@@ -96,7 +96,11 @@ export {
 	scheduleContractDefaultInTx,
 } from "./contract-defaults";
 export {
+	type ContractsReviewQueueResult,
+	type EnrichedContractMigrationConflict,
+	type EnrichedRetrospectiveDepartureReview,
 	listContractMigrationConflicts,
+	listContractsReviewQueue,
 	resolveContractMigrationConflict,
 } from "./contract-reviews";
 export {

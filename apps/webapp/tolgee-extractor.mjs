@@ -92,6 +92,7 @@ const NESTED_NAMESPACE_PREFIXES = [
 	["settings.workDiagnostics.", "settings/payrollExport"],
 	["settings.scheduledExports.", "settings/scheduledExports"],
 	["settings.holidays.", "settings/holidays"],
+	["settings.contracts.", "settings/workPolicies"],
 	["settings.workPolicies.", "settings/workPolicies"],
 	["settings.workSchedules.", "settings/workPolicies"],
 	["settings.timeRegulations.", "settings/workPolicies"],

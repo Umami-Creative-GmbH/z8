@@ -1,17 +1,7 @@
 /* @vitest-environment jsdom */
 
-import {
-	QueryClient,
-	QueryClientProvider,
-	useQuery,
-} from "@tanstack/react-query";
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps, ReactNode } from "react";
 import { renderToString } from "react-dom/server";
@@ -28,17 +18,28 @@ import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 import type { EmployeeDetailFormApi } from "./page-utils";
 
-const { pushMock, useEmployeeMock, formSection, saveEmployeeMock, teamApi } = vi.hoisted(() => ({
+const {
+	pushMock,
+	useEmployeeMock,
+	formSection,
+	saveEmployeeMock,
+	teamApi,
+	teamContractPreviewMock,
+} = vi.hoisted(() => ({
 	pushMock: vi.fn(),
 	useEmployeeMock: vi.fn(),
 	formSection: { real: false },
 	saveEmployeeMock: vi.fn(),
 	teamApi: { list: vi.fn(), preview: vi.fn() },
+	teamContractPreviewMock: vi.fn(),
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/teams/actions", () => ({ listTeams: teamApi.list }));
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	previewEmployeeTeamChange: teamApi.preview,
+}));
+vi.mock("@/app/[locale]/(app)/settings/employees/employee-mutations.actions", () => ({
+	previewEmployeeTeamChangeContractImpact: teamContractPreviewMock,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -75,9 +76,7 @@ vi.mock("./page-sections", async () => {
 				</header>
 			);
 		},
-		EmployeeEditFormCard: (
-			props: ComponentProps<typeof EmployeeEditFormCard>,
-		) =>
+		EmployeeEditFormCard: (props: ComponentProps<typeof EmployeeEditFormCard>) =>
 			formSection.real ? (
 				<EmployeeEditFormCard {...props} />
 			) : (
@@ -102,29 +101,46 @@ vi.mock("./page-sections", async () => {
 	};
 });
 
-vi.mock(
-	"@/components/settings/employee-offboarding/employee-offboarding-section",
-	() => ({
-		EmployeeOffboardingSection: ({ employeeId }: { employeeId: string }) => (
-			<section aria-label="Employment and departure">{employeeId}</section>
-		),
-	}),
-);
+vi.mock("@/components/settings/employee-offboarding/employee-offboarding-section", () => ({
+	EmployeeOffboardingSection: ({
+		employeeId,
+		highlightedReviewId,
+	}: {
+		employeeId: string;
+		highlightedReviewId?: string | null;
+	}) => (
+		<section id="offboarding" aria-label="Employment and departure">
+			{employeeId}
+			{highlightedReviewId ? (
+				<div id={`offboarding-review-${highlightedReviewId}`}>Review {highlightedReviewId}</div>
+			) : null}
+		</section>
+	),
+}));
 
-vi.mock(
-	"@/components/settings/personal-data-export/employee-personal-data-export-card",
-	() => ({
-		EmployeePersonalDataExportCard: ({
-			isOwnRecord,
-		}: {
-			isOwnRecord: boolean;
-		}) => (
-			<section aria-label="Personal data export">
-				{isOwnRecord ? "own record" : "colleague"}
-			</section>
-		),
-	}),
-);
+vi.mock("@/components/settings/employee-offboarding/leaving-date-panel", () => ({
+	LeavingDatePanel: ({ employeeId }: { employeeId: string }) => (
+		<section aria-label="Leaving Date">{employeeId}</section>
+	),
+}));
+
+vi.mock("@/components/settings/contracts/employee-contract-tab", () => ({
+	EmployeeContractTab: ({ employeeId }: { employeeId: string }) => (
+		<section aria-label="Effective Contract">{employeeId}</section>
+	),
+}));
+
+vi.mock("@/components/settings/contracts/scoped-manager-policy-card", () => ({
+	ScopedManagerPolicyCard: ({ employeeId }: { employeeId: string }) => (
+		<section aria-label="Work Policy Assignment">{employeeId}</section>
+	),
+}));
+
+vi.mock("@/components/settings/personal-data-export/employee-personal-data-export-card", () => ({
+	EmployeePersonalDataExportCard: ({ isOwnRecord }: { isOwnRecord: boolean }) => (
+		<section aria-label="Personal data export">{isOwnRecord ? "own record" : "colleague"}</section>
+	),
+}));
 
 vi.mock("./employee-draft-actions", () => ({
 	EmployeeDraftActions: () => <div>Draft actions</div>,
@@ -164,9 +180,7 @@ vi.mock("@/components/organization/employee-lifecycle-actions", () => ({
 			<div>
 				<button
 					type="button"
-					onClick={() =>
-						onOptimisticStatusChange(target.employeeId, !target.isActive)
-					}
+					onClick={() => onOptimisticStatusChange(target.employeeId, !target.isActive)}
 				>
 					{target.isActive ? "Deactivate" : "Reactivate"}
 				</button>
@@ -180,43 +194,35 @@ vi.mock("@/components/organization/employee-lifecycle-actions", () => ({
 	},
 }));
 
-vi.mock(
-	"@/components/settings/custom-roles/employee-custom-roles-card",
-	() => ({
-		EmployeeCustomRolesCard: ({
-			employeeId,
-			organizationId,
-			isAdmin,
-		}: {
-			employeeId: string;
-			organizationId: string;
-			isAdmin: boolean;
-		}) => (
-			<section aria-label="Custom roles">
-				Custom roles for {employeeId} in {organizationId}: {isAdmin ? "admin" : "read-only"}
-			</section>
-		),
-	}),
-);
+vi.mock("@/components/settings/custom-roles/employee-custom-roles-card", () => ({
+	EmployeeCustomRolesCard: ({
+		employeeId,
+		organizationId,
+		isAdmin,
+	}: {
+		employeeId: string;
+		organizationId: string;
+		isAdmin: boolean;
+	}) => (
+		<section aria-label="Custom roles">
+			Custom roles for {employeeId} in {organizationId}: {isAdmin ? "admin" : "read-only"}
+		</section>
+	),
+}));
 const employmentHistoryCardProps = vi.hoisted(() => ({
 	last: null as null | Record<string, unknown>,
 }));
 vi.mock("@/components/settings/employee-employment-history-card", () => ({
-	EmployeeEmploymentHistoryCard: (
-		props: { notice?: ReactNode } & Record<string, unknown>,
-	) => {
+	EmployeeEmploymentHistoryCard: (props: { notice?: ReactNode } & Record<string, unknown>) => {
 		employmentHistoryCardProps.last = props;
 		return <>{props.notice}</>;
 	},
 }));
-vi.mock(
-	"@/components/settings/employee-employment-history/wage-history-merge-note",
-	() => ({
-		WageHistoryMergeNote: ({ employeeId }: { employeeId: string }) => (
-			<p>Merge note for {employeeId}</p>
-		),
-	}),
-);
+vi.mock("@/components/settings/employee-employment-history/wage-history-merge-note", () => ({
+	WageHistoryMergeNote: ({ employeeId }: { employeeId: string }) => (
+		<p>Merge note for {employeeId}</p>
+	),
+}));
 vi.mock("@/components/settings/employee-skills-card", () => ({
 	EmployeeSkillsCard: () => null,
 }));
@@ -226,18 +232,11 @@ vi.mock("@/components/settings/manager-assignment", () => ({
 vi.mock("@/components/settings/work-balance-recalculation-card", () => ({
 	WorkBalanceRecalculationCard: () => null,
 }));
-vi.mock(
-	"@/components/settings/work-balance/employee-work-balance-section",
-	() => ({
-		EmployeeWorkBalanceSection: () => null,
-	}),
-);
+vi.mock("@/components/settings/work-balance/employee-work-balance-section", () => ({
+	EmployeeWorkBalanceSection: () => null,
+}));
 vi.mock("@/components/personnel-file/personnel-file-panel", () => ({
-	PersonnelFilePanel: ({
-		capability,
-	}: {
-		capability: { employeeId: string };
-	}) => (
+	PersonnelFilePanel: ({ capability }: { capability: { employeeId: string } }) => (
 		<section aria-label="Personnel file panel">{capability.employeeId}</section>
 	),
 }));
@@ -315,42 +314,34 @@ function renderDetail({
 	settingsAccess = "owner",
 	accessTier = "orgAdmin",
 	personnelFile = null,
+	highlightedReviewId = null,
 }: {
 	employee?: EmployeeDetail;
 	currentUserId?: string;
 	settingsAccess?: SettingsAccess | null;
 	accessTier?: "orgAdmin" | "manager" | "member";
 	personnelFile?: { employeeId: string; categories: []; today: string } | null;
+	highlightedReviewId?: string | null;
 } = {}) {
 	const snapshot = {
 		scope: { userId: currentUserId, organizationId: employee.organizationId },
 		data: employee,
 		updatedAt: Date.now(),
 	};
-	useEmployeeMock.mockImplementation(
-		({ employeeId }: { employeeId: string }) => {
-			const query = useQuery({
-				queryKey: queryKeys.employees.detailFor(
-					currentUserId,
-					employee.organizationId,
-					employeeId,
-				),
-				queryFn: async () => snapshot,
-				initialData: snapshot,
-				staleTime: Number.POSITIVE_INFINITY,
-			});
-			return employeeHookResult(query.data.data);
-		},
-	);
+	useEmployeeMock.mockImplementation(({ employeeId }: { employeeId: string }) => {
+		const query = useQuery({
+			queryKey: queryKeys.employees.detailFor(currentUserId, employee.organizationId, employeeId),
+			queryFn: async () => snapshot,
+			initialData: snapshot,
+			staleTime: Number.POSITIVE_INFINITY,
+		});
+		return employeeHookResult(query.data.data);
+	});
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
 	queryClient.setQueryData(
-		queryKeys.employees.detailFor(
-			currentUserId,
-			employee.organizationId,
-			employee.id,
-		),
+		queryKeys.employees.detailFor(currentUserId, employee.organizationId, employee.id),
 		snapshot,
 	);
 
@@ -358,11 +349,7 @@ function renderDetail({
 		queryClient,
 		setEmployee: (updated: EmployeeDetail) =>
 			queryClient.setQueryData(
-				queryKeys.employees.detailFor(
-					currentUserId,
-					employee.organizationId,
-					employee.id,
-				),
+				queryKeys.employees.detailFor(currentUserId, employee.organizationId, employee.id),
 				{ ...snapshot, data: updated, updatedAt: Date.now() },
 			),
 		...render(
@@ -373,6 +360,7 @@ function renderDetail({
 					currentUserId={currentUserId}
 					settingsAccess={settingsAccess}
 					personnelFile={personnelFile}
+					highlightedReviewId={highlightedReviewId}
 				/>
 			</QueryClientProvider>,
 		),
@@ -398,6 +386,37 @@ describe("employee detail Team field (#1575)", () => {
 		teamApi.preview.mockResolvedValue({
 			success: true,
 			data: { detail: "full", employees: [], previewToken: token },
+		});
+		teamContractPreviewMock.mockResolvedValue({
+			success: true,
+			data: {
+				employeeId: "employee-2",
+				effectiveOnDate: "2026-07-01",
+				currentPrimaryTeamId: "team-1",
+				currentPrimaryTeamName: "Umami",
+				targetPrimaryTeamId: "team-2",
+				targetPrimaryTeamName: "Vertrieb",
+				hasOperationalChanges: true,
+				changes: [
+					{
+						field: "workModel",
+						before: "hybrid",
+						after: "onsite",
+						beforeLabel: "hybrid",
+						afterLabel: "onsite",
+						beforeSource: "team_default",
+						afterSource: "team_default",
+					},
+				],
+				preservedPersonalDivergences: [],
+				preservedEmployeeOwnedTerms: {
+					contractType: "fixed",
+					employmentProfile: "regular",
+					arbzgScope: "standard",
+					onCallTerms: null,
+				},
+				mismatchWarning: null,
+			},
 		});
 		saveEmployeeMock.mockResolvedValue({ success: true, data: undefined });
 	});
@@ -478,13 +497,21 @@ describe("employee detail heading", () => {
 });
 
 describe("employee detail admin-only custom roles (#1475)", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		window.location.hash = "";
+	});
 
 	it.each(["manager", "member"] as const)(
 		"does not mount the custom roles card for a %s viewer",
 		async (accessTier) => {
 			renderDetail({ accessTier, settingsAccess: "member" });
 			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+			const tab = screen.getByRole("tab", { name: "Access & Roles" });
+			act(() => {
+				fireEvent.mouseDown(tab);
+				fireEvent.click(tab);
+			});
 			expect(screen.queryByText(/Custom roles for/)).toBeNull();
 		},
 	);
@@ -493,25 +520,72 @@ describe("employee detail admin-only custom roles (#1475)", () => {
 		"mounts the custom roles card with the employee scope for %s settings access",
 		async (settingsAccess) => {
 			renderDetail({ accessTier: "orgAdmin", settingsAccess });
-			expect(
-				(await screen.findByRole("region", { name: "Custom roles" })).textContent,
-			).toBe("Custom roles for employee-2 in org-1: admin");
+			const tab = await screen.findByRole("tab", { name: "Access & Roles" });
+			act(() => {
+				fireEvent.mouseDown(tab);
+				fireEvent.click(tab);
+			});
+			expect((await screen.findByRole("region", { name: "Custom roles" })).textContent).toBe(
+				"Custom roles for employee-2 in org-1: admin",
+			);
 		},
 	);
 });
 
 describe("employee detail wage history merge note (#1176)", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		window.location.hash = "";
+	});
 
 	it("shows the note on the terms card to org admins", async () => {
 		renderDetail({ accessTier: "orgAdmin" });
+		const tab = await screen.findByRole("tab", { name: "Contract" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
 		expect(await screen.findByText("Merge note for employee-2")).toBeTruthy();
 	});
 
-	it("shows no note to managers", async () => {
+	it("shows no note to managers and isolates to wage-free policy assignment (A1)", async () => {
 		renderDetail({ accessTier: "manager", settingsAccess: "scopedManager" });
-		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		const tab = await screen.findByRole("tab", { name: "Work policy" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Work Policy Assignment" })).toBeTruthy();
 		expect(screen.queryByText(/Merge note/)).toBeNull();
+		expect(screen.queryByRole("region", { name: "Effective Contract" })).toBeNull();
+	});
+});
+
+describe("employee detail 6-tab deep links (#1930)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		window.location.hash = "";
+	});
+
+	it("auto-activates Contract tab for #employment-history deep link", async () => {
+		window.location.hash = "#employment-history";
+		renderDetail({ accessTier: "orgAdmin" });
+		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
+	});
+
+	it("auto-activates Leaving Date tab for #offboarding deep link", async () => {
+		window.location.hash = "#offboarding";
+		renderDetail({ accessTier: "orgAdmin" });
+		expect(await screen.findByRole("region", { name: "Leaving Date" })).toBeTruthy();
+		expect(screen.getByRole("region", { name: "Employment and departure" })).toBeTruthy();
+	});
+
+	it("auto-activates Leaving Date tab and highlights target review for ?review=<id>", async () => {
+		renderDetail({
+			accessTier: "orgAdmin",
+			highlightedReviewId: "11111111-1111-4111-8111-111111111111",
+		});
+		expect(await screen.findByText("Review 11111111-1111-4111-8111-111111111111")).toBeTruthy();
 	});
 });
 
@@ -540,9 +614,7 @@ describe("employee detail personnel file tab (#865)", () => {
 			fireEvent.click(tab);
 		});
 
-		expect(
-			await screen.findByRole("region", { name: "Personnel file panel" }),
-		).toBeTruthy();
+		expect(await screen.findByRole("region", { name: "Personnel file panel" })).toBeTruthy();
 	});
 });
 
@@ -558,8 +630,14 @@ describe("employee detail Change wage (#1177)", () => {
 	} as EmployeeDetail;
 
 	it("offers Change wage to an org admin while today's terms are hourly", async () => {
+		window.location.hash = "";
 		renderDetail({ employee: hourlyToday });
-		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		const tab = await screen.findByRole("tab", { name: "Contract" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
 
 		expect(employmentHistoryCardProps.last?.changeWage).toEqual({
 			onSubmit: expect.any(Function),
@@ -567,26 +645,36 @@ describe("employee detail Change wage (#1177)", () => {
 		});
 	});
 
-	it("offers no Change wage to a scoped manager", async () => {
+	it("offers no Change wage or employment terms to a scoped manager", async () => {
+		window.location.hash = "";
 		renderDetail({
 			employee: hourlyToday,
 			accessTier: "manager",
 			settingsAccess: "scopedManager",
 		});
-		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
-
-		expect(employmentHistoryCardProps.last).not.toBeNull();
-		expect(employmentHistoryCardProps.last?.changeWage).toBeUndefined();
+		const tab = await screen.findByRole("tab", { name: "Work policy" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Work Policy Assignment" })).toBeTruthy();
+		expect(employmentHistoryCardProps.last).toBeNull();
 	});
 
 	it("offers no Change wage while today's terms are fixed", async () => {
+		window.location.hash = "";
 		renderDetail({
 			employee: {
 				...realEmployee,
 				contractTypeToday: "fixed",
 			} as EmployeeDetail,
 		});
-		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		const tab = await screen.findByRole("tab", { name: "Contract" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
 
 		expect(employmentHistoryCardProps.last?.changeWage).toBeUndefined();
 	});
@@ -608,12 +696,8 @@ describe("employee detail lifecycle integration", () => {
 				settingsAccess,
 			});
 
-			expect(
-				await screen.findByRole("button", { name: statusAction }),
-			).toBeTruthy();
-			expect(
-				Boolean(screen.queryByRole("button", { name: "Remove access" })),
-			).toBe(canRemove);
+			expect(await screen.findByRole("button", { name: statusAction })).toBeTruthy();
+			expect(Boolean(screen.queryByRole("button", { name: "Remove access" }))).toBe(canRemove);
 		},
 	);
 
@@ -661,9 +745,7 @@ describe("employee detail lifecycle integration", () => {
 				} as EmployeeDetail,
 			});
 
-			expect(
-				await screen.findByRole("button", { name: "Deactivate" }),
-			).toBeTruthy();
+			expect(await screen.findByRole("button", { name: "Deactivate" })).toBeTruthy();
 		},
 	);
 
@@ -695,48 +777,56 @@ describe("employee detail lifecycle integration", () => {
 	);
 
 	it.each(["orgAdmin", "manager"] as const)(
-		"shows the departure section to %s viewers of a real employee",
+		"shows the departure section to %s viewers of a real employee (and Leaving Date panel to org admins only)",
 		async (accessTier) => {
-			renderDetail({ accessTier });
+			window.location.hash = "";
+			renderDetail({
+				accessTier,
+				settingsAccess: accessTier === "orgAdmin" ? "orgAdmin" : "scopedManager",
+			});
+			const tab = await screen.findByRole("tab", { name: "Leaving Date" });
+			act(() => {
+				fireEvent.mouseDown(tab);
+				fireEvent.click(tab);
+			});
 
-			expect(
-				await screen.findByRole("region", { name: "Employment and departure" }),
-			).toBeTruthy();
+			expect(await screen.findByRole("region", { name: "Employment and departure" })).toBeTruthy();
+			if (accessTier === "orgAdmin") {
+				expect(screen.getByRole("region", { name: "Leaving Date" })).toBeTruthy();
+			} else {
+				expect(screen.queryByRole("region", { name: "Leaving Date" })).toBeNull();
+			}
 		},
 	);
 
 	it("offers the admin export to org admins only, marked on their own record (#1166)", async () => {
+		window.location.hash = "#offboarding";
 		const { unmount } = renderDetail({ accessTier: "orgAdmin" });
-		expect(
-			(await screen.findByRole("region", { name: "Personal data export" }))
-				.textContent,
-		).toBe("colleague");
+		expect((await screen.findByRole("region", { name: "Personal data export" })).textContent).toBe(
+			"colleague",
+		);
 		unmount();
 
 		const own = renderDetail({
 			accessTier: "orgAdmin",
 			currentUserId: "user-2",
 		});
-		expect(
-			(await screen.findByRole("region", { name: "Personal data export" }))
-				.textContent,
-		).toBe("own record");
+		expect((await screen.findByRole("region", { name: "Personal data export" })).textContent).toBe(
+			"own record",
+		);
 		own.unmount();
 
-		renderDetail({ accessTier: "manager" });
+		renderDetail({ accessTier: "manager", settingsAccess: "scopedManager" });
 		await screen.findByRole("region", { name: "Employment and departure" });
-		expect(
-			screen.queryByRole("region", { name: "Personal data export" }),
-		).toBeNull();
+		expect(screen.queryByRole("region", { name: "Personal data export" })).toBeNull();
+		window.location.hash = "";
 	});
 
 	it("never offers departure controls on an invitation draft", async () => {
 		renderDetail({ employee: draftEmployee });
 
 		expect(await screen.findByText("Draft actions")).toBeTruthy();
-		expect(
-			screen.queryByRole("region", { name: "Employment and departure" }),
-		).toBeNull();
+		expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
 	});
 
 	it("shows reinvitation guidance when inactive history has no membership", async () => {
@@ -759,9 +849,7 @@ describe("employee detail lifecycle integration", () => {
 		const { queryClient } = renderDetail();
 		fireEvent.click(await screen.findByRole("button", { name: "Deactivate" }));
 
-		expect(
-			await screen.findByRole("button", { name: "Reactivate" }),
-		).toBeTruthy();
+		expect(await screen.findByRole("button", { name: "Reactivate" })).toBeTruthy();
 		expect(
 			queryClient.getQueryData<EmployeeReadSnapshot<"detail">>(
 				queryKeys.employees.detailFor("owner-user", "org-1", "employee-2"),
@@ -771,9 +859,7 @@ describe("employee detail lifecycle integration", () => {
 
 	it("keeps historical detail after removal and clears membership without redirecting", async () => {
 		const { queryClient } = renderDetail();
-		fireEvent.click(
-			await screen.findByRole("button", { name: "Remove access" }),
-		);
+		fireEvent.click(await screen.findByRole("button", { name: "Remove access" }));
 
 		expect(screen.getByText("Alex Morgan")).toBeTruthy();
 		expect(
@@ -795,9 +881,7 @@ describe("employee detail lifecycle integration", () => {
 
 	it("renders restored membership from authoritative query data after local removal", async () => {
 		const { setEmployee } = renderDetail();
-		fireEvent.click(
-			await screen.findByRole("button", { name: "Remove access" }),
-		);
+		fireEvent.click(await screen.findByRole("button", { name: "Remove access" }));
 		expect(
 			await screen.findByText(
 				"This employee no longer has organization membership. Send a new invitation to restore access.",
@@ -812,18 +896,14 @@ describe("employee detail lifecycle integration", () => {
 			});
 		});
 
-		expect(
-			await screen.findByRole("button", { name: "Deactivate" }),
-		).toBeTruthy();
+		expect(await screen.findByRole("button", { name: "Deactivate" })).toBeTruthy();
 		expect(screen.queryByText(/Invite this person again/)).toBeNull();
 	});
 
 	it("renders an external status refresh after a local optimistic change", async () => {
 		const { setEmployee } = renderDetail();
 		fireEvent.click(await screen.findByRole("button", { name: "Deactivate" }));
-		expect(
-			await screen.findByRole("button", { name: "Reactivate" }),
-		).toBeTruthy();
+		expect(await screen.findByRole("button", { name: "Reactivate" })).toBeTruthy();
 
 		await act(async () => {
 			setEmployee({
@@ -832,9 +912,7 @@ describe("employee detail lifecycle integration", () => {
 			});
 		});
 
-		expect(
-			await screen.findByRole("button", { name: "Deactivate" }),
-		).toBeTruthy();
+		expect(await screen.findByRole("button", { name: "Deactivate" })).toBeTruthy();
 	});
 });
 
@@ -847,9 +925,7 @@ describe("employee detail drafts during refresh", () => {
 		} as EmployeeDetail;
 		const { setEmployee } = renderDetail({ employee });
 		const input = await screen.findByRole("textbox", { name: "First name" });
-		await act(async () =>
-			fireEvent.change(input, { target: { value: "Unsaved Alex" } }),
-		);
+		await act(async () => fireEvent.change(input, { target: { value: "Unsaved Alex" } }));
 		await act(async () =>
 			setEmployee({
 				...employee,
@@ -871,9 +947,7 @@ describe("employee detail drafts during refresh", () => {
 				user: { ...employee.user, firstName: "Server Alex" },
 			}),
 		);
-		await waitFor(() =>
-			expect((input as HTMLInputElement).value).toBe("Server Alex"),
-		);
+		await waitFor(() => expect((input as HTMLInputElement).value).toBe("Server Alex"));
 	});
 });
 
@@ -908,18 +982,15 @@ describe("preseeded employee edit form baseline", () => {
 			);
 			const container = document.createElement("div");
 			container.innerHTML = html;
-			expect(
-				container.querySelector<HTMLInputElement>('input[name="firstName"]')
-					?.value,
-			).toBe("Ada");
-			expect(
-				container.querySelector<HTMLInputElement>('input[name="lastName"]')
-					?.value,
-			).toBe("Lovelace");
-			expect(
-				container.querySelector<HTMLInputElement>('input[name="startDate"]')
-					?.value,
-			).toBe("2025-01-01");
+			expect(container.querySelector<HTMLInputElement>('input[name="firstName"]')?.value).toBe(
+				"Ada",
+			);
+			expect(container.querySelector<HTMLInputElement>('input[name="lastName"]')?.value).toBe(
+				"Lovelace",
+			);
+			expect(container.querySelector<HTMLInputElement>('input[name="startDate"]')?.value).toBe(
+				"2025-01-01",
+			);
 		} finally {
 			formSection.real = false;
 		}
@@ -930,9 +1001,7 @@ describe("preseeded employee edit form baseline", () => {
 		try {
 			const { setEmployee } = renderDetail({ employee });
 			const input = await screen.findByRole("textbox", { name: "First name" });
-			await act(async () =>
-				fireEvent.change(input, { target: { value: "Unsaved Ada" } }),
-			);
+			await act(async () => fireEvent.change(input, { target: { value: "Unsaved Ada" } }));
 			await act(async () =>
 				setEmployee({
 					...employee,
@@ -956,14 +1025,10 @@ describe("preseeded employee edit form baseline", () => {
 					user: { ...employee.user, firstName: "Fresh Ada" },
 				}),
 			);
-			await waitFor(() =>
-				expect((input as HTMLInputElement).value).toBe("Fresh Ada"),
+			await waitFor(() => expect((input as HTMLInputElement).value).toBe("Fresh Ada"));
+			expect(screen.getByRole("button", { name: "Save Changes" }).hasAttribute("disabled")).toBe(
+				true,
 			);
-			expect(
-				screen
-					.getByRole("button", { name: "Save Changes" })
-					.hasAttribute("disabled"),
-			).toBe(true);
 		} finally {
 			formSection.real = false;
 		}

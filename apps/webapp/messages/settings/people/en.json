@@ -95,7 +95,12 @@
 				"systemRole": "System Role",
 				"systemRoleDescription": "Determines access level in the system",
 				"tabs": {
-					"overview": "Overview"
+					"overview": "Overview",
+					"contract": "Contract",
+					"workPolicy": "Work policy",
+					"timeBalance": "Time & Balance",
+					"assignments": "Access & Roles",
+					"leavingDate": "Leaving Date"
 				},
 				"team": "Team",
 				"teamClearNotice": "Saving ends this employee's {currentTeam} team membership. Their next team membership, if any, becomes their primary team.",
@@ -105,7 +110,8 @@
 				"updateFailed": "Failed to update employee",
 				"updateSuccess": "Employee updated successfully",
 				"viewDescription": "View employee details",
-				"workSchedule": "Work Schedule"
+				"workSchedule": "Work Schedule",
+				"tabsAriaLabel": "Employee detail sections"
 			},
 			"directory": {
 				"actions": {
@@ -723,6 +729,31 @@
 					"template": "Download template",
 					"title": "Upload opening balances"
 				}
+			},
+			"leavingDate": {
+				"saved": "Leaving date updated",
+				"title": "Leaving Date",
+				"description": "Schedule a future departure, offboard immediately, record a retrospective past leaving date, correct a past leaving date, or backfill a legacy former employee's date.",
+				"modeLegend": "Leaving date action",
+				"willLeave": "Will Leave (future date)",
+				"offboardNow": "Offboard Now (immediate)",
+				"hasLeft": "Has Left (past date)",
+				"correctPastDate": "Correct Past Leaving Date",
+				"historicalBackfill": "Record Historical Leaving Date",
+				"dateOnlyTitle": "Strictly date-only correction",
+				"dateOnlyDescription": "Correcting a past leaving date adjusts the recorded departure date without reopening the effective departure. Use Rehire to start a new employment period.",
+				"loadingPastPreview": "Checking post-cutoff work and closed/settled payroll impact…",
+				"postCutoffWorkCount": "{count} work periods after cutoff",
+				"closedMonthsCount": "{count} closed months overlapping",
+				"settledDaysCount": "{count} settled payroll days overlapping",
+				"payrollUntouchedNotice": "Closed months and settled payroll days will remain untouched; a durable payroll_reconciliation review will be opened.",
+				"workAfterCutoffNotice": "Recorded work exists after the leaving date; a durable work_after_cutoff review will be opened.",
+				"ackDuties": "Admins will handle any unassigned approval duties if no replacement is chosen.",
+				"reasonLabel": "Audit note (optional)",
+				"submitWillLeave": "Schedule leaving date",
+				"submitHasLeft": "Record past leaving date",
+				"submitCorrectDate": "Correct past date",
+				"submitHistorical": "Record historical date"
 			}
 		},
 		"employmentHistory": {

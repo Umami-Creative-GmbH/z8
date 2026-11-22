@@ -381,6 +381,7 @@ const sourceShape0: CatalogSourceMetadata = {
 				timeRegulations: 1,
 				workPolicies: 1,
 				workSchedules: 1,
+				contracts: 1,
 			},
 		},
 		"settings/vacation": {

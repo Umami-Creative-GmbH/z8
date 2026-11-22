@@ -3,6 +3,7 @@
 import { IconDeviceFloppy, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
+import { TeamMoveContractPreview } from "@/components/settings/contracts/team-move-contract-preview";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { RoleSelector } from "@/components/settings/role-selector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -48,6 +49,7 @@ export type EmployeeTeamOption = { id: string; name: string };
  * Only org admins get it, on an employee record.
  */
 export type EmployeeEditFormTeam = {
+	employeeId?: string;
 	currentTeam: EmployeeTeamOption | null;
 	options: readonly EmployeeTeamOption[];
 };
@@ -130,12 +132,7 @@ export function EmployeeEditFormCard({
 					<EmployeeRoleField form={form} disabled={orgAdminFieldsDisabled} t={t} />
 
 					{team && (
-						<EmployeeTeamField
-							form={form}
-							team={team}
-							disabled={orgAdminFieldsDisabled}
-							t={t}
-						/>
+						<EmployeeTeamField form={form} team={team} disabled={orgAdminFieldsDisabled} t={t} />
 					)}
 
 					{contract.kind === "draft" ? (
@@ -186,10 +183,7 @@ function EmployeeNameFields({ form, disabled, t }: EmployeeFieldProps) {
 				form={form}
 				name="lastName"
 				label={t("settings.employees.detailView.lastName", "Last name")}
-				placeholder={t(
-					"settings.employees.detailView.lastNamePlaceholder",
-					"e.g., Lovelace…",
-				)}
+				placeholder={t("settings.employees.detailView.lastNamePlaceholder", "e.g., Lovelace…")}
 				autoComplete="family-name"
 				description={t(
 					"settings.employees.detailView.lastNameDescription",
@@ -214,13 +208,18 @@ function PersonnelNumberField({
 			readOnly={managedByScim}
 			name="employeeNumber"
 			label={t("settings.employees.detailView.personnelNumber", "Personnel number")}
-			placeholder={t(
-				"settings.employees.detailView.employeeNumberPlaceholder",
-				"e.g., EMP-001",
-			)}
-			description={managedByScim
-				? t("settings.employees.detailView.personnelNumberManagedByIdp", "Managed by your identity provider. Change the personnel number there.")
-				: t("settings.employees.detailView.personnelNumberDescription", "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.")}
+			placeholder={t("settings.employees.detailView.employeeNumberPlaceholder", "e.g., EMP-001")}
+			description={
+				managedByScim
+					? t(
+							"settings.employees.detailView.personnelNumberManagedByIdp",
+							"Managed by your identity provider. Change the personnel number there.",
+						)
+					: t(
+							"settings.employees.detailView.personnelNumberDescription",
+							"Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
+						)
+			}
 			disabled={disabled}
 		/>
 	);
@@ -412,7 +411,9 @@ function DraftContractFields({ form, disabled, t }: EmployeeFieldProps) {
 				)}
 			</form.Field>
 
-			<form.Subscribe<EmployeeDetailFormValues["contractType"]> selector={(state) => state.values.contractType}>
+			<form.Subscribe<EmployeeDetailFormValues["contractType"]>
+				selector={(state) => state.values.contractType}
+			>
 				{(contractType: EmployeeDetailFormValues["contractType"]) =>
 					contractType === "hourly" && (
 						<form.Field name="hourlyRate">
@@ -500,7 +501,12 @@ function EmployeeTeamField({
 								"The employee's primary team. Manage further team memberships under Teams.",
 							)}
 						</TFormDescription>
-						<TeamMoveNotice currentTeam={team.currentTeam} nextTeam={nextTeam} t={t} />
+						<TeamMoveNotice
+							employeeId={team.employeeId}
+							currentTeam={team.currentTeam}
+							nextTeam={nextTeam}
+							t={t}
+						/>
 						<TFormMessage field={field} />
 					</TFormItem>
 				);
@@ -510,32 +516,47 @@ function EmployeeTeamField({
 }
 
 function TeamMoveNotice({
+	employeeId,
 	currentTeam,
 	nextTeam,
 	t,
 }: {
+	employeeId?: string;
 	currentTeam: EmployeeTeamOption | null;
 	nextTeam: EmployeeTeamOption | null;
 	t: Translate;
 }) {
-	if (!currentTeam || currentTeam.id === nextTeam?.id) return null;
+	const teamChanged = (currentTeam?.id ?? null) !== (nextTeam?.id ?? null);
+	if (!teamChanged) return null;
+
 	return (
-		<Alert role="status">
-			<IconInfoCircle aria-hidden="true" />
-			<AlertDescription>
-				{nextTeam
-					? t(
-							"settings.employees.detailView.teamMoveNotice",
-							"Saving moves this employee to {nextTeam}. Their {currentTeam} team membership ends; their other team memberships stay.",
-							{ nextTeam: nextTeam.name, currentTeam: currentTeam.name },
-						)
-					: t(
-							"settings.employees.detailView.teamClearNotice",
-							"Saving ends this employee's {currentTeam} team membership. Their next team membership, if any, becomes their primary team.",
-							{ currentTeam: currentTeam.name },
-						)}
-			</AlertDescription>
-		</Alert>
+		<div className="space-y-2">
+			{currentTeam && (
+				<Alert role="status">
+					<IconInfoCircle aria-hidden="true" />
+					<AlertDescription>
+						{nextTeam
+							? t(
+									"settings.employees.detailView.teamMoveNotice",
+									"Saving moves this employee to {nextTeam}. Their {currentTeam} team membership ends; their other team memberships stay.",
+									{ nextTeam: nextTeam.name, currentTeam: currentTeam.name },
+								)
+							: t(
+									"settings.employees.detailView.teamClearNotice",
+									"Saving ends this employee's {currentTeam} team membership. Their next team membership, if any, becomes their primary team.",
+									{ currentTeam: currentTeam.name },
+								)}
+					</AlertDescription>
+				</Alert>
+			)}
+			{employeeId && (
+				<TeamMoveContractPreview
+					employeeId={employeeId}
+					targetTeamId={nextTeam?.id ?? null}
+					enabled={teamChanged}
+				/>
+			)}
+		</div>
 	);
 }
 
@@ -631,12 +652,14 @@ function EmployeeEditFormActions({
 			<Button type="button" variant="outline" onClick={onCancel} disabled={isUpdating}>
 				{t("settings.employees.detailView.cancel", "Cancel")}
 			</Button>
-			<form.Subscribe<readonly [boolean, boolean]> selector={(state) => [state.isDirty, state.isSubmitting] as const}>
+			<form.Subscribe<readonly [boolean, boolean]>
+				selector={(state) => [state.isDirty, state.isSubmitting] as const}
+			>
 				{([isDirty, isSubmitting]: readonly [boolean, boolean]) => (
 					<Button
-							type="submit"
-							disabled={(!isDirty && !hasCustomFieldChanges) || isSubmitting || isUpdating}
-						>
+						type="submit"
+						disabled={(!isDirty && !hasCustomFieldChanges) || isSubmitting || isUpdating}
+					>
 						{(isSubmitting || isUpdating) && (
 							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						)}
