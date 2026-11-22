@@ -3,6 +3,7 @@ import { and, asc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import {
 	contractChangeBatch,
+	contractChangeBatchItem,
 	contractTemplate,
 	contractTemplateVersion,
 	contractTemplateVersionDay,
@@ -253,39 +254,45 @@ async function resolveTargetEmployees(
 	const onlyLegacy = resolveOnlyLegacyFlag(target, defaultOnlyLegacyTerms);
 
 	if (onlyLegacy) {
-		// A1-19 / A2-3: Determine eligibility strictly from the WINNING confirmed terms row
-		// covering `effectiveFromDate` in the employee's open employment period (preferring
-		// stint-scoped rows over null-period rows, matching resolve-contract.ts precedence).
+		// A1-19 / A2-3 / A3-9: Determine eligibility strictly from the WINNING confirmed terms row
+		// (matching resolve-contract.ts timeline truncation: the latest confirmed row with
+		// valid_from_date <= effectiveFromDate in the active period scope must still cover
+		// effectiveFromDate and have migrated_legacy_terms = true).
 		conditions.push(sql`(
-			SELECT h.migrated_legacy_terms
-			FROM employee_employment_history h
-			LEFT JOIN employee_employment_period open_p
-				ON open_p.organization_id = h.organization_id
-				AND open_p.employee_id = h.employee_id
-				AND open_p.status = 'open'
-			WHERE h.organization_id = ${organizationId}
-				AND h.employee_id = ${employee.id}
-				AND h.review_state = 'confirmed'
-				AND h.valid_from_date <= ${effectiveFromDate}::date
-				AND (h.valid_until_date IS NULL OR h.valid_until_date > ${effectiveFromDate}::date)
-				AND (
-					(open_p.id IS NOT NULL AND h.employment_period_id = open_p.id)
-					OR (
-						h.employment_period_id IS NULL
-						AND NOT EXISTS (
-							SELECT 1
-							FROM employee_employment_history ps
-							WHERE ps.organization_id = h.organization_id
-								AND ps.employee_id = h.employee_id
-								AND ps.review_state = 'confirmed'
-								AND open_p.id IS NOT NULL
-								AND ps.employment_period_id = open_p.id
+			SELECT (
+				(w.valid_until_date IS NULL OR w.valid_until_date > ${effectiveFromDate}::date)
+				AND w.migrated_legacy_terms = true
+			)
+			FROM (
+				SELECT h.valid_until_date, h.migrated_legacy_terms
+				FROM employee_employment_history h
+				LEFT JOIN employee_employment_period open_p
+					ON open_p.organization_id = h.organization_id
+					AND open_p.employee_id = h.employee_id
+					AND open_p.status = 'open'
+				WHERE h.organization_id = ${organizationId}
+					AND h.employee_id = ${employee.id}
+					AND h.review_state = 'confirmed'
+					AND h.valid_from_date <= ${effectiveFromDate}::date
+					AND (
+						(open_p.id IS NOT NULL AND h.employment_period_id = open_p.id)
+						OR (
+							h.employment_period_id IS NULL
+							AND NOT EXISTS (
+								SELECT 1
+								FROM employee_employment_history ps
+								WHERE ps.organization_id = h.organization_id
+									AND ps.employee_id = h.employee_id
+									AND ps.review_state = 'confirmed'
+									AND open_p.id IS NOT NULL
+									AND ps.employment_period_id = open_p.id
+							)
 						)
+						OR open_p.id IS NULL
 					)
-					OR open_p.id IS NULL
-				)
-			ORDER BY h.valid_from_date DESC, h.created_at DESC, h.id DESC
-			LIMIT 1
+				ORDER BY h.valid_from_date DESC, h.created_at DESC, h.id DESC
+				LIMIT 1
+			) w
 		) = true`);
 	}
 
@@ -855,7 +862,9 @@ export async function submitBulkContractAction(
 			if (typeof storedIntent === "string") {
 				intentMatches = storedIntent === submittedIntentFingerprint;
 			} else {
-				// Pre-upgrade compatibility check (A2-19): verify operation kind and canonical payload fields.
+				// Pre-upgrade compatibility check (A2-19 / A3-8): verify operation kind, canonical payload
+				// fields, AND exact persisted target employee IDs (or confirmationFingerprint over the
+				// persisted item roster) so a changed target can never replay an unrelated legacy batch.
 				const expectedKind =
 					input.actionKind === "apply_template_version"
 						? "bulk_template_apply"
@@ -886,9 +895,51 @@ export async function submitBulkContractAction(
 										changes: input.changes,
 										changeReason: input.changeReason ?? null,
 									};
-					intentMatches =
+					const payloadMatches =
 						JSON.stringify(sortKeysCanonical(existingPayload)) ===
 						JSON.stringify(sortKeysCanonical(expectedLegacyPayload));
+					if (payloadMatches) {
+						const persistedItems = await db
+							.select({ employeeId: contractChangeBatchItem.employeeId })
+							.from(contractChangeBatchItem)
+							.where(
+								and(
+									eq(contractChangeBatchItem.organizationId, input.organizationId),
+									eq(contractChangeBatchItem.batchId, existing.id),
+								),
+							)
+							.orderBy(asc(contractChangeBatchItem.employeeId));
+						const persistedEmployeeIds = persistedItems.map((item) => item.employeeId);
+						if (input.confirmationFingerprint !== undefined) {
+							const expectedPersistedFp = computeBulkConfirmationFingerprint({
+								organizationId: input.organizationId,
+								spec: input,
+								effectiveFromDate: parsedEffectiveFromDate,
+								employeeIds: persistedEmployeeIds,
+								onlyLegacyTerms,
+							});
+							intentMatches = input.confirmationFingerprint === expectedPersistedFp;
+						} else if (input.target.employeeIds && input.target.employeeIds.length > 0) {
+							const requestedIds = [...new Set(input.target.employeeIds)].sort((a, b) =>
+								a.localeCompare(b),
+							);
+							intentMatches =
+								requestedIds.length === persistedEmployeeIds.length &&
+								requestedIds.every((id, idx) => id === persistedEmployeeIds[idx]);
+						} else {
+							const currentMatched = await resolveTargetEmployees(
+								db,
+								input.organizationId,
+								input.target,
+								input.actionKind === "adopt_default",
+								parsedEffectiveFromDate,
+							);
+							const currentIds = currentMatched.map((e) => e.id);
+							intentMatches =
+								currentIds.length === persistedEmployeeIds.length &&
+								currentIds.every((id, idx) => id === persistedEmployeeIds[idx]);
+						}
+					}
 				}
 			}
 			if (intentMatches) {
@@ -908,7 +959,11 @@ export async function submitBulkContractAction(
 		}
 	}
 
-	const { effectiveFromDate } = await validateBulkActionInputs(db, input.organizationId, input);
+	const { effectiveFromDate, templateVersion } = await validateBulkActionInputs(
+		db,
+		input.organizationId,
+		input,
+	);
 	const matched = await resolveTargetEmployees(
 		db,
 		input.organizationId,
@@ -943,6 +998,41 @@ export async function submitBulkContractAction(
 				"Bulk action preview is stale because matching employees or parameters changed. Re-run preview before submitting.",
 			conflictType: "confirmation_fingerprint_mismatch",
 		});
+	}
+
+	// A3-2: Enforce employee-level validation before creating a batch so submitting a failed
+	// preview (or a batch invalidated by a concurrent pay/on-call edit) never partially updates
+	// some employees while failing others.
+	const requiresEmployeeValidation =
+		(input.actionKind === "apply_template_version" &&
+			(templateVersion?.defaultContractType === "hourly" ||
+				templateVersion?.scheduleSource === "on_call")) ||
+		(input.actionKind === "bulk_operational_update" &&
+			(input.changes.contractType === "hourly" ||
+				input.changes.hourlyRate !== undefined ||
+				input.changes.scheduleSource === "on_call"));
+	if (requiresEmployeeValidation) {
+		for (let offset = 0; offset < matched.length; offset += PREVIEW_CHUNK_SIZE) {
+			const chunk = matched.slice(offset, offset + PREVIEW_CHUNK_SIZE);
+			const resolvedMap = await loadEffectiveContractsBatch(db, {
+				organizationId: input.organizationId,
+				employeeIds: chunk.map((e) => e.id),
+				dates: [effectiveFromDate],
+			});
+			for (const emp of chunk) {
+				const current = resolvedMap.get(emp.id)?.get(effectiveFromDate);
+				const entry = evaluateEmployeeAgainstAction(emp, current, input, templateVersion);
+				if (entry.status === "validation_error") {
+					throw new ValidationError({
+						message:
+							entry.validationErrors[0] ??
+							"One or more matched employees failed bulk contract validation.",
+						field: "target",
+						refusal: "bulk_employee_validation_failed",
+					});
+				}
+			}
+		}
 	}
 
 	const requestId = input.requestId ?? randomUUID();

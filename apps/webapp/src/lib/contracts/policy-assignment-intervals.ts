@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { workPolicyAssignment } from "@/db/schema";
 import type { WorkPolicyAssignmentSourceKind } from "@/db/schema/contract-types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import type { ContractWriteTx } from "./contract-validation";
 
@@ -220,10 +220,96 @@ export async function replacePolicyAssignmentWindowInTx(
 	return inserted;
 }
 
+export interface CappedPolicyAssignmentRecord {
+	readonly id: string;
+	readonly previousEffectiveUntilDate: string | null;
+	readonly previousEffectiveUntil: string | null;
+}
+
+/**
+ * Caps active employee `work_policy_assignment` rows spanning `cutoffLocalDate` and
+ * deactivates future ones when an employee departs, returning the exact capped rows and
+ * their pre-departure end dates so a later forward departure correction only restores rows
+ * that departure shortened and never extends past their original end date (A3-20).
+ */
+export async function capAndDeactivateEmployeePolicyAssignmentsOnDepartureInTx(
+	tx: Pick<ContractWriteTx, "execute">,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		cutoff: Date;
+		cutoffLocalDate: string;
+		now: Date;
+	},
+): Promise<{
+	cappedAssignments: CappedPolicyAssignmentRecord[];
+	deactivatedAssignmentIds: string[];
+}> {
+	const toCap = await tx.execute<{
+		id: string;
+		prev_until_date: string | null;
+		prev_until: Date | string | null;
+	}>(sql`
+		SELECT
+			id,
+			to_char(effective_until_date, 'YYYY-MM-DD') AS prev_until_date,
+			effective_until AS prev_until
+		FROM work_policy_assignment
+		WHERE organization_id = ${input.organizationId}
+			AND assignment_type = 'employee'
+			AND employee_id = ${input.employeeId}::uuid
+			AND is_active = true
+			AND effective_from_date < ${input.cutoffLocalDate}::date
+			AND (effective_until_date IS NULL OR effective_until_date > ${input.cutoffLocalDate}::date)
+	`);
+
+	const cappedAssignments: CappedPolicyAssignmentRecord[] = toCap.rows.map((row) => ({
+		id: row.id,
+		previousEffectiveUntilDate: row.prev_until_date ?? null,
+		previousEffectiveUntil:
+			row.prev_until instanceof Date
+				? row.prev_until.toISOString()
+				: typeof row.prev_until === "string"
+					? row.prev_until
+					: null,
+	}));
+
+	if (cappedAssignments.length > 0) {
+		await tx.execute(sql`
+			UPDATE work_policy_assignment
+			SET effective_until = ${input.cutoff},
+				effective_until_date = ${input.cutoffLocalDate}::date,
+				updated_at = ${input.now}
+			WHERE organization_id = ${input.organizationId}
+				AND assignment_type = 'employee'
+				AND employee_id = ${input.employeeId}::uuid
+				AND is_active = true
+				AND effective_from_date < ${input.cutoffLocalDate}::date
+				AND (effective_until_date IS NULL OR effective_until_date > ${input.cutoffLocalDate}::date)
+		`);
+	}
+
+	const deactivated = await tx.execute<{ id: string }>(sql`
+		UPDATE work_policy_assignment
+		SET is_active = false, updated_at = ${input.now}
+		WHERE organization_id = ${input.organizationId}
+			AND assignment_type = 'employee'
+			AND employee_id = ${input.employeeId}::uuid
+			AND is_active = true
+			AND effective_from_date >= ${input.cutoffLocalDate}::date
+		RETURNING id
+	`);
+
+	return {
+		cappedAssignments,
+		deactivatedAssignmentIds: deactivated.rows.map((row) => row.id),
+	};
+}
+
 /**
  * Keeps stint-scoped employee `work_policy_assignment` rows aligned when an effective past
- * departure date is corrected earlier or later (A1-3, A2-16), without touching assignments
- * belonging to any subsequent rehire stint.
+ * departure date is corrected earlier or later (A1-3, A2-16, A3-20), without touching
+ * assignments belonging to any subsequent rehire stint or extending deliberately ended rows.
  */
 export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionInTx(
 	tx: ContractWriteTx,
@@ -236,9 +322,10 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 		newCutoffDate: Date;
 		nextPeriodStartLocalDate: string | null;
 		nextPeriodStart: Date | null;
+		cappedPolicyAssignments: readonly CappedPolicyAssignmentRecord[];
 		now: Date;
 	},
-): Promise<void> {
+): Promise<{ newlyCappedAssignments: CappedPolicyAssignmentRecord[] }> {
 	const stintProvenanceGuard = sql`AND (
 		source_employment_history_id IS NULL
 		OR source_employment_history_id IN (
@@ -262,45 +349,76 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 			input.nextPeriodStart && input.newCutoffDate.getTime() > input.nextPeriodStart.getTime()
 				? input.nextPeriodStart
 				: input.newCutoffDate;
-		await tx.execute(sql`
-			UPDATE work_policy_assignment a
-			SET effective_until = ${effectiveExtendedUntilTs},
-				effective_until_date = ${effectiveExtendedUntilDate}::date,
-				updated_at = ${input.now}
-			WHERE a.organization_id = ${input.organizationId}
-				AND a.assignment_type = 'employee'
-				AND a.employee_id = ${input.employeeId}::uuid
-				AND a.is_active = true
-				AND a.effective_until_date = ${input.previousCutoffLocalDate}::date
-				AND (
-					a.source_employment_history_id IS NULL
-					OR a.source_employment_history_id IN (
-						SELECT id
-						FROM employee_employment_history
-						WHERE organization_id = ${input.organizationId}
-							AND employee_id = ${input.employeeId}::uuid
-							AND employment_period_id = ${input.employmentPeriodId}::uuid
+
+		// A3-20: Extend ONLY assignments recorded as departure-shortened, and never past each
+		// assignment's original pre-departure end date!
+		for (const capped of input.cappedPolicyAssignments) {
+			const originalUntilDate = capped.previousEffectiveUntilDate;
+			if (originalUntilDate !== null && originalUntilDate <= input.previousCutoffLocalDate) {
+				continue;
+			}
+			const clampedUntilDate =
+				originalUntilDate !== null && originalUntilDate < effectiveExtendedUntilDate
+					? originalUntilDate
+					: effectiveExtendedUntilDate;
+			const clampedUntilTs =
+				originalUntilDate !== null && originalUntilDate < effectiveExtendedUntilDate
+					? capped.previousEffectiveUntil
+						? dateFromInstant(
+								parseInstant(
+									capped.previousEffectiveUntil.includes("T")
+										? capped.previousEffectiveUntil
+										: `${capped.previousEffectiveUntil.replace(" ", "T")}${/[zZ]|[+-]\d{2}:?\d{2}$/.test(capped.previousEffectiveUntil) ? "" : "Z"}`,
+								),
+							)
+						: utcMidnight(parsePlainDate(originalUntilDate))
+					: effectiveExtendedUntilTs;
+			await tx.execute(sql`
+				UPDATE work_policy_assignment a
+				SET effective_until = ${clampedUntilTs},
+					effective_until_date = ${clampedUntilDate}::date,
+					updated_at = ${input.now}
+				WHERE a.organization_id = ${input.organizationId}
+					AND a.id = ${capped.id}::uuid
+					AND a.assignment_type = 'employee'
+					AND a.employee_id = ${input.employeeId}::uuid
+					AND a.is_active = true
+					AND a.effective_until_date = ${input.previousCutoffLocalDate}::date
+					AND (
+						a.source_employment_history_id IS NULL
+						OR a.source_employment_history_id IN (
+							SELECT id
+							FROM employee_employment_history
+							WHERE organization_id = ${input.organizationId}
+								AND employee_id = ${input.employeeId}::uuid
+								AND employment_period_id = ${input.employmentPeriodId}::uuid
+						)
 					)
-				)
-				AND NOT EXISTS (
-					SELECT 1
-					FROM work_policy_assignment later
-					WHERE later.organization_id = a.organization_id
-						AND later.assignment_type = 'employee'
-						AND later.employee_id = a.employee_id
-						AND later.is_active = true
-						AND later.id <> a.id
-						AND later.effective_from_date >= ${input.previousCutoffLocalDate}::date
-						AND later.effective_from_date < ${effectiveExtendedUntilDate}::date
-				)
-		`);
+					AND NOT EXISTS (
+						SELECT 1
+						FROM work_policy_assignment later
+						WHERE later.organization_id = a.organization_id
+							AND later.assignment_type = 'employee'
+							AND later.employee_id = a.employee_id
+							AND later.is_active = true
+							AND later.id <> a.id
+							AND later.effective_from_date >= ${input.previousCutoffLocalDate}::date
+							AND later.effective_from_date < ${clampedUntilDate}::date
+					)
+			`);
+		}
 	}
 
-	await tx.execute(sql`
-		UPDATE work_policy_assignment
-		SET effective_until = ${input.newCutoffDate},
-			effective_until_date = ${input.nextCutoffLocalDate}::date,
-			updated_at = ${input.now}
+	const toCapNow = await tx.execute<{
+		id: string;
+		prev_until_date: string | null;
+		prev_until: Date | string | null;
+	}>(sql`
+		SELECT
+			id,
+			to_char(effective_until_date, 'YYYY-MM-DD') AS prev_until_date,
+			effective_until AS prev_until
+		FROM work_policy_assignment
 		WHERE organization_id = ${input.organizationId}
 			AND assignment_type = 'employee'
 			AND employee_id = ${input.employeeId}::uuid
@@ -309,6 +427,32 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 			AND (effective_until_date IS NULL OR effective_until_date > ${input.nextCutoffLocalDate}::date)
 			${stintProvenanceGuard}
 	`);
+	const newlyCappedAssignments: CappedPolicyAssignmentRecord[] = toCapNow.rows.map((row) => ({
+		id: row.id,
+		previousEffectiveUntilDate: row.prev_until_date ?? null,
+		previousEffectiveUntil:
+			row.prev_until instanceof Date
+				? row.prev_until.toISOString()
+				: typeof row.prev_until === "string"
+					? row.prev_until
+					: null,
+	}));
+
+	if (newlyCappedAssignments.length > 0) {
+		await tx.execute(sql`
+			UPDATE work_policy_assignment
+			SET effective_until = ${input.newCutoffDate},
+				effective_until_date = ${input.nextCutoffLocalDate}::date,
+				updated_at = ${input.now}
+			WHERE organization_id = ${input.organizationId}
+				AND assignment_type = 'employee'
+				AND employee_id = ${input.employeeId}::uuid
+				AND is_active = true
+				AND effective_from_date < ${input.nextCutoffLocalDate}::date
+				AND (effective_until_date IS NULL OR effective_until_date > ${input.nextCutoffLocalDate}::date)
+				${stintProvenanceGuard}
+		`);
+	}
 	await tx.execute(sql`
 		UPDATE work_policy_assignment
 		SET is_active = false, updated_at = ${input.now}
@@ -320,4 +464,6 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 			${nextPeriodUpperBoundGuard}
 			${stintProvenanceGuard}
 	`);
+
+	return { newlyCappedAssignments };
 }

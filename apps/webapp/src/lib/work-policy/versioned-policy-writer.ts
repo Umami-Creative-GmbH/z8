@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
+	dateFromInstant,
 	instantFromDate,
 	parsePlainDate,
 	plainDateAt,
@@ -309,7 +310,17 @@ async function validateReactivationPresenceLocationsInTx(
 	if (input.versions.length === 0) return;
 	const currentEffective =
 		input.versions.find((v) => v.effectiveFromDate <= input.orgTodayDate) ?? null;
-	const futureVersions = input.versions.filter((v) => v.effectiveFromDate > input.orgTodayDate);
+	// A3-21: Deduplicate future revisions per effective_from_date (highest versionNumber wins),
+	// matching location-lifecycle.ts so a superseded same-day revision never blocks reactivation.
+	const winningFutureByDate = new Map<string, PolicyVersionSummary>();
+	for (const v of input.versions) {
+		if (v.effectiveFromDate <= input.orgTodayDate) continue;
+		const existing = winningFutureByDate.get(v.effectiveFromDate);
+		if (!existing || v.versionNumber > existing.versionNumber) {
+			winningFutureByDate.set(v.effectiveFromDate, v);
+		}
+	}
+	const futureVersions = [...winningFutureByDate.values()];
 	const activePresenceVersionIds = [
 		...(currentEffective &&
 		currentEffective.presenceEnabled &&
@@ -340,10 +351,31 @@ async function validateReactivationPresenceLocationsInTx(
 }
 
 /**
+ * Locks active `work_policy_assignment` rows for `policyId` in deterministic `id` order BEFORE
+ * locking `work_policy`, matching `policy-clock-out-break-snapshot.ts` (`assignment -> policy`)
+ * so concurrent deactivation and clock-out can never deadlock (A3-13).
+ */
+export async function lockPolicyAssignmentsForRetirementInTx(
+	tx: PolicyTransaction,
+	organizationId: string,
+	policyId: string,
+): Promise<void> {
+	await tx.execute(sql`
+		SELECT id
+		FROM work_policy_assignment
+		WHERE organization_id = ${organizationId}
+			AND policy_id = ${policyId}::uuid
+			AND is_active = true
+		ORDER BY id
+		FOR UPDATE
+	`);
+}
+
+/**
  * Records a dated retirement boundary (`orgTodayDate`) on active `work_policy_assignment` and
  * `contract_default` rows referencing a retired policy so historical dates continue resolving
  * the retired policy while today and future dates stop applying it without losing non-policy
- * contract default fields (A1-12 / A2-8 / P7-1).
+ * contract default fields (A1-12 / A2-8 / P7-1 / P8-1 / P8-2 / A3-5 / A3-12 / A3-14).
  */
 export async function retirePolicyReferencesInTx(
 	tx: PolicyTransaction,
@@ -352,16 +384,26 @@ export async function retirePolicyReferencesInTx(
 		policyId: string;
 		actorUserId: string;
 		orgTodayDate: string;
+		orgTimezone?: string;
 		now: Date;
 	},
 ): Promise<void> {
 	const { organizationId, policyId, actorUserId, orgTodayDate, now } = input;
+	const orgTimezone = input.orgTimezone ?? (await loadOrganizationTimezone(tx, organizationId));
 	const orgTodayMidnight = utcMidnight(parsePlainDate(orgTodayDate));
+	// A3-14: Legacy timestamp-bounded assignments are evaluated against org-local midnight so
+	// non-UTC organizations (e.g. America/New_York) never lose hours at the end of the prior day.
+	const orgTodayLocalStart = dateFromInstant(
+		parsePlainDate(orgTodayDate).toZonedDateTime(orgTimezone).toInstant(),
+	);
 
 	// 1. Cap active policy assignments at orgTodayDate and deactivate future ones.
 	await tx.execute(sql`
 		UPDATE work_policy_assignment
-		SET effective_until = ${orgTodayMidnight},
+		SET effective_until = CASE
+				WHEN source_kind = 'legacy' THEN (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC')
+				ELSE (${orgTodayMidnight}::timestamptz AT TIME ZONE 'UTC')
+			END,
 			effective_until_date = ${orgTodayDate}::date,
 			updated_at = ${now}
 		WHERE organization_id = ${organizationId}
@@ -379,8 +421,39 @@ export async function retirePolicyReferencesInTx(
 			AND effective_from_date >= ${orgTodayDate}::date
 	`);
 
-	// 2. Cap/split active contract_default rows referencing this policy so today & future dates
-	// stop inheriting the retired policy while preserving all other default operational fields.
+	// 2. Acquire the same scope advisory lock as `scheduleContractDefaultInTx` in deterministic
+	// sorted order for every affected active default scope before reading & splitting (P8-2 / A3-12).
+	const affectedScopes = await tx
+		.select({
+			scope: contractDefault.scope,
+			teamId: contractDefault.teamId,
+		})
+		.from(contractDefault)
+		.innerJoin(
+			contractTemplateVersion,
+			and(
+				eq(contractTemplateVersion.id, contractDefault.templateVersionId),
+				eq(contractTemplateVersion.organizationId, contractDefault.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(contractDefault.organizationId, organizationId),
+				eq(contractDefault.isActive, true),
+				eq(contractTemplateVersion.workPolicyId, policyId),
+			),
+		);
+	const scopeLockKeys = [
+		...new Set(
+			affectedScopes.map((s) => `contract_default:${organizationId}:${s.scope}:${s.teamId ?? ""}`),
+		),
+	].sort((a, b) => a.localeCompare(b));
+	for (const lockKey of scopeLockKeys) {
+		await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+	}
+
+	// 3. Re-query ONLY active contract_default rows referencing this policy under the scope locks
+	// so superseded/inactive defaults are never revived (P8-1 / A3-5).
 	const defaultRows = await tx
 		.select({
 			defaultRow: contractDefault,
@@ -397,6 +470,7 @@ export async function retirePolicyReferencesInTx(
 		.where(
 			and(
 				eq(contractDefault.organizationId, organizationId),
+				eq(contractDefault.isActive, true),
 				eq(contractTemplateVersion.workPolicyId, policyId),
 			),
 		);
@@ -465,7 +539,11 @@ export async function retirePolicyReferencesInTx(
 		if (defaultRow.effectiveFromDate >= orgTodayDate) {
 			await tx
 				.update(contractDefault)
-				.set({ templateVersionId: clonedVersion.id })
+				.set({
+					templateVersionId: clonedVersion.id,
+					updatedBy: actorUserId,
+					updatedAt: now,
+				})
 				.where(
 					and(
 						eq(contractDefault.id, defaultRow.id),
@@ -476,7 +554,11 @@ export async function retirePolicyReferencesInTx(
 			// Cap historical segment at orgTodayDate and insert continuation without the retired policy.
 			await tx
 				.update(contractDefault)
-				.set({ effectiveUntilDate: orgTodayDate })
+				.set({
+					effectiveUntilDate: orgTodayDate,
+					updatedBy: actorUserId,
+					updatedAt: now,
+				})
 				.where(
 					and(
 						eq(contractDefault.id, defaultRow.id),
@@ -488,10 +570,14 @@ export async function retirePolicyReferencesInTx(
 				scope: defaultRow.scope,
 				teamId: defaultRow.teamId,
 				templateVersionId: clonedVersion.id,
+				requireDefaultEligible: true,
 				effectiveFromDate: orgTodayDate,
 				effectiveUntilDate: defaultRow.effectiveUntilDate,
+				isActive: true,
 				createdBy: actorUserId,
 				createdAt: now,
+				updatedBy: actorUserId,
+				updatedAt: now,
 			});
 		}
 	}
@@ -1099,7 +1185,11 @@ export async function updateOrPublishWorkPolicyInTx(
 	}
 	const requestedEffectiveFromDate = normalizeDateInput(data.effectiveFromDate);
 
-	// Step 1: Lock work_policy FOR UPDATE first.
+	// Step 1: When retiring (isActive: false), lock active policy assignments in id order BEFORE
+	// locking work_policy so lock order matches clock-out (`assignment -> policy`, A3-13).
+	if (data.isActive === false) {
+		await lockPolicyAssignmentsForRetirementInTx(tx, organizationId, policyId);
+	}
 	const existingPolicy = await lockWorkPolicyForUpdateInTx(tx, organizationId, policyId);
 	if (!existingPolicy) {
 		throw new NotFoundError({
@@ -1166,6 +1256,7 @@ export async function updateOrPublishWorkPolicyInTx(
 				policyId,
 				actorUserId,
 				orgTodayDate,
+				orgTimezone: orgTimezone ?? undefined,
 				now,
 			});
 		}
@@ -1240,7 +1331,9 @@ export async function updateOrPublishWorkPolicyInTx(
 				? data.presence.locationId || null
 				: (currentDetails?.presence?.locationId ?? null);
 
-	if (incomingPresenceLocationId && (nextPresenceEnabled || Boolean(data.presence?.locationId))) {
+	// A2-5 / A3-3: Validate org ownership for EVERY location that the new version will persist
+	// (including inherited disabled presence rules), requiring active status when presence is enabled.
+	if (incomingPresenceLocationId) {
 		await lockOwnedLocationForShareInTx(
 			tx,
 			organizationId,
@@ -1352,6 +1445,18 @@ export async function updateOrPublishWorkPolicyInTx(
 			}
 		}
 
+		// A3-11: Pre-seal combined edit setting isActive: false must also retire references.
+		if (data.isActive === false && existingPolicy.isActive) {
+			await retirePolicyReferencesInTx(tx, {
+				organizationId,
+				policyId,
+				actorUserId,
+				orgTodayDate,
+				orgTimezone,
+				now: dateFromInstant(nowInstant),
+			});
+		}
+
 		const saved = await loadWorkPolicyVersionDetailsInTx(tx, {
 			organizationId,
 			policyId,
@@ -1457,6 +1562,7 @@ export async function updateOrPublishWorkPolicyInTx(
 			policyId,
 			actorUserId,
 			orgTodayDate,
+			orgTimezone,
 			now: updateNow,
 		});
 	}

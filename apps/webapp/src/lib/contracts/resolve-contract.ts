@@ -145,6 +145,8 @@ export interface PolicyAssignmentSnapshot {
 	readonly teamId: string | null;
 	readonly employeeId: string | null;
 	readonly sourceKind?: string | null;
+	readonly sourceEmploymentHistoryId?: string | null;
+	readonly isActive?: boolean;
 	readonly priority: number;
 	readonly effectiveFrom: Date | null;
 	readonly effectiveUntil: Date | null;
@@ -158,6 +160,7 @@ export interface WorkPolicyVersionSnapshot {
 	readonly policyId: string;
 	readonly versionNumber: number;
 	readonly effectiveFromDate: string;
+	readonly scheduleAnchorDate?: string;
 	readonly scheduleEnabled: boolean;
 	readonly regulationEnabled: boolean;
 	readonly presenceEnabled: boolean;
@@ -401,9 +404,15 @@ function selectConfirmedTermsForPeriodOnDay(input: {
 	day: PlainDate;
 	employeeCalendarTimezone: string;
 	organizationTimezone: string;
-}): { terms: EmploymentHistorySnapshot | null; inEndedTermsGap: boolean } {
+}): {
+	terms: EmploymentHistorySnapshot | null;
+	inEndedTermsGap: boolean;
+	effectivePolicyEvaluationDate: string | null;
+} {
 	const { confirmedTerms, period, day, employeeCalendarTimezone, organizationTimezone } = input;
-	if (confirmedTerms.length === 0) return { terms: null, inEndedTermsGap: false };
+	if (confirmedTerms.length === 0) {
+		return { terms: null, inEndedTermsGap: false, effectivePolicyEvaluationDate: null };
+	}
 
 	const periodScoped = period
 		? confirmedTerms.filter((row) => row.employmentPeriodId === period.id)
@@ -416,16 +425,25 @@ function selectConfirmedTermsForPeriodOnDay(input: {
 				: confirmedTerms;
 
 	const direct = selectConfirmedTermsOnDate(candidateRows, day, organizationTimezone);
-	if (direct) return { terms: direct, inEndedTermsGap: false };
+	if (direct) {
+		return { terms: direct, inEndedTermsGap: false, effectivePolicyEvaluationDate: null };
+	}
 
 	// Cross-timezone rehire opening day: when employeeTz lags behind orgTz, the stint's
 	// recorded start instant falls on `day` in employeeTz and `day + 1` in orgTz.
+	// Return `startInOrgTz` so work policy version selection matches clock-out (A3-10).
 	if (period && period.startProvenance === "recorded" && period.startedAt) {
 		const startInEmpTz = plainDateAt(period.startedAt, employeeCalendarTimezone);
 		const startInOrgTz = plainDateAt(period.startedAt, organizationTimezone);
 		if (comparePlainDates(startInEmpTz, day) === 0 && comparePlainDates(startInOrgTz, day) > 0) {
 			const crossTz = selectConfirmedTermsOnDate(candidateRows, startInOrgTz, organizationTimezone);
-			if (crossTz) return { terms: crossTz, inEndedTermsGap: false };
+			if (crossTz) {
+				return {
+					terms: crossTz,
+					inEndedTermsGap: false,
+					effectivePolicyEvaluationDate: startInOrgTz.toString(),
+				};
+			}
 		}
 	}
 
@@ -437,7 +455,7 @@ function selectConfirmedTermsForPeriodOnDay(input: {
 		return bounds.until !== null && comparePlainDates(bounds.until, day) <= 0;
 	});
 
-	return { terms: null, inEndedTermsGap };
+	return { terms: null, inEndedTermsGap, effectivePolicyEvaluationDate: null };
 }
 
 function selectContractDefaultOnDay(
@@ -547,6 +565,7 @@ function selectPolicyAssignmentAtLevel(input: {
 	at?: Instant;
 }): PolicyAssignmentSnapshot | null {
 	const matching = input.assignments.filter((row) => {
+		if (row.isActive === false) return false;
 		if (row.assignmentType !== input.level) return false;
 		if (input.level === "employee" && row.employeeId !== input.employeeId) return false;
 		if (input.level === "team" && (input.teamId === null || row.teamId !== input.teamId)) {
@@ -631,6 +650,52 @@ function computeScheduleAnchorDate(
 }
 
 /**
+ * Precomputes `scheduleAnchorDate` once per policy version so bulk resolution across
+ * thousands of employees/dates never repeats the history fingerprint walk (A3-19).
+ */
+export function attachPrecomputedScheduleAnchors(
+	versions: readonly WorkPolicyVersionSnapshot[],
+): WorkPolicyVersionSnapshot[] {
+	if (versions.length === 0) return [];
+	// Compute winning version per effectiveFromDate in chronological order once.
+	const sortedAsc = [...versions].sort(
+		(a, b) =>
+			a.effectiveFromDate.localeCompare(b.effectiveFromDate) || a.versionNumber - b.versionNumber,
+	);
+	const anchorById = new Map<string, string>();
+	const winningTimeline: { effectiveFromDate: string; fp: string }[] = [];
+	const fpById = new Map<string, string>();
+	for (const v of sortedAsc) {
+		fpById.set(v.id, scheduleFingerprintForAnchor(v.schedule));
+	}
+	const winningByDate = new Map<string, WorkPolicyVersionSnapshot>();
+	for (const v of sortedAsc) {
+		const prev = winningByDate.get(v.effectiveFromDate);
+		if (!prev || v.versionNumber > prev.versionNumber) {
+			winningByDate.set(v.effectiveFromDate, v);
+		}
+	}
+	const chronologicalWinning = [...winningByDate.values()].sort((a, b) =>
+		a.effectiveFromDate.localeCompare(b.effectiveFromDate),
+	);
+	let runAnchor = chronologicalWinning[0]?.effectiveFromDate ?? "";
+	let runFp = chronologicalWinning[0] ? (fpById.get(chronologicalWinning[0].id) ?? "") : "";
+	for (const v of chronologicalWinning) {
+		const fp = fpById.get(v.id) ?? "";
+		if (fp !== runFp) {
+			runAnchor = v.effectiveFromDate;
+			runFp = fp;
+		}
+		winningTimeline.push({ effectiveFromDate: v.effectiveFromDate, fp });
+		anchorById.set(v.id, runAnchor);
+	}
+	return versions.map((v) => ({
+		...v,
+		scheduleAnchorDate: anchorById.get(v.id) ?? computeScheduleAnchorDate(versions, v),
+	}));
+}
+
+/**
  * Selects the active `work_policy_version` for `policy` on `dayStr` (`YYYY-MM-DD`),
  * ordered deterministically by `(effective_from_date DESC, version_number DESC)`.
  * Consumes `schedule_enabled`, `regulation_enabled`, and `presence_enabled` strictly
@@ -662,7 +727,8 @@ export function selectActivePolicyVersionOnDay(
 		policyVersionId: activeVersion.id,
 		versionNumber: activeVersion.versionNumber,
 		effectiveFromDate: activeVersion.effectiveFromDate,
-		scheduleAnchorDate: computeScheduleAnchorDate(policy.versions, activeVersion),
+		scheduleAnchorDate:
+			activeVersion.scheduleAnchorDate ?? computeScheduleAnchorDate(policy.versions, activeVersion),
 		scheduleEnabled: activeVersion.scheduleEnabled,
 		regulationEnabled: activeVersion.regulationEnabled,
 		presenceEnabled: activeVersion.presenceEnabled,
@@ -717,13 +783,14 @@ function getWorkDaysFromPolicySchedule(
 	activeCycleWeek = 1,
 ): DayOfWeek[] {
 	if (schedule.scheduleType === "detailed" || schedule.workingDaysPreset === "custom") {
-		const matched = schedule.days.filter(
-			(d) => d.isWorkDay && (d.cycleWeek ?? 1) === activeCycleWeek,
-		);
-		const workDays =
-			matched.length > 0
-				? matched
-				: schedule.days.filter((d) => d.isWorkDay && (d.cycleWeek ?? 1) === 1);
+		// A3-18: Check whether ANY rows exist for `activeCycleWeek` BEFORE filtering by `isWorkDay`
+		// so an explicitly work-free cycle week returns [] instead of falling back to week 1.
+		const cycleWeekRows = schedule.days.filter((d) => (d.cycleWeek ?? 1) === activeCycleWeek);
+		const effectiveRows =
+			cycleWeekRows.length > 0
+				? cycleWeekRows
+				: schedule.days.filter((d) => (d.cycleWeek ?? 1) === 1);
+		const workDays = effectiveRows.filter((d) => d.isWorkDay);
 		const order = new Map(DAY_OF_WEEK_ORDER.map((day, idx) => [day, idx]));
 		return workDays
 			.map((d) => d.dayOfWeek)
@@ -1020,7 +1087,11 @@ export function resolveEffectiveContractPure(
 	});
 
 	// 3. Confirmed employee terms for the active stint (never leak across closed employment periods)
-	const { terms: employeeTerms, inEndedTermsGap } = isEmployed
+	const {
+		terms: employeeTerms,
+		inEndedTermsGap,
+		effectivePolicyEvaluationDate,
+	} = isEmployed
 		? selectConfirmedTermsForPeriodOnDay({
 				confirmedTerms: input.confirmedTerms,
 				period,
@@ -1028,7 +1099,7 @@ export function resolveEffectiveContractPure(
 				employeeCalendarTimezone: input.employeeCalendarTimezone,
 				organizationTimezone: input.organizationTimezone,
 			})
-		: { terms: null, inEndedTermsGap: false };
+		: { terms: null, inEndedTermsGap: false, effectivePolicyEvaluationDate: null };
 
 	// 4. Primary Team Default & Organization Default
 	const teamDefault =
@@ -1058,23 +1129,60 @@ export function resolveEffectiveContractPure(
 	if (employeeTerms?.workPolicyId) {
 		const policy = input.policiesById.get(employeeTerms.workPolicyId);
 		if (policy) {
+			const policyEvalDateStr = effectivePolicyEvaluationDate ?? dayStr;
+			const policyEvalDay = effectivePolicyEvaluationDate
+				? parsePlainDate(effectivePolicyEvaluationDate)
+				: day;
 			const termsEndDate =
 				termsDateBounds(employeeTerms, input.organizationTimezone).until?.toString() ?? null;
-			// A2-8 / P7-1: Apply the same dated retirement boundary to direct employee terms pins.
-			let pinEligible = isPolicyEligibleOnDay(policy, dayStr, termsEndDate);
-			if (!pinEligible && !policy.isActive) {
-				const matchingCappedAssignment = input.policyAssignments.find(
+			// A2-8 / P7-1 / A3-6: When confirmed terms have linked `employment_terms` assignment(s),
+			// those immutable capped/deactivated windows govern pin eligibility so renaming or later
+			// reactivating a retired policy can never revive the retired pin.
+			const linkedTermsAssignments = input.policyAssignments.filter(
+				(row) =>
+					row.assignmentType === "employee" &&
+					row.employeeId === input.employeeId &&
+					row.policyId === policy.id &&
+					row.sourceEmploymentHistoryId === employeeTerms.id,
+			);
+			let pinEligible: boolean;
+			if (linkedTermsAssignments.length > 0) {
+				pinEligible = linkedTermsAssignments.some(
 					(row) =>
-						row.assignmentType === "employee" &&
-						row.employeeId === input.employeeId &&
-						row.policyId === policy.id &&
-						assignmentCoversDay(row, day, dayStr, input.organizationTimezone, input.at) &&
-						isPolicyEligibleOnDay(policy, dayStr, row.effectiveUntilDate),
+						row.isActive !== false &&
+						assignmentCoversDay(
+							row,
+							policyEvalDay,
+							policyEvalDateStr,
+							input.organizationTimezone,
+							input.at,
+						) &&
+						(policy.isActive ||
+							isPolicyEligibleOnDay(policy, policyEvalDateStr, row.effectiveUntilDate)),
 				);
-				pinEligible = Boolean(matchingCappedAssignment);
+			} else {
+				pinEligible = isPolicyEligibleOnDay(policy, policyEvalDateStr, termsEndDate);
+				if (!pinEligible && !policy.isActive) {
+					const matchingCappedAssignment = input.policyAssignments.find(
+						(row) =>
+							row.isActive !== false &&
+							row.assignmentType === "employee" &&
+							row.employeeId === input.employeeId &&
+							row.policyId === policy.id &&
+							assignmentCoversDay(
+								row,
+								policyEvalDay,
+								policyEvalDateStr,
+								input.organizationTimezone,
+								input.at,
+							) &&
+							isPolicyEligibleOnDay(policy, policyEvalDateStr, row.effectiveUntilDate),
+					);
+					pinEligible = Boolean(matchingCappedAssignment);
+				}
 			}
 			if (pinEligible) {
-				workPolicyResolved = selectActivePolicyVersionOnDay(policy, dayStr, {
+				workPolicyResolved = selectActivePolicyVersionOnDay(policy, policyEvalDateStr, {
 					assignmentType: "employee",
 					assignmentId: null,
 					assignedVia: "Contract override",
@@ -1503,6 +1611,8 @@ export async function loadEffectiveContractsBatch(
 			employeeId: workPolicyAssignment.employeeId,
 			priority: workPolicyAssignment.priority,
 			sourceKind: workPolicyAssignment.sourceKind,
+			sourceEmploymentHistoryId: workPolicyAssignment.sourceEmploymentHistoryId,
+			isActive: workPolicyAssignment.isActive,
 			effectiveFrom: workPolicyAssignment.effectiveFrom,
 			effectiveUntil: workPolicyAssignment.effectiveUntil,
 			effectiveFromDate: workPolicyAssignment.effectiveFromDate,
@@ -1513,12 +1623,23 @@ export async function loadEffectiveContractsBatch(
 		.where(
 			and(
 				eq(workPolicyAssignment.organizationId, input.organizationId),
-				eq(workPolicyAssignment.isActive, true),
 				or(
-					eq(workPolicyAssignment.assignmentType, "organization"),
-					eq(workPolicyAssignment.assignmentType, "team"),
+					and(
+						eq(workPolicyAssignment.isActive, true),
+						or(
+							eq(workPolicyAssignment.assignmentType, "organization"),
+							eq(workPolicyAssignment.assignmentType, "team"),
+							and(
+								eq(workPolicyAssignment.assignmentType, "employee"),
+								inArray(workPolicyAssignment.employeeId, uniqueEmployeeIds),
+							),
+						),
+					),
+					// Include deactivated `employment_terms` assignments for these employees so direct
+					// terms pins observe retirement/deactivation even if the policy is later renamed or reactivated (A3-6).
 					and(
 						eq(workPolicyAssignment.assignmentType, "employee"),
+						eq(workPolicyAssignment.sourceKind, "employment_terms"),
 						inArray(workPolicyAssignment.employeeId, uniqueEmployeeIds),
 					),
 				),
@@ -1862,7 +1983,7 @@ export async function loadEffectiveContractsBatch(
 			scheduleEnabled: p.scheduleEnabled,
 			regulationEnabled: p.regulationEnabled,
 			presenceEnabled: p.presenceEnabled,
-			versions: versionsByPolicyId.get(p.id) ?? [],
+			versions: attachPrecomputedScheduleAnchors(versionsByPolicyId.get(p.id) ?? []),
 		});
 	}
 

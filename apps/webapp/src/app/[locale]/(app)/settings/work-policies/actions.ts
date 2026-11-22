@@ -41,6 +41,7 @@ import {
 import {
 	createVersionedWorkPolicy,
 	duplicateVersionedWorkPolicy,
+	lockPolicyAssignmentsForRetirementInTx,
 	type PublishWorkPolicyVersionResult,
 	retirePolicyReferencesInTx,
 	type SameDayReplacementWarning,
@@ -459,6 +460,7 @@ export const deleteWorkPolicy = organizationAction(
 				const orgTodayDate = plainDateAt(instantFromDate(now), orgTimezone).toString();
 
 				await dbService.db.transaction(async (tx) => {
+					await lockPolicyAssignmentsForRetirementInTx(tx, organizationId, policyId);
 					await tx
 						.update(workPolicy)
 						.set({
@@ -473,6 +475,7 @@ export const deleteWorkPolicy = organizationAction(
 						policyId,
 						actorUserId: actor.userId,
 						orgTodayDate,
+						orgTimezone,
 						now,
 					});
 				});

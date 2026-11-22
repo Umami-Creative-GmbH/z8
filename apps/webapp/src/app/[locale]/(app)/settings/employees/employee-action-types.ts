@@ -59,7 +59,8 @@ export function decodeEmployeeInvitationDraftId(id: string) {
 		: null;
 }
 
-export type EmployeeWithRelations = typeof employee.$inferSelect & {
+export type EmployeeWithRelations = Omit<typeof employee.$inferSelect, "contractType"> & {
+	contractType: ContractType | null;
 	kind: "employee";
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { organization, user } from "@/db/auth-schema";
 import {
 	contractDefault,
@@ -30,7 +30,7 @@ import type {
 	TemplateScheduleMode,
 } from "@/db/schema/contract-types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
@@ -49,6 +49,7 @@ import {
 	replacePolicyAssignmentWindowInTx,
 } from "./policy-assignment-intervals";
 import {
+	attachPrecomputedScheduleAnchors,
 	type ContractDefaultSnapshot,
 	type EmploymentHistorySnapshot,
 	type EmploymentPeriodSnapshot,
@@ -1029,6 +1030,9 @@ export async function previewContractDefaultChange(
 					teamId: workPolicyAssignment.teamId,
 					employeeId: workPolicyAssignment.employeeId,
 					priority: workPolicyAssignment.priority,
+					sourceKind: workPolicyAssignment.sourceKind,
+					sourceEmploymentHistoryId: workPolicyAssignment.sourceEmploymentHistoryId,
+					isActive: workPolicyAssignment.isActive,
 					effectiveFrom: workPolicyAssignment.effectiveFrom,
 					effectiveUntil: workPolicyAssignment.effectiveUntil,
 					effectiveFromDate: workPolicyAssignment.effectiveFromDate,
@@ -1039,7 +1043,13 @@ export async function previewContractDefaultChange(
 				.where(
 					and(
 						eq(workPolicyAssignment.organizationId, input.organizationId),
-						eq(workPolicyAssignment.isActive, true),
+						or(
+							eq(workPolicyAssignment.isActive, true),
+							and(
+								eq(workPolicyAssignment.assignmentType, "employee"),
+								eq(workPolicyAssignment.sourceKind, "employment_terms"),
+							),
+						),
 					),
 				),
 		]);
@@ -1294,10 +1304,14 @@ export async function previewContractDefaultChange(
 			id: p.id,
 			name: p.name,
 			isActive: p.isActive,
+			retiredOnDate:
+				!p.isActive && p.updatedAt
+					? plainDateAt(instantFromDate(p.updatedAt), orgTimezone).toString()
+					: null,
 			scheduleEnabled: p.scheduleEnabled,
 			regulationEnabled: p.regulationEnabled,
 			presenceEnabled: p.presenceEnabled,
-			versions: versionsByPolicyId.get(p.id) ?? [],
+			versions: attachPrecomputedScheduleAnchors(versionsByPolicyId.get(p.id) ?? []),
 		});
 	}
 
@@ -1378,6 +1392,9 @@ export async function previewContractDefaultChange(
 							teamId: validated.teamId,
 							employeeId: null,
 							priority: validated.scope === "team" ? 1 : 0,
+							sourceKind: "contract_default" as const,
+							sourceEmploymentHistoryId: null,
+							isActive: true,
 							effectiveFrom: null,
 							effectiveUntil: null,
 							effectiveFromDate: validated.effectiveFromDate,

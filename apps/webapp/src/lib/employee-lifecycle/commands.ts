@@ -4,12 +4,14 @@ import { organization } from "@/db/auth-schema";
 import { auditLog, employee, employeeEmploymentHistory, employeeManagers } from "@/db/schema";
 import {
 	employeeDeparture,
+	employeeDepartureEvent,
 	employeeDepartureReview,
 	employeeDepartureTask,
 	employeeEmploymentPeriod,
 } from "@/db/schema/employee-lifecycle";
 import { AuditAction } from "@/lib/audit-logger";
 import {
+	type CappedPolicyAssignmentRecord,
 	reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionInTx,
 	replacePolicyAssignmentWindowInTx,
 } from "@/lib/contracts/policy-assignment-intervals";
@@ -1047,19 +1049,56 @@ async function correctPastDepartureDate(
 			}
 		}
 
+		// Load departure-shortened policy assignments from this departure's prior lifecycle events
+		// so forward correction only extends assignments that departure shortened and never extends
+		// beyond their original pre-departure end dates (A3-20).
+		const priorCappedEvents = await tx
+			.select({ metadata: employeeDepartureEvent.metadata })
+			.from(employeeDepartureEvent)
+			.where(
+				and(
+					eq(employeeDepartureEvent.organizationId, actor.organizationId),
+					eq(employeeDepartureEvent.departureId, departure.id),
+					inArray(employeeDepartureEvent.kind, ["departure_effective", "departure_date_corrected"]),
+				),
+			)
+			.orderBy(asc(employeeDepartureEvent.occurredAt), asc(employeeDepartureEvent.id));
+		const cappedById = new Map<string, CappedPolicyAssignmentRecord>();
+		for (const ev of priorCappedEvents) {
+			const list = (ev.metadata as { cappedPolicyAssignments?: unknown } | null)
+				?.cappedPolicyAssignments;
+			if (!Array.isArray(list)) continue;
+			for (const raw of list) {
+				if (typeof raw !== "object" || raw === null) continue;
+				const rec = raw as Record<string, unknown>;
+				if (typeof rec.id !== "string" || cappedById.has(rec.id)) continue;
+				cappedById.set(rec.id, {
+					id: rec.id,
+					previousEffectiveUntilDate:
+						typeof rec.previousEffectiveUntilDate === "string"
+							? rec.previousEffectiveUntilDate
+							: null,
+					previousEffectiveUntil:
+						typeof rec.previousEffectiveUntil === "string" ? rec.previousEffectiveUntil : null,
+				});
+			}
+		}
+
 		// Cap, deactivate, or extend stint-scoped active employee policy assignments along the
-		// corrected cutoff without touching any subsequent rehire stint (A1-3, A2-16).
-		await reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionInTx(tx, {
-			organizationId: actor.organizationId,
-			employeeId: target.id,
-			employmentPeriodId: period.id,
-			previousCutoffLocalDate,
-			nextCutoffLocalDate: nextCutoff.cutoffLocalDate,
-			newCutoffDate,
-			nextPeriodStartLocalDate,
-			nextPeriodStart,
-			now: nowDate,
-		});
+		// corrected cutoff without touching any subsequent rehire stint (A1-3, A2-16, A3-20).
+		const { newlyCappedAssignments } =
+			await reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionInTx(tx, {
+				organizationId: actor.organizationId,
+				employeeId: target.id,
+				employmentPeriodId: period.id,
+				previousCutoffLocalDate,
+				nextCutoffLocalDate: nextCutoff.cutoffLocalDate,
+				newCutoffDate,
+				nextPeriodStartLocalDate,
+				nextPeriodStart,
+				cappedPolicyAssignments: [...cappedById.values()],
+				now: nowDate,
+			});
 
 		const reconciliation = await reconcileRetrospectiveDepartureReviewsInTx(tx, {
 			organizationId: actor.organizationId,
@@ -1108,6 +1147,9 @@ async function correctPastDepartureDate(
 				reason: input.reason?.trim() || null,
 				workAfterCutoffReviewOpened: reconciliation.workAfterCutoffReviewOpened,
 				payrollReconciliationReviewOpened: reconciliation.payrollReconciliationReviewOpened,
+				...(newlyCappedAssignments.length > 0
+					? { cappedPolicyAssignments: newlyCappedAssignments }
+					: {}),
 			},
 		});
 		return result;

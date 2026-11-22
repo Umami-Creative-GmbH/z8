@@ -35,6 +35,7 @@ import type { ContractType } from "@/lib/validations/employee";
 import { parseIsoCalendarDate } from "./contract-validation";
 import { normalizeHoursToMinutes } from "./custom-days";
 import {
+	attachPrecomputedScheduleAnchors,
 	type ContractDefaultSnapshot,
 	type EmploymentHistorySnapshot,
 	type EmploymentPeriodSnapshot,
@@ -55,6 +56,12 @@ import type {
 	WeeklyHoursMismatchWarning,
 } from "./types";
 
+export interface PrimaryTeamMoveScheduleDaySummary {
+	readonly dayOfWeek: DayOfWeek;
+	readonly minutesPerDay: number;
+	readonly latestClockIn: string | null;
+}
+
 export interface PrimaryTeamMoveOperationalChange {
 	readonly field:
 		| "workPolicy"
@@ -70,6 +77,8 @@ export interface PrimaryTeamMoveOperationalChange {
 	readonly after: string | number | null;
 	readonly beforeLabel: string | null;
 	readonly afterLabel: string | null;
+	readonly beforeScheduleDays?: readonly PrimaryTeamMoveScheduleDaySummary[] | null;
+	readonly afterScheduleDays?: readonly PrimaryTeamMoveScheduleDaySummary[] | null;
 	readonly beforeSource: ContractFieldSource;
 	readonly afterSource: ContractFieldSource;
 }
@@ -254,6 +263,9 @@ export async function previewPrimaryTeamMove(
 				teamId: workPolicyAssignment.teamId,
 				employeeId: workPolicyAssignment.employeeId,
 				priority: workPolicyAssignment.priority,
+				sourceKind: workPolicyAssignment.sourceKind,
+				sourceEmploymentHistoryId: workPolicyAssignment.sourceEmploymentHistoryId,
+				isActive: workPolicyAssignment.isActive,
 				effectiveFrom: workPolicyAssignment.effectiveFrom,
 				effectiveUntil: workPolicyAssignment.effectiveUntil,
 				effectiveFromDate: workPolicyAssignment.effectiveFromDate,
@@ -264,12 +276,21 @@ export async function previewPrimaryTeamMove(
 			.where(
 				and(
 					eq(workPolicyAssignment.organizationId, input.organizationId),
-					eq(workPolicyAssignment.isActive, true),
 					or(
-						eq(workPolicyAssignment.assignmentType, "organization"),
-						eq(workPolicyAssignment.assignmentType, "team"),
+						and(
+							eq(workPolicyAssignment.isActive, true),
+							or(
+								eq(workPolicyAssignment.assignmentType, "organization"),
+								eq(workPolicyAssignment.assignmentType, "team"),
+								and(
+									eq(workPolicyAssignment.assignmentType, "employee"),
+									eq(workPolicyAssignment.employeeId, input.employeeId),
+								),
+							),
+						),
 						and(
 							eq(workPolicyAssignment.assignmentType, "employee"),
+							eq(workPolicyAssignment.sourceKind, "employment_terms"),
 							eq(workPolicyAssignment.employeeId, input.employeeId),
 						),
 					),
@@ -504,10 +525,14 @@ export async function previewPrimaryTeamMove(
 			id: p.id,
 			name: p.name,
 			isActive: p.isActive,
+			retiredOnDate:
+				!p.isActive && p.updatedAt
+					? plainDateAt(instantFromDate(p.updatedAt), orgTimezone).toString()
+					: null,
 			scheduleEnabled: p.scheduleEnabled,
 			regulationEnabled: p.regulationEnabled,
 			presenceEnabled: p.presenceEnabled,
-			versions: versionsByPolicyId.get(p.id) ?? [],
+			versions: attachPrecomputedScheduleAnchors(versionsByPolicyId.get(p.id) ?? []),
 		});
 	}
 
@@ -697,15 +722,31 @@ export async function previewPrimaryTeamMove(
 	const currentGridLabel = formatScheduleDaysLabel(currentContract.weeklyScheduleDays);
 	const projectedGridLabel = formatScheduleDaysLabel(projectedContract.weeklyScheduleDays);
 
-	const comparisons: {
-		field: PrimaryTeamMoveOperationalChange["field"];
-		before: string | number | null;
-		after: string | number | null;
-		beforeLabel: string | null;
-		afterLabel: string | null;
-		beforeSource: ContractFieldSource;
-		afterSource: ContractFieldSource;
-	}[] = [
+	const extractWorkDaySummaries = (
+		days: readonly {
+			readonly dayOfWeek: DayOfWeek;
+			readonly isWorkDay: boolean;
+			readonly minutesPerDay: number;
+			readonly latestClockIn: string | null;
+		}[],
+	): PrimaryTeamMoveScheduleDaySummary[] => {
+		const byDay = new Map(days.map((d) => [d.dayOfWeek, d]));
+		const out: PrimaryTeamMoveScheduleDaySummary[] = [];
+		for (const day of CANONICAL_DAY_ORDER) {
+			const row = byDay.get(day);
+			if (!row?.isWorkDay) continue;
+			out.push({
+				dayOfWeek: day,
+				minutesPerDay: row.minutesPerDay,
+				latestClockIn: row.latestClockIn,
+			});
+		}
+		return out;
+	};
+	const currentScheduleDays = extractWorkDaySummaries(currentContract.weeklyScheduleDays);
+	const projectedScheduleDays = extractWorkDaySummaries(projectedContract.weeklyScheduleDays);
+
+	const comparisons: PrimaryTeamMoveOperationalChange[] = [
 		{
 			field: "workPolicy",
 			before: currentContract.workPolicy?.policyId ?? null,
@@ -745,6 +786,8 @@ export async function previewPrimaryTeamMove(
 			after: projectedGrid || null,
 			beforeLabel: currentGridLabel,
 			afterLabel: projectedGridLabel,
+			beforeScheduleDays: currentScheduleDays,
+			afterScheduleDays: projectedScheduleDays,
 			beforeSource: currentContract.scheduleModeSource,
 			afterSource: projectedContract.scheduleModeSource,
 		},

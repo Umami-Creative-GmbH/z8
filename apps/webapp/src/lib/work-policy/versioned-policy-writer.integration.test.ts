@@ -1195,6 +1195,67 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			},
 		]);
 
+		// P8-1 / A3-5: Retiring a policy referenced ONLY by a superseded inactive contract_default
+		// row spanning today must NOT revive that obsolete default or collide with an active replacement.
+		const supersededPol = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			now,
+			data: {
+				name: "Superseded Policy P",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "30",
+				},
+			},
+		});
+		const {
+			rows: [supTvRow],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO contract_template_version (
+				organization_id, template_id, version_number, work_policy_id,
+				weekly_contract_minutes, schedule_mode, work_model, presence_override,
+				balance_mode, schedule_source, created_by
+			) VALUES (
+				$1, $2, 99, $3, 1800, 'policy', 'remote', 'exempt', 'tracked', 'policy', $4
+			) RETURNING id`,
+			[ORG_ID, tplRow!.id, supersededPol.policy.id, USER_ID],
+		);
+		await siblingPool.query(
+			`INSERT INTO contract_default (
+				organization_id, scope, team_id, template_version_id,
+				effective_from_date, effective_until_date, is_active, created_by
+			) VALUES ($1, 'organization', NULL, $2, '2026-01-01', NULL, false, $3)`,
+			[ORG_ID, supTvRow!.id, USER_ID],
+		);
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: supersededPol.policy.id,
+			now,
+			data: { isActive: false },
+		});
+		const { rows: activeDefaultsAfterSupersededRetire } = await siblingPool.query<{
+			effective_from_date: string;
+			weekly_contract_minutes: number | null;
+		}>(
+			`SELECT cd.effective_from_date::text, ctv.weekly_contract_minutes
+			 FROM contract_default cd
+			 JOIN contract_template_version ctv ON ctv.id = cd.template_version_id
+			 WHERE cd.organization_id = $1 AND cd.scope = 'organization' AND cd.is_active = true
+			 ORDER BY cd.effective_from_date ASC`,
+			[ORG_ID],
+		);
+		expect(activeDefaultsAfterSupersededRetire).toEqual([
+			{ effective_from_date: "2026-01-01", weekly_contract_minutes: 2280 },
+			{ effective_from_date: "2026-06-01", weekly_contract_minutes: 2280 },
+		]);
+
 		await siblingPool.query("DELETE FROM organization WHERE id = $1", [foreignOrgId]);
 	});
 });

@@ -108,13 +108,17 @@ function mapEmployeeRow(
 	const isFormer = row.isFormer === true;
 	return {
 		...row.employee,
+		// Spec #1921 Story 22 / A3-1: Redact contract & leaving-date projections for scoped managers.
+		contractType: viewer.isOrgAdmin ? row.employee.contractType : null,
+		deactivatedAt: viewer.isOrgAdmin ? row.employee.deactivatedAt : null,
+		endDate: viewer.isOrgAdmin ? row.employee.endDate : null,
 		birthday: birthdayVisibleTo(viewer, row.employee.birthday),
 		kind: "employee",
 		user: row.user,
 		team: row.team,
 		membership: row.membership?.id ? row.membership : null,
 		isFormer,
-		...formerSinceField(isFormer, row.formerSince),
+		...formerSinceField(viewer.isOrgAdmin && isFormer, row.formerSince),
 	};
 }
 
@@ -225,18 +229,25 @@ function enrichEmployeeDirectoryRows(viewer: DirectoryViewer, rows: EmployeeDire
 					viewer: { kind: "actor", userId: viewer.userId },
 				}),
 			),
-			dbService.query("employeeContracts.current", () =>
-				loadCurrentContractTypes(dbService.db, {
-					organizationId: viewer.organizationId,
-					employees,
-				}),
-			),
+			viewer.isOrgAdmin
+				? dbService.query("employeeContracts.current", () =>
+						loadCurrentContractTypes(dbService.db, {
+							organizationId: viewer.organizationId,
+							employees: employees.map((row) => ({
+								id: row.id,
+								contractType: row.contractType ?? "fixed",
+							})),
+						}),
+					)
+				: Effect.succeed(new Map<string, EmployeeWithRelations["contractType"]>()),
 		]);
 		return rows.map((row): EmployeeDirectoryRow =>
 			row.kind === "employee"
 				? {
 						...row,
-						contractType: contractTypes.get(row.id) ?? row.contractType,
+						contractType: viewer.isOrgAdmin
+							? (contractTypes.get(row.id) ?? row.contractType)
+							: null,
 						missingRequiredCustomFields: missing.has(row.id),
 					}
 				: row,
@@ -506,12 +517,15 @@ export const getEmployeeAction = organizationAction(
 
 			return {
 				...detail,
+				contractType: viewer.isOrgAdmin ? detail.contractType : null,
+				deactivatedAt: viewer.isOrgAdmin ? detail.deactivatedAt : null,
+				endDate: viewer.isOrgAdmin ? detail.endDate : null,
 				birthday: birthdayVisibleTo(viewer, detail.birthday),
 				kind: "employee",
 				membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
 				contractTypeToday: viewer.isOrgAdmin ? (termsToday?.contractType ?? null) : null,
 				isFormer: targetEmployee.isFormer === true,
-				// Leaving dates (`formerSince`) are restricted to org admins (Spec #1921 Story 22 / A2-1).
+				// Leaving dates (`formerSince`) are restricted to org admins (Spec #1921 Story 22 / A2-1 / A3-1).
 				...formerSinceField(
 					viewer.isOrgAdmin && targetEmployee.isFormer === true,
 					targetEmployee.formerSince,

@@ -1241,7 +1241,25 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			[polMgr!.id, fixture.organizationId, person.employeeId, fixture.ownerUserId],
 		);
 
-		// 1. Record past departure on 2026-06-15 -> caps manager assignment at 2026-06-16
+		// A3-20: Seed a second employee whose assignment was deliberately scheduled to end on
+		// 2026-06-16 (the exact initial cutoff) — forward correction must NOT extend it!
+		const personEnded = await fixture.seedEmployee({
+			startDate: new Date("2026-01-01T00:00:00Z"),
+		});
+		await seedConfirmedTerms(personEnded, "2026-01-01", null);
+		const {
+			rows: [deliberatelyEnded],
+		} = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_until, effective_from_date, effective_until_date,
+				source_kind, is_active, created_by, updated_at
+			) VALUES ($1, $2, 'employee', $3, 2, '2026-01-01T00:00:00Z', '2026-06-16T00:00:00Z', '2026-01-01', '2026-06-16', 'manager_assignment', true, $4, now())
+			RETURNING id`,
+			[polMgr!.id, fixture.organizationId, personEnded.employeeId, fixture.ownerUserId],
+		);
+
+		// 1. Record past departure on 2026-06-15 for both employees
 		const dep = await commands().recordPastDeparture(ownerActor(), {
 			employeeId: person.employeeId,
 			requestId: randomUUID(),
@@ -1250,15 +1268,24 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			acknowledgeUnassignedDuties: true,
 		});
 		if (dep.status !== "effective") throw new Error("expected effective departure");
+		const depEnded = await commands().recordPastDeparture(ownerActor(), {
+			employeeId: personEnded.employeeId,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-15",
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+		if (depEnded.status !== "effective") throw new Error("expected effective departure");
 
-		const afterCap = await fixture.pool.query<{ effective_until_date: string | null }>(
-			`SELECT effective_until_date::text FROM work_policy_assignment
+		const afterCap = await fixture.pool.query<{ id: string; effective_until_date: string | null }>(
+			`SELECT id, effective_until_date::text FROM work_policy_assignment
 			 WHERE employee_id = $1 AND policy_id = $2`,
 			[person.employeeId, polMgr!.id],
 		);
 		expect(afterCap.rows[0]?.effective_until_date).toBe("2026-06-16");
 
-		// 2. Move past departure FORWARD to 2026-06-25 -> manager assignment MUST extend to 2026-06-26 (A2-16)
+		// 2. Move past departure FORWARD to 2026-06-25 -> departure-capped assignment MUST extend to
+		// 2026-06-26 (A2-16) while the deliberately ended assignment MUST stay at 2026-06-16 (A3-20)!
 		const movedForward = await commands().correctPastDepartureDate(ownerActor(), {
 			employeeId: person.employeeId,
 			departureId: dep.departureId,
@@ -1266,12 +1293,24 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			requestId: randomUUID(),
 			lastWorkingDay: "2026-06-25",
 		});
-		const afterForward = await fixture.pool.query<{ effective_until_date: string | null }>(
-			`SELECT effective_until_date::text FROM work_policy_assignment
-			 WHERE employee_id = $1 AND policy_id = $2`,
-			[person.employeeId, polMgr!.id],
+		await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: personEnded.employeeId,
+			departureId: depEnded.departureId,
+			expectedRevision: depEnded.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-25",
+		});
+		const afterForward = await fixture.pool.query<{
+			id: string;
+			effective_until_date: string | null;
+		}>(
+			`SELECT id, effective_until_date::text FROM work_policy_assignment
+			 WHERE id IN ($1, $2)`,
+			[afterCap.rows[0]!.id, deliberatelyEnded!.id],
 		);
-		expect(afterForward.rows[0]?.effective_until_date).toBe("2026-06-26");
+		const byId = new Map(afterForward.rows.map((r) => [r.id, r.effective_until_date]));
+		expect(byId.get(afterCap.rows[0]!.id)).toBe("2026-06-26");
+		expect(byId.get(deliberatelyEnded!.id)).toBe("2026-06-16");
 
 		// 3. Rehire on 2026-08-01T00:00:00Z and seed a work period spanning the rehire boundary
 		// (starts 2026-07-31T22:00:00Z, ends 2026-08-01T06:00:00Z).

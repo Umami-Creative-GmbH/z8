@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { organization, user } from "@/db/auth-schema";
 import {
 	closedMonthEmployee,
 	contractChangeBatch,
+	contractChangeBatchItem,
 	employee,
 	employeeDeparture,
 	employeeEmploymentPeriod,
@@ -1727,22 +1728,111 @@ export async function commitCsvImportBatch(
 					existing.operationKind === input.operationKind &&
 					storedIntent === submittedIntentFingerprint;
 			} else if (existing.operationKind === input.operationKind) {
-				// A2-19: Pre-upgrade compatibility check for batches committed before
-				// `submittedIntentFingerprint` was persisted in `payload`.
+				// A2-19 / A3-8: Pre-upgrade compatibility check for batches committed before
+				// `submittedIntentFingerprint` was persisted in `payload`. Verify the persisted
+				// confirmationFingerprint, options, AND the actual parsed CSV rows against the
+				// persisted `contract_change_batch_item` records so changed CSV content can never
+				// replay an unrelated legacy batch.
 				const sameFingerprint =
 					existingPayload.confirmationFingerprint === input.confirmationFingerprint;
-				if (input.operationKind === "csv_contract_import") {
-					intentMatches =
-						sameFingerprint &&
-						(existingPayload.defaultEffectiveFromDate ?? null) ===
-							(input.defaultEffectiveFromDate ?? null) &&
-						Boolean(existingPayload.overwritePersonalDivergences) ===
-							Boolean(input.overwritePersonalDivergences);
-				} else {
-					intentMatches =
-						sameFingerprint &&
-						Boolean(existingPayload.defaultAcknowledgeUnassignedDuties ?? true) ===
+				const optionsMatch =
+					input.operationKind === "csv_contract_import"
+						? (existingPayload.defaultEffectiveFromDate ?? null) ===
+								(input.defaultEffectiveFromDate ?? null) &&
+							Boolean(existingPayload.overwritePersonalDivergences) ===
+								Boolean(input.overwritePersonalDivergences)
+						: Boolean(existingPayload.defaultAcknowledgeUnassignedDuties ?? true) ===
 							Boolean(input.defaultAcknowledgeUnassignedDuties ?? true);
+				if (sameFingerprint && optionsMatch) {
+					const persistedItems = await db
+						.select({
+							employeeId: contractChangeBatchItem.employeeId,
+							payload: contractChangeBatchItem.payload,
+						})
+						.from(contractChangeBatchItem)
+						.where(
+							and(
+								eq(contractChangeBatchItem.organizationId, input.organizationId),
+								eq(contractChangeBatchItem.batchId, existing.id),
+							),
+						)
+						.orderBy(asc(contractChangeBatchItem.employeeId));
+
+					const canonicalJson = (value: unknown): string => {
+						if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+						if (value !== null && typeof value === "object") {
+							const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+								a.localeCompare(b),
+							);
+							return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
+						}
+						return JSON.stringify(value);
+					};
+
+					if (input.operationKind === "csv_contract_import") {
+						const livePreview = await previewCsvContractImport(db, {
+							organizationId: input.organizationId,
+							csvText: input.csvText,
+							defaultEffectiveFromDate: input.defaultEffectiveFromDate,
+							overwritePersonalDivergences: input.overwritePersonalDivergences,
+							delimiter: input.delimiter,
+						});
+						const parsedItems = livePreview.rows
+							.filter(
+								(
+									r,
+								): r is CsvContractPreviewRow & {
+									employeeId: string;
+									normalizedPayload: CsvContractBatchItemPayload;
+								} => r.employeeId !== null && r.normalizedPayload !== null,
+							)
+							.map((r) => ({
+								employeeId: r.employeeId,
+								payload: r.normalizedPayload as unknown as Record<string, unknown>,
+							}))
+							.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+						intentMatches =
+							livePreview.errorRows === 0 &&
+							livePreview.confirmationFingerprint === input.confirmationFingerprint &&
+							parsedItems.length === persistedItems.length &&
+							parsedItems.every(
+								(item, idx) =>
+									item.employeeId === persistedItems[idx]?.employeeId &&
+									canonicalJson(item.payload) ===
+										canonicalJson((persistedItems[idx]?.payload ?? {}) as Record<string, unknown>),
+							);
+					} else {
+						const livePreview = await previewCsvLeavingDateImport(db, {
+							organizationId: input.organizationId,
+							csvText: input.csvText,
+							actorUserId: input.actorUserId,
+							defaultAcknowledgeUnassignedDuties: input.defaultAcknowledgeUnassignedDuties,
+							now: input.clockNow,
+							delimiter: input.delimiter,
+						});
+						const parsedKeyed = livePreview.rows
+							.filter((r): r is CsvLeavingDatePreviewRow & { employeeId: string } =>
+								Boolean(r.employeeId && r.lastWorkingDay),
+							)
+							.map((r) => ({
+								employeeId: r.employeeId,
+								lastWorkingDay: r.lastWorkingDay,
+								reason: r.normalizedPayload?.reason ?? null,
+							}))
+							.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+						intentMatches =
+							livePreview.rows.length === persistedItems.length &&
+							parsedKeyed.length === persistedItems.length &&
+							parsedKeyed.every((row, idx) => {
+								const persisted = persistedItems[idx];
+								const persistedPayload = (persisted?.payload ?? {}) as Record<string, unknown>;
+								return (
+									persisted?.employeeId === row.employeeId &&
+									persistedPayload.lastWorkingDay === row.lastWorkingDay &&
+									(row.reason === null || (persistedPayload.reason ?? null) === row.reason)
+								);
+							});
+					}
 				}
 			}
 			if (intentMatches) {

@@ -9,6 +9,7 @@ import {
 	employeeDepartureTask,
 } from "@/db/schema/employee-lifecycle";
 import { AuditTrail } from "@/lib/audit-trail";
+import { capAndDeactivateEmployeePolicyAssignmentsOnDepartureInTx } from "@/lib/contracts/policy-assignment-intervals";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -142,7 +143,13 @@ export async function executeDepartureInTransaction(
 			AND review_state = 'confirmed' AND valid_from < ${cutoffDate}
 			AND (valid_until IS NULL OR valid_until > ${cutoffDate})
 	`);
-	await closeEmploymentWindows(tx, identity, cutoffDate, cutoffLocalDate, nowDate);
+	const { cappedAssignments } = await closeEmploymentWindows(
+		tx,
+		identity,
+		cutoffDate,
+		cutoffLocalDate,
+		nowDate,
+	);
 	await tx.execute(sql`
 		UPDATE employee SET is_active = false, deactivated_at = ${cutoffDate}, updated_at = ${nowDate}
 		WHERE organization_id = ${identity.organizationId} AND id = ${identity.employeeId}
@@ -174,6 +181,7 @@ export async function executeDepartureInTransaction(
 
 	await recordSystemEvent(tx, identity, "departure_effective", nowDate, {
 		cutoff: cutoffDate.toISOString(),
+		cappedPolicyAssignments: cappedAssignments,
 	});
 
 	return {
@@ -224,24 +232,14 @@ async function closeEmploymentWindows(
 		employmentPeriodId: identity.employmentPeriodId,
 		departureId: identity.departureId,
 	};
-	await tx.execute(sql`
-		UPDATE work_policy_assignment
-		SET effective_until = ${cutoff},
-			effective_until_date = ${cutoffLocalDate}::date,
-			updated_at = ${now}
-		WHERE organization_id = ${identity.organizationId} AND assignment_type = 'employee'
-			AND employee_id = ${identity.employeeId} AND is_active = true
-			AND effective_from_date < ${cutoffLocalDate}::date
-			AND (effective_until_date IS NULL OR effective_until_date > ${cutoffLocalDate}::date)
-	`);
-	const deactivated = await tx.execute<{ id: string }>(sql`
-		UPDATE work_policy_assignment
-		SET is_active = false, updated_at = ${now}
-		WHERE organization_id = ${identity.organizationId} AND assignment_type = 'employee'
-			AND employee_id = ${identity.employeeId} AND is_active = true
-			AND effective_from_date >= ${cutoffLocalDate}::date
-		RETURNING id
-	`);
+	const { cappedAssignments, deactivatedAssignmentIds } =
+		await capAndDeactivateEmployeePolicyAssignmentsOnDepartureInTx(tx, {
+			organizationId: identity.organizationId,
+			employeeId: identity.employeeId,
+			cutoff,
+			cutoffLocalDate,
+			now,
+		});
 
 	const futureTerms = await tx
 		.select({
@@ -267,20 +265,21 @@ async function closeEmploymentWindows(
 			validFrom: terms.validFrom.toISOString(),
 		},
 	}));
-	if (deactivated.rows.length > 0) {
+	if (deactivatedAssignmentIds.length > 0) {
 		reviews.push({
 			...scope,
 			kind: "employment_terms",
 			subjectId: null,
 			metadata: {
 				reason: "future_assignments_deactivated",
-				workPolicyAssignmentIds: deactivated.rows.map((assignment) => assignment.id),
+				workPolicyAssignmentIds: deactivatedAssignmentIds,
 			},
 		});
 	}
 	if (reviews.length > 0) {
 		await tx.insert(employeeDepartureReview).values(reviews).onConflictDoNothing();
 	}
+	return { cappedAssignments };
 }
 
 /**

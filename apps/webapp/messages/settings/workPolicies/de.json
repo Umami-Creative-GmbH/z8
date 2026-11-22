@@ -799,7 +799,18 @@
 				"changesHeading": "Betriebliche Vertragsregeln, die sich durch den Stammteam-Wechsel ändern:",
 				"noChangesHeading": "Durch diesen Stammteam-Wechsel ändern sich keine geerbten betrieblichen Vertragsregeln.",
 				"preservedDivergences": "Unveränderte persönliche Abweichungen: {fields}",
-				"employeeTermsUnchanged": "Mitarbeiterbezogene Bedingungen (Vertragsart, Stundenlohn, Beschäftigungsprofil, ArbZG-Bereich, Abrufarbeit) werden durch einen Teamwechsel nie verändert."
+				"employeeTermsUnchanged": "Mitarbeiterbezogene Bedingungen (Vertragsart, Stundenlohn, Beschäftigungsprofil, ArbZG-Bereich, Abrufarbeit) werden durch einen Teamwechsel nie verändert.",
+				"durationHours": "{hours} Std.",
+				"durationHoursMinutes": "{hours} Std. {minutes} Min.",
+				"weekdaysShort": {
+					"monday": "Mo",
+					"tuesday": "Di",
+					"wednesday": "Mi",
+					"thursday": "Do",
+					"friday": "Fr",
+					"saturday": "Sa",
+					"sunday": "So"
+				}
 			}
 		}
 	}

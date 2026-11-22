@@ -848,5 +848,124 @@ describe("contracts pure helpers & resolver", () => {
 			}),
 		);
 		expect(weekendHoursOnly.requiredMinutes).toBe(480); // 960 / 2 = 480m on Sat, NOT 2400 / 2 = 1200m!
+
+		// A3-18: An explicitly work-free week 2 (Monday isWorkDay=false) must NOT fall back to week 1!
+		const workFreeW2Policy: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-work-free-w2",
+			versions: [
+				{
+					...detailedPolicy().versions[0]!,
+					id: "pv-wf2",
+					effectiveFromDate: "2026-06-01",
+					schedule: {
+						id: "sched-wf2",
+						scheduleCycle: "biweekly",
+						scheduleType: "detailed",
+						workingDaysPreset: "custom",
+						hoursPerCycle: null,
+						normalizedCycleMinutes: null,
+						homeOfficeDaysPerCycle: 0,
+						days: [
+							{
+								dayOfWeek: "monday",
+								hoursPerDay: "8.00",
+								minutesPerDay: 480,
+								isWorkDay: true,
+								cycleWeek: 1,
+								latestClockIn: null,
+							},
+							{
+								dayOfWeek: "monday",
+								hoursPerDay: "0.00",
+								minutesPerDay: 0,
+								isWorkDay: false,
+								cycleWeek: 2,
+								latestClockIn: null,
+							},
+						],
+					},
+				},
+			],
+		};
+		const workFreeW2Res = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-08"), // Monday of week 2 (explicitly off!)
+				policiesById: new Map([[workFreeW2Policy.id, workFreeW2Policy]]),
+				contractDefaults: [
+					{
+						...longDatedDefault,
+						id: "def-wf2",
+						workPolicyId: workFreeW2Policy.id,
+						weeklyContractMinutes: 480,
+						scheduleMode: "hours_only",
+						effectiveUntilDate: null,
+					},
+				],
+			}),
+		);
+		expect(workFreeW2Res.requiredMinutes).toBe(0);
+
+		// A3-6: Renaming or reactivating a previously retired policy does NOT revive a direct terms
+		// pin whose linked `employment_terms` assignment was capped at the original retirement date!
+		const renamedOrReactivatedPolicy: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-reactivated-later",
+			isActive: true,
+			retiredOnDate: null,
+		};
+		const pinReactivatedRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-15"),
+				policiesById: new Map([[renamedOrReactivatedPolicy.id, renamedOrReactivatedPolicy]]),
+				policyAssignments: [
+					{
+						id: "asgn-linked-capped",
+						policyId: renamedOrReactivatedPolicy.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "employment_terms",
+						sourceEmploymentHistoryId: "terms-linked-1",
+						isActive: true,
+						effectiveFrom: new Date("2026-01-01T00:00:00Z"),
+						effectiveUntil: new Date("2026-06-10T00:00:00Z"),
+						effectiveFromDate: "2026-01-01",
+						effectiveUntilDate: "2026-06-10",
+						priority: 2,
+						createdAt: new Date("2026-01-01T00:00:00Z"),
+					},
+				],
+				confirmedTerms: [
+					{
+						id: "terms-linked-1",
+						employmentPeriodId: "period-1",
+						validFrom: new Date("2026-01-01T00:00:00Z"),
+						validUntil: new Date("2026-07-01T00:00:00Z"),
+						validFromDate: "2026-01-01",
+						validUntilDate: "2026-07-01",
+						status: "active",
+						contractType: "fixed",
+						hourlyRate: null,
+						currency: "EUR",
+						weeklyContractMinutes: 2400,
+						workModel: "onsite",
+						workPolicyId: renamedOrReactivatedPolicy.id,
+						scheduleMode: "policy",
+						presenceOverride: "inherit",
+						balanceMode: "tracked",
+						scheduleSource: "policy",
+						employmentProfile: "regular",
+						migratedLegacyTerms: false,
+						probationStartsOn: null,
+						probationEndsOn: null,
+						createdAt: new Date("2026-01-01T00:00:00Z"),
+						customDays: [],
+						onCallTerms: null,
+					},
+				],
+			}),
+		);
+		expect(pinReactivatedRes.workPolicy).toBeNull();
 	});
 });

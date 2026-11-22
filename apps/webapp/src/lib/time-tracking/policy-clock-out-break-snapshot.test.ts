@@ -403,6 +403,7 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 				expect(compiled.sql).toContain("for update of employee");
 				expect(compiled.sql).toContain("for update of assignment");
 				expect(compiled.sql).toContain("pg_timezone_names");
+				expect(compiled.sql).not.toContain("btrim(user_settings.timezone)");
 				expect(compiled.sql).toContain("employee_team_history");
 				expect(compiled.sql).toContain(
 					'assignment.organization_id = employee_row."organizationId"',
@@ -559,7 +560,8 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 						policyId: workPolicySnapshot.policy.id,
 						policyName: workPolicySnapshot.policy.name,
 						policyIsActive: false,
-						policyUpdatedAt: new Date("2026-04-01T12:00:00Z"),
+						// A3-7: Verify pg's raw `timestamp without time zone` string (`YYYY-MM-DD HH:mm:ss`) parses cleanly
+						policyUpdatedAt: "2026-04-01 12:00:00",
 						policyVersionId,
 						effectiveFromDate,
 						regulationEnabled: true,
@@ -591,7 +593,8 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 						policyId: workPolicySnapshot.policy.id,
 						policyName: workPolicySnapshot.policy.name,
 						policyIsActive: false,
-						policyUpdatedAt: new Date("2026-04-01T12:00:00Z"),
+						// A3-7: Verify pg's raw `timestamp without time zone` string (`YYYY-MM-DD HH:mm:ss`) parses cleanly
+						policyUpdatedAt: "2026-04-01 12:00:00",
 						policyVersionId,
 						effectiveFromDate,
 						regulationEnabled: false,

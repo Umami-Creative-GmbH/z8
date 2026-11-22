@@ -799,7 +799,18 @@
 				"changesHeading": "Operational contract rules affected by moving primary team:",
 				"noChangesHeading": "No inherited operational contract rules change from this primary team move.",
 				"preservedDivergences": "Personal overrides kept unchanged: {fields}",
-				"employeeTermsUnchanged": "Employee-owned terms (contract type, hourly wage, employment profile, ArbZG scope, on-call agreement) are never changed by a team move."
+				"employeeTermsUnchanged": "Employee-owned terms (contract type, hourly wage, employment profile, ArbZG scope, on-call agreement) are never changed by a team move.",
+				"durationHours": "{hours}h",
+				"durationHoursMinutes": "{hours}h {minutes}m",
+				"weekdaysShort": {
+					"monday": "Mon",
+					"tuesday": "Tue",
+					"wednesday": "Wed",
+					"thursday": "Thu",
+					"friday": "Fri",
+					"saturday": "Sat",
+					"sunday": "Sun"
+				}
 			}
 		}
 	}

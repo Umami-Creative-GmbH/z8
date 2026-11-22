@@ -901,8 +901,8 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 						a.policy_id,
 						a.assignment_type::text AS scope,
 						a.team_id,
-						COALESCE(a.effective_from_date, DATE '1970-01-01')::text AS effective_from_date,
-						a.effective_until_date::text AS effective_until_date,
+						to_char(COALESCE(a.effective_from_date, DATE '1970-01-01'), 'YYYY-MM-DD') AS effective_from_iso,
+						to_char(a.effective_until_date, 'YYYY-MM-DD') AS effective_until_iso,
 						a.created_by
 					FROM "work_policy_assignment" a
 					WHERE a.assignment_type IN ('organization', 'team')
@@ -923,11 +923,11 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 
 				let processed = 0;
 				for (const row of rowsResult.rows) {
-					const fromStr = String(row.effective_from_date).slice(0, 10);
+					const fromStr = String(row.effective_from_iso);
 					const untilStr =
-						row.effective_until_date === null || row.effective_until_date === undefined
+						row.effective_until_iso === null || row.effective_until_iso === undefined
 							? null
-							: String(row.effective_until_date).slice(0, 10);
+							: String(row.effective_until_iso);
 
 					// A1-17: Normalize and skip empty/inverted legacy assignment ranges BEFORE promoting
 					// into contract_default so 0319's effective_until_date > effective_from_date check never fails.

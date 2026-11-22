@@ -1522,41 +1522,47 @@ export async function runContractChangeBatch(
 							return { status: "completed" as const, alreadyTerminal: false };
 						}
 						if (batchPayload.onlyLegacyTerms) {
-							// A2-3: Evaluate migrated_legacy_terms strictly on the winning confirmed terms
-							// row for the open employment period (matching resolve-contract.ts stint precedence),
-							// never qualifying an employee from a superseded null-period legacy row.
-							const winningTerms = await tx.execute<{ migrated_legacy_terms: boolean }>(sql`
-								SELECT h.migrated_legacy_terms
-								FROM employee_employment_history h
-								LEFT JOIN employee_employment_period open_p
-									ON open_p.organization_id = h.organization_id
-									AND open_p.employee_id = h.employee_id
-									AND open_p.status = 'open'
-								WHERE h.organization_id = ${input.organizationId}
-									AND h.employee_id = ${item.employeeId}::uuid
-									AND h.review_state = 'confirmed'
-									AND h.valid_from_date <= ${effectiveFromDate}::date
-									AND (h.valid_until_date IS NULL OR h.valid_until_date > ${effectiveFromDate}::date)
-									AND (
-										(open_p.id IS NOT NULL AND h.employment_period_id = open_p.id)
-										OR (
-											h.employment_period_id IS NULL
-											AND NOT EXISTS (
-												SELECT 1
-												FROM employee_employment_history ps
-												WHERE ps.organization_id = h.organization_id
-													AND ps.employee_id = h.employee_id
-													AND ps.review_state = 'confirmed'
-													AND open_p.id IS NOT NULL
-													AND ps.employment_period_id = open_p.id
+							// A2-3 / A3-9: Evaluate migrated_legacy_terms strictly on the winning confirmed
+							// terms row (matching resolve-contract.ts timeline truncation: the latest row with
+							// valid_from_date <= effectiveFromDate in the active period scope must still cover
+							// effectiveFromDate and have migrated_legacy_terms = true).
+							const winningTerms = await tx.execute<{ is_legacy: boolean }>(sql`
+								SELECT (
+									(w.valid_until_date IS NULL OR w.valid_until_date > ${effectiveFromDate}::date)
+									AND w.migrated_legacy_terms = true
+								) AS is_legacy
+								FROM (
+									SELECT h.valid_until_date, h.migrated_legacy_terms
+									FROM employee_employment_history h
+									LEFT JOIN employee_employment_period open_p
+										ON open_p.organization_id = h.organization_id
+										AND open_p.employee_id = h.employee_id
+										AND open_p.status = 'open'
+									WHERE h.organization_id = ${input.organizationId}
+										AND h.employee_id = ${item.employeeId}::uuid
+										AND h.review_state = 'confirmed'
+										AND h.valid_from_date <= ${effectiveFromDate}::date
+										AND (
+											(open_p.id IS NOT NULL AND h.employment_period_id = open_p.id)
+											OR (
+												h.employment_period_id IS NULL
+												AND NOT EXISTS (
+													SELECT 1
+													FROM employee_employment_history ps
+													WHERE ps.organization_id = h.organization_id
+														AND ps.employee_id = h.employee_id
+														AND ps.review_state = 'confirmed'
+														AND open_p.id IS NOT NULL
+														AND ps.employment_period_id = open_p.id
+												)
 											)
+											OR open_p.id IS NULL
 										)
-										OR open_p.id IS NULL
-									)
-								ORDER BY h.valid_from_date DESC, h.created_at DESC, h.id DESC
-								LIMIT 1
+									ORDER BY h.valid_from_date DESC, h.created_at DESC, h.id DESC
+									LIMIT 1
+								) w
 							`);
-							if (winningTerms.rows[0]?.migrated_legacy_terms !== true) {
+							if (winningTerms.rows[0]?.is_legacy !== true) {
 								await markBatchItemOutcomeInTx(tx, {
 									organizationId: input.organizationId,
 									itemId: item.id,

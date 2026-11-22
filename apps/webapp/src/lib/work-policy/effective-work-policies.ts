@@ -2,8 +2,10 @@ import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-o
 import {
 	contractDefault,
 	contractTemplateVersion,
+	employee,
 	employeeEmploymentHistory,
 	team,
+	userSettings,
 	workPolicy,
 	workPolicyAssignment,
 	workPolicyBreakOption,
@@ -29,6 +31,7 @@ import { dateFromInstant, type Instant, plainDateAt } from "@/lib/datetime/tempo
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
 import { termsCalendarDate } from "@/lib/employment-history/terms-in-force";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
 export type WorkPolicyWithDetails = typeof workPolicy.$inferSelect & {
@@ -414,16 +417,41 @@ export async function loadEffectiveWorkPolicies(
 
 	const at = dateFromInstant(input.at);
 	const orgTimezone = await loadOrganizationTimezone(db, input.organizationId);
-	const day = plainDateAt(input.at, orgTimezone);
-	const dayStr = day.toString();
+	const orgDay = plainDateAt(input.at, orgTimezone);
 	const employeeIds = [...new Set(input.employees.map((person) => person.id))];
+
+	// A3-16: Compute each real employee's own local calendar date at `at` (matching clock-out's
+	// personal -> organization -> UTC timezone resolution) instead of forcing every employee onto
+	// the organization's date.
+	const employeeTzRows = await db
+		.select({
+			id: employee.id,
+			userTimezone: userSettings.timezone,
+		})
+		.from(employee)
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
+		.where(
+			and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
+		);
+	const dayStrByEmployeeId = new Map<string, string>();
+	const uniqueDaysByStr = new Map<string, ReturnType<typeof plainDateAt>>();
+	uniqueDaysByStr.set(orgDay.toString(), orgDay);
+	for (const row of employeeTzRows) {
+		const empTz = resolveEffectiveTimezone(row.userTimezone, orgTimezone);
+		const empDay = plainDateAt(input.at, empTz);
+		const empDayStr = empDay.toString();
+		dayStrByEmployeeId.set(row.id, empDayStr);
+		if (!uniqueDaysByStr.has(empDayStr)) {
+			uniqueDaysByStr.set(empDayStr, empDay);
+		}
+	}
 
 	// Resolve real employees through the unified read-only contract resolver using captured
 	// `employee_team_history` (never overriding real employees with caller's current `teamId` — A1-11).
 	const batch = await loadEffectiveContractsBatch(db, {
 		organizationId: input.organizationId,
 		employeeIds,
-		dates: [day],
+		dates: [...uniqueDaysByStr.values()],
 		at: input.at,
 	});
 
@@ -431,7 +459,8 @@ export async function loadEffectiveWorkPolicies(
 	for (const person of input.employees) {
 		const perDate = batch.get(person.id);
 		if (perDate) {
-			const contract = perDate.get(dayStr);
+			const empDayStr = dayStrByEmployeeId.get(person.id) ?? orgDay.toString();
+			const contract = perDate.get(empDayStr);
 			resolved.set(
 				person.id,
 				contract?.workPolicy
@@ -446,6 +475,7 @@ export async function loadEffectiveWorkPolicies(
 	if (syntheticTargets.length === 0) {
 		return resolved;
 	}
+	const dayStr = orgDay.toString();
 
 	const syntheticIds = [...new Set(syntheticTargets.map((person) => person.id))];
 	const teamIds = [
