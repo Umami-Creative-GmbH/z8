@@ -522,48 +522,55 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 	}
 
 	const requirements: DailyWorkRequirements = {};
-	const sliceRequirements = await Promise.all(
-		clipTermsSpans(spans, range).map(async ({ terms: slice, from, until }) => {
-			// Resolve calendar ownership before converting back to reader boundary instants.
-			const start = dateFromInstant(from.toZonedDateTime(timezone).toInstant());
-			const end = dateFromInstant(
-				(until ?? range.toExclusive)
-					.subtract({ days: 1 })
-					.toZonedDateTime(timezone)
-					.toInstant(),
-			);
+	const resolveSlice = async ({
+		terms: slice,
+		from,
+		until,
+	}: (typeof spans)[number]) => {
+		// Resolve calendar ownership before converting back to reader boundary instants.
+		const start = dateFromInstant(from.toZonedDateTime(timezone).toInstant());
+		const end = dateFromInstant(
+			(until ?? range.toExclusive)
+				.subtract({ days: 1 })
+				.toZonedDateTime(timezone)
+				.toInstant(),
+		);
 
-			if (slice.contractType === "hourly") {
-				return getPublishedShiftRequirementsForEmployee({
-					database: params.database,
-					organizationId: params.organizationId,
-					employeeId: params.employeeId,
-					startDate: start,
-					endDate: end,
-					timezone,
-					evidence: params.evidence?.shifts,
-				});
-			}
-
-			const policy = slice.workPolicyId
-				? params.evidence
-					? (params.evidence.policies.get(slice.workPolicyId) ?? null)
-					: await getEmploymentHistoryWorkPolicy({
-							database: params.database,
-							organizationId: params.organizationId,
-							policyId: slice.workPolicyId,
-						})
-				: params.fallbackPolicy;
-
-			return buildDailyWorkRequirements({
-				policy,
+		if (slice.contractType === "hourly") {
+			return getPublishedShiftRequirementsForEmployee({
+				database: params.database,
+				organizationId: params.organizationId,
+				employeeId: params.employeeId,
 				startDate: start,
 				endDate: end,
 				timezone,
-				weeklyContractMinutes: slice.weeklyContractMinutes,
+				evidence: params.evidence?.shifts,
 			});
-		}),
-	);
+		}
+
+		const policy = slice.workPolicyId
+			? params.evidence
+				? (params.evidence.policies.get(slice.workPolicyId) ?? null)
+				: await getEmploymentHistoryWorkPolicy({
+						database: params.database,
+						organizationId: params.organizationId,
+						policyId: slice.workPolicyId,
+					})
+			: params.fallbackPolicy;
+
+		return buildDailyWorkRequirements({
+			policy,
+			startDate: start,
+			endDate: end,
+			timezone,
+			weeklyContractMinutes: slice.weeklyContractMinutes,
+		});
+	};
+	// One after another: `params.database` may be one connection, and pg@9 refuses a query while another is executing.
+	const sliceRequirements: Awaited<ReturnType<typeof resolveSlice>>[] = [];
+	for (const termsSlice of clipTermsSpans(spans, range)) {
+		sliceRequirements.push(await resolveSlice(termsSlice));
+	}
 
 	for (const sliceRequirement of sliceRequirements) {
 		if (sliceRequirement)

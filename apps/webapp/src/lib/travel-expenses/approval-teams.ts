@@ -25,27 +25,26 @@ async function loadEmployeeTeamIds(
 	database: Executor,
 	scope: { organizationId: string; employeeId: string },
 ): Promise<string[]> {
-	const [primary, memberships] = await Promise.all([
-		database
-			.select({ teamId: team.id })
-			.from(employee)
-			.innerJoin(
-				team,
-				and(eq(team.id, employee.teamId), eq(team.organizationId, employee.organizationId)),
-			)
-			.where(
-				and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)),
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const primary = await database
+		.select({ teamId: team.id })
+		.from(employee)
+		.innerJoin(
+			team,
+			and(eq(team.id, employee.teamId), eq(team.organizationId, employee.organizationId)),
+		)
+		.where(
+			and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)),
+		);
+	const memberships = await database
+		.select({ teamId: teamMembership.teamId })
+		.from(teamMembership)
+		.where(
+			and(
+				eq(teamMembership.employeeId, scope.employeeId),
+				eq(teamMembership.organizationId, scope.organizationId),
 			),
-		database
-			.select({ teamId: teamMembership.teamId })
-			.from(teamMembership)
-			.where(
-				and(
-					eq(teamMembership.employeeId, scope.employeeId),
-					eq(teamMembership.organizationId, scope.organizationId),
-				),
-			),
-	]);
+		);
 	return [...new Set([...primary, ...memberships].map((row) => row.teamId))].toSorted();
 }
 

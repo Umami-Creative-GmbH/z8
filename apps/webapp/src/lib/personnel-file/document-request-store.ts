@@ -1295,79 +1295,80 @@ export async function toDocumentRequestViews(
 		...new Set(rows.flatMap((row) => (row.renewedDocumentId ? [row.renewedDocumentId] : []))),
 	];
 	const creatorIds = [...new Set(rows.flatMap((row) => (row.createdBy ? [row.createdBy] : [])))];
-	const [events, submissions, linkedDocuments, renewed, creators] = await Promise.all([
-		database
-			.select({
-				id: employeeDocumentRequestEvent.id,
-				requestId: employeeDocumentRequestEvent.requestId,
-				kind: employeeDocumentRequestEvent.kind,
-				actorName: user.name,
-				reason: employeeDocumentRequestEvent.reason,
-				reasonCode: employeeDocumentRequestEvent.reasonCode,
-				submissionId: employeeDocumentRequestEvent.submissionId,
-				changes: employeeDocumentRequestEvent.changes,
-				occurredAt: employeeDocumentRequestEvent.occurredAt,
-			})
-			.from(employeeDocumentRequestEvent)
-			.leftJoin(user, eq(user.id, employeeDocumentRequestEvent.actorUserId))
-			.where(
-				and(
-					eq(employeeDocumentRequestEvent.organizationId, organizationId),
-					inArray(employeeDocumentRequestEvent.requestId, requestIds),
-				),
-			)
-			.orderBy(asc(employeeDocumentRequestEvent.occurredAt), asc(employeeDocumentRequestEvent.id)),
-		database
-			.select()
-			.from(employeeDocumentRequestSubmission)
-			.where(
-				and(
-					eq(employeeDocumentRequestSubmission.organizationId, organizationId),
-					inArray(employeeDocumentRequestSubmission.requestId, requestIds),
-				),
-			)
-			.orderBy(
-				asc(employeeDocumentRequestSubmission.submittedAt),
-				asc(employeeDocumentRequestSubmission.id),
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const events = await database
+		.select({
+			id: employeeDocumentRequestEvent.id,
+			requestId: employeeDocumentRequestEvent.requestId,
+			kind: employeeDocumentRequestEvent.kind,
+			actorName: user.name,
+			reason: employeeDocumentRequestEvent.reason,
+			reasonCode: employeeDocumentRequestEvent.reasonCode,
+			submissionId: employeeDocumentRequestEvent.submissionId,
+			changes: employeeDocumentRequestEvent.changes,
+			occurredAt: employeeDocumentRequestEvent.occurredAt,
+		})
+		.from(employeeDocumentRequestEvent)
+		.leftJoin(user, eq(user.id, employeeDocumentRequestEvent.actorUserId))
+		.where(
+			and(
+				eq(employeeDocumentRequestEvent.organizationId, organizationId),
+				inArray(employeeDocumentRequestEvent.requestId, requestIds),
 			),
-		database
-			.select({
-				requestId: employeeDocumentRequestDocument.requestId,
-				submissionId: employeeDocumentRequestDocument.submissionId,
-				id: employeeDocument.id,
-				title: employeeDocument.title,
-				fileName: employeeDocument.fileName,
-				mimeType: employeeDocument.mimeType,
-			})
-			.from(employeeDocumentRequestDocument)
-			.innerJoin(
-				employeeDocument,
-				and(
-					eq(employeeDocument.id, employeeDocumentRequestDocument.documentId),
-					eq(employeeDocument.organizationId, employeeDocumentRequestDocument.organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(employeeDocumentRequestDocument.organizationId, organizationId),
-					inArray(employeeDocumentRequestDocument.requestId, requestIds),
-					visibleDocumentsCondition(access),
-				),
-			)
-			.orderBy(asc(employeeDocument.createdAt), asc(employeeDocument.id)),
+		)
+		.orderBy(asc(employeeDocumentRequestEvent.occurredAt), asc(employeeDocumentRequestEvent.id));
+	const submissions = await database
+		.select()
+		.from(employeeDocumentRequestSubmission)
+		.where(
+			and(
+				eq(employeeDocumentRequestSubmission.organizationId, organizationId),
+				inArray(employeeDocumentRequestSubmission.requestId, requestIds),
+			),
+		)
+		.orderBy(
+			asc(employeeDocumentRequestSubmission.submittedAt),
+			asc(employeeDocumentRequestSubmission.id),
+		);
+	const linkedDocuments = await database
+		.select({
+			requestId: employeeDocumentRequestDocument.requestId,
+			submissionId: employeeDocumentRequestDocument.submissionId,
+			id: employeeDocument.id,
+			title: employeeDocument.title,
+			fileName: employeeDocument.fileName,
+			mimeType: employeeDocument.mimeType,
+		})
+		.from(employeeDocumentRequestDocument)
+		.innerJoin(
+			employeeDocument,
+			and(
+				eq(employeeDocument.id, employeeDocumentRequestDocument.documentId),
+				eq(employeeDocument.organizationId, employeeDocumentRequestDocument.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(employeeDocumentRequestDocument.organizationId, organizationId),
+				inArray(employeeDocumentRequestDocument.requestId, requestIds),
+				visibleDocumentsCondition(access),
+			),
+		)
+		.orderBy(asc(employeeDocument.createdAt), asc(employeeDocument.id));
+	const renewed =
 		renewedIds.length === 0
-			? Promise.resolve([])
-			: database
+			? []
+			: await database
 					.select({ id: employeeDocument.id, title: employeeDocument.title })
 					.from(employeeDocument)
-					.where(and(inArray(employeeDocument.id, renewedIds), visibleDocumentsCondition(access))),
+					.where(and(inArray(employeeDocument.id, renewedIds), visibleDocumentsCondition(access)));
+	const creators =
 		creatorIds.length === 0
-			? Promise.resolve([])
-			: database
+			? []
+			: await database
 					.select({ id: user.id, name: user.name })
 					.from(user)
-					.where(inArray(user.id, creatorIds)),
-	]);
+					.where(inArray(user.id, creatorIds));
 	const renewedById = new Map(renewed.map((document) => [document.id, document]));
 	const creatorNames = new Map(creators.map((creator) => [creator.id, creator.name]));
 	const documentsBySubmission = new Map<string, DocumentRequestDocumentView[]>();

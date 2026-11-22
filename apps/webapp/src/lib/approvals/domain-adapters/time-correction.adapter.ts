@@ -794,27 +794,27 @@ export function createTimeCorrectionApprovalAdapter(
 			) {
 				return fail();
 			}
-			const [memberships, teamRows, groupRows] = await Promise.all([
-				db.query.member.findMany({
-					where: and(
-						eq(member.organizationId, input.organizationId),
-						eq(member.userId, requester.userId),
-					),
-					limit: 2,
-				}),
-				db.query.teamMembership.findMany({
-					where: and(
-						eq(teamMembership.organizationId, input.organizationId),
-						eq(teamMembership.employeeId, requesterEmployeeId),
-					),
-				}),
-				db.query.employeeGroupMember.findMany({
-					where: and(
-						eq(employeeGroupMember.organizationId, input.organizationId),
-						eq(employeeGroupMember.employeeId, requesterEmployeeId),
-					),
-				}),
-			]);
+			// One after another: `db` may be a transaction, which is one connection, and
+			// pg@9 drops queries queued on a connection still executing another.
+			const memberships = await db.query.member.findMany({
+				where: and(
+					eq(member.organizationId, input.organizationId),
+					eq(member.userId, requester.userId),
+				),
+				limit: 2,
+			});
+			const teamRows = await db.query.teamMembership.findMany({
+				where: and(
+					eq(teamMembership.organizationId, input.organizationId),
+					eq(teamMembership.employeeId, requesterEmployeeId),
+				),
+			});
+			const groupRows = await db.query.employeeGroupMember.findMany({
+				where: and(
+					eq(employeeGroupMember.organizationId, input.organizationId),
+					eq(employeeGroupMember.employeeId, requesterEmployeeId),
+				),
+			});
 			const membership = memberships[0];
 			if (
 				memberships.length !== 1 ||

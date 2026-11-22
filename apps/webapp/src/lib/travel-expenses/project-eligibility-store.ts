@@ -94,62 +94,61 @@ export async function listExpenseEligibleProjects(
 			),
 		);
 	const teamIds = [...new Set(memberships.map((membership) => membership.teamId))];
-	const [assignments, exceptions] = await Promise.all([
-		reader
-			.select({
-				projectId: projectAssignmentHistory.projectId,
-				assignmentType: projectAssignmentHistory.assignmentType,
-				employeeId: projectAssignmentHistory.employeeId,
-				teamId: projectAssignmentHistory.teamId,
-				effectiveFrom: projectAssignmentHistory.effectiveFrom,
-				effectiveTo: projectAssignmentHistory.effectiveTo,
-			})
-			.from(projectAssignmentHistory)
-			.where(
-				and(
-					eq(projectAssignmentHistory.organizationId, target.organizationId),
-					options.projectId ? eq(projectAssignmentHistory.projectId, options.projectId) : undefined,
-					lt(projectAssignmentHistory.effectiveFrom, end),
-					or(
-						isNull(projectAssignmentHistory.effectiveTo),
-						gt(projectAssignmentHistory.effectiveTo, start),
-					),
-					teamIds.length > 0
-						? or(
-								eq(projectAssignmentHistory.employeeId, target.employeeId),
-								inArray(projectAssignmentHistory.teamId, teamIds),
-							)
-						: eq(projectAssignmentHistory.employeeId, target.employeeId),
+	// One after another: `reader` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const assignments = await reader
+		.select({
+			projectId: projectAssignmentHistory.projectId,
+			assignmentType: projectAssignmentHistory.assignmentType,
+			employeeId: projectAssignmentHistory.employeeId,
+			teamId: projectAssignmentHistory.teamId,
+			effectiveFrom: projectAssignmentHistory.effectiveFrom,
+			effectiveTo: projectAssignmentHistory.effectiveTo,
+		})
+		.from(projectAssignmentHistory)
+		.where(
+			and(
+				eq(projectAssignmentHistory.organizationId, target.organizationId),
+				options.projectId ? eq(projectAssignmentHistory.projectId, options.projectId) : undefined,
+				lt(projectAssignmentHistory.effectiveFrom, end),
+				or(
+					isNull(projectAssignmentHistory.effectiveTo),
+					gt(projectAssignmentHistory.effectiveTo, start),
 				),
+				teamIds.length > 0
+					? or(
+							eq(projectAssignmentHistory.employeeId, target.employeeId),
+							inArray(projectAssignmentHistory.teamId, teamIds),
+						)
+					: eq(projectAssignmentHistory.employeeId, target.employeeId),
 			),
-		reader
-			.select({
-				id: travelExpenseProjectAttributionException.id,
-				projectId: travelExpenseProjectAttributionException.projectId,
-				validFrom: travelExpenseProjectAttributionException.validFrom,
-				validTo: travelExpenseProjectAttributionException.validTo,
-				reason: travelExpenseProjectAttributionException.reason,
-				evidence: travelExpenseProjectAttributionException.evidence,
-				authorizedByEmployeeId: travelExpenseProjectAttributionException.authorizedByEmployeeId,
-				authorizedAt: travelExpenseProjectAttributionException.authorizedAt,
-			})
-			.from(travelExpenseProjectAttributionException)
-			.where(
-				and(
-					eq(travelExpenseProjectAttributionException.organizationId, target.organizationId),
-					eq(travelExpenseProjectAttributionException.employeeId, target.employeeId),
-					options.projectId
-						? eq(travelExpenseProjectAttributionException.projectId, options.projectId)
-						: undefined,
-					lte(travelExpenseProjectAttributionException.validFrom, window.to),
-					gte(travelExpenseProjectAttributionException.validTo, window.from),
-				),
-			)
-			.orderBy(
-				asc(travelExpenseProjectAttributionException.authorizedAt),
-				asc(travelExpenseProjectAttributionException.id),
+		);
+	const exceptions = await reader
+		.select({
+			id: travelExpenseProjectAttributionException.id,
+			projectId: travelExpenseProjectAttributionException.projectId,
+			validFrom: travelExpenseProjectAttributionException.validFrom,
+			validTo: travelExpenseProjectAttributionException.validTo,
+			reason: travelExpenseProjectAttributionException.reason,
+			evidence: travelExpenseProjectAttributionException.evidence,
+			authorizedByEmployeeId: travelExpenseProjectAttributionException.authorizedByEmployeeId,
+			authorizedAt: travelExpenseProjectAttributionException.authorizedAt,
+		})
+		.from(travelExpenseProjectAttributionException)
+		.where(
+			and(
+				eq(travelExpenseProjectAttributionException.organizationId, target.organizationId),
+				eq(travelExpenseProjectAttributionException.employeeId, target.employeeId),
+				options.projectId
+					? eq(travelExpenseProjectAttributionException.projectId, options.projectId)
+					: undefined,
+				lte(travelExpenseProjectAttributionException.validFrom, window.to),
+				gte(travelExpenseProjectAttributionException.validTo, window.from),
 			),
-	]);
+		)
+		.orderBy(
+			asc(travelExpenseProjectAttributionException.authorizedAt),
+			asc(travelExpenseProjectAttributionException.id),
+		);
 	const eligible = resolveProjectEligibility({
 		employeeId: target.employeeId,
 		window,

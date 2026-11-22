@@ -68,15 +68,18 @@ export async function savePayrollAccessGrant(
 	// The officer and newly named employees must be on the current roster (#1438);
 	// employees the grant already names stay valid after they leave.
 	const requestedPeople = [payrollEmployeeId, ...requestedEmployeeIds];
-	const [notCurrentIds, teamRows] = await Promise.all([
-		findEmployeesNotOnCurrentRoster(tx, { organizationId, employeeIds: requestedPeople }),
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const notCurrentIds = await findEmployeesNotOnCurrentRoster(tx, {
+		organizationId,
+		employeeIds: requestedPeople,
+	});
+	const teamRows =
 		requestedTeamIds.length > 0
-			? tx
+			? await tx
 					.select({ id: team.id })
 					.from(team)
 					.where(and(eq(team.organizationId, organizationId), inArray(team.id, requestedTeamIds)))
-			: Promise.resolve([]),
-	]);
+			: [];
 
 	const validated = buildValidatedPayrollAccessInput(input.grant, {
 		activeEmployeeIds: requestedPeople.filter((id) => !notCurrentIds.includes(id)),
@@ -292,26 +295,25 @@ async function readGrantScope(
 	organizationId: string,
 	grant: { id: string; scope: string },
 ): Promise<PayrollAccessScope> {
-	const [teamRows, employeeRows] = await Promise.all([
-		tx
-			.select({ teamId: payrollAccessTeam.teamId })
-			.from(payrollAccessTeam)
-			.where(
-				and(
-					eq(payrollAccessTeam.organizationId, organizationId),
-					eq(payrollAccessTeam.grantId, grant.id),
-				),
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const teamRows = await tx
+		.select({ teamId: payrollAccessTeam.teamId })
+		.from(payrollAccessTeam)
+		.where(
+			and(
+				eq(payrollAccessTeam.organizationId, organizationId),
+				eq(payrollAccessTeam.grantId, grant.id),
 			),
-		tx
-			.select({ employeeId: payrollAccessEmployee.employeeId })
-			.from(payrollAccessEmployee)
-			.where(
-				and(
-					eq(payrollAccessEmployee.organizationId, organizationId),
-					eq(payrollAccessEmployee.grantId, grant.id),
-				),
+		);
+	const employeeRows = await tx
+		.select({ employeeId: payrollAccessEmployee.employeeId })
+		.from(payrollAccessEmployee)
+		.where(
+			and(
+				eq(payrollAccessEmployee.organizationId, organizationId),
+				eq(payrollAccessEmployee.grantId, grant.id),
 			),
-	]);
+		);
 
 	return {
 		scope: grant.scope === "all" ? "all" : "specific",

@@ -32,35 +32,39 @@ export async function loadVacationYearBalances(
 		currentDate: Date;
 	},
 ): Promise<VacationYearBalanceEvidence[]> {
-	return Promise.all(
-		input.years.map(async (year): Promise<VacationYearBalanceEvidence> => {
-			try {
-				const { balances, configurations } = await loadVacationBalances(database, {
-					organizationId: input.organizationId,
-					employeeIds: [input.employeeId],
-					year,
-					timezone: input.timezone,
-					currentDate: input.currentDate,
-				});
-				const balance = balances.get(input.employeeId);
-				if (balance) return { year, status: "available", balance };
-				return {
-					year,
-					status: "unavailable",
-					reason:
-						configurations.get(input.employeeId)?.status === "conflict"
-							? "conflicting_policy"
-							: "missing_policy",
-				};
-			} catch (error) {
-				logger.error(
-					{ error, organizationId: input.organizationId, employeeId: input.employeeId, year },
-					"Failed to read vacation balance for year",
-				);
-				return { year, status: "unavailable", reason: "read_failed" };
-			}
-		}),
-	);
+	const readYear = async (year: number): Promise<VacationYearBalanceEvidence> => {
+		try {
+			const { balances, configurations } = await loadVacationBalances(database, {
+				organizationId: input.organizationId,
+				employeeIds: [input.employeeId],
+				year,
+				timezone: input.timezone,
+				currentDate: input.currentDate,
+			});
+			const balance = balances.get(input.employeeId);
+			if (balance) return { year, status: "available", balance };
+			return {
+				year,
+				status: "unavailable",
+				reason:
+					configurations.get(input.employeeId)?.status === "conflict"
+						? "conflicting_policy"
+						: "missing_policy",
+			};
+		} catch (error) {
+			logger.error(
+				{ error, organizationId: input.organizationId, employeeId: input.employeeId, year },
+				"Failed to read vacation balance for year",
+			);
+			return { year, status: "unavailable", reason: "read_failed" };
+		}
+	};
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const evidence: VacationYearBalanceEvidence[] = [];
+	for (const year of input.years) {
+		evidence.push(await readYear(year));
+	}
+	return evidence;
 }
 
 /**

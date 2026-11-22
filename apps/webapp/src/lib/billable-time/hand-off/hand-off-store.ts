@@ -240,16 +240,15 @@ async function loadHandOffContext(
 
 	// Projects without an active customer (none, or a deleted one): their
 	// billable work is "without customer" and never in any hand-off.
-	const [work, customerless] = await Promise.all([
-		loadReportedProjectWork(reader, organizationId, {
-			projectIds: [...selected],
-			range,
-		}),
-		reader
-			.select({ id: project.id, name: project.name })
-			.from(project)
-			.where(and(eq(project.organizationId, organizationId), not(projectHasActiveCustomerSql()))),
-	]);
+	// One after another: `reader` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const work = await loadReportedProjectWork(reader, organizationId, {
+		projectIds: [...selected],
+		range,
+	});
+	const customerless = await reader
+		.select({ id: project.id, name: project.name })
+		.from(project)
+		.where(and(eq(project.organizationId, organizationId), not(projectHasActiveCustomerSql())));
 	const customerlessWork = (
 		await loadReportedProjectWork(reader, organizationId, {
 			projectIds: customerless.map((row) => row.id),
@@ -269,21 +268,21 @@ async function loadHandOffContext(
 			invoiced: item.invoiced != null,
 		}))
 		.sort(compareCandidates);
-	const [rates, connection] = await Promise.all([
-		loadReportRates(
-			reader,
-			organizationId,
-			work.filter((item) => item.isBillable && !item.invoiced),
-			{ includeCost: false },
-		),
-		getActiveAccountingConnection(reader, organizationId),
-	]);
+	const rates = await loadReportRates(
+		reader,
+		organizationId,
+		work.filter((item) => item.isBillable && !item.invoiced),
+		{ includeCost: false },
+	);
+	const connection = await getActiveAccountingConnection(reader, organizationId);
 	const connector = connection ? dependencies.registry.get(connection.providerKind) : null;
 	const capabilities = connector?.capabilities ?? null;
-	const [contact, taxTreatment] = await Promise.all([
-		getCustomerContactLink(reader, organizationId, customerRow.id),
-		getEffectiveCustomerTaxTreatment(reader, organizationId, customerRow.id),
-	]);
+	const contact = await getCustomerContactLink(reader, organizationId, customerRow.id);
+	const taxTreatment = await getEffectiveCustomerTaxTreatment(
+		reader,
+		organizationId,
+		customerRow.id,
+	);
 
 	const plan = planHandOff({
 		period: request.period,

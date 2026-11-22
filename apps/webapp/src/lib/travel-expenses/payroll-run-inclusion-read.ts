@@ -211,10 +211,15 @@ export async function loadIncludedPayrollRuns(
 			),
 		);
 	const jobIds = [...new Set(rows.map((row) => row.jobId))];
-	const [headers, partlyConfirmed] = await Promise.all([
-		loadPayrollRunHeaders(database, { organizationId: input.organizationId, jobIds }),
-		partlyConfirmedRuns(database, { organizationId: input.organizationId, jobIds }),
-	]);
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const headers = await loadPayrollRunHeaders(database, {
+		organizationId: input.organizationId,
+		jobIds,
+	});
+	const partlyConfirmed = await partlyConfirmedRuns(database, {
+		organizationId: input.organizationId,
+		jobIds,
+	});
 	for (const row of rows) {
 		const header = headers.get(row.jobId);
 		if (!header) continue;

@@ -256,52 +256,52 @@ export const loadPermissionsPageData = organizationAction(
 			const snapshot = yield* dbService.query("loadPermissionsPageData", async () => {
 				return await dbService.db.transaction(
 					async (tx) => {
-						const [employeeRows, teamRows, permissionRows] = await Promise.all([
-							tx.query.employee.findMany({
-								where: eq(employee.organizationId, organizationId),
-								columns: {
-									id: true,
-									userId: true,
-									pronouns: true,
-									position: true,
-									role: true,
-									isActive: true,
-									teamId: true,
-								},
-								with: {
-									user: {
-										columns: {
-											id: true,
-											firstName: true,
-											lastName: true,
-											name: true,
-											email: true,
-											image: true,
-										},
+						// One after another: `tx` is one connection, and pg@9 refuses a query while
+						// another is executing.
+						const employeeRows = await tx.query.employee.findMany({
+							where: eq(employee.organizationId, organizationId),
+							columns: {
+								id: true,
+								userId: true,
+								pronouns: true,
+								position: true,
+								role: true,
+								isActive: true,
+								teamId: true,
+							},
+							with: {
+								user: {
+									columns: {
+										id: true,
+										firstName: true,
+										lastName: true,
+										name: true,
+										email: true,
+										image: true,
 									},
 								},
-								orderBy: (employee, { asc }) => [asc(employee.userId)],
-							}),
-							tx.query.team.findMany({
-								where: eq(team.organizationId, organizationId),
-								columns: { id: true, name: true, organizationId: true },
-								orderBy: (team, { asc }) => [asc(team.name)],
-							}),
-							tx.query.teamPermissions.findMany({
-								where: eq(teamPermissions.organizationId, organizationId),
-								columns: {
-									employeeId: true,
-									organizationId: true,
-									teamId: true,
-									canCreateTeams: true,
-									canManageTeamMembers: true,
-									canManageTeamSettings: true,
-									canApproveTeamRequests: true,
-									grantedBy: true,
-									grantedAt: true,
-								},
-							}),
-						]);
+							},
+							orderBy: (employee, { asc }) => [asc(employee.userId)],
+						});
+						const teamRows = await tx.query.team.findMany({
+							where: eq(team.organizationId, organizationId),
+							columns: { id: true, name: true, organizationId: true },
+							orderBy: (team, { asc }) => [asc(team.name)],
+						});
+						const permissionRows = await tx.query.teamPermissions.findMany({
+							where: eq(teamPermissions.organizationId, organizationId),
+							columns: {
+								employeeId: true,
+								organizationId: true,
+								teamId: true,
+								canCreateTeams: true,
+								canManageTeamMembers: true,
+								canManageTeamSettings: true,
+								canApproveTeamRequests: true,
+								grantedBy: true,
+								grantedAt: true,
+							},
+						});
 						return { employeeRows, teamRows, permissionRows };
 					},
 					{ isolationLevel: "repeatable read" },

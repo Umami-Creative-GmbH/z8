@@ -35,27 +35,27 @@ export async function readEquipmentOfficers(
 				resource: "equipment",
 				action: "manage",
 			});
-		const [employees, teams, grants] = await Promise.all([
-			tx
-				.select({
-					id: employee.id,
-					name: user.name,
-					current: sql<boolean>`(${employeeHasOrganizationAccess(systemClock.nowInstant())} and exists (select 1 from member m where m.organization_id = ${employee.organizationId} and m.user_id = ${employee.userId} and m.status = 'approved'))`,
-				})
-				.from(employee)
-				.innerJoin(user, eq(user.id, employee.userId))
-				.where(eq(employee.organizationId, actor.organizationId))
-				.orderBy(asc(user.name)),
-			tx
-				.select({ id: team.id, name: team.name })
-				.from(team)
-				.where(eq(team.organizationId, actor.organizationId))
-				.orderBy(asc(team.name)),
-			tx
-				.select()
-				.from(equipmentOfficerGrant)
-				.where(eq(equipmentOfficerGrant.organizationId, actor.organizationId)),
-		]);
+		// One after another: `tx` is one connection, and pg@9 refuses a query while
+		// another is executing.
+		const employees = await tx
+			.select({
+				id: employee.id,
+				name: user.name,
+				current: sql<boolean>`(${employeeHasOrganizationAccess(systemClock.nowInstant())} and exists (select 1 from member m where m.organization_id = ${employee.organizationId} and m.user_id = ${employee.userId} and m.status = 'approved'))`,
+			})
+			.from(employee)
+			.innerJoin(user, eq(user.id, employee.userId))
+			.where(eq(employee.organizationId, actor.organizationId))
+			.orderBy(asc(user.name));
+		const teams = await tx
+			.select({ id: team.id, name: team.name })
+			.from(team)
+			.where(eq(team.organizationId, actor.organizationId))
+			.orderBy(asc(team.name));
+		const grants = await tx
+			.select()
+			.from(equipmentOfficerGrant)
+			.where(eq(equipmentOfficerGrant.organizationId, actor.organizationId));
 		const employeeMap = new Map(employees.map((e) => [e.id, e]));
 		return {
 			employees,

@@ -1,4 +1,4 @@
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	approvalChainInstance,
@@ -7,6 +7,7 @@ import {
 	approvalRequest,
 	employee,
 	employeeGroup,
+	employeeManagers,
 	employeeGroupMember,
 	team,
 	teamMembership,
@@ -356,48 +357,51 @@ async function loadPolicyContext(
 	dbService: ApprovalDbService,
 	context: ApprovalPolicyEvaluationContext,
 ) {
-	const [
-		policies,
-		groupRows,
-		activeGroups,
-		employees,
-		managerLinks,
-		teamMemberships,
-		teams,
-	] = await Promise.all([
-		dbService.db.query.approvalPolicy.findMany({
-			where: eq(approvalPolicy.organizationId, context.organizationId),
-			orderBy: [asc(approvalPolicy.priority)],
-			with: { conditions: true, stages: true },
-		}),
+	// One after another: `dbService.db` may be a transaction, which is one connection,
+	// and pg@9 drops queries queued on a connection still executing another.
+	const policies = await dbService.db.query.approvalPolicy.findMany({
+		where: eq(approvalPolicy.organizationId, context.organizationId),
+		orderBy: [asc(approvalPolicy.priority)],
+		with: { conditions: true, stages: true },
+	});
+	const groupRows =
 		context.employeeGroupIds.length === 0
-			? dbService.db.query.employeeGroupMember.findMany({
+			? await dbService.db.query.employeeGroupMember.findMany({
 					where: and(
 						eq(employeeGroupMember.organizationId, context.organizationId),
 						eq(employeeGroupMember.employeeId, context.requesterEmployeeId),
 					),
 				})
-			: [],
-		dbService.db.query.employeeGroup.findMany({
-			where: and(
-				eq(employeeGroup.organizationId, context.organizationId),
-				eq(employeeGroup.isActive, true),
-			),
-		}),
-		dbService.db.query.employee.findMany({
-			where: eq(employee.organizationId, context.organizationId),
-		}),
-		dbService.db.query.employeeManagers.findMany(),
-		dbService.db.query.teamMembership.findMany({
-			where: and(
-				eq(teamMembership.organizationId, context.organizationId),
-				eq(teamMembership.employeeId, context.requesterEmployeeId),
-			),
-		}),
-		dbService.db.query.team.findMany({
-			where: eq(team.organizationId, context.organizationId),
-		}),
-	]);
+			: [];
+	const activeGroups = await dbService.db.query.employeeGroup.findMany({
+		where: and(
+			eq(employeeGroup.organizationId, context.organizationId),
+			eq(employeeGroup.isActive, true),
+		),
+	});
+	const employees = await dbService.db.query.employee.findMany({
+		where: eq(employee.organizationId, context.organizationId),
+	});
+	// Manager links carry no organization of their own: scope them through the
+	// organization's employees instead of reading every tenant's links.
+	const organizationEmployeeIds = (employees as Array<{ id: string }>).map(
+		(row) => row.id,
+	);
+	const managerLinks =
+		organizationEmployeeIds.length === 0
+			? []
+			: await dbService.db.query.employeeManagers.findMany({
+					where: inArray(employeeManagers.employeeId, organizationEmployeeIds),
+				});
+	const teamMemberships = await dbService.db.query.teamMembership.findMany({
+		where: and(
+			eq(teamMembership.organizationId, context.organizationId),
+			eq(teamMembership.employeeId, context.requesterEmployeeId),
+		),
+	});
+	const teams = await dbService.db.query.team.findMany({
+		where: eq(team.organizationId, context.organizationId),
+	});
 	const activeGroupIds = new Set(
 		(activeGroups as Array<{ id: string }>).map((group) => group.id),
 	);

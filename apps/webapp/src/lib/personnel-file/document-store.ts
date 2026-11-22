@@ -173,10 +173,9 @@ export async function toDocumentViews(
 	organizationId: string,
 	rows: readonly DocumentRow[],
 ): Promise<EmployeeDocumentView[]> {
-	const [absences, skillNames] = await Promise.all([
-		loadLinkedAbsenceDays(database, { organizationId, rows }),
-		loadLinkedSkillNames(database, { organizationId, rows }),
-	]);
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const absences = await loadLinkedAbsenceDays(database, { organizationId, rows });
+	const skillNames = await loadLinkedSkillNames(database, { organizationId, rows });
 	return rows.map((row) => toDocumentView(row, absences, skillNames));
 }
 

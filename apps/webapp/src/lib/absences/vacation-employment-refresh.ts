@@ -64,31 +64,30 @@ export async function planEmploymentVacationRefresh(
 	},
 ): Promise<EmploymentVacationRefresh> {
 	const today = plainDateAt(input.now, input.timezone);
-	const [employment, existing] = await Promise.all([
-		loadEmployeeEmployments(client, {
-			organizationId: input.organizationId,
-			employeeIds: [input.employeeId],
-			employeeEmploymentStartDateOverrides: new Map([
-				[input.employeeId, input.employmentStartDate],
-			]),
-		}),
-		client
-			.select({
-				id: vacationAdjustment.id,
-				year: vacationAdjustment.year,
-				month: vacationAdjustment.accrualMonth,
-				days: vacationAdjustment.days,
-			})
-			.from(vacationAdjustment)
-			.innerJoin(employee, eq(employee.id, vacationAdjustment.employeeId))
-			.where(
-				and(
-					eq(employee.organizationId, input.organizationId),
-					eq(vacationAdjustment.employeeId, input.employeeId),
-					eq(vacationAdjustment.kind, "accrual"),
-				),
+	// One after another: `client` may be one connection, and pg@9 refuses a query while another is executing.
+	const employment = await loadEmployeeEmployments(client, {
+		organizationId: input.organizationId,
+		employeeIds: [input.employeeId],
+		employeeEmploymentStartDateOverrides: new Map([
+			[input.employeeId, input.employmentStartDate],
+		]),
+	});
+	const existing = await client
+		.select({
+			id: vacationAdjustment.id,
+			year: vacationAdjustment.year,
+			month: vacationAdjustment.accrualMonth,
+			days: vacationAdjustment.days,
+		})
+		.from(vacationAdjustment)
+		.innerJoin(employee, eq(employee.id, vacationAdjustment.employeeId))
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(vacationAdjustment.employeeId, input.employeeId),
+				eq(vacationAdjustment.kind, "accrual"),
 			),
-	]);
+		);
 	const person = employment.get(input.employeeId);
 	const result: EmploymentVacationRefresh = {
 		accruals: [],

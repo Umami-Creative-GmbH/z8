@@ -274,180 +274,184 @@ export async function adjustVacationAbsencesForSickness(input: {
 		with: { category: true },
 	});
 
-	const summaries = await Promise.all(
-		overlappingVacations.map(
-			async (vacation): Promise<VacationOverrideSummary> => {
-				const summary: VacationOverrideSummary = {
-					updatedAbsenceIds: [],
-					createdAbsenceIds: [],
-					deletedAbsenceIds: [],
-				};
+	const adjustVacation = async (
+		vacation: (typeof overlappingVacations)[number],
+	): Promise<VacationOverrideSummary> => {
+		const summary: VacationOverrideSummary = {
+			updatedAbsenceIds: [],
+			createdAbsenceIds: [],
+			deletedAbsenceIds: [],
+		};
 
-				if (vacation.status !== "pending" && vacation.status !== "approved")
-					return summary;
-				if (!vacation.category.countsAgainstVacation) return summary;
-				if (
-					vacation.startPeriod !== "full_day" ||
-					vacation.endPeriod !== "full_day"
-				)
-					return summary;
-				if (
-					!dateRangesOverlap(
-						input.sickStartDate,
-						input.sickEndDate,
-						vacation.startDate,
-						vacation.endDate,
-					)
-				) {
-					return summary;
-				}
+		if (vacation.status !== "pending" && vacation.status !== "approved")
+			return summary;
+		if (!vacation.category.countsAgainstVacation) return summary;
+		if (
+			vacation.startPeriod !== "full_day" ||
+			vacation.endPeriod !== "full_day"
+		)
+			return summary;
+		if (
+			!dateRangesOverlap(
+				input.sickStartDate,
+				input.sickEndDate,
+				vacation.startDate,
+				vacation.endDate,
+			)
+		) {
+			return summary;
+		}
 
-				const segments = splitVacationAroundSickRange({
-					vacationStartDate: vacation.startDate,
-					vacationEndDate: vacation.endDate,
-					sickStartDate: input.sickStartDate,
-					sickEndDate: input.sickEndDate,
-				});
+		const segments = splitVacationAroundSickRange({
+			vacationStartDate: vacation.startDate,
+			vacationEndDate: vacation.endDate,
+			sickStartDate: input.sickStartDate,
+			sickEndDate: input.sickEndDate,
+		});
 
-				if (segments.length === 0) {
-					if (vacation.status === "pending") {
-						await input.tx
-							.update(approvalRequest)
-							.set({
-								status: "rejected",
-								approvedAt: currentTimestamp(),
-								rejectionReason: SICK_OVERRIDE_REJECTION_REASON,
-							})
-							.where(
-								and(
-									eq(approvalRequest.entityType, "absence_entry"),
-									eq(approvalRequest.entityId, vacation.id),
-									eq(approvalRequest.organizationId, input.organizationId),
-									eq(approvalRequest.status, "pending"),
-								),
-							);
-					}
-					await input.tx
-						.update(absenceEntry)
-						.set({
-							status: "rejected",
-							rejectionReason: SICK_OVERRIDE_REJECTION_REASON,
-						})
-						.where(
-							and(
-								eq(absenceEntry.id, vacation.id),
-								eq(absenceEntry.organizationId, input.organizationId),
-							),
-						);
-					await rejectCanonicalAbsenceInTransaction(input.tx, {
-						organizationId: input.organizationId,
-						canonicalRecordId: vacation.canonicalRecordId,
-						updatedBy: input.updatedBy,
-					});
-					summary.deletedAbsenceIds.push(vacation.id);
-					if (vacation.status === "approved") {
-						summary.overriddenApprovedAbsenceIds = [vacation.id];
-					}
-					return summary;
-				}
-
-				const [firstSegment, secondSegment] = segments;
+		if (segments.length === 0) {
+			if (vacation.status === "pending") {
 				await input.tx
-					.update(absenceEntry)
+					.update(approvalRequest)
 					.set({
-						startDate: firstSegment.startDate,
-						startPeriod: "full_day",
-						endDate: firstSegment.endDate,
-						endPeriod: "full_day",
+						status: "rejected",
+						approvedAt: currentTimestamp(),
+						rejectionReason: SICK_OVERRIDE_REJECTION_REASON,
 					})
 					.where(
 						and(
-							eq(absenceEntry.id, vacation.id),
-							eq(absenceEntry.organizationId, input.organizationId),
+							eq(approvalRequest.entityType, "absence_entry"),
+							eq(approvalRequest.entityId, vacation.id),
+							eq(approvalRequest.organizationId, input.organizationId),
+							eq(approvalRequest.status, "pending"),
 						),
 					);
-				await updateCanonicalAbsenceRangeInTransaction(input.tx, {
+			}
+			await input.tx
+				.update(absenceEntry)
+				.set({
+					status: "rejected",
+					rejectionReason: SICK_OVERRIDE_REJECTION_REASON,
+				})
+				.where(
+					and(
+						eq(absenceEntry.id, vacation.id),
+						eq(absenceEntry.organizationId, input.organizationId),
+					),
+				);
+			await rejectCanonicalAbsenceInTransaction(input.tx, {
+				organizationId: input.organizationId,
+				canonicalRecordId: vacation.canonicalRecordId,
+				updatedBy: input.updatedBy,
+			});
+			summary.deletedAbsenceIds.push(vacation.id);
+			if (vacation.status === "approved") {
+				summary.overriddenApprovedAbsenceIds = [vacation.id];
+			}
+			return summary;
+		}
+
+		const [firstSegment, secondSegment] = segments;
+		await input.tx
+			.update(absenceEntry)
+			.set({
+				startDate: firstSegment.startDate,
+				startPeriod: "full_day",
+				endDate: firstSegment.endDate,
+				endPeriod: "full_day",
+			})
+			.where(
+				and(
+					eq(absenceEntry.id, vacation.id),
+					eq(absenceEntry.organizationId, input.organizationId),
+				),
+			);
+		await updateCanonicalAbsenceRangeInTransaction(input.tx, {
+			organizationId: input.organizationId,
+			canonicalRecordId: vacation.canonicalRecordId,
+			startDate: firstSegment.startDate,
+			startPeriod: "full_day",
+			endDate: firstSegment.endDate,
+			endPeriod: "full_day",
+			updatedBy: input.updatedBy,
+		});
+		summary.updatedAbsenceIds.push(vacation.id);
+
+		if (secondSegment) {
+			const canonicalRecordId = await createCanonicalAbsenceInTransaction(
+				input.tx,
+				{
 					organizationId: input.organizationId,
-					canonicalRecordId: vacation.canonicalRecordId,
-					startDate: firstSegment.startDate,
+					employeeId: vacation.employeeId,
+					absenceCategoryId: vacation.categoryId,
+					startDate: secondSegment.startDate,
 					startPeriod: "full_day",
-					endDate: firstSegment.endDate,
+					endDate: secondSegment.endDate,
 					endPeriod: "full_day",
-					updatedBy: input.updatedBy,
-				});
-				summary.updatedAbsenceIds.push(vacation.id);
+					countsAgainstVacation: vacation.category.countsAgainstVacation,
+					requiresApproval: vacation.category.requiresApproval,
+					approvalState: vacation.status,
+					createdBy: input.updatedBy,
+				},
+			);
+			const [created] = await input.tx
+				.insert(absenceEntry)
+				.values({
+					employeeId: vacation.employeeId,
+					organizationId: input.organizationId,
+					categoryId: vacation.categoryId,
+					startDate: secondSegment.startDate,
+					startPeriod: "full_day",
+					endDate: secondSegment.endDate,
+					endPeriod: "full_day",
+					status: vacation.status,
+					notes: vacation.notes,
+					// The deputy covers the split-off part too (#1013).
+					deputyEmployeeId: vacation.deputyEmployeeId,
+					deputyAssignedAt: vacation.deputyAssignedAt,
+					approvedBy: vacation.approvedBy,
+					approvedAt: vacation.approvedAt,
+					canonicalRecordId,
+				})
+				.returning({ id: absenceEntry.id });
+			summary.createdAbsenceIds.push(created.id);
 
-				if (secondSegment) {
-					const canonicalRecordId = await createCanonicalAbsenceInTransaction(
-						input.tx,
-						{
-							organizationId: input.organizationId,
-							employeeId: vacation.employeeId,
-							absenceCategoryId: vacation.categoryId,
-							startDate: secondSegment.startDate,
-							startPeriod: "full_day",
-							endDate: secondSegment.endDate,
-							endPeriod: "full_day",
-							countsAgainstVacation: vacation.category.countsAgainstVacation,
-							requiresApproval: vacation.category.requiresApproval,
-							approvalState: vacation.status,
-							createdBy: input.updatedBy,
-						},
-					);
-					const [created] = await input.tx
-						.insert(absenceEntry)
-						.values({
-							employeeId: vacation.employeeId,
-							organizationId: input.organizationId,
-							categoryId: vacation.categoryId,
-							startDate: secondSegment.startDate,
-							startPeriod: "full_day",
-							endDate: secondSegment.endDate,
-							endPeriod: "full_day",
-							status: vacation.status,
-							notes: vacation.notes,
-							// The deputy covers the split-off part too (#1013).
-							deputyEmployeeId: vacation.deputyEmployeeId,
-							deputyAssignedAt: vacation.deputyAssignedAt,
-							approvedBy: vacation.approvedBy,
-							approvedAt: vacation.approvedAt,
-							canonicalRecordId,
-						})
-						.returning({ id: absenceEntry.id });
-					summary.createdAbsenceIds.push(created.id);
+			if (vacation.status === "pending") {
+				const existingApproval =
+					await input.tx.query.approvalRequest.findFirst({
+						where: and(
+							eq(approvalRequest.organizationId, input.organizationId),
+							eq(approvalRequest.entityType, "absence_entry"),
+							eq(approvalRequest.entityId, vacation.id),
+						),
+					});
 
-					if (vacation.status === "pending") {
-						const existingApproval =
-							await input.tx.query.approvalRequest.findFirst({
-								where: and(
-									eq(approvalRequest.organizationId, input.organizationId),
-									eq(approvalRequest.entityType, "absence_entry"),
-									eq(approvalRequest.entityId, vacation.id),
-								),
-							});
-
-						if (existingApproval) {
-							await input.tx.insert(approvalRequest).values({
-								organizationId: input.organizationId,
-								entityType: existingApproval.entityType,
-								entityId: created.id,
-								canonicalRecordId,
-								requestedBy: existingApproval.requestedBy,
-								approverId: existingApproval.approverId,
-								status: existingApproval.status,
-								reason: existingApproval.reason,
-								notes: existingApproval.notes,
-								approvedAt: existingApproval.approvedAt,
-								rejectionReason: existingApproval.rejectionReason,
-							});
-						}
-					}
+				if (existingApproval) {
+					await input.tx.insert(approvalRequest).values({
+						organizationId: input.organizationId,
+						entityType: existingApproval.entityType,
+						entityId: created.id,
+						canonicalRecordId,
+						requestedBy: existingApproval.requestedBy,
+						approverId: existingApproval.approverId,
+						status: existingApproval.status,
+						reason: existingApproval.reason,
+						notes: existingApproval.notes,
+						approvedAt: existingApproval.approvedAt,
+						rejectionReason: existingApproval.rejectionReason,
+					});
 				}
+			}
+		}
 
-				return summary;
-			},
-		),
-	);
+		return summary;
+	};
+
+	// One after another: `input.tx` is one connection, and pg@9 refuses a query while another is executing.
+	const summaries: VacationOverrideSummary[] = [];
+	for (const vacation of overlappingVacations) {
+		summaries.push(await adjustVacation(vacation));
+	}
 
 	return summaries.reduce<VacationOverrideSummary>(
 		(summary, vacationSummary) => ({

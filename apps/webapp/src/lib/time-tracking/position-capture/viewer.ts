@@ -52,30 +52,29 @@ export async function loadPositionStampViewer(
 		ownEmployeeId: null,
 		organizationWide: null,
 	};
-	const [[membership], [profile]] = await Promise.all([
-		db
-			.select({ role: member.role })
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, userId),
-					eq(member.organizationId, organizationId),
-					eq(member.status, "approved"),
-				),
-			)
-			.limit(1),
-		db
-			.select({ id: employee.id })
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, userId),
-					eq(employee.organizationId, organizationId),
-					employeeHasOrganizationAccess(),
-				),
-			)
-			.limit(1),
-	]);
+	// One after another: `db` may be one connection, and pg@9 refuses a query while another is executing.
+	const [membership] = await db
+		.select({ role: member.role })
+		.from(member)
+		.where(
+			and(
+				eq(member.userId, userId),
+				eq(member.organizationId, organizationId),
+				eq(member.status, "approved"),
+			),
+		)
+		.limit(1);
+	const [profile] = await db
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.userId, userId),
+				eq(employee.organizationId, organizationId),
+				employeeHasOrganizationAccess(),
+			),
+		)
+		.limit(1);
 	if (!membership) return none;
 
 	const ownEmployeeId = profile?.id ?? null;

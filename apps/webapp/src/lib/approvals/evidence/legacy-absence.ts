@@ -331,14 +331,14 @@ export async function captureLegacyAbsenceSubmissionEvidence(
 		});
 	}
 
-	const [subject, submitter] = await Promise.all([
-		loadEmployeeLabel(database, input.organizationId, {
-			employeeId: input.subjectEmployeeId,
-		}),
-		loadEmployeeLabel(database, input.organizationId, {
-			userId: input.submitterUserId,
-		}),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const subject = await loadEmployeeLabel(database, input.organizationId, {
+		employeeId: input.subjectEmployeeId,
+	});
+	const submitter = await loadEmployeeLabel(database, input.organizationId, {
+		userId: input.submitterUserId,
+	});
 	if (!subject || !submitter || submitter.userId !== input.submitterUserId) {
 		throw new ApprovalEvidenceError("evidence_incomplete", { field: "roles" });
 	}
@@ -526,13 +526,13 @@ export async function prepareLegacyAbsenceDecisionEvidence(
 		organizationId: input.organizationId,
 		absenceId: input.absenceId,
 	};
-	const [mode, revision] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
-			workflowType: "absence",
-		}),
-		loadLegacyAbsenceSubmittedRevision(database, scope),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const mode = await readApprovalEvidenceMode(database, {
+		organizationId: input.organizationId,
+		workflowType: "absence",
+	});
+	const revision = await loadLegacyAbsenceSubmittedRevision(database, scope);
 	if (!revision) {
 		if (mode === "capture") {
 			throw new ApprovalEvidenceError("evidence_required");

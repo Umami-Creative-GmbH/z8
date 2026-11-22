@@ -101,28 +101,27 @@ export async function deleteOwnDraftReport(
 		if (!isDeletableDraftReport(report)) return { kind: "not_deletable" };
 
 		const legacyClaim = await lockContinuedLegacyDraft(tx, owner, input.reportId);
-		const [receipts, attachments] = await Promise.all([
-			tx
-				.select({ id: travelExpenseReportReceipt.id })
-				.from(travelExpenseReportReceipt)
-				.where(
-					and(
-						eq(travelExpenseReportReceipt.reportId, input.reportId),
-						eq(travelExpenseReportReceipt.organizationId, owner.organizationId),
-					),
+		// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+		const receipts = await tx
+			.select({ id: travelExpenseReportReceipt.id })
+			.from(travelExpenseReportReceipt)
+			.where(
+				and(
+					eq(travelExpenseReportReceipt.reportId, input.reportId),
+					eq(travelExpenseReportReceipt.organizationId, owner.organizationId),
 				),
-			legacyClaim
-				? tx
-						.select()
-						.from(travelExpenseAttachment)
-						.where(
-							and(
-								eq(travelExpenseAttachment.claimId, legacyClaim.id),
-								eq(travelExpenseAttachment.organizationId, owner.organizationId),
-							),
-						)
-				: Promise.resolve([]),
-		]);
+			);
+		const attachments = legacyClaim
+			? await tx
+					.select()
+					.from(travelExpenseAttachment)
+					.where(
+						and(
+							eq(travelExpenseAttachment.claimId, legacyClaim.id),
+							eq(travelExpenseAttachment.organizationId, owner.organizationId),
+						),
+					)
+			: [];
 
 		await tx.delete(travelExpenseReport).where(ownedReport(owner, input.reportId));
 		if (legacyClaim) {

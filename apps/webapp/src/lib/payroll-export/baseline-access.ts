@@ -47,24 +47,23 @@ export async function requireBaselineActor(
 		auth.employee.organizationId !== organizationId
 	)
 		throw denied(auth.user.id);
-	const [actor, grant] = await Promise.all([
-		database.query.employee.findFirst({
-			where: and(
-				eq(employee.id, auth.employee.id),
-				eq(employee.organizationId, organizationId),
-				eq(employee.userId, auth.user.id),
-				eq(employee.isActive, true),
-			),
-			columns: { id: true },
-		}),
-		database.query.payrollAccessGrant.findFirst({
-			where: and(
-				eq(payrollAccessGrant.organizationId, organizationId),
-				eq(payrollAccessGrant.payrollEmployeeId, auth.employee.id),
-				eq(payrollAccessGrant.isActive, true),
-			),
-		}),
-	]);
+	// One after another: `database` may be a transaction, one connection, and pg@9 refuses a query while another is executing.
+	const actor = await database.query.employee.findFirst({
+		where: and(
+			eq(employee.id, auth.employee.id),
+			eq(employee.organizationId, organizationId),
+			eq(employee.userId, auth.user.id),
+			eq(employee.isActive, true),
+		),
+		columns: { id: true },
+	});
+	const grant = await database.query.payrollAccessGrant.findFirst({
+		where: and(
+			eq(payrollAccessGrant.organizationId, organizationId),
+			eq(payrollAccessGrant.payrollEmployeeId, auth.employee.id),
+			eq(payrollAccessGrant.isActive, true),
+		),
+	});
 	if (!actor || !grant) throw denied(auth.user.id);
 	const activeScope = await resolvePayrollAccessibleEmployeeIds(
 		{

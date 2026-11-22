@@ -35,21 +35,19 @@ export async function prepareTravelExpenseReviewEvidence(
 	input: { organizationId: string; claimId: string },
 	database: ApprovalDatabase = db,
 ): Promise<TravelExpenseReviewEvidence> {
-	const [mode, revision] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
-			workflowType: "travel_expense",
-		}),
-		loadLegacyTravelExpenseSubmittedRevision(database, input),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const mode = await readApprovalEvidenceMode(database, {
+		organizationId: input.organizationId,
+		workflowType: "travel_expense",
+	});
+	const revision = await loadLegacyTravelExpenseSubmittedRevision(database, input);
 	if (!revision) return { status: "not_captured", held: mode === "capture" };
-	const [comparison, decisions] = await Promise.all([
-		compareTravelExpenseWithSubmittedRevision(database, revision),
-		listLegacyDecisionEvidence(database, {
-			organizationId: input.organizationId,
-			submittedRevisionId: revision.id,
-		}),
-	]);
+	const comparison = await compareTravelExpenseWithSubmittedRevision(database, revision);
+	const decisions = await listLegacyDecisionEvidence(database, {
+		organizationId: input.organizationId,
+		submittedRevisionId: revision.id,
+	});
 	return { status: "evidenced", revision, comparison, decisions };
 }
 
