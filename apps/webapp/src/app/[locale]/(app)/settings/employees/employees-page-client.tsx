@@ -21,8 +21,8 @@ import type {
 	InvitationWithInviter,
 	MemberWithUserAndEmployee,
 } from "@/components/organization/people-management-types";
-import { EmploymentDateUploadDialog } from "@/components/settings/employment-date-upload-dialog";
-import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
+import { EmploymentDateUploadPanel } from "@/components/settings/employment-date-upload-panel";
+import { OpeningBalanceUploadPanel } from "@/components/settings/work-balance/opening-balance-upload-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -151,10 +151,7 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 	};
 
 	return (
-		<div
-			data-testid="employees-content"
-			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
-		>
+		<div data-testid="employees-content" className="page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("settings.employees.title", "Employees")}
 				description={t("settings.employees.description", "Manage employees, members, and invites")}
@@ -162,8 +159,8 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 				actions={
 					shouldShowPeopleTabs ? (
 						<>
-							<EmploymentDateUploadDialog />
-							<OpeningBalanceUploadDialog />
+							<EmploymentDateUploadPanel />
+							<OpeningBalanceUploadPanel />
 							<Button onClick={() => setInviteDialogOpen(true)}>
 								<IconPlus className="size-4" aria-hidden="true" />
 								{t("organization.invite.title", "Invite Member")}
@@ -529,9 +526,9 @@ function EmployeeDirectoryTab(props: {
 											<TableCell colSpan={columns.length} className="h-24 text-center">
 												<div className="flex flex-col items-center justify-center">
 													<IconUser
-													className="mb-2 size-8 text-muted-foreground"
-													aria-hidden="true"
-												/>
+														className="mb-2 size-8 text-muted-foreground"
+														aria-hidden="true"
+													/>
 													<p className="text-sm text-muted-foreground">
 														{t("settings.employees.directory.emptyState", "No employees found")}
 													</p>

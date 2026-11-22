@@ -470,4 +470,33 @@ describe("KioskSettings", () => {
 		expect(within(row).getByText("Revoked")).toBeTruthy();
 		expect(within(row).queryByRole("button")).toBeNull();
 	});
+
+	it("renders kiosk create/edit in ActionPanel, preserves values on failure, and blocks duplicate submissions", async () => {
+		let finish!: (value: { success: false; error: string }) => void;
+		mocks.createKioskAction.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		);
+		renderSettings();
+
+		fireEvent.click(screen.getByRole("button", { name: "Add kiosk" }));
+		const dialog = screen.getByRole("dialog");
+		expect(dialog.getAttribute("data-slot")).toBe("action-panel-content");
+
+		const nameInput = screen.getByLabelText("Name");
+		fireEvent.change(nameInput, { target: { value: "Warehouse Gate" } });
+		const submitButton = within(dialog).getByRole("button", { name: "Create kiosk" });
+		fireEvent.click(submitButton);
+
+		await waitFor(() => expect(mocks.createKioskAction).toHaveBeenCalledTimes(1));
+		expect(submitButton).toHaveProperty("disabled", true);
+		fireEvent.submit(nameInput.closest("form") as HTMLFormElement);
+		expect(mocks.createKioskAction).toHaveBeenCalledTimes(1);
+
+		finish({ success: false, error: "Could not save kiosk" });
+		await waitFor(() => expect(submitButton).toHaveProperty("disabled", false));
+		expect((nameInput as HTMLInputElement).value).toBe("Warehouse Gate");
+	});
 });

@@ -1,11 +1,10 @@
 "use client";
 
-/* eslint-disable react-doctor/no-giant-component */
-
 import { IconChevronDown, IconChevronUp, IconLoader2, IconX } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
 	createWorkCategorySet,
@@ -26,13 +25,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ClientForm } from "@/components/ui/client-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
-import { useEditSession } from "@/hooks/use-edit-session";
 import {
 	actionErrorMessage,
 	type RefusalOverrides,
@@ -81,7 +82,18 @@ interface SetCategory {
 	sortOrder: number;
 }
 
-export function WorkCategorySetDialog({
+interface WorkCategorySetFormValues {
+	name: string;
+	description: string;
+	categoryIds: string[];
+}
+
+export function WorkCategorySetDialog(props: WorkCategorySetDialogProps) {
+	const key = `${String(props.open)}:${props.categorySet?.id ?? "new"}`;
+	return <WorkCategorySetDialogContent key={key} {...props} />;
+}
+
+function WorkCategorySetDialogContent({
 	open,
 	onOpenChange,
 	organizationId,
@@ -91,17 +103,8 @@ export function WorkCategorySetDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const isEditing = !!categorySet;
-	const metaScopeKey = `${open}:${categorySet?.id ?? "new"}`;
-
-	const [metaDraft, setMetaDraft] = useState<{
-		scopeKey: string;
-		name: string;
-		description: string;
-	} | null>(null);
-	const [selectionDraft, setSelectionDraft] = useState<{
-		scopeKey: string;
-		ids: string[];
-	} | null>(null);
+	const submittingRef = useRef(false);
+	const hydratedDetailRef = useRef(false);
 
 	// Fetch all org-level categories
 	const { data: orgCategoriesResult, isLoading: isLoadingOrgCategories } = useQuery({
@@ -133,208 +136,140 @@ export function WorkCategorySetDialog({
 		enabled: isEditing && open,
 	});
 
-	useEditSession({
-		open,
-		scope: categorySet?.id ?? "new",
-		ready: !isEditing || !!setDetail,
-		initialize: () => {
-			setMetaDraft(null);
-			setSelectionDraft(null);
-		},
-	});
-
-	const selectionScopeKey = metaScopeKey;
-
-	const initialSelectedCategoryIds = isEditing
-		? (setDetail?.categories.map((c) => c.id) ?? [])
-		: [];
-	const selectedCategoryIds =
-		selectionDraft?.scopeKey === selectionScopeKey
-			? selectionDraft.ids
-			: initialSelectedCategoryIds;
-
-	const metaValues =
-		metaDraft?.scopeKey === metaScopeKey
-			? { name: metaDraft.name, description: metaDraft.description }
-			: {
-					name: categorySet?.name || "",
-					description: categorySet?.description || "",
-				};
-
-	// Create set mutation
 	const createSetMutation = useMutation({
 		mutationFn: (data: { name: string; description: string | null; categoryIds: string[] }) =>
-			createWorkCategorySet({
-				name: data.name,
-				description: data.description,
-				categoryIds: data.categoryIds,
-			}),
-		onSuccess: (result) => {
-			if (result.success) {
-				queryClient.invalidateQueries({
-					queryKey: queryKeys.workCategorySets.list(organizationId),
-				});
-				toast.success(t("settings.workCategories.setCreated", "Category set created"));
-				onSuccess();
-			} else {
-				toast.error(
-					actionErrorMessage(t, result, SET_REFUSALS, [
-						"settings.workCategories.setCreateFailed",
-						"Failed to create category set",
-					]),
-				);
-			}
-		},
-		onError: () => {
-			toast.error(t("settings.workCategories.setCreateFailed", "Failed to create category set"));
-		},
+			createWorkCategorySet(data),
 	});
 
-	// Update set mutation
 	const updateSetMutation = useMutation({
 		mutationFn: (data: { setId: string; name: string; description: string | null }) =>
-			updateWorkCategorySet({
-				setId: data.setId,
-				name: data.name,
-				description: data.description,
-			}),
-		onSuccess: async (result) => {
-			if (result.success) {
-				if (!categorySet?.id) {
-					toast.error(
-						t("settings.workCategories.setUpdateFailed", "Failed to update category set"),
-					);
-					return;
-				}
+			updateWorkCategorySet(data),
+	});
 
-				// Also update the categories in the set
-				const updateResult = await updateSetCategories({ setId: categorySet.id, categoryIds: selectedCategoryIds });
-				if (updateResult.success) {
-					toast.success(t("settings.workCategories.setUpdated", "Category set updated"));
-					queryClient.invalidateQueries({
-						queryKey: queryKeys.workCategorySets.detail(categorySet.id),
+	const validateName = (value: string) =>
+		value.trim()
+			? undefined
+			: t("settings.workCategories.setNameRequired", "Category set name is required");
+
+	const form = useForm({
+		defaultValues: {
+			name: categorySet?.name || "",
+			description: categorySet?.description || "",
+			categoryIds: [] as string[],
+		} satisfies WorkCategorySetFormValues,
+		onSubmit: async ({ value }) => {
+			if (submittingRef.current) return;
+			submittingRef.current = true;
+
+			const run = async () => {
+				try {
+					if (isEditing && categorySet) {
+						const result = await updateSetMutation.mutateAsync({
+							setId: categorySet.id,
+							name: value.name.trim(),
+							description: value.description.trim() || null,
+						});
+						if (!result.success) {
+							toast.error(
+								actionErrorMessage(t, result, SET_REFUSALS, [
+									"settings.workCategories.setUpdateFailed",
+									"Failed to update category set",
+								]),
+							);
+							return;
+						}
+
+						const updateResult = await updateSetCategories({
+							setId: categorySet.id,
+							categoryIds: value.categoryIds,
+						});
+						if (!updateResult.success) {
+							toast.error(
+								actionErrorMessage(t, updateResult, {}, [
+									"settings.workCategories.setUpdateFailed",
+									"Failed to update categories",
+								]),
+							);
+							return;
+						}
+
+						toast.success(t("settings.workCategories.setUpdated", "Category set updated"));
+						void queryClient.invalidateQueries({
+							queryKey: queryKeys.workCategorySets.detail(categorySet.id),
+						});
+						void queryClient.invalidateQueries({
+							queryKey: queryKeys.workCategorySets.list(organizationId),
+						});
+						onSuccess();
+						return;
+					}
+
+					const result = await createSetMutation.mutateAsync({
+						name: value.name.trim(),
+						description: value.description.trim() || null,
+						categoryIds: value.categoryIds,
 					});
-					queryClient.invalidateQueries({
+					if (!result.success) {
+						toast.error(
+							actionErrorMessage(t, result, SET_REFUSALS, [
+								"settings.workCategories.setCreateFailed",
+								"Failed to create category set",
+							]),
+						);
+						return;
+					}
+
+					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workCategorySets.list(organizationId),
 					});
+					toast.success(t("settings.workCategories.setCreated", "Category set created"));
 					onSuccess();
-				} else {
+				} catch {
 					toast.error(
-						actionErrorMessage(t, updateResult, {}, [
-							"settings.workCategories.setUpdateFailed",
-							"Failed to update categories",
-						]),
+						isEditing
+							? t("settings.workCategories.setUpdateFailed", "Failed to update category set")
+							: t("settings.workCategories.setCreateFailed", "Failed to create category set"),
 					);
 				}
-			} else {
-				toast.error(
-					actionErrorMessage(t, result, SET_REFUSALS, [
-						"settings.workCategories.setUpdateFailed",
-						"Failed to update category set",
-					]),
-				);
-			}
-		},
-		onError: () => {
-			toast.error(t("settings.workCategories.setUpdateFailed", "Failed to update category set"));
+			};
+
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await run().finally(() => {
+				submittingRef.current = false;
+			});
 		},
 	});
 
-	// Toggle category selection
-	const handleToggleCategory = (categoryId: string) => {
-		setSelectionDraft((prev) => {
-			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
-			const nextIds = currentIds.includes(categoryId)
-				? currentIds.filter((id) => id !== categoryId)
-				: [...currentIds, categoryId];
-
-			return {
-				scopeKey: selectionScopeKey,
-				ids: nextIds,
-			};
-		});
-	};
-
-	// Move category up in order
-	const moveUp = (index: number) => {
-		if (index === 0) return;
-		setSelectionDraft((prev) => {
-			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
-			const newIds = [...currentIds];
-			[newIds[index - 1], newIds[index]] = [newIds[index], newIds[index - 1]];
-			return {
-				scopeKey: selectionScopeKey,
-				ids: newIds,
-			};
-		});
-	};
-
-	// Move category down in order
-	const moveDown = (index: number) => {
-		setSelectionDraft((prev) => {
-			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
-			if (index === currentIds.length - 1) {
-				return {
-					scopeKey: selectionScopeKey,
-					ids: currentIds,
-				};
-			}
-
-			const newIds = [...currentIds];
-			[newIds[index], newIds[index + 1]] = [newIds[index + 1], newIds[index]];
-			return {
-				scopeKey: selectionScopeKey,
-				ids: newIds,
-			};
-		});
-	};
-
-	// Remove category from selection
-	const removeCategory = (categoryId: string) => {
-		setSelectionDraft((prev) => {
-			const currentIds = prev?.scopeKey === selectionScopeKey ? prev.ids : selectedCategoryIds;
-			return {
-				scopeKey: selectionScopeKey,
-				ids: currentIds.filter((id) => id !== categoryId),
-			};
-		});
-	};
-
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-
-		if (isEditing && categorySet) {
-			updateSetMutation.mutate({
-				setId: categorySet.id,
-				name: metaValues.name,
-				description: metaValues.description || null,
-			});
-			return;
+	useEffect(() => {
+		if (isEditing && setDetail && !hydratedDetailRef.current) {
+			hydratedDetailRef.current = true;
+			form.setFieldValue(
+				"categoryIds",
+				setDetail.categories.map((c) => c.id),
+			);
 		}
-
-		createSetMutation.mutate({
-			name: metaValues.name,
-			description: metaValues.description || null,
-			categoryIds: selectedCategoryIds,
-		});
-	};
+	}, [form, isEditing, setDetail]);
 
 	const orgCategories = orgCategoriesResult || [];
 	const isLoading = isLoadingOrgCategories || (isEditing && isLoadingDetail);
-	const isMutating = createSetMutation.isPending || updateSetMutation.isPending;
-	const selectedCategoryIdSet = new Set(selectedCategoryIds);
 
-	// Get selected categories in order with their data
-	const selectedCategories = selectedCategoryIds
-		.map((id) => orgCategories.find((c) => c.id === id))
-		.filter((c): c is OrgCategory => c !== undefined);
-
-	// Get unselected categories
-	const unselectedCategories = orgCategories.filter((c) => !selectedCategoryIdSet.has(c.id));
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen && submittingRef.current) return;
+		onOpenChange(nextOpen);
+	};
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent size="wide">
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent
+				size="wide"
+				onEscapeKeyDown={(event) => {
+					if (submittingRef.current) event.preventDefault();
+				}}
+				onInteractOutside={(event) => {
+					if (submittingRef.current) event.preventDefault();
+				}}
+			>
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
@@ -354,228 +289,304 @@ export function WorkCategorySetDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+				<ClientForm
+					noValidate
+					onSubmit={() => {
+						if (submittingRef.current || isLoading) return;
+						void form.handleSubmit();
+					}}
+					className="flex min-h-0 flex-1 flex-col"
+				>
 					<ActionPanelBody className="space-y-4">
 						{/* Set Name */}
-						<div className="space-y-2 px-1">
-							<Label htmlFor="set-name">{t("settings.workCategories.setName", "Name")}</Label>
-							<Input
-								id="set-name"
-								value={metaValues.name}
-								onChange={(e) => {
-									setMetaDraft({
-										scopeKey: metaScopeKey,
-										name: e.target.value,
-										description: metaValues.description,
-									});
-								}}
-								placeholder={t(
-									"settings.workCategories.setNamePlaceholder",
-									"e.g., Travel Categories",
-								)}
-							/>
-						</div>
+						<form.Field
+							name="name"
+							validators={{
+								onSubmit: ({ value }) => validateName(value),
+								onChange: ({ value, fieldApi }) =>
+									fieldApi.state.meta.errors.length > 0 ? validateName(value) : undefined,
+							}}
+						>
+							{(field) => (
+								<TFormItem className="px-1">
+									<TFormLabel hasError={fieldHasError(field)} required>
+										{t("settings.workCategories.setName", "Name")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<Input
+											name="name"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+											placeholder={t(
+												"settings.workCategories.setNamePlaceholder",
+												"e.g., Travel Categories",
+											)}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
 
 						{/* Set Description */}
-						<div className="space-y-2 px-1">
-							<Label htmlFor="set-description">
-								{t("settings.workCategories.setDescription", "Description")}
-							</Label>
-							<Textarea
-								id="set-description"
-								value={metaValues.description}
-								onChange={(e) => {
-									setMetaDraft({
-										scopeKey: metaScopeKey,
-										name: metaValues.name,
-										description: e.target.value,
-									});
-								}}
-								placeholder={t(
-									"settings.workCategories.setDescriptionPlaceholder",
-									"Optional description for this category set",
-								)}
-								rows={2}
-							/>
-						</div>
+						<form.Field name="description">
+							{(field) => (
+								<TFormItem className="px-1">
+									<TFormLabel>
+										{t("settings.workCategories.setDescription", "Description")}
+									</TFormLabel>
+									<TFormControl>
+										<Textarea
+											name="description"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+											placeholder={t(
+												"settings.workCategories.setDescriptionPlaceholder",
+												"Optional description for this category set",
+											)}
+											rows={2}
+										/>
+									</TFormControl>
+								</TFormItem>
+							)}
+						</form.Field>
 
 						<Separator />
 
 						{/* Categories Section */}
-						<div className="space-y-4 px-1">
-							<div className="flex items-center justify-between">
-								<Label>{t("settings.workCategories.selectCategories", "Select Categories")}</Label>
-								<Badge variant="secondary">
-									{selectedCategoryIds.length} {t("common.selected", "selected")}
-								</Badge>
-							</div>
+						<form.Field name="categoryIds">
+							{(field) => {
+								const selectedCategoryIds = field.state.value;
+								const selectedCategoryIdSet = new Set(selectedCategoryIds);
+								const selectedCategories = selectedCategoryIds
+									.map((id) => orgCategories.find((c) => c.id === id))
+									.filter((c): c is OrgCategory => c !== undefined);
+								const unselectedCategories = orgCategories.filter(
+									(c) => !selectedCategoryIdSet.has(c.id),
+								);
 
-							{isLoading ? (
-								<div className="space-y-2">
-									{[1, 2, 3].map((i) => (
-										<Skeleton key={i} className="h-12 w-full" />
-									))}
-								</div>
-							) : orgCategories.length === 0 ? (
-								<div className="py-8 text-center text-muted-foreground">
-									<p>
-										{t("settings.workCategories.noCategoriesAvailable", "No categories available")}
-									</p>
-									<p className="text-sm">
-										{t(
-											"settings.workCategories.createCategoriesFirst",
-											"Create categories in the Categories tab first",
-										)}
-									</p>
-								</div>
-							) : (
-								<div className="space-y-4">
-									{/* Selected categories (sortable) */}
-									{selectedCategories.length > 0 && (
-										<div className="space-y-2">
-											<p
-												id="work-category-set-order-hint"
-												className="text-sm text-muted-foreground"
-											>
-												{t(
-													"settings.workCategories.selectedCategoriesOrder",
-													"Selected categories (use the arrows to reorder)",
-												)}
-											</p>
-											<ol
-												aria-describedby="work-category-set-order-hint"
-												className="space-y-1 rounded-lg border p-2"
-											>
-												{selectedCategories.map((category, index) => (
-													<li
-														key={category.id}
-														className="flex items-center gap-2 rounded-md bg-muted/50 p-1"
-													>
-														<div className="flex items-center">
-															<Button
-																type="button"
-																variant="ghost"
-																size="icon"
-																className="size-8"
-																onClick={() => moveUp(index)}
-																disabled={index === 0}
-																aria-label={t(
-																	"settings.workCategories.moveCategoryUp",
-																	"Move {name} up",
-																	{ name: category.name },
-																)}
-															>
-																<IconChevronUp className="size-4" aria-hidden="true" />
-															</Button>
-															<Button
-																type="button"
-																variant="ghost"
-																size="icon"
-																className="size-8"
-																onClick={() => moveDown(index)}
-																disabled={index === selectedCategories.length - 1}
-																aria-label={t(
-																	"settings.workCategories.moveCategoryDown",
-																	"Move {name} down",
-																	{ name: category.name },
-																)}
-															>
-																<IconChevronDown className="size-4" aria-hidden="true" />
-															</Button>
-														</div>
-														{category.color && (
-															<div
-																className="size-4 rounded-full shrink-0"
-																style={{ backgroundColor: category.color }}
-																aria-hidden="true"
-															/>
-														)}
-														<span className="min-w-0 flex-1 truncate font-medium text-sm">
-															{category.name}
-														</span>
-														<Badge variant="outline" className="text-xs tabular-nums">
-															{formatFactorAsMultiplier(parseFloat(category.factor))}
-														</Badge>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															className="size-8"
-															onClick={() => removeCategory(category.id)}
-															aria-label={t(
-																"settings.workCategories.removeCategoryFromSet",
-																"Remove {name} from set",
-																{ name: category.name },
-															)}
-														>
-															<IconX className="size-4" aria-hidden="true" />
-														</Button>
-													</li>
+								const handleToggleCategory = (categoryId: string) => {
+									const nextIds = selectedCategoryIds.includes(categoryId)
+										? selectedCategoryIds.filter((id) => id !== categoryId)
+										: [...selectedCategoryIds, categoryId];
+									field.handleChange(nextIds);
+								};
+
+								const moveUp = (index: number) => {
+									if (index === 0) return;
+									const newIds = [...selectedCategoryIds];
+									[newIds[index - 1], newIds[index]] = [newIds[index], newIds[index - 1]];
+									field.handleChange(newIds);
+								};
+
+								const moveDown = (index: number) => {
+									if (index === selectedCategoryIds.length - 1) return;
+									const newIds = [...selectedCategoryIds];
+									[newIds[index], newIds[index + 1]] = [newIds[index + 1], newIds[index]];
+									field.handleChange(newIds);
+								};
+
+								const removeCategory = (categoryId: string) => {
+									field.handleChange(selectedCategoryIds.filter((id) => id !== categoryId));
+								};
+
+								return (
+									<div className="space-y-4 px-1">
+										<div className="flex items-center justify-between">
+											<Label>
+												{t("settings.workCategories.selectCategories", "Select Categories")}
+											</Label>
+											<Badge variant="secondary">
+												{selectedCategoryIds.length} {t("common.selected", "selected")}
+											</Badge>
+										</div>
+
+										{isLoading ? (
+											<div className="space-y-2">
+												{[1, 2, 3].map((i) => (
+													<Skeleton key={i} className="h-12 w-full" />
 												))}
-											</ol>
-										</div>
-									)}
-
-									{/* Available categories to add */}
-									{unselectedCategories.length > 0 && (
-										<div className="space-y-2">
-											<p className="text-sm text-muted-foreground">
-												{t("settings.workCategories.availableCategories", "Available categories")}
-											</p>
-											<ScrollArea className="h-[200px] rounded-lg border p-2">
-												<div className="space-y-1">
-													{unselectedCategories.map((category) => (
-														<button
-															key={category.id}
-															type="button"
-															className="flex items-center gap-2 rounded-md p-2 hover:bg-muted/50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-															onClick={() => handleToggleCategory(category.id)}
+											</div>
+										) : orgCategories.length === 0 ? (
+											<div className="py-8 text-center text-muted-foreground">
+												<p>
+													{t(
+														"settings.workCategories.noCategoriesAvailable",
+														"No categories available",
+													)}
+												</p>
+												<p className="text-sm">
+													{t(
+														"settings.workCategories.createCategoriesFirst",
+														"Create categories in the Categories tab first",
+													)}
+												</p>
+											</div>
+										) : (
+											<div className="space-y-4">
+												{selectedCategories.length > 0 && (
+													<div className="space-y-2">
+														<p
+															id="work-category-set-order-hint"
+															className="text-sm text-muted-foreground"
 														>
-															<Checkbox
-														checked={selectedCategoryIdSet.has(category.id)}
-																onCheckedChange={() => handleToggleCategory(category.id)}
-																tabIndex={-1}
-															/>
-															{category.color && (
-																<div
-																	className="size-4 rounded-full shrink-0"
-																	style={{ backgroundColor: category.color }}
-																	aria-hidden="true"
-																/>
+															{t(
+																"settings.workCategories.selectedCategoriesOrder",
+																"Selected categories (use the arrows to reorder)",
 															)}
-															<span className="flex-1 text-sm">{category.name}</span>
-															<Badge variant="outline" className="text-xs">
-																{formatFactorAsMultiplier(parseFloat(category.factor))}
-															</Badge>
-														</button>
-													))}
-												</div>
-											</ScrollArea>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
+														</p>
+														<ol
+															aria-describedby="work-category-set-order-hint"
+															className="space-y-1 rounded-lg border p-2"
+														>
+															{selectedCategories.map((category, index) => (
+																<li
+																	key={category.id}
+																	className="flex items-center gap-2 rounded-md bg-muted/50 p-1"
+																>
+																	<div className="flex items-center">
+																		<Button
+																			type="button"
+																			variant="ghost"
+																			size="icon"
+																			className="size-8"
+																			onClick={() => moveUp(index)}
+																			disabled={index === 0}
+																			aria-label={t(
+																				"settings.workCategories.moveCategoryUp",
+																				"Move {name} up",
+																				{ name: category.name },
+																			)}
+																		>
+																			<IconChevronUp className="size-4" aria-hidden="true" />
+																		</Button>
+																		<Button
+																			type="button"
+																			variant="ghost"
+																			size="icon"
+																			className="size-8"
+																			onClick={() => moveDown(index)}
+																			disabled={index === selectedCategories.length - 1}
+																			aria-label={t(
+																				"settings.workCategories.moveCategoryDown",
+																				"Move {name} down",
+																				{ name: category.name },
+																			)}
+																		>
+																			<IconChevronDown className="size-4" aria-hidden="true" />
+																		</Button>
+																	</div>
+																	{category.color && (
+																		<div
+																			className="size-4 shrink-0 rounded-full"
+																			style={{ backgroundColor: category.color }}
+																			aria-hidden="true"
+																		/>
+																	)}
+																	<span className="min-w-0 flex-1 truncate font-medium text-sm">
+																		{category.name}
+																	</span>
+																	<Badge variant="outline" className="text-xs tabular-nums">
+																		{formatFactorAsMultiplier(parseFloat(category.factor))}
+																	</Badge>
+																	<Button
+																		type="button"
+																		variant="ghost"
+																		size="icon"
+																		className="size-8"
+																		onClick={() => removeCategory(category.id)}
+																		aria-label={t(
+																			"settings.workCategories.removeCategoryFromSet",
+																			"Remove {name} from set",
+																			{ name: category.name },
+																		)}
+																	>
+																		<IconX className="size-4" aria-hidden="true" />
+																	</Button>
+																</li>
+															))}
+														</ol>
+													</div>
+												)}
+
+												{unselectedCategories.length > 0 && (
+													<div className="space-y-2">
+														<p className="text-sm text-muted-foreground">
+															{t(
+																"settings.workCategories.availableCategories",
+																"Available categories",
+															)}
+														</p>
+														<ScrollArea className="h-[200px] rounded-lg border p-2">
+															<div className="space-y-1">
+																{unselectedCategories.map((category) => (
+																	<button
+																		key={category.id}
+																		type="button"
+																		className="flex cursor-pointer items-center gap-2 rounded-md p-2 hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+																		onClick={() => handleToggleCategory(category.id)}
+																	>
+																		<Checkbox
+																			checked={selectedCategoryIdSet.has(category.id)}
+																			onCheckedChange={() => handleToggleCategory(category.id)}
+																			tabIndex={-1}
+																		/>
+																		{category.color && (
+																			<div
+																				className="size-4 shrink-0 rounded-full"
+																				style={{ backgroundColor: category.color }}
+																				aria-hidden="true"
+																			/>
+																		)}
+																		<span className="flex-1 text-sm">{category.name}</span>
+																		<Badge variant="outline" className="text-xs">
+																			{formatFactorAsMultiplier(parseFloat(category.factor))}
+																		</Badge>
+																	</button>
+																))}
+															</div>
+														</ScrollArea>
+													</div>
+												)}
+											</div>
+										)}
+									</div>
+								);
+							}}
+						</form.Field>
 					</ActionPanelBody>
 
-					<ActionPanelFooter className="pt-4 border-t">
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button type="submit" disabled={isMutating || isLoading}>
-							{isMutating ? (
+					<ActionPanelFooter className="border-t pt-4">
+						<form.Subscribe selector={(state) => state.isSubmitting}>
+							{(isSubmitting) => (
 								<>
-									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-									{t("common.saving", "Saving...")}
+									<Button
+										type="button"
+										variant="outline"
+										disabled={isSubmitting}
+										onClick={() => handleOpenChange(false)}
+									>
+										{t("common.cancel", "Cancel")}
+									</Button>
+									<Button type="submit" disabled={isSubmitting || isLoading}>
+										{isSubmitting ? (
+											<>
+												<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+												{t("common.saving", "Saving...")}
+											</>
+										) : isEditing ? (
+											t("common.save", "Save")
+										) : (
+											t("common.create", "Create")
+										)}
+									</Button>
 								</>
-							) : isEditing ? (
-								t("common.save", "Save")
-							) : (
-								t("common.create", "Create")
 							)}
-						</Button>
+						</form.Subscribe>
 					</ActionPanelFooter>
-				</form>
+				</ClientForm>
 			</ActionPanelContent>
 		</ActionPanel>
 	);

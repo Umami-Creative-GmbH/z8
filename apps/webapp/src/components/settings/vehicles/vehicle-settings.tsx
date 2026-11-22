@@ -38,7 +38,7 @@ import {
 	type ActionFailure,
 	actionErrorMessage,
 } from "@/lib/organization-action/action-error-message";
-import { VehicleDialog } from "./vehicle-dialog";
+import { VehiclePanel } from "./vehicle-panel";
 import { VehiclePhotosDialog } from "./vehicle-photos-dialog";
 import { VEHICLE_REFUSALS } from "./vehicle-refusals";
 
@@ -155,7 +155,7 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 				requestDeletion={requestDeletion}
 			/>
 
-			<VehicleDialog
+			<VehiclePanel
 				open={dialog !== null}
 				onOpenChange={(open) => {
 					if (!open) setDialog(null);

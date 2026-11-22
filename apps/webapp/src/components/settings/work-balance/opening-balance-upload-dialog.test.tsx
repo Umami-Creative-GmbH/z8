@@ -84,7 +84,7 @@ it("unlocks a discarded preview that finishes while its cached view is hidden", 
 	);
 	expect(screen.queryByText("Covered former employee")).toBeNull();
 	await userEvent.setup().click(screen.getByRole("button", { name: "Cancel" }));
-	expect(screen.queryByRole("dialog")).toBeNull();
+	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });
 
 it("discards a preview from an earlier cached visit and accepts a fresh file after it settles", async () => {
@@ -201,7 +201,7 @@ it("keeps the returned dialog open when an earlier commit's cache refresh finish
 	expect(screen.queryByText("Covered former employee")).toBeNull();
 	expect((screen.getByLabelText("CSV file") as HTMLInputElement).disabled).toBe(false);
 	await userEvent.setup().click(screen.getByRole("button", { name: "Cancel" }));
-	expect(screen.queryByRole("dialog")).toBeNull();
+	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });
 
 it("locks selection before file reading, prevents duplicates and keeps pending dismissal blocked", async () => {

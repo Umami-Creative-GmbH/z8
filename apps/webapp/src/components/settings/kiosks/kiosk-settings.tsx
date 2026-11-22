@@ -37,7 +37,7 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { Link } from "@/navigation";
 import { type KioskConfirmation, KioskConfirmationDialog } from "./kiosk-confirmation-dialog";
-import { KioskFormDialog } from "./kiosk-form-dialog";
+import { KioskFormPanel } from "./kiosk-form-panel";
 import { formatKioskInstant } from "./kiosk-format";
 import { KioskRefusalList } from "./kiosk-refusals";
 import { KIOSK_SETTINGS_REFUSALS } from "./kiosk-settings-refusals";
@@ -167,7 +167,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 				<KioskRefusalList refusals={data.refusals} />
 			) : null}
 
-			<KioskFormDialog
+			<KioskFormPanel
 				mode="create"
 				open={creating}
 				onOpenChange={setCreating}
@@ -180,7 +180,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 				}}
 			/>
 			{editing ? (
-				<KioskFormDialog
+				<KioskFormPanel
 					mode="edit"
 					open
 					onOpenChange={(open) => {

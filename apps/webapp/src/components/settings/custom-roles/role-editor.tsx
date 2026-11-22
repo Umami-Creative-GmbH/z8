@@ -1,8 +1,9 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef } from "react";
 import { toast } from "sonner";
 import {
 	createCustomRole,
@@ -12,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ClientForm } from "@/components/ui/client-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,6 +23,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { defineAbilityFor } from "@/lib/authorization/ability";
 import {
@@ -98,269 +102,358 @@ interface RoleEditorProps {
 	onCancel: () => void;
 }
 
-export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
-	const { t } = useTranslate();
-	const isEditing = !!role;
+type BaseTier = "admin" | "manager" | "employee";
 
-	const [name, setName] = useState(role?.name ?? "");
-	const [description, setDescription] = useState(role?.description ?? "");
-	const [baseTier, setBaseTier] = useState<"admin" | "manager" | "employee">(
-		role?.baseTier ?? "employee",
-	);
-	const [color, setColor] = useState(role?.color ?? "#6366f1");
-	const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(() => {
-		if (!role) return new Set();
-		// A retired permission still stored on the role (e.g. finance, #748) would fail validation on save.
-		return new Set(
+interface RoleEditorValues {
+	name: string;
+	description: string;
+	baseTier: BaseTier;
+	color: string;
+	permissions: string[];
+}
+
+function initialRolePermissions(role?: CustomRoleWithPermissions): string[] {
+	if (!role) return [];
+	// A retired permission still stored on the role (e.g. finance, #748) would fail validation on save.
+	return Array.from(
+		new Set(
 			role.permissions
 				.filter((p) => isValidPermission(p.action, p.subject))
 				.map((p) => getPermissionKey(p.action, p.subject)),
-		);
-	});
-	const [isSaving, setIsSaving] = useState(false);
+		),
+	);
+}
 
-	const inherited = getInheritedPermissions(baseTier);
+function toggleKey(keys: string[], key: string): string[] {
+	return keys.includes(key) ? keys.filter((item) => item !== key) : [...keys, key];
+}
+
+export function RoleEditor({ role, onSaved, onCancel }: RoleEditorProps) {
+	const { t } = useTranslate();
+	const isEditing = !!role;
+	const submittingRef = useRef(false);
+	const createdRoleIdRef = useRef<string | undefined>(role?.id);
+
 	const categories = getPermissionCategories();
 	const permsByCategory = getPermissionsByCategory();
 
-	const togglePermission = (key: string) => {
-		setSelectedPermissions((prev) => {
-			const next = new Set(prev);
-			if (next.has(key)) {
-				next.delete(key);
-			} else {
-				next.add(key);
-			}
-			return next;
-		});
-	};
+	const validateName = (value: string) =>
+		value.trim()
+			? undefined
+			: t("settings.roles.editor.errors.nameRequired", "Role name is required");
 
-	const handleSave = async () => {
-		if (!name.trim()) {
-			toast.error(t("settings.roles.editor.errors.nameRequired", "Role name is required"));
-			return;
-		}
+	const form = useForm({
+		defaultValues: {
+			name: role?.name ?? "",
+			description: role?.description ?? "",
+			baseTier: (role?.baseTier ?? "employee") as BaseTier,
+			color: role?.color ?? "#6366f1",
+			permissions: initialRolePermissions(role),
+		} satisfies RoleEditorValues,
+		onSubmit: async ({ value }) => {
+			if (submittingRef.current) return;
+			submittingRef.current = true;
 
-		setIsSaving(true);
-		let roleId = role?.id;
+			const run = async () => {
+				let roleId = createdRoleIdRef.current;
 
-		if (isEditing && roleId) {
-			const updateResult = await updateCustomRole({
-				roleId,
-				input: { name, description, baseTier, color },
-			}).catch(() => null);
-			if (!updateResult?.success) {
-				toast.error(
-					actionErrorMessage(t, updateResult, {}, [
-						"settings.roles.editor.errors.updateFailed",
-						"Failed to update role",
-					]),
+				if (roleId) {
+					const updateResult = await updateCustomRole({
+						roleId,
+						input: {
+							name: value.name,
+							description: value.description,
+							baseTier: value.baseTier,
+							color: value.color,
+						},
+					}).catch(() => null);
+					if (!updateResult?.success) {
+						toast.error(
+							actionErrorMessage(t, updateResult, {}, [
+								"settings.roles.editor.errors.updateFailed",
+								"Failed to update role",
+							]),
+						);
+						return;
+					}
+				} else {
+					const createResult = await createCustomRole({
+						name: value.name,
+						description: value.description,
+						baseTier: value.baseTier,
+						color: value.color,
+					}).catch(() => null);
+					if (!createResult?.success) {
+						toast.error(
+							actionErrorMessage(t, createResult, {}, [
+								"settings.roles.editor.errors.createFailed",
+								"Failed to create role",
+							]),
+						);
+						return;
+					}
+					roleId = createResult.data.id;
+					createdRoleIdRef.current = roleId;
+				}
+
+				const inherited = getInheritedPermissions(value.baseTier);
+				// Set permissions (only non-inherited ones)
+				const permsToSave = value.permissions.flatMap((key) => {
+					if (inherited.has(key)) {
+						return [];
+					}
+
+					const [action, subject] = key.split(":");
+					return [{ action: action!, subject: subject! }];
+				});
+
+				const permResult = await setRolePermissions({
+					roleId,
+					permissions: permsToSave,
+				}).catch(() => null);
+				if (!permResult?.success) {
+					toast.error(
+						actionErrorMessage(t, permResult, {}, [
+							"settings.roles.editor.errors.permissionsFailed",
+							"Failed to save role permissions",
+						]),
+					);
+					return;
+				}
+
+				toast.success(
+					isEditing
+						? t("settings.roles.toast.updated", "Role updated")
+						: t("settings.roles.toast.created", "Role created"),
 				);
-				setIsSaving(false);
-				return;
-			}
-		} else {
-			const createResult = await createCustomRole({
-				name,
-				description,
-				baseTier,
-				color,
-			}).catch(() => null);
-			if (!createResult?.success) {
-				toast.error(
-					actionErrorMessage(t, createResult, {}, [
-						"settings.roles.editor.errors.createFailed",
-						"Failed to create role",
-					]),
-				);
-				setIsSaving(false);
-				return;
-			}
-			roleId = createResult.data.id;
-		}
+				onSaved();
+			};
 
-		// Set permissions (only non-inherited ones)
-		const permsToSave = Array.from(selectedPermissions).flatMap((key) => {
-			if (inherited.has(key)) {
-				return [];
-			}
-
-			const [action, subject] = key.split(":");
-			return [{ action: action!, subject: subject! }];
-		});
-
-		const permResult = await setRolePermissions({
-			roleId: roleId!,
-			permissions: permsToSave,
-		}).catch(() => null);
-		if (!permResult?.success) {
-			toast.error(
-				actionErrorMessage(t, permResult, {}, [
-					"settings.roles.editor.errors.permissionsFailed",
-					"Failed to save role permissions",
-				]),
-			);
-			setIsSaving(false);
-			return;
-		}
-
-		toast.success(
-			isEditing
-				? t("settings.roles.toast.updated", "Role updated")
-				: t("settings.roles.toast.created", "Role created"),
-		);
-		onSaved();
-		setIsSaving(false);
-	};
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await run().finally(() => {
+				submittingRef.current = false;
+			});
+		},
+	});
 
 	return (
-		<div className="space-y-6">
+		<ClientForm
+			className="space-y-6"
+			noValidate
+			onSubmit={() => {
+				if (submittingRef.current) return;
+				void form.handleSubmit();
+			}}
+		>
 			{/* Basic Info */}
 			<div className="grid grid-cols-2 gap-4">
-				<div className="space-y-2">
-					<Label htmlFor="role-name">{t("settings.roles.editor.name", "Name")}</Label>
-					<Input
-						id="role-name"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder={t(
-							"settings.roles.editor.namePlaceholder",
-							"e.g. Team Lead, HR Manager\u2026",
-						)}
-					/>
-				</div>
-				<div className="space-y-2">
-					<Label htmlFor="role-tier">{t("settings.roles.editor.baseTier", "Base Tier")}</Label>
-					<Select value={baseTier} onValueChange={(v) => setBaseTier(v as typeof baseTier)}>
-						<SelectTrigger id="role-tier">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="employee">
-								{t("settings.roles.baseTiers.employee", "Employee")}
-							</SelectItem>
-							<SelectItem value="manager">
-								{t("settings.roles.baseTiers.manager", "Manager")}
-							</SelectItem>
-							<SelectItem value="admin">{t("settings.roles.baseTiers.admin", "Admin")}</SelectItem>
-						</SelectContent>
-					</Select>
-				</div>
+				<form.Field
+					name="name"
+					validators={{
+						onSubmit: ({ value }) => validateName(value),
+						onChange: ({ value, fieldApi }) =>
+							fieldApi.state.meta.errors.length > 0 ? validateName(value) : undefined,
+					}}
+				>
+					{(field) => (
+						<TFormItem>
+							<TFormLabel hasError={fieldHasError(field)} required>
+								{t("settings.roles.editor.name", "Name")}
+							</TFormLabel>
+							<TFormControl hasError={fieldHasError(field)}>
+								<Input
+									name="name"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									placeholder={t(
+										"settings.roles.editor.namePlaceholder",
+										"e.g. Team Lead, HR Manager\u2026",
+									)}
+								/>
+							</TFormControl>
+							<TFormMessage field={field} />
+						</TFormItem>
+					)}
+				</form.Field>
+				<form.Field name="baseTier">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel>{t("settings.roles.editor.baseTier", "Base Tier")}</TFormLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(v) => field.handleChange(v as BaseTier)}
+							>
+								<TFormControl>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+								</TFormControl>
+								<SelectContent>
+									<SelectItem value="employee">
+										{t("settings.roles.baseTiers.employee", "Employee")}
+									</SelectItem>
+									<SelectItem value="manager">
+										{t("settings.roles.baseTiers.manager", "Manager")}
+									</SelectItem>
+									<SelectItem value="admin">
+										{t("settings.roles.baseTiers.admin", "Admin")}
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</TFormItem>
+					)}
+				</form.Field>
 			</div>
 
-			<div className="space-y-2">
-				<Label htmlFor="role-desc">{t("settings.roles.editor.description", "Description")}</Label>
-				<Textarea
-					id="role-desc"
-					value={description}
-					onChange={(e) => setDescription(e.target.value)}
-					placeholder={t(
-						"settings.roles.editor.descriptionPlaceholder",
-						"What this role is for\u2026",
-					)}
-					rows={2}
-				/>
-			</div>
+			<form.Field name="description">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel>{t("settings.roles.editor.description", "Description")}</TFormLabel>
+						<TFormControl>
+							<Textarea
+								name="description"
+								value={field.state.value}
+								onChange={(e) => field.handleChange(e.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"settings.roles.editor.descriptionPlaceholder",
+									"What this role is for\u2026",
+								)}
+								rows={2}
+							/>
+						</TFormControl>
+					</TFormItem>
+				)}
+			</form.Field>
 
 			{/* Color Picker */}
-			<div className="space-y-2">
-				<Label>{t("settings.roles.editor.color", "Color")}</Label>
-				<div className="flex gap-2">
-					{COLOR_PRESETS.map((c) => (
-						<button
-							key={c}
-							type="button"
-							aria-label={t("settings.roles.editor.selectColor", "Select color {color}", {
-								color: c,
-							})}
-							className="size-7 rounded-full border-2 transition-[border-color,box-shadow]"
-							style={{
-								backgroundColor: c,
-								borderColor: color === c ? "white" : "transparent",
-								boxShadow: color === c ? `0 0 0 2px ${c}` : "none",
-							}}
-							onClick={() => setColor(c)}
-						/>
-					))}
-				</div>
-			</div>
+			<form.Field name="color">
+				{(field) => (
+					<div className="space-y-2">
+						<Label>{t("settings.roles.editor.color", "Color")}</Label>
+						<div className="flex gap-2">
+							{COLOR_PRESETS.map((c) => (
+								<button
+									key={c}
+									type="button"
+									aria-pressed={field.state.value === c}
+									aria-label={t("settings.roles.editor.selectColor", "Select color {color}", {
+										color: c,
+									})}
+									className="size-7 rounded-full border-2 transition-[border-color,box-shadow]"
+									style={{
+										backgroundColor: c,
+										borderColor: field.state.value === c ? "white" : "transparent",
+										boxShadow: field.state.value === c ? `0 0 0 2px ${c}` : "none",
+									}}
+									onClick={() => field.handleChange(c)}
+								/>
+							))}
+						</div>
+					</div>
+				)}
+			</form.Field>
 
 			{/* Permission Matrix */}
-			<div className="space-y-4">
-				<div>
-					<Label className="text-base">
-						{t("settings.roles.editor.permissions", "Permissions")}
-					</Label>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.roles.editor.permissionsHelp",
-							"Select additional permissions for this role. Permissions inherited from the base tier are shown as locked.",
-						)}
-					</p>
-				</div>
-
-				{categories.map((cat) => {
-					const perms = permsByCategory[cat.id];
-					if (!perms?.length) return null;
-
+			<form.Subscribe selector={(state) => state.values.baseTier}>
+				{(baseTier) => {
+					const inherited = getInheritedPermissions(baseTier);
 					return (
-						<div key={cat.id} className="space-y-2">
-							<h4 className="text-sm font-semibold">{t(cat.labelKey, cat.label)}</h4>
-							<div className="grid gap-2">
-								{perms.map((perm) => {
-									const key = getPermissionKey(perm.action, perm.subject);
-									const isInherited = inherited.has(key);
-									const isChecked = isInherited || selectedPermissions.has(key);
+						<form.Field name="permissions">
+							{(field) => {
+								const selectedPermissions = new Set(field.state.value);
+								return (
+									<div className="space-y-4">
+										<div>
+											<Label className="text-base">
+												{t("settings.roles.editor.permissions", "Permissions")}
+											</Label>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.roles.editor.permissionsHelp",
+													"Select additional permissions for this role. Permissions inherited from the base tier are shown as locked.",
+												)}
+											</p>
+										</div>
 
-									return (
-										<label
-											key={key}
-											className="flex items-start gap-3 rounded-md border p-3 hover:bg-muted/50 cursor-pointer"
-										>
-											<Checkbox
-												checked={isChecked}
-												onCheckedChange={() => {
-													if (!isInherited) togglePermission(key);
-												}}
-												disabled={isInherited}
-												className="mt-0.5"
-											/>
-											<div className="flex-1 space-y-0.5">
-												<div className="flex items-center gap-2">
-													<span className="text-sm font-medium">
-														{t(perm.labelKey, perm.label)}
-													</span>
-													{isInherited && (
-														<Badge variant="outline" className="text-xs">
-															{t("settings.roles.editor.inherited", "Inherited")}
-														</Badge>
-													)}
+										{categories.map((cat) => {
+											const perms = permsByCategory[cat.id];
+											if (!perms?.length) return null;
+
+											return (
+												<div key={cat.id} className="space-y-2">
+													<h4 className="text-sm font-semibold">{t(cat.labelKey, cat.label)}</h4>
+													<div className="grid gap-2">
+														{perms.map((perm) => {
+															const key = getPermissionKey(perm.action, perm.subject);
+															const isInherited = inherited.has(key);
+															const isChecked = isInherited || selectedPermissions.has(key);
+
+															return (
+																<label
+																	key={key}
+																	className="flex cursor-pointer items-start gap-3 rounded-md border p-3 hover:bg-muted/50"
+																>
+																	<Checkbox
+																		checked={isChecked}
+																		onCheckedChange={() => {
+																			if (!isInherited) {
+																				field.handleChange(toggleKey(field.state.value, key));
+																			}
+																		}}
+																		disabled={isInherited}
+																		className="mt-0.5"
+																	/>
+																	<div className="flex-1 space-y-0.5">
+																		<div className="flex items-center gap-2">
+																			<span className="text-sm font-medium">
+																				{t(perm.labelKey, perm.label)}
+																			</span>
+																			{isInherited && (
+																				<Badge variant="outline" className="text-xs">
+																					{t("settings.roles.editor.inherited", "Inherited")}
+																				</Badge>
+																			)}
+																		</div>
+																		<p className="text-xs text-muted-foreground">
+																			{t(perm.descriptionKey, perm.description)}
+																		</p>
+																	</div>
+																</label>
+															);
+														})}
+													</div>
 												</div>
-												<p className="text-xs text-muted-foreground">
-													{t(perm.descriptionKey, perm.description)}
-												</p>
-											</div>
-										</label>
-									);
-								})}
-							</div>
-						</div>
+											);
+										})}
+									</div>
+								);
+							}}
+						</form.Field>
 					);
-				})}
-			</div>
+				}}
+			</form.Subscribe>
 
 			{/* Actions */}
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="outline" onClick={onCancel}>
-					{t("common:actions.cancel", "Cancel")}
-				</Button>
-				<Button onClick={handleSave} disabled={isSaving}>
-					{isSaving && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-					{isEditing
-						? t("settings.roles.actions.saveChanges", "Save Changes")
-						: t("settings.roles.actions.create", "Create Role")}
-				</Button>
-			</div>
-		</div>
+			<form.Subscribe selector={(state) => state.isSubmitting}>
+				{(isSubmitting) => (
+					<div className="flex justify-end gap-2 pt-2">
+						<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+							{t("common:actions.cancel", "Cancel")}
+						</Button>
+						<Button type="submit" disabled={isSubmitting}>
+							{isSubmitting && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							)}
+							{isEditing
+								? t("settings.roles.actions.saveChanges", "Save Changes")
+								: t("settings.roles.actions.create", "Create Role")}
+						</Button>
+					</div>
+				)}
+			</form.Subscribe>
+		</ClientForm>
 	);
 }
