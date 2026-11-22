@@ -50,7 +50,7 @@ describe("platform admin layout", () => {
 	it("checks the billing flag inside the billing page content boundary", () => {
 		const source = stripComments(
 			readFileSync(join(PLATFORM_ADMIN_ROOT, "billing/page.tsx"), "utf8"),
-		);
+		).replace(/\r\n/g, "\n");
 		const dynamicBoundary = "async function AdminBillingPageContent";
 		const billingEnabledCheck = 'if (env.BILLING_ENABLED !== "true")';
 
@@ -61,7 +61,16 @@ describe("platform admin layout", () => {
 		expect(source.indexOf(dynamicBoundary)).toBeLessThan(
 			source.indexOf(billingEnabledCheck),
 		);
-		expect(source).not.toContain("connection()");
+		// Only the stats card needs the request clock; the flag check itself must not.
+		const contentBody = source.slice(
+			source.indexOf(dynamicBoundary),
+			source.indexOf("\n}\n", source.indexOf(dynamicBoundary)),
+		);
+		expect(contentBody).toContain(billingEnabledCheck);
+		expect(contentBody).not.toContain("connection()");
+		expect(source.indexOf("await connection()")).toBeGreaterThan(
+			source.indexOf("async function BillingStats"),
+		);
 	});
 
 	it("links to deployment diagnostics from platform-admin navigation and overview", () => {

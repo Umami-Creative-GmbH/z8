@@ -13,6 +13,7 @@ const APP_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(admin)/platform-admin/page.tsx",
 	"src/app/[locale]/(admin)/platform-admin/analytics/page.tsx",
+	"src/app/[locale]/(admin)/platform-admin/billing/page.tsx",
 	"src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
 	"src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx",
 	"src/app/[locale]/(app)/absences/page.tsx",
@@ -71,6 +72,16 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reason:
 			"Live platform analytics Effect data must resolve per request outside the prerendered shell.",
 		operation: "const t = await getTranslate();",
+	},
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/billing/page.tsx",
+		contentComponent: "BillingStats",
+		fallbackComponent: "BillingStatsLoading",
+		coordinatorComponent: "AdminBillingPageContent",
+		coordinatorFallbackComponent: "AdminBillingPageLoading",
+		reasonCategory: "current-period",
+		reason: "Resolve current request time before evaluating ended trials.",
+		operation: "const now = new Date();",
 	},
 	{
 		file: "src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
@@ -169,7 +180,7 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 	{
 		file: "src/app/[locale]/(app)/settings/work-diagnostics/page.tsx",
 		contentComponent: "WorkDiagnosticsContent",
-		fallbackComponent: "SettingsContentLoading",
+		fallbackComponent: "WorkDiagnosticsBodyLoading",
 		reasonCategory: "current-period",
 		reason: "The default work-diagnostics period must be resolved per request.",
 		authorizationOperation: "requireOrgAdminSettingsAccess(),",
@@ -1288,7 +1299,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(20);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(21);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
