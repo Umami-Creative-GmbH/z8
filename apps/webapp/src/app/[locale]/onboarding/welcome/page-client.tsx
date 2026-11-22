@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import type { OnboardingSummary } from "@/lib/effect/services/onboarding.service";
+import { getOnboardingStepPath } from "@/lib/validations/onboarding-steps";
 import { useRouter } from "@/navigation";
 import { getOnboardingSummary, startOnboarding, updateOnboardingStep } from "./actions";
 
@@ -185,7 +186,7 @@ function WelcomeArrival() {
 			if (!current.active) return;
 			if (result.success) {
 				setContinuation({ status: "continuing" });
-				router.push(step === "profile" ? "/onboarding/profile" : "/onboarding/organization");
+				router.push(getOnboardingStepPath(step));
 				return;
 			}
 			current.pending = false;

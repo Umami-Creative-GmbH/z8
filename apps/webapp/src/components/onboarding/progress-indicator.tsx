@@ -15,7 +15,6 @@ const STEP_I18N_KEYS: Record<OnboardingStep, { key: string; default: string }> =
 	welcome: { key: "onboarding.steps.welcome", default: "Welcome" },
 	organization: { key: "onboarding.steps.organization", default: "Organization" },
 	profile: { key: "onboarding.steps.profile", default: "Profile" },
-	work_schedule: { key: "onboarding.steps.workSchedule", default: "Schedule" },
 	vacation_policy: { key: "onboarding.steps.vacationPolicy", default: "Vacation" },
 	work_templates: { key: "onboarding.steps.workTemplates", default: "Templates" },
 	wellness: { key: "onboarding.steps.wellness", default: "Wellness" },

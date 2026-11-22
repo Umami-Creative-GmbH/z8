@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useSession } from "@/lib/auth-client";
+import { getNextOnboardingStepPath, ONBOARDING_STEPS } from "@/lib/validations/onboarding-steps";
 import { Link, useRouter } from "@/navigation";
 import { configureNotificationsOnboarding, skipNotificationsSetup } from "./actions";
 
@@ -23,6 +24,8 @@ const defaultValues = {
 	notifyStatusUpdates: true,
 	notifyTeamChanges: true,
 };
+const NOTIFICATIONS_NEXT_STEP_PATH =
+	getNextOnboardingStepPath("notifications", false) ?? ONBOARDING_STEPS.complete.path;
 type Pending = "save" | "skip" | "push" | null;
 
 function PreferenceToggle({
@@ -287,7 +290,7 @@ function NotificationSetup({ organizationId }: { organizationId: string | null }
 			const result = await action();
 			if (!isCurrent(owner)) return;
 			if (result.success) {
-				push("/onboarding/complete");
+				push(NOTIFICATIONS_NEXT_STEP_PATH);
 				return;
 			}
 			setError(result.error || fallback);

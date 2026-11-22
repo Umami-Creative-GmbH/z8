@@ -6,14 +6,13 @@ export type OnboardingStep =
 	| "welcome"
 	| "organization"
 	| "profile"
-	| "work_schedule"
 	| "vacation_policy"
 	| "work_templates"
 	| "wellness"
 	| "notifications"
 	| "complete";
 
-// Admin-only steps (shown after work_schedule if user created an organization)
+// Admin-only steps (shown after profile if user created an organization)
 export const ADMIN_ONLY_STEPS: OnboardingStep[] = ["vacation_policy", "work_templates"];
 
 // Base steps configuration
@@ -42,43 +41,36 @@ export const ONBOARDING_STEPS: Record<
 		label: "Profile",
 		adminOnly: false,
 	},
-	work_schedule: {
-		order: 4,
-		path: "/onboarding/work-schedule",
-		required: false,
-		label: "Schedule",
-		adminOnly: false,
-	},
 	vacation_policy: {
-		order: 5,
+		order: 4,
 		path: "/onboarding/vacation-policy",
 		required: false,
 		label: "Vacation",
 		adminOnly: true,
 	},
 	work_templates: {
-		order: 6,
+		order: 5,
 		path: "/onboarding/work-templates",
 		required: false,
 		label: "Templates",
 		adminOnly: true,
 	},
 	wellness: {
-		order: 7,
+		order: 6,
 		path: "/onboarding/wellness",
 		required: false,
 		label: "Wellness",
 		adminOnly: false,
 	},
 	notifications: {
-		order: 8,
+		order: 7,
 		path: "/onboarding/notifications",
 		required: false,
 		label: "Notifications",
 		adminOnly: false,
 	},
 	complete: {
-		order: 9,
+		order: 8,
 		path: "/onboarding/complete",
 		required: true,
 		label: "Complete",
@@ -87,9 +79,10 @@ export const ONBOARDING_STEPS: Record<
 } as const;
 
 // Steps removed from the flow that may still be stored in user_settings.onboarding_step,
-// mapped to the step that now follows them. Holiday setup moved to settings.
+// mapped to the step that now follows them.
 const RETIRED_ONBOARDING_STEPS: Record<string, OnboardingStep> = {
 	holiday_setup: "work_templates",
+	work_schedule: "vacation_policy",
 };
 
 // Helper to get the correct path for a step
@@ -107,9 +100,7 @@ export function getVisibleSteps(isAdmin: boolean): OnboardingStep[] {
 			(typeof ONBOARDING_STEPS)[OnboardingStep],
 		][]
 	)
-		.filter(
-			([step, config]) => (!config.adminOnly || isAdmin) && (isAdmin || step !== "work_schedule"),
-		)
+		.filter(([, config]) => !config.adminOnly || isAdmin)
 		.sort(([, a], [, b]) => a.order - b.order)
 		.map(([step]) => step);
 }
@@ -125,4 +116,13 @@ export function getNextOnboardingStep(
 		return null;
 	}
 	return visibleSteps[currentIndex + 1];
+}
+
+// Helper to get the next step path based on current step and admin status
+export function getNextOnboardingStepPath(
+	currentStep: OnboardingStep,
+	isAdmin: boolean,
+): `/${string}` | null {
+	const nextStep = getNextOnboardingStep(currentStep, isAdmin);
+	return nextStep ? ONBOARDING_STEPS[nextStep].path : null;
 }
