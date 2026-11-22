@@ -90,10 +90,24 @@ describe("TeamsTab delete confirmation", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Delete Team" }));
 
 		await waitFor(() => expect(deleteTeam).toHaveBeenCalledWith({ teamId: "team-1" }));
-		expect((await screen.findByRole("alert")).textContent).toBe(
-			"Team still owns shift templates",
-		);
+		expect((await screen.findByRole("alert")).textContent).toBe("Team still owns shift templates");
 		expect(screen.getByRole("alertdialog")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Delete Delivery", hidden: true })).toBeTruthy();
+	});
+
+	it("omits a manual toolbar refresh button", () => {
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<TeamsTab
+					teams={[team]}
+					members={[]}
+					canAccessOrganizationAdminSurface
+					canCreateTeams
+					organizationId="org-1"
+				/>
+			</QueryClientProvider>,
+		);
+
+		expect(screen.queryByRole("button", { name: /Refresh/i })).toBeNull();
 	});
 });

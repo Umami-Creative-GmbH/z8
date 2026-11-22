@@ -6,6 +6,7 @@ import {
 	DrivingLicenceSettingsTabs,
 } from "@/components/driving-licence/settings-tabs";
 import { VerifierSettings } from "@/components/driving-licence/verifier-settings";
+import { SettingsLoadError } from "@/components/settings/settings-load-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { requireDrivingLicenceSettingsPage } from "@/lib/organization/driving-licence/page-guards";
@@ -26,12 +27,12 @@ async function DrivingLicenceSettingsContent() {
 		return <DrivingLicenceSettingsTabs settings={settings} panels={{ retention }} />;
 	const [result, t] = await Promise.all([getDrivingLicenceAdminDataAction(), getTranslate()]);
 	const loadError = (
-		<p role="alert" className="text-sm text-destructive">
-			{t(
+		<SettingsLoadError
+			message={t(
 				"drivingLicence.loadError",
 				"Driving licence control could not be loaded. Check your organization access.",
 			)}
-		</p>
+		/>
 	);
 	return (
 		<DrivingLicenceSettingsTabs

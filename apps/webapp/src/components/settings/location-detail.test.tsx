@@ -63,7 +63,11 @@ function employeeRow(id: string, employeeId: string, firstName: string, isPrimar
 			id: employeeId,
 			firstName,
 			lastName: "Example",
-			user: { id: `user-${employeeId}`, name: `${firstName} Example`, email: `${firstName}@example.com` },
+			user: {
+				id: `user-${employeeId}`,
+				name: `${firstName} Example`,
+				email: `${firstName}@example.com`,
+			},
 		},
 	};
 }
@@ -225,5 +229,24 @@ describe("LocationDetail assignment removal", () => {
 
 		finish({ success: true, data: undefined });
 		await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalledOnce());
+	});
+
+	it("omits the header refresh button while keeping Retry on load error", async () => {
+		renderDetail();
+		await screen.findByRole("heading", { level: 1, name: "Head Office" });
+		expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
+	});
+
+	it("renders an explicit Retry control when loading a location fails", async () => {
+		const user = userEvent.setup();
+		mocks.getLocation
+			.mockResolvedValueOnce({ success: false, error: "Network error" })
+			.mockResolvedValueOnce({ success: true, data: locationFixture() });
+		renderDetail();
+
+		expect(await screen.findByText("This location could not be loaded")).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		expect(await screen.findByRole("heading", { level: 1, name: "Head Office" })).toBeTruthy();
 	});
 });

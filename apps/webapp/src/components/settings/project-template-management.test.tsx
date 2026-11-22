@@ -81,7 +81,7 @@ vi.mock("@/components/ui/select", () => {
 				value={value}
 				onChange={(event) => onValueChange?.(event.target.value)}
 			>
-				<option value="" />
+				<option value="">None</option>
 				{content?.props.children}
 			</select>
 		);
@@ -356,5 +356,37 @@ describe("ProjectTemplateManagement", () => {
 
 		expect(templateActions.deleteProjectTemplate).toHaveBeenCalledWith("template-1");
 		expect(toast.success).toHaveBeenCalledWith("Website relaunch deleted");
+	});
+
+	it("omits a routine toolbar refresh button while refreshing the list automatically after creating a template", async () => {
+		const user = userEvent.setup();
+		const created = summary({ id: "template-2", name: "Auto-refreshed template" });
+		templateActions.getProjectTemplates
+			.mockResolvedValueOnce({ success: true, data: [summary()] })
+			.mockResolvedValueOnce({ success: true, data: [summary(), created] });
+		renderManagement();
+
+		await screen.findByRole("row", { name: /Website relaunch/ });
+		expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
+
+		await user.click(screen.getByRole("button", { name: "Create template" }));
+		const form = await screen.findByRole("form", { name: "Create project template" });
+		await user.type(within(form).getByLabelText(/^Name/), "Auto-refreshed template");
+		await user.click(within(form).getByRole("button", { name: "Create template" }));
+
+		expect(await screen.findByRole("row", { name: /Auto-refreshed template/ })).toBeTruthy();
+	});
+
+	it("preserves the explicit Retry action when templates fail to load", async () => {
+		const user = userEvent.setup();
+		templateActions.getProjectTemplates
+			.mockResolvedValueOnce({ success: false, error: "Temporary failure" })
+			.mockResolvedValueOnce({ success: true, data: [summary()] });
+		renderManagement();
+
+		expect(await screen.findByRole("alert")).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		expect(await screen.findByRole("row", { name: /Website relaunch/ })).toBeTruthy();
 	});
 });

@@ -7,7 +7,6 @@ import {
 	IconLanguage,
 	IconLoader2,
 	IconPlus,
-	IconRefresh,
 	IconSchool,
 	IconShieldCheck,
 	IconTools,
@@ -208,26 +207,12 @@ export function SkillCatalogManagement({
 						"Manage skills and certifications that can be assigned to employees",
 					)}
 					actions={
-						<>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => refetch()}
-								disabled={isFetching}
-								aria-label={t("settings.skills.refresh", "Refresh skill catalog")}
-							>
-								<IconRefresh
-									className={`size-4 ${isFetching ? "motion-safe:animate-spin" : ""}`}
-									aria-hidden="true"
-								/>
+						canManageCatalog ? (
+							<Button onClick={handleCreate}>
+								<IconPlus className="mr-2 size-4" aria-hidden="true" />
+								{t("settings.skills.addSkill", "Add Skill")}
 							</Button>
-							{canManageCatalog ? (
-								<Button onClick={handleCreate}>
-									<IconPlus className="mr-2 size-4" aria-hidden="true" />
-									{t("settings.skills.addSkill", "Add Skill")}
-								</Button>
-							) : null}
-						</>
+						) : undefined
 					}
 				/>
 
@@ -602,7 +587,9 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isMutating}>
-							{isMutating && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
+							{isMutating && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							)}
 							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>

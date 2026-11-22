@@ -35,7 +35,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: boundary.refresh, replace: vi.fn() }),
 	usePathname: () => "/en/settings/employees",
-	Link: (props: ComponentProps<"a">) => <a {...props} />,
+	Link: ({ children, ...props }: ComponentProps<"a">) => <a {...props}>{children}</a>,
 }));
 vi.mock("@/app/[locale]/(app)/settings/employees/employee-clock-status.actions", () => ({
 	getEmployeeClockStatuses: async () => ({ success: true, data: {} }),
@@ -157,10 +157,13 @@ it("header Refresh retains a typed directory search", async () => {
 	).toBe("Synthetic person");
 });
 
-it("the member refresh button refreshes the authoritative server snapshot", async () => {
+it("omits routine toolbar refresh buttons on Employees and Members tabs while header Refresh refreshes the snapshot", async () => {
 	mount(true);
-	fireEvent.click(await screen.findByRole("tab", { name: "Members" }));
-	fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+	await screen.findByRole("textbox", { name: "Search employees" });
+	expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
+	fireEvent.click(screen.getByRole("tab", { name: "Members" }));
+	expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
+	fireEvent.click(screen.getAllByRole("button", { name: "Refresh data" })[0]);
 	await waitFor(() => expect(boundary.refresh).toHaveBeenCalledTimes(1));
 });
 
@@ -197,9 +200,9 @@ it.each([
 ])("owns the page heading at %s", (path) => {
 	expect(appPageOwnsHeading(path)).toBe(true);
 });
-it.each([
-	"/en/settings/employees/new",
-	"/settings/employees/person/edit",
-])("retains descendant shell ownership at %s", (path) => {
-	expect(appPageOwnsHeading(path)).toBe(false);
-});
+it.each(["/en/settings/employees/new", "/settings/employees/person/edit"])(
+	"retains descendant shell ownership at %s",
+	(path) => {
+		expect(appPageOwnsHeading(path)).toBe(false);
+	},
+);

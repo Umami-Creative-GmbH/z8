@@ -218,24 +218,10 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 					"Manage customer contacts for project assignments",
 				)}
 				actions={
-					<>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => refetch()}
-							disabled={isFetching}
-							aria-label={t("common.refresh", "Refresh")}
-						>
-							<IconRefresh
-								aria-hidden="true"
-								className={`size-4 ${isFetching ? "animate-spin" : ""}`}
-							/>
-						</Button>
-						<Button onClick={handleCreate} disabled={!canCreateCustomer}>
-							<IconPlus aria-hidden="true" className="mr-2 size-4" />
-							{t("settings.customers.create", "Add Customer")}
-						</Button>
-					</>
+					<Button onClick={handleCreate} disabled={!canCreateCustomer}>
+						<IconPlus aria-hidden="true" className="mr-2 size-4" />
+						{t("settings.customers.create", "Add Customer")}
+					</Button>
 				}
 			/>
 			{/* The empty state repeats this hint beside its own add button. */}
