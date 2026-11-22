@@ -1,7 +1,7 @@
 import { detectLanguageFromHeaders } from "@tolgee/react/server";
 import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { connection, type NextRequest, NextResponse } from "next/server";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
@@ -26,6 +26,7 @@ import { localDayRange, localMonthRange } from "@/lib/datetime/temporal-boundari
 import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { superJsonResponse } from "@/lib/superjson";
 import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
+import { isValidTimeZone } from "@/lib/timezone/validation";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/catalog-config";
@@ -72,15 +73,19 @@ async function fetchHolidayEvents(params: {
 		return getHolidaysForMonth(params.organizationId, params.month, params.year);
 	}
 
-	const monthStart = DateTime.utc(params.year, params.month + 1, 1).startOf("day");
-	const monthEnd = monthStart.endOf("month");
+	const monthRange = localMonthRange(
+		`${params.year}-${String(params.month + 1).padStart(2, "0")}-01`,
+		"UTC",
+	);
+	const monthStart = dateFromInstant(monthRange.start);
+	const monthEnd = dateFromInstant(monthRange.endExclusive.subtract({ milliseconds: 1 }));
 
 	try {
 		const holidays = await getAssignedHolidaysForEmployee({
 			organizationId: params.organizationId,
 			employeeId: params.employeeId,
-			startDate: monthStart.toJSDate(),
-			endDate: monthEnd.toJSDate(),
+			startDate: monthStart,
+			endDate: monthEnd,
 		});
 		return holidays.map(assignedHolidayToCalendarEvent);
 	} catch (error) {
@@ -178,19 +183,19 @@ function getRequestDateRange(
 	fullYear: boolean,
 	timezone: string | null,
 ) {
-	const zonedStart = DateTime.fromObject(
-		{ year, month: fullYear ? 1 : (month ?? 0) + 1, day: 1 },
-		{ zone: timezone || "UTC" },
-	);
-	const validStart = zonedStart.isValid
-		? zonedStart
-		: DateTime.utc(year, fullYear ? 1 : (month ?? 0) + 1, 1);
-	const start = fullYear ? validStart.startOf("year") : validStart.startOf("month");
-	const end = fullYear ? start.endOf("year") : start.endOf("month");
+	const resolvedTimezone = timezone && isValidTimeZone(timezone) ? timezone : "UTC";
+	const startDate = Temporal.PlainDate.from({
+		year,
+		month: fullYear ? 1 : (month ?? 0) + 1,
+		day: 1,
+	});
+	const endExclusiveDate = fullYear ? startDate.add({ years: 1 }) : startDate.add({ months: 1 });
+	const startInstant = startDate.toZonedDateTime(resolvedTimezone).toInstant();
+	const endExclusiveInstant = endExclusiveDate.toZonedDateTime(resolvedTimezone).toInstant();
 
 	return {
-		startDate: start.toUTC().toJSDate(),
-		endDate: end.toUTC().toJSDate(),
+		startDate: dateFromInstant(startInstant),
+		endDate: dateFromInstant(endExclusiveInstant.subtract({ milliseconds: 1 })),
 	};
 }
 

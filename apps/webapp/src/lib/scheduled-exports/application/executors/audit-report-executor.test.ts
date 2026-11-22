@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExecuteParams } from "./base-executor";
 
@@ -26,10 +26,9 @@ const params: ExecuteParams = {
 	executionId: "5f0c7c1e-0b7e-4a39-9d2a-0f5e1d7c9a10",
 	organizationId: "org-a",
 	reportConfig: {},
-	// Fixtures for the executor's existing Luxon boundary; no date calculations.
 	dateRange: {
-		start: DateTime.fromISO("2026-09-01T00:00:00", { zone: "Europe/Berlin" }),
-		end: DateTime.fromISO("2026-09-30T23:59:59", { zone: "Europe/Berlin" }),
+		start: Temporal.ZonedDateTime.from("2026-09-01T00:00:00[Europe/Berlin]"),
+		end: Temporal.ZonedDateTime.from("2026-09-30T23:59:59[Europe/Berlin]"),
 	},
 };
 

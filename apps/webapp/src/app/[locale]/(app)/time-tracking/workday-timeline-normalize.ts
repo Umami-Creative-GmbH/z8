@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import { hasAttemptedOrdinaryTimeApprovalEvidence } from "@/lib/approvals/time-request-kind";
 import {
 	comparePlainDates,
@@ -174,7 +173,7 @@ export function normalizeWorkdayTimeline({
 					]
 				: [],
 		),
-	].sort((left, right) => compareTimedItems(left, right, timezone));
+	].sort((left, right) => compareTimedItems(left, right));
 
 	return {
 		selectedDate,
@@ -391,12 +390,8 @@ function getShiftDateTimes(
 	};
 }
 
-function compareTimedItems(
-	left: WorkdayTimelineItem,
-	right: WorkdayTimelineItem,
-	timezone: string,
-): number {
-	const timeDifference = getLocalSortTime(left, timezone) - getLocalSortTime(right, timezone);
+function compareTimedItems(left: WorkdayTimelineItem, right: WorkdayTimelineItem): number {
+	const timeDifference = getLocalSortTime(left) - getLocalSortTime(right);
 	if (timeDifference !== 0) return timeDifference;
 
 	const priorityDifference = getTypeSortPriority(left) - getTypeSortPriority(right);
@@ -405,9 +400,9 @@ function compareTimedItems(
 	return left.id.localeCompare(right.id);
 }
 
-function getLocalSortTime(item: WorkdayTimelineItem, timezone: string): number {
+function getLocalSortTime(item: WorkdayTimelineItem): number {
 	if (!item.startTime) return Number.POSITIVE_INFINITY;
-	return DateTime.fromJSDate(item.startTime).setZone(timezone).toMillis();
+	return instantFromDate(item.startTime).epochMilliseconds;
 }
 
 function getTypeSortPriority(item: WorkdayTimelineItem): number {

@@ -10,16 +10,16 @@
  */
 
 import { and, eq, lte } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db, scheduledExport, scheduledExportExecution } from "@/db";
 import type { ScheduledExport, ScheduledExportExecution } from "@/db/schema/scheduled-export";
 import { AuditAction } from "@/lib/audit-logger";
 import { withAuditTrail } from "@/lib/audit-trail";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { calculateDateRange } from "../domain/date-range-calculator";
 import { calculateNextExecution } from "../domain/schedule-evaluator";
 import {
+	type CalculatedDateRange,
 	type DateRangeConfig,
 	type DeliveryConfig,
 	deliversByEmail,
@@ -48,7 +48,7 @@ export class ScheduledExportOrchestrator {
 	 * Called by the cron job processor
 	 */
 	async processDueExports(): Promise<ScheduledExportsProcessorResult> {
-		const now = DateTime.utc();
+		const now = systemClock.nowInstant();
 		const result: ScheduledExportsProcessorResult = {
 			success: true,
 			processed: 0,
@@ -60,7 +60,7 @@ export class ScheduledExportOrchestrator {
 		try {
 			// A schedule whose owner is no longer an org admin pauses instead of running (#988).
 			// Departures take effect by date, so this tick is what notices them.
-			await pauseSchedulesWithIneligibleOwners(db, { now: instantFromDate(now.toJSDate()) });
+			await pauseSchedulesWithIneligibleOwners(db, { now });
 
 			// Find all active schedules that are due
 			const dueSchedules = await this.findDueSchedules(now);
@@ -118,7 +118,7 @@ export class ScheduledExportOrchestrator {
 	 */
 	async executeSchedule(
 		schedule: ScheduledExport,
-		triggeredAt: DateTime = DateTime.utc(),
+		triggeredAt: Instant = systemClock.nowInstant(),
 		run: RunTrigger = { trigger: "schedule" },
 	): Promise<void> {
 		const startTime = Date.now();
@@ -150,8 +150,8 @@ export class ScheduledExportOrchestrator {
 				{
 					scheduleId: schedule.id,
 					dateRange: {
-						start: dateRange.start.toISODate(),
-						end: dateRange.end.toISODate(),
+						start: dateRange.start.toPlainDate().toString(),
+						end: dateRange.end.toPlainDate().toString(),
 					},
 				},
 				"Calculated date range",
@@ -221,7 +221,7 @@ export class ScheduledExportOrchestrator {
 							emailsSent: deliveryResult.emailsSent,
 							emailsFailed: deliveryResult.emailsFailed,
 							emailErrors: deliveryResult.emailErrors,
-							completedAt: DateTime.utc().toJSDate(),
+							completedAt: dateFromInstant(systemClock.nowInstant()),
 							durationMs,
 						})
 						.where(eq(scheduledExportExecution.id, execution.id));
@@ -265,7 +265,7 @@ export class ScheduledExportOrchestrator {
 							status: "failed",
 							errorMessage,
 							errorStack,
-							completedAt: DateTime.utc().toJSDate(),
+							completedAt: dateFromInstant(systemClock.nowInstant()),
 							durationMs,
 						})
 						.where(eq(scheduledExportExecution.id, execution.id));
@@ -303,14 +303,19 @@ export class ScheduledExportOrchestrator {
 	private runMetadata(
 		executionId: string,
 		run: RunTrigger,
-		dateRange?: { start: DateTime; end: DateTime },
+		dateRange?: CalculatedDateRange,
 	): Record<string, unknown> {
 		return {
 			executionId,
 			trigger: run.trigger,
 			requestedBy: run.trigger === "run_now" ? run.requestedBy : null,
 			...(dateRange
-				? { dateRange: { start: dateRange.start.toISODate(), end: dateRange.end.toISODate() } }
+				? {
+						dateRange: {
+							start: dateRange.start.toPlainDate().toString(),
+							end: dateRange.end.toPlainDate().toString(),
+						},
+					}
 				: {}),
 		};
 	}
@@ -318,11 +323,11 @@ export class ScheduledExportOrchestrator {
 	/**
 	 * Find all schedules that are due for execution
 	 */
-	private async findDueSchedules(currentTime: DateTime): Promise<ScheduledExport[]> {
+	private async findDueSchedules(currentTime: Instant): Promise<ScheduledExport[]> {
 		const schedules = await db.query.scheduledExport.findMany({
 			where: and(
 				eq(scheduledExport.isActive, true),
-				lte(scheduledExport.nextExecutionAt, currentTime.toJSDate()),
+				lte(scheduledExport.nextExecutionAt, dateFromInstant(currentTime)),
 			),
 		});
 
@@ -334,7 +339,7 @@ export class ScheduledExportOrchestrator {
 	 */
 	private async createExecution(
 		schedule: ScheduledExport,
-		triggeredAt: DateTime,
+		triggeredAt: Instant,
 	): Promise<{ id: string }> {
 		// Calculate date range for recording
 		const dateRangeConfig: DateRangeConfig = {
@@ -348,10 +353,10 @@ export class ScheduledExportOrchestrator {
 			.values({
 				scheduledExportId: schedule.id,
 				organizationId: schedule.organizationId,
-				triggeredAt: triggeredAt.toJSDate(),
+				triggeredAt: dateFromInstant(triggeredAt),
 				scheduledFor: schedule.nextExecutionAt!,
-				dateRangeStart: dateRange.start.toISODate()!,
-				dateRangeEnd: dateRange.end.toISODate()!,
+				dateRangeStart: dateRange.start.toPlainDate().toString(),
+				dateRangeEnd: dateRange.end.toPlainDate().toString(),
 				status: "pending",
 			})
 			.returning({ id: scheduledExportExecution.id });
@@ -368,7 +373,7 @@ export class ScheduledExportOrchestrator {
 	): Promise<void> {
 		const updates: Partial<ScheduledExportExecution> = { status };
 		if (status === "processing") {
-			updates.startedAt = DateTime.utc().toJSDate();
+			updates.startedAt = dateFromInstant(systemClock.nowInstant());
 		}
 
 		await db
@@ -384,19 +389,19 @@ export class ScheduledExportOrchestrator {
 		schedule: ScheduledExport,
 		scheduleConfig: ScheduleConfig,
 	): Promise<void> {
-		const now = DateTime.utc();
+		const now = systemClock.nowInstant();
 		const nextExecution = calculateNextExecution(scheduleConfig, now);
 
 		await db
 			.update(scheduledExport)
 			.set({
-				lastExecutionAt: now.toJSDate(),
-				nextExecutionAt: nextExecution.toJSDate(),
+				lastExecutionAt: dateFromInstant(now),
+				nextExecutionAt: dateFromInstant(nextExecution.toInstant()),
 			})
 			.where(eq(scheduledExport.id, schedule.id));
 
 		logger.debug(
-			{ scheduleId: schedule.id, nextExecutionAt: nextExecution.toISO() },
+			{ scheduleId: schedule.id, nextExecutionAt: nextExecution.toInstant().toString() },
 			"Updated next execution time",
 		);
 	}

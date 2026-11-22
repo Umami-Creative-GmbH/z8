@@ -22,6 +22,7 @@ import type {
 } from "@/db/schema/scheduled-export";
 import { AuditAction } from "@/lib/audit-logger";
 import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
@@ -390,7 +391,7 @@ export const createScheduledExportAction = organizationAction(
 						emailSubjectTemplate: input.emailSubjectTemplate,
 						useOrgS3Config: input.useOrgS3Config ?? true,
 						customS3Prefix: input.customS3Prefix,
-						nextExecutionAt: nextExecutionAt.toJSDate(),
+						nextExecutionAt: dateFromInstant(nextExecutionAt.toInstant()),
 						ownerId: actor.userId,
 						createdBy: actor.userId,
 					})
@@ -552,7 +553,7 @@ function updateSchedule(
 				timezone: input.timezone || existing.timezone,
 			};
 			const nextExecutionAt = calculateNextExecution(scheduleConfig);
-			updates.nextExecutionAt = nextExecutionAt.toJSDate();
+			updates.nextExecutionAt = dateFromInstant(nextExecutionAt.toInstant());
 		}
 
 		const schedule = yield* auditedWrite("scheduledExport.update", async (tx, audit) => {
@@ -799,7 +800,7 @@ export const previewNextExecutionsAction = organizationAction(
 			};
 
 			const executions = getNextExecutions(config, input.count ?? 5);
-			return executions.map((dt) => dt.toISO()!);
+			return executions.map((dt) => dt.toInstant().toString());
 		}),
 );
 

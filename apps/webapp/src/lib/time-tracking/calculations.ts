@@ -5,15 +5,26 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
-import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { endOfDay, fromJSDate, startOfDay, toDateKey } from "@/lib/datetime/luxon-utils";
+import { instantFromDB, instantToDB } from "@/lib/datetime/drizzle-adapter";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	compareInstants,
+	dateFromInstant,
+	instantFromDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import type { DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { loadEmployeeTrackingContext } from "./tracking-start";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
 } from "@/lib/effect/services/work-policy.service";
+import { isValidTimeZone, parseTimeZone } from "@/lib/timezone/validation";
+import { loadEmployeeTrackingContext } from "./tracking-start";
+
+function resolveCalculationZone(timezone?: string): string {
+	return timezone && isValidTimeZone(timezone) ? parseTimeZone(timezone) : "UTC";
+}
 
 export interface WorkHoursSummary {
 	totalMinutes: number;
@@ -89,9 +100,14 @@ export async function calculateWorkHours(
 	startDate: Date,
 	endDate: Date,
 ): Promise<WorkHoursSummary> {
-	// Ensure dates are at start/end of day
-	const rangeStart = dateToDB(startOfDay(fromJSDate(startDate)))!;
-	const rangeEnd = dateToDB(endOfDay(fromJSDate(endDate)))!;
+	// Ensure dates are at start/end of day in UTC
+	const startDayRange = localDayRange(
+		plainDateAt(instantFromDate(startDate), "UTC").toString(),
+		"UTC",
+	);
+	const endDayRange = localDayRange(plainDateAt(instantFromDate(endDate), "UTC").toString(), "UTC");
+	const rangeStart = dateFromInstant(startDayRange.start);
+	const rangeEnd = dateFromInstant(endDayRange.endExclusive.subtract({ milliseconds: 1 }));
 
 	// Fetch all completed work periods in the date range
 	const periods = await db
@@ -123,9 +139,9 @@ export async function calculateWorkHours(
 
 	// Process each work period
 	for (const { period, shouldExclude } of periodsWithExclusion) {
-		const periodDT = dateFromDB(period.startTime);
-		if (!periodDT) continue;
-		const dateKey = toDateKey(periodDT); // YYYY-MM-DD
+		const periodInstant = instantFromDB(period.startTime);
+		if (!periodInstant) continue;
+		const dateKey = plainDateAt(periodInstant, "UTC").toString(); // YYYY-MM-DD
 
 		// Track unique work days
 		processedDates.add(dateKey);
@@ -202,8 +218,9 @@ export async function calculateExpectedWorkHours(
 	timezone?: string,
 	exclusions?: (date: Date) => boolean,
 ): Promise<WorkHoursSummary> {
-	let currentDT = fromJSDate(startDate, timezone);
-	const endDT = fromJSDate(endDate, timezone);
+	const zone = resolveCalculationZone(timezone);
+	let current = instantFromDate(startDate).toZonedDateTimeISO(zone);
+	const end = instantFromDate(endDate).toZonedDateTimeISO(zone);
 
 	let totalMinutes = 0;
 	let excludedMinutes = 0;
@@ -211,13 +228,13 @@ export async function calculateExpectedWorkHours(
 	let excludedDays = 0;
 
 	// Iterate through each day in the range
-	while (currentDT <= endDT) {
-		const dayOfWeek = currentDT.weekday % 7; // Luxon: 1=Mon, 7=Sun -> convert to JS: 0=Sun, 6=Sat
+	while (compareInstants(current.toInstant(), end.toInstant()) <= 0) {
+		const dayOfWeek = current.dayOfWeek % 7; // ISO: 1=Mon, 7=Sun -> convert to JS: 0=Sun, 6=Sat
 
 		// Skip weekends (assuming 5-day work week)
 		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
 			// Check if this is a holiday
-			const dayDate = dateToDB(currentDT);
+			const dayDate = instantToDB(current.toInstant());
 			const shouldExclude = dayDate
 				? exclusions
 					? exclusions(dayDate)
@@ -234,7 +251,7 @@ export async function calculateExpectedWorkHours(
 		}
 
 		// Move to next day
-		currentDT = currentDT.plus({ days: 1 });
+		current = current.add({ days: 1 });
 	}
 
 	return {
@@ -314,8 +331,9 @@ export async function calculateExpectedWorkHoursForPolicy(
 	timezone: string,
 	exclusions?: (date: Date) => boolean,
 ): Promise<ExpectedWorkHoursSummary> {
-	let currentDT = fromJSDate(startDate, timezone);
-	const endDT = fromJSDate(endDate, timezone);
+	const zone = resolveCalculationZone(timezone);
+	let current = instantFromDate(startDate).toZonedDateTimeISO(zone);
+	const end = instantFromDate(endDate).toZonedDateTimeISO(zone);
 
 	let totalMinutes = 0;
 	let excludedMinutes = 0;
@@ -323,15 +341,15 @@ export async function calculateExpectedWorkHoursForPolicy(
 	let excludedDays = 0;
 
 	// Iterate through each day in the range
-	while (currentDT <= endDT) {
-		const luxonWeekday = currentDT.weekday; // 1=Mon...7=Sun
+	while (compareInstants(current.toInstant(), end.toInstant()) <= 0) {
+		const isoWeekday = current.dayOfWeek; // 1=Mon...7=Sun
 
 		// Check if this is a working day per policy schedule
-		if (isWorkingDay(policy, luxonWeekday)) {
-			const hoursForDay = getExpectedHoursForDay(policy, luxonWeekday);
+		if (isWorkingDay(policy, isoWeekday)) {
+			const hoursForDay = getExpectedHoursForDay(policy, isoWeekday);
 
 			// Check if this is a holiday
-			const dayDate = dateToDB(currentDT);
+			const dayDate = instantToDB(current.toInstant());
 			const shouldExclude = dayDate
 				? exclusions
 					? exclusions(dayDate)
@@ -348,7 +366,7 @@ export async function calculateExpectedWorkHoursForPolicy(
 		}
 
 		// Move to next day
-		currentDT = currentDT.plus({ days: 1 });
+		current = current.add({ days: 1 });
 	}
 
 	return {
@@ -383,7 +401,7 @@ export const compareWorkHours = Effect.fn("compareWorkHours")(function* (
 				calculateWorkHours(employeeId, organizationId, startDate, endDate),
 			),
 			// calculateWorkHours counts UTC days, so the expected side does too.
-			calculateExpectedWorkHoursForEmployee(employeeId, organizationId, startDate, endDate, "utc"),
+			calculateExpectedWorkHoursForEmployee(employeeId, organizationId, startDate, endDate, "UTC"),
 		],
 		{ concurrency: "unbounded" },
 	);

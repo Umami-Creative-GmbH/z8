@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { timeRecord, timeRecordAbsence } from "@/db/schema";
 import {
@@ -8,6 +7,7 @@ import {
 } from "@/lib/absences/duration";
 import type { AbsenceDurationKind } from "@/lib/absences/types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 
 type DayPeriod = "full_day" | "am" | "pm";
 type CanonicalAbsenceTransaction = Pick<
@@ -33,23 +33,20 @@ export function mapAbsenceRangeToCanonicalTimestamps(input: {
 		});
 	}
 
-	const startOfStartDate = DateTime.fromISO(input.startDate, {
-		zone: "utc",
-	}).startOf("day");
-	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf(
-		"day"
-	);
+	const startOfStartDate = parsePlainDate(input.startDate).toZonedDateTime("UTC").toInstant();
+	const endOfEndDate = parsePlainDate(input.endDate)
+		.add({ days: 1 })
+		.toZonedDateTime("UTC")
+		.toInstant()
+		.subtract({ milliseconds: 1 });
 
 	const startAt =
-		input.startPeriod === "pm"
-			? startOfStartDate.plus({ hours: 12 })
-			: startOfStartDate;
-	const endAt =
-		input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
+		input.startPeriod === "pm" ? startOfStartDate.add({ hours: 12 }) : startOfStartDate;
+	const endAt = input.endPeriod === "am" ? endOfEndDate.subtract({ hours: 12 }) : endOfEndDate;
 
 	return {
-		startAt: startAt.toJSDate(),
-		endAt: endAt.toJSDate(),
+		startAt: dateFromInstant(startAt),
+		endAt: dateFromInstant(endAt),
 	};
 }
 
@@ -77,13 +74,8 @@ export function buildCanonicalAbsenceRecordValues(input: {
 			recordKind: "absence" as const,
 			startAt,
 			endAt,
-			durationMinutes: Math.max(
-				0,
-				Math.floor((endAt.getTime() - startAt.getTime()) / 60000)
-			),
-			approvalState: input.requiresApproval
-				? ("pending" as const)
-				: ("approved" as const),
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			approvalState: input.requiresApproval ? ("pending" as const) : ("approved" as const),
 			origin: "manual" as const,
 			createdBy: input.createdBy,
 			updatedBy: input.createdBy,
@@ -143,8 +135,7 @@ export async function updateCanonicalAbsenceRangeInTransaction(
 		endDate: string;
 		endPeriod: DayPeriod;
 		updatedBy: string;
-		resolvedBounds?: { startAt: Date; endAt: Date
-	};
+		resolvedBounds?: { startAt: Date; endAt: Date };
 	},
 ): Promise<void> {
 	if (!input.canonicalRecordId) {
@@ -159,10 +150,7 @@ export async function updateCanonicalAbsenceRangeInTransaction(
 		.set({
 			startAt,
 			endAt,
-			durationMinutes: Math.max(
-				0,
-				Math.floor((endAt.getTime() - startAt.getTime()) / 60000)
-			),
+			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
 			updatedAt: currentTimestamp(),
 			updatedBy: input.updatedBy,
 		})

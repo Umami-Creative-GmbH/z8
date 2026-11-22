@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExecuteParams } from "./base-executor";
 
@@ -44,10 +44,9 @@ const params: ExecuteParams = {
 	ownerId: "schedule-user",
 	payrollConfigId: "payroll-config-1",
 	reportConfig: { formatId: "datev_lohn" },
-	// Fixtures for the executor's existing Luxon boundary; no date calculations.
 	dateRange: {
-		start: DateTime.fromISO("2026-08-01T00:00:00Z", { zone: "UTC" }),
-		end: DateTime.fromISO("2026-08-31T23:59:59Z", { zone: "UTC" }),
+		start: Temporal.ZonedDateTime.from("2026-08-01T00:00:00[UTC]"),
+		end: Temporal.ZonedDateTime.from("2026-08-31T23:59:59[UTC]"),
 	},
 };
 

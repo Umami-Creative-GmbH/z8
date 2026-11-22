@@ -9,7 +9,6 @@ import { db } from "@/db";
 import { absenceCategory, absenceEntry, employee, timeEntry, workPeriod } from "@/db/schema";
 import { clipAbsenceDayRange, countAbsenceDays } from "@/lib/absences/absence-days";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
-import { endOfDay, format, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	compareInstants,
@@ -17,6 +16,7 @@ import {
 	dateFromInstant,
 	instantFromDate,
 	parsePlainDate,
+	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import {
@@ -201,12 +201,9 @@ export async function generateEmployeeReport(
 			customFields: customFields.byRecord[employeeId] ?? [],
 		},
 		period: {
-			startDate: calendarRange?.startDate ?? format(startDate, "yyyy-MM-dd"),
-			endDate: calendarRange?.endDate ?? format(endDate, "yyyy-MM-dd"),
-			label: formatDateRangeLabel(
-				calendarRange?.startDate ?? format(startDate, "yyyy-MM-dd"),
-				calendarRange?.endDate ?? format(endDate, "yyyy-MM-dd"),
-			),
+			startDate: reportRange.startDate,
+			endDate: reportRange.endDate,
+			label: formatDateRangeLabel(reportRange.startDate, reportRange.endDate),
 		},
 		workHours,
 		absences: {
@@ -320,8 +317,9 @@ export async function aggregateAbsences(
 ): Promise<Omit<AbsencesData, "homeOffice">> {
 	// Convert dates to YYYY-MM-DD strings for date column comparison
 	const rangeStartStr =
-		calendarRange?.startDate ?? format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
-	const rangeEndStr = calendarRange?.endDate ?? format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
+		calendarRange?.startDate ?? plainDateAt(instantFromDate(startDate), "UTC").toString();
+	const rangeEndStr =
+		calendarRange?.endDate ?? plainDateAt(instantFromDate(endDate), "UTC").toString();
 
 	// Fetch all absences in date range and the working days that count them
 	const [absences, isWorkingDay] = await Promise.all([
