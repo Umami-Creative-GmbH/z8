@@ -2,7 +2,6 @@
 
 import { IconAlertTriangle, IconScale, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import Link from "next/link";
 import { useReducer, useRef, useTransition } from "react";
 import { toast } from "sonner";
 import type { PayrollExportFormatOption } from "@/app/[locale]/(app)/payroll/actions";
@@ -15,6 +14,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import type { PayrollReadinessResult } from "@/lib/payroll-readiness/get-payroll-readiness";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
+import { Link } from "@/navigation";
 import { PayrollAbsencesTab } from "./workspace/payroll-absences-tab";
 import { PayrollDaysTab } from "./workspace/payroll-days-tab";
 import { PayrollExportTab } from "./workspace/payroll-export-tab";
@@ -388,7 +388,10 @@ function PayrollHeader({
 						<Button asChild variant="outline">
 							<Link href="/settings/payroll-export">
 								<IconSettings aria-hidden="true" className="size-4" />
-								{t("payroll.actions.exportSettings", "Payroll export settings")}
+								{t(
+									"settings.payrollExport.connectorsTitle",
+									"Payroll Connectors & Wage Types",
+								)}
 							</Link>
 						</Button>
 					) : null}

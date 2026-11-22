@@ -39,6 +39,9 @@ vi.mock("next-intl", () => ({
 vi.mock("next/navigation", () => ({
 	useSearchParams: () => new URLSearchParams(window.location.search),
 }));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+}));
 vi.mock("sonner", () => ({ toast: toastMocks }));
 vi.mock("@tanstack/react-query", () => ({
 	useQueryClient: () => ({ invalidateQueries: async () => undefined }),
@@ -2678,7 +2681,7 @@ describe("PayrollWorkspace unified IA (#1957)", () => {
 		);
 
 		expect(
-			screen.getByRole("link", { name: "Payroll export settings" }).getAttribute("href"),
+			screen.getByRole("link", { name: "Payroll Connectors & Wage Types" }).getAttribute("href"),
 		).toBe("/settings/payroll-export");
 		expect(screen.getByRole("tab", { name: "Closed months", selected: true })).toBeTruthy();
 		expect(screen.getByTestId("closed-months-settings")).toBeTruthy();
@@ -2701,7 +2704,7 @@ describe("PayrollWorkspace unified IA (#1957)", () => {
 			/>,
 		);
 
-		expect(screen.queryByRole("link", { name: "Payroll export settings" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Payroll Connectors & Wage Types" })).toBeNull();
 		expect(screen.queryByTestId("payroll-overview-readiness-section")).toBeNull();
 		expect(screen.queryByRole("tab", { name: "Closed months" })).toBeNull();
 
@@ -2721,7 +2724,7 @@ describe("PayrollWorkspace unified IA (#1957)", () => {
 		expect(screen.queryByRole("tab", { name: "Settlement" })).toBeNull();
 		expect(screen.queryByRole("tab", { name: "Export" })).toBeNull();
 		expect(screen.queryByRole("link", { name: "Work balances" })).toBeNull();
-		expect(screen.queryByRole("link", { name: "Payroll export settings" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Payroll Connectors & Wage Types" })).toBeNull();
 	});
 
 	it("keeps the Closed months tab visible with an error alert when loading closed months fails", () => {

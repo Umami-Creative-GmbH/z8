@@ -10,7 +10,7 @@ import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { payrollBlockerDismissal, payrollExportCarriedDay, payrollExportJob } from "@/db/schema";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { isOrgAdminForOrganization } from "@/lib/payroll-access/org-admin";
@@ -868,6 +868,9 @@ export async function getPayrollExportScopeAction(
 	});
 }
 
+const PAYROLL_EXPORT_HISTORY_LIMIT = 50;
+const PAYROLL_OFFICER_HISTORY_SCAN_LIMIT = 250;
+
 /**
  * Organization-level payroll readiness checks for the `/payroll` Overview tab (#1957).
  * Strictly limited to organization administrators.
@@ -878,9 +881,9 @@ export async function getPayrollReadinessForWorkspaceAction(request: {
 }): Promise<ServerActionResult<PayrollReadinessResult>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const actor = await requireOrgAdminPayrollActor(t);
-		const start = parseISODate(t, request.startDate, "startDate");
-		const end = parseISODate(t, request.endDate, "endDate");
-		if (end < start) {
+		const startPlain = parsePlainDateForAction(t, request.startDate, "startDate");
+		const endPlain = parsePlainDateForAction(t, request.endDate, "endDate");
+		if (comparePlainDates(endPlain, startPlain) < 0) {
 			throw new ValidationError({
 				message: t("payroll.errors.endDateAfterStart", "End date must be on or after start date"),
 				field: "endDate",
@@ -889,9 +892,33 @@ export async function getPayrollReadinessForWorkspaceAction(request: {
 		}
 		return getPayrollReadiness({
 			organizationId: actor.organizationId,
-			period: { start, end },
+			period: {
+				start: DateTime.fromISO(startPlain.toString(), { zone: "utc" }),
+				end: DateTime.fromISO(endPlain.toString(), { zone: "utc" }),
+			},
 		});
 	});
+}
+
+function parsePlainDateForAction(t: PayrollTranslate, value: string, field: string) {
+	if (typeof value !== "string" || !ISO_DATE_PATTERN.test(value)) {
+		throw new ValidationError({
+			message: t("payroll.errors.mustBeIsoDate", "{field} must be an ISO date", { field }),
+			field,
+			value,
+		});
+	}
+	try {
+		return parsePlainDate(value);
+	} catch {
+		throw new ValidationError({
+			message: t("payroll.errors.mustBeValidIsoDate", "{field} must be a valid ISO date", {
+				field,
+			}),
+			field,
+			value,
+		});
+	}
 }
 
 export interface PayrollWorkspaceExportHistory {
@@ -904,9 +931,6 @@ export interface PayrollWorkspaceExportHistory {
  * admins, strictly limited to jobs within the active payroll access grant for
  * delegated payroll officers. Denied to close-month-only actors.
  */
-const PAYROLL_EXPORT_HISTORY_LIMIT = 50;
-const PAYROLL_OFFICER_HISTORY_SCAN_LIMIT = 250;
-
 export async function getPayrollExportHistoryAction(): Promise<
 	ServerActionResult<PayrollWorkspaceExportHistory>
 > {

@@ -77,7 +77,7 @@ function projectReportReader() {
 				}),
 			);
 		}
-		const org = yield* dbService.query("getProjectReportOrganization", () =>
+		const org = yield* dbService.query("projectReports.getOrganization", () =>
 			dbService.db.query.organization.findFirst({
 				where: eq(organization.id, organizationId),
 				columns: { projectsEnabled: true },

@@ -13,7 +13,7 @@ const mockState = vi.hoisted(() => ({
 	} | null,
 	settingsCaller: null as {
 		organizationId: string;
-		settingsAccess: { tier: "member" | "manager" | "orgAdmin" };
+		settingsAccess: "member" | "scopedManager" | "orgAdmin" | "owner";
 	} | null,
 	hasGrant: false,
 	grantScope: null as "all" | "specific" | null,
@@ -71,16 +71,6 @@ vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: vi.fn(async () => mockState.authContext),
 	getCurrentSettingsAccess: vi.fn(async () => mockState.settingsCaller),
 	getAbility: vi.fn(async () => ({ can: () => false })),
-}));
-
-vi.mock("@/lib/organization-action/settings-access", () => ({
-	meetsSettingsAccess: (
-		access: { tier: "member" | "manager" | "orgAdmin" },
-		required: "member" | "manager" | "orgAdmin",
-	) => {
-		const rank = { member: 0, manager: 1, orgAdmin: 2 };
-		return rank[access.tier] >= rank[required];
-	},
 }));
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
@@ -264,7 +254,7 @@ describe("payroll actions access paths & scoped export history (#1957)", () => {
 			};
 			mockState.settingsCaller = {
 				organizationId: "org-1",
-				settingsAccess: { tier: "orgAdmin" },
+				settingsAccess: "orgAdmin",
 			};
 			mockState.hasGrant = false;
 		});
@@ -314,7 +304,7 @@ describe("payroll actions access paths & scoped export history (#1957)", () => {
 			};
 			mockState.settingsCaller = {
 				organizationId: "org-1",
-				settingsAccess: { tier: "orgAdmin" },
+				settingsAccess: "orgAdmin",
 			};
 			mockState.hasGrant = false;
 		});
@@ -397,7 +387,7 @@ describe("payroll actions access paths & scoped export history (#1957)", () => {
 			};
 			mockState.settingsCaller = {
 				organizationId: "org-1",
-				settingsAccess: { tier: "member" },
+				settingsAccess: "member",
 			};
 			mockState.hasGrant = true;
 			mockState.grantScope = "specific";
@@ -538,7 +528,7 @@ describe("payroll actions access paths & scoped export history (#1957)", () => {
 			};
 			mockState.settingsCaller = {
 				organizationId: "org-1",
-				settingsAccess: { tier: "member" },
+				settingsAccess: "member",
 			};
 			mockState.hasGrant = false;
 			mockState.grantScope = null;

@@ -14,7 +14,7 @@ const mockState = vi.hoisted(() => ({
 	} | null,
 	settingsCaller: null as {
 		organizationId: string;
-		settingsAccess: { tier: "member" | "manager" | "orgAdmin" };
+		settingsAccess: "member" | "scopedManager" | "orgAdmin" | "owner";
 	} | null,
 	canClose: false,
 	canReopen: false,
@@ -51,16 +51,6 @@ vi.mock("@/lib/auth-helpers", () => ({
 			return false;
 		},
 	})),
-}));
-
-vi.mock("@/lib/organization-action/settings-access", () => ({
-	meetsSettingsAccess: (
-		access: { tier: "member" | "manager" | "orgAdmin" },
-		required: "member" | "manager" | "orgAdmin",
-	) => {
-		const rank = { member: 0, manager: 1, orgAdmin: 2 };
-		return rank[access.tier] >= rank[required];
-	},
 }));
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
@@ -173,7 +163,7 @@ describe("PayrollPage actor paths (#1957)", () => {
 		};
 		mockState.settingsCaller = {
 			organizationId: "org-1",
-			settingsAccess: { tier: "orgAdmin" },
+			settingsAccess: "owner",
 		};
 		mockState.canClose = true;
 
@@ -200,7 +190,7 @@ describe("PayrollPage actor paths (#1957)", () => {
 		};
 		mockState.settingsCaller = {
 			organizationId: "org-1",
-			settingsAccess: { tier: "orgAdmin" },
+			settingsAccess: "owner",
 		};
 		mockState.canClose = true;
 		mockState.getClosedMonthsOverview.mockResolvedValue({
@@ -228,7 +218,7 @@ describe("PayrollPage actor paths (#1957)", () => {
 		};
 		mockState.settingsCaller = {
 			organizationId: "org-1",
-			settingsAccess: { tier: "member" },
+			settingsAccess: "member",
 		};
 		mockState.hasGrant = true;
 
@@ -254,7 +244,7 @@ describe("PayrollPage actor paths (#1957)", () => {
 		};
 		mockState.settingsCaller = {
 			organizationId: "org-1",
-			settingsAccess: { tier: "member" },
+			settingsAccess: "member",
 		};
 		mockState.hasGrant = false;
 		mockState.canClose = true;
@@ -280,7 +270,7 @@ describe("PayrollPage actor paths (#1957)", () => {
 		};
 		mockState.settingsCaller = {
 			organizationId: "org-1",
-			settingsAccess: { tier: "member" },
+			settingsAccess: "member",
 		};
 
 		await renderPayrollPageContent();
