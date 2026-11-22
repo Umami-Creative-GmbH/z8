@@ -68,4 +68,36 @@ describe("getSelectedWorkdayDate", () => {
 		expect(result.dateKey).toBe("2026-05-04");
 		expect(result.todayDateKey).toBe("2026-05-04");
 	});
+
+	it("formats the workday label using the active locale (de vs en) across DST boundaries", () => {
+		const springDe = getSelectedWorkdayDate({
+			dateParam: "2026-03-29",
+			timezone: "Europe/Berlin",
+			locale: "de",
+			now: new Date("2026-03-29T10:00:00.000Z"),
+		});
+		const springEn = getSelectedWorkdayDate({
+			dateParam: "2026-03-29",
+			timezone: "Europe/Berlin",
+			locale: "en",
+			now: new Date("2026-03-29T10:00:00.000Z"),
+		});
+
+		expect(springDe.label).toBe("29. März 2026");
+		expect(springEn.label).toBe("March 29, 2026");
+		// Spring-forward day in Europe/Berlin is 23 hours long: 2026-03-28T23:00Z .. 2026-03-29T21:59:59.999Z
+		expect(springDe.startUtc.toISO()).toBe("2026-03-28T23:00:00.000Z");
+		expect(springDe.endUtc.toISO()).toBe("2026-03-29T21:59:59.999Z");
+
+		const fallDe = getSelectedWorkdayDate({
+			dateParam: "2026-10-25",
+			timezone: "Europe/Berlin",
+			locale: "de",
+			now: new Date("2026-10-25T10:00:00.000Z"),
+		});
+		// Fall-back day in Europe/Berlin is 25 hours long: 2026-10-24T22:00Z .. 2026-10-25T22:59:59.999Z
+		expect(fallDe.label).toBe("25. Oktober 2026");
+		expect(fallDe.startUtc.toISO()).toBe("2026-10-24T22:00:00.000Z");
+		expect(fallDe.endUtc.toISO()).toBe("2026-10-25T22:59:59.999Z");
+	});
 });

@@ -17,7 +17,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 }));
 vi.mock("@/lib/queue", () => ({ addJob: async () => ({ id: "queued" }) }));
 
-const { DateTime } = await import("luxon");
+const { parsePlainDate } = await import("@/lib/datetime/temporal-core");
 const { createExportJob, getExportJobHistory, processExportJob } =
 	await import("@/lib/payroll-export/export-service");
 const { settleDays } = await import("./settlement");
@@ -204,8 +204,8 @@ async function exportFile(
 		requestedById: ids.holder,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO(week.startDate, { zone: "utc" }),
-				end: DateTime.fromISO(week.endDate, { zone: "utc" }),
+				start: parsePlainDate(week.startDate),
+				end: parsePlainDate(week.endDate),
 			},
 			employeeIds,
 		},

@@ -5,17 +5,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SurchargeReports } from "./surcharge-reports-root";
 
 const getSurchargeCalculationsForPeriodMock = vi.fn();
-const translateMock = vi.fn(
-	(_key: string, fallback?: string, params?: { count?: number }) => {
-		const text = fallback ?? _key;
-		// Resolve the "{count, plural, one {# x} other {# xs}}" form the summary strip uses.
-		const plural = /^\{count, plural, one \{([^}]*)\} other \{([^}]*)\}\}$/.exec(text);
-		if (plural && params?.count !== undefined) {
-			return (params.count === 1 ? plural[1] : plural[2]).replace("#", String(params.count));
-		}
-		return text;
-	},
-);
+const translateMock = vi.fn((_key: string, fallback?: string, params?: { count?: number }) => {
+	const text = fallback ?? _key;
+	// Resolve the "{count, plural, one {# x} other {# xs}}" form the summary strip uses.
+	const plural = /^\{count, plural, one \{([^}]*)\} other \{([^}]*)\}\}$/.exec(text);
+	if (plural && params?.count !== undefined) {
+		return (params.count === 1 ? plural[1] : plural[2]).replace("#", String(params.count));
+	}
+	return text;
+});
+
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: translateMock }),

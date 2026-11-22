@@ -1,4 +1,10 @@
-import { DateTime } from "luxon";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	formatInstant,
+	formatPlainDate,
+	localeDefaultTimeFormat,
+} from "@/lib/datetime/temporal-format";
+import { isValidTimeZone } from "@/lib/timezone/validation";
 import type { PositionCaptureReview } from "@/lib/works-council/position-capture-review";
 import type { SuppressedValue } from "@/lib/works-council/privacy";
 import type { WorksCouncilPortalModel } from "@/lib/works-council/review-data";
@@ -7,24 +13,50 @@ import { getTranslate } from "@/tolgee/server";
 import { PositionCaptureReviewSection } from "./position-capture-review-section";
 import { VehicleUseReviewSection } from "./vehicle-use-review-section";
 
-function formatTimestamp(timestamp: string) {
-	return DateTime.fromISO(timestamp)
-		.setLocale("en-US")
-		.toLocaleString(DateTime.DATETIME_MED);
+function resolveDisplayTimezone(timezone?: string): string {
+	return timezone && isValidTimeZone(timezone) ? timezone : "UTC";
 }
 
-function formatDateRange(range: { start: string; end: string }) {
-	const start = DateTime.fromISO(range.start, { zone: "utc" })
-		.setLocale("en-US")
-		.toLocaleString(DateTime.DATE_MED);
-	const end = DateTime.fromISO(range.end, { zone: "utc" })
-		.setLocale("en-US")
-		.toLocaleString(DateTime.DATE_MED);
-	return `${start} - ${end}`;
+function formatTimestamp(timestamp: string, locale: string, timezone: string) {
+	try {
+		return formatInstant(
+			parseInstant(timestamp),
+			{
+				locale,
+				timezone: resolveDisplayTimezone(timezone),
+				timeFormat: localeDefaultTimeFormat(locale),
+			},
+			"dateTimeMedium",
+		);
+	} catch {
+		return timestamp;
+	}
+}
+
+function formatDateRange(range: { start: string; end: string }, locale: string) {
+	try {
+		const start = formatPlainDate(
+			parseInstant(range.start).toZonedDateTimeISO("UTC").toPlainDate(),
+			locale,
+			"dateMedium",
+		);
+		const end = formatPlainDate(
+			parseInstant(range.end).toZonedDateTimeISO("UTC").toPlainDate(),
+			locale,
+			"dateMedium",
+		);
+		return `${start} - ${end}`;
+	} catch {
+		return `${range.start} - ${range.end}`;
+	}
 }
 
 function formatDateInput(value: string) {
-	return DateTime.fromISO(value, { zone: "utc" }).toISODate() ?? "";
+	try {
+		return parseInstant(value).toZonedDateTimeISO("UTC").toPlainDate().toString();
+	} catch {
+		return "";
+	}
 }
 
 function buildExportHref(range: { start: string; end: string }) {
@@ -61,9 +93,7 @@ function MetricCard({
 		>
 			<p className="text-sm font-medium text-muted-foreground">{label}</p>
 			{value.state === "available" ? (
-				<p className="mt-2 font-semibold text-2xl tabular-nums tracking-tight">
-					{value.value}
-				</p>
+				<p className="mt-2 font-semibold text-2xl tabular-nums tracking-tight">{value.value}</p>
 			) : (
 				<p className="mt-2 font-medium text-muted-foreground text-sm">
 					{t("common.worksCouncil.insufficientData", "Insufficient data")}
@@ -75,23 +105,26 @@ function MetricCard({
 
 export async function WorksCouncilDashboard({
 	model,
+	locale: providedLocale,
+	timezone = "UTC",
 	positionCapture,
 	vehicleUse,
 }: {
 	model: WorksCouncilPortalModel;
+	locale?: string;
+	timezone?: string;
 	/** The read-only position capture section (#834). */
 	positionCapture?: { review: PositionCaptureReview; locale: string };
 	/** The read-only vehicle use section (#1130). */
 	vehicleUse?: { review: VehicleUseReview };
 }) {
 	const t = await getTranslate();
+	const locale = providedLocale ?? positionCapture?.locale ?? "en";
+	const displayTimezone = resolveDisplayTimezone(timezone);
 	if (model.state === "disabled") {
 		return (
 			<section className="page-frame space-y-2" aria-labelledby="works-council-title">
-				<h1
-					id="works-council-title"
-					className="text-balance text-2xl font-semibold tracking-tight"
-				>
+				<h1 id="works-council-title" className="text-balance text-2xl font-semibold tracking-tight">
 					{t("common.worksCouncil.title", "Works Council")}
 				</h1>
 				<p className="text-muted-foreground">
@@ -123,9 +156,7 @@ export async function WorksCouncilDashboard({
 							"Privacy-filtered workforce review for the selected period.",
 						)}
 					</p>
-					<p className="font-medium text-sm">
-						{formatDateRange(model.dateRange)}
-					</p>
+					<p className="font-medium text-sm">{formatDateRange(model.dateRange, locale)}</p>
 				</div>
 				{model.exportEnabled && (
 					<form method="post" action={buildExportHref(model.dateRange)}>
@@ -139,10 +170,7 @@ export async function WorksCouncilDashboard({
 				)}
 			</div>
 
-			<form
-				method="get"
-				className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
-			>
+			<form method="get" className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
 				<div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
 					<div className="space-y-2">
 						<label className="font-medium text-sm" htmlFor="works-council-from">
@@ -194,10 +222,7 @@ export async function WorksCouncilDashboard({
 				/>
 				<MetricCard
 					t={t}
-					label={t(
-						"common.worksCouncil.complianceFindings",
-						"Compliance findings",
-					)}
+					label={t("common.worksCouncil.complianceFindings", "Compliance findings")}
 					value={model.dashboard.complianceFindingCount}
 				/>
 			</div>
@@ -216,10 +241,7 @@ export async function WorksCouncilDashboard({
 				</div>
 				{model.changeLog.length === 0 ? (
 					<p className="px-4 py-6 text-sm text-muted-foreground">
-						{t(
-							"common.worksCouncil.changeLogEmpty",
-							"No changes found for this period.",
-						)}
+						{t("common.worksCouncil.changeLogEmpty", "No changes found for this period.")}
 					</p>
 				) : (
 					<ul className="divide-y">
@@ -227,7 +249,7 @@ export async function WorksCouncilDashboard({
 							<li key={entry.id} className="px-4 py-3">
 								<p className="break-words font-medium">{entry.summary}</p>
 								<p className="text-sm text-muted-foreground">
-									{entry.actorLabel} - {formatTimestamp(entry.timestamp)}
+									{entry.actorLabel} - {formatTimestamp(entry.timestamp, locale, displayTimezone)}
 								</p>
 							</li>
 						))}
@@ -249,29 +271,21 @@ export async function WorksCouncilDashboard({
 				</div>
 				{model.scheduleReview.length === 0 ? (
 					<p className="px-4 py-6 text-sm text-muted-foreground">
-						{t(
-							"common.worksCouncil.scheduleEmpty",
-							"No schedule entries found for this period.",
-						)}
+						{t("common.worksCouncil.scheduleEmpty", "No schedule entries found for this period.")}
 					</p>
 				) : (
 					<ul className="divide-y">
 						{model.scheduleReview.map((entry) => (
 							<li key={entry.id} className="px-4 py-3">
 								<p className="break-words font-medium">
-									{entry.teamName ??
-										t("common.worksCouncil.unassignedTeam", "Unassigned team")}
+									{entry.teamName ?? t("common.worksCouncil.unassignedTeam", "Unassigned team")}
 								</p>
 								<p className="text-sm text-muted-foreground">
-									{t(
-										"common.worksCouncil.scheduleEntry",
-										"{identity} - {start} to {end}",
-										{
-											identity: formatIdentityLabel(entry, t),
-											start: formatTimestamp(entry.startsAt),
-											end: formatTimestamp(entry.endsAt),
-										},
-									)}
+									{t("common.worksCouncil.scheduleEntry", "{identity} - {start} to {end}", {
+										identity: formatIdentityLabel(entry, t),
+										start: formatTimestamp(entry.startsAt, locale, displayTimezone),
+										end: formatTimestamp(entry.endsAt, locale, displayTimezone),
+									})}
 								</p>
 							</li>
 						))}

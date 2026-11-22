@@ -2,14 +2,13 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { payrollBlockerDismissal } from "@/db/schema";
 import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import {
@@ -847,7 +846,7 @@ async function resolvePayrollExportScope(
 	request: PayrollWorkspaceRequest,
 ): Promise<{
 	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
-	period: { start: DateTime; end: DateTime; label: string };
+	period: { start: PlainDate; end: PlainDate; label: string };
 	employeeIds: string[];
 }> {
 	const authContext = await requirePayrollGrantHolder(t);
@@ -1029,7 +1028,7 @@ async function resolvePayrollWorkspaceActionContext(
 	} = {},
 ): Promise<{
 	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
-	period: { start: DateTime; end: DateTime; label: string };
+	period: { start: PlainDate; end: PlainDate; label: string };
 	scopedEmployeeIds: string[];
 }> {
 	const authContext = authenticatedContext ?? (await requireActiveOrganizationEmployee(t));
@@ -1146,14 +1145,14 @@ function validatePayrollWorkspaceRequest(
 	t: PayrollTranslate,
 	request: PayrollWorkspaceRequest,
 ): {
-	start: DateTime;
-	end: DateTime;
+	start: PlainDate;
+	end: PlainDate;
 	label: string;
 } {
 	const start = parseISODate(t, request.startDate, "startDate");
 	const end = parseISODate(t, request.endDate, "endDate");
 
-	if (end < start) {
+	if (comparePlainDates(end, start) < 0) {
 		throw new ValidationError({
 			message: t("payroll.errors.endDateAfterStart", "End date must be on or after start date"),
 			field: "endDate",
@@ -1171,7 +1170,7 @@ function validatePayrollWorkspaceRequest(
 	return { start, end, label: request.label.trim() };
 }
 
-function parseISODate(t: PayrollTranslate, value: string, field: string): DateTime {
+function parseISODate(t: PayrollTranslate, value: string, field: string): PlainDate {
 	if (typeof value !== "string" || !ISO_DATE_PATTERN.test(value)) {
 		throw new ValidationError({
 			message: t("payroll.errors.mustBeIsoDate", "{field} must be an ISO date", { field }),
@@ -1180,18 +1179,22 @@ function parseISODate(t: PayrollTranslate, value: string, field: string): DateTi
 		});
 	}
 
-	const parsed = DateTime.fromISO(value, { zone: "utc" });
-	if (!parsed.isValid || parsed.toISODate() !== value) {
-		throw new ValidationError({
-			message: t("payroll.errors.mustBeValidIsoDate", "{field} must be a valid ISO date", {
-				field,
-			}),
-			field,
-			value,
-		});
+	try {
+		const parsed = parsePlainDate(value);
+		if (parsed.toString() === value) {
+			return parsed;
+		}
+	} catch {
+		// Fall through to ValidationError below.
 	}
 
-	return parsed;
+	throw new ValidationError({
+		message: t("payroll.errors.mustBeValidIsoDate", "{field} must be a valid ISO date", {
+			field,
+		}),
+		field,
+		value,
+	});
 }
 
 function validateRequestedEmployeeIds(

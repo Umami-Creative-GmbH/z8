@@ -3,7 +3,6 @@
  * Fetches work periods, absences, and configuration from database
  */
 import { and, asc, eq, gt, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
 import {
 	absenceCategory,
 	db,
@@ -17,7 +16,7 @@ import {
 } from "@/db";
 import { timeRecord } from "@/db/schema";
 import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
-import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
 import { createLogger } from "@/lib/logger";
 import {
@@ -74,8 +73,8 @@ export async function fetchWorkPeriodsForExport(
 		organizationId,
 		employeeIds: await resolveExportEmployeeIds(organizationId, filters),
 		range: {
-			start: queryEnvelope.start.toJSDate(),
-			endExclusive: queryEnvelope.end.toJSDate(),
+			start: dateFromInstant(queryEnvelope.start),
+			endExclusive: dateFromInstant(queryEnvelope.end),
 		},
 		findRepairs: (query) => findOpenDepartureClockRepairs(db, query),
 	});
@@ -86,8 +85,8 @@ export async function fetchWorkPeriodsForExport(
 		eq(timeRecord.recordKind, "work"),
 		eq(timeRecord.approvalState, "approved"),
 		isNotNull(timeRecord.endAt),
-		lte(timeRecord.startAt, queryEnvelope.end.toJSDate()),
-		gte(timeRecord.endAt, queryEnvelope.start.toJSDate()),
+		lte(timeRecord.startAt, dateFromInstant(queryEnvelope.end)),
+		gte(timeRecord.endAt, dateFromInstant(queryEnvelope.start)),
 	];
 
 	// Add employee filter if specified
@@ -154,9 +153,7 @@ export async function fetchWorkPeriodsForExport(
 	let filteredPeriods = periods;
 	if (filters.teamIds && filters.teamIds.length > 0) {
 		const teamIdSet = new Set(filters.teamIds);
-		filteredPeriods = periods.filter(
-			(p) => p.employee?.teamId && teamIdSet.has(p.employee.teamId),
-		);
+		filteredPeriods = periods.filter((p) => p.employee?.teamId && teamIdSet.has(p.employee.teamId));
 	}
 
 	if (filters.projectIds && filters.projectIds.length > 0) {
@@ -168,10 +165,7 @@ export async function fetchWorkPeriodsForExport(
 		);
 	}
 
-	logger.info(
-		{ count: filteredPeriods.length },
-		"Fetched work periods for payroll export",
-	);
+	logger.info({ count: filteredPeriods.length }, "Fetched work periods for payroll export");
 
 	const credited = creditExportWorkPeriods(organizationId, filteredPeriods, {
 		startDate,
@@ -182,16 +176,14 @@ export async function fetchWorkPeriodsForExport(
 	return credited.map(({ record: p, minutes, overlap }) => ({
 		id: p.id,
 		sourceActorId: p.updatedBy ?? null,
-		sourceRevision: p.updatedAt
-			? instantFromDate(p.updatedAt).toString()
-			: null,
+		sourceRevision: p.updatedAt ? instantFromDate(p.updatedAt).toString() : null,
 		employeeId: p.employeeId,
 		employeeNumber: p.employee?.employeeNumber || null,
 		email: p.employee?.user?.email || null,
 		firstName: p.employee?.user?.firstName || null,
 		lastName: p.employee?.user?.lastName || null,
-		startTime: dateTimeFromInstant(overlap.start),
-		endTime: dateTimeFromInstant(overlap.endExclusive),
+		startTime: overlap.start.toZonedDateTimeISO("UTC"),
+		endTime: overlap.endExclusive.toZonedDateTimeISO("UTC"),
 		durationMinutes: minutes,
 		workCategoryId: p.work?.workCategoryId || null,
 		workCategoryName: p.work?.workCategory?.name || null,
@@ -232,10 +224,12 @@ export async function fetchAbsencesForExport(
 		await assertCanonicalCutoverReady(organizationId);
 	}
 	const { startDate, endDate } = getLogicalDateRange(filters);
-	const logicalStart = DateTime.fromISO(startDate, { zone: "utc" }).startOf(
-		"day",
-	);
-	const logicalEnd = DateTime.fromISO(endDate, { zone: "utc" }).endOf("day");
+	const logicalStart = parsePlainDate(startDate).toZonedDateTime("UTC").toInstant();
+	const logicalEnd = parsePlainDate(endDate)
+		.add({ days: 1 })
+		.toZonedDateTime("UTC")
+		.toInstant()
+		.subtract({ milliseconds: 1 });
 
 	logger.info(
 		{ organizationId, filters: serializeFilters(filters) },
@@ -276,9 +270,9 @@ export async function fetchAbsencesForExport(
 			eq(timeRecord.recordKind, "absence"),
 			eq(timeRecord.approvalState, "approved"),
 			inArray(timeRecord.employeeId, employeeIds),
-			lte(timeRecord.startAt, logicalEnd.toJSDate()),
+			lte(timeRecord.startAt, dateFromInstant(logicalEnd)),
 			// An end exactly at the first midnight is exclusive (`absenceRecordDates`).
-			or(gt(timeRecord.endAt, logicalStart.toJSDate()), isNull(timeRecord.endAt)),
+			or(gt(timeRecord.endAt, dateFromInstant(logicalStart)), isNull(timeRecord.endAt)),
 		),
 		with: {
 			employee: {
@@ -316,10 +310,7 @@ export async function fetchAbsencesForExport(
 		orderBy: [asc(timeRecord.startAt)],
 	});
 
-	logger.info(
-		{ count: absences.length },
-		"Fetched absences for payroll export",
-	);
+	logger.info({ count: absences.length }, "Fetched absences for payroll export");
 
 	return absences.map((a) => {
 		// Wall clock encoded as UTC; an exclusive next-midnight end (canonical backfill of
@@ -368,11 +359,7 @@ export async function fetchOvertimePayoutsForExport(
 	const { startDate, endDate } = getLogicalDateRange(filters);
 	const payouts = await listOvertimePayouts(reader, {
 		organizationId,
-		employeeIds: await resolveExportEmployeeIds(
-			organizationId,
-			filters,
-			reader,
-		),
+		employeeIds: await resolveExportEmployeeIds(organizationId, filters, reader),
 		fromDate: startDate,
 		throughDate: endDate,
 	});
@@ -383,9 +370,7 @@ export async function fetchOvertimePayoutsForExport(
 	const people = await reader.query.employee.findMany({
 		where: and(
 			eq(employee.organizationId, organizationId),
-			inArray(employee.id, [
-				...new Set(payouts.map((payout) => payout.employeeId)),
-			]),
+			inArray(employee.id, [...new Set(payouts.map((payout) => payout.employeeId))]),
 		),
 		columns: { id: true, employeeNumber: true },
 		with: {
@@ -403,9 +388,7 @@ export async function fetchOvertimePayoutsForExport(
 		const person = byId.get(payout.employeeId);
 		return {
 			id: payout.id,
-			sourceRevision: payout.recordedAt
-				? instantFromDate(payout.recordedAt).toString()
-				: null,
+			sourceRevision: payout.recordedAt ? instantFromDate(payout.recordedAt).toString() : null,
 			sourceReason: payout.reason ?? null,
 			sourceActorId: payout.recordedBy ?? null,
 			employeeId: payout.employeeId,
@@ -508,10 +491,7 @@ export async function getWageTypeMappings(
  */
 export async function getWorkCategories(organizationId: string) {
 	return db.query.workCategory.findMany({
-		where: and(
-			eq(workCategory.organizationId, organizationId),
-			eq(workCategory.isActive, true),
-		),
+		where: and(eq(workCategory.organizationId, organizationId), eq(workCategory.isActive, true)),
 		columns: {
 			id: true,
 			name: true,
@@ -552,12 +532,7 @@ export async function getEmployeesForFilter(organizationId: string) {
 		})
 		.from(employee)
 		.innerJoin(user, eq(employee.userId, user.id))
-		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
-			),
-		)
+		.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
 		.orderBy(asc(user.lastName), asc(user.firstName));
 }
 
@@ -582,10 +557,7 @@ export async function getTeamsForFilter(organizationId: string) {
 export async function getProjectsForFilter(organizationId: string) {
 	const { project } = await import("@/db");
 	return db.query.project.findMany({
-		where: and(
-			eq(project.organizationId, organizationId),
-			eq(project.isActive, true),
-		),
+		where: and(eq(project.organizationId, organizationId), eq(project.isActive, true)),
 		columns: {
 			id: true,
 			name: true,
@@ -616,8 +588,8 @@ export async function countWorkPeriods(
 		eq(timeRecord.recordKind, "work"),
 		eq(timeRecord.approvalState, "approved"),
 		isNotNull(timeRecord.endAt),
-		lte(timeRecord.startAt, queryEnvelope.end.toJSDate()),
-		gte(timeRecord.endAt, queryEnvelope.start.toJSDate()),
+		lte(timeRecord.startAt, dateFromInstant(queryEnvelope.end)),
+		gte(timeRecord.endAt, dateFromInstant(queryEnvelope.start)),
 	];
 
 	if (filters.employeeIds && filters.employeeIds.length > 0) {
@@ -655,8 +627,7 @@ export async function countWorkPeriods(
 	if (filters.teamIds && filters.teamIds.length > 0) {
 		const teamIdSet = new Set(filters.teamIds);
 		filteredRecords = filteredRecords.filter(
-			(record) =>
-				record.employee?.teamId && teamIdSet.has(record.employee.teamId),
+			(record) => record.employee?.teamId && teamIdSet.has(record.employee.teamId),
 		);
 	}
 
@@ -744,18 +715,14 @@ function creditExportWorkPeriods<TRecord extends ExportWorkRecord>(
 	return credited;
 }
 
-function dateTimeFromInstant(instant: Instant): DateTime {
-	return DateTime.fromMillis(instant.epochMilliseconds, { zone: "utc" });
-}
-
 /**
  * Helper to serialize filters for logging
  */
 function serializeFilters(filters: PayrollExportFilters) {
 	return {
 		dateRange: {
-			start: filters.dateRange.start.toISO(),
-			end: filters.dateRange.end.toISO(),
+			start: filters.dateRange.start.toString(),
+			end: filters.dateRange.end.toString(),
 		},
 		employeeIds: filters.employeeIds,
 		teamIds: filters.teamIds,
@@ -783,8 +750,7 @@ async function resolveExportEmployeeIds(
 	filters: PayrollExportFilters,
 	reader: Pick<typeof db, "query"> = db,
 ): Promise<string[]> {
-	if (filters.employeeIds && filters.employeeIds.length > 0)
-		return filters.employeeIds;
+	if (filters.employeeIds && filters.employeeIds.length > 0) return filters.employeeIds;
 	const rows = await reader.query.employee.findMany({
 		where:
 			filters.teamIds && filters.teamIds.length > 0
@@ -803,12 +769,10 @@ function hasEmptyEmployeeScope(filters: PayrollExportFilters) {
 }
 
 function getLogicalDateRange(filters: PayrollExportFilters) {
-	const startDate = filters.dateRange.start.toISODate();
-	const endDate = filters.dateRange.end.toISODate();
-	if (!startDate || !endDate) {
-		throw new Error("Invalid payroll export date range");
-	}
-	return { startDate, endDate };
+	return {
+		startDate: filters.dateRange.start.toString(),
+		endDate: filters.dateRange.end.toString(),
+	};
 }
 
 async function getOrganizationTimezone(organizationId: string) {

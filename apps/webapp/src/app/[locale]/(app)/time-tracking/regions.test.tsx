@@ -5,13 +5,7 @@ import { DateTime } from "luxon";
 import { DynamicServerError } from "next/dist/client/components/hooks-server-context";
 import { makeUntrackedHangingPromise } from "next/dist/server/dynamic-rendering-utils";
 import { notFound, redirect, unstable_rethrow } from "next/navigation";
-import {
-	Children,
-	isValidElement,
-	type ReactElement,
-	type ReactNode,
-	Suspense,
-} from "react";
+import { Children, isValidElement, type ReactElement, type ReactNode, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
@@ -49,10 +43,7 @@ import {
 	WorkdayContextRegion,
 	WorkplacePolicyRegion,
 } from "./regions";
-import {
-	type EmployeeRenderContext,
-	getTimeTrackingRenderContext,
-} from "./render-context";
+import { type EmployeeRenderContext, getTimeTrackingRenderContext } from "./render-context";
 import { serializeWorkdayTimelineResult } from "./timeline-serialization";
 import { getWorkdayTimelineData } from "./workday-timeline-data";
 
@@ -73,10 +64,7 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: vi.fn(async () => (_key: string, fallback: string) => fallback),
 }));
 vi.mock("next/headers", () => ({
-	headers: vi.fn(
-		async () =>
-			new Headers({ "x-pathname": "/de/time-tracking?date=2026-10-02" }),
-	),
+	headers: vi.fn(async () => new Headers({ "x-pathname": "/de/time-tracking?date=2026-10-02" })),
 }));
 vi.mock("next-intl/server", () => ({ getLocale: vi.fn(async () => "de") }));
 vi.mock("./render-context", () => ({ getTimeTrackingRenderContext: vi.fn() }));
@@ -149,8 +137,7 @@ const timelineResult = {
 	error: "Timeline unavailable",
 };
 const searchParams = () => Promise.resolve({ date: "2026-10-02" });
-const element = (node: unknown) =>
-	node as ReactElement<Record<string, unknown>>;
+const element = (node: unknown) => node as ReactElement<Record<string, unknown>>;
 const leaf = (node: unknown) => {
 	const result = element(node);
 	return result.type === "div" ? element(result.props.children) : result;
@@ -206,8 +193,7 @@ describe("driving details missing notice (#1127)", () => {
 describe("independent time tracking region components", () => {
 	it("clock resolves while secondary regions and search params are pending", async () => {
 		const identity = Promise.withResolvers<EmployeeRenderContext>();
-		const active =
-			Promise.withResolvers<Awaited<ReturnType<typeof readActiveWorkPeriod>>>();
+		const active = Promise.withResolvers<Awaited<ReturnType<typeof readActiveWorkPeriod>>>();
 		const summary = Promise.withResolvers<typeof summaryData>();
 		const history = Promise.withResolvers<typeof historyData>();
 		const timeline = Promise.withResolvers<typeof timelineResult>();
@@ -278,9 +264,9 @@ describe("independent time tracking region components", () => {
 			WorkdayContextRegion,
 			WorkplacePolicyRegion,
 		]);
-		expect(
-			boundaries.map((boundary) => boundary.props.children.props.context),
-		).toEqual(Array(8).fill(context));
+		expect(boundaries.map((boundary) => boundary.props.children.props.context)).toEqual(
+			Array(8).fill(context),
+		);
 		expect(
 			boundaries
 				.filter((boundary) => boundary.props.children.props.searchParams)
@@ -326,29 +312,19 @@ describe("independent time tracking region components", () => {
 	});
 
 	it("marks the timeline and the clock as rendered, loaded or failed, for a blocker focus", async () => {
-		const loaded = element(
-			await TimelineRegion({ context, searchParams: searchParams() }),
-		);
+		const loaded = element(await TimelineRegion({ context, searchParams: searchParams() }));
 		expect(loaded.props.id).toBe("workday-timeline-region");
-		vi.mocked(getWorkdayTimelineData).mockRejectedValue(
-			new Error("timeline unavailable"),
-		);
-		const failed = element(
-			await TimelineRegion({ context, searchParams: searchParams() }),
-		);
+		vi.mocked(getWorkdayTimelineData).mockRejectedValue(new Error("timeline unavailable"));
+		const failed = element(await TimelineRegion({ context, searchParams: searchParams() }));
 		expect(failed.props.id).toBe("workday-timeline-region");
-		vi.mocked(readActiveWorkPeriod).mockRejectedValue(
-			new Error("clock unavailable"),
-		);
+		vi.mocked(readActiveWorkPeriod).mockRejectedValue(new Error("clock unavailable"));
 		const clockFailed = element(await ClockRegion({ context }));
 		expect(clockFailed.props.id).toBe("time-clock-region");
 	});
 
 	it("keeps the translated employee label and known clocked-out status", async () => {
 		vi.mocked(readActiveWorkPeriod).mockResolvedValue(null);
-		const result = leaf(
-			await ClockRegion({ context: { ...context, employeeName: "" } }),
-		);
+		const result = leaf(await ClockRegion({ context: { ...context, employeeName: "" } }));
 		expect(result.props).toMatchObject({
 			activeWorkPeriod: null,
 			employeeName: "Employee",
@@ -362,26 +338,21 @@ describe("independent time tracking region components", () => {
 	});
 
 	it("serializes structured timeline failures and scopes the selected date locally", async () => {
-		const result = leaf(
-			await TimelineRegion({ context, searchParams: searchParams() }),
-		);
+		const result = leaf(await TimelineRegion({ context, searchParams: searchParams() }));
 		expect(result.type).toBe(PersonalWorkdayTimeline);
-		expect(result.props.result).toEqual(
-			serializeWorkdayTimelineResult(timelineResult),
-		);
+		expect(result.props.result).toEqual(serializeWorkdayTimelineResult(timelineResult));
 		expect(getWorkdayTimelineData).toHaveBeenCalledWith({
 			employeeId: "employee-1",
 			organizationId: "org-1",
 			timezone: "Europe/Berlin",
+			locale: "de",
 			timeFormat: "24h",
 			dateParam: "2026-10-02",
 		});
 	});
 
 	it("preserves summary balance-null semantics and history leaf props", async () => {
-		expect(element(await SummaryRegion({ context })).props).toEqual(
-			summaryData,
-		);
+		expect(element(await SummaryRegion({ context })).props).toEqual(summaryData);
 		const history = leaf(await HistoryRegion({ context }));
 		expect(history.type).toBe(TimeEntriesTable);
 		expect(history.props).toEqual({
@@ -467,9 +438,7 @@ describe("independent time tracking region components", () => {
 			HistoryRegion({ context }),
 			TimelineRegion({ context, searchParams: searchParams() }),
 		]);
-		expect(
-			[clock, summary, history, timeline].map((result) => leaf(result).type),
-		).toEqual([
+		expect([clock, summary, history, timeline].map((result) => leaf(result).type)).toEqual([
 			ClockInOutWidget,
 			WeeklySummaryCards,
 			RegionLoadError,
@@ -477,45 +446,37 @@ describe("independent time tracking region components", () => {
 		]);
 	});
 
-	it.each(regions)(
-		"rethrows Next control flow before $name fallback",
-		async ({ read, run }) => {
-			for (const control of [
-				() => redirect("/sign-in"),
-				() => notFound(),
-				() => {
-					throw new DynamicServerError("prerender");
-				},
-			]) {
-				let error: unknown;
-				try {
-					control();
-				} catch (caught) {
-					error = caught;
-				}
-				vi.mocked(read).mockRejectedValue(error);
-				await expect(run()).rejects.toBe(error);
-				expect(unstable_rethrow).toHaveBeenCalledWith(error);
+	it.each(regions)("rethrows Next control flow before $name fallback", async ({ read, run }) => {
+		for (const control of [
+			() => redirect("/sign-in"),
+			() => notFound(),
+			() => {
+				throw new DynamicServerError("prerender");
+			},
+		]) {
+			let error: unknown;
+			try {
+				control();
+			} catch (caught) {
+				error = caught;
 			}
-			const abort = new AbortController();
-			const hanging = makeUntrackedHangingPromise(
-				abort.signal,
-				"/time-tracking",
-				"test",
-			);
-			abort.abort();
-			const error = await hanging.catch((caught: unknown) => caught);
 			vi.mocked(read).mockRejectedValue(error);
 			await expect(run()).rejects.toBe(error);
-		},
-	);
+			expect(unstable_rethrow).toHaveBeenCalledWith(error);
+		}
+		const abort = new AbortController();
+		const hanging = makeUntrackedHangingPromise(abort.signal, "/time-tracking", "test");
+		abort.abort();
+		const error = await hanging.catch((caught: unknown) => caught);
+		vi.mocked(read).mockRejectedValue(error);
+		await expect(run()).rejects.toBe(error);
+	});
 
 	it("denies unknown auth before protected reads or content", async () => {
 		vi.mocked(getTimeTrackingRenderContext).mockResolvedValue(null);
 		await expect(
 			TimeTrackingPageContent({
-				searchParams:
-					Promise.withResolvers<TimeTrackingPageSearchParams>().promise,
+				searchParams: Promise.withResolvers<TimeTrackingPageSearchParams>().promise,
 			}),
 		).rejects.toMatchObject({
 			digest: expect.stringContaining(
@@ -530,9 +491,7 @@ describe("independent time tracking region components", () => {
 	it("lets authorization failures escape before protected reads", async () => {
 		const error = new Error("authorization unavailable");
 		vi.mocked(getTimeTrackingRenderContext).mockRejectedValue(error);
-		await expect(
-			TimeTrackingPageContent({ searchParams: searchParams() }),
-		).rejects.toBe(error);
+		await expect(TimeTrackingPageContent({ searchParams: searchParams() })).rejects.toBe(error);
 		expect(readActiveWorkPeriod).not.toHaveBeenCalled();
 	});
 	it("returns the existing no employee error without protected regions", async () => {
@@ -541,9 +500,7 @@ describe("independent time tracking region components", () => {
 			employee: null,
 			membershipRole: null,
 		});
-		const result = element(
-			await TimeTrackingPageContent({ searchParams: searchParams() }),
-		);
+		const result = element(await TimeTrackingPageContent({ searchParams: searchParams() }));
 		expect(element(result.props.children).type).toBe(NoEmployeeError);
 		expect(element(result.props.children).props.feature).toBe("track time");
 		expect(readActiveWorkPeriod).not.toHaveBeenCalled();
@@ -557,14 +514,11 @@ describe("independent time tracking region components", () => {
 		{ Loading: TimelineLoading, height: "h-64", count: 1 },
 		{ Loading: SummaryLoading, height: "h-28", count: 4 },
 		{ Loading: HistoryLoading, height: "h-80", count: 1 },
-	])(
-		"keeps accessible $height loading geometry",
-		({ Loading, height, count }) => {
-			const { container } = render(<Loading />);
-			expect(screen.getByRole("status", { name: "Loading..." })).toBeTruthy();
-			expect(container.querySelectorAll(`.${height}`)).toHaveLength(count);
-		},
-	);
+	])("keeps accessible $height loading geometry", ({ Loading, height, count }) => {
+		const { container } = render(<Loading />);
+		expect(screen.getByRole("status", { name: "Loading..." })).toBeTruthy();
+		expect(container.querySelectorAll(`.${height}`)).toHaveLength(count);
+	});
 
 	it("retry refreshes once without enabling clock actions locally", () => {
 		render(<RegionLoadError label="Time Tracking" />);
@@ -572,8 +526,6 @@ describe("independent time tracking region components", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 		expect(state.refresh).toHaveBeenCalledTimes(1);
 		expect(screen.getAllByRole("button")).toHaveLength(1);
-		expect(screen.getByRole("alert").textContent).toContain(
-			"An error occurred",
-		);
+		expect(screen.getByRole("alert").textContent).toContain("An error occurred");
 	});
 });

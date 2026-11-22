@@ -1,23 +1,35 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	type Instant,
+	instantFromDate,
+	parseInstant,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
+import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
 import type { SurchargeCalculationWithDetails } from "@/lib/surcharges/validation";
-import { DATE_FORMAT } from "./constants";
 import type { FilterValues } from "./types";
 
 export function getDefaultFilters(): FilterValues {
-	const now = DateTime.now();
+	const today = Temporal.Now.plainDateISO();
+	const yearMonth = today.toPlainYearMonth();
 
 	return {
-		startDate: now.startOf("month").toFormat(DATE_FORMAT),
-		endDate: now.endOf("month").toFormat(DATE_FORMAT),
+		startDate: yearMonth.toPlainDate({ day: 1 }).toString(),
+		endDate: yearMonth.toPlainDate({ day: yearMonth.daysInMonth }).toString(),
 		employeeId: "",
 	};
 }
 
-export function parseFilterDate(value: string, boundary: "start" | "end") {
-	const parsed = DateTime.fromFormat(value, DATE_FORMAT, { zone: "local" });
-
-	return boundary === "start" ? parsed.startOf("day") : parsed.endOf("day");
+export function parseFilterDate(value: string, boundary: "start" | "end"): Instant | null {
+	try {
+		const plainDate = parsePlainDate(value);
+		const range = localDayRange(plainDate.toString(), Temporal.Now.timeZoneId());
+		return boundary === "start" ? range.start : range.endExclusive.subtract({ milliseconds: 1 });
+	} catch {
+		return null;
+	}
 }
 
 export function formatMinutes(minutes: number) {
@@ -31,14 +43,33 @@ export function formatMinutesCell(minutes: number) {
 	return `${minutes} min`;
 }
 
-export function formatDate(value: Date) {
-	return DateTime.fromJSDate(value).toLocaleString(DateTime.DATE_MED);
+export function formatDate(value: Date, locale = "en") {
+	return formatInstant(
+		instantFromDate(value),
+		{
+			locale,
+			timezone: Temporal.Now.timeZoneId(),
+			timeFormat: localeDefaultTimeFormat(locale),
+		},
+		"dateMedium",
+	);
 }
 
-export function formatTimestamp(value: Date | string) {
-	const dateTime = typeof value === "string" ? DateTime.fromISO(value) : DateTime.fromJSDate(value);
-
-	return dateTime.isValid ? dateTime.toLocaleString(DateTime.DATETIME_MED) : "-";
+export function formatTimestamp(value: Date | string, locale = "en") {
+	try {
+		const instant = typeof value === "string" ? parseInstant(value) : instantFromDate(value);
+		return formatInstant(
+			instant,
+			{
+				locale,
+				timezone: Temporal.Now.timeZoneId(),
+				timeFormat: localeDefaultTimeFormat(locale),
+			},
+			"dateTimeMedium",
+		);
+	} catch {
+		return "-";
+	}
 }
 
 export function formatPercentage(value: number | string) {

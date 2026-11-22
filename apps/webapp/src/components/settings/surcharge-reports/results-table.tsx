@@ -2,6 +2,7 @@
 
 import { IconChevronDown, IconChevronRight, IconFileAnalytics } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,7 @@ export function SurchargeResultsTable({
 	onExpandedChange,
 }: SurchargeResultsTableProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 
 	if (isLoading && rows.length === 0) {
 		return (
@@ -122,13 +124,13 @@ export function SurchargeResultsTable({
 										)}
 									</Button>
 								</TableCell>
-								<TableCell>{formatDate(calculation.calculationDate)}</TableCell>
+								<TableCell>{formatDate(calculation.calculationDate, locale)}</TableCell>
 								<TableCell>{employeeName}</TableCell>
 								<TableCell>{formatMinutesCell(calculation.baseMinutes)}</TableCell>
 								<TableCell>{formatMinutesCell(calculation.qualifyingMinutes)}</TableCell>
 								<TableCell>{formatMinutesCell(calculation.surchargeMinutes)}</TableCell>
 								<TableCell>{formatPercentage(calculation.appliedPercentage)}</TableCell>
-								<TableCell>{formatTimestamp(calculation.createdAt)}</TableCell>
+								<TableCell>{formatTimestamp(calculation.createdAt, locale)}</TableCell>
 							</TableRow>
 							{isExpanded ? (
 								<CalculationDetailsRow calculation={calculation} detailsId={detailsId} />

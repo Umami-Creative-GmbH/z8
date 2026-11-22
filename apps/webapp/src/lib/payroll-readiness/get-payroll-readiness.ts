@@ -1,5 +1,4 @@
 import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db, employee, payrollExportJob, timeRecord } from "@/db";
 import {
 	travelExpenseClaim,
@@ -7,7 +6,15 @@ import {
 	travelExpenseReport,
 	travelExpenseReportItem,
 } from "@/db/schema";
-import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	type PlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
 import { loadPeriodSubmissionGaps } from "@/lib/time-tracking/period-submissions/submission-gaps-store";
 import { loadPayrollSetupChecks } from "./payroll-setup-checks";
@@ -64,10 +71,11 @@ export type PayrollReadinessResult = {
 export type GetPayrollReadinessInput = {
 	organizationId: string;
 	period: {
-		start: DateTime;
-		end: DateTime;
+		start: PlainDate;
+		end: PlainDate;
 	};
-	now?: DateTime;
+	now?: Instant;
+	locale?: string;
 };
 
 type EmployeeLike = {
@@ -141,12 +149,12 @@ function uniqueAffectedEmployees(sources: EmployeeSource[]): PayrollReadinessAff
 	return Array.from(employees.values());
 }
 
-function isExportForPeriod(job: PayrollExportJobLike, start: DateTime, end: DateTime): boolean {
+function isExportForPeriod(job: PayrollExportJobLike, start: PlainDate, end: PlainDate): boolean {
 	const dateRange = job.filters?.dateRange;
 
 	return (
-		dateRange?.start?.slice(0, 10) === (start.toISODate() ?? "") &&
-		dateRange?.end?.slice(0, 10) === (end.toISODate() ?? "")
+		dateRange?.start?.slice(0, 10) === start.toString() &&
+		dateRange?.end?.slice(0, 10) === end.toString()
 	);
 }
 
@@ -208,12 +216,18 @@ export async function getPayrollReadiness(
 	input: GetPayrollReadinessInput,
 ): Promise<PayrollReadinessResult> {
 	const organizationId = input.organizationId;
-	const start = input.period.start.startOf("day");
-	const end = input.period.end.endOf("day");
-	const selectedStartDate = start.toISODate() ?? "";
-	const selectedEndDate = end.toISODate() ?? "";
-	const now = input.now ?? DateTime.utc();
-	const staleActiveWorkCutoff = now.minus({ hours: 24 });
+	const startDate = input.period.start;
+	const endDate = input.period.end;
+	const startInstant = startDate.toZonedDateTime("UTC").toInstant();
+	const endExclusiveInstant = endDate.add({ days: 1 }).toZonedDateTime("UTC").toInstant();
+	const endInstant = endExclusiveInstant.subtract({ milliseconds: 1 });
+	const startJsDate = dateFromInstant(startInstant);
+	const endJsDate = dateFromInstant(endInstant);
+	const selectedStartDate = startDate.toString();
+	const selectedEndDate = endDate.toString();
+	const now = input.now ?? systemClock.nowInstant();
+	const staleActiveWorkCutoff = now.subtract({ hours: 24 });
+	const locale = input.locale ?? "en";
 
 	const [
 		activeWorkRecords,
@@ -229,8 +243,8 @@ export async function getPayrollReadiness(
 			where: and(
 				eq(timeRecord.organizationId, organizationId),
 				eq(timeRecord.recordKind, "work"),
-				gte(timeRecord.startAt, start.toJSDate()),
-				lte(timeRecord.startAt, end.toJSDate()),
+				gte(timeRecord.startAt, startJsDate),
+				lte(timeRecord.startAt, endJsDate),
 				isNull(timeRecord.endAt),
 			),
 			with: {
@@ -245,8 +259,8 @@ export async function getPayrollReadiness(
 			where: and(
 				eq(timeRecord.organizationId, organizationId),
 				eq(timeRecord.approvalState, "pending"),
-				gte(timeRecord.startAt, start.toJSDate()),
-				lte(timeRecord.startAt, end.toJSDate()),
+				gte(timeRecord.startAt, startJsDate),
+				lte(timeRecord.startAt, endJsDate),
 			),
 			with: {
 				employee: {
@@ -275,8 +289,8 @@ export async function getPayrollReadiness(
 			where: and(
 				eq(travelExpenseClaim.organizationId, organizationId),
 				or(eq(travelExpenseClaim.status, "submitted"), eq(travelExpenseClaim.status, "draft")),
-				lte(travelExpenseClaim.tripStart, end.toJSDate()),
-				gte(travelExpenseClaim.tripEnd, start.toJSDate()),
+				lte(travelExpenseClaim.tripStart, endJsDate),
+				gte(travelExpenseClaim.tripEnd, startJsDate),
 				// A legacy draft continued as a report (#616) keeps its `draft` status
 				// forever; the report it became is checked below instead.
 				sql`not exists (select 1 from ${travelExpenseLegacyDraftConversion} conversion
@@ -314,8 +328,8 @@ export async function getPayrollReadiness(
 		findOpenDepartureClockRepairs(db, {
 			organizationId,
 			employeeIds: null,
-			rangeStart: start.toJSDate(),
-			rangeEndExclusive: end.plus({ milliseconds: 1 }).toJSDate(),
+			rangeStart: startJsDate,
+			rangeEndExclusive: dateFromInstant(endExclusiveInstant),
 		}).then(
 			(repairs) => ({ available: true as const, repairs }),
 			() => ({ available: false as const, repairs: [] }),
@@ -325,10 +339,10 @@ export async function getPayrollReadiness(
 		loadPeriodSubmissionGaps(db, {
 			organizationId,
 			window: {
-				from: parsePlainDate(selectedStartDate),
-				to: parsePlainDate(selectedEndDate),
+				from: startDate,
+				to: endDate,
 			},
-			now: instantFromDate(now.toJSDate()),
+			now,
 		}).then(
 			(report) => ({ available: true as const, ...report }),
 			() => ({ available: false as const, collected: true, gaps: [] }),
@@ -340,23 +354,25 @@ export async function getPayrollReadiness(
 	const setup = await loadPayrollSetupChecks(db, {
 		organizationId,
 		employees: activeEmployees,
-		termsWindow: { start: start.toJSDate(), end: end.toJSDate() },
+		termsWindow: { start: startJsDate, end: endJsDate },
 		findIdentifierClashes: (configs) =>
 			loadPersonnelIdentifierClashes({
 				organizationId,
 				configs,
-				period: { start: start.toJSDate(), end: end.toJSDate() },
-				from: parsePlainDate(selectedStartDate),
-				asOf: parsePlainDate(selectedEndDate),
+				period: { start: startJsDate, end: endJsDate },
+				from: startDate,
+				asOf: endDate,
 			}),
 	});
 
 	const staleActiveWorkRecords = activeWorkRecords.filter((record) => {
-		const startAt = DateTime.fromJSDate(record.startAt);
+		const startAt = instantFromDate(record.startAt);
 
-		return startAt <= staleActiveWorkCutoff;
+		return compareInstants(startAt, staleActiveWorkCutoff) <= 0;
 	});
-	const latestExportJob = latestExportJobs.find((job) => isExportForPeriod(job, start, end));
+	const latestExportJob = latestExportJobs.find((job) =>
+		isExportForPeriod(job, startDate, endDate),
+	);
 	// Reports load no relations; name their employees from the active employee list.
 	const activeEmployeesById = new Map(
 		activeEmployees.map((activeEmployee) => [activeEmployee.id, activeEmployee]),
@@ -370,7 +386,9 @@ export async function getPayrollReadiness(
 	];
 	const travelExpenseCount = travelExpenseClaims.length + pendingTravelExpenseReports.length;
 	// A period still running in the range is not missing: it cannot be submitted yet.
-	const periodSubmissionGaps = periodSubmissionLookup.gaps.filter((gap) => gap.status !== "running");
+	const periodSubmissionGaps = periodSubmissionLookup.gaps.filter(
+		(gap) => gap.status !== "running",
+	);
 	const runningPeriods = periodSubmissionLookup.gaps.filter((gap) => gap.status === "running");
 	const affectedBy = (gaps: typeof periodSubmissionLookup.gaps) =>
 		uniqueAffectedEmployees(
@@ -553,9 +571,9 @@ export async function getPayrollReadiness(
 	return {
 		status: derivePayrollReadinessStatus(checks),
 		period: {
-			start: start.toISODate() ?? "",
-			end: end.toISODate() ?? "",
-			label: `${start.toFormat("dd LLL yyyy")} - ${end.toFormat("dd LLL yyyy")}`,
+			start: selectedStartDate,
+			end: selectedEndDate,
+			label: `${formatPlainDate(startDate, locale, "dateMedium")} - ${formatPlainDate(endDate, locale, "dateMedium")}`,
 		},
 		summary: {
 			blockerCount: checks.filter(

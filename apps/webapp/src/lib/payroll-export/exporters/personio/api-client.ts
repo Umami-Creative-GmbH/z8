@@ -2,7 +2,7 @@
  * Personio API Client
  * Handles authentication and API communication with Personio
  */
-import { DateTime } from "luxon";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import type {
 	PersonioAbsenceRequest,
@@ -19,18 +19,13 @@ const logger = createLogger("PersonioApiClient");
 const PERSONIO_API_BASE = "https://api.personio.de/v1";
 const TOKEN_EXPIRY_BUFFER_MS = 5 * 60 * 1000; // 5 minutes before expiry
 const DEFAULT_TOKEN_EXPIRY_SECONDS = 24 * 60 * 60;
-const DEFAULT_EMPLOYEE_MATCH_STRATEGY: PersonioConfig["employeeMatchStrategy"] =
-	"employeeNumber";
+const DEFAULT_EMPLOYEE_MATCH_STRATEGY: PersonioConfig["employeeMatchStrategy"] = "employeeNumber";
 // Personio documents 100 as the maximum employee page size.
 const EMPLOYEE_PAGE_LIMIT = 100;
 const EMPLOYEE_RATE_LIMIT_RETRY_DELAY_MS = 1000;
 const EMPLOYEE_EMAIL_ATTRIBUTES = ["id", "email"] as const;
 const EMPLOYEE_PERSONNEL_ATTRIBUTES = ["id", "personnel_number"] as const;
-const EMPLOYEE_CONNECTION_ATTRIBUTES = [
-	"id",
-	"email",
-	"personnel_number",
-] as const;
+const EMPLOYEE_CONNECTION_ATTRIBUTES = ["id", "email", "personnel_number"] as const;
 
 function getEmployeesEndpoint(options: {
 	attributes: readonly string[];
@@ -62,11 +57,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
-function getResponseError(
-	value: unknown,
-): { message: string; code?: number } | undefined {
-	if (!isRecord(value) || value.success !== false || !isRecord(value.error))
-		return undefined;
+function getResponseError(value: unknown): { message: string; code?: number } | undefined {
+	if (!isRecord(value) || value.success !== false || !isRecord(value.error)) return undefined;
 	if (typeof value.error.message !== "string") return undefined;
 
 	return {
@@ -76,8 +68,7 @@ function getResponseError(
 }
 
 function getResponseData(value: unknown): unknown {
-	if (!isRecord(value) || value.success !== true || !("data" in value))
-		return undefined;
+	if (!isRecord(value) || value.success !== true || !("data" in value)) return undefined;
 	return value.data ?? undefined;
 }
 
@@ -118,27 +109,18 @@ function decodeEmployee(
 	value: unknown,
 	attributesToDecode: readonly ("email" | "personnel_number")[],
 ): PersonioEmployee | undefined {
-	if (
-		!isRecord(value) ||
-		value.type !== "Employee" ||
-		!isRecord(value.attributes)
-	)
+	if (!isRecord(value) || value.type !== "Employee" || !isRecord(value.attributes))
 		return undefined;
 
 	const { attributes } = value;
-	if (!isRecord(attributes.id) || !isFiniteNumber(attributes.id.value))
-		return undefined;
+	if (!isRecord(attributes.id) || !isFiniteNumber(attributes.id.value)) return undefined;
 
 	const employee: PersonioEmployee = {
 		id: attributes.id.value,
 	};
 
 	if (attributesToDecode.includes("email") && attributes.email !== undefined) {
-		if (
-			!isRecord(attributes.email) ||
-			typeof attributes.email.value !== "string"
-		)
-			return undefined;
+		if (!isRecord(attributes.email) || typeof attributes.email.value !== "string") return undefined;
 		employee.email = attributes.email.value;
 	}
 
@@ -177,9 +159,7 @@ function decodeEmployeeArray(
 	return employees;
 }
 
-function decodeTimeOffTypeArray(
-	value: unknown,
-): Array<{ id: number; name: string }> | undefined {
+function decodeTimeOffTypeArray(value: unknown): Array<{ id: number; name: string }> | undefined {
 	if (!Array.isArray(value)) return undefined;
 
 	const timeOffTypes: Array<{ id: number; name: string }> = [];
@@ -223,10 +203,7 @@ export class PersonioApiError extends Error {
  */
 export class PersonioApiClient {
 	private authToken: PersonioAuthToken | null = null;
-	private employeeEmailPromises = new Map<
-		string,
-		Promise<PersonioEmployee | null>
-	>();
+	private employeeEmailPromises = new Map<string, Promise<PersonioEmployee | null>>();
 	private personnelDirectoryPromise: Promise<PersonioEmployee[]> | null = null;
 
 	constructor(
@@ -294,9 +271,9 @@ export class PersonioApiClient {
 			// Personio tokens typically expire in 24 hours
 			this.authToken = {
 				token: data.token,
-				expiresAt: DateTime.now()
-					.plus({ seconds: data.expires_in ?? DEFAULT_TOKEN_EXPIRY_SECONDS })
-					.toMillis(),
+				expiresAt: systemClock
+					.nowInstant()
+					.add({ seconds: data.expires_in ?? DEFAULT_TOKEN_EXPIRY_SECONDS }).epochMilliseconds,
 			};
 
 			logger.info("Successfully authenticated with Personio API");
@@ -318,7 +295,7 @@ export class PersonioApiClient {
 	private async ensureAuthenticated(): Promise<void> {
 		if (
 			!this.authToken ||
-			DateTime.now().toMillis() >=
+			systemClock.nowInstant().epochMilliseconds >=
 				this.authToken.expiresAt - TOKEN_EXPIRY_BUFFER_MS
 		) {
 			await this.authenticate();
@@ -331,11 +308,7 @@ export class PersonioApiClient {
 	): Promise<number> {
 		if (typeof identifier === "number") {
 			if (isFiniteNumber(identifier)) return identifier;
-			throw new PersonioApiError(
-				"Invalid Personio employee ID",
-				undefined,
-				false,
-			);
+			throw new PersonioApiError("Invalid Personio employee ID", undefined, false);
 		}
 
 		const employee =
@@ -343,11 +316,7 @@ export class PersonioApiClient {
 				? await this.getEmployeeByEmail(identifier)
 				: await this.getEmployeeByPersonnelNumber(identifier);
 		if (!employee) {
-			throw new PersonioApiError(
-				"Personio employee not found",
-				undefined,
-				false,
-			);
+			throw new PersonioApiError("Personio employee not found", undefined, false);
 		}
 
 		return employee.id;
@@ -359,10 +328,7 @@ export class PersonioApiClient {
 		const directoryPromise = this.loadPersonnelDirectory();
 		this.personnelDirectoryPromise = directoryPromise;
 		void directoryPromise.catch((error) => {
-			if (
-				!isRateLimitError(error) &&
-				this.personnelDirectoryPromise === directoryPromise
-			) {
+			if (!isRateLimitError(error) && this.personnelDirectoryPromise === directoryPromise) {
 				this.personnelDirectoryPromise = null;
 			}
 		});
@@ -397,9 +363,7 @@ export class PersonioApiClient {
 			if (!isRateLimitError(error)) throw error;
 		}
 
-		await new Promise((resolve) =>
-			setTimeout(resolve, EMPLOYEE_RATE_LIMIT_RETRY_DELAY_MS),
-		);
+		await new Promise((resolve) => setTimeout(resolve, EMPLOYEE_RATE_LIMIT_RETRY_DELAY_MS));
 		return this.request(endpoint, { method: "GET" }, decodeData);
 	}
 
@@ -413,11 +377,7 @@ export class PersonioApiClient {
 	): Promise<{ data: T; durationMs: number }> {
 		await this.ensureAuthenticated();
 		if (!this.authToken) {
-			throw new PersonioApiError(
-				"Authentication failed: Invalid response",
-				undefined,
-				false,
-			);
+			throw new PersonioApiError("Authentication failed: Invalid response", undefined, false);
 		}
 
 		const url = `${PERSONIO_API_BASE}${endpoint}`;
@@ -426,8 +386,7 @@ export class PersonioApiClient {
 		try {
 			const headers = new Headers(options.headers);
 			headers.set("Authorization", `Bearer ${this.authToken.token}`);
-			if (!headers.has("Content-Type"))
-				headers.set("Content-Type", "application/json");
+			if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 			if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
 			const response = await fetch(url, {
@@ -467,11 +426,7 @@ export class PersonioApiClient {
 			const data = getResponseData(responseData);
 			const decodedData = data === undefined ? undefined : decodeData(data);
 			if (decodedData === undefined) {
-				throw new PersonioApiError(
-					"Invalid Personio API response",
-					response.status,
-					false,
-				);
+				throw new PersonioApiError("Invalid Personio API response", response.status, false);
 			}
 
 			return { data: decodedData, durationMs };
@@ -537,9 +492,7 @@ export class PersonioApiClient {
 		return lookupPromise;
 	}
 
-	private async loadEmployeeByEmail(
-		normalizedEmail: string,
-	): Promise<PersonioEmployee | null> {
+	private async loadEmployeeByEmail(normalizedEmail: string): Promise<PersonioEmployee | null> {
 		const { data } = await this.requestEmployeePage(
 			getEmployeesEndpoint({
 				attributes: EMPLOYEE_EMAIL_ATTRIBUTES,
@@ -551,24 +504,16 @@ export class PersonioApiClient {
 		);
 
 		return (
-			data.find(
-				(employee) => employee.email?.trim().toLowerCase() === normalizedEmail,
-			) ?? null
+			data.find((employee) => employee.email?.trim().toLowerCase() === normalizedEmail) ?? null
 		);
 	}
 
 	/**
 	 * Get employee by personnel number
 	 */
-	async getEmployeeByPersonnelNumber(
-		personnelNumber: string,
-	): Promise<PersonioEmployee | null> {
+	async getEmployeeByPersonnelNumber(personnelNumber: string): Promise<PersonioEmployee | null> {
 		const employees = await this.getPersonnelDirectory();
-		return (
-			employees.find(
-				(employee) => employee.personnel_number === personnelNumber,
-			) ?? null
-		);
+		return employees.find((employee) => employee.personnel_number === personnelNumber) ?? null;
 	}
 
 	/**
@@ -579,10 +524,7 @@ export class PersonioApiClient {
 		strategy: PersonioConfig["employeeMatchStrategy"] = DEFAULT_EMPLOYEE_MATCH_STRATEGY,
 	): Promise<PersonioSyncAttemptResult> {
 		try {
-			const employeeId = await this.resolveEmployeeId(
-				attendance.employee,
-				strategy,
-			);
+			const employeeId = await this.resolveEmployeeId(attendance.employee, strategy);
 			const { data } = await this.request<{ id: number }>(
 				"/company/attendances",
 				{
@@ -599,22 +541,16 @@ export class PersonioApiClient {
 				externalId: data.id,
 			};
 		} catch (error) {
-			const errorMessage =
-				error instanceof PersonioApiError ? error.message : "Unknown error";
-			const isRetryable =
-				error instanceof PersonioApiError ? error.isRetryable : true;
+			const errorMessage = error instanceof PersonioApiError ? error.message : "Unknown error";
+			const isRetryable = error instanceof PersonioApiError ? error.isRetryable : true;
 
-			logger.warn(
-				{ date: attendance.date, error: errorMessage },
-				"Failed to create attendance",
-			);
+			logger.warn({ date: attendance.date, error: errorMessage }, "Failed to create attendance");
 
 			return {
 				success: false,
 				error: {
 					message: errorMessage,
-					code:
-						error instanceof PersonioApiError ? error.statusCode : undefined,
+					code: error instanceof PersonioApiError ? error.statusCode : undefined,
 					isRetryable,
 				},
 			};
@@ -660,10 +596,7 @@ export class PersonioApiClient {
 		strategy: PersonioConfig["employeeMatchStrategy"] = DEFAULT_EMPLOYEE_MATCH_STRATEGY,
 	): Promise<PersonioSyncAttemptResult> {
 		try {
-			const employeeId = await this.resolveEmployeeId(
-				absence.employee_id,
-				strategy,
-			);
+			const employeeId = await this.resolveEmployeeId(absence.employee_id, strategy);
 			const body = new URLSearchParams({
 				employee_id: String(employeeId),
 				time_off_type_id: String(absence.time_off_type_id),
@@ -689,10 +622,8 @@ export class PersonioApiClient {
 				externalId: data.id,
 			};
 		} catch (error) {
-			const errorMessage =
-				error instanceof PersonioApiError ? error.message : "Unknown error";
-			const isRetryable =
-				error instanceof PersonioApiError ? error.isRetryable : true;
+			const errorMessage = error instanceof PersonioApiError ? error.message : "Unknown error";
+			const isRetryable = error instanceof PersonioApiError ? error.isRetryable : true;
 
 			logger.warn(
 				{
@@ -707,8 +638,7 @@ export class PersonioApiClient {
 				success: false,
 				error: {
 					message: errorMessage,
-					code:
-						error instanceof PersonioApiError ? error.statusCode : undefined,
+					code: error instanceof PersonioApiError ? error.statusCode : undefined,
 					isRetryable,
 				},
 			};
@@ -737,10 +667,7 @@ export class PersonioApiClient {
 		}
 
 		const successCount = results.filter((r) => r.success).length;
-		logger.info(
-			{ total: absences.length, success: successCount },
-			"Absence creation completed",
-		);
+		logger.info({ total: absences.length, success: successCount }, "Absence creation completed");
 
 		return results;
 	}

@@ -10,6 +10,10 @@ const { getSessionMock, listSessionsMock, revokeSessionMock } = vi.hoisted(() =>
 	revokeSessionMock: vi.fn(),
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, defaultValue?: string, params?: Record<string, unknown>) =>

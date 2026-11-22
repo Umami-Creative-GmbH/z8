@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 
 const mockAssertCanonicalCutoverReady = vi.fn();
 
@@ -89,9 +89,7 @@ vi.mock("@/db/schema", () => ({
 }));
 
 const dataFetcher = await import("../data-fetcher");
-const { PayrollWorkAllocationBlockedError } = await import(
-	"../work-allocation-blocked-error"
-);
+const { PayrollWorkAllocationBlockedError } = await import("../work-allocation-blocked-error");
 
 describe("payroll export canonical data fetching", () => {
 	beforeEach(() => {
@@ -116,8 +114,8 @@ describe("payroll export canonical data fetching", () => {
 		await expect(
 			dataFetcher.fetchWorkPeriodsForExport("org-1", {
 				dateRange: {
-					start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
-					end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+					start: parsePlainDate("2026-01-01"),
+					end: parsePlainDate("2026-01-31"),
 				},
 			}),
 		).rejects.toMatchObject({
@@ -129,21 +127,17 @@ describe("payroll export canonical data fetching", () => {
 
 	it("rejects payroll export reads when canonical cutover is incomplete", async () => {
 		mockAssertCanonicalCutoverReady.mockRejectedValue(
-			new Error(
-				"Canonical time-record backfill is incomplete for organization org-1",
-			),
+			new Error("Canonical time-record backfill is incomplete for organization org-1"),
 		);
 
 		await expect(
 			dataFetcher.fetchWorkPeriodsForExport("org-1", {
 				dateRange: {
-					start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
-					end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+					start: parsePlainDate("2026-01-01"),
+					end: parsePlainDate("2026-01-31"),
 				},
 			}),
-		).rejects.toThrow(
-			"Canonical time-record backfill is incomplete for organization org-1",
-		);
+		).rejects.toThrow("Canonical time-record backfill is incomplete for organization org-1");
 	});
 
 	it("fetches work export rows from canonical time records", async () => {
@@ -186,8 +180,8 @@ describe("payroll export canonical data fetching", () => {
 
 		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
-				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 			employeeIds: ["emp-1"],
 			teamIds: ["team-1"],
@@ -206,10 +200,8 @@ describe("payroll export canonical data fetching", () => {
 				firstName: "Ada",
 				lastName: "Lovelace",
 				email: "ada@example.com",
-				startTime: DateTime.fromISO("2026-01-10T08:00:00.000Z", {
-					zone: "utc",
-				}),
-				endTime: DateTime.fromISO("2026-01-10T16:00:00.000Z", { zone: "utc" }),
+				startTime: parseInstant("2026-01-10T08:00:00.000Z").toZonedDateTimeISO("UTC"),
+				endTime: parseInstant("2026-01-10T16:00:00.000Z").toZonedDateTimeISO("UTC"),
 				durationMinutes: 480,
 				workCategoryId: "wc-1",
 				workCategoryName: "Regular",
@@ -244,19 +236,19 @@ describe("payroll export canonical data fetching", () => {
 
 		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-02-01T00:00:00.000Z", { zone: "utc" }),
-				end: DateTime.fromISO("2026-02-28T23:59:59.999Z", { zone: "utc" }),
+				start: parsePlainDate("2026-02-01"),
+				end: parsePlainDate("2026-02-28"),
 			},
 			employeeIds: ["emp-1"],
 		});
 
-		expect(
-			JSON.stringify(mockState.timeRecordFindMany.mock.calls[0]?.[0].where),
-		).toContain("timeRecord.endAt");
+		expect(JSON.stringify(mockState.timeRecordFindMany.mock.calls[0]?.[0].where)).toContain(
+			"timeRecord.endAt",
+		);
 		expect(results[0]).toMatchObject({
 			id: "record-1",
-			startTime: DateTime.fromISO("2026-02-01T00:00:00.000Z", { zone: "utc" }),
-			endTime: DateTime.fromISO("2026-02-01T02:00:00.000Z", { zone: "utc" }),
+			startTime: parseInstant("2026-02-01T00:00:00.000Z").toZonedDateTimeISO("UTC"),
+			endTime: parseInstant("2026-02-01T02:00:00.000Z").toZonedDateTimeISO("UTC"),
 			durationMinutes: 120,
 		});
 	});
@@ -354,35 +346,25 @@ describe("payroll export canonical data fetching", () => {
 
 		const filters = {
 			dateRange: {
-				start: DateTime.fromISO("2026-05-01", { zone: "utc" }),
-				end: DateTime.fromISO("2026-05-31", { zone: "utc" }),
+				start: parsePlainDate("2026-05-01"),
+				end: parsePlainDate("2026-05-31"),
 			},
 		};
-		const results = await dataFetcher.fetchWorkPeriodsForExport(
-			"org-1",
-			filters,
-		);
+		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", filters);
 
-		expect(results.map((result) => result.id)).toEqual([
-			"new-york-may",
-			"berlin-may",
-		]);
+		expect(results.map((result) => result.id)).toEqual(["new-york-may", "berlin-may"]);
 		expect(results.find((result) => result.id === "berlin-may")).toMatchObject({
-			startTime: DateTime.fromISO("2026-04-30T22:30:00.000Z", { zone: "utc" }),
-			endTime: DateTime.fromISO("2026-04-30T23:30:00.000Z", { zone: "utc" }),
+			startTime: parseInstant("2026-04-30T22:30:00.000Z").toZonedDateTimeISO("UTC"),
+			endTime: parseInstant("2026-04-30T23:30:00.000Z").toZonedDateTimeISO("UTC"),
 			durationMinutes: 60,
 		});
-		expect(
-			results.find((result) => result.id === "new-york-may"),
-		).toMatchObject({
-			startTime: DateTime.fromISO("2026-05-31T22:00:00.000Z", { zone: "utc" }),
-			endTime: DateTime.fromISO("2026-06-01T02:00:00.000Z", { zone: "utc" }),
+		expect(results.find((result) => result.id === "new-york-may")).toMatchObject({
+			startTime: parseInstant("2026-05-31T22:00:00.000Z").toZonedDateTimeISO("UTC"),
+			endTime: parseInstant("2026-06-01T02:00:00.000Z").toZonedDateTimeISO("UTC"),
 			durationMinutes: 240,
 		});
 
-		await expect(dataFetcher.countWorkPeriods("org-1", filters)).resolves.toBe(
-			2,
-		);
+		await expect(dataFetcher.countWorkPeriods("org-1", filters)).resolves.toBe(2);
 	});
 
 	it("exports protected stored minutes for a fully included segment", async () => {
@@ -401,8 +383,8 @@ describe("payroll export canonical data fetching", () => {
 
 		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01", { zone: "utc" }),
-				end: DateTime.fromISO("2026-01-31", { zone: "utc" }),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 		});
 
@@ -432,28 +414,28 @@ describe("payroll export canonical data fetching", () => {
 
 		const [february] = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-02-01", { zone: "utc" }),
-				end: DateTime.fromISO("2026-02-28", { zone: "utc" }),
+				start: parsePlainDate("2026-02-01"),
+				end: parsePlainDate("2026-02-28"),
 			},
 		});
 		const [january] = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01", { zone: "utc" }),
-				end: DateTime.fromISO("2026-01-31", { zone: "utc" }),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 		});
 
 		// Berlin month boundary is 2026-01-31T23:00Z.
-		expect(january).toMatchObject({
-			startTime: DateTime.fromISO("2026-01-31T21:07:13.000Z", { zone: "utc" }),
-			endTime: DateTime.fromISO("2026-01-31T23:00:00.000Z", { zone: "utc" }),
-		});
-		expect(february?.startTime).toEqual(
-			DateTime.fromISO("2026-01-31T23:00:00.000Z", { zone: "utc" }),
+		expect(january?.startTime.toInstant().toString({ fractionalSecondDigits: 3 })).toBe(
+			"2026-01-31T21:07:13.000Z",
 		);
-		expect(
-			(january?.durationMinutes ?? 0) + (february?.durationMinutes ?? 0),
-		).toBe(346);
+		expect(january?.endTime?.toInstant().toString({ fractionalSecondDigits: 3 })).toBe(
+			"2026-01-31T23:00:00.000Z",
+		);
+		expect(february?.startTime.toInstant().toString({ fractionalSecondDigits: 3 })).toBe(
+			"2026-01-31T23:00:00.000Z",
+		);
+		expect((january?.durationMinutes ?? 0) + (february?.durationMinutes ?? 0)).toBe(346);
 	});
 
 	it("blocks the whole export when in-scope work has an unlocated break across the boundary", async () => {
@@ -481,18 +463,13 @@ describe("payroll export canonical data fetching", () => {
 		]);
 		const filters = {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01", { zone: "utc" }),
-				end: DateTime.fromISO("2026-01-31", { zone: "utc" }),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 		};
 
-		const exportAttempt = dataFetcher.fetchWorkPeriodsForExport(
-			"org-1",
-			filters,
-		);
-		await expect(exportAttempt).rejects.toBeInstanceOf(
-			PayrollWorkAllocationBlockedError,
-		);
+		const exportAttempt = dataFetcher.fetchWorkPeriodsForExport("org-1", filters);
+		await expect(exportAttempt).rejects.toBeInstanceOf(PayrollWorkAllocationBlockedError);
 		await expect(exportAttempt).rejects.toMatchObject({
 			organizationId: "org-1",
 			blockedRecords: [
@@ -503,9 +480,9 @@ describe("payroll export canonical data fetching", () => {
 				},
 			],
 		});
-		await expect(
-			dataFetcher.countWorkPeriods("org-1", filters),
-		).rejects.toBeInstanceOf(PayrollWorkAllocationBlockedError);
+		await expect(dataFetcher.countWorkPeriods("org-1", filters)).rejects.toBeInstanceOf(
+			PayrollWorkAllocationBlockedError,
+		);
 	});
 
 	it("blocks completed work without stored minutes instead of exporting zero", async () => {
@@ -525,14 +502,12 @@ describe("payroll export canonical data fetching", () => {
 		await expect(
 			dataFetcher.fetchWorkPeriodsForExport("org-1", {
 				dateRange: {
-					start: DateTime.fromISO("2026-01-01", { zone: "utc" }),
-					end: DateTime.fromISO("2026-01-31", { zone: "utc" }),
+					start: parsePlainDate("2026-01-01"),
+					end: parsePlainDate("2026-01-31"),
 				},
 			}),
 		).rejects.toMatchObject({
-			blockedRecords: [
-				expect.objectContaining({ reason: "missing_stored_minutes" }),
-			],
+			blockedRecords: [expect.objectContaining({ reason: "missing_stored_minutes" })],
 		});
 	});
 
@@ -552,8 +527,8 @@ describe("payroll export canonical data fetching", () => {
 
 		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
-				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 			employeeIds: [],
 		});
@@ -592,8 +567,8 @@ describe("payroll export canonical data fetching", () => {
 
 		const results = await dataFetcher.fetchAbsencesForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
-				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 			employeeIds: ["emp-2"],
 		});
@@ -656,8 +631,8 @@ describe("payroll export canonical data fetching", () => {
 
 		const results = await dataFetcher.fetchAbsencesForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-11-01T00:00:00.000Z"),
-				end: DateTime.fromISO("2026-11-30T23:59:59.999Z"),
+				start: parsePlainDate("2026-11-01"),
+				end: parsePlainDate("2026-11-30"),
 			},
 			employeeIds: ["emp-2"],
 		});
@@ -684,8 +659,8 @@ describe("payroll export canonical data fetching", () => {
 
 		const results = await dataFetcher.fetchAbsencesForExport("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
-				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 			employeeIds: [],
 		});
@@ -719,8 +694,8 @@ describe("payroll export canonical data fetching", () => {
 
 		const count = await dataFetcher.countWorkPeriods("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
-				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 			employeeIds: ["emp-1"],
 			teamIds: ["team-1"],
@@ -743,8 +718,8 @@ describe("payroll export canonical data fetching", () => {
 
 		const count = await dataFetcher.countWorkPeriods("org-1", {
 			dateRange: {
-				start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
-				end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				start: parsePlainDate("2026-01-01"),
+				end: parsePlainDate("2026-01-31"),
 			},
 			employeeIds: [],
 		});

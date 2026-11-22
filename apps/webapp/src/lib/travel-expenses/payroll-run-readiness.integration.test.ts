@@ -9,7 +9,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -97,16 +97,14 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 const { db } = await import("@/db");
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
 const mileageActions = await import("@/app/[locale]/(app)/travel-expenses/mileage-actions");
-const overrideActions = await import(
-	"@/app/[locale]/(app)/settings/travel-expenses/allowance-override-actions"
-);
+const overrideActions =
+	await import("@/app/[locale]/(app)/settings/travel-expenses/allowance-override-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
 const payrollActions = await import("@/app/[locale]/(app)/payroll/actions");
 const { createExportJob, processExportJob } = await import("@/lib/payroll-export/export-service");
 const { getPayrollRunReadiness } = await import("./payroll-run-readiness");
-const { POST: processReceipt } = await import(
-	"@/app/api/upload/travel-expense/report-receipt/route"
-);
+const { POST: processReceipt } =
+	await import("@/app/api/upload/travel-expense/report-receipt/route");
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
@@ -402,8 +400,8 @@ async function exportPayroll(period: Period, employeeIds?: string[]) {
 		requestedById: ids.finance,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO(period.startDate, { zone: "utc" }),
-				end: DateTime.fromISO(period.endDate, { zone: "utc" }),
+				start: parsePlainDate(period.startDate),
+				end: parsePlainDate(period.endDate),
 			},
 			employeeIds,
 		},

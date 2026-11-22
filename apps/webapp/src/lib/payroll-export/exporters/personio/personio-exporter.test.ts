@@ -1,14 +1,10 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PayrollIdentifierMissingError } from "../../personnel-identifier";
 import type { AbsenceData, WageTypeMapping, WorkPeriodData } from "../../types";
 import { selectPersonioEmployeeIdentifier } from "./employee-identifier";
 import { PersonioExporter } from "./personio-exporter";
-import type {
-	PersonioAbsenceRequest,
-	PersonioAttendanceRequest,
-	PersonioConfig,
-} from "./types";
+import type { PersonioAbsenceRequest, PersonioAttendanceRequest, PersonioConfig } from "./types";
 
 const apiClientMocks = vi.hoisted(() => ({
 	createAttendances: vi.fn(),
@@ -37,12 +33,8 @@ vi.mock("@/lib/logger", () => ({
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	apiClientMocks.createAttendances.mockResolvedValue([
-		{ success: true, externalId: 1 },
-	]);
-	apiClientMocks.createAbsences.mockResolvedValue([
-		{ success: true, externalId: 2 },
-	]);
+	apiClientMocks.createAttendances.mockResolvedValue([{ success: true, externalId: 1 }]);
+	apiClientMocks.createAbsences.mockResolvedValue([{ success: true, externalId: 2 }]);
 });
 
 describe("selectPersonioEmployeeIdentifier", () => {
@@ -55,10 +47,7 @@ describe("selectPersonioEmployeeIdentifier", () => {
 		).toBe("employee@example.com");
 	});
 
-	it.each([
-		"123abc",
-		"123",
-	])("preserves employee number %s exactly", (employeeNumber) => {
+	it.each(["123abc", "123"])("preserves employee number %s exactly", (employeeNumber) => {
 		expect(
 			selectPersonioEmployeeIdentifier(
 				{ employeeNumber, email: "employee@example.com" },
@@ -100,10 +89,7 @@ describe("selectPersonioEmployeeIdentifier", () => {
 
 	it("returns null when the selected identifier is unavailable", () => {
 		expect(
-			selectPersonioEmployeeIdentifier(
-				{ employeeNumber: "E-42", email: null },
-				"email",
-			),
+			selectPersonioEmployeeIdentifier({ employeeNumber: "E-42", email: null }, "email"),
 		).toBeNull();
 	});
 });
@@ -117,10 +103,8 @@ describe("PersonioExporter identifier wiring", () => {
 			email: "period@example.com",
 			firstName: "Pat",
 			lastName: "Example",
-			startTime: DateTime.fromISO("2026-07-28T09:15:00+02:00", {
-				setZone: true,
-			}),
-			endTime: DateTime.fromISO("2026-07-28T17:45:00+02:00", { setZone: true }),
+			startTime: Temporal.ZonedDateTime.from("2026-07-28T09:15:00+02:00[+02:00]"),
+			endTime: Temporal.ZonedDateTime.from("2026-07-28T17:45:00+02:00[+02:00]"),
 			durationMinutes: 510,
 			workCategoryId: null,
 			workCategoryName: null,
@@ -156,11 +140,7 @@ describe("PersonioExporter identifier wiring", () => {
 		};
 		const mapping = createMapping();
 
-		const result = transformAbsences(
-			[absence],
-			new Map([["category-1", mapping]]),
-			"email",
-		);
+		const result = transformAbsences([absence], new Map([["category-1", mapping]]), "email");
 
 		expect(result[0]).toMatchObject({
 			employee_id: "absence@example.com",
@@ -200,12 +180,8 @@ describe("PersonioExporter identifier wiring", () => {
 			email: "employee@example.com",
 			firstName: "Pat",
 			lastName: "Example",
-			startTime: DateTime.fromISO("2026-07-28T09:15:00+02:00", {
-				setZone: true,
-			}),
-			endTime: DateTime.fromISO("2026-07-28T17:45:00+02:00", {
-				setZone: true,
-			}),
+			startTime: Temporal.ZonedDateTime.from("2026-07-28T09:15:00+02:00[+02:00]"),
+			endTime: Temporal.ZonedDateTime.from("2026-07-28T17:45:00+02:00[+02:00]"),
 			durationMinutes: 510,
 			workCategoryId: null,
 			workCategoryName: null,
@@ -228,13 +204,9 @@ describe("PersonioExporter identifier wiring", () => {
 			status: "approved",
 		};
 
-		await new PersonioExporter().export(
-			"org-1",
-			[period],
-			[absence],
-			[createMapping()],
-			{ employeeMatchStrategy: "employeeNumber" },
-		);
+		await new PersonioExporter().export("org-1", [period], [absence], [createMapping()], {
+			employeeMatchStrategy: "employeeNumber",
+		});
 
 		expect(apiClientMocks.createAttendances).toHaveBeenCalledWith(
 			[expect.objectContaining({ employee: "OPS@BERLIN" })],
@@ -254,8 +226,8 @@ describe("PersonioExporter identifier wiring", () => {
 			email: "employee@example.com",
 			firstName: "Pat",
 			lastName: "Example",
-			startTime: DateTime.fromISO("2026-07-28T09:15:00+02:00", { setZone: true }),
-			endTime: DateTime.fromISO("2026-07-28T17:45:00+02:00", { setZone: true }),
+			startTime: Temporal.ZonedDateTime.from("2026-07-28T09:15:00+02:00[+02:00]"),
+			endTime: Temporal.ZonedDateTime.from("2026-07-28T17:45:00+02:00[+02:00]"),
 			durationMinutes: 510,
 			workCategoryId: null,
 			workCategoryName: null,
@@ -308,9 +280,7 @@ type TestableExporter = {
 	): Array<PersonioAbsenceRequest | null>;
 };
 
-function config(
-	strategy: PersonioConfig["employeeMatchStrategy"],
-): PersonioConfig {
+function config(strategy: PersonioConfig["employeeMatchStrategy"]): PersonioConfig {
 	return {
 		employeeMatchStrategy: strategy,
 		includeZeroHours: false,
@@ -323,9 +293,10 @@ function transformWorkPeriods(
 	periods: WorkPeriodData[],
 	strategy: PersonioConfig["employeeMatchStrategy"],
 ) {
-	return (
-		new PersonioExporter() as unknown as TestableExporter
-	).transformWorkPeriods(periods, config(strategy));
+	return (new PersonioExporter() as unknown as TestableExporter).transformWorkPeriods(
+		periods,
+		config(strategy),
+	);
 }
 
 function transformAbsences(
@@ -333,9 +304,11 @@ function transformAbsences(
 	mappings: Map<string, WageTypeMapping>,
 	strategy: PersonioConfig["employeeMatchStrategy"],
 ) {
-	return (
-		new PersonioExporter() as unknown as TestableExporter
-	).transformAbsences(absences, mappings, config(strategy));
+	return (new PersonioExporter() as unknown as TestableExporter).transformAbsences(
+		absences,
+		mappings,
+		config(strategy),
+	);
 }
 
 function createMapping(): WageTypeMapping {

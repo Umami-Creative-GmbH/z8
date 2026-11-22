@@ -3,10 +3,10 @@
 import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
 import { addDomainAction } from "@/app/[locale]/(app)/settings/enterprise/actions";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -41,14 +41,9 @@ interface DomainAddDialogProps {
 	}) => void;
 }
 
-const DOMAIN_REGEX =
-	/^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 
-export function DomainAddDialog({
-	open,
-	onOpenChange,
-	onDomainAdded,
-}: DomainAddDialogProps) {
+export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAddDialogProps) {
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,7 +63,7 @@ export function DomainAddDialog({
 			await runWithBusyState(setIsSubmitting, async () => {
 				try {
 					const result = await actionData(addDomainAction({ domain: value.domain }));
-					const now = DateTime.now();
+					const now = systemClock.nowInstant();
 
 					onDomainAdded({
 						id: result.id,
@@ -76,19 +71,17 @@ export function DomainAddDialog({
 						domainVerified: false,
 						isPrimary: false,
 						verificationToken: result.verificationToken,
-						verificationTokenExpiresAt: now.plus({ days: 7 }).toJSDate(),
+						verificationTokenExpiresAt: dateFromInstant(now.add({ hours: 7 * 24 })),
 						authConfig: {
 							emailPasswordEnabled: true,
 							socialProvidersEnabled: [],
 							ssoEnabled: false,
 							passkeyEnabled: true,
 						},
-						createdAt: now.toJSDate(),
+						createdAt: dateFromInstant(now),
 					});
 					form.reset();
-					toast.success(
-						t("settings.enterprise.domains.added", "Domain added successfully"),
-					);
+					toast.success(t("settings.enterprise.domains.added", "Domain added successfully"));
 				} catch (error) {
 					toast.error(
 						enterpriseErrorMessage(t, error, [
@@ -128,10 +121,7 @@ export function DomainAddDialog({
 							validators={{
 								onChange: ({ value }) => {
 									if (!value)
-										return t(
-											"settings.enterprise.domains.domainRequired",
-											"Domain is required",
-										);
+										return t("settings.enterprise.domains.domainRequired", "Domain is required");
 									if (!DOMAIN_REGEX.test(value)) {
 										return t(
 											"settings.enterprise.domains.domainInvalid",
@@ -161,20 +151,14 @@ export function DomainAddDialog({
 										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">
-											{field.state.meta.errors[0]}
-										</p>
+										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
 									)}
 								</div>
 							)}
 						</form.Field>
 					</ActionPanelBody>
 					<ActionPanelFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-						>
+						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>

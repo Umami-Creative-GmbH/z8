@@ -2,7 +2,6 @@
 
 import { and, asc, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
@@ -367,7 +366,7 @@ export const createScheduledExportAction = organizationAction(
 				cronExpression: input.cronExpression ?? undefined,
 				timezone,
 			};
-			const nextExecutionAt = calculateNextExecution(scheduleConfig, DateTime.utc());
+			const nextExecutionAt = calculateNextExecution(scheduleConfig);
 
 			// Create schedule; the creating admin becomes its owner.
 			const schedule = yield* auditedWrite("scheduledExport.create", async (tx, audit) => {
@@ -458,9 +457,11 @@ export const getScheduleOwnerCandidatesAction = organizationAction(
 			const candidates = yield* dbService.query("scheduledExport.ownerCandidates", () =>
 				listScheduleOwnerCandidates(dbService.db, { organizationId }),
 			);
-			return candidates.map(
-				({ userId, name, email }): ScheduleOwnerCandidate => ({ userId, name, email }),
-			);
+			return candidates.map(({ userId, name, email }): ScheduleOwnerCandidate => ({
+				userId,
+				name,
+				email,
+			}));
 		}),
 );
 
@@ -550,7 +551,7 @@ function updateSchedule(
 				cronExpression: input.cronExpression ?? existing.cronExpression ?? undefined,
 				timezone: input.timezone || existing.timezone,
 			};
-			const nextExecutionAt = calculateNextExecution(scheduleConfig, DateTime.utc());
+			const nextExecutionAt = calculateNextExecution(scheduleConfig);
 			updates.nextExecutionAt = nextExecutionAt.toJSDate();
 		}
 
@@ -755,21 +756,19 @@ export const getExecutionHistoryAction = organizationAction(
 				}),
 			);
 
-			return executions.map(
-				(e): ExecutionHistoryItem => ({
-					id: e.id,
-					status: e.status,
-					triggeredAt: e.triggeredAt,
-					dateRangeStart: e.dateRangeStart,
-					dateRangeEnd: e.dateRangeEnd,
-					recordCount: e.recordCount,
-					emailsSent: e.emailsSent,
-					emailsFailed: e.emailsFailed,
-					errorMessage: e.errorMessage,
-					durationMs: e.durationMs,
-					completedAt: e.completedAt,
-				}),
-			);
+			return executions.map((e): ExecutionHistoryItem => ({
+				id: e.id,
+				status: e.status,
+				triggeredAt: e.triggeredAt,
+				dateRangeStart: e.dateRangeStart,
+				dateRangeEnd: e.dateRangeEnd,
+				recordCount: e.recordCount,
+				emailsSent: e.emailsSent,
+				emailsFailed: e.emailsFailed,
+				errorMessage: e.errorMessage,
+				durationMs: e.durationMs,
+				completedAt: e.completedAt,
+			}));
 		}),
 );
 
@@ -799,7 +798,7 @@ export const previewNextExecutionsAction = organizationAction(
 				timezone: input.timezone,
 			};
 
-			const executions = getNextExecutions(config, input.count ?? 5, DateTime.utc());
+			const executions = getNextExecutions(config, input.count ?? 5);
 			return executions.map((dt) => dt.toISO()!);
 		}),
 );
@@ -842,7 +841,7 @@ export const runScheduledExportNowAction = organizationAction(
 
 			const orchestrator = new ScheduledExportOrchestrator();
 			yield* Effect.promise(() =>
-				orchestrator.executeSchedule(schedule, DateTime.utc(), {
+				orchestrator.executeSchedule(schedule, undefined, {
 					trigger: "run_now",
 					requestedBy: actor.userId,
 				}),
@@ -945,12 +944,10 @@ export const getPayrollConfigsAction = organizationAction(
 
 			const typedConfigs = configs as unknown as PayrollExportConfigWithFormat[];
 
-			return typedConfigs.map(
-				(c): PayrollConfigSummary => ({
-					id: c.id,
-					formatId: c.format?.id ?? c.formatId,
-					formatName: c.format?.name ?? c.formatId,
-				}),
-			);
+			return typedConfigs.map((c): PayrollConfigSummary => ({
+				id: c.id,
+				formatId: c.format?.id ?? c.formatId,
+				formatName: c.format?.name ?? c.formatId,
+			}));
 		}),
 );
