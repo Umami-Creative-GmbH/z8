@@ -821,7 +821,9 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 
 		const { resolveEffectiveContractOnDay } = await import("@/lib/contracts");
 		const { plainDateAt, systemClock } = await import("@/lib/datetime/temporal-core");
-		const orgToday = plainDateAt(systemClock.nowInstant(), "UTC").toString();
+		const orgTodayPlain = plainDateAt(systemClock.nowInstant(), "UTC");
+		const orgToday = orgTodayPlain.toString();
+		const futureOrgDate = orgTodayPlain.add({ months: 1 }).toString();
 
 		const effective = await resolveEffectiveContractOnDay(db, {
 			organizationId: ids.organization,
@@ -855,7 +857,7 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 			organizationId: ids.organization,
 			actorUserId: ids.adminUser,
 			scope: "organization",
-			effectiveFromDate: "2027-01-01",
+			effectiveFromDate: futureOrgDate,
 			workPolicyId: policyC,
 			weeklyContractMinutes: 2280,
 			workModel: "remote",
@@ -868,7 +870,7 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 		const effectiveFuture = await resolveEffectiveContractOnDay(db, {
 			organizationId: ids.organization,
 			employeeId: memberRow.id,
-			date: "2027-01-01",
+			date: futureOrgDate,
 		});
 		expect(effectiveFuture?.workPolicy?.policyId).toBe(teamPolicy);
 		expect(effectiveFuture?.weeklyContractMinutes).toBe(2280);
