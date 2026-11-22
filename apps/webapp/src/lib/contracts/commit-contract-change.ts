@@ -616,6 +616,14 @@ export async function resetEmployeeContractDivergencesInTx(
 	input: ResetEmployeeContractDivergencesInput,
 ): Promise<CommitContractChangeResult> {
 	const effectiveFromDate = parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate");
+	// Astra #1 (Pass 8): Acquire (1.5) organization FOR KEY SHARE BEFORE locking (2) employee FOR UPDATE
+	// so nested `commitContractChangeInTx` never inverts (1.5) <-> (2) against lifecycle commands.
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${input.organizationId}
+		FOR KEY SHARE
+	`);
 	// A2-4: Lock the employee row BEFORE reading current on-call terms so concurrent
 	// contract edits cannot commit between the read and write and be clobbered.
 	await tx.execute(sql`

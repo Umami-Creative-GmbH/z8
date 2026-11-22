@@ -187,6 +187,14 @@ export async function createInitialEmploymentAgreementInTx(
 	input: CreateInitialEmploymentAgreementInput,
 ): Promise<EmploymentTermAgreement> {
 	const validated = validateAgreementFields(input);
+	// Astra #1 (Pass 8): Acquire (1.5) organization FOR KEY SHARE before (2) employee FOR UPDATE
+	// because inserting into `employment_term_agreement` takes a FK FOR KEY SHARE on organization.
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${input.organizationId}
+		FOR KEY SHARE
+	`);
 	await lockEmployeeRow(tx, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
@@ -262,6 +270,13 @@ export async function recordFixedTermExtensionInTx(
 	const now = input.now ?? systemClock.nowInstant();
 	const nowDate = dateFromInstant(now);
 
+	// Astra #1 (Pass 8): Acquire (1.5) organization FOR KEY SHARE before (2) employee FOR UPDATE.
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${input.organizationId}
+		FOR KEY SHARE
+	`);
 	await lockEmployeeRow(tx, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,

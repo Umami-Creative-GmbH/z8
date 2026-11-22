@@ -1551,7 +1551,7 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			requestId: randomUUID(),
 			lastWorkingDay: "2026-06-11", // cutoff = 2026-06-12
 		});
-		await commands().correctPastDepartureDate(ownerActor(), {
+		const depA6Extended = await commands().correctPastDepartureDate(ownerActor(), {
 			employeeId: personUnlinkedPin.employeeId,
 			departureId: depA5.departureId,
 			expectedRevision: depA6Shortened.revision,
@@ -1584,6 +1584,48 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 				valid_until_date: "2026-06-18",
 				work_policy_id: null,
 				weekly_contract_minutes: 2400,
+			},
+		]);
+
+		// Astra #4 (Pass 8): Shorten back to June 12, then re-extend BEYOND previous max (to June 25) —
+		// both June 12..14 AND June 18..24 MUST stay seamlessly covered with ZERO gap!
+		const depA4Short = await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: personUnlinkedPin.employeeId,
+			departureId: depA5.departureId,
+			expectedRevision: depA6Extended.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-11", // cutoff = 2026-06-12
+		});
+		await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: personUnlinkedPin.employeeId,
+			departureId: depA5.departureId,
+			expectedRevision: depA4Short.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-24", // cutoff = 2026-06-25
+		});
+		const { rows: a4ExtTerms } = await fixture.pool.query<{
+			valid_from_date: string;
+			valid_until_date: string | null;
+			work_policy_id: string | null;
+		}>(
+			`SELECT to_char(valid_from_date, 'YYYY-MM-DD') AS valid_from_date,
+				to_char(valid_until_date, 'YYYY-MM-DD') AS valid_until_date,
+				work_policy_id
+			 FROM employee_employment_history
+			 WHERE organization_id = $1 AND employee_id = $2
+			 ORDER BY valid_from_date ASC`,
+			[fixture.organizationId, personUnlinkedPin.employeeId],
+		);
+		expect(a4ExtTerms).toEqual([
+			{
+				valid_from_date: "2026-01-01",
+				valid_until_date: "2026-06-15",
+				work_policy_id: polTermRetiring!.id,
+			},
+			{
+				valid_from_date: "2026-06-15",
+				valid_until_date: "2026-06-25",
+				work_policy_id: null,
 			},
 		]);
 	});

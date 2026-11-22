@@ -114,6 +114,10 @@ export async function clearPolicyAssignmentWindowInTx(
 				sourceBatchItemId: null,
 				isActive: true,
 				createdBy: row.createdBy,
+				// Astra #9 (Pass 8): Preserve the exact microsecond `created_at` of the split parent
+				// assignment instead of defaulting to transaction-start `now()`, so post-reactivation
+				// remainders are never misclassified as predating an earlier retirement.
+				createdAt: sql`(SELECT created_at FROM work_policy_assignment WHERE id = ${row.id}::uuid)`,
 				updatedAt: now,
 			});
 		} else if (startsBefore) {
@@ -338,6 +342,109 @@ export async function doesLinkedTermsPolicyAssignmentCoverDayInTx(
 	const row = res.rows[0];
 	if (!row?.has_linked) return true;
 	return Boolean(row.covers_day);
+}
+
+/**
+ * Splits/transfers the `[splitDateIso, min(oldUntil, toUntilDateIso))` portion of a linked
+ * `employment_terms` `work_policy_assignment` from `fromHistoryId` to `toHistoryId` when a
+ * confirmed pay-only wage edit splits `fromHistoryId` (Astra #2, Pass 8). This ensures the new
+ * wage row remains linked to its bounded policy assignment and never turns into an unbounded
+ * unlinked pin that overrides a later scheduled policy replacement!
+ */
+export async function transferLinkedTermsAssignmentOnSplitInTx(
+	tx: ContractWriteTx,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		fromHistoryId: string;
+		toHistoryId: string;
+		policyId: string;
+		splitDateIso: string;
+		toUntilDateIso: string | null;
+		now: Date;
+	},
+): Promise<void> {
+	const linkedRows = await tx
+		.select()
+		.from(workPolicyAssignment)
+		.where(
+			and(
+				eq(workPolicyAssignment.organizationId, input.organizationId),
+				eq(workPolicyAssignment.assignmentType, "employee"),
+				eq(workPolicyAssignment.employeeId, input.employeeId),
+				eq(workPolicyAssignment.policyId, input.policyId),
+				eq(workPolicyAssignment.sourceEmploymentHistoryId, input.fromHistoryId),
+				eq(workPolicyAssignment.isActive, true),
+			),
+		);
+
+	for (const row of linkedRows) {
+		const rowUntil = row.effectiveUntilDate;
+		if (rowUntil !== null && rowUntil <= input.splitDateIso) {
+			continue;
+		}
+		if (row.effectiveFromDate === input.splitDateIso) {
+			await tx
+				.update(workPolicyAssignment)
+				.set({
+					sourceEmploymentHistoryId: input.toHistoryId,
+					updatedAt: input.now,
+				})
+				.where(
+					and(
+						eq(workPolicyAssignment.id, row.id),
+						eq(workPolicyAssignment.organizationId, input.organizationId),
+					),
+				);
+			continue;
+		}
+		if (row.effectiveFromDate < input.splitDateIso) {
+			const segmentUntilDate =
+				rowUntil !== null && (input.toUntilDateIso === null || rowUntil < input.toUntilDateIso)
+					? rowUntil
+					: input.toUntilDateIso;
+			const segmentUntilTs =
+				segmentUntilDate !== null
+					? segmentUntilDate === rowUntil && row.effectiveUntil !== null
+						? row.effectiveUntil
+						: utcMidnight(parsePlainDate(segmentUntilDate))
+					: null;
+			await tx
+				.update(workPolicyAssignment)
+				.set({
+					effectiveUntilDate: input.splitDateIso,
+					effectiveUntil: utcMidnight(parsePlainDate(input.splitDateIso)),
+					updatedAt: input.now,
+				})
+				.where(
+					and(
+						eq(workPolicyAssignment.id, row.id),
+						eq(workPolicyAssignment.organizationId, input.organizationId),
+					),
+				);
+			await tx.insert(workPolicyAssignment).values({
+				policyId: row.policyId,
+				organizationId: row.organizationId,
+				assignmentType: row.assignmentType,
+				teamId: row.teamId,
+				employeeId: row.employeeId,
+				priority: row.priority,
+				effectiveFromDate: input.splitDateIso,
+				effectiveUntilDate: segmentUntilDate,
+				effectiveFrom: utcMidnight(parsePlainDate(input.splitDateIso)),
+				effectiveUntil: segmentUntilTs,
+				sourceKind: "employment_terms",
+				sourceContractDefaultId: null,
+				sourceEmploymentHistoryId: input.toHistoryId,
+				sourceBatchItemId: null,
+				isActive: true,
+				createdBy: input.actorUserId,
+				createdAt: sql`(SELECT created_at FROM work_policy_assignment WHERE id = ${row.id}::uuid)`,
+				updatedAt: input.now,
+			});
+		}
+	}
 }
 
 /**

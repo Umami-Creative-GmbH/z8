@@ -559,8 +559,22 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 							and assignment.effective_from < assignment.effective_until
 							and assignment.effective_from_date is not null
 							and assignment.effective_until_date = assignment.effective_from_date + 1
-							and ((assignment.effective_from at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone")::date < assignment.effective_from_date
-							and assignment.effective_until = ((assignment.effective_from_date::timestamp at time zone employee_row."effectiveOrganizationTimezone") at time zone 'UTC')
+							and (
+								(
+									((assignment.effective_from at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone")::date < assignment.effective_from_date
+									and assignment.effective_until = ((assignment.effective_from_date::timestamp at time zone employee_row."effectiveOrganizationTimezone") at time zone 'UTC')
+								)
+								or exists (
+									select 1
+									from audit_log al
+									where al.organization_id = assignment.organization_id
+										and al.entity_type = 'work_policy'
+										and al.entity_id = assignment.policy_id::text
+										and al.action = 'work_policy.retired'
+										and (al.metadata::jsonb->>'retiredOnDate') = to_char(assignment.effective_from_date, 'YYYY-MM-DD')
+										and ((al.metadata::jsonb->>'retiredAtLocalStart')::timestamptz at time zone 'UTC') = assignment.effective_until
+								)
+							)
 						)
 					)
 					and not (

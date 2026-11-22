@@ -117,6 +117,8 @@ export interface EmploymentHistorySnapshot {
 	readonly hourlyRate: number | null;
 	readonly currency: string;
 	readonly createdAt: Date;
+	/** Full PostgreSQL microsecond UTC timestamp (`YYYY-MM-DD"T"HH24:MI:SS.US"Z"`) for tie-breaking parity (Astra #6). */
+	readonly createdAtIso?: string;
 	readonly customDays: readonly CustomWorkDay[];
 }
 
@@ -154,6 +156,8 @@ export interface PolicyAssignmentSnapshot {
 	readonly effectiveFromDate: string | null;
 	readonly effectiveUntilDate: string | null;
 	readonly createdAt: Date;
+	/** Set when DB verified `effective_until` matched a durable `work_policy.retired` `retiredAtLocalStart` (Astra #7). */
+	readonly matchedDurableRetirementPriorEvening?: boolean;
 }
 
 export interface WorkPolicyVersionSnapshot {
@@ -372,8 +376,15 @@ function selectConfirmedTermsOnDate(
 		.sort((left, right) => {
 			const fromCmp = comparePlainDates(left.bounds.from, right.bounds.from);
 			if (fromCmp !== 0) return fromCmp;
-			const createdCmp = left.row.createdAt.getTime() - right.row.createdAt.getTime();
-			if (createdCmp !== 0) return createdCmp;
+			// Astra #6 (Pass 8): Compare full microsecond PostgreSQL `created_at` when available
+			// so tie-breaking matches retirement supersession with zero JS Date truncation drift.
+			if (left.row.createdAtIso && right.row.createdAtIso) {
+				const isoCmp = left.row.createdAtIso.localeCompare(right.row.createdAtIso);
+				if (isoCmp !== 0) return isoCmp;
+			} else {
+				const createdCmp = left.row.createdAt.getTime() - right.row.createdAt.getTime();
+				if (createdCmp !== 0) return createdCmp;
+			}
 			return left.row.id.localeCompare(right.row.id);
 		});
 
@@ -589,13 +600,16 @@ function isPreservedLegacyPriorEveningWindow(
 	if (row.effectiveFrom.getTime() >= row.effectiveUntil.getTime()) return false;
 	const expectedNextDay = parsePlainDate(row.effectiveFromDate).add({ days: 1 }).toString();
 	if (row.effectiveUntilDate !== expectedNextDay) return false;
+	if (row.matchedDurableRetirementPriorEvening) {
+		return true;
+	}
 	const localFromDate = plainDateAt(
 		instantFromDate(row.effectiveFrom),
 		organizationTimezone,
 	).toString();
 	if (localFromDate >= row.effectiveFromDate) return false;
-	// Astra #9 / Opus #2: Require `effective_until` to equal exact org-local midnight of
-	// `effective_from_date` (the exact timestamp written by Step 1a-fallback on retirement),
+	// Astra #9 / Opus #2 / Astra #7 (Pass 8): Require `effective_until` to equal exact org-local midnight of
+	// `effective_from_date` (or a verified durable `work_policy.retired` `retiredAtLocalStart` boundary),
 	// so manually canceled 1-day legacy assignments ending at UTC midnight of D+1 are never revived.
 	const expectedLocalMidnight = parsePlainDate(row.effectiveFromDate)
 		.toZonedDateTime(organizationTimezone)
@@ -1674,7 +1688,10 @@ export async function loadEffectiveContractsBatch(
 		);
 
 	const termsRows = await db
-		.select()
+		.select({
+			row: employeeEmploymentHistory,
+			createdAtIso: sql<string>`to_char(${employeeEmploymentHistory.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+		})
 		.from(employeeEmploymentHistory)
 		.where(
 			and(
@@ -1734,6 +1751,16 @@ export async function loadEffectiveContractsBatch(
 			effectiveFromDate: workPolicyAssignment.effectiveFromDate,
 			effectiveUntilDate: workPolicyAssignment.effectiveUntilDate,
 			createdAt: workPolicyAssignment.createdAt,
+			matchedDurableRetirementPriorEvening: sql<boolean>`EXISTS (
+				SELECT 1
+				FROM audit_log al
+				WHERE al.organization_id = ${workPolicyAssignment.organizationId}
+					AND al.entity_type = 'work_policy'
+					AND al.entity_id = ${workPolicyAssignment.policyId}::text
+					AND al.action = 'work_policy.retired'
+					AND (al.metadata::jsonb->>'retiredOnDate') = to_char(${workPolicyAssignment.effectiveFromDate}, 'YYYY-MM-DD')
+					AND ((al.metadata::jsonb->>'retiredAtLocalStart')::timestamptz AT TIME ZONE 'UTC') = ${workPolicyAssignment.effectiveUntil}
+			)`,
 		})
 		.from(workPolicyAssignment)
 		.leftJoin(
@@ -1765,16 +1792,27 @@ export async function loadEffectiveContractsBatch(
 						eq(workPolicyAssignment.sourceKind, "employment_terms"),
 						inArray(workPolicyAssignment.employeeId, uniqueEmployeeIds),
 					),
-					// Astra #9 / Opus #2: Include deactivated retired legacy prior-evening instant windows
-					// (effective_until = exact org-local midnight of effective_from_date) so scheduling a
-					// successor on retirement day never erases historical prior-evening lookups, while
-					// excluding manually canceled 1-day legacy rows.
+					// Astra #9 / Opus #2 / Astra #7 (Pass 8): Include deactivated retired legacy prior-evening
+					// instant windows matching either current org-local midnight OR a durable `work_policy.retired`
+					// `retiredAtLocalStart` boundary so org timezone changes never erase preserved evening hours.
 					and(
 						eq(workPolicyAssignment.sourceKind, "legacy"),
 						sql`${workPolicyAssignment.effectiveFrom} IS NOT NULL`,
 						sql`${workPolicyAssignment.effectiveUntil} IS NOT NULL`,
 						sql`${workPolicyAssignment.effectiveUntilDate} = ${workPolicyAssignment.effectiveFromDate} + 1`,
-						sql`${workPolicyAssignment.effectiveUntil} = ((${workPolicyAssignment.effectiveFromDate}::timestamp AT TIME ZONE ${orgTimezone}) AT TIME ZONE 'UTC')`,
+						sql`(
+							${workPolicyAssignment.effectiveUntil} = ((${workPolicyAssignment.effectiveFromDate}::timestamp AT TIME ZONE ${orgTimezone}) AT TIME ZONE 'UTC')
+							OR EXISTS (
+								SELECT 1
+								FROM audit_log al
+								WHERE al.organization_id = ${workPolicyAssignment.organizationId}
+									AND al.entity_type = 'work_policy'
+									AND al.entity_id = ${workPolicyAssignment.policyId}::text
+									AND al.action = 'work_policy.retired'
+									AND (al.metadata::jsonb->>'retiredOnDate') = to_char(${workPolicyAssignment.effectiveFromDate}, 'YYYY-MM-DD')
+									AND ((al.metadata::jsonb->>'retiredAtLocalStart')::timestamptz AT TIME ZONE 'UTC') = ${workPolicyAssignment.effectiveUntil}
+							)
+						)`,
 						or(
 							eq(workPolicyAssignment.assignmentType, "organization"),
 							eq(workPolicyAssignment.assignmentType, "team"),
@@ -1790,8 +1828,8 @@ export async function loadEffectiveContractsBatch(
 
 	// 2. Load custom working days, referenced team ownership (guarding 0120-0132 foreign teams), and work policy versions
 	const customDayHistoryIds = termsRows
-		.filter((row) => row.scheduleMode === "custom_days")
-		.map((row) => row.id);
+		.filter(({ row }) => row.scheduleMode === "custom_days")
+		.map(({ row }) => row.id);
 	const customDayTemplateVersionIds = [
 		...new Set(
 			defaultRows
@@ -1812,7 +1850,7 @@ export async function loadEffectiveContractsBatch(
 	];
 	const allReferencedPolicyIds = [
 		...new Set([
-			...termsRows.flatMap((row) => (row.workPolicyId ? [row.workPolicyId] : [])),
+			...termsRows.flatMap(({ row }) => (row.workPolicyId ? [row.workPolicyId] : [])),
 			...defaultRows.flatMap((row) => (row.workPolicyId ? [row.workPolicyId] : [])),
 			...assignmentRows.map((row) => row.policyId),
 		]),
@@ -2192,7 +2230,7 @@ export async function loadEffectiveContractsBatch(
 	}
 
 	const termsByEmployee = new Map<string, EmploymentHistorySnapshot[]>();
-	for (const row of termsRows) {
+	for (const { row, createdAtIso } of termsRows) {
 		const list = termsByEmployee.get(row.employeeId) ?? [];
 		list.push({
 			id: row.id,
@@ -2219,6 +2257,7 @@ export async function loadEffectiveContractsBatch(
 			hourlyRate: row.hourlyRate,
 			currency: row.currency,
 			createdAt: row.createdAt,
+			createdAtIso,
 			customDays: historyDaysByHistoryId.get(row.id) ?? [],
 		});
 		termsByEmployee.set(row.employeeId, list);

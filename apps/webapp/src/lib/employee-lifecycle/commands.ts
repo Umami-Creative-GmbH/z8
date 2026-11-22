@@ -1004,6 +1004,9 @@ async function correctPastDepartureDate(
 						eq(employeeEmploymentHistory.employmentPeriodId, period.id),
 						eq(employeeEmploymentHistory.reviewState, "confirmed"),
 						sql`${employeeEmploymentHistory.validFrom} < ${previousCutoff}`,
+						// Astra #5 (Pass 8): Exclude zero-width [D, D) superseded rows so a collapsed
+						// same-start row never masks the actual covering terms row ending at previousCutoff.
+						sql`(${employeeEmploymentHistory.validUntilDate} IS NULL OR ${employeeEmploymentHistory.validUntilDate} > ${employeeEmploymentHistory.validFromDate})`,
 					),
 				)
 				.orderBy(desc(employeeEmploymentHistory.validFrom))
@@ -1147,8 +1150,13 @@ async function correctPastDepartureDate(
 				}
 			}
 
-			// Astra #6: If a post-previous-cutoff confirmed row (such as a continuation row from an
-			// earlier extend -> shorten cycle) now spans past `newCutoffDate`, cap it at `newCutoffDate`.
+			// Astra #4 / #6 (Pass 8): Reconcile any post-previous-cutoff confirmed row in this period
+			// (such as a continuation row left behind by an earlier extend -> shorten cycle):
+			// (a) Cap any row spanning past `newCutoffDate` at `newCutoffDate`, and
+			// (b) If the latest non-empty confirmed row starting in `[previousCutoff, newCutoffDate)`
+			//     ended strictly before `newCutoffDate`, extend it cleanly to `newCutoffDate` (checking
+			//     for any intervening policy retirement if it carries a policy pin) so re-extending past
+			//     a previous maximum leaves zero uncovered wage gap!
 			await tx.execute(sql`
 				UPDATE employee_employment_history
 				SET valid_until = ${newCutoffDate},
@@ -1162,6 +1170,55 @@ async function correctPastDepartureDate(
 					AND valid_from < ${newCutoffDate}
 					AND (valid_until IS NULL OR valid_until > ${newCutoffDate})
 			`);
+			const [latestPostPrevRow] = await tx
+				.select({
+					row: employeeEmploymentHistory,
+					validFromDateIso: sql<string>`to_char(${employeeEmploymentHistory.validFromDate}, 'YYYY-MM-DD')`,
+					validUntilDateIso: sql<
+						string | null
+					>`to_char(${employeeEmploymentHistory.validUntilDate}, 'YYYY-MM-DD')`,
+				})
+				.from(employeeEmploymentHistory)
+				.where(
+					and(
+						eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+						eq(employeeEmploymentHistory.employeeId, target.id),
+						eq(employeeEmploymentHistory.employmentPeriodId, period.id),
+						eq(employeeEmploymentHistory.reviewState, "confirmed"),
+						sql`${employeeEmploymentHistory.validFrom} >= ${previousCutoff}`,
+						sql`${employeeEmploymentHistory.validFrom} < ${newCutoffDate}`,
+						sql`(${employeeEmploymentHistory.validUntilDate} IS NULL OR ${employeeEmploymentHistory.validUntilDate} > ${employeeEmploymentHistory.validFromDate})`,
+					),
+				)
+				.orderBy(desc(employeeEmploymentHistory.validFrom))
+				.limit(1);
+			const latestPostPrev = latestPostPrevRow?.row;
+			if (
+				latestPostPrev &&
+				latestPostPrevRow.validUntilDateIso !== null &&
+				latestPostPrevRow.validUntilDateIso < nextCutoff.cutoffLocalDate
+			) {
+				const tailRetirementDate = latestPostPrev.workPolicyId
+					? await findInterveningPolicyRetirementForTermsInTx(tx, {
+							organizationId: actor.organizationId,
+							employmentHistoryId: latestPostPrev.id,
+							policyId: latestPostPrev.workPolicyId,
+							effectiveFromDate: latestPostPrevRow.validFromDateIso,
+							previousCutoffLocalDate: latestPostPrevRow.validUntilDateIso,
+							nextCutoffLocalDate: nextCutoff.cutoffLocalDate,
+						})
+					: null;
+				if (tailRetirementDate === null) {
+					await tx.execute(sql`
+						UPDATE employee_employment_history
+						SET valid_until = ${newCutoffDate},
+							valid_until_date = GREATEST(valid_from_date, ${nextCutoff.cutoffLocalDate}::date),
+							updated_at = ${nowDate}
+						WHERE organization_id = ${actor.organizationId}
+							AND id = ${latestPostPrev.id}::uuid
+					`);
+				}
+			}
 		} else if (newCutoffDate.getTime() < previousCutoff.getTime()) {
 			await tx.execute(sql`
 				UPDATE employee_employment_history

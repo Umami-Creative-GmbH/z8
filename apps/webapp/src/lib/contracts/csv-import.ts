@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { organization, user } from "@/db/auth-schema";
 import {
 	closedMonthEmployee,
@@ -1750,6 +1750,7 @@ export async function commitCsvImportBatch(
 				if (sameFingerprint && optionsMatch) {
 					const persistedItems = await db
 						.select({
+							id: contractChangeBatchItem.id,
 							employeeId: contractChangeBatchItem.employeeId,
 							payload: contractChangeBatchItem.payload,
 						})
@@ -1935,14 +1936,16 @@ export async function commitCsvImportBatch(
 									.where(eq(organization.id, input.organizationId))
 									.limit(1);
 								const fallbackOrgTimezone = orgRow?.timezone ?? "UTC";
-								// Astra #10 / #13: Use each departure's frozen creation timezone when available
-								// (including immediate departures where `last_working_day IS NULL`, keyed by
-								// `effectiveAt` in the departure's frozen timezone) so an organization timezone
-								// change after commit does not invalidate identical legacy retries.
+								// Astra #8 / #10 / #13: Use each departure's frozen creation timezone when available
+								// — matching first by exact `request_id = persistedItem.id` (surviving midnight
+								// crossings and timezone changes), then falling back to `(employeeId, lastWorkingDay)`
+								// or immediate-departure local day!
+								const persistedItemIds = persistedItems.map((p) => p.id);
 								const depTzRows =
 									parsedInstructions.length > 0
 										? await db
 												.select({
+													requestId: employeeDeparture.requestId,
 													employeeId: employeeDeparture.employeeId,
 													lastWorkingDay: employeeDeparture.lastWorkingDay,
 													effectiveAt: employeeDeparture.effectiveAt,
@@ -1952,16 +1955,25 @@ export async function commitCsvImportBatch(
 												.where(
 													and(
 														eq(employeeDeparture.organizationId, input.organizationId),
-														inArray(
-															employeeDeparture.employeeId,
-															parsedInstructions.map((r) => r.employeeId),
+														or(
+															inArray(
+																employeeDeparture.employeeId,
+																parsedInstructions.map((r) => r.employeeId),
+															),
+															...(persistedItemIds.length > 0
+																? [inArray(employeeDeparture.requestId, persistedItemIds)]
+																: []),
 														),
 													),
 												)
 												.orderBy(desc(employeeDeparture.createdAt))
 										: [];
+								const frozenTzByRequestId = new Map<string, string>();
 								const frozenTzByEmpAndDay = new Map<string, string>();
 								for (const depRow of depTzRows) {
+									if (!frozenTzByRequestId.has(depRow.requestId)) {
+										frozenTzByRequestId.set(depRow.requestId, depRow.timezone);
+									}
 									const dayKey =
 										depRow.lastWorkingDay ??
 										(depRow.effectiveAt
@@ -1981,6 +1993,7 @@ export async function commitCsvImportBatch(
 									const persistedPayload = (persisted?.payload ?? {}) as Record<string, unknown>;
 									const action = persistedPayload.action;
 									const rowTz =
+										(persisted ? frozenTzByRequestId.get(persisted.id) : undefined) ??
 										frozenTzByEmpAndDay.get(`${row.employeeId}:${row.lastWorkingDay}`) ??
 										fallbackOrgTimezone;
 									const batchToday = plainDateAt(instantFromDate(existing.createdAt), rowTz);

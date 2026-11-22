@@ -17,6 +17,8 @@ import type {
 } from "@/db/schema/contract-types";
 import {
 	doesLinkedTermsPolicyAssignmentCoverDayInTx,
+	lockEmployeeActivePolicyAssignmentsInTx,
+	transferLinkedTermsAssignmentOnSplitInTx,
 	verifyWorkPolicyForTermsInTx,
 } from "@/lib/contracts/policy-assignment-intervals";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -331,13 +333,15 @@ async function insertTerms(
 	if (terms.workPolicyId) {
 		let allowHistoricalUntilDateIso: string | null = null;
 		if (options?.allowCopiedHistoricalPolicy) {
+			// Astra #3 / Opus #2 (Pass 8/13): Only allow an inactive policy when the actual
+			// confirmed interval bounded by existing period terms has a finite end date <= retirement!
 			const hypotheticalConfirmed = adjustConfirmedTimeline({
 				existing,
 				next: { ...draftNext, reviewState: "confirmed" },
 			});
 			allowHistoricalUntilDateIso = hypotheticalConfirmed.next.validUntil
 				? toUtcPlainDateString(hypotheticalConfirmed.next.validUntil)
-				: (options.sourceTermsValidUntilDate ?? null);
+				: null;
 		}
 		await requireOrganizationWorkPolicy(
 			tx,
@@ -391,6 +395,11 @@ export async function confirmEmploymentTerms(
 ): Promise<EmployeeEmploymentHistory> {
 	await lockOrgPolicyShared(tx, input.organizationId);
 	await lockEmployee(tx, input);
+	await lockEmployeeActivePolicyAssignmentsInTx(
+		tx as never,
+		input.organizationId,
+		input.employeeId,
+	);
 	const scope = { ...input, now: input.now ?? currentTimestamp() };
 
 	const existing = await tx
@@ -475,6 +484,25 @@ export async function confirmEmploymentTerms(
 		.returning();
 	if (!updated) throw new Error("Employment history update returned no row");
 
+	if (updated.workPolicyId) {
+		const trimmedPredecessor = previewAdjusted.updates.find(
+			(u) => u.validUntil?.getTime() === updated.validFrom.getTime(),
+		);
+		if (trimmedPredecessor) {
+			await transferLinkedTermsAssignmentOnSplitInTx(tx as never, {
+				organizationId: scope.organizationId,
+				employeeId: scope.employeeId,
+				actorUserId: scope.actorUserId,
+				fromHistoryId: trimmedPredecessor.id,
+				toHistoryId: updated.id,
+				policyId: updated.workPolicyId,
+				splitDateIso: updated.validFromDate,
+				toUntilDateIso: updated.validUntilDate,
+				now: scope.now,
+			});
+		}
+	}
+
 	await projectCurrentTerms(tx, scope, updated);
 	return updated;
 }
@@ -495,6 +523,11 @@ export async function changeHourlyWage(
 ): Promise<EmployeeEmploymentHistory> {
 	await lockOrgPolicyShared(tx, input.organizationId);
 	await lockEmployee(tx, input);
+	await lockEmployeeActivePolicyAssignmentsInTx(
+		tx as never,
+		input.organizationId,
+		input.employeeId,
+	);
 	const scope = {
 		...input,
 		now: input.now ?? currentTimestamp(),
@@ -578,11 +611,25 @@ export async function changeHourlyWage(
 		},
 		{
 			allowCopiedHistoricalPolicy: true,
-			sourceTermsValidUntilDate: inForce.validUntil
-				? toUtcPlainDateString(inForce.validUntil)
-				: null,
 		},
 	);
+
+	// Astra #2 (Pass 8): When a confirmed wage edit splits an existing terms row backed by a
+	// linked `work_policy_assignment`, split/transfer the assignment slice onto the new wage row so
+	// the wage row never turns into an unbounded unlinked pin that overrides a later scheduled policy!
+	if (input.reviewState === "confirmed" && copiedWorkPolicyId) {
+		await transferLinkedTermsAssignmentOnSplitInTx(tx as never, {
+			organizationId: scope.organizationId,
+			employeeId: scope.employeeId,
+			actorUserId: scope.actorUserId,
+			fromHistoryId: inForce.id,
+			toHistoryId: inserted.id,
+			policyId: copiedWorkPolicyId,
+			splitDateIso: inserted.validFromDate,
+			toUntilDateIso: inserted.validUntilDate,
+			now: scope.now,
+		});
+	}
 
 	if (existingDays.length > 0) {
 		await tx.insert(employeeEmploymentHistoryDay).values(

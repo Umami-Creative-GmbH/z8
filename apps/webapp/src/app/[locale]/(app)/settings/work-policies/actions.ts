@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { z } from "zod";
 import { employee, team, workPolicy, workPolicyPreset, workPolicyViolation } from "@/db/schema";
@@ -459,6 +459,17 @@ export const deleteWorkPolicy = organizationAction(
 				await dbService.db.transaction(async (tx) => {
 					await lockContractDefaultsOrgExclusiveInTx(tx, organizationId);
 					await lockPolicyAssignmentsForRetirementInTx(tx, organizationId, policyId);
+					// Astra #10 (Pass 8): Acquire work_policy FOR UPDATE BEFORE computing orgTodayDate
+					// so a concurrent metadata edit held across org-local midnight cannot make the
+					// retirement date lag behind the post-midnight audit timestamp.
+					await tx.execute(sql`
+						SELECT id
+						FROM work_policy
+						WHERE id = ${policyId}::uuid
+							AND organization_id = ${organizationId}
+						LIMIT 1
+						FOR UPDATE
+					`);
 					const orgTimezone = await loadOrganizationTimezone(tx as never, organizationId);
 					const now = currentTimestamp();
 					const orgTodayDate = plainDateAt(instantFromDate(now), orgTimezone).toString();
