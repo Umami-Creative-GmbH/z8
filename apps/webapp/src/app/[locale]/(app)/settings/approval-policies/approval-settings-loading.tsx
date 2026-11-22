@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Loading fallback for the combined Approval settings page. It mirrors the
- * page frame, heading and tab strip of `ApprovalSettingsTabs` so nothing jumps
+ * page frame, heading and tab strip of `SettingsTabbedPage` so nothing jumps
  * when the panels arrive.
  */
 export function ApprovalSettingsLoading() {

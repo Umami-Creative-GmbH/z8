@@ -10,8 +10,7 @@ import { SuccessFactorsConfigForm } from "@/components/settings/payroll-export/s
 import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type-mappings";
 import { WorkdayConfigForm } from "@/components/settings/payroll-export/workday-config-form";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
-import { PageHeader } from "@/components/ui/page-header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { db } from "@/db";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import type { PayrollExportFormatId } from "@/lib/payroll-export/format-registry";
@@ -64,19 +63,13 @@ async function PayrollExportContent() {
 	]);
 
 	const datevConfig = datevConfigResult.success ? datevConfigResult.data : null;
-	const lexwareConfig = lexwareConfigResult.success
-		? lexwareConfigResult.data
-		: null;
+	const lexwareConfig = lexwareConfigResult.success ? lexwareConfigResult.data : null;
 	const sageConfig = sageConfigResult.success ? sageConfigResult.data : null;
-	const personioConfig = personioConfigResult.success
-		? personioConfigResult.data
-		: null;
+	const personioConfig = personioConfigResult.success ? personioConfigResult.data : null;
 	const successFactorsConfig = successFactorsConfigResult.success
 		? successFactorsConfigResult.data
 		: null;
-	const workdayConfig = workdayConfigResult.success
-		? workdayConfigResult.data
-		: null;
+	const workdayConfig = workdayConfigResult.success ? workdayConfigResult.data : null;
 	const exports = historyResult.success ? historyResult.data : [];
 	// Employee custom fields every identifier and match setting can use (#821).
 	const identifierFields = identifierFieldsResult.success ? identifierFieldsResult.data : [];
@@ -133,122 +126,91 @@ async function PayrollExportContent() {
 		datevConfig || lexwareConfig || sageConfig || successFactorsConfig,
 	);
 
-	const title = t("settings.payrollExport.title", "Payroll Export");
-
 	return (
-		<div className="page-frame">
-			<div className="page-measure min-w-0 space-y-6">
-				<PageHeader
-					title={title}
-					description={t(
-						"settings.payrollExport.description",
-						"Export work periods to payroll systems like DATEV or Personio",
-					)}
-				/>
-
-				<Tabs
-					defaultValue={hasConfiguredExportTarget ? "export" : "datev"}
-					className="w-full min-w-0"
-				>
-					<TabsList aria-label={title}>
-						<TabsTrigger value="export">
-							{t("settings.payrollExport.tabs.export", "Export")}
-						</TabsTrigger>
-						<TabsTrigger value="datev">
-							{t("settings.payrollExport.tabs.datev", "DATEV")}
-						</TabsTrigger>
-						<TabsTrigger value="lexware">
-							{t("settings.payrollExport.tabs.lexware", "Lexware")}
-						</TabsTrigger>
-						<TabsTrigger value="sage">
-							{t("settings.payrollExport.tabs.sage", "Sage")}
-						</TabsTrigger>
-						<TabsTrigger value="personio">
-							{t("settings.payrollExport.tabs.personio", "Personio")}
-						</TabsTrigger>
-						<TabsTrigger value="successfactors">
-							{t(
-								"settings.payrollExport.tabs.successfactors",
-								"SAP SuccessFactors",
-							)}
-						</TabsTrigger>
-						<TabsTrigger value="workday">
-							{t("settings.payrollExport.tabs.workday", "Workday")}
-						</TabsTrigger>
-						<TabsTrigger value="mappings">
-							{t("settings.payrollExport.tabs.mappings", "Wage Types")}
-						</TabsTrigger>
-						<TabsTrigger value="history">
-							{t("settings.payrollExport.tabs.history", "History")}
-						</TabsTrigger>
-					</TabsList>
-
-					<TabsContent value="export" className="mt-4">
+		<SettingsTabbedPage
+			key={organizationId}
+			title={t("settings.payrollExport.title", "Payroll Export")}
+			description={t(
+				"settings.payrollExport.description",
+				"Export work periods to payroll systems like DATEV or Personio",
+			)}
+			measure
+			defaultTab={hasConfiguredExportTarget ? "export" : "datev"}
+			tabs={[
+				{
+					value: "export",
+					label: t("settings.payrollExport.tabs.export", "Export"),
+					panel: (
 						<ExportForm
 							organizationId={organizationId}
 							config={datevConfig}
 							exportAvailability={exportAvailability}
 						/>
-					</TabsContent>
-
-					<TabsContent value="datev" className="mt-4">
-						<DatevConfigForm
-							initialConfig={datevConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="lexware" className="mt-4">
-						<LexwareConfigForm
-							initialConfig={lexwareConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="sage" className="mt-4">
-						<SageConfigForm
-							initialConfig={sageConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="personio" className="mt-4">
+					),
+				},
+				{
+					value: "datev",
+					label: t("settings.payrollExport.tabs.datev", "DATEV"),
+					panel: (
+						<DatevConfigForm initialConfig={datevConfig} identifierFields={identifierFields} />
+					),
+				},
+				{
+					value: "lexware",
+					label: t("settings.payrollExport.tabs.lexware", "Lexware"),
+					panel: (
+						<LexwareConfigForm initialConfig={lexwareConfig} identifierFields={identifierFields} />
+					),
+				},
+				{
+					value: "sage",
+					label: t("settings.payrollExport.tabs.sage", "Sage"),
+					panel: <SageConfigForm initialConfig={sageConfig} identifierFields={identifierFields} />,
+				},
+				{
+					value: "personio",
+					label: t("settings.payrollExport.tabs.personio", "Personio"),
+					panel: (
 						<PersonioConfigForm
 							initialConfig={personioConfig}
 							identifierFields={identifierFields}
 						/>
-					</TabsContent>
-
-					<TabsContent value="successfactors" className="mt-4">
+					),
+				},
+				{
+					value: "successfactors",
+					label: t("settings.payrollExport.tabs.successfactors", "SAP SuccessFactors"),
+					panel: (
 						<SuccessFactorsConfigForm
 							initialConfig={successFactorsConfig}
 							identifierFields={identifierFields}
 						/>
-					</TabsContent>
-
-					<TabsContent value="workday" className="mt-4">
-						<WorkdayConfigForm
-							initialConfig={workdayConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="mappings" className="mt-4 space-y-6">
-						<WageTypeMappings
-							hasMappingFormat={hasMappingFormat}
-						/>
-						<ExpenseWageTypeMappings />
-					</TabsContent>
-
-					<TabsContent value="history" className="mt-4">
-						<ExportHistory
-							exports={exports}
-							organizationTimezone={organizationTimezone}
-						/>
-					</TabsContent>
-				</Tabs>
-			</div>
-		</div>
+					),
+				},
+				{
+					value: "workday",
+					label: t("settings.payrollExport.tabs.workday", "Workday"),
+					panel: (
+						<WorkdayConfigForm initialConfig={workdayConfig} identifierFields={identifierFields} />
+					),
+				},
+				{
+					value: "mappings",
+					label: t("settings.payrollExport.tabs.mappings", "Wage Types"),
+					panel: (
+						<div className="space-y-6">
+							<WageTypeMappings hasMappingFormat={hasMappingFormat} />
+							<ExpenseWageTypeMappings />
+						</div>
+					),
+				},
+				{
+					value: "history",
+					label: t("settings.payrollExport.tabs.history", "History"),
+					panel: <ExportHistory exports={exports} organizationTimezone={organizationTimezone} />,
+				},
+			]}
+		/>
 	);
 }
 

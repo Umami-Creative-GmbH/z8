@@ -14,61 +14,49 @@ import { TravelExpenseReceiptExceptionSettingsCard } from "@/components/settings
 import { TravelExpenseSettingsTabs } from "@/components/settings/travel-expense/travel-expense-settings-tabs";
 import { OfficerCoverageGapNotice } from "@/components/travel-expenses/finance/officer-coverage-gap";
 import { LoadingRegion } from "@/components/ui/loading-region";
-import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getTranslate } from "@/tolgee/server";
 
 async function TravelExpenseSettingsPageContent() {
-	const [, t] = await Promise.all([requireOrgAdminSettingsAccess(), getTranslate()]);
+	const { organizationId } = await requireOrgAdminSettingsAccess();
 
 	return (
-		<div className="page-frame">
-			<div className="page-measure space-y-6">
-				<PageHeader
-					title={t("settings.travelExpenses.title", "Travel Expense Policies")}
-					description={t(
-						"settings.travelExpenses.pageDescription",
-						"Choose who reviews expense reports, how missing receipts and foreign currencies are handled, which mileage and per diem rates apply, and which exceptions are authorized.",
-					)}
-				/>
-				<TravelExpenseSettingsTabs
-					review={
-						<>
-							<TravelExpenseApproverSettingsCard />
-							<TravelExpenseReceiptExceptionSettingsCard />
-						</>
-					}
-					currencies={
-						<>
-							<ReimbursementChannelSettingsCard />
-							<ReimbursementCurrencySettingsCard />
-							<ReferenceRateSettingsCard />
-						</>
-					}
-					rates={
-						<>
-							<MileagePolicySettingsCard />
-							<PerDiemPolicySettingsCard />
-							<TravelExpensePolicyManagement />
-						</>
-					}
-					exceptions={
-						<>
-							<ForeignExpenseConversionsCard />
-							<TravelExpenseProjectExceptionsCard />
-							<AllowanceOverridesSettingsCard />
-						</>
-					}
-					access={
-						<>
-							<OfficerCoverageGapNotice />
-							<ExpenseOfficerSettingsCard />
-						</>
-					}
-				/>
-			</div>
-		</div>
+		<TravelExpenseSettingsTabs
+			key={organizationId}
+			review={
+				<>
+					<TravelExpenseApproverSettingsCard />
+					<TravelExpenseReceiptExceptionSettingsCard />
+				</>
+			}
+			currencies={
+				<>
+					<ReimbursementChannelSettingsCard />
+					<ReimbursementCurrencySettingsCard />
+					<ReferenceRateSettingsCard />
+				</>
+			}
+			rates={
+				<>
+					<MileagePolicySettingsCard />
+					<PerDiemPolicySettingsCard />
+					<TravelExpensePolicyManagement />
+				</>
+			}
+			exceptions={
+				<>
+					<ForeignExpenseConversionsCard />
+					<TravelExpenseProjectExceptionsCard />
+					<AllowanceOverridesSettingsCard />
+				</>
+			}
+			access={
+				<>
+					<OfficerCoverageGapNotice />
+					<ExpenseOfficerSettingsCard />
+				</>
+			}
+		/>
 	);
 }
 
