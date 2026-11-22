@@ -15,6 +15,7 @@ import {
 	getEmployeesForAssignment,
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -346,42 +347,30 @@ export function HolidayAssignmentDialog({
 								<form.Field name="employeeId">
 									{(field) => (
 										<div className="space-y-2">
-											<Label>{t("settings.holidays.assignments.employee", "Employee")}</Label>
-											<Select value={field.state.value} onValueChange={field.handleChange}>
-												<SelectTrigger>
-													<SelectValue
-														placeholder={t(
-															"settings.holidays.assignments.selectEmployee",
-															"Select an employee",
-														)}
-													/>
-												</SelectTrigger>
-												<SelectContent>
-													{employees?.map((emp) => (
-														<SelectItem key={emp.id} value={emp.id}>
-															<div className="flex flex-col">
-																<span>
-																	{emp.firstName} {emp.lastName}
-																</span>
-																{emp.position && (
-																	<span className="text-xs text-muted-foreground">
-																		{emp.position}
-																	</span>
-																)}
-															</div>
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
+											<EmployeeSingleSelect
+												label={t("settings.holidays.assignments.employee", "Employee")}
+												placeholder={t(
+													"settings.holidays.assignments.selectEmployee",
+													"Select an employee",
+												)}
+												value={field.state.value || null}
+												onChange={(value) => field.handleChange(value ?? "")}
+												error={validationErrors.employeeId}
+												employees={(employees ?? []).map((emp) =>
+													toSelectableEmployee({
+														id: emp.id,
+														firstName: emp.firstName,
+														lastName: emp.lastName,
+														position: emp.position,
+													}),
+												)}
+											/>
 											<p className="text-sm text-muted-foreground">
 												{t(
 													"settings.holidays.assignments.employeeCategoryNote",
 													"This holiday category will apply only to this employee",
 												)}
 											</p>
-											{validationErrors.employeeId && (
-												<p className="text-sm text-destructive">{validationErrors.employeeId}</p>
-											)}
 										</div>
 									)}
 								</form.Field>

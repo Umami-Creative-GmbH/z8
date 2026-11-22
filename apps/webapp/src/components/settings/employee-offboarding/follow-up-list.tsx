@@ -3,16 +3,10 @@
 import { IconExternalLink, IconLoader2, IconRefresh } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { FUTURE_STAGE_REVIEW_REASON } from "@/lib/employee-lifecycle/review-reasons";
@@ -261,23 +255,22 @@ function ReplacementAssignment(props: {
 				{t("settings.employees.offboarding.replacement", "Replacement for approvals")}
 			</Label>
 			<div className="flex flex-wrap gap-2">
-				<Select value={replacementId} onValueChange={setReplacementId}>
-					<SelectTrigger className="w-64" aria-labelledby={labelId}>
-						<SelectValue
-							placeholder={t(
-								"settings.employees.offboarding.chooseReplacement",
-								"Choose a replacement",
-							)}
-						/>
-					</SelectTrigger>
-					<SelectContent>
-						{props.options.map((option) => (
-							<SelectItem key={option.id} value={option.id}>
-								{option.name}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<EmployeeSingleSelect
+					className="w-64 space-y-0"
+					aria-labelledby={labelId}
+					placeholder={t(
+						"settings.employees.offboarding.chooseReplacement",
+						"Choose a replacement",
+					)}
+					value={replacementId || null}
+					onChange={(value) => setReplacementId(value ?? "")}
+					employees={props.options.map((option) =>
+						toSelectableEmployee({
+							id: option.id,
+							name: option.name,
+						}),
+					)}
+				/>
 				<Button
 					type="button"
 					size="sm"

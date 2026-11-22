@@ -3,8 +3,10 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { updateTeam } from "@/app/[locale]/(app)/settings/teams/actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -17,13 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { team } from "@/db/schema";
 import { queryKeys } from "@/lib/query";
@@ -48,6 +43,14 @@ export function EditTeamDialog({
 }: EditTeamDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	const [selectedManager, setSelectedManager] = useState<{
+		teamId: string;
+		value: string | null;
+	} | null>(null);
+	const currentPrimaryManagerId =
+		team && selectedManager?.teamId === team.id
+			? selectedManager.value
+			: (team?.primaryManagerId ?? null);
 	const updateMutation = useMutation({
 		mutationFn: (data: {
 			teamId: string;
@@ -147,33 +150,29 @@ export function EditTeamDialog({
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="primaryManagerId">
-								{t("organization.teams.edit.fallbackManagerLabel", "Fallback Manager")}
-							</Label>
-							<Select
+							<input
+								type="hidden"
 								name="primaryManagerId"
-								defaultValue={team.primaryManagerId ?? NO_MANAGER_VALUE}
-							>
-								<SelectTrigger id="primaryManagerId">
-									<SelectValue
-										placeholder={t(
-											"organization.teams.edit.fallbackManagerPlaceholder",
-											"Select a fallback manager",
-										)}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value={NO_MANAGER_VALUE}>
-										{t("organization.teams.edit.noFallbackManager", "No fallback manager")}
-									</SelectItem>
-									{managerOptions.map((manager) => (
-										<SelectItem key={manager.employeeId} value={manager.employeeId}>
-											{manager.name}
-											{manager.position ? ` (${manager.position})` : ""}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+								value={currentPrimaryManagerId ?? NO_MANAGER_VALUE}
+							/>
+							<EmployeeSingleSelect
+								id="primaryManagerId"
+								label={t("organization.teams.edit.fallbackManagerLabel", "Fallback Manager")}
+								placeholder={t("organization.teams.edit.noFallbackManager", "No fallback manager")}
+								allowClear
+								clearLabel={t("organization.teams.edit.noFallbackManager", "No fallback manager")}
+								value={currentPrimaryManagerId}
+								onChange={(value) => setSelectedManager({ teamId: team.id, value })}
+								employees={managerOptions.map((manager) =>
+									toSelectableEmployee({
+										id: manager.employeeId,
+										name: manager.name,
+										email: manager.email,
+										position: manager.position,
+										role: "manager",
+									}),
+								)}
+							/>
 							<p className="text-xs text-muted-foreground">
 								{t(
 									"organization.teams.edit.fallbackManagerHelp",

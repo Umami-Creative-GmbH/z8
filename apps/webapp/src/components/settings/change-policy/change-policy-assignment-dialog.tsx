@@ -12,6 +12,7 @@ import {
 	getEmployeesForAssignment,
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -306,26 +307,22 @@ export function ChangePolicyAssignmentDialog({
 												{t("settings.changePolicies.selectEmployee", "Select Employee")}
 											</TFormLabel>
 											<TFormControl>
-												<Select
-													value={field.state.value}
-													onValueChange={(value) => field.handleChange(value)}
-												>
-													<SelectTrigger>
-														<SelectValue
-															placeholder={t(
-																"settings.changePolicies.selectEmployeePlaceholder",
-																"Choose an employee...",
-															)}
-														/>
-													</SelectTrigger>
-													<SelectContent>
-														{employees?.map((emp) => (
-															<SelectItem key={emp.id} value={emp.id}>
-																{getEmployeeDisplayName(emp, t)}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+												<EmployeeSingleSelect
+													className="space-y-0"
+													value={field.state.value || null}
+													onChange={(value) => field.handleChange(value ?? "")}
+													onBlur={field.handleBlur}
+													placeholder={t(
+														"settings.changePolicies.selectEmployeePlaceholder",
+														"Choose an employee...",
+													)}
+													employees={(employees ?? []).map((emp) =>
+														toSelectableEmployee({
+															id: emp.id,
+															name: getEmployeeDisplayName(emp, t),
+														}),
+													)}
+												/>
 											</TFormControl>
 											<TFormMessage field={field} />
 										</TFormItem>

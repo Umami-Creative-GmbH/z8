@@ -8,6 +8,7 @@ import {
 	previewSettlePayrollDaysAction,
 	settlePayrollDaysAction,
 } from "@/app/[locale]/(app)/payroll/actions";
+import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,10 +17,6 @@ import { Label } from "@/components/ui/label";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import type { PayrollPeriodEmployee } from "@/lib/payroll-period/types";
-import {
-	type PayrollChecklistEmployee,
-	PayrollEmployeeChecklist,
-} from "./payroll-employee-checklist";
 import { PayrollSettleConfirmDialog, usePayrollSettle } from "./payroll-settle-dialog";
 import {
 	defaultSettleFormValues,
@@ -70,12 +67,14 @@ export function PayrollSettleForm({
 		if (errors.length === 0) setUnsettleOpen(true);
 	}
 
-	const checklistEmployees: PayrollChecklistEmployee[] = employees.map((employee) => ({
-		id: employee.id,
-		name: employee.name,
-		employeeNumber: employee.employeeNumber,
-		teamName: employee.teamName,
-	}));
+	const selectableEmployees = employees.map((employee) =>
+		toSelectableEmployee({
+			id: employee.id,
+			name: employee.name,
+			employeeNumber: employee.employeeNumber,
+			teamName: employee.teamName,
+		}),
+	);
 
 	return (
 		<Card>
@@ -175,11 +174,17 @@ export function PayrollSettleForm({
 									>
 										{(field) => (
 											<TFormItem>
-												<PayrollEmployeeChecklist
-													employees={checklistEmployees}
-													invalid={fieldHasError(field)}
+												<EmployeeMultiSelect
+													aria-label={t("payroll.settle.employees", "Employees")}
+													aria-invalid={fieldHasError(field)}
+													employees={selectableEmployees}
 													onChange={(employeeIds) => field.handleChange(employeeIds)}
-													t={t}
+													placeholder={t("payroll.settle.selectEmployees", "Select employees")}
+													searchPlaceholder={t("payroll.settle.searchEmployees", "Search employees")}
+													emptyMessage={t(
+														"payroll.settle.noEmployeesFound",
+														"No employees match the search.",
+													)}
 													value={field.state.value}
 												/>
 												<TFormMessage field={field} />

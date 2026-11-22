@@ -414,7 +414,8 @@ describe("finance queue (#612, #753)", () => {
 		mount();
 		await screen.findByText("€89.90 outstanding");
 		await user.click(screen.getByRole("combobox", { name: "Employee" }));
-		await user.click(await screen.findByRole("option", { name: "Robin" }));
+		await user.click(await screen.findByRole("option", { name: /Robin/ }));
+		await waitFor(() => expect(screen.queryByRole("option", { name: /Robin/ })).toBeNull());
 		await waitFor(() =>
 			expect(mocks.getQueue).toHaveBeenLastCalledWith(view({ employeeId: robin })),
 		);

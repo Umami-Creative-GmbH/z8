@@ -29,6 +29,7 @@ import {
 	type PayslipBatchPreview,
 	updatePayslipBatchFileAction,
 } from "@/app/[locale]/(app)/personnel-files/payslip-batches/actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { useOrganization } from "@/components/providers/organization-context-provider";
 import {
@@ -53,7 +54,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { payPeriodCode } from "@/lib/personnel-file/payslip-batch.types";
 import { queryKeys } from "@/lib/query/keys";
@@ -773,24 +773,24 @@ function usePayslipFileRow({
 	const byId = new Map(
 		preview.employees.map((employee) => [employee.id, employee]),
 	);
-	const optionOf = (id: string) => {
+	const employeeLabel = (id: string) => {
 		const employee = byId.get(id);
-		return {
-			code: id,
-			name: employee
-				? employee.employeeNumber
-					? `${employee.name} (${employee.employeeNumber})`
-					: employee.name
-				: id,
-			keywords: employee?.employeeNumber
-				? [employee.employeeNumber]
-				: undefined,
-		};
+		return employee
+			? employee.employeeNumber
+				? `${employee.name} (${employee.employeeNumber})`
+				: employee.name
+			: id;
 	};
-	const options = preview.employees.map((employee) => optionOf(employee.id));
-	const pinned =
+	const selectableEmployees = preview.employees.map((employee) =>
+		toSelectableEmployee({
+			id: employee.id,
+			name: employee.name,
+			employeeNumber: employee.employeeNumber,
+		}),
+	);
+	const pinnedIds =
 		file.matchKind === "ambiguous"
-			? file.matchedEmployeeIds.filter((id) => byId.has(id)).map(optionOf)
+			? file.matchedEmployeeIds.filter((id) => byId.has(id))
 			: undefined;
 
 	const form = useForm({
@@ -843,9 +843,9 @@ function usePayslipFileRow({
 		matchBadge,
 		preview,
 		failureLabels,
-		options,
-		pinned,
-		optionOf,
+		selectableEmployees,
+		pinnedIds,
+		employeeLabel,
 	};
 }
 
@@ -858,9 +858,9 @@ function FileRow({ file, preview }: { file: PayslipBatchFileView; preview: Paysl
 		needsEmployee,
 		matchBadge,
 		failureLabels,
-		options,
-		pinned,
-		optionOf,
+		selectableEmployees,
+		pinnedIds,
+		employeeLabel,
 	} = usePayslipFileRow({ file, preview });
 	return (
 		<li className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center">
@@ -890,12 +890,13 @@ function FileRow({ file, preview }: { file: PayslipBatchFileView; preview: Paysl
 			</div>
 			<div className="w-full md:w-72">
 				{editable ? (
-					<SearchableSelect
-						options={options}
-						pinnedOptions={pinned}
-						value={file.employeeId ?? ""}
-						onValueChange={(value) =>
-							void update({ assignedEmployeeId: value || null })
+					<EmployeeSingleSelect
+						className="space-y-0"
+						employees={selectableEmployees}
+						pinnedIds={pinnedIds}
+						value={file.employeeId}
+						onChange={(value) =>
+							void update({ assignedEmployeeId: value })
 						}
 						placeholder={t(
 							"settings.personnelFiles.batch.chooseEmployee",
@@ -905,7 +906,7 @@ function FileRow({ file, preview }: { file: PayslipBatchFileView; preview: Paysl
 							"settings.personnelFiles.batch.searchEmployee",
 							"Search name or personnel number",
 						)}
-						emptyText={t(
+						emptyMessage={t(
 							"settings.personnelFiles.batch.noEmployee",
 							"No employee found.",
 						)}
@@ -921,7 +922,7 @@ function FileRow({ file, preview }: { file: PayslipBatchFileView; preview: Paysl
 					/>
 				) : (
 					<p className="truncate text-sm text-muted-foreground">
-						{file.employeeId ? optionOf(file.employeeId).name : null}
+						{file.employeeId ? employeeLabel(file.employeeId) : null}
 					</p>
 				)}
 			</div>

@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ContractTypeOptions,
 	TermDateField,
@@ -387,19 +388,30 @@ function RehireAssignmentFields({
 			</form.Field>
 			<form.Field name="primaryManagerId">
 				{(field) => (
-					<TermSelectField
-						label={t("settings.employees.offboarding.primaryManager", "Primary manager")}
-						field={field}
-					>
-						<SelectItem value={NONE}>
-							{t("settings.employees.offboarding.noManager", "No manager")}
-						</SelectItem>
-						{managers.map((manager) => (
-							<SelectItem key={manager.id} value={manager.id}>
-								{manager.name}
-							</SelectItem>
-						))}
-					</TermSelectField>
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("settings.employees.offboarding.primaryManager", "Primary manager")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<EmployeeSingleSelect
+								className="space-y-0"
+								value={field.state.value === NONE ? null : field.state.value}
+								onChange={(value) => field.handleChange(value ?? NONE)}
+								onBlur={field.handleBlur}
+								placeholder={t("settings.employees.offboarding.noManager", "No manager")}
+								allowClear
+								clearLabel={t("settings.employees.offboarding.noManager", "No manager")}
+								employees={managers.map((manager) =>
+									toSelectableEmployee({
+										id: manager.id,
+										name: manager.name,
+										role: "manager",
+									}),
+								)}
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
 				)}
 			</form.Field>
 			<form.Field

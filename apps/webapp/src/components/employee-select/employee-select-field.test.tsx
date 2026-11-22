@@ -8,7 +8,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { EmployeeMultiSelect } from "./employee-select-field";
+import { EmployeeMultiSelect, EmployeeSingleSelect } from "./employee-select-field";
+import { toSelectableEmployee } from "./to-selectable-employee";
 import type { SelectableEmployee } from "./types";
 
 vi.mock("@tolgee/react", () => ({
@@ -129,5 +130,64 @@ describe("EmployeeMultiSelect", () => {
 
 		expect(source).not.toContain('`${modalOpen ? "open" : "closed"}');
 		expect(source).not.toContain("modalOpen ?");
+	});
+
+	it("excludes excludeIds and matches searchKeywords in pre-filtered mode", async () => {
+		const user = userEvent.setup();
+		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<EmployeeSingleSelect
+					label="Employee"
+					value={null}
+					onChange={() => {}}
+					excludeIds={["employee-a"]}
+					employees={[
+						toSelectableEmployee({ id: "employee-a", name: "Ada Lovelace", employeeNumber: "P-100" }),
+						toSelectableEmployee({ id: "employee-b", name: "Grace Hopper", employeeNumber: "P-200" }),
+					]}
+				/>
+			</QueryClientProvider>,
+		);
+
+		await user.click(screen.getByRole("combobox", { name: "Employee" }));
+		expect(screen.queryByRole("option", { name: /Ada Lovelace/i })).toBeNull();
+		expect(screen.getByRole("option", { name: /Grace Hopper/i })).toBeTruthy();
+
+		await user.type(screen.getByPlaceholderText(/Search/i), "P-200");
+		expect(screen.getByRole("option", { name: /Grace Hopper/i })).toBeTruthy();
+	});
+
+	it("offers a clear option and pins suggested employees in single-select mode", async () => {
+		const user = userEvent.setup();
+		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const onChange = vi.fn();
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<EmployeeSingleSelect
+					aria-label="Filter employee"
+					value="employee-b"
+					onChange={onChange}
+					allowClear
+					clearLabel="All employees"
+					pinnedIds={["employee-b"]}
+					employees={[
+						makeEmployee("employee-a", "Ada Lovelace"),
+						makeEmployee("employee-b", "Grace Hopper"),
+					]}
+				/>
+			</QueryClientProvider>,
+		);
+
+		await user.click(screen.getByRole("combobox", { name: "Filter employee" }));
+		const options = screen.getAllByRole("option");
+		expect(options[0].textContent).toContain("All employees");
+		expect(options[1].textContent).toContain("Grace Hopper");
+		expect(options[2].textContent).toContain("Ada Lovelace");
+
+		await user.click(screen.getByRole("option", { name: "All employees" }));
+		expect(onChange).toHaveBeenCalledWith(null);
 	});
 });

@@ -624,6 +624,7 @@ function TemplateMemberFields({
 			<form.Field name="managerEmployeeIds" mode="array">
 				{(field) => (
 					<ManagerOrAssignmentField
+						pickerKind="employee"
 						title={t("settings.projects.templates.managers.title", "Project managers")}
 						pickerLabel={t("settings.projects.templates.managers.picker", "Project manager to add")}
 						placeholder={t("settings.projects.templates.selectEmployee", "Select an employee")}
@@ -652,6 +653,7 @@ function TemplateMemberFields({
 			<form.Field name="employeeIds" mode="array">
 				{(field) => (
 					<ManagerOrAssignmentField
+						pickerKind="employee"
 						title={t("settings.projects.templates.employees.title", "Employees")}
 						pickerLabel={t("settings.projects.templates.employees.picker", "Employee to assign")}
 						placeholder={t("settings.projects.templates.selectEmployee", "Select an employee")}

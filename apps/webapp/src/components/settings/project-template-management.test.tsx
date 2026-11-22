@@ -1,10 +1,10 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	ProjectTemplate,
 	ProjectTemplateSummary,
@@ -152,6 +152,14 @@ function renderManagement() {
 	);
 }
 
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
+
 describe("ProjectTemplateManagement", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -201,15 +209,20 @@ describe("ProjectTemplateManagement", () => {
 		await user.type(within(form).getByLabelText("Task 1 estimate (hours)"), "8");
 
 		const managerPicker = within(form).getByRole("combobox", { name: "Project manager to add" });
-		await within(managerPicker).findByRole("option", { name: "Pat Manager" });
-		await user.selectOptions(managerPicker, "emp-2");
+		await waitFor(() => expect(projectActions.getEmployeesForSelection).toHaveBeenCalled());
+		await user.click(managerPicker);
+		await user.click(await screen.findByRole("option", { name: /Pat Manager/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: /Select Employee/i })).toBeNull(),
+		);
 		await user.selectOptions(
 			within(form).getByRole("combobox", { name: "Team to assign" }),
 			"team-2",
 		);
-		await user.selectOptions(
-			within(form).getByRole("combobox", { name: "Employee to assign" }),
-			"emp-1",
+		await user.click(within(form).getByRole("combobox", { name: "Employee to assign" }));
+		await user.click(await screen.findByRole("option", { name: /Avery Employee/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: /Select Employee/i })).toBeNull(),
 		);
 		expect(within(form).getByRole("listitem", { name: "Pat Manager" })).toBeTruthy();
 

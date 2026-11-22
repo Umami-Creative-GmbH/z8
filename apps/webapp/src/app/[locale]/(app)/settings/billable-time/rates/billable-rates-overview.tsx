@@ -8,6 +8,7 @@ import {
 	BillableRateActionPanel,
 	BillableRateSeries,
 } from "@/components/billable-time/billable-rate-series";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -347,16 +348,18 @@ function AddRatePanel({
 						<p className="text-sm text-muted-foreground">{labels[level].description}</p>
 					</div>
 					{needsEmployee && (
-						<TargetSelect
+						<EmployeeSingleSelect
 							id="billable-rate-employee"
 							label={t("settings.billableTime.rates.employee", "Employee")}
 							placeholder={t("settings.billableTime.rates.chooseEmployee", "Choose an employee")}
-							value={employeeId}
-							onChange={setEmployeeId}
-							options={options.employees.map((option) => ({
-								id: option.id,
-								label: option.name,
-							}))}
+							value={employeeId === NONE ? null : employeeId}
+							onChange={(value) => setEmployeeId(value ?? NONE)}
+							employees={options.employees.map((option) =>
+								toSelectableEmployee({
+									id: option.id,
+									name: option.name,
+								}),
+							)}
 						/>
 					)}
 					{needsProject && (

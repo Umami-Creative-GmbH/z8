@@ -31,7 +31,8 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/components/ui/action-panel", () => ({
-	ActionPanel: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanel: ({ open, children }: { open?: boolean; children: ReactNode }) =>
+		open === false ? null : <div>{children}</div>,
 	ActionPanelBody: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	ActionPanelContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 	ActionPanelDescription: ({ children }: { children: ReactNode }) => <p>{children}</p>,
@@ -209,7 +210,7 @@ describe("team detail page sections", () => {
 
 		expect(screen.getByLabelText("Teamname")).toBeInstanceOf(HTMLInputElement);
 		expect(screen.getByLabelText("Beschreibung")).toBeInstanceOf(HTMLTextAreaElement);
-		expect(screen.getByRole("button", { name: "Mitarbeitende auswählen" })).toBeTruthy();
+		expect(screen.getByRole("combobox", { name: "Mitarbeitende auswählen" })).toBeTruthy();
 	});
 
 	it("renders translated German representative strings without English fallbacks", () => {

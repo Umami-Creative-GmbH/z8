@@ -18,6 +18,7 @@ import {
 	getTravelExpenseFinanceQueue,
 	getTravelExpenseFinanceQueueFilterOptions,
 } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -204,10 +205,12 @@ function QueueFilters({
 		) : null;
 	// Any change of filter starts again on the first page.
 	const filter = (patch: Partial<FinanceQueueView>) => onChange({ ...view, ...patch, page: 1 });
-	const employeeOptions = (options?.employees ?? []).map((employee) => ({
-		code: employee.id,
-		name: employee.name ?? "—",
-	}));
+	const employeeOptions = (options?.employees ?? []).map((employee) =>
+		toSelectableEmployee({
+			id: employee.id,
+			name: employee.name ?? "—",
+		}),
+	);
 	const teamOptions = (options?.teams ?? []).map((team) => ({ code: team.id, name: team.name }));
 	const allEmployees = t("travelExpenses.finance.filter.employee.all", "All employees");
 	const allTeams = t("travelExpenses.finance.filter.team.all", "All teams");
@@ -236,20 +239,21 @@ function QueueFilters({
 					<Label htmlFor={employeeId}>
 						{t("travelExpenses.finance.filter.employee.label", "Employee")}
 					</Label>
-					<SearchableSelect
+					<EmployeeSingleSelect
 						id={employeeId}
+						className="space-y-0"
 						aria-label={t("travelExpenses.finance.filter.employee.label", "Employee")}
-						options={employeeOptions}
-						value={view.employeeId ?? ""}
-						onValueChange={(value) => filter({ employeeId: value || null })}
+						employees={employeeOptions}
+						value={view.employeeId}
+						onChange={(value) => filter({ employeeId: value })}
 						placeholder={allEmployees}
 						searchPlaceholder={t(
 							"travelExpenses.finance.filter.employee.search",
 							"Search employees…",
 						)}
-						emptyText={t("travelExpenses.finance.filter.employee.none", "No employee found.")}
-						allowEmpty
-						emptyLabel={allEmployees}
+						emptyMessage={t("travelExpenses.finance.filter.employee.none", "No employee found.")}
+						allowClear
+						clearLabel={allEmployees}
 					/>
 				</div>
 				<div className="space-y-2">

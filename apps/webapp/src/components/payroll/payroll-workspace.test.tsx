@@ -490,6 +490,11 @@ describe("PayrollWorkspace", () => {
 
 	beforeEach(() => {
 		vi.resetAllMocks();
+		globalThis.ResizeObserver = class ResizeObserver {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		};
 		window.history.replaceState(null, "", "/payroll");
 		translateOverrides = {};
 		activeLocale = "en";
@@ -804,8 +809,8 @@ describe("PayrollWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Confirm (1)" }));
 		await waitFor(() => expect(screen.getByText("1 employees selected")).toBeTruthy());
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
@@ -2095,7 +2100,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getAllByText("Specific employees").length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByText("Choose employees to include in this payroll scope.")).toBeTruthy();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
-		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		fireEvent.click(screen.getByRole("button", { name: "Close" }));
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog", { name: "Specific employees" })).toBeNull();
 		});
@@ -2213,11 +2218,11 @@ describe("PayrollWorkspace", () => {
 
 		const sheet = await screen.findByRole("dialog");
 		expect(within(sheet).getByRole("heading", { name: "Specific employees" })).toBeTruthy();
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
 
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 
-		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Confirm (1)" }));
 
 		await waitFor(() => {
 			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
@@ -2238,12 +2243,12 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Grace Hopper" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Grace Hopper/i }));
 
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 
-		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Confirm (2)" }));
 
 		await waitFor(() => {
 			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
@@ -2263,8 +2268,8 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
 
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog")).toBeNull();
@@ -2284,8 +2289,8 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		let sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Confirm (1)" }));
 
 		await waitFor(() => {
 			expect(screen.getByText("1 employees selected")).toBeTruthy();
@@ -2348,7 +2353,7 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 		sheet = await screen.findByRole("dialog");
 		expect(within(sheet).getByText("No assigned employees in this payroll scope.")).toBeTruthy();
-		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
 
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog")).toBeNull();
