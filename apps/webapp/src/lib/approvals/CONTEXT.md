@@ -54,6 +54,14 @@ _Avoid_: invitee (Organization's word for how they arrive), synthetic employee
 
 ### Deciding
 
+**Approval inbox**:
+The single workspace (`/approvals/inbox`) where authorized approvers review and decide pending requests across all supported approval kinds, including absences, absence change requests, time approvals, expense reports, earlier expense claims, period submissions, and ArbZG compliance exceptions.
+_Avoid_: legacy approvals page, approvals workspace, compliance settings queue
+
+**Compliance exception approval**:
+A manager or compliance-manager decision on an employee's ArbZG working-time or rest-period waiver (`compliance_exception`), surfaced in the Approval inbox via a dedicated adapter with deliberate single-item review, required rejection reason, and no deputy covering (ADR-0005).
+_Avoid_: compliance settings, ArbZG settings queue
+
 **Time approval**:
 An approval of one of the three time kinds, each about one work period: a time correction, a manual time submission or a policy clock-out.
 _Avoid_: time request, time entry approval
