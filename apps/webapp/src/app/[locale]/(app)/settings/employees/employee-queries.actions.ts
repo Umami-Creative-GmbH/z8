@@ -483,10 +483,26 @@ export const getEmployeeAction = organizationAction(
 						user: true,
 						team: true,
 						managers: {
+							columns: {
+								id: true,
+								isPrimary: true,
+							},
 							with: {
 								manager: {
+									columns: {
+										id: true,
+										userId: true,
+									},
 									with: {
-										user: true,
+										user: {
+											columns: {
+												firstName: true,
+												lastName: true,
+												name: true,
+												email: true,
+												image: true,
+											},
+										},
 									},
 								},
 							},
@@ -517,6 +533,21 @@ export const getEmployeeAction = organizationAction(
 
 			return {
 				...detail,
+				managers: (detail.managers ?? []).map((m) => ({
+					id: m.id,
+					isPrimary: m.isPrimary,
+					manager: {
+						id: m.manager.id,
+						userId: m.manager.userId,
+						user: {
+							firstName: m.manager.user.firstName,
+							lastName: m.manager.user.lastName,
+							name: m.manager.user.name,
+							email: m.manager.user.email,
+							image: m.manager.user.image,
+						},
+					},
+				})),
 				contractType: viewer.isOrgAdmin ? detail.contractType : null,
 				deactivatedAt: viewer.isOrgAdmin ? detail.deactivatedAt : null,
 				endDate: viewer.isOrgAdmin ? detail.endDate : null,
@@ -549,8 +580,13 @@ export const listEmployeesForSelectAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
+			const viewer = directoryViewerOf(actor, organizationId);
 			return yield* selectableEmployeePage(
-				{ organizationId, onlyEmployeeIds: managedEmployeeIdsOf(yield* actor.managedScope()) },
+				{
+					organizationId,
+					onlyEmployeeIds: managedEmployeeIdsOf(yield* actor.managedScope()),
+					includeFormerSince: viewer.isOrgAdmin,
+				},
 				input,
 			);
 		}),
@@ -566,10 +602,12 @@ export const getEmployeesByIdsAction = organizationAction(
 	({ actor, organizationId, input: employeeIds }) =>
 		Effect.gen(function* () {
 			if (employeeIds.length === 0) return [];
+			const viewer = directoryViewerOf(actor, organizationId);
 			return yield* loadEmployeesByIds(
 				organizationId,
 				managedEmployeeIdsOf(yield* actor.managedScope()),
 				employeeIds,
+				viewer.isOrgAdmin,
 			);
 		}),
 );
@@ -578,6 +616,7 @@ function loadEmployeesByIds(
 	organizationId: string,
 	onlyEmployeeIds: ReadonlySet<string> | null,
 	employeeIds: string[],
+	includeFormerSince: boolean,
 ) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
@@ -601,6 +640,6 @@ function loadEmployeesByIds(
 		});
 
 		const typedRows = rows as unknown as SelectableEmployeeRow[];
-		return typedRows.map(mapSelectableEmployeeRow);
+		return typedRows.map((row) => mapSelectableEmployeeRow(row, { includeFormerSince }));
 	});
 }

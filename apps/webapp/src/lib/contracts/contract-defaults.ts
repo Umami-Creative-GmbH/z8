@@ -232,14 +232,15 @@ function validateDefaultInput(input: ScheduleContractDefaultInput) {
 }
 
 async function verifyTeamAndPolicyInTx(
-	db: Pick<DatabaseClient, "select">,
+	tx: Pick<DatabaseClient, "select"> & Partial<Pick<DatabaseClient, "execute">>,
 	organizationId: string,
 	teamId: string | null,
 	workPolicyId: string | null,
+	lockPolicyForShare = false,
 ): Promise<{ teamName: string | null }> {
 	let teamName: string | null = null;
 	if (teamId) {
-		const [teamRow] = await db
+		const [teamRow] = await tx
 			.select({ id: team.id, name: team.name })
 			.from(team)
 			.where(and(eq(team.id, teamId), eq(team.organizationId, organizationId)))
@@ -255,11 +256,30 @@ async function verifyTeamAndPolicyInTx(
 	}
 
 	if (workPolicyId) {
-		const [policyRow] = await db
-			.select({ id: workPolicy.id, isActive: workPolicy.isActive })
-			.from(workPolicy)
-			.where(and(eq(workPolicy.id, workPolicyId), eq(workPolicy.organizationId, organizationId)))
-			.limit(1);
+		// H8 / F9-1: Lock work_policy FOR SHARE in mutating transactions after acquiring advisory +
+		// assignment locks so a concurrent policy retirement cannot deactivate the policy mid-write.
+		let policyRow: { id: string; isActive: boolean } | undefined;
+		if (lockPolicyForShare && tx.execute) {
+			const policyRes = await tx.execute<{ id: string; is_active: boolean }>(sql`
+				SELECT id, is_active
+				FROM work_policy
+				WHERE id = ${workPolicyId}::uuid
+					AND organization_id = ${organizationId}
+				LIMIT 1
+				FOR SHARE
+			`);
+			const raw = policyRes.rows[0];
+			if (raw) {
+				policyRow = { id: raw.id, isActive: Boolean(raw.is_active) };
+			}
+		} else {
+			const [selected] = await tx
+				.select({ id: workPolicy.id, isActive: workPolicy.isActive })
+				.from(workPolicy)
+				.where(and(eq(workPolicy.id, workPolicyId), eq(workPolicy.organizationId, organizationId)))
+				.limit(1);
+			policyRow = selected;
+		}
 		if (!policyRow) {
 			throw new NotFoundError({
 				message: "Work policy not found",
@@ -277,6 +297,10 @@ async function verifyTeamAndPolicyInTx(
 	}
 
 	return { teamName };
+}
+
+function buildOrgDefaultsAdvisoryLockKey(organizationId: string): string {
+	return `contract_default_org:${organizationId}`;
 }
 
 function buildScopeAdvisoryLockKey(
@@ -300,21 +324,58 @@ export async function scheduleContractDefaultInTx(
 ): Promise<ScheduleContractDefaultResult> {
 	const validated = validateDefaultInput(input);
 	const now = input.now ?? currentTimestamp();
-	const { teamName } = await verifyTeamAndPolicyInTx(
-		tx,
-		input.organizationId,
-		validated.teamId,
-		validated.workPolicyId,
-	);
 
-	// Serialize concurrent default schedules for the same (org, scope, team) without contending
-	// with unrelated organization row locks.
+	// Universal deadlock-free lock order (H8 / F9-1 / M3 / M4):
+	// (0) org defaults advisory lock (SHARED here, EXCLUSIVE in policy retirement)
+	// (1) scope advisory lock (EXCLUSIVE for this org/scope/team)
+	// (3) active work_policy_assignment rows for this scope ORDER BY id FOR UPDATE
+	// (4) work_policy row FOR SHARE
+	const orgLockKey = buildOrgDefaultsAdvisoryLockKey(input.organizationId);
+	await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
+
 	const lockKey = buildScopeAdvisoryLockKey(
 		input.organizationId,
 		validated.scope,
 		validated.teamId,
 	);
 	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+
+	const assignmentTarget: PolicyAssignmentScopeTarget =
+		validated.scope === "team" && validated.teamId
+			? { assignmentType: "team", teamId: validated.teamId, employeeId: null, priority: 1 }
+			: { assignmentType: "organization", teamId: null, employeeId: null, priority: 0 };
+
+	if (assignmentTarget.assignmentType === "team") {
+		await tx.execute(sql`
+			SELECT id
+			FROM work_policy_assignment
+			WHERE organization_id = ${input.organizationId}
+				AND assignment_type = 'team'
+				AND team_id = ${assignmentTarget.teamId}::uuid
+				AND is_active = true
+			ORDER BY id
+			FOR UPDATE
+		`);
+	} else {
+		await tx.execute(sql`
+			SELECT id
+			FROM work_policy_assignment
+			WHERE organization_id = ${input.organizationId}
+				AND assignment_type = 'organization'
+				AND team_id IS NULL
+				AND is_active = true
+			ORDER BY id
+			FOR UPDATE
+		`);
+	}
+
+	const { teamName } = await verifyTeamAndPolicyInTx(
+		tx,
+		input.organizationId,
+		validated.teamId,
+		validated.workPolicyId,
+		true,
+	);
 
 	// 1. Reuse or create the backing template container (`kind = 'default_backing'`).
 	const backingName =
@@ -498,11 +559,6 @@ export async function scheduleContractDefaultInTx(
 	}
 
 	// 3. Write-through canonical org/team `work_policy_assignment` row(s) honoring 0322 btree_gist.
-	const assignmentTarget: PolicyAssignmentScopeTarget =
-		validated.scope === "team" && validated.teamId
-			? { assignmentType: "team", teamId: validated.teamId, employeeId: null, priority: 1 }
-			: { assignmentType: "organization", teamId: null, employeeId: null, priority: 0 };
-
 	const writeThroughAssignment = await replacePolicyAssignmentWindowInTx(tx, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
@@ -601,6 +657,9 @@ export async function scheduleContractDefaultPolicyUpdateInTx(
 ): Promise<ScheduleContractDefaultResult> {
 	const effectiveFromDate = parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate");
 	const teamId = input.scope === "team" ? (input.teamId ?? null) : null;
+	// Acquire (0 shared) BEFORE (1 scope) to preserve universal lock order when calling scheduleContractDefaultInTx.
+	const orgLockKey = buildOrgDefaultsAdvisoryLockKey(input.organizationId);
+	await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
 	const lockKey = buildScopeAdvisoryLockKey(input.organizationId, input.scope, teamId);
 	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
 

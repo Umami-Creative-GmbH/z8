@@ -1355,5 +1355,57 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 		);
 		expect(reviewRow.rows[0]?.affected_end_at?.toISOString()).toBe("2026-08-01T00:00:00.000Z");
 		expect(reviewRow.rows[0]?.metadata.latestWorkAt).toBe("2026-08-01T00:00:00.000Z");
+
+		// M9: Forward past-departure correction MUST clamp assignment extension to an intervening
+		// policy retirement date so historical dates stay eligible!
+		now = TODAY;
+		const personRetired = await fixture.seedEmployee();
+		const {
+			rows: [polRetiring],
+		} = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy (organization_id, name, schedule_enabled, regulation_enabled, presence_enabled, is_active, created_by, updated_at)
+			 VALUES ($1, 'M9 Intervening Retirement Policy', true, false, false, true, $2, '2026-01-01T00:00:00Z')
+			 RETURNING id`,
+			[fixture.organizationId, fixture.ownerUserId],
+		);
+		await seedConfirmedTerms(personRetired, "2026-01-01", null);
+		const {
+			rows: [asgnRetiring],
+		} = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES ($1, $2, 'employee', $3, 2, '2026-01-01T00:00:00Z', '2026-01-01', 'manager_assignment', true, $4, now())
+			RETURNING id`,
+			[polRetiring!.id, fixture.organizationId, personRetired.employeeId, fixture.ownerUserId],
+		);
+		const depRet = await commands().recordPastDeparture(ownerActor(), {
+			employeeId: personRetired.employeeId,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-09", // cutoff = 2026-06-10
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+		if (depRet.status !== "effective") throw new Error("expected effective departure");
+		// Policy retires on 2026-06-15 (between initial cutoff 2026-06-10 and corrected cutoff 2026-06-20)
+		await fixture.pool.query(
+			`UPDATE work_policy SET is_active = false, updated_at = '2026-06-15T12:00:00Z' WHERE id = $1`,
+			[polRetiring!.id],
+		);
+		await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: personRetired.employeeId,
+			departureId: depRet.departureId,
+			expectedRevision: depRet.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-19", // cutoff = 2026-06-20
+		});
+		const {
+			rows: [afterM9],
+		} = await fixture.pool.query<{ effective_until_date: string | null }>(
+			`SELECT to_char(effective_until_date, 'YYYY-MM-DD') AS effective_until_date
+			 FROM work_policy_assignment WHERE id = $1`,
+			[asgnRetiring!.id],
+		);
+		expect(afterM9?.effective_until_date).toBe("2026-06-15");
 	});
 });

@@ -1580,5 +1580,113 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 			code: "invalid_number",
 			params: { field: "weekly_hours", value: "not-a-number" },
 		});
+
+		// H6: Pre-upgrade bulk replay MUST reject a changed employee target even when reusing the
+		// original confirmationFingerprint!
+		await expect(
+			submitBulkContractAction(db, {
+				organizationId: ORG_ID,
+				actorUserId: ADMIN_USER_ID,
+				requestId: retryReqId,
+				actionKind: "apply_template_version",
+				templateVersionId: tpl.templateVersionId,
+				effectiveFromDate: "2026-07-01",
+				target: { employeeIds: [stillLegacyEmp.employeeId] }, // changed target!
+				confirmationFingerprint: tplPreview.confirmationFingerprint, // reused old fp!
+				runnerOptions: { skipBalanceDirtyNotification: true },
+			}),
+		).rejects.toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "request_conflict",
+		} satisfies Partial<ConflictError>);
+
+		// H3 / F9-3: Submitting a non-hourly work-model bulk update covering an employee whose
+		// employment period starts AFTER effectiveFromDate MUST be rejected before creating a batch!
+		const futureHire = await seedEmployee({ key: "h3-future-hire", employeeNumber: "H3-100" });
+		await admin.query(
+			`UPDATE employee_employment_period
+			 SET started_at = '2026-09-01T00:00:00Z', start_provenance = 'recorded'
+			 WHERE employee_id = $1`,
+			[futureHire.employeeId],
+		);
+		await expect(
+			submitBulkContractAction(db, {
+				organizationId: ORG_ID,
+				actorUserId: ADMIN_USER_ID,
+				actionKind: "bulk_operational_update",
+				effectiveFromDate: "2026-07-01",
+				target: { employeeIds: [rehiredEmp.employeeId, futureHire.employeeId] },
+				changes: { workModel: "remote" },
+				runnerOptions: { skipBalanceDirtyNotification: true },
+			}),
+		).rejects.toMatchObject({
+			refusal: "bulk_employee_validation_failed",
+		});
+
+		// M2: An empty [D, D) confirmed row MUST NOT mask a valid older legacy terms row!
+		await admin.query(
+			`INSERT INTO employee_employment_history (
+				organization_id, employee_id, employment_period_id,
+				valid_from, valid_until, valid_from_date, valid_until_date,
+				status, review_state, contract_type, currency, weekly_contract_minutes,
+				migrated_legacy_terms, created_by, updated_at
+			) VALUES (
+				$1, $2, (SELECT id FROM employee_employment_period WHERE employee_id = $2 AND status = 'open' LIMIT 1),
+				'2026-03-01T00:00:00Z', '2026-03-01T00:00:00Z', '2026-03-01', '2026-03-01',
+				'active', 'confirmed', 'fixed', 'EUR', 2400,
+				false, $3, now()
+			)`,
+			[ORG_ID, stillLegacyEmp.employeeId, ADMIN_USER_ID],
+		);
+		const emptyMaskPreview = await previewBulkContractAction(db, {
+			organizationId: ORG_ID,
+			actionKind: "adopt_default",
+			effectiveFromDate: "2026-06-01",
+			target: {
+				employeeIds: [stillLegacyEmp.employeeId],
+				onlyLegacyTerms: true,
+			},
+		});
+		expect(emptyMaskPreview.employees.map((e) => e.employeeId)).toEqual([
+			stillLegacyEmp.employeeId,
+		]);
+
+		// M1: Pre-upgrade CSV contract import retry MUST still replay after its policy is retired!
+		const m1Pol = await seedSimplePolicy("M1 Legacy Csv Policy", "39.00");
+		const m1Csv = [
+			"employee_number,effective_from_date,work_policy_id",
+			`A2-301,2026-07-15,${m1Pol}`,
+		].join("\n");
+		const m1Preview = await previewCsvContractImport(db, {
+			organizationId: ORG_ID,
+			csvText: m1Csv,
+		});
+		expect(m1Preview.canCommit).toBe(true);
+		const m1ReqId = randomUUID();
+		const m1First = await commitCsvImportBatch(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			requestId: m1ReqId,
+			operationKind: "csv_contract_import",
+			csvText: m1Csv,
+			confirmationFingerprint: m1Preview.confirmationFingerprint,
+			runnerOptions: { skipBalanceDirtyNotification: true },
+		});
+		await admin.query(
+			`UPDATE contract_change_batch SET payload = payload - 'submittedIntentFingerprint' WHERE id = $1`,
+			[m1First.batch.id],
+		);
+		await admin.query(`UPDATE work_policy SET is_active = false WHERE id = $1`, [m1Pol]);
+		const m1Replay = await commitCsvImportBatch(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			requestId: m1ReqId,
+			operationKind: "csv_contract_import",
+			csvText: m1Csv,
+			confirmationFingerprint: m1Preview.confirmationFingerprint,
+			runnerOptions: { skipBalanceDirtyNotification: true },
+		});
+		expect(m1Replay.replayed).toBe(true);
+		expect(m1Replay.batch.id).toBe(m1First.batch.id);
 	});
 });

@@ -274,6 +274,7 @@ async function resolveTargetEmployees(
 					AND h.employee_id = ${employee.id}
 					AND h.review_state = 'confirmed'
 					AND h.valid_from_date <= ${effectiveFromDate}::date
+					AND (h.valid_until_date IS NULL OR h.valid_until_date > h.valid_from_date)
 					AND (
 						(open_p.id IS NOT NULL AND h.employment_period_id = open_p.id)
 						OR (
@@ -910,22 +911,30 @@ export async function submitBulkContractAction(
 							)
 							.orderBy(asc(contractChangeBatchItem.employeeId));
 						const persistedEmployeeIds = persistedItems.map((item) => item.employeeId);
-						if (input.confirmationFingerprint !== undefined) {
-							const expectedPersistedFp = computeBulkConfirmationFingerprint({
-								organizationId: input.organizationId,
-								spec: input,
-								effectiveFromDate: parsedEffectiveFromDate,
-								employeeIds: persistedEmployeeIds,
-								onlyLegacyTerms,
-							});
-							intentMatches = input.confirmationFingerprint === expectedPersistedFp;
-						} else if (input.target.employeeIds && input.target.employeeIds.length > 0) {
+						// H6 / A3-8: Always verify the submitted target independently of any supplied
+						// confirmationFingerprint so reusing an old fingerprint with a changed target
+						// can never replay an unrelated legacy batch.
+						let targetMatchesPersisted = false;
+						if (input.target.employeeIds && input.target.employeeIds.length > 0) {
 							const requestedIds = [...new Set(input.target.employeeIds)].sort((a, b) =>
 								a.localeCompare(b),
 							);
-							intentMatches =
+							targetMatchesPersisted =
 								requestedIds.length === persistedEmployeeIds.length &&
 								requestedIds.every((id, idx) => id === persistedEmployeeIds[idx]);
+							if (targetMatchesPersisted && (input.target.teamId || input.target.contractType)) {
+								const filteredMatched = await resolveTargetEmployees(
+									db,
+									input.organizationId,
+									{ ...input.target, onlyLegacyTerms: false },
+									false,
+									parsedEffectiveFromDate,
+								);
+								const filteredIds = filteredMatched.map((e) => e.id);
+								targetMatchesPersisted =
+									filteredIds.length === persistedEmployeeIds.length &&
+									filteredIds.every((id, idx) => id === persistedEmployeeIds[idx]);
+							}
 						} else {
 							const currentMatched = await resolveTargetEmployees(
 								db,
@@ -935,10 +944,21 @@ export async function submitBulkContractAction(
 								parsedEffectiveFromDate,
 							);
 							const currentIds = currentMatched.map((e) => e.id);
-							intentMatches =
+							targetMatchesPersisted =
 								currentIds.length === persistedEmployeeIds.length &&
 								currentIds.every((id, idx) => id === persistedEmployeeIds[idx]);
 						}
+						const fingerprintMatches =
+							input.confirmationFingerprint === undefined ||
+							input.confirmationFingerprint ===
+								computeBulkConfirmationFingerprint({
+									organizationId: input.organizationId,
+									spec: input,
+									effectiveFromDate: parsedEffectiveFromDate,
+									employeeIds: persistedEmployeeIds,
+									onlyLegacyTerms,
+								});
+						intentMatches = targetMatchesPersisted && fingerprintMatches;
 					}
 				}
 			}
@@ -1000,37 +1020,27 @@ export async function submitBulkContractAction(
 		});
 	}
 
-	// A3-2: Enforce employee-level validation before creating a batch so submitting a failed
-	// preview (or a batch invalidated by a concurrent pay/on-call edit) never partially updates
-	// some employees while failing others.
-	const requiresEmployeeValidation =
-		(input.actionKind === "apply_template_version" &&
-			(templateVersion?.defaultContractType === "hourly" ||
-				templateVersion?.scheduleSource === "on_call")) ||
-		(input.actionKind === "bulk_operational_update" &&
-			(input.changes.contractType === "hourly" ||
-				input.changes.hourlyRate !== undefined ||
-				input.changes.scheduleSource === "on_call"));
-	if (requiresEmployeeValidation) {
-		for (let offset = 0; offset < matched.length; offset += PREVIEW_CHUNK_SIZE) {
-			const chunk = matched.slice(offset, offset + PREVIEW_CHUNK_SIZE);
-			const resolvedMap = await loadEffectiveContractsBatch(db, {
-				organizationId: input.organizationId,
-				employeeIds: chunk.map((e) => e.id),
-				dates: [effectiveFromDate],
-			});
-			for (const emp of chunk) {
-				const current = resolvedMap.get(emp.id)?.get(effectiveFromDate);
-				const entry = evaluateEmployeeAgainstAction(emp, current, input, templateVersion);
-				if (entry.status === "validation_error") {
-					throw new ValidationError({
-						message:
-							entry.validationErrors[0] ??
-							"One or more matched employees failed bulk contract validation.",
-						field: "target",
-						refusal: "bulk_employee_validation_failed",
-					});
-				}
+	// A3-2 / F9-3 / H3: Enforce employee-level validation for EVERY bulk action kind before
+	// creating a batch so submitting a failed preview (including unemployed-on-date, missing
+	// contract, hourly without rate, or on-call without hours kind) never creates a partial batch.
+	for (let offset = 0; offset < matched.length; offset += PREVIEW_CHUNK_SIZE) {
+		const chunk = matched.slice(offset, offset + PREVIEW_CHUNK_SIZE);
+		const resolvedMap = await loadEffectiveContractsBatch(db, {
+			organizationId: input.organizationId,
+			employeeIds: chunk.map((e) => e.id),
+			dates: [effectiveFromDate],
+		});
+		for (const emp of chunk) {
+			const current = resolvedMap.get(emp.id)?.get(effectiveFromDate);
+			const entry = evaluateEmployeeAgainstAction(emp, current, input, templateVersion);
+			if (entry.status === "validation_error") {
+				throw new ValidationError({
+					message:
+						entry.validationErrors[0] ??
+						"One or more matched employees failed bulk contract validation.",
+					field: "target",
+					refusal: "bulk_employee_validation_failed",
+				});
 			}
 		}
 	}

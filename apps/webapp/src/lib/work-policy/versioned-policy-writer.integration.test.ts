@@ -1256,6 +1256,170 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			{ effective_from_date: "2026-06-01", weekly_contract_minutes: 2280 },
 		]);
 
-		await siblingPool.query("DELETE FROM organization WHERE id = $1", [foreignOrgId]);
+		// M10: Combined reactivation + replacement revision on the SAME future effective date that
+		// removes an archived presence location MUST succeed instead of being blocked by the
+		// superseded future version!
+		await expect(
+			updateOrPublishWorkPolicy(siblingDb, {
+				organizationId: ORG_ID,
+				actorUserId: USER_ID,
+				policyId: versionedReactPolicy.policy.id,
+				now,
+				data: {
+					isActive: true,
+					effectiveFromDate: "2026-08-01",
+					presenceEnabled: false,
+					presence: null,
+				},
+			}),
+		).resolves.toMatchObject({
+			policy: { isActive: true },
+		});
+
+		// H5: Retiring a policy creates durable linked retirement history for an unlinked confirmed
+		// `employee_employment_history` terms pin so later reactivating the policy never revives it!
+		const h5Pol = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			now,
+			data: {
+				name: "H5 Migrated Pin Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+			},
+		});
+		const h5UserId = `h5-user-${randomUUID()}`;
+		await siblingPool.query(
+			`INSERT INTO "user" (id, name, email, email_verified, created_at, updated_at)
+			 VALUES ($1, 'H5 User', $2, true, now(), now())`,
+			[h5UserId, `${h5UserId}@example.com`],
+		);
+		const {
+			rows: [h5Emp],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO employee (user_id, organization_id, role, is_active, created_at, updated_at)
+			 VALUES ($1, $2, 'employee', true, now(), now()) RETURNING id`,
+			[h5UserId, ORG_ID],
+		);
+		const {
+			rows: [h5Hist],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO employee_employment_history (
+				organization_id, employee_id, valid_from, valid_from_date,
+				status, review_state, contract_type, currency, work_policy_id,
+				created_by, updated_at
+			) VALUES (
+				$1, $2, '2026-01-01T00:00:00Z', '2026-01-01',
+				'active', 'confirmed', 'fixed', 'EUR', $3, $4, now()
+			) RETURNING id`,
+			[ORG_ID, h5Emp!.id, h5Pol.policy.id, USER_ID],
+		);
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: h5Pol.policy.id,
+			now, // 2026-06-01
+			data: { isActive: false },
+		});
+		const { rows: h5Linked } = await siblingPool.query<{
+			effective_from_date: string;
+			effective_until_date: string | null;
+			is_active: boolean;
+		}>(
+			`SELECT to_char(effective_from_date, 'YYYY-MM-DD') AS effective_from_date,
+				to_char(effective_until_date, 'YYYY-MM-DD') AS effective_until_date,
+				is_active
+			 FROM work_policy_assignment
+			 WHERE organization_id = $1
+				AND employee_id = $2
+				AND source_employment_history_id = $3`,
+			[ORG_ID, h5Emp!.id, h5Hist!.id],
+		);
+		expect(h5Linked).toEqual([
+			{
+				effective_from_date: "2026-01-01",
+				effective_until_date: "2026-06-01",
+				is_active: true,
+			},
+		]);
+
+		// M5: Legacy UTC-midnight assignment starting 2026-06-10 00:00Z (June 9 20:00 America/New_York)
+		// keeps its prior-evening hours instead of being deactivated when retired on 2026-06-10!
+		const m5OrgId = `${ORG_ID}-ny-m5`;
+		await siblingPool.query(
+			`INSERT INTO organization (id, name, slug, timezone, created_at)
+			 VALUES ($1, 'NY Org M5', $2, 'America/New_York', now())
+			 ON CONFLICT (id) DO NOTHING`,
+			[m5OrgId, `${m5OrgId}-slug`],
+		);
+		const m5Pol = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: m5OrgId,
+			actorUserId: USER_ID,
+			now: new Date("2026-06-10T15:00:00Z"),
+			data: {
+				name: "M5 NY Legacy Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+			},
+		});
+		const {
+			rows: [m5Asgn],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'organization', 0,
+				'2026-06-10 00:00:00', '2026-06-10', 'legacy', true, $3, now()
+			) RETURNING id`,
+			[m5Pol.policy.id, m5OrgId, USER_ID],
+		);
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: m5OrgId,
+			actorUserId: USER_ID,
+			policyId: m5Pol.policy.id,
+			now: new Date("2026-06-10T15:00:00Z"), // 2026-06-10 11:00 in America/New_York
+			data: { isActive: false },
+		});
+		const {
+			rows: [m5After],
+		} = await siblingPool.query<{
+			is_active: boolean;
+			effective_from_date: string;
+			effective_until_date: string | null;
+			effective_until_utc: string | null;
+		}>(
+			`SELECT is_active,
+				to_char(effective_from_date, 'YYYY-MM-DD') AS effective_from_date,
+				to_char(effective_until_date, 'YYYY-MM-DD') AS effective_until_date,
+				to_char(effective_until, 'YYYY-MM-DD HH24:MI:SS') AS effective_until_utc
+			 FROM work_policy_assignment WHERE id = $1`,
+			[m5Asgn!.id],
+		);
+		expect(m5After).toEqual({
+			is_active: true,
+			effective_from_date: "2026-06-09",
+			effective_until_date: "2026-06-10",
+			effective_until_utc: "2026-06-10 04:00:00",
+		});
+
+		await siblingPool.query("DELETE FROM organization WHERE id IN ($1, $2)", [
+			foreignOrgId,
+			m5OrgId,
+		]);
 	});
 });

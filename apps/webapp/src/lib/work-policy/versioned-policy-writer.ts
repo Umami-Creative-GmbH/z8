@@ -351,9 +351,22 @@ async function validateReactivationPresenceLocationsInTx(
 }
 
 /**
+ * Acquires the organization-wide contract-default advisory lock in EXCLUSIVE mode BEFORE
+ * locking policy assignments or `work_policy`, serializing policy retirement against ALL
+ * concurrent default schedulers (including brand-new scopes) without deadlocking (H8 / F9-1 / M3).
+ */
+export async function lockContractDefaultsOrgExclusiveInTx(
+	tx: PolicyTransaction,
+	organizationId: string,
+): Promise<void> {
+	const orgLockKey = `contract_default_org:${organizationId}`;
+	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${orgLockKey}))`);
+}
+
+/**
  * Locks active `work_policy_assignment` rows for `policyId` in deterministic `id` order BEFORE
  * locking `work_policy`, matching `policy-clock-out-break-snapshot.ts` (`assignment -> policy`)
- * so concurrent deactivation and clock-out can never deadlock (A3-13).
+ * so concurrent deactivation and clock-out can never deadlock (A3-13 / M4).
  */
 export async function lockPolicyAssignmentsForRetirementInTx(
 	tx: PolicyTransaction,
@@ -372,10 +385,14 @@ export async function lockPolicyAssignmentsForRetirementInTx(
 }
 
 /**
- * Records a dated retirement boundary (`orgTodayDate`) on active `work_policy_assignment` and
- * `contract_default` rows referencing a retired policy so historical dates continue resolving
- * the retired policy while today and future dates stop applying it without losing non-policy
- * contract default fields (A1-12 / A2-8 / P7-1 / P8-1 / P8-2 / A3-5 / A3-12 / A3-14).
+ * Records a dated retirement boundary (`orgTodayDate`) on active `work_policy_assignment`,
+ * unlinked confirmed `employee_employment_history` terms pins, and active `contract_default`
+ * rows referencing a retired policy so historical dates continue resolving the retired policy
+ * while today and future dates stop applying it without losing non-policy default fields
+ * (A1-12 / A2-8 / P7-1 / P8-1 / P8-2 / A3-5 / A3-12 / A3-14 / H5 / H8 / M3 / M5).
+ *
+ * Callers MUST acquire `lockContractDefaultsOrgExclusiveInTx` -> `lockPolicyAssignmentsForRetirementInTx`
+ * -> `work_policy FOR UPDATE` before invoking this helper.
  */
 export async function retirePolicyReferencesInTx(
 	tx: PolicyTransaction,
@@ -391,13 +408,54 @@ export async function retirePolicyReferencesInTx(
 	const { organizationId, policyId, actorUserId, orgTodayDate, now } = input;
 	const orgTimezone = input.orgTimezone ?? (await loadOrganizationTimezone(tx, organizationId));
 	const orgTodayMidnight = utcMidnight(parsePlainDate(orgTodayDate));
-	// A3-14: Legacy timestamp-bounded assignments are evaluated against org-local midnight so
-	// non-UTC organizations (e.g. America/New_York) never lose hours at the end of the prior day.
+	// A3-14 / M5: Legacy timestamp-bounded assignments are classified & capped against org-local
+	// midnight so non-UTC organizations (e.g. America/New_York) never lose evening hours on the
+	// prior local day even when migration stored `effective_from_date = orgTodayDate` from UTC midnight.
 	const orgTodayLocalStart = dateFromInstant(
 		parsePlainDate(orgTodayDate).toZonedDateTime(orgTimezone).toInstant(),
 	);
 
-	// 1. Cap active policy assignments at orgTodayDate and deactivate future ones.
+	// 1a. Handle legacy timestamp-bounded assignments whose instant started strictly before
+	//     orgTodayLocalStart even though `effective_from_date >= orgTodayDate` (M5).
+	//     Shift `effective_from_date` to the org-local start date (< orgTodayDate) when non-overlapping
+	//     so 0322's `effective_until_date > effective_from_date` and btree_gist constraints stay valid.
+	await tx.execute(sql`
+		UPDATE work_policy_assignment a
+		SET effective_from_date = ((a.effective_from AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone})::date,
+			effective_until = (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC'),
+			effective_until_date = ${orgTodayDate}::date,
+			updated_at = ${now}
+		WHERE a.organization_id = ${organizationId}
+			AND a.policy_id = ${policyId}::uuid
+			AND a.is_active = true
+			AND a.source_kind = 'legacy'
+			AND a.effective_from IS NOT NULL
+			AND a.effective_from < (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC')
+			AND (a.effective_until IS NULL OR a.effective_until > (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC'))
+			AND a.effective_from_date >= ${orgTodayDate}::date
+			AND ((a.effective_from AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone})::date < ${orgTodayDate}::date
+			AND NOT EXISTS (
+				SELECT 1
+				FROM work_policy_assignment other
+				WHERE other.organization_id = a.organization_id
+					AND other.assignment_type = a.assignment_type
+					AND other.is_active = true
+					AND other.id <> a.id
+					AND (
+						(a.assignment_type = 'organization')
+						OR (a.assignment_type = 'team' AND other.team_id = a.team_id)
+						OR (a.assignment_type = 'employee' AND other.employee_id = a.employee_id)
+					)
+					AND daterange(other.effective_from_date, other.effective_until_date, '[)')
+						&& daterange(
+							((a.effective_from AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone})::date,
+							${orgTodayDate}::date,
+							'[)'
+						)
+			)
+	`);
+
+	// 1b. Cap remaining active policy assignments spanning orgTodayDate / orgTodayLocalStart.
 	await tx.execute(sql`
 		UPDATE work_policy_assignment
 		SET effective_until = CASE
@@ -410,50 +468,266 @@ export async function retirePolicyReferencesInTx(
 			AND policy_id = ${policyId}::uuid
 			AND is_active = true
 			AND effective_from_date < ${orgTodayDate}::date
-			AND (effective_until_date IS NULL OR effective_until_date > ${orgTodayDate}::date)
+			AND (
+				(
+					source_kind <> 'legacy'
+					AND (effective_until_date IS NULL OR effective_until_date > ${orgTodayDate}::date)
+				)
+				OR (
+					source_kind = 'legacy'
+					AND (effective_from IS NULL OR effective_from < (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC'))
+					AND (effective_until IS NULL OR effective_until > (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC'))
+				)
+			)
 	`);
+
+	// 1c. Deactivate assignments that take effect on or after orgTodayDate / orgTodayLocalStart
+	//     (or legacy same-day rows that could not shift back without overlapping a prior assignment).
 	await tx.execute(sql`
 		UPDATE work_policy_assignment
 		SET is_active = false, updated_at = ${now}
 		WHERE organization_id = ${organizationId}
 			AND policy_id = ${policyId}::uuid
 			AND is_active = true
-			AND effective_from_date >= ${orgTodayDate}::date
+			AND (
+				(source_kind <> 'legacy' AND effective_from_date >= ${orgTodayDate}::date)
+				OR (
+					source_kind = 'legacy'
+					AND (
+						(effective_from IS NOT NULL AND effective_from >= (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC'))
+						OR (effective_from IS NULL AND effective_from_date >= ${orgTodayDate}::date)
+						OR effective_from_date >= ${orgTodayDate}::date
+					)
+				)
+			)
 	`);
 
-	// 2. Acquire the same scope advisory lock as `scheduleContractDefaultInTx` in deterministic
-	// sorted order for every affected active default scope before reading & splitting (P8-2 / A3-12).
-	const affectedScopes = await tx
-		.select({
-			scope: contractDefault.scope,
-			teamId: contractDefault.teamId,
-		})
-		.from(contractDefault)
-		.innerJoin(
-			contractTemplateVersion,
-			and(
-				eq(contractTemplateVersion.id, contractDefault.templateVersionId),
-				eq(contractTemplateVersion.organizationId, contractDefault.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(contractDefault.organizationId, organizationId),
-				eq(contractDefault.isActive, true),
-				eq(contractTemplateVersion.workPolicyId, policyId),
-			),
-		);
-	const scopeLockKeys = [
-		...new Set(
-			affectedScopes.map((s) => `contract_default:${organizationId}:${s.scope}:${s.teamId ?? ""}`),
-		),
-	].sort((a, b) => a.localeCompare(b));
-	for (const lockKey of scopeLockKeys) {
-		await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+	// 1d. H5 / A3-6: Record durable capped/deactivated `employment_terms` assignment history for any
+	//     pre-migration / unlinked confirmed `employee_employment_history` row referencing this policy
+	//     so later reactivating the policy can never revive the retired terms pin.
+	const unlinkedTermsRes = await tx.execute(sql`
+		SELECT
+			h.id,
+			h.employee_id AS "employeeId",
+			COALESCE(
+				to_char(h.valid_from_date, 'YYYY-MM-DD'),
+				to_char((h.valid_from AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD')
+			) AS "validFromDate"
+		FROM employee_employment_history h
+		WHERE h.organization_id = ${organizationId}
+			AND h.work_policy_id = ${policyId}::uuid
+			AND h.review_state = 'confirmed'
+			AND (h.valid_until_date IS NULL OR h.valid_until_date > ${orgTodayDate}::date)
+			AND NOT EXISTS (
+				SELECT 1
+				FROM work_policy_assignment a
+				WHERE a.organization_id = h.organization_id
+					AND a.assignment_type = 'employee'
+					AND a.employee_id = h.employee_id
+					AND a.policy_id = h.work_policy_id
+					AND a.source_employment_history_id = h.id
+			)
+		ORDER BY h.id
+	`);
+	const unlinkedTerms = toRows(unlinkedTermsRes) as Array<{
+		id: string;
+		employeeId: string;
+		validFromDate: string;
+	}>;
+	for (const term of unlinkedTerms) {
+		if (!term.validFromDate) continue;
+		if (term.validFromDate >= orgTodayDate) {
+			const fromTs = utcMidnight(parsePlainDate(term.validFromDate));
+			await tx.execute(sql`
+				INSERT INTO work_policy_assignment (
+					policy_id,
+					organization_id,
+					assignment_type,
+					employee_id,
+					team_id,
+					priority,
+					effective_from,
+					effective_until,
+					effective_from_date,
+					effective_until_date,
+					source_kind,
+					source_employment_history_id,
+					is_active,
+					created_by,
+					updated_at
+				)
+				VALUES (
+					${policyId}::uuid,
+					${organizationId},
+					'employee',
+					${term.employeeId}::uuid,
+					NULL,
+					2,
+					(${fromTs}::timestamptz AT TIME ZONE 'UTC'),
+					NULL,
+					${term.validFromDate}::date,
+					NULL,
+					'employment_terms',
+					${term.id}::uuid,
+					false,
+					${actorUserId},
+					${now}
+				)
+			`);
+			continue;
+		}
+
+		// Try linking an existing unlinked assignment for this same employee + policy just capped at orgTodayDate.
+		const linkedExistingRes = await tx.execute(sql`
+			UPDATE work_policy_assignment
+			SET source_employment_history_id = ${term.id}::uuid,
+				updated_at = ${now}
+			WHERE id = (
+				SELECT id
+				FROM work_policy_assignment
+				WHERE organization_id = ${organizationId}
+					AND assignment_type = 'employee'
+					AND employee_id = ${term.employeeId}::uuid
+					AND policy_id = ${policyId}::uuid
+					AND is_active = true
+					AND source_employment_history_id IS NULL
+					AND source_kind IN ('legacy', 'employment_terms')
+					AND effective_from_date <= ${term.validFromDate}::date
+					AND effective_until_date = ${orgTodayDate}::date
+				ORDER BY id
+				LIMIT 1
+			)
+			RETURNING id
+		`);
+		if (toRows(linkedExistingRes).length > 0) {
+			continue;
+		}
+
+		// Compute uncovered sub-intervals of [term.validFromDate, orgTodayDate) against active employee
+		// assignments so inserting durable historical caps strictly respects 0322 btree_gist.
+		const overlappingRes = await tx.execute(sql`
+			SELECT
+				to_char(effective_from_date, 'YYYY-MM-DD') AS "fromDate",
+				to_char(effective_until_date, 'YYYY-MM-DD') AS "untilDate"
+			FROM work_policy_assignment
+			WHERE organization_id = ${organizationId}
+				AND assignment_type = 'employee'
+				AND employee_id = ${term.employeeId}::uuid
+				AND is_active = true
+				AND effective_from_date < ${orgTodayDate}::date
+				AND (effective_until_date IS NULL OR effective_until_date > ${term.validFromDate}::date)
+			ORDER BY effective_from_date ASC
+		`);
+		const overlaps = toRows(overlappingRes) as Array<{
+			fromDate: string;
+			untilDate: string | null;
+		}>;
+		const uncovered: Array<{ from: string; until: string }> = [];
+		let cursor = term.validFromDate;
+		for (const ov of overlaps) {
+			if (ov.fromDate > cursor) {
+				uncovered.push({
+					from: cursor,
+					until: ov.fromDate < orgTodayDate ? ov.fromDate : orgTodayDate,
+				});
+			}
+			if (ov.untilDate === null || ov.untilDate >= orgTodayDate) {
+				cursor = orgTodayDate;
+				break;
+			}
+			if (ov.untilDate > cursor) {
+				cursor = ov.untilDate;
+			}
+		}
+		if (cursor < orgTodayDate) {
+			uncovered.push({ from: cursor, until: orgTodayDate });
+		}
+
+		if (uncovered.length > 0) {
+			for (const span of uncovered) {
+				const spanFromTs = utcMidnight(parsePlainDate(span.from));
+				const spanUntilTs = utcMidnight(parsePlainDate(span.until));
+				await tx.execute(sql`
+					INSERT INTO work_policy_assignment (
+						policy_id,
+						organization_id,
+						assignment_type,
+						employee_id,
+						team_id,
+						priority,
+						effective_from,
+						effective_until,
+						effective_from_date,
+						effective_until_date,
+						source_kind,
+						source_employment_history_id,
+						is_active,
+						created_by,
+						updated_at
+					)
+					VALUES (
+						${policyId}::uuid,
+						${organizationId},
+						'employee',
+						${term.employeeId}::uuid,
+						NULL,
+						2,
+						(${spanFromTs}::timestamptz AT TIME ZONE 'UTC'),
+						(${spanUntilTs}::timestamptz AT TIME ZONE 'UTC'),
+						${span.from}::date,
+						${span.until}::date,
+						'employment_terms',
+						${term.id}::uuid,
+						true,
+						${actorUserId},
+						${now}
+					)
+				`);
+			}
+		} else {
+			const fromTs = utcMidnight(parsePlainDate(term.validFromDate));
+			await tx.execute(sql`
+				INSERT INTO work_policy_assignment (
+					policy_id,
+					organization_id,
+					assignment_type,
+					employee_id,
+					team_id,
+					priority,
+					effective_from,
+					effective_until,
+					effective_from_date,
+					effective_until_date,
+					source_kind,
+					source_employment_history_id,
+					is_active,
+					created_by,
+					updated_at
+				)
+				VALUES (
+					${policyId}::uuid,
+					${organizationId},
+					'employee',
+					${term.employeeId}::uuid,
+					NULL,
+					2,
+					(${fromTs}::timestamptz AT TIME ZONE 'UTC'),
+					NULL,
+					${term.validFromDate}::date,
+					NULL,
+					'employment_terms',
+					${term.id}::uuid,
+					false,
+					${actorUserId},
+					${now}
+				)
+			`);
+		}
 	}
 
-	// 3. Re-query ONLY active contract_default rows referencing this policy under the scope locks
-	// so superseded/inactive defaults are never revived (P8-1 / A3-5).
+	// 2. Query ONLY active contract_default rows referencing this policy (under the org-wide
+	//    contract_default_org exclusive lock acquired before assignment & policy locks) so
+	//    superseded/inactive defaults are never revived and no new scope can race in (P8-1 / H8 / M3).
 	const defaultRows = await tx
 		.select({
 			defaultRow: contractDefault,
@@ -634,7 +908,7 @@ async function listPolicyVersionsOrderedInTx(
 		SELECT
 			"id",
 			"version_number" AS "versionNumber",
-			"effective_from_date"::text AS "effectiveFromDate",
+			to_char("effective_from_date", 'YYYY-MM-DD') AS "effectiveFromDate",
 			"schedule_enabled" AS "scheduleEnabled",
 			"regulation_enabled" AS "regulationEnabled",
 			"presence_enabled" AS "presenceEnabled",
@@ -695,7 +969,7 @@ async function ensurePolicyV1IdempotentlyInTx(
 		SELECT
 			"id",
 			"version_number" AS "versionNumber",
-			"effective_from_date"::text AS "effectiveFromDate",
+			to_char("effective_from_date", 'YYYY-MM-DD') AS "effectiveFromDate",
 			"schedule_enabled" AS "scheduleEnabled",
 			"regulation_enabled" AS "regulationEnabled",
 			"presence_enabled" AS "presenceEnabled",
@@ -1185,9 +1459,10 @@ export async function updateOrPublishWorkPolicyInTx(
 	}
 	const requestedEffectiveFromDate = normalizeDateInput(data.effectiveFromDate);
 
-	// Step 1: When retiring (isActive: false), lock active policy assignments in id order BEFORE
-	// locking work_policy so lock order matches clock-out (`assignment -> policy`, A3-13).
+	// Step 1: When retiring (isActive: false), acquire locks in universal deadlock-free order:
+	// (0) org defaults advisory lock (EXCLUSIVE) -> (3) active policy assignments ORDER BY id -> (4) work_policy (H8 / M3 / M4).
 	if (data.isActive === false) {
+		await lockContractDefaultsOrgExclusiveInTx(tx, organizationId);
 		await lockPolicyAssignmentsForRetirementInTx(tx, organizationId, policyId);
 	}
 	const existingPolicy = await lockWorkPolicyForUpdateInTx(tx, organizationId, policyId);
@@ -1342,16 +1617,24 @@ export async function updateOrPublishWorkPolicyInTx(
 		);
 	}
 
-	// A2-17: If a versioned edit also reactivates the policy, validate presence locations on all
-	// other effective & future presence-enabled versions as well.
+	// A2-17 / M10: If a versioned edit also reactivates the policy, validate presence locations on
+	// all projected winning effective & future versions, excluding any existing version that this
+	// proposed edit supersedes on `targetEffectiveFromDate` (whose own location was just validated).
 	if (data.isActive === true && !existingPolicy.isActive) {
 		const excludeIds = new Set<string>();
+		for (const v of initialVersions) {
+			if (v.effectiveFromDate === targetEffectiveFromDate) {
+				excludeIds.add(v.id);
+			}
+		}
+		const currentEffective =
+			initialVersions.find((v) => v.effectiveFromDate <= orgTodayDate) ?? null;
 		if (
+			currentEffective &&
 			targetEffectiveFromDate <= orgTodayDate &&
-			initialBaseVersion &&
-			(data.presenceEnabled === false || data.presence !== undefined)
+			targetEffectiveFromDate >= currentEffective.effectiveFromDate
 		) {
-			excludeIds.add(initialBaseVersion.id);
+			excludeIds.add(currentEffective.id);
 		}
 		await validateReactivationPresenceLocationsInTx(tx, {
 			organizationId,

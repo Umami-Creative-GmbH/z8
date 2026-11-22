@@ -102,6 +102,8 @@ export interface PreviewCsvContractImportInput {
 	readonly overwritePersonalDivergences?: boolean;
 	readonly delimiter?: "," | ";";
 	readonly maxPreviewRows?: number;
+	/** Internal-only flag for pre-upgrade idempotent retry verification after live state changed (M1). */
+	readonly skipLiveStateValidation?: boolean;
 }
 
 export interface PreviewCsvContractImportResult {
@@ -542,7 +544,7 @@ export async function previewCsvContractImport(
 
 		const emp = matchEmployeeForRow(v, empLookup, errorDetails);
 		if (emp) {
-			if (emp.isFormer) {
+			if (emp.isFormer && !input.skipLiveStateValidation) {
 				pushDiagnostic(
 					errorDetails,
 					"employee_not_on_roster",
@@ -608,7 +610,7 @@ export async function previewCsvContractImport(
 					`Work policy not found in organization: "${v.work_policy_id}".`,
 					{ value: v.work_policy_id },
 				);
-			} else if (!policy.isActive) {
+			} else if (!policy.isActive && !input.skipLiveStateValidation) {
 				pushDiagnostic(
 					errorDetails,
 					"work_policy_inactive",
@@ -627,7 +629,7 @@ export async function previewCsvContractImport(
 					`Work policy not found in organization: "${v.work_policy_name}".`,
 					{ value: v.work_policy_name },
 				);
-			} else if (!policy.isActive) {
+			} else if (!policy.isActive && !input.skipLiveStateValidation) {
 				pushDiagnostic(
 					errorDetails,
 					"work_policy_inactive",
@@ -926,27 +928,29 @@ export async function previewCsvContractImport(
 
 	// Load current effective contracts grouped by effective date in bounded chunks for preview diffs & divergence checks
 	const contractsByKey = new Map<string, EffectiveContractOnDay>();
-	const employeeIdsByDate = new Map<string, Set<string>>();
-	for (const row of intermediates) {
-		if (row.errorDetails.length === 0 && row.employee && row.effectiveFromDate) {
-			const set = employeeIdsByDate.get(row.effectiveFromDate) ?? new Set<string>();
-			set.add(row.employee.id);
-			employeeIdsByDate.set(row.effectiveFromDate, set);
+	if (!input.skipLiveStateValidation) {
+		const employeeIdsByDate = new Map<string, Set<string>>();
+		for (const row of intermediates) {
+			if (row.errorDetails.length === 0 && row.employee && row.effectiveFromDate) {
+				const set = employeeIdsByDate.get(row.effectiveFromDate) ?? new Set<string>();
+				set.add(row.employee.id);
+				employeeIdsByDate.set(row.effectiveFromDate, set);
+			}
 		}
-	}
 
-	for (const [date, empIdSet] of employeeIdsByDate.entries()) {
-		const empIds = [...empIdSet];
-		for (let i = 0; i < empIds.length; i += PREVIEW_CONTRACT_CHUNK_SIZE) {
-			const chunk = empIds.slice(i, i + PREVIEW_CONTRACT_CHUNK_SIZE);
-			const batch = await loadEffectiveContractsBatch(db, {
-				organizationId: input.organizationId,
-				employeeIds: chunk,
-				dates: [date],
-			});
-			for (const empId of chunk) {
-				const resolved = batch.get(empId)?.get(date);
-				if (resolved) contractsByKey.set(`${empId}:${date}`, resolved);
+		for (const [date, empIdSet] of employeeIdsByDate.entries()) {
+			const empIds = [...empIdSet];
+			for (let i = 0; i < empIds.length; i += PREVIEW_CONTRACT_CHUNK_SIZE) {
+				const chunk = empIds.slice(i, i + PREVIEW_CONTRACT_CHUNK_SIZE);
+				const batch = await loadEffectiveContractsBatch(db, {
+					organizationId: input.organizationId,
+					employeeIds: chunk,
+					dates: [date],
+				});
+				for (const empId of chunk) {
+					const resolved = batch.get(empId)?.get(date);
+					if (resolved) contractsByKey.set(`${empId}:${date}`, resolved);
+				}
 			}
 		}
 	}
@@ -1776,6 +1780,10 @@ export async function commitCsvImportBatch(
 							defaultEffectiveFromDate: input.defaultEffectiveFromDate,
 							overwritePersonalDivergences: input.overwritePersonalDivergences,
 							delimiter: input.delimiter,
+							// M1 / A3-8: Skip live roster/policy-active/employment checks during legacy
+							// retry verification so identical retries still return the original batch
+							// receipt after an employee leaves or a policy is later retired.
+							skipLiveStateValidation: true,
 						});
 						const parsedItems = livePreview.rows
 							.filter(
@@ -1802,36 +1810,153 @@ export async function commitCsvImportBatch(
 										canonicalJson((persistedItems[idx]?.payload ?? {}) as Record<string, unknown>),
 							);
 					} else {
-						const livePreview = await previewCsvLeavingDateImport(db, {
-							organizationId: input.organizationId,
-							csvText: input.csvText,
-							actorUserId: input.actorUserId,
-							defaultAcknowledgeUnassignedDuties: input.defaultAcknowledgeUnassignedDuties,
-							now: input.clockNow,
-							delimiter: input.delimiter,
-						});
-						const parsedKeyed = livePreview.rows
-							.filter((r): r is CsvLeavingDatePreviewRow & { employeeId: string } =>
-								Boolean(r.employeeId && r.lastWorkingDay),
-							)
-							.map((r) => ({
-								employeeId: r.employeeId,
-								lastWorkingDay: r.lastWorkingDay,
-								reason: r.normalizedPayload?.reason ?? null,
-							}))
-							.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
-						intentMatches =
-							livePreview.rows.length === persistedItems.length &&
-							parsedKeyed.length === persistedItems.length &&
-							parsedKeyed.every((row, idx) => {
-								const persisted = persistedItems[idx];
-								const persistedPayload = (persisted?.payload ?? {}) as Record<string, unknown>;
-								return (
-									persisted?.employeeId === row.employeeId &&
-									persistedPayload.lastWorkingDay === row.lastWorkingDay &&
-									(row.reason === null || (persistedPayload.reason ?? null) === row.reason)
-								);
-							});
+						// H7 / A3-8: Parse EVERY submitted departure instruction directly from the CSV
+						// without live roster/departure-state checks and verify strict equality of every
+						// field (employee, rowNumber, lastWorkingDay, replacementEmployeeId,
+						// acknowledgeUnassignedDuties, reason, and explicit departure_mode) against the
+						// persisted batch items.
+						let parsedCsv: ReturnType<typeof parseCsvText> | null = null;
+						try {
+							parsedCsv = parseCsvText(input.csvText, { delimiter: input.delimiter });
+						} catch {
+							parsedCsv = null;
+						}
+						if (parsedCsv && parsedCsv.rows.length === persistedItems.length) {
+							const defaultAck = input.defaultAcknowledgeUnassignedDuties ?? true;
+							const nowInstant = input.clockNow ?? systemClock.nowInstant();
+							const ids: string[] = [];
+							const numbers: string[] = [];
+							const emails: string[] = [];
+							for (const row of parsedCsv.rows) {
+								if (row.values.employee_id) ids.push(row.values.employee_id);
+								if (row.values.employee_number) numbers.push(row.values.employee_number);
+								if (row.values.email) emails.push(row.values.email);
+								if (row.values.replacement_employee_id)
+									ids.push(row.values.replacement_employee_id);
+								if (row.values.replacement_employee_number) {
+									numbers.push(row.values.replacement_employee_number);
+								}
+								if (row.values.replacement_email) emails.push(row.values.replacement_email);
+							}
+							const empLookup = await resolveEmployeesByIdentifiers(
+								db,
+								input.organizationId,
+								{ ids, employeeNumbers: numbers, emails },
+								nowInstant,
+							);
+							const seenEmpIds = new Set<string>();
+							let parseOk = true;
+							const parsedInstructions: {
+								employeeId: string;
+								rowNumber: number;
+								lastWorkingDay: string;
+								replacementEmployeeId: string | null;
+								acknowledgeUnassignedDuties: boolean;
+								reason: string | null;
+								departureMode: "scheduled" | "immediate" | "retrospective" | null;
+							}[] = [];
+
+							for (const row of parsedCsv.rows) {
+								const v = row.values;
+								const rowErrors: CsvRowDiagnostic[] = [];
+								const emp = matchEmployeeForRow(v, empLookup, rowErrors);
+								if (!emp || rowErrors.length > 0 || seenEmpIds.has(emp.id)) {
+									parseOk = false;
+									break;
+								}
+								seenEmpIds.add(emp.id);
+
+								let lastWorkingDay: string | null = null;
+								if (v.last_working_day) {
+									try {
+										lastWorkingDay = parseIsoCalendarDate(v.last_working_day, "last_working_day");
+									} catch {
+										parseOk = false;
+										break;
+									}
+								}
+								if (!lastWorkingDay) {
+									parseOk = false;
+									break;
+								}
+
+								const modeRaw = v.departure_mode?.trim().toLowerCase() || null;
+								if (
+									modeRaw !== null &&
+									modeRaw !== "scheduled" &&
+									modeRaw !== "immediate" &&
+									modeRaw !== "retrospective"
+								) {
+									parseOk = false;
+									break;
+								}
+
+								let replacementEmployeeId: string | null = null;
+								if (
+									v.replacement_employee_id ||
+									v.replacement_employee_number ||
+									v.replacement_email
+								) {
+									const repErrors: CsvRowDiagnostic[] = [];
+									const replacement = matchEmployeeForRow(v, empLookup, repErrors, "replacement_");
+									if (!replacement || repErrors.length > 0) {
+										parseOk = false;
+										break;
+									}
+									replacementEmployeeId = replacement.id;
+								}
+
+								let acknowledgeUnassignedDuties = defaultAck;
+								if (v.acknowledge_unassigned_duties) {
+									try {
+										const parsedAck = parseCsvBoolean(v.acknowledge_unassigned_duties);
+										if (parsedAck !== null) acknowledgeUnassignedDuties = parsedAck;
+									} catch {
+										parseOk = false;
+										break;
+									}
+								}
+
+								parsedInstructions.push({
+									employeeId: emp.id,
+									rowNumber: row.rowNumber,
+									lastWorkingDay,
+									replacementEmployeeId,
+									acknowledgeUnassignedDuties,
+									reason: v.reason || v.change_reason || null,
+									departureMode: modeRaw,
+								});
+							}
+
+							if (parseOk && parsedInstructions.length === persistedItems.length) {
+								parsedInstructions.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+								intentMatches = parsedInstructions.every((row, idx) => {
+									const persisted = persistedItems[idx];
+									const persistedPayload = (persisted?.payload ?? {}) as Record<string, unknown>;
+									const action = persistedPayload.action;
+									const modeMatchesAction =
+										row.departureMode === null ||
+										(row.departureMode === "immediate" && action === "offboard_immediately") ||
+										(row.departureMode === "scheduled" && action === "schedule_departure") ||
+										(row.departureMode === "retrospective" &&
+											(action === "record_past_departure" ||
+												action === "correct_past_departure_date" ||
+												action === "record_historical_departure_date" ||
+												action === "skip_unchanged"));
+									return (
+										persisted?.employeeId === row.employeeId &&
+										persistedPayload.rowNumber === row.rowNumber &&
+										persistedPayload.lastWorkingDay === row.lastWorkingDay &&
+										(persistedPayload.replacementEmployeeId ?? null) ===
+											row.replacementEmployeeId &&
+										Boolean(persistedPayload.acknowledgeUnassignedDuties) ===
+											row.acknowledgeUnassignedDuties &&
+										(persistedPayload.reason ?? null) === row.reason &&
+										modeMatchesAction
+									);
+								});
+							}
+						}
 					}
 				}
 			}

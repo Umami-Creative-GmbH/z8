@@ -4,6 +4,7 @@ import type { WorkPolicyAssignmentSourceKind } from "@/db/schema/contract-types"
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { dateFromInstant, parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { ContractWriteTx } from "./contract-validation";
 
 export type PolicyAssignmentScopeTarget =
@@ -323,6 +324,7 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 		nextPeriodStartLocalDate: string | null;
 		nextPeriodStart: Date | null;
 		cappedPolicyAssignments: readonly CappedPolicyAssignmentRecord[];
+		organizationTimezone?: string;
 		now: Date;
 	},
 ): Promise<{ newlyCappedAssignments: CappedPolicyAssignmentRecord[] }> {
@@ -341,6 +343,8 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 		: sql``;
 
 	if (input.nextCutoffLocalDate > input.previousCutoffLocalDate) {
+		const orgTimezone =
+			input.organizationTimezone ?? (await loadOrganizationTimezone(tx, input.organizationId));
 		const effectiveExtendedUntilDate =
 			input.nextPeriodStartLocalDate && input.nextCutoffLocalDate > input.nextPeriodStartLocalDate
 				? input.nextPeriodStartLocalDate
@@ -350,29 +354,74 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 				? input.nextPeriodStart
 				: input.newCutoffDate;
 
-		// A3-20: Extend ONLY assignments recorded as departure-shortened, and never past each
-		// assignment's original pre-departure end date!
+		// A3-20 / M8 / M9: Extend ONLY assignments recorded as departure-shortened, never past
+		// each assignment's original pre-departure end date or instant (M8), and never past an
+		// intervening retirement of the assigned work policy (M9).
 		for (const capped of input.cappedPolicyAssignments) {
 			const originalUntilDate = capped.previousEffectiveUntilDate;
 			if (originalUntilDate !== null && originalUntilDate <= input.previousCutoffLocalDate) {
 				continue;
 			}
-			const clampedUntilDate =
+			const parsedOriginalUntilTs = capped.previousEffectiveUntil
+				? dateFromInstant(
+						parseInstant(
+							capped.previousEffectiveUntil.includes("T")
+								? capped.previousEffectiveUntil
+								: `${capped.previousEffectiveUntil.replace(" ", "T")}${/[zZ]|[+-]\d{2}:?\d{2}$/.test(capped.previousEffectiveUntil) ? "" : "Z"}`,
+						),
+					)
+				: originalUntilDate !== null
+					? utcMidnight(parsePlainDate(originalUntilDate))
+					: null;
+
+			let clampedUntilDate =
 				originalUntilDate !== null && originalUntilDate < effectiveExtendedUntilDate
 					? originalUntilDate
 					: effectiveExtendedUntilDate;
-			const clampedUntilTs =
-				originalUntilDate !== null && originalUntilDate < effectiveExtendedUntilDate
-					? capped.previousEffectiveUntil
-						? dateFromInstant(
-								parseInstant(
-									capped.previousEffectiveUntil.includes("T")
-										? capped.previousEffectiveUntil
-										: `${capped.previousEffectiveUntil.replace(" ", "T")}${/[zZ]|[+-]\d{2}:?\d{2}$/.test(capped.previousEffectiveUntil) ? "" : "Z"}`,
-								),
-							)
-						: utcMidnight(parsePlainDate(originalUntilDate))
+			let clampedUntilTs =
+				parsedOriginalUntilTs !== null &&
+				parsedOriginalUntilTs.getTime() < effectiveExtendedUntilTs.getTime()
+					? parsedOriginalUntilTs
 					: effectiveExtendedUntilTs;
+
+			// M9: Check whether the assigned policy was retired after the initial departure cap.
+			const policyInfoRes = await tx.execute<{
+				source_kind: string | null;
+				policy_is_active: boolean;
+				policy_retired_on_date: string | null;
+			}>(sql`
+				SELECT
+					a.source_kind,
+					p.is_active AS policy_is_active,
+					to_char((p.updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS policy_retired_on_date
+				FROM work_policy_assignment a
+				JOIN work_policy p
+					ON p.id = a.policy_id
+					AND p.organization_id = a.organization_id
+				WHERE a.organization_id = ${input.organizationId}
+					AND a.id = ${capped.id}::uuid
+				LIMIT 1
+			`);
+			const policyInfo = policyInfoRes.rows[0];
+			if (policyInfo && !policyInfo.policy_is_active && policyInfo.policy_retired_on_date) {
+				const retiredOnDate = policyInfo.policy_retired_on_date;
+				if (retiredOnDate <= input.previousCutoffLocalDate) {
+					continue;
+				}
+				const retirementBoundaryTs =
+					policyInfo.source_kind === "legacy"
+						? dateFromInstant(
+								parsePlainDate(retiredOnDate).toZonedDateTime(orgTimezone).toInstant(),
+							)
+						: utcMidnight(parsePlainDate(retiredOnDate));
+				if (retiredOnDate < clampedUntilDate) {
+					clampedUntilDate = retiredOnDate;
+				}
+				if (retirementBoundaryTs.getTime() < clampedUntilTs.getTime()) {
+					clampedUntilTs = retirementBoundaryTs;
+				}
+			}
+
 			await tx.execute(sql`
 				UPDATE work_policy_assignment a
 				SET effective_until = ${clampedUntilTs},

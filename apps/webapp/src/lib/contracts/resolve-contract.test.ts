@@ -967,5 +967,64 @@ describe("contracts pure helpers & resolver", () => {
 			}),
 		);
 		expect(pinReactivatedRes.workPolicy).toBeNull();
+
+		// H4 / A3-4: On an opening-day cross-timezone rehire (Berlin rehire on June 16 while
+		// employee's New York date is still June 15), with no new policy pin, the pure resolver
+		// MUST exclude the prior stint's manager assignment capped at June 16 (matching clock-out).
+		const priorStintPolicy: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-prior-stint-mgr",
+			name: "Prior Stint Manager Policy",
+		};
+		const crossTzRehireRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-15"),
+				employeeCalendarTimezone: "America/New_York",
+				organizationTimezone: "Europe/Berlin",
+				employmentPeriods: [
+					{
+						id: "period-1",
+						employeeId: "emp-1",
+						status: "closed",
+						startedAt: parseInstant("2025-01-01T00:00:00Z"),
+						startProvenance: "recorded",
+						endedAt: parseInstant("2026-06-15T22:00:00Z"), // 2026-06-16 00:00 Berlin
+						createdAt: parseInstant("2025-01-01T00:00:00Z"),
+					},
+					{
+						id: "period-2",
+						employeeId: "emp-1",
+						status: "open",
+						startedAt: parseInstant("2026-06-15T22:30:00Z"), // 2026-06-16 00:30 Berlin, 2026-06-15 18:30 NY
+						startProvenance: "recorded",
+						endedAt: null,
+						createdAt: parseInstant("2026-06-15T22:30:00Z"),
+					},
+				],
+				policiesById: new Map([[priorStintPolicy.id, priorStintPolicy]]),
+				contractDefaults: [],
+				confirmedTerms: [],
+				policyAssignments: [
+					{
+						id: "asgn-prior-mgr",
+						policyId: priorStintPolicy.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "manager_assignment",
+						sourceEmploymentHistoryId: null,
+						isActive: true,
+						effectiveFrom: new Date("2025-01-01T00:00:00Z"),
+						effectiveUntil: new Date("2026-06-15T22:00:00Z"),
+						effectiveFromDate: "2025-01-01",
+						effectiveUntilDate: "2026-06-16",
+						priority: 2,
+						createdAt: new Date("2025-01-01T00:00:00Z"),
+					},
+				],
+			}),
+		);
+		expect(crossTzRehireRes.employmentPeriodId).toBe("period-2");
+		expect(crossTzRehireRes.workPolicy).toBeNull();
 	});
 });

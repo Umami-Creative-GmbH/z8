@@ -1542,6 +1542,7 @@ export async function runContractChangeBatch(
 										AND h.employee_id = ${item.employeeId}::uuid
 										AND h.review_state = 'confirmed'
 										AND h.valid_from_date <= ${effectiveFromDate}::date
+										AND (h.valid_until_date IS NULL OR h.valid_until_date > h.valid_from_date)
 										AND (
 											(open_p.id IS NOT NULL AND h.employment_period_id = open_p.id)
 											OR (

@@ -451,12 +451,12 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					user_settings.timezone as "userTimezone",
 					organization.timezone as "organizationTimezone",
 					coalesce(
-						(select tz.name from pg_timezone_names tz where tz.name = nullif(user_settings.timezone, '') limit 1),
-						(select tz.name from pg_timezone_names tz where tz.name = nullif(organization.timezone, '') limit 1),
+						(select tz.name from pg_timezone_names tz where lower(tz.name) = lower(nullif(user_settings.timezone, '')) limit 1),
+						(select tz.name from pg_timezone_names tz where lower(tz.name) = lower(nullif(organization.timezone, '')) limit 1),
 						'UTC'
 					) as "effectiveTimezone",
 					coalesce(
-						(select tz.name from pg_timezone_names tz where tz.name = nullif(organization.timezone, '') limit 1),
+						(select tz.name from pg_timezone_names tz where lower(tz.name) = lower(nullif(organization.timezone, '')) limit 1),
 						'UTC'
 					) as "effectiveOrganizationTimezone"
 				from employee
@@ -597,10 +597,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 						or (assignment.assignment_type = 'team' and assignment.team_id = employee_row."teamId")
 						or (assignment.assignment_type = 'organization' and assignment.employee_id is null and assignment.team_id is null)
 					)
-				order by assignment.priority desc,
-					case assignment.assignment_type
-						when 'employee' then 2 when 'team' then 1 else 0 end desc,
-					assignment.id
+				order by assignment.id
 				limit ${MAX_ASSIGNMENT_CANDIDATES + 1}
 				for update of assignment
 			)
@@ -617,6 +614,10 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			from employee_evidence employee_row
 			left join period_evidence period on true
 			left join assignment_candidates assignment on true
+			order by assignment.priority desc nulls last,
+				case assignment."assignmentType"
+					when 'employee' then 2 when 'team' then 1 else 0 end desc,
+				assignment."assignmentId"
 		`);
 		if (
 			typeof candidateResult !== "object" ||

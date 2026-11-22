@@ -1197,8 +1197,57 @@ export function resolveEffectiveContractPure(
 			employeeTerms && employeeTerms.workPolicyId === null
 				? termsDateBounds(employeeTerms, input.organizationTimezone).from.toString()
 				: null;
+		// H4 / A3-4: Mirror clock-out stint & cross-timezone rehire opening-day exclusions so a
+		// rehire on opening day never inherits a prior stint's capped employee/manager assignment.
+		const periodStartInEmpTz =
+			period?.startProvenance === "recorded" && period.startedAt
+				? plainDateAt(period.startedAt, input.employeeCalendarTimezone)
+				: null;
+		const periodStartInOrgTz =
+			period?.startProvenance === "recorded" && period.startedAt
+				? plainDateAt(period.startedAt, input.organizationTimezone)
+				: null;
+		const isOpeningDayCrossTz = Boolean(
+			periodStartInEmpTz &&
+			periodStartInOrgTz &&
+			comparePlainDates(periodStartInEmpTz, day) === 0 &&
+			comparePlainDates(periodStartInOrgTz, day) > 0,
+		);
+		const periodStartInOrgTzStr = periodStartInOrgTz?.toString() ?? null;
+		const foreignPeriodHistoryIds =
+			employmentPeriodId !== null
+				? new Set(
+						input.confirmedTerms
+							.filter(
+								(t) => t.employmentPeriodId !== null && t.employmentPeriodId !== employmentPeriodId,
+							)
+							.map((t) => t.id),
+					)
+				: null;
+		const stintEligibleAssignments =
+			employmentPeriodId !== null
+				? input.policyAssignments.filter((row) => {
+						if (row.assignmentType !== "employee") return true;
+						if (
+							row.sourceKind === "employment_terms" &&
+							typeof row.sourceEmploymentHistoryId === "string" &&
+							foreignPeriodHistoryIds?.has(row.sourceEmploymentHistoryId)
+						) {
+							return false;
+						}
+						if (
+							isOpeningDayCrossTz &&
+							periodStartInOrgTzStr !== null &&
+							row.effectiveUntilDate !== null &&
+							row.effectiveUntilDate <= periodStartInOrgTzStr
+						) {
+							return false;
+						}
+						return true;
+					})
+				: input.policyAssignments;
 		const empAssignment = selectPolicyAssignmentAtLevel({
-			assignments: input.policyAssignments,
+			assignments: stintEligibleAssignments,
 			policiesById: input.policiesById,
 			level: "employee",
 			employeeId: input.employeeId,
@@ -2082,6 +2131,20 @@ export async function loadEffectiveContractsBatch(
 		termsByEmployee.set(row.employeeId, list);
 	}
 
+	// M7 / A3-6 / A3-19: Pre-partition policy assignments once per batch so resolving each employee
+	// only inspects that employee's own assignments plus org/team defaults (O(1) instead of O(N^2)).
+	const sharedPolicyAssignments: PolicyAssignmentSnapshot[] = [];
+	const employeePolicyAssignmentsByEmployee = new Map<string, PolicyAssignmentSnapshot[]>();
+	for (const row of assignmentRows) {
+		if (row.assignmentType === "employee" && row.employeeId) {
+			const list = employeePolicyAssignmentsByEmployee.get(row.employeeId) ?? [];
+			list.push(row);
+			employeePolicyAssignmentsByEmployee.set(row.employeeId, list);
+		} else {
+			sharedPolicyAssignments.push(row);
+		}
+	}
+
 	// 5. Resolve per employee x date
 	for (const emp of employeeRows) {
 		const empCalendarTz =
@@ -2090,6 +2153,11 @@ export async function loadEffectiveContractsBatch(
 		const empPeriods = periodsByEmployee.get(emp.id) ?? [];
 		const empTeamHistory = teamHistoryByEmployee.get(emp.id) ?? [];
 		const empTerms = termsByEmployee.get(emp.id) ?? [];
+		const empOwnAssignments = employeePolicyAssignmentsByEmployee.get(emp.id) ?? [];
+		const empScopedAssignments =
+			empOwnAssignments.length > 0
+				? [...empOwnAssignments, ...sharedPolicyAssignments]
+				: sharedPolicyAssignments;
 
 		const hasTeamIdOverride = Boolean(input.teamIdOverrides?.has(emp.id));
 		const teamIdOverride = hasTeamIdOverride ? (input.teamIdOverrides?.get(emp.id) ?? null) : null;
@@ -2112,7 +2180,7 @@ export async function loadEffectiveContractsBatch(
 				teamNames,
 				confirmedTerms: empTerms,
 				contractDefaults: defaultsSnapshots,
-				policyAssignments: assignmentRows,
+				policyAssignments: empScopedAssignments,
 				policiesById,
 			});
 			perDate.set(day.toString(), resolved);

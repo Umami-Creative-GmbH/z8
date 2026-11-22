@@ -403,6 +403,7 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 				expect(compiled.sql).toContain("for update of employee");
 				expect(compiled.sql).toContain("for update of assignment");
 				expect(compiled.sql).toContain("pg_timezone_names");
+				expect(compiled.sql).toContain("lower(tz.name) = lower(nullif(user_settings.timezone");
 				expect(compiled.sql).not.toContain("btrim(user_settings.timezone)");
 				expect(compiled.sql).toContain("employee_team_history");
 				expect(compiled.sql).toContain(
@@ -410,8 +411,13 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 				);
 				expect(compiled.sql).toContain("assignment.effective_from <=");
 				expect(compiled.sql).toContain("assignment.effective_until >");
+				// M4 / F9-2: Lock assignment rows strictly by assignment.id before sorting by priority.
+				expect(compiled.sql.indexOf("order by assignment.id")).toBeGreaterThan(-1);
+				expect(compiled.sql.indexOf("order by assignment.id")).toBeLessThan(
+					compiled.sql.indexOf("for update of assignment"),
+				);
 				expect(compiled.sql.indexOf("assignment.priority desc")).toBeLessThan(
-					compiled.sql.indexOf("case assignment.assignment_type"),
+					compiled.sql.indexOf('case assignment."assignmentType"'),
 				);
 				expect(compiled.params).toContain(65);
 				return {

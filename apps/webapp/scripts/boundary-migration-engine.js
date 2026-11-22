@@ -987,7 +987,7 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 							)
 						LIMIT 1
 						`,
-						[row.organization_id, row.scope, row.effective_from_date, row.team_id],
+						[row.organization_id, row.scope, fromStr, row.team_id],
 					);
 
 					const existing = existingResult.rows[0];
@@ -1103,8 +1103,8 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 							row.scope,
 							row.team_id,
 							templateVersionId,
-							row.effective_from_date,
-							row.effective_until_date,
+							fromStr,
+							untilStr,
 							row.created_by,
 						],
 					);
