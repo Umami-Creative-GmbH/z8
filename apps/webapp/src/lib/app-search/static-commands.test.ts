@@ -117,6 +117,11 @@ describe("buildStaticAppCommands", () => {
 				href: "/settings/employees",
 			},
 		);
+		expect(
+			orgAdminCommands.find((result) => result.id === "action:open-payroll-readiness"),
+		).toMatchObject({
+			href: "/payroll",
+		});
 
 		expect(
 			buildCommands({

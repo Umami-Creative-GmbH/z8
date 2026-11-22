@@ -9,15 +9,19 @@ import {
 	payrollExportBaseline,
 	payrollExportJob,
 } from "@/db/schema";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getAuthContext, getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthenticationError,
 	AuthorizationError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
-import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
+import {
+	resolveOrganizationPayrollEmployeeIds,
+	resolvePayrollAccessibleEmployeeIds,
+} from "@/lib/payroll-access/permissions";
 import { payrollBaselineDetail } from "./baseline-evidence";
 import type {
 	PayrollBaselineDetail,
@@ -41,11 +45,26 @@ export async function requireBaselineActor(
 	if (!auth)
 		throw new AuthenticationError({ message: "Authentication required" });
 	const organizationId = auth.session.activeOrganizationId;
+	if (!organizationId) throw denied(auth.user.id);
+	const settingsCaller = await getCurrentSettingsAccess?.();
 	if (
-		!organizationId ||
-		!auth.employee ||
-		auth.employee.organizationId !== organizationId
-	)
+		settingsCaller?.settingsAccess &&
+		settingsCaller.organizationId === organizationId &&
+		meetsSettingsAccess(settingsCaller.settingsAccess, "orgAdmin")
+	) {
+		const activeScope = await resolveOrganizationPayrollEmployeeIds(
+			organizationId,
+			database,
+		);
+		return {
+			organizationId,
+			userId: auth.user.id,
+			all: true,
+			orgAdmin: true,
+			activeScope,
+		};
+	}
+	if (!auth.employee || auth.employee.organizationId !== organizationId)
 		throw denied(auth.user.id);
 	// One after another: `database` may be a transaction, one connection, and pg@9 refuses a query while another is executing.
 	const actor = await database.query.employee.findFirst({
@@ -76,6 +95,7 @@ export async function requireBaselineActor(
 		organizationId,
 		userId: auth.user.id,
 		all: grant.scope === "all",
+		orgAdmin: false,
 		activeScope,
 	};
 }

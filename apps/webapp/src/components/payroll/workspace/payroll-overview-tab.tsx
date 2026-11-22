@@ -15,6 +15,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import type { PayrollReadinessResult } from "@/lib/payroll-readiness/get-payroll-readiness";
 import type { DismissiblePayrollBlocker } from "@/lib/payroll-workspace/blocker-dismissals";
 import type { PayrollBlockerIdentity } from "@/lib/payroll-workspace/blocker-identity";
 import { payrollHoursFormat } from "@/lib/payroll-workspace/hours-format";
@@ -22,11 +23,13 @@ import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { OvertimePayoutReadinessAlert } from "../overtime-payout-readiness-alert";
 import { PayrollRunReadinessCard } from "../payroll-run-readiness-card";
 import { PayrollBlockersAlert } from "./payroll-blockers-alert";
+import { PayrollOverviewReadinessSection } from "./payroll-overview-readiness-section";
 import type { BlockerFocusRequest, PayrollPeriodRequest, PayrollTranslate } from "./state";
 
 /**
  * The Overview tab: closed-month status, blockers, overtime payout and travel-expense
- * run readiness, and the totals per employee.
+ * run readiness, organization-level readiness checks (for org admins), and the totals
+ * per employee.
  */
 export function PayrollOverviewTab({
 	blockers,
@@ -37,6 +40,9 @@ export function PayrollOverviewTab({
 	filtersHaveNoMatches,
 	focusRequest,
 	formatId,
+	initialPeriod,
+	initialReadiness,
+	isOrgAdmin = false,
 	onClearBlocker,
 	periodMonths,
 	request,
@@ -50,6 +56,9 @@ export function PayrollOverviewTab({
 	filtersHaveNoMatches: boolean;
 	focusRequest: BlockerFocusRequest | null;
 	formatId: string;
+	initialPeriod?: { startDate: string; endDate: string };
+	initialReadiness?: PayrollReadinessResult | null;
+	isOrgAdmin?: boolean;
 	onClearBlocker: (blocker: DismissiblePayrollBlocker, activatedControl: HTMLButtonElement) => void;
 	periodMonths: string[];
 	request: PayrollPeriodRequest;
@@ -77,6 +86,20 @@ export function PayrollOverviewTab({
 				<OvertimePayoutReadinessAlert request={{ ...request, formatId }} />
 			)}
 			{filtersHaveNoMatches ? null : <PayrollRunReadinessCard request={{ ...request, formatId }} />}
+			{isOrgAdmin ? (
+				<PayrollOverviewReadinessSection
+					initialPeriod={
+						initialPeriod ?? { startDate: request.startDate, endDate: request.endDate }
+					}
+					initialReadiness={initialReadiness}
+					period={{
+						startDate: request.startDate,
+						endDate: request.endDate,
+						label: request.label,
+					}}
+					t={t}
+				/>
+			) : null}
 			<EmployeeTotalsCard employees={employees} t={t} />
 		</div>
 	);

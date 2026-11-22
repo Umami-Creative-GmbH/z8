@@ -11,9 +11,13 @@ import {
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
-import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
+import {
+	listDepartedEmployeesCoveredForExport,
+	listOrganizationDepartedEmployeesForExport,
+} from "@/lib/payroll-access/adjustment-coverage";
 import {
 	intersectPayrollScope,
+	resolveOrganizationPayrollEmployeeIds,
 	resolvePayrollAccessibleEmployeeIds,
 } from "@/lib/payroll-access/permissions";
 import { loadEmployeeTrackingContexts } from "@/lib/time-tracking/tracking-start";
@@ -56,20 +60,21 @@ export async function readPeriod(
 	});
 }
 
-/** The grant holder resolving a scope; a caller that knows their user saves a lookup. */
-type ScopeActor = Pick<PayrollPeriodActor, "employeeId"> & { userId?: string };
+/** The payroll actor resolving a scope; a caller that knows their user saves a lookup. */
+type ScopeActor = Pick<PayrollPeriodActor, "employeeId" | "orgAdmin"> & { userId?: string };
 
 /**
- * Which of the grant's employees who left a scope covers (#1894): those who left after
+ * Which of the actor's employees who left a scope covers (#1894): those who left after
  * the start of a period's first day, or everyone who left, whenever (the settlement
- * records of a day the grant could settle stay reachable).
+ * records of a day the actor could settle stay reachable).
  */
 export type DepartedEmployees = { leftAfterStartOf: string } | { anyDeparture: true };
 
 /**
- * The employees a payroll period read covers: the actor's payroll access grant scope,
- * plus the grant's employees who left during or after the period (#1894), as the
- * payroll export covers them. `scope.employeeIds` narrows it and never widens it.
+ * The employees a payroll period read covers: the actor's payroll scope (org-wide for
+ * org admins, active payroll access grant for delegated officers), plus covered
+ * employees who left during or after the period (#1894), as the payroll export covers
+ * them. `scope.employeeIds` narrows it and never widens it.
  */
 export async function resolvePeriodEmployeeIds(
 	organizationId: string,
@@ -80,17 +85,29 @@ export async function resolvePeriodEmployeeIds(
 	return resolveGrantEmployeeIds(organizationId, actor, { leftAfterStartOf: startDate }, scope);
 }
 
-/** The grant's scope plus the employees who left that `departed` names, narrowed by `scope`. */
+/** The actor's scope plus the employees who left that `departed` names, narrowed by `scope`. */
 export async function resolveGrantEmployeeIds(
 	organizationId: string,
 	actor: ScopeActor,
 	departed: DepartedEmployees,
 	scope: PayrollPeriodScope = {},
 ): Promise<string[]> {
+	if (actor.orgAdmin) {
+		const [allowedEmployeeIds, departedEmployeeIds] = await Promise.all([
+			resolveOrganizationPayrollEmployeeIds(organizationId),
+			listDepartedGrantEmployees(organizationId, actor, departed),
+		]);
+		return intersectPayrollScope({
+			allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
+			requestedEmployeeIds: scope.employeeIds ? [...scope.employeeIds] : undefined,
+		});
+	}
+	if (!actor.employeeId) return [];
+	const payrollEmployeeId = actor.employeeId;
 	const [allowedEmployeeIds, departedEmployeeIds] = await Promise.all([
 		resolvePayrollAccessibleEmployeeIds({
 			organizationId,
-			payrollEmployeeId: actor.employeeId,
+			payrollEmployeeId,
 		}),
 		listDepartedGrantEmployees(organizationId, actor, departed),
 	]);
@@ -101,7 +118,7 @@ export async function resolveGrantEmployeeIds(
 }
 
 /**
- * The grant's employees who left that `departed` names (#1894): the one source of the
+ * The actor's employees who left that `departed` names (#1894): the one source of the
  * employees who left that payroll period reads, settling, workspace actions and exports
  * cover.
  */
@@ -111,6 +128,15 @@ export async function listDepartedGrantEmployees(
 	departed: DepartedEmployees,
 ): Promise<string[]> {
 	const { db } = await import("@/db");
+	const fromDate =
+		"leftAfterStartOf" in departed ? parsePlainDate(departed.leftAfterStartOf).toString() : null;
+	if (actor.orgAdmin) {
+		return listOrganizationDepartedEmployeesForExport(db, {
+			organizationId,
+			fromDate,
+		});
+	}
+	if (!actor.employeeId) return [];
 	let actorUserId = actor.userId;
 	if (!actorUserId) {
 		const [row] = await db
@@ -124,12 +150,11 @@ export async function listDepartedGrantEmployees(
 	return listDepartedEmployeesCoveredForExport(db, {
 		organizationId,
 		actorUserId,
-		fromDate:
-			"leftAfterStartOf" in departed ? parsePlainDate(departed.leftAfterStartOf).toString() : null,
+		fromDate,
 	});
 }
 
-/** `readPeriod` for employees already resolved through the payroll access grant. */
+/** `readPeriod` for employees already resolved through the actor's payroll scope. */
 export async function readPeriodForEmployees(
 	organizationId: string,
 	actor: PayrollPeriodActor,
@@ -152,7 +177,7 @@ export async function readPeriodForEmployees(
 		organizationId,
 		period: payrollPeriod,
 		generatedAt: Temporal.Now.instant(),
-		generatedBy: { id: actor.employeeId, name: actor.name },
+		generatedBy: { id: actor.employeeId ?? actor.userId ?? "", name: actor.name },
 		sources: { ...sources, requirements, holidays, settledDays },
 	});
 }

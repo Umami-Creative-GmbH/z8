@@ -28,6 +28,7 @@ import { PayrollBaselinesCard } from "../payroll-baselines-card";
 import { PayrollComparisonCard } from "../payroll-comparison-card";
 import { PayrollRunsCard } from "../payroll-runs-card";
 import { PayrollConfirmPaidCard } from "./payroll-confirm-paid-card";
+import { PayrollExportHistoryCard } from "./payroll-export-history-card";
 import type { PayrollTranslate, PayrollWorkspaceAction } from "./state";
 
 /**
@@ -187,6 +188,7 @@ export function PayrollExportTab({
 				)}
 			</p>
 			<PayrollRunsCard />
+			<PayrollExportHistoryCard />
 			<PayrollBaselinesCard
 				key={formatId}
 				formatId={formatId}

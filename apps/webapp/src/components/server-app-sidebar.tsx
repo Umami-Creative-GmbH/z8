@@ -21,6 +21,7 @@ import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { resolvePersonnelFileAccessForIdentity } from "@/lib/personnel-file/access-store";
 import { managesProjectBelowManagerTierForIdentity } from "@/lib/projects/project-manager-settings-access";
+import { canCloseMonths, canReopenMonths } from "@/lib/time-tracking/closed-months/permissions";
 import { loadCollectsPeriodSubmissions } from "@/lib/time-tracking/period-submissions/settings";
 import { drivingDetailsTeamScope } from "@/lib/time-tracking/vehicle-use/driving-details-team-store";
 import { hasWhoIsInLocations } from "@/lib/time-tracking/who-is-in/queries";
@@ -185,15 +186,31 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 				: false,
 			false,
 		),
-		capability(
-			hasEmployee && identity?.employee
-				? hasActivePayrollAccessGrant({
-						organizationId: identity.organizationId,
-						payrollEmployeeId: identity.employee.id,
-					})
-				: false,
-			false,
-		),
+		identity
+			? settingsAccessTier === "orgAdmin"
+				? Promise.resolve(true)
+				: Promise.all([
+						capability(
+							hasEmployee && identity.employee
+								? hasActivePayrollAccessGrant({
+										organizationId: identity.organizationId,
+										payrollEmployeeId: identity.employee.id,
+									})
+								: false,
+							false,
+						),
+						capability(
+							getRenderAbility().then(
+								(ability) =>
+									!!ability &&
+									typeof ability.can === "function" &&
+									(canCloseMonths(ability, identity.organizationId, identity.organizationId) ||
+										canReopenMonths(ability, identity.organizationId, identity.organizationId)),
+							),
+							false,
+						),
+					]).then(([hasGrant, canManageClosedMonths]) => hasGrant || canManageClosedMonths)
+			: Promise.resolve(false),
 		capability(
 			hasEmployee
 				? getRenderAbility().then((ability) => loadFinanceActorForIdentity(authContext, ability))

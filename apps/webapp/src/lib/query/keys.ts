@@ -215,6 +215,11 @@ export const queryKeys = {
 			["payroll", "export-scope", request.startDate, request.endDate] as const,
 		/** Completed exports the reader may confirm as paid (#1899). */
 		exportsToConfirm: () => ["payroll", "exports-to-confirm"] as const,
+		/** Scoped payroll export job history (#1957). */
+		exportHistory: () => ["payroll", "export-history"] as const,
+		/** Organization-level payroll readiness checks for org admins (#1957). */
+		readiness: (request: { startDate: string; endDate: string }) =>
+			["payroll", "readiness", request.startDate, request.endDate] as const,
 		/** Overtime payouts an export of the period, format and employees would leave out (#1001). */
 		overtimePayoutReadiness: (request: {
 			startDate: string;

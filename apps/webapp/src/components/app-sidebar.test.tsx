@@ -1542,7 +1542,7 @@ describe("app sidebar compliance navigation", () => {
 			expect.objectContaining({
 				navigationCapabilities: expect.objectContaining({
 					compliance: true,
-					payroll: false,
+					payroll: true,
 					platformAdmin: false,
 					scheduling: true,
 				}),
@@ -1562,10 +1562,7 @@ describe("app sidebar compliance navigation", () => {
 				},
 			}),
 		);
-		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
-			organizationId: "org_1",
-			payrollEmployeeId: "emp_admin",
-		});
+		expect(hasActivePayrollAccessGrantMock).not.toHaveBeenCalled();
 
 		appSidebarSpy.mockReset();
 		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
@@ -1652,7 +1649,7 @@ describe("app sidebar compliance navigation", () => {
 		});
 	});
 
-	it("hides payroll navigation for admins without an active payroll grant", async () => {
+	it("shows payroll navigation for org admins without requiring an active payroll self-grant (#1957)", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
 		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
@@ -1699,17 +1696,14 @@ describe("app sidebar compliance navigation", () => {
 
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
-				navigationCapabilities: expect.objectContaining({ payroll: false }),
+				navigationCapabilities: expect.objectContaining({ payroll: true }),
 				employeeRole: "admin",
 			}),
 		);
-		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
-			organizationId: "org_1",
-			payrollEmployeeId: "employee-admin",
-		});
+		expect(hasActivePayrollAccessGrantMock).not.toHaveBeenCalled();
 	});
 
-	it("shows payroll navigation for admins with an active payroll grant", async () => {
+	it("shows payroll navigation for org admins without an employee record (#1957)", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
 		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
@@ -1728,14 +1722,10 @@ describe("app sidebar compliance navigation", () => {
 		getAuthContextMock.mockResolvedValue({
 			user: { role: "user" },
 			session: { activeOrganizationId: "org_1" },
-			employee: {
-				id: "employee-admin",
-				organizationId: "org_1",
-				role: "admin",
-			},
+			employee: null,
 		});
 		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
-		hasActivePayrollAccessGrantMock.mockResolvedValue(true);
+		hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
@@ -1757,13 +1747,10 @@ describe("app sidebar compliance navigation", () => {
 		expect(appSidebarSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				navigationCapabilities: expect.objectContaining({ payroll: true }),
-				employeeRole: "admin",
+				employeeRole: null,
 			}),
 		);
-		expect(hasActivePayrollAccessGrantMock).toHaveBeenCalledWith({
-			organizationId: "org_1",
-			payrollEmployeeId: "employee-admin",
-		});
+		expect(hasActivePayrollAccessGrantMock).not.toHaveBeenCalled();
 	});
 
 	it("hides scoped payroll navigation for employees without active grants", async () => {
@@ -1924,6 +1911,7 @@ describe("app sidebar compliance navigation", () => {
 			},
 			expectedTeam: ["/today", "/team", "/team/absences", "/approvals/inbox", "/analytics"],
 			expectedOrg: [
+				"/payroll",
 				"/travel-expenses/finance",
 				"/personnel-files",
 				"/equipment",
@@ -1965,6 +1953,7 @@ describe("app sidebar compliance navigation", () => {
 			},
 			expectedTeam: ["/analytics"],
 			expectedOrg: [
+				"/payroll",
 				"/billable-time/hand-off",
 				"/personnel-files",
 				"/equipment",
@@ -1977,6 +1966,14 @@ describe("app sidebar compliance navigation", () => {
 			role: "employee" as const,
 			tier: "member" as const,
 			grants: { payroll: true },
+			expectedTeam: null,
+			expectedOrg: ["/payroll"],
+		},
+		{
+			persona: "close-month-only custom-role holder",
+			role: "employee" as const,
+			tier: "member" as const,
+			grants: { canCloseMonths: true },
 			expectedTeam: null,
 			expectedOrg: ["/payroll"],
 		},
@@ -2059,7 +2056,10 @@ describe("app sidebar compliance navigation", () => {
 				planner: false,
 				settings: "hidden",
 			});
-			requireAbilityMock.mockResolvedValue({});
+			requireAbilityMock.mockResolvedValue({
+				can: (action: string, subject: string) =>
+					Boolean(grants.canCloseMonths) && action === "close" && subject === "PayrollPeriod",
+			});
 			canViewWorksCouncilPortalMock.mockReturnValue(Boolean(grants.worksCouncil));
 
 			vi.doUnmock("./app-sidebar");

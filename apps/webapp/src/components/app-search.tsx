@@ -3,7 +3,6 @@
 import {
 	IconFileDescription,
 	IconHierarchy,
-	IconReceipt,
 	IconSearch,
 	IconSettings,
 	IconShieldCheck,
@@ -49,7 +48,6 @@ type SearchIcon = typeof IconSearch;
 const SETTING_ICON_BY_HREF: Record<string, SearchIcon> = {
 	"/settings/employees": IconUsers,
 	"/settings/organization": IconHierarchy,
-	"/settings/payroll-readiness": IconReceipt,
 	"/settings/projects": IconFileDescription,
 	"/settings/security": IconShieldCheck,
 	"/settings/teams": IconUsers,

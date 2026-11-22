@@ -120,8 +120,15 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/team/driving-licence": ["common", "team", "settings/generic"],
 	"/personnel-files": ["common", "settings/people"],
 	// travelExpenses: confirming a payroll run as paid (#853).
-	// settings/payrollExport: payroll line kind labels in payroll readiness (#854).
-	"/payroll": ["common", "payroll", "travelExpenses", "settings/payrollExport"],
+	// settings/payrollExport: payroll line kind labels in payroll readiness (#854) and export history (#1957).
+	// settings/generic: org-level payroll readiness and closed months tabs absorbed from /settings (#1957).
+	"/payroll": [
+		"common",
+		"payroll",
+		"travelExpenses",
+		"settings/payrollExport",
+		"settings/generic",
+	],
 	// settings/people: the Work balance section of the employee settings page (#995).
 	"/payroll/work-balances": ["common", "payroll", "settings/people"],
 	// Main app routes
@@ -204,11 +211,6 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 		"common",
 		"settings/generic",
 		"settings/people",
-	],
-	"/settings/payroll-readiness": [
-		"common",
-		"settings/generic",
-		"settings/payrollExport",
 	],
 	"/settings/work-diagnostics": [
 		"common",
