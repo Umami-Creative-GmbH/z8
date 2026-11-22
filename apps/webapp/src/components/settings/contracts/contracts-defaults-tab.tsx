@@ -50,7 +50,7 @@ import {
 	formatContractMinutes,
 	hoursInputToIntegerMinutes,
 	integerMinutesToHoursInput,
-	todayIsoDate,
+	todayIsoDateInTimezone,
 	useContractLabels,
 } from "./contract-formatters";
 import {
@@ -111,9 +111,13 @@ function toSchedulePayload(values: DefaultFormValues) {
 
 export interface ContractsDefaultsTabProps {
 	organizationId: string;
+	organizationTimezone: string;
 }
 
-export function ContractsDefaultsTab({ organizationId }: ContractsDefaultsTabProps) {
+export function ContractsDefaultsTab({
+	organizationId,
+	organizationTimezone,
+}: ContractsDefaultsTabProps) {
 	const { t } = useTranslate();
 	const labels = useContractLabels();
 	const queryClient = useQueryClient();
@@ -168,7 +172,7 @@ export function ContractsDefaultsTab({ organizationId }: ContractsDefaultsTabPro
 		() => ({
 			scope: "organization",
 			teamId: "",
-			effectiveFromDate: todayIsoDate(),
+			effectiveFromDate: todayIsoDateInTimezone(organizationTimezone),
 			workPolicyId: NO_POLICY,
 			weeklyHours: "40",
 			scheduleMode: "policy",
@@ -178,7 +182,7 @@ export function ContractsDefaultsTab({ organizationId }: ContractsDefaultsTabPro
 			balanceMode: "tracked",
 			scheduleSource: "policy",
 		}),
-		[],
+		[organizationTimezone],
 	);
 
 	const previewMutation = useMutation({
@@ -292,6 +296,7 @@ export function ContractsDefaultsTab({ organizationId }: ContractsDefaultsTabPro
 			{/* 1-Step 5-Person Org Default Setup Card */}
 			{(!hasOrgDefault || showQuickSetup) && (
 				<QuickOrgDefaultSetupCard
+					organizationTimezone={organizationTimezone}
 					policies={policies}
 					isPending={scheduleMutation.isPending}
 					onSave={async (quickValues) => {
@@ -837,11 +842,13 @@ export function ContractsDefaultsTab({ organizationId }: ContractsDefaultsTabPro
 }
 
 function QuickOrgDefaultSetupCard({
+	organizationTimezone,
 	policies,
 	isPending,
 	onSave,
 	onDismiss,
 }: {
+	organizationTimezone: string;
 	policies: readonly { id: string; name: string }[];
 	isPending: boolean;
 	onSave: (values: {
@@ -858,7 +865,7 @@ function QuickOrgDefaultSetupCard({
 
 	const quickForm = useForm({
 		defaultValues: {
-			effectiveFromDate: todayIsoDate(),
+			effectiveFromDate: todayIsoDateInTimezone(organizationTimezone),
 			workPolicyId: policies[0]?.id ?? NO_POLICY,
 			weeklyHours: "40",
 			workModel: "hybrid" as WorkModel,

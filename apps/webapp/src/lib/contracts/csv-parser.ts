@@ -318,7 +318,7 @@ export function parseCsvCustomDays(raw: string | undefined):
 	}
 
 	const tokens = trimmed
-		.split(/[|,]/)
+		.split(/\||,(?!\d)/)
 		.map((t) => t.trim())
 		.filter(Boolean);
 	const result: {

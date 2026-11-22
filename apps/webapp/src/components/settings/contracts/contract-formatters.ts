@@ -15,6 +15,7 @@ import type {
 	EffectivePresenceStatus,
 	WorkModel,
 } from "@/lib/contracts/types";
+import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import type { ContractType } from "@/lib/validations/employee";
 
 /** Formats integer weekly or daily minutes as hours + minutes (e.g. `40h`, `37h 30m`). */
@@ -43,13 +44,17 @@ export function integerMinutesToHoursInput(minutes: number | null | undefined): 
 	return Number.isInteger(hours) ? String(hours) : String(Number(hours.toFixed(2)));
 }
 
-/** Returns today's ISO calendar date (`YYYY-MM-DD`) in local time for form defaults. */
-export function todayIsoDate(): string {
-	const now = new Date();
-	const y = now.getFullYear();
-	const m = String(now.getMonth() + 1).padStart(2, "0");
-	const d = String(now.getDate()).padStart(2, "0");
-	return `${y}-${m}-${d}`;
+/**
+ * Returns today's ISO calendar date (`YYYY-MM-DD`) in the organization's explicit IANA timezone
+ * via Temporal — never from the viewer's browser timezone.
+ */
+export function todayIsoDateInTimezone(organizationTimezone: string): string {
+	const zone = organizationTimezone || "UTC";
+	try {
+		return plainDateAt(systemClock.nowInstant(), zone).toString();
+	} catch {
+		return plainDateAt(systemClock.nowInstant(), "UTC").toString();
+	}
 }
 
 export function useContractLabels() {

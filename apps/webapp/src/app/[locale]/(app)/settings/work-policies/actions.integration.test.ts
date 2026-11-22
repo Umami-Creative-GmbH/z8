@@ -788,6 +788,63 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 		expect(customDays.find((d) => d.day_of_week === "friday")).toMatchObject({
 			minutes_per_day: 180,
 		});
+
+		// P3-1: Assigning a team work policy when NO team default exists yet must inherit the active
+		// organization default's operational fields (trust_based, custom_days + 7 days, hybrid, exempt)
+		// instead of overwriting them with hard-coded fallbacks (tracked / policy)!
+		const { policyId: teamPolicy } = await seedPolicyWithAllArbzgFields("Team Specific Policy");
+		const {
+			rows: [teamRow],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO team (organization_id, name, created_at, updated_at)
+			 VALUES ($1, 'Inherited Team', now(), now()) RETURNING id`,
+			[ids.organization],
+		);
+		const {
+			rows: [memberRow],
+		} = await admin.query<{ id: string }>(
+			`SELECT id FROM employee WHERE organization_id = $1 AND user_id = $2 LIMIT 1`,
+			[ids.organization, ids.adminUser],
+		);
+		await admin.query(`UPDATE employee SET team_id = $1 WHERE id = $2`, [teamRow.id, memberRow.id]);
+		await admin.query(
+			`UPDATE employee_team_history SET effective_from = '2025-01-01T00:00:00Z'::timestamptz WHERE employee_id = $1`,
+			[memberRow.id],
+		);
+
+		const teamAssignRes = await createWorkPolicyAssignment({
+			policyId: teamPolicy,
+			assignmentType: "team",
+			teamId: teamRow.id,
+		});
+		expect(teamAssignRes.success).toBe(true);
+
+		const { resolveEffectiveContractOnDay } = await import("@/lib/contracts");
+		const { plainDateAt, systemClock } = await import("@/lib/datetime/temporal-core");
+		const orgToday = plainDateAt(systemClock.nowInstant(), "UTC").toString();
+
+		const effective = await resolveEffectiveContractOnDay(db, {
+			organizationId: ids.organization,
+			employeeId: memberRow.id,
+			date: orgToday,
+		});
+		expect(effective).not.toBeNull();
+		expect(effective?.primaryTeamId).toBe(teamRow.id);
+		expect(effective?.contractDefaultScope).toBe("team");
+		expect(effective?.workPolicy?.policyId).toBe(teamPolicy);
+		expect(effective?.balanceMode).toBe("trust_based");
+		expect(effective?.scheduleMode).toBe("custom_days");
+		expect(effective?.weeklyContractMinutes).toBe(2100);
+		expect(effective?.workModel).toBe("hybrid");
+		expect(effective?.presenceOverride).toBe("exempt");
+		expect(effective?.weeklyScheduleDays).toHaveLength(7);
+		expect(effective?.weeklyScheduleDays.find((d) => d.dayOfWeek === "monday")).toMatchObject({
+			minutesPerDay: 480,
+			latestClockIn: "09:30",
+		});
+		expect(effective?.weeklyScheduleDays.find((d) => d.dayOfWeek === "friday")).toMatchObject({
+			minutesPerDay: 180,
+		});
 	});
 
 	it("deletes only the targeted manual assignment without capping/deactivating sibling or future employment_terms rows (N2)", async () => {

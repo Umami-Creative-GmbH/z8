@@ -38,7 +38,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-operations";
 import { Link } from "@/navigation";
-import { todayIsoDate } from "./contract-formatters";
+import { todayIsoDateInTimezone } from "./contract-formatters";
 
 type ReviewFilterKind =
 	| "all"
@@ -48,14 +48,18 @@ type ReviewFilterKind =
 
 export interface ContractsReviewsTabProps {
 	organizationId: string;
+	organizationTimezone: string;
 }
 
-export function ContractsReviewsTab({ organizationId }: ContractsReviewsTabProps) {
+export function ContractsReviewsTab({
+	organizationId,
+	organizationTimezone,
+}: ContractsReviewsTabProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [filterKind, setFilterKind] = useState<ReviewFilterKind>("all");
 	const [includeResolved, setIncludeResolved] = useState(false);
-	const [adoptDate, setAdoptDate] = useState(todayIsoDate());
+	const [adoptDate, setAdoptDate] = useState(() => todayIsoDateInTimezone(organizationTimezone));
 	const [adoptPreview, setAdoptPreview] = useState<PreviewBulkContractActionResult | null>(null);
 	const [notes, setNotes] = useState<Record<string, string>>({});
 

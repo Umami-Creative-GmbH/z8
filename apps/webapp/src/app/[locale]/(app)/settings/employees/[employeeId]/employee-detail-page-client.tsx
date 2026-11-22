@@ -170,6 +170,7 @@ export function EmployeeDetailPageClient({
 	currentUserId,
 	settingsAccess,
 	organizationId,
+	organizationTimezone = "UTC",
 	initialSnapshot,
 	highlightedReviewId = null,
 	personnelFile = null,
@@ -181,6 +182,7 @@ export function EmployeeDetailPageClient({
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 	organizationId?: string;
+	organizationTimezone?: string;
 	initialSnapshot?: EmployeeReadSnapshot<"detail">;
 	highlightedReviewId?: string | null;
 	/** Decided on the server by the personnel file access resolver (#865). */
@@ -380,6 +382,7 @@ export function EmployeeDetailPageClient({
 								<>
 									<EmployeeContractTab
 										organizationId={employee.organizationId}
+										organizationTimezone={organizationTimezone}
 										employeeId={employeeId}
 										workPolicies={workPolicies}
 										employmentHistory={employeeData.employmentHistory}
@@ -433,6 +436,7 @@ export function EmployeeDetailPageClient({
 							) : (
 								<ScopedManagerPolicyCard
 									employeeId={employeeId}
+									organizationTimezone={organizationTimezone}
 									workPolicies={workPolicies}
 									onAssigned={() => void employeeData.refetch()}
 								/>

@@ -41,6 +41,7 @@ vi.mock("@/app/[locale]/(app)/settings/contracts/actions", () => ({
 	assignEmployeeWorkPolicyAction: mocks.assignEmployeeWorkPolicyAction,
 }));
 
+import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { EmployeeContractTab } from "./employee-contract-tab";
 import { ScopedManagerPolicyCard } from "./scoped-manager-policy-card";
 
@@ -180,6 +181,7 @@ describe("EmployeeContractTab & ScopedManagerPolicyCard (#1930)", () => {
 		renderWithQuery(
 			<EmployeeContractTab
 				organizationId="org-1"
+				organizationTimezone="Europe/Berlin"
 				employeeId="emp-1"
 				workPolicies={[{ id: "pol-1", name: "Germany Standard 40h" }]}
 				employmentHistory={[]}
@@ -230,6 +232,7 @@ describe("EmployeeContractTab & ScopedManagerPolicyCard (#1930)", () => {
 		renderWithQuery(
 			<EmployeeContractTab
 				organizationId="org-1"
+				organizationTimezone="Europe/Berlin"
 				employeeId="emp-1"
 				workPolicies={[]}
 				employmentHistory={[]}
@@ -247,6 +250,7 @@ describe("EmployeeContractTab & ScopedManagerPolicyCard (#1930)", () => {
 		renderWithQuery(
 			<ScopedManagerPolicyCard
 				employeeId="emp-1"
+				organizationTimezone="Pacific/Kiritimati"
 				workPolicies={[{ id: "pol-1", name: "Germany Standard 40h" }]}
 			/>,
 		);
@@ -255,12 +259,18 @@ describe("EmployeeContractTab & ScopedManagerPolicyCard (#1930)", () => {
 		expect(screen.queryByText(/Hourly rate/i)).toBeNull();
 		expect(screen.queryByText(/Adopt Org\/Team default/i)).toBeNull();
 
+		const expectedOrgToday = plainDateAt(systemClock.nowInstant(), "Pacific/Kiritimati").toString();
+		const dateInput = screen.getByLabelText("Effective from") as HTMLInputElement;
+		expect(dateInput.value).toBe(expectedOrgToday);
+		expect(dateInput.min).toBe(expectedOrgToday);
+
 		fireEvent.click(screen.getByRole("button", { name: "Assign work policy" }));
 		await waitFor(() =>
 			expect(mocks.assignEmployeeWorkPolicyAction).toHaveBeenCalledWith(
 				expect.objectContaining({
 					employeeId: "emp-1",
 					policyId: "pol-1",
+					effectiveFromDate: expectedOrgToday,
 				}),
 			),
 		);

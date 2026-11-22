@@ -67,7 +67,7 @@ import {
 	formatContractMinutes,
 	hoursInputToIntegerMinutes,
 	integerMinutesToHoursInput,
-	todayIsoDate,
+	todayIsoDateInTimezone,
 	useContractLabels,
 } from "./contract-formatters";
 import {
@@ -80,9 +80,13 @@ const NO_VALUE = "__none__";
 
 export interface ContractsTemplatesTabProps {
 	organizationId: string;
+	organizationTimezone: string;
 }
 
-export function ContractsTemplatesTab({ organizationId }: ContractsTemplatesTabProps) {
+export function ContractsTemplatesTab({
+	organizationId,
+	organizationTimezone,
+}: ContractsTemplatesTabProps) {
 	const { t } = useTranslate();
 	const labels = useContractLabels();
 	const queryClient = useQueryClient();
@@ -331,6 +335,7 @@ export function ContractsTemplatesTab({ organizationId }: ContractsTemplatesTabP
 					<ActionPanelBody>
 						{applyTarget?.latestVersion && (
 							<ApplyTemplatePanel
+								organizationTimezone={organizationTimezone}
 								template={applyTarget}
 								teams={teamsQuery.data ?? []}
 								onSubmitted={() => {
@@ -940,18 +945,22 @@ function TemplateEditorForm({
 }
 
 function ApplyTemplatePanel({
+	organizationTimezone,
 	template,
 	teams,
 	onSubmitted,
 	onCancel,
 }: {
+	organizationTimezone: string;
 	template: HydratedContractTemplateSummary;
 	teams: readonly { id: string; name: string }[];
 	onSubmitted: () => void;
 	onCancel: () => void;
 }) {
 	const { t } = useTranslate();
-	const [effectiveFromDate, setEffectiveFromDate] = useState(todayIsoDate());
+	const [effectiveFromDate, setEffectiveFromDate] = useState(() =>
+		todayIsoDateInTimezone(organizationTimezone),
+	);
 	const [teamId, setTeamId] = useState<string>(NO_VALUE);
 	const [overwritePersonalDivergences, setOverwritePersonalDivergences] = useState(false);
 	const [preview, setPreview] = useState<PreviewBulkContractActionResult | null>(null);

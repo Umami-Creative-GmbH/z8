@@ -602,46 +602,59 @@ export async function scheduleContractDefaultPolicyUpdateInTx(
 	const lockKey = buildScopeAdvisoryLockKey(input.organizationId, input.scope, teamId);
 	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
 
-	const scopeWhere =
-		input.scope === "team" && teamId
-			? and(
-					eq(contractDefault.organizationId, input.organizationId),
-					eq(contractDefault.scope, "team"),
-					eq(contractDefault.teamId, teamId),
-					eq(contractDefault.isActive, true),
-				)
-			: and(
-					eq(contractDefault.organizationId, input.organizationId),
-					eq(contractDefault.scope, "organization"),
-					isNull(contractDefault.teamId),
-					eq(contractDefault.isActive, true),
-				);
+	const loadActiveDefaultForScope = async (
+		targetScope: ContractDefaultScope,
+		targetTeamId: string | null,
+	) => {
+		const scopeWhere =
+			targetScope === "team" && targetTeamId
+				? and(
+						eq(contractDefault.organizationId, input.organizationId),
+						eq(contractDefault.scope, "team"),
+						eq(contractDefault.teamId, targetTeamId),
+						eq(contractDefault.isActive, true),
+					)
+				: and(
+						eq(contractDefault.organizationId, input.organizationId),
+						eq(contractDefault.scope, "organization"),
+						isNull(contractDefault.teamId),
+						eq(contractDefault.isActive, true),
+					);
 
-	const activeDefaults = await tx
-		.select({
-			id: contractDefault.id,
-			templateVersionId: contractDefault.templateVersionId,
-			effectiveFromDate: contractDefault.effectiveFromDate,
-			effectiveUntilDate: contractDefault.effectiveUntilDate,
-			createdAt: contractDefault.createdAt,
-		})
-		.from(contractDefault)
-		.where(scopeWhere);
+		const activeDefaults = await tx
+			.select({
+				id: contractDefault.id,
+				templateVersionId: contractDefault.templateVersionId,
+				effectiveFromDate: contractDefault.effectiveFromDate,
+				effectiveUntilDate: contractDefault.effectiveUntilDate,
+				createdAt: contractDefault.createdAt,
+			})
+			.from(contractDefault)
+			.where(scopeWhere);
 
-	const currentDefault = activeDefaults
-		.filter(
-			(row) =>
-				row.effectiveFromDate <= effectiveFromDate &&
-				(row.effectiveUntilDate === null || row.effectiveUntilDate > effectiveFromDate),
-		)
-		.sort((a, b) => {
-			if (b.effectiveFromDate !== a.effectiveFromDate) {
-				return b.effectiveFromDate.localeCompare(a.effectiveFromDate);
-			}
-			const createdCmp = b.createdAt.getTime() - a.createdAt.getTime();
-			if (createdCmp !== 0) return createdCmp;
-			return b.id.localeCompare(a.id);
-		})[0];
+		return activeDefaults
+			.filter(
+				(row) =>
+					row.effectiveFromDate <= effectiveFromDate &&
+					(row.effectiveUntilDate === null || row.effectiveUntilDate > effectiveFromDate),
+			)
+			.sort((a, b) => {
+				if (b.effectiveFromDate !== a.effectiveFromDate) {
+					return b.effectiveFromDate.localeCompare(a.effectiveFromDate);
+				}
+				const createdCmp = b.createdAt.getTime() - a.createdAt.getTime();
+				if (createdCmp !== 0) return createdCmp;
+				return b.id.localeCompare(a.id);
+			})[0];
+	};
+
+	// When scheduling a team-scope policy update and no team default exists yet on `effectiveFromDate`,
+	// fall back to the active organization default so the newly created team default carries forward
+	// inherited org-level settings (balanceMode, scheduleMode, customDays, workModel, presenceOverride,
+	// scheduleSource) instead of shadowing them with hard-coded fallbacks.
+	const currentDefault =
+		(await loadActiveDefaultForScope(input.scope, teamId)) ??
+		(input.scope === "team" ? await loadActiveDefaultForScope("organization", null) : undefined);
 
 	let carriedFields: Partial<ScheduleContractDefaultInput> = {};
 	if (currentDefault) {
@@ -670,12 +683,15 @@ export async function scheduleContractDefaultPolicyUpdateInTx(
 			carriedFields = {
 				weeklyContractMinutes: tplVersion.weeklyContractMinutes,
 				scheduleMode: tplVersion.scheduleMode as TemplateScheduleMode,
-				customDays: dayRows.map((d) => ({
-					dayOfWeek: d.dayOfWeek as DayOfWeek,
-					minutesPerDay: d.minutesPerDay,
-					isWorkDay: d.isWorkDay,
-					latestClockIn: d.latestClockIn,
-				})),
+				customDays:
+					tplVersion.scheduleMode === "custom_days"
+						? dayRows.map((d) => ({
+								dayOfWeek: d.dayOfWeek as DayOfWeek,
+								minutesPerDay: d.minutesPerDay,
+								isWorkDay: d.isWorkDay,
+								latestClockIn: d.latestClockIn,
+							}))
+						: undefined,
 				workModel: tplVersion.workModel as WorkModel | null,
 				presenceOverride: tplVersion.presenceOverride as PresenceOverride,
 				balanceMode: tplVersion.balanceMode as BalanceMode,

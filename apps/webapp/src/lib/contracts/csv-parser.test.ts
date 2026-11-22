@@ -85,6 +85,16 @@ describe("csv-parser (#1928)", () => {
 			{ dayOfWeek: "friday", minutesPerDay: 0, isWorkDay: false, latestClockIn: null },
 		]);
 
+		// P3-3: German decimal commas inside pipe- or comma-separated custom_days entries
+		expect(parseCsvCustomDays("mon:7,5h|fri:4h")).toEqual([
+			{ dayOfWeek: "monday", minutesPerDay: 450, isWorkDay: true, latestClockIn: null },
+			{ dayOfWeek: "friday", minutesPerDay: 240, isWorkDay: true, latestClockIn: null },
+		]);
+		expect(parseCsvCustomDays("mon:7,5h,tue:6,25h@08:30")).toEqual([
+			{ dayOfWeek: "monday", minutesPerDay: 450, isWorkDay: true, latestClockIn: null },
+			{ dayOfWeek: "tuesday", minutesPerDay: 375, isWorkDay: true, latestClockIn: "08:30" },
+		]);
+
 		expect(
 			parseCsvCustomDays('[{"dayOfWeek":"monday","minutesPerDay":360,"isWorkDay":true}]'),
 		).toEqual([{ dayOfWeek: "monday", minutesPerDay: 360, isWorkDay: true, latestClockIn: null }]);

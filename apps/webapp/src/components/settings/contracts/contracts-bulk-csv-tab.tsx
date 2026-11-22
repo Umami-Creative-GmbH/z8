@@ -38,15 +38,19 @@ import type {
 	PreviewCsvLeavingDateImportResult,
 } from "@/lib/contracts/csv-import";
 import type { WorkModel } from "@/lib/contracts/types";
-import { todayIsoDate, useContractLabels } from "./contract-formatters";
+import { todayIsoDateInTimezone, useContractLabels } from "./contract-formatters";
 
 const ALL_VALUE = "__all__";
 
 export interface ContractsBulkCsvTabProps {
 	organizationId: string;
+	organizationTimezone: string;
 }
 
-export function ContractsBulkCsvTab({ organizationId }: ContractsBulkCsvTabProps) {
+export function ContractsBulkCsvTab({
+	organizationId,
+	organizationTimezone,
+}: ContractsBulkCsvTabProps) {
 	const { t } = useTranslate();
 	const labels = useContractLabels();
 	const queryClient = useQueryClient();
@@ -55,7 +59,7 @@ export function ContractsBulkCsvTab({ organizationId }: ContractsBulkCsvTabProps
 	const [bulkKind, setBulkKind] = useState<
 		"adopt_default" | "apply_template_version" | "bulk_operational_update"
 	>("adopt_default");
-	const [bulkDate, setBulkDate] = useState(todayIsoDate());
+	const [bulkDate, setBulkDate] = useState(() => todayIsoDateInTimezone(organizationTimezone));
 	const [bulkTeamId, setBulkTeamId] = useState(ALL_VALUE);
 	const [bulkTemplateVersionId, setBulkTemplateVersionId] = useState("");
 	const [bulkWorkModel, setBulkWorkModel] = useState<WorkModel | "">("");
@@ -69,7 +73,9 @@ export function ContractsBulkCsvTab({ organizationId }: ContractsBulkCsvTabProps
 		"csv_contract_import",
 	);
 	const [csvText, setCsvText] = useState("");
-	const [csvDefaultDate, setCsvDefaultDate] = useState(todayIsoDate());
+	const [csvDefaultDate, setCsvDefaultDate] = useState(() =>
+		todayIsoDateInTimezone(organizationTimezone),
+	);
 	const [csvOverwrite, setCsvOverwrite] = useState(false);
 	const [csvAckDuties, setCsvAckDuties] = useState(false);
 	const [csvContractPreview, setCsvContractPreview] =

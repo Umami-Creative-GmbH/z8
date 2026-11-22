@@ -17,10 +17,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { todayIsoDate } from "./contract-formatters";
+import { todayIsoDateInTimezone } from "./contract-formatters";
 
 export interface ScopedManagerPolicyCardProps {
 	employeeId: string;
+	organizationTimezone: string;
 	workPolicies: readonly { id: string; name: string }[];
 	onAssigned?: () => void;
 }
@@ -32,10 +33,12 @@ export interface ScopedManagerPolicyCardProps {
  */
 export function ScopedManagerPolicyCard({
 	employeeId,
+	organizationTimezone,
 	workPolicies,
 	onAssigned,
 }: ScopedManagerPolicyCardProps) {
 	const { t } = useTranslate();
+	const orgTodayDate = todayIsoDateInTimezone(organizationTimezone);
 
 	const assignMutation = useMutation({
 		mutationFn: async (values: { policyId: string; effectiveFromDate: string }) => {
@@ -65,7 +68,7 @@ export function ScopedManagerPolicyCard({
 	const form = useForm({
 		defaultValues: {
 			policyId: workPolicies[0]?.id ?? "",
-			effectiveFromDate: todayIsoDate(),
+			effectiveFromDate: orgTodayDate,
 		},
 		onSubmit: async ({ value }) => {
 			if (!value.policyId) {
@@ -145,6 +148,7 @@ export function ScopedManagerPolicyCard({
 									<Input
 										id="scoped-manager-effective-from"
 										type="date"
+										min={orgTodayDate}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 									/>

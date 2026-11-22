@@ -74,7 +74,7 @@ import {
 	formatContractMinutes,
 	hoursInputToIntegerMinutes,
 	integerMinutesToHoursInput,
-	todayIsoDate,
+	todayIsoDateInTimezone,
 	useContractLabels,
 } from "./contract-formatters";
 import {
@@ -146,7 +146,10 @@ function buildChangePayload(employeeId: string, values: ChangePanelFormValues) {
 	};
 }
 
-function buildPrefilledValues(effective: EffectiveContractOnDay | null): ChangePanelFormValues {
+function buildPrefilledValues(
+	effective: EffectiveContractOnDay | null,
+	organizationTimezone: string,
+): ChangePanelFormValues {
 	const weeklyDays: CustomWorkDay[] =
 		effective?.scheduleMode === "custom_days" && effective.weeklyScheduleDays.length > 0
 			? effective.weeklyScheduleDays.map((d) => ({
@@ -158,7 +161,7 @@ function buildPrefilledValues(effective: EffectiveContractOnDay | null): ChangeP
 			: createDefaultCustomDays(effective?.weeklyContractMinutes ?? 2400);
 
 	return {
-		validFromDate: todayIsoDate(),
+		validFromDate: todayIsoDateInTimezone(organizationTimezone),
 		workPolicyId:
 			effective?.workPolicySource === "employee_override" && effective.workPolicy
 				? effective.workPolicy.policyId
@@ -200,6 +203,7 @@ function buildPrefilledValues(effective: EffectiveContractOnDay | null): ChangeP
 
 export interface EmployeeContractTabProps {
 	organizationId: string;
+	organizationTimezone: string;
 	employeeId: string;
 	workPolicies: readonly { id: string; name: string }[];
 	employmentHistory: readonly EmploymentHistoryEntry[];
@@ -208,6 +212,7 @@ export interface EmployeeContractTabProps {
 
 export function EmployeeContractTab({
 	organizationId,
+	organizationTimezone,
 	employeeId,
 	workPolicies,
 	employmentHistory,
@@ -216,7 +221,7 @@ export function EmployeeContractTab({
 	const { t } = useTranslate();
 	const labels = useContractLabels();
 	const queryClient = useQueryClient();
-	const [asOfDate, setAsOfDate] = useState(() => todayIsoDate());
+	const [asOfDate, setAsOfDate] = useState(() => todayIsoDateInTimezone(organizationTimezone));
 	const [changePanelOpen, setChangePanelOpen] = useState(false);
 	const [agreementDialogMode, setAgreementDialogMode] = useState<"initial" | "extension" | null>(
 		null,
@@ -766,6 +771,7 @@ export function EmployeeContractTab({
 						{changePanelOpen && (
 							<EmployeeContractChangeForm
 								key={`${employeeId}:${effective?.employmentHistoryId ?? "none"}`}
+								organizationTimezone={organizationTimezone}
 								employeeId={employeeId}
 								effective={effective}
 								workPolicies={workPolicies}
@@ -810,6 +816,7 @@ export function EmployeeContractTab({
 						{agreementDialogMode && (
 							<FixedTermAgreementForm
 								mode={agreementDialogMode}
+								organizationTimezone={organizationTimezone}
 								employeeId={employeeId}
 								pendingDeparture={pendingDeparture}
 								onSaved={() => {
@@ -827,12 +834,14 @@ export function EmployeeContractTab({
 }
 
 function EmployeeContractChangeForm({
+	organizationTimezone,
 	employeeId,
 	effective,
 	workPolicies,
 	onSaved,
 	onCancel,
 }: {
+	organizationTimezone: string;
 	employeeId: string;
 	effective: EffectiveContractOnDay | null;
 	workPolicies: readonly { id: string; name: string }[];
@@ -885,7 +894,7 @@ function EmployeeContractChangeForm({
 	});
 
 	const form = useForm({
-		defaultValues: buildPrefilledValues(effective),
+		defaultValues: buildPrefilledValues(effective, organizationTimezone),
 		onSubmit: async ({ value }) => {
 			if (value.scheduleMode === "custom_days" && validateCustomDaysGrid(value.customDays)) {
 				toast.error(
@@ -1451,12 +1460,14 @@ function EmployeeContractChangeForm({
 
 function FixedTermAgreementForm({
 	mode,
+	organizationTimezone,
 	employeeId,
 	pendingDeparture,
 	onSaved,
 	onCancel,
 }: {
 	mode: "initial" | "extension";
+	organizationTimezone: string;
 	employeeId: string;
 	pendingDeparture: { id: string; lastWorkingDay: string | null } | null;
 	onSaved: () => void;
@@ -1517,7 +1528,7 @@ function FixedTermAgreementForm({
 	const form = useForm({
 		defaultValues: {
 			kind: "fixed_term" as EmploymentTermAgreementKind,
-			startsOn: todayIsoDate(),
+			startsOn: todayIsoDateInTimezone(organizationTimezone),
 			endsOn: "",
 			reason: "",
 			notes: "",

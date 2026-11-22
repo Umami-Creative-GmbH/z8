@@ -35,7 +35,12 @@ export function ContractsHubClient({
 						"settings.contracts.tabs.defaultsDescription",
 						"Configure date-effective organization and primary-team default contracts with affected-employee previews.",
 					),
-					panel: <ContractsDefaultsTab organizationId={organizationId} />,
+					panel: (
+						<ContractsDefaultsTab
+							organizationId={organizationId}
+							organizationTimezone={organizationTimezone}
+						/>
+					),
 				},
 				{
 					value: "templates",
@@ -44,7 +49,12 @@ export function ContractsHubClient({
 						"settings.contracts.tabs.templatesDescription",
 						"Create and version immutable stamping contract templates and apply them with divergence protection.",
 					),
-					panel: <ContractsTemplatesTab organizationId={organizationId} />,
+					panel: (
+						<ContractsTemplatesTab
+							organizationId={organizationId}
+							organizationTimezone={organizationTimezone}
+						/>
+					),
 				},
 				{
 					value: "work-policies",
@@ -68,7 +78,12 @@ export function ContractsHubClient({
 						"settings.contracts.tabs.bulkDescription",
 						"Run dry-run bulk contract updates, validate contract or leaving-date CSV imports, and monitor batch progress.",
 					),
-					panel: <ContractsBulkCsvTab organizationId={organizationId} />,
+					panel: (
+						<ContractsBulkCsvTab
+							organizationId={organizationId}
+							organizationTimezone={organizationTimezone}
+						/>
+					),
 				},
 				{
 					value: "reviews",
@@ -77,7 +92,12 @@ export function ContractsHubClient({
 						"settings.contracts.tabs.reviewsDescription",
 						"Resolve contract migration conflicts, post-cutoff work reviews, payroll reconciliations, and migrated legacy terms.",
 					),
-					panel: <ContractsReviewsTab organizationId={organizationId} />,
+					panel: (
+						<ContractsReviewsTab
+							organizationId={organizationId}
+							organizationTimezone={organizationTimezone}
+						/>
+					),
 				},
 			]}
 		/>
