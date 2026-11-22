@@ -29,85 +29,46 @@ vi.mock("next/navigation", async () => {
 	};
 });
 
-import { DrivingLicenceRoleTabs } from "./role-tabs";
+import { DrivingLicenceTeamTabs } from "./role-tabs";
 
 const panels = {
-	myLicence: <p>Own licence content</p>,
 	checks: <p>Checks content</p>,
 	planning: <p>Planning content</p>,
 };
-const none = { myLicence: false, checks: false, planning: false };
+const none = { checks: false, planning: false };
 
 beforeEach(() => {
-	window.history.replaceState(null, "", "/en/driving-licence");
+	window.history.replaceState(null, "", "/en/team/driving-licence");
 });
 afterEach(cleanup);
 
-describe("driving licence role tabs", () => {
-	it("shows one tab per role the user holds, starting with the first", () => {
-		render(
-			<DrivingLicenceRoleTabs
-				roles={{ myLicence: true, checks: true, planning: true }}
-				panels={panels}
-			/>,
-		);
-		expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
-			"My licence",
-			"Checks",
-			"Planning",
-		]);
-		expect(screen.getByRole("tabpanel").textContent).toBe("Own licence content");
-		expect(screen.queryByText("Checks content")).toBeNull();
-	});
-
-	it("offers only the tabs of the roles held", () => {
-		render(
-			<DrivingLicenceRoleTabs
-				roles={{ myLicence: false, checks: true, planning: true }}
-				panels={panels}
-			/>,
-		);
+describe("driving licence team tabs (#1937)", () => {
+	it("shows Checks then Planning for a verifier who also plans, opening Checks", () => {
+		render(<DrivingLicenceTeamTabs roles={{ checks: true, planning: true }} panels={panels} />);
 		expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
 			"Checks",
 			"Planning",
 		]);
-		expect(screen.queryByText("Own licence content")).toBeNull();
+		expect(screen.getByRole("tabpanel").textContent).toBe("Checks content");
+		expect(screen.queryByText("Planning content")).toBeNull();
+		expect(screen.getByRole("heading", { level: 1, name: "Driving licences" })).toBeTruthy();
 	});
 
 	it.each([
-		["myLicence", "Own licence content"],
 		["checks", "Checks content"],
 		["planning", "Planning content"],
 	] as const)("shows a single %s role without a tab bar", (role, content) => {
-		render(<DrivingLicenceRoleTabs roles={{ ...none, [role]: true }} panels={panels} />);
+		render(<DrivingLicenceTeamTabs roles={{ ...none, [role]: true }} panels={panels} />);
 		expect(screen.queryByRole("tablist")).toBeNull();
 		expect(screen.getByText(content)).toBeTruthy();
-		expect(screen.getByRole("heading", { level: 1, name: "Driving licence" })).toBeTruthy();
 	});
 
 	it("opens a linked tab and keeps the selection in the address", () => {
-		window.history.replaceState(null, "", "/en/driving-licence?tab=planning");
-		render(
-			<DrivingLicenceRoleTabs
-				roles={{ myLicence: true, checks: true, planning: true }}
-				panels={panels}
-			/>,
-		);
+		window.history.replaceState(null, "", "/en/team/driving-licence?tab=planning");
+		render(<DrivingLicenceTeamTabs roles={{ checks: true, planning: true }} panels={panels} />);
 		expect(screen.getByRole("tabpanel").textContent).toBe("Planning content");
 		fireEvent.click(screen.getByRole("tab", { name: "Checks" }));
 		expect(window.location.search).toBe("?tab=checks");
 		expect(screen.getByText("Checks content")).toBeTruthy();
-	});
-
-	it("ignores a link to a tab the user doesn't hold", () => {
-		window.history.replaceState(null, "", "/en/driving-licence?tab=checks");
-		render(
-			<DrivingLicenceRoleTabs
-				roles={{ myLicence: true, checks: false, planning: true }}
-				panels={panels}
-			/>,
-		);
-		expect(screen.getByRole("tabpanel").textContent).toBe("Own licence content");
-		expect(screen.queryByText("Checks content")).toBeNull();
 	});
 });

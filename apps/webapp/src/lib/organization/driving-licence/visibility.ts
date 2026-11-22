@@ -34,8 +34,9 @@ export {
 	drivingLicenceRoles,
 	HIDDEN_DRIVING_LICENCE_VISIBILITY,
 	showsDrivingAuthorizationAdvisory,
-	showsDrivingLicenceNavigation,
 	showsDrivingLicenceSettings,
+	showsMyDrivingLicence,
+	showsTeamDrivingLicence,
 } from "./visibility-rules";
 
 /** The planning permission comes only from an active custom role of this organization. */

@@ -14,6 +14,7 @@ import {
 	IconGavel,
 	IconHelp,
 	IconHierarchy,
+	IconLicense,
 	IconMessageCircle,
 	IconPackage,
 	IconReceipt,
@@ -27,6 +28,10 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { FinanceNavBadge } from "@/components/travel-expenses/finance/finance-nav-badge";
+import {
+	MY_DRIVING_LICENCE_PATH,
+	TEAM_DRIVING_LICENCE_PATH,
+} from "@/lib/organization/driving-licence/paths";
 
 export interface NavigationCapabilities {
 	scheduling: boolean;
@@ -47,8 +52,10 @@ export interface NavigationCapabilities {
 	periodSubmissions?: boolean;
 	/** Who Is In is useful only while the active organization has active locations. */
 	teamPresence?: boolean;
-	/** Decided by the driving licence visibility reader: feature on and a driving licence role (#1420). */
-	drivingLicence?: boolean;
+	/** My driving licence: the feature is on and the viewer is an intended driver or has own records (#1937). */
+	myDrivingLicence?: boolean;
+	/** Driving licences under Team & organization: the feature is on and the viewer verifies or plans (#1937). */
+	teamDrivingLicence?: boolean;
 	platformAdmin: boolean;
 }
 
@@ -131,11 +138,11 @@ export function buildPersonalNav(
 					},
 				]
 			: []),
-		...(navigationCapabilities.drivingLicence
+		...(navigationCapabilities.myDrivingLicence
 			? [
 					{
-						title: t("nav.driving-licence", "Driving licence"),
-						url: "/driving-licence",
+						title: t("nav.my-driving-licence", "My driving licence"),
+						url: MY_DRIVING_LICENCE_PATH,
 						icon: IconSteeringWheel,
 					},
 				]
@@ -171,8 +178,31 @@ export function buildPersonalNav(
 	];
 }
 
-// Team section - admin/manager only
+/**
+ * Team & organization section. Its team pages are for managers and above; a verifier or
+ * planner without that role sees only Driving licences (#1937). An empty list hides the section.
+ */
 export function buildTeamNav(
+	t: Translate,
+	navigationCapabilities: NavigationCapabilities,
+	employeeRole: SidebarEmployeeRole,
+) {
+	const managerOrAbove = employeeRole === "admin" || employeeRole === "manager";
+	return [
+		...(managerOrAbove ? buildManagerTeamNav(t, navigationCapabilities) : []),
+		...(navigationCapabilities.teamDrivingLicence
+			? [
+					{
+						title: t("nav.team-driving-licences", "Driving licences"),
+						url: TEAM_DRIVING_LICENCE_PATH,
+						icon: IconLicense,
+					},
+				]
+			: []),
+	];
+}
+
+function buildManagerTeamNav(
 	t: Translate,
 	navigationCapabilities: NavigationCapabilities,
 ) {

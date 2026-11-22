@@ -23,8 +23,9 @@ vi.mock("./check-subject", () => ({
 
 const {
 	requireDrivingLicenceCheckPage,
-	requireDrivingLicencePage,
 	requireDrivingLicenceSettingsPage,
+	requireMyDrivingLicencePage,
+	requireTeamDrivingLicencePage,
 } = await import("./page-guards");
 
 const actor = {
@@ -47,13 +48,15 @@ beforeEach(() => {
 	mocks.requireDrivingLicenceActor.mockResolvedValue(actor);
 });
 
-describe("/driving-licence route guard (#1420)", () => {
+describe("/driving-licence route guard (#1420, #1937)", () => {
 	it.each([
 		["the feature is off", { ...hidden, intendedDriver: true }],
 		["the member holds no role", { ...hidden, featureEnabled: true }],
+		["the member is only a verifier", { ...hidden, featureEnabled: true, verifier: true }],
+		["the member is only a planner", { ...hidden, featureEnabled: true, planner: true }],
 	])("returns not found when %s", async (_case, view) => {
 		mocks.readDrivingLicenceVisibility.mockResolvedValue(view);
-		await expect(requireDrivingLicencePage()).rejects.toThrow("NEXT_NOT_FOUND");
+		await expect(requireMyDrivingLicencePage()).rejects.toThrow("NEXT_NOT_FOUND");
 		expect(mocks.readDrivingLicenceVisibility).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			userId: "user-1",
@@ -62,30 +65,54 @@ describe("/driving-licence route guard (#1420)", () => {
 
 	it("returns not found instead of an error for a viewer without organization access", async () => {
 		mocks.requireDrivingLicenceActor.mockRejectedValue(new Error("forbidden"));
-		await expect(requireDrivingLicencePage()).rejects.toThrow("NEXT_NOT_FOUND");
+		await expect(requireMyDrivingLicencePage()).rejects.toThrow("NEXT_NOT_FOUND");
 		expect(mocks.readDrivingLicenceVisibility).not.toHaveBeenCalled();
 	});
 
 	it.each([
-		[
-			"an intended driver",
-			{ intendedDriver: true },
-			{ myLicence: true, checks: false, planning: false },
-		],
-		[
-			"a former intended driver with records",
-			{ ownRetainedRecords: true },
-			{ myLicence: true, checks: false, planning: false },
-		],
-		["a verifier", { verifier: true }, { myLicence: false, checks: true, planning: false }],
-		["a planner", { planner: true }, { myLicence: false, checks: false, planning: true }],
-	])("opens the page for %s with that role", async (_case, facts, roles) => {
+		["an intended driver", { intendedDriver: true }],
+		["a former intended driver with records", { ownRetainedRecords: true }],
+	])("opens the page for %s", async (_case, facts) => {
 		mocks.readDrivingLicenceVisibility.mockResolvedValue({
 			...hidden,
 			featureEnabled: true,
 			...facts,
 		});
-		await expect(requireDrivingLicencePage()).resolves.toMatchObject({
+		await expect(requireMyDrivingLicencePage()).resolves.toMatchObject({
+			actor,
+			employeeId: "employee-1",
+		});
+		expect(mocks.notFound).not.toHaveBeenCalled();
+	});
+});
+
+describe("/team/driving-licence route guard (#1937)", () => {
+	it.each([
+		["the feature is off", { ...hidden, verifier: true, planner: true }],
+		[
+			"the member is only an intended driver",
+			{ ...hidden, featureEnabled: true, intendedDriver: true },
+		],
+		[
+			"the member only administers the settings",
+			{ ...hidden, featureEnabled: true, settings: "full" },
+		],
+	])("returns not found when %s", async (_case, view) => {
+		mocks.readDrivingLicenceVisibility.mockResolvedValue(view);
+		await expect(requireTeamDrivingLicencePage()).rejects.toThrow("NEXT_NOT_FOUND");
+	});
+
+	it.each([
+		["a verifier", { verifier: true }, { checks: true, planning: false }],
+		["a planner", { planner: true }, { checks: false, planning: true }],
+		["a verifier and planner", { verifier: true, planner: true }, { checks: true, planning: true }],
+	])("opens the page for %s with those tabs", async (_case, facts, roles) => {
+		mocks.readDrivingLicenceVisibility.mockResolvedValue({
+			...hidden,
+			featureEnabled: true,
+			...facts,
+		});
+		await expect(requireTeamDrivingLicencePage()).resolves.toMatchObject({
 			actor,
 			roles,
 		});
@@ -93,7 +120,7 @@ describe("/driving-licence route guard (#1420)", () => {
 	});
 });
 
-describe("/driving-licence/checks/[employee] route guard (#1429)", () => {
+describe("/team/driving-licence/[employee] route guard (#1429, #1937)", () => {
 	const employeeId = "5b0f8f62-8a1a-4f4e-9f1a-2a7c4f0f6c11";
 	const verifierView = { ...hidden, featureEnabled: true, verifier: true };
 	const covered = { employeeId, name: "Anna Driver", canVerify: true };

@@ -29,8 +29,10 @@ export interface StaticAppSearchInput {
 	featureFlags?: FeatureFlagState;
 	/** The user manages a project below the manager tier (#928). */
 	managesProject?: boolean;
-	/** The driving licence visibility reader shows the personal Driving licence item (#1420). */
-	showDrivingLicenceNav?: boolean;
+	/** The driving licence visibility reader shows My driving licence (#1937). */
+	showMyDrivingLicenceNav?: boolean;
+	/** The driving licence visibility reader shows Team & organization → Driving licences (#1937). */
+	showTeamDrivingLicenceNav?: boolean;
 	/** The driving licence visibility reader offers its settings (#1420). */
 	drivingLicenceSettingsVisible?: boolean;
 }

@@ -54,12 +54,6 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	canCreateOrganizations?: boolean;
 }
 
-const isManagerOrAbove = (
-	role: "admin" | "manager" | "employee" | null | undefined,
-): boolean => {
-	return role === "admin" || role === "manager";
-};
-
 const EMPTY_ORGANIZATIONS: UserOrganization[] = [];
 const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	scheduling: false,
@@ -71,7 +65,8 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	personnelFiles: false,
 	periodSubmissions: false,
 	teamPresence: false,
-	drivingLicence: false,
+	myDrivingLicence: false,
+	teamDrivingLicence: false,
 	platformAdmin: false,
 };
 
@@ -128,7 +123,9 @@ export function AppSidebar({
 		showPayrollNav: navigationCapabilities.payroll,
 		featureFlags,
 		managesProject,
-		showDrivingLicenceNav: navigationCapabilities.drivingLicence ?? false,
+		showMyDrivingLicenceNav: navigationCapabilities.myDrivingLicence ?? false,
+		showTeamDrivingLicenceNav:
+			navigationCapabilities.teamDrivingLicence ?? false,
 		drivingLicenceSettingsVisible,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
@@ -138,7 +135,11 @@ export function AppSidebar({
 		navigationCapabilities,
 		employeeRole,
 	);
-	const navTeam = buildTeamNav(translate, navigationCapabilities);
+	const navTeam = buildTeamNav(
+		translate,
+		navigationCapabilities,
+		employeeRole,
+	);
 	const navSecondary = buildSecondaryNav(translate, navigationCapabilities);
 
 	return (
@@ -163,7 +164,7 @@ export function AppSidebar({
 					/>
 				</Suspense>
 				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
-					{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
+					{navTeam.length > 0 && <NavTeam items={navTeam} />}
 				</Suspense>
 				<Suspense fallback={<SidebarSecondaryNavigationLoading />}>
 					<NavSecondary className="mt-auto" items={navSecondary} />

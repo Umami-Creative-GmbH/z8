@@ -73,8 +73,8 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		titleKey: "nav.travel-expenses",
 		titleDefault: "Travel Expenses",
 	},
-	// Formerly a settings entry (#1420). Route titles must exist in the synced catalogs, so this
-	// keeps the existing key until `nav.driving-licence` is synced from Tolgee.
+	// Route titles must exist in the synced catalogs, so both driving licence routes keep synced
+	// keys until `nav.my-driving-licence` and `nav.team-driving-licences` are synced (#1937).
 	{
 		id: "driving-licence",
 		href: "/driving-licence",
@@ -116,6 +116,12 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		href: "/team/period-submissions",
 		titleKey: "nav.teamPeriodSubmissions",
 		titleDefault: "Period Submissions",
+	},
+	{
+		id: "team-driving-licence",
+		href: "/team/driving-licence",
+		titleKey: "nav.driving-licence",
+		titleDefault: "Driving licence",
 	},
 	{
 		id: "team-driving",
@@ -303,7 +309,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		) ||
 		/^\/equipment\/assignments\/[^/]+$/.test(path) ||
 		/^\/equipment\/employees\/[^/]+$/.test(path) ||
-		/^\/driving-licence\/checks\/[^/]+$/.test(path) ||
+		/^\/team\/driving-licence\/[^/]+$/.test(path) ||
 		/^\/approvals\/review\/[^/]+\/[^/]+\/[^/]+$/.test(path) ||
 		/^\/approvals\/deputy-decisions\/[^/]+$/.test(path) ||
 		/^\/calendar\/[^/]+$/.test(path) ||
@@ -321,6 +327,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		path === "/team" ||
 		path === "/team/absences" ||
 		path === "/team/driving" ||
+		path === "/team/driving-licence" ||
 		path === "/team/period-submissions" ||
 		path === "/payroll" ||
 		path === "/my-documents" ||

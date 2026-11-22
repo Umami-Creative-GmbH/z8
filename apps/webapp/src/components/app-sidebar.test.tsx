@@ -356,9 +356,9 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
-	it("renders the personal Driving licence item after Personnel Files only with the capability (#1420)", () => {
+	it("renders My driving licence after Personnel Files only with the capability (#1420, #1937)", () => {
 		const { unmount } = render(<AppSidebar employeeRole="employee" />);
-		expect(screen.queryByRole("link", { name: "Driving licence" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "My driving licence" })).toBeNull();
 		unmount();
 
 		render(
@@ -371,7 +371,7 @@ describe("app sidebar compliance navigation", () => {
 					finance: false,
 					worksCouncil: false,
 					personnelFiles: true,
-					drivingLicence: true,
+					myDrivingLicence: true,
 					platformAdmin: false,
 				}}
 			/>,
@@ -379,23 +379,78 @@ describe("app sidebar compliance navigation", () => {
 
 		expect(
 			screen
-				.getByRole("link", { name: "Driving licence" })
+				.getByRole("link", { name: "My driving licence" })
 				.getAttribute("href"),
 		).toBe("/driving-licence");
 		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
 		expect(urls.indexOf("/driving-licence")).toBe(
 			urls.indexOf("/personnel-files") + 1,
 		);
+		expect(screen.queryByRole("link", { name: "Driving licences" })).toBeNull();
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
 			expect.objectContaining({
 				staticResults: expect.arrayContaining([
 					expect.objectContaining({
-						title: "Driving licence",
+						title: "My driving licence",
 						href: "/driving-licence",
 					}),
 				]),
 			}),
 		);
+	});
+
+	it("shows Team & organization with only Driving licences to a verifier who is no manager (#1937)", () => {
+		render(
+			<AppSidebar
+				employeeRole="employee"
+				navigationCapabilities={{
+					scheduling: true,
+					compliance: false,
+					payroll: false,
+					finance: false,
+					worksCouncil: false,
+					teamDrivingLicence: true,
+					platformAdmin: false,
+				}}
+			/>,
+		);
+
+		expect(screen.getByTestId("nav-team")).toBeTruthy();
+		expect(
+			navTeamSpy.mock.lastCall?.[0].map(({ title, url }) => ({ title, url })),
+		).toEqual([{ title: "Driving licences", url: "/team/driving-licence" }]);
+	});
+
+	it("adds Driving licences last to a manager's Team & organization section (#1937)", () => {
+		const { unmount } = render(<AppSidebar employeeRole="manager" />);
+		expect(
+			navTeamSpy.mock.lastCall?.[0].map((item) => item.url),
+		).not.toContain("/team/driving-licence");
+		unmount();
+
+		render(
+			<AppSidebar
+				employeeRole="manager"
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: false,
+					finance: false,
+					worksCouncil: false,
+					teamDrivingLicence: true,
+					platformAdmin: false,
+				}}
+			/>,
+		);
+
+		const urls = navTeamSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
+		expect(urls.at(-1)).toBe("/team/driving-licence");
+		expect(urls.at(-2)).toBe("/approvals/inbox");
+	});
+
+	it("hides Team & organization from an employee without a team item", () => {
+		render(<AppSidebar employeeRole="employee" />);
+		expect(screen.queryByTestId("nav-team")).toBeNull();
 	});
 
 	it.each([
@@ -484,48 +539,59 @@ describe("app sidebar compliance navigation", () => {
 		[
 			"intended driver",
 			{ featureEnabled: true, intendedDriver: true, settings: "hidden" },
-			true,
+			{ myDrivingLicence: true, teamDrivingLicence: false },
 			false,
 		],
 		[
 			"verifier",
 			{ featureEnabled: true, verifier: true, settings: "hidden" },
-			true,
+			{ myDrivingLicence: false, teamDrivingLicence: true },
 			false,
 		],
 		[
 			"planner",
 			{ featureEnabled: true, planner: true, settings: "hidden" },
-			true,
+			{ myDrivingLicence: false, teamDrivingLicence: true },
 			false,
+		],
+		[
+			"verifier who is also an intended driver",
+			{
+				featureEnabled: true,
+				intendedDriver: true,
+				verifier: true,
+				settings: "full",
+			},
+			{ myDrivingLicence: true, teamDrivingLicence: true },
+			true,
 		],
 		[
 			"former intended driver",
 			{ featureEnabled: true, ownRetainedRecords: true, settings: "full" },
-			true,
+			{ myDrivingLicence: true, teamDrivingLicence: false },
 			true,
 		],
 		[
 			"member without a role",
 			{ featureEnabled: true, settings: "full" },
-			false,
+			{ myDrivingLicence: false, teamDrivingLicence: false },
 			true,
 		],
 		[
 			"feature off",
 			{ featureEnabled: false, settings: "retention_only" },
-			false,
+			{ myDrivingLicence: false, teamDrivingLicence: false },
 			true,
 		],
 		[
 			"feature off without records",
 			{ featureEnabled: false, settings: "hidden" },
-			false,
+			{ myDrivingLicence: false, teamDrivingLicence: false },
 			false,
 		],
 	])(
-		"decides the Driving licence item and settings entry from the visibility reader (%s, #1420)",
-		async (_case, view, drivingLicence, drivingLicenceSettingsVisible) => {
+		"decides the Driving licence items and settings entry from the visibility reader (%s, #1420, #1937)",
+		async (_case, view, items, drivingLicenceSettingsVisible) => {
 			vi.stubEnv("BILLING_ENABLED", "false");
 			canCreateOrganizationsForDeploymentMock.mockImplementation(
 				(value: boolean) => value,
@@ -585,7 +651,7 @@ describe("app sidebar compliance navigation", () => {
 				);
 				expect(appSidebarSpy).toHaveBeenCalledWith(
 					expect.objectContaining({
-						navigationCapabilities: expect.objectContaining({ drivingLicence }),
+						navigationCapabilities: expect.objectContaining(items),
 						drivingLicenceSettingsVisible,
 					}),
 				);

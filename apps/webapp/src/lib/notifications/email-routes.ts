@@ -89,9 +89,10 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	period_submission_sent_back: layout("/time-tracking"),
 	period_submission_decided: layout("/time-tracking"),
 	driving_details_missing_reminder: layout("/time-tracking"),
-	driving_licence_reminder: layout("/driving-licence"),
+	// The employee's My driving licence, the verifiers' check page (#1937).
+	driving_licence_reminder: layout("/driving-licence", "/team/driving-licence/"),
 	equipment_return_reminder: layout("/equipment", "/my-equipment"),
-	driving_authorization_suspended: layout("/driving-licence"),
+	driving_authorization_suspended: layout("/driving-licence", "/team/driving-licence/"),
 	// Record the refused kiosk clocking again (#1290).
 	kiosk_command_refused: layout("/time-tracking"),
 	personnel_file_document_shared: layout("/my-documents"),

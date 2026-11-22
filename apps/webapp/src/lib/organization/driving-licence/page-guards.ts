@@ -6,7 +6,8 @@ import { type DrivingLicenceActor, requireDrivingLicenceActor } from "./context"
 import {
 	drivingLicenceRoles,
 	readDrivingLicenceVisibility,
-	showsDrivingLicenceNavigation,
+	showsMyDrivingLicence,
+	showsTeamDrivingLicence,
 } from "./visibility";
 
 async function actorOrNotFound(): Promise<DrivingLicenceActor> {
@@ -17,19 +18,37 @@ async function actorOrNotFound(): Promise<DrivingLicenceActor> {
 	}
 }
 
-/** `/driving-licence`: not found while the feature is off or the viewer holds no role. */
-export async function requireDrivingLicencePage() {
+async function readActorVisibility() {
 	const actor = await actorOrNotFound();
 	const visibility = await readDrivingLicenceVisibility({
 		organizationId: actor.organizationId,
 		userId: actor.userId,
 	});
-	if (!showsDrivingLicenceNavigation(visibility)) notFound();
+	return { actor, visibility };
+}
+
+/**
+ * `/driving-licence`, My driving licence (#1937): not found while the feature is off, or unless
+ * the viewer is an intended driver or still has their own retained check records.
+ */
+export async function requireMyDrivingLicencePage() {
+	const { actor, visibility } = await readActorVisibility();
+	if (!showsMyDrivingLicence(visibility) || !actor.employeeId) notFound();
+	return { actor, visibility, employeeId: actor.employeeId };
+}
+
+/**
+ * `/team/driving-licence` (#1937): not found while the feature is off, or unless the viewer is a
+ * verifier or holds the planning permission. Administering the settings grants neither.
+ */
+export async function requireTeamDrivingLicencePage() {
+	const { actor, visibility } = await readActorVisibility();
+	if (!showsTeamDrivingLicence(visibility)) notFound();
 	return { actor, visibility, roles: drivingLicenceRoles(visibility) };
 }
 
 /**
- * `/driving-licence/checks/[employee]` (#1429): not found unless the feature is on, the
+ * `/team/driving-licence/[employee]` (#1429, #1937): not found unless the feature is on, the
  * viewer currently holds a verifier grant covering that employee, and it is not the
  * viewer's own check.
  */

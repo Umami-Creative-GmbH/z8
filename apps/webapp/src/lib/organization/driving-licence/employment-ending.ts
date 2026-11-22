@@ -12,6 +12,7 @@ import {
 } from "@/lib/employee-lifecycle/reactivation-checklist";
 import { endDrivingLicenceEmployment, liveDrivingLicenceEmployment } from "./lifecycle";
 import { lockDrivingLicenceOrganization } from "./locks";
+import { drivingLicenceCheckPath } from "./paths";
 
 type DrivingAuthorizationState = (typeof drivingAuthorization.$inferSelect)["state"];
 
@@ -69,7 +70,7 @@ export const drivingLicenceEndingParticipant: EmploymentEndingParticipant<
 			group: "access",
 			kind: "driving_authorizations",
 			count: applied.endedAuthorizationIds.length,
-			href: `/driving-licence/checks/${subject.employeeId}`,
+			href: drivingLicenceCheckPath(subject.employeeId),
 		}),
 	],
 };

@@ -36,7 +36,10 @@ export const HIDDEN_DRIVING_LICENCE_VISIBILITY: DrivingLicenceVisibility = {
 	settings: "hidden",
 };
 
-/** The `/driving-licence` tabs the viewer may open. */
+/**
+ * The driving licence views the viewer may open: My driving licence (`/driving-licence`),
+ * and the Checks and Planning tabs of `/team/driving-licence` (#1937).
+ */
 export function drivingLicenceRoles(visibility: DrivingLicenceVisibility) {
 	const on = visibility.featureEnabled;
 	return {
@@ -45,10 +48,16 @@ export function drivingLicenceRoles(visibility: DrivingLicenceVisibility) {
 		planning: on && visibility.planner,
 	};
 }
-/** The personal sidebar item and `/driving-licence` itself: on, and at least one role. */
-export function showsDrivingLicenceNavigation(visibility: DrivingLicenceVisibility) {
+export type DrivingLicenceRoles = ReturnType<typeof drivingLicenceRoles>;
+
+/** The Workplace item and `/driving-licence`: intended drivers and holders of their own retained records. */
+export function showsMyDrivingLicence(visibility: DrivingLicenceVisibility) {
+	return drivingLicenceRoles(visibility).myLicence;
+}
+/** The Team & organization item and `/team/driving-licence`: verifiers and planners. */
+export function showsTeamDrivingLicence(visibility: DrivingLicenceVisibility) {
 	const roles = drivingLicenceRoles(visibility);
-	return roles.myLicence || roles.checks || roles.planning;
+	return roles.checks || roles.planning;
 }
 /** The clock widget and popover advisory: on, and only to intended drivers. */
 export function showsDrivingAuthorizationAdvisory(visibility: DrivingLicenceVisibility) {

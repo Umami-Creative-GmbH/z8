@@ -192,7 +192,7 @@ it("links the employee to their own licence and each verifier to the employee's 
 	expect(
 		(await checks.completeDrivingLicenceCheckAction(original("2026-02-10"))).success,
 	).toBe(true);
-	const checkPage = `/driving-licence/checks/${fixture.employeeId}`;
+	const checkPage = `/team/driving-licence/${fixture.employeeId}`;
 	harness.now = "2026-02-05T10:00:00Z"; // Within seven days of the document's expiry.
 	await runDrivingLicenceRemindersJob();
 	expect((await inbox()).map((n) => n.actionUrl)).toEqual(["/driving-licence"]);

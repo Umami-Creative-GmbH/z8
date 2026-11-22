@@ -19,6 +19,7 @@ function action<T>(run: () => Promise<T>) {
 function revalidate() {
 	revalidatePath("/settings/driving-licence");
 	revalidatePath("/driving-licence");
+	revalidatePath("/team/driving-licence", "layout");
 }
 
 /** Owners and admins set an organization, team or employee assignment to Required or Not required. */
