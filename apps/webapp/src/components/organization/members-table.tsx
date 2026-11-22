@@ -62,7 +62,6 @@ interface MembersTableProps {
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 	currentUserId: string;
-	onRefresh?: () => void;
 	isRefreshing?: boolean;
 }
 

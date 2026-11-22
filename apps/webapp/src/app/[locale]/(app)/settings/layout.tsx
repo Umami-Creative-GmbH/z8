@@ -25,6 +25,9 @@ const loadSettingsNavProps = cache(async () => {
 });
 
 async function SettingsNavigation() {
+	const billingAccess = await getRenderBillingAccess();
+	if (billingAccess.canAccess === false) return null;
+
 	const navProps = await loadSettingsNavProps();
 
 	return (
@@ -36,6 +39,9 @@ async function SettingsNavigation() {
 
 /** Below `md`, where the sidebar is hidden, the same navigation opens in a drawer. */
 async function SettingsMobileNavigation() {
+	const billingAccess = await getRenderBillingAccess();
+	if (billingAccess.canAccess === false) return null;
+
 	const navProps = await loadSettingsNavProps();
 
 	return (
@@ -43,6 +49,13 @@ async function SettingsMobileNavigation() {
 			<SettingsNav {...navProps} />
 		</SettingsMobileNav>
 	);
+}
+
+async function SettingsBreadcrumbsRegion() {
+	const billingAccess = await getRenderBillingAccess();
+	if (billingAccess.canAccess === false) return null;
+
+	return <SettingsBreadcrumbs />;
 }
 
 function SettingsNavigationLoading() {
@@ -74,44 +87,34 @@ function SettingsBreadcrumbsLoading() {
 	);
 }
 
-async function SettingsShell({ children }: { children: React.ReactNode }) {
-	const billingAccess = await getRenderBillingAccess();
-	const showSettingsChrome = billingAccess.canAccess !== false;
-
+export default function SettingsLayout({
+	children,
+	params,
+}: {
+	children: React.ReactNode;
+	params: Promise<{ locale: string }>;
+}) {
 	return (
-		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-			{showSettingsChrome ? (
+		<RouteTranslationBoundary route="/settings" params={params}>
+			<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
 				<Suspense fallback={<SettingsNavigationLoading />}>
 					<SettingsNavigation />
 				</Suspense>
-			) : null}
-			<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-				{showSettingsChrome ? (
-					/* Empty on the settings hub, where neither the menu nor breadcrumbs render. */
+				<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+					{/* Empty on the settings hub and suspended-billing recovery, where neither the menu nor breadcrumbs render. */}
 					<div className="mx-auto flex w-full max-w-[120rem] flex-wrap items-center gap-x-3 gap-y-2 px-4 pt-4 empty:hidden lg:px-6">
 						<Suspense fallback={<SettingsMobileNavigationLoading />}>
 							<SettingsMobileNavigation />
 						</Suspense>
 						<Suspense fallback={<SettingsBreadcrumbsLoading />}>
-							<SettingsBreadcrumbs />
+							<SettingsBreadcrumbsRegion />
 						</Suspense>
 					</div>
-				) : null}
-				<Suspense fallback={<SettingsContentLoading />}>
-					<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">{children}</div>
-				</Suspense>
-			</main>
-		</div>
-	);
-}
-
-export default function SettingsLayout(props: {
-	children: React.ReactNode;
-	params: Promise<{ locale: string }>;
-}) {
-	return (
-		<RouteTranslationBoundary route="/settings" params={props.params}>
-			<SettingsShell>{props.children}</SettingsShell>
+					<Suspense fallback={<SettingsContentLoading />}>
+						<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">{children}</div>
+					</Suspense>
+				</main>
+			</div>
 		</RouteTranslationBoundary>
 	);
 }

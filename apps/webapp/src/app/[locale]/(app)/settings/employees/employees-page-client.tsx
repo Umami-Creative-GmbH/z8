@@ -120,25 +120,10 @@ export function EmployeesPageClient(props: EmployeeAdministrationProps) {
 
 function EmployeeAdministration(props: EmployeeAdministrationProps) {
 	const { t } = useTranslate();
-	const router = useRouter();
-	const queryClient = useQueryClient();
 	const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-	const [isRefreshingPeople, startPeopleRefresh] = useTransition();
 
 	const people = props.people;
 	const shouldShowPeopleTabs = meetsSettingsAccess(props.settingsAccess, "orgAdmin") && people;
-
-	const handlePeopleRefresh = () => {
-		startPeopleRefresh(async () => {
-			await Promise.all([
-				queryClient.invalidateQueries({ queryKey: queryKeys.members.list(props.organizationId) }),
-				queryClient.invalidateQueries({
-					queryKey: queryKeys.invitations.list(props.organizationId),
-				}),
-			]);
-			router.refresh();
-		});
-	};
 
 	return (
 		<div data-testid="employees-content" className="page-frame flex min-w-0 flex-1 flex-col gap-6">
@@ -194,8 +179,6 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 								invitations={[]}
 								settingsAccess={props.settingsAccess}
 								currentUserId={people.currentUserId}
-								onRefresh={handlePeopleRefresh}
-								isRefreshing={isRefreshingPeople}
 							/>
 						</TabsContent>
 
@@ -225,8 +208,6 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 								defaultTab="invitations"
 								settingsAccess={props.settingsAccess}
 								currentUserId={people.currentUserId}
-								onRefresh={handlePeopleRefresh}
-								isRefreshing={isRefreshingPeople}
 							/>
 							<PendingMembersCard
 								organizationId={props.organizationId}

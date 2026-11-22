@@ -33,8 +33,10 @@ describe("settings layout sidebar", () => {
 		expect(source).toContain("function SettingsBreadcrumbsLoading()");
 		expect(source).toContain("<Suspense fallback={<SettingsBreadcrumbsLoading />}>");
 		expect(source).toMatch(
-			/<Suspense fallback=\{<SettingsBreadcrumbsLoading \/>\}>\s*<SettingsBreadcrumbs \/>\s*<\/Suspense>/,
+			/<Suspense fallback=\{<SettingsBreadcrumbsLoading \/>\}>\s*<SettingsBreadcrumbsRegion \/>\s*<\/Suspense>/,
 		);
+		expect(source).toContain("export default function SettingsLayout(");
+		expect(source).not.toContain("async function SettingsShell");
 		expect(source.match(/\{children\}/g)).toHaveLength(1);
 	});
 
