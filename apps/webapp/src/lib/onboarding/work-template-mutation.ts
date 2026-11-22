@@ -24,6 +24,7 @@ import {
 	writeUserSettings,
 } from "@/lib/user-preferences/user-settings-mutation";
 import {
+	getNextOnboardingStep,
 	type OnboardingOrganizationExpectation,
 	type OnboardingWorkTemplateFormValues,
 	onboardingWorkTemplateSchema,
@@ -147,7 +148,7 @@ const mutateTemplate = Effect.fnUntraced(function* (
 						writeUserSettings(
 							database.db,
 							userId,
-							{ onboardingStep: "wellness" },
+							{ onboardingStep: getNextOnboardingStep("work_templates", true) ?? "wellness" },
 							async (transaction) => {
 								// Drizzle transactions expose the auth/facts operations, but not the outer pool's $client.
 								// Only those readers receive this adapter; every graph/progress write uses the actual transaction.

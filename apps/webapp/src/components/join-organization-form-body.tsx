@@ -1,10 +1,4 @@
-﻿import {
-	IconBuilding,
-	IconCheck,
-	IconClock,
-	IconLoader2,
-	IconUserPlus,
-} from "@tabler/icons-react";
+﻿import { IconBuilding, IconCheck, IconClock, IconLoader2, IconUserPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { FormEventHandler, ReactNode } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -29,10 +23,12 @@ interface JoinOrganizationFormBodyProps {
 	joinStatus: "pending" | "approved" | null;
 	onSubmit: FormEventHandler<HTMLFormElement>;
 	onValidate: () => void;
+	organizationId: string | null;
 	organizationName: string | null;
 	accountEmail: string | null;
 	sessionLoading: boolean;
 	signInHref: string;
+	signUpHref: string;
 	state: JoinState;
 }
 
@@ -43,16 +39,22 @@ export function JoinOrganizationFormBody({
 	joinStatus,
 	onSubmit,
 	onValidate,
+	organizationId,
 	organizationName,
 	accountEmail,
 	sessionLoading,
 	signInHref,
+	signUpHref,
 	state,
 }: JoinOrganizationFormBodyProps) {
 	const { t } = useTranslate();
 	const branding = useBranding();
 	const completed = state === "success" || state === "already-member";
 	const pending = state === "success" && joinStatus === "pending";
+	const completionHref =
+		!pending && organizationId
+			? `/init?organizationId=${encodeURIComponent(organizationId)}`
+			: "/init";
 	const title =
 		state === "already-member"
 			? t("settings.inviteCodes.alreadyMember", "Already a Member")
@@ -81,9 +83,7 @@ export function JoinOrganizationFormBody({
 								) : (
 									<IconCheck aria-hidden="true" className="size-4" />
 								)}
-								<AlertTitle className="break-words">
-									{organizationName}
-								</AlertTitle>
+								<AlertTitle className="break-words">{organizationName}</AlertTitle>
 								<AlertDescription>
 									{state === "already-member"
 										? t(
@@ -106,10 +106,7 @@ export function JoinOrganizationFormBody({
 							{pending ? (
 								<div className="space-y-2 text-sm text-muted-foreground">
 									<p className="font-medium text-foreground">
-										{t(
-											"settings.inviteCodes.pendingApproval",
-											"Pending Approval",
-										)}
+										{t("settings.inviteCodes.pendingApproval", "Pending Approval")}
 									</p>
 									<p>
 										{t(
@@ -134,7 +131,7 @@ export function JoinOrganizationFormBody({
 							)}
 						</div>
 						<Button asChild className="w-full">
-							<Link href="/">
+							<Link href={completionHref}>
 								{pending
 									? t("auth.join.continueToAccount", "Continue to your account")
 									: t("common.goToDashboard", "Go to Dashboard")}
@@ -156,9 +153,7 @@ export function JoinOrganizationFormBody({
 								variant="outline"
 								className="w-full"
 								onClick={onValidate}
-								disabled={
-									!code.trim() || state === "loading" || state === "joining"
-								}
+								disabled={!code.trim() || state === "loading" || state === "joining"}
 							>
 								{state === "loading" ? (
 									<IconLoader2
@@ -172,18 +167,13 @@ export function JoinOrganizationFormBody({
 						<div role="status" aria-live="polite" className="space-y-3">
 							{state === "loading" ? (
 								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.inviteCodes.validatingCode",
-										"Validating code...",
-									)}
+									{t("settings.inviteCodes.validatingCode", "Validating code...")}
 								</p>
 							) : null}
 							{organizationName ? (
 								<Alert role="status">
 									<IconBuilding aria-hidden="true" className="size-4" />
-									<AlertTitle className="break-words">
-										{organizationName}
-									</AlertTitle>
+									<AlertTitle className="break-words">{organizationName}</AlertTitle>
 									<AlertDescription>
 										{t(
 											"auth.join.resolvedOrganization",
@@ -234,34 +224,19 @@ export function JoinOrganizationFormBody({
 								? t("settings.inviteCodes.joining", "Joining...")
 								: !accountEmail
 									? t("settings.inviteCodes.signInToJoin", "Sign in to Join")
-									: t(
-											"settings.inviteCodes.joinOrganization",
-											"Join Organization",
-										)}
+									: t("settings.inviteCodes.joinOrganization", "Join Organization")}
 						</Button>
 						{!accountEmail && !sessionLoading ? (
 							<div className="space-y-2 border-t pt-4 text-sm text-muted-foreground">
 								<p>
-									{t(
-										"settings.inviteCodes.alreadyHaveAccount",
-										"Already have an account?",
-									)}{" "}
-									<Link
-										href={signInHref}
-										className="text-primary underline underline-offset-4"
-									>
+									{t("settings.inviteCodes.alreadyHaveAccount", "Already have an account?")}{" "}
+									<Link href={signInHref} className="text-primary underline underline-offset-4">
 										{t("auth.sign-in", "Sign in")}
 									</Link>
 								</p>
 								<p>
-									{t(
-										"settings.inviteCodes.needAccount",
-										"Don't have an account?",
-									)}{" "}
-									<Link
-										href={`/sign-up?inviteCode=${encodeURIComponent(code)}`}
-										className="text-primary underline underline-offset-4"
-									>
+									{t("settings.inviteCodes.needAccount", "Don't have an account?")}{" "}
+									<Link href={signUpHref} className="text-primary underline underline-offset-4">
 										{t("auth.sign-up", "Sign up")}
 									</Link>
 								</p>

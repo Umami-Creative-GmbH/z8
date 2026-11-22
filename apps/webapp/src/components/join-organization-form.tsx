@@ -3,7 +3,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useLocale } from "next-intl";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { redeemInviteCode, validateInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { withCallbackUrl } from "@/lib/auth/callback-url";
 import { useAuthPageSession } from "@/lib/auth/use-auth-page-session";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
@@ -25,6 +25,18 @@ async function readInviteCode(code: string) {
 	} catch {
 		return null;
 	}
+}
+
+function getJoinAuthHrefs(code: string) {
+	const trimmedCode = code.trim();
+	const callbackUrl = trimmedCode ? `/join/${encodeURIComponent(trimmedCode)}` : "/join";
+	const signUpBase = trimmedCode
+		? `/sign-up?inviteCode=${encodeURIComponent(trimmedCode)}`
+		: "/sign-up";
+	return {
+		signInHref: withCallbackUrl("/sign-in", callbackUrl),
+		signUpHref: withCallbackUrl(signUpBase, callbackUrl),
+	};
 }
 
 export function JoinOrganizationForm({ code }: { code?: string }) {
@@ -58,10 +70,10 @@ function JoinOrganizationFormContent({
 	sessionLoading: boolean;
 }) {
 	const { t } = useTranslate();
-	const locale = useLocale();
 	const router = useRouter();
 	const [state, setState] = useState<JoinState>(initialCode ? "loading" : "valid");
 	const [error, setError] = useState<string | null>(null);
+	const [organizationId, setOrganizationId] = useState<string | null>(null);
 	const [organizationName, setOrganizationName] = useState<string | null>(null);
 	const [joinStatus, setJoinStatus] = useState<"pending" | "approved" | null>(null);
 	const validationOperationRef = useRef(0);
@@ -97,6 +109,7 @@ function JoinOrganizationFormContent({
 							return;
 						}
 						setState("success");
+						setOrganizationId(result.data.organizationId);
 						setOrganizationName(result.data.organizationName);
 						setJoinStatus(result.data.status);
 					} catch {
@@ -117,13 +130,13 @@ function JoinOrganizationFormContent({
 		},
 	});
 	const code = useStore(form.store, (value) => value.values.code);
-	const callback = `/${locale}/join/${encodeURIComponent(code)}`;
-	const signInHref = `/sign-in?callbackUrl=${encodeURIComponent(callback)}`;
+	const { signInHref, signUpHref } = getJoinAuthHrefs(code);
 
 	function applyValidation(operation: number, result: Awaited<ReturnType<typeof readInviteCode>>) {
 		if (!mountedRef.current || validationOperationRef.current !== operation) return;
 		if (!result?.success || !result.data.valid) {
 			setState("invalid");
+			setOrganizationId(null);
 			setError(
 				(result?.success ? result.data.error : result?.error) ||
 					t("settings.inviteCodes.invalidCode", "Invalid invite code"),
@@ -132,6 +145,9 @@ function JoinOrganizationFormContent({
 			return;
 		}
 		setState("valid");
+		setOrganizationId(
+			result.data.inviteCode?.organization?.id ?? result.data.inviteCode?.organizationId ?? null,
+		);
 		setOrganizationName(result.data.inviteCode?.organization?.name || null);
 	}
 	const completeInitialValidation = useEffectEvent(applyValidation);
@@ -183,6 +199,7 @@ function JoinOrganizationFormContent({
 										field.handleChange(event.target.value.toUpperCase());
 										setState("valid");
 										setError(null);
+										setOrganizationId(null);
 										setOrganizationName(null);
 									}}
 									className="font-mono uppercase tracking-wider"
@@ -204,15 +221,18 @@ function JoinOrganizationFormContent({
 				void form.handleSubmit();
 			}}
 			onValidate={() => {
+				setOrganizationId(null);
 				setOrganizationName(null);
 				setError(null);
 				setState("loading");
 				void validateCode(code);
 			}}
+			organizationId={organizationId}
 			organizationName={organizationName}
 			accountEmail={accountEmail}
 			sessionLoading={sessionLoading}
 			signInHref={signInHref}
+			signUpHref={signUpHref}
 			state={state}
 		/>
 	);

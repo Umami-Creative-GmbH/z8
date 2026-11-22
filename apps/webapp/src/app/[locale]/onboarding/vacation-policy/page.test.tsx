@@ -312,10 +312,10 @@ describe("VacationPolicyPage load effect", () => {
 		expect(mocks.checkIsAdmin).toHaveBeenCalledTimes(2);
 	});
 
-	it("routes a non-admin to notifications without exposing policy controls", async () => {
+	it("routes a non-admin to wellness without exposing policy controls", async () => {
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: false });
 		render(<VacationPolicyPage />);
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/wellness"));
 		expect(screen.queryByLabelText("Policy Name")).toBeNull();
 	});
 
@@ -503,7 +503,7 @@ describe("VacationPolicyPage load effect", () => {
 			request.reject(new Error("private admin failure"));
 		});
 
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/wellness"));
 	});
 
 	it("keeps a live admin request during StrictMode replay", async () => {

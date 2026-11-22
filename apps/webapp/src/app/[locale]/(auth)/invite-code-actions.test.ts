@@ -112,7 +112,12 @@ describe("pre-membership invite-code actions", () => {
 
 		expect(result).toEqual({
 			success: true,
-			data: { success: true, status: "pending", organizationName: "Acme" },
+			data: {
+				success: true,
+				status: "pending",
+				organizationId: "org-1",
+				organizationName: "Acme",
+			},
 		});
 		expect(mocks.processPendingInviteCode).toHaveBeenCalledWith("user-1");
 	});
@@ -126,7 +131,6 @@ describe("pre-membership invite-code actions", () => {
 		});
 	});
 
-
 	it("redeems a code as the signed-in user", async () => {
 		mocks.useCode.mockReturnValue({
 			success: true,
@@ -139,7 +143,12 @@ describe("pre-membership invite-code actions", () => {
 
 		expect(result).toEqual({
 			success: true,
-			data: { success: true, status: "approved", organizationName: "Acme" },
+			data: {
+				success: true,
+				status: "approved",
+				organizationId: "org-1",
+				organizationName: "Acme",
+			},
 		});
 		expect(mocks.useCode).toHaveBeenCalledWith({
 			code: "JOIN-TEAM",
