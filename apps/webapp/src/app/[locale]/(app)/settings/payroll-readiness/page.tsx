@@ -11,7 +11,6 @@ import {
 	resolvePayrollReadinessPeriod,
 } from "@/components/settings/payroll-readiness/payroll-readiness-period";
 import { PayrollReadinessPeriodNav } from "@/components/settings/payroll-readiness/payroll-readiness-period-nav";
-import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,10 +49,30 @@ function PayrollReadinessPageContent(props: PayrollReadinessPageProps) {
 			<Suspense fallback={<PayrollReadinessHeaderLoading />}>
 				<PayrollReadinessHeader {...props} />
 			</Suspense>
-			<Suspense fallback={<SettingsContentLoading />}>
+			<Suspense fallback={<PayrollReadinessBodyLoading />}>
 				<PayrollReadinessContent {...props} />
 			</Suspense>
 		</div>
+	);
+}
+
+function PayrollReadinessBodyLoading() {
+	return (
+		<LoadingRegion
+			className="flex flex-col gap-6"
+			role="status"
+			label={{
+				labelKey: "common.loadingRegions.payrollReadiness",
+				labelDefault: "Loading payroll readiness",
+			}}
+		>
+			<div className="grid gap-px overflow-hidden rounded-lg border md:grid-cols-2 xl:grid-cols-3">
+				{PAYROLL_READINESS_SUMMARY_LOADING_KEYS.map((key) => (
+					<Skeleton key={key} aria-hidden="true" className="h-24 w-full rounded-none" />
+				))}
+			</div>
+			<Skeleton aria-hidden="true" className="h-72 w-full" />
+		</LoadingRegion>
 	);
 }
 

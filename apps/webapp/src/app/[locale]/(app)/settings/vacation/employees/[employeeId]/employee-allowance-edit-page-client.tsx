@@ -129,12 +129,15 @@ function stepResult(
 		: { success: false, error: result.error ?? undefined };
 }
 
-function useEmployeeAllowanceEditor(employeeId: string) {
+function useEmployeeAllowanceEditor(
+	employeeId: string,
+	serverOrganizationId?: string,
+) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [historicalAdminOrganizationId, setHistoricalAdminOrganizationId] =
-		useState<string | null>(null);
+		useState<string | null>(serverOrganizationId ?? null);
 	const [employee, setEmployee] = useState<EmployeeAllowanceView | null>(null);
 	const [policies, setPolicies] = useState<VacationPolicyOption[]>([]);
 	const [currentAssignment, setCurrentAssignment] =
@@ -260,16 +263,20 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 			const generation = ++loadGeneration.current;
 			setLoadFailed(false);
 			try {
-			const current = await getCurrentEmployee();
-			if (generation !== loadGeneration.current) return;
-			if (!current) {
-				setNoEmployee(true);
-				return;
-			}
+			if (serverOrganizationId) {
+				setHistoricalAdminOrganizationId(serverOrganizationId);
+			} else {
+				const current = await getCurrentEmployee();
+				if (generation !== loadGeneration.current) return;
+				if (!current) {
+					setNoEmployee(true);
+					return;
+				}
 
-			setHistoricalAdminOrganizationId(
-				current.role === "admin" ? current.organizationId : null,
-			);
+				setHistoricalAdminOrganizationId(
+					current.role === "admin" ? current.organizationId : null,
+				);
+			}
 			const balanceResult = await getEmployeeVacationBalance(employeeId);
 			if (generation !== loadGeneration.current) return;
 			if (!balanceResult.success) {
@@ -331,7 +338,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				if (generation === loadGeneration.current) setLoadFailed(true);
 			}
 		},
-		[employeeId, form],
+		[employeeId, form, serverOrganizationId],
 	);
 	useViewRefresh(() => runLoadData(true));
 	useEffect(() => {
@@ -370,8 +377,10 @@ type EmployeeAllowanceFormApi = EmployeeAllowanceEditorState["form"];
 
 export function EmployeeAllowanceEditPageClient({
 	params,
+	organizationId,
 }: {
 	params: Promise<{ employeeId: string }>;
+	organizationId?: string;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
@@ -391,7 +400,7 @@ export function EmployeeAllowanceEditPageClient({
 		retry,
 		reload,
 		saveFailure,
-	} = useEmployeeAllowanceEditor(employeeId);
+	} = useEmployeeAllowanceEditor(employeeId, organizationId);
 	const pageTitle = t(
 		"settings.vacation.employees.edit.title",
 		"Edit Vacation Allowance",

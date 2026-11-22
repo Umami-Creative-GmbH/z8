@@ -3,31 +3,10 @@ import { WorksCouncilSettingsForm } from "@/components/settings/works-council-se
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import {
-	loadWorksCouncilSettings,
-	saveWorksCouncilSettings,
-	type WorksCouncilSettingsFormValues,
-} from "@/lib/works-council/settings";
+import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
 import { getTranslate } from "@/tolgee/server";
+import { updateWorksCouncilSettings } from "./actions";
 import { loadWorksCouncilScopeOptions } from "./scope-options";
-
-async function updateWorksCouncilSettings(
-	values: WorksCouncilSettingsFormValues,
-) {
-	"use server";
-
-	const {
-		authContext: actionAuthContext,
-		organizationId: actionOrganizationId,
-	} = await requireOrgAdminSettingsAccess();
-	await saveWorksCouncilSettings({
-		...values,
-		organizationId: actionOrganizationId,
-		actorUserId: actionAuthContext.user.id,
-	});
-
-	return { success: true };
-}
 
 async function WorksCouncilSettingsPageContent() {
 	const authContextPromise = requireOrgAdminSettingsAccess();

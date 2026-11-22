@@ -45,6 +45,14 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/equipment",
 	"/settings/driving-licence",
 	"/settings/vehicle-use",
+	"/settings/closed-months",
+	"/settings/vacation/employees",
+	"/settings/approval-policies",
+	"/settings/compliance/works-council",
+	"/settings/billable-time/rates",
+	"/settings/billable-time/cost-rates",
+	"/settings/billable-time/accounting",
+	"/settings/billable-time/hand-off",
 ] as const;
 
 export type SettingsAccessMembershipRole = OrganizationRoleValue;

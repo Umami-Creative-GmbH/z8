@@ -47,17 +47,27 @@ function buildSettingsBreadcrumbs(
 	let currentPath = "/settings";
 	for (let i = 0; i < segments.length; i++) {
 		const segment = segments[i];
-		if (segment === "enterprise") {
-			currentPath += "/enterprise";
+		if (
+			segment === "enterprise" ||
+			(segment === "compliance" && segments[i + 1] === "works-council")
+		) {
+			currentPath += `/${segment}`;
 			continue;
 		}
 		currentPath += `/${segment}`;
 
+		// Prefer an exact navigation entry match so nested routes (e.g. /settings/vacation/employees)
+		// use their own title rather than colliding with a single-segment label like "employees".
+		const exactEntry = SETTINGS_ENTRIES.find(
+			(candidate) => candidate.href === currentPath,
+		);
+
 		// Get label for this segment
 		let label = segment;
 
-		// Handle special cases for better labels
-		if (segment === "profile") {
+		if (exactEntry) {
+			label = t(exactEntry.titleKey, exactEntry.titleDefault);
+		} else if (segment === "profile") {
 			label = t("settings.profile.title", "Profile");
 		} else if (segment === "organization") {
 			label = t("settings.organizations.title", "Organization");
@@ -81,8 +91,6 @@ function buildSettingsBreadcrumbs(
 			label = t("settings.surcharges.title", "Surcharges");
 		} else if (segment === "approval-escalation") {
 			label = t("settings.approvalEscalation.title", "Approval Escalation");
-		} else if (segment === "history") {
-			label = t("settings.vacation.history.title", "History");
 		} else if (segment === "rates" && segments[i - 1] === "billable-time") {
 			label = t("settings.billableTime.nav.rates", "Billable rates");
 		} else if (
@@ -110,13 +118,7 @@ function buildSettingsBreadcrumbs(
 				label = t("common.details", "Details");
 			}
 		} else {
-			// A settings page is named like its navigation entry; otherwise capitalize the segment.
-			const entry = SETTINGS_ENTRIES.find(
-				(candidate) => candidate.href === currentPath,
-			);
-			label = entry
-				? t(entry.titleKey, entry.titleDefault)
-				: segment.charAt(0).toUpperCase() + segment.slice(1);
+			label = segment.charAt(0).toUpperCase() + segment.slice(1);
 		}
 
 		breadcrumbs.push({
