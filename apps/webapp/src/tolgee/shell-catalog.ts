@@ -35,6 +35,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"user",
 		"userAvatar",
 		"billing.trialBanner",
+		// The suspended-billing recovery header is part of the shared app layout (#1971).
+		"billing.recovery",
 		// Minimal driving status is also shown in the header clock on every route.
 		"drivingLicence.operational.advisory",
 		"drivingLicence.operational.loading",
