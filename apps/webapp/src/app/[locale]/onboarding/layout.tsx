@@ -61,9 +61,10 @@ function OnboardingLayoutLoading() {
 }
 
 async function OnboardingLayoutContent({ children }: { children: React.ReactNode }) {
-	// Random onboarding backgrounds and authoritative org-admin state must resolve per request.
+	// Random onboarding backgrounds must be selected per request.
 	await connection();
 	const backgroundImage = selectRandomAuthBackgroundImage();
+	// Resolve authoritative org-admin state per request so ProgressIndicator stays accurate.
 	const session = await getRequestSession();
 	const initialUserId = session?.user?.id ?? null;
 	const initialOrganizationId = session?.session?.activeOrganizationId ?? null;

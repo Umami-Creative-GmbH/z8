@@ -4,15 +4,10 @@ import { AuthenticationError, DatabaseError } from "@/lib/effect/errors";
 import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 
 const mocks = vi.hoisted(() => ({
-	connection: vi.fn(async () => undefined),
 	getOnboardingStatus: vi.fn(),
 	redirectWithLocale: vi.fn((href: string) => {
 		throw new Error(`REDIRECT:${href}`);
 	}),
-}));
-
-vi.mock("next/server", () => ({
-	connection: mocks.connection,
 }));
 
 vi.mock("@/lib/navigation/locale-redirect", () => ({
@@ -48,7 +43,6 @@ describe("OnboardingIndexPage", () => {
 		await expect(OnboardingIndexPage()).rejects.toThrow(
 			"REDIRECT:/sign-in?callbackUrl=%2Fonboarding",
 		);
-		expect(mocks.connection).toHaveBeenCalledOnce();
 		expect(mocks.redirectWithLocale).toHaveBeenCalledWith("/sign-in?callbackUrl=%2Fonboarding");
 	});
 

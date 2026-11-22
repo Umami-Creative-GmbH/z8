@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import { connection } from "next/server";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
 import { runServerActionSafe } from "@/lib/effect/result";
 import { OnboardingService } from "@/lib/effect/services/onboarding.service";
@@ -9,7 +8,6 @@ import { getOnboardingStepPath } from "@/lib/validations/onboarding-steps";
 export const instant = false;
 
 export default async function OnboardingIndexPage() {
-	await connection();
 	const result = await runServerActionSafe(
 		Effect.gen(function* () {
 			const onboardingService = yield* OnboardingService;
