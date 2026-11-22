@@ -2847,8 +2847,7 @@
       "description": "Nasıl ve ne zaman bildirim almak istediğinizi seçin",
       "digestTime": "Özet zamanı",
       "discord": {
-        "description": "Kuruluşunuz için Discord bildirimlerini yapılandırın.",
-        "setupInstructions": "Discord'u bu sayfadan bağlama henüz kullanılamıyor. Bağlantı için Discord uygulamanızın bot belirteci, uygulama kimliği ve genel anahtarı gereklidir."
+        "description": "Kuruluşunuz için Discord bildirimlerini yapılandırın."
       },
       "escalations": "Yükseltmeler",
       "escalationsDescription": "Yanıtlanmayan onay isteklerini yapılandırılan zaman aşımından sonra yükselt.",

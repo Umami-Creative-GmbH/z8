@@ -225,12 +225,28 @@ function UsersPageContent({
 		}, 300);
 	};
 
-	useEffect(() => {
-		const searchTimeout = searchTimeoutRef.current;
+	const handleClearOrganization = () => {
+		if (searchTimeoutRef.current) {
+			clearTimeout(searchTimeoutRef.current);
+			searchTimeoutRef.current = null;
+		}
+		const params = new URLSearchParams();
+		if (search) params.set("search", search);
+		if (status !== "all") params.set("status", status);
+		const query = params.toString();
+		router.push(query ? `/platform-admin/users?${query}` : "/platform-admin/users");
+	};
 
+	const organizationLabel = organizationId
+		? (users
+				.flatMap((user) => user.organizations)
+				.find((org) => org.id === organizationId)?.name ?? organizationId)
+		: undefined;
+
+	useEffect(() => {
 		return () => {
-			if (searchTimeout) {
-				clearTimeout(searchTimeout);
+			if (searchTimeoutRef.current) {
+				clearTimeout(searchTimeoutRef.current);
 			}
 		};
 	}, []);
@@ -319,7 +335,10 @@ function UsersPageContent({
 			<PlatformAdminUserFilters
 				search={search}
 				status={status}
+				organizationId={organizationId || undefined}
+				organizationLabel={organizationLabel}
 				onFilterChange={handleFilterChange}
+				onClearOrganization={handleClearOrganization}
 			/>
 			<PlatformAdminUsersTable
 				users={users}

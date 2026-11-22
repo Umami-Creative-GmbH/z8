@@ -24,10 +24,13 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: mockState.getAuthContext,
+	getCurrentSettingsAccess: vi.fn(async () => null),
 	getAbility: vi.fn(async () => ({ can: () => false })),
 }));
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
+	getActivePayrollAccessGrantScope: vi.fn(async () => "specific"),
+	resolveOrganizationPayrollEmployeeIds: vi.fn(async () => []),
 	resolvePayrollAccessibleEmployeeIds: mockState.resolvePayrollAccessibleEmployeeIds,
 	hasActivePayrollAccessGrant: vi.fn(async () => true),
 	intersectPayrollScope: ({
@@ -44,14 +47,18 @@ vi.mock("@/lib/payroll-access/permissions", () => ({
 
 vi.mock("@/lib/payroll-access/adjustment-coverage", () => ({
 	listDepartedEmployeesCoveredForExport: vi.fn(async () => []),
+	listOrganizationDepartedEmployeesForExport: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/payroll-export", () => ({
 	createExportJob: mockState.createExportJob,
 	enqueuePayrollExportJob: mockState.enqueuePayrollExportJob,
+	getExportDownloadUrl: vi.fn(),
+	getExportJobHistory: vi.fn(async () => []),
 	getFormatter: vi.fn(() => ({})),
 	getPayrollExportConfig: mockState.getPayrollExportConfig,
 	processExportJob: mockState.processExportJob,
+	unmappedOvertimePayoutsForExport: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/payroll-workspace/pdf-exporter", () => ({

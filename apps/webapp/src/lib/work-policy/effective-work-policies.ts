@@ -16,17 +16,19 @@ import {
 	workPolicyScheduleDay,
 	workPolicyVersion,
 } from "@/db/schema";
+import { normalizeHoursToMinutes } from "@/lib/contracts/custom-days";
 import {
 	loadEffectiveContractsBatch,
-	normalizeHoursToMinutes,
-	type ResolvedWorkPolicyPresence,
-	type ResolvedWorkPolicyRegulation,
-	type ResolvedWorkPolicySchedule,
-	type ResolvedWorkPolicyVersion,
 	selectActivePolicyVersionOnDay,
 	type WorkPolicySnapshot,
 	type WorkPolicyVersionSnapshot,
-} from "@/lib/contracts";
+} from "@/lib/contracts/resolve-contract";
+import type {
+	ResolvedWorkPolicyPresence,
+	ResolvedWorkPolicyRegulation,
+	ResolvedWorkPolicySchedule,
+	ResolvedWorkPolicyVersion,
+} from "@/lib/contracts/types";
 import { dateFromInstant, type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";

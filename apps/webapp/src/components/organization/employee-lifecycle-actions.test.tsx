@@ -10,7 +10,7 @@ import {
 	within,
 } from "@testing-library/react";
 import type { ComponentPropsWithRef, ReactElement, ReactNode } from "react";
-import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
 import { queryKeys } from "@/lib/query";
 import { emptyDeactivationPreview } from "./testing/deactivation-preview.test.fixture";
@@ -203,6 +203,14 @@ const deactivationCall = (employeeId: string, replacementManagers = {}) => ({
 	employeeId,
 	requestId: expect.any(String),
 	replacementManagers,
+});
+
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
 });
 
 describe("EmployeeLifecycleActions capabilities", () => {
@@ -543,7 +551,10 @@ describe("EmployeeLifecycleActions mutations", () => {
 		const dialog = await openDeactivation();
 
 		fireEvent.click(within(dialog).getByRole("combobox", { name: /New manager for/ }));
-		fireEvent.click(await screen.findByRole("option", { name: "Anna Admin" }));
+		fireEvent.click(await screen.findByRole("option", { name: /Anna Admin/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("option", { name: /Anna Admin/ })).toBeNull(),
+		);
 
 		await waitFor(() =>
 			expect(previewEmployeeDeactivationMock).toHaveBeenLastCalledWith({

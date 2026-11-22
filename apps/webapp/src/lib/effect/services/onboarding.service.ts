@@ -19,7 +19,6 @@ import {
 	type AuthenticationError,
 	AuthorizationError,
 	type DatabaseError,
-	type NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
 import {
@@ -38,14 +37,15 @@ import {
 import { isTimeFormat } from "@/lib/user-preferences/time-format";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
-import type {
-	OnboardingNotificationsFormValues,
-	OnboardingOrganizationExpectation,
-	OnboardingProfileFormValues,
-	OnboardingStep,
-	OnboardingVacationPolicyFormValues,
-	OnboardingWorkScheduleFormValues,
-	OnboardingWorkTemplateFormValues,
+import {
+	getNextOnboardingStep,
+	getOnboardingStepPath,
+	type OnboardingNotificationsFormValues,
+	type OnboardingOrganizationExpectation,
+	type OnboardingProfileFormValues,
+	type OnboardingStep,
+	type OnboardingVacationPolicyFormValues,
+	type OnboardingWorkTemplateFormValues,
 } from "@/lib/validations/onboarding";
 import { type OrganizationFormValues, organizationSchema } from "@/lib/validations/organization";
 import type { OnboardingWellnessFormValues } from "@/lib/validations/wellness";
@@ -96,12 +96,6 @@ export class OnboardingService extends Context.Service<
 			{ nextStep: string },
 			AuthenticationError | DatabaseError
 		>;
-
-		// Work schedule setup
-		readonly setWorkSchedule: (
-			data: OnboardingWorkScheduleFormValues,
-		) => Effect.Effect<void, AuthenticationError | DatabaseError | NotFoundError>;
-		readonly skipWorkScheduleSetup: () => Effect.Effect<void, AuthenticationError | DatabaseError>;
 
 		// Admin setup - Vacation Policy
 		readonly createVacationPolicy: (
@@ -171,6 +165,11 @@ export const OnboardingServiceLive = Layer.effect(
 			resolveCallerSettingsAccess().pipe(
 				Effect.provideService(AuthService, authentication),
 				Effect.provideService(DatabaseService, dbService),
+			);
+		const isCurrentOrgAdmin = () =>
+			settingsCaller().pipe(
+				Effect.map((caller) => meetsSettingsAccess(caller.settingsAccess, "orgAdmin")),
+				Effect.catchTag("AuthorizationError", () => Effect.succeed(false)),
 			);
 		const requireVacationPolicyAdmin = (expected?: OnboardingOrganizationExpectation) =>
 			Effect.gen(function* () {
@@ -314,10 +313,11 @@ export const OnboardingServiceLive = Layer.effect(
 					});
 
 					// Update onboarding step on userSettings and reset canCreateOrganizations on user
+					const nextStep = getNextOnboardingStep("organization", false) ?? "profile";
 					yield* dbService.query("updateOnboardingStepAfterOrgCreation", async () => {
 						// Update onboarding step in userSettings
 						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "profile",
+							onboardingStep: nextStep,
 						});
 						// Reset canCreateOrganizations on user table
 						await dbService.db
@@ -335,10 +335,11 @@ export const OnboardingServiceLive = Layer.effect(
 			skipOrganizationSetup: () =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					const nextStep = getNextOnboardingStep("organization", false) ?? "profile";
 
 					yield* dbService.query("skipOrganizationSetup", async () => {
 						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "profile",
+							onboardingStep: nextStep,
 						});
 					});
 				}),
@@ -367,7 +368,10 @@ export const OnboardingServiceLive = Layer.effect(
 						);
 					}
 
-					const nextStep = yield* dbService.query("updateProfile", async () => {
+					const isAdmin = yield* isCurrentOrgAdmin();
+					const nextStep = getNextOnboardingStep("profile", isAdmin) ?? "wellness";
+
+					yield* dbService.query("updateProfile", async () => {
 						await auth.api.updateUser({
 							body: toAuthStructuredName({
 								firstName: data.firstName,
@@ -403,17 +407,6 @@ export const OnboardingServiceLive = Layer.effect(
 								);
 						}
 
-						const membership = activeOrgId
-							? await dbService.db.query.member.findFirst({
-									where: and(
-										eq(member.userId, session.user.id),
-										eq(member.organizationId, activeOrgId),
-									),
-								})
-							: null;
-						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
-						const nextStep = isAdmin ? "work_schedule" : "wellness";
-
 						// Update onboarding step in userSettings
 						await writeUserSettings(dbService.db, session.user.id, {
 							onboardingStep: nextStep,
@@ -421,95 +414,25 @@ export const OnboardingServiceLive = Layer.effect(
 							timeFormat: data.timeFormat,
 							helpImproveProduct: data.helpImproveProduct,
 						});
-
-						return isAdmin ? "/onboarding/work-schedule" : "/onboarding/wellness";
 					});
 
-					return { nextStep };
+					return { nextStep: getOnboardingStepPath(nextStep) };
 				}),
 
 			// Skip profile setup
 			skipProfileSetup: () =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
-					const activeOrgId = session.session.activeOrganizationId;
+					const isAdmin = yield* isCurrentOrgAdmin();
+					const nextStep = getNextOnboardingStep("profile", isAdmin) ?? "wellness";
 
-					const nextStep = yield* dbService.query("skipProfileSetup", async () => {
-						const membership = activeOrgId
-							? await dbService.db.query.member.findFirst({
-									where: and(
-										eq(member.userId, session.user.id),
-										eq(member.organizationId, activeOrgId),
-									),
-								})
-							: null;
-						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
-						const nextStep = isAdmin ? "work_schedule" : "wellness";
-
-						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: nextStep,
-						});
-
-						return isAdmin ? "/onboarding/work-schedule" : "/onboarding/wellness";
-					});
-
-					return { nextStep };
-				}),
-
-			// Set work schedule
-			// Note: Work schedules are now template-based and managed at org/team/employee level by admins
-			// During onboarding, users will inherit their schedule from the organization default
-			setWorkSchedule: (_data: OnboardingWorkScheduleFormValues) =>
-				Effect.gen(function* () {
-					const session = yield* authService.getSession();
-					const activeOrgId = session.session.activeOrganizationId;
-
-					// The employee comes from joining (spec #1664); this step creates none.
-					yield* dbService.query("setWorkSchedule", async () => {
-						// Determine next step based on admin status
-						// Admins go to vacation_policy, employees go to wellness
-						const membership = activeOrgId
-							? await dbService.db.query.member.findFirst({
-									where: and(
-										eq(member.userId, session.user.id),
-										eq(member.organizationId, activeOrgId),
-									),
-								})
-							: null;
-						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
-						const nextStep = isAdmin ? "vacation_policy" : "wellness";
-
-						// Update onboarding step in userSettings
+					yield* dbService.query("skipProfileSetup", async () => {
 						await writeUserSettings(dbService.db, session.user.id, {
 							onboardingStep: nextStep,
 						});
 					});
-				}),
 
-			// Skip work schedule setup
-			skipWorkScheduleSetup: () =>
-				Effect.gen(function* () {
-					const session = yield* authService.getSession();
-					const activeOrgId = session.session.activeOrganizationId;
-
-					yield* dbService.query("skipWorkScheduleSetup", async () => {
-						// Determine next step based on admin status
-						// Admins go to vacation_policy, employees go to wellness
-						const membership = activeOrgId
-							? await dbService.db.query.member.findFirst({
-									where: and(
-										eq(member.userId, session.user.id),
-										eq(member.organizationId, activeOrgId),
-									),
-								})
-							: null;
-						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
-						const nextStep = isAdmin ? "vacation_policy" : "wellness";
-
-						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: nextStep,
-						});
-					});
+					return { nextStep: getOnboardingStepPath(nextStep) };
 				}),
 
 			// Admin setup - Create vacation policy
@@ -517,6 +440,7 @@ export const OnboardingServiceLive = Layer.effect(
 				Effect.gen(function* () {
 					const caller = yield* requireVacationPolicyAdmin(expected);
 					const activeOrgId = caller.organizationId;
+					const nextStep = getNextOnboardingStep("vacation_policy", true) ?? "work_templates";
 
 					yield* dbService.query("createVacationPolicy", async () => {
 						// Get current date as start date
@@ -544,7 +468,7 @@ export const OnboardingServiceLive = Layer.effect(
 
 						// Update onboarding step in userSettings
 						await writeUserSettings(dbService.db, caller.userId, {
-							onboardingStep: "work_templates",
+							onboardingStep: nextStep,
 						});
 					});
 				}),
@@ -553,10 +477,11 @@ export const OnboardingServiceLive = Layer.effect(
 			skipVacationPolicySetup: (expected) =>
 				Effect.gen(function* () {
 					const caller = yield* requireVacationPolicyAdmin(expected);
+					const nextStep = getNextOnboardingStep("vacation_policy", true) ?? "work_templates";
 
 					yield* dbService.query("skipVacationPolicySetup", async () => {
 						await writeUserSettings(dbService.db, caller.userId, {
-							onboardingStep: "work_templates",
+							onboardingStep: nextStep,
 						});
 					});
 				}),
@@ -571,6 +496,7 @@ export const OnboardingServiceLive = Layer.effect(
 			configureWellness: (data: OnboardingWellnessFormValues) =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					const nextStep = getNextOnboardingStep("wellness", false) ?? "notifications";
 
 					yield* dbService.query("configureWellness", async () => {
 						// Upsert water reminder settings and onboarding step to userSettings
@@ -579,7 +505,7 @@ export const OnboardingServiceLive = Layer.effect(
 							waterReminderPreset: data.waterReminderPreset,
 							waterReminderIntervalMinutes: data.waterReminderIntervalMinutes,
 							waterReminderDailyGoal: data.waterReminderDailyGoal,
-							onboardingStep: "notifications",
+							onboardingStep: nextStep,
 						});
 					});
 				}),
@@ -588,10 +514,11 @@ export const OnboardingServiceLive = Layer.effect(
 			skipWellnessSetup: () =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					const nextStep = getNextOnboardingStep("wellness", false) ?? "notifications";
 
 					yield* dbService.query("skipWellnessSetup", async () => {
 						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "notifications",
+							onboardingStep: nextStep,
 						});
 					});
 				}),
@@ -667,7 +594,7 @@ export const OnboardingServiceLive = Layer.effect(
 						);
 
 						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "complete",
+							onboardingStep: getNextOnboardingStep("notifications", false) ?? "complete",
 						});
 					});
 				}),
@@ -676,20 +603,17 @@ export const OnboardingServiceLive = Layer.effect(
 			skipNotificationsSetup: () =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					const nextStep = getNextOnboardingStep("notifications", false) ?? "complete";
 
 					yield* dbService.query("skipNotificationsSetup", async () => {
 						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "complete",
+							onboardingStep: nextStep,
 						});
 					});
 				}),
 
 			// Check if user is admin of their organization
-			isUserAdmin: () =>
-				settingsCaller().pipe(
-					Effect.map((caller) => meetsSettingsAccess(caller.settingsAccess, "orgAdmin")),
-					Effect.catchTag("AuthorizationError", () => Effect.succeed(false)),
-				),
+			isUserAdmin: () => isCurrentOrgAdmin(),
 
 			// Get onboarding summary
 			getOnboardingSummary: () =>
@@ -797,7 +721,7 @@ export const OnboardingServiceLive = Layer.effect(
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
 
-					const status = yield* dbService.query("getOnboardingStatus", async () => {
+					const rawStatus = yield* dbService.query("getOnboardingStatus", async () => {
 						const activeOrgId = session.session.activeOrganizationId;
 						const [userSettingsData, userRecord, membership] = await Promise.all([
 							dbService.db.query.userSettings.findFirst({
@@ -823,11 +747,11 @@ export const OnboardingServiceLive = Layer.effect(
 							}),
 						]);
 						const wasInvited = Boolean(userRecord?.invitedVia);
-
+						const rawStep = userSettingsData?.onboardingStep ?? null;
 						const onboardingStep =
-							userSettingsData?.onboardingStep === "organization" && (membership || wasInvited)
-								? "profile"
-								: (userSettingsData?.onboardingStep ?? null);
+							rawStep === "organization" && (membership || wasInvited)
+								? (getNextOnboardingStep("organization", false) ?? "profile")
+								: rawStep;
 
 						return {
 							onboardingComplete: userSettingsData?.onboardingComplete ?? false,
@@ -835,7 +759,15 @@ export const OnboardingServiceLive = Layer.effect(
 						};
 					});
 
-					return status;
+					if (rawStatus.onboardingStep === "work_schedule") {
+						const isAdmin = yield* isCurrentOrgAdmin();
+						return {
+							...rawStatus,
+							onboardingStep: getNextOnboardingStep("profile", isAdmin) ?? "wellness",
+						};
+					}
+
+					return rawStatus;
 				}),
 		});
 	}),

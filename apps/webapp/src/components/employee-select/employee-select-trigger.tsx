@@ -110,6 +110,12 @@ export function EmployeeSelectTrigger({
 	error,
 	className,
 	onClick,
+	onBlur,
+	"aria-label": ariaLabel,
+	"aria-labelledby": ariaLabelledBy,
+	"aria-describedby": ariaDescribedBy,
+	"aria-invalid": ariaInvalid,
+	"aria-required": ariaRequired,
 }: EmployeeSelectTriggerProps) {
 	const { t } = useTranslate();
 
@@ -129,10 +135,15 @@ export function EmployeeSelectTrigger({
 			role="combobox"
 			aria-expanded={expanded}
 			aria-controls={controlsId}
-			aria-invalid={error ? true : undefined}
+			aria-label={ariaLabel}
+			aria-labelledby={ariaLabelledBy}
+			aria-describedby={ariaDescribedBy}
+			aria-invalid={error || ariaInvalid ? true : undefined}
+			aria-required={ariaRequired || undefined}
 			data-placeholder={isEmpty ? "" : undefined}
 			disabled={disabled}
 			onClick={onClick}
+			onBlur={onBlur}
 			className={cn(wraps ? "h-auto min-h-9 w-full py-1.5" : "w-full", className)}
 		>
 			<TriggerSelection

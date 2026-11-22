@@ -5,12 +5,11 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { assignManagers } from "@/app/[locale]/(app)/settings/employees/actions";
+import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
@@ -70,25 +69,29 @@ export function ManagerAssignment({
 		{ polling: false },
 	);
 
-	const handleManagerToggle = (managerId: string, checked: boolean) => {
-		const newSelected = new Set(selectedManagers);
-
-		if (checked) {
-			newSelected.add(managerId);
-			// If this is the first manager, make them primary
-			if (newSelected.size === 1) {
-				setPrimaryManager(managerId);
-			}
-		} else {
-			newSelected.delete(managerId);
-			// If removing the primary manager, select another as primary
-			if (managerId === primaryManager && newSelected.size > 0) {
-				setPrimaryManager(Array.from(newSelected)[0]);
-			}
+	const handleManagersChange = (nextIds: string[]) => {
+		const newSelected = new Set(nextIds);
+		if (newSelected.size === 0) {
+			setPrimaryManager("");
+		} else if (!primaryManager || !newSelected.has(primaryManager)) {
+			setPrimaryManager(nextIds[0]);
 		}
-
 		setSelectedManagers(newSelected);
 	};
+
+	const selectableManagers = availableManagers.map((manager) =>
+		toSelectableEmployee({
+			id: manager.id,
+			userId: manager.userId,
+			firstName: manager.user.firstName,
+			lastName: manager.user.lastName,
+			name: buildAuthUserDisplayName(manager.user),
+			email: manager.user.email,
+			image: manager.user.image,
+			role: "manager",
+			clockStatus: presence.getStatus(manager.id),
+		}),
+	);
 
 	const handleSave = async () => {
 		// Validate at least one manager selected
@@ -157,57 +160,15 @@ export function ManagerAssignment({
 			</CardHeader>
 			<CardContent className="space-y-6">
 				{/* Manager Selection */}
-				<div className="space-y-4">
-					<Label className="text-base font-semibold">
-						{t("settings.managerAssignment.availableManagers", "Available Managers")}
-					</Label>
-					<ScrollArea className="h-[300px] rounded-md border p-4">
-						<div className="space-y-4">
-							{availableManagers.length === 0 ? (
-								<p className="text-sm text-muted-foreground">
-									{t("settings.managerAssignment.empty", "No available managers")}
-								</p>
-							) : (
-								availableManagers.map((manager) => {
-									const isSelected = selectedManagers.has(manager.id);
-									const displayName = buildAuthUserDisplayName(manager.user);
-
-									return (
-										<div
-											key={manager.id}
-											className="flex items-center gap-x-3 rounded-lg p-2 hover:bg-accent"
-										>
-											<Checkbox
-												id={`manager-${manager.id}`}
-												checked={isSelected}
-												onCheckedChange={(checked) =>
-													handleManagerToggle(manager.id, checked as boolean)
-												}
-												disabled={loading}
-											/>
-											<Label
-												htmlFor={`manager-${manager.id}`}
-												className="flex flex-1 items-center gap-3 cursor-pointer"
-											>
-												<UserAvatar
-													image={manager.user.image}
-													seed={manager.id}
-													name={displayName}
-													size="sm"
-													clockStatus={presence.getStatus(manager.id)}
-												/>
-												<div className="flex-1">
-													<div className="font-medium">{displayName}</div>
-													<div className="text-sm text-muted-foreground">{manager.user.email}</div>
-												</div>
-											</Label>
-										</div>
-									);
-								})
-							)}
-						</div>
-					</ScrollArea>
-				</div>
+				<EmployeeMultiSelect
+					label={t("settings.managerAssignment.availableManagers", "Available Managers")}
+					placeholder={t("settings.managerAssignment.selectManagers", "Select managers")}
+					emptyMessage={t("settings.managerAssignment.empty", "No available managers")}
+					value={Array.from(selectedManagers)}
+					onChange={handleManagersChange}
+					employees={selectableManagers}
+					disabled={loading}
+				/>
 
 				{/* Primary Manager Selection */}
 				{selectedManagers.size > 0 && (

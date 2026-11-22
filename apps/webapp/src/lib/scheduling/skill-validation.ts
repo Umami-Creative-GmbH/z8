@@ -80,22 +80,21 @@ export async function loadSkillValidation(
 	},
 ): Promise<SkillValidationResult> {
 	const { organizationId, templateId } = input;
-	const [employeeSkills, subareaRequirements, templateRequirements] = await Promise.all([
-		database.query.employeeSkill.findMany({
-			where: eq(employeeSkill.employeeId, input.employeeId),
-			with: { skill: true },
-		}),
-		database.query.subareaSkillRequirement.findMany({
-			where: eq(subareaSkillRequirement.subareaId, input.subareaId),
-			with: { skill: true },
-		}),
-		templateId
-			? database.query.shiftTemplateSkillRequirement.findMany({
-					where: eq(shiftTemplateSkillRequirement.templateId, templateId),
-					with: { skill: true },
-				})
-			: Promise.resolve([]),
-	]);
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const employeeSkills = await database.query.employeeSkill.findMany({
+		where: eq(employeeSkill.employeeId, input.employeeId),
+		with: { skill: true },
+	});
+	const subareaRequirements = await database.query.subareaSkillRequirement.findMany({
+		where: eq(subareaSkillRequirement.subareaId, input.subareaId),
+		with: { skill: true },
+	});
+	const templateRequirements = templateId
+		? await database.query.shiftTemplateSkillRequirement.findMany({
+				where: eq(shiftTemplateSkillRequirement.templateId, templateId),
+				with: { skill: true },
+			})
+		: [];
 
 	// Requirements deduped by skill; required wins over optional.
 	const requirements = new Map<string, { skill: Skill; isRequired: boolean }>();

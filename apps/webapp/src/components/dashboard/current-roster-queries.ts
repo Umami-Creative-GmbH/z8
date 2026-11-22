@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { employee } from "@/db/schema";
-import { loadEffectiveContractsBatch } from "@/lib/contracts";
+import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";

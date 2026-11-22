@@ -7,13 +7,18 @@ confirmed on 2026-10-20.
 **Status:** the 2026-10-16 rules are implemented (#1313–#1322). The
 2026-10-20 changes in [Switching control on and off](#switching-control-on-and-off),
 [Intended drivers](#intended-drivers) and [Screens and navigation](#screens-and-navigation)
-are accepted design, not implemented yet. Where they conflict with an older
-section, the 2026-10-20 sections apply.
+are implemented. Where they conflict with an older section, the 2026-10-20
+sections apply. On 2026-11-22 (#1937) the personal view and the verifier and
+planning views became separate pages, and checks were confirmed to be
+independent of the organization's vehicles.
 
 ## Purpose and boundaries (Q1–Q3)
 
 An organization in Germany must be able to arrange, document and repeat
-original driving licence checks before allowing employees to use its vehicles.
+original driving licence checks before allowing employees to drive for work.
+That covers organization vehicles, rented vehicles and the employee's own car.
+Checks don't depend on which vehicles, if any, the organization has recorded in
+Z8: a check answers whether someone may drive and which classes they may drive.
 Z8 records a personal inspection by an authorized verifier without uploading
 or storing driving licence photographs, scans or copies.
 
@@ -36,8 +41,8 @@ The boundary decision is in
 
 ## Participants, verifiers and access (Q4, Q10, Q20, Q23, Q26)
 
-The organization decides which employees are **intended drivers** of its
-vehicles and therefore need checks; see [Intended drivers](#intended-drivers).
+The organization decides which employees are **intended drivers**, people who
+may drive for work and therefore need checks; see [Intended drivers](#intended-drivers).
 A new intended driver has no driving authorization and is shown as not yet
 checked. An existing assigned-driver suggestion or vehicle selection creates
 no authorization.
@@ -235,8 +240,8 @@ on the empty **Intended drivers** tab.
 
 Switching it off asks for confirmation. While it is off:
 
-- Nobody sees the sidebar item, the `/driving-licence` page or the clock advisory.
-  The page returns not found.
+- Nobody sees the sidebar items, the `/driving-licence` and `/team/driving-licence`
+  pages or the clock advisory. The pages return not found.
 - No reminders, notifications or tasks are created.
 - Intended-driver assignments, verifier grants, check records and authorizations
   are kept. Deadlines keep running.
@@ -285,23 +290,37 @@ assignments, so nobody's status changed.
 
 ## Screens and navigation
 
-Confirmed on 2026-10-20.
+Confirmed on 2026-10-20; split into a personal and a team page on 2026-11-22 (#1937).
 
-**Sidebar.** A personal **Driving licence** item appears while the feature is on
-for intended drivers, verifiers and holders of the planning permission. It
-replaces the former "My driving authorization" settings entry.
+**Sidebar.** While the feature is on:
 
-**`/driving-licence`.** You see only the tabs for the roles you hold:
+- **Workplace → My driving licence** appears for intended drivers and for
+  employees whose own check records are still retained. It replaces the former
+  "My driving authorization" settings entry.
+- **Team & organization → Driving licences** appears last in that section for
+  verifiers and holders of the planning permission. The section also shows for
+  a verifier or planner who is no manager, with only this item; Team, Team
+  Absences and Approvals stay with managers. Administering the settings alone
+  adds no item: administrators work under *Settings → Driving licence*.
 
-- **My licence**: the status of each class and its valid-through date, then
-  the evidence, the history and *Unable to drive?*
+**`/driving-licence`, My driving licence**: the status of each class and its
+valid-through date, then the evidence, the history and *Unable to drive?*
+
+**`/team/driving-licence`, Driving licences.** You see only the tabs for the
+roles you hold:
+
 - **Checks**, for verifiers: a table of intended drivers in scope, with status,
   next deadline and team, plus search, a status filter and the soonest deadline
-  first. Verifiers never appear in their own table.
+  first. Verifiers never appear in their own table. When it is empty, it says
+  why: nobody in the verifier's scope is an intended driver yet (administrators
+  get a link to **Intended drivers**), and an intended driver who is also a
+  verifier is told that another verifier must check their licence.
 - **Planning**, for holders of the planning permission.
 
-Each check opens on its own page, `/driving-licence/checks/[employee]`.
-Reminders and tasks link straight to it.
+Each check opens on its own page, `/team/driving-licence/[employee]`.
+Reminders, tasks and checklists link straight to it. The former
+`/driving-licence/checks/[employee]` permanently redirects there, so links in
+reminders sent before the move still work.
 
 **`/settings/driving-licence`.** The page has four tabs, like vehicle use
 settings:

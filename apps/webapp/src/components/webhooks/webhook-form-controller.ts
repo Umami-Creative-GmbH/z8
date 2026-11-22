@@ -2,7 +2,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLayoutEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createWebhook, updateWebhook } from "@/app/[locale]/(app)/settings/webhooks/actions";
+import { createWebhook, updateWebhook } from "@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions";
 import type { PublicWebhookEndpoint, WebhookEndpoint } from "@/lib/webhooks/types";
 import { useRouter } from "@/navigation";
 import { EVENT_CATEGORIES } from "./webhook-event-categories";

@@ -362,31 +362,31 @@ async function verifyLegacySubmission(
 	}
 	const chainInstanceId = input.lifecycle.chainInstanceId;
 	if (!chainInstanceId) return { request, chainStageId: null };
-	const [chains, stages] = await Promise.all([
-		database
-			.select({ id: approvalChainInstance.id })
-			.from(approvalChainInstance)
-			.where(
-				and(
-					eq(approvalChainInstance.id, chainInstanceId),
-					eq(approvalChainInstance.organizationId, input.organizationId),
-					eq(approvalChainInstance.entityType, "time_entry"),
-					eq(approvalChainInstance.entityId, input.facts.workPeriodId),
-				),
-			)
-			.limit(2),
-		database
-			.select({ id: approvalChainStageInstance.id })
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, input.lifecycle.approvalRequestId),
-				),
-			)
-			.limit(2),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const chains = await database
+		.select({ id: approvalChainInstance.id })
+		.from(approvalChainInstance)
+		.where(
+			and(
+				eq(approvalChainInstance.id, chainInstanceId),
+				eq(approvalChainInstance.organizationId, input.organizationId),
+				eq(approvalChainInstance.entityType, "time_entry"),
+				eq(approvalChainInstance.entityId, input.facts.workPeriodId),
+			),
+		)
+		.limit(2);
+	const stages = await database
+		.select({ id: approvalChainStageInstance.id })
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, input.lifecycle.approvalRequestId),
+			),
+		)
+		.limit(2);
 	if (chains.length !== 1 || stages.length > 1) return incomplete("legacy_lifecycle");
 	return { request, chainStageId: stages[0]?.id ?? null };
 }
@@ -411,10 +411,14 @@ export async function captureTimeCorrectionSubmissionEvidence(
 	if (facts.organizationId !== input.organizationId) {
 		throw new ApprovalEvidenceError("invariant", { field: "organization" });
 	}
-	const [subject, submitter] = await Promise.all([
-		loadEmployeeLabel(database, input.organizationId, { employeeId: facts.subjectEmployeeId }),
-		loadEmployeeLabel(database, input.organizationId, { userId: input.submitterUserId }),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const subject = await loadEmployeeLabel(database, input.organizationId, {
+		employeeId: facts.subjectEmployeeId,
+	});
+	const submitter = await loadEmployeeLabel(database, input.organizationId, {
+		userId: input.submitterUserId,
+	});
 	if (
 		!subject ||
 		!submitter ||
@@ -622,16 +626,16 @@ async function loadCanonicalDecisionRevision(
 	database: ApprovalDatabase,
 	input: { organizationId: string; workflow: ApprovalWorkflowSnapshot },
 ): Promise<TimeCorrectionSubmittedRevisionRecord | null> {
-	const [mode, revision] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
-			workflowType: "time_correction",
-		}),
-		loadCanonicalTimeCorrectionSubmittedRevision(database, {
-			organizationId: input.organizationId,
-			workflowId: input.workflow.id,
-		}),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const mode = await readApprovalEvidenceMode(database, {
+		organizationId: input.organizationId,
+		workflowType: "time_correction",
+	});
+	const revision = await loadCanonicalTimeCorrectionSubmittedRevision(database, {
+		organizationId: input.organizationId,
+		workflowId: input.workflow.id,
+	});
 	if (!revision) {
 		if (mode === "capture") throw new ApprovalEvidenceError("evidence_required");
 		return null;
@@ -754,13 +758,13 @@ export async function prepareLegacyTimeCorrectionDecisionEvidence(
 		chainInstanceId: string | null;
 	},
 ): Promise<LegacyTimeCorrectionDecisionPlan | null> {
-	const [mode, revision] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
-			workflowType: "time_correction",
-		}),
-		loadLegacyTimeCorrectionSubmittedRevision(database, input),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const mode = await readApprovalEvidenceMode(database, {
+		organizationId: input.organizationId,
+		workflowType: "time_correction",
+	});
+	const revision = await loadLegacyTimeCorrectionSubmittedRevision(database, input);
 	if (!revision) {
 		if (mode === "capture") throw new ApprovalEvidenceError("evidence_required");
 		return null;
@@ -796,47 +800,47 @@ export async function recordLegacyTimeCorrectionDecisionEvidence(
 	},
 ): Promise<LegacyDecisionEvidenceRecord> {
 	const { revision } = plan;
-	const [requests, stages, period] = await Promise.all([
-		database
-			.select({
-				id: approvalRequest.id,
-				status: approvalRequest.status,
-				approverId: approvalRequest.approverId,
-				approvedAt: approvalRequest.approvedAt,
-				updatedAt: approvalRequest.updatedAt,
-			})
-			.from(approvalRequest)
-			.where(
-				and(
-					eq(approvalRequest.id, input.approvalRequestId),
-					eq(approvalRequest.organizationId, input.organizationId),
-					eq(approvalRequest.entityType, "time_entry"),
-					eq(approvalRequest.entityId, revision.workPeriodId),
-				),
-			)
-			.limit(2),
-		database
-			.select({
-				id: approvalChainStageInstance.id,
-				chainInstanceId: approvalChainStageInstance.chainInstanceId,
-				status: approvalChainStageInstance.status,
-				decidedBy: approvalChainStageInstance.decidedBy,
-				decidedAt: approvalChainStageInstance.decidedAt,
-			})
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
-				),
-			)
-			.limit(2),
-		loadPeriod(database, {
-			organizationId: input.organizationId,
-			employeeId: revision.subjectEmployeeId,
-			workPeriodId: revision.workPeriodId,
-		}),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 drops queries queued on a connection still executing another.
+	const requests = await database
+		.select({
+			id: approvalRequest.id,
+			status: approvalRequest.status,
+			approverId: approvalRequest.approverId,
+			approvedAt: approvalRequest.approvedAt,
+			updatedAt: approvalRequest.updatedAt,
+		})
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, revision.workPeriodId),
+			),
+		)
+		.limit(2);
+	const stages = await database
+		.select({
+			id: approvalChainStageInstance.id,
+			chainInstanceId: approvalChainStageInstance.chainInstanceId,
+			status: approvalChainStageInstance.status,
+			decidedBy: approvalChainStageInstance.decidedBy,
+			decidedAt: approvalChainStageInstance.decidedAt,
+		})
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+			),
+		)
+		.limit(2);
+	const period = await loadPeriod(database, {
+		organizationId: input.organizationId,
+		employeeId: revision.subjectEmployeeId,
+		workPeriodId: revision.workPeriodId,
+	});
 	const request = requests[0];
 	const stage = stages[0] ?? null;
 	const expected = input.action === "approve" ? "approved" : "rejected";

@@ -28,7 +28,7 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock("@/app/[locale]/(app)/settings/holidays/preset-actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/vacation/holiday-preset-actions", () => ({
 	getTeamsForAssignment: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/settings/vacation/assignment-actions", () => ({

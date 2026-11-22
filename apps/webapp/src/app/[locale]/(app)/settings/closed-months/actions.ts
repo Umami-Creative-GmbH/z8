@@ -44,6 +44,12 @@ import {
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 
 const SETTINGS_PATH = "/settings/closed-months";
+const PAYROLL_PATH = "/payroll";
+
+function revalidateClosedMonthPaths() {
+	revalidatePath(SETTINGS_PATH);
+	revalidatePath(PAYROLL_PATH);
+}
 
 /**
  * What the actor may do with the organization's months. Closing and reopening are
@@ -256,7 +262,7 @@ export const closeMonthAction = organizationAction(
 					now: systemClock.nowInstant(),
 				}),
 			);
-			if (result.kind === "closed") revalidatePath(SETTINGS_PATH);
+			if (result.kind === "closed") revalidateClosedMonthPaths();
 			return result;
 		}),
 );
@@ -309,7 +315,7 @@ export const reopenMonthAction = organizationAction(
 				}),
 			);
 			if (result.kind === "reopened") {
-				revalidatePath(SETTINGS_PATH);
+				revalidateClosedMonthPaths();
 				// After commit and best effort: the reopening stands without its notifications.
 				yield* Effect.promise(() =>
 					notifyReopening(dbService.db, {
@@ -398,7 +404,7 @@ export const saveClosedMonthSettingsAction = organizationAction(
 					}),
 				);
 			}
-			revalidatePath(SETTINGS_PATH);
+			revalidateClosedMonthPaths();
 			return saved;
 		}),
 );

@@ -3,8 +3,10 @@ import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { absenceCategory, absenceEntry, userSettings, workPeriod } from "@/db/schema";
-import { loadEffectiveContractsBatch, resolveEffectiveContractOnDay } from "@/lib/contracts";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	loadEffectiveContractsBatch,
+	resolveEffectiveContractOnDay,
+} from "@/lib/contracts/resolve-contract";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { normalizeWeekStartDay, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import {
@@ -92,11 +94,14 @@ export function loadPresenceStatusForSubject(subject: {
 		// Resolve every day in the evaluation period so midweek remote/exempt changes are honored.
 		const periodDates: string[] = [];
 		for (
-			let cursor = parsePlainDate(periodStartDate);
-			cursor.toString() <= periodEndDate;
-			cursor = cursor.add({ days: 1 })
+			let cursor = periodStart.startOf("day");
+			cursor <= periodEnd;
+			cursor = cursor.plus({ days: 1 })
 		) {
-			periodDates.push(cursor.toString());
+			const iso = cursor.toISODate();
+			if (iso && iso <= periodEndDate) {
+				periodDates.push(iso);
+			}
 		}
 
 		const periodContracts =

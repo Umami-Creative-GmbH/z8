@@ -51,20 +51,19 @@ export async function collectPayrollBaselineWindows(
 ): Promise<PayrollBaselineEvidence["employeeWindows"]> {
 	const ids = [...new Set(input.employeeIds)].sort();
 	if (ids.length === 0) return [];
-	const [org, employees] = await Promise.all([
-		database.query.organization.findFirst({
-			where: eq(organization.id, input.organizationId),
-			columns: { timezone: true },
-		}),
-		database.query.employee.findMany({
-			where: and(
-				eq(employee.organizationId, input.organizationId),
-				inArray(employee.id, ids),
-			),
-			columns: { id: true },
-			with: { userSettings: { columns: { timezone: true } } },
-		}),
-	]);
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const org = await database.query.organization.findFirst({
+		where: eq(organization.id, input.organizationId),
+		columns: { timezone: true },
+	});
+	const employees = await database.query.employee.findMany({
+		where: and(
+			eq(employee.organizationId, input.organizationId),
+			inArray(employee.id, ids),
+		),
+		columns: { id: true },
+		with: { userSettings: { columns: { timezone: true } } },
+	});
 	if (employees.length !== ids.length)
 		throw new Error("Payroll scope is unavailable");
 	return employees
@@ -531,15 +530,14 @@ async function eraseEmployeePayrollBaselinesInTransaction(
 	input: { organizationId: string; employeeId: string },
 ): Promise<number> {
 	await comparisonErasureLock(tx, input.organizationId);
-	const [baselines, jobs] = await Promise.all([
-		tx.query.payrollExportBaseline.findMany({
-			where: eq(payrollExportBaseline.organizationId, input.organizationId),
-		}),
-		tx.query.payrollExportJob.findMany({
-			where: eq(payrollExportJob.organizationId, input.organizationId),
-			columns: { id: true, filters: true },
-		}),
-	]);
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const baselines = await tx.query.payrollExportBaseline.findMany({
+		where: eq(payrollExportBaseline.organizationId, input.organizationId),
+	});
+	const jobs = await tx.query.payrollExportJob.findMany({
+		where: eq(payrollExportJob.organizationId, input.organizationId),
+		columns: { id: true, filters: true },
+	});
 	const affected = baselines.filter(
 		(row) =>
 			!Array.isArray(row.scopeEmployeeIds) ||

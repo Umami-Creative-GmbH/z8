@@ -97,39 +97,38 @@ async function copyApprovedReport(
 		.returning({ id: travelExpenseReport.id });
 	if (!report) throw new Error("Failed to create the adjustment report");
 
-	const [items, receipts, conversions] = await Promise.all([
-		tx
-			.select()
-			.from(travelExpenseReportItem)
-			.where(
-				and(
-					eq(travelExpenseReportItem.reportId, source.id),
-					eq(travelExpenseReportItem.organizationId, owner.organizationId),
-				),
-			)
-			.orderBy(asc(travelExpenseReportItem.position)),
-		tx
-			.select()
-			.from(travelExpenseReportReceipt)
-			.where(
-				and(
-					eq(travelExpenseReportReceipt.reportId, source.id),
-					eq(travelExpenseReportReceipt.organizationId, owner.organizationId),
-				),
-			)
-			.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id)),
-		tx
-			.select()
-			.from(travelExpenseReportItemConversion)
-			.where(
-				and(
-					eq(travelExpenseReportItemConversion.reportId, source.id),
-					eq(travelExpenseReportItemConversion.organizationId, owner.organizationId),
-					// Reference rates are derived again while the copy is a draft (#608).
-					inArray(travelExpenseReportItemConversion.basis, ["card_charge", "manual_rate"]),
-				),
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const items = await tx
+		.select()
+		.from(travelExpenseReportItem)
+		.where(
+			and(
+				eq(travelExpenseReportItem.reportId, source.id),
+				eq(travelExpenseReportItem.organizationId, owner.organizationId),
 			),
-	]);
+		)
+		.orderBy(asc(travelExpenseReportItem.position));
+	const receipts = await tx
+		.select()
+		.from(travelExpenseReportReceipt)
+		.where(
+			and(
+				eq(travelExpenseReportReceipt.reportId, source.id),
+				eq(travelExpenseReportReceipt.organizationId, owner.organizationId),
+			),
+		)
+		.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id));
+	const conversions = await tx
+		.select()
+		.from(travelExpenseReportItemConversion)
+		.where(
+			and(
+				eq(travelExpenseReportItemConversion.reportId, source.id),
+				eq(travelExpenseReportItemConversion.organizationId, owner.organizationId),
+				// Reference rates are derived again while the copy is a draft (#608).
+				inArray(travelExpenseReportItemConversion.basis, ["card_charge", "manual_rate"]),
+			),
+		);
 	const itemIds = new Map<string, string>();
 	if (items.length > 0) {
 		// One statement: positions are unique per report, so each copy maps back by its position.
@@ -299,19 +298,22 @@ export async function createTravelExpenseAdjustment(
 				});
 		const approved = baseline?.status === "ok";
 		const source = { type: "report" as const, id: original.id };
-		const [exportState, reimbursed, inPayrollRun] = approved
-			? await Promise.all([
-					loadTravelExpenseReportExportState(tx, {
-						organizationId: owner.organizationId,
-						reportId: original.id,
-					}),
-					hasRecordedSettlement(tx, { organizationId: owner.organizationId, source }),
-					isCarriedByPayrollRun(tx, {
-						organizationId: owner.organizationId,
-						reportIds: [original.id],
-					}),
-				])
-			: [null, false, false];
+		// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+		const exportState = approved
+			? await loadTravelExpenseReportExportState(tx, {
+					organizationId: owner.organizationId,
+					reportId: original.id,
+				})
+			: null;
+		const reimbursed = approved
+			? await hasRecordedSettlement(tx, { organizationId: owner.organizationId, source })
+			: false;
+		const inPayrollRun = approved
+			? await isCarriedByPayrollRun(tx, {
+					organizationId: owner.organizationId,
+					reportIds: [original.id],
+				})
+			: false;
 		const eligibility = adjustmentEligibility({
 			approved,
 			isAdjustment,

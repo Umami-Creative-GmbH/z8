@@ -130,17 +130,21 @@ export async function loadVacationBalances(
 		month: 12,
 		day: 31,
 	}).toString();
-	const [policyCalculationsEnabled, workingWeeks] = await Promise.all([
-		vacationPolicyCalculationsEnabled(database, organizationId, year),
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const policyCalculationsEnabled = await vacationPolicyCalculationsEnabled(
+		database,
+		organizationId,
+		year,
+	);
+	const workingWeeks =
 		year >= FIRST_WORKING_WEEK_YEAR
-			? loadWorkingWeekPeriodsForEmployees(database, {
+			? await loadWorkingWeekPeriodsForEmployees(database, {
 					organizationId,
 					employeeIds,
 					startDate: startOfYear,
 					endDate: endOfYear,
 				})
-			: new Map<string, WorkingWeekPeriod[]>(),
-	]);
+			: new Map<string, WorkingWeekPeriod[]>();
 	const periods = policyCalculationsEnabled
 		? await loadEmployeeVacationPolicyPeriods(database, {
 				organizationId,
@@ -192,43 +196,44 @@ export async function loadVacationBalances(
 			customCarryoverDays: days,
 		});
 	}
-	const [allowances, absences, workingDays, adjustmentSums, frozenCarryovers] =
-		await Promise.all([
-			// Only employees of the organization get an allowance, and so a balance.
-			loadProratedVacationAllowances(database, {
-				organizationId,
-				employeeIds,
-				year,
-				policies,
-				overrides,
-				employeeEmploymentStartDateOverrides:
-					input.employeeEmploymentStartDateOverrides,
-			}),
-			database.query.absenceEntry.findMany({
-				where: and(
-					or(
-						isNull(absenceEntry.organizationId),
-						eq(absenceEntry.organizationId, organizationId),
-					),
-					inArray(absenceEntry.employeeId, employeeIds),
-					lte(absenceEntry.startDate, endOfYear),
-					gte(absenceEntry.endDate, startOfYear),
-				),
-				with: { category: true },
-			}),
-			loadWorkingDaysForEmployees(database, {
-				organizationId,
-				employeeIds,
-				startDate: startOfYear,
-				endDate: endOfYear,
-			}),
-			loadVacationAdjustmentSums(database, {
-				organizationId,
-				employeeIds,
-				year,
-			}),
-			loadFrozenCarryoverTerms(database, { organizationId, employeeIds, year }),
-		]);
+	// Only employees of the organization get an allowance, and so a balance.
+	const allowances = await loadProratedVacationAllowances(database, {
+		organizationId,
+		employeeIds,
+		year,
+		policies,
+		overrides,
+		employeeEmploymentStartDateOverrides:
+			input.employeeEmploymentStartDateOverrides,
+	});
+	const absences = await database.query.absenceEntry.findMany({
+		where: and(
+			or(
+				isNull(absenceEntry.organizationId),
+				eq(absenceEntry.organizationId, organizationId),
+			),
+			inArray(absenceEntry.employeeId, employeeIds),
+			lte(absenceEntry.startDate, endOfYear),
+			gte(absenceEntry.endDate, startOfYear),
+		),
+		with: { category: true },
+	});
+	const workingDays = await loadWorkingDaysForEmployees(database, {
+		organizationId,
+		employeeIds,
+		startDate: startOfYear,
+		endDate: endOfYear,
+	});
+	const adjustmentSums = await loadVacationAdjustmentSums(database, {
+		organizationId,
+		employeeIds,
+		year,
+	});
+	const frozenCarryovers = await loadFrozenCarryoverTerms(database, {
+		organizationId,
+		employeeIds,
+		year,
+	});
 
 	const effectiveAbsences: AbsenceWithCategory[] = (
 		absences as unknown as AbsenceWithCategory[]

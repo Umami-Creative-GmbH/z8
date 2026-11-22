@@ -3,17 +3,19 @@
 import { IconAlertTriangle, IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
-import { Temporal } from "temporal-polyfill";
+import { useLocale } from "next-intl";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	type DatevConfigResult,
 	type FilterOptions,
 	getFilterOptionsAction,
 	startExportAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
+import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,11 +29,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
@@ -71,6 +69,7 @@ export function ExportForm({
 	onExportComplete,
 }: ExportFormProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [isPending, startTransition] = useTransition();
 	const { data: filterOptions } = useQuery({
 		queryKey: ["payroll-export-filter-options", organizationId],
@@ -81,8 +80,7 @@ export function ExportForm({
 	});
 	const formatOptions = getFormatOptions(t);
 	const firstConfiguredFormatId =
-		payrollExportFormatIds().find((id) => exportAvailability[id]?.configured) ??
-		"datev_lohn";
+		payrollExportFormatIds().find((id) => exportAvailability[id]?.configured) ?? "datev_lohn";
 	const [requestedFormatId, setRequestedFormatId] = useState(
 		config?.formatId && exportAvailability[config.formatId]?.configured
 			? config.formatId
@@ -93,18 +91,17 @@ export function ExportForm({
 		: firstConfiguredFormatId;
 	const [dateMode, setDateMode] = useState<DateMode>("month");
 	const [initialMonth] = useState(() => {
-		const now = DateTime.now();
+		const today = Temporal.Now.plainDateISO();
+		const yearMonth = today.toPlainYearMonth();
 		return {
-			year: now.year,
-			month: now.month,
-			start: now.startOf("month").toISODate() || "",
-			end: now.endOf("month").toISODate() || "",
+			year: yearMonth.year,
+			month: yearMonth.month,
+			start: yearMonth.toPlainDate({ day: 1 }).toString(),
+			end: yearMonth.toPlainDate({ day: yearMonth.daysInMonth }).toString(),
 		};
 	});
 	const [selectedYear, setSelectedYear] = useState(initialMonth.year);
-	const [selectedMonth, setSelectedMonth] = useState<number>(
-		initialMonth.month,
-	);
+	const [selectedMonth, setSelectedMonth] = useState<number>(initialMonth.month);
 	const [customStartDate, setCustomStartDate] = useState(initialMonth.start);
 	const [customEndDate, setCustomEndDate] = useState(initialMonth.end);
 	const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
@@ -120,13 +117,13 @@ export function ExportForm({
 		const dateRange =
 			dateMode === "month"
 				? (() => {
-						const month = DateTime.fromObject({
+						const yearMonth = Temporal.PlainYearMonth.from({
 							year: selectedYear,
 							month: selectedMonth,
 						});
 						return {
-							start: month.startOf("month").toISODate() ?? "",
-							end: month.endOf("month").toISODate() ?? "",
+							start: yearMonth.toPlainDate({ day: 1 }).toString(),
+							end: yearMonth.toPlainDate({ day: yearMonth.daysInMonth }).toString(),
 						};
 					})()
 				: { start: customStartDate, end: customEndDate };
@@ -135,9 +132,7 @@ export function ExportForm({
 				formatId: selectedFormatId,
 				startDate: dateRange.start,
 				endDate: dateRange.end,
-				employeeIds: selectedEmployeeIds.length
-					? selectedEmployeeIds
-					: undefined,
+				employeeIds: selectedEmployeeIds.length ? selectedEmployeeIds : undefined,
 				teamIds: selectedTeamIds.length ? selectedTeamIds : undefined,
 				projectIds: selectedProjectIds.length ? selectedProjectIds : undefined,
 			});
@@ -148,15 +143,12 @@ export function ExportForm({
 				return;
 			}
 			if (result.data.isAsync) {
-				toast.success(
-					t("settings.payrollExport.export.asyncStarted", "Export started"),
-					{
-						description: t(
-							"settings.payrollExport.export.asyncDescription",
-							"Your export is being processed. Check the history tab for progress.",
-						),
-					},
-				);
+				toast.success(t("settings.payrollExport.export.asyncStarted", "Export started"), {
+					description: t(
+						"settings.payrollExport.export.asyncDescription",
+						"Your export is being processed. Check the history tab for progress.",
+					),
+				});
 			} else if (result.data.fileContent) {
 				const url = window.URL.createObjectURL(
 					new Blob([result.data.fileContent], {
@@ -170,9 +162,7 @@ export function ExportForm({
 				link.click();
 				document.body.removeChild(link);
 				window.URL.revokeObjectURL(url);
-				toast.success(
-					t("settings.payrollExport.export.success", "Export downloaded"),
-				);
+				toast.success(t("settings.payrollExport.export.success", "Export downloaded"));
 			}
 			if (result.data.unmappedOvertimePayoutCount) {
 				toast.warning(
@@ -201,18 +191,11 @@ export function ExportForm({
 						{
 							id: option.id,
 							label: option.label,
-							isMissingCredentials:
-								exportAvailability[option.id]?.reason === "missingCredentials",
+							isMissingCredentials: exportAvailability[option.id]?.reason === "missingCredentials",
 							reason:
 								exportAvailability[option.id]?.reason === "missingCredentials"
-									? t(
-											"settings.payrollExport.export.unavailable.missingCredentials",
-											"credentials",
-										)
-									: t(
-											"settings.payrollExport.export.unavailable.missingConfiguration",
-											"config",
-										),
+									? t("settings.payrollExport.export.unavailable.missingCredentials", "credentials")
+									: t("settings.payrollExport.export.unavailable.missingConfiguration", "config"),
 						},
 					],
 		)
@@ -223,30 +206,24 @@ export function ExportForm({
 					? -1
 					: 1,
 		);
-	const years = Array.from(
-		{ length: 5 },
-		(_, index) => initialMonth.year - index,
-	);
+	const years = Array.from({ length: 5 }, (_, index) => initialMonth.year - index);
 	const months = Array.from({ length: 12 }, (_, index) => ({
 		value: index + 1,
-		label: DateTime.fromObject({ month: index + 1 }).toFormat("LLLL"),
+		label: formatPlainDate(
+			Temporal.PlainDate.from({ year: 2026, month: index + 1, day: 1 }),
+			locale,
+			"monthLong",
+		),
 	}));
-	const toggle = (
-		setter: React.Dispatch<React.SetStateAction<string[]>>,
-		id: string,
-	) =>
+	const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>, id: string) =>
 		setter((current) =>
-			current.includes(id)
-				? current.filter((value) => value !== id)
-				: [...current, id],
+			current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
 		);
 
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
-					{t("settings.payrollExport.export.title", "Export Payroll Data")}
-				</CardTitle>
+				<CardTitle>{t("settings.payrollExport.export.title", "Export Payroll Data")}</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.payrollExport.export.description",
@@ -287,10 +264,9 @@ export function ExportForm({
 					employeeIds={selectedEmployeeIds}
 					teamIds={selectedTeamIds}
 					projectIds={selectedProjectIds}
-					onToggleEmployee={(id) => toggle(setSelectedEmployeeIds, id)}
+					onEmployeesChange={setSelectedEmployeeIds}
 					onToggleTeam={(id) => toggle(setSelectedTeamIds, id)}
 					onToggleProject={(id) => toggle(setSelectedProjectIds, id)}
-					onClearEmployees={() => setSelectedEmployeeIds([])}
 					onClearTeams={() => setSelectedTeamIds([])}
 					onClearProjects={() => setSelectedProjectIds([])}
 					t={t}
@@ -299,9 +275,7 @@ export function ExportForm({
 			<CardFooter>
 				<Button
 					onClick={handleExport}
-					disabled={
-						isPending || !exportAvailability[selectedFormatId]?.configured
-					}
+					disabled={isPending || !exportAvailability[selectedFormatId]?.configured}
 				>
 					{isPending ? (
 						<>
@@ -342,22 +316,10 @@ function getFormatOptions(t: Translate) {
 
 function getExportButtonLabel(id: string, t: Translate) {
 	const labels: Record<PayrollExportFormatId, [string, string]> = {
-		datev_lohn: [
-			"settings.payrollExport.export.exportButtonDatev",
-			"Export to DATEV",
-		],
-		lexware_lohn: [
-			"settings.payrollExport.export.exportButtonLexware",
-			"Export to Lexware",
-		],
-		sage_lohn: [
-			"settings.payrollExport.export.exportButtonSage",
-			"Export to Sage",
-		],
-		personio: [
-			"settings.payrollExport.export.exportButtonPersonio",
-			"Export to Personio",
-		],
+		datev_lohn: ["settings.payrollExport.export.exportButtonDatev", "Export to DATEV"],
+		lexware_lohn: ["settings.payrollExport.export.exportButtonLexware", "Export to Lexware"],
+		sage_lohn: ["settings.payrollExport.export.exportButtonSage", "Export to Sage"],
+		personio: ["settings.payrollExport.export.exportButtonPersonio", "Export to Personio"],
 		successfactors_api: [
 			"settings.payrollExport.export.exportButtonSuccessFactorsApi",
 			"Export to SAP SuccessFactors (API)",
@@ -366,10 +328,7 @@ function getExportButtonLabel(id: string, t: Translate) {
 			"settings.payrollExport.export.exportButtonSuccessFactorsCsv",
 			"Export SAP SuccessFactors CSV",
 		],
-		workday_api: [
-			"settings.payrollExport.export.exportButtonWorkday",
-			"Export to Workday",
-		],
+		workday_api: ["settings.payrollExport.export.exportButtonWorkday", "Export to Workday"],
 	};
 	const [key, fallback] = labels[id as PayrollExportFormatId] ?? [
 		"settings.payrollExport.export.title",
@@ -474,13 +433,8 @@ function DateSection({
 }) {
 	return (
 		<div className="space-y-4">
-			<Label>
-				{t("settings.payrollExport.export.dateRange", "Date Range")}
-			</Label>
-			<Tabs
-				value={mode}
-				onValueChange={(value) => onModeChange(value as DateMode)}
-			>
+			<Label>{t("settings.payrollExport.export.dateRange", "Date Range")}</Label>
+			<Tabs value={mode} onValueChange={(value) => onModeChange(value as DateMode)}>
 				<TabsList>
 					<TabsTrigger value="month">
 						{t("settings.payrollExport.export.monthSelection", "Select Month")}
@@ -508,15 +462,11 @@ function DateSection({
 				<TabsContent value="custom" className="space-y-4 pt-4">
 					<div className="grid gap-4 md:grid-cols-2">
 						<div className="space-y-2">
-							<Label>
-								{t("settings.payrollExport.export.startDate", "Start Date")}
-							</Label>
+							<Label>{t("settings.payrollExport.export.startDate", "Start Date")}</Label>
 							<DatePicker value={start} onChange={onStartChange} />
 						</div>
 						<div className="space-y-2">
-							<Label>
-								{t("settings.payrollExport.export.endDate", "End Date")}
-							</Label>
+							<Label>{t("settings.payrollExport.export.endDate", "End Date")}</Label>
 							<DatePicker value={end} onChange={onEndChange} />
 						</div>
 					</div>
@@ -540,10 +490,7 @@ function NumberSelect({
 	return (
 		<div className="space-y-2">
 			<Label>{label}</Label>
-			<Select
-				value={String(value)}
-				onValueChange={(next) => onChange(parseInt(next, 10))}
-			>
+			<Select value={String(value)} onValueChange={(next) => onChange(parseInt(next, 10))}>
 				<SelectTrigger>
 					<SelectValue />
 				</SelectTrigger>
@@ -564,10 +511,9 @@ function FiltersSection({
 	employeeIds,
 	teamIds,
 	projectIds,
-	onToggleEmployee,
+	onEmployeesChange,
 	onToggleTeam,
 	onToggleProject,
-	onClearEmployees,
 	onClearTeams,
 	onClearProjects,
 	t,
@@ -576,27 +522,32 @@ function FiltersSection({
 	employeeIds: string[];
 	teamIds: string[];
 	projectIds: string[];
-	onToggleEmployee: (id: string) => void;
+	onEmployeesChange: (ids: string[]) => void;
 	onToggleTeam: (id: string) => void;
 	onToggleProject: (id: string) => void;
-	onClearEmployees: () => void;
 	onClearTeams: () => void;
 	onClearProjects: () => void;
 	t: Translate;
 }) {
+	const selectableEmployees = (options?.employees ?? []).map(
+		({ id, firstName, lastName, employeeNumber }) =>
+			toSelectableEmployee({
+				id,
+				firstName,
+				lastName,
+				employeeNumber,
+			}),
+	);
 	return (
 		<div className="space-y-4">
-			<Label>
-				{t("settings.payrollExport.export.filters", "Filters (Optional)")}
-			</Label>
+			<Label>{t("settings.payrollExport.export.filters", "Filters (Optional)")}</Label>
 			<div className="grid gap-4 md:grid-cols-3">
-				<FilterPopover
-					kind="employees"
-					items={options?.employees ?? []}
-					selectedIds={employeeIds}
-					onToggle={onToggleEmployee}
-					onClear={onClearEmployees}
-					t={t}
+				<EmployeeMultiSelect
+					label={t("settings.payrollExport.export.employees", "Employees")}
+					placeholder={t("settings.payrollExport.export.allEmployees", "All Employees")}
+					value={employeeIds}
+					onChange={onEmployeesChange}
+					employees={selectableEmployees}
 				/>
 				<FilterPopover
 					kind="teams"
@@ -620,15 +571,6 @@ function FiltersSection({
 }
 
 const FILTER_TEXT = {
-	employees: {
-		label: { key: "settings.payrollExport.export.employees", fallback: "Employees" },
-		all: { key: "settings.payrollExport.export.allEmployees", fallback: "All Employees" },
-		selected: {
-			key: "settings.payrollExport.export.employeesSelected",
-			fallback: "{count} selected",
-		},
-		idPrefix: "emp",
-	},
 	teams: {
 		label: { key: "settings.payrollExport.export.teams", fallback: "Teams" },
 		all: { key: "settings.payrollExport.export.allTeams", fallback: "All Teams" },
@@ -654,13 +596,10 @@ function FilterPopover({
 	onClear,
 	t,
 }: {
-	kind: "employees" | "teams" | "projects";
+	kind: "teams" | "projects";
 	items: Array<{
 		id: string;
-		name?: string;
-		firstName?: string | null;
-		lastName?: string | null;
-		employeeNumber?: string | null;
+		name: string;
 	}>;
 	selectedIds: string[];
 	onToggle: (id: string) => void;
@@ -691,33 +630,15 @@ function FilterPopover({
 									checked={selected.has(item.id)}
 									onCheckedChange={() => onToggle(item.id)}
 								/>
-								<label
-									htmlFor={`${text.idPrefix}-${item.id}`}
-									className="cursor-pointer text-sm"
-								>
-									{item.name ?? (
-										<>
-											{item.firstName} {item.lastName}
-										</>
-									)}
-									{item.employeeNumber ? (
-										<span className="text-muted-foreground">
-											{" "}
-											({item.employeeNumber})
-										</span>
-									) : null}
+								<label htmlFor={`${text.idPrefix}-${item.id}`} className="cursor-pointer text-sm">
+									{item.name}
 								</label>
 							</div>
 						))}
 					</ScrollArea>
 					{selectedIds.length ? (
 						<div className="border-t p-2">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={onClear}
-								className="w-full"
-							>
+							<Button variant="ghost" size="sm" onClick={onClear} className="w-full">
 								{t("common.clearSelection", "Clear Selection")}
 							</Button>
 						</div>

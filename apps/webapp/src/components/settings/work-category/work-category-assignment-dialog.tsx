@@ -11,6 +11,7 @@ import {
 	getTeamsForAssignment,
 	getWorkCategorySets,
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -289,27 +290,28 @@ export function WorkCategoryAssignmentDialog({
 					{/* Employee Selection */}
 					{assignmentType === "employee" && (
 						<div className="space-y-2">
-							<Label>{t("settings.workCategories.selectEmployee", "Employee")}</Label>
 							{employeesLoading ? (
-								<Skeleton className="h-10 w-full" />
+								<>
+									<Label>{t("settings.workCategories.selectEmployee", "Employee")}</Label>
+									<Skeleton className="h-10 w-full" />
+								</>
 							) : (
-								<Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-									<SelectTrigger>
-										<SelectValue
-											placeholder={t(
-												"settings.workCategories.selectEmployeePlaceholder",
-												"Select an employee",
-											)}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{employees?.map((emp) => (
-											<SelectItem key={emp.id} value={emp.id}>
-												{emp.firstName} {emp.lastName}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<EmployeeSingleSelect
+									label={t("settings.workCategories.selectEmployee", "Employee")}
+									placeholder={t(
+										"settings.workCategories.selectEmployeePlaceholder",
+										"Select an employee",
+									)}
+									value={selectedEmployeeId || null}
+									onChange={(value) => setSelectedEmployeeId(value ?? "")}
+									employees={(employees ?? []).map((emp) =>
+										toSelectableEmployee({
+											id: emp.id,
+											firstName: emp.firstName,
+											lastName: emp.lastName,
+										}),
+									)}
+								/>
 							)}
 							{employees?.length === 0 && (
 								<p className="text-sm text-muted-foreground">

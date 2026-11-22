@@ -18,7 +18,7 @@ import type { PayrollPeriodActor, PayrollPeriodDayDetail, PayrollPeriodDayRecord
  */
 export async function readPeriodDay(
 	organizationId: string,
-	actor: Pick<PayrollPeriodActor, "employeeId"> & { userId?: string },
+	actor: Pick<PayrollPeriodActor, "employeeId" | "orgAdmin"> & { userId?: string },
 	query: { employeeId: string; date: string },
 ): Promise<PayrollPeriodDayDetail | null> {
 	const date = parsePlainDate(query.date).toString();

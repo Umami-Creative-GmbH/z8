@@ -3,11 +3,7 @@ import { Suspense } from "react";
 import { AcceptInvitationForm } from "@/components/accept-invitation-form";
 import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { db, invitation as invitationTable } from "@/db";
-import {
-	compareInstants,
-	instantFromDate,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { compareInstants, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 
 interface AcceptInvitationPageProps {
 	params: Promise<{ invitationId: string }>;
@@ -26,9 +22,7 @@ export default function AcceptInvitationPage(props: AcceptInvitationPageProps) {
 	);
 }
 
-async function AcceptInvitationPageContent({
-	params,
-}: AcceptInvitationPageProps) {
+async function AcceptInvitationPageContent({ params }: AcceptInvitationPageProps) {
 	const { invitationId } = await params;
 
 	const invitation = await db.query.invitation.findFirst({
@@ -46,9 +40,7 @@ async function AcceptInvitationPageContent({
 			},
 		},
 	});
-	const typedInvitation = invitation as unknown as
-		| InvitationWithRelations
-		| undefined;
+	const typedInvitation = invitation as unknown as InvitationWithRelations | undefined;
 
 	return (
 		<AcceptInvitationForm
@@ -62,6 +54,7 @@ async function AcceptInvitationPageContent({
 									instantFromDate(typedInvitation.expiresAt),
 									systemClock.nowInstant(),
 								) < 0,
+							organizationId: typedInvitation.organizationId,
 							organizationName: typedInvitation.organization?.name ?? null,
 							role: typedInvitation.role ?? null,
 							status: typedInvitation.status,

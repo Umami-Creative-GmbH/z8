@@ -9,6 +9,7 @@ import {
 	onCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster";
 import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import {
 	type EmployeeDirectoryStatus,
 	type EmployeeSelectParams,
@@ -189,10 +190,10 @@ export function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 			{
 				organizationId: actor.organizationId,
 				managerId:
-					actor.accessTier === "manager" && actor.currentEmployee
+					!meetsSettingsAccess(actor.settingsAccess, "orgAdmin") && actor.currentEmployee
 						? actor.currentEmployee.id
 						: undefined,
-				includeFormerSince: actor.accessTier === "orgAdmin",
+				includeFormerSince: meetsSettingsAccess(actor.settingsAccess, "orgAdmin"),
 			},
 			params,
 		);

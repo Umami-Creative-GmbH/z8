@@ -253,7 +253,7 @@ it("links a verifier's personal reminder task notice to the employee's check pag
 	).toEqual([
 		{
 			entityType: "driving_licence_task",
-			actionUrl: `/driving-licence/checks/${fixture.employeeId}`,
+			actionUrl: `/team/driving-licence/${fixture.employeeId}`,
 		},
 	]);
 });

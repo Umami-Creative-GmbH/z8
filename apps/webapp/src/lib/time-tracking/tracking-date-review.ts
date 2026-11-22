@@ -256,11 +256,10 @@ export async function loadTrackingDateImpact(
 				},
 				client,
 			);
-		const [before, after, openingBalance] = await Promise.all([
-			snapshot(throughDate, false),
-			snapshot(throughDate, true),
-			readOpeningBalanceInEffect(client, scope),
-		]);
+		// One after another: `client` may be one connection, and pg@9 refuses a query while another is executing.
+		const before = await snapshot(throughDate, false);
+		const after = await snapshot(throughDate, true);
+		const openingBalance = await readOpeningBalanceInEffect(client, scope);
 		const oldBoundary = beforeContext?.startDate ?? before.calculationStartDate;
 		// List every month from the earliest changed boundary, plus any closed month whose accumulated result changes.
 		const firstDay =
@@ -288,10 +287,10 @@ export async function loadTrackingDateImpact(
 				(closure) => closure.month.slice(0, 7) === month,
 			);
 			const periodTimezone = closedRange?.timezone ?? timezone;
-			const ending = await Promise.all([
-				snapshot(day, false, periodTimezone),
-				snapshot(day, true, periodTimezone),
-			]);
+			const ending = [
+				await snapshot(day, false, periodTimezone),
+				await snapshot(day, true, periodTimezone),
+			] as const;
 			const monthFor = (value: WorkBalanceSnapshot, proposed: boolean) =>
 				computeEmployeePeriodBalance({
 					...scope,
@@ -305,10 +304,10 @@ export async function loadTrackingDateImpact(
 					isClosed: false,
 					...(proposed ? projection : {}),
 				});
-			const monthly = await Promise.all([
-				monthFor(ending[0], false),
-				monthFor(ending[1], true),
-			]);
+			const monthly = [
+				await monthFor(ending[0], false),
+				await monthFor(ending[1], true),
+			] as const;
 			const prior = {
 				...ending[0],
 				actualMinutes: monthly[0].actualMinutes,

@@ -2,7 +2,7 @@
 
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
 import {
 	emptyDeactivationPreview,
@@ -82,9 +82,20 @@ function renderDialog(overrides: Partial<DeactivationPreviewDialogProps> = {}) {
 	return { props, ...view };
 }
 
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
+
 async function pick(user: ReturnType<typeof userEvent.setup>, label: string, option: string) {
 	await user.click(screen.getByRole("combobox", { name: new RegExp(label) }));
-	await user.click(await screen.findByRole("option", { name: option }));
+	await user.click(await screen.findByRole("option", { name: new RegExp(option) }));
+	await waitFor(() =>
+		expect(screen.queryByRole("option", { name: new RegExp(option) })).toBeNull(),
+	);
 }
 
 describe("DeactivationPreviewDialog", () => {
@@ -180,8 +191,8 @@ describe("DeactivationPreviewDialog", () => {
 
 		await user.click(screen.getByRole("combobox", { name: /New manager for Rita Report/ }));
 
-		expect(await screen.findByRole("option", { name: "Anna Admin" })).toBeTruthy();
-		expect(screen.queryByRole("option", { name: "Rita Report" })).toBeNull();
+		expect(await screen.findByRole("option", { name: /Anna Admin/ })).toBeTruthy();
+		expect(screen.queryByRole("option", { name: /Rita Report/ })).toBeNull();
 	});
 
 	it("shows when the picked replacement is no longer eligible and refuses to confirm with it", async () => {
@@ -248,9 +259,9 @@ describe("DeactivationPreviewDialog", () => {
 		const alert = screen.getByRole("alert");
 		expect(alert.textContent).toContain("Choose a current manager for every report");
 		await waitFor(() => expect(document.activeElement).toBe(alert));
-		expect(screen.getByRole("combobox", { name: /New manager for Rita Report/ }).textContent).toBe(
-			"Ben Manager",
-		);
+		expect(
+			screen.getByRole("combobox", { name: /New manager for Rita Report/ }).textContent,
+		).toContain("Ben Manager");
 	});
 
 	it("locks the dialog while the deactivation is submitted", () => {

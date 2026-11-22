@@ -1,8 +1,8 @@
 import { IconCalendar, IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import type { useTranslate } from "@tolgee/react";
-import type { DateTime } from "luxon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { cn } from "@/lib/utils";
 import type { EmploymentHistoryEntry } from "./types";
 import {
@@ -22,12 +22,14 @@ export function EmploymentHistoryContext({
 	label,
 	empty,
 	t,
+	locale = "en",
 	policyNameById,
 }: {
 	entry?: EmploymentHistoryEntry;
 	label: string;
 	empty: string;
 	t: Translate;
+	locale?: string;
 	policyNameById: Map<string, string>;
 }) {
 	const policyName =
@@ -56,7 +58,7 @@ export function EmploymentHistoryContext({
 						<IconCalendar className="size-3" aria-hidden="true" />
 						<span>
 							{t("settings.employmentHistory.effectiveDateValue", "Effective {date}", {
-								date: formatDate(entry.validFrom) ?? t("common.present", "Present"),
+								date: formatDate(entry.validFrom, locale) ?? t("common.present", "Present"),
 							})}
 						</span>
 					</div>
@@ -88,15 +90,17 @@ export function EmploymentHistoryTimeline({
 	onConfirm,
 	onCancel,
 	t,
+	locale = "en",
 	policyNameById,
 }: {
 	history: EmploymentHistoryEntry[];
 	canManage: boolean;
 	isMutating: boolean;
-	now: DateTime;
+	now: Instant;
 	onConfirm: (historyId: string) => void;
 	onCancel: (historyId: string) => void;
 	t: Translate;
+	locale?: string;
 	policyNameById: Map<string, string>;
 }) {
 	const stints = groupHistoryByEmployment(history);
@@ -115,11 +119,11 @@ export function EmploymentHistoryTimeline({
 						<section
 							key={stint.period?.id ?? "unknown"}
 							className="space-y-3"
-							aria-label={stints.length > 1 ? stintLabel(stint, t) : undefined}
+							aria-label={stints.length > 1 ? stintLabel(stint, t, locale) : undefined}
 						>
 							{stints.length > 1 && (
 								<div className="text-sm font-medium text-muted-foreground">
-									{stintLabel(stint, t)}
+									{stintLabel(stint, t, locale)}
 								</div>
 							)}
 							{stint.entries.map((entry) => (
@@ -132,6 +136,7 @@ export function EmploymentHistoryTimeline({
 									onConfirm={onConfirm}
 									onCancel={onCancel}
 									t={t}
+									locale={locale}
 									policyNameById={policyNameById}
 								/>
 							))}
@@ -141,8 +146,8 @@ export function EmploymentHistoryTimeline({
 										"settings.employees.offboarding.employmentGap",
 										"Not employed {startDate} – {endDate}",
 										{
-											startDate: formatDate(stint.gapBefore.from) ?? "",
-											endDate: formatDate(stint.gapBefore.to) ?? "",
+											startDate: formatDate(stint.gapBefore.from, locale) ?? "",
+											endDate: formatDate(stint.gapBefore.to, locale) ?? "",
 										},
 									)}
 								</div>
@@ -155,12 +160,16 @@ export function EmploymentHistoryTimeline({
 	);
 }
 
-function stintLabel(stint: ReturnType<typeof groupHistoryByEmployment>[number], t: Translate) {
+function stintLabel(
+	stint: ReturnType<typeof groupHistoryByEmployment>[number],
+	t: Translate,
+	locale: string,
+) {
 	const unknown = t("settings.employees.offboarding.unknownLegacyDate", "Date not recorded");
 	return t("settings.employees.offboarding.employmentStint", "Employment {startDate} – {endDate}", {
-		startDate: formatDate(stint.period?.startedAt) ?? unknown,
+		startDate: formatDate(stint.period?.startedAt, locale) ?? unknown,
 		endDate: stint.period?.endedAt
-			? (formatDate(stint.period.endedAt) ?? unknown)
+			? (formatDate(stint.period.endedAt, locale) ?? unknown)
 			: stint.period?.status === "open"
 				? t("common.present", "Present")
 				: unknown,
@@ -175,15 +184,17 @@ function TimelineRow({
 	onConfirm,
 	onCancel,
 	t,
+	locale,
 	policyNameById,
 }: {
 	entry: EmploymentHistoryEntry;
 	canManage: boolean;
 	isMutating: boolean;
-	now: DateTime;
+	now: Instant;
 	onConfirm: (historyId: string) => void;
 	onCancel: (historyId: string) => void;
 	t: Translate;
+	locale: string;
 	policyNameById: Map<string, string>;
 }) {
 	const current = isCurrentConfirmed(entry, now);
@@ -227,10 +238,12 @@ function TimelineRow({
 						)}
 					</div>
 					<div className="text-xs text-muted-foreground">
-						{formatDate(entry.validFrom)} -{" "}
-						{entry.validUntil ? formatDate(entry.validUntil) : t("common.present", "Present")}
+						{formatDate(entry.validFrom, locale)} -{" "}
+						{entry.validUntil
+							? formatDate(entry.validUntil, locale)
+							: t("common.present", "Present")}
 					</div>
-					<TimelineRowNotes entry={entry} policyName={policyName || null} t={t} />
+					<TimelineRowNotes entry={entry} policyName={policyName || null} t={t} locale={locale} />
 				</div>
 				{canManage && (
 					<TimelineRowActions
@@ -252,18 +265,20 @@ function TimelineRowNotes({
 	entry,
 	policyName,
 	t,
+	locale,
 }: {
 	entry: EmploymentHistoryEntry;
 	policyName: string | null;
 	t: Translate;
+	locale: string;
 }) {
 	return (
 		<>
 			{entry.probationStartsOn && entry.probationEndsOn && (
 				<div className="text-xs text-muted-foreground">
 					{t("settings.employmentHistory.probationRange", "Probation {startDate} - {endDate}", {
-						startDate: formatDate(entry.probationStartsOn) ?? "",
-						endDate: formatDate(entry.probationEndsOn) ?? "",
+						startDate: formatDate(entry.probationStartsOn, locale) ?? "",
+						endDate: formatDate(entry.probationEndsOn, locale) ?? "",
 					})}
 				</div>
 			)}
@@ -289,7 +304,7 @@ function TimelineRowActions({
 }: {
 	entry: EmploymentHistoryEntry;
 	isMutating: boolean;
-	now: DateTime;
+	now: Instant;
 	onConfirm: (historyId: string) => void;
 	onCancel: (historyId: string) => void;
 	t: Translate;

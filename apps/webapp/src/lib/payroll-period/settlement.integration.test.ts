@@ -5,7 +5,7 @@
  * organizations, and read the result back through `readPeriod` and the history.
  */
 
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -480,8 +480,8 @@ describe("settling payroll days on PostgreSQL", () => {
 			organizationId: ORG,
 			allowedEmployeeIds: [ids.anna],
 			period: {
-				start: DateTime.fromISO(november.startDate, { zone: "utc" }),
-				end: DateTime.fromISO(november.endDate, { zone: "utc" }),
+				start: parsePlainDate(november.startDate),
+				end: parsePlainDate(november.endDate),
 				label: november.label,
 			},
 			generatedBy: { id: ids.holder, name: "Holder" },

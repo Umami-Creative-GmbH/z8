@@ -5,7 +5,6 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -18,7 +17,13 @@ import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/ma
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { canAccessApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	parseInstant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -103,11 +108,11 @@ export async function GET(request: NextRequest) {
 			const from = parseDateRangeInstant(dateFrom);
 			const to = parseDateRangeInstant(dateTo);
 
-			if (!from || !to || from > to) {
+			if (!from || !to || compareInstants(from, to) > 0) {
 				return NextResponse.json({ error: "Invalid date range" }, { status: 400 });
 			}
 
-			dateRange = { from: from.toJSDate(), to: to.toJSDate() };
+			dateRange = { from: dateFromInstant(from), to: dateFromInstant(to) };
 		}
 
 		const result = await getApprovalInboxList({
@@ -155,9 +160,12 @@ function parsePriority(priority: string | null): ApprovalPriority | undefined {
 		: undefined;
 }
 
-function parseDateRangeInstant(value: string): DateTime | null {
+function parseDateRangeInstant(value: string): Instant | null {
 	if (!ISO_DATETIME_WITH_OFFSET_PATTERN.test(value)) return null;
 
-	const parsed = DateTime.fromISO(value, { setZone: true });
-	return parsed.isValid ? parsed.toUTC() : null;
+	try {
+		return parseInstant(value);
+	} catch {
+		return null;
+	}
 }

@@ -1,4 +1,16 @@
-import { hasSettingsAccessTier, type SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
+import {
+	DEFAULT_SETTINGS_CAPABILITIES,
+	resolveSettingsCapabilitiesInput,
+	type SettingsCapabilities,
+	type SettingsCapabilityKey,
+} from "@/lib/settings/capabilities";
+
+export type { SettingsCapabilities, SettingsCapabilityKey };
+export { DEFAULT_SETTINGS_CAPABILITIES };
 
 export type SettingsGroup =
 	| "account"
@@ -8,8 +20,7 @@ export type SettingsGroup =
 	| "policies"
 	| "projects"
 	| "payroll"
-	| "notifications"
-	| "integrations"
+	| "integrations-channels"
 	| "compliance"
 	| "data";
 
@@ -45,21 +56,16 @@ export const FEATURE_SWITCH_HREFS: Record<FeatureFlag, string> = {
  * switched (an org-admin route). That page still decides which switches the
  * viewer may change; this only chooses between a link and "ask an admin".
  */
-export function canReachFeatureSwitches(accessTier: SettingsAccessTier): boolean {
-	return hasSettingsAccessTier(accessTier, "orgAdmin");
+export function canReachFeatureSwitches(settingsAccess: SettingsAccess | null): boolean {
+	return meetsSettingsAccess(settingsAccess, "orgAdmin");
 }
 
-interface ResolveSettingsVisibilityInput {
-	accessTier: SettingsAccessTier;
+export interface ResolveSettingsVisibilityInput {
+	settingsAccess: SettingsAccess | null;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
-	/** The caller manages at least one project of the organization (#928). */
-	managesProject?: boolean;
-	/**
-	 * The driving licence visibility reader offers its settings to the caller (#1420).
-	 * Hidden unless a server caller passes the reader's answer.
-	 */
-	drivingLicenceSettingsVisible?: boolean;
+	/** Server-computed non-tier visibility capabilities (ADR 0003). */
+	settingsCapabilities?: Partial<SettingsCapabilities>;
 }
 
 export type SettingsIconName =
@@ -119,16 +125,32 @@ export interface SettingsEntry {
 	descriptionDefault: string;
 	href: string;
 	icon: SettingsIconName;
-	minimumTier: SettingsAccessTier;
+	/**
+	 * Minimum Settings access required (ADR 0003).
+	 * `null` marks account-only entries accessible to any signed-in user regardless
+	 * of organization membership or former-employee status.
+	 */
+	minimumAccess: SettingsAccess | null;
 	group: SettingsGroup;
 	/** Feature flag that must be enabled for this setting to be accessible */
 	requiredFeature?: FeatureFlag;
 	/** If true, only show when BILLING_ENABLED=true (checked at runtime) */
 	requiresBilling?: boolean;
-	/** If true, also show below `minimumTier` to users who manage a project (#928) */
-	visibleToProjectManagers?: boolean;
-	/** If true, show only when the driving licence visibility reader offers its settings (#1420) */
-	requiresDrivingLicenceSettings?: boolean;
+	/**
+	 * If set, also show below `minimumAccess` (when `settingsAccess !== null`)
+	 * if this server-computed capability is true (ADR 0003).
+	 */
+	grantedByCapability?: SettingsCapabilityKey;
+	/**
+	 * If set, require this server-computed capability to be true in addition to
+	 * `minimumAccess` (for example, Driving licence control).
+	 */
+	requiresCapability?: SettingsCapabilityKey;
+	/**
+	 * If set, keep the entry visible and enabled when `requiredFeature` is off
+	 * as long as this server-computed capability is true (for example, Report Share Links).
+	 */
+	visibleWhenFeatureDisabledByCapability?: SettingsCapabilityKey;
 }
 
 export interface SettingsGroupConfig {
@@ -174,14 +196,9 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		labelDefault: "Payroll",
 	},
 	{
-		id: "notifications",
-		labelKey: "settings.group.notifications",
-		labelDefault: "Notifications",
-	},
-	{
-		id: "integrations",
-		labelKey: "settings.group.integrations",
-		labelDefault: "Integrations",
+		id: "integrations-channels",
+		labelKey: "settings.group.integrationsChannels",
+		labelDefault: "Integrations & Channels",
 	},
 	{
 		id: "compliance",
@@ -204,7 +221,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage your personal information and profile picture",
 		href: "/settings/profile",
 		icon: "user-circle",
-		minimumTier: "member",
+		minimumAccess: null,
 		group: "account",
 	},
 	{
@@ -215,7 +232,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage your password and active sessions",
 		href: "/settings/security",
 		icon: "shield",
-		minimumTier: "member",
+		minimumAccess: null,
 		group: "account",
 	},
 	{
@@ -226,7 +243,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure how you receive notifications",
 		href: "/settings/notifications",
 		icon: "bell",
-		minimumTier: "member",
+		minimumAccess: null,
 		group: "account",
 	},
 	{
@@ -237,7 +254,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure water reminders and hydration tracking",
 		href: "/settings/wellness",
 		icon: "droplet",
-		minimumTier: "member",
+		minimumAccess: null,
 		group: "account",
 	},
 	{
@@ -249,7 +266,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Whether your position is recorded with your clock events, and your consent",
 		href: "/settings/position-stamps",
 		icon: "map-pin",
-		minimumTier: "member",
+		minimumAccess: "member",
 		group: "account",
 	},
 	{
@@ -260,7 +277,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Download a copy of the personal data this organization keeps about you",
 		href: "/settings/my-data",
 		icon: "database-export",
-		minimumTier: "member",
+		minimumAccess: "member",
 		group: "account",
 	},
 	{
@@ -271,7 +288,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage organization details and configuration",
 		href: "/settings/organization",
 		icon: "building",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 	},
 	{
@@ -282,7 +299,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage employees, members, and invites",
 		href: "/settings/employees",
 		icon: "users",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "organization",
 	},
 	{
@@ -293,7 +310,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Organize employees into teams and manage team assignments",
 		href: "/settings/teams",
 		icon: "users-group",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "organization",
 	},
 	{
@@ -304,7 +321,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Create custom permission roles for your organization",
 		href: "/settings/roles",
 		icon: "shield-check",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 	},
 	{
@@ -315,7 +332,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure SSO, social login, provisioning and organization access",
 		href: "/settings/enterprise/identity-setup",
 		icon: "key",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 	},
 	{
@@ -326,7 +343,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure your organization’s custom domain and branding",
 		href: "/settings/enterprise/domains",
 		icon: "world",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 	},
 	{
@@ -337,7 +354,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage organization locations and subareas",
 		href: "/settings/locations",
 		icon: "map-pin",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "organization",
 	},
 	{
@@ -348,9 +365,9 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Set the check policy, intended drivers, verifiers and evidence retention",
 		href: "/settings/driving-licence",
 		icon: "shield-check",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "compliance",
-		requiresDrivingLicenceSettings: true,
+		requiresCapability: "canManageDrivingLicence",
 	},
 	{
 		id: "vehicles",
@@ -360,7 +377,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Vehicles your employees drive for work, and their assigned drivers",
 		href: "/settings/vehicles",
 		icon: "car",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 	},
 	{
@@ -371,7 +388,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure equipment types, item identities and record retention.",
 		href: "/settings/equipment",
 		icon: "briefcase",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 		requiredFeature: "equipmentEnabled",
 	},
@@ -383,7 +400,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage personnel file access, expiry reminders and document retention",
 		href: "/settings/personnel-files",
 		icon: "file-text",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 		requiredFeature: "personnelFilesEnabled",
 	},
@@ -395,7 +412,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Your own fields on employees, projects and customers",
 		href: "/settings/custom-fields",
 		icon: "forms",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 	},
 	{
@@ -407,7 +424,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Check go-live readiness and track setup across policies, payroll, integrations, and employee import",
 		href: "/settings/implementation-checklist",
 		icon: "target",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 	},
 	{
@@ -418,7 +435,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage your subscription, payment methods, and invoices",
 		href: "/settings/billing",
 		icon: "credit-card",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "organization",
 		requiresBilling: true,
 	},
@@ -431,7 +448,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Manage default contracts, templates, work policy versions, bulk updates, and review queues",
 		href: "/settings/contracts",
 		icon: "file-text",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "policies",
 	},
 	{
@@ -442,7 +459,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure work schedules, time limits, and break requirements",
 		href: "/settings/work-policies",
 		icon: "gavel",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "policies",
 	},
 	{
@@ -453,7 +470,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure organization holidays and time off",
 		href: "/settings/vacation",
 		icon: "calendar-event",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "policies",
 	},
 	{
@@ -464,7 +481,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure custom vacation allowances for individual employees",
 		href: "/settings/vacation/employees",
 		icon: "beach",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "policies",
 	},
 	{
@@ -476,7 +493,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Expense report review, receipts, currencies, mileage and per diem rates, and exceptions.",
 		href: "/settings/travel-expenses",
 		icon: "map-pin",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "policies",
 	},
 	{
@@ -487,8 +504,9 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure sequential approval chains for operational workflows",
 		href: "/settings/approval-policies",
 		icon: "git-branch",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "policies",
+		grantedByCapability: "canManageApprovalEscalation",
 	},
 	{
 		id: "clocking",
@@ -498,7 +516,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure tracking, automatic clock-out, reminders and period submissions",
 		href: "/settings/clocking",
 		icon: "clock",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "time-tracking",
 	},
 	{
@@ -509,7 +527,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Define work categories with time factors for effective time calculation",
 		href: "/settings/work-categories",
 		icon: "tag",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "time-tracking",
 	},
 	{
@@ -520,7 +538,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Record positions with employees' own clock events, with their consent",
 		href: "/settings/position-capture",
 		icon: "map-pin",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "time-tracking",
 	},
 	{
@@ -531,7 +549,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Shared devices at a location where employees clock with their kiosk PIN",
 		href: "/settings/kiosks",
 		icon: "device-tablet",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "time-tracking",
 	},
 	{
@@ -542,7 +560,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Find missing or conflicting time records and time entry chain issues",
 		href: "/settings/work-diagnostics",
 		icon: "shield-check",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "time-tracking",
 	},
 	{
@@ -553,7 +571,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage skill catalog, certifications, and employee qualifications",
 		href: "/settings/skills",
 		icon: "certificate",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "scheduling",
 	},
 	{
@@ -564,7 +582,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure shift templates and coverage targets",
 		href: "/settings/shifts",
 		icon: "calendar-clock",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "scheduling",
 		requiredFeature: "shiftsEnabled",
 	},
@@ -576,7 +594,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage customer contacts for project assignments",
 		href: "/settings/customers",
 		icon: "address-book",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "projects",
 		requiredFeature: "projectsEnabled",
 	},
@@ -588,11 +606,11 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage projects, budgets, deadlines, and time assignments",
 		href: "/settings/projects",
 		icon: "briefcase",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "projects",
 		requiredFeature: "projectsEnabled",
-		// Project managers below the manager tier get a tasks-only view (#872).
-		visibleToProjectManagers: true,
+		// Project managers below scopedManager get a tasks-only view (#872).
+		grantedByCapability: "canManageProjects",
 	},
 	{
 		id: "billable-time",
@@ -602,7 +620,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Billable currency and what your organization charges customers for work",
 		href: "/settings/billable-time",
 		icon: "receipt",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "projects",
 		requiredFeature: "billableTimeEnabled",
 	},
@@ -614,9 +632,10 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "See and revoke every link that shares a project or customer report",
 		href: "/settings/report-share-links",
 		icon: "share",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "projects",
 		requiredFeature: "projectsEnabled",
+		visibleWhenFeatureDisabledByCapability: "hasActiveReportShareLinks",
 	},
 	{
 		id: "payroll-access",
@@ -627,7 +646,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 			"Activate payroll officers and assign the teams or employees they can include in payroll workflows.",
 		href: "/settings/payroll-access",
 		icon: "user-dollar",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "payroll",
 	},
 	{
@@ -638,42 +657,19 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure time surcharges for overtime, night work, and holidays",
 		href: "/settings/surcharges",
 		icon: "percentage",
-		minimumTier: "manager",
+		minimumAccess: "scopedManager",
 		group: "payroll",
 		requiredFeature: "surchargesEnabled",
 	},
 	{
-		id: "payroll-readiness",
-		titleKey: "settings.payrollReadiness.title",
-		titleDefault: "Payroll Readiness",
-		descriptionKey: "settings.payrollReadiness.description",
-		descriptionDefault: "Check whether a payroll period is ready before export",
-		href: "/settings/payroll-readiness",
-		icon: "shield-check",
-		minimumTier: "orgAdmin",
-		group: "payroll",
-	},
-	{
 		id: "payroll-export",
-		titleKey: "settings.payrollExport.title",
-		titleDefault: "Payroll Export",
-		descriptionKey: "settings.payrollExport.description",
-		descriptionDefault: "Export work periods to DATEV Lohn & Gehalt",
+		titleKey: "settings.payrollExport.connectorsTitle",
+		titleDefault: "Payroll Connectors & Wage Types",
+		descriptionKey: "settings.payrollExport.connectorsDescription",
+		descriptionDefault: "Configure payroll export connectors and wage type mappings",
 		href: "/settings/payroll-export",
 		icon: "database-export",
-		minimumTier: "orgAdmin",
-		group: "payroll",
-	},
-	{
-		id: "closed-months",
-		titleKey: "settings.closedMonths.title",
-		titleDefault: "Closed months",
-		descriptionKey: "settings.closedMonths.description",
-		descriptionDefault:
-			"Close months after payroll so their work and absences can no longer change",
-		href: "/settings/closed-months",
-		icon: "lock",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "payroll",
 	},
 	{
@@ -684,8 +680,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure email delivery and customize message templates",
 		href: "/settings/enterprise/email",
 		icon: "mail",
-		minimumTier: "orgAdmin",
-		group: "notifications",
+		minimumAccess: "orgAdmin",
+		group: "integrations-channels",
 	},
 	{
 		id: "chat-integrations",
@@ -695,8 +691,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure Slack, Microsoft Teams, Telegram and Discord",
 		href: "/settings/notification-channels",
 		icon: "messages",
-		minimumTier: "orgAdmin",
-		group: "notifications",
+		minimumAccess: "orgAdmin",
+		group: "integrations-channels",
 	},
 	{
 		id: "calendar",
@@ -706,8 +702,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure calendar providers, ICS feeds, and sync settings",
 		href: "/settings/calendar",
 		icon: "calendar-sync",
-		minimumTier: "manager",
-		group: "integrations",
+		minimumAccess: "scopedManager",
+		group: "integrations-channels",
 	},
 	{
 		id: "developer-access",
@@ -717,8 +713,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Manage API keys and webhook endpoints",
 		href: "/settings/enterprise/api-keys",
 		icon: "key",
-		minimumTier: "orgAdmin",
-		group: "integrations",
+		minimumAccess: "orgAdmin",
+		group: "integrations-channels",
 	},
 	{
 		id: "works-council",
@@ -728,7 +724,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Configure privacy-safe Betriebsrat access and review exports",
 		href: "/settings/compliance/works-council",
 		icon: "gavel",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "compliance",
 		requiredFeature: "worksCouncilEnabled",
 	},
@@ -740,7 +736,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Review activity and configure signed audit exports",
 		href: "/settings/audit-export",
 		icon: "history",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "compliance",
 	},
 	{
@@ -751,7 +747,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Download your Data Processing Agreement (Auftragsverarbeitungsvertrag)",
 		href: "/settings/avv",
 		icon: "file-text",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "compliance",
 		requiresBilling: true,
 	},
@@ -763,7 +759,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Import data from supported providers like Clockodo and Clockin",
 		href: "/settings/import",
 		icon: "database-import",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "data",
 	},
 	{
@@ -774,7 +770,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Export organization data for backup or migration",
 		href: "/settings/export",
 		icon: "database-export",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "data",
 	},
 	{
@@ -785,7 +781,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Schedule recurring payroll, data and audit exports",
 		href: "/settings/scheduled-exports",
 		icon: "calendar-clock",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "data",
 	},
 	{
@@ -796,18 +792,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Monitor payroll, audit, and scheduled export activity",
 		href: "/settings/export-operations",
 		icon: "history",
-		minimumTier: "orgAdmin",
-		group: "data",
-	},
-	{
-		id: "statistics",
-		titleKey: "settings.statistics.title",
-		titleDefault: "Statistics",
-		descriptionKey: "settings.statistics.description",
-		descriptionDefault: "View statistics and metrics about your instance",
-		href: "/settings/statistics",
-		icon: "chart-bar",
-		minimumTier: "manager",
+		minimumAccess: "orgAdmin",
 		group: "data",
 	},
 	{
@@ -818,25 +803,39 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Generate sample data for testing or clear all time-related data",
 		href: "/settings/demo",
 		icon: "test-pipe",
-		minimumTier: "orgAdmin",
+		minimumAccess: "orgAdmin",
 		group: "data",
 		requiredFeature: "demoDataEnabled",
 	},
 ];
 
+export function isSettingFeatureBypassed(
+	entry: SettingsEntry,
+	settingsCapabilities?: Partial<SettingsCapabilities>,
+): boolean {
+	if (!entry.visibleWhenFeatureDisabledByCapability) return false;
+	return settingsCapabilities?.[entry.visibleWhenFeatureDisabledByCapability] === true;
+}
+
 export function getVisibleSettings(
-	accessTier: SettingsAccessTier,
+	settingsAccess: SettingsAccess | null,
 	billingEnabled = false,
-	managesProject = false,
-	drivingLicenceSettingsVisible = false,
+	settingsCapabilities?: Partial<SettingsCapabilities>,
 ): SettingsEntry[] {
+	const capabilities = resolveSettingsCapabilitiesInput(settingsCapabilities);
+
 	return SETTINGS_ENTRIES.filter((entry) => {
-		const projectManagerAccess = managesProject && entry.visibleToProjectManagers === true;
-		if (!hasSettingsAccessTier(accessTier, entry.minimumTier) && !projectManagerAccess) {
-			return false;
+		if (entry.minimumAccess !== null) {
+			if (settingsAccess === null) return false;
+			const hasTierAccess = meetsSettingsAccess(settingsAccess, entry.minimumAccess);
+			const hasCapabilityGrant =
+				entry.grantedByCapability !== undefined && capabilities[entry.grantedByCapability];
+			if (!hasTierAccess && !hasCapabilityGrant) {
+				return false;
+			}
 		}
 		if (entry.requiresBilling && !billingEnabled) return false;
-		if (entry.requiresDrivingLicenceSettings && !drivingLicenceSettingsVisible) return false;
+		if (entry.requiresCapability && !capabilities[entry.requiresCapability]) return false;
 		return true;
 	});
 }
@@ -850,9 +849,11 @@ export function getVisibleGroups(entries: SettingsEntry[]): SettingsGroupConfig[
 export function filterSettingsByFeatureFlags(
 	entries: SettingsEntry[],
 	featureFlags: FeatureFlagState,
+	settingsCapabilities?: Partial<SettingsCapabilities>,
 ): SettingsEntry[] {
 	return entries.filter((entry) => {
 		if (!entry.requiredFeature) return true;
+		if (isSettingFeatureBypassed(entry, settingsCapabilities)) return true;
 		if (entry.requiredFeature === "demoDataEnabled") {
 			return featureFlags.demoDataEnabled ?? true;
 		}
@@ -868,29 +869,27 @@ export function filterSettingsByFeatureFlags(
 export function getVisibleGroupsForFeatureFlags(
 	entries: SettingsEntry[],
 	featureFlags: FeatureFlagState,
+	settingsCapabilities?: Partial<SettingsCapabilities>,
 ): SettingsGroupConfig[] {
-	return getVisibleGroups(filterSettingsByFeatureFlags(entries, featureFlags));
+	return getVisibleGroups(
+		filterSettingsByFeatureFlags(entries, featureFlags, settingsCapabilities),
+	);
 }
 
 export function getResolvedSettingsVisibility({
-	accessTier,
+	settingsAccess,
 	billingEnabled = false,
 	featureFlags,
-	managesProject = false,
-	drivingLicenceSettingsVisible = false,
+	settingsCapabilities,
 }: ResolveSettingsVisibilityInput): {
 	visibleSettings: SettingsEntry[];
 	visibleGroups: SettingsGroupConfig[];
 } {
-	const tierVisibleSettings = getVisibleSettings(
-		accessTier,
-		billingEnabled,
-		managesProject,
-		drivingLicenceSettingsVisible,
-	);
+	const capabilities = resolveSettingsCapabilitiesInput(settingsCapabilities);
+	const accessVisibleSettings = getVisibleSettings(settingsAccess, billingEnabled, capabilities);
 	const visibleSettings = featureFlags
-		? filterSettingsByFeatureFlags(tierVisibleSettings, featureFlags)
-		: tierVisibleSettings;
+		? filterSettingsByFeatureFlags(accessVisibleSettings, featureFlags, capabilities)
+		: accessVisibleSettings;
 	const visibleGroups = getVisibleGroups(visibleSettings);
 
 	return {

@@ -143,7 +143,7 @@ describe("driving licence visibility while the feature is on", () => {
 		await grantPlanningPermission(planner.employeeId);
 	});
 
-	it("shows the personal item and the clock advisory to an intended driver", async () => {
+	it("shows My driving licence and the clock advisory to an intended driver, but not the team item", async () => {
 		const driver = await read(
 			(
 				await fixture.pool.query<{ user_id: string }>("select user_id from employee where id=$1", [
@@ -158,11 +158,12 @@ describe("driving licence visibility while the feature is on", () => {
 			planner: false,
 			settings: "hidden",
 		});
-		expect(visibility.showsDrivingLicenceNavigation(driver)).toBe(true);
+		expect(visibility.showsMyDrivingLicence(driver)).toBe(true);
+		expect(visibility.showsTeamDrivingLicence(driver)).toBe(false);
 		expect(visibility.showsDrivingAuthorizationAdvisory(driver)).toBe(true);
 	});
 
-	it("shows the personal item to verifiers and planners, but never the advisory", async () => {
+	it("shows verifiers and planners the team item only, never My driving licence or the advisory (#1937)", async () => {
 		const asVerifier = await read(verifier.userId);
 		const asPlanner = await read(planner.userId);
 		expect(asVerifier).toMatchObject({
@@ -176,7 +177,8 @@ describe("driving licence visibility while the feature is on", () => {
 			planner: true,
 		});
 		for (const view of [asVerifier, asPlanner]) {
-			expect(visibility.showsDrivingLicenceNavigation(view)).toBe(true);
+			expect(visibility.showsTeamDrivingLicence(view)).toBe(true);
+			expect(visibility.showsMyDrivingLicence(view)).toBe(false);
 			expect(visibility.showsDrivingAuthorizationAdvisory(view)).toBe(false);
 		}
 	});
@@ -191,7 +193,8 @@ describe("driving licence visibility while the feature is on", () => {
 			planner: false,
 			settings: "hidden",
 		});
-		expect(visibility.showsDrivingLicenceNavigation(none)).toBe(false);
+		expect(visibility.showsMyDrivingLicence(none)).toBe(false);
+		expect(visibility.showsTeamDrivingLicence(none)).toBe(false);
 		expect(visibility.showsDrivingAuthorizationAdvisory(none)).toBe(false);
 	});
 
@@ -204,7 +207,7 @@ describe("driving licence visibility while the feature is on", () => {
 			intendedDriver: false,
 			ownRetainedRecords: true,
 		});
-		expect(visibility.showsDrivingLicenceNavigation(former)).toBe(true);
+		expect(visibility.showsMyDrivingLicence(former)).toBe(true);
 		expect(visibility.showsDrivingAuthorizationAdvisory(former)).toBe(false);
 		expect(visibility.drivingLicenceRoles(former)).toEqual({
 			myLicence: true,
@@ -243,7 +246,8 @@ describe("driving licence visibility while the feature is off", () => {
 			const view = await read(userId);
 			expect(view.featureEnabled).toBe(false);
 			expect(view.settings).toBe("hidden");
-			expect(visibility.showsDrivingLicenceNavigation(view)).toBe(false);
+			expect(visibility.showsMyDrivingLicence(view)).toBe(false);
+			expect(visibility.showsTeamDrivingLicence(view)).toBe(false);
 			expect(visibility.showsDrivingAuthorizationAdvisory(view)).toBe(false);
 		}
 	});
@@ -271,7 +275,8 @@ describe("driving licence visibility while the feature is off", () => {
 		for (const userId of [driverUserId, verifier.userId, planner.userId]) {
 			const view = await read(userId);
 			expect(view.featureEnabled).toBe(false);
-			expect(visibility.showsDrivingLicenceNavigation(view)).toBe(false);
+			expect(visibility.showsMyDrivingLicence(view)).toBe(false);
+			expect(visibility.showsTeamDrivingLicence(view)).toBe(false);
 			expect(visibility.showsDrivingAuthorizationAdvisory(view)).toBe(false);
 			expect(visibility.drivingLicenceRoles(view)).toEqual({
 				myLicence: false,
@@ -348,7 +353,7 @@ it("decides each organization separately for a member of two organizations", asy
 	);
 	const home = await read(driverUserId);
 	const other = await read(driverUserId, otherOrganizationId);
-	expect(visibility.showsDrivingLicenceNavigation(home)).toBe(true);
+	expect(visibility.showsMyDrivingLicence(home)).toBe(true);
 	expect(visibility.showsDrivingAuthorizationAdvisory(home)).toBe(true);
 	// The member administers the other organization, where the feature is off and
 	// nothing is retained: the first organization's role and records never leak into it.
@@ -358,7 +363,7 @@ it("decides each organization separately for a member of two organizations", asy
 		ownRetainedRecords: false,
 		settings: "hidden",
 	});
-	expect(visibility.showsDrivingLicenceNavigation(other)).toBe(false);
+	expect(visibility.showsMyDrivingLicence(other)).toBe(false);
 	expect(visibility.showsDrivingAuthorizationAdvisory(other)).toBe(false);
 	session.organizationId = otherOrganizationId;
 	expect(await as(driverUserId, () => operational.getDrivingAuthorizationStatusAction())).toEqual({

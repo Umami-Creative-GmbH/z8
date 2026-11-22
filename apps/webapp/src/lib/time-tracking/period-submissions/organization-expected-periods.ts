@@ -30,9 +30,6 @@ type Database = typeof db;
 /** Departures that will end the current employment unless cancelled. */
 const UPCOMING_DEPARTURE_STATUSES = ["pending", "blocked"] as const;
 
-/** How many employees' holidays and work schedules are read at the same time. */
-const SCHEDULE_READ_CONCURRENCY = 4;
-
 function eachDayKey(startDate: PlainDate, endDate: PlainDate): string[] {
 	const keys: string[] = [];
 	for (let day = startDate; comparePlainDates(day, endDate) <= 0; day = day.add({ days: 1 })) {
@@ -169,24 +166,23 @@ export async function loadExpectedSubmissionFactsByEmployee(
 	const employeeIds = [...new Set(input.employeeIds)].filter(isUuid);
 	if (employeeIds.length === 0) return factsByEmployee;
 
-	const [targets, cadenceHistory] = await Promise.all([
-		database
-			.select({
-				employeeId: employee.id,
-				startDate: employee.startDate,
-				email: user.email,
-				userTimezone: userSettings.timezone,
-				organizationTimezone: organization.timezone,
-			})
-			.from(employee)
-			.innerJoin(user, eq(user.id, employee.userId))
-			.innerJoin(organization, eq(organization.id, employee.organizationId))
-			.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
-			.where(
-				and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
-			),
-		loadSubmissionCadenceHistory(database, input.organizationId),
-	]);
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const targets = await database
+		.select({
+			employeeId: employee.id,
+			startDate: employee.startDate,
+			email: user.email,
+			userTimezone: userSettings.timezone,
+			organizationTimezone: organization.timezone,
+		})
+		.from(employee)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.innerJoin(organization, eq(organization.id, employee.organizationId))
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
+		.where(
+			and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
+		);
+	const cadenceHistory = await loadSubmissionCadenceHistory(database, input.organizationId);
 
 	const candidates: Candidate[] = [];
 	for (const target of targets) {
@@ -227,44 +223,42 @@ export async function loadExpectedSubmissionFactsByEmployee(
 		first.startDate,
 	);
 	const rangeEnd = candidates.reduce((date, item) => maxDate(date, item.endDate), first.endDate);
-	const [coverage, departures, absences] = await Promise.all([
-		loadEmploymentCoverageByEmployee(database, {
-			organizationId: input.organizationId,
-			employeeIds: candidateIds,
-		}),
-		database
-			.select({ employeeId: employeeDeparture.employeeId, cutoffAt: employeeDeparture.cutoffAt })
-			.from(employeeDeparture)
-			.where(
-				and(
-					eq(employeeDeparture.organizationId, input.organizationId),
-					inArray(employeeDeparture.employeeId, candidateIds),
-					inArray(employeeDeparture.status, [...UPCOMING_DEPARTURE_STATUSES]),
-				),
+	const coverage = await loadEmploymentCoverageByEmployee(database, {
+		organizationId: input.organizationId,
+		employeeIds: candidateIds,
+	});
+	const departures = await database
+		.select({ employeeId: employeeDeparture.employeeId, cutoffAt: employeeDeparture.cutoffAt })
+		.from(employeeDeparture)
+		.where(
+			and(
+				eq(employeeDeparture.organizationId, input.organizationId),
+				inArray(employeeDeparture.employeeId, candidateIds),
+				inArray(employeeDeparture.status, [...UPCOMING_DEPARTURE_STATUSES]),
 			),
-		database
-			.select({
-				employeeId: absenceEntry.employeeId,
-				startDate: absenceEntry.startDate,
-				startPeriod: absenceEntry.startPeriod,
-				endDate: absenceEntry.endDate,
-				endPeriod: absenceEntry.endPeriod,
-			})
-			.from(absenceEntry)
-			.innerJoin(absenceCategory, eq(absenceCategory.id, absenceEntry.categoryId))
-			.where(
-				and(
-					eq(absenceEntry.organizationId, input.organizationId),
-					inArray(absenceEntry.employeeId, candidateIds),
-					eq(absenceEntry.status, "approved"),
-					eq(absenceCategory.organizationId, input.organizationId),
-					// No work is expected on the day: time off in lieu included.
-					eq(absenceCategory.requiresWorkTime, false),
-					lte(absenceEntry.startDate, rangeEnd.toString()),
-					gte(absenceEntry.endDate, rangeStart.toString()),
-				),
+		);
+	const absences = await database
+		.select({
+			employeeId: absenceEntry.employeeId,
+			startDate: absenceEntry.startDate,
+			startPeriod: absenceEntry.startPeriod,
+			endDate: absenceEntry.endDate,
+			endPeriod: absenceEntry.endPeriod,
+		})
+		.from(absenceEntry)
+		.innerJoin(absenceCategory, eq(absenceCategory.id, absenceEntry.categoryId))
+		.where(
+			and(
+				eq(absenceEntry.organizationId, input.organizationId),
+				inArray(absenceEntry.employeeId, candidateIds),
+				eq(absenceEntry.status, "approved"),
+				eq(absenceCategory.organizationId, input.organizationId),
+				// No work is expected on the day: time off in lieu included.
+				eq(absenceCategory.requiresWorkTime, false),
+				lte(absenceEntry.startDate, rangeEnd.toString()),
+				gte(absenceEntry.endDate, rangeStart.toString()),
 			),
-	]);
+		);
 	const cutoffs = new Map(departures.map((row) => [row.employeeId, row.cutoffAt]));
 	const absencesByEmployee = new Map<string, ApprovedAbsenceSpan[]>();
 	for (const absence of absences) {
@@ -296,26 +290,24 @@ export async function loadExpectedSubmissionFactsByEmployee(
 		}
 	}
 
-	for (let index = 0; index < survivors.length; index += SCHEDULE_READ_CONCURRENCY) {
-		await Promise.all(
-			survivors.slice(index, index + SCHEDULE_READ_CONCURRENCY).map(async (candidate) => {
-				const scope = {
-					organizationId: input.organizationId,
-					employeeId: candidate.employeeId,
-					startDate: candidate.startDate,
-					endDate: candidate.endDate,
-				};
-				const [publicHolidays, nonWorkingDays] = await Promise.all([
-					loadPublicHolidays(database, scope),
-					loadNonWorkingDays({ ...scope, timezone: candidate.facts.timezone }),
-				]);
-				factsByEmployee.set(candidate.employeeId, {
-					...candidate.facts,
-					publicHolidays,
-					nonWorkingDays,
-				});
-			}),
-		);
+	// One employee at a time; only the schedule read, which uses the application database,
+	// overlaps the holiday read.
+	for (const candidate of survivors) {
+		const scope = {
+			organizationId: input.organizationId,
+			employeeId: candidate.employeeId,
+			startDate: candidate.startDate,
+			endDate: candidate.endDate,
+		};
+		const [publicHolidays, nonWorkingDays] = await Promise.all([
+			loadPublicHolidays(database, scope),
+			loadNonWorkingDays({ ...scope, timezone: candidate.facts.timezone }),
+		]);
+		factsByEmployee.set(candidate.employeeId, {
+			...candidate.facts,
+			publicHolidays,
+			nonWorkingDays,
+		});
 	}
 	return factsByEmployee;
 }

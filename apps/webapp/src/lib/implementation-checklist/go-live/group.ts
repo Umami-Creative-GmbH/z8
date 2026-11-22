@@ -27,52 +27,51 @@ export async function resolveGoLiveGroup(
 	organizationId: string,
 	asOf: GoLiveAsOf,
 ): Promise<GoLiveGroup> {
-	const [employees, invitees] = await Promise.all([
-		db
-			.select({
-				employeeId: employee.id,
-				primaryTeamId: employee.teamId,
-				teamName: team.name,
-				name: user.name,
-				email: user.email,
-			})
-			.from(employee)
-			.innerJoin(user, eq(user.id, employee.userId))
-			.leftJoin(team, and(eq(team.id, employee.teamId), eq(team.organizationId, organizationId)))
-			.where(
-				and(
-					onCurrentRoster(organizationId, employee, asOf.instant),
-					inChosenTeams(organizationId, employee.teamId),
-					notExcluded(organizationId),
-				),
-			)
-			.orderBy(asc(user.name), asc(employee.id)),
-		db
-			.select({
-				draftId: employeeInvitationDraft.id,
-				teamId: employeeInvitationDraft.teamId,
-				teamName: team.name,
-				firstName: employeeInvitationDraft.firstName,
-				lastName: employeeInvitationDraft.lastName,
-				email: invitation.email,
-			})
-			.from(employeeInvitationDraft)
-			.innerJoin(invitation, eq(invitation.id, employeeInvitationDraft.invitationId))
-			.leftJoin(
-				team,
-				and(eq(team.id, employeeInvitationDraft.teamId), eq(team.organizationId, organizationId)),
-			)
-			.where(
-				and(
-					buildEligibleInvitationDraftPredicate({
-						organizationId,
-						now: dateFromInstant(asOf.instant),
-					}),
-					inChosenTeams(organizationId, employeeInvitationDraft.teamId),
-				),
-			)
-			.orderBy(asc(invitation.email), asc(employeeInvitationDraft.id)),
-	]);
+	// One after another: `db` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const employees = await db
+		.select({
+			employeeId: employee.id,
+			primaryTeamId: employee.teamId,
+			teamName: team.name,
+			name: user.name,
+			email: user.email,
+		})
+		.from(employee)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.leftJoin(team, and(eq(team.id, employee.teamId), eq(team.organizationId, organizationId)))
+		.where(
+			and(
+				onCurrentRoster(organizationId, employee, asOf.instant),
+				inChosenTeams(organizationId, employee.teamId),
+				notExcluded(organizationId),
+			),
+		)
+		.orderBy(asc(user.name), asc(employee.id));
+	const invitees = await db
+		.select({
+			draftId: employeeInvitationDraft.id,
+			teamId: employeeInvitationDraft.teamId,
+			teamName: team.name,
+			firstName: employeeInvitationDraft.firstName,
+			lastName: employeeInvitationDraft.lastName,
+			email: invitation.email,
+		})
+		.from(employeeInvitationDraft)
+		.innerJoin(invitation, eq(invitation.id, employeeInvitationDraft.invitationId))
+		.leftJoin(
+			team,
+			and(eq(team.id, employeeInvitationDraft.teamId), eq(team.organizationId, organizationId)),
+		)
+		.where(
+			and(
+				buildEligibleInvitationDraftPredicate({
+					organizationId,
+					now: dateFromInstant(asOf.instant),
+				}),
+				inChosenTeams(organizationId, employeeInvitationDraft.teamId),
+			),
+		)
+		.orderBy(asc(invitation.email), asc(employeeInvitationDraft.id));
 
 	const teamNames = new Map<string, string>();
 	const members: GoLiveMember[] = [];

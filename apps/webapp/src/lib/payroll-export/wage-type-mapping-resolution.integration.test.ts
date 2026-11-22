@@ -9,7 +9,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { DateTime } from "luxon";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 import type { WorkPeriodData } from "./types";
@@ -112,8 +112,8 @@ function nightShift(workCategoryId: string): WorkPeriodData {
 		employeeNumber: "P-1",
 		firstName: null,
 		lastName: null,
-		startTime: DateTime.fromISO("2026-04-10T20:00:00Z", { zone: "utc" }),
-		endTime: DateTime.fromISO("2026-04-11T04:00:00Z", { zone: "utc" }),
+		startTime: parseInstant("2026-04-10T20:00:00Z").toZonedDateTimeISO("UTC"),
+		endTime: parseInstant("2026-04-11T04:00:00Z").toZonedDateTimeISO("UTC"),
 		durationMinutes: 480,
 		workCategoryId,
 		workCategoryName: "Night shift",
@@ -131,8 +131,8 @@ async function mappingsForExport(formatId: string) {
 		requestedById: ids.employee,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO("2026-04-01", { zone: "utc" }),
-				end: DateTime.fromISO("2026-04-30", { zone: "utc" }),
+				start: parsePlainDate("2026-04-01"),
+				end: parsePlainDate("2026-04-30"),
 			},
 		},
 	});

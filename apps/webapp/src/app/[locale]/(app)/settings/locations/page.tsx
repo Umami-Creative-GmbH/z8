@@ -2,27 +2,21 @@ import { Suspense } from "react";
 import { LocationManagement } from "@/components/settings/location-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 
 async function LocationSettingsPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
-		return redirectWithLocale("/settings");
-	}
-
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
 	return (
 		<LocationManagement
-			organizationId={organizationId}
-			canManageLocations={settingsRouteContext.accessTier === "orgAdmin"}
+			organizationId={caller.organizationId}
+			canManageLocations={meetsSettingsAccess(caller.settingsAccess, "orgAdmin")}
 		/>
 	);
 }

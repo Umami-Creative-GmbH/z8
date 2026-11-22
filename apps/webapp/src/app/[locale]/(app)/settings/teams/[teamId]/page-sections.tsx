@@ -13,6 +13,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { z } from "zod";
+import { EmployeeSingleSelect } from "@/components/employee-select";
 import {
 	FormerEmployeeBadge,
 	ShowFormerEmployeesSwitch,
@@ -33,13 +34,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
@@ -190,39 +184,22 @@ export function TeamInfoCard(props: {
 
 						<form.Field name="primaryManagerId">
 							{(field: any) => (
-								<div className="space-y-2">
-									<Label htmlFor={teamPrimaryManagerInputId}>
-										{t("settings.teams.detail.info.primaryManager", "Primary Manager")}
-									</Label>
-									<Select
-										value={field.state.value ?? "none"}
-										onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
-									>
-										<SelectTrigger id={teamPrimaryManagerInputId} className="w-full min-w-0">
-											<SelectValue
-												placeholder={t(
-													"settings.teams.detail.info.noPrimaryManager",
-													"No primary manager assigned",
-												)}
-											/>
-										</SelectTrigger>
-										<SelectContent className="max-w-[var(--anchor-width)]">
-											<SelectItem value="none">
-												{t(
-													"settings.teams.detail.info.noPrimaryManager",
-													"No primary manager assigned",
-												)}
-											</SelectItem>
-											{managerOptions.map((employee) => (
-												<SelectItem key={employee.id} value={employee.id} className="max-w-full">
-													<span className="block truncate">
-														{employee.user.name} ({employee.user.email})
-													</span>
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
+								<EmployeeSingleSelect
+									id={teamPrimaryManagerInputId}
+									label={t("settings.teams.detail.info.primaryManager", "Primary Manager")}
+									placeholder={t(
+										"settings.teams.detail.info.noPrimaryManager",
+										"No primary manager assigned",
+									)}
+									allowClear
+									clearLabel={t(
+										"settings.teams.detail.info.noPrimaryManager",
+										"No primary manager assigned",
+									)}
+									value={field.state.value ?? null}
+									onChange={(value) => field.handleChange(value)}
+									employees={managerOptions}
+								/>
 							)}
 						</form.Field>
 
@@ -484,36 +461,14 @@ export function AddMemberDialog(props: {
 							)}
 						</p>
 					) : (
-						<>
-							<Label htmlFor={employeeSelectId}>
-								{t("settings.teams.detail.selectEmployee", "Select employee")}
-							</Label>
-							<Select value={selectedEmployee} onValueChange={onSelectedEmployeeChange}>
-								<SelectTrigger
-									id={employeeSelectId}
-									aria-label={t("settings.teams.detail.selectEmployee", "Select employee")}
-								>
-									<SelectValue
-										placeholder={t(
-											"settings.teams.detail.addMember.selectEmployee",
-											"Select employee",
-										)}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									{availableEmployees.map((employee) => (
-										<SelectItem key={employee.id} value={employee.id}>
-											<div className="flex items-center gap-2">
-												<span>{employee.user.name}</span>
-												<span className="text-sm text-muted-foreground">
-													({employee.user.email})
-												</span>
-											</div>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</>
+						<EmployeeSingleSelect
+							id={employeeSelectId}
+							label={t("settings.teams.detail.selectEmployee", "Select employee")}
+							placeholder={t("settings.teams.detail.addMember.selectEmployee", "Select employee")}
+							value={selectedEmployee || null}
+							onChange={(value) => onSelectedEmployeeChange(value ?? "")}
+							employees={availableEmployees}
+						/>
 					)}
 				</ActionPanelBody>
 				<ActionPanelFooter>

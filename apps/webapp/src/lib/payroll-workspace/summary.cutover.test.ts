@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 
 const mockState = vi.hoisted(() => ({
 	assertCanonicalCutoverReady: vi.fn(),
@@ -31,8 +31,8 @@ const request = {
 	organizationId: "org-1",
 	allowedEmployeeIds: [],
 	period: {
-		start: DateTime.fromISO("2026-06-01", { zone: "utc" }),
-		end: DateTime.fromISO("2026-06-30", { zone: "utc" }),
+		start: parsePlainDate("2026-06-01"),
+		end: parsePlainDate("2026-06-30"),
 		label: "June 2026",
 	},
 	generatedBy: { id: "payroll-1", name: "Payroll User" },
@@ -53,9 +53,7 @@ describe("getPayrollWorkspaceSummary canonical cutover", () => {
 
 	it("does not calculate payroll totals from an incomplete canonical dataset", async () => {
 		mockState.assertCanonicalCutoverReady.mockRejectedValue(
-			new Error(
-				"Canonical time-record backfill is incomplete for organization org-1",
-			),
+			new Error("Canonical time-record backfill is incomplete for organization org-1"),
 		);
 
 		await expect(getPayrollWorkspaceSummary(request)).rejects.toThrow(

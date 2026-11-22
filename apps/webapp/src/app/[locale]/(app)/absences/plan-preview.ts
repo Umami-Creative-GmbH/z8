@@ -1,7 +1,6 @@
 "use server";
 
 import { and, eq, gte, lte } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry } from "@/db/schema";
@@ -24,8 +23,10 @@ import { isComparisonEligibleCategory } from "@/lib/absences/vacation-comparison
 import { loadVacationYearBalances } from "@/lib/absences/vacation-year-balance-store";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import {
+	comparePlainDates,
 	dateFromInstant,
 	instantToCanonicalString,
+	parsePlainDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
@@ -242,17 +243,23 @@ async function evaluateAbsencePlanPreview(
 }
 
 function parsePreviewRange(request: AbsencePlanPreviewRequest) {
-	const start = DateTime.fromISO(request.startDate, { zone: "utc" });
-	const end = DateTime.fromISO(request.endDate, { zone: "utc" });
+	try {
+		const start = parsePlainDate(request.startDate);
+		const end = parsePlainDate(request.endDate);
 
-	if (!start.isValid || !end.isValid || end < start) {
+		if (comparePlainDates(end, start) < 0) {
+			return null;
+		}
+
+		return {
+			start,
+			end,
+			startDate: dateFromInstant(start.toZonedDateTime("UTC").toInstant()),
+			endDate: dateFromInstant(
+				end.add({ days: 1 }).toZonedDateTime("UTC").toInstant().subtract({ milliseconds: 1 }),
+			),
+		};
+	} catch {
 		return null;
 	}
-
-	return {
-		start,
-		end,
-		startDate: start.startOf("day").toJSDate(),
-		endDate: end.endOf("day").toJSDate(),
-	};
 }

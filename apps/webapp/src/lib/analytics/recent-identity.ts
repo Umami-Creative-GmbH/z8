@@ -3,7 +3,7 @@ import "server-only";
 import { and, eq, inArray, notExists, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { employee, employeeManagers } from "@/db/schema";
-import { analyticsContractRevisionSql } from "@/lib/contracts";
+import { analyticsContractRevisionSql } from "@/lib/contracts/evidence-queries";
 import {
 	activeAnalyticsEmployee,
 	getAnalyticsCalendarRange,
@@ -20,11 +20,25 @@ export type RecentAnalyticsRequest =
 			filters?: OvertimeBurnDownParams["filters"];
 	  };
 
+export type RecentAnalyticsActor =
+	| {
+			id: string | null;
+			userId: string;
+			organizationId: string;
+			role: "admin";
+	  }
+	| {
+			id: string;
+			userId: string;
+			organizationId: string;
+			role: "manager";
+	  };
+
 export type RecentAnalyticsIdentity = {
 	calculationVersion: "recent-analytics-v1";
 	organizationId: string;
 	userId: string;
-	actorEmployeeId: string;
+	actorEmployeeId: string | null;
 	scope: AnalyticsEmployeeScope;
 	visibleEmployeeIds: string[];
 	revision: string;
@@ -33,12 +47,7 @@ export type RecentAnalyticsIdentity = {
 
 /** Fresh visibility and committed source revisions; never cached authorization. */
 export const loadRecentAnalyticsIdentity = Effect.fn("analytics.recentIdentity")(function* (
-	actor: {
-		id: string;
-		userId: string;
-		organizationId: string;
-		role: "admin" | "manager";
-	},
+	actor: RecentAnalyticsActor,
 	request: RecentAnalyticsRequest,
 ) {
 	const database = yield* DatabaseService;
@@ -90,6 +99,9 @@ export const loadRecentAnalyticsIdentity = Effect.fn("analytics.recentIdentity")
 	const visibleEmployeeIds = visible.map((person) => person.id);
 	const ids = JSON.stringify(visibleEmployeeIds);
 	const organizationId = actor.organizationId;
+	const actorCustomRoleRevision = actor.id
+		? sql`union all select 'custom-assignment',a.id::text,a.xmin::text from employee_custom_role a where a.employee_id=${actor.id}`
+		: sql``;
 	// Only identities and MVCC revisions leave PostgreSQL, not source values.
 	// Include membership of each set, so removals and same-timestamp updates change
 	// the key. This is deliberately an analytics dependency list, not a generic DAL.
@@ -106,7 +118,7 @@ with visible as materialized (
  select distinct m.manager_id from employee_managers m join visible v on m.employee_id=v.id
 ), revisions as (
  select 'employee' f,e.id::text id,e.xmin::text r from employee e join visible v on v.id=e.id
- union all select 'actor',e.id::text,e.xmin::text from employee e where e.organization_id=${organizationId} and e.id=${actor.id}
+ union all select 'actor',e.id::text,e.xmin::text from employee e where e.organization_id=${organizationId} and e.user_id=${actor.userId}
  union all select 'user',u.id,u.xmin::text from "user" u where u.id=${actor.userId} or u.id in (select user_id from visible) or u.id in (select e.user_id from employee e join managers m on m.manager_id=e.id where e.organization_id=${organizationId})
  union all select 'settings',s.user_id,s.xmin::text from user_settings s where s.user_id in (select user_id from visible)
  union all select 'organization',o.id,o.xmin::text from organization o where o.id=${organizationId}
@@ -134,7 +146,7 @@ with visible as materialized (
  union all select 'cost-center',c.id::text,c.xmin::text from cost_center c where c.organization_id=${organizationId}
  union all select 'custom-role',r.id::text,r.xmin::text from custom_role r where r.organization_id=${organizationId}
  union all select 'custom-permission',p.id::text,p.xmin::text from custom_role_permission p join custom_role r on r.id=p.custom_role_id where r.organization_id=${organizationId}
- union all select 'custom-assignment',a.id::text,a.xmin::text from employee_custom_role a where a.employee_id=${actor.id}
+ ${actorCustomRoleRevision}
 )
 select md5(coalesce(string_agg(f||':'||id||':'||r,'|' order by f,id),'')) revision,
  (select count(*)::integer from employee_work_balance b join visible v on b.employee_id=v.id where b.organization_id=${organizationId}) marker_count

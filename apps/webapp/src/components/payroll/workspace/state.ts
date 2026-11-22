@@ -1,6 +1,7 @@
 import type { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
+import type { PlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { PayrollBlockerIdentity } from "@/lib/payroll-workspace/blocker-identity";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 
@@ -81,14 +82,31 @@ export function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeri
 	};
 }
 
-export function buildPeriodRequest(start: DateTime, mode: Exclude<PayrollDateRangeMode, "custom">) {
-	const normalizedStart = start.startOf(mode);
-	const end = normalizedStart.endOf(mode);
+export function startOfPayrollPeriod(
+	date: PlainDate,
+	mode: Exclude<PayrollDateRangeMode, "custom">,
+): PlainDate {
+	if (mode === "month") {
+		return date.with({ day: 1 });
+	}
+	return date.subtract({ days: date.dayOfWeek - 1 });
+}
+
+export function buildPeriodRequest(
+	start: PlainDate,
+	mode: Exclude<PayrollDateRangeMode, "custom">,
+	locale = "en",
+) {
+	const normalizedStart = startOfPayrollPeriod(start, mode);
+	const end =
+		mode === "month"
+			? normalizedStart.with({ day: normalizedStart.daysInMonth })
+			: normalizedStart.add({ days: 6 });
 
 	return {
-		startDate: normalizedStart.toISODate() ?? "",
-		endDate: end.toISODate() ?? "",
-		label: formatPeriodLabel(normalizedStart, end, mode),
+		startDate: normalizedStart.toString(),
+		endDate: end.toString(),
+		label: formatPeriodLabel(normalizedStart, end, mode, locale),
 	};
 }
 
@@ -124,11 +142,18 @@ export function getFilteredEmployeeIds(
 	return employeeIds;
 }
 
-export function formatPeriodLabel(start: DateTime, end: DateTime, mode: PayrollDateRangeMode) {
-	if (mode === "month") return start.toFormat("LLLL yyyy");
-	if (mode === "week") return `${start.toFormat("LLL d")} - ${end.toFormat("LLL d, yyyy")}`;
+export function formatPeriodLabel(
+	start: PlainDate,
+	end: PlainDate,
+	mode: PayrollDateRangeMode,
+	locale = "en",
+) {
+	if (mode === "month") return formatPlainDate(start, locale, "monthYear");
+	if (mode === "week") {
+		return `${formatPlainDate(start, locale, "monthDay")} - ${formatPlainDate(end, locale, "dateMedium")}`;
+	}
 
-	return `${start.toISODate()} - ${end.toISODate()}`;
+	return `${start.toString()} - ${end.toString()}`;
 }
 
 export function formatDisplayedPeriod(

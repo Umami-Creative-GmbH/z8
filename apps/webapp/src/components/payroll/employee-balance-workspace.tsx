@@ -10,9 +10,9 @@ import {
 	recordOvertimePayoutAction,
 	setOpeningBalanceAction,
 } from "@/app/[locale]/(app)/settings/employees/work-balance-actions";
-import { CancelBalanceAdjustmentDialog } from "@/components/settings/work-balance/cancel-balance-adjustment-dialog";
-import { RecordOvertimePayoutPanel } from "@/components/settings/work-balance/record-overtime-payout-dialog";
-import { SetOpeningBalancePanel } from "@/components/settings/work-balance/set-opening-balance-dialog";
+import { CancelBalanceAdjustmentPanel } from "@/components/settings/work-balance/cancel-balance-adjustment-panel";
+import { RecordOvertimePayoutPanel } from "@/components/settings/work-balance/record-overtime-payout-panel";
+import { SetOpeningBalancePanel } from "@/components/settings/work-balance/set-opening-balance-panel";
 import {
 	BalanceAdjustmentActionError,
 	EMPLOYEE_WORK_BALANCE_QUERY_KEY,
@@ -222,7 +222,7 @@ function EmployeeBalanceArrival(props: Props) {
 									changed(() => recordOvertimePayoutAction({ ...input, employeeId: employee.id }))
 								}
 							/>
-							<CancelBalanceAdjustmentDialog
+							<CancelBalanceAdjustmentPanel
 								adjustment={cancelling}
 								onOpenChange={(open) => {
 									if (!open) setCancelling(null);

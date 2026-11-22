@@ -18,10 +18,9 @@
 
 import { randomUUID } from "node:crypto";
 import JSZip from "jszip";
-import { DateTime } from "luxon";
 import type { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -688,8 +687,13 @@ describe("graph-aware verification and audit assurance on PostgreSQL", () => {
 		expect(created.status).toBe(200);
 		const proposal = created.body.proposal;
 		expect(
-			(await proposalAction({ action: "approve", proposalId: proposal.id, fingerprint: proposal.fingerprint }))
-				.body.status,
+			(
+				await proposalAction({
+					action: "approve",
+					proposalId: proposal.id,
+					fingerprint: proposal.fingerprint,
+				})
+			).body.status,
 		).toBe("approved");
 		await admin.query(
 			"insert into historical_work_repair_control (organization_id, mode) values ($1, 'active')",
@@ -808,10 +812,10 @@ describe("graph-aware verification and audit assurance on PostgreSQL", () => {
 			getPayrollReadiness({
 				organizationId: ids.organization,
 				period: {
-					start: DateTime.fromISO("2026-07-01T00:00:00Z", { zone: "utc" }),
-					end: DateTime.fromISO("2026-07-31T00:00:00Z", { zone: "utc" }),
+					start: parsePlainDate("2026-07-01"),
+					end: parsePlainDate("2026-07-31"),
 				},
-				now: DateTime.fromISO("2026-08-01T00:00:00Z", { zone: "utc" }),
+				now: parseInstant("2026-08-01T00:00:00Z"),
 			});
 		const before = await readiness();
 

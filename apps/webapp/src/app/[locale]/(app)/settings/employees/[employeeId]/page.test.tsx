@@ -9,7 +9,6 @@ vi.mock("@tolgee/react", () => ({
 
 const mockState = vi.hoisted(() => ({
 	getCurrentSettingsAccess: vi.fn(),
-	getCurrentSettingsRouteContext: vi.fn(),
 	getEmployee: vi.fn(),
 	loadPersonnelFilePanelCapability: vi.fn(),
 	getEmployeeEquipment: vi.fn(),
@@ -22,7 +21,6 @@ vi.mock("next/navigation", () => ({ redirect: mockState.redirect }));
 vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
 vi.mock("@/lib/auth-helpers", () => ({
 	getCurrentSettingsAccess: mockState.getCurrentSettingsAccess,
-	getCurrentSettingsRouteContext: mockState.getCurrentSettingsRouteContext,
 }));
 vi.mock("../actions", () => ({ getEmployee: mockState.getEmployee }));
 vi.mock("@/lib/personnel-file/panel", () => ({
@@ -51,13 +49,6 @@ describe("EmployeeDetailPage viewer settings access", () => {
 			success: false,
 			code: "AuthorizationError",
 		});
-		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
-			authContext: {
-				user: { id: "user-1" },
-				session: { activeOrganizationId: "org-1" },
-			},
-			accessTier: "orgAdmin",
-		});
 		mockState.getEmployee.mockResolvedValue({
 			success: true,
 			data: { id: "employee-1", organizationId: "org-1" },
@@ -78,8 +69,11 @@ describe("EmployeeDetailPage viewer settings access", () => {
 
 	it("passes the viewer's settings access to detail controls", async () => {
 		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			userId: "user-1",
 			organizationId: "org-1",
 			settingsAccess: "owner",
+			membershipRole: "owner",
+			employee: null,
 		});
 
 		const page = EmployeeDetailPage({
@@ -99,11 +93,15 @@ describe("EmployeeDetailPage viewer settings access", () => {
 				updatedAt: expect.any(Number),
 			},
 		});
+		expect(detailPage.props).not.toHaveProperty("accessTier");
 	});
 	it("loads equipment through its independent permission boundary for an employee profile", async () => {
 		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			userId: "user-1",
 			organizationId: "org-1",
 			settingsAccess: "owner",
+			membershipRole: "owner",
+			employee: null,
 		});
 		const equipment = {
 			assignments: [{ identifier: "L-01" }],
@@ -123,8 +121,11 @@ describe("EmployeeDetailPage viewer settings access", () => {
 
 	it("passes the personnel file panel only when the resolver grants it (#865)", async () => {
 		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			userId: "user-1",
 			organizationId: "org-1",
 			settingsAccess: "owner",
+			membershipRole: "owner",
+			employee: null,
 		});
 		const capability = {
 			employeeId: "employee-1",
@@ -145,15 +146,11 @@ describe("EmployeeDetailPage viewer settings access", () => {
 
 	it("passes no personnel file panel to managers the resolver refuses", async () => {
 		mockState.getCurrentSettingsAccess.mockResolvedValue({
+			userId: "user-1",
 			organizationId: "org-1",
 			settingsAccess: "scopedManager",
-		});
-		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
-			authContext: {
-				user: { id: "user-1" },
-				session: { activeOrganizationId: "org-1" },
-			},
-			accessTier: "manager",
+			membershipRole: "member",
+			employee: { id: "manager-1", role: "manager" },
 		});
 		mockState.loadPersonnelFilePanelCapability.mockResolvedValue(null);
 
@@ -166,11 +163,24 @@ describe("EmployeeDetailPage viewer settings access", () => {
 		expect(detailPage.props.personnelFile).toBeNull();
 	});
 
-	it("denies detail access when the viewer has no settings access", async () => {
-		mockState.getCurrentSettingsAccess.mockResolvedValue({
+	it.each([
+		null,
+		{
+			userId: "user-1",
 			organizationId: "org-1",
 			settingsAccess: null,
-		});
+			membershipRole: null,
+			employee: null,
+		},
+		{
+			userId: "user-1",
+			organizationId: "org-1",
+			settingsAccess: "member",
+			membershipRole: "member",
+			employee: { id: "employee-1", role: "employee" },
+		},
+	])("denies detail access without scoped-manager settings access", async (caller) => {
+		mockState.getCurrentSettingsAccess.mockResolvedValue(caller);
 
 		const page = EmployeeDetailPage({
 			params: Promise.resolve({ employeeId: "employee-1" }),

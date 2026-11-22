@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { and, count, desc, eq, inArray, like, notLike } from "drizzle-orm";
 import { DateTime } from "luxon";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -29,6 +30,7 @@ import { formatEuroAmount, monthlyRecurringRevenueCents } from "@/lib/billing/se
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
+import { computeTrialConversionRate } from "./metrics";
 import { SyncSeatsButton } from "./sync-seats-button";
 
 const BILLING_STATS_LOADING_KEYS = [
@@ -160,6 +162,9 @@ function StatCard({
 }
 
 async function BillingStats() {
+	// Resolve current request time before evaluating ended trials.
+	await connection();
+	const now = new Date();
 	// Get all subscriptions
 	const [t, allSubscriptions] = await Promise.all([
 		getTranslate(),
@@ -200,16 +205,11 @@ async function BillingStats() {
 		(s) => s.status === "past_due",
 	).length;
 
-	// Trial conversion rate (trials that converted to active)
-	// Count subscriptions that were trialing and are now active
 	const activeCount = allSubscriptions.filter(
 		(s) => s.status === "active",
 	).length;
-	const totalTrialsAndActive = trialingCount + activeCount;
-	const conversionRate =
-		totalTrialsAndActive > 0
-			? Math.round((activeCount / totalTrialsAndActive) * 100)
-			: 0;
+	// Trial conversion rate across resolved trials (ended, converted early, or canceled)
+	const conversionRate = computeTrialConversionRate(allSubscriptions, now);
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

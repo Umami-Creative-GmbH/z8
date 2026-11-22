@@ -76,46 +76,80 @@ export function PlatformAdminUsersPageHeader() {
 export function PlatformAdminUserFilters({
 	search,
 	status,
+	organizationId,
+	organizationLabel,
 	onFilterChange,
+	onClearOrganization,
 }: {
 	search: string;
 	status: UserStatusFilter;
+	organizationId?: string;
+	organizationLabel?: string;
 	onFilterChange: (search: string, status: UserStatusFilter) => void;
+	onClearOrganization?: () => void;
 }) {
 	const { t } = useTranslate();
 
 	return (
-		<div className="flex flex-col gap-4 sm:flex-row">
-			<div className="relative flex-1">
-				<IconSearch
-					className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
-					aria-hidden="true"
-				/>
-				<Input
-					aria-label={t("admin:admin.users.searchLabel", "Search users by email")}
-					placeholder={t("admin:admin.users.searchPlaceholder", "Search by email…")}
-					name="search"
-					autoComplete="off"
-					value={search}
-					onChange={(event) => onFilterChange(event.target.value, status)}
-					className="pl-9"
-				/>
+		<div className="space-y-3">
+			<div className="flex flex-col gap-4 sm:flex-row">
+				<div className="relative flex-1">
+					<IconSearch
+						className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					<Input
+						aria-label={t("admin:admin.users.searchLabel", "Search users by email")}
+						placeholder={t("admin:admin.users.searchPlaceholder", "Search by email…")}
+						name="search"
+						autoComplete="off"
+						value={search}
+						onChange={(event) => onFilterChange(event.target.value, status)}
+						className="pl-9"
+					/>
+				</div>
+				<Select
+					value={status}
+					onValueChange={(value) => onFilterChange(search, value as UserStatusFilter)}
+				>
+					<SelectTrigger className="w-full sm:w-40">
+						<SelectValue placeholder={t("common.status", "Status")} />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">
+							{t("admin:admin.users.filters.allUsers", "All Users")}
+						</SelectItem>
+						<SelectItem value="active">{t("common.active", "Active")}</SelectItem>
+						<SelectItem value="banned">{t("admin:admin.users.filters.banned", "Banned")}</SelectItem>
+					</SelectContent>
+				</Select>
 			</div>
-			<Select
-				value={status}
-				onValueChange={(value) => onFilterChange(search, value as UserStatusFilter)}
-			>
-				<SelectTrigger className="w-full sm:w-40">
-					<SelectValue placeholder={t("common.status", "Status")} />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="all">
-						{t("admin:admin.users.filters.allUsers", "All Users")}
-					</SelectItem>
-					<SelectItem value="active">{t("common.active", "Active")}</SelectItem>
-					<SelectItem value="banned">{t("admin:admin.users.filters.banned", "Banned")}</SelectItem>
-				</SelectContent>
-			</Select>
+			{organizationId ? (
+				<div className="flex flex-wrap items-center gap-2">
+					<Badge variant="secondary" className="gap-1.5 pr-1">
+						<span>
+							{t("admin:admin.users.filters.organization", "Organization: {name}", {
+								name: organizationLabel || organizationId,
+							})}
+						</span>
+						{onClearOrganization ? (
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								className="size-6 rounded-full p-0 hover:bg-transparent"
+								onClick={onClearOrganization}
+								aria-label={t(
+									"admin:admin.users.filters.clearOrganization",
+									"Clear organization filter",
+								)}
+							>
+								<IconX className="size-3" aria-hidden="true" />
+							</Button>
+						) : null}
+					</Badge>
+				</div>
+			) : null}
 		</div>
 	);
 }

@@ -572,28 +572,28 @@ async function findTimeRevisionLifecycle(
 				}
 			: null;
 	}
-	const [stages, chainStages] = await Promise.all([
-		database
-			.select({ workflowId: approvalWorkflowStage.workflowId })
-			.from(approvalWorkflowStage)
-			.where(
-				and(
-					eq(approvalWorkflowStage.organizationId, input.organizationId),
-					eq(approvalWorkflowStage.legacyApprovalRequestId, input.approvalRequestId),
-				),
-			)
-			.limit(2),
-		database
-			.select({ chainInstanceId: approvalChainStageInstance.chainInstanceId })
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
-				),
-			)
-			.limit(2),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const stages = await database
+		.select({ workflowId: approvalWorkflowStage.workflowId })
+		.from(approvalWorkflowStage)
+		.where(
+			and(
+				eq(approvalWorkflowStage.organizationId, input.organizationId),
+				eq(approvalWorkflowStage.legacyApprovalRequestId, input.approvalRequestId),
+			),
+		)
+		.limit(2);
+	const chainStages = await database
+		.select({ chainInstanceId: approvalChainStageInstance.chainInstanceId })
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+			),
+		)
+		.limit(2);
 	const workflowId = stages.length === 1 ? (stages[0]?.workflowId ?? null) : null;
 	const chainInstanceId =
 		chainStages.length === 1 ? (chainStages[0]?.chainInstanceId ?? null) : null;
@@ -690,12 +690,20 @@ export async function prepareTimeReviewEvidence(
 					})
 				: await loadLegacyTimeCorrectionSubmittedRevision(database, legacyScope);
 		if (!revision) return { status: "not_captured", held: input.requestPending && await readApprovalEvidenceMode(database, { organizationId: input.organizationId, workflowType: lifecycle.kind }) === "capture" };
-		const [comparison, decisions, categoryNames, vehicleUseWarnings] = await Promise.all([
-			input.requestPending ? compareTimeCorrectionWithSubmittedRevision(database, revision) : null,
-			decisionsFor(revision.id),
-			loadTimeCorrectionCategoryNames(database, input.organizationId, revision),
-			input.requestPending ? submittedVehicleUseWarnings(database, revision) : [],
-		]);
+		// One after another: `database` may be a transaction, one connection,
+		// and pg@9 refuses a query while another is executing.
+		const comparison = input.requestPending
+			? await compareTimeCorrectionWithSubmittedRevision(database, revision)
+			: null;
+		const decisions = await decisionsFor(revision.id);
+		const categoryNames = await loadTimeCorrectionCategoryNames(
+			database,
+			input.organizationId,
+			revision,
+		);
+		const vehicleUseWarnings = input.requestPending
+			? await submittedVehicleUseWarnings(database, revision)
+			: [];
 		return {
 			status: "evidenced",
 			kind: "time_correction",
@@ -714,9 +722,11 @@ export async function prepareTimeReviewEvidence(
 				})
 			: await loadLegacyWorkPeriodSubmittedRevision(database, legacyScope);
 	if (!revision) return { status: "not_captured", held: input.requestPending && await readApprovalEvidenceMode(database, { organizationId: input.organizationId, workflowType: lifecycle.kind }) === "capture" };
-	const [comparison, decisions] = await Promise.all([
-		input.requestPending ? compareWorkPeriodWithSubmittedRevision(database, revision) : null,
-		decisionsFor(revision.id),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const comparison = input.requestPending
+		? await compareWorkPeriodWithSubmittedRevision(database, revision)
+		: null;
+	const decisions = await decisionsFor(revision.id);
 	return { status: "evidenced", kind: "work_period", revision, comparison, decisions };
 }

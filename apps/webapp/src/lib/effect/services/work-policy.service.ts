@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, workPolicy, workPolicyPreset, workPolicyViolation } from "@/db/schema";
-import { resolveEffectiveContractOnDay } from "@/lib/contracts";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
 	dateFromInstant,
 	type Instant,

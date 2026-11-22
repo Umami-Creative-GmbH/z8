@@ -10,7 +10,7 @@ import {
 	saveVehicleUseSettingsAction,
 	setVehicleUseAssignmentAction,
 	type VehicleUseAdminData,
-} from "@/app/[locale]/(app)/settings/vehicle-use/actions";
+} from "@/app/[locale]/(app)/settings/vehicles/vehicle-use-actions";
 import {
 	FeatureSettingsTabs,
 	ScopedFeatureAssignments,

@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { db } from "@/db";
-import { getCurrentSettingsAccess, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { EmployeeReadScope } from "@/lib/organization/employee-read-types";
 import { getEmployeeEquipment } from "@/lib/organization/equipment/actions";
 import { loadPersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
@@ -29,36 +30,25 @@ export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
 }
 
 async function EmployeeDetailPageContent({ params, searchParams }: EmployeeDetailPageProps) {
-	const [settingsRouteContext, { employeeId }, query] = await Promise.all([
-		getCurrentSettingsRouteContext(),
+	const [caller, { employeeId }, query] = await Promise.all([
+		getCurrentSettingsAccess(),
 		params,
 		searchParams ?? Promise.resolve({ review: undefined }),
 	]);
 	// A notification links to one persisted review; only its id is passed on.
 	const highlightedReviewId = isCanonicalUuid(query.review) ? query.review : null;
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
-	const currentUserId = settingsRouteContext.authContext.user.id;
-	// Detail controls follow the shared settings access resolver (ADR 0002, #1623).
-	const caller = await getCurrentSettingsAccess();
-	const settingsAccess = caller?.organizationId === organizationId ? caller.settingsAccess : null;
-
-	if (!settingsAccess) {
-		return redirectWithLocale("/settings");
-	}
+	const { organizationId, userId: currentUserId, settingsAccess } = caller;
 
 	const [employeeResult, personnelFile, equipment, organizationTimezone] = await Promise.all([
 		getEmployee(employeeId),
-		// Decided by the personnel file access resolver, never by the settings tier:
+		// Decided by the personnel file access resolver, never by settings access:
 		// managers reach this page but not the personnel file (#865, ADR 0001).
 		loadPersonnelFilePanelCapability(employeeId),
-		// Equipment authority is independent of the settings tier and manager role.
+		// Equipment authority is independent of settings access and manager role.
 		getEmployeeEquipment(employeeId),
 		loadOrganizationTimezone(db, organizationId),
 	]);
@@ -70,7 +60,6 @@ async function EmployeeDetailPageContent({ params, searchParams }: EmployeeDetai
 	return (
 		<EmployeeDetailPageClient
 			params={Promise.resolve({ employeeId })}
-			accessTier={settingsRouteContext.accessTier}
 			currentUserId={currentUserId}
 			organizationId={organizationId}
 			organizationTimezone={organizationTimezone}

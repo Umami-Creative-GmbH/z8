@@ -1,25 +1,14 @@
+import { IconFileExport } from "@tabler/icons-react";
 import { Suspense } from "react";
-import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
-import { ExpenseWageTypeMappings } from "@/components/settings/payroll-export/expense-wage-type-mappings";
-import { ExportForm } from "@/components/settings/payroll-export/export-form";
-import { ExportHistory } from "@/components/settings/payroll-export/export-history";
-import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-config-form";
-import { PersonioConfigForm } from "@/components/settings/payroll-export/personio-config-form";
-import { SageConfigForm } from "@/components/settings/payroll-export/sage-config-form";
-import { SuccessFactorsConfigForm } from "@/components/settings/payroll-export/successfactors-config-form";
-import { WageTypeMappings } from "@/components/settings/payroll-export/wage-type-mappings";
-import { WorkdayConfigForm } from "@/components/settings/payroll-export/workday-config-form";
+import { PayrollConnectorsSettings } from "@/components/settings/payroll-export/payroll-connectors-settings";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { db } from "@/db";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import type { PayrollExportFormatId } from "@/lib/payroll-export/format-registry";
-import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
-	getExportHistoryAction,
 	getLexwareConfigAction,
 	getPayrollIdentifierFieldsAction,
 	getPersonioConfigAction,
@@ -28,18 +17,15 @@ import {
 	getWorkdayConfigAction,
 } from "./actions";
 
-type ExportAvailabilityEntry = {
-	configured: boolean;
-	reason: "missingConfiguration" | "missingCredentials" | null;
-};
-
 async function PayrollExportContent() {
-	const [t, { organizationId }] = await Promise.all([
+	// Enforce org-admin access before fetching any connector configs or identifier fields.
+	const [t] = await Promise.all([
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);
 
-	// Fetch configs and history in parallel
+	// Fetch connector configs and personnel identifier fields in parallel.
+	// Operational export execution and history live in `/payroll?tab=export` (#1957, #1958).
 	const [
 		datevConfigResult,
 		lexwareConfigResult,
@@ -47,9 +33,7 @@ async function PayrollExportContent() {
 		personioConfigResult,
 		successFactorsConfigResult,
 		workdayConfigResult,
-		historyResult,
 		identifierFieldsResult,
-		organizationTimezone,
 	] = await Promise.all([
 		getDatevConfigAction(),
 		getLexwareConfigAction(),
@@ -57,83 +41,30 @@ async function PayrollExportContent() {
 		getPersonioConfigAction(),
 		getSuccessFactorsConfigAction(),
 		getWorkdayConfigAction(),
-		getExportHistoryAction(),
 		getPayrollIdentifierFieldsAction(),
-		// Export times are audit instants, shown in the organization's time zone.
-		loadOrganizationTimezone(db, organizationId),
 	]);
 
 	const datevConfig = datevConfigResult.success ? datevConfigResult.data : null;
-	const lexwareConfig = lexwareConfigResult.success
-		? lexwareConfigResult.data
-		: null;
+	const lexwareConfig = lexwareConfigResult.success ? lexwareConfigResult.data : null;
 	const sageConfig = sageConfigResult.success ? sageConfigResult.data : null;
-	const personioConfig = personioConfigResult.success
-		? personioConfigResult.data
-		: null;
+	const personioConfig = personioConfigResult.success ? personioConfigResult.data : null;
 	const successFactorsConfig = successFactorsConfigResult.success
 		? successFactorsConfigResult.data
 		: null;
-	const workdayConfig = workdayConfigResult.success
-		? workdayConfigResult.data
-		: null;
-	const exports = historyResult.success ? historyResult.data : [];
+	const workdayConfig = workdayConfigResult.success ? workdayConfigResult.data : null;
 	// Employee custom fields every identifier and match setting can use (#821).
 	const identifierFields = identifierFieldsResult.success ? identifierFieldsResult.data : [];
-	// Every registered format (#823) states whether it can export.
-	const exportAvailability: Record<PayrollExportFormatId, ExportAvailabilityEntry> = {
-		datev_lohn: {
-			configured: Boolean(datevConfig),
-			reason: datevConfig ? null : "missingConfiguration",
-		},
-		lexware_lohn: {
-			configured: Boolean(lexwareConfig),
-			reason: lexwareConfig ? null : "missingConfiguration",
-		},
-		sage_lohn: {
-			configured: Boolean(sageConfig),
-			reason: sageConfig ? null : "missingConfiguration",
-		},
-		personio: {
-			configured: Boolean(personioConfig?.hasCredentials),
-			reason: !personioConfig
-				? "missingConfiguration"
-				: personioConfig.hasCredentials
-					? null
-					: "missingCredentials",
-		},
-		successfactors_api: {
-			configured: Boolean(successFactorsConfig?.hasCredentials),
-			reason: !successFactorsConfig
-				? "missingConfiguration"
-				: successFactorsConfig.hasCredentials
-					? null
-					: "missingCredentials",
-		},
-		successfactors_csv: {
-			configured: Boolean(successFactorsConfig),
-			reason: successFactorsConfig ? null : "missingConfiguration",
-		},
-		workday_api: {
-			configured: Boolean(workdayConfig?.hasCredentials),
-			reason: !workdayConfig
-				? "missingConfiguration"
-				: workdayConfig.hasCredentials
-					? null
-					: "missingCredentials",
-		},
-	};
-	const hasConfiguredExportTarget = Object.values(exportAvailability).some(
-		(entry) => entry.configured,
-	);
 
 	// Mappings belong to the organization; any format that reads them
-	// unlocks the Wage Types tab (#816).
+	// unlocks the Wage Types section (#816).
 	const hasMappingFormat = Boolean(
 		datevConfig || lexwareConfig || sageConfig || successFactorsConfig,
 	);
 
-	const title = t("settings.payrollExport.title", "Payroll Export");
+	const title = t(
+		"settings.payrollExport.connectorsTitle",
+		"Payroll Connectors & Wage Types",
+	);
 
 	return (
 		<div className="page-frame">
@@ -141,112 +72,29 @@ async function PayrollExportContent() {
 				<PageHeader
 					title={title}
 					description={t(
-						"settings.payrollExport.description",
-						"Export work periods to payroll systems like DATEV or Personio",
+						"settings.payrollExport.connectorsDescription",
+						"Configure payroll export connectors and wage type mappings",
 					)}
+					actions={
+						<Button asChild variant="outline">
+							<Link href="/payroll?tab=export">
+								<IconFileExport aria-hidden="true" className="size-4" />
+								{t("settings.payrollExport.openPayrollWorkspace", "Run exports in Payroll")}
+							</Link>
+						</Button>
+					}
 				/>
 
-				<Tabs
-					defaultValue={hasConfiguredExportTarget ? "export" : "datev"}
-					className="w-full min-w-0"
-				>
-					<TabsList aria-label={title}>
-						<TabsTrigger value="export">
-							{t("settings.payrollExport.tabs.export", "Export")}
-						</TabsTrigger>
-						<TabsTrigger value="datev">
-							{t("settings.payrollExport.tabs.datev", "DATEV")}
-						</TabsTrigger>
-						<TabsTrigger value="lexware">
-							{t("settings.payrollExport.tabs.lexware", "Lexware")}
-						</TabsTrigger>
-						<TabsTrigger value="sage">
-							{t("settings.payrollExport.tabs.sage", "Sage")}
-						</TabsTrigger>
-						<TabsTrigger value="personio">
-							{t("settings.payrollExport.tabs.personio", "Personio")}
-						</TabsTrigger>
-						<TabsTrigger value="successfactors">
-							{t(
-								"settings.payrollExport.tabs.successfactors",
-								"SAP SuccessFactors",
-							)}
-						</TabsTrigger>
-						<TabsTrigger value="workday">
-							{t("settings.payrollExport.tabs.workday", "Workday")}
-						</TabsTrigger>
-						<TabsTrigger value="mappings">
-							{t("settings.payrollExport.tabs.mappings", "Wage Types")}
-						</TabsTrigger>
-						<TabsTrigger value="history">
-							{t("settings.payrollExport.tabs.history", "History")}
-						</TabsTrigger>
-					</TabsList>
-
-					<TabsContent value="export" className="mt-4">
-						<ExportForm
-							organizationId={organizationId}
-							config={datevConfig}
-							exportAvailability={exportAvailability}
-						/>
-					</TabsContent>
-
-					<TabsContent value="datev" className="mt-4">
-						<DatevConfigForm
-							initialConfig={datevConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="lexware" className="mt-4">
-						<LexwareConfigForm
-							initialConfig={lexwareConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="sage" className="mt-4">
-						<SageConfigForm
-							initialConfig={sageConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="personio" className="mt-4">
-						<PersonioConfigForm
-							initialConfig={personioConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="successfactors" className="mt-4">
-						<SuccessFactorsConfigForm
-							initialConfig={successFactorsConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="workday" className="mt-4">
-						<WorkdayConfigForm
-							initialConfig={workdayConfig}
-							identifierFields={identifierFields}
-						/>
-					</TabsContent>
-
-					<TabsContent value="mappings" className="mt-4 space-y-6">
-						<WageTypeMappings
-							hasMappingFormat={hasMappingFormat}
-						/>
-						<ExpenseWageTypeMappings />
-					</TabsContent>
-
-					<TabsContent value="history" className="mt-4">
-						<ExportHistory
-							exports={exports}
-							organizationTimezone={organizationTimezone}
-						/>
-					</TabsContent>
-				</Tabs>
+				<PayrollConnectorsSettings
+					datevConfig={datevConfig}
+					lexwareConfig={lexwareConfig}
+					sageConfig={sageConfig}
+					personioConfig={personioConfig}
+					successFactorsConfig={successFactorsConfig}
+					workdayConfig={workdayConfig}
+					identifierFields={identifierFields}
+					hasMappingFormat={hasMappingFormat}
+				/>
 			</div>
 		</div>
 	);

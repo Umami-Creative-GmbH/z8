@@ -2,7 +2,7 @@
  * Personio Payroll Exporter
  * Implements IPayrollExporter for pushing time entries to Personio HR API
  */
-import { DateTime } from "luxon";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault/secrets";
 import { CUSTOM_FIELD_IDENTIFIER, customFieldMatchError } from "../../personnel-identifier";
@@ -61,9 +61,7 @@ export class PersonioExporter implements IPayrollExporter {
 				personioConfig.employeeMatchStrategy,
 			)
 		) {
-			errors.push(
-				"Employee match strategy must be 'employeeNumber', 'email' or 'customField'",
-			);
+			errors.push("Employee match strategy must be 'employeeNumber', 'email' or 'customField'");
 		}
 		const customFieldError = customFieldMatchError(config);
 		if (customFieldError) errors.push(customFieldError);
@@ -77,8 +75,7 @@ export class PersonioExporter implements IPayrollExporter {
 
 		if (
 			personioConfig.apiTimeoutMs !== undefined &&
-			(personioConfig.apiTimeoutMs < 5000 ||
-				personioConfig.apiTimeoutMs > 120000)
+			(personioConfig.apiTimeoutMs < 5000 || personioConfig.apiTimeoutMs > 120000)
 		) {
 			errors.push("API timeout must be between 5000 and 120000 milliseconds");
 		}
@@ -101,8 +98,7 @@ export class PersonioExporter implements IPayrollExporter {
 			if (!credentials) {
 				return {
 					success: false,
-					error:
-						"Personio credentials not configured. Please enter your Client ID and API Secret.",
+					error: "Personio credentials not configured. Please enter your Client ID and API Secret.",
 				};
 			}
 
@@ -110,10 +106,7 @@ export class PersonioExporter implements IPayrollExporter {
 				...DEFAULT_PERSONIO_CONFIG,
 				...config,
 			} as PersonioConfig;
-			const client = new PersonioApiClient(
-				credentials,
-				personioConfig.apiTimeoutMs,
-			);
+			const client = new PersonioApiClient(credentials, personioConfig.apiTimeoutMs);
 
 			return await client.testConnection();
 		} catch (error) {
@@ -152,10 +145,7 @@ export class PersonioExporter implements IPayrollExporter {
 			throw new Error("Personio credentials not configured");
 		}
 
-		const client = new PersonioApiClient(
-			credentials,
-			personioConfig.apiTimeoutMs,
-		);
+		const client = new PersonioApiClient(credentials, personioConfig.apiTimeoutMs);
 
 		// Build mapping lookups for absence categories
 		const absenceCategoryMappings = new Map<string, WageTypeMapping>();
@@ -166,10 +156,7 @@ export class PersonioExporter implements IPayrollExporter {
 		}
 
 		// Transform to Personio requests (with original work period tracking)
-		const attendanceData = this.transformWorkPeriods(
-			workPeriods,
-			personioConfig,
-		);
+		const attendanceData = this.transformWorkPeriods(workPeriods, personioConfig);
 		const absenceRequests = this.transformAbsences(
 			absences,
 			absenceCategoryMappings,
@@ -187,9 +174,7 @@ export class PersonioExporter implements IPayrollExporter {
 		}> = [];
 		const attendanceBatches: Array<typeof attendanceData> = [];
 		for (let i = 0; i < attendanceData.length; i += personioConfig.batchSize) {
-			attendanceBatches.push(
-				attendanceData.slice(i, i + personioConfig.batchSize),
-			);
+			attendanceBatches.push(attendanceData.slice(i, i + personioConfig.batchSize));
 		}
 
 		const attendanceBatchResults = await Promise.all(
@@ -235,16 +220,9 @@ export class PersonioExporter implements IPayrollExporter {
 		});
 		const absenceBatches: PersonioAbsenceRequest[][] = [];
 
-		for (
-			let i = 0;
-			i < validAbsenceRequests.length;
-			i += personioConfig.batchSize
-		) {
+		for (let i = 0; i < validAbsenceRequests.length; i += personioConfig.batchSize) {
 			absenceBatches.push(
-				validAbsenceRequests.slice(
-					i,
-					i + personioConfig.batchSize,
-				) as PersonioAbsenceRequest[],
+				validAbsenceRequests.slice(i, i + personioConfig.batchSize) as PersonioAbsenceRequest[],
 			);
 		}
 
@@ -275,9 +253,7 @@ export class PersonioExporter implements IPayrollExporter {
 
 		// Calculate results
 		const totalRecords = workPeriods.length + absences.length;
-		const syncedAttendances = attendanceResults.filter(
-			(r) => r.result.success,
-		).length;
+		const syncedAttendances = attendanceResults.filter((r) => r.result.success).length;
 		const syncedAbsences = absenceResults.filter((r) => r.success).length;
 		const syncedRecords = syncedAttendances + syncedAbsences;
 		const failedRecords = errors.length;
@@ -302,8 +278,8 @@ export class PersonioExporter implements IPayrollExporter {
 			metadata: {
 				employeeCount: uniqueEmployees.size,
 				dateRange: {
-					start: dateRange.start?.toISODate() || "",
-					end: dateRange.end?.toISODate() || "",
+					start: dateRange.start?.toString() || "",
+					end: dateRange.end?.toString() || "",
 				},
 				apiCallCount,
 				durationMs,
@@ -366,12 +342,11 @@ export class PersonioExporter implements IPayrollExporter {
 			results.push({
 				request: {
 					employee: employeeIdentifier,
-					date: period.startTime.toISODate() as string,
-					start_time: period.startTime.toFormat("HH:mm"),
-					end_time: period.endTime.toFormat("HH:mm"),
+					date: period.startTime.toPlainDate().toString(),
+					start_time: period.startTime.toPlainTime().toString({ smallestUnit: "minute" }),
+					end_time: period.endTime.toPlainTime().toString({ smallestUnit: "minute" }),
 					break: 0, // Could be calculated from gaps between periods
-					comment:
-						commentParts.length > 0 ? commentParts.join(" - ") : undefined,
+					comment: commentParts.length > 0 ? commentParts.join(" - ") : undefined,
 				},
 				workPeriod: period,
 			});
@@ -446,19 +421,14 @@ export class PersonioExporter implements IPayrollExporter {
 	/**
 	 * Get credentials from Vault
 	 */
-	private async getCredentials(
-		organizationId: string,
-	): Promise<PersonioCredentials | null> {
+	private async getCredentials(organizationId: string): Promise<PersonioCredentials | null> {
 		const [clientId, clientSecret] = await Promise.all([
 			getOrgSecret(organizationId, VAULT_KEY_CLIENT_ID),
 			getOrgSecret(organizationId, VAULT_KEY_CLIENT_SECRET),
 		]);
 
 		if (!clientId || !clientSecret) {
-			logger.debug(
-				{ organizationId },
-				"Personio credentials not found in Vault",
-			);
+			logger.debug({ organizationId }, "Personio credentials not found in Vault");
 			return null;
 		}
 
@@ -471,27 +441,31 @@ export class PersonioExporter implements IPayrollExporter {
 	private getDateRange(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
-	): { start: DateTime | null; end: DateTime | null } {
-		let start: DateTime | null = null;
-		let end: DateTime | null = null;
+	): { start: PlainDate | null; end: PlainDate | null } {
+		let start: PlainDate | null = null;
+		let end: PlainDate | null = null;
 
 		for (const period of workPeriods) {
-			if (!start || period.startTime < start) {
-				start = period.startTime;
+			const periodStart = period.startTime.toPlainDate();
+			if (!start || comparePlainDates(periodStart, start) < 0) {
+				start = periodStart;
 			}
-			if (period.endTime && (!end || period.endTime > end)) {
-				end = period.endTime;
+			if (period.endTime) {
+				const periodEnd = period.endTime.toPlainDate();
+				if (!end || comparePlainDates(periodEnd, end) > 0) {
+					end = periodEnd;
+				}
 			}
 		}
 
 		for (const absence of absences) {
-			const absStart = DateTime.fromISO(absence.startDate);
-			const absEnd = DateTime.fromISO(absence.endDate);
+			const absStart = parsePlainDate(absence.startDate);
+			const absEnd = parsePlainDate(absence.endDate);
 
-			if (!start || absStart < start) {
+			if (!start || comparePlainDates(absStart, start) < 0) {
 				start = absStart;
 			}
-			if (!end || absEnd > end) {
+			if (!end || comparePlainDates(absEnd, end) > 0) {
 				end = absEnd;
 			}
 		}

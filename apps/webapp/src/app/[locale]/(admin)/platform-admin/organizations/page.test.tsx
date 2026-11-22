@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { pushMock, useQueryMock, invalidateQueriesMock } = vi.hoisted(() => ({
 	pushMock: vi.fn(),
@@ -259,5 +259,25 @@ describe("Platform admin organizations page", () => {
 
 		const queryConfig = useQueryMock.mock.calls.at(-1)?.[0];
 		expect(queryConfig.queryKey).toEqual(["admin-organizations", "acme", "suspended", 1]);
+	});
+
+	it("cancels a pending search debounce timeout when unmounting", () => {
+		vi.useFakeTimers();
+
+		const { unmount } = render(<OrganizationsPage />);
+		fireEvent.change(screen.getByPlaceholderText("Search by name or slug…"), {
+			target: { value: "acme" },
+		});
+		unmount();
+
+		act(() => {
+			vi.advanceTimersByTime(300);
+		});
+
+		expect(pushMock).not.toHaveBeenCalled();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
 	});
 });

@@ -15,7 +15,7 @@ import {
 	subareaSkillRequirement,
 	workPeriod,
 } from "@/db/schema";
-import { loadEffectiveContractsBatch } from "@/lib/contracts";
+import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type PlainDate } from "@/lib/datetime/temporal-core";
 import type { EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";

@@ -118,16 +118,16 @@ export async function prepareAbsenceReviewEvidence(
 ): Promise<AbsenceReviewEvidence | null> {
 	const live = absenceEntity(input.entity);
 	if (!live || live.organizationId !== input.organizationId) return null;
-	const [mode, rollout] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
-			workflowType: "absence",
-		}),
-		readApprovalAuthoritySnapshot(database, {
-			organizationId: input.organizationId,
-			workflowType: "absence",
-		}),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const mode = await readApprovalEvidenceMode(database, {
+		organizationId: input.organizationId,
+		workflowType: "absence",
+	});
+	const rollout = await readApprovalAuthoritySnapshot(database, {
+		organizationId: input.organizationId,
+		workflowType: "absence",
+	});
 	const canonicalAuthority = rollout.authority === "canonical";
 	// A legacy revision never sits under a workflow ID, so an observed shadow
 	// workflow link cannot surface legacy evidence as canonical (or vice versa).

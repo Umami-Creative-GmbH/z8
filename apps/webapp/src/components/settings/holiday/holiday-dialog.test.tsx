@@ -7,7 +7,7 @@ import {
 	parseHolidayDatePickerValue,
 } from "./holiday-dialog-utils";
 
-vi.mock("@/app/[locale]/(app)/settings/holidays/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/vacation/holiday-actions", () => ({
 	getHolidayCategories: vi.fn(),
 }));
 

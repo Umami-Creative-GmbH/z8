@@ -24,8 +24,8 @@ vi.mock("@/navigation", () => ({
 		<a {...props}>{children}</a>
 	),
 }));
-vi.mock("@/components/settings/work-balance/opening-balance-upload-dialog", () => ({
-	OpeningBalanceUploadDialog: () => <button type="button">Upload opening balances</button>,
+vi.mock("@/components/settings/work-balance/opening-balance-upload-panel", () => ({
+	OpeningBalanceUploadPanel: () => <button type="button">Upload opening balances</button>,
 }));
 
 it("keeps the pending directory heading and retains the independently adopted employee heading", () => {

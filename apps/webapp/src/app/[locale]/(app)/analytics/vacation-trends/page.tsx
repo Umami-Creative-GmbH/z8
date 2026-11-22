@@ -58,9 +58,13 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { getAnalyticsDateRangeForPreset } from "@/lib/analytics/date-ranges";
-import type { DateRange, VacationTrendsData } from "@/lib/analytics/types";
+import type {
+	AbsencePatternsData,
+	DateRange,
+	VacationTrendsData,
+} from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
-import { getVacationTrendsData } from "../actions";
+import { getAbsencePatternsData, getVacationTrendsData } from "../actions";
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
@@ -424,6 +428,92 @@ function MonthlyValues({
 	);
 }
 
+function AbsencePatternsCard({
+	data,
+	unavailable,
+	t,
+}: {
+	data: Array<{ category: string; days: number }>;
+	unavailable: boolean;
+	t: VacationTrendsTranslate;
+}) {
+	const daysLabel = t("analytics.common.days", "Days");
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					<h2>
+						{t("analytics.overview.absencePatterns.title", "Absence Patterns")}
+					</h2>
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"analytics.overview.absencePatterns.description",
+						"Absence distribution by category",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{unavailable ? (
+					<p className="flex min-h-72 items-center justify-center text-sm text-muted-foreground">
+						{t(
+							"analytics.overview.errors.loadData",
+							"Failed to load analytics data",
+						)}
+					</p>
+				) : data.length > 0 ? (
+					<ChartContainer
+						config={{
+							days: {
+								label: daysLabel,
+								color: "var(--chart-2)",
+							},
+						}}
+						className="h-72 w-full min-w-0"
+					>
+						<BarChart data={data}>
+							<CartesianGrid strokeDasharray="3 3" />
+							<XAxis
+								dataKey="category"
+								tickLine={false}
+								tickMargin={10}
+								axisLine={false}
+							/>
+							<YAxis tickLine={false} axisLine={false} />
+							<ChartTooltip content={<ChartTooltipContent />} />
+							<Bar dataKey="days" fill="var(--color-days)" radius={4} />
+						</BarChart>
+					</ChartContainer>
+				) : (
+					<div className="flex min-h-72 items-center justify-center text-sm text-muted-foreground">
+						{t("analytics.common.noDataAvailable", "No data available")}
+					</div>
+				)}
+				{!unavailable && data.length > 0 ? (
+					<details className="mt-4 text-sm">
+						<summary className="cursor-pointer rounded-sm text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
+							{t("analytics.overview.chartValues", "View chart values")}
+						</summary>
+						<dl className="mt-3 divide-y">
+							{data.map((row) => (
+								<div
+									key={row.category}
+									className="flex flex-wrap justify-between gap-2 py-2"
+								>
+									<dt className="break-words">{row.category}</dt>
+									<dd className="tabular-nums">
+										{row.days} {daysLabel}
+									</dd>
+								</div>
+							))}
+						</dl>
+					</details>
+				) : null}
+			</CardContent>
+		</Card>
+	);
+}
+
 function VacationToolbar({
 	dateRange,
 	onDateRangeChange,
@@ -511,18 +601,30 @@ function VacationTrends() {
 	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [state, setState] = useState<{
 		data: VacationTrendsData | null;
+		absenceData: AbsencePatternsData | null;
 		key: string;
 		loading: boolean;
 		refreshing: boolean;
 		failed: boolean;
-	}>({ data: null, key: "", loading: true, refreshing: false, failed: false });
+		absenceFailed: boolean;
+	}>({
+		data: null,
+		absenceData: null,
+		key: "",
+		loading: true,
+		refreshing: false,
+		failed: false,
+		absenceFailed: false,
+	});
 	const requestKey = JSON.stringify([
 		dateRange?.start.getTime(),
 		dateRange?.end.getTime(),
 		timezone,
 	]);
 	const vacationData = state.key === requestKey ? state.data : null;
-	const loading = state.loading || (!vacationData && !state.failed);
+	const absenceData = state.key === requestKey ? state.absenceData : null;
+	const loading =
+		state.loading || (!vacationData && !absenceData && !state.failed);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
@@ -571,63 +673,97 @@ function VacationTrends() {
 				loading: !background,
 				refreshing: background,
 				failed: false,
+				absenceFailed: false,
 			}));
-			let failed = false;
-			await Promise.resolve()
-				.then(() => getVacationTrendsData(range))
-				.then((result) => {
-					if (!isLatest()) {
-						return;
-					}
 
-					if (result.success && result.data) {
-						setState({
-							data: result.data,
-							key: requestKey,
-							loading: false,
-							refreshing: false,
-							failed: false,
-						});
-					} else {
-						if (
-							!result.success &&
-							[
-								"AuthenticationError",
-								"AuthorizationError",
-								"NotFoundError",
-								"BillingError",
-							].includes(result.code ?? "")
-						) {
-							setState((current) => ({ ...current, data: null }));
-						}
-						throw new Error("Failed to load analytics data");
-					}
-				})
-				.catch((error) => {
-					if (!isLatest()) {
-						return;
-					}
+			const [vacationResult, absenceResult] = await Promise.allSettled([
+				getVacationTrendsData(range),
+				getAbsencePatternsData(range),
+			]);
+			if (!isLatest()) {
+				return;
+			}
 
-					console.error("Failed to load vacation trends data:", error);
-					failed = true;
-					setState((current) => ({ ...current, failed: true }));
-					toast.error(
-						t(
-							"analytics.vacationTrends.errors.loadData",
-							"Failed to load vacation trends data",
-						),
+			const refusalCodes = [
+				"AuthenticationError",
+				"AuthorizationError",
+				"NotFoundError",
+				"BillingError",
+			];
+			const isRefused = (
+				result: PromiseSettledResult<{ success: boolean; code?: string }>,
+			) =>
+				result.status === "fulfilled" &&
+				!result.value.success &&
+				refusalCodes.includes(result.value.code ?? "");
+
+			const refused = isRefused(vacationResult) || isRefused(absenceResult);
+			const vacationOk =
+				vacationResult.status === "fulfilled" &&
+				vacationResult.value.success &&
+				Boolean(vacationResult.value.data);
+			const absenceOk =
+				absenceResult.status === "fulfilled" &&
+				absenceResult.value.success &&
+				Boolean(absenceResult.value.data);
+			const vacationFailed = !vacationOk;
+			const absenceFailed = !absenceOk;
+			const anyFailed = vacationFailed || absenceFailed;
+
+			if (anyFailed) {
+				if (vacationResult.status === "rejected") {
+					console.error(
+						"Failed to load vacation trends data:",
+						vacationResult.reason,
 					);
-				})
-				.finally(() => {
-					if (isLatest()) {
-						setState((current) => ({
-							...current,
-							loading: false,
-							refreshing: false,
-						}));
-					}
-				});
-			if (failed && background)
+				}
+				if (absenceResult.status === "rejected") {
+					console.error(
+						"Failed to load absence patterns data:",
+						absenceResult.reason,
+					);
+				}
+				toast.error(
+					t(
+						"analytics.vacationTrends.errors.loadData",
+						"Failed to load vacation trends data",
+					),
+				);
+			}
+
+			setState((current) => {
+				const keepPrevious =
+					background && !refused && current.key === requestKey;
+				return {
+					data: refused
+						? null
+						: vacationOk &&
+							  vacationResult.status === "fulfilled" &&
+							  vacationResult.value.success
+							? vacationResult.value.data
+							: keepPrevious
+								? current.data
+								: null,
+					absenceData: refused
+						? null
+						: absenceOk &&
+							  absenceResult.status === "fulfilled" &&
+							  absenceResult.value.success
+							? absenceResult.value.data
+							: keepPrevious
+								? current.absenceData
+								: null,
+					key: requestKey,
+					loading: false,
+					refreshing: false,
+					failed: anyFailed,
+					absenceFailed: refused
+						? true
+						: absenceFailed && !(keepPrevious && current.absenceData),
+				};
+			});
+
+			if (anyFailed && background)
 				throw new Error("Vacation analytics refresh failed");
 		},
 		[dateRange, isHydrated, timezone, t, requestKey],
@@ -664,11 +800,15 @@ function VacationTrends() {
 			/>
 			<VacationContent
 				vacationData={vacationData}
+				absenceData={absenceData}
+				absenceUnavailable={state.absenceFailed || !absenceData}
 				loading={loading}
 				failed={state.failed}
 				refreshing={state.refreshing}
 				onRetry={() =>
-					void runAnalyticsLoad(Boolean(vacationData)).catch(() => {})
+					void runAnalyticsLoad(Boolean(vacationData || absenceData)).catch(
+						() => {},
+					)
 				}
 				t={t}
 			/>
@@ -678,6 +818,8 @@ function VacationTrends() {
 
 function VacationContent({
 	vacationData,
+	absenceData,
+	absenceUnavailable,
 	loading,
 	failed,
 	refreshing,
@@ -685,6 +827,8 @@ function VacationContent({
 	t,
 }: {
 	vacationData: VacationTrendsData | null;
+	absenceData: AbsencePatternsData | null;
+	absenceUnavailable: boolean;
 	loading: boolean;
 	failed: boolean;
 	refreshing: boolean;
@@ -703,6 +847,11 @@ function VacationContent({
 			return row ? [{ month, count: row.daysTaken }] : [];
 		},
 	);
+	const absencePatternsChartData =
+		absenceData?.byType.map((cat) => ({
+			category: cat.categoryName,
+			days: cat.totalDays,
+		})) || [];
 
 	return (
 		<>
@@ -763,6 +912,14 @@ function VacationContent({
 						<PeakMonthsCard data={peakMonthsData} t={t} />
 					</div>
 				</>
+			)}
+
+			{!loading && (absenceData || overallData) && (
+				<AbsencePatternsCard
+					data={absencePatternsChartData}
+					unavailable={absenceUnavailable}
+					t={t}
+				/>
 			)}
 		</>
 	);

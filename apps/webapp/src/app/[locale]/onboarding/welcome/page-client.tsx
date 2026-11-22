@@ -14,10 +14,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import type { OnboardingSummary } from "@/lib/effect/services/onboarding.service";
+import { getOnboardingStepPath } from "@/lib/validations/onboarding-steps";
 import { useRouter } from "@/navigation";
 import { getOnboardingSummary, startOnboarding, updateOnboardingStep } from "./actions";
 
-function WelcomeFrame({ children, isAdmin = false }: { children: ReactNode; isAdmin?: boolean }) {
+function WelcomeFrame({ children, isAdmin }: { children: ReactNode; isAdmin?: boolean }) {
 	const { t } = useTranslate();
 	return (
 		<section className="mx-auto max-w-3xl rounded-xl border bg-card text-card-foreground shadow-sm">
@@ -185,7 +186,7 @@ function WelcomeArrival() {
 			if (!current.active) return;
 			if (result.success) {
 				setContinuation({ status: "continuing" });
-				router.push(step === "profile" ? "/onboarding/profile" : "/onboarding/organization");
+				router.push(getOnboardingStepPath(step));
 				return;
 			}
 			current.pending = false;
@@ -201,7 +202,9 @@ function WelcomeArrival() {
 	};
 
 	return (
-		<WelcomeFrame isAdmin={preparation.status === "ready" && preparation.summary.isAdmin}>
+		<WelcomeFrame
+			isAdmin={preparation.status === "ready" ? preparation.summary.isAdmin : undefined}
+		>
 			{preparation.status === "preparing" && (
 				<p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
 					<IconLoader2

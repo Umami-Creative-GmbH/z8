@@ -224,49 +224,49 @@ async function deriveReturnOutcome(
 	database: ApprovalDatabase,
 	input: { organizationId: string; reportId: string; approvalRequestId: string; actorId: string },
 ) {
-	const [requests, stages, reports] = await Promise.all([
-		database
-			.select({
-				status: approvalRequest.status,
-				approverId: approvalRequest.approverId,
-				updatedAt: approvalRequest.updatedAt,
-				entityType: approvalRequest.entityType,
-				entityId: approvalRequest.entityId,
-			})
-			.from(approvalRequest)
-			.where(
-				and(
-					eq(approvalRequest.id, input.approvalRequestId),
-					eq(approvalRequest.organizationId, input.organizationId),
-				),
-			)
-			.limit(2),
-		database
-			.select({
-				id: approvalChainStageInstance.id,
-				status: approvalChainStageInstance.status,
-				decidedAt: approvalChainStageInstance.decidedAt,
-				decidedBy: approvalChainStageInstance.decidedBy,
-			})
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
-				),
-			)
-			.limit(2),
-		database
-			.select({ status: travelExpenseReport.status, decidedAt: travelExpenseReport.decidedAt })
-			.from(travelExpenseReport)
-			.where(
-				and(
-					eq(travelExpenseReport.id, input.reportId),
-					eq(travelExpenseReport.organizationId, input.organizationId),
-				),
-			)
-			.limit(2),
-	]);
+	// One after another: `database` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const requests = await database
+		.select({
+			status: approvalRequest.status,
+			approverId: approvalRequest.approverId,
+			updatedAt: approvalRequest.updatedAt,
+			entityType: approvalRequest.entityType,
+			entityId: approvalRequest.entityId,
+		})
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, input.organizationId),
+			),
+		)
+		.limit(2);
+	const stages = await database
+		.select({
+			id: approvalChainStageInstance.id,
+			status: approvalChainStageInstance.status,
+			decidedAt: approvalChainStageInstance.decidedAt,
+			decidedBy: approvalChainStageInstance.decidedBy,
+		})
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+			),
+		)
+		.limit(2);
+	const reports = await database
+		.select({ status: travelExpenseReport.status, decidedAt: travelExpenseReport.decidedAt })
+		.from(travelExpenseReport)
+		.where(
+			and(
+				eq(travelExpenseReport.id, input.reportId),
+				eq(travelExpenseReport.organizationId, input.organizationId),
+			),
+		)
+		.limit(2);
 	const request = requests[0];
 	const report = reports[0];
 	if (

@@ -45,7 +45,6 @@ import type { EquipmentView } from "@/lib/organization/equipment/contracts";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query";
 import { type EmployeeDetail, useEmployee } from "@/lib/query/use-employee";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { EmployeeDraftActions } from "./employee-draft-actions";
@@ -168,7 +167,6 @@ function EmployeeDetailLifecycleActions({
 
 export function EmployeeDetailPageClient({
 	params,
-	accessTier,
 	currentUserId,
 	settingsAccess,
 	organizationId,
@@ -179,7 +177,6 @@ export function EmployeeDetailPageClient({
 	equipment = null,
 }: {
 	params: Promise<{ employeeId: string }>;
-	accessTier: SettingsAccessTier;
 	currentUserId: string;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
@@ -196,7 +193,7 @@ export function EmployeeDetailPageClient({
 	const { push } = useRouter();
 	const queryClient = useQueryClient();
 
-	const isOrgAdmin = accessTier === "orgAdmin" && meetsSettingsAccess(settingsAccess, "orgAdmin");
+	const isOrgAdmin = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const hasPersonnelFile = Boolean(personnelFile);
 	const [activeTab, setActiveTab] = useState<EmployeeDetailTab>(() =>
 		resolveEmployeeDetailTabFromDeepLink({
@@ -240,7 +237,7 @@ export function EmployeeDetailPageClient({
 
 	const employeeData = useEmployee({
 		employeeId,
-		accessTier,
+		settingsAccess,
 		userId: currentUserId,
 		organizationId,
 		initialSnapshot,
@@ -255,7 +252,7 @@ export function EmployeeDetailPageClient({
 	});
 	const { form, teamOptions, drivingLicenceWarning } = useEmployeeDetailForm({
 		employeeId,
-		accessTier,
+		settingsAccess,
 		employee,
 		updateEmployee,
 		customFields,
@@ -275,7 +272,7 @@ export function EmployeeDetailPageClient({
 	const isDraft = employee.kind === "invitationDraft";
 	const canShowRealEmployeeSections = !isDraft;
 	const canEditDraftDetails = !isDraft || !employee.realEmployeeId;
-	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
+	const isOrgAdminOrManager = meetsSettingsAccess(settingsAccess, "scopedManager");
 	const { availableManagers, workPolicies } = employeeData;
 
 	const handleWorkBalanceRecalculation = async () => {
@@ -301,7 +298,7 @@ export function EmployeeDetailPageClient({
 		<EmployeeDetailEditCard
 			form={form}
 			employee={employee}
-			accessTier={accessTier}
+			settingsAccess={settingsAccess}
 			isUpdating={isUpdating}
 			teamOptions={teamOptions}
 			customFields={customFields}
@@ -437,7 +434,7 @@ export function EmployeeDetailPageClient({
 												: undefined
 										}
 									/>
-									<EmployeeRateSections employeeId={employeeId} accessTier={accessTier} />
+									<EmployeeRateSections employeeId={employeeId} settingsAccess={settingsAccess} />
 								</>
 							) : (
 								<ScopedManagerPolicyCard
@@ -532,11 +529,7 @@ export function EmployeeDetailPageClient({
 							<EmployeeOverviewCard employee={employee} schedule={employeeData.schedule} t={t} />
 							{canEditDraftDetails && editForm}
 						</div>
-						<EmployeeInvitationActions
-							employee={employee}
-							accessTier={accessTier}
-							settingsAccess={settingsAccess}
-						/>
+						<EmployeeInvitationActions employee={employee} settingsAccess={settingsAccess} />
 					</div>
 				)}
 			</div>
@@ -635,7 +628,7 @@ function EmployeeReadNotices({ data }: { data: ReturnType<typeof useEmployee> })
 function EmployeeDetailEditCard({
 	form,
 	employee,
-	accessTier,
+	settingsAccess,
 	isUpdating,
 	teamOptions,
 	customFields,
@@ -643,7 +636,7 @@ function EmployeeDetailEditCard({
 }: {
 	form: EmployeeDetailFormApi;
 	employee: EmployeeDetail;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	isUpdating: boolean;
 	/** Only for an org admin editing a real employee: the Team field stays hidden without. */
 	teamOptions: EmployeeTeamOption[] | undefined;
@@ -656,8 +649,8 @@ function EmployeeDetailEditCard({
 	return (
 		<EmployeeEditFormCard
 			form={form}
-			canEditManagerFields={accessTier === "orgAdmin" || accessTier === "manager"}
-			canEditOrgAdminFields={accessTier === "orgAdmin"}
+			canEditManagerFields={meetsSettingsAccess(settingsAccess, "scopedManager")}
+			canEditOrgAdminFields={meetsSettingsAccess(settingsAccess, "orgAdmin")}
 			personnelNumberManagedByScim={
 				employee.kind === "employee" && employee.personnelNumberManagedByScim
 			}
@@ -694,14 +687,14 @@ function EmployeeDetailEditCard({
 /** Customer billing and internal cost rates use the same feature and access gate. */
 function EmployeeRateSections({
 	employeeId,
-	accessTier,
+	settingsAccess,
 }: {
 	employeeId: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 }) {
 	const { t } = useTranslate();
 	const billableTimeEnabled = useBillableTimeEnabled();
-	if (accessTier !== "orgAdmin" || !billableTimeEnabled) return null;
+	if (!meetsSettingsAccess(settingsAccess, "orgAdmin") || !billableTimeEnabled) return null;
 
 	return (
 		<>
@@ -738,16 +731,13 @@ function EmployeeRateSections({
 
 function EmployeeInvitationActions({
 	employee,
-	accessTier,
 	settingsAccess,
 }: {
 	employee: NonNullable<ReturnType<typeof useEmployee>["employee"]>;
-	accessTier: SettingsAccessTier;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 }) {
-	const canManageDraftActions =
-		accessTier === "orgAdmin" && meetsSettingsAccess(settingsAccess, "orgAdmin");
+	const canManageDraftActions = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	if (employee.kind !== "invitationDraft" || !canManageDraftActions) return null;
 	return (
 		<EmployeeDraftActions

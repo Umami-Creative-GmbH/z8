@@ -73,9 +73,7 @@ function useLocationDetail({ locationId, organizationId }: LocationDetailProps) 
 	const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
 	const [addSubareaOpen, setAddSubareaOpen] = useState(false);
 	const [editSubarea, setEditSubarea] = useState<SubareaWithEmployees | null>(null);
-	const [subareaToDelete, setSubareaToDelete] = useState<{ id: string; name: string } | null>(
-		null,
-	);
+	const [subareaToDelete, setSubareaToDelete] = useState<{ id: string; name: string } | null>(null);
 	const [deletingLocation, setDeletingLocation] = useState(false);
 	const [deletingSubarea, setDeletingSubarea] = useState(false);
 	const [removingAssignmentId, setRemovingAssignmentId] = useState<string | null>(null);
@@ -402,11 +400,9 @@ export function LocationDetail(props: LocationDetailProps) {
 		<div className="page-frame flex flex-1 flex-col gap-6">
 			<LocationDetailHeader
 				canManageLocations={canManageLocations}
-				isFetching={isFetching}
 				location={location}
 				onDelete={() => setDeleteLocationOpen(true)}
 				onEdit={() => setEditLocationOpen(true)}
-				onRefresh={() => refetch()}
 			/>
 
 			{/* Content Grid */}
@@ -577,18 +573,14 @@ function LocationInfoCard({ location }: { location: LocationWithDetails }) {
 
 function LocationDetailHeader({
 	canManageLocations,
-	isFetching,
 	location,
 	onDelete,
 	onEdit,
-	onRefresh,
 }: {
 	canManageLocations: boolean;
-	isFetching: boolean;
 	location: LocationWithDetails;
 	onDelete: () => void;
 	onEdit: () => void;
-	onRefresh: () => void;
 }) {
 	const { t } = useTranslate();
 	const address = [location.street, location.postalCode, location.city, location.country]
@@ -616,33 +608,18 @@ function LocationDetailHeader({
 				</div>
 			}
 			actions={
-				<>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={onRefresh}
-						aria-label={t("common.refresh", "Refresh")}
-						title={t("common.refresh", "Refresh")}
-						disabled={isFetching}
-					>
-						<IconRefresh
-							className={cn("size-4", isFetching && "motion-safe:animate-spin")}
-							aria-hidden="true"
-						/>
-					</Button>
-					{canManageLocations && (
-						<>
-							<Button variant="outline" onClick={onEdit}>
-								<IconEdit className="size-4" aria-hidden="true" />
-								{t("settings.locations.dialog.editTitle", "Edit Location")}
-							</Button>
-							<Button variant="destructive" onClick={onDelete}>
-								<IconTrash className="size-4" aria-hidden="true" />
-								{t("settings.locations.deleteTitle", "Delete Location")}
-							</Button>
-						</>
-					)}
-				</>
+				canManageLocations ? (
+					<>
+						<Button variant="outline" onClick={onEdit}>
+							<IconEdit className="size-4" aria-hidden="true" />
+							{t("settings.locations.dialog.editTitle", "Edit Location")}
+						</Button>
+						<Button variant="destructive" onClick={onDelete}>
+							<IconTrash className="size-4" aria-hidden="true" />
+							{t("settings.locations.deleteTitle", "Delete Location")}
+						</Button>
+					</>
+				) : undefined
 			}
 		/>
 	);

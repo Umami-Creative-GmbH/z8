@@ -22,15 +22,19 @@ vi.mock("next/cache", async (importOriginal) => ({
 }));
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: mockState.getAuthContext,
+	getCurrentSettingsAccess: vi.fn(async () => null),
 	getAbility: vi.fn(async () => ({ can: () => false })),
 }));
 vi.mock("@/lib/payroll-access/permissions", () => ({
+	getActivePayrollAccessGrantScope: vi.fn(async () => "specific"),
+	resolveOrganizationPayrollEmployeeIds: vi.fn(async () => []),
 	resolvePayrollAccessibleEmployeeIds: vi.fn(async () => ["employee-2"]),
 	hasActivePayrollAccessGrant: mockState.hasActivePayrollAccessGrant,
 	intersectPayrollScope: vi.fn(),
 }));
 vi.mock("@/lib/payroll-access/adjustment-coverage", () => ({
 	listDepartedEmployeesCoveredForExport: vi.fn(async () => []),
+	listOrganizationDepartedEmployeesForExport: vi.fn(async () => []),
 }));
 vi.mock("@/lib/payroll-export", () => ({}));
 vi.mock("@/lib/payroll-workspace/pdf-exporter", () => ({}));

@@ -5,10 +5,11 @@
  * Uses color-coding to highlight severity levels.
  */
 
-import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
-import { fmtShortDate } from "@/lib/bot-platform/i18n";
+import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { ComplianceSummary } from "@/lib/effect/services/teams-compliance.service";
+import { isValidTimeZone } from "@/lib/timezone/validation";
 
 // ============================================
 // TYPES
@@ -64,8 +65,8 @@ function getExceptionTypeLabel(type: string, t: BotTranslateFn): string {
 }
 
 function formatDate(date: Date, locale: string, timezone?: string): string {
-	const dt = timezone ? DateTime.fromJSDate(date).setZone(timezone) : DateTime.fromJSDate(date);
-	return fmtShortDate(dt, locale);
+	const resolvedTimezone = timezone && isValidTimeZone(timezone) ? timezone : "UTC";
+	return formatPlainDate(plainDateAt(instantFromDate(date), resolvedTimezone), locale, "monthDay");
 }
 
 // ============================================

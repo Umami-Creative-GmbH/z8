@@ -2,14 +2,12 @@
 
 import { IconChevronLeft, IconChevronRight, IconLock, IconReload } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CalendarClosedRange } from "@/hooks/use-calendar-data";
 import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
-import { dayTouchesClosedRange } from "@/lib/time-tracking/closed-months/calendar-day";
 import {
 	buildMonthWorkSummary,
 	type MonthWorkDay,
@@ -21,6 +19,9 @@ import type {
 	DailyWorkHoursStatus,
 	DailyWorkHoursSummaries,
 } from "@/lib/calendar/types";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { dayTouchesClosedRange } from "@/lib/time-tracking/closed-months/calendar-day";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import type { ViewMode } from "./schedule-x-calendar";
@@ -124,9 +125,7 @@ function getDailyStatusClassName(status: DailyWorkHoursStatus): string {
 }
 
 function getDayLabel(day: MonthWorkDay, locale: string, t: Translate): string {
-	const dateLabel = day.date
-		.setLocale(locale)
-		.toLocaleString(DateTime.DATE_HUGE);
+	const dateLabel = formatPlainDate(day.date, locale, "weekdayDateLong");
 	const summary = day.isActiveMonth ? day.workHoursSummary : null;
 	const eventTitles = day.events.map((event) => event.title).join(", ");
 	const eventText =
@@ -234,10 +233,7 @@ function EventBadges({ events }: { events: CalendarEvent[] }) {
 					)}
 				>
 					{event.type === "work_period" ? (
-						<WorkLocationIndicator
-							value={event.metadata.workLocationType}
-							t={t}
-						/>
+						<WorkLocationIndicator value={event.metadata.workLocationType} t={t} />
 					) : null}
 					<span className="truncate">{event.title}</span>
 				</span>
@@ -403,8 +399,8 @@ export function MonthWorkSummaryView({
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
-	const activeMonth = DateTime.fromISO(monthDateKey, { zone: "utc" }).startOf("month");
-	const monthTitle = activeMonth.setLocale(locale).toFormat("LLLL yyyy");
+	const activeMonth = parsePlainDate(monthDateKey).with({ day: 1 });
+	const monthTitle = formatPlainDate(activeMonth, locale, "monthYear");
 	const weekdays = getWeekdayNames(locale, weekStartDay);
 	const monthSummary = buildMonthWorkSummary({
 		year: activeMonth.year,
@@ -424,7 +420,7 @@ export function MonthWorkSummaryView({
 						type="button"
 						variant="outline"
 						size="icon"
-						onClick={() => onMonthChange(activeMonth.minus({ months: 1 }).toISODate()!)}
+						onClick={() => onMonthChange(activeMonth.subtract({ months: 1 }).toString())}
 						aria-label={t("calendar.monthSummary.previousMonth", "Previous month")}
 					>
 						<IconChevronLeft className="size-4" aria-hidden="true" />
@@ -433,7 +429,7 @@ export function MonthWorkSummaryView({
 						type="button"
 						variant="outline"
 						size="icon"
-						onClick={() => onMonthChange(activeMonth.plus({ months: 1 }).toISODate()!)}
+						onClick={() => onMonthChange(activeMonth.add({ months: 1 }).toString())}
 						aria-label={t("calendar.monthSummary.nextMonth", "Next month")}
 					>
 						<IconChevronRight className="size-4" aria-hidden="true" />

@@ -43,33 +43,32 @@ export async function loadTravelExpenseReportFactsInput(
 	  })
 	| null
 > {
-	const [reports, items, receipts, conversions, perDiems, adjustment, allowanceOverrides] =
-		await Promise.all([
-		database
-			.select()
-			.from(travelExpenseReport)
-			.where(
-				and(
-					eq(travelExpenseReport.id, scope.reportId),
-					eq(travelExpenseReport.organizationId, scope.organizationId),
-				),
-			)
-			.limit(2),
-		database
-			.select()
-			.from(travelExpenseReportItem)
-			.where(eq(travelExpenseReportItem.reportId, scope.reportId)),
-		database
-			.select()
-			.from(travelExpenseReportReceipt)
-			.where(eq(travelExpenseReportReceipt.reportId, scope.reportId)),
-		loadReportConversionRows(database, scope.reportId),
-		loadReportPerDiemRows(database, scope.reportId),
-		// The report it corrects when it is an adjustment report (#615).
-		loadAdjustmentLink(database, scope),
-		// Administrator overrides of allowance items (#610).
-		loadReportAllowanceOverrideRows(database, scope.reportId),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const reports = await database
+		.select()
+		.from(travelExpenseReport)
+		.where(
+			and(
+				eq(travelExpenseReport.id, scope.reportId),
+				eq(travelExpenseReport.organizationId, scope.organizationId),
+			),
+		)
+		.limit(2);
+	const items = await database
+		.select()
+		.from(travelExpenseReportItem)
+		.where(eq(travelExpenseReportItem.reportId, scope.reportId));
+	const receipts = await database
+		.select()
+		.from(travelExpenseReportReceipt)
+		.where(eq(travelExpenseReportReceipt.reportId, scope.reportId));
+	const conversions = await loadReportConversionRows(database, scope.reportId);
+	const perDiems = await loadReportPerDiemRows(database, scope.reportId);
+	// The report it corrects when it is an adjustment report (#615).
+	const adjustment = await loadAdjustmentLink(database, scope);
+	// Administrator overrides of allowance items (#610).
+	const allowanceOverrides = await loadReportAllowanceOverrideRows(database, scope.reportId);
 	const report = reports[0];
 	if (reports.length !== 1 || !report) return null;
 	return {
@@ -141,31 +140,31 @@ export async function verifyTravelExpenseReportLifecycle(
 	const chainInstanceId =
 		input.routing.kind === "default_created" ? null : input.routing.chainInstanceId;
 	if (!chainInstanceId) return { chainInstanceId: null, chainStageId: null, approverEmployeeId };
-	const [chains, stages] = await Promise.all([
-		database
-			.select({ id: approvalChainInstance.id })
-			.from(approvalChainInstance)
-			.where(
-				and(
-					eq(approvalChainInstance.id, chainInstanceId),
-					eq(approvalChainInstance.organizationId, input.organizationId),
-					eq(approvalChainInstance.entityType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
-					eq(approvalChainInstance.entityId, input.reportId),
-				),
-			)
-			.limit(2),
-		database
-			.select({ id: approvalChainStageInstance.id })
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, input.routing.approvalRequestId),
-				),
-			)
-			.limit(2),
-	]);
+	// One after another: `database` is the submission's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const chains = await database
+		.select({ id: approvalChainInstance.id })
+		.from(approvalChainInstance)
+		.where(
+			and(
+				eq(approvalChainInstance.id, chainInstanceId),
+				eq(approvalChainInstance.organizationId, input.organizationId),
+				eq(approvalChainInstance.entityType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
+				eq(approvalChainInstance.entityId, input.reportId),
+			),
+		)
+		.limit(2);
+	const stages = await database
+		.select({ id: approvalChainStageInstance.id })
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, input.routing.approvalRequestId),
+			),
+		)
+		.limit(2);
 	const stage = stages[0];
 	if (chains.length !== 1 || stages.length !== 1 || !stage) {
 		throw new ApprovalEvidenceError("evidence_incomplete", { field: "legacy_lifecycle" });

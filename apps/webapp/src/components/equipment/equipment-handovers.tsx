@@ -3,6 +3,7 @@ import { IconAlertCircle, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { type ReactNode, type RefObject, useContext, useRef } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanelBody,
 	ActionPanelDescription,
@@ -1007,8 +1008,8 @@ function IssueSubjectField({
 								: t("settings.equipment.handover.employee", "Current employee")}
 						</TFormLabel>
 						<TFormControl hasError={field.state.meta.errors.length > 0}>
-							<select
-								name={field.name}
+							<EmployeeSingleSelect
+								className="space-y-0"
 								aria-label={
 									mode === "historical"
 										? t(
@@ -1020,18 +1021,16 @@ function IssueSubjectField({
 												"Current employee",
 											)
 								}
-								className={equipmentSelectClass}
-								value={field.state.value}
-								onChange={(e) => {
-									field.handleChange(e.target.value);
+								value={field.state.value || null}
+								onChange={(value) => {
+									field.handleChange(value ?? "");
 									form.setFieldValue("employmentPeriodId", "");
 									form.setFieldValue("endingContext", "");
 								}}
 								onBlur={field.handleBlur}
 								disabled={!!employeeId}
-							>
-								<option value="">
-									{mode === "historical"
+								placeholder={
+									mode === "historical"
 										? t(
 												"settings.equipment.historical.selectEmployee",
 												"Select a current or former employee…",
@@ -1039,23 +1038,23 @@ function IssueSubjectField({
 										: t(
 												"settings.equipment.handover.selectEmployee",
 												"Select a current employee…",
-											)}
-								</option>
-								{data.employees
+											)
+								}
+								employees={data.employees
 									.filter(
 										(employee) =>
 											mode === "historical" ||
 											(!employee.former && employee.canIssue !== false),
 									)
-									.map((employee) => (
-										<option key={employee.id} value={employee.id}>
-											{employee.name}
-											{employee.former
-												? ` · ${t("settings.equipment.custody.former", "Former employee")}`
-												: ""}
-										</option>
-									))}
-							</select>
+									.map((employee) =>
+										toSelectableEmployee({
+											id: employee.id,
+											name: employee.name,
+											isActive: !employee.former,
+											isFormer: employee.former,
+										}),
+									)}
+							/>
 						</TFormControl>
 						<TFormMessage field={field} />
 					</TFormItem>

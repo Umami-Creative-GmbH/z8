@@ -5,17 +5,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SurchargeReports } from "./surcharge-reports-root";
 
 const getSurchargeCalculationsForPeriodMock = vi.fn();
-const translateMock = vi.fn(
-	(_key: string, fallback?: string, params?: { count?: number }) => {
-		const text = fallback ?? _key;
-		// Resolve the "{count, plural, one {# x} other {# xs}}" form the summary strip uses.
-		const plural = /^\{count, plural, one \{([^}]*)\} other \{([^}]*)\}\}$/.exec(text);
-		if (plural && params?.count !== undefined) {
-			return (params.count === 1 ? plural[1] : plural[2]).replace("#", String(params.count));
-		}
-		return text;
-	},
-);
+const translateMock = vi.fn((_key: string, fallback?: string, params?: { count?: number }) => {
+	const text = fallback ?? _key;
+	// Resolve the "{count, plural, one {# x} other {# xs}}" form the summary strip uses.
+	const plural = /^\{count, plural, one \{([^}]*)\} other \{([^}]*)\}\}$/.exec(text);
+	if (plural && params?.count !== undefined) {
+		return (params.count === 1 ? plural[1] : plural[2]).replace("#", String(params.count));
+	}
+	return text;
+});
+
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: translateMock }),
@@ -418,5 +420,25 @@ describe("SurchargeReports", () => {
 
 		expect(screen.queryByText("Mina Miller")).toBeNull();
 		expect(screen.getByText("0 calculations")).toBeTruthy();
+	});
+
+	it("anchors filter date boundaries to the organization timezone rather than the viewer timezone", async () => {
+		getSurchargeCalculationsForPeriodMock.mockResolvedValue({
+			success: true,
+			data: [calculation],
+		});
+
+		render(<SurchargeReports organizationId="org-1" organizationTimezone="America/New_York" />);
+		await waitFor(() => expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(1));
+
+		fireEvent.change(screen.getByLabelText("Start date"), { target: { value: "2026-07-15" } });
+		fireEvent.change(screen.getByLabelText("End date"), { target: { value: "2026-07-15" } });
+		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+
+		await waitFor(() => expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(2));
+		const secondCall = getSurchargeCalculationsForPeriodMock.mock.calls[1]?.[0];
+		// 2026-07-15 in America/New_York (EDT, UTC-4): 04:00:00.000Z .. 2026-07-16T03:59:59.999Z
+		expect(secondCall.startDate.toISOString()).toBe("2026-07-15T04:00:00.000Z");
+		expect(secondCall.endDate.toISOString()).toBe("2026-07-16T03:59:59.999Z");
 	});
 });

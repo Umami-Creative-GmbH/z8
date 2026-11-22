@@ -577,7 +577,7 @@ reactivated and until an org admin dismisses it (`checklist_dismissed_at`,
 what `applied` lists and links each item to where it is granted again: reports
 and own managers to the employee pages, grants to their settings tabs, kiosk
 badges to the employee page, driving authorizations to
-`/driving-licence/checks/<id>`, teams to `/settings/teams/<id>`, projects to
+`/team/driving-licence/<id>`, teams to `/settings/teams/<id>`, projects to
 `/settings/projects`, shifts to `/scheduling`, absences to `/team/absences`,
 share links to `/settings/report-share-links`, cancelled document requests to
 the personnel file (`/personnel-files/<id>`). The items of what Employment

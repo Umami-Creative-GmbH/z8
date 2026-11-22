@@ -4,6 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useId } from "react";
 import { mapCsvWorkAction } from "@/app/[locale]/(app)/settings/import/csv-actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import {
 	TFormControl,
@@ -183,27 +184,44 @@ export function CsvWorkMapping({
 											)}
 								</TFormLabel>
 								<TFormControl>
-									<select
-										aria-labelledby={`${labelId}-target`}
-										className={selectClass}
-										disabled={disabled || submitting}
-										value={values.targetId}
-										onChange={(event) =>
-											form.setFieldValue("targetId", event.target.value)
-										}
-									>
-										<option value="">
-											{t(
+									{values.kind === "employee" ? (
+										<EmployeeSingleSelect
+											className="space-y-0"
+											aria-labelledby={`${labelId}-target`}
+											disabled={disabled || submitting}
+											value={values.targetId || null}
+											onChange={(value) => form.setFieldValue("targetId", value ?? "")}
+											placeholder={t(
 												"settings.import.csv.chooseTarget",
 												"Choose an existing record",
 											)}
-										</option>
-										{targets.map((target) => (
-											<option key={target.id} value={target.id}>
-												{target.label}
+											employees={targets.map((target) =>
+												toSelectableEmployee({ id: target.id, name: target.label }),
+											)}
+										/>
+									) : (
+										<select
+											aria-labelledby={`${labelId}-target`}
+											className={selectClass}
+											disabled={disabled || submitting}
+											value={values.targetId}
+											onChange={(event) =>
+												form.setFieldValue("targetId", event.target.value)
+											}
+										>
+											<option value="">
+												{t(
+													"settings.import.csv.chooseTarget",
+													"Choose an existing record",
+												)}
 											</option>
-										))}
-									</select>
+											{targets.map((target) => (
+												<option key={target.id} value={target.id}>
+													{target.label}
+												</option>
+											))}
+										</select>
+									)}
 								</TFormControl>
 							</TFormItem>
 							<Button

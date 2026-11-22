@@ -71,72 +71,72 @@ export async function readOrganizationStaffingEvidence(
 		)
 		.where(inArray(locationSubarea.id, subareas));
 	if (allowedAreas.length !== subareas.length) return result;
-	const [rules, published] = await Promise.all([
-		database
-			.select({
-				id: coverageRule.id,
-				organizationId: coverageRule.organizationId,
-				subareaId: coverageRule.subareaId,
-				dayOfWeek: coverageRule.dayOfWeek,
-				startTime: coverageRule.startTime,
-				endTime: coverageRule.endTime,
-				minimumStaffCount: coverageRule.minimumStaffCount,
-				subareaName: locationSubarea.name,
-			})
-			.from(coverageRule)
-			.innerJoin(
-				locationSubarea,
-				eq(locationSubarea.id, coverageRule.subareaId),
-			)
-			.innerJoin(
-				location,
-				and(
-					eq(location.id, locationSubarea.locationId),
-					eq(location.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(coverageRule.organizationId, organizationId),
-					inArray(coverageRule.subareaId, subareas),
-				),
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const rules = await database
+		.select({
+			id: coverageRule.id,
+			organizationId: coverageRule.organizationId,
+			subareaId: coverageRule.subareaId,
+			dayOfWeek: coverageRule.dayOfWeek,
+			startTime: coverageRule.startTime,
+			endTime: coverageRule.endTime,
+			minimumStaffCount: coverageRule.minimumStaffCount,
+			subareaName: locationSubarea.name,
+		})
+		.from(coverageRule)
+		.innerJoin(
+			locationSubarea,
+			eq(locationSubarea.id, coverageRule.subareaId),
+		)
+		.innerJoin(
+			location,
+			and(
+				eq(location.id, locationSubarea.locationId),
+				eq(location.organizationId, organizationId),
 			),
-		database
-			.select({
-				id: shift.id,
-				organizationId: shift.organizationId,
-				employeeId: shift.employeeId,
-				subareaId: shift.subareaId,
-				date: shift.date,
-				startTime: shift.startTime,
-				endTime: shift.endTime,
-			})
-			.from(shift)
-			.innerJoin(locationSubarea, eq(locationSubarea.id, shift.subareaId))
-			.innerJoin(
-				location,
-				and(
-					eq(location.id, locationSubarea.locationId),
-					eq(location.organizationId, organizationId),
-				),
-			)
-			.innerJoin(
-				employee,
-				and(
-					eq(employee.id, shift.employeeId),
-					eq(employee.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(shift.organizationId, organizationId),
-					eq(shift.status, "published"),
-					inArray(shift.subareaId, subareas),
-					gte(shift.date, bounds.start),
-					lt(shift.date, bounds.endExclusive),
-				),
+		)
+		.where(
+			and(
+				eq(coverageRule.organizationId, organizationId),
+				inArray(coverageRule.subareaId, subareas),
 			),
-	]);
+		);
+	const published = await database
+		.select({
+			id: shift.id,
+			organizationId: shift.organizationId,
+			employeeId: shift.employeeId,
+			subareaId: shift.subareaId,
+			date: shift.date,
+			startTime: shift.startTime,
+			endTime: shift.endTime,
+		})
+		.from(shift)
+		.innerJoin(locationSubarea, eq(locationSubarea.id, shift.subareaId))
+		.innerJoin(
+			location,
+			and(
+				eq(location.id, locationSubarea.locationId),
+				eq(location.organizationId, organizationId),
+			),
+		)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, shift.employeeId),
+				eq(employee.organizationId, organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(shift.organizationId, organizationId),
+				eq(shift.status, "published"),
+				inArray(shift.subareaId, subareas),
+				gte(shift.date, bounds.start),
+				lt(shift.date, bounds.endExclusive),
+			),
+		);
 	result.shifts = published.map((own) => ({
 		...own,
 		date: shiftCalendarDate(own.date, timezone).toString(),

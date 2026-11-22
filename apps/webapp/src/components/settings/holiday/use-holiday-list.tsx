@@ -10,7 +10,7 @@ import {
 	deleteHoliday,
 	getHolidayCategories,
 	type HolidayWithCategory,
-} from "@/app/[locale]/(app)/settings/holidays/actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import { createSelectionColumn, DataTableColumnHeader } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";

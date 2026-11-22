@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import {
 	addCalendarDateKey,
@@ -6,7 +5,12 @@ import {
 	calendarDateKeyForDate,
 	todayCalendarDateKey,
 } from "@/lib/calendar/date-keys";
-import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	comparePlainDates,
+	type Instant,
+	type PlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
 	CalendarEvent,
@@ -26,7 +30,7 @@ export interface WorkPeriodTotal {
 }
 
 export interface MonthWorkDay {
-	date: DateTime;
+	date: PlainDate;
 	dateKey: string;
 	isActiveMonth: boolean;
 	workHoursSummary: DailyWorkHoursSummary | null;
@@ -62,19 +66,17 @@ function getTotalStatus(deltaMinutes: number): WorkPeriodTotalStatus {
 	return "under";
 }
 
-function getGridStart(date: DateTime, weekStartDay: WeekStartDay): DateTime {
-	if (weekStartDay === "monday") return date.startOf("week").startOf("day");
-
-	const daysSinceSunday = date.weekday % 7;
-	return date.minus({ days: daysSinceSunday }).startOf("day");
+function getGridStart(date: PlainDate, weekStartDay: WeekStartDay): PlainDate {
+	const daysSinceStart = weekStartDay === "monday" ? date.dayOfWeek - 1 : date.dayOfWeek % 7;
+	return date.subtract({ days: daysSinceStart });
 }
 
-function getGridEnd(date: DateTime, weekStartDay: WeekStartDay): DateTime {
-	const endOfMonth = date.endOf("month").startOf("day");
+function getGridEnd(date: PlainDate, weekStartDay: WeekStartDay): PlainDate {
+	const endOfMonth = date.with({ day: date.daysInMonth });
 	const daysUntilWeekEnd =
-		weekStartDay === "monday" ? 7 - endOfMonth.weekday : 6 - (endOfMonth.weekday % 7);
+		weekStartDay === "monday" ? 7 - endOfMonth.dayOfWeek : 6 - (endOfMonth.dayOfWeek % 7);
 
-	return endOfMonth.plus({ days: daysUntilWeekEnd });
+	return endOfMonth.add({ days: daysUntilWeekEnd });
 }
 
 export function totalWorkSummaries(summaries: DailyWorkHoursSummary[]): WorkPeriodTotal | null {
@@ -142,10 +144,7 @@ export function buildMonthWorkSummary({
 	timezone = "UTC",
 	now = systemClock.nowInstant(),
 }: BuildMonthWorkSummaryOptions): MonthWorkSummary {
-	const monthStart = DateTime.fromObject(
-		{ year, month: monthIndex + 1, day: 1 },
-		{ zone: timezone },
-	).startOf("day");
+	const monthStart = Temporal.PlainDate.from({ year, month: monthIndex + 1, day: 1 });
 	const todayDateKey = todayCalendarDateKey(timezone, now);
 	const gridStart = getGridStart(monthStart, weekStartDay);
 	const gridEnd = getGridEnd(monthStart, weekStartDay);
@@ -154,12 +153,12 @@ export function buildMonthWorkSummary({
 	const monthSummaries: DailyWorkHoursSummary[] = [];
 
 	let current = gridStart;
-	while (current <= gridEnd) {
+	while (comparePlainDates(current, gridEnd) <= 0) {
 		const days: MonthWorkDay[] = [];
 		const weekSummaries: DailyWorkHoursSummary[] = [];
 
 		for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
-			const dateKey = current.toISODate()!;
+			const dateKey = current.toString();
 			const isActiveMonth = current.month === monthStart.month;
 			const isFutureCurrentMonthDay =
 				monthStart.year === Number(todayDateKey.slice(0, 4)) &&
@@ -180,11 +179,11 @@ export function buildMonthWorkSummary({
 				events: eventsByDate.get(dateKey) ?? [],
 			});
 
-			current = current.plus({ days: 1 });
+			current = current.add({ days: 1 });
 		}
 
 		weeks.push({
-			weekNumber: days[0]!.date.weekNumber,
+			weekNumber: days[0]!.date.weekOfYear ?? 1,
 			days,
 			total: totalWorkSummaries(weekSummaries),
 		});

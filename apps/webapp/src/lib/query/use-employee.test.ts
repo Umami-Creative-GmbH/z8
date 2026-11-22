@@ -3,15 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
-import {
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	expectTypeOf,
-	it,
-	vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { queryKeys } from "./keys";
 import type { useEmployee } from "./use-employee";
 
@@ -73,8 +65,7 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employment-history-client-actio
 	confirmEmployeeEmploymentHistoryAction: confirmEmploymentHistoryMock,
 	createEmployeeEmploymentHistoryAction: createEmploymentHistoryMock,
 	listEmployeeEmploymentHistoryAction: listEmploymentHistoryMock,
-	}),
-);
+}));
 
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({
 	getEmployeeEffectiveScheduleDetails: getScheduleMock,
@@ -86,11 +77,7 @@ const employeeId = "employee-1";
 
 function createWrapper(queryClient: QueryClient) {
 	return function Wrapper({ children }: { children: ReactNode }) {
-		return createElement(
-			QueryClientProvider,
-			{ client: queryClient },
-			children,
-		);
+		return createElement(QueryClientProvider, { client: queryClient }, children);
 	};
 }
 
@@ -104,15 +91,15 @@ function createTestQueryClient() {
 }
 
 function renderUseEmployee(queryClient: QueryClient) {
-	return renderHook(() => useEmployeeHook({ employeeId, enabled: false, accessTier: "orgAdmin" }), {
-		wrapper: createWrapper(queryClient),
+	return renderHook(
+		() => useEmployeeHook({ employeeId, enabled: false, settingsAccess: "orgAdmin" }),
+		{
+			wrapper: createWrapper(queryClient),
 		},
 	);
 }
 
-function expectEmploymentHistoryInvalidated(
-	invalidateQueriesSpy: ReturnType<typeof vi.spyOn>,
-) {
+function expectEmploymentHistoryInvalidated(invalidateQueriesSpy: ReturnType<typeof vi.spyOn>) {
 	expect(invalidateQueriesSpy).toHaveBeenCalledWith({
 		queryKey: queryKeys.employees.detailFor("user-1", "org-1", employeeId),
 	});
@@ -172,29 +159,15 @@ describe("useEmployee contracts", () => {
 		type UseEmployeeResult = ReturnType<typeof useEmployee>;
 
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("employmentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty(
-			"isLoadingEmploymentHistory",
-		);
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("isLoadingEmploymentHistory");
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("createEmploymentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty(
-			"isCreatingEmploymentHistory",
-		);
-		expectTypeOf<UseEmployeeResult>().toHaveProperty(
-			"confirmEmploymentHistory",
-		);
-		expectTypeOf<UseEmployeeResult>().toHaveProperty(
-			"isConfirmingEmploymentHistory",
-		);
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("isCreatingEmploymentHistory");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("confirmEmploymentHistory");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("isConfirmingEmploymentHistory");
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("cancelEmploymentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty(
-			"isCancelingEmploymentHistory",
-		);
-		expectTypeOf<UseEmployeeResult>().toHaveProperty(
-			"requestWorkBalanceRecalculation",
-		);
-		expectTypeOf<UseEmployeeResult>().toHaveProperty(
-			"isRequestingWorkBalanceRecalculation",
-		);
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("isCancelingEmploymentHistory");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("requestWorkBalanceRecalculation");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty("isRequestingWorkBalanceRecalculation");
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("changeWage");
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("isChangingWage");
 	});
@@ -296,9 +269,7 @@ describe("useEmployee contracts", () => {
 			await result.current.requestWorkBalanceRecalculation();
 		});
 
-		expect(requestWorkBalanceRecalculationMock).toHaveBeenCalledWith(
-			employeeId,
-		);
+		expect(requestWorkBalanceRecalculationMock).toHaveBeenCalledWith(employeeId);
 		expect(invalidateQueriesSpy).toHaveBeenCalledWith({
 			queryKey: queryKeys.employees.detailFor("user-1", "org-1", employeeId),
 		});
@@ -333,7 +304,7 @@ describe("useEmployee contracts", () => {
 			data: { id: employeeId, kind: "employee", organizationId: "org-1" },
 		});
 		const queryClient = createTestQueryClient();
-		renderHook(() => useEmployeeHook({ employeeId, accessTier: "orgAdmin" }), {
+		renderHook(() => useEmployeeHook({ employeeId, settingsAccess: "orgAdmin" }), {
 			wrapper: createWrapper(queryClient),
 		});
 
@@ -341,15 +312,13 @@ describe("useEmployee contracts", () => {
 			expect(
 				fetchMock.mock.calls.some(([url]) =>
 					new URL(url, "http://localhost").pathname.endsWith("/managers"),
-			),
+				),
 			).toBe(true),
 		);
 		const [url] = fetchMock.mock.calls.find(([url]) =>
 			new URL(url, "http://localhost").pathname.endsWith("/managers"),
 		)!;
-		expect(
-			new URL(url, "http://localhost").searchParams.get("employeeId"),
-		).toBe(employeeId);
+		expect(new URL(url, "http://localhost").searchParams.get("employeeId")).toBe(employeeId);
 		expect(listEmployeesForSelectMock).not.toHaveBeenCalled();
 	});
 });

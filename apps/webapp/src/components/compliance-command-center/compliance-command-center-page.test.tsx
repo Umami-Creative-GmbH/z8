@@ -89,7 +89,7 @@ describe("ComplianceCommandCenterPage", () => {
 					updatedAt: null,
 					primaryLink: {
 						label: "Open Audit Log",
-						href: "/settings/enterprise/audit-log",
+						href: "/settings/audit-export?tab=activity",
 					},
 				},
 				{
@@ -182,7 +182,7 @@ describe("ComplianceCommandCenterPage", () => {
 		).toBe("/settings/audit-export");
 		expect(
 			screen.getByRole("link", { name: "Open Audit Log" }).getAttribute("href"),
-		).toBe("/settings/enterprise/audit-log");
+		).toBe("/settings/audit-export?tab=activity");
 		expect(screen.getByText(/does not reevaluate/)).toBeTruthy();
 	});
 
@@ -217,7 +217,7 @@ describe("ComplianceCommandCenterPage", () => {
 							updatedAt: "2026-04-11T10:00:00.000Z",
 							primaryLink: {
 								label: "Open Audit Log",
-								href: "/settings/enterprise/audit-log",
+								href: "/settings/audit-export?tab=activity",
 							},
 						},
 					],
@@ -232,7 +232,7 @@ describe("ComplianceCommandCenterPage", () => {
 							occurredAt: "2026-04-11T09:30:00.000Z",
 							primaryLink: {
 								label: "Review Audit Log",
-								href: "/settings/enterprise/audit-log",
+								href: "/settings/audit-export?tab=activity",
 							},
 						},
 					],
@@ -293,7 +293,7 @@ describe("ComplianceCommandCenterPage", () => {
 						updatedAt: null,
 						primaryLink: {
 							label: "Open Audit Log",
-							href: "/settings/enterprise/audit-log",
+							href: "/settings/audit-export?tab=activity",
 						},
 					},
 				],

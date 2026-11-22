@@ -8,11 +8,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { DateTime } from "luxon";
 import { useRef, useSyncExternalStore } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-	CalendarEvent,
-	DailyWorkHoursSummaries,
-	WorkPeriodEvent,
-} from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkHoursSummaries, WorkPeriodEvent } from "@/lib/calendar/types";
 import { ScheduleXCalendarWrapper } from "./schedule-x-calendar";
 import {
 	buildCalendarTimeZoneDate,
@@ -37,7 +33,7 @@ const { scheduleXPreferences, useCalendarAppMock } = vi.hoisted(() => ({
 
 const EMPTY_CALENDAR_EVENTS: CalendarEvent[] = [];
 const EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS = new Set<string>();
-const EMPTY_VISIBLE_REQUIREMENT_DATES: DateTime[] = [];
+const EMPTY_VISIBLE_REQUIREMENT_DATES: Temporal.PlainDate[] = [];
 const EMPTY_WORK_HOURS_DATA: DailyWorkHoursSummaries = new Map();
 const translateFallback = (_key: string, fallback: string) => fallback;
 
@@ -86,10 +82,7 @@ function useCalendarAppTestDouble(config: {
 		(onCalendarReady) => {
 			if (!calendar.current) {
 				const selectedDate = initialConfig.current.selectedDate;
-				const initialRange = weekRangeForDate(
-					selectedDate,
-					initialConfig.current.firstDayOfWeek,
-				);
+				const initialRange = weekRangeForDate(selectedDate, initialConfig.current.firstDayOfWeek);
 				const calendarApp: CalendarAppTestDouble = {
 					config: {
 						firstDayOfWeek: { value: initialConfig.current.firstDayOfWeek },
@@ -98,10 +91,7 @@ function useCalendarAppTestDouble(config: {
 					calendarState: {
 						range: { value: initialRange },
 						setRange: (date) => {
-							const nextRange = weekRangeForDate(
-								date,
-								calendarApp.config.firstDayOfWeek.value,
-							);
+							const nextRange = weekRangeForDate(date, calendarApp.config.firstDayOfWeek.value);
 							const currentRange = calendarApp.calendarState.range.value;
 							if (
 								nextRange.start.equals(currentRange.start) &&
@@ -230,7 +220,9 @@ function ClockOutDelegationHarness({
 	return <div ref={containerRef} data-testid="clock-out-delegation-container" />;
 }
 
-function DomLifecycleHarness({ onTimeRangeSelect }: { onTimeRangeSelect?: (range: { start: Date; end: Date }) => void } = {}) {
+function DomLifecycleHarness({
+	onTimeRangeSelect,
+}: { onTimeRangeSelect?: (range: { start: Date; end: Date }) => void } = {}) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	useScheduleXDomLifecycle({
 		calendarContainerRef: containerRef,
@@ -239,7 +231,9 @@ function DomLifecycleHarness({ onTimeRangeSelect }: { onTimeRangeSelect?: (range
 		isLoading: false,
 		viewMode: onTimeRangeSelect ? "day" : "month",
 		timeZone: "Europe/Berlin",
-		visibleRequirementDates: onTimeRangeSelect ? [DateTime.fromISO("2026-05-18", { zone: "Europe/Berlin" })] : EMPTY_VISIBLE_REQUIREMENT_DATES,
+		visibleRequirementDates: onTimeRangeSelect
+			? [Temporal.PlainDate.from("2026-05-18")]
+			: EMPTY_VISIBLE_REQUIREMENT_DATES,
 		onTimeRangeSelect,
 		workHoursData: EMPTY_WORK_HOURS_DATA,
 		isSummaryLoading: false,
@@ -249,7 +243,7 @@ function DomLifecycleHarness({ onTimeRangeSelect }: { onTimeRangeSelect?: (range
 	return (
 		<div ref={containerRef} data-testid="dom-lifecycle-container">
 			<div className="sx__view-container" data-testid="calendar-time-scroller">
-			<div className="sx__time-grid-day" data-time-grid-date="2026-05-18" />
+				<div className="sx__time-grid-day" data-time-grid-date="2026-05-18" />
 			</div>
 			<div className="sx__event" data-testid="dom-lifecycle-event" />
 			<div className="sx__event-modal is-open" />
@@ -266,7 +260,12 @@ beforeEach(() => {
 describe("ScheduleXCalendarWrapper header", () => {
 	it("opens records loaded after Schedule-X registered its initial click callback", () => {
 		const onEventClick = vi.fn();
-		const props = { events: EMPTY_CALENDAR_EVENTS, viewMode: "week" as const, onViewModeChange: vi.fn(), onEventClick };
+		const props = {
+			events: EMPTY_CALENDAR_EVENTS,
+			viewMode: "week" as const,
+			onViewModeChange: vi.fn(),
+			onEventClick,
+		};
 		const { rerender } = render(<ScheduleXCalendarWrapper {...props} />);
 		const firstCallback = useCalendarAppMock.mock.calls[0]?.[0].callbacks.onEventClick;
 		rerender(<ScheduleXCalendarWrapper {...props} events={[completedWorkPeriod]} />);
@@ -280,7 +279,10 @@ describe("ScheduleXCalendarWrapper header", () => {
 	it("centers current time inside the record without scrolling page scope or period controls", async () => {
 		const originalScroll = Object.getOwnPropertyDescriptor(Element.prototype, "scrollIntoView");
 		const scrollAncestors = vi.fn();
-		Object.defineProperty(Element.prototype, "scrollIntoView", { configurable: true, value: scrollAncestors });
+		Object.defineProperty(Element.prototype, "scrollIntoView", {
+			configurable: true,
+			value: scrollAncestors,
+		});
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-18T12:00:00Z"));
 		try {
@@ -288,13 +290,16 @@ describe("ScheduleXCalendarWrapper header", () => {
 			const scroller = screen.getByTestId("calendar-time-scroller");
 			const scrollTo = vi.fn();
 			Object.defineProperty(scroller, "scrollTo", { value: scrollTo });
-			await act(async () => { await vi.advanceTimersByTimeAsync(150); });
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(150);
+			});
 			expect(scrollTo).toHaveBeenCalled();
 			expect(scrollAncestors).not.toHaveBeenCalled();
 			unmount();
 		} finally {
 			vi.useRealTimers();
-			if (originalScroll) Object.defineProperty(Element.prototype, "scrollIntoView", originalScroll);
+			if (originalScroll)
+				Object.defineProperty(Element.prototype, "scrollIntoView", originalScroll);
 			else Reflect.deleteProperty(Element.prototype, "scrollIntoView");
 		}
 	});
@@ -302,7 +307,17 @@ describe("ScheduleXCalendarWrapper header", () => {
 		const onSelect = vi.fn();
 		const { container, unmount } = render(<DomLifecycleHarness onTimeRangeSelect={onSelect} />);
 		const day = container.querySelector<HTMLElement>(".sx__time-grid-day")!;
-		vi.spyOn(day, "getBoundingClientRect").mockReturnValue({ left: 0, right: 100, top: 0, bottom: 1440, height: 1440, width: 100, x: 0, y: 0, toJSON() {} });
+		vi.spyOn(day, "getBoundingClientRect").mockReturnValue({
+			left: 0,
+			right: 100,
+			top: 0,
+			bottom: 1440,
+			height: 1440,
+			width: 100,
+			x: 0,
+			y: 0,
+			toJSON() {},
+		});
 		const pointer = (type: string, y: number) => {
 			const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: 50, clientY: y });
 			Object.defineProperty(event, "pointerType", { value: "mouse" });
@@ -706,18 +721,17 @@ describe("shouldRetryRequirementHeaderInjection", () => {
 });
 
 describe("isScheduleXEventElement", () => {
-	it.each([
-		"sx__event",
-		"sx__time-grid-event",
-		"sx__date-grid-event",
-	])("identifies %s elements as Schedule-X events", (className) => {
-		const eventElement = document.createElement("div");
-		eventElement.className = className;
-		const child = document.createElement("span");
-		eventElement.append(child);
+	it.each(["sx__event", "sx__time-grid-event", "sx__date-grid-event"])(
+		"identifies %s elements as Schedule-X events",
+		(className) => {
+			const eventElement = document.createElement("div");
+			eventElement.className = className;
+			const child = document.createElement("span");
+			eventElement.append(child);
 
-		expect(isScheduleXEventElement(child)).toBe(true);
-	});
+			expect(isScheduleXEventElement(child)).toBe(true);
+		},
+	);
 
 	it("does not identify empty grid cells as Schedule-X events", () => {
 		const gridCell = document.createElement("div");

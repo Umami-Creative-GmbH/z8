@@ -35,32 +35,32 @@ export async function loadOrganizationPrincipalContext(
 	input: { userId: string; organizationId: string },
 ): Promise<PrincipalContext> {
 	const { userId, organizationId } = input;
-	const [[memberRecord], [employeeRow]] = await Promise.all([
-		executor
-			.select()
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, userId),
-					eq(member.organizationId, organizationId),
-					eq(member.status, "approved"),
-				),
-			)
-			.limit(1),
-		executor
-			.select({
-				employee,
-				hasOrganizationAccess: employeeHasOrganizationAccess(),
-			})
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, userId),
-					eq(employee.organizationId, organizationId),
-				),
-			)
-			.limit(1),
-	]);
+	// One after another: `executor` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const [memberRecord] = await executor
+		.select()
+		.from(member)
+		.where(
+			and(
+				eq(member.userId, userId),
+				eq(member.organizationId, organizationId),
+				eq(member.status, "approved"),
+			),
+		)
+		.limit(1);
+	const [employeeRow] = await executor
+		.select({
+			employee,
+			hasOrganizationAccess: employeeHasOrganizationAccess(),
+		})
+		.from(employee)
+		.where(
+			and(
+				eq(employee.userId, userId),
+				eq(employee.organizationId, organizationId),
+			),
+		)
+		.limit(1);
 	// A former employee keeps no organization role, whatever their membership.
 	const hasSettingsAccess =
 		memberRecord != null && employeeRow?.hasOrganizationAccess !== false;

@@ -181,16 +181,15 @@ async function dueRequests(
 	requests: readonly ClosedRequest[],
 ): Promise<ClosedRequest[]> {
 	if (requests.length === 0) return [];
-	const [closing, employment] = await Promise.all([
-		loadClosingInstants(database, {
-			organizationId: context.organizationId,
-			requestIds: requests.map((request) => request.id),
-		}),
-		loadRetentionEmployment(database, {
-			organizationId: context.organizationId,
-			employeeIds: [...new Set(requests.map((request) => request.employeeId))],
-		}),
-	]);
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const closing = await loadClosingInstants(database, {
+		organizationId: context.organizationId,
+		requestIds: requests.map((request) => request.id),
+	});
+	const employment = await loadRetentionEmployment(database, {
+		organizationId: context.organizationId,
+		employeeIds: [...new Set(requests.map((request) => request.employeeId))],
+	});
 	return requests.filter((request) => {
 		const retentionYears = context.periods[request.category];
 		if (retentionYears === undefined) return false;

@@ -1,5 +1,5 @@
-import type { DateTime } from "luxon";
 import type { ComplianceFindingSeverity } from "@/db/schema/compliance-finding";
+import type { Instant } from "@/lib/datetime/temporal-core";
 
 export interface EmployeePolicy {
 	policyId: string;
@@ -32,8 +32,8 @@ export interface RuleDetectionInput {
 	employee: EmployeeWithPolicy;
 	workPeriods: WorkPeriodData[];
 	dateRange: {
-		start: DateTime;
-		end: DateTime;
+		start: Instant;
+		end: Instant;
 	};
 	thresholdOverrides: unknown;
 }

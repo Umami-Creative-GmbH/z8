@@ -40,9 +40,16 @@ vi.mock("@/lib/auth", () => ({
 
 // The writer port runs additional domain work before its progress upsert.
 vi.mock("@/lib/user-preferences/user-settings-mutation", () => ({
-	writeUserSettings: vi.fn(async (database: object, _userId: string, _values: unknown, beforeWrite?: (transaction: object) => Promise<void>) => {
-		await beforeWrite?.(database);
-	}),
+	writeUserSettings: vi.fn(
+		async (
+			database: object,
+			_userId: string,
+			_values: unknown,
+			beforeWrite?: (transaction: object) => Promise<void>,
+		) => {
+			await beforeWrite?.(database);
+		},
+	),
 }));
 
 vi.mock("@/lib/organization/creation-policy", () => ({
@@ -240,12 +247,15 @@ describe("OnboardingService.updateProfile", () => {
 			DatabaseService,
 			DatabaseService.of({
 				db: withTransaction(mockDb) as never,
-				query: (_name, query) => Effect.promise(query) as never,
+				query: (name, query) =>
+					(name === SETTINGS_ACCESS_FACTS_QUERY
+						? Effect.succeed({ membershipRole: "member", employee: null })
+						: Effect.promise(query)) as never,
 			}),
 		);
 		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
-		await Effect.runPromise(
+		const outcome = await Effect.runPromise(
 			Effect.gen(function* () {
 				const service = yield* OnboardingService;
 
@@ -259,6 +269,13 @@ describe("OnboardingService.updateProfile", () => {
 					helpImproveProduct: true,
 				});
 			}).pipe(Effect.provide(layer)),
+		);
+
+		expect(outcome).toEqual({ nextStep: "/onboarding/wellness" });
+		expect(writeUserSettings).toHaveBeenCalledWith(
+			mockDb,
+			"user-1",
+			expect.objectContaining({ onboardingStep: "wellness" }),
 		);
 
 		expect(auth.api.updateUser).toHaveBeenCalledWith({
@@ -326,7 +343,10 @@ describe("OnboardingService.updateProfile", () => {
 			DatabaseService,
 			DatabaseService.of({
 				db: withTransaction(mockDb) as never,
-				query: (_name, query) => Effect.promise(query) as never,
+				query: (name, query) =>
+					(name === SETTINGS_ACCESS_FACTS_QUERY
+						? Effect.succeed({ membershipRole: "member", employee: null })
+						: Effect.promise(query)) as never,
 			}),
 		);
 		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
@@ -532,6 +552,176 @@ describe("OnboardingService.updateProfile", () => {
 		});
 		expect(mockDb.insert).not.toHaveBeenCalled();
 	});
+
+	it.each([
+		["owner", "vacation_policy", "/onboarding/vacation-policy"],
+		["admin", "vacation_policy", "/onboarding/vacation-policy"],
+		["member", "wellness", "/onboarding/wellness"],
+		[null, "wellness", "/onboarding/wellness"],
+	] as const)(
+		"advances profile completion for %s directly to %s (%s)",
+		async (membershipRole, expectedStep, expectedPath) => {
+			vi.mocked(headers).mockResolvedValue(new Headers());
+			vi.mocked(auth.api.updateUser).mockResolvedValue({} as never);
+			const mockDb = {
+				query: {
+					employee: {
+						findFirst: vi.fn(async () => null),
+					},
+				},
+			};
+			const authLayer = Layer.succeed(
+				AuthService,
+				AuthService.of({
+					getSession: () =>
+						Effect.succeed({
+							user: { id: "user-1", name: "Ada" },
+							session: { activeOrganizationId: membershipRole ? "org-1" : null },
+						} as never),
+				}),
+			);
+			const dbLayer = Layer.succeed(
+				DatabaseService,
+				DatabaseService.of({
+					db: withTransaction(mockDb) as never,
+					query: (name, query) =>
+						(name === SETTINGS_ACCESS_FACTS_QUERY
+							? Effect.succeed({ membershipRole, employee: null })
+							: Effect.promise(query)) as never,
+				}),
+			);
+			const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+					return yield* service.updateProfile({
+						firstName: "Ada",
+						lastName: "Lovelace",
+						weekStartDay: "monday",
+						timeFormat: "24h",
+						helpImproveProduct: true,
+					});
+				}).pipe(Effect.provide(layer)),
+			);
+
+			expect(result).toEqual({ nextStep: expectedPath });
+			expect(writeUserSettings).toHaveBeenCalledWith(
+				mockDb,
+				"user-1",
+				expect.objectContaining({ onboardingStep: expectedStep }),
+			);
+		},
+	);
+});
+
+describe("OnboardingService.skipProfileSetup", () => {
+	it.each([
+		["owner", "vacation_policy", "/onboarding/vacation-policy"],
+		["admin", "vacation_policy", "/onboarding/vacation-policy"],
+		["member", "wellness", "/onboarding/wellness"],
+		[null, "wellness", "/onboarding/wellness"],
+	] as const)(
+		"advances skipped profile for %s directly to %s (%s)",
+		async (membershipRole, expectedStep, expectedPath) => {
+			const mockDb = {};
+			const authLayer = Layer.succeed(
+				AuthService,
+				AuthService.of({
+					getSession: () =>
+						Effect.succeed({
+							user: { id: "user-1" },
+							session: { activeOrganizationId: membershipRole ? "org-1" : null },
+						} as never),
+				}),
+			);
+			const dbLayer = Layer.succeed(
+				DatabaseService,
+				DatabaseService.of({
+					db: withTransaction(mockDb) as never,
+					query: (name, query) =>
+						(name === SETTINGS_ACCESS_FACTS_QUERY
+							? Effect.succeed({ membershipRole, employee: null })
+							: Effect.promise(query)) as never,
+				}),
+			);
+			const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+					return yield* service.skipProfileSetup();
+				}).pipe(Effect.provide(layer)),
+			);
+
+			expect(result).toEqual({ nextStep: expectedPath });
+			expect(writeUserSettings).toHaveBeenCalledWith(mockDb, "user-1", {
+				onboardingStep: expectedStep,
+			});
+		},
+	);
+});
+
+describe("OnboardingService.getOnboardingStatus", () => {
+	it.each([
+		["owner", "vacation_policy"],
+		["admin", "vacation_policy"],
+		["member", "wellness"],
+		[null, "wellness"],
+	] as const)(
+		"normalizes retired work_schedule progress for %s to %s",
+		async (membershipRole, expectedStep) => {
+			const mockDb = {
+				query: {
+					userSettings: {
+						findFirst: vi.fn(async () => ({
+							onboardingComplete: false,
+							onboardingStep: "work_schedule",
+						})),
+					},
+					user: {
+						findFirst: vi.fn(async () => ({ invitedVia: null })),
+					},
+					member: {
+						findFirst: vi.fn(async () => (membershipRole ? { organizationId: "org-1" } : null)),
+					},
+				},
+			};
+			const authLayer = Layer.succeed(
+				AuthService,
+				AuthService.of({
+					getSession: () =>
+						Effect.succeed({
+							user: { id: "user-1" },
+							session: { activeOrganizationId: membershipRole ? "org-1" : null },
+						} as never),
+				}),
+			);
+			const dbLayer = Layer.succeed(
+				DatabaseService,
+				DatabaseService.of({
+					db: withTransaction(mockDb) as never,
+					query: (name, query) =>
+						(name === SETTINGS_ACCESS_FACTS_QUERY
+							? Effect.succeed({ membershipRole, employee: null })
+							: Effect.promise(query)) as never,
+				}),
+			);
+			const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+			const status = await Effect.runPromise(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+					return yield* service.getOnboardingStatus();
+				}).pipe(Effect.provide(layer)),
+			);
+
+			expect(status).toEqual({
+				onboardingComplete: false,
+				onboardingStep: expectedStep,
+			});
+		},
+	);
 });
 
 describe("OnboardingService.getOnboardingSummary", () => {
@@ -624,19 +814,17 @@ describe("OnboardingService work-template authorization", () => {
 			DatabaseService,
 			DatabaseService.of({
 				db: withTransaction(mockDb) as never,
-				query: (name, query) => (name === SETTINGS_ACCESS_FACTS_QUERY
-					? Effect.succeed({ membershipRole: role ?? null, employee: null })
-					: Effect.promise(query)) as never,
+				query: (name, query) =>
+					(name === SETTINGS_ACCESS_FACTS_QUERY
+						? Effect.succeed({ membershipRole: role ?? null, employee: null })
+						: Effect.promise(query)) as never,
 			}),
 		);
 
 		return {
 			findMembership,
 			insert,
-			layer: OnboardingServiceLive.pipe(
-				Layer.provide(authLayer),
-				Layer.provide(dbLayer),
-			),
+			layer: OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer)),
 		};
 	}
 

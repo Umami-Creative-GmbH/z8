@@ -2,14 +2,8 @@
 
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useId, useState } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import type { PayrollPeriodDay, PayrollPeriodEmployee } from "@/lib/payroll-period/types";
 import { cn } from "@/lib/utils";
 import {
@@ -62,6 +56,14 @@ export function PayrollDaysList({
 	const select = (next: number) => setSelectedId(employees[next]?.id ?? null);
 	const pickableDays = picking ? settleableGroup(picking.groups.byEmployee, employee.id) : [];
 	const days = hideEmptyDays ? daysWithEntries(employee.days) : employee.days;
+	const selectableEmployees = employees.map((option) =>
+		toSelectableEmployee({
+			id: option.id,
+			name: option.name,
+			employeeNumber: option.employeeNumber,
+			teamName: option.teamName,
+		}),
+	);
 
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
@@ -76,21 +78,15 @@ export function PayrollDaysList({
 				>
 					<IconChevronLeft aria-hidden="true" />
 				</Button>
-				<Select value={employee.id} onValueChange={(value) => setSelectedId(value)}>
-					<SelectTrigger
-						className="min-w-0 flex-1"
-						aria-label={t("payroll.days.list.employee", "Employee")}
-					>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{employees.map((option) => (
-							<SelectItem key={option.id} value={option.id}>
-								{option.name}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<EmployeeSingleSelect
+					className="min-w-0 flex-1 space-y-0"
+					aria-label={t("payroll.days.list.employee", "Employee")}
+					value={employee.id}
+					onChange={(value) => {
+						if (value) setSelectedId(value);
+					}}
+					employees={selectableEmployees}
+				/>
 				<Button
 					type="button"
 					variant="outline"

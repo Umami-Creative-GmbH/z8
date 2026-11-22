@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	createLifecycleDatabaseFixture,
@@ -259,11 +258,11 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 		});
 
 		// The same organization's own payroll readiness setup checks agree.
-		const today = DateTime.fromISO("2026-06-15", { zone: "utc" });
+		const today = parsePlainDate("2026-06-15");
 		const readiness = await getPayrollReadiness({
 			organizationId,
 			period: { start: today, end: today },
-			now: DateTime.fromISO("2026-06-15T10:00:00Z"),
+			now: parseInstant("2026-06-15T10:00:00Z"),
 		});
 		const check = (id: string) =>
 			readiness.groups.flatMap((group) => group.checks).find((entry) => entry.id === id);

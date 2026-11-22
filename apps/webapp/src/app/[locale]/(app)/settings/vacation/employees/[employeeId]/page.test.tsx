@@ -4,10 +4,18 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { use } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { requireOrgAdminSettingsAccessMock } = vi.hoisted(() => ({
+	requireOrgAdminSettingsAccessMock: vi.fn(),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
+vi.mock("@/lib/auth-helpers", () => ({
+	requireOrgAdminSettingsAccess: requireOrgAdminSettingsAccessMock,
 }));
 
 vi.mock("./employee-allowance-edit-page-client", () => ({
@@ -24,7 +32,12 @@ vi.mock("./employee-allowance-edit-page-client", () => ({
 const { default: EmployeeAllowanceEditPage } = await import("./page");
 
 describe("EmployeeAllowanceEditPage route boundary", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	it("renders the settings fallback while params remain unresolved", () => {
+		requireOrgAdminSettingsAccessMock.mockReturnValue(new Promise<never>(() => {}));
 		const page = EmployeeAllowanceEditPage({
 			params: new Promise<never>(() => {}),
 		});
@@ -33,6 +46,21 @@ describe("EmployeeAllowanceEditPage route boundary", () => {
 		render(page);
 
 		expect(screen.getByLabelText("Loading settings")).toBeTruthy();
+	});
+
+	it("enforces org-admin settings access on the server before rendering the client editor", async () => {
+		requireOrgAdminSettingsAccessMock.mockRejectedValue(new Error("REDIRECT:/settings"));
+
+		const page = EmployeeAllowanceEditPage({
+			params: Promise.resolve({ employeeId: "emp-1" }),
+		});
+		const guardedElement = page.props.children as {
+			type: (props: { params: Promise<{ employeeId: string }> }) => Promise<unknown>;
+			props: { params: Promise<{ employeeId: string }> };
+		};
+
+		await expect(guardedElement.type(guardedElement.props)).rejects.toThrow("REDIRECT:/settings");
+		expect(requireOrgAdminSettingsAccessMock).toHaveBeenCalledOnce();
 	});
 
 	it("keeps params consumption in the client implementation", () => {
@@ -53,9 +81,8 @@ describe("EmployeeAllowanceEditPage route boundary", () => {
 		expect(pageSource).toContain(
 			"<Suspense fallback={<SettingsContentLoading />}>",
 		);
-		expect(pageSource).toContain(
-			"<EmployeeAllowanceEditPageClient params={params} />",
-		);
+		expect(pageSource).toContain("<EmployeeAllowanceEditPageClient");
+		expect(pageSource).toContain("params={params}");
 		expect(pageSource).not.toContain("use(params)");
 		expect(clientSource).toMatch(/^\s*["']use client["'];/);
 		expect(clientSource).toContain(

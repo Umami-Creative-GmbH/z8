@@ -211,8 +211,8 @@ An optional organization feature that arranges, records and repeats driving lice
 _Avoid_: driving licence verification, licence module
 
 **Intended driver**:
-An employee the organization intends to let drive its vehicles, and who therefore needs driving licence checks. The organization decides this for everyone, for teams or for single employees, and can exclude someone from a broader decision.
-_Avoid_: enrolled employee, participant, assigned driver
+An employee the organization requires to hold a checked driving licence because they may drive for work, whether in an organization vehicle, a rented one or their own. It does not depend on which vehicles the organization has. The organization decides this for everyone, for teams or for single employees, and can exclude someone from a broader decision.
+_Avoid_: enrolled employee, participant, assigned driver, vehicle user
 
 **Driving licence check**:
 An authorized verifier's recorded personal inspection of an employee's original driving licence for explicitly identified classes. It establishes what was checked at that time.

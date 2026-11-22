@@ -13,7 +13,7 @@ import {
 	bulkAddHolidaysToPreset,
 	createHolidayPreset,
 	createPresetAssignment,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-preset-actions";
 import {
 	type ActionFailure,
 	actionErrorMessage,

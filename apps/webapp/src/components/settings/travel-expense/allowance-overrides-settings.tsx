@@ -15,17 +15,18 @@ import { allowanceSituationLabel } from "@/components/travel-expenses/report/all
 import { AllowanceOverrideNotice } from "@/components/travel-expenses/report/allowance-override-notice";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
 import { perDiemExceptionLabel } from "@/components/travel-expenses/report/per-diem-labels";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -117,7 +118,7 @@ function factsLine(locale: string, item: AllowanceExceptionItem): string {
 		.join(" · ");
 }
 
-function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClose: () => void }) {
+function OverridePanel({ item, onClose }: { item: AllowanceExceptionItem; onClose: () => void }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const queryClient = useQueryClient();
@@ -189,145 +190,153 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 		},
 	});
 	return (
-		<Dialog open onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel open onOpenChange={(open) => !open && !form.state.isSubmitting && onClose()}>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{t(
 							"settings.travelExpenses.allowanceOverrides.dialogTitle",
 							"Set the allowance manually",
 						)}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.travelExpenses.allowanceOverrides.dialogDescription",
 							"{employee}: {facts}. The amount applies only to exactly these facts; the employee and the reviewer see it with your reason, evidence and calculation.",
 							{ employee: item.employeeName, facts: factsLine(locale, item) },
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					noValidate
-					className="grid gap-4"
+					className="flex min-h-0 flex-1 flex-col"
 					onSubmit={(event) => {
 						event.preventDefault();
+						if (form.state.isSubmitting) return;
 						void form.handleSubmit();
 					}}
 				>
-					<form.Field name="amount" validators={validators("amount")}>
-						{(input) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(input)}>
-									{t("settings.travelExpenses.allowanceOverrides.amount", "Amount ({currency})", {
-										currency: item.reimbursementCurrency,
-									})}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(input)}>
-									<Input
-										name="amount"
-										inputMode="decimal"
-										autoComplete="off"
-										value={input.state.value}
-										onChange={(event) => input.handleChange(event.target.value)}
-										onBlur={input.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage field={input} />
-							</TFormItem>
-						)}
-					</form.Field>
-					<form.Field name="calculationBasis" validators={validators("calculationBasis")}>
-						{(input) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(input)}>
-									{t("settings.travelExpenses.allowanceOverrides.basis", "Calculation")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(input)}>
-									<Textarea
-										name="calculationBasis"
-										rows={2}
-										maxLength={MAX_OVERRIDE_BASIS_LENGTH}
-										value={input.state.value}
-										onChange={(event) => input.handleChange(event.target.value)}
-										onBlur={input.handleBlur}
-									/>
-								</TFormControl>
-								<TFormDescription>
-									{t(
-										"settings.travelExpenses.allowanceOverrides.basisDescription",
-										"E.g. 2 partial days × 39.00 EUR + 1 full day × 58.00 EUR − breakfast 11.60 EUR.",
-									)}
-								</TFormDescription>
-								<TFormMessage field={input} />
-							</TFormItem>
-						)}
-					</form.Field>
-					<form.Field name="reason" validators={validators("reason")}>
-						{(input) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(input)}>
-									{t("settings.travelExpenses.allowanceOverrides.reason", "Reason")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(input)}>
-									<Textarea
-										name="reason"
-										rows={2}
-										maxLength={MAX_OVERRIDE_REASON_LENGTH}
-										value={input.state.value}
-										onChange={(event) => input.handleChange(event.target.value)}
-										onBlur={input.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage field={input} />
-							</TFormItem>
-						)}
-					</form.Field>
-					<form.Field name="evidence" validators={validators("evidence")}>
-						{(input) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(input)}>
-									{t("settings.travelExpenses.allowanceOverrides.evidence", "Evidence")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(input)}>
-									<Textarea
-										name="evidence"
-										rows={2}
-										maxLength={MAX_OVERRIDE_EVIDENCE_LENGTH}
-										value={input.state.value}
-										onChange={(event) => input.handleChange(event.target.value)}
-										onBlur={input.handleBlur}
-									/>
-								</TFormControl>
-								<TFormDescription>
-									{t(
-										"settings.travelExpenses.allowanceOverrides.evidenceDescription",
-										"What the amount rests on, e.g. the official rate table and edition, or a written confirmation.",
-									)}
-								</TFormDescription>
-								<TFormMessage field={input} />
-							</TFormItem>
-						)}
-					</form.Field>
-					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onClose}>
-							{t("common.cancel", "Cancel")}
-						</Button>
+					<ActionPanelBody className="space-y-4">
+						<form.Field name="amount" validators={validators("amount")}>
+							{(input) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(input)}>
+										{t("settings.travelExpenses.allowanceOverrides.amount", "Amount ({currency})", {
+											currency: item.reimbursementCurrency,
+										})}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(input)}>
+										<Input
+											name="amount"
+											inputMode="decimal"
+											autoComplete="off"
+											value={input.state.value}
+											onChange={(event) => input.handleChange(event.target.value)}
+											onBlur={input.handleBlur}
+										/>
+									</TFormControl>
+									<TFormMessage field={input} />
+								</TFormItem>
+							)}
+						</form.Field>
+						<form.Field name="calculationBasis" validators={validators("calculationBasis")}>
+							{(input) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(input)}>
+										{t("settings.travelExpenses.allowanceOverrides.basis", "Calculation")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(input)}>
+										<Textarea
+											name="calculationBasis"
+											rows={2}
+											maxLength={MAX_OVERRIDE_BASIS_LENGTH}
+											value={input.state.value}
+											onChange={(event) => input.handleChange(event.target.value)}
+											onBlur={input.handleBlur}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.travelExpenses.allowanceOverrides.basisDescription",
+											"E.g. 2 partial days × 39.00 EUR + 1 full day × 58.00 EUR − breakfast 11.60 EUR.",
+										)}
+									</TFormDescription>
+									<TFormMessage field={input} />
+								</TFormItem>
+							)}
+						</form.Field>
+						<form.Field name="reason" validators={validators("reason")}>
+							{(input) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(input)}>
+										{t("settings.travelExpenses.allowanceOverrides.reason", "Reason")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(input)}>
+										<Textarea
+											name="reason"
+											rows={2}
+											maxLength={MAX_OVERRIDE_REASON_LENGTH}
+											value={input.state.value}
+											onChange={(event) => input.handleChange(event.target.value)}
+											onBlur={input.handleBlur}
+										/>
+									</TFormControl>
+									<TFormMessage field={input} />
+								</TFormItem>
+							)}
+						</form.Field>
+						<form.Field name="evidence" validators={validators("evidence")}>
+							{(input) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(input)}>
+										{t("settings.travelExpenses.allowanceOverrides.evidence", "Evidence")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(input)}>
+										<Textarea
+											name="evidence"
+											rows={2}
+											maxLength={MAX_OVERRIDE_EVIDENCE_LENGTH}
+											value={input.state.value}
+											onChange={(event) => input.handleChange(event.target.value)}
+											onBlur={input.handleBlur}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.travelExpenses.allowanceOverrides.evidenceDescription",
+											"What the amount rests on, e.g. the official rate table and edition, or a written confirmation.",
+										)}
+									</TFormDescription>
+									<TFormMessage field={input} />
+								</TFormItem>
+							)}
+						</form.Field>
+					</ActionPanelBody>
+					<ActionPanelFooter>
 						<form.Subscribe selector={(state) => state.isSubmitting}>
 							{(isSubmitting) => (
-								<Button type="submit" disabled={isSubmitting}>
-									{isSubmitting ? (
-										<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-									) : (
-										<IconShieldCheck aria-hidden="true" className="mr-2 size-4" />
-									)}
-									{t("settings.travelExpenses.allowanceOverrides.authorize", "Authorize allowance")}
-								</Button>
+								<>
+									<Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>
+										{t("common.cancel", "Cancel")}
+									</Button>
+									<Button type="submit" disabled={isSubmitting}>
+										{isSubmitting ? (
+											<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+										) : (
+											<IconShieldCheck aria-hidden="true" className="mr-2 size-4" />
+										)}
+										{t(
+											"settings.travelExpenses.allowanceOverrides.authorize",
+											"Authorize allowance",
+										)}
+									</Button>
+								</>
 							)}
 						</form.Subscribe>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 
@@ -496,7 +505,7 @@ export function AllowanceOverridesSettingsCard() {
 						))}
 					</ul>
 				)}
-				{editing && <OverrideDialog item={editing} onClose={() => setEditing(null)} />}
+				{editing && <OverridePanel item={editing} onClose={() => setEditing(null)} />}
 			</CardContent>
 		</Card>
 	);

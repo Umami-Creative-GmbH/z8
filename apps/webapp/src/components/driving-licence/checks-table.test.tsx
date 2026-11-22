@@ -84,11 +84,13 @@ function row(
 			: null,
 	};
 }
-function renderWorklist() {
+function renderWorklist(
+	emptyGuidance = { canAssignIntendedDrivers: false, selfIsIntendedDriver: false },
+) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(
 		<QueryClientProvider client={client}>
-			<DrivingLicenceVerifierWorklist />
+			<DrivingLicenceVerifierWorklist emptyGuidance={emptyGuidance} />
 		</QueryClientProvider>,
 	);
 }
@@ -217,11 +219,28 @@ describe("the verifier's Checks table", () => {
 		);
 	});
 
-	it("explains an empty scope", async () => {
+	it("explains an empty scope to a verifier who can't assign intended drivers", async () => {
 		remote.rows = [];
 		renderWorklist();
 		expect(await screen.findByText("Nobody to check yet")).toBeTruthy();
+		expect(screen.getByText(/Ask an administrator to assign intended drivers/)).toBeTruthy();
+		expect(screen.queryByRole("link", { name: "Assign intended drivers" })).toBeNull();
+		expect(screen.queryByText(/another verifier must check your licence/)).toBeNull();
 		expect(screen.queryByRole("table")).toBeNull();
+	});
+
+	it("links an administrator to Intended drivers and tells an intended driver why they're missing (#1937)", async () => {
+		remote.rows = [];
+		renderWorklist({ canAssignIntendedDrivers: true, selfIsIntendedDriver: true });
+		expect(
+			(await screen.findByRole("link", { name: "Assign intended drivers" })).getAttribute("href"),
+		).toBe("/settings/driving-licence?tab=intended-drivers");
+		expect(
+			screen.getByText(
+				"You never appear in your own list: another verifier must check your licence.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByText(/Ask an administrator/)).toBeNull();
 	});
 
 	it("says when no intended driver matches the search", async () => {
@@ -242,10 +261,10 @@ describe("the verifier's Checks table", () => {
 		renderWorklist();
 		expect(
 			(await screen.findByRole("link", { name: "Check Bruno Soon" })).getAttribute("href"),
-		).toBe("/driving-licence/checks/bruno-soon");
+		).toBe("/team/driving-licence/bruno-soon");
 		expect(
 			screen.getByRole("link", { name: "View ended record for Fiona Former" }).getAttribute("href"),
-		).toBe("/driving-licence/checks/fiona-former");
+		).toBe("/team/driving-licence/fiona-former");
 		expect(screen.queryByRole("heading", { name: /original licence/ })).toBeNull();
 	});
 });

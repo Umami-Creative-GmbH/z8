@@ -148,10 +148,9 @@ export async function isCloseResumeStanding(
 	scope: { organizationId: string; employeeId: string },
 	result: Pick<CloseResumeWorkResult, "close" | "resume">,
 ): Promise<boolean> {
-	const [closure, start] = await Promise.all([
-		findStandingClosure(tx, scope, result.close),
-		findStandingStart(tx, scope, result.resume),
-	]);
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const closure = await findStandingClosure(tx, scope, result.close);
+	const start = await findStandingStart(tx, scope, result.resume);
 	return closure !== null && start !== null;
 }
 

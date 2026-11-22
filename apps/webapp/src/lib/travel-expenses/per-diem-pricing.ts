@@ -104,52 +104,51 @@ export async function loadPerDiemOverlaps(
 	},
 ): Promise<string[]> {
 	const family = await loadAdjustmentFamilyIds(database, input);
-	const [reports, claims] = await Promise.all([
-		database
-			.select({
-				row: travelExpenseReportPerDiem,
-				status: travelExpenseReport.status,
-				reimbursementCurrency: travelExpenseReport.reimbursementCurrency,
-				tripDestinations: travelExpenseReport.tripDestinations,
-			})
-			.from(travelExpenseReportPerDiem)
-			.innerJoin(
-				travelExpenseReport,
-				and(
-					eq(travelExpenseReport.id, travelExpenseReportPerDiem.reportId),
-					eq(travelExpenseReport.organizationId, travelExpenseReportPerDiem.organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(travelExpenseReportPerDiem.organizationId, input.organizationId),
-					eq(travelExpenseReport.employeeId, input.employeeId),
-					ne(travelExpenseReport.id, input.reportId),
-					...(family.length > 0 ? [notInArray(travelExpenseReport.id, family)] : []),
-					inArray(travelExpenseReport.status, [...CLAIMING_REPORT_STATUSES]),
-					isNotNull(travelExpenseReportPerDiem.startDate),
-					isNotNull(travelExpenseReportPerDiem.endDate),
-					lte(travelExpenseReportPerDiem.startDate, input.endDate),
-					gte(travelExpenseReportPerDiem.endDate, input.startDate),
-				),
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const reports = await database
+		.select({
+			row: travelExpenseReportPerDiem,
+			status: travelExpenseReport.status,
+			reimbursementCurrency: travelExpenseReport.reimbursementCurrency,
+			tripDestinations: travelExpenseReport.tripDestinations,
+		})
+		.from(travelExpenseReportPerDiem)
+		.innerJoin(
+			travelExpenseReport,
+			and(
+				eq(travelExpenseReport.id, travelExpenseReportPerDiem.reportId),
+				eq(travelExpenseReport.organizationId, travelExpenseReportPerDiem.organizationId),
 			),
-		database
-			.select({
-				startDate: travelExpenseClaim.tripStartDate,
-				endDate: travelExpenseClaim.tripEndDate,
-			})
-			.from(travelExpenseClaim)
-			.where(
-				and(
-					eq(travelExpenseClaim.organizationId, input.organizationId),
-					eq(travelExpenseClaim.employeeId, input.employeeId),
-					eq(travelExpenseClaim.type, "per_diem"),
-					inArray(travelExpenseClaim.status, ["submitted", "approved"]),
-					lte(travelExpenseClaim.tripStartDate, input.endDate),
-					gte(travelExpenseClaim.tripEndDate, input.startDate),
-				),
+		)
+		.where(
+			and(
+				eq(travelExpenseReportPerDiem.organizationId, input.organizationId),
+				eq(travelExpenseReport.employeeId, input.employeeId),
+				ne(travelExpenseReport.id, input.reportId),
+				...(family.length > 0 ? [notInArray(travelExpenseReport.id, family)] : []),
+				inArray(travelExpenseReport.status, [...CLAIMING_REPORT_STATUSES]),
+				isNotNull(travelExpenseReportPerDiem.startDate),
+				isNotNull(travelExpenseReportPerDiem.endDate),
+				lte(travelExpenseReportPerDiem.startDate, input.endDate),
+				gte(travelExpenseReportPerDiem.endDate, input.startDate),
 			),
-	]);
+		);
+	const claims = await database
+		.select({
+			startDate: travelExpenseClaim.tripStartDate,
+			endDate: travelExpenseClaim.tripEndDate,
+		})
+		.from(travelExpenseClaim)
+		.where(
+			and(
+				eq(travelExpenseClaim.organizationId, input.organizationId),
+				eq(travelExpenseClaim.employeeId, input.employeeId),
+				eq(travelExpenseClaim.type, "per_diem"),
+				inArray(travelExpenseClaim.status, ["submitted", "approved"]),
+				lte(travelExpenseClaim.tripStartDate, input.endDate),
+				gte(travelExpenseClaim.tripEndDate, input.startDate),
+			),
+		);
 	const range = new Set(tripDays(input.startDate, input.endDate));
 	const claimed = new Set<string>();
 	const claim = (dates: readonly string[]) => {

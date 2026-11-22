@@ -60,42 +60,34 @@ describe("useEmployees directory filters (#1438)", () => {
 
 	it("opens on the current roster", async () => {
 		const { result } = renderHook(
-			() => useEmployees({ organizationId: "org-1", accessTier: "orgAdmin" }),
+			() => useEmployees({ organizationId: "org-1", settingsAccess: "orgAdmin" }),
 			{ wrapper },
 		);
 
 		expect(result.current.status).toBe("current");
 		await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 		expect(
-			new URL(fetchMock.mock.lastCall![0], "http://localhost").searchParams.get(
-				"status",
-			),
+			new URL(fetchMock.mock.lastCall![0], "http://localhost").searchParams.get("status"),
 		).toBe("current");
 	});
 
 	it("asks for former employees and for everyone on those filters", async () => {
 		const { result } = renderHook(
-			() => useEmployees({ organizationId: "org-1", accessTier: "orgAdmin" }),
+			() => useEmployees({ organizationId: "org-1", settingsAccess: "orgAdmin" }),
 			{ wrapper },
 		);
 
 		act(() => result.current.setStatus("former"));
 		await waitFor(() =>
 			expect(
-				new URL(
-					fetchMock.mock.lastCall![0],
-					"http://localhost",
-				).searchParams.get("status"),
+				new URL(fetchMock.mock.lastCall![0], "http://localhost").searchParams.get("status"),
 			).toBe("former"),
 		);
 
 		act(() => result.current.setStatus("all"));
 		await waitFor(() =>
 			expect(
-				new URL(
-					fetchMock.mock.lastCall![0],
-					"http://localhost",
-				).searchParams.get("status"),
+				new URL(fetchMock.mock.lastCall![0], "http://localhost").searchParams.get("status"),
 			).toBeNull(),
 		);
 	});

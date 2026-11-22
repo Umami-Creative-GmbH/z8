@@ -550,8 +550,8 @@ describe("cross-consumer contract reader parity (PostgreSQL, #1925)", () => {
 				},
 			},
 			dateRange: {
-				start: DateTime.fromISO("2026-06-15T00:00:00.000Z", { zone: "UTC" }),
-				end: DateTime.fromISO("2026-06-21T23:59:59.999Z", { zone: "UTC" }),
+				start: parseInstant("2026-06-15T00:00:00.000Z"),
+				end: parseInstant("2026-06-21T23:59:59.999Z"),
 			},
 			workPeriods: [
 				{

@@ -3,8 +3,8 @@
  * and writes one audit entry attributed to the owner. A due schedule whose owner is no
  * longer an org admin pauses instead of running.
  */
-import { DateTime } from "luxon";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -128,7 +128,7 @@ describe("scheduled export runs", () => {
 
 		await new ScheduledExportOrchestrator().executeSchedule(
 			schedule,
-			DateTime.fromISO("2026-10-11T08:00:00Z", { zone: "utc" }),
+			parseInstant("2026-10-11T08:00:00Z"),
 		);
 
 		expect(runs.executed.map((params) => params.ownerId)).toEqual([owner.userId]);
@@ -167,7 +167,7 @@ describe("scheduled export runs", () => {
 
 		await new ScheduledExportOrchestrator().executeSchedule(
 			schedule,
-			DateTime.fromISO("2026-10-11T08:00:00Z", { zone: "utc" }),
+			parseInstant("2026-10-11T08:00:00Z"),
 			{ trigger: "run_now", requestedBy: requester.userId },
 		);
 

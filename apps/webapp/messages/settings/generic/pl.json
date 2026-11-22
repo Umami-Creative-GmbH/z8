@@ -2847,8 +2847,7 @@
       "description": "Wybierz, jak i kiedy chcesz otrzymywać powiadomienia",
       "digestTime": "Godzina podsumowania",
       "discord": {
-        "description": "Skonfiguruj powiadomienia Discord dla swojej organizacji.",
-        "setupInstructions": "Łączenie z platformą Discord z poziomu tej strony nie jest jeszcze dostępne. Połączenie wymaga tokena bota, identyfikatora aplikacji i klucza publicznego aplikacji Discord."
+        "description": "Skonfiguruj powiadomienia Discord dla swojej organizacji."
       },
       "escalations": "Eskalacje",
       "escalationsDescription": "Eskaluj nieodebrane prośby o zatwierdzenie po upływie skonfigurowanego czasu oczekiwania.",

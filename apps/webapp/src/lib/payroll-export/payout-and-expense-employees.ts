@@ -14,12 +14,10 @@ export function logicalPeriod(filters: PayrollExportFilters): {
 	startDate: string;
 	endDate: string;
 } {
-	const startDate = filters.dateRange.start.toISODate();
-	const endDate = filters.dateRange.end.toISODate();
-	if (!startDate || !endDate) {
-		throw new Error("Invalid payroll export date range");
-	}
-	return { startDate, endDate };
+	return {
+		startDate: filters.dateRange.start.toString(),
+		endDate: filters.dateRange.end.toString(),
+	};
 }
 
 /**

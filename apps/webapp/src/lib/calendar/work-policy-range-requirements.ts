@@ -10,7 +10,10 @@ import {
 	shift,
 } from "@/db/schema";
 import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
-import { type EmploymentPeriodSnapshot, loadEffectiveContractsBatch } from "@/lib/contracts";
+import {
+	type EmploymentPeriodSnapshot,
+	loadEffectiveContractsBatch,
+} from "@/lib/contracts/resolve-contract";
 import {
 	comparePlainDates,
 	dateFromInstant,

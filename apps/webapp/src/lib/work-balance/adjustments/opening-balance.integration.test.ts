@@ -10,10 +10,10 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type PlainDate,
+	parseInstant,
 	parsePlainDate,
 	plainDateAt,
 	systemClock,
@@ -523,7 +523,7 @@ describe("opening balances on PostgreSQL", () => {
 
 	it("replaces the yearly team balance of the year it is dated in", async () => {
 		// The yearly team balance covers one calendar year; 2025 contains 31 October.
-		const in2025 = DateTime.fromISO("2025-12-15T12:00:00Z", { zone: "utc" });
+		const in2025 = parseInstant("2025-12-15T12:00:00Z");
 		const yearly = async () =>
 			(
 				await refreshEmployeeTimeBalances({

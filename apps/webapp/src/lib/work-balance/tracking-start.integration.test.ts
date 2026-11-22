@@ -1,6 +1,6 @@
-import { sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { sql } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
@@ -205,7 +205,7 @@ describe("explicit tracking start across public balance readers", () => {
 		const team = await refreshEmployeeTimeBalances({
 			organizationId,
 			employeeIds: [employeeId],
-			now: DateTime.fromISO("2026-06-01T10:00:00Z"),
+			now: Temporal.Instant.from("2026-06-01T10:00:00Z"),
 		});
 		expect(team.get(employeeId)).toMatchObject({
 			actualMinutes: 60,

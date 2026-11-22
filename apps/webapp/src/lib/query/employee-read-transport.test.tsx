@@ -1,14 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	act,
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { type ReactNode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
@@ -50,16 +43,13 @@ vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	updateEmployee: state.updateReal,
 	updateEmployeeInvitationDraft: state.updateDraft,
 }));
-vi.mock(
-	"@/app/[locale]/(app)/settings/employees/employment-history-client-actions",
-	() => ({
-		listEmployeeEmploymentHistoryAction: state.oldRead,
-		cancelEmployeeEmploymentHistoryAction: vi.fn(),
-		changeEmployeeWageAction: vi.fn(),
-		confirmEmployeeEmploymentHistoryAction: vi.fn(),
-		createEmployeeEmploymentHistoryAction: vi.fn(),
-	}),
-);
+vi.mock("@/app/[locale]/(app)/settings/employees/employment-history-client-actions", () => ({
+	listEmployeeEmploymentHistoryAction: state.oldRead,
+	cancelEmployeeEmploymentHistoryAction: vi.fn(),
+	changeEmployeeWageAction: vi.fn(),
+	confirmEmployeeEmploymentHistoryAction: vi.fn(),
+	createEmployeeEmploymentHistoryAction: vi.fn(),
+}));
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({
 	getEmployeeEffectiveScheduleDetails: state.oldRead,
 	getWorkPolicies: state.oldRead,
@@ -83,9 +73,7 @@ function provider(children: ReactNode, initial = bootstrap) {
 	});
 	const tree = (context: OrganizationDisplayContext) => (
 		<QueryClientProvider client={client}>
-			<OrganizationContextProvider
-				initialContext={{ ...context, updatedAt: Date.now() }}
-			>
+			<OrganizationContextProvider initialContext={{ ...context, updatedAt: Date.now() }}>
 				{children}
 			</OrganizationContextProvider>
 		</QueryClientProvider>
@@ -93,19 +81,18 @@ function provider(children: ReactNode, initial = bootstrap) {
 	const result = render(tree(initial));
 	return {
 		...result,
-		replaceScope: (context: OrganizationDisplayContext) =>
-			result.rerender(tree(context)),
+		replaceScope: (context: OrganizationDisplayContext) => result.rerender(tree(context)),
 	};
 }
 
 function Directory({
-	accessTier = "manager",
+	settingsAccess = "scopedManager",
 }: {
-	accessTier?: "manager" | "orgAdmin";
+	settingsAccess?: "scopedManager" | "orgAdmin" | "owner";
 }) {
 	const result = useEmployees({
 		organizationId: "org-1",
-		accessTier,
+		settingsAccess,
 	});
 	return (
 		<p>
@@ -123,50 +110,40 @@ function ScopedCustomFields() {
 		recordId: "person-1",
 		enabled: Boolean(userId && activeOrganizationId),
 		readScope:
-			userId && activeOrganizationId
-				? { userId, organizationId: activeOrganizationId }
-				: undefined,
+			userId && activeOrganizationId ? { userId, organizationId: activeOrganizationId } : undefined,
 	});
 	return <p>{section?.fields[0]?.name ?? "No visible fields"}</p>;
 }
 
 function Detail({
 	initialSnapshot,
-	accessTier = "orgAdmin",
+	settingsAccess = "orgAdmin",
 }: {
 	initialSnapshot: EmployeeReadSnapshot<"detail">;
-	accessTier?: "orgAdmin" | "manager";
+	settingsAccess?: "orgAdmin" | "scopedManager" | "owner";
 }) {
 	const data = useEmployee({
 		employeeId:
 			initialSnapshot.data.kind === "invitationDraft"
 				? initialSnapshot.data.encodedId
 				: initialSnapshot.data.id,
-		accessTier,
+		settingsAccess,
 		initialSnapshot,
 	});
 	return (
 		<>
 			<p>{data.employee?.user.name ?? "Loading employee"}</p>
 			<p>
-				{data.availableManagers.length} manager /{" "}
-				{data.employmentHistory.length} history / {data.workPolicies.length}{" "}
-				policy
+				{data.availableManagers.length} manager / {data.employmentHistory.length} history /{" "}
+				{data.workPolicies.length} policy
 			</p>
 			{data.readErrors.employmentHistory ? (
 				<p role="alert">{data.readErrors.employmentHistory.message}</p>
 			) : null}
-			<button
-				type="button"
-				onClick={() => void data.updateEmployee({ firstName: "Prepared Pat" })}
-			>
+			<button type="button" onClick={() => void data.updateEmployee({ firstName: "Prepared Pat" })}>
 				Save employee
 			</button>
-			<button
-				type="button"
-				onClick={() => void data.refetch()}
-				disabled={data.isFetching}
-			>
+			<button type="button" onClick={() => void data.refetch()} disabled={data.isFetching}>
 				Refresh employee
 			</button>
 		</>
@@ -226,9 +203,7 @@ describe("employee read transport through the shared provider", () => {
 	it("uses the authorized server detail and starts independent reads while its schedule is held", async () => {
 		let releaseSchedule!: () => void;
 		state.fetch.mockImplementation((url: string) => {
-			const dataset = new URL(url, "http://localhost").pathname
-				.split("/")
-				.at(-1);
+			const dataset = new URL(url, "http://localhost").pathname.split("/").at(-1);
 			const response = (data: unknown) =>
 				Response.json({
 					scope: { userId: "viewer-1", organizationId: "org-1" },
@@ -240,15 +215,10 @@ describe("employee read transport through the shared provider", () => {
 					releaseSchedule = () => resolve(response(null));
 				});
 			if (dataset === "managers")
-				return Promise.resolve(
-					response([{ id: "manager-1", user: { name: "Manager person" } }]),
-				);
-			if (dataset === "employment-history")
-				return Promise.resolve(response([{ id: "terms-1" }]));
+				return Promise.resolve(response([{ id: "manager-1", user: { name: "Manager person" } }]));
+			if (dataset === "employment-history") return Promise.resolve(response([{ id: "terms-1" }]));
 			if (dataset === "work-policies")
-				return Promise.resolve(
-					response([{ id: "policy-1", name: "Weekdays" }]),
-				);
+				return Promise.resolve(response([{ id: "policy-1", name: "Weekdays" }]));
 			throw new Error(`Unexpected initial read: ${dataset}`);
 		});
 		provider(
@@ -266,9 +236,7 @@ describe("employee read transport through the shared provider", () => {
 			/>,
 		);
 		expect(await screen.findByText("Pat River")).toBeTruthy();
-		expect(
-			await screen.findByText("1 manager / 1 history / 1 policy"),
-		).toBeTruthy();
+		expect(await screen.findByText("1 manager / 1 history / 1 policy")).toBeTruthy();
 		await waitFor(() => expect(state.fetch).toHaveBeenCalledTimes(4));
 		expect(state.oldRead).not.toHaveBeenCalled();
 		expect(state.getCurrentEmployee).not.toHaveBeenCalled();
@@ -317,9 +285,7 @@ describe("employee read transport through the shared provider", () => {
 			/>,
 		);
 		expect(await screen.findByText("Accepted Pat")).toBeTruthy();
-		await act(async () =>
-			fireEvent.click(screen.getByRole("button", { name: "Save employee" })),
-		);
+		await act(async () => fireEvent.click(screen.getByRole("button", { name: "Save employee" })));
 		expect(state.updateDraft).not.toHaveBeenCalled();
 		expect(state.updateReal).not.toHaveBeenCalled();
 		expect(state.fetch).not.toHaveBeenCalled();
@@ -327,9 +293,7 @@ describe("employee read transport through the shared provider", () => {
 
 	it("shows a real optional-read error while the authorized detail remains usable", async () => {
 		state.fetch.mockImplementation(async (url: string) => {
-			const dataset = new URL(url, "http://localhost").pathname
-				.split("/")
-				.at(-1);
+			const dataset = new URL(url, "http://localhost").pathname.split("/").at(-1);
 			return dataset === "employment-history"
 				? Response.json({ error: "History unavailable" }, { status: 503 })
 				: Response.json({
@@ -352,14 +316,10 @@ describe("employee read transport through the shared provider", () => {
 				}}
 			/>,
 		);
-		expect((await screen.findByRole("alert")).textContent).toBe(
-			"History unavailable",
-		);
+		expect((await screen.findByRole("alert")).textContent).toBe("History unavailable");
 		expect(screen.getByText("Pat River")).toBeTruthy();
 		expect(
-			state.fetch.mock.calls.filter(([url]) =>
-				String(url).includes("/employment-history"),
-			),
+			state.fetch.mock.calls.filter(([url]) => String(url).includes("/employment-history")),
 		).toHaveLength(1);
 	});
 
@@ -372,18 +332,14 @@ describe("employee read transport through the shared provider", () => {
 			}),
 		);
 		provider(<Directory />);
-		expect(
-			await screen.findByText("Employee context changed. Refresh to continue."),
-		).toBeTruthy();
+		expect(await screen.findByText("Employee context changed. Refresh to continue.")).toBeTruthy();
 		expect(screen.queryByText("Wrong person")).toBeNull();
 	});
 
 	it("does not paint an old user's delayed response after identity replacement", async () => {
 		let finishOld!: () => void;
 		state.fetch.mockImplementation((_url: string, options: RequestInit) => {
-			const userId = (options.headers as Record<string, string>)[
-				"x-z8-context-user"
-			];
+			const userId = (options.headers as Record<string, string>)["x-z8-context-user"];
 			const response = (name: string) =>
 				Response.json({
 					scope: { userId, organizationId: "org-1" },
@@ -422,7 +378,7 @@ describe("employee read transport through the shared provider", () => {
 	});
 
 	it("uses the active organization for an administrator without an employee profile", async () => {
-		provider(<Directory accessTier="orgAdmin" />, {
+		provider(<Directory settingsAccess="orgAdmin" />, {
 			...bootstrap,
 			employee: null,
 		});
@@ -443,8 +399,7 @@ describe("employee read transport through the shared provider", () => {
 		state.customFields.mockImplementationOnce(
 			() =>
 				new Promise((resolve) => {
-					finishRestricted = () =>
-						resolve({ success: true, data: { fields: [], history: {} } });
+					finishRestricted = () => resolve({ success: true, data: { fields: [], history: {} } });
 				}),
 		);
 		const view = provider(<ScopedCustomFields />);
@@ -472,7 +427,12 @@ describe("employee read transport through the shared provider", () => {
 		const initialSnapshot = {
 			scope: { userId: "viewer-1", organizationId: "org-1" },
 			updatedAt: Date.now(),
-			data: { id: "person-1", kind: "employee" as const, organizationId: "org-1", user: { name: "Pat River" } },
+			data: {
+				id: "person-1",
+				kind: "employee" as const,
+				organizationId: "org-1",
+				user: { name: "Pat River" },
+			},
 		};
 		state.fetch.mockImplementation(async (url: string) =>
 			Response.json({
@@ -486,27 +446,20 @@ describe("employee read transport through the shared provider", () => {
 			}),
 		);
 		function RoleChange() {
-			const [tier, setTier] = useState<"orgAdmin" | "manager">("orgAdmin");
+			const [access, setAccess] = useState<"orgAdmin" | "scopedManager">("orgAdmin");
 			return (
 				<>
-					<Detail
-						accessTier={tier}
-						initialSnapshot={initialSnapshot}
-					/>
-					<button type="button" onClick={() => setTier("manager")}>
+					<Detail settingsAccess={access} initialSnapshot={initialSnapshot} />
+					<button type="button" onClick={() => setAccess("scopedManager")}>
 						Reduce role
 					</button>
 				</>
 			);
 		}
 		provider(<RoleChange />);
-		expect(
-			await screen.findByText("1 manager / 0 history / 0 policy"),
-		).toBeTruthy();
+		expect(await screen.findByText("1 manager / 0 history / 0 policy")).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Reduce role" }));
-		expect(
-			await screen.findByText("0 manager / 0 history / 0 policy"),
-		).toBeTruthy();
+		expect(await screen.findByText("0 manager / 0 history / 0 policy")).toBeTruthy();
 	});
 
 	it("refreshes each visible dataset once and keeps mutation refresh limited to affected detail data", async () => {
@@ -517,14 +470,11 @@ describe("employee read transport through the shared provider", () => {
 			user: { name: "Pat River" },
 		};
 		state.fetch.mockImplementation(async (url: string) => {
-			const dataset = new URL(url, "http://localhost").pathname
-				.split("/")
-				.at(-1);
+			const dataset = new URL(url, "http://localhost").pathname.split("/").at(-1);
 			return Response.json({
 				scope: { userId: "viewer-1", organizationId: "org-1" },
 				updatedAt: Date.now(),
-				data:
-					dataset === "detail" ? person : dataset === "schedule" ? null : [],
+				data: dataset === "detail" ? person : dataset === "schedule" ? null : [],
 			});
 		});
 		state.updateReal.mockResolvedValue({ success: true, data: person });
@@ -559,9 +509,7 @@ describe("employee read transport through the shared provider", () => {
 		await waitFor(() => expect(state.fetch).toHaveBeenCalledTimes(3));
 		expect(
 			state.fetch.mock.calls
-				.map(([url]) =>
-					new URL(url, "http://localhost").pathname.split("/").at(-1),
-				)
+				.map(([url]) => new URL(url, "http://localhost").pathname.split("/").at(-1))
 				.sort(),
 		).toEqual(["detail", "employment-history", "schedule"]);
 	});

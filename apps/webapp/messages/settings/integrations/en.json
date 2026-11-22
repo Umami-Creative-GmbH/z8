@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "Application ID",
+      "botToken": "Bot Token",
+      "botTokenHelp": "Stored encrypted in Vault and used to validate and operate your bot.",
+      "commandsRegistrationFailed": "Discord bot connected, but slash commands could not be registered automatically. Verify your bot permissions, then disconnect and connect the bot again to retry.",
+      "connect": "Connect Discord Bot",
+      "connectDescription": "Enter the credentials from your Discord application in the Discord Developer Portal.",
+      "connected": "Discord bot connected successfully",
+      "connectError": "Failed to connect Discord bot",
+      "copied": "Copied",
+      "copy": "Copy",
+      "copyInteractionUrl": "Copy Interaction Endpoint URL",
+      "copyInteractionUrlFailed": "The Interaction Endpoint URL could not be copied. Select it and copy it manually.",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": {
+        "description": "This will remove the stored bot token and disable Discord notifications and slash commands for your organization.",
+        "title": "Disconnect Discord Bot?"
+      },
+      "disconnected": "Discord bot disconnected",
+      "disconnectError": "Failed to disconnect Discord bot",
+      "errors": {
+        "applicationIdMismatch": "Application ID does not match the provided bot token.",
+        "invalidBotToken": "Invalid bot token. Check your Discord bot credentials and try again.",
+        "publicKeyMismatch": "Public key does not match the Discord application."
+      },
+      "interactionEndpointHelp": "Paste this URL into the Interactions Endpoint URL field in your Discord Developer Portal application.",
+      "interactionEndpointUrl": "Interaction Endpoint URL",
+      "interactionUrlCopied": "Interaction Endpoint URL copied",
+      "publicKey": "Public Key",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "Application ID must contain digits only.",
+        "applicationIdRequired": "Application ID is required.",
+        "botTokenRequired": "Bot token is required.",
+        "publicKeyInvalid": "Public key must be a 64-character hexadecimal string.",
+        "publicKeyRequired": "Public key is required."
+      }
     },
     "slack": {
       "title": "Slack"

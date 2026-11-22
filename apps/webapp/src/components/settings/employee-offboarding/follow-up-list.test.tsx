@@ -3,7 +3,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const searchReplacementsMock = vi.hoisted(() => vi.fn());
 const getReplacementMock = vi.hoisted(() => vi.fn());
@@ -28,6 +28,14 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-offboarding.actions", 
 	searchReplacementEmployeesAction: searchReplacementsMock,
 	getReplacementEmployeeAction: getReplacementMock,
 }));
+
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
 
 import { FollowUpList, type FollowUpListProps } from "./follow-up-list";
 
@@ -81,6 +89,16 @@ function reviewItem(label: string) {
 	const item = screen.getByText(label).closest("li");
 	if (!item) throw new Error(`review ${label} not rendered`);
 	return within(item);
+}
+
+async function pickReplacement(
+	user: ReturnType<typeof userEvent.setup>,
+	scope: ReturnType<typeof within>,
+	name: RegExp,
+) {
+	await user.click(scope.getByRole("combobox", { name: "Replacement for approvals" }));
+	await user.click(await screen.findByRole("option", { name }));
+	await waitFor(() => expect(screen.queryByRole("option", { name })).toBeNull());
 }
 
 describe("FollowUpList", () => {
@@ -161,8 +179,7 @@ describe("FollowUpList", () => {
 		const handover = reviewItem("Approval duties need a replacement");
 
 		expect(handover.getByText("No replacement was chosen.")).toBeTruthy();
-		await user.click(handover.getByRole("combobox", { name: "Replacement for approvals" }));
-		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
+		await pickReplacement(user, handover, /Robin Admin/);
 		await user.click(handover.getByRole("button", { name: "Assign replacement" }));
 		await handover.findByRole("alert");
 		await user.click(handover.getByRole("button", { name: "Assign replacement" }));
@@ -195,8 +212,7 @@ describe("FollowUpList", () => {
 		});
 		const stage = reviewItem("Approval duties need a replacement");
 
-		await user.click(stage.getByRole("combobox", { name: "Replacement for approvals" }));
-		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
+		await pickReplacement(user, stage, /Robin Admin/);
 		await user.click(stage.getByRole("button", { name: "Assign replacement" }));
 
 		await waitFor(() => expect(assignReplacement).toHaveBeenCalledTimes(1));
@@ -214,8 +230,7 @@ describe("FollowUpList", () => {
 		renderList({ assignReplacement, anchor: { deactivationId: "deactivation-1" } });
 		const handover = reviewItem("Approval duties need a replacement");
 
-		await user.click(handover.getByRole("combobox", { name: "Replacement for approvals" }));
-		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
+		await pickReplacement(user, handover, /Robin Admin/);
 		await user.click(handover.getByRole("button", { name: "Assign replacement" }));
 
 		await waitFor(() => expect(assignReplacement).toHaveBeenCalledTimes(1));

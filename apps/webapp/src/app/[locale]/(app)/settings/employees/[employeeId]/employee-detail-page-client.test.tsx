@@ -135,7 +135,6 @@ vi.mock("@/components/settings/contracts/scoped-manager-policy-card", () => ({
 		<section aria-label="Work Policy Assignment">{employeeId}</section>
 	),
 }));
-
 vi.mock("@/components/settings/personal-data-export/employee-personal-data-export-card", () => ({
 	EmployeePersonalDataExportCard: ({ isOwnRecord }: { isOwnRecord: boolean }) => (
 		<section aria-label="Personal data export">{isOwnRecord ? "own record" : "colleague"}</section>
@@ -312,14 +311,12 @@ function renderDetail({
 	employee = realEmployee,
 	currentUserId = "owner-user",
 	settingsAccess = "owner",
-	accessTier = "orgAdmin",
 	personnelFile = null,
 	highlightedReviewId = null,
 }: {
 	employee?: EmployeeDetail;
 	currentUserId?: string;
 	settingsAccess?: SettingsAccess | null;
-	accessTier?: "orgAdmin" | "manager" | "member";
 	personnelFile?: { employeeId: string; categories: []; today: string } | null;
 	highlightedReviewId?: string | null;
 } = {}) {
@@ -356,7 +353,6 @@ function renderDetail({
 			<QueryClientProvider client={queryClient}>
 				<EmployeeDetailPageClient
 					params={resolvedParams(employee.id)}
-					accessTier={accessTier}
 					currentUserId={currentUserId}
 					settingsAccess={settingsAccess}
 					personnelFile={personnelFile}
@@ -473,7 +469,7 @@ describe("employee detail Team field (#1575)", () => {
 	it("offers no Team field to a scoped manager", async () => {
 		formSection.real = true;
 		try {
-			renderDetail({ employee: inUmami, accessTier: "manager", settingsAccess: "scopedManager" });
+			renderDetail({ employee: inUmami, settingsAccess: "scopedManager" });
 			await screen.findByRole("textbox", { name: "Position" });
 			expect(screen.queryByRole("combobox", { name: "Team" })).toBeNull();
 			expect(teamApi.list).not.toHaveBeenCalled();
@@ -502,10 +498,10 @@ describe("employee detail admin-only custom roles (#1475)", () => {
 		window.location.hash = "";
 	});
 
-	it.each(["manager", "member"] as const)(
-		"does not mount the custom roles card for a %s viewer",
-		async (accessTier) => {
-			renderDetail({ accessTier, settingsAccess: "member" });
+	it.each(["scopedManager", "member", null] as const)(
+		"does not mount the custom roles card for %s settings access",
+		async (settingsAccess) => {
+			renderDetail({ settingsAccess });
 			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
 			const tab = screen.getByRole("tab", { name: "Access & Roles" });
 			act(() => {
@@ -519,7 +515,7 @@ describe("employee detail admin-only custom roles (#1475)", () => {
 	it.each(["orgAdmin", "owner"] as const)(
 		"mounts the custom roles card with the employee scope for %s settings access",
 		async (settingsAccess) => {
-			renderDetail({ accessTier: "orgAdmin", settingsAccess });
+			renderDetail({ settingsAccess });
 			const tab = await screen.findByRole("tab", { name: "Access & Roles" });
 			act(() => {
 				fireEvent.mouseDown(tab);
@@ -539,7 +535,7 @@ describe("employee detail wage history merge note (#1176)", () => {
 	});
 
 	it("shows the note on the terms card to org admins", async () => {
-		renderDetail({ accessTier: "orgAdmin" });
+		renderDetail({ settingsAccess: "orgAdmin" });
 		const tab = await screen.findByRole("tab", { name: "Contract" });
 		act(() => {
 			fireEvent.mouseDown(tab);
@@ -549,7 +545,7 @@ describe("employee detail wage history merge note (#1176)", () => {
 	});
 
 	it("shows no note to managers and isolates to wage-free policy assignment (A1)", async () => {
-		renderDetail({ accessTier: "manager", settingsAccess: "scopedManager" });
+		renderDetail({ settingsAccess: "scopedManager" });
 		const tab = await screen.findByRole("tab", { name: "Work policy" });
 		act(() => {
 			fireEvent.mouseDown(tab);
@@ -571,20 +567,20 @@ describe("employee detail 6-tab deep links (#1930)", () => {
 
 	it("auto-activates Contract tab for #employment-history deep link", async () => {
 		window.location.hash = "#employment-history";
-		renderDetail({ accessTier: "orgAdmin" });
+		renderDetail({ settingsAccess: "orgAdmin" });
 		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
 	});
 
 	it("auto-activates Leaving Date tab for #offboarding deep link", async () => {
 		window.location.hash = "#offboarding";
-		renderDetail({ accessTier: "orgAdmin" });
+		renderDetail({ settingsAccess: "orgAdmin" });
 		expect(await screen.findByRole("region", { name: "Leaving Date" })).toBeTruthy();
 		expect(screen.getByRole("region", { name: "Employment and departure" })).toBeTruthy();
 	});
 
 	it("auto-activates Leaving Date tab and highlights target review for ?review=<id>", async () => {
 		renderDetail({
-			accessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			highlightedReviewId: "11111111-1111-4111-8111-111111111111",
 		});
 		expect(await screen.findByText("Review 11111111-1111-4111-8111-111111111111")).toBeTruthy();
@@ -651,7 +647,6 @@ describe("employee detail Change wage (#1177)", () => {
 		window.location.hash = "";
 		renderDetail({
 			employee: hourlyToday,
-			accessTier: "manager",
 			settingsAccess: "scopedManager",
 		});
 		const tab = await screen.findByRole("tab", { name: "Work policy" });
@@ -712,7 +707,6 @@ describe("employee detail lifecycle integration", () => {
 			<QueryClientProvider client={queryClient}>
 				<EmployeeDetailPageClient
 					params={resolvedParams("employee-2")}
-					accessTier="manager"
 					currentUserId="manager-user"
 					settingsAccess="scopedManager"
 				/>
@@ -762,16 +756,10 @@ describe("employee detail lifecycle integration", () => {
 		).toBeNull();
 	});
 
-	it.each([
-		["manager", "orgAdmin"],
-		["member", "owner"],
-		["orgAdmin", "member"],
-		["orgAdmin", "scopedManager"],
-		["orgAdmin", null],
-	] as const)(
-		"hides draft actions for access tier %s with settings access %s",
-		async (accessTier, settingsAccess) => {
-			renderDetail({ employee: draftEmployee, accessTier, settingsAccess });
+	it.each(["member", "scopedManager", null] as const)(
+		"hides draft actions for settings access %s",
+		async (settingsAccess) => {
+			renderDetail({ employee: draftEmployee, settingsAccess });
 
 			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
 			expect(screen.queryByText("Draft actions")).toBeNull();
@@ -781,7 +769,6 @@ describe("employee detail lifecycle integration", () => {
 	it("shows the departure section and Leaving Date panel to org admins only, hiding both from managers (A1-2)", async () => {
 		window.location.hash = "";
 		const adminRender = renderDetail({
-			accessTier: "orgAdmin",
 			settingsAccess: "orgAdmin",
 		});
 		const tab = await screen.findByRole("tab", { name: "Leaving Date" });
@@ -794,7 +781,6 @@ describe("employee detail lifecycle integration", () => {
 		adminRender.unmount();
 
 		renderDetail({
-			accessTier: "manager",
 			settingsAccess: "scopedManager",
 		});
 		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
@@ -806,14 +792,14 @@ describe("employee detail lifecycle integration", () => {
 	it("offers the admin export to org admins only, marked on their own record (#1166)", async () => {
 		try {
 			window.location.hash = "#offboarding";
-			const { unmount } = renderDetail({ accessTier: "orgAdmin" });
+			const { unmount } = renderDetail({ settingsAccess: "orgAdmin" });
 			expect(
 				(await screen.findByRole("region", { name: "Personal data export" })).textContent,
 			).toBe("colleague");
 			unmount();
 
 			const own = renderDetail({
-				accessTier: "orgAdmin",
+				settingsAccess: "orgAdmin",
 				currentUserId: "user-2",
 			});
 			expect(
@@ -821,7 +807,7 @@ describe("employee detail lifecycle integration", () => {
 			).toBe("own record");
 			own.unmount();
 
-			renderDetail({ accessTier: "manager", settingsAccess: "scopedManager" });
+			renderDetail({ settingsAccess: "scopedManager" });
 			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
 			expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
 			expect(screen.queryByRole("region", { name: "Personal data export" })).toBeNull();
@@ -980,7 +966,6 @@ describe("preseeded employee edit form baseline", () => {
 				<QueryClientProvider client={queryClient}>
 					<EmployeeDetailPageClient
 						params={resolvedParams(employee.id)}
-						accessTier="orgAdmin"
 						currentUserId="owner-user"
 						settingsAccess="owner"
 						organizationId={employee.organizationId}

@@ -4,6 +4,7 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { employee, project, workPeriod } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
@@ -44,6 +45,10 @@ import type {
 	ProjectSummary,
 } from "@/lib/reports/project-types";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import {
+	type EmployeeProjectReportAccess,
+	getCachedProjectReportAccess,
+} from "./project-report-access-loader";
 
 const logger = createLogger("ProjectReportsActions");
 
@@ -69,6 +74,19 @@ function projectReportReader() {
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message: "Active organization required",
+				}),
+			);
+		}
+		const org = yield* dbService.query("projectReports.getOrganization", () =>
+			dbService.db.query.organization.findFirst({
+				where: eq(organization.id, organizationId),
+				columns: { projectsEnabled: true },
+			}),
+		);
+		if (!org?.projectsEnabled) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Projects are disabled for this organization",
 				}),
 			);
 		}
@@ -426,6 +444,14 @@ export async function getProjectsForFilter(): Promise<
 		return { success: false, error: "Unauthorized" };
 	}
 
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, emp.organizationId),
+		columns: { projectsEnabled: true },
+	});
+	if (!org?.projectsEnabled) {
+		return { success: false, error: "Projects are disabled for this organization" };
+	}
+
 	const projects = await db.query.project.findMany({
 		where: eq(project.organizationId, emp.organizationId),
 		columns: {
@@ -462,26 +488,6 @@ export async function getCurrentEmployeeForReports(): Promise<typeof employee.$i
 	return emp || null;
 }
 
-export async function getCurrentEmployeeProjectReportAccess(): Promise<{
-	employee: typeof employee.$inferSelect;
-	canViewProjectReports: boolean;
-} | null> {
-	const emp = await getCurrentEmployeeForReports();
-
-	if (!emp) {
-		return null;
-	}
-
-	if (emp.role === "admin" || emp.role === "manager") {
-		return { employee: emp, canViewProjectReports: true };
-	}
-
-	const authContext = await requireAuth();
-	const viewer = await loadProjectReportViewer(db, {
-		organizationId: emp.organizationId,
-		userId: authContext.user.id,
-		employee: emp,
-	});
-
-	return { employee: emp, canViewProjectReports: canViewProjectReports(viewer) };
+export async function getCurrentEmployeeProjectReportAccess(): Promise<EmployeeProjectReportAccess | null> {
+	return getCachedProjectReportAccess(getCurrentEmployeeForReports);
 }

@@ -7,7 +7,6 @@
 
 import { and, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -26,16 +25,22 @@ import {
 	currentRosterDigestManager,
 	currentRosterReportIds,
 } from "@/lib/bot-platform/current-roster-team";
-import { fmtTime, fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
-import { resolveEffectiveContractOnDay } from "@/lib/contracts";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
+	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	parsePlainDate,
 	plainDateAt,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import {
+	formatInstant,
+	formatPlainDate,
+	localeDefaultTimeFormat,
+} from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -58,9 +63,8 @@ export async function shouldSkipDigestForManager(
 	organizationId: string,
 	timezone: string,
 ): Promise<boolean> {
-	const now = DateTime.utc().setZone(timezone);
-	const todayStr = now.toISODate();
-	if (!todayStr) return false;
+	const now = systemClock.nowInstant().toZonedDateTimeISO(timezone);
+	const todayStr = now.toPlainDate().toString();
 
 	const absence = await db.query.absenceEntry.findFirst({
 		where: and(
@@ -177,16 +181,19 @@ type DigestTenant = {
 
 async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 	// Check if it's time to send the digest
-	const now = DateTime.now().setZone(tenant.digestTimezone);
+	const now = systemClock.nowInstant().toZonedDateTimeISO(tenant.digestTimezone);
 	const [digestHour, digestMinute] = tenant.digestTime.split(":").map(Number);
 
 	// Only send if within the 15-minute window of the digest time
-	const digestTime = now.set({
+	const digestTime = now.with({
 		hour: digestHour,
 		minute: digestMinute,
 		second: 0,
+		millisecond: 0,
+		microsecond: 0,
+		nanosecond: 0,
 	});
-	const minutesSinceDigestTime = now.diff(digestTime, "minutes").minutes;
+	const minutesSinceDigestTime = (now.epochMilliseconds - digestTime.epochMilliseconds) / 60_000;
 
 	// Send if we're within 0-15 minutes after the digest time
 	if (minutesSinceDigestTime < 0 || minutesSinceDigestTime >= 15) {
@@ -194,7 +201,7 @@ async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 			{
 				tenantId: tenant.tenantId,
 				digestTime: tenant.digestTime,
-				currentTime: now.toISO(),
+				currentTime: now.toString(),
 			},
 			"Not digest time for tenant",
 		);
@@ -287,7 +294,6 @@ export async function buildDigestDataForManager(
 	locale: string = DEFAULT_LANGUAGE,
 	nowInstant: Instant = systemClock.nowInstant(),
 ): Promise<DailyDigestData> {
-	const now = DateTime.fromMillis(nowInstant.epochMilliseconds, { zone: timezone });
 	const today = plainDateAt(nowInstant, timezone);
 	const todayStr = today.toString();
 	// `shift.date` is keyed in the organization's zone: read the shifts of today's calendar date.
@@ -452,19 +458,27 @@ export async function buildDigestDataForManager(
 		employeesOut = absences.map((a) => ({
 			name: a.employeeName || "Unknown",
 			category: a.categoryName || "Leave",
-			returnDate: fmtWeekdayShortDate(DateTime.fromISO(a.endDate).plus({ days: 1 }), locale),
+			returnDate: formatPlainDate(
+				parsePlainDate(a.endDate).add({ days: 1 }),
+				locale,
+				"weekdayMonthDay",
+			),
 			deputyName: a.deputyName,
 		}));
 
 		activeWorkPeriods = activeWorkPeriodsResult;
+		const timeFormat = localeDefaultTimeFormat(locale);
 		employeesClockedIn = activeWorkPeriods.map((e) => {
-			const clockInTime = DateTime.fromJSDate(e.startTime).setZone(timezone);
-			const duration = now.diff(clockInTime, ["hours", "minutes"]);
+			const clockInInstant = instantFromDate(e.startTime);
+			const totalMinutes = Math.max(
+				0,
+				Math.floor((nowInstant.epochMilliseconds - clockInInstant.epochMilliseconds) / 60_000),
+			);
 
 			return {
 				name: e.employeeName || "Unknown",
-				clockedInAt: fmtTime(clockInTime, locale),
-				durationSoFar: `${Math.floor(duration.hours)}h ${Math.floor(duration.minutes % 60)}m`,
+				clockedInAt: formatInstant(clockInInstant, { locale, timezone, timeFormat }, "time"),
+				durationSoFar: `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
 			};
 		});
 
@@ -559,7 +573,7 @@ export async function buildDigestDataForManager(
 	}
 
 	return {
-		date: now.toJSDate(),
+		date: dateFromInstant(nowInstant),
 		timezone,
 		pendingApprovals: pendingApprovals.length,
 		employeesOut,

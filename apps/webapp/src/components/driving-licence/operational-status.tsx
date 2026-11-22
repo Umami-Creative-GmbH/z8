@@ -3,10 +3,9 @@ import { IconRefresh } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useDeferredValue, useId, useState } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query";
 import { DrivingStatusLabel } from "./check-evidence";
@@ -157,6 +156,13 @@ function OperationalDrivingEmployees({
 	// A refusal withdraws the roster and selected status; never retain inspection access.
 	const employees =
 		!query.isError && query.data?.success ? query.data.data : null;
+	const selectableEmployees = (employees ?? []).map((entry) =>
+		toSelectableEmployee({ id: entry.employeeId, name: entry.name }),
+	);
+	const activeSelected =
+		selected && employees?.some((entry) => entry.employeeId === selected)
+			? selected
+			: null;
 	return (
 		<Card
 			className="min-w-0"
@@ -210,20 +216,31 @@ function OperationalDrivingEmployees({
 						"Refresh planning employees",
 					)}
 				</Button>
-				<Label htmlFor={id}>
-					{t("drivingLicence.operational.search", "Find employee")}
-				</Label>
-				<Input
+				<EmployeeSingleSelect
 					id={id}
-					type="search"
-					name="driving-employee-search"
-					autoComplete="off"
-					maxLength={100}
-					value={search}
-					onChange={(event) => {
-						setSearch(event.target.value);
+					label={t("drivingLicence.operational.search", "Find employee")}
+					placeholder={t(
+						"drivingLicence.operational.selectEmployee",
+						"Select employee",
+					)}
+					searchPlaceholder={t(
+						"drivingLicence.operational.search",
+						"Find employee",
+					)}
+					emptyMessage={t(
+						"drivingLicence.operational.noEmployees",
+						"No matching employees.",
+					)}
+					value={activeSelected}
+					onChange={(next) => setSelected(next)}
+					employees={selectableEmployees}
+					onSearchChange={(next) => {
+						setSearch(next);
 						setSelected(null);
 					}}
+					isLoading={query.isFetching}
+					allowClear
+					disabled={!employees}
 				/>
 				<p className="text-xs text-muted-foreground">
 					{t(
@@ -231,34 +248,8 @@ function OperationalDrivingEmployees({
 						"Up to 50 employees are shown. Narrow the search to find another employee. This view contains no inspection records.",
 					)}
 				</p>
-				<ul className="flex flex-wrap gap-2">
-					{employees?.map((entry) => (
-						<li key={entry.employeeId} className="min-w-0 max-w-full">
-							<Button
-								type="button"
-								variant={
-									selected === entry.employeeId ? "secondary" : "outline"
-								}
-								aria-pressed={selected === entry.employeeId}
-								className="h-auto min-h-9 max-w-full whitespace-normal break-words text-left"
-								onClick={() => setSelected(entry.employeeId)}
-							>
-								{entry.name}
-							</Button>
-						</li>
-					))}
-				</ul>
-				{employees && !employees.length ? (
-					<p>
-						{t(
-							"drivingLicence.operational.noEmployees",
-							"No matching employees.",
-						)}
-					</p>
-				) : null}
-				{selected &&
-				employees?.some((entry) => entry.employeeId === selected) ? (
-					<DrivingAuthorizationAdvisory employeeId={selected} />
+				{activeSelected ? (
+					<DrivingAuthorizationAdvisory employeeId={activeSelected} />
 				) : null}
 			</CardContent>
 		</Card>

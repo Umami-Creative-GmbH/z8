@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { EffectiveContractOnDay } from "@/lib/contracts";
+import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { DatabaseError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
@@ -12,7 +12,7 @@ const mockState = vi.hoisted(() => ({
 	loadActiveOrganizationDefaultPolicyId: vi.fn(),
 }));
 
-vi.mock("@/lib/contracts", () => ({
+vi.mock("@/lib/contracts/resolve-contract", () => ({
 	resolveEffectiveContractOnDay: mockState.resolveEffectiveContractOnDay,
 }));
 

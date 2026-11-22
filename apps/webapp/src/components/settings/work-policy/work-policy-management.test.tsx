@@ -36,7 +36,7 @@ describe("WorkPolicyManagement", () => {
 	it("opens on the policies tab by default", () => {
 		render(
 			<WorkPolicyManagement
-				accessTier="orgAdmin"
+				settingsAccess="orgAdmin"
 				organizationId="org-1"
 				organizationTimezone="Europe/Berlin"
 			/>,
@@ -53,7 +53,7 @@ describe("WorkPolicyManagement", () => {
 
 		render(
 			<WorkPolicyManagement
-				accessTier="orgAdmin"
+				settingsAccess="orgAdmin"
 				organizationId="org-1"
 				organizationTimezone="Europe/Berlin"
 			/>,

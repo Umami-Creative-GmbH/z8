@@ -169,8 +169,8 @@ describe("the project report's By task section on PostgreSQL", () => {
 		await cleanup();
 		const timestamp = new Date("2026-01-01T00:00:00Z");
 		await admin.query(
-			`insert into organization (id, name, slug, timezone, created_at) values
-			 ($1, 'T876 reports', $1, 'UTC', $3), ($2, 'T876 other', $2, 'UTC', $3)`,
+			`insert into organization (id, name, slug, timezone, projects_enabled, created_at) values
+			 ($1, 'T876 reports', $1, 'UTC', true, $3), ($2, 'T876 other', $2, 'UTC', true, $3)`,
 			[ids.organization, ids.otherOrganization, timestamp],
 		);
 		await admin.query(

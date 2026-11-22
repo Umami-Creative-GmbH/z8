@@ -2,7 +2,8 @@ import "server-only";
 
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
-import { type EffectiveContractOnDay, loadEffectiveContractsBatch } from "@/lib/contracts";
+import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import {
 	type AbsenceDayRange,
 	countAbsenceDays,
@@ -106,28 +107,27 @@ export async function loadWorkingDaysForEmployees(
 		dates,
 	});
 
-	return new Map(
-		await Promise.all(
-			[...contractsByEmployee].map(async ([employeeId, contractsByDate]) => {
-				const holidays = holidayDateKeys(
-					await getVacationHolidays({
-						database,
-						organizationId: input.organizationId,
-						employeeId,
-						startDate: input.startDate,
-						endDate: input.endDate,
-					}),
-				);
-				const isWorkingDay: IsWorkingDay = (day) => {
-					const dayStr = day.toString();
-					if (holidays.has(dayStr)) return false;
-					const weekdays = effectiveScheduledWeekdaysForContract(contractsByDate.get(dayStr));
-					return weekdays ? weekdays.has(day.dayOfWeek) : mondayToFriday(day);
-				};
-				return [employeeId, isWorkingDay] as const;
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const workingDays = new Map<string, IsWorkingDay>();
+	for (const [employeeId, contractsByDate] of contractsByEmployee) {
+		const holidays = holidayDateKeys(
+			await getVacationHolidays({
+				database,
+				organizationId: input.organizationId,
+				employeeId,
+				startDate: input.startDate,
+				endDate: input.endDate,
 			}),
-		),
-	);
+		);
+		const isWorkingDay: IsWorkingDay = (day) => {
+			const dayStr = day.toString();
+			if (holidays.has(dayStr)) return false;
+			const weekdays = effectiveScheduledWeekdaysForContract(contractsByDate.get(dayStr));
+			return weekdays ? weekdays.has(day.dayOfWeek) : mondayToFriday(day);
+		};
+		workingDays.set(employeeId, isWorkingDay);
+	}
+	return workingDays;
 }
 
 /**

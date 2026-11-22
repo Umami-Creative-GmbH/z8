@@ -11,9 +11,9 @@ import {
 } from "@/components/work-balance/balance-adjustment-history";
 import { cn } from "@/lib/utils";
 import { formatSignedWorkBalance, getWorkBalanceStatus } from "@/lib/work-balance/format";
-import { CancelBalanceAdjustmentDialog } from "./cancel-balance-adjustment-dialog";
-import { RecordOvertimePayoutDialog } from "./record-overtime-payout-dialog";
-import { SetOpeningBalanceDialog } from "./set-opening-balance-dialog";
+import { CancelBalanceAdjustmentPanel } from "./cancel-balance-adjustment-panel";
+import { RecordOvertimePayoutPanel } from "./record-overtime-payout-panel";
+import { SetOpeningBalancePanel } from "./set-opening-balance-panel";
 import { isRefusal, useEmployeeWorkBalance } from "./use-employee-work-balance";
 
 /**
@@ -141,7 +141,7 @@ export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string 
 			</CardContent>
 
 			{data?.canManage ? (
-				<SetOpeningBalanceDialog
+				<SetOpeningBalancePanel
 					open={isSettingOpeningBalance}
 					onOpenChange={setIsSettingOpeningBalance}
 					today={data.today}
@@ -150,14 +150,14 @@ export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string 
 				/>
 			) : null}
 			{data?.canManage ? (
-				<RecordOvertimePayoutDialog
+				<RecordOvertimePayoutPanel
 					open={isRecording}
 					onOpenChange={setIsRecording}
 					today={data.today}
 					onRecord={(input) => recordPayout.mutateAsync(input)}
 				/>
 			) : null}
-			<CancelBalanceAdjustmentDialog
+			<CancelBalanceAdjustmentPanel
 				adjustment={cancelling}
 				onOpenChange={(open) => {
 					if (!open) setCancelling(null);

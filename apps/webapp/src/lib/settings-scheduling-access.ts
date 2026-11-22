@@ -8,10 +8,12 @@ import {
 	subareaEmployee,
 	teamPermissions,
 } from "@/db/schema";
-import type { AuthContext } from "@/lib/auth-helpers";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { reachesWholeOrganization } from "@/lib/organization-action/managed-scope";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 
 export interface ScopedSchedulingLocation {
 	id: string;
@@ -24,8 +26,8 @@ export interface ScopedSchedulingLocation {
 }
 
 export interface SchedulingSettingsAccessContext {
-	authContext: AuthContext;
-	accessTier: SettingsAccessTier;
+	userId: string;
+	settingsAccess: SettingsAccess;
 	organizationId: string;
 	canManageTeamSettings: boolean;
 	manageableTeamIds: Set<string> | null;
@@ -63,34 +65,40 @@ export function getManagedShiftTemplateSubareaIds(input: {
 }
 
 export function canAccessShiftTemplateSettings(
-	accessTier: SettingsAccessTier,
+	settingsAccess: SettingsAccess | null,
 	canManageTeamSettings: boolean,
 	manageableSubareaIds: Set<string> | null,
 ) {
-	if (accessTier === "orgAdmin") {
+	if (meetsSettingsAccess(settingsAccess, "orgAdmin")) {
 		return true;
 	}
 
-	return accessTier === "manager" && canManageTeamSettings && (manageableSubareaIds?.size ?? 0) > 0;
+	return (
+		meetsSettingsAccess(settingsAccess, "scopedManager") &&
+		canManageTeamSettings &&
+		(manageableSubareaIds?.size ?? 0) > 0
+	);
 }
 
 export function canAccessCoverageRuleSettings(
-	accessTier: SettingsAccessTier,
+	settingsAccess: SettingsAccess | null,
 	manageableSubareaIds: Set<string> | null,
 ) {
-	if (accessTier === "orgAdmin") {
+	if (meetsSettingsAccess(settingsAccess, "orgAdmin")) {
 		return true;
 	}
 
-	return accessTier === "manager" && (manageableSubareaIds?.size ?? 0) > 0;
+	return (
+		meetsSettingsAccess(settingsAccess, "scopedManager") && (manageableSubareaIds?.size ?? 0) > 0
+	);
 }
 
 export function canManageScopedSchedulingSubarea(
-	accessTier: SettingsAccessTier,
+	settingsAccess: SettingsAccess | null,
 	manageableSubareaIds: Set<string> | null,
 	subareaId: string | null | undefined,
 ) {
-	if (accessTier === "orgAdmin") {
+	if (meetsSettingsAccess(settingsAccess, "orgAdmin")) {
 		return true;
 	}
 
@@ -113,21 +121,18 @@ export function filterItemsToManageableSubareas<T extends { subareaId: string | 
 }
 
 export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSettingsAccessContext | null> {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext) {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return null;
 	}
 
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+	const { userId, organizationId, settingsAccess, employee: currentEmployee } = caller;
 
-	if (!organizationId || settingsRouteContext.accessTier === "member") {
-		return null;
-	}
-
-	if (settingsRouteContext.accessTier === "orgAdmin") {
+	if (meetsSettingsAccess(settingsAccess, "orgAdmin")) {
 		return {
-			...settingsRouteContext,
+			userId,
+			settingsAccess,
 			organizationId,
 			canManageTeamSettings: true,
 			manageableTeamIds: null,
@@ -139,16 +144,12 @@ export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSe
 		};
 	}
 
-	const currentEmployee = settingsRouteContext.authContext.employee;
-
 	// A workforce admin (#1651) reaches every coverage rule, as `coverageRuleSubareaScope`
 	// does; shift templates and the org-wide coverage settings stay out of reach.
-	if (
-		currentEmployee &&
-		reachesWholeOrganization({ settingsAccess: "scopedManager", employee: currentEmployee })
-	) {
+	if (currentEmployee && reachesWholeOrganization({ settingsAccess, employee: currentEmployee })) {
 		return {
-			...settingsRouteContext,
+			userId,
+			settingsAccess,
 			organizationId,
 			canManageTeamSettings: false,
 			manageableTeamIds: new Set(),
@@ -216,21 +217,19 @@ export async function getSchedulingSettingsAccessContext(): Promise<SchedulingSe
 				);
 
 	return {
-		...settingsRouteContext,
+		userId,
+		settingsAccess,
 		organizationId,
 		canManageTeamSettings,
 		manageableTeamIds,
 		manageableShiftTemplateSubareaIds,
 		manageableSubareaIds,
 		canAccessShiftTemplates: canAccessShiftTemplateSettings(
-			settingsRouteContext.accessTier,
+			settingsAccess,
 			canManageTeamSettings,
 			manageableShiftTemplateSubareaIds,
 		),
-		canAccessCoverageRules: canAccessCoverageRuleSettings(
-			settingsRouteContext.accessTier,
-			manageableSubareaIds,
-		),
+		canAccessCoverageRules: canAccessCoverageRuleSettings(settingsAccess, manageableSubareaIds),
 		canManageCoverageSettings: false,
 	};
 }

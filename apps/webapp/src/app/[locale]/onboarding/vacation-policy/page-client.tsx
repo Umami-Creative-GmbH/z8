@@ -30,10 +30,16 @@ import type {
 	OnboardingOrganizationExpectation,
 	OnboardingVacationPolicyFormValues,
 } from "@/lib/validations/onboarding";
+import { getNextOnboardingStepPath, ONBOARDING_STEPS } from "@/lib/validations/onboarding-steps";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import { checkIsAdmin, createVacationPolicyOnboarding, skipVacationPolicySetup } from "./actions";
 import { usePolicyArrival } from "./use-policy-arrival";
+
+const VACATION_POLICY_NEXT_STEP_PATH =
+	getNextOnboardingStepPath("vacation_policy", true) ?? ONBOARDING_STEPS.work_templates.path;
+const NON_ADMIN_REDIRECT_PATH =
+	getNextOnboardingStepPath("profile", false) ?? ONBOARDING_STEPS.wellness.path;
 
 function VacationPolicyHeader({ t }: { t: (key: string, defaultValue: string) => string }) {
 	return (
@@ -434,10 +440,10 @@ function VacationPolicyArrival({
 				if (result.success && result.data) {
 					setLoading(false);
 					setIsAdmin(true);
-				} else push("/onboarding/notifications");
+				} else push(NON_ADMIN_REDIRECT_PATH);
 			})
 			.catch(() => {
-				if (current()) push("/onboarding/notifications");
+				if (current()) push(NON_ADMIN_REDIRECT_PATH);
 			});
 		return () => {
 			active.current = false;
@@ -482,7 +488,7 @@ function VacationPolicyArrival({
 				}
 				if (value)
 					toast.success(t("onboarding.vacationPolicy.success", "Vacation policy created!"));
-				push("/onboarding/work-templates");
+				push(VACATION_POLICY_NEXT_STEP_PATH);
 				return true;
 			},
 			onRejected: () => failed(),

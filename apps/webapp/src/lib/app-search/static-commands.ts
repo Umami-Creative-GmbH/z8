@@ -1,4 +1,4 @@
-import { hasSettingsAccessTier } from "@/lib/settings-access";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { AppSearchResult, StaticAppSearchInput } from "./types";
 
 export type StaticAppCommandInput = StaticAppSearchInput;
@@ -103,7 +103,7 @@ const STATIC_APP_COMMANDS: StaticAppCommandDefinition[] = [
 			{ key: "appSearch.commands.inviteTeammate.keywords.teammate", defaultValue: "teammate" },
 			{ key: "appSearch.commands.inviteTeammate.keywords.member", defaultValue: "member" },
 		],
-		href: "/settings/organization",
+		href: "/settings/employees",
 		visibleFor: "orgAdmin",
 	},
 	{
@@ -135,7 +135,7 @@ const STATIC_APP_COMMANDS: StaticAppCommandDefinition[] = [
 			},
 			{ key: "appSearch.commands.openPayrollReadiness.keywords.export", defaultValue: "export" },
 		],
-		href: "/settings/payroll-readiness",
+		href: "/payroll",
 		visibleFor: "orgAdmin",
 	},
 	{
@@ -173,14 +173,14 @@ function isManagerOrAdmin(employeeRole: StaticAppCommandInput["employeeRole"]): 
 
 function isVisibleCommand(
 	command: StaticAppCommandDefinition,
-	{ employeeRole, settingsAccessTier, featureFlags, showPayrollNav }: StaticAppCommandInput,
+	{ employeeRole, settingsAccess, featureFlags, showPayrollNav }: StaticAppCommandInput,
 ): boolean {
 	if (command.requiresProjectsEnabled && !featureFlags?.projectsEnabled) {
 		return false;
 	}
 
 	if (command.visibleFor === "orgAdmin") {
-		return hasSettingsAccessTier(settingsAccessTier, "orgAdmin");
+		return meetsSettingsAccess(settingsAccess, "orgAdmin");
 	}
 
 	if (command.visibleFor === "payroll") {

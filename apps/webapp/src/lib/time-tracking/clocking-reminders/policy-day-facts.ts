@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { resolveEffectiveContractOnDay } from "@/lib/contracts";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	dateFromInstant,

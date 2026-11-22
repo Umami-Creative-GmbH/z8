@@ -27,6 +27,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useSession } from "@/lib/auth-client";
 import type { OnboardingWellnessFormValues } from "@/lib/validations/wellness";
+import { getNextOnboardingStepPath, ONBOARDING_STEPS } from "@/lib/validations/onboarding-steps";
 import {
 	CUSTOM_INTERVAL_RANGE,
 	DAILY_GOAL_RANGE,
@@ -39,6 +40,8 @@ import { configureWellnessOnboarding, skipWellnessSetup } from "./actions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 const defaultSubmitMeta: { arrival: object | null } = { arrival: null };
+const WELLNESS_NEXT_STEP_PATH =
+	getNextOnboardingStepPath("wellness", false) ?? ONBOARDING_STEPS.notifications.path;
 
 // The /onboarding route only loads the common and onboarding namespaces, so the
 // settings.wellness.presets.* keys on WATER_PRESETS would render in English here.
@@ -127,7 +130,7 @@ function useWellnessForm({
 							toast.success(t("onboarding.wellness.success", "Water reminder enabled!"));
 						}
 						draft.continueNavigation();
-						push("/onboarding/notifications");
+						push(WELLNESS_NEXT_STEP_PATH);
 						return true;
 					}
 					const message =
@@ -442,7 +445,7 @@ function WellnessStep({
 				if (arrival.current !== submittedArrival) return;
 				if (result.success) {
 					draft.continueNavigation();
-					push("/onboarding/notifications");
+					push(WELLNESS_NEXT_STEP_PATH);
 					return true;
 				} else {
 					setError(

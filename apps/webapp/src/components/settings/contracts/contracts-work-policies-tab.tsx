@@ -60,7 +60,7 @@ export function ContractsWorkPoliciesTab({
 
 			<WorkPolicyManagement
 				organizationId={organizationId}
-				accessTier="orgAdmin"
+				settingsAccess="orgAdmin"
 				organizationTimezone={organizationTimezone}
 				workPolicyVersioningEnabled={workPolicyVersioningEnabled}
 			/>

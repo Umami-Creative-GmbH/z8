@@ -23,7 +23,7 @@ import { departureCutoffDate } from "@/lib/employee-lifecycle/cutoff-display";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useEmployeeOffboarding, useRequestIdentity } from "@/lib/query/use-employee-offboarding";
-import { RecordOvertimePayoutDialog } from "../work-balance/record-overtime-payout-dialog";
+import { RecordOvertimePayoutPanel } from "../work-balance/record-overtime-payout-panel";
 import { useRecordOvertimePayout } from "../work-balance/use-employee-work-balance";
 import { DepartureCard } from "./departure-card";
 import { DepartureForm } from "./departure-form";
@@ -157,7 +157,7 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 			/>
 
 			{finalPayout && (
-				<RecordOvertimePayoutDialog
+				<RecordOvertimePayoutPanel
 					key={`${targetEmployeeId}:${finalPayout.defaultDay}:${finalPayout.defaultMinutes}`}
 					open={recordingFinalPayout}
 					onOpenChange={setRecordingFinalPayout}

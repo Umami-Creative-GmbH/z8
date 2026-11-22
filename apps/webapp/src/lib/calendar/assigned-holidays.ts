@@ -1,6 +1,5 @@
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
-import type { Temporal } from "temporal-polyfill";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import {
 	employee,
@@ -12,6 +11,13 @@ import {
 	holidayPresetAssignment,
 	type holidayPresetHoliday,
 } from "@/db/schema";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	instantFromDate,
+	type PlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { holidayCalendarDate, holidayStoredDates } from "@/lib/holidays/recurrence";
 import { preserveTrustBasedBalanceDates } from "./trust-based-dates";
 import type { DailyWorkRequirements, HolidayEvent } from "./types";
@@ -79,22 +85,25 @@ type HolidayPresetAssignmentWithPreset = {
 		| null;
 };
 
-function toUtcDay(date: Date): DateTime {
-	return DateTime.fromJSDate(date, { zone: "utc" }).startOf("day");
+function tryToUtcDay(date: Date): PlainDate | null {
+	try {
+		return plainDateAt(instantFromDate(date), "UTC");
+	} catch {
+		return null;
+	}
 }
 
 export function getAssignedHolidayDateKeys(holidays: AssignedHolidayRange[]): Set<string> {
 	const dateKeys = new Set<string>();
 
 	for (const holiday of holidays) {
-		let cursor = toUtcDay(holiday.startDate);
-		const end = toUtcDay(holiday.endDate);
-		if (!cursor.isValid || !end.isValid || end < cursor) continue;
+		let cursor = tryToUtcDay(holiday.startDate);
+		const end = tryToUtcDay(holiday.endDate);
+		if (!cursor || !end || comparePlainDates(end, cursor) < 0) continue;
 
-		while (cursor <= end) {
-			const dateKey = cursor.toISODate();
-			if (dateKey) dateKeys.add(dateKey);
-			cursor = cursor.plus({ days: 1 });
+		while (comparePlainDates(cursor, end) <= 0) {
+			dateKeys.add(cursor.toString());
+			cursor = cursor.add({ days: 1 });
 		}
 	}
 
@@ -170,12 +179,12 @@ function getBatchAssignmentScope(
 }
 
 export function getPresetHolidayExpansionYears(startDate: Date, endDate: Date): number[] {
-	const startYear = toUtcDay(startDate).year;
-	const endYear = toUtcDay(endDate).year;
-	if (!Number.isFinite(startYear) || !Number.isFinite(endYear) || endYear < startYear) return [];
+	const start = tryToUtcDay(startDate);
+	const end = tryToUtcDay(endDate);
+	if (!start || !end || end.year < start.year) return [];
 
 	const years: number[] = [];
-	for (let year = startYear - 1; year <= endYear; year++) {
+	for (let year = start.year - 1; year <= end.year; year++) {
 		years.push(year);
 	}
 	return years;
@@ -191,21 +200,29 @@ function expandPresetHolidayForYear(params: {
 	>;
 	year: number;
 }): AssignedHolidayRange | null {
-	const start = DateTime.utc(
-		params.year,
-		params.presetHoliday.month,
-		params.presetHoliday.day,
-	).startOf("day");
-	if (!start.isValid) return null;
+	let startDate: PlainDate;
+	try {
+		startDate = Temporal.PlainDate.from(
+			{
+				year: params.year,
+				month: params.presetHoliday.month,
+				day: params.presetHoliday.day,
+			},
+			{ overflow: "reject" },
+		);
+	} catch {
+		return null;
+	}
 
 	const durationDays = Math.max(1, params.presetHoliday.durationDays ?? 1);
-	const end = start.plus({ days: durationDays - 1 }).endOf("day");
+	const endDate = startDate.add({ days: durationDays - 1 });
+	const range = utcDayRange(startDate, endDate);
 
 	return {
 		id: `preset-${params.presetId}-${params.presetHoliday.id}-${params.year}`,
 		name: params.presetHoliday.name,
-		startDate: start.toJSDate(),
-		endDate: end.toJSDate(),
+		startDate: range.startDate,
+		endDate: range.endDate,
 		categoryId: params.presetHoliday.categoryId,
 		color: params.presetColor,
 		description: params.presetHoliday.description,
@@ -222,15 +239,11 @@ function overlapsRange(holiday: AssignedHolidayRange, startDate: Date, endDate: 
 }
 
 /** Inclusive calendar dates as UTC midnight to the end of the last day, as presets are. */
-function utcDayRange(
-	start: Temporal.PlainDate,
-	end: Temporal.PlainDate,
-): { startDate: Date; endDate: Date } {
+function utcDayRange(start: PlainDate, end: PlainDate): { startDate: Date; endDate: Date } {
 	return {
-		startDate: new Date(start.toZonedDateTime("UTC").epochMilliseconds),
-		endDate: new Date(
-			end.add({ days: 1 }).toZonedDateTime("UTC").toInstant().subtract({ milliseconds: 1 })
-				.epochMilliseconds,
+		startDate: dateFromInstant(start.toZonedDateTime("UTC").toInstant()),
+		endDate: dateFromInstant(
+			end.add({ days: 1 }).toZonedDateTime("UTC").toInstant().subtract({ milliseconds: 1 }),
 		),
 	};
 }
@@ -243,7 +256,7 @@ function toAssignedHolidayRange(
 		id:
 			dateRange.startDate.getTime() === holiday.startDate.getTime()
 				? holiday.id
-				: `${holiday.id}-${toUtcDay(dateRange.startDate).year}`,
+				: `${holiday.id}-${plainDateAt(instantFromDate(dateRange.startDate), "UTC").year}`,
 		name: holiday.name,
 		startDate: dateRange.startDate,
 		endDate: dateRange.endDate,
@@ -261,17 +274,17 @@ export function expandCustomAssignedHoliday(
 ): AssignedHolidayRange[] {
 	if (!holiday.isActive) return [];
 
-	const requestedStart = toUtcDay(requestedRange.startDate);
-	const requestedEnd = toUtcDay(requestedRange.endDate).endOf("day");
-	const originalStart = toUtcDay(holiday.startDate);
-	const originalEnd = toUtcDay(holiday.endDate);
+	const requestedStart = tryToUtcDay(requestedRange.startDate);
+	const requestedEnd = tryToUtcDay(requestedRange.endDate);
+	const originalStart = tryToUtcDay(holiday.startDate);
+	const originalEnd = tryToUtcDay(holiday.endDate);
 	if (
-		!requestedStart.isValid ||
-		!requestedEnd.isValid ||
-		requestedEnd < requestedStart ||
-		!originalStart.isValid ||
-		!originalEnd.isValid ||
-		originalEnd < originalStart
+		!requestedStart ||
+		!requestedEnd ||
+		comparePlainDates(requestedEnd, requestedStart) < 0 ||
+		!originalStart ||
+		!originalEnd ||
+		comparePlainDates(originalEnd, originalStart) < 0
 	) {
 		return [];
 	}
@@ -303,29 +316,36 @@ export function expandCustomAssignedHoliday(
 	const originalDate = storedDates.start;
 
 	const durationDays = originalDate.until(storedDates.end).days + 1;
-	const recurrenceEnd = holiday.recurrenceEndDate
-		? toUtcDay(holiday.recurrenceEndDate).endOf("day")
+	const recurrenceEndDay = holiday.recurrenceEndDate
+		? tryToUtcDay(holiday.recurrenceEndDate)
+		: null;
+	const recurrenceEndMs = recurrenceEndDay
+		? recurrenceEndDay
+				.add({ days: 1 })
+				.toZonedDateTime("UTC")
+				.toInstant()
+				.subtract({ milliseconds: 1 }).epochMilliseconds
 		: null;
 	const expanded: AssignedHolidayRange[] = [];
 	const firstExpansionYear = Math.max(requestedStart.year - 1, originalDate.year);
 
 	for (let year = firstExpansionYear; year <= requestedEnd.year; year++) {
-		let occurrence: Temporal.PlainDate;
+		let occurrence: PlainDate;
 		try {
 			occurrence = originalDate.with({ year }, { overflow: "reject" });
 		} catch {
 			continue; // February 29 has no occurrence in a non-leap year.
 		}
 		const start = occurrence.toZonedDateTime("UTC").toInstant();
-		if (recurrenceEnd && start.epochMilliseconds > recurrenceEnd.toMillis()) continue;
+		if (recurrenceEndMs !== null && start.epochMilliseconds > recurrenceEndMs) continue;
 		const end = occurrence
 			.add({ days: durationDays })
 			.toZonedDateTime("UTC")
 			.toInstant()
 			.subtract({ milliseconds: 1 });
 		const assignedHoliday = toAssignedHolidayRange(holiday, {
-			startDate: new Date(start.epochMilliseconds),
-			endDate: new Date(end.epochMilliseconds),
+			startDate: dateFromInstant(start),
+			endDate: dateFromInstant(end),
 		});
 		if (overlapsRange(assignedHoliday, requestedRange.startDate, requestedRange.endDate)) {
 			expanded.push(assignedHoliday);

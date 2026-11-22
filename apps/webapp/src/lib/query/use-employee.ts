@@ -21,7 +21,10 @@ import {
 	type EmployeeReadSnapshot,
 	sameEmployeeReadScope,
 } from "@/lib/organization/employee-read-types";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import type { UpdateEmployee, UpdateEmployeeInvitationDraft } from "@/lib/validations/employee";
 import type {
 	ChangeHourlyWage,
@@ -47,7 +50,7 @@ type EmployeeDetailUpdate = UpdateEmployee &
 interface UseEmployeeOptions {
 	employeeId: string;
 	enabled?: boolean;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	organizationId?: string;
 	userId?: string;
 	initialSnapshot?: EmployeeReadSnapshot<"detail">;
@@ -69,12 +72,13 @@ const draftActionResult = {
  * - Update mutation with automatic cache invalidation
  */
 export function useEmployee(options: UseEmployeeOptions) {
-	const { employeeId, enabled = true, accessTier } = options;
+	const { employeeId, enabled = true, settingsAccess } = options;
 	const queryClient = useQueryClient();
 	const organization = useOrganization();
 	const userId = organization.userId;
 	const organizationId = organization.activeOrganizationId ?? organization.organizationId;
-	const hasEmployee = Boolean(organization.employeeId) || accessTier === "orgAdmin";
+	const isOrgAdmin = meetsSettingsAccess(settingsAccess, "orgAdmin");
+	const hasEmployee = Boolean(organization.employeeId) || isOrgAdmin;
 	const scope = userId && organizationId ? { userId, organizationId } : null;
 	const canLoadEmployee =
 		enabled &&
@@ -147,13 +151,13 @@ export function useEmployee(options: UseEmployeeOptions) {
 	const managersQuery = useQuery({
 		queryKey: [
 			...queryKeys.employees.managerChoices(userId, organizationId, employeeId),
-			accessTier,
+			settingsAccess,
 		],
 		queryFn: async ({ signal }) => {
 			if (!scope) throw new ApiError("Employee context is unavailable", 401);
 			return (await fetchEmployeeRead("managers", scope, { employeeId }, signal)).data;
 		},
-		enabled: canLoadEmployeeDetails && accessTier === "orgAdmin",
+		enabled: canLoadEmployeeDetails && isOrgAdmin,
 		staleTime: 60_000,
 		refetchOnMount: "always",
 		retry: false,
@@ -165,7 +169,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			if (!scope) throw new ApiError("Employee context is unavailable", 401);
 			return (await fetchEmployeeRead("employment-history", scope, { employeeId }, signal)).data;
 		},
-		enabled: canLoadEmployeeDetails && accessTier === "orgAdmin",
+		enabled: canLoadEmployeeDetails && isOrgAdmin,
 		staleTime: 30_000,
 		retry: false,
 	});
@@ -309,7 +313,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 		schedule:
 			canLoadEmployeeDetails && !scheduleQuery.isError ? (scheduleQuery.data ?? null) : null,
 		availableManagers:
-			canLoadEmployeeDetails && accessTier === "orgAdmin" && !managersQuery.isError
+			canLoadEmployeeDetails && isOrgAdmin && !managersQuery.isError
 				? (managersQuery.data ?? [])
 				: [],
 		employmentHistory:
@@ -343,7 +347,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 		// Auth state
 		hasEmployee,
-		isAdmin: accessTier === "orgAdmin",
+		isAdmin: isOrgAdmin,
 
 		// Mutations
 		updateEmployee: updateMutation.mutateAsync,

@@ -72,6 +72,7 @@ describe("NavTeam", () => {
 
 		renderTeamNav();
 
+		expect(screen.getByRole("navigation", { name: "Team" })).toBeTruthy();
 		expect(activeState("Team")).toBe("true");
 		expect(activeState("Team Absences")).toBe("false");
 		expect(activeState("Presence")).toBe("false");

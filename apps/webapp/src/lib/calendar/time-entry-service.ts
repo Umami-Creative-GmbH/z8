@@ -1,13 +1,13 @@
 import "server-only";
 
 import { and, eq, gte, lt } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, timeEntry } from "@/db/schema";
-import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
+import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
+import { formatInstant, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import type { TimeEntryEvent } from "./types";
 
 interface TimeEntryFilters {
@@ -62,9 +62,19 @@ export async function getTimeEntriesForMonth(
 
 		// Transform to TimeEntryEvent objects
 		return entries.map(({ entry, user }) => {
-			// Format time for display
-			const entryDT = dateFromDB(entry.timestamp);
-			const timeFormatted = entryDT?.toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+			// Format time for display in the entry's captured offset/timezone
+			const entryInstant = instantFromDB(entry.timestamp);
+			const entryTimezone =
+				entry.utcOffsetMinutes !== null && entry.utcOffsetMinutes !== undefined
+					? offsetMinutesToTimeZoneId(entry.utcOffsetMinutes)
+					: entry.timezone || timezone || "UTC";
+			const timeFormatted = entryInstant
+				? formatInstant(
+						entryInstant,
+						{ locale: "en", timezone: entryTimezone, timeFormat: "24h" },
+						"time",
+					)
+				: undefined;
 
 			return {
 				id: entry.id,

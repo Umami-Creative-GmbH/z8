@@ -79,6 +79,37 @@ describe("German route catalogs", () => {
 		],
 		["/settings/employees", "settings.employees.leavingDate.title", "Austrittsdatum"],
 		["/settings/employees", "settings.contracts.employee.effectiveTitle", "Wirksamer Vertrag"],
+		["/settings/notification-channels", "settings.discord.connect", "Discord-Bot verbinden"],
+		[
+			"/settings/notification-channels",
+			"settings.discord.interactionEndpointUrl",
+			"Interaktions-Endpunkt-URL",
+		],
+		[
+			"/settings/notification-channels",
+			"settings.discord.errors.invalidBotToken",
+			"Ungültiges Bot-Token. Prüfen Sie Ihre Discord-Bot-Zugangsdaten und versuchen Sie es erneut.",
+		],
+		[
+			"/settings/notification-channels",
+			"settings.discord.errors.applicationIdMismatch",
+			"Die Anwendungs-ID stimmt nicht mit dem angegebenen Bot-Token überein.",
+		],
+		[
+			"/settings/notification-channels",
+			"settings.discord.errors.publicKeyMismatch",
+			"Der öffentliche Schlüssel stimmt nicht mit der Discord-Anwendung überein.",
+		],
+		[
+			"/settings/report-share-links",
+			"settings.reportShareLinks.projectsDisabledNotice.title",
+			"Projekte sind deaktiviert",
+		],
+		[
+			"/settings/report-share-links",
+			"settings.reportShareLinks.projectsDisabledNotice.description",
+			"Projekte sind für diese Organisation derzeit deaktiviert, sodass keine neuen Berichtsfreigabe-Links erstellt werden können. Bestehende Links können Sie hier weiterhin einsehen und widerrufen.",
+		],
 	])("provides German copy for %s: %s", async (route, key, expected) => {
 		const namespaces = getRouteCatalogScope(route)?.namespaces;
 		if (!namespaces) throw new Error(`No catalog scope for ${route}`);

@@ -3,9 +3,8 @@
  *
  * Handles S3 upload and email notification delivery for scheduled exports.
  */
-import { DateTime } from "luxon";
 import { db } from "@/db";
-import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { type PlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { loadEmailTranslator } from "@/lib/email/email-i18n";
 import { sendEmail } from "@/lib/email/email-service";
 import {
@@ -57,17 +56,14 @@ function formatLifetime(totalSeconds: number, locale: string): string {
 }
 
 /**
- * A day of the schedule's date range (a Luxon value from the legacy range calculation)
- * as a calendar day. An invalid one fails the email with a message that names it.
+ * A day of the schedule's date range as a calendar day.
+ * An invalid boundary fails the email with a message that names it.
  */
 function rangeDay(day: CalculatedDateRange["start"], which: "start" | "end"): PlainDate {
-	const isoDate = day.toISODate();
-	if (!isoDate) {
-		throw new Error(
-			`Scheduled export date range ${which} is invalid: ${day.invalidReason ?? "unknown reason"}`,
-		);
+	if (!day || typeof day.toPlainDate !== "function") {
+		throw new Error(`Scheduled export date range ${which} is invalid: missing date value`);
 	}
-	return parsePlainDate(isoDate);
+	return day.toPlainDate();
 }
 
 /**
@@ -196,7 +192,7 @@ export class DeliveryService {
 				recipient,
 				success: false as const,
 				error: errorMessage,
-				timestamp: DateTime.utc().toISO()!,
+				timestamp: systemClock.nowInstant().toString(),
 			};
 		};
 

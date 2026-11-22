@@ -70,14 +70,22 @@ describe("toKioskBoard", () => {
 
 describe("whoIsInScopeFor", () => {
 	it("lets owners and admins see everyone and managers only the employees they manage", () => {
-		expect(whoIsInScopeFor({ accessTier: "orgAdmin", managedEmployeeIds: [] })).toEqual({
+		expect(whoIsInScopeFor({ settingsAccess: "owner", managedEmployeeIds: [] })).toEqual({
 			kind: "all",
 		});
-		expect(whoIsInScopeFor({ accessTier: "manager", managedEmployeeIds: ["e-ben"] })).toEqual({
+		expect(whoIsInScopeFor({ settingsAccess: "orgAdmin", managedEmployeeIds: [] })).toEqual({
+			kind: "all",
+		});
+		expect(
+			whoIsInScopeFor({ settingsAccess: "scopedManager", managedEmployeeIds: ["e-ben"] }),
+		).toEqual({
 			kind: "managed",
 			employeeIds: new Set(["e-ben"]),
 		});
-		expect(whoIsInScopeFor({ accessTier: "member", managedEmployeeIds: ["e-ben"] })).toEqual({
+		expect(whoIsInScopeFor({ settingsAccess: "member", managedEmployeeIds: ["e-ben"] })).toEqual({
+			kind: "none",
+		});
+		expect(whoIsInScopeFor({ settingsAccess: null, managedEmployeeIds: ["e-ben"] })).toEqual({
 			kind: "none",
 		});
 	});

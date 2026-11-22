@@ -15,25 +15,25 @@ import { activeNavHref } from "./nav-active";
 
 export function NavTeam({
 	items,
+	allNavHrefs,
 }: {
 	items: {
 		title: string;
 		url: string;
 		icon?: Icon;
 	}[];
+	allNavHrefs?: readonly string[];
 }) {
 	const { t } = useTranslate();
 	const pathname = usePathname();
-	const activeUrl = activeNavHref(
-		pathname,
-		items.map((item) => item.url),
-	);
+	const activeUrl = activeNavHref(pathname, allNavHrefs ?? items.map((item) => item.url));
+	const label = t("nav.team", "Team");
 
 	return (
 		<SidebarGroup>
-			<nav aria-label={t("nav.team-organization-label", "Team & organization")}>
+			<nav aria-label={label}>
 				<SidebarGroupLabel className="font-semibold uppercase tracking-wide">
-					{t("nav.team-organization-label", "Team & organization")}
+					{label}
 				</SidebarGroupLabel>
 				<SidebarGroupContent>
 					<SidebarMenu>
@@ -42,11 +42,7 @@ export function NavTeam({
 
 							return (
 								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton
-										asChild
-										isActive={isActive}
-										tooltip={item.title}
-									>
+									<SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
 										<Link
 											href={item.url}
 											aria-label={item.title}

@@ -3,7 +3,7 @@
  * period submissions in the run's range. The check never blocks, is scoped to the organization,
  * and does not appear while the organization's submission cadence is off.
  */
-import { DateTime } from "luxon";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	type ClosedMonthDatabaseFixture,
@@ -12,10 +12,10 @@ import {
 import { getPayrollReadiness } from "./get-payroll-readiness";
 
 const april = {
-	start: DateTime.fromISO("2026-04-01T00:00:00.000Z", { zone: "utc" }),
-	end: DateTime.fromISO("2026-04-30T00:00:00.000Z", { zone: "utc" }),
+	start: parsePlainDate("2026-04-01"),
+	end: parsePlainDate("2026-04-30"),
 };
-const now = DateTime.fromISO("2026-05-10T12:00:00.000Z", { zone: "utc" });
+const now = parseInstant("2026-05-10T12:00:00.000Z");
 
 describe("payroll readiness period submission warning on PostgreSQL", () => {
 	let fixture: ClosedMonthDatabaseFixture;
@@ -95,7 +95,7 @@ describe("payroll readiness period submission warning on PostgreSQL", () => {
 		const result = await getPayrollReadiness({
 			organizationId: org.organizationId,
 			period: april,
-			now: DateTime.fromISO("2026-04-30T12:00:00.000Z", { zone: "utc" }),
+			now: parseInstant("2026-04-30T12:00:00.000Z"),
 		});
 
 		const checks = result.groups.flatMap((group) => group.checks);

@@ -100,31 +100,31 @@ export async function readAbsenceChangeCoverageSnapshot(
 			target.requesterEmployeeId !== row.employeeId)
 	)
 		return null;
-	const [live, organization, submitted] = await Promise.all([
-		database.query.absenceEntry.findFirst({
-			where: and(
-				eq(absenceEntry.id, row.absenceId),
-				eq(absenceEntry.organizationId, organizationId),
-				eq(absenceEntry.employeeId, row.employeeId),
-			),
-			with: { category: true },
-		}),
-		database.query.organization.findFirst({
-			where: (table, { eq }) => eq(table.id, organizationId),
-			columns: { timezone: true },
-		}),
-		database.query.auditLog.findMany({
-			where: and(
-				eq(auditLog.organizationId, organizationId),
-				eq(auditLog.entityType, "absence_change_request"),
-				eq(auditLog.entityId, row.id),
-				eq(auditLog.action, "absence_change.submitted"),
-				eq(auditLog.employeeId, row.employeeId),
-				eq(auditLog.performedBy, row.submittedBy),
-			),
-			limit: 2,
-		}),
-	]);
+	// One after another: `database` may be a transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const live = await database.query.absenceEntry.findFirst({
+		where: and(
+			eq(absenceEntry.id, row.absenceId),
+			eq(absenceEntry.organizationId, organizationId),
+			eq(absenceEntry.employeeId, row.employeeId),
+		),
+		with: { category: true },
+	});
+	const organization = await database.query.organization.findFirst({
+		where: (table, { eq }) => eq(table.id, organizationId),
+		columns: { timezone: true },
+	});
+	const submitted = await database.query.auditLog.findMany({
+		where: and(
+			eq(auditLog.organizationId, organizationId),
+			eq(auditLog.entityType, "absence_change_request"),
+			eq(auditLog.entityId, row.id),
+			eq(auditLog.action, "absence_change.submitted"),
+			eq(auditLog.employeeId, row.employeeId),
+			eq(auditLog.performedBy, row.submittedBy),
+		),
+		limit: 2,
+	});
 	const audit = submitted.length === 1 ? submitted[0] : null;
 	let submittedRevision: string | null = null;
 	let submittedMatchesCurrent = false;

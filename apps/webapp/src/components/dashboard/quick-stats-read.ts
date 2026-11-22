@@ -2,16 +2,24 @@ import "server-only";
 
 import { and, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
-import { absenceEntry, employee, workPeriod } from "@/db/schema";
+import { Temporal } from "temporal-polyfill";
+import { organization } from "@/db/auth-schema";
+import { absenceEntry, employee, userSettings, workPeriod } from "@/db/schema";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
-import { resolveEffectiveContractOnDay } from "@/lib/contracts";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { localDayRange, localMonthRange, localWeekRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	compareInstants,
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
-import { getWeekBounds } from "@/lib/user-preferences/week-start";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { DashboardScope } from "./dashboard-types";
@@ -78,14 +86,45 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 			weekStartDay,
 		});
 		if (trackedStats) return { ...trackedStats, workBalance, workBalanceUnavailable };
-		const nowDT = DateTime.fromJSDate(now);
-		const { start: weekStartDateTime, end: weekEndDateTime } = getWeekBounds(nowDT, weekStartDay);
-		const weekStart = weekStartDateTime.toJSDate();
-		const weekEnd = weekEndDateTime.toJSDate();
-		const monthStart = nowDT.startOf("month").toJSDate();
-		const monthEnd = nowDT.endOf("month").toJSDate();
-		const monthStartStr = nowDT.startOf("month").toISODate()!;
-		const monthEndStr = nowDT.endOf("month").toISODate()!;
+		const effectiveTimezone = yield* dbService
+			.query("getQuickStatsTimezone", async () => {
+				const [settings, org] = await Promise.all([
+					dbService.db.query.userSettings.findFirst({
+						where: eq(userSettings.userId, userId),
+						columns: { timezone: true },
+					}),
+					dbService.db.query.organization.findFirst({
+						where: eq(organization.id, organizationId),
+						columns: { timezone: true },
+					}),
+				]);
+				return resolveEffectiveTimezone(settings?.timezone, org?.timezone);
+			})
+			.pipe(Effect.catch(() => Effect.succeed("UTC")));
+		const nowInstant = instantFromDate(now);
+		const nowZdt = nowInstant.toZonedDateTimeISO(effectiveTimezone);
+		const today = plainDateAt(nowInstant, effectiveTimezone);
+		const todayStr = today.toString();
+		const weekRange = localWeekRange(todayStr, effectiveTimezone, weekStartDay);
+		const monthRange = localMonthRange(todayStr, effectiveTimezone);
+		const weekEndInclusiveInstant = weekRange.endExclusive.subtract({
+			milliseconds: 1,
+		});
+		const monthEndInclusiveInstant = monthRange.endExclusive.subtract({
+			milliseconds: 1,
+		});
+		const weekStartZdt = weekRange.start.toZonedDateTimeISO(effectiveTimezone);
+		const weekEndZdt = weekEndInclusiveInstant.toZonedDateTimeISO(effectiveTimezone);
+		const monthStartZdt = monthRange.start.toZonedDateTimeISO(effectiveTimezone);
+		const monthEndZdt = monthEndInclusiveInstant.toZonedDateTimeISO(effectiveTimezone);
+		const weekStart = dateFromInstant(weekRange.start);
+		const weekEnd = dateFromInstant(weekEndInclusiveInstant);
+		const monthStart = dateFromInstant(monthRange.start);
+		const monthEnd = dateFromInstant(monthEndInclusiveInstant);
+		const monthStartPlain = monthStartZdt.toPlainDate();
+		const monthEndPlain = monthEndZdt.toPlainDate();
+		const monthStartStr = monthStartPlain.toString();
+		const monthEndStr = monthEndPlain.toString();
 
 		// Get all work periods for this month (includes this week)
 		const monthPeriods = yield* dbService.query("getMonthWorkPeriods", async () => {
@@ -118,34 +157,43 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 
 		const excludedDates = yield* Effect.promise(async () => {
 			const dates = new Set<string>();
-			const rangeStart = DateTime.fromJSDate(monthStart).startOf("day");
-			const rangeEnd = DateTime.fromJSDate(monthEnd).startOf("day");
 
 			for (const absence of approvedAbsences) {
 				if (absence.category?.requiresWorkTime) continue;
 
-				let current = DateTime.fromISO(absence.startDate);
-				const last = DateTime.fromISO(absence.endDate);
-				if (!current.isValid || !last.isValid) continue;
+				let current: Temporal.PlainDate;
+				let last: Temporal.PlainDate;
+				try {
+					current = parsePlainDate(absence.startDate);
+					last = parsePlainDate(absence.endDate);
+				} catch {
+					continue;
+				}
 
-				if (current < rangeStart) current = rangeStart;
+				if (Temporal.PlainDate.compare(current, monthStartPlain) < 0) {
+					current = monthStartPlain;
+				}
 
-				while (current <= last && current <= rangeEnd) {
-					const dateKey = current.toISODate();
-					if (dateKey) dates.add(dateKey);
-					current = current.plus({ days: 1 });
+				while (
+					Temporal.PlainDate.compare(current, last) <= 0 &&
+					Temporal.PlainDate.compare(current, monthEndPlain) <= 0
+				) {
+					dates.add(current.toString());
+					current = current.add({ days: 1 });
 				}
 			}
 
-			let current = rangeStart;
-			while (current <= rangeEnd) {
+			let current = monthStartPlain;
+			while (Temporal.PlainDate.compare(current, monthEndPlain) <= 0) {
 				if (
-					await shouldExcludeFromCalculations(currentEmployee.organizationId, current.toJSDate())
+					await shouldExcludeFromCalculations(
+						currentEmployee.organizationId,
+						dateFromInstant(localDayRange(current.toString(), effectiveTimezone).start),
+					)
 				) {
-					const dateKey = current.toISODate();
-					if (dateKey) dates.add(dateKey);
+					dates.add(current.toString());
 				}
-				current = current.plus({ days: 1 });
+				current = current.add({ days: 1 });
 			}
 
 			return dates;
@@ -183,7 +231,7 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 			resolveEffectiveContractOnDay(dbService.db, {
 				organizationId,
 				employeeId: currentEmployee.id,
-				date: plainDateAt(instantFromDate(now), "UTC"),
+				date: today,
 			}),
 		);
 		const rawSchedule = resolvedContract?.workPolicy?.scheduleEnabled
@@ -197,26 +245,26 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 			: null;
 		const weekExpected = calculateAdjustedExpectedHoursForRange({
 			schedule,
-			start: weekStartDateTime,
-			end: weekEndDateTime,
+			start: weekStartZdt,
+			end: weekEndZdt,
 			excludedDates,
 		});
 		const weekExpectedToDate = calculateAdjustedExpectedHoursForRange({
 			schedule,
-			start: weekStartDateTime,
-			end: nowDT < weekEndDateTime ? nowDT : weekEndDateTime,
+			start: weekStartZdt,
+			end: compareInstants(nowInstant, weekEndInclusiveInstant) < 0 ? nowZdt : weekEndZdt,
 			excludedDates,
 		});
 		const monthExpected = calculateAdjustedExpectedHoursForRange({
 			schedule,
-			start: DateTime.fromJSDate(monthStart),
-			end: DateTime.fromJSDate(monthEnd),
+			start: monthStartZdt,
+			end: monthEndZdt,
 			excludedDates,
 		});
 		const monthExpectedToDate = calculateAdjustedExpectedHoursForRange({
 			schedule,
-			start: DateTime.fromJSDate(monthStart),
-			end: nowDT < DateTime.fromJSDate(monthEnd) ? nowDT : DateTime.fromJSDate(monthEnd),
+			start: monthStartZdt,
+			end: compareInstants(nowInstant, monthEndInclusiveInstant) < 0 ? nowZdt : monthEndZdt,
 			excludedDates,
 		});
 

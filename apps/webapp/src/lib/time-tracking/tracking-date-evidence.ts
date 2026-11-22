@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { loadContractTrackingReviewEvidence } from "@/lib/contracts";
+import { loadContractTrackingReviewEvidence } from "@/lib/contracts/evidence-queries";
 import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 
 /** Stable serialization for reviewed source evidence, never returned to the browser. */

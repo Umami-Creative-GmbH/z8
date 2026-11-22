@@ -139,9 +139,12 @@ const db: Row = {
 				promise.orderBy = vi.fn(async () => rows);
 				return promise;
 			};
-			return {
+			const chain: Row = {
+				innerJoin: vi.fn(() => chain),
+				leftJoin: vi.fn(() => chain),
 				where: vi.fn(() => makeResult()),
 			};
+			return chain;
 		}),
 	})),
 	insert: vi.fn(() => ({

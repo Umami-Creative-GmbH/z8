@@ -93,6 +93,7 @@ export async function computeEmployeePeriodBalance(input: {
 	const startDate = effectiveStart.toJSDate();
 	const endDate = periodEnd.toJSDate();
 
+	// One after another: `dbClient` may be one connection, and pg@9 refuses a query while another is executing.
 	const requirements = await getDailyWorkRequirementsForEmployee(
 		{
 			employeeId: input.employeeId,

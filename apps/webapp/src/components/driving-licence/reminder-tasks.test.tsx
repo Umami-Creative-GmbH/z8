@@ -110,5 +110,5 @@ it("links a personal reminder task to the employee's check page (#1429)", async 
 	mount(<DrivingLicencePersonalReminderTasks />);
 	expect(
 		(await screen.findByRole("link", { name: "Open check" })).getAttribute("href"),
-	).toBe("/driving-licence/checks/employee");
+	).toBe("/team/driving-licence/employee");
 });

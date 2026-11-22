@@ -1,9 +1,10 @@
 "use client";
 
-import { DateTime } from "luxon";
 import type React from "react";
 import { useEffect, useRef } from "react";
+import { Temporal } from "temporal-polyfill";
 import { getPayrollWorkspaceSummaryAction } from "@/app/[locale]/(app)/payroll/actions";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import {
 	buildPeriodRequest,
@@ -11,6 +12,7 @@ import {
 	type PayrollPeriodRequest,
 	type PayrollWorkspaceAction,
 	type SummaryLoadResult,
+	startOfPayrollPeriod,
 } from "./state";
 
 export function useMountedRef() {
@@ -100,6 +102,7 @@ export function payrollPeriodActions({
 	dispatch,
 	endDate,
 	filteredEmployeeIds,
+	locale = "en",
 	refreshSummary,
 	startDate,
 	summary,
@@ -108,6 +111,7 @@ export function payrollPeriodActions({
 	dispatch: React.Dispatch<PayrollWorkspaceAction>;
 	endDate: string;
 	filteredEmployeeIds: string[] | undefined;
+	locale?: string;
 	refreshSummary: (
 		nextRequest: PayrollPeriodRequest,
 		employeeIds?: string[],
@@ -123,7 +127,11 @@ export function payrollPeriodActions({
 		}
 
 		refreshSummary(
-			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
+			buildPeriodRequest(
+				startOfPayrollPeriod(Temporal.Now.plainDateISO("UTC"), nextMode),
+				nextMode,
+				locale,
+			),
 			filteredEmployeeIds,
 			() => dispatch({ type: "dateModeChanged", dateMode: nextMode }),
 		);
@@ -132,29 +140,42 @@ export function payrollPeriodActions({
 	function navigatePeriod(direction: "previous" | "next") {
 		if (dateMode === "custom") return;
 
-		const currentStart = DateTime.fromISO(summary.period.start, {
-			zone: "utc",
-		});
+		const currentStart = parsePlainDate(summary.period.start);
 		const amount = direction === "previous" ? -1 : 1;
-		const nextStart = currentStart.plus({ [dateMode]: amount }).startOf(dateMode);
+		const nextStart =
+			dateMode === "month"
+				? startOfPayrollPeriod(currentStart.add({ months: amount }), "month")
+				: startOfPayrollPeriod(currentStart.add({ weeks: amount }), "week");
 
-		refreshSummary(buildPeriodRequest(nextStart, dateMode));
+		refreshSummary(buildPeriodRequest(nextStart, dateMode, locale));
 	}
 
 	function returnToCurrentPeriod() {
 		if (dateMode === "custom") return;
 
-		refreshSummary(buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode));
+		refreshSummary(
+			buildPeriodRequest(
+				startOfPayrollPeriod(Temporal.Now.plainDateISO("UTC"), dateMode),
+				dateMode,
+				locale,
+			),
+		);
 	}
 
 	function applyCustomRange() {
-		const start = DateTime.fromISO(startDate);
-		const end = DateTime.fromISO(endDate);
+		let label = `${startDate} - ${endDate}`;
+		try {
+			const start = parsePlainDate(startDate);
+			const end = parsePlainDate(endDate);
+			label = formatPeriodLabel(start, end, "custom", locale);
+		} catch {
+			// Let the server action return its validation error when a date input is blank or malformed.
+		}
 
 		refreshSummary({
 			startDate,
 			endDate,
-			label: formatPeriodLabel(start, end, "custom"),
+			label,
 		});
 	}
 

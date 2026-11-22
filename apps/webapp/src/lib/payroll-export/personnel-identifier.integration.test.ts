@@ -10,7 +10,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -103,16 +103,13 @@ vi.mock("@/lib/payroll-export/exporters/personio/api-client", () => ({
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
 const { startScopedPayrollExportAction } = await import("@/app/[locale]/(app)/payroll/actions");
 const { createExportJob, processExportJob } = await import("./export-service");
-const { PayrollWorkCollectionBlockedError } = await import(
-	"@/lib/payroll-collection/payroll-work-collection-blocked-error"
-);
+const { PayrollWorkCollectionBlockedError } =
+	await import("@/lib/payroll-collection/payroll-work-collection-blocked-error");
 const { payrollWorkInputDigest } = await import("@/lib/payroll-collection/payroll-work-collection");
-const { PayrollIdentifierChangedError, PayrollIdentifierMissingError } = await import(
-	"./personnel-identifier"
-);
-const { listPayrollIdentifierFields, savePayrollExportConfig } = await import(
-	"./personnel-identifier-store"
-);
+const { PayrollIdentifierChangedError, PayrollIdentifierMissingError } =
+	await import("./personnel-identifier");
+const { listPayrollIdentifierFields, savePayrollExportConfig } =
+	await import("./personnel-identifier-store");
 const { changeCustomFields } = await import("@/lib/organization/custom-fields/definitions");
 const { payrollIdentifierArchiveGuard } = await import("./personnel-identifier-usage");
 const { getPayrollWorkspaceSummary } = await import("@/lib/payroll-workspace/summary");
@@ -317,8 +314,8 @@ describe("employee custom field as payroll identifier on PostgreSQL", () => {
 			requestedById: ids.owner,
 			filters: {
 				dateRange: {
-					start: DateTime.fromISO(july.startDate, { zone: "utc" }),
-					end: DateTime.fromISO(july.endDate, { zone: "utc" }),
+					start: parsePlainDate(july.startDate),
+					end: parsePlainDate(july.endDate),
 				},
 			},
 		});
@@ -571,8 +568,8 @@ describe("employee custom field as payroll identifier on PostgreSQL", () => {
 				organizationId: ORG,
 				allowedEmployeeIds: [ids.owner, ids.worker, ids.peer],
 				period: {
-					start: DateTime.fromISO(july.startDate, { zone: "utc" }),
-					end: DateTime.fromISO(july.endDate, { zone: "utc" }).endOf("day"),
+					start: parsePlainDate(july.startDate),
+					end: parsePlainDate(july.endDate),
 					label: july.label,
 				},
 				generatedBy: { id: ids.owner, name: "Owner" },

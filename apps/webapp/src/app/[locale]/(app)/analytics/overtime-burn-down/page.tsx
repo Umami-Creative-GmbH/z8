@@ -14,6 +14,10 @@ import {
 	type ExportData,
 } from "@/components/analytics/export-button";
 import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
+import {
+	EmployeeSingleSelect,
+	toSelectableEmployee,
+} from "@/components/employee-select";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -197,24 +201,38 @@ function AnalyticsToolbar({
 							rows={data?.byCostCenter ?? []}
 							onValueChange={(value) => onFilterChange("costCenterId", value)}
 						/>
-						<FilterSelect
-							label={t("analytics.overtimeBurnDown.manager", "Manager")}
-							ariaLabel={t(
-								"analytics.overtimeBurnDown.filters.managerLabel",
-								"Manager filter",
-							)}
-							placeholder={t(
-								"analytics.overtimeBurnDown.filters.allManagers",
-								"All managers",
-							)}
-							allLabel={t(
-								"analytics.overtimeBurnDown.filters.allManagers",
-								"All managers",
-							)}
-							value={managerId}
-							rows={data?.byManager ?? []}
-							onValueChange={(value) => onFilterChange("managerId", value)}
-						/>
+						<div className="min-w-0 space-y-2">
+							<p className="text-sm text-muted-foreground">
+								{t("analytics.overtimeBurnDown.manager", "Manager")}
+							</p>
+							<EmployeeSingleSelect
+								value={managerId === ALL_FILTER_VALUE ? null : managerId}
+								onChange={(value) =>
+									onFilterChange("managerId", value ?? ALL_FILTER_VALUE)
+								}
+								employees={(data?.byManager ?? []).map((row) =>
+									toSelectableEmployee({
+										id: row.id,
+										name: row.label,
+										role: "manager",
+									}),
+								)}
+								allowClear
+								clearLabel={t(
+									"analytics.overtimeBurnDown.filters.allManagers",
+									"All managers",
+								)}
+								placeholder={t(
+									"analytics.overtimeBurnDown.filters.allManagers",
+									"All managers",
+								)}
+								aria-label={t(
+									"analytics.overtimeBurnDown.filters.managerLabel",
+									"Manager filter",
+								)}
+								triggerClassName="w-full min-w-0"
+							/>
+						</div>
 						<div className="min-w-0 space-y-2">
 							<p className="text-sm text-muted-foreground">
 								{t("analytics.overtimeBurnDown.breakdown", "Breakdown")}

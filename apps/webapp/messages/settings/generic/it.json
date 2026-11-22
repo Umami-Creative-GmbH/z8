@@ -2847,8 +2847,7 @@
       "description": "Scegli come e quando vuoi ricevere le notifiche",
       "digestTime": "Orario del riepilogo",
       "discord": {
-        "description": "Configura le notifiche Discord per la tua organizzazione.",
-        "setupInstructions": "La connessione a Discord da questa pagina non è ancora disponibile. La connessione richiede il token bot, l'ID applicazione e la chiave pubblica della tua applicazione Discord."
+        "description": "Configura le notifiche Discord per la tua organizzazione."
       },
       "escalations": "Escalation",
       "escalationsDescription": "Inoltra le richieste di approvazione senza risposta dopo il timeout configurato.",

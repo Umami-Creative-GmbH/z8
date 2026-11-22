@@ -1,6 +1,6 @@
 import { and, eq, gte, isNotNull, lt, lte, min } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -10,11 +10,16 @@ import {
 	type workPolicy,
 } from "@/db/schema";
 import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
-import { type EffectiveContractOnDay, loadEffectiveContractsBatch } from "@/lib/contracts";
+import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import {
 	comparePlainDates,
 	dateFromInstant,
+	earlierInstant,
+	type Instant,
 	instantFromDate,
+	laterInstant,
+	parseInstant,
 	type PlainDate,
 	parsePlainDate,
 	plainDateAt,
@@ -42,7 +47,7 @@ import {
 } from "@/lib/time-tracking/tracking-start";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { isValidIanaTimeZone } from "@/lib/timezone/validation";
+import { isValidIanaTimeZone, isValidTimeZone } from "@/lib/timezone/validation";
 import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import {
 	type ApprovedAbsenceRange,
@@ -156,6 +161,21 @@ function getRequiredMinutesForDay(
 	return 0;
 }
 
+function resolveRequirementZone(timezone: string | null | undefined): string {
+	return timezone && isValidTimeZone(timezone) ? timezone : "UTC";
+}
+
+function parseUtcDateOrInstant(value: string): Instant {
+	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		return parsePlainDate(value).toZonedDateTime("UTC").toInstant();
+	}
+	try {
+		return parseInstant(value);
+	} catch {
+		return Temporal.PlainDateTime.from(value).toZonedDateTime("UTC").toInstant();
+	}
+}
+
 export function buildDailyWorkRequirements({
 	policy,
 	startDate,
@@ -165,25 +185,25 @@ export function buildDailyWorkRequirements({
 }: BuildDailyWorkRequirementsOptions): DailyWorkRequirements {
 	if (!policy?.schedule) return {};
 
-	const requestedZone = timezone || "utc";
-	const zonedStart = DateTime.fromJSDate(startDate, { zone: "utc" }).setZone(requestedZone);
-	const zonedEnd = DateTime.fromJSDate(endDate, { zone: "utc" }).setZone(requestedZone);
-	const start = (
-		zonedStart.isValid ? zonedStart : DateTime.fromJSDate(startDate, { zone: "utc" })
-	).startOf("day");
-	const end = (zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(endDate, { zone: "utc" })).startOf(
-		"day",
-	);
-	if (!start.isValid || !end.isValid || end < start) return {};
+	const zone = resolveRequirementZone(timezone);
+	let start: Temporal.PlainDate;
+	let end: Temporal.PlainDate;
+	try {
+		start = plainDateAt(instantFromDate(startDate), zone);
+		end = plainDateAt(instantFromDate(endDate), zone);
+	} catch {
+		return {};
+	}
+	if (comparePlainDates(end, start) < 0) return {};
 
 	const requirements: DailyWorkRequirements = {};
 
-	for (let cursor = start; cursor <= end; cursor = cursor.plus({ days: 1 })) {
-		const dayName = WEEKDAY_BY_NUMBER[cursor.weekday];
+	for (let cursor = start; comparePlainDates(cursor, end) <= 0; cursor = cursor.add({ days: 1 })) {
+		const dayName = WEEKDAY_BY_NUMBER[cursor.dayOfWeek];
 		const requiredMinutes = getRequiredMinutesForDay(policy, dayName, weeklyContractMinutes);
 		if (requiredMinutes <= 0) continue;
 
-		requirements[cursor.toFormat("yyyy-MM-dd")] = {
+		requirements[cursor.toString()] = {
 			requiredMinutes,
 			policyId: policy.policyId,
 			policyName: policy.policyName,
@@ -267,17 +287,9 @@ async function getApprovedAbsenceRanges(params: {
 	endDate: Date;
 	timezone?: string | null;
 }): Promise<ApprovedAbsenceRange[]> {
-	const requestedZone = params.timezone || "utc";
-	const zonedStart = DateTime.fromJSDate(params.startDate, {
-		zone: "utc",
-	}).setZone(requestedZone);
-	const zonedEnd = DateTime.fromJSDate(params.endDate, { zone: "utc" }).setZone(requestedZone);
-	const start = (
-		zonedStart.isValid ? zonedStart : DateTime.fromJSDate(params.startDate, { zone: "utc" })
-	).toFormat("yyyy-MM-dd");
-	const end = (
-		zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(params.endDate, { zone: "utc" })
-	).toFormat("yyyy-MM-dd");
+	const zone = resolveRequirementZone(params.timezone);
+	const start = plainDateAt(instantFromDate(params.startDate), zone).toString();
+	const end = plainDateAt(instantFromDate(params.endDate), zone).toString();
 
 	return Effect.runPromise(
 		params.database.query("getApprovedAbsencesForCalendarRequirements", async () => {
@@ -420,7 +432,6 @@ async function buildContractDailyRequirements(params: {
 	const shiftDays = new Set<string>();
 	const trustBasedDates = new Set<string>();
 	const requirements: DailyWorkRequirements = {};
-
 	for (const day of dates) {
 		const dateKey = day.toString();
 		const contract = contractsByDate.get(dateKey);
@@ -575,12 +586,8 @@ export function loadDailyWorkRequirementsForEmployee(
 					loadEmployeeTrackingContext(database.db, params),
 				);
 		if (tracking) params = { ...params, timezone: tracking.timezone };
-		const requestedStartDate = DateTime.fromJSDate(params.startDate, {
-			zone: "utc",
-		});
-		const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, {
-			zone: "utc",
-		});
+		const requestedStartInstant = instantFromDate(params.startDate);
+		const accountCreatedInstant = instantFromDate(scopedEmployee.user.createdAt);
 		const firstCompletedWorkPeriodBeforeAccount = tracking
 			? null
 			: yield* Effect.promise(() =>
@@ -591,30 +598,20 @@ export function loadDailyWorkRequirementsForEmployee(
 						accountCreatedAt: scopedEmployee.user.createdAt,
 					}),
 				);
-		const employeeStartDate = params.employeeEmploymentStartDateOverride
-			? DateTime.fromISO(params.employeeEmploymentStartDateOverride, {
-					zone: "utc",
-				})
+		const employeeStartInstant = params.employeeEmploymentStartDateOverride
+			? parseUtcDateOrInstant(params.employeeEmploymentStartDateOverride)
 			: scopedEmployee.startDate
-				? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
-				: accountCreatedDate;
-		const normalStartDate = DateTime.max(accountCreatedDate, employeeStartDate);
-		const lowerBoundDate = tracking
-			? DateTime.fromJSDate(
-					dateFromInstant(
-						parsePlainDate(tracking.startDate).toZonedDateTime(tracking.timezone).toInstant(),
-					),
-					{ zone: "utc" },
-				)
+				? instantFromDate(scopedEmployee.startDate)
+				: accountCreatedInstant;
+		const normalStartInstant = laterInstant(accountCreatedInstant, employeeStartInstant);
+		const lowerBoundInstant = tracking
+			? parsePlainDate(tracking.startDate).toZonedDateTime(tracking.timezone).toInstant()
 			: firstCompletedWorkPeriodBeforeAccount
-				? DateTime.min(
-						DateTime.fromJSDate(firstCompletedWorkPeriodBeforeAccount, {
-							zone: "utc",
-						}),
-						normalStartDate,
-					)
-				: normalStartDate;
-		const effectiveStartDate = DateTime.max(requestedStartDate, lowerBoundDate).toJSDate();
+				? earlierInstant(instantFromDate(firstCompletedWorkPeriodBeforeAccount), normalStartInstant)
+				: normalStartInstant;
+		const effectiveStartDate = dateFromInstant(
+			laterInstant(requestedStartInstant, lowerBoundInstant),
+		);
 		if (effectiveStartDate > params.endDate) return {};
 
 		const requirements = yield* Effect.promise(() =>

@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import type { ChangePolicyRecord } from "@/app/[locale]/(app)/settings/change-policies/actions";
+import type { ChangePolicyRecord } from "@/app/[locale]/(app)/settings/work-policies/change-policy-actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
 import { ChangePolicyAssignmentDialog } from "./change-policy-assignment-dialog";
