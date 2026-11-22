@@ -613,12 +613,26 @@ export class AnalyticsService extends Context.Service<
 						const { organizationId, dateRange } = params;
 						const calendarRange = getAnalyticsCalendarRange(dateRange);
 
-						// Get all employees with vacation allowances
+						// Get employees with vacation allowances (scoped to managed employees for managers)
 						const employees = yield* dbService.query("getEmployeesWithVacation", async () => {
 							return await dbService.db.query.employee.findMany({
 								where: and(
 									eq(employee.organizationId, organizationId),
 									activeAnalyticsEmployee(),
+									params.scope?.role === "manager"
+										? inArray(
+												employee.id,
+												dbService.db
+													.select({ employeeId: employeeManagers.employeeId })
+													.from(employeeManagers)
+													.where(
+														eq(
+															employeeManagers.managerId,
+															params.scope.managerEmployeeId,
+														),
+													),
+											)
+										: undefined,
 								),
 								with: {
 									user: true,
@@ -1299,7 +1313,9 @@ export class AnalyticsService extends Context.Service<
 
 				getManagerEffectiveness: (params: ManagerEffectivenessParams) =>
 					Effect.gen(function* () {
-						const { organizationId, dateRange, managerId } = params;
+						const { organizationId, dateRange, managerId, scope } = params;
+						const effectiveManagerId =
+							scope?.role === "manager" ? scope.managerEmployeeId : managerId;
 
 						const approvals = yield* dbService.query("getApprovalsForEffectiveness", async () => {
 							return await dbService.db.query.approvalRequest.findMany({
@@ -1307,7 +1323,9 @@ export class AnalyticsService extends Context.Service<
 									eq(approvalRequest.organizationId, organizationId),
 									gte(approvalRequest.createdAt, dateRange.start),
 									lte(approvalRequest.createdAt, dateRange.end),
-									managerId ? eq(approvalRequest.approverId, managerId) : undefined,
+									effectiveManagerId
+										? eq(approvalRequest.approverId, effectiveManagerId)
+										: undefined,
 								),
 								with: {
 									approver: {
@@ -1335,7 +1353,9 @@ export class AnalyticsService extends Context.Service<
 										lte(travelExpenseClaim.submittedAt, dateRange.end),
 										inArray(travelExpenseClaim.status, ["submitted", "approved", "rejected"]),
 										isNotNull(travelExpenseClaim.submittedAt),
-										managerId ? eq(travelExpenseClaim.approverId, managerId) : undefined,
+										effectiveManagerId
+											? eq(travelExpenseClaim.approverId, effectiveManagerId)
+											: undefined,
 									),
 									with: {
 										employee: {

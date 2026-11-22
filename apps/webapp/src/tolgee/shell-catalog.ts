@@ -291,8 +291,6 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.reportShareLinks.title",
 		"settings.security.description",
 		"settings.security.title",
-		"settings.statistics.healthCardDescription",
-		"settings.statistics.title",
 		"settings.timezone.picker.empty",
 		"settings.timezone.picker.groups.africa",
 		"settings.timezone.picker.groups.americas",

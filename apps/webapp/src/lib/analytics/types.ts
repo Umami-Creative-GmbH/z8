@@ -242,6 +242,7 @@ export type TeamPerformanceParams = {
 export type VacationTrendsParams = {
 	organizationId: string;
 	dateRange: DateRange;
+	scope?: AnalyticsEmployeeScope;
 };
 
 export type WorkHoursParams = {
@@ -265,6 +266,7 @@ export type ManagerEffectivenessParams = {
 	organizationId: string;
 	dateRange: DateRange;
 	managerId?: string;
+	scope?: AnalyticsEmployeeScope;
 };
 
 export type OvertimeBurnDownParams = {

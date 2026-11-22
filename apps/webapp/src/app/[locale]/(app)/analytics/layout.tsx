@@ -12,15 +12,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { getRequestSession } from "@/lib/auth/request-session";
-import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { Link } from "@/navigation";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
-import { getStatisticsScope } from "../settings/statistics/actions";
 import { formatStatisticsFetchedAt } from "../settings/statistics/statistics-format";
+import {
+	loadAnalyticsSettingsAccess,
+	loadAnalyticsStatisticsScope,
+} from "./analytics-access-loader";
 import { AnalyticsHeading } from "./analytics-heading";
 import { AnalyticsTabs } from "./analytics-tabs";
 
@@ -70,7 +72,7 @@ async function AnalyticsLayoutContent({ children }: { children: React.ReactNode 
 		return redirectWithLocale("/sign-in");
 	}
 
-	const caller = await getCurrentSettingsAccess();
+	const caller = await loadAnalyticsSettingsAccess();
 
 	// Unified access control (#1955): org admins (with or without an employee record),
 	// workforce admins, and managers may view Analytics; plain employees remain denied.
@@ -98,7 +100,7 @@ async function AnalyticsLayoutContent({ children }: { children: React.ReactNode 
 	}
 
 	const [scopeResult, organizationTimezone] = await Promise.all([
-		getStatisticsScope(),
+		loadAnalyticsStatisticsScope(),
 		loadOrganizationTimezone(db, caller.organizationId).catch(() => "UTC"),
 	]);
 

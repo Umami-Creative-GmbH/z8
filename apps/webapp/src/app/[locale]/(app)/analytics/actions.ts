@@ -188,7 +188,7 @@ async function readCachedAnalytics<T>(
 }
 /**
  * Get team performance analytics
- * Organization ID is derived from authenticated user's employee record
+ * Organization ID is derived from the authenticated session's active organization
  */
 export async function getTeamPerformanceData(
 	dateRange: DateRange,
@@ -234,6 +234,7 @@ export async function getVacationTrendsData(
 		const data = yield* analyticsService.getVacationTrends({
 			organizationId,
 			dateRange,
+			scope: actor.scope,
 		});
 
 		return data;
@@ -311,12 +312,28 @@ export async function getManagerEffectivenessData(
 		const actor = yield* resolveAnalyticsActor();
 		const organizationId = actor.organizationId;
 
+		if (
+			actor.role === "manager" &&
+			managerId &&
+			managerId !== actor.employeeId
+		) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Managers can only view their own approval analytics",
+					userId: actor.userId,
+					resource: "analytics",
+					action: "view",
+				}),
+			);
+		}
+
 		const analyticsService = yield* AnalyticsService;
 
 		const data = yield* analyticsService.getManagerEffectiveness({
 			organizationId,
 			dateRange,
-			managerId,
+			managerId: actor.role === "manager" ? actor.employeeId : managerId,
+			scope: actor.scope,
 		});
 
 		return data;
@@ -327,7 +344,7 @@ export async function getManagerEffectivenessData(
 
 /**
  * Get overtime burn-down analytics
- * Organization ID is derived from authenticated user's employee record
+ * Organization ID is derived from the authenticated session's active organization
  */
 export async function getOvertimeBurnDownData(
 	dateRange: DateRange,

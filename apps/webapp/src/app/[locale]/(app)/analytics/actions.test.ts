@@ -258,6 +258,18 @@ describe("analytics actions unified authorization (#1955)", () => {
 				scope: { role: "admin" },
 			}),
 		);
+		expect(mocks.vacationTrends).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: { role: "admin" },
+			}),
+		);
+		expect(mocks.managerEffectiveness).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: { role: "admin" },
+			}),
+		);
 	});
 
 	it("grants a workforce admin org-wide scope", async () => {
@@ -266,7 +278,25 @@ describe("analytics actions unified authorization (#1955)", () => {
 		expect(await getAbsencePatternsData(range)).toMatchObject({
 			success: true,
 		});
+		expect(await getVacationTrendsData(range)).toMatchObject({
+			success: true,
+		});
+		expect(await getManagerEffectivenessData(range)).toMatchObject({
+			success: true,
+		});
 		expect(mocks.absencePatterns).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: { role: "admin" },
+			}),
+		);
+		expect(mocks.vacationTrends).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: { role: "admin" },
+			}),
+		);
+		expect(mocks.managerEffectiveness).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-1",
 				scope: { role: "admin" },
@@ -274,11 +304,17 @@ describe("analytics actions unified authorization (#1955)", () => {
 		);
 	});
 
-	it("scopes a manager to their managed employees", async () => {
+	it("scopes a manager to their managed employees and refuses cross-manager requests", async () => {
 		mocks.caller = managerCaller;
 
 		expect(await getTeamPerformanceData(range)).toMatchObject({ success: true });
 		expect(await getAbsencePatternsData(range)).toMatchObject({
+			success: true,
+		});
+		expect(await getVacationTrendsData(range)).toMatchObject({
+			success: true,
+		});
+		expect(await getManagerEffectivenessData(range)).toMatchObject({
 			success: true,
 		});
 
@@ -297,6 +333,28 @@ describe("analytics actions unified authorization (#1955)", () => {
 				scope: { role: "manager", managerEmployeeId: "emp-manager" },
 			}),
 		);
+		expect(mocks.vacationTrends).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: { role: "manager", managerEmployeeId: "emp-manager" },
+			}),
+		);
+		expect(mocks.managerEffectiveness).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				managerId: "emp-manager",
+				scope: { role: "manager", managerEmployeeId: "emp-manager" },
+			}),
+		);
+
+		mocks.managerEffectiveness.mockClear();
+		expect(
+			await getManagerEffectivenessData(range, "emp-other-manager"),
+		).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(mocks.managerEffectiveness).not.toHaveBeenCalled();
 	});
 
 	it("refuses a plain employee every analytics action", async () => {

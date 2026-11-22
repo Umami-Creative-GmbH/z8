@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	type AuthContext,
-	getCurrentSettingsAccess,
 	getCurrentSettingsRouteContext,
 } from "@/lib/auth-helpers";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
@@ -13,7 +12,6 @@ import {
 	getAdoptionStatistics,
 	getAttentionStatistics,
 	getMonthStatistics,
-	getStatisticsScope,
 	getWorkforceStatistics,
 } from "../settings/statistics/actions";
 import { loadApprovalInboxSummary } from "../settings/statistics/approval-inbox-summary";
@@ -31,6 +29,10 @@ import {
 	StatisticsGroupError,
 	StatisticsGroupSkeleton,
 } from "../settings/statistics/statistics-groups";
+import {
+	loadAnalyticsSettingsAccess,
+	loadAnalyticsStatisticsScope,
+} from "./analytics-access-loader";
 
 async function groupLoadError() {
 	const t = await getTranslate();
@@ -160,8 +162,8 @@ export function AnalyticsHealthSkeleton() {
 export async function AnalyticsHealthSections() {
 	const [settingsRouteContext, caller, scopeResult, t] = await Promise.all([
 		getCurrentSettingsRouteContext(),
-		getCurrentSettingsAccess(),
-		getStatisticsScope(),
+		loadAnalyticsSettingsAccess(),
+		loadAnalyticsStatisticsScope(),
 		getTranslate(),
 	]);
 
