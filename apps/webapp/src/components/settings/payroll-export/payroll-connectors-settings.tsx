@@ -195,8 +195,10 @@ export function PayrollConnectorsSettings({
 							return (
 								<button
 									key={target.id}
+									id={`payroll-target-${target.id}`}
 									type="button"
 									aria-pressed={isSelected}
+									aria-controls="payroll-target-panel"
 									onClick={() => setSelectedTarget(target.id)}
 									className={cn(
 										"flex w-full items-start justify-between gap-2 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -219,7 +221,12 @@ export function PayrollConnectorsSettings({
 						})}
 					</div>
 
-					<div className="min-w-0">
+					<div
+						id="payroll-target-panel"
+						role="region"
+						aria-labelledby={`payroll-target-${selectedTarget}`}
+						className="min-w-0"
+					>
 						{selectedTarget === "datev" ? (
 							<DatevConfigForm
 								initialConfig={datevConfig}

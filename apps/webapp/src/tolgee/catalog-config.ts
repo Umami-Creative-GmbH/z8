@@ -194,12 +194,10 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	],
 	"/settings/holidays": ["common", "settings/generic", "settings/holidays"],
 	"/settings/permissions": ["common", "settings/generic", "settings/people"],
-	// `payroll`: the payroll run discard dialog (#852) is shared with the payroll workspace.
 	"/settings/payroll-export": [
 		"common",
 		"settings/generic",
 		"settings/payrollExport",
-		"payroll",
 	],
 	"/settings/personnel-files": [
 		"common",

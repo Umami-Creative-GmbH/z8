@@ -18,6 +18,7 @@ import {
 } from "./actions";
 
 async function PayrollExportContent() {
+	// Enforce org-admin access before fetching any connector configs or identifier fields.
 	const [t] = await Promise.all([
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
