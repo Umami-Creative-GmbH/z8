@@ -219,4 +219,134 @@ describe("WorkPolicyDialog", () => {
 		);
 		expect(latest).toMatchObject({ monday: null, tuesday: "09:30", saturday: null });
 	});
+
+	it("loads all 7 ArbZG regulation fields and preserves them when saving an unrelated name change", async () => {
+		vi.mocked(updateWorkPolicy).mockClear();
+		vi.mocked(updateWorkPolicy).mockResolvedValue({ success: true, data: undefined } as never);
+		const arbzgPolicy = {
+			...editablePolicy,
+			regulation: {
+				...editablePolicy.regulation,
+				minRestPeriodMinutes: 690,
+				restPeriodEnforcement: "block",
+				overtimeDailyThresholdMinutes: 510,
+				overtimeWeeklyThresholdMinutes: 2310,
+				overtimeMonthlyThresholdMinutes: 10200,
+				alertBeforeLimitMinutes: 45,
+				alertThresholdPercent: 90,
+			},
+		} as unknown as WorkPolicyWithDetails;
+
+		renderWithQueryClient(
+			<WorkPolicyDialog
+				open={true}
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				editingPolicy={arbzgPolicy}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		expect(((await screen.findByLabelText("Minimum Rest Period")) as HTMLInputElement).value).toBe(
+			"11.5",
+		);
+		expect((screen.getByLabelText("Daily Overtime Threshold") as HTMLInputElement).value).toBe(
+			"8.5",
+		);
+		expect((screen.getByLabelText("Weekly Overtime Threshold") as HTMLInputElement).value).toBe(
+			"38.5",
+		);
+		expect((screen.getByLabelText("Monthly Overtime Threshold") as HTMLInputElement).value).toBe(
+			"170",
+		);
+		expect((screen.getByLabelText("Alert Before Limit") as HTMLInputElement).value).toBe("45");
+		expect((screen.getByLabelText("Alert Threshold") as HTMLInputElement).value).toBe("90");
+
+		// Change only the policy name and save
+		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Retail 38h Renamed" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		await waitFor(() => expect(updateWorkPolicy).toHaveBeenCalled());
+		const [{ data: submitted }] = vi.mocked(updateWorkPolicy).mock.calls[0];
+		expect(submitted.name).toBe("Retail 38h Renamed");
+		expect(submitted.regulation).toMatchObject({
+			minRestPeriodMinutes: 690,
+			restPeriodEnforcement: "block",
+			overtimeDailyThresholdMinutes: 510,
+			overtimeWeeklyThresholdMinutes: 2310,
+			overtimeMonthlyThresholdMinutes: 10200,
+			alertBeforeLimitMinutes: 45,
+			alertThresholdPercent: 90,
+		});
+	});
+
+	it("validates out-of-range ArbZG inputs and persists edited ArbZG values", async () => {
+		vi.mocked(updateWorkPolicy).mockClear();
+		vi.mocked(updateWorkPolicy).mockResolvedValue({ success: true, data: undefined } as never);
+		const arbzgPolicy = {
+			...editablePolicy,
+			regulation: {
+				...editablePolicy.regulation,
+				minRestPeriodMinutes: 660,
+				restPeriodEnforcement: "warn",
+				overtimeDailyThresholdMinutes: 480,
+				overtimeWeeklyThresholdMinutes: 2400,
+				overtimeMonthlyThresholdMinutes: 10800,
+				alertBeforeLimitMinutes: 30,
+				alertThresholdPercent: 80,
+			},
+		} as unknown as WorkPolicyWithDetails;
+
+		renderWithQueryClient(
+			<WorkPolicyDialog
+				open={true}
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				editingPolicy={arbzgPolicy}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		const minRest = (await screen.findByLabelText("Minimum Rest Period")) as HTMLInputElement;
+		const alertPercent = screen.getByLabelText("Alert Threshold") as HTMLInputElement;
+
+		// Out-of-range values block submission via @tanstack/react-form
+		fireEvent.change(minRest, { target: { value: "25" } });
+		fireEvent.change(alertPercent, { target: { value: "150" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		expect(await screen.findByText("Must be greater than 0 and at most 24 hours")).toBeTruthy();
+		expect(await screen.findByText("Must be between 1 and 100%")).toBeTruthy();
+		expect(minRest.getAttribute("aria-invalid")).toBe("true");
+		expect(alertPercent.getAttribute("aria-invalid")).toBe("true");
+		expect(updateWorkPolicy).not.toHaveBeenCalled();
+
+		// Correct values and update all 7 fields
+		fireEvent.change(minRest, { target: { value: "10" } });
+		fireEvent.click(screen.getByRole("radio", { name: /Block/i }));
+		fireEvent.change(screen.getByLabelText("Daily Overtime Threshold"), {
+			target: { value: "9" },
+		});
+		fireEvent.change(screen.getByLabelText("Weekly Overtime Threshold"), {
+			target: { value: "42" },
+		});
+		fireEvent.change(screen.getByLabelText("Monthly Overtime Threshold"), {
+			target: { value: "185" },
+		});
+		fireEvent.change(screen.getByLabelText("Alert Before Limit"), { target: { value: "15" } });
+		fireEvent.change(alertPercent, { target: { value: "75" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		await waitFor(() => expect(updateWorkPolicy).toHaveBeenCalled());
+		const [{ data: submitted }] = vi.mocked(updateWorkPolicy).mock.calls[0];
+		expect(submitted.regulation).toMatchObject({
+			minRestPeriodMinutes: 600,
+			restPeriodEnforcement: "block",
+			overtimeDailyThresholdMinutes: 540,
+			overtimeWeeklyThresholdMinutes: 2520,
+			overtimeMonthlyThresholdMinutes: 11100,
+			alertBeforeLimitMinutes: 15,
+			alertThresholdPercent: 75,
+		});
+	});
 });
