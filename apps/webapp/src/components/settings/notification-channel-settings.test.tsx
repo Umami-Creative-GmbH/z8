@@ -1,10 +1,6 @@
 /* @vitest-environment jsdom */
 
-import {
-	QueryClient,
-	QueryClientProvider,
-	useQuery,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -40,9 +36,7 @@ function renderWithQueryClient(children: ReactNode) {
 		},
 	});
 
-	return render(
-		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,
-	);
+	return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
 }
 
 describe("NotificationChannelSettings", () => {
@@ -86,9 +80,7 @@ describe("NotificationChannelSettings", () => {
 	);
 	it("refreshes its server settings after an accepted save without restarting unrelated client data", async () => {
 		const load = vi.fn().mockResolvedValue("Unrelated employee data");
-		const update = vi
-			.fn()
-			.mockResolvedValue({ success: true, data: undefined });
+		const update = vi.fn().mockResolvedValue({ success: true, data: undefined });
 		function OtherView() {
 			const query = useQuery({
 				queryKey: ["employee-visible-read"],
@@ -119,20 +111,16 @@ describe("NotificationChannelSettings", () => {
 			</>,
 		);
 		await screen.findByText("Unrelated employee data");
-		fireEvent.click(
-			screen.getByRole("switch", { name: /Approval notifications/i }),
-		);
+		fireEvent.click(screen.getByRole("switch", { name: /Approval notifications/i }));
 		fireEvent.click(screen.getByRole("button", { name: "Save Settings" }));
 		await waitFor(() => expect(route.refresh).toHaveBeenCalledTimes(1));
 		expect(update.mock.calls[0]?.[0]).toMatchObject({ enableApprovals: true });
 		expect(update.mock.calls[0]).toHaveLength(1);
 		expect(load).toHaveBeenCalledTimes(1);
 		await waitFor(() =>
-			expect(
-				screen
-					.getByRole("button", { name: "Save Settings" })
-					.hasAttribute("disabled"),
-			).toBe(true),
+			expect(screen.getByRole("button", { name: "Save Settings" }).hasAttribute("disabled")).toBe(
+				true,
+			),
 		);
 	});
 	it("explains an out-of-range escalation timeout beside the field and does not save it", async () => {
@@ -156,9 +144,7 @@ describe("NotificationChannelSettings", () => {
 		);
 		const timeout = screen.getByLabelText("Timeout");
 		fireEvent.change(timeout, { target: { value: "0" } });
-		expect(
-			await screen.findByText("Enter a whole number of hours from 1 to 168."),
-		).toBeTruthy();
+		expect(await screen.findByText("Enter a whole number of hours from 1 to 168.")).toBeTruthy();
 		expect(timeout.getAttribute("aria-invalid")).toBe("true");
 		fireEvent.click(screen.getByRole("button", { name: "Save Settings" }));
 		await new Promise((resolve) => setTimeout(resolve, 0));
@@ -247,6 +233,40 @@ describe("NotificationChannelSettings", () => {
 		expect(screen.queryByRole("button", { name: "Connect Slack" })).toBeNull();
 	});
 
+	it("shows connectedAction only while the channel is connected", () => {
+		const { rerender } = renderWithQueryClient(
+			<NotificationChannelSettings
+				channelName="Discord"
+				config={null}
+				updateAction={vi.fn()}
+				connectedAction={<button type="button">Disconnect</button>}
+			/>,
+		);
+		expect(screen.queryByRole("button", { name: "Disconnect" })).toBeNull();
+
+		rerender(
+			<QueryClientProvider client={new QueryClient()}>
+				<NotificationChannelSettings
+					channelName="Discord"
+					config={{
+						setupStatus: "active",
+						displayName: "123456",
+						enableApprovals: true,
+						enableCommands: true,
+						enableDailyDigest: true,
+						enableEscalations: true,
+						digestTime: "08:00",
+						digestTimezone: "UTC",
+						escalationTimeoutHours: 24,
+					}}
+					updateAction={vi.fn()}
+					connectedAction={<button type="button">Disconnect</button>}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByRole("button", { name: "Disconnect" })).toBeTruthy();
+	});
+
 	it("keeps switch controls visible beside wrapping labels on narrow screens", () => {
 		renderWithQueryClient(
 			<NotificationChannelSettings
@@ -258,9 +278,7 @@ describe("NotificationChannelSettings", () => {
 		);
 
 		const approvalLabel = screen.getByText("Approval notifications");
-		const approvalCopy = screen.getByText(
-			"Send approval requests and approval status updates.",
-		);
+		const approvalCopy = screen.getByText("Send approval requests and approval status updates.");
 		const approvalTextColumn = approvalLabel.closest("div");
 		const approvalRow = approvalTextColumn?.parentElement;
 		const approvalSwitch = screen.getByRole("switch", {
