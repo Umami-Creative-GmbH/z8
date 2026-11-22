@@ -137,7 +137,6 @@ function renderEmployeeDirectory() {
 				}}
 			>
 				<EmployeesPageClient
-					accessTier="member"
 					organizationId="org-1"
 					currentUserId="user-1"
 					currentEmployee={{ id: "employee-1", role: "employee" }}

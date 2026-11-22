@@ -6,7 +6,7 @@ import type {
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
-import { getCurrentSettingsAccess, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import {
@@ -94,25 +94,14 @@ async function loadPeopleManagementData(input: {
 }
 
 export default async function EmployeesPage() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
-
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
-		return redirectWithLocale("/settings");
-	}
-
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
-	const currentUserId = settingsRouteContext.authContext.user.id;
-	// Controls and people tabs follow the shared settings access resolver (ADR 0002, #1623).
+	// Resolve settings access once and pass it consistently (ADR 0002 / ADR 0003).
 	const caller = await getCurrentSettingsAccess();
-	const settingsAccess = caller?.organizationId === organizationId ? caller.settingsAccess : null;
 
-	if (!settingsAccess) {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
+
+	const { organizationId, userId: currentUserId, settingsAccess } = caller;
 
 	const people = meetsSettingsAccess(settingsAccess, "orgAdmin")
 		? await loadPeopleManagementData({
@@ -124,10 +113,9 @@ export default async function EmployeesPage() {
 
 	return (
 		<EmployeesPageClient
-			accessTier={settingsRouteContext.accessTier}
 			organizationId={organizationId}
 			currentUserId={currentUserId}
-			currentEmployee={caller?.employee ?? null}
+			currentEmployee={caller.employee}
 			settingsAccess={settingsAccess}
 			people={people}
 		/>

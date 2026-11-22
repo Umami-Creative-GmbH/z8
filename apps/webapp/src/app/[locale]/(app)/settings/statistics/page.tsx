@@ -6,8 +6,9 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { type AuthContext, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { type AuthContext, getAuthContext, getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -147,22 +148,23 @@ async function WorkforceSection({ organizationWide }: { organizationWide: boolea
 }
 
 async function StatisticsContent() {
-	const [settingsRouteContext, t, locale] = await Promise.all([
-		getCurrentSettingsRouteContext(),
+	const [authContext, caller, t, locale] = await Promise.all([
+		getAuthContext(),
+		getCurrentSettingsAccess(),
 		getTranslate(),
 		getLocale(),
 	]);
 
-	if (!settingsRouteContext) {
+	if (
+		!authContext ||
+		!caller?.settingsAccess ||
+		caller.organizationId !== authContext.session.activeOrganizationId ||
+		!meetsSettingsAccess(caller.settingsAccess, "scopedManager")
+	) {
 		return redirectWithLocale("/settings");
 	}
 
-	const { authContext, accessTier } = settingsRouteContext;
-	const organizationId = authContext.session.activeOrganizationId;
-
-	if (accessTier === "member" || !organizationId) {
-		return redirectWithLocale("/settings");
-	}
+	const { organizationId, settingsAccess } = caller;
 
 	const [scopeResult, organizationTimezone] = await Promise.all([
 		getStatisticsScope(),
@@ -201,7 +203,7 @@ async function StatisticsContent() {
 				{ count: scope.teamCount },
 			);
 	// Payroll readiness and work-policy violations are org-admin settings.
-	const canReviewOrganization = accessTier === "orgAdmin";
+	const canReviewOrganization = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	// The analytics pages check the employee role, not settings access.
 	const canOpenAnalytics =
 		authContext.employee?.organizationId === organizationId &&

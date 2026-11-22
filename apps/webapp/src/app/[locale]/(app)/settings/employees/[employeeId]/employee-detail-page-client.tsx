@@ -42,16 +42,11 @@ import type { EquipmentView } from "@/lib/organization/equipment/contracts";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query";
 import { type EmployeeDetail, useEmployee } from "@/lib/query/use-employee";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { EmployeeDraftActions } from "./employee-draft-actions";
 import type { EmployeeTeamOption } from "./employee-edit-form-card";
-import {
-	EmployeeDetailHeader,
-	EmployeeEditFormCard,
-	EmployeeOverviewCard,
-} from "./page-sections";
+import { EmployeeDetailHeader, EmployeeEditFormCard, EmployeeOverviewCard } from "./page-sections";
 import type { EmployeeDetailFormApi } from "./page-utils";
 import { useEmployeeDetailForm } from "./use-employee-detail-form";
 
@@ -76,14 +71,9 @@ function EmployeeDetailLifecycleActions({
 	) => {
 		if (employee.id !== targetEmployeeId) return;
 		queryClient.setQueryData<EmployeeReadSnapshot<"detail">>(
-			queryKeys.employees.detailFor(
-				currentUserId,
-				employee.organizationId,
-				targetEmployeeId,
-			),
+			queryKeys.employees.detailFor(currentUserId, employee.organizationId, targetEmployeeId),
 			(current) =>
-				current?.data.kind === "employee" &&
-				current.data.id === targetEmployeeId
+				current?.data.kind === "employee" && current.data.id === targetEmployeeId
 					? // The former mark follows at once (#1438); the date arrives with the next read.
 						{
 							...current,
@@ -138,7 +128,6 @@ function EmployeeDetailLifecycleActions({
 
 export function EmployeeDetailPageClient({
 	params,
-	accessTier,
 	currentUserId,
 	settingsAccess,
 	organizationId,
@@ -148,7 +137,6 @@ export function EmployeeDetailPageClient({
 	equipment = null,
 }: {
 	params: Promise<{ employeeId: string }>;
-	accessTier: SettingsAccessTier;
 	currentUserId: string;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
@@ -165,25 +153,22 @@ export function EmployeeDetailPageClient({
 
 	const employeeData = useEmployee({
 		employeeId,
-		accessTier,
+		settingsAccess,
 		userId: currentUserId,
 		organizationId,
 		initialSnapshot,
 	});
-	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } =
-		employeeData;
+	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
 	// The "Custom fields" section (#818), saved with the employee details.
 	const customFields = useCustomFieldDrafts({
 		entity: "employee",
 		recordId: employeeId,
 		enabled: employee?.kind === "employee",
-		readScope: organizationId
-			? { userId: currentUserId, organizationId }
-			: undefined,
+		readScope: organizationId ? { userId: currentUserId, organizationId } : undefined,
 	});
 	const { form, teamOptions, drivingLicenceWarning } = useEmployeeDetailForm({
 		employeeId,
-		accessTier,
+		settingsAccess,
 		employee,
 		updateEmployee,
 		customFields,
@@ -207,7 +192,6 @@ export function EmployeeDetailPageClient({
 			employee={employee}
 			employeeId={employeeId}
 			data={employeeData}
-			accessTier={accessTier}
 			currentUserId={currentUserId}
 			settingsAccess={settingsAccess}
 			organizationId={organizationId}
@@ -217,7 +201,7 @@ export function EmployeeDetailPageClient({
 				<EmployeeDetailEditCard
 					form={form}
 					employee={employee}
-					accessTier={accessTier}
+					settingsAccess={settingsAccess}
 					isUpdating={isUpdating}
 					teamOptions={teamOptions}
 					customFields={customFields}
@@ -276,21 +260,14 @@ function EmployeeDetailMissing() {
 				<EmployeeDetailHeader t={t} />
 				<NoEmployeeError
 					className="w-full max-w-xl"
-					feature={t(
-						"settings.employees.detailView.manageEmployees",
-						"manage employees",
-					)}
+					feature={t("settings.employees.detailView.manageEmployees", "manage employees")}
 				/>
 			</div>
 		</div>
 	);
 }
 
-function EmployeeDetailLoadError({
-	data,
-}: {
-	data: ReturnType<typeof useEmployee>;
-}) {
+function EmployeeDetailLoadError({ data }: { data: ReturnType<typeof useEmployee> }) {
 	const { t } = useTranslate();
 	return (
 		<div className="page-frame">
@@ -302,16 +279,9 @@ function EmployeeDetailLoadError({
 				>
 					<p className="text-sm">
 						{data.error?.message ||
-							t(
-								"settings.employees.detailView.loadFailed",
-								"Employee data could not be loaded",
-							)}
+							t("settings.employees.detailView.loadFailed", "Employee data could not be loaded")}
 					</p>
-					<Button
-						variant="outline"
-						onClick={() => void data.refetch()}
-						disabled={data.isFetching}
-					>
+					<Button variant="outline" onClick={() => void data.refetch()} disabled={data.isFetching}>
 						{t("common.retry", "Try again")}
 					</Button>
 				</div>
@@ -327,10 +297,7 @@ function EmployeeDetailLoading() {
 		<div className="page-frame">
 			<output
 				className="page-measure block space-y-6"
-				aria-label={t(
-					"settings.employees.detailView.loadingEmployeeData",
-					"Loading employee data",
-				)}
+				aria-label={t("settings.employees.detailView.loadingEmployeeData", "Loading employee data")}
 			>
 				<div className="space-y-2" aria-hidden="true">
 					<Skeleton className="h-4 w-36" />
@@ -351,7 +318,6 @@ function EmployeeDetailOverview({
 	employee,
 	employeeId,
 	data,
-	accessTier,
 	currentUserId,
 	settingsAccess,
 	organizationId,
@@ -362,7 +328,6 @@ function EmployeeDetailOverview({
 	employee: EmployeeDetail;
 	employeeId: string;
 	data: ReturnType<typeof useEmployee>;
-	accessTier: SettingsAccessTier;
 	currentUserId: string;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
@@ -381,19 +346,11 @@ function EmployeeDetailOverview({
 		<>
 			<EmployeeReadNotices data={data} />
 			<div className="grid gap-4 lg:grid-cols-3">
-				<EmployeeOverviewCard
-					employee={employee}
-					schedule={data.schedule}
-					t={t}
-				/>
+				<EmployeeOverviewCard employee={employee} schedule={data.schedule} t={t} />
 				{canEditDraftDetails && editForm}
 			</div>
 
-			<EmployeeInvitationActions
-				employee={employee}
-				accessTier={accessTier}
-				settingsAccess={settingsAccess}
-			/>
+			<EmployeeInvitationActions employee={employee} settingsAccess={settingsAccess} />
 			{equipment && canShowRealEmployeeSections ? (
 				<EmployeeEquipment
 					key={`${organizationId}:${employeeId}`}
@@ -406,7 +363,7 @@ function EmployeeDetailOverview({
 				<EmployeeRecordSections
 					employee={employee}
 					employeeId={employeeId}
-					accessTier={accessTier}
+					settingsAccess={settingsAccess}
 					currentUserId={currentUserId}
 					highlightedReviewId={highlightedReviewId}
 					data={data}
@@ -417,11 +374,7 @@ function EmployeeDetailOverview({
 }
 
 /** What did not load beside the employee, and the work schedule still loading. */
-function EmployeeReadNotices({
-	data,
-}: {
-	data: ReturnType<typeof useEmployee>;
-}) {
+function EmployeeReadNotices({ data }: { data: ReturnType<typeof useEmployee> }) {
 	const { t } = useTranslate();
 	return (
 		<>
@@ -433,21 +386,14 @@ function EmployeeReadNotices({
 							"Some employee information could not be loaded. Your edits have been kept.",
 						)}
 					</p>
-					<Button
-						variant="outline"
-						onClick={() => void data.refetch()}
-						disabled={data.isFetching}
-					>
+					<Button variant="outline" onClick={() => void data.refetch()} disabled={data.isFetching}>
 						{t("common.retry", "Try again")}
 					</Button>
 				</div>
 			) : null}
 			{data.isLoadingSchedule ? (
 				<p role="status">
-					{t(
-						"settings.employees.detailView.loadingSchedule",
-						"Loading work schedule…",
-					)}
+					{t("settings.employees.detailView.loadingSchedule", "Loading work schedule…")}
 				</p>
 			) : null}
 		</>
@@ -457,7 +403,7 @@ function EmployeeReadNotices({
 function EmployeeDetailEditCard({
 	form,
 	employee,
-	accessTier,
+	settingsAccess,
 	isUpdating,
 	teamOptions,
 	customFields,
@@ -465,7 +411,7 @@ function EmployeeDetailEditCard({
 }: {
 	form: EmployeeDetailFormApi;
 	employee: EmployeeDetail;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	isUpdating: boolean;
 	/** Only for an org admin editing a real employee: the Team field stays hidden without. */
 	teamOptions: EmployeeTeamOption[] | undefined;
@@ -478,8 +424,8 @@ function EmployeeDetailEditCard({
 	return (
 		<EmployeeEditFormCard
 			form={form}
-			canEditManagerFields={accessTier === "orgAdmin" || accessTier === "manager"}
-			canEditOrgAdminFields={accessTier === "orgAdmin"}
+			canEditManagerFields={meetsSettingsAccess(settingsAccess, "scopedManager")}
+			canEditOrgAdminFields={meetsSettingsAccess(settingsAccess, "orgAdmin")}
 			personnelNumberManagedByScim={
 				employee.kind === "employee" && employee.personnelNumberManagedByScim
 			}
@@ -506,9 +452,7 @@ function EmployeeDetailEditCard({
 			}
 			hasCustomFieldChanges={customFields.isDirty}
 			customFields={
-				isDraft ? null : (
-					<CustomFieldDraftsSection drafts={customFields} disabled={isUpdating} />
-				)
+				isDraft ? null : <CustomFieldDraftsSection drafts={customFields} disabled={isUpdating} />
 			}
 		/>
 	);
@@ -518,34 +462,29 @@ function EmployeeDetailEditCard({
 function EmployeeRecordSections({
 	employee,
 	employeeId,
-	accessTier,
+	settingsAccess,
 	currentUserId,
 	highlightedReviewId,
 	data,
 }: {
 	employee: EmployeeDetail;
 	employeeId: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	currentUserId: string;
 	highlightedReviewId: string | null;
 	data: ReturnType<typeof useEmployee>;
 }) {
 	const { t } = useTranslate();
-	const isOrgAdmin = accessTier === "orgAdmin";
-	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
+	const isOrgAdmin = meetsSettingsAccess(settingsAccess, "orgAdmin");
+	const isOrgAdminOrManager = meetsSettingsAccess(settingsAccess, "scopedManager");
 	const { availableManagers, workPolicies } = data;
 
 	const handleWorkBalanceRecalculation = async () => {
-		const result = await data
-			.requestWorkBalanceRecalculation()
-			.catch(() => null);
+		const result = await data.requestWorkBalanceRecalculation().catch(() => null);
 
 		if (result?.success) {
 			toast.success(
-				t(
-					"settings.workBalanceRecalculation.requestSuccess",
-					"Work balance recalculation queued",
-				),
+				t("settings.workBalanceRecalculation.requestSuccess", "Work balance recalculation queued"),
 			);
 			return;
 		}
@@ -621,14 +560,12 @@ function EmployeeRecordSections({
 			<EmployeeEmploymentSections
 				employee={employee}
 				employeeId={employeeId}
-				accessTier={accessTier}
+				settingsAccess={settingsAccess}
 				data={data}
 			/>
 
 			{/* Managers see it read-only for employees they manage (#996); the server decides. */}
-			{isOrgAdminOrManager && (
-				<EmployeeWorkBalanceSection employeeId={employeeId} />
-			)}
+			{isOrgAdminOrManager && <EmployeeWorkBalanceSection employeeId={employeeId} />}
 
 			{isOrgAdmin && (
 				<WorkBalanceRecalculationCard
@@ -639,7 +576,7 @@ function EmployeeRecordSections({
 				/>
 			)}
 
-			<EmployeeRateSections employeeId={employeeId} accessTier={accessTier} />
+			<EmployeeRateSections employeeId={employeeId} settingsAccess={settingsAccess} />
 		</>
 	);
 }
@@ -648,33 +585,29 @@ function EmployeeRecordSections({
 function EmployeeEmploymentSections({
 	employee,
 	employeeId,
-	accessTier,
+	settingsAccess,
 	data,
 }: {
 	employee: EmployeeDetail;
 	employeeId: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	data: ReturnType<typeof useEmployee>;
 }) {
 	const queryClient = useQueryClient();
-	const isOrgAdmin = accessTier === "orgAdmin";
-	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
+	const isOrgAdmin = meetsSettingsAccess(settingsAccess, "orgAdmin");
+	const isOrgAdminOrManager = meetsSettingsAccess(settingsAccess, "scopedManager");
 	const { workPolicies } = data;
 
 	return (
 		<>
-			{isOrgAdminOrManager && (
-				<EmployeeTrackingDateCard employeeId={employeeId} />
-			)}
+			{isOrgAdminOrManager && <EmployeeTrackingDateCard employeeId={employeeId} />}
 
 			{isOrgAdmin && employee.kind === "employee" ? (
 				<EmploymentDateCorrectionCard
 					key={employeeId}
 					employeeId={employeeId}
 					employmentStartDate={
-						employee.startDate
-							? new Date(employee.startDate).toISOString().slice(0, 10)
-							: null
+						employee.startDate ? new Date(employee.startDate).toISOString().slice(0, 10) : null
 					}
 					onSaved={async () => {
 						await Promise.all([
@@ -697,25 +630,16 @@ function EmployeeEmploymentSections({
 				onConfirm={data.confirmEmploymentHistory}
 				onCancel={data.cancelEmploymentHistory}
 				isCreating={data.isCreatingEmploymentHistory}
-				isMutating={
-					data.isConfirmingEmploymentHistory ||
-					data.isCancelingEmploymentHistory
-				}
+				isMutating={data.isConfirmingEmploymentHistory || data.isCancelingEmploymentHistory}
 				workPolicies={workPolicies}
-				notice={
-					isOrgAdmin ? (
-						<WageHistoryMergeNote employeeId={employeeId} />
-					) : undefined
-				}
+				notice={isOrgAdmin ? <WageHistoryMergeNote employeeId={employeeId} /> : undefined}
 				lifecycleEvents={
 					employee.kind === "employee" ? (
 						<EmploymentLifecycleEvents employeeId={employeeId} />
 					) : undefined
 				}
 				changeWage={
-					isOrgAdmin &&
-					employee.kind === "employee" &&
-					employee.contractTypeToday === "hourly"
+					isOrgAdmin && employee.kind === "employee" && employee.contractTypeToday === "hourly"
 						? { onSubmit: data.changeWage, isPending: data.isChangingWage }
 						: undefined
 				}
@@ -727,14 +651,14 @@ function EmployeeEmploymentSections({
 /** Customer billing and internal cost rates use the same feature and access gate. */
 function EmployeeRateSections({
 	employeeId,
-	accessTier,
+	settingsAccess,
 }: {
 	employeeId: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 }) {
 	const { t } = useTranslate();
 	const billableTimeEnabled = useBillableTimeEnabled();
-	if (accessTier !== "orgAdmin" || !billableTimeEnabled) return null;
+	if (!meetsSettingsAccess(settingsAccess, "orgAdmin") || !billableTimeEnabled) return null;
 
 	return (
 		<>
@@ -743,10 +667,7 @@ function EmployeeRateSections({
 				title={
 					<>
 						<IconCoin aria-hidden="true" className="size-5" />
-						{t(
-							"settings.billableTime.rates.employeeRateTitle",
-							"Billable rate",
-						)}
+						{t("settings.billableTime.rates.employeeRateTitle", "Billable rate")}
 					</>
 				}
 				description={t(
@@ -774,18 +695,14 @@ function EmployeeRateSections({
 
 function EmployeeInvitationActions({
 	employee,
-	accessTier,
 	settingsAccess,
 }: {
 	employee: NonNullable<ReturnType<typeof useEmployee>["employee"]>;
-	accessTier: SettingsAccessTier;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 }) {
-	const canManageDraftActions =
-		accessTier === "orgAdmin" && meetsSettingsAccess(settingsAccess, "orgAdmin");
-	if (employee.kind !== "invitationDraft" || !canManageDraftActions)
-		return null;
+	const canManageDraftActions = meetsSettingsAccess(settingsAccess, "orgAdmin");
+	if (employee.kind !== "invitationDraft" || !canManageDraftActions) return null;
 	return (
 		<EmployeeDraftActions
 			organizationId={employee.organizationId}

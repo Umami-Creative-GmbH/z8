@@ -35,7 +35,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: boundary.refresh, replace: vi.fn() }),
 	usePathname: () => "/en/settings/employees",
-	Link: (props: ComponentProps<"a">) => <a {...props} />,
+	Link: ({ children, ...props }: ComponentProps<"a">) => <a {...props}>{children}</a>,
 }));
 vi.mock("@/app/[locale]/(app)/settings/employees/employee-clock-status.actions", () => ({
 	getEmployeeClockStatuses: async () => ({ success: true, data: {} }),
@@ -91,7 +91,6 @@ function mount(admin = false) {
 						<SidebarProvider>
 							<SiteHeader />
 							<EmployeesPageClient
-								accessTier={admin ? "orgAdmin" : "manager"}
 								settingsAccess={admin ? "orgAdmin" : "scopedManager"}
 								organizationId="org"
 								currentUserId="actor"
@@ -197,9 +196,9 @@ it.each([
 ])("owns the page heading at %s", (path) => {
 	expect(appPageOwnsHeading(path)).toBe(true);
 });
-it.each([
-	"/en/settings/employees/new",
-	"/settings/employees/person/edit",
-])("retains descendant shell ownership at %s", (path) => {
-	expect(appPageOwnsHeading(path)).toBe(false);
-});
+it.each(["/en/settings/employees/new", "/settings/employees/person/edit"])(
+	"retains descendant shell ownership at %s",
+	(path) => {
+		expect(appPageOwnsHeading(path)).toBe(false);
+	},
+);

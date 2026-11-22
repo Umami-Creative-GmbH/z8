@@ -2,10 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	accessContext: {
-		authContext: {
-			user: { id: "user-1" },
-		},
-		accessTier: "manager" as const,
+		userId: "user-1",
+		settingsAccess: "scopedManager" as const,
 		organizationId: "org-1",
 		canAccessShiftTemplates: true,
 		manageableShiftTemplateSubareaIds: new Set(["subarea-team-1"]),
@@ -35,11 +33,8 @@ vi.mock("@/lib/settings-scheduling-access", () => ({
 			subareaId: string | null | undefined,
 		) => Boolean(subareaId && manageableSubareaIds?.has(subareaId)),
 	),
-	filterItemsToManageableSubareas: vi.fn(
-		(items: any[], manageableSubareaIds: Set<string> | null) =>
-			manageableSubareaIds
-				? items.filter((item) => manageableSubareaIds.has(item.subareaId))
-				: items,
+	filterItemsToManageableSubareas: vi.fn((items: any[], manageableSubareaIds: Set<string> | null) =>
+		manageableSubareaIds ? items.filter((item) => manageableSubareaIds.has(item.subareaId)) : items,
 	),
 	getSchedulingSettingsAccessContext: vi.fn(async () => mockState.accessContext),
 	getShiftTemplateScopeTarget: vi.fn(async () => mockState.templateTarget),
@@ -55,15 +50,14 @@ vi.mock("@/lib/effect/services/shift.service", async () => {
 	return { ShiftService };
 });
 
-const { createShiftTemplate, deleteShiftTemplate, updateShiftTemplate } = await import(
-	"./template-actions"
-);
+const { createShiftTemplate, deleteShiftTemplate, updateShiftTemplate } =
+	await import("./template-actions");
 
 describe("shift template manager scope", () => {
 	beforeEach(() => {
 		mockState.accessContext = {
-			authContext: { user: { id: "user-1" } },
-			accessTier: "manager",
+			userId: "user-1",
+			settingsAccess: "scopedManager",
 			organizationId: "org-1",
 			canAccessShiftTemplates: true,
 			manageableShiftTemplateSubareaIds: new Set(["subarea-team-1"]),

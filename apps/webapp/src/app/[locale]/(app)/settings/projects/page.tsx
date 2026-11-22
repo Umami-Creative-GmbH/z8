@@ -5,8 +5,9 @@ import { ProjectTaskManagement } from "@/components/settings/project-task-manage
 import { ProjectTemplateManagement } from "@/components/settings/project-template-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import {
 	listProjectsWithManageableTasks,
 	loadProjectTaskManager,
@@ -22,31 +23,23 @@ async function getTaskOnlyProjects(userId: string, organizationId: string) {
 }
 
 async function ProjectSettingsPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext) {
+	if (!caller?.settingsAccess) {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const { organizationId, settingsAccess, userId } = caller;
 
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
-
-	if (settingsRouteContext.accessTier === "member") {
-		const projects = await getTaskOnlyProjects(
-			settingsRouteContext.authContext.user.id,
-			organizationId,
-		);
+	if (!meetsSettingsAccess(settingsAccess, "scopedManager")) {
+		const projects = await getTaskOnlyProjects(userId, organizationId);
 		if (projects.length === 0) {
 			return redirectWithLocale("/settings");
 		}
 		return <ProjectTaskManagement projects={projects} />;
 	}
 
-	if (settingsRouteContext.accessTier !== "orgAdmin") {
+	if (!meetsSettingsAccess(settingsAccess, "orgAdmin")) {
 		return (
 			<div className="page-frame flex flex-1 flex-col">
 				<ProjectManagement organizationId={organizationId} canManageProjectManagers={false} />

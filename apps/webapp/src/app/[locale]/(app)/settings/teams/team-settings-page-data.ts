@@ -5,14 +5,15 @@ import { employee, team, teamMembership } from "@/db/schema";
 import type { TeamPermissions } from "@/lib/authorization";
 import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { formerMark } from "@/lib/employee-lifecycle/former-since";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { buildTeamSettingsSurface, filterMembersForTeamSettingsSurface } from "./team-scope";
 
 export async function loadTeamSettingsPageData(input: {
 	organizationId: string;
-	settingsRouteContext: { accessTier: "member" | "manager" | "orgAdmin" };
+	settingsAccess: SettingsAccess | null;
 	principalContext: { permissions: TeamPermissions };
 }) {
-	const { organizationId, settingsRouteContext, principalContext } = input;
+	const { organizationId, settingsAccess, principalContext } = input;
 
 	const [membersData, allTeams, membershipRows] = await Promise.all([
 		db
@@ -70,7 +71,7 @@ export async function loadTeamSettingsPageData(input: {
 	});
 
 	const teamSurface = buildTeamSettingsSurface({
-		accessTier: settingsRouteContext.accessTier,
+		settingsAccess,
 		teams: allTeams,
 		permissions: principalContext.permissions,
 	});

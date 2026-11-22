@@ -23,7 +23,7 @@ vi.mock("@/db/schema", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
-	getCurrentSettingsRouteContext: vi.fn(async () => null),
+	getCurrentSettingsAccess: vi.fn(async () => null),
 }));
 
 const {
@@ -34,29 +34,38 @@ const {
 	getManagedShiftTemplateSubareaIds,
 	getSchedulingSettingsAccessContext,
 } = await import("@/lib/settings-scheduling-access");
-const { getCurrentSettingsRouteContext } = await import("@/lib/auth-helpers");
+const { getCurrentSettingsAccess } = await import("@/lib/auth-helpers");
 
-/** A scoped manager's settings route context (`accessTier` manager) in org-1. */
-function routeContextFor(employee: { id: string; role: "admin" | "manager" }) {
+/** A scoped manager's settings access caller in org-1. */
+function callerFor(employee: { id: string; role: "admin" | "manager" }) {
 	return {
-		accessTier: "manager",
-		authContext: { session: { activeOrganizationId: "org-1" }, employee },
+		userId: "user-1",
+		organizationId: "org-1",
+		settingsAccess: "scopedManager" as const,
+		membershipRole: "member",
+		employee,
 	};
 }
 
 describe("settings scheduling access helpers", () => {
-	it("keeps org-admin parity for owner/admin level access", () => {
-		expect(canAccessShiftTemplateSettings("orgAdmin", false, new Set())).toBe(true);
-		expect(canAccessCoverageRuleSettings("orgAdmin", new Set())).toBe(true);
-		expect(canManageScopedSchedulingSubarea("orgAdmin", new Set(), undefined)).toBe(true);
-	});
+	it.each(["orgAdmin", "owner"] as const)(
+		"keeps org-admin parity for %s settings access",
+		(settingsAccess) => {
+			expect(canAccessShiftTemplateSettings(settingsAccess, false, new Set())).toBe(true);
+			expect(canAccessCoverageRuleSettings(settingsAccess, new Set())).toBe(true);
+			expect(canManageScopedSchedulingSubarea(settingsAccess, new Set(), undefined)).toBe(true);
+		},
+	);
 
 	it("requires both team settings and own-team shift-template scope for managers", () => {
-		expect(canAccessShiftTemplateSettings("manager", true, new Set(["team-subarea-1"]))).toBe(true);
-		expect(canAccessShiftTemplateSettings("manager", false, new Set(["team-subarea-1"]))).toBe(
-			false,
+		expect(canAccessShiftTemplateSettings("scopedManager", true, new Set(["team-subarea-1"]))).toBe(
+			true,
 		);
-		expect(canAccessShiftTemplateSettings("manager", true, new Set())).toBe(false);
+		expect(
+			canAccessShiftTemplateSettings("scopedManager", false, new Set(["team-subarea-1"])),
+		).toBe(false);
+		expect(canAccessShiftTemplateSettings("scopedManager", true, new Set())).toBe(false);
+		expect(canAccessShiftTemplateSettings(null, true, new Set(["team-subarea-1"]))).toBe(false);
 	});
 
 	it("derives shift-template subareas from manageable teams instead of arbitrary area assignments", () => {
@@ -74,20 +83,21 @@ describe("settings scheduling access helpers", () => {
 	});
 
 	it("requires at least one manageable area for manager coverage access", () => {
-		expect(canAccessCoverageRuleSettings("manager", new Set(["subarea-1"]))).toBe(true);
-		expect(canAccessCoverageRuleSettings("manager", new Set())).toBe(false);
+		expect(canAccessCoverageRuleSettings("scopedManager", new Set(["subarea-1"]))).toBe(true);
+		expect(canAccessCoverageRuleSettings("scopedManager", new Set())).toBe(false);
+		expect(canAccessCoverageRuleSettings(null, new Set(["subarea-1"]))).toBe(false);
 	});
 
 	it("denies manager writes outside explicit subarea scope", () => {
 		const manageableSubareaIds = new Set(["subarea-1"]);
 
-		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, "subarea-1")).toBe(
-			true,
-		);
-		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, "subarea-2")).toBe(
-			false,
-		);
-		expect(canManageScopedSchedulingSubarea("manager", manageableSubareaIds, undefined)).toBe(
+		expect(
+			canManageScopedSchedulingSubarea("scopedManager", manageableSubareaIds, "subarea-1"),
+		).toBe(true);
+		expect(
+			canManageScopedSchedulingSubarea("scopedManager", manageableSubareaIds, "subarea-2"),
+		).toBe(false);
+		expect(canManageScopedSchedulingSubarea("scopedManager", manageableSubareaIds, undefined)).toBe(
 			false,
 		);
 	});
@@ -106,8 +116,8 @@ describe("settings scheduling access helpers", () => {
 	});
 
 	it("opens every coverage rule, but no shift template or coverage setting, to a workforce admin", async () => {
-		vi.mocked(getCurrentSettingsRouteContext).mockResolvedValueOnce(
-			routeContextFor({ id: "employee-workforce-admin", role: "admin" }) as never,
+		vi.mocked(getCurrentSettingsAccess).mockResolvedValueOnce(
+			callerFor({ id: "employee-workforce-admin", role: "admin" }),
 		);
 
 		const context = await getSchedulingSettingsAccessContext();
@@ -124,8 +134,8 @@ describe("settings scheduling access helpers", () => {
 	});
 
 	it("keeps a scoped manager without an assigned subarea out of coverage rules", async () => {
-		vi.mocked(getCurrentSettingsRouteContext).mockResolvedValueOnce(
-			routeContextFor({ id: "employee-manager", role: "manager" }) as never,
+		vi.mocked(getCurrentSettingsAccess).mockResolvedValueOnce(
+			callerFor({ id: "employee-manager", role: "manager" }),
 		);
 
 		const context = await getSchedulingSettingsAccessContext();
@@ -135,6 +145,18 @@ describe("settings scheduling access helpers", () => {
 			canAccessShiftTemplates: false,
 		});
 		expect(context?.manageableSubareaIds).toEqual(new Set());
+	});
+
+	it("refuses former employees and unapproved members from scheduling settings", async () => {
+		vi.mocked(getCurrentSettingsAccess).mockResolvedValueOnce({
+			userId: "user-1",
+			organizationId: "org-1",
+			settingsAccess: null,
+			membershipRole: null,
+			employee: null,
+		});
+
+		await expect(getSchedulingSettingsAccessContext()).resolves.toBeNull();
 	});
 
 	it("uses directly scoped permission and team-member queries for scheduling access", () => {

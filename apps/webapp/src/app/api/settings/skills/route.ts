@@ -2,24 +2,32 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { skill } from "@/db/schema";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getRequestSession } from "@/lib/auth/request-session";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 
 export async function GET(request: Request) {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const session = await getRequestSession();
 
-	if (!settingsRouteContext) {
+	if (
+		!session?.user ||
+		("ssoRequired" in session && session.ssoRequired === true) ||
+		("mfaRequired" in session && !!session.mfaRequired)
+	) {
 		return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
 	}
 
-	if (settingsRouteContext.accessTier === "member") {
+	if (!session.session.activeOrganizationId) {
+		return NextResponse.json({ success: false, error: "No active organization" }, { status: 400 });
+	}
+
+	const caller = await getCurrentSettingsAccess();
+
+	if (!caller || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return NextResponse.json({ success: false, error: "Manager access required" }, { status: 403 });
 	}
 
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return NextResponse.json({ success: false, error: "No active organization" }, { status: 400 });
-	}
+	const organizationId = caller.organizationId;
 
 	const includeInactive = new URL(request.url).searchParams.get("includeInactive") === "true";
 

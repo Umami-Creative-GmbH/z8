@@ -4,11 +4,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import {
-	customRole,
-	customRolePermission,
-	employeeCustomRole,
-} from "@/db/schema/custom-role";
+import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
 import { drivingLicenceCheck } from "@/db/schema/driving-licence-checks";
 import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceHold } from "@/db/schema/driving-licence-retention";
@@ -16,12 +12,12 @@ import type { AuthorizedOrganizationIdentity } from "@/lib/auth/organization-ide
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
-import type { SettingsAccessTier } from "@/lib/settings-access";
-import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import {
-	type DrivingLicenceDatabase,
-	loadDrivingLicenceVerifierGrant,
-} from "./verifiers";
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
+import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
+import { type DrivingLicenceDatabase, loadDrivingLicenceVerifierGrant } from "./verifiers";
 import {
 	type DrivingLicenceVisibility,
 	HIDDEN_DRIVING_LICENCE_VISIBILITY,
@@ -48,10 +44,7 @@ export function drivingAuthorizationPlanningPermission(
 		.select({ id: customRole.id })
 		.from(employeeCustomRole)
 		.innerJoin(customRole, eq(customRole.id, employeeCustomRole.customRoleId))
-		.innerJoin(
-			customRolePermission,
-			eq(customRolePermission.customRoleId, customRole.id),
-		)
+		.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
 		.where(
 			and(
 				eq(employeeCustomRole.employeeId, input.employeeId),
@@ -81,10 +74,7 @@ async function hasOwnRetainedRecords(
 	return !!row;
 }
 /** Evidence cleanup deletes due check records, so any remaining record is retained. */
-async function hasRetainedEvidence(
-	database: DrivingLicenceDatabase,
-	organizationId: string,
-) {
+async function hasRetainedEvidence(database: DrivingLicenceDatabase, organizationId: string) {
 	const [record] = await database
 		.select({ id: drivingLicenceCheck.id })
 		.from(drivingLicenceCheck)
@@ -115,15 +105,11 @@ export async function readDrivingLicenceVisibility(
 	database: DrivingLicenceDatabase = db,
 ): Promise<DrivingLicenceVisibility> {
 	if (database === db && input.now === undefined)
-		return readRequestDrivingLicenceVisibility(
-			input.organizationId,
-			input.userId,
-		);
+		return readRequestDrivingLicenceVisibility(input.organizationId, input.userId);
 	return readVisibility(input, database);
 }
-const readRequestDrivingLicenceVisibility = cache(
-	(organizationId: string, userId: string) =>
-		readVisibility({ organizationId, userId }, db),
+const readRequestDrivingLicenceVisibility = cache((organizationId: string, userId: string) =>
+	readVisibility({ organizationId, userId }, db),
 );
 async function readVisibility(
 	input: { organizationId: string; userId: string; now?: Instant },
@@ -155,10 +141,7 @@ async function readVisibility(
 		})
 		.from(employee)
 		.where(
-			and(
-				eq(employee.organizationId, input.organizationId),
-				eq(employee.userId, input.userId),
-			),
+			and(eq(employee.organizationId, input.organizationId), eq(employee.userId, input.userId)),
 		)
 		.limit(1);
 	const featureEnabled = policy?.enabled ?? false;
@@ -216,8 +199,7 @@ async function resolveVisibilityForIdentity(
 		return {
 			...HIDDEN_DRIVING_LICENCE_VISIBILITY,
 			settings:
-				isAdministrator &&
-				(await hasRetainedEvidence(database, input.organizationId))
+				isAdministrator && (await hasRetainedEvidence(database, input.organizationId))
 					? "retention_only"
 					: "hidden",
 		};
@@ -230,10 +212,7 @@ async function resolveVisibilityForIdentity(
 	};
 	// Sequential on purpose (see above): the reader may run inside a caller's transaction.
 	// react-doctor-disable-next-line react-doctor/async-parallel
-	const intendedDriver = await isDrivingLicenceIntendedDriver(
-		database,
-		subject,
-	);
+	const intendedDriver = await isDrivingLicenceIntendedDriver(database, subject);
 	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const ownRetainedRecords = await hasOwnRetainedRecords(database, subject);
 	const grant = await loadDrivingLicenceVerifierGrant(database, {
@@ -242,10 +221,7 @@ async function resolveVisibilityForIdentity(
 		now,
 	});
 	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
-	const [permission] = await drivingAuthorizationPlanningPermission(
-		database,
-		subject,
-	);
+	const [permission] = await drivingAuthorizationPlanningPermission(database, subject);
 	return {
 		featureEnabled,
 		intendedDriver,
@@ -256,13 +232,13 @@ async function resolveVisibilityForIdentity(
 	};
 }
 
-/** The settings entry for the settings index and navigation; reads nothing below the org admin tier. */
+/** The settings entry for the settings index and navigation; reads nothing below org admin. */
 export async function loadDrivingLicenceSettingsVisible(
-	accessTier: SettingsAccessTier | null,
+	settingsAccess: SettingsAccess | null,
 	userId: string | null,
 	organizationId: string | null,
 ) {
-	if (accessTier !== "orgAdmin" || !userId || !organizationId) return false;
+	if (!meetsSettingsAccess(settingsAccess, "orgAdmin") || !userId || !organizationId) return false;
 	return showsDrivingLicenceSettings(
 		await readDrivingLicenceVisibility({ organizationId, userId }),
 	);

@@ -90,12 +90,15 @@ describe("getEmployeeSettingsActorContext", () => {
 		).rejects.toThrow("Organization access is inactive");
 	});
 
-	it.each(["owner", "admin"])(
-		"retains bootstrap org-admin access for an approved %s without an employee",
-		async (role) => {
+	it.each([
+		["owner", "owner"],
+		["admin", "orgAdmin"],
+	] as const)(
+		"retains bootstrap %s settings access without an employee",
+		async (role, expectedAccess) => {
 			const actor = await runSettingsActorContext({ role }, null);
 
-			expect(actor.accessTier).toBe("orgAdmin");
+			expect(actor.settingsAccess).toBe(expectedAccess);
 			expect(actor.currentEmployee).toBeNull();
 		},
 	);

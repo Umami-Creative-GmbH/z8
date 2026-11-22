@@ -12,7 +12,6 @@ import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { type SettingsAccess, settingsAccessOf } from "@/lib/organization-action/settings-access";
 import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
-import { isSettingsAccessMembershipRole, resolveSettingsAccessTier } from "@/lib/settings-access";
 import { getRenderUserSettings } from "@/lib/user-preferences/render-snapshot";
 import { mapSessionUserToAuthContextUser } from "./auth-context-user";
 import { organizationForDisplay, organizationSettingsForDisplay } from "./organization-display";
@@ -237,26 +236,6 @@ export const getRenderSettingsAccess = cache(async (): Promise<SettingsAccess | 
 					former: !records.activeProfile.eligible,
 				}
 			: null,
-	});
-});
-
-export const getRenderSettingsAccessTier = cache(async () => {
-	const session = await getRenderSession();
-	if (!session?.user) return null;
-	const records = await getRenderIdentityRecords();
-	const admitted = await getRenderOrganizationAdmission();
-	const membershipRole = records?.activeMembership?.membership.role;
-	const inactive = records?.activeProfile?.eligible === false;
-	return resolveSettingsAccessTier({
-		activeOrganizationId: records?.activeOrganizationId ?? null,
-		membershipRole:
-			admitted && !inactive && isSettingsAccessMembershipRole(membershipRole)
-				? membershipRole
-				: null,
-		employeeRole:
-			admitted && !inactive && records?.activeMembership
-				? (records.activeProfile?.role ?? null)
-				: null,
 	});
 });
 

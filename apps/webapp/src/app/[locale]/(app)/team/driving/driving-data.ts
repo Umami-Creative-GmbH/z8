@@ -1,7 +1,7 @@
 import "server-only";
 
 import { db } from "@/db";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import {
 	drivingDetailsTeamScope,
 	loadTeamDrivingDetails,
@@ -24,19 +24,16 @@ export async function getTeamDrivingDetails(
 	},
 	expected?: { userId: string; organizationId: string },
 ): Promise<TeamDrivingDetailsResult> {
-	const context = await getCurrentSettingsRouteContext();
-	const organizationId = context?.authContext.session.activeOrganizationId;
-	if (!context || !organizationId) return { status: "forbidden" };
+	const caller = await getCurrentSettingsAccess();
+	if (!caller) return { status: "forbidden" };
+	const organizationId = caller.organizationId;
 	// Display scope is a consistency check, never an authorization input.
-	if (
-		expected &&
-		(expected.userId !== context.authContext.user.id || expected.organizationId !== organizationId)
-	)
+	if (expected && (expected.userId !== caller.userId || expected.organizationId !== organizationId))
 		return { status: "forbidden" };
 	const scope = drivingDetailsTeamScope({
-		accessTier: context.accessTier,
+		settingsAccess: caller.settingsAccess,
 		organizationId,
-		employee: context.authContext.employee ?? null,
+		employee: caller.employee ? { id: caller.employee.id, organizationId } : null,
 	});
 	if (!scope) return { status: "forbidden" };
 	const details = await loadTeamDrivingDetails(db, { organizationId, scope, filters });

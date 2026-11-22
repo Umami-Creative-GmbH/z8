@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 	}),
 }));
 vi.mock("@/lib/auth-helpers", () => ({
-	getCurrentSettingsRouteContext: mocks.context,
+	getCurrentSettingsAccess: mocks.context,
 }));
 vi.mock("@/lib/navigation/locale-redirect", () => ({
 	redirectWithLocale: mocks.redirect,
@@ -60,13 +60,16 @@ vi.mock("@/components/settings/vacation/absence-settings-tabs", () => ({
 import LegacyHolidayPage from "../holidays/page";
 import AbsencePage from "./page";
 
-function context(
-	accessTier = "orgAdmin",
-	organizationId: string | null = "org-1",
+function caller(
+	settingsAccess: "member" | "scopedManager" | "orgAdmin" | "owner" | null = "orgAdmin",
+	organizationId = "org-1",
 ) {
 	return {
-		accessTier,
-		authContext: { session: { activeOrganizationId: organizationId } },
+		userId: "user-1",
+		organizationId,
+		settingsAccess,
+		membershipRole: settingsAccess ? "admin" : null,
+		employee: null,
 	};
 }
 async function content(page: ReturnType<typeof AbsencePage>) {
@@ -74,7 +77,7 @@ async function content(page: ReturnType<typeof AbsencePage>) {
 }
 beforeEach(() => {
 	vi.clearAllMocks();
-	mocks.context.mockResolvedValue(context());
+	mocks.context.mockResolvedValue(caller());
 	mocks.settings.mockResolvedValue({ employeeSickNoteUpload: true });
 	mocks.personnel.mockResolvedValue(true);
 	mocks.defaults.mockResolvedValue(undefined);
@@ -93,14 +96,15 @@ describe("combined Absences settings", () => {
 			canManageCategories: true,
 			allowedAssignmentTypes: ["team", "employee"],
 		});
-		expect(
-			page.props.panels.vacation.props.absenceSettings.props,
-		).toMatchObject({ enabled: true, personnelFilesEnabled: true });
+		expect(page.props.panels.vacation.props.absenceSettings.props).toMatchObject({
+			enabled: true,
+			personnelFilesEnabled: true,
+		});
 		expect(mocks.defaults).toHaveBeenCalledWith("org-1");
 		expect(mocks.notice).toHaveBeenCalledWith({}, { organizationId: "org-1" });
 	});
 	it("preserves managers' limited assignments without loading or initializing admin settings", async () => {
-		mocks.context.mockResolvedValue(context("manager"));
+		mocks.context.mockResolvedValue(caller("scopedManager"));
 		const page = await content(AbsencePage());
 		expect(page.props.panels.holidays.props.canManage).toBe(false);
 		expect(page.props.panels.vacation.props).toMatchObject({
@@ -109,34 +113,27 @@ describe("combined Absences settings", () => {
 			absenceSettings: null,
 			notice: null,
 		});
-		for (const load of [
-			mocks.settings,
-			mocks.personnel,
-			mocks.defaults,
-			mocks.notice,
-		])
+		for (const load of [mocks.settings, mocks.personnel, mocks.defaults, mocks.notice])
 			expect(load).not.toHaveBeenCalled();
 	});
-	it.each([null, context("member"), context("orgAdmin", null)])(
-		"rejects access without a manager tier and active organization",
+	it.each([null, caller("member"), caller(null)])(
+		"rejects access without scoped-manager settings access and active organization",
 		async (routeContext) => {
 			mocks.context.mockResolvedValue(routeContext);
-			await expect(content(AbsencePage())).rejects.toThrow(
-				"redirect:/settings",
-			);
+			await expect(content(AbsencePage())).rejects.toThrow("redirect:/settings");
 			expect(mocks.defaults).not.toHaveBeenCalled();
 		},
 	);
 	it("preserves the old Holidays URL through a tab redirect", async () => {
-		mocks.context.mockResolvedValue(context("manager"));
+		mocks.context.mockResolvedValue(caller("scopedManager"));
 		await expect(content(LegacyHolidayPage())).rejects.toThrow(
 			"redirect:/settings/vacation?tab=holidays",
 		);
 	});
-	it("keeps members out of the old Holidays URL", async () => {
-		mocks.context.mockResolvedValue(context("member"));
-		await expect(content(LegacyHolidayPage())).rejects.toThrow(
-			"redirect:/settings",
-		);
+	it("keeps members and former employees out of the old Holidays URL", async () => {
+		for (const denied of [caller("member"), caller(null)]) {
+			mocks.context.mockResolvedValue(denied);
+			await expect(content(LegacyHolidayPage())).rejects.toThrow("redirect:/settings");
+		}
 	});
 });

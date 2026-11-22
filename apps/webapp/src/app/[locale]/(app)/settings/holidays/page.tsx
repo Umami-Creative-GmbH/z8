@@ -1,19 +1,13 @@
 import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 
 async function HolidaySettingsPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext) {
-		return redirectWithLocale("/settings");
-	}
-
-	const { authContext, accessTier } = settingsRouteContext;
-	const organizationId = authContext.session.activeOrganizationId;
-
-	if (accessTier === "member" || !organizationId) {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 

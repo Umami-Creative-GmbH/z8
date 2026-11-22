@@ -1,7 +1,7 @@
 import "server-only";
 
 import { db } from "@/db";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { periodSubmissionOverviewScope } from "@/lib/time-tracking/period-submissions/overview";
 import {
@@ -21,15 +21,15 @@ export interface PeriodSubmissionsAccess {
 }
 
 export async function getPeriodSubmissionsAccess(): Promise<PeriodSubmissionsAccess | null> {
-	const context = await getCurrentSettingsRouteContext();
-	const organizationId = context?.authContext.session.activeOrganizationId;
-	if (!context || !organizationId) return null;
+	const caller = await getCurrentSettingsAccess();
+	if (!caller) return null;
+	const organizationId = caller.organizationId;
 	const scope = periodSubmissionOverviewScope({
-		accessTier: context.accessTier,
+		settingsAccess: caller.settingsAccess,
 		organizationId,
-		employee: context.authContext.employee ?? null,
+		employee: caller.employee ? { id: caller.employee.id, organizationId } : null,
 	});
-	return scope ? { userId: context.authContext.user.id, organizationId, scope: scope.kind } : null;
+	return scope ? { userId: caller.userId, organizationId, scope: scope.kind } : null;
 }
 
 /**
@@ -41,15 +41,15 @@ export async function getPeriodSubmissionOverview(
 	requestedPeriod: string | null,
 	expected: Pick<PeriodSubmissionsAccess, "userId" | "organizationId">,
 ): Promise<PeriodSubmissionOverviewResult> {
-	const context = await getCurrentSettingsRouteContext();
-	const organizationId = context?.authContext.session.activeOrganizationId;
-	if (!context || !organizationId) return { status: "forbidden" };
-	if (expected.userId !== context.authContext.user.id || expected.organizationId !== organizationId)
+	const caller = await getCurrentSettingsAccess();
+	if (!caller) return { status: "forbidden" };
+	const organizationId = caller.organizationId;
+	if (expected.userId !== caller.userId || expected.organizationId !== organizationId)
 		return { status: "forbidden" };
 	const scope = periodSubmissionOverviewScope({
-		accessTier: context.accessTier,
+		settingsAccess: caller.settingsAccess,
 		organizationId,
-		employee: context.authContext.employee ?? null,
+		employee: caller.employee ? { id: caller.employee.id, organizationId } : null,
 	});
 	if (!scope) return { status: "forbidden" };
 	const overview = await loadPeriodSubmissionOverview(db, {
