@@ -51,6 +51,7 @@ describe("AcceptInvitationPage", () => {
 		mockState.findInvitation.mockResolvedValue({
 			email: "invitee@example.com",
 			expiresAt: new Date("2026-08-11T00:00:00.000Z"),
+			organizationId: "org-1",
 			organization: { name: "Acme" },
 			role: "member",
 			status: "pending",
@@ -95,19 +96,15 @@ describe("AcceptInvitationPage", () => {
 				user: { columns: { name: true } },
 			},
 		});
-		expect(mockState.instantFromDate).toHaveBeenCalledWith(
-			new Date("2026-08-11T00:00:00.000Z"),
-		);
+		expect(mockState.instantFromDate).toHaveBeenCalledWith(new Date("2026-08-11T00:00:00.000Z"));
 		expect(mockState.nowInstant).toHaveBeenCalledOnce();
-		expect(mockState.compareInstants).toHaveBeenCalledWith(
-			"expiration-instant",
-			"current-instant",
-		);
+		expect(mockState.compareInstants).toHaveBeenCalledWith("expiration-instant", "current-instant");
 		expect(form.props).toEqual({
 			invitation: {
 				email: "invitee@example.com",
 				inviterName: "Ada Admin",
 				isExpired: true,
+				organizationId: "org-1",
 				organizationName: "Acme",
 				role: "member",
 				status: "pending",
