@@ -1,7 +1,10 @@
+import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { SurchargeManagement } from "@/components/settings/surcharge-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -19,10 +22,16 @@ async function SurchargeSettingsPageContent() {
 		return redirectWithLocale("/settings");
 	}
 
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+
 	return (
 		<SurchargeManagement
 			organizationId={organizationId}
 			canManage={accessTier === "orgAdmin"}
+			organizationTimezone={org?.timezone || "UTC"}
 		/>
 	);
 }

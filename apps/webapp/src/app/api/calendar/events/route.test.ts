@@ -82,9 +82,23 @@ vi.mock("@/lib/work-balance/service", () => ({
 
 const { GET } = await import("./route");
 
-function createRequest(url: string): NextRequest {
+function createRequest(
+	url: string,
+	options?: { localeCookie?: string; acceptLanguage?: string },
+): NextRequest {
+	const headers = new Headers();
+	if (options?.acceptLanguage) {
+		headers.set("accept-language", options.acceptLanguage);
+	}
 	return {
 		nextUrl: new URL(url),
+		headers,
+		cookies: {
+			get: (name: string) =>
+				name === "NEXT_LOCALE" && options?.localeCookie
+					? { name, value: options.localeCookie }
+					: undefined,
+		},
 	} as unknown as NextRequest;
 }
 
@@ -145,6 +159,8 @@ describe("GET /api/calendar/events", () => {
 				employeeId: "employee-1",
 			},
 			"Europe/Berlin",
+			undefined,
+			{ locale: "en", timeFormat: undefined },
 		);
 	});
 
@@ -274,6 +290,8 @@ describe("GET /api/calendar/events", () => {
 				employeeId: "employee-2",
 			},
 			"America/New_York",
+			undefined,
+			{ locale: "en", timeFormat: undefined },
 		);
 	});
 
@@ -532,13 +550,11 @@ describe("GET /api/calendar/events", () => {
 			color: "#10b981",
 			metadata: { durationMinutes: 60, employeeName: "Ada" },
 		};
-		mockState.getWorkPeriodsForMonth.mockImplementation(
-			async (month: number) => {
-				if (month === 7) return [duplicatePeriod];
-				if (month === 8) return [duplicatePeriod, septemberPeriod];
-				return [];
-			},
-		);
+		mockState.getWorkPeriodsForMonth.mockImplementation(async (month: number) => {
+			if (month === 7) return [duplicatePeriod];
+			if (month === 8) return [duplicatePeriod, septemberPeriod];
+			return [];
+		});
 
 		const response = await GET(
 			createRequest(
@@ -553,12 +569,16 @@ describe("GET /api/calendar/events", () => {
 			2026,
 			{ organizationId: "org-1", employeeId: "employee-1" },
 			"Europe/Berlin",
+			undefined,
+			{ locale: "en", timeFormat: undefined },
 		);
 		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
 			8,
 			2026,
 			{ organizationId: "org-1", employeeId: "employee-1" },
 			"Europe/Berlin",
+			undefined,
+			{ locale: "en", timeFormat: undefined },
 		);
 		expect(body.total).toBe(2);
 		expect(body.dailyActualMinutes).toEqual({
@@ -587,12 +607,39 @@ describe("GET /api/calendar/events", () => {
 			2026,
 			{ organizationId: "org-1", employeeId: "employee-1" },
 			"Europe/Berlin",
+			undefined,
+			{ locale: "en", timeFormat: undefined },
 		);
 		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
 			0,
 			2027,
 			{ organizationId: "org-1", employeeId: "employee-1" },
 			"Europe/Berlin",
+			undefined,
+			{ locale: "en", timeFormat: undefined },
+		);
+	});
+
+	it("forwards active viewer locale cookie and timeFormat preference to getWorkPeriodsForMonth", async () => {
+		mockState.findUserSettings
+			.mockResolvedValueOnce({ timezone: "Europe/Berlin" })
+			.mockResolvedValueOnce({ locale: "en", timeFormat: "24h" });
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&month=4&showWorkPeriods=true",
+				{ localeCookie: "de" },
+			),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			4,
+			2026,
+			{ organizationId: "org-1", employeeId: "employee-1" },
+			"Europe/Berlin",
+			undefined,
+			{ locale: "de", timeFormat: "24h" },
 		);
 	});
 

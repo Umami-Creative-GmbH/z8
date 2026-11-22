@@ -32,6 +32,7 @@ import {
 
 type SurchargeResultsTableProps = {
 	isLoading: boolean;
+	organizationTimezone: string;
 	rows: SurchargeCalculationWithDetails[];
 	expandedId: string | null;
 	onExpandedChange: (next: string | null) => void;
@@ -39,6 +40,7 @@ type SurchargeResultsTableProps = {
 
 export function SurchargeResultsTable({
 	isLoading,
+	organizationTimezone,
 	rows,
 	expandedId,
 	onExpandedChange,
@@ -124,16 +126,24 @@ export function SurchargeResultsTable({
 										)}
 									</Button>
 								</TableCell>
-								<TableCell>{formatDate(calculation.calculationDate, locale)}</TableCell>
+								<TableCell>
+									{formatDate(calculation.calculationDate, locale, organizationTimezone)}
+								</TableCell>
 								<TableCell>{employeeName}</TableCell>
 								<TableCell>{formatMinutesCell(calculation.baseMinutes)}</TableCell>
 								<TableCell>{formatMinutesCell(calculation.qualifyingMinutes)}</TableCell>
 								<TableCell>{formatMinutesCell(calculation.surchargeMinutes)}</TableCell>
 								<TableCell>{formatPercentage(calculation.appliedPercentage)}</TableCell>
-								<TableCell>{formatTimestamp(calculation.createdAt, locale)}</TableCell>
+								<TableCell>
+									{formatTimestamp(calculation.createdAt, locale, organizationTimezone)}
+								</TableCell>
 							</TableRow>
 							{isExpanded ? (
-								<CalculationDetailsRow calculation={calculation} detailsId={detailsId} />
+								<CalculationDetailsRow
+									calculation={calculation}
+									detailsId={detailsId}
+									organizationTimezone={organizationTimezone}
+								/>
 							) : null}
 						</Fragment>
 					);

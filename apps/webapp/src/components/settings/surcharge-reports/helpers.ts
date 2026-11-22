@@ -11,8 +11,8 @@ import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-
 import type { SurchargeCalculationWithDetails } from "@/lib/surcharges/validation";
 import type { FilterValues } from "./types";
 
-export function getDefaultFilters(): FilterValues {
-	const today = Temporal.Now.plainDateISO();
+export function getDefaultFilters(timezone = "UTC"): FilterValues {
+	const today = Temporal.Now.plainDateISO(timezone);
 	const yearMonth = today.toPlainYearMonth();
 
 	return {
@@ -22,10 +22,14 @@ export function getDefaultFilters(): FilterValues {
 	};
 }
 
-export function parseFilterDate(value: string, boundary: "start" | "end"): Instant | null {
+export function parseFilterDate(
+	value: string,
+	boundary: "start" | "end",
+	timezone = "UTC",
+): Instant | null {
 	try {
 		const plainDate = parsePlainDate(value);
-		const range = localDayRange(plainDate.toString(), Temporal.Now.timeZoneId());
+		const range = localDayRange(plainDate.toString(), timezone);
 		return boundary === "start" ? range.start : range.endExclusive.subtract({ milliseconds: 1 });
 	} catch {
 		return null;
@@ -43,26 +47,26 @@ export function formatMinutesCell(minutes: number) {
 	return `${minutes} min`;
 }
 
-export function formatDate(value: Date, locale = "en") {
+export function formatDate(value: Date, locale = "en", timezone = "UTC") {
 	return formatInstant(
 		instantFromDate(value),
 		{
 			locale,
-			timezone: Temporal.Now.timeZoneId(),
+			timezone,
 			timeFormat: localeDefaultTimeFormat(locale),
 		},
 		"dateMedium",
 	);
 }
 
-export function formatTimestamp(value: Date | string, locale = "en") {
+export function formatTimestamp(value: Date | string, locale = "en", timezone = "UTC") {
 	try {
 		const instant = typeof value === "string" ? parseInstant(value) : instantFromDate(value);
 		return formatInstant(
 			instant,
 			{
 				locale,
-				timezone: Temporal.Now.timeZoneId(),
+				timezone,
 				timeFormat: localeDefaultTimeFormat(locale),
 			},
 			"dateTimeMedium",

@@ -101,9 +101,12 @@ function surchargeReportReducer(
 	}
 }
 
-export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
+export function SurchargeReports({
+	organizationId,
+	organizationTimezone = "UTC",
+}: SurchargeReportsProps) {
 	const { t } = useTranslate();
-	const [defaultFilters] = useState(getDefaultFilters);
+	const [defaultFilters] = useState(() => getDefaultFilters(organizationTimezone));
 	const [state, dispatch] = useReducer(surchargeReportReducer, defaultFilters, (activeFilters) => ({
 		activeFilters,
 		dateError: null,
@@ -120,8 +123,8 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const runLoadCalculations = async (filters: FilterValues, background = false) => {
 		const requestId = latestRequestId.current + 1;
 		latestRequestId.current = requestId;
-		const startDate = parseFilterDate(filters.startDate, "start");
-		const endDate = parseFilterDate(filters.endDate, "end");
+		const startDate = parseFilterDate(filters.startDate, "start", organizationTimezone);
+		const endDate = parseFilterDate(filters.endDate, "end", organizationTimezone);
 
 		if (!startDate || !endDate || compareInstants(startDate, endDate) > 0) {
 			loadedRowsOrganizationIdRef.current = null;
@@ -347,6 +350,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 				<CardContent>
 					<SurchargeResultsTable
 						isLoading={state.isLoading}
+						organizationTimezone={organizationTimezone}
 						rows={displayRows}
 						expandedId={state.expandedId}
 						onExpandedChange={(id) => dispatch({ type: "setExpandedId", id })}

@@ -5,9 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-	deleteSurchargeModel,
-} from "@/app/[locale]/(app)/settings/surcharges/actions";
+import { deleteSurchargeModel } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -28,11 +26,13 @@ import { SurchargeReports } from "./surcharge-reports/surcharge-reports-root";
 interface SurchargeManagementProps {
 	organizationId: string;
 	canManage: boolean;
+	organizationTimezone?: string;
 }
 
 export function SurchargeManagement({
 	organizationId,
 	canManage,
+	organizationTimezone = "UTC",
 }: SurchargeManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -43,12 +43,11 @@ export function SurchargeManagement({
 
 	// Dialog states
 	const [modelDialogOpen, setModelDialogOpen] = useState(false);
-	const [editingModel, setEditingModel] =
-		useState<SurchargeModelWithRules | null>(null);
+	const [editingModel, setEditingModel] = useState<SurchargeModelWithRules | null>(null);
 	const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-	const [assignmentType, setAssignmentType] = useState<
-		"organization" | "team" | "employee"
-	>("organization");
+	const [assignmentType, setAssignmentType] = useState<"organization" | "team" | "employee">(
+		"organization",
+	);
 
 	// Delete confirmation states
 	const [deleteModelId, setDeleteModelId] = useState<string | null>(null);
@@ -62,9 +61,7 @@ export function SurchargeManagement({
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.surcharges.models.list(organizationId),
 				});
-				toast.success(
-					t("settings.surcharges.modelDeleted", "Surcharge model deleted"),
-				);
+				toast.success(t("settings.surcharges.modelDeleted", "Surcharge model deleted"));
 				setDeleteModelId(null);
 			} else {
 				// The dialog stays open with the reason so the deletion can be retried.
@@ -77,9 +74,7 @@ export function SurchargeManagement({
 			}
 		},
 		onError: () => {
-			setDeleteModelError(
-				t("settings.surcharges.deleteFailed", "Failed to delete model"),
-			);
+			setDeleteModelError(t("settings.surcharges.deleteFailed", "Failed to delete model"));
 		},
 	});
 
@@ -130,8 +125,7 @@ export function SurchargeManagement({
 			isRetrying={modelsQuery.isFetching}
 		/>
 	);
-	const deleteModelName =
-		models.find((model) => model.id === deleteModelId)?.name ?? "";
+	const deleteModelName = models.find((model) => model.id === deleteModelId)?.name ?? "";
 
 	if (isLoading) {
 		return (
@@ -165,15 +159,9 @@ export function SurchargeManagement({
 			{pageHeader}
 			{modelsQuery.isError ? modelError : null}
 
-			<Tabs
-				value={activeTab}
-				onValueChange={setActiveTab}
-				className="min-w-0 gap-4"
-			>
+			<Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 gap-4">
 				<TabsList>
-					<TabsTrigger value="models">
-						{t("settings.surcharges.tabModels", "Models")}
-					</TabsTrigger>
+					<TabsTrigger value="models">{t("settings.surcharges.tabModels", "Models")}</TabsTrigger>
 					<TabsTrigger value="assignments">
 						{t("settings.surcharges.tabAssignments", "Assignments")}
 					</TabsTrigger>
@@ -210,7 +198,10 @@ export function SurchargeManagement({
 				</TabsContent>
 
 				<TabsContent value="reports" className="space-y-4">
-					<SurchargeReports organizationId={organizationId} />
+					<SurchargeReports
+						organizationId={organizationId}
+						organizationTimezone={organizationTimezone}
+					/>
 				</TabsContent>
 			</Tabs>
 

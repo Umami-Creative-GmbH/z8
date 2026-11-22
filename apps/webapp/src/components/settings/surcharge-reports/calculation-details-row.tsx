@@ -10,9 +10,14 @@ import { formatMinutes, formatPercentage, formatTimestamp } from "./helpers";
 type CalculationDetailsRowProps = {
 	calculation: SurchargeCalculationWithDetails;
 	detailsId: string;
+	organizationTimezone: string;
 };
 
-export function CalculationDetailsRow({ calculation, detailsId }: CalculationDetailsRowProps) {
+export function CalculationDetailsRow({
+	calculation,
+	detailsId,
+	organizationTimezone,
+}: CalculationDetailsRowProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const details = calculation.calculationDetails;
@@ -29,7 +34,7 @@ export function CalculationDetailsRow({ calculation, detailsId }: CalculationDet
 							</div>
 							<div className="text-muted-foreground">
 								{details
-									? `${formatTimestamp(details.workPeriodStartTime, locale)} - ${formatTimestamp(details.workPeriodEndTime, locale)}`
+									? `${formatTimestamp(details.workPeriodStartTime, locale, organizationTimezone)} - ${formatTimestamp(details.workPeriodEndTime, locale, organizationTimezone)}`
 									: "-"}
 							</div>
 						</div>
@@ -38,7 +43,9 @@ export function CalculationDetailsRow({ calculation, detailsId }: CalculationDet
 								{t("settings.surcharges.reports.details.calculatedAt", "Calculated at")}
 							</div>
 							<div className="text-muted-foreground">
-								{details ? formatTimestamp(details.calculatedAt, locale) : "-"}
+								{details
+									? formatTimestamp(details.calculatedAt, locale, organizationTimezone)
+									: "-"}
 							</div>
 						</div>
 						<div>

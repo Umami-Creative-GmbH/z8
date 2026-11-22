@@ -53,4 +53,13 @@ describe("payroll export calendar boundaries", () => {
 		expect(serialized).toBe("2026-05-01");
 		expect(parsePayrollLogicalDate(serialized).equals(parsePlainDate("2026-05-01"))).toBe(true);
 	});
+
+	it("parses legacy UTC Z-suffixed ISO strings from stored export jobs", () => {
+		expect(
+			parsePayrollLogicalDate("2026-05-01T00:00:00.000Z").equals(parsePlainDate("2026-05-01")),
+		).toBe(true);
+		expect(
+			parsePayrollLogicalDate("2026-05-31T23:59:59.999Z").equals(parsePlainDate("2026-05-31")),
+		).toBe(true);
+	});
 });

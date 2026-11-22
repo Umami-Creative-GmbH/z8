@@ -3,6 +3,7 @@ import {
 	compareInstants,
 	type Instant,
 	type PlainDate,
+	parseInstant,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { parseTimeZone } from "@/lib/timezone/validation";
@@ -23,7 +24,11 @@ export function parsePayrollLogicalDate(value: string): PlainDate {
 	try {
 		return Temporal.PlainDate.from(trimmed);
 	} catch {
-		throw new Error("Invalid payroll logical date");
+		try {
+			return parseInstant(trimmed).toZonedDateTimeISO("UTC").toPlainDate();
+		} catch {
+			throw new Error("Invalid payroll logical date");
+		}
 	}
 }
 

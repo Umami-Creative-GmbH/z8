@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import {
 	buildPeriodRequest,
 	formatDisplayedPeriod,
 	formatPeriodLabel,
 	startOfPayrollPeriod,
 } from "./state";
+import { payrollPeriodActions } from "./use-payroll-summary";
 
 describe("payroll workspace period state (Temporal + locale)", () => {
 	it("computes ISO Monday week starts across month and year boundaries", () => {
@@ -48,5 +50,75 @@ describe("payroll workspace period state (Temporal + locale)", () => {
 		).toBe("2026-10-01 - 2026-10-31");
 		expect(formatDisplayedPeriod("2026-10-01", "2026-10-31", "month", "en")).toBe("October 2026");
 		expect(formatDisplayedPeriod("2026-10-01", "2026-10-31", "month", "de")).toBe("Oktober 2026");
+	});
+
+	it("preserves active German locale across payroll period navigation actions", () => {
+		const refreshSummary = vi.fn();
+		const dispatch = vi.fn();
+		const summary = {
+			period: {
+				start: "2026-02-01",
+				end: "2026-02-28",
+				label: "Februar 2026",
+			},
+		} as unknown as PayrollWorkspaceSummary;
+
+		const actions = payrollPeriodActions({
+			dateMode: "month",
+			dispatch,
+			endDate: "2026-03-31",
+			filteredEmployeeIds: undefined,
+			locale: "de",
+			refreshSummary,
+			startDate: "2026-03-01",
+			summary,
+		});
+
+		actions.navigatePeriod("next");
+		expect(refreshSummary).toHaveBeenLastCalledWith({
+			startDate: "2026-03-01",
+			endDate: "2026-03-31",
+			label: "März 2026",
+		});
+
+		actions.applyDateMode("month");
+		const modeReq = refreshSummary.mock.calls.at(-1)?.[0];
+		expect(modeReq.label).toBe(
+			formatPeriodLabel(
+				parsePlainDate(modeReq.startDate),
+				parsePlainDate(modeReq.endDate),
+				"month",
+				"de",
+			),
+		);
+
+		actions.returnToCurrentPeriod();
+		const currentReq = refreshSummary.mock.calls.at(-1)?.[0];
+		expect(currentReq.label).toBe(
+			formatPeriodLabel(
+				parsePlainDate(currentReq.startDate),
+				parsePlainDate(currentReq.endDate),
+				"month",
+				"de",
+			),
+		);
+
+		// Clearing a custom date input still delegates cleanly to refreshSummary without throwing
+		const blankCustom = payrollPeriodActions({
+			dateMode: "custom",
+			dispatch,
+			endDate: "",
+			filteredEmployeeIds: undefined,
+			locale: "de",
+			refreshSummary,
+			startDate: "",
+			summary,
+		});
+		expect(() => blankCustom.applyCustomRange()).not.toThrow();
+		expect(refreshSummary).toHaveBeenLastCalledWith({
+			startDate: "",
+			endDate: "",
+			label: " - ",
+		});
 	});
 });

@@ -102,6 +102,7 @@ export function payrollPeriodActions({
 	dispatch,
 	endDate,
 	filteredEmployeeIds,
+	locale = "en",
 	refreshSummary,
 	startDate,
 	summary,
@@ -110,6 +111,7 @@ export function payrollPeriodActions({
 	dispatch: React.Dispatch<PayrollWorkspaceAction>;
 	endDate: string;
 	filteredEmployeeIds: string[] | undefined;
+	locale?: string;
 	refreshSummary: (
 		nextRequest: PayrollPeriodRequest,
 		employeeIds?: string[],
@@ -128,6 +130,7 @@ export function payrollPeriodActions({
 			buildPeriodRequest(
 				startOfPayrollPeriod(Temporal.Now.plainDateISO("UTC"), nextMode),
 				nextMode,
+				locale,
 			),
 			filteredEmployeeIds,
 			() => dispatch({ type: "dateModeChanged", dateMode: nextMode }),
@@ -144,7 +147,7 @@ export function payrollPeriodActions({
 				? startOfPayrollPeriod(currentStart.add({ months: amount }), "month")
 				: startOfPayrollPeriod(currentStart.add({ weeks: amount }), "week");
 
-		refreshSummary(buildPeriodRequest(nextStart, dateMode));
+		refreshSummary(buildPeriodRequest(nextStart, dateMode, locale));
 	}
 
 	function returnToCurrentPeriod() {
@@ -154,18 +157,25 @@ export function payrollPeriodActions({
 			buildPeriodRequest(
 				startOfPayrollPeriod(Temporal.Now.plainDateISO("UTC"), dateMode),
 				dateMode,
+				locale,
 			),
 		);
 	}
 
 	function applyCustomRange() {
-		const start = parsePlainDate(startDate);
-		const end = parsePlainDate(endDate);
+		let label = `${startDate} - ${endDate}`;
+		try {
+			const start = parsePlainDate(startDate);
+			const end = parsePlainDate(endDate);
+			label = formatPeriodLabel(start, end, "custom", locale);
+		} catch {
+			// Let the server action return its validation error when a date input is blank or malformed.
+		}
 
 		refreshSummary({
 			startDate,
 			endDate,
-			label: formatPeriodLabel(start, end, "custom"),
+			label,
 		});
 	}
 
