@@ -140,8 +140,8 @@ describe("SettingsNav", () => {
 		);
 	});
 
-	it("keeps Report Share Links clickable when Projects is off and active share links exist", () => {
-		render(
+	it("keeps Report Share Links clickable when Projects is off and active share links exist, and hides it once none remain", () => {
+		const { rerender } = render(
 			<SidebarProvider>
 				<SettingsNav
 					settingsAccess="orgAdmin"
@@ -154,6 +154,19 @@ describe("SettingsNav", () => {
 		expect(screen.getByRole("link", { name: "Report Share Links" }).getAttribute("href")).toBe(
 			"/settings/report-share-links",
 		);
+
+		rerender(
+			<SidebarProvider>
+				<SettingsNav
+					settingsAccess="orgAdmin"
+					billingEnabled={true}
+					settingsCapabilities={{ hasActiveReportShareLinks: false }}
+				/>
+			</SidebarProvider>,
+		);
+
+		expect(screen.queryByRole("link", { name: "Report Share Links" })).toBeNull();
+		expect(screen.queryByText("Report Share Links")).toBeNull();
 	});
 
 	it("explains a switched-off feature entry and links admins and owners to its switch", () => {

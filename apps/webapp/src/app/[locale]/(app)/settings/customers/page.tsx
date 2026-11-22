@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
 
 async function CustomerSettingsPageContent() {
 	const caller = await getCurrentSettingsAccess();
@@ -12,6 +13,8 @@ async function CustomerSettingsPageContent() {
 	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
+
+	await requireOrganizationFeatureEnabled(caller.organizationId, "projectsEnabled");
 
 	return (
 		<CustomerManagement

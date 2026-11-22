@@ -3387,6 +3387,10 @@
     "reportShareLinks": {
       "description": "See and revoke every link that shares a project or customer report",
       "pageDescription": "Links that show a frozen snapshot of a project or customer report to someone outside Z8. Revoking a link stops it at once and deletes its snapshot.",
+      "projectsDisabledNotice": {
+        "description": "Projects is currently turned off for this organization, so no new report share links can be created. You can still review and revoke existing links here.",
+        "title": "Projects is turned off"
+      },
       "title": "Report Share Links"
     },
     "search": {

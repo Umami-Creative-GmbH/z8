@@ -5,6 +5,7 @@ import { ShiftTemplateManagement } from "@/components/settings/shift-template-ma
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
 import {
 	getSchedulingSettingsAccessContext,
 	getScopedSchedulingLocationsForSettings,
@@ -19,11 +20,12 @@ async function ShiftTemplatesPageContent() {
 
 	if (
 		!accessContext ||
-		(!accessContext.canAccessShiftTemplates &&
-			!accessContext.canAccessCoverageRules)
+		(!accessContext.canAccessShiftTemplates && !accessContext.canAccessCoverageRules)
 	) {
 		return redirectWithLocale("/settings");
 	}
+
+	await requireOrganizationFeatureEnabled(accessContext.organizationId, "shiftsEnabled");
 
 	const [templateLocations, coverageLocations] = await Promise.all([
 		accessContext.canAccessShiftTemplates
@@ -43,9 +45,7 @@ async function ShiftTemplatesPageContent() {
 		<SettingsTabbedPage
 			key={accessContext.organizationId}
 			title={t("settings.navigation.shiftPlanning.title", "Shift Planning")}
-			defaultTab={
-				accessContext.canAccessShiftTemplates ? "templates" : "coverage"
-			}
+			defaultTab={accessContext.canAccessShiftTemplates ? "templates" : "coverage"}
 			tabs={[
 				...(accessContext.canAccessShiftTemplates
 					? [
@@ -88,9 +88,7 @@ async function ShiftTemplatesPageContent() {
 												? [...accessContext.manageableSubareaIds]
 												: null
 										}
-										canManageCoverageSettings={
-											accessContext.canManageCoverageSettings
-										}
+										canManageCoverageSettings={accessContext.canManageCoverageSettings}
 									/>
 								),
 							},

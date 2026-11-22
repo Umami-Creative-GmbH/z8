@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	access: vi.fn(),
 	locations: vi.fn(),
+	requireOrganizationFeatureEnabled: vi.fn(),
 	redirect: vi.fn((url: string) => {
 		throw new Error(`redirect:${url}`);
 	}),
@@ -10,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/settings-scheduling-access", () => ({
 	getSchedulingSettingsAccessContext: mocks.access,
 	getScopedSchedulingLocationsForSettings: mocks.locations,
+}));
+vi.mock("@/lib/settings/feature-flags.server", () => ({
+	requireOrganizationFeatureEnabled: mocks.requireOrganizationFeatureEnabled,
 }));
 vi.mock("@/lib/navigation/locale-redirect", () => ({
 	redirectWithLocale: mocks.redirect,
@@ -30,6 +34,7 @@ const renderPage = () => PlanningPage().props.children.type();
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.locations.mockResolvedValue([]);
+	mocks.requireOrganizationFeatureEnabled.mockResolvedValue(undefined);
 	mocks.access.mockResolvedValue({
 		organizationId: "org-1",
 		canAccessShiftTemplates: true,
@@ -91,7 +96,18 @@ describe("merged Shift Planning permissions", () => {
 		async (access) => {
 			mocks.access.mockResolvedValue(access);
 			await expect(renderPage()).rejects.toThrow("redirect:/settings");
+			expect(mocks.requireOrganizationFeatureEnabled).not.toHaveBeenCalled();
 			expect(mocks.locations).not.toHaveBeenCalled();
 		},
 	);
+	it("returns notFound without loading locations when shiftsEnabled is off", async () => {
+		mocks.requireOrganizationFeatureEnabled.mockRejectedValue(new Error("NEXT_NOT_FOUND"));
+		await expect(renderPage()).rejects.toThrow("NEXT_NOT_FOUND");
+		expect(mocks.requireOrganizationFeatureEnabled).toHaveBeenCalledWith("org-1", "shiftsEnabled");
+		expect(mocks.locations).not.toHaveBeenCalled();
+	});
+	it("checks shiftsEnabled before rendering when shift planning is enabled", async () => {
+		await renderPage();
+		expect(mocks.requireOrganizationFeatureEnabled).toHaveBeenCalledWith("org-1", "shiftsEnabled");
+	});
 });

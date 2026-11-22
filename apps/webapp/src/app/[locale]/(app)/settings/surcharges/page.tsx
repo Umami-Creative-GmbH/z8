@@ -8,6 +8,7 @@ import { organization } from "@/db/auth-schema";
 import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
 
 async function SurchargeSettingsPageContent() {
 	const caller = await getCurrentSettingsAccess();
@@ -15,6 +16,8 @@ async function SurchargeSettingsPageContent() {
 	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
+
+	await requireOrganizationFeatureEnabled(caller.organizationId, "surchargesEnabled");
 
 	const org = await db.query.organization.findFirst({
 		where: eq(organization.id, caller.organizationId),
