@@ -55,6 +55,10 @@ _Avoid_: Session, shift, time entry pair
 A work period that has started and not yet ended; the employee is clocked in.
 _Avoid_: Active session, running timer
 
+**Stale live work**:
+Live work that started more than 24 hours ago. It is likely a forgotten clock-out and may need review, but it blocks nothing.
+_Avoid_: Stale active work, forgotten clock-out, long-running session
+
 **Completed work**:
 A work period that has ended and now counts in the employee's work record.
 _Avoid_: Finished entries, closed session
