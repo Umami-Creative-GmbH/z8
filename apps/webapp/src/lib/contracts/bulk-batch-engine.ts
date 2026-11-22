@@ -755,6 +755,45 @@ async function findExistingBatchHistoryInTx(
 	return existing ?? null;
 }
 
+async function lockClaimableBatchItemInTx(
+	tx: ContractWriteTx,
+	organizationId: string,
+	itemId: string,
+): Promise<
+	| { readonly claimable: true }
+	| {
+			readonly claimable: false;
+			readonly status: ContractChangeBatchItemStatus;
+			readonly result: Record<string, unknown> | null;
+	  }
+> {
+	const [row] = await tx
+		.select({
+			status: contractChangeBatchItem.status,
+			result: contractChangeBatchItem.result,
+		})
+		.from(contractChangeBatchItem)
+		.where(
+			and(
+				eq(contractChangeBatchItem.id, itemId),
+				eq(contractChangeBatchItem.organizationId, organizationId),
+			),
+		)
+		.for("update");
+
+	if (!row) {
+		return { claimable: false, status: "skipped", result: null };
+	}
+	if (row.status !== "pending" && row.status !== "running") {
+		return {
+			claimable: false,
+			status: row.status,
+			result: (row.result as Record<string, unknown> | null) ?? null,
+		};
+	}
+	return { claimable: true };
+}
+
 async function markBatchItemOutcomeInTx(
 	tx: ContractWriteTx,
 	input: {
@@ -766,8 +805,8 @@ async function markBatchItemOutcomeInTx(
 		errorMessage?: string | null;
 		now: Date;
 	},
-): Promise<void> {
-	await tx
+): Promise<boolean> {
+	const updated = await tx
 		.update(contractChangeBatchItem)
 		.set({
 			status: input.status,
@@ -782,8 +821,35 @@ async function markBatchItemOutcomeInTx(
 			and(
 				eq(contractChangeBatchItem.id, input.itemId),
 				eq(contractChangeBatchItem.organizationId, input.organizationId),
+				inArray(contractChangeBatchItem.status, ["pending", "running"]),
 			),
-		);
+		)
+		.returning({ id: contractChangeBatchItem.id });
+	return updated.length > 0;
+}
+
+function isSourceBatchItemUniqueViolation(error: unknown): boolean {
+	let cursor: unknown = error;
+	const seen = new Set<unknown>();
+	while (cursor && typeof cursor === "object" && !seen.has(cursor)) {
+		seen.add(cursor);
+		const candidate = cursor as {
+			code?: unknown;
+			constraint?: unknown;
+			detail?: unknown;
+			message?: unknown;
+			cause?: unknown;
+		};
+		if (candidate.code === "23505") {
+			const hay =
+				`${String(candidate.constraint ?? "")} ${String(candidate.detail ?? "")} ${String(candidate.message ?? "")}`.toLowerCase();
+			if (hay.includes("source_batch_item_id") || hay.includes("batch_item")) {
+				return true;
+			}
+		}
+		cursor = candidate.cause;
+	}
+	return false;
 }
 
 async function executeSparseContractMutationInTx(
@@ -798,7 +864,22 @@ async function executeSparseContractMutationInTx(
 		sourceTemplateVersionId?: string | null;
 		now: Date;
 	},
-): Promise<{ status: "completed" | "skipped"; result: Record<string, unknown> }> {
+): Promise<{
+	status: ContractChangeBatchItemStatus;
+	result: Record<string, unknown>;
+	alreadyTerminal: boolean;
+}> {
+	// 0. Serialize concurrent runners on the batch item row first (strictly before locking
+	//    `employee`), and exit immediately if another runner already finalized this item.
+	const lockedItem = await lockClaimableBatchItemInTx(tx, input.organizationId, input.item.id);
+	if (!lockedItem.claimable) {
+		return {
+			status: lockedItem.status,
+			result: lockedItem.result ?? {},
+			alreadyTerminal: true,
+		};
+	}
+
 	// 1. Check crash-recovery deduplication FIRST before evaluating current divergences,
 	//    because a pre-crash commit for this exact batch item would already appear on the employee!
 	const existingHistory = await findExistingBatchHistoryInTx(
@@ -818,7 +899,7 @@ async function executeSparseContractMutationInTx(
 			result: dedupResult,
 			now: input.now,
 		});
-		return { status: "completed", result: dedupResult };
+		return { status: "completed", result: dedupResult, alreadyTerminal: false };
 	}
 
 	const prior = await loadPriorSparseStateInTx(tx, {
@@ -983,7 +1064,7 @@ async function executeSparseContractMutationInTx(
 			result: skippedResult,
 			now: input.now,
 		});
-		return { status: "skipped", result: skippedResult };
+		return { status: "skipped", result: skippedResult, alreadyTerminal: false };
 	}
 
 	const commitResult = await commitContractChangeInTx(tx, {
@@ -1029,7 +1110,7 @@ async function executeSparseContractMutationInTx(
 		result: completedResult,
 		now: input.now,
 	});
-	return { status: "completed", result: completedResult };
+	return { status: "completed", result: completedResult, alreadyTerminal: false };
 }
 
 function buildTemplateChanges(
@@ -1334,6 +1415,7 @@ export async function runContractChangeBatch(
 		for (const item of chunk) {
 			const itemNow = nowFn();
 			let itemStatus: ContractChangeBatchItemStatus = "completed";
+			let encounteredTerminalItem = false;
 
 			try {
 				if (claimedBatch.operationKind === "bulk_template_apply") {
@@ -1358,14 +1440,22 @@ export async function runContractChangeBatch(
 						}),
 					);
 					itemStatus = outcome.status;
-					if (outcome.status === "completed") anyContractMutationCompleted = true;
+					if (outcome.alreadyTerminal) {
+						encounteredTerminalItem = true;
+					} else if (outcome.status === "completed") {
+						anyContractMutationCompleted = true;
+					}
 				} else if (claimedBatch.operationKind === "bulk_adopt_default") {
 					const batchPayload = claimedBatch.payload as unknown as BulkAdoptDefaultBatchPayload;
 					const effectiveFromDate = parseIsoCalendarDate(
 						batchPayload.effectiveFromDate,
 						"effectiveFromDate",
 					);
-					await db.transaction(async (tx) => {
+					const adoptOutcome = await db.transaction(async (tx) => {
+						const lockedItem = await lockClaimableBatchItemInTx(tx, input.organizationId, item.id);
+						if (!lockedItem.claimable) {
+							return { status: lockedItem.status, alreadyTerminal: true };
+						}
 						const commitResult = await adoptContractDefaultInTx(tx, {
 							organizationId: input.organizationId,
 							employeeId: item.employeeId,
@@ -1387,9 +1477,14 @@ export async function runContractChangeBatch(
 							},
 							now: itemNow,
 						});
+						return { status: "completed" as const, alreadyTerminal: false };
 					});
-					itemStatus = "completed";
-					anyContractMutationCompleted = true;
+					itemStatus = adoptOutcome.status;
+					if (adoptOutcome.alreadyTerminal) {
+						encounteredTerminalItem = true;
+					} else {
+						anyContractMutationCompleted = true;
+					}
 				} else if (claimedBatch.operationKind === "bulk_terms_update") {
 					const batchPayload = claimedBatch.payload as unknown as BulkTermsUpdateBatchPayload;
 					const effectiveFromDate = parseIsoCalendarDate(
@@ -1411,7 +1506,11 @@ export async function runContractChangeBatch(
 						}),
 					);
 					itemStatus = outcome.status;
-					if (outcome.status === "completed") anyContractMutationCompleted = true;
+					if (outcome.alreadyTerminal) {
+						encounteredTerminalItem = true;
+					} else if (outcome.status === "completed") {
+						anyContractMutationCompleted = true;
+					}
 				} else if (claimedBatch.operationKind === "csv_contract_import") {
 					const itemPayload = item.payload as unknown as CsvContractBatchItemPayload;
 					const effectiveFromDate = parseIsoCalendarDate(
@@ -1430,7 +1529,11 @@ export async function runContractChangeBatch(
 						}),
 					);
 					itemStatus = outcome.status;
-					if (outcome.status === "completed") anyContractMutationCompleted = true;
+					if (outcome.alreadyTerminal) {
+						encounteredTerminalItem = true;
+					} else if (outcome.status === "completed") {
+						anyContractMutationCompleted = true;
+					}
 				} else if (claimedBatch.operationKind === "csv_departure_import") {
 					if (!departureCommands) {
 						throw new Error("Departure commands missing for csv_departure_import");
@@ -1441,8 +1544,25 @@ export async function runContractChangeBatch(
 						organizationId: input.organizationId,
 					};
 
-					if (itemPayload.action === "skip_unchanged") {
-						await db.transaction((tx) =>
+					const [currentItemRow] = await db
+						.select({ status: contractChangeBatchItem.status })
+						.from(contractChangeBatchItem)
+						.where(
+							and(
+								eq(contractChangeBatchItem.id, item.id),
+								eq(contractChangeBatchItem.organizationId, input.organizationId),
+							),
+						)
+						.limit(1);
+
+					if (
+						!currentItemRow ||
+						(currentItemRow.status !== "pending" && currentItemRow.status !== "running")
+					) {
+						itemStatus = currentItemRow?.status ?? "skipped";
+						encounteredTerminalItem = true;
+					} else if (itemPayload.action === "skip_unchanged") {
+						const updated = await db.transaction((tx) =>
 							markBatchItemOutcomeInTx(tx, {
 								organizationId: input.organizationId,
 								itemId: item.id,
@@ -1452,6 +1572,7 @@ export async function runContractChangeBatch(
 							}),
 						);
 						itemStatus = "skipped";
+						if (!updated) encounteredTerminalItem = true;
 					} else if (itemPayload.action === "schedule_departure") {
 						const res = await departureCommands.scheduleDeparture(actor, {
 							employeeId: item.employeeId,
@@ -1461,7 +1582,7 @@ export async function runContractChangeBatch(
 							replacementEmployeeId: itemPayload.replacementEmployeeId,
 							acknowledgeUnassignedDuties: itemPayload.acknowledgeUnassignedDuties,
 						});
-						await db.transaction((tx) =>
+						const updated = await db.transaction((tx) =>
 							markBatchItemOutcomeInTx(tx, {
 								organizationId: input.organizationId,
 								itemId: item.id,
@@ -1471,6 +1592,7 @@ export async function runContractChangeBatch(
 							}),
 						);
 						itemStatus = "completed";
+						if (!updated) encounteredTerminalItem = true;
 					} else if (itemPayload.action === "offboard_immediately") {
 						const res = await departureCommands.offboardImmediately(actor, {
 							employeeId: item.employeeId,
@@ -1479,7 +1601,7 @@ export async function runContractChangeBatch(
 							acknowledgeUnassignedDuties: itemPayload.acknowledgeUnassignedDuties,
 						});
 						if (res.status === "blocked") {
-							await db.transaction((tx) =>
+							const updated = await db.transaction((tx) =>
 								markBatchItemOutcomeInTx(tx, {
 									organizationId: input.organizationId,
 									itemId: item.id,
@@ -1491,8 +1613,9 @@ export async function runContractChangeBatch(
 								}),
 							);
 							itemStatus = "failed";
+							if (!updated) encounteredTerminalItem = true;
 						} else {
-							await db.transaction((tx) =>
+							const updated = await db.transaction((tx) =>
 								markBatchItemOutcomeInTx(tx, {
 									organizationId: input.organizationId,
 									itemId: item.id,
@@ -1502,6 +1625,7 @@ export async function runContractChangeBatch(
 								}),
 							);
 							itemStatus = "completed";
+							if (!updated) encounteredTerminalItem = true;
 						}
 					} else if (itemPayload.action === "record_past_departure") {
 						const res = await departureCommands.recordPastDeparture(actor, {
@@ -1512,7 +1636,7 @@ export async function runContractChangeBatch(
 							acknowledgeUnassignedDuties: itemPayload.acknowledgeUnassignedDuties,
 						});
 						if (res.status === "blocked") {
-							await db.transaction((tx) =>
+							const updated = await db.transaction((tx) =>
 								markBatchItemOutcomeInTx(tx, {
 									organizationId: input.organizationId,
 									itemId: item.id,
@@ -1524,8 +1648,9 @@ export async function runContractChangeBatch(
 								}),
 							);
 							itemStatus = "failed";
+							if (!updated) encounteredTerminalItem = true;
 						} else {
-							await db.transaction((tx) =>
+							const updated = await db.transaction((tx) =>
 								markBatchItemOutcomeInTx(tx, {
 									organizationId: input.organizationId,
 									itemId: item.id,
@@ -1535,6 +1660,7 @@ export async function runContractChangeBatch(
 								}),
 							);
 							itemStatus = "completed";
+							if (!updated) encounteredTerminalItem = true;
 						}
 					} else if (itemPayload.action === "correct_past_departure_date") {
 						if (!itemPayload.expectedDepartureId || itemPayload.expectedRevision === null) {
@@ -1551,7 +1677,7 @@ export async function runContractChangeBatch(
 							requestId: item.id,
 							reason: itemPayload.reason,
 						});
-						await db.transaction((tx) =>
+						const updated = await db.transaction((tx) =>
 							markBatchItemOutcomeInTx(tx, {
 								organizationId: input.organizationId,
 								itemId: item.id,
@@ -1561,6 +1687,7 @@ export async function runContractChangeBatch(
 							}),
 						);
 						itemStatus = "completed";
+						if (!updated) encounteredTerminalItem = true;
 					} else if (itemPayload.action === "record_historical_departure_date") {
 						const res = await departureCommands.recordHistoricalDepartureDate(actor, {
 							employeeId: item.employeeId,
@@ -1568,7 +1695,7 @@ export async function runContractChangeBatch(
 							requestId: item.id,
 							reason: itemPayload.reason,
 						});
-						await db.transaction((tx) =>
+						const updated = await db.transaction((tx) =>
 							markBatchItemOutcomeInTx(tx, {
 								organizationId: input.organizationId,
 								itemId: item.id,
@@ -1578,21 +1705,80 @@ export async function runContractChangeBatch(
 							}),
 						);
 						itemStatus = "completed";
+						if (!updated) encounteredTerminalItem = true;
 					}
 				}
 			} catch (itemError) {
-				const { code, message } = extractErrorDetails(itemError);
-				itemStatus = "failed";
-				await db.transaction((tx) =>
-					markBatchItemOutcomeInTx(tx, {
-						organizationId: input.organizationId,
-						itemId: item.id,
-						status: "failed",
-						errorCode: code,
-						errorMessage: message,
-						now: itemNow,
-					}),
-				);
+				if (isSourceBatchItemUniqueViolation(itemError)) {
+					const deduped = await db.transaction(async (tx) => {
+						const lockedItem = await lockClaimableBatchItemInTx(tx, input.organizationId, item.id);
+						if (!lockedItem.claimable) {
+							return { status: lockedItem.status, alreadyTerminal: true };
+						}
+						const existingHistory = await findExistingBatchHistoryInTx(
+							tx,
+							input.organizationId,
+							item.id,
+						);
+						if (!existingHistory) {
+							return null;
+						}
+						const updated = await markBatchItemOutcomeInTx(tx, {
+							organizationId: input.organizationId,
+							itemId: item.id,
+							status: "completed",
+							result: {
+								employmentHistoryId: existingHistory.id,
+								deduplicated: true,
+							},
+							now: itemNow,
+						});
+						return { status: "completed" as const, alreadyTerminal: !updated };
+					});
+					if (deduped) {
+						itemStatus = deduped.status;
+						if (deduped.alreadyTerminal) {
+							encounteredTerminalItem = true;
+						}
+					} else {
+						const { code, message } = extractErrorDetails(itemError);
+						itemStatus = "failed";
+						const updated = await db.transaction((tx) =>
+							markBatchItemOutcomeInTx(tx, {
+								organizationId: input.organizationId,
+								itemId: item.id,
+								status: "failed",
+								errorCode: code,
+								errorMessage: message,
+								now: itemNow,
+							}),
+						);
+						if (!updated) encounteredTerminalItem = true;
+					}
+				} else {
+					const { code, message } = extractErrorDetails(itemError);
+					itemStatus = "failed";
+					const updated = await db.transaction((tx) =>
+						markBatchItemOutcomeInTx(tx, {
+							organizationId: input.organizationId,
+							itemId: item.id,
+							status: "failed",
+							errorCode: code,
+							errorMessage: message,
+							now: itemNow,
+						}),
+					);
+					if (!updated) encounteredTerminalItem = true;
+				}
+			}
+
+			if (encounteredTerminalItem) {
+				const stillOwnsLease = await sendHeartbeat();
+				processedSinceHeartbeat = 0;
+				if (!stillOwnsLease) {
+					break;
+				}
+				continue;
 			}
 
 			processedInThisRun += 1;

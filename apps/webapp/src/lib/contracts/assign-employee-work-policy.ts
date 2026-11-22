@@ -1,16 +1,18 @@
 import { and, eq, sql } from "drizzle-orm";
 import { employeeEmploymentHistory, workPolicy, workPolicyAssignment } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { type ContractWriteTx, parseIsoCalendarDate } from "./contract-validation";
-import {
-	clearPolicyAssignmentWindowInTx,
-	type PolicyAssignmentScopeTarget,
-	replacePolicyAssignmentWindowInTx,
-} from "./policy-assignment-intervals";
+import { replacePolicyAssignmentWindowInTx } from "./policy-assignment-intervals";
 
 export interface AssignEmployeeWorkPolicyInput {
 	readonly organizationId: string;
@@ -171,12 +173,23 @@ export async function assignEmployeeWorkPolicyInTx(
 		});
 	}
 
+	const orgTimezone = await loadOrganizationTimezone(
+		tx as unknown as DatabaseClient,
+		input.organizationId,
+	);
+	const nowInstant = input.now ? instantFromDate(input.now) : systemClock.nowInstant();
+	const orgTodayDate = plainDateAt(nowInstant, orgTimezone).toString();
 	const effectiveFromDate = input.effectiveFromDate
 		? parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate")
-		: plainDateAt(
-				systemClock.nowInstant(),
-				await loadOrganizationTimezone(tx as unknown as DatabaseClient, input.organizationId),
-			).toString();
+		: orgTodayDate;
+
+	if (!input.actorIsOrgAdmin && effectiveFromDate < orgTodayDate) {
+		throw new ValidationError({
+			message: `Scoped managers cannot assign work policies on a past date (${effectiveFromDate} is before ${orgTodayDate}).`,
+			field: "effectiveFromDate",
+			refusal: "effective_date_in_past",
+		});
+	}
 
 	await refuseIfAdminPinnedContractTermsPolicyInTx(tx, {
 		organizationId: input.organizationId,
@@ -238,12 +251,13 @@ export interface CloseManualWorkPolicyAssignmentResult {
 }
 
 /**
- * Closes a manual or legacy work policy assignment from `effectiveFromDate` (defaulting to
- * the organization's today) onward through `clearPolicyAssignmentWindowInTx`, preserving all
- * historical days before `effectiveFromDate`.
+ * Closes a single manual or legacy work policy assignment from `effectiveFromDate` (defaulting
+ * to the organization's today) onward without disturbing sibling or future assignments in the
+ * same scope, preserving all historical days before `effectiveFromDate`.
  *
  * Refuses to remove projection rows owned by `contract_default` or `employment_terms` (for
- * all actors) and enforces A1 scoped-manager pin protection atomically inside the transaction.
+ * all actors) and enforces A1 scoped-manager pin and past-date protection atomically inside
+ * the transaction.
  */
 export async function closeManualWorkPolicyAssignmentInTx(
 	tx: ContractWriteTx,
@@ -321,12 +335,23 @@ export async function closeManualWorkPolicyAssignmentInTx(
 		});
 	}
 
+	const orgTimezone = await loadOrganizationTimezone(
+		tx as unknown as DatabaseClient,
+		input.organizationId,
+	);
+	const nowInstant = input.now ? instantFromDate(input.now) : systemClock.nowInstant();
+	const orgTodayDate = plainDateAt(nowInstant, orgTimezone).toString();
 	const effectiveFromDate = input.effectiveFromDate
 		? parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate")
-		: plainDateAt(
-				systemClock.nowInstant(),
-				await loadOrganizationTimezone(tx as unknown as DatabaseClient, input.organizationId),
-			).toString();
+		: orgTodayDate;
+
+	if (!input.actorIsOrgAdmin && effectiveFromDate < orgTodayDate) {
+		throw new ValidationError({
+			message: `Scoped managers cannot close work policy assignments on a past date (${effectiveFromDate} is before ${orgTodayDate}).`,
+			field: "effectiveFromDate",
+			refusal: "effective_date_in_past",
+		});
+	}
 
 	if (assignment.assignmentType === "employee" && assignment.employeeId) {
 		await refuseIfAdminPinnedContractTermsPolicyInTx(tx, {
@@ -337,37 +362,39 @@ export async function closeManualWorkPolicyAssignmentInTx(
 		});
 	}
 
-	let target: PolicyAssignmentScopeTarget;
-	if (assignment.assignmentType === "employee" && assignment.employeeId) {
-		target = {
-			assignmentType: "employee",
-			teamId: null,
-			employeeId: assignment.employeeId,
-			priority: 2,
-		};
-	} else if (assignment.assignmentType === "team" && assignment.teamId) {
-		target = {
-			assignmentType: "team",
-			teamId: assignment.teamId,
-			employeeId: null,
-			priority: 1,
-		};
-	} else {
-		target = {
-			assignmentType: "organization",
-			teamId: null,
-			employeeId: null,
-			priority: 0,
-		};
+	// Act strictly on the locked target row so no sibling/future rows (manual, employment_terms,
+	// or contract_default) in the same scope are ever capped or deactivated.
+	if (assignment.effectiveFromDate >= effectiveFromDate) {
+		await tx
+			.update(workPolicyAssignment)
+			.set({
+				isActive: false,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(workPolicyAssignment.id, assignment.id),
+					eq(workPolicyAssignment.organizationId, input.organizationId),
+				),
+			);
+	} else if (
+		assignment.effectiveUntilDate === null ||
+		assignment.effectiveUntilDate > effectiveFromDate
+	) {
+		await tx
+			.update(workPolicyAssignment)
+			.set({
+				effectiveUntilDate: effectiveFromDate,
+				effectiveUntil: utcMidnight(parsePlainDate(effectiveFromDate)),
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(workPolicyAssignment.id, assignment.id),
+					eq(workPolicyAssignment.organizationId, input.organizationId),
+				),
+			);
 	}
-
-	await clearPolicyAssignmentWindowInTx(tx, {
-		organizationId: input.organizationId,
-		target,
-		effectiveFromDate,
-		effectiveUntilDate: null,
-		now,
-	});
 
 	return {
 		assignmentId: assignment.id,

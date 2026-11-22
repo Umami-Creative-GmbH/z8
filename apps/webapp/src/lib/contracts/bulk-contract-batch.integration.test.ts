@@ -533,6 +533,87 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 		expect(allAssignments).toHaveLength(15);
 	});
 
+	it("prevents concurrent stale/reclaimed dual runners from failing or overwriting completed items (N3)", async () => {
+		const policyId = await seedSimplePolicy("Dual Runner Policy 39h", "39.00");
+		const employees = [];
+		for (let i = 0; i < 6; i++) {
+			employees.push(await seedEmployee({ key: `dual-${String(i).padStart(2, "0")}` }));
+		}
+
+		const t0 = new Date("2026-07-01T14:00:00.000Z");
+		const submitted = await submitContractChangeBatch(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			requestId: randomUUID(),
+			operationKind: "bulk_terms_update",
+			payload: {
+				effectiveFromDate: "2026-09-01",
+				overwritePersonalDivergences: false,
+				changes: { workPolicyId: policyId, weeklyContractMinutes: 2340 },
+				changeReason: "Concurrent dual-runner safety test",
+			},
+			items: employees.map((e) => ({ employeeId: e.employeeId, payload: {} })),
+			now: t0,
+			skipImmediateExecution: true,
+		});
+
+		// Launch Runner A and pause it mid-chunk after item #1 so its lease expires, then launch
+		// Runner B concurrently while Runner A resumes on the exact same chunk!
+		let releaseRunnerA: (() => void) | null = null;
+		const runnerAPaused = new Promise<void>((resolve) => {
+			releaseRunnerA = resolve;
+		});
+		let runnerACrossedItem1: (() => void) | null = null;
+		const waitRunnerAItem1 = new Promise<void>((resolve) => {
+			runnerACrossedItem1 = resolve;
+		});
+
+		const runnerAPromise = runContractChangeBatch(db, {
+			organizationId: ORG_ID,
+			batchId: submitted.batch.id,
+			now: () => t0,
+			leaseDurationMs: 1_000,
+			skipBalanceDirtyNotification: true,
+			onAfterItemProcessed: async ({ processedInThisRun }) => {
+				if (processedInThisRun === 1) {
+					runnerACrossedItem1?.();
+					await runnerAPaused;
+				}
+				return undefined;
+			},
+		});
+
+		await waitRunnerAItem1;
+
+		// Runner B reclaims the expired lease (t0 + 5s) and runs concurrently as Runner A unblocks!
+		const runnerBPromise = runContractChangeBatch(db, {
+			organizationId: ORG_ID,
+			batchId: submitted.batch.id,
+			now: () => new Date(t0.getTime() + 5_000),
+			leaseDurationMs: 60_000,
+			skipBalanceDirtyNotification: true,
+		});
+		releaseRunnerA?.();
+
+		const [resA, resB] = await Promise.all([runnerAPromise, runnerBPromise]);
+		expect(resA.claimed).toBe(true);
+		expect(resB.claimed).toBe(true);
+		expect(resA.leaseLost).toBe(true);
+
+		const detail = await getContractChangeBatch(db, ORG_ID, submitted.batch.id, { limit: 20 });
+		expect(detail?.batch.status).toBe("completed");
+		expect(detail?.batch.completedItems).toBe(6);
+		expect(detail?.batch.failedItems).toBe(0);
+		expect(detail?.batch.skippedItems).toBe(0);
+		expect(detail?.items.every((i) => i.status === "completed")).toBe(true);
+
+		const historyRows = await db
+			.select()
+			.from(employeeEmploymentHistory)
+			.where(eq(employeeEmploymentHistory.organizationId, ORG_ID));
+		expect(historyRows).toHaveLength(6);
+	});
+
 	it("executes all 3 bulk contract operations with read-only dry-run previews: template apply (preserve vs overwrite), adopt_default for legacy terms, and bulk operational update", async () => {
 		const orgPolicyId = await seedSimplePolicy("Org Default 40h", "40.00");
 		const templatePolicyId = await seedSimplePolicy("Retail Shift 32h", "32.00");

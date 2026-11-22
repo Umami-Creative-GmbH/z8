@@ -65,6 +65,7 @@ const {
 	deleteWorkPolicyAssignment,
 	duplicateWorkPolicy,
 	getWorkPolicy,
+	setDefaultWorkPolicy,
 	updateWorkPolicy,
 } = await import("./actions");
 
@@ -682,5 +683,240 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 		expect(afterDeleteRows).toHaveLength(1);
 		expect(afterDeleteRows[0]?.policy_id).toBe(policyA);
 		expect(afterDeleteRows[0]?.effective_from_date).toBe("2025-01-01");
+	});
+
+	it("preserves existing contract default operational settings & custom days when changing only workPolicyId (N1)", async () => {
+		const { policyId: policyA } = await seedPolicyWithAllArbzgFields("Rich Default Policy A");
+		const { policyId: policyB } = await seedPolicyWithAllArbzgFields("Rich Default Policy B");
+		const { policyId: policyC } = await seedPolicyWithAllArbzgFields("Rich Default Policy C");
+
+		const { db } = await import("@/db");
+		const { scheduleContractDefault } = await import("@/lib/contracts");
+
+		// Seed a rich organization contract default with custom weekly hours, custom days, hybrid model,
+		// explicit presence override, and trust_based balance mode
+		await scheduleContractDefault(db, {
+			organizationId: ids.organization,
+			actorUserId: ids.adminUser,
+			scope: "organization",
+			effectiveFromDate: "2025-01-01",
+			workPolicyId: policyA,
+			weeklyContractMinutes: 2100,
+			workModel: "hybrid",
+			presenceOverride: "exempt",
+			balanceMode: "trust_based",
+			scheduleMode: "custom_days",
+			scheduleSource: "policy",
+			customDays: [
+				{ dayOfWeek: "monday", minutesPerDay: 480, isWorkDay: true, latestClockIn: "09:30" },
+				{ dayOfWeek: "tuesday", minutesPerDay: 480, isWorkDay: true, latestClockIn: null },
+				{ dayOfWeek: "wednesday", minutesPerDay: 480, isWorkDay: true, latestClockIn: null },
+				{ dayOfWeek: "thursday", minutesPerDay: 480, isWorkDay: true, latestClockIn: null },
+				{ dayOfWeek: "friday", minutesPerDay: 180, isWorkDay: true, latestClockIn: null },
+				{ dayOfWeek: "saturday", minutesPerDay: 0, isWorkDay: false, latestClockIn: null },
+				{ dayOfWeek: "sunday", minutesPerDay: 0, isWorkDay: false, latestClockIn: null },
+			],
+		});
+
+		// 1) Reassign org work policy via createWorkPolicyAssignment
+		const assignRes = await createWorkPolicyAssignment({
+			policyId: policyB,
+			assignmentType: "organization",
+		});
+		expect(assignRes.success).toBe(true);
+
+		// 2) Reassign org default work policy via setDefaultWorkPolicy
+		const setDefaultRes = await setDefaultWorkPolicy(policyC);
+		expect(setDefaultRes.success).toBe(true);
+
+		const {
+			rows: [activeOrgDefault],
+		} = await admin.query<{
+			template_version_id: string;
+			work_policy_id: string | null;
+			weekly_contract_minutes: number | null;
+			work_model: string | null;
+			presence_override: string;
+			balance_mode: string;
+			schedule_mode: string;
+			schedule_source: string;
+		}>(
+			`SELECT cd.template_version_id,
+			        v.work_policy_id,
+			        v.weekly_contract_minutes,
+			        v.work_model,
+			        v.presence_override,
+			        v.balance_mode,
+			        v.schedule_mode,
+			        v.schedule_source
+			 FROM contract_default cd
+			 JOIN contract_template_version v ON v.id = cd.template_version_id
+			 WHERE cd.organization_id = $1
+			   AND cd.scope = 'organization'
+			   AND cd.is_active = true
+			   AND cd.effective_until_date IS NULL
+			 ORDER BY cd.effective_from_date DESC
+			 LIMIT 1`,
+			[ids.organization],
+		);
+		expect(activeOrgDefault).toMatchObject({
+			work_policy_id: policyC,
+			weekly_contract_minutes: 2100,
+			work_model: "hybrid",
+			presence_override: "exempt",
+			balance_mode: "trust_based",
+			schedule_mode: "custom_days",
+			schedule_source: "policy",
+		});
+
+		const { rows: customDays } = await admin.query<{
+			day_of_week: string;
+			minutes_per_day: number;
+			is_work_day: boolean;
+			latest_clock_in: string | null;
+		}>(
+			`SELECT day_of_week, minutes_per_day, is_work_day, latest_clock_in
+			 FROM contract_template_version_day
+			 WHERE template_version_id = $1`,
+			[activeOrgDefault.template_version_id],
+		);
+		expect(customDays).toHaveLength(7);
+		expect(customDays.find((d) => d.day_of_week === "monday")).toMatchObject({
+			minutes_per_day: 480,
+			latest_clock_in: "09:30",
+		});
+		expect(customDays.find((d) => d.day_of_week === "friday")).toMatchObject({
+			minutes_per_day: 180,
+		});
+	});
+
+	it("deletes only the targeted manual assignment without capping/deactivating sibling or future employment_terms rows (N2)", async () => {
+		const { policyId: policyA } = await seedPolicyWithAllArbzgFields("Single-Row Policy A");
+		const { policyId: policyB } = await seedPolicyWithAllArbzgFields("Single-Row Policy B");
+
+		const {
+			rows: [empRow],
+		} = await admin.query<{ id: string }>(
+			`SELECT id FROM employee WHERE organization_id = $1 AND user_id = $2 LIMIT 1`,
+			[ids.organization, ids.adminUser],
+		);
+
+		// Case 1: Manual row A [2025-01-01, 2099-12-01) + future manual row B [2099-12-01, null).
+		// Deleting future row B must NOT cap row A at today!
+		const {
+			rows: [rowA],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_until, effective_from_date, effective_until_date,
+				source_kind, is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'employee', $3, 2,
+				'2025-01-01T00:00:00Z', '2099-12-01T00:00:00Z', '2025-01-01', '2099-12-01',
+				'manager_assignment', true, $4, now()
+			) RETURNING id`,
+			[policyA, ids.organization, empRow.id, ids.adminUser],
+		);
+		const {
+			rows: [rowB],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'employee', $3, 2,
+				'2099-12-01T00:00:00Z', '2099-12-01', 'manager_assignment', true, $4, now()
+			) RETURNING id`,
+			[policyB, ids.organization, empRow.id, ids.adminUser],
+		);
+
+		const delFutureManual = await deleteWorkPolicyAssignment(rowB.id);
+		expect(delFutureManual.success).toBe(true);
+
+		const { rows: afterCase1 } = await admin.query<{
+			id: string;
+			effective_from_date: string;
+			effective_until_date: string | null;
+			is_active: boolean;
+		}>(
+			`SELECT id, effective_from_date::text, effective_until_date::text, is_active
+			 FROM work_policy_assignment
+			 WHERE id IN ($1, $2)
+			 ORDER BY effective_from_date`,
+			[rowA.id, rowB.id],
+		);
+		expect(afterCase1).toEqual([
+			{
+				id: rowA.id,
+				effective_from_date: "2025-01-01",
+				effective_until_date: "2099-12-01",
+				is_active: true,
+			},
+			{
+				id: rowB.id,
+				effective_from_date: "2099-12-01",
+				effective_until_date: null,
+				is_active: false,
+			},
+		]);
+
+		// Case 2: Future employment_terms row C [2099-12-01, null) coexists with manual row A [2025-01-01, 2099-12-01).
+		// Deleting manual row A must cap ONLY row A at today and leave future employment_terms row C active & untouched!
+		const {
+			rows: [histRow],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO employee_employment_history (
+				organization_id, employee_id, valid_from, valid_from_date, contract_type, review_state, created_by, updated_at
+			) VALUES (
+				$1, $2, '2099-12-01T00:00:00Z', '2099-12-01', 'fixed', 'confirmed', $3, now()
+			) RETURNING id`,
+			[ids.organization, empRow.id, ids.adminUser],
+		);
+		const {
+			rows: [rowC],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, source_employment_history_id,
+				is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'employee', $3, 2,
+				'2099-12-01T00:00:00Z', '2099-12-01', 'employment_terms', $4,
+				true, $5, now()
+			) RETURNING id`,
+			[policyB, ids.organization, empRow.id, histRow.id, ids.adminUser],
+		);
+
+		const delManualA = await deleteWorkPolicyAssignment(rowA.id);
+		expect(delManualA.success).toBe(true);
+
+		const { rows: afterCase2 } = await admin.query<{
+			id: string;
+			source_kind: string;
+			effective_from_date: string;
+			effective_until_date: string | null;
+			is_active: boolean;
+		}>(
+			`SELECT id, source_kind, effective_from_date::text, effective_until_date::text, is_active
+			 FROM work_policy_assignment
+			 WHERE id IN ($1, $2)
+			 ORDER BY effective_from_date`,
+			[rowA.id, rowC.id],
+		);
+		expect(afterCase2[0]).toMatchObject({
+			id: rowA.id,
+			source_kind: "manager_assignment",
+			effective_from_date: "2025-01-01",
+			is_active: true,
+		});
+		expect(afterCase2[0]?.effective_until_date).not.toBe("2099-12-01");
+		expect(afterCase2[0]?.effective_until_date).not.toBeNull();
+		expect(afterCase2[1]).toEqual({
+			id: rowC.id,
+			source_kind: "employment_terms",
+			effective_from_date: "2099-12-01",
+			effective_until_date: null,
+			is_active: true,
+		});
 	});
 });

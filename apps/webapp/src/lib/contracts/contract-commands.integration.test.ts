@@ -968,9 +968,26 @@ describe("contract defaults, templates, employee divergence & fixed-term command
 			actorUserId: MANAGER_USER_ID,
 			actorIsOrgAdmin: false,
 			effectiveFromDate: "2026-02-01",
+			now: new Date("2026-01-15T10:00:00Z"),
 		});
 		expect(managerAssign.sourceKind).toBe("manager_assignment");
 		expect("hourlyRate" in managerAssign).toBe(false);
+
+		// N4: Scoped managers MUST NOT backdate a work policy assignment before org today
+		await expect(
+			assignEmployeeWorkPolicy(db, {
+				organizationId: ORG_ID,
+				employeeId: emp.employeeId,
+				policyId: policyA,
+				actorUserId: MANAGER_USER_ID,
+				actorIsOrgAdmin: false,
+				effectiveFromDate: "2026-01-14",
+				now: new Date("2026-01-15T10:00:00Z"),
+			}),
+		).rejects.toMatchObject({
+			_tag: "ValidationError",
+			refusal: "effective_date_in_past",
+		});
 
 		const resolvedManagerPolicy = await resolveEffectiveContractOnDay(db, {
 			organizationId: ORG_ID,
@@ -997,6 +1014,7 @@ describe("contract defaults, templates, employee divergence & fixed-term command
 				actorUserId: MANAGER_USER_ID,
 				actorIsOrgAdmin: false,
 				effectiveFromDate: "2026-03-15",
+				now: new Date("2026-03-01T10:00:00Z"),
 			}),
 		).rejects.toMatchObject({
 			_tag: "ValidationError",

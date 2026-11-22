@@ -13,7 +13,7 @@ import {
 	workPolicyScheduleDay,
 	workPolicyVersion,
 } from "@/db/schema";
-import { scheduleContractDefault } from "@/lib/contracts/contract-defaults";
+import { scheduleContractDefaultPolicyUpdate } from "@/lib/contracts/contract-defaults";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
@@ -317,7 +317,7 @@ export async function setOrganizationDefaultWorkPolicy(
 	const orgTimezone = await loadOrganizationTimezone(db, input.organizationId);
 	const effectiveFromDate = plainDateAt(systemClock.nowInstant(), orgTimezone).toString();
 
-	await scheduleContractDefault(db, {
+	await scheduleContractDefaultPolicyUpdate(db, {
 		organizationId: input.organizationId,
 		actorUserId: input.actorUserId,
 		scope: "organization",

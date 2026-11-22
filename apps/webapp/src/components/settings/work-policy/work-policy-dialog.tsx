@@ -19,7 +19,6 @@ import {
 	type WorkPolicyWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { todayIsoDate } from "@/components/settings/contracts/contract-formatters";
 import { WorkSchedulePreview } from "@/components/settings/work-policy/work-policy-preview";
 import { generateDaysFromPreset } from "@/components/settings/work-policy/work-policy-preview-utils";
 import {
@@ -47,6 +46,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { BreakRuleEditor } from "../break-rule-editor";
@@ -63,16 +63,11 @@ interface WorkPolicyDialogProps {
 }
 
 function todayIsoDateInTimezone(timeZone?: string): string {
-	if (!timeZone) return todayIsoDate();
+	const zone = timeZone || "UTC";
 	try {
-		return new Intl.DateTimeFormat("en-CA", {
-			timeZone,
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-		}).format(new Date());
+		return plainDateAt(systemClock.nowInstant(), zone).toString();
 	} catch {
-		return todayIsoDate();
+		return plainDateAt(systemClock.nowInstant(), "UTC").toString();
 	}
 }
 

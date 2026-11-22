@@ -577,6 +577,132 @@ export async function scheduleContractDefault(
 	return db.transaction((tx) => scheduleContractDefaultInTx(tx, input));
 }
 
+export interface ScheduleContractDefaultPolicyUpdateInput {
+	readonly organizationId: string;
+	readonly actorUserId: string;
+	readonly scope: ContractDefaultScope;
+	readonly teamId?: string | null;
+	readonly effectiveFromDate: string;
+	readonly workPolicyId: string;
+	readonly now?: Date;
+}
+
+/**
+ * Updates only the `workPolicyId` of an organization or primary-team default contract
+ * effective on `effectiveFromDate`, carrying forward every operational field (`weeklyContractMinutes`,
+ * `scheduleMode`, `customDays`, `workModel`, `presenceOverride`, `balanceMode`, `scheduleSource`)
+ * from the active default in force on that date so no existing default terms are silently wiped.
+ */
+export async function scheduleContractDefaultPolicyUpdateInTx(
+	tx: ContractWriteTx,
+	input: ScheduleContractDefaultPolicyUpdateInput,
+): Promise<ScheduleContractDefaultResult> {
+	const effectiveFromDate = parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate");
+	const teamId = input.scope === "team" ? (input.teamId ?? null) : null;
+	const lockKey = buildScopeAdvisoryLockKey(input.organizationId, input.scope, teamId);
+	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+
+	const scopeWhere =
+		input.scope === "team" && teamId
+			? and(
+					eq(contractDefault.organizationId, input.organizationId),
+					eq(contractDefault.scope, "team"),
+					eq(contractDefault.teamId, teamId),
+					eq(contractDefault.isActive, true),
+				)
+			: and(
+					eq(contractDefault.organizationId, input.organizationId),
+					eq(contractDefault.scope, "organization"),
+					isNull(contractDefault.teamId),
+					eq(contractDefault.isActive, true),
+				);
+
+	const activeDefaults = await tx
+		.select({
+			id: contractDefault.id,
+			templateVersionId: contractDefault.templateVersionId,
+			effectiveFromDate: contractDefault.effectiveFromDate,
+			effectiveUntilDate: contractDefault.effectiveUntilDate,
+			createdAt: contractDefault.createdAt,
+		})
+		.from(contractDefault)
+		.where(scopeWhere);
+
+	const currentDefault = activeDefaults
+		.filter(
+			(row) =>
+				row.effectiveFromDate <= effectiveFromDate &&
+				(row.effectiveUntilDate === null || row.effectiveUntilDate > effectiveFromDate),
+		)
+		.sort((a, b) => {
+			if (b.effectiveFromDate !== a.effectiveFromDate) {
+				return b.effectiveFromDate.localeCompare(a.effectiveFromDate);
+			}
+			const createdCmp = b.createdAt.getTime() - a.createdAt.getTime();
+			if (createdCmp !== 0) return createdCmp;
+			return b.id.localeCompare(a.id);
+		})[0];
+
+	let carriedFields: Partial<ScheduleContractDefaultInput> = {};
+	if (currentDefault) {
+		const [tplVersion] = await tx
+			.select()
+			.from(contractTemplateVersion)
+			.where(
+				and(
+					eq(contractTemplateVersion.id, currentDefault.templateVersionId),
+					eq(contractTemplateVersion.organizationId, input.organizationId),
+				),
+			)
+			.limit(1);
+
+		if (tplVersion) {
+			const dayRows = await tx
+				.select()
+				.from(contractTemplateVersionDay)
+				.where(
+					and(
+						eq(contractTemplateVersionDay.organizationId, input.organizationId),
+						eq(contractTemplateVersionDay.templateVersionId, tplVersion.id),
+					),
+				);
+
+			carriedFields = {
+				weeklyContractMinutes: tplVersion.weeklyContractMinutes,
+				scheduleMode: tplVersion.scheduleMode as TemplateScheduleMode,
+				customDays: dayRows.map((d) => ({
+					dayOfWeek: d.dayOfWeek as DayOfWeek,
+					minutesPerDay: d.minutesPerDay,
+					isWorkDay: d.isWorkDay,
+					latestClockIn: d.latestClockIn,
+				})),
+				workModel: tplVersion.workModel as WorkModel | null,
+				presenceOverride: tplVersion.presenceOverride as PresenceOverride,
+				balanceMode: tplVersion.balanceMode as BalanceMode,
+				scheduleSource: tplVersion.scheduleSource as ScheduleSource,
+			};
+		}
+	}
+
+	return scheduleContractDefaultInTx(tx, {
+		...carriedFields,
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		scope: input.scope,
+		teamId,
+		effectiveFromDate,
+		workPolicyId: input.workPolicyId,
+		now: input.now,
+	});
+}
+
+export async function scheduleContractDefaultPolicyUpdate(
+	db: DatabaseClient,
+	input: ScheduleContractDefaultPolicyUpdateInput,
+): Promise<ScheduleContractDefaultResult> {
+	return db.transaction((tx) => scheduleContractDefaultPolicyUpdateInTx(tx, input));
+}
+
 function diffOperationalContracts(
 	before: EffectiveContractOnDay,
 	after: EffectiveContractOnDay,

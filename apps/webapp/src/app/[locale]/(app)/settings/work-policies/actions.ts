@@ -9,7 +9,7 @@ import {
 	assignEmployeeWorkPolicy,
 	closeManualWorkPolicyAssignment,
 	resolveEffectiveContractOnDay,
-	scheduleContractDefault,
+	scheduleContractDefaultPolicyUpdate,
 } from "@/lib/contracts";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
@@ -613,7 +613,7 @@ export const createWorkPolicyAssignment = organizationAction(
 
 				const orgTz = await loadOrganizationTimezone(db, organizationId);
 				const today = plainDateAt(systemClock.nowInstant(), orgTz).toString();
-				const result = await scheduleContractDefault(db, {
+				const result = await scheduleContractDefaultPolicyUpdate(db, {
 					organizationId,
 					actorUserId: actor.userId,
 					scope: data.assignmentType === "team" ? "team" : "organization",

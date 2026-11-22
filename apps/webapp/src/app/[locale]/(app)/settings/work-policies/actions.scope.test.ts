@@ -31,7 +31,7 @@ const state = vi.hoisted(() => ({
 	resolveEffectiveContractOnDay: vi.fn(),
 	assignEmployeeWorkPolicy: vi.fn(),
 	closeManualWorkPolicyAssignment: vi.fn(),
-	scheduleContractDefault: vi.fn(),
+	scheduleContractDefaultPolicyUpdate: vi.fn(),
 	setOrganizationDefaultWorkPolicy: vi.fn(),
 }));
 
@@ -39,7 +39,7 @@ vi.mock("@/lib/contracts", () => ({
 	resolveEffectiveContractOnDay: state.resolveEffectiveContractOnDay,
 	assignEmployeeWorkPolicy: state.assignEmployeeWorkPolicy,
 	closeManualWorkPolicyAssignment: state.closeManualWorkPolicyAssignment,
-	scheduleContractDefault: state.scheduleContractDefault,
+	scheduleContractDefaultPolicyUpdate: state.scheduleContractDefaultPolicyUpdate,
 }));
 
 vi.mock("@/lib/work-policy/policy-queries", async (importOriginal) => {
@@ -657,11 +657,11 @@ describe("work policy settings scope actions", () => {
 		});
 	});
 
-	it("routes organization and team assignments through scheduleContractDefault", async () => {
+	it("routes organization and team assignments through scheduleContractDefaultPolicyUpdate", async () => {
 		state.caller = orgAdmin;
 		state.workPolicyQueue = [{ id: "policy-1" }, { id: "policy-1" }];
 		state.teamQueue = [{ id: "team-1" }];
-		state.scheduleContractDefault
+		state.scheduleContractDefaultPolicyUpdate
 			.mockResolvedValueOnce({
 				contractDefaultId: "def-org",
 				workPolicyAssignmentId: "assign-org",
@@ -683,7 +683,7 @@ describe("work policy settings scope actions", () => {
 
 		expect(orgResult).toEqual({ success: true, data: { id: "assign-org" } });
 		expect(teamResult).toEqual({ success: true, data: { id: "assign-team" } });
-		expect(state.scheduleContractDefault).toHaveBeenNthCalledWith(
+		expect(state.scheduleContractDefaultPolicyUpdate).toHaveBeenNthCalledWith(
 			1,
 			expect.anything(),
 			expect.objectContaining({
@@ -693,7 +693,7 @@ describe("work policy settings scope actions", () => {
 				workPolicyId: "policy-1",
 			}),
 		);
-		expect(state.scheduleContractDefault).toHaveBeenNthCalledWith(
+		expect(state.scheduleContractDefaultPolicyUpdate).toHaveBeenNthCalledWith(
 			2,
 			expect.anything(),
 			expect.objectContaining({
@@ -712,7 +712,7 @@ describe("work policy settings scope actions", () => {
 		});
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
-		expect(state.scheduleContractDefault).not.toHaveBeenCalled();
+		expect(state.scheduleContractDefaultPolicyUpdate).not.toHaveBeenCalled();
 	});
 
 	it("marks organization work balances dirty after closing a manual work policy assignment", async () => {

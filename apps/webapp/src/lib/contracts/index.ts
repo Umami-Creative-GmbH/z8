@@ -95,9 +95,12 @@ export {
 	type PreviewContractDefaultChangeResult,
 	previewContractDefaultChange,
 	type ScheduleContractDefaultInput,
+	type ScheduleContractDefaultPolicyUpdateInput,
 	type ScheduleContractDefaultResult,
 	scheduleContractDefault,
 	scheduleContractDefaultInTx,
+	scheduleContractDefaultPolicyUpdate,
+	scheduleContractDefaultPolicyUpdateInTx,
 } from "./contract-defaults";
 export {
 	type ContractsReviewQueueResult,
