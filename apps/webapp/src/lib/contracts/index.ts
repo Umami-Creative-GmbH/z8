@@ -1,4 +1,72 @@
 export {
+	type AssignEmployeeWorkPolicyInput,
+	type AssignEmployeeWorkPolicyResult,
+	assignEmployeeWorkPolicy,
+	assignEmployeeWorkPolicyInTx,
+	refuseIfAdminPinnedContractTermsPolicyInTx,
+} from "./assign-employee-work-policy";
+export {
+	type AdoptContractDefaultInput,
+	adoptContractDefault,
+	adoptContractDefaultInTx,
+	type CommitContractChangeInput,
+	type CommitContractChangeResult,
+	commitContractChange,
+	commitContractChangeInTx,
+	type PreviewEmployeeContractChangeResult,
+	previewEmployeeContractChange,
+	type ResetEmployeeContractDivergencesInput,
+	resetEmployeeContractDivergences,
+	resetEmployeeContractDivergencesInTx,
+} from "./commit-contract-change";
+export {
+	type ContractDefaultAffectedEmployee,
+	type ContractDefaultFieldDiff,
+	getContractDefaults,
+	type HydratedContractDefault,
+	type PreviewContractDefaultChangeResult,
+	previewContractDefaultChange,
+	type ScheduleContractDefaultInput,
+	type ScheduleContractDefaultResult,
+	scheduleContractDefault,
+	scheduleContractDefaultInTx,
+} from "./contract-defaults";
+export {
+	listContractMigrationConflicts,
+	resolveContractMigrationConflict,
+} from "./contract-reviews";
+export {
+	archiveContractTemplate,
+	type ContractTemplateVersionFields,
+	type CreateContractTemplateInput,
+	createContractTemplate,
+	createContractTemplateInTx,
+	getContractTemplate,
+	type HydratedContractTemplateDetail,
+	type HydratedContractTemplateSummary,
+	type HydratedContractTemplateVersion,
+	listContractTemplates,
+	type PreviewTemplateApplicationResult,
+	type PublishContractTemplateVersionInput,
+	previewTemplateApplication,
+	publishContractTemplateVersion,
+	publishContractTemplateVersionInTx,
+} from "./contract-templates";
+export {
+	buildOnCallStatutoryPreview,
+	type ContractDbOrTx,
+	type ContractWriteTx,
+	parseIsoCalendarDate,
+	recordWeeklyHoursMismatchConflictInTx,
+	resolveRemotePresenceDefault,
+	STATUTORY_ON_CALL_DAILY_PREVIEW_NOTE,
+	STATUTORY_ON_CALL_MIN_DAILY_MINUTES,
+	STATUTORY_ON_CALL_WEEKLY_FALLBACK_MINUTES,
+	validateAndNormalizeCustomDays,
+	validateOnCallTerms,
+	validateWeeklyContractMinutes,
+} from "./contract-validation";
+export {
 	customWorkDaySchema,
 	customWorkDaysSchema,
 	DAY_OF_WEEK_ORDER,
@@ -14,6 +82,28 @@ export {
 	analyticsContractRevisionSql,
 	loadContractTrackingReviewEvidence,
 } from "./evidence-queries";
+export {
+	type CreateInitialEmploymentAgreementInput,
+	createInitialEmploymentAgreement,
+	createInitialEmploymentAgreementInTx,
+	type FixedTermDepartureSyncAction,
+	type FixedTermDepartureSyncResult,
+	listEmploymentTermAgreements,
+	type RecordFixedTermExtensionInput,
+	type RecordFixedTermExtensionResult,
+	recordFixedTermExtension,
+	recordFixedTermExtensionInTx,
+} from "./fixed-term-agreements";
+export {
+	clearPolicyAssignmentWindowInTx,
+	type PolicyAssignmentScopeTarget,
+	replacePolicyAssignmentWindowInTx,
+} from "./policy-assignment-intervals";
+export {
+	type PreviewPrimaryTeamMoveResult,
+	type PrimaryTeamMoveOperationalChange,
+	previewPrimaryTeamMove,
+} from "./primary-team-move-preview";
 export {
 	type ContractDefaultSnapshot,
 	type EmploymentHistorySnapshot,

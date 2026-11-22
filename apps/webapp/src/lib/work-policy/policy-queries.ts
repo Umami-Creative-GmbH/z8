@@ -13,9 +13,10 @@ import {
 	workPolicyScheduleDay,
 	workPolicyVersion,
 } from "@/db/schema";
+import { scheduleContractDefault } from "@/lib/contracts/contract-defaults";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
@@ -292,8 +293,9 @@ export async function loadWorkPolicyWithLatestVersion(
 }
 
 /**
- * Sets the organization's default work policy via the canonical organization
- * `work_policy_assignment` projection without touching `work_policy.is_default`.
+ * Sets the organization's default work policy via `scheduleContractDefault`, keeping
+ * `scheduleContractDefault` as the sole writer of canonical org/team `work_policy_assignment`
+ * write-through rows without touching `work_policy.is_default`.
  */
 export async function setOrganizationDefaultWorkPolicy(
 	db: DatabaseClient,
@@ -303,51 +305,15 @@ export async function setOrganizationDefaultWorkPolicy(
 		policyId: string;
 	},
 ): Promise<void> {
-	const [policyRow] = await db
-		.select({ id: workPolicy.id, isActive: workPolicy.isActive })
-		.from(workPolicy)
-		.where(
-			and(eq(workPolicy.id, input.policyId), eq(workPolicy.organizationId, input.organizationId)),
-		)
-		.limit(1);
+	const orgTimezone = await loadOrganizationTimezone(db, input.organizationId);
+	const effectiveFromDate = plainDateAt(systemClock.nowInstant(), orgTimezone).toString();
 
-	if (!policyRow) {
-		throw new NotFoundError({
-			message: "Policy not found",
-			entityType: "work_policy",
-			entityId: input.policyId,
-		});
-	}
-
-	const now = currentTimestamp();
-	await db.transaction(async (tx) => {
-		await tx
-			.update(workPolicyAssignment)
-			.set({
-				isActive: false,
-				updatedAt: now,
-			})
-			.where(
-				and(
-					eq(workPolicyAssignment.organizationId, input.organizationId),
-					eq(workPolicyAssignment.assignmentType, "organization"),
-					eq(workPolicyAssignment.isActive, true),
-				),
-			);
-
-		await tx.insert(workPolicyAssignment).values({
-			policyId: input.policyId,
-			organizationId: input.organizationId,
-			assignmentType: "organization",
-			teamId: null,
-			employeeId: null,
-			priority: 0,
-			effectiveFromDate: "1970-01-01",
-			sourceKind: "legacy",
-			isActive: true,
-			createdBy: input.actorUserId,
-			updatedAt: now,
-		});
+	await scheduleContractDefault(db, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		scope: "organization",
+		effectiveFromDate,
+		workPolicyId: input.policyId,
 	});
 }
 

@@ -28,11 +28,13 @@ const state = vi.hoisted(() => ({
 	markOrganizationWorkBalancesDirty: vi.fn(),
 	formerEmployeeIds: new Set<string>(),
 	resolveEffectiveContractOnDay: vi.fn(),
+	refuseIfAdminPinnedContractTermsPolicyInTx: vi.fn(),
 	setOrganizationDefaultWorkPolicy: vi.fn(),
 }));
 
 vi.mock("@/lib/contracts", () => ({
 	resolveEffectiveContractOnDay: state.resolveEffectiveContractOnDay,
+	refuseIfAdminPinnedContractTermsPolicyInTx: state.refuseIfAdminPinnedContractTermsPolicyInTx,
 }));
 
 vi.mock("@/lib/work-policy/policy-queries", async (importOriginal) => {
@@ -655,6 +657,7 @@ describe("work policy settings scope actions", () => {
 				organizationId: "org-1",
 				assignmentType: "employee",
 				employeeId: "employee-1",
+				sourceKind: "manager_assignment",
 			},
 		];
 
@@ -664,6 +667,27 @@ describe("work policy settings scope actions", () => {
 		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
+	});
+
+	it("refuses a scoped manager deleting an admin-pinned contract_terms work policy assignment (A1)", async () => {
+		state.assignmentQueue = [
+			{
+				id: "assignment-pinned",
+				organizationId: "org-1",
+				assignmentType: "employee",
+				employeeId: "employee-1",
+				sourceKind: "employment_terms",
+			},
+		];
+
+		const result = await actions.deleteWorkPolicyAssignment("assignment-pinned");
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "contract_terms_policy_pinned",
+		});
+		expect(state.updateSets).toHaveLength(0);
 	});
 
 	it("marks organization work balances dirty after schedule-affecting work policy updates", async () => {

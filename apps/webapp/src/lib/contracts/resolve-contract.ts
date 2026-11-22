@@ -853,7 +853,7 @@ export function resolveEffectiveContractPure(
 		}
 	}
 
-	if (!workPolicyResolved && employeeTerms === null && isEmployed) {
+	if (!workPolicyResolved && isEmployed) {
 		const empAssignment = selectPolicyAssignmentAtLevel({
 			assignments: input.policyAssignments,
 			policiesById: input.policiesById,
