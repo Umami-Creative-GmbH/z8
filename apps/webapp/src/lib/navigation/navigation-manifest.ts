@@ -70,12 +70,12 @@ export interface NavigationCapabilities {
 	myDrivingLicence?: boolean;
 	/** Driving licences: the feature is on and the viewer verifies or plans (#1937). */
 	teamDrivingLicence?: boolean;
+	/** Missing vehicle logs queue visibility (resolved from drivingDetailsTeamScope on the server). */
+	missingVehicleLogs?: boolean;
 	/** Analytics workspace visibility (managers/admins; expanded to org admins in #1955). */
 	analytics?: boolean;
 	/** Project reports visibility (projectsEnabled and project-report viewer access). */
 	projectReports?: boolean;
-	/** Billable Time Hand-off workspace visibility (promoted out of /settings in #1956). */
-	billableHandOff?: boolean;
 	platformAdmin: boolean;
 }
 
@@ -126,6 +126,9 @@ function isManagerOrAdmin(employeeRole: NavigationEmployeeRole): boolean {
 }
 
 function canViewMissingVehicleLogs(ctx: NavigationAccessContext): boolean {
+	if (ctx.navigationCapabilities.missingVehicleLogs !== undefined) {
+		return ctx.navigationCapabilities.missingVehicleLogs;
+	}
 	return (
 		ctx.settingsAccessTier === "orgAdmin" ||
 		(ctx.settingsAccessTier === "manager" && ctx.employeeRole !== null)

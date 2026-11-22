@@ -46,9 +46,9 @@ function toNavigationAccessContext(input: StaticAppSearchInput): NavigationAcces
 			input.navigationCapabilities?.myDrivingLicence ?? input.showMyDrivingLicenceNav,
 		teamDrivingLicence:
 			input.navigationCapabilities?.teamDrivingLicence ?? input.showTeamDrivingLicenceNav,
+		missingVehicleLogs: input.navigationCapabilities?.missingVehicleLogs,
 		analytics: input.navigationCapabilities?.analytics,
 		projectReports: input.navigationCapabilities?.projectReports,
-		billableHandOff: input.navigationCapabilities?.billableHandOff,
 		platformAdmin: input.navigationCapabilities?.platformAdmin ?? false,
 	};
 

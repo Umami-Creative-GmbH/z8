@@ -1,4 +1,5 @@
 import type * as React from "react";
+import type { FeatureFlagState } from "@/components/settings/settings-config";
 import { FinanceNavBadge } from "@/components/travel-expenses/finance/finance-nav-badge";
 import {
 	getSidebarManifestEntries,
@@ -8,12 +9,19 @@ import {
 	type NavigationManifestEntry,
 	type SidebarSection,
 } from "@/lib/navigation/navigation-manifest";
+import type { SettingsAccessTier } from "@/lib/settings-access";
 
 export type { NavigationCapabilities } from "@/lib/navigation/navigation-manifest";
 
 export type SidebarEmployeeRole = NavigationEmployeeRole;
 
 type Translate = (key: string, defaultValue: string) => string;
+
+export interface SidebarNavOptions {
+	settingsAccessTier?: SettingsAccessTier;
+	featureFlags?: FeatureFlagState;
+	managesProject?: boolean;
+}
 
 export interface SidebarNavItem {
 	title: string;
@@ -38,11 +46,14 @@ function buildSectionNav(
 	t: Translate,
 	navigationCapabilities: NavigationCapabilities,
 	employeeRole: SidebarEmployeeRole,
+	options?: SidebarNavOptions,
 ): SidebarNavItem[] {
 	return getSidebarManifestEntries(section, {
 		employeeRole,
-		settingsAccessTier: "member",
+		settingsAccessTier: options?.settingsAccessTier ?? "member",
 		navigationCapabilities,
+		featureFlags: options?.featureFlags,
+		managesProject: options?.managesProject,
 	}).map((entry) => toSidebarNavItem(entry, t));
 }
 
@@ -51,8 +62,9 @@ export function buildPersonalNav(
 	t: Translate,
 	navigationCapabilities: NavigationCapabilities,
 	employeeRole: SidebarEmployeeRole,
+	options?: SidebarNavOptions,
 ) {
-	return buildSectionNav("workplace", t, navigationCapabilities, employeeRole);
+	return buildSectionNav("workplace", t, navigationCapabilities, employeeRole, options);
 }
 
 /**
@@ -63,12 +75,17 @@ export function buildTeamNav(
 	t: Translate,
 	navigationCapabilities: NavigationCapabilities,
 	employeeRole: SidebarEmployeeRole,
+	options?: SidebarNavOptions,
 ) {
-	return buildSectionNav("team", t, navigationCapabilities, employeeRole);
+	return buildSectionNav("team", t, navigationCapabilities, employeeRole, options);
 }
 
-export function buildSecondaryNav(t: Translate, navigationCapabilities: NavigationCapabilities) {
-	return buildSectionNav("secondary", t, navigationCapabilities, null);
+export function buildSecondaryNav(
+	t: Translate,
+	navigationCapabilities: NavigationCapabilities,
+	options?: SidebarNavOptions,
+) {
+	return buildSectionNav("secondary", t, navigationCapabilities, null, options);
 }
 
 interface SessionUserLike {

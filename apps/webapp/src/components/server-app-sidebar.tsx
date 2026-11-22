@@ -22,6 +22,7 @@ import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { resolvePersonnelFileAccessForIdentity } from "@/lib/personnel-file/access-store";
 import { managesProjectBelowManagerTierForIdentity } from "@/lib/projects/project-manager-settings-access";
 import { loadCollectsPeriodSubmissions } from "@/lib/time-tracking/period-submissions/settings";
+import { drivingDetailsTeamScope } from "@/lib/time-tracking/vehicle-use/driving-details-team-store";
 import { hasWhoIsInLocations } from "@/lib/time-tracking/who-is-in/queries";
 import { loadFinanceActorForIdentity } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
@@ -99,6 +100,14 @@ export async function ServerAppSidebar({
 				teamPresence: showTeamPresenceNav,
 				myDrivingLicence: showMyDrivingLicenceNav,
 				teamDrivingLicence: showTeamDrivingLicenceNav,
+				missingVehicleLogs: Boolean(
+					activeOrganizationId &&
+					drivingDetailsTeamScope({
+						accessTier: settingsAccessTier ?? "member",
+						organizationId: activeOrganizationId,
+						employee: activeEmployee,
+					}),
+				),
 				analytics: activeEmployee?.role === "admin" || activeEmployee?.role === "manager",
 				projectReports:
 					featureFlags.projectsEnabled &&

@@ -219,12 +219,29 @@ describe("navigation manifest", () => {
 		}
 	});
 
-	it("preserves heading ownership flags from the manifest", () => {
-		for (const entry of APP_NAVIGATION_MANIFEST) {
-			if (entry.external) continue;
-			expect(appPageOwnsHeading(`/en${entry.href === "/" ? "" : entry.href}`)).toBe(
-				entry.ownsHeading,
-			);
+	it("derives page heading ownership for manifest routes without adopting descendants or shell-titled pages", () => {
+		for (const path of [
+			"/en",
+			"/en/travel-expenses/finance",
+			"/en/team/driving",
+			"/en/driving-licence",
+			"/en/team/driving-licence",
+			"/en/notifications",
+			"/en/reports/projects",
+			"/en/reports/vehicles",
+			"/en/today",
+			"/en/analytics",
+			"/en/equipment",
+			"/en/my-equipment",
+		]) {
+			expect(appPageOwnsHeading(path), `expected ${path} to own heading`).toBe(true);
+		}
+		for (const path of [
+			"/en/platform-admin",
+			"/en/team/driving/detail",
+			"/en/notifications/detail",
+		]) {
+			expect(appPageOwnsHeading(path), `expected ${path} to keep shell heading`).toBe(false);
 		}
 	});
 });

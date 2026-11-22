@@ -130,9 +130,14 @@ export function AppSidebar({
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
 	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);
-	const navPersonal = buildPersonalNav(translate, navigationCapabilities, employeeRole);
-	const navTeam = buildTeamNav(translate, navigationCapabilities, employeeRole);
-	const navSecondary = buildSecondaryNav(translate, navigationCapabilities);
+	const navOptions = {
+		settingsAccessTier,
+		featureFlags,
+		managesProject,
+	};
+	const navPersonal = buildPersonalNav(translate, navigationCapabilities, employeeRole, navOptions);
+	const navTeam = buildTeamNav(translate, navigationCapabilities, employeeRole, navOptions);
+	const navSecondary = buildSecondaryNav(translate, navigationCapabilities, navOptions);
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
