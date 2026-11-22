@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createExportJob, getPayrollExportConfig, processExportJob } from "@/lib/payroll-export";
+import { parsePayrollLogicalDate } from "@/lib/payroll-export/calendar-boundaries";
 import {
 	isPayrollExportFormatId,
 	payrollExportFormatIds,
@@ -59,10 +60,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 
 			const requester = ownerId
 				? await db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, ownerId),
-							eq(employee.organizationId, organizationId),
-						),
+						where: and(eq(employee.userId, ownerId), eq(employee.organizationId, organizationId)),
 						columns: { id: true },
 					})
 				: undefined;
@@ -82,8 +80,10 @@ export class PayrollExportExecutor implements IReportExecutor {
 				requestedById: requester.id,
 				filters: {
 					dateRange: {
-						start: dateRange.start,
-						end: dateRange.end,
+						start: parsePayrollLogicalDate(
+							dateRange.start.toISODate() ?? dateRange.start.toISO() ?? "",
+						),
+						end: parsePayrollLogicalDate(dateRange.end.toISODate() ?? dateRange.end.toISO() ?? ""),
 					},
 					employeeIds: filters?.employeeIds,
 					teamIds: filters?.teamIds,

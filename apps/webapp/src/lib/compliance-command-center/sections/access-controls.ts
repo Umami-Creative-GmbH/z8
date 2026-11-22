@@ -1,8 +1,8 @@
 import { and, desc, eq, gte } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { auditLog } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import type { ComplianceCriticalEvent, ComplianceSectionResult, ComplianceText } from "../types";
 
 const ACCESS_CONTROL_LOOKBACK_HOURS = 24;
@@ -83,7 +83,7 @@ export function deriveAccessControlsSection(input: {
 						})
 					: text("compliance.commandCenter.facts.access.latestSensitiveActionNone"),
 			],
-			updatedAt: DateTime.utc().toISO(),
+			updatedAt: systemClock.nowInstant().toString(),
 			primaryLink: {
 				label: text("compliance.commandCenter.links.openAuditLog"),
 				href: "/settings/enterprise/audit-log",
@@ -101,7 +101,9 @@ export function deriveAccessControlsSection(input: {
 export async function getAccessControlsSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
-	const lookbackStart = DateTime.utc().minus({ hours: ACCESS_CONTROL_LOOKBACK_HOURS }).toJSDate();
+	const lookbackStart = dateFromInstant(
+		systemClock.nowInstant().subtract({ hours: ACCESS_CONTROL_LOOKBACK_HOURS }),
+	);
 	const logs = await db.query.auditLog.findMany({
 		where: and(eq(auditLog.organizationId, organizationId), gte(auditLog.timestamp, lookbackStart)),
 		orderBy: [desc(auditLog.timestamp)],

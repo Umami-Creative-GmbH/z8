@@ -2,9 +2,9 @@
 
 import { IconAlertTriangle, IconLoader2, IconPlayerPlay } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useTransition } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { runScheduledExportNowAction } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
@@ -20,7 +20,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { SCHEDULED_EXPORT_REFUSALS } from "./scheduled-export-refusals";
 
 interface RunNowDialogProps {
@@ -33,35 +33,52 @@ interface RunNowDialogProps {
 	onSuccess?: () => void;
 }
 
+const WEEK_START_DAY_NUMBER: Record<WeekStartDay, number> = {
+	monday: 1,
+	sunday: 7,
+};
+
 function getEstimatedDateRange(
 	strategy: string,
 	weekStartDay: WeekStartDay,
 ): { start: string; end: string } {
-	const now = DateTime.utc();
+	const today = Temporal.Now.plainDateISO("UTC");
 
 	switch (strategy) {
-		case "previous_day":
-			return {
-				start: now.minus({ days: 1 }).startOf("day").toISODate() ?? "N/A",
-				end: now.minus({ days: 1 }).endOf("day").toISODate() ?? "N/A",
-			};
+		case "previous_day": {
+			const previousDay = today.subtract({ days: 1 }).toString();
+			return { start: previousDay, end: previousDay };
+		}
 		case "previous_week": {
-			const previousWeek = getWeekBounds(now.minus({ weeks: 1 }), weekStartDay);
+			const lastWeekAnchor = today.subtract({ weeks: 1 });
+			const startDow = WEEK_START_DAY_NUMBER[weekStartDay] ?? 1;
+			const offset = (lastWeekAnchor.dayOfWeek - startDow + 7) % 7;
+			const weekStart = lastWeekAnchor.subtract({ days: offset });
+			const weekEnd = weekStart.add({ days: 6 });
 			return {
-				start: previousWeek.start.toISODate() ?? "N/A",
-				end: previousWeek.end.toISODate() ?? "N/A",
+				start: weekStart.toString(),
+				end: weekEnd.toString(),
 			};
 		}
-		case "previous_month":
+		case "previous_month": {
+			const previousMonth = today.toPlainYearMonth().subtract({ months: 1 });
 			return {
-				start: now.minus({ months: 1 }).startOf("month").toISODate() ?? "N/A",
-				end: now.minus({ months: 1 }).endOf("month").toISODate() ?? "N/A",
+				start: previousMonth.toPlainDate({ day: 1 }).toString(),
+				end: previousMonth.toPlainDate({ day: previousMonth.daysInMonth }).toString(),
 			};
-		case "previous_quarter":
+		}
+		case "previous_quarter": {
+			const currentQuarterStartMonth = Math.floor((today.month - 1) / 3) * 3 + 1;
+			const prevQuarterStart = Temporal.PlainYearMonth.from({
+				year: today.year,
+				month: currentQuarterStartMonth,
+			}).subtract({ months: 3 });
+			const prevQuarterEndMonth = prevQuarterStart.add({ months: 2 });
 			return {
-				start: now.minus({ quarters: 1 }).startOf("quarter").toISODate() ?? "N/A",
-				end: now.minus({ quarters: 1 }).endOf("quarter").toISODate() ?? "N/A",
+				start: prevQuarterStart.toPlainDate({ day: 1 }).toString(),
+				end: prevQuarterEndMonth.toPlainDate({ day: prevQuarterEndMonth.daysInMonth }).toString(),
 			};
+		}
 		default:
 			return { start: "TBD", end: "TBD" };
 	}

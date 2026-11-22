@@ -1,5 +1,7 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
+import { compareInstants, instantFromDate, type ZonedDateTime } from "@/lib/datetime/temporal-core";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
+import { parseTimeZone } from "@/lib/timezone/validation";
 import type { EmployeeScheduleComplianceInput, ScheduleComplianceRegulation } from "./types";
 
 /** A shift as `shift` stores it: `date` at the organization-local midnight, wall-clock times. */
@@ -25,8 +27,8 @@ export interface ComplianceRegulationSource {
 }
 
 interface Interval {
-	start: DateTime;
-	end: DateTime;
+	start: ZonedDateTime;
+	end: ZonedDateTime;
 }
 
 function addMinutes(target: Record<string, number>, dayKey: string | null, minutes: number): void {
@@ -73,24 +75,30 @@ function toShiftInterval(params: {
 	endTime: string;
 	timezone: string;
 }): Interval | null {
-	const baseDate = shiftCalendarDate(params.date, params.timezone).toString();
+	try {
+		const timezone = parseTimeZone(params.timezone);
+		const baseDate = shiftCalendarDate(params.date, timezone);
+		const startClock = Temporal.PlainTime.from(params.startTime);
+		const endClock = Temporal.PlainTime.from(params.endTime);
 
-	const start = DateTime.fromISO(`${baseDate}T${params.startTime}`, {
-		zone: params.timezone,
-	});
-	let end = DateTime.fromISO(`${baseDate}T${params.endTime}`, {
-		zone: params.timezone,
-	});
+		const start = baseDate
+			.toPlainDateTime(startClock)
+			.toZonedDateTime(timezone, { disambiguation: "compatible" });
+		let end = baseDate
+			.toPlainDateTime(endClock)
+			.toZonedDateTime(timezone, { disambiguation: "compatible" });
 
-	if (!start.isValid || !end.isValid) {
+		if (compareInstants(end.toInstant(), start.toInstant()) <= 0) {
+			end = baseDate
+				.add({ days: 1 })
+				.toPlainDateTime(endClock)
+				.toZonedDateTime(timezone, { disambiguation: "compatible" });
+		}
+
+		return { start, end };
+	} catch {
 		return null;
 	}
-
-	if (end <= start) {
-		end = end.plus({ days: 1 });
-	}
-
-	return { start, end };
 }
 
 /**
@@ -104,6 +112,7 @@ export function buildEmployeeComplianceInput(params: {
 	workPeriods: readonly ComplianceWorkPeriodSource[];
 	timezone: string;
 }): EmployeeScheduleComplianceInput {
+	const timezone = parseTimeZone(params.timezone);
 	const actualMinutesByDay: Record<string, number> = {};
 	const scheduledMinutesByDay: Record<string, number> = {};
 	const intervals: Interval[] = [];
@@ -113,12 +122,15 @@ export function buildEmployeeComplianceInput(params: {
 		if (!endTime) {
 			continue;
 		}
-		const start = DateTime.fromJSDate(employeePeriod.startTime).setZone(params.timezone);
-		const end = DateTime.fromJSDate(endTime).setZone(params.timezone);
+		const startInstant = instantFromDate(employeePeriod.startTime);
+		const endInstant = instantFromDate(endTime);
+		const start = startInstant.toZonedDateTimeISO(timezone);
+		const end = endInstant.toZonedDateTimeISO(timezone);
 		const minutes =
-			employeePeriod.durationMinutes ?? Math.max(0, Math.round(end.diff(start, "minutes").minutes));
+			employeePeriod.durationMinutes ??
+			Math.max(0, Math.round(endInstant.since(startInstant).total({ unit: "minutes" })));
 
-		addMinutes(actualMinutesByDay, start.toISODate(), minutes);
+		addMinutes(actualMinutesByDay, start.toPlainDate().toString(), minutes);
 		intervals.push({ start, end });
 	}
 
@@ -127,29 +139,34 @@ export function buildEmployeeComplianceInput(params: {
 			date: employeeShift.date,
 			startTime: employeeShift.startTime,
 			endTime: employeeShift.endTime,
-			timezone: params.timezone,
+			timezone,
 		});
 
 		if (!interval) {
 			continue;
 		}
 
-		const minutes = Math.max(0, Math.round(interval.end.diff(interval.start, "minutes").minutes));
-		addMinutes(scheduledMinutesByDay, interval.start.toISODate(), minutes);
+		const minutes = Math.max(
+			0,
+			Math.round(
+				interval.end.toInstant().since(interval.start.toInstant()).total({ unit: "minutes" }),
+			),
+		);
+		addMinutes(scheduledMinutesByDay, interval.start.toPlainDate().toString(), minutes);
 		intervals.push(interval);
 	}
 
-	intervals.sort((a, b) => a.start.toMillis() - b.start.toMillis());
+	intervals.sort((a, b) => compareInstants(a.start.toInstant(), b.start.toInstant()));
 
 	const restTransitions: EmployeeScheduleComplianceInput["restTransitions"] = [];
 	for (let index = 1; index < intervals.length; index++) {
 		const previous = intervals[index - 1];
 		const current = intervals[index];
 		// The evaluator judges only transitions into the window.
-		if (current.start > previous.end) {
+		if (compareInstants(current.start.toInstant(), previous.end.toInstant()) > 0) {
 			restTransitions.push({
-				fromEndIso: previous.end.toISO() ?? previous.end.toUTC().toISO() ?? "",
-				toStartIso: current.start.toISO() ?? current.start.toUTC().toISO() ?? "",
+				fromEndIso: previous.end.toString({ timeZoneName: "never" }),
+				toStartIso: current.start.toString({ timeZoneName: "never" }),
 			});
 		}
 	}

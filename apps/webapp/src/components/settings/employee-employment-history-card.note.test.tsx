@@ -4,6 +4,10 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { EmployeeEmploymentHistoryCard } from "./employee-employment-history-card";
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));

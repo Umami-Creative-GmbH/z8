@@ -118,7 +118,7 @@ export class ScheduledExportOrchestrator {
 	 */
 	async executeSchedule(
 		schedule: ScheduledExport,
-		triggeredAt: DateTime,
+		triggeredAt: DateTime = DateTime.utc(),
 		run: RunTrigger = { trigger: "schedule" },
 	): Promise<void> {
 		const startTime = Date.now();

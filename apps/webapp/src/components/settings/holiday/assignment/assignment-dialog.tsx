@@ -6,14 +6,15 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	createPresetAssignment,
 	getHolidayPresets,
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { EmployeeSingleSelect } from "@/components/employee-select";
 import {
 	ActionPanel,
@@ -70,17 +71,16 @@ interface TeamOption {
 	name: string;
 }
 
-function formatDateInputValue(date: DateTime) {
-	return date.toFormat("yyyy-LL-dd");
-}
-
 function parseDateInputValue(value: string) {
 	if (!value) {
 		return null;
 	}
 
-	const date = DateTime.fromISO(value, { zone: "utc" }).startOf("day");
-	return date.isValid ? date.toJSDate() : null;
+	try {
+		return dateFromInstant(parsePlainDate(value).toZonedDateTime("UTC").toInstant());
+	} catch {
+		return null;
+	}
 }
 
 function parseDateInputEndValue(value: string) {
@@ -88,15 +88,24 @@ function parseDateInputEndValue(value: string) {
 		return null;
 	}
 
-	const date = DateTime.fromISO(value, { zone: "utc" }).endOf("day");
-	return date.isValid ? date.toJSDate() : null;
+	try {
+		return dateFromInstant(
+			parsePlainDate(value)
+				.add({ days: 1 })
+				.toZonedDateTime("UTC")
+				.toInstant()
+				.subtract({ milliseconds: 1 }),
+		);
+	} catch {
+		return null;
+	}
 }
 
 function getDefaultAssignmentDates() {
-	const year = DateTime.utc().year;
+	const year = Temporal.Now.plainDateISO("UTC").year;
 	return {
-		effectiveFrom: formatDateInputValue(DateTime.utc(year, 1, 1)),
-		effectiveUntil: formatDateInputValue(DateTime.utc(year, 12, 31)),
+		effectiveFrom: Temporal.PlainDate.from({ year, month: 1, day: 1 }).toString(),
+		effectiveUntil: Temporal.PlainDate.from({ year, month: 12, day: 31 }).toString(),
 	};
 }
 

@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import { connection } from "next/server";
@@ -78,11 +77,7 @@ function PayrollReadinessBodyLoading() {
 
 function PayrollReadinessHeaderLoading() {
 	return (
-		<div
-			aria-busy="true"
-			className="space-y-2"
-			data-testid="payroll-readiness-header-loading"
-		>
+		<div aria-busy="true" className="space-y-2" data-testid="payroll-readiness-header-loading">
 			<Skeleton aria-hidden="true" className="h-4 w-48 max-w-full" />
 			<Skeleton aria-hidden="true" className="h-8 w-56 max-w-full" />
 			<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
@@ -102,31 +97,22 @@ async function PayrollReadinessHeader({ searchParams }: PayrollReadinessPageProp
 
 	return (
 		<PageHeader
-			scope={t(
-				"settings.payrollReadiness.period.scope",
-				"Payroll period: {period} (UTC)",
-				{ period: formatPayrollReadinessPeriod(period, locale) },
-			)}
+			scope={t("settings.payrollReadiness.period.scope", "Payroll period: {period} (UTC)", {
+				period: formatPayrollReadinessPeriod(period, locale),
+			})}
 			title={t("settings.payrollReadiness.title", "Payroll Readiness")}
 			description={t(
 				"settings.payrollReadiness.description",
 				"Check whether a payroll period is ready before exporting time, absence, and payroll data.",
 			)}
 			actions={
-				<PayrollReadinessPeriodNav
-					t={t}
-					locale={locale}
-					period={period}
-					today={period.today}
-				/>
+				<PayrollReadinessPeriodNav t={t} locale={locale} period={period} today={period.today} />
 			}
 		/>
 	);
 }
 
-async function PayrollReadinessContent({
-	searchParams,
-}: PayrollReadinessPageProps) {
+async function PayrollReadinessContent({ searchParams }: PayrollReadinessPageProps) {
 	const [{ organizationId }, t, locale, resolvedSearchParams] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
@@ -136,13 +122,13 @@ async function PayrollReadinessContent({
 	// The default payroll-readiness period must be resolved per request.
 	await connection();
 	const period = getPayrollReadinessPeriod(resolvedSearchParams);
-	// getPayrollReadiness still takes Luxon values: convert at its boundary, as UTC days.
 	const data = await getPayrollReadiness({
 		organizationId,
 		period: {
-			start: DateTime.fromISO(period.start.toString(), { zone: "utc" }),
-			end: DateTime.fromISO(period.end.toString(), { zone: "utc" }),
+			start: period.start,
+			end: period.end,
 		},
+		locale,
 	});
 
 	return (

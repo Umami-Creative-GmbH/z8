@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { comparePayrollOutput } from "../comparison-model";
 import type {
 	AbsenceData,
@@ -59,8 +59,8 @@ function work(overrides: Partial<WorkPeriodData> = {}): WorkPeriodData {
 	return {
 		...identity,
 		id: "work-1",
-		startTime: DateTime.fromISO("2026-09-15T08:00:00Z"),
-		endTime: DateTime.fromISO("2026-09-15T08:01:00Z"),
+		startTime: parseInstant("2026-09-15T08:00:00Z").toZonedDateTimeISO("UTC"),
+		endTime: parseInstant("2026-09-15T08:01:00Z").toZonedDateTimeISO("UTC"),
 		durationMinutes: 1,
 		workCategoryId: "work-category",
 		workCategoryName: "Work",
@@ -276,14 +276,7 @@ describe("Sage supported output evidence", () => {
 	});
 
 	it("does not invent supported rows for unmapped absences or payouts", () => {
-		const result = new SageLohnFormatter().transform(
-			[],
-			[absence],
-			[],
-			[],
-			config,
-			[payout],
-		);
+		const result = new SageLohnFormatter().transform([], [absence], [], [], config, [payout]);
 		expect(result.supportedOutputEvidence?.rows).toEqual([]);
 		expect(String(result.content).split("\r\n")).toHaveLength(1);
 		expect(result.metadata.unmappedOvertimePayouts).toEqual([
@@ -301,19 +294,13 @@ describe("Sage supported output evidence", () => {
 			work({ durationMinutes: 90 }),
 			work({
 				id: "work-2",
-				startTime: DateTime.fromISO("2026-09-16T08:00:00Z"),
-				endTime: DateTime.fromISO("2026-09-16T09:00:00Z"),
+				startTime: parseInstant("2026-09-16T08:00:00Z").toZonedDateTimeISO("UTC"),
+				endTime: parseInstant("2026-09-16T09:00:00Z").toZonedDateTimeISO("UTC"),
 				durationMinutes: 60,
 			}),
 		];
 		const oldOutput = output(
-			formatter.transform(
-				periods,
-				[],
-				[],
-				[mapping({ workCategoryId: "work-category" })],
-				config,
-			),
+			formatter.transform(periods, [], [], [mapping({ workCategoryId: "work-category" })], config),
 		);
 		const current = output(
 			formatter.transform(
@@ -351,9 +338,7 @@ describe("Sage supported output evidence", () => {
 
 	it("shows an output-mode setting change while preserving the same hours total once", () => {
 		const formatter = new SageLohnFormatter();
-		const before = output(
-			formatter.transform([work({ durationMinutes: 90 })], [], [], [], config),
-		);
+		const before = output(formatter.transform([work({ durationMinutes: 90 })], [], [], [], config));
 		const after = output(
 			formatter.transform([work({ durationMinutes: 90 })], [], [], [], {
 				...config,
@@ -400,9 +385,7 @@ describe("Sage supported output evidence", () => {
 		expect(result).toMatchObject({
 			hasPayrollImpact: false,
 			rows: [],
-			sourceOnlyChanges: [
-				{ outputImpact: "none", employeeIds: ["employee-1"] },
-			],
+			sourceOnlyChanges: [{ outputImpact: "none", employeeIds: ["employee-1"] }],
 		});
 	});
 });

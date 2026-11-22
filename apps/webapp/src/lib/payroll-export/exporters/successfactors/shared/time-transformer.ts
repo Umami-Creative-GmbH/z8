@@ -82,10 +82,10 @@ export function transformWorkPeriods(
 
 		const request: SFTimeRecordRequest = {
 			userId,
-			startDate: period.startTime.toISODate()!,
-			startTime: period.startTime.toFormat("HH:mm"),
-			endDate: period.endTime.toISODate()!,
-			endTime: period.endTime.toFormat("HH:mm"),
+			startDate: period.startTime.toPlainDate().toString(),
+			startTime: period.startTime.toPlainTime().toString({ smallestUnit: "minute" }),
+			endDate: period.endTime.toPlainDate().toString(),
+			endTime: period.endTime.toPlainTime().toString({ smallestUnit: "minute" }),
 			timeType,
 			quantityInHours: Math.round(quantityInHours * 100) / 100, // Round to 2 decimal places
 			comment: commentParts.length > 0 ? commentParts.join(" - ") : undefined,
@@ -151,7 +151,7 @@ export function aggregateWorkPeriodsForCSV(
 		const userId = getEmployeeIdFromWorkPeriod(period, strategy);
 		if (!userId) continue;
 
-		const dateStr = period.startTime.toISODate()!;
+		const dateStr = period.startTime.toPlainDate().toString();
 		const hours = period.durationMinutes / 60;
 		const timeType = getTimeTypeForWorkPeriod(period, workCategoryMappings);
 

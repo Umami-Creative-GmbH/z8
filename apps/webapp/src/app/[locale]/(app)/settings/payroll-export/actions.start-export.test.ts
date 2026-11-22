@@ -87,9 +87,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 
 const actions = await import("./actions");
 const { startExportAction } = actions;
-const { PayrollIdentifierDuplicateError } = await import(
-	"@/lib/payroll-export/personnel-identifier"
-);
+const { PayrollIdentifierDuplicateError } =
+	await import("@/lib/payroll-export/personnel-identifier");
 
 describe("startExportAction", () => {
 	beforeEach(() => {
@@ -136,8 +135,8 @@ describe("startExportAction", () => {
 		});
 
 		const { filters } = mockState.createExportJob.mock.calls[0][0];
-		expect(filters.dateRange.start.toISODate()).toBe("2026-01-01");
-		expect(filters.dateRange.end.toISODate()).toBe("2026-01-31");
+		expect(filters.dateRange.start.toString()).toBe("2026-01-01");
+		expect(filters.dateRange.end.toString()).toBe("2026-01-31");
 	});
 
 	it("refuses a range that ends before it starts, or a malformed date", async () => {

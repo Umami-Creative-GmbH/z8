@@ -26,6 +26,7 @@ interface GetWorkdayTimelineDataInput {
 	employeeId: string;
 	organizationId: string;
 	timezone: string;
+	locale?: string;
 	timeFormat?: TimeFormat;
 	dateParam: string | undefined;
 	now?: Date;
@@ -70,11 +71,12 @@ export async function getWorkdayTimelineData({
 	employeeId,
 	organizationId,
 	timezone,
+	locale,
 	timeFormat,
 	dateParam,
 	now,
 }: GetWorkdayTimelineDataInput): Promise<WorkdayTimelineResult> {
-	const selectedDate = getSelectedWorkdayDate({ dateParam, timezone, now });
+	const selectedDate = getSelectedWorkdayDate({ dateParam, timezone, locale, now });
 	const startBound = dateToDB(selectedDate.startUtc)!;
 	const endBound = dateToDB(selectedDate.endUtc)!;
 	const selectedLogicalDate = selectedDate.dateKey;

@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { getAccessControlsSection } from "./sections/access-controls";
 import { getAuditEvidenceSection } from "./sections/audit-evidence";
 import { getWorkforceComplianceSection } from "./sections/workforce-compliance";
@@ -20,7 +20,7 @@ function unavailableSection(
 			status: "unavailable",
 			headline: text("compliance.commandCenter.sections.unavailable.headline"),
 			facts: [errorMessage],
-			updatedAt: DateTime.utc().toISO(),
+			updatedAt: systemClock.nowInstant().toString(),
 			primaryLink,
 		},
 		recentCriticalEvents: [],
@@ -75,6 +75,6 @@ export async function getComplianceCommandCenterData(
 			text("compliance.commandCenter.coverage.workforceCompliance"),
 			text("compliance.commandCenter.coverage.accessControls"),
 		],
-		refreshedAt: DateTime.utc().toISO()!,
+		refreshedAt: systemClock.nowInstant().toString(),
 	});
 }

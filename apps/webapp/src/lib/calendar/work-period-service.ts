@@ -1,6 +1,5 @@
 import { and, eq, gt, inArray, isNull, lt, not, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import type { SurchargeCalculationDetails } from "@/db/schema";
@@ -19,7 +18,6 @@ import {
 import { systemNoteOf } from "@/lib/time-tracking/system-notes";
 import { vehicleUseFromColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
-import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	type Clock,
@@ -28,6 +26,7 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
 import type { SurchargeBreakdown, WorkPeriodEvent } from "./types";
 import { resolveWorkPeriodEditedBy, type WorkPeriodAttributionEdit } from "./work-period-edited-by";
 
@@ -168,10 +167,14 @@ export async function getWorkPeriodsForMonth(
 	filters: WorkPeriodFilters,
 	timezone?: string | null,
 	clock: Clock = systemClock,
+	displayOptions?: { locale?: string; timeFormat?: "12h" | "24h" },
 ): Promise<WorkPeriodEvent[]> {
+	const resolvedTimezone = timezone || "UTC";
+	const locale = displayOptions?.locale ?? "en";
+	const timeFormat = displayOptions?.timeFormat ?? localeDefaultTimeFormat(locale);
 	const range = localMonthRange(
 		`${year}-${String(month + 1).padStart(2, "0")}-01`,
-		timezone || "UTC",
+		resolvedTimezone,
 	);
 	const startDate = dateFromInstant(range.start);
 	const endExclusiveDate = dateFromInstant(range.endExclusive);
@@ -253,10 +256,7 @@ export async function getWorkPeriodsForMonth(
 			)
 			.leftJoin(clockInEditor, eq(clockInEntry.createdBy, clockInEditor.id))
 			.leftJoin(clockOutEditor, eq(clockOutEntry.createdBy, clockOutEditor.id))
-			.leftJoin(
-				surchargeCalculation,
-				eq(surchargeCalculation.workPeriodId, workPeriod.id),
-			)
+			.leftJoin(surchargeCalculation, eq(surchargeCalculation.workPeriodId, workPeriod.id))
 			.leftJoin(project, eq(workPeriod.projectId, project.id))
 			.leftJoin(
 				projectTask,
@@ -318,24 +318,26 @@ export async function getWorkPeriodsForMonth(
 				// Use project color if available, otherwise default green
 				const eventColor = proj?.color || "#10b981"; // Green (emerald)
 
-				// Format start and end times for display
-				const startDT = dateFromDB(period.startTime);
-				const endDT = period.endTime ? dateFromDB(period.endTime) : null;
-				const startTimeFormatted =
-					startDT?.setLocale("en-US").toLocaleString(DateTime.TIME_SIMPLE) ??
-					undefined;
-				const endTimeFormatted =
-					endDT?.setLocale("en-US").toLocaleString(DateTime.TIME_SIMPLE) ??
-					undefined;
+				// Format start and end times for display in the explicit calendar timezone and active locale
+				const startInstant = instantFromDate(period.startTime);
+				const startTimeFormatted = formatInstant(
+					startInstant,
+					{ locale, timezone: resolvedTimezone, timeFormat },
+					"time",
+				);
+				const endTimeFormatted = period.endTime
+					? formatInstant(
+							instantFromDate(period.endTime),
+							{ locale, timezone: resolvedTimezone, timeFormat },
+							"time",
+						)
+					: undefined;
 				const isRunning = period.isActive && !period.endTime;
 
 				if (isRunning) {
-					const startInstant = instantFromDate(period.startTime);
 					const durationMinutes = Math.max(
 						0,
-						Math.floor(
-							nowInstant.since(startInstant).total({ unit: "minutes" }),
-						),
+						Math.floor(nowInstant.since(startInstant).total({ unit: "minutes" })),
 					);
 
 					return {
@@ -438,8 +440,7 @@ export async function getWorkPeriodsForMonth(
 				// Parse surcharge breakdown from calculation details
 				let surchargeBreakdown: SurchargeBreakdown[] | undefined;
 				if (surcharge?.calculationDetails) {
-					const details =
-						surcharge.calculationDetails as SurchargeCalculationDetails;
+					const details = surcharge.calculationDetails as SurchargeCalculationDetails;
 					if (details.rulesApplied && details.rulesApplied.length > 0) {
 						surchargeBreakdown = details.rulesApplied.map((rule) => ({
 							ruleId: rule.ruleId,

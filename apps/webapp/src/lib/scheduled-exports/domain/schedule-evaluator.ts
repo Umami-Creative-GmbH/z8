@@ -16,7 +16,10 @@ import type { ScheduleConfig, ScheduleType } from "./types";
  * @param currentTime - Current time for calculation
  * @returns Next execution DateTime
  */
-export function calculateNextExecution(config: ScheduleConfig, currentTime: DateTime): DateTime {
+export function calculateNextExecution(
+	config: ScheduleConfig,
+	currentTime: DateTime = DateTime.utc(),
+): DateTime {
 	const localTime = currentTime.setZone(config.timezone);
 
 	switch (config.type) {

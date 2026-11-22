@@ -17,7 +17,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -270,8 +270,8 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 			requestedById: ids.owner,
 			filters: {
 				dateRange: {
-					start: DateTime.fromISO(july.startDate, { zone: "utc" }),
-					end: DateTime.fromISO(july.endDate, { zone: "utc" }),
+					start: parsePlainDate(july.startDate),
+					end: parsePlainDate(july.endDate),
 				},
 			},
 		});
@@ -530,8 +530,8 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 			getPayrollReadiness({
 				organizationId: ORG,
 				period: {
-					start: DateTime.fromISO(july.startDate, { zone: "utc" }),
-					end: DateTime.fromISO(july.endDate, { zone: "utc" }),
+					start: parsePlainDate(july.startDate),
+					end: parsePlainDate(july.endDate),
 				},
 			});
 		const duplicateCheck = (readiness: Awaited<ReturnType<typeof readinessOfJuly>>) =>

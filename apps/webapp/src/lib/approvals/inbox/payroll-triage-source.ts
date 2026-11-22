@@ -2,7 +2,6 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import {
 	absenceEntry,
 	approvalChainStageInstance,
@@ -47,14 +46,10 @@ import type { ApprovalInboxTriageTarget } from "./triage-evidence";
 function fingerprint(value: unknown): string {
 	return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
-async function currentLifecycle(
-	database: ApprovalDatabase,
-	target: ApprovalInboxTriageTarget,
-) {
+async function currentLifecycle(database: ApprovalDatabase, target: ApprovalInboxTriageTarget) {
 	const organizationId = target.context.organizationId;
 	if (
-		(target.requestKind !== "absence" &&
-			target.requestKind !== "time_correction") ||
+		(target.requestKind !== "absence" && target.requestKind !== "time_correction") ||
 		!target.authority
 	)
 		return null;
@@ -62,13 +57,8 @@ async function currentLifecycle(
 		organizationId,
 		workflowType: target.requestKind,
 	});
-	if (
-		target.authority === "canonical_assignment" &&
-		rollout.authority !== "canonical"
-	)
-		return null;
-	const entityType =
-		target.requestKind === "absence" ? "absence_entry" : "time_entry";
+	if (target.authority === "canonical_assignment" && rollout.authority !== "canonical") return null;
+	const entityType = target.requestKind === "absence" ? "absence_entry" : "time_entry";
 	if (target.authority === "compatibility_request") {
 		const request = await database.query.approvalRequest.findFirst({
 			where: and(
@@ -97,10 +87,7 @@ async function currentLifecycle(
 				and(
 					eq(approvalWorkflow.id, approvalWorkflowStage.workflowId),
 					eq(approvalWorkflow.organizationId, organizationId),
-					eq(
-						approvalWorkflowStage.sequence,
-						approvalWorkflow.currentStageOrder,
-					),
+					eq(approvalWorkflowStage.sequence, approvalWorkflow.currentStageOrder),
 				),
 			)
 			.where(
@@ -197,10 +184,8 @@ async function readCorrectionRequest(
 		period.deletedAt ||
 		!period.endTime ||
 		!period.clockOutId ||
-		(lifecycle.workflowId &&
-			period.approvalWorkflowId !== lifecycle.workflowId) ||
-		(lifecycle.canonicalRecordId &&
-			lifecycle.canonicalRecordId !== period.canonicalRecordId)
+		(lifecycle.workflowId && period.approvalWorkflowId !== lifecycle.workflowId) ||
+		(lifecycle.canonicalRecordId && lifecycle.canonicalRecordId !== period.canonicalRecordId)
 	)
 		return null;
 	// One after another: `database` may be a transaction, one connection,
@@ -214,10 +199,7 @@ async function readCorrectionRequest(
 		),
 	});
 	const subject = await database.query.employee.findFirst({
-		where: and(
-			eq(employee.organizationId, organizationId),
-			eq(employee.id, period.employeeId),
-		),
+		where: and(eq(employee.organizationId, organizationId), eq(employee.id, period.employeeId)),
 		columns: { id: true, userId: true },
 	});
 	if (!record?.endAt || !subject) return null;
@@ -233,8 +215,7 @@ async function readCorrectionRequest(
 				eq(approvalRequest.status, "pending"),
 			),
 		});
-		if (!alias || alias.requestedBy !== lifecycle.requesterEmployeeId)
-			return null;
+		if (!alias || alias.requestedBy !== lifecycle.requesterEmployeeId) return null;
 	}
 	const chainStages =
 		!lifecycle.workflowId && legacyApprovalRequestId
@@ -246,10 +227,7 @@ async function readCorrectionRequest(
 					.where(
 						and(
 							eq(approvalChainStageInstance.organizationId, organizationId),
-							eq(
-								approvalChainStageInstance.approvalRequestId,
-								legacyApprovalRequestId,
-							),
+							eq(approvalChainStageInstance.approvalRequestId, legacyApprovalRequestId),
 						),
 					)
 					.limit(2)
@@ -277,19 +255,12 @@ async function readCorrectionRequest(
 		return null;
 	const start = instantToCanonicalString(instantFromDate(record.startAt)),
 		end = instantToCanonicalString(instantFromDate(record.endAt));
-	const comparison = await compareTimeCorrectionWithSubmittedRevision(
-		database,
-		revision,
-	);
+	const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
 	const current =
 		comparison.kind === "current" &&
-		parseInstant(revision.facts.baseline.clockIn.at).equals(
-			parseInstant(start),
-		) &&
+		parseInstant(revision.facts.baseline.clockIn.at).equals(parseInstant(start)) &&
 		!!revision.facts.baseline.clockOut &&
-		parseInstant(revision.facts.baseline.clockOut.at).equals(
-			parseInstant(end),
-		) &&
+		parseInstant(revision.facts.baseline.clockOut.at).equals(parseInstant(end)) &&
 		record.durationMinutes === revision.facts.baseline.storedDurationMinutes &&
 		record.approvalState === period.approvalStatus;
 	const settings = await database.query.userSettings.findFirst({
@@ -321,12 +292,8 @@ async function readCorrectionRequest(
 		}),
 		recordStartAt: start,
 		recordEndAt: end,
-		payrollTimezone: resolveEffectiveTimezone(
-			settings?.timezone,
-			organization?.timezone,
-		),
-		scopedCorrectionMapped:
-			record.approvalState === "approved" && legacyApprovalRequestId !== null,
+		payrollTimezone: resolveEffectiveTimezone(settings?.timezone, organization?.timezone),
+		scopedCorrectionMapped: record.approvalState === "approved" && legacyApprovalRequestId !== null,
 	};
 }
 export async function readPayrollTriageRequest(
@@ -353,10 +320,8 @@ export async function readPayrollTriageRequest(
 		!absence ||
 		absence.category.organizationId !== organizationId ||
 		!absence.canonicalRecordId ||
-		(lifecycle.workflowId &&
-			lifecycle.workflowId !== absence.approvalWorkflowId) ||
-		(lifecycle.canonicalRecordId &&
-			lifecycle.canonicalRecordId !== absence.canonicalRecordId)
+		(lifecycle.workflowId && lifecycle.workflowId !== absence.approvalWorkflowId) ||
+		(lifecycle.canonicalRecordId && lifecycle.canonicalRecordId !== absence.canonicalRecordId)
 	)
 		return null;
 	// One after another: `database` may be a transaction, one connection,
@@ -371,10 +336,7 @@ export async function readPayrollTriageRequest(
 		),
 	});
 	const subject = await database.query.employee.findFirst({
-		where: and(
-			eq(employee.organizationId, organizationId),
-			eq(employee.id, absence.employeeId),
-		),
+		where: and(eq(employee.organizationId, organizationId), eq(employee.id, absence.employeeId)),
 		columns: { id: true },
 	});
 	if (!record?.endAt || !subject) return null;
@@ -401,20 +363,13 @@ export async function readPayrollTriageRequest(
 				.where(
 					and(
 						eq(approvalChainStageInstance.organizationId, organizationId),
-						eq(
-							approvalChainStageInstance.approvalRequestId,
-							target.context.requestId,
-						),
+						eq(approvalChainStageInstance.approvalRequestId, target.context.requestId),
 					),
 				)
 				.limit(2);
-			if (
-				stages.length !== 1 ||
-				stages[0]?.chainInstanceId !== revision.legacy.chainInstanceId
-			)
+			if (stages.length !== 1 || stages[0]?.chainInstanceId !== revision.legacy.chainInstanceId)
 				return null;
-		} else if (revision.legacy.approvalRequestId !== target.context.requestId)
-			return null;
+		} else if (revision.legacy.approvalRequestId !== target.context.requestId) return null;
 	}
 	const capturedRecord = revision.facts.compatibility.canonicalRecord;
 	const start = instantToCanonicalString(instantFromDate(record.startAt)),
@@ -481,11 +436,7 @@ export async function readAuthorizedPayrollTriageAssessment(input: {
 	if (!allowedEmployeeIds.includes(request.subjectEmployeeId)) return null;
 	const { db } = await import("@/db");
 	const scopedWork = await isPayrollWorkCollectionActive(db, organizationId);
-	if (
-		request.requestKind === "time_correction" &&
-		scopedWork &&
-		!request.scopedCorrectionMapped
-	)
+	if (request.requestKind === "time_correction" && scopedWork && !request.scopedCorrectionMapped)
 		return null;
 	const scopedEmployeeIds = [request.subjectEmployeeId];
 	if (request.requestKind === "time_correction" && !scopedWork) {
@@ -508,19 +459,12 @@ export async function readAuthorizedPayrollTriageAssessment(input: {
 		request.requestKind === "absence" &&
 		(!request.recordStartAt ||
 			!request.recordEndAt ||
-			parseInstant(request.recordStartAt).epochNanoseconds >=
-				endExclusive.epochNanoseconds ||
-			parseInstant(request.recordEndAt).epochNanoseconds <
-				startInstant.epochNanoseconds)
+			parseInstant(request.recordStartAt).epochNanoseconds >= endExclusive.epochNanoseconds ||
+			parseInstant(request.recordEndAt).epochNanoseconds < startInstant.epochNanoseconds)
 	)
 		return null;
 	if (request.requestKind === "time_correction") {
-		if (
-			!request.recordStartAt ||
-			!request.recordEndAt ||
-			!request.payrollTimezone
-		)
-			return null;
+		if (!request.recordStartAt || !request.recordEndAt || !request.payrollTimezone) return null;
 		const window = scopedWork
 			? employeePayrollWindow(
 					assessmentContext.period.startDate,
@@ -540,16 +484,12 @@ export async function readAuthorizedPayrollTriageAssessment(input: {
 				sourceEnd >= window.start.epochNanoseconds;
 		if (!overlaps) return null;
 	}
-	// Luxon is an adapter to the existing payroll summary API, never used for new calendar logic.
 	const summary = await getPayrollWorkspaceSummary({
 		organizationId,
 		allowedEmployeeIds: [...new Set(scopedEmployeeIds)],
 		period: {
-			start: DateTime.fromISO(startInstant.toString(), { zone: "utc" }),
-			end: DateTime.fromISO(
-				endExclusive.subtract({ milliseconds: 1 }).toString(),
-				{ zone: "utc" },
-			),
+			start: parsePlainDate(assessmentContext.period.startDate),
+			end: parsePlainDate(assessmentContext.period.endDate),
 			label: assessmentContext.period.label,
 		},
 		generatedBy: {
@@ -557,8 +497,7 @@ export async function readAuthorizedPayrollTriageAssessment(input: {
 			name: auth.user.name || auth.user.email,
 		},
 	});
-	if ((await isPayrollWorkCollectionActive(db, organizationId)) !== scopedWork)
-		return null;
+	if ((await isPayrollWorkCollectionActive(db, organizationId)) !== scopedWork) return null;
 	const freshScope = await resolvePayrollAccessibleEmployeeIds({
 		organizationId,
 		payrollEmployeeId: auth.employee.id,

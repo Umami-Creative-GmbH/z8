@@ -9,7 +9,12 @@
  * - Line endings: CRLF (\r\n)
  * - Columns: User ID, Date, Time Type, Hours, Comment
  */
-import { DateTime } from "luxon";
+import {
+	comparePlainDates,
+	type PlainDate,
+	parsePlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { expenseLinesInFileOrder } from "../../formatters/expense-lines";
 import {
@@ -203,8 +208,8 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 				workPeriodCount: workPeriods.length,
 				employeeCount: uniqueEmployees.size,
 				dateRange: {
-					start: dateRange.start?.toISODate() || "",
-					end: dateRange.end?.toISODate() || "",
+					start: dateRange.start?.toString() || "",
+					end: dateRange.end?.toString() || "",
 				},
 				unmappedOvertimePayouts: payouts.unmapped,
 			},
@@ -252,27 +257,31 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 	private getDateRange(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
-	): { start: DateTime | null; end: DateTime | null } {
-		let start: DateTime | null = null;
-		let end: DateTime | null = null;
+	): { start: PlainDate | null; end: PlainDate | null } {
+		let start: PlainDate | null = null;
+		let end: PlainDate | null = null;
 
 		for (const period of workPeriods) {
-			if (!start || period.startTime < start) {
-				start = period.startTime;
+			const periodStart = period.startTime.toPlainDate();
+			if (!start || comparePlainDates(periodStart, start) < 0) {
+				start = periodStart;
 			}
-			if (period.endTime && (!end || period.endTime > end)) {
-				end = period.endTime;
+			if (period.endTime) {
+				const periodEnd = period.endTime.toPlainDate();
+				if (!end || comparePlainDates(periodEnd, end) > 0) {
+					end = periodEnd;
+				}
 			}
 		}
 
 		for (const absence of absences) {
-			const absStart = DateTime.fromISO(absence.startDate);
-			const absEnd = DateTime.fromISO(absence.endDate);
+			const absStart = parsePlainDate(absence.startDate);
+			const absEnd = parsePlainDate(absence.endDate);
 
-			if (!start || absStart < start) {
+			if (!start || comparePlainDates(absStart, start) < 0) {
 				start = absStart;
 			}
-			if (!end || absEnd > end) {
+			if (!end || comparePlainDates(absEnd, end) > 0) {
 				end = absEnd;
 			}
 		}
@@ -283,10 +292,13 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate file name based on date range
 	 */
-	private generateFileName(dateRange: { start: DateTime | null; end: DateTime | null }): string {
-		const now = DateTime.now();
-		const dateStr = dateRange.start ? dateRange.start.toFormat("yyyy-MM") : now.toFormat("yyyy-MM");
-		return `sap_successfactors_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
+	private generateFileName(dateRange: { start: PlainDate | null; end: PlainDate | null }): string {
+		const now = systemClock.nowInstant().toZonedDateTimeISO("UTC");
+		const dateStr = dateRange.start
+			? dateRange.start.toPlainYearMonth().toString()
+			: now.toPlainDate().toPlainYearMonth().toString();
+		const stamp = `${now.year}${String(now.month).padStart(2, "0")}${String(now.day).padStart(2, "0")}_${String(now.hour).padStart(2, "0")}${String(now.minute).padStart(2, "0")}${String(now.second).padStart(2, "0")}`;
+		return `sap_successfactors_${dateStr}_${stamp}.csv`;
 	}
 }
 

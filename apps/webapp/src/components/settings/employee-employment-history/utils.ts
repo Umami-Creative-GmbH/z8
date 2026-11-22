@@ -1,4 +1,13 @@
-import { DateTime } from "luxon";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	parseInstant,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import {
 	hourlyWageFromForm,
 	type UpsertEmploymentHistory,
@@ -18,15 +27,29 @@ export const defaultFormValues: FormValues = {
 	changeReason: "",
 };
 
-export function toDateTime(value: Date | string | null | undefined) {
+export function toInstant(value: Date | string | null | undefined): Instant | null {
 	if (!value) return null;
-	return value instanceof Date
-		? DateTime.fromJSDate(value, { zone: "utc" })
-		: DateTime.fromISO(value, { zone: "utc" });
+	try {
+		if (value instanceof Date) {
+			if (Number.isNaN(value.getTime())) return null;
+			return instantFromDate(value);
+		}
+		const trimmed = value.trim();
+		if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+			return parsePlainDate(trimmed).toZonedDateTime("UTC").toInstant();
+		}
+		return parseInstant(trimmed);
+	} catch {
+		return null;
+	}
 }
 
 function dateInputToDate(value: string) {
-	return DateTime.fromISO(value, { zone: "utc" }).toJSDate();
+	const instant = toInstant(value);
+	if (!instant) {
+		throw new RangeError(`Invalid employment history date: ${value}`);
+	}
+	return dateFromInstant(instant);
 }
 
 export function toEmploymentHistoryPayload(value: FormValues): UpsertEmploymentHistory {
@@ -57,9 +80,9 @@ function getCurrencyFormatter(currency: string) {
 	return formatter;
 }
 
-export function formatDate(value: Date | string | null | undefined) {
-	const date = toDateTime(value);
-	return date?.isValid ? date.toLocaleString(DateTime.DATE_MED) : null;
+export function formatDate(value: Date | string | null | undefined, locale = "en") {
+	const instant = toInstant(value);
+	return instant ? formatPlainDate(plainDateAt(instant, "UTC"), locale, "dateMedium") : null;
 }
 
 export function formatCurrency(amount: number | null, currency: string) {
@@ -71,25 +94,31 @@ export function formatWeeklyHours(minutes: number) {
 	return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
 }
 
-export function isCurrentConfirmed(entry: EmploymentHistoryEntry, now: DateTime) {
+export function isCurrentConfirmed(entry: EmploymentHistoryEntry, now: Instant) {
 	if (entry.reviewState !== "confirmed") return false;
-	const validFrom = toDateTime(entry.validFrom);
-	const validUntil = toDateTime(entry.validUntil);
-	return !!validFrom?.isValid && validFrom <= now && (!validUntil?.isValid || validUntil > now);
+	const validFrom = toInstant(entry.validFrom);
+	const validUntil = toInstant(entry.validUntil);
+	return (
+		validFrom !== null &&
+		compareInstants(validFrom, now) <= 0 &&
+		(validUntil === null || compareInstants(validUntil, now) > 0)
+	);
 }
 
-export function isFutureConfirmed(entry: EmploymentHistoryEntry, now: DateTime) {
-	const validFrom = toDateTime(entry.validFrom);
-	return entry.reviewState === "confirmed" && !!validFrom?.isValid && validFrom > now;
+export function isFutureConfirmed(entry: EmploymentHistoryEntry, now: Instant) {
+	const validFrom = toInstant(entry.validFrom);
+	return (
+		entry.reviewState === "confirmed" && validFrom !== null && compareInstants(validFrom, now) > 0
+	);
 }
 
 export function canConfirm(entry: EmploymentHistoryEntry) {
 	return entry.reviewState === "draft" || entry.reviewState === "pending";
 }
 
-export function canCancel(entry: EmploymentHistoryEntry, now: DateTime) {
-	const validFrom = toDateTime(entry.validFrom);
-	return canConfirm(entry) || (!!validFrom?.isValid && validFrom > now);
+export function canCancel(entry: EmploymentHistoryEntry, now: Instant) {
+	const validFrom = toInstant(entry.validFrom);
+	return canConfirm(entry) || (validFrom !== null && compareInstants(validFrom, now) > 0);
 }
 
 export type EmploymentHistoryStint = {
@@ -119,8 +148,10 @@ export function groupHistoryByEmployment(
 		stints.set(key, stint);
 	}
 	const ordered = [...stints.values()].sort((left, right) => {
-		const leftStart = toDateTime(left.period?.startedAt)?.toMillis() ?? Number.NEGATIVE_INFINITY;
-		const rightStart = toDateTime(right.period?.startedAt)?.toMillis() ?? Number.NEGATIVE_INFINITY;
+		const leftStart =
+			toInstant(left.period?.startedAt)?.epochMilliseconds ?? Number.NEGATIVE_INFINITY;
+		const rightStart =
+			toInstant(right.period?.startedAt)?.epochMilliseconds ?? Number.NEGATIVE_INFINITY;
 		return rightStart - leftStart;
 	});
 	for (const [index, stint] of ordered.entries()) {

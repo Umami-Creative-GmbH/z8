@@ -1,7 +1,7 @@
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { parseTimeZone } from "@/lib/timezone/validation";
 import { splitCreditByLocalDay } from "@/lib/payroll-period/period-rows";
 import type { AbsenceData, WorkPeriodData } from "./types";
 
@@ -44,17 +44,18 @@ function workWithoutSettledDays(
 ): WorkPeriodData[] {
 	// A line without an end or minutes carries no hours; the formatters skip it.
 	if (!period.endTime || !period.durationMinutes) return [period];
-	const startAt = Temporal.Instant.fromEpochMilliseconds(period.startTime.toMillis());
-	const endExclusive = Temporal.Instant.fromEpochMilliseconds(period.endTime.toMillis());
+	const startAt = period.startTime.toInstant();
+	const endExclusive = period.endTime.toInstant();
+	const tz = parseTimeZone(timezone);
 	const days = [
-		...splitCreditByLocalDay({ startAt, endExclusive, minutes: period.durationMinutes }, timezone),
+		...splitCreditByLocalDay({ startAt, endExclusive, minutes: period.durationMinutes }, tz),
 	];
 	if (!days.some(([date]) => isSettled(period.employeeId, date))) return [period];
 
 	return days
 		.filter(([date]) => !isSettled(period.employeeId, date))
 		.map(([date, minutes]) => {
-			const day = localDayRange(date, timezone);
+			const day = localDayRange(date, tz);
 			const start = Temporal.Instant.compare(startAt, day.start) > 0 ? startAt : day.start;
 			const end =
 				Temporal.Instant.compare(endExclusive, day.endExclusive) < 0
@@ -63,8 +64,8 @@ function workWithoutSettledDays(
 			return {
 				...period,
 				// In the employee's zone, so a formatter dating lines by their start reads the local day.
-				startTime: DateTime.fromMillis(start.epochMilliseconds, { zone: timezone }),
-				endTime: DateTime.fromMillis(end.epochMilliseconds, { zone: timezone }),
+				startTime: start.toZonedDateTimeISO(tz),
+				endTime: end.toZonedDateTimeISO(tz),
 				durationMinutes: minutes,
 			};
 		});

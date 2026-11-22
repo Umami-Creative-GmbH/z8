@@ -2,7 +2,7 @@
  * SAP SuccessFactors Payroll Exporter
  * Implements IPayrollExporter for pushing time entries to SAP SuccessFactors OData API
  */
-import { DateTime } from "luxon";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault/secrets";
 import type {
@@ -260,8 +260,8 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 			metadata: {
 				employeeCount: uniqueEmployees.size,
 				dateRange: {
-					start: dateRange.start?.toISODate() || "",
-					end: dateRange.end?.toISODate() || "",
+					start: dateRange.start?.toString() || "",
+					end: dateRange.end?.toString() || "",
 				},
 				apiCallCount,
 				durationMs,
@@ -305,27 +305,31 @@ export class SuccessFactorsExporter implements IPayrollExporter {
 	private getDateRange(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
-	): { start: DateTime | null; end: DateTime | null } {
-		let start: DateTime | null = null;
-		let end: DateTime | null = null;
+	): { start: PlainDate | null; end: PlainDate | null } {
+		let start: PlainDate | null = null;
+		let end: PlainDate | null = null;
 
 		for (const period of workPeriods) {
-			if (!start || period.startTime < start) {
-				start = period.startTime;
+			const periodStart = period.startTime.toPlainDate();
+			if (!start || comparePlainDates(periodStart, start) < 0) {
+				start = periodStart;
 			}
-			if (period.endTime && (!end || period.endTime > end)) {
-				end = period.endTime;
+			if (period.endTime) {
+				const periodEnd = period.endTime.toPlainDate();
+				if (!end || comparePlainDates(periodEnd, end) > 0) {
+					end = periodEnd;
+				}
 			}
 		}
 
 		for (const absence of absences) {
-			const absStart = DateTime.fromISO(absence.startDate);
-			const absEnd = DateTime.fromISO(absence.endDate);
+			const absStart = parsePlainDate(absence.startDate);
+			const absEnd = parsePlainDate(absence.endDate);
 
-			if (!start || absStart < start) {
+			if (!start || comparePlainDates(absStart, start) < 0) {
 				start = absStart;
 			}
-			if (!end || absEnd > end) {
+			if (!end || comparePlainDates(absEnd, end) > 0) {
 				end = absEnd;
 			}
 		}

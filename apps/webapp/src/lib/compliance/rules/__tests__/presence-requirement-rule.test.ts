@@ -5,9 +5,9 @@
  * denominator adjustment for absences/holidays, severity levels, and edge cases.
  */
 
-import { DateTime } from "luxon";
 import { describe, expect, test } from "vitest";
 import type { PresenceRequirementEvidence } from "@/db/schema/compliance-finding";
+import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	type AbsenceDay,
 	type HolidayDay,
@@ -24,7 +24,7 @@ import type { EmployeeWithPolicy } from "../types";
 
 const TIMEZONE = "Europe/Berlin";
 /** Monday 2026-02-09 */
-const WEEK_START = DateTime.fromISO("2026-02-09", { zone: TIMEZONE });
+const WEEK_START = parsePlainDate("2026-02-09").toZonedDateTime(TIMEZONE);
 
 const mockEmployee: EmployeeWithPolicy = {
 	id: "emp-001",
@@ -47,13 +47,13 @@ function makeWorkPeriod(
 	locationType: string | null,
 	overrides?: Partial<WorkPeriodWithLocation>,
 ): WorkPeriodWithLocation {
-	const start = WEEK_START.plus({ days: dayOffset }).set({ hour: 9, minute: 0 });
-	const end = start.plus({ hours: 8 });
+	const start = WEEK_START.add({ days: dayOffset }).with({ hour: 9, minute: 0 });
+	const end = start.add({ hours: 8 });
 	return {
 		id: `wp-${dayOffset}-${Math.random().toString(36).slice(2, 8)}`,
 		employeeId: mockEmployee.id,
-		startTime: start.toJSDate(),
-		endTime: end.toJSDate(),
+		startTime: dateFromInstant(start.toInstant()),
+		endTime: dateFromInstant(end.toInstant()),
 		durationMinutes: 480,
 		isActive: false,
 		workLocationType: locationType,
@@ -83,8 +83,8 @@ function makeInput(params: {
 		employee: mockEmployee,
 		workPeriods: params.workPeriods,
 		dateRange: {
-			start: WEEK_START,
-			end: WEEK_START.plus({ days: 4 }), // Mon-Fri
+			start: WEEK_START.toInstant(),
+			end: WEEK_START.add({ days: 4 }).toInstant(), // Mon-Fri
 		},
 		thresholdOverrides: null,
 		presenceConfig: params.presenceConfig,
@@ -345,8 +345,8 @@ describe("PresenceRequirementRule", () => {
 				{
 					id: "wp-mon-1",
 					employeeId: mockEmployee.id,
-					startTime: monday.set({ hour: 8 }).toJSDate(),
-					endTime: monday.set({ hour: 12 }).toJSDate(),
+					startTime: dateFromInstant(monday.with({ hour: 8 }).toInstant()),
+					endTime: dateFromInstant(monday.with({ hour: 12 }).toInstant()),
 					durationMinutes: 240,
 					isActive: false,
 					workLocationType: "office",
@@ -354,8 +354,8 @@ describe("PresenceRequirementRule", () => {
 				{
 					id: "wp-mon-2",
 					employeeId: mockEmployee.id,
-					startTime: monday.set({ hour: 13 }).toJSDate(),
-					endTime: monday.set({ hour: 17 }).toJSDate(),
+					startTime: dateFromInstant(monday.with({ hour: 13 }).toInstant()),
+					endTime: dateFromInstant(monday.with({ hour: 17 }).toInstant()),
 					durationMinutes: 240,
 					isActive: false,
 					workLocationType: "office",
@@ -363,8 +363,8 @@ describe("PresenceRequirementRule", () => {
 				{
 					id: "wp-mon-3",
 					employeeId: mockEmployee.id,
-					startTime: monday.set({ hour: 18 }).toJSDate(),
-					endTime: monday.set({ hour: 20 }).toJSDate(),
+					startTime: dateFromInstant(monday.with({ hour: 18 }).toInstant()),
+					endTime: dateFromInstant(monday.with({ hour: 20 }).toInstant()),
 					durationMinutes: 120,
 					isActive: false,
 					workLocationType: "office",

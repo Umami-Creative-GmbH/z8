@@ -1,11 +1,13 @@
-import { DateTime } from "luxon";
+import { getLocale } from "next-intl/server";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { Temporal } from "temporal-polyfill";
 import { FormerEmployeesExportCard } from "@/components/payroll/former-employees-export-card";
 import { PayrollWorkspace } from "@/components/payroll/payroll-workspace";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getConfiguredPayrollExportFormatsAction,
@@ -17,13 +19,15 @@ import { loadPayrollWorkBalanceEmployees } from "./work-balances/coverage";
 async function PayrollPageContent() {
 	// The current payroll period must be resolved per request.
 	await connection();
-	const now = DateTime.utc();
-	const start = now.startOf("month");
-	const end = now.endOf("month");
+	const today = Temporal.Now.plainDateISO("UTC");
+	const locale = await getLocale();
+	const yearMonth = today.toPlainYearMonth();
+	const start = yearMonth.toPlainDate({ day: 1 });
+	const end = yearMonth.toPlainDate({ day: yearMonth.daysInMonth });
 	const initialRequest = {
-		startDate: start.toISODate() ?? "",
-		endDate: end.toISODate() ?? "",
-		label: start.toFormat("LLLL yyyy"),
+		startDate: start.toString(),
+		endDate: end.toString(),
+		label: formatPlainDate(start, locale, "monthYear"),
 	};
 
 	const [t, summaryResult, formatsResult] = await Promise.all([
@@ -46,7 +50,7 @@ async function PayrollPageContent() {
 				exportEntry={
 					// Their last months can still be exported (#1001).
 					<FormerEmployeesExportCard
-						initialMonth={start.toFormat("yyyy-MM")}
+						initialMonth={yearMonth.toString()}
 						exportFormats={formatsResult.success ? formatsResult.data : []}
 					/>
 				}

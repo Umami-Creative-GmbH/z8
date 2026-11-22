@@ -9,6 +9,10 @@ import {
 } from "./employee-employment-history-card";
 import { toEmploymentHistoryPayload } from "./employee-employment-history/utils";
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string | number | null>) =>
@@ -242,9 +246,9 @@ describe("EmployeeEmploymentHistoryCard", () => {
 		fireEvent.click(confirm);
 
 		await waitFor(() => expect(confirm.hasAttribute("disabled")).toBe(true));
-		expect(within(dialog).getByRole("button", { name: "Keep change" }).hasAttribute("disabled")).toBe(
-			true,
-		);
+		expect(
+			within(dialog).getByRole("button", { name: "Keep change" }).hasAttribute("disabled"),
+		).toBe(true);
 		fireEvent.click(confirm);
 		expect(onCancel).toHaveBeenCalledTimes(1);
 
