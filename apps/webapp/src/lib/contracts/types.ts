@@ -113,6 +113,8 @@ export interface ResolvedWorkPolicyVersion {
 	readonly policyVersionId: string | null;
 	readonly versionNumber: number | null;
 	readonly effectiveFromDate: string | null;
+	/** Stable cycle anchor date preserved across non-schedule policy versions (A2-15/P7-2). */
+	readonly scheduleAnchorDate?: string | null;
 	readonly scheduleEnabled: boolean;
 	readonly regulationEnabled: boolean;
 	readonly presenceEnabled: boolean;

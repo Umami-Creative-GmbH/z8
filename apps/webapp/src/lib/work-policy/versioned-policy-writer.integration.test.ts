@@ -1003,5 +1003,198 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 				data: { isActive: true },
 			}),
 		).rejects.toMatchObject({ refusal: "location_inactive" });
+
+		// A2-17: Reactivating through a versioned edit (isActive: true + schedule change) MUST also reject
+		// when another effective/future version references an archived location!
+		const locFutureArch = await seedLocation(
+			siblingPool,
+			ORG_ID,
+			USER_ID,
+			"Future Archived Branch",
+		);
+		const versionedReactPolicy = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			now,
+			data: {
+				name: "Versioned React Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+			},
+		});
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: versionedReactPolicy.policy.id,
+			now,
+			data: {
+				effectiveFromDate: "2026-08-01",
+				presenceEnabled: true,
+				presence: {
+					presenceMode: "minimum_count",
+					requiredOnsiteDays: 2,
+					locationId: locFutureArch,
+				},
+			},
+		});
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: versionedReactPolicy.policy.id,
+			now,
+			data: { isActive: false },
+		});
+		await deleteOrArchiveLocationGuarded(siblingDb, {
+			organizationId: ORG_ID,
+			locationId: locFutureArch,
+			actorUserId: USER_ID,
+			asOfDate: "2026-06-01",
+		});
+		await expect(
+			updateOrPublishWorkPolicy(siblingDb, {
+				organizationId: ORG_ID,
+				actorUserId: USER_ID,
+				policyId: versionedReactPolicy.policy.id,
+				now,
+				data: {
+					isActive: true,
+					effectiveFromDate: "2026-06-15",
+					schedule: {
+						scheduleCycle: "weekly",
+						scheduleType: "simple",
+						workingDaysPreset: "weekdays",
+						hoursPerCycle: "38",
+					},
+				},
+			}),
+		).rejects.toMatchObject({ refusal: "location_inactive" });
+
+		// A2-5: Creating a policy with presenceEnabled: false and a foreign-organization locationId MUST be rejected
+		const foreignOrgId = `${ORG_ID}-foreign`;
+		await siblingPool.query(
+			`INSERT INTO organization (id, name, slug, created_at) VALUES ($1, 'Foreign Org', $2, now())
+			 ON CONFLICT (id) DO NOTHING`,
+			[foreignOrgId, `${foreignOrgId}-slug`],
+		);
+		const foreignLocId = await seedLocation(siblingPool, foreignOrgId, USER_ID, "Foreign HQ");
+		await expect(
+			createVersionedWorkPolicy(siblingDb, {
+				organizationId: ORG_ID,
+				actorUserId: USER_ID,
+				now,
+				data: {
+					name: "Disabled Presence Foreign Loc",
+					scheduleEnabled: true,
+					regulationEnabled: false,
+					presenceEnabled: false,
+					schedule: {
+						scheduleCycle: "weekly",
+						scheduleType: "simple",
+						workingDaysPreset: "weekdays",
+						hoursPerCycle: "40",
+					},
+					presence: {
+						presenceMode: "minimum_count",
+						requiredOnsiteDays: 1,
+						locationId: foreignLocId,
+					},
+				},
+			}),
+		).rejects.toThrow(ValidationError);
+
+		// A2-8 / P7-1: Retiring a policy via isActive: false splits active contract_default rows at today
+		// so historical dates retain the retired policy while today/future drop work_policy_id and preserve hours/model!
+		const retDefaultPol = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			now,
+			data: {
+				name: "Retired Default Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "38",
+				},
+			},
+		});
+		const {
+			rows: [tplRow],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO contract_template (organization_id, name, created_by)
+			 VALUES ($1, 'Retire Default Tpl', $2) RETURNING id`,
+			[ORG_ID, USER_ID],
+		);
+		const {
+			rows: [tvRow],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO contract_template_version (
+				organization_id, template_id, version_number, work_policy_id,
+				weekly_contract_minutes, schedule_mode, work_model, presence_override,
+				balance_mode, schedule_source, created_by
+			) VALUES (
+				$1, $2, 1, $3, 2280, 'policy', 'hybrid', 'inherit', 'tracked', 'policy', $4
+			) RETURNING id`,
+			[ORG_ID, tplRow!.id, retDefaultPol.policy.id, USER_ID],
+		);
+		await siblingPool.query(
+			`INSERT INTO contract_default (
+				organization_id, scope, team_id, template_version_id,
+				effective_from_date, effective_until_date, created_by
+			) VALUES ($1, 'organization', NULL, $2, '2026-01-01', '2026-12-31', $3)`,
+			[ORG_ID, tvRow!.id, USER_ID],
+		);
+
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: retDefaultPol.policy.id,
+			now, // 2026-06-01 in UTC
+			data: { isActive: false },
+		});
+
+		const { rows: splitDefaults } = await siblingPool.query<{
+			effective_from_date: string;
+			effective_until_date: string | null;
+			work_policy_id: string | null;
+			weekly_contract_minutes: number | null;
+			work_model: string | null;
+		}>(
+			`SELECT cd.effective_from_date::text, cd.effective_until_date::text,
+				ctv.work_policy_id, ctv.weekly_contract_minutes, ctv.work_model
+			 FROM contract_default cd
+			 JOIN contract_template_version ctv ON ctv.id = cd.template_version_id
+			 WHERE cd.organization_id = $1 AND cd.scope = 'organization'
+			 ORDER BY cd.effective_from_date ASC`,
+			[ORG_ID],
+		);
+		expect(splitDefaults).toEqual([
+			{
+				effective_from_date: "2026-01-01",
+				effective_until_date: "2026-06-01",
+				work_policy_id: retDefaultPol.policy.id,
+				weekly_contract_minutes: 2280,
+				work_model: "hybrid",
+			},
+			{
+				effective_from_date: "2026-06-01",
+				effective_until_date: "2026-12-31",
+				work_policy_id: null,
+				weekly_contract_minutes: 2280,
+				work_model: "hybrid",
+			},
+		]);
+
+		await siblingPool.query("DELETE FROM organization WHERE id = $1", [foreignOrgId]);
 	});
 });

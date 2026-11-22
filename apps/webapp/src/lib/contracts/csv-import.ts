@@ -563,12 +563,13 @@ export async function previewCsvContractImport(
 		if (v.effective_from_date) {
 			try {
 				effectiveFromDate = parseIsoCalendarDate(v.effective_from_date, "effective_from_date");
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid effective_from_date.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "effective_from_date",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_iso_date",
+					`Invalid effective_from_date "${v.effective_from_date}". Expected YYYY-MM-DD.`,
+					{ field: "effective_from_date", value: v.effective_from_date },
+				);
 			}
 		}
 		if (!effectiveFromDate) {
@@ -585,13 +586,13 @@ export async function previewCsvContractImport(
 		const clearPin = (() => {
 			try {
 				return parseCsvBoolean(v.clear_personal_policy_pin);
-			} catch (error) {
-				const detail =
-					error instanceof Error ? error.message : "Invalid clear_personal_policy_pin.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "clear_personal_policy_pin",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_boolean",
+					`Invalid clear_personal_policy_pin "${v.clear_personal_policy_pin}".`,
+					{ field: "clear_personal_policy_pin", value: v.clear_personal_policy_pin ?? "" },
+				);
 				return null;
 			}
 		})();
@@ -639,36 +640,58 @@ export async function previewCsvContractImport(
 
 		// Weekly hours / minutes
 		if (v.weekly_contract_minutes) {
+			let num: number | null = null;
 			try {
-				const num = parseCsvNumber(v.weekly_contract_minutes);
-				if (num !== null) {
+				num = parseCsvNumber(v.weekly_contract_minutes);
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_number",
+					`Invalid numeric value "${v.weekly_contract_minutes}" for weekly_contract_minutes.`,
+					{ field: "weekly_contract_minutes", value: v.weekly_contract_minutes },
+				);
+			}
+			if (num !== null) {
+				try {
 					changes.weeklyContractMinutes = validateWeeklyContractMinutes(
 						Math.round(num),
 						"weekly_contract_minutes",
 					);
+				} catch {
+					pushDiagnostic(
+						errorDetails,
+						"invalid_weekly_minutes_range",
+						`weekly_contract_minutes "${v.weekly_contract_minutes}" is outside the allowed weekly range (0–10080 minutes).`,
+						{ field: "weekly_contract_minutes", value: v.weekly_contract_minutes },
+					);
 				}
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid weekly_contract_minutes.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "weekly_contract_minutes",
-					detail,
-				});
 			}
 		} else if (v.weekly_hours) {
+			let hours: number | null = null;
 			try {
-				const hours = parseCsvNumber(v.weekly_hours);
-				if (hours !== null) {
+				hours = parseCsvNumber(v.weekly_hours);
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_number",
+					`Invalid numeric value "${v.weekly_hours}" for weekly_hours.`,
+					{ field: "weekly_hours", value: v.weekly_hours },
+				);
+			}
+			if (hours !== null) {
+				try {
 					changes.weeklyContractMinutes = validateWeeklyContractMinutes(
 						Math.round(hours * 60),
 						"weekly_hours",
 					);
+				} catch {
+					pushDiagnostic(
+						errorDetails,
+						"invalid_weekly_minutes_range",
+						`weekly_hours "${v.weekly_hours}" is outside the allowed weekly range (0–168 hours).`,
+						{ field: "weekly_hours", value: v.weekly_hours },
+					);
 				}
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid weekly_hours.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "weekly_hours",
-					detail,
-				});
 			}
 		}
 
@@ -694,12 +717,13 @@ export async function previewCsvContractImport(
 						changes.scheduleMode = "custom_days";
 					}
 				}
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid custom_days.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "custom_days",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_custom_days",
+					`Invalid custom_days format "${v.custom_days}".`,
+					{ value: v.custom_days },
+				);
 			}
 		} else if (scheduleMode === "custom_days") {
 			pushDiagnostic(
@@ -758,12 +782,13 @@ export async function previewCsvContractImport(
 						changes.hourlyRate = rate;
 					}
 				}
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid hourly_rate.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "hourly_rate",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_number",
+					`Invalid numeric value "${v.hourly_rate}" for hourly_rate.`,
+					{ field: "hourly_rate", value: v.hourly_rate },
+				);
 			}
 		}
 
@@ -805,23 +830,25 @@ export async function previewCsvContractImport(
 			try {
 				const n = parseCsvNumber(v.on_call_weekly_minutes);
 				if (n !== null) onCallWeeklyMinutes = Math.round(n);
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid on_call_weekly_minutes.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "on_call_weekly_minutes",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_number",
+					`Invalid numeric value "${v.on_call_weekly_minutes}" for on_call_weekly_minutes.`,
+					{ field: "on_call_weekly_minutes", value: v.on_call_weekly_minutes },
+				);
 			}
 		} else if (v.on_call_weekly_hours) {
 			try {
 				const h = parseCsvNumber(v.on_call_weekly_hours);
 				if (h !== null) onCallWeeklyMinutes = Math.round(h * 60);
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid on_call_weekly_hours.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "on_call_weekly_hours",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_number",
+					`Invalid numeric value "${v.on_call_weekly_hours}" for on_call_weekly_hours.`,
+					{ field: "on_call_weekly_hours", value: v.on_call_weekly_hours },
+				);
 			}
 		}
 		let onCallDailyMinutes: number | null | undefined;
@@ -829,12 +856,13 @@ export async function previewCsvContractImport(
 			try {
 				const n = parseCsvNumber(v.on_call_daily_minutes);
 				if (n !== null) onCallDailyMinutes = Math.round(n);
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid on_call_daily_minutes.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "on_call_daily_minutes",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_number",
+					`Invalid numeric value "${v.on_call_daily_minutes}" for on_call_daily_minutes.`,
+					{ field: "on_call_daily_minutes", value: v.on_call_daily_minutes },
+				);
 			}
 		}
 
@@ -858,11 +886,17 @@ export async function previewCsvContractImport(
 					changes.onCallDailyMinutes = validatedOnCall.onCallDailyMinutes;
 				}
 			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid on-call agreement fields.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "on_call",
-					detail,
-				});
+				if (scheduleSource === "on_call" && !onCallHoursKind) {
+					pushDiagnostic(
+						errorDetails,
+						"on_call_hours_kind_required",
+						"On-call schedule source requires an on_call_hours_kind value.",
+					);
+				} else {
+					const detail =
+						error instanceof Error ? error.message : "Invalid on-call agreement fields.";
+					pushDiagnostic(errorDetails, "invalid_on_call_terms", detail);
+				}
 			}
 		}
 
@@ -1332,12 +1366,13 @@ export async function previewCsvLeavingDateImport(
 		} else {
 			try {
 				lastWorkingDay = parseIsoCalendarDate(v.last_working_day, "last_working_day");
-			} catch (error) {
-				const detail = error instanceof Error ? error.message : "Invalid last_working_day.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "last_working_day",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_iso_date",
+					`Invalid last_working_day "${v.last_working_day}". Expected YYYY-MM-DD.`,
+					{ field: "last_working_day", value: v.last_working_day },
+				);
 			}
 		}
 
@@ -1389,13 +1424,13 @@ export async function previewCsvLeavingDateImport(
 			try {
 				const parsedAck = parseCsvBoolean(v.acknowledge_unassigned_duties);
 				if (parsedAck !== null) acknowledgeUnassignedDuties = parsedAck;
-			} catch (error) {
-				const detail =
-					error instanceof Error ? error.message : "Invalid acknowledge_unassigned_duties.";
-				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-					field: "acknowledge_unassigned_duties",
-					detail,
-				});
+			} catch {
+				pushDiagnostic(
+					errorDetails,
+					"invalid_boolean",
+					`Invalid acknowledge_unassigned_duties "${v.acknowledge_unassigned_duties}".`,
+					{ field: "acknowledge_unassigned_duties", value: v.acknowledge_unassigned_duties },
+				);
 			}
 		}
 
@@ -1459,12 +1494,13 @@ export async function previewCsvLeavingDateImport(
 								"Will reschedule existing pending departure.",
 							);
 						}
-					} catch (error) {
-						const detail = error instanceof Error ? error.message : "Invalid future leaving date.";
-						pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-							field: "last_working_day",
-							detail,
-						});
+					} catch {
+						pushDiagnostic(
+							errorDetails,
+							"invalid_future_leaving_date",
+							`Invalid future leaving date "${lastWorkingDay}".`,
+							{ value: lastWorkingDay },
+						);
 					}
 				} else {
 					// Strictly past date for an active employee -> retrospective departure
@@ -1507,12 +1543,13 @@ export async function previewCsvLeavingDateImport(
 								);
 							}
 						}
-					} catch (error) {
-						const detail = error instanceof Error ? error.message : "Invalid past leaving date.";
-						pushDiagnostic(errorDetails, "invalid_field_value", detail, {
-							field: "last_working_day",
-							detail,
-						});
+					} catch {
+						pushDiagnostic(
+							errorDetails,
+							"invalid_past_leaving_date",
+							`Invalid past leaving date "${lastWorkingDay}".`,
+							{ value: lastWorkingDay },
+						);
 					}
 				}
 			} else if (errorDetails.length === 0) {
@@ -1682,12 +1719,33 @@ export async function commitCsvImportBatch(
 			)
 			.limit(1);
 		if (existing) {
-			const storedIntent = (existing.payload as { submittedIntentFingerprint?: unknown } | null)
-				?.submittedIntentFingerprint;
-			if (
-				existing.operationKind === input.operationKind &&
-				storedIntent === submittedIntentFingerprint
-			) {
+			const existingPayload = (existing.payload ?? {}) as Record<string, unknown>;
+			const storedIntent = existingPayload.submittedIntentFingerprint;
+			let intentMatches = false;
+			if (typeof storedIntent === "string") {
+				intentMatches =
+					existing.operationKind === input.operationKind &&
+					storedIntent === submittedIntentFingerprint;
+			} else if (existing.operationKind === input.operationKind) {
+				// A2-19: Pre-upgrade compatibility check for batches committed before
+				// `submittedIntentFingerprint` was persisted in `payload`.
+				const sameFingerprint =
+					existingPayload.confirmationFingerprint === input.confirmationFingerprint;
+				if (input.operationKind === "csv_contract_import") {
+					intentMatches =
+						sameFingerprint &&
+						(existingPayload.defaultEffectiveFromDate ?? null) ===
+							(input.defaultEffectiveFromDate ?? null) &&
+						Boolean(existingPayload.overwritePersonalDivergences) ===
+							Boolean(input.overwritePersonalDivergences);
+				} else {
+					intentMatches =
+						sameFingerprint &&
+						Boolean(existingPayload.defaultAcknowledgeUnassignedDuties ?? true) ===
+							Boolean(input.defaultAcknowledgeUnassignedDuties ?? true);
+				}
+			}
+			if (intentMatches) {
 				return replayExistingContractChangeBatch(db, {
 					organizationId: input.organizationId,
 					existingBatch: existing,

@@ -901,8 +901,8 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 						a.policy_id,
 						a.assignment_type::text AS scope,
 						a.team_id,
-						COALESCE(a.effective_from_date, DATE '1970-01-01') AS effective_from_date,
-						a.effective_until_date,
+						COALESCE(a.effective_from_date, DATE '1970-01-01')::text AS effective_from_date,
+						a.effective_until_date::text AS effective_until_date,
 						a.created_by
 					FROM "work_policy_assignment" a
 					WHERE a.assignment_type IN ('organization', 'team')
@@ -923,16 +923,11 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 
 				let processed = 0;
 				for (const row of rowsResult.rows) {
-					const fromStr =
-						row.effective_from_date instanceof Date
-							? row.effective_from_date.toISOString().slice(0, 10)
-							: String(row.effective_from_date);
+					const fromStr = String(row.effective_from_date).slice(0, 10);
 					const untilStr =
 						row.effective_until_date === null || row.effective_until_date === undefined
 							? null
-							: row.effective_until_date instanceof Date
-								? row.effective_until_date.toISOString().slice(0, 10)
-								: String(row.effective_until_date);
+							: String(row.effective_until_date).slice(0, 10);
 
 					// A1-17: Normalize and skip empty/inverted legacy assignment ranges BEFORE promoting
 					// into contract_default so 0319's effective_until_date > effective_from_date check never fails.
@@ -2018,6 +2013,14 @@ async function relationExists(client, relationName) {
 	return res.rows[0]?.exists === true;
 }
 
+async function columnExists(client, tableName, columnName) {
+	const res = await client.query(
+		`SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1 AND column_name = $2 LIMIT 1`,
+		[tableName, columnName],
+	);
+	return res.rows.length > 0;
+}
+
 async function resolveWorkClient(options) {
 	if (options.pool) {
 		const client = await options.pool.connect();
@@ -2140,6 +2143,33 @@ export async function runBoundaryAwareMigrations(options) {
 		const phase1SchemaPresent =
 			is0321Applied && (await relationExists(client, "public.work_policy_version"));
 		if (phase1SchemaPresent && !is0322Applied) {
+			// A2-9: Databases already parked at an earlier 0321 build skip re-executing 0321's SQL;
+			// ensure the nullable `source_batch_item_id` column exists before Drain Gate 1 so
+			// assignment writers work while parked at 0321.
+			const hasSourceBatchItemCol = await columnExists(
+				client,
+				"work_policy_assignment",
+				"source_batch_item_id",
+			);
+			if (!hasSourceBatchItemCol) {
+				await withLockTimeoutRetry(async () => {
+					await client.query("BEGIN");
+					try {
+						await client.query("SET LOCAL lock_timeout = '500ms'");
+						await client.query(
+							`ALTER TABLE "work_policy_assignment" ADD COLUMN IF NOT EXISTS "source_batch_item_id" uuid`,
+						);
+						await client.query("COMMIT");
+					} catch (error) {
+						try {
+							await client.query("ROLLBACK");
+						} catch {
+							// ignore rollback error
+						}
+						throw error;
+					}
+				}, retryOptions);
+			}
 			backfillStats = await runPhase1ChunkedBackfill(client, {
 				chunkSize: backfillChunkSize,
 				retryOptions,

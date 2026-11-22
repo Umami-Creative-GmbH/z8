@@ -519,4 +519,334 @@ describe("contracts pure helpers & resolver", () => {
 		);
 		expect(simpleBiRes.requiredMinutes).toBe(480);
 	});
+
+	it("enforces dated retirement boundaries on defaults & direct pins (A2-8 / P7-1), local-midnight dated assignments (A2-12), manager-assignment pay-only preservation (A2-13), hours_only week-2 & daily workdays (A2-14), and stable cycle anchor across non-schedule versions (A2-15 / P7-2)", () => {
+		// A2-8 / P7-1: A retired policy (retiredOnDate = 2026-06-10) on a dated default ending 2026-07-01
+		// must NOT apply on/after 2026-06-10, and a direct employee terms pin also respects retiredOnDate.
+		const retiredPol: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-retired",
+			isActive: false,
+			retiredOnDate: "2026-06-10",
+		};
+		const longDatedDefault = {
+			id: "def-long",
+			scope: "organization" as const,
+			teamId: null,
+			templateVersionId: "tv-long",
+			effectiveFromDate: "2026-01-01",
+			effectiveUntilDate: "2026-07-01",
+			workPolicyId: retiredPol.id,
+			weeklyContractMinutes: 2400,
+			scheduleMode: "policy" as const,
+			workModel: "onsite" as const,
+			presenceOverride: "inherit" as const,
+			balanceMode: "tracked" as const,
+			scheduleSource: "policy" as const,
+			customDays: [],
+			createdAt: new Date("2026-01-01T00:00:00Z"),
+		};
+		const afterRetire = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-11"),
+				policiesById: new Map([[retiredPol.id, retiredPol]]),
+				contractDefaults: [longDatedDefault],
+			}),
+		);
+		expect(afterRetire.workPolicy).toBeNull();
+
+		// Properly capped default ending AT retiredOnDate keeps retired policy on 2026-06-09
+		const cappedDefault = { ...longDatedDefault, effectiveUntilDate: "2026-06-10" };
+		const beforeRetire = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-09"),
+				policiesById: new Map([[retiredPol.id, retiredPol]]),
+				contractDefaults: [cappedDefault],
+			}),
+		);
+		expect(beforeRetire.workPolicy?.policyId).toBe(retiredPol.id);
+
+		// Direct employee terms pin to retired policy does NOT apply on/after retiredOnDate
+		const pinAfterRetire = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-11"),
+				policiesById: new Map([[retiredPol.id, retiredPol]]),
+				confirmedTerms: [
+					{
+						id: "terms-pin-retired",
+						employmentPeriodId: "period-1",
+						validFrom: new Date("2026-01-01T00:00:00Z"),
+						validUntil: null,
+						validFromDate: "2026-01-01",
+						validUntilDate: null,
+						status: "active",
+						contractType: "fixed",
+						hourlyRate: null,
+						currency: "EUR",
+						weeklyContractMinutes: 2400,
+						workModel: "onsite",
+						workPolicyId: retiredPol.id,
+						scheduleMode: "policy",
+						presenceOverride: "inherit",
+						balanceMode: "tracked",
+						scheduleSource: "policy",
+						employmentProfile: "regular",
+						migratedLegacyTerms: false,
+						probationStartsOn: null,
+						probationEndsOn: null,
+						createdAt: new Date("2026-01-01T00:00:00Z"),
+						customDays: [],
+						onCallTerms: null,
+					},
+				],
+			}),
+		);
+		expect(pinAfterRetire.workPolicy).toBeNull();
+
+		// A2-12: Dated non-legacy assignment starting 2026-01-02 applies at 00:30 Berlin time
+		// (2026-01-01T23:30:00Z) even though effectiveFrom stores UTC midnight 2026-01-02T00:00:00Z
+		const activePol = detailedPolicy();
+		const berlinMidnightRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-01-02"),
+				at: parseInstant("2026-01-01T23:30:00Z"),
+				employeeCalendarTimezone: "Europe/Berlin",
+				organizationTimezone: "Europe/Berlin",
+				policiesById: new Map([[activePol.id, activePol]]),
+				policyAssignments: [
+					{
+						id: "asgn-mgr-berlin",
+						policyId: activePol.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "manager_assignment",
+						effectiveFrom: new Date("2026-01-02T00:00:00Z"),
+						effectiveUntil: null,
+						effectiveFromDate: "2026-01-02",
+						effectiveUntilDate: null,
+						priority: 2,
+						isActive: true,
+						createdAt: new Date("2026-01-01T12:00:00Z"),
+					},
+				],
+			}),
+		);
+		expect(berlinMidnightRes.workPolicy?.policyId).toBe(activePol.id);
+
+		// A2-13: Pay-only terms change (workPolicyId = null) after a manager_assignment preserves it
+		const payEditRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-03-01"),
+				policiesById: new Map([[activePol.id, activePol]]),
+				policyAssignments: [
+					{
+						id: "asgn-mgr-keep",
+						policyId: activePol.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "manager_assignment",
+						effectiveFrom: new Date("2026-02-01T00:00:00Z"),
+						effectiveUntil: null,
+						effectiveFromDate: "2026-02-01",
+						effectiveUntilDate: null,
+						priority: 2,
+						isActive: true,
+						createdAt: new Date("2026-02-01T00:00:00Z"),
+					},
+				],
+				confirmedTerms: [
+					{
+						id: "terms-wage-only",
+						employmentPeriodId: "period-1",
+						validFrom: new Date("2026-02-15T00:00:00Z"),
+						validUntil: null,
+						validFromDate: "2026-02-15",
+						validUntilDate: null,
+						status: "active",
+						contractType: "hourly",
+						hourlyRate: 25,
+						currency: "EUR",
+						weeklyContractMinutes: null,
+						workModel: null,
+						workPolicyId: null,
+						scheduleMode: null,
+						presenceOverride: "inherit",
+						balanceMode: null,
+						scheduleSource: null,
+						employmentProfile: "regular",
+						migratedLegacyTerms: false,
+						probationStartsOn: null,
+						probationEndsOn: null,
+						createdAt: new Date("2026-02-15T00:00:00Z"),
+						customDays: [],
+						onCallTerms: null,
+					},
+				],
+			}),
+		);
+		expect(payEditRes.workPolicy?.policyId).toBe(activePol.id);
+
+		// A2-14 & A2-15 / P7-2: Non-schedule v2 published in week 2 keeps v1's anchor date, AND
+		// hours_only uses week 2's active workdays (Tuesday) rather than week 1's Monday.
+		const biweeklySchedule = {
+			id: "sched-bi-anchor",
+			scheduleCycle: "biweekly" as const,
+			scheduleType: "detailed" as const,
+			workingDaysPreset: "custom" as const,
+			hoursPerCycle: null,
+			normalizedCycleMinutes: null,
+			homeOfficeDaysPerCycle: 0,
+			days: [
+				{
+					dayOfWeek: "monday" as const,
+					hoursPerDay: "8.00",
+					minutesPerDay: 480,
+					isWorkDay: true,
+					cycleWeek: 1,
+					latestClockIn: null,
+				},
+				{
+					dayOfWeek: "tuesday" as const,
+					hoursPerDay: "6.00",
+					minutesPerDay: 360,
+					isWorkDay: true,
+					cycleWeek: 2,
+					latestClockIn: null,
+				},
+			],
+		};
+		const multiVerBiweekly: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-bi-anchor",
+			versions: [
+				{
+					...detailedPolicy().versions[0]!,
+					id: "pv-1",
+					versionNumber: 1,
+					effectiveFromDate: "2026-06-01", // Monday (week 1)
+					regulationEnabled: false,
+					schedule: biweeklySchedule,
+				},
+				{
+					...detailedPolicy().versions[0]!,
+					id: "pv-2",
+					versionNumber: 2,
+					effectiveFromDate: "2026-06-08", // Monday (week 2) — non-schedule regulation change only!
+					regulationEnabled: true,
+					schedule: { ...biweeklySchedule, id: "sched-bi-anchor-v2" },
+				},
+			],
+		};
+		const biAsgn = {
+			id: "asgn-bi-anchor",
+			policyId: multiVerBiweekly.id,
+			assignmentType: "employee" as const,
+			teamId: null,
+			employeeId: "emp-1",
+			sourceKind: "employment_terms",
+			effectiveFrom: new Date("2026-06-01T00:00:00Z"),
+			effectiveUntil: null,
+			effectiveFromDate: "2026-06-01",
+			effectiveUntilDate: null,
+			priority: 2,
+			isActive: true,
+			createdAt: new Date("2026-06-01T00:00:00Z"),
+		};
+		// On 2026-06-09 (Tuesday of week 2), v2 is active, scheduleAnchorDate MUST stay 2026-06-01 -> Tuesday = 360m!
+		const w2WithV2 = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-09"),
+				policiesById: new Map([[multiVerBiweekly.id, multiVerBiweekly]]),
+				policyAssignments: [biAsgn],
+			}),
+		);
+		expect(w2WithV2.workPolicy?.policyVersionId).toBe("pv-2");
+		expect(w2WithV2.workPolicy?.scheduleAnchorDate).toBe("2026-06-01");
+		expect(w2WithV2.requiredMinutes).toBe(360);
+		expect(w2WithV2.weeklyScheduleDays.find((d) => d.dayOfWeek === "monday")?.isWorkDay).toBe(
+			false,
+		);
+
+		// hours_only on week 2 (2026-06-09) distributes weeklyContractMinutes (420m) onto Tuesday (week 2), NOT Monday!
+		const hoursOnlyW2 = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-09"),
+				policiesById: new Map([[multiVerBiweekly.id, multiVerBiweekly]]),
+				policyAssignments: [biAsgn],
+				confirmedTerms: [
+					{
+						id: "terms-ho-w2",
+						employmentPeriodId: "period-1",
+						validFrom: new Date("2026-06-01T00:00:00Z"),
+						validUntil: null,
+						validFromDate: "2026-06-01",
+						validUntilDate: null,
+						status: "active",
+						contractType: "fixed",
+						hourlyRate: null,
+						currency: "EUR",
+						weeklyContractMinutes: 420,
+						workModel: "onsite",
+						workPolicyId: multiVerBiweekly.id,
+						scheduleMode: "hours_only",
+						presenceOverride: "inherit",
+						balanceMode: "tracked",
+						scheduleSource: "policy",
+						employmentProfile: "regular",
+						migratedLegacyTerms: false,
+						probationStartsOn: null,
+						probationEndsOn: null,
+						createdAt: new Date("2026-06-01T00:00:00Z"),
+						customDays: [],
+						onCallTerms: null,
+					},
+				],
+			}),
+		);
+		expect(hoursOnlyW2.requiredMinutes).toBe(420);
+		expect(hoursOnlyW2.weeklyScheduleDays.find((d) => d.dayOfWeek === "monday")?.isWorkDay).toBe(
+			false,
+		);
+
+		// A2-14: hours_only fallback on a weekend-only daily policy (8h/day * 2 days = 16h/wk, NOT 40h/wk)
+		const weekendDailyPolicy: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-weekend-daily",
+			versions: [
+				{
+					...detailedPolicy().versions[0]!,
+					id: "pv-wd",
+					schedule: {
+						id: "sched-wd",
+						scheduleCycle: "daily",
+						scheduleType: "simple",
+						workingDaysPreset: "weekends",
+						hoursPerCycle: "8.00",
+						normalizedCycleMinutes: 480,
+						homeOfficeDaysPerCycle: 0,
+						days: [],
+					},
+				},
+			],
+		};
+		const weekendHoursOnly = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-06"), // Saturday
+				policiesById: new Map([[weekendDailyPolicy.id, weekendDailyPolicy]]),
+				contractDefaults: [
+					{
+						...longDatedDefault,
+						id: "def-wd",
+						workPolicyId: weekendDailyPolicy.id,
+						weeklyContractMinutes: null,
+						scheduleMode: "hours_only",
+						effectiveUntilDate: null,
+					},
+				],
+			}),
+		);
+		expect(weekendHoursOnly.requiredMinutes).toBe(480); // 960 / 2 = 480m on Sat, NOT 2400 / 2 = 1200m!
+	});
 });

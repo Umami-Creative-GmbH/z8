@@ -822,7 +822,8 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 		expect(badPreview.rows[0]?.errors[0]).toMatch(/Invalid work_model/i);
 		expect(badPreview.rows[1]?.errors[0]).toMatch(/Employee not found/i);
 		expect(badPreview.rows[2]?.errors[0]).toMatch(/Duplicate employee/i);
-		expect(badPreview.rows[3]?.errors[0]).toMatch(/hours kind/i);
+		expect(badPreview.rows[3]?.errors[0]).toMatch(/on_call_hours_kind|hours kind/i);
+		expect(badPreview.rows[3]?.errorDetails[0]?.code).toBe("on_call_hours_kind_required");
 
 		await expect(
 			commitCsvImportBatch(db, {
@@ -1408,5 +1409,176 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 		});
 		expect(deepErrorPreview.rows).toHaveLength(50);
 		expect(deepErrorPreview.errorRowDetails.some((r) => r.rowNumber === 56)).toBe(true);
+	});
+
+	it("enforces winning-terms legacy eligibility on rehires (A2-3), replays bulk retries after policy retirement and across pre-upgrade payloads (A2-18/A2-19), and emits structured CSV number diagnostics (A2-23)", async () => {
+		// A2-3: Rehired employee has an open stint with non-legacy terms PLUS an old null-period legacy row.
+		// onlyLegacyTerms MUST NOT select or modify them!
+		const rehiredEmp = await seedEmployee({ key: "a2-3-rehire", employeeNumber: "A2-301" });
+		const stillLegacyEmp = await seedEmployee({ key: "a2-3-legacy", employeeNumber: "A2-302" });
+		const orgPol = await seedSimplePolicy("A2-3 Org Default Policy", "40.00");
+		await scheduleContractDefault(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			scope: "organization",
+			effectiveFromDate: "2026-01-01",
+			workPolicyId: orgPol,
+			weeklyContractMinutes: 2400,
+			workModel: "onsite",
+			scheduleMode: "policy",
+			balanceMode: "tracked",
+			scheduleSource: "policy",
+		});
+
+		// Insert a covering employment_period_id = NULL legacy row on rehiredEmp (simulating pre-rehire legacy row)
+		await admin.query(
+			`INSERT INTO employee_employment_history (
+				organization_id, employee_id, employment_period_id,
+				valid_from, valid_from_date, status, review_state,
+				contract_type, currency, weekly_contract_minutes, migrated_legacy_terms,
+				created_by, updated_at
+			) VALUES (
+				$1, $2, NULL,
+				'2025-01-01T00:00:00Z', '2025-01-01', 'active', 'confirmed',
+				'fixed', 'EUR', 1800, true, $3, now()
+			)`,
+			[ORG_ID, rehiredEmp.employeeId, ADMIN_USER_ID],
+		);
+		// Give rehiredEmp non-legacy confirmed terms attached to their open stint
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: rehiredEmp.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-02-01",
+			weeklyContractMinutes: 1920,
+			migratedLegacyTerms: false,
+		});
+		// Give stillLegacyEmp an actual winning legacy row
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: stillLegacyEmp.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-02-01",
+			weeklyContractMinutes: 1800,
+			migratedLegacyTerms: true,
+		});
+
+		const legacyPreview = await previewBulkContractAction(db, {
+			organizationId: ORG_ID,
+			actionKind: "adopt_default",
+			effectiveFromDate: "2026-06-01",
+			target: {
+				employeeIds: [rehiredEmp.employeeId, stillLegacyEmp.employeeId],
+				onlyLegacyTerms: true,
+			},
+		});
+		expect(legacyPreview.employees.map((e) => e.employeeId)).toEqual([stillLegacyEmp.employeeId]);
+
+		// A2-18: Retry of an identical committed bulk template application succeeds EVEN AFTER the policy is retired
+		const retiringPolicyId = await seedSimplePolicy("A2-18 Retiring Policy", "38.00");
+		const tpl = await createContractTemplate(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			name: "A2-18 Template",
+			workPolicyId: retiringPolicyId,
+			weeklyContractMinutes: 2280,
+			workModel: "hybrid",
+			balanceMode: "tracked",
+			scheduleMode: "policy",
+			scheduleSource: "policy",
+		});
+		const tplPreview = await previewBulkContractAction(db, {
+			organizationId: ORG_ID,
+			actionKind: "apply_template_version",
+			templateVersionId: tpl.templateVersionId,
+			effectiveFromDate: "2026-07-01",
+			target: { employeeIds: [rehiredEmp.employeeId] },
+		});
+		const retryReqId = randomUUID();
+		const firstSubmit = await submitBulkContractAction(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			requestId: retryReqId,
+			actionKind: "apply_template_version",
+			templateVersionId: tpl.templateVersionId,
+			effectiveFromDate: "2026-07-01",
+			target: { employeeIds: [rehiredEmp.employeeId] },
+			confirmationFingerprint: tplPreview.confirmationFingerprint,
+			runnerOptions: { skipBalanceDirtyNotification: true },
+		});
+		expect(firstSubmit.replayed).toBe(false);
+
+		// Now retire the referenced policy in the database
+		await admin.query(
+			`UPDATE work_policy SET is_active = false, updated_at = now() WHERE id = $1`,
+			[retiringPolicyId],
+		);
+
+		// Identical retry MUST replay the original receipt instead of failing with work_policy_inactive!
+		const replayAfterRetire = await submitBulkContractAction(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			requestId: retryReqId,
+			actionKind: "apply_template_version",
+			templateVersionId: tpl.templateVersionId,
+			effectiveFromDate: "2026-07-01",
+			target: { employeeIds: [rehiredEmp.employeeId] },
+			confirmationFingerprint: tplPreview.confirmationFingerprint,
+			runnerOptions: { skipBalanceDirtyNotification: true },
+		});
+		expect(replayAfterRetire.replayed).toBe(true);
+		expect(replayAfterRetire.batch.id).toBe(firstSubmit.batch.id);
+
+		// A2-19: Pre-upgrade batch payload lacking submittedIntentFingerprint still replays cleanly
+		// on matching request and rejects mismatched request!
+		await admin.query(
+			`UPDATE contract_change_batch
+			 SET payload = payload - 'submittedIntentFingerprint'
+			 WHERE id = $1`,
+			[firstSubmit.batch.id],
+		);
+		const preUpgradeReplay = await submitBulkContractAction(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			requestId: retryReqId,
+			actionKind: "apply_template_version",
+			templateVersionId: tpl.templateVersionId,
+			effectiveFromDate: "2026-07-01",
+			target: { employeeIds: [rehiredEmp.employeeId] },
+			confirmationFingerprint: tplPreview.confirmationFingerprint,
+			runnerOptions: { skipBalanceDirtyNotification: true },
+		});
+		expect(preUpgradeReplay.replayed).toBe(true);
+		await expect(
+			submitBulkContractAction(db, {
+				organizationId: ORG_ID,
+				actorUserId: ADMIN_USER_ID,
+				requestId: retryReqId,
+				actionKind: "apply_template_version",
+				templateVersionId: tpl.templateVersionId,
+				effectiveFromDate: "2026-08-01", // changed effective date!
+				target: { employeeIds: [rehiredEmp.employeeId] },
+				confirmationFingerprint: tplPreview.confirmationFingerprint,
+				runnerOptions: { skipBalanceDirtyNotification: true },
+			}),
+		).rejects.toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "request_conflict",
+		} satisfies Partial<ConflictError>);
+
+		// A2-23: Invalid numeric CSV cell emits structured invalid_number diagnostic (no English parser text)
+		const badNumCsv = [
+			"employee_number,effective_from_date,weekly_hours",
+			"A2-301,2026-07-01,not-a-number",
+		].join("\n");
+		const badNumPreview = await previewCsvContractImport(db, {
+			organizationId: ORG_ID,
+			csvText: badNumCsv,
+		});
+		expect(badNumPreview.canCommit).toBe(false);
+		expect(badNumPreview.rows[0]?.errorDetails[0]).toMatchObject({
+			code: "invalid_number",
+			params: { field: "weekly_hours", value: "not-a-number" },
+		});
 	});
 });

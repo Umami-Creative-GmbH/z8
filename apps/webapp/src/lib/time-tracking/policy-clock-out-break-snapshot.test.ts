@@ -402,6 +402,8 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 			if (compiled.sql.includes("assignment_candidates")) {
 				expect(compiled.sql).toContain("for update of employee");
 				expect(compiled.sql).toContain("for update of assignment");
+				expect(compiled.sql).toContain("pg_timezone_names");
+				expect(compiled.sql).toContain("employee_team_history");
 				expect(compiled.sql).toContain(
 					'assignment.organization_id = employee_row."organizationId"',
 				);
@@ -535,6 +537,73 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 			},
 			breakRules: [],
 		});
+	});
+
+	it("resolves a historically capped assignment for a retired policy (A2-10) and rejects post-retirement ones", async () => {
+		const retiredCapped = {
+			...candidate({
+				id: workPolicySnapshot.assignment.id,
+				type: "team",
+				policyId: workPolicySnapshot.policy.id,
+				priority: 2,
+			}),
+			assignmentEffectiveUntilDate: "2026-04-01",
+			policyEvaluationDate: "2026-03-29",
+		};
+		const historicalExecute = vi
+			.fn()
+			.mockResolvedValueOnce({ rows: [retiredCapped] })
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						policyId: workPolicySnapshot.policy.id,
+						policyName: workPolicySnapshot.policy.name,
+						policyIsActive: false,
+						policyUpdatedAt: new Date("2026-04-01T12:00:00Z"),
+						policyVersionId,
+						effectiveFromDate,
+						regulationEnabled: true,
+						regulationId: workPolicySnapshot.regulation.id,
+						maxUninterruptedMinutes: 360,
+						breakRules: workPolicySnapshot.breakRules,
+					},
+				],
+			});
+		await expect(resolveWith(historicalExecute)).resolves.toEqual(
+			parsePolicyClockOutBreakSnapshot(workPolicySnapshotV2, evaluatedAt),
+		);
+
+		const uncappedRetiredExecute = vi
+			.fn()
+			.mockResolvedValueOnce({
+				rows: [
+					candidate({
+						id: workPolicySnapshot.assignment.id,
+						type: "team",
+						policyId: workPolicySnapshot.policy.id,
+						priority: 2,
+					}),
+				],
+			})
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						policyId: workPolicySnapshot.policy.id,
+						policyName: workPolicySnapshot.policy.name,
+						policyIsActive: false,
+						policyUpdatedAt: new Date("2026-04-01T12:00:00Z"),
+						policyVersionId,
+						effectiveFromDate,
+						regulationEnabled: false,
+						regulationId: null,
+						maxUninterruptedMinutes: null,
+						breakRules: [],
+					},
+				],
+			});
+		await expect(resolveWith(uncappedRetiredExecute)).rejects.toThrow(
+			"Policy clock-out break snapshot resolution failed",
+		);
 	});
 
 	it("fails closed when an assignment references invalid policy evidence", async () => {

@@ -488,28 +488,34 @@ export const getEmployeeAction = organizationAction(
 				return yield* Effect.fail(employeeNotFound(employeeId));
 			}
 
-			// The edit form shows today's contract type read-only (#1177).
-			const termsToday = yield* dbService.query("employmentTerms.getToday", async () => {
-				const { timezone, today } = await loadOrganizationDay(dbService.db, {
-					organizationId,
-					now: systemClock.nowInstant(),
-				});
-				return loadTermsInForceOn(dbService.db, {
-					organizationId,
-					employeeId,
-					date: today,
-					timezone,
-				});
-			});
+			// The edit form shows today's contract type read-only (#1177), restricted to org admins (A2-1).
+			const termsToday = viewer.isOrgAdmin
+				? yield* dbService.query("employmentTerms.getToday", async () => {
+						const { timezone, today } = await loadOrganizationDay(dbService.db, {
+							organizationId,
+							now: systemClock.nowInstant(),
+						});
+						return loadTermsInForceOn(dbService.db, {
+							organizationId,
+							employeeId,
+							date: today,
+							timezone,
+						});
+					})
+				: null;
 
 			return {
 				...detail,
 				birthday: birthdayVisibleTo(viewer, detail.birthday),
 				kind: "employee",
 				membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
-				contractTypeToday: termsToday?.contractType ?? null,
+				contractTypeToday: viewer.isOrgAdmin ? (termsToday?.contractType ?? null) : null,
 				isFormer: targetEmployee.isFormer === true,
-				...formerSinceField(targetEmployee.isFormer === true, targetEmployee.formerSince),
+				// Leaving dates (`formerSince`) are restricted to org admins (Spec #1921 Story 22 / A2-1).
+				...formerSinceField(
+					viewer.isOrgAdmin && targetEmployee.isFormer === true,
+					targetEmployee.formerSince,
+				),
 			} as EmployeeWithRelations;
 		}),
 );

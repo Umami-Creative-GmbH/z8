@@ -1,5 +1,8 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import {
+	contractDefault,
+	contractTemplateVersion,
+	contractTemplateVersionDay,
 	workPolicy,
 	workPolicyBreakOption,
 	workPolicyBreakRule,
@@ -10,9 +13,15 @@ import {
 	workPolicyVersion,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { instantFromDate, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { hasValidLatestClockIns, latestClockInForDay } from "@/lib/scheduling/latest-clock-in";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
@@ -239,13 +248,15 @@ function resolveRegulationValues(
 }
 
 /**
- * Locks a referenced presence location `FOR SHARE` and asserts `is_active = true`.
- * Always called AFTER locking `work_policy` to keep lock ordering strictly acyclic (`work_policy -> location`).
+ * Locks a referenced presence location `FOR SHARE`, verifying tenant ownership (and optionally
+ * `is_active = true`). Always called AFTER locking `work_policy` to keep lock ordering strictly
+ * acyclic (`work_policy -> location`).
  */
-export async function lockActiveLocationForShareInTx(
+export async function lockOwnedLocationForShareInTx(
 	tx: PolicyTransaction,
 	organizationId: string,
 	locationId: string,
+	requireActive: boolean,
 ): Promise<void> {
 	if (!UUID_REGEX.test(locationId)) {
 		throw new ValidationError({
@@ -262,12 +273,227 @@ export async function lockActiveLocationForShareInTx(
 		FOR SHARE
 	`);
 	const row = toRows(result)[0];
-	if (!row || row.isActive !== true) {
+	if (!row || (requireActive && row.isActive !== true)) {
 		throw new ValidationError({
-			message: "Referenced presence location is inactive or does not exist",
+			message: requireActive
+				? "Referenced presence location is inactive or does not exist"
+				: "Referenced presence location does not belong to this organization",
 			field: "presence.locationId",
 			refusal: "location_inactive",
 		});
+	}
+}
+
+export async function lockActiveLocationForShareInTx(
+	tx: PolicyTransaction,
+	organizationId: string,
+	locationId: string,
+): Promise<void> {
+	return lockOwnedLocationForShareInTx(tx, organizationId, locationId, true);
+}
+
+/**
+ * Validates and locks (`FOR SHARE`) every location referenced by currently effective or future
+ * presence-enabled versions of a policy before reactivating it (A1-30 / A2-17).
+ */
+async function validateReactivationPresenceLocationsInTx(
+	tx: PolicyTransaction,
+	input: {
+		organizationId: string;
+		policyId: string;
+		versions: readonly PolicyVersionSummary[];
+		orgTodayDate: string;
+		excludeVersionIds?: ReadonlySet<string>;
+	},
+): Promise<void> {
+	if (input.versions.length === 0) return;
+	const currentEffective =
+		input.versions.find((v) => v.effectiveFromDate <= input.orgTodayDate) ?? null;
+	const futureVersions = input.versions.filter((v) => v.effectiveFromDate > input.orgTodayDate);
+	const activePresenceVersionIds = [
+		...(currentEffective &&
+		currentEffective.presenceEnabled &&
+		!input.excludeVersionIds?.has(currentEffective.id)
+			? [currentEffective.id]
+			: []),
+		...futureVersions
+			.filter((v) => v.presenceEnabled && !input.excludeVersionIds?.has(v.id))
+			.map((v) => v.id),
+	];
+	if (activePresenceVersionIds.length === 0) return;
+
+	const presenceRows = await tx
+		.select({ locationId: workPolicyPresence.locationId })
+		.from(workPolicyPresence)
+		.where(
+			and(
+				eq(workPolicyPresence.policyId, input.policyId),
+				inArray(workPolicyPresence.policyVersionId, activePresenceVersionIds),
+			),
+		);
+	const uniqueLocationIds = [
+		...new Set(presenceRows.map((row) => row.locationId).filter((id): id is string => Boolean(id))),
+	].sort((a, b) => a.localeCompare(b));
+	for (const locId of uniqueLocationIds) {
+		await lockActiveLocationForShareInTx(tx, input.organizationId, locId);
+	}
+}
+
+/**
+ * Records a dated retirement boundary (`orgTodayDate`) on active `work_policy_assignment` and
+ * `contract_default` rows referencing a retired policy so historical dates continue resolving
+ * the retired policy while today and future dates stop applying it without losing non-policy
+ * contract default fields (A1-12 / A2-8 / P7-1).
+ */
+export async function retirePolicyReferencesInTx(
+	tx: PolicyTransaction,
+	input: {
+		organizationId: string;
+		policyId: string;
+		actorUserId: string;
+		orgTodayDate: string;
+		now: Date;
+	},
+): Promise<void> {
+	const { organizationId, policyId, actorUserId, orgTodayDate, now } = input;
+	const orgTodayMidnight = utcMidnight(parsePlainDate(orgTodayDate));
+
+	// 1. Cap active policy assignments at orgTodayDate and deactivate future ones.
+	await tx.execute(sql`
+		UPDATE work_policy_assignment
+		SET effective_until = ${orgTodayMidnight},
+			effective_until_date = ${orgTodayDate}::date,
+			updated_at = ${now}
+		WHERE organization_id = ${organizationId}
+			AND policy_id = ${policyId}::uuid
+			AND is_active = true
+			AND effective_from_date < ${orgTodayDate}::date
+			AND (effective_until_date IS NULL OR effective_until_date > ${orgTodayDate}::date)
+	`);
+	await tx.execute(sql`
+		UPDATE work_policy_assignment
+		SET is_active = false, updated_at = ${now}
+		WHERE organization_id = ${organizationId}
+			AND policy_id = ${policyId}::uuid
+			AND is_active = true
+			AND effective_from_date >= ${orgTodayDate}::date
+	`);
+
+	// 2. Cap/split active contract_default rows referencing this policy so today & future dates
+	// stop inheriting the retired policy while preserving all other default operational fields.
+	const defaultRows = await tx
+		.select({
+			defaultRow: contractDefault,
+			version: contractTemplateVersion,
+		})
+		.from(contractDefault)
+		.innerJoin(
+			contractTemplateVersion,
+			and(
+				eq(contractTemplateVersion.id, contractDefault.templateVersionId),
+				eq(contractTemplateVersion.organizationId, contractDefault.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(contractDefault.organizationId, organizationId),
+				eq(contractTemplateVersion.workPolicyId, policyId),
+			),
+		);
+
+	for (const { defaultRow, version } of defaultRows) {
+		if (defaultRow.effectiveUntilDate !== null && defaultRow.effectiveUntilDate <= orgTodayDate) {
+			continue;
+		}
+		const maxVerRes = await tx.execute(sql`
+			SELECT COALESCE(MAX(version_number), 0)::int AS max_ver
+			FROM contract_template_version
+			WHERE organization_id = ${organizationId}
+				AND template_id = ${version.templateId}::uuid
+		`);
+		const nextVersionNumber = Number(toRows(maxVerRes)[0]?.max_ver ?? 0) + 1;
+
+		const [clonedVersion] = await tx
+			.insert(contractTemplateVersion)
+			.values({
+				organizationId,
+				templateId: version.templateId,
+				versionNumber: nextVersionNumber,
+				workPolicyId: null,
+				weeklyContractMinutes: version.weeklyContractMinutes,
+				scheduleMode: version.scheduleMode,
+				workModel: version.workModel,
+				presenceOverride: version.presenceOverride,
+				balanceMode: version.balanceMode,
+				scheduleSource: version.scheduleSource,
+				defaultContractType: version.defaultContractType,
+				defaultHourlyRate: version.defaultHourlyRate,
+				defaultCurrency: version.defaultCurrency,
+				defaultEmploymentProfile: version.defaultEmploymentProfile,
+				defaultArbzgScope: version.defaultArbzgScope,
+				defaultOnCallHoursKind: version.defaultOnCallHoursKind,
+				defaultOnCallWeeklyMinutes: version.defaultOnCallWeeklyMinutes,
+				defaultOnCallDailyMinutes: version.defaultOnCallDailyMinutes,
+				createdBy: actorUserId,
+				createdAt: now,
+			})
+			.returning({ id: contractTemplateVersion.id });
+		if (!clonedVersion) continue;
+
+		const existingDays = await tx
+			.select()
+			.from(contractTemplateVersionDay)
+			.where(
+				and(
+					eq(contractTemplateVersionDay.organizationId, organizationId),
+					eq(contractTemplateVersionDay.templateVersionId, version.id),
+				),
+			);
+		if (existingDays.length > 0) {
+			await tx.insert(contractTemplateVersionDay).values(
+				existingDays.map((d) => ({
+					organizationId,
+					templateVersionId: clonedVersion.id,
+					dayOfWeek: d.dayOfWeek,
+					minutesPerDay: d.minutesPerDay,
+					isWorkDay: d.isWorkDay,
+					latestClockIn: d.latestClockIn,
+				})),
+			);
+		}
+
+		if (defaultRow.effectiveFromDate >= orgTodayDate) {
+			await tx
+				.update(contractDefault)
+				.set({ templateVersionId: clonedVersion.id })
+				.where(
+					and(
+						eq(contractDefault.id, defaultRow.id),
+						eq(contractDefault.organizationId, organizationId),
+					),
+				);
+		} else {
+			// Cap historical segment at orgTodayDate and insert continuation without the retired policy.
+			await tx
+				.update(contractDefault)
+				.set({ effectiveUntilDate: orgTodayDate })
+				.where(
+					and(
+						eq(contractDefault.id, defaultRow.id),
+						eq(contractDefault.organizationId, organizationId),
+					),
+				);
+			await tx.insert(contractDefault).values({
+				organizationId,
+				scope: defaultRow.scope,
+				teamId: defaultRow.teamId,
+				templateVersionId: clonedVersion.id,
+				effectiveFromDate: orgTodayDate,
+				effectiveUntilDate: defaultRow.effectiveUntilDate,
+				createdBy: actorUserId,
+				createdAt: now,
+			});
+		}
 	}
 }
 
@@ -756,11 +982,16 @@ export async function createVersionedWorkPolicyInTx(
 		})
 		.returning();
 
-	// Step 2: Whenever a presence location is referenced, lock location FOR SHARE and assert is_active = true.
-	const presenceLocationId =
-		data.presenceEnabled && data.presence?.locationId ? data.presence.locationId : null;
+	// Step 2: Validate tenant ownership (and active status when enabled) for every presence
+	// location being persisted, including when presence is disabled (A2-5).
+	const presenceLocationId = data.presence?.locationId || null;
 	if (presenceLocationId) {
-		await lockActiveLocationForShareInTx(tx, organizationId, presenceLocationId);
+		await lockOwnedLocationForShareInTx(
+			tx,
+			organizationId,
+			presenceLocationId,
+			Boolean(data.presenceEnabled),
+		);
 	}
 
 	// Step 3: Strictly AFTER acquiring locks, read versioning cutover state.
@@ -898,40 +1129,24 @@ export async function updateOrPublishWorkPolicyInTx(
 	// Step 2: Metadata-only edit updates work_policy in place without creating empty versions.
 	if (!input.forceNewVersion && isMetadataOnlyEdit(existingPolicy, data)) {
 		const versions = await listPolicyVersionsOrderedInTx(tx, policyId);
+		const now = input.now ?? currentTimestamp();
+		const orgTimezone =
+			data.isActive !== undefined && data.isActive !== existingPolicy.isActive
+				? await loadOrganizationTimezone(tx, organizationId)
+				: null;
+		const orgTodayDate = orgTimezone
+			? plainDateAt(instantFromDate(now), orgTimezone).toString()
+			: null;
 
 		// A1-30: Reactivating an inactive policy must lock & validate presence locations on effective
 		// and future presence-enabled versions so an active policy can never point at an archived location.
-		if (data.isActive === true && !existingPolicy.isActive && versions.length > 0) {
-			const orgTimezone = await loadOrganizationTimezone(tx, organizationId);
-			const nowInstant = input.now ? instantFromDate(input.now) : systemClock.nowInstant();
-			const orgTodayDate = plainDateAt(nowInstant, orgTimezone).toString();
-
-			const currentEffective = versions.find((v) => v.effectiveFromDate <= orgTodayDate) ?? null;
-			const futureVersions = versions.filter((v) => v.effectiveFromDate > orgTodayDate);
-			const activePresenceVersionIds = [
-				...(currentEffective && currentEffective.presenceEnabled ? [currentEffective.id] : []),
-				...futureVersions.filter((v) => v.presenceEnabled).map((v) => v.id),
-			];
-
-			if (activePresenceVersionIds.length > 0) {
-				const presenceRows = await tx
-					.select({ locationId: workPolicyPresence.locationId })
-					.from(workPolicyPresence)
-					.where(
-						and(
-							eq(workPolicyPresence.policyId, policyId),
-							inArray(workPolicyPresence.policyVersionId, activePresenceVersionIds),
-						),
-					);
-				const uniqueLocationIds = [
-					...new Set(
-						presenceRows.map((row) => row.locationId).filter((id): id is string => Boolean(id)),
-					),
-				].sort((a, b) => a.localeCompare(b));
-				for (const locId of uniqueLocationIds) {
-					await lockActiveLocationForShareInTx(tx, organizationId, locId);
-				}
-			}
+		if (data.isActive === true && !existingPolicy.isActive && orgTodayDate) {
+			await validateReactivationPresenceLocationsInTx(tx, {
+				organizationId,
+				policyId,
+				versions,
+				orgTodayDate,
+			});
 		}
 
 		await tx
@@ -941,9 +1156,19 @@ export async function updateOrPublishWorkPolicyInTx(
 				description: data.description ?? existingPolicy.description,
 				isActive: data.isActive ?? existingPolicy.isActive,
 				updatedBy: actorUserId,
-				updatedAt: currentTimestamp(),
+				updatedAt: now,
 			})
 			.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
+
+		if (data.isActive === false && existingPolicy.isActive && orgTodayDate) {
+			await retirePolicyReferencesInTx(tx, {
+				organizationId,
+				policyId,
+				actorUserId,
+				orgTodayDate,
+				now,
+			});
+		}
 
 		const latestVersion =
 			versions[0] ??
@@ -1015,12 +1240,33 @@ export async function updateOrPublishWorkPolicyInTx(
 				? data.presence.locationId || null
 				: (currentDetails?.presence?.locationId ?? null);
 
-	const shouldLockLocation =
-		Boolean(incomingPresenceLocationId) &&
-		(nextPresenceEnabled || Boolean(data.presence?.locationId));
+	if (incomingPresenceLocationId && (nextPresenceEnabled || Boolean(data.presence?.locationId))) {
+		await lockOwnedLocationForShareInTx(
+			tx,
+			organizationId,
+			incomingPresenceLocationId,
+			nextPresenceEnabled,
+		);
+	}
 
-	if (shouldLockLocation && incomingPresenceLocationId) {
-		await lockActiveLocationForShareInTx(tx, organizationId, incomingPresenceLocationId);
+	// A2-17: If a versioned edit also reactivates the policy, validate presence locations on all
+	// other effective & future presence-enabled versions as well.
+	if (data.isActive === true && !existingPolicy.isActive) {
+		const excludeIds = new Set<string>();
+		if (
+			targetEffectiveFromDate <= orgTodayDate &&
+			initialBaseVersion &&
+			(data.presenceEnabled === false || data.presence !== undefined)
+		) {
+			excludeIds.add(initialBaseVersion.id);
+		}
+		await validateReactivationPresenceLocationsInTx(tx, {
+			organizationId,
+			policyId,
+			versions: initialVersions,
+			orgTodayDate,
+			excludeVersionIds: excludeIds,
+		});
 	}
 
 	// Step 3: Strictly AFTER acquiring work_policy FOR UPDATE + location FOR SHARE, read DB seal/cutover state.
@@ -1186,6 +1432,7 @@ export async function updateOrPublishWorkPolicyInTx(
 	const nextVersionNumber = versions.reduce((max, v) => Math.max(max, v.versionNumber), 0) + 1;
 
 	const shouldSyncTopLevelFlags = effectiveFromDate <= orgTodayDate;
+	const updateNow = input.now ?? currentTimestamp();
 	await tx
 		.update(workPolicy)
 		.set({
@@ -1200,9 +1447,19 @@ export async function updateOrPublishWorkPolicyInTx(
 					}
 				: {}),
 			updatedBy: actorUserId,
-			updatedAt: currentTimestamp(),
+			updatedAt: updateNow,
 		})
 		.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
+
+	if (data.isActive === false && existingPolicy.isActive) {
+		await retirePolicyReferencesInTx(tx, {
+			organizationId,
+			policyId,
+			actorUserId,
+			orgTodayDate,
+			now: updateNow,
+		});
+	}
 
 	const [createdVersion] = await tx
 		.insert(workPolicyVersion)

@@ -204,9 +204,9 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		).toBe(true);
 	});
 
-	it("loads an authorized detail, schedule and confirmed history through independent GETs", async () => {
+	it("loads authorized detail and schedule for a manager, denies employment-history to managers, and allows org admins (A1-1/A2-22)", async () => {
 		const query = `employeeId=${managed.employeeId}`;
-		const [detailResponse, scheduleResponse, historyResponse] =
+		const [detailResponse, scheduleResponse, managerHistoryResponse] =
 			await Promise.all([
 				request("detail", query),
 				request("schedule", query),
@@ -215,8 +215,8 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		expect([
 			detailResponse.status,
 			scheduleResponse.status,
-			historyResponse.status,
-		]).toEqual([200, 200, 200]);
+			managerHistoryResponse.status,
+		]).toEqual([200, 200, 403]);
 		const detail =
 			await parseSuperJsonResponse<EmployeeReadSnapshot<"detail">>(
 				detailResponse,
@@ -225,11 +225,18 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 			id: managed.employeeId,
 			organizationId: fixture.organizationId,
 			user: { name: "Managed Pat" },
+			contractTypeToday: null,
 		});
+		expect(detail.data.formerSince).toBeUndefined();
 		expect(detail.data.createdAt).toBeInstanceOf(Date);
+
+		// Org admins receive confirmed employment history.
+		state.userId = fixture.ownerUserId;
+		const adminHistoryResponse = await request("employment-history", query);
+		expect(adminHistoryResponse.status).toBe(200);
 		const history =
 			await parseSuperJsonResponse<EmployeeReadSnapshot<"employment-history">>(
-				historyResponse,
+				adminHistoryResponse,
 			);
 		expect(history.data).toHaveLength(1);
 		expect(history.data[0]).toMatchObject({
@@ -242,6 +249,7 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 			"2026-01-01T00:00:00.000Z",
 		);
 		expect(history.data[0].employmentPeriod?.startedAt).toBeInstanceOf(Date);
+		state.userId = manager.userId;
 		const schedule =
 			await parseSuperJsonResponse<EmployeeReadSnapshot<"schedule">>(
 				scheduleResponse,
@@ -517,7 +525,7 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		).toEqual([{ id: policyId, name: "Fixture policy" }]);
 	});
 
-	it.each(["detail", "schedule", "employment-history"])(
+	it.each(["detail", "schedule"])(
 		"denies an unmanaged and a foreign target for %s",
 		async (dataset) => {
 			expect(
@@ -528,6 +536,20 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 			).toBe(404);
 		},
 	);
+
+	it("denies managers on employment-history and returns 404 to org admins for a foreign target (P7-3)", async () => {
+		expect(
+			(await request("employment-history", `employeeId=${unrelated.employeeId}`)).status,
+		).toBe(403);
+		expect(
+			(await request("employment-history", `employeeId=${foreign.employeeId}`)).status,
+		).toBe(403);
+
+		state.userId = fixture.ownerUserId;
+		expect(
+			(await request("employment-history", `employeeId=${foreign.employeeId}`)).status,
+		).toBe(404);
+	});
 
 	it("rejects replaced expected scope before reading directory rows", async () => {
 		const response = await request(

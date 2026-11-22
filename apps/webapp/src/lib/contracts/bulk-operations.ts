@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { and, asc, eq, exists, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import {
 	contractChangeBatch,
@@ -7,8 +7,6 @@ import {
 	contractTemplateVersion,
 	contractTemplateVersionDay,
 	employee,
-	employeeEmploymentHistory,
-	employeeEmploymentPeriod,
 	workPolicy,
 } from "@/db/schema";
 import type { ContractChangeBatchExecutionMode } from "@/db/schema/contract-types";
@@ -255,40 +253,40 @@ async function resolveTargetEmployees(
 	const onlyLegacy = resolveOnlyLegacyFlag(target, defaultOnlyLegacyTerms);
 
 	if (onlyLegacy) {
-		// A1-19: Determine eligibility strictly from the confirmed terms covering
-		// `effectiveFromDate` in the employee's active employment period, never from
-		// already-superseded historical legacy rows.
-		conditions.push(
-			exists(
-				db
-					.select({ one: sql`1` })
-					.from(employeeEmploymentHistory)
-					.leftJoin(
-						employeeEmploymentPeriod,
-						and(
-							eq(employeeEmploymentPeriod.id, employeeEmploymentHistory.employmentPeriodId),
-							eq(employeeEmploymentPeriod.organizationId, organizationId),
-						),
+		// A1-19 / A2-3: Determine eligibility strictly from the WINNING confirmed terms row
+		// covering `effectiveFromDate` in the employee's open employment period (preferring
+		// stint-scoped rows over null-period rows, matching resolve-contract.ts precedence).
+		conditions.push(sql`(
+			SELECT h.migrated_legacy_terms
+			FROM employee_employment_history h
+			LEFT JOIN employee_employment_period open_p
+				ON open_p.organization_id = h.organization_id
+				AND open_p.employee_id = h.employee_id
+				AND open_p.status = 'open'
+			WHERE h.organization_id = ${organizationId}
+				AND h.employee_id = ${employee.id}
+				AND h.review_state = 'confirmed'
+				AND h.valid_from_date <= ${effectiveFromDate}::date
+				AND (h.valid_until_date IS NULL OR h.valid_until_date > ${effectiveFromDate}::date)
+				AND (
+					(open_p.id IS NOT NULL AND h.employment_period_id = open_p.id)
+					OR (
+						h.employment_period_id IS NULL
+						AND NOT EXISTS (
+							SELECT 1
+							FROM employee_employment_history ps
+							WHERE ps.organization_id = h.organization_id
+								AND ps.employee_id = h.employee_id
+								AND ps.review_state = 'confirmed'
+								AND open_p.id IS NOT NULL
+								AND ps.employment_period_id = open_p.id
+						)
 					)
-					.where(
-						and(
-							eq(employeeEmploymentHistory.organizationId, organizationId),
-							eq(employeeEmploymentHistory.employeeId, employee.id),
-							eq(employeeEmploymentHistory.reviewState, "confirmed"),
-							eq(employeeEmploymentHistory.migratedLegacyTerms, true),
-							sql`${employeeEmploymentHistory.validFromDate} <= ${effectiveFromDate}::date`,
-							or(
-								isNull(employeeEmploymentHistory.validUntilDate),
-								sql`${employeeEmploymentHistory.validUntilDate} > ${effectiveFromDate}::date`,
-							),
-							or(
-								isNull(employeeEmploymentHistory.employmentPeriodId),
-								eq(employeeEmploymentPeriod.status, "open"),
-							),
-						),
-					),
-			),
-		);
+					OR open_p.id IS NULL
+				)
+			ORDER BY h.valid_from_date DESC, h.created_at DESC, h.id DESC
+			LIMIT 1
+		) = true`);
 	}
 
 	return db
@@ -814,20 +812,24 @@ export async function submitBulkContractAction(
 	db: DatabaseClient,
 	input: SubmitBulkContractActionInput,
 ): Promise<ContractChangeBatchReceipt> {
-	const { effectiveFromDate } = await validateBulkActionInputs(db, input.organizationId, input);
+	const parsedEffectiveFromDate = parseIsoCalendarDate(
+		input.effectiveFromDate,
+		"effectiveFromDate",
+	);
 	const onlyLegacyTerms = resolveOnlyLegacyFlag(input.target, input.actionKind === "adopt_default");
 	const submittedIntentFingerprint = computeBulkSubmittedIntentFingerprint({
 		organizationId: input.organizationId,
 		spec: input,
-		effectiveFromDate,
+		effectiveFromDate: parsedEffectiveFromDate,
 		target: input.target,
 		onlyLegacyTerms,
 		confirmationFingerprint: input.confirmationFingerprint,
 	});
 
-	// Replay check BEFORE re-resolving live target employees so an identical retry after
-	// commit (e.g. `onlyLegacyTerms: true` after legacy terms were just adopted) returns
-	// the original receipt instead of failing on post-commit target drift (A1-21/A1-22).
+	// A2-18 & A2-19: Check existing (organizationId, requestId) BEFORE live template/policy
+	// validation or target resolution so an identical retry after a policy retirement or
+	// roster change replays the original receipt, including pre-upgrade batches without
+	// `submittedIntentFingerprint`.
 	if (input.requestId) {
 		if (!UUID_REGEX.test(input.requestId)) {
 			throw new ValidationError({
@@ -847,9 +849,49 @@ export async function submitBulkContractAction(
 			)
 			.limit(1);
 		if (existing) {
-			const storedIntent = (existing.payload as { submittedIntentFingerprint?: unknown } | null)
-				?.submittedIntentFingerprint;
-			if (storedIntent === submittedIntentFingerprint) {
+			const existingPayload = (existing.payload ?? {}) as Record<string, unknown>;
+			const storedIntent = existingPayload.submittedIntentFingerprint;
+			let intentMatches = false;
+			if (typeof storedIntent === "string") {
+				intentMatches = storedIntent === submittedIntentFingerprint;
+			} else {
+				// Pre-upgrade compatibility check (A2-19): verify operation kind and canonical payload fields.
+				const expectedKind =
+					input.actionKind === "apply_template_version"
+						? "bulk_template_apply"
+						: input.actionKind === "adopt_default"
+							? "bulk_adopt_default"
+							: "bulk_terms_update";
+				if (
+					existing.operationKind === expectedKind &&
+					existingPayload.effectiveFromDate === parsedEffectiveFromDate
+				) {
+					const expectedLegacyPayload =
+						input.actionKind === "apply_template_version"
+							? {
+									templateVersionId: input.templateVersionId,
+									effectiveFromDate: parsedEffectiveFromDate,
+									overwritePersonalDivergences: input.overwritePersonalDivergences ?? false,
+									changeReason: input.changeReason ?? null,
+								}
+							: input.actionKind === "adopt_default"
+								? {
+										effectiveFromDate: parsedEffectiveFromDate,
+										keepDivergenceFields: input.keepDivergenceFields ?? [],
+										changeReason: input.changeReason ?? null,
+									}
+								: {
+										effectiveFromDate: parsedEffectiveFromDate,
+										overwritePersonalDivergences: input.overwritePersonalDivergences ?? false,
+										changes: input.changes,
+										changeReason: input.changeReason ?? null,
+									};
+					intentMatches =
+						JSON.stringify(sortKeysCanonical(existingPayload)) ===
+						JSON.stringify(sortKeysCanonical(expectedLegacyPayload));
+				}
+			}
+			if (intentMatches) {
 				return replayExistingContractChangeBatch(db, {
 					organizationId: input.organizationId,
 					existingBatch: existing,
@@ -866,6 +908,7 @@ export async function submitBulkContractAction(
 		}
 	}
 
+	const { effectiveFromDate } = await validateBulkActionInputs(db, input.organizationId, input);
 	const matched = await resolveTargetEmployees(
 		db,
 		input.organizationId,
@@ -882,7 +925,7 @@ export async function submitBulkContractAction(
 		});
 	}
 
-	// A1-21: Verify confirmation fingerprint against the normalized operation and exact
+	// A1-21 / A2-2: Verify confirmation fingerprint against the normalized operation and exact
 	// matched employee IDs so roster/operation drift after preview requires a fresh preview.
 	const currentFingerprint = computeBulkConfirmationFingerprint({
 		organizationId: input.organizationId,
@@ -891,7 +934,10 @@ export async function submitBulkContractAction(
 		employeeIds: matched.map((m) => m.id),
 		onlyLegacyTerms,
 	});
-	if (input.confirmationFingerprint && input.confirmationFingerprint !== currentFingerprint) {
+	if (
+		input.confirmationFingerprint !== undefined &&
+		input.confirmationFingerprint !== currentFingerprint
+	) {
 		throw new ConflictError({
 			message:
 				"Bulk action preview is stale because matching employees or parameters changed. Re-run preview before submitting.",

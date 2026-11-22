@@ -9,7 +9,10 @@ import {
 	employeeEmploymentPeriod,
 } from "@/db/schema/employee-lifecycle";
 import { AuditAction } from "@/lib/audit-logger";
-import { replacePolicyAssignmentWindowInTx } from "@/lib/contracts/policy-assignment-intervals";
+import {
+	reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionInTx,
+	replacePolicyAssignmentWindowInTx,
+} from "@/lib/contracts/policy-assignment-intervals";
 import {
 	type Clock,
 	compareInstants,
@@ -1044,47 +1047,19 @@ async function correctPastDepartureDate(
 			}
 		}
 
-		// Cap or deactivate active employee policy assignments beyond the corrected cutoff using
-		// canonical dates, strictly bounded to the corrected stint (never touching a subsequent rehire
-		// period's assignments — A1-3).
-		const stintProvenanceGuard = sql`AND (
-			source_employment_history_id IS NULL
-			OR source_employment_history_id IN (
-				SELECT id
-				FROM employee_employment_history
-				WHERE organization_id = ${actor.organizationId}
-					AND employee_id = ${target.id}::uuid
-					AND employment_period_id = ${period.id}::uuid
-			)
-		)`;
-		const nextPeriodUpperBoundGuard = nextPeriodStartLocalDate
-			? sql`AND effective_from_date < ${nextPeriodStartLocalDate}::date`
-			: sql``;
-
-		await tx.execute(sql`
-			UPDATE work_policy_assignment
-			SET effective_until = ${newCutoffDate},
-				effective_until_date = ${nextCutoff.cutoffLocalDate}::date,
-				updated_at = ${nowDate}
-			WHERE organization_id = ${actor.organizationId}
-				AND assignment_type = 'employee'
-				AND employee_id = ${target.id}::uuid
-				AND is_active = true
-				AND effective_from_date < ${nextCutoff.cutoffLocalDate}::date
-				AND (effective_until_date IS NULL OR effective_until_date > ${nextCutoff.cutoffLocalDate}::date)
-				${stintProvenanceGuard}
-		`);
-		await tx.execute(sql`
-			UPDATE work_policy_assignment
-			SET is_active = false, updated_at = ${nowDate}
-			WHERE organization_id = ${actor.organizationId}
-				AND assignment_type = 'employee'
-				AND employee_id = ${target.id}::uuid
-				AND is_active = true
-				AND effective_from_date >= ${nextCutoff.cutoffLocalDate}::date
-				${nextPeriodUpperBoundGuard}
-				${stintProvenanceGuard}
-		`);
+		// Cap, deactivate, or extend stint-scoped active employee policy assignments along the
+		// corrected cutoff without touching any subsequent rehire stint (A1-3, A2-16).
+		await reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionInTx(tx, {
+			organizationId: actor.organizationId,
+			employeeId: target.id,
+			employmentPeriodId: period.id,
+			previousCutoffLocalDate,
+			nextCutoffLocalDate: nextCutoff.cutoffLocalDate,
+			newCutoffDate,
+			nextPeriodStartLocalDate,
+			nextPeriodStart,
+			now: nowDate,
+		});
 
 		const reconciliation = await reconcileRetrospectiveDepartureReviewsInTx(tx, {
 			organizationId: actor.organizationId,

@@ -127,10 +127,22 @@ export async function inspectRetrospectiveDepartureImpact(
 	}
 
 	const timeEntryCount = Number(timeEntryAgg[0]?.count ?? 0);
+	const upperBoundMs = upperBoundDate ? upperBoundDate.getTime() : null;
 	const timestamps: Date[] = [];
 	for (const row of postCutoffPeriods) {
-		timestamps.push(row.startTime);
-		if (row.endTime) timestamps.push(row.endTime);
+		const clippedStartMs = Math.max(row.startTime.getTime(), cutoffDate.getTime());
+		if (upperBoundMs === null || clippedStartMs < upperBoundMs) {
+			timestamps.push(new Date(clippedStartMs));
+		}
+		if (row.endTime) {
+			// A2-20: Clip work-period end time to upperBound so a work period spanning rehire
+			// never extends an old-stint review's latestWorkAt/affectedEndAt into the later stint.
+			const clippedEndMs =
+				upperBoundMs !== null
+					? Math.min(row.endTime.getTime(), upperBoundMs)
+					: row.endTime.getTime();
+			timestamps.push(new Date(clippedEndMs));
+		}
 	}
 	if (timeEntryAgg[0]?.earliest) timestamps.push(new Date(timeEntryAgg[0].earliest));
 	if (timeEntryAgg[0]?.latest) timestamps.push(new Date(timeEntryAgg[0].latest));

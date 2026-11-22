@@ -204,6 +204,21 @@ describe("ContractsHubClient (#1930)", () => {
 				mismatchWarnings: [],
 			},
 		});
+		mocks.previewBulkContractActionAction.mockResolvedValue({
+			success: true,
+			data: {
+				actionKind: "adopt_default",
+				effectiveFromDate: "2026-06-01",
+				confirmationFingerprint: "a".repeat(64),
+				canSubmit: true,
+				totalMatched: 4,
+				wouldApplyCount: 4,
+				wouldSkipCount: 0,
+				wouldFailCount: 0,
+				mismatchWarningCount: 0,
+				employees: [],
+			},
+		});
 		mocks.submitBulkContractActionAction.mockResolvedValue({
 			success: true,
 			data: {
@@ -247,12 +262,21 @@ describe("ContractsHubClient (#1930)", () => {
 		expect(screen.getByText("contract_migration_conflict")).toBeTruthy();
 		expect(screen.getByText("payroll_reconciliation")).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: "Adopt Org/Team default for all" }));
+		const adoptButton = screen.getByRole("button", {
+			name: "Adopt Org/Team default for all",
+		}) as HTMLButtonElement;
+		expect(adoptButton.disabled).toBe(true);
+
+		fireEvent.click(screen.getByRole("button", { name: "Preview adoption" }));
+		await waitFor(() => expect(adoptButton.disabled).toBe(false));
+
+		fireEvent.click(adoptButton);
 		await waitFor(() =>
 			expect(mocks.submitBulkContractActionAction).toHaveBeenCalledWith(
 				expect.objectContaining({
 					actionKind: "adopt_default",
 					target: { onlyLegacyTerms: true },
+					confirmationFingerprint: "a".repeat(64),
 				}),
 			),
 		);

@@ -124,15 +124,15 @@ const previewBulkContractActionSchema = z.discriminatedUnion("actionKind", [
 const submitBulkContractActionSchema = z.discriminatedUnion("actionKind", [
 	bulkActionVariantSchemas[0].extend({
 		requestId: uuidSchema.optional(),
-		confirmationFingerprint: z.string().min(64).max(64).optional(),
+		confirmationFingerprint: z.string().min(64).max(64),
 	}),
 	bulkActionVariantSchemas[1].extend({
 		requestId: uuidSchema.optional(),
-		confirmationFingerprint: z.string().min(64).max(64).optional(),
+		confirmationFingerprint: z.string().min(64).max(64),
 	}),
 	bulkActionVariantSchemas[2].extend({
 		requestId: uuidSchema.optional(),
-		confirmationFingerprint: z.string().min(64).max(64).optional(),
+		confirmationFingerprint: z.string().min(64).max(64),
 	}),
 ]);
 

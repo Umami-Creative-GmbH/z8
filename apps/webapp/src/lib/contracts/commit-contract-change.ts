@@ -586,6 +586,15 @@ export async function resetEmployeeContractDivergencesInTx(
 	input: ResetEmployeeContractDivergencesInput,
 ): Promise<CommitContractChangeResult> {
 	const effectiveFromDate = parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate");
+	// A2-4: Lock the employee row BEFORE reading current on-call terms so concurrent
+	// contract edits cannot commit between the read and write and be clobbered.
+	await tx.execute(sql`
+		SELECT id
+		FROM employee
+		WHERE id = ${input.employeeId}::uuid
+			AND organization_id = ${input.organizationId}
+		FOR UPDATE
+	`);
 	const current = await resolveEffectiveContractOnDay(tx, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
@@ -657,6 +666,16 @@ export async function adoptContractDefaultInTx(
 ): Promise<CommitContractChangeResult> {
 	const effectiveFromDate = parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate");
 	const keep = new Set(input.keepDivergenceFields ?? []);
+
+	// A2-4: Lock the employee row BEFORE reading current divergences & on-call terms so
+	// concurrent edits cannot be overwritten by stale values.
+	await tx.execute(sql`
+		SELECT id
+		FROM employee
+		WHERE id = ${input.employeeId}::uuid
+			AND organization_id = ${input.organizationId}
+		FOR UPDATE
+	`);
 
 	const current = await resolveEffectiveContractOnDay(tx, {
 		organizationId: input.organizationId,

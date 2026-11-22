@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	listContractsReviewQueueAction,
@@ -63,6 +63,13 @@ export function ContractsReviewsTab({
 	const [adoptPreview, setAdoptPreview] = useState<PreviewBulkContractActionResult | null>(null);
 	const [adoptRequestId, setAdoptRequestId] = useState<string | null>(null);
 	const [notes, setNotes] = useState<Record<string, string>>({});
+	const adoptPreviewEpochRef = useRef(0);
+
+	const clearAdoptPreview = () => {
+		adoptPreviewEpochRef.current += 1;
+		setAdoptPreview(null);
+		setAdoptRequestId(null);
+	};
 
 	const queueQuery = useQuery({
 		queryKey: ["contracts", "review-queue", organizationId, includeResolved],
@@ -76,15 +83,18 @@ export function ContractsReviewsTab({
 
 	const previewAdoptMutation = useMutation({
 		mutationFn: async () => {
+			const epoch = adoptPreviewEpochRef.current + 1;
+			adoptPreviewEpochRef.current = epoch;
 			const result = await previewBulkContractActionAction({
 				actionKind: "adopt_default",
 				effectiveFromDate: adoptDate,
 				target: { onlyLegacyTerms: true },
 			});
 			if (!result.success) throw new Error(result.error || "Failed to preview legacy adoption");
-			return result.data;
+			return { data: result.data, epoch };
 		},
-		onSuccess: (data) => {
+		onSuccess: ({ data, epoch }) => {
+			if (epoch !== adoptPreviewEpochRef.current) return;
 			setAdoptPreview(data);
 			setAdoptRequestId(globalThis.crypto.randomUUID());
 		},
@@ -102,6 +112,14 @@ export function ContractsReviewsTab({
 
 	const submitAdoptMutation = useMutation({
 		mutationFn: async () => {
+			if (!adoptPreview?.canSubmit) {
+				throw new Error(
+					t(
+						"settings.contracts.reviews.previewRequiredBeforeAdopt",
+						"Run a preview before adopting the Org/Team default.",
+					),
+				);
+			}
 			const activeRequestId = adoptRequestId ?? globalThis.crypto.randomUUID();
 			if (!adoptRequestId) setAdoptRequestId(activeRequestId);
 			const result = await submitBulkContractActionAction({
@@ -109,7 +127,7 @@ export function ContractsReviewsTab({
 				effectiveFromDate: adoptDate,
 				target: { onlyLegacyTerms: true },
 				requestId: activeRequestId,
-				...(adoptPreview ? { confirmationFingerprint: adoptPreview.confirmationFingerprint } : {}),
+				confirmationFingerprint: adoptPreview.confirmationFingerprint,
 			});
 			if (!result.success) throw new Error(result.error || "Failed to adopt Org/Team default");
 			return result.data;
@@ -122,8 +140,7 @@ export function ContractsReviewsTab({
 					{ count: receipt.batch.totalItems },
 				),
 			);
-			setAdoptPreview(null);
-			setAdoptRequestId(null);
+			clearAdoptPreview();
 			void Promise.all([
 				queryClient.invalidateQueries({ queryKey: ["contracts", "review-queue", organizationId] }),
 				queryClient.invalidateQueries({ queryKey: ["contracts", "batches", organizationId] }),
@@ -243,8 +260,7 @@ export function ContractsReviewsTab({
 									value={adoptDate}
 									onChange={(e) => {
 										setAdoptDate(e.target.value);
-										setAdoptPreview(null);
-										setAdoptRequestId(null);
+										clearAdoptPreview();
 									}}
 									className="h-8 w-44"
 								/>
@@ -264,7 +280,7 @@ export function ContractsReviewsTab({
 							<Button
 								type="button"
 								size="sm"
-								disabled={submitAdoptMutation.isPending}
+								disabled={!adoptPreview?.canSubmit || submitAdoptMutation.isPending}
 								onClick={() => submitAdoptMutation.mutate()}
 							>
 								{submitAdoptMutation.isPending && (

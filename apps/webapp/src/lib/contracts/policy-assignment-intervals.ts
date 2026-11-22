@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { workPolicyAssignment } from "@/db/schema";
 import type { WorkPolicyAssignmentSourceKind } from "@/db/schema/contract-types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -218,4 +218,106 @@ export async function replacePolicyAssignmentWindowInTx(
 		throw new Error("work_policy_assignment insert returned no row");
 	}
 	return inserted;
+}
+
+/**
+ * Keeps stint-scoped employee `work_policy_assignment` rows aligned when an effective past
+ * departure date is corrected earlier or later (A1-3, A2-16), without touching assignments
+ * belonging to any subsequent rehire stint.
+ */
+export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionInTx(
+	tx: ContractWriteTx,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		employmentPeriodId: string;
+		previousCutoffLocalDate: string;
+		nextCutoffLocalDate: string;
+		newCutoffDate: Date;
+		nextPeriodStartLocalDate: string | null;
+		nextPeriodStart: Date | null;
+		now: Date;
+	},
+): Promise<void> {
+	const stintProvenanceGuard = sql`AND (
+		source_employment_history_id IS NULL
+		OR source_employment_history_id IN (
+			SELECT id
+			FROM employee_employment_history
+			WHERE organization_id = ${input.organizationId}
+				AND employee_id = ${input.employeeId}::uuid
+				AND employment_period_id = ${input.employmentPeriodId}::uuid
+		)
+	)`;
+	const nextPeriodUpperBoundGuard = input.nextPeriodStartLocalDate
+		? sql`AND effective_from_date < ${input.nextPeriodStartLocalDate}::date`
+		: sql``;
+
+	if (input.nextCutoffLocalDate > input.previousCutoffLocalDate) {
+		const effectiveExtendedUntilDate =
+			input.nextPeriodStartLocalDate && input.nextCutoffLocalDate > input.nextPeriodStartLocalDate
+				? input.nextPeriodStartLocalDate
+				: input.nextCutoffLocalDate;
+		const effectiveExtendedUntilTs =
+			input.nextPeriodStart && input.newCutoffDate.getTime() > input.nextPeriodStart.getTime()
+				? input.nextPeriodStart
+				: input.newCutoffDate;
+		await tx.execute(sql`
+			UPDATE work_policy_assignment a
+			SET effective_until = ${effectiveExtendedUntilTs},
+				effective_until_date = ${effectiveExtendedUntilDate}::date,
+				updated_at = ${input.now}
+			WHERE a.organization_id = ${input.organizationId}
+				AND a.assignment_type = 'employee'
+				AND a.employee_id = ${input.employeeId}::uuid
+				AND a.is_active = true
+				AND a.effective_until_date = ${input.previousCutoffLocalDate}::date
+				AND (
+					a.source_employment_history_id IS NULL
+					OR a.source_employment_history_id IN (
+						SELECT id
+						FROM employee_employment_history
+						WHERE organization_id = ${input.organizationId}
+							AND employee_id = ${input.employeeId}::uuid
+							AND employment_period_id = ${input.employmentPeriodId}::uuid
+					)
+				)
+				AND NOT EXISTS (
+					SELECT 1
+					FROM work_policy_assignment later
+					WHERE later.organization_id = a.organization_id
+						AND later.assignment_type = 'employee'
+						AND later.employee_id = a.employee_id
+						AND later.is_active = true
+						AND later.id <> a.id
+						AND later.effective_from_date >= ${input.previousCutoffLocalDate}::date
+						AND later.effective_from_date < ${effectiveExtendedUntilDate}::date
+				)
+		`);
+	}
+
+	await tx.execute(sql`
+		UPDATE work_policy_assignment
+		SET effective_until = ${input.newCutoffDate},
+			effective_until_date = ${input.nextCutoffLocalDate}::date,
+			updated_at = ${input.now}
+		WHERE organization_id = ${input.organizationId}
+			AND assignment_type = 'employee'
+			AND employee_id = ${input.employeeId}::uuid
+			AND is_active = true
+			AND effective_from_date < ${input.nextCutoffLocalDate}::date
+			AND (effective_until_date IS NULL OR effective_until_date > ${input.nextCutoffLocalDate}::date)
+			${stintProvenanceGuard}
+	`);
+	await tx.execute(sql`
+		UPDATE work_policy_assignment
+		SET is_active = false, updated_at = ${input.now}
+		WHERE organization_id = ${input.organizationId}
+			AND assignment_type = 'employee'
+			AND employee_id = ${input.employeeId}::uuid
+			AND is_active = true
+			AND effective_from_date >= ${input.nextCutoffLocalDate}::date
+			${nextPeriodUpperBoundGuard}
+			${stintProvenanceGuard}
+	`);
 }

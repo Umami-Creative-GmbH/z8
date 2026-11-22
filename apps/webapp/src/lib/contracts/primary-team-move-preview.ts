@@ -654,8 +654,48 @@ export async function previewPrimaryTeamMove(
 			return `${day}:${row.isWorkDay ? 1 : 0}:${row.minutesPerDay}:${row.latestClockIn ?? ""}`;
 		}).join("|");
 	};
+	const DAY_SHORT: Record<string, string> = {
+		monday: "Mon",
+		tuesday: "Tue",
+		wednesday: "Wed",
+		thursday: "Thu",
+		friday: "Fri",
+		saturday: "Sat",
+		sunday: "Sun",
+	};
+	const formatScheduleDaysLabel = (
+		days: readonly {
+			dayOfWeek: string;
+			isWorkDay: boolean;
+			minutesPerDay: number;
+			latestClockIn: string | null;
+		}[],
+	): string | null => {
+		const byDay = new Map(days.map((d) => [d.dayOfWeek, d]));
+		const parts: string[] = [];
+		for (const day of [
+			"monday",
+			"tuesday",
+			"wednesday",
+			"thursday",
+			"friday",
+			"saturday",
+			"sunday",
+		]) {
+			const row = byDay.get(day);
+			if (!row?.isWorkDay) continue;
+			const hours = Math.floor(row.minutesPerDay / 60);
+			const mins = row.minutesPerDay % 60;
+			const dur = mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
+			const clockIn = row.latestClockIn ? ` (${row.latestClockIn})` : "";
+			parts.push(`${DAY_SHORT[day] ?? day} ${dur}${clockIn}`);
+		}
+		return parts.length > 0 ? parts.join(", ") : null;
+	};
 	const currentGrid = serializeGrid(currentContract.weeklyScheduleDays);
 	const projectedGrid = serializeGrid(projectedContract.weeklyScheduleDays);
+	const currentGridLabel = formatScheduleDaysLabel(currentContract.weeklyScheduleDays);
+	const projectedGridLabel = formatScheduleDaysLabel(projectedContract.weeklyScheduleDays);
 
 	const comparisons: {
 		field: PrimaryTeamMoveOperationalChange["field"];
@@ -703,8 +743,8 @@ export async function previewPrimaryTeamMove(
 			field: "weeklyScheduleDays",
 			before: currentGrid || null,
 			after: projectedGrid || null,
-			beforeLabel: currentGrid || null,
-			afterLabel: projectedGrid || null,
+			beforeLabel: currentGridLabel,
+			afterLabel: projectedGridLabel,
 			beforeSource: currentContract.scheduleModeSource,
 			afterSource: projectedContract.scheduleModeSource,
 		},

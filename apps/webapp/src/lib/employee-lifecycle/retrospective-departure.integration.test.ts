@@ -1218,4 +1218,103 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 		);
 		expect(stint2AssignAfter.rows[0]?.is_active).toBe(true);
 	});
+
+	it("restores capped stint-scoped policy assignments on forward past-departure correction (A2-16) and clips work periods spanning a rehire boundary (A2-20)", async () => {
+		now = TODAY;
+		const person = await fixture.seedEmployee({
+			startDate: new Date("2026-01-01T00:00:00Z"),
+		});
+		const {
+			rows: [polMgr],
+		} = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy (organization_id, name, schedule_enabled, regulation_enabled, presence_enabled, is_active, created_by, updated_at)
+			 VALUES ($1, 'Manager Stint Policy', true, false, false, true, $2, now())
+			 RETURNING id`,
+			[fixture.organizationId, fixture.ownerUserId],
+		);
+		await seedConfirmedTerms(person, "2026-01-01", null);
+		await fixture.pool.query(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES ($1, $2, 'employee', $3, 2, '2026-02-01T00:00:00Z', '2026-02-01', 'manager_assignment', true, $4, now())`,
+			[polMgr!.id, fixture.organizationId, person.employeeId, fixture.ownerUserId],
+		);
+
+		// 1. Record past departure on 2026-06-15 -> caps manager assignment at 2026-06-16
+		const dep = await commands().recordPastDeparture(ownerActor(), {
+			employeeId: person.employeeId,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-15",
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+		if (dep.status !== "effective") throw new Error("expected effective departure");
+
+		const afterCap = await fixture.pool.query<{ effective_until_date: string | null }>(
+			`SELECT effective_until_date::text FROM work_policy_assignment
+			 WHERE employee_id = $1 AND policy_id = $2`,
+			[person.employeeId, polMgr!.id],
+		);
+		expect(afterCap.rows[0]?.effective_until_date).toBe("2026-06-16");
+
+		// 2. Move past departure FORWARD to 2026-06-25 -> manager assignment MUST extend to 2026-06-26 (A2-16)
+		const movedForward = await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: person.employeeId,
+			departureId: dep.departureId,
+			expectedRevision: dep.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-25",
+		});
+		const afterForward = await fixture.pool.query<{ effective_until_date: string | null }>(
+			`SELECT effective_until_date::text FROM work_policy_assignment
+			 WHERE employee_id = $1 AND policy_id = $2`,
+			[person.employeeId, polMgr!.id],
+		);
+		expect(afterForward.rows[0]?.effective_until_date).toBe("2026-06-26");
+
+		// 3. Rehire on 2026-08-01T00:00:00Z and seed a work period spanning the rehire boundary
+		// (starts 2026-07-31T22:00:00Z, ends 2026-08-01T06:00:00Z).
+		// Move stint 1 departure earlier to 2026-06-20 -> review MUST clip affected_end_at & latestWorkAt to 2026-08-01T00:00:00Z (A2-20)!
+		now = parseInstant("2026-08-01T00:00:00Z");
+		await commands().rehireEmployee(ownerActor(), {
+			employeeId: person.employeeId,
+			requestId: randomUUID(),
+			previousEmploymentPeriodId: person.employmentPeriodId,
+			role: "employee",
+			teamId: null,
+			primaryManagerId: null,
+			workPolicyId: polMgr!.id,
+			weeklyContractMinutes: 2400,
+			contractType: "fixed",
+			workModel: "onsite",
+			hourlyRate: null,
+			currency: "EUR",
+			probationStartsOn: null,
+			probationEndsOn: null,
+			changeReason: "Rehire for clipping test",
+		});
+		await seedPostCutoffWork(person, "2026-07-31T22:00:00Z", "2026-08-01T06:00:00Z");
+
+		now = TODAY;
+		const movedEarlier = await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: person.employeeId,
+			departureId: dep.departureId,
+			expectedRevision: movedForward.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-20",
+		});
+		expect(movedEarlier.workAfterCutoffReviewOpened).toBe(true);
+
+		const reviewRow = await fixture.pool.query<{
+			affected_end_at: Date | null;
+			metadata: { latestWorkAt?: string | null };
+		}>(
+			`SELECT affected_end_at, metadata FROM employee_departure_review
+			 WHERE departure_id = $1 AND kind = 'work_after_cutoff'`,
+			[dep.departureId],
+		);
+		expect(reviewRow.rows[0]?.affected_end_at?.toISOString()).toBe("2026-08-01T00:00:00.000Z");
+		expect(reviewRow.rows[0]?.metadata.latestWorkAt).toBe("2026-08-01T00:00:00.000Z");
+	});
 });

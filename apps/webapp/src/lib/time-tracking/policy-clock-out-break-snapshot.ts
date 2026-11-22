@@ -2,12 +2,14 @@ import { sql } from "drizzle-orm";
 import {
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 	instantToCanonicalString,
 	parseInstant,
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
 import type {
 	PolicyClockOutBreakSnapshot,
@@ -325,6 +327,8 @@ type AssignmentCandidate = Readonly<{
 	type: "employee" | "team" | "organization";
 	policyId: string;
 	priority: number;
+	effectiveUntilDate: string | null;
+	policyEvaluationDate: string | null;
 }>;
 
 type CandidateSelectionResult = Readonly<{
@@ -342,6 +346,11 @@ function optionalUuid(value: unknown): string | null {
 function optionalTimezone(value: unknown): string | null {
 	if (value === null || value === undefined) return null;
 	return typeof value === "string" ? value : fail();
+}
+
+function optionalPlainDate(value: unknown): string | null {
+	if (value === null || value === undefined) return null;
+	return canonicalPlainDate(value);
 }
 
 function selectAssignmentCandidate(
@@ -403,6 +412,8 @@ function selectAssignmentCandidate(
 			type: row.assignmentType,
 			policyId: row.assignmentPolicyId,
 			priority: row.priority as number,
+			effectiveUntilDate: optionalPlainDate(row.assignmentEffectiveUntilDate),
+			policyEvaluationDate: optionalPlainDate(row.policyEvaluationDate),
 		});
 	}
 	if (new Set(candidates.map(({ id }) => id)).size !== candidates.length) fail();
@@ -434,12 +445,20 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 	const endTimeDate = dateFromInstant(input.endTime);
 	try {
 		const candidateResult = await input.dbService.db.execute(sql`
-			with employee_evidence as (
-				select employee.id, employee.organization_id as "organizationId",
-					employee.team_id as "teamId",
+			with employee_base as (
+				select employee.id,
+					employee.organization_id as "organizationId",
 					user_settings.timezone as "userTimezone",
 					organization.timezone as "organizationTimezone",
-					(${endTimeDate}::timestamptz at time zone coalesce(nullif(user_settings.timezone, ''), nullif(organization.timezone, ''), 'UTC'))::date as "clockOutLocalDate"
+					coalesce(
+						(select tz.name from pg_timezone_names tz where tz.name = nullif(btrim(user_settings.timezone), '') limit 1),
+						(select tz.name from pg_timezone_names tz where tz.name = nullif(btrim(organization.timezone), '') limit 1),
+						'UTC'
+					) as "effectiveTimezone",
+					coalesce(
+						(select tz.name from pg_timezone_names tz where tz.name = nullif(btrim(organization.timezone), '') limit 1),
+						'UTC'
+					) as "effectiveOrganizationTimezone"
 				from employee
 				left join user_settings on user_settings.user_id = employee.user_id
 				left join organization on organization.id = employee.organization_id
@@ -447,8 +466,43 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					and employee.organization_id = ${input.organizationId}
 				limit 2
 				for update of employee
+			), team_evidence as (
+				select history.team_id as "teamId"
+				from employee_base employee_row
+				join employee_team_history history
+					on history.organization_id = employee_row."organizationId"
+					and history.employee_id = employee_row.id
+				join team owned_team
+					on owned_team.id = history.team_id
+					and owned_team.organization_id = employee_row."organizationId"
+				where history.effective_from <= ${endTimeDate}
+					and (history.effective_to is null or history.effective_to > ${endTimeDate})
+				order by history.effective_from desc, history.id desc
+				limit 1
+			), employee_evidence as (
+				select employee_row.id,
+					employee_row."organizationId",
+					team_row."teamId",
+					employee_row."userTimezone",
+					employee_row."organizationTimezone",
+					employee_row."effectiveTimezone",
+					employee_row."effectiveOrganizationTimezone",
+					(${endTimeDate}::timestamptz at time zone employee_row."effectiveTimezone")::date as "clockOutLocalDate"
+				from employee_base employee_row
+				left join team_evidence team_row on true
 			), period_evidence as (
-				select period.id as "employmentPeriodId"
+				select period.id as "employmentPeriodId",
+					period.start_provenance as "periodStartProvenance",
+					case
+						when period.start_provenance = 'recorded' and period.started_at is not null
+						then (period.started_at at time zone employee_row."effectiveTimezone")::date
+						else null
+					end as "periodStartEmployeeDate",
+					case
+						when period.start_provenance = 'recorded' and period.started_at is not null
+						then (period.started_at at time zone employee_row."effectiveOrganizationTimezone")::date
+						else null
+					end as "periodStartOrganizationDate"
 				from employee_evidence employee_row
 				join employee_employment_period period
 					on period.organization_id = employee_row."organizationId"
@@ -462,8 +516,23 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					employee_row."teamId", assignment.id as "assignmentId",
 					assignment.organization_id as "assignmentOrganizationId",
 					assignment.assignment_type as "assignmentType",
-					assignment.policy_id as "assignmentPolicyId", assignment.priority
+					assignment.policy_id as "assignmentPolicyId", assignment.priority,
+					assignment.effective_until_date::text as "assignmentEffectiveUntilDate",
+					case
+						when assignment.source_kind = 'employment_terms'
+							and assignment.assignment_type = 'employee'
+							and assignment.source_employment_history_id is not null
+							and period."periodStartProvenance" = 'recorded'
+							and period."periodStartEmployeeDate" = employee_row."clockOutLocalDate"
+							and period."periodStartOrganizationDate" > employee_row."clockOutLocalDate"
+							and assignment.effective_from_date > employee_row."clockOutLocalDate"
+							and assignment.effective_from_date <= period."periodStartOrganizationDate"
+							and (assignment.effective_until_date is null or assignment.effective_until_date > period."periodStartOrganizationDate")
+						then period."periodStartOrganizationDate"::text
+						else employee_row."clockOutLocalDate"::text
+					end as "policyEvaluationDate"
 				from employee_evidence employee_row
+				left join period_evidence period on true
 				join work_policy_assignment assignment
 					on assignment.organization_id = employee_row."organizationId"
 				where assignment.organization_id = ${input.organizationId}
@@ -473,6 +542,24 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 							assignment.source_kind <> 'legacy'
 							and assignment.effective_from_date <= employee_row."clockOutLocalDate"
 							and (assignment.effective_until_date is null or assignment.effective_until_date > employee_row."clockOutLocalDate")
+						)
+						or (
+							assignment.source_kind = 'employment_terms'
+							and assignment.assignment_type = 'employee'
+							and assignment.source_employment_history_id is not null
+							and period."periodStartProvenance" = 'recorded'
+							and period."periodStartEmployeeDate" = employee_row."clockOutLocalDate"
+							and period."periodStartOrganizationDate" > employee_row."clockOutLocalDate"
+							and assignment.effective_from_date <= period."periodStartOrganizationDate"
+							and (assignment.effective_until_date is null or assignment.effective_until_date > period."periodStartOrganizationDate")
+							and exists (
+								select 1
+								from employee_employment_history terms
+								where terms.id = assignment.source_employment_history_id
+									and terms.organization_id = employee_row."organizationId"
+									and terms.employment_period_id = period."employmentPeriodId"
+									and terms.review_state = 'confirmed'
+							)
 						)
 						or (
 							assignment.source_kind = 'legacy'
@@ -499,7 +586,9 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				period."employmentPeriodId",
 				assignment."assignmentId",
 				assignment."assignmentOrganizationId", assignment."assignmentType",
-				assignment."assignmentPolicyId", assignment.priority
+				assignment."assignmentPolicyId", assignment.priority,
+				assignment."assignmentEffectiveUntilDate",
+				assignment."policyEvaluationDate"
 			from employee_evidence employee_row
 			left join period_evidence period on true
 			left join assignment_candidates assignment on true
@@ -530,11 +619,13 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			selection.userTimezone,
 			selection.organizationTimezone,
 		);
-		const clockOutDate = plainDateAt(input.endTime, calendarTimezone).toString();
+		const clockOutDate =
+			assignment.policyEvaluationDate ?? plainDateAt(input.endTime, calendarTimezone).toString();
 
 		const result = await input.dbService.db.execute(sql`
 			with policy_evidence as (
-				select policy.id, policy.name, policy.is_active as "policyIsActive"
+				select policy.id, policy.name, policy.is_active as "policyIsActive",
+					policy.updated_at as "policyUpdatedAt"
 				from work_policy policy
 				where policy.id = ${assignment.policyId}::uuid
 					and policy.organization_id = ${input.organizationId}
@@ -574,6 +665,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			)
 			select policy.id as "policyId", policy.name as "policyName",
 				policy."policyIsActive",
+				policy."policyUpdatedAt",
 				version."policyVersionId",
 				version."effectiveFromDate",
 				version."regulationEnabled",
@@ -593,9 +685,33 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			throw new Error();
 		}
 		const row = result.rows[0] as Record<string, unknown>;
+		const policyEligible = (() => {
+			if (row.policyIsActive === true) return true;
+			if (row.policyIsActive !== false) return false;
+			// A2-10: Allow historically eligible capped assignments to resolve a retired policy's
+			// historical version for deferred break adjustments while still failing closed on
+			// uncapped or post-retirement references.
+			if (assignment.effectiveUntilDate === null || clockOutDate >= assignment.effectiveUntilDate) {
+				return false;
+			}
+			const orgTimezone = resolveOrganizationTimezone(selection.organizationTimezone).timezone;
+			const policyRetiredOnDate =
+				row.policyUpdatedAt instanceof Date
+					? plainDateAt(instantFromDate(row.policyUpdatedAt), orgTimezone).toString()
+					: typeof row.policyUpdatedAt === "string"
+						? plainDateAt(parseInstant(row.policyUpdatedAt), orgTimezone).toString()
+						: null;
+			if (
+				policyRetiredOnDate !== null &&
+				(clockOutDate >= policyRetiredOnDate || assignment.effectiveUntilDate > policyRetiredOnDate)
+			) {
+				return false;
+			}
+			return true;
+		})();
 		if (
 			row.policyId !== assignment.policyId ||
-			row.policyIsActive !== true ||
+			!policyEligible ||
 			typeof row.policyName !== "string" ||
 			typeof row.policyVersionId !== "string" ||
 			typeof row.effectiveFromDate !== "string" ||

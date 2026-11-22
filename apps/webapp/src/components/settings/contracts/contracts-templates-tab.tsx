@@ -13,7 +13,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	archiveContractTemplateAction,
@@ -965,8 +965,10 @@ function ApplyTemplatePanel({
 	const [overwritePersonalDivergences, setOverwritePersonalDivergences] = useState(false);
 	const [preview, setPreview] = useState<PreviewBulkContractActionResult | null>(null);
 	const [requestId, setRequestId] = useState<string | null>(null);
+	const previewEpochRef = useRef(0);
 
 	const clearPreview = () => {
+		previewEpochRef.current += 1;
 		setPreview(null);
 		setRequestId(null);
 	};
@@ -975,6 +977,8 @@ function ApplyTemplatePanel({
 
 	const previewMutation = useMutation({
 		mutationFn: async () => {
+			const epoch = previewEpochRef.current + 1;
+			previewEpochRef.current = epoch;
 			const result = await previewBulkContractActionAction({
 				actionKind: "apply_template_version",
 				templateVersionId,
@@ -983,9 +987,10 @@ function ApplyTemplatePanel({
 				target: teamId !== NO_VALUE ? { teamId } : {},
 			});
 			if (!result.success) throw new Error(result.error || "Failed to preview template apply");
-			return result.data;
+			return { epoch, data: result.data };
 		},
-		onSuccess: (data) => {
+		onSuccess: ({ epoch, data }) => {
+			if (previewEpochRef.current !== epoch) return;
 			setPreview(data);
 			setRequestId(globalThis.crypto.randomUUID());
 		},

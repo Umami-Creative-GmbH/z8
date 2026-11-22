@@ -3,7 +3,7 @@
 import { IconCheck, IconEye, IconFileUpload, IconLoader2, IconRefresh } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { type ChangeEvent, useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 import { listContractTemplatesAction } from "@/app/[locale]/(app)/settings/contracts/actions";
 import {
@@ -117,10 +117,56 @@ function translateCsvDiagnostic(
 				"settings.contracts.csv.diag.missingEffectiveFromDate",
 				"Missing effective_from_date (and no default effective date provided).",
 			);
-		case "invalid_field_value":
+		case "invalid_iso_date":
 			return t(
-				"settings.contracts.csv.diag.invalidFieldValue",
-				"Invalid value for {field}: {detail}",
+				"settings.contracts.csv.diag.invalidIsoDate",
+				'Invalid date "{value}" for {field}. Expected YYYY-MM-DD.',
+				p,
+			);
+		case "invalid_boolean":
+			return t(
+				"settings.contracts.csv.diag.invalidBoolean",
+				'Invalid boolean value "{value}" for {field}.',
+				p,
+			);
+		case "invalid_number":
+			return t(
+				"settings.contracts.csv.diag.invalidNumber",
+				'Invalid numeric value "{value}" for {field}.',
+				p,
+			);
+		case "invalid_weekly_minutes_range":
+			return t(
+				"settings.contracts.csv.diag.invalidWeeklyMinutesRange",
+				'Value "{value}" for {field} is outside the allowed weekly range.',
+				p,
+			);
+		case "invalid_custom_days":
+			return t(
+				"settings.contracts.csv.diag.invalidCustomDays",
+				'Invalid custom_days format "{value}".',
+				p,
+			);
+		case "on_call_hours_kind_required":
+			return t(
+				"settings.contracts.csv.diag.onCallHoursKindRequired",
+				"On-call schedule source requires an on_call_hours_kind value.",
+			);
+		case "invalid_on_call_terms":
+			return t(
+				"settings.contracts.csv.diag.invalidOnCallTerms",
+				"Invalid on-call agreement fields.",
+			);
+		case "invalid_future_leaving_date":
+			return t(
+				"settings.contracts.csv.diag.invalidFutureLeavingDate",
+				'Invalid future leaving date "{value}".',
+				p,
+			);
+		case "invalid_past_leaving_date":
+			return t(
+				"settings.contracts.csv.diag.invalidPastLeavingDate",
+				'Invalid past leaving date "{value}".',
 				p,
 			);
 		case "work_policy_not_found":
@@ -307,13 +353,17 @@ export function ContractsBulkCsvTab({
 	const [csvDeparturePreview, setCsvDeparturePreview] =
 		useState<PreviewCsvLeavingDateImportResult | null>(null);
 	const [csvRequestId, setCsvRequestId] = useState<string | null>(null);
+	const bulkPreviewEpochRef = useRef(0);
+	const csvPreviewEpochRef = useRef(0);
 
 	const clearBulkPreview = () => {
+		bulkPreviewEpochRef.current += 1;
 		setBulkPreview(null);
 		setBulkRequestId(null);
 	};
 
 	const clearCsvPreview = () => {
+		csvPreviewEpochRef.current += 1;
 		setCsvContractPreview(null);
 		setCsvDeparturePreview(null);
 		setCsvRequestId(null);
@@ -401,11 +451,15 @@ export function ContractsBulkCsvTab({
 
 	const bulkPreviewMutation = useMutation({
 		mutationFn: async () => {
+			const epoch = bulkPreviewEpochRef.current + 1;
+			bulkPreviewEpochRef.current = epoch;
 			const result = await previewBulkContractActionAction(buildBulkSpec());
 			if (!result.success) throw new Error(result.error || "Bulk dry-run failed");
-			return result.data;
+			return { epoch, data: result.data };
 		},
-		onSuccess: (data) => {
+		onSuccess: ({ epoch, data }) => {
+			// A2-21: Ignore stale in-flight preview response if inputs changed while pending.
+			if (bulkPreviewEpochRef.current !== epoch) return;
 			setBulkPreview(data);
 			setBulkRequestId(createClientRequestId());
 		},
@@ -460,6 +514,8 @@ export function ContractsBulkCsvTab({
 					t("settings.contracts.csv.emptyInput", "Upload or paste CSV content first."),
 				);
 			}
+			const epoch = csvPreviewEpochRef.current + 1;
+			csvPreviewEpochRef.current = epoch;
 			if (csvKind === "csv_contract_import") {
 				const result = await previewCsvContractImportAction({
 					csvText,
@@ -468,7 +524,7 @@ export function ContractsBulkCsvTab({
 					maxPreviewRows: 50,
 				});
 				if (!result.success) throw new Error(result.error || "CSV contract validation failed");
-				return { kind: "contract" as const, data: result.data };
+				return { epoch, kind: "contract" as const, data: result.data };
 			}
 			const result = await previewCsvLeavingDateImportAction({
 				csvText,
@@ -476,9 +532,11 @@ export function ContractsBulkCsvTab({
 				maxPreviewRows: 50,
 			});
 			if (!result.success) throw new Error(result.error || "CSV leaving-date validation failed");
-			return { kind: "departure" as const, data: result.data };
+			return { epoch, kind: "departure" as const, data: result.data };
 		},
 		onSuccess: (res) => {
+			// A2-21: Ignore stale in-flight CSV preview response if input changed while pending.
+			if (csvPreviewEpochRef.current !== res.epoch) return;
 			if (res.kind === "contract") {
 				setCsvContractPreview(res.data);
 				setCsvDeparturePreview(null);

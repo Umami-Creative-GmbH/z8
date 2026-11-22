@@ -165,7 +165,10 @@ export const getEmployeeKioskStateAction = organizationAction(
 							? instantToCanonicalString(badge.lastRevoked.revokedAt)
 							: null,
 						lastRevokedReason: badge.lastRevoked?.reason ?? null,
-						departureLastWorkingDay: badge.lastRevoked?.lastWorkingDay?.toString() ?? null,
+						// Leaving dates are restricted to org admins (Spec #1921 Story 22 / A2-1).
+						departureLastWorkingDay: isAdmin
+							? (badge.lastRevoked?.lastWorkingDay?.toString() ?? null)
+							: null,
 						timezone,
 						canIssue: badge.canIssue,
 					},
@@ -174,7 +177,9 @@ export const getEmployeeKioskStateAction = organizationAction(
 						lastEnded: fob.lastEnded && {
 							at: instantToCanonicalString(fob.lastEnded.endedAt),
 							reason: fob.lastEnded.reason,
-							departureLastWorkingDay: fob.lastEnded.lastWorkingDay?.toString() ?? null,
+							departureLastWorkingDay: isAdmin
+								? (fob.lastEnded.lastWorkingDay?.toString() ?? null)
+								: null,
 						},
 						fobReaderInUse: fob.fobReaderInUse,
 						timezone,
