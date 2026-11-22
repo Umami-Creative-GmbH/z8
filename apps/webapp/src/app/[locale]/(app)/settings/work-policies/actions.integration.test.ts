@@ -835,8 +835,11 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 		expect(effective?.balanceMode).toBe("trust_based");
 		expect(effective?.scheduleMode).toBe("custom_days");
 		expect(effective?.weeklyContractMinutes).toBe(2100);
+		expect(effective?.weeklyContractMinutesSource).toBe("org_default");
 		expect(effective?.workModel).toBe("hybrid");
+		expect(effective?.workModelSource).toBe("org_default");
 		expect(effective?.presenceOverride).toBe("exempt");
+		expect(effective?.presenceOverrideSource).toBe("org_default");
 		expect(effective?.weeklyScheduleDays).toHaveLength(7);
 		expect(effective?.weeklyScheduleDays.find((d) => d.dayOfWeek === "monday")).toMatchObject({
 			minutesPerDay: 480,
@@ -845,6 +848,35 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 		expect(effective?.weeklyScheduleDays.find((d) => d.dayOfWeek === "friday")).toMatchObject({
 			minutesPerDay: 180,
 		});
+
+		// P4-1: Future org-default changes to nullable/inheritable fields (weeklyContractMinutes,
+		// workModel, presenceOverride) must still flow through automatically to team members!
+		await scheduleContractDefault(db, {
+			organizationId: ids.organization,
+			actorUserId: ids.adminUser,
+			scope: "organization",
+			effectiveFromDate: "2027-01-01",
+			workPolicyId: policyC,
+			weeklyContractMinutes: 2280,
+			workModel: "remote",
+			presenceOverride: "exempt",
+			balanceMode: "trust_based",
+			scheduleMode: "policy",
+			scheduleSource: "policy",
+		});
+
+		const effectiveFuture = await resolveEffectiveContractOnDay(db, {
+			organizationId: ids.organization,
+			employeeId: memberRow.id,
+			date: "2027-01-01",
+		});
+		expect(effectiveFuture?.workPolicy?.policyId).toBe(teamPolicy);
+		expect(effectiveFuture?.weeklyContractMinutes).toBe(2280);
+		expect(effectiveFuture?.weeklyContractMinutesSource).toBe("org_default");
+		expect(effectiveFuture?.workModel).toBe("remote");
+		expect(effectiveFuture?.workModelSource).toBe("org_default");
+		expect(effectiveFuture?.presenceOverride).toBe("exempt");
+		expect(effectiveFuture?.presenceOverrideSource).toBe("org_default");
 	});
 
 	it("deletes only the targeted manual assignment without capping/deactivating sibling or future employment_terms rows (N2)", async () => {

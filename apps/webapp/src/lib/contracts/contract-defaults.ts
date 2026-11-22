@@ -649,39 +649,46 @@ export async function scheduleContractDefaultPolicyUpdateInTx(
 	};
 
 	// When scheduling a team-scope policy update and no team default exists yet on `effectiveFromDate`,
-	// fall back to the active organization default so the newly created team default carries forward
-	// inherited org-level settings (balanceMode, scheduleMode, customDays, workModel, presenceOverride,
-	// scheduleSource) instead of shadowing them with hard-coded fallbacks.
-	const currentDefault =
-		(await loadActiveDefaultForScope(input.scope, teamId)) ??
-		(input.scope === "team" ? await loadActiveDefaultForScope("organization", null) : undefined);
+	// fall back to the active organization default ONLY for non-nullable schema fields that a team
+	// default cannot leave to inherit (`scheduleMode` + `customDays`, `balanceMode`, `scheduleSource`).
+	// Leave nullable/inheritable fields (`weeklyContractMinutes: null`, `workModel: null`,
+	// `presenceOverride: "inherit"`) unset so future org-default updates keep flowing through and
+	// field provenance continues to report `org_default`.
+	const sameScopeDefault = await loadActiveDefaultForScope(input.scope, teamId);
+	const inheritedOrgFallback =
+		!sameScopeDefault && input.scope === "team"
+			? await loadActiveDefaultForScope("organization", null)
+			: undefined;
+	const sourceDefault = sameScopeDefault ?? inheritedOrgFallback;
 
 	let carriedFields: Partial<ScheduleContractDefaultInput> = {};
-	if (currentDefault) {
+	if (sourceDefault) {
 		const [tplVersion] = await tx
 			.select()
 			.from(contractTemplateVersion)
 			.where(
 				and(
-					eq(contractTemplateVersion.id, currentDefault.templateVersionId),
+					eq(contractTemplateVersion.id, sourceDefault.templateVersionId),
 					eq(contractTemplateVersion.organizationId, input.organizationId),
 				),
 			)
 			.limit(1);
 
 		if (tplVersion) {
-			const dayRows = await tx
-				.select()
-				.from(contractTemplateVersionDay)
-				.where(
-					and(
-						eq(contractTemplateVersionDay.organizationId, input.organizationId),
-						eq(contractTemplateVersionDay.templateVersionId, tplVersion.id),
-					),
-				);
+			const dayRows =
+				tplVersion.scheduleMode === "custom_days"
+					? await tx
+							.select()
+							.from(contractTemplateVersionDay)
+							.where(
+								and(
+									eq(contractTemplateVersionDay.organizationId, input.organizationId),
+									eq(contractTemplateVersionDay.templateVersionId, tplVersion.id),
+								),
+							)
+					: [];
 
-			carriedFields = {
-				weeklyContractMinutes: tplVersion.weeklyContractMinutes,
+			const nonNullableFields: Partial<ScheduleContractDefaultInput> = {
 				scheduleMode: tplVersion.scheduleMode as TemplateScheduleMode,
 				customDays:
 					tplVersion.scheduleMode === "custom_days"
@@ -692,11 +699,23 @@ export async function scheduleContractDefaultPolicyUpdateInTx(
 								latestClockIn: d.latestClockIn,
 							}))
 						: undefined,
-				workModel: tplVersion.workModel as WorkModel | null,
-				presenceOverride: tplVersion.presenceOverride as PresenceOverride,
 				balanceMode: tplVersion.balanceMode as BalanceMode,
 				scheduleSource: tplVersion.scheduleSource as ScheduleSource,
 			};
+
+			carriedFields = sameScopeDefault
+				? {
+						...nonNullableFields,
+						weeklyContractMinutes: tplVersion.weeklyContractMinutes,
+						workModel: tplVersion.workModel as WorkModel | null,
+						presenceOverride: tplVersion.presenceOverride as PresenceOverride,
+					}
+				: {
+						...nonNullableFields,
+						weeklyContractMinutes: null,
+						workModel: null,
+						presenceOverride: "inherit",
+					};
 		}
 	}
 
