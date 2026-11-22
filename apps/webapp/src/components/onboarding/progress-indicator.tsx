@@ -4,18 +4,17 @@ import { IconCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { cn } from "@/lib/utils";
 import {
-	ADMIN_ONLY_STEPS,
 	getVisibleSteps,
 	ONBOARDING_STEPS,
 	type OnboardingStep,
 } from "@/lib/validations/onboarding";
+import { useOnboardingIsAdmin } from "./onboarding-progress-provider";
 
 // Map step keys to i18n keys with defaults
 const STEP_I18N_KEYS: Record<OnboardingStep, { key: string; default: string }> = {
 	welcome: { key: "onboarding.steps.welcome", default: "Welcome" },
 	organization: { key: "onboarding.steps.organization", default: "Organization" },
 	profile: { key: "onboarding.steps.profile", default: "Profile" },
-	work_schedule: { key: "onboarding.steps.workSchedule", default: "Schedule" },
 	vacation_policy: { key: "onboarding.steps.vacationPolicy", default: "Vacation" },
 	work_templates: { key: "onboarding.steps.workTemplates", default: "Templates" },
 	wellness: { key: "onboarding.steps.wellness", default: "Wellness" },
@@ -35,7 +34,8 @@ export function ProgressIndicator({
 	isAdmin: isAdminProp,
 }: ProgressIndicatorProps) {
 	const { t } = useTranslate();
-	const isAdmin = isAdminProp ?? ADMIN_ONLY_STEPS.includes(currentStep);
+	const contextIsAdmin = useOnboardingIsAdmin();
+	const isAdmin = isAdminProp ?? contextIsAdmin;
 
 	// Get visible steps based on admin status
 	const visibleSteps = getVisibleSteps(isAdmin);

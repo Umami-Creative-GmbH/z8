@@ -1,7 +1,8 @@
 import "server-only";
 
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, isNull, ne, or } from "drizzle-orm";
 import { db } from "@/db";
+import { member } from "@/db/auth-schema";
 import {
 	discordBotConfig,
 	employee,
@@ -17,6 +18,7 @@ import {
 import { env } from "@/env";
 import { organizationSettingsForDisplay } from "@/lib/auth/organization-display";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { loadManualConfirmations } from "@/lib/implementation-checklist/confirmation/load";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
@@ -169,12 +171,30 @@ async function detectCompleteIds(
 		"payroll-readiness": null,
 		integrations: activeIntegration,
 		notifications: detectorComplete(async () => {
-			const preference = await db.query.notificationPreference.findFirst({
-				where: and(
-					eq(notificationPreference.organizationId, organizationId),
-					eq(notificationPreference.enabled, true),
-				),
-			});
+			// Notification preferences are user-level (Notifications ADR 0002); scope to
+			// current org members (approved membership, excluding former employees).
+			const [preference] = await db
+				.select({ id: notificationPreference.id })
+				.from(notificationPreference)
+				.innerJoin(
+					member,
+					and(
+						eq(member.userId, notificationPreference.userId),
+						eq(member.organizationId, organizationId),
+						eq(member.status, "approved"),
+					),
+				)
+				.leftJoin(
+					employee,
+					and(eq(employee.userId, member.userId), eq(employee.organizationId, organizationId)),
+				)
+				.where(
+					and(
+						eq(notificationPreference.enabled, true),
+						or(isNull(employee.id), onCurrentRoster(organizationId, employee)),
+					),
+				)
+				.limit(1);
 
 			return Boolean(preference || (await activeIntegration));
 		}),
@@ -312,7 +332,7 @@ export async function loadGoLiveViewer(
 	return {
 		asOf: goLiveAsOf(instant, timezone),
 		fixLink: goLiveFixLinks({
-			accessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: env.BILLING_ENABLED === "true",
 			featureFlags,
 		}),

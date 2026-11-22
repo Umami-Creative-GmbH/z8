@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	type AuthContext,
-	getCurrentSettingsRouteContext,
+	getAuthContext,
 } from "@/lib/auth-helpers";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import { getTranslate } from "@/tolgee/server";
@@ -160,17 +160,18 @@ export function AnalyticsHealthSkeleton() {
 }
 
 export async function AnalyticsHealthSections() {
-	const [settingsRouteContext, caller, scopeResult, t] = await Promise.all([
-		getCurrentSettingsRouteContext(),
+	const [authContext, caller, scopeResult, t] = await Promise.all([
+		getAuthContext(),
 		loadAnalyticsSettingsAccess(),
 		loadAnalyticsStatisticsScope(),
 		getTranslate(),
 	]);
 
 	if (
-		!settingsRouteContext ||
+		!authContext ||
 		!caller ||
 		caller.settingsAccess === null ||
+		caller.organizationId !== authContext.session.activeOrganizationId ||
 		!meetsSettingsAccess(caller.settingsAccess, "scopedManager")
 	) {
 		return null;
@@ -194,7 +195,7 @@ export async function AnalyticsHealthSections() {
 		<div className="space-y-8">
 			<Suspense fallback={<StatisticsGroupSkeleton cards={3} />}>
 				<AttentionSection
-					authContext={settingsRouteContext.authContext}
+					authContext={authContext}
 					organizationId={caller.organizationId}
 					canReviewOrganization={canReviewOrganization}
 				/>

@@ -1,28 +1,34 @@
+import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { SurchargeManagement } from "@/components/settings/surcharge-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
 
 async function SurchargeSettingsPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext) {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
-	const { authContext, accessTier } = settingsRouteContext;
-	const organizationId = authContext.session.activeOrganizationId;
+	await requireOrganizationFeatureEnabled(caller.organizationId, "surchargesEnabled");
 
-	if (accessTier === "member" || !organizationId) {
-		return redirectWithLocale("/settings");
-	}
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, caller.organizationId),
+		columns: { timezone: true },
+	});
 
 	return (
 		<SurchargeManagement
-			organizationId={organizationId}
-			canManage={accessTier === "orgAdmin"}
+			organizationId={caller.organizationId}
+			canManage={meetsSettingsAccess(caller.settingsAccess, "orgAdmin")}
+			organizationTimezone={org?.timezone || "UTC"}
 		/>
 	);
 }

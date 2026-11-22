@@ -2,6 +2,7 @@
 
 import { IconAlertTriangle, IconScale, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useReducer, useRef, useTransition } from "react";
 import { toast } from "sonner";
 import type { PayrollExportFormatOption } from "@/app/[locale]/(app)/payroll/actions";
@@ -79,6 +80,7 @@ function PayrollWorkspaceContent({
 	closedMonthsError = null,
 }: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
 		summary: initialSummary,
 		dateMode: "month",
@@ -221,6 +223,7 @@ function PayrollWorkspaceContent({
 			dispatch,
 			endDate,
 			filteredEmployeeIds,
+			locale,
 			refreshSummary,
 			startDate,
 			summary,

@@ -4,10 +4,13 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getCurrentEmployeeMock, getCurrentSettingsRouteContextMock } = vi.hoisted(() => ({
-	getCurrentEmployeeMock: vi.fn(),
-	getCurrentSettingsRouteContextMock: vi.fn(),
-}));
+const { getCurrentEmployeeMock, getAuthContextMock, getCurrentSettingsAccessMock } = vi.hoisted(
+	() => ({
+		getCurrentEmployeeMock: vi.fn(),
+		getAuthContextMock: vi.fn(),
+		getCurrentSettingsAccessMock: vi.fn(),
+	}),
+);
 
 vi.mock("react", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("react")>();
@@ -34,7 +37,8 @@ vi.mock("../actions", () => ({
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
-	getCurrentSettingsRouteContext: getCurrentSettingsRouteContextMock,
+	getAuthContext: getAuthContextMock,
+	getCurrentSettingsAccess: getCurrentSettingsAccessMock,
 }));
 
 vi.mock("@/components/reports/vehicles/vehicle-distance-report-container", () => ({
@@ -58,7 +62,8 @@ async function renderPage() {
 describe("VehicleDistanceReportPage cross-link (#1952)", () => {
 	beforeEach(() => {
 		getCurrentEmployeeMock.mockReset();
-		getCurrentSettingsRouteContextMock.mockReset();
+		getAuthContextMock.mockReset();
+		getCurrentSettingsAccessMock.mockReset();
 	});
 
 	it("shows a contextual link to Missing vehicle logs for managers and org admins", async () => {
@@ -67,12 +72,13 @@ describe("VehicleDistanceReportPage cross-link (#1952)", () => {
 			organizationId: "org-1",
 			role: "manager",
 		});
-		getCurrentSettingsRouteContextMock.mockResolvedValue({
-			accessTier: "manager",
-			authContext: {
-				session: { activeOrganizationId: "org-1" },
-				employee: { id: "emp-1", organizationId: "org-1" },
-			},
+		getAuthContextMock.mockResolvedValue({
+			session: { activeOrganizationId: "org-1" },
+			employee: { id: "emp-1", organizationId: "org-1" },
+		});
+		getCurrentSettingsAccessMock.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: "scopedManager",
 		});
 
 		await renderPage();
@@ -87,12 +93,13 @@ describe("VehicleDistanceReportPage cross-link (#1952)", () => {
 			organizationId: "org-1",
 			role: "employee",
 		});
-		getCurrentSettingsRouteContextMock.mockResolvedValue({
-			accessTier: "member",
-			authContext: {
-				session: { activeOrganizationId: "org-1" },
-				employee: { id: "emp-1", organizationId: "org-1" },
-			},
+		getAuthContextMock.mockResolvedValue({
+			session: { activeOrganizationId: "org-1" },
+			employee: { id: "emp-1", organizationId: "org-1" },
+		});
+		getCurrentSettingsAccessMock.mockResolvedValue({
+			organizationId: "org-1",
+			settingsAccess: "member",
 		});
 
 		await renderPage();

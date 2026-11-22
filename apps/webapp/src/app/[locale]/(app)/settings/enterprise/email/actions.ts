@@ -211,7 +211,7 @@ export const saveEmailConfig = organizationAction(
 			});
 
 			logger.info({ organizationId, transportType: config.transportType }, "Email config saved");
-			revalidatePath("/settings/enterprise");
+			revalidatePath("/settings/enterprise/email");
 		}),
 );
 
@@ -287,7 +287,7 @@ export const deleteEmailConfig = organizationAction(
 			});
 
 			logger.info({ organizationId }, "Email config deleted");
-			revalidatePath("/settings/enterprise");
+			revalidatePath("/settings/enterprise/email");
 		}),
 );
 
@@ -295,9 +295,7 @@ export const deleteEmailConfig = organizationAction(
 export const getSecretStoreConnectionStatus = organizationAction(
 	{ name: "emailConfig.secretStoreStatus", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		secretStore(
-			"status",
-			"Unable to reach the secret store",
-			(): Promise<SecretStoreStatus> => getSecretStoreStatus(organizationId),
+		secretStore("status", "Unable to reach the secret store", (): Promise<SecretStoreStatus> =>
+			getSecretStoreStatus(organizationId),
 		),
 );

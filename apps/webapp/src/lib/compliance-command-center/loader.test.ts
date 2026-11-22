@@ -36,7 +36,7 @@ vi.mock("./sections/access-controls", () => ({
 			headline: "critical",
 			facts: [],
 			updatedAt: "2026-04-11T10:00:00.000Z",
-			primaryLink: { label: "Audit Log", href: "/settings/enterprise/audit-log" },
+			primaryLink: { label: "Audit Log", href: "/settings/audit-export?tab=activity" },
 		},
 		recentCriticalEvents: [
 			{
@@ -46,7 +46,7 @@ vi.mock("./sections/access-controls", () => ({
 				title: "Sensitive action",
 				description: "details",
 				occurredAt: "2026-04-11T10:00:00.000Z",
-				primaryLink: { label: "Open", href: "/settings/enterprise/audit-log" },
+				primaryLink: { label: "Open", href: "/settings/audit-export?tab=activity" },
 			},
 		],
 	})),
@@ -73,8 +73,8 @@ describe("getComplianceCommandCenterData", () => {
 
 		const data = await getComplianceCommandCenterData("org-1");
 
-		expect(data.sections.find((section) => section.key === "accessControls")?.status).toBe(
-			"unavailable",
-		);
+		const accessControls = data.sections.find((section) => section.key === "accessControls");
+		expect(accessControls?.status).toBe("unavailable");
+		expect(accessControls?.primaryLink.href).toBe("/settings/audit-export?tab=activity");
 	});
 });

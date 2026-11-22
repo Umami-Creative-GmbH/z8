@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getAuthContext, getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { drivingDetailsTeamScope } from "@/lib/time-tracking/vehicle-use/driving-details-team-store";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -14,19 +14,23 @@ import { getCurrentEmployee } from "../actions";
 
 async function VehicleDistanceReportPageContent() {
 	// Auth is checked in layout; who sees whose driving is decided by the report action.
-	const [t, employee, settingsContext] = await Promise.all([
+	const [t, employee, authContext, settingsCaller] = await Promise.all([
 		getTranslate(),
 		getCurrentEmployee(),
-		getCurrentSettingsRouteContext(),
+		getAuthContext(),
+		getCurrentSettingsAccess(),
 	]);
-	const organizationId = settingsContext?.authContext.session.activeOrganizationId;
+	const organizationId = authContext?.session.activeOrganizationId;
+	const settingsAccess =
+		settingsCaller && settingsCaller.organizationId === organizationId
+			? settingsCaller.settingsAccess
+			: null;
 	const canViewMissingVehicleLogs = Boolean(
-		settingsContext &&
 		organizationId &&
 		drivingDetailsTeamScope({
-			accessTier: settingsContext.accessTier,
+			settingsAccess,
 			organizationId,
-			employee: settingsContext.authContext.employee ?? null,
+			employee: authContext?.employee ?? null,
 		}),
 	);
 	const missingVehicleLogsAction = canViewMissingVehicleLogs ? (

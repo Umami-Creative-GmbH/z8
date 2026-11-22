@@ -1,7 +1,7 @@
 import { and, eq, gte, sql } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { complianceException, workPolicyViolation } from "@/db/schema";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import type { ComplianceSectionResult, ComplianceText } from "../types";
 
 const WORKFORCE_COMPLIANCE_LOOKBACK_DAYS = 7;
@@ -52,7 +52,7 @@ export function deriveWorkforceComplianceSection(
 					count: snapshot.pendingExceptions,
 				}),
 			],
-			updatedAt: snapshot.latestViolationAt ?? DateTime.utc().toISO(),
+			updatedAt: snapshot.latestViolationAt ?? systemClock.nowInstant().toString(),
 			primaryLink: {
 				label: text("compliance.commandCenter.links.openComplianceSettings"),
 				href: "/settings/compliance",
@@ -72,7 +72,7 @@ export function deriveWorkforceComplianceSection(
 								generalPolicyViolations: snapshot.generalPolicyViolations,
 								overtimeViolations: snapshot.overtimeViolations,
 							}),
-							occurredAt: snapshot.latestViolationAt ?? DateTime.utc().toISO()!,
+							occurredAt: snapshot.latestViolationAt ?? systemClock.nowInstant().toString(),
 							primaryLink: {
 								label: text("compliance.commandCenter.links.inspectCompliance"),
 								href: "/settings/compliance",
@@ -85,9 +85,13 @@ export function deriveWorkforceComplianceSection(
 export async function getWorkforceComplianceSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
-	const sevenDaysAgo = DateTime.utc()
-		.minus({ days: WORKFORCE_COMPLIANCE_LOOKBACK_DAYS })
-		.toJSDate();
+	const sevenDaysAgo = dateFromInstant(
+		systemClock
+			.nowInstant()
+			.toZonedDateTimeISO("UTC")
+			.subtract({ days: WORKFORCE_COMPLIANCE_LOOKBACK_DAYS })
+			.toInstant(),
+	);
 
 	const [violationRows, pendingExceptionRows] = await Promise.all([
 		db

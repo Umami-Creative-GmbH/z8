@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { SurchargeCalculationWithDetails } from "@/lib/surcharges/validation";
@@ -9,10 +10,16 @@ import { formatMinutes, formatPercentage, formatTimestamp } from "./helpers";
 type CalculationDetailsRowProps = {
 	calculation: SurchargeCalculationWithDetails;
 	detailsId: string;
+	organizationTimezone: string;
 };
 
-export function CalculationDetailsRow({ calculation, detailsId }: CalculationDetailsRowProps) {
+export function CalculationDetailsRow({
+	calculation,
+	detailsId,
+	organizationTimezone,
+}: CalculationDetailsRowProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const details = calculation.calculationDetails;
 
 	return (
@@ -27,7 +34,7 @@ export function CalculationDetailsRow({ calculation, detailsId }: CalculationDet
 							</div>
 							<div className="text-muted-foreground">
 								{details
-									? `${formatTimestamp(details.workPeriodStartTime)} - ${formatTimestamp(details.workPeriodEndTime)}`
+									? `${formatTimestamp(details.workPeriodStartTime, locale, organizationTimezone)} - ${formatTimestamp(details.workPeriodEndTime, locale, organizationTimezone)}`
 									: "-"}
 							</div>
 						</div>
@@ -36,7 +43,9 @@ export function CalculationDetailsRow({ calculation, detailsId }: CalculationDet
 								{t("settings.surcharges.reports.details.calculatedAt", "Calculated at")}
 							</div>
 							<div className="text-muted-foreground">
-								{details ? formatTimestamp(details.calculatedAt) : "-"}
+								{details
+									? formatTimestamp(details.calculatedAt, locale, organizationTimezone)
+									: "-"}
 							</div>
 						</div>
 						<div>

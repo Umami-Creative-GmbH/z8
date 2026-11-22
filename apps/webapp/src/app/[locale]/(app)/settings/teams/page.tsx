@@ -1,31 +1,28 @@
 import { loadTeamSettingsPageData } from "@/app/[locale]/(app)/settings/teams/team-settings-page-data";
 import { TeamsTab } from "@/components/organization/teams-tab";
-import { getCurrentSettingsRouteContext, getPrincipalContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess, getPrincipalContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 
 export default async function TeamsPage() {
-	const [settingsRouteContext, principalContext] = await Promise.all([
-		getCurrentSettingsRouteContext(),
+	const [caller, principalContext] = await Promise.all([
+		getCurrentSettingsAccess(),
 		getPrincipalContext(),
 	]);
 
-	if (!settingsRouteContext || !principalContext) {
+	if (
+		!caller?.settingsAccess ||
+		!principalContext ||
+		!meetsSettingsAccess(caller.settingsAccess, "scopedManager")
+	) {
 		return redirectWithLocale("/settings");
 	}
 
-	if (settingsRouteContext.accessTier === "member") {
-		return redirectWithLocale("/settings");
-	}
-
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
+	const { organizationId, settingsAccess } = caller;
 
 	const { teamSurface, scopedMembers } = await loadTeamSettingsPageData({
 		organizationId,
-		settingsRouteContext,
+		settingsAccess,
 		principalContext,
 	});
 

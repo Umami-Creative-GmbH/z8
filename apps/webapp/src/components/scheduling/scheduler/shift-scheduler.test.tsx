@@ -43,7 +43,7 @@ vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 vi.mock("@/app/[locale]/(app)/settings/skills/actions", () => ({
 	validateEmployeeForShift: vi.fn(),
 }));
-vi.mock("@/app/[locale]/(app)/settings/coverage-rules/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/shifts/coverage-rule-actions", () => ({
 	getTargetHeatmapData: async () => ({ success: true, data: [] }),
 }));
 beforeEach(() => {

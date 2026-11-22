@@ -3,9 +3,12 @@
 import { IconLoader2, IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -49,6 +52,7 @@ export function PasskeyManagement({
 	variant?: "card" | "inline";
 } = {}) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const queryClient = useQueryClient();
 	const [passkeyToDelete, setPasskeyToDelete] = useState<Passkey | null>(null);
 
@@ -212,8 +216,14 @@ export function PasskeyManagement({
 							</p>
 							<p className="text-sm text-muted-foreground">
 								{t("settings.passkeys.addedOn", "Added on {date}", {
-									date: DateTime.fromJSDate(passkey.createdAt).toLocaleString(
-										DateTime.DATE_MED,
+									date: formatInstant(
+										instantFromDate(passkey.createdAt),
+										{
+											locale,
+											timezone: Temporal.Now.timeZoneId(),
+											timeFormat: localeDefaultTimeFormat(locale),
+										},
+										"dateMedium",
 									),
 								})}
 							</p>

@@ -146,7 +146,7 @@ const { insertLegacyTravelExpenseDraft, submitLegacyTravelExpenseClaim } = await
 const { POST: processUpload } = await import("@/app/api/upload/travel-expense/process/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { transferApprovalEscalationAssignment } = await import(
-	"@/app/[locale]/(app)/settings/approval-escalation/actions"
+	"@/app/[locale]/(app)/settings/approval-policies/escalation-actions"
 );
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");

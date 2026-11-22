@@ -12,6 +12,10 @@ const mocks = vi.hoisted(() => ({
 	translate: (_key: string, fallback: string) => fallback,
 }));
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: mocks.translate }),
 }));
@@ -23,21 +27,11 @@ vi.mock("@/app/[locale]/(app)/settings/scheduled-exports/actions", () => ({
 vi.mock("@/components/ui/action-panel", () => ({
 	ActionPanel: ({ children, open }: { children: ReactNode; open: boolean }) =>
 		open ? <div>{children}</div> : null,
-	ActionPanelBody: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	ActionPanelContent: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	ActionPanelDescription: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	ActionPanelHeader: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	ActionPanelTitle: ({ children }: { children: ReactNode }) => (
-		<h1>{children}</h1>
-	),
+	ActionPanelBody: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanelContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanelDescription: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanelHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanelTitle: ({ children }: { children: ReactNode }) => <h1>{children}</h1>,
 }));
 
 function deferred<T>() {
@@ -110,9 +104,7 @@ describe("ExecutionHistoryDialog", () => {
 		renderDialog();
 
 		const row = (await screen.findByText(/run-start/)).closest("tr");
-		const cells = Array.from(row?.querySelectorAll("td") ?? [], (cell) =>
-			cell.textContent?.trim(),
-		);
+		const cells = Array.from(row?.querySelectorAll("td") ?? [], (cell) => cell.textContent?.trim());
 		expect(cells).toContain("2");
 		expect(cells).not.toContain("20");
 	});
@@ -133,9 +125,7 @@ describe("ExecutionHistoryDialog", () => {
 				scheduleName="Old"
 			/>,
 		);
-		await waitFor(() =>
-			expect(mocks.getExecutionHistoryAction).toHaveBeenCalledOnce(),
-		);
+		await waitFor(() => expect(mocks.getExecutionHistoryAction).toHaveBeenCalledOnce());
 
 		rerender(
 			<ExecutionHistoryDialog
@@ -146,9 +136,7 @@ describe("ExecutionHistoryDialog", () => {
 				scheduleName="New"
 			/>,
 		);
-		await waitFor(() =>
-			expect(mocks.getExecutionHistoryAction).toHaveBeenCalledTimes(2),
-		);
+		await waitFor(() => expect(mocks.getExecutionHistoryAction).toHaveBeenCalledTimes(2));
 
 		await act(async () => {
 			second.resolve(historyResult("new"));

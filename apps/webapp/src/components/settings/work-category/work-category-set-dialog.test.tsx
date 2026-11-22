@@ -1,10 +1,12 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	createWorkCategorySet,
 	getOrganizationCategories,
 	getWorkCategorySetDetail,
 	updateSetCategories,
@@ -37,6 +39,9 @@ beforeAll(() => {
 		unobserve() {}
 		disconnect() {}
 	};
+	if (typeof Element !== "undefined" && !Element.prototype.getAnimations) {
+		Element.prototype.getAnimations = () => [];
+	}
 });
 
 function category(id: string, name: string) {
@@ -81,6 +86,8 @@ describe("WorkCategorySetDialog ordering", () => {
 		vi.mocked(updateSetCategories).mockResolvedValue({ success: true, data: undefined } as never);
 	});
 
+	afterEach(cleanup);
+
 	it("names the category and direction on 32px move buttons and saves the new order", async () => {
 		renderDialog(
 			<WorkCategorySetDialog
@@ -116,5 +123,49 @@ describe("WorkCategorySetDialog ordering", () => {
 				categoryIds: ["cat-b", "cat-a"],
 			}),
 		);
+	});
+
+	it("validates required set name inline, preserves values on failure, and prevents duplicate submission", async () => {
+		const user = userEvent.setup();
+		let finish!: (value: { success: false; error: string }) => void;
+		vi.mocked(createWorkCategorySet).mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}) as never,
+		);
+
+		renderDialog(
+			<WorkCategorySetDialog
+				open
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				categorySet={null}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByRole("dialog").getAttribute("data-slot")).toBe("action-panel-content");
+
+		await user.click(screen.getByRole("button", { name: "Create" }));
+		expect(await screen.findByText("Category set name is required")).toBeTruthy();
+		expect(createWorkCategorySet).not.toHaveBeenCalled();
+
+		const nameInput = screen.getByLabelText(/Name/);
+		const descriptionInput = screen.getByLabelText("Description");
+		await user.type(nameInput, "Shift Set");
+		await user.type(descriptionInput, "Night shift categories");
+
+		const createButton = screen.getByRole("button", { name: "Create" });
+		await user.click(createButton);
+		await waitFor(() => expect(createWorkCategorySet).toHaveBeenCalledTimes(1));
+		expect(createButton).toHaveProperty("disabled", true);
+		fireEvent.submit(nameInput.closest("form") as HTMLFormElement);
+		expect(createWorkCategorySet).toHaveBeenCalledTimes(1);
+
+		finish({ success: false, error: "Set already exists" });
+		await waitFor(() => expect(createButton).toHaveProperty("disabled", false));
+		expect((nameInput as HTMLInputElement).value).toBe("Shift Set");
+		expect((descriptionInput as HTMLTextAreaElement).value).toBe("Night shift categories");
 	});
 });

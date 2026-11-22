@@ -7,7 +7,6 @@ import {
 	IconDownload,
 	IconFileZip,
 	IconLoader2,
-	IconRefresh,
 	IconShieldCheck,
 	IconX,
 } from "@tabler/icons-react";
@@ -25,13 +24,7 @@ import {
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -42,23 +35,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useDisplayContext } from "@/hooks/use-display-context";
-import {
-	type Instant,
-	instantFromDate,
-	parseInstant,
-} from "@/lib/datetime/temporal-core";
-import {
-	type DisplayContext,
-	formatInstant,
-} from "@/lib/datetime/temporal-format";
+import { type Instant, instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
+import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useJobStatus } from "@/lib/queue/use-job-status";
 
@@ -68,9 +49,7 @@ interface AuditPackGeneratorCardProps {
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-type AsyncResult<T> =
-	| { success: true; value: T }
-	| { success: false; error: unknown };
+type AsyncResult<T> = { success: true; value: T } | { success: false; error: unknown };
 
 const DEFAULT_RANGE_DAYS = 30;
 
@@ -82,10 +61,7 @@ async function settle<T>(promise: Promise<T>): Promise<AsyncResult<T>> {
 	}
 }
 
-async function runWithBusyState(
-	setBusy: (busy: boolean) => void,
-	action: () => Promise<void>,
-) {
+async function runWithBusyState(setBusy: (busy: boolean) => void, action: () => Promise<void>) {
 	setBusy(true);
 	try {
 		await action();
@@ -106,10 +82,7 @@ function toInstant(value: Date | string | null): Instant | null {
 	return parseInstant(value);
 }
 
-function formatDateTime(
-	value: Date | string | null,
-	displayContext: DisplayContext,
-): string {
+function formatDateTime(value: Date | string | null, displayContext: DisplayContext): string {
 	const instant = toInstant(value);
 	if (!instant) {
 		return "-";
@@ -118,10 +91,7 @@ function formatDateTime(
 	return formatInstant(instant, displayContext, "dateTimeMedium");
 }
 
-function formatDate(
-	value: Date | string,
-	displayContext: DisplayContext,
-): string {
+function formatDate(value: Date | string, displayContext: DisplayContext): string {
 	const instant = toInstant(value);
 	if (!instant) {
 		return "-";
@@ -160,9 +130,7 @@ function AuditPackGeneratorCardForOrganization({
 		organizationId: string;
 		jobId: string;
 	} | null>(null);
-	const [downloadingRequestId, setDownloadingRequestId] = useState<
-		string | null
-	>(null);
+	const [downloadingRequestId, setDownloadingRequestId] = useState<string | null>(null);
 	const organizationOperationRef = useRef({ organizationId, active: true });
 	const requestsOperationRef = useRef(0);
 
@@ -172,9 +140,7 @@ function AuditPackGeneratorCardForOrganization({
 		if (showLoading) {
 			setIsLoadingRequests(true);
 		}
-		const actionResult = await settle(
-			getAuditPackRequestsAction({ limit: 10 }),
-		);
+		const actionResult = await settle(getAuditPackRequestsAction({ limit: 10 }));
 		if (
 			organizationOperationRef.current !== organizationOperation ||
 			!organizationOperation.active ||
@@ -217,10 +183,7 @@ function AuditPackGeneratorCardForOrganization({
 		};
 	}, []);
 
-	const handleCreate = async (value: {
-		startDate: string;
-		endDate: string;
-	}) => {
+	const handleCreate = async (value: { startDate: string; endDate: string }) => {
 		const organizationOperation = organizationOperationRef.current;
 		let startDate: InstanceType<typeof Temporal.PlainDate>;
 		let endDate: InstanceType<typeof Temporal.PlainDate>;
@@ -229,20 +192,14 @@ function AuditPackGeneratorCardForOrganization({
 			endDate = Temporal.PlainDate.from(value.endDate);
 		} catch {
 			toast.error(
-				t(
-					"settings.auditExport.auditPack.invalidDateRange",
-					"Please select a valid date range",
-				),
+				t("settings.auditExport.auditPack.invalidDateRange", "Please select a valid date range"),
 			);
 			return;
 		}
 
 		if (Temporal.PlainDate.compare(startDate, endDate) > 0) {
 			toast.error(
-				t(
-					"settings.auditExport.auditPack.invalidDateRange",
-					"Please select a valid date range",
-				),
+				t("settings.auditExport.auditPack.invalidDateRange", "Please select a valid date range"),
 			);
 			return;
 		}
@@ -260,9 +217,7 @@ function AuditPackGeneratorCardForOrganization({
 			)
 				return;
 			if (!actionResult.success) {
-				toast.error(
-					t("common.unexpectedError", "An unexpected error occurred"),
-				);
+				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 				console.error("Create audit pack error:", actionResult.error);
 				return;
 			}
@@ -280,26 +235,19 @@ function AuditPackGeneratorCardForOrganization({
 
 			setActiveJob({ organizationId, jobId: result.data.jobId });
 			toast.success(
-				t(
-					"settings.auditExport.auditPack.createSuccess",
-					"Audit pack request created",
-				),
+				t("settings.auditExport.auditPack.createSuccess", "Audit pack request created"),
 			);
 			await loadRequests();
 		});
 	};
 
-	const activeJobId =
-		activeJob?.organizationId === organizationId ? activeJob.jobId : null;
+	const activeJobId = activeJob?.organizationId === organizationId ? activeJob.jobId : null;
 	const { status: activeJobStatus } = useJobStatus(activeJobId, {
 		enabled: activeJobId !== null,
 		onSuccess: () => {
 			if (activeJob?.organizationId !== organizationId) return;
 			toast.success(
-				t(
-					"settings.auditExport.auditPack.jobCompleted",
-					"Audit pack generation completed",
-				),
+				t("settings.auditExport.auditPack.jobCompleted", "Audit pack generation completed"),
 			);
 			setActiveJob(null);
 			void loadRequests();
@@ -307,11 +255,7 @@ function AuditPackGeneratorCardForOrganization({
 		onError: (error) => {
 			if (activeJob?.organizationId !== organizationId) return;
 			toast.error(
-				error ||
-					t(
-						"settings.auditExport.auditPack.jobFailed",
-						"Audit pack generation failed",
-					),
+				error || t("settings.auditExport.auditPack.jobFailed", "Audit pack generation failed"),
 			);
 			setActiveJob(null);
 			void loadRequests();
@@ -321,13 +265,8 @@ function AuditPackGeneratorCardForOrganization({
 	const handleDownload = async (requestId: string) => {
 		const organizationOperation = organizationOperationRef.current;
 		setDownloadingRequestId(requestId);
-		const actionResult = await settle(
-			getAuditPackDownloadUrlAction({ requestId }),
-		);
-		if (
-			organizationOperationRef.current !== organizationOperation ||
-			!organizationOperation.active
-		)
+		const actionResult = await settle(getAuditPackDownloadUrlAction({ requestId }));
+		if (organizationOperationRef.current !== organizationOperation || !organizationOperation.active)
 			return;
 		setDownloadingRequestId(null);
 		if (!actionResult.success) {
@@ -352,9 +291,7 @@ function AuditPackGeneratorCardForOrganization({
 			newWindow.opener = null;
 		}
 
-		toast.success(
-			t("settings.auditExport.auditPack.downloadStarted", "Download started"),
-		);
+		toast.success(t("settings.auditExport.auditPack.downloadStarted", "Download started"));
 	};
 
 	return (
@@ -386,7 +323,6 @@ function AuditPackGeneratorCardForOrganization({
 					displayContext={displayContext}
 					isLoading={isLoadingRequests}
 					downloadingRequestId={downloadingRequestId}
-					onRefresh={() => void loadRequests()}
 					onDownload={handleDownload}
 					t={t}
 				/>
@@ -431,10 +367,7 @@ function AuditPackRequestForm({
 						onSubmit: ({ value }) =>
 							value
 								? undefined
-								: t(
-										"settings.auditExport.auditPack.startDateRequired",
-										"Start date is required",
-									),
+								: t("settings.auditExport.auditPack.startDateRequired", "Start date is required"),
 					}}
 				>
 					{(field) => (
@@ -460,10 +393,7 @@ function AuditPackRequestForm({
 						onSubmit: ({ value }) =>
 							value
 								? undefined
-								: t(
-										"settings.auditExport.auditPack.endDateRequired",
-										"End date is required",
-									),
+								: t("settings.auditExport.auditPack.endDateRequired", "End date is required"),
 					}}
 				>
 					{(field) => (
@@ -486,9 +416,7 @@ function AuditPackRequestForm({
 			</div>
 			<div className="flex flex-wrap items-center gap-3">
 				<Button type="submit" disabled={isSubmitting}>
-					{isSubmitting ? (
-						<IconLoader2 className="mr-2 size-4 animate-spin" />
-					) : null}
+					{isSubmitting ? <IconLoader2 className="mr-2 size-4 animate-spin" /> : null}
 					{t("settings.auditExport.auditPack.generate", "Generate audit pack")}
 				</Button>
 				<p className="text-sm text-muted-foreground">
@@ -513,26 +441,18 @@ function ActiveGenerationJob({
 		<div className="space-y-2 rounded-lg border p-4">
 			<div className="flex items-center justify-between gap-2">
 				<span className="text-sm font-medium">
-					{t(
-						"settings.auditExport.auditPack.activeJob",
-						"Active generation job",
-					)}
+					{t("settings.auditExport.auditPack.activeJob", "Active generation job")}
 				</span>
 				<Badge variant="secondary" className="gap-1">
 					<IconLoader2 className="size-3 animate-spin" />
-					{status?.state ??
-						t("settings.auditExport.auditPack.statusRequested", "requested")}
+					{status?.state ?? t("settings.auditExport.auditPack.statusRequested", "requested")}
 				</Badge>
 			</div>
 			<Progress value={status?.progress ?? 0} />
 			<p className="text-xs text-muted-foreground">
-				{t(
-					"settings.auditExport.auditPack.progressLabel",
-					"Progress: {progress}%",
-					{
-						progress: status?.progress ?? 0,
-					},
-				)}
+				{t("settings.auditExport.auditPack.progressLabel", "Progress: {progress}%", {
+					progress: status?.progress ?? 0,
+				})}
 			</p>
 		</div>
 	);
@@ -543,7 +463,6 @@ function RecentAuditPackRequests({
 	displayContext,
 	isLoading,
 	downloadingRequestId,
-	onRefresh,
 	onDownload,
 	t,
 }: {
@@ -551,31 +470,18 @@ function RecentAuditPackRequests({
 	displayContext: DisplayContext;
 	isLoading: boolean;
 	downloadingRequestId: string | null;
-	onRefresh: () => void;
 	onDownload: (requestId: string) => Promise<void>;
 	t: Translate;
 }) {
 	return (
 		<div className="space-y-3">
-			<div className="flex items-center justify-between gap-2">
-				<h3 className="text-sm font-medium">
-					{t(
-						"settings.auditExport.auditPack.recentRequests",
-						"Recent requests",
-					)}
-				</h3>
-				<Button variant="outline" size="sm" onClick={onRefresh}>
-					<IconRefresh className="mr-2 size-4" />
-					{t("common.refresh", "Refresh")}
-				</Button>
-			</div>
+			<h3 className="text-sm font-medium">
+				{t("settings.auditExport.auditPack.recentRequests", "Recent requests")}
+			</h3>
 			{isLoading ? (
 				<div className="flex items-center gap-2 text-sm text-muted-foreground">
 					<IconLoader2 className="size-4 animate-spin" />
-					{t(
-						"settings.auditExport.auditPack.loadingRequests",
-						"Loading requests...",
-					)}
+					{t("settings.auditExport.auditPack.loadingRequests", "Loading requests...")}
 				</div>
 			) : requests.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
@@ -616,10 +522,7 @@ function RecentAuditPackRequests({
 									<TableCell className="text-sm">
 										{request.artifact?.entryCount ?? "-"}
 										{request.artifact ? (
-											<AppendAssuranceNote
-												assurance={request.artifact.appendAssurance}
-												t={t}
-											/>
+											<AppendAssuranceNote assurance={request.artifact.appendAssurance} t={t} />
 										) : null}
 									</TableCell>
 									<TableCell className="text-right">
@@ -652,10 +555,7 @@ function RecentAuditPackRequests({
 											<span className="text-xs text-muted-foreground">
 												{request.completedAt
 													? formatDateTime(request.completedAt, displayContext)
-													: t(
-															"settings.auditExport.auditPack.pending",
-															"Pending",
-														)}
+													: t("settings.auditExport.auditPack.pending", "Pending")}
 											</span>
 										)}
 									</TableCell>
@@ -680,10 +580,7 @@ function AppendAssuranceNote({
 	if (!assurance) {
 		return (
 			<p className="text-xs text-muted-foreground">
-				{t(
-					"settings.auditExport.auditPack.lineageNotRecorded",
-					"Lineage assurance not recorded",
-				)}
+				{t("settings.auditExport.auditPack.lineageNotRecorded", "Lineage assurance not recorded")}
 			</p>
 		);
 	}

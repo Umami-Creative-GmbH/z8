@@ -23,18 +23,18 @@ describe("ProgressIndicator", () => {
 		render(<ProgressIndicator currentStep="wellness" isAdmin />);
 
 		const list = screen.getByRole("list");
-		expect(screen.getAllByRole("listitem")).toHaveLength(9);
+		expect(screen.getAllByRole("listitem")).toHaveLength(8);
 		// jsdom 31 serializes lengths like browsers do: `0` becomes `0px`.
-		expect(list.style.gridTemplateColumns).toBe("repeat(9, minmax(0px, 1fr))");
+		expect(list.style.gridTemplateColumns).toBe("repeat(8, minmax(0px, 1fr))");
 	});
 
 	it("runs the progress line from the first circle centre to the current one", () => {
 		render(<ProgressIndicator currentStep="wellness" isAdmin />);
 
-		// 9 columns: centres sit 1/18 in from each edge; wellness is step 7, six columns along.
+		// 8 columns: centres sit 1/16 in from each edge; wellness is step 6, five columns along.
 		const line = screen.getByTestId("onboarding-progress-line");
-		expect(Number.parseFloat(line.style.left)).toBeCloseTo(100 / 18);
-		expect(Number.parseFloat(line.style.width)).toBeCloseTo((6 * 100) / 9);
+		expect(Number.parseFloat(line.style.left)).toBeCloseTo(100 / 16);
+		expect(Number.parseFloat(line.style.width)).toBeCloseTo((5 * 100) / 8);
 	});
 
 	it("draws no progress on the first step", () => {
@@ -57,5 +57,13 @@ describe("ProgressIndicator", () => {
 		const label = screen.getByText("Notifications");
 		expect(label.className).toContain("sr-only");
 		expect(label.className).toContain("sm:not-sr-only");
+	});
+
+	it("does not guess admin status from admin-only step slugs when isAdmin and provider are omitted", () => {
+		render(<ProgressIndicator currentStep="vacation_policy" />);
+
+		expect(screen.getAllByRole("listitem")).toHaveLength(6);
+		expect(screen.queryByText("Vacation")).toBeNull();
+		expect(screen.queryByText("Templates")).toBeNull();
 	});
 });

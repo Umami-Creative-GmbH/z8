@@ -32,6 +32,10 @@ vi.mock("next/server", () => ({
 	connection: vi.fn(async () => undefined),
 }));
 
+vi.mock("next-intl/server", () => ({
+	getLocale: vi.fn(async () => "en"),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));

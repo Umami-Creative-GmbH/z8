@@ -36,7 +36,11 @@ import { buildStaticAppSearchResults } from "@/lib/app-search/static-results";
 import type { StaticAppSearchInput } from "@/lib/app-search/types";
 import { useSession } from "@/lib/auth-client";
 import type { UserOrganization } from "@/lib/auth-helpers";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
+import {
+	DEFAULT_SETTINGS_CAPABILITIES,
+	type SettingsCapabilities,
+} from "@/lib/settings/capabilities";
 
 export type { NavigationCapabilities } from "@/components/app-sidebar-nav";
 
@@ -46,13 +50,11 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	currentOrganization?: UserOrganization | null;
 	employeeRole?: "admin" | "manager" | "employee" | null;
 	navigationCapabilities?: NavigationCapabilities;
-	settingsAccessTier?: SettingsAccessTier;
+	settingsAccess?: SettingsAccess | null;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
-	/** The user manages a project below the manager tier (#928). */
-	managesProject?: boolean;
-	/** The driving licence visibility reader offers its settings (#1420). */
-	drivingLicenceSettingsVisible?: boolean;
+	/** Server-computed non-tier visibility capabilities (ADR 0003). */
+	settingsCapabilities?: Partial<SettingsCapabilities>;
 	canCreateOrganizations?: boolean;
 }
 
@@ -106,11 +108,10 @@ export function AppSidebar({
 	currentOrganization = null,
 	employeeRole = null,
 	navigationCapabilities = DEFAULT_NAVIGATION_CAPABILITIES,
-	settingsAccessTier = "member",
+	settingsAccess = null,
 	billingEnabled = false,
 	featureFlags,
-	managesProject = false,
-	drivingLicenceSettingsVisible = false,
+	settingsCapabilities = DEFAULT_SETTINGS_CAPABILITIES,
 	canCreateOrganizations = false,
 	...props
 }: AppSidebarProps) {
@@ -119,23 +120,22 @@ export function AppSidebar({
 	const staticSearchInput: StaticAppSearchInput = {
 		t: translate,
 		employeeRole,
-		settingsAccessTier,
+		settingsAccess,
 		billingEnabled,
 		showComplianceNav: navigationCapabilities.compliance,
 		showPayrollNav: navigationCapabilities.payroll,
 		featureFlags,
-		managesProject,
+		settingsCapabilities,
 		showMyDrivingLicenceNav: navigationCapabilities.myDrivingLicence ?? false,
 		showTeamDrivingLicenceNav: navigationCapabilities.teamDrivingLicence ?? false,
-		drivingLicenceSettingsVisible,
 		navigationCapabilities,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
 	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);
 	const navOptions = {
-		settingsAccessTier,
+		settingsAccess,
 		featureFlags,
-		managesProject,
+		settingsCapabilities,
 	};
 	const navPersonal = buildPersonalNav(translate, navigationCapabilities, employeeRole, navOptions);
 	const navTeam = buildTeamNav(translate, navigationCapabilities, employeeRole, navOptions);

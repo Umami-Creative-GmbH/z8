@@ -4,7 +4,7 @@ import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
-	settingsAccessTier: "member" as "member" | "manager" | "orgAdmin",
+	settingsAccess: "member" as "member" | "scopedManager" | "orgAdmin" | "owner" | null,
 	employee: null as { id: string; organizationId: string; role: "admin" | "manager" | "employee" } | null,
 	hasGrant: false,
 	canClose: false,
@@ -20,7 +20,7 @@ vi.mock("@/lib/auth/render-context", () => ({
 		session: { activeOrganizationId: "org-1" },
 		employee: mockState.employee,
 	})),
-	getRenderSettingsAccessTier: vi.fn(async () => mockState.settingsAccessTier),
+	getRenderSettingsAccess: vi.fn(async () => mockState.settingsAccess),
 	getRenderUserOrganizations: vi.fn(async () => [
 		{
 			id: "org-1",
@@ -49,6 +49,20 @@ vi.mock("@/lib/auth/render-context", () => ({
 			return false;
 		},
 	})),
+	getRenderOrganizationAbility: vi.fn(async () => ({
+		can: (action: string, subject: string) => {
+			if (subject !== "PayrollPeriod") return false;
+			if (action === "close") return mockState.canClose;
+			if (action === "reopen") return mockState.canReopen;
+			return false;
+		},
+	})),
+}));
+vi.mock("@/lib/projects/project-task-permission", () => ({
+	hasTaskManagedProject: vi.fn(async () => false),
+}));
+vi.mock("@/lib/projects/report-share/report-share-links", () => ({
+	hasActiveOrganizationShareLinks: vi.fn(async () => false),
 }));
 vi.mock("@/lib/organization/creation-policy.server", () => ({
 	canCreateOrganizationsForDeployment: () => false,
@@ -122,7 +136,7 @@ async function renderSidebar() {
 describe("ServerAppSidebar payroll navigation visibility (#1957)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.settingsAccessTier = "member";
+		mockState.settingsAccess = "member";
 		mockState.employee = null;
 		mockState.hasGrant = false;
 		mockState.canClose = false;
@@ -130,7 +144,7 @@ describe("ServerAppSidebar payroll navigation visibility (#1957)", () => {
 	});
 
 	it("shows Payroll for an org admin without an employee record or payroll grant", async () => {
-		mockState.settingsAccessTier = "orgAdmin";
+		mockState.settingsAccess = "orgAdmin";
 		mockState.employee = null;
 		mockState.hasGrant = false;
 
@@ -139,7 +153,7 @@ describe("ServerAppSidebar payroll navigation visibility (#1957)", () => {
 	});
 
 	it("shows Payroll for a delegated payroll officer with an active grant", async () => {
-		mockState.settingsAccessTier = "member";
+		mockState.settingsAccess = "member";
 		mockState.employee = { id: "emp-1", organizationId: "org-1", role: "employee" };
 		mockState.hasGrant = true;
 
@@ -148,7 +162,7 @@ describe("ServerAppSidebar payroll navigation visibility (#1957)", () => {
 	});
 
 	it("shows Payroll for a close-month-only custom-role holder without org-admin status or grant", async () => {
-		mockState.settingsAccessTier = "member";
+		mockState.settingsAccess = "member";
 		mockState.employee = { id: "emp-1", organizationId: "org-1", role: "employee" };
 		mockState.hasGrant = false;
 		mockState.canClose = true;
@@ -158,7 +172,7 @@ describe("ServerAppSidebar payroll navigation visibility (#1957)", () => {
 	});
 
 	it("shows Payroll for a reopen-month-only custom-role holder without org-admin status or grant", async () => {
-		mockState.settingsAccessTier = "member";
+		mockState.settingsAccess = "member";
 		mockState.employee = { id: "emp-1", organizationId: "org-1", role: "employee" };
 		mockState.hasGrant = false;
 		mockState.canReopen = true;
@@ -168,7 +182,7 @@ describe("ServerAppSidebar payroll navigation visibility (#1957)", () => {
 	});
 
 	it("hides Payroll for a member without org-admin status, payroll grant, or month-closure permissions", async () => {
-		mockState.settingsAccessTier = "member";
+		mockState.settingsAccess = "member";
 		mockState.employee = { id: "emp-1", organizationId: "org-1", role: "employee" };
 
 		const props = await renderSidebar();

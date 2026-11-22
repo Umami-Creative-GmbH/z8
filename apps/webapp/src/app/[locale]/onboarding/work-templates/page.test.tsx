@@ -89,7 +89,7 @@ describe("WorkTemplatesPage load effect", () => {
 		await act(async () => {
 			check.resolve({ success: true, data: false });
 		});
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/wellness"));
 		expect(screen.queryByLabelText("Template Name")).toBeNull();
 	});
 
@@ -151,7 +151,7 @@ describe("WorkTemplatesPage load effect", () => {
 		});
 		fireEvent.click(continueButton);
 
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/wellness"));
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(continueButton).toHaveProperty("disabled", true);
 	});
@@ -192,7 +192,7 @@ describe("WorkTemplatesPage load effect", () => {
 		});
 
 		request.resolve({ success: true });
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/wellness"));
 	});
 
 	it("keeps invalid template state on screen and blocks submission", async () => {
@@ -208,7 +208,7 @@ describe("WorkTemplatesPage load effect", () => {
 		expect(await screen.findByText("Template name is required")).toBeTruthy();
 		expect(nameInput).toHaveProperty("value", "");
 		expect(mocks.createWorkTemplateOnboarding).not.toHaveBeenCalled();
-		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/notifications");
+		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/wellness");
 	});
 
 	it("keeps skip disabled after successful skip navigation", async () => {
@@ -221,7 +221,7 @@ describe("WorkTemplatesPage load effect", () => {
 		});
 		fireEvent.click(skipButton);
 
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/wellness"));
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(skipButton).toHaveProperty("disabled", true);
 	});
@@ -290,7 +290,7 @@ describe("WorkTemplatesPage load effect", () => {
 			request.reject(new Error("private admin failure"));
 		});
 
-		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/wellness"));
 	});
 
 	it("keeps a live admin request during StrictMode replay", async () => {

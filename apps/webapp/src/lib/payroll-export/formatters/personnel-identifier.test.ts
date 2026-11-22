@@ -5,8 +5,8 @@
  * back to the employee number or ID.
  */
 
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { SuccessFactorsFormatter } from "../exporters/successfactors/successfactors-formatter";
 import { PayrollIdentifierMissingError } from "../personnel-identifier";
 import type { AbsenceData, ExpenseLineData, WageTypeMapping, WorkPeriodData } from "../types";
@@ -26,8 +26,8 @@ const shift: WorkPeriodData = {
 	employeeNumber: "P-1",
 	firstName: "Ada",
 	lastName: "Lovelace",
-	startTime: DateTime.fromISO("2026-09-10T08:00:00Z", { zone: "utc" }),
-	endTime: DateTime.fromISO("2026-09-10T16:00:00Z", { zone: "utc" }),
+	startTime: parseInstant("2026-09-10T08:00:00Z").toZonedDateTimeISO("UTC"),
+	endTime: parseInstant("2026-09-10T16:00:00Z").toZonedDateTimeISO("UTC"),
 	durationMinutes: 480,
 	workCategoryId: null,
 	workCategoryName: null,

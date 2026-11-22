@@ -48,12 +48,6 @@ export const onboardingProfileSchema = z.object({
 	helpImproveProduct: z.boolean().default(true),
 });
 
-export const onboardingWorkScheduleSchema = z.object({
-	hoursPerWeek: z.number().min(0).max(168),
-	workClassification: z.enum(["daily", "weekly", "monthly"]),
-	effectiveFrom: z.date(),
-});
-
 export const onboardingVacationPolicySchema = z.object({
 	name: z.string().min(1, "Policy name is required").max(100),
 	defaultAnnualDays: z.number().min(0).max(365).default(25),
@@ -81,7 +75,6 @@ export const onboardingNotificationsSchema = z.object({
 
 export type OnboardingProfileFormValues = z.infer<typeof onboardingProfileSchema>;
 export type OnboardingProfileFormInput = z.input<typeof onboardingProfileSchema>;
-export type OnboardingWorkScheduleFormValues = z.infer<typeof onboardingWorkScheduleSchema>;
 export type OnboardingVacationPolicyFormValues = z.infer<typeof onboardingVacationPolicySchema>;
 /** Compared with fresh server-selected scope; never an organization selector or permission grant. */
 export interface OnboardingOrganizationExpectation {
@@ -94,6 +87,7 @@ export type OnboardingNotificationsFormValues = z.infer<typeof onboardingNotific
 export {
 	ADMIN_ONLY_STEPS,
 	getNextOnboardingStep,
+	getNextOnboardingStepPath,
 	getOnboardingStepPath,
 	getVisibleSteps,
 	ONBOARDING_STEPS,

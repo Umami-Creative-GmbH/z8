@@ -16,7 +16,11 @@ describe("deriveAccessControlsSection", () => {
 		});
 
 		expect(result.card.status).toBe("critical");
+		expect(result.card.primaryLink.href).toBe("/settings/audit-export?tab=activity");
 		expect(result.recentCriticalEvents).toHaveLength(1);
+		expect(result.recentCriticalEvents[0]?.primaryLink.href).toBe(
+			"/settings/audit-export?tab=activity",
+		);
 	});
 
 	it("marks the section warning when only non-critical sensitive events exist", () => {

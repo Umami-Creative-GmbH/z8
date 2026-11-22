@@ -91,7 +91,7 @@ const { requestAbsenceEffect } = await import(
 );
 const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
 const { listApprovalEscalationCandidates, transferApprovalEscalationAssignment } = await import(
-	"@/app/[locale]/(app)/settings/approval-escalation/actions"
+	"@/app/[locale]/(app)/settings/approval-policies/escalation-actions"
 );
 const { processDueEscalations } = await import("./transfer");
 const { db } = await import("@/db");

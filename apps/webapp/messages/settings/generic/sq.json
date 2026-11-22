@@ -2847,8 +2847,7 @@
       "description": "Zgjidhni se si dhe kur dëshironi të njoftoheni",
       "digestTime": "Ora e përmbledhjes",
       "discord": {
-        "description": "Konfiguroni njoftimet e Discord për organizatën tuaj.",
-        "setupInstructions": "Lidhja e Discord nga kjo faqe nuk është ende e disponueshme. Lidhja kërkon token-in e bot-it të aplikacionit tuaj Discord, ID-në e aplikacionit dhe çelësin publik."
+        "description": "Konfiguroni njoftimet e Discord për organizatën tuaj."
       },
       "escalations": "Përshkallëzimet",
       "escalationsDescription": "Përshkallëzoni kërkesat e miratimit pa përgjigje pas skadimit të kohës së konfiguruar.",

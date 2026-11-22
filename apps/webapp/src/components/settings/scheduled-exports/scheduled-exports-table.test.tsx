@@ -12,6 +12,7 @@ const actions = vi.hoisted(() => ({
 	remove: vi.fn(),
 	error: vi.fn(),
 }));
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("next/dynamic", () => ({ default: () => () => null }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -102,9 +103,9 @@ describe("Scheduled exports query ownership", () => {
 
 		await waitFor(() => expect(actions.remove).toHaveBeenCalledTimes(1));
 		expect(screen.getByRole("alertdialog")).toBeTruthy();
-		expect(
-			(screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled,
-		).toBe(true);
+		expect((screen.getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled).toBe(
+			true,
+		);
 
 		await act(async () => refuse({ success: false, error: "Schedule is running" }));
 

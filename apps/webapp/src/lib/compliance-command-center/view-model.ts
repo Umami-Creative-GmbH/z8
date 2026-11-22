@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { compareInstants, parseInstant } from "@/lib/datetime/temporal-core";
 import type {
 	ComplianceCommandCenterData,
 	ComplianceCriticalEvent,
@@ -49,10 +49,8 @@ function buildRiskSummary(
 function sortRecentCriticalEvents(events: ComplianceCriticalEvent[]): ComplianceCriticalEvent[] {
 	return [...events]
 		.filter((event) => event.severity === "critical")
-		.sort(
-			(left, right) =>
-				DateTime.fromISO(right.occurredAt).toMillis() -
-				DateTime.fromISO(left.occurredAt).toMillis(),
+		.sort((left, right) =>
+			compareInstants(parseInstant(right.occurredAt), parseInstant(left.occurredAt)),
 		)
 		.slice(0, 5);
 }

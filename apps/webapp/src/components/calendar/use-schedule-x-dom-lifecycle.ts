@@ -1,9 +1,11 @@
-import { DateTime } from "luxon";
+import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
 import { Temporal } from "temporal-polyfill";
-import type { RefObject } from "react";
-import type { WorkPeriodEvent } from "@/lib/calendar/types";
+import type { CalendarEvent, DailyWorkHoursSummaries, WorkPeriodEvent } from "@/lib/calendar/types";
+import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { buildRequirementHeaderContent } from "./daily-requirement-strip";
+import type { ViewMode } from "./schedule-x-calendar";
 import {
 	buildCalendarTimeZoneDate,
 	buildCurrentTimeIndicatorPosition,
@@ -13,8 +15,6 @@ import {
 	resolveEventModalLeft,
 	shouldRetryRequirementHeaderInjection,
 } from "./schedule-x-calendar-utils";
-import type { ViewMode } from "./schedule-x-calendar";
-import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 
 interface RangeSelectionStart {
 	date: Date;
@@ -54,10 +54,18 @@ function roundToQuarterHour(minutes: number) {
 	return Math.max(0, Math.min(23 * 60 + 45, Math.round(minutes / 15) * 15));
 }
 
+function tryParsePlainDate(value: string): PlainDate | null {
+	try {
+		return parsePlainDate(value);
+	} catch {
+		return null;
+	}
+}
+
 function getPointerDateTime(
 	container: HTMLDivElement,
 	event: PointerEvent,
-	visibleDates: DateTime[],
+	visibleDates: PlainDate[],
 	timeZone: string,
 ) {
 	if (visibleDates.length === 0) return null;
@@ -70,9 +78,7 @@ function getPointerDateTime(
 		dateAttributeElement?.dataset.timeGridDate ??
 		dateAttributeElement?.dataset.date ??
 		dateAttributeElement?.dataset.dateTime;
-	const attributeDate = dateAttribute
-		? DateTime.fromISO(dateAttribute.slice(0, 10), { zone: timeZone })
-		: null;
+	const attributeDate = dateAttribute ? tryParsePlainDate(dateAttribute.slice(0, 10)) : null;
 
 	const dayCells = Array.from(container.querySelectorAll<HTMLElement>(".sx__time-grid-day"));
 	const matchingDayCell = dayCells.find((cell) => {
@@ -92,14 +98,12 @@ function getPointerDateTime(
 	if (timeGridRect.height <= 0) return null;
 
 	const dayIndex = matchingDayCell ? Math.max(0, dayCells.indexOf(matchingDayCell)) : 0;
-	const date = attributeDate?.isValid
-		? attributeDate
-		: visibleDates[Math.min(dayIndex, visibleDates.length - 1)];
+	const date = attributeDate ?? visibleDates[Math.min(dayIndex, visibleDates.length - 1)];
 	const minutes = roundToQuarterHour(
 		((event.clientY - timeGridRect.top) / timeGridRect.height) * 24 * 60,
 	);
 
-	return buildCalendarTimeZoneDate(date.toISODate() ?? "", minutes, timeZone);
+	return buildCalendarTimeZoneDate(date.toString(), minutes, timeZone);
 }
 
 export function useScheduleXClockOutDelegation({
@@ -152,6 +156,7 @@ export function useScheduleXDomLifecycle({
 	isLoading,
 	viewMode,
 	timeZone,
+	locale = "en",
 	visibleRequirementDates,
 	workHoursData,
 	isSummaryLoading,
@@ -165,7 +170,8 @@ export function useScheduleXDomLifecycle({
 	isLoading: boolean;
 	viewMode: ViewMode;
 	timeZone: string;
-	visibleRequirementDates: DateTime[];
+	locale?: string;
+	visibleRequirementDates: PlainDate[];
 	workHoursData: DailyWorkHoursSummaries;
 	isSummaryLoading: boolean;
 	t: (key: string, fallback: string) => string;
@@ -286,14 +292,18 @@ export function useScheduleXDomLifecycle({
 			const container = calendarContainerRef.current;
 			const viewport = container?.querySelector<HTMLElement>(".sx__view-container");
 			if (!viewport) return;
-			const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
-			const timeIndicator = container?.querySelector(
-				".sx__current-time-indicator",
-			);
+			const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+				? "instant"
+				: "smooth";
+			const timeIndicator = container?.querySelector(".sx__current-time-indicator");
 			if (timeIndicator) {
 				// scrollIntoView also scrolls the surrounding planner, hiding scope and period controls.
 				viewport.scrollTo({
-					top: viewport.scrollTop + timeIndicator.getBoundingClientRect().top - viewport.getBoundingClientRect().top - viewport.clientHeight / 2,
+					top:
+						viewport.scrollTop +
+						timeIndicator.getBoundingClientRect().top -
+						viewport.getBoundingClientRect().top -
+						viewport.clientHeight / 2,
 					behavior,
 				});
 				return;
@@ -345,10 +355,14 @@ export function useScheduleXDomLifecycle({
 					continue;
 				}
 
-				const summary = workHoursData.get(date.toFormat("yyyy-MM-dd"));
+				const summary = workHoursData.get(date.toString());
 				if (!summary) continue;
 
-				const content = buildRequirementHeaderContent(summary, date.toFormat("cccc, LLLL d"), t);
+				const content = buildRequirementHeaderContent(
+					summary,
+					formatPlainDate(date, locale, "weekdayMonthDayLong"),
+					t,
+				);
 				const wrapper = document.createElement("div");
 				wrapper.className = `z8-requirement-header-summary z8-requirement-header-summary--${content.status ?? "none"}`;
 				wrapper.setAttribute("aria-label", content.accessibleLabel);
@@ -409,7 +423,15 @@ export function useScheduleXDomLifecycle({
 			if (retryTimeout !== null) window.clearTimeout(retryTimeout);
 			clearRequirementHeaderContent(container);
 		};
-	}, [calendarContainerRef, t, viewMode, visibleRequirementDates, workHoursData, isSummaryLoading]);
+	}, [
+		calendarContainerRef,
+		locale,
+		t,
+		viewMode,
+		visibleRequirementDates,
+		workHoursData,
+		isSummaryLoading,
+	]);
 
 	useEffect(() => {
 		const container = calendarContainerRef.current;
@@ -433,12 +455,14 @@ export function useScheduleXDomLifecycle({
 
 			const [first, last] = [start.date, end]
 				.sort((a, b) => a.getTime() - b.getTime())
-				.map((date) => Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(timeZone));
+				.map((date) =>
+					Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(timeZone),
+				);
 			const firstDay = first.toPlainDate().toString();
 			const lastDay = last.toPlainDate().toString();
 			const dayCells = container.querySelectorAll<HTMLElement>(".sx__time-grid-day");
 			dayCells.forEach((cell, index) => {
-				const dateKey = cell.dataset.timeGridDate ?? visibleRequirementDates[index]?.toISODate();
+				const dateKey = cell.dataset.timeGridDate ?? visibleRequirementDates[index]?.toString();
 				if (!dateKey || dateKey < firstDay || dateKey > lastDay) return;
 				const startMinutes = dateKey === firstDay ? first.hour * 60 + first.minute : 0;
 				const endMinutes = dateKey === lastDay ? last.hour * 60 + last.minute : 1440;

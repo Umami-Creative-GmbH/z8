@@ -130,6 +130,11 @@
     }
   },
   "billing": {
+    "recovery": {
+      "billingAndSubscription": "Abrechnung & Abonnement",
+      "navigationLabel": "Navigation zur Abrechnungswiederherstellung",
+      "suspensionNotice": "Hinweis zur Sperrung"
+    },
     "suspended": {
       "accessConsequence": "Der Zugriff auf diese Organisation ist pausiert, bis die Abrechnung aktualisiert wird.",
       "adminDescription": "Ihre Testversion ist abgelaufen oder Ihr Abonnement ist nicht mehr gültig. Aktualisieren Sie Ihre Zahlungsdaten, um Z8 weiterhin zu nutzen.",

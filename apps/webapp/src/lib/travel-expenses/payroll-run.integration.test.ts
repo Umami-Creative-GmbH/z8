@@ -9,7 +9,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -123,9 +123,8 @@ const { processTravelExpenseExportBatch } = await import("@/lib/travel-expenses/
 const { createExportJob, processExportJob } = await import("@/lib/payroll-export/export-service");
 const { discardPayrollRun } = await import("./payroll-run");
 const { countUnconfirmedPayrollRuns } = await import("./reimbursement-channel");
-const { POST: processReceipt } = await import(
-	"@/app/api/upload/travel-expense/report-receipt/route"
-);
+const { POST: processReceipt } =
+	await import("@/app/api/upload/travel-expense/report-receipt/route");
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
@@ -364,8 +363,8 @@ async function exportPayroll(
 		requestedById: ids.finance,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO(period.start, { zone: "utc" }),
-				end: DateTime.fromISO(period.end, { zone: "utc" }),
+				start: parsePlainDate(period.start),
+				end: parsePlainDate(period.end),
 			},
 			employeeIds: options.employeeIds,
 		},
@@ -522,9 +521,8 @@ describe("payroll file exports carry expense lines (#852)", () => {
 		const reportId = await approvedHotel("100.00");
 		const earlier = await exportPayroll("datev_lohn", current);
 		// An asynchronous delivery whose upload fails.
-		const { LexwareLohnFormatter } = await import(
-			"@/lib/payroll-export/formatters/lexware-lohn-formatter"
-		);
+		const { LexwareLohnFormatter } =
+			await import("@/lib/payroll-export/formatters/lexware-lohn-formatter");
 		vi.spyOn(LexwareLohnFormatter.prototype, "getSyncThreshold").mockReturnValue(-1);
 		const { jobId, isAsync } = await createExportJob({
 			organizationId: ORG,
@@ -532,8 +530,8 @@ describe("payroll file exports carry expense lines (#852)", () => {
 			requestedById: ids.finance,
 			filters: {
 				dateRange: {
-					start: DateTime.fromISO(current.start, { zone: "utc" }),
-					end: DateTime.fromISO(current.end, { zone: "utc" }),
+					start: parsePlainDate(current.start),
+					end: parsePlainDate(current.end),
 				},
 			},
 		});
@@ -610,9 +608,8 @@ describe("payroll file exports carry expense lines (#852)", () => {
 		const run = await exportPayroll("datev_lohn", current);
 
 		signIn("finance");
-		const { discardPayrollRunAction } = await import(
-			"@/app/[locale]/(app)/settings/payroll-export/actions"
-		);
+		const { discardPayrollRunAction } =
+			await import("@/app/[locale]/(app)/settings/payroll-export/actions");
 		const discarded = await discardPayrollRunAction({ jobId: run.jobId });
 
 		expect(discarded).toEqual({

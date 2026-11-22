@@ -40,7 +40,11 @@ import {
 	MY_DRIVING_LICENCE_PATH,
 	TEAM_DRIVING_LICENCE_PATH,
 } from "@/lib/organization/driving-licence/paths";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
+import type { SettingsCapabilities } from "@/lib/settings/capabilities";
 
 export type NavigationIcon = typeof IconDashboard;
 
@@ -84,11 +88,11 @@ export interface NavigationCapabilities {
 
 export interface NavigationAccessContext {
 	employeeRole: NavigationEmployeeRole;
-	settingsAccessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	navigationCapabilities: NavigationCapabilities;
 	featureFlags?: FeatureFlagState;
-	/** The user manages a project below the manager tier (#928). */
-	managesProject?: boolean;
+	/** Server-computed non-tier visibility capabilities (ADR 0003). */
+	settingsCapabilities?: Partial<SettingsCapabilities>;
 }
 
 export interface NavigationSearchKeyword {
@@ -133,8 +137,8 @@ function canViewMissingVehicleLogs(ctx: NavigationAccessContext): boolean {
 		return ctx.navigationCapabilities.missingVehicleLogs;
 	}
 	return (
-		ctx.settingsAccessTier === "orgAdmin" ||
-		(ctx.settingsAccessTier === "manager" && ctx.employeeRole !== null)
+		meetsSettingsAccess(ctx.settingsAccess, "orgAdmin") ||
+		(meetsSettingsAccess(ctx.settingsAccess, "scopedManager") && ctx.employeeRole !== null)
 	);
 }
 
@@ -143,9 +147,7 @@ function canViewAnalytics(ctx: NavigationAccessContext): boolean {
 		return ctx.navigationCapabilities.analytics;
 	}
 	return (
-		ctx.settingsAccessTier === "orgAdmin" ||
-		ctx.settingsAccessTier === "manager" ||
-		isManagerOrAdmin(ctx.employeeRole)
+		meetsSettingsAccess(ctx.settingsAccess, "scopedManager") || isManagerOrAdmin(ctx.employeeRole)
 	);
 }
 
@@ -154,7 +156,7 @@ function canViewBillableHandOff(ctx: NavigationAccessContext): boolean {
 		return ctx.navigationCapabilities.billableHandOff;
 	}
 	return (
-		ctx.settingsAccessTier === "orgAdmin" &&
+		meetsSettingsAccess(ctx.settingsAccess, "orgAdmin") &&
 		Boolean(ctx.featureFlags?.billableTimeEnabled) &&
 		Boolean(ctx.featureFlags?.projectsEnabled)
 	);
@@ -167,9 +169,9 @@ function canViewProjectReports(ctx: NavigationAccessContext): boolean {
 	return (
 		Boolean(ctx.featureFlags?.projectsEnabled) &&
 		ctx.employeeRole !== null &&
-		(ctx.settingsAccessTier === "orgAdmin" ||
+		(meetsSettingsAccess(ctx.settingsAccess, "orgAdmin") ||
 			isManagerOrAdmin(ctx.employeeRole) ||
-			Boolean(ctx.managesProject))
+			Boolean(ctx.settingsCapabilities?.canManageProjects))
 	);
 }
 

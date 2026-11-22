@@ -1,5 +1,5 @@
-import type { DateTime } from "luxon";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
+import type { Instant } from "@/lib/datetime/temporal-core";
 
 export type WorkdayTimelineItemType =
 	| "shift"
@@ -90,8 +90,8 @@ export interface SelectedWorkdayDate {
 	previousDateKey: string;
 	nextDateKey: string;
 	label: string;
-	startUtc: DateTime;
-	endUtc: DateTime;
+	startUtc: Instant;
+	endUtc: Instant;
 }
 
 export interface WorkdayTimelineData {

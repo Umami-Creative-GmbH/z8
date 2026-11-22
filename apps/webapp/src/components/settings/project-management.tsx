@@ -265,21 +265,10 @@ export function ProjectManagement({
 	} = useProjectManagement({ organizationId, canManageProjectManagers });
 
 	const actions = (
-		<>
-			<Button
-				variant="ghost"
-				size="icon"
-				onClick={() => refetch()}
-				disabled={isFetching}
-				aria-label={t("common.refresh", "Refresh")}
-			>
-				<IconRefresh aria-hidden="true" className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-			</Button>
-			<Button onClick={handleCreate}>
-				<IconPlus aria-hidden="true" className="mr-2 size-4" />
-				{t("settings.projects.create", "Create Project")}
-			</Button>
-		</>
+		<Button onClick={handleCreate}>
+			<IconPlus aria-hidden="true" className="mr-2 size-4" />
+			{t("settings.projects.create", "Create Project")}
+		</Button>
 	);
 
 	return (

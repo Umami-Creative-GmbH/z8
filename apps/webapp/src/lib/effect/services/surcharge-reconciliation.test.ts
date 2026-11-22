@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import {
+	calculateSurchargesInternal,
 	evaluateSurchargeSnapshot,
 	reconcileSurchargeWorkPeriodsWithDatabase,
 } from "./surcharge.service";
@@ -954,5 +955,80 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input),
 		).rejects.toThrow("Surcharge reconciliation failed");
 		expect(fake.tx.delete).not.toHaveBeenCalled();
+	});
+});
+
+describe("calculateSurchargesInternal date_based rules", () => {
+	it("matches UTC-midnight specificDate on the organization calendar day west of UTC (#1973)", () => {
+		const christmasRule = {
+			id: "rule-christmas",
+			name: "Christmas Day 100%",
+			ruleType: "date_based" as const,
+			percentage: "1.0000",
+			specificDate: new Date("2026-12-25T00:00:00Z"),
+			priority: 1,
+		};
+
+		// 2026-12-24 09:00-11:00 EST (America/New_York) must NOT match 2026-12-25
+		const christmasEve = calculateSurchargesInternal(
+			new Date("2026-12-24T14:00:00Z"),
+			new Date("2026-12-24T16:00:00Z"),
+			[christmasRule],
+			"America/New_York",
+		);
+		expect(christmasEve.qualifyingMinutes).toBe(0);
+		expect(christmasEve.surchargeMinutes).toBe(0);
+
+		// 2026-12-25 09:00-11:00 EST (America/New_York) MUST match 2026-12-25
+		const christmasDay = calculateSurchargesInternal(
+			new Date("2026-12-25T14:00:00Z"),
+			new Date("2026-12-25T16:00:00Z"),
+			[christmasRule],
+			"America/New_York",
+		);
+		expect(christmasDay.qualifyingMinutes).toBe(120);
+		expect(christmasDay.surchargeMinutes).toBe(120);
+	});
+
+	it("matches UTC-midnight date ranges without shifting back a day west of UTC (#1973)", () => {
+		const rangeRule = {
+			id: "rule-year-end",
+			name: "Year-end range 50%",
+			ruleType: "date_based" as const,
+			percentage: "0.5000",
+			dateRangeStart: new Date("2026-12-25T00:00:00Z"),
+			dateRangeEnd: new Date("2026-12-26T00:00:00Z"),
+			priority: 1,
+		};
+
+		// Before range: 2026-12-24 10:00-12:00 EST
+		expect(
+			calculateSurchargesInternal(
+				new Date("2026-12-24T15:00:00Z"),
+				new Date("2026-12-24T17:00:00Z"),
+				[rangeRule],
+				"America/New_York",
+			).surchargeMinutes,
+		).toBe(0);
+
+		// Last day of range: 2026-12-26 10:00-12:00 EST
+		expect(
+			calculateSurchargesInternal(
+				new Date("2026-12-26T15:00:00Z"),
+				new Date("2026-12-26T17:00:00Z"),
+				[rangeRule],
+				"America/New_York",
+			).surchargeMinutes,
+		).toBe(60);
+
+		// After range: 2026-12-27 10:00-12:00 EST
+		expect(
+			calculateSurchargesInternal(
+				new Date("2026-12-27T15:00:00Z"),
+				new Date("2026-12-27T17:00:00Z"),
+				[rangeRule],
+				"America/New_York",
+			).surchargeMinutes,
+		).toBe(0);
 	});
 });

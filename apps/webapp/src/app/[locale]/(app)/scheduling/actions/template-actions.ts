@@ -21,7 +21,7 @@ export async function createShiftTemplate(
 
 	if (
 		!canManageScopedSchedulingSubarea(
-			accessContext.accessTier,
+			accessContext.settingsAccess,
 			accessContext.manageableShiftTemplateSubareaIds,
 			input.subareaId,
 		)
@@ -39,7 +39,7 @@ export async function createShiftTemplate(
 			endTime: input.endTime,
 			color: input.color,
 			subareaId: input.subareaId,
-			createdBy: accessContext.authContext.user.id,
+			createdBy: accessContext.userId,
 		});
 	});
 
@@ -68,7 +68,7 @@ export async function updateShiftTemplate(
 		input.subareaId !== undefined ? input.subareaId : existingTemplate.subareaId;
 	if (
 		!canManageScopedSchedulingSubarea(
-			accessContext.accessTier,
+			accessContext.settingsAccess,
 			accessContext.manageableShiftTemplateSubareaIds,
 			nextSubareaId,
 		)
@@ -102,7 +102,7 @@ export async function deleteShiftTemplate(id: string): Promise<SchedulingActionR
 
 	if (
 		!canManageScopedSchedulingSubarea(
-			accessContext.accessTier,
+			accessContext.settingsAccess,
 			accessContext.manageableShiftTemplateSubareaIds,
 			existingTemplate.subareaId,
 		)

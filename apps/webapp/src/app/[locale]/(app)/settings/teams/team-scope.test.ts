@@ -26,7 +26,7 @@ const TEAM_BRAVO = {
 describe("team scope helpers", () => {
 	it("limits manager surfaces to teams covered by scoped team permissions", () => {
 		const surface = buildTeamSettingsSurface({
-			accessTier: "manager",
+			settingsAccess: "scopedManager",
 			teams: [TEAM_ALPHA, TEAM_BRAVO],
 			permissions: {
 				orgWide: null,
@@ -55,31 +55,34 @@ describe("team scope helpers", () => {
 		]);
 	});
 
-	it("keeps org admins fully enabled across all teams", () => {
-		const surface = buildTeamSettingsSurface({
-			accessTier: "orgAdmin",
-			teams: [TEAM_ALPHA, TEAM_BRAVO],
-			permissions: {
-				orgWide: null,
-				byTeamId: new Map(),
-			},
-		});
+	it.each(["orgAdmin", "owner"] as const)(
+		"keeps %s fully enabled across all teams",
+		(settingsAccess) => {
+			const surface = buildTeamSettingsSurface({
+				settingsAccess,
+				teams: [TEAM_ALPHA, TEAM_BRAVO],
+				permissions: {
+					orgWide: null,
+					byTeamId: new Map(),
+				},
+			});
 
-		expect(surface.canAccessOrganizationAdminSurface).toBe(true);
-		expect(surface.canCreateTeams).toBe(true);
-		expect(surface.teams).toEqual([
-			expect.objectContaining({
-				id: TEAM_ALPHA.id,
-				canManageMembers: true,
-				canManageSettings: true,
-			}),
-			expect.objectContaining({
-				id: TEAM_BRAVO.id,
-				canManageMembers: true,
-				canManageSettings: true,
-			}),
-		]);
-	});
+			expect(surface.canAccessOrganizationAdminSurface).toBe(true);
+			expect(surface.canCreateTeams).toBe(true);
+			expect(surface.teams).toEqual([
+				expect.objectContaining({
+					id: TEAM_ALPHA.id,
+					canManageMembers: true,
+					canManageSettings: true,
+				}),
+				expect.objectContaining({
+					id: TEAM_BRAVO.id,
+					canManageMembers: true,
+					canManageSettings: true,
+				}),
+			]);
+		},
+	);
 
 	it("blocks moving employees out of teams the manager cannot manage", () => {
 		expect(
@@ -109,7 +112,7 @@ describe("team scope helpers", () => {
 
 	it("does not let managers create teams even with org-wide create permissions", () => {
 		const surface = buildTeamSettingsSurface({
-			accessTier: "manager",
+			settingsAccess: "scopedManager",
 			teams: [TEAM_ALPHA],
 			permissions: {
 				orgWide: {
@@ -127,7 +130,7 @@ describe("team scope helpers", () => {
 
 	it("ignores org-wide team permissions for managers and keeps them scoped to explicit teams", () => {
 		const surface = buildTeamSettingsSurface({
-			accessTier: "manager",
+			settingsAccess: "scopedManager",
 			teams: [TEAM_ALPHA, TEAM_BRAVO],
 			permissions: {
 				orgWide: {
@@ -159,30 +162,33 @@ describe("team scope helpers", () => {
 		]);
 	});
 
-	it("keeps non-manager employees out of the scoped team surface even with granted team permissions", () => {
-		const surface = buildTeamSettingsSurface({
-			accessTier: "member",
-			teams: [TEAM_ALPHA],
-			permissions: {
-				orgWide: null,
-				byTeamId: new Map([
-					[
-						TEAM_ALPHA.id,
-						{
-							canCreateTeams: false,
-							canManageTeamMembers: true,
-							canManageTeamSettings: true,
-							canApproveTeamRequests: false,
-						},
-					],
-				]),
-			},
-		});
+	it.each(["member", null] as const)(
+		"keeps %s callers out of the scoped team surface even with granted team permissions",
+		(settingsAccess) => {
+			const surface = buildTeamSettingsSurface({
+				settingsAccess,
+				teams: [TEAM_ALPHA],
+				permissions: {
+					orgWide: null,
+					byTeamId: new Map([
+						[
+							TEAM_ALPHA.id,
+							{
+								canCreateTeams: false,
+								canManageTeamMembers: true,
+								canManageTeamSettings: true,
+								canApproveTeamRequests: false,
+							},
+						],
+					]),
+				},
+			});
 
-		expect(surface.canAccessOrganizationAdminSurface).toBe(false);
-		expect(surface.canCreateTeams).toBe(false);
-		expect(surface.teams).toEqual([]);
-	});
+			expect(surface.canAccessOrganizationAdminSurface).toBe(false);
+			expect(surface.canCreateTeams).toBe(false);
+			expect(surface.teams).toEqual([]);
+		},
+	);
 
 	it("filters loaded members down to scoped teams for managers", () => {
 		const allMembers = [

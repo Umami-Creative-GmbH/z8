@@ -66,16 +66,16 @@ describe("navigation manifest", () => {
 
 	it("unifies driving-licence, Expense Finance, and Missing vehicle logs across sidebar, Cmd+K, and route metadata", () => {
 		const navOptions = {
-			settingsAccessTier: "orgAdmin" as const,
+			settingsAccess: "orgAdmin" as const,
 			featureFlags: { shiftsEnabled: true, projectsEnabled: true },
-			managesProject: false,
+			settingsCapabilities: { canManageProjects: false },
 		};
 		const personalNav = buildPersonalNav(t, ALL_CAPABILITIES, "admin", navOptions);
 		const organizationNav = buildOrganizationNav(t, ALL_CAPABILITIES, "admin", navOptions);
 		const searchResults = buildStaticAppSearchResults({
 			t,
 			employeeRole: "admin",
-			settingsAccessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: true,
 			showComplianceNav: true,
 			showPayrollNav: true,
@@ -123,9 +123,9 @@ describe("navigation manifest", () => {
 
 	it("organizes the four bounded sidebar sections and split-pair personal/staff routes (#1953)", () => {
 		const navOptions = {
-			settingsAccessTier: "orgAdmin" as const,
+			settingsAccess: "orgAdmin" as const,
 			featureFlags: { shiftsEnabled: true, projectsEnabled: true },
-			managesProject: false,
+			settingsCapabilities: { canManageProjects: false },
 		};
 
 		expect(
@@ -164,7 +164,7 @@ describe("navigation manifest", () => {
 				t,
 				{ ...NO_CAPABILITIES, analytics: undefined },
 				null,
-				{ settingsAccessTier: "orgAdmin" },
+				{ settingsAccess: "orgAdmin" },
 			).map((item) => item.url),
 		).toEqual(["/analytics"]);
 
@@ -193,7 +193,7 @@ describe("navigation manifest", () => {
 		const authorizedPages = buildStaticAppSearchResults({
 			t,
 			employeeRole: "admin",
-			settingsAccessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: true,
 			showComplianceNav: true,
 			showPayrollNav: true,
@@ -226,7 +226,7 @@ describe("navigation manifest", () => {
 		const employeePages = buildStaticAppSearchResults({
 			t,
 			employeeRole: "employee",
-			settingsAccessTier: "member",
+			settingsAccess: "member",
 			billingEnabled: false,
 			showComplianceNav: false,
 			showPayrollNav: false,
@@ -263,7 +263,7 @@ describe("navigation manifest", () => {
 		const orgAdminNoEmployee = buildStaticAppSearchResults({
 			t,
 			employeeRole: null,
-			settingsAccessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: false,
 			showComplianceNav: true,
 		});
@@ -274,7 +274,7 @@ describe("navigation manifest", () => {
 		const serverDeniedOverride = buildStaticAppSearchResults({
 			t,
 			employeeRole: "admin",
-			settingsAccessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: false,
 			showComplianceNav: true,
 			navigationCapabilities: { ...ALL_CAPABILITIES, missingVehicleLogs: false },
@@ -284,7 +284,7 @@ describe("navigation manifest", () => {
 		const managerWithoutEmployee = buildStaticAppSearchResults({
 			t,
 			employeeRole: null,
-			settingsAccessTier: "manager",
+			settingsAccess: "scopedManager",
 			billingEnabled: false,
 			showComplianceNav: false,
 		});
@@ -293,7 +293,7 @@ describe("navigation manifest", () => {
 		const managerWithEmployee = buildStaticAppSearchResults({
 			t,
 			employeeRole: "manager",
-			settingsAccessTier: "manager",
+			settingsAccess: "scopedManager",
 			billingEnabled: false,
 			showComplianceNav: false,
 		});
@@ -302,7 +302,7 @@ describe("navigation manifest", () => {
 
 	it("exposes Billable Hand-off in Organization and Cmd+K only to org admins when Projects and Billable Time are enabled (#1956)", () => {
 		const orgAdminBothFlags = {
-			settingsAccessTier: "orgAdmin" as const,
+			settingsAccess: "orgAdmin" as const,
 			featureFlags: { projectsEnabled: true, billableTimeEnabled: true },
 		};
 		expect(
@@ -317,7 +317,7 @@ describe("navigation manifest", () => {
 		const orgAdminCmdK = buildStaticAppSearchResults({
 			t,
 			employeeRole: null,
-			settingsAccessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
 			billingEnabled: false,
 			showComplianceNav: false,
 			featureFlags: { projectsEnabled: true, billableTimeEnabled: true },
@@ -336,7 +336,7 @@ describe("navigation manifest", () => {
 					t,
 					{ ...NO_CAPABILITIES, billableHandOff: undefined },
 					"admin",
-					{ settingsAccessTier: "orgAdmin", featureFlags: flags },
+					{ settingsAccess: "orgAdmin", featureFlags: flags },
 				).map((item) => item.url),
 			).not.toContain("/billable-time/hand-off");
 		}
@@ -347,7 +347,7 @@ describe("navigation manifest", () => {
 			{ ...NO_CAPABILITIES, finance: true, billableHandOff: undefined },
 			"employee",
 			{
-				settingsAccessTier: "member",
+				settingsAccess: "member",
 				featureFlags: { projectsEnabled: true, billableTimeEnabled: true },
 			},
 		).map((item) => item.url);
@@ -356,7 +356,7 @@ describe("navigation manifest", () => {
 		const expenseOfficerCmdK = buildStaticAppSearchResults({
 			t,
 			employeeRole: "employee",
-			settingsAccessTier: "member",
+			settingsAccess: "member",
 			billingEnabled: false,
 			showComplianceNav: false,
 			navigationCapabilities: { ...NO_CAPABILITIES, finance: true, billableHandOff: undefined },
@@ -368,9 +368,9 @@ describe("navigation manifest", () => {
 
 	it("keeps sidebar items aligned with manifest titles, hrefs, and icons", () => {
 		const navOptions = {
-			settingsAccessTier: "orgAdmin" as const,
+			settingsAccess: "orgAdmin" as const,
 			featureFlags: { shiftsEnabled: true, projectsEnabled: true },
-			managesProject: true,
+			settingsCapabilities: { canManageProjects: true },
 		};
 		const sidebarItems = [
 			...buildPersonalNav(t, ALL_CAPABILITIES, "employee", navOptions),

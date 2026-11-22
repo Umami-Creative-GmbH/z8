@@ -2,29 +2,20 @@ import { Suspense } from "react";
 import { CalendarSettingsForm } from "@/components/settings/calendar-settings-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { getTranslate } from "@/tolgee/server";
 import { getCalendarSettings, getManagerCalendarReadView } from "./actions";
 
 async function CalendarSettingsPageContent() {
-	const [settingsRouteContext, t] = await Promise.all([
-		getCurrentSettingsRouteContext(),
-		getTranslate(),
-	]);
+	const [caller, t] = await Promise.all([getCurrentSettingsAccess(), getTranslate()]);
 
-	if (!settingsRouteContext) {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
-	const { authContext, accessTier } = settingsRouteContext;
-	const organizationId = authContext.session.activeOrganizationId;
-
-	if (accessTier === "member" || !organizationId) {
-		return redirectWithLocale("/settings");
-	}
-
-	const canManageCalendarSettings = accessTier === "orgAdmin";
+	const canManageCalendarSettings = meetsSettingsAccess(caller.settingsAccess, "orgAdmin");
 
 	const settingsResult = await (canManageCalendarSettings
 		? getCalendarSettings()
@@ -46,7 +37,7 @@ async function CalendarSettingsPageContent() {
 				<PageHeader
 					title={t("settings.calendar.title", "Calendar Sync")}
 					description={
-						accessTier === "orgAdmin"
+						canManageCalendarSettings
 							? t(
 									"settings.calendar.description",
 									"Configure calendar providers, ICS feeds, and sync settings for your organization",
@@ -58,10 +49,7 @@ async function CalendarSettingsPageContent() {
 					}
 				/>
 
-				<CalendarSettingsForm
-					initialSettings={settings}
-					canManage={canManageCalendarSettings}
-				/>
+				<CalendarSettingsForm initialSettings={settings} canManage={canManageCalendarSettings} />
 			</div>
 		</div>
 	);

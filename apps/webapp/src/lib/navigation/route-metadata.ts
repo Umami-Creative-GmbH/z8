@@ -42,7 +42,7 @@ export function normalizeAppPath(pathname: string): string {
 }
 
 /** Settings routes that render their own PageHeader (or SettingsTabbedPage) h1.
- * Redirect-only legacy routes are deliberately absent: they keep the shell title.
+ * Legacy settings URLs redirect in `proxy.ts` and are not listed here.
  */
 const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings",
@@ -79,7 +79,6 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings/organization",
 	"/settings/payroll-access",
 	"/settings/payroll-export",
-	"/settings/permissions",
 	"/settings/personnel-files",
 	"/settings/position-capture",
 	"/settings/position-stamps",
@@ -104,7 +103,7 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 
 /** Settings record pages (one dynamic segment) that render their own h1. */
 const SETTINGS_RECORD_HEADING_ROUTES: readonly RegExp[] = [
-	// `new` is a redirect-only legacy route and keeps the shell title.
+	// `new` is a retired legacy URL redirected in `proxy.ts`, not an employee detail record.
 	/^\/settings\/employees\/(?!new$)[^/]+$/,
 	/^\/settings\/teams\/[^/]+$/,
 	/^\/settings\/locations\/[^/]+$/,

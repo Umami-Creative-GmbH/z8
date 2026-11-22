@@ -2,7 +2,6 @@
 
 import {
 	IconDots,
-	IconLoader2,
 	IconPencil,
 	IconPlus,
 	IconRefresh,
@@ -367,26 +366,17 @@ export function VacationPoliciesTable({
 					onSearchChange={setSearch}
 					searchPlaceholder={t("vacation.policies.searchPlaceholder", "Search policies...")}
 					actions={
-						<div className="flex items-center gap-2">
-							<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-								{isFetching ? (
-									<IconLoader2 className="size-4 animate-spin" />
-								) : (
-									<IconRefresh className="size-4" />
-								)}
-								<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+						canManagePolicies ? (
+							<Button onClick={handleCreateClick}>
+								<IconPlus className="mr-2 size-4" />
+								{t("vacation.policies.add-policy", "Add Policy")}
 							</Button>
-							{canManagePolicies ? (
-								<Button onClick={handleCreateClick}>
-									<IconPlus className="mr-2 size-4" />
-									{t("vacation.policies.add-policy", "Add Policy")}
-								</Button>
-							) : null}
-						</div>
+						) : undefined
 					}
 				/>
 
-				<DataTable mobileLayout="stacked"
+				<DataTable
+					mobileLayout="stacked"
 					columns={columns}
 					data={filteredPolicies}
 					isFetching={isFetching}

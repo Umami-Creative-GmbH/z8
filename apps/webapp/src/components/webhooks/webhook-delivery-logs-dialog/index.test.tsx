@@ -23,7 +23,7 @@ vi.mock("next-intl", () => ({
 vi.mock("@/stores/organization-settings-store", () => ({
 	useOrganizationTimezone: () => "Europe/Berlin",
 }));
-vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions", () => ({
 	getWebhookDeliveryLogs: mocks.getWebhookDeliveryLogs,
 }));
 

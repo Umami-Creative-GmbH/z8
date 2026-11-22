@@ -269,9 +269,7 @@ export function AbsenceCategoriesTable({
 					actions={
 						<AbsenceCategoriesToolbarActions
 							canManageCategories={canManageCategories}
-							isFetching={isFetching}
 							onCreate={openCreateForm}
-							onRefresh={() => refetch()}
 							t={t}
 						/>
 					}

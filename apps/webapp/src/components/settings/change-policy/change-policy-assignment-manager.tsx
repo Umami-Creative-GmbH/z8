@@ -19,7 +19,7 @@ import {
 	type ChangePolicyAssignmentWithDetails,
 	deleteChangePolicyAssignment,
 	getChangePolicyAssignments,
-} from "@/app/[locale]/(app)/settings/change-policies/actions";
+} from "@/app/[locale]/(app)/settings/work-policies/change-policy-actions";
 import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
 import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
 import { AssignmentLevelCardHeader } from "@/components/settings/assignment-level-card-header";

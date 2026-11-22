@@ -1,8 +1,9 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef } from "react";
 import { toast } from "sonner";
 import { changePassword } from "@/app/[locale]/(app)/settings/profile/actions";
 import {
@@ -14,117 +15,84 @@ import {
 	validateStrongPassword,
 } from "@/components/auth/password-validation";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClientForm } from "@/components/ui/client-form";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import { runWithBusyState } from "../run-with-busy-state";
+
+interface PasswordChangeFormValues {
+	currentPassword: string;
+	newPassword: string;
+	confirmPassword: string;
+	revokeOtherSessions: boolean;
+}
 
 export function PasswordChangeForm() {
 	const { t } = useTranslate();
+	const submittingRef = useRef(false);
 
-	// Password form state
-	const [passwordData, setPasswordData] = useState({
+	const validateCurrentPassword = (value: string) =>
+		value.trim()
+			? undefined
+			: t("profile.current-password-required", "Current password is required");
+
+	const defaultValues: PasswordChangeFormValues = {
 		currentPassword: "",
 		newPassword: "",
 		confirmPassword: "",
-	});
-	const [revokeOtherSessions, setRevokeOtherSessions] = useState(false);
-	const [isPasswordLoading, setIsPasswordLoading] = useState(false);
-	const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>(
-		{},
-	);
+		revokeOtherSessions: false,
+	};
 
-	// Handle password change
-	const handlePasswordSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setPasswordErrors({});
-		const nextErrors: Record<string, string> = {};
-		const newPasswordError = validateStrongPassword(
-			passwordData.newPassword,
-			t,
-		);
-		if (newPasswordError) {
-			nextErrors.newPassword = newPasswordError;
-		}
-		const confirmPasswordError = validatePasswordConfirmation(
-			passwordData.confirmPassword,
-			passwordData.newPassword,
-			t,
-		);
-		if (confirmPasswordError) {
-			nextErrors.confirmPassword = confirmPasswordError;
-		}
+	const form = useForm({
+		defaultValues,
+		onSubmit: async ({ value, formApi }) => {
+			if (submittingRef.current) return;
+			submittingRef.current = true;
 
-		if (Object.keys(nextErrors).length > 0) {
-			setPasswordErrors(nextErrors);
-			return;
-		}
-
-		await runWithBusyState(setIsPasswordLoading, async () => {
-			try {
-				const result = await changePassword({
-					currentPassword: passwordData.currentPassword,
-					newPassword: passwordData.newPassword,
-					confirmPassword: passwordData.confirmPassword,
-					revokeOtherSessions,
-				});
-
-				if (result.success) {
-					toast.success(
-						t("profile.password-changed", "Password changed successfully"),
-					);
-					// Reset form
-					setPasswordData({
-						currentPassword: "",
-						newPassword: "",
-						confirmPassword: "",
+			const run = async () => {
+				try {
+					const result = await changePassword({
+						currentPassword: value.currentPassword,
+						newPassword: value.newPassword,
+						confirmPassword: value.confirmPassword,
+						revokeOtherSessions: value.revokeOtherSessions,
 					});
-					setRevokeOtherSessions(false);
-				} else {
-					if (
-						result.error?.includes("incorrect") ||
-						result.error?.includes("Invalid")
-					) {
-						setPasswordErrors({
-							currentPassword: t(
-								"profile.invalid-current-password",
-								"Current password is incorrect",
-							),
-						});
-					}
-					toast.error(
-						actionErrorMessage(t, result, {}, [
-							"profile.password-change-failed",
-							"Failed to change password",
-						]),
-					);
-				}
-			} catch {
-				toast.error(
-					t("profile.password-change-failed", "Failed to change password"),
-				);
-			}
-		});
-	};
 
-	const handlePasswordChange = (field: string, value: string) => {
-		setPasswordData((prev) => ({ ...prev, [field]: value }));
-		// Clear error for this field when user starts typing
-		if (passwordErrors[field]) {
-			setPasswordErrors((prev) => {
-				const newErrors = { ...prev };
-				delete newErrors[field];
-				return newErrors;
+					if (result.success) {
+						toast.success(t("profile.password-changed", "Password changed successfully"));
+						formApi.reset();
+					} else {
+						if (result.error?.includes("incorrect") || result.error?.includes("Invalid")) {
+							formApi.setFieldMeta("currentPassword", (meta) => ({
+								...meta,
+								errorMap: {
+									...meta.errorMap,
+									onSubmit: t("profile.invalid-current-password", "Current password is incorrect"),
+								},
+							}));
+						}
+						toast.error(
+							actionErrorMessage(t, result, {}, [
+								"profile.password-change-failed",
+								"Failed to change password",
+							]),
+						);
+					}
+				} catch {
+					toast.error(t("profile.password-change-failed", "Failed to change password"));
+				}
+			};
+
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await run().finally(() => {
+				submittingRef.current = false;
 			});
-		}
-	};
+		},
+	});
 
 	return (
 		<Card>
@@ -138,117 +106,147 @@ export function PasswordChangeForm() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form onSubmit={handlePasswordSubmit} className="space-y-4">
+				<ClientForm
+					noValidate
+					onSubmit={() => {
+						if (submittingRef.current) return;
+						void form.handleSubmit();
+					}}
+					className="space-y-4"
+				>
 					{/* Current Password */}
-					<div className="space-y-2">
-						<Label htmlFor="currentPassword">
-							{t("profile.current-password", "Current Password")}
-						</Label>
-						<PasswordVisibilityInput
-							id="currentPassword"
-							autoComplete="current-password"
-							value={passwordData.currentPassword}
-							onChange={(e) =>
-								handlePasswordChange("currentPassword", e.target.value)
-							}
-							placeholder={t(
-								"profile.current-password-placeholder",
-								"Enter current password",
-							)}
-							required
-							aria-invalid={passwordErrors.currentPassword ? true : undefined}
-							aria-describedby={
-								passwordErrors.currentPassword ? "currentPassword-error" : undefined
-							}
-						/>
-						{passwordErrors.currentPassword ? (
-							<p id="currentPassword-error" className="text-destructive text-sm">
-								{passwordErrors.currentPassword}
-							</p>
-						) : null}
-					</div>
+					<form.Field
+						name="currentPassword"
+						validators={{
+							onSubmit: ({ value }) => validateCurrentPassword(value),
+							onChange: ({ value, fieldApi }) =>
+								fieldApi.state.meta.errors.length > 0 ? validateCurrentPassword(value) : undefined,
+						}}
+					>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("profile.current-password", "Current Password")}
+								</TFormLabel>
+								<TFormControl hasError={fieldHasError(field)}>
+									<PasswordVisibilityInput
+										name="currentPassword"
+										autoComplete="current-password"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t(
+											"profile.current-password-placeholder",
+											"Enter current password",
+										)}
+									/>
+								</TFormControl>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
 
 					{/* New Password */}
-					<div className="space-y-2">
-						<Label htmlFor="newPassword">
-							{t("profile.new-password", "New Password")}
-						</Label>
-						<PasswordVisibilityInput
-							id="newPassword"
-							autoComplete="new-password"
-							value={passwordData.newPassword}
-							onChange={(e) =>
-								handlePasswordChange("newPassword", e.target.value)
-							}
-							placeholder={t(
-								"profile.new-password-placeholder",
-								"Enter new password",
-							)}
-							required
-							aria-invalid={passwordErrors.newPassword ? true : undefined}
-							aria-describedby={passwordErrors.newPassword ? "newPassword-error" : undefined}
-						/>
-						<PasswordStrengthIndicator password={passwordData.newPassword} />
-						{passwordErrors.newPassword ? (
-							<p id="newPassword-error" className="text-destructive text-sm">
-								{passwordErrors.newPassword}
-							</p>
-						) : null}
-					</div>
+					<form.Field
+						name="newPassword"
+						validators={{
+							onSubmit: ({ value }) => validateStrongPassword(value, t),
+							onChange: ({ value, fieldApi }) =>
+								fieldApi.state.meta.errors.length > 0
+									? validateStrongPassword(value, t)
+									: undefined,
+						}}
+					>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("profile.new-password", "New Password")}
+								</TFormLabel>
+								<TFormControl hasError={fieldHasError(field)}>
+									<PasswordVisibilityInput
+										name="newPassword"
+										autoComplete="new-password"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t("profile.new-password-placeholder", "Enter new password")}
+									/>
+								</TFormControl>
+								<PasswordStrengthIndicator password={field.state.value} />
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
 
 					{/* Confirm Password */}
-					<div className="space-y-2">
-						<Label htmlFor="confirmPassword">
-							{t("profile.confirm-password", "Confirm New Password")}
-						</Label>
-						<PasswordVisibilityInput
-							id="confirmPassword"
-							autoComplete="new-password"
-							value={passwordData.confirmPassword}
-							onChange={(e) =>
-								handlePasswordChange("confirmPassword", e.target.value)
-							}
-							placeholder={t(
-								"profile.confirm-password-placeholder",
-								"Confirm new password",
-							)}
-							required
-							aria-invalid={passwordErrors.confirmPassword ? true : undefined}
-							aria-describedby={
-								passwordErrors.confirmPassword ? "confirmPassword-error" : undefined
-							}
-						/>
-						{passwordErrors.confirmPassword ? (
-							<p id="confirmPassword-error" className="text-destructive text-sm">
-								{passwordErrors.confirmPassword}
-							</p>
-						) : null}
-					</div>
+					<form.Field
+						name="confirmPassword"
+						validators={{
+							onChangeListenTo: ["newPassword"],
+							onSubmit: ({ value, fieldApi }) =>
+								validatePasswordConfirmation(value, fieldApi.form.getFieldValue("newPassword"), t),
+							onChange: ({ value, fieldApi }) =>
+								fieldApi.state.meta.errors.length > 0
+									? validatePasswordConfirmation(
+											value,
+											fieldApi.form.getFieldValue("newPassword"),
+											t,
+										)
+									: undefined,
+						}}
+					>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel hasError={fieldHasError(field)}>
+									{t("profile.confirm-password", "Confirm New Password")}
+								</TFormLabel>
+								<TFormControl hasError={fieldHasError(field)}>
+									<PasswordVisibilityInput
+										name="confirmPassword"
+										autoComplete="new-password"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder={t("profile.confirm-password-placeholder", "Confirm new password")}
+									/>
+								</TFormControl>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</form.Field>
 
 					{/* Revoke Other Sessions */}
-					<div className="flex items-center gap-x-2">
-						<Switch
-							id="revokeOtherSessions"
-							checked={revokeOtherSessions}
-							onCheckedChange={setRevokeOtherSessions}
-						/>
-						<Label htmlFor="revokeOtherSessions" className="cursor-pointer">
-							{t("profile.revoke-sessions", "Log out other devices")}
-						</Label>
-					</div>
+					<form.Field name="revokeOtherSessions">
+						{(field) => (
+							<div className="flex items-center gap-x-2">
+								<Switch
+									id="revokeOtherSessions"
+									checked={field.state.value}
+									onCheckedChange={(checked) => field.handleChange(checked === true)}
+								/>
+								<Label htmlFor="revokeOtherSessions" className="cursor-pointer">
+									{t("profile.revoke-sessions", "Log out other devices")}
+								</Label>
+							</div>
+						)}
+					</form.Field>
 
 					{/* Submit Button */}
-					<Button type="submit" disabled={isPasswordLoading}>
-						{isPasswordLoading ? (
-							<>
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-								{t("common.saving", "Saving...")}
-							</>
-						) : (
-							t("profile.update-password", "Change Password")
+					<form.Subscribe selector={(state) => state.isSubmitting}>
+						{(isSubmitting) => (
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting ? (
+									<>
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+										{t("common.saving", "Saving...")}
+									</>
+								) : (
+									t("profile.update-password", "Change Password")
+								)}
+							</Button>
 						)}
-					</Button>
-				</form>
+					</form.Subscribe>
+				</ClientForm>
 			</CardContent>
 		</Card>
 	);

@@ -1,14 +1,17 @@
-import type { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import type { VacationAccrualType } from "@/db/schema/vacation";
-import { fromJSDate } from "@/lib/datetime/luxon-utils";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+} from "@/lib/datetime/temporal-core";
 import {
 	clipAbsenceDayRange,
 	countAbsenceDays,
 	type IsWorkingDay,
 	mondayToFriday,
 } from "./absence-days";
-import { calculateCarryoverExpiryDate } from "./date-utils";
 import type { ProratedAllowance } from "./prorated-allowance";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
 import { isAccrualPolicy } from "./vacation-policy-settings";
@@ -46,10 +49,7 @@ export function startingAllowanceDays(input: {
 }
 
 /** Approved vacation taken beyond the balance's days, to the hundredth; 0 when none (#1111). */
-export function overdrawnVacationDays(
-	usedDays: number,
-	totalDays: number,
-): number {
+export function overdrawnVacationDays(usedDays: number, totalDays: number): number {
 	return Math.max(0, Math.round((usedDays - totalDays) * 100) / 100);
 }
 
@@ -91,15 +91,13 @@ export function calculateVacationBalance({
 	absences: AbsenceWithCategory[];
 	/** The employee's working days; defaults to Monday to Friday. */
 	isWorkingDay?: IsWorkingDay;
-	currentDate: Date | DateTime;
+	currentDate: Date | Instant;
 	year: number;
 	previouslyTakenDays?: number;
 	adjustmentTotal?: number; // Sum of all vacation adjustment events
 	timezone?: string;
 }): VacationBalance {
-	// Convert currentDate to DateTime if needed
-	const current =
-		currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
+	const currentInstant = currentDate instanceof Date ? instantFromDate(currentDate) : currentDate;
 
 	// 1. Calculate total annual days: the (prorated) allowance, or 0 on an accrual policy
 	const allowanceDays = startingAllowanceDays({
@@ -115,41 +113,36 @@ export function calculateVacationBalance({
 
 	if (frozenCarryover) {
 		carryoverExpiryDate = frozenCarryover.expiryDate ?? undefined;
-		const currentInstant = Temporal.Instant.from(
-			current.toJSDate().toISOString(),
-		);
 		if (
 			!frozenCarryover.expiredAt &&
 			(!frozenCarryover.expiryDate ||
-				Temporal.Instant.compare(
-					currentInstant,
-					Temporal.Instant.from(frozenCarryover.expiryDate.toISOString()),
-				) <= 0)
+				compareInstants(currentInstant, instantFromDate(frozenCarryover.expiryDate)) <= 0)
 		) {
 			carryoverDays = Number(employeeAllowance?.customCarryoverDays ?? 0);
 			totalDays += carryoverDays;
 		}
-	} else if (
-		organizationAllowance.allowCarryover &&
-		employeeAllowance?.customCarryoverDays
-	) {
+	} else if (organizationAllowance.allowCarryover && employeeAllowance?.customCarryoverDays) {
 		const carryover = parseFloat(employeeAllowance.customCarryoverDays);
 
 		if (organizationAllowance.carryoverExpiryMonths) {
-			const carryoverExpiryDT = calculateCarryoverExpiryDate(
+			const carryoverExpiryInstant = Temporal.PlainDate.from({
 				year,
-				organizationAllowance.carryoverExpiryMonths,
-				timezone,
-			);
+				month: 1,
+				day: 1,
+			})
+				.add({ months: organizationAllowance.carryoverExpiryMonths })
+				.toZonedDateTime(timezone)
+				.toInstant()
+				.subtract({ milliseconds: 1 });
 
 			// Only add carryover if not expired
-			if (current <= carryoverExpiryDT) {
+			if (compareInstants(currentInstant, carryoverExpiryInstant) <= 0) {
 				carryoverDays = carryover;
 				totalDays += carryover;
 			}
 
-			// Convert back to Date for VacationBalance interface (will update later)
-			carryoverExpiryDate = carryoverExpiryDT.toJSDate();
+			// Convert back to Date for VacationBalance interface
+			carryoverExpiryDate = dateFromInstant(carryoverExpiryInstant);
 		} else {
 			// No expiry, add full carryover
 			carryoverDays = carryover;
@@ -164,8 +157,7 @@ export function calculateVacationBalance({
 	const calendarYear = { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
 	const vacationDaysInYear = (status: AbsenceWithCategory["status"]) =>
 		absences.reduce((sum, absence) => {
-			if (absence.status !== status || !absence.category.countsAgainstVacation)
-				return sum;
+			if (absence.status !== status || !absence.category.countsAgainstVacation) return sum;
 			const clipped = clipAbsenceDayRange(absence, calendarYear);
 			return clipped ? sum + countAbsenceDays(clipped, isWorkingDay) : sum;
 		}, 0);
@@ -205,10 +197,7 @@ export function calculateVacationBalance({
  * @param requestedDays - Number of days being requested
  * @returns True if sufficient balance
  */
-export function hasSufficientBalance(
-	balance: VacationBalance,
-	requestedDays: number,
-): boolean {
+export function hasSufficientBalance(balance: VacationBalance, requestedDays: number): boolean {
 	return balance.remainingDays >= requestedDays;
 }
 
@@ -219,14 +208,8 @@ export function calculateCarryoverDays(input: {
 	previouslyTakenDays: number;
 	maxCarryoverDays: string | null;
 }) {
-	const remaining = Math.max(
-		0,
-		input.totalAllowance - input.usedDays - input.previouslyTakenDays,
-	);
-	const cap =
-		input.maxCarryoverDays === null
-			? remaining
-			: Number(input.maxCarryoverDays);
+	const remaining = Math.max(0, input.totalAllowance - input.usedDays - input.previouslyTakenDays);
+	const cap = input.maxCarryoverDays === null ? remaining : Number(input.maxCarryoverDays);
 	return {
 		remaining,
 		applied: Math.min(remaining, cap),

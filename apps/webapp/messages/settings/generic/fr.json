@@ -2847,8 +2847,7 @@
       "description": "Choisissez comment et quand vous souhaitez être notifié",
       "digestTime": "Heure du résumé",
       "discord": {
-        "description": "Configurez les notifications Discord pour votre organisation.",
-        "setupInstructions": "La connexion à Discord depuis cette page n'est pas encore disponible. La connexion nécessite le jeton de bot, l'ID d'application et la clé publique de votre application Discord."
+        "description": "Configurez les notifications Discord pour votre organisation."
       },
       "escalations": "Escalades",
       "escalationsDescription": "Escalader les demandes d'approbation sans réponse après le délai configuré.",

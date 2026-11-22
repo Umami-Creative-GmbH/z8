@@ -13,7 +13,6 @@ import {
 	payrollExportConfig,
 	timeRecord,
 } from "@/db/schema";
-import { parseISO } from "@/lib/datetime/luxon-utils";
 import {
 	dateFromInstant,
 	instantFromDate,
@@ -39,18 +38,12 @@ import {
 	payrollBaselineDetail,
 	payrollBaselineDigest,
 } from "./baseline-evidence";
-import type {
-	PayrollBaselineEvidence,
-	PayrollBaselineSummary,
-} from "./baseline-types";
+import type { PayrollBaselineEvidence, PayrollBaselineSummary } from "./baseline-types";
 import { workPeriodsFromCollectedInput } from "./collected-work";
 import { payrollComparisonCsv } from "./comparison-csv";
 import { readPayrollComparisonExplanations } from "./comparison-explanations";
 import { comparePayrollOutput } from "./comparison-model";
-import type {
-	PayrollComparisonPreparation,
-	ReviewedPayrollComparison,
-} from "./comparison-types";
+import type { PayrollComparisonPreparation, ReviewedPayrollComparison } from "./comparison-types";
 
 export type { PayrollComparisonPreparation } from "./comparison-types";
 
@@ -91,22 +84,12 @@ export interface PayrollComparisonRequest {
 }
 export type PayrollComparisonDatabase = Pick<
 	typeof db,
-	| "query"
-	| "select"
-	| "insert"
-	| "update"
-	| "delete"
-	| "execute"
-	| "transaction"
+	"query" | "select" | "insert" | "update" | "delete" | "execute" | "transaction"
 >;
 type Reader = Parameters<Parameters<typeof db.transaction>[0]>[0];
-function sameSet(
-	a: readonly string[] | undefined,
-	b: readonly string[] | undefined,
-) {
+function sameSet(a: readonly string[] | undefined, b: readonly string[] | undefined) {
 	return (
-		JSON.stringify([...new Set(a ?? [])].sort()) ===
-		JSON.stringify([...new Set(b ?? [])].sort())
+		JSON.stringify([...new Set(a ?? [])].sort()) === JSON.stringify([...new Set(b ?? [])].sort())
 	);
 }
 function validRequest(input: Omit<PayrollComparisonRequest, "baselineId">) {
@@ -117,8 +100,7 @@ function validRequest(input: Omit<PayrollComparisonRequest, "baselineId">) {
 		for (const ids of [input.employeeIds, input.teamIds, input.projectIds])
 			if (
 				ids !== undefined &&
-				(!Array.isArray(ids) ||
-					ids.some((id) => !z.uuid().safeParse(id).success))
+				(!Array.isArray(ids) || ids.some((id) => !z.uuid().safeParse(id).success))
 			)
 				throw new Error();
 	} catch {
@@ -131,22 +113,11 @@ async function requestScope(
 	database: PayrollComparisonDatabase = db,
 ) {
 	validRequest(request);
-	if (
-		request.formatId !== undefined &&
-		!isSupportedPayrollFormat(request.formatId)
-	)
+	if (request.formatId !== undefined && !isSupportedPayrollFormat(request.formatId))
 		throw new ValidationError({ message: "Invalid payroll format" });
 	let selected: string[];
 	if (request.employeeIds !== undefined) {
-		if (
-			!(await canReadScope(
-				actor,
-				request.employeeIds,
-				request.startDate,
-				database,
-			))
-		)
-			return null;
+		if (!(await canReadScope(actor, request.employeeIds, request.startDate, database))) return null;
 		selected = [...new Set(request.employeeIds)].sort();
 	} else
 		selected = [
@@ -166,11 +137,7 @@ async function requestScope(
 		].sort();
 	// Explicit employee selection takes precedence for the export run. Work rows
 	// still apply the team and project filters independently in collection.
-	if (
-		request.employeeIds !== undefined ||
-		!selected.length ||
-		!request.teamIds?.length
-	)
+	if (request.employeeIds !== undefined || !selected.length || !request.teamIds?.length)
 		return selected;
 	const rows = await database
 		.select({ id: employee.id })
@@ -227,8 +194,8 @@ async function checkCompatibility(
 		organizationId,
 		{
 			dateRange: {
-				start: parseISO(evidence.period.startDate, "utc"),
-				end: parseISO(evidence.period.endDate, "utc"),
+				start: parsePlainDate(evidence.period.startDate),
+				end: parsePlainDate(evidence.period.endDate),
 			},
 			employeeIds: evidence.filters.employeeIds,
 			teamIds: evidence.filters.teamIds,
@@ -236,8 +203,7 @@ async function checkCompatibility(
 		},
 		reader,
 	);
-	if (!sameSet(currentExportScope, evidence.employeeIds))
-		return "employee_scope_changed";
+	if (!sameSet(currentExportScope, evidence.employeeIds)) return "employee_scope_changed";
 	const current = await reader.query.payrollExportConfig.findFirst({
 		where: and(
 			eq(payrollExportConfig.organizationId, organizationId),
@@ -282,8 +248,7 @@ export async function preparePayrollComparison(
 ): Promise<PayrollComparisonPreparation> {
 	const actor = await requireBaselineActor(database);
 	const scope = await requestScope(actor, request, database);
-	if (!scope || !z.uuid().safeParse(request.baselineId).success)
-		return { status: "unavailable" };
+	if (!scope || !z.uuid().safeParse(request.baselineId).success) return { status: "unavailable" };
 	const baseline = await inspectPayrollBaseline(request.baselineId, database);
 	if (!baseline?.evidence) return { status: "unavailable" };
 	const evidence = baseline.evidence;
@@ -320,8 +285,7 @@ export async function preparePayrollComparison(
 					evidence,
 					scope,
 				);
-				if (incompatibility)
-					return { status: "incompatible", reason: incompatibility } as const;
+				if (incompatibility) return { status: "incompatible", reason: incompatibility } as const;
 				const current = await reader.query.payrollExportConfig.findFirst({
 					where: and(
 						eq(payrollExportConfig.organizationId, actor.organizationId),
@@ -349,8 +313,8 @@ export async function preparePayrollComparison(
 					} as const;
 				const filters: PayrollExportFilters = {
 					dateRange: {
-						start: parseISO(evidence.period.startDate, "utc"),
-						end: parseISO(evidence.period.endDate, "utc"),
+						start: parsePlainDate(evidence.period.startDate),
+						end: parsePlainDate(evidence.period.endDate),
 					},
 					employeeIds: scope,
 					teamIds: evidence.filters.teamIds,
@@ -365,16 +329,11 @@ export async function preparePayrollComparison(
 				);
 				if (absenceBlockers.length)
 					return { status: "blocked", blockers: absenceBlockers } as const;
-				const absences = await fetchAbsencesForExport(
-					actor.organizationId,
-					filters,
-					{ canonicalReadiness: "absences", reader },
-				);
-				const payouts = await fetchOvertimePayoutsForExport(
-					actor.organizationId,
-					filters,
+				const absences = await fetchAbsencesForExport(actor.organizationId, filters, {
+					canonicalReadiness: "absences",
 					reader,
-				);
+				});
+				const payouts = await fetchOvertimePayoutsForExport(actor.organizationId, filters, reader);
 				const collection = await readPayrollWorkCollectionFromSnapshot(
 					reader,
 					actor.organizationId,
@@ -405,8 +364,7 @@ export async function preparePayrollComparison(
 							});
 				const work = workPeriodsFromCollectedInput(collection.input);
 				const rows = [...work, ...absences, ...payouts];
-				const missing =
-					identifier === null ? [] : employeesWithoutIdentifier(rows, values);
+				const missing = identifier === null ? [] : employeesWithoutIdentifier(rows, values);
 				if (missing.length)
 					return {
 						status: "blocked",
@@ -417,16 +375,9 @@ export async function preparePayrollComparison(
 					} as const;
 				const apply = <T extends { employeeId: string }>(rows: T[]) =>
 					identifier === null ? rows : withPersonnelIdentifiers(rows, values);
-				const identifierOf = exportedPersonnelIdentifier(
-					evidence.output.formatId,
-					config,
-				);
-				if (!identifierOf)
-					throw new Error("Payroll identifier rule unavailable");
-				const clashes = findDuplicatePersonnelIdentifiers(
-					apply(rows),
-					identifierOf,
-				);
+				const identifierOf = exportedPersonnelIdentifier(evidence.output.formatId, config);
+				if (!identifierOf) throw new Error("Payroll identifier rule unavailable");
+				const clashes = findDuplicatePersonnelIdentifiers(apply(rows), identifierOf);
 				if (clashes.length)
 					return {
 						status: "blocked",
@@ -437,10 +388,7 @@ export async function preparePayrollComparison(
 							})),
 						),
 					} as const;
-				const mappings = await getWageTypeMappings(
-					actor.organizationId,
-					reader,
-				);
+				const mappings = await getWageTypeMappings(actor.organizationId, reader);
 				const formatted = formatter.transform(
 					apply(work),
 					apply(absences),
@@ -474,25 +422,18 @@ export async function preparePayrollComparison(
 			{ isolationLevel: "repeatable read", accessMode: "read only" },
 		)
 		.catch((error) => {
-			if (
-				error instanceof Error &&
-				error.name === "CanonicalCutoverNotReadyError"
-			)
+			if (error instanceof Error && error.name === "CanonicalCutoverNotReadyError")
 				return {
 					status: "blocked",
 					blockers: [{ employeeId: "", reason: "absence_readiness" }],
 				} as const;
 			throw error;
 		});
-	if (preview.status === "blocked")
-		return { status: "blocked", blockers: [...preview.blockers] };
+	if (preview.status === "blocked") return { status: "blocked", blockers: [...preview.blockers] };
 	if (preview.status !== "ready") return preview;
 	const expires = preview.preparedAt.add({ hours: 24 });
 	const expiresAt =
-		Temporal.Instant.compare(
-			expires,
-			parseInstant(baseline.summary.expiresAt),
-		) < 0
+		Temporal.Instant.compare(expires, parseInstant(baseline.summary.expiresAt)) < 0
 			? expires
 			: parseInstant(baseline.summary.expiresAt);
 	const result: ReviewedPayrollComparison = {
@@ -508,12 +449,7 @@ export async function preparePayrollComparison(
 	const freshActor = await requireBaselineActor(database);
 	if (
 		freshActor.organizationId !== actor.organizationId ||
-		!(await canReadScope(
-			freshActor,
-			scope,
-			evidence.period.startDate,
-			database,
-		))
+		!(await canReadScope(freshActor, scope, evidence.period.startDate, database))
 	)
 		return { status: "unavailable" };
 	const retained = await database.transaction(async (tx) => {
@@ -524,8 +460,7 @@ export async function preparePayrollComparison(
 				eq(payrollExportBaseline.id, baseline.summary.id),
 			),
 		});
-		if (!row || !payrollBaselineDetail(row, systemClock.nowInstant()).evidence)
-			return false;
+		if (!row || !payrollBaselineDetail(row, systemClock.nowInstant()).evidence) return false;
 		await tx.insert(payrollComparisonResult).values({
 			id: result.id,
 			organizationId: actor.organizationId,
@@ -561,10 +496,7 @@ async function readReviewedPayrollComparison(
 	});
 	if (
 		!row ||
-		Temporal.Instant.compare(
-			instantFromDate(row.expiresAt),
-			systemClock.nowInstant(),
-		) <= 0
+		Temporal.Instant.compare(instantFromDate(row.expiresAt), systemClock.nowInstant()) <= 0
 	)
 		return null;
 	const baseline = await inspectPayrollBaseline(row.baselineId, database);
@@ -603,17 +535,10 @@ export async function downloadPayrollComparison(
 		content: payrollComparisonCsv(result),
 	};
 }
-export async function cleanupExpiredPayrollComparisons(
-	database: PayrollComparisonDatabase = db,
-) {
+export async function cleanupExpiredPayrollComparisons(database: PayrollComparisonDatabase = db) {
 	return database
 		.delete(payrollComparisonResult)
-		.where(
-			lte(
-				payrollComparisonResult.expiresAt,
-				dateFromInstant(systemClock.nowInstant()),
-			),
-		)
+		.where(lte(payrollComparisonResult.expiresAt, dateFromInstant(systemClock.nowInstant())))
 		.returning({ id: payrollComparisonResult.id });
 }
 
@@ -629,10 +554,7 @@ async function readPendingAbsenceBlockers(
 		parsePlainDate(period.startDate).toZonedDateTime("UTC").toInstant(),
 	);
 	const end = dateFromInstant(
-		parsePlainDate(period.endDate)
-			.add({ days: 1 })
-			.toZonedDateTime("UTC")
-			.toInstant(),
+		parsePlainDate(period.endDate).add({ days: 1 }).toZonedDateTime("UTC").toInstant(),
 	);
 	const pending = await reader
 		.select({ employeeId: timeRecord.employeeId })
@@ -666,8 +588,7 @@ async function readPendingAbsenceBlockers(
 		...pending.map((row) => ({
 			employeeId: row.employeeId,
 			reason: "pending_absence",
-			message:
-				"Review and decide the pending absence in the Absences workspace.",
+			message: "Review and decide the pending absence in the Absences workspace.",
 		})),
 		...changes.map((row) => ({
 			employeeId: row.employeeId,

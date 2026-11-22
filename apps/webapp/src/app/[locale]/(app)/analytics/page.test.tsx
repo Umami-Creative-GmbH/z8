@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
 	getManagerEffectivenessDataMock,
 	toastErrorMock,
-	getCurrentSettingsRouteContextMock,
+	getAuthContextMock,
 	getCurrentSettingsAccessMock,
 	getStatisticsScopeMock,
 	getAttentionStatisticsMock,
@@ -19,7 +19,7 @@ const {
 } = vi.hoisted(() => ({
 	getManagerEffectivenessDataMock: vi.fn(),
 	toastErrorMock: vi.fn(),
-	getCurrentSettingsRouteContextMock: vi.fn(),
+	getAuthContextMock: vi.fn(),
 	getCurrentSettingsAccessMock: vi.fn(),
 	getStatisticsScopeMock: vi.fn(),
 	getAttentionStatisticsMock: vi.fn(),
@@ -66,7 +66,7 @@ vi.mock("./actions", () => ({
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
-	getCurrentSettingsRouteContext: getCurrentSettingsRouteContextMock,
+	getAuthContext: getAuthContextMock,
 	getCurrentSettingsAccess: getCurrentSettingsAccessMock,
 }));
 
@@ -295,13 +295,10 @@ describe("AnalyticsOverviewBottlenecks (#1955)", () => {
 describe("AnalyticsHealthSections (#1955)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		getCurrentSettingsRouteContextMock.mockResolvedValue({
-			authContext: {
-				user: { id: "user-admin" },
-				session: { activeOrganizationId: "org-1" },
-				employee: null,
-			},
-			accessTier: "orgAdmin",
+		getAuthContextMock.mockResolvedValue({
+			user: { id: "user-admin" },
+			session: { activeOrganizationId: "org-1" },
+			employee: null,
 		});
 		getCurrentSettingsAccessMock.mockResolvedValue({
 			userId: "user-admin",

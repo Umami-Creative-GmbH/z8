@@ -42,6 +42,9 @@ describe("implementation checklist status resolver", () => {
 			descriptionKey:
 				"settings.implementationChecklist.items.organizationStructure.goLiveDescription",
 		});
+		expect(IMPLEMENTATION_CHECKLIST_ITEMS.find((item) => item.id === "holidays")?.href).toBe(
+			"/settings/vacation?tab=holidays",
+		);
 	});
 
 	it("classifies every item for go-live readiness", () => {

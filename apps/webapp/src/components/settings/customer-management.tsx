@@ -52,18 +52,21 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
 import { MissingRequiredValuesBadge } from "./custom-fields/custom-field-values-section";
 import { CustomerDialog } from "./customer-dialog";
 
 interface CustomerManagementProps {
 	organizationId: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess;
 }
 
-function useCustomerManagement({ organizationId, accessTier }: CustomerManagementProps) {
+function useCustomerManagement({ organizationId, settingsAccess }: CustomerManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -72,8 +75,9 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [ratesCustomer, setRatesCustomer] = useState<CustomerData | null>(null);
 	const [accountingCustomer, setAccountingCustomer] = useState<CustomerData | null>(null);
+	const isOrgAdmin = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	// Billable rates are for owners and admins only (#898); the actions check again.
-	const canSetBillableRates = useBillableTimeEnabled() && accessTier === "orgAdmin";
+	const canSetBillableRates = useBillableTimeEnabled() && isOrgAdmin;
 
 	const {
 		data: customersResult,
@@ -103,7 +107,7 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 		},
 	});
 	const hasScopedProjects = (scopedProjectsResult?.length ?? 0) > 0;
-	const canCreateCustomer = accessTier !== "manager" || hasScopedProjects;
+	const canCreateCustomer = isOrgAdmin || hasScopedProjects;
 
 	const handleCreate = () => {
 		if (!canCreateCustomer) {
@@ -172,7 +176,6 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 		setDeletingCustomer,
 		ratesCustomer,
 		accountingCustomer,
-		accessTier,
 		organizationId,
 		editingCustomer,
 		dialogOpen,
@@ -184,7 +187,7 @@ function useCustomerManagement({ organizationId, accessTier }: CustomerManagemen
 	};
 }
 
-export function CustomerManagement({ organizationId, accessTier }: CustomerManagementProps) {
+export function CustomerManagement({ organizationId, settingsAccess }: CustomerManagementProps) {
 	const {
 		t,
 		refetch,
@@ -208,7 +211,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 		deletingCustomer,
 		isDeleting,
 		handleDelete,
-	} = useCustomerManagement({ organizationId, accessTier });
+	} = useCustomerManagement({ organizationId, settingsAccess });
 	return (
 		<div className="page-frame flex flex-1 flex-col gap-6">
 			<PageHeader
@@ -218,24 +221,10 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 					"Manage customer contacts for project assignments",
 				)}
 				actions={
-					<>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => refetch()}
-							disabled={isFetching}
-							aria-label={t("common.refresh", "Refresh")}
-						>
-							<IconRefresh
-								aria-hidden="true"
-								className={`size-4 ${isFetching ? "animate-spin" : ""}`}
-							/>
-						</Button>
-						<Button onClick={handleCreate} disabled={!canCreateCustomer}>
-							<IconPlus aria-hidden="true" className="mr-2 size-4" />
-							{t("settings.customers.create", "Add Customer")}
-						</Button>
-					</>
+					<Button onClick={handleCreate} disabled={!canCreateCustomer}>
+						<IconPlus aria-hidden="true" className="mr-2 size-4" />
+						{t("settings.customers.create", "Add Customer")}
+					</Button>
 				}
 			/>
 			{/* The empty state repeats this hint beside its own add button. */}
@@ -295,7 +284,7 @@ export function CustomerManagement({ organizationId, accessTier }: CustomerManag
 			)}
 
 			<CustomerDialog
-				accessTier={accessTier}
+				settingsAccess={settingsAccess}
 				organizationId={organizationId}
 				customer={editingCustomer}
 				open={dialogOpen}

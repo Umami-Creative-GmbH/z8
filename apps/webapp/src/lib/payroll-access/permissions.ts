@@ -6,6 +6,7 @@ import {
 	payrollAccessTeam,
 	teamMembership,
 } from "@/db/schema";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 
 export interface PayrollAccessGrantRow {
 	id: string;
@@ -115,7 +116,7 @@ export async function resolveOrganizationPayrollEmployeeIds(
 	const rows = await db
 		.select({ employeeId: employee.id })
 		.from(employee)
-		.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)));
+		.where(onCurrentRoster(organizationId));
 
 	return Array.from(new Set(rows.map((row) => row.employeeId))).toSorted();
 }

@@ -29,9 +29,15 @@ import type {
 	OnboardingOrganizationExpectation,
 	OnboardingWorkTemplateFormValues,
 } from "@/lib/validations/onboarding";
+import { getNextOnboardingStepPath, ONBOARDING_STEPS } from "@/lib/validations/onboarding-steps";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import { checkIsAdmin, createWorkTemplateOnboarding, skipWorkTemplateSetup } from "./actions";
+
+const WORK_TEMPLATES_NEXT_STEP_PATH =
+	getNextOnboardingStepPath("work_templates", true) ?? ONBOARDING_STEPS.wellness.path;
+const NON_ADMIN_REDIRECT_PATH =
+	getNextOnboardingStepPath("profile", false) ?? ONBOARDING_STEPS.wellness.path;
 
 const DAYS_OF_WEEK = [
 	"monday",
@@ -445,7 +451,7 @@ function useWorkTemplateSetup(expected: OnboardingOrganizationExpectation) {
 				}
 				if (kind === "save")
 					toast.success(t("onboarding.workTemplates.success", "Work schedule template created!"));
-				push("/onboarding/notifications");
+				push(WORK_TEMPLATES_NEXT_STEP_PATH);
 				return true;
 			},
 			onRejected: () => fail(fallback),
@@ -488,14 +494,14 @@ function useWorkTemplateSetup(expected: OnboardingOrganizationExpectation) {
 				if (result.success) {
 					setIsAdmin(result.data);
 					if (!result.data) {
-						push("/onboarding/notifications");
+						push(NON_ADMIN_REDIRECT_PATH);
 					}
 				} else {
-					push("/onboarding/notifications");
+					push(NON_ADMIN_REDIRECT_PATH);
 				}
 			} catch {
 				if (!cancelled) {
-					push("/onboarding/notifications");
+					push(NON_ADMIN_REDIRECT_PATH);
 				}
 			}
 		}

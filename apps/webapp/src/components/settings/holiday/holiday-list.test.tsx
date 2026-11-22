@@ -3,11 +3,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
-import { getHolidays } from "@/app/[locale]/(app)/settings/holidays/actions";
+import { getHolidays } from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import { render } from "@/test/render-with-translations";
 import { HolidayList } from "./holiday-list";
 
-vi.mock("@/app/[locale]/(app)/settings/holidays/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/vacation/holiday-actions", () => ({
 	getHolidays: vi.fn(),
 	getHolidayCategories: vi.fn().mockResolvedValue({ success: true, data: [] }),
 	deleteHoliday: vi.fn(),

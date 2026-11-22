@@ -102,9 +102,7 @@ describe("getWorkPeriodsForMonth", () => {
 		"exposes recorded location %s to the calendar",
 		async (workLocationType) => {
 			const row = automaticPeriod();
-			mockDb.where.mockResolvedValue([
-				{ ...row, period: { ...row.period, workLocationType } },
-			]);
+			mockDb.where.mockResolvedValue([{ ...row, period: { ...row.period, workLocationType } }]);
 			const [event] = await getWorkPeriodsForMonth(4, 2026, {
 				organizationId: "org-1",
 			});
@@ -247,10 +245,7 @@ describe("getWorkPeriodsForMonth", () => {
 			new Date("2026-06-01T04:00:00.000Z"),
 		);
 		expect(mockOperators.eq).toHaveBeenCalledWith(expect.anything(), "org-1");
-		expect(mockOperators.eq).toHaveBeenCalledWith(
-			expect.anything(),
-			"employee-1",
-		);
+		expect(mockOperators.eq).toHaveBeenCalledWith(expect.anything(), "employee-1");
 	});
 
 	it("returns an active work period as a running calendar event ending now", async () => {
@@ -393,6 +388,68 @@ describe("getWorkPeriodsForMonth", () => {
 				clockOutTimezone: "America/New_York",
 			},
 		});
+	});
+	it("formats completed work period start/end metadata in active locale (de vs en) with explicit timezone across DST", async () => {
+		const winterRow = {
+			period: {
+				id: "period-winter",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				// 13:30 - 15:45 UTC => 14:30 - 16:45 CET (+01:00) in Europe/Berlin
+				startTime: new Date("2026-03-28T13:30:00.000Z"),
+				endTime: new Date("2026-03-28T15:45:00.000Z"),
+				durationMinutes: 135,
+				isActive: false,
+				approvalStatus: "approved",
+				projectId: null,
+				clockOutId: "out-1",
+			},
+			employee: { id: "employee-1", userId: "user-1" },
+			user: { id: "user-1", name: "Ada Lovelace" },
+			clockInEntry: { utcOffsetMinutes: 60, timezone: "Europe/Berlin" },
+			clockOutEntry: { utcOffsetMinutes: 60, timezone: "Europe/Berlin" },
+			surcharge: null,
+			project: null,
+		};
+		const summerRow = {
+			...winterRow,
+			period: {
+				...winterRow.period,
+				id: "period-summer",
+				// 13:30 - 15:45 UTC => 15:30 - 17:45 CEST (+02:00) in Europe/Berlin
+				startTime: new Date("2026-03-29T13:30:00.000Z"),
+				endTime: new Date("2026-03-29T15:45:00.000Z"),
+			},
+			clockInEntry: { utcOffsetMinutes: 120, timezone: "Europe/Berlin" },
+			clockOutEntry: { utcOffsetMinutes: 120, timezone: "Europe/Berlin" },
+		};
+		mockDb.where.mockResolvedValue([winterRow, summerRow]);
+
+		const germanEvents = await getWorkPeriodsForMonth(
+			2,
+			2026,
+			{ organizationId: "org-1" },
+			"Europe/Berlin",
+			undefined,
+			{ locale: "de" },
+		);
+		expect(germanEvents[0]?.metadata?.startTime).toBe("14:30");
+		expect(germanEvents[0]?.metadata?.endTime).toBe("16:45");
+		expect(germanEvents[1]?.metadata?.startTime).toBe("15:30");
+		expect(germanEvents[1]?.metadata?.endTime).toBe("17:45");
+
+		const englishEvents = await getWorkPeriodsForMonth(
+			2,
+			2026,
+			{ organizationId: "org-1" },
+			"Europe/Berlin",
+			undefined,
+			{ locale: "en" },
+		);
+		expect(englishEvents[0]?.metadata?.startTime).toMatch(/2:30\s*PM/);
+		expect(englishEvents[0]?.metadata?.endTime).toMatch(/4:45\s*PM/);
+		expect(englishEvents[1]?.metadata?.startTime).toMatch(/3:30\s*PM/);
+		expect(englishEvents[1]?.metadata?.endTime).toMatch(/5:45\s*PM/);
 	});
 });
 

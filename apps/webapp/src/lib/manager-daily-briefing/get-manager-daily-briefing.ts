@@ -1,6 +1,7 @@
 import { and, eq, exists, gte, inArray, lt, lte } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { shiftCalendarDate, shiftDateBounds } from "@/lib/scheduling/shift-date";
 import {
 	buildSummaryCounts,
@@ -78,14 +79,24 @@ export type ManagerDailyBriefingSources = {
 type GetManagerDailyBriefingFromSourcesInput = {
 	organizationId: string;
 	currentEmployee: CurrentEmployee;
-	now: DateTime;
+	now: Instant;
 	timezone: string;
 	sources: ManagerDailyBriefingSources;
 };
 
 type GetManagerDailyBriefingInput = {
 	currentEmployee: CurrentEmployee & { organizationId: string };
-	now?: DateTime;
+	now?: Instant;
+};
+
+const WEEKDAY_NAMES: Record<number, string> = {
+	1: "monday",
+	2: "tuesday",
+	3: "wednesday",
+	4: "thursday",
+	5: "friday",
+	6: "saturday",
+	7: "sunday",
 };
 
 const SECTION_LOAD_ERROR = "Section could not be loaded.";
@@ -154,8 +165,9 @@ export async function getManagerDailyBriefingFromSources({
 	timezone,
 	sources,
 }: GetManagerDailyBriefingFromSourcesInput): Promise<ManagerDailyBriefing> {
-	const businessNow = now.setZone(timezone);
-	const date = businessNow.toISODate() ?? "";
+	const businessNow = now.toZonedDateTimeISO(timezone);
+	const today = businessNow.toPlainDate();
+	const date = today.toString();
 	const scopedEmployees = await sources.getScopedEmployees({
 		organizationId,
 		currentEmployeeId: currentEmployee.id,
@@ -163,9 +175,11 @@ export async function getManagerDailyBriefingFromSources({
 	});
 	const employeeIds = scopedEmployees.map((employee) => employee.id);
 	const sourceScope = { organizationId, employeeIds };
+	const todayRange = localDayRange(date, timezone);
+	const tomorrowRange = localDayRange(today.add({ days: 1 }).toString(), timezone);
 	const timeRecordWindow = {
-		from: businessNow.startOf("day").minus({ hours: 2 }).toJSDate(),
-		to: businessNow.endOf("day").plus({ days: 1 }).toJSDate(),
+		from: dateFromInstant(todayRange.start.subtract({ hours: 2 })),
+		to: dateFromInstant(tomorrowRange.endExclusive.subtract({ milliseconds: 1 })),
 	};
 
 	const shiftsPromise = sources.getPublishedShifts({ ...sourceScope, date, timezone });
@@ -234,7 +248,7 @@ export async function getManagerDailyBriefingFromSources({
 	const coverageItems =
 		coverageRulesResult.status === "fulfilled" && shiftsResult.status === "fulfilled"
 			? detectCoverageRisks({
-					dayOfWeek: businessNow.toFormat("cccc").toLowerCase(),
+					dayOfWeek: WEEKDAY_NAMES[businessNow.dayOfWeek] ?? "",
 					coverageRules,
 					publishedShifts: shifts,
 				})
@@ -280,7 +294,7 @@ export async function getManagerDailyBriefingFromSources({
 	};
 
 	return {
-		generatedAt: now.toISO() ?? now.toUTC().toISO() ?? "",
+		generatedAt: now.toString(),
 		date,
 		...(drivingResult.status === "rejected"
 			? { needsActionError: "Driving details could not be checked." }
@@ -293,7 +307,7 @@ export async function getManagerDailyBriefingFromSources({
 
 export async function getManagerDailyBriefing({
 	currentEmployee,
-	now = DateTime.now(),
+	now = systemClock.nowInstant(),
 }: GetManagerDailyBriefingInput): Promise<ManagerDailyBriefing> {
 	const [{ db, organization }, { resolveEffectiveTimezone }] = await Promise.all([
 		import("@/db"),

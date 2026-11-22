@@ -87,6 +87,7 @@ describe("route metadata", () => {
 			"/en/settings/billable-time/rates",
 			"/en/settings/billable-time/hand-off",
 			"/en/settings/enterprise",
+			"/en/settings/permissions",
 			"/en/settings/employees/employee-1/detail",
 			"/en/settings-other",
 		]) {

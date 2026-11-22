@@ -33,9 +33,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import { queryKeys } from "@/lib/query";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 import { CustomFieldDraftsSection } from "./custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "./custom-fields/use-custom-field-drafts";
 import {
@@ -45,7 +45,7 @@ import {
 } from "./customer-dialog.helpers";
 
 interface CustomerDialogProps {
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess;
 	organizationId: string;
 	customer: CustomerData | null;
 	open: boolean;
@@ -53,9 +53,7 @@ interface CustomerDialogProps {
 	onSuccess: () => void;
 }
 
-function getCustomerDefaultValues(
-	customer: CustomerData | null,
-): CustomerDialogFormValues {
+function getCustomerDefaultValues(customer: CustomerData | null): CustomerDialogFormValues {
 	return {
 		projectId: "",
 		name: customer?.name || "",
@@ -94,7 +92,7 @@ function saveCustomer(
 }
 
 export function CustomerDialog({
-	accessTier,
+	settingsAccess,
 	organizationId,
 	customer,
 	open,
@@ -112,10 +110,7 @@ export function CustomerDialog({
 		onOpenChange,
 		onSaved: onSuccess,
 	});
-	const requiresScopedProject = requiresScopedProjectSelection(
-		accessTier,
-		isEditing,
-	);
+	const requiresScopedProject = requiresScopedProjectSelection(settingsAccess, isEditing);
 
 	const { data: projectsData } = useQuery({
 		queryKey: queryKeys.projects.list(organizationId, {
@@ -145,18 +140,14 @@ export function CustomerDialog({
 			setIsSubmitting(true);
 
 			if (requiresScopedProject && !value.projectId) {
-				toast.error(
-					t("settings.customers.projectRequired", "Select a project first"),
-				);
+				toast.error(t("settings.customers.projectRequired", "Select a project first"));
 				setIsSubmitting(false);
 				return;
 			}
 
-			const result = await saveCustomer(
-				customer,
-				value,
-				customFields.values(),
-			).finally(() => setIsSubmitting(false));
+			const result = await saveCustomer(customer, value, customFields.values()).finally(() =>
+				setIsSubmitting(false),
+			);
 			if (result?.success) {
 				toast.success(
 					isEditing
@@ -172,10 +163,7 @@ export function CustomerDialog({
 						{},
 						isEditing
 							? ["settings.customers.updateFailed", "Failed to update customer"]
-							: [
-									"settings.customers.createFailed",
-									"Failed to create customer",
-								],
+							: ["settings.customers.createFailed", "Failed to create customer"],
 					),
 				);
 			}
@@ -255,10 +243,7 @@ export function CustomerDialog({
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="contactPerson">
-										{t(
-											"settings.customers.field.contactPerson",
-											"Contact Person",
-										)}
+										{t("settings.customers.field.contactPerson", "Contact Person")}
 									</Label>
 									<Input
 										id="contactPerson"
@@ -279,9 +264,7 @@ export function CustomerDialog({
 							<form.Field name="email">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="email">
-											{t("settings.customers.field.email", "Email")}
-										</Label>
+										<Label htmlFor="email">{t("settings.customers.field.email", "Email")}</Label>
 										<Input
 											id="email"
 											type="email"
@@ -297,9 +280,7 @@ export function CustomerDialog({
 							<form.Field name="phone">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="phone">
-											{t("settings.customers.field.phone", "Phone")}
-										</Label>
+										<Label htmlFor="phone">{t("settings.customers.field.phone", "Phone")}</Label>
 										<Input
 											id="phone"
 											type="tel"
@@ -340,9 +321,7 @@ export function CustomerDialog({
 							<form.Field name="vatId">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="vatId">
-											{t("settings.customers.field.vatId", "VAT ID")}
-										</Label>
+										<Label htmlFor="vatId">{t("settings.customers.field.vatId", "VAT ID")}</Label>
 										<Input
 											id="vatId"
 											value={field.state.value}
@@ -372,10 +351,7 @@ export function CustomerDialog({
 							</form.Field>
 						</div>
 
-						<CustomFieldDraftsSection
-							drafts={customFields}
-							disabled={isSubmitting}
-						/>
+						<CustomFieldDraftsSection drafts={customFields} disabled={isSubmitting} />
 					</ActionPanelBody>
 
 					<CustomerDialogFooter
@@ -401,12 +377,7 @@ function CustomerDialogFooter({
 	const { t } = useTranslate();
 	return (
 		<ActionPanelFooter>
-			<Button
-				type="button"
-				variant="outline"
-				onClick={onCancel}
-				disabled={isSubmitting}
-			>
+			<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
 				{t("common.cancel", "Cancel")}
 			</Button>
 			<Button type="submit" disabled={isSubmitting}>
@@ -430,10 +401,7 @@ function CustomerDialogHeader({ isEditing }: { isEditing: boolean }) {
 			</ActionPanelTitle>
 			<ActionPanelDescription>
 				{isEditing
-					? t(
-							"settings.customers.dialog.editDescription",
-							"Update customer details",
-						)
+					? t("settings.customers.dialog.editDescription", "Update customer details")
 					: t(
 							"settings.customers.dialog.createDescription",
 							"Add a new customer for project assignments",

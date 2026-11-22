@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PayrollExportJobSummary } from "@/lib/payroll-export/types";
 
+vi.mock("next-intl/server", () => ({
+	getLocale: vi.fn(async () => "en"),
+}));
+
 const JOB_IN_SCOPE = "11111111-1111-4111-8111-111111111111";
 const JOB_OUT_OF_SCOPE = "22222222-2222-4222-8222-222222222222";
 const JOB_ORG_WIDE = "33333333-3333-4333-8333-333333333333";

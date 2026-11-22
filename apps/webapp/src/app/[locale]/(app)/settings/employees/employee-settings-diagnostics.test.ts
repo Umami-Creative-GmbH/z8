@@ -51,9 +51,7 @@ function runActor(
 				user: { id: "user-1", email: "private-email-sentinel" },
 				session: {
 					activeOrganizationId:
-						input.activeOrganizationId === undefined
-							? "org-1"
-							: input.activeOrganizationId,
+						input.activeOrganizationId === undefined ? "org-1" : input.activeOrganizationId,
 					token: "secret-session-sentinel",
 				},
 			} as never),
@@ -63,8 +61,7 @@ function runActor(
 			query: {
 				member: { findFirst: memberFindFirst },
 				employee: {
-					findFirst: async () =>
-						input.employee === undefined ? activeEmployee : input.employee,
+					findFirst: async () => (input.employee === undefined ? activeEmployee : input.employee),
 				},
 			},
 		} as never,
@@ -105,7 +102,7 @@ describe("employee settings denial diagnostics", () => {
 				employeeId: "employee-1",
 				employeeRole: "employee",
 				employeeIsActive: true,
-				accessTier: "member",
+				settingsAccess: "member",
 			},
 			"[DEBUG-employee-settings-access] Authorization denied",
 		);
@@ -134,12 +131,15 @@ describe("employee settings denial diagnostics", () => {
 				membershipLookupFailed: false,
 			});
 			const dialect = new PgDialect();
-			expect(
-				dialect.sqlToQuery(memberFindFirst.mock.calls[0][0].where).params,
-			).toEqual(["user-1", "org-2", "approved"]);
-			expect(
-				dialect.sqlToQuery(memberFindFirst.mock.calls[1][0].where).params,
-			).toEqual(["user-1", "org-2"]);
+			expect(dialect.sqlToQuery(memberFindFirst.mock.calls[0][0].where).params).toEqual([
+				"user-1",
+				"org-2",
+				"approved",
+			]);
+			expect(dialect.sqlToQuery(memberFindFirst.mock.calls[1][0].where).params).toEqual([
+				"user-1",
+				"org-2",
+			]);
 		},
 	);
 
@@ -183,14 +183,17 @@ describe("employee settings denial diagnostics", () => {
 		expect(memberFindFirst).not.toHaveBeenCalled();
 	});
 
-	it.each(["owner", "admin"])(
+	it.each([
+		["owner", "owner"],
+		["admin", "orgAdmin"],
+	] as const)(
 		"keeps approved %s access silent without an employee",
-		async (role) => {
+		async (role, expectedAccess) => {
 			const { result, memberFindFirst } = runActor({
 				membership: { role, status: "approved" },
 				employee: null,
 			});
-			await expect(result).resolves.toMatchObject({ accessTier: "orgAdmin" });
+			await expect(result).resolves.toMatchObject({ settingsAccess: expectedAccess });
 			expect(warn).not.toHaveBeenCalled();
 			expect(memberFindFirst).toHaveBeenCalledTimes(1);
 		},

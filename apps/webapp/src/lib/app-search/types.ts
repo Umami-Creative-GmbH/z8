@@ -1,6 +1,7 @@
 import type { FeatureFlagState } from "@/components/settings/settings-config";
 import type { NavigationCapabilities } from "@/lib/navigation/navigation-manifest";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
+import type { SettingsCapabilities } from "@/lib/settings/capabilities";
 
 export type AppSearchResultType = "page" | "setting" | "employee" | "team" | "action";
 
@@ -23,19 +24,17 @@ export type AppSearchEmployeeRole = "admin" | "manager" | "employee" | null;
 export interface StaticAppSearchInput {
 	t: AppSearchTranslate;
 	employeeRole: AppSearchEmployeeRole;
-	settingsAccessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	billingEnabled: boolean;
 	showComplianceNav: boolean;
 	showPayrollNav?: boolean;
 	featureFlags?: FeatureFlagState;
-	/** The user manages a project below the manager tier (#928). */
-	managesProject?: boolean;
+	/** Server-computed non-tier visibility capabilities (ADR 0003). */
+	settingsCapabilities?: Partial<SettingsCapabilities>;
 	/** The driving licence visibility reader shows My driving licence (#1937). */
 	showMyDrivingLicenceNav?: boolean;
 	/** The driving licence visibility reader shows Organization → Driving licences (#1937, #1953). */
 	showTeamDrivingLicenceNav?: boolean;
-	/** The driving licence visibility reader offers its settings (#1420). */
-	drivingLicenceSettingsVisible?: boolean;
 	/** Full server-resolved navigation capabilities for manifest-driven Cmd+K gating (#1952). */
 	navigationCapabilities?: NavigationCapabilities;
 }

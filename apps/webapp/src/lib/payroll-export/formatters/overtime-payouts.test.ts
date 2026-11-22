@@ -5,8 +5,8 @@
  * want of that mapping.
  */
 
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { SuccessFactorsFormatter } from "../exporters/successfactors/successfactors-formatter";
 import type { OvertimePayoutData, WageTypeMapping, WorkPeriodData } from "../types";
 import { DatevLohnFormatter } from "./datev-lohn-formatter";
@@ -214,8 +214,8 @@ describe("SAP SuccessFactors CSV overtime payouts (#1050)", () => {
 			employeeNumber: "P-1",
 			firstName: "Ada",
 			lastName: "Lovelace",
-			startTime: DateTime.fromISO("2026-09-15T08:00:00", { zone: "utc" }),
-			endTime: DateTime.fromISO("2026-09-15T11:00:00", { zone: "utc" }),
+			startTime: parseInstant("2026-09-15T08:00:00Z").toZonedDateTimeISO("UTC"),
+			endTime: parseInstant("2026-09-15T11:00:00Z").toZonedDateTimeISO("UTC"),
 			durationMinutes: 180,
 			workCategoryId: "category-overtime",
 			workCategoryName: "Overtime",

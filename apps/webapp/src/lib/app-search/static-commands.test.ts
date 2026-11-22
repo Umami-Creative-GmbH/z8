@@ -15,7 +15,7 @@ function buildCommands(input: Partial<StaticAppCommandInput> = {}) {
 	return buildStaticAppCommands({
 		t: translatedT,
 		employeeRole: "employee",
-		settingsAccessTier: "member",
+		settingsAccess: "member",
 		billingEnabled: true,
 		showComplianceNav: true,
 		featureFlags: enabledFeatures,
@@ -81,59 +81,64 @@ describe("buildStaticAppCommands", () => {
 		);
 
 		expect(
-			buildCommands({ employeeRole: "manager", settingsAccessTier: "manager" }).map(
+			buildCommands({ employeeRole: "manager", settingsAccess: "scopedManager" }).map(
 				(result) => result.id,
 			),
 		).toEqual(expect.arrayContaining(["action:open-approvals-inbox"]));
 	});
 
-	it("shows org-admin-only commands only when the required tier and flags allow them", () => {
-		expect(
-			buildCommands({ employeeRole: "manager", settingsAccessTier: "manager" }).map(
-				(result) => result.id,
-			),
-		).not.toEqual(
-			expect.arrayContaining([
-				"action:create-project",
-				"action:invite-teammate",
-				"action:open-payroll-readiness",
-			]),
-		);
+	it("shows org-admin-only commands for orgAdmin and owner and hides them for null, member, and scopedManager", () => {
+		for (const settingsAccess of [null, "member", "scopedManager"] as const) {
+			expect(
+				buildCommands({
+					employeeRole: settingsAccess === "scopedManager" ? "manager" : "employee",
+					settingsAccess,
+				}).map((result) => result.id),
+			).not.toEqual(
+				expect.arrayContaining([
+					"action:create-project",
+					"action:invite-teammate",
+					"action:open-payroll-readiness",
+				]),
+			);
+		}
 
-		const orgAdminCommands = buildCommands({
-			employeeRole: "admin",
-			settingsAccessTier: "orgAdmin",
-		});
+		for (const settingsAccess of ["orgAdmin", "owner"] as const) {
+			const orgAdminCommands = buildCommands({
+				employeeRole: "admin",
+				settingsAccess,
+			});
 
-		expect(orgAdminCommands.map((result) => result.id)).toEqual(
-			expect.arrayContaining([
-				"action:create-project",
-				"action:invite-teammate",
-				"action:open-payroll-readiness",
-			]),
-		);
-		expect(orgAdminCommands.find((result) => result.id === "action:invite-teammate")).toMatchObject(
-			{
+			expect(orgAdminCommands.map((result) => result.id)).toEqual(
+				expect.arrayContaining([
+					"action:create-project",
+					"action:invite-teammate",
+					"action:open-payroll-readiness",
+				]),
+			);
+			expect(
+				orgAdminCommands.find((result) => result.id === "action:invite-teammate"),
+			).toMatchObject({
 				href: "/settings/employees",
-			},
-		);
-		expect(
-			orgAdminCommands.find((result) => result.id === "action:open-payroll-readiness"),
-		).toMatchObject({
-			href: "/payroll",
-		});
+			});
+			expect(
+				orgAdminCommands.find((result) => result.id === "action:open-payroll-readiness"),
+			).toMatchObject({
+				href: "/payroll",
+			});
+		}
 
 		expect(
 			buildCommands({
 				employeeRole: "admin",
-				settingsAccessTier: "orgAdmin",
+				settingsAccess: "orgAdmin",
 				featureFlags: { ...enabledFeatures, projectsEnabled: false },
 			}).map((result) => result.id),
 		).not.toContain("action:create-project");
 	});
 
 	it("returns globally unique result ids", () => {
-		const ids = buildCommands({ employeeRole: "admin", settingsAccessTier: "orgAdmin" }).map(
+		const ids = buildCommands({ employeeRole: "admin", settingsAccess: "owner" }).map(
 			(result) => result.id,
 		);
 

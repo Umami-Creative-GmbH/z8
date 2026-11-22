@@ -25,6 +25,7 @@ const tracer = () => trace.getTracer("invite-codes");
 type JoinResult = {
 	success: boolean;
 	status: "pending" | "approved";
+	organizationId: string;
 	organizationName: string;
 };
 
@@ -119,6 +120,7 @@ export async function processPendingInviteCode(): Promise<ServerActionResult<Joi
 		return {
 			success: result.success,
 			status: result.status,
+			organizationId: result.organizationId,
 			organizationName: result.organizationName,
 		};
 	});
@@ -127,7 +129,6 @@ export async function processPendingInviteCode(): Promise<ServerActionResult<Joi
 		traced("processPendingInviteCode", {}, effect).pipe(Effect.provide(InviteCodeServiceLive)),
 	);
 }
-
 
 /**
  * Use an invite code to join an organization (requires authentication)
@@ -152,6 +153,7 @@ export async function redeemInviteCode(
 		return {
 			success: result.success,
 			status: result.status,
+			organizationId: result.organizationId,
 			organizationName: result.organizationName,
 		};
 	});

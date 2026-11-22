@@ -11,6 +11,7 @@ import {
 	getWorkPolicyViolations,
 	type WorkPolicyViolationWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
@@ -56,6 +57,10 @@ export function WorkPolicyComplianceView({
 	const [rangeEndMillis, setRangeEndMillis] = useState(
 		() => systemClock.nowInstant().epochMilliseconds,
 	);
+	// Header refresh moves the range end to now so recently recorded violations appear.
+	useViewRefresh(() => {
+		setRangeEndMillis(systemClock.nowInstant().epochMilliseconds);
+	});
 
 	const handleDateRangeChange = (nextRange: "7d" | "30d" | "90d") => {
 		setDateRange(nextRange);
@@ -73,7 +78,12 @@ export function WorkPolicyComplianceView({
 	})();
 
 	const queryKey = queryKeys.workPolicies.violations.list(organizationId, range);
-	const { data: violations, isLoading, error, refetch } = useQuery({
+	const {
+		data: violations,
+		isLoading,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey,
 		queryFn: async () => {
 			const result = await getWorkPolicyViolations({ startDate: range.start, endDate: range.end });
@@ -197,10 +207,6 @@ export function WorkPolicyComplianceView({
 				violations={violations}
 				onDateRangeChange={handleDateRangeChange}
 				onExport={handleExportCSV}
-				onRefresh={() => {
-					// Move the range end to now so violations recorded since the range was chosen appear.
-					setRangeEndMillis(systemClock.nowInstant().epochMilliseconds);
-				}}
 				onAcknowledge={handleAcknowledgeClick}
 			/>
 			<AcknowledgementPanel

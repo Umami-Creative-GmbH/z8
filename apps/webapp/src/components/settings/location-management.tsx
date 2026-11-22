@@ -84,27 +84,12 @@ export function LocationManagement({
 					"Manage organization locations and subareas",
 				)}
 				actions={
-					<>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => refetch()}
-							disabled={isFetching}
-							aria-label={t("common.refresh", "Refresh")}
-							title={t("common.refresh", "Refresh")}
-						>
-							<IconRefresh
-								className={cn("size-4", isFetching && "motion-safe:animate-spin")}
-								aria-hidden="true"
-							/>
+					canManageLocations ? (
+						<Button onClick={handleCreate}>
+							<IconPlus className="size-4" aria-hidden="true" />
+							{t("settings.locations.create", "Create Location")}
 						</Button>
-						{canManageLocations && (
-							<Button onClick={handleCreate}>
-								<IconPlus className="size-4" aria-hidden="true" />
-								{t("settings.locations.create", "Create Location")}
-							</Button>
-						)}
-					</>
+					) : undefined
 				}
 			/>
 
@@ -131,12 +116,7 @@ export function LocationManagement({
 								"Check your connection, then try again.",
 							)}
 						</p>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => refetch()}
-							disabled={isFetching}
-						>
+						<Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
 							<IconRefresh
 								className={cn("size-4", isFetching && "motion-safe:animate-spin")}
 								aria-hidden="true"
@@ -211,10 +191,7 @@ export function LocationManagement({
 										</TableCell>
 										<TableCell className="text-center">
 											<div className="flex items-center justify-center gap-1">
-												<IconUsers
-													className="size-4 text-muted-foreground"
-													aria-hidden="true"
-												/>
+												<IconUsers className="size-4 text-muted-foreground" aria-hidden="true" />
 												<span className="tabular-nums">{location.employeeCount}</span>
 											</div>
 										</TableCell>

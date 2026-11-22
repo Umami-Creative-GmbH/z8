@@ -29,7 +29,7 @@ import {
 	type TelegramUserLink,
 	unlinkTelegramAccount,
 	updateTelegramSettings,
-} from "@/app/[locale]/(app)/settings/telegram/actions";
+} from "@/app/[locale]/(app)/settings/notification-channels/telegram-actions";
 import {
 	ConfirmActionDialog,
 	useConfirmedAction,

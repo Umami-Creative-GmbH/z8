@@ -9,7 +9,8 @@ import {
 	type NavigationManifestEntry,
 	type SidebarSection,
 } from "@/lib/navigation/navigation-manifest";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
+import type { SettingsCapabilities } from "@/lib/settings/capabilities";
 
 export type { NavigationCapabilities } from "@/lib/navigation/navigation-manifest";
 
@@ -18,9 +19,9 @@ export type SidebarEmployeeRole = NavigationEmployeeRole;
 type Translate = (key: string, defaultValue: string) => string;
 
 export interface SidebarNavOptions {
-	settingsAccessTier?: SettingsAccessTier;
+	settingsAccess?: SettingsAccess | null;
 	featureFlags?: FeatureFlagState;
-	managesProject?: boolean;
+	settingsCapabilities?: Partial<SettingsCapabilities>;
 }
 
 export interface SidebarNavItem {
@@ -50,10 +51,10 @@ function buildSectionNav(
 ): SidebarNavItem[] {
 	return getSidebarManifestEntries(section, {
 		employeeRole,
-		settingsAccessTier: options?.settingsAccessTier ?? "member",
+		settingsAccess: options?.settingsAccess ?? null,
 		navigationCapabilities,
 		featureFlags: options?.featureFlags,
-		managesProject: options?.managesProject,
+		settingsCapabilities: options?.settingsCapabilities,
 	}).map((entry) => toSidebarNavItem(entry, t));
 }
 

@@ -2847,8 +2847,7 @@
       "description": "Välj hur och när du vill få aviseringar",
       "digestTime": "Tid för sammanfattning",
       "discord": {
-        "description": "Konfigurera Discord-aviseringar för din organisation.",
-        "setupInstructions": "Att ansluta Discord från den här sidan är inte tillgängligt ännu. Anslutningen kräver din Discord-applikations bot-token, applikations-ID och publika nyckel."
+        "description": "Konfigurera Discord-aviseringar för din organisation."
       },
       "escalations": "Eskaleringar",
       "escalationsDescription": "Eskalera obesvarade godkännandeförfrågningar efter den konfigurerade tidsgränsen.",

@@ -55,22 +55,15 @@ function toNavigationAccessContext(input: StaticAppSearchInput): NavigationAcces
 
 	return {
 		employeeRole: input.employeeRole,
-		settingsAccessTier: input.settingsAccessTier,
+		settingsAccess: input.settingsAccess,
 		navigationCapabilities: capabilities,
 		featureFlags: input.featureFlags,
-		managesProject: input.managesProject,
+		settingsCapabilities: input.settingsCapabilities,
 	};
 }
 
 export function buildStaticAppSearchResults(input: StaticAppSearchInput): AppSearchResult[] {
-	const {
-		t,
-		settingsAccessTier,
-		billingEnabled,
-		featureFlags,
-		managesProject,
-		drivingLicenceSettingsVisible,
-	} = input;
+	const { t, settingsAccess, billingEnabled, featureFlags, settingsCapabilities } = input;
 
 	const pageResults: AppSearchResult[] = getCmdKManifestEntries(
 		toNavigationAccessContext(input),
@@ -88,11 +81,10 @@ export function buildStaticAppSearchResults(input: StaticAppSearchInput): AppSea
 	}));
 
 	const { visibleSettings } = getResolvedSettingsVisibility({
-		accessTier: settingsAccessTier,
+		settingsAccess,
 		billingEnabled,
 		featureFlags,
-		managesProject,
-		drivingLicenceSettingsVisible,
+		settingsCapabilities,
 	});
 
 	const settingsResults: AppSearchResult[] = visibleSettings.map((setting) => ({

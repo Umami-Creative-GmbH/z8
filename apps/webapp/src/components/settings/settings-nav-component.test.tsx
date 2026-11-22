@@ -39,7 +39,7 @@ describe("SettingsNav", () => {
 		const user = userEvent.setup();
 		render(
 			<SidebarProvider>
-				<SettingsNav accessTier="orgAdmin" billingEnabled={true} />
+				<SettingsNav settingsAccess="orgAdmin" billingEnabled={true} />
 			</SidebarProvider>,
 		);
 		expect(screen.getByRole("link", { name: "Profile" }).getAttribute("data-active")).toBe("true");
@@ -49,16 +49,75 @@ describe("SettingsNav", () => {
 		const search = screen.getByRole("searchbox", { name: "Search settings" });
 		await user.type(search, "/settings/security");
 		expect(screen.queryByRole("link", { name: "Profile" })).toBeNull();
-		expect(screen.getByRole("link", { name: "Security" }).getAttribute("data-active")).toBe("false");
+		expect(screen.getByRole("link", { name: "Security" }).getAttribute("data-active")).toBe(
+			"false",
+		);
 
 		await user.clear(search);
 		expect(screen.getByRole("link", { name: "Profile" }).getAttribute("data-active")).toBe("true");
 	});
 
-	it("lists Driving licence control only when the visibility reader offers it (#1420)", () => {
+	it("renders only account-only links when settingsAccess is null", () => {
+		render(
+			<SidebarProvider>
+				<SettingsNav
+					settingsAccess={null}
+					billingEnabled={true}
+					settingsCapabilities={{
+						canAccessClosedMonths: true,
+						canManageApprovalEscalation: true,
+						canManageProjects: true,
+						canManageDrivingLicence: true,
+						hasActiveReportShareLinks: true,
+					}}
+				/>
+			</SidebarProvider>,
+		);
+
+		expect(screen.getByRole("link", { name: "Profile" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Security" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Notifications" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Wellness" })).toBeTruthy();
+		expect(screen.queryByRole("link", { name: "Position stamps" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "My data" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Organization" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Closed months" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Approval" })).toBeNull();
+	});
+
+	it("shows Closed months and Approval for members granted custom-role capabilities", () => {
 		const { unmount } = render(
 			<SidebarProvider>
-				<SettingsNav accessTier="orgAdmin" billingEnabled={true} />
+				<SettingsNav settingsAccess="member" billingEnabled={false} />
+			</SidebarProvider>,
+		);
+		expect(screen.queryByRole("link", { name: "Closed months" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Approval" })).toBeNull();
+		unmount();
+
+		render(
+			<SidebarProvider>
+				<SettingsNav
+					settingsAccess="member"
+					billingEnabled={false}
+					settingsCapabilities={{
+						canAccessClosedMonths: true,
+						canManageApprovalEscalation: true,
+					}}
+				/>
+			</SidebarProvider>,
+		);
+
+		expect(screen.queryByRole("link", { name: "Closed months" })).toBeNull();
+		expect(screen.getByRole("link", { name: "Approval" }).getAttribute("href")).toBe(
+			"/settings/approval-policies",
+		);
+	});
+
+	it("lists Driving licence control only when canManageDrivingLicence is true", () => {
+		const { unmount } = render(
+			<SidebarProvider>
+				<SettingsNav settingsAccess="orgAdmin" billingEnabled={true} />
 			</SidebarProvider>,
 		);
 		expect(screen.queryByText("Driving licence control")).toBeNull();
@@ -68,9 +127,9 @@ describe("SettingsNav", () => {
 		render(
 			<SidebarProvider>
 				<SettingsNav
-					accessTier="orgAdmin"
+					settingsAccess="orgAdmin"
 					billingEnabled={true}
-					drivingLicenceSettingsVisible={true}
+					settingsCapabilities={{ canManageDrivingLicence: true }}
 				/>
 			</SidebarProvider>,
 		);
@@ -79,11 +138,40 @@ describe("SettingsNav", () => {
 		);
 	});
 
-	it("explains a switched-off feature entry and links admins to its switch", () => {
+	it("keeps Report Share Links clickable when Projects is off and active share links exist, and hides it once none remain", () => {
+		const { rerender } = render(
+			<SidebarProvider>
+				<SettingsNav
+					settingsAccess="orgAdmin"
+					billingEnabled={true}
+					settingsCapabilities={{ hasActiveReportShareLinks: true }}
+				/>
+			</SidebarProvider>,
+		);
+
+		expect(screen.getByRole("link", { name: "Report Share Links" }).getAttribute("href")).toBe(
+			"/settings/report-share-links",
+		);
+
+		rerender(
+			<SidebarProvider>
+				<SettingsNav
+					settingsAccess="orgAdmin"
+					billingEnabled={true}
+					settingsCapabilities={{ hasActiveReportShareLinks: false }}
+				/>
+			</SidebarProvider>,
+		);
+
+		expect(screen.queryByRole("link", { name: "Report Share Links" })).toBeNull();
+		expect(screen.queryByText("Report Share Links")).toBeNull();
+	});
+
+	it("explains a switched-off feature entry and links admins and owners to its switch", () => {
 		// The mocked store has no flags: Demo Data is listed but its feature is off.
 		render(
 			<SidebarProvider>
-				<SettingsNav accessTier="orgAdmin" billingEnabled={true} />
+				<SettingsNav settingsAccess="owner" billingEnabled={true} />
 			</SidebarProvider>,
 		);
 
@@ -99,7 +187,7 @@ describe("SettingsNav", () => {
 	it("renders group labels as sticky scroll headers", () => {
 		render(
 			<SidebarProvider>
-				<SettingsNav accessTier="orgAdmin" billingEnabled={true} />
+				<SettingsNav settingsAccess="orgAdmin" billingEnabled={true} />
 			</SidebarProvider>,
 		);
 

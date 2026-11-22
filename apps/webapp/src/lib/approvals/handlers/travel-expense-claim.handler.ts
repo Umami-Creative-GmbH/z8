@@ -1,9 +1,8 @@
 import { IconReceipt2 } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { approvalRequest, travelExpenseClaim } from "@/db/schema";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
@@ -416,7 +415,9 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 		}),
 
 	calculatePriority: (_entity, createdAt) => {
-		const requestAgeHours = DateTime.now().diff(DateTime.fromJSDate(createdAt), "hours").hours;
+		const requestAgeHours = instantFromDate(createdAt)
+			.until(systemClock.nowInstant())
+			.total({ unit: "hours" });
 
 		if (requestAgeHours > 72) return "urgent";
 		if (requestAgeHours > 24) return "high";

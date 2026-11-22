@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createExportJob, getPayrollExportConfig, processExportJob } from "@/lib/payroll-export";
+import { parsePayrollLogicalDate } from "@/lib/payroll-export/calendar-boundaries";
 import {
 	isPayrollExportFormatId,
 	payrollExportFormatIds,
@@ -40,8 +41,8 @@ export class PayrollExportExecutor implements IReportExecutor {
 				organizationId,
 				formatId: config.formatId,
 				dateRange: {
-					start: dateRange.start.toISODate(),
-					end: dateRange.end.toISODate(),
+					start: dateRange.start.toPlainDate().toString(),
+					end: dateRange.end.toPlainDate().toString(),
 				},
 			},
 			"Executing payroll export",
@@ -59,10 +60,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 
 			const requester = ownerId
 				? await db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, ownerId),
-							eq(employee.organizationId, organizationId),
-						),
+						where: and(eq(employee.userId, ownerId), eq(employee.organizationId, organizationId)),
 						columns: { id: true },
 					})
 				: undefined;
@@ -82,8 +80,8 @@ export class PayrollExportExecutor implements IReportExecutor {
 				requestedById: requester.id,
 				filters: {
 					dateRange: {
-						start: dateRange.start,
-						end: dateRange.end,
+						start: parsePayrollLogicalDate(dateRange.start.toPlainDate().toString()),
+						end: parsePayrollLogicalDate(dateRange.end.toPlainDate().toString()),
 					},
 					employeeIds: filters?.employeeIds,
 					teamIds: filters?.teamIds,

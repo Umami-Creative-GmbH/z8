@@ -1,9 +1,10 @@
 vi.mock("@/lib/time-tracking/tracking-start", () => ({
- loadEmployeeTrackingStart: async () => null,
- loadEmployeeTrackingContext: async () => null,
+	loadEmployeeTrackingStart: async () => null,
+	loadEmployeeTrackingContext: async () => null,
 }));
-import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { serializeInstant } from "@/lib/datetime/temporal-wire";
 
 const mocks = vi.hoisted(() => ({
 	calculateExpectedWorkHoursForEmployee: vi.fn(),
@@ -45,10 +46,10 @@ beforeEach(() => {
 
 describe("team time balance helpers", () => {
 	it("returns the current calendar year range", () => {
-		const range = getCurrentYearRange(DateTime.fromISO("2026-05-18T12:00:00", { zone: "utc" }));
+		const range = getCurrentYearRange(parseInstant("2026-05-18T12:00:00Z"));
 		expect(range.year).toBe(2026);
-		expect(range.start.toISO()).toBe("2026-01-01T00:00:00.000Z");
-		expect(range.end.toISO()).toBe("2026-12-31T23:59:59.999Z");
+		expect(serializeInstant(range.start)).toBe("2026-01-01T00:00:00.000Z");
+		expect(serializeInstant(range.end)).toBe("2026-12-31T23:59:59.999Z");
 	});
 
 	it("calculates positive, negative, and zero balances", () => {
@@ -154,7 +155,7 @@ describe("team time balance helpers", () => {
 	it("uses UTC-derived date-only values for canonical day fractions", () => {
 		expect(
 			getAbsenceDayFraction({
-				date: DateTime.fromISO("2026-03-29", { zone: "utc" }).toISODate()!,
+				date: parsePlainDate("2026-03-29").toString(),
 				startDate: "2026-03-28",
 				startPeriod: "pm",
 				endDate: "2026-03-30",
@@ -207,7 +208,7 @@ describe("employee time balance persistence values", () => {
 		const result = await refreshEmployeeTimeBalances({
 			employeeIds: ["employee-from-another-org"],
 			organizationId: "org-1",
-			now: DateTime.fromISO("2026-05-18T12:00:00", { zone: "utc" }),
+			now: parseInstant("2026-05-18T12:00:00Z"),
 		});
 
 		expect(result.size).toBe(0);

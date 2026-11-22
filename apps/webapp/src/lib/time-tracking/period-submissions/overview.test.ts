@@ -20,33 +20,35 @@ describe("whom the overview shows", () => {
 	const manager = { id: "manager-employee", organizationId: "org-1" };
 
 	it("shows owners and admins every covered employee", () => {
-		expect(
-			periodSubmissionOverviewScope({
-				accessTier: "orgAdmin",
-				organizationId: "org-1",
-				employee: null,
-			}),
-		).toEqual({ kind: "all" });
+		for (const settingsAccess of ["owner", "orgAdmin"] as const) {
+			expect(
+				periodSubmissionOverviewScope({
+					settingsAccess,
+					organizationId: "org-1",
+					employee: null,
+				}),
+			).toEqual({ kind: "all" });
+		}
 	});
 
 	it("shows managers the employees they manage in the active organization", () => {
 		expect(
 			periodSubmissionOverviewScope({
-				accessTier: "manager",
+				settingsAccess: "scopedManager",
 				organizationId: "org-1",
 				employee: manager,
 			}),
 		).toEqual({ kind: "managed", managerEmployeeId: "manager-employee" });
 		expect(
 			periodSubmissionOverviewScope({
-				accessTier: "manager",
+				settingsAccess: "scopedManager",
 				organizationId: "org-2",
 				employee: manager,
 			}),
 		).toBeNull();
 		expect(
 			periodSubmissionOverviewScope({
-				accessTier: "manager",
+				settingsAccess: "scopedManager",
 				organizationId: "org-1",
 				employee: null,
 			}),
@@ -54,13 +56,15 @@ describe("whom the overview shows", () => {
 	});
 
 	it("refuses everyone else", () => {
-		expect(
-			periodSubmissionOverviewScope({
-				accessTier: "member",
-				organizationId: "org-1",
-				employee: manager,
-			}),
-		).toBeNull();
+		for (const settingsAccess of ["member", null] as const) {
+			expect(
+				periodSubmissionOverviewScope({
+					settingsAccess,
+					organizationId: "org-1",
+					employee: manager,
+				}),
+			).toBeNull();
+		}
 	});
 });
 
