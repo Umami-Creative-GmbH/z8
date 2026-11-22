@@ -41,7 +41,7 @@ vi.mock("@/components/dashboard/actions", () => ({
 	updateWidgetOrder: vi.fn(),
 	logWaterIntake: vi.fn(),
 }));
-vi.mock("@/app/[locale]/(app)/wellness/actions", () => ({
+vi.mock("@/lib/wellness/actions", () => ({
 	logWaterIntake: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({

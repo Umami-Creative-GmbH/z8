@@ -11,7 +11,7 @@ import {
 	TimeRecordService,
 	TimeRecordServiceLive,
 } from "@/lib/effect/services/time-record.service";
-import type { ListTimeRecordsFilters, TimeRecord } from "./types";
+import type { ListTimeRecordsFilters, TimeRecord } from "./action-types";
 
 const hasElevatedRecordScope = (role: string) => role === "manager" || role === "admin";
 

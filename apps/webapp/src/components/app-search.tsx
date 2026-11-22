@@ -20,7 +20,7 @@ import {
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { searchAppRecordsAction } from "@/app/[locale]/(app)/search/actions";
+import { searchAppRecordsAction } from "@/lib/app-search/actions";
 import {
 	CommandDialog,
 	CommandEmpty,
