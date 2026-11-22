@@ -81,7 +81,7 @@ it.each(["admitted", "pending", "restricted", "no employee"])(
 		);
 		expect(
 			screen.getAllByRole("heading", { level: 1 }).map((n) => n.textContent),
-		).toEqual(["Vacation Trends"]);
+		).toEqual(["Absences & Vacation"]);
 		expect(screen.getByText("Analytics")).toBeTruthy();
 	},
 );

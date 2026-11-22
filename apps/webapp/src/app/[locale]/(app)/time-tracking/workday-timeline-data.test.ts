@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 
 const source = readFileSync(
 	fileURLToPath(new URL("./workday-timeline-data.ts", import.meta.url)),
@@ -350,8 +351,8 @@ describe("isRequestRelevantToSelectedDate", () => {
 
 describe("isWorkPeriodRelevantToSelectedDate", () => {
 	const selectedDate = {
-		startUtc: { toJSDate: () => new Date("2026-05-03T00:00:00.000Z") },
-		endUtc: { toJSDate: () => new Date("2026-05-03T23:59:59.999Z") },
+		startUtc: parseInstant("2026-05-03T00:00:00.000Z"),
+		endUtc: parseInstant("2026-05-03T23:59:59.999Z"),
 	};
 
 	it("accepts periods that started before the selected day and ended during it", () => {

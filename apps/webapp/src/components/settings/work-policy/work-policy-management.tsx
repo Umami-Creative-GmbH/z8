@@ -6,8 +6,11 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { WorkPolicyWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 import { WorkPolicyAssignmentDialog } from "./work-policy-assignment-dialog";
 import { WorkPolicyAssignmentManager } from "./work-policy-assignment-manager";
 import { WorkPolicyComplianceView } from "./work-policy-compliance-view";
@@ -17,21 +20,24 @@ import { WorkPolicyTable } from "./work-policy-table";
 
 interface WorkPolicyManagementProps {
 	organizationId: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess;
 	/** The organization's resolved IANA timezone (UTC when unset). */
 	organizationTimezone: string;
+	/** Enables future-dated work policy version publishing when true. */
+	workPolicyVersioningEnabled?: boolean;
 }
 
 export function WorkPolicyManagement({
 	organizationId,
-	accessTier,
+	settingsAccess,
 	organizationTimezone,
+	workPolicyVersioningEnabled = false,
 }: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	// Go-live fix links open the assignments tab with `?view=assignments`.
 	const initialTab = useSearchParams().get("view") === "assignments" ? "assignments" : "policies";
-	const canManagePolicies = accessTier === "orgAdmin";
+	const canManagePolicies = meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> =
 		canManagePolicies ? (["organization", "team", "employee"] as const) : (["employee"] as const);
 
@@ -160,7 +166,9 @@ export function WorkPolicyManagement({
 					open={policyDialogOpen}
 					onOpenChange={setPolicyDialogOpen}
 					organizationId={organizationId}
+					organizationTimezone={organizationTimezone}
 					editingPolicy={editingPolicy}
+					workPolicyVersioningEnabled={workPolicyVersioningEnabled}
 					onSuccess={handlePolicySuccess}
 				/>
 			) : null}

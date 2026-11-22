@@ -4,15 +4,18 @@ import { ProjectReportsContainer } from "@/components/reports/projects/project-r
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployeeProjectReportAccess } from "./actions";
 
 async function ProjectReportsPageContent() {
 	// Auth is checked in layout
-	const [t, access] = await Promise.all([
-		getTranslate(),
-		getCurrentEmployeeProjectReportAccess(),
-	]);
+	const [t, access] = await Promise.all([getTranslate(), getCurrentEmployeeProjectReportAccess()]);
+
+	if (access && !access.projectsEnabled) {
+		return redirectWithLocale("/reports");
+	}
+
 	const header = (
 		<PageHeader
 			title={t("reports.projects.page.title", "Project Reports")}
@@ -23,14 +26,12 @@ async function ProjectReportsPageContent() {
 		/>
 	);
 
-	if (!access) {
+	if (!access?.employee) {
 		return (
 			<>
 				{header}
-				<div className="@container/main flex flex-1 items-center justify-center p-6">
-					<NoEmployeeError
-						feature={t("reports.projects.page.feature", "view project reports")}
-					/>
+				<div className="flex flex-1 items-center justify-center p-6">
+					<NoEmployeeError feature={t("reports.projects.page.feature", "view project reports")} />
 				</div>
 			</>
 		);
@@ -40,7 +41,7 @@ async function ProjectReportsPageContent() {
 		return (
 			<>
 				{header}
-				<div className="@container/main flex flex-1 items-center justify-center p-6">
+				<div className="flex flex-1 items-center justify-center p-6">
 					<div className="text-center">
 						<h2 className="text-xl font-semibold">
 							{t("reports.projects.page.accessDenied", "Access Denied")}
@@ -72,7 +73,7 @@ function ProjectReportsPageLoading() {
 				labelKey: "common.loadingRegions.projectReports",
 				labelDefault: "Loading project reports",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6"
+			className="flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
 			<div className="space-y-3">
@@ -84,11 +85,11 @@ function ProjectReportsPageLoading() {
 	);
 }
 
-// The page frame renders at once; translations and access are request reads
-// behind the Suspense boundary.
+// The shared layout owns page-frame geometry; translations and access are
+// request reads behind the Suspense boundary.
 export default function ProjectReportsPage() {
 	return (
-		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+		<div className="flex min-w-0 flex-1 flex-col gap-6">
 			<Suspense fallback={<ProjectReportsPageLoading />}>
 				<ProjectReportsPageContent />
 			</Suspense>

@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
 import {
@@ -16,10 +15,14 @@ import {
 	userSettings,
 } from "@/db/schema";
 import {
+	compareInstants,
+	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	type PlainDate,
 	parsePlainDate,
 	plainDateAt,
+	systemClock,
 } from "@/lib/datetime/temporal-core";
 import {
 	findOpenDepartureClockRepairs,
@@ -72,7 +75,7 @@ import type {
 	PayrollWorkspaceSummary,
 } from "./types";
 
-type PayrollDateTimePeriod = { start: DateTime; end: DateTime };
+type PayrollDateTimePeriod = { start: Instant; end: Instant };
 
 export interface PendingTimeApprovalBlockerRow {
 	id: string;
@@ -84,21 +87,21 @@ export interface PendingTimeApprovalBlockerRow {
 	recordId: string | null;
 	recordOrganizationId: string | null;
 	employeeId: string;
-	startAt: DateTime;
-	endAt: DateTime | null;
+	startAt: Instant | null;
+	endAt: Instant | null;
 }
 
 export interface MissingClockOutBlockerRow {
 	id: string;
 	employeeId: string;
-	startAt: DateTime;
+	startAt: Instant | null;
 }
 
 export function buildPayrollSummaryFromRows(input: {
 	organizationId: string;
 	organizationName: string;
 	period: PayrollPeriod;
-	generatedAt: DateTime;
+	generatedAt: Instant;
 	generatedBy: { id: string; name: string };
 	employees: PayrollSummaryEmployeeSource[];
 	workRows: PayrollSummaryWorkRow[];
@@ -149,7 +152,7 @@ export function buildPayrollSummaryFromRows(input: {
 		organizationId: input.organizationId,
 		organizationName: input.organizationName,
 		period: input.period,
-		generatedAt: input.generatedAt.toUTC().toISO() ?? input.generatedAt.toISO() ?? "",
+		generatedAt: input.generatedAt.toString({ fractionalSecondDigits: 3 }),
 		generatedBy: input.generatedBy,
 		totals: {
 			employeeCount: employees.length,
@@ -287,24 +290,15 @@ export function filterPendingTimeApprovalBlockers(input: {
 		allowedEmployeeIds.has(row.requestedBy) &&
 		allowedEmployeeIds.has(row.employeeId) &&
 		row.endAt !== null &&
-		(!row.startAt.isValid ||
-			!row.endAt.isValid ||
-			intervalsOverlap(
-				row.startAt.toUTC(),
-				row.endAt.toUTC(),
-				input.period.start,
-				input.period.end,
-			))
+		(row.startAt === null ||
+			intervalsOverlap(row.startAt, row.endAt, input.period.start, input.period.end))
 			? [
 					{
 						id: row.id,
 						employeeId: row.employeeId,
 						type: "pending_time_correction" as const,
 						label: "Pending time correction",
-						...localizeBlockerInstant(
-							row.startAt,
-							input.timezoneByEmployeeId.get(row.employeeId),
-						),
+						...localizeBlockerInstant(row.startAt, input.timezoneByEmployeeId.get(row.employeeId)),
 					},
 				]
 			: [],
@@ -317,17 +311,14 @@ export function filterMissingClockOutBlockers(input: {
 	rows: MissingClockOutBlockerRow[];
 }): PayrollBlocker[] {
 	return input.rows.flatMap((row) =>
-		!row.startAt.isValid || row.startAt.toUTC() <= input.period.end.toUTC()
+		row.startAt === null || compareInstants(row.startAt, input.period.end) <= 0
 			? [
 					{
 						id: row.id,
 						employeeId: row.employeeId,
 						type: "missing_clock_out" as const,
 						label: "Missing clock-out",
-						...localizeBlockerInstant(
-							row.startAt,
-							input.timezoneByEmployeeId.get(row.employeeId),
-						),
+						...localizeBlockerInstant(row.startAt, input.timezoneByEmployeeId.get(row.employeeId)),
 					},
 				]
 			: [],
@@ -340,7 +331,9 @@ export function filterMissingClockOutBlockers(input: {
  */
 export function buildOffboardingClockRepairBlockers(input: {
 	timezoneByEmployeeId: ReadonlyMap<string, string>;
-	repairs: ReadonlyArray<Pick<OpenDepartureClockRepair, "reviewId" | "employeeId" | "affectedEndAt">>;
+	repairs: ReadonlyArray<
+		Pick<OpenDepartureClockRepair, "reviewId" | "employeeId" | "affectedEndAt">
+	>;
 }): PayrollBlocker[] {
 	return input.repairs.map((repair) => {
 		const timezone = input.timezoneByEmployeeId.get(repair.employeeId);
@@ -380,9 +373,9 @@ export function buildPendingAbsenceBlockers(
 export async function getPayrollWorkspaceSummary(input: {
 	organizationId: string;
 	allowedEmployeeIds: string[];
-	period: { start: DateTime; end: DateTime; label: string };
+	period: { start: PlainDate; end: PlainDate; label: string };
 	generatedBy: { id: string; name: string };
-	generatedAt?: DateTime;
+	generatedAt?: Instant;
 }): Promise<PayrollWorkspaceSummary> {
 	const [{ period, sources }, { buildPayrollPeriodRead }, { loadActiveSettledDays }, { db }] =
 		await Promise.all([
@@ -402,9 +395,7 @@ export async function getPayrollWorkspaceSummary(input: {
 	return buildPayrollPeriodRead({
 		organizationId: input.organizationId,
 		period,
-		generatedAt: input.generatedAt
-			? Temporal.Instant.fromEpochMilliseconds(input.generatedAt.toMillis())
-			: Temporal.Now.instant(),
+		generatedAt: input.generatedAt ?? systemClock.nowInstant(),
 		generatedBy: input.generatedBy,
 		sources: { ...sources, settledDays },
 	}).summary;
@@ -418,7 +409,7 @@ export async function getPayrollWorkspaceSummary(input: {
 export async function loadPayrollPeriodSources(input: {
 	organizationId: string;
 	allowedEmployeeIds: readonly string[];
-	period: { start: DateTime; end: DateTime; label: string };
+	period: { start: PlainDate; end: PlainDate; label: string };
 }): Promise<{
 	period: PayrollPeriod;
 	organizationTimezone: string | null;
@@ -728,8 +719,8 @@ async function getWorkRows(
 				eq(timeRecord.approvalState, "approved"),
 				isNotNull(timeRecord.endAt),
 				inArray(timeRecord.employeeId, allowedEmployeeIds),
-				lte(timeRecord.startAt, queryEnvelope.end.toJSDate()),
-				gte(timeRecord.endAt, queryEnvelope.start.toJSDate()),
+				lte(timeRecord.startAt, dateFromInstant(queryEnvelope.end)),
+				gte(timeRecord.endAt, dateFromInstant(queryEnvelope.start)),
 			),
 		);
 
@@ -836,7 +827,7 @@ function absenceOverlapsPeriod(period: Pick<PayrollPeriod, "start" | "end">) {
 async function getBlockers(
 	organizationId: string,
 	allowedEmployeeIds: string[],
-	period: { start: DateTime; end: DateTime },
+	period: { start: PlainDate; end: PlainDate },
 	organizationTimezone: string | null,
 	options: {
 		/** Scoped collection reports open work, corrections and departure timers itself (#322). */
@@ -845,106 +836,113 @@ async function getBlockers(
 ): Promise<PayrollBlocker[]> {
 	const { db } = await import("@/db");
 	const collectionOwnsWorkBlockers = options.collectionOwnsWorkBlockers === true;
+	const periodStartInstant = period.start.toZonedDateTime("UTC").toInstant();
+	const periodEndExclusiveInstant = period.end.add({ days: 1 }).toZonedDateTime("UTC").toInstant();
+	const periodEndInstant = periodEndExclusiveInstant.subtract({ milliseconds: 1 });
+	const periodRange: PayrollDateTimePeriod = {
+		start: periodStartInstant,
+		end: periodEndInstant,
+	};
 	const [missingClockOutRows, pendingAbsenceRows, pendingApprovalRows, clockRepairs] =
 		await Promise.all([
-		collectionOwnsWorkBlockers
-			? []
-			: db
-			.select({
-				id: timeRecord.id,
-				employeeId: timeRecord.employeeId,
-				startAt: timeRecord.startAt,
-			})
-			.from(timeRecord)
-			.where(
-				and(
-					eq(timeRecord.organizationId, organizationId),
-					eq(timeRecord.recordKind, "work"),
-					inArray(timeRecord.employeeId, allowedEmployeeIds),
-					isNull(timeRecord.endAt),
-					lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
+			collectionOwnsWorkBlockers
+				? []
+				: db
+						.select({
+							id: timeRecord.id,
+							employeeId: timeRecord.employeeId,
+							startAt: timeRecord.startAt,
+						})
+						.from(timeRecord)
+						.where(
+							and(
+								eq(timeRecord.organizationId, organizationId),
+								eq(timeRecord.recordKind, "work"),
+								inArray(timeRecord.employeeId, allowedEmployeeIds),
+								isNull(timeRecord.endAt),
+								lte(timeRecord.startAt, dateFromInstant(periodEndInstant)),
+							),
+						),
+			db
+				.select({
+					id: timeRecord.id,
+					employeeId: timeRecord.employeeId,
+					startDate: absenceEntry.startDate,
+					startAt: timeRecord.startAt,
+					endAt: timeRecord.endAt,
+					startPeriod: timeRecordAbsence.startPeriod,
+					endPeriod: timeRecordAbsence.endPeriod,
+				})
+				.from(timeRecord)
+				.innerJoin(
+					timeRecordAbsence,
+					and(
+						eq(timeRecord.id, timeRecordAbsence.recordId),
+						eq(timeRecordAbsence.organizationId, organizationId),
+					),
+				)
+				.leftJoin(
+					absenceEntry,
+					and(
+						eq(absenceEntry.canonicalRecordId, timeRecord.id),
+						eq(absenceEntry.organizationId, organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(timeRecord.organizationId, organizationId),
+						eq(timeRecord.recordKind, "absence"),
+						eq(timeRecord.approvalState, "pending"),
+						inArray(timeRecord.employeeId, allowedEmployeeIds),
+						// Absence instants encode wall clocks as UTC, compared on the period's dates.
+						absenceOverlapsPeriod(toPayrollPeriod({ ...period, label: "" })),
+					),
 				),
-			),
-		db
-			.select({
-				id: timeRecord.id,
-				employeeId: timeRecord.employeeId,
-				startDate: absenceEntry.startDate,
-				startAt: timeRecord.startAt,
-				endAt: timeRecord.endAt,
-				startPeriod: timeRecordAbsence.startPeriod,
-				endPeriod: timeRecordAbsence.endPeriod,
-			})
-			.from(timeRecord)
-			.innerJoin(
-				timeRecordAbsence,
-				and(
-					eq(timeRecord.id, timeRecordAbsence.recordId),
-					eq(timeRecordAbsence.organizationId, organizationId),
-				),
-			)
-			.leftJoin(
-				absenceEntry,
-				and(
-					eq(absenceEntry.canonicalRecordId, timeRecord.id),
-					eq(absenceEntry.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(timeRecord.organizationId, organizationId),
-					eq(timeRecord.recordKind, "absence"),
-					eq(timeRecord.approvalState, "pending"),
-					inArray(timeRecord.employeeId, allowedEmployeeIds),
-					// Absence instants encode wall clocks as UTC, compared on the period's dates.
-					absenceOverlapsPeriod(toPayrollPeriod({ ...period, label: "" })),
-				),
-			),
-		collectionOwnsWorkBlockers
-			? []
-			: db
-			.select({
-				id: approvalRequest.id,
-				organizationId: approvalRequest.organizationId,
-				requestedBy: approvalRequest.requestedBy,
-				status: approvalRequest.status,
-				entityType: approvalRequest.entityType,
-				canonicalRecordId: approvalRequest.canonicalRecordId,
-				recordId: timeRecord.id,
-				recordOrganizationId: timeRecord.organizationId,
-				employeeId: timeRecord.employeeId,
-				startAt: timeRecord.startAt,
-				endAt: timeRecord.endAt,
-			})
-			.from(approvalRequest)
-			.innerJoin(
-				timeRecord,
-				and(
-					eq(approvalRequest.canonicalRecordId, timeRecord.id),
-					eq(timeRecord.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(approvalRequest.organizationId, organizationId),
-					eq(approvalRequest.status, "pending"),
-					eq(approvalRequest.entityType, "time_entry"),
-					inArray(approvalRequest.requestedBy, allowedEmployeeIds),
-					inArray(timeRecord.employeeId, allowedEmployeeIds),
-					isNotNull(timeRecord.endAt),
-					lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
-					gte(timeRecord.endAt, period.start.toUTC().toJSDate()),
-				),
-			),
-		collectionOwnsWorkBlockers
-			? []
-			: findOpenDepartureClockRepairs(db, {
-					organizationId,
-					employeeIds: allowedEmployeeIds,
-					rangeStart: period.start.toUTC().toJSDate(),
-					rangeEndExclusive: period.end.toUTC().plus({ milliseconds: 1 }).toJSDate(),
-				}),
-	]);
+			collectionOwnsWorkBlockers
+				? []
+				: db
+						.select({
+							id: approvalRequest.id,
+							organizationId: approvalRequest.organizationId,
+							requestedBy: approvalRequest.requestedBy,
+							status: approvalRequest.status,
+							entityType: approvalRequest.entityType,
+							canonicalRecordId: approvalRequest.canonicalRecordId,
+							recordId: timeRecord.id,
+							recordOrganizationId: timeRecord.organizationId,
+							employeeId: timeRecord.employeeId,
+							startAt: timeRecord.startAt,
+							endAt: timeRecord.endAt,
+						})
+						.from(approvalRequest)
+						.innerJoin(
+							timeRecord,
+							and(
+								eq(approvalRequest.canonicalRecordId, timeRecord.id),
+								eq(timeRecord.organizationId, organizationId),
+							),
+						)
+						.where(
+							and(
+								eq(approvalRequest.organizationId, organizationId),
+								eq(approvalRequest.status, "pending"),
+								eq(approvalRequest.entityType, "time_entry"),
+								inArray(approvalRequest.requestedBy, allowedEmployeeIds),
+								inArray(timeRecord.employeeId, allowedEmployeeIds),
+								isNotNull(timeRecord.endAt),
+								lte(timeRecord.startAt, dateFromInstant(periodEndInstant)),
+								gte(timeRecord.endAt, dateFromInstant(periodStartInstant)),
+							),
+						),
+			collectionOwnsWorkBlockers
+				? []
+				: findOpenDepartureClockRepairs(db, {
+						organizationId,
+						employeeIds: allowedEmployeeIds,
+						rangeStart: dateFromInstant(periodStartInstant),
+						rangeEndExclusive: dateFromInstant(periodEndExclusiveInstant),
+					}),
+		]);
 
 	const affectedEmployeeIds = Array.from(
 		new Set(
@@ -959,10 +957,7 @@ async function getBlockers(
 			.select({ id: employee.id, userId: employee.userId })
 			.from(employee)
 			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					inArray(employee.id, affectedEmployeeIds),
-				),
+				and(eq(employee.organizationId, organizationId), inArray(employee.id, affectedEmployeeIds)),
 			);
 		const affectedUserIds = Array.from(
 			new Set(affectedEmployees.map((employeeRow) => employeeRow.userId)),
@@ -983,10 +978,7 @@ async function getBlockers(
 		for (const employeeRow of affectedEmployees) {
 			timezoneByEmployeeId.set(
 				employeeRow.id,
-				resolveEffectiveTimezone(
-					timezoneByUserId.get(employeeRow.userId),
-					organizationTimezone,
-				),
+				resolveEffectiveTimezone(timezoneByUserId.get(employeeRow.userId), organizationTimezone),
 			);
 		}
 	}
@@ -994,21 +986,21 @@ async function getBlockers(
 	const pendingApprovalBlockers = filterPendingTimeApprovalBlockers({
 		organizationId,
 		allowedEmployeeIds,
-		period,
+		period: periodRange,
 		timezoneByEmployeeId,
 		rows: pendingApprovalRows.map((row) => ({
 			...row,
-			startAt: DateTime.fromJSDate(row.startAt, { zone: "utc" }),
-			endAt: row.endAt ? DateTime.fromJSDate(row.endAt, { zone: "utc" }) : null,
+			startAt: instantFromDate(row.startAt),
+			endAt: row.endAt ? instantFromDate(row.endAt) : null,
 		})),
 	});
 
 	const missingClockOutBlockers = filterMissingClockOutBlockers({
-		period,
+		period: periodRange,
 		timezoneByEmployeeId,
 		rows: missingClockOutRows.map((row) => ({
 			...row,
-			startAt: DateTime.fromJSDate(row.startAt, { zone: "utc" }),
+			startAt: instantFromDate(row.startAt),
 		})),
 	});
 
@@ -1028,8 +1020,7 @@ async function getBlockers(
 	const dismissible = await filterDismissedPayrollBlockerCandidates({
 		organizationId,
 		blockerCandidates,
-		findDismissals: (query) =>
-			db.query.payrollBlockerDismissal.findMany(query),
+		findDismissals: (query) => db.query.payrollBlockerDismissal.findMany(query),
 	});
 	// Added after dismissal filtering: an unresolved departure timer can never be dismissed.
 	return [
@@ -1039,16 +1030,18 @@ async function getBlockers(
 }
 
 function localizeBlockerInstant(
-	instant: DateTime,
+	instant: Instant | null,
 	timezone: string | undefined,
 ): Pick<PayrollBlocker, "date" | "time"> {
-	const instantIso = instant.isValid ? instant.toUTC().toISO() : null;
-	if (!(instantIso && timezone)) return { date: null, time: null };
+	if (!(instant && timezone)) return { date: null, time: null };
 
-	return localizeInstant(Temporal.Instant.from(instantIso), timezone);
+	return localizeInstant(instant, timezone);
 }
 
-function localizeInstant(instant: Instant, timezone: string): Pick<PayrollBlocker, "date" | "time"> {
+function localizeInstant(
+	instant: Instant,
+	timezone: string,
+): Pick<PayrollBlocker, "date" | "time"> {
 	try {
 		const local = instant.toZonedDateTimeISO(timezone);
 		return {
@@ -1060,10 +1053,14 @@ function localizeInstant(instant: Instant, timezone: string): Pick<PayrollBlocke
 	}
 }
 
-function toPayrollPeriod(period: { start: DateTime; end: DateTime; label: string }): PayrollPeriod {
+function toPayrollPeriod(period: {
+	start: PlainDate;
+	end: PlainDate;
+	label: string;
+}): PayrollPeriod {
 	return {
-		start: period.start.toUTC().toISODate() ?? "",
-		end: period.end.toUTC().toISODate() ?? "",
+		start: period.start.toString(),
+		end: period.end.toString(),
 		label: period.label,
 	};
 }
@@ -1077,12 +1074,12 @@ function formatEmployeeDisplayName(
 }
 
 function intervalsOverlap(
-	startAt: DateTime,
-	endAt: DateTime,
-	periodStart: DateTime,
-	periodEnd: DateTime,
+	startAt: Instant,
+	endAt: Instant,
+	periodStart: Instant,
+	periodEnd: Instant,
 ): boolean {
-	return startAt.toUTC() <= periodEnd.toUTC() && endAt.toUTC() >= periodStart.toUTC();
+	return compareInstants(startAt, periodEnd) <= 0 && compareInstants(endAt, periodStart) >= 0;
 }
 
 function roundHours(hours: number): number {

@@ -11,6 +11,7 @@ import {
 	removeTeamMember,
 } from "@/app/[locale]/(app)/settings/teams/actions";
 import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	FormerEmployeeBadge,
 	isMarkedFormer,
@@ -27,13 +28,6 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/user-avatar";
 import type { team } from "@/db/schema";
@@ -187,37 +181,30 @@ export function TeamMembersDialog({
 						<div className="space-y-3">
 							<div className="flex items-center gap-2">
 								<div className="flex-1">
-									<Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-										<SelectTrigger>
-											<SelectValue
-												placeholder={t(
-													"organization.teams.members.selectEmployee",
-													"Select an employee to add",
-												)}
-											/>
-										</SelectTrigger>
-										<SelectContent>
-											{availableEmployees.map((member) => (
-												<SelectItem key={member.employee!.id} value={member.employee!.id}>
-													<div className="flex items-center gap-2">
-														<UserAvatar
-															seed={member.user.id}
-															image={member.user.image}
-															name={member.user.name}
-															size="xs"
-															clockStatus={presence.getStatus(member.employee!.id)}
-														/>
-														<span>{member.user.name}</span>
-														{member.employee?.position && (
-															<span className="text-xs text-muted-foreground">
-																({member.employee.position})
-															</span>
-														)}
-													</div>
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+									<EmployeeSingleSelect
+										className="space-y-0"
+										aria-label={t(
+											"organization.teams.members.selectEmployee",
+											"Select an employee to add",
+										)}
+										placeholder={t(
+											"organization.teams.members.selectEmployee",
+											"Select an employee to add",
+										)}
+										value={selectedEmployeeId || null}
+										onChange={(value) => setSelectedEmployeeId(value ?? "")}
+										employees={availableEmployees.map((member) =>
+											toSelectableEmployee({
+												id: member.employee!.id,
+												userId: member.user.id,
+												name: member.user.name,
+												email: member.user.email,
+												image: member.user.image,
+												position: member.employee?.position,
+												clockStatus: presence.getStatus(member.employee!.id),
+											}),
+										)}
+									/>
 								</div>
 								<Button
 									onClick={handleAddMember}

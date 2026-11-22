@@ -166,14 +166,16 @@ describe("cost rates on PostgreSQL", () => {
 	) {
 		await admin.query(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, valid_from, valid_until, contract_type,
-			  weekly_contract_minutes, hourly_rate, currency, review_state, created_by, updated_at)
-			 values ($1, $2, $3, $4, $5, 2400, $6, $7, $8, $9, now())`,
+			 (employee_id, organization_id, valid_from, valid_until, valid_from_date, valid_until_date,
+			  contract_type, weekly_contract_minutes, hourly_rate, currency, review_state, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, 2400, $8, $9, $10, $11, now())`,
 			[
 				employeeId,
 				ids.organization,
 				`${options.from}T00:00:00Z`,
 				options.until ? `${options.until}T00:00:00Z` : null,
+				options.from,
+				options.until ?? null,
 				options.contractType ?? "hourly",
 				options.wage === undefined ? null : options.wage,
 				options.currency ?? "EUR",

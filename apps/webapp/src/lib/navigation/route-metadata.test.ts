@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	appPageOwnsHeading,
-	normalizeAppPath,
-	resolveAppRouteMetadata,
-} from "./route-metadata";
+import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 it("opts only the driving queue into page-owned headings", () => {
 	expect(appPageOwnsHeading("/en/team/driving")).toBe(true);
@@ -73,7 +69,8 @@ describe("route metadata", () => {
 			"/en/settings/enterprise/domains",
 			"/en/settings/enterprise/identity-setup",
 			"/en/settings/enterprise/email",
-			"/en/settings/billable-time/rates",
+			"/en/settings/billable-time",
+			"/en/billable-time/hand-off",
 			"/en/settings/employees/employee-1",
 			"/en/settings/teams/team-1",
 			"/en/settings/locations/location-1",
@@ -86,7 +83,11 @@ describe("route metadata", () => {
 			"/en/settings/slack",
 			"/en/settings/holidays",
 			"/en/settings/change-policies",
+			"/en/settings/statistics",
+			"/en/settings/billable-time/rates",
+			"/en/settings/billable-time/hand-off",
 			"/en/settings/enterprise",
+			"/en/settings/permissions",
 			"/en/settings/employees/employee-1/detail",
 			"/en/settings-other",
 		]) {
@@ -94,15 +95,11 @@ describe("route metadata", () => {
 		}
 	});
 	it("adopts only selected employee files, leaving other personnel workflows independently staged", () => {
+		expect(appPageOwnsHeading("/de/personnel-files/af981290-0000-4000-8000-000000000001")).toBe(
+			true,
+		);
 		expect(
-			appPageOwnsHeading(
-				"/de/personnel-files/af981290-0000-4000-8000-000000000001",
-			),
-		).toBe(true);
-		expect(
-			appPageOwnsHeading(
-				"/en/personnel-files/af981290-0000-4000-8000-000000000001/detail",
-			),
+			appPageOwnsHeading("/en/personnel-files/af981290-0000-4000-8000-000000000001/detail"),
 		).toBe(false);
 	});
 	it("adopts the payslip batch start and detail headings", () => {
@@ -111,9 +108,7 @@ describe("route metadata", () => {
 	});
 	it("adopts only the sick-leave overview heading, preserving independent personnel routes", () => {
 		expect(appPageOwnsHeading("/de/personnel-files/sick-leave")).toBe(true);
-		expect(appPageOwnsHeading("/en/personnel-files/sick-leave/detail")).toBe(
-			false,
-		);
+		expect(appPageOwnsHeading("/en/personnel-files/sick-leave/detail")).toBe(false);
 	});
 	it("adopts only the scheduling page heading, preserving its descendants and settings", () => {
 		expect(appPageOwnsHeading("/de/scheduling")).toBe(true);
@@ -123,12 +118,8 @@ describe("route metadata", () => {
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
-		expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(
-			true,
-		);
-		expect(
-			appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),
-		).toBe(false);
+		expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);
+		expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);
 	});
 	it("adopts only the notification timeline heading, retaining settings and descendants", () => {
 		expect(appPageOwnsHeading("/de/notifications")).toBe(true);
@@ -139,6 +130,11 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
 		expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);
 	});
+	it("adopts the works-council page heading without descendants", () => {
+		expect(appPageOwnsHeading("/en/works-council")).toBe(true);
+		expect(appPageOwnsHeading("/de/works-council/")).toBe(true);
+		expect(appPageOwnsHeading("/en/works-council/detail")).toBe(false);
+	});
 	it("adopts the personal documents heading without officer descendants", () => {
 		expect(appPageOwnsHeading("/de/my-documents")).toBe(true);
 		expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);
@@ -148,22 +144,15 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);
 		expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(true);
 		expect(appPageOwnsHeading("/en/personnel-files/sick-leave")).toBe(true);
-		for (const path of [
-			"/en/personnel-files/id",
-			"/en/personnel-files/sick-leave/detail",
-		])
+		for (const path of ["/en/personnel-files/id", "/en/personnel-files/sick-leave/detail"])
 			expect(appPageOwnsHeading(path)).toBe(false);
 	});
 	it("adopts equipment overview and exact assignment headings, keeping other descendants independent", () => {
 		expect(appPageOwnsHeading("/de/equipment")).toBe(true);
 		expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);
-		expect(
-			appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),
-		).toBe(true);
+		expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);
 		expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);
-		expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(
-			false,
-		);
+		expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);
 		expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/settings/equipment")).toBe(true);
 	});
@@ -171,67 +160,45 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);
 		expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);
 	});
-	it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {
+	it("adopts both licence pages and the employee check while retaining other descendants and settings headings", () => {
 		expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
-		expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
-			true,
-		);
-		expect(
-			appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),
-		).toBe(false);
-		expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);
+		expect(appPageOwnsHeading("/de/team/driving-licence")).toBe(true);
+		expect(appPageOwnsHeading("/en/team/driving-licence/employee-1")).toBe(true);
+		expect(appPageOwnsHeading("/en/team/driving-licence/employee-1/detail")).toBe(false);
+		// The old check route only redirects (#1937).
+		expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(false);
 		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(true);
 	});
 	it("retains independent approvals page headings", () => {
 		expect(appPageOwnsHeading("/de/approvals")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
-		expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(
-			true,
-		);
+		expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);
 	});
 	it("adopts only the deputy history record, preserving other approval headings", () => {
-		expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(
-			true,
-		);
-		expect(
-			appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),
-		).toBe(false);
+		expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);
+		expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);
 		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
 	});
 	it("adopts the exact inbox heading, retaining independent review route ownership", () => {
 		expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);
-		expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(
-			true,
-		);
+		expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);
 	});
 	it("adopts only the complete review arrival route", () => {
-		expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(
-			true,
-		);
-		expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(
-			false,
-		);
-		expect(
-			appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),
-		).toBe(false);
+		expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);
+		expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);
+		expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);
 	});
 	it("adopts the exact vacation route while retaining staged descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);
-		expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(
-			false,
-		);
+		expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);
 	});
 	it("adopts only refreshed analytics routes while retaining staged descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);
-		expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(
-			false,
-		);
+		expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);
-		expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(
-			false,
-		);
+		expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);
 	});
 	it("adopts refreshed analytics without adopting unconverted descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics")).toBe(true);
@@ -257,9 +224,11 @@ describe("route metadata", () => {
 		["/en/compliance", "Compliance"],
 		["/en/works-council", "Works Council"],
 		["/en/team/absences", "Team Absences"],
-		["/en/team/driving", "Driving Details"],
-		["/en/driving-licence", "My driving authorization"],
-		["/en/driving-licence/checks/employee-1", "My driving authorization"],
+		["/en/team/driving", "Missing vehicle logs"],
+		["/en/driving-licence", "My driving licence"],
+		["/en/team/driving-licence", "Driving licences"],
+		["/en/team/driving-licence/employee-1", "Driving licences"],
+		["/en/travel-expenses/finance", "Expense Finance"],
 		["/en/reports/projects", "Project Reports"],
 		["/en/reports/vehicles", "Distance per Vehicle"],
 		["/en/settings/employees/employee-1", "Employees"],
@@ -278,18 +247,12 @@ describe("route metadata", () => {
 	});
 
 	it("normalizes locale and trailing slash segments", () => {
-		expect(normalizeAppPath("/de/settings/security/")).toBe(
-			"/settings/security",
-		);
+		expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");
 	});
 });
 it("adopts only the exact payslip batch detail heading", () => {
-	expect(
-		appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-1"),
-	).toBe(true);
-	expect(
-		appPageOwnsHeading("/de/personnel-files/payslip-batches/batch-1/detail"),
-	).toBe(false);
+	expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-1")).toBe(true);
+	expect(appPageOwnsHeading("/de/personnel-files/payslip-batches/batch-1/detail")).toBe(false);
 });
 
 it.each([

@@ -146,32 +146,31 @@ async function withScopeRows(
 ): Promise<PersonnelFileOfficerGrantRecord[]> {
 	if (grants.length === 0) return [];
 	const grantIds = grants.map((grant) => grant.id);
-	const [teamRows, employeeRows] = await Promise.all([
-		database
-			.select({
-				grantId: personnelFileOfficerTeam.grantId,
-				teamId: personnelFileOfficerTeam.teamId,
-			})
-			.from(personnelFileOfficerTeam)
-			.where(
-				and(
-					eq(personnelFileOfficerTeam.organizationId, organizationId),
-					inArray(personnelFileOfficerTeam.grantId, grantIds),
-				),
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const teamRows = await database
+		.select({
+			grantId: personnelFileOfficerTeam.grantId,
+			teamId: personnelFileOfficerTeam.teamId,
+		})
+		.from(personnelFileOfficerTeam)
+		.where(
+			and(
+				eq(personnelFileOfficerTeam.organizationId, organizationId),
+				inArray(personnelFileOfficerTeam.grantId, grantIds),
 			),
-		database
-			.select({
-				grantId: personnelFileOfficerEmployee.grantId,
-				employeeId: personnelFileOfficerEmployee.employeeId,
-			})
-			.from(personnelFileOfficerEmployee)
-			.where(
-				and(
-					eq(personnelFileOfficerEmployee.organizationId, organizationId),
-					inArray(personnelFileOfficerEmployee.grantId, grantIds),
-				),
+		);
+	const employeeRows = await database
+		.select({
+			grantId: personnelFileOfficerEmployee.grantId,
+			employeeId: personnelFileOfficerEmployee.employeeId,
+		})
+		.from(personnelFileOfficerEmployee)
+		.where(
+			and(
+				eq(personnelFileOfficerEmployee.organizationId, organizationId),
+				inArray(personnelFileOfficerEmployee.grantId, grantIds),
 			),
-	]);
+		);
 	return grants.map((grant) => ({
 		id: grant.id,
 		officerEmployeeId: grant.officerEmployeeId,
@@ -225,23 +224,23 @@ export async function savePersonnelFileOfficerGrant(
 		.for("update");
 	const [currentGrant] = current ? await withScopeRows(tx, organizationId, [current]) : [];
 
-	const [employeeRows, teamRows] = await Promise.all([
-		tx
-			.select({ id: employee.id, isActive: employee.isActive })
-			.from(employee)
-			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					inArray(employee.id, [officerEmployeeId, ...requestedEmployeeIds]),
-				),
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const employeeRows = await tx
+		.select({ id: employee.id, isActive: employee.isActive })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				inArray(employee.id, [officerEmployeeId, ...requestedEmployeeIds]),
 			),
+		);
+	const teamRows =
 		requestedTeamIds.length > 0
-			? tx
+			? await tx
 					.select({ id: team.id })
 					.from(team)
 					.where(and(eq(team.organizationId, organizationId), inArray(team.id, requestedTeamIds)))
-			: Promise.resolve([]),
-	]);
+			: [];
 	const validated = buildValidatedPersonnelFileOfficerGrant(input.grant, {
 		activeEmployeeIds: employeeRows.filter((row) => row.isActive).map((row) => row.id),
 		organizationEmployeeIds: employeeRows.map((row) => row.id),

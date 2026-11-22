@@ -1,10 +1,10 @@
 ﻿/* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectWithDetails } from "@/app/[locale]/(app)/settings/projects/actions";
 import { ProjectMembersPanel } from "./project-members-panel";
 
@@ -140,6 +140,14 @@ function renderPanel(props: Partial<Parameters<typeof ProjectMembersPanel>[0]> =
 	return { onChanged };
 }
 
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
+
 describe("ProjectMembersPanel", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -222,10 +230,15 @@ describe("ProjectMembersPanel", () => {
 
 		const employees = screen.getByRole("region", { name: "Employees" });
 		const picker = within(employees).getByRole("combobox", { name: "Employee to assign" });
-		await within(picker).findByRole("option", { name: "Blake Builder" });
-		expect(within(picker).queryByRole("option", { name: "Avery Employee" })).toBeNull();
+		await waitFor(() => expect(actions.getEmployeesForSelection).toHaveBeenCalled());
+		await user.click(picker);
+		const blake = await screen.findByRole("option", { name: /Blake Builder/ });
+		expect(screen.queryByRole("option", { name: /Avery Employee/ })).toBeNull();
 
-		await user.selectOptions(picker, "emp-2");
+		await user.click(blake);
+		await waitFor(() =>
+			expect(screen.queryByRole("option", { name: /Blake Builder/ })).toBeNull(),
+		);
 		await user.click(within(employees).getByRole("button", { name: "Assign employee" }));
 
 		expect(actions.addProjectAssignment).toHaveBeenCalledWith({
@@ -246,10 +259,15 @@ describe("ProjectMembersPanel", () => {
 
 		const managers = screen.getByRole("region", { name: "Project managers" });
 		const picker = within(managers).getByRole("combobox", { name: "Project manager to add" });
-		await within(picker).findByRole("option", { name: "Blake Builder" });
-		expect(within(picker).queryByRole("option", { name: "Pat Manager" })).toBeNull();
+		await waitFor(() => expect(actions.getEmployeesForSelection).toHaveBeenCalled());
+		await user.click(picker);
+		const blake = await screen.findByRole("option", { name: /Blake Builder/ });
+		expect(screen.queryByRole("option", { name: /Pat Manager/ })).toBeNull();
 
-		await user.selectOptions(picker, "emp-2");
+		await user.click(blake);
+		await waitFor(() =>
+			expect(screen.queryByRole("option", { name: /Blake Builder/ })).toBeNull(),
+		);
 		await user.click(within(managers).getByRole("button", { name: "Add project manager" }));
 		expect(actions.addProjectManager).toHaveBeenCalledWith({
 			projectId: "project-1",

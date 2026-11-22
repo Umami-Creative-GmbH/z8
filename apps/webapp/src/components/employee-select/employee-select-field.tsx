@@ -5,7 +5,13 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { EmployeeSelectModal } from "./employee-select-modal";
 import { EmployeeChips, EmployeeSelectTrigger } from "./employee-select-trigger";
-import type { EmployeeSelectFieldProps, SelectableEmployee } from "./types";
+import type {
+	EmployeeSelectCommonProps,
+	EmployeeSelectFieldProps,
+	MultiSelectProps,
+	SelectableEmployee,
+	SingleSelectProps,
+} from "./types";
 import { useSelectedEmployees } from "./use-employee-select";
 
 /**
@@ -47,22 +53,66 @@ import { useSelectedEmployees } from "./use-employee-select";
  * ```
  */
 export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
+	if (props.employees !== undefined) {
+		return <EmployeeSelectFieldInner props={props} fetchedEmployees={EMPTY_EMPLOYEES} />;
+	}
+	return <ServerEmployeeSelectField props={props} />;
+}
+
+const EMPTY_EMPLOYEES: SelectableEmployee[] = [];
+
+function ServerEmployeeSelectField({ props }: { props: EmployeeSelectFieldProps }) {
+	const selectedIds = props.mode === "single" ? (props.value ? [props.value] : []) : props.value || [];
+	const { employees: fetchedEmployees } = useSelectedEmployees(selectedIds);
+	return <EmployeeSelectFieldInner props={props} fetchedEmployees={fetchedEmployees} />;
+}
+
+function EmployeeSelectFieldInner({
+	props,
+	fetchedEmployees,
+}: {
+	props: EmployeeSelectFieldProps;
+	fetchedEmployees: SelectableEmployee[];
+}) {
 	const {
+		id,
 		excludeIds,
 		filters,
 		includeFormerEmployees,
 		showFilters = true,
 		label,
 		placeholder,
+		searchPlaceholder,
+		emptyMessage,
+		modalTitle,
+		modalDescription,
+		onSearchChange,
+		isLoading,
 		disabled = false,
 		error,
 		className,
+		triggerClassName,
+		onBlur,
+		"aria-label": ariaLabel,
+		"aria-labelledby": ariaLabelledBy,
+		"aria-describedby": ariaDescribedBy,
+		"aria-invalid": ariaInvalid,
+		"aria-required": ariaRequired,
 		employees: preFilteredEmployees,
+		pinnedIds,
 	} = props;
 
 	const [modalOpen, setModalOpen] = useState(false);
-	const triggerId = useId();
+	const generatedTriggerId = useId();
+	const triggerId = id ?? generatedTriggerId;
 	const employeeListboxId = useId();
+
+	const handleModalOpenChange = (nextOpen: boolean) => {
+		setModalOpen(nextOpen);
+		if (!nextOpen) {
+			onBlur?.();
+		}
+	};
 
 	// Track selected employees locally for immediate UI updates
 	const [localSelectedEmployees, setLocalSelectedEmployees] = useState<
@@ -77,11 +127,6 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 		return props.value || [];
 	})();
 	const selectedIdSet = new Set(selectedIds);
-
-	// Fetch selected employees for display (skip if pre-filtered list provided)
-	const { employees: fetchedEmployees } = useSelectedEmployees(
-		preFilteredEmployees ? [] : selectedIds,
-	);
 
 	// Merge fetched employees with locally tracked ones
 	const selectedEmployees = (() => {
@@ -157,8 +202,12 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 		setModalOpen(false);
 	};
 
-	// Get maxSelections for multi-select
+	// Get mode-specific options
 	const maxSelections = props.mode === "multiple" ? props.maxSelections : undefined;
+	const showChips = props.mode === "multiple" ? (props.showChips ?? true) : false;
+	const allowClear = props.mode === "single" ? props.allowClear : undefined;
+	const clearLabel = props.mode === "single" ? props.clearLabel : undefined;
+
 	return (
 		<div className={cn("space-y-2", className)}>
 			{label && <Label htmlFor={triggerId}>{label}</Label>}
@@ -172,11 +221,18 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 				expanded={modalOpen}
 				disabled={disabled}
 				error={error}
+				className={triggerClassName}
+				aria-label={ariaLabel}
+				aria-labelledby={ariaLabelledBy}
+				aria-describedby={ariaDescribedBy}
+				aria-invalid={ariaInvalid}
+				aria-required={ariaRequired}
 				onClick={() => setModalOpen(true)}
+				onBlur={onBlur}
 			/>
 
 			{/* Show chips for multi-select below the trigger */}
-			{props.mode === "multiple" && selectedEmployees.length > 0 && (
+			{props.mode === "multiple" && showChips && selectedEmployees.length > 0 && (
 				<EmployeeChips
 					employees={selectedEmployees}
 					onRemove={handleDeselect}
@@ -190,19 +246,28 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 			{/* Selection modal */}
 			<EmployeeSelectModal
 				open={modalOpen}
-				onOpenChange={setModalOpen}
+				onOpenChange={handleModalOpenChange}
 				listboxId={employeeListboxId}
 				mode={props.mode}
 				selectedIds={selectedIds}
 				onSelect={handleSelect}
 				onDeselect={handleDeselect}
 				onConfirm={handleConfirm}
+				allowClear={allowClear}
+				clearLabel={clearLabel}
+				searchPlaceholder={searchPlaceholder}
+				emptyMessage={emptyMessage}
+				title={modalTitle}
+				description={modalDescription}
+				onSearchChange={onSearchChange}
+				isLoading={isLoading}
 				excludeIds={excludeIds}
 				filters={filters}
 				includeFormerEmployees={includeFormerEmployees}
 				showFilters={showFilters}
 				maxSelections={maxSelections}
 				employees={preFilteredEmployees}
+				pinnedIds={pinnedIds}
 			/>
 		</div>
 	);
@@ -211,22 +276,10 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 /**
  * Simplified single-select component for common use cases
  */
-export interface EmployeeSingleSelectProps {
-	value: string | null;
-	onChange: (value: string | null) => void;
-	excludeIds?: string[];
-	filters?: EmployeeSelectFieldProps["filters"];
-	/** Also offer former employees, labelled (#1438): for views of the past only. */
-	includeFormerEmployees?: boolean;
-	showFilters?: boolean;
-	label?: string;
-	placeholder?: string;
-	disabled?: boolean;
-	error?: string;
-	className?: string;
-	/** Pre-filtered employee list (uses client-side search when provided) */
-	employees?: SelectableEmployee[];
-}
+export type EmployeeSingleSelectProps = Omit<
+	EmployeeSelectCommonProps & SingleSelectProps,
+	"mode"
+>;
 
 export function EmployeeSingleSelect(props: EmployeeSingleSelectProps) {
 	return <EmployeeSelectField mode="single" {...props} />;
@@ -235,23 +288,10 @@ export function EmployeeSingleSelect(props: EmployeeSingleSelectProps) {
 /**
  * Simplified multi-select component for common use cases
  */
-export interface EmployeeMultiSelectProps {
-	value: string[];
-	onChange: (value: string[]) => void;
-	excludeIds?: string[];
-	filters?: EmployeeSelectFieldProps["filters"];
-	/** Also offer former employees, labelled (#1438): for views of the past only. */
-	includeFormerEmployees?: boolean;
-	showFilters?: boolean;
-	label?: string;
-	placeholder?: string;
-	disabled?: boolean;
-	error?: string;
-	className?: string;
-	maxSelections?: number;
-	/** Pre-filtered employee list (uses client-side search when provided) */
-	employees?: SelectableEmployee[];
-}
+export type EmployeeMultiSelectProps = Omit<
+	EmployeeSelectCommonProps & MultiSelectProps,
+	"mode"
+>;
 
 export function EmployeeMultiSelect(props: EmployeeMultiSelectProps) {
 	return <EmployeeSelectField mode="multiple" {...props} />;

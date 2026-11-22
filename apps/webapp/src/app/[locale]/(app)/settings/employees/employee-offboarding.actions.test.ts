@@ -56,13 +56,19 @@ import { ResolveDepartureReviewError } from "@/lib/employee-lifecycle/reviews";
 import {
 	assignDepartureReplacementAction,
 	cancelEmployeeDepartureAction,
+	correctPastDepartureDateAction,
 	getEmployeeOffboardingViewAction,
+	getReplacementEmployeeAction,
 	offboardEmployeeNowAction,
 	previewEmployeeDepartureAction,
+	previewPastDepartureAction,
+	recordHistoricalDepartureDateAction,
+	recordPastDepartureAction,
 	rehireEmployeeAction,
 	resolveDepartureReviewAction,
 	retryDepartureTaskAction,
 	scheduleEmployeeDepartureAction,
+	searchReplacementEmployeesAction,
 } from "./employee-offboarding.actions";
 
 const uuid = "11111111-1111-4111-8111-111111111111";
@@ -118,6 +124,26 @@ const rehireInput = {
 	changeReason: null,
 };
 
+const recordPastInput = {
+	employeeId: uuid,
+	requestId: uuid,
+	lastWorkingDay: "2026-08-31",
+	replacementEmployeeId: null,
+	acknowledgeUnassignedDuties: true,
+};
+const correctPastInput = {
+	employeeId: uuid,
+	departureId: uuid,
+	expectedRevision: 1,
+	requestId: uuid,
+	lastWorkingDay: "2026-08-30",
+};
+const historicalInput = {
+	employeeId: uuid,
+	requestId: uuid,
+	lastWorkingDay: "2025-12-31",
+};
+
 const departureCommands = [
 	["schedule", () => scheduleEmployeeDepartureAction(scheduleInput)],
 	[
@@ -131,9 +157,16 @@ const departureCommands = [
 			}),
 	],
 	["offboard now", () => offboardEmployeeNowAction(offboardInput)],
+	["record past", () => recordPastDepartureAction(recordPastInput)],
+	["correct past date", () => correctPastDepartureDateAction(correctPastInput)],
+	["record historical date", () => recordHistoricalDepartureDateAction(historicalInput)],
 	[
 		"preview",
 		() => previewEmployeeDepartureAction({ employeeId: uuid, lastWorkingDay: "2026-09-30" }),
+	],
+	[
+		"preview past",
+		() => previewPastDepartureAction({ employeeId: uuid, lastWorkingDay: "2026-08-31" }),
 	],
 ] as const;
 
@@ -150,6 +183,11 @@ const followUpCommands = [
 			}),
 	],
 	["resolution", () => resolveDepartureReviewAction({ reviewId: uuid, resolution: "Ok" })],
+	[
+		"search replacements",
+		() => searchReplacementEmployeesAction({ excludeEmployeeId: uuid, limit: 20 }),
+	],
+	["get replacement", () => getReplacementEmployeeAction({ employeeId: uuid })],
 ] as const;
 
 describe("employee offboarding actions before release", () => {
@@ -212,7 +250,7 @@ describe("employee offboarding follow-up actions", () => {
 	});
 
 	it("scopes the view to the actor's organization and maps a foreign employee to not found", async () => {
-		mocks.caller = scopedManager;
+		mocks.caller = orgAdmin;
 		const view = vi.fn().mockResolvedValue({ kind: "not_found" });
 		mocks.getOffboardingQueries.mockReturnValue({ view });
 
@@ -226,12 +264,14 @@ describe("employee offboarding follow-up actions", () => {
 		expect(result).toMatchObject({ success: false, error: "Employee not found." });
 	});
 
-	it("refuses the view to an org member, one level below a scoped manager", async () => {
+	it("refuses the view to a scoped manager and an org member (Story 22 / A1-2)", async () => {
+		mocks.caller = scopedManager;
+		const managerResult = await getEmployeeOffboardingViewAction({ employeeId: uuid });
+		expect(managerResult).toMatchObject({ success: false, code: "AuthorizationError" });
+
 		mocks.caller = orgMember;
-
-		const result = await getEmployeeOffboardingViewAction({ employeeId: uuid });
-
-		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		const memberResult = await getEmployeeOffboardingViewAction({ employeeId: uuid });
+		expect(memberResult).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mocks.getOffboardingQueries).not.toHaveBeenCalled();
 	});
 
@@ -346,6 +386,66 @@ describe("employee offboarding actions after release", () => {
 		expect(result).toMatchObject({
 			success: true,
 			data: { capabilities: { schedule: true, offboardNow: true } },
+		});
+	});
+
+	it("records a retrospective departure and maps past-date refusals", async () => {
+		const { DepartureCommandError } = await import("@/lib/employee-lifecycle/commands");
+		const recordPastDeparture = vi.fn().mockResolvedValue({
+			departureId: uuid,
+			revision: 1,
+			employmentPeriodId: uuid,
+			lastWorkingDay: "2026-08-31",
+			cutoff: "2026-09-01T00:00:00Z",
+			workAfterCutoffReviewId: null,
+			payrollReconciliationReviewId: null,
+		});
+		mocks.getDepartureCommands.mockReturnValue({ recordPastDeparture });
+
+		const ok = await recordPastDepartureAction(recordPastInput);
+		expect(ok).toMatchObject({ success: true, data: { departureId: uuid, revision: 1 } });
+		expect(recordPastDeparture).toHaveBeenCalledWith(
+			{ userId: "user-1", organizationId: "org-1" },
+			recordPastInput,
+		);
+
+		mocks.getDepartureCommands.mockReturnValue({
+			correctPastDepartureDate: vi
+				.fn()
+				.mockRejectedValue(new DepartureCommandError("departure_reopen_forbidden")),
+		});
+		const refused = await correctPastDepartureDateAction(correctPastInput);
+		expect(refused).toMatchObject({
+			success: false,
+			error:
+				"An effective departure cannot be reopened by moving its date to today or the future. Rehire the employee instead.",
+		});
+	});
+
+	it("searches eligible replacements bounded to the actor organization", async () => {
+		const searchReplacements = vi.fn().mockResolvedValue({
+			items: [],
+			nextCursor: null,
+			hasMore: false,
+		});
+		mocks.getOffboardingQueries.mockReturnValue({ searchReplacements });
+
+		const result = await searchReplacementEmployeesAction({
+			excludeEmployeeId: uuid,
+			search: "Robin",
+			limit: 25,
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: { items: [], nextCursor: null, hasMore: false },
+		});
+		expect(searchReplacements).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			excludeEmployeeId: uuid,
+			search: "Robin",
+			cursor: null,
+			limit: 25,
 		});
 	});
 });

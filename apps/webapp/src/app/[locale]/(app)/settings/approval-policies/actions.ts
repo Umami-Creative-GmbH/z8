@@ -272,52 +272,49 @@ export const upsertApprovalPolicy = organizationAction(
 							})
 							.returning();
 
-						await Promise.all([
-							(async () => {
-								await tx
-									.delete(approvalPolicyCondition)
-									.where(
-										and(
-											eq(approvalPolicyCondition.policyId, savedPolicy.id),
-											eq(approvalPolicyCondition.organizationId, organizationId),
-										),
-									);
+						// One after another: `tx` is one connection, and pg@9 refuses a query while
+						// another is executing.
+						await tx
+							.delete(approvalPolicyCondition)
+							.where(
+								and(
+									eq(approvalPolicyCondition.policyId, savedPolicy.id),
+									eq(approvalPolicyCondition.organizationId, organizationId),
+								),
+							);
 
-								if (policy.conditions.length > 0) {
-									await tx
-										.insert(approvalPolicyCondition)
-										.values(
-											policy.conditions.map((condition) =>
-												conditionInsertValue(organizationId, savedPolicy.id, condition),
-											),
-										);
-								}
-							})(),
-							(async () => {
-								await tx
-									.delete(approvalPolicyStage)
-									.where(
-										and(
-											eq(approvalPolicyStage.policyId, savedPolicy.id),
-											eq(approvalPolicyStage.organizationId, organizationId),
-										),
-									);
+						if (policy.conditions.length > 0) {
+							await tx
+								.insert(approvalPolicyCondition)
+								.values(
+									policy.conditions.map((condition) =>
+										conditionInsertValue(organizationId, savedPolicy.id, condition),
+									),
+								);
+						}
 
-								if (policy.stages.length > 0) {
-									await tx.insert(approvalPolicyStage).values(
-										policy.stages.map((stage) => ({
-											organizationId,
-											policyId: savedPolicy.id,
-											stepOrder: stage.stepOrder,
-											label: stage.label,
-											approverType: databaseApproverType(stage.approverType),
-											approverEmployeeId: stage.approverEmployeeId,
-											fallbackBehavior: stage.fallbackBehavior,
-										})),
-									);
-								}
-							})(),
-						]);
+						await tx
+							.delete(approvalPolicyStage)
+							.where(
+								and(
+									eq(approvalPolicyStage.policyId, savedPolicy.id),
+									eq(approvalPolicyStage.organizationId, organizationId),
+								),
+							);
+
+						if (policy.stages.length > 0) {
+							await tx.insert(approvalPolicyStage).values(
+								policy.stages.map((stage) => ({
+									organizationId,
+									policyId: savedPolicy.id,
+									stepOrder: stage.stepOrder,
+									label: stage.label,
+									approverType: databaseApproverType(stage.approverType),
+									approverEmployeeId: stage.approverEmployeeId,
+									fallbackBehavior: stage.fallbackBehavior,
+								})),
+							);
+						}
 					}),
 				)
 				.pipe(Effect.mapError(saveFailed("Approval policy could not be saved.")));

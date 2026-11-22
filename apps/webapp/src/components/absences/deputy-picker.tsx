@@ -8,13 +8,7 @@ import {
 	getDeputyCandidates,
 	getDeputyDecisionCapability,
 } from "@/app/[locale]/(app)/absences/deputy-actions";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import type { DeputyRefusal, PlainDateSpan } from "@/lib/absences/deputy";
 import { useSession } from "@/lib/auth-client";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
@@ -58,9 +52,6 @@ export function deputyRefusalText(t: Translate, refusal: string | undefined): st
 export function deputyRequiredText(t: Translate): string {
 	return actionMessageText(t, DEPUTY_REFUSALS.deputy_required);
 }
-
-/** The select's value for "no deputy"; a Radix item cannot have an empty value. */
-const NO_DEPUTY = "__no-deputy";
 
 export interface DeputyPickerProps {
 	/** The picked deputy's employee id, or "" for none. */
@@ -151,51 +142,39 @@ export function DeputyPicker({
 	});
 	const candidates = candidatesQuery.data ?? [];
 	const picked = candidates.find((candidate) => candidate.id === value);
-
-	const optionLabel = (candidate: (typeof candidates)[number]) =>
-		candidate.awayPeriods.length > 0
-			? t("absences.deputy.awayOption", "{name} · Away {dates}", {
-					name: candidate.name,
-					dates: formatAway(candidate.awayPeriods, locale),
-				})
-			: candidate.name;
+	const selectableCandidates = candidates.map((candidate) =>
+		toSelectableEmployee({
+			id: candidate.id,
+			name: candidate.name,
+			secondaryText:
+				candidate.awayPeriods.length > 0
+					? t("absences.deputy.away", "Away {dates}", {
+							dates: formatAway(candidate.awayPeriods, locale),
+						})
+					: null,
+		}),
+	);
 
 	return (
 		<div className="space-y-2">
-			<Select
-				value={value || (required ? "" : NO_DEPUTY)}
-				onValueChange={(next) => onChange(!next || next === NO_DEPUTY ? "" : next)}
+			<EmployeeSingleSelect
+				id={id}
+				className="space-y-0"
+				value={value || null}
+				onChange={(next) => onChange(next ?? "")}
+				onBlur={onBlur}
 				disabled={disabled || candidatesQuery.isLoading}
-			>
-				<SelectTrigger
-					id={id}
-					className="w-full"
-					onBlur={onBlur}
-					aria-invalid={ariaInvalid}
-					aria-label={t("absences.deputy.label", "Deputy")}
-				>
-					<SelectValue placeholder={t("absences.deputy.placeholder", "Select a deputy…")} />
-				</SelectTrigger>
-				<SelectContent>
-					{!required && (
-						<SelectItem value={NO_DEPUTY} label={t("absences.deputy.none", "No deputy")}>
-							{t("absences.deputy.none", "No deputy")}
-						</SelectItem>
-					)}
-					{candidates.map((candidate) => (
-						<SelectItem key={candidate.id} value={candidate.id} label={optionLabel(candidate)}>
-							<span>{candidate.name}</span>
-							{candidate.awayPeriods.length > 0 && (
-								<span className="text-muted-foreground text-xs">
-									{t("absences.deputy.away", "Away {dates}", {
-										dates: formatAway(candidate.awayPeriods, locale),
-									})}
-								</span>
-							)}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
+				aria-invalid={ariaInvalid}
+				aria-label={t("absences.deputy.label", "Deputy")}
+				placeholder={
+					required
+						? t("absences.deputy.placeholder", "Select a deputy…")
+						: t("absences.deputy.none", "No deputy")
+				}
+				allowClear={!required}
+				clearLabel={t("absences.deputy.none", "No deputy")}
+				employees={selectableCandidates}
+			/>
 			{picked && picked.awayPeriods.length > 0 && (
 				<p
 					role="status"

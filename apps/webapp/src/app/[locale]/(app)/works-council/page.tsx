@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { getLocale } from "next-intl/server";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -9,6 +8,14 @@ import { WorksCouncilDashboard } from "@/components/works-council/works-council-
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { requireAbility, requireUser } from "@/lib/auth-helpers";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	parseInstant,
+	parsePlainDate,
+	type PlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { auditWorksCouncilPortalViewed } from "@/lib/works-council/access-audit";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
@@ -18,35 +25,47 @@ import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
 import { loadWorksCouncilVehicleUseReview } from "@/lib/works-council/vehicle-use-review-data";
 import { getTranslate } from "@/tolgee/server";
 
-function getRange(searchParams?: { from?: string; to?: string }) {
-	const now = DateTime.utc();
-	const from = searchParams?.from
-		? DateTime.fromISO(searchParams.from, { zone: "utc" }).startOf("day")
-		: now.startOf("month");
-	const to = searchParams?.to
-		? DateTime.fromISO(searchParams.to, { zone: "utc" }).endOf("day")
-		: now.endOf("month");
+function parseUtcDateParam(value: string): PlainDate | null {
+	try {
+		return parsePlainDate(value);
+	} catch {
+		try {
+			return parseInstant(value).toZonedDateTimeISO("UTC").toPlainDate();
+		} catch {
+			return null;
+		}
+	}
+}
 
-	if (!from.isValid || !to.isValid || from > to) {
-		return {
-			dateRangeStart: now.startOf("month").toJSDate(),
-			dateRangeEnd: now.endOf("month").toJSDate(),
-		};
+function utcDayRange(startDate: PlainDate, endDate: PlainDate) {
+	return {
+		dateRangeStart: dateFromInstant(startDate.toZonedDateTime("UTC").toInstant()),
+		dateRangeEnd: dateFromInstant(
+			endDate.add({ days: 1 }).toZonedDateTime("UTC").toInstant().subtract({ milliseconds: 1 }),
+		),
+	};
+}
+
+function getRange(searchParams?: { from?: string; to?: string }) {
+	const today = systemClock.nowInstant().toZonedDateTimeISO("UTC").toPlainDate();
+	const monthStart = today.with({ day: 1 });
+	const monthEnd = monthStart.add({ months: 1 }).subtract({ days: 1 });
+
+	const from = searchParams?.from ? parseUtcDateParam(searchParams.from) : monthStart;
+	const to = searchParams?.to ? parseUtcDateParam(searchParams.to) : monthEnd;
+
+	if (!from || !to || comparePlainDates(from, to) > 0) {
+		return utcDayRange(monthStart, monthEnd);
 	}
 
-	return {
-		dateRangeStart: from.toJSDate(),
-		dateRangeEnd: to.toJSDate(),
-	};
+	return utcDayRange(from, to);
 }
 
 type WorksCouncilPageProps = {
 	searchParams?: Promise<{ from?: string; to?: string }>;
 };
 
-async function WorksCouncilPageContent({
-	searchParams,
-}: WorksCouncilPageProps) {
+async function WorksCouncilPageContent({ searchParams }: WorksCouncilPageProps) {
 	// This protected view must execute per request so authorization and audit are not reused.
 	await connection();
 	const authContext = await requireUser();
@@ -58,17 +77,13 @@ async function WorksCouncilPageContent({
 
 	const ability = await requireAbility();
 	if (
-		!canViewWorksCouncilPortal(
-			ability,
-			organizationId,
-			authContext.session.activeOrganizationId,
-		)
+		!canViewWorksCouncilPortal(ability, organizationId, authContext.session.activeOrganizationId)
 	) {
 		return redirectWithLocale("/");
 	}
 
 	const currentOrganization = await db.query.organization.findFirst({
-		columns: { worksCouncilEnabled: true },
+		columns: { worksCouncilEnabled: true, timezone: true },
 		where: eq(organization.id, organizationId),
 	});
 	if (!currentOrganization?.worksCouncilEnabled) {
@@ -98,6 +113,8 @@ async function WorksCouncilPageContent({
 	return (
 		<WorksCouncilDashboard
 			model={model}
+			locale={locale}
+			timezone={currentOrganization.timezone ?? "UTC"}
 			positionCapture={{ review: positionCaptureReview, locale }}
 			vehicleUse={{ review: vehicleUseReview }}
 		/>

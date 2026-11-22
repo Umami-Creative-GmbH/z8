@@ -36,6 +36,11 @@ interface NotificationChannelSettingsProps {
 	 * button or setup instructions. The page decides who may see it.
 	 */
 	connectAction?: ReactNode;
+	/**
+	 * Controls shown while the channel is connected, such as endpoint details
+	 * or a disconnect button. The page decides who may see it.
+	 */
+	connectedAction?: ReactNode;
 }
 
 function needsConnection(config: NotificationChannelConfig | null): boolean {
@@ -61,6 +66,7 @@ function ChannelSummaryCard({
 	isActive,
 	statusLabel,
 	connectAction,
+	connectedAction,
 	t,
 }: {
 	channelName: string;
@@ -69,30 +75,32 @@ function ChannelSummaryCard({
 	isActive: boolean;
 	statusLabel: string;
 	connectAction?: ReactNode;
+	connectedAction?: ReactNode;
 	t: NotificationTranslate;
 }) {
+	const disconnected = needsConnection(config);
+
 	return (
 		<Card>
 			<CardHeader>
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0 space-y-1">
 						<CardTitle>{channelName}</CardTitle>
-						{description ? (
-							<CardDescription>{description}</CardDescription>
-						) : null}
+						{description ? <CardDescription>{description}</CardDescription> : null}
 					</div>
 					<Badge variant={isActive ? "default" : "secondary"}>{statusLabel}</Badge>
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-2">
 				<p className="break-words text-sm font-medium">
-					{config?.displayName ??
-						t("settings.notifications.notConnected", "{channelName} is not connected", {
-							channelName,
-						})}
+					{!disconnected && config?.displayName
+						? config.displayName
+						: t("settings.notifications.notConnected", "{channelName} is not connected", {
+								channelName,
+							})}
 				</p>
 				<p className="text-sm text-muted-foreground">
-					{config
+					{!disconnected
 						? t(
 								"settings.notifications.manageEnabledFeatures",
 								"Manage which notification features are enabled for this integration.",
@@ -102,9 +110,8 @@ function ChannelSummaryCard({
 								"Connect or configure this integration before changing notification settings.",
 							)}
 				</p>
-				{connectAction && needsConnection(config) ? (
-					<div className="pt-2">{connectAction}</div>
-				) : null}
+				{connectAction && disconnected ? <div className="pt-2">{connectAction}</div> : null}
+				{connectedAction && !disconnected ? <div className="pt-2">{connectedAction}</div> : null}
 			</CardContent>
 		</Card>
 	);
@@ -138,14 +145,17 @@ function FeatureToggleRow({
 	);
 }
 
-function useNotificationChannelForm({ channelName, config, updateAction }: NotificationChannelSettingsProps) {
+function useNotificationChannelForm({
+	channelName,
+	config,
+	updateAction,
+}: NotificationChannelSettingsProps) {
 	const { t } = useTranslate();
-	const isConfigured = Boolean(config);
 	const isActive = config?.setupStatus === "active";
 	const statusLabel = config
 		? getSetupStatusLabel(config.setupStatus, t)
 		: t("settings.notifications.status.notConfigured", "Not configured");
-	const controlsDisabled = !isConfigured;
+	const controlsDisabled = needsConnection(config);
 	const router = useRouter();
 
 	const updateMutation = useMutation({
@@ -209,21 +219,9 @@ function useNotificationChannelForm({ channelName, config, updateAction }: Notif
 }
 
 export function NotificationChannelSettings(props: NotificationChannelSettingsProps) {
-	const {
-		channelName,
-		description,
-		config,
-		connectAction,
-	} = props;
-	const {
-		t,
-		isActive,
-		statusLabel,
-		form,
-		isDirty,
-		isSubmitting,
-		disableForm,
-	} = useNotificationChannelForm(props);
+	const { channelName, description, config, connectAction, connectedAction } = props;
+	const { t, isActive, statusLabel, form, isDirty, isSubmitting, disableForm } =
+		useNotificationChannelForm(props);
 
 	return (
 		<div className="min-w-0 space-y-6">
@@ -234,6 +232,7 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 				isActive={isActive}
 				statusLabel={statusLabel}
 				connectAction={connectAction}
+				connectedAction={connectedAction}
 				t={t}
 			/>
 
@@ -421,9 +420,7 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 													disabled={disableForm}
 													autoComplete="off"
 													aria-invalid={hasError}
-													aria-describedby={
-														hasError ? "escalationTimeoutHours-error" : undefined
-													}
+													aria-describedby={hasError ? "escalationTimeoutHours-error" : undefined}
 													className="w-24 tabular-nums"
 												/>
 												<span className="text-sm text-muted-foreground">

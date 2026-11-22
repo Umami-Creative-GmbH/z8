@@ -1,42 +1,28 @@
 import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
+import { DEFAULT_SETTINGS_CAPABILITIES } from "@/lib/settings/capabilities";
 
 const mockState = vi.hoisted(() => ({
-	getCurrentSettingsRouteContext: vi.fn(),
+	getRenderAuthContext: vi.fn(),
+	getRenderSettingsAccess: vi.fn(),
+	getRenderSettingsCapabilities: vi.fn(),
+	getRenderOrganizationSettings: vi.fn(),
 	requireUser: vi.fn(),
-	findOrganization: vi.fn(),
-	managesProjectBelowManagerTier: vi.fn(),
-	loadDrivingLicenceSettingsVisible: vi.fn(),
 }));
 
-vi.mock("@/lib/organization/driving-licence/visibility", () => ({
-	loadDrivingLicenceSettingsVisible: mockState.loadDrivingLicenceSettingsVisible,
+vi.mock("@/lib/auth/render-context", () => ({
+	getRenderAuthContext: mockState.getRenderAuthContext,
+	getRenderSettingsAccess: mockState.getRenderSettingsAccess,
+	getRenderOrganizationSettings: mockState.getRenderOrganizationSettings,
 }));
 
-vi.mock("@/lib/projects/project-manager-settings-access", () => ({
-	managesProjectBelowManagerTier: mockState.managesProjectBelowManagerTier,
+vi.mock("@/lib/settings/capabilities.server", () => ({
+	getRenderSettingsCapabilities: mockState.getRenderSettingsCapabilities,
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
-	getCurrentSettingsRouteContext: mockState.getCurrentSettingsRouteContext,
 	requireUser: mockState.requireUser,
-}));
-
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			organization: {
-				findFirst: mockState.findOrganization,
-			},
-		},
-	},
-}));
-
-vi.mock("@/db/auth-schema", () => ({
-	organization: {
-		id: "organization.id",
-	},
 }));
 
 vi.mock("@/components/settings/settings-grid", () => ({
@@ -48,92 +34,134 @@ const { default: SettingsPage } = await import("./page");
 describe("SettingsPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
-			authContext: {
-				user: { id: "user-1" },
-				session: { activeOrganizationId: "org-1" },
-				employee: null,
-			},
-			accessTier: "orgAdmin",
+		mockState.getRenderAuthContext.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
+			employee: null,
 		});
-		mockState.findOrganization.mockResolvedValue({
+		mockState.getRenderSettingsAccess.mockResolvedValue("orgAdmin");
+		mockState.getRenderSettingsCapabilities.mockResolvedValue({
+			...DEFAULT_SETTINGS_CAPABILITIES,
+		});
+		mockState.getRenderOrganizationSettings.mockResolvedValue({
+			organizationId: "org-1",
 			shiftsEnabled: true,
 			projectsEnabled: true,
 			surchargesEnabled: true,
 			demoDataEnabled: true,
 			worksCouncilEnabled: true,
+			billableTimeEnabled: false,
+			personnelFilesEnabled: false,
+			equipmentEnabled: false,
+			timezone: "UTC",
+			deletedAt: null,
 		});
-		mockState.managesProjectBelowManagerTier.mockResolvedValue(false);
-		mockState.loadDrivingLicenceSettingsVisible.mockResolvedValue(false);
 	});
 
-	it("lists Driving licence control only when the driving licence visibility reader offers it (#1420)", async () => {
-		const settingHrefs = async () => {
-			const page = await SettingsPage().props.children.type();
-			const grid = page.props.children.props.children;
-			return grid.props.visibleSettings.map((entry: { href: string }) => entry.href);
-		};
+	async function renderGridProps() {
+		const page = await SettingsPage().props.children.type();
+		return page.props.children.props.children.props;
+	}
 
-		expect(await settingHrefs()).not.toContain("/settings/driving-licence");
-		expect(await settingHrefs()).not.toContain("/driving-licence");
-
-		mockState.loadDrivingLicenceSettingsVisible.mockResolvedValue(true);
-
-		expect(await settingHrefs()).toContain("/settings/driving-licence");
-		expect(mockState.loadDrivingLicenceSettingsVisible).toHaveBeenCalledWith(
-			"orgAdmin",
-			"user-1",
-			"org-1",
-		);
-	});
+	async function settingHrefs() {
+		const props = await renderGridProps();
+		return props.visibleSettings.map((entry: { href: string }) => entry.href);
+	}
 
 	it("returns a navigation fallback before accessing the request session", () => {
 		const page = SettingsPage();
 
 		expect(page).not.toBeInstanceOf(Promise);
-		expect(mockState.getCurrentSettingsRouteContext).not.toHaveBeenCalled();
-		expect(mockState.findOrganization).not.toHaveBeenCalled();
+		expect(mockState.getRenderAuthContext).not.toHaveBeenCalled();
+		expect(mockState.getRenderSettingsAccess).not.toHaveBeenCalled();
+		expect(mockState.getRenderSettingsCapabilities).not.toHaveBeenCalled();
 		expect(page.type).toBe(Suspense);
 		expect(page.props.fallback.type).toBe(SettingsContentLoading);
 	});
 
-	it("lists Projects for a member-tier user who manages a project of the active organization (#928)", async () => {
-		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
-			authContext: {
-				user: { id: "user-1" },
-				session: { activeOrganizationId: "org-1" },
-				employee: null,
-			},
-			accessTier: "member",
+	it("lists Driving licence control only when canManageDrivingLicence is true", async () => {
+		expect(await settingHrefs()).not.toContain("/settings/driving-licence");
+		expect(await settingHrefs()).not.toContain("/driving-licence");
+
+		mockState.getRenderSettingsCapabilities.mockResolvedValue({
+			...DEFAULT_SETTINGS_CAPABILITIES,
+			canManageDrivingLicence: true,
 		});
-		const settingHrefs = async () => {
-			const page = await SettingsPage().props.children.type();
-			const grid = page.props.children.props.children;
-			return grid.props.visibleSettings.map(
-				(entry: { href: string }) => entry.href,
-			);
-		};
+
+		expect(await settingHrefs()).toContain("/settings/driving-licence");
+	});
+
+	it("lists Projects for a member who manages a project of the active organization", async () => {
+		mockState.getRenderSettingsAccess.mockResolvedValue("member");
 
 		expect(await settingHrefs()).not.toContain("/settings/projects");
 
-		mockState.managesProjectBelowManagerTier.mockResolvedValue(true);
+		mockState.getRenderSettingsCapabilities.mockResolvedValue({
+			...DEFAULT_SETTINGS_CAPABILITIES,
+			canManageProjects: true,
+		});
 
 		expect(await settingHrefs()).toContain("/settings/projects");
-		expect(mockState.managesProjectBelowManagerTier).toHaveBeenCalledWith(
-			"member",
-			"user-1",
-			"org-1",
-		);
+	});
+
+	it("lists Approval and omits moved Closed months for a member granted custom-role capabilities", async () => {
+		mockState.getRenderSettingsAccess.mockResolvedValue("member");
+		mockState.getRenderSettingsCapabilities.mockResolvedValue({
+			...DEFAULT_SETTINGS_CAPABILITIES,
+			canAccessClosedMonths: true,
+			canManageApprovalEscalation: true,
+		});
+
+		const hrefs = await settingHrefs();
+		expect(hrefs).not.toContain("/settings/closed-months");
+		expect(hrefs).toContain("/settings/approval-policies");
+		expect(hrefs).not.toContain("/settings/organization");
+	});
+
+	it("shows only account-only settings when settingsAccess is null (former employee or pending/missing membership)", async () => {
+		mockState.getRenderSettingsAccess.mockResolvedValue(null);
+		mockState.getRenderOrganizationSettings.mockResolvedValue(null);
+
+		const props = await renderGridProps();
+		expect(props.visibleSettings.map((entry: { id: string }) => entry.id)).toEqual([
+			"profile",
+			"security",
+			"notifications",
+			"wellness",
+		]);
+		expect(props.canChangeFeatures).toBe(false);
 	});
 
 	it("passes the Works Council settings entry to the grid when the org feature is enabled", async () => {
-		const page = await SettingsPage().props.children.type();
-		const grid = page.props.children.props.children;
+		const props = await renderGridProps();
 
-		expect(grid.props.visibleSettings).toEqual(
+		expect(props.visibleSettings).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ href: "/settings/compliance/works-council" }),
 			]),
 		);
+		expect(props.canChangeFeatures).toBe(true);
+	});
+
+	it("keeps Report Share Links visible when Projects is off and active share links exist", async () => {
+		mockState.getRenderOrganizationSettings.mockResolvedValue({
+			organizationId: "org-1",
+			shiftsEnabled: false,
+			projectsEnabled: false,
+			surchargesEnabled: false,
+			demoDataEnabled: false,
+			worksCouncilEnabled: false,
+			billableTimeEnabled: false,
+			personnelFilesEnabled: false,
+			equipmentEnabled: false,
+			timezone: "UTC",
+			deletedAt: null,
+		});
+		mockState.getRenderSettingsCapabilities.mockResolvedValue({
+			...DEFAULT_SETTINGS_CAPABILITIES,
+			hasActiveReportShareLinks: true,
+		});
+
+		expect(await settingHrefs()).toContain("/settings/report-share-links");
 	});
 });

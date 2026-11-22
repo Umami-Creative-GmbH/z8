@@ -195,10 +195,12 @@ export async function findDueDocuments(
 	input: { organizationId: string; condition?: SQL; now?: Instant },
 ): Promise<DueDocumentsResult> {
 	const now = input.now ?? systemClock.nowInstant();
-	const [{ timezone, today }, periods] = await Promise.all([
-		loadOrganizationDay(database, { organizationId: input.organizationId, now }),
-		loadRetentionPeriods(database, input.organizationId),
-	]);
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const { timezone, today } = await loadOrganizationDay(database, {
+		organizationId: input.organizationId,
+		now,
+	});
+	const periods = await loadRetentionPeriods(database, input.organizationId);
 	const empty: DueDocumentsResult = { today: today.toString(), documents: [], unknownStart: [] };
 	const categories = DOCUMENT_CATEGORIES.filter((category) => periods[category] !== undefined);
 	if (categories.length === 0) return empty;

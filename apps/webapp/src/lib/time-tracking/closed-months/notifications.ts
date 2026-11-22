@@ -30,7 +30,7 @@ const logger = createLogger("ClosedMonthNotifications");
 type Database = typeof appDb;
 type Reader = Pick<Database, "select">;
 
-export const CLOSED_MONTHS_PATH = "/settings/closed-months";
+export const CLOSED_MONTHS_PATH = "/payroll?tab=closed-months";
 
 /** Users of the organization allowed to close months right now, sorted. */
 export async function listMonthCloseRecipients(

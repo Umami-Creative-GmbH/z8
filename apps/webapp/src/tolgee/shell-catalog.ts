@@ -2,10 +2,7 @@ import type { CatalogSlice } from "./catalog-slices";
 import type { Namespace, TreeTranslationsData } from "./catalog-config";
 
 export type ShellCatalogKey = { namespace: Namespace; path: readonly string[] };
-function keys(
-	namespace: Namespace,
-	paths: readonly string[],
-): ShellCatalogKey[] {
+function keys(namespace: Namespace, paths: readonly string[]): ShellCatalogKey[] {
 	return paths.map((path) => ({ namespace, path: path.split(".") }));
 }
 
@@ -24,7 +21,9 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"actions",
 		"appSearch",
 		"common",
+		"employeeSelect",
 		"errors",
+		"formerEmployees",
 		"header",
 		"loading",
 		"nav",
@@ -36,6 +35,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"user",
 		"userAvatar",
 		"billing.trialBanner",
+		// The suspended-billing recovery header is part of the shared app layout (#1971).
+		"billing.recovery",
 		// Minimal driving status is also shown in the header clock on every route.
 		"drivingLicence.operational.advisory",
 		"drivingLicence.operational.loading",
@@ -239,8 +240,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.group.administration",
 		"settings.group.data",
 		"settings.group.enterprise",
-		"settings.group.integrations",
-		"settings.group.notifications",
+		"settings.group.integrationsChannels",
 		"settings.group.organization",
 		"settings.implementationChecklist.entryDescription",
 		"settings.implementationChecklist.title",
@@ -289,8 +289,6 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.reportShareLinks.title",
 		"settings.security.description",
 		"settings.security.title",
-		"settings.statistics.description",
-		"settings.statistics.title",
 		"settings.timezone.picker.empty",
 		"settings.timezone.picker.groups.africa",
 		"settings.timezone.picker.groups.americas",
@@ -369,10 +367,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.telegram.description",
 		"settings.telegram.title",
 	]),
-	...keys("settings/demo", [
-		"settings.demoData.description",
-		"settings.demoData.title",
-	]),
+	...keys("settings/demo", ["settings.demoData.description", "settings.demoData.title"]),
 	...keys("settings/people", [
 		"settings.permissions.title",
 		"settings.employees.details",
@@ -387,15 +382,10 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.teams.description",
 		"settings.teams.title",
 	]),
-	...keys("settings/holidays", [
-		"settings.holidays.description",
-		"settings.holidays.title",
-	]),
+	...keys("settings/holidays", ["settings.holidays.description", "settings.holidays.title"]),
 	...keys("settings/payrollExport", [
-		"settings.payrollExport.description",
-		"settings.payrollExport.title",
-		"settings.payrollReadiness.description",
-		"settings.payrollReadiness.title",
+		"settings.payrollExport.connectorsDescription",
+		"settings.payrollExport.connectorsTitle",
 		"settings.workDiagnostics.description",
 		"settings.workDiagnostics.title",
 	]),
@@ -408,6 +398,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.vacation.title",
 	]),
 	...keys("settings/workPolicies", [
+		"settings.contracts.description",
+		"settings.contracts.title",
 		"settings.workPolicies.description",
 		"settings.workPolicies.title",
 	]),
@@ -418,8 +410,7 @@ function readPath(
 	path: readonly string[],
 ): TreeTranslationsData | string | undefined {
 	let value: TreeTranslationsData | string | undefined = tree;
-	for (const key of path)
-		value = typeof value === "object" ? value[key] : undefined;
+	for (const key of path) value = typeof value === "object" ? value[key] : undefined;
 	return value;
 }
 function copyPath(

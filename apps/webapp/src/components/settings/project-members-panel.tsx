@@ -16,6 +16,7 @@ import {
 	removeProjectManager,
 } from "@/app/[locale]/(app)/settings/projects/actions";
 import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	FormerEmployeeBadge,
 	ShowFormerEmployeesSwitch,
@@ -167,6 +168,7 @@ function MemberSection({
 }
 
 function AddMemberForm({
+	pickerKind = "default",
 	pickerLabel,
 	placeholder,
 	submitLabel,
@@ -176,6 +178,7 @@ function AddMemberForm({
 	failureMessage,
 	onChanged,
 }: {
+	pickerKind?: "default" | "employee";
 	pickerLabel: string;
 	placeholder: string;
 	submitLabel: string;
@@ -212,20 +215,33 @@ function AddMemberForm({
 			}}
 		>
 			<form.Field name="targetId">
-				{(field) => (
-					<Select value={field.state.value} onValueChange={field.handleChange}>
-						<SelectTrigger aria-label={pickerLabel} className="flex-1">
-							<SelectValue placeholder={placeholder} />
-						</SelectTrigger>
-						<SelectContent>
-							{options.map((option) => (
-								<SelectItem key={option.id} value={option.id}>
-									{option.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				)}
+				{(field) =>
+					pickerKind === "employee" ? (
+						<EmployeeSingleSelect
+							className="flex-1 space-y-0"
+							aria-label={pickerLabel}
+							placeholder={placeholder}
+							value={field.state.value || null}
+							onChange={(value) => field.handleChange(value ?? "")}
+							employees={options.map((option) =>
+								toSelectableEmployee({ id: option.id, name: option.name }),
+							)}
+						/>
+					) : (
+						<Select value={field.state.value} onValueChange={field.handleChange}>
+							<SelectTrigger aria-label={pickerLabel} className="flex-1">
+								<SelectValue placeholder={placeholder} />
+							</SelectTrigger>
+							<SelectContent>
+								{options.map((option) => (
+									<SelectItem key={option.id} value={option.id}>
+										{option.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					)
+				}
 			</form.Field>
 			<form.Subscribe selector={(state) => [state.values.targetId, state.isSubmitting] as const}>
 				{([targetId, isSubmitting]) => (
@@ -391,6 +407,7 @@ export function ProjectMembersPanel({
 						>
 							{project && (
 								<AddMemberForm
+									pickerKind="employee"
 									pickerLabel={t("settings.projects.members.employeePicker", "Employee to assign")}
 									placeholder={t("settings.projects.members.selectEmployee", "Select an employee")}
 									submitLabel={t("settings.projects.members.assignEmployee", "Assign employee")}
@@ -433,6 +450,7 @@ export function ProjectMembersPanel({
 						>
 							{project && canManageProjectManagers ? (
 								<AddMemberForm
+									pickerKind="employee"
 									pickerLabel={t(
 										"settings.projects.members.managerPicker",
 										"Project manager to add",

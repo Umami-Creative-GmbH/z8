@@ -19,3 +19,7 @@ _Avoid_: viewer locale, user language, browser language
 **Email override**:
 An organization's own subject and body for one kind of email, or a platform admin's for one billing email, sent exactly as written to every recipient whatever their recipient language.
 _Avoid_: custom template, email template (for the override itself)
+
+**Notification preference**:
+A user's own opt-in or opt-out choice for one notification type over one channel, shared across every organization they belong to. Channel availability (such as Slack, Teams, Discord or Telegram) belongs to each organization separately.
+_Avoid_: organization notification preference, alert setting, subscription

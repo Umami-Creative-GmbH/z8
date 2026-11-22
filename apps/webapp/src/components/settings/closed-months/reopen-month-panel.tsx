@@ -5,6 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import { reopenMonthAction } from "@/app/[locale]/(app)/settings/closed-months/actions";
+import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -15,7 +16,6 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Select,
 	SelectContent,
@@ -192,32 +192,24 @@ export function ReopenMonthPanel({
 												<TFormLabel hasError={fieldHasError(field)}>
 													{t("settings.closedMonths.employeesLabel", "Employees")}
 												</TFormLabel>
-												<ul className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-3">
-													{employees.map((employee) => {
-														const checked = field.state.value.includes(employee.id);
-														return (
-															<li key={employee.id} className="flex items-center gap-2">
-																<Checkbox
-																	id={`reopen-employee-${employee.id}`}
-																	checked={checked}
-																	onCheckedChange={(next) =>
-																		field.handleChange(
-																			next
-																				? [...field.state.value, employee.id]
-																				: field.state.value.filter((id) => id !== employee.id),
-																		)
-																	}
-																/>
-																<label
-																	htmlFor={`reopen-employee-${employee.id}`}
-																	className="min-w-0 truncate text-sm"
-																>
-																	{employee.name}
-																</label>
-															</li>
-														);
-													})}
-												</ul>
+												<TFormControl hasError={fieldHasError(field)}>
+													<EmployeeMultiSelect
+														className="space-y-0"
+														value={field.state.value}
+														onChange={field.handleChange}
+														onBlur={field.handleBlur}
+														placeholder={t(
+															"settings.closedMonths.selectEmployees",
+															"Select employees",
+														)}
+														employees={employees.map((employee) =>
+															toSelectableEmployee({
+																id: employee.id,
+																name: employee.name,
+															}),
+														)}
+													/>
+												</TFormControl>
 												<TFormMessage field={field} />
 											</TFormItem>
 										)}

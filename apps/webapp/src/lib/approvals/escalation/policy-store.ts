@@ -26,48 +26,48 @@ export async function loadEscalationPolicySources(
 	executor: EscalationAttentionExecutor,
 	organizationId: string,
 ): Promise<EscalationPolicySourceInput[]> {
-	const [slack, telegram, discord, teams] = await Promise.all([
-		executor
-			.select({
-				sourceId: slackWorkspaceConfig.id,
-				displayName: slackWorkspaceConfig.slackTeamName,
-				setupStatus: slackWorkspaceConfig.setupStatus,
-				escalationEnabled: slackWorkspaceConfig.enableEscalations,
-				escalationTimeoutHours: slackWorkspaceConfig.escalationTimeoutHours,
-			})
-			.from(slackWorkspaceConfig)
-			.where(eq(slackWorkspaceConfig.organizationId, organizationId)),
-		executor
-			.select({
-				sourceId: telegramBotConfig.id,
-				displayName: telegramBotConfig.botUsername,
-				setupStatus: telegramBotConfig.setupStatus,
-				escalationEnabled: telegramBotConfig.enableEscalations,
-				escalationTimeoutHours: telegramBotConfig.escalationTimeoutHours,
-			})
-			.from(telegramBotConfig)
-			.where(eq(telegramBotConfig.organizationId, organizationId)),
-		executor
-			.select({
-				sourceId: discordBotConfig.id,
-				displayName: discordBotConfig.applicationId,
-				setupStatus: discordBotConfig.setupStatus,
-				escalationEnabled: discordBotConfig.enableEscalations,
-				escalationTimeoutHours: discordBotConfig.escalationTimeoutHours,
-			})
-			.from(discordBotConfig)
-			.where(eq(discordBotConfig.organizationId, organizationId)),
-		executor
-			.select({
-				sourceId: teamsTenantConfig.id,
-				displayName: teamsTenantConfig.tenantName,
-				setupStatus: teamsTenantConfig.setupStatus,
-				escalationEnabled: teamsTenantConfig.enableEscalations,
-				escalationTimeoutHours: teamsTenantConfig.escalationTimeoutHours,
-			})
-			.from(teamsTenantConfig)
-			.where(eq(teamsTenantConfig.organizationId, organizationId)),
-	]);
+	// One after another: `executor` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const slack = await executor
+		.select({
+			sourceId: slackWorkspaceConfig.id,
+			displayName: slackWorkspaceConfig.slackTeamName,
+			setupStatus: slackWorkspaceConfig.setupStatus,
+			escalationEnabled: slackWorkspaceConfig.enableEscalations,
+			escalationTimeoutHours: slackWorkspaceConfig.escalationTimeoutHours,
+		})
+		.from(slackWorkspaceConfig)
+		.where(eq(slackWorkspaceConfig.organizationId, organizationId));
+	const telegram = await executor
+		.select({
+			sourceId: telegramBotConfig.id,
+			displayName: telegramBotConfig.botUsername,
+			setupStatus: telegramBotConfig.setupStatus,
+			escalationEnabled: telegramBotConfig.enableEscalations,
+			escalationTimeoutHours: telegramBotConfig.escalationTimeoutHours,
+		})
+		.from(telegramBotConfig)
+		.where(eq(telegramBotConfig.organizationId, organizationId));
+	const discord = await executor
+		.select({
+			sourceId: discordBotConfig.id,
+			displayName: discordBotConfig.applicationId,
+			setupStatus: discordBotConfig.setupStatus,
+			escalationEnabled: discordBotConfig.enableEscalations,
+			escalationTimeoutHours: discordBotConfig.escalationTimeoutHours,
+		})
+		.from(discordBotConfig)
+		.where(eq(discordBotConfig.organizationId, organizationId));
+	const teams = await executor
+		.select({
+			sourceId: teamsTenantConfig.id,
+			displayName: teamsTenantConfig.tenantName,
+			setupStatus: teamsTenantConfig.setupStatus,
+			escalationEnabled: teamsTenantConfig.enableEscalations,
+			escalationTimeoutHours: teamsTenantConfig.escalationTimeoutHours,
+		})
+		.from(teamsTenantConfig)
+		.where(eq(teamsTenantConfig.organizationId, organizationId));
 
 	return [
 		...slack.map((row) => ({ ...row, channel: "slack" as const })),

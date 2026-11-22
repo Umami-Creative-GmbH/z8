@@ -11,44 +11,45 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
+import {
+	resolveSettingsCapabilitiesInput,
+	type SettingsCapabilities,
+} from "@/lib/settings/capabilities";
 import { Link, usePathname } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import {
 	canReachFeatureSwitches,
 	type FeatureFlag,
 	getResolvedSettingsVisibility,
+	isSettingFeatureBypassed,
 } from "./settings-config";
 import { SettingsFeatureOffNotice } from "./settings-feature-off-notice";
 import { SETTINGS_ICON_MAP } from "./settings-icons";
 import { SettingsSearch, SettingsSearchEmpty, useSettingsSearch } from "./settings-search";
 
-interface SettingsNavProps {
-	accessTier: SettingsAccessTier;
+export interface SettingsNavProps {
+	settingsAccess: SettingsAccess | null;
 	billingEnabled: boolean;
-	/** The user manages a project below the manager tier (#928). */
-	managesProject?: boolean;
-	/** The driving licence visibility reader offers its settings (#1420). */
-	drivingLicenceSettingsVisible?: boolean;
+	settingsCapabilities?: Partial<SettingsCapabilities>;
 }
 
 export function SettingsNav({
-	accessTier,
+	settingsAccess,
 	billingEnabled,
-	managesProject,
-	drivingLicenceSettingsVisible,
+	settingsCapabilities,
 }: SettingsNavProps) {
 	const pathname = usePathname();
 	const { t } = useTranslate();
 	const orgSettings = useOrganizationSettings();
 	const isHydrated = orgSettings.isHydrated;
+	const resolvedCapabilities = resolveSettingsCapabilitiesInput(settingsCapabilities);
 
 	const { visibleSettings, visibleGroups } = getResolvedSettingsVisibility({
-		accessTier,
+		settingsAccess,
 		billingEnabled,
 		featureFlags: isHydrated ? orgSettings : undefined,
-		managesProject,
-		drivingLicenceSettingsVisible,
+		settingsCapabilities: resolvedCapabilities,
 	});
 
 	const { query, setQuery, matchingGroups } = useSettingsSearch(visibleSettings, visibleGroups);
@@ -84,9 +85,13 @@ export function SettingsNav({
 									const title = t(item.titleKey, item.titleDefault);
 									const Icon = SETTINGS_ICON_MAP[item.icon];
 									const hasFeatureFlag = !!item.requiredFeature;
-									const isLoading = hasFeatureFlag && !isHydrated;
+									const isFeatureBypassed = isSettingFeatureBypassed(item, resolvedCapabilities);
+									const isLoading = hasFeatureFlag && !isFeatureBypassed && !isHydrated;
 									const isDisabled =
-										hasFeatureFlag && isHydrated && !isFeatureEnabled(item.requiredFeature);
+										hasFeatureFlag &&
+										!isFeatureBypassed &&
+										isHydrated &&
+										!isFeatureEnabled(item.requiredFeature);
 
 									if (isLoading) {
 										return (
@@ -118,7 +123,7 @@ export function SettingsNav({
 												<SettingsFeatureOffNotice
 													feature={item.requiredFeature}
 													settingTitle={title}
-													canChangeFeatures={canReachFeatureSwitches(accessTier)}
+													canChangeFeatures={canReachFeatureSwitches(settingsAccess)}
 													compact
 													className="pr-2 pb-1 pl-9"
 												/>

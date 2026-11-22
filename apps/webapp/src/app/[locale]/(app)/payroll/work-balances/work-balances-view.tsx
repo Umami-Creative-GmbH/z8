@@ -4,7 +4,7 @@ import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { useOrganization } from "@/components/providers/organization-context-provider";
-import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
+import { OpeningBalanceUploadPanel } from "@/components/settings/work-balance/opening-balance-upload-panel";
 import { isMarkedFormer } from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
@@ -50,7 +50,7 @@ export function WorkBalancesView({
 	return (
 		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
 			<WorkBalancesHeader
-				actions={employees.length > 0 ? <OpeningBalanceUploadDialog /> : undefined}
+				actions={employees.length > 0 ? <OpeningBalanceUploadPanel /> : undefined}
 			/>
 			{employees.length === 0 ? (
 				<p className="text-sm text-muted-foreground">

@@ -331,10 +331,10 @@ export async function getOrganizationMfaRequirement(
 		.from(organizationMfaPolicy)
 		.where(eq(organizationMfaPolicy.organizationId, organizationId));
 	if (!policy?.enabled) return { allowed: true, reason: "disabled" } as const;
-	const [window, proof] = await Promise.all([
-		materializeMfaWindow(organizationId, subject.userId, database),
-		readLocalMfaProof(subject, database),
-	]);
+	// One after another: `database` may be the ambient transaction, which is one
+	// connection, and pg@9 refuses a query while another is executing.
+	const window = await materializeMfaWindow(organizationId, subject.userId, database);
+	const proof = await readLocalMfaProof(subject, database);
 	const decision = evaluateOrganizationMfaAccess({
 		enabled: true,
 		deadline: window?.deadline ?? null,

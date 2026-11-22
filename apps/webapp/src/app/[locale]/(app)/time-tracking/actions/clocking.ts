@@ -1,14 +1,9 @@
 import "server-only";
 
 import { and, eq, gte, isNull, lte, sql } from "drizzle-orm";
-import { DateTime, IANAZone } from "luxon";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import {
-	approvalRequest,
-	type employee,
-	workPeriod,
-} from "@/db/schema";
+import { approvalRequest, type employee, workPeriod } from "@/db/schema";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
@@ -19,6 +14,7 @@ import { isOwnerOrAdminSelfRecording, manualWorkExemption } from "@/lib/approval
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import { getPrincipalContext } from "@/lib/auth-helpers";
 import { defineAbilityFor } from "@/lib/authorization";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	dateFromInstant,
 	type Instant,
@@ -27,6 +23,7 @@ import {
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
 import { deserializeInstant, serializeInstant } from "@/lib/datetime/temporal-wire";
+import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
@@ -131,14 +128,8 @@ import {
 } from "@/lib/time-tracking/project-eligibility";
 import { namedTaskIntent, recordedTaskId } from "@/lib/time-tracking/task-attribution";
 import { validateProjectAssignment } from "./entry-helpers";
-import {
-	resolveManualEntryTarget,
-	resolveManualEntryTargetZone,
-} from "./manual-entry-target";
-import {
-	logger,
-	ONE_MINUTE_MS,
-} from "./shared";
+import { resolveManualEntryTarget, resolveManualEntryTargetZone } from "./manual-entry-target";
+import { logger, ONE_MINUTE_MS } from "./shared";
 import { calculateDurationMinutes, createUtcDateTime } from "./time-utils";
 import type {
 	BrowserTimezoneContext,
@@ -158,8 +149,7 @@ type ManualEntryOverlapResult =
 			error: string;
 	  };
 
-const APPROVAL_POLICY_CHECK_ERROR =
-	"Could not verify time approval policy. Please try again.";
+const APPROVAL_POLICY_CHECK_ERROR = "Could not verify time approval policy. Please try again.";
 type ManualSubmissionRequestEvidence = {
 	date: string;
 	clockInTime: string;
@@ -232,19 +222,9 @@ function parseManualSubmissionMetadata(input: {
 	} catch {
 		throw new Error("Submission collision");
 	}
-	const root = exactPlainObject(parsed, [
-		"ordinarySubmission",
-		"request",
-		"result",
-	]);
-	const marker = exactPlainObject(root.ordinarySubmission, [
-		"submissionId",
-		"kind",
-	]);
-	if (
-		marker.submissionId !== input.submissionId ||
-		marker.kind !== "manual_time_submission"
-	) {
+	const root = exactPlainObject(parsed, ["ordinarySubmission", "request", "result"]);
+	const marker = exactPlainObject(root.ordinarySubmission, ["submissionId", "kind"]);
+	if (marker.submissionId !== input.submissionId || marker.kind !== "manual_time_submission") {
 		throw new Error("Submission collision");
 	}
 	const request = exactPlainObject(root.request, [
@@ -315,11 +295,7 @@ async function findManualSubmissionEvidence(input: {
 		with: { clockIn: true, clockOut: true },
 	})) as OrdinarySourceEvidence | undefined;
 	if (!period) return null;
-	const canonical = await loadCanonicalEvidence(
-		input.tx,
-		period,
-		input.organizationId,
-	);
+	const canonical = await loadCanonicalEvidence(input.tx, period, input.organizationId);
 	if (canonical.workRows.length !== 1 || !canonical.workRows[0]) {
 		throw new Error("Submission collision");
 	}
@@ -351,8 +327,7 @@ async function findManualSubmissionEvidence(input: {
 		period.clockIn?.notes !== `Manual entry: ${input.request.reason}` ||
 		period.clockOut?.notes !== input.request.reason ||
 		(marker !== null &&
-			(marker.submissionId !== input.submissionId ||
-				marker.kind !== "manual_time_submission"))
+			(marker.submissionId !== input.submissionId || marker.kind !== "manual_time_submission"))
 	) {
 		throw new Error("Submission collision");
 	}
@@ -407,9 +382,7 @@ async function lockManualSubmission(input: {
 		"time_entry",
 		input.submissionId,
 	]);
-	await input.tx.execute(
-		sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`,
-	);
+	await input.tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
 }
 
 async function findAndReplayManualSubmission(input: {
@@ -575,10 +548,7 @@ export async function clockIn(
 	}
 }
 
-function webClockActor(
-	userId: string,
-	employee: CurrentEmployee,
-): ClockActor {
+function webClockActor(userId: string, employee: CurrentEmployee): ClockActor {
 	return { userId, employee, resolveTimezone: () => getUserTimezone(userId) };
 }
 
@@ -1044,9 +1014,7 @@ function adjustManualEntryForOverlaps(
 
 	const sortedWorkPeriods = existingWorkPeriods
 		.filter((workPeriod) => workPeriod.endTime !== null)
-		.sort(
-			(left, right) => left.startTime.getTime() - right.startTime.getTime(),
-		);
+		.sort((left, right) => left.startTime.getTime() - right.startTime.getTime());
 
 	for (const existingWorkPeriod of sortedWorkPeriods) {
 		if (!existingWorkPeriod.endTime) continue;
@@ -1058,24 +1026,15 @@ function adjustManualEntryForOverlaps(
 		if (newStart < periodEnd && newEnd > periodStart) {
 			wasAdjusted = true;
 
-			if (
-				newStart < periodStart &&
-				newEnd > periodStart &&
-				newEnd <= periodEnd
-			) {
+			if (newStart < periodStart && newEnd > periodStart && newEnd <= periodEnd) {
 				adjustedClockOut = new Date(periodStart - ONE_MINUTE_MS);
-			} else if (
-				newStart >= periodStart &&
-				newStart < periodEnd &&
-				newEnd > periodEnd
-			) {
+			} else if (newStart >= periodStart && newStart < periodEnd && newEnd > periodEnd) {
 				adjustedClockIn = new Date(periodEnd + ONE_MINUTE_MS);
 			} else if (newStart < periodStart && newEnd > periodEnd) {
 				adjustedClockOut = new Date(periodStart - ONE_MINUTE_MS);
 			} else if (newStart >= periodStart && newEnd <= periodEnd) {
 				return {
-					error:
-						"The selected time range is completely covered by an existing work period.",
+					error: "The selected time range is completely covered by an existing work period.",
 				} as const;
 			}
 		}
@@ -1149,8 +1108,7 @@ export async function createManualTimeEntry(
 			}),
 		);
 		if (replay) {
-			const approvalAutoCompleted =
-				replay.approvalSubmission?.result.kind === "auto_completed";
+			const approvalAutoCompleted = replay.approvalSubmission?.result.kind === "auto_completed";
 			return {
 				success: true,
 				data: {
@@ -1175,11 +1133,7 @@ export async function createManualTimeEntry(
 		};
 	}
 
-	if (
-		isOwnEntry &&
-		data.timezone !== undefined &&
-		!IANAZone.isValidZone(data.timezone)
-	) {
+	if (isOwnEntry && data.timezone !== undefined && !isValidIanaTimeZone(data.timezone)) {
 		return { success: false, error: "Invalid timezone" };
 	}
 
@@ -1188,21 +1142,13 @@ export async function createManualTimeEntry(
 		userId: isOwnEntry ? session.user.id : targetEmployee.userId,
 		organizationId: targetEmployee.organizationId,
 	});
-	const timezone = isOwnEntry
-		? (data.timezone ?? targetTimezone)
-		: targetTimezone;
+	const timezone = isOwnEntry ? (data.timezone ?? targetTimezone) : targetTimezone;
 	const matchingBrowserTimezone =
-		isOwnEntry &&
-		data.browserTimezone === timezone &&
-		IANAZone.isValidZone(data.browserTimezone)
+		isOwnEntry && data.browserTimezone === timezone && isValidIanaTimeZone(data.browserTimezone)
 			? data.browserTimezone
 			: null;
 	const clockInDate = createUtcDateTime(data.date, data.clockInTime, timezone);
-	const clockOutDate = createUtcDateTime(
-		data.date,
-		data.clockOutTime,
-		timezone,
-	);
+	const clockOutDate = createUtcDateTime(data.date, data.clockOutTime, timezone);
 
 	if (!clockInDate || !clockOutDate) {
 		return { success: false, error: "Invalid time values" };
@@ -1282,8 +1228,7 @@ export async function createManualTimeEntry(
 		if (!categoryValidation.isValid) {
 			return {
 				success: false,
-				error:
-					categoryValidation.error || "Cannot assign to this work category",
+				error: categoryValidation.error || "Cannot assign to this work category",
 			};
 		}
 	}
@@ -1314,8 +1259,10 @@ export async function createManualTimeEntry(
 	}
 
 	try {
-		const localDate = DateTime.fromISO(data.date, { zone: timezone });
-		if (!localDate.isValid) {
+		let dayRange: ReturnType<typeof localDayRange>;
+		try {
+			dayRange = localDayRange(data.date, timezone);
+		} catch {
 			return { success: false, error: "Invalid date format" };
 		}
 
@@ -1326,8 +1273,11 @@ export async function createManualTimeEntry(
 				eq(workPeriod.employeeId, targetEmployee.id),
 				eq(workPeriod.organizationId, targetEmployee.organizationId),
 				isNull(workPeriod.deletedAt),
-				gte(workPeriod.startTime, localDate.startOf("day").toUTC().toJSDate()),
-				lte(workPeriod.startTime, localDate.endOf("day").toUTC().toJSDate()),
+				gte(workPeriod.startTime, dateFromInstant(dayRange.start)),
+				lte(
+					workPeriod.startTime,
+					dateFromInstant(dayRange.endExclusive.subtract({ milliseconds: 1 })),
+				),
 			),
 		});
 
@@ -1367,18 +1317,14 @@ export async function createManualTimeEntry(
 					timezone,
 					timezoneSource: "manager_target_user_setting",
 				});
-		const durationMinutes = calculateDurationMinutes(
-			adjustedClockIn,
-			adjustedClockOut,
-		);
+		const durationMinutes = calculateDurationMinutes(adjustedClockIn, adjustedClockOut);
 		const resultEvidence: ManualSubmissionResultEvidence = {
 			startTime: adjustedClockIn.toISOString(),
 			endTime: adjustedClockOut.toISOString(),
 			durationMinutes,
 			wasAdjusted,
 		};
-		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null =
-			null;
+		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
 		const requestMetadata = await getRequestMetadata();
 		// The manual work transaction (#308) protects the actor, the target and the
 		// submission identity in acquisition order; work records needs its sealed scope.
@@ -1420,12 +1366,16 @@ export async function createManualTimeEntry(
 				// (#900), decided in the write transaction with the project as it is now.
 				let isBillable: boolean;
 				try {
-					isBillable = await resolveWorkBillabilityInTransaction(tx, targetEmployee.organizationId, {
-						projectId: data.projectId || null,
-						projectChosen: true,
-						current: false,
-						requested: requestEvidence.billable,
-					});
+					isBillable = await resolveWorkBillabilityInTransaction(
+						tx,
+						targetEmployee.organizationId,
+						{
+							projectId: data.projectId || null,
+							projectChosen: true,
+							current: false,
+							requested: requestEvidence.billable,
+						},
+					);
 				} catch (error) {
 					if (!(error instanceof BillableWorkRefusedError)) throw error;
 					return { disposition: "billable_refused" as const, message: error.message };
@@ -1685,12 +1635,8 @@ export async function createManualTimeEntry(
 				clockInTime: data.clockInTime,
 				clockOutTime: data.clockOutTime,
 				wasAdjusted,
-				adjustedClockIn: wasAdjusted
-					? adjustedClockIn.toISOString()
-					: undefined,
-				adjustedClockOut: wasAdjusted
-					? adjustedClockOut.toISOString()
-					: undefined,
+				adjustedClockIn: wasAdjusted ? adjustedClockIn.toISOString() : undefined,
+				adjustedClockOut: wasAdjusted ? adjustedClockOut.toISOString() : undefined,
 				requiresApproval: requiresApproval && !approvalAutoCompleted,
 			},
 			"Manual time entry created successfully",

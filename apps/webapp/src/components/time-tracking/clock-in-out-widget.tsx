@@ -330,9 +330,10 @@ export function ClockInOutWidget({
 					<ClockComplianceNotices widget={widget} />
 				</div>
 
-				{/* Its own widget container: the location options size to this column, not the card. */}
 				<div className="@container/widget grid min-w-0 gap-4 @3xl/widget:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)] @3xl/widget:items-end">
-					<div className="min-w-0">
+					{/* Its own widget container: the location options size to their own column, not
+					    the column they share with Clock In, so they never squeeze into four cramped cells. */}
+					<div className="@container/widget min-w-0">
 						<ClockBookingChoices widget={widget} />
 					</div>
 

@@ -27,7 +27,9 @@ import { type BillingAccessResult, evaluateBillingAccess } from "./billing-acces
 
 type SubscriptionRow = typeof subscription.$inferSelect;
 /** The client of the caller's `DatabaseService`: the global database or a transaction. */
-type BillingDatabase = Pick<typeof db, "query" | "transaction">;
+type BillingDatabase = Pick<typeof db, "transaction"> & {
+	query: Pick<typeof db.query, "subscription">;
+};
 /** The subscription rows of one Stripe subscription within the protected organizations. */
 type ProtectedSubscriptionScope = SQL | undefined;
 

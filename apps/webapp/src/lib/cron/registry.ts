@@ -19,6 +19,7 @@ import type { AbsenceCategoryNoticesJobResult } from "@/lib/jobs/absence-categor
 import type { AbsenceDeputyRemindersJobResult } from "@/lib/jobs/absence-deputy-reminders";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto-close";
+import type { ContractChangeBatchRecoveryResult } from "@/lib/jobs/contract-change-batches";
 import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonalDataExportSweepResult } from "@/lib/jobs/personal-data-export-sweep";
@@ -261,23 +262,18 @@ export const CRON_JOBS = {
 		description:
 			"Remove expired closed equipment personal history, protecting outstanding returns and case holds",
 		processor: async () =>
-			(
-				await import("@/lib/jobs/equipment-retention")
-			).runEquipmentRetentionJob(),
+			(await import("@/lib/jobs/equipment-retention")).runEquipmentRetentionJob(),
 		defaultJobOptions: { attempts: 3, priority: 5 },
 	},
 	"cron:payroll-baseline-cleanup": {
 		schedule: "17 * * * *",
-		description:
-			"Remove expired payroll comparison evidence and short-lived reviewed results",
+		description: "Remove expired payroll comparison evidence and short-lived reviewed results",
 		processor: async (): Promise<{ expired: number }> => {
-			const [
-				{ cleanupExpiredPayrollBaselines },
-				{ cleanupExpiredPayrollComparisons },
-			] = await Promise.all([
-				import("@/lib/payroll-export/baseline-evidence"),
-				import("@/lib/payroll-export/comparison-service"),
-			]);
+			const [{ cleanupExpiredPayrollBaselines }, { cleanupExpiredPayrollComparisons }] =
+				await Promise.all([
+					import("@/lib/payroll-export/baseline-evidence"),
+					import("@/lib/payroll-export/comparison-service"),
+				]);
 			await cleanupExpiredPayrollComparisons();
 			return { expired: await cleanupExpiredPayrollBaselines() };
 		},
@@ -288,9 +284,8 @@ export const CRON_JOBS = {
 		description:
 			"Delete due driving licence evidence under its dedicated policy and specific-case holds",
 		processor: async () => {
-			const { runDrivingLicenceRetentionJob } = await import(
-				"@/lib/jobs/driving-licence-retention"
-			);
+			const { runDrivingLicenceRetentionJob } =
+				await import("@/lib/jobs/driving-licence-retention");
 			return runDrivingLicenceRetentionJob();
 		},
 		defaultJobOptions: { attempts: 3, priority: 5 },
@@ -300,9 +295,7 @@ export const CRON_JOBS = {
 		description:
 			"Remind employees of equipment deadlines and authorized staff of outstanding overdue returns",
 		processor: async () => {
-			const { runEquipmentRemindersJob } = await import(
-				"@/lib/jobs/equipment-reminders"
-			);
+			const { runEquipmentRemindersJob } = await import("@/lib/jobs/equipment-reminders");
 			return runEquipmentRemindersJob();
 		},
 		defaultJobOptions: { attempts: 3, priority: 5 },
@@ -312,9 +305,8 @@ export const CRON_JOBS = {
 		description:
 			"Deliver mandatory driving licence deadline and suspension notices to current employees and scoped verifiers",
 		processor: async () => {
-			const { runDrivingLicenceRemindersJob } = await import(
-				"@/lib/jobs/driving-licence-reminders"
-			);
+			const { runDrivingLicenceRemindersJob } =
+				await import("@/lib/jobs/driving-licence-reminders");
 			return runDrivingLicenceRemindersJob();
 		},
 		defaultJobOptions: { attempts: 3, priority: 5 },
@@ -323,9 +315,7 @@ export const CRON_JOBS = {
 		schedule: "0 0 * * *", // Daily at midnight
 		description: "Vacation automation (carryover, expiry, accrual)",
 		processor: async () => {
-			const { runVacationAutomation } = await import(
-				"@/lib/jobs/carryover-automation"
-			);
+			const { runVacationAutomation } = await import("@/lib/jobs/carryover-automation");
 			return runVacationAutomation();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -335,9 +325,7 @@ export const CRON_JOBS = {
 		schedule: "*/5 * * * *", // Every 5 minutes
 		description: "Process pending data exports",
 		processor: async () => {
-			const { runExportProcessor } = await import(
-				"@/lib/jobs/export-processor"
-			);
+			const { runExportProcessor } = await import("@/lib/jobs/export-processor");
 			return runExportProcessor();
 		},
 		defaultJobOptions: { attempts: 3, priority: 3 },
@@ -347,9 +335,7 @@ export const CRON_JOBS = {
 		schedule: "0 1 * * *", // Daily at 1 AM
 		description: "Delete soft-deleted organizations older than 5 days",
 		processor: async () => {
-			const { runOrganizationCleanup } = await import(
-				"@/lib/jobs/organization-cleanup"
-			);
+			const { runOrganizationCleanup } = await import("@/lib/jobs/organization-cleanup");
 			return runOrganizationCleanup();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
@@ -359,9 +345,8 @@ export const CRON_JOBS = {
 		schedule: "0 * * * *", // Hourly
 		description: "Run billing seat reconciliation",
 		processor: async (): Promise<BillingSeatReconciliationResult> => {
-			const { runBillingSeatReconciliation } = await import(
-				"@/lib/jobs/billing-seat-reconciliation"
-			);
+			const { runBillingSeatReconciliation } =
+				await import("@/lib/jobs/billing-seat-reconciliation");
 			return runBillingSeatReconciliation();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
@@ -371,9 +356,8 @@ export const CRON_JOBS = {
 		schedule: "* * * * *", // Every minute
 		description: "Process durable SCIM seat sync and projection recovery work",
 		processor: async (): Promise<SCIMMaintenanceResult> => {
-			const { runSCIMMaintenance, SCIMMaintenanceDegradedError } = await import(
-				"@/lib/jobs/scim-maintenance"
-			);
+			const { runSCIMMaintenance, SCIMMaintenanceDegradedError } =
+				await import("@/lib/jobs/scim-maintenance");
 			const result = await runSCIMMaintenance();
 			if (result.exhausted > 0 || result.persistenceFailures > 0) {
 				throw new SCIMMaintenanceDegradedError(result);
@@ -385,12 +369,9 @@ export const CRON_JOBS = {
 
 	"cron:auto-clock-out": {
 		schedule: "*/5 * * * *",
-		description:
-			"Close overdue uninterrupted work and recover durable automatic clock-out tasks",
+		description: "Close overdue uninterrupted work and recover durable automatic clock-out tasks",
 		processor: async () => {
-			const { runAutoClockOutMaintenance } = await import(
-				"@/lib/jobs/auto-clock-out"
-			);
+			const { runAutoClockOutMaintenance } = await import("@/lib/jobs/auto-clock-out");
 			return runAutoClockOutMaintenance();
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
@@ -401,9 +382,7 @@ export const CRON_JOBS = {
 		description:
 			"Remind employees of a missed clock-in, a forgotten clock-out or a break that is about to be due",
 		processor: async () => {
-			const { runClockingReminders } = await import(
-				"@/lib/jobs/clocking-reminders"
-			);
+			const { runClockingReminders } = await import("@/lib/jobs/clocking-reminders");
 			return runClockingReminders();
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
@@ -411,25 +390,31 @@ export const CRON_JOBS = {
 
 	"cron:employee-departures": {
 		schedule: "* * * * *", // Every minute
-		description:
-			"Materialize due employee departures and deliver their durable follow-up work",
+		description: "Materialize due employee departures and deliver their durable follow-up work",
 		processor: async (): Promise<EmployeeDepartureMaintenanceResult> => {
-			const { runEmployeeDepartureMaintenance } = await import(
-				"@/lib/jobs/employee-departures"
-			);
+			const { runEmployeeDepartureMaintenance } = await import("@/lib/jobs/employee-departures");
 			return runEmployeeDepartureMaintenance();
+		},
+		defaultJobOptions: { attempts: 1, priority: 8 },
+	},
+
+	"cron:contract-batch-recovery": {
+		schedule: "* * * * *", // Every minute
+		description:
+			"Recover stalled pending (>10s) and lease-expired contract change batches across inline and async modes",
+		processor: async (): Promise<ContractChangeBatchRecoveryResult> => {
+			const { runContractChangeBatchRecoveryJob } =
+				await import("@/lib/jobs/contract-change-batches");
+			return runContractChangeBatchRecoveryJob();
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
 	},
 
 	"cron:execution-cleanup": {
 		schedule: "30 2 * * *", // Daily at 2:30 AM
-		description:
-			"Delete cron execution records past the configured retention period",
+		description: "Delete cron execution records past the configured retention period",
 		processor: async (): Promise<ExecutionCleanupResult> => {
-			const { runExecutionCleanup } = await import(
-				"@/lib/jobs/execution-cleanup"
-			);
+			const { runExecutionCleanup } = await import("@/lib/jobs/execution-cleanup");
 			return runExecutionCleanup();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -471,9 +456,7 @@ export const CRON_JOBS = {
 			expired: number;
 			creatorLostAccess: number;
 		}> => {
-			const { runReportShareLinkSweep } = await import(
-				"@/lib/jobs/report-share-links"
-			);
+			const { runReportShareLinkSweep } = await import("@/lib/jobs/report-share-links");
 			return runReportShareLinkSweep();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
@@ -484,9 +467,7 @@ export const CRON_JOBS = {
 		description:
 			"Delete personal data exports 7 days after completion, give up stuck builds, and delete the stored files of deleted exports",
 		processor: async (): Promise<PersonalDataExportSweepResult> => {
-			const { runPersonalDataExportSweep } = await import(
-				"@/lib/jobs/personal-data-export-sweep"
-			);
+			const { runPersonalDataExportSweep } = await import("@/lib/jobs/personal-data-export-sweep");
 			return runPersonalDataExportSweep();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
@@ -497,9 +478,7 @@ export const CRON_JOBS = {
 		description:
 			"Delete position stamps past their purge date in every organization; clock events stay",
 		processor: async (): Promise<PositionStampPurgeResult> => {
-			const { runPositionStampPurge } = await import(
-				"@/lib/jobs/position-stamp-purge"
-			);
+			const { runPositionStampPurge } = await import("@/lib/jobs/position-stamp-purge");
 			return runPositionStampPurge();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -510,9 +489,7 @@ export const CRON_JOBS = {
 		description:
 			"Remove private vehicle photos from failed, abandoned uploads and deleted vehicles",
 		processor: async () =>
-			(
-				await import("@/lib/jobs/vehicle-photo-cleanup")
-			).runVehiclePhotoCleanupJob(),
+			(await import("@/lib/jobs/vehicle-photo-cleanup")).runVehiclePhotoCleanupJob(),
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 	"cron:travel-expense-receipt-cleanup": {
@@ -520,9 +497,8 @@ export const CRON_JOBS = {
 		description:
 			"Delete private receipt objects that were rejected, failed or abandoned before attaching to a travel expense claim",
 		processor: async (): Promise<TravelExpenseReceiptCleanupJobResult> => {
-			const { runTravelExpenseReceiptCleanupJob } = await import(
-				"@/lib/jobs/travel-expense-receipt-cleanup"
-			);
+			const { runTravelExpenseReceiptCleanupJob } =
+				await import("@/lib/jobs/travel-expense-receipt-cleanup");
 			return runTravelExpenseReceiptCleanupJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -533,9 +509,8 @@ export const CRON_JOBS = {
 		description:
 			"Delete private personnel file objects of deleted employee documents and of failed or abandoned uploads",
 		processor: async (): Promise<PersonnelFileUploadCleanupJobResult> => {
-			const { runPersonnelFileUploadCleanupJob } = await import(
-				"@/lib/jobs/personnel-file-upload-cleanup"
-			);
+			const { runPersonnelFileUploadCleanupJob } =
+				await import("@/lib/jobs/personnel-file-upload-cleanup");
 			return runPersonnelFileUploadCleanupJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -546,9 +521,8 @@ export const CRON_JOBS = {
 		description:
 			"Remind officers and employees of personnel file documents expiring within the lead time or today",
 		processor: async (): Promise<PersonnelFileExpiryRemindersJobResult> => {
-			const { runPersonnelFileExpiryRemindersJob } = await import(
-				"@/lib/jobs/personnel-file-expiry-reminders"
-			);
+			const { runPersonnelFileExpiryRemindersJob } =
+				await import("@/lib/jobs/personnel-file-expiry-reminders");
 			return runPersonnelFileExpiryRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -558,13 +532,11 @@ export const CRON_JOBS = {
 		schedule: "0 * * * *", // Hourly, so each organization's day starts soon after its midnight
 		description:
 			"Remind employees of open document requests 3 days before and on the deadline, and tell them and the officers on the first overdue day",
-		processor:
-			async (): Promise<PersonnelFileDocumentRequestRemindersJobResult> => {
-				const { runPersonnelFileDocumentRequestRemindersJob } = await import(
-					"@/lib/jobs/personnel-file-document-request-reminders"
-				);
-				return runPersonnelFileDocumentRequestRemindersJob();
-			},
+		processor: async (): Promise<PersonnelFileDocumentRequestRemindersJobResult> => {
+			const { runPersonnelFileDocumentRequestRemindersJob } =
+				await import("@/lib/jobs/personnel-file-document-request-reminders");
+			return runPersonnelFileDocumentRequestRemindersJob();
+		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},
 
@@ -573,9 +545,7 @@ export const CRON_JOBS = {
 		description:
 			"Remind employees and their managers of employee skills expiring within the lead time or today",
 		processor: async (): Promise<SkillExpiryRemindersJobResult> => {
-			const { runSkillExpiryRemindersJob } = await import(
-				"@/lib/jobs/skill-expiry-reminders"
-			);
+			const { runSkillExpiryRemindersJob } = await import("@/lib/jobs/skill-expiry-reminders");
 			return runSkillExpiryRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -586,9 +556,7 @@ export const CRON_JOBS = {
 		description:
 			"Remind deputies the day before an approved absence they cover starts (once per absence and deputy)",
 		processor: async (): Promise<AbsenceDeputyRemindersJobResult> => {
-			const { runAbsenceDeputyRemindersJob } = await import(
-				"@/lib/jobs/absence-deputy-reminders"
-			);
+			const { runAbsenceDeputyRemindersJob } = await import("@/lib/jobs/absence-deputy-reminders");
 			return runAbsenceDeputyRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -599,9 +567,7 @@ export const CRON_JOBS = {
 		description:
 			"Tell covering deputies what waits when cover starts, and approvers what their deputy decided when back (once per absence and deputy)",
 		processor: async (): Promise<DeputyCoverSummariesJobResult> => {
-			const { runDeputyCoverSummariesJob } = await import(
-				"@/lib/jobs/deputy-cover-summaries"
-			);
+			const { runDeputyCoverSummariesJob } = await import("@/lib/jobs/deputy-cover-summaries");
 			return runDeputyCoverSummariesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -612,9 +578,7 @@ export const CRON_JOBS = {
 		description:
 			"Close the previous month for organizations with automatic close on, N days after it ended (#762)",
 		processor: async (): Promise<ClosedMonthAutoCloseJobResult> => {
-			const { runClosedMonthAutoCloseJob } = await import(
-				"@/lib/jobs/closed-month-auto-close"
-			);
+			const { runClosedMonthAutoCloseJob } = await import("@/lib/jobs/closed-month-auto-close");
 			return runClosedMonthAutoCloseJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
@@ -625,9 +589,8 @@ export const CRON_JOBS = {
 		description:
 			"Tell personnel file officers about employee documents newly due for deletion (never deletes)",
 		processor: async (): Promise<PersonnelFileRetentionRemindersJobResult> => {
-			const { runPersonnelFileRetentionRemindersJob } = await import(
-				"@/lib/jobs/personnel-file-retention-reminders"
-			);
+			const { runPersonnelFileRetentionRemindersJob } =
+				await import("@/lib/jobs/personnel-file-retention-reminders");
 			return runPersonnelFileRetentionRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -637,13 +600,11 @@ export const CRON_JOBS = {
 		schedule: "15 * * * *", // Hourly, so each organization's day starts soon after its midnight
 		description:
 			"Delete closed document requests without documents once their category's retention period has passed (deletes data)",
-		processor:
-			async (): Promise<PersonnelFileDocumentRequestRetentionJobResult> => {
-				const { runPersonnelFileDocumentRequestRetentionJob } = await import(
-					"@/lib/jobs/personnel-file-document-request-retention"
-				);
-				return runPersonnelFileDocumentRequestRetentionJob();
-			},
+		processor: async (): Promise<PersonnelFileDocumentRequestRetentionJobResult> => {
+			const { runPersonnelFileDocumentRequestRetentionJob } =
+				await import("@/lib/jobs/personnel-file-document-request-retention");
+			return runPersonnelFileDocumentRequestRetentionJob();
+		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 
@@ -652,9 +613,7 @@ export const CRON_JOBS = {
 		description:
 			"Tell owners and admins once that the time off in lieu absence category is available",
 		processor: async (): Promise<AbsenceCategoryNoticesJobResult> => {
-			const { runAbsenceCategoryNoticesJob } = await import(
-				"@/lib/jobs/absence-category-notices"
-			);
+			const { runAbsenceCategoryNoticesJob } = await import("@/lib/jobs/absence-category-notices");
 			return runAbsenceCategoryNoticesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -665,9 +624,8 @@ export const CRON_JOBS = {
 		description:
 			"Fetch ECB euro reference rates for organizations that approved them as a travel expense conversion basis",
 		processor: async (): Promise<TravelExpenseReferenceRatesJobResult> => {
-			const { runTravelExpenseReferenceRatesJob } = await import(
-				"@/lib/jobs/travel-expense-reference-rates"
-			);
+			const { runTravelExpenseReferenceRatesJob } =
+				await import("@/lib/jobs/travel-expense-reference-rates");
 			return runTravelExpenseReferenceRatesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -678,12 +636,8 @@ export const CRON_JOBS = {
 		description:
 			"Recover committed automatic break adjustments (any date) and check today's legacy work periods",
 		processor: async ({ manualParams }) => {
-			const { runBreakEnforcementCheck } = await import(
-				"@/lib/jobs/break-enforcement"
-			);
-			const params = manualParams as
-				| { organizationId?: string; date?: string }
-				| undefined;
+			const { runBreakEnforcementCheck } = await import("@/lib/jobs/break-enforcement");
+			const params = manualParams as { organizationId?: string; date?: string } | undefined;
 			return runBreakEnforcementCheck(
 				params
 					? {
@@ -700,9 +654,8 @@ export const CRON_JOBS = {
 		schedule: "0 * * * *", // Hourly
 		description: "Send project deadline notifications",
 		processor: async () => {
-			const { checkAndSendDeadlineNotifications } = await import(
-				"@/lib/notifications/project-notification-triggers"
-			);
+			const { checkAndSendDeadlineNotifications } =
+				await import("@/lib/notifications/project-notification-triggers");
 			return checkAndSendDeadlineNotifications();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
@@ -717,11 +670,8 @@ export const CRON_JOBS = {
 				return { success: true, message: "Telemetry disabled" };
 			}
 
-			const {
-				calculateTelemetryMetrics,
-				getOrCreateTelemetryIdentity,
-				sendTelemetryReport,
-			} = await import("@/lib/telemetry");
+			const { calculateTelemetryMetrics, getOrCreateTelemetryIdentity, sendTelemetryReport } =
+				await import("@/lib/telemetry");
 			const { deploymentId } = await getOrCreateTelemetryIdentity();
 			const metrics = await calculateTelemetryMetrics();
 			const success = await sendTelemetryReport(deploymentId, metrics);
@@ -738,9 +688,8 @@ export const CRON_JOBS = {
 		schedule: "*/5 * * * *", // Every 5 minutes
 		description: "Process due scheduled exports (payroll, data, audit reports)",
 		processor: async (): Promise<ScheduledExportsResult> => {
-			const { runScheduledExportsProcessor } = await import(
-				"@/lib/jobs/scheduled-exports-processor"
-			);
+			const { runScheduledExportsProcessor } =
+				await import("@/lib/jobs/scheduled-exports-processor");
 			return runScheduledExportsProcessor();
 		},
 		defaultJobOptions: { attempts: 2, priority: 4 },
@@ -760,9 +709,7 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
 		description: "Send Teams daily digest cards to managers",
 		processor: async (): Promise<TeamsDailyDigestResult> => {
-			const { runDailyDigestJob } = await import(
-				"@/lib/teams/jobs/daily-digest"
-			);
+			const { runDailyDigestJob } = await import("@/lib/teams/jobs/daily-digest");
 			return runDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -772,9 +719,7 @@ export const CRON_JOBS = {
 		schedule: "*/30 * * * *", // Every 30 minutes
 		description: "Check and escalate stale approval requests via Teams",
 		processor: async (): Promise<TeamsEscalationResult> => {
-			const { runEscalationCheckerJob } = await import(
-				"@/lib/teams/jobs/escalation-checker"
-			);
+			const { runEscalationCheckerJob } = await import("@/lib/teams/jobs/escalation-checker");
 			return runEscalationCheckerJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
@@ -784,9 +729,7 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
 		description: "Send Telegram daily digest messages to managers",
 		processor: async (): Promise<TelegramDailyDigestResult> => {
-			const { runTelegramDailyDigestJob } = await import(
-				"@/lib/telegram/jobs/daily-digest"
-			);
+			const { runTelegramDailyDigestJob } = await import("@/lib/telegram/jobs/daily-digest");
 			return runTelegramDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -796,9 +739,8 @@ export const CRON_JOBS = {
 		schedule: "*/30 * * * *", // Every 30 minutes
 		description: "Check and escalate stale approval requests via Telegram",
 		processor: async (): Promise<TelegramEscalationResult> => {
-			const { runTelegramEscalationCheckerJob } = await import(
-				"@/lib/telegram/jobs/escalation-checker"
-			);
+			const { runTelegramEscalationCheckerJob } =
+				await import("@/lib/telegram/jobs/escalation-checker");
 			return runTelegramEscalationCheckerJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
@@ -808,9 +750,7 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
 		description: "Send Discord daily digest messages to managers",
 		processor: async (): Promise<DiscordDailyDigestResult> => {
-			const { runDiscordDailyDigestJob } = await import(
-				"@/lib/discord/jobs/daily-digest"
-			);
+			const { runDiscordDailyDigestJob } = await import("@/lib/discord/jobs/daily-digest");
 			return runDiscordDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -820,9 +760,8 @@ export const CRON_JOBS = {
 		schedule: "*/30 * * * *", // Every 30 minutes
 		description: "Check and escalate stale approval requests via Discord",
 		processor: async (): Promise<DiscordEscalationResult> => {
-			const { runDiscordEscalationCheckerJob } = await import(
-				"@/lib/discord/jobs/escalation-checker"
-			);
+			const { runDiscordEscalationCheckerJob } =
+				await import("@/lib/discord/jobs/escalation-checker");
 			return runDiscordEscalationCheckerJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
@@ -832,9 +771,7 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
 		description: "Send Slack daily digest messages to managers",
 		processor: async (): Promise<SlackDailyDigestResult> => {
-			const { runSlackDailyDigestJob } = await import(
-				"@/lib/slack/jobs/daily-digest"
-			);
+			const { runSlackDailyDigestJob } = await import("@/lib/slack/jobs/daily-digest");
 			return runSlackDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -845,9 +782,7 @@ export const CRON_JOBS = {
 		description:
 			"Transfer overdue approval assignments for organizations whose escalation ownership moved to the shared module",
 		processor: async (): Promise<ApprovalEscalationJobResult> => {
-			const { runApprovalEscalationJob } = await import(
-				"@/lib/approvals/escalation/scheduled-job"
-			);
+			const { runApprovalEscalationJob } = await import("@/lib/approvals/escalation/scheduled-job");
 			return runApprovalEscalationJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
@@ -858,9 +793,7 @@ export const CRON_JOBS = {
 		description:
 			"Deliver, refresh and retry approval cards for organizations whose delivery moved to the approval delivery owner",
 		processor: async (): Promise<ApprovalDeliveryJobResult> => {
-			const { runApprovalDeliveryJob } = await import(
-				"@/lib/approvals/delivery/scheduled-job"
-			);
+			const { runApprovalDeliveryJob } = await import("@/lib/approvals/delivery/scheduled-job");
 			return runApprovalDeliveryJob();
 		},
 		defaultJobOptions: { attempts: 1, priority: 6 },
@@ -870,21 +803,16 @@ export const CRON_JOBS = {
 		schedule: "*/30 * * * *", // Every 30 minutes
 		description: "Check and escalate stale approval requests via Slack",
 		processor: async (): Promise<SlackEscalationResult> => {
-			const { runSlackEscalationCheckerJob } = await import(
-				"@/lib/slack/jobs/escalation-checker"
-			);
+			const { runSlackEscalationCheckerJob } = await import("@/lib/slack/jobs/escalation-checker");
 			return runSlackEscalationCheckerJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
 	},
 	"cron:organization-mfa-notices": {
 		schedule: "* * * * *",
-		description:
-			"Deliver mandatory organization MFA enrollment, reminder and security notices",
+		description: "Deliver mandatory organization MFA enrollment, reminder and security notices",
 		processor: async () => {
-			const { deliverMfaNotices } = await import(
-				"@/lib/organization-mfa/delivery"
-			);
+			const { deliverMfaNotices } = await import("@/lib/organization-mfa/delivery");
 			return deliverMfaNotices();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -928,9 +856,7 @@ export type CronJobResult<T extends CronJobName> = Awaited<
 /**
  * Get a cron job definition by name
  */
-export function getCronJobDefinition<T extends CronJobName>(
-	name: T,
-): (typeof CRON_JOBS)[T] {
+export function getCronJobDefinition<T extends CronJobName>(name: T): (typeof CRON_JOBS)[T] {
 	return CRON_JOBS[name];
 }
 
@@ -951,10 +877,7 @@ export function isCronJobName(name: string): name is CronJobName {
 /**
  * Get schedule info for all jobs (useful for worker setup)
  */
-export function getCronSchedules(): Record<
-	CronJobName,
-	{ pattern: string; description: string }
-> {
+export function getCronSchedules(): Record<CronJobName, { pattern: string; description: string }> {
 	return Object.fromEntries(
 		Object.entries(CRON_JOBS).map(([name, def]) => [
 			name,

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, expect, it, vi } from "vitest";
 
 const remote = vi.hoisted(() => ({
 	commit: vi.fn(),
@@ -22,6 +22,13 @@ vi.mock("@/app/[locale]/(app)/settings/import/csv-actions", () => ({
 	refreshCsvWorkAction: vi.fn(),
 }));
 const { CsvWorkReview } = await import("./csv-work-review");
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
@@ -170,10 +177,9 @@ it("lets an admin map an unknown personnel number and reject an unresolved row",
 	);
 	const user = userEvent.setup();
 	await user.selectOptions(screen.getByLabelText("Source value"), "external-7");
-	await user.selectOptions(
-		screen.getByLabelText("Existing employee"),
-		"employee",
-	);
+	await user.click(screen.getByLabelText("Existing employee"));
+	await user.click(await screen.findByRole("option", { name: /Alice/ }));
+	await waitFor(() => expect(screen.queryByRole("option", { name: /Alice/ })).toBeNull());
 	await user.click(screen.getByRole("button", { name: "Apply mapping" }));
 	await waitFor(() =>
 		expect(remote.map).toHaveBeenCalledWith({

@@ -1,7 +1,6 @@
 import "server-only";
 import { and, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { unstable_cache } from "next/cache";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
@@ -13,6 +12,7 @@ import {
 	waterIntakeLog,
 } from "@/db/schema";
 import { getEnhancedVacationBalanceResult } from "@/lib/absences/vacation.service";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	calendarYearAt,
 	dateFromInstant,
@@ -23,6 +23,7 @@ import {
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
 import type { BirthdayRemindersData, DashboardScope, DashboardSubject } from "./dashboard-types";
 import { buildTeamStreakLeaders, collectUniqueTeamIds } from "./hydration-team-streak-leaders";
 import { createHydrationTeamStreakLeadersCacheConfig } from "./hydration-team-streak-leaders-query";
@@ -172,9 +173,16 @@ export function loadHydrationForSubject(
 			});
 		});
 
-		// Get today's intake using Luxon for date boundaries
-		const todayStart = DateTime.now().startOf("day").toJSDate();
-		const todayEnd = DateTime.now().endOf("day").toJSDate();
+		// Get today's intake in the user's configured timezone (fallback UTC)
+		const hydrationTimezone = resolvePersonalTimezone({
+			userTimezone: "timezone" in settings ? settings.timezone : undefined,
+		}).timezone;
+		const todayRange = localDayRange(
+			plainDateAt(systemClock.nowInstant(), hydrationTimezone).toString(),
+			hydrationTimezone,
+		);
+		const todayStart = dateFromInstant(todayRange.start);
+		const todayEnd = dateFromInstant(todayRange.endExclusive.subtract({ milliseconds: 1 }));
 
 		const todayIntakeResult = yield* dbService.query("getTodayIntake", async () => {
 			return dbService.db

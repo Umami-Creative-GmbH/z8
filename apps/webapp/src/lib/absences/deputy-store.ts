@@ -150,20 +150,20 @@ export async function changeAbsenceDeputy(
 				.for("update", { of: absenceEntry });
 			if (!absence) return { kind: "not_found" };
 
-			const [managed, todays] = await Promise.all([
+			// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+			const managed =
 				input.actor.role === "manager"
-					? loadManagedEmployeeIds(tx, {
+					? await loadManagedEmployeeIds(tx, {
 							organizationId: input.organizationId,
 							managerEmployeeId: input.actor.employeeId,
 							employeeIds: [absence.employeeId],
 						})
-					: new Set<string>(),
-				loadAbsentEmployeeTodays(tx, {
-					organizationId: input.organizationId,
-					employeeIds: [absence.employeeId],
-					at: input.at,
-				}),
-			]);
+					: new Set<string>();
+			const todays = await loadAbsentEmployeeTodays(tx, {
+				organizationId: input.organizationId,
+				employeeIds: [absence.employeeId],
+				at: input.at,
+			});
 			const access = checkDeputyChangeAccess({
 				actor: { ...input.actor, managesAbsentEmployee: managed.has(absence.employeeId) },
 				absence,

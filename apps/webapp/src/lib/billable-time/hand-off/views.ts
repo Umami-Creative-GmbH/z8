@@ -10,7 +10,7 @@ import type { MarkVersion } from "./resolution";
 /** The hand-off area's section listing work changed after invoicing. */
 export const CHANGED_AFTER_INVOICING_ANCHOR = "changed-after-invoicing";
 /** Where reports send owners and admins to see which work is marked. */
-export const CHANGED_AFTER_INVOICING_HREF = `/settings/billable-time/hand-off#${CHANGED_AFTER_INVOICING_ANCHOR}`;
+export const CHANGED_AFTER_INVOICING_HREF = `/billable-time/hand-off#${CHANGED_AFTER_INVOICING_ANCHOR}`;
 
 export interface HandOffWorkView {
 	workPeriodId: string;

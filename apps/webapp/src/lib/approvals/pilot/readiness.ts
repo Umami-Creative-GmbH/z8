@@ -931,18 +931,18 @@ async function assessEscalation(
 	database: ApprovalDatabase,
 	organizationId: string,
 ): Promise<PilotEscalationReadiness> {
-	const [[control], [policy]] = await Promise.all([
-		database
-			.select()
-			.from(approvalEscalationControl)
-			.where(eq(approvalEscalationControl.organizationId, organizationId))
-			.limit(1),
-		database
-			.select()
-			.from(approvalEscalationPolicy)
-			.where(eq(approvalEscalationPolicy.organizationId, organizationId))
-			.limit(1),
-	]);
+	// One after another: `database` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const [control] = await database
+		.select()
+		.from(approvalEscalationControl)
+		.where(eq(approvalEscalationControl.organizationId, organizationId))
+		.limit(1);
+	const [policy] = await database
+		.select()
+		.from(approvalEscalationPolicy)
+		.where(eq(approvalEscalationPolicy.organizationId, organizationId))
+		.limit(1);
 	const [transfers] = rows(
 		await database.execute(sql`
 			select

@@ -179,19 +179,18 @@ export async function loadReportRates(
 		if (Temporal.PlainDate.compare(last, toDay) > 0) toDay = last;
 	}
 	const employeeIds = [...new Set(work.map((item) => item.employeeId))];
-	const [billable, cost] = await Promise.all([
-		listBillableRatesForWork(reader, organizationId, {
-			employeeIds,
-			projectIds: [...new Set(work.map((item) => item.projectId))],
-			customerIds: [
-				...new Set(work.flatMap((item) => (item.customerId === null ? [] : [item.customerId]))),
-			],
-			fromDay,
-			toDay,
-		}),
-		options.includeCost
-			? listCostRatesForWork(reader, organizationId, { employeeIds, fromDay, toDay })
-			: Promise.resolve([]),
-	]);
+	// One after another: `reader` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const billable = await listBillableRatesForWork(reader, organizationId, {
+		employeeIds,
+		projectIds: [...new Set(work.map((item) => item.projectId))],
+		customerIds: [
+			...new Set(work.flatMap((item) => (item.customerId === null ? [] : [item.customerId]))),
+		],
+		fromDay,
+		toDay,
+	});
+	const cost = options.includeCost
+		? await listCostRatesForWork(reader, organizationId, { employeeIds, fromDay, toDay })
+		: [];
 	return { billable, cost };
 }

@@ -13,16 +13,15 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
+import { useRefreshOnboardingIsAdmin } from "@/components/onboarding/onboarding-progress-provider";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { OrganizationTrackingSetupFields } from "@/components/organization/organization-tracking-setup-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
-import {
-	generateSlug,
-	organizationSchema,
-} from "@/lib/validations/organization";
+import { generateSlug, organizationSchema } from "@/lib/validations/organization";
+import { getNextOnboardingStepPath, ONBOARDING_STEPS } from "@/lib/validations/onboarding-steps";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import {
@@ -37,6 +36,9 @@ const defaultValues = {
 	name: "",
 	slug: "",
 };
+
+const ORGANIZATION_NEXT_STEP_PATH =
+	getNextOnboardingStepPath("organization", false) ?? ONBOARDING_STEPS.profile.path;
 
 type OrganizationValues = typeof defaultValues;
 type OrganizationForm = ReactFormExtendedApi<
@@ -134,12 +136,7 @@ function OrganizationSkipCard({
 				</p>
 			</header>
 			<div className="p-6">
-				<Button
-					variant="outline"
-					onClick={onSkip}
-					disabled={loading}
-					className="w-full"
-				>
+				<Button variant="outline" onClick={onSkip} disabled={loading} className="w-full">
 					{t("onboarding.organization.skip", "Skip for now")}
 				</Button>
 			</div>
@@ -230,9 +227,7 @@ function CreateOrganizationCard({
 									autoComplete="organization"
 									aria-invalid={field.state.meta.errors.length > 0}
 									aria-describedby={
-										field.state.meta.errors.length
-											? "organization-name-error"
-											: undefined
+										field.state.meta.errors.length ? "organization-name-error" : undefined
 									}
 									value={field.state.value}
 									onChange={(event) => {
@@ -244,10 +239,7 @@ function CreateOrganizationCard({
 										}
 									}}
 									onBlur={field.handleBlur}
-									placeholder={t(
-										"onboarding.organization.namePlaceholder",
-										"Acme Inc.",
-									)}
+									placeholder={t("onboarding.organization.namePlaceholder", "Acme Inc.")}
 									disabled={status.loading}
 								/>
 								{field.state.meta.errors.length > 0 && (
@@ -269,10 +261,7 @@ function CreateOrganizationCard({
 								.string()
 								.min(
 									2,
-									t(
-										"onboarding.organization.slugErrors.min",
-										"Slug must be at least 2 characters",
-									),
+									t("onboarding.organization.slugErrors.min", "Slug must be at least 2 characters"),
 								)
 								.max(
 									50,
@@ -288,15 +277,12 @@ function CreateOrganizationCard({
 										"Slug must contain only lowercase letters, numbers, and hyphens",
 									),
 								)
-								.refine(
-									(value) => !value.startsWith("-") && !value.endsWith("-"),
-									{
-										message: t(
-											"onboarding.organization.slugErrors.hyphen",
-											"Slug cannot start or end with a hyphen",
-										),
-									},
-								),
+								.refine((value) => !value.startsWith("-") && !value.endsWith("-"), {
+									message: t(
+										"onboarding.organization.slugErrors.hyphen",
+										"Slug cannot start or end with a hyphen",
+									),
+								}),
 						}}
 					>
 						{(field) => (
@@ -310,10 +296,7 @@ function CreateOrganizationCard({
 										name="slug"
 										autoComplete="off"
 										spellCheck={false}
-										aria-invalid={
-											!!status.slugErrorMessage ||
-											field.state.meta.errors.length > 0
-										}
+										aria-invalid={!!status.slugErrorMessage || field.state.meta.errors.length > 0}
 										aria-describedby={`organization-slug-description organization-slug-status${status.slugErrorMessage ? " organization-slug-error" : ""}${field.state.meta.errors.length ? " organization-slug-validation" : ""}`}
 										value={field.state.value}
 										onChange={(event) => {
@@ -322,10 +305,7 @@ function CreateOrganizationCard({
 											field.handleChange(event.target.value);
 										}}
 										onBlur={field.handleBlur}
-										placeholder={t(
-											"onboarding.organization.slugPlaceholder",
-											"acme-inc",
-										)}
+										placeholder={t("onboarding.organization.slugPlaceholder", "acme-inc")}
 										disabled={status.loading}
 									/>
 									{status.checkingSlug && (
@@ -334,10 +314,7 @@ function CreateOrganizationCard({
 										</div>
 									)}
 								</div>
-								<p
-									id="organization-slug-description"
-									className="text-sm text-muted-foreground"
-								>
+								<p id="organization-slug-description" className="text-sm text-muted-foreground">
 									{t(
 										"onboarding.organization.slugDescription",
 										"Used in URLs. Auto-generated from name.",
@@ -349,15 +326,9 @@ function CreateOrganizationCard({
 									className="text-sm text-muted-foreground"
 								>
 									{status.checkingSlug
-										? t(
-												"onboarding.organization.checkingSlug",
-												"Checking availability…",
-											)
+										? t("onboarding.organization.checkingSlug", "Checking availability…")
 										: status.slugAvailable
-											? t(
-													"onboarding.organization.slugAvailable",
-													"This slug is available.",
-												)
+											? t("onboarding.organization.slugAvailable", "This slug is available.")
 											: ""}
 								</p>
 								{status.slugErrorMessage && (
@@ -406,16 +377,10 @@ function CreateOrganizationCard({
 					<div className="flex gap-3 pt-2">
 						<Button
 							type="submit"
-							disabled={
-								status.loading ||
-								status.checkingSlug ||
-								!!status.slugErrorMessage
-							}
+							disabled={status.loading || status.checkingSlug || !!status.slugErrorMessage}
 							className="flex-1"
 						>
-							{status.loading && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
-							)}
+							{status.loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							{t("onboarding.organization.create", "Create Organization")}
 						</Button>
 					</div>
@@ -425,10 +390,8 @@ function CreateOrganizationCard({
 	);
 }
 
-export default function OrganizationPageClient(
-	props: OrganizationPageClientProps,
-) {
-	const { data } = useSession();
+export default function OrganizationPageClient(props: OrganizationPageClientProps) {
+	const { data, refetch } = useSession();
 	const operations = useRef(new Set<string>());
 	const [pendingScopes, setPendingScopes] = useState(new Set<string>());
 	// A different account or organization owns a different draft and request lifetime.
@@ -450,6 +413,9 @@ export default function OrganizationPageClient(
 			loading={pendingScopes.has(scope)}
 			acquireOperation={acquireOperation}
 			setLoading={setLoading}
+			onSessionRefresh={() => {
+				void refetch?.();
+			}}
 		/>
 	);
 }
@@ -460,13 +426,16 @@ function OrganizationSetup({
 	loading,
 	acquireOperation,
 	setLoading,
+	onSessionRefresh,
 }: OrganizationPageClientProps & {
 	loading: boolean;
 	acquireOperation: () => boolean;
 	setLoading: (next: boolean) => void;
+	onSessionRefresh: () => void;
 }) {
 	const { t } = useTranslate();
 	const { push, replace } = useRouter();
+	const refreshOnboardingIsAdmin = useRefreshOnboardingIsAdmin();
 	const [checkingSlugFor, setCheckingSlugFor] = useState<string | null>(null);
 	const [availableSlug, setAvailableSlug] = useState<string | null>(null);
 	const [slugError, setSlugError] = useState<SlugError>(null);
@@ -502,30 +471,23 @@ function OrganizationSetup({
 					if (!requestLifetime || lifetime.current !== requestLifetime) return;
 					if (result.success) {
 						toast.success(
-							t(
-								"onboarding.organization.createSuccess",
-								"Organization created successfully!",
-							),
+							t("onboarding.organization.createSuccess", "Organization created successfully!"),
 						);
-						push("/onboarding/profile");
+						onSessionRefresh();
+						void refreshOnboardingIsAdmin();
+						push(ORGANIZATION_NEXT_STEP_PATH);
 						return true;
 					} else {
 						showActionError(
 							result.error ||
-								t(
-									"onboarding.organization.createError",
-									"Failed to create organization",
-								),
+								t("onboarding.organization.createError", "Failed to create organization"),
 						);
 					}
 				},
 				onRejected: () => {
 					if (!requestLifetime || lifetime.current !== requestLifetime) return;
 					showActionError(
-						t(
-							"onboarding.organization.createError",
-							"Failed to create organization",
-						),
+						t("onboarding.organization.createError", "Failed to create organization"),
 					);
 				},
 				setLoading,
@@ -570,7 +532,7 @@ function OrganizationSetup({
 					}
 
 					if (result.success) {
-						replace("/onboarding/profile");
+						replace(ORGANIZATION_NEXT_STEP_PATH);
 						return;
 					}
 					setActionError(result.error || getSkipError());
@@ -642,25 +604,19 @@ function OrganizationSetup({
 			onResult: (result) => {
 				if (!requestLifetime || lifetime.current !== requestLifetime) return;
 				if (result.success) {
-					push("/onboarding/profile");
+					push(ORGANIZATION_NEXT_STEP_PATH);
 					return true;
 				} else {
 					showActionError(
 						result.error ||
-							t(
-								"onboarding.organization.skipError",
-								"Failed to skip organization setup",
-							),
+							t("onboarding.organization.skipError", "Failed to skip organization setup"),
 					);
 				}
 			},
 			onRejected: () => {
 				if (!requestLifetime || lifetime.current !== requestLifetime) return;
 				showActionError(
-					t(
-						"onboarding.organization.skipError",
-						"Failed to skip organization setup",
-					),
+					t("onboarding.organization.skipError", "Failed to skip organization setup"),
 				);
 			},
 			setLoading,
@@ -672,10 +628,7 @@ function OrganizationSetup({
 			<>
 				<ProgressIndicator currentStep="organization" />
 				<div className="mx-auto max-w-4xl">
-					<OrganizationSetupHeader
-						canCreateOrganizations={canCreateOrganizations}
-						t={t}
-					/>
+					<OrganizationSetupHeader canCreateOrganizations={canCreateOrganizations} t={t} />
 					<div
 						role="status"
 						aria-label={t(
@@ -696,10 +649,7 @@ function OrganizationSetup({
 			<ProgressIndicator currentStep="organization" />
 
 			<div className="mx-auto max-w-4xl">
-				<OrganizationSetupHeader
-					canCreateOrganizations={canCreateOrganizations}
-					t={t}
-				/>
+				<OrganizationSetupHeader canCreateOrganizations={canCreateOrganizations} t={t} />
 
 				<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
 					{actionError ? (

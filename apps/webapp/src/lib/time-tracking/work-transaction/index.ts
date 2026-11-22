@@ -44,10 +44,14 @@ export {
 	WorkTransactionProtocolViolation,
 	withOrganizationConfigurationMutation,
 } from "./ranks";
-export type WorkTransactionClient = Pick<
-	Transaction,
-	"execute" | "query" | "select" | "insert" | "update" | "delete"
->;
+export interface WorkTransactionClient {
+	execute: Transaction["execute"];
+	query: Transaction["query"];
+	select: Transaction["select"];
+	insert: Transaction["insert"];
+	update: Transaction["update"];
+	delete: Transaction["delete"];
+}
 export type WorkTransactionDatabase = Pick<typeof db, "transaction">;
 
 const protectedTransaction = Symbol("protected work transaction");

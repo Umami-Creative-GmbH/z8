@@ -104,56 +104,55 @@ export async function loadEmployeeEmployments(
 	const onlyThese = (column: Parameters<typeof inArray>[0]): SQL | undefined =>
 		employeeIds ? inArray(column, employeeIds) : undefined;
 
-	const [employees, periods, departures, timezone] = await Promise.all([
-		database
-			.select({
-				id: employee.id,
-				isActive: employee.isActive,
-				startDate: employee.startDate,
-				endDate: employee.endDate,
-			})
-			.from(employee)
-			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					onlyThese(employee.id),
-				),
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const employees = await database
+		.select({
+			id: employee.id,
+			isActive: employee.isActive,
+			startDate: employee.startDate,
+			endDate: employee.endDate,
+		})
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				onlyThese(employee.id),
 			),
-		database
-			.select({
-				employeeId: employeeEmploymentPeriod.employeeId,
-				id: employeeEmploymentPeriod.id,
-				startedAt: employeeEmploymentPeriod.startedAt,
-				endedAt: employeeEmploymentPeriod.endedAt,
-				startProvenance: employeeEmploymentPeriod.startProvenance,
-			})
-			.from(employeeEmploymentPeriod)
-			.where(
-				and(
-					eq(employeeEmploymentPeriod.organizationId, organizationId),
-					onlyThese(employeeEmploymentPeriod.employeeId),
-				),
+		);
+	const periods = await database
+		.select({
+			employeeId: employeeEmploymentPeriod.employeeId,
+			id: employeeEmploymentPeriod.id,
+			startedAt: employeeEmploymentPeriod.startedAt,
+			endedAt: employeeEmploymentPeriod.endedAt,
+			startProvenance: employeeEmploymentPeriod.startProvenance,
+		})
+		.from(employeeEmploymentPeriod)
+		.where(
+			and(
+				eq(employeeEmploymentPeriod.organizationId, organizationId),
+				onlyThese(employeeEmploymentPeriod.employeeId),
 			),
-		database
-			.select({
-				employeeId: employeeDeparture.employeeId,
-				employmentPeriodId: employeeDeparture.employmentPeriodId,
-				status: employeeDeparture.status,
-				lastWorkingDay: employeeDeparture.lastWorkingDay,
-				cutoffAt: employeeDeparture.cutoffAt,
-				timezone: employeeDeparture.timezone,
-				createdAt: employeeDeparture.createdAt,
-			})
-			.from(employeeDeparture)
-			.where(
-				and(
-					eq(employeeDeparture.organizationId, organizationId),
-					onlyThese(employeeDeparture.employeeId),
-					inArray(employeeDeparture.status, ["pending", "effective"]),
-				),
+		);
+	const departures = await database
+		.select({
+			employeeId: employeeDeparture.employeeId,
+			employmentPeriodId: employeeDeparture.employmentPeriodId,
+			status: employeeDeparture.status,
+			lastWorkingDay: employeeDeparture.lastWorkingDay,
+			cutoffAt: employeeDeparture.cutoffAt,
+			timezone: employeeDeparture.timezone,
+			createdAt: employeeDeparture.createdAt,
+		})
+		.from(employeeDeparture)
+		.where(
+			and(
+				eq(employeeDeparture.organizationId, organizationId),
+				onlyThese(employeeDeparture.employeeId),
+				inArray(employeeDeparture.status, ["pending", "effective"]),
 			),
-		loadOrganizationTimezone(database, organizationId),
-	]);
+		);
+	const timezone = await loadOrganizationTimezone(database, organizationId);
 
 	const periodsByEmployee = Map.groupBy(periods, (period) => period.employeeId);
 	const departuresByEmployee = Map.groupBy(
@@ -221,28 +220,29 @@ export async function loadProratedVacationAllowances(
 
 	const startDate = `${year}-01-01`;
 	const endDate = `${year}-12-31`;
-	const [employments, overrides, workingWeeks] = await Promise.all([
-		loadEmployeeEmployments(database, {
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const employments = await loadEmployeeEmployments(database, {
+		organizationId,
+		employeeIds,
+		employeeEmploymentStartDateOverrides:
+			input.employeeEmploymentStartDateOverrides,
+	});
+	const overrides =
+		input.overrides ??
+		(await loadEmployeeVacationOverrides(database, {
 			organizationId,
 			employeeIds,
-			employeeEmploymentStartDateOverrides:
-				input.employeeEmploymentStartDateOverrides,
-		}),
-		input.overrides ??
-			loadEmployeeVacationOverrides(database, {
-				organizationId,
-				employeeIds,
-				year,
-			}),
+			year,
+		}));
+	const workingWeeks =
 		!input.policies && year >= FIRST_WORKING_WEEK_YEAR
-			? loadWorkingWeekPeriodsForEmployees(database, {
+			? await loadWorkingWeekPeriodsForEmployees(database, {
 					organizationId,
 					employeeIds,
 					startDate,
 					endDate,
 				})
-			: new Map<string, WorkingWeekPeriod[]>(),
-	]);
+			: new Map<string, WorkingWeekPeriod[]>();
 
 	const allowances = new Map<string, ProratedAllowance>();
 	for (const [employeeId, employee] of employments) {

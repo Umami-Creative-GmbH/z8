@@ -1,7 +1,9 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
+import { organization } from "@/db/auth-schema";
 import { requireAuth } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import {
@@ -99,7 +101,18 @@ export async function createReportShareLink(
 		if (!target) {
 			return yield* Effect.fail(new ValidationError({ message: "Choose a report to share" }));
 		}
-		const { organizationId, userId, currentEmployee, viewer } = yield* shareLinkActor();
+		const { dbService, organizationId, userId, currentEmployee, viewer } = yield* shareLinkActor();
+		const org = yield* dbService.query("reportShareLink.getOrganization", () =>
+			dbService.db.query.organization.findFirst({
+				where: eq(organization.id, organizationId),
+				columns: { projectsEnabled: true },
+			}),
+		);
+		if (!org?.projectsEnabled) {
+			return yield* Effect.fail(
+				new AuthorizationError({ message: "Projects are disabled for this organization" }),
+			);
+		}
 		if (!canViewProjectReports(viewer)) {
 			return yield* Effect.fail(
 				new AuthorizationError({ message: "You don't have permission to share this report" }),

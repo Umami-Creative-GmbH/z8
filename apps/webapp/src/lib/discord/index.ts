@@ -5,12 +5,15 @@
  */
 
 // API
-export { createDM, editMessage, getApplicationInfo, sendMessage } from "./api";
-// Approval handling
 export {
-	handleApprovalButtonClick,
-	sendApprovalMessageToManager,
-} from "./approval-handler";
+	createDM,
+	editMessage,
+	getApplicationInfo,
+	sendMessage,
+	verifyBotApplication,
+} from "./api";
+// Approval handling
+export { handleApprovalButtonClick, sendApprovalMessageToManager } from "./approval-handler";
 // Bot config
 export {
 	getAllActiveBotConfigs,

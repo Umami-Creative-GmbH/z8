@@ -54,6 +54,7 @@ export async function completeDrivingLicencePersonalReminderAction(input: {
 				);
 		});
 		revalidatePath("/driving-licence");
+		revalidatePath("/team/driving-licence", "layout");
 		return { success: true as const };
 	} catch {
 		return {

@@ -9,9 +9,13 @@ import { queryKeys } from "./keys";
 const actions = vi.hoisted(() => ({
 	getEmployeeOffboardingViewAction: vi.fn(),
 	previewEmployeeDepartureAction: vi.fn(),
+	previewPastDepartureAction: vi.fn(),
 	scheduleEmployeeDepartureAction: vi.fn(),
 	cancelEmployeeDepartureAction: vi.fn(),
 	offboardEmployeeNowAction: vi.fn(),
+	recordPastDepartureAction: vi.fn(),
+	correctPastDepartureDateAction: vi.fn(),
+	recordHistoricalDepartureDateAction: vi.fn(),
 	rehireEmployeeAction: vi.fn(),
 	resolveDepartureReviewAction: vi.fn(),
 	retryDepartureTaskAction: vi.fn(),

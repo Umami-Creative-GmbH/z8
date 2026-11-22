@@ -488,48 +488,47 @@ export async function cancelAbsenceInTransaction(
 		fail("Absence not found in the active organization");
 	}
 
-	const [ownedOrganization, canonicalRecord, workflowRow, requests, chains] = await Promise.all([
-		transactionDb.query.organization.findFirst({
-			where: eq(organization.id, organizationId),
-			columns: { id: true, timezone: true },
-		}),
-		transactionDb.query.timeRecord.findFirst({
-			where: and(
-				eq(timeRecord.id, absence.canonicalRecordId),
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.employeeId, absence.employeeId),
-				eq(timeRecord.recordKind, "absence"),
-			),
-		}),
-		absence.approvalWorkflowId
-			? transactionDb.query.approvalWorkflow.findFirst({
-					where: and(
-						eq(approvalWorkflow.id, absence.approvalWorkflowId),
-						eq(approvalWorkflow.organizationId, organizationId),
-						eq(approvalWorkflow.workflowType, "absence"),
-						eq(approvalWorkflow.sourceType, "absence_entry"),
-						eq(approvalWorkflow.sourceId, absenceId),
-					),
-				})
-			: Promise.resolve(undefined),
-		transactionDb.query.approvalRequest.findMany({
-			where: and(
-				eq(approvalRequest.organizationId, organizationId),
-				eq(approvalRequest.entityType, "absence_entry"),
-				eq(approvalRequest.entityId, absenceId),
-			),
-			limit: 1001,
-		}),
-		transactionDb.query.approvalChainInstance.findMany({
-			where: and(
-				eq(approvalChainInstance.organizationId, organizationId),
-				eq(approvalChainInstance.entityType, "absence_entry"),
-				eq(approvalChainInstance.entityId, absenceId),
-			),
-			with: { stages: true },
-			limit: 2,
-		}),
-	]);
+	// One after another: `transactionDb` is one connection, and pg@9 refuses a query while another is executing.
+	const ownedOrganization = await transactionDb.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { id: true, timezone: true },
+	});
+	const canonicalRecord = await transactionDb.query.timeRecord.findFirst({
+		where: and(
+			eq(timeRecord.id, absence.canonicalRecordId),
+			eq(timeRecord.organizationId, organizationId),
+			eq(timeRecord.employeeId, absence.employeeId),
+			eq(timeRecord.recordKind, "absence"),
+		),
+	});
+	const workflowRow = absence.approvalWorkflowId
+		? await transactionDb.query.approvalWorkflow.findFirst({
+				where: and(
+					eq(approvalWorkflow.id, absence.approvalWorkflowId),
+					eq(approvalWorkflow.organizationId, organizationId),
+					eq(approvalWorkflow.workflowType, "absence"),
+					eq(approvalWorkflow.sourceType, "absence_entry"),
+					eq(approvalWorkflow.sourceId, absenceId),
+				),
+			})
+		: undefined;
+	const requests = await transactionDb.query.approvalRequest.findMany({
+		where: and(
+			eq(approvalRequest.organizationId, organizationId),
+			eq(approvalRequest.entityType, "absence_entry"),
+			eq(approvalRequest.entityId, absenceId),
+		),
+		limit: 1001,
+	});
+	const chains = await transactionDb.query.approvalChainInstance.findMany({
+		where: and(
+			eq(approvalChainInstance.organizationId, organizationId),
+			eq(approvalChainInstance.entityType, "absence_entry"),
+			eq(approvalChainInstance.entityId, absenceId),
+		),
+		with: { stages: true },
+		limit: 2,
+	});
 	if (
 		ownedOrganization?.id !== organizationId ||
 		!ownedOrganization.timezone ||

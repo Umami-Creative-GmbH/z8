@@ -139,20 +139,19 @@ export async function classifyPayrollRunCandidates(
 			),
 		)
 		.orderBy(asc(travelExpenseReport.id));
-	const [reports, claims] = await Promise.all([
-		options.lock ? reportQuery.for("update") : reportQuery,
-		database
-			.select({ row: travelExpenseClaim })
-			.from(travelExpenseClaim)
-			.where(
-				and(
-					eq(travelExpenseClaim.organizationId, organizationId),
-					eq(travelExpenseClaim.status, "approved"),
-					inArray(travelExpenseClaim.employeeId, employeeIds),
-				),
-			)
-			.orderBy(asc(travelExpenseClaim.id)),
-	]);
+	// One after another: `database` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const reports = options.lock ? await reportQuery.for("update") : await reportQuery;
+	const claims = await database
+		.select({ row: travelExpenseClaim })
+		.from(travelExpenseClaim)
+		.where(
+			and(
+				eq(travelExpenseClaim.organizationId, organizationId),
+				eq(travelExpenseClaim.status, "approved"),
+				inArray(travelExpenseClaim.employeeId, employeeIds),
+			),
+		)
+		.orderBy(asc(travelExpenseClaim.id));
 
 	const accounts = await buildSettlementAccounts(
 		database,
@@ -172,19 +171,17 @@ export async function classifyPayrollRunCandidates(
 	if (awaiting.length === 0) return [];
 
 	const awaitingReports = awaiting.filter((account) => account.source.type === "report");
-	const [revisions, codes] = await Promise.all([
-		latestApprovedRevisions(database, {
-			organizationId,
-			reports: awaitingReports.map((account) => ({
-				reportId: account.source.id,
-				revisionId: account.basis?.revisionId ?? "",
-				submissionCycle: account.basis?.submissionCycle ?? 0,
-			})),
-		}),
-		isExpensePayrollFormat(input.format)
-			? wageTypeCodes(database, organizationId, input.format)
-			: new Map<string, string>(),
-	]);
+	const revisions = await latestApprovedRevisions(database, {
+		organizationId,
+		reports: awaitingReports.map((account) => ({
+			reportId: account.source.id,
+			revisionId: account.basis?.revisionId ?? "",
+			submissionCycle: account.basis?.submissionCycle ?? 0,
+		})),
+	});
+	const codes = isExpensePayrollFormat(input.format)
+		? await wageTypeCodes(database, organizationId, input.format)
+		: new Map<string, string>();
 
 	return awaiting.map((account) => {
 		let revision: { id: string; facts: PayrollRevision } | null = null;

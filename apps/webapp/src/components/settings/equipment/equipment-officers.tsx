@@ -11,6 +11,11 @@ import { useTranslate } from "@tolgee/react";
 import { useId, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
+	EmployeeMultiSelect,
+	EmployeeSingleSelect,
+	toSelectableEmployee,
+} from "@/components/employee-select";
+import {
 	ActionPanel,
 	ActionPanelBody,
 	ActionPanelContent,
@@ -48,7 +53,6 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
 	Select,
 	SelectContent,
@@ -522,16 +526,17 @@ function OfficerGrantForm({
 								</p>
 							) : (
 								<TFormControl hasError={field.state.meta.errors.length > 0}>
-									<SearchableSelect
-										options={candidates.map((employee) => ({
-											code: employee.id,
-											name: employee.name,
-										}))}
-										value={field.state.value}
-										onValueChange={field.handleChange}
-										onOpenChange={(next) => {
-											if (!next) field.handleBlur();
-										}}
+									<EmployeeSingleSelect
+										className="space-y-0"
+										employees={candidates.map((employee) =>
+											toSelectableEmployee({
+												id: employee.id,
+												name: employee.name,
+											}),
+										)}
+										value={field.state.value || null}
+										onChange={(value) => field.handleChange(value ?? "")}
+										onBlur={field.handleBlur}
 										placeholder={t(
 											"settings.equipment.officers.choose",
 											"Select an officer…",
@@ -540,7 +545,7 @@ function OfficerGrantForm({
 											"settings.equipment.officers.search",
 											"Search employees…",
 										)}
-										emptyText={t(
+										emptyMessage={t(
 											"settings.equipment.officers.noMatches",
 											"No current employee found.",
 										)}
@@ -612,21 +617,34 @@ function OfficerGrantForm({
 								</form.Field>
 								<form.Field name="employeeIds">
 									{(field) => (
-										<ScopeChoices
-											title={t(
+										<EmployeeMultiSelect
+											label={t(
 												"settings.equipment.officers.employees",
 												"Employees",
 											)}
-											empty={t(
+											placeholder={t(
+												"settings.equipment.officers.selectEmployees",
+												"Select employees",
+											)}
+											emptyMessage={t(
 												"settings.equipment.officers.noEmployees",
 												"No current employees available.",
 											)}
 											// Former employees stay listed only while the grant names them.
-											choices={data.employees.filter(
-												(employee) =>
-													employee.current ||
-													field.state.value.includes(employee.id),
-											)}
+											employees={data.employees
+												.filter(
+													(employee) =>
+														employee.current ||
+														field.state.value.includes(employee.id),
+												)
+												.map((employee) =>
+													toSelectableEmployee({
+														id: employee.id,
+														name: employee.name,
+														isActive: employee.current,
+														isFormer: !employee.current,
+													}),
+												)}
 											value={field.state.value}
 											onChange={field.handleChange}
 											disabled={pending}

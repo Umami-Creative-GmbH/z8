@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { listEmployeeCostRates } from "@/lib/billable-time/cost-rates";
@@ -18,9 +18,9 @@ describe("current contract type reads", () => {
 		]);
 		await fixture.pool.query(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, employment_period_id, valid_from, contract_type,
+			 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date, contract_type,
 			  weekly_contract_minutes, hourly_rate, currency, review_state, created_by, updated_at)
-			 values ($1, $2, $3, '2026-03-10 00:00:00', 'hourly', 2400, 25, 'EUR',
+			 values ($1, $2, $3, '2026-03-10 00:00:00', '2026-03-10', 'hourly', 2400, 25, 'EUR',
 			         'confirmed', $4, now())`,
 			[fixture.employeeId, fixture.organizationId, fixture.employmentPeriodId, fixture.ownerUserId],
 		);
@@ -47,8 +47,8 @@ describe("current contract type reads", () => {
 			organizationId: fixture.organizationId,
 			allowedEmployeeIds: [fixture.employeeId],
 			period: {
-				start: DateTime.fromISO("2026-03-01", { zone: "UTC" }),
-				end: DateTime.fromISO("2026-03-31", { zone: "UTC" }),
+				start: parsePlainDate("2026-03-01"),
+				end: parsePlainDate("2026-03-31"),
 				label: "March 2026",
 			},
 			generatedBy: { id: fixture.ownerUserId, name: "Owner" },

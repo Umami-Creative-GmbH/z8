@@ -15,7 +15,7 @@ Scope: privileged settings server actions and organization-related API routes th
 - `api/slack/setup/route.ts`: disconnect is guarded before Vault or database mutation.
 - `api/slack/oauth/authorize/route.ts`: OAuth state creation is guarded.
 - `api/slack/oauth/callback/route.ts`: the state-bound actor is revalidated before consuming state, exchanging the code, or storing credentials.
-- `api/discord/setup/route.ts`: setup and disconnect are guarded before external, Vault, or database mutation.
+- `settings/notification-channels/actions.ts` (`connectDiscordBot`, `disconnectDiscordBot`): migrated from retired `api/discord/setup/route.ts` to `organizationAction` (`requires: "orgAdmin"`), guarding before external, Vault, or database mutation.
 - `api/telegram/setup/route.ts`: setup and disconnect are guarded before external, Vault, or database mutation.
 - `api/teams/setup/route.ts`: setup and disconnect retain active-organization and CASL checks and additionally reject inactive or unapproved actors.
 

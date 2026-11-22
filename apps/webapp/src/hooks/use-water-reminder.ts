@@ -8,7 +8,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { getWaterReminderStatus } from "@/app/[locale]/(app)/wellness/actions";
+import { getWaterReminderStatus } from "@/lib/wellness/actions";
 import { queryKeys } from "@/lib/query/keys";
 import { useHydrationStats } from "./use-hydration-stats";
 

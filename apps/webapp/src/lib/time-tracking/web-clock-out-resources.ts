@@ -78,6 +78,10 @@ function resourceQueries(
 			scope: sql`organization_id = ${org} and id in (${policies})`,
 		},
 		{
+			table: "work_policy_version",
+			scope: sql`organization_id = ${org} and policy_id in (${policies})`,
+		},
+		{
 			table: "work_policy_regulation",
 			scope: sql`policy_id in (select id from work_policy where organization_id = ${org} and id in (${policies}))`,
 		},
@@ -206,9 +210,7 @@ export async function routeWebClockOutResources(
 		}
 	}
 	if (
-		!resources.some(
-			(row) => row.table === "employee" && row.id === input.employeeId,
-		) ||
+		!resources.some((row) => row.table === "employee" && row.id === input.employeeId) ||
 		!resources.some((row) => row.table === "user" && row.id === input.userId) ||
 		!resources.some((row) => row.table === "user" && row.id === ownerUserId)
 	) {
@@ -227,9 +229,7 @@ export async function lockWebClockOutResources(
 		resources.filter((row) => row.table === "employee").map((row) => row.id),
 		resources.filter((row) => row.table === "user").map((row) => row.id),
 	)) {
-		const ids = resources
-			.filter((row) => row.table === definition.table)
-			.map((row) => row.id);
+		const ids = resources.filter((row) => row.table === definition.table).map((row) => row.id);
 		if (ids.length === 0) continue;
 		const column = sql.identifier(definition.column ?? "id");
 		// Only the routed IDs may be acquired. Newly discovered IDs cause a full

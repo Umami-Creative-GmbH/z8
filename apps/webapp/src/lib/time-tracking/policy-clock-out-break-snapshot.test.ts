@@ -9,6 +9,10 @@ import {
 } from "./policy-clock-out-break-snapshot";
 
 const evaluatedAt = "2026-03-29T08:01:00Z";
+const policyVersionId = "35000000-0000-4000-8000-000000000001";
+const employmentPeriodId = "65000000-0000-4000-8000-000000000001";
+const effectiveFromDate = "2026-01-01";
+
 const workPolicySnapshot = {
 	version: 1,
 	evaluatedAt,
@@ -42,18 +46,45 @@ const workPolicySnapshot = {
 	],
 } as const;
 
+const workPolicySnapshotV2 = {
+	...workPolicySnapshot,
+	version: 2,
+	employmentPeriodId,
+	policyVersionId,
+	effectiveFromDate,
+} as const;
+
 describe("parsePolicyClockOutBreakSnapshot", () => {
 	it("accepts sorted rules and returns detached deeply frozen evidence", () => {
 		const input = structuredClone(workPolicySnapshot);
 		const parsed = parsePolicyClockOutBreakSnapshot(input, evaluatedAt);
 
-		expect(
-			parsed.breakRules.map((rule) => rule.workingMinutesThreshold),
-		).toEqual([360, 540]);
+		expect(parsed.breakRules.map((rule) => rule.workingMinutesThreshold)).toEqual([360, 540]);
 		expect(parsed).not.toBe(input);
 		expect(Object.isFrozen(parsed)).toBe(true);
 		expect(Object.isFrozen(parsed.breakRules)).toBe(true);
 		expect(Object.isFrozen(parsed.breakRules[0])).toBe(true);
+	});
+
+	it("accepts v2 work_policy and none snapshots while preserving v1 replay compatibility", () => {
+		const parsedV2 = parsePolicyClockOutBreakSnapshot(
+			structuredClone(workPolicySnapshotV2),
+			evaluatedAt,
+		);
+		expect(parsedV2).toEqual(workPolicySnapshotV2);
+		expect(Object.isFrozen(parsedV2)).toBe(true);
+
+		expect(
+			parsePolicyClockOutBreakSnapshot(
+				{ version: 2, evaluatedAt, resolution: "none", employmentPeriodId },
+				evaluatedAt,
+			),
+		).toEqual({ version: 2, evaluatedAt, resolution: "none", employmentPeriodId });
+
+		// v1 and v2 are distinct snapshots
+		expect(
+			policyClockOutBreakSnapshotsEqual(workPolicySnapshot, workPolicySnapshotV2, evaluatedAt),
+		).toBe(false);
 	});
 
 	it("accepts a strict no-policy resolution", () => {
@@ -67,14 +98,8 @@ describe("parsePolicyClockOutBreakSnapshot", () => {
 
 	it.each([
 		["unknown key", { ...workPolicySnapshot, metadata: {} }],
-		[
-			"non-canonical instant",
-			{ ...workPolicySnapshot, evaluatedAt: "2026-03-29T08:01:00.000Z" },
-		],
-		[
-			"wrong source end",
-			{ ...workPolicySnapshot, evaluatedAt: "2026-03-29T08:02:00Z" },
-		],
+		["non-canonical instant", { ...workPolicySnapshot, evaluatedAt: "2026-03-29T08:01:00.000Z" }],
+		["wrong source end", { ...workPolicySnapshot, evaluatedAt: "2026-03-29T08:02:00Z" }],
 		["invalid id", { ...workPolicySnapshot, teamId: "team-1" }],
 		[
 			"unsorted break rules",
@@ -150,8 +175,7 @@ describe("parsePolicyClockOutBreakSnapshot", () => {
 					workPolicySnapshot.breakRules[0],
 					{
 						...workPolicySnapshot.breakRules[1],
-						workingMinutesThreshold:
-							workPolicySnapshot.breakRules[0].workingMinutesThreshold,
+						workingMinutesThreshold: workPolicySnapshot.breakRules[0].workingMinutesThreshold,
 					},
 				],
 			},
@@ -217,6 +241,9 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 		return {
 			employeeOrganizationId: input.employeeOrganizationId ?? "org-1",
 			teamId: workPolicySnapshot.teamId,
+			userTimezone: "Europe/Berlin",
+			organizationTimezone: "Europe/Berlin",
+			employmentPeriodId,
 			assignmentId: input.id,
 			assignmentOrganizationId: input.organizationId ?? "org-1",
 			assignmentType: input.type,
@@ -238,6 +265,8 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 						policyId: selected.assignmentPolicyId,
 						policyName: "Selected policy",
 						policyIsActive: true,
+						policyVersionId,
+						effectiveFromDate,
 						regulationEnabled: false,
 						regulationId: null,
 						maxUninterruptedMinutes: null,
@@ -373,13 +402,22 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 			if (compiled.sql.includes("assignment_candidates")) {
 				expect(compiled.sql).toContain("for update of employee");
 				expect(compiled.sql).toContain("for update of assignment");
+				expect(compiled.sql).toContain("pg_timezone_names");
+				expect(compiled.sql).toContain("lower(tz.name) = lower(nullif(user_settings.timezone");
+				expect(compiled.sql).not.toContain("btrim(user_settings.timezone)");
+				expect(compiled.sql).toContain("employee_team_history");
 				expect(compiled.sql).toContain(
 					'assignment.organization_id = employee_row."organizationId"',
 				);
 				expect(compiled.sql).toContain("assignment.effective_from <=");
 				expect(compiled.sql).toContain("assignment.effective_until >");
+				// M4 / F9-2: Lock assignment rows strictly by assignment.id before sorting by priority.
+				expect(compiled.sql.indexOf("order by assignment.id")).toBeGreaterThan(-1);
+				expect(compiled.sql.indexOf("order by assignment.id")).toBeLessThan(
+					compiled.sql.indexOf("for update of assignment"),
+				);
 				expect(compiled.sql.indexOf("assignment.priority desc")).toBeLessThan(
-					compiled.sql.indexOf("case assignment.assignment_type"),
+					compiled.sql.indexOf('case assignment."assignmentType"'),
 				);
 				expect(compiled.params).toContain(65);
 				return {
@@ -393,7 +431,7 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 					],
 				};
 			}
-			for (const owner of ["policy", "regulation", "rule"]) {
+			for (const owner of ["policy", "version", "regulation", "rule"]) {
 				expect(compiled.sql).toContain(`for update of ${owner}`);
 			}
 			return {
@@ -402,6 +440,8 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 						policyId: workPolicySnapshot.policy.id,
 						policyName: workPolicySnapshot.policy.name,
 						policyIsActive: true,
+						policyVersionId,
+						effectiveFromDate,
 						regulationEnabled: true,
 						regulationId: workPolicySnapshot.regulation.id,
 						maxUninterruptedMinutes: 360,
@@ -418,9 +458,7 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 				employeeId: "60000000-0000-4000-8000-000000000001",
 				endTime: parseInstant(evaluatedAt),
 			}),
-		).resolves.toEqual(
-			parsePolicyClockOutBreakSnapshot(workPolicySnapshot, evaluatedAt),
-		);
+		).resolves.toEqual(parsePolicyClockOutBreakSnapshot(workPolicySnapshotV2, evaluatedAt));
 	});
 
 	it("stores none only when no effective assignment exists", async () => {
@@ -429,6 +467,9 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 				{
 					employeeOrganizationId: "org-1",
 					teamId: null,
+					userTimezone: null,
+					organizationTimezone: "UTC",
+					employmentPeriodId,
 					assignmentId: null,
 					assignmentOrganizationId: null,
 					assignmentType: null,
@@ -444,7 +485,12 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 				employeeId: "60000000-0000-4000-8000-000000000001",
 				endTime: parseInstant(evaluatedAt),
 			}),
-		).resolves.toEqual({ version: 1, evaluatedAt, resolution: "none" });
+		).resolves.toEqual({
+			version: 2,
+			evaluatedAt,
+			resolution: "none",
+			employmentPeriodId,
+		});
 	});
 
 	it("retains assigned policy identity when regulation is disabled", async () => {
@@ -463,6 +509,8 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 						policyId: workPolicySnapshot.policy.id,
 						policyName: "Policy",
 						policyIsActive: true,
+						policyVersionId,
+						effectiveFromDate,
 						regulationEnabled: false,
 						regulationId: null,
 						maxUninterruptedMinutes: null,
@@ -479,9 +527,12 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 				endTime: parseInstant(evaluatedAt),
 			}),
 		).resolves.toEqual({
-			version: 1,
+			version: 2,
 			evaluatedAt,
 			resolution: "work_policy",
+			employmentPeriodId,
+			policyVersionId,
+			effectiveFromDate,
 			teamId: workPolicySnapshot.teamId,
 			assignment: workPolicySnapshot.assignment,
 			policy: { id: workPolicySnapshot.policy.id, name: "Policy" },
@@ -493,6 +544,75 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 			},
 			breakRules: [],
 		});
+	});
+
+	it("resolves a historically capped assignment for a retired policy (A2-10) and rejects post-retirement ones", async () => {
+		const retiredCapped = {
+			...candidate({
+				id: workPolicySnapshot.assignment.id,
+				type: "team",
+				policyId: workPolicySnapshot.policy.id,
+				priority: 2,
+			}),
+			assignmentEffectiveUntilDate: "2026-04-01",
+			policyEvaluationDate: "2026-03-29",
+		};
+		const historicalExecute = vi
+			.fn()
+			.mockResolvedValueOnce({ rows: [retiredCapped] })
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						policyId: workPolicySnapshot.policy.id,
+						policyName: workPolicySnapshot.policy.name,
+						policyIsActive: false,
+						// A3-7: Verify pg's raw `timestamp without time zone` string (`YYYY-MM-DD HH:mm:ss`) parses cleanly
+						policyUpdatedAt: "2026-04-01 12:00:00",
+						policyVersionId,
+						effectiveFromDate,
+						regulationEnabled: true,
+						regulationId: workPolicySnapshot.regulation.id,
+						maxUninterruptedMinutes: 360,
+						breakRules: workPolicySnapshot.breakRules,
+					},
+				],
+			});
+		await expect(resolveWith(historicalExecute)).resolves.toEqual(
+			parsePolicyClockOutBreakSnapshot(workPolicySnapshotV2, evaluatedAt),
+		);
+
+		const uncappedRetiredExecute = vi
+			.fn()
+			.mockResolvedValueOnce({
+				rows: [
+					candidate({
+						id: workPolicySnapshot.assignment.id,
+						type: "team",
+						policyId: workPolicySnapshot.policy.id,
+						priority: 2,
+					}),
+				],
+			})
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						policyId: workPolicySnapshot.policy.id,
+						policyName: workPolicySnapshot.policy.name,
+						policyIsActive: false,
+						// A3-7: Verify pg's raw `timestamp without time zone` string (`YYYY-MM-DD HH:mm:ss`) parses cleanly
+						policyUpdatedAt: "2026-04-01 12:00:00",
+						policyVersionId,
+						effectiveFromDate,
+						regulationEnabled: false,
+						regulationId: null,
+						maxUninterruptedMinutes: null,
+						breakRules: [],
+					},
+				],
+			});
+		await expect(resolveWith(uncappedRetiredExecute)).rejects.toThrow(
+			"Policy clock-out break snapshot resolution failed",
+		);
 	});
 
 	it("fails closed when an assignment references invalid policy evidence", async () => {

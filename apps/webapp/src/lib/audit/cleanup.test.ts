@@ -20,6 +20,8 @@ vi.mock("@/db", () => ({
 	auditLog: {
 		id: "auditLog.id",
 		timestamp: "auditLog.timestamp",
+		entityType: "auditLog.entityType",
+		action: "auditLog.action",
 	},
 	db: {
 		delete: deleteMock,
@@ -53,7 +55,7 @@ describe("deleteOldAuditLogs", () => {
 		vi.useRealTimers();
 	});
 
-	it("deletes audit logs older than the retention cutoff and returns the deleted count", async () => {
+	it("deletes audit logs older than the retention cutoff while preserving durable work_policy.retired boundaries", async () => {
 		returningMock.mockResolvedValue([{ id: "audit-1" }, { id: "audit-2" }]);
 
 		const result = await deleteOldAuditLogs(365);
@@ -61,13 +63,32 @@ describe("deleteOldAuditLogs", () => {
 		expect(result).toBe(2);
 		expect(deleteMock).toHaveBeenCalledWith(auditLog);
 		expect(sql).toHaveBeenCalledWith(
-			expect.arrayContaining(["", " < ", ""]),
+			expect.arrayContaining([
+				"",
+				" < ",
+				" AND NOT (",
+				" = 'work_policy' AND ",
+				" = 'work_policy.retired')",
+			]),
 			auditLog.timestamp,
 			new Date("2025-05-24T12:00:00.000Z"),
+			auditLog.entityType,
+			auditLog.action,
 		);
 		expect(whereMock).toHaveBeenCalledWith({
-			strings: expect.arrayContaining(["", " < ", ""]),
-			values: [auditLog.timestamp, new Date("2025-05-24T12:00:00.000Z")],
+			strings: expect.arrayContaining([
+				"",
+				" < ",
+				" AND NOT (",
+				" = 'work_policy' AND ",
+				" = 'work_policy.retired')",
+			]),
+			values: [
+				auditLog.timestamp,
+				new Date("2025-05-24T12:00:00.000Z"),
+				auditLog.entityType,
+				auditLog.action,
+			],
 		});
 		expect(returningMock).toHaveBeenCalledWith({ id: auditLog.id });
 		expect(infoMock).toHaveBeenCalledWith(
@@ -86,6 +107,8 @@ describe("deleteOldAuditLogs", () => {
 			expect.any(Array),
 			auditLog.timestamp,
 			new Date("2025-05-24T12:00:00.000Z"),
+			auditLog.entityType,
+			auditLog.action,
 		);
 	});
 

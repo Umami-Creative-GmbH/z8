@@ -1,16 +1,19 @@
 import { Suspense } from "react";
 import { ProjectManagement } from "@/components/settings/project-management";
-import { ProjectSettingsTabs } from "@/components/settings/project-settings-tabs";
 import { ProjectTaskManagement } from "@/components/settings/project-task-management";
 import { ProjectTemplateManagement } from "@/components/settings/project-template-management";
+import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import {
 	listProjectsWithManageableTasks,
 	loadProjectTaskManager,
 } from "@/lib/projects/project-task-permission";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
+import { getTranslate } from "@/tolgee/server";
 
 /**
  * Project managers without project settings access manage only the tasks of
@@ -22,31 +25,26 @@ async function getTaskOnlyProjects(userId: string, organizationId: string) {
 }
 
 async function ProjectSettingsPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext) {
+	if (!caller?.settingsAccess) {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const { organizationId, settingsAccess, userId } = caller;
 
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
-
-	if (settingsRouteContext.accessTier === "member") {
-		const projects = await getTaskOnlyProjects(
-			settingsRouteContext.authContext.user.id,
-			organizationId,
-		);
+	if (!meetsSettingsAccess(settingsAccess, "scopedManager")) {
+		const projects = await getTaskOnlyProjects(userId, organizationId);
 		if (projects.length === 0) {
 			return redirectWithLocale("/settings");
 		}
+		await requireOrganizationFeatureEnabled(organizationId, "projectsEnabled");
 		return <ProjectTaskManagement projects={projects} />;
 	}
 
-	if (settingsRouteContext.accessTier !== "orgAdmin") {
+	await requireOrganizationFeatureEnabled(organizationId, "projectsEnabled");
+
+	if (!meetsSettingsAccess(settingsAccess, "orgAdmin")) {
 		return (
 			<div className="page-frame flex flex-1 flex-col">
 				<ProjectManagement organizationId={organizationId} canManageProjectManagers={false} />
@@ -54,13 +52,41 @@ async function ProjectSettingsPageContent() {
 		);
 	}
 
+	const t = await getTranslate();
 	// Only org owners and admins manage project templates (#878).
 	return (
-		<ProjectSettingsTabs
-			projects={
-				<ProjectManagement organizationId={organizationId} canManageProjectManagers embedded />
-			}
-			templates={<ProjectTemplateManagement organizationId={organizationId} />}
+		<SettingsTabbedPage
+			key={organizationId}
+			title={t("settings.projects.title", "Projects")}
+			description={t(
+				"settings.projects.description",
+				"Manage projects, budgets, deadlines, and time assignments",
+			)}
+			defaultTab="projects"
+			tabs={[
+				{
+					value: "projects",
+					label: t("settings.projects.tabs.projects", "Projects"),
+					panel: (
+						<div className="flex flex-1 flex-col">
+							<ProjectManagement
+								organizationId={organizationId}
+								canManageProjectManagers
+								embedded
+							/>
+						</div>
+					),
+				},
+				{
+					value: "templates",
+					label: t("settings.projects.tabs.templates", "Templates"),
+					panel: (
+						<div className="flex flex-1 flex-col">
+							<ProjectTemplateManagement organizationId={organizationId} />
+						</div>
+					),
+				},
+			]}
 		/>
 	);
 }

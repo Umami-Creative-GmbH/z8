@@ -1,8 +1,14 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import { workPeriod } from "@/db/schema";
-import type { Instant } from "@/lib/datetime/temporal-core";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import {
 	type AutomaticBreakAdjustmentOutcome,
@@ -232,10 +238,10 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 			processUnprocessedPeriods: (input) =>
 				Effect.gen(function* () {
-					const targetDate = input.date || new Date();
-					const targetDT = DateTime.fromJSDate(targetDate);
-					const startOfDay = targetDT.startOf("day").toJSDate();
-					const endOfDay = targetDT.endOf("day").toJSDate();
+					const targetInstant = input.date ? instantFromDate(input.date) : systemClock.nowInstant();
+					const dayRange = localDayRange(plainDateAt(targetInstant, "UTC").toString(), "UTC");
+					const startOfDay = dateFromInstant(dayRange.start);
+					const endOfDay = dateFromInstant(dayRange.endExclusive.subtract({ milliseconds: 1 }));
 
 					// Find all completed work periods from the target day that haven't been auto-adjusted
 					const periods = yield* dbService.query("getUnprocessedPeriods", async () => {

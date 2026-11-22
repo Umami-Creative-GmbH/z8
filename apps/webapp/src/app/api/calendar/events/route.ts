@@ -1,5 +1,9 @@
-import { DateTime } from "luxon";
+import { detectLanguageFromHeaders } from "@tolgee/react/server";
+import { eq } from "drizzle-orm";
 import { connection, type NextRequest, NextResponse } from "next/server";
+import { Temporal } from "temporal-polyfill";
+import { db } from "@/db";
+import { userSettings } from "@/db/schema";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
 import { getAbsencesForMonth, linkAbsenceDeputyProfiles } from "@/lib/calendar/absence-service";
 import {
@@ -18,16 +22,44 @@ import type {
 import { buildDailyActualMinutes } from "@/lib/calendar/work-hours-summary";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
-import {
-	localDayRange,
-	localMonthRange,
-} from "@/lib/datetime/temporal-boundaries";
+import { localDayRange, localMonthRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { superJsonResponse } from "@/lib/superjson";
+import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
+import { isValidTimeZone } from "@/lib/timezone/validation";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
-import { db } from "@/db";
-import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
+import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/catalog-config";
+
+interface WorkPeriodDisplayOptions {
+	locale: string;
+	timeFormat?: "12h" | "24h";
+}
+
+function resolveCalendarLocale(
+	request: NextRequest,
+	savedLocale: string | null | undefined,
+): string {
+	const cookieLocale = request.cookies?.get("NEXT_LOCALE")?.value;
+	if (cookieLocale && ALL_LANGUAGES.includes(cookieLocale)) {
+		return cookieLocale;
+	}
+	if (savedLocale && ALL_LANGUAGES.includes(savedLocale)) {
+		return savedLocale;
+	}
+	if (request.headers) {
+		const detected = detectLanguageFromHeaders(request.headers, ALL_LANGUAGES);
+		if (detected) return detected;
+	}
+	return DEFAULT_LANGUAGE;
+}
+
+function normalizeTimeFormatPreference(
+	value: string | null | undefined,
+): "12h" | "24h" | undefined {
+	if (value === "12h" || value === "24h") return value;
+	return undefined;
+}
 
 async function fetchHolidayEvents(params: {
 	organizationId: string;
@@ -41,15 +73,19 @@ async function fetchHolidayEvents(params: {
 		return getHolidaysForMonth(params.organizationId, params.month, params.year);
 	}
 
-	const monthStart = DateTime.utc(params.year, params.month + 1, 1).startOf("day");
-	const monthEnd = monthStart.endOf("month");
+	const monthRange = localMonthRange(
+		`${params.year}-${String(params.month + 1).padStart(2, "0")}-01`,
+		"UTC",
+	);
+	const monthStart = dateFromInstant(monthRange.start);
+	const monthEnd = dateFromInstant(monthRange.endExclusive.subtract({ milliseconds: 1 }));
 
 	try {
 		const holidays = await getAssignedHolidaysForEmployee({
 			organizationId: params.organizationId,
 			employeeId: params.employeeId,
-			startDate: monthStart.toJSDate(),
-			endDate: monthEnd.toJSDate(),
+			startDate: monthStart,
+			endDate: monthEnd,
 		});
 		return holidays.map(assignedHolidayToCalendarEvent);
 	} catch (error) {
@@ -74,6 +110,7 @@ async function fetchMonthEvents(
 	showWorkPeriods: boolean,
 	includeWorkPeriodActuals: boolean,
 	calendarTimezone: string | null,
+	workPeriodDisplayOptions: WorkPeriodDisplayOptions,
 ): Promise<{
 	events: CalendarEvent[];
 	dailyActualMinutes: DailyWorkActualMinutes;
@@ -93,7 +130,14 @@ async function fetchMonthEvents(
 			? getTimeEntriesForMonth(month, year, { organizationId, employeeId }, calendarTimezone)
 			: [],
 		showWorkPeriods || includeWorkPeriodActuals
-			? getWorkPeriodsForMonth(month, year, { organizationId, employeeId }, calendarTimezone)
+			? getWorkPeriodsForMonth(
+					month,
+					year,
+					{ organizationId, employeeId },
+					calendarTimezone,
+					undefined,
+					workPeriodDisplayOptions,
+				)
 			: [],
 	]);
 	const completedWorkPeriods = workPeriods.filter((event) => !event.metadata.isRunning);
@@ -139,26 +183,23 @@ function getRequestDateRange(
 	fullYear: boolean,
 	timezone: string | null,
 ) {
-	const zonedStart = DateTime.fromObject(
-		{ year, month: fullYear ? 1 : (month ?? 0) + 1, day: 1 },
-		{ zone: timezone || "UTC" },
-	);
-	const validStart = zonedStart.isValid
-		? zonedStart
-		: DateTime.utc(year, fullYear ? 1 : (month ?? 0) + 1, 1);
-	const start = fullYear ? validStart.startOf("year") : validStart.startOf("month");
-	const end = fullYear ? start.endOf("year") : start.endOf("month");
+	const resolvedTimezone = timezone && isValidTimeZone(timezone) ? timezone : "UTC";
+	const startDate = Temporal.PlainDate.from({
+		year,
+		month: fullYear ? 1 : (month ?? 0) + 1,
+		day: 1,
+	});
+	const endExclusiveDate = fullYear ? startDate.add({ years: 1 }) : startDate.add({ months: 1 });
+	const startInstant = startDate.toZonedDateTime(resolvedTimezone).toInstant();
+	const endExclusiveInstant = endExclusiveDate.toZonedDateTime(resolvedTimezone).toInstant();
 
 	return {
-		startDate: start.toUTC().toJSDate(),
-		endDate: end.toUTC().toJSDate(),
+		startDate: dateFromInstant(startInstant),
+		endDate: dateFromInstant(endExclusiveInstant.subtract({ milliseconds: 1 })),
 	};
 }
 
-function parseCalendarDateRange(
-	rangeStart: string | null,
-	rangeEnd: string | null,
-) {
+function parseCalendarDateRange(rangeStart: string | null, rangeEnd: string | null) {
 	if (rangeStart === null && rangeEnd === null) return null;
 	if (rangeStart === null || rangeEnd === null) {
 		throw new RangeError("Calendar date range requires both boundaries");
@@ -168,9 +209,7 @@ function parseCalendarDateRange(
 	const endDate = parsePlainDate(rangeEnd);
 	const days = startDate.until(endDate).days;
 	if (days < 0 || days > 6) {
-		throw new RangeError(
-			"Calendar date range must be between one and seven dates",
-		);
+		throw new RangeError("Calendar date range must be between one and seven dates");
 	}
 
 	return { startDateKey: rangeStart, endDateKey: rangeEnd, startDate, endDate };
@@ -289,10 +328,7 @@ export async function GET(request: NextRequest) {
 			range = parseCalendarDateRange(rangeStart, rangeEnd);
 		} catch (error) {
 			if (error instanceof RangeError) {
-				return NextResponse.json(
-					{ error: "Invalid calendar date range" },
-					{ status: 400 },
-				);
+				return NextResponse.json({ error: "Invalid calendar date range" }, { status: 400 });
 			}
 			throw error;
 		}
@@ -315,14 +351,24 @@ export async function GET(request: NextRequest) {
 		let workBalance: EmployeeWorkBalancePayload | null = null;
 		const includeWorkPeriodActuals = Boolean(scopedEmployeeId);
 		const holidayEmployeeId = holidaysRequestedForEmployee ? scopedEmployeeId : undefined;
+		const viewerSettings =
+			showWorkPeriods || includeWorkPeriodActuals
+				? await db.query.userSettings.findFirst({
+						where: eq(userSettings.userId, orgContext.user.id),
+						columns: { locale: true, timeFormat: true },
+					})
+				: undefined;
+		const workPeriodDisplayOptions: WorkPeriodDisplayOptions = {
+			locale: resolveCalendarLocale(request, viewerSettings?.locale),
+			timeFormat: normalizeTimeFormatPreference(viewerSettings?.timeFormat),
+		};
 
 		if (range) {
 			const monthPromises = [];
 			for (
 				let currentMonth = range.startDate.with({ day: 1 });
 				currentMonth.year < range.endDate.year ||
-					(currentMonth.year === range.endDate.year &&
-						currentMonth.month <= range.endDate.month);
+				(currentMonth.year === range.endDate.year && currentMonth.month <= range.endDate.month);
 				currentMonth = currentMonth.add({ months: 1 })
 			) {
 				monthPromises.push(
@@ -338,6 +384,7 @@ export async function GET(request: NextRequest) {
 						showWorkPeriods,
 						includeWorkPeriodActuals,
 						calendarTimezone,
+						workPeriodDisplayOptions,
 					),
 				);
 			}
@@ -368,6 +415,7 @@ export async function GET(request: NextRequest) {
 					showWorkPeriods,
 					includeWorkPeriodActuals,
 					calendarTimezone,
+					workPeriodDisplayOptions,
 				),
 			);
 
@@ -396,6 +444,7 @@ export async function GET(request: NextRequest) {
 				showWorkPeriods,
 				includeWorkPeriodActuals,
 				calendarTimezone,
+				workPeriodDisplayOptions,
 			);
 			events = monthResult.events;
 			dailyActualMinutes = monthResult.dailyActualMinutes;

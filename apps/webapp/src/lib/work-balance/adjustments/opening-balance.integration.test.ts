@@ -10,10 +10,10 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type PlainDate,
+	parseInstant,
 	parsePlainDate,
 	plainDateAt,
 	systemClock,
@@ -141,15 +141,23 @@ describe("opening balances on PostgreSQL", () => {
 			 values ($1, $2, 'Monday hour', true, false, $3, now())`,
 			[policyId, organizationId, owner.userId],
 		);
-		await fixture.pool.query(
-			`insert into work_policy_schedule (id, policy_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
-			 values ($1, $2, 'weekly', 'detailed', 'custom', now())`,
-			[scheduleId, policyId],
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3) returning id`,
+			[policyId, organizationId, owner.userId],
 		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule_day (schedule_id, day_of_week, hours_per_day, is_work_day)
-			 values ($1, 'monday', '1.00', true)`,
-			[scheduleId],
+			`insert into work_policy_schedule (id, policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
+			 values ($1, $2, $3, 'weekly', 'detailed', 'custom', now())`,
+			[scheduleId, policyId, policyVersion.id],
+		);
+		await fixture.pool.query(
+			`insert into work_policy_schedule_day (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day)
+			 values ($1, $2, 'monday', '1.00', true)`,
+			[scheduleId, policyVersion.id],
 		);
 		await fixture.pool.query(
 			`insert into work_policy_assignment (policy_id, organization_id, assignment_type, employee_id, priority, created_by, updated_at)
@@ -515,7 +523,7 @@ describe("opening balances on PostgreSQL", () => {
 
 	it("replaces the yearly team balance of the year it is dated in", async () => {
 		// The yearly team balance covers one calendar year; 2025 contains 31 October.
-		const in2025 = DateTime.fromISO("2025-12-15T12:00:00Z", { zone: "utc" });
+		const in2025 = parseInstant("2025-12-15T12:00:00Z");
 		const yearly = async () =>
 			(
 				await refreshEmployeeTimeBalances({

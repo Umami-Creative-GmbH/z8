@@ -25,9 +25,9 @@ describe("terms in force loader", () => {
 		await fixture.pool.query(
 			`insert into employee_employment_history
 			 (employee_id, organization_id, employment_period_id, valid_from, valid_until,
-			  contract_type, weekly_contract_minutes, hourly_rate, currency, review_state,
-			  created_by, updated_at)
-			 values ($1, $2, $3, $4, $5, 'hourly', 2400, $6, 'EUR', $7, $8, now())`,
+			  valid_from_date, valid_until_date, contract_type, weekly_contract_minutes,
+			  hourly_rate, currency, review_state, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, $4::timestamp::date, $5::timestamp::date, 'hourly', 2400, $6, 'EUR', $7, $8, now())`,
 			[
 				fixture.employeeId,
 				input.organizationId,

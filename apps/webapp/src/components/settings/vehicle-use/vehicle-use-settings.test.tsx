@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { VehicleUseAdminData } from "@/app/[locale]/(app)/settings/vehicle-use/actions";
+import type { VehicleUseAdminData } from "@/app/[locale]/(app)/settings/vehicles/vehicle-use-actions";
 import { VehicleUseSettings } from "./vehicle-use-settings";
 
 const {
@@ -37,7 +37,7 @@ vi.mock("@tolgee/react", () => ({
 		},
 	}),
 }));
-vi.mock("@/app/[locale]/(app)/settings/vehicle-use/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/vehicles/vehicle-use-actions", () => ({
 	saveVehicleUseSettingsAction: saveMock,
 	setVehicleUseAssignmentAction: setAssignmentMock,
 	removeVehicleUseAssignmentAction: removeAssignmentMock,

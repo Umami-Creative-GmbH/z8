@@ -4,6 +4,10 @@ import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
 import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { type MissingDrivingDetail, missingDrivingDetail } from "./driving-details-missing";
 import { listDrivingDetailsMissing } from "./driving-details-missing-store";
 
@@ -19,14 +23,17 @@ export type DrivingDetailsTeamScope =
 	| { kind: "all" }
 	| { kind: "managed"; managerEmployeeId: string };
 
-/** The viewer's scope by settings access tier; null for everyone else. */
+/** The viewer's scope by settings access; null for everyone else. */
 export function drivingDetailsTeamScope(input: {
-	accessTier: "member" | "manager" | "orgAdmin";
+	settingsAccess: SettingsAccess | null;
 	organizationId: string;
 	employee: { id: string; organizationId: string } | null;
 }): DrivingDetailsTeamScope | null {
-	if (input.accessTier === "orgAdmin") return { kind: "all" };
-	if (input.accessTier === "manager" && input.employee?.organizationId === input.organizationId) {
+	if (meetsSettingsAccess(input.settingsAccess, "orgAdmin")) return { kind: "all" };
+	if (
+		meetsSettingsAccess(input.settingsAccess, "scopedManager") &&
+		input.employee?.organizationId === input.organizationId
+	) {
 		return { kind: "managed", managerEmployeeId: input.employee.id };
 	}
 	return null;

@@ -3,44 +3,21 @@ import { WorksCouncilSettingsForm } from "@/components/settings/works-council-se
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import {
-	loadWorksCouncilSettings,
-	saveWorksCouncilSettings,
-	type WorksCouncilSettingsFormValues,
-} from "@/lib/works-council/settings";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
+import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
 import { getTranslate } from "@/tolgee/server";
+import { updateWorksCouncilSettings } from "./actions";
 import { loadWorksCouncilScopeOptions } from "./scope-options";
 
-async function updateWorksCouncilSettings(
-	values: WorksCouncilSettingsFormValues,
-) {
-	"use server";
-
-	const {
-		authContext: actionAuthContext,
-		organizationId: actionOrganizationId,
-	} = await requireOrgAdminSettingsAccess();
-	await saveWorksCouncilSettings({
-		...values,
-		organizationId: actionOrganizationId,
-		actorUserId: actionAuthContext.user.id,
-	});
-
-	return { success: true };
-}
-
 async function WorksCouncilSettingsPageContent() {
-	const authContextPromise = requireOrgAdminSettingsAccess();
-	const settingsPromise = authContextPromise.then(({ organizationId }) =>
-		loadWorksCouncilSettings(organizationId),
-	);
-	const scopeOptionsPromise = authContextPromise.then(({ organizationId }) =>
-		loadWorksCouncilScopeOptions(organizationId),
-	);
-	const [settings, scopeOptions, t] = await Promise.all([
-		settingsPromise,
-		scopeOptionsPromise,
+	const [{ organizationId }, t] = await Promise.all([
+		requireOrgAdminSettingsAccess(),
 		getTranslate(),
+	]);
+	await requireOrganizationFeatureEnabled(organizationId, "worksCouncilEnabled");
+	const [settings, scopeOptions] = await Promise.all([
+		loadWorksCouncilSettings(organizationId),
+		loadWorksCouncilScopeOptions(organizationId),
 	]);
 
 	return (

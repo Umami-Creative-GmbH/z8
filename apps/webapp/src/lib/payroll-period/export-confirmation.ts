@@ -124,8 +124,17 @@ export async function listExportsToConfirm(
 	actor: PayrollSettlementActor,
 	limit = 20,
 ): Promise<PayrollExportToConfirm[]> {
-	if (!(await hasActivePayrollAccessGrant({ organizationId, payrollEmployeeId: actor.employeeId })))
-		return [];
+	if (!actor.orgAdmin) {
+		if (
+			!actor.employeeId ||
+			!(await hasActivePayrollAccessGrant({
+				organizationId,
+				payrollEmployeeId: actor.employeeId,
+			}))
+		) {
+			return [];
+		}
+	}
 	const carriedJobs = db
 		.selectDistinct({ jobId: payrollExportCarriedDay.jobId })
 		.from(payrollExportCarriedDay)

@@ -2,6 +2,7 @@
 
 import { IconUsers } from "@tabler/icons-react";
 import { useState } from "react";
+import { EmployeeSelectModal, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -37,11 +38,31 @@ export function PayrollScopeControls({
 	teamOptions: string[];
 	t: PayrollTranslate;
 }) {
+	const [employeePickerOpen, setEmployeePickerOpen] = useState(false);
 	const scopeSummary = getPayrollScopeSummary({
 		selectedEmployeeIds,
 		selectedTeamNames,
 		t,
 	});
+	const employeeOptions = scopedEmployees.map((employee) =>
+		toSelectableEmployee({
+			id: employee.id,
+			name: employee.name,
+			employeeNumber: employee.employeeNumber,
+			teamName: employee.teamName,
+		}),
+	);
+
+	function handleConfirmEmployees(confirmedIds?: string[]) {
+		if (!confirmedIds) return;
+		const selectedSet = new Set(selectedEmployeeIds);
+		const changed =
+			confirmedIds.length !== selectedEmployeeIds.length ||
+			confirmedIds.some((id) => !selectedSet.has(id));
+		if (changed) {
+			onApplyEmployees(confirmedIds);
+		}
+	}
 
 	return (
 		<div
@@ -74,25 +95,33 @@ export function PayrollScopeControls({
 					title={t("payroll.scope.specificTeams", "Specific teams")}
 					t={t}
 				/>
-				<ScopeSheet
+				<Button
+					disabled={isPending}
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => setEmployeePickerOpen(true)}
+				>
+					{t("payroll.scope.specificEmployees", "Specific employees")}
+				</Button>
+				<EmployeeSelectModal
+					open={employeePickerOpen}
+					onOpenChange={setEmployeePickerOpen}
+					mode="multiple"
+					selectedIds={selectedEmployeeIds}
+					onSelect={() => {}}
+					onDeselect={() => {}}
+					onConfirm={handleConfirmEmployees}
+					employees={employeeOptions}
+					title={t("payroll.scope.specificEmployees", "Specific employees")}
 					description={t(
 						"payroll.scope.specificEmployeesDescription",
 						"Choose employees to include in this payroll scope.",
 					)}
-					emptyText={t(
+					emptyMessage={t(
 						"payroll.scope.noAssignedEmployees",
 						"No assigned employees in this payroll scope.",
 					)}
-					isPending={isPending}
-					onApply={onApplyEmployees}
-					options={scopedEmployees.map((employee) => ({
-						value: employee.id,
-						label: employee.name,
-						checkboxId: `payroll-scope-employee-${employee.id}`,
-					}))}
-					selected={selectedEmployeeIds}
-					title={t("payroll.scope.specificEmployees", "Specific employees")}
-					t={t}
 				/>
 			</div>
 		</div>

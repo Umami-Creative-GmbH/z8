@@ -1,6 +1,6 @@
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
 import {
 	buildPayrollSummaryFromRows,
@@ -39,7 +39,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
 				{
@@ -69,7 +69,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
 				{
@@ -138,7 +138,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
 				{
@@ -183,7 +183,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
 				{
@@ -250,9 +250,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			{ categoryId: "morning", categoryName: "Morning", days: 0.5 },
 			{ categoryId: "overnight", categoryName: "Overnight", days: 0.5 },
 		]);
-		expect(
-			summary.absenceDetails.map(({ date, period }) => ({ date, period })),
-		).toEqual([
+		expect(summary.absenceDetails.map(({ date, period }) => ({ date, period }))).toEqual([
 			{ date: "2026-06-10", period: "pm" },
 			{ date: "2026-06-11", period: "am" },
 			{ date: "2026-06-12", period: "partial_day" },
@@ -265,7 +263,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
 				{
@@ -288,10 +286,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			blockers: [],
 		});
 
-		expect(summary.employees.map((employee) => employee.id)).toEqual([
-			"employee-1",
-			"employee-2",
-		]);
+		expect(summary.employees.map((employee) => employee.id)).toEqual(["employee-1", "employee-2"]);
 	});
 
 	it("keeps blockers as warnings and marks affected employees", () => {
@@ -299,7 +294,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
 				{
@@ -355,7 +350,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
 				{
@@ -459,9 +454,7 @@ describe("calculatePayrollWorkedMinutes", () => {
 			end: "2026-07-31",
 		}).workedMinutesByEmployee;
 
-		expect((juneMinutes.get("employee-1") ?? 0) + (julyMinutes.get("employee-1") ?? 0)).toBe(
-			346,
-		);
+		expect((juneMinutes.get("employee-1") ?? 0) + (julyMinutes.get("employee-1") ?? 0)).toBe(346);
 	});
 
 	it("reports work with an unlocated break across the boundary as a blocker", () => {
@@ -513,7 +506,7 @@ describe("buildPayrollSummaryFromRows work allocation blockers", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
 				{
@@ -541,8 +534,8 @@ describe("filterPendingTimeApprovalBlockers", () => {
 			organizationId: "org-1",
 			allowedEmployeeIds: ["employee-1"],
 			period: {
-				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				start: parseInstant("2026-06-01T00:00:00Z"),
+				end: parseInstant("2026-06-30T23:59:59Z"),
 			},
 			timezoneByEmployeeId: new Map([["employee-1", "America/New_York"]]),
 			rows: [
@@ -556,8 +549,8 @@ describe("filterPendingTimeApprovalBlockers", () => {
 					recordId: "record-1",
 					recordOrganizationId: "org-1",
 					employeeId: "employee-1",
-					startAt: DateTime.fromISO("2026-06-01T01:30:00Z"),
-					endAt: DateTime.fromISO("2026-06-01T02:30:00Z"),
+					startAt: parseInstant("2026-06-01T01:30:00Z"),
+					endAt: parseInstant("2026-06-01T02:30:00Z"),
 				},
 			],
 		});
@@ -570,8 +563,8 @@ describe("filterPendingTimeApprovalBlockers", () => {
 			organizationId: "org-1",
 			allowedEmployeeIds: ["employee-1"],
 			period: {
-				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				start: parseInstant("2026-06-01T00:00:00Z"),
+				end: parseInstant("2026-06-30T23:59:59Z"),
 			},
 			timezoneByEmployeeId: new Map([["employee-1", "America/New_York"]]),
 			rows: [
@@ -585,8 +578,8 @@ describe("filterPendingTimeApprovalBlockers", () => {
 					recordId: "record-1",
 					recordOrganizationId: "org-1",
 					employeeId: "employee-1",
-					startAt: DateTime.invalid("invalid metadata"),
-					endAt: DateTime.fromISO("2026-06-01T02:30:00Z"),
+					startAt: null,
+					endAt: parseInstant("2026-06-01T02:30:00Z"),
 				},
 			],
 		});
@@ -599,8 +592,8 @@ describe("filterPendingTimeApprovalBlockers", () => {
 			organizationId: "org-1",
 			allowedEmployeeIds: ["employee-1"],
 			period: {
-				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				start: parseInstant("2026-06-01T00:00:00Z"),
+				end: parseInstant("2026-06-30T23:59:59Z"),
 			},
 			timezoneByEmployeeId: new Map(),
 			rows: [
@@ -614,8 +607,8 @@ describe("filterPendingTimeApprovalBlockers", () => {
 					recordId: "record-1",
 					recordOrganizationId: "org-1",
 					employeeId: "employee-1",
-					startAt: DateTime.fromISO("2026-06-10T09:00:00Z"),
-					endAt: DateTime.fromISO("2026-06-10T10:00:00Z"),
+					startAt: parseInstant("2026-06-10T09:00:00Z"),
+					endAt: parseInstant("2026-06-10T10:00:00Z"),
 				},
 				{
 					id: "approval-2",
@@ -627,8 +620,8 @@ describe("filterPendingTimeApprovalBlockers", () => {
 					recordId: null,
 					recordOrganizationId: null,
 					employeeId: "employee-1",
-					startAt: DateTime.fromISO("2026-06-10T09:00:00Z"),
-					endAt: DateTime.fromISO("2026-06-10T10:00:00Z"),
+					startAt: parseInstant("2026-06-10T09:00:00Z"),
+					endAt: parseInstant("2026-06-10T10:00:00Z"),
 				},
 				{
 					id: "approval-3",
@@ -640,8 +633,8 @@ describe("filterPendingTimeApprovalBlockers", () => {
 					recordId: "record-3",
 					recordOrganizationId: "org-1",
 					employeeId: "employee-1",
-					startAt: DateTime.fromISO("2026-07-10T09:00:00Z"),
-					endAt: DateTime.fromISO("2026-07-10T10:00:00Z"),
+					startAt: parseInstant("2026-07-10T09:00:00Z"),
+					endAt: parseInstant("2026-07-10T10:00:00Z"),
 				},
 			],
 		});
@@ -663,15 +656,15 @@ describe("filterMissingClockOutBlockers", () => {
 	it("uses the employee timezone to localize the missing clock-out start", () => {
 		const blockers = filterMissingClockOutBlockers({
 			period: {
-				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				start: parseInstant("2026-06-01T00:00:00Z"),
+				end: parseInstant("2026-06-30T23:59:59Z"),
 			},
 			timezoneByEmployeeId: new Map([["employee-1", "America/New_York"]]),
 			rows: [
 				{
 					id: "record-1",
 					employeeId: "employee-1",
-					startAt: DateTime.fromISO("2026-06-01T01:30:00Z"),
+					startAt: parseInstant("2026-06-01T01:30:00Z"),
 				},
 			],
 		});
@@ -682,15 +675,15 @@ describe("filterMissingClockOutBlockers", () => {
 	it("retains a missing clock-out when the employee timezone is invalid", () => {
 		const blockers = filterMissingClockOutBlockers({
 			period: {
-				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				start: parseInstant("2026-06-01T00:00:00Z"),
+				end: parseInstant("2026-06-30T23:59:59Z"),
 			},
 			timezoneByEmployeeId: new Map([["employee-1", "Invalid/Timezone"]]),
 			rows: [
 				{
 					id: "record-1",
 					employeeId: "employee-1",
-					startAt: DateTime.fromISO("2026-06-01T01:30:00Z"),
+					startAt: parseInstant("2026-06-01T01:30:00Z"),
 				},
 			],
 		});
@@ -710,15 +703,15 @@ describe("filterMissingClockOutBlockers", () => {
 	it("retains a missing clock-out with invalid instant metadata", () => {
 		const blockers = filterMissingClockOutBlockers({
 			period: {
-				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				start: parseInstant("2026-06-01T00:00:00Z"),
+				end: parseInstant("2026-06-30T23:59:59Z"),
 			},
 			timezoneByEmployeeId: new Map([["employee-1", "America/New_York"]]),
 			rows: [
 				{
 					id: "record-1",
 					employeeId: "employee-1",
-					startAt: DateTime.invalid("invalid metadata"),
+					startAt: null,
 				},
 			],
 		});
@@ -729,20 +722,20 @@ describe("filterMissingClockOutBlockers", () => {
 	it("includes open work records that started before the payroll period", () => {
 		const blockers = filterMissingClockOutBlockers({
 			period: {
-				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+				start: parseInstant("2026-06-01T00:00:00Z"),
+				end: parseInstant("2026-06-30T23:59:59Z"),
 			},
 			timezoneByEmployeeId: new Map(),
 			rows: [
 				{
 					id: "record-1",
 					employeeId: "employee-1",
-					startAt: DateTime.fromISO("2026-05-31T23:00:00Z"),
+					startAt: parseInstant("2026-05-31T23:00:00Z"),
 				},
 				{
 					id: "record-2",
 					employeeId: "employee-1",
-					startAt: DateTime.fromISO("2026-07-01T00:00:00Z"),
+					startAt: parseInstant("2026-07-01T00:00:00Z"),
 				},
 			],
 		});
@@ -874,10 +867,16 @@ describe("workspace under scoped collection (#322)", () => {
 			organizationId: "organization-a",
 			organizationName: "Acme GmbH",
 			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
-			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedAt: parseInstant("2026-06-30T12:00:00Z"),
 			generatedBy: { id: "payroll-1", name: "Payroll User" },
 			employees: [
-				{ id: "employee-1", name: "Ada", employeeNumber: null, teamName: null, contractType: "hourly" },
+				{
+					id: "employee-1",
+					name: "Ada",
+					employeeNumber: null,
+					teamName: null,
+					contractType: "hourly",
+				},
 			],
 			workRows: [],
 			collectedWork: collection.input.work,

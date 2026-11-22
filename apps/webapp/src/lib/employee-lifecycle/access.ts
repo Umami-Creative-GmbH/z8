@@ -101,35 +101,35 @@ export async function resolveEmployeeOrganizationAccess(
 	database: Pick<typeof rootDatabase, "select">,
 	input: { userId: string; organizationId: string; now?: Instant },
 ): Promise<EmployeeOrganizationAccess> {
-	const [[membership], [profile]] = await Promise.all([
-		database
-			.select({ id: member.id })
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, input.userId),
-					eq(member.organizationId, input.organizationId),
-					eq(member.status, "approved"),
-				),
-			)
-			.limit(1),
-		database
-			.select({
-				id: employee.id,
-				isActive: employee.isActive,
-				dueDepartureDenies: sql<boolean>`${dueDepartureDeniesAccess(input.now)}`,
-				hasEffectiveDeparture: sql<boolean>`EXISTS (
-					SELECT 1 FROM employee_departure d
-					WHERE d.organization_id = "employee"."organization_id"
-						AND d.employee_id = "employee"."id" AND d.status = 'effective'
-				)`,
-			})
-			.from(employee)
-			.where(
-				and(eq(employee.userId, input.userId), eq(employee.organizationId, input.organizationId)),
-			)
-			.limit(1),
-	]);
+	// One after another: `database` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const [membership] = await database
+		.select({ id: member.id })
+		.from(member)
+		.where(
+			and(
+				eq(member.userId, input.userId),
+				eq(member.organizationId, input.organizationId),
+				eq(member.status, "approved"),
+			),
+		)
+		.limit(1);
+	const [profile] = await database
+		.select({
+			id: employee.id,
+			isActive: employee.isActive,
+			dueDepartureDenies: sql<boolean>`${dueDepartureDeniesAccess(input.now)}`,
+			hasEffectiveDeparture: sql<boolean>`EXISTS (
+				SELECT 1 FROM employee_departure d
+				WHERE d.organization_id = "employee"."organization_id"
+					AND d.employee_id = "employee"."id" AND d.status = 'effective'
+			)`,
+		})
+		.from(employee)
+		.where(
+			and(eq(employee.userId, input.userId), eq(employee.organizationId, input.organizationId)),
+		)
+		.limit(1);
 
 	if (!membership) return { allowed: false, reason: "membership_required" };
 	if (!profile) return { allowed: true, employeeId: null };

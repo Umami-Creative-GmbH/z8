@@ -2,15 +2,26 @@ import { sql } from "drizzle-orm";
 import {
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 	instantToCanonicalString,
 	parseInstant,
+	parsePlainDate,
+	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
-import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot.types";
+import type {
+	PolicyClockOutBreakSnapshot,
+	PolicyClockOutBreakSnapshotV1,
+	PolicyClockOutBreakSnapshotV2,
+} from "./policy-clock-out-break-snapshot.types";
 
 export type {
 	PolicyClockOutBreakRuleSnapshot,
 	PolicyClockOutBreakSnapshot,
+	PolicyClockOutBreakSnapshotV1,
+	PolicyClockOutBreakSnapshotV2,
 } from "./policy-clock-out-break-snapshot.types";
 
 /**
@@ -96,107 +107,179 @@ function canonicalInstant(value: unknown): string {
 	}
 }
 
+function canonicalPlainDate(value: unknown): string {
+	if (typeof value !== "string") return fail();
+	try {
+		return parsePlainDate(value).toString() === value ? value : fail();
+	} catch {
+		return fail();
+	}
+}
+
+function parseWorkPolicyPayload(root: Record<string, unknown>) {
+	const assignment = exact(root.assignment, ["id", "type"]);
+	if (
+		assignment.type !== "employee" &&
+		assignment.type !== "team" &&
+		assignment.type !== "organization"
+	) {
+		return fail();
+	}
+	const policy = exact(root.policy, ["id", "name"]);
+	const regulation = exact(root.regulation, ["id", "name", "maxUninterruptedMinutes"]);
+	if (typeof root.regulationEnabled !== "boolean") return fail();
+	if (!Array.isArray(root.breakRules)) return fail();
+	const breakRules = root.breakRules.map((value) => {
+		const rule = exact(value, ["id", "workingMinutesThreshold", "requiredBreakMinutes"]);
+		return Object.freeze({
+			id: uuid(rule.id),
+			workingMinutesThreshold: minutes(rule.workingMinutesThreshold),
+			requiredBreakMinutes: minutes(rule.requiredBreakMinutes),
+		});
+	});
+	if (
+		new Set(breakRules.map((rule) => rule.id)).size !== breakRules.length ||
+		new Set(breakRules.map((rule) => rule.workingMinutesThreshold)).size !== breakRules.length ||
+		breakRules.some((rule, index) => {
+			const previous = breakRules[index - 1];
+			return (
+				previous !== undefined &&
+				(previous.workingMinutesThreshold > rule.workingMinutesThreshold ||
+					(previous.workingMinutesThreshold === rule.workingMinutesThreshold &&
+						previous.id.localeCompare(rule.id) >= 0))
+			);
+		})
+	) {
+		return fail();
+	}
+	const regulationEnabled = root.regulationEnabled;
+	const regulationId = regulation.id === null ? null : uuid(regulation.id);
+	const regulationName = regulation.name === null ? null : name(regulation.name);
+	const maxUninterruptedMinutes =
+		regulation.maxUninterruptedMinutes === null
+			? null
+			: minutes(regulation.maxUninterruptedMinutes);
+	if (
+		(regulationEnabled && (regulationId === null || regulationName === null)) ||
+		(!regulationEnabled &&
+			(regulationId !== null ||
+				regulationName !== null ||
+				maxUninterruptedMinutes !== null ||
+				breakRules.length !== 0))
+	) {
+		return fail();
+	}
+	return {
+		teamId: root.teamId === null ? null : uuid(root.teamId),
+		assignment: Object.freeze({
+			id: uuid(assignment.id),
+			type: assignment.type,
+		}),
+		policy: Object.freeze({ id: uuid(policy.id), name: name(policy.name) }),
+		regulationEnabled,
+		regulation: Object.freeze({
+			id: regulationId,
+			name: regulationName,
+			maxUninterruptedMinutes,
+		}),
+		breakRules: Object.freeze(breakRules),
+	};
+}
+
 export function parsePolicyClockOutBreakSnapshot(
 	value: unknown,
 	expectedEvaluatedAt: string,
 ): PolicyClockOutBreakSnapshot {
 	try {
 		const evaluatedAt = canonicalInstant(expectedEvaluatedAt);
-		const root = exact(
-			value,
-			typeof value === "object" &&
-				value !== null &&
-				(value as { resolution?: unknown }).resolution === "none"
-				? ["version", "evaluatedAt", "resolution"]
-				: [
-						"version",
-						"evaluatedAt",
-						"resolution",
-						"teamId",
-						"assignment",
-						"policy",
-						"regulationEnabled",
-						"regulation",
-						"breakRules",
-					],
-		);
-		if (root.version !== 1 || canonicalInstant(root.evaluatedAt) !== evaluatedAt) {
+		if (typeof value !== "object" || value === null || Array.isArray(value)) {
 			return fail();
 		}
-		if (root.resolution === "none") {
-			return Object.freeze({ version: 1, evaluatedAt, resolution: "none" });
-		}
-		if (root.resolution !== "work_policy") return fail();
-		const assignment = exact(root.assignment, ["id", "type"]);
-		if (
-			assignment.type !== "employee" &&
-			assignment.type !== "team" &&
-			assignment.type !== "organization"
-		) {
-			return fail();
-		}
-		const policy = exact(root.policy, ["id", "name"]);
-		const regulation = exact(root.regulation, ["id", "name", "maxUninterruptedMinutes"]);
-		if (typeof root.regulationEnabled !== "boolean") return fail();
-		if (!Array.isArray(root.breakRules)) return fail();
-		const breakRules = root.breakRules.map((value) => {
-			const rule = exact(value, ["id", "workingMinutesThreshold", "requiredBreakMinutes"]);
+		const version = (value as { version?: unknown }).version;
+		const resolution = (value as { resolution?: unknown }).resolution;
+
+		if (version === 1) {
+			const root = exact(
+				value,
+				resolution === "none"
+					? ["version", "evaluatedAt", "resolution"]
+					: [
+							"version",
+							"evaluatedAt",
+							"resolution",
+							"teamId",
+							"assignment",
+							"policy",
+							"regulationEnabled",
+							"regulation",
+							"breakRules",
+						],
+			);
+			if (root.version !== 1 || canonicalInstant(root.evaluatedAt) !== evaluatedAt) {
+				return fail();
+			}
+			if (root.resolution === "none") {
+				return Object.freeze({
+					version: 1,
+					evaluatedAt,
+					resolution: "none",
+				}) satisfies PolicyClockOutBreakSnapshotV1;
+			}
+			if (root.resolution !== "work_policy") return fail();
 			return Object.freeze({
-				id: uuid(rule.id),
-				workingMinutesThreshold: minutes(rule.workingMinutesThreshold),
-				requiredBreakMinutes: minutes(rule.requiredBreakMinutes),
-			});
-		});
-		if (
-			new Set(breakRules.map((rule) => rule.id)).size !== breakRules.length ||
-			new Set(breakRules.map((rule) => rule.workingMinutesThreshold)).size !== breakRules.length ||
-			breakRules.some((rule, index) => {
-				const previous = breakRules[index - 1];
-				return (
-					previous !== undefined &&
-					(previous.workingMinutesThreshold > rule.workingMinutesThreshold ||
-						(previous.workingMinutesThreshold === rule.workingMinutesThreshold &&
-							previous.id.localeCompare(rule.id) >= 0))
-				);
-			})
-		) {
-			return fail();
+				version: 1,
+				evaluatedAt,
+				resolution: "work_policy",
+				...parseWorkPolicyPayload(root),
+			}) satisfies PolicyClockOutBreakSnapshotV1;
 		}
-		const regulationEnabled = root.regulationEnabled;
-		const regulationId = regulation.id === null ? null : uuid(regulation.id);
-		const regulationName = regulation.name === null ? null : name(regulation.name);
-		const maxUninterruptedMinutes =
-			regulation.maxUninterruptedMinutes === null
-				? null
-				: minutes(regulation.maxUninterruptedMinutes);
-		if (
-			(regulationEnabled && (regulationId === null || regulationName === null)) ||
-			(!regulationEnabled &&
-				(regulationId !== null ||
-					regulationName !== null ||
-					maxUninterruptedMinutes !== null ||
-					breakRules.length !== 0))
-		) {
-			return fail();
+
+		if (version === 2) {
+			const root = exact(
+				value,
+				resolution === "none"
+					? ["version", "evaluatedAt", "resolution", "employmentPeriodId"]
+					: [
+							"version",
+							"evaluatedAt",
+							"resolution",
+							"employmentPeriodId",
+							"policyVersionId",
+							"effectiveFromDate",
+							"teamId",
+							"assignment",
+							"policy",
+							"regulationEnabled",
+							"regulation",
+							"breakRules",
+						],
+			);
+			if (root.version !== 2 || canonicalInstant(root.evaluatedAt) !== evaluatedAt) {
+				return fail();
+			}
+			const employmentPeriodId =
+				root.employmentPeriodId === null ? null : uuid(root.employmentPeriodId);
+			if (root.resolution === "none") {
+				return Object.freeze({
+					version: 2,
+					evaluatedAt,
+					resolution: "none",
+					employmentPeriodId,
+				}) satisfies PolicyClockOutBreakSnapshotV2;
+			}
+			if (root.resolution !== "work_policy") return fail();
+			return Object.freeze({
+				version: 2,
+				evaluatedAt,
+				resolution: "work_policy",
+				employmentPeriodId,
+				policyVersionId: uuid(root.policyVersionId),
+				effectiveFromDate: canonicalPlainDate(root.effectiveFromDate),
+				...parseWorkPolicyPayload(root),
+			}) satisfies PolicyClockOutBreakSnapshotV2;
 		}
-		return Object.freeze({
-			version: 1,
-			evaluatedAt,
-			resolution: "work_policy",
-			teamId: root.teamId === null ? null : uuid(root.teamId),
-			assignment: Object.freeze({
-				id: uuid(assignment.id),
-				type: assignment.type,
-			}),
-			policy: Object.freeze({ id: uuid(policy.id), name: name(policy.name) }),
-			regulationEnabled,
-			regulation: Object.freeze({
-				id: regulationId,
-				name: regulationName,
-				maxUninterruptedMinutes,
-			}),
-			breakRules: Object.freeze(breakRules),
-		});
+
+		return fail();
 	} catch {
 		throw new Error(ERROR);
 	}
@@ -237,24 +320,60 @@ const MAX_ASSIGNMENT_CANDIDATES = 64;
 
 type AssignmentCandidate = Readonly<{
 	teamId: string | null;
+	employmentPeriodId: string | null;
+	userTimezone: string | null;
+	organizationTimezone: string | null;
 	id: string;
 	type: "employee" | "team" | "organization";
 	policyId: string;
 	priority: number;
+	isActive: boolean;
+	effectiveUntilDate: string | null;
+	policyEvaluationDate: string | null;
 }>;
+
+type CandidateSelectionResult = Readonly<{
+	employmentPeriodId: string | null;
+	userTimezone: string | null;
+	organizationTimezone: string | null;
+	assignment: AssignmentCandidate | null;
+}>;
+
+function optionalUuid(value: unknown): string | null {
+	if (value === null || value === undefined) return null;
+	return typeof value === "string" && UUID.test(value) ? value : fail();
+}
+
+function optionalTimezone(value: unknown): string | null {
+	if (value === null || value === undefined) return null;
+	return typeof value === "string" ? value : fail();
+}
+
+function optionalPlainDate(value: unknown): string | null {
+	if (value === null || value === undefined) return null;
+	return canonicalPlainDate(value);
+}
 
 function selectAssignmentCandidate(
 	rows: readonly unknown[],
 	organizationId: string,
-): AssignmentCandidate | null {
+): CandidateSelectionResult {
 	if (rows.length === 0 || rows.length > MAX_ASSIGNMENT_CANDIDATES) fail();
 	const candidates: AssignmentCandidate[] = [];
+	let employmentPeriodId: string | null = null;
+	let userTimezone: string | null = null;
+	let organizationTimezone: string | null = null;
+
 	for (const value of rows) {
 		if (typeof value !== "object" || value === null || Array.isArray(value)) {
 			fail();
 		}
 		const row = value as Record<string, unknown>;
 		if (row.employeeOrganizationId !== organizationId) fail();
+		employmentPeriodId = optionalUuid(row.employmentPeriodId);
+		userTimezone = optionalTimezone(row.userTimezone);
+		organizationTimezone = optionalTimezone(row.organizationTimezone);
+
 		if (row.assignmentId === null) {
 			if (
 				rows.length !== 1 ||
@@ -265,7 +384,12 @@ function selectAssignmentCandidate(
 			) {
 				fail();
 			}
-			return null;
+			return {
+				employmentPeriodId,
+				userTimezone,
+				organizationTimezone,
+				assignment: null,
+			};
 		}
 		if (
 			row.assignmentOrganizationId !== organizationId ||
@@ -282,22 +406,34 @@ function selectAssignmentCandidate(
 		}
 		candidates.push({
 			teamId: row.teamId === null || typeof row.teamId === "string" ? row.teamId : fail(),
+			employmentPeriodId,
+			userTimezone,
+			organizationTimezone,
 			id: row.assignmentId,
 			type: row.assignmentType,
 			policyId: row.assignmentPolicyId,
 			priority: row.priority as number,
+			isActive: typeof row.assignmentIsActive === "boolean" ? row.assignmentIsActive : true,
+			effectiveUntilDate: optionalPlainDate(row.assignmentEffectiveUntilDate),
+			policyEvaluationDate: optionalPlainDate(row.policyEvaluationDate),
 		});
 	}
 	if (new Set(candidates.map(({ id }) => id)).size !== candidates.length) fail();
 	const specificity = { employee: 2, team: 1, organization: 0 } as const;
-	return (
+	const selected =
 		candidates.toSorted(
 			(left, right) =>
 				right.priority - left.priority ||
 				specificity[right.type] - specificity[left.type] ||
+				(right.isActive ? 1 : 0) - (left.isActive ? 1 : 0) ||
 				(left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
-		)[0] ?? fail()
-	);
+		)[0] ?? fail();
+	return {
+		employmentPeriodId,
+		userTimezone,
+		organizationTimezone,
+		assignment: selected,
+	};
 }
 
 export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
@@ -309,47 +445,221 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 	endTime: Instant;
 }): Promise<PolicyClockOutBreakSnapshot> {
 	const evaluatedAt = instantToCanonicalString(input.endTime);
+	const endTimeDate = dateFromInstant(input.endTime);
 	try {
 		const candidateResult = await input.dbService.db.execute(sql`
-			with employee_evidence as (
-				select employee.id, employee.organization_id as "organizationId",
-					employee.team_id as "teamId"
+			with employee_base as (
+				select employee.id,
+					employee.organization_id as "organizationId",
+					user_settings.timezone as "userTimezone",
+					organization.timezone as "organizationTimezone",
+					coalesce(
+						(select tz.name from pg_timezone_names tz where lower(tz.name) = lower(nullif(user_settings.timezone, '')) limit 1),
+						(select tz.name from pg_timezone_names tz where lower(tz.name) = lower(nullif(organization.timezone, '')) limit 1),
+						'UTC'
+					) as "effectiveTimezone",
+					coalesce(
+						(select tz.name from pg_timezone_names tz where lower(tz.name) = lower(nullif(organization.timezone, '')) limit 1),
+						'UTC'
+					) as "effectiveOrganizationTimezone"
 				from employee
+				left join user_settings on user_settings.user_id = employee.user_id
+				left join organization on organization.id = employee.organization_id
 				where employee.id = ${input.employeeId}::uuid
 					and employee.organization_id = ${input.organizationId}
 				limit 2
 				for update of employee
+			), team_evidence as (
+				select history.team_id as "teamId"
+				from employee_base employee_row
+				join employee_team_history history
+					on history.organization_id = employee_row."organizationId"
+					and history.employee_id = employee_row.id
+				join team owned_team
+					on owned_team.id = history.team_id
+					and owned_team.organization_id = employee_row."organizationId"
+				where history.effective_from <= ${endTimeDate}
+					and (history.effective_to is null or history.effective_to > ${endTimeDate})
+				order by history.effective_from desc, history.id desc
+				limit 1
+			), employee_evidence as (
+				select employee_row.id,
+					employee_row."organizationId",
+					team_row."teamId",
+					employee_row."userTimezone",
+					employee_row."organizationTimezone",
+					employee_row."effectiveTimezone",
+					employee_row."effectiveOrganizationTimezone",
+					(${endTimeDate}::timestamptz at time zone employee_row."effectiveTimezone")::date as "clockOutLocalDate"
+				from employee_base employee_row
+				left join team_evidence team_row on true
+			), period_evidence as (
+				select period.id as "employmentPeriodId",
+					period.start_provenance as "periodStartProvenance",
+					case
+						when period.start_provenance = 'recorded' and period.started_at is not null
+						then (period.started_at at time zone employee_row."effectiveTimezone")::date
+						else null
+					end as "periodStartEmployeeDate",
+					case
+						when period.start_provenance = 'recorded' and period.started_at is not null
+						then (period.started_at at time zone employee_row."effectiveOrganizationTimezone")::date
+						else null
+					end as "periodStartOrganizationDate"
+				from employee_evidence employee_row
+				join employee_employment_period period
+					on period.organization_id = employee_row."organizationId"
+					and period.employee_id = employee_row.id
+				where (period.start_provenance <> 'recorded' or period.started_at is null or period.started_at <= ${endTimeDate})
+					and (period.ended_at is null or period.ended_at > ${endTimeDate})
+				order by period.started_at desc nulls last, period.created_at desc, period.id desc
+				limit 1
 			), assignment_candidates as (
 				select employee_row."organizationId" as "employeeOrganizationId",
 					employee_row."teamId", assignment.id as "assignmentId",
 					assignment.organization_id as "assignmentOrganizationId",
 					assignment.assignment_type as "assignmentType",
-					assignment.policy_id as "assignmentPolicyId", assignment.priority
+					assignment.policy_id as "assignmentPolicyId", assignment.priority,
+					assignment.is_active as "assignmentIsActive",
+					case
+						when assignment.source_kind = 'legacy' and assignment.effective_until is not null
+						then case
+							when extract(hour from assignment.effective_until) = 0
+								and extract(minute from assignment.effective_until) = 0
+								and extract(second from assignment.effective_until) = 0
+							then to_char(assignment.effective_until::date, 'YYYY-MM-DD')
+							else to_char((assignment.effective_until at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone", 'YYYY-MM-DD')
+						end
+						else to_char(assignment.effective_until_date, 'YYYY-MM-DD')
+					end as "assignmentEffectiveUntilDate",
+					case
+						when assignment.source_kind = 'employment_terms'
+							and assignment.assignment_type = 'employee'
+							and assignment.source_employment_history_id is not null
+							and period."periodStartProvenance" = 'recorded'
+							and period."periodStartEmployeeDate" = employee_row."clockOutLocalDate"
+							and period."periodStartOrganizationDate" > employee_row."clockOutLocalDate"
+							and assignment.effective_from_date > employee_row."clockOutLocalDate"
+							and assignment.effective_from_date <= period."periodStartOrganizationDate"
+							and (assignment.effective_until_date is null or assignment.effective_until_date > period."periodStartOrganizationDate")
+						then to_char(period."periodStartOrganizationDate", 'YYYY-MM-DD')
+						else to_char(employee_row."clockOutLocalDate", 'YYYY-MM-DD')
+					end as "policyEvaluationDate"
 				from employee_evidence employee_row
+				left join period_evidence period on true
 				join work_policy_assignment assignment
 					on assignment.organization_id = employee_row."organizationId"
 				where assignment.organization_id = ${input.organizationId}
-					and assignment.is_active = true
-					and (assignment.effective_from is null or assignment.effective_from <= ${dateFromInstant(input.endTime)})
-					and (assignment.effective_until is null or assignment.effective_until > ${dateFromInstant(input.endTime)})
+					and (
+						assignment.is_active = true
+						or (
+							assignment.source_kind = 'legacy'
+							and assignment.effective_from is not null
+							and assignment.effective_until is not null
+							and assignment.effective_from < assignment.effective_until
+							and assignment.effective_from_date is not null
+							and assignment.effective_until_date = assignment.effective_from_date + 1
+							and (
+								(
+									((assignment.effective_from at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone")::date < assignment.effective_from_date
+									and assignment.effective_until = ((assignment.effective_from_date::timestamp at time zone employee_row."effectiveOrganizationTimezone") at time zone 'UTC')
+								)
+								or exists (
+									select 1
+									from audit_log al
+									where al.organization_id = assignment.organization_id
+										and al.entity_type = 'work_policy'
+										and al.entity_id = assignment.policy_id::text
+										and al.action = 'work_policy.retired'
+										and (al.metadata::jsonb->>'retiredOnDate') = to_char(assignment.effective_from_date, 'YYYY-MM-DD')
+										and ((al.metadata::jsonb->>'retiredAtLocalStart')::timestamptz at time zone 'UTC') = assignment.effective_until
+								)
+							)
+						)
+					)
+					and not (
+						assignment.assignment_type = 'employee'
+						and period."employmentPeriodId" is not null
+						and (
+							(
+								assignment.source_kind = 'employment_terms'
+								and assignment.source_employment_history_id is not null
+								and exists (
+									select 1
+									from employee_employment_history prior_terms
+									where prior_terms.id = assignment.source_employment_history_id
+										and prior_terms.organization_id = employee_row."organizationId"
+										and prior_terms.employment_period_id is not null
+										and prior_terms.employment_period_id <> period."employmentPeriodId"
+								)
+							)
+							or (
+								period."periodStartProvenance" = 'recorded'
+								and period."periodStartEmployeeDate" = employee_row."clockOutLocalDate"
+								and period."periodStartOrganizationDate" > employee_row."clockOutLocalDate"
+								and assignment.effective_until_date is not null
+								and assignment.effective_until_date <= period."periodStartOrganizationDate"
+							)
+						)
+					)
+					and (
+						(
+							assignment.source_kind <> 'legacy'
+							and assignment.effective_from_date <= employee_row."clockOutLocalDate"
+							and (assignment.effective_until_date is null or assignment.effective_until_date > employee_row."clockOutLocalDate")
+						)
+						or (
+							assignment.source_kind = 'employment_terms'
+							and assignment.assignment_type = 'employee'
+							and assignment.source_employment_history_id is not null
+							and period."periodStartProvenance" = 'recorded'
+							and period."periodStartEmployeeDate" = employee_row."clockOutLocalDate"
+							and period."periodStartOrganizationDate" > employee_row."clockOutLocalDate"
+							and assignment.effective_from_date <= period."periodStartOrganizationDate"
+							and (assignment.effective_until_date is null or assignment.effective_until_date > period."periodStartOrganizationDate")
+							and exists (
+								select 1
+								from employee_employment_history terms
+								where terms.id = assignment.source_employment_history_id
+									and terms.organization_id = employee_row."organizationId"
+									and terms.employment_period_id = period."employmentPeriodId"
+									and terms.review_state = 'confirmed'
+							)
+						)
+						or (
+							assignment.source_kind = 'legacy'
+							and (assignment.effective_from is null or assignment.effective_from <= ${endTimeDate})
+							and (assignment.effective_until is null or assignment.effective_until > ${endTimeDate})
+						)
+					)
 					and (
 						(assignment.assignment_type = 'employee' and assignment.employee_id = employee_row.id)
 						or (assignment.assignment_type = 'team' and assignment.team_id = employee_row."teamId")
 						or (assignment.assignment_type = 'organization' and assignment.employee_id is null and assignment.team_id is null)
 					)
-				order by assignment.priority desc,
-					case assignment.assignment_type
-						when 'employee' then 2 when 'team' then 1 else 0 end desc,
-					assignment.id
+				order by assignment.id
 				limit ${MAX_ASSIGNMENT_CANDIDATES + 1}
 				for update of assignment
 			)
 			select employee_row."organizationId" as "employeeOrganizationId",
-				employee_row."teamId", assignment."assignmentId",
+				employee_row."teamId",
+				employee_row."userTimezone",
+				employee_row."organizationTimezone",
+				period."employmentPeriodId",
+				assignment."assignmentId",
 				assignment."assignmentOrganizationId", assignment."assignmentType",
-				assignment."assignmentPolicyId", assignment.priority
+				assignment."assignmentPolicyId", assignment.priority,
+				assignment."assignmentIsActive",
+				assignment."assignmentEffectiveUntilDate",
+				assignment."policyEvaluationDate"
 			from employee_evidence employee_row
+			left join period_evidence period on true
 			left join assignment_candidates assignment on true
+			order by assignment.priority desc nulls last,
+				case assignment."assignmentType"
+					when 'employee' then 2 when 'team' then 1 else 0 end desc,
+				assignment."assignmentIsActive" desc nulls last,
+				assignment."assignmentId"
 		`);
 		if (
 			typeof candidateResult !== "object" ||
@@ -359,29 +669,59 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 		) {
 			throw new Error();
 		}
-		const assignment = selectAssignmentCandidate(candidateResult.rows, input.organizationId);
+		const selection = selectAssignmentCandidate(candidateResult.rows, input.organizationId);
+		const assignment = selection.assignment;
 		if (assignment === null) {
 			return parsePolicyClockOutBreakSnapshot(
-				{ version: 1, evaluatedAt, resolution: "none" },
+				{
+					version: 2,
+					evaluatedAt,
+					resolution: "none",
+					employmentPeriodId: selection.employmentPeriodId,
+				},
 				evaluatedAt,
 			);
 		}
 
+		const calendarTimezone = resolveEffectiveTimezone(
+			selection.userTimezone,
+			selection.organizationTimezone,
+		);
+		const orgTimezone = resolveOrganizationTimezone(selection.organizationTimezone).timezone;
+		const clockOutDate =
+			assignment.policyEvaluationDate ?? plainDateAt(input.endTime, calendarTimezone).toString();
+
 		const result = await input.dbService.db.execute(sql`
 			with policy_evidence as (
 				select policy.id, policy.name, policy.is_active as "policyIsActive",
-					policy.regulation_enabled as "regulationEnabled"
+					policy.updated_at as "policyUpdatedAt",
+					to_char((policy.updated_at at time zone 'UTC') at time zone ${orgTimezone}, 'YYYY-MM-DD') as "policyRetiredOnDate"
 				from work_policy policy
 				where policy.id = ${assignment.policyId}::uuid
 					and policy.organization_id = ${input.organizationId}
 				limit 2
 				for update of policy
+			), version_evidence as (
+				select version.id as "policyVersionId",
+					to_char(version.effective_from_date, 'YYYY-MM-DD') as "effectiveFromDate",
+					version.regulation_enabled as "regulationEnabled"
+				from policy_evidence policy
+				join work_policy_version version
+					on version.policy_id = policy.id
+					and version.organization_id = ${input.organizationId}
+				where version.effective_from_date <= ${clockOutDate}::date
+				order by version.effective_from_date desc, version.version_number desc
+				limit 1
+				for update of version
 			), regulation_evidence as (
 				select regulation.id,
 					regulation.max_uninterrupted_minutes as "maxUninterruptedMinutes"
 				from policy_evidence policy
-				join work_policy_regulation regulation on regulation.policy_id = policy.id
-				where policy."regulationEnabled" = true
+				join version_evidence version on true
+				join work_policy_regulation regulation
+					on regulation.policy_id = policy.id
+					and (regulation.policy_version_id = version."policyVersionId" or regulation.policy_version_id is null)
+				where version."regulationEnabled" = true
 				limit 2
 				for update of regulation
 			), rule_evidence as (
@@ -394,10 +734,16 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				for update of rule
 			)
 			select policy.id as "policyId", policy.name as "policyName",
-				policy."policyIsActive", policy."regulationEnabled",
+				policy."policyIsActive",
+				policy."policyUpdatedAt",
+				policy."policyRetiredOnDate",
+				version."policyVersionId",
+				version."effectiveFromDate",
+				version."regulationEnabled",
 				regulation.id as "regulationId", regulation."maxUninterruptedMinutes",
 				coalesce((select json_agg(rule order by rule."workingMinutesThreshold", rule.id) from rule_evidence rule), '[]'::json) as "breakRules"
 			from policy_evidence policy
+			left join version_evidence version on true
 			left join regulation_evidence regulation on true
 		`);
 		if (
@@ -410,10 +756,44 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			throw new Error();
 		}
 		const row = result.rows[0] as Record<string, unknown>;
+		const policyEligible = (() => {
+			if (row.policyIsActive === true) return true;
+			if (row.policyIsActive !== false) return false;
+			// A2-10 / A3-7: Allow historically eligible capped assignments to resolve a retired policy's
+			// historical version for deferred break adjustments while still failing closed on
+			// uncapped or post-retirement references.
+			if (assignment.effectiveUntilDate === null || clockOutDate >= assignment.effectiveUntilDate) {
+				return false;
+			}
+			const parsePolicyTimestamp = (val: unknown): Instant | null => {
+				if (val instanceof Date) return instantFromDate(val);
+				if (typeof val !== "string" || val.length === 0) return null;
+				const normalized = val.includes("T")
+					? val
+					: `${val.replace(" ", "T")}${/[zZ]|[+-]\d{2}:?\d{2}$/.test(val) ? "" : "Z"}`;
+				return parseInstant(normalized);
+			};
+			const policyRetiredOnDate =
+				typeof row.policyRetiredOnDate === "string" && row.policyRetiredOnDate.length === 10
+					? canonicalPlainDate(row.policyRetiredOnDate)
+					: (() => {
+							const ts = parsePolicyTimestamp(row.policyUpdatedAt);
+							return ts ? plainDateAt(ts, orgTimezone).toString() : null;
+						})();
+			if (
+				policyRetiredOnDate !== null &&
+				(clockOutDate >= policyRetiredOnDate || assignment.effectiveUntilDate > policyRetiredOnDate)
+			) {
+				return false;
+			}
+			return true;
+		})();
 		if (
 			row.policyId !== assignment.policyId ||
-			row.policyIsActive !== true ||
+			!policyEligible ||
 			typeof row.policyName !== "string" ||
+			typeof row.policyVersionId !== "string" ||
+			typeof row.effectiveFromDate !== "string" ||
 			typeof row.regulationEnabled !== "boolean"
 		) {
 			throw new Error();
@@ -440,9 +820,12 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			});
 		return parsePolicyClockOutBreakSnapshot(
 			{
-				version: 1,
+				version: 2,
 				evaluatedAt,
 				resolution: "work_policy",
+				employmentPeriodId: selection.employmentPeriodId,
+				policyVersionId: row.policyVersionId,
+				effectiveFromDate: row.effectiveFromDate,
 				teamId: assignment.teamId,
 				assignment: { id: assignment.id, type: assignment.type },
 				policy: { id: row.policyId, name: row.policyName },

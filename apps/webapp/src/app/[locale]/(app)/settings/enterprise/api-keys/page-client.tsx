@@ -48,28 +48,30 @@ export function DeveloperAccessClient(props: DeveloperAccessProps) {
 	return (
 		<>
 			{!ready ? (
-				<div className="page-frame space-y-6">
-					<PageHeader title={title} />
-					{context.error ? (
-						<Alert>
-							<AlertTitle>
-								{t("settings.apiKeys.contextUnavailable", "Organization context unavailable")}
-							</AlertTitle>
-							<AlertDescription>
-								{t(
-									"settings.apiKeys.contextRetry",
-									"Refresh your organization context to continue.",
-								)}
-								<Button variant="outline" onClick={() => void context.refetch()}>
-									{t("common.retry", "Retry")}
-								</Button>
-							</AlertDescription>
-						</Alert>
-					) : (
-						<LoadingRegion
-							label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}
-						/>
-					)}
+				<div className="page-frame">
+					<div className="page-measure space-y-6">
+						<PageHeader title={title} />
+						{context.error ? (
+							<Alert>
+								<AlertTitle>
+									{t("settings.apiKeys.contextUnavailable", "Organization context unavailable")}
+								</AlertTitle>
+								<AlertDescription>
+									{t(
+										"settings.apiKeys.contextRetry",
+										"Refresh your organization context to continue.",
+									)}
+									<Button variant="outline" onClick={() => void context.refetch()}>
+										{t("common.retry", "Retry")}
+									</Button>
+								</AlertDescription>
+							</Alert>
+						) : (
+							<LoadingRegion
+								label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}
+							/>
+						)}
+					</div>
 				</div>
 			) : null}
 			<Activity mode={ready ? "visible" : "hidden"}>

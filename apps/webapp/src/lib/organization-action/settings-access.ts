@@ -49,26 +49,26 @@ export async function loadSettingsAccessFacts(
 	db: Pick<DatabaseClient, "select">,
 	input: { userId: string; organizationId: string },
 ): Promise<SettingsAccessFacts> {
-	const [[membership], [employeeRecord]] = await Promise.all([
-		db
-			.select({ role: member.role })
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, input.userId),
-					eq(member.organizationId, input.organizationId),
-					eq(member.status, "approved"),
-				),
-			)
-			.limit(1),
-		db
-			.select({ id: employee.id, role: employee.role, former: isFormerEmployee(employee) })
-			.from(employee)
-			.where(
-				and(eq(employee.userId, input.userId), eq(employee.organizationId, input.organizationId)),
-			)
-			.limit(1),
-	]);
+	// One after another: `db` may be a transaction, which is one connection, and
+	// pg@9 refuses a query while another is executing.
+	const [membership] = await db
+		.select({ role: member.role })
+		.from(member)
+		.where(
+			and(
+				eq(member.userId, input.userId),
+				eq(member.organizationId, input.organizationId),
+				eq(member.status, "approved"),
+			),
+		)
+		.limit(1);
+	const [employeeRecord] = await db
+		.select({ id: employee.id, role: employee.role, former: isFormerEmployee(employee) })
+		.from(employee)
+		.where(
+			and(eq(employee.userId, input.userId), eq(employee.organizationId, input.organizationId)),
+		)
+		.limit(1);
 	return {
 		membershipRole: membership?.role ?? null,
 		employee: employeeRecord ?? null,

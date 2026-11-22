@@ -10,6 +10,7 @@ import {
 	getScheduleOwnerCandidatesAction,
 	type ScheduledExportSummary,
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -20,13 +21,6 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
@@ -122,30 +116,28 @@ export function ChangeOwnerDialog({
 									<TFormLabel hasError={fieldHasError(field)} required>
 										{t("settings.scheduledExports.owner.label", "Owner")}
 									</TFormLabel>
-									<Select
-										name="ownerId"
-										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value)}
-										disabled={isLoading}
-									>
-										<TFormControl hasError={fieldHasError(field)}>
-											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-												<SelectValue
-													placeholder={t(
-														"settings.scheduledExports.owner.placeholder",
-														"Select an org admin…",
-													)}
-												/>
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											{(candidates ?? []).map((candidate) => (
-												<SelectItem key={candidate.userId} value={candidate.userId}>
-													{candidate.name || candidate.email || candidate.userId}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+									<TFormControl hasError={fieldHasError(field)}>
+										<EmployeeSingleSelect
+											className="space-y-0"
+											value={field.state.value || null}
+											onChange={(value) => field.handleChange(value ?? "")}
+											onBlur={field.handleBlur}
+											disabled={isLoading}
+											placeholder={t(
+												"settings.scheduledExports.owner.placeholder",
+												"Select an org admin…",
+											)}
+											employees={(candidates ?? []).map((candidate) =>
+												toSelectableEmployee({
+													id: candidate.userId,
+													userId: candidate.userId,
+													name: candidate.name || candidate.email || candidate.userId,
+													email: candidate.email,
+													role: "admin",
+												}),
+											)}
+										/>
+									</TFormControl>
 									<TFormMessage field={field} />
 								</TFormItem>
 							)}

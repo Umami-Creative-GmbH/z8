@@ -27,7 +27,12 @@ vi.mock("@/lib/auth-client", () => ({
 		},
 	}),
 }));
-beforeEach(() =>
+beforeEach(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
 	vi.stubGlobal(
 		"fetch",
 		vi.fn(async (input: string) => {
@@ -43,8 +48,8 @@ beforeEach(() =>
 				await remote.status(employeeId ? { employeeId } : {}),
 			);
 		}),
-	),
-);
+	);
+});
 vi.mock("@/components/time-tracking/use-clock-in-out-widget", () => ({
 	useClockInOutWidget: () => ({
 		t: (_key: string, fallback: string) => fallback,
@@ -339,7 +344,10 @@ it("lets a planner open only the minimal employee status without inspection cont
 			<OperationalDrivingStatusPanel />
 		</QueryClientProvider>,
 	);
-	fireEvent.click(await screen.findByRole("button", { name: "Driver One" }));
+	const picker = screen.getByRole<HTMLButtonElement>("combobox", { name: "Find employee" });
+	await waitFor(() => expect(picker.disabled).toBe(false));
+	fireEvent.click(picker);
+	fireEvent.click(await screen.findByRole("option", { name: /Driver One/i }));
 	expect(
 		await screen.findByText("Not yet checked — no driving authorization"),
 	).toBeTruthy();
@@ -367,15 +375,17 @@ it("shows planning loading and a recoverable refusal instead of a blank panel, r
 		data: [{ employeeId: "driver", name: "Driver One" }],
 	});
 	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-	expect(
-		await screen.findByRole("button", { name: "Driver One" }),
-	).toBeTruthy();
-	fireEvent.change(screen.getByRole("searchbox", { name: "Find employee" }), {
+	const picker = screen.getByRole<HTMLButtonElement>("combobox", { name: "Find employee" });
+	await waitFor(() => expect(picker.disabled).toBe(false));
+	fireEvent.click(picker);
+	expect(await screen.findByRole("option", { name: /Driver One/i })).toBeTruthy();
+	fireEvent.change(screen.getByPlaceholderText("Find employee"), {
 		target: { value: "Driver" },
 	});
 	await waitFor(() =>
 		expect(remote.employeeList).toHaveBeenLastCalledWith({ search: "Driver" }),
 	);
+	fireEvent.click(screen.getByRole("button", { name: "Close" }));
 	await waitFor(() =>
 		expect(
 			screen.getByRole<HTMLButtonElement>("button", {
@@ -388,6 +398,6 @@ it("shows planning loading and a recoverable refusal instead of a blank panel, r
 		screen.getByRole("button", { name: "Refresh planning employees" }),
 	);
 	await screen.findByRole("alert");
-	expect(screen.getByRole<HTMLInputElement>("searchbox").value).toBe("Driver");
-	expect(screen.queryByRole("button", { name: "Driver One" })).toBeNull();
+	expect(picker.disabled).toBe(true);
+	expect(screen.queryByRole("option", { name: /Driver One/i })).toBeNull();
 });

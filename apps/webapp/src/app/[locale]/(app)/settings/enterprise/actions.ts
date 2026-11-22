@@ -905,7 +905,6 @@ export const registerSSOProviderAction = organizationAction(
 				throw error;
 			}
 
-			revalidatePath("/settings/enterprise/sso");
 			revalidatePath(IDENTITY_SETUP_PATH);
 
 			return normalizeSSOProvider(rawProvider);
@@ -926,7 +925,6 @@ export const deleteSSOProviderAction = organizationAction(
 			// Path: secret/data/organizations/{orgId}/sso/{providerId}/client_secret
 			await deleteOrgSecret(organizationId, `sso/${provider.providerId}/client_secret`);
 
-			revalidatePath("/settings/enterprise/sso");
 			revalidatePath(IDENTITY_SETUP_PATH);
 		}),
 );
@@ -944,7 +942,6 @@ export const requestSSODomainVerificationAction = organizationAction(
 			const result = await requestSsoDomainVerification(provider.providerId);
 
 			revalidatePath("/settings/enterprise/domains");
-			revalidatePath("/settings/enterprise/sso");
 			revalidatePath(IDENTITY_SETUP_PATH);
 
 			return {
@@ -965,7 +962,6 @@ export const verifySSODomainAction = organizationAction(
 			await verifySsoDomain(provider.providerId);
 
 			revalidatePath("/settings/enterprise/domains");
-			revalidatePath("/settings/enterprise/sso");
 			revalidatePath(IDENTITY_SETUP_PATH);
 
 			return { verified: true };
@@ -997,7 +993,6 @@ export const updateBrandingAction = organizationAction(
 	({ organizationId, input }) =>
 		enterpriseWork("Unable to save the branding", async () => {
 			await updateOrganizationBranding(organizationId, input);
-			revalidatePath("/settings/enterprise/branding");
 			revalidatePath("/settings/enterprise/domains");
 		}),
 );

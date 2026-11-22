@@ -1,10 +1,7 @@
-import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { serializeWorkdayTimelineResult } from "./timeline-serialization";
-import type {
-	SelectedWorkdayDate,
-	WorkdayTimelineResult,
-} from "./workday-timeline.types";
+import type { SelectedWorkdayDate, WorkdayTimelineResult } from "./workday-timeline.types";
 
 const serializableDate = {
 	dateKey: "2026-03-29",
@@ -15,8 +12,8 @@ const serializableDate = {
 };
 const selectedDate: SelectedWorkdayDate = {
 	...serializableDate,
-	startUtc: DateTime.fromISO("2026-03-28T23:00:00Z"),
-	endUtc: DateTime.fromISO("2026-03-29T21:59:59.999Z"),
+	startUtc: parseInstant("2026-03-28T23:00:00Z"),
+	endUtc: parseInstant("2026-03-29T21:59:59.999Z"),
 };
 const serializableWarning = {
 	id: "warning-1",
@@ -96,9 +93,7 @@ describe("serializeWorkdayTimelineResult", () => {
 				dayWarnings: [serializableWarning],
 			},
 		};
-		expect(serializeWorkdayTimelineResult(successFixture)).toEqual(
-			serializableFixture,
-		);
+		expect(serializeWorkdayTimelineResult(successFixture)).toEqual(serializableFixture);
 	});
 
 	it("preserves error and selected date navigation fields without internal date objects", () => {

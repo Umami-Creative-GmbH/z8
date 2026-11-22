@@ -1,22 +1,24 @@
 "use client";
 /* eslint-disable react-doctor/no-giant-component */
 
-import { IconLoader2, IconPlus } from "@tabler/icons-react";
+import { IconAlertTriangle, IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	type BreakRuleInput,
 	type CreateWorkPolicyInput,
 	createWorkPolicy,
+	publishWorkPolicyVersion,
 	type ScheduleDayInput,
 	type UpdateWorkPolicyInput,
 	updateWorkPolicy,
 	type WorkPolicyWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { WorkSchedulePreview } from "@/components/settings/work-policy/work-policy-preview";
 import { generateDaysFromPreset } from "@/components/settings/work-policy/work-policy-preview-utils";
 import {
@@ -44,6 +46,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
 import { BreakRuleEditor } from "../break-rule-editor";
@@ -53,8 +56,19 @@ interface WorkPolicyDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	organizationTimezone?: string;
 	editingPolicy: WorkPolicyWithDetails | null;
+	workPolicyVersioningEnabled?: boolean;
 	onSuccess: () => void;
+}
+
+function todayIsoDateInTimezone(timeZone?: string): string {
+	const zone = timeZone || "UTC";
+	try {
+		return plainDateAt(systemClock.nowInstant(), zone).toString();
+	} catch {
+		return plainDateAt(systemClock.nowInstant(), "UTC").toString();
+	}
 }
 
 const DAYS_OF_WEEK = [
@@ -230,17 +244,51 @@ function useWorkPolicyForm({
 	open,
 	onOpenChange,
 	organizationId,
+	organizationTimezone,
 	editingPolicy,
+	workPolicyVersioningEnabled = false,
 	onSuccess,
 }: WorkPolicyDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const isEditing = !!editingPolicy;
 	const initialFormValues = buildWorkPolicyFormValues(editingPolicy);
+	const orgTodayDate = todayIsoDateInTimezone(organizationTimezone);
+	const [effectiveFromDate, setEffectiveFromDate] = useState(() => orgTodayDate);
+	const [confirmSameDayReplace, setConfirmSameDayReplace] = useState(false);
+
+	const isMetadataOnlyEdit = (value: typeof formDefaultValues): boolean => {
+		if (!editingPolicy) return false;
+		const init = initialFormValues;
+		return (
+			value.scheduleEnabled === init.scheduleEnabled &&
+			value.regulationEnabled === init.regulationEnabled &&
+			value.presenceEnabled === init.presenceEnabled &&
+			value.scheduleCycle === init.scheduleCycle &&
+			value.scheduleType === init.scheduleType &&
+			value.workingDaysPreset === init.workingDaysPreset &&
+			value.hoursPerCycle === init.hoursPerCycle &&
+			value.homeOfficeDaysPerCycle === init.homeOfficeDaysPerCycle &&
+			JSON.stringify(value.days) === JSON.stringify(init.days) &&
+			value.maxDailyMinutes === init.maxDailyMinutes &&
+			value.maxWeeklyMinutes === init.maxWeeklyMinutes &&
+			value.maxUninterruptedMinutes === init.maxUninterruptedMinutes &&
+			value.minRestPeriodMinutes === init.minRestPeriodMinutes &&
+			value.restPeriodEnforcement === init.restPeriodEnforcement &&
+			value.overtimeDailyThresholdMinutes === init.overtimeDailyThresholdMinutes &&
+			value.overtimeWeeklyThresholdMinutes === init.overtimeWeeklyThresholdMinutes &&
+			value.overtimeMonthlyThresholdMinutes === init.overtimeMonthlyThresholdMinutes &&
+			value.alertBeforeLimitMinutes === init.alertBeforeLimitMinutes &&
+			value.alertThresholdPercent === init.alertThresholdPercent &&
+			JSON.stringify(value.breakRules) === JSON.stringify(init.breakRules) &&
+			JSON.stringify(value.presence) === JSON.stringify(init.presence)
+		);
+	};
 
 	const form = useForm({
 		defaultValues: initialFormValues,
 		onSubmit: async ({ value }) => {
+			const metadataOnly = isMetadataOnlyEdit(value);
 			const input = {
 				name: value.name,
 				description: value.description || undefined,
@@ -298,7 +346,21 @@ function useWorkPolicyForm({
 					: undefined,
 			};
 
-			if (isEditing) {
+			if (isEditing && workPolicyVersioningEnabled && !metadataOnly) {
+				if (effectiveFromDate < orgTodayDate) {
+					toast.error(
+						t(
+							"settings.workPolicies.versionDateInPast",
+							"New policy versions cannot take effect on a past date.",
+						),
+					);
+					return;
+				}
+				publishVersionMutation.mutate({
+					effectiveFromDate,
+					data: input,
+				});
+			} else if (isEditing) {
 				updateMutation.mutate(input);
 			} else {
 				createMutation.mutate(input);
@@ -311,10 +373,12 @@ function useWorkPolicyForm({
 		if (open && resetScopeRef.current !== nextResetScope) {
 			resetScopeRef.current = nextResetScope;
 			form.reset(initialFormValues);
+			setEffectiveFromDate(orgTodayDate);
+			setConfirmSameDayReplace(false);
 		} else if (!open && resetScopeRef.current !== "") {
 			resetScopeRef.current = "";
 		}
-	}, [open, editingPolicy, form, initialFormValues]);
+	}, [open, editingPolicy, form, initialFormValues, orgTodayDate]);
 
 	// Create mutation
 	const createMutation = useMutation({
@@ -376,7 +440,77 @@ function useWorkPolicyForm({
 		},
 	});
 
-	const isPending = createMutation.isPending || updateMutation.isPending;
+	// Publish effective-dated version mutation
+	const publishVersionMutation = useMutation({
+		mutationFn: ({
+			effectiveFromDate: targetDate,
+			data,
+		}: {
+			effectiveFromDate: string;
+			data: UpdateWorkPolicyInput;
+		}) => {
+			if (!editingPolicy) {
+				throw new Error("Cannot publish policy version without an editing target");
+			}
+			return publishWorkPolicyVersion({
+				policyId: editingPolicy.id,
+				effectiveFromDate: targetDate,
+				data,
+			});
+		},
+		onSuccess: (result) => {
+			if (result.success) {
+				if (result.data.replacesSameDayVersion) {
+					toast.warning(
+						t(
+							"settings.workPolicies.sameDayReplacedToast",
+							"Version v{version} published for {date} (replaced earlier same-day revision v{replacedVersion} for that full day).",
+							{
+								version: result.data.version.versionNumber,
+								date: result.data.replacesSameDayVersion.effectiveFromDate,
+								replacedVersion: result.data.replacesSameDayVersion.replacedVersionNumber,
+							},
+						),
+					);
+				} else {
+					toast.success(
+						t(
+							"settings.workPolicies.versionPublished",
+							"Policy version v{version} published effective {date}",
+							{
+								version: result.data.version.versionNumber,
+								date: result.data.version.effectiveFromDate,
+							},
+						),
+					);
+				}
+				void Promise.all([
+					queryClient.invalidateQueries({
+						queryKey: queryKeys.workPolicies.list(organizationId),
+					}),
+					editingPolicy
+						? queryClient.invalidateQueries({
+								queryKey: queryKeys.workPolicies.detail(editingPolicy.id),
+							})
+						: Promise.resolve(),
+				]);
+				onSuccess();
+			} else {
+				toast.error(
+					actionErrorMessage(t, result, WORK_POLICY_REFUSALS, [
+						"settings.workPolicies.updateFailed",
+						"Failed to update",
+					]),
+				);
+			}
+		},
+		onError: () => {
+			toast.error(t("settings.workPolicies.updateFailed", "Failed to update policy"));
+		},
+	});
+
+	const isPending =
+		createMutation.isPending || updateMutation.isPending || publishVersionMutation.isPending;
 
 	// Subscribe to form values for conditional rendering
 	const scheduleEnabled = useStore(form.store, (state) => state.values.scheduleEnabled);
@@ -415,10 +549,26 @@ function useWorkPolicyForm({
 		}));
 	})();
 
+	const currentValues = useStore(form.store, (state) => state.values);
+	const isRuleEdit = isEditing && !isMetadataOnlyEdit(currentValues);
+	const matchesExistingVersionDate = Boolean(
+		editingPolicy?.versionEffectiveDates?.includes(effectiveFromDate),
+	);
+	const requiresSameDayConfirmation =
+		workPolicyVersioningEnabled && isRuleEdit && matchesExistingVersionDate;
+
 	return {
 		open,
 		onOpenChange,
 		isEditing,
+		workPolicyVersioningEnabled,
+		orgTodayDate,
+		effectiveFromDate,
+		setEffectiveFromDate,
+		confirmSameDayReplace,
+		setConfirmSameDayReplace,
+		isRuleEdit,
+		requiresSameDayConfirmation,
 		t,
 		form,
 		noSectionsEnabled: !scheduleEnabled && !regulationEnabled && !presenceEnabled,
@@ -439,12 +589,21 @@ export function WorkPolicyDialog({
 	open,
 	onOpenChange,
 	organizationId,
+	organizationTimezone,
 	editingPolicy,
+	workPolicyVersioningEnabled = false,
 	onSuccess,
 }: WorkPolicyDialogProps) {
 	const {
 		noSectionsEnabled,
 		isEditing,
+		orgTodayDate,
+		effectiveFromDate,
+		setEffectiveFromDate,
+		confirmSameDayReplace,
+		setConfirmSameDayReplace,
+		isRuleEdit,
+		requiresSameDayConfirmation,
 		t,
 		form,
 		scheduleEnabled,
@@ -457,7 +616,15 @@ export function WorkPolicyDialog({
 		scheduleCycle,
 		presenceMode,
 		isPending,
-	} = useWorkPolicyForm({ open, onOpenChange, organizationId, editingPolicy, onSuccess });
+	} = useWorkPolicyForm({
+		open,
+		onOpenChange,
+		organizationId,
+		organizationTimezone,
+		editingPolicy,
+		workPolicyVersioningEnabled,
+		onSuccess,
+	});
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent size="wide">
@@ -559,6 +726,78 @@ export function WorkPolicyDialog({
 								)}
 							</form.Field>
 						</div>
+
+						{/* Effective-Dated Version Publishing */}
+						{isEditing && workPolicyVersioningEnabled && (
+							<div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+								<div className="grid gap-3 sm:grid-cols-2 sm:items-end">
+									<div className="space-y-1.5">
+										<Label htmlFor="work-policy-effective-from">
+											{t(
+												"settings.workPolicies.versionEffectiveFrom",
+												"New version effective from",
+											)}
+										</Label>
+										<Input
+											id="work-policy-effective-from"
+											type="date"
+											min={orgTodayDate}
+											value={effectiveFromDate}
+											onChange={(e) => {
+												setEffectiveFromDate(e.target.value);
+												setConfirmSameDayReplace(false);
+											}}
+										/>
+									</div>
+									<p className="text-muted-foreground text-xs">
+										{isRuleEdit
+											? t(
+													"settings.workPolicies.versionPublishHint",
+													"Rule changes publish a new immutable version from this date without altering past history.",
+												)
+											: t(
+													"settings.workPolicies.metadataOnlyHint",
+													"Name and description changes update in place without creating a new version.",
+												)}
+									</p>
+								</div>
+
+								{requiresSameDayConfirmation && (
+									<Alert role="alert">
+										<IconAlertTriangle className="size-4" aria-hidden="true" />
+										<AlertTitle>
+											{t(
+												"settings.workPolicies.sameDayWarningTitle",
+												"Same-day revision replaces earlier version",
+											)}
+										</AlertTitle>
+										<AlertDescription className="space-y-2">
+											<p>
+												{t(
+													"settings.workPolicies.sameDayWarningBody",
+													"Publishing a second revision effective {date} replaces the earlier revision for that entire calendar day.",
+													{ date: effectiveFromDate },
+												)}
+											</p>
+											<label className="flex items-center gap-2 font-medium text-xs">
+												<Checkbox
+													id="work-policy-confirm-same-day"
+													checked={confirmSameDayReplace}
+													onCheckedChange={(c) => setConfirmSameDayReplace(c === true)}
+												/>
+												<span>
+													{t(
+														"settings.workPolicies.sameDayConfirmLabel",
+														"I understand this replaces the earlier revision for {date}",
+														{ date: effectiveFromDate },
+													)}
+												</span>
+											</label>
+										</AlertDescription>
+									</Alert>
+								)}
+							</div>
+						)}
 
 						{/* Feature Toggles */}
 						<div className="space-y-4">
@@ -1305,11 +1544,19 @@ export function WorkPolicyDialog({
 						</Button>
 						<Button
 							type="submit"
-							disabled={isPending || noSectionsEnabled}
+							disabled={
+								isPending ||
+								noSectionsEnabled ||
+								(requiresSameDayConfirmation && !confirmSameDayReplace)
+							}
 							aria-busy={isPending || undefined}
 						>
 							{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
-							{isEditing ? t("common.save", "Save") : t("common.create", "Create")}
+							{isEditing && workPolicyVersioningEnabled && isRuleEdit
+								? t("settings.workPolicies.publishVersion", "Publish version")
+								: isEditing
+									? t("common.save", "Save")
+									: t("common.create", "Create")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

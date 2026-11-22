@@ -2,30 +2,23 @@ import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { WorkCategoryManagement } from "@/components/settings/work-category/work-category-management";
 import { WorkCategorySetsTable } from "@/components/settings/work-category/work-category-sets-table";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 
 async function WorkCategoriesSettingsContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
-
-	const { accessTier } = settingsRouteContext;
+	const { organizationId, settingsAccess } = caller;
+	const canManage = meetsSettingsAccess(settingsAccess, "orgAdmin");
 
 	return (
-		<WorkCategoryManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"}>
-			<WorkCategorySetsTable
-				organizationId={organizationId}
-				canManage={accessTier === "orgAdmin"}
-			/>
+		<WorkCategoryManagement organizationId={organizationId} canManage={canManage}>
+			<WorkCategorySetsTable organizationId={organizationId} canManage={canManage} />
 		</WorkCategoryManagement>
 	);
 }

@@ -5,26 +5,24 @@ import { WorkPolicySettingsTabs } from "@/components/settings/work-policy/work-p
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { env } from "@/env";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
 async function WorkPoliciesPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
+	const { organizationId, settingsAccess } = caller;
 
 	// Violation instants are shown on the organization's calendar, not the viewer's.
 	const organizationTimezone = await loadOrganizationTimezone(db, organizationId);
+	const workPolicyVersioningEnabled = env.WORK_POLICY_VERSIONING_ENABLED === "true";
 
 	return (
 		<WorkPolicySettingsTabs
@@ -33,14 +31,15 @@ async function WorkPoliciesPageContent() {
 				work: (
 					<WorkPolicyManagement
 						organizationId={organizationId}
-						accessTier={settingsRouteContext.accessTier}
+						settingsAccess={settingsAccess}
 						organizationTimezone={organizationTimezone}
+						workPolicyVersioningEnabled={workPolicyVersioningEnabled}
 					/>
 				),
 				changes: (
 					<ChangePolicyManagement
 						organizationId={organizationId}
-						canManage={settingsRouteContext.accessTier === "orgAdmin"}
+						canManage={meetsSettingsAccess(settingsAccess, "orgAdmin")}
 					/>
 				),
 			}}

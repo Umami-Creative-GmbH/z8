@@ -6,6 +6,7 @@ import { splitRouteLocale } from "@/i18n/route-locale";
 import { routing } from "@/i18n/routing";
 import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain/platform-domain";
 import { resolvePublicRedirectOrigin } from "@/lib/domain/request-origin";
+import { resolveLegacySettingsRedirect } from "@/lib/navigation/legacy-settings-redirects";
 import { applyShareResponseHeaders } from "@/lib/projects/report-share/http";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { applySecurityHeaders } from "@/lib/security";
@@ -32,7 +33,6 @@ const PUBLIC_ROUTES = [
 	"/verify-email",
 	"/verify-email-pending",
 	"/verify-2fa",
-	"/welcome",
 	"/licenses",
 	"/join",
 	"/setup",
@@ -41,7 +41,7 @@ const PUBLIC_ROUTES = [
 ];
 
 // Routes that authenticated users should be redirected away from
-const AUTH_ROUTES = ["/sign-in", "/sign-up", "/forgot-password", "/welcome"];
+const AUTH_ROUTES = ["/sign-in", "/sign-up", "/forgot-password"];
 
 const i18nMiddleware = createMiddleware(routing);
 
@@ -230,6 +230,27 @@ export async function proxy(request: NextRequest) {
 		if (!rateLimitResult.allowed) {
 			return createRateLimitResponse(rateLimitResult, request);
 		}
+	}
+
+	// Centralized 308 redirects for retired legacy settings URLs (#1963).
+	// Runs before i18nMiddleware so both locale-prefixed and bare legacy URLs resolve in one 308 hop
+	// without duplicating DB authorization checks in the proxy; the canonical destination enforces access.
+	const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
+	const legacyRedirectLocale =
+		routeLocale ??
+		(cookieLocale && routing.locales.includes(cookieLocale) ? cookieLocale : null) ??
+		pickAcceptLanguage(request.headers.get("accept-language"), routing.locales) ??
+		DEFAULT_LANGUAGE;
+	const legacySettingsRedirect = resolveLegacySettingsRedirect(
+		pathWithoutLocale,
+		legacyRedirectLocale,
+		request.nextUrl.searchParams,
+	);
+	if (legacySettingsRedirect) {
+		const redirectUrl = await publicRedirectUrl(legacySettingsRedirect, request);
+		const redirectResponse = NextResponse.redirect(redirectUrl, 308);
+		applySecurityHeaders(redirectResponse, { pathname });
+		return redirectResponse;
 	}
 
 	// Handle i18n routing first

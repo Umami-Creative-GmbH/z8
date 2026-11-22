@@ -23,34 +23,33 @@ export async function assertNoUnresolvedWorkPeriodReview(
 			conflictType: "work_period_pending_approval",
 		});
 	}
-	const [legacyPending, canonicalPending] = await Promise.all([
-		tx
-			.select({ id: approvalRequest.id })
-			.from(approvalRequest)
-			.where(
-				and(
-					eq(approvalRequest.organizationId, organizationId),
-					eq(approvalRequest.entityType, "time_entry"),
-					eq(approvalRequest.entityId, period.id),
-					eq(approvalRequest.status, "pending"),
-				),
-			)
-			.limit(1),
-		// Any canonical review of the period, not only corrections: an ordinary
-		// workflow may still be pending while the period status lags (#304).
-		tx
-			.select({ id: approvalWorkflow.id, workflowType: approvalWorkflow.workflowType })
-			.from(approvalWorkflow)
-			.where(
-				and(
-					eq(approvalWorkflow.organizationId, organizationId),
-					eq(approvalWorkflow.sourceType, "time_entry"),
-					eq(approvalWorkflow.sourceId, period.id),
-					eq(approvalWorkflow.status, "pending"),
-				),
-			)
-			.limit(2),
-	]);
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const legacyPending = await tx
+		.select({ id: approvalRequest.id })
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.organizationId, organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, period.id),
+				eq(approvalRequest.status, "pending"),
+			),
+		)
+		.limit(1);
+	// Any canonical review of the period, not only corrections: an ordinary
+	// workflow may still be pending while the period status lags (#304).
+	const canonicalPending = await tx
+		.select({ id: approvalWorkflow.id, workflowType: approvalWorkflow.workflowType })
+		.from(approvalWorkflow)
+		.where(
+			and(
+				eq(approvalWorkflow.organizationId, organizationId),
+				eq(approvalWorkflow.sourceType, "time_entry"),
+				eq(approvalWorkflow.sourceId, period.id),
+				eq(approvalWorkflow.status, "pending"),
+			),
+		)
+		.limit(2);
 	if (canonicalPending.some(({ workflowType }) => workflowType !== "time_correction")) {
 		throw new ConflictError({
 			message: "This work period is awaiting approval and cannot be edited",

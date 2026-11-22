@@ -49,7 +49,7 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 
-const admin = await import("@/app/[locale]/(app)/settings/vehicle-use/actions");
+const admin = await import("@/app/[locale]/(app)/settings/vehicles/vehicle-use-actions");
 const { resolveVehicleUseMode } = await import("./resolver");
 
 const ids = {

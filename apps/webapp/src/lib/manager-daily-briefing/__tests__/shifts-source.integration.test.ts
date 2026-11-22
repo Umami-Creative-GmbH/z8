@@ -5,8 +5,8 @@
  * which found no shifts for any organization outside UTC.
  */
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -164,7 +164,7 @@ describe("manager daily briefing published shifts source", () => {
 			const briefing = await getManagerDailyBriefingFromSources({
 				organizationId: org.organizationId,
 				currentEmployee: { id: manager.employeeId, role: "manager" },
-				now: DateTime.fromISO(now, { setZone: true }),
+				now: parseInstant(now),
 				timezone,
 				// Approvals load every approval handler; they are covered by approvals-source.
 				sources: { ...managerDailyBriefingDatabaseSources, getApprovals: async () => [] },

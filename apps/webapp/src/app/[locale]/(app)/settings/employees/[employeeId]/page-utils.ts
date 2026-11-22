@@ -3,7 +3,13 @@ import type {
 	FormValidateOrFn,
 	ReactFormExtendedApi,
 } from "@tanstack/react-form";
-import { DateTime } from "luxon";
+import {
+	dateFromInstant,
+	instantFromDate,
+	parseInstant,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { PERSONNEL_NUMBER_TAKEN } from "@/lib/organization/personnel-number-refusal";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 
@@ -55,15 +61,7 @@ export const defaultFormValues: EmployeeDetailFormValues = {
 	teamId: "",
 };
 
-export const scheduleDayLabels = [
-	"Mon",
-	"Tue",
-	"Wed",
-	"Thu",
-	"Fri",
-	"Sat",
-	"Sun",
-];
+export const scheduleDayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const scheduleDayKeys = [
 	"monday",
@@ -75,21 +73,34 @@ export const scheduleDayKeys = [
 	"sunday",
 ] as const;
 
-export function formatEmployeeDetailDateInputValue(
-	value: Date | string | null | undefined,
-) {
+export function formatEmployeeDetailDateInputValue(value: Date | string | null | undefined) {
 	if (!value) return "";
-	const date =
-		value instanceof Date
-			? DateTime.fromJSDate(value, { zone: "utc" })
-			: DateTime.fromISO(value, { zone: "utc" });
-	return date.isValid ? (date.toISODate() ?? "") : "";
+	try {
+		if (value instanceof Date) {
+			if (Number.isNaN(value.getTime())) return "";
+			return plainDateAt(instantFromDate(value), "UTC").toString();
+		}
+		const trimmed = value.trim();
+		if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+			return parsePlainDate(trimmed).toString();
+		}
+		return plainDateAt(parseInstant(trimmed), "UTC").toString();
+	} catch {
+		return "";
+	}
 }
 
 export function parseEmployeeDetailDateInputValue(value: string) {
 	if (!value) return null;
-	const date = DateTime.fromISO(value, { zone: "utc" }).startOf("day");
-	return date.isValid ? date.toJSDate() : null;
+	try {
+		const trimmed = value.trim();
+		const plainDate = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+			? parsePlainDate(trimmed)
+			: plainDateAt(parseInstant(trimmed), "UTC");
+		return dateFromInstant(plainDate.toZonedDateTime("UTC").toInstant());
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -116,19 +127,10 @@ export function buildEmployeeUpdatePayload(
  * validation error or a save refusal the server put on the field (a taken
  * personnel number, `showEmployeeSaveRefusal`).
  */
-export function focusFirstInvalidEmployeeDetailField(
-	formApi: EmployeeDetailFormMetaApi,
-) {
-	for (const fieldName of [
-		"firstName",
-		"lastName",
-		"pronouns",
-		"employeeNumber",
-	] as const) {
+export function focusFirstInvalidEmployeeDetailField(formApi: EmployeeDetailFormMetaApi) {
+	for (const fieldName of ["firstName", "lastName", "pronouns", "employeeNumber"] as const) {
 		if (formApi.getFieldMeta(fieldName)?.errors.length) {
-			document
-				.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)
-				?.focus();
+			document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
 			break;
 		}
 	}
@@ -155,9 +157,7 @@ export function showEmployeeSaveRefusal(
 	return true;
 }
 
-export function buildEmployeeDetailFormValues(
-	employee: EmployeeDetail,
-): EmployeeDetailFormValues {
+export function buildEmployeeDetailFormValues(employee: EmployeeDetail): EmployeeDetailFormValues {
 	return {
 		...defaultFormValues,
 		firstName: employee.user.firstName || "",
@@ -171,14 +171,8 @@ export function buildEmployeeDetailFormValues(
 		role: employee.role || undefined,
 		teamId: employee.teamId ?? "",
 		// Employee wages change only through confirmed employment terms (ADR 0002).
-		contractType:
-			employee.kind === "invitationDraft"
-				? employee.contractType || "fixed"
-				: "fixed",
-		hourlyRate:
-			employee.kind === "invitationDraft"
-				? employee.currentHourlyRate || ""
-				: "",
+		contractType: employee.kind === "invitationDraft" ? employee.contractType || "fixed" : "fixed",
+		hourlyRate: employee.kind === "invitationDraft" ? employee.currentHourlyRate || "" : "",
 	};
 }
 

@@ -122,10 +122,18 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 			[organizationId, name, owner.userId],
 		);
 		const policyId = rows[0].id as string;
+		const {
+			rows: [policyVersion],
+		} = await sql(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3) returning id`,
+			[policyId, organizationId, owner.userId],
+		);
 		await sql(
-			`insert into work_policy_schedule (policy_id, schedule_cycle, schedule_type, working_days_preset, hours_per_cycle, updated_at)
-			 values ($1, 'weekly', 'simple', 'weekdays', $2, now())`,
-			[policyId, hoursPerWeek],
+			`insert into work_policy_schedule (policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, hours_per_cycle, updated_at)
+			 values ($1, $2, 'weekly', 'simple', 'weekdays', $3, now())`,
+			[policyId, policyVersion.id, hoursPerWeek],
 		);
 		await sql(
 			`insert into work_policy_assignment

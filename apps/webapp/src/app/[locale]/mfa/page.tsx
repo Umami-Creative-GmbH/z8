@@ -1,6 +1,5 @@
 import { and, eq } from "drizzle-orm";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { MfaRequirements } from "@/components/organization-mfa/requirements";
 import { MfaSignOut } from "@/components/organization-mfa/sign-out";
@@ -18,6 +17,7 @@ import { getRequestSession } from "@/lib/auth/request-session";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getOwnMfaRequirements } from "@/lib/organization-mfa/queries";
 import type { SocialProviderId } from "@/lib/social-providers";
+import { Link } from "@/navigation";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
 

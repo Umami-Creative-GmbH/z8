@@ -38,12 +38,18 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import type { ServerActionResult } from "@/lib/effect/result";
 import type { PayrollExportJobSummary } from "@/lib/payroll-export/types";
+import type { DiscardPayrollRunResult } from "@/lib/travel-expenses/payroll-run";
 
 interface ExportHistoryProps {
 	exports: PayrollExportJobSummary[];
 	/** The organization's resolved IANA time zone: export times are shown in it. */
 	organizationTimezone: string;
+	/** Optional scoped action override for `/payroll` (#1957). */
+	getDownloadUrl?: (jobId: string) => Promise<ServerActionResult<string | null>>;
+	/** Optional scoped action override for `/payroll` (#1957). */
+	discardPayrollRun?: (jobId: string) => Promise<ServerActionResult<DiscardPayrollRunResult>>;
 }
 
 function formatFileSize(bytes: number | null) {
@@ -53,7 +59,12 @@ function formatFileSize(bytes: number | null) {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ExportHistory({ exports, organizationTimezone }: ExportHistoryProps) {
+export function ExportHistory({
+	exports,
+	organizationTimezone,
+	getDownloadUrl,
+	discardPayrollRun,
+}: ExportHistoryProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const formatCreatedAt = useMemo(
@@ -64,7 +75,9 @@ export function ExportHistory({ exports, organizationTimezone }: ExportHistoryPr
 
 	const handleDownload = async (jobId: string) => {
 		startTransition(async () => {
-			const result = await getExportDownloadUrlAction({ jobId });
+			const result = getDownloadUrl
+				? await getDownloadUrl(jobId)
+				: await getExportDownloadUrlAction({ jobId });
 
 			if (result.success && result.data) {
 				window.open(result.data, "_blank", "noopener,noreferrer");
@@ -253,7 +266,11 @@ export function ExportHistory({ exports, organizationTimezone }: ExportHistoryPr
 											{exp.payrollRunIncludedReports > 0 && (
 												<DiscardPayrollRunButton
 													includedReports={exp.payrollRunIncludedReports}
-													discard={() => discardPayrollRunAction({ jobId: exp.id })}
+													discard={() =>
+														discardPayrollRun
+															? discardPayrollRun(exp.id)
+															: discardPayrollRunAction({ jobId: exp.id })
+													}
 												/>
 											)}
 											{exp.status === "completed" && exp.fileName && (

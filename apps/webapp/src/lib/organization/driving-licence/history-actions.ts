@@ -28,6 +28,7 @@ export async function supplementDrivingLicenceCheckAction(input: unknown) {
 			input,
 		);
 		revalidatePath("/driving-licence");
+		revalidatePath("/team/driving-licence", "layout");
 		return result;
 	});
 }

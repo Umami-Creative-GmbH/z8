@@ -6,6 +6,7 @@ import {
 	payrollAccessTeam,
 	teamMembership,
 } from "@/db/schema";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 
 export interface PayrollAccessGrantRow {
 	id: string;
@@ -77,9 +78,19 @@ export async function hasActivePayrollAccessGrant(input: {
 	organizationId: string;
 	payrollEmployeeId: string;
 }): Promise<boolean> {
-	const { db } = await import("@/db");
+	return (await getActivePayrollAccessGrantScope(input)) !== null;
+}
+
+export async function getActivePayrollAccessGrantScope(
+	input: {
+		organizationId: string;
+		payrollEmployeeId: string;
+	},
+	reader?: Pick<typeof import("@/db").db, "select">,
+): Promise<"all" | "specific" | null> {
+	const db = reader ?? (await import("@/db")).db;
 	const [grant] = await db
-		.select({ id: payrollAccessGrant.id })
+		.select({ scope: payrollAccessGrant.scope })
 		.from(payrollAccessGrant)
 		.where(
 			and(
@@ -90,7 +101,24 @@ export async function hasActivePayrollAccessGrant(input: {
 		)
 		.limit(1);
 
-	return Boolean(grant);
+	if (!grant) {
+		return null;
+	}
+
+	return grant.scope === "all" ? "all" : "specific";
+}
+
+export async function resolveOrganizationPayrollEmployeeIds(
+	organizationId: string,
+	reader?: Pick<typeof import("@/db").db, "select">,
+): Promise<string[]> {
+	const db = reader ?? (await import("@/db")).db;
+	const rows = await db
+		.select({ employeeId: employee.id })
+		.from(employee)
+		.where(onCurrentRoster(organizationId));
+
+	return Array.from(new Set(rows.map((row) => row.employeeId))).toSorted();
 }
 
 export async function resolvePayrollAccessibleEmployeeIds(
@@ -145,32 +173,31 @@ export async function resolvePayrollAccessibleEmployeeIds(
 		});
 	}
 
-	const [directRows, assignedTeamRows] = await Promise.all([
-		db
-			.select({
-				employeeId: employee.id,
-				organizationId: employee.organizationId,
-				isActive: employee.isActive,
-			})
-			.from(payrollAccessEmployee)
-			.innerJoin(employee, eq(payrollAccessEmployee.employeeId, employee.id))
-			.where(
-				and(
-					eq(payrollAccessEmployee.organizationId, input.organizationId),
-					eq(payrollAccessEmployee.grantId, grant.id),
-					eq(employee.organizationId, input.organizationId),
-				),
+	// One after another: `reader` may be a transaction, one connection, and pg@9 refuses a query while another is executing.
+	const directRows = await db
+		.select({
+			employeeId: employee.id,
+			organizationId: employee.organizationId,
+			isActive: employee.isActive,
+		})
+		.from(payrollAccessEmployee)
+		.innerJoin(employee, eq(payrollAccessEmployee.employeeId, employee.id))
+		.where(
+			and(
+				eq(payrollAccessEmployee.organizationId, input.organizationId),
+				eq(payrollAccessEmployee.grantId, grant.id),
+				eq(employee.organizationId, input.organizationId),
 			),
-		db
-			.select({ teamId: payrollAccessTeam.teamId })
-			.from(payrollAccessTeam)
-			.where(
-				and(
-					eq(payrollAccessTeam.organizationId, input.organizationId),
-					eq(payrollAccessTeam.grantId, grant.id),
-				),
+		);
+	const assignedTeamRows = await db
+		.select({ teamId: payrollAccessTeam.teamId })
+		.from(payrollAccessTeam)
+		.where(
+			and(
+				eq(payrollAccessTeam.organizationId, input.organizationId),
+				eq(payrollAccessTeam.grantId, grant.id),
 			),
-	]);
+		);
 
 	const assignedTeamIds = assignedTeamRows.map((row) => row.teamId);
 	if (assignedTeamIds.length === 0) {
@@ -181,36 +208,34 @@ export async function resolvePayrollAccessibleEmployeeIds(
 		});
 	}
 
-	const [employeeTeamRows, teamMembershipRows] = await Promise.all([
-		db
-			.select({
-				employeeId: employee.id,
-				organizationId: employee.organizationId,
-				isActive: employee.isActive,
-			})
-			.from(employee)
-			.where(
-				and(
-					eq(employee.organizationId, input.organizationId),
-					inArray(employee.teamId, assignedTeamIds),
-				),
+	const employeeTeamRows = await db
+		.select({
+			employeeId: employee.id,
+			organizationId: employee.organizationId,
+			isActive: employee.isActive,
+		})
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				inArray(employee.teamId, assignedTeamIds),
 			),
-		db
-			.select({
-				employeeId: employee.id,
-				organizationId: employee.organizationId,
-				isActive: employee.isActive,
-			})
-			.from(teamMembership)
-			.innerJoin(employee, eq(teamMembership.employeeId, employee.id))
-			.where(
-				and(
-					eq(teamMembership.organizationId, input.organizationId),
-					inArray(teamMembership.teamId, assignedTeamIds),
-					eq(employee.organizationId, input.organizationId),
-				),
+		);
+	const teamMembershipRows = await db
+		.select({
+			employeeId: employee.id,
+			organizationId: employee.organizationId,
+			isActive: employee.isActive,
+		})
+		.from(teamMembership)
+		.innerJoin(employee, eq(teamMembership.employeeId, employee.id))
+		.where(
+			and(
+				eq(teamMembership.organizationId, input.organizationId),
+				inArray(teamMembership.teamId, assignedTeamIds),
+				eq(employee.organizationId, input.organizationId),
 			),
-	]);
+		);
 
 	return resolvePayrollAccessibleEmployeeIdsFromRows({
 		grant: normalizedGrant,

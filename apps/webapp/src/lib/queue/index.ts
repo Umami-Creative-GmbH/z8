@@ -11,19 +11,9 @@
  * - Supports job prioritization and rate limiting
  */
 
-import {
-	type ConnectionOptions,
-	type Job,
-	type JobsOptions,
-	Queue,
-	Worker,
-} from "bullmq";
+import { type ConnectionOptions, type Job, type JobsOptions, Queue, Worker } from "bullmq";
 import { env } from "@/env";
-import type {
-	CronJobData,
-	CronJobName,
-	CronJobResult,
-} from "@/lib/cron/registry";
+import type { CronJobData, CronJobName, CronJobResult } from "@/lib/cron/registry";
 import type {
 	AccountingCustomerScanJobData,
 	CsvWorkScanJobData,
@@ -37,18 +27,10 @@ const logger = createLogger("JobQueue");
 const queueHealthTimeoutMs = Number(env.QUEUE_HEALTH_TIMEOUT_MS);
 const queueJobAttempts = Number(env.QUEUE_JOB_ATTEMPTS);
 const queueJobBackoffDelayMs = Number(env.QUEUE_JOB_BACKOFF_DELAY_MS);
-const queueCompletedJobRetentionCount = Number(
-	env.QUEUE_COMPLETED_JOB_RETENTION_COUNT,
-);
-const queueCompletedJobRetentionSeconds = Number(
-	env.QUEUE_COMPLETED_JOB_RETENTION_SECONDS,
-);
-const queueFailedJobRetentionCount = Number(
-	env.QUEUE_FAILED_JOB_RETENTION_COUNT,
-);
-const queueFailedJobRetentionSeconds = Number(
-	env.QUEUE_FAILED_JOB_RETENTION_SECONDS,
-);
+const queueCompletedJobRetentionCount = Number(env.QUEUE_COMPLETED_JOB_RETENTION_COUNT);
+const queueCompletedJobRetentionSeconds = Number(env.QUEUE_COMPLETED_JOB_RETENTION_SECONDS);
+const queueFailedJobRetentionCount = Number(env.QUEUE_FAILED_JOB_RETENTION_COUNT);
+const queueFailedJobRetentionSeconds = Number(env.QUEUE_FAILED_JOB_RETENTION_SECONDS);
 
 // Connection configuration for Redis-compatible backend
 const redisConnectionOptions = createRedisConnectionOptions(env);
@@ -174,6 +156,13 @@ export interface EmployeeDepartureJobData {
 	revision: number;
 }
 
+/** Asynchronous execution of a durable contract change batch (> 200 items, #1928). */
+export interface ContractChangeBatchJobData {
+	type: "contract-change-batch";
+	batchId: string;
+	organizationId: string;
+}
+
 export type ImportReviewScanQueueJobData =
 	| ImportScanJobData
 	| AccountingCustomerScanJobData
@@ -195,6 +184,7 @@ export type JobData =
 	| OrganizationDeletionNotificationJobData
 	| AuditPackJobData
 	| EmployeeDepartureJobData
+	| ContractChangeBatchJobData
 	| ImportReviewScanQueueJobData
 	| ImportReviewCommitQueueJobData;
 
@@ -233,10 +223,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 	return Promise.race([
 		promise,
 		new Promise<T>((_, reject) => {
-			timeout = setTimeout(
-				() => reject(new Error("Queue health check timed out")),
-				timeoutMs,
-			);
+			timeout = setTimeout(() => reject(new Error("Queue health check timed out")), timeoutMs);
 		}),
 	]).finally(() => {
 		if (timeout) {
@@ -321,11 +308,7 @@ export async function addCleanupJob(
 export async function addCalendarSyncJob(
 	data: Omit<CalendarSyncJobData, "type">,
 ): Promise<Job<JobData, JobResult>> {
-	return addJob(
-		"calendar-sync",
-		{ ...data, type: "calendar-sync" },
-		{ priority: 3 },
-	);
+	return addJob("calendar-sync", { ...data, type: "calendar-sync" }, { priority: 3 });
 }
 
 /**
@@ -347,10 +330,24 @@ export async function addOrganizationDeletionNotificationJob(
 export async function addAuditPackJob(
 	data: Omit<AuditPackJobData, "type">,
 ): Promise<Job<JobData, JobResult>> {
+	return addJob("process-audit-pack", { ...data, type: "audit-pack" }, { priority: 4 });
+}
+
+/**
+ * Add an async contract change batch job (`contract-change-batch-${batchId}`, #1928).
+ */
+export async function addContractChangeBatchJob(
+	data: Omit<ContractChangeBatchJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
 	return addJob(
-		"process-audit-pack",
-		{ ...data, type: "audit-pack" },
-		{ priority: 4 },
+		"contract-change-batch",
+		{ ...data, type: "contract-change-batch" },
+		{
+			jobId: `contract-change-batch-${data.batchId}`,
+			priority: 4,
+			attempts: 3,
+			backoff: { type: "exponential", delay: 2000 },
+		},
 	);
 }
 
@@ -430,10 +427,7 @@ export function createWorker(
 	});
 
 	worker.on("failed", (job, err) => {
-		logger.error(
-			{ jobId: job?.id, name: job?.name, error: err.message },
-			"Job failed",
-		);
+		logger.error({ jobId: job?.id, name: job?.name, error: err.message }, "Job failed");
 	});
 
 	worker.on("progress", (job, progress) => {

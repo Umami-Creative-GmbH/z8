@@ -17,7 +17,6 @@ import { kioskSeatsEnabled } from "@/lib/effect/services/billing/seat-items";
 import { stripeConfigFromEnv } from "@/lib/effect/services/billing/stripe.service";
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
-import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 
 const logger = createLogger("billing-settings-page");
 const billingCheckFailedAccess: BillingAccessResult = {
@@ -34,7 +33,7 @@ async function BillingSettingsContent() {
 		return redirectWithLocale("/settings");
 	}
 
-	const { organizationId, settingsAccess } = await requireOrgAdminSettingsAccess();
+	const { organizationId } = await requireOrgAdminSettingsAccess();
 
 	// Fetch subscription info
 	const program = Effect.flatMap(SubscriptionService, (subscriptionService) =>
@@ -86,7 +85,6 @@ async function BillingSettingsContent() {
 					: null
 			}
 			accessResult={serializedAccessResult}
-			isOwner={meetsSettingsAccess(settingsAccess, "owner")}
 			kioskSeatsEnabled={kioskSeatsEnabled(stripeConfigFromEnv())}
 		/>
 	);

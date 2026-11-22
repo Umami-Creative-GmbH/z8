@@ -5,7 +5,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -22,9 +22,7 @@ const harness = vi.hoisted(() => ({
 	}>,
 	failNextUpload: false,
 }));
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -63,10 +61,7 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 vi.mock("@/lib/queue", () => ({
-	async addJob(
-		_name: string,
-		data: { organizationId: string; batchId: string; attempt: number },
-	) {
+	async addJob(_name: string, data: { organizationId: string; batchId: string; attempt: number }) {
 		harness.jobs.push({
 			organizationId: data.organizationId,
 			batchId: data.batchId,
@@ -93,11 +88,7 @@ vi.mock("@/lib/storage/s3-client", () => ({
 	},
 }));
 vi.mock("@/lib/storage/export-s3-client", () => ({
-	async uploadPrivateObject(
-		_organizationId: string,
-		key: string,
-		data: Buffer,
-	) {
+	async uploadPrivateObject(_organizationId: string, key: string, data: Buffer) {
 		harness.objects.set(key, Buffer.from(data));
 		return { bucket: "t1256p-private", versionId: `v-${key.length}` };
 	},
@@ -123,24 +114,14 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 }));
 
-const exceptionActions = await import(
-	"@/app/[locale]/(app)/travel-expenses/receipt-exception-actions"
-);
-const actions = await import(
-	"@/app/[locale]/(app)/travel-expenses/report-actions"
-);
-const finance = await import(
-	"@/app/[locale]/(app)/travel-expenses/finance-actions"
-);
-const { createExportJob, processExportJob } = await import(
-	"@/lib/payroll-export/export-service"
-);
-const { POST: processReceipt } = await import(
-	"@/app/api/upload/travel-expense/report-receipt/route"
-);
-const { POST: approveRoute } = await import(
-	"@/app/api/approvals/inbox/[id]/approve/route"
-);
+const exceptionActions =
+	await import("@/app/[locale]/(app)/travel-expenses/receipt-exception-actions");
+const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
+const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const { createExportJob, processExportJob } = await import("@/lib/payroll-export/export-service");
+const { POST: processReceipt } =
+	await import("@/app/api/upload/travel-expense/report-receipt/route");
+const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
 
@@ -183,10 +164,7 @@ const admin = integrationAdminPool();
 const pdfBytes = Buffer.from("%PDF-1.4\n% receipt\n%%EOF");
 
 /** Logical dates relative to today in Berlin, so the reports approved now fall where intended. */
-const today = systemClock
-	.nowInstant()
-	.toZonedDateTimeISO("Europe/Berlin")
-	.toPlainDate();
+const today = systemClock.nowInstant().toZonedDateTimeISO("Europe/Berlin").toPlainDate();
 const day = (offset: number) => today.add({ days: offset }).toString();
 interface Period {
 	start: string;
@@ -195,10 +173,7 @@ interface Period {
 /** The period every report approved today falls in. */
 const current: Period = { start: day(-20), end: day(20) };
 async function cleanup() {
-	await admin.query("delete from organization where id in ($1, $2)", [
-		ORG,
-		FOREIGN_ORG,
-	]);
+	await admin.query("delete from organization where id in ($1, $2)", [ORG, FOREIGN_ORG]);
 	await admin.query(
 		"delete from travel_expense_receipt_upload where organization_id like 't1256p-%'",
 	);
@@ -221,13 +196,7 @@ async function seed() {
 		["clerk", ORG, "member", "employee", null],
 		["foreigner", FOREIGN_ORG, "owner", "admin", null],
 	];
-	for (const [
-		name,
-		organizationId,
-		memberRole,
-		role,
-		employeeNumber,
-	] of people) {
+	for (const [name, organizationId, memberRole, role, employeeNumber] of people) {
 		await admin.query(
 			'insert into "user" (id,name,email,created_at,updated_at) values ($1,$2,$3,now(),now())',
 			[`t1256p-${name}`, name, `t1256p-${name}@example.test`],
@@ -393,8 +362,8 @@ async function exportPayroll(
 		requestedById: ids.finance,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO(period.start, { zone: "utc" }),
-				end: DateTime.fromISO(period.end, { zone: "utc" }),
+				start: parsePlainDate(period.start),
+				end: parsePlainDate(period.end),
 			},
 			employeeIds: options.employeeIds,
 		},

@@ -2,13 +2,13 @@ import "server-only";
 
 import { and, asc, eq, exists, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import { employee, project, projectManager } from "@/db/schema";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import {
-	isSettingsAccessMembershipRole,
-	resolveSettingsAccessTier,
-} from "@/lib/settings-access";
+	loadSettingsAccessFacts,
+	meetsSettingsAccess,
+	settingsAccessOf,
+} from "@/lib/organization-action/settings-access";
 
 /**
  * Who may manage a project's tasks (#872, decision 2 of #770):
@@ -26,35 +26,18 @@ export interface ProjectTaskManager {
 
 type Reader = Pick<typeof db, "select">;
 
-/** The caller as a potential task manager, or null without approved membership. */
+/** The caller as a potential task manager, or null without active settings access. */
 export async function loadProjectTaskManager(
 	input: { userId: string; organizationId: string },
 	reader: Reader = db,
 ): Promise<ProjectTaskManager | null> {
-	const [membership] = await reader
-		.select({ role: member.role })
-		.from(member)
-		.where(
-			and(
-				eq(member.userId, input.userId),
-				eq(member.organizationId, input.organizationId),
-				eq(member.status, "approved"),
-			),
-		)
-		.limit(1);
-	if (!membership) return null;
+	const facts = await loadSettingsAccessFacts(reader, input);
+	const settingsAccess = settingsAccessOf(facts);
+	if (!settingsAccess) return null;
 	return {
 		userId: input.userId,
 		organizationId: input.organizationId,
-		// The one definition of an org admin, shared with the settings access tiers.
-		isOrgAdmin:
-			resolveSettingsAccessTier({
-				activeOrganizationId: input.organizationId,
-				membershipRole: isSettingsAccessMembershipRole(membership.role)
-					? membership.role
-					: null,
-				employeeRole: null,
-			}) === "orgAdmin",
+		isOrgAdmin: meetsSettingsAccess(settingsAccess, "orgAdmin"),
 	};
 }
 
@@ -76,11 +59,7 @@ function managedByCaller(manager: ProjectTaskManager, reader: Reader): SQL {
 	);
 }
 
-function manageableProjects(
-	manager: ProjectTaskManager,
-	reader: Reader,
-	projectId?: string,
-) {
+function manageableProjects(manager: ProjectTaskManager, reader: Reader, projectId?: string) {
 	return and(
 		eq(project.organizationId, manager.organizationId),
 		projectId ? eq(project.id, projectId) : undefined,
@@ -120,10 +99,7 @@ export async function managesProjectTasks(
 }
 
 /** Internal server reuse after the current organization identity is authorized. */
-export function hasTaskManagedProject(
-	manager: ProjectTaskManager,
-	reader: Reader = db,
-) {
+export function hasTaskManagedProject(manager: ProjectTaskManager, reader: Reader = db) {
 	return hasManageableProject(manager, reader);
 }
 

@@ -7,7 +7,7 @@ import {
 	getHolidays,
 	type HolidayListParams,
 	type HolidayWithCategory,
-} from "@/app/[locale]/(app)/settings/holidays/actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import type { PaginatedResponse } from "@/lib/data-table/types";
 import { queryKeys } from "./keys";
 

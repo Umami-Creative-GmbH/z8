@@ -1,10 +1,10 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	ProjectTemplate,
 	ProjectTemplateSummary,
@@ -81,7 +81,7 @@ vi.mock("@/components/ui/select", () => {
 				value={value}
 				onChange={(event) => onValueChange?.(event.target.value)}
 			>
-				<option value="" />
+				<option value="">None</option>
 				{content?.props.children}
 			</select>
 		);
@@ -152,6 +152,14 @@ function renderManagement() {
 	);
 }
 
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
+
 describe("ProjectTemplateManagement", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -201,15 +209,20 @@ describe("ProjectTemplateManagement", () => {
 		await user.type(within(form).getByLabelText("Task 1 estimate (hours)"), "8");
 
 		const managerPicker = within(form).getByRole("combobox", { name: "Project manager to add" });
-		await within(managerPicker).findByRole("option", { name: "Pat Manager" });
-		await user.selectOptions(managerPicker, "emp-2");
+		await waitFor(() => expect(projectActions.getEmployeesForSelection).toHaveBeenCalled());
+		await user.click(managerPicker);
+		await user.click(await screen.findByRole("option", { name: /Pat Manager/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: /Select Employee/i })).toBeNull(),
+		);
 		await user.selectOptions(
 			within(form).getByRole("combobox", { name: "Team to assign" }),
 			"team-2",
 		);
-		await user.selectOptions(
-			within(form).getByRole("combobox", { name: "Employee to assign" }),
-			"emp-1",
+		await user.click(within(form).getByRole("combobox", { name: "Employee to assign" }));
+		await user.click(await screen.findByRole("option", { name: /Avery Employee/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog", { name: /Select Employee/i })).toBeNull(),
 		);
 		expect(within(form).getByRole("listitem", { name: "Pat Manager" })).toBeTruthy();
 
@@ -343,5 +356,37 @@ describe("ProjectTemplateManagement", () => {
 
 		expect(templateActions.deleteProjectTemplate).toHaveBeenCalledWith("template-1");
 		expect(toast.success).toHaveBeenCalledWith("Website relaunch deleted");
+	});
+
+	it("omits a routine toolbar refresh button while refreshing the list automatically after creating a template", async () => {
+		const user = userEvent.setup();
+		const created = summary({ id: "template-2", name: "Auto-refreshed template" });
+		templateActions.getProjectTemplates
+			.mockResolvedValueOnce({ success: true, data: [summary()] })
+			.mockResolvedValueOnce({ success: true, data: [summary(), created] });
+		renderManagement();
+
+		await screen.findByRole("row", { name: /Website relaunch/ });
+		expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
+
+		await user.click(screen.getByRole("button", { name: "Create template" }));
+		const form = await screen.findByRole("form", { name: "Create project template" });
+		await user.type(within(form).getByLabelText(/^Name/), "Auto-refreshed template");
+		await user.click(within(form).getByRole("button", { name: "Create template" }));
+
+		expect(await screen.findByRole("row", { name: /Auto-refreshed template/ })).toBeTruthy();
+	});
+
+	it("preserves the explicit Retry action when templates fail to load", async () => {
+		const user = userEvent.setup();
+		templateActions.getProjectTemplates
+			.mockResolvedValueOnce({ success: false, error: "Temporary failure" })
+			.mockResolvedValueOnce({ success: true, data: [summary()] });
+		renderManagement();
+
+		expect(await screen.findByRole("alert")).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		expect(await screen.findByRole("row", { name: /Website relaunch/ })).toBeTruthy();
 	});
 });

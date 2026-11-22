@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { preserveTrustBasedBalanceDates } from "./trust-based-dates";
 import type { DailyWorkRequirements } from "./types";
 
 export type AbsenceDayPeriod = "full_day" | "am" | "pm";
@@ -70,5 +71,5 @@ export function applyAbsenceAdjustmentsToRequirements(
 		};
 	}
 
-	return adjusted;
+	return preserveTrustBasedBalanceDates(requirements, adjusted);
 }

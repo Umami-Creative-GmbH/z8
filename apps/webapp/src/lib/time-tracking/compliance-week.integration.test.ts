@@ -104,21 +104,31 @@ describe("Monday compliance weeks on PostgreSQL", () => {
 			 values ($1,$2,$4,false,$3,now())`,
 			[id, organizationId, userId, id],
 		);
+		const {
+			rows: [policyVersion],
+		} = await admin.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by)
+			 values ($1,$2,1,'1970-01-01',false,true,false,true,$3) returning id`,
+			[id, organizationId, userId],
+		);
 		await admin.query(
-			`insert into work_policy_regulation (policy_id,max_weekly_minutes,updated_at)
-			 values ($1,$2,now())`,
-			[id, maxWeeklyMinutes],
+			`insert into work_policy_regulation (policy_id,policy_version_id,max_weekly_minutes,updated_at)
+			 values ($1,$2,$3,now())`,
+			[id, policyVersion.id, maxWeeklyMinutes],
 		);
 		await admin.query(
 			`insert into work_policy_assignment
-			 (policy_id,organization_id,assignment_type,employee_id,effective_until,created_by,updated_at)
-			 values ($1,$2,$3,$4,$5,$6,now())`,
+			 (policy_id,organization_id,assignment_type,employee_id,priority,effective_until,effective_until_date,created_by,updated_at)
+			 values ($1,$2,$3,$4,$5,$6,$7,$8,now())`,
 			[
 				id,
 				organizationId,
 				employeeUntil ? "employee" : "organization",
 				employeeUntil ? employeeId : null,
+				employeeUntil ? 2 : 0,
 				employeeUntil ?? null,
+				employeeUntil ? employeeUntil.slice(0, 10) : null,
 				userId,
 			],
 		);

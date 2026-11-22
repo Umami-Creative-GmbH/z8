@@ -268,21 +268,7 @@ export function ProjectTemplateManagement({ organizationId }: { organizationId: 
 						)}
 					</p>
 				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={() => refetch()}
-						disabled={isFetching}
-						aria-label={t("common.refresh", "Refresh")}
-					>
-						<IconRefresh
-							aria-hidden="true"
-							className={`size-4 ${isFetching ? "animate-spin" : ""}`}
-						/>
-					</Button>
-					{createButton}
-				</div>
+				<div className="flex flex-wrap items-center gap-2">{createButton}</div>
 			</div>
 
 			{isLoading ? (

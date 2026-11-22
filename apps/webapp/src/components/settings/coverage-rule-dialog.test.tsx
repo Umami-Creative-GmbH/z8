@@ -18,7 +18,7 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
-vi.mock("@/app/[locale]/(app)/settings/coverage-rules/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/shifts/coverage-rule-actions", () => ({
 	createCoverageRule: mocks.createCoverageRule,
 	updateCoverageRule: mocks.updateCoverageRule,
 }));

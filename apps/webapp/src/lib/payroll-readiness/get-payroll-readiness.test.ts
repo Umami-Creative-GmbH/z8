@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 
 const mockState = vi.hoisted(() => ({
 	timeRecordFindMany: vi.fn(),
@@ -141,15 +141,15 @@ vi.mock("@/db/schema", () => ({
 import { derivePayrollReadinessStatus, getPayrollReadiness } from "./get-payroll-readiness";
 
 const period = {
-	start: DateTime.fromISO("2026-04-01T08:00:00.000Z"),
-	end: DateTime.fromISO("2026-04-30T17:00:00.000Z"),
+	start: parsePlainDate("2026-04-01"),
+	end: parsePlainDate("2026-04-30"),
 };
 
 function defaultInput() {
 	return {
 		organizationId: "org-1",
 		period,
-		now: DateTime.fromISO("2026-04-28T12:00:00.000Z"),
+		now: parseInstant("2026-04-28T12:00:00.000Z"),
 	};
 }
 
@@ -862,6 +862,26 @@ describe("getPayrollReadiness", () => {
 			severity: "warning",
 			count: 1,
 		});
+	});
+	it("formats the period label in German (de) and English (en) locales", async () => {
+		const english = await getPayrollReadiness({
+			...defaultInput(),
+			period: { start: parsePlainDate("2026-03-01"), end: parsePlainDate("2026-03-31") },
+			locale: "en",
+		});
+		const german = await getPayrollReadiness({
+			...defaultInput(),
+			period: { start: parsePlainDate("2026-03-01"), end: parsePlainDate("2026-03-31") },
+			locale: "de",
+		});
+
+		expect(english.period).toMatchObject({
+			start: "2026-03-01",
+			end: "2026-03-31",
+		});
+		expect(english.period.label).toContain("Mar");
+		expect(german.period.label).toContain("März");
+		expect(german.period.label).not.toBe(english.period.label);
 	});
 });
 

@@ -1,7 +1,7 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import type { DeliveryConfig, ExecutionResult } from "../domain/types";
+import type { CalculatedDateRange, DeliveryConfig, ExecutionResult } from "../domain/types";
 
 const {
 	sendEmail,
@@ -75,10 +75,9 @@ function deliver(exportResult: ExecutionResult, deliveryConfig: DeliveryConfig =
 	return new DeliveryService().deliver({
 		organizationId: "org-1",
 		scheduleName: "Monthly payroll",
-		// Fixtures for the delivery's existing Luxon boundary; no date calculations.
 		dateRange: {
-			start: DateTime.fromISO("2026-09-01T00:00:00", { zone: "Europe/Berlin" }),
-			end: DateTime.fromISO("2026-09-30T23:59:59", { zone: "Europe/Berlin" }),
+			start: Temporal.ZonedDateTime.from("2026-09-01T00:00:00[Europe/Berlin]"),
+			end: Temporal.ZonedDateTime.from("2026-09-30T23:59:59[Europe/Berlin]"),
 		},
 		deliveryConfig,
 		exportResult,
@@ -274,8 +273,8 @@ describe("DeliveryService email delivery", () => {
 			organizationId: "org-1",
 			scheduleName: "Monthly payroll",
 			dateRange: {
-				start: DateTime.invalid("unparsable schedule start"),
-				end: DateTime.fromISO("2026-09-30T23:59:59", { zone: "Europe/Berlin" }),
+				start: null as unknown as CalculatedDateRange["start"],
+				end: Temporal.ZonedDateTime.from("2026-09-30T23:59:59[Europe/Berlin]"),
 			},
 			deliveryConfig: {
 				method: "email_only",
@@ -290,7 +289,7 @@ describe("DeliveryService email delivery", () => {
 		expect(result.emailErrors).toEqual([
 			{
 				recipient: "a@example.com",
-				error: "Scheduled export date range start is invalid: unparsable schedule start",
+				error: "Scheduled export date range start is invalid: missing date value",
 				timestamp: expect.any(String),
 			},
 		]);

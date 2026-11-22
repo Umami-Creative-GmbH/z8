@@ -5,6 +5,7 @@ import type * as React from "react";
 import { Suspense } from "react";
 import { AppSearch } from "@/components/app-search";
 import {
+	buildOrganizationNav,
 	buildPersonalNav,
 	buildSecondaryNav,
 	buildTeamNav,
@@ -12,6 +13,7 @@ import {
 	toNavUser,
 } from "@/components/app-sidebar-nav";
 import { NavMain } from "@/components/nav-main";
+import { NavOrganization } from "@/components/nav-organization";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
@@ -34,7 +36,11 @@ import { buildStaticAppSearchResults } from "@/lib/app-search/static-results";
 import type { StaticAppSearchInput } from "@/lib/app-search/types";
 import { useSession } from "@/lib/auth-client";
 import type { UserOrganization } from "@/lib/auth-helpers";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
+import {
+	DEFAULT_SETTINGS_CAPABILITIES,
+	type SettingsCapabilities,
+} from "@/lib/settings/capabilities";
 
 export type { NavigationCapabilities } from "@/components/app-sidebar-nav";
 
@@ -44,21 +50,13 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	currentOrganization?: UserOrganization | null;
 	employeeRole?: "admin" | "manager" | "employee" | null;
 	navigationCapabilities?: NavigationCapabilities;
-	settingsAccessTier?: SettingsAccessTier;
+	settingsAccess?: SettingsAccess | null;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
-	/** The user manages a project below the manager tier (#928). */
-	managesProject?: boolean;
-	/** The driving licence visibility reader offers its settings (#1420). */
-	drivingLicenceSettingsVisible?: boolean;
+	/** Server-computed non-tier visibility capabilities (ADR 0003). */
+	settingsCapabilities?: Partial<SettingsCapabilities>;
 	canCreateOrganizations?: boolean;
 }
-
-const isManagerOrAbove = (
-	role: "admin" | "manager" | "employee" | null | undefined,
-): boolean => {
-	return role === "admin" || role === "manager";
-};
 
 const EMPTY_ORGANIZATIONS: UserOrganization[] = [];
 const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
@@ -71,7 +69,8 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	personnelFiles: false,
 	periodSubmissions: false,
 	teamPresence: false,
-	drivingLicence: false,
+	myDrivingLicence: false,
+	teamDrivingLicence: false,
 	platformAdmin: false,
 };
 
@@ -109,11 +108,10 @@ export function AppSidebar({
 	currentOrganization = null,
 	employeeRole = null,
 	navigationCapabilities = DEFAULT_NAVIGATION_CAPABILITIES,
-	settingsAccessTier = "member",
+	settingsAccess = null,
 	billingEnabled = false,
 	featureFlags,
-	managesProject = false,
-	drivingLicenceSettingsVisible = false,
+	settingsCapabilities = DEFAULT_SETTINGS_CAPABILITIES,
 	canCreateOrganizations = false,
 	...props
 }: AppSidebarProps) {
@@ -122,24 +120,38 @@ export function AppSidebar({
 	const staticSearchInput: StaticAppSearchInput = {
 		t: translate,
 		employeeRole,
-		settingsAccessTier,
+		settingsAccess,
 		billingEnabled,
 		showComplianceNav: navigationCapabilities.compliance,
 		showPayrollNav: navigationCapabilities.payroll,
 		featureFlags,
-		managesProject,
-		showDrivingLicenceNav: navigationCapabilities.drivingLicence ?? false,
-		drivingLicenceSettingsVisible,
+		settingsCapabilities,
+		showMyDrivingLicenceNav: navigationCapabilities.myDrivingLicence ?? false,
+		showTeamDrivingLicenceNav: navigationCapabilities.teamDrivingLicence ?? false,
+		navigationCapabilities,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
 	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);
-	const navPersonal = buildPersonalNav(
+	const navOptions = {
+		settingsAccess,
+		featureFlags,
+		settingsCapabilities,
+	};
+	const navPersonal = buildPersonalNav(translate, navigationCapabilities, employeeRole, navOptions);
+	const navTeam = buildTeamNav(translate, navigationCapabilities, employeeRole, navOptions);
+	const navOrganization = buildOrganizationNav(
 		translate,
 		navigationCapabilities,
 		employeeRole,
+		navOptions,
 	);
-	const navTeam = buildTeamNav(translate, navigationCapabilities);
-	const navSecondary = buildSecondaryNav(translate, navigationCapabilities);
+	const navSecondary = buildSecondaryNav(translate, navigationCapabilities, navOptions);
+	const allNavHrefs = [
+		...navPersonal,
+		...navTeam,
+		...navOrganization,
+		...navSecondary.filter((item) => !item.external),
+	].map((item) => item.url);
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
@@ -152,21 +164,24 @@ export function AppSidebar({
 			</SidebarHeader>
 			{capabilitiesUnavailable ? <SidebarCapabilityNotice /> : null}
 			<SidebarContent className="gap-3 group-data-[collapsible=icon]:overflow-y-auto">
-				<AppSearch
-					staticCommands={staticCommands}
-					staticResults={staticSearchResults}
-				/>
+				<AppSearch staticCommands={staticCommands} staticResults={staticSearchResults} />
 				<Suspense fallback={<SidebarNavigationLoading rows={8} />}>
 					<NavMain
 						items={navPersonal}
 						label={t("nav.workplace-label", "Workplace")}
+						allNavHrefs={allNavHrefs}
 					/>
 				</Suspense>
 				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
-					{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
+					{navTeam.length > 0 && <NavTeam items={navTeam} allNavHrefs={allNavHrefs} />}
+				</Suspense>
+				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
+					{navOrganization.length > 0 && (
+						<NavOrganization items={navOrganization} allNavHrefs={allNavHrefs} />
+					)}
 				</Suspense>
 				<Suspense fallback={<SidebarSecondaryNavigationLoading />}>
-					<NavSecondary className="mt-auto" items={navSecondary} />
+					<NavSecondary className="mt-auto" items={navSecondary} allNavHrefs={allNavHrefs} />
 				</Suspense>
 			</SidebarContent>
 			<SidebarFooter className="border-t border-sidebar-border">

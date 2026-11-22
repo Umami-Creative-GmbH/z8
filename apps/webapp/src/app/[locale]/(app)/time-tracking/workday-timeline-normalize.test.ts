@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { SelectedWorkdayDate } from "./workday-timeline.types";
 import {
 	type NormalizeWorkdayTimelineInput,
@@ -12,8 +12,8 @@ const selectedDate: SelectedWorkdayDate = {
 	previousDateKey: "2026-05-02",
 	nextDateKey: "2026-05-04",
 	label: "May 3, 2026",
-	startUtc: DateTime.fromISO("2026-05-02T22:00:00.000Z"),
-	endUtc: DateTime.fromISO("2026-05-03T21:59:59.999Z"),
+	startUtc: parseInstant("2026-05-02T22:00:00.000Z"),
+	endUtc: parseInstant("2026-05-03T21:59:59.999Z"),
 };
 
 describe("normalizeWorkdayTimeline", () => {
@@ -354,12 +354,8 @@ describe("normalizeWorkdayTimeline", () => {
 		});
 
 		expect(result.items[0]).toMatchObject({
-			startTime: DateTime.fromISO("2026-05-03T22:00", {
-				zone: "Europe/Berlin",
-			}).toJSDate(),
-			endTime: DateTime.fromISO("2026-05-04T06:00", {
-				zone: "Europe/Berlin",
-			}).toJSDate(),
+			startTime: new Date("2026-05-03T20:00:00.000Z"),
+			endTime: new Date("2026-05-04T04:00:00.000Z"),
 		});
 	});
 

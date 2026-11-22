@@ -1,14 +1,23 @@
-import { DateTime } from "luxon";
+import {
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 
 export function formatHolidayDatePickerValue(value: Date | null | undefined) {
 	return value && !Number.isNaN(value.getTime())
-		? DateTime.fromJSDate(value, { zone: "utc" }).toISODate()
+		? plainDateAt(instantFromDate(value), "UTC").toString()
 		: "";
 }
 
 export function parseHolidayDatePickerValue(value: string) {
-	const date = DateTime.fromISO(value, { zone: "utc" });
-	return date.isValid ? date.toJSDate() : null;
+	if (!value) return null;
+	try {
+		return dateFromInstant(parsePlainDate(value).toZonedDateTime("UTC").toInstant());
+	} catch {
+		return null;
+	}
 }
 
 export { createYearlyHolidayRecurrenceRule } from "@/lib/holidays/recurrence";

@@ -1,7 +1,7 @@
-import { DateTime } from "luxon";
-
 import type { ScheduleXEvent } from "@/lib/calendar/schedule-x-adapter";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { isValidTimeZone } from "@/lib/timezone/validation";
 import type { ViewMode } from "./schedule-x-calendar";
 
 export function filterEventsForScheduleXView(
@@ -81,19 +81,18 @@ export function hasExceededPointerDragThreshold(
 }
 
 export function buildCalendarTimeZoneDate(dateValue: string, minutes: number, timeZone: string) {
-	return DateTime.fromISO(dateValue, { zone: timeZone })
-		.startOf("day")
-		.plus({ minutes })
-		.toJSDate();
+	return dateFromInstant(
+		parsePlainDate(dateValue).toZonedDateTime(timeZone).add({ minutes }).toInstant(),
+	);
 }
 
 export function buildCurrentTimeIndicatorPosition(now: Date, timeZone: string) {
-	const zonedNow = DateTime.fromJSDate(now, { zone: timeZone });
-	if (!zonedNow.isValid) return null;
+	if (!isValidTimeZone(timeZone)) return null;
+	const zonedNow = instantFromDate(now).toZonedDateTimeISO(timeZone);
 
 	const minutes = zonedNow.hour * 60 + zonedNow.minute + zonedNow.second / 60;
 	return {
-		dateKey: zonedNow.toFormat("yyyy-MM-dd"),
+		dateKey: zonedNow.toPlainDate().toString(),
 		topPercent: (minutes * 100) / (24 * 60),
 	};
 }

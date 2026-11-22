@@ -1,9 +1,15 @@
 "use client";
 
 import { IconLoader2, IconRefresh } from "@tabler/icons-react";
+import {
+	type FormAsyncValidateOrFn,
+	type FormValidateOrFn,
+	type ReactFormExtendedApi,
+	useForm,
+} from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { InviteCodeWithRelations } from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import {
@@ -23,6 +29,7 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ClientForm } from "@/components/ui/client-form";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,8 +40,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
+
+const INVITE_CODE_REGEX = /^[A-Z0-9-]{4,20}$/;
 
 interface InviteCodeDialogProps {
 	organizationId: string;
@@ -55,217 +72,314 @@ interface InviteCodeFormValues {
 	status: "active" | "paused";
 }
 
+type InviteCodeFormApi = ReactFormExtendedApi<
+	InviteCodeFormValues,
+	FormValidateOrFn<InviteCodeFormValues> | undefined,
+	FormValidateOrFn<InviteCodeFormValues> | undefined,
+	FormAsyncValidateOrFn<InviteCodeFormValues> | undefined,
+	FormValidateOrFn<InviteCodeFormValues> | undefined,
+	FormAsyncValidateOrFn<InviteCodeFormValues> | undefined,
+	FormValidateOrFn<InviteCodeFormValues> | undefined,
+	FormAsyncValidateOrFn<InviteCodeFormValues> | undefined,
+	FormValidateOrFn<InviteCodeFormValues> | undefined,
+	FormAsyncValidateOrFn<InviteCodeFormValues> | undefined,
+	FormAsyncValidateOrFn<InviteCodeFormValues> | undefined,
+	unknown
+>;
+
 function InviteCodeFormFields({
-	values,
-	updateDraft,
+	form,
 	isEditing,
 	minExpiryDate,
 	teams,
 	onGenerateCode,
 	t,
 }: {
-	values: InviteCodeFormValues;
-	updateDraft: (updates: Partial<InviteCodeFormValues>) => void;
+	form: InviteCodeFormApi;
 	isEditing: boolean;
 	minExpiryDate: string;
 	teams: Array<{ id: string; name: string }>;
 	onGenerateCode: () => void;
 	t: ReturnType<typeof useTranslate>["t"];
 }) {
+	const validateCode = (value: string) => {
+		const trimmed = value.trim();
+		if (isEditing || !trimmed) return undefined;
+		return INVITE_CODE_REGEX.test(trimmed)
+			? undefined
+			: t(
+					"settings.inviteCodes.codeInvalid",
+					"Use 4-20 characters: letters, numbers, and hyphens only.",
+				);
+	};
+
+	const validateLabel = (value: string) =>
+		value.trim() ? undefined : t("settings.inviteCodes.labelRequired", "Label is required");
+
+	const validateMaxUses = (value: string) => {
+		const trimmed = value.trim();
+		if (!trimmed) return undefined;
+		const parsed = Number(trimmed);
+		return Number.isInteger(parsed) && parsed >= 1
+			? undefined
+			: t("settings.inviteCodes.maxUsesInvalid", "Enter a whole number of at least 1.");
+	};
+
 	return (
 		<ActionPanelBody className="space-y-5">
-			<div className="grid gap-2">
-				<Label htmlFor="code">{t("settings.inviteCodes.code", "Code")}</Label>
-				<div className="flex flex-col gap-2 sm:flex-row">
-					<Input
-						id="code"
-						value={values.code}
-						onChange={(event) =>
-							updateDraft({ code: event.target.value.toUpperCase() })
-						}
-						placeholder={t(
-							"settings.inviteCodes.codePlaceholder",
-							"TEAM-ABC123",
-						)}
-						disabled={isEditing}
-						className="font-mono uppercase tracking-[0.18em]"
-					/>
-					{!isEditing && (
-						<Button
-							type="button"
-							variant="outline"
-							onClick={onGenerateCode}
-							className="w-full sm:w-auto"
-							aria-label={t(
-								"settings.inviteCodes.generateCode",
-								"Generate new code",
+			<form.Field
+				name="code"
+				validators={{
+					onSubmit: ({ value }) => validateCode(value),
+					onChange: ({ value, fieldApi }) =>
+						fieldApi.state.meta.errors.length > 0 ? validateCode(value) : undefined,
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("settings.inviteCodes.code", "Code")}
+						</TFormLabel>
+						<div className="flex flex-col gap-2 sm:flex-row">
+							<TFormControl hasError={fieldHasError(field)}>
+								<Input
+									name="code"
+									value={field.state.value}
+									onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
+									onBlur={field.handleBlur}
+									placeholder={t("settings.inviteCodes.codePlaceholder", "TEAM-ABC123")}
+									disabled={isEditing}
+									className="font-mono uppercase tracking-[0.18em]"
+								/>
+							</TFormControl>
+							{!isEditing && (
+								<Button
+									type="button"
+									variant="outline"
+									onClick={onGenerateCode}
+									className="w-full sm:w-auto"
+									aria-label={t("settings.inviteCodes.generateCode", "Generate new code")}
+								>
+									<IconRefresh className="size-4" aria-hidden="true" />
+								</Button>
 							)}
-						>
-							<IconRefresh className="size-4" />
-						</Button>
-					)}
-				</div>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.inviteCodes.codeHelp",
-						"4-20 characters, letters, numbers, and hyphens only",
-					)}
-				</p>
-			</div>
-
-			<div className="grid gap-2">
-				<Label htmlFor="label">
-					{t("settings.inviteCodes.label", "Label")} *
-				</Label>
-				<Input
-					id="label"
-					value={values.label}
-					onChange={(event) => updateDraft({ label: event.target.value })}
-					placeholder={t(
-						"settings.inviteCodes.labelPlaceholder",
-						"e.g., Public Recruitment 2024",
-					)}
-					required
-				/>
-			</div>
-
-			<div className="grid gap-2">
-				<Label htmlFor="description">
-					{t("settings.inviteCodes.description", "Description")}
-				</Label>
-				<Textarea
-					id="description"
-					value={values.description}
-					onChange={(event) => updateDraft({ description: event.target.value })}
-					placeholder={t(
-						"settings.inviteCodes.descriptionPlaceholder",
-						"Optional description...",
-					)}
-					rows={2}
-				/>
-			</div>
-
-			<div className="grid gap-2">
-				<Label htmlFor="maxUses">
-					{t("settings.inviteCodes.maxUses", "Maximum Uses")}
-				</Label>
-				<Input
-					id="maxUses"
-					type="number"
-					min="1"
-					value={values.maxUses}
-					onChange={(event) => updateDraft({ maxUses: event.target.value })}
-					placeholder={t("settings.inviteCodes.unlimited", "Unlimited")}
-				/>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.inviteCodes.maxUsesHelp",
-						"Leave empty for unlimited uses",
-					)}
-				</p>
-			</div>
-
-			<div className="grid gap-2">
-				<Label htmlFor="expiresAt">
-					{t("settings.inviteCodes.expiresAt", "Expiration Date")}
-				</Label>
-				<DatePicker
-					id="expiresAt"
-					value={values.expiresAt}
-					onChange={(value) => updateDraft({ expiresAt: value })}
-					min={minExpiryDate}
-				/>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.inviteCodes.expiresAtHelp",
-						"Leave empty for no expiration",
-					)}
-				</p>
-			</div>
-
-			<div className="grid gap-2">
-				<Label htmlFor="defaultTeam">
-					{t("settings.inviteCodes.targetTeam", "Target team")}
-				</Label>
-				<Select
-					value={values.defaultTeamId || "none"}
-					onValueChange={(value) =>
-						updateDraft({ defaultTeamId: value === "none" ? "" : value })
-					}
-				>
-					<SelectTrigger>
-						<SelectValue
-							placeholder={t("settings.inviteCodes.noTargetTeam", "No team")}
-						/>
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="none">
-							{t("settings.inviteCodes.noTargetTeam", "No team")}
-						</SelectItem>
-						{teams.map((team) => (
-							<SelectItem key={team.id} value={team.id}>
-								{team.name}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.inviteCodes.targetTeamHelp",
-						"New members will use this team by default when they join.",
-					)}
-				</p>
-			</div>
-
-			<div className="flex items-center gap-x-2">
-				<Checkbox
-					id="requiresApproval"
-					checked={values.requiresApproval}
-					onCheckedChange={(checked) =>
-						updateDraft({ requiresApproval: checked === true })
-					}
-				/>
-				<Label htmlFor="requiresApproval" className="cursor-pointer">
-					{t("settings.inviteCodes.requiresApproval", "Require admin approval")}
-				</Label>
-			</div>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"settings.inviteCodes.requiresApprovalHelp",
-					"When enabled, new members will be pending until an admin approves them",
+						</div>
+						<TFormDescription>
+							{t(
+								"settings.inviteCodes.codeHelp",
+								"4-20 characters, letters, numbers, and hyphens only",
+							)}
+						</TFormDescription>
+						<TFormMessage field={field} />
+					</TFormItem>
 				)}
-			</p>
+			</form.Field>
+
+			<form.Field
+				name="label"
+				validators={{
+					onSubmit: ({ value }) => validateLabel(value),
+					onChange: ({ value, fieldApi }) =>
+						fieldApi.state.meta.errors.length > 0 ? validateLabel(value) : undefined,
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)} required>
+							{t("settings.inviteCodes.label", "Label")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<Input
+								name="label"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"settings.inviteCodes.labelPlaceholder",
+									"e.g., Public Recruitment 2024",
+								)}
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field name="description">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel>{t("settings.inviteCodes.description", "Description")}</TFormLabel>
+						<TFormControl>
+							<Textarea
+								name="description"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"settings.inviteCodes.descriptionPlaceholder",
+									"Optional description...",
+								)}
+								rows={2}
+							/>
+						</TFormControl>
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field
+				name="maxUses"
+				validators={{
+					onSubmit: ({ value }) => validateMaxUses(value),
+					onChange: ({ value, fieldApi }) =>
+						fieldApi.state.meta.errors.length > 0 ? validateMaxUses(value) : undefined,
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)}>
+							{t("settings.inviteCodes.maxUses", "Maximum Uses")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<Input
+								name="maxUses"
+								type="number"
+								min="1"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t("settings.inviteCodes.unlimited", "Unlimited")}
+							/>
+						</TFormControl>
+						<TFormDescription>
+							{t("settings.inviteCodes.maxUsesHelp", "Leave empty for unlimited uses")}
+						</TFormDescription>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field name="expiresAt">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel>{t("settings.inviteCodes.expiresAt", "Expiration Date")}</TFormLabel>
+						<TFormControl>
+							<DatePicker
+								name="expiresAt"
+								value={field.state.value}
+								onChange={(value) => field.handleChange(value)}
+								onBlur={field.handleBlur}
+								min={minExpiryDate}
+							/>
+						</TFormControl>
+						<TFormDescription>
+							{t("settings.inviteCodes.expiresAtHelp", "Leave empty for no expiration")}
+						</TFormDescription>
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field name="defaultTeamId">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel>{t("settings.inviteCodes.targetTeam", "Target team")}</TFormLabel>
+						<Select
+							value={field.state.value || "none"}
+							onValueChange={(value) => field.handleChange(value === "none" ? "" : value)}
+						>
+							<TFormControl>
+								<SelectTrigger>
+									<SelectValue placeholder={t("settings.inviteCodes.noTargetTeam", "No team")} />
+								</SelectTrigger>
+							</TFormControl>
+							<SelectContent>
+								<SelectItem value="none">
+									{t("settings.inviteCodes.noTargetTeam", "No team")}
+								</SelectItem>
+								{teams.map((team) => (
+									<SelectItem key={team.id} value={team.id}>
+										{team.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<TFormDescription>
+							{t(
+								"settings.inviteCodes.targetTeamHelp",
+								"New members will use this team by default when they join.",
+							)}
+						</TFormDescription>
+					</TFormItem>
+				)}
+			</form.Field>
+
+			<form.Field name="requiresApproval">
+				{(field) => (
+					<div className="space-y-2">
+						<div className="flex items-center gap-x-2">
+							<Checkbox
+								id="requiresApproval"
+								checked={field.state.value}
+								onCheckedChange={(checked) => field.handleChange(checked === true)}
+							/>
+							<Label htmlFor="requiresApproval" className="cursor-pointer">
+								{t("settings.inviteCodes.requiresApproval", "Require admin approval")}
+							</Label>
+						</div>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.inviteCodes.requiresApprovalHelp",
+								"When enabled, new members will be pending until an admin approves them",
+							)}
+						</p>
+					</div>
+				)}
+			</form.Field>
 
 			{isEditing && (
-				<div className="grid gap-2">
-					<Label htmlFor="status">
-						{t("settings.inviteCodes.status", "Status")}
-					</Label>
-					<Select
-						value={values.status}
-						onValueChange={(value) =>
-							updateDraft({ status: value as "active" | "paused" })
-						}
-					>
-						<SelectTrigger>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="active">
-								{t("settings.inviteCodes.status.active", "Active")}
-							</SelectItem>
-							<SelectItem value="paused">
-								{t("settings.inviteCodes.status.paused", "Paused")}
-							</SelectItem>
-						</SelectContent>
-					</Select>
-				</div>
+				<form.Field name="status">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel>{t("settings.inviteCodes.status", "Status")}</TFormLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => field.handleChange(value as "active" | "paused")}
+							>
+								<TFormControl>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+								</TFormControl>
+								<SelectContent>
+									<SelectItem value="active">
+										{t("settings.inviteCodes.status.active", "Active")}
+									</SelectItem>
+									<SelectItem value="paused">
+										{t("settings.inviteCodes.status.paused", "Paused")}
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</TFormItem>
+					)}
+				</form.Field>
 			)}
 		</ActionPanelBody>
 	);
 }
 
-export function InviteCodeDialog({
+let nextGeneratedCodeSession = 0;
+
+// Outside the component: React Compiler cannot compile writes to module-level variables.
+function allocateGeneratedCodeSession() {
+	nextGeneratedCodeSession += 1;
+	return nextGeneratedCodeSession;
+}
+
+export function InviteCodeDialog(props: InviteCodeDialogProps) {
+	const key = `${String(props.open)}:${props.inviteCode?.id ?? "new"}`;
+	return <InviteCodeDialogContent key={key} {...props} />;
+}
+
+function InviteCodeDialogContent({
 	organizationId,
 	minExpiryDate,
 	inviteCode,
@@ -275,12 +389,9 @@ export function InviteCodeDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const isEditing = !!inviteCode;
-	const formScopeKey = `${open}:${inviteCode?.id ?? "new"}`;
-
-	const [draftState, setDraftState] = useState<{
-		scopeKey: string;
-		values: InviteCodeFormValues;
-	} | null>(null);
+	const submittingRef = useRef(false);
+	const codeEditedRef = useRef(false);
+	const [generatedCodeSession] = useState(allocateGeneratedCodeSession);
 
 	// Fetch teams for team selection
 	const { data: teamsResult } = useQuery({
@@ -292,7 +403,7 @@ export function InviteCodeDialog({
 	const teams = teamsResult?.success ? teamsResult.data : [];
 
 	const generatedCodeQuery = useQuery({
-		queryKey: ["invite-code", "generated", formScopeKey],
+		queryKey: ["invite-code", "generated", generatedCodeSession],
 		queryFn: async () => {
 			const result = await generateRandomCode();
 			if (!result.success) {
@@ -301,75 +412,24 @@ export function InviteCodeDialog({
 			return result.data;
 		},
 		enabled: open && !isEditing,
+		staleTime: 0,
+		gcTime: 0,
 	});
-
-	const initialValues: InviteCodeFormValues = {
-		code: inviteCode?.code || generatedCodeQuery.data || "",
-		label: inviteCode?.label || "",
-		description: inviteCode?.description || "",
-		maxUses: inviteCode?.maxUses?.toString() || "",
-		expiresAt: inviteCode?.expiresAt
-			? new Date(inviteCode.expiresAt).toISOString().split("T")[0]
-			: "",
-		defaultTeamId: inviteCode?.defaultTeamId || "",
-		requiresApproval: inviteCode?.requiresApproval ?? true,
-		status: inviteCode?.status === "paused" ? "paused" : "active",
-	};
-
-	const values =
-		draftState?.scopeKey === formScopeKey ? draftState.values : initialValues;
-
-	const updateDraft = (updates: Partial<InviteCodeFormValues>) => {
-		setDraftState((prev) => {
-			const baseValues =
-				prev?.scopeKey === formScopeKey ? prev.values : initialValues;
-			return {
-				scopeKey: formScopeKey,
-				values: {
-					...baseValues,
-					...updates,
-				},
-			};
-		});
-	};
-
-	// Generate new random code
-	const handleGenerateCode = async () => {
-		const result = await generateRandomCode();
-		if (result.success) {
-			updateDraft({ code: result.data });
-		}
-	};
 
 	// Create mutation
 	const createMutation = useMutation({
 		mutationFn: async (formValues: InviteCodeFormValues) => {
 			const result = await createInviteCode({
 				code: formValues.code || undefined,
-				label: formValues.label,
+				label: formValues.label.trim(),
 				description: formValues.description || undefined,
-				maxUses: formValues.maxUses
-					? parseInt(formValues.maxUses, 10)
-					: undefined,
-				expiresAt: formValues.expiresAt
-					? new Date(formValues.expiresAt)
-					: undefined,
+				maxUses: formValues.maxUses ? parseInt(formValues.maxUses, 10) : undefined,
+				expiresAt: formValues.expiresAt ? new Date(formValues.expiresAt) : undefined,
 				defaultTeamId: formValues.defaultTeamId || undefined,
 				requiresApproval: formValues.requiresApproval,
 			});
-			if (!result.success)
-				throw new Error(result.error || "Failed to create invite code");
+			if (!result.success) throw new Error(result.error || "Failed to create invite code");
 			return result.data;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.inviteCodes.list(organizationId),
-			});
-			toast.success(t("settings.inviteCodes.created", "Invite code created"));
-			onOpenChange(false);
-		},
-		onError: (error) => {
-			toast.error(error.message);
 		},
 	});
 
@@ -378,7 +438,7 @@ export function InviteCodeDialog({
 		mutationFn: async (formValues: InviteCodeFormValues) => {
 			const result = await updateInviteCode({
 				inviteCodeId: inviteCode!.id,
-				label: formValues.label,
+				label: formValues.label.trim(),
 				description: formValues.description || null,
 				maxUses: formValues.maxUses ? parseInt(formValues.maxUses, 10) : null,
 				expiresAt: formValues.expiresAt ? new Date(formValues.expiresAt) : null,
@@ -386,36 +446,95 @@ export function InviteCodeDialog({
 				requiresApproval: formValues.requiresApproval,
 				status: formValues.status,
 			});
-			if (!result.success)
-				throw new Error(result.error || "Failed to update invite code");
+			if (!result.success) throw new Error(result.error || "Failed to update invite code");
 			return result.data;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.inviteCodes.list(organizationId),
-			});
-			toast.success(t("settings.inviteCodes.updated", "Invite code updated"));
-			onOpenChange(false);
-		},
-		onError: (error) => {
-			toast.error(error.message);
 		},
 	});
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (isEditing) {
-			updateMutation.mutate(values);
-		} else {
-			createMutation.mutate(values);
+	const form = useForm({
+		defaultValues: {
+			code: inviteCode?.code || "",
+			label: inviteCode?.label || "",
+			description: inviteCode?.description || "",
+			maxUses: inviteCode?.maxUses?.toString() || "",
+			expiresAt: inviteCode?.expiresAt
+				? new Date(inviteCode.expiresAt).toISOString().split("T")[0]
+				: "",
+			defaultTeamId: inviteCode?.defaultTeamId || "",
+			requiresApproval: inviteCode?.requiresApproval ?? true,
+			status: inviteCode?.status === "paused" ? "paused" : "active",
+		} satisfies InviteCodeFormValues,
+		onSubmit: async ({ value }) => {
+			if (submittingRef.current) return;
+			submittingRef.current = true;
+
+			const run = async () => {
+				try {
+					if (isEditing) {
+						await updateMutation.mutateAsync(value);
+						void queryClient.invalidateQueries({
+							queryKey: queryKeys.inviteCodes.list(organizationId),
+						});
+						toast.success(t("settings.inviteCodes.updated", "Invite code updated"));
+					} else {
+						await createMutation.mutateAsync(value);
+						void queryClient.invalidateQueries({
+							queryKey: queryKeys.inviteCodes.list(organizationId),
+						});
+						toast.success(t("settings.inviteCodes.created", "Invite code created"));
+					}
+					onOpenChange(false);
+				} catch (error) {
+					toast.error(
+						error instanceof Error
+							? error.message
+							: t("common.unexpectedError", "An unexpected error occurred"),
+					);
+				}
+			};
+
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await run().finally(() => {
+				submittingRef.current = false;
+			});
+		},
+	});
+
+	useEffect(() => {
+		if (
+			!isEditing &&
+			generatedCodeQuery.data &&
+			!codeEditedRef.current &&
+			!form.getFieldValue("code")
+		) {
+			form.setFieldValue("code", generatedCodeQuery.data);
+		}
+	}, [form, generatedCodeQuery.data, isEditing]);
+
+	const handleGenerateCode = async () => {
+		const result = await generateRandomCode().catch(() => null);
+		if (result?.success) {
+			codeEditedRef.current = true;
+			form.setFieldValue("code", result.data);
 		}
 	};
 
-	const isSubmitting = createMutation.isPending || updateMutation.isPending;
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen && submittingRef.current) return;
+		onOpenChange(nextOpen);
+	};
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
-			<ActionPanelContent>
+		<ActionPanel open={open} onOpenChange={handleOpenChange}>
+			<ActionPanelContent
+				onEscapeKeyDown={(event) => {
+					if (submittingRef.current) event.preventDefault();
+				}}
+				onInteractOutside={(event) => {
+					if (submittingRef.current) event.preventDefault();
+				}}
+			>
 				<ActionPanelHeader>
 					<ActionPanelTitle>
 						{isEditing
@@ -435,38 +554,48 @@ export function InviteCodeDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+				<ClientForm
+					noValidate
+					onSubmit={() => {
+						if (submittingRef.current) return;
+						void form.handleSubmit();
+					}}
+					className="flex min-h-0 flex-1 flex-col"
+				>
 					<InviteCodeFormFields
-						values={values}
-						updateDraft={updateDraft}
+						form={form}
 						isEditing={isEditing}
 						minExpiryDate={minExpiryDate}
 						teams={teams}
-						onGenerateCode={handleGenerateCode}
+						onGenerateCode={() => void handleGenerateCode()}
 						t={t}
 					/>
 
 					<ActionPanelFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-						>
-							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button
-							type="submit"
-							disabled={isSubmitting || !values.label.trim()}
-						>
-							{isSubmitting && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
+						<form.Subscribe selector={(state) => state.isSubmitting}>
+							{(isSubmitting) => (
+								<>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={isSubmitting}
+										onClick={() => handleOpenChange(false)}
+									>
+										{t("common.cancel", "Cancel")}
+									</Button>
+									<Button type="submit" disabled={isSubmitting}>
+										{isSubmitting && (
+											<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+										)}
+										{isEditing
+											? t("common.save", "Save")
+											: t("settings.inviteCodes.create", "Create")}
+									</Button>
+								</>
 							)}
-							{isEditing
-								? t("common.save", "Save")
-								: t("settings.inviteCodes.create", "Create")}
-						</Button>
+						</form.Subscribe>
 					</ActionPanelFooter>
-				</form>
+				</ClientForm>
 			</ActionPanelContent>
 		</ActionPanel>
 	);

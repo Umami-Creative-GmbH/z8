@@ -92,7 +92,7 @@ vi.mock("@/lib/clockodo/client", () => ({
 }));
 
 const { saveProjectMappings } = await import(
-	"@/app/[locale]/(app)/settings/clockodo-import/actions"
+	"@/app/[locale]/(app)/settings/import/clockodo-actions"
 );
 const { scanClockodoImportPartition } = await import("./clockodo-adapter");
 const { applyImportRowDecision, saveImportJobSecret } = await import("./repository");

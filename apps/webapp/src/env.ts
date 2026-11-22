@@ -28,16 +28,10 @@ const positiveMillisecondString = positiveDecimalIntegerString.refine(
 	`must not exceed ${MAX_TIMEOUT_MS} milliseconds`,
 );
 
-const tusMultipartPartSizeString = positiveDecimalIntegerString.refine(
-	(value) => {
-		const bytes = Number(value);
-		return (
-			bytes >= MIN_TUS_MULTIPART_PART_SIZE_BYTES &&
-			bytes <= MAX_TUS_MULTIPART_PART_SIZE_BYTES
-		);
-	},
-	`must be between ${MIN_TUS_MULTIPART_PART_SIZE_BYTES} and ${MAX_TUS_MULTIPART_PART_SIZE_BYTES} bytes`,
-);
+const tusMultipartPartSizeString = positiveDecimalIntegerString.refine((value) => {
+	const bytes = Number(value);
+	return bytes >= MIN_TUS_MULTIPART_PART_SIZE_BYTES && bytes <= MAX_TUS_MULTIPART_PART_SIZE_BYTES;
+}, `must be between ${MIN_TUS_MULTIPART_PART_SIZE_BYTES} and ${MAX_TUS_MULTIPART_PART_SIZE_BYTES} bytes`);
 
 const nonNegativeDecimalIntegerList = z
 	.string()
@@ -46,10 +40,7 @@ const nonNegativeDecimalIntegerList = z
 		(value) =>
 			value
 				.split(",")
-				.every(
-					(entry) =>
-						Number.isSafeInteger(Number(entry)) && Number(entry) <= MAX_TIMEOUT_MS,
-				),
+				.every((entry) => Number.isSafeInteger(Number(entry)) && Number(entry) <= MAX_TIMEOUT_MS),
 		`entries must be safe integers no greater than ${MAX_TIMEOUT_MS}`,
 	);
 
@@ -238,6 +229,7 @@ const parsedEnv = createEnv({
 
 		// Billing / Stripe (SaaS mode only - disabled for self-hosted)
 		BILLING_ENABLED: z.enum(["true", "false"]).optional().default("false"),
+		WORK_POLICY_VERSIONING_ENABLED: z.enum(["true", "false"]).optional().default("false"),
 		STRIPE_SECRET_KEY: z.string().optional(),
 		STRIPE_WEBHOOK_SECRET: z.string().optional(),
 		STRIPE_PRICE_MONTHLY_ID: z.string().optional(),
@@ -313,8 +305,7 @@ const parsedEnv = createEnv({
 		REDIS_COMMAND_TIMEOUT_MS: process.env.REDIS_COMMAND_TIMEOUT_MS,
 		QUEUE_HEALTH_TIMEOUT_MS: optionalEnv(process.env.QUEUE_HEALTH_TIMEOUT_MS) ?? "1000",
 		QUEUE_JOB_ATTEMPTS: optionalEnv(process.env.QUEUE_JOB_ATTEMPTS) ?? "3",
-		QUEUE_JOB_BACKOFF_DELAY_MS:
-			optionalEnv(process.env.QUEUE_JOB_BACKOFF_DELAY_MS) ?? "1000",
+		QUEUE_JOB_BACKOFF_DELAY_MS: optionalEnv(process.env.QUEUE_JOB_BACKOFF_DELAY_MS) ?? "1000",
 		QUEUE_COMPLETED_JOB_RETENTION_COUNT:
 			optionalEnv(process.env.QUEUE_COMPLETED_JOB_RETENTION_COUNT) ?? "100",
 		QUEUE_COMPLETED_JOB_RETENTION_SECONDS:
@@ -323,46 +314,34 @@ const parsedEnv = createEnv({
 			optionalEnv(process.env.QUEUE_FAILED_JOB_RETENTION_COUNT) ?? "500",
 		QUEUE_FAILED_JOB_RETENTION_SECONDS:
 			optionalEnv(process.env.QUEUE_FAILED_JOB_RETENTION_SECONDS) ?? "604800",
-		REDIS_MAX_RECONNECT_ATTEMPTS:
-			optionalEnv(process.env.REDIS_MAX_RECONNECT_ATTEMPTS) ?? "8",
+		REDIS_MAX_RECONNECT_ATTEMPTS: optionalEnv(process.env.REDIS_MAX_RECONNECT_ATTEMPTS) ?? "8",
 		REDIS_LOG_THROTTLE_MS: optionalEnv(process.env.REDIS_LOG_THROTTLE_MS) ?? "30000",
-		REDIS_MAX_RETRIES_PER_REQUEST:
-			optionalEnv(process.env.REDIS_MAX_RETRIES_PER_REQUEST) ?? "1",
-		REDIS_RECONNECT_BASE_DELAY_MS:
-			optionalEnv(process.env.REDIS_RECONNECT_BASE_DELAY_MS) ?? "100",
-		REDIS_RECONNECT_MAX_DELAY_MS:
-			optionalEnv(process.env.REDIS_RECONNECT_MAX_DELAY_MS) ?? "2000",
+		REDIS_MAX_RETRIES_PER_REQUEST: optionalEnv(process.env.REDIS_MAX_RETRIES_PER_REQUEST) ?? "1",
+		REDIS_RECONNECT_BASE_DELAY_MS: optionalEnv(process.env.REDIS_RECONNECT_BASE_DELAY_MS) ?? "100",
+		REDIS_RECONNECT_MAX_DELAY_MS: optionalEnv(process.env.REDIS_RECONNECT_MAX_DELAY_MS) ?? "2000",
 		REDIS_HEALTH_TIMEOUT_MS: optionalEnv(process.env.REDIS_HEALTH_TIMEOUT_MS) ?? "1000",
-		SMTP_CONNECTION_TIMEOUT_MS:
-			optionalEnv(process.env.SMTP_CONNECTION_TIMEOUT_MS) ?? "10000",
-		SMTP_GREETING_TIMEOUT_MS:
-			optionalEnv(process.env.SMTP_GREETING_TIMEOUT_MS) ?? "10000",
+		SMTP_CONNECTION_TIMEOUT_MS: optionalEnv(process.env.SMTP_CONNECTION_TIMEOUT_MS) ?? "10000",
+		SMTP_GREETING_TIMEOUT_MS: optionalEnv(process.env.SMTP_GREETING_TIMEOUT_MS) ?? "10000",
 		SMTP_SOCKET_TIMEOUT_MS: optionalEnv(process.env.SMTP_SOCKET_TIMEOUT_MS) ?? "30000",
 		TURNSTILE_TIMEOUT_MS: optionalEnv(process.env.TURNSTILE_TIMEOUT_MS) ?? "5000",
 		WEBHOOK_RETRY_DELAYS_MS:
-			optionalEnv(process.env.WEBHOOK_RETRY_DELAYS_MS) ??
-			"0,1000,5000,30000,120000,600000",
+			optionalEnv(process.env.WEBHOOK_RETRY_DELAYS_MS) ?? "0,1000,5000,30000,120000,600000",
 		WEBHOOK_MAX_ATTEMPTS: optionalEnv(process.env.WEBHOOK_MAX_ATTEMPTS) ?? "6",
 		WEBHOOK_TIMEOUT_MS: optionalEnv(process.env.WEBHOOK_TIMEOUT_MS) ?? "30000",
 		WEBHOOK_MAX_RESPONSE_BODY_LENGTH:
 			optionalEnv(process.env.WEBHOOK_MAX_RESPONSE_BODY_LENGTH) ?? "10240",
-		WORK_BALANCE_JOB_BATCH_LIMIT:
-			optionalEnv(process.env.WORK_BALANCE_JOB_BATCH_LIMIT) ?? "1000",
+		WORK_BALANCE_JOB_BATCH_LIMIT: optionalEnv(process.env.WORK_BALANCE_JOB_BATCH_LIMIT) ?? "1000",
 		CLOCKODO_IMPORT_QUERY_CHUNK_SIZE:
 			optionalEnv(process.env.CLOCKODO_IMPORT_QUERY_CHUNK_SIZE) ?? "500",
-		CLOCKODO_IMPORT_CONCURRENCY:
-			optionalEnv(process.env.CLOCKODO_IMPORT_CONCURRENCY) ?? "4",
+		CLOCKODO_IMPORT_CONCURRENCY: optionalEnv(process.env.CLOCKODO_IMPORT_CONCURRENCY) ?? "4",
 		EXPORT_FETCH_BATCH_SIZE: optionalEnv(process.env.EXPORT_FETCH_BATCH_SIZE) ?? "1000",
-		TUS_MAX_UPLOAD_SIZE_BYTES:
-			optionalEnv(process.env.TUS_MAX_UPLOAD_SIZE_BYTES) ?? "10485760",
-		IMAGE_MAX_UPLOAD_SIZE_BYTES:
-			optionalEnv(process.env.IMAGE_MAX_UPLOAD_SIZE_BYTES) ?? "10485760",
+		TUS_MAX_UPLOAD_SIZE_BYTES: optionalEnv(process.env.TUS_MAX_UPLOAD_SIZE_BYTES) ?? "10485760",
+		IMAGE_MAX_UPLOAD_SIZE_BYTES: optionalEnv(process.env.IMAGE_MAX_UPLOAD_SIZE_BYTES) ?? "10485760",
 		TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES:
 			optionalEnv(process.env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES) ?? "10485760",
 		TUS_MULTIPART_PART_SIZE_BYTES:
 			optionalEnv(process.env.TUS_MULTIPART_PART_SIZE_BYTES) ?? "8388608",
-		JOB_EXECUTION_RETENTION_DAYS:
-			optionalEnv(process.env.JOB_EXECUTION_RETENTION_DAYS) ?? "90",
+		JOB_EXECUTION_RETENTION_DAYS: optionalEnv(process.env.JOB_EXECUTION_RETENTION_DAYS) ?? "90",
 		DOMAIN_CACHE_TTL_SECONDS: optionalEnv(process.env.DOMAIN_CACHE_TTL_SECONDS) ?? "300",
 		SECRET_STORE_STATUS_CACHE_TTL_SECONDS:
 			optionalEnv(process.env.SECRET_STORE_STATUS_CACHE_TTL_SECONDS) ?? "86400",
@@ -449,6 +428,7 @@ const parsedEnv = createEnv({
 		TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY,
 		TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
 		BILLING_ENABLED: process.env.BILLING_ENABLED,
+		WORK_POLICY_VERSIONING_ENABLED: process.env.WORK_POLICY_VERSIONING_ENABLED,
 		STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
 		STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 		STRIPE_PRICE_MONTHLY_ID: process.env.STRIPE_PRICE_MONTHLY_ID,
@@ -477,25 +457,22 @@ const parsedEnv = createEnv({
 	},
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((env, ctx) => {
-			const matchesRotatedAuthSecret = env.BETTER_AUTH_SECRETS?.split(",").some(
-				(entry) => {
-					const [versionRaw, ...valueParts] = entry.trim().split(":");
-					const version = Number(versionRaw);
-					const value = valueParts.join(":").trim();
+			const matchesRotatedAuthSecret = env.BETTER_AUTH_SECRETS?.split(",").some((entry) => {
+				const [versionRaw, ...valueParts] = entry.trim().split(":");
+				const version = Number(versionRaw);
+				const value = valueParts.join(":").trim();
 
-					return (
-						Number.isInteger(version) &&
-						version > 0 &&
-						value.length >= 32 &&
-						value === env.SCIM_CREDENTIAL_HASH_SECRET
-					);
-				},
-			);
+				return (
+					Number.isInteger(version) &&
+					version > 0 &&
+					value.length >= 32 &&
+					value === env.SCIM_CREDENTIAL_HASH_SECRET
+				);
+			});
 
 			if (
 				env.SCIM_CREDENTIAL_HASH_SECRET &&
-				(env.SCIM_CREDENTIAL_HASH_SECRET === env.BETTER_AUTH_SECRET ||
-					matchesRotatedAuthSecret)
+				(env.SCIM_CREDENTIAL_HASH_SECRET === env.BETTER_AUTH_SECRET || matchesRotatedAuthSecret)
 			) {
 				ctx.addIssue({
 					code: "custom",

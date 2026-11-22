@@ -102,9 +102,10 @@ export async function loadWorksCouncilSettings(organizationId: string) {
 
 export async function saveWorksCouncilSettings(
 	input: WorksCouncilSettingsInput & { organizationId: string; actorUserId: string },
+	dbClient: typeof db = db,
 ) {
 	const normalized = normalizeWorksCouncilSettingsInput(input);
-	const [row] = await db.transaction(async (tx) => {
+	const [row] = await dbClient.transaction(async (tx) => {
 		const savedRows = await tx
 			.insert(worksCouncilSettings)
 			.values({

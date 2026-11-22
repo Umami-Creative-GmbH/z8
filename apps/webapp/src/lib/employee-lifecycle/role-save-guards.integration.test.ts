@@ -46,9 +46,9 @@ vi.mock("@/lib/organization-mfa/organization-access", async (importOriginal) => 
 	canAccessOrganization: async () => true,
 }));
 
-const holidays = await import("@/app/[locale]/(app)/settings/holidays/actions");
+const holidays = await import("@/app/[locale]/(app)/settings/vacation/holiday-actions");
 const surcharges = await import("@/app/[locale]/(app)/settings/surcharges/actions");
-const changePolicies = await import("@/app/[locale]/(app)/settings/change-policies/actions");
+const changePolicies = await import("@/app/[locale]/(app)/settings/work-policies/change-policy-actions");
 const workCategories = await import("@/app/[locale]/(app)/settings/work-categories/actions");
 const approvalPolicies = await import("@/app/[locale]/(app)/settings/approval-policies/actions");
 

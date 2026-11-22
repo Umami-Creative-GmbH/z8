@@ -1,6 +1,11 @@
-import { DateTime } from "luxon";
-import { dateRangesOverlap, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
-import { calendarYearAt, parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	calendarYearAt,
+	comparePlainDates,
+	instantFromDate,
+	parseInstant,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import {
 	type AbsenceDaysRefusal,
 	absenceDaysByYear,
@@ -19,11 +24,7 @@ import {
 	yearsExceedingBalance,
 } from "./vacation-year-balance";
 
-export type {
-	CoverageEvaluation,
-	CoverageEvidenceGap,
-	CoverageRisk,
-} from "./coverage-evidence";
+export type { CoverageEvaluation, CoverageEvidenceGap, CoverageRisk } from "./coverage-evidence";
 
 export interface AbsencePlanCategoryInput {
 	id: string;
@@ -114,10 +115,7 @@ export interface AbsencePlanPreview {
 
 export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): AbsencePlanPreview {
 	const normalizedRequest = normalizeAbsenceDurationInput(input.request);
-	const holidays = findHolidaysInRequestRange(normalizedRequest, input.holidays).map((holiday) => ({
-		...holiday,
-		endDate: fromJSDate(holiday.endDate, "utc").endOf("day").toJSDate(),
-	}));
+	const holidays = findHolidaysInRequestRange(normalizedRequest, input.holidays);
 	// Counted from the request once normalized: normalizing it again would drop legacy half days.
 	const absenceDayRange = toAbsenceEntryDurationFields(normalizedRequest);
 	const requestedAbsenceDays = countAbsenceDays(absenceDayRange, input.isWorkingDay);
@@ -196,8 +194,8 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		holidays: holidays.map((holiday) => ({
 			id: holiday.id,
 			name: holiday.name,
-			startDate: toDateKey(fromJSDate(holiday.startDate, "utc")),
-			endDate: toDateKey(fromJSDate(holiday.endDate, "utc")),
+			startDate: plainDateAt(instantFromDate(holiday.startDate), "UTC").toString(),
+			endDate: plainDateAt(instantFromDate(holiday.endDate), "UTC").toString(),
 		})),
 		overlaps,
 		affectedShifts: normalizeAffectedShifts(input.affectedShifts),
@@ -225,13 +223,16 @@ function findHolidaysInRequestRange(
 	request: Pick<AbsenceRequest, "startDate" | "endDate">,
 	holidays: Holiday[],
 ): Holiday[] {
-	const requestStart = DateTime.fromISO(request.startDate, { zone: "utc" });
-	const requestEnd = DateTime.fromISO(request.endDate, { zone: "utc" }).endOf("day");
+	const requestStart = parsePlainDate(request.startDate);
+	const requestEnd = parsePlainDate(request.endDate);
 
 	return holidays.filter((holiday) => {
-		const holidayStart = fromJSDate(holiday.startDate, "utc");
-		const holidayEnd = fromJSDate(holiday.endDate, "utc");
-		return dateRangesOverlap(requestStart, requestEnd, holidayStart, holidayEnd);
+		const holidayStart = plainDateAt(instantFromDate(holiday.startDate), "UTC");
+		const holidayEnd = plainDateAt(instantFromDate(holiday.endDate), "UTC");
+		return (
+			comparePlainDates(requestStart, holidayEnd) <= 0 &&
+			comparePlainDates(holidayStart, requestEnd) <= 0
+		);
 	});
 }
 
@@ -239,19 +240,19 @@ function findAbsenceOverlaps(
 	request: Pick<AbsenceRequest, "startDate" | "endDate">,
 	existingAbsences: ExistingAbsenceInput[],
 ): ExistingAbsenceInput[] {
-	const requestStart = DateTime.fromISO(request.startDate, { zone: "utc" });
-	const requestEnd = DateTime.fromISO(request.endDate, { zone: "utc" }).endOf("day");
+	const requestStart = parsePlainDate(request.startDate);
+	const requestEnd = parsePlainDate(request.endDate);
 
 	return existingAbsences.filter((absence) => {
 		if (absence.status === "rejected") {
 			return false;
 		}
 
-		return dateRangesOverlap(
-			requestStart,
-			requestEnd,
-			DateTime.fromISO(absence.startDate, { zone: "utc" }),
-			DateTime.fromISO(absence.endDate, { zone: "utc" }).endOf("day"),
+		const absenceStart = parsePlainDate(absence.startDate);
+		const absenceEnd = parsePlainDate(absence.endDate);
+		return (
+			comparePlainDates(requestStart, absenceEnd) <= 0 &&
+			comparePlainDates(absenceStart, requestEnd) <= 0
 		);
 	});
 }

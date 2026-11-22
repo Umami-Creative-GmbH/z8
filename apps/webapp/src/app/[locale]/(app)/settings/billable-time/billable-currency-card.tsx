@@ -25,10 +25,32 @@ export function BillableCurrencyCard({
 	const router = useRouter();
 	const labelFor = useBillableCurrencyLabel();
 
+	if (locked) {
+		return (
+			<div
+				role="region"
+				aria-label={t("settings.billableTime.currency.title", "Billable currency")}
+				className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm"
+			>
+				<div className="flex items-center gap-2 font-medium">
+					<IconLock aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+					<span>{t("settings.billableTime.currency.title", "Billable currency")}:</span>
+					<span>{labelFor(currency)}</span>
+				</div>
+				<p className="text-muted-foreground">
+					{t(
+						"settings.billableTime.currency.locked",
+						"Billable rates or cost rates already use this currency, so it can no longer change.",
+					)}
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<Card>
-			<CardHeader>
-				<CardTitle role="heading" aria-level={2}>
+			<CardHeader className="pb-3">
+				<CardTitle role="heading" aria-level={2} className="text-base">
 					{t("settings.billableTime.currency.title", "Billable currency")}
 				</CardTitle>
 				<CardDescription>
@@ -39,42 +61,27 @@ export function BillableCurrencyCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				{locked ? (
-					<div className="space-y-2">
-						<p className="flex items-center gap-2 text-sm font-medium">
-							<IconLock aria-hidden="true" className="size-4 text-muted-foreground" />
-							{labelFor(currency)}
-						</p>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.billableTime.currency.locked",
-								"Billable rates or cost rates already use this currency, so it can no longer change.",
-							)}
-						</p>
-					</div>
-				) : (
-					<BillableCurrencyForm
-						key={currency}
-						defaultCurrency={currency}
-						onSubmit={async (next) => {
-							if (next === currency) return;
-							const result = await updateBillableCurrency({ currency: next });
-							if (!result.success) {
-								toast.error(result.error);
-								return;
-							}
-							toast.success(t("settings.billableTime.currency.saved", "Billable currency saved"));
-							router.refresh();
-						}}
-					>
-						{({ pending }) => (
-							<Button type="submit" disabled={pending}>
-								{pending && <IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />}
-								{t("settings.billableTime.currency.save", "Save currency")}
-							</Button>
-						)}
-					</BillableCurrencyForm>
-				)}
+				<BillableCurrencyForm
+					key={currency}
+					defaultCurrency={currency}
+					onSubmit={async (next) => {
+						if (next === currency) return;
+						const result = await updateBillableCurrency({ currency: next });
+						if (!result.success) {
+							toast.error(result.error);
+							return;
+						}
+						toast.success(t("settings.billableTime.currency.saved", "Billable currency saved"));
+						router.refresh();
+					}}
+				>
+					{({ pending }) => (
+						<Button type="submit" disabled={pending}>
+							{pending && <IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />}
+							{t("settings.billableTime.currency.save", "Save currency")}
+						</Button>
+					)}
+				</BillableCurrencyForm>
 			</CardContent>
 		</Card>
 	);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import type { HolidayWithCategory } from "@/app/[locale]/(app)/settings/holidays/actions";
+import type { HolidayWithCategory } from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import { DataTable } from "@/components/data-table-server";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";

@@ -1,23 +1,18 @@
 import "server-only";
 
-import { gt, and, eq, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
-import { employee, workPolicyAssignment } from "@/db/schema";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import {
 	type AbsenceDayRange,
 	countAbsenceDays,
+	holidayDateKeys,
 	type IsWorkingDay,
 	mondayToFriday,
 } from "./absence-days";
 import { getVacationHolidays } from "./vacation-holidays";
-import {
-	type WorkingDayPolicyAssignment,
-	type WorkingWeekPeriod,
-	workingDaysFrom,
-	workingWeekPeriodsFrom,
-} from "./working-days";
+import type { WeekdayName, WorkingWeekPeriod } from "./working-days";
 
 /** The caller's client: the global `db`, its `DatabaseService`'s, or a transaction. */
 export type AbsenceDaysDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -29,171 +24,161 @@ export interface WorkingDaysRange {
 	endDate: string;
 }
 
-function utcDayStart(date: Temporal.PlainDate): Date {
-	return new Date(date.toZonedDateTime("UTC").epochMilliseconds);
+const ISO_WEEKDAY: Record<WeekdayName, number> = {
+	monday: 1,
+	tuesday: 2,
+	wednesday: 3,
+	thursday: 4,
+	friday: 5,
+	saturday: 6,
+	sunday: 7,
+};
+
+const MONDAY_TO_FRIDAY_DAYS = 5;
+
+function enumerateDateRange(startDate: string, endDate: string): Temporal.PlainDate[] {
+	const start = Temporal.PlainDate.from(startDate);
+	const end = Temporal.PlainDate.from(endDate);
+	if (Temporal.PlainDate.compare(start, end) > 0) return [];
+	const dates: Temporal.PlainDate[] = [];
+	for (
+		let cursor = start;
+		Temporal.PlainDate.compare(cursor, end) <= 0;
+		cursor = cursor.add({ days: 1 })
+	) {
+		dates.push(cursor);
+	}
+	return dates;
+}
+
+/**
+ * Resolves the effective scheduled ISO weekdays (1=Mon..7=Sun) from a single day's
+ * unified contract, or `null` when no schedule applies (so absences fall back to Mon-Fri).
+ * Honors `isEmployedOnDay` (A1-26), multi-week `cycleWeek` and all simple cycles resolved by
+ * `resolveEffectiveContractPure` (A1-13), versioned `scheduleEnabled` flags, and custom working days.
+ */
+function effectiveScheduledWeekdaysForContract(
+	contract: EffectiveContractOnDay | undefined,
+): ReadonlySet<number> | null {
+	if (!contract) return null;
+	if (!contract.isEmployedOnDay) return new Set();
+	if (contract.scheduleSource !== "policy") return null;
+
+	if (contract.scheduleMode === "custom_days" || contract.scheduleMode === "hours_only") {
+		const days = contract.weeklyScheduleDays.flatMap((d) =>
+			d.isWorkDay ? [ISO_WEEKDAY[d.dayOfWeek]] : [],
+		);
+		return new Set(days);
+	}
+
+	const activeSchedule =
+		contract.workPolicy?.scheduleEnabled && contract.workPolicy.schedule
+			? contract.workPolicy.schedule
+			: null;
+	if (!activeSchedule) return null;
+
+	// Consume the canonical per-day schedule already resolved for this exact day & cycleWeek.
+	const days = contract.weeklyScheduleDays.flatMap((d) =>
+		d.isWorkDay ? [ISO_WEEKDAY[d.dayOfWeek]] : [],
+	);
+	return new Set(days);
 }
 
 /**
  * The working days of each employee in the organization over a range (Absences ADR 0001).
- * It reads the employees, every work policy assignment that can reach them inside the range,
- * and each employee's assigned holidays: a bounded number of queries per employee, however
- * long the range. An employee outside the organization gets no entry.
+ * Resolved strictly through the unified read-only contract resolver so versioned policy
+ * `schedule_enabled` toggles, org/team defaults, and custom working days stay aligned
+ * with Preview, Work Balance, Payroll, and Presence. An employee outside the organization
+ * gets no entry.
  */
 export async function loadWorkingDaysForEmployees(
 	database: AbsenceDaysDatabase,
 	input: WorkingDaysRange & { organizationId: string; employeeIds: readonly string[] },
 ): Promise<Map<string, IsWorkingDay>> {
-	const assignments = await loadWorkPolicyAssignments(database, input);
-	return new Map(
-		await Promise.all(
-			[...assignments].map(
-				async ([employeeId, employeeAssignments]) =>
-					[
-						employeeId,
-						workingDaysFrom({
-							assignments: employeeAssignments,
-							holidays: await getVacationHolidays({
-								database,
-								organizationId: input.organizationId,
-								employeeId,
-								startDate: input.startDate,
-								endDate: input.endDate,
-							}),
-						}),
-					] as const,
-			),
-		),
-	);
+	const employeeIds = [...new Set(input.employeeIds)];
+	if (employeeIds.length === 0) return new Map();
+
+	const dates = enumerateDateRange(input.startDate, input.endDate);
+	if (dates.length === 0) return new Map();
+
+	const contractsByEmployee = await loadEffectiveContractsBatch(database, {
+		organizationId: input.organizationId,
+		employeeIds,
+		dates,
+	});
+
+	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
+	const workingDays = new Map<string, IsWorkingDay>();
+	for (const [employeeId, contractsByDate] of contractsByEmployee) {
+		const holidays = holidayDateKeys(
+			await getVacationHolidays({
+				database,
+				organizationId: input.organizationId,
+				employeeId,
+				startDate: input.startDate,
+				endDate: input.endDate,
+			}),
+		);
+		const isWorkingDay: IsWorkingDay = (day) => {
+			const dayStr = day.toString();
+			if (holidays.has(dayStr)) return false;
+			const weekdays = effectiveScheduledWeekdaysForContract(contractsByDate.get(dayStr));
+			return weekdays ? weekdays.has(day.dayOfWeek) : mondayToFriday(day);
+		};
+		workingDays.set(employeeId, isWorkingDay);
+	}
+	return workingDays;
 }
 
 /**
  * The working days per week of each employee in the organization over a range (Absences ADR
- * 0003), from the same work policy assignments as their working days, but without holidays.
+ * 0003), from the unified contract in effect on each day, without holidays.
  * An employee outside the organization gets no entry.
  */
 export async function loadWorkingWeekPeriodsForEmployees(
 	database: AbsenceDaysDatabase,
 	input: WorkingDaysRange & { organizationId: string; employeeIds: readonly string[] },
 ): Promise<Map<string, WorkingWeekPeriod[]>> {
-	const assignments = await loadWorkPolicyAssignments(database, input);
-	return new Map(
-		[...assignments].map(([employeeId, employeeAssignments]) => [
-			employeeId,
-			workingWeekPeriodsFrom({
-				assignments: employeeAssignments,
-				startDate: input.startDate,
-				endDate: input.endDate,
-			}),
-		]),
-	);
-}
-
-/**
- * Every active work policy assignment that can reach each employee of the organization inside the
- * range, in two queries however many employees. An employee outside the organization gets no entry.
- */
-async function loadWorkPolicyAssignments(
-	database: AbsenceDaysDatabase,
-	input: WorkingDaysRange & { organizationId: string; employeeIds: readonly string[] },
-): Promise<Map<string, WorkingDayPolicyAssignment[]>> {
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 
-	const employees = await database
-		.select({ id: employee.id, teamId: employee.teamId })
-		.from(employee)
-		.where(
-			and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
-		);
-	if (employees.length === 0) return new Map();
+	const dates = enumerateDateRange(input.startDate, input.endDate);
+	if (dates.length === 0) return new Map();
 
-	const rangeStart = utcDayStart(Temporal.PlainDate.from(input.startDate));
-	const rangeEndExclusive = utcDayStart(Temporal.PlainDate.from(input.endDate).add({ days: 1 }));
-	const teamIds = [...new Set(employees.flatMap((row) => (row.teamId ? [row.teamId] : [])))];
-	const reachableAssignments: SQL[] = [
-		eq(workPolicyAssignment.assignmentType, "organization"),
-		and(
-			eq(workPolicyAssignment.assignmentType, "employee"),
-			inArray(
-				workPolicyAssignment.employeeId,
-				employees.map((row) => row.id),
-			),
-		) as SQL,
-	];
-	if (teamIds.length > 0) {
-		reachableAssignments.push(
-			and(
-				eq(workPolicyAssignment.assignmentType, "team"),
-				inArray(workPolicyAssignment.teamId, teamIds),
-			) as SQL,
-		);
+	const contractsByEmployee = await loadEffectiveContractsBatch(database, {
+		organizationId: input.organizationId,
+		employeeIds,
+		dates,
+	});
+
+	const result = new Map<string, WorkingWeekPeriod[]>();
+	for (const [employeeId, contractsByDate] of contractsByEmployee) {
+		const periods: WorkingWeekPeriod[] = [];
+		for (const day of dates) {
+			const dayStr = day.toString();
+			const contract = contractsByDate.get(dayStr);
+			const weekdays = effectiveScheduledWeekdaysForContract(contract);
+			const workingDaysPerWeek = weekdays ? weekdays.size : MONDAY_TO_FRIDAY_DAYS;
+			const workPolicyId = contract?.workPolicy?.policyId ?? null;
+			const last = periods.at(-1);
+			if (
+				last &&
+				last.workingDaysPerWeek === workingDaysPerWeek &&
+				last.workPolicyId === workPolicyId
+			) {
+				last.endDate = dayStr;
+			} else {
+				periods.push({
+					startDate: dayStr,
+					endDate: dayStr,
+					workingDaysPerWeek,
+					workPolicyId,
+				});
+			}
+		}
+		result.set(employeeId, periods);
 	}
-
-	const assignments = await database.query.workPolicyAssignment.findMany({
-		where: and(
-			eq(workPolicyAssignment.organizationId, input.organizationId),
-			eq(workPolicyAssignment.isActive, true),
-			or(...reachableAssignments),
-			or(
-				isNull(workPolicyAssignment.effectiveFrom),
-				lt(workPolicyAssignment.effectiveFrom, rangeEndExclusive),
-			),
-			or(
-				isNull(workPolicyAssignment.effectiveUntil),
-				gt(workPolicyAssignment.effectiveUntil, rangeStart),
-			),
-		),
-		columns: {
-			id: true,
-			policyId: true,
-			assignmentType: true,
-			teamId: true,
-			employeeId: true,
-			effectiveFrom: true,
-			effectiveUntil: true,
-			createdAt: true,
-		},
-		with: {
-			policy: {
-				columns: { organizationId: true, isActive: true, scheduleEnabled: true },
-				with: {
-					schedule: {
-						columns: { scheduleType: true, workingDaysPreset: true },
-						with: { days: { columns: { dayOfWeek: true, isWorkDay: true } } },
-					},
-				},
-			},
-		},
-	});
-
-	const policyAssignments = assignments.flatMap((assignment) => {
-		const policy = assignment.policy;
-		if (!policy?.isActive || policy.organizationId !== input.organizationId) return [];
-		const workingDayAssignment: WorkingDayPolicyAssignment = {
-			id: assignment.id,
-			policyId: assignment.policyId,
-			assignmentType: assignment.assignmentType,
-			effectiveFrom: assignment.effectiveFrom ? instantFromDate(assignment.effectiveFrom) : null,
-			effectiveUntil: assignment.effectiveUntil ? instantFromDate(assignment.effectiveUntil) : null,
-			createdAt: instantFromDate(assignment.createdAt),
-			schedule: policy.scheduleEnabled ? (policy.schedule ?? null) : null,
-		};
-		return [
-			{ ...workingDayAssignment, teamId: assignment.teamId, employeeId: assignment.employeeId },
-		];
-	});
-
-	return new Map(
-		employees.map((row) => [
-			row.id,
-			policyAssignments.filter(
-				(assignment) =>
-					assignment.assignmentType === "organization" ||
-					(assignment.assignmentType === "team" && assignment.teamId === row.teamId) ||
-					(assignment.assignmentType === "employee" && assignment.employeeId === row.id),
-			),
-		]),
-	);
+	return result;
 }
 
 /** One employee's working days over a range; Monday to Friday when they aren't in the organization. */

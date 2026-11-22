@@ -15,7 +15,9 @@ export type OffboardingReviewKind =
 	| "clock_repair"
 	| "approval_handover"
 	| "future_work"
-	| "employment_terms";
+	| "employment_terms"
+	| "work_after_cutoff"
+	| "payroll_reconciliation";
 
 export type OffboardingFollowUpTaskKind =
 	| "dispatch_departure"
@@ -36,7 +38,7 @@ export interface EmployeeOffboardingView {
 	departure: null | {
 		id: string;
 		revision: number;
-		mode: "scheduled" | "immediate";
+		mode: "scheduled" | "immediate" | "retrospective";
 		lastWorkingDay: string | null;
 		/** ISO instant. */
 		cutoff: string;
@@ -98,6 +100,9 @@ export interface EmployeeOffboardingView {
 		offboardNow: boolean;
 		rehire: boolean;
 		resolve: boolean;
+		recordPastDeparture?: boolean;
+		correctPastDepartureDate?: boolean;
+		recordHistoricalDepartureDate?: boolean;
 	};
 }
 
@@ -138,7 +143,9 @@ export type DeparturePreviewException =
 	/** Later stages name only this employee and need a replacement. */
 	| "later_stages_without_replacement"
 	| "owner_authorization_required"
-	| "final_accessible_owner";
+	| "final_accessible_owner"
+	| "work_after_cutoff"
+	| "payroll_reconciliation";
 
 /** Advisory, side-effect free; submission recomputes everything. */
 export interface EmployeeDeparturePreview {
@@ -149,4 +156,51 @@ export interface EmployeeDeparturePreview {
 	pendingDutyCount: number;
 	replacementOptions: DepartureReplacementOption[];
 	exceptions: DeparturePreviewException[];
+}
+
+export interface PastDepartureWorkImpact {
+	workPeriodCount: number;
+	timeEntryCount: number;
+	workPeriodIds: string[];
+	earliestWorkAt: string | null;
+	latestWorkAt: string | null;
+	hasRunningTimer: boolean;
+}
+
+export interface PastDeparturePayrollImpact {
+	closedMonths: string[];
+	settledDayCount: number;
+	settledDates: string[];
+	earliestSettledDate: string | null;
+	latestSettledDate: string | null;
+	requiresReconciliation: boolean;
+}
+
+export interface PastDepartureImpactSummary {
+	workAfterCutoff: PastDepartureWorkImpact;
+	payrollReconciliation: PastDeparturePayrollImpact;
+	requiresWorkAfterCutoffReview: boolean;
+	requiresPayrollReconciliationReview: boolean;
+}
+
+export interface PastDeparturePreview extends EmployeeDeparturePreview {
+	lastWorkingDay: string;
+	impact: PastDepartureImpactSummary;
+}
+
+export interface ReplacementEmployeeOption {
+	employeeId: string;
+	userId: string;
+	name: string;
+	email: string;
+	role: "admin" | "manager";
+	position: string | null;
+	teamName: string | null;
+	image: string | null;
+}
+
+export interface SearchReplacementEmployeesResult {
+	items: ReplacementEmployeeOption[];
+	nextCursor: string | null;
+	hasMore: boolean;
 }

@@ -7,6 +7,7 @@ import { resolveSCIMReconciliationContext } from "./reconciliation-context";
 import {
 	createSCIMTransactionStore,
 	type SCIMProviderConfigRecord,
+	type SCIMRoleMappingRecord,
 	type SCIMRoleTemplateRecord,
 } from "./transaction-store";
 
@@ -66,23 +67,21 @@ export async function reconcileSCIMRoleProjection(
 	const organizationId = input.provisioningDomainId;
 	const store = createSCIMTransactionStore(context.database);
 	const { config } = await resolveSCIMReconciliationContext(input, store);
-	const candidates = (
-		await Promise.all(
-			input.grants.map(async (grant) => {
-				const externalId = grant.source.externalId;
-				if (!externalId?.trim()) return null;
-				const mapping = await store.getRoleMapping(organizationId, externalId);
-				if (!mapping || mapping.roleTemplateId !== grant.role) return null;
-				const template = await store.getRoleTemplate(mapping.roleTemplateId);
-				return templateIsAvailable(template, organizationId)
-					? { mapping, template }
-					: null;
-			}),
-		)
-	).filter(
-		(candidate): candidate is NonNullable<typeof candidate> =>
-			candidate !== null,
-	);
+	// One after another: `store` runs on the SCIM transaction (one connection), and pg@9 refuses a query while another is executing.
+	const candidates: {
+		mapping: SCIMRoleMappingRecord;
+		template: SCIMRoleTemplateRecord;
+	}[] = [];
+	for (const grant of input.grants) {
+		const externalId = grant.source.externalId;
+		if (!externalId?.trim()) continue;
+		const mapping = await store.getRoleMapping(organizationId, externalId);
+		if (!mapping || mapping.roleTemplateId !== grant.role) continue;
+		const template = await store.getRoleTemplate(mapping.roleTemplateId);
+		if (templateIsAvailable(template, organizationId)) {
+			candidates.push({ mapping, template });
+		}
+	}
 	candidates.sort(
 		(left, right) =>
 			right.mapping.priority - left.mapping.priority ||
@@ -96,10 +95,11 @@ export async function reconcileSCIMRoleProjection(
 		throw new Error("SCIM role template is unavailable");
 	}
 
-	const [previousProjection, assignment] = await Promise.all([
-		store.getProjectionState(organizationId, input.userId),
-		store.getRoleAssignment(organizationId, input.userId),
-	]);
+	const previousProjection = await store.getProjectionState(
+		organizationId,
+		input.userId,
+	);
+	const assignment = await store.getRoleAssignment(organizationId, input.userId);
 	await store.putProjectionState({
 		organizationId,
 		userId: input.userId,

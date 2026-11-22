@@ -203,3 +203,67 @@ export async function listDepartedEmployeesCoveredForExport(
 	`);
 	return result.rows.map((row) => row.id);
 }
+
+/**
+ * Every employee of the organization for balance adjustments (active ones first, then by
+ * name), for organization administrators accessing `/payroll/work-balances` without a
+ * self-grant (#1957). `employeeId` narrows the list to that one employee.
+ */
+export async function listOrganizationBalanceAdjustmentEmployees(
+	client: Reader,
+	input: { organizationId: string; employeeId?: string },
+): Promise<BalanceAdjustmentGrantEmployee[]> {
+	const result = await client.execute<{
+		id: string;
+		user_name: string | null;
+		first_name: string | null;
+		last_name: string | null;
+		employee_number: string | null;
+		is_active: boolean | null;
+	}>(sql`
+		select e.id, u.name as user_name, u.first_name, u.last_name,
+			e.employee_number, e.is_active
+		from employee e
+		left join "user" u on u.id = e.user_id
+		where e.organization_id = ${input.organizationId}
+			${input.employeeId ? sql`and e.id = ${input.employeeId}` : sql``}
+		order by e.is_active desc, lower(coalesce(u.name, '')), e.employee_number, e.id
+	`);
+	return result.rows.map((row) => ({
+		id: row.id,
+		name: adjustmentDisplayName(
+			{ firstName: row.first_name, lastName: row.last_name, name: row.user_name },
+			row.employee_number || row.id,
+		),
+		employeeNumber: row.employee_number,
+		isActive: row.is_active === true,
+	}));
+}
+
+/**
+ * Every employee of the organization who left with an effective departure whose cutoff lies
+ * after the start of `fromDate` in the departure's frozen zone (or any effective departure
+ * when `fromDate` is null), for organization administrators (#1957).
+ */
+export async function listOrganizationDepartedEmployeesForExport(
+	client: Reader,
+	input: { organizationId: string; fromDate: string | null },
+): Promise<string[]> {
+	const result = await client.execute<{ id: string }>(sql`
+		select e.id
+		from employee e
+		where e.organization_id = ${input.organizationId}
+			and e.is_active = false
+			and exists (
+				select 1 from employee_departure d
+				where d.organization_id = e.organization_id and d.employee_id = e.id
+					and d.status = 'effective'
+					and (
+						${input.fromDate}::date is null
+						or d.cutoff_at > (${input.fromDate}::date::timestamp at time zone d.timezone)
+					)
+			)
+		order by e.id
+	`);
+	return result.rows.map((row) => row.id);
+}

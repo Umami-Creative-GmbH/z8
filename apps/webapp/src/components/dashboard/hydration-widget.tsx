@@ -11,7 +11,7 @@ import { useTranslate } from "@tolgee/react";
 import confetti from "canvas-confetti";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { logWaterIntake } from "@/app/[locale]/(app)/wellness/actions";
+import { logWaterIntake } from "@/lib/wellness/actions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";

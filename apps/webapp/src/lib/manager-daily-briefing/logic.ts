@@ -1,5 +1,10 @@
-import { DateTime } from "luxon";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { Temporal } from "temporal-polyfill";
+import {
+	compareInstants,
+	instantFromDate,
+	parsePlainDate,
+	parsePlainTimeMinute,
+} from "@/lib/datetime/temporal-core";
 import { workMatchesShift } from "@/lib/scheduling/shift-occasion";
 import type {
 	BriefingAbsence,
@@ -89,7 +94,7 @@ export function sortActionItems(items: BriefingActionItem[]): BriefingActionItem
 }
 
 interface DetectAttendanceExceptionsInput {
-	now: DateTime;
+	now: Temporal.ZonedDateTime;
 	shifts: BriefingShift[];
 	records: BriefingTimeRecord[];
 	graceMinutes: number;
@@ -101,32 +106,40 @@ export function detectAttendanceExceptions({
 	records,
 	graceMinutes,
 }: DetectAttendanceExceptionsInput): BriefingActionItem[] {
+	const timezone = now.timeZoneId;
 	const items = shifts.flatMap((shift): BriefingActionItem[] => {
 		if (shift.status !== "published") {
 			return [];
 		}
 
-		const scheduledStart = DateTime.fromISO(`${shift.date}T${shift.startTime}`, { zone: now.zone });
+		const scheduledStart = parsePlainDate(shift.date)
+			.toPlainDateTime(parsePlainTimeMinute(shift.startTime))
+			.toZonedDateTime(timezone);
 		const scheduledEnd = getShiftEnd(scheduledStart, shift.endTime);
 		const interval = {
-			start: instantFromDate(scheduledStart.toJSDate()),
-			end: instantFromDate(scheduledEnd.toJSDate()),
+			start: scheduledStart.toInstant(),
+			end: scheduledEnd.toInstant(),
 		};
-		const firstClockIn = records.reduce<DateTime | null>((earliest, record) => {
-				if (record.employeeId !== shift.employeeId) return earliest;
-				const startAt = DateTime.fromJSDate(record.startAt).setZone(now.zone);
-				const matchesShift = workMatchesShift(interval, {
-					start: instantFromDate(record.startAt),
-					end: record.endAt ? instantFromDate(record.endAt) : null,
-				});
+		const firstClockIn = records.reduce<Temporal.ZonedDateTime | null>((earliest, record) => {
+			if (record.employeeId !== shift.employeeId) return earliest;
+			const startInstant = instantFromDate(record.startAt);
+			const startAt = startInstant.toZonedDateTimeISO(timezone);
+			const matchesShift = workMatchesShift(interval, {
+				start: startInstant,
+				end: record.endAt ? instantFromDate(record.endAt) : null,
+			});
 
-				if (!matchesShift) return earliest;
+			if (!matchesShift) return earliest;
 
-				return !earliest || startAt.toMillis() < earliest.toMillis() ? startAt : earliest;
-			}, null);
+			return !earliest || startInstant.epochMilliseconds < earliest.epochMilliseconds
+				? startAt
+				: earliest;
+		}, null);
+
+		const graceDeadline = scheduledStart.add({ minutes: graceMinutes }).toInstant();
 
 		if (!firstClockIn) {
-			if (now < scheduledStart.plus({ minutes: graceMinutes })) {
+			if (compareInstants(now.toInstant(), graceDeadline) < 0) {
 				return [];
 			}
 
@@ -149,7 +162,7 @@ export function detectAttendanceExceptions({
 			];
 		}
 
-		if (firstClockIn > scheduledStart.plus({ minutes: graceMinutes })) {
+		if (compareInstants(firstClockIn.toInstant(), graceDeadline) > 0) {
 			return [
 				{
 					id: `attendance:${shift.id}`,
@@ -161,7 +174,7 @@ export function detectAttendanceExceptions({
 						{
 							employeeName: shift.employeeName,
 							startTime: shift.startTime,
-							clockInTime: firstClockIn.toFormat("HH:mm"),
+							clockInTime: `${String(firstClockIn.hour).padStart(2, "0")}:${String(firstClockIn.minute).padStart(2, "0")}`,
 							teamSuffix: formatTeamSuffix(shift.teamName),
 						},
 					),
@@ -177,7 +190,7 @@ export function detectAttendanceExceptions({
 }
 
 interface DetectAbsencesTodayInput {
-	today: DateTime;
+	today: Temporal.ZonedDateTime;
 	absences: BriefingAbsence[];
 }
 
@@ -185,11 +198,7 @@ export function detectAbsencesToday({
 	today,
 	absences,
 }: DetectAbsencesTodayInput): BriefingActionItem[] {
-	const todayDate = today.toISODate();
-
-	if (!todayDate) {
-		return [];
-	}
+	const todayDate = today.toPlainDate().toString();
 
 	return sortActionItems(
 		absences.flatMap((absence): BriefingActionItem[] => {
@@ -282,12 +291,18 @@ function formatTeamSuffix(teamName: string | null): string {
 	return teamName ? ` (${teamName})` : "";
 }
 
-function getShiftEnd(scheduledStart: DateTime, endTime: string): DateTime {
-	const scheduledEnd = DateTime.fromISO(`${scheduledStart.toISODate()}T${endTime}`, {
-		zone: scheduledStart.zone,
-	});
+function getShiftEnd(
+	scheduledStart: Temporal.ZonedDateTime,
+	endTime: string,
+): Temporal.ZonedDateTime {
+	const scheduledEnd = scheduledStart
+		.toPlainDate()
+		.toPlainDateTime(parsePlainTimeMinute(endTime))
+		.toZonedDateTime(scheduledStart.timeZoneId);
 
-	return scheduledEnd <= scheduledStart ? scheduledEnd.plus({ days: 1 }) : scheduledEnd;
+	return compareInstants(scheduledEnd.toInstant(), scheduledStart.toInstant()) <= 0
+		? scheduledEnd.add({ days: 1 })
+		: scheduledEnd;
 }
 
 function getLowestStaffedSegmentCount(rule: BriefingCoverageRule, shifts: BriefingShift[]): number {

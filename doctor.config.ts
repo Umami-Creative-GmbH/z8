@@ -159,7 +159,7 @@ export default {
 				// advisory guards), read-your-writes and append-chain predecessors, and a failed
 				// statement aborts the transaction for every statement queued behind it.
 				files: [
-					"**/settings/clockodo-import/actions.ts",
+					"**/settings/import/clockodo-actions.ts",
 					"**/src/lib/billable-time/settings.ts",
 					"**/src/lib/absences/change-request-proposal.ts",
 					"**/src/lib/absences/change-request-service.ts",
@@ -286,7 +286,7 @@ export default {
 					"**/src/lib/time-tracking/clocking/follow-ups.ts",
 					// The attention recheck raises and resolves the open items the alert dispatch then
 					// reads; demo vehicles are generated only after the locations step has succeeded.
-					"**/settings/approval-escalation/actions.ts",
+					"**/settings/approval-policies/escalation-actions.ts",
 					"**/settings/demo/actions.ts",
 				],
 				rules: [

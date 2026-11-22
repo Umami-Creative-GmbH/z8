@@ -210,4 +210,42 @@ describe("VehicleSettings", () => {
 			).toBeTruthy(),
 		);
 	});
+
+	it("renders vehicle create/edit inside ActionPanel, preserves values on refusal, and prevents duplicate submission", async () => {
+		let finish!: (value: unknown) => void;
+		changeMock.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		);
+		render(<VehicleSettings initialData={data([])} />);
+
+		await userEvent.click(screen.getByRole("button", { name: "Add vehicle" }));
+		const dialog = screen.getByRole("dialog");
+		expect(dialog.getAttribute("data-slot")).toBe("action-panel-content");
+
+		const nameInput = screen.getByLabelText("Name");
+		const plateInput = screen.getByLabelText("Licence plate");
+		await userEvent.type(nameInput, "Service Truck");
+		await userEvent.type(plateInput, "M-TR 99");
+
+		const submitButton = screen.getByRole("button", { name: "Create vehicle" });
+		await userEvent.click(submitButton);
+		await waitFor(() => expect(changeMock).toHaveBeenCalledTimes(1));
+		expect(submitButton).toHaveProperty("disabled", true);
+		await userEvent.click(submitButton);
+		expect(changeMock).toHaveBeenCalledTimes(1);
+
+		finish({
+			success: false,
+			error: "The vehicle change was refused",
+			code: "ValidationError",
+			refusal: "licence_plate_taken",
+		});
+
+		await waitFor(() => expect(submitButton).toHaveProperty("disabled", false));
+		expect((nameInput as HTMLInputElement).value).toBe("Service Truck");
+		expect((plateInput as HTMLInputElement).value).toBe("M-TR 99");
+	});
 });

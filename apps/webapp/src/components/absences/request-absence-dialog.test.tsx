@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { toast } from "sonner";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
 import { RequestAbsenceDialog } from "./request-absence-dialog";
@@ -148,6 +148,14 @@ vi.mock("@/components/ui/select", async () => {
 			<>{children}</>
 		),
 		SelectValue: ({ placeholder }: { placeholder?: string }) => <>{placeholder}</>,
+	};
+});
+
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
 	};
 });
 
@@ -545,8 +553,11 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog();
 
 		fillRequiredFields();
-		await screen.findByRole("option", { name: "Ben Example" });
-		fireEvent.change(screen.getByLabelText("Deputy"), { target: { value: "deputy-ben" } });
+		const deputyTrigger = screen.getByRole("combobox", { name: "Deputy" });
+		await waitFor(() => expect(deputyTrigger.hasAttribute("disabled")).toBe(false));
+		fireEvent.click(deputyTrigger);
+		fireEvent.click(await screen.findByRole("option", { name: /Ben Example/ }));
+		await waitFor(() => expect(screen.queryByRole("option", { name: /Ben Example/ })).toBeNull());
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() =>

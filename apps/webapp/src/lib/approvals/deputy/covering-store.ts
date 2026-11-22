@@ -181,52 +181,52 @@ async function loadCoverFacts(
 
 	// Every timezone's local day lies within one day of the UTC day.
 	const utcDay = at.toZonedDateTimeISO("UTC").toPlainDate();
-	const [[org], absences] = await Promise.all([
-		executor
-			.select({ timezone: organization.timezone })
-			.from(organization)
-			.where(eq(organization.id, organizationId))
-			.limit(1),
-		executor
-			.select({
-				id: absenceEntry.id,
-				employeeId: absenceEntry.employeeId,
-				deputyEmployeeId: absenceEntry.deputyEmployeeId,
-				startDate: absenceEntry.startDate,
-				endDate: absenceEntry.endDate,
-				startPeriod: absenceEntry.startPeriod,
-				endPeriod: absenceEntry.endPeriod,
-				status: absenceEntry.status,
-				countsAsWorkingTime: absenceCategory.requiresWorkTime,
-				approvedAt: absenceEntry.approvedAt,
-				deputyAssignedAt: absenceEntry.deputyAssignedAt,
-				userTimezone: userSettings.timezone,
-			})
-			.from(absenceEntry)
-			.innerJoin(
-				absenceCategory,
-				and(
-					eq(absenceCategory.id, absenceEntry.categoryId),
-					eq(absenceCategory.organizationId, organizationId),
-				),
-			)
-			.innerJoin(
-				employee,
-				and(eq(employee.id, absenceEntry.employeeId), eq(employee.organizationId, organizationId)),
-			)
-			.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
-			.where(
-				and(
-					eq(absenceEntry.organizationId, organizationId),
-					eq(absenceEntry.deputyEmployeeId, query.deputyId),
-					eq(absenceEntry.status, "approved"),
-					query.approverId ? eq(absenceEntry.employeeId, query.approverId) : undefined,
-					lte(absenceEntry.startDate, utcDay.add({ days: 1 }).toString()),
-					gte(absenceEntry.endDate, utcDay.subtract({ days: 1 }).toString()),
-				),
-			)
-			.orderBy(absenceEntry.employeeId, absenceEntry.id),
-	]);
+	// One after another: `executor` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const [org] = await executor
+		.select({ timezone: organization.timezone })
+		.from(organization)
+		.where(eq(organization.id, organizationId))
+		.limit(1);
+	const absences = await executor
+		.select({
+			id: absenceEntry.id,
+			employeeId: absenceEntry.employeeId,
+			deputyEmployeeId: absenceEntry.deputyEmployeeId,
+			startDate: absenceEntry.startDate,
+			endDate: absenceEntry.endDate,
+			startPeriod: absenceEntry.startPeriod,
+			endPeriod: absenceEntry.endPeriod,
+			status: absenceEntry.status,
+			countsAsWorkingTime: absenceCategory.requiresWorkTime,
+			approvedAt: absenceEntry.approvedAt,
+			deputyAssignedAt: absenceEntry.deputyAssignedAt,
+			userTimezone: userSettings.timezone,
+		})
+		.from(absenceEntry)
+		.innerJoin(
+			absenceCategory,
+			and(
+				eq(absenceCategory.id, absenceEntry.categoryId),
+				eq(absenceCategory.organizationId, organizationId),
+			),
+		)
+		.innerJoin(
+			employee,
+			and(eq(employee.id, absenceEntry.employeeId), eq(employee.organizationId, organizationId)),
+		)
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
+		.where(
+			and(
+				eq(absenceEntry.organizationId, organizationId),
+				eq(absenceEntry.deputyEmployeeId, query.deputyId),
+				eq(absenceEntry.status, "approved"),
+				query.approverId ? eq(absenceEntry.employeeId, query.approverId) : undefined,
+				lte(absenceEntry.startDate, utcDay.add({ days: 1 }).toString()),
+				gte(absenceEntry.endDate, utcDay.subtract({ days: 1 }).toString()),
+			),
+		)
+		.orderBy(absenceEntry.employeeId, absenceEntry.id);
 
 	const approvers = new Map<string, string | null>();
 	for (const absence of absences) approvers.set(absence.employeeId, absence.userTimezone);

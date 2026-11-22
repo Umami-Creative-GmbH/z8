@@ -8,12 +8,15 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
+import { Temporal } from "temporal-polyfill";
 import {
 	type ExecutionHistoryItem,
 	getExecutionHistoryAction,
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -32,12 +35,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 
 interface ExecutionHistoryDialogProps {
@@ -50,8 +48,16 @@ interface ExecutionHistoryDialogProps {
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-function formatDate(date: Date) {
-	return DateTime.fromJSDate(date).toLocaleString(DateTime.DATETIME_SHORT);
+function formatDate(date: Date, locale: string) {
+	return formatInstant(
+		instantFromDate(date),
+		{
+			locale,
+			timezone: Temporal.Now.timeZoneId(),
+			timeFormat: localeDefaultTimeFormat(locale),
+		},
+		"dateTimeMedium",
+	);
 }
 
 function formatDuration(ms: number | null) {
@@ -69,6 +75,7 @@ export function ExecutionHistoryDialog({
 	scheduleName,
 }: ExecutionHistoryDialogProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [executions, setExecutions] = useState<ExecutionHistoryItem[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -94,10 +101,7 @@ export function ExecutionHistoryDialog({
 
 			if (!result) {
 				setError(
-					t(
-						"settings.scheduledExports.history.loadError",
-						"Failed to load execution history",
-					),
+					t("settings.scheduledExports.history.loadError", "Failed to load execution history"),
 				);
 				setIsLoading(false);
 				return;
@@ -132,28 +136,18 @@ export function ExecutionHistoryDialog({
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t(
-							"settings.scheduledExports.history.title",
-							"Execution History",
-						)}
+						{t("settings.scheduledExports.history.title", "Execution History")}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
-						{t(
-							"settings.scheduledExports.history.description",
-							'Past runs for "{scheduleName}"',
-							{
-								scheduleName,
-							},
-						)}
+						{t("settings.scheduledExports.history.description", 'Past runs for "{scheduleName}"', {
+							scheduleName,
+						})}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<ActionPanelBody
 					role="region"
-					aria-label={t(
-						"settings.scheduledExports.history.tableRegion",
-						"Execution history table",
-					)}
+					aria-label={t("settings.scheduledExports.history.tableRegion", "Execution history table")}
 				>
 					{visibleLoading && (
 						<div className="flex items-center justify-center py-12">
@@ -165,37 +159,26 @@ export function ExecutionHistoryDialog({
 					)}
 
 					{visibleError && (
-						<div
-							className="flex items-center gap-2 text-destructive py-4"
-							role="alert"
-						>
+						<div className="flex items-center gap-2 text-destructive py-4" role="alert">
 							<IconAlertCircle className="size-5" aria-hidden="true" />
 							<span>{visibleError}</span>
 						</div>
 					)}
 
-					{!visibleLoading &&
-						!visibleError &&
-						visibleExecutions.length === 0 && (
-							<div className="space-y-1 py-8 text-center text-muted-foreground">
-								<IconClock
-									className="mx-auto mb-2 size-6"
-									aria-hidden="true"
-								/>
-								<p className="font-medium text-foreground">
-									{t(
-										"settings.scheduledExports.history.noExecutions",
-										"No executions yet",
-									)}
-								</p>
-								<p className="text-sm">
-									{t(
-										"settings.scheduledExports.history.noExecutionsDesc",
-										"This schedule hasn't run yet. Executions will appear here once the schedule triggers.",
-									)}
-								</p>
-							</div>
-						)}
+					{!visibleLoading && !visibleError && visibleExecutions.length === 0 && (
+						<div className="space-y-1 py-8 text-center text-muted-foreground">
+							<IconClock className="mx-auto mb-2 size-6" aria-hidden="true" />
+							<p className="font-medium text-foreground">
+								{t("settings.scheduledExports.history.noExecutions", "No executions yet")}
+							</p>
+							<p className="text-sm">
+								{t(
+									"settings.scheduledExports.history.noExecutionsDesc",
+									"This schedule hasn't run yet. Executions will appear here once the schedule triggers.",
+								)}
+							</p>
+						</div>
+					)}
 
 					{!visibleLoading && !visibleError && visibleExecutions.length > 0 && (
 						<Table>
@@ -205,38 +188,23 @@ export function ExecutionHistoryDialog({
 										{t("settings.scheduledExports.history.colStatus", "Status")}
 									</TableHead>
 									<TableHead>
-										{t(
-											"settings.scheduledExports.history.colTriggered",
-											"Triggered",
-										)}
+										{t("settings.scheduledExports.history.colTriggered", "Triggered")}
 									</TableHead>
 									<TableHead>
-										{t(
-											"settings.scheduledExports.history.colDateRange",
-											"Date Range",
-										)}
+										{t("settings.scheduledExports.history.colDateRange", "Date Range")}
 									</TableHead>
 									<TableHead>
-										{t(
-											"settings.scheduledExports.history.colRecords",
-											"Records",
-										)}
+										{t("settings.scheduledExports.history.colRecords", "Records")}
 									</TableHead>
 									<TableHead>
 										{t("settings.scheduledExports.history.colEmails", "Emails")}
 									</TableHead>
 									<TableHead>
-										{t(
-											"settings.scheduledExports.history.colDuration",
-											"Duration",
-										)}
+										{t("settings.scheduledExports.history.colDuration", "Duration")}
 									</TableHead>
 									<TableHead className="w-[80px]">
 										<span className="sr-only">
-											{t(
-												"settings.scheduledExports.history.colActions",
-												"Actions",
-											)}
+											{t("settings.scheduledExports.history.colActions", "Actions")}
 										</span>
 									</TableHead>
 								</TableRow>
@@ -248,11 +216,10 @@ export function ExecutionHistoryDialog({
 											<ExecutionStatusBadge status={execution.status} t={t} />
 										</TableCell>
 										<TableCell className="text-sm">
-											{formatDate(execution.triggeredAt)}
+											{formatDate(execution.triggeredAt, locale)}
 										</TableCell>
 										<TableCell className="text-sm text-muted-foreground">
-											{execution.dateRangeStart} {t("common.to", "to")}{" "}
-											{execution.dateRangeEnd}
+											{execution.dateRangeStart} {t("common.to", "to")} {execution.dateRangeEnd}
 										</TableCell>
 										<TableCell>
 											{execution.recordCount !== null
@@ -269,11 +236,7 @@ export function ExecutionHistoryDialog({
 																<TooltipTrigger asChild>
 																	<span className="text-destructive ml-1">
 																		({execution.emailsFailed}{" "}
-																		{t(
-																			"settings.scheduledExports.history.failed",
-																			"failed",
-																		)}
-																		)
+																		{t("settings.scheduledExports.history.failed", "failed")})
 																	</span>
 																</TooltipTrigger>
 																<TooltipContent>
@@ -297,33 +260,30 @@ export function ExecutionHistoryDialog({
 											{formatDuration(execution.durationMs)}
 										</TableCell>
 										<TableCell>
-											{execution.status === "failed" &&
-												execution.errorMessage && (
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<Button
-																	variant="ghost"
-																	size="sm"
-																	aria-label={t(
-																		"settings.scheduledExports.history.viewError",
-																		"View error details",
-																	)}
-																>
-																	<IconAlertCircle
-																		className="size-4 text-destructive"
-																		aria-hidden="true"
-																	/>
-																</Button>
-															</TooltipTrigger>
-															<TooltipContent className="max-w-xs">
-																<p className="text-sm">
-																	{execution.errorMessage}
-																</p>
-															</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
-												)}
+											{execution.status === "failed" && execution.errorMessage && (
+												<TooltipProvider>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="sm"
+																aria-label={t(
+																	"settings.scheduledExports.history.viewError",
+																	"View error details",
+																)}
+															>
+																<IconAlertCircle
+																	className="size-4 text-destructive"
+																	aria-hidden="true"
+																/>
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent className="max-w-xs">
+															<p className="text-sm">{execution.errorMessage}</p>
+														</TooltipContent>
+													</Tooltip>
+												</TooltipProvider>
+											)}
 										</TableCell>
 									</TableRow>
 								))}
@@ -348,14 +308,8 @@ function ExecutionStatusBadge({ status, t }: { status: string; t: Translate }) {
 		case "processing":
 			return (
 				<Badge variant="secondary">
-					<IconLoader2
-						className="mr-1 size-3 animate-spin"
-						aria-hidden="true"
-					/>
-					{t(
-						"settings.scheduledExports.history.statusProcessing",
-						"Processing",
-					)}
+					<IconLoader2 className="mr-1 size-3 animate-spin" aria-hidden="true" />
+					{t("settings.scheduledExports.history.statusProcessing", "Processing")}
 				</Badge>
 			);
 		case "pending":

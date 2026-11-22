@@ -7,10 +7,7 @@
 
 import { createLogger } from "@/lib/logger";
 import type { DiscordCallFailure } from "./delivery-outcome";
-import type {
-	DiscordMessagePayload,
-	DiscordSlashCommandDefinition,
-} from "./types";
+import type { DiscordMessagePayload, DiscordSlashCommandDefinition } from "./types";
 
 const logger = createLogger("DiscordAPI");
 
@@ -246,7 +243,8 @@ export async function openDMChannelWithOutcome(
 		isDiscordChannel,
 	);
 	if (opened.kind !== "ok") return opened;
-	if (opened.result.type !== DM_CHANNEL_TYPE) return { kind: "unknown", reason: "invalid_response" };
+	if (opened.result.type !== DM_CHANNEL_TYPE)
+		return { kind: "unknown", reason: "invalid_response" };
 	return { kind: "ok", result: opened.result.id };
 }
 
@@ -343,20 +341,50 @@ interface DiscordApplication {
 	verify_key: string;
 }
 
+export interface DiscordApplicationInfo {
+	id: string;
+	name: string;
+	verifyKey: string;
+}
+
+export type VerifyBotApplicationResult =
+	| { kind: "ok"; application: DiscordApplicationInfo }
+	| { kind: "unauthorized"; status: number }
+	| { kind: "error"; status: number };
+
+/**
+ * Verify a Discord bot token and return application metadata with status classification.
+ * Distinguishes authentication failures (401/403) from rate limits or upstream outages.
+ */
+export async function verifyBotApplication(botToken: string): Promise<VerifyBotApplicationResult> {
+	const result = await callApi<DiscordApplication>(botToken, "GET", "/applications/@me");
+
+	if (!result.ok) {
+		if (result.status === 401 || result.status === 403) {
+			return { kind: "unauthorized", status: result.status };
+		}
+		return { kind: "error", status: result.status };
+	}
+
+	if (!result.data) {
+		return { kind: "error", status: result.status };
+	}
+
+	return {
+		kind: "ok",
+		application: {
+			id: result.data.id,
+			name: result.data.name,
+			verifyKey: result.data.verify_key,
+		},
+	};
+}
+
 /**
  * Get application info (verify bot token is valid).
  * Returns the application ID and verify key.
  */
-export async function getApplicationInfo(
-	botToken: string,
-): Promise<{ id: string; name: string; verifyKey: string } | null> {
-	const result = await callApi<DiscordApplication>(botToken, "GET", "/applications/@me");
-
-	if (!result.data) return null;
-
-	return {
-		id: result.data.id,
-		name: result.data.name,
-		verifyKey: result.data.verify_key,
-	};
+export async function getApplicationInfo(botToken: string): Promise<DiscordApplicationInfo | null> {
+	const result = await verifyBotApplication(botToken);
+	return result.kind === "ok" ? result.application : null;
 }

@@ -12,7 +12,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { env } from "@/env";
-import { getCurrentSettingsAccessTier, requireUser } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess, requireUser } from "@/lib/auth-helpers";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { SocialProviderId } from "@/lib/social-providers";
 import { getTranslate } from "@/tolgee/server";
 
@@ -39,15 +40,18 @@ function getEnabledSocialProviderIds(): SocialProviderId[] {
 }
 
 export default async function SecuritySettingsPage() {
-	const [authContext, t, settingsAccessTier] = await Promise.all([
+	const [authContext, t, settingsAccessCaller] = await Promise.all([
 		requireUser(),
 		getTranslate(),
 		// Only decides whether to show the policy link; the policy page authorizes on its own.
 		// A failed lookup hides the link rather than failing the personal security page.
-		getCurrentSettingsAccessTier().catch(() => null),
+		getCurrentSettingsAccess().catch(() => null),
 	]);
 	const enabledSocialProviderIds = getEnabledSocialProviderIds();
-	const canManageOrganizationPolicy = settingsAccessTier === "orgAdmin";
+	const canManageOrganizationPolicy = meetsSettingsAccess(
+		settingsAccessCaller?.settingsAccess ?? null,
+		"orgAdmin",
+	);
 
 	// Fetch user's 2FA status
 	const userRecord = await db.query.user.findFirst({

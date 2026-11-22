@@ -13,9 +13,9 @@ import { AnalyticsTabs } from "./analytics-tabs";
 const destinations = [
 	["/analytics", "overview", "Overview"],
 	["/analytics/team-performance", "team-performance", "Team Performance"],
-	["/analytics/vacation-trends", "vacation-trends", "Vacation Trends"],
 	["/analytics/work-hours", "work-hours", "Work Hours"],
 	["/analytics/overtime-burn-down", "overtime-burn-down", "Overtime Burn-Down"],
+	["/analytics/vacation-trends", "vacation-trends", "Absences & Vacation"],
 ];
 
 function Navigation() {

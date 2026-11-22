@@ -25,7 +25,7 @@ vi.mock("@/hooks/use-display-context", () => ({
 		timeFormat: "24h",
 	}),
 }));
-vi.mock("@/app/[locale]/(app)/settings/audit-log/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/audit-export/audit-log-actions", () => ({
 	exportAuditLogsAction: exportMock,
 	getAuditLogsAction: vi.fn(),
 }));

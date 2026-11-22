@@ -8,6 +8,7 @@ import {
 	workBalanceRebuildIntent,
 	workPeriod,
 } from "@/db/schema";
+import { collectTrustBasedBalanceDates } from "@/lib/calendar/trust-based-dates";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import {
 	loadEmployeeTrackingContext,
@@ -271,8 +272,8 @@ async function getFirstRelevantDate(
 		employeeId: string;
 		organizationId: string;
 		trackingStartDateOverride?: string | null;
- employeeTrackingStartDateOverride?: string | null;
- employeeEmploymentStartDateOverride?: string;
+		employeeTrackingStartDateOverride?: string | null;
+		employeeEmploymentStartDateOverride?: string;
 	},
 	dbClient: WorkBalanceDbClient = db,
 	knownEmployee?: { id: string; startDate: Date | string | null },
@@ -291,7 +292,8 @@ async function getFirstRelevantDate(
 
 	const trackingStartDate = await loadEmployeeTrackingStart(dbClient, input);
 	if (trackingStartDate) return trackingStartDate;
-	const employeeStartDate = input.employeeEmploymentStartDateOverride ?? toUtcIsoDate(scopedEmployee.startDate);
+	const employeeStartDate =
+		input.employeeEmploymentStartDateOverride ?? toUtcIsoDate(scopedEmployee.startDate);
 	if (employeeStartDate) return employeeStartDate;
 
 	const [firstWorkPeriod] = await dbClient
@@ -393,20 +395,44 @@ export async function computeEmployeeWorkBalance(input: {
 	const startDate = start.toJSDate();
 	const endDate = through.endOf("day").toJSDate();
 
-	const [actualMinutes, requirements] = await Promise.all([
-		getActualMinutes({ ...input, startDate, endDate }),
-		getDailyWorkRequirementsForEmployee({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			startDate,
-			endDate,
-		}),
-	]);
+	const requirements = await getDailyWorkRequirementsForEmployee({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		startDate,
+		endDate,
+	});
+	const trustBasedDates = collectTrustBasedBalanceDates(requirements);
+	const actualMinutes =
+		trustBasedDates.size > 0
+			? await db
+					.select({
+						startTime: workPeriod.startTime,
+						durationMinutes: workPeriod.durationMinutes,
+					})
+					.from(workPeriod)
+					.where(
+						and(
+							eq(workPeriod.employeeId, input.employeeId),
+							eq(workPeriod.organizationId, input.organizationId),
+							isNotNull(workPeriod.endTime),
+							isNotNull(workPeriod.durationMinutes),
+							gte(workPeriod.startTime, startDate),
+							lte(workPeriod.startTime, endDate),
+						),
+					)
+					.then((rows) =>
+						rows.reduce((total, row) => {
+							const dayKey = DateTime.fromJSDate(row.startTime, { zone: "utc" }).toISODate();
+							if (dayKey && trustBasedDates.has(dayKey)) return total;
+							return total + Number(row.durationMinutes ?? 0);
+						}, 0),
+					)
+			: await getActualMinutes({ ...input, startDate, endDate });
 
-	const requiredMinutes = Object.values(requirements).reduce(
-		(total, requirement) => total + requirement.requiredMinutes,
-		0,
-	);
+	const requiredMinutes = Object.entries(requirements).reduce((total, [dateKey, requirement]) => {
+		if (trustBasedDates.has(dateKey)) return total;
+		return total + requirement.requiredMinutes;
+	}, 0);
 
 	return buildWorkBalanceValues({
 		employeeId: input.employeeId,
@@ -570,65 +596,60 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 
 	if (affectedStartDate < hotWindow.startDate) {
 		const months = getMonthPeriodsBetween(affectedStartDate, closedMonthEnd);
-		await Promise.all(
-			months.map(async (month) => {
-				const values = await computeEmployeePeriodBalance({
-					employeeId: input.employeeId,
-					organizationId: input.organizationId,
-					dbClient,
-					periodType: "month",
-					periodStart: month.periodStart,
-					periodEnd: month.periodEnd,
-					calculationStartDate,
-					...timezoneInput,
-					isClosed: true,
-					now,
-				});
-				await upsertEmployeeWorkBalancePeriod(values, {
-					dbClient,
-					refreshStartedAt: now,
-				});
-			}),
-		);
-
-		const touchedYears = new Set(months.map((month) => month.periodStart.slice(0, 4)));
-		await Promise.all(
-			[...touchedYears].map((year) =>
-				rebuildEmployeeYearBalanceFromMonths({
-					employeeId: input.employeeId,
-					organizationId: input.organizationId,
-					dbClient,
-					dateInYear: `${year}-01-01`,
-					calculationStartDate,
-					now,
-				}),
-			),
-		);
-	}
-
-	const [hotWindowValues, closedTotals] = await Promise.all([
-		computeEmployeePeriodBalance({
-			employeeId: input.employeeId,
-			organizationId: input.organizationId,
-			dbClient,
-			periodType: "month",
-			periodStart: hotWindow.startDate,
-			periodEnd: hotWindow.endDate,
-			calculationStartDate,
-			...timezoneInput,
-			isClosed: false,
-			now,
-		}),
-		sumClosedMonthlyPeriodTotalsBefore(
-			{
+		// One after another: `dbClient` is one connection, and pg@9 refuses a query while another is executing.
+		for (const month of months) {
+			const values = await computeEmployeePeriodBalance({
 				employeeId: input.employeeId,
 				organizationId: input.organizationId,
-				beforeDate: hotWindow.startDate,
-				fromDate: calculationStartDate,
-			},
-			dbClient,
-		),
-	]);
+				dbClient,
+				periodType: "month",
+				periodStart: month.periodStart,
+				periodEnd: month.periodEnd,
+				calculationStartDate,
+				...timezoneInput,
+				isClosed: true,
+				now,
+			});
+			await upsertEmployeeWorkBalancePeriod(values, {
+				dbClient,
+				refreshStartedAt: now,
+			});
+		}
+
+		const touchedYears = new Set(months.map((month) => month.periodStart.slice(0, 4)));
+		for (const year of touchedYears) {
+			await rebuildEmployeeYearBalanceFromMonths({
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				dbClient,
+				dateInYear: `${year}-01-01`,
+				calculationStartDate,
+				now,
+			});
+		}
+	}
+
+	const hotWindowValues = await computeEmployeePeriodBalance({
+		employeeId: input.employeeId,
+		organizationId: input.organizationId,
+		dbClient,
+		periodType: "month",
+		periodStart: hotWindow.startDate,
+		periodEnd: hotWindow.endDate,
+		calculationStartDate,
+		...timezoneInput,
+		isClosed: false,
+		now,
+	});
+	const closedTotals = await sumClosedMonthlyPeriodTotalsBefore(
+		{
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			beforeDate: hotWindow.startDate,
+			fromDate: calculationStartDate,
+		},
+		dbClient,
+	);
 
 	await upsertEmployeeWorkBalance(
 		buildWorkBalanceValues({
@@ -708,8 +729,8 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 		day: string;
 		/** Server-side proposed organization date for reviewed impact calculations; never persisted here. */
 		trackingStartDateOverride?: string | null;
- employeeTrackingStartDateOverride?: string | null;
- employeeEmploymentStartDateOverride?: string;
+		employeeTrackingStartDateOverride?: string | null;
+		employeeEmploymentStartDateOverride?: string;
 		/** A closed month retains the timezone captured by its close. */
 		employeeTimezoneOverride?: string;
 	},
@@ -719,21 +740,31 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 		employeeId: input.employee.id,
 		organizationId: input.organizationId,
 		trackingStartDateOverride: input.trackingStartDateOverride,
- employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
- employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
+		employeeTrackingStartDateOverride: input.employeeTrackingStartDateOverride,
+		employeeEmploymentStartDateOverride: input.employeeEmploymentStartDateOverride,
 		employeeTimezoneOverride: input.employeeTimezoneOverride,
 	};
-	const [firstRelevantDate, { countFrom, adjustmentMinutes }] = await Promise.all([
-		getFirstRelevantDate(scope, dbClient, input.employee, input.employee.timezone),
-		readWorkBalanceAdjustments(dbClient, {
-			...scope,
-			throughDate: input.day,
-			openingBalanceDatedLater: "ignore",
-		}),
-	]);
+	// One after another: `dbClient` may be one connection, and pg@9 refuses a query while another is executing.
+	const firstRelevantDate = await getFirstRelevantDate(
+		scope,
+		dbClient,
+		input.employee,
+		input.employee.timezone,
+	);
+	const { countFrom, adjustmentMinutes } = await readWorkBalanceAdjustments(dbClient, {
+		...scope,
+		throughDate: input.day,
+		openingBalanceDatedLater: "ignore",
+	});
 	const calculationStartDate = laterIsoDate(firstRelevantDate, countFrom);
 	if (!calculationStartDate || calculationStartDate > input.day) {
-		return { actualMinutes: 0, requiredMinutes: 0, adjustmentMinutes, balanceMinutes: adjustmentMinutes, calculationStartDate };
+		return {
+			actualMinutes: 0,
+			requiredMinutes: 0,
+			adjustmentMinutes,
+			balanceMinutes: adjustmentMinutes,
+			calculationStartDate,
+		};
 	}
 
 	const work = await computeEmployeePeriodBalance({
@@ -746,8 +777,13 @@ export async function computeEmployeeWorkBalanceSnapshotAtEndOfDay(
 		...(input.employee.timezone === "UTC" ? {} : { timezone: input.employee.timezone }),
 		isClosed: false,
 	});
-	return { actualMinutes: work.actualMinutes, requiredMinutes: work.requiredMinutes, adjustmentMinutes,
-		balanceMinutes: work.actualMinutes - work.requiredMinutes + adjustmentMinutes, calculationStartDate };
+	return {
+		actualMinutes: work.actualMinutes,
+		requiredMinutes: work.requiredMinutes,
+		adjustmentMinutes,
+		balanceMinutes: work.actualMinutes - work.requiredMinutes + adjustmentMinutes,
+		calculationStartDate,
+	};
 }
 
 export async function computeEmployeeWorkBalanceAtEndOfDay(
@@ -934,17 +970,17 @@ export async function requestOrganizationWorkBalanceFullRebuild(
 			orderBy: (employeeRow, { asc }) => [asc(employeeRow.id)],
 		});
 
-		await Promise.all(
-			organizationEmployees.map((organizationEmployee) =>
-				requestEmployeeWorkBalanceFullRebuild(
-					{
-						employeeId: organizationEmployee.id,
-						organizationId: organizationEmployee.organizationId,
-					},
-					{ dbClient, requestedAt },
-				),
-			),
-		);
+		// One after another: `dbClient` is one connection, and pg@9 refuses a query while another is executing.
+		// Each employee's lock is still taken in ascending employee id order.
+		for (const organizationEmployee of organizationEmployees) {
+			await requestEmployeeWorkBalanceFullRebuild(
+				{
+					employeeId: organizationEmployee.id,
+					organizationId: organizationEmployee.organizationId,
+				},
+				{ dbClient, requestedAt },
+			);
+		}
 	};
 
 	if (options?.dbClient) {

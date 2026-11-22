@@ -58,32 +58,31 @@ export async function lockDocumentRequestsOfDocuments(
 	const result: DocumentRequestsOfDocuments = { uploadedFrom: new Map(), renewedBy: new Map() };
 	if (input.documentIds.length === 0) return result;
 	const documentIds = [...input.documentIds];
-	const [uploads, renewals] = await Promise.all([
-		tx
-			.select({
-				documentId: employeeDocumentRequestDocument.documentId,
-				requestId: employeeDocumentRequestDocument.requestId,
-			})
-			.from(employeeDocumentRequestDocument)
-			.where(
-				and(
-					eq(employeeDocumentRequestDocument.organizationId, input.organizationId),
-					inArray(employeeDocumentRequestDocument.documentId, documentIds),
-				),
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const uploads = await tx
+		.select({
+			documentId: employeeDocumentRequestDocument.documentId,
+			requestId: employeeDocumentRequestDocument.requestId,
+		})
+		.from(employeeDocumentRequestDocument)
+		.where(
+			and(
+				eq(employeeDocumentRequestDocument.organizationId, input.organizationId),
+				inArray(employeeDocumentRequestDocument.documentId, documentIds),
 			),
-		tx
-			.select({
-				documentId: employeeDocumentRequest.renewedDocumentId,
-				requestId: employeeDocumentRequest.id,
-			})
-			.from(employeeDocumentRequest)
-			.where(
-				and(
-					eq(employeeDocumentRequest.organizationId, input.organizationId),
-					inArray(employeeDocumentRequest.renewedDocumentId, documentIds),
-				),
+		);
+	const renewals = await tx
+		.select({
+			documentId: employeeDocumentRequest.renewedDocumentId,
+			requestId: employeeDocumentRequest.id,
+		})
+		.from(employeeDocumentRequest)
+		.where(
+			and(
+				eq(employeeDocumentRequest.organizationId, input.organizationId),
+				inArray(employeeDocumentRequest.renewedDocumentId, documentIds),
 			),
-	]);
+		);
 	for (const row of uploads) result.uploadedFrom.set(row.documentId, row.requestId);
 	for (const row of renewals) {
 		if (!row.documentId) continue;

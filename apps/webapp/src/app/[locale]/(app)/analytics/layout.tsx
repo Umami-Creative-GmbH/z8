@@ -5,20 +5,26 @@ import {
 	IconClock,
 	IconUsers,
 } from "@tabler/icons-react";
+import { getLocale } from "next-intl/server";
 import { Suspense } from "react";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { Link } from "@/navigation";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
+import { formatStatisticsFetchedAt } from "../settings/statistics/statistics-format";
+import {
+	loadAnalyticsSettingsAccess,
+	loadAnalyticsStatisticsScope,
+} from "./analytics-access-loader";
 import { AnalyticsHeading } from "./analytics-heading";
 import { AnalyticsTabs } from "./analytics-tabs";
-import { findAnalyticsEmployeeByUserId } from "./current-employee-scope";
 
 export default function AnalyticsLayout({
 	children,
@@ -56,35 +62,25 @@ async function AnalyticsLayoutLoading() {
 	);
 }
 
-async function AnalyticsLayoutContent({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
-	const [t, session] = await Promise.all([getTranslate(), getRequestSession()]);
+async function AnalyticsLayoutContent({ children }: { children: React.ReactNode }) {
+	const [t, locale, session] = await Promise.all([
+		getTranslate(),
+		getLocale(),
+		getRequestSession(),
+	]);
 	if (!session?.user) {
 		return redirectWithLocale("/sign-in");
 	}
 
-	const currentEmployee = await findAnalyticsEmployeeByUserId(
-		db,
-		session.user.id,
-		session.session.activeOrganizationId,
-	);
+	const caller = await loadAnalyticsSettingsAccess();
 
-	if (!currentEmployee) {
-		return (
-			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
-				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
-				<NoEmployeeError
-					feature={t("analytics.access.noEmployeeFeature", "view analytics")}
-				/>
-			</div>
-		);
-	}
-
-	// Role-based access control: Only admins and managers can access analytics
-	if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
+	// Unified access control (#1955): org admins (with or without an employee record),
+	// workforce admins, and managers may view Analytics; plain employees remain denied.
+	if (
+		!caller ||
+		caller.settingsAccess === null ||
+		!meetsSettingsAccess(caller.settingsAccess, "scopedManager")
+	) {
 		return (
 			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
@@ -103,6 +99,35 @@ async function AnalyticsLayoutContent({
 		);
 	}
 
+	const [scopeResult, organizationTimezone] = await Promise.all([
+		loadAnalyticsStatisticsScope(),
+		loadOrganizationTimezone(db, caller.organizationId).catch(() => "UTC"),
+	]);
+
+	const scopeContext = scopeResult.success
+		? (() => {
+				const { scope, fetchedAt } = scopeResult.data;
+				const scopeLabel = scope.organizationWide
+					? t("settings.statistics.scope.organization", "Whole organization")
+					: t(
+							"settings.statistics.scope.teams",
+							"{count, plural, =0 {No teams you manage} one {# team you manage} other {# teams you manage}}",
+							{ count: scope.teamCount },
+						);
+				return (
+					<div className="space-y-1 text-right text-xs">
+						<p className="font-medium text-foreground">{scopeLabel}</p>
+						<p className="tabular-nums text-muted-foreground">
+							{t("settings.statistics.lastUpdated", "Last updated")}:{" "}
+							<time dateTime={fetchedAt}>
+								{formatStatisticsFetchedAt(fetchedAt, locale, organizationTimezone)}
+							</time>
+						</p>
+					</div>
+				);
+			})()
+		: undefined;
+
 	return (
 		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{/* Page Header */}
@@ -113,6 +138,7 @@ async function AnalyticsLayoutContent({
 						"analytics.layout.description",
 						"Comprehensive insights into team performance, work hours, and absence patterns",
 					)}
+					actions={scopeContext}
 				/>
 			</div>
 
@@ -132,12 +158,6 @@ async function AnalyticsLayoutContent({
 								{t("analytics.layout.tabs.teamPerformance", "Team Performance")}
 							</Link>
 						</TabsTrigger>
-						<TabsTrigger value="vacation-trends" asChild>
-							<Link href="/analytics/vacation-trends">
-								<IconCalendar className="mr-2 size-4" />
-								{t("analytics.layout.tabs.vacationTrends", "Vacation Trends")}
-							</Link>
-						</TabsTrigger>
 						<TabsTrigger value="work-hours" asChild>
 							<Link href="/analytics/work-hours">
 								<IconChartLine className="mr-2 size-4" />
@@ -147,10 +167,13 @@ async function AnalyticsLayoutContent({
 						<TabsTrigger value="overtime-burn-down" asChild>
 							<Link href="/analytics/overtime-burn-down">
 								<IconClock className="mr-2 size-4" />
-								{t(
-									"analytics.layout.tabs.overtimeBurnDown",
-									"Overtime Burn-Down",
-								)}
+								{t("analytics.layout.tabs.overtimeBurnDown", "Overtime Burn-Down")}
+							</Link>
+						</TabsTrigger>
+						<TabsTrigger value="vacation-trends" asChild>
+							<Link href="/analytics/vacation-trends">
+								<IconCalendar className="mr-2 size-4" />
+								{t("analytics.layout.tabs.absencesAndVacation", "Absences & Vacation")}
 							</Link>
 						</TabsTrigger>
 					</TabsList>

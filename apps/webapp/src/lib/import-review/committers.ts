@@ -1,5 +1,4 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import {
@@ -21,21 +20,14 @@ import {
 } from "@/lib/absences/historical-vacation";
 import type { PlannedReconciledAbsence } from "@/lib/absences/vacation-reconciliation";
 import { withVacationReconciliation } from "@/lib/absences/vacation-reconciliation";
-import {
-	type Instant,
-	instantFromDate,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	type ClockingStore,
 	createDatabaseClockingStore,
 	insertChainedClockIn,
 } from "@/lib/time-tracking/clocking-core";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
-import {
-	assertAbsenceDaysOpen,
-	workInterval,
-} from "@/lib/time-tracking/closed-months/store";
+import { assertAbsenceDaysOpen, workInterval } from "@/lib/time-tracking/closed-months/store";
 import type { ImportedWorkHold } from "@/lib/time-tracking/imported-work-interval";
 import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import {
@@ -52,14 +44,8 @@ import {
 	acquireOrganizationConfigurationGuard,
 } from "@/lib/time-tracking/work-transaction";
 import { commitCsvWorkRow } from "./csv-work-import";
-import {
-	type CustomerImportHold,
-	commitCustomerRow,
-} from "./customer-committer";
-import {
-	reviewedImportRowMapping,
-	withReviewedImportTransaction,
-} from "./import-work-transaction";
+import { type CustomerImportHold, commitCustomerRow } from "./customer-committer";
+import { reviewedImportRowMapping, withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
 
@@ -80,10 +66,7 @@ type CommitResult = {
 };
 type CommitOptions = { finalAttempt?: boolean };
 type ChainHead = { id: string; hash: string } | null;
-type CommitDb = Pick<
-	typeof db,
-	"execute" | "insert" | "query" | "select" | "update"
->;
+type CommitDb = Pick<typeof db, "execute" | "insert" | "query" | "select" | "update">;
 type CommitRowOutcome =
 	| { status: "committed" }
 	| { status: "blocked"; message: string }
@@ -108,12 +91,8 @@ function stagedWorkAttribution(
 	payload: Partial<WorkPeriodPayload>,
 ): ImportedWorkAttribution | undefined {
 	const value = payload.attribution;
-	if (!value || typeof value !== "object" || Array.isArray(value))
-		return undefined;
-	const { projectId, billable, nonBillableWhenRefused } = value as Record<
-		string,
-		unknown
-	>;
+	if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+	const { projectId, billable, nonBillableWhenRefused } = value as Record<string, unknown>;
 	if (typeof projectId !== "string" || projectId.length === 0) return undefined;
 	if (typeof billable !== "boolean") return { projectId };
 	// A provider's billable value downgrades to non-billable instead of holding (#907).
@@ -227,11 +206,7 @@ async function markHeld(
 	return { status: "held", message };
 }
 
-async function releaseBlocked(
-	database: CommitDb,
-	rowId: string,
-	job: ImportCommitJobData,
-) {
+async function releaseBlocked(database: CommitDb, rowId: string, job: ImportCommitJobData) {
 	await database
 		.update(importStagedRow)
 		.set({
@@ -261,11 +236,7 @@ async function blockRow(
 	return { status: "blocked", message };
 }
 
-async function markCommitFailed(
-	rowId: string,
-	job: ImportCommitJobData,
-	error: unknown,
-) {
+async function markCommitFailed(rowId: string, job: ImportCommitJobData, error: unknown) {
 	const [updated] = await db
 		.update(importStagedRow)
 		.set({
@@ -285,11 +256,7 @@ async function markCommitFailed(
 	return Boolean(updated);
 }
 
-async function claimRow(
-	database: CommitDb,
-	rowId: string,
-	job: ImportCommitJobData,
-) {
+async function claimRow(database: CommitDb, rowId: string, job: ImportCommitJobData) {
 	const [claimed] = await database
 		.update(importStagedRow)
 		.set({
@@ -317,16 +284,11 @@ async function assertEmployeeInOrganization(
 	organizationId: string,
 ) {
 	const found = await database.query.employee.findFirst({
-		where: and(
-			eq(employee.id, employeeId),
-			eq(employee.organizationId, organizationId),
-		),
+		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 	});
 
 	if (!found) {
-		throw new Error(
-			`Employee ${employeeId} does not belong to organization ${organizationId}`,
-		);
+		throw new Error(`Employee ${employeeId} does not belong to organization ${organizationId}`);
 	}
 }
 
@@ -402,16 +364,9 @@ async function getCommitSummary(
 	);
 }
 
-function parseUtcDateTime(value: string, fieldName: string): DateTime {
-	const parsed = DateTime.fromISO(value, { zone: "utc" }).toUTC();
-	if (!parsed.isValid) throw new Error(`Invalid ${fieldName}: ${value}`);
-	return parsed;
-}
-
 function requiredName(payload: SetupReferencePayload, entityType: string) {
 	const name = payload.name?.trim();
-	if (!name)
-		throw new Error(`${entityType} import row requires a name before commit`);
+	if (!name) throw new Error(`${entityType} import row requires a name before commit`);
 	return name;
 }
 
@@ -421,7 +376,7 @@ function isActiveValue(payload: SetupReferencePayload) {
 
 /**
  * A provider instant with Temporal (dates.md): its own offset, or UTC when it
- * names none, as `parseUtcDateTime` reads it.
+ * names none.
  */
 function parseUtcInstant(value: string, fieldName: string): Instant {
 	try {
@@ -453,18 +408,14 @@ async function commitLegacyOpenWorkPeriod(
 	attribution: { projectId: string; isBillable: boolean } | null,
 ) {
 	const payload = row.normalizedPayload as unknown as WorkPeriodPayload;
-	const startAt = parseUtcDateTime(payload.startsAt, "startsAt");
-	const start = instantFromDate(startAt.toJSDate());
+	const start = parseUtcInstant(payload.startsAt, "startsAt");
+	const startDate = dateFromInstant(start);
 	const capture = resolveFallbackTimezoneCapture({
-		timestamp: startAt.toJSDate(),
+		timestamp: startDate,
 		timezone: "UTC",
 		timezoneSource: "backfill",
 	});
-	const previous = await getChainHead(
-		database,
-		payload.employeeId,
-		job.organizationId,
-	);
+	const previous = await getChainHead(database, payload.employeeId, job.organizationId);
 	const clockIn = await insertChainedClockIn(
 		store,
 		{
@@ -480,7 +431,7 @@ async function commitLegacyOpenWorkPeriod(
 		employeeId: payload.employeeId,
 		organizationId: job.organizationId,
 		clockInId: clockIn.id,
-		startTime: startAt.toJSDate(),
+		startTime: startDate,
 		projectId: attribution?.projectId ?? null,
 		isBillable: attribution?.isBillable ?? false,
 	});
@@ -490,7 +441,7 @@ async function commitLegacyOpenWorkPeriod(
 		organizationId: job.organizationId,
 		employeeId: payload.employeeId,
 		causedByUserId: job.committedBy,
-		work: [workInterval(startAt.toJSDate(), startAt.toJSDate())],
+		work: [workInterval(startDate, startDate)],
 	});
 
 	await markCommitted(database, row.id, job, "work_period", period.id);
@@ -532,17 +483,16 @@ async function commitAbsence(
 	reviewed?: PlannedReconciledAbsence,
 ): Promise<CommitRowOutcome> {
 	const payload = row.normalizedPayload as unknown as AbsencePayload;
-	await assertEmployeeInOrganization(
-		database,
-		payload.employeeId,
-		job.organizationId,
-	);
+	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 	const startDate =
 		reviewed?.absence.startDate ??
-		parseUtcDateTime(payload.startsAt, "startsAt").toISODate()!;
+		parseUtcInstant(payload.startsAt, "startsAt")
+			.toZonedDateTimeISO("UTC")
+			.toPlainDate()
+			.toString();
 	const endDate =
 		reviewed?.absence.endDate ??
-		parseUtcDateTime(payload.endsAt, "endsAt").toISODate()!;
+		parseUtcInstant(payload.endsAt, "endsAt").toZonedDateTimeISO("UTC").toPlainDate().toString();
 	// Unknown provider category mappings must never bypass historical-vacation safety.
 	const knownCategory =
 		reviewed?.category ??
@@ -571,8 +521,7 @@ async function commitAbsence(
 		});
 	} catch (error) {
 		const historical = historicalVacationRefusalOf(error);
-		if (historical)
-			return blockRow(database, row.id, job, historical.message, options);
+		if (historical) return blockRow(database, row.id, job, historical.message, options);
 		const closed = monthClosedRefusalOf(error);
 		if (!closed) throw error;
 		return blockRow(database, row.id, job, closed.message, options);
@@ -659,8 +608,7 @@ async function commitHoliday(
 ): Promise<CommitRowOutcome> {
 	const payload = row.normalizedPayload as unknown as SetupReferencePayload;
 	if (!payload.categoryId) {
-		const message =
-			"holiday import row requires a confirmed categoryId before commit";
+		const message = "holiday import row requires a confirmed categoryId before commit";
 		return blockRow(database, row.id, job, message, options);
 	}
 	const category = await database.query.holidayCategory.findFirst({
@@ -677,8 +625,7 @@ async function commitHoliday(
 	const startsAt = payload.startDate ?? payload.date;
 	const endsAt = payload.endDate ?? startsAt;
 	if (!startsAt || !endsAt) {
-		const message =
-			"holiday import row requires date or startDate before commit";
+		const message = "holiday import row requires date or startDate before commit";
 		return blockRow(database, row.id, job, message, options);
 	}
 	const name = payload.name?.trim();
@@ -694,8 +641,8 @@ async function commitHoliday(
 			categoryId: payload.categoryId,
 			name,
 			description: payload.description?.trim() || null,
-			startDate: parseUtcDateTime(startsAt, "startDate").toJSDate(),
-			endDate: parseUtcDateTime(endsAt, "endDate").toJSDate(),
+			startDate: dateFromInstant(parseUtcInstant(startsAt, "startDate")),
+			endDate: dateFromInstant(parseUtcInstant(endsAt, "endDate")),
 			recurrenceType: payload.recurrenceType ?? "none",
 			recurrenceRule: payload.recurrenceRule ?? null,
 			isActive: isActiveValue(payload),
@@ -729,21 +676,14 @@ async function commitSurcharge(
 
 type StagedRow = typeof importStagedRow.$inferSelect;
 
-async function getBatchProvider(
-	job: ImportCommitJobData,
-): Promise<ImportProvider> {
+async function getBatchProvider(job: ImportCommitJobData): Promise<ImportProvider> {
 	const batch = await db.query.importBatch.findFirst({
-		where: and(
-			eq(importBatch.id, job.batchId),
-			eq(importBatch.organizationId, job.organizationId),
-		),
+		where: and(eq(importBatch.id, job.batchId), eq(importBatch.organizationId, job.organizationId)),
 		columns: { provider: true },
 	});
 	if (!batch) throw new Error(`Import batch ${job.batchId} not found`);
 	if (batch.provider === "accounting") {
-		throw new Error(
-			`Import batch ${job.batchId} has no work from a time-tracking tool`,
-		);
+		throw new Error(`Import batch ${job.batchId} has no work from a time-tracking tool`);
 	}
 	return batch.provider;
 }
@@ -833,13 +773,8 @@ function commitReviewedWorkRow(
 				if (attribution.kind === "held") {
 					return markHeld(database, claimed.id, job, attribution.hold);
 				}
-				const payload =
-					claimed.normalizedPayload as unknown as WorkPeriodPayload;
-				await assertEmployeeInOrganization(
-					database,
-					payload.employeeId,
-					job.organizationId,
-				);
+				const payload = claimed.normalizedPayload as unknown as WorkPeriodPayload;
+				await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 				if (!payload.endsAt) {
 					await commitLegacyOpenWorkPeriod(
 						database,
@@ -859,8 +794,7 @@ function commitReviewedWorkRow(
 					end: parseUtcInstant(payload.endsAt, "endsAt"),
 					recorded: attribution.recorded,
 				});
-				if (created.kind === "held")
-					return markHeld(database, claimed.id, job, created.hold);
+				if (created.kind === "held") return markHeld(database, claimed.id, job, created.hold);
 				await markCommitted(
 					database,
 					claimed.id,
@@ -870,15 +804,8 @@ function commitReviewedWorkRow(
 				);
 				return { status: "committed" };
 			}
-			if (outcome.kind === "held")
-				return markHeld(database, claimed.id, job, outcome.hold);
-			await markCommitted(
-				database,
-				claimed.id,
-				job,
-				"work_period",
-				outcome.result.workPeriodId,
-			);
+			if (outcome.kind === "held") return markHeld(database, claimed.id, job, outcome.hold);
+			await markCommitted(database, claimed.id, job, "work_period", outcome.result.workPeriodId);
 			return { status: "committed" };
 		},
 	);
@@ -892,9 +819,11 @@ function commitReviewedWorkRow(
  * and fences fresh manual submissions. Teams (created without members),
  * absences and surcharge models are not manual dependencies.
  */
-const MANUAL_DEPENDENCY_SETUP_ENTITIES: ReadonlySet<
-	ImportCommitJobData["entityType"]
-> = new Set(["holiday", "service", "work_category"]);
+const MANUAL_DEPENDENCY_SETUP_ENTITIES: ReadonlySet<ImportCommitJobData["entityType"]> = new Set([
+	"holiday",
+	"service",
+	"work_category",
+]);
 
 function mappingRequiredMessage(entityType: ImportCommitJobData["entityType"]) {
 	return `${entityType} import rows require mapping confirmation before commit`;
@@ -919,14 +848,9 @@ export async function commitAcceptedRowsForEntity(
 				async (review) => {
 					const plan = review.sourceState.input;
 					if (plan.kind !== "import" || plan.batchId !== job.batchId)
-						throw new Error(
-							"The reviewed import batch does not match this job.",
-						);
+						throw new Error("The reviewed import batch does not match this job.");
 					const bySourceRow = new Map(
-						review.candidates.map((candidate) => [
-							candidate.sourceRowId,
-							candidate,
-						]),
+						review.candidates.map((candidate) => [candidate.sourceRowId, candidate]),
 					);
 					for (const mapped of review.importRows) {
 						const claimed = await tx
@@ -941,21 +865,13 @@ export async function commitAcceptedRowsForEntity(
 								),
 							)
 							.returning();
-						if (!claimed[0])
-							throw new Error("The reviewed import row changed.");
+						if (!claimed[0]) throw new Error("The reviewed import row changed.");
 						if (mapped.replayTargetId) {
-							await markCommitted(
-								tx,
-								mapped.row.id,
-								job,
-								"absence_entry",
-								mapped.replayTargetId,
-							);
+							await markCommitted(tx, mapped.row.id, job, "absence_entry", mapped.replayTargetId);
 							continue;
 						}
 						const candidate = bySourceRow.get(mapped.row.id);
-						if (!candidate)
-							throw new Error("The reviewed import mapping is missing.");
+						if (!candidate) throw new Error("The reviewed import mapping is missing.");
 						const outcome = await commitAbsence(
 							tx,
 							claimed[0],
@@ -964,9 +880,7 @@ export async function commitAcceptedRowsForEntity(
 							candidate,
 						);
 						if (outcome.status !== "committed")
-							throw new Error(
-								"The reviewed absence was refused; no reconciliation was applied.",
-							);
+							throw new Error("The reviewed absence was refused; no reconciliation was applied.");
 					}
 					const targets = await tx
 						.select({
@@ -1015,9 +929,7 @@ export async function commitAcceptedRowsForEntity(
 	const errors: CommitRowError[] = [];
 	const blockOptions = { finalAttempt };
 	const provider =
-		job.entityType === "work_period" && rows.length > 0
-			? await getBatchProvider(job)
-			: null;
+		job.entityType === "work_period" && rows.length > 0 ? await getBatchProvider(job) : null;
 
 	for (const row of rows) {
 		if (row.rowStatus !== "accepted") continue;
@@ -1029,27 +941,16 @@ export async function commitAcceptedRowsForEntity(
 					: await commitReviewedWorkRow(row.id, job, provider)
 				: await db.transaction(async (tx): Promise<CommitRowOutcome> => {
 						if (MANUAL_DEPENDENCY_SETUP_ENTITIES.has(job.entityType)) {
-							await acquireExclusiveOrganizationConfigurationGuard(
-								tx,
-								job.organizationId,
-							);
+							await acquireExclusiveOrganizationConfigurationGuard(tx, job.organizationId);
 						} else if (job.entityType === "absence") {
-							await acquireOrganizationConfigurationGuard(
-								tx,
-								job.organizationId,
-							);
+							await acquireOrganizationConfigurationGuard(tx, job.organizationId);
 						}
 						const claimedRow = await claimRow(tx as CommitDb, row.id, job);
 						if (!claimedRow) return { status: "skipped" };
 
 						switch (job.entityType) {
 							case "absence":
-								return commitAbsence(
-									tx as CommitDb,
-									claimedRow,
-									job,
-									blockOptions,
-								);
+								return commitAbsence(tx as CommitDb, claimedRow, job, blockOptions);
 							case "team":
 								await commitTeam(tx as CommitDb, claimedRow, job);
 								return { status: "committed" };
@@ -1058,24 +959,14 @@ export async function commitAcceptedRowsForEntity(
 								await commitWorkCategory(tx as CommitDb, claimedRow, job);
 								return { status: "committed" };
 							case "holiday":
-								return commitHoliday(
-									tx as CommitDb,
-									claimedRow,
-									job,
-									blockOptions,
-								);
+								return commitHoliday(tx as CommitDb, claimedRow, job, blockOptions);
 							case "surcharge":
 								await commitSurcharge(tx as CommitDb, claimedRow, job);
 								return { status: "committed" };
 							case "customer": {
 								const outcome = await commitCustomerRow(tx, claimedRow, job);
 								if (outcome.kind === "held") {
-									return markHeld(
-										tx as CommitDb,
-										claimedRow.id,
-										job,
-										outcome.hold,
-									);
+									return markHeld(tx as CommitDb, claimedRow.id, job, outcome.hold);
 								}
 								await markCommitted(
 									tx as CommitDb,
@@ -1092,18 +983,10 @@ export async function commitAcceptedRowsForEntity(
 							case "employee":
 							case "absence_category": {
 								const message = mappingRequiredMessage(job.entityType);
-								return blockRow(
-									tx as CommitDb,
-									claimedRow.id,
-									job,
-									message,
-									blockOptions,
-								);
+								return blockRow(tx as CommitDb, claimedRow.id, job, message, blockOptions);
 							}
 							default:
-								throw new Error(
-									`Unsupported import review commit entity type: ${job.entityType}`,
-								);
+								throw new Error(`Unsupported import review commit entity type: ${job.entityType}`);
 						}
 					});
 			if (outcome.status === "skipped") continue;

@@ -9,6 +9,7 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -210,29 +211,30 @@ function ClockinMappingStep({
 										)}
 								</p>
 							</div>
-							<select
-								value={entry.employeeId ?? ""}
+							<EmployeeSingleSelect
+								className="space-y-0"
+								value={entry.employeeId}
 								aria-label={`${t("settings.clockinImport.mapping.mapEmployee", "Map")} ${entry.clockinEmployeeName}`}
-								onChange={(event) =>
-									controller.updateMapping(
-										entry.clockinEmployeeId,
-										event.target.value,
-									)
+								placeholder={t(
+									"settings.clockinImport.mapping.skipEmployee",
+									"Skip this employee",
+								)}
+								allowClear
+								clearLabel={t(
+									"settings.clockinImport.mapping.skipEmployee",
+									"Skip this employee",
+								)}
+								onChange={(value) =>
+									controller.updateMapping(entry.clockinEmployeeId, value ?? "")
 								}
-								className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-							>
-								<option value="">
-									{t(
-										"settings.clockinImport.mapping.skipEmployee",
-										"Skip this employee",
-									)}
-								</option>
-								{controller.z8Employees.map((employee) => (
-									<option key={employee.id} value={employee.id}>
-										{employee.name} ({employee.email})
-									</option>
-								))}
-							</select>
+								employees={controller.z8Employees.map((employee) =>
+									toSelectableEmployee({
+										id: employee.id,
+										name: employee.name,
+										email: employee.email,
+									}),
+								)}
+							/>
 						</div>
 					))}
 				</div>

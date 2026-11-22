@@ -22,10 +22,7 @@ vi.mock("next-intl/middleware", () => ({
 		/^\/[a-z]{2,3}(?:\/|$)/.test(request.nextUrl.pathname)
 			? NextResponse.next()
 			: NextResponse.redirect(
-					new URL(
-						`/de${request.nextUrl.pathname}${request.nextUrl.search}`,
-						request.url,
-					),
+					new URL(`/de${request.nextUrl.pathname}${request.nextUrl.search}`, request.url),
 				),
 }));
 vi.mock("@/lib/setup/config-cache", () => ({
@@ -50,10 +47,7 @@ const SESSION_COOKIE = "better-auth.session_token=session";
 
 // Next 16 builds the proxy's request.url from x-forwarded-proto and its own
 // listening address; only the Host header carries the public authority.
-function listeningRequest(
-	path: string,
-	{ host, cookie }: { host?: string; cookie?: string } = {},
-) {
+function listeningRequest(path: string, { host, cookie }: { host?: string; cookie?: string } = {}) {
 	return new NextRequest(`https://localhost:3000${path}`, {
 		headers: {
 			...(host === undefined ? {} : { host }),
@@ -78,9 +72,7 @@ describe("proxy redirects use the public origin", () => {
 	});
 
 	it("redirects an unauthenticated page request to sign-in on the validated Host", async () => {
-		const response = await proxy(
-			listeningRequest("/de/time-tracking", { host: "z8.example.com" }),
-		);
+		const response = await proxy(listeningRequest("/de/time-tracking", { host: "z8.example.com" }));
 		expect(response.headers.get("location")).toBe(
 			"https://z8.example.com/de/sign-in?callbackUrl=%2Ftime-tracking",
 		);
@@ -131,9 +123,7 @@ describe("proxy redirects use the public origin", () => {
 	);
 
 	it("does not treat an unsupported two-letter segment as a route locale", async () => {
-		const response = await proxy(
-			listeningRequest("/xx/time-tracking", { host: "z8.example.com" }),
-		);
+		const response = await proxy(listeningRequest("/xx/time-tracking", { host: "z8.example.com" }));
 		expect(response.headers.get("location")).toBe(
 			"https://z8.example.com/en/sign-in?callbackUrl=%2Fxx%2Ftime-tracking",
 		);
@@ -141,18 +131,12 @@ describe("proxy redirects use the public origin", () => {
 
 	it("redirects an unconfigured platform to setup on the validated Host", async () => {
 		mocks.configured = false;
-		const response = await proxy(
-			listeningRequest("/de/time-tracking", { host: "z8.example.com" }),
-		);
-		expect(response.headers.get("location")).toBe(
-			"https://z8.example.com/de/setup",
-		);
+		const response = await proxy(listeningRequest("/de/time-tracking", { host: "z8.example.com" }));
+		expect(response.headers.get("location")).toBe("https://z8.example.com/de/setup");
 	});
 
 	it("redirects a configured platform's setup page home on the validated Host", async () => {
-		const response = await proxy(
-			listeningRequest("/de/setup", { host: "z8.example.com" }),
-		);
+		const response = await proxy(listeningRequest("/de/setup", { host: "z8.example.com" }));
 		expect(response.headers.get("location")).toBe("https://z8.example.com/de/");
 		expect(response.headers.get("cache-control")).toContain("no-store");
 	});
@@ -165,6 +149,16 @@ describe("proxy redirects use the public origin", () => {
 		expect(location.origin).toBe("https://z8.example.com");
 		expect(location.pathname).toBe("/de/time-tracking");
 		expect(location.search).toBe("?view=week");
+	});
+
+	it("keeps legacy settings 308 redirects on the validated Host", async () => {
+		const response = await proxy(
+			listeningRequest("/de/settings/webhooks?filter=active", { host: "z8.example.com" }),
+		);
+		expect(response.status).toBe(308);
+		expect(response.headers.get("location")).toBe(
+			"https://z8.example.com/de/settings/enterprise/api-keys?filter=active&tab=webhooks",
+		);
 	});
 
 	it("redirects a verified platform subdomain on its own host", async () => {
@@ -205,9 +199,7 @@ describe("proxy redirects use the public origin", () => {
 		["the listening Host", "localhost:3000"],
 		["a missing Host", undefined],
 	])("falls back to the configured origin for %s", async (_label, host) => {
-		const response = await proxy(
-			listeningRequest("/de/time-tracking", { host }),
-		);
+		const response = await proxy(listeningRequest("/de/time-tracking", { host }));
 		expect(response.headers.get("location")).toBe(
 			"https://z8.example.com/de/sign-in?callbackUrl=%2Ftime-tracking",
 		);
@@ -223,9 +215,7 @@ describe("proxy redirects use the public origin", () => {
 				cookie: SESSION_COOKIE,
 			}),
 		);
-		expect(response.headers.get("location")).toBe(
-			"https://auth.example.com/de/",
-		);
+		expect(response.headers.get("location")).toBe("https://auth.example.com/de/");
 	});
 
 	it("falls back to the platform domain when it is the only configuration", async () => {

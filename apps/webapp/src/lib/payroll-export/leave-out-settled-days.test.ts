@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { leaveOutSettledDays } from "./leave-out-settled-days";
 import type { AbsenceData, WorkPeriodData } from "./types";
 
@@ -17,8 +17,8 @@ function work(
 		employeeNumber: employeeId.toUpperCase(),
 		firstName: null,
 		lastName: null,
-		startTime: DateTime.fromISO(startAt, { zone: "utc" }),
-		endTime: DateTime.fromISO(endAt, { zone: "utc" }),
+		startTime: parseInstant(startAt).toZonedDateTimeISO("UTC"),
+		endTime: parseInstant(endAt).toZonedDateTimeISO("UTC"),
 		durationMinutes,
 		workCategoryId: null,
 		workCategoryName: null,
@@ -48,9 +48,9 @@ function absence(employeeId: string, startDate: string, endDate: string): Absenc
 function lines(periods: readonly WorkPeriodData[]) {
 	return periods.map((period) => ({
 		employeeId: period.employeeId,
-		date: period.startTime.toISODate(),
-		startAt: period.startTime.toUTC().toISO(),
-		endAt: period.endTime?.toUTC().toISO(),
+		date: period.startTime.toPlainDate().toString(),
+		startAt: period.startTime.toInstant().toString({ fractionalSecondDigits: 3 }),
+		endAt: period.endTime?.toInstant().toString({ fractionalSecondDigits: 3 }),
 		minutes: period.durationMinutes,
 	}));
 }

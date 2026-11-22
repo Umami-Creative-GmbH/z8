@@ -16,6 +16,7 @@ import { activeNavHref } from "./nav-active";
 export function NavMain({
 	items,
 	label,
+	allNavHrefs,
 }: {
 	items: {
 		title: string;
@@ -25,12 +26,10 @@ export function NavMain({
 		badge?: ReactNode;
 	}[];
 	label?: ReactNode;
+	allNavHrefs?: readonly string[];
 }) {
 	const pathname = usePathname();
-	const activeUrl = activeNavHref(
-		pathname,
-		items.map((item) => item.url),
-	);
+	const activeUrl = activeNavHref(pathname, allNavHrefs ?? items.map((item) => item.url));
 
 	return (
 		<SidebarGroup>
@@ -47,11 +46,7 @@ export function NavMain({
 
 							return (
 								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton
-										asChild
-										isActive={isActive}
-										tooltip={item.title}
-									>
+									<SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
 										<Link
 											href={item.url}
 											aria-label={item.title}

@@ -41,6 +41,7 @@ export function AssignmentListCard({
 	options,
 	isLoading,
 	isMutating,
+	renderPicker,
 	onAdd,
 	onRemove,
 }: {
@@ -54,6 +55,11 @@ export function AssignmentListCard({
 	options: AssignmentOption[];
 	isLoading: boolean;
 	isMutating: boolean;
+	renderPicker?: (props: {
+		value: string;
+		onChange: (value: string) => void;
+		disabled: boolean;
+	}) => ReactNode;
 	onAdd: (id: string) => Promise<boolean>;
 	onRemove: (row: AssignmentRow) => void;
 }) {
@@ -130,27 +136,37 @@ export function AssignmentListCard({
 								}}
 							>
 								<form.Field name="selectedId">
-									{(field) => (
-										<Select value={field.state.value} onValueChange={field.handleChange}>
-											<SelectTrigger className="sm:flex-1" aria-label={selectLabel}>
-												<SelectValue placeholder={selectPlaceholder} />
-											</SelectTrigger>
-											<SelectContent>
-												{options.map((option) => (
-													<SelectItem key={option.id} value={option.id}>
-														<span className="flex flex-col">
-															<span>{option.label}</span>
-															{option.detail && (
-																<span className="text-xs text-muted-foreground">
-																	{option.detail}
-																</span>
-															)}
-														</span>
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									)}
+									{(field) =>
+										renderPicker ? (
+											<div className="sm:flex-1">
+												{renderPicker({
+													value: field.state.value,
+													onChange: field.handleChange,
+													disabled: isMutating,
+												})}
+											</div>
+										) : (
+											<Select value={field.state.value} onValueChange={field.handleChange}>
+												<SelectTrigger className="sm:flex-1" aria-label={selectLabel}>
+													<SelectValue placeholder={selectPlaceholder} />
+												</SelectTrigger>
+												<SelectContent>
+													{options.map((option) => (
+														<SelectItem key={option.id} value={option.id}>
+															<span className="flex flex-col">
+																<span>{option.label}</span>
+																{option.detail && (
+																	<span className="text-xs text-muted-foreground">
+																		{option.detail}
+																	</span>
+																)}
+															</span>
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										)
+									}
 								</form.Field>
 								<form.Subscribe selector={(state) => state.values.selectedId}>
 									{(selectedId) => (

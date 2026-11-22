@@ -101,7 +101,7 @@ describe("BillableFiguresCard", () => {
 			name: "2 invoiced work periods were changed after invoicing",
 		});
 		expect(link.getAttribute("href")).toBe(
-			"/settings/billable-time/hand-off#changed-after-invoicing",
+			"/billable-time/hand-off#changed-after-invoicing",
 		);
 	});
 

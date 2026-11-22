@@ -215,6 +215,11 @@ export const queryKeys = {
 			["payroll", "export-scope", request.startDate, request.endDate] as const,
 		/** Completed exports the reader may confirm as paid (#1899). */
 		exportsToConfirm: () => ["payroll", "exports-to-confirm"] as const,
+		/** Scoped payroll export job history (#1957). */
+		exportHistory: () => ["payroll", "export-history"] as const,
+		/** Organization-level payroll readiness checks for org admins (#1957). */
+		readiness: (request: { startDate: string; endDate: string }) =>
+			["payroll", "readiness", request.startDate, request.endDate] as const,
 		/** Overtime payouts an export of the period, format and employees would leave out (#1001). */
 		overtimePayoutReadiness: (request: {
 			startDate: string;
@@ -344,6 +349,27 @@ export const queryKeys = {
 				lastWorkingDay,
 				replacementEmployeeId,
 			] as const,
+		offboardingPastPreview: (
+			orgId: string,
+			employeeId: string,
+			lastWorkingDay: string,
+			replacementEmployeeId: string | null,
+		) =>
+			[
+				"employees",
+				orgId,
+				"offboarding",
+				employeeId,
+				"past-preview",
+				lastWorkingDay,
+				replacementEmployeeId,
+			] as const,
+		offboardingReplacementSearch: (
+			orgId: string,
+			excludeEmployeeId: string | null,
+			search: string,
+		) =>
+			["employees", orgId, "offboarding", "replacement-search", excludeEmployeeId, search] as const,
 	},
 
 	// Report share links (#806)
@@ -814,8 +840,12 @@ export const queryKeys = {
 		all: ["compliance"] as const,
 		clockScope: (userId: string | null, organizationId: string | null, employeeId: string | null) =>
 			["compliance", "clock", userId, organizationId, employeeId] as const,
-		clock: (userId: string | null, organizationId: string | null, employeeId: string | null, mode: "idle" | "active") =>
-			["compliance", "clock", userId, organizationId, employeeId, mode] as const,
+		clock: (
+			userId: string | null,
+			organizationId: string | null,
+			employeeId: string | null,
+			mode: "idle" | "active",
+		) => ["compliance", "clock", userId, organizationId, employeeId, mode] as const,
 		// Schedule compliance warnings for scheduler publish flow
 		scheduleWarnings: (orgId: string, dateRange: { startDate: string; endDateExclusive: string }) =>
 			["compliance", "schedule-warnings", orgId, dateRange] as const,

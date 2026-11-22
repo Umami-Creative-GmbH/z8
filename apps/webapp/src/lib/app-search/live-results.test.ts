@@ -111,20 +111,22 @@ describe("mapTeamSearchRow", () => {
 describe("getSearchableTeamIds", () => {
 	const teams = [{ id: "team-1" }, { id: "team-2" }, { id: "team-3" }];
 
-	it("returns all organization team ids for org admins", () => {
-		expect(
-			getSearchableTeamIds({
-				accessTier: "orgAdmin",
-				teams,
-				permissionsByTeamId: new Map(),
-			}),
-		).toEqual(["team-1", "team-2", "team-3"]);
+	it("returns all organization team ids for org admins and owners", () => {
+		for (const settingsAccess of ["orgAdmin", "owner"] as const) {
+			expect(
+				getSearchableTeamIds({
+					settingsAccess,
+					teams,
+					permissionsByTeamId: new Map(),
+				}),
+			).toEqual(["team-1", "team-2", "team-3"]);
+		}
 	});
 
-	it("returns only teams where managers can manage members or settings", () => {
+	it("returns only teams where scoped managers can manage members or settings", () => {
 		expect(
 			getSearchableTeamIds({
-				accessTier: "manager",
+				settingsAccess: "scopedManager",
 				teams,
 				permissionsByTeamId: new Map([
 					["team-1", { canManageTeamMembers: true, canManageTeamSettings: false }],
@@ -135,52 +137,58 @@ describe("getSearchableTeamIds", () => {
 		).toEqual(["team-1", "team-2"]);
 	});
 
-	it("returns no teams for members", () => {
-		expect(
-			getSearchableTeamIds({
-				accessTier: "member",
-				teams,
-				permissionsByTeamId: new Map([
-					["team-1", { canManageTeamMembers: true, canManageTeamSettings: true }],
-				]),
-			}),
-		).toEqual([]);
+	it("returns no teams for members or null settingsAccess", () => {
+		for (const settingsAccess of [null, "member"] as const) {
+			expect(
+				getSearchableTeamIds({
+					settingsAccess,
+					teams,
+					permissionsByTeamId: new Map([
+						["team-1", { canManageTeamMembers: true, canManageTeamSettings: true }],
+					]),
+				}),
+			).toEqual([]);
+		}
 	});
 });
 
 describe("buildEmployeeSearchConditions", () => {
-	it("returns no access for members", () => {
-		expect(
-			buildEmployeeSearchConditions({
-				accessTier: "member",
-				organizationId: "org-1",
-				currentEmployeeId: "emp-1",
-			}),
-		).toBeNull();
+	it("returns no access for members or null settingsAccess", () => {
+		for (const settingsAccess of [null, "member"] as const) {
+			expect(
+				buildEmployeeSearchConditions({
+					settingsAccess,
+					organizationId: "org-1",
+					currentEmployeeId: "emp-1",
+				}),
+			).toBeNull();
+		}
 	});
 
-	it("returns organization-scoped access for org admins", () => {
-		const conditions = buildEmployeeSearchConditions({
-			accessTier: "orgAdmin",
-			organizationId: "org-1",
-			currentEmployeeId: null,
-		});
+	it("returns organization-scoped access for org admins and owners", () => {
+		for (const settingsAccess of ["orgAdmin", "owner"] as const) {
+			const conditions = buildEmployeeSearchConditions({
+				settingsAccess,
+				organizationId: "org-1",
+				currentEmployeeId: null,
+			});
 
-		expect(conditions).not.toBeNull();
-		expect(conditions).toHaveLength(1);
+			expect(conditions).not.toBeNull();
+			expect(conditions).toHaveLength(1);
+		}
 	});
 
 	it("returns manager-scoped access only when the current employee exists", () => {
 		expect(
 			buildEmployeeSearchConditions({
-				accessTier: "manager",
+				settingsAccess: "scopedManager",
 				organizationId: "org-1",
 				currentEmployeeId: null,
 			}),
 		).toBeNull();
 
 		const conditions = buildEmployeeSearchConditions({
-			accessTier: "manager",
+			settingsAccess: "scopedManager",
 			organizationId: "org-1",
 			currentEmployeeId: "manager-1",
 		});
@@ -191,13 +199,23 @@ describe("buildEmployeeSearchConditions", () => {
 });
 
 describe("searchLiveAppResults", () => {
-	it("returns empty results without querying when organizationId is missing", async () => {
+	it("returns empty results without querying when organizationId or settingsAccess is missing", async () => {
 		await expect(
 			searchLiveAppResults({
 				query: "maria",
-				accessTier: "orgAdmin",
+				settingsAccess: "orgAdmin",
 				organizationId: null,
 				currentEmployeeId: null,
+				permissionsByTeamId: new Map(),
+			}),
+		).resolves.toEqual({ employees: [], teams: [] });
+
+		await expect(
+			searchLiveAppResults({
+				query: "maria",
+				settingsAccess: null,
+				organizationId: "org-1",
+				currentEmployeeId: "emp-1",
 				permissionsByTeamId: new Map(),
 			}),
 		).resolves.toEqual({ employees: [], teams: [] });

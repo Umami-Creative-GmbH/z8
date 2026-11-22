@@ -18,6 +18,10 @@ vi.mock("@/lib/notifications/notification-service", async (importOriginal) => ({
 vi.mock("@/lib/approvals/delivery/kick", async () =>
 	(await import("@/test/integration-harness")).deliveryKick(),
 );
+vi.mock("@/lib/employee-lifecycle/release", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/employee-lifecycle/release")>()),
+	EMPLOYEE_OFFBOARDING_RELEASE_READY: false,
+}));
 vi.mock("@/lib/logger", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/logger")>();
 	const quiet = { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} };
@@ -30,15 +34,12 @@ const { EMPLOYEE_OFFBOARDING_RELEASE_READY } = await import("@/lib/employee-life
 const { AuditTrail } = await import("@/lib/audit-trail");
 const { dateFromInstant, systemClock } = await import("@/lib/datetime/temporal-core");
 const { insertDeactivation } = await import("@/lib/employee-lifecycle/receipts");
-const { applyApprovalDuties, planApprovalDuties } = await import(
-	"@/lib/employee-lifecycle/deactivation/approval-duties"
-);
-const { enableCanonicalAbsences, seedPendingAbsenceWorkflow } = await import(
-	"@/lib/employee-lifecycle/testing/approval-workflow.test.fixture"
-);
-const { createLifecycleDatabaseFixture } = await import(
-	"@/lib/employee-lifecycle/testing/database.test.fixture"
-);
+const { applyApprovalDuties, planApprovalDuties } =
+	await import("@/lib/employee-lifecycle/deactivation/approval-duties");
+const { enableCanonicalAbsences, seedPendingAbsenceWorkflow } =
+	await import("@/lib/employee-lifecycle/testing/approval-workflow.test.fixture");
+const { createLifecycleDatabaseFixture } =
+	await import("@/lib/employee-lifecycle/testing/database.test.fixture");
 type LifecycleDatabaseFixture =
 	import("@/lib/employee-lifecycle/testing/database.test.fixture").LifecycleDatabaseFixture;
 type SeededEmployee =

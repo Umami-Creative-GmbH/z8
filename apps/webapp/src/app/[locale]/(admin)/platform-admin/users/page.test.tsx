@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { pushMock, useQueryMock, invalidateQueriesMock } = vi.hoisted(() => ({
 	pushMock: vi.fn(),
@@ -140,7 +140,6 @@ import UsersPage from "./page";
 
 describe("Platform admin users page", () => {
 	beforeEach(() => {
-		vi.useRealTimers();
 		vi.clearAllMocks();
 		window.history.replaceState(null, "", "/platform-admin/users");
 		useQueryMock.mockReturnValue({
@@ -254,5 +253,40 @@ describe("Platform admin users page", () => {
 		expect(pushMock).toHaveBeenCalledWith(
 			"/platform-admin/users?search=ada&organizationId=org-acme",
 		);
+	});
+
+	it("shows the active organization filter badge and clears it while keeping search and status", () => {
+		window.history.replaceState(
+			null,
+			"",
+			"/platform-admin/users?search=ada&status=active&organizationId=org-acme",
+		);
+
+		render(<UsersPage />);
+
+		expect(screen.getByText("Organization: Acme Corp")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Clear organization filter" }));
+
+		expect(pushMock).toHaveBeenCalledWith("/platform-admin/users?search=ada&status=active");
+	});
+
+	it("cancels a pending search debounce timeout when unmounting", () => {
+		vi.useFakeTimers();
+
+		const { unmount } = render(<UsersPage />);
+		fireEvent.change(screen.getByLabelText("Search users by email"), {
+			target: { value: "ada" },
+		});
+		unmount();
+
+		act(() => {
+			vi.advanceTimersByTime(300);
+		});
+
+		expect(pushMock).not.toHaveBeenCalled();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
 	});
 });

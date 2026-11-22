@@ -3,8 +3,9 @@ import { Effect } from "effect";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { type ReactNode, Suspense } from "react";
+import { cache, type ReactNode, Suspense } from "react";
 import { AppSkipLink } from "@/components/app-skip-link";
+import { BillingRecoveryHeader } from "@/components/billing/billing-recovery-header";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OfflineBanner } from "@/components/offline";
@@ -25,12 +26,16 @@ import { env } from "@/env";
 import {
 	getRenderApprovedMembership,
 	getRenderOrganizationDisplayContext,
+	getRenderSettingsAccess,
+	getRenderUserOrganizations,
 } from "@/lib/auth/render-context";
 import { getRenderSession } from "@/lib/auth/render-session";
 import { runtime } from "@/lib/effect/runtime";
 import type { BillingAccessResult } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { mfaChallengeFromSession } from "@/lib/organization-mfa/http";
 import { appBannerScrollPaddingClassName } from "@/lib/store-app/app-banner";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
@@ -49,16 +54,15 @@ const billingCheckFailedAccess: BillingAccessResult = {
 };
 
 /** Billing runs on the shared runtime; it is imported only once billing is enabled. */
-async function checkBillingAccess(organizationId: string): Promise<BillingAccessResult> {
-	const { BillingEnforcementService, BillingServicesLive } = await import(
-		"@/lib/effect/services/billing"
-	);
+const checkBillingAccess = cache(async (organizationId: string): Promise<BillingAccessResult> => {
+	const { BillingEnforcementService, BillingServicesLive } =
+		await import("@/lib/effect/services/billing");
 	return runtime.runPromise(
 		Effect.flatMap(BillingEnforcementService, (enforcementService) =>
 			enforcementService.checkBillingAccess(organizationId),
 		).pipe(Effect.provide(BillingServicesLive)),
 	);
-}
+});
 
 interface AuthenticatedAppContentProps {
 	children: ReactNode;
@@ -146,6 +150,25 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 		return redirectWithLocale("/billing/suspended");
 	}
 
+	const isSuspendedRecoveryMode = billingAccess.canAccess === false;
+	const recoveryChrome = isSuspendedRecoveryMode
+		? await Promise.all([getRenderUserOrganizations(), getRenderSettingsAccess()]).then(
+				([organizations, settingsAccess]) => ({
+					organizations,
+					currentOrganization: activeOrganizationId
+						? (organizations.find((org) => org.id === activeOrganizationId) ?? null)
+						: null,
+					canCreateOrganizations: canCreateOrganizationsForDeployment(
+						Boolean(
+							("canCreateOrganizations" in session.user && session.user.canCreateOrganizations) ||
+							session.user.role === "admin",
+						),
+					),
+					canAccessBilling: meetsSettingsAccess(settingsAccess, "orgAdmin"),
+				}),
+			)
+		: null;
+
 	return (
 		<PostHogProvider
 			identityKey={JSON.stringify([session.user.id, activeOrganizationId])}
@@ -159,57 +182,76 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 					timezone={timezone}
 				>
 					<OrganizationSettingsProvider initialContext={organizationContext}>
-						<SidebarProvider
-							style={
-								{
-									"--sidebar-width": "16rem",
-									"--sidebar-width-icon": "3.5rem",
-									"--header-height": "4rem",
-								} as React.CSSProperties
-							}
-						>
-							<AppSkipLink />
-							<ServerSidebarRegion
-								variant="sidebar"
-								showWorksCouncilNav={Boolean(activeOrganizationId)}
-							/>
-							<SidebarInset>
-								<Suspense fallback={<SiteHeaderLoading />}>
-									<SiteHeader />
-								</Suspense>
-								{/* In flow so recovery status never covers header clock controls. */}
-								<OfflineBanner />
-								<Suspense fallback={null}>
-									<MfaDeadlineBanner
-										userId={session.user.id}
-										organizationId={activeOrganizationId}
-									/>
-								</Suspense>
-								<AppTrialBanner
-									showTrialBanner={showTrialBanner}
-									trialDaysRemaining={trialDaysRemaining}
-									canManageBilling={canManageBilling}
+						{recoveryChrome ? (
+							<div className="flex min-h-svh flex-1 flex-col bg-background">
+								<AppSkipLink />
+								<BillingRecoveryHeader
+									organizations={recoveryChrome.organizations}
+									currentOrganization={recoveryChrome.currentOrganization}
+									canCreateOrganizations={recoveryChrome.canCreateOrganizations}
+									canAccessBilling={recoveryChrome.canAccessBilling}
 								/>
-								<OrganizationDeletionBanner />
-								{/* Asked on the next clock action when position capture needs consent (#826). */}
-								<PositionConsentDialogHost />
-								{/* Keeps the end of each page above the home indicator when drawn edge to edge, and above the get-the-app banner while it shows (#847). */}
 								<div
-									className={`flex flex-1 flex-col min-h-0 overflow-y-auto ${appBannerScrollPaddingClassName}`}
+									className="flex min-h-0 flex-1 flex-col overflow-y-auto"
 									id="app-page-content"
 									tabIndex={-1}
 								>
 									{children}
 								</div>
-								{/* Floats over the page on phone browsers, so it never shifts the layout (#847). */}
-								<GetTheAppBanner
-									storeUrls={{
-										ios: env.STORE_APP_IOS_URL ?? null,
-										android: env.STORE_APP_ANDROID_URL ?? null,
-									}}
+							</div>
+						) : (
+							<SidebarProvider
+								style={
+									{
+										"--sidebar-width": "16rem",
+										"--sidebar-width-icon": "3.5rem",
+										"--header-height": "4rem",
+									} as React.CSSProperties
+								}
+							>
+								<AppSkipLink />
+								<ServerSidebarRegion
+									variant="sidebar"
+									showWorksCouncilNav={Boolean(activeOrganizationId)}
 								/>
-							</SidebarInset>
-						</SidebarProvider>
+								<SidebarInset>
+									<Suspense fallback={<SiteHeaderLoading />}>
+										<SiteHeader />
+									</Suspense>
+									{/* In flow so recovery status never covers header clock controls. */}
+									<OfflineBanner />
+									<Suspense fallback={null}>
+										<MfaDeadlineBanner
+											userId={session.user.id}
+											organizationId={activeOrganizationId}
+										/>
+									</Suspense>
+									<AppTrialBanner
+										showTrialBanner={showTrialBanner}
+										trialDaysRemaining={trialDaysRemaining}
+										canManageBilling={canManageBilling}
+									/>
+									<OrganizationDeletionBanner />
+									{/* Asked on the next clock action when position capture needs consent (#826). */}
+									<PositionConsentDialogHost />
+									{/* Keeps the end of each page above the home indicator when drawn edge to edge, and above the get-the-app banner while it shows (#847). */}
+									<div
+										className={`flex flex-1 flex-col min-h-0 overflow-y-auto ${appBannerScrollPaddingClassName}`}
+										id="app-page-content"
+										tabIndex={-1}
+									>
+										{children}
+									</div>
+									{/* Floats over the page on phone browsers, so it never shifts the layout (#847). */}
+									<GetTheAppBanner
+										storeUrls={{
+											ios: env.STORE_APP_IOS_URL ?? null,
+											android: env.STORE_APP_ANDROID_URL ?? null,
+										}}
+									/>
+								</SidebarInset>
+							</SidebarProvider>
+						)}
 					</OrganizationSettingsProvider>
 				</UserPreferencesProvider>
 			</PushPermissionProvider>
@@ -281,3 +323,20 @@ async function loadAppBillingStatus(activeOrganizationId: string | null | undefi
 		showTrialBanner,
 	};
 }
+
+/** Per-request cached billing access shared between the app and nested settings layouts. */
+export const getRenderBillingAccess = cache(async (): Promise<BillingAccessResult> => {
+	const billingEnabled = env.BILLING_ENABLED === "true";
+	if (!billingEnabled) {
+		return billingDisabledAccess;
+	}
+	const session = await getRenderSession();
+	const activeOrganizationId = session?.session?.activeOrganizationId;
+	if (!activeOrganizationId) {
+		return billingDisabledAccess;
+	}
+	return checkBillingAccess(activeOrganizationId).catch((error) => {
+		logger.error({ error, organizationId: activeOrganizationId }, "Billing access check failed");
+		return billingCheckFailedAccess;
+	});
+});

@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const markComplete = vi.fn();
 const markIncomplete = vi.fn();
@@ -133,7 +133,7 @@ const checklist = {
 				"Configure public holidays and closing days used by absence and payroll workflows.",
 			helperText: "Z8 checks for active holiday presets, assignments, or custom holidays.",
 			actionLabel: "Configure holidays",
-			href: "/settings/holidays",
+			href: "/settings/vacation?tab=holidays",
 			detector: "automatic",
 			canManualComplete: false,
 			role: "informational",
@@ -240,10 +240,18 @@ const firstWorkflowsItem = {
 } as const;
 
 describe("ImplementationChecklistClient", () => {
+	beforeAll(async () => {
+		await import("./implementation-checklist-client");
+	}, 15_000);
+
 	beforeEach(() => {
 		markComplete.mockReset();
 		markIncomplete.mockReset();
 		toastError.mockReset();
+	});
+
+	afterEach(() => {
+		cleanup();
 	});
 
 	it("renders checklist summary, task links, status, and manual completion controls", async () => {
@@ -263,7 +271,7 @@ describe("ImplementationChecklistClient", () => {
 			"/settings/organization",
 		);
 		expect(screen.getByRole("link", { name: "Configure holidays" }).getAttribute("href")).toBe(
-			"/settings/holidays",
+			"/settings/vacation?tab=holidays",
 		);
 		expect(screen.getByRole("button", { name: "Mark complete" })).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Mark incomplete" })).toBeNull();
@@ -690,7 +698,7 @@ describe("ImplementationChecklistClient", () => {
 			id: "approval-rules",
 			title: "Approval rules",
 			actionLabel: "Review approval rules",
-			href: "/settings/change-policies",
+			href: "/settings/work-policies?tab=changes",
 			canManualComplete: true,
 			canToggleManualCompletion: true,
 			confirmationLabel: "Confirm our approval process is agreed",
@@ -738,7 +746,7 @@ describe("ImplementationChecklistClient", () => {
 							id: "approval-rules",
 							title: "Approval rules",
 							actionLabel: "Review approval rules",
-							href: "/settings/change-policies",
+							href: "/settings/work-policies?tab=changes",
 							canToggleManualCompletion: true,
 							confirmationLabel: "Confirm our approval process is agreed",
 							confirmedLabel: "Confirmed: our approval process is agreed",

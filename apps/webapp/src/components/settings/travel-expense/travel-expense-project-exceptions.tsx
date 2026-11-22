@@ -11,6 +11,7 @@ import {
 	getProjectAttributionExceptionSettings,
 	type ProjectExceptionSettings,
 } from "@/app/[locale]/(app)/settings/travel-expenses/project-exception-actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { formatPlainDateRange } from "@/components/travel-expenses/report/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -199,28 +200,21 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 							<TFormLabel hasError={fieldHasError(field)}>
 								{t("settings.travelExpenses.projectExceptions.employee", "Employee")}
 							</TFormLabel>
-							<Select
-								value={field.state.value || null}
-								onValueChange={(value) => field.handleChange(value ?? "")}
-							>
-								<TFormControl hasError={fieldHasError(field)}>
-									<SelectTrigger className="w-full">
-										<SelectValue
-											placeholder={t(
-												"settings.travelExpenses.projectExceptions.employeePlaceholder",
-												"Choose an employee",
-											)}
-										/>
-									</SelectTrigger>
-								</TFormControl>
-								<SelectContent>
-									{settings.employees.map((employee) => (
-										<SelectItem key={employee.id} value={employee.id}>
-											{employee.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+							<TFormControl hasError={fieldHasError(field)}>
+								<EmployeeSingleSelect
+									className="space-y-0"
+									value={field.state.value || null}
+									onChange={(value) => field.handleChange(value ?? "")}
+									onBlur={field.handleBlur}
+									placeholder={t(
+										"settings.travelExpenses.projectExceptions.employeePlaceholder",
+										"Choose an employee",
+									)}
+									employees={settings.employees.map((employee) =>
+										toSelectableEmployee({ id: employee.id, name: employee.name }),
+									)}
+								/>
+							</TFormControl>
 							<TFormMessage field={field} />
 						</TFormItem>
 					)}

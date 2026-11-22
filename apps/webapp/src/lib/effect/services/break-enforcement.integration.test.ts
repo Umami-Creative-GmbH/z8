@@ -18,9 +18,8 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 const { clockOutFollowUpEffects } = await import("@/lib/time-tracking/clocking");
-const { createClockPostprocessHandler } = await import(
-	"@/lib/employee-lifecycle/clock-postprocess"
-);
+const { createClockPostprocessHandler } =
+	await import("@/lib/employee-lifecycle/clock-postprocess");
 
 const ids = {
 	organization: "t547-break-day-org",
@@ -88,16 +87,25 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 			 values ($1, $2, 'T547 break', false, true, true, $3, $4)`,
 			[ids.policy, ids.organization, ids.user, timestamp],
 		);
+		const {
+			rows: [policyVersion],
+		} = await admin.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', false, true, false, true, $3)
+			 returning id`,
+			[ids.policy, ids.organization, ids.user],
+		);
 		await admin.query(
-			`insert into work_policy_regulation (id, policy_id, max_uninterrupted_minutes, updated_at)
-			 values ($1, $2, 360, $3)`,
-			[ids.regulation, ids.policy, timestamp],
+			`insert into work_policy_regulation (id, policy_id, policy_version_id, max_uninterrupted_minutes, updated_at)
+			 values ($1, $2, $3, 360, $4)`,
+			[ids.regulation, ids.policy, policyVersion.id, timestamp],
 		);
 		await admin.query(
 			`insert into work_policy_break_rule
-			 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
-			 values ($1, $2, 360, 30, $3)`,
-			[ids.breakRule, ids.regulation, timestamp],
+			 (id, regulation_id, policy_version_id, working_minutes_threshold, required_break_minutes, updated_at)
+			 values ($1, $2, $3, 360, 30, $4)`,
+			[ids.breakRule, ids.regulation, policyVersion.id, timestamp],
 		);
 		await admin.query(
 			`insert into work_policy_assignment
@@ -117,16 +125,25 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 			 values ($1, $2, 'T549 stricter break', false, true, true, $3, $4)`,
 			[policyId, organizationId, ids.user, timestamp],
 		);
+		const {
+			rows: [policyVersion],
+		} = await admin.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', false, true, false, true, $3)
+			 returning id`,
+			[policyId, organizationId, ids.user],
+		);
 		await admin.query(
-			`insert into work_policy_regulation (id, policy_id, max_uninterrupted_minutes, updated_at)
-			 values ($1, $2, 360, $3)`,
-			[regulationId, policyId, timestamp],
+			`insert into work_policy_regulation (id, policy_id, policy_version_id, max_uninterrupted_minutes, updated_at)
+			 values ($1, $2, $3, 360, $4)`,
+			[regulationId, policyId, policyVersion.id, timestamp],
 		);
 		await admin.query(
 			`insert into work_policy_break_rule
-			 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
-			 values ($1, $2, 360, 45, $3)`,
-			[randomUUID(), regulationId, timestamp],
+			 (id, regulation_id, policy_version_id, working_minutes_threshold, required_break_minutes, updated_at)
+			 values ($1, $2, $3, 360, 45, $4)`,
+			[randomUUID(), regulationId, policyVersion.id, timestamp],
 		);
 		return policyId;
 	}
@@ -144,8 +161,8 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 		await admin.query(
 			`insert into work_policy_assignment
 			 (policy_id, organization_id, assignment_type, employee_id, priority, effective_from,
-			  effective_until, is_active, created_by, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, true, $8, now())`,
+			  effective_until, effective_from_date, effective_until_date, is_active, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, $10, now())`,
 			[
 				policyId,
 				organizationId,
@@ -154,6 +171,8 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 				assignmentPriority[type],
 				window.from ? new Date(window.from) : null,
 				window.until ? new Date(window.until) : null,
+				window.from ? window.from.slice(0, 10) : "1970-01-01",
+				window.until ? window.until.slice(0, 10) : null,
 				ids.user,
 			],
 		);
@@ -370,10 +389,10 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 
 	// #549: the rule is the one in force when the closed work ended, in its organization.
 	it("applies the break rule in force at the work's end when the assignment changed before enforcement", async () => {
-		// The 45-minute policy applies when the work starts and again from the next day;
-		// the 30-minute one only from mid-work until that evening, so it holds at the end.
+		// The 45-minute policy applies before 2026-07-22 and again from 2026-07-23;
+		// the 30-minute one holds during 2026-07-22 when the work ends.
 		await admin.query(
-			"update work_policy_assignment set effective_from = $2, effective_until = $3 where id = $1",
+			"update work_policy_assignment set effective_from = $2, effective_until = $3, effective_from_date = '2026-07-22', effective_until_date = '2026-07-23' where id = $1",
 			[ids.policyAssignment, new Date("2026-07-22T10:00:00Z"), new Date("2026-07-22T20:00:00Z")],
 		);
 		const stricter = await stricterPolicy(ids.organization);
@@ -388,15 +407,13 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 	});
 
 	it("ignores the employee's assignment in another organization", async () => {
-		// The organization's own rule is its default; the other organization's
-		// employee-level assignment names the same employee id.
+		// The organization's own rule is its default; migration 0322 blocks cross-tenant
+		// employee assignments at the DB level, and the other organization's own policy is ignored.
 		await admin.query("delete from work_policy_assignment where id = $1", [ids.policyAssignment]);
 		await assignPolicy(ids.policy, ids.organization, "organization");
-		await assignPolicy(
-			await stricterPolicy(ids.otherOrganization),
-			ids.otherOrganization,
-			"employee",
-		);
+		const otherStricter = await stricterPolicy(ids.otherOrganization);
+		await expect(assignPolicy(otherStricter, ids.otherOrganization, "employee")).rejects.toThrow();
+		await assignPolicy(otherStricter, ids.otherOrganization, "organization");
 		const closed = await work("2026-07-22T07:30:00Z", "2026-07-22T14:31:00Z");
 
 		await expect(followUp(closed, "2026-07-22T14:35:00Z")).resolves.toMatchObject({

@@ -1,3 +1,4 @@
+import { drivingLicenceCheckPath } from "@/lib/organization/driving-licence/paths";
 import type {
 	AbsencesPlan,
 	DeactivationApplied,
@@ -349,7 +350,7 @@ export function legacyAccessEndsItems(input: {
 			group: "access",
 			kind: "driving_authorizations",
 			count: accessEnds.drivingAuthorizationIds.length,
-			href: `/driving-licence/checks/${employeeId}`,
+			href: drivingLicenceCheckPath(employeeId),
 		}),
 		...countedChecklistItems({
 			group: "shareLinks",
