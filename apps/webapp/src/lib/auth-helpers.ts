@@ -26,12 +26,6 @@ import {
 	type SettingsAccessCaller,
 } from "@/lib/organization-action/settings-access";
 import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
-import {
-	isSettingsAccessMembershipRole,
-	type ResolveSettingsAccessTierInput,
-	resolveSettingsAccessTier,
-	type SettingsAccessTier,
-} from "@/lib/settings-access";
 
 export interface AuthContext {
 	user: AuthContextUser;
@@ -640,103 +634,6 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 		organizationId: activeOrganizationId,
 	});
 }
-
-export async function getSettingsAccessInputForUser(
-	userId: string,
-	activeOrganizationId: string | null,
-): Promise<ResolveSettingsAccessTierInput> {
-	if (!activeOrganizationId) {
-		return {
-			activeOrganizationId: null,
-			membershipRole: null,
-			employeeRole: null,
-		};
-	}
-	const session = await getRequestSession();
-	if (
-		session?.user.id !== userId ||
-		!(await canAccessOrganization(session.session, activeOrganizationId))
-	) {
-		return { activeOrganizationId, membershipRole: null, employeeRole: null };
-	}
-
-	const [membershipRecord, employeeRecord] = await Promise.all([
-		db
-			.select({ role: member.role })
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, userId),
-					eq(member.organizationId, activeOrganizationId),
-					eq(member.status, "approved"),
-				),
-			)
-			.limit(1)
-			.then((records) => records[0] ?? null),
-		db
-			.select({
-				role: employee.role,
-				isActive: employeeHasOrganizationAccess(),
-			})
-			.from(employee)
-			.where(and(eq(employee.userId, userId), eq(employee.organizationId, activeOrganizationId)))
-			.limit(1)
-			.then((records) => records[0] ?? null),
-	]);
-	const employeeIsInactive = employeeRecord?.isActive === false;
-
-	return {
-		activeOrganizationId,
-		membershipRole:
-			!employeeIsInactive && isSettingsAccessMembershipRole(membershipRecord?.role)
-				? membershipRecord.role
-				: null,
-		employeeRole: membershipRecord && !employeeIsInactive ? (employeeRecord?.role ?? null) : null,
-	};
-}
-
-export async function getSettingsAccessTierForUser(
-	userId: string,
-	activeOrganizationId: string | null,
-): Promise<SettingsAccessTier> {
-	return resolveSettingsAccessTier(
-		await getSettingsAccessInputForUser(userId, activeOrganizationId),
-	);
-}
-
-export const getCurrentSettingsAccessTier = cache(async (): Promise<SettingsAccessTier | null> => {
-	const session = await getRequestSession();
-
-	if (!session?.user) {
-		return null;
-	}
-
-	return getSettingsAccessTierForUser(
-		session.user.id,
-		session.session?.activeOrganizationId || null,
-	);
-});
-
-export const getCurrentSettingsRouteContext = cache(
-	async (): Promise<{
-		authContext: AuthContext;
-		accessTier: SettingsAccessTier;
-	} | null> => {
-		const authContext = await getAuthContext();
-
-		if (!authContext) {
-			return null;
-		}
-
-		return {
-			authContext,
-			accessTier: await getSettingsAccessTierForUser(
-				authContext.user.id,
-				authContext.session.activeOrganizationId || null,
-			),
-		};
-	},
-);
 
 /**
  * The viewer's settings access in the session's active organization, for pages

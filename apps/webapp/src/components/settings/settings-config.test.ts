@@ -13,7 +13,6 @@ import {
 } from "@/components/settings/settings-config";
 import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { SettingsCapabilities } from "@/lib/settings/capabilities";
-import { canResolvedTierAccessRoute } from "@/lib/settings-access";
 import settingsGenericEn from "../../../messages/settings/generic/en.json";
 import settingsPeopleEn from "../../../messages/settings/people/en.json";
 
@@ -42,8 +41,6 @@ describe("feature switch locations", () => {
 		expect(canReachFeatureSwitches("scopedManager")).toBe(false);
 		expect(canReachFeatureSwitches("member")).toBe(false);
 		expect(canReachFeatureSwitches(null)).toBe(false);
-		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/organization")).toBe(true);
-		expect(canResolvedTierAccessRoute("manager", "/settings/organization")).toBe(false);
 	});
 });
 
@@ -116,9 +113,6 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 				getVisibleSettings(access, true).some((entry) => entry.href === "/settings/equipment"),
 				String(access),
 			).toBe(expected);
-		}
-		for (const tier of ["member", "manager", "orgAdmin"] as const) {
-			expect(canResolvedTierAccessRoute(tier, "/settings/equipment")).toBe(tier === "orgAdmin");
 		}
 	});
 
@@ -329,8 +323,6 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 		expect(organizationIds.indexOf("vehicles")).toBe(organizationIds.indexOf("locations") + 1);
 		expect(managerEntries.some((entry) => entry.id === "vehicles")).toBe(false);
 		expect(memberEntries.some((entry) => entry.id === "vehicles")).toBe(false);
-		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/vehicles")).toBe(true);
-		expect(canResolvedTierAccessRoute("manager", "/settings/vehicles")).toBe(false);
 	});
 
 	it("shows custom fields to org admins after personnel files", () => {
@@ -357,9 +349,6 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 		).toBe(true);
 		expect(managerEntries.some((entry) => entry.id === "custom-fields")).toBe(false);
 		expect(memberEntries.some((entry) => entry.id === "custom-fields")).toBe(false);
-		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/custom-fields")).toBe(true);
-		expect(canResolvedTierAccessRoute("manager", "/settings/custom-fields")).toBe(false);
-		expect(canResolvedTierAccessRoute("member", "/settings/custom-fields")).toBe(false);
 	});
 
 	it("groups all policy settings around one Approval entry", () => {
@@ -845,10 +834,10 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 			).toBe(false);
 		});
 
-		it("guards the area's routes as org admin only", () => {
-			expect(canResolvedTierAccessRoute("orgAdmin", "/settings/billable-time")).toBe(true);
-			expect(canResolvedTierAccessRoute("manager", "/settings/billable-time")).toBe(false);
-			expect(canResolvedTierAccessRoute("member", "/settings/billable-time")).toBe(false);
+		it("guards the area's entry as org admin only", () => {
+			expect(
+				SETTINGS_ENTRIES.find((entry) => entry.id === "billable-time")?.minimumAccess,
+			).toBe("orgAdmin");
 		});
 	});
 

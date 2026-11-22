@@ -29,7 +29,6 @@ describe("settings layout sidebar", () => {
 		expect(source).not.toContain("connection()");
 		expect(source).toContain("getRenderSettingsAccess()");
 		expect(source).toContain("getRenderSettingsCapabilities()");
-		expect(source).not.toContain("getCurrentSettingsRouteContext(");
 		expect(source).toContain("<Suspense fallback={<SettingsNavigationLoading />}>");
 		expect(source).toContain("function SettingsBreadcrumbsLoading()");
 		expect(source).toContain("<Suspense fallback={<SettingsBreadcrumbsLoading />}>");
