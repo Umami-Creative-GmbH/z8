@@ -472,6 +472,8 @@ export const getEmployeeOffboardingViewAction = organizationAction(
 					offboardNow: false,
 					rehire: false,
 					recordPastDeparture: false,
+					correctPastDepartureDate: false,
+					recordHistoricalDepartureDate: false,
 				},
 			};
 		}),

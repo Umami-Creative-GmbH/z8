@@ -53,6 +53,7 @@ import {
 	workPolicy,
 	workPolicyAssignment,
 	workPolicySchedule,
+	workPolicyVersion,
 } from "@/db/schema";
 import type { ServerWidgetId } from "./dashboard-types";
 
@@ -123,9 +124,9 @@ describe("scoped scheduling and absence Dashboard snapshots", () => {
 			.set({ startPeriod: "pm", endPeriod: "am" })
 			.where(eq(absenceEntry.id, rangeId));
 		await absence(absentEast.employeeId, "2026-10-27", "2026-10-27");
-		for (const [preset, start, end] of [
-			["weekdays", null, "2026-10-27T23:59:59.999Z"],
-			["weekends", "2026-10-28T00:00:00Z", null],
+		for (const [preset, start, end, fromDate, untilDate] of [
+			["weekdays", null, "2026-10-27T23:59:59.999Z", "1970-01-01", "2026-10-28"],
+			["weekends", "2026-10-28T00:00:00Z", null, "2026-10-28", null],
 		] as const) {
 			const [policy] = await fixture.db
 				.insert(workPolicy)
@@ -136,8 +137,23 @@ describe("scoped scheduling and absence Dashboard snapshots", () => {
 					createdBy: org.creator.userId,
 				})
 				.returning();
+			const [version] = await fixture.db
+				.insert(workPolicyVersion)
+				.values({
+					policyId: policy.id,
+					organizationId: org.organizationId,
+					versionNumber: 1,
+					effectiveFromDate: "1970-01-01",
+					scheduleEnabled: true,
+					regulationEnabled: false,
+					presenceEnabled: false,
+					isLegacyBaseline: true,
+					createdBy: org.creator.userId,
+				})
+				.returning();
 			await fixture.db.insert(workPolicySchedule).values({
 				policyId: policy.id,
+				policyVersionId: version.id,
 				scheduleType: "simple",
 				workingDaysPreset: preset,
 				scheduleCycle: "weekly",
@@ -150,6 +166,8 @@ describe("scoped scheduling and absence Dashboard snapshots", () => {
 				priority: 2,
 				effectiveFrom: start ? new Date(start) : null,
 				effectiveUntil: end ? new Date(end) : null,
+				effectiveFromDate: fromDate,
+				effectiveUntilDate: untilDate,
 				createdBy: org.creator.userId,
 			});
 		}

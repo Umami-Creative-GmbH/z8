@@ -390,6 +390,7 @@ async function buildContractDailyRequirements(params: {
 	startDate: Date;
 	endDate: Date;
 	timezone?: string | null;
+	employeeEmploymentStartDateOverride?: string;
 	evidence?: EmployeeRequirementInputs;
 }): Promise<DailyWorkRequirements> {
 	const timezone =
@@ -409,6 +410,7 @@ async function buildContractDailyRequirements(params: {
 						employeeIds: [params.employeeId],
 						dates,
 						timezoneOverride: timezone,
+						employmentStartDateOverride: params.employeeEmploymentStartDateOverride,
 					}),
 				),
 			)
@@ -623,6 +625,7 @@ export function loadDailyWorkRequirementsForEmployee(
 				startDate: effectiveStartDate,
 				endDate: params.endDate,
 				timezone: params.timezone,
+				employeeEmploymentStartDateOverride: params.employeeEmploymentStartDateOverride,
 				evidence: preloaded?.inputs,
 			}),
 		);

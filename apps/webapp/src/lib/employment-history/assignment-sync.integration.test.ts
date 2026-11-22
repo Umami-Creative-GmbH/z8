@@ -36,6 +36,11 @@ describe("employment terms work-policy assignments", () => {
 		);
 		const row = rows[0];
 		if (!row) throw new Error("Policy fixture insert returned no row");
+		await fixture.pool.query(
+			`insert into work_policy_version (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3)`,
+			[row.id, fixture.organizationId, fixture.ownerUserId],
+		);
 		return row.id;
 	}
 	async function write(

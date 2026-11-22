@@ -37,15 +37,23 @@ describe("batched effective work policies (PostgreSQL)", () => {
 		);
 		const id = rows[0]?.id;
 		if (!id) throw new Error("work policy insert returned no row");
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3) returning id`,
+			[id, organizationId, fixture.ownerUserId],
+		);
 		const schedule = await fixture.pool.query<{ id: string }>(
-			`insert into work_policy_schedule (policy_id, schedule_type, hours_per_cycle, updated_at)
-			 values ($1, 'simple', $2, now()) returning id`,
-			[id, options.hoursPerCycle ?? "40.00"],
+			`insert into work_policy_schedule (policy_id, policy_version_id, schedule_type, hours_per_cycle, updated_at)
+			 values ($1, $2, 'simple', $3, now()) returning id`,
+			[id, policyVersion.id, options.hoursPerCycle ?? "40.00"],
 		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule_day (schedule_id, day_of_week, hours_per_day, is_work_day)
-			 values ($1, 'monday', '8.00', true), ($1, 'saturday', '0.00', false)`,
-			[schedule.rows[0]?.id],
+			`insert into work_policy_schedule_day (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day)
+			 values ($1, $2, 'monday', '8.00', true), ($1, $2, 'saturday', '0.00', false)`,
+			[schedule.rows[0]?.id, policyVersion.id],
 		);
 		return id;
 	}
@@ -73,8 +81,8 @@ describe("batched effective work policies (PostgreSQL)", () => {
 		await fixture.pool.query(
 			`insert into work_policy_assignment
 			 (policy_id, organization_id, assignment_type, team_id, employee_id, priority,
-			  effective_from, effective_until, is_active, created_by, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())`,
+			  effective_from, effective_until, effective_from_date, effective_until_date, is_active, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())`,
 			[
 				input.policyId,
 				input.organizationId ?? fixture.organizationId,
@@ -84,6 +92,8 @@ describe("batched effective work policies (PostgreSQL)", () => {
 				input.type === "employee" ? 2 : input.type === "team" ? 1 : 0,
 				input.from ?? null,
 				input.until ?? null,
+				input.from ? input.from.slice(0, 10) : "1970-01-01",
+				input.until ? input.until.slice(0, 10) : null,
 				input.isActive ?? true,
 				fixture.ownerUserId,
 			],

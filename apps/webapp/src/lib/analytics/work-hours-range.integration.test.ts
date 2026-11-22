@@ -9,16 +9,12 @@ import {
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const queries = vi.hoisted(() => [] as string[]);
-const statements = vi.hoisted(
-	() => [] as { text: string; params: unknown[] }[],
-);
+const statements = vi.hoisted(() => [] as { text: string; params: unknown[] }[]);
 const caller = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -52,18 +48,11 @@ vi.mock("@/db", async () =>
 	}),
 );
 const { db } = await import("@/db");
-const { AnalyticsService } = await import(
-	"@/lib/effect/services/analytics.service"
-);
-const { DatabaseService, makeDatabaseService } = await import(
-	"@/lib/effect/services/database.service"
-);
-const { WorkPolicyServiceLive } = await import(
-	"@/lib/effect/services/work-policy.service"
-);
-const { getWorkHoursAnalyticsData } = await import(
-	"@/app/[locale]/(app)/analytics/actions"
-);
+const { AnalyticsService } = await import("@/lib/effect/services/analytics.service");
+const { DatabaseService, makeDatabaseService } =
+	await import("@/lib/effect/services/database.service");
+const { WorkPolicyServiceLive } = await import("@/lib/effect/services/work-policy.service");
+const { getWorkHoursAnalyticsData } = await import("@/app/[locale]/(app)/analytics/actions");
 
 describe("scoped work-hours range evidence on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -81,9 +70,15 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			`insert into work_policy (id,organization_id,name,regulation_enabled,schedule_enabled,created_by,updated_at) values ($1,$2,'Weekdays',false,true,$3,now())`,
 			[policyId, fixture.organizationId, fixture.ownerUserId],
 		);
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by) values ($1,$2,1,'1970-01-01',true,false,false,true,$3) returning id`,
+			[policyId, fixture.organizationId, fixture.ownerUserId],
+		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule (policy_id,hours_per_cycle,updated_at) values ($1,40,now())`,
-			[policyId],
+			`insert into work_policy_schedule (policy_id,policy_version_id,hours_per_cycle,updated_at) values ($1,$2,40,now())`,
+			[policyId, policyVersion.id],
 		);
 		await fixture.pool.query(
 			`insert into work_policy_assignment (policy_id,organization_id,assignment_type,created_by,updated_at) values ($1,$2,'organization',$3,now())`,
@@ -93,26 +88,15 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			const person = await fixture.seedEmployee();
 			people.push(person.employeeId);
 			await fixture.pool.query(
-				`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z',2400,'confirmed',$4,now())`,
-				[
-					person.employeeId,
-					fixture.organizationId,
-					person.employmentPeriodId,
-					fixture.ownerUserId,
-				],
+				`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,valid_from_date,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z','2026-01-01',2400,'confirmed',$4,now())`,
+				[person.employeeId, fixture.organizationId, person.employmentPeriodId, fixture.ownerUserId],
 			);
 			await withCanonicalRecords(fixture.pool, async (client) => {
 				const incoming = randomUUID(),
 					outgoing = randomUUID();
 				await client.query(
 					`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1,$3,$4,'clock_in','2026-03-02T09:00:00Z',0,'UTC','user_setting',$1::uuid::text,$5),($2,$3,$4,'clock_out','2026-03-02T17:00:00Z',0,'UTC','user_setting',$2::uuid::text,$5)`,
-					[
-						incoming,
-						outgoing,
-						person.employeeId,
-						fixture.organizationId,
-						fixture.ownerUserId,
-					],
+					[incoming, outgoing, person.employeeId, fixture.organizationId, fixture.ownerUserId],
 				);
 				await client.query(
 					`insert into work_period (employee_id,organization_id,clock_in_id,clock_out_id,start_time,end_time,duration_minutes,is_active,updated_at) values ($1,$2,$3,$4,'2026-03-02T09:00:00Z','2026-03-02T17:00:00Z',480,false,now())`,
@@ -133,9 +117,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 	async function read(
 		endDate = "2026-03-31",
 		employeeId?: string,
-		scope:
-			| { role: "admin" }
-			| { role: "manager"; managerEmployeeId: string } = { role: "admin" },
+		scope: { role: "admin" } | { role: "manager"; managerEmployeeId: string } = { role: "admin" },
 		client: Parameters<typeof makeDatabaseService>[0] = db,
 		startDate = "2026-03-01",
 	) {
@@ -160,9 +142,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			}).pipe(
 				Effect.provide(AnalyticsService.Live),
 				Effect.provide(WorkPolicyServiceLive),
-				Effect.provide(
-					Layer.succeed(DatabaseService, makeDatabaseService(client)),
-				),
+				Effect.provide(Layer.succeed(DatabaseService, makeDatabaseService(client))),
 			),
 		);
 		const evidence = {
@@ -175,8 +155,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			tracking: queries.filter((text) =>
 				text.includes('left join "organization_tracking_settings"'),
 			).length,
-			periods: queries.filter((text) => text.includes('from "work_period"'))
-				.length,
+			periods: queries.filter((text) => text.includes('from "work_period"')).length,
 			elapsedMs: performance.now() - start,
 		};
 		if (process.env.Z8_WORK_HOURS_QUERY_EVIDENCE === "1")
@@ -193,9 +172,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 
 	it("loads tracking once per bounded employee range rather than repeating it per employee", async () => {
 		const { result, evidence } = await read();
-		expect(
-			result.byEmployee.filter((row) => people.includes(row.employeeId)),
-		).toHaveLength(4);
+		expect(result.byEmployee.filter((row) => people.includes(row.employeeId))).toHaveLength(4);
 		expect(result.summary.totalHours).toBe(32);
 		if (process.env.Z8_WORK_HOURS_LATENCY_EVIDENCE === "1") {
 			for (const [begin, end] of [
@@ -206,13 +183,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 				const samples = [];
 				let count = 0;
 				for (let sample = 0; sample < 20; sample++) {
-					const measured = await read(
-						end,
-						undefined,
-						{ role: "admin" },
-						db,
-						begin,
-					);
+					const measured = await read(end, undefined, { role: "admin" }, db, begin);
 					samples.push(measured.evidence.elapsedMs);
 					count = measured.evidence.queries;
 				}
@@ -242,13 +213,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 	it("keeps policy, employment, absence and holiday I/O bounded as the range grows", async () => {
 		const month = await read();
 		expect(month.evidence.queries).toBeLessThanOrEqual(26);
-		const year = await read(
-			"2026-12-31",
-			undefined,
-			{ role: "admin" },
-			db,
-			"2026-01-01",
-		);
+		const year = await read("2026-12-31", undefined, { role: "admin" }, db, "2026-01-01");
 		expect(year.result.summary.totalHours).toBe(32);
 		expect(year.evidence.queries).toBeLessThanOrEqual(26);
 	});
@@ -261,13 +226,9 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			managerEmployeeId: fixture.employeeId,
 		} as const;
 		const allowed = await read(undefined, undefined, scope);
-		expect(allowed.result.byEmployee.map((row) => row.employeeId)).toEqual([
-			people[0],
-		]);
+		expect(allowed.result.byEmployee.map((row) => row.employeeId)).toEqual([people[0]]);
 		expect(allowed.result.summary.totalHours).toBe(8);
-		expect((await read(undefined, people[1], scope)).result.byEmployee).toEqual(
-			[],
-		);
+		expect((await read(undefined, people[1], scope)).result.byEmployee).toEqual([]);
 	});
 	it("retains explicit month work, requirement and distribution totals", async () => {
 		const { result } = await read();
@@ -286,9 +247,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 				isUndertime: true,
 			},
 		]);
-		expect(
-			result.byEmployee.find((row) => row.employeeId === people[0]),
-		).toMatchObject({
+		expect(result.byEmployee.find((row) => row.employeeId === people[0])).toMatchObject({
 			totalHours: 8,
 			overtimeHours: 0,
 			undertimeHours: 168,
@@ -296,10 +255,9 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 		});
 	});
 	it("authenticates manager scope freshly and rejects an employee before range reads", async () => {
-		const manager = await fixture.pool.query(
-			`select user_id from employee where id=$1`,
-			[fixture.employeeId],
-		);
+		const manager = await fixture.pool.query(`select user_id from employee where id=$1`, [
+			fixture.employeeId,
+		]);
 		caller.userId = manager.rows[0].user_id;
 		caller.organizationId = fixture.organizationId;
 		const range = {
@@ -322,31 +280,25 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 		expect(roster).toBeDefined();
 		if (!roster) throw new Error("Manager roster query missing");
 		expect(
-			(await fixture.pool.query(roster.text, roster.params)).rows.map(
-				(row) => row.id,
-			),
+			(await fixture.pool.query(roster.text, roster.params)).rows.map((row) => row.id),
 		).toEqual([people[0]]);
-		await fixture.pool.query(
-			`delete from employee_managers where manager_id=$1`,
-			[fixture.employeeId],
-		);
+		await fixture.pool.query(`delete from employee_managers where manager_id=$1`, [
+			fixture.employeeId,
+		]);
 		expect(await getWorkHoursAnalyticsData(range)).toMatchObject({
 			success: true,
 			data: { byEmployee: [] },
 		});
-		const member = await fixture.pool.query(
-			`select user_id from employee where id=$1`,
-			[people[0]],
-		);
+		const member = await fixture.pool.query(`select user_id from employee where id=$1`, [
+			people[0],
+		]);
 		caller.userId = member.rows[0].user_id;
 		queries.length = 0;
 		expect(await getWorkHoursAnalyticsData(range)).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 		});
-		expect(queries.some((text) => text.includes('from "work_period"'))).toBe(
-			false,
-		);
+		expect(queries.some((text) => text.includes('from "work_period"'))).toBe(false);
 	});
 
 	async function personWithTerms(timezone = "UTC", contractType = "fixed") {
@@ -355,12 +307,12 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			`insert into user_settings (user_id,timezone,updated_at) values ($1,$2,now())`,
 			[person.userId, timezone],
 		);
+		await fixture.pool.query(`update employee set contract_type=$2 where id=$1`, [
+			person.employeeId,
+			contractType,
+		]);
 		await fixture.pool.query(
-			`update employee set contract_type=$2 where id=$1`,
-			[person.employeeId, contractType],
-		);
-		await fixture.pool.query(
-			`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,weekly_contract_minutes,contract_type,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z',2400,$5,'confirmed',$4,now())`,
+			`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,valid_from_date,weekly_contract_minutes,contract_type,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z','2026-01-01',2400,$5,'confirmed',$4,now())`,
 			[
 				person.employeeId,
 				fixture.organizationId,
@@ -397,11 +349,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 						at,
 						offset,
 						fixture.ownerUserId,
-						offset > 0
-							? "Europe/Berlin"
-							: offset < 0
-								? "America/New_York"
-								: "UTC",
+						offset > 0 ? "Europe/Berlin" : offset < 0 ? "America/New_York" : "UTC",
 					],
 				);
 			await client.query(
@@ -412,14 +360,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 	}
 	it("retains protected rounding and employee-local boundaries when captured endpoints differ", async () => {
 		const person = await personWithTerms("Europe/Berlin");
-		await work(
-			person.employeeId,
-			"2026-03-31T21:58:30Z",
-			"2026-03-31T22:01:00Z",
-			3,
-			120,
-			-240,
-		);
+		await work(person.employeeId, "2026-03-31T21:58:30Z", "2026-03-31T22:01:00Z", 3, 120, -240);
 		const { result } = await read(undefined, person.employeeId);
 		expect(result.summary).toEqual({
 			totalHours: 0.03,
@@ -439,34 +380,28 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 	});
 	it("retains the 23-hour employee-local DST day in range evidence", async () => {
 		const person = await personWithTerms("Europe/Berlin");
-		await work(
-			person.employeeId,
-			"2026-03-28T23:00:00Z",
-			"2026-03-29T22:00:00Z",
-			1380,
-			60,
-			120,
-		);
+		await work(person.employeeId, "2026-03-28T23:00:00Z", "2026-03-29T22:00:00Z", 1380, 60, 120);
 		const { result } = await read(undefined, person.employeeId);
 		expect(result.summary).toMatchObject({
 			totalHours: 23,
 			overtimeHours: 0,
 			undertimeHours: 161,
 		});
-		expect(
-			result.distribution.find((row) => row.date === "2026-03-29"),
-		).toMatchObject({ hours: 22, expectedHours: 0, isOvertime: true });
+		expect(result.distribution.find((row) => row.date === "2026-03-29")).toMatchObject({
+			hours: 22,
+			expectedHours: 0,
+			isOvertime: true,
+		});
 	});
 	it("uses confirmed weekly terms, half-day release and assigned holidays without new per-day I/O", async () => {
 		const person = await personWithTerms();
 		await fixture.pool.query(
-			`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-03-16T00:00:00Z',1200,'confirmed',$4,now()),($1,$2,$3,'2026-03-01T00:00:00Z',600,'draft',$4,now())`,
-			[
-				person.employeeId,
-				fixture.organizationId,
-				person.employmentPeriodId,
-				fixture.ownerUserId,
-			],
+			`update employee_employment_history set valid_until='2026-03-16T00:00:00Z', valid_until_date='2026-03-16' where employee_id=$1 and review_state='confirmed' and valid_until is null`,
+			[person.employeeId],
+		);
+		await fixture.pool.query(
+			`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,valid_from_date,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-03-16T00:00:00Z','2026-03-16',1200,'confirmed',$4,now()),($1,$2,$3,'2026-03-01T00:00:00Z','2026-03-01',600,'draft',$4,now())`,
+			[person.employeeId, fixture.organizationId, person.employmentPeriodId, fixture.ownerUserId],
 		);
 		const absence = randomUUID(),
 			category = randomUUID(),
@@ -511,15 +446,12 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			`insert into shift (organization_id,employee_id,subarea_id,date,start_time,end_time,status,created_by,updated_at) values ($1,$2,$3,'2026-03-02T00:00:00Z','09:00','17:00','published',$4,now()),($1,$2,$3,'2026-03-03T00:00:00Z','09:00','17:00','draft',$4,now()),($1,$2,$3,'2026-04-01T00:00:00Z','09:00','17:00','published',$4,now())`,
 			[fixture.organizationId, person.employeeId, subarea, fixture.ownerUserId],
 		);
-		await work(
-			person.employeeId,
-			"2026-03-02T09:00:00Z",
-			"2026-03-02T17:00:00Z",
-			480,
-		);
-		expect(
-			(await read(undefined, person.employeeId)).result.summary,
-		).toMatchObject({ totalHours: 8, overtimeHours: 0, undertimeHours: 0 });
+		await work(person.employeeId, "2026-03-02T09:00:00Z", "2026-03-02T17:00:00Z", 480);
+		expect((await read(undefined, person.employeeId)).result.summary).toMatchObject({
+			totalHours: 8,
+			overtimeHours: 0,
+			undertimeHours: 0,
+		});
 	});
 	it("uses the caller's transaction for changed tracking, confirmed terms and absence evidence", async () => {
 		await expect(
@@ -538,15 +470,12 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 					sql`insert into absence_entry (employee_id,organization_id,category_id,start_date,end_date,status,updated_at) values (${people[0]},${fixture.organizationId},${category},'2026-03-16','2026-03-16','approved',now())`,
 				);
 				expect(
-					(await read(undefined, people[0], { role: "admin" }, tx)).result
-						.summary,
+					(await read(undefined, people[0], { role: "admin" }, tx)).result.summary,
 				).toMatchObject({ totalHours: 8, undertimeHours: 44 });
 				throw new Error("rollback fixture preview");
 			}),
 		).rejects.toThrow("rollback fixture preview");
-		expect(
-			(await read(undefined, people[0])).result.summary.undertimeHours,
-		).toBe(168);
+		expect((await read(undefined, people[0])).result.summary.undertimeHours).toBe(168);
 	});
 	it("bounds employee inputs and serial I/O as a larger roster crosses a range batch", async () => {
 		for (let index = 0; index < 64; index++) await fixture.seedEmployee();
@@ -561,9 +490,7 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			.map(
 				(query) =>
 					new Set(
-						query.params
-							.flat()
-							.filter((value) => typeof value === "string" && ids.has(value)),
+						query.params.flat().filter((value) => typeof value === "string" && ids.has(value)),
 					).size,
 			);
 		// Public batch contract: one SQL operation admits at most64 scoped employees.
@@ -627,41 +554,19 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 			organizationId,
 		);
 		const { result } = await read();
-		expect(
-			result.byEmployee.some((row) => row.employeeId === outsider.employeeId),
-		).toBe(false);
+		expect(result.byEmployee.some((row) => row.employeeId === outsider.employeeId)).toBe(false);
 		for (const statement of statements.filter((query) =>
 			query.text.includes('from "work_period"'),
 		)) {
-			const retrieved = await fixture.pool.query(
-				statement.text,
-				statement.params,
-			);
-			expect(
-				retrieved.rows.some((row) => row.employee_id === outsider.employeeId),
-			).toBe(false);
+			const retrieved = await fixture.pool.query(statement.text, statement.params);
+			expect(retrieved.rows.some((row) => row.employee_id === outsider.employeeId)).toBe(false);
 		}
 	});
 	it("uses half-open instant boundaries for both range queries", async () => {
 		const person = await personWithTerms();
-		await work(
-			person.employeeId,
-			"2026-02-28T23:00:00Z",
-			"2026-03-01T00:00:00Z",
-			60,
-		);
-		await work(
-			person.employeeId,
-			"2026-03-31T23:00:00Z",
-			"2026-04-01T00:00:00Z",
-			60,
-		);
-		await work(
-			person.employeeId,
-			"2026-04-01T00:00:00Z",
-			"2026-04-01T01:00:00Z",
-			60,
-		);
+		await work(person.employeeId, "2026-02-28T23:00:00Z", "2026-03-01T00:00:00Z", 60);
+		await work(person.employeeId, "2026-03-31T23:00:00Z", "2026-04-01T00:00:00Z", 60);
+		await work(person.employeeId, "2026-04-01T00:00:00Z", "2026-04-01T01:00:00Z", 60);
 		const { result } = await read(undefined, person.employeeId);
 		expect(result.summary).toMatchObject({
 			totalHours: 1,

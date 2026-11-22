@@ -40,12 +40,7 @@ import {
 	resolveEffectiveCronSchedules,
 } from "@/lib/cron";
 import { createLogger } from "@/lib/logger";
-import {
-	createWorker,
-	getJobQueue,
-	type JobData,
-	type JobResult,
-} from "@/lib/queue";
+import { createWorker, getJobQueue, type JobData, type JobResult } from "@/lib/queue";
 
 const logger = createLogger("Worker");
 
@@ -99,12 +94,7 @@ async function processCronJob(job: Job<CronJobData>): Promise<JobResult> {
 				if (failureResult === undefined) {
 					await markJobFailed(executionId, jobError.message, duration);
 				} else {
-					await markJobFailed(
-						executionId,
-						jobError.message,
-						duration,
-						failureResult,
-					);
+					await markJobFailed(executionId, jobError.message, duration, failureResult);
 				}
 			} catch (trackingError) {
 				logger.error(
@@ -185,27 +175,20 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 			}
 
 			case "webhook": {
-				const { processWebhookJob } = await import(
-					"@/lib/webhooks/webhook-worker"
-				);
+				const { processWebhookJob } = await import("@/lib/webhooks/webhook-worker");
 				// Type assertion needed: job.data is WebhookJobData (queue type)
 				// processWebhookJob expects the specific webhook type, which is structurally compatible
-				return await processWebhookJob(
-					job as unknown as Parameters<typeof processWebhookJob>[0],
-				);
+				return await processWebhookJob(job as unknown as Parameters<typeof processWebhookJob>[0]);
 			}
 
 			case "calendar-sync": {
-				const { processCalendarSyncJob } = await import(
-					"@/lib/calendar-sync/jobs"
-				);
+				const { processCalendarSyncJob } = await import("@/lib/calendar-sync/jobs");
 				return await processCalendarSyncJob(job.data);
 			}
 
 			case "organization-deletion-notification": {
-				const { sendOrganizationDeletionNotifications } = await import(
-					"@/lib/jobs/organization-deletion-notification"
-				);
+				const { sendOrganizationDeletionNotifications } =
+					await import("@/lib/jobs/organization-deletion-notification");
 				await sendOrganizationDeletionNotifications(job.data);
 				return {
 					success: true,
@@ -214,40 +197,32 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 			}
 
 			case "audit-pack": {
-				const { processAuditPack } = await import(
-					"@/lib/audit-pack/application/audit-pack-processor"
-				);
+				const { processAuditPack } =
+					await import("@/lib/audit-pack/application/audit-pack-processor");
 				await processAuditPack(job.data);
 				return { success: true, message: "Audit pack processed" };
 			}
 
 			case "import-review-scan": {
-				const { processImportReviewJob } = await import(
-					"@/lib/import-review/worker"
-				);
+				const { processImportReviewJob } = await import("@/lib/import-review/worker");
 				return await processImportReviewJob(job as Job<typeof job.data>);
 			}
 
 			case "import-review-commit": {
-				const { processImportReviewJob } = await import(
-					"@/lib/import-review/worker"
-				);
+				const { processImportReviewJob } = await import("@/lib/import-review/worker");
 				return await processImportReviewJob(job as Job<typeof job.data>);
 			}
 
 			case "employee-departure": {
-				const { processEmployeeDepartureJob } = await import(
-					"@/lib/jobs/employee-departures"
-				);
+				const { processEmployeeDepartureJob } = await import("@/lib/jobs/employee-departures");
 				const { type: _type, ...identity } = job.data;
 				const outcome = await processEmployeeDepartureJob(identity);
 				return { success: true, message: `Employee departure ${outcome.status}` };
 			}
 
 			case "contract-change-batch": {
-				const { processContractChangeBatchJob } = await import(
-					"@/lib/jobs/contract-change-batches"
-				);
+				const { processContractChangeBatchJob } =
+					await import("@/lib/jobs/contract-change-batches");
 				const outcome = await processContractChangeBatchJob({
 					batchId: job.data.batchId,
 					organizationId: job.data.organizationId,
@@ -324,9 +299,7 @@ export async function processJob(job: Job<AllJobData>): Promise<JobResult> {
 	return processOneOffJob(job as Job<JobData>);
 }
 
-async function resolveCronExecutionId(
-	job: Job<JobData, JobResult>,
-): Promise<string | undefined> {
+async function resolveCronExecutionId(job: Job<JobData, JobResult>): Promise<string | undefined> {
 	const executionId = (job.data as CronJobData).executionId;
 	if (executionId) {
 		return executionId;
@@ -339,10 +312,7 @@ async function resolveCronExecutionId(
 
 function isCronJob(job: Job<JobData, JobResult>): boolean {
 	const type = job.data.type;
-	return (
-		typeof type === "string" &&
-		(type.startsWith("cron:") || isCronJobName(type))
-	);
+	return typeof type === "string" && (type.startsWith("cron:") || isCronJobName(type));
 }
 
 function getJobDuration(job: Job<JobData, JobResult>): number {
@@ -397,10 +367,7 @@ export async function reconcileCronJobFailure(
 		}
 		const executionId = await resolveCronExecutionId(job);
 		if (!executionId) {
-			logger.warn(
-				{ jobId: job.id, type: job.data.type },
-				"Cron execution not found for failure",
-			);
+			logger.warn({ jobId: job.id, type: job.data.type }, "Cron execution not found for failure");
 			return;
 		}
 		await markJobFailed(executionId, error.message, getJobDuration(job));
@@ -412,9 +379,7 @@ export async function reconcileCronJobFailure(
 	}
 }
 
-export function registerCronTrackingListeners(
-	worker: ReturnType<typeof createWorker>,
-): void {
+export function registerCronTrackingListeners(worker: ReturnType<typeof createWorker>): void {
 	worker.on("completed", (job, result) => {
 		void reconcileCronJobCompletion(job, result);
 	});
@@ -473,10 +438,7 @@ async function setupCronJobs(queue: Queue): Promise<void> {
 			if (isCronJobName(override.jobName)) {
 				scheduleOverrides.push({ ...override, jobName: override.jobName });
 			} else {
-				logger.warn(
-					{ jobName: override.jobName },
-					"Ignoring unknown cron schedule override",
-				);
+				logger.warn({ jobName: override.jobName }, "Ignoring unknown cron schedule override");
 			}
 		}
 
@@ -580,17 +542,12 @@ async function main(): Promise<void> {
 	await setupCronJobs(queue);
 
 	// Create the worker
-	const worker = createWorker(
-		processJob as (job: Job<JobData, JobResult>) => Promise<JobResult>,
-	);
+	const worker = createWorker(processJob as (job: Job<JobData, JobResult>) => Promise<JobResult>);
 	registerCronTrackingListeners(worker);
 
 	// Graceful shutdown handlers
 	const shutdown = async (signal: string) => {
-		logger.info(
-			{ signal },
-			"Received shutdown signal, closing worker gracefully...",
-		);
+		logger.info({ signal }, "Received shutdown signal, closing worker gracefully...");
 
 		try {
 			// Close the worker (waits for current jobs to complete)

@@ -5,6 +5,7 @@ import { WorkPolicySettingsTabs } from "@/components/settings/work-policy/work-p
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
+import { env } from "@/env";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -24,7 +25,7 @@ async function WorkPoliciesPageContent() {
 
 	// Violation instants are shown on the organization's calendar, not the viewer's.
 	const organizationTimezone = await loadOrganizationTimezone(db, organizationId);
-	const workPolicyVersioningEnabled = process.env.WORK_POLICY_VERSIONING_ENABLED === "true";
+	const workPolicyVersioningEnabled = env.WORK_POLICY_VERSIONING_ENABLED === "true";
 
 	return (
 		<WorkPolicySettingsTabs

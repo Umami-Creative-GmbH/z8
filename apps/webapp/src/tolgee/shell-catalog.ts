@@ -2,10 +2,7 @@ import type { CatalogSlice } from "./catalog-slices";
 import type { Namespace, TreeTranslationsData } from "./catalog-config";
 
 export type ShellCatalogKey = { namespace: Namespace; path: readonly string[] };
-function keys(
-	namespace: Namespace,
-	paths: readonly string[],
-): ShellCatalogKey[] {
+function keys(namespace: Namespace, paths: readonly string[]): ShellCatalogKey[] {
 	return paths.map((path) => ({ namespace, path: path.split(".") }));
 }
 
@@ -369,10 +366,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.telegram.description",
 		"settings.telegram.title",
 	]),
-	...keys("settings/demo", [
-		"settings.demoData.description",
-		"settings.demoData.title",
-	]),
+	...keys("settings/demo", ["settings.demoData.description", "settings.demoData.title"]),
 	...keys("settings/people", [
 		"settings.permissions.title",
 		"settings.employees.details",
@@ -387,10 +381,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.teams.description",
 		"settings.teams.title",
 	]),
-	...keys("settings/holidays", [
-		"settings.holidays.description",
-		"settings.holidays.title",
-	]),
+	...keys("settings/holidays", ["settings.holidays.description", "settings.holidays.title"]),
 	...keys("settings/payrollExport", [
 		"settings.payrollExport.description",
 		"settings.payrollExport.title",
@@ -408,6 +399,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.vacation.title",
 	]),
 	...keys("settings/workPolicies", [
+		"settings.contracts.description",
+		"settings.contracts.title",
 		"settings.workPolicies.description",
 		"settings.workPolicies.title",
 	]),
@@ -418,8 +411,7 @@ function readPath(
 	path: readonly string[],
 ): TreeTranslationsData | string | undefined {
 	let value: TreeTranslationsData | string | undefined = tree;
-	for (const key of path)
-		value = typeof value === "object" ? value[key] : undefined;
+	for (const key of path) value = typeof value === "object" ? value[key] : undefined;
 	return value;
 }
 function copyPath(
