@@ -205,27 +205,30 @@ export async function commitContractChangeInTx(
 ): Promise<CommitContractChangeResult> {
 	const validFromDate = parseIsoCalendarDate(input.validFromDate, "validFromDate");
 	const validFrom = utcMidnight(parsePlainDate(validFromDate));
-	const now = input.now ?? currentTimestamp();
 	const reviewState: EmploymentReviewState = input.reviewState ?? "confirmed";
 
 	// Universal deadlock-free lock order (Astra #1 / #2 / #5 / H8 / M3 / M4):
-	// (0) org policy advisory lock SHARED -> (1.5) organization FOR KEY SHARE ->
+	// (0) org policy advisory lock SHARED (when assigning a policy) ->
+	// (1.5) organization FOR KEY SHARE (unconditionally, because inserting employee_employment_history
+	//       takes a FK FOR KEY SHARE on organization!) ->
 	// (2) employee FOR UPDATE -> (3) active employee work_policy_assignment ORDER BY id FOR UPDATE ->
 	// (4) work_policy FOR SHARE.
 	const workPolicyId = input.workPolicyId ?? null;
 	if (workPolicyId) {
 		const orgLockKey = `contract_default_org:${input.organizationId}`;
 		await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
-		await tx.execute(sql`
-			SELECT id
-			FROM organization
-			WHERE id = ${input.organizationId}
-			FOR KEY SHARE
-		`);
 	}
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${input.organizationId}
+		FOR KEY SHARE
+	`);
 
 	// 1. Lock employee row FOR UPDATE
 	const empRow = await lockEmployeeInTx(tx, input.organizationId, input.employeeId);
+	// Astra #8: Capture timestamp strictly AFTER acquiring (0)/(1.5)/(2).
+	const now = input.now ?? currentTimestamp();
 
 	// 2. Atomic per-employee deduplication when called from a durable batch item (#1928)
 	if (input.sourceBatchItemId) {
@@ -483,7 +486,7 @@ export async function commitContractChangeInTx(
 			changeReason: input.changeReason ?? null,
 			reviewState,
 			createdBy: input.actorUserId,
-			createdAt: now,
+			createdAt: input.now ?? sql`clock_timestamp()`,
 			updatedBy: input.actorUserId,
 			updatedAt: now,
 		})
@@ -529,6 +532,7 @@ export async function commitContractChangeInTx(
 				sourceEmploymentHistoryId: inserted.id,
 				sourceBatchItemId: input.sourceBatchItemId ?? null,
 				now,
+				useDbClockTimestamp: input.now === undefined,
 			});
 			workPolicyAssignmentId = assignment?.id ?? null;
 		} else if (input.clearPersonalPolicyPin) {
@@ -693,19 +697,19 @@ export async function adoptContractDefaultInTx(
 	const effectiveFromDate = parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate");
 	const keep = new Set(input.keepDivergenceFields ?? []);
 
-	// Astra #1: Acquire (0) org policy advisory lock SHARED + (1.5) organization FOR KEY SHARE
-	// BEFORE locking (2) employee FOR UPDATE when preserving `workPolicy` so nested
-	// `commitContractChangeInTx` never inverts (0) <-> (2) against policy retirement!
+	// Astra #1 / #2: Acquire (0) org policy advisory lock SHARED (when preserving `workPolicy`) and
+	// (1.5) organization FOR KEY SHARE unconditionally BEFORE locking (2) employee FOR UPDATE so
+	// nested `commitContractChangeInTx` never inverts (0)/(1.5) <-> (2)!
 	if (keep.has("workPolicy")) {
 		const orgLockKey = `contract_default_org:${input.organizationId}`;
 		await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
-		await tx.execute(sql`
-			SELECT id
-			FROM organization
-			WHERE id = ${input.organizationId}
-			FOR KEY SHARE
-		`);
 	}
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${input.organizationId}
+		FOR KEY SHARE
+	`);
 
 	// A2-4: Lock the employee row BEFORE reading current divergences & on-call terms so
 	// concurrent edits cannot be overwritten by stale values.

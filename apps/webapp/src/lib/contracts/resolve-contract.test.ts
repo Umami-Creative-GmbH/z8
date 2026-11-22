@@ -1121,5 +1121,96 @@ describe("contracts pure helpers & resolver", () => {
 			}),
 		);
 		expect(emptyUnscopedRes.workPolicy?.policyId).toBe(nyLegacyPol.id);
+
+		// Astra #9 / Opus #2(a): A manually canceled 1-day NY legacy assignment [June 10 00:00Z, June 11 00:00Z)
+		// (effective_until != June 10 local midnight 04:00Z) MUST NOT govern lookups after cancellation!
+		const canceledOneDayRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-10"),
+				at: parseInstant("2026-06-10T12:00:00Z"),
+				employeeCalendarTimezone: "America/New_York",
+				organizationTimezone: "America/New_York",
+				policiesById: new Map([[nyLegacyPol.id, nyLegacyPol]]),
+				contractDefaults: [],
+				confirmedTerms: [],
+				policyAssignments: [
+					{
+						id: "asgn-canceled-one-day",
+						policyId: nyLegacyPol.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "legacy",
+						sourceEmploymentHistoryId: null,
+						isActive: false,
+						effectiveFrom: new Date("2026-06-10T00:00:00Z"),
+						effectiveUntil: new Date("2026-06-11T00:00:00Z"),
+						effectiveFromDate: "2026-06-10",
+						effectiveUntilDate: "2026-06-11",
+						priority: 2,
+						createdAt: new Date("2026-06-01T00:00:00Z"),
+					},
+				],
+			}),
+		);
+		expect(canceledOneDayRes.workPolicy).toBeNull();
+
+		// Opus #2(b): When an admin schedules an active replacement starting on D-1 (June 9),
+		// it MUST beat a deactivated retired 1a-fallback prior-evening row (June 10..11, 00:00Z..04:00Z)
+		// on the evening of June 9 (2026-06-10T01:00:00Z = June 9 21:00 NY)!
+		const replacementPol: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-d-minus-1-replacement",
+			name: "D-1 Replacement Policy",
+		};
+		const dMinus1ReplacementRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-09"),
+				at: parseInstant("2026-06-10T01:00:00Z"), // June 9 21:00 EDT
+				employeeCalendarTimezone: "America/New_York",
+				organizationTimezone: "America/New_York",
+				policiesById: new Map([
+					[retiredPol.id, retiredPol],
+					[replacementPol.id, replacementPol],
+				]),
+				contractDefaults: [],
+				confirmedTerms: [],
+				policyAssignments: [
+					{
+						id: "asgn-1a-fallback-retired",
+						policyId: retiredPol.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "legacy",
+						sourceEmploymentHistoryId: null,
+						isActive: false,
+						effectiveFrom: new Date("2026-06-10T00:00:00Z"),
+						effectiveUntil: new Date("2026-06-10T04:00:00Z"), // exact June 10 NY midnight
+						effectiveFromDate: "2026-06-10",
+						effectiveUntilDate: "2026-06-11",
+						priority: 2,
+						createdAt: new Date("2026-06-01T00:00:00Z"),
+					},
+					{
+						id: "asgn-active-d-minus-1",
+						policyId: replacementPol.id,
+						assignmentType: "employee",
+						teamId: null,
+						employeeId: "emp-1",
+						sourceKind: "manager_assignment",
+						sourceEmploymentHistoryId: null,
+						isActive: true,
+						effectiveFrom: new Date("2026-06-09T00:00:00Z"),
+						effectiveUntil: null,
+						effectiveFromDate: "2026-06-09",
+						effectiveUntilDate: null,
+						priority: 2,
+						createdAt: new Date("2026-06-10T10:00:00Z"),
+					},
+				],
+			}),
+		);
+		expect(dMinus1ReplacementRes.workPolicy?.policyId).toBe(replacementPol.id);
 	});
 });

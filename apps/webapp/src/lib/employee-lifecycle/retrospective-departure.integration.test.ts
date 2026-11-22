@@ -1505,7 +1505,7 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			now: new Date("2026-06-15T12:00:00Z"),
 			data: { isActive: false },
 		});
-		await commands().correctPastDepartureDate(ownerActor(), {
+		const depA5Extended = await commands().correctPastDepartureDate(ownerActor(), {
 			employeeId: personUnlinkedPin.employeeId,
 			departureId: depA5.departureId,
 			expectedRevision: depA5.revision,
@@ -1536,6 +1536,52 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			{
 				valid_from_date: "2026-06-15",
 				valid_until_date: "2026-06-20",
+				work_policy_id: null,
+				weekly_contract_minutes: 2400,
+			},
+		]);
+
+		// Astra #6 (Pass 7): Repeated departure corrections (extend June 20 -> shorten June 12 ->
+		// extend June 18) MUST leave June 12..14 covered by the pinned row and trim the continuation
+		// cleanly to June 18 with ZERO uncovered wage gap!
+		const depA6Shortened = await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: personUnlinkedPin.employeeId,
+			departureId: depA5.departureId,
+			expectedRevision: depA5Extended.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-11", // cutoff = 2026-06-12
+		});
+		await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: personUnlinkedPin.employeeId,
+			departureId: depA5.departureId,
+			expectedRevision: depA6Shortened.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-17", // cutoff = 2026-06-18
+		});
+		const { rows: a6Terms } = await fixture.pool.query<{
+			valid_from_date: string;
+			valid_until_date: string | null;
+			work_policy_id: string | null;
+			weekly_contract_minutes: number | null;
+		}>(
+			`SELECT to_char(valid_from_date, 'YYYY-MM-DD') AS valid_from_date,
+				to_char(valid_until_date, 'YYYY-MM-DD') AS valid_until_date,
+				work_policy_id, weekly_contract_minutes
+			 FROM employee_employment_history
+			 WHERE organization_id = $1 AND employee_id = $2
+			 ORDER BY valid_from_date ASC`,
+			[fixture.organizationId, personUnlinkedPin.employeeId],
+		);
+		expect(a6Terms).toEqual([
+			{
+				valid_from_date: "2026-01-01",
+				valid_until_date: "2026-06-15",
+				work_policy_id: polTermRetiring!.id,
+				weekly_contract_minutes: 2400,
+			},
+			{
+				valid_from_date: "2026-06-15",
+				valid_until_date: "2026-06-18",
 				work_policy_id: null,
 				weekly_contract_minutes: 2400,
 			},

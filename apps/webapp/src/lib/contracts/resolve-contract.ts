@@ -593,7 +593,14 @@ function isPreservedLegacyPriorEveningWindow(
 		instantFromDate(row.effectiveFrom),
 		organizationTimezone,
 	).toString();
-	return localFromDate < row.effectiveFromDate;
+	if (localFromDate >= row.effectiveFromDate) return false;
+	// Astra #9 / Opus #2: Require `effective_until` to equal exact org-local midnight of
+	// `effective_from_date` (the exact timestamp written by Step 1a-fallback on retirement),
+	// so manually canceled 1-day legacy assignments ending at UTC midnight of D+1 are never revived.
+	const expectedLocalMidnight = parsePlainDate(row.effectiveFromDate)
+		.toZonedDateTime(organizationTimezone)
+		.toInstant();
+	return compareInstants(instantFromDate(row.effectiveUntil), expectedLocalMidnight) === 0;
 }
 
 function selectPolicyAssignmentAtLevel(input: {
@@ -634,6 +641,10 @@ function selectPolicyAssignmentAtLevel(input: {
 	if (matching.length === 0) return null;
 
 	matching.sort((left, right) => {
+		// Opus #2(b): Prefer active assignments over deactivated preserved 1a-fallback prior-evening
+		// rows so a replacement scheduled from D-1 overrides a deactivated retired policy on D-1 evening.
+		const activeCmp = (right.isActive !== false ? 1 : 0) - (left.isActive !== false ? 1 : 0);
+		if (activeCmp !== 0) return activeCmp;
 		const leftFrom = left.effectiveFromDate ?? "";
 		const rightFrom = right.effectiveFromDate ?? "";
 		if (rightFrom !== leftFrom) return rightFrom.localeCompare(leftFrom);
@@ -1754,13 +1765,16 @@ export async function loadEffectiveContractsBatch(
 						eq(workPolicyAssignment.sourceKind, "employment_terms"),
 						inArray(workPolicyAssignment.employeeId, uniqueEmployeeIds),
 					),
-					// Astra #9: Include deactivated retired legacy prior-evening instant windows so
-					// scheduling a successor on retirement day never erases historical prior-evening lookups.
+					// Astra #9 / Opus #2: Include deactivated retired legacy prior-evening instant windows
+					// (effective_until = exact org-local midnight of effective_from_date) so scheduling a
+					// successor on retirement day never erases historical prior-evening lookups, while
+					// excluding manually canceled 1-day legacy rows.
 					and(
 						eq(workPolicyAssignment.sourceKind, "legacy"),
 						sql`${workPolicyAssignment.effectiveFrom} IS NOT NULL`,
 						sql`${workPolicyAssignment.effectiveUntil} IS NOT NULL`,
 						sql`${workPolicyAssignment.effectiveUntilDate} = ${workPolicyAssignment.effectiveFromDate} + 1`,
+						sql`${workPolicyAssignment.effectiveUntil} = ((${workPolicyAssignment.effectiveFromDate}::timestamp AT TIME ZONE ${orgTimezone}) AT TIME ZONE 'UTC')`,
 						or(
 							eq(workPolicyAssignment.assignmentType, "organization"),
 							eq(workPolicyAssignment.assignmentType, "team"),

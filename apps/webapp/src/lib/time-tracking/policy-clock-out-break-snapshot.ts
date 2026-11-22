@@ -327,6 +327,7 @@ type AssignmentCandidate = Readonly<{
 	type: "employee" | "team" | "organization";
 	policyId: string;
 	priority: number;
+	isActive: boolean;
 	effectiveUntilDate: string | null;
 	policyEvaluationDate: string | null;
 }>;
@@ -412,6 +413,7 @@ function selectAssignmentCandidate(
 			type: row.assignmentType,
 			policyId: row.assignmentPolicyId,
 			priority: row.priority as number,
+			isActive: typeof row.assignmentIsActive === "boolean" ? row.assignmentIsActive : true,
 			effectiveUntilDate: optionalPlainDate(row.assignmentEffectiveUntilDate),
 			policyEvaluationDate: optionalPlainDate(row.policyEvaluationDate),
 		});
@@ -423,6 +425,7 @@ function selectAssignmentCandidate(
 			(left, right) =>
 				right.priority - left.priority ||
 				specificity[right.type] - specificity[left.type] ||
+				(right.isActive ? 1 : 0) - (left.isActive ? 1 : 0) ||
 				(left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
 		)[0] ?? fail();
 	return {
@@ -517,6 +520,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					assignment.organization_id as "assignmentOrganizationId",
 					assignment.assignment_type as "assignmentType",
 					assignment.policy_id as "assignmentPolicyId", assignment.priority,
+					assignment.is_active as "assignmentIsActive",
 					case
 						when assignment.source_kind = 'legacy' and assignment.effective_until is not null
 						then case
@@ -556,6 +560,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 							and assignment.effective_from_date is not null
 							and assignment.effective_until_date = assignment.effective_from_date + 1
 							and ((assignment.effective_from at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone")::date < assignment.effective_from_date
+							and assignment.effective_until = ((assignment.effective_from_date::timestamp at time zone employee_row."effectiveOrganizationTimezone") at time zone 'UTC')
 						)
 					)
 					and not (
@@ -630,6 +635,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				assignment."assignmentId",
 				assignment."assignmentOrganizationId", assignment."assignmentType",
 				assignment."assignmentPolicyId", assignment.priority,
+				assignment."assignmentIsActive",
 				assignment."assignmentEffectiveUntilDate",
 				assignment."policyEvaluationDate"
 			from employee_evidence employee_row
@@ -638,6 +644,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			order by assignment.priority desc nulls last,
 				case assignment."assignmentType"
 					when 'employee' then 2 when 'team' then 1 else 0 end desc,
+				assignment."assignmentIsActive" desc nulls last,
 				assignment."assignmentId"
 		`);
 		if (

@@ -433,6 +433,7 @@ export async function retirePolicyReferencesInTx(
 		orgTodayDate: string;
 		orgTimezone?: string;
 		now: Date;
+		useDbClockTimestamp?: boolean;
 	},
 ): Promise<void> {
 	const { organizationId, policyId, actorUserId, orgTodayDate, now } = input;
@@ -566,7 +567,12 @@ export async function retirePolicyReferencesInTx(
 	//     before `orgTodayDate` keep resolving this policy (even when overlapping another manager
 	//     assignment), today and future dates stop applying it, later reactivation never revives it,
 	//     and already-superseded overlapping legacy rows are capped WITHOUT cloning stale wages (Astra #4).
-	const unlinkedTerms = await tx
+	// 1d. Split ALL confirmed `employee_employment_history` terms rows still pinned to this retired
+	//     policy past `orgTodayDate` (both unlinked migrated pins AND rows whose linked assignment
+	//     was capped in Step 1b/1c) at `orgTodayDate` so historical dates keep `work_policy_id = policyId`,
+	//     today/future dates carry `work_policy_id = NULL`, and later pay-only wage edits never copy a
+	//     stale retired pin (H5 / F10-1 / Astra #1 & #3 & #4).
+	const pinnedTerms = await tx
 		.select({
 			row: employeeEmploymentHistory,
 			validFromDateIso: sql<string>`to_char(${employeeEmploymentHistory.validFromDate}, 'YYYY-MM-DD')`,
@@ -581,20 +587,11 @@ export async function retirePolicyReferencesInTx(
 				eq(employeeEmploymentHistory.workPolicyId, policyId),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				sql`(${employeeEmploymentHistory.validUntilDate} IS NULL OR ${employeeEmploymentHistory.validUntilDate} > ${orgTodayDate}::date)`,
-				sql`NOT EXISTS (
-					SELECT 1
-					FROM work_policy_assignment a
-					WHERE a.organization_id = ${employeeEmploymentHistory.organizationId}
-						AND a.assignment_type = 'employee'
-						AND a.employee_id = ${employeeEmploymentHistory.employeeId}
-						AND a.policy_id = ${employeeEmploymentHistory.workPolicyId}
-						AND a.source_employment_history_id = ${employeeEmploymentHistory.id}
-				)`,
 			),
 		)
 		.orderBy(asc(employeeEmploymentHistory.id));
 
-	for (const { row: term, validFromDateIso, validUntilDateIso } of unlinkedTerms) {
+	for (const { row: term, validFromDateIso, validUntilDateIso } of pinnedTerms) {
 		const fromDate =
 			validFromDateIso || plainDateAt(instantFromDate(term.validFrom), orgTimezone).toString();
 		if (fromDate >= orgTodayDate) {
@@ -613,10 +610,10 @@ export async function retirePolicyReferencesInTx(
 			continue;
 		}
 
-		// Astra #4: Check whether a newer non-empty confirmed terms row already supersedes `term`
-		// on or before `orgTodayDate` (possible for legacy `employment_period_id IS NULL` rows).
-		// If already superseded, cap `term` without inserting a continuation row so stale wages/terms
-		// can never overtake the newer winning row!
+		// Astra #4 / #5: Check whether a newer non-empty confirmed terms row already supersedes `term`
+		// on or before `orgTodayDate` (possible for legacy `employment_period_id IS NULL` rows),
+		// comparing `newer.created_at` against `cur.created_at` inside PostgreSQL to preserve full
+		// microsecond precision. If already superseded, cap `term` without inserting a continuation row.
 		const supersedingRes = await tx.execute(sql`
 			SELECT
 				MIN(to_char(newer.valid_from_date, 'YYYY-MM-DD')) FILTER (
@@ -629,8 +626,8 @@ export async function retirePolicyReferencesInTx(
 						OR (
 							newer.valid_from_date = ${fromDate}::date
 							AND (
-								newer.created_at > ${term.createdAt}
-								OR (newer.created_at = ${term.createdAt} AND newer.id > ${term.id}::uuid)
+								newer.created_at > cur.created_at
+								OR (newer.created_at = cur.created_at AND newer.id > cur.id)
 							)
 						)
 					)
@@ -649,6 +646,9 @@ export async function retirePolicyReferencesInTx(
 						AND (ps.valid_until_date IS NULL OR ps.valid_until_date > ps.valid_from_date)
 				) AS "hasOpenPeriodScopedTerms"
 			FROM employee_employment_history newer
+			JOIN employee_employment_history cur
+				ON cur.id = ${term.id}::uuid
+				AND cur.organization_id = ${organizationId}
 			WHERE newer.organization_id = ${organizationId}
 				AND newer.employee_id = ${term.employeeId}::uuid
 				AND newer.review_state = 'confirmed'
@@ -824,7 +824,7 @@ export async function retirePolicyReferencesInTx(
 			retiredAtUtcMidnight: orgTodayMidnight.toISOString(),
 			organizationTimezone: orgTimezone,
 		}),
-		timestamp: now,
+		timestamp: input.useDbClockTimestamp ? sql`clock_timestamp()` : now,
 	});
 
 	// 2. Query ONLY active contract_default rows referencing this policy (under the org-wide
@@ -1561,11 +1561,21 @@ export async function updateOrPublishWorkPolicyInTx(
 	}
 	const requestedEffectiveFromDate = normalizeDateInput(data.effectiveFromDate);
 
-	// Step 1: When retiring (isActive: false), acquire locks in universal deadlock-free order:
-	// (0) org defaults advisory lock (EXCLUSIVE) -> (3) active policy assignments ORDER BY id -> (4) work_policy (H8 / M3 / M4).
+	// Step 1: Acquire locks in universal deadlock-free order (H8 / M3 / M4 / Astra #2 & #3):
+	// - When retiring: (0) org defaults advisory lock EXCLUSIVE -> (1.5) organization FOR KEY SHARE ->
+	//   (2) pinned employees FOR KEY SHARE -> (3) active policy assignments ORDER BY id FOR UPDATE -> (4) work_policy FOR UPDATE.
+	// - Otherwise: (1.5) organization FOR KEY SHARE -> (4) work_policy FOR UPDATE so inserting
+	//   `work_policy_version` (FK -> organization) never inverts (4) <-> (1.5) against `rehireEmployee`!
 	if (data.isActive === false) {
 		await lockContractDefaultsOrgExclusiveInTx(tx, organizationId);
 		await lockPolicyAssignmentsForRetirementInTx(tx, organizationId, policyId);
+	} else {
+		await tx.execute(sql`
+			SELECT id
+			FROM organization
+			WHERE id = ${organizationId}
+			FOR KEY SHARE
+		`);
 	}
 	const existingPolicy = await lockWorkPolicyForUpdateInTx(tx, organizationId, policyId);
 	if (!existingPolicy) {
@@ -1635,6 +1645,7 @@ export async function updateOrPublishWorkPolicyInTx(
 				orgTodayDate,
 				orgTimezone: orgTimezone ?? undefined,
 				now,
+				useDbClockTimestamp: input.now === undefined,
 			});
 		}
 
@@ -1839,6 +1850,7 @@ export async function updateOrPublishWorkPolicyInTx(
 				orgTodayDate,
 				orgTimezone,
 				now: dateFromInstant(nowInstant),
+				useDbClockTimestamp: input.now === undefined,
 			});
 		}
 
@@ -1949,6 +1961,7 @@ export async function updateOrPublishWorkPolicyInTx(
 			orgTodayDate,
 			orgTimezone,
 			now: updateNow,
+			useDbClockTimestamp: input.now === undefined,
 		});
 	}
 

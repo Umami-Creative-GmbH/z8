@@ -182,9 +182,11 @@ export async function replacePolicyAssignmentWindowInTx(
 		sourceEmploymentHistoryId?: string | null;
 		sourceBatchItemId?: string | null;
 		now?: Date;
+		useDbClockTimestamp?: boolean;
 	},
 ): Promise<{ id: string } | null> {
 	const now = input.now ?? currentTimestamp();
+	const useDbClock = input.useDbClockTimestamp ?? input.now === undefined;
 	await clearPolicyAssignmentWindowInTx(tx, {
 		organizationId: input.organizationId,
 		target: input.target,
@@ -218,7 +220,7 @@ export async function replacePolicyAssignmentWindowInTx(
 			sourceBatchItemId: input.sourceBatchItemId ?? null,
 			isActive: true,
 			createdBy: input.actorUserId,
-			createdAt: now,
+			createdAt: useDbClock ? sql`clock_timestamp()` : now,
 			updatedAt: now,
 		})
 		.returning({ id: workPolicyAssignment.id });
@@ -296,19 +298,132 @@ function parsePgTimestampToDate(raw: Date | string): Date {
 }
 
 /**
+ * Checks whether a terms row's linked `work_policy_assignment` (if any exists for
+ * `(employmentHistoryId, policyId)`) still actively covers `dayIso`. When NO linked assignment
+ * exists (unlinked legacy/terms pin), returns `true`; when linked assignments exist but none
+ * actively cover `dayIso` (e.g. capped on policy retirement or replaced), returns `false` so
+ * pay-only wage edits never copy a retired or superseded pin (Astra #4).
+ */
+export async function doesLinkedTermsPolicyAssignmentCoverDayInTx(
+	tx: Pick<ContractWriteTx, "execute">,
+	input: {
+		organizationId: string;
+		employmentHistoryId: string;
+		policyId: string;
+		dayIso: string;
+	},
+): Promise<boolean> {
+	const res = await tx.execute<{ has_linked: boolean; covers_day: boolean }>(sql`
+		SELECT
+			EXISTS (
+				SELECT 1
+				FROM work_policy_assignment a
+				WHERE a.organization_id = ${input.organizationId}
+					AND a.assignment_type = 'employee'
+					AND a.policy_id = ${input.policyId}::uuid
+					AND a.source_employment_history_id = ${input.employmentHistoryId}::uuid
+			) AS has_linked,
+			EXISTS (
+				SELECT 1
+				FROM work_policy_assignment a
+				WHERE a.organization_id = ${input.organizationId}
+					AND a.assignment_type = 'employee'
+					AND a.policy_id = ${input.policyId}::uuid
+					AND a.source_employment_history_id = ${input.employmentHistoryId}::uuid
+					AND a.is_active = true
+					AND a.effective_from_date <= ${input.dayIso}::date
+					AND (a.effective_until_date IS NULL OR a.effective_until_date > ${input.dayIso}::date)
+			) AS covers_day
+	`);
+	const row = res.rows[0];
+	if (!row?.has_linked) return true;
+	return Boolean(row.covers_day);
+}
+
+/**
+ * Locks `work_policy FOR SHARE` (level 4) and verifies organization ownership & active status.
+ * For historical copied pins (e.g. backdated hourly wage changes into a period strictly before
+ * retirement, Opus #1), permits an inactive policy ONLY when `allowHistoricalUntilDateIso` is
+ * non-null and ends on or before the policy's retirement date in the organization timezone.
+ */
+export async function verifyWorkPolicyForTermsInTx(
+	tx: ContractWriteTx,
+	input: {
+		organizationId: string;
+		policyId: string;
+		allowHistoricalUntilDateIso?: string | null;
+	},
+): Promise<"ok" | "not_found" | "inactive"> {
+	const orgTimezone = await loadOrganizationTimezone(tx, input.organizationId);
+	const polRes = await tx.execute<{
+		id: string;
+		is_active: boolean;
+		retired_on_date: string | null;
+	}>(sql`
+		SELECT
+			id,
+			is_active,
+			to_char((updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS retired_on_date
+		FROM work_policy
+		WHERE id = ${input.policyId}::uuid
+			AND organization_id = ${input.organizationId}
+		LIMIT 1
+		FOR SHARE
+	`);
+	const pol = polRes.rows[0];
+	if (!pol) return "not_found";
+	if (pol.is_active) return "ok";
+
+	const endDateIso = input.allowHistoricalUntilDateIso ?? null;
+	if (!endDateIso) return "inactive";
+
+	// Determine the durable retirement date (latest `work_policy.retired` audit row, falling back
+	// to `work_policy.updated_at` in org timezone for direct SQL / pre-upgrade retirements).
+	const auditRes = await tx.execute<{ metadata: string | null }>(sql`
+		SELECT metadata
+		FROM audit_log
+		WHERE organization_id = ${input.organizationId}
+			AND entity_type = 'work_policy'
+			AND entity_id = ${input.policyId}
+			AND action = 'work_policy.retired'
+		ORDER BY timestamp DESC, id DESC
+		LIMIT 1
+	`);
+	let retiredOnDate: string | null = null;
+	const rawMeta = auditRes.rows[0]?.metadata;
+	if (rawMeta) {
+		try {
+			const parsed = JSON.parse(rawMeta) as Record<string, unknown>;
+			if (typeof parsed.retiredOnDate === "string" && parsed.retiredOnDate.length === 10) {
+				retiredOnDate = parsed.retiredOnDate;
+			}
+		} catch {
+			// fall back below
+		}
+	}
+	if (!retiredOnDate) {
+		retiredOnDate = pol.retired_on_date;
+	}
+	if (retiredOnDate && endDateIso <= retiredOnDate) {
+		return "ok";
+	}
+	return "inactive";
+}
+
+/**
  * Finds the earliest intervening policy retirement date (`retiredOnDate` in
- * `[previousCutoffLocalDate, nextCutoffLocalDate)`) that occurred on or after `createdAt`
- * for an unlinked confirmed `employee_employment_history` row pinned to `policyId`, locking
- * `work_policy FOR SHARE` at level (4) so forward departure corrections never revive a retired
- * unlinked terms pin (Astra #5 / #7 / M9).
+ * `[previousCutoffLocalDate, nextCutoffLocalDate)`) that occurred on or after the terms row's
+ * PostgreSQL `created_at` (full microsecond precision, Astra #7) for an unlinked confirmed
+ * `employee_employment_history` row pinned to `policyId`, locking `work_policy FOR SHARE` at
+ * level (4) so forward departure corrections never revive a retired unlinked terms pin (Astra #5 / M9).
  */
 export async function findInterveningPolicyRetirementForTermsInTx(
 	tx: ContractWriteTx,
 	input: {
 		organizationId: string;
+		employmentHistoryId: string;
 		policyId: string;
 		effectiveFromDate: string;
-		createdAt: Date;
 		previousCutoffLocalDate: string;
 		nextCutoffLocalDate: string;
 	},
@@ -317,36 +432,40 @@ export async function findInterveningPolicyRetirementForTermsInTx(
 	const polRes = await tx.execute<{
 		is_active: boolean;
 		retired_on_date: string | null;
-		updated_at: Date | string;
+		retired_on_or_after_created: boolean;
 	}>(sql`
 		SELECT
-			is_active,
-			to_char((updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS retired_on_date,
-			updated_at
-		FROM work_policy
-		WHERE organization_id = ${input.organizationId}
-			AND id = ${input.policyId}::uuid
+			wp.is_active,
+			to_char((wp.updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS retired_on_date,
+			(wp.updated_at >= h.created_at) AS retired_on_or_after_created
+		FROM work_policy wp
+		JOIN employee_employment_history h
+			ON h.id = ${input.employmentHistoryId}::uuid
+			AND h.organization_id = wp.organization_id
+		WHERE wp.organization_id = ${input.organizationId}
+			AND wp.id = ${input.policyId}::uuid
 		LIMIT 1
-		FOR SHARE
+		FOR SHARE OF wp
 	`);
-	const auditRes = await tx.execute<{ metadata: string | null; timestamp: Date | string }>(sql`
-		SELECT metadata, timestamp
-		FROM audit_log
-		WHERE organization_id = ${input.organizationId}
-			AND entity_type = 'work_policy'
-			AND entity_id = ${input.policyId}
-			AND action = 'work_policy.retired'
+	const auditRes = await tx.execute<{ metadata: string | null }>(sql`
+		SELECT al.metadata
+		FROM audit_log al
+		JOIN employee_employment_history h
+			ON h.id = ${input.employmentHistoryId}::uuid
+			AND h.organization_id = al.organization_id
+		WHERE al.organization_id = ${input.organizationId}
+			AND al.entity_type = 'work_policy'
+			AND al.entity_id = ${input.policyId}
+			AND al.action = 'work_policy.retired'
+			AND al.timestamp >= h.created_at
 	`);
 
-	const createdInstant = instantFromDate(input.createdAt);
 	let earliestRetirementDate: string | null = null;
 	for (const row of auditRes.rows) {
 		if (!row.metadata) continue;
 		try {
 			const parsed = JSON.parse(row.metadata) as Record<string, unknown>;
 			if (typeof parsed.retiredOnDate !== "string" || parsed.retiredOnDate.length !== 10) continue;
-			const evInstant = parsePgInstant(row.timestamp);
-			if (compareInstants(evInstant, createdInstant) < 0) continue;
 			if (
 				parsed.retiredOnDate < input.effectiveFromDate ||
 				parsed.retiredOnDate < input.previousCutoffLocalDate ||
@@ -363,10 +482,8 @@ export async function findInterveningPolicyRetirementForTermsInTx(
 	}
 
 	const polRow = polRes.rows[0];
-	if (polRow && !polRow.is_active && polRow.retired_on_date) {
-		const polInstant = parsePgInstant(polRow.updated_at);
+	if (polRow && !polRow.is_active && polRow.retired_on_date && polRow.retired_on_or_after_created) {
 		if (
-			compareInstants(polInstant, createdInstant) >= 0 &&
 			polRow.retired_on_date >= input.effectiveFromDate &&
 			polRow.retired_on_date >= input.previousCutoffLocalDate &&
 			polRow.retired_on_date < input.nextCutoffLocalDate

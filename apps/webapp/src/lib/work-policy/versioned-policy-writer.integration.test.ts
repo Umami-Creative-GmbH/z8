@@ -1456,6 +1456,143 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			},
 		]);
 
+		// Astra #4 (Pass 7) & Opus #1 (Pass 12): Linked hourly terms split on retirement so
+		// (a) post-retirement wage change succeeds without reviving the retired policy even after reactivation,
+		// AND (b) backdated confirmed & draft wage changes strictly before retirement succeed and confirm!
+		const wagePol = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			now,
+			data: {
+				name: "Wage Retirement Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+			},
+		});
+		const wageUserId = `wage-user-${randomUUID()}`;
+		await siblingPool.query(
+			`INSERT INTO "user" (id, name, email, email_verified, created_at, updated_at)
+			 VALUES ($1, 'Wage User', $2, true, now(), now())`,
+			[wageUserId, `${wageUserId}@example.com`],
+		);
+		const {
+			rows: [wageEmp],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO employee (user_id, organization_id, role, contract_type, is_active, created_at, updated_at)
+			 VALUES ($1, $2, 'employee', 'hourly', true, now(), now()) RETURNING id`,
+			[wageUserId, ORG_ID],
+		);
+		const {
+			rows: [wagePeriod],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO employee_employment_period (organization_id, employee_id, status, started_at, start_provenance, created_at, created_by)
+			 VALUES ($1, $2, 'open', '2026-01-01T00:00:00Z', 'recorded', now(), $3) RETURNING id`,
+			[ORG_ID, wageEmp!.id, USER_ID],
+		);
+		const {
+			rows: [wageTerms1],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO employee_employment_history (
+				organization_id, employee_id, employment_period_id, valid_from, valid_from_date,
+				status, review_state, contract_type, hourly_rate, currency, work_policy_id,
+				created_by, updated_at
+			) VALUES (
+				$1, $2, $3, '2026-01-01T00:00:00Z', '2026-01-01',
+				'active', 'confirmed', 'hourly', '18.00', 'EUR', $4, $5, now()
+			) RETURNING id`,
+			[ORG_ID, wageEmp!.id, wagePeriod!.id, wagePol.policy.id, USER_ID],
+		);
+		await siblingPool.query(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, source_employment_history_id,
+				is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'employee', $3, 2,
+				'2026-01-01 00:00:00', '2026-01-01', 'employment_terms', $4,
+				true, $5, now()
+			)`,
+			[wagePol.policy.id, ORG_ID, wageEmp!.id, wageTerms1!.id, USER_ID],
+		);
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: wagePol.policy.id,
+			now: new Date("2026-06-10T12:00:00Z"),
+			data: { isActive: false },
+		});
+
+		const { changeHourlyWage, confirmEmploymentTerms } =
+			await import("@/lib/employment-history/write-terms");
+		const { parsePlainDate } = await import("@/lib/datetime/temporal-core");
+
+		// Opus #1: Backdated confirmed wage change (2026-03-01) and backdated draft (2026-04-01) + confirm
+		// while policy is STILL inactive MUST succeed and keep workPolicyId = wagePol on < 2026-06-10!
+		const backdatedConfirmed = await siblingDb.transaction((tx) =>
+			changeHourlyWage(tx as never, {
+				organizationId: ORG_ID,
+				employeeId: wageEmp!.id,
+				actorUserId: USER_ID,
+				effectiveOn: parsePlainDate("2026-03-01"),
+				hourlyRate: 20,
+				changeReason: "Backdated March raise",
+				reviewState: "confirmed",
+			}),
+		);
+		expect(backdatedConfirmed.workPolicyId).toBe(wagePol.policy.id);
+		expect(backdatedConfirmed.validUntilDate).toBe("2026-06-10");
+
+		const backdatedDraft = await siblingDb.transaction((tx) =>
+			changeHourlyWage(tx as never, {
+				organizationId: ORG_ID,
+				employeeId: wageEmp!.id,
+				actorUserId: USER_ID,
+				effectiveOn: parsePlainDate("2026-04-01"),
+				hourlyRate: 21,
+				changeReason: "Backdated April draft raise",
+				reviewState: "draft",
+			}),
+		);
+		const confirmedDraft = await siblingDb.transaction((tx) =>
+			confirmEmploymentTerms(tx as never, {
+				organizationId: ORG_ID,
+				employeeId: wageEmp!.id,
+				actorUserId: USER_ID,
+				termsId: backdatedDraft.id,
+			}),
+		);
+		expect(confirmedDraft.workPolicyId).toBe(wagePol.policy.id);
+		expect(confirmedDraft.validUntilDate).toBe("2026-06-10");
+
+		// Astra #4: Reactivate policy, then perform a post-retirement wage change on 2026-07-01 —
+		// workPolicyId MUST remain null (never reviving the retired pin!).
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: wagePol.policy.id,
+			now: new Date("2026-06-15T12:00:00Z"),
+			data: { isActive: true },
+		});
+		const postRetireRaise = await siblingDb.transaction((tx) =>
+			changeHourlyWage(tx as never, {
+				organizationId: ORG_ID,
+				employeeId: wageEmp!.id,
+				actorUserId: USER_ID,
+				effectiveOn: parsePlainDate("2026-07-01"),
+				hourlyRate: 24,
+				changeReason: "July raise after retirement",
+				reviewState: "confirmed",
+			}),
+		);
+		expect(postRetireRaise.workPolicyId).toBeNull();
+
 		// M5: Legacy UTC-midnight assignment starting 2026-06-10 00:00Z (June 9 20:00 America/New_York)
 		// keeps its prior-evening hours both with no preceding row (shifts back to 2026-06-09) AND
 		// when a preceding row occupies 2026-06-09 (keeps 2026-06-10..2026-06-11 date range with 04:00Z instant)!

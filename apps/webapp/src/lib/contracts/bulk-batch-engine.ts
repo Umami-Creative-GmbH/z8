@@ -884,6 +884,7 @@ async function executeSparseContractMutationInTx(
 		changes: BulkTermsUpdateChanges;
 		sourceTemplateVersionId?: string | null;
 		now: Date;
+		commitNow?: Date;
 	},
 ): Promise<{
 	status: ContractChangeBatchItemStatus;
@@ -1136,7 +1137,7 @@ async function executeSparseContractMutationInTx(
 		sourceTemplateVersionId: input.sourceTemplateVersionId ?? null,
 		sourceBatchItemId: input.item.id,
 		clearPersonalPolicyPin: nextClearPersonalPolicyPin,
-		now: input.now,
+		now: input.commitNow,
 	});
 
 	const completedResult = {
@@ -1488,6 +1489,7 @@ export async function runContractChangeBatch(
 							changes: buildTemplateChanges(templateSnapshot, batchPayload.changeReason),
 							sourceTemplateVersionId: templateSnapshot.id,
 							now: itemNow,
+							commitNow: input.now ? itemNow : undefined,
 						}),
 					);
 					itemStatus = outcome.status;
@@ -1507,6 +1509,17 @@ export async function runContractChangeBatch(
 						if (!lockedItem.claimable) {
 							return { status: lockedItem.status, alreadyTerminal: true };
 						}
+						// Astra #1: Acquire (0) org policy advisory lock SHARED + (1.5) organization FOR KEY SHARE
+						// BEFORE locking (2) employee FOR UPDATE so nested `adoptContractDefaultInTx` can never
+						// invert (0) <-> (2) against concurrent policy retirement!
+						const orgLockKey = `contract_default_org:${input.organizationId}`;
+						await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
+						await tx.execute(sql`
+							SELECT id
+							FROM organization
+							WHERE id = ${input.organizationId}
+							FOR KEY SHARE
+						`);
 						// Lock employee before rechecking eligibility and committing adoption (A1-19).
 						await tx.execute(sql`
 							SELECT id
@@ -1595,7 +1608,7 @@ export async function runContractChangeBatch(
 							keepDivergenceFields: batchPayload.keepDivergenceFields,
 							changeReason: batchPayload.changeReason,
 							sourceBatchItemId: item.id,
-							now: itemNow,
+							now: input.now ? itemNow : undefined,
 						});
 						await markBatchItemOutcomeInTx(tx, {
 							organizationId: input.organizationId,
@@ -1634,6 +1647,7 @@ export async function runContractChangeBatch(
 								changeReason: batchPayload.changes.changeReason ?? batchPayload.changeReason,
 							},
 							now: itemNow,
+							commitNow: input.now ? itemNow : undefined,
 						}),
 					);
 					itemStatus = outcome.status;
@@ -1657,6 +1671,7 @@ export async function runContractChangeBatch(
 							overwritePersonalDivergences: itemPayload.overwritePersonalDivergences,
 							changes: itemPayload.changes,
 							now: itemNow,
+							commitNow: input.now ? itemNow : undefined,
 						}),
 					);
 					itemStatus = outcome.status;

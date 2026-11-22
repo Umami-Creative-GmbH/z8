@@ -33,6 +33,7 @@ import {
 	instantFromDate,
 	parsePlainDate,
 	plainDateAt,
+	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
@@ -820,8 +821,6 @@ async function correctPastDepartureDate(
 ): Promise<CorrectPastDepartureDateResult> {
 	const fingerprint = requestFingerprint(actor, "correct_past_departure_date", input);
 	return deps.db.transaction(async (tx) => {
-		const now = deps.clock.nowInstant();
-		const nowDate = dateFromInstant(now);
 		// Astra #2: Acquire (0) org policy advisory lock SHARED BEFORE beginCommand's (1.5)
 		// organization FOR UPDATE, then lock (2) employee FOR UPDATE and (3) active employee policy
 		// assignments ORDER BY id FOR UPDATE to strictly match universal lock order.
@@ -830,6 +829,9 @@ async function correctPastDepartureDate(
 		const target = await beginCommand(tx, actor, input.employeeId);
 		await lockEmployeeRow(tx, { organizationId: actor.organizationId, employeeId: target.id });
 		await lockEmployeeActivePolicyAssignmentsInTx(tx, actor.organizationId, target.id);
+		// Astra #8: Capture timestamp strictly AFTER acquiring locks.
+		const now = deps.clock.nowInstant();
+		const nowDate = dateFromInstant(now);
 		const replay = await readReceipt<CorrectPastDepartureDateResult>(
 			tx,
 			actor,
@@ -982,6 +984,10 @@ async function correctPastDepartureDate(
 
 		// Keep the stint's closing confirmed employment terms aligned with the corrected date.
 		if (newCutoffDate.getTime() > previousCutoff.getTime()) {
+			// Astra #6: Select the closing confirmed row in force right before `previousCutoff`
+			// (NOT any post-previous-cutoff row left behind by an earlier extend->shorten cycle!),
+			// and clamp its forward extension at any earliest later confirmed row so repeated
+			// extend -> shorten -> extend corrections never leave uncovered wage gaps!
 			const [finalTermRow] = await tx
 				.select({
 					row: employeeEmploymentHistory,
@@ -997,29 +1003,59 @@ async function correctPastDepartureDate(
 						eq(employeeEmploymentHistory.employeeId, target.id),
 						eq(employeeEmploymentHistory.employmentPeriodId, period.id),
 						eq(employeeEmploymentHistory.reviewState, "confirmed"),
-						sql`${employeeEmploymentHistory.validFrom} < ${newCutoffDate}`,
+						sql`${employeeEmploymentHistory.validFrom} < ${previousCutoff}`,
 					),
 				)
 				.orderBy(desc(employeeEmploymentHistory.validFrom))
 				.limit(1);
+			const [nextLaterTermRow] = await tx
+				.select({
+					validFrom: employeeEmploymentHistory.validFrom,
+					validFromDateIso: sql<string>`to_char(${employeeEmploymentHistory.validFromDate}, 'YYYY-MM-DD')`,
+				})
+				.from(employeeEmploymentHistory)
+				.where(
+					and(
+						eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+						eq(employeeEmploymentHistory.employeeId, target.id),
+						eq(employeeEmploymentHistory.employmentPeriodId, period.id),
+						eq(employeeEmploymentHistory.reviewState, "confirmed"),
+						sql`${employeeEmploymentHistory.validFrom} >= ${previousCutoff}`,
+						sql`(${employeeEmploymentHistory.validUntilDate} IS NULL OR ${employeeEmploymentHistory.validUntilDate} > ${employeeEmploymentHistory.validFromDate})`,
+					),
+				)
+				.orderBy(employeeEmploymentHistory.validFrom)
+				.limit(1);
+
+			const extensionTargetDateIso =
+				nextLaterTermRow && nextLaterTermRow.validFromDateIso < nextCutoff.cutoffLocalDate
+					? nextLaterTermRow.validFromDateIso
+					: nextCutoff.cutoffLocalDate;
+			const extensionTargetTs =
+				nextLaterTermRow && nextLaterTermRow.validFrom.getTime() < newCutoffDate.getTime()
+					? nextLaterTermRow.validFrom
+					: newCutoffDate;
+
 			const finalTerm = finalTermRow?.row;
 			if (
 				finalTerm &&
+				extensionTargetDateIso > previousCutoffLocalDate &&
 				(finalTerm.validUntil === null ||
 					finalTerm.validUntil.getTime() === previousCutoff.getTime() ||
 					finalTermRow.validUntilDateIso === previousCutoffLocalDate)
 			) {
-				// Astra #5: If the closing terms row carries an unlinked policy pin whose policy was
-				// retired between the old and new cutoffs, cap the pinned row at the retirement date
-				// and emit a continuation row with `workPolicyId = null` so the retired pin never revives!
+				// Astra #5 / #7: If the closing terms row carries a policy pin whose policy was
+				// retired between the old and target cutoffs (compared against PG microsecond
+				// `created_at`), cap the pinned row at the retirement date and emit a continuation
+				// row with `workPolicyId = null` so the retired pin never revives!
 				const interveningRetirementDate = finalTerm.workPolicyId
 					? await findInterveningPolicyRetirementForTermsInTx(tx, {
 							organizationId: actor.organizationId,
+							employmentHistoryId: finalTerm.id,
 							policyId: finalTerm.workPolicyId,
 							effectiveFromDate: finalTermRow.validFromDateIso,
-							createdAt: finalTerm.createdAt,
 							previousCutoffLocalDate,
-							nextCutoffLocalDate: nextCutoff.cutoffLocalDate,
+							nextCutoffLocalDate: extensionTargetDateIso,
 						})
 					: null;
 
@@ -1035,7 +1071,7 @@ async function correctPastDepartureDate(
 								AND id = ${finalTerm.id}::uuid
 						`);
 					}
-					if (interveningRetirementDate < nextCutoff.cutoffLocalDate) {
+					if (interveningRetirementDate < extensionTargetDateIso) {
 						const [continuation] = await tx
 							.insert(employeeEmploymentHistory)
 							.values({
@@ -1043,9 +1079,9 @@ async function correctPastDepartureDate(
 								organizationId: finalTerm.organizationId,
 								employmentPeriodId: finalTerm.employmentPeriodId,
 								validFrom: retirementUtcMidnight,
-								validUntil: newCutoffDate,
+								validUntil: extensionTargetTs,
 								validFromDate: interveningRetirementDate,
-								validUntilDate: nextCutoff.cutoffLocalDate,
+								validUntilDate: extensionTargetDateIso,
 								status: finalTerm.status,
 								contractType: finalTerm.contractType,
 								weeklyContractMinutes: finalTerm.weeklyContractMinutes,
@@ -1102,14 +1138,30 @@ async function correctPastDepartureDate(
 				} else {
 					await tx.execute(sql`
 						UPDATE employee_employment_history
-						SET valid_until = ${newCutoffDate},
-							valid_until_date = GREATEST(valid_from_date, ${nextCutoff.cutoffLocalDate}::date),
+						SET valid_until = ${extensionTargetTs},
+							valid_until_date = GREATEST(valid_from_date, ${extensionTargetDateIso}::date),
 							updated_at = ${nowDate}
 						WHERE organization_id = ${actor.organizationId}
 							AND id = ${finalTerm.id}::uuid
 					`);
 				}
 			}
+
+			// Astra #6: If a post-previous-cutoff confirmed row (such as a continuation row from an
+			// earlier extend -> shorten cycle) now spans past `newCutoffDate`, cap it at `newCutoffDate`.
+			await tx.execute(sql`
+				UPDATE employee_employment_history
+				SET valid_until = ${newCutoffDate},
+					valid_until_date = GREATEST(valid_from_date, ${nextCutoff.cutoffLocalDate}::date),
+					updated_at = ${nowDate}
+				WHERE organization_id = ${actor.organizationId}
+					AND employee_id = ${target.id}::uuid
+					AND employment_period_id = ${period.id}::uuid
+					AND review_state = 'confirmed'
+					AND valid_from >= ${previousCutoff}
+					AND valid_from < ${newCutoffDate}
+					AND (valid_until IS NULL OR valid_until > ${newCutoffDate})
+			`);
 		} else if (newCutoffDate.getTime() < previousCutoff.getTime()) {
 			await tx.execute(sql`
 				UPDATE employee_employment_history
@@ -1281,8 +1333,6 @@ async function recordHistoricalDepartureDate(
 ): Promise<RecordHistoricalDepartureDateResult> {
 	const fingerprint = requestFingerprint(actor, "record_historical_departure_date", input);
 	return deps.db.transaction(async (tx) => {
-		const now = deps.clock.nowInstant();
-		const nowDate = dateFromInstant(now);
 		// Astra #2: Acquire (0) org policy advisory lock SHARED BEFORE beginCommand's (1.5)
 		// organization FOR UPDATE, then lock (2) employee FOR UPDATE and (3) active employee policy
 		// assignments ORDER BY id FOR UPDATE to strictly match universal lock order.
@@ -1291,6 +1341,9 @@ async function recordHistoricalDepartureDate(
 		const target = await beginCommand(tx, actor, input.employeeId);
 		await lockEmployeeRow(tx, { organizationId: actor.organizationId, employeeId: target.id });
 		await lockEmployeeActivePolicyAssignmentsInTx(tx, actor.organizationId, target.id);
+		// Astra #8: Capture timestamp strictly AFTER acquiring locks.
+		const now = deps.clock.nowInstant();
+		const nowDate = dateFromInstant(now);
 		const replay = await readReceipt<RecordHistoricalDepartureDateResult>(
 			tx,
 			actor,
@@ -1566,8 +1619,6 @@ async function rehireEmployee(
 ): Promise<RehireResult> {
 	const fingerprint = requestFingerprint(actor, "rehire_employee", input);
 	return deps.db.transaction(async (tx) => {
-		const now = deps.clock.nowInstant();
-		const nowDate = dateFromInstant(now);
 		// Astra #2: Acquire (0) org policy advisory lock SHARED BEFORE beginCommand's (1.5)
 		// organization FOR UPDATE, then lock (2) employee FOR UPDATE and (3) active employee policy
 		// assignments ORDER BY id FOR UPDATE to strictly match universal lock order.
@@ -1576,6 +1627,9 @@ async function rehireEmployee(
 		const target = await beginCommand(tx, actor, input.employeeId);
 		await lockEmployeeRow(tx, { organizationId: actor.organizationId, employeeId: target.id });
 		await lockEmployeeActivePolicyAssignmentsInTx(tx, actor.organizationId, target.id);
+		// Astra #8: Capture timestamp strictly AFTER acquiring locks.
+		const now = deps.clock.nowInstant();
+		const nowDate = dateFromInstant(now);
 		const replay = await readReceipt<RehireResult>(tx, actor, input.requestId, fingerprint);
 		if (replay) return replay;
 
@@ -1655,11 +1709,13 @@ async function rehireEmployee(
 		// The period starts at the rehire instant; its terms start on the
 		// org-local rehire date, stored as a calendar date like all terms (D1).
 		const rehirePlainDate = plainDateAt(now, timezone);
+		const useDbClockTimestamp = deps.clock === systemClock;
 		const insertedTerms = await writeEmploymentTerms(tx, {
 			organizationId: actor.organizationId,
 			employeeId: target.id,
 			actorUserId: actor.userId,
 			now: nowDate,
+			useDbClockTimestamp,
 			terms: {
 				validFrom: utcMidnight(rehirePlainDate),
 				status: "active",
@@ -1694,6 +1750,7 @@ async function rehireEmployee(
 				sourceContractDefaultId: null,
 				sourceEmploymentHistoryId: insertedTerms.id,
 				now: nowDate,
+				useDbClockTimestamp,
 			});
 		}
 		await tx.delete(employeeManagers).where(eq(employeeManagers.employeeId, target.id));

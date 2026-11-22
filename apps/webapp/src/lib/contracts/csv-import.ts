@@ -1935,14 +1935,17 @@ export async function commitCsvImportBatch(
 									.where(eq(organization.id, input.organizationId))
 									.limit(1);
 								const fallbackOrgTimezone = orgRow?.timezone ?? "UTC";
-								// Astra #13: Use each departure's frozen creation timezone when available so an
-								// organization timezone change after commit does not invalidate identical legacy retries.
+								// Astra #10 / #13: Use each departure's frozen creation timezone when available
+								// (including immediate departures where `last_working_day IS NULL`, keyed by
+								// `effectiveAt` in the departure's frozen timezone) so an organization timezone
+								// change after commit does not invalidate identical legacy retries.
 								const depTzRows =
 									parsedInstructions.length > 0
 										? await db
 												.select({
 													employeeId: employeeDeparture.employeeId,
 													lastWorkingDay: employeeDeparture.lastWorkingDay,
+													effectiveAt: employeeDeparture.effectiveAt,
 													timezone: employeeDeparture.timezone,
 												})
 												.from(employeeDeparture)
@@ -1959,7 +1962,15 @@ export async function commitCsvImportBatch(
 										: [];
 								const frozenTzByEmpAndDay = new Map<string, string>();
 								for (const depRow of depTzRows) {
-									const key = `${depRow.employeeId}:${depRow.lastWorkingDay ?? ""}`;
+									const dayKey =
+										depRow.lastWorkingDay ??
+										(depRow.effectiveAt
+											? plainDateAt(instantFromDate(depRow.effectiveAt), depRow.timezone).toString()
+											: plainDateAt(
+													instantFromDate(existing.createdAt),
+													depRow.timezone,
+												).toString());
+									const key = `${depRow.employeeId}:${dayKey}`;
 									if (!frozenTzByEmpAndDay.has(key)) {
 										frozenTzByEmpAndDay.set(key, depRow.timezone);
 									}

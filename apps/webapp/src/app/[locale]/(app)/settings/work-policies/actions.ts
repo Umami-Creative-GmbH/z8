@@ -456,13 +456,12 @@ export const deleteWorkPolicy = organizationAction(
 			}
 
 			yield* dbService.query("softDelete", async () => {
-				const orgTimezone = await loadOrganizationTimezone(dbService.db, organizationId);
-				const now = currentTimestamp();
-				const orgTodayDate = plainDateAt(instantFromDate(now), orgTimezone).toString();
-
 				await dbService.db.transaction(async (tx) => {
 					await lockContractDefaultsOrgExclusiveInTx(tx, organizationId);
 					await lockPolicyAssignmentsForRetirementInTx(tx, organizationId, policyId);
+					const orgTimezone = await loadOrganizationTimezone(tx as never, organizationId);
+					const now = currentTimestamp();
+					const orgTodayDate = plainDateAt(instantFromDate(now), orgTimezone).toString();
 					await tx
 						.update(workPolicy)
 						.set({
@@ -479,6 +478,7 @@ export const deleteWorkPolicy = organizationAction(
 						orgTodayDate,
 						orgTimezone,
 						now,
+						useDbClockTimestamp: true,
 					});
 				});
 			});

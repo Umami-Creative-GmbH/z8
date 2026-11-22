@@ -133,8 +133,6 @@ export async function assignEmployeeWorkPolicyInTx(
 	tx: ContractWriteTx,
 	input: AssignEmployeeWorkPolicyInput,
 ): Promise<AssignEmployeeWorkPolicyResult> {
-	const now = input.now ?? currentTimestamp();
-
 	// Universal deadlock-free lock order (Astra #2 / #5 / H8 / M3 / M4):
 	// (0) org policy advisory lock SHARED -> (1.5) organization FOR KEY SHARE ->
 	// (2) employee FOR UPDATE -> (3) active employee work_policy_assignment ORDER BY id FOR UPDATE ->
@@ -182,6 +180,9 @@ export async function assignEmployeeWorkPolicyInTx(
 		LIMIT 1
 		FOR SHARE
 	`);
+	// Astra #8: Capture timestamp strictly AFTER acquiring (0)/(1.5)/(2)/(3)/(4) so
+	// post-reactivation assignments are never stamped before the retirement they follow.
+	const now = input.now ?? currentTimestamp();
 	const policyRow = policyRes.rows[0];
 
 	if (!policyRow) {
@@ -240,6 +241,7 @@ export async function assignEmployeeWorkPolicyInTx(
 		sourceContractDefaultId: null,
 		sourceEmploymentHistoryId: null,
 		now,
+		useDbClockTimestamp: input.now === undefined,
 	});
 
 	if (!created) {
