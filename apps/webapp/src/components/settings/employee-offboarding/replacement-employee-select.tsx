@@ -127,23 +127,22 @@ export function ReplacementEmployeeSelect({
 		if (!nextCursor || isLoadingMore) return;
 		const seq = ++requestCounter.current;
 		setIsLoadingMore(true);
-		try {
-			const result = await searchReplacementEmployeesAction({
-				excludeEmployeeId,
-				search: debouncedSearch || null,
-				cursor: nextCursor,
-				limit: PAGE_SIZE,
-			});
-			if (seq !== requestCounter.current) return;
-			if (result.success) {
-				setItems((prev) => [...prev, ...result.data.items]);
-				setNextCursor(result.data.nextCursor);
-				setHasMore(result.data.hasMore);
-			}
-		} finally {
+		// Promise.finally instead of try/finally: React Compiler cannot compile a finalizer.
+		const result = await searchReplacementEmployeesAction({
+			excludeEmployeeId,
+			search: debouncedSearch || null,
+			cursor: nextCursor,
+			limit: PAGE_SIZE,
+		}).finally(() => {
 			if (seq === requestCounter.current) {
 				setIsLoadingMore(false);
 			}
+		});
+		if (seq !== requestCounter.current) return;
+		if (result.success) {
+			setItems((prev) => [...prev, ...result.data.items]);
+			setNextCursor(result.data.nextCursor);
+			setHasMore(result.data.hasMore);
 		}
 	}, [excludeEmployeeId, debouncedSearch, nextCursor, isLoadingMore]);
 
