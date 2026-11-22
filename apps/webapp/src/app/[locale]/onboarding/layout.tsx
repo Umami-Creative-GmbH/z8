@@ -17,6 +17,12 @@ import { runServerActionSafe } from "@/lib/effect/result";
 import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
+// Defined outside the component: React Compiler cannot compile generator functions.
+const isCurrentUserOrgAdmin = Effect.gen(function* () {
+	const onboardingService = yield* OnboardingService;
+	return yield* onboardingService.isUserAdmin();
+});
+
 export default function OnboardingLayout({
 	children,
 	params,
@@ -71,12 +77,7 @@ async function OnboardingLayoutContent({ children }: { children: React.ReactNode
 	let initialIsAdmin = false;
 
 	if (initialUserId && initialOrganizationId) {
-		const result = await runServerActionSafe(
-			Effect.gen(function* () {
-				const onboardingService = yield* OnboardingService;
-				return yield* onboardingService.isUserAdmin();
-			}),
-		);
+		const result = await runServerActionSafe(isCurrentUserOrgAdmin);
 		initialIsAdmin = result.success ? result.data : false;
 	}
 

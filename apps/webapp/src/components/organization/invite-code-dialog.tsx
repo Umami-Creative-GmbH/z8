@@ -368,6 +368,12 @@ function InviteCodeFormFields({
 
 let nextGeneratedCodeSession = 0;
 
+// Outside the component: React Compiler cannot compile writes to module-level variables.
+function allocateGeneratedCodeSession() {
+	nextGeneratedCodeSession += 1;
+	return nextGeneratedCodeSession;
+}
+
 export function InviteCodeDialog(props: InviteCodeDialogProps) {
 	const key = `${String(props.open)}:${props.inviteCode?.id ?? "new"}`;
 	return <InviteCodeDialogContent key={key} {...props} />;
@@ -385,7 +391,7 @@ function InviteCodeDialogContent({
 	const isEditing = !!inviteCode;
 	const submittingRef = useRef(false);
 	const codeEditedRef = useRef(false);
-	const [generatedCodeSession] = useState(() => ++nextGeneratedCodeSession);
+	const [generatedCodeSession] = useState(allocateGeneratedCodeSession);
 
 	// Fetch teams for team selection
 	const { data: teamsResult } = useQuery({
