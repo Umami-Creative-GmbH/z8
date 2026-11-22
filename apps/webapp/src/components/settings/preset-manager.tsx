@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import {
 	deleteHolidayPreset,
 	getHolidayPresets,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-preset-actions";
 import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

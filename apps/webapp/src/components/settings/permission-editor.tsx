@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
 	grantTeamPermissions,
 	revokeTeamPermissions,
-} from "@/app/[locale]/(app)/settings/permissions/actions";
+} from "@/app/[locale]/(app)/settings/roles/team-permission-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";

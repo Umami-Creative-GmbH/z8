@@ -13,7 +13,7 @@ import {
 	createPresetAssignment,
 	getHolidayPresets,
 	getTeamsForAssignment,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-preset-actions";
 import { EmployeeSingleSelect } from "@/components/employee-select";
 import {
 	ActionPanel,

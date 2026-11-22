@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { getVehicleUseAdminDataAction } from "../vehicle-use/actions";
+import { getVehicleUseAdminDataAction } from "./vehicle-use-actions";
 import { getVehicleSettings } from "./actions";
 
 async function VehicleSettingsPageContent() {

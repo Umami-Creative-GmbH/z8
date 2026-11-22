@@ -15,7 +15,7 @@ import {
 	deleteHolidayFromPreset,
 	getHolidayPreset,
 	updateHolidayPreset,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-preset-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,

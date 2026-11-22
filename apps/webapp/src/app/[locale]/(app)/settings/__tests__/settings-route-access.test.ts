@@ -18,22 +18,14 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"billing/page.tsx",
 	"avv/page.tsx",
 	"roles/page.tsx",
-	"permissions/page.tsx",
 	"payroll-access/page.tsx",
 	"travel-expenses/page.tsx",
 	"enterprise/domains/page.tsx",
 	"enterprise/identity-setup/page.tsx",
 	"enterprise/email/page.tsx",
-	"email-templates/page.tsx",
 	"enterprise/api-keys/page.tsx",
 	"enterprise/api-keys/[keyId]/page.tsx",
-	"enterprise/audit-log/page.tsx",
 	"report-share-links/page.tsx",
-	"telegram/page.tsx",
-	"slack/page.tsx",
-	"discord/page.tsx",
-	"teams-notifications/page.tsx",
-	"webhooks/page.tsx",
 	"export/page.tsx",
 	"export/history/[organizationId]/page.tsx",
 	"payroll-export/page.tsx",
@@ -66,19 +58,9 @@ describe("org-admin settings route access", () => {
 		expect(source).toContain('className="min-w-0 flex-1 overflow-auto overflow-x-hidden"');
 	});
 
-	it("keeps merged chat settings on the mobile-safe tab layout and redirects legacy URLs", () => {
+	it("keeps merged chat settings on the mobile-safe tab layout", () => {
 		const source = readTestText(join(SETTINGS_ROOT, "notification-channels/page.tsx"), "utf8");
 		expect(source).toContain("<SettingsTabbedPage");
-		for (const [path, tab] of [
-			["slack", "slack"],
-			["discord", "discord"],
-			["teams-notifications", "teams"],
-			["telegram", "telegram"],
-		]) {
-			const legacy = readTestText(join(SETTINGS_ROOT, path, "page.tsx"), "utf8");
-			expect(legacy).toContain("requireOrgAdminSettingsAccess(");
-			expect(legacy).toContain(`/settings/notification-channels?tab=${tab}`);
-		}
 	});
 
 	it("keeps payroll officer settings on the shared detail page spacing", () => {
@@ -115,15 +97,8 @@ describe("org-admin settings route access", () => {
 			"/settings/enterprise/domains",
 			"/settings/enterprise/identity-setup",
 			"/settings/enterprise/email",
-			"/settings/email-templates",
 			"/settings/enterprise/api-keys",
-			"/settings/enterprise/audit-log",
 			"/settings/report-share-links",
-			"/settings/telegram",
-			"/settings/slack",
-			"/settings/discord",
-			"/settings/teams-notifications",
-			"/settings/webhooks",
 			"/settings/export",
 			"/settings/payroll-export",
 			"/settings/payroll-readiness",
@@ -142,7 +117,6 @@ describe("org-admin settings route access", () => {
 			"/settings/vehicles",
 			"/settings/equipment",
 			"/settings/driving-licence",
-			"/settings/vehicle-use",
 			"/settings/vacation/employees",
 			"/settings/compliance/works-council",
 			"/settings/billable-time/rates",
@@ -171,24 +145,19 @@ describe("org-admin settings route access", () => {
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/organization")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/statistics")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/change-policies")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/employees")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/holidays")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/locations")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/skills")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/vacation")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/work-categories")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/work-policies")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/shifts")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/coverage-rules")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/projects")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/customers")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/surcharges")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/calendar")).toBe(true);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/billing")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/slack")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/discord")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams-notifications")).toBe(false);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/notification-channels")).toBe(false);
 		expect(canResolvedTierAccessRoute(managerTier, "/settings/implementation-checklist")).toBe(
 			false,
 		);
@@ -280,15 +249,11 @@ describe("org-admin settings route access", () => {
 		expect(source.includes('emp?.role === "admin"')).toBe(false);
 	});
 
-	it("lets shift and coverage settings pages use scoped settings access instead of the org-admin helper", () => {
-		const pages = ["shifts/page.tsx", "coverage-rules/page.tsx"];
+	it("lets shift settings page use scoped settings access instead of the org-admin helper", () => {
+		const source = stripComments(readTestText(join(SETTINGS_ROOT, "shifts/page.tsx"), "utf8"));
 
-		for (const relativePath of pages) {
-			const source = stripComments(readTestText(join(SETTINGS_ROOT, relativePath), "utf8"));
-
-			expect(source.includes("getSchedulingSettingsAccessContext(")).toBe(true);
-			expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
-		}
+		expect(source.includes("getSchedulingSettingsAccessContext(")).toBe(true);
+		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 	});
 
 	it("lets project and customer settings pages use scoped settings access instead of the org-admin helper", () => {
@@ -300,14 +265,6 @@ describe("org-admin settings route access", () => {
 			expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 			expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 		}
-	});
-
-	it("lets the holidays route use scoped settings access instead of the org-admin helper", () => {
-		const source = stripComments(readTestText(join(SETTINGS_ROOT, "holidays/page.tsx"), "utf8"));
-
-		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
-		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
-		expect(source.includes('accessTier === "member"')).toBe(true);
 	});
 
 	it("lets vacation and work-policy pages use scoped settings access instead of the org-admin helper", () => {
@@ -457,10 +414,10 @@ describe("org-admin settings route access", () => {
 
 	it("uses scoped holiday access helpers for reads while keeping mutations org-admin only", () => {
 		const holidayActionsSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "holidays/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "vacation/holiday-actions.ts"), "utf8"),
 		);
 		const presetActionsSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "holidays/preset-actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "vacation/holiday-preset-actions.ts"), "utf8"),
 		);
 
 		for (const source of [holidayActionsSource, presetActionsSource]) {
@@ -473,20 +430,11 @@ describe("org-admin settings route access", () => {
 		}
 	});
 
-	it("lets the change-policies route use scoped settings access and manager-aware actions", () => {
-		const pageSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "change-policies/page.tsx"), "utf8"),
-		);
+	it("keeps change-policy actions manager-aware under work-policies", () => {
 		const actionsSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "change-policies/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "work-policies/change-policy-actions.ts"), "utf8"),
 		);
 
-		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
-		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
-		expect(pageSource.includes('accessTier === "member"')).toBe(true);
-		expect(pageSource.includes('redirectWithLocale("/settings/work-policies?tab=changes")')).toBe(
-			true,
-		);
 		expect(actionsSource.includes('requires: "scopedManager"')).toBe(true);
 		expect(actionsSource.includes('requires: "orgAdmin"')).toBe(true);
 		expect(actionsSource.includes("actor.managedScope()")).toBe(true);
@@ -515,7 +463,7 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "../scheduling/actions/template-actions.ts"), "utf8"),
 		);
 		const coverageActionsSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "coverage-rules/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "shifts/coverage-rule-actions.ts"), "utf8"),
 		);
 
 		expect(templateActionsSource.includes("getSchedulingSettingsAccessContext(")).toBe(true);
@@ -535,36 +483,24 @@ describe("org-admin settings route access", () => {
 		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
 	});
 
-	it("keeps audit log, roles, and permissions settings surfaces on org-admin settings access", () => {
-		const auditLogSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "audit-log/page.tsx"), "utf8"),
+	it("keeps audit log, roles, and team permission settings surfaces on org-admin settings access", () => {
+		const auditExportSource = stripComments(
+			readTestText(join(SETTINGS_ROOT, "audit-export/page.tsx"), "utf8"),
 		);
 		const auditLogActionsSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "audit-log/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "audit-export/audit-log-actions.ts"), "utf8"),
 		);
 		const rolesSource = stripComments(readTestText(join(SETTINGS_ROOT, "roles/page.tsx"), "utf8"));
-		const permissionsSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "permissions/page.tsx"), "utf8"),
-		);
 		const permissionsActionsSource = stripComments(
-			readTestText(join(SETTINGS_ROOT, "permissions/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "roles/team-permission-actions.ts"), "utf8"),
 		);
 
-		expect(auditLogSource.includes("requireOrgAdminSettingsAccess(")).toBe(true);
-		expect(auditLogSource.includes('authContext.employee?.role !== "admin"')).toBe(false);
+		expect(auditExportSource.includes("requireOrgAdminSettingsAccess(")).toBe(true);
 		expect(auditLogActionsSource.includes('requires: "orgAdmin"')).toBe(true);
 		expect(auditLogActionsSource.includes('employee?.role !== "admin"')).toBe(false);
 		expect(rolesSource.includes("requireOrgAdminSettingsAccess(")).toBe(true);
 		expect(rolesSource.includes("<SettingsTabbedPage")).toBe(true);
 		expect(rolesSource.includes('value: "team-permissions"')).toBe(true);
-		expect(permissionsSource.includes("requireOrgAdminSettingsAccess(")).toBe(true);
-		expect(permissionsSource.includes("getCurrentSettingsRouteContext(")).toBe(false);
-		expect(
-			permissionsSource.includes('redirectWithLocale("/settings/roles?tab=team-permissions")'),
-		).toBe(true);
-		expect(permissionsSource.includes("PermissionsPageClient")).toBe(false);
-		expect(permissionsSource.includes("getCurrentEmployee(")).toBe(false);
-		expect(permissionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);
 		expect(permissionsActionsSource.includes("organizationAction(")).toBe(true);
 		expect(permissionsActionsSource.includes("getEmployeeSettingsActorContext(")).toBe(false);
 		expect(permissionsActionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);

@@ -41,7 +41,7 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push: mocks.push }),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/clockodo-import/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/import/clockodo-actions", () => ({
 	fetchClockodoUsers: mocks.fetchClockodoUsers,
 	fetchProjectMappingData: mocks.fetchProjectMappingData,
 	fetchZ8Employees: mocks.fetchZ8Employees,

@@ -85,18 +85,18 @@ beforeEach(() => {
 });
 describe("proxy and saved-locale layout query preservation", () => {
 	it("preserves repeated query values while enforcing the saved language", async () => {
-		await throughProxy("/de/settings/webhooks?tab=keys&keep=one&keep=two");
+		await throughProxy("/de/settings/enterprise/api-keys?tab=keys&keep=one&keep=two");
 		await expect(
 			AuthenticatedAppContent({ params: Promise.resolve({ locale: "de" }), children: null }),
-		).rejects.toThrow("TEST_REDIRECT:/en/settings/webhooks?tab=keys&keep=one&keep=two");
+		).rejects.toThrow("TEST_REDIRECT:/en/settings/enterprise/api-keys?tab=keys&keep=one&keep=two");
 	});
 	it.each([null, "de"])("respects a matching or unset saved preference %j", async (saved) => {
 		h.savedLocale = saved;
-		const { forwarded } = await throughProxy("/de/settings/webhooks?keep=one&keep=two");
+		const { forwarded } = await throughProxy("/de/settings/enterprise/api-keys?keep=one&keep=two");
 		await expect(
 			AuthenticatedAppContent({ params: Promise.resolve({ locale: "de" }), children: null }),
 		).resolves.toBeTruthy();
-		expect(forwarded.get(DOMAIN_HEADERS.PATHNAME)).toBe("/de/settings/webhooks");
+		expect(forwarded.get(DOMAIN_HEADERS.PATHNAME)).toBe("/de/settings/enterprise/api-keys");
 		expect(new URLSearchParams(forwarded.get(DOMAIN_HEADERS.SEARCH) ?? "").getAll("keep")).toEqual([
 			"one",
 			"two",
@@ -104,16 +104,19 @@ describe("proxy and saved-locale layout query preservation", () => {
 	});
 	it("retains empty, repeated and encoded values without reserialization", async () => {
 		const search = "?keep=&keep=two&encoded=%2Fwork%3Fa%3D1%26b%3D2&space=one+two";
-		await throughProxy(`/de/settings/webhooks${search}`);
+		await throughProxy(`/de/settings/enterprise/api-keys${search}`);
 		await expect(
 			AuthenticatedAppContent({ params: Promise.resolve({ locale: "de" }), children: null }),
-		).rejects.toThrow(`TEST_REDIRECT:/en/settings/webhooks${search}`);
+		).rejects.toThrow(`TEST_REDIRECT:/en/settings/enterprise/api-keys${search}`);
 	});
 	it("overwrites a client-supplied query header and keeps intl/session context private", async () => {
-		const { response, forwarded } = await throughProxy("/de/settings/webhooks?keep=real", {
-			[DOMAIN_HEADERS.SEARCH]: "?keep=forged",
-			"x-client-marker": "preserved",
-		});
+		const { response, forwarded } = await throughProxy(
+			"/de/settings/enterprise/api-keys?keep=real",
+			{
+				[DOMAIN_HEADERS.SEARCH]: "?keep=forged",
+				"x-client-marker": "preserved",
+			},
+		);
 		expect(forwarded.get(DOMAIN_HEADERS.SEARCH)).toBe("?keep=real");
 		expect(forwarded.get("x-next-intl-locale")).toBe("de");
 		expect(forwarded.get("cookie")).toContain("better-auth.session_token=test-session");
@@ -123,16 +126,16 @@ describe("proxy and saved-locale layout query preservation", () => {
 		expect(response.headers.get("x-middleware-rewrite")).toBeNull();
 		await expect(
 			AuthenticatedAppContent({ params: Promise.resolve({ locale: "de" }), children: null }),
-		).rejects.toThrow("TEST_REDIRECT:/en/settings/webhooks?keep=real");
+		).rejects.toThrow("TEST_REDIRECT:/en/settings/enterprise/api-keys?keep=real");
 	});
 	it("clears forged query context when the real URL has no query", async () => {
-		const { forwarded } = await throughProxy("/de/settings/webhooks", {
+		const { forwarded } = await throughProxy("/de/settings/enterprise/api-keys", {
 			[DOMAIN_HEADERS.SEARCH]: "?unexpected=one",
 		});
 		expect(forwarded.get(DOMAIN_HEADERS.SEARCH)).toBe("");
 		await expect(
 			AuthenticatedAppContent({ params: Promise.resolve({ locale: "de" }), children: null }),
-		).rejects.toThrow("TEST_REDIRECT:/en/settings/webhooks");
+		).rejects.toThrow("TEST_REDIRECT:/en/settings/enterprise/api-keys");
 	});
 	it("preserves the three-letter route locale and pathname-only callbacks", async () => {
 		const { forwarded } = await throughProxy("/gsw/settings/billing?return=one&return=two");

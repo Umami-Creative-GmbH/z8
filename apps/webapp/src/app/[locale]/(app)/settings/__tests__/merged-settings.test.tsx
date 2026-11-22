@@ -55,7 +55,7 @@ vi.mock("../enterprise/email/actions", () => ({
 	getEmailConfig: mocks.email,
 	getSecretStoreConnectionStatus: mocks.secretStatus,
 }));
-vi.mock("../email-templates/actions", () => ({
+vi.mock("../enterprise/email/template-actions", () => ({
 	listEmailTemplates: mocks.templates,
 }));
 vi.mock("../enterprise/api-keys/actions", () => ({ listApiKeys: mocks.keys }));
@@ -167,13 +167,8 @@ vi.mock("@/components/settings/custom-roles/team-permissions-tab", () => ({
 }));
 
 import AuditPage from "../audit-export/page";
-import LegacyAuditPage from "../audit-log/page";
 import ClockingPage from "../clocking/page";
-import LegacyDiscordPage from "../discord/page";
-import LegacyEmailPage from "../email-templates/page";
 import DeveloperPage from "../enterprise/api-keys/page";
-import LegacyEnterpriseAuditPage from "../enterprise/audit-log/page";
-import LegacyBrandingPage from "../enterprise/branding/page";
 
 vi.mock("@/components/settings/enterprise/domains-branding-tabs", () => ({
 	DomainsAndBrandingTabs: () => null,
@@ -182,14 +177,8 @@ vi.mock("@/components/settings/enterprise/domains-branding-tabs", () => ({
 import DomainsPage from "../enterprise/domains/page";
 import EmailPage from "../enterprise/email/page";
 import IdentityPage from "../enterprise/identity-setup/page";
-import LegacySSOPage from "../enterprise/sso/page";
 import ChatPage from "../notification-channels/page";
-import LegacyPermissionsPage from "../permissions/page";
 import RolesPage from "../roles/page";
-import LegacySlackPage from "../slack/page";
-import LegacyTeamsPage from "../teams-notifications/page";
-import LegacyTelegramPage from "../telegram/page";
-import LegacyWebhooksPage from "../webhooks/page";
 
 const mergedPages = [
 	EmailPage,
@@ -342,32 +331,6 @@ describe("merged organization settings", () => {
 		expect(page.props.tabs[1].panel.props).toMatchObject({
 			organizationId: "org-1",
 		});
-	});
-	it.each([
-		[LegacyEmailPage, "/settings/enterprise/email?tab=templates"],
-		[LegacyTelegramPage, "/settings/notification-channels?tab=telegram"],
-		[LegacyWebhooksPage, "/settings/enterprise/api-keys?tab=webhooks"],
-		[LegacyAuditPage, "/settings/audit-export?tab=activity"],
-		[LegacyEnterpriseAuditPage, "/settings/audit-export?tab=activity"],
-		[LegacySlackPage, "/settings/notification-channels?tab=slack"],
-		[LegacyTeamsPage, "/settings/notification-channels?tab=teams"],
-		[LegacyDiscordPage, "/settings/notification-channels?tab=discord"],
-		[LegacySSOPage, "/settings/enterprise/identity-setup?tab=sso"],
-		[LegacyBrandingPage, "/settings/enterprise/domains?tab=branding"],
-		[LegacyPermissionsPage, "/settings/roles?tab=team-permissions"],
-	])("preserves a guarded legacy route", async (page, target) => {
-		const render = () => {
-			// Every Next page receives searchParams; the webhooks redirect forwards them.
-			const result = (page as (props: unknown) => ReturnType<typeof page>)({
-				searchParams: Promise.resolve({}),
-			});
-			return result instanceof Promise
-				? result
-				: result.props.children.type(result.props.children.props);
-		};
-		await expect(render()).rejects.toThrow(`redirect:${target}`);
-		mocks.access.mockRejectedValue(new Error("denied"));
-		await expect(render()).rejects.toThrow("denied");
 	});
 	it.each(["sso", "social-oauth"])(
 		"redirects a legacy identity tab on the domains URL",

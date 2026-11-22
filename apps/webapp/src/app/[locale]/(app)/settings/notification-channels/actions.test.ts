@@ -160,23 +160,17 @@ describe("notification channel settings actions", () => {
 	});
 
 	it.each([
-		["Slack", updateSlackNotificationChannelSettings, slackWorkspaceConfig, "/settings/slack"],
-		["Discord", updateDiscordNotificationChannelSettings, discordBotConfig, "/settings/discord"],
-		[
-			"Teams",
-			updateTeamsNotificationChannelSettings,
-			teamsTenantConfig,
-			"/settings/teams-notifications",
-		],
+		["Slack", updateSlackNotificationChannelSettings, slackWorkspaceConfig],
+		["Discord", updateDiscordNotificationChannelSettings, discordBotConfig],
+		["Teams", updateTeamsNotificationChannelSettings, teamsTenantConfig],
 	] as const)(
 		"updates %s channel settings of the session's organization",
-		async (_name, update, table, path) => {
+		async (_name, update, table) => {
 			const result = await update(settings);
 
 			expect(result).toEqual({ success: true, data: undefined });
 			expect(mocks.update).toHaveBeenCalledWith(table);
 			expect(mocks.set).toHaveBeenCalledWith(settings);
-			expect(mocks.revalidatePath).toHaveBeenCalledWith(path);
 			expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/notification-channels");
 		},
 	);

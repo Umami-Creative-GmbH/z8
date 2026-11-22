@@ -7,10 +7,7 @@ import {
 	loadRouteCatalogSlice,
 	loadShellTranslations,
 } from "./load-translations";
-import {
-	getRouteCatalogScope,
-	ROUTE_CATALOG_SCOPES,
-} from "./route-catalog-scopes";
+import { getRouteCatalogScope, ROUTE_CATALOG_SCOPES } from "./route-catalog-scopes";
 import { ALL_LANGUAGES, type TreeTranslationsData } from "./shared";
 
 vi.mock("server-only", () => ({}));
@@ -27,10 +24,7 @@ function pathname(file: string) {
 		.filter((segment) => !segment.startsWith("("))
 		.join("/")}`;
 }
-function leaves(
-	tree: TreeTranslationsData,
-	prefix = "",
-): Record<string, string> {
+function leaves(tree: TreeTranslationsData, prefix = ""): Record<string, string> {
 	const entries: [string, string][] = [];
 	function visit(branch: TreeTranslationsData, currentPrefix: string) {
 		for (const [key, value] of Object.entries(branch)) {
@@ -49,24 +43,14 @@ function moduleInfo(file: string) {
 	const source = readFileSync(file, "utf8");
 	const result = { keys: [] as string[], imports: [] as string[] };
 	modules.set(file, result);
-	if (
-		/^["']use server["']/.test(source) ||
-		source.includes('import "server-only"')
-	)
-		return result;
-	for (const match of source.matchAll(/\bt\(\s*["']([^"']+)["']/g))
-		result.keys.push(match[1]);
-	for (const match of source.matchAll(/keyName=["']([^"']+)["']/g))
-		result.keys.push(match[1]);
+	if (/^["']use server["']/.test(source) || source.includes('import "server-only"')) return result;
+	for (const match of source.matchAll(/\bt\(\s*["']([^"']+)["']/g)) result.keys.push(match[1]);
+	for (const match of source.matchAll(/keyName=["']([^"']+)["']/g)) result.keys.push(match[1]);
 	const imports = [
-		...source.matchAll(
-			/(?:import|export)\s+(?!type\b)[^;]*?from\s*["']([^"']+)["']/g,
-		),
+		...source.matchAll(/(?:import|export)\s+(?!type\b)[^;]*?from\s*["']([^"']+)["']/g),
 		// UI lazy imports live in TSX modules. Do not crawl runtime backend job
 		// registries: their bot translators use the complete server catalog.
-		...(file.endsWith(".tsx")
-			? source.matchAll(/\bimport\(\s*["']([^"']+)["']/g)
-			: []),
+		...(file.endsWith(".tsx") ? source.matchAll(/\bimport\(\s*["']([^"']+)["']/g) : []),
 	];
 	for (const match of imports) {
 		const specifier = match[1];
@@ -109,9 +93,7 @@ describe("route catalog wiring", () => {
 		async (locale) => {
 			const shell = await loadShellTranslations(locale);
 			const complete = leaves(
-				(await loadCompleteServerTranslations(locale))[
-					locale
-				] as TreeTranslationsData,
+				(await loadCompleteServerTranslations(locale))[locale] as TreeTranslationsData,
 			);
 			const records = new Map(
 				await Promise.all(
@@ -120,10 +102,9 @@ describe("route catalog wiring", () => {
 							[
 								scope.route,
 								leaves(
-									mergeCatalogRecords(
-										shell,
-										await loadRouteCatalogSlice(locale, scope),
-									).records[locale] as TreeTranslationsData,
+									mergeCatalogRecords(shell, await loadRouteCatalogSlice(locale, scope)).records[
+										locale
+									] as TreeTranslationsData,
 								),
 							] as const,
 					),
@@ -159,9 +140,7 @@ describe("route catalog wiring", () => {
 			const actual = leaves(
 				mergeCatalogRecords(
 					shell,
-					scope
-						? await loadRouteCatalogSlice("en", scope)
-						: { ...shell, records: { en: {} } },
+					scope ? await loadRouteCatalogSlice("en", scope) : { ...shell, records: { en: {} } },
 				).records.en as TreeTranslationsData,
 			);
 			for (const key of reachableKeys(path.join(root, layout)))
@@ -183,8 +162,7 @@ describe("route catalog wiring", () => {
 			}
 			return !sources.some(
 				(source) =>
-					source.includes("RouteTranslationBoundary") &&
-					source.includes(`route="${scope.route}"`),
+					source.includes("RouteTranslationBoundary") && source.includes(`route="${scope.route}"`),
 			);
 		});
 		expect(uncoveredPages).toEqual([]);
@@ -198,12 +176,10 @@ describe("route catalog wiring", () => {
 		);
 	});
 	it("uses segment boundaries and longest-prefix settings scopes", () => {
-		expect(
-			getRouteCatalogScope("/settings/clockodo-import")?.namespaces,
-		).toContain("settings/integrations");
-		expect(
-			getRouteCatalogScope("/settings/vacation/employees/123")?.namespaces,
-		).toContain("settings/vacation");
+		expect(getRouteCatalogScope("/settings/import")?.namespaces).toContain("settings/integrations");
+		expect(getRouteCatalogScope("/settings/vacation/employees/123")?.namespaces).toContain(
+			"settings/vacation",
+		);
 		expect(getRouteCatalogScope("/reports/projects")?.route).toBe("/reports");
 		// The record and change-deputy dialogs on /team use calendar's absences.deputy.* keys (#802).
 		expect(getRouteCatalogScope("/team/absences")?.namespaces).toContain("calendar");
@@ -229,15 +205,10 @@ describe("route catalog wiring", () => {
 		async (locale) => {
 			const shell = await loadShellTranslations(locale);
 			const complete = leaves(
-				(await loadCompleteServerTranslations(locale))[
-					locale
-				] as TreeTranslationsData,
+				(await loadCompleteServerTranslations(locale))[locale] as TreeTranslationsData,
 			);
 			for (const scope of ROUTE_CATALOG_SCOPES) {
-				const slice = mergeCatalogRecords(
-					shell,
-					await loadRouteCatalogSlice(locale, scope),
-				);
+				const slice = mergeCatalogRecords(shell, await loadRouteCatalogSlice(locale, scope));
 				const actual = leaves(slice.records[locale] as TreeTranslationsData);
 				for (const key of scope.keys)
 					if (complete[key] !== undefined)
@@ -260,11 +231,7 @@ describe("route catalog wiring", () => {
 						async (scope) =>
 							[
 								scope.route,
-								Buffer.byteLength(
-									JSON.stringify(
-										await loadRouteCatalogSlice(locale, scope),
-									),
-								),
+								Buffer.byteLength(JSON.stringify(await loadRouteCatalogSlice(locale, scope))),
 							] as const,
 					),
 				),
@@ -282,8 +249,7 @@ describe("route catalog wiring", () => {
 					[...source.matchAll(/route="([^"]+)"/g)].map((match) => match[1]),
 				);
 				const bytes =
-					rootBytes +
-					routes.reduce((sum, route) => sum + (scopeBytes.get(route) ?? 0), 0);
+					rootBytes + routes.reduce((sum, route) => sum + (scopeBytes.get(route) ?? 0), 0);
 				expect(bytes, pathname(page)).toBeLessThan(completeBytes);
 				measurements[pathname(page)] = bytes;
 			}

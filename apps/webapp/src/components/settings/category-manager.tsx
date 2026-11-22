@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
 	deleteCategory,
 	getHolidayCategories,
-} from "@/app/[locale]/(app)/settings/holidays/actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";

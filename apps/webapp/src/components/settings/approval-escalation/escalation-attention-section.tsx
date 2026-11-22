@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { listApprovalEscalationCandidates } from "@/app/[locale]/(app)/settings/approval-escalation/actions";
+import { listApprovalEscalationCandidates } from "@/app/[locale]/(app)/settings/approval-policies/escalation-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

@@ -10,7 +10,7 @@ import {
 	type CreateChangePolicyInput,
 	createChangePolicy,
 	updateChangePolicy,
-} from "@/app/[locale]/(app)/settings/change-policies/actions";
+} from "@/app/[locale]/(app)/settings/work-policies/change-policy-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,

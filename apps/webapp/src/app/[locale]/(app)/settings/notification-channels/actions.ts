@@ -404,7 +404,6 @@ export const updateSlackNotificationChannelSettings = organizationAction(
 					.set(input)
 					.where(eq(slackWorkspaceConfig.organizationId, organizationId)),
 			);
-			revalidatePath("/settings/slack");
 			revalidatePath("/settings/notification-channels");
 			return undefined;
 		}),
@@ -425,7 +424,6 @@ export const updateDiscordNotificationChannelSettings = organizationAction(
 					.set(input)
 					.where(eq(discordBotConfig.organizationId, organizationId)),
 			);
-			revalidatePath("/settings/discord");
 			revalidatePath("/settings/notification-channels");
 			return undefined;
 		}),
@@ -446,7 +444,6 @@ export const updateTeamsNotificationChannelSettings = organizationAction(
 					.set(input)
 					.where(eq(teamsTenantConfig.organizationId, organizationId)),
 			);
-			revalidatePath("/settings/teams-notifications");
 			revalidatePath("/settings/notification-channels");
 			return undefined;
 		}),

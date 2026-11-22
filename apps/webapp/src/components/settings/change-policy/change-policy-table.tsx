@@ -17,7 +17,7 @@ import {
 	type ChangePolicyRecord,
 	deleteChangePolicy,
 	getChangePolicies,
-} from "@/app/[locale]/(app)/settings/change-policies/actions";
+} from "@/app/[locale]/(app)/settings/work-policies/change-policy-actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";

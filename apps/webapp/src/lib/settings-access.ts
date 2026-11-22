@@ -1,7 +1,4 @@
-import {
-	hasOrganizationRole,
-	type OrganizationRoleValue,
-} from "@/lib/auth/organization-role";
+import { hasOrganizationRole, type OrganizationRoleValue } from "@/lib/auth/organization-role";
 
 export type SettingsAccessTier = "member" | "manager" | "orgAdmin";
 
@@ -17,15 +14,8 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/enterprise/domains",
 	"/settings/enterprise/identity-setup",
 	"/settings/enterprise/email",
-	"/settings/email-templates",
 	"/settings/enterprise/api-keys",
-	"/settings/enterprise/audit-log",
 	"/settings/report-share-links",
-	"/settings/telegram",
-	"/settings/slack",
-	"/settings/discord",
-	"/settings/teams-notifications",
-	"/settings/webhooks",
 	"/settings/export",
 	"/settings/payroll-export",
 	"/settings/payroll-readiness",
@@ -44,7 +34,6 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/vehicles",
 	"/settings/equipment",
 	"/settings/driving-licence",
-	"/settings/vehicle-use",
 	// Note: /settings/closed-months and /settings/approval-policies admit non-orgAdmin
 	// callers via custom-role / CASL ability checks, so they stay out of this org-admin-only list.
 	"/settings/vacation/employees",
@@ -57,11 +46,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 
 export type SettingsAccessMembershipRole = OrganizationRoleValue;
 
-export type SettingsAccessEmployeeRole =
-	| "admin"
-	| "manager"
-	| "employee"
-	| null;
+export type SettingsAccessEmployeeRole = "admin" | "manager" | "employee" | null;
 
 export interface ResolveSettingsAccessTierInput {
 	activeOrganizationId: string | null;
@@ -112,20 +97,11 @@ export function hasSettingsAccessTier(
 	currentTier: SettingsAccessTier,
 	requiredTier: SettingsAccessTier,
 ): boolean {
-	return (
-		SETTINGS_ACCESS_RANK[currentTier] >= SETTINGS_ACCESS_RANK[requiredTier]
-	);
+	return SETTINGS_ACCESS_RANK[currentTier] >= SETTINGS_ACCESS_RANK[requiredTier];
 }
 
-export function canResolvedTierAccessRoute(
-	accessTier: SettingsAccessTier,
-	route: string,
-): boolean {
-	if (
-		!ORG_ADMIN_SETTINGS_ROUTES.includes(
-			route as (typeof ORG_ADMIN_SETTINGS_ROUTES)[number],
-		)
-	) {
+export function canResolvedTierAccessRoute(accessTier: SettingsAccessTier, route: string): boolean {
+	if (!ORG_ADMIN_SETTINGS_ROUTES.includes(route as (typeof ORG_ADMIN_SETTINGS_ROUTES)[number])) {
 		return true;
 	}
 

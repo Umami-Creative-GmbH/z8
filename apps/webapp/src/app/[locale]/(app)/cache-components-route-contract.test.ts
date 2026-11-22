@@ -266,16 +266,6 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "ApprovalPoliciesSettingsContent",
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/approval-escalation/page.tsx",
-		fallbackComponent: "ApprovalEscalationSettingsLoading",
-		contentComponent: "ApprovalEscalationSettingsContent",
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/permissions/page.tsx",
-		fallbackComponent: "PermissionsPageLoading",
-		contentComponent: "PermissionsPageContent",
-	},
-	{
 		file: "src/app/[locale]/(app)/settings/work-categories/page.tsx",
 		fallbackComponent: "WorkCategoriesSettingsLoading",
 		contentComponent: "WorkCategoriesSettingsContent",
@@ -315,13 +305,6 @@ const SHELL_WORK_QUEUE = [
 		fallbackAriaLabel: "Loading surcharge settings",
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/change-policies/page.tsx",
-		fallbackComponent: "ChangePoliciesSettingsPageLoading",
-		contentComponent: "ChangePoliciesSettingsPageContent",
-		fallbackFrameClass: "page-frame flex min-w-0 flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading change policy settings",
-	},
-	{
 		file: "src/app/[locale]/(app)/settings/payroll-access/page.tsx",
 		fallbackComponent: "PayrollAccessSettingsPageLoading",
 		contentComponent: "PayrollAccessSettingsPageContent",
@@ -358,15 +341,6 @@ const SHELL_WORK_QUEUE = [
 		fallbackAriaLabel: "Loading project settings",
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/holidays/page.tsx",
-		fallbackComponent: "HolidaySettingsPageLoading",
-		contentComponent: "HolidaySettingsPageContent",
-		// Redirect-only routes load in the shared, framed settings skeleton.
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading holiday settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
 		file: "src/app/[locale]/(app)/settings/compliance/works-council/page.tsx",
 		fallbackComponent: "WorksCouncilSettingsPageLoading",
 		contentComponent: "WorksCouncilSettingsPageContent",
@@ -377,86 +351,6 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "LocationSettingsPageContent",
 		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
 		fallbackAriaLabel: "Loading location settings",
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/telegram/page.tsx",
-		fallbackComponent: "TelegramSettingsLoading",
-		contentComponent: "TelegramSettingsContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/email-templates/page.tsx",
-		fallbackComponent: "EmailTemplatesSettingsPageLoading",
-		contentComponent: "EmailTemplatesSettingsPageContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/vehicle-use/page.tsx",
-		fallbackComponent: "VehicleUseSettingsPageLoading",
-		contentComponent: "VehicleUseSettingsPageContent",
-		fallbackFrameClass: "page-frame",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/enterprise/sso/page.tsx",
-		fallbackComponent: "SSOProvidersPageLoading",
-		contentComponent: "RedirectContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/enterprise/branding/page.tsx",
-		fallbackComponent: "BrandingPageLoading",
-		contentComponent: "RedirectContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/slack/page.tsx",
-		fallbackComponent: "LegacyChatSettingsLoading",
-		contentComponent: "RedirectContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/discord/page.tsx",
-		fallbackComponent: "LegacyChatSettingsLoading",
-		contentComponent: "RedirectContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/teams-notifications/page.tsx",
-		fallbackComponent: "LegacyChatSettingsLoading",
-		contentComponent: "RedirectContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/webhooks/page.tsx",
-		fallbackComponent: "WebhooksSettingsLoading",
-		contentComponent: "RedirectContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/audit-log/page.tsx",
-		fallbackComponent: "AuditLogPageLoading",
-		contentComponent: "RedirectContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading settings",
-		requiresSynchronousDefaultExport: true,
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/enterprise/email/page.tsx",
@@ -699,14 +593,6 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "AuditExportSettingsContent",
 		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading audit export settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
-		fallbackComponent: "CoverageRulesSettingsLoading",
-		contentComponent: "CoverageRulesSettingsContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-4",
-		fallbackAriaLabel: "Loading coverage rule settings",
 		requiresSynchronousDefaultExport: true,
 	},
 	{
@@ -1610,7 +1496,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(76);
+		expect(workQueueFiles).toHaveLength(61);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

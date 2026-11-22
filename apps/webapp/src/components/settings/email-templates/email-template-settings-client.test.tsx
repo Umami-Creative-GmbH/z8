@@ -81,7 +81,7 @@ vi.mock("./email-template-editor", () => ({
 	},
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/email-templates/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/enterprise/email/template-actions", () => ({
 	resetEmailTemplate: resetEmailTemplateMock,
 	saveEmailTemplate: saveEmailTemplateMock,
 	sendEmailTemplateTest: sendEmailTemplateTestMock,

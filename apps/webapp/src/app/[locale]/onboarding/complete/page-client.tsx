@@ -189,7 +189,7 @@ function CompletionAttempt({
 						{summary?.isAdmin && summary.holidayPresetCreated === false ? (
 							<div className="text-sm">
 								<Link
-									href="/settings/holidays"
+									href="/settings/vacation?tab=holidays"
 									className="rounded-sm font-medium underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
 								>
 									{t("onboarding.complete.setUpHolidays", "Set up public holidays")}

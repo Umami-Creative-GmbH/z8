@@ -57,13 +57,9 @@ vi.mock("@/components/settings/vacation/absence-settings-tabs", () => ({
 	AbsenceSettingsTabs: () => null,
 }));
 
-import LegacyHolidayPage from "../holidays/page";
 import AbsencePage from "./page";
 
-function context(
-	accessTier = "orgAdmin",
-	organizationId: string | null = "org-1",
-) {
+function context(accessTier = "orgAdmin", organizationId: string | null = "org-1") {
 	return {
 		accessTier,
 		authContext: { session: { activeOrganizationId: organizationId } },
@@ -93,9 +89,10 @@ describe("combined Absences settings", () => {
 			canManageCategories: true,
 			allowedAssignmentTypes: ["team", "employee"],
 		});
-		expect(
-			page.props.panels.vacation.props.absenceSettings.props,
-		).toMatchObject({ enabled: true, personnelFilesEnabled: true });
+		expect(page.props.panels.vacation.props.absenceSettings.props).toMatchObject({
+			enabled: true,
+			personnelFilesEnabled: true,
+		});
 		expect(mocks.defaults).toHaveBeenCalledWith("org-1");
 		expect(mocks.notice).toHaveBeenCalledWith({}, { organizationId: "org-1" });
 	});
@@ -109,34 +106,15 @@ describe("combined Absences settings", () => {
 			absenceSettings: null,
 			notice: null,
 		});
-		for (const load of [
-			mocks.settings,
-			mocks.personnel,
-			mocks.defaults,
-			mocks.notice,
-		])
+		for (const load of [mocks.settings, mocks.personnel, mocks.defaults, mocks.notice])
 			expect(load).not.toHaveBeenCalled();
 	});
 	it.each([null, context("member"), context("orgAdmin", null)])(
 		"rejects access without a manager tier and active organization",
 		async (routeContext) => {
 			mocks.context.mockResolvedValue(routeContext);
-			await expect(content(AbsencePage())).rejects.toThrow(
-				"redirect:/settings",
-			);
+			await expect(content(AbsencePage())).rejects.toThrow("redirect:/settings");
 			expect(mocks.defaults).not.toHaveBeenCalled();
 		},
 	);
-	it("preserves the old Holidays URL through a tab redirect", async () => {
-		mocks.context.mockResolvedValue(context("manager"));
-		await expect(content(LegacyHolidayPage())).rejects.toThrow(
-			"redirect:/settings/vacation?tab=holidays",
-		);
-	});
-	it("keeps members out of the old Holidays URL", async () => {
-		mocks.context.mockResolvedValue(context("member"));
-		await expect(content(LegacyHolidayPage())).rejects.toThrow(
-			"redirect:/settings",
-		);
-	});
 });

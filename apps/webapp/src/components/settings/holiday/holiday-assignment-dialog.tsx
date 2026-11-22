@@ -10,11 +10,11 @@ import { toast } from "sonner";
 import {
 	createHolidayCategoryAssignment,
 	getHolidayCategories,
-} from "@/app/[locale]/(app)/settings/holidays/actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import {
 	getEmployeesForAssignment,
 	getTeamsForAssignment,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-preset-actions";
 import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,

@@ -3,7 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useLayoutEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
-import { loadPermissionsPageData } from "@/app/[locale]/(app)/settings/permissions/actions";
+import { loadPermissionsPageData } from "@/app/[locale]/(app)/settings/roles/team-permission-actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { TeamPermissionEditorPanel } from "./team-permission-editor-panel";
 import { TeamPermissionsTableCard } from "./team-permissions-table-card";

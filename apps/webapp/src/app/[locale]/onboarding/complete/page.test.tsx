@@ -138,7 +138,11 @@ describe("personal onboarding completion", () => {
 			render(<CompletePage />);
 			await screen.findByRole("link", { name: "Continue to workspace" });
 			expect(!!screen.queryByText("Invite your team members")).toBe(invite);
-			expect(!!screen.queryByRole("link", { name: "Set up public holidays" })).toBe(holiday);
+			const holidayLink = screen.queryByRole("link", { name: "Set up public holidays" });
+			expect(!!holidayLink).toBe(holiday);
+			if (holiday) {
+				expect(holidayLink?.getAttribute("href")).toBe("/settings/vacation?tab=holidays");
+			}
 			expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
 			expect(screen.getByText("Profile completed")).toBeTruthy();
 			expect(screen.getByText("Using default notification preferences")).toBeTruthy();

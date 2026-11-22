@@ -56,7 +56,7 @@ export async function getComplianceCommandCenterData(
 				"accessControls",
 				{
 					label: text("compliance.commandCenter.links.openAuditLog"),
-					href: "/settings/enterprise/audit-log",
+					href: "/settings/audit-export?tab=activity",
 				},
 				text("compliance.commandCenter.facts.unavailable.accessControls"),
 			),

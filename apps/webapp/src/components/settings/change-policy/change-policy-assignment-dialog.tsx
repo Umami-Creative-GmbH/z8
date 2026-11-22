@@ -11,7 +11,7 @@ import {
 	getChangePolicies,
 	getEmployeesForAssignment,
 	getTeamsForAssignment,
-} from "@/app/[locale]/(app)/settings/change-policies/actions";
+} from "@/app/[locale]/(app)/settings/work-policies/change-policy-actions";
 import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,

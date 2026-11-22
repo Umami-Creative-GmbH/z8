@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getWebhookDeliveryLogs } from "@/app/[locale]/(app)/settings/webhooks/actions";
+import { getWebhookDeliveryLogs } from "@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions";
 import type { WebhookDelivery } from "@/lib/webhooks/types";
 
 export const WEBHOOK_DELIVERY_LOGS_PAGE_SIZE = 20;

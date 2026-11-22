@@ -35,7 +35,7 @@ vi.mock("@/hooks/use-display-context", () => ({
 	}),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/approval-escalation/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/approval-policies/escalation-actions", () => ({
 	listApprovalEscalationCandidates: vi.fn(),
 }));
 
