@@ -340,6 +340,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		path === "/my-equipment" ||
 		path === "/organization" ||
 		path === "/compliance" ||
+		path === "/works-council" ||
 		path === "/driving-licence" ||
 		path === "/calendar" ||
 		path === "/approvals" ||

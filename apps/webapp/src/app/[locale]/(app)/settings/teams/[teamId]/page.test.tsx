@@ -4,10 +4,23 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { use } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { getCurrentSettingsRouteContextMock, redirectWithLocaleMock } = vi.hoisted(() => ({
+	getCurrentSettingsRouteContextMock: vi.fn(),
+	redirectWithLocaleMock: vi.fn(),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
+vi.mock("@/lib/auth-helpers", () => ({
+	getCurrentSettingsRouteContext: getCurrentSettingsRouteContextMock,
+}));
+
+vi.mock("@/lib/navigation/locale-redirect", () => ({
+	redirectWithLocale: redirectWithLocaleMock,
 }));
 
 vi.mock("./team-detail-page-client", () => ({
@@ -24,13 +37,37 @@ vi.mock("./team-detail-page-client", () => ({
 const { default: TeamDetailPage } = await import("./page");
 
 describe("TeamDetailPage route boundary", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	it("renders the settings fallback while params remain unresolved", () => {
+		getCurrentSettingsRouteContextMock.mockReturnValue(new Promise<never>(() => {}));
 		const page = TeamDetailPage({ params: new Promise<never>(() => {}) });
 
 		expect(page).not.toBeInstanceOf(Promise);
 		render(page);
 
 		expect(screen.getByLabelText("Loading settings")).toBeTruthy();
+	});
+
+	it("redirects members away from team detail settings on the server", async () => {
+		getCurrentSettingsRouteContextMock.mockResolvedValue({
+			accessTier: "member",
+			authContext: { session: { activeOrganizationId: "org-1" } },
+		});
+		redirectWithLocaleMock.mockImplementation((path: string) => {
+			throw new Error(`REDIRECT:${path}`);
+		});
+
+		const page = TeamDetailPage({ params: Promise.resolve({ teamId: "team-1" }) });
+		const guardedElement = page.props.children as {
+			type: (props: { params: Promise<{ teamId: string }> }) => Promise<unknown>;
+			props: { params: Promise<{ teamId: string }> };
+		};
+
+		await expect(guardedElement.type(guardedElement.props)).rejects.toThrow("REDIRECT:/settings");
+		expect(redirectWithLocaleMock).toHaveBeenCalledWith("/settings");
 	});
 
 	it("keeps params consumption in the client implementation", () => {

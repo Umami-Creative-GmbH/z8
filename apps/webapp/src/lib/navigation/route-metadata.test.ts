@@ -139,6 +139,11 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
 		expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);
 	});
+	it("adopts the works-council page heading without descendants", () => {
+		expect(appPageOwnsHeading("/en/works-council")).toBe(true);
+		expect(appPageOwnsHeading("/de/works-council/")).toBe(true);
+		expect(appPageOwnsHeading("/en/works-council/detail")).toBe(false);
+	});
 	it("adopts the personal documents heading without officer descendants", () => {
 		expect(appPageOwnsHeading("/de/my-documents")).toBe(true);
 		expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);

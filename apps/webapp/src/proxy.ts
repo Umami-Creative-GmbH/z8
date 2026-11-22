@@ -32,7 +32,6 @@ const PUBLIC_ROUTES = [
 	"/verify-email",
 	"/verify-email-pending",
 	"/verify-2fa",
-	"/welcome",
 	"/licenses",
 	"/join",
 	"/setup",
@@ -41,7 +40,7 @@ const PUBLIC_ROUTES = [
 ];
 
 // Routes that authenticated users should be redirected away from
-const AUTH_ROUTES = ["/sign-in", "/sign-up", "/forgot-password", "/welcome"];
+const AUTH_ROUTES = ["/sign-in", "/sign-up", "/forgot-password"];
 
 const i18nMiddleware = createMiddleware(routing);
 

@@ -5,7 +5,6 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { use, useCallback, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { HistoricalVacationUsageCard } from "@/components/absences/historical-vacation-usage-card";
 import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 import {
@@ -13,7 +12,6 @@ import {
 	VacationAllowanceExplanation,
 } from "@/components/absences/vacation-allowance-explanation";
 import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
-import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { SettingsLoadError } from "@/components/settings/settings-load-error";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -133,13 +131,10 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const [historicalAdminOrganizationId, setHistoricalAdminOrganizationId] =
-		useState<string | null>(null);
 	const [employee, setEmployee] = useState<EmployeeAllowanceView | null>(null);
 	const [policies, setPolicies] = useState<VacationPolicyOption[]>([]);
 	const [currentAssignment, setCurrentAssignment] =
 		useState<EmployeePolicyAssignment | null>(null);
-	const [noEmployee, setNoEmployee] = useState(false);
 	// A failed read of the employee, policies or balance; shown only while nothing is loaded yet.
 	const [loadFailed, setLoadFailed] = useState(false);
 	// The balance and its year come from the server, in the organization's timezone (#1111).
@@ -260,16 +255,6 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 			const generation = ++loadGeneration.current;
 			setLoadFailed(false);
 			try {
-			const current = await getCurrentEmployee();
-			if (generation !== loadGeneration.current) return;
-			if (!current) {
-				setNoEmployee(true);
-				return;
-			}
-
-			setHistoricalAdminOrganizationId(
-				current.role === "admin" ? current.organizationId : null,
-			);
 			const balanceResult = await getEmployeeVacationBalance(employeeId);
 			if (generation !== loadGeneration.current) return;
 			if (!balanceResult.success) {
@@ -346,7 +331,6 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	}, [runLoadData]);
 
 	return {
-		historicalAdminOrganizationId,
 		loadFailed,
 		retry: () => runLoadData(),
 		reload: () => runLoadData(true),
@@ -357,7 +341,6 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 		employee,
 		form,
 		loading,
-		noEmployee,
 		policies,
 		saveFailure,
 	};
@@ -370,8 +353,10 @@ type EmployeeAllowanceFormApi = EmployeeAllowanceEditorState["form"];
 
 export function EmployeeAllowanceEditPageClient({
 	params,
+	organizationId,
 }: {
 	params: Promise<{ employeeId: string }>;
+	organizationId: string;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
@@ -384,35 +369,17 @@ export function EmployeeAllowanceEditPageClient({
 		employee,
 		form,
 		loading,
-		noEmployee,
 		policies,
-		historicalAdminOrganizationId,
 		loadFailed,
 		retry,
 		reload,
 		saveFailure,
 	} = useEmployeeAllowanceEditor(employeeId);
+	const historicalAdminOrganizationId = organizationId;
 	const pageTitle = t(
 		"settings.vacation.employees.edit.title",
 		"Edit Vacation Allowance",
 	);
-
-	if (noEmployee) {
-		return (
-			<div className="page-frame">
-				<div className="page-measure space-y-6">
-					<PageHeader title={pageTitle} />
-					<NoEmployeeError
-						className="w-full max-w-xl"
-						feature={t(
-							"settings.vacation.employees.detail.manageAllowances",
-							"manage employee vacation allowances",
-						)}
-					/>
-				</div>
-			</div>
-		);
-	}
 
 	if (!employee || currentYear === null) {
 		if (loadFailed) {

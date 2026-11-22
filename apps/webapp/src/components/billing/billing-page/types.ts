@@ -26,7 +26,6 @@ export interface AccessResult {
 export interface BillingPageClientProps {
 	subscription: SubscriptionInfo | null;
 	accessResult: AccessResult;
-	isOwner: boolean;
 	/**
 	 * Whether kiosk seats are on (both kiosk prices configured, #886): the pricing
 	 * cards then show the kiosk seat price and the summary a kiosk seat line.

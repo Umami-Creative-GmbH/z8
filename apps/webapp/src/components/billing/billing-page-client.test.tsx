@@ -100,7 +100,6 @@ describe("BillingPageClient", () => {
 					cancelAt: null,
 				}}
 				accessResult={{ canAccess: true, status: "trialing" }}
-				isOwner={true}
 			/>,
 		);
 
@@ -130,7 +129,6 @@ describe("BillingPageClient", () => {
 					cancelAt: null,
 				}}
 				accessResult={{ canAccess: true, status: "trialing" }}
-				isOwner={true}
 			/>,
 		);
 
@@ -170,7 +168,6 @@ describe("BillingPageClient", () => {
 					cancelAt: null,
 				}}
 				accessResult={{ canAccess: true, status: "trialing" }}
-				isOwner={true}
 			/>,
 		);
 
@@ -201,7 +198,6 @@ describe("BillingPageClient", () => {
 					cancelAt: null,
 				}}
 				accessResult={{ canAccess: true, status: "active" }}
-				isOwner={true}
 			/>,
 		);
 
@@ -230,7 +226,6 @@ describe("BillingPageClient", () => {
 				<BillingPageClient
 					subscription={{ ...activeSubscription, billingInterval: "month", currentKioskSeats: 5 }}
 					accessResult={{ canAccess: true, status: "active" }}
-					isOwner={true}
 					kioskSeatsEnabled={true}
 				/>,
 			);
@@ -252,7 +247,6 @@ describe("BillingPageClient", () => {
 				<BillingPageClient
 					subscription={{ ...activeSubscription, billingInterval: "year", currentKioskSeats: 5 }}
 					accessResult={{ canAccess: true, status: "active" }}
-					isOwner={true}
 					kioskSeatsEnabled={true}
 				/>,
 			);
@@ -269,7 +263,6 @@ describe("BillingPageClient", () => {
 				<BillingPageClient
 					subscription={{ ...activeSubscription, billingInterval: "month", currentKioskSeats: 0 }}
 					accessResult={{ canAccess: true, status: "active" }}
-					isOwner={true}
 				/>,
 			);
 
@@ -283,7 +276,6 @@ describe("BillingPageClient", () => {
 				<BillingPageClient
 					subscription={{ ...activeSubscription, billingInterval: "month", currentKioskSeats: 5 }}
 					accessResult={{ canAccess: true, status: "active" }}
-					isOwner={true}
 					kioskSeatsEnabled={true}
 				/>,
 			);
@@ -315,7 +307,6 @@ describe("BillingPageClient", () => {
 				<BillingPageClient
 					subscription={null}
 					accessResult={{ canAccess: true }}
-					isOwner={true}
 					kioskSeatsEnabled={true}
 				/>,
 			);
@@ -328,7 +319,6 @@ describe("BillingPageClient", () => {
 				<BillingPageClient
 					subscription={localTrial}
 					accessResult={{ canAccess: true, status: "trialing" }}
-					isOwner={true}
 					kioskSeatsEnabled={true}
 				/>,
 			);
@@ -338,7 +328,7 @@ describe("BillingPageClient", () => {
 
 		it("hides the kiosk seat price while kiosk seats are off", () => {
 			render(
-				<BillingPageClient subscription={null} accessResult={{ canAccess: true }} isOwner={true} />,
+				<BillingPageClient subscription={null} accessResult={{ canAccess: true }} />,
 			);
 
 			expect(screen.queryByText(/^Kiosk seats \(kiosk-only employees\)/)).toBeNull();
