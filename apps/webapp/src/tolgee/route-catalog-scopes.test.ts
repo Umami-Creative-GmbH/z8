@@ -189,6 +189,23 @@ describe("route catalog wiring", () => {
 		});
 		expect(uncoveredPages).toEqual([]);
 	});
+	it("extracts /licenses outside (auth) with a single /licenses translation boundary", () => {
+		const normalizedPages = pages.map((file) => file.replaceAll("\\", "/"));
+		expect(normalizedPages).toContain("licenses/page.tsx");
+		expect(normalizedPages).not.toContain("(auth)/licenses/page.tsx");
+
+		let directory = path.dirname(path.join(root, "licenses/page.tsx"));
+		const sources = [readFileSync(path.join(root, "licenses/page.tsx"), "utf8")];
+		while (directory.startsWith(root) && directory !== root) {
+			const layout = path.join(directory, "layout.tsx");
+			if (existsSync(layout)) sources.push(readFileSync(layout, "utf8"));
+			directory = path.dirname(directory);
+		}
+		const boundaryRoutes = sources.flatMap((source) =>
+			[...source.matchAll(/route="([^"]+)"/g)].map((match) => match[1]),
+		);
+		expect(boundaryRoutes).toEqual(["/licenses"]);
+	});
 	it("loads the sick-note strings where sick notes are recorded and managed (#984)", () => {
 		expect(getRouteCatalogScope("/team/absences")?.namespaces).toEqual(
 			expect.arrayContaining(["calendar", "settings/people"]),

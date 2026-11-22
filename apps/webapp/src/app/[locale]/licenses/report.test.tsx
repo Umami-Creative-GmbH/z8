@@ -24,11 +24,14 @@ vi.mock("@tolgee/react", () => ({
 // header, record renderer and F2 toolbar remain assembled and real.
 vi.mock("@/navigation", () => ({
 	Link: ({
+		children,
 		href,
 		locale = "de",
 		...props
 	}: ComponentProps<"a"> & { locale?: string }) => (
-		<a {...props} href={`/${locale}${href}`} />
+		<a {...props} href={`/${locale}${href}`}>
+			{children}
+		</a>
 	),
 }));
 vi.mock("@/data/licenses.json", () => ({
