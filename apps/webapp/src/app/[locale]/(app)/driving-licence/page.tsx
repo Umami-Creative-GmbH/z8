@@ -14,7 +14,7 @@ import { getTranslate } from "@/tolgee/server";
  * My driving licence (#1428, #1937): the viewer's own class status, evidence, history and
  * *Unable to drive?*. Not found while the feature is off, or unless the viewer is an intended
  * driver or still has their own retained check records. Verifiers and planners work under
- * Team & organization → Driving licences.
+ * Organization → Driving licences.
  */
 async function MyDrivingLicenceContent() {
 	const [{ actor, visibility, employeeId }, t] = await Promise.all([
@@ -24,11 +24,7 @@ async function MyDrivingLicenceContent() {
 	const record = await getDrivingLicenceEmployeeRecordAction({ employeeId });
 	const identity = `${actor.organizationId}:${actor.userId}`;
 	return (
-		<DrivingLicencePageScope
-			kind="my"
-			organizationId={actor.organizationId}
-			userId={actor.userId}
-		>
+		<DrivingLicencePageScope kind="my" organizationId={actor.organizationId} userId={actor.userId}>
 			<div className="page-frame flex min-w-0 flex-col gap-6">
 				<PageHeader title={<DrivingLicencePageTitle kind="my" />} />
 				{record.success ? (

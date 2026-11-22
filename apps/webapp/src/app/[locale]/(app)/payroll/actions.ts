@@ -6,22 +6,29 @@ import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
-import { payrollBlockerDismissal } from "@/db/schema";
-import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers";
+import { organization } from "@/db/auth-schema";
+import { payrollBlockerDismissal, payrollExportCarriedDay, payrollExportJob } from "@/db/schema";
+import { getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { isOrgAdminForOrganization } from "@/lib/payroll-access/org-admin";
 import {
+	getActivePayrollAccessGrantScope,
 	hasActivePayrollAccessGrant,
 	intersectPayrollScope,
+	resolveOrganizationPayrollEmployeeIds,
 	resolvePayrollAccessibleEmployeeIds,
 } from "@/lib/payroll-access/permissions";
 import {
 	createExportJob,
 	enqueuePayrollExportJob,
+	getExportDownloadUrl,
+	getExportJobHistory,
 	getFormatter,
 	getPayrollExportConfig,
 	type PayrollExportFilters,
+	type PayrollExportJobSummary,
 	processExportJob,
 	unmappedOvertimePayoutsForExport,
 } from "@/lib/payroll-export";
@@ -62,6 +69,10 @@ import {
 } from "@/lib/payroll-period/settlement";
 import type { PayrollPeriodDayDetail, PayrollPeriodRead } from "@/lib/payroll-period/types";
 import {
+	getPayrollReadiness,
+	type PayrollReadinessResult,
+} from "@/lib/payroll-readiness/get-payroll-readiness";
+import {
 	exportPayrollPeriodToPDF,
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
@@ -70,6 +81,7 @@ import type {
 	DismissiblePayrollBlockerType,
 	PayrollWorkspaceSummary,
 } from "@/lib/payroll-workspace/types";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import {
 	type DiscardPayrollRunResult,
 	discardPayrollRun,
@@ -85,6 +97,15 @@ import { mapPayrollWorkspaceActionError } from "./action-errors";
 import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
 
 type PayrollTranslate = Awaited<ReturnType<typeof getTranslate>>;
+
+interface PayrollWorkspaceActor {
+	organizationId: string;
+	userId: string;
+	employeeId: string | null;
+	employeeRole: "admin" | "manager" | "employee";
+	name: string;
+	isOrgAdmin: boolean;
+}
 
 export interface PayrollWorkspaceRequest {
 	startDate: string;
@@ -126,15 +147,15 @@ export async function getPayrollPeriodAction(
 	request: PayrollWorkspaceRequest,
 ): Promise<ServerActionResult<PayrollPeriodView>> {
 	return runPayrollWorkspaceAction(async (t) => {
-		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+		const { actor, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 			t,
 			request,
 			undefined,
 			{ includeDeparted: true },
 		);
 		const read = await readPeriodForEmployees(
-			authContext.employee.organizationId,
-			payrollActor(authContext),
+			actor.organizationId,
+			toPayrollPeriodActor(actor),
 			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
 			{ employeeIds: scopedEmployeeIds },
 		);
@@ -327,21 +348,20 @@ export async function confirmPayrollExportPaidAction(
 }
 
 async function resolvePayrollSettlementActor(t: PayrollTranslate) {
-	const authContext = await requirePayrollGrantHolder(t);
+	const workspaceActor = await requirePayrollWorkspaceActor(t);
 	return {
-		organizationId: authContext.employee.organizationId,
-		actor: payrollActor(authContext),
+		organizationId: workspaceActor.organizationId,
+		actor: toPayrollPeriodActor(workspaceActor),
 	};
 }
 
-/** The signed-in grant holder as the payroll period module names an actor. */
-function payrollActor(
-	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> },
-) {
+/** The signed-in payroll actor as the payroll period module names an actor. */
+function toPayrollPeriodActor(actor: PayrollWorkspaceActor) {
 	return {
-		employeeId: authContext.employee.id,
-		userId: authContext.user.id,
-		name: authContext.user.name || authContext.user.email,
+		employeeId: actor.employeeId,
+		userId: actor.userId,
+		name: actor.name,
+		...(actor.isOrgAdmin ? { orgAdmin: true as const } : {}),
 	};
 }
 
@@ -484,12 +504,12 @@ async function resolvePayrollSettlementRequest(
 	t: PayrollTranslate,
 	request: PayrollWorkspaceRequest,
 ) {
-	const authContext = await requirePayrollGrantHolder(t);
+	const workspaceActor = await requirePayrollWorkspaceActor(t);
 	validatePayrollWorkspaceRequest(t, request);
 	const employeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
 	return {
-		organizationId: authContext.employee.organizationId,
-		actor: payrollActor(authContext),
+		organizationId: workspaceActor.organizationId,
+		actor: toPayrollPeriodActor(workspaceActor),
 		scope: { employeeIds },
 		range: { startDate: request.startDate, endDate: request.endDate },
 	};
@@ -553,11 +573,11 @@ export async function getPayrollDayRecordsAction(request: {
 }): Promise<ServerActionResult<PayrollPeriodDayDetail>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const day = parsePayrollActionInput(t, payrollDaySchema, request);
-		const authContext = await requirePayrollGrantHolder(t);
-		// The module checks the grant's scope, employees who left during or after the day included.
+		const workspaceActor = await requirePayrollWorkspaceActor(t);
+		// The module checks the actor's scope, employees who left during or after the day included.
 		const detail = await readPeriodDay(
-			authContext.employee.organizationId,
-			payrollActor(authContext),
+			workspaceActor.organizationId,
+			toPayrollPeriodActor(workspaceActor),
 			day,
 		);
 		if (!detail) {
@@ -566,7 +586,7 @@ export async function getPayrollDayRecordsAction(request: {
 					"payroll.errors.noAvailableEmployees",
 					"No payroll employees are available in your access scope",
 				),
-				userId: authContext.user.id,
+				userId: workspaceActor.userId,
 				resource: "payroll_workspace",
 				action: "read",
 			});
@@ -579,16 +599,25 @@ export async function dismissPayrollBlockerAction(
 	request: DismissPayrollBlockerRequest,
 ): Promise<ServerActionResult<{ dismissed: true }>> {
 	return runPayrollWorkspaceAction(async (t) => {
-		const authenticatedContext = await requireActiveOrganizationEmployee(t);
+		const authenticatedActor = await requirePayrollWorkspaceActor(t);
 		const { blockerId, blockerType } = validatePayrollBlockerDismissalRequest(t, request);
 		// Blockers of employees who left are in the workspace's summary, so they can be dismissed.
-		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+		const { actor, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 			t,
 			request,
-			authenticatedContext,
+			authenticatedActor,
 			{ includeDeparted: true },
 		);
-		const organizationId = authContext.employee.organizationId;
+		if (!actor.employeeId) {
+			throw new ValidationError({
+				message: t(
+					"payroll.errors.employeeProfileRequiredToDismissBlocker",
+					"An employee profile in this organization is required to dismiss payroll blockers",
+				),
+				field: "blockerId",
+			});
+		}
+		const organizationId = actor.organizationId;
 		const findExistingDismissal = () =>
 			db.query.payrollBlockerDismissal.findFirst({
 				columns: {
@@ -616,7 +645,7 @@ export async function dismissPayrollBlockerAction(
 				return { dismissed: true };
 			}
 
-			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+			throwPayrollBlockerAuthorizationError(t, actor.userId);
 		}
 
 		const summary = await getPayrollWorkspaceSummary({
@@ -624,8 +653,8 @@ export async function dismissPayrollBlockerAction(
 			allowedEmployeeIds: scopedEmployeeIds,
 			period,
 			generatedBy: {
-				id: authContext.employee.id,
-				name: authContext.user.name || authContext.user.email,
+				id: actor.employeeId,
+				name: actor.name,
 			},
 		});
 		const blocker = summary.blockers.find(
@@ -637,11 +666,11 @@ export async function dismissPayrollBlockerAction(
 				return { dismissed: true };
 			}
 
-			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+			throwPayrollBlockerAuthorizationError(t, actor.userId);
 		}
 
 		if (!scopedEmployeeIds.includes(blocker.employeeId)) {
-			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+			throwPayrollBlockerAuthorizationError(t, actor.userId);
 		}
 
 		const insertedDismissals = await db
@@ -651,7 +680,7 @@ export async function dismissPayrollBlockerAction(
 				blockerType,
 				sourceId: blockerId,
 				employeeId: blocker.employeeId,
-				dismissedByEmployeeId: authContext.employee.id,
+				dismissedByEmployeeId: actor.employeeId,
 			})
 			.onConflictDoNothing()
 			.returning({ id: payrollBlockerDismissal.id });
@@ -661,7 +690,7 @@ export async function dismissPayrollBlockerAction(
 				return { dismissed: true };
 			}
 
-			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+			throwPayrollBlockerAuthorizationError(t, actor.userId);
 		}
 
 		return { dismissed: true };
@@ -673,20 +702,20 @@ export async function exportPayrollPdfAction(
 ): Promise<ServerActionResult<{ filename: string; data: number[] }>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		// The PDF reads the payroll period module, so it matches the Days tab (#1900).
-		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+		const { actor, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 			t,
 			request,
 			undefined,
 			{ includeDeparted: true },
 		);
 		const read = await readPeriodForEmployees(
-			authContext.employee.organizationId,
-			payrollActor(authContext),
+			actor.organizationId,
+			toPayrollPeriodActor(actor),
 			{ startDate: request.startDate, endDate: request.endDate, label: request.label.trim() },
 			{ employeeIds: scopedEmployeeIds },
 		);
 		// The day sheets' clock times and breaks, for the employees and days of the read.
-		const records = await readPeriodRecordsForEmployees(authContext.employee.organizationId, {
+		const records = await readPeriodRecordsForEmployees(actor.organizationId, {
 			employees: read.employees,
 			startDate: read.period.start,
 			endDate: read.period.end,
@@ -723,7 +752,16 @@ export async function startScopedPayrollExportAction(
 > {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		const { authContext, period, employeeIds } = await resolvePayrollExportScope(t, request);
+		const { actor, period, employeeIds } = await resolvePayrollExportScope(t, request);
+		if (!actor.employeeId) {
+			throw new ValidationError({
+				message: t(
+					"payroll.export.employeeProfileRequired",
+					"An employee profile in this organization is required to trigger a file export",
+				),
+				field: "formatId",
+			});
+		}
 		if (employeeIds.length === 0) {
 			throw new ValidationError({
 				message: t(
@@ -734,10 +772,7 @@ export async function startScopedPayrollExportAction(
 			});
 		}
 
-		const configuredFormat = await getPayrollExportConfig(
-			authContext.employee.organizationId,
-			formatId,
-		);
+		const configuredFormat = await getPayrollExportConfig(actor.organizationId, formatId);
 		if (!configuredFormat) {
 			throw new ValidationError({
 				message: t(
@@ -758,13 +793,14 @@ export async function startScopedPayrollExportAction(
 
 		// Only an organization administrator executes eligible historical repairs (#322),
 		// as for the repair route; other payroll users collect without repair.
-		const ability = await getAbility();
+		const ability = actor.isOrgAdmin ? null : await getAbility();
 		const { jobId, isAsync } = await createExportJob({
-			organizationId: authContext.employee.organizationId,
+			organizationId: actor.organizationId,
 			formatId,
-			requestedById: authContext.employee.id,
+			requestedById: actor.employeeId,
 			filters,
-			repairActorUserId: ability?.can("manage", "OrgSettings") ? authContext.user.id : null,
+			repairActorUserId:
+				actor.isOrgAdmin || ability?.can("manage", "OrgSettings") ? actor.userId : null,
 			// The workspace prepares the file: settled days are left out unless reissued.
 			settledDays: request.includeSettledDays === true ? "include" : "leave_out",
 		});
@@ -772,14 +808,14 @@ export async function startScopedPayrollExportAction(
 		if (isAsync) {
 			await enqueuePayrollExportJob({
 				jobId,
-				organizationId: authContext.employee.organizationId,
+				organizationId: actor.organizationId,
 			});
 			return { jobId, isAsync };
 		}
 
 		const { result, settledDaysLeftOut } = await processExportJob({
 			jobId,
-			organizationId: authContext.employee.organizationId,
+			organizationId: actor.organizationId,
 		});
 		const fileContent = result?.content
 			? typeof result.content === "string"
@@ -807,13 +843,12 @@ export async function getOvertimePayoutExportReadinessAction(
 ): Promise<ServerActionResult<{ unmappedPayoutCount: number }>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		const { authContext, period, employeeIds } = await resolvePayrollExportScope(t, request);
+		const { actor, period, employeeIds } = await resolvePayrollExportScope(t, request);
 		if (employeeIds.length === 0) return { unmappedPayoutCount: 0 };
-		const unmapped = await unmappedOvertimePayoutsForExport(
-			authContext.employee.organizationId,
-			formatId,
-			{ dateRange: { start: period.start, end: period.end }, employeeIds },
-		);
+		const unmapped = await unmappedOvertimePayoutsForExport(actor.organizationId, formatId, {
+			dateRange: { start: period.start, end: period.end },
+			employeeIds,
+		});
 		return { unmappedPayoutCount: unmapped.length };
 	});
 }
@@ -832,37 +867,243 @@ export async function getPayrollExportScopeAction(
 	});
 }
 
+const PAYROLL_EXPORT_HISTORY_LIMIT = 50;
+const PAYROLL_OFFICER_HISTORY_SCAN_LIMIT = 250;
+
 /**
- * The employees a payroll workspace export covers (#1001): the employees the
- * grant covers in the workspace, plus the grant's employees who left on or
- * after the period's first day, so final payouts and last-month hours reach
- * payroll. An employee selection narrows both. A grant that covers only
- * employees who have left may therefore export a period in which one of them
- * was still employed; the scope is empty for a period after they all left.
- * Every other payroll view keeps the workspace scope.
+ * Organization-level payroll readiness checks for the `/payroll` Overview tab (#1957).
+ * Strictly limited to organization administrators.
+ */
+export async function getPayrollReadinessForWorkspaceAction(request: {
+	startDate: string;
+	endDate: string;
+}): Promise<ServerActionResult<PayrollReadinessResult>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const actor = await requireOrgAdminPayrollActor(t);
+		const startPlain = parsePlainDateForAction(t, request.startDate, "startDate");
+		const endPlain = parsePlainDateForAction(t, request.endDate, "endDate");
+		if (comparePlainDates(endPlain, startPlain) < 0) {
+			throw new ValidationError({
+				message: t("payroll.errors.endDateAfterStart", "End date must be on or after start date"),
+				field: "endDate",
+				value: request.endDate,
+			});
+		}
+		const locale = await getLocale();
+		return getPayrollReadiness({
+			organizationId: actor.organizationId,
+			period: {
+				start: startPlain,
+				end: endPlain,
+			},
+			locale,
+		});
+	});
+}
+
+function parsePlainDateForAction(t: PayrollTranslate, value: string, field: string) {
+	if (typeof value !== "string" || !ISO_DATE_PATTERN.test(value)) {
+		throw new ValidationError({
+			message: t("payroll.errors.mustBeIsoDate", "{field} must be an ISO date", { field }),
+			field,
+			value,
+		});
+	}
+	try {
+		return parsePlainDate(value);
+	} catch {
+		throw new ValidationError({
+			message: t("payroll.errors.mustBeValidIsoDate", "{field} must be a valid ISO date", {
+				field,
+			}),
+			field,
+			value,
+		});
+	}
+}
+
+export interface PayrollWorkspaceExportHistory {
+	exports: PayrollExportJobSummary[];
+	organizationTimezone: string;
+}
+
+/**
+ * Export history for the `/payroll` Export tab (#1957): organization-wide for org
+ * admins, strictly limited to jobs within the active payroll access grant for
+ * delegated payroll officers. Denied to close-month-only actors.
+ */
+export async function getPayrollExportHistoryAction(): Promise<
+	ServerActionResult<PayrollWorkspaceExportHistory>
+> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const actor = await requirePayrollWorkspaceActor(t);
+		const fetchLimit = actor.isOrgAdmin
+			? PAYROLL_EXPORT_HISTORY_LIMIT
+			: PAYROLL_OFFICER_HISTORY_SCAN_LIMIT;
+		const [[orgRow], jobs] = await Promise.all([
+			db
+				.select({ timezone: organization.timezone })
+				.from(organization)
+				.where(eq(organization.id, actor.organizationId))
+				.limit(1),
+			getExportJobHistory(actor.organizationId, fetchLimit),
+		]);
+		const organizationTimezone = resolveOrganizationTimezone(orgRow?.timezone).timezone;
+		const exports = (await filterExportJobsForPayrollActor(actor, jobs)).slice(
+			0,
+			PAYROLL_EXPORT_HISTORY_LIMIT,
+		);
+		return { exports, organizationTimezone };
+	});
+}
+
+/**
+ * Presigned download URL for a completed payroll export job on `/payroll` (#1957).
+ * Enforces the same actor scope check as `getPayrollExportHistoryAction`.
+ */
+export async function getPayrollExportDownloadUrlAction(
+	jobId: string,
+): Promise<ServerActionResult<string | null>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const actor = await requirePayrollWorkspaceActor(t);
+		if (!z.uuid().safeParse(jobId).success) {
+			return null;
+		}
+		const [job] = await db
+			.select({
+				id: payrollExportJob.id,
+				organizationId: payrollExportJob.organizationId,
+				filters: payrollExportJob.filters,
+			})
+			.from(payrollExportJob)
+			.where(
+				and(
+					eq(payrollExportJob.id, jobId),
+					eq(payrollExportJob.organizationId, actor.organizationId),
+				),
+			)
+			.limit(1);
+		if (!job) {
+			return null;
+		}
+		if (!(await isExportJobInPayrollActorScope(actor, job))) {
+			throw new AuthorizationError({
+				message: t(
+					"payroll.errors.exportOutOfScope",
+					"This payroll export is outside your access scope",
+				),
+				userId: actor.userId,
+				resource: "payroll_export",
+				action: "read",
+			});
+		}
+		return getExportDownloadUrl(actor.organizationId, job.id);
+	});
+}
+
+async function filterExportJobsForPayrollActor<
+	TJob extends { id: string; filters: PayrollExportJobSummary["filters"] },
+>(actor: PayrollWorkspaceActor, jobs: TJob[]): Promise<TJob[]> {
+	if (actor.isOrgAdmin || jobs.length === 0) {
+		return jobs;
+	}
+	if (!actor.employeeId) {
+		return [];
+	}
+	const grantScope = await getActivePayrollAccessGrantScope({
+		organizationId: actor.organizationId,
+		payrollEmployeeId: actor.employeeId,
+	});
+	if (!grantScope) {
+		return [];
+	}
+	const jobIds = jobs.map((job) => job.id);
+	const carriedRows = await db
+		.select({
+			jobId: payrollExportCarriedDay.jobId,
+			employeeId: payrollExportCarriedDay.employeeId,
+		})
+		.from(payrollExportCarriedDay)
+		.where(
+			and(
+				eq(payrollExportCarriedDay.organizationId, actor.organizationId),
+				inArray(payrollExportCarriedDay.jobId, jobIds),
+			),
+		);
+	const carriedByJob = new Map<string, Set<string>>();
+	for (const row of carriedRows) {
+		const set = carriedByJob.get(row.jobId) ?? new Set<string>();
+		set.add(row.employeeId);
+		carriedByJob.set(row.jobId, set);
+	}
+	const startDates = [...new Set(jobs.map((job) => job.filters.dateRange.start))];
+	const periodActor = toPayrollPeriodActor(actor);
+	const allowedByStart = new Map(
+		await Promise.all(
+			startDates.map(
+				async (startDate) =>
+					[
+						startDate,
+						new Set(await resolvePeriodEmployeeIds(actor.organizationId, periodActor, startDate)),
+					] as const,
+			),
+		),
+	);
+	return jobs.filter((job) => {
+		const allowed = allowedByStart.get(job.filters.dateRange.start) ?? new Set<string>();
+		const carried = carriedByJob.get(job.id);
+		if (carried && carried.size > 0) {
+			if (allowed.size === 0 || !Array.from(carried).every((id) => allowed.has(id))) {
+				return false;
+			}
+		}
+		const explicitEmployeeIds = job.filters.employeeIds;
+		const hasNonEmployeeFilters =
+			(job.filters.teamIds?.length ?? 0) > 0 || (job.filters.projectIds?.length ?? 0) > 0;
+		if (hasNonEmployeeFilters) {
+			return grantScope === "all";
+		}
+		if (explicitEmployeeIds && explicitEmployeeIds.length > 0) {
+			return allowed.size > 0 && explicitEmployeeIds.every((id) => allowed.has(id));
+		}
+		return grantScope === "all";
+	});
+}
+
+async function isExportJobInPayrollActorScope(
+	actor: PayrollWorkspaceActor,
+	job: { id: string; filters: PayrollExportJobSummary["filters"] },
+): Promise<boolean> {
+	if (actor.isOrgAdmin) return true;
+	const filtered = await filterExportJobsForPayrollActor(actor, [job]);
+	return filtered.length === 1;
+}
+
+/**
+ * The employees a payroll workspace export covers (#1001, #1957): org-wide for org
+ * admins, active payroll access grant scope for delegated officers, plus covered
+ * employees who left on or after the period's first day. An employee selection narrows
+ * both.
  */
 async function resolvePayrollExportScope(
 	t: PayrollTranslate,
 	request: PayrollWorkspaceRequest,
 ): Promise<{
-	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
+	actor: PayrollWorkspaceActor;
 	period: { start: PlainDate; end: PlainDate; label: string };
 	employeeIds: string[];
 }> {
-	const authContext = await requirePayrollGrantHolder(t);
+	const actor = await requirePayrollWorkspaceActor(t);
 	const period = validatePayrollWorkspaceRequest(t, request);
 	const requestedEmployeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
 	const [allowedEmployeeIds, departedEmployeeIds] = await Promise.all([
-		resolvePayrollAccessibleEmployeeIds({
-			organizationId: authContext.employee.organizationId,
-			payrollEmployeeId: authContext.employee.id,
-		}),
-		listDepartedGrantEmployees(authContext.employee.organizationId, payrollActor(authContext), {
+		resolveActivePayrollEmployeesForActor(actor),
+		listDepartedGrantEmployees(actor.organizationId, toPayrollPeriodActor(actor), {
 			leftAfterStartOf: request.startDate,
 		}),
 	]);
 	return {
-		authContext,
+		actor,
 		period,
 		employeeIds: intersectPayrollScope({
 			allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
@@ -871,13 +1112,80 @@ async function resolvePayrollExportScope(
 	};
 }
 
-/** The signed-in employee, when they hold an active payroll access grant in the active organization. */
-async function requirePayrollGrantHolder(
-	t: PayrollTranslate,
-): Promise<AuthContext & { employee: NonNullable<AuthContext["employee"]> }> {
-	const authContext = await requireActiveOrganizationEmployee(t);
+/** Active employees in the actor's payroll scope (org-wide for org admins, grant-scoped otherwise). */
+async function resolveActivePayrollEmployeesForActor(
+	actor: PayrollWorkspaceActor,
+): Promise<string[]> {
+	if (actor.isOrgAdmin) {
+		return resolveOrganizationPayrollEmployeeIds(actor.organizationId);
+	}
+	if (!actor.employeeId) {
+		return [];
+	}
+	return resolvePayrollAccessibleEmployeeIds({
+		organizationId: actor.organizationId,
+		payrollEmployeeId: actor.employeeId,
+	});
+}
+
+/**
+ * Resolves the signed-in payroll workspace actor (#1957):
+ * 1. Organization administrators (with or without an employee record) get org-wide scope.
+ * 2. Delegated payroll officers with an active employee profile and active payroll access grant
+ *    get strictly their grant scope.
+ * Close-month-only custom-role holders are deliberately rejected here so they cannot load
+ * restricted payroll figures, settlement, or export actions.
+ */
+async function requirePayrollWorkspaceActor(t: PayrollTranslate): Promise<PayrollWorkspaceActor> {
+	const authContext = await getAuthContext();
+	const organizationId = authContext?.session.activeOrganizationId;
+	if (!authContext || !organizationId) {
+		throw new AuthenticationError({
+			message: t("payroll.errors.authenticationRequired", "Authentication required"),
+		});
+	}
+
+	const isOrgAdmin = await isOrgAdminForOrganization(organizationId);
+
+	if (isOrgAdmin) {
+		const activeEmployee =
+			authContext.employee?.organizationId === organizationId ? authContext.employee : null;
+		return {
+			organizationId,
+			userId: authContext.user.id,
+			employeeId: activeEmployee?.id ?? null,
+			employeeRole: activeEmployee?.role ?? "admin",
+			name: authContext.user.name || authContext.user.email,
+			isOrgAdmin: true,
+		};
+	}
+
+	if (!authContext.employee) {
+		throw new AuthorizationError({
+			message: t(
+				"payroll.errors.noAssignedEmployees",
+				"No payroll employees are assigned to your access scope",
+			),
+			userId: authContext.user.id,
+			resource: "payroll_workspace",
+			action: "read",
+		});
+	}
+
+	if (authContext.employee.organizationId !== organizationId) {
+		throw new AuthorizationError({
+			message: t(
+				"payroll.errors.activeOrganizationEmployeeRequired",
+				"Active organization employee context is required",
+			),
+			userId: authContext.user.id,
+			resource: "payroll_workspace",
+			action: "read",
+		});
+	}
+
 	const holdsGrant = await hasActivePayrollAccessGrant({
-		organizationId: authContext.employee.organizationId,
+		organizationId,
 		payrollEmployeeId: authContext.employee.id,
 	});
 	if (!holdsGrant) {
@@ -891,19 +1199,48 @@ async function requirePayrollGrantHolder(
 			action: "read",
 		});
 	}
-	return authContext;
+
+	return {
+		organizationId,
+		userId: authContext.user.id,
+		employeeId: authContext.employee.id,
+		employeeRole: authContext.employee.role,
+		name: authContext.user.name || authContext.user.email,
+		isOrgAdmin: false,
+	};
+}
+
+async function requireOrgAdminPayrollActor(t: PayrollTranslate): Promise<PayrollWorkspaceActor> {
+	const actor = await requirePayrollWorkspaceActor(t);
+	if (!actor.isOrgAdmin) {
+		throw new AuthorizationError({
+			message: t(
+				"payroll.errors.orgAdminRequired",
+				"Organization administrator access is required",
+			),
+			userId: actor.userId,
+			resource: "payroll_readiness",
+			action: "read",
+		});
+	}
+	return actor;
 }
 
 /** An unconfirmed payroll run (#852) whose every included report is in the reader's payroll scope. */
 export type ScopedPayrollRun = Omit<UnconfirmedPayrollRun, "employeeIds">;
 
-/** The unconfirmed payroll runs the payroll access holder may discard. */
+/** The unconfirmed payroll runs the payroll actor may discard. */
 export async function getScopedPayrollRunsAction(): Promise<
 	ServerActionResult<ScopedPayrollRun[]>
 > {
 	return runPayrollWorkspaceAction(async (t) => {
-		const { authContext, allowedEmployeeIds } = await resolvePayrollScopeOnly(t);
-		const runs = await listUnconfirmedPayrollRuns(db, authContext.employee.organizationId);
+		const actor = await requirePayrollWorkspaceActor(t);
+		if (actor.isOrgAdmin) {
+			const runs = await listUnconfirmedPayrollRuns(db, actor.organizationId);
+			return runs.map(({ employeeIds: _employeeIds, ...run }) => run);
+		}
+		const { allowedEmployeeIds } = await resolvePayrollScopeOnly(t, actor);
+		const runs = await listUnconfirmedPayrollRuns(db, actor.organizationId);
 		const allowedEmployeeIdSet = new Set(allowedEmployeeIds);
 		return runs
 			.filter((run) => run.employeeIds.every((id) => allowedEmployeeIdSet.has(id)))
@@ -912,20 +1249,24 @@ export async function getScopedPayrollRunsAction(): Promise<
 }
 
 /**
- * Discards an unconfirmed payroll run (#852) for a payroll access holder: only
- * a run whose every included report belongs to an employee in their scope.
+ * Discards an unconfirmed payroll run (#852) for a payroll actor: org admins may discard
+ * any run in the organization; delegated payroll officers may discard only runs whose
+ * included reports all belong to employees in their scope.
  */
 export async function discardScopedPayrollRunAction(
 	jobId: string,
 ): Promise<ServerActionResult<DiscardPayrollRunResult>> {
 	return runPayrollWorkspaceAction(async (t) => {
-		const { authContext, allowedEmployeeIds } = await resolvePayrollScopeOnly(t);
+		const actor = await requirePayrollWorkspaceActor(t);
 		if (!z.uuid().safeParse(jobId).success) return { status: "not_found" } as const;
+		const employeeScope = actor.isOrgAdmin
+			? ("all" as const)
+			: (await resolvePayrollScopeOnly(t, actor)).allowedEmployeeIds;
 		const result = await discardPayrollRun(db, {
-			organizationId: authContext.employee.organizationId,
+			organizationId: actor.organizationId,
 			jobId,
-			actorUserId: authContext.user.id,
-			employeeScope: allowedEmployeeIds,
+			actorUserId: actor.userId,
+			employeeScope,
 		});
 		if (result.status === "discarded") revalidatePath("/payroll");
 		return result;
@@ -942,12 +1283,9 @@ export async function getPayrollRunReadinessAction(
 ): Promise<ServerActionResult<PayrollRunReadiness>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
-			t,
-			request,
-		);
+		const { actor, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(t, request);
 		return getPayrollRunReadiness(db, {
-			organizationId: authContext.employee.organizationId,
+			organizationId: actor.organizationId,
 			formatId,
 			// Validated above as exact ISO dates: the period's logical dates.
 			period: {
@@ -960,21 +1298,28 @@ export async function getPayrollRunReadinessAction(
 }
 
 /** The reader's whole payroll scope, for actions that concern no period. */
-async function resolvePayrollScopeOnly(t: PayrollTranslate) {
-	const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(t, {
-		startDate: "2000-01-01",
-		endDate: "2000-01-01",
-		label: t("payroll.export.formatAccessCheck", "Format access check"),
-	});
-	return { authContext, allowedEmployeeIds: scopedEmployeeIds };
+async function resolvePayrollScopeOnly(
+	t: PayrollTranslate,
+	authenticatedActor?: PayrollWorkspaceActor,
+) {
+	const { actor, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+		t,
+		{
+			startDate: "2000-01-01",
+			endDate: "2000-01-01",
+			label: t("payroll.export.formatAccessCheck", "Format access check"),
+		},
+		authenticatedActor,
+	);
+	return { actor, allowedEmployeeIds: scopedEmployeeIds };
 }
 
 export async function getConfiguredPayrollExportFormatsAction(): Promise<
 	ServerActionResult<PayrollExportFormatOption[]>
 > {
 	return runPayrollWorkspaceAction(async (t) => {
-		// Every grant holder, also one whose grant covers only employees who have left (#1001).
-		const authContext = await requirePayrollGrantHolder(t);
+		// Every org admin and active grant holder (including grants covering only former employees).
+		const actor = await requirePayrollWorkspaceActor(t);
 
 		const configuredFormats = await db
 			.select({ id: payrollExportFormat.id, label: payrollExportFormat.name })
@@ -982,7 +1327,7 @@ export async function getConfiguredPayrollExportFormatsAction(): Promise<
 			.innerJoin(payrollExportFormat, eq(payrollExportConfig.formatId, payrollExportFormat.id))
 			.where(
 				and(
-					eq(payrollExportConfig.organizationId, authContext.employee.organizationId),
+					eq(payrollExportConfig.organizationId, actor.organizationId),
 					eq(payrollExportConfig.isActive, true),
 					eq(payrollExportFormat.isEnabled, true),
 					inArray(payrollExportFormat.id, payrollWorkspaceExportFormatIds()),
@@ -997,7 +1342,7 @@ async function buildScopedPayrollWorkspaceSummary(
 	t: PayrollTranslate,
 	request: PayrollWorkspaceRequest,
 ): Promise<PayrollWorkspaceSummary> {
-	const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+	const { actor, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 		t,
 		request,
 		undefined,
@@ -1005,12 +1350,12 @@ async function buildScopedPayrollWorkspaceSummary(
 	);
 
 	return getPayrollWorkspaceSummary({
-		organizationId: authContext.employee.organizationId,
+		organizationId: actor.organizationId,
 		allowedEmployeeIds: scopedEmployeeIds,
 		period,
 		generatedBy: {
-			id: authContext.employee.id,
-			name: authContext.user.name || authContext.user.email,
+			id: actor.employeeId ?? actor.userId,
+			name: actor.name,
 		},
 	});
 }
@@ -1018,48 +1363,52 @@ async function buildScopedPayrollWorkspaceSummary(
 async function resolvePayrollWorkspaceActionContext(
 	t: PayrollTranslate,
 	request: PayrollWorkspaceRequest,
-	authenticatedContext?: AuthContext & { employee: NonNullable<AuthContext["employee"]> },
+	authenticatedActor?: PayrollWorkspaceActor,
 	options: {
 		/**
-		 * Period reads (#1894) also cover the grant's employees who left during or after
+		 * Period reads (#1894) also cover covered employees who left during or after
 		 * the period, as the export does; the period read keeps those with data in it.
 		 */
 		includeDeparted?: boolean;
 	} = {},
 ): Promise<{
-	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
+	actor: PayrollWorkspaceActor;
 	period: { start: PlainDate; end: PlainDate; label: string };
 	scopedEmployeeIds: string[];
 }> {
-	const authContext = authenticatedContext ?? (await requireActiveOrganizationEmployee(t));
+	const actor = authenticatedActor ?? (await requirePayrollWorkspaceActor(t));
 	const period = validatePayrollWorkspaceRequest(t, request);
 	const requestedEmployeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
 	const [allowedEmployeeIds, departedEmployeeIds] = await Promise.all([
-		resolvePayrollAccessibleEmployeeIds({
-			organizationId: authContext.employee.organizationId,
-			payrollEmployeeId: authContext.employee.id,
-		}),
+		resolveActivePayrollEmployeesForActor(actor),
 		options.includeDeparted
-			? listDepartedGrantEmployees(authContext.employee.organizationId, payrollActor(authContext), {
+			? listDepartedGrantEmployees(actor.organizationId, toPayrollPeriodActor(actor), {
 					leftAfterStartOf: request.startDate,
 				})
 			: [],
 	]);
 
 	if (allowedEmployeeIds.length === 0) {
+		if (actor.isOrgAdmin && requestedEmployeeIds === undefined) {
+			return {
+				actor,
+				period,
+				scopedEmployeeIds: [...departedEmployeeIds].toSorted(),
+			};
+		}
 		throw new AuthorizationError({
 			message: t(
 				"payroll.errors.noAssignedEmployees",
 				"No payroll employees are assigned to your access scope",
 			),
-			userId: authContext.user.id,
+			userId: actor.userId,
 			resource: "payroll_workspace",
 			action: "read",
 		});
 	}
 
 	const scopedResult = resolveScopedPayrollEmployeeIdsForAction({
-		role: authContext.employee.role,
+		role: actor.employeeRole,
 		requestedEmployeeIds,
 		allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
 	});
@@ -1070,14 +1419,14 @@ async function resolvePayrollWorkspaceActionContext(
 				"payroll.errors.noAvailableEmployees",
 				"No payroll employees are available in your access scope",
 			),
-			userId: authContext.user.id,
+			userId: actor.userId,
 			resource: "payroll_workspace",
 			action: "read",
 		});
 	}
 
 	return {
-		authContext,
+		actor,
 		period,
 		scopedEmployeeIds: scopedResult.employeeIds,
 	};
@@ -1114,31 +1463,6 @@ function throwPayrollBlockerAuthorizationError(t: PayrollTranslate, userId: stri
 		resource: "payroll_workspace",
 		action: "write",
 	});
-}
-
-async function requireActiveOrganizationEmployee(
-	t: PayrollTranslate,
-): Promise<AuthContext & { employee: NonNullable<AuthContext["employee"]> }> {
-	const authContext = await getAuthContext();
-	if (!authContext?.employee || !authContext.session.activeOrganizationId) {
-		throw new AuthenticationError({
-			message: t("payroll.errors.authenticationRequired", "Authentication required"),
-		});
-	}
-
-	if (authContext.employee.organizationId !== authContext.session.activeOrganizationId) {
-		throw new AuthorizationError({
-			message: t(
-				"payroll.errors.activeOrganizationEmployeeRequired",
-				"Active organization employee context is required",
-			),
-			userId: authContext.user.id,
-			resource: "payroll_workspace",
-			action: "read",
-		});
-	}
-
-	return authContext as AuthContext & { employee: NonNullable<AuthContext["employee"]> };
 }
 
 function validatePayrollWorkspaceRequest(

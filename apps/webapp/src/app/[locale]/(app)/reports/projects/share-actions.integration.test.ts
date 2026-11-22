@@ -332,4 +332,23 @@ describe("report share links on PostgreSQL", () => {
 		).resolves.toBeTruthy();
 		expect((await storedLink(created.id)).revoked_at).toBeNull();
 	});
+
+	it("refuses creating new share links when projectsEnabled is false while allowing revocation (#1954)", async () => {
+		actAs(ids.ownerUser);
+		const created = await unwrap(
+			createReportShareLink(projectLink(ids.website)),
+		);
+
+		await admin.query(
+			"update organization set projects_enabled = false where id = $1",
+			[ids.organization],
+		);
+
+		await expect(
+			refusal(createReportShareLink(projectLink(ids.website))),
+		).resolves.toMatch(/disabled/i);
+
+		await unwrap(revokeReportShareLink(created.id));
+		expect((await storedLink(created.id)).revoked_at).not.toBeNull();
+	});
 });

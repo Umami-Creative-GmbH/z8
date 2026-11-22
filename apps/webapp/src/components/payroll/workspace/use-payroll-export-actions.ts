@@ -151,6 +151,10 @@ export function usePayrollExportActions({
 			void queryClient.invalidateQueries({
 				queryKey: queryKeys.payroll.exportsToConfirm(),
 			});
+			// Refresh scoped export history on `/payroll` Export tab (#1957).
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.payroll.exportHistory(),
+			});
 			// A payroll run may now include expense reports (#852), which changes readiness (#854).
 			void queryClient.invalidateQueries({
 				queryKey: queryKeys.travelExpenses.payrollRuns(),

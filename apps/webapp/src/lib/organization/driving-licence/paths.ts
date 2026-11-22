@@ -6,7 +6,7 @@
 /** The employee's own page: My driving licence, in the Workplace section. */
 export const MY_DRIVING_LICENCE_PATH = "/driving-licence";
 
-/** Verifiers' Checks and planners' Planning, in the Team & organization section (#1937). */
+/** Verifiers' Checks and planners' Planning, in the Organization section (#1937, #1953). */
 export const TEAM_DRIVING_LICENCE_PATH = "/team/driving-licence";
 
 /** One employee's check page. Only verifiers covering that employee can open it. */

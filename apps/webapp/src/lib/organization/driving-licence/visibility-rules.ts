@@ -54,7 +54,7 @@ export type DrivingLicenceRoles = ReturnType<typeof drivingLicenceRoles>;
 export function showsMyDrivingLicence(visibility: DrivingLicenceVisibility) {
 	return drivingLicenceRoles(visibility).myLicence;
 }
-/** The Team & organization item and `/team/driving-licence`: verifiers and planners. */
+/** The Organization item and `/team/driving-licence`: verifiers and planners. */
 export function showsTeamDrivingLicence(visibility: DrivingLicenceVisibility) {
 	const roles = drivingLicenceRoles(visibility);
 	return roles.checks || roles.planning;

@@ -11,11 +11,15 @@ import {
 import type { ReactNode } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { read, translate } = vi.hoisted(() => ({
+const { read, readAbsencePatterns, translate } = vi.hoisted(() => ({
 	read: vi.fn(),
+	readAbsencePatterns: vi.fn(),
 	translate: (_key: string, fallback: string) => fallback,
 }));
-vi.mock("../actions", () => ({ getVacationTrendsData: read }));
+vi.mock("../actions", () => ({
+	getVacationTrendsData: read,
+	getAbsencePatternsData: readAbsencePatterns,
+}));
 vi.mock("@tolgee/react", () => ({ useTranslate: () => ({ t: translate }) }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh() {} }) }));
@@ -113,14 +117,39 @@ const data = {
 		clusteringScore: 0,
 	},
 };
+const absenceData = {
+	summary: {
+		totalAbsences: 2,
+		totalDays: 8,
+		avgDaysPerAbsence: 4,
+		absenceRate: 3.5,
+	},
+	byType: [
+		{ categoryName: "Vacation", count: 1, totalDays: 6, percentage: 75 },
+		{ categoryName: "Sick Leave", count: 1, totalDays: 2, percentage: 25 },
+	],
+	byTeam: [],
+	patterns: {
+		sickLeavePatterns: {
+			avgDuration: 2,
+			peakMonths: [],
+			frequentEmployees: [],
+		},
+		vacationClustering: { score: 0, hotspots: [] },
+	},
+	timeline: [],
+};
 beforeEach(() => {
 	read.mockReset();
+	readAbsencePatterns.mockReset();
+	readAbsencePatterns.mockResolvedValue({ success: true, data: absenceData });
 	useOrganizationSettings.getState().reset();
 	hydrate();
 });
 
 it("offers retry for failed arrival without presenting invented zero or empty balances", async () => {
 	read.mockResolvedValue({ success: false, error: "Unavailable" });
+	readAbsencePatterns.mockResolvedValue({ success: false, error: "Unavailable" });
 	setup();
 	expect(await screen.findByRole("button", { name: "Retry" })).toBeTruthy();
 	expect(screen.queryByText("0.0%")).toBeNull();
@@ -131,6 +160,7 @@ it("offers retry for failed arrival without presenting invented zero or empty ba
 		screen.getByRole("button", { name: "Export" }).hasAttribute("disabled"),
 	).toBe(true);
 	read.mockResolvedValue({ success: true, data });
+	readAbsencePatterns.mockResolvedValue({ success: true, data: absenceData });
 	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 	expect(await screen.findByText("Alex Example")).toBeTruthy();
 });
@@ -284,7 +314,7 @@ it("keeps a successful empty scope distinct from failure", async () => {
 	expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
 });
 
-it("keeps employee comparisons ahead of supporting monthly values, with keyboard-readable taken days", async () => {
+it("keeps employee comparisons ahead of supporting monthly values and absence patterns, with keyboard-readable taken days", async () => {
 	read.mockResolvedValue({ success: true, data });
 	setup();
 	await screen.findByText("Alex Example");
@@ -295,10 +325,27 @@ it("keeps employee comparisons ahead of supporting monthly values, with keyboard
 		"Vacation Balance",
 		"Monthly Vacation Usage",
 		"Peak Vacation Months",
+		"Absence Patterns",
 	]);
 	const values = screen.getAllByText("View monthly values");
 	expect(values.length).toBe(2);
 	fireEvent.click(values[0]);
 	expect(screen.getAllByText("2025-06").length).toBeGreaterThan(0);
 	expect(within(screen.getByRole("table")).getByText("6")).toBeTruthy();
+
+	fireEvent.click(screen.getByText("View chart values"));
+	expect(screen.getByText("Vacation")).toBeTruthy();
+	expect(screen.getByText("6 Days")).toBeTruthy();
+	expect(screen.getByText("Sick Leave")).toBeTruthy();
+	expect(screen.getByText("2 Days")).toBeTruthy();
+});
+
+it("keeps vacation cards visible when absence patterns fail to load", async () => {
+	read.mockResolvedValue({ success: true, data });
+	readAbsencePatterns.mockResolvedValue({ success: false, error: "Timeout" });
+	setup();
+	expect(await screen.findByText("Alex Example")).toBeTruthy();
+	expect(screen.getByRole("heading", { name: "Absence Patterns" })).toBeTruthy();
+	expect(screen.getByText("Failed to load analytics data")).toBeTruthy();
+	expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
 });

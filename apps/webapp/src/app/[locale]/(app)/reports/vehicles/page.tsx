@@ -1,20 +1,54 @@
+import { IconGauge } from "@tabler/icons-react";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { VehicleDistanceReportContainer } from "@/components/reports/vehicles/vehicle-distance-report-container";
+import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getAuthContext, getCurrentSettingsAccess } from "@/lib/auth-helpers";
+import { drivingDetailsTeamScope } from "@/lib/time-tracking/vehicle-use/driving-details-team-store";
+import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee } from "../actions";
 
 async function VehicleDistanceReportPageContent() {
 	// Auth is checked in layout; who sees whose driving is decided by the report action.
-	const [t, employee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
+	const [t, employee, authContext, settingsCaller] = await Promise.all([
+		getTranslate(),
+		getCurrentEmployee(),
+		getAuthContext(),
+		getCurrentSettingsAccess(),
+	]);
+	const organizationId = authContext?.session.activeOrganizationId;
+	const settingsAccess =
+		settingsCaller && settingsCaller.organizationId === organizationId
+			? settingsCaller.settingsAccess
+			: null;
+	const canViewMissingVehicleLogs = Boolean(
+		organizationId &&
+		drivingDetailsTeamScope({
+			settingsAccess,
+			organizationId,
+			employee: authContext?.employee ?? null,
+		}),
+	);
+	const missingVehicleLogsAction = canViewMissingVehicleLogs ? (
+		<Button asChild variant="outline">
+			<Link href="/team/driving">
+				<IconGauge className="mr-2 size-4" aria-hidden="true" />
+				{t("nav.missing-vehicle-logs", "Missing vehicle logs")}
+			</Link>
+		</Button>
+	) : null;
 
 	if (!employee) {
 		return (
-			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
-				<PageHeader title={t("reports.vehicles.title", "Distance per Vehicle")} />
+			<div className="flex min-w-0 flex-1 flex-col gap-6">
+				<PageHeader
+					title={t("reports.vehicles.title", "Distance per Vehicle")}
+					actions={missingVehicleLogsAction}
+				/>
 				<NoEmployeeError
 					feature={t("reports.vehicles.page.feature", "view the distance per vehicle report")}
 				/>
@@ -23,13 +57,14 @@ async function VehicleDistanceReportPageContent() {
 	}
 
 	return (
-		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+		<div className="flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("reports.vehicles.title", "Distance per Vehicle")}
 				description={t(
 					"reports.vehicles.page.description",
 					"Kilometres driven for work per vehicle and employee, by month",
 				)}
+				actions={missingVehicleLogsAction}
 			/>
 
 			<VehicleDistanceReportContainer />
@@ -45,7 +80,7 @@ async function VehicleDistanceReportPageLoading() {
 				labelKey: "common.loadingRegions.vehicleDistanceReport",
 				labelDefault: "Loading the distance per vehicle report",
 			}}
-			className="@container/main page-frame flex flex-1 flex-col gap-6"
+			className="flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
 			<div className="space-y-3">

@@ -115,8 +115,8 @@ describe("project reports on PostgreSQL", () => {
 	beforeEach(async () => {
 		await cleanup();
 		await admin.query(
-			`insert into organization (id, name, slug, timezone, created_at)
-			 values ($1, 'T794 project reports', $1, 'UTC', now())`,
+			`insert into organization (id, name, slug, timezone, projects_enabled, created_at)
+			 values ($1, 'T794 project reports', $1, 'UTC', true, now())`,
 			[ids.organization],
 		);
 		await admin.query(
@@ -248,5 +248,22 @@ describe("project reports on PostgreSQL", () => {
 				success: false,
 			});
 		}
+	});
+
+	it("refuses project reports when projectsEnabled is false (#1954)", async () => {
+		await admin.query("update organization set projects_enabled = false where id = $1", [
+			ids.organization,
+		]);
+
+		await expect(getProjectsOverview("2026-03-01", "2026-03-31")).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		await expect(
+			getProjectDetailedReport(ids.project, "2026-03-01", "2026-03-31"),
+		).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
 	});
 });

@@ -20,8 +20,7 @@ export type SettingsGroup =
 	| "policies"
 	| "projects"
 	| "payroll"
-	| "notifications"
-	| "integrations"
+	| "integrations-channels"
 	| "compliance"
 	| "data";
 
@@ -197,14 +196,9 @@ export const SETTINGS_GROUPS: SettingsGroupConfig[] = [
 		labelDefault: "Payroll",
 	},
 	{
-		id: "notifications",
-		labelKey: "settings.group.notifications",
-		labelDefault: "Notifications",
-	},
-	{
-		id: "integrations",
-		labelKey: "settings.group.integrations",
-		labelDefault: "Integrations",
+		id: "integrations-channels",
+		labelKey: "settings.group.integrationsChannels",
+		labelDefault: "Integrations & Channels",
 	},
 	{
 		id: "compliance",
@@ -656,39 +650,15 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		requiredFeature: "surchargesEnabled",
 	},
 	{
-		id: "payroll-readiness",
-		titleKey: "settings.payrollReadiness.title",
-		titleDefault: "Payroll Readiness",
-		descriptionKey: "settings.payrollReadiness.description",
-		descriptionDefault: "Check whether a payroll period is ready before export",
-		href: "/settings/payroll-readiness",
-		icon: "shield-check",
-		minimumAccess: "orgAdmin",
-		group: "payroll",
-	},
-	{
 		id: "payroll-export",
-		titleKey: "settings.payrollExport.title",
-		titleDefault: "Payroll Export",
-		descriptionKey: "settings.payrollExport.description",
-		descriptionDefault: "Export work periods to DATEV Lohn & Gehalt",
+		titleKey: "settings.payrollExport.connectorsTitle",
+		titleDefault: "Payroll Connectors & Wage Types",
+		descriptionKey: "settings.payrollExport.connectorsDescription",
+		descriptionDefault: "Configure payroll export connectors and wage type mappings",
 		href: "/settings/payroll-export",
 		icon: "database-export",
 		minimumAccess: "orgAdmin",
 		group: "payroll",
-	},
-	{
-		id: "closed-months",
-		titleKey: "settings.closedMonths.title",
-		titleDefault: "Closed months",
-		descriptionKey: "settings.closedMonths.description",
-		descriptionDefault:
-			"Close months after payroll so their work and absences can no longer change",
-		href: "/settings/closed-months",
-		icon: "lock",
-		minimumAccess: "orgAdmin",
-		group: "payroll",
-		grantedByCapability: "canAccessClosedMonths",
 	},
 	{
 		id: "email",
@@ -699,7 +669,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/enterprise/email",
 		icon: "mail",
 		minimumAccess: "orgAdmin",
-		group: "notifications",
+		group: "integrations-channels",
 	},
 	{
 		id: "chat-integrations",
@@ -710,7 +680,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/notification-channels",
 		icon: "messages",
 		minimumAccess: "orgAdmin",
-		group: "notifications",
+		group: "integrations-channels",
 	},
 	{
 		id: "calendar",
@@ -721,7 +691,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/calendar",
 		icon: "calendar-sync",
 		minimumAccess: "scopedManager",
-		group: "integrations",
+		group: "integrations-channels",
 	},
 	{
 		id: "developer-access",
@@ -732,7 +702,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/enterprise/api-keys",
 		icon: "key",
 		minimumAccess: "orgAdmin",
-		group: "integrations",
+		group: "integrations-channels",
 	},
 	{
 		id: "works-council",
@@ -811,18 +781,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/export-operations",
 		icon: "history",
 		minimumAccess: "orgAdmin",
-		group: "data",
-	},
-	{
-		id: "statistics",
-		titleKey: "settings.statistics.title",
-		titleDefault: "Statistics",
-		descriptionKey: "settings.statistics.healthCardDescription",
-		descriptionDefault:
-			"See what needs attention, this month's figures and how well tracking is set up",
-		href: "/settings/statistics",
-		icon: "chart-bar",
-		minimumAccess: "scopedManager",
 		group: "data",
 	},
 	{

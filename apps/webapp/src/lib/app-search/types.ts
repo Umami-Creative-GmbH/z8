@@ -1,4 +1,5 @@
 import type { FeatureFlagState } from "@/components/settings/settings-config";
+import type { NavigationCapabilities } from "@/lib/navigation/navigation-manifest";
 import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { SettingsCapabilities } from "@/lib/settings/capabilities";
 
@@ -32,8 +33,10 @@ export interface StaticAppSearchInput {
 	settingsCapabilities?: Partial<SettingsCapabilities>;
 	/** The driving licence visibility reader shows My driving licence (#1937). */
 	showMyDrivingLicenceNav?: boolean;
-	/** The driving licence visibility reader shows Team & organization → Driving licences (#1937). */
+	/** The driving licence visibility reader shows Organization → Driving licences (#1937, #1953). */
 	showTeamDrivingLicenceNav?: boolean;
+	/** Full server-resolved navigation capabilities for manifest-driven Cmd+K gating (#1952). */
+	navigationCapabilities?: NavigationCapabilities;
 }
 
 export interface LiveAppSearchResults {

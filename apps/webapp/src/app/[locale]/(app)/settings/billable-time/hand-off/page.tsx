@@ -1,20 +1,12 @@
 import { Suspense } from "react";
 import { BillableTimeSettingsLoading } from "@/components/billable-time/billable-time-settings-loading";
-import { requireBillableTimeSettingsAccess } from "@/lib/billable-time/settings-access";
-import { BillableTimeSettingsShell } from "../billable-time-settings-shell";
-import { HandOffView } from "./hand-off-view";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 async function HandOffPageContent() {
-	await requireBillableTimeSettingsAccess();
-
-	return (
-		<BillableTimeSettingsShell activePageId="hand-off">
-			<HandOffView />
-		</BillableTimeSettingsShell>
-	);
+	return redirectWithLocale("/billable-time/hand-off");
 }
 
-/** Billable Time → Hand-off (#903): invoice drafts from billable work, release and marks. */
+/** Legacy `/settings/billable-time/hand-off` route redirects to `/billable-time/hand-off` (#1956). */
 export default function HandOffPage() {
 	return (
 		<Suspense fallback={<BillableTimeSettingsLoading />}>

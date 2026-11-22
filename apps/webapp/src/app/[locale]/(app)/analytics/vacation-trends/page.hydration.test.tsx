@@ -12,9 +12,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DateRange } from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
-const { getVacationTrendsDataMock } = vi.hoisted(() => ({
-	getVacationTrendsDataMock: vi.fn(),
-}));
+const { getVacationTrendsDataMock, getAbsencePatternsDataMock } = vi.hoisted(
+	() => ({
+		getVacationTrendsDataMock: vi.fn(),
+		getAbsencePatternsDataMock: vi.fn(),
+	}),
+);
 
 vi.mock("next/dynamic", () => ({
 	default: () => () => null,
@@ -58,6 +61,7 @@ vi.mock("@/components/analytics/date-range-picker", () => ({
 
 vi.mock("../actions", () => ({
 	getVacationTrendsData: getVacationTrendsDataMock,
+	getAbsencePatternsData: getAbsencePatternsDataMock,
 }));
 
 import VacationTrendsPage from "./page";
@@ -82,6 +86,28 @@ describe("VacationTrendsPage range hydration", () => {
 		Settings.defaultZone = "utc";
 		Settings.now = () => Date.parse("2026-05-12T10:30:00.000Z");
 		useOrganizationSettings.getState().reset();
+		getAbsencePatternsDataMock.mockResolvedValue({
+			success: true,
+			data: {
+				summary: {
+					totalAbsences: 0,
+					totalDays: 0,
+					avgDaysPerAbsence: 0,
+					absenceRate: 0,
+				},
+				byType: [],
+				byTeam: [],
+				patterns: {
+					sickLeavePatterns: {
+						avgDuration: 0,
+						peakMonths: [],
+						frequentEmployees: [],
+					},
+					vacationClustering: { score: 0, hotspots: [] },
+				},
+				timeline: [],
+			},
+		});
 		getVacationTrendsDataMock.mockResolvedValue({
 			success: true,
 			data: {

@@ -26,6 +26,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 		session: { activeOrganizationId: actor.organizationId },
 		employee: { id: actor.employeeId, organizationId: actor.organizationId },
 	}),
+	getCurrentSettingsAccess: async () => null,
 }));
 const { createExportJob, processExportJob } = await import("./export-service");
 const { readPayrollBaseline, cleanupExpiredPayrollBaselines, eraseEmployeePayrollBaselines } =

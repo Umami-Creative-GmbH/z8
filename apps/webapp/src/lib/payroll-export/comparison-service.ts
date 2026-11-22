@@ -21,7 +21,10 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
-import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
+import {
+	listDepartedEmployeesCoveredForExport,
+	listOrganizationDepartedEmployeesForExport,
+} from "@/lib/payroll-access/adjustment-coverage";
 import { readPayrollWorkCollectionFromSnapshot } from "@/lib/payroll-collection/payroll-work-collection-reader";
 import {
 	canReadScope,
@@ -120,11 +123,16 @@ async function requestScope(
 		selected = [
 			...new Set([
 				...actor.activeScope,
-				...(await listDepartedEmployeesCoveredForExport(database, {
-					organizationId: actor.organizationId,
-					actorUserId: actor.userId,
-					fromDate: request.startDate,
-				})),
+				...(actor.orgAdmin
+					? await listOrganizationDepartedEmployeesForExport(database, {
+							organizationId: actor.organizationId,
+							fromDate: request.startDate,
+						})
+					: await listDepartedEmployeesCoveredForExport(database, {
+							organizationId: actor.organizationId,
+							actorUserId: actor.userId,
+							fromDate: request.startDate,
+						})),
 			]),
 		].sort();
 	// Explicit employee selection takes precedence for the export run. Work rows

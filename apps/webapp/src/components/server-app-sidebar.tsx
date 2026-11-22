@@ -26,6 +26,7 @@ import {
 	resolveSettingsCapabilitiesForIdentity,
 } from "@/lib/settings/capabilities.server";
 import { loadCollectsPeriodSubmissions } from "@/lib/time-tracking/period-submissions/settings";
+import { drivingDetailsTeamScope } from "@/lib/time-tracking/vehicle-use/driving-details-team-store";
 import { hasWhoIsInLocations } from "@/lib/time-tracking/who-is-in/queries";
 import { loadFinanceActorForIdentity } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
@@ -90,6 +91,11 @@ export async function ServerAppSidebar({
 				compliance: meetsSettingsAccess(settingsAccess, "orgAdmin"),
 				payroll: Boolean(showPayrollNav),
 				finance: showFinanceNav,
+				billableHandOff:
+					Boolean(activeOrganizationId) &&
+					meetsSettingsAccess(settingsAccess, "orgAdmin") &&
+					featureFlags.billableTimeEnabled &&
+					featureFlags.projectsEnabled,
 				worksCouncil: canShowWorksCouncilNav,
 				// My documents (#865): the employee's own shared documents, while the feature is on.
 				myDocuments:
@@ -102,6 +108,26 @@ export async function ServerAppSidebar({
 				teamPresence: showTeamPresenceNav,
 				myDrivingLicence: showMyDrivingLicenceNav,
 				teamDrivingLicence: showTeamDrivingLicenceNav,
+				missingVehicleLogs: Boolean(
+					activeOrganizationId &&
+					drivingDetailsTeamScope({
+						settingsAccess,
+						organizationId: activeOrganizationId,
+						employee: activeEmployee,
+					}),
+				),
+				analytics:
+					Boolean(activeOrganizationId) &&
+					(meetsSettingsAccess(settingsAccess, "scopedManager") ||
+						activeEmployee?.role === "admin" ||
+						activeEmployee?.role === "manager"),
+				projectReports:
+					featureFlags.projectsEnabled &&
+					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId) &&
+					(meetsSettingsAccess(settingsAccess, "orgAdmin") ||
+						activeEmployee?.role === "admin" ||
+						activeEmployee?.role === "manager" ||
+						settingsCapabilities.canManageProjects),
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccess={settingsAccess}
@@ -185,15 +211,22 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 				: false,
 			false,
 		),
-		capability(
-			hasEmployee && identity?.employee
-				? hasActivePayrollAccessGrant({
-						organizationId: identity.organizationId,
-						payrollEmployeeId: identity.employee.id,
-					})
-				: false,
-			false,
-		),
+		identity
+			? meetsSettingsAccess(settingsAccess, "orgAdmin")
+				? Promise.resolve(true)
+				: Promise.all([
+						capability(
+							hasEmployee && identity.employee
+								? hasActivePayrollAccessGrant({
+										organizationId: identity.organizationId,
+										payrollEmployeeId: identity.employee.id,
+									})
+								: false,
+							false,
+						),
+						settingsCapabilitiesPromise.then((caps) => caps.canAccessClosedMonths),
+					]).then(([hasGrant, canManageClosedMonths]) => hasGrant || canManageClosedMonths)
+			: Promise.resolve(false),
 		capability(
 			hasEmployee
 				? getRenderAbility().then((ability) => loadFinanceActorForIdentity(authContext, ability))

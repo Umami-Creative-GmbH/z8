@@ -117,13 +117,15 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/team/driving-licence": ["common", "team", "settings/generic"],
 	"/personnel-files": ["common", "settings/people"],
 	// travelExpenses: confirming a payroll run as paid (#853).
-	// settings/payrollExport: payroll line kind labels in payroll readiness (#854).
+	// settings/payrollExport: payroll line kind labels in payroll readiness (#854) and export history (#1957).
+	// Note: settings/generic is already included for /payroll via route-catalog-scopes DEPENDENCIES.
 	"/payroll": ["common", "payroll", "travelExpenses", "settings/payrollExport"],
 	// settings/people: the Work balance section of the employee settings page (#995).
 	"/payroll/work-balances": ["common", "payroll", "settings/people"],
 	// Main app routes
 	"/": ["common", "dashboard"],
-	"/analytics": ["common", "analytics"],
+	// settings/generic: merged health monitoring sections and scope labels from /settings/statistics (#1955).
+	"/analytics": ["common", "analytics", "settings/generic"],
 	"/calendar": ["common", "calendar", "timeTracking"],
 	// settings/people: sick notes reuse the personnel file document list (#982).
 	"/absences": ["common", "calendar", "settings/people"],
@@ -133,8 +135,8 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/team": ["common", "team"],
 	"/today": ["common", "today"],
 	"/scheduling": ["common", "scheduling", "compliance"],
+	"/billable-time/hand-off": ["common", "settings/generic", "reports"],
 	"/settings/billing": ["common", "settings/generic", "billing"],
-	"/settings/billable-time/hand-off": ["common", "settings/generic", "reports"],
 	"/settings": ["common", "settings/generic"],
 	"/settings/approval-policies": [
 		"common",
@@ -160,10 +162,8 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 		"organization",
 	],
 	"/settings/notification-channels": ["common", "settings/generic", "settings/integrations"],
-	// `payroll`: the payroll run discard dialog (#852) is shared with the payroll workspace.
-	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport", "payroll"],
+	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
-	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/report-share-links": ["common", "settings/generic", "reports"],
 	"/settings/roles": ["common", "settings/generic", "settings/people"],

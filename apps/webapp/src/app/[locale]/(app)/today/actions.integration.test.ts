@@ -39,7 +39,7 @@ describe("Today public read action with the real organization roster", () => {
 		expect(result.status).toBe("ready");
 		if (result.status !== "ready") throw Error("Expected admitted read");
 		expect(result.briefing.sections.payroll.items.map((item) => item.href)).toEqual([
-			"/settings/payroll-readiness",
+			"/payroll",
 		]);
 	});
 	it("refuses employee access rather than interpreting an empty manager scope as all-clear", async () => {

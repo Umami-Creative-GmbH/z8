@@ -1,34 +1,32 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
-import type React from "react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-	getAbsencePatternsDataMock,
 	getManagerEffectivenessDataMock,
-	getTeamPerformanceDataMock,
 	toastErrorMock,
+	getAuthContextMock,
+	getCurrentSettingsAccessMock,
+	getStatisticsScopeMock,
+	getAttentionStatisticsMock,
+	getMonthStatisticsMock,
+	getAdoptionStatisticsMock,
+	getWorkforceStatisticsMock,
+	loadApprovalInboxSummaryMock,
 } = vi.hoisted(() => ({
-	getAbsencePatternsDataMock: vi.fn(),
 	getManagerEffectivenessDataMock: vi.fn(),
-	getTeamPerformanceDataMock: vi.fn(),
 	toastErrorMock: vi.fn(),
-}));
-
-vi.mock("next/dynamic", () => ({
-	default: () =>
-		function DynamicChartMock({ children }: { children?: React.ReactNode }) {
-			return <div data-testid="dynamic-chart">{children}</div>;
-		},
+	getAuthContextMock: vi.fn(),
+	getCurrentSettingsAccessMock: vi.fn(),
+	getStatisticsScopeMock: vi.fn(),
+	getAttentionStatisticsMock: vi.fn(),
+	getMonthStatisticsMock: vi.fn(),
+	getAdoptionStatisticsMock: vi.fn(),
+	getWorkforceStatisticsMock: vi.fn(),
+	loadApprovalInboxSummaryMock: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -38,25 +36,14 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 
-vi.mock("@tabler/icons-react", () => ({
-	IconCalendarOff: () => <span aria-hidden="true" />,
-	IconCheck: () => <span aria-hidden="true" />,
-	IconClock: () => <span aria-hidden="true" />,
-	IconLoader2: () => <span aria-hidden="true" />,
-	IconUsers: () => <span aria-hidden="true" />,
-}));
-
-vi.mock("@/components/analytics/export-button", () => ({
-	ExportButton: ({ disabled }: { disabled: boolean }) => (
-		<button type="button" disabled={disabled}>
-			Export
-		</button>
-	),
+vi.mock("@/tolgee/server", () => ({
+	getTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 
 vi.mock("@/components/analytics/date-range-picker", () => ({
@@ -67,27 +54,42 @@ vi.mock("@/components/analytics/date-range-picker", () => ({
 	}) => (
 		<button
 			type="button"
-			onClick={() =>
-				onChange({ start: new Date("2026-05-01"), end: new Date("2026-05-31") })
-			}
+			onClick={() => onChange({ start: new Date("2026-05-01"), end: new Date("2026-05-31") })}
 		>
 			Change range
 		</button>
 	),
 }));
 
-vi.mock("@/components/ui/chart", () => ({
-	ChartContainer: ({ children }: { children: React.ReactNode }) => (
-		<div>{children}</div>
-	),
-	ChartTooltip: () => null,
-	ChartTooltipContent: () => null,
+vi.mock("./actions", () => ({
+	getManagerEffectivenessData: getManagerEffectivenessDataMock,
 }));
 
-vi.mock("./actions", () => ({
-	getAbsencePatternsData: getAbsencePatternsDataMock,
-	getManagerEffectivenessData: getManagerEffectivenessDataMock,
-	getTeamPerformanceData: getTeamPerformanceDataMock,
+vi.mock("@/lib/auth-helpers", () => ({
+	getAuthContext: getAuthContextMock,
+	getCurrentSettingsAccess: getCurrentSettingsAccessMock,
+}));
+
+vi.mock("../settings/statistics/actions", () => ({
+	getStatisticsScope: getStatisticsScopeMock,
+	getAttentionStatistics: getAttentionStatisticsMock,
+	getMonthStatistics: getMonthStatisticsMock,
+	getAdoptionStatistics: getAdoptionStatisticsMock,
+	getWorkforceStatistics: getWorkforceStatisticsMock,
+}));
+
+vi.mock("../settings/statistics/approval-inbox-summary", () => ({
+	loadApprovalInboxSummary: loadApprovalInboxSummaryMock,
+}));
+
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
+}));
+
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ refresh: () => {} }),
 }));
 
 import {
@@ -95,11 +97,8 @@ import {
 	ViewRefreshProvider,
 } from "@/components/providers/view-refresh-provider";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
-import AnalyticsOverviewPage from "./page";
-
-vi.mock("next/navigation", () => ({
-	useRouter: () => ({ refresh: () => {} }),
-}));
+import { AnalyticsHealthSections } from "./analytics-health-sections";
+import { AnalyticsOverviewBottlenecks } from "./analytics-overview-bottlenecks";
 
 function RefreshControl() {
 	const { refresh } = useViewRefreshAction();
@@ -110,21 +109,21 @@ function RefreshControl() {
 	);
 }
 
-function renderWithRefresh() {
+function renderBottlenecks() {
 	return render(
 		<QueryClientProvider client={new QueryClient()}>
 			<ViewRefreshProvider>
 				<RefreshControl />
-				<AnalyticsOverviewPage />
+				<AnalyticsOverviewBottlenecks />
 			</ViewRefreshProvider>
 		</QueryClientProvider>,
 	);
 }
 
-function hydrateOrganizationSettings(timezone = "UTC") {
+function hydrateOrganizationSettings(organizationId = "org-1", timezone = "UTC") {
 	act(() => {
 		useOrganizationSettings.getState().hydrate({
-			organizationId: "org-1",
+			organizationId,
 			shiftsEnabled: false,
 			projectsEnabled: false,
 			surchargesEnabled: false,
@@ -135,49 +134,7 @@ function hydrateOrganizationSettings(timezone = "UTC") {
 	});
 }
 
-function createTeamData(teamName = "Operations", totalHours = 320) {
-	return {
-		teams: [
-			{
-				teamId: `team-${teamName}`,
-				teamName,
-				totalHours,
-				avgHoursPerEmployee: totalHours / 2,
-				employeeCount: 2,
-				employees: [],
-			},
-		],
-		organizationTotal: totalHours,
-		dateRange: { start: new Date("2026-04-01"), end: new Date("2026-04-30") },
-	};
-}
-
-function createAbsenceData(totalDays = 2) {
-	return {
-		summary: {
-			totalAbsences: 1,
-			totalDays,
-			avgDaysPerAbsence: totalDays,
-			absenceRate: 1,
-		},
-		byType: [
-			{ categoryName: "Vacation", count: 1, totalDays, percentage: 100 },
-		],
-		byTeam: [],
-		patterns: {
-			sickLeavePatterns: {
-				avgDuration: 0,
-				peakMonths: [],
-				frequentEmployees: [],
-			},
-			vacationClustering: { score: 0, hotspots: [] },
-		},
-		timeline: [],
-	};
-}
-
 function createManagerData({
-	approvalRate = 87.5,
 	managerName = "Avery Manager",
 	teamLabel = "Operations approvals",
 	withBottlenecks = true,
@@ -188,7 +145,7 @@ function createManagerData({
 			avgDecisionTimeHours: 18,
 			totalApprovals: 7,
 			totalRejections: 1,
-			approvalRate,
+			approvalRate: 87.5,
 			pendingSlaWarnings: 3,
 		},
 		byManager: withBottlenecks
@@ -240,308 +197,195 @@ function createManagerData({
 	};
 }
 
-function deferred<T>() {
-	return Promise.withResolvers<T>();
-}
-
-describe("AnalyticsOverviewPage", () => {
+describe("AnalyticsOverviewBottlenecks (#1955)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		useOrganizationSettings.getState().reset();
 		hydrateOrganizationSettings();
-		getTeamPerformanceDataMock.mockResolvedValue({
-			success: true,
-			data: createTeamData(),
-		});
-		getAbsencePatternsDataMock.mockResolvedValue({
-			success: true,
-			data: createAbsenceData(),
-		});
+	});
+
+	it("renders Approval Bottlenecks without duplicated KPI cards or Work Hours / Absence charts", async () => {
 		getManagerEffectivenessDataMock.mockResolvedValue({
 			success: true,
 			data: createManagerData(),
 		});
-	});
 
-	it("does not fetch analytics before organization settings hydrate", () => {
-		useOrganizationSettings.getState().reset();
+		renderBottlenecks();
 
-		render(<AnalyticsOverviewPage />);
-
-		expect(getTeamPerformanceDataMock).not.toHaveBeenCalled();
-		expect(getAbsencePatternsDataMock).not.toHaveBeenCalled();
-		expect(getManagerEffectivenessDataMock).not.toHaveBeenCalled();
-	});
-
-	it("renders real approval analytics and bottlenecks", async () => {
-		render(<AnalyticsOverviewPage />);
-
-		await waitFor(() => {
-			expect(getManagerEffectivenessDataMock).toHaveBeenCalledTimes(1);
-		});
-		expect(screen.getByText("87.5%")).toBeTruthy();
-		expect(screen.getByText("Of decided requests approved")).toBeTruthy();
-		expect(screen.getByText("Approval Bottlenecks")).toBeTruthy();
+		expect(await screen.findByText("Approval Bottlenecks")).toBeTruthy();
 		expect(screen.getByText("Avery Manager")).toBeTruthy();
 		expect(screen.getByText("Operations approvals")).toBeTruthy();
-		expect(
-			within(screen.getByRole("list", { name: "By Manager" })).getAllByRole(
-				"listitem",
-			),
-		).toHaveLength(1);
-		expect(
-			within(screen.getByRole("list", { name: "By Team" })).getAllByRole(
-				"listitem",
-			),
-		).toHaveLength(1);
+		expect(screen.getByText("Vacation")).toBeTruthy();
+		expect(screen.queryByText("Total Employees")).toBeNull();
+		expect(screen.queryByText("Avg Work Hours")).toBeNull();
+		expect(screen.queryByText("Work Hours by Team")).toBeNull();
+		expect(screen.queryByText("Absence Patterns")).toBeNull();
 	});
 
-	it("keeps team and absence analytics visible when manager analytics rejects", async () => {
-		getManagerEffectivenessDataMock.mockRejectedValueOnce(
-			new Error("Manager analytics failed"),
-		);
-
-		render(<AnalyticsOverviewPage />);
-
-		await waitFor(() => {
-			expect(screen.getByText("160.0h")).toBeTruthy();
-			expect(screen.getAllByText("2").length).toBeGreaterThanOrEqual(2);
-			expect(screen.getByText("Unavailable")).toBeTruthy();
-			expect(
-				screen.getByText("Approval analytics could not be loaded"),
-			).toBeTruthy();
-		});
-		expect(screen.queryByText("0.0%")).toBeNull();
-		expect(screen.queryByText("No approval bottlenecks found")).toBeNull();
-		expect(screen.queryByText("Avery Manager")).toBeNull();
-		expect(screen.queryByText("No data available")).toBeNull();
-	});
-
-	it("shows normal empty bottlenecks when manager analytics succeeds with no bottlenecks", async () => {
-		getManagerEffectivenessDataMock.mockResolvedValueOnce({
-			success: true,
-			data: createManagerData({ approvalRate: 0, withBottlenecks: false }),
-		});
-
-		render(<AnalyticsOverviewPage />);
-
-		await waitFor(() => {
-			expect(screen.getByText("0.0%")).toBeTruthy();
-			expect(screen.getByText("No approval bottlenecks found")).toBeTruthy();
-		});
-		expect(
-			screen.queryByText("Approval analytics could not be loaded"),
-		).toBeNull();
-	});
-
-	it("distinguishes failed team and absence reads from successful zero approval data", async () => {
-		render(<AnalyticsOverviewPage />);
-
-		await screen.findByText("Operations approvals");
-		expect(screen.getByText("87.5%")).toBeTruthy();
-
-		getTeamPerformanceDataMock.mockResolvedValueOnce({
+	it("shows unavailable state and retry when approval bottlenecks fail", async () => {
+		getManagerEffectivenessDataMock.mockResolvedValue({
 			success: false,
-			error: "Team failed",
-		});
-		getAbsencePatternsDataMock.mockResolvedValueOnce({
-			success: false,
-			error: "Absence failed",
-		});
-		getManagerEffectivenessDataMock.mockResolvedValueOnce({
-			success: true,
-			data: createManagerData({ approvalRate: 0, withBottlenecks: false }),
+			error: "Temporary outage",
 		});
 
-		fireEvent.click(screen.getByRole("button", { name: "Change range" }));
+		renderBottlenecks();
 
-		await waitFor(() => {
-			expect(screen.getAllByText("Unavailable")).toHaveLength(3);
-			expect(screen.getByText("No approval bottlenecks found")).toBeTruthy();
-		});
-		expect(screen.queryByText("Operations approvals")).toBeNull();
-		expect(screen.queryByText("0.0h")).toBeNull();
-		expect(screen.queryByText("No data available")).toBeNull();
+		expect(await screen.findByText("Approval bottlenecks could not be loaded")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
-		expect(toastErrorMock).toHaveBeenCalledWith(
-			"Failed to load analytics data",
-		);
-	});
 
-	it("ignores stale responses when the date range changes before older requests finish", async () => {
-		const firstTeam = deferred<{
-			success: true;
-			data: ReturnType<typeof createTeamData>;
-		}>();
-		const firstAbsence = deferred<{
-			success: true;
-			data: ReturnType<typeof createAbsenceData>;
-		}>();
-		const firstManager = deferred<{
-			success: true;
-			data: ReturnType<typeof createManagerData>;
-		}>();
-
-		getTeamPerformanceDataMock
-			.mockReturnValueOnce(firstTeam.promise)
-			.mockResolvedValueOnce({
-				success: true,
-				data: createTeamData("Current Team", 500),
-			});
-		getAbsencePatternsDataMock
-			.mockReturnValueOnce(firstAbsence.promise)
-			.mockResolvedValueOnce({ success: true, data: createAbsenceData(4) });
-		getManagerEffectivenessDataMock
-			.mockReturnValueOnce(firstManager.promise)
-			.mockResolvedValueOnce({
-				success: true,
-				data: createManagerData({
-					approvalRate: 91.2,
-					teamLabel: "Current approvals",
-				}),
-			});
-
-		render(<AnalyticsOverviewPage />);
-		await waitFor(() =>
-			expect(getManagerEffectivenessDataMock).toHaveBeenCalledTimes(1),
-		);
-		fireEvent.click(screen.getByRole("button", { name: "Change range" }));
-
-		await screen.findByText("Current approvals");
-		expect(screen.getByText("91.2%")).toBeTruthy();
-
-		firstTeam.resolve({
+		getManagerEffectivenessDataMock.mockResolvedValue({
 			success: true,
-			data: createTeamData("Stale Team", 100),
-		});
-		firstAbsence.resolve({ success: true, data: createAbsenceData(8) });
-		firstManager.resolve({
-			success: true,
-			data: createManagerData({
-				approvalRate: 55.5,
-				teamLabel: "Stale approvals",
-			}),
-		});
-
-		await waitFor(() => {
-			expect(screen.queryByText("Stale approvals")).toBeNull();
-		});
-		expect(screen.getByText("Current approvals")).toBeTruthy();
-		expect(screen.getByText("91.2%")).toBeTruthy();
-	});
-
-	it("keeps the selected period and usable records during refresh, then retries a partial failure", async () => {
-		renderWithRefresh();
-		await screen.findByText("160.0h");
-		fireEvent.click(screen.getByRole("button", { name: "Change range" }));
-		await screen.findByText("160.0h");
-		const held = deferred<{ success: false; error: string }>();
-		getTeamPerformanceDataMock.mockReturnValueOnce(held.promise);
-		getAbsencePatternsDataMock.mockResolvedValueOnce({
-			success: true,
-			data: createAbsenceData(5),
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Refresh data" }));
-		await screen.findByText("Refreshing analytics…");
-		expect(screen.getByText("160.0h")).toBeTruthy();
-		held.resolve({ success: false, error: "Temporary read failure" });
-		await screen.findByRole("button", { name: "Retry" });
-		expect(screen.getByText("160.0h")).toBeTruthy();
-		expect(screen.getByText("5")).toBeTruthy();
-		getTeamPerformanceDataMock.mockResolvedValueOnce({
-			success: true,
-			data: createTeamData("Recovered", 400),
+			data: createManagerData({ withBottlenecks: false }),
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-		await screen.findByText("200.0h");
-		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
-		expect(
-			getTeamPerformanceDataMock.mock.lastCall?.[0].start.toISOString(),
-		).toBe("2026-05-01T00:00:00.000Z");
+		expect(await screen.findByText("No approval bottlenecks found")).toBeTruthy();
 	});
 
-	it("removes cached records after authority loss on refresh", async () => {
-		renderWithRefresh();
-		await screen.findByText("160.0h");
-		getTeamPerformanceDataMock.mockResolvedValueOnce({
+	it("retains loaded bottlenecks on transient background refresh failure and clears them on authority refusal", async () => {
+		getManagerEffectivenessDataMock.mockResolvedValue({
+			success: true,
+			data: createManagerData(),
+		});
+
+		renderBottlenecks();
+		expect(await screen.findByText("Avery Manager")).toBeTruthy();
+
+		getManagerEffectivenessDataMock.mockResolvedValue({
+			success: false,
+			error: "Transient timeout",
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Refresh data" }));
+		await waitFor(() => expect(toastErrorMock).toHaveBeenCalled());
+		expect(await screen.findByRole("button", { name: "Retry" })).toBeTruthy();
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Retry" }).hasAttribute("disabled")).toBe(false),
+		);
+		expect(screen.getByText("Avery Manager")).toBeTruthy();
+
+		getManagerEffectivenessDataMock.mockResolvedValue({
 			success: false,
 			code: "AuthorizationError",
-			error: "Access revoked",
+			error: "Forbidden",
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Refresh data" }));
-		await screen.findByRole("button", { name: "Retry" });
-		expect(screen.queryByText("160.0h")).toBeNull();
-		expect(screen.getAllByText("Unavailable")).toHaveLength(4);
-	});
-
-	it("does not render previous organization records when the active organization changes in flight", async () => {
-		const first = deferred<{
-			success: true;
-			data: ReturnType<typeof createTeamData>;
-		}>();
-		getTeamPerformanceDataMock
-			.mockReturnValueOnce(first.promise)
-			.mockResolvedValueOnce({
-				success: true,
-				data: createTeamData("New organization", 400),
-			});
-		render(<AnalyticsOverviewPage />);
-		await waitFor(() =>
-			expect(getTeamPerformanceDataMock).toHaveBeenCalledTimes(1),
-		);
-		act(() =>
-			useOrganizationSettings
-				.getState()
-				.setSettings({ organizationId: "org-2" }),
-		);
-		await screen.findByText("200.0h");
-		first.resolve({
-			success: true,
-			data: createTeamData("Old organization", 100),
-		});
-		await act(async () => {
-			await first.promise;
-		});
-		expect(screen.queryByText("50.0h")).toBeNull();
-		expect(screen.getByText("200.0h")).toBeTruthy();
-	});
-
-	it("cannot export the previous period's team dataset while a new period is pending", async () => {
-		render(<AnalyticsOverviewPage />);
-		await screen.findByText("160.0h");
-		expect(
-			screen.getByRole("button", { name: "Export" }).hasAttribute("disabled"),
-		).toBe(false);
-		const held = deferred<{
-			success: true;
-			data: ReturnType<typeof createTeamData>;
-		}>();
-		getTeamPerformanceDataMock.mockReturnValueOnce(held.promise);
-		fireEvent.click(screen.getByRole("button", { name: "Change range" }));
-		expect(
-			screen.getByRole("button", { name: "Export" }).hasAttribute("disabled"),
-		).toBe(true);
-		held.resolve({ success: true, data: createTeamData("New period", 400) });
-		await screen.findByText("200.0h");
-		expect(
-			screen.getByRole("button", { name: "Export" }).hasAttribute("disabled"),
-		).toBe(false);
-	});
-
-	it("recovers a failed arrival without presenting any unavailable dataset as zero", async () => {
-		getTeamPerformanceDataMock.mockRejectedValueOnce(new Error("Offline"));
-		getAbsencePatternsDataMock.mockRejectedValueOnce(new Error("Offline"));
-		getManagerEffectivenessDataMock.mockRejectedValueOnce(new Error("Offline"));
-		render(<AnalyticsOverviewPage />);
-		await screen.findByRole("button", { name: "Retry" });
-		expect(screen.getAllByText("Unavailable")).toHaveLength(4);
-		expect(screen.queryByText("0.0h")).toBeNull();
-		expect(screen.queryByText("No approval bottlenecks found")).toBeNull();
-		expect(
-			screen.getByRole("button", { name: "Export" }).hasAttribute("disabled"),
-		).toBe(true);
 		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-		await screen.findByText("160.0h");
-		expect(screen.queryByText("Unavailable")).toBeNull();
+		expect(await screen.findByText("Approval bottlenecks could not be loaded")).toBeTruthy();
+		expect(screen.queryByText("Avery Manager")).toBeNull();
+	});
+
+	it("resets bottlenecks when switching organizations", async () => {
+		getManagerEffectivenessDataMock.mockResolvedValueOnce({
+			success: true,
+			data: createManagerData({ managerName: "Org One Manager" }),
+		});
+
+		renderBottlenecks();
+		expect(await screen.findByText("Org One Manager")).toBeTruthy();
+
+		getManagerEffectivenessDataMock.mockResolvedValueOnce({
+			success: true,
+			data: createManagerData({ managerName: "Org Two Manager" }),
+		});
+		hydrateOrganizationSettings("org-2");
+
+		expect(await screen.findByText("Org Two Manager")).toBeTruthy();
+		expect(screen.queryByText("Org One Manager")).toBeNull();
+	});
+});
+
+describe("AnalyticsHealthSections (#1955)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		getAuthContextMock.mockResolvedValue({
+			user: { id: "user-admin" },
+			session: { activeOrganizationId: "org-1" },
+			employee: null,
+		});
+		getCurrentSettingsAccessMock.mockResolvedValue({
+			userId: "user-admin",
+			organizationId: "org-1",
+			employee: null,
+			settingsAccess: "orgAdmin",
+			membershipRole: "admin",
+		});
+		getStatisticsScopeMock.mockResolvedValue({
+			success: true,
+			data: {
+				scope: { organizationWide: true },
+				fetchedAt: "2026-03-15T10:00:00.000Z",
+			},
+		});
+		getAttentionStatisticsMock.mockResolvedValue({
+			success: true,
+			data: {
+				staleLiveWork: { status: "ok", value: 2 },
+				openViolations: { status: "ok", value: 1 },
+			},
+		});
+		loadApprovalInboxSummaryMock.mockResolvedValue({
+			status: "ok",
+			value: null,
+		});
+		getMonthStatisticsMock.mockResolvedValue({
+			success: true,
+			data: {
+				comparison: { firstDay: "2026-02-01", lastDay: "2026-02-15" },
+				workedMinutes: { status: "ok", value: { current: 600, previous: 480 } },
+				absenceDays: { status: "ok", value: { current: 2, previous: 1 } },
+				completedWorkPeriods: {
+					status: "ok",
+					value: { current: 10, previous: 8 },
+				},
+			},
+		});
+		getAdoptionStatisticsMock.mockResolvedValue({
+			success: true,
+			data: {
+				coverage: { status: "ok", value: { tracked: 8, expected: 10 } },
+				clockedIn: { status: "ok", value: 3 },
+				manualEntryShare: {
+					status: "ok",
+					value: { manualMinutes: 60, totalMinutes: 600 },
+				},
+			},
+		});
+		getWorkforceStatisticsMock.mockResolvedValue({
+			success: true,
+			data: {
+				roster: { status: "ok", value: { roster: 12, joined: 2, left: 1 } },
+				teams: { status: "ok", value: 4 },
+				incompleteSetup: { status: "ok", value: 1 },
+				usersSignedIn: { status: "ok", value: 7 },
+			},
+		});
+	});
+
+	it("renders Needs attention, This month, Tracking adoption, and Workforce & setup for an employee-less org admin", async () => {
+		const container = await AnalyticsHealthSections();
+		expect(container).not.toBeNull();
+		if (!container) return;
+
+		// Resolve each Suspense child section element so we inspect the real rendered sections.
+		const sections = container.props.children as Array<{
+			props: {
+				children: {
+					type: (props: Record<string, unknown>) => Promise<React.ReactElement>;
+					props: Record<string, unknown>;
+				};
+			};
+		}>;
+		const rendered = await Promise.all(
+			sections.map(async (suspense) => {
+				const child = suspense.props.children;
+				return renderToStaticMarkup(await child.type(child.props));
+			}),
+		);
+		const combinedHtml = rendered.join("\n");
+
+		expect(combinedHtml).toContain("Needs attention");
+		expect(combinedHtml).toContain("This month");
+		expect(combinedHtml).toContain("Tracking adoption");
+		expect(combinedHtml).toContain("Workforce &amp; setup");
+		expect(combinedHtml).toContain("Stale live work");
+		expect(combinedHtml).toContain("Users signed in");
 	});
 });

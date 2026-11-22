@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
-export default function HandOffLayout({
+export default function BillableHandOffLayout({
 	children,
 	params,
 }: {
@@ -9,7 +9,7 @@ export default function HandOffLayout({
 	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<RouteTranslationBoundary route="/settings/billable-time/hand-off" params={params}>
+		<RouteTranslationBoundary route="/billable-time/hand-off" params={params}>
 			{children}
 		</RouteTranslationBoundary>
 	);

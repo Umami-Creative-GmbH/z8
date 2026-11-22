@@ -5,37 +5,50 @@ import { type ReactNode, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PayrollTranslate } from "./state";
 
-const PAYROLL_WORKSPACE_TABS = ["overview", "days", "absences", "settlement", "export"] as const;
+const PAYROLL_WORKSPACE_TABS = [
+	"overview",
+	"days",
+	"absences",
+	"settlement",
+	"export",
+	"closed-months",
+] as const;
 export type PayrollWorkspaceTab = (typeof PAYROLL_WORKSPACE_TABS)[number];
 
-const DEFAULT_TAB: PayrollWorkspaceTab = "overview";
-
-function parsePayrollTab(value: string | null | undefined): PayrollWorkspaceTab {
-	return PAYROLL_WORKSPACE_TABS.find((tab) => tab === value) ?? DEFAULT_TAB;
+function parsePayrollTab(
+	value: string | null | undefined,
+	visibleTabs: readonly PayrollWorkspaceTab[],
+): PayrollWorkspaceTab {
+	const fallback = visibleTabs[0] ?? "overview";
+	return visibleTabs.find((tab) => tab === value) ?? fallback;
 }
 
 /**
  * The selected tab, kept in the `tab` search param so a reload, browser back or a
  * shared link opens the same tab.
  */
-function usePayrollTabParam() {
+function usePayrollTabParam(visibleTabs: readonly PayrollWorkspaceTab[]) {
 	const searchParams = useSearchParams();
 	const tabParam = searchParams?.get("tab");
-	const [active, setActive] = useState(() => parsePayrollTab(tabParam));
+	const defaultTab = visibleTabs[0] ?? "overview";
+	const [active, setActive] = useState(() => parsePayrollTab(tabParam, visibleTabs));
 	const [seenTabParam, setSeenTabParam] = useState(tabParam);
 
 	// History navigation changes the param without a tab click.
 	if (tabParam !== seenTabParam) {
 		setSeenTabParam(tabParam);
-		setActive(parsePayrollTab(tabParam));
+		setActive(parsePayrollTab(tabParam, visibleTabs));
 	}
 
+	// Ensure active tab remains valid if visibleTabs changes.
+	const resolvedActive = visibleTabs.includes(active) ? active : defaultTab;
+
 	function select(value: unknown) {
-		const next = PAYROLL_WORKSPACE_TABS.find((tab) => tab === value);
+		const next = visibleTabs.find((tab) => tab === value);
 		if (!next) return;
 		setActive(next);
 		const params = new URLSearchParams(window.location.search);
-		if (next === DEFAULT_TAB) params.delete("tab");
+		if (next === defaultTab && defaultTab === "overview") params.delete("tab");
 		else params.set("tab", next);
 		const search = params.toString();
 		window.history.replaceState(
@@ -45,17 +58,18 @@ function usePayrollTabParam() {
 		);
 	}
 
-	return { active, select };
+	return { active: resolvedActive, select };
 }
 
 export function PayrollWorkspaceTabs({
 	panels,
 	t,
 }: {
-	panels: Record<PayrollWorkspaceTab, ReactNode>;
+	panels: Partial<Record<PayrollWorkspaceTab, ReactNode>>;
 	t: PayrollTranslate;
 }) {
-	const { active, select } = usePayrollTabParam();
+	const visibleTabs = PAYROLL_WORKSPACE_TABS.filter((tab) => panels[tab] !== undefined);
+	const { active, select } = usePayrollTabParam(visibleTabs);
 	// A tab renders on first visit and then stays mounted, so its queries and drafts survive.
 	const [visited, setVisited] = useState(() => new Set<PayrollWorkspaceTab>([active]));
 	if (!visited.has(active)) setVisited(new Set([...visited, active]));
@@ -66,6 +80,7 @@ export function PayrollWorkspaceTabs({
 		absences: t("payroll.tabs.absences", "Absences"),
 		settlement: t("payroll.tabs.settlement", "Settlement"),
 		export: t("payroll.tabs.export", "Export"),
+		"closed-months": t("settings.closedMonths.title", "Closed months"),
 	};
 
 	return (
@@ -74,13 +89,13 @@ export function PayrollWorkspaceTabs({
 				aria-label={t("payroll.tabs.label", "Payroll workspace sections")}
 				className="w-full sm:w-fit"
 			>
-				{PAYROLL_WORKSPACE_TABS.map((tab) => (
+				{visibleTabs.map((tab) => (
 					<TabsTrigger key={tab} value={tab}>
 						{labels[tab]}
 					</TabsTrigger>
 				))}
 			</TabsList>
-			{PAYROLL_WORKSPACE_TABS.map((tab) => (
+			{visibleTabs.map((tab) => (
 				<TabsContent key={tab} value={tab} keepMounted className="min-w-0">
 					{active === tab || visited.has(tab) ? panels[tab] : null}
 				</TabsContent>

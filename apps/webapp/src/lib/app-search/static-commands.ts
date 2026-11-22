@@ -135,7 +135,7 @@ const STATIC_APP_COMMANDS: StaticAppCommandDefinition[] = [
 			},
 			{ key: "appSearch.commands.openPayrollReadiness.keywords.export", defaultValue: "export" },
 		],
-		href: "/settings/payroll-readiness",
+		href: "/payroll",
 		visibleFor: "orgAdmin",
 	},
 	{

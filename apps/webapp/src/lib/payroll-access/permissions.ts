@@ -6,6 +6,7 @@ import {
 	payrollAccessTeam,
 	teamMembership,
 } from "@/db/schema";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 
 export interface PayrollAccessGrantRow {
 	id: string;
@@ -77,9 +78,19 @@ export async function hasActivePayrollAccessGrant(input: {
 	organizationId: string;
 	payrollEmployeeId: string;
 }): Promise<boolean> {
-	const { db } = await import("@/db");
+	return (await getActivePayrollAccessGrantScope(input)) !== null;
+}
+
+export async function getActivePayrollAccessGrantScope(
+	input: {
+		organizationId: string;
+		payrollEmployeeId: string;
+	},
+	reader?: Pick<typeof import("@/db").db, "select">,
+): Promise<"all" | "specific" | null> {
+	const db = reader ?? (await import("@/db")).db;
 	const [grant] = await db
-		.select({ id: payrollAccessGrant.id })
+		.select({ scope: payrollAccessGrant.scope })
 		.from(payrollAccessGrant)
 		.where(
 			and(
@@ -90,7 +101,24 @@ export async function hasActivePayrollAccessGrant(input: {
 		)
 		.limit(1);
 
-	return Boolean(grant);
+	if (!grant) {
+		return null;
+	}
+
+	return grant.scope === "all" ? "all" : "specific";
+}
+
+export async function resolveOrganizationPayrollEmployeeIds(
+	organizationId: string,
+	reader?: Pick<typeof import("@/db").db, "select">,
+): Promise<string[]> {
+	const db = reader ?? (await import("@/db")).db;
+	const rows = await db
+		.select({ employeeId: employee.id })
+		.from(employee)
+		.where(onCurrentRoster(organizationId));
+
+	return Array.from(new Set(rows.map((row) => row.employeeId))).toSorted();
 }
 
 export async function resolvePayrollAccessibleEmployeeIds(

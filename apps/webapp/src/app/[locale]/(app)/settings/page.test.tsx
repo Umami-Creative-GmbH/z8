@@ -104,7 +104,7 @@ describe("SettingsPage", () => {
 		expect(await settingHrefs()).toContain("/settings/projects");
 	});
 
-	it("lists Closed months and Approval for a member granted custom-role capabilities", async () => {
+	it("lists Approval and omits moved Closed months for a member granted custom-role capabilities", async () => {
 		mockState.getRenderSettingsAccess.mockResolvedValue("member");
 		mockState.getRenderSettingsCapabilities.mockResolvedValue({
 			...DEFAULT_SETTINGS_CAPABILITIES,
@@ -113,7 +113,7 @@ describe("SettingsPage", () => {
 		});
 
 		const hrefs = await settingHrefs();
-		expect(hrefs).toContain("/settings/closed-months");
+		expect(hrefs).not.toContain("/settings/closed-months");
 		expect(hrefs).toContain("/settings/approval-policies");
 		expect(hrefs).not.toContain("/settings/organization");
 	});

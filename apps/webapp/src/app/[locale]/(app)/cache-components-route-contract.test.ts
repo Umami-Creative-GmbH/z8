@@ -22,7 +22,6 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/settings/avv/page.tsx",
 	"src/app/[locale]/(app)/settings/billing/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-access/page.tsx",
-	"src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
 	"src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
 	"src/app/[locale]/(app)/settings/wellness/page.tsx",
 	"src/app/[locale]/(app)/settings/work-diagnostics/page.tsx",
@@ -166,16 +165,6 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reasonCategory: "deployment-config",
 		reason: "The billing deployment setting must be read per request, not while prerendering.",
 		operation: 'if (env.BILLING_ENABLED !== "true") {',
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
-		contentComponent: "PayrollReadinessContent",
-		fallbackComponent: "SettingsContentLoading",
-		coordinatorComponent: "PayrollReadinessPageContent",
-		coordinatorFallbackComponent: "PayrollReadinessPageLoading",
-		reasonCategory: "current-period",
-		reason: "The default payroll-readiness period must be resolved per request.",
-		operation: "const period = getPayrollReadinessPeriod(resolvedSearchParams);",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/work-diagnostics/page.tsx",
@@ -450,7 +439,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/reports/page.tsx",
 		fallbackComponent: "ReportsPageLoading",
 		contentComponent: "ReportsPageContent",
-		fallbackFrameClass: "@container/main page-frame flex flex-1 flex-col gap-6",
+		fallbackFrameClass: "flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading employee reports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -458,7 +447,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/reports/projects/page.tsx",
 		fallbackComponent: "ProjectReportsPageLoading",
 		contentComponent: "ProjectReportsPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6",
+		fallbackFrameClass: "flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading project reports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -466,7 +455,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/reports/vehicles/page.tsx",
 		fallbackComponent: "VehicleDistanceReportPageLoading",
 		contentComponent: "VehicleDistanceReportPageContent",
-		fallbackFrameClass: "@container/main page-frame flex flex-1 flex-col gap-6",
+		fallbackFrameClass: "flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading the distance per vehicle report",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -695,14 +684,6 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "WellnessPageContent",
 		fallbackFrameClass: "page-frame",
 		fallbackAriaLabel: "Loading wellness settings",
-		requiresSynchronousDefaultExport: true,
-	},
-	{
-		file: "src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
-		fallbackComponent: "PayrollReadinessPageLoading",
-		contentComponent: "PayrollReadinessPageContent",
-		fallbackFrameClass: "page-frame flex flex-1 flex-col gap-6",
-		fallbackAriaLabel: "Loading payroll readiness",
 		requiresSynchronousDefaultExport: true,
 	},
 	{
@@ -1307,7 +1288,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(21);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(20);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
@@ -1388,7 +1369,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(61);
+		expect(workQueueFiles).toHaveLength(60);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

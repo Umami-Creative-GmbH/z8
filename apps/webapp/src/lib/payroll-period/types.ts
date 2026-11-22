@@ -19,11 +19,15 @@ export interface PayrollPeriodRange {
 	label: string;
 }
 
-/** The payroll access grant holder reading the period. */
+/** The payroll actor reading the period: an org admin or a payroll access grant holder. */
 export interface PayrollPeriodActor {
-	/** Employee ID of the grant holder; the grant decides who is in scope. */
-	employeeId: string;
+	/** Employee ID of the actor; null for an org admin without an employee record (#1957). */
+	employeeId: string | null;
 	name: string;
+	/** Organization administrators have organization-wide payroll scope without a self-grant (#1957). */
+	orgAdmin?: boolean;
+	/** User ID of the actor, used as generatedBy fallback when `employeeId` is null. */
+	userId?: string;
 }
 
 /** Narrows the grant's scope; never widens it. */

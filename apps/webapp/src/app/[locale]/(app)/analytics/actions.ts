@@ -3,19 +3,19 @@
 /**
  * Analytics Server Actions
  *
- * Server actions for analytics data retrieval with role-based access control.
- * All analytics endpoints are restricted to admins and managers only.
+ * Server actions for analytics data retrieval with unified manager/admin access control.
+ * Accessible to employee-role managers/workforce admins and org admins (including org
+ * admins without an employee record) via the shared settings-access resolver (#1955).
  *
- * SECURITY: Organization ID is always derived from the authenticated user's
- * employee record, never from client input. This ensures multi-tenant isolation.
+ * SECURITY: Organization ID is always derived from the authenticated session's active
+ * organization, never from client input. This ensures multi-tenant isolation.
  */
 
-import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { member } from "@/db/auth-schema";
 import { env } from "@/env";
 import {
 	loadRecentAnalyticsIdentity,
+	type RecentAnalyticsActor,
 	type RecentAnalyticsRequest,
 } from "@/lib/analytics/recent-identity";
 import {
@@ -37,96 +37,111 @@ import {
 	AuthorizationError,
 	BillingError,
 	ExternalServiceError,
-	NotFoundError,
 } from "@/lib/effect/errors";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
 import { AnalyticsService } from "@/lib/effect/services/analytics.service";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import { findAnalyticsEmployeeByUserId } from "./current-employee-scope";
+import {
+	meetsSettingsAccess,
+	resolveCallerSettingsAccess,
+} from "@/lib/organization-action/settings-access";
+
+type AnalyticsActor =
+	| {
+			role: "admin";
+			organizationId: string;
+			userId: string;
+			employeeId: string | null;
+			scope: { role: "admin" };
+	  }
+	| {
+			role: "manager";
+			organizationId: string;
+			userId: string;
+			employeeId: string;
+			scope: { role: "manager"; managerEmployeeId: string };
+	  };
 
 /**
- * Get current employee and check if they're a manager or admin
- * Returns the employee record which includes organizationId for secure data access
+ * Resolve the authenticated analytics caller via the unified settings-access rule:
+ * - Org owners/admins (with or without an employee record) and workforce admins read org-wide.
+ * - Managers read their managed scope.
+ * - Plain employees, former employees, and unapproved memberships are refused.
  */
-function checkManagerOrAdminAccess() {
+function resolveAnalyticsActor() {
 	return Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
+		const caller = yield* resolveCallerSettingsAccess();
 
-		// Get current employee
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await findAnalyticsEmployeeByUserId(
-					dbService.db,
-					session.user.id,
-					session.session.activeOrganizationId,
-				);
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
-
-		const membership = yield* dbService.query(
-			"analytics.currentMembership",
-			() =>
-				dbService.db
-					.select({ id: member.id })
-					.from(member)
-					.where(
-						and(
-							eq(member.organizationId, currentEmployee.organizationId),
-							eq(member.userId, session.user.id),
-							eq(member.status, "approved"),
-						),
-					)
-					.limit(1),
-		);
-		if (!membership.length)
+		if (
+			caller.settingsAccess === null ||
+			!meetsSettingsAccess(caller.settingsAccess, "scopedManager")
+		) {
 			return yield* Effect.fail(
 				new AuthorizationError({
-					message: "Organization access is no longer available",
-					userId: session.user.id,
-					resource: "analytics",
-					action: "view",
-				}),
-			);
-
-		// Check role
-		if (
-			currentEmployee.role !== "admin" &&
-			currentEmployee.role !== "manager"
-		) {
-			yield* Effect.fail(
-				new AuthorizationError({
 					message: "Analytics access restricted to managers and admins",
-					userId: session.user.id,
+					userId: caller.userId,
 					resource: "analytics",
 					action: "view",
 				}),
 			);
 		}
 
-		return currentEmployee;
+		if (
+			meetsSettingsAccess(caller.settingsAccess, "orgAdmin") ||
+			caller.employee?.role === "admin"
+		) {
+			return {
+				role: "admin",
+				organizationId: caller.organizationId,
+				userId: caller.userId,
+				employeeId: caller.employee?.id ?? null,
+				scope: { role: "admin" },
+			} satisfies AnalyticsActor;
+		}
+
+		if (caller.employee?.role === "manager") {
+			return {
+				role: "manager",
+				organizationId: caller.organizationId,
+				userId: caller.userId,
+				employeeId: caller.employee.id,
+				scope: { role: "manager", managerEmployeeId: caller.employee.id },
+			} satisfies AnalyticsActor;
+		}
+
+		return yield* Effect.fail(
+			new AuthorizationError({
+				message: "Analytics access restricted to managers and admins",
+				userId: caller.userId,
+				resource: "analytics",
+				action: "view",
+			}),
+		);
 	});
+}
+
+function toRecentAnalyticsActor(actor: AnalyticsActor): RecentAnalyticsActor {
+	if (actor.role === "admin") {
+		return {
+			id: actor.employeeId,
+			userId: actor.userId,
+			organizationId: actor.organizationId,
+			role: "admin",
+		};
+	}
+	return {
+		id: actor.employeeId,
+		userId: actor.userId,
+		organizationId: actor.organizationId,
+		role: "manager",
+	};
 }
 
 function prepareRecentAnalytics(request: RecentAnalyticsRequest) {
 	return Effect.gen(function* () {
-		const current = yield* checkManagerOrAdminAccess();
+		const current = yield* resolveAnalyticsActor();
 		if (env.BILLING_ENABLED === "true") {
 			const { BillingEnforcementService, BillingServicesLive } =
 				yield* Effect.promise(() => import("@/lib/effect/services/billing"));
@@ -146,12 +161,7 @@ function prepareRecentAnalytics(request: RecentAnalyticsRequest) {
 				);
 		}
 		return yield* loadRecentAnalyticsIdentity(
-			{
-				id: current.id,
-				userId: current.userId,
-				organizationId: current.organizationId,
-				role: current.role === "admin" ? "admin" : "manager",
-			},
+			toRecentAnalyticsActor(current),
 			request,
 		);
 	});
@@ -178,7 +188,7 @@ async function readCachedAnalytics<T>(
 }
 /**
  * Get team performance analytics
- * Organization ID is derived from authenticated user's employee record
+ * Organization ID is derived from the authenticated session's active organization
  */
 export async function getTeamPerformanceData(
 	dateRange: DateRange,
@@ -210,20 +220,21 @@ export async function getTeamPerformanceData(
 }
 /**
  * Get vacation trends analytics
- * Organization ID is derived from authenticated user's employee record
+ * Organization ID is derived from the authenticated session's active organization
  */
 export async function getVacationTrendsData(
 	dateRange: DateRange,
 ): Promise<ServerActionResult<VacationTrendsData>> {
 	const effect = Effect.gen(function* () {
-		const currentEmployee = yield* checkManagerOrAdminAccess();
-		const organizationId = currentEmployee.organizationId;
+		const actor = yield* resolveAnalyticsActor();
+		const organizationId = actor.organizationId;
 
 		const analyticsService = yield* AnalyticsService;
 
 		const data = yield* analyticsService.getVacationTrends({
 			organizationId,
 			dateRange,
+			scope: actor.scope,
 		});
 
 		return data;
@@ -234,7 +245,7 @@ export async function getVacationTrendsData(
 
 /**
  * Get work hours analytics
- * Organization ID is derived from authenticated user's employee record
+ * Organization ID is derived from the authenticated session's active organization
  */
 export async function getWorkHoursAnalyticsData(
 	dateRange: DateRange,
@@ -266,24 +277,21 @@ export async function getWorkHoursAnalyticsData(
 }
 /**
  * Get absence patterns analytics
- * Organization ID is derived from authenticated user's employee record
+ * Organization ID is derived from the authenticated session's active organization
  */
 export async function getAbsencePatternsData(
 	dateRange: DateRange,
 ): Promise<ServerActionResult<AbsencePatternsData>> {
 	const effect = Effect.gen(function* () {
-		const currentEmployee = yield* checkManagerOrAdminAccess();
-		const organizationId = currentEmployee.organizationId;
+		const actor = yield* resolveAnalyticsActor();
+		const organizationId = actor.organizationId;
 
 		const analyticsService = yield* AnalyticsService;
 
 		const data = yield* analyticsService.getAbsencePatterns({
 			organizationId,
 			dateRange,
-			scope:
-				currentEmployee.role === "admin"
-					? { role: "admin" }
-					: { role: "manager", managerEmployeeId: currentEmployee.id },
+			scope: actor.scope,
 		});
 
 		return data;
@@ -294,22 +302,38 @@ export async function getAbsencePatternsData(
 
 /**
  * Get manager effectiveness analytics
- * Organization ID is derived from authenticated user's employee record
+ * Organization ID is derived from the authenticated session's active organization
  */
 export async function getManagerEffectivenessData(
 	dateRange: DateRange,
 	managerId?: string,
 ): Promise<ServerActionResult<ManagerEffectivenessData>> {
 	const effect = Effect.gen(function* () {
-		const currentEmployee = yield* checkManagerOrAdminAccess();
-		const organizationId = currentEmployee.organizationId;
+		const actor = yield* resolveAnalyticsActor();
+		const organizationId = actor.organizationId;
+
+		if (
+			actor.role === "manager" &&
+			managerId &&
+			managerId !== actor.employeeId
+		) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Managers can only view their own approval analytics",
+					userId: actor.userId,
+					resource: "analytics",
+					action: "view",
+				}),
+			);
+		}
 
 		const analyticsService = yield* AnalyticsService;
 
 		const data = yield* analyticsService.getManagerEffectiveness({
 			organizationId,
 			dateRange,
-			managerId,
+			managerId: actor.role === "manager" ? actor.employeeId : managerId,
+			scope: actor.scope,
 		});
 
 		return data;
@@ -320,7 +344,7 @@ export async function getManagerEffectivenessData(
 
 /**
  * Get overtime burn-down analytics
- * Organization ID is derived from authenticated user's employee record
+ * Organization ID is derived from the authenticated session's active organization
  */
 export async function getOvertimeBurnDownData(
 	dateRange: DateRange,

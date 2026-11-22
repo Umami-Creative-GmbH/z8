@@ -1,31 +1,12 @@
 import { Suspense } from "react";
 import { BillableTimeSettingsLoading } from "@/components/billable-time/billable-time-settings-loading";
-import { db } from "@/db";
-import {
-	listBillableRateSeries,
-	listBillableRateTargetOptions,
-} from "@/lib/billable-time/billable-rates";
-import { requireBillableTimeSettingsAccess } from "@/lib/billable-time/settings-access";
-import { BillableTimeSettingsShell } from "../billable-time-settings-shell";
-import { AddBillableRateAction, BillableRatesOverview } from "./billable-rates-overview";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 async function BillableRatesPageContent() {
-	const { organizationId, settings } = await requireBillableTimeSettingsAccess();
-	const [series, options] = await Promise.all([
-		listBillableRateSeries(db, organizationId),
-		listBillableRateTargetOptions(db, organizationId),
-	]);
-
-	return (
-		<BillableTimeSettingsShell
-			activePageId="rates"
-			actions={<AddBillableRateAction options={options} />}
-		>
-			<BillableRatesOverview currency={settings.currency} series={series} />
-		</BillableTimeSettingsShell>
-	);
+	return redirectWithLocale("/settings/billable-time");
 }
 
+/** Legacy `/settings/billable-time/rates` route redirects to `/settings/billable-time` (#1956). */
 export default function BillableRatesPage() {
 	return (
 		<Suspense fallback={<BillableTimeSettingsLoading />}>

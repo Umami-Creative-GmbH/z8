@@ -1,17 +1,21 @@
 "use client";
 
-import { IconScale } from "@tabler/icons-react";
+import { IconAlertTriangle, IconScale, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import Link from "next/link";
 import { useReducer, useRef, useTransition } from "react";
 import { toast } from "sonner";
 import type { PayrollExportFormatOption } from "@/app/[locale]/(app)/payroll/actions";
+import type { ClosedMonthsOverview } from "@/app/[locale]/(app)/settings/closed-months/actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+import { ClosedMonthsSettings } from "@/components/settings/closed-months/closed-months-settings";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
+import type { PayrollReadinessResult } from "@/lib/payroll-readiness/get-payroll-readiness";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
+import { Link } from "@/navigation";
 import { PayrollAbsencesTab } from "./workspace/payroll-absences-tab";
 import { PayrollDaysTab } from "./workspace/payroll-days-tab";
 import { PayrollExportTab } from "./workspace/payroll-export-tab";
@@ -41,6 +45,14 @@ import {
 interface PayrollWorkspaceProps {
 	initialSummary: PayrollWorkspaceSummary;
 	exportFormats: PayrollExportFormatOption[];
+	/** Organization administrators see org-level readiness and the contextual `/settings/payroll-export` link (#1957). */
+	isOrgAdmin?: boolean;
+	/** Initial organization-level payroll readiness snapshot for org admins (#1957). */
+	initialReadiness?: PayrollReadinessResult | null;
+	/** Present when the actor is authorized to close or reopen months (#1957). */
+	closedMonthsOverview?: ClosedMonthsOverview | null;
+	/** Present when the actor may manage closed months but loading the overview failed (#1957). */
+	closedMonthsError?: string | null;
 }
 
 export function PayrollWorkspace(props: PayrollWorkspaceProps) {
@@ -56,10 +68,17 @@ export function PayrollWorkspace(props: PayrollWorkspaceProps) {
 
 /**
  * The payroll workspace: a period and scope bar, a status strip, and the Overview,
- * Days, Absences, Settlement and Export tabs. The period, scope and format state is
- * shared by all tabs.
+ * Days, Absences, Settlement, Export, and (when permitted) Closed Months tabs.
+ * The period, scope and format state is shared by all tabs.
  */
-function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
+function PayrollWorkspaceContent({
+	initialSummary,
+	exportFormats,
+	isOrgAdmin = false,
+	initialReadiness = null,
+	closedMonthsOverview = null,
+	closedMonthsError = null,
+}: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
@@ -220,7 +239,11 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 	return (
 		<PayrollSettlementRefreshProvider refreshSummary={refreshWorkspaceSummary}>
 			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-4">
-				<PayrollHeader organizationName={summary.organizationName} t={t} />
+				<PayrollHeader
+					organizationName={summary.organizationName}
+					isOrgAdmin={isOrgAdmin}
+					t={t}
+				/>
 				<PayrollPeriodBar
 					dateMode={dateMode}
 					dispatch={dispatch}
@@ -268,6 +291,12 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 								filtersHaveNoMatches={filtersHaveNoMatches}
 								focusRequest={focusRequest}
 								formatId={formatId}
+								initialPeriod={{
+									startDate: initialSummary.period.start,
+									endDate: initialSummary.period.end,
+								}}
+								initialReadiness={initialReadiness}
+								isOrgAdmin={isOrgAdmin}
 								onClearBlocker={clearPayrollBlocker}
 								periodMonths={periodMonths}
 								request={request}
@@ -312,6 +341,26 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 								t={t}
 							/>
 						),
+						...(closedMonthsOverview
+							? {
+									"closed-months": <ClosedMonthsSettings overview={closedMonthsOverview} />,
+								}
+							: closedMonthsError
+								? {
+										"closed-months": (
+											<Alert variant="destructive">
+												<IconAlertTriangle aria-hidden="true" />
+												<AlertTitle>
+													{t(
+														"settings.closedMonths.loadErrorTitle",
+														"Closed months could not be loaded",
+													)}
+												</AlertTitle>
+												<AlertDescription>{closedMonthsError}</AlertDescription>
+											</Alert>
+										),
+									}
+								: {}),
 					}}
 				/>
 			</div>
@@ -319,7 +368,15 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 	);
 }
 
-function PayrollHeader({ organizationName, t }: { organizationName: string; t: PayrollTranslate }) {
+function PayrollHeader({
+	organizationName,
+	isOrgAdmin,
+	t,
+}: {
+	organizationName: string;
+	isOrgAdmin: boolean;
+	t: PayrollTranslate;
+}) {
 	return (
 		<PageHeader
 			scope={organizationName}
@@ -329,12 +386,25 @@ function PayrollHeader({ organizationName, t }: { organizationName: string; t: P
 				"Review payroll totals, readiness, and exports for the selected period.",
 			)}
 			actions={
-				<Button asChild variant="outline">
-					<Link href="/payroll/work-balances">
-						<IconScale aria-hidden="true" className="size-4" />
-						{t("payroll.workBalances.open", "Work balances")}
-					</Link>
-				</Button>
+				<div className="flex flex-wrap items-center gap-2">
+					{isOrgAdmin ? (
+						<Button asChild variant="outline">
+							<Link href="/settings/payroll-export">
+								<IconSettings aria-hidden="true" className="size-4" />
+								{t(
+									"settings.payrollExport.connectorsTitle",
+									"Payroll Connectors & Wage Types",
+								)}
+							</Link>
+						</Button>
+					) : null}
+					<Button asChild variant="outline">
+						<Link href="/payroll/work-balances">
+							<IconScale aria-hidden="true" className="size-4" />
+							{t("payroll.workBalances.open", "Work balances")}
+						</Link>
+					</Button>
+				</div>
 			}
 		/>
 	);

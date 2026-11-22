@@ -134,7 +134,7 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 
 		expect(entries.some((entry) => entry.id === "teams")).toBe(true);
 		expect(entries.some((entry) => entry.id === "organizations")).toBe(false);
-		expect(entries.some((entry) => entry.id === "statistics")).toBe(true);
+		expect(entries.some((entry) => entry.id === "statistics")).toBe(false);
 		expect(entries.some((entry) => entry.id === "calendar")).toBe(true);
 		expect(entries.some((entry) => entry.id === "change-policies")).toBe(false);
 		expect(entries.some((entry) => entry.id === "employees")).toBe(true);
@@ -394,8 +394,10 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 	it("separates personal notification preferences from organization delivery settings", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		expect(
-			entries.filter((entry) => entry.group === "notifications").map((entry) => entry.id),
-		).toEqual(["email", "chat-integrations"]);
+			entries
+				.filter((entry) => entry.group === "integrations-channels")
+				.map((entry) => entry.id),
+		).toEqual(["email", "chat-integrations", "calendar", "developer-access"]);
 		expect(entries.find((entry) => entry.id === "notifications")).toMatchObject({
 			group: "account",
 			minimumAccess: null,
@@ -403,7 +405,9 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 		});
 		for (const access of [null, "member", "scopedManager"] as const) {
 			expect(
-				getVisibleSettings(access, true).some((entry) => entry.group === "notifications"),
+				getVisibleSettings(access, true).some(
+					(entry) => entry.id === "email" || entry.id === "chat-integrations",
+				),
 			).toBe(false);
 		}
 	});
@@ -416,8 +420,10 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 		});
 		expect(entries.find((entry) => entry.id === "custom-domains")?.group).toBe("organization");
 		expect(
-			entries.filter((entry) => entry.group === "integrations").map((entry) => entry.id),
-		).toEqual(["calendar", "developer-access"]);
+			entries
+				.filter((entry) => entry.group === "integrations-channels")
+				.map((entry) => entry.id),
+		).toEqual(["email", "chat-integrations", "calendar", "developer-access"]);
 		const personnel = entries.find((entry) => entry.id === "personnel-files");
 		expect(personnel).toMatchObject({
 			group: "organization",
@@ -477,8 +483,7 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 			"scheduling",
 			"projects",
 			"payroll",
-			"integrations",
-			"data",
+			"integrations-channels",
 		]);
 	});
 
@@ -643,33 +648,15 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
 	});
 
-	describe("Closed months capability (canAccessClosedMonths)", () => {
-		it("shows Closed months to a member or scopedManager with canAccessClosedMonths", () => {
-			for (const access of ["member", "scopedManager"] as const) {
-				const withoutCapability = getResolvedSettingsVisibility({
-					settingsAccess: access,
-					settingsCapabilities: { canAccessClosedMonths: false },
-				});
-				const withCapability = getResolvedSettingsVisibility({
+	describe("Closed months moved out of Settings (#1957)", () => {
+		it("never exposes a Settings entry for closed-months even when canAccessClosedMonths is true", () => {
+			for (const access of [null, "member", "scopedManager", "orgAdmin", "owner"] as const) {
+				const visibility = getResolvedSettingsVisibility({
 					settingsAccess: access,
 					settingsCapabilities: { canAccessClosedMonths: true },
 				});
-
-				expect(withoutCapability.visibleSettings.some((e) => e.id === "closed-months")).toBe(false);
-				expect(withCapability.visibleSettings.some((e) => e.id === "closed-months")).toBe(true);
-				expect(withCapability.visibleGroups.map((g) => g.id)).toContain("payroll");
-				expect(
-					withCapability.visibleSettings.filter((e) => e.id !== "closed-months").map((e) => e.id),
-				).toEqual(withoutCapability.visibleSettings.map((e) => e.id));
+				expect(visibility.visibleSettings.some((e) => e.id === "closed-months")).toBe(false);
 			}
-		});
-
-		it("still hides Closed months when settingsAccess is null", () => {
-			const visibility = getResolvedSettingsVisibility({
-				settingsAccess: null,
-				settingsCapabilities: { canAccessClosedMonths: true },
-			});
-			expect(visibility.visibleSettings.some((e) => e.id === "closed-months")).toBe(false);
 		});
 	});
 
@@ -876,6 +863,58 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 			expect(visibleIds("scopedManager", true)).not.toContain("driving-licence");
 			expect(visibleIds("member", true)).not.toContain("driving-licence");
 			expect(visibleIds(null, true)).not.toContain("driving-licence");
+		});
+	});
+
+	describe("Settings group consolidation & Payroll Connectors rename (#1957, #1958)", () => {
+		it("merges Notifications and Integrations into Integrations & Channels for 10 groups total", async () => {
+			const { SETTINGS_GROUPS } = await import("@/components/settings/settings-config");
+			expect(SETTINGS_GROUPS.map((group) => group.id)).toEqual([
+				"account",
+				"organization",
+				"policies",
+				"time-tracking",
+				"scheduling",
+				"projects",
+				"payroll",
+				"integrations-channels",
+				"compliance",
+				"data",
+			]);
+			expect(SETTINGS_GROUPS).toHaveLength(10);
+			expect(
+				SETTINGS_GROUPS.find((group) => group.id === "integrations-channels"),
+			).toMatchObject({
+				labelKey: "settings.group.integrationsChannels",
+				labelDefault: "Integrations & Channels",
+			});
+
+			const mergedEntries = SETTINGS_ENTRIES.filter(
+				(entry) => entry.group === "integrations-channels",
+			);
+			expect(mergedEntries.map((entry) => entry.id)).toEqual([
+				"email",
+				"chat-integrations",
+				"calendar",
+				"developer-access",
+			]);
+		});
+
+		it("re-titles /settings/payroll-export to Payroll Connectors & Wage Types and keeps core settings entries", () => {
+			const payrollExport = SETTINGS_ENTRIES.find((entry) => entry.id === "payroll-export");
+			expect(payrollExport).toMatchObject({
+				titleKey: "settings.payrollExport.connectorsTitle",
+				titleDefault: "Payroll Connectors & Wage Types",
+				href: "/settings/payroll-export",
+				group: "payroll",
+				minimumAccess: "orgAdmin",
+			});
+
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "payroll-readiness")).toBe(false);
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "closed-months")).toBe(false);
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "employees")).toBe(true);
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "work-diagnostics")).toBe(true);
+			expect(SETTINGS_ENTRIES.some((entry) => entry.id === "export-operations")).toBe(true);
 		});
 	});
 });

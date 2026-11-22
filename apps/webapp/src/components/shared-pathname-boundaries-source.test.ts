@@ -12,7 +12,10 @@ describe("shared pathname consumer boundaries", () => {
 			/<Suspense fallback=\{<SidebarNavigationLoading rows=\{8\} \/>\}>\s*<NavMain[\s\S]*?<\/Suspense>/,
 		);
 		expect(source).toMatch(
-			/<Suspense fallback=\{<SidebarNavigationLoading rows=\{4\} \/>\}>\s*\{isManagerOrAbove\(employeeRole\) && <NavTeam[\s\S]*?<\/Suspense>/,
+			/<Suspense fallback=\{<SidebarNavigationLoading rows=\{4\} \/>\}>\s*\{navTeam\.length > 0 && <NavTeam[\s\S]*?<\/Suspense>/,
+		);
+		expect(source).toMatch(
+			/<Suspense fallback=\{<SidebarNavigationLoading rows=\{4\} \/>\}>\s*\{navOrganization\.length > 0 && \([\s\S]*?<NavOrganization[\s\S]*?<\/Suspense>/,
 		);
 		expect(source).toMatch(
 			/<Suspense fallback=\{<SidebarSecondaryNavigationLoading \/>\}>\s*<NavSecondary className="mt-auto"[\s\S]*?<\/Suspense>/,
@@ -26,16 +29,11 @@ describe("shared pathname consumer boundaries", () => {
 			source.indexOf("function SidebarNavigationLoading"),
 			source.indexOf("export function AppSidebar"),
 		);
-		expect(fallbackSource).not.toMatch(
-			/href|url|capabilit|platform|payroll|settings/i,
-		);
+		expect(fallbackSource).not.toMatch(/href|url|capabilit|platform|payroll|settings/i);
 	});
 
 	it("keeps the resolved app frame visible while the site header resolves", () => {
-		const source = readFileSync(
-			"src/app/[locale]/(app)/app-layout-content.tsx",
-			"utf8",
-		);
+		const source = readFileSync("src/app/[locale]/(app)/app-layout-content.tsx", "utf8");
 
 		expect(source).toMatch(/import \{[^}]*Suspense[^}]*\} from "react"/);
 		expect(source).toContain("function SiteHeaderLoading");
@@ -48,8 +46,6 @@ describe("shared pathname consumer boundaries", () => {
 			source.indexOf("\n}", source.indexOf("function SiteHeaderLoading")) + 2,
 		);
 		expect(fallbackSource).toContain("<Skeleton");
-		expect(fallbackSource).not.toMatch(
-			/user|tenant|organization|pathname|button|link/i,
-		);
+		expect(fallbackSource).not.toMatch(/user|tenant|organization|pathname|button|link/i);
 	});
 });

@@ -71,6 +71,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 		session: { activeOrganizationId: auth.organizationId },
 		employee: { id: auth.employeeId, organizationId: auth.organizationId },
 	}),
+	getCurrentSettingsAccess: async () => null,
 }));
 const {
 	preparePayrollComparison,

@@ -1,19 +1,11 @@
 /**
- * The pages of the Billable Time settings area (#897), in navigation order.
- * Later slices of #768 add theirs here (billable rates #898, cost rates #899,
- * accounting connection #903) and gate each page with
- * `requireBillableTimeSettingsAccess()`.
+ * The configuration pages of the Billable Time settings area (#897, #1956),
+ * in navigation order. Each page is gated with `requireBillableTimeSettingsAccess()`.
  */
 export const BILLABLE_TIME_SETTINGS_PAGES = [
 	{
-		id: "currency",
-		href: "/settings/billable-time",
-		titleKey: "settings.billableTime.nav.currency",
-		titleDefault: "Billable currency",
-	},
-	{
 		id: "rates",
-		href: "/settings/billable-time/rates",
+		href: "/settings/billable-time",
 		titleKey: "settings.billableTime.nav.rates",
 		titleDefault: "Billable rates",
 	},
@@ -28,12 +20,6 @@ export const BILLABLE_TIME_SETTINGS_PAGES = [
 		href: "/settings/billable-time/accounting",
 		titleKey: "settings.billableTime.nav.accounting",
 		titleDefault: "Accounting",
-	},
-	{
-		id: "hand-off",
-		href: "/settings/billable-time/hand-off",
-		titleKey: "settings.billableTime.nav.handOff",
-		titleDefault: "Hand-off",
 	},
 ] as const satisfies readonly {
 	id: string;

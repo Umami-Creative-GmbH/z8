@@ -62,7 +62,7 @@ export function OrganizationTrackingImpact({
 						))}
 					</ul>
 					{impact.blockers.some((blocker) => blocker.kind === "month_closed") ? (
-						<Link href="/settings/closed-months" className="mt-2 inline-block underline">
+						<Link href="/payroll?tab=closed-months" className="mt-2 inline-block underline">
 							{t("organization.tracking.closed-settings", "Open closed-month settings")}
 						</Link>
 					) : null}

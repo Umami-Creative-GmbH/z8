@@ -3,15 +3,7 @@ import { createRequire, registerHooks } from "node:module";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createElement, type ReactNode } from "react";
-import {
-	afterAll,
-	beforeAll,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -22,10 +14,7 @@ vi.mock("react", async () => {
 	const { dirname, join } = await import("node:path");
 	const require = createRequire(import.meta.url);
 	return require(
-		join(
-			dirname(require.resolve("react/package.json")),
-			"cjs/react.react-server.production.js",
-		),
+		join(dirname(require.resolve("react/package.json")), "cjs/react.react-server.production.js"),
 	);
 });
 const boundary = vi.hoisted(() => ({
@@ -48,9 +37,7 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("@/db", async () => {
 	const module = await (
 		await import("@/test/integration-database")
@@ -83,17 +70,11 @@ vi.mock("./app-sidebar", async () => ({
 			"nav",
 			{ "data-employee-role": props.employeeRole },
 			props.capabilitiesUnavailable
-				? createElement(
-						"p",
-						{ role: "status" },
-						"Some navigation is unavailable",
-					)
+				? createElement("p", { role: "status" }, "Some navigation is unavailable")
 				: null,
 			Object.entries(navigationCapabilities)
 				.filter(([, visible]) => visible)
-				.map(([name]) =>
-					createElement("a", { key: name, href: `/${name}` }, name),
-				),
+				.map(([name]) => createElement("a", { key: name, href: `/${name}` }, name)),
 		);
 	},
 }));
@@ -108,19 +89,13 @@ vi.mock("./sidebar-loading", () => ({
 }));
 const { ServerAppSidebar } = await import("./server-app-sidebar");
 const { ServerSidebarRegion } = await import("./server-sidebar-region");
-const { getTimeClockStatus } = await import(
-	"@/app/[locale]/(app)/time-tracking/actions"
-);
+const { getTimeClockStatus } = await import("@/app/[locale]/(app)/time-tracking/actions");
 async function KnownClock() {
 	const status = await getTimeClockStatus();
 	return createElement(
 		"button",
 		{ type: "button", disabled: !status.hasEmployee },
-		status.hasEmployee
-			? status.isClockedIn
-				? "Clock Out"
-				: "Clock In"
-			: "Clock unavailable",
+		status.hasEmployee ? (status.isClockedIn ? "Clock Out" : "Clock In") : "Clock unavailable",
 	);
 }
 const require = createRequire(import.meta.url);
@@ -130,10 +105,7 @@ const serverReact = join(
 );
 const hook = registerHooks({
 	resolve(specifier, context, nextResolve) {
-		if (
-			specifier === "react" &&
-			context.parentURL?.includes("react-server-dom-webpack")
-		)
+		if (specifier === "react" && context.parentURL?.includes("react-server-dom-webpack"))
 			return { url: pathToFileURL(serverReact).href, shortCircuit: true };
 		return nextResolve(specifier, context);
 	},
@@ -202,10 +174,7 @@ function startRegion(actor: Subject | null) {
 function render(actor: Subject | null) {
 	return requests.run(actor, () =>
 		new Response(
-			renderToReadableStream(
-				createElement(ServerAppSidebar, { showWorksCouncilNav: true }),
-				{},
-			),
+			renderToReadableStream(createElement(ServerAppSidebar, { showWorksCouncilNav: true }), {}),
 		).text(),
 	);
 }
@@ -230,68 +199,53 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		expect(output).toContain('"href":"/personnelFiles"');
 		expect(boundary.reads).toBe(1);
 		expect(
-			boundary.queries.filter((query) =>
-				/from "member" inner join "organization"/.test(query),
-			),
+			boundary.queries.filter((query) => /from "member" inner join "organization"/.test(query)),
 		).toHaveLength(1);
-		expect(
-			boundary.queries.filter((query) => query.includes('from "employee"')),
-		).toHaveLength(1);
+		expect(boundary.queries.filter((query) => query.includes('from "employee"'))).toHaveLength(1);
 	});
 	it("hides all equipment navigation while equipment tracking is switched off (#1572)", async () => {
-		await fixture.pool.query(
-			"update organization set equipment_enabled=false where id=$1",
-			[fixture.organizationId],
-		);
+		await fixture.pool.query("update organization set equipment_enabled=false where id=$1", [
+			fixture.organizationId,
+		]);
 		const admin = await fixture.seedEmployee({ role: "admin" });
 		const output = await render(subject(admin.userId));
 		expect(output).not.toContain('"href":"/myEquipment"');
 		expect(output).not.toContain('"href":"/equipment"');
 	});
 	it("offers equipment staff navigation to owners/admins and only self-history to managers and employees", async () => {
-		await fixture.pool.query(
-			"update organization set equipment_enabled=true where id=$1",
-			[fixture.organizationId],
-		);
+		await fixture.pool.query("update organization set equipment_enabled=true where id=$1", [
+			fixture.organizationId,
+		]);
 		for (const role of ["owner", "admin", "manager", "employee"] as const) {
 			const person = await fixture.seedEmployee({
 				role: role === "owner" || role === "admin" ? role : "member",
 			});
 			if (role === "manager")
-				await fixture.pool.query(
-					"update employee set role='manager' where id=$1",
-					[person.employeeId],
-				);
+				await fixture.pool.query("update employee set role='manager' where id=$1", [
+					person.employeeId,
+				]);
 			const output = await render(subject(person.userId));
 			expect(output).toContain('"href":"/myEquipment"');
-			if (role === "owner" || role === "admin")
-				expect(output).toContain('"href":"/equipment"');
+			if (role === "owner" || role === "admin") expect(output).toContain('"href":"/equipment"');
 			else expect(output).not.toContain('"href":"/equipment"');
 		}
 	});
 	it("offers equipment navigation for a current officer grant and removes it on revocation", async () => {
-		await fixture.pool.query(
-			"update organization set equipment_enabled=true where id=$1",
-			[fixture.organizationId],
-		);
+		await fixture.pool.query("update organization set equipment_enabled=true where id=$1", [
+			fixture.organizationId,
+		]);
 		const officer = await fixture.seedEmployee({ role: "member" });
-		expect(await render(subject(officer.userId))).not.toContain(
-			'"href":"/equipment"',
-		);
+		expect(await render(subject(officer.userId))).not.toContain('"href":"/equipment"');
 		await fixture.pool.query(
 			"insert into equipment_officer_grant(organization_id,employee_id,scope) values($1,$2,'all')",
 			[fixture.organizationId, officer.employeeId],
 		);
-		expect(await render(subject(officer.userId))).toContain(
-			'"href":"/equipment"',
-		);
+		expect(await render(subject(officer.userId))).toContain('"href":"/equipment"');
 		await fixture.pool.query(
 			"update equipment_officer_grant set revoked_at=now() where organization_id=$1 and employee_id=$2",
 			[fixture.organizationId, officer.employeeId],
 		);
-		expect(await render(subject(officer.userId))).not.toContain(
-			'"href":"/equipment"',
-		);
+		expect(await render(subject(officer.userId))).not.toContain('"href":"/equipment"');
 	});
 	it("offers presence only for an active own-organization location, using a bounded existence read", async () => {
 		const otherOrg = await fixture.createOrganization();
@@ -308,9 +262,7 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		);
 		boundary.queries = [];
 		expect(await render(subject())).toContain('"href":"/teamPresence"');
-		const locationQueries = boundary.queries.filter((query) =>
-			query.includes('from "location"'),
-		);
+		const locationQueries = boundary.queries.filter((query) => query.includes('from "location"'));
 		expect(locationQueries).toHaveLength(1);
 		expect(locationQueries[0]).not.toContain('"name"');
 		expect(locationQueries[0]).toMatch(/limit \$\d+/);
@@ -324,21 +276,15 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		try {
 			await vi.waitFor(() =>
 				expect(
-					boundary.queries.some((query) =>
-						query.includes('from "payroll_access_grant"'),
-					),
+					boundary.queries.some((query) => query.includes('from "payroll_access_grant"')),
 				).toBe(true),
 			);
 			await vi.waitFor(() =>
 				expect(
-					boundary.queries.some((query) =>
-						query.includes('from "driving_licence_policy"'),
-					),
+					boundary.queries.some((query) => query.includes('from "driving_licence_policy"')),
 				).toBe(true),
 			);
-			expect(
-				boundary.queries.some((query) => query.includes('from "location"')),
-			).toBe(true);
+			expect(boundary.queries.some((query) => query.includes('from "location"'))).toBe(true);
 		} finally {
 			release();
 			boundary.hold = null;
@@ -352,9 +298,7 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		});
 		const pending = startRegion(subject());
 		try {
-			await vi.waitFor(() =>
-				expect(pending.output()).toContain("Loading navigation"),
-			);
+			await vi.waitFor(() => expect(pending.output()).toContain("Loading navigation"));
 			await vi.waitFor(() => expect(pending.output()).toContain("Clock In"));
 			expect(pending.output()).toContain("Protected page content");
 			expect(pending.output()).not.toContain('"href":"/finance"');
@@ -415,14 +359,8 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		const granted = await render(subject(person.userId));
 		for (const name of ["finance", "personnelFiles", "payroll"])
 			expect(granted).toContain(`"href":"/${name}"`);
-		await fixture.pool.query(
-			`update custom_role set is_active=false where id=$1`,
-			[roleId],
-		);
-		for (const table of [
-			"expense_officer_grant",
-			"personnel_file_officer_grant",
-		])
+		await fixture.pool.query(`update custom_role set is_active=false where id=$1`, [roleId]);
+		for (const table of ["expense_officer_grant", "personnel_file_officer_grant"])
 			await fixture.pool.query(
 				`update ${table} set is_active=false where organization_id=$1 and officer_employee_id=$2`,
 				[fixture.organizationId, person.employeeId],
@@ -437,32 +375,22 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 	});
 	it("preserves personnel-file owner access without an employee and skips employee-only capability reads", async () => {
 		const owner = await fixture.seedEmployee({ role: "owner" });
-		await fixture.pool.query(
-			`delete from employee where id=$1 and organization_id=$2`,
-			[owner.employeeId, fixture.organizationId],
-		);
+		await fixture.pool.query(`delete from employee where id=$1 and organization_id=$2`, [
+			owner.employeeId,
+			fixture.organizationId,
+		]);
 		boundary.queries = [];
 		const output = await render(subject(owner.userId));
 		expect(output).toContain('"href":"/personnelFiles"');
 		expect(output).toContain('"href":"/worksCouncil"');
-		for (const name of [
-			"finance",
-			"payroll",
-			"myDocuments",
-			"teamPresence",
-			"periodSubmissions",
-		])
+		for (const name of ["finance", "payroll", "myDocuments", "teamPresence", "periodSubmissions"])
 			expect(output).not.toContain(`"href":"/${name}"`);
-		expect(
-			boundary.queries.some((query) =>
-				query.includes('from "payroll_access_grant"'),
-			),
-		).toBe(false);
-		expect(
-			boundary.queries.some((query) =>
-				query.includes('from "expense_officer_grant"'),
-			),
-		).toBe(false);
+		expect(boundary.queries.some((query) => query.includes('from "payroll_access_grant"'))).toBe(
+			false,
+		);
+		expect(boundary.queries.some((query) => query.includes('from "expense_officer_grant"'))).toBe(
+			false,
+		);
 		expect(boundary.reads).toBe(1);
 	});
 	it("does not run disabled personnel/project capability reads or offer their navigation", async () => {
@@ -476,13 +404,9 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 			expect(output).not.toContain('"href":"/personnelFiles"');
 			expect(output).not.toContain('"href":"/worksCouncil"');
 			expect(
-				boundary.queries.some((query) =>
-					query.includes('from "personnel_file_officer_grant"'),
-				),
+				boundary.queries.some((query) => query.includes('from "personnel_file_officer_grant"')),
 			).toBe(false);
-			expect(
-				boundary.queries.some((query) => query.includes('from "project"')),
-			).toBe(false);
+			expect(boundary.queries.some((query) => query.includes('from "project"'))).toBe(false);
 		} finally {
 			await fixture.pool.query(
 				`update organization set personnel_files_enabled=true,projects_enabled=true,works_council_enabled=true where id=$1`,
@@ -495,15 +419,13 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		async (kind) => {
 			const person = await fixture.seedEmployee({ role: "admin" });
 			if (kind === "inactive")
-				await fixture.pool.query(
-					`update employee set is_active=false where id=$1`,
-					[person.employeeId],
-				);
+				await fixture.pool.query(`update employee set is_active=false where id=$1`, [
+					person.employeeId,
+				]);
 			else
-				await fixture.pool.query(
-					`update member set status='pending' where id=$1`,
-					[person.memberId],
-				);
+				await fixture.pool.query(`update member set status='pending' where id=$1`, [
+					person.memberId,
+				]);
 			const output = await render(subject(person.userId));
 			for (const name of [
 				"finance",
@@ -514,11 +436,9 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 				"periodSubmissions",
 			])
 				expect(output).not.toContain(`"href":"/${name}"`);
-			expect(
-				boundary.queries.some((query) =>
-					query.includes('from "payroll_access_grant"'),
-				),
-			).toBe(false);
+			expect(boundary.queries.some((query) => query.includes('from "payroll_access_grant"'))).toBe(
+				false,
+			);
 		},
 	);
 	it("recovers a failed payroll capability on a fresh sidebar render without retaining failure state", async () => {
@@ -528,15 +448,42 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		);
 		boundary.fail = true;
 		try {
-			expect(await startRegion(subject()).completion).not.toContain(
-				'"href":"/payroll"',
-			);
+			expect(await startRegion(subject()).completion).not.toContain('"href":"/payroll"');
 		} finally {
 			boundary.fail = false;
 		}
 		const recovered = await startRegion(subject()).completion;
 		expect(recovered).toContain('"href":"/payroll"');
 		expect(recovered).not.toContain("Some navigation is unavailable");
+	});
+	it("offers driving-licence verifier navigation for an active grant and removes it on revocation (#1953)", async () => {
+		const verifier = await fixture.seedEmployee({ role: "member" });
+		await fixture.pool.query(
+			`insert into driving_licence_policy (organization_id,enabled,interval_months,timezone,reminder_lead_days,retention_months,retention_justification,updated_at,updated_by)
+			 values ($1,true,6,'Europe/Berlin','[14]'::jsonb,36,'Legal compliance retention',now(),$2)
+			 on conflict (organization_id) do update set enabled=true,retention_months=36,retention_justification='Legal compliance retention',updated_at=now(),updated_by=$2`,
+			[fixture.organizationId, fixture.ownerUserId],
+		);
+		try {
+			expect(await render(subject(verifier.userId))).not.toContain('"href":"/teamDrivingLicence"');
+			await fixture.pool.query(
+				`insert into driving_licence_verifier_grant (organization_id,verifier_employee_id,scope,granted_by) values ($1,$2,'all',$3)`,
+				[fixture.organizationId, verifier.employeeId, fixture.ownerUserId],
+			);
+			const granted = await render(subject(verifier.userId));
+			expect(granted).toContain('"href":"/teamDrivingLicence"');
+			expect(granted).not.toContain('"href":"/compliance"');
+			await fixture.pool.query(
+				`update driving_licence_verifier_grant set revoked_at=now(),revoked_by=$3 where organization_id=$1 and verifier_employee_id=$2`,
+				[fixture.organizationId, verifier.employeeId, fixture.ownerUserId],
+			);
+			expect(await render(subject(verifier.userId))).not.toContain('"href":"/teamDrivingLicence"');
+		} finally {
+			await fixture.pool.query(
+				`update driving_licence_policy set enabled=false where organization_id=$1`,
+				[fixture.organizationId],
+			);
+		}
 	});
 	it("isolates simultaneous user/organization capability results without sharing another render's grants", async () => {
 		const otherOrg = await fixture.createOrganization();

@@ -64,9 +64,11 @@ const { db } = await import("@/db");
 const { DatabaseService, makeDatabaseService } = await import(
 	"@/lib/effect/services/database.service"
 );
-const { getTeamPerformanceData, getWorkHoursAnalyticsData } = await import(
-	"@/app/[locale]/(app)/analytics/actions"
-);
+const {
+	getOvertimeBurnDownData,
+	getTeamPerformanceData,
+	getWorkHoursAnalyticsData,
+} = await import("@/app/[locale]/(app)/analytics/actions");
 const range = {
 	start: new Date("2026-03-02T00:00:00Z"),
 	end: new Date("2026-03-08T23:59:59.999Z"),
@@ -180,6 +182,55 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 			);
 		});
 	}
+	it("allows an org admin without an employee record to load recent analytics org-wide (#1955)", async () => {
+		const userId = `u-org-admin-no-emp-${randomUUID().slice(0, 8)}`;
+		const memberId = `m-org-admin-no-emp-${randomUUID().slice(0, 8)}`;
+		await fixture.pool.query(
+			`insert into "user" (id,name,email,email_verified,created_at,updated_at) values ($1,'Org Admin Only',$2,true,now(),now())`,
+			[userId, `${userId}@example.test`],
+		);
+		await fixture.pool.query(
+			`insert into member (id,organization_id,user_id,role,status,created_at) values ($1,$2,$3,'admin','approved',now())`,
+			[memberId, fixture.organizationId, userId],
+		);
+		try {
+			caller.userId = userId;
+			caller.organizationId = fixture.organizationId;
+
+			expect(await getTeamPerformanceData(range)).toMatchObject({
+				success: true,
+			});
+			expect(await getWorkHoursAnalyticsData(range)).toMatchObject({
+				success: true,
+			});
+			expect(await getOvertimeBurnDownData(range)).toMatchObject({
+				success: true,
+			});
+
+			const { loadRecentAnalyticsIdentity } = await import(
+				"@/lib/analytics/recent-identity"
+			);
+			const prepared = await Effect.runPromise(
+				loadRecentAnalyticsIdentity(
+					{
+						id: null,
+						userId,
+						organizationId: fixture.organizationId,
+						role: "admin",
+					},
+					{ kind: "team", dateRange: range },
+				).pipe(
+					Effect.provide(Layer.succeed(DatabaseService, makeDatabaseService(db))),
+				),
+			);
+			expect(prepared.identity.actorEmployeeId).toBeNull();
+			expect(prepared.identity.scope).toEqual({ role: "admin" });
+			expect(prepared.identity.revision).toMatch(/^[0-9a-f]{32}$/);
+		} finally {
+			await fixture.pool.query(`delete from member where id=$1`, [memberId]);
+			await fixture.pool.query(`delete from "user" where id=$1`, [userId]);
+		}
+	});
 	it("denies a revoked organization membership before retrieving or looking up analytics", async () => {
 		const manager = await fixture.seedEmployee();
 		await fixture.pool.query(`update employee set role='manager' where id=$1`, [
@@ -285,7 +336,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		queries.length = 0;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: false,
-			code: "NotFoundError",
+			code: "AuthorizationError",
 		});
 		expect(
 			queries.some(
@@ -305,7 +356,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		queries.length = 0;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: false,
-			code: "NotFoundError",
+			code: "AuthorizationError",
 		});
 		expect(
 			queries.some((text) => text.includes("with visible as materialized")),

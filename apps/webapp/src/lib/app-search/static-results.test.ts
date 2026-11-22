@@ -69,21 +69,23 @@ describe("buildStaticAppSearchResults", () => {
 		]);
 	});
 
-	it("shows Closed months in app search for an org member with canAccessClosedMonths", () => {
+	it("omits removed /settings/closed-months even when canAccessClosedMonths is set (#1957)", () => {
 		const results = buildStaticAppSearchResults({
 			t,
 			employeeRole: "employee",
 			settingsAccess: "member",
 			billingEnabled: true,
 			showComplianceNav: false,
+			showPayrollNav: true,
 			featureFlags: enabledFeatures,
 			settingsCapabilities: { canAccessClosedMonths: true },
 		});
 
-		expect(results.find((result) => result.href === "/settings/closed-months")).toMatchObject({
-			type: "setting",
-			title: "Closed months",
+		expect(results.find((result) => result.href === "/payroll")).toMatchObject({
+			type: "page",
+			title: "Payroll",
 		});
+		expect(results.some((result) => result.href === "/settings/closed-months")).toBe(false);
 		expect(results.some((result) => result.href === "/settings/organization")).toBe(false);
 	});
 
@@ -314,5 +316,24 @@ describe("buildStaticAppSearchResults", () => {
 
 		const ids = results.map((result) => result.id);
 		expect(new Set(ids).size).toBe(ids.length);
+	});
+
+	it("indexes /settings/payroll-export as Payroll Connectors & Wage Types and omits removed payroll settings (#1957, #1958)", () => {
+		const results = buildStaticAppSearchResults({
+			t,
+			employeeRole: "admin",
+			settingsAccess: "orgAdmin",
+			billingEnabled: true,
+			showComplianceNav: true,
+			featureFlags: enabledFeatures,
+		});
+
+		expect(results.find((result) => result.href === "/settings/payroll-export")).toMatchObject({
+			type: "setting",
+			id: "setting:payroll-export",
+			title: "Payroll Connectors & Wage Types",
+		});
+		expect(results.some((result) => result.href === "/settings/payroll-readiness")).toBe(false);
+		expect(results.some((result) => result.href === "/settings/closed-months")).toBe(false);
 	});
 });

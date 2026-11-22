@@ -418,7 +418,7 @@ describe("manager daily briefing logic", () => {
 				severity: "warning",
 				title: "B item",
 				description: "",
-				href: "/settings/payroll-readiness",
+				href: "/payroll",
 			},
 			{
 				id: "1",

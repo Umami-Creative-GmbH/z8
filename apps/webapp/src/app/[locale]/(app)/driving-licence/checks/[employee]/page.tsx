@@ -6,7 +6,7 @@ interface LegacyDrivingLicenceCheckPageProps {
 }
 
 /**
- * The check page moved to Team & organization (#1937). Reminder emails and inbox items sent
+ * The check page moved to Organization (#1937, #1953). Reminder emails and inbox items sent
  * before the move still link here, so this route permanently redirects. The new route applies
  * the same access check; this one reveals nothing.
  */

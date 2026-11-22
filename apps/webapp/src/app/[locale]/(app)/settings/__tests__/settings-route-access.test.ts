@@ -33,7 +33,6 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"export/page.tsx",
 	"export/history/[organizationId]/page.tsx",
 	"payroll-export/page.tsx",
-	"payroll-readiness/page.tsx",
 	"work-diagnostics/page.tsx",
 	"audit-export/page.tsx",
 	"demo/page.tsx",
@@ -108,7 +107,7 @@ describe("org-admin settings route access", () => {
 		expect(managerAccess).toBe("scopedManager");
 		expect(visibleHrefs.has("/settings/organization")).toBe(false);
 		expect(visibleHrefs.has("/settings/teams")).toBe(true);
-		expect(visibleHrefs.has("/settings/statistics")).toBe(true);
+		expect(visibleHrefs.has("/settings/statistics")).toBe(false);
 		expect(visibleHrefs.has("/settings/employees")).toBe(true);
 		expect(visibleHrefs.has("/settings/locations")).toBe(true);
 		expect(visibleHrefs.has("/settings/skills")).toBe(true);
@@ -583,17 +582,25 @@ describe("org-admin settings route access", () => {
 		expect(source).not.toContain("requireOrganizationFeatureEnabled(");
 	});
 
-	it("gates the Billable Time settings pages on org admins and the module flag", () => {
+	it("gates the Billable Time settings pages and top-level Hand-off workspace on org admins and the module flag", () => {
 		for (const page of [
-			"billable-time/page.tsx",
-			"billable-time/rates/page.tsx",
-			"billable-time/cost-rates/page.tsx",
-			"billable-time/accounting/page.tsx",
-			"billable-time/hand-off/page.tsx",
+			join(SETTINGS_ROOT, "billable-time/page.tsx"),
+			join(SETTINGS_ROOT, "billable-time/cost-rates/page.tsx"),
+			join(SETTINGS_ROOT, "billable-time/accounting/page.tsx"),
+			join(SETTINGS_ROOT, "../billable-time/hand-off/page.tsx"),
 		]) {
-			const source = stripComments(readTestText(join(SETTINGS_ROOT, page), "utf8"));
+			const source = stripComments(readTestText(page, "utf8"));
 
 			expect(source.includes("requireBillableTimeSettingsAccess("), page).toBe(true);
+		}
+		for (const [legacyPage, target] of [
+			["billable-time/rates/page.tsx", 'redirectWithLocale("/settings/billable-time")'],
+			["billable-time/hand-off/page.tsx", 'redirectWithLocale("/billable-time/hand-off")'],
+		] as const) {
+			const source = stripComments(
+				readTestText(join(SETTINGS_ROOT, legacyPage), "utf8"),
+			);
+			expect(source.includes(target), legacyPage).toBe(true);
 		}
 	});
 

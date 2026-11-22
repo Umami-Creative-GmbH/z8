@@ -1,25 +1,19 @@
-import { IconCar } from "@tabler/icons-react";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ReportsContainer } from "@/components/reports/reports-container";
-import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee } from "./actions";
 
 async function ReportsPageContent() {
 	// Auth is checked in layout
-	const [t, employee] = await Promise.all([
-		getTranslate(),
-		getCurrentEmployee(),
-	]);
+	const [t, employee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
 
 	if (!employee) {
 		return (
-			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+			<div className="flex min-w-0 flex-1 flex-col gap-6">
 				<PageHeader title={t("reports.title", "Employee Reports")} />
 				<div className="flex flex-1 items-center justify-center">
 					<NoEmployeeError feature={t("reports.feature", "generate reports")} />
@@ -29,7 +23,7 @@ async function ReportsPageContent() {
 	}
 
 	return (
-		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+		<div className="flex min-w-0 flex-1 flex-col gap-6">
 			{/* Page Header */}
 			<PageHeader
 				title={t("reports.title", "Employee Reports")}
@@ -37,14 +31,6 @@ async function ReportsPageContent() {
 					"reports.description",
 					"Generate comprehensive work hour and absence reports with tax-relevant home office data",
 				)}
-				actions={
-					<Button asChild variant="outline">
-						<Link href="/reports/vehicles">
-							<IconCar className="mr-2 size-4" aria-hidden="true" />
-							{t("reports.vehicles.title", "Distance per Vehicle")}
-						</Link>
-					</Button>
-				}
 			/>
 
 			{/* Reports Container */}
@@ -64,7 +50,7 @@ function ReportsPageLoading() {
 				labelKey: "common.loadingRegions.employeeReports",
 				labelDefault: "Loading employee reports",
 			}}
-			className="@container/main page-frame flex flex-1 flex-col gap-6"
+			className="flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
 			<div className="space-y-3">

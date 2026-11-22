@@ -108,9 +108,7 @@ describe("SettingsNav", () => {
 			</SidebarProvider>,
 		);
 
-		expect(screen.getByRole("link", { name: "Closed months" }).getAttribute("href")).toBe(
-			"/settings/closed-months",
-		);
+		expect(screen.queryByRole("link", { name: "Closed months" })).toBeNull();
 		expect(screen.getByRole("link", { name: "Approval" }).getAttribute("href")).toBe(
 			"/settings/approval-policies",
 		);

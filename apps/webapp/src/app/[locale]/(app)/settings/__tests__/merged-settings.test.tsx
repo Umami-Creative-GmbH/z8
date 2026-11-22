@@ -482,29 +482,16 @@ describe("merged organization settings", () => {
 			organizationId: "org-1",
 		});
 	});
-	it("renders all nine payroll export tabs on SettingsTabbedPage with smart default", async () => {
-		const unconfigured = await content(PayrollExportPage);
-		expect(unconfigured.key).toBe("org-1");
-		expect(unconfigured.props.measure).toBe(true);
-		expect(unconfigured.props.defaultTab).toBe("datev");
-		expect(tabs(unconfigured)).toEqual([
-			"export",
-			"datev",
-			"lexware",
-			"sage",
-			"personio",
-			"successfactors",
-			"workday",
-			"mappings",
-			"history",
-		]);
-		expect(unconfigured.props.tabs[8].panel.props).toMatchObject({
-			organizationTimezone: "Europe/Berlin",
-		});
-
-		mocks.datev.mockResolvedValue({ success: true, data: { id: "datev-1" } });
-		const configured = await content(PayrollExportPage);
-		expect(configured.props.defaultTab).toBe("export");
+	it("renders Payroll Connectors & Wage Types with connector configs and a Payroll workspace link (#1958)", async () => {
+		const page = await content(PayrollExportPage);
+		expect(page.props.className).toContain("page-frame");
+		expect(mocks.datev).toHaveBeenCalledTimes(1);
+		expect(mocks.lexware).toHaveBeenCalledTimes(1);
+		expect(mocks.sage).toHaveBeenCalledTimes(1);
+		expect(mocks.personio).toHaveBeenCalledTimes(1);
+		expect(mocks.successfactors).toHaveBeenCalledTimes(1);
+		expect(mocks.workday).toHaveBeenCalledTimes(1);
+		expect(mocks.payrollIdentifierFields).toHaveBeenCalledTimes(1);
 	});
 	it("mounts travel expense settings tabs scoped to the active organization", async () => {
 		const page = await content(TravelExpensesPage);
