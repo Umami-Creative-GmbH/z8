@@ -174,6 +174,13 @@ export interface EmployeeDepartureJobData {
 	revision: number;
 }
 
+/** Asynchronous execution of a durable contract change batch (> 200 items, #1928). */
+export interface ContractChangeBatchJobData {
+	type: "contract-change-batch";
+	batchId: string;
+	organizationId: string;
+}
+
 export type ImportReviewScanQueueJobData =
 	| ImportScanJobData
 	| AccountingCustomerScanJobData
@@ -195,6 +202,7 @@ export type JobData =
 	| OrganizationDeletionNotificationJobData
 	| AuditPackJobData
 	| EmployeeDepartureJobData
+	| ContractChangeBatchJobData
 	| ImportReviewScanQueueJobData
 	| ImportReviewCommitQueueJobData;
 
@@ -351,6 +359,24 @@ export async function addAuditPackJob(
 		"process-audit-pack",
 		{ ...data, type: "audit-pack" },
 		{ priority: 4 },
+	);
+}
+
+/**
+ * Add an async contract change batch job (`contract-change-batch-${batchId}`, #1928).
+ */
+export async function addContractChangeBatchJob(
+	data: Omit<ContractChangeBatchJobData, "type">,
+): Promise<Job<JobData, JobResult>> {
+	return addJob(
+		"contract-change-batch",
+		{ ...data, type: "contract-change-batch" },
+		{
+			jobId: `contract-change-batch-${data.batchId}`,
+			priority: 4,
+			attempts: 3,
+			backoff: { type: "exponential", delay: 2000 },
+		},
 	);
 }
 

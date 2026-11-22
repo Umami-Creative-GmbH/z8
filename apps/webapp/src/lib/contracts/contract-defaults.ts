@@ -33,6 +33,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
 	type ContractWriteTx,
@@ -519,8 +520,7 @@ export async function scheduleContractDefaultInTx(
 		.from(employee)
 		.where(
 			and(
-				eq(employee.organizationId, input.organizationId),
-				eq(employee.isActive, true),
+				onCurrentRoster(input.organizationId),
 				...(validated.scope === "team" && validated.teamId
 					? [eq(employee.teamId, validated.teamId)]
 					: []),
@@ -705,8 +705,7 @@ export async function previewContractDefaultChange(
 		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 		.where(
 			and(
-				eq(employee.organizationId, input.organizationId),
-				eq(employee.isActive, true),
+				onCurrentRoster(input.organizationId),
 				...(validated.scope === "team" && validated.teamId
 					? [eq(employee.teamId, validated.teamId)]
 					: []),

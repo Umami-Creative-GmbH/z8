@@ -244,6 +244,25 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				return { success: true, message: `Employee departure ${outcome.status}` };
 			}
 
+			case "contract-change-batch": {
+				const { processContractChangeBatchJob } = await import(
+					"@/lib/jobs/contract-change-batches"
+				);
+				const outcome = await processContractChangeBatchJob({
+					batchId: job.data.batchId,
+					organizationId: job.data.organizationId,
+				});
+				return {
+					success: outcome.batch.status !== "failed",
+					message: `Contract change batch ${outcome.batch.status}`,
+					data: {
+						batchId: outcome.batchId,
+						status: outcome.batch.status,
+						processedInThisRun: outcome.processedInThisRun,
+					},
+				};
+			}
+
 			case "payroll-export": {
 				const { processExportJob } = await import("@/lib/payroll-export");
 				await processExportJob({
