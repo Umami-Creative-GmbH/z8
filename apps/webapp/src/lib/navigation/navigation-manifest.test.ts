@@ -153,7 +153,18 @@ describe("navigation manifest", () => {
 			"/team/period-submissions",
 			"/scheduling",
 			"/approvals/inbox",
+			"/analytics",
 		]);
+
+		// Org admin without an employee record sees Analytics in Team (#1955)
+		expect(
+			buildTeamNav(
+				t,
+				{ ...NO_CAPABILITIES, analytics: undefined },
+				null,
+				{ settingsAccessTier: "orgAdmin" },
+			).map((item) => item.url),
+		).toEqual(["/analytics"]);
 
 		expect(
 			buildOrganizationNav(t, ALL_CAPABILITIES, "admin", navOptions).map((item) => item.url),
@@ -254,6 +265,8 @@ describe("navigation manifest", () => {
 			showComplianceNav: true,
 		});
 		expect(orgAdminNoEmployee.some((r) => r.href === "/team/driving")).toBe(true);
+		expect(orgAdminNoEmployee.some((r) => r.type === "page" && r.href === "/analytics")).toBe(true);
+		expect(orgAdminNoEmployee.some((r) => r.href === "/settings/statistics")).toBe(false);
 
 		const serverDeniedOverride = buildStaticAppSearchResults({
 			t,

@@ -462,7 +462,8 @@ describe("app sidebar compliance navigation", () => {
 
 		const teamUrls = navTeamSpy.mock.lastCall?.[0].map((item: { url: string }) => item.url) ?? [];
 		expect(teamUrls[0]).toBe("/today");
-		expect(teamUrls.at(-1)).toBe("/approvals/inbox");
+		expect(teamUrls.at(-2)).toBe("/approvals/inbox");
+		expect(teamUrls.at(-1)).toBe("/analytics");
 		expect(teamUrls).not.toContain("/team/driving-licence");
 		expect(navOrganizationSpy.mock.lastCall?.[0].map((item: { url: string }) => item.url)).toEqual([
 			"/team/driving-licence",
@@ -1882,7 +1883,14 @@ describe("app sidebar compliance navigation", () => {
 			role: "manager" as const,
 			tier: "manager" as const,
 			grants: { shiftsEnabled: true },
-			expectedTeam: ["/today", "/team", "/team/absences", "/scheduling", "/approvals/inbox"],
+			expectedTeam: [
+				"/today",
+				"/team",
+				"/team/absences",
+				"/scheduling",
+				"/approvals/inbox",
+				"/analytics",
+			],
 			expectedOrg: null,
 		},
 		{
@@ -1890,7 +1898,14 @@ describe("app sidebar compliance navigation", () => {
 			role: "admin" as const,
 			tier: "manager" as const,
 			grants: { shiftsEnabled: true },
-			expectedTeam: ["/today", "/team", "/team/absences", "/scheduling", "/approvals/inbox"],
+			expectedTeam: [
+				"/today",
+				"/team",
+				"/team/absences",
+				"/scheduling",
+				"/approvals/inbox",
+				"/analytics",
+			],
 			expectedOrg: null,
 		},
 		{
@@ -1903,7 +1918,7 @@ describe("app sidebar compliance navigation", () => {
 				equipment: true,
 				worksCouncil: true,
 			},
-			expectedTeam: ["/today", "/team", "/team/absences", "/approvals/inbox"],
+			expectedTeam: ["/today", "/team", "/team/absences", "/approvals/inbox", "/analytics"],
 			expectedOrg: [
 				"/travel-expenses/finance",
 				"/personnel-files",
@@ -1923,7 +1938,7 @@ describe("app sidebar compliance navigation", () => {
 				equipment: true,
 				worksCouncil: true,
 			},
-			expectedTeam: ["/today", "/team", "/team/absences", "/approvals/inbox"],
+			expectedTeam: ["/today", "/team", "/team/absences", "/approvals/inbox", "/analytics"],
 			expectedOrg: [
 				"/payroll",
 				"/travel-expenses/finance",
@@ -1942,7 +1957,7 @@ describe("app sidebar compliance navigation", () => {
 				equipment: true,
 				worksCouncil: true,
 			},
-			expectedTeam: null,
+			expectedTeam: ["/analytics"],
 			expectedOrg: ["/personnel-files", "/equipment", "/compliance", "/works-council"],
 		},
 		{

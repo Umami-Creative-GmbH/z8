@@ -285,7 +285,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		queries.length = 0;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: false,
-			code: "NotFoundError",
+			code: "AuthorizationError",
 		});
 		expect(
 			queries.some(
@@ -305,7 +305,7 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		queries.length = 0;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: false,
-			code: "NotFoundError",
+			code: "AuthorizationError",
 		});
 		expect(
 			queries.some((text) => text.includes("with visible as materialized")),

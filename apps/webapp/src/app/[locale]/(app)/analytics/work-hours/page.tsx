@@ -170,7 +170,7 @@ function WorkHours() {
 						"Failed to load work hours analytics data",
 					),
 				);
-				if (background) throw new Error("Team performance refresh failed");
+				if (background) throw new Error("Work hours refresh failed");
 			}
 		},
 		[dateRange, isHydrated, timezone, t, requestKey],

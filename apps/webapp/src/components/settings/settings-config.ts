@@ -817,17 +817,6 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "data",
 	},
 	{
-		id: "statistics",
-		titleKey: "settings.statistics.title",
-		titleDefault: "Statistics",
-		descriptionKey: "settings.statistics.healthCardDescription",
-		descriptionDefault: "See what needs attention, this month's figures and how well tracking is set up",
-		href: "/settings/statistics",
-		icon: "chart-bar",
-		minimumTier: "manager",
-		group: "data",
-	},
-	{
 		id: "demo-data",
 		titleKey: "settings.demoData.title",
 		titleDefault: "Demo Data",

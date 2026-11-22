@@ -95,7 +95,6 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings/security",
 	"/settings/shifts",
 	"/settings/skills",
-	"/settings/statistics",
 	"/settings/surcharges",
 	"/settings/teams",
 	"/settings/travel-expenses",

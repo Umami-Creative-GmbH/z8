@@ -108,7 +108,12 @@ export async function ServerAppSidebar({
 						employee: activeEmployee,
 					}),
 				),
-				analytics: activeEmployee?.role === "admin" || activeEmployee?.role === "manager",
+				analytics:
+					Boolean(activeOrganizationId) &&
+					(settingsAccessTier === "orgAdmin" ||
+						settingsAccessTier === "manager" ||
+						activeEmployee?.role === "admin" ||
+						activeEmployee?.role === "manager"),
 				projectReports:
 					featureFlags.projectsEnabled &&
 					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId) &&

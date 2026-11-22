@@ -572,8 +572,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/reports/page.tsx",
 		fallbackComponent: "ReportsPageLoading",
 		contentComponent: "ReportsPageContent",
-		fallbackFrameClass:
-			"@container/main page-frame flex flex-1 flex-col gap-6",
+		fallbackFrameClass: "flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading employee reports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -581,7 +580,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/reports/projects/page.tsx",
 		fallbackComponent: "ProjectReportsPageLoading",
 		contentComponent: "ProjectReportsPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6",
+		fallbackFrameClass: "flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading project reports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -589,8 +588,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/reports/vehicles/page.tsx",
 		fallbackComponent: "VehicleDistanceReportPageLoading",
 		contentComponent: "VehicleDistanceReportPageContent",
-		fallbackFrameClass:
-			"@container/main page-frame flex flex-1 flex-col gap-6",
+		fallbackFrameClass: "flex min-w-0 flex-1 flex-col gap-6",
 		fallbackAriaLabel: "Loading the distance per vehicle report",
 		requiresSynchronousDefaultExport: true,
 	},

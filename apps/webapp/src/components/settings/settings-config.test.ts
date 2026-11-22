@@ -62,7 +62,7 @@ describe("settings visibility tiers", () => {
 
 		expect(entries.some((entry) => entry.id === "teams")).toBe(true);
 		expect(entries.some((entry) => entry.id === "organizations")).toBe(false);
-		expect(entries.some((entry) => entry.id === "statistics")).toBe(true);
+		expect(entries.some((entry) => entry.id === "statistics")).toBe(false);
 		expect(entries.some((entry) => entry.id === "calendar")).toBe(true);
 		expect(entries.some((entry) => entry.id === "change-policies")).toBe(false);
 		expect(entries.some((entry) => entry.id === "employees")).toBe(true);
@@ -466,7 +466,6 @@ describe("settings visibility tiers", () => {
 			"projects",
 			"payroll",
 			"integrations",
-			"data",
 		]);
 	});
 

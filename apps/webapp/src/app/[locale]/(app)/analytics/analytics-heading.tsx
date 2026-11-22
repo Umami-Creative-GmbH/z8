@@ -49,12 +49,12 @@ export function AnalyticsHeading(props: ComponentProps<typeof PageHeader>) {
 			<PageHeader
 				{...props}
 				scope={props.title}
-				title={t("analytics.layout.tabs.vacationTrends", "Vacation Trends")}
+				title={t("analytics.layout.tabs.absencesAndVacation", "Absences & Vacation")}
 				description={
 					props.description
 						? t(
 								"analytics.vacationTrends.description",
-								"Compare vacation usage and employee balances for the selected organization period.",
+								"Compare vacation usage, employee balances, and absence patterns for the selected organization period.",
 							)
 						: undefined
 				}

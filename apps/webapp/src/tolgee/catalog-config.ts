@@ -126,7 +126,8 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/payroll/work-balances": ["common", "payroll", "settings/people"],
 	// Main app routes
 	"/": ["common", "dashboard"],
-	"/analytics": ["common", "analytics"],
+	// settings/generic: merged health monitoring sections and scope labels from /settings/statistics (#1955).
+	"/analytics": ["common", "analytics", "settings/generic"],
 	"/calendar": ["common", "calendar", "timeTracking"],
 	// settings/people: sick notes reuse the personnel file document list (#982).
 	"/absences": ["common", "calendar", "settings/people"],

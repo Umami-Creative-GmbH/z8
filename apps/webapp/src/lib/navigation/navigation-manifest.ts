@@ -72,7 +72,7 @@ export interface NavigationCapabilities {
 	teamDrivingLicence?: boolean;
 	/** Missing vehicle logs queue visibility (resolved from drivingDetailsTeamScope on the server). */
 	missingVehicleLogs?: boolean;
-	/** Analytics workspace visibility (managers/admins; expanded to org admins in #1955). */
+	/** Analytics workspace visibility (managers, workforce admins, and org admins including employee-less org admins; #1955). */
 	analytics?: boolean;
 	/** Project reports visibility (projectsEnabled and project-report viewer access). */
 	projectReports?: boolean;
@@ -139,7 +139,11 @@ function canViewAnalytics(ctx: NavigationAccessContext): boolean {
 	if (ctx.navigationCapabilities.analytics !== undefined) {
 		return ctx.navigationCapabilities.analytics;
 	}
-	return isManagerOrAdmin(ctx.employeeRole);
+	return (
+		ctx.settingsAccessTier === "orgAdmin" ||
+		ctx.settingsAccessTier === "manager" ||
+		isManagerOrAdmin(ctx.employeeRole)
+	);
 }
 
 function canViewProjectReports(ctx: NavigationAccessContext): boolean {
@@ -396,6 +400,23 @@ export const APP_NAVIGATION_MANIFEST: readonly NavigationManifestEntry[] = [
 		cmdK: { include: true },
 		isVisible: (ctx) => isManagerOrAdmin(ctx.employeeRole),
 	},
+	{
+		id: "analytics",
+		href: "/analytics",
+		titleKey: "nav.analytics",
+		titleDefault: "Analytics",
+		icon: IconChartBar,
+		sidebarSection: "team",
+		ownsHeading: true,
+		ownedHeadingSubpaths: [
+			"/analytics/overtime-burn-down",
+			"/analytics/team-performance",
+			"/analytics/work-hours",
+			"/analytics/vacation-trends",
+		],
+		cmdK: { include: true },
+		isVisible: canViewAnalytics,
+	},
 
 	// ── Organization & specialist officer consoles ───────────────────────────
 	{
@@ -510,23 +531,6 @@ export const APP_NAVIGATION_MANIFEST: readonly NavigationManifestEntry[] = [
 			],
 		},
 		isVisible: canViewMissingVehicleLogs,
-	},
-	{
-		id: "analytics",
-		href: "/analytics",
-		titleKey: "nav.analytics",
-		titleDefault: "Analytics",
-		icon: IconChartBar,
-		sidebarSection: "none",
-		ownsHeading: true,
-		ownedHeadingSubpaths: [
-			"/analytics/overtime-burn-down",
-			"/analytics/team-performance",
-			"/analytics/work-hours",
-			"/analytics/vacation-trends",
-		],
-		cmdK: { include: true },
-		isVisible: canViewAnalytics,
 	},
 	{
 		id: "reports-projects",
