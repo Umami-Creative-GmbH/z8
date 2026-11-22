@@ -58,4 +58,12 @@ describe("ProgressIndicator", () => {
 		expect(label.className).toContain("sr-only");
 		expect(label.className).toContain("sm:not-sr-only");
 	});
+
+	it("does not guess admin status from admin-only step slugs when isAdmin and provider are omitted", () => {
+		render(<ProgressIndicator currentStep="vacation_policy" />);
+
+		expect(screen.getAllByRole("listitem")).toHaveLength(6);
+		expect(screen.queryByText("Vacation")).toBeNull();
+		expect(screen.queryByText("Templates")).toBeNull();
+	});
 });

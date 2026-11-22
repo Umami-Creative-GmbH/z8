@@ -133,7 +133,7 @@ const checklist = {
 				"Configure public holidays and closing days used by absence and payroll workflows.",
 			helperText: "Z8 checks for active holiday presets, assignments, or custom holidays.",
 			actionLabel: "Configure holidays",
-			href: "/settings/holidays",
+			href: "/settings/vacation?tab=holidays",
 			detector: "automatic",
 			canManualComplete: false,
 			role: "informational",
@@ -271,7 +271,7 @@ describe("ImplementationChecklistClient", () => {
 			"/settings/organization",
 		);
 		expect(screen.getByRole("link", { name: "Configure holidays" }).getAttribute("href")).toBe(
-			"/settings/holidays",
+			"/settings/vacation?tab=holidays",
 		);
 		expect(screen.getByRole("button", { name: "Mark complete" })).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Mark incomplete" })).toBeNull();

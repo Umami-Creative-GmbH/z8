@@ -1,4 +1,5 @@
 import "./glass-panels.css";
+import { Effect } from "effect";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AuthBackgroundImage } from "@/components/auth-background-image";
@@ -6,10 +7,14 @@ import { selectRandomAuthBackgroundImage } from "@/components/auth-background-im
 import { FontSizeToggle } from "@/components/font-size-toggle";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { OnboardingProgressProvider } from "@/components/onboarding/onboarding-progress-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { pageSafeAreaPaddingClassName } from "@/components/ui/safe-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getRequestSession } from "@/lib/auth/request-session";
+import { runServerActionSafe } from "@/lib/effect/result";
+import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
 export default function OnboardingLayout({
@@ -38,40 +43,48 @@ function OnboardingLayoutLoading() {
 				labelDefault: "Loading onboarding",
 			}}
 		>
-			<div className={`flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}>
+			<div
+				className={`flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}
+			>
 				<div className="flex justify-end gap-2">
 					<Skeleton aria-hidden="true" className="size-9 rounded-md" />
 					<Skeleton aria-hidden="true" className="size-9 rounded-md" />
 					<Skeleton aria-hidden="true" className="h-9 w-28 rounded-md" />
 				</div>
 				<main className="flex flex-1 items-center justify-center py-8 sm:py-10">
-					<Skeleton
-						aria-hidden="true"
-						className="h-[30rem] w-full max-w-5xl rounded-xl"
-					/>
+					<Skeleton aria-hidden="true" className="h-[30rem] w-full max-w-5xl rounded-xl" />
 				</main>
-				<Skeleton
-					aria-hidden="true"
-					className="mx-auto mb-3 h-4 w-64 max-w-full"
-				/>
+				<Skeleton aria-hidden="true" className="mx-auto mb-3 h-4 w-64 max-w-full" />
 			</div>
 		</LoadingRegion>
 	);
 }
 
-async function OnboardingLayoutContent({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
-	// Random onboarding backgrounds must be selected per request.
+async function OnboardingLayoutContent({ children }: { children: React.ReactNode }) {
+	// Random onboarding backgrounds and authoritative org-admin state must resolve per request.
 	await connection();
 	const backgroundImage = selectRandomAuthBackgroundImage();
+	const session = await getRequestSession();
+	const initialUserId = session?.user?.id ?? null;
+	const initialOrganizationId = session?.session?.activeOrganizationId ?? null;
+	let initialIsAdmin = false;
+
+	if (initialUserId && initialOrganizationId) {
+		const result = await runServerActionSafe(
+			Effect.gen(function* () {
+				const onboardingService = yield* OnboardingService;
+				return yield* onboardingService.isUserAdmin();
+			}),
+		);
+		initialIsAdmin = result.success ? result.data : false;
+	}
 
 	return (
 		<div className="relative min-h-svh overflow-x-hidden bg-background">
 			<AuthBackgroundImage initialImage={backgroundImage} />
-			<section className={`relative z-10 flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}>
+			<section
+				className={`relative z-10 flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}
+			>
 				<div className="auth-shell-controls auth-shell-controls-readable flex items-center justify-end gap-2 drop-shadow-sm [&_[data-slot=dropdown-menu-trigger]]:!border-white/20 [&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85 [&_[data-slot=dropdown-menu-trigger]]:!text-white [&_[data-slot=dropdown-menu-trigger]]:!shadow-lg [&_[data-slot=dropdown-menu-trigger]]:!shadow-slate-950/20 [&_[data-slot=dropdown-menu-trigger]]:!backdrop-blur-xl [&_[data-slot=dropdown-menu-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]]:!border-white/20 [&_[data-slot=select-trigger]]:!bg-slate-950/85 [&_[data-slot=select-trigger]]:!text-white [&_[data-slot=select-trigger]]:!shadow-lg [&_[data-slot=select-trigger]]:!shadow-slate-950/20 [&_[data-slot=select-trigger]]:!backdrop-blur-xl [&_[data-slot=select-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]_svg]:!text-white">
 					<ThemeToggle />
 					<FontSizeToggle />
@@ -79,7 +92,15 @@ async function OnboardingLayoutContent({
 				</div>
 
 				<main className="onboarding-glass-scope flex flex-1 items-center justify-center py-8 sm:py-10 [&_[data-slot=card]]:border-white/30 [&_[data-slot=card]]:bg-white/20 [&_[data-slot=card]]:shadow-xl [&_[data-slot=card]]:shadow-black/5 [&_[data-slot=card]]:backdrop-blur-[40px] [&_[data-slot=card]]:pt-0 [&_[data-slot=card-header]]:rounded-t-[inherit] [&_[data-slot=card-header]]:border-b [&_[data-slot=card-header]]:border-white/30 [&_[data-slot=card-header]]:bg-white/40 [&_[data-slot=card-header]]:gap-1 [&_[data-slot=card-header]]:py-3 dark:[&_[data-slot=card-header]]:border-white/10 dark:[&_[data-slot=card-header]]:bg-white/10 [&_[data-slot=card]_.text-muted-foreground]:text-foreground/75 dark:[&_[data-slot=card]]:border-white/10 dark:[&_[data-slot=card]]:bg-slate-950/20 dark:[&_[data-slot=card]]:shadow-black/30">
-					<div className="w-full max-w-5xl">{children}</div>
+					<div className="w-full max-w-5xl">
+						<OnboardingProgressProvider
+							initialIsAdmin={initialIsAdmin}
+							initialUserId={initialUserId}
+							initialOrganizationId={initialOrganizationId}
+						>
+							{children}
+						</OnboardingProgressProvider>
+					</div>
 				</main>
 
 				<div className="pt-2 pb-2 drop-shadow-sm">

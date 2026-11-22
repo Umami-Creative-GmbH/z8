@@ -93,7 +93,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		actionLabel: "Configure holidays",
 		actionLabelKey: "settings.implementationChecklist.items.holidays.actionLabel",
 		confirmationCovers: null,
-		href: "/settings/holidays",
+		href: "/settings/vacation?tab=holidays",
 		detector: "automatic",
 		canManualComplete: false,
 		role: "informational",

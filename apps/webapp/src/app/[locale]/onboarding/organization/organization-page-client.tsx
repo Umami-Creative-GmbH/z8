@@ -13,6 +13,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { checkSlugAvailability } from "@/app/[locale]/(app)/organization-actions";
+import { useRefreshOnboardingIsAdmin } from "@/components/onboarding/onboarding-progress-provider";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { OrganizationTrackingSetupFields } from "@/components/organization/organization-tracking-setup-fields";
 import { Button } from "@/components/ui/button";
@@ -390,7 +391,7 @@ function CreateOrganizationCard({
 }
 
 export default function OrganizationPageClient(props: OrganizationPageClientProps) {
-	const { data } = useSession();
+	const { data, refetch } = useSession();
 	const operations = useRef(new Set<string>());
 	const [pendingScopes, setPendingScopes] = useState(new Set<string>());
 	// A different account or organization owns a different draft and request lifetime.
@@ -412,6 +413,9 @@ export default function OrganizationPageClient(props: OrganizationPageClientProp
 			loading={pendingScopes.has(scope)}
 			acquireOperation={acquireOperation}
 			setLoading={setLoading}
+			onSessionRefresh={() => {
+				void refetch?.();
+			}}
 		/>
 	);
 }
@@ -422,13 +426,16 @@ function OrganizationSetup({
 	loading,
 	acquireOperation,
 	setLoading,
+	onSessionRefresh,
 }: OrganizationPageClientProps & {
 	loading: boolean;
 	acquireOperation: () => boolean;
 	setLoading: (next: boolean) => void;
+	onSessionRefresh: () => void;
 }) {
 	const { t } = useTranslate();
 	const { push, replace } = useRouter();
+	const refreshOnboardingIsAdmin = useRefreshOnboardingIsAdmin();
 	const [checkingSlugFor, setCheckingSlugFor] = useState<string | null>(null);
 	const [availableSlug, setAvailableSlug] = useState<string | null>(null);
 	const [slugError, setSlugError] = useState<SlugError>(null);
@@ -466,6 +473,8 @@ function OrganizationSetup({
 						toast.success(
 							t("onboarding.organization.createSuccess", "Organization created successfully!"),
 						);
+						onSessionRefresh();
+						void refreshOnboardingIsAdmin();
 						push(ORGANIZATION_NEXT_STEP_PATH);
 						return true;
 					} else {
