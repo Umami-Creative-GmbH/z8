@@ -1,13 +1,6 @@
 "use client";
 
-import {
-	IconEdit,
-	IconLoader2,
-	IconPlus,
-	IconRefresh,
-	IconShieldCog,
-	IconTrash,
-} from "@tabler/icons-react";
+import { IconEdit, IconLoader2, IconPlus, IconShieldCog, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -107,24 +100,10 @@ export function CustomRolesManagement({ organizationId }: CustomRolesManagementP
 				<div className="min-w-0">
 					<h2 className="text-lg font-semibold">{t("settings.roles.title", "Custom Roles")}</h2>
 				</div>
-				<div className="flex items-center gap-2">
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={() => refetch()}
-						disabled={isFetching}
-						aria-label={t("settings.roles.actions.refresh", "Refresh custom roles")}
-					>
-						<IconRefresh
-							className={`size-4 ${isFetching ? "motion-safe:animate-spin" : ""}`}
-							aria-hidden="true"
-						/>
-					</Button>
-					<Button onClick={() => setIsCreateOpen(true)}>
-						<IconPlus className="mr-2 size-4" aria-hidden="true" />
-						{t("settings.roles.actions.create", "Create Role")}
-					</Button>
-				</div>
+				<Button onClick={() => setIsCreateOpen(true)}>
+					<IconPlus className="mr-2 size-4" aria-hidden="true" />
+					{t("settings.roles.actions.create", "Create Role")}
+				</Button>
 			</div>
 
 			{isLoading ? (

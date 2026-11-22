@@ -46,6 +46,15 @@ vi.mock("@/lib/settings/capabilities.server", () => ({
 	})),
 }));
 
+const billingAccessState = vi.hoisted(() => ({
+	canAccess: true,
+	state: "active" as "active" | "suspended",
+}));
+
+vi.mock("../app-layout-content", () => ({
+	getRenderBillingAccess: vi.fn(async () => ({ ...billingAccessState })),
+}));
+
 vi.mock("next/server", () => ({
 	connection: vi.fn(),
 }));
@@ -59,16 +68,19 @@ function PendingContent() {
 	return <div>Settings content</div>;
 }
 
-function layoutParts() {
+async function layoutParts() {
 	const boundary = SettingsLayout({
 		params: Promise.resolve({ locale: "en" }),
 		children: <PendingContent />,
 	});
 	expect(boundary.props.route).toBe("/settings");
-	const layout = boundary.props.children;
+	const shell = boundary.props.children;
+	const layout = await shell.type(shell.props);
 	const [navigationBoundary, main] = layout.props.children;
 	const [headerRow, contentBoundary] = main.props.children;
-	const [mobileNavigationBoundary, breadcrumbsBoundary] = headerRow.props.children;
+	const [mobileNavigationBoundary, breadcrumbsBoundary] = headerRow
+		? headerRow.props.children
+		: [null, null];
 	return {
 		navigationBoundary,
 		main,
@@ -80,8 +92,10 @@ function layoutParts() {
 }
 
 describe("SettingsLayout", () => {
-	it("keeps navigation and breadcrumbs outside the child content boundary", () => {
-		const { navigationBoundary, breadcrumbsBoundary, contentBoundary } = layoutParts();
+	it("keeps navigation and breadcrumbs outside the child content boundary when billing is active", async () => {
+		billingAccessState.canAccess = true;
+		billingAccessState.state = "active";
+		const { navigationBoundary, breadcrumbsBoundary, contentBoundary } = await layoutParts();
 
 		expect(navigationBoundary.type).toBe(Suspense);
 		expect(breadcrumbsBoundary.type).toBe(Suspense);
@@ -91,8 +105,10 @@ describe("SettingsLayout", () => {
 		expect(contentBoundary.props.children.props.children.type).toBe(PendingContent);
 	});
 
-	it("shows the content fallback without hiding breadcrumbs while children wait", () => {
-		const { breadcrumbsBoundary, contentBoundary } = layoutParts();
+	it("shows the content fallback without hiding breadcrumbs while children wait", async () => {
+		billingAccessState.canAccess = true;
+		billingAccessState.state = "active";
+		const { breadcrumbsBoundary, contentBoundary } = await layoutParts();
 
 		render(
 			<>
@@ -106,8 +122,10 @@ describe("SettingsLayout", () => {
 		expect(screen.queryByText("Settings content")).toBeNull();
 	});
 
-	it("puts the mobile settings menu beside the breadcrumbs, in its own boundary", () => {
-		const { headerRow, mobileNavigationBoundary } = layoutParts();
+	it("puts the mobile settings menu beside the breadcrumbs, in its own boundary", async () => {
+		billingAccessState.canAccess = true;
+		billingAccessState.state = "active";
+		const { headerRow, mobileNavigationBoundary } = await layoutParts();
 
 		expect(headerRow.props.className).toContain("px-4");
 		expect(headerRow.props.className).toContain("empty:hidden");
@@ -119,7 +137,9 @@ describe("SettingsLayout", () => {
 	});
 
 	it("renders the same server-computed navigation in the sidebar and the mobile drawer", async () => {
-		const { navigationBoundary, mobileNavigationBoundary } = layoutParts();
+		billingAccessState.canAccess = true;
+		billingAccessState.state = "active";
+		const { navigationBoundary, mobileNavigationBoundary } = await layoutParts();
 		const sidebar = (await navigationBoundary.props.children.type()) as ReactElement<{
 			className: string;
 			children: ReactElement;
@@ -145,5 +165,24 @@ describe("SettingsLayout", () => {
 		expect(drawer.type).toBe(SettingsMobileNav);
 		expect(drawer.props.children.type).toBe(SettingsNav);
 		expect(drawer.props.children.props).toEqual(expectedProps);
+	});
+
+	it("omits the nested settings sidebar, mobile drawer, and breadcrumbs when billing is suspended", async () => {
+		billingAccessState.canAccess = false;
+		billingAccessState.state = "suspended";
+		const {
+			navigationBoundary,
+			headerRow,
+			mobileNavigationBoundary,
+			breadcrumbsBoundary,
+			contentBoundary,
+		} = await layoutParts();
+
+		expect(navigationBoundary).toBeNull();
+		expect(headerRow).toBeNull();
+		expect(mobileNavigationBoundary).toBeNull();
+		expect(breadcrumbsBoundary).toBeNull();
+		expect(contentBoundary.type).toBe(Suspense);
+		expect(contentBoundary.props.children.props.children.type).toBe(PendingContent);
 	});
 });

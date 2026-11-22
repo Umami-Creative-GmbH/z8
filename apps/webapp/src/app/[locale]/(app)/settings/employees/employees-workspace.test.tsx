@@ -156,10 +156,13 @@ it("header Refresh retains a typed directory search", async () => {
 	).toBe("Synthetic person");
 });
 
-it("the member refresh button refreshes the authoritative server snapshot", async () => {
+it("omits routine toolbar refresh buttons on Employees and Members tabs while header Refresh refreshes the snapshot", async () => {
 	mount(true);
-	fireEvent.click(await screen.findByRole("tab", { name: "Members" }));
-	fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+	await screen.findByRole("textbox", { name: "Search employees" });
+	expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
+	fireEvent.click(screen.getByRole("tab", { name: "Members" }));
+	expect(screen.queryByRole("button", { name: "Refresh" })).toBeNull();
+	fireEvent.click(screen.getAllByRole("button", { name: "Refresh data" })[0]);
 	await waitFor(() => expect(boundary.refresh).toHaveBeenCalledTimes(1));
 });
 

@@ -259,20 +259,10 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 						"Search categories...",
 					)}
 					actions={
-						<div className="flex items-center gap-2">
-							<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-								{isFetching ? (
-									<IconLoader2 className="size-4 animate-spin" />
-								) : (
-									<IconRefresh className="size-4" />
-								)}
-								<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-							</Button>
-							<Button onClick={onAddClick}>
-								<IconPlus className="mr-2 size-4" />
-								{t("settings.holidays.categories.add", "Add Category")}
-							</Button>
-						</div>
+						<Button onClick={onAddClick}>
+							<IconPlus className="mr-2 size-4" />
+							{t("settings.holidays.categories.add", "Add Category")}
+						</Button>
 					}
 				/>
 

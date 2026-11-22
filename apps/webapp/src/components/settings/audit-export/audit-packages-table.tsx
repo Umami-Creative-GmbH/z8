@@ -6,7 +6,6 @@ import {
 	IconFileZip,
 	IconLoader2,
 	IconLock,
-	IconRefresh,
 	IconShieldCheck,
 	IconX,
 } from "@tabler/icons-react";
@@ -28,14 +27,7 @@ import {
 } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardAction,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -45,20 +37,14 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { VerificationResult } from "@/lib/audit-export";
-import {
-	formatDateOnly,
-	formatDateTime,
-	formatTimeOnly,
-} from "@/lib/datetime/format";
+import { formatDateOnly, formatDateTime, formatTimeOnly } from "@/lib/datetime/format";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import { useRouter } from "@/navigation";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 function formatFileSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	if (bytes < 1024 * 1024 * 1024)
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -66,13 +52,10 @@ interface AuditPackagesTableProps {
 	packages: AuditPackageInfo[];
 }
 
-export function AuditPackagesTable({
-	packages,
-}: AuditPackagesTableProps) {
+export function AuditPackagesTable({ packages }: AuditPackagesTableProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const timezone = useOrganizationTimezone();
-	const router = useRouter();
 	const [verifying, setVerifying] = useState<string | null>(null);
 	const [verificationResult, setVerificationResult] = useState<{
 		packageId: string;
@@ -109,10 +92,7 @@ export function AuditPackagesTable({
 						{t("settings.auditExport.packages.title", "Audit Packages")}
 					</CardTitle>
 					<CardDescription>
-						{t(
-							"settings.auditExport.packages.emptyDescription",
-							"No audit packages created yet",
-						)}
+						{t("settings.auditExport.packages.emptyDescription", "No audit packages created yet")}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -141,32 +121,16 @@ export function AuditPackagesTable({
 							"Cryptographically hardened export packages",
 						)}
 					</CardDescription>
-					<CardAction>
-						<Button variant="outline" size="sm" onClick={() => router.refresh()}>
-							<IconRefresh className="size-4" aria-hidden="true" />
-							{t("common.refresh", "Refresh")}
-						</Button>
-					</CardAction>
 				</CardHeader>
 				<CardContent>
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>
-									{t("settings.auditExport.packages.colDate", "Date")}
-								</TableHead>
-								<TableHead>
-									{t("settings.auditExport.packages.colType", "Type")}
-								</TableHead>
-								<TableHead>
-									{t("settings.auditExport.packages.colStatus", "Status")}
-								</TableHead>
-								<TableHead>
-									{t("settings.auditExport.packages.colFiles", "Files")}
-								</TableHead>
-								<TableHead>
-									{t("settings.auditExport.packages.colSize", "Size")}
-								</TableHead>
+								<TableHead>{t("settings.auditExport.packages.colDate", "Date")}</TableHead>
+								<TableHead>{t("settings.auditExport.packages.colType", "Type")}</TableHead>
+								<TableHead>{t("settings.auditExport.packages.colStatus", "Status")}</TableHead>
+								<TableHead>{t("settings.auditExport.packages.colFiles", "Files")}</TableHead>
+								<TableHead>{t("settings.auditExport.packages.colSize", "Size")}</TableHead>
 								<TableHead>
 									{t("settings.auditExport.packages.colRetention", "Retention")}
 								</TableHead>
@@ -199,14 +163,8 @@ export function AuditPackagesTable({
 											{pkg.exportType === "data"
 												? t("settings.auditExport.packages.typeData", "Data")
 												: pkg.exportType === "payroll"
-													? t(
-															"settings.auditExport.packages.typePayroll",
-															"Payroll",
-														)
-													: t(
-															"settings.auditExport.packages.typeAuditPack",
-															"Audit Pack",
-														)}
+													? t("settings.auditExport.packages.typePayroll", "Payroll")
+													: t("settings.auditExport.packages.typeAuditPack", "Audit Pack")}
 										</Badge>
 									</TableCell>
 									<TableCell>
@@ -214,9 +172,7 @@ export function AuditPackagesTable({
 									</TableCell>
 									<TableCell className="tabular-nums">{pkg.fileCount ?? "-"}</TableCell>
 									<TableCell className="whitespace-nowrap tabular-nums">
-										{pkg.fileSizeBytes
-											? formatFileSize(pkg.fileSizeBytes)
-											: "-"}
+										{pkg.fileSizeBytes ? formatFileSize(pkg.fileSizeBytes) : "-"}
 									</TableCell>
 									<TableCell>
 										<div className="flex items-center gap-1 whitespace-nowrap">
@@ -225,16 +181,10 @@ export function AuditPackagesTable({
 													<IconLock
 														className="size-4 text-muted-foreground"
 														aria-hidden="true"
-														title={t(
-															"settings.auditExport.wORMProtected",
-															"WORM protected",
-														)}
+														title={t("settings.auditExport.wORMProtected", "WORM protected")}
 													/>
 													<span className="sr-only">
-														{t(
-															"settings.auditExport.wORMProtected",
-															"WORM protected",
-														)}
+														{t("settings.auditExport.wORMProtected", "WORM protected")}
 													</span>
 												</>
 											)}
@@ -279,28 +229,17 @@ export function AuditPackagesTable({
 						<ActionPanelTitle className="flex items-center gap-2">
 							{verificationResult?.result.isValid ? (
 								<>
-									<IconCheck
-										className="size-5 shrink-0 text-success"
-										aria-hidden="true"
-									/>
-									{t(
-										"settings.auditExport.verification.valid",
-										"Verification Passed",
-									)}
+									<IconCheck className="size-5 shrink-0 text-success" aria-hidden="true" />
+									{t("settings.auditExport.verification.valid", "Verification Passed")}
 								</>
 							) : (
 								<>
 									<IconX className="size-5 shrink-0 text-destructive" aria-hidden="true" />
-									{t(
-										"settings.auditExport.verification.invalid",
-										"Verification Failed",
-									)}
+									{t("settings.auditExport.verification.invalid", "Verification Failed")}
 								</>
 							)}
 						</ActionPanelTitle>
-						<ActionPanelDescription>
-							{verificationResult?.result.summary}
-						</ActionPanelDescription>
+						<ActionPanelDescription>{verificationResult?.result.summary}</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-4">
 						{verificationResult && (
@@ -328,27 +267,18 @@ export function AuditPackagesTable({
 											)}
 											<div className="flex-1 min-w-0">
 												<p className="font-medium text-sm">{check.name}</p>
-												<p className="text-xs text-muted-foreground">
-													{check.details}
-												</p>
+												<p className="text-xs text-muted-foreground">{check.details}</p>
 											</div>
 										</div>
 									))}
 								</div>
 								<p className="text-xs text-muted-foreground text-center">
-									{t(
-										"settings.auditExport.verification.verifiedAt",
-										"Verified at {time}",
-										{
-											time: formatDateTime(
-												verificationResult.result.verifiedAt,
-												{
-													locale,
-													timezone,
-												},
-											),
-										},
-									)}
+									{t("settings.auditExport.verification.verifiedAt", "Verified at {time}", {
+										time: formatDateTime(verificationResult.result.verifiedAt, {
+											locale,
+											timezone,
+										}),
+									})}
 								</p>
 							</>
 						)}

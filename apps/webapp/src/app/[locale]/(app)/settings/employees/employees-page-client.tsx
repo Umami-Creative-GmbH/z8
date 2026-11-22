@@ -1,18 +1,13 @@
 "use client";
 
-import {
-	IconChevronLeft,
-	IconChevronRight,
-	IconPlus,
-	IconRefresh,
-	IconUser,
-} from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconPlus, IconUser } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { flexRender, type SortingState, useTable } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useMemo, useState, useTransition } from "react";
 import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { SettingsLoadError } from "@/components/settings/settings-load-error";
 import { InviteCodeManagement } from "@/components/organization/invite-code-management";
 import { InviteMemberDialog } from "@/components/organization/invite-member-dialog";
 import { MembersTable } from "@/components/organization/members-table";
@@ -84,31 +79,28 @@ export function EmployeesPageClient(props: EmployeeAdministrationProps) {
 		organization.role === (props.currentEmployee?.role ?? null);
 	if (!current) {
 		return (
-			<div className="page-frame flex min-w-0 flex-col gap-6">
-				<PageHeader title={t("settings.employees.title", "Employees")} />
-				{organization.isLoading ? (
-					<p role="status">{t("common.loading", "Loading...")}</p>
-				) : (
-					<div role="alert" className="space-y-3 rounded-lg border p-4">
-						<p>
-							{t(
+			<div className="page-frame">
+				<div className="page-measure flex min-w-0 flex-col gap-6">
+					<PageHeader title={t("settings.employees.title", "Employees")} />
+					{organization.isLoading ? (
+						<p role="status">{t("common.loading", "Loading...")}</p>
+					) : (
+						<SettingsLoadError
+							message={t(
 								"settings.employees.scopeChanged",
 								"Employee context is unavailable or changed. Refresh to continue.",
 							)}
-						</p>
-						<Button
-							disabled={pending}
-							onClick={() =>
+							retryLabel={t("common.retry", "Try again")}
+							isRetrying={pending}
+							onRetry={() =>
 								startRetry(async () => {
 									await organization.refetch();
 									router.refresh();
 								})
 							}
-						>
-							{t("common.retry", "Try again")}
-						</Button>
-					</div>
-				)}
+						/>
+					)}
+				</div>
 			</div>
 		);
 	}
@@ -426,8 +418,9 @@ function EmployeeDirectoryTab(props: {
 
 	if (!hasEmployee && !isLoading && !isError) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6">
+			<div className="page-measure">
 				<NoEmployeeError
+					className="w-full max-w-xl"
 					feature={t("settings.employees.directory.noEmployeeFeature", "manage employees")}
 				/>
 			</div>
@@ -447,15 +440,6 @@ function EmployeeDirectoryTab(props: {
 							})}
 					</CardDescription>
 				</div>
-				{
-					<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
-						<IconRefresh
-							aria-hidden="true"
-							className={`size-4 ${isFetching ? "motion-safe:animate-spin" : ""}`}
-						/>
-						<span className="sr-only">{t("settings.employees.directory.refresh", "Refresh")}</span>
-					</Button>
-				}
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<EmployeeDirectoryFilters
@@ -468,21 +452,15 @@ function EmployeeDirectoryTab(props: {
 				/>
 
 				{isError ? (
-					<div
-						role="alert"
-						className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
-					>
-						<p>
-							{error?.message ||
-								t(
-									"settings.employees.directory.loadFailed",
-									"Employee directory could not be loaded",
-								)}
-						</p>
-						<Button variant="outline" onClick={() => void refresh()} disabled={isFetching}>
-							{t("common.retry", "Try again")}
-						</Button>
-					</div>
+					<SettingsLoadError
+						message={
+							error?.message ||
+							t("settings.employees.directory.loadFailed", "Employee directory could not be loaded")
+						}
+						retryLabel={t("common.retry", "Try again")}
+						isRetrying={isFetching}
+						onRetry={() => void refresh()}
+					/>
 				) : isLoading ? (
 					<div className="flex items-center justify-center py-8">
 						<p className="text-sm text-muted-foreground">
