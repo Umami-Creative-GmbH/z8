@@ -35,6 +35,7 @@ function toNavigationAccessContext(input: StaticAppSearchInput): NavigationAcces
 		compliance: input.navigationCapabilities?.compliance ?? input.showComplianceNav,
 		payroll: input.navigationCapabilities?.payroll ?? Boolean(input.showPayrollNav),
 		finance: input.navigationCapabilities?.finance ?? false,
+		billableHandOff: input.navigationCapabilities?.billableHandOff,
 		worksCouncil: input.navigationCapabilities?.worksCouncil ?? false,
 		myDocuments: input.navigationCapabilities?.myDocuments,
 		myEquipment: input.navigationCapabilities?.myEquipment,

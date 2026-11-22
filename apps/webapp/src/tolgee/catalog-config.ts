@@ -137,6 +137,7 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	"/team": ["common", "team"],
 	"/today": ["common", "today"],
 	"/scheduling": ["common", "scheduling", "compliance"],
+	"/billable-time/hand-off": ["common", "settings/generic", "reports"],
 	"/settings/billing": ["common", "settings/generic", "billing"],
 	"/settings/billable-time/hand-off": ["common", "settings/generic", "reports"],
 	"/settings": ["common", "settings/generic"],

@@ -88,6 +88,11 @@ export async function ServerAppSidebar({
 				compliance: settingsAccessTier === "orgAdmin",
 				payroll: Boolean(showPayrollNav),
 				finance: showFinanceNav,
+				billableHandOff:
+					Boolean(activeOrganizationId) &&
+					settingsAccessTier === "orgAdmin" &&
+					featureFlags.billableTimeEnabled &&
+					featureFlags.projectsEnabled,
 				worksCouncil: canShowWorksCouncilNav,
 				// My documents (#865): the employee's own shared documents, while the feature is on.
 				myDocuments:

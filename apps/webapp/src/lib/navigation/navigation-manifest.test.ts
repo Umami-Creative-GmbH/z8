@@ -21,6 +21,7 @@ const ALL_CAPABILITIES: NavigationCapabilities = {
 	compliance: true,
 	payroll: true,
 	finance: true,
+	billableHandOff: true,
 	worksCouncil: true,
 	myDocuments: true,
 	myEquipment: true,
@@ -41,6 +42,7 @@ const NO_CAPABILITIES: NavigationCapabilities = {
 	compliance: false,
 	payroll: false,
 	finance: false,
+	billableHandOff: false,
 	worksCouncil: false,
 	myDocuments: false,
 	myEquipment: false,
@@ -171,6 +173,7 @@ describe("navigation manifest", () => {
 		).toEqual([
 			"/payroll",
 			"/travel-expenses/finance",
+			"/billable-time/hand-off",
 			"/personnel-files",
 			"/equipment",
 			"/team/driving-licence",
@@ -295,6 +298,72 @@ describe("navigation manifest", () => {
 			showComplianceNav: false,
 		});
 		expect(managerWithEmployee.some((r) => r.href === "/team/driving")).toBe(true);
+	});
+
+	it("exposes Billable Hand-off in Organization and Cmd+K only to org admins when Projects and Billable Time are enabled (#1956)", () => {
+		const orgAdminBothFlags = {
+			settingsAccessTier: "orgAdmin" as const,
+			featureFlags: { projectsEnabled: true, billableTimeEnabled: true },
+		};
+		expect(
+			buildOrganizationNav(
+				t,
+				{ ...NO_CAPABILITIES, billableHandOff: undefined },
+				null,
+				orgAdminBothFlags,
+			).map((item) => item.url),
+		).toEqual(["/billable-time/hand-off"]);
+
+		const orgAdminCmdK = buildStaticAppSearchResults({
+			t,
+			employeeRole: null,
+			settingsAccessTier: "orgAdmin",
+			billingEnabled: false,
+			showComplianceNav: false,
+			featureFlags: { projectsEnabled: true, billableTimeEnabled: true },
+		});
+		expect(
+			orgAdminCmdK.some((r) => r.type === "page" && r.href === "/billable-time/hand-off"),
+		).toBe(true);
+
+		// Missing either flag hides Billable Hand-off even for org admins
+		for (const flags of [
+			{ projectsEnabled: true, billableTimeEnabled: false },
+			{ projectsEnabled: false, billableTimeEnabled: true },
+		]) {
+			expect(
+				buildOrganizationNav(
+					t,
+					{ ...NO_CAPABILITIES, billableHandOff: undefined },
+					"admin",
+					{ settingsAccessTier: "orgAdmin", featureFlags: flags },
+				).map((item) => item.url),
+			).not.toContain("/billable-time/hand-off");
+		}
+
+		// Expense officer without org-admin access sees Expense Finance but never Billable Hand-off
+		const expenseOfficerNav = buildOrganizationNav(
+			t,
+			{ ...NO_CAPABILITIES, finance: true, billableHandOff: undefined },
+			"employee",
+			{
+				settingsAccessTier: "member",
+				featureFlags: { projectsEnabled: true, billableTimeEnabled: true },
+			},
+		).map((item) => item.url);
+		expect(expenseOfficerNav).toEqual(["/travel-expenses/finance"]);
+
+		const expenseOfficerCmdK = buildStaticAppSearchResults({
+			t,
+			employeeRole: "employee",
+			settingsAccessTier: "member",
+			billingEnabled: false,
+			showComplianceNav: false,
+			navigationCapabilities: { ...NO_CAPABILITIES, finance: true, billableHandOff: undefined },
+			featureFlags: { projectsEnabled: true, billableTimeEnabled: true },
+		});
+		expect(expenseOfficerCmdK.some((r) => r.href === "/travel-expenses/finance")).toBe(true);
+		expect(expenseOfficerCmdK.some((r) => r.href === "/billable-time/hand-off")).toBe(false);
 	});
 
 	it("keeps sidebar items aligned with manifest titles, hrefs, and icons", () => {

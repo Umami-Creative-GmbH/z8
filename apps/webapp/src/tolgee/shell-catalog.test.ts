@@ -79,6 +79,7 @@ const ROUTE_TITLES_AWAITING_SYNC = new Set([
 	"nav.team-driving-licences",
 	"nav.expense-finance",
 	"nav.missing-vehicle-logs",
+	"nav.billable-hand-off",
 ]);
 function getPath(value: unknown, path: readonly string[]): unknown {
 	return path.reduce<unknown>(

@@ -52,8 +52,6 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings/billable-time",
 	"/settings/billable-time/accounting",
 	"/settings/billable-time/cost-rates",
-	"/settings/billable-time/hand-off",
-	"/settings/billable-time/rates",
 	"/settings/billing",
 	"/settings/calendar",
 	"/settings/clocking",

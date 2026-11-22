@@ -68,6 +68,10 @@ vi.mock("@/lib/auth-client", () => ({
 	}),
 }));
 
+vi.mock("@/lib/projects/project-manager-settings-access", () => ({
+	managesProjectBelowManagerTierForIdentity: async () => false,
+}));
+
 vi.mock("@/lib/auth/render-context", () => ({
 	getRenderAuthContext: getAuthContextMock,
 	getRenderUserOrganizations: getUserOrganizationsMock,
@@ -1956,9 +1960,17 @@ describe("app sidebar compliance navigation", () => {
 				personnelFiles: true,
 				equipment: true,
 				worksCouncil: true,
+				projectsEnabled: true,
+				billableTimeEnabled: true,
 			},
 			expectedTeam: ["/analytics"],
-			expectedOrg: ["/personnel-files", "/equipment", "/compliance", "/works-council"],
+			expectedOrg: [
+				"/billable-time/hand-off",
+				"/personnel-files",
+				"/equipment",
+				"/compliance",
+				"/works-council",
+			],
 		},
 		{
 			persona: "payroll officer",
@@ -1972,7 +1984,11 @@ describe("app sidebar compliance navigation", () => {
 			persona: "expense officer",
 			role: "employee" as const,
 			tier: "member" as const,
-			grants: { finance: true },
+			grants: {
+				finance: true,
+				projectsEnabled: true,
+				billableTimeEnabled: true,
+			},
 			expectedTeam: null,
 			expectedOrg: ["/travel-expenses/finance"],
 		},
@@ -2009,10 +2025,11 @@ describe("app sidebar compliance navigation", () => {
 				{
 					id: "org_1",
 					shiftsEnabled: Boolean(grants.shiftsEnabled),
-					projectsEnabled: false,
+					projectsEnabled: Boolean(grants.projectsEnabled),
 					surchargesEnabled: false,
 					demoDataEnabled: false,
 					worksCouncilEnabled: Boolean(grants.worksCouncil),
+					billableTimeEnabled: Boolean(grants.billableTimeEnabled),
 					personnelFilesEnabled: Boolean(grants.personnelFiles),
 					equipmentEnabled: Boolean(grants.equipment || grants.myEquipment),
 				},

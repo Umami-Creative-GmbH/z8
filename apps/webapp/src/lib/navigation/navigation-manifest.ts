@@ -14,6 +14,7 @@ import {
 	IconCreditCard,
 	IconDashboard,
 	IconFileDescription,
+	IconFileInvoice,
 	IconFolder,
 	IconFolders,
 	IconGauge,
@@ -53,6 +54,8 @@ export interface NavigationCapabilities {
 	payroll: boolean;
 	/** Owners, admins and active expense officers (#753). */
 	finance: boolean;
+	/** Billable Hand-off workspace visibility: org admins while Billable Time and Projects are enabled (#1956). */
+	billableHandOff?: boolean;
 	worksCouncil: boolean;
 	/** The employee's own shared documents while personnel files are on (#865). */
 	myDocuments?: boolean;
@@ -143,6 +146,17 @@ function canViewAnalytics(ctx: NavigationAccessContext): boolean {
 		ctx.settingsAccessTier === "orgAdmin" ||
 		ctx.settingsAccessTier === "manager" ||
 		isManagerOrAdmin(ctx.employeeRole)
+	);
+}
+
+function canViewBillableHandOff(ctx: NavigationAccessContext): boolean {
+	if (ctx.navigationCapabilities.billableHandOff !== undefined) {
+		return ctx.navigationCapabilities.billableHandOff;
+	}
+	return (
+		ctx.settingsAccessTier === "orgAdmin" &&
+		Boolean(ctx.featureFlags?.billableTimeEnabled) &&
+		Boolean(ctx.featureFlags?.projectsEnabled)
 	);
 }
 
@@ -449,6 +463,24 @@ export const APP_NAVIGATION_MANIFEST: readonly NavigationManifestEntry[] = [
 			],
 		},
 		isVisible: (ctx) => ctx.navigationCapabilities.finance,
+	},
+	{
+		id: "billable-hand-off",
+		href: "/billable-time/hand-off",
+		titleKey: "nav.billable-hand-off",
+		titleDefault: "Billable Hand-off",
+		icon: IconFileInvoice,
+		sidebarSection: "organization",
+		ownsHeading: true,
+		cmdK: {
+			include: true,
+			keywords: [
+				{ key: "appSearch.billableHandOff.keywords.billable", defaultValue: "billable" },
+				{ key: "appSearch.billableHandOff.keywords.invoice", defaultValue: "invoice" },
+				{ key: "appSearch.billableHandOff.keywords.handOff", defaultValue: "hand-off" },
+			],
+		},
+		isVisible: canViewBillableHandOff,
 	},
 	{
 		id: "personnel-files",
