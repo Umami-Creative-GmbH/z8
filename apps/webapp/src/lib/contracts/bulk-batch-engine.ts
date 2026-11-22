@@ -1553,6 +1553,7 @@ export async function runContractChangeBatch(
 													WHERE ps.organization_id = h.organization_id
 														AND ps.employee_id = h.employee_id
 														AND ps.review_state = 'confirmed'
+														AND (ps.valid_until_date IS NULL OR ps.valid_until_date > ps.valid_from_date)
 														AND open_p.id IS NOT NULL
 														AND ps.employment_period_id = open_p.id
 												)

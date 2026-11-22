@@ -972,7 +972,10 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 
 					const existingResult = await tx.query(
 						`
-						SELECT cd.id, ctv.work_policy_id
+						SELECT
+							cd.id,
+							ctv.work_policy_id,
+							to_char(cd.effective_until_date, 'YYYY-MM-DD') AS effective_until_iso
 						FROM "contract_default" cd
 						JOIN "contract_template_version" ctv
 							ON ctv.id = cd.template_version_id
@@ -992,7 +995,11 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 
 					const existing = existingResult.rows[0];
 					if (existing) {
-						if (existing.work_policy_id === row.policy_id) {
+						const existingUntilStr =
+							existing.effective_until_iso === null || existing.effective_until_iso === undefined
+								? null
+								: String(existing.effective_until_iso);
+						if (existing.work_policy_id === row.policy_id && existingUntilStr === untilStr) {
 							await tx.query(
 								`
 								UPDATE "work_policy_assignment"
@@ -1033,6 +1040,8 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 										existingContractDefaultId: existing.id,
 										existingWorkPolicyId: existing.work_policy_id,
 										assignmentWorkPolicyId: row.policy_id,
+										existingEffectiveUntilDate: existingUntilStr,
+										assignmentEffectiveUntilDate: untilStr,
 									}),
 								],
 							);

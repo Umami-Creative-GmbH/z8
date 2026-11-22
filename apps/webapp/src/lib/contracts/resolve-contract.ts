@@ -146,6 +146,7 @@ export interface PolicyAssignmentSnapshot {
 	readonly employeeId: string | null;
 	readonly sourceKind?: string | null;
 	readonly sourceEmploymentHistoryId?: string | null;
+	readonly sourceEmploymentPeriodId?: string | null;
 	readonly isActive?: boolean;
 	readonly priority: number;
 	readonly effectiveFrom: Date | null;
@@ -415,7 +416,11 @@ function selectConfirmedTermsForPeriodOnDay(input: {
 	}
 
 	const periodScoped = period
-		? confirmedTerms.filter((row) => row.employmentPeriodId === period.id)
+		? confirmedTerms.filter((row) => {
+				if (row.employmentPeriodId !== period.id) return false;
+				const bounds = termsDateBounds(row, organizationTimezone);
+				return bounds.until === null || comparePlainDates(bounds.from, bounds.until) < 0;
+			})
 		: confirmedTerms;
 	const candidateRows =
 		periodScoped.length > 0
@@ -537,6 +542,13 @@ function assignmentCoversDay(
 	}
 	if (assignment.effectiveFromDate !== null) {
 		if (assignment.effectiveFromDate > dayStr) return false;
+		if (assignment.sourceKind === "legacy" && assignment.effectiveUntil !== null) {
+			const legacyEndDate = plainDateAt(
+				instantFromDate(assignment.effectiveUntil),
+				organizationTimezone,
+			).toString();
+			if (legacyEndDate <= dayStr) return false;
+		}
 		if (assignment.effectiveUntilDate !== null && assignment.effectiveUntilDate <= dayStr) {
 			return false;
 		}
@@ -576,7 +588,11 @@ function selectPolicyAssignmentAtLevel(input: {
 		}
 		const policy = input.policiesById.get(row.policyId);
 		if (!policy) return false;
-		return isPolicyEligibleOnDay(policy, input.dayStr, row.effectiveUntilDate);
+		const intervalEndDate =
+			row.sourceKind === "legacy" && row.effectiveUntil !== null
+				? plainDateAt(instantFromDate(row.effectiveUntil), input.organizationTimezone).toString()
+				: row.effectiveUntilDate;
+		return isPolicyEligibleOnDay(policy, input.dayStr, intervalEndDate);
 	});
 
 	if (matching.length === 0) return null;
@@ -1230,8 +1246,11 @@ export function resolveEffectiveContractPure(
 						if (row.assignmentType !== "employee") return true;
 						if (
 							row.sourceKind === "employment_terms" &&
-							typeof row.sourceEmploymentHistoryId === "string" &&
-							foreignPeriodHistoryIds?.has(row.sourceEmploymentHistoryId)
+							((row.sourceEmploymentPeriodId !== null &&
+								row.sourceEmploymentPeriodId !== undefined &&
+								row.sourceEmploymentPeriodId !== employmentPeriodId) ||
+								(typeof row.sourceEmploymentHistoryId === "string" &&
+									foreignPeriodHistoryIds?.has(row.sourceEmploymentHistoryId)))
 						) {
 							return false;
 						}
@@ -1661,6 +1680,7 @@ export async function loadEffectiveContractsBatch(
 			priority: workPolicyAssignment.priority,
 			sourceKind: workPolicyAssignment.sourceKind,
 			sourceEmploymentHistoryId: workPolicyAssignment.sourceEmploymentHistoryId,
+			sourceEmploymentPeriodId: employeeEmploymentHistory.employmentPeriodId,
 			isActive: workPolicyAssignment.isActive,
 			effectiveFrom: workPolicyAssignment.effectiveFrom,
 			effectiveUntil: workPolicyAssignment.effectiveUntil,
@@ -1669,6 +1689,13 @@ export async function loadEffectiveContractsBatch(
 			createdAt: workPolicyAssignment.createdAt,
 		})
 		.from(workPolicyAssignment)
+		.leftJoin(
+			employeeEmploymentHistory,
+			and(
+				eq(employeeEmploymentHistory.id, workPolicyAssignment.sourceEmploymentHistoryId),
+				eq(employeeEmploymentHistory.organizationId, workPolicyAssignment.organizationId),
+			),
+		)
 		.where(
 			and(
 				eq(workPolicyAssignment.organizationId, input.organizationId),
@@ -2131,17 +2158,35 @@ export async function loadEffectiveContractsBatch(
 		termsByEmployee.set(row.employeeId, list);
 	}
 
-	// M7 / A3-6 / A3-19: Pre-partition policy assignments once per batch so resolving each employee
-	// only inspects that employee's own assignments plus org/team defaults (O(1) instead of O(N^2)).
-	const sharedPolicyAssignments: PolicyAssignmentSnapshot[] = [];
+	// M7 / A3-6 / A3-19: Pre-partition policy assignments AND contract defaults by org, team, and
+	// employee once per batch so resolving each employee only inspects org rows, their relevant
+	// teams' rows, and their own employee rows (true O(1) per employee even with N distinct teams).
+	const orgPolicyAssignments: PolicyAssignmentSnapshot[] = [];
+	const teamPolicyAssignmentsByTeam = new Map<string, PolicyAssignmentSnapshot[]>();
 	const employeePolicyAssignmentsByEmployee = new Map<string, PolicyAssignmentSnapshot[]>();
 	for (const row of assignmentRows) {
 		if (row.assignmentType === "employee" && row.employeeId) {
 			const list = employeePolicyAssignmentsByEmployee.get(row.employeeId) ?? [];
 			list.push(row);
 			employeePolicyAssignmentsByEmployee.set(row.employeeId, list);
-		} else {
-			sharedPolicyAssignments.push(row);
+		} else if (row.assignmentType === "team" && row.teamId) {
+			const list = teamPolicyAssignmentsByTeam.get(row.teamId) ?? [];
+			list.push(row);
+			teamPolicyAssignmentsByTeam.set(row.teamId, list);
+		} else if (row.assignmentType === "organization") {
+			orgPolicyAssignments.push(row);
+		}
+	}
+
+	const orgContractDefaults: ContractDefaultSnapshot[] = [];
+	const teamContractDefaultsByTeam = new Map<string, ContractDefaultSnapshot[]>();
+	for (const def of defaultsSnapshots) {
+		if (def.scope === "team" && def.teamId) {
+			const list = teamContractDefaultsByTeam.get(def.teamId) ?? [];
+			list.push(def);
+			teamContractDefaultsByTeam.set(def.teamId, list);
+		} else if (def.scope === "organization") {
+			orgContractDefaults.push(def);
 		}
 	}
 
@@ -2153,14 +2198,29 @@ export async function loadEffectiveContractsBatch(
 		const empPeriods = periodsByEmployee.get(emp.id) ?? [];
 		const empTeamHistory = teamHistoryByEmployee.get(emp.id) ?? [];
 		const empTerms = termsByEmployee.get(emp.id) ?? [];
-		const empOwnAssignments = employeePolicyAssignmentsByEmployee.get(emp.id) ?? [];
-		const empScopedAssignments =
-			empOwnAssignments.length > 0
-				? [...empOwnAssignments, ...sharedPolicyAssignments]
-				: sharedPolicyAssignments;
 
 		const hasTeamIdOverride = Boolean(input.teamIdOverrides?.has(emp.id));
 		const teamIdOverride = hasTeamIdOverride ? (input.teamIdOverrides?.get(emp.id) ?? null) : null;
+
+		const relevantTeamIds = new Set<string>();
+		if (emp.teamId) relevantTeamIds.add(emp.teamId);
+		if (teamIdOverride) relevantTeamIds.add(teamIdOverride);
+		for (const th of empTeamHistory) {
+			if (th.teamId) relevantTeamIds.add(th.teamId);
+		}
+
+		const empOwnAssignments = employeePolicyAssignmentsByEmployee.get(emp.id) ?? [];
+		const empScopedAssignments: PolicyAssignmentSnapshot[] = [
+			...empOwnAssignments,
+			...orgPolicyAssignments,
+		];
+		const empScopedDefaults: ContractDefaultSnapshot[] = [...orgContractDefaults];
+		for (const tid of relevantTeamIds) {
+			const teamAsgns = teamPolicyAssignmentsByTeam.get(tid);
+			if (teamAsgns) empScopedAssignments.push(...teamAsgns);
+			const teamDefs = teamContractDefaultsByTeam.get(tid);
+			if (teamDefs) empScopedDefaults.push(...teamDefs);
+		}
 
 		for (const day of uniqueDates) {
 			const resolved = resolveEffectiveContractPure({
@@ -2179,7 +2239,7 @@ export async function loadEffectiveContractsBatch(
 				foreignTeamIds,
 				teamNames,
 				confirmedTerms: empTerms,
-				contractDefaults: defaultsSnapshots,
+				contractDefaults: empScopedDefaults,
 				policyAssignments: empScopedAssignments,
 				policiesById,
 			});

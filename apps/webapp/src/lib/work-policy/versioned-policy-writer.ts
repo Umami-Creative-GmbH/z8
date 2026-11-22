@@ -1,8 +1,11 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import {
+	auditLog,
 	contractDefault,
 	contractTemplateVersion,
 	contractTemplateVersionDay,
+	employeeEmploymentHistory,
+	employeeEmploymentHistoryDay,
 	workPolicy,
 	workPolicyBreakOption,
 	workPolicyBreakRule,
@@ -364,15 +367,34 @@ export async function lockContractDefaultsOrgExclusiveInTx(
 }
 
 /**
- * Locks active `work_policy_assignment` rows for `policyId` in deterministic `id` order BEFORE
- * locking `work_policy`, matching `policy-clock-out-break-snapshot.ts` (`assignment -> policy`)
- * so concurrent deactivation and clock-out can never deadlock (A3-13 / M4).
+ * Locks affected `employee` rows (level 2, `FOR KEY SHARE`) and active `work_policy_assignment`
+ * rows (level 3, `FOR UPDATE`) in deterministic `id` order BEFORE locking `work_policy` (level 4),
+ * matching `policy-clock-out-break-snapshot.ts` (`employee -> assignment -> policy`) so concurrent
+ * deactivation, history-split FK checks, and clock-out can never deadlock (A3-13 / M4 / F10-2 / Astra #2).
  */
 export async function lockPolicyAssignmentsForRetirementInTx(
 	tx: PolicyTransaction,
 	organizationId: string,
 	policyId: string,
 ): Promise<void> {
+	// Level (2): Pre-lock every employee with a confirmed terms pin to this policy FOR KEY SHARE
+	// before locking assignments so Step 1d's continuation-row FK insert never inverts (2) <-> (3).
+	await tx.execute(sql`
+		SELECT e.id
+		FROM employee e
+		WHERE e.organization_id = ${organizationId}
+			AND EXISTS (
+				SELECT 1
+				FROM employee_employment_history h
+				WHERE h.organization_id = e.organization_id
+					AND h.employee_id = e.id
+					AND h.work_policy_id = ${policyId}::uuid
+					AND h.review_state = 'confirmed'
+			)
+		ORDER BY e.id
+		FOR KEY SHARE
+	`);
+	// Level (3): Lock active assignments for this policy in ascending id order.
 	await tx.execute(sql`
 		SELECT id
 		FROM work_policy_assignment
@@ -386,10 +408,11 @@ export async function lockPolicyAssignmentsForRetirementInTx(
 
 /**
  * Records a dated retirement boundary (`orgTodayDate`) on active `work_policy_assignment`,
- * unlinked confirmed `employee_employment_history` terms pins, and active `contract_default`
- * rows referencing a retired policy so historical dates continue resolving the retired policy
- * while today and future dates stop applying it without losing non-policy default fields
- * (A1-12 / A2-8 / P7-1 / P8-1 / P8-2 / A3-5 / A3-12 / A3-14 / H5 / H8 / M3 / M5).
+ * unlinked confirmed `employee_employment_history` terms pins, departure-capped assignment
+ * records, and active `contract_default` rows referencing a retired policy so historical dates
+ * continue resolving the retired policy while today and future dates stop applying it without
+ * losing non-policy fields or reviving retired pins on later reactivation
+ * (A1-12 / A2-8 / P7-1 / P8-1 / P8-2 / A3-5 / A3-12 / A3-14 / H5 / H8 / M3 / M5 / M9 / F10-1 / F10-2).
  *
  * Callers MUST acquire `lockContractDefaultsOrgExclusiveInTx` -> `lockPolicyAssignmentsForRetirementInTx`
  * -> `work_policy FOR UPDATE` before invoking this helper.
@@ -455,6 +478,27 @@ export async function retirePolicyReferencesInTx(
 			)
 	`);
 
+	// 1a-fallback (Astra M5): When a preceding assignment occupies the prior calendar date in
+	// btree_gist (e.g., prev ends 2026-06-10 00:00Z, cur starts 2026-06-10 00:00Z in New York),
+	// keep cur's `effective_from_date = orgTodayDate`, cap `effective_until = orgTodayLocalStart`,
+	// and narrow `effective_until_date` to `orgTodayDate + 1` (a strict subset of cur's existing
+	// range, satisfying 0322's `effective_until_date > effective_from_date` and btree_gist while
+	// both clock-out and resolver evaluate legacy rows via `effective_until`!).
+	await tx.execute(sql`
+		UPDATE work_policy_assignment a
+		SET effective_until = (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC'),
+			effective_until_date = (${orgTodayDate}::date + 1),
+			updated_at = ${now}
+		WHERE a.organization_id = ${organizationId}
+			AND a.policy_id = ${policyId}::uuid
+			AND a.is_active = true
+			AND a.source_kind = 'legacy'
+			AND a.effective_from IS NOT NULL
+			AND a.effective_from < (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC')
+			AND (a.effective_until IS NULL OR a.effective_until > (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC'))
+			AND a.effective_from_date = ${orgTodayDate}::date
+	`);
+
 	// 1b. Cap remaining active policy assignments spanning orgTodayDate / orgTodayLocalStart.
 	await tx.execute(sql`
 		UPDATE work_policy_assignment
@@ -481,8 +525,7 @@ export async function retirePolicyReferencesInTx(
 			)
 	`);
 
-	// 1c. Deactivate assignments that take effect on or after orgTodayDate / orgTodayLocalStart
-	//     (or legacy same-day rows that could not shift back without overlapping a prior assignment).
+	// 1c. Deactivate assignments that take effect on or after orgTodayDate / orgTodayLocalStart.
 	await tx.execute(sql`
 		UPDATE work_policy_assignment
 		SET is_active = false, updated_at = ${now}
@@ -496,234 +539,162 @@ export async function retirePolicyReferencesInTx(
 					AND (
 						(effective_from IS NOT NULL AND effective_from >= (${orgTodayLocalStart}::timestamptz AT TIME ZONE 'UTC'))
 						OR (effective_from IS NULL AND effective_from_date >= ${orgTodayDate}::date)
-						OR effective_from_date >= ${orgTodayDate}::date
 					)
 				)
 			)
 	`);
 
-	// 1d. H5 / A3-6: Record durable capped/deactivated `employment_terms` assignment history for any
-	//     pre-migration / unlinked confirmed `employee_employment_history` row referencing this policy
-	//     so later reactivating the policy can never revive the retired terms pin.
-	const unlinkedTermsRes = await tx.execute(sql`
-		SELECT
-			h.id,
-			h.employee_id AS "employeeId",
-			COALESCE(
-				to_char(h.valid_from_date, 'YYYY-MM-DD'),
-				to_char((h.valid_from AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD')
-			) AS "validFromDate"
-		FROM employee_employment_history h
-		WHERE h.organization_id = ${organizationId}
-			AND h.work_policy_id = ${policyId}::uuid
-			AND h.review_state = 'confirmed'
-			AND (h.valid_until_date IS NULL OR h.valid_until_date > ${orgTodayDate}::date)
-			AND NOT EXISTS (
-				SELECT 1
-				FROM work_policy_assignment a
-				WHERE a.organization_id = h.organization_id
-					AND a.assignment_type = 'employee'
-					AND a.employee_id = h.employee_id
-					AND a.policy_id = h.work_policy_id
-					AND a.source_employment_history_id = h.id
-			)
-		ORDER BY h.id
-	`);
-	const unlinkedTerms = toRows(unlinkedTermsRes) as Array<{
-		id: string;
-		employeeId: string;
-		validFromDate: string;
-	}>;
-	for (const term of unlinkedTerms) {
-		if (!term.validFromDate) continue;
-		if (term.validFromDate >= orgTodayDate) {
-			const fromTs = utcMidnight(parsePlainDate(term.validFromDate));
-			await tx.execute(sql`
-				INSERT INTO work_policy_assignment (
-					policy_id,
-					organization_id,
-					assignment_type,
-					employee_id,
-					team_id,
-					priority,
-					effective_from,
-					effective_until,
-					effective_from_date,
-					effective_until_date,
-					source_kind,
-					source_employment_history_id,
-					is_active,
-					created_by,
-					updated_at
-				)
-				VALUES (
-					${policyId}::uuid,
-					${organizationId},
-					'employee',
-					${term.employeeId}::uuid,
-					NULL,
-					2,
-					(${fromTs}::timestamptz AT TIME ZONE 'UTC'),
-					NULL,
-					${term.validFromDate}::date,
-					NULL,
-					'employment_terms',
-					${term.id}::uuid,
-					false,
-					${actorUserId},
-					${now}
-				)
-			`);
+	// 1d. H5 / F10-1 / Astra #1 & #3: Split or clear unlinked confirmed `employee_employment_history`
+	//     terms pins referencing this policy (just like `contract_default` below) so historical dates
+	//     before `orgTodayDate` keep resolving this policy (even when overlapping another manager
+	//     assignment), today and future dates stop applying it, later reactivation never revives it,
+	//     and `work_policy_assignment` provenance/exclusion constraints are never violated.
+	const unlinkedTerms = await tx
+		.select({
+			row: employeeEmploymentHistory,
+			validFromDateIso: sql<string>`to_char(${employeeEmploymentHistory.validFromDate}, 'YYYY-MM-DD')`,
+			validUntilDateIso: sql<
+				string | null
+			>`to_char(${employeeEmploymentHistory.validUntilDate}, 'YYYY-MM-DD')`,
+		})
+		.from(employeeEmploymentHistory)
+		.where(
+			and(
+				eq(employeeEmploymentHistory.organizationId, organizationId),
+				eq(employeeEmploymentHistory.workPolicyId, policyId),
+				eq(employeeEmploymentHistory.reviewState, "confirmed"),
+				sql`(${employeeEmploymentHistory.validUntilDate} IS NULL OR ${employeeEmploymentHistory.validUntilDate} > ${orgTodayDate}::date)`,
+				sql`NOT EXISTS (
+					SELECT 1
+					FROM work_policy_assignment a
+					WHERE a.organization_id = ${employeeEmploymentHistory.organizationId}
+						AND a.assignment_type = 'employee'
+						AND a.employee_id = ${employeeEmploymentHistory.employeeId}
+						AND a.policy_id = ${employeeEmploymentHistory.workPolicyId}
+						AND a.source_employment_history_id = ${employeeEmploymentHistory.id}
+				)`,
+			),
+		)
+		.orderBy(asc(employeeEmploymentHistory.id));
+
+	for (const { row: term, validFromDateIso, validUntilDateIso } of unlinkedTerms) {
+		const fromDate =
+			validFromDateIso || plainDateAt(instantFromDate(term.validFrom), orgTimezone).toString();
+		if (fromDate >= orgTodayDate) {
+			await tx
+				.update(employeeEmploymentHistory)
+				.set({
+					workPolicyId: null,
+					updatedAt: now,
+				})
+				.where(
+					and(
+						eq(employeeEmploymentHistory.id, term.id),
+						eq(employeeEmploymentHistory.organizationId, organizationId),
+					),
+				);
 			continue;
 		}
 
-		// Try linking an existing unlinked assignment for this same employee + policy just capped at orgTodayDate.
-		const linkedExistingRes = await tx.execute(sql`
-			UPDATE work_policy_assignment
-			SET source_employment_history_id = ${term.id}::uuid,
-				updated_at = ${now}
-			WHERE id = (
-				SELECT id
-				FROM work_policy_assignment
-				WHERE organization_id = ${organizationId}
-					AND assignment_type = 'employee'
-					AND employee_id = ${term.employeeId}::uuid
-					AND policy_id = ${policyId}::uuid
-					AND is_active = true
-					AND source_employment_history_id IS NULL
-					AND source_kind IN ('legacy', 'employment_terms')
-					AND effective_from_date <= ${term.validFromDate}::date
-					AND effective_until_date = ${orgTodayDate}::date
-				ORDER BY id
-				LIMIT 1
-			)
-			RETURNING id
-		`);
-		if (toRows(linkedExistingRes).length > 0) {
-			continue;
-		}
+		// Cap historical terms segment at orgTodayDate and insert continuation without the retired policy.
+		await tx
+			.update(employeeEmploymentHistory)
+			.set({
+				validUntilDate: orgTodayDate,
+				validUntil: orgTodayMidnight,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(employeeEmploymentHistory.id, term.id),
+					eq(employeeEmploymentHistory.organizationId, organizationId),
+				),
+			);
 
-		// Compute uncovered sub-intervals of [term.validFromDate, orgTodayDate) against active employee
-		// assignments so inserting durable historical caps strictly respects 0322 btree_gist.
-		const overlappingRes = await tx.execute(sql`
-			SELECT
-				to_char(effective_from_date, 'YYYY-MM-DD') AS "fromDate",
-				to_char(effective_until_date, 'YYYY-MM-DD') AS "untilDate"
-			FROM work_policy_assignment
-			WHERE organization_id = ${organizationId}
-				AND assignment_type = 'employee'
-				AND employee_id = ${term.employeeId}::uuid
-				AND is_active = true
-				AND effective_from_date < ${orgTodayDate}::date
-				AND (effective_until_date IS NULL OR effective_until_date > ${term.validFromDate}::date)
-			ORDER BY effective_from_date ASC
-		`);
-		const overlaps = toRows(overlappingRes) as Array<{
-			fromDate: string;
-			untilDate: string | null;
-		}>;
-		const uncovered: Array<{ from: string; until: string }> = [];
-		let cursor = term.validFromDate;
-		for (const ov of overlaps) {
-			if (ov.fromDate > cursor) {
-				uncovered.push({
-					from: cursor,
-					until: ov.fromDate < orgTodayDate ? ov.fromDate : orgTodayDate,
-				});
-			}
-			if (ov.untilDate === null || ov.untilDate >= orgTodayDate) {
-				cursor = orgTodayDate;
-				break;
-			}
-			if (ov.untilDate > cursor) {
-				cursor = ov.untilDate;
-			}
-		}
-		if (cursor < orgTodayDate) {
-			uncovered.push({ from: cursor, until: orgTodayDate });
-		}
+		const [continuation] = await tx
+			.insert(employeeEmploymentHistory)
+			.values({
+				employeeId: term.employeeId,
+				organizationId: term.organizationId,
+				employmentPeriodId: term.employmentPeriodId,
+				validFrom: orgTodayMidnight,
+				validUntil: term.validUntil,
+				validFromDate: orgTodayDate,
+				validUntilDate: validUntilDateIso,
+				status: term.status,
+				contractType: term.contractType,
+				weeklyContractMinutes: term.weeklyContractMinutes,
+				probationStartsOn: term.probationStartsOn,
+				probationEndsOn: term.probationEndsOn,
+				workModel: term.workModel,
+				workPolicyId: null,
+				scheduleMode: term.scheduleMode,
+				presenceOverride: term.presenceOverride,
+				balanceMode: term.balanceMode,
+				scheduleSource: term.scheduleSource,
+				sourceTemplateVersionId: term.sourceTemplateVersionId,
+				sourceBatchItemId: null,
+				employmentProfile: term.employmentProfile,
+				arbzgScope: term.arbzgScope,
+				onCallHoursKind: term.onCallHoursKind,
+				onCallWeeklyMinutes: term.onCallWeeklyMinutes,
+				onCallDailyMinutes: term.onCallDailyMinutes,
+				migratedLegacyTerms: term.migratedLegacyTerms,
+				hourlyRate: term.hourlyRate,
+				currency: term.currency,
+				reviewState: term.reviewState,
+				changeReason: term.changeReason,
+				createdBy: actorUserId,
+				createdAt: now,
+				updatedBy: actorUserId,
+				updatedAt: now,
+			})
+			.returning({ id: employeeEmploymentHistory.id });
 
-		if (uncovered.length > 0) {
-			for (const span of uncovered) {
-				const spanFromTs = utcMidnight(parsePlainDate(span.from));
-				const spanUntilTs = utcMidnight(parsePlainDate(span.until));
-				await tx.execute(sql`
-					INSERT INTO work_policy_assignment (
-						policy_id,
-						organization_id,
-						assignment_type,
-						employee_id,
-						team_id,
-						priority,
-						effective_from,
-						effective_until,
-						effective_from_date,
-						effective_until_date,
-						source_kind,
-						source_employment_history_id,
-						is_active,
-						created_by,
-						updated_at
-					)
-					VALUES (
-						${policyId}::uuid,
-						${organizationId},
-						'employee',
-						${term.employeeId}::uuid,
-						NULL,
-						2,
-						(${spanFromTs}::timestamptz AT TIME ZONE 'UTC'),
-						(${spanUntilTs}::timestamptz AT TIME ZONE 'UTC'),
-						${span.from}::date,
-						${span.until}::date,
-						'employment_terms',
-						${term.id}::uuid,
-						true,
-						${actorUserId},
-						${now}
-					)
-				`);
+		if (continuation) {
+			const existingCustomDays = await tx
+				.select()
+				.from(employeeEmploymentHistoryDay)
+				.where(
+					and(
+						eq(employeeEmploymentHistoryDay.organizationId, organizationId),
+						eq(employeeEmploymentHistoryDay.employmentHistoryId, term.id),
+					),
+				);
+			if (existingCustomDays.length > 0) {
+				await tx.insert(employeeEmploymentHistoryDay).values(
+					existingCustomDays.map((d) => ({
+						organizationId,
+						employmentHistoryId: continuation.id,
+						dayOfWeek: d.dayOfWeek,
+						minutesPerDay: d.minutesPerDay,
+						isWorkDay: d.isWorkDay,
+						latestClockIn: d.latestClockIn,
+					})),
+				);
 			}
-		} else {
-			const fromTs = utcMidnight(parsePlainDate(term.validFromDate));
-			await tx.execute(sql`
-				INSERT INTO work_policy_assignment (
-					policy_id,
-					organization_id,
-					assignment_type,
-					employee_id,
-					team_id,
-					priority,
-					effective_from,
-					effective_until,
-					effective_from_date,
-					effective_until_date,
-					source_kind,
-					source_employment_history_id,
-					is_active,
-					created_by,
-					updated_at
-				)
-				VALUES (
-					${policyId}::uuid,
-					${organizationId},
-					'employee',
-					${term.employeeId}::uuid,
-					NULL,
-					2,
-					(${fromTs}::timestamptz AT TIME ZONE 'UTC'),
-					NULL,
-					${term.validFromDate}::date,
-					NULL,
-					'employment_terms',
-					${term.id}::uuid,
-					false,
-					${actorUserId},
-					${now}
-				)
-			`);
 		}
 	}
+
+	// 1e. Astra #4 / M9: Record an append-only durable retirement boundary in `audit_log`
+	//     capturing `orgTodayDate` in the organization's timezone at retirement so a later policy
+	//     rename or reactivation before a forward departure correction can never extend past this
+	//     retirement (and without mutating append-only `employee_departure_event` or locking `employee`).
+	await tx.insert(auditLog).values({
+		organizationId,
+		entityType: "work_policy",
+		entityId: policyId,
+		action: "work_policy.retired",
+		performedBy: actorUserId,
+		employeeId: null,
+		metadata: JSON.stringify({
+			retiredOnDate: orgTodayDate,
+			retiredAtLocalStart: orgTodayLocalStart.toISOString(),
+			retiredAtUtcMidnight: orgTodayMidnight.toISOString(),
+			organizationTimezone: orgTimezone,
+		}),
+		timestamp: now,
+	});
 
 	// 2. Query ONLY active contract_default rows referencing this policy (under the org-wide
 	//    contract_default_org exclusive lock acquired before assignment & policy locks) so

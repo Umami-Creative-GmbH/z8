@@ -1097,7 +1097,6 @@ async function correctPastDepartureDate(
 				nextPeriodStartLocalDate,
 				nextPeriodStart,
 				cappedPolicyAssignments: [...cappedById.values()],
-				organizationTimezone: nextCutoff.timezone,
 				now: nowDate,
 			});
 

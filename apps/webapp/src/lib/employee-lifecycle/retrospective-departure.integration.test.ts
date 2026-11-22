@@ -1387,11 +1387,23 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			acknowledgeUnassignedDuties: true,
 		});
 		if (depRet.status !== "effective") throw new Error("expected effective departure");
-		// Policy retires on 2026-06-15 (between initial cutoff 2026-06-10 and corrected cutoff 2026-06-20)
-		await fixture.pool.query(
-			`UPDATE work_policy SET is_active = false, updated_at = '2026-06-15T12:00:00Z' WHERE id = $1`,
-			[polRetiring!.id],
-		);
+		// Policy retires on 2026-06-15 via updateOrPublishWorkPolicy, then is reactivated on 2026-06-18!
+		// Forward departure correction to 2026-06-20 MUST STILL stay clamped at 2026-06-15 (Astra #4 / M9)!
+		const { updateOrPublishWorkPolicy } = await import("@/lib/work-policy/versioned-policy-writer");
+		await updateOrPublishWorkPolicy(fixture.db, {
+			organizationId: fixture.organizationId,
+			actorUserId: fixture.ownerUserId,
+			policyId: polRetiring!.id,
+			now: new Date("2026-06-15T12:00:00Z"),
+			data: { isActive: false },
+		});
+		await updateOrPublishWorkPolicy(fixture.db, {
+			organizationId: fixture.organizationId,
+			actorUserId: fixture.ownerUserId,
+			policyId: polRetiring!.id,
+			now: new Date("2026-06-18T12:00:00Z"),
+			data: { isActive: true, name: "M9 Reactivated Policy" },
+		});
 		await commands().correctPastDepartureDate(ownerActor(), {
 			employeeId: personRetired.employeeId,
 			departureId: depRet.departureId,

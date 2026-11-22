@@ -6,7 +6,6 @@ import {
 	employee,
 	employeeEmploymentHistory,
 	employeeEmploymentHistoryDay,
-	workPolicy,
 } from "@/db/schema";
 import type {
 	ArbzgScope,
@@ -209,7 +208,17 @@ export async function commitContractChangeInTx(
 	const now = input.now ?? currentTimestamp();
 	const reviewState: EmploymentReviewState = input.reviewState ?? "confirmed";
 
-	// 1. Lock employee row FOR UPDATE (last lock in lock hierarchy)
+	// Universal deadlock-free lock order (Astra #5 / H8 / M3 / M4):
+	// (0) org defaults/policy advisory lock SHARED (when assigning a work policy) ->
+	// (2) employee FOR UPDATE -> (3) active employee work_policy_assignment ORDER BY id FOR UPDATE ->
+	// (4) work_policy FOR SHARE.
+	const workPolicyId = input.workPolicyId ?? null;
+	if (workPolicyId) {
+		const orgLockKey = `contract_default_org:${input.organizationId}`;
+		await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
+	}
+
+	// 1. Lock employee row FOR UPDATE
 	const empRow = await lockEmployeeInTx(tx, input.organizationId, input.employeeId);
 
 	// 2. Atomic per-employee deduplication when called from a durable batch item (#1928)
@@ -258,15 +267,26 @@ export async function commitContractChangeInTx(
 	});
 
 	// 4. Validate foreign references (workPolicyId, sourceTemplateVersionId)
-	const workPolicyId = input.workPolicyId ?? null;
 	if (workPolicyId) {
-		const [policyRow] = await tx
-			.select({ id: workPolicy.id, isActive: workPolicy.isActive })
-			.from(workPolicy)
-			.where(
-				and(eq(workPolicy.id, workPolicyId), eq(workPolicy.organizationId, input.organizationId)),
-			)
-			.limit(1);
+		await tx.execute(sql`
+			SELECT id
+			FROM work_policy_assignment
+			WHERE organization_id = ${input.organizationId}
+				AND assignment_type = 'employee'
+				AND employee_id = ${input.employeeId}::uuid
+				AND is_active = true
+			ORDER BY id
+			FOR UPDATE
+		`);
+		const policyRes = await tx.execute<{ id: string; is_active: boolean }>(sql`
+			SELECT id, is_active
+			FROM work_policy
+			WHERE id = ${workPolicyId}::uuid
+				AND organization_id = ${input.organizationId}
+			LIMIT 1
+			FOR SHARE
+		`);
+		const policyRow = policyRes.rows[0];
 		if (!policyRow) {
 			throw new NotFoundError({
 				message: "Work policy not found",
@@ -274,7 +294,7 @@ export async function commitContractChangeInTx(
 				entityId: workPolicyId,
 			});
 		}
-		if (!policyRow.isActive) {
+		if (!policyRow.is_active) {
 			throw new ValidationError({
 				message: "Inactive work policies cannot be assigned to employment terms.",
 				field: "workPolicyId",

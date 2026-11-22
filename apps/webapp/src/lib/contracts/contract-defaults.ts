@@ -325,9 +325,11 @@ export async function scheduleContractDefaultInTx(
 	const validated = validateDefaultInput(input);
 	const now = input.now ?? currentTimestamp();
 
-	// Universal deadlock-free lock order (H8 / F9-1 / M3 / M4):
+	// Universal deadlock-free lock order (H8 / F9-1 / M3 / M4 / Astra #2):
 	// (0) org defaults advisory lock (SHARED here, EXCLUSIVE in policy retirement)
 	// (1) scope advisory lock (EXCLUSIVE for this org/scope/team)
+	// (2) candidate employees ORDER BY id FOR KEY SHARE (before assignments/policy so Step 4's
+	//     contract_migration_conflict FK inserts can never invert employee <-> assignment order!)
 	// (3) active work_policy_assignment rows for this scope ORDER BY id FOR UPDATE
 	// (4) work_policy row FOR SHARE
 	const orgLockKey = buildOrgDefaultsAdvisoryLockKey(input.organizationId);
@@ -339,6 +341,23 @@ export async function scheduleContractDefaultInTx(
 		validated.teamId,
 	);
 	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
+
+	const candidateEmployees =
+		validated.workPolicyId !== null
+			? await tx
+					.select({ id: employee.id })
+					.from(employee)
+					.where(
+						and(
+							onCurrentRoster(input.organizationId),
+							...(validated.scope === "team" && validated.teamId
+								? [eq(employee.teamId, validated.teamId)]
+								: []),
+						),
+					)
+					.orderBy(asc(employee.id))
+					.for("key share", { of: employee })
+			: [];
 
 	const assignmentTarget: PolicyAssignmentScopeTarget =
 		validated.scope === "team" && validated.teamId
@@ -572,19 +591,8 @@ export async function scheduleContractDefaultInTx(
 	});
 
 	// 4. Record `contract_migration_conflict` ONLY on mutating write paths when this default
-	//    introduces a weekly-hours vs. detailed-policy day-sum mismatch for any active employee.
-	const candidateEmployees = await tx
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(
-				onCurrentRoster(input.organizationId),
-				...(validated.scope === "team" && validated.teamId
-					? [eq(employee.teamId, validated.teamId)]
-					: []),
-			),
-		);
-
+	//    introduces a weekly-hours vs. detailed-policy day-sum mismatch for any active employee
+	//    (reusing `candidateEmployees` pre-locked FOR KEY SHARE at level (2)).
 	let recordedConflictsCount = 0;
 	if (candidateEmployees.length > 0 && validated.workPolicyId !== null) {
 		const contracts = await loadEffectiveContractsBatch(tx, {

@@ -285,6 +285,7 @@ async function resolveTargetEmployees(
 								WHERE ps.organization_id = h.organization_id
 									AND ps.employee_id = h.employee_id
 									AND ps.review_state = 'confirmed'
+									AND (ps.valid_until_date IS NULL OR ps.valid_until_date > ps.valid_from_date)
 									AND open_p.id IS NOT NULL
 									AND ps.employment_period_id = open_p.id
 							)
@@ -912,41 +913,42 @@ export async function submitBulkContractAction(
 							.orderBy(asc(contractChangeBatchItem.employeeId));
 						const persistedEmployeeIds = persistedItems.map((item) => item.employeeId);
 						// H6 / A3-8: Always verify the submitted target independently of any supplied
-						// confirmationFingerprint so reusing an old fingerprint with a changed target
-						// can never replay an unrelated legacy batch.
+						// confirmationFingerprint, intersecting explicit employeeIds with any team,
+						// contractType, or legacy filter just like initial submission.
 						let targetMatchesPersisted = false;
-						if (input.target.employeeIds && input.target.employeeIds.length > 0) {
+						if (
+							input.target.employeeIds &&
+							input.target.employeeIds.length > 0 &&
+							!input.target.teamId &&
+							!input.target.contractType &&
+							!onlyLegacyTerms
+						) {
 							const requestedIds = [...new Set(input.target.employeeIds)].sort((a, b) =>
 								a.localeCompare(b),
 							);
 							targetMatchesPersisted =
 								requestedIds.length === persistedEmployeeIds.length &&
 								requestedIds.every((id, idx) => id === persistedEmployeeIds[idx]);
-							if (targetMatchesPersisted && (input.target.teamId || input.target.contractType)) {
-								const filteredMatched = await resolveTargetEmployees(
+						} else {
+							const requestedSet =
+								input.target.employeeIds && input.target.employeeIds.length > 0
+									? new Set(input.target.employeeIds)
+									: null;
+							const allPersistedInRequested =
+								requestedSet === null || persistedEmployeeIds.every((id) => requestedSet.has(id));
+							if (allPersistedInRequested) {
+								const currentMatched = await resolveTargetEmployees(
 									db,
 									input.organizationId,
-									{ ...input.target, onlyLegacyTerms: false },
-									false,
+									input.target,
+									input.actionKind === "adopt_default",
 									parsedEffectiveFromDate,
 								);
-								const filteredIds = filteredMatched.map((e) => e.id);
+								const currentIds = currentMatched.map((e) => e.id);
 								targetMatchesPersisted =
-									filteredIds.length === persistedEmployeeIds.length &&
-									filteredIds.every((id, idx) => id === persistedEmployeeIds[idx]);
+									currentIds.length === persistedEmployeeIds.length &&
+									currentIds.every((id, idx) => id === persistedEmployeeIds[idx]);
 							}
-						} else {
-							const currentMatched = await resolveTargetEmployees(
-								db,
-								input.organizationId,
-								input.target,
-								input.actionKind === "adopt_default",
-								parsedEffectiveFromDate,
-							);
-							const currentIds = currentMatched.map((e) => e.id);
-							targetMatchesPersisted =
-								currentIds.length === persistedEmployeeIds.length &&
-								currentIds.every((id, idx) => id === persistedEmployeeIds[idx]);
 						}
 						const fingerprintMatches =
 							input.confirmationFingerprint === undefined ||

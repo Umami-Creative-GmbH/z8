@@ -517,7 +517,11 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					assignment.organization_id as "assignmentOrganizationId",
 					assignment.assignment_type as "assignmentType",
 					assignment.policy_id as "assignmentPolicyId", assignment.priority,
-					to_char(assignment.effective_until_date, 'YYYY-MM-DD') as "assignmentEffectiveUntilDate",
+					case
+						when assignment.source_kind = 'legacy' and assignment.effective_until is not null
+						then to_char((assignment.effective_until at time zone 'UTC') at time zone employee_row."effectiveOrganizationTimezone", 'YYYY-MM-DD')
+						else to_char(assignment.effective_until_date, 'YYYY-MM-DD')
+					end as "assignmentEffectiveUntilDate",
 					case
 						when assignment.source_kind = 'employment_terms'
 							and assignment.assignment_type = 'employee'

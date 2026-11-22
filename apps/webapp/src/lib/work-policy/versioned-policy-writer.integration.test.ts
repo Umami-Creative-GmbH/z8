@@ -11,7 +11,7 @@
  *      `ON DELETE NO ACTION` and full-organization teardown.
  */
 
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
 import { drizzle } from "drizzle-orm/node-postgres";
 import type { Pool, PoolClient } from "pg";
@@ -1276,8 +1276,10 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			policy: { isActive: true },
 		});
 
-		// H5: Retiring a policy creates durable linked retirement history for an unlinked confirmed
-		// `employee_employment_history` terms pin so later reactivating the policy never revives it!
+		// H5 / F10-1 / Astra #1 & #3: Retiring a policy with an unlinked confirmed
+		// `employee_employment_history` terms pin PLUS a legacy employee assignment for the same
+		// policy (and/or an overlapping manager assignment for another policy) splits the terms row
+		// at orgTodayDate without violating 0322 provenance or changing historical resolution!
 		const h5Pol = await createVersionedWorkPolicy(siblingDb, {
 			organizationId: ORG_ID,
 			actorUserId: USER_ID,
@@ -1308,9 +1310,18 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			 VALUES ($1, $2, 'employee', true, now(), now()) RETURNING id`,
 			[h5UserId, ORG_ID],
 		);
-		const {
-			rows: [h5Hist],
-		} = await siblingPool.query<{ id: string }>(
+		// Seed BOTH a legacy assignment for h5Pol AND an unlinked confirmed terms pin for h5Pol (F10-1!)
+		await siblingPool.query(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'employee', $3, 2,
+				'2025-01-01 00:00:00', '2025-01-01', 'legacy', true, $4, now()
+			)`,
+			[h5Pol.policy.id, ORG_ID, h5Emp!.id, USER_ID],
+		);
+		await siblingPool.query(
 			`INSERT INTO employee_employment_history (
 				organization_id, employee_id, valid_from, valid_from_date,
 				status, review_state, contract_type, currency, work_policy_id,
@@ -1318,7 +1329,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			) VALUES (
 				$1, $2, '2026-01-01T00:00:00Z', '2026-01-01',
 				'active', 'confirmed', 'fixed', 'EUR', $3, $4, now()
-			) RETURNING id`,
+			)`,
 			[ORG_ID, h5Emp!.id, h5Pol.policy.id, USER_ID],
 		);
 		await updateOrPublishWorkPolicy(siblingDb, {
@@ -1328,30 +1339,35 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			now, // 2026-06-01
 			data: { isActive: false },
 		});
-		const { rows: h5Linked } = await siblingPool.query<{
-			effective_from_date: string;
-			effective_until_date: string | null;
-			is_active: boolean;
+		const { rows: h5TermsSplit } = await siblingPool.query<{
+			valid_from_date: string;
+			valid_until_date: string | null;
+			work_policy_id: string | null;
 		}>(
-			`SELECT to_char(effective_from_date, 'YYYY-MM-DD') AS effective_from_date,
-				to_char(effective_until_date, 'YYYY-MM-DD') AS effective_until_date,
-				is_active
-			 FROM work_policy_assignment
-			 WHERE organization_id = $1
-				AND employee_id = $2
-				AND source_employment_history_id = $3`,
-			[ORG_ID, h5Emp!.id, h5Hist!.id],
+			`SELECT to_char(valid_from_date, 'YYYY-MM-DD') AS valid_from_date,
+				to_char(valid_until_date, 'YYYY-MM-DD') AS valid_until_date,
+				work_policy_id
+			 FROM employee_employment_history
+			 WHERE organization_id = $1 AND employee_id = $2
+			 ORDER BY valid_from_date ASC`,
+			[ORG_ID, h5Emp!.id],
 		);
-		expect(h5Linked).toEqual([
+		expect(h5TermsSplit).toEqual([
 			{
-				effective_from_date: "2026-01-01",
-				effective_until_date: "2026-06-01",
-				is_active: true,
+				valid_from_date: "2026-01-01",
+				valid_until_date: "2026-06-01",
+				work_policy_id: h5Pol.policy.id,
+			},
+			{
+				valid_from_date: "2026-06-01",
+				valid_until_date: null,
+				work_policy_id: null,
 			},
 		]);
 
 		// M5: Legacy UTC-midnight assignment starting 2026-06-10 00:00Z (June 9 20:00 America/New_York)
-		// keeps its prior-evening hours instead of being deactivated when retired on 2026-06-10!
+		// keeps its prior-evening hours both with no preceding row (shifts back to 2026-06-09) AND
+		// when a preceding row occupies 2026-06-09 (keeps 2026-06-10..2026-06-11 date range with 04:00Z instant)!
 		const m5OrgId = `${ORG_ID}-ny-m5`;
 		await siblingPool.query(
 			`INSERT INTO organization (id, name, slug, timezone, created_at)
@@ -1376,6 +1392,23 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 				},
 			},
 		});
+		const m5PrevPol = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: m5OrgId,
+			actorUserId: USER_ID,
+			now: new Date("2026-06-10T15:00:00Z"),
+			data: {
+				name: "M5 NY Preceding Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+			},
+		});
 		const {
 			rows: [m5Asgn],
 		} = await siblingPool.query<{ id: string }>(
@@ -1387,6 +1420,38 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 				'2026-06-10 00:00:00', '2026-06-10', 'legacy', true, $3, now()
 			) RETURNING id`,
 			[m5Pol.policy.id, m5OrgId, USER_ID],
+		);
+		const {
+			rows: [m5Team],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO team (organization_id, name, created_at, updated_at)
+			 VALUES ($1, 'M5 NY Team', now(), now()) RETURNING id`,
+			[m5OrgId],
+		);
+		// Preceding team assignment ending at 2026-06-10 00:00Z (occupies 2026-06-09 in daterange!)
+		await siblingPool.query(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, team_id, priority,
+				effective_from, effective_until, effective_from_date, effective_until_date,
+				source_kind, is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'team', $3, 1,
+				'2026-01-01 00:00:00', '2026-06-10 00:00:00', '2026-01-01', '2026-06-10',
+				'legacy', true, $4, now()
+			)`,
+			[m5PrevPol.policy.id, m5OrgId, m5Team!.id, USER_ID],
+		);
+		const {
+			rows: [m5BlockedAsgn],
+		} = await siblingPool.query<{ id: string }>(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, team_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'team', $3, 1,
+				'2026-06-10 00:00:00', '2026-06-10', 'legacy', true, $4, now()
+			) RETURNING id`,
+			[m5Pol.policy.id, m5OrgId, m5Team!.id, USER_ID],
 		);
 		await updateOrPublishWorkPolicy(siblingDb, {
 			organizationId: m5OrgId,
@@ -1414,6 +1479,27 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			is_active: true,
 			effective_from_date: "2026-06-09",
 			effective_until_date: "2026-06-10",
+			effective_until_utc: "2026-06-10 04:00:00",
+		});
+		const {
+			rows: [m5BlockedAfter],
+		} = await siblingPool.query<{
+			is_active: boolean;
+			effective_from_date: string;
+			effective_until_date: string | null;
+			effective_until_utc: string | null;
+		}>(
+			`SELECT is_active,
+				to_char(effective_from_date, 'YYYY-MM-DD') AS effective_from_date,
+				to_char(effective_until_date, 'YYYY-MM-DD') AS effective_until_date,
+				to_char(effective_until, 'YYYY-MM-DD HH24:MI:SS') AS effective_until_utc
+			 FROM work_policy_assignment WHERE id = $1`,
+			[m5BlockedAsgn!.id],
+		);
+		expect(m5BlockedAfter).toEqual({
+			is_active: true,
+			effective_from_date: "2026-06-10",
+			effective_until_date: "2026-06-11",
 			effective_until_utc: "2026-06-10 04:00:00",
 		});
 

@@ -324,7 +324,6 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 		nextPeriodStartLocalDate: string | null;
 		nextPeriodStart: Date | null;
 		cappedPolicyAssignments: readonly CappedPolicyAssignmentRecord[];
-		organizationTimezone?: string;
 		now: Date;
 	},
 ): Promise<{ newlyCappedAssignments: CappedPolicyAssignmentRecord[] }> {
@@ -342,9 +341,13 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 		? sql`AND effective_from_date < ${input.nextPeriodStartLocalDate}::date`
 		: sql``;
 
-	if (input.nextCutoffLocalDate > input.previousCutoffLocalDate) {
-		const orgTimezone =
-			input.organizationTimezone ?? (await loadOrganizationTimezone(tx, input.organizationId));
+	if (
+		input.nextCutoffLocalDate > input.previousCutoffLocalDate &&
+		input.cappedPolicyAssignments.length > 0
+	) {
+		// Astra #4 / M9: Always interpret any fallback policy retirement timestamp in the
+		// organization's current timezone (not the departure's frozen timezone).
+		const orgTimezone = await loadOrganizationTimezone(tx, input.organizationId);
 		const effectiveExtendedUntilDate =
 			input.nextPeriodStartLocalDate && input.nextCutoffLocalDate > input.nextPeriodStartLocalDate
 				? input.nextPeriodStartLocalDate
@@ -354,22 +357,150 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 				? input.nextPeriodStart
 				: input.newCutoffDate;
 
+		const parseTs = (raw: string): Date =>
+			dateFromInstant(
+				parseInstant(
+					raw.includes("T")
+						? raw
+						: `${raw.replace(" ", "T")}${/[zZ]|[+-]\d{2}:?\d{2}$/.test(raw) ? "" : "Z"}`,
+				),
+			);
+
+		// Universal lock order (Astra #4 / M9): Caller already holds (2 employee FOR UPDATE).
+		// Acquire (3) capped assignments ORDER BY id FOR UPDATE, then (4) referenced work_policy
+		// ORDER BY id FOR SHARE so a concurrent policy retirement cannot commit mid-correction.
+		const sortedCapped = [...input.cappedPolicyAssignments].sort((a, b) =>
+			a.id.localeCompare(b.id),
+		);
+		const lockedAssignmentsById = new Map<
+			string,
+			{ id: string; policyId: string; sourceKind: string | null; effectiveFromDate: string }
+		>();
+		for (const capped of sortedCapped) {
+			const res = await tx.execute<{
+				id: string;
+				policy_id: string;
+				source_kind: string | null;
+				effective_from_date: string;
+			}>(sql`
+				SELECT
+					id,
+					policy_id,
+					source_kind,
+					to_char(effective_from_date, 'YYYY-MM-DD') AS effective_from_date
+				FROM work_policy_assignment
+				WHERE organization_id = ${input.organizationId}
+					AND id = ${capped.id}::uuid
+					AND assignment_type = 'employee'
+					AND employee_id = ${input.employeeId}::uuid
+				LIMIT 1
+				FOR UPDATE
+			`);
+			const row = res.rows[0];
+			if (row) {
+				lockedAssignmentsById.set(row.id, {
+					id: row.id,
+					policyId: row.policy_id,
+					sourceKind: row.source_kind,
+					effectiveFromDate: row.effective_from_date,
+				});
+			}
+		}
+
+		const uniquePolicyIds = [
+			...new Set([...lockedAssignmentsById.values()].map((a) => a.policyId)),
+		].sort((a, b) => a.localeCompare(b));
+		const lockedPoliciesById = new Map<
+			string,
+			{ isActive: boolean; retiredOnDate: string | null }
+		>();
+		for (const polId of uniquePolicyIds) {
+			const polRes = await tx.execute<{
+				is_active: boolean;
+				retired_on_date: string | null;
+			}>(sql`
+				SELECT
+					is_active,
+					to_char((updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS retired_on_date
+				FROM work_policy
+				WHERE organization_id = ${input.organizationId}
+					AND id = ${polId}::uuid
+				LIMIT 1
+				FOR SHARE
+			`);
+			const row = polRes.rows[0];
+			if (row) {
+				lockedPoliciesById.set(polId, {
+					isActive: Boolean(row.is_active),
+					retiredOnDate: row.retired_on_date,
+				});
+			}
+		}
+
+		// Read append-only durable retirement boundaries recorded in `audit_log` by
+		// `retirePolicyReferencesInTx` AFTER acquiring (3)/(4) so a later policy rename or
+		// reactivation (or a concurrent retire+reactivate) preserves the original retirement boundary.
+		const durableRetirementsByPolicyId = new Map<
+			string,
+			Array<{
+				retiredOnDate: string;
+				retiredAtLocalStart: Date | null;
+				retiredAtUtcMidnight: Date | null;
+			}>
+		>();
+		for (const polId of uniquePolicyIds) {
+			const auditRes = await tx.execute<{ metadata: string | null }>(sql`
+				SELECT metadata
+				FROM audit_log
+				WHERE organization_id = ${input.organizationId}
+					AND entity_type = 'work_policy'
+					AND entity_id = ${polId}
+					AND action = 'work_policy.retired'
+			`);
+			const events: Array<{
+				retiredOnDate: string;
+				retiredAtLocalStart: Date | null;
+				retiredAtUtcMidnight: Date | null;
+			}> = [];
+			for (const row of auditRes.rows) {
+				if (!row.metadata) continue;
+				try {
+					const parsed = JSON.parse(row.metadata) as Record<string, unknown>;
+					if (typeof parsed.retiredOnDate === "string" && parsed.retiredOnDate.length === 10) {
+						events.push({
+							retiredOnDate: parsed.retiredOnDate,
+							retiredAtLocalStart:
+								typeof parsed.retiredAtLocalStart === "string"
+									? parseTs(parsed.retiredAtLocalStart)
+									: null,
+							retiredAtUtcMidnight:
+								typeof parsed.retiredAtUtcMidnight === "string"
+									? parseTs(parsed.retiredAtUtcMidnight)
+									: null,
+						});
+					}
+				} catch {
+					// ignore non-JSON metadata
+				}
+			}
+			if (events.length > 0) {
+				durableRetirementsByPolicyId.set(polId, events);
+			}
+		}
+
 		// A3-20 / M8 / M9: Extend ONLY assignments recorded as departure-shortened, never past
-		// each assignment's original pre-departure end date or instant (M8), and never past an
-		// intervening retirement of the assigned work policy (M9).
-		for (const capped of input.cappedPolicyAssignments) {
+		// each assignment's original pre-departure end date or instant (M8), and never past any
+		// durable or active intervening retirement boundary of the assigned work policy (M9).
+		for (const capped of sortedCapped) {
+			const lockedAssignment = lockedAssignmentsById.get(capped.id);
+			if (!lockedAssignment) continue;
 			const originalUntilDate = capped.previousEffectiveUntilDate;
 			if (originalUntilDate !== null && originalUntilDate <= input.previousCutoffLocalDate) {
 				continue;
 			}
+
 			const parsedOriginalUntilTs = capped.previousEffectiveUntil
-				? dateFromInstant(
-						parseInstant(
-							capped.previousEffectiveUntil.includes("T")
-								? capped.previousEffectiveUntil
-								: `${capped.previousEffectiveUntil.replace(" ", "T")}${/[zZ]|[+-]\d{2}:?\d{2}$/.test(capped.previousEffectiveUntil) ? "" : "Z"}`,
-						),
-					)
+				? parseTs(capped.previousEffectiveUntil)
 				: originalUntilDate !== null
 					? utcMidnight(parsePlainDate(originalUntilDate))
 					: null;
@@ -384,32 +515,49 @@ export async function reconcileStintEmployeePolicyAssignmentsOnCutoffCorrectionI
 					? parsedOriginalUntilTs
 					: effectiveExtendedUntilTs;
 
-			// M9: Check whether the assigned policy was retired after the initial departure cap.
-			const policyInfoRes = await tx.execute<{
-				source_kind: string | null;
-				policy_is_active: boolean;
-				policy_retired_on_date: string | null;
-			}>(sql`
-				SELECT
-					a.source_kind,
-					p.is_active AS policy_is_active,
-					to_char((p.updated_at AT TIME ZONE 'UTC') AT TIME ZONE ${orgTimezone}, 'YYYY-MM-DD') AS policy_retired_on_date
-				FROM work_policy_assignment a
-				JOIN work_policy p
-					ON p.id = a.policy_id
-					AND p.organization_id = a.organization_id
-				WHERE a.organization_id = ${input.organizationId}
-					AND a.id = ${capped.id}::uuid
-				LIMIT 1
-			`);
-			const policyInfo = policyInfoRes.rows[0];
-			if (policyInfo && !policyInfo.policy_is_active && policyInfo.policy_retired_on_date) {
-				const retiredOnDate = policyInfo.policy_retired_on_date;
+			const durableEvents = durableRetirementsByPolicyId.get(lockedAssignment.policyId) ?? [];
+			let blockedByDurableRetirement = false;
+			for (const ev of durableEvents) {
+				if (
+					ev.retiredOnDate < lockedAssignment.effectiveFromDate ||
+					ev.retiredOnDate < input.previousCutoffLocalDate
+				) {
+					continue;
+				}
+				if (ev.retiredOnDate === input.previousCutoffLocalDate) {
+					blockedByDurableRetirement = true;
+					break;
+				}
+				const eventBoundaryTs =
+					lockedAssignment.sourceKind === "legacy"
+						? (ev.retiredAtLocalStart ??
+							dateFromInstant(
+								parsePlainDate(ev.retiredOnDate).toZonedDateTime(orgTimezone).toInstant(),
+							))
+						: (ev.retiredAtUtcMidnight ?? utcMidnight(parsePlainDate(ev.retiredOnDate)));
+				if (ev.retiredOnDate < clampedUntilDate) {
+					clampedUntilDate = ev.retiredOnDate;
+				}
+				if (
+					ev.retiredOnDate <= clampedUntilDate &&
+					eventBoundaryTs.getTime() < clampedUntilTs.getTime()
+				) {
+					clampedUntilTs = eventBoundaryTs;
+				}
+			}
+			if (blockedByDurableRetirement) {
+				continue;
+			}
+
+			// Fallback check for direct SQL deactivation or pre-upgrade retirements while policy is inactive.
+			const policyInfo = lockedPoliciesById.get(lockedAssignment.policyId);
+			if (policyInfo && !policyInfo.isActive && policyInfo.retiredOnDate) {
+				const retiredOnDate = policyInfo.retiredOnDate;
 				if (retiredOnDate <= input.previousCutoffLocalDate) {
 					continue;
 				}
 				const retirementBoundaryTs =
-					policyInfo.source_kind === "legacy"
+					lockedAssignment.sourceKind === "legacy"
 						? dateFromInstant(
 								parsePlainDate(retiredOnDate).toZonedDateTime(orgTimezone).toInstant(),
 							)

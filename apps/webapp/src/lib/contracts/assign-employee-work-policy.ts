@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { employeeEmploymentHistory, workPolicy, workPolicyAssignment } from "@/db/schema";
+import { employeeEmploymentHistory, workPolicyAssignment } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	instantFromDate,
@@ -135,6 +135,13 @@ export async function assignEmployeeWorkPolicyInTx(
 ): Promise<AssignEmployeeWorkPolicyResult> {
 	const now = input.now ?? currentTimestamp();
 
+	// Universal deadlock-free lock order (Astra #5 / H8 / M3 / M4):
+	// (0) org defaults/policy advisory lock SHARED -> (2) employee FOR UPDATE ->
+	// (3) active employee work_policy_assignment rows ORDER BY id FOR UPDATE ->
+	// (4) work_policy FOR SHARE.
+	const orgLockKey = `contract_default_org:${input.organizationId}`;
+	await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
+
 	const lockedEmployee = await tx.execute<{ id: string }>(sql`
 		SELECT id
 		FROM employee
@@ -150,13 +157,26 @@ export async function assignEmployeeWorkPolicyInTx(
 		});
 	}
 
-	const [policyRow] = await tx
-		.select({ id: workPolicy.id, isActive: workPolicy.isActive })
-		.from(workPolicy)
-		.where(
-			and(eq(workPolicy.id, input.policyId), eq(workPolicy.organizationId, input.organizationId)),
-		)
-		.limit(1);
+	await tx.execute(sql`
+		SELECT id
+		FROM work_policy_assignment
+		WHERE organization_id = ${input.organizationId}
+			AND assignment_type = 'employee'
+			AND employee_id = ${input.employeeId}::uuid
+			AND is_active = true
+		ORDER BY id
+		FOR UPDATE
+	`);
+
+	const policyRes = await tx.execute<{ id: string; is_active: boolean }>(sql`
+		SELECT id, is_active
+		FROM work_policy
+		WHERE id = ${input.policyId}::uuid
+			AND organization_id = ${input.organizationId}
+		LIMIT 1
+		FOR SHARE
+	`);
+	const policyRow = policyRes.rows[0];
 
 	if (!policyRow) {
 		throw new NotFoundError({
@@ -165,7 +185,7 @@ export async function assignEmployeeWorkPolicyInTx(
 			entityId: input.policyId,
 		});
 	}
-	if (!policyRow.isActive) {
+	if (!policyRow.is_active) {
 		throw new ValidationError({
 			message: "Inactive work policies cannot be assigned.",
 			field: "policyId",

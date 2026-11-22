@@ -1929,20 +1929,35 @@ export async function commitCsvImportBatch(
 							}
 
 							if (parseOk && parsedInstructions.length === persistedItems.length) {
+								const [orgRow] = await db
+									.select({ timezone: organization.timezone })
+									.from(organization)
+									.where(eq(organization.id, input.organizationId))
+									.limit(1);
+								const orgTimezone = orgRow?.timezone ?? "UTC";
+								const batchToday = plainDateAt(instantFromDate(existing.createdAt), orgTimezone);
 								parsedInstructions.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
 								intentMatches = parsedInstructions.every((row, idx) => {
 									const persisted = persistedItems[idx];
 									const persistedPayload = (persisted?.payload ?? {}) as Record<string, unknown>;
 									const action = persistedPayload.action;
+									const dayCmp = comparePlainDates(parsePlainDate(row.lastWorkingDay), batchToday);
 									const modeMatchesAction =
-										row.departureMode === null ||
-										(row.departureMode === "immediate" && action === "offboard_immediately") ||
-										(row.departureMode === "scheduled" && action === "schedule_departure") ||
-										(row.departureMode === "retrospective" &&
-											(action === "record_past_departure" ||
-												action === "correct_past_departure_date" ||
-												action === "record_historical_departure_date" ||
-												action === "skip_unchanged"));
+										row.departureMode !== null
+											? (row.departureMode === "immediate" && action === "offboard_immediately") ||
+												(row.departureMode === "scheduled" && action === "schedule_departure") ||
+												(row.departureMode === "retrospective" &&
+													(action === "record_past_departure" ||
+														action === "correct_past_departure_date" ||
+														action === "record_historical_departure_date" ||
+														action === "skip_unchanged"))
+											: (dayCmp === 0 && action === "offboard_immediately") ||
+												(dayCmp > 0 && action === "schedule_departure") ||
+												(dayCmp < 0 &&
+													(action === "record_past_departure" ||
+														action === "correct_past_departure_date" ||
+														action === "record_historical_departure_date" ||
+														action === "skip_unchanged"));
 									return (
 										persisted?.employeeId === row.employeeId &&
 										persistedPayload.rowNumber === row.rowNumber &&
