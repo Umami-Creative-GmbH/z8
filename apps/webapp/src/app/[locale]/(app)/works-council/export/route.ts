@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -7,6 +6,14 @@ import { organization } from "@/db/auth-schema";
 import { worksCouncilAccessAudit, worksCouncilReviewExport } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	parseInstant,
+	parsePlainDate,
+	type PlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { canExportWorksCouncilReview } from "@/lib/works-council/permissions";
 import {
 	type PositionCaptureReview,
@@ -39,25 +46,37 @@ type VisibilitySnapshot = {
 
 const CSV_CONTENT_TYPE = "text/csv; charset=utf-8";
 
+function parseUtcDateParam(value: string): PlainDate | null {
+	try {
+		return parsePlainDate(value);
+	} catch {
+		try {
+			return parseInstant(value).toZonedDateTimeISO("UTC").toPlainDate();
+		} catch {
+			return null;
+		}
+	}
+}
+
 function parseDateRange(request: NextRequest) {
 	const url = new URL(request.url);
-	const now = DateTime.utc();
+	const today = systemClock.nowInstant().toZonedDateTimeISO("UTC").toPlainDate();
 	const fromParam = url.searchParams.get("from");
 	const toParam = url.searchParams.get("to");
-	const start = fromParam
-		? DateTime.fromISO(fromParam, { zone: "utc" }).startOf("day")
-		: now.minus({ days: 30 }).startOf("day");
-	const end = toParam ? DateTime.fromISO(toParam, { zone: "utc" }).endOf("day") : now.endOf("day");
+	const start = fromParam ? parseUtcDateParam(fromParam) : today.subtract({ days: 30 });
+	const end = toParam ? parseUtcDateParam(toParam) : today;
 
-	if (!start.isValid || !end.isValid || start > end) {
+	if (!start || !end || comparePlainDates(start, end) > 0) {
 		return null;
 	}
 
 	return {
-		dateRangeStart: start.toJSDate(),
-		dateRangeEnd: end.toJSDate(),
-		fileStart: start.toFormat("yyyyLLdd"),
-		fileEnd: end.toFormat("yyyyLLdd"),
+		dateRangeStart: dateFromInstant(start.toZonedDateTime("UTC").toInstant()),
+		dateRangeEnd: dateFromInstant(
+			end.add({ days: 1 }).toZonedDateTime("UTC").toInstant().subtract({ milliseconds: 1 }),
+		),
+		fileStart: start.toString().replaceAll("-", ""),
+		fileEnd: end.toString().replaceAll("-", ""),
 	};
 }
 

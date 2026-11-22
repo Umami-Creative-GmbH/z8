@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { Temporal } from "temporal-polyfill";
 import { DeputyName } from "@/components/absences/deputy-name";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +12,14 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import type { AbsenceEvent, CalendarEvent, WorkPeriodEvent } from "@/lib/calendar/types";
-import { runningWorkPeriodTitle } from "./running-work-period-labels";
-import { format } from "@/lib/datetime/luxon-utils";
-import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import {
+	formatPlainDate,
+	formatUtcOffset,
+	offsetMinutesToTimeZoneId,
+} from "@/lib/datetime/temporal-format";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
+import { runningWorkPeriodTitle } from "./running-work-period-labels";
 
 interface EventDetailsPanelProps {
 	event: CalendarEvent;
@@ -24,9 +28,32 @@ interface EventDetailsPanelProps {
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-const formatDate = (date: Date) => {
-	return format(date, "PPP"); // e.g., "January 1, 2024"
-};
+function resolveEventDateZone(event: CalendarEvent): string {
+	if (event.type === "holiday" || event.type === "absence") {
+		return "UTC";
+	}
+	if (event.type === "work_period") {
+		if (event.metadata.clockInUtcOffsetMinutes !== undefined) {
+			return offsetMinutesToTimeZoneId(event.metadata.clockInUtcOffsetMinutes);
+		}
+		if (event.metadata.clockInTimezone) {
+			return event.metadata.clockInTimezone;
+		}
+	}
+	if (event.type === "time_entry") {
+		if (event.metadata.utcOffsetMinutes !== undefined) {
+			return offsetMinutesToTimeZoneId(event.metadata.utcOffsetMinutes);
+		}
+		if (event.metadata.timezone) {
+			return event.metadata.timezone;
+		}
+	}
+	return "UTC";
+}
+
+function formatEventDate(date: Date, locale: string, timezone: string): string {
+	return formatPlainDate(plainDateAt(instantFromDate(date), timezone), locale, "dateMedium");
+}
 
 const formatDuration = (minutes: number) => {
 	const hours = Math.floor(minutes / 60);
@@ -38,7 +65,10 @@ const formatDuration = (minutes: number) => {
 
 export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() ?? "en";
 	const projectsEnabled = useProjectsEnabled();
+	const dateZone = resolveEventDateZone(event);
 
 	return (
 		<Sheet open onOpenChange={(open) => !open && onClose()}>
@@ -50,12 +80,12 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 					</div>
 					<SheetDescription className="flex items-center gap-2">
 						<Badge variant="outline">{getEventTypeLabel(event, t)}</Badge>
-						<span>{formatDate(event.date)}</span>
+						<span>{formatEventDate(event.date, locale, dateZone)}</span>
 					</SheetDescription>
 				</SheetHeader>
 
 				<div className="mt-6">
-					<EventTypeDetails event={event} projectsEnabled={projectsEnabled} t={t} />
+					<EventTypeDetails event={event} locale={locale} projectsEnabled={projectsEnabled} t={t} />
 				</div>
 
 				{event.description && (
@@ -73,10 +103,12 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
 
 function EventTypeDetails({
 	event,
+	locale,
 	projectsEnabled,
 	t,
 }: {
 	event: CalendarEvent;
+	locale: string;
 	projectsEnabled: boolean;
 	t: Translate;
 }) {
@@ -84,7 +116,7 @@ function EventTypeDetails({
 		case "holiday":
 			return <HolidayDetails event={event} t={t} />;
 		case "absence":
-			return <AbsenceDetails event={event} t={t} />;
+			return <AbsenceDetails event={event} locale={locale} t={t} />;
 		case "work_period":
 			return <WorkPeriodDetails event={event} projectsEnabled={projectsEnabled} t={t} />;
 		case "time_entry":
@@ -120,7 +152,15 @@ function HolidayDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
 	);
 }
 
-function AbsenceDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
+function AbsenceDetails({
+	event,
+	locale,
+	t,
+}: {
+	event: CalendarEvent;
+	locale: string;
+	t: Translate;
+}) {
 	const metadata = event.metadata as AbsenceEvent["metadata"];
 	const statusColors = {
 		pending: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
@@ -163,7 +203,7 @@ function AbsenceDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
 			{event.endDate && event.date.getTime() !== event.endDate.getTime() && (
 				<DetailValue
 					label={t("calendar.details.dateRange", "Date Range")}
-					value={`${formatDate(event.date)} - ${formatDate(event.endDate)}`}
+					value={`${formatEventDate(event.date, locale, "UTC")} - ${formatEventDate(event.endDate, locale, "UTC")}`}
 				/>
 			)}
 		</div>

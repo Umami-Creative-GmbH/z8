@@ -1,11 +1,6 @@
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
-import type {
-	AbsenceData,
-	OvertimePayoutData,
-	WageTypeMapping,
-	WorkPeriodData,
-} from "../types";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import type { AbsenceData, OvertimePayoutData, WageTypeMapping, WorkPeriodData } from "../types";
 import { DatevLohnFormatter } from "./datev-lohn-formatter";
 
 vi.mock("@/lib/logger", () => ({
@@ -50,8 +45,8 @@ function work(overrides: Partial<WorkPeriodData> = {}): WorkPeriodData {
 	return {
 		...identity,
 		id: "work-1",
-		startTime: DateTime.fromISO("2026-09-15T08:00:00Z"),
-		endTime: DateTime.fromISO("2026-09-15T08:01:00Z"),
+		startTime: parseInstant("2026-09-15T08:00:00Z").toZonedDateTimeISO("UTC"),
+		endTime: parseInstant("2026-09-15T08:01:00Z").toZonedDateTimeISO("UTC"),
 		durationMinutes: 1,
 		workCategoryId: "work-category",
 		workCategoryName: "Work",
@@ -259,14 +254,7 @@ describe("DATEV supported output evidence", () => {
 	});
 
 	it("does not invent supported rows for unmapped absences or payouts", () => {
-		const result = new DatevLohnFormatter().transform(
-			[],
-			[absence],
-			[],
-			[],
-			config,
-			[payout],
-		);
+		const result = new DatevLohnFormatter().transform([], [absence], [], [], config, [payout]);
 		expect(result.supportedOutputEvidence?.rows).toEqual([]);
 		expect(String(result.content).split("\r\n")).toHaveLength(1);
 		expect(result.metadata.unmappedOvertimePayouts).toEqual([

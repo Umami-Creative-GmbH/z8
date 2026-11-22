@@ -9,9 +9,12 @@ import { previewEmployeeTeamChange } from "@/app/[locale]/(app)/settings/employe
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import type { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
 import type { useEmployee } from "@/lib/query/use-employee";
-import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useRouter } from "@/navigation";
 import {
 	buildEmployeeDetailFormValues,
@@ -30,13 +33,13 @@ type EmployeeData = ReturnType<typeof useEmployee>;
  */
 export function useEmployeeDetailForm({
 	employeeId,
-	accessTier,
+	settingsAccess,
 	employee,
 	updateEmployee,
 	customFields,
 }: {
 	employeeId: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	employee: EmployeeData["employee"];
 	updateEmployee: EmployeeData["updateEmployee"];
 	/** The "Custom fields" section (#818), saved with the employee details. */
@@ -47,7 +50,7 @@ export function useEmployeeDetailForm({
 
 	// The Team field (Organization ADR 0010): org admins move a real employee between teams.
 	const canEditTeam =
-		accessTier === "orgAdmin" && employee?.kind === "employee";
+		meetsSettingsAccess(settingsAccess, "orgAdmin") && employee?.kind === "employee";
 	const teamOptions = useQuery({
 		queryKey: queryKeys.teams.options(employee?.organizationId ?? ""),
 		queryFn: async () => {
@@ -62,20 +65,14 @@ export function useEmployeeDetailForm({
 	const teamOptionsError = teamOptions.error;
 	useEffect(() => {
 		if (teamOptionsError)
-			toast.error(
-				teamOptionsError.message ||
-					t("errors.failedToLoad", "Failed to load data"),
-			);
+			toast.error(teamOptionsError.message || t("errors.failedToLoad", "Failed to load data"));
 	}, [teamOptionsError, t]);
 	const { confirmTeamChange, teamChangeError, drivingLicenceWarning } =
 		useDrivingLicenceTeamChangeWarning();
 
 	const form = useForm({
-		defaultValues: employee
-			? buildEmployeeDetailFormValues(employee)
-			: defaultFormValues,
-		onSubmitInvalid: ({ formApi }) =>
-			focusFirstInvalidEmployeeDetailField(formApi),
+		defaultValues: employee ? buildEmployeeDetailFormValues(employee) : defaultFormValues,
+		onSubmitInvalid: ({ formApi }) => focusFirstInvalidEmployeeDetailField(formApi),
 		onSubmit: async ({ value }) => {
 			const payload = buildEmployeeUpdatePayload(
 				value,
@@ -99,20 +96,14 @@ export function useEmployeeDetailForm({
 
 			if (!result) {
 				toast.error(
-					t(
-						"settings.employees.detailView.unexpectedError",
-						"An unexpected error occurred",
-					),
+					t("settings.employees.detailView.unexpectedError", "An unexpected error occurred"),
 				);
 				return;
 			}
 
 			if (result.success) {
 				toast.success(
-					t(
-						"settings.employees.detailView.updateSuccess",
-						"Employee updated successfully",
-					),
+					t("settings.employees.detailView.updateSuccess", "Employee updated successfully"),
 				);
 				customFields.reset();
 				push("/settings/employees");
@@ -122,10 +113,7 @@ export function useEmployeeDetailForm({
 				toast.error(
 					teamChangeError(
 						result,
-						t(
-							"settings.employees.detailView.updateFailed",
-							"Failed to update employee",
-						),
+						t("settings.employees.detailView.updateFailed", "Failed to update employee"),
 					),
 				);
 			}
@@ -134,10 +122,7 @@ export function useEmployeeDetailForm({
 	const syncedEmployee = useRef<string | null>(null);
 
 	useEffect(() => {
-		if (
-			employee &&
-			(syncedEmployee.current !== employeeId || !form.state.isDirty)
-		) {
+		if (employee && (syncedEmployee.current !== employeeId || !form.state.isDirty)) {
 			syncEmployeeForm(form, employee);
 			syncedEmployee.current = employeeId;
 		}

@@ -1,13 +1,16 @@
 "use client";
 
-import { IconPlus, IconRefresh, IconUsers } from "@tabler/icons-react";
+import { IconPlus, IconUsers } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
 import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
-import { ConfirmActionDialog, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import {
+	ConfirmActionDialog,
+	useConfirmedAction,
+} from "@/components/settings/confirm-action-dialog";
 import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -45,10 +48,8 @@ const emptyTeamPatches = (baseTeams: ScopedTeam[]): TeamPatches => ({
 function TeamsView({
 	teams,
 	canCreateTeams,
-	isRefreshing,
 	getTeamEmployees,
 	getPrimaryManager,
-	onRefresh,
 	onCreate,
 	onEdit,
 	onDelete,
@@ -57,12 +58,8 @@ function TeamsView({
 }: {
 	teams: ScopedTeam[];
 	canCreateTeams: boolean;
-	isRefreshing: boolean;
 	getTeamEmployees: (teamId: string) => MemberWithUserAndEmployee[];
-	getPrimaryManager: (
-		primaryManagerId: string | null,
-	) => TeamManagerOption | null;
-	onRefresh: () => void;
+	getPrimaryManager: (primaryManagerId: string | null) => TeamManagerOption | null;
 	onCreate: () => void;
 	onEdit: (team: ScopedTeam) => void;
 	onDelete: (team: ScopedTeam) => void;
@@ -79,23 +76,12 @@ function TeamsView({
 					"Organize employees into teams and manage team assignments",
 				)}
 				actions={
-					<>
-						<Button type="button" variant="outline" onClick={onRefresh} disabled={isRefreshing}>
-							<IconRefresh
-								className={`mr-2 size-4 ${isRefreshing ? "motion-safe:animate-spin" : ""}`}
-								aria-hidden="true"
-							/>
-							{isRefreshing
-								? t("common.refreshing", "Refreshing...")
-								: t("common.refresh", "Refresh")}
+					canCreateTeams ? (
+						<Button onClick={onCreate}>
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
+							{t("organization.teams.create", "Create Team")}
 						</Button>
-						{canCreateTeams && (
-							<Button onClick={onCreate}>
-								<IconPlus className="mr-2 size-4" aria-hidden="true" />
-								{t("organization.teams.create", "Create Team")}
-							</Button>
-						)}
-					</>
+					) : undefined
 				}
 			/>
 			{teams.length === 0 ? (
@@ -255,10 +241,8 @@ export function TeamsTab({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const { refresh } = useRouter();
-	const [isRefreshing, startRefreshTransition] = useTransition();
-	const [teamPatches, setTeamPatches] = useState<TeamPatches>(() =>
-		emptyTeamPatches(initialTeams),
-	);
+	const [, startRefreshTransition] = useTransition();
+	const [teamPatches, setTeamPatches] = useState<TeamPatches>(() => emptyTeamPatches(initialTeams));
 
 	// Dialog states
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -271,9 +255,7 @@ export function TeamsTab({
 	const [selectedTeam, setSelectedTeam] = useState<ScopedTeam | null>(null);
 
 	const activeTeamPatches =
-		teamPatches.baseTeams === initialTeams
-			? teamPatches
-			: emptyTeamPatches(initialTeams);
+		teamPatches.baseTeams === initialTeams ? teamPatches : emptyTeamPatches(initialTeams);
 	const initialTeamIds = new Set(initialTeams.map((team) => team.id));
 	const teams = [
 		...initialTeams.flatMap((team) =>
@@ -282,8 +264,7 @@ export function TeamsTab({
 				: [activeTeamPatches.updatedTeamsById[team.id] ?? team],
 		),
 		...activeTeamPatches.createdTeams.flatMap((team) =>
-			initialTeamIds.has(team.id) ||
-			activeTeamPatches.deletedTeamIds.has(team.id)
+			initialTeamIds.has(team.id) || activeTeamPatches.deletedTeamIds.has(team.id)
 				? []
 				: [activeTeamPatches.updatedTeamsById[team.id] ?? team],
 		),
@@ -327,11 +308,7 @@ export function TeamsTab({
 			return null;
 		}
 
-		return (
-			managerOptions.find(
-				(manager) => manager.employeeId === primaryManagerId,
-			) ?? null
-		);
+		return managerOptions.find((manager) => manager.employeeId === primaryManagerId) ?? null;
 	};
 
 	const refreshTeams = () => {
@@ -357,9 +334,7 @@ export function TeamsTab({
 			const previousTeamPatches = teamPatches;
 			setTeamPatches((previous) => {
 				const patches =
-					previous.baseTeams === initialTeams
-						? previous
-						: emptyTeamPatches(initialTeams);
+					previous.baseTeams === initialTeams ? previous : emptyTeamPatches(initialTeams);
 				return {
 					...patches,
 					baseTeams: initialTeams,
@@ -369,9 +344,7 @@ export function TeamsTab({
 			return { previousTeamPatches };
 		},
 		onSuccess: () => {
-			toast.success(
-				t("organization.teams.deleteSuccess", "Team deleted successfully"),
-			);
+			toast.success(t("organization.teams.deleteSuccess", "Team deleted successfully"));
 			void queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
 			refreshTeams();
 		},
@@ -393,9 +366,7 @@ export function TeamsTab({
 		};
 		setTeamPatches((previous) => {
 			const patches =
-				previous.baseTeams === initialTeams
-					? previous
-					: emptyTeamPatches(initialTeams);
+				previous.baseTeams === initialTeams ? previous : emptyTeamPatches(initialTeams);
 			return {
 				...patches,
 				baseTeams: initialTeams,
@@ -410,16 +381,12 @@ export function TeamsTab({
 		const existingTeam = teams.find((t) => t.id === updatedTeam.id);
 		const patchedTeam = {
 			...updatedTeam,
-			canManageMembers:
-				existingTeam?.canManageMembers ?? canAccessOrganizationAdminSurface,
-			canManageSettings:
-				existingTeam?.canManageSettings ?? canAccessOrganizationAdminSurface,
+			canManageMembers: existingTeam?.canManageMembers ?? canAccessOrganizationAdminSurface,
+			canManageSettings: existingTeam?.canManageSettings ?? canAccessOrganizationAdminSurface,
 		};
 		setTeamPatches((previous) => {
 			const patches =
-				previous.baseTeams === initialTeams
-					? previous
-					: emptyTeamPatches(initialTeams);
+				previous.baseTeams === initialTeams ? previous : emptyTeamPatches(initialTeams);
 			return {
 				...patches,
 				baseTeams: initialTeams,
@@ -447,10 +414,7 @@ export function TeamsTab({
 		void deletion.confirm(
 			(team) => deleteMutation.mutateAsync(team.id),
 			(failure) =>
-				describeFailure(
-					failure,
-					t("organization.teams.deleteError", "Failed to delete team"),
-				),
+				describeFailure(failure, t("organization.teams.deleteError", "Failed to delete team")),
 		);
 
 	// Handle manage members
@@ -464,10 +428,8 @@ export function TeamsTab({
 			<TeamsView
 				teams={teams}
 				canCreateTeams={canCreateTeams}
-				isRefreshing={isRefreshing}
 				getTeamEmployees={getTeamEmployees}
 				getPrimaryManager={getPrimaryManager}
-				onRefresh={refreshTeams}
 				onCreate={() => setCreateDialogOpen(true)}
 				onEdit={handleEdit}
 				onDelete={handleDeleteRequest}
@@ -487,9 +449,7 @@ export function TeamsTab({
 				deleteError={deletion.error}
 				teamToDelete={deletion.target}
 				deleteTeamMemberCount={
-					deletion.target
-						? getTeamEmployees(deletion.target.id, { includeFormer: true }).length
-						: 0
+					deletion.target ? getTeamEmployees(deletion.target.id, { includeFormer: true }).length : 0
 				}
 				onCreateOpenChange={setCreateDialogOpen}
 				onEditOpenChange={setEditDialogOpen}

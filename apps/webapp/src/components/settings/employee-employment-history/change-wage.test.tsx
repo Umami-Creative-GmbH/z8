@@ -7,6 +7,10 @@ import {
 	type EmployeeEmploymentHistoryCardProps,
 } from "../employee-employment-history-card";
 
+vi.mock("next-intl", () => ({
+	useLocale: () => "en",
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string) => fallback,

@@ -41,7 +41,7 @@ vi.mock("@/components/dashboard/actions", () => ({
 	updateWidgetOrder: vi.fn(),
 	logWaterIntake: vi.fn(),
 }));
-vi.mock("@/app/[locale]/(app)/wellness/actions", () => ({
+vi.mock("@/lib/wellness/actions", () => ({
 	logWaterIntake: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
@@ -86,7 +86,7 @@ function Layout({ stamp }: { stamp: number }) {
 function Employee({ stamp, name }: { stamp: number; name: string }) {
 	const employee = useEmployee({
 		employeeId: "target-a",
-		accessTier: "orgAdmin",
+		settingsAccess: "orgAdmin",
 		userId: scope.userId,
 		organizationId: scope.organizationId,
 		initialSnapshot: {

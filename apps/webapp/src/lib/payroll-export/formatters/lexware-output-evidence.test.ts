@@ -1,12 +1,7 @@
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { comparePayrollOutput } from "../comparison-model";
-import type {
-	AbsenceData,
-	OvertimePayoutData,
-	WageTypeMapping,
-	WorkPeriodData,
-} from "../types";
+import type { AbsenceData, OvertimePayoutData, WageTypeMapping, WorkPeriodData } from "../types";
 import { LexwareLohnFormatter } from "./lexware-lohn-formatter";
 
 vi.mock("@/lib/logger", () => ({
@@ -53,8 +48,8 @@ function work(overrides: Partial<WorkPeriodData> = {}): WorkPeriodData {
 	return {
 		...identity,
 		id: "work-1",
-		startTime: DateTime.fromISO("2026-09-15T08:00:00Z"),
-		endTime: DateTime.fromISO("2026-09-15T08:01:00Z"),
+		startTime: parseInstant("2026-09-15T08:00:00Z").toZonedDateTimeISO("UTC"),
+		endTime: parseInstant("2026-09-15T08:01:00Z").toZonedDateTimeISO("UTC"),
 		durationMinutes: 1,
 		workCategoryId: "work-category",
 		workCategoryName: "Work",
@@ -88,7 +83,7 @@ describe("Lexware supported output evidence", () => {
 				work(),
 				work({
 					id: "late-work",
-					startTime: DateTime.fromISO("2026-09-29T08:00:00Z"),
+					startTime: parseInstant("2026-09-29T08:00:00Z").toZonedDateTimeISO("UTC"),
 				}),
 			],
 			[absence],
@@ -136,10 +131,7 @@ describe("Lexware supported output evidence", () => {
 			work({ id: "zero", durationMinutes: 0 }),
 			work({ id: "open", endTime: null }),
 		];
-		expect(
-			formatter.transform(rows, [], [], [], config).supportedOutputEvidence
-				?.rows,
-		).toEqual([]);
+		expect(formatter.transform(rows, [], [], [], config).supportedOutputEvidence?.rows).toEqual([]);
 		const result = formatter.transform(rows, [], [], [], {
 			...config,
 			includeZeroHours: true,
@@ -252,8 +244,6 @@ describe("Lexware supported output evidence", () => {
 				contributions: [{ sourceId: "absence-1", hours: 16 }],
 			},
 		]);
-		expect(result.supportedOutputEvidence?.rows[0].contributions).toHaveLength(
-			1,
-		);
+		expect(result.supportedOutputEvidence?.rows[0].contributions).toHaveLength(1);
 	});
 });

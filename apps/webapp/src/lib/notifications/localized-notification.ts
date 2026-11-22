@@ -1,5 +1,9 @@
-import { DateTime } from "luxon";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	instantFromDate,
+	parseInstant,
+	parsePlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
@@ -95,16 +99,8 @@ function formatDateRange(
 		return "";
 	}
 
-	const start = DateTime.fromISO(startDate).setLocale(locale).toLocaleString({
-		month: "short",
-		day: "numeric",
-	});
-	const end = DateTime.fromISO(endDate || startDate)
-		.setLocale(locale)
-		.toLocaleString({
-			month: "short",
-			day: "numeric",
-		});
+	const start = formatPlainDate(parsePlainDate(startDate), locale, "monthDay");
+	const end = formatPlainDate(parsePlainDate(endDate || startDate), locale, "monthDay");
 
 	return start === end ? start : `${start} - ${end}`;
 }
@@ -190,18 +186,32 @@ export function getLocalizedTimeAgo(
 	locale: string,
 	t: Translate,
 ): string {
-	const created =
-		typeof createdAt === "string" ? DateTime.fromISO(createdAt) : DateTime.fromJSDate(createdAt);
-	const diff = created.diffNow(["months", "weeks", "days", "hours", "minutes", "seconds"]);
-	const absolute = diff.negate();
+	const createdInstant =
+		typeof createdAt === "string" ? parseInstant(createdAt) : instantFromDate(createdAt);
+	const nowInstant = systemClock.nowInstant();
+	const elapsedMs = nowInstant.epochMilliseconds - createdInstant.epochMilliseconds;
 
-	if (absolute.as("seconds") < 60) {
+	if (elapsedMs < 60_000) {
 		return t("common:notifications.time.justNow", "just now");
 	}
 
-	const units = ["months", "weeks", "days", "hours", "minutes"] as const;
-	const unit = units.find((candidate) => Math.floor(absolute.get(candidate)) > 0) || "minutes";
-	const value = -Math.floor(absolute.get(unit));
+	const diff = createdInstant
+		.toZonedDateTimeISO("UTC")
+		.until(nowInstant.toZonedDateTimeISO("UTC"), { largestUnit: "month" });
+	const totalMonths = diff.years * 12 + diff.months;
+	const weeks = Math.floor(diff.days / 7);
+	const remainingDays = diff.days % 7;
+
+	const candidates: Array<readonly [Intl.RelativeTimeFormatUnit, number]> = [
+		["months", totalMonths],
+		["weeks", weeks],
+		["days", remainingDays],
+		["hours", diff.hours],
+		["minutes", diff.minutes],
+	];
+	const match = candidates.find(([, count]) => count > 0);
+	const unit = match ? match[0] : "minutes";
+	const value = -(match ? match[1] : 1);
 
 	return getRelativeTimeFormatter(locale).format(value, unit);
 }

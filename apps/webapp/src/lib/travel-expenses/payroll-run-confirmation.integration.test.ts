@@ -9,7 +9,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -99,19 +99,16 @@ const adjustments = await import("@/app/[locale]/(app)/travel-expenses/adjustmen
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
 const reopen = await import("@/app/[locale]/(app)/travel-expenses/report-reopen-actions");
 const recovery = await import("@/app/[locale]/(app)/travel-expenses/finance-recovery-actions");
-const officerGrants = await import(
-	"@/app/[locale]/(app)/settings/travel-expenses/expense-officer-actions"
-);
-const { discardPayrollRunAction } = await import(
-	"@/app/[locale]/(app)/settings/payroll-export/actions"
-);
+const officerGrants =
+	await import("@/app/[locale]/(app)/settings/travel-expenses/expense-officer-actions");
+const { discardPayrollRunAction } =
+	await import("@/app/[locale]/(app)/settings/payroll-export/actions");
 const { createExportJob, processExportJob } = await import("@/lib/payroll-export/export-service");
 const { countUnconfirmedPayrollRuns } = await import("./reimbursement-channel");
 const { getPayrollRunReadiness } = await import("./payroll-run-readiness");
 const { db } = await import("@/db");
-const { POST: processReceipt } = await import(
-	"@/app/api/upload/travel-expense/report-receipt/route"
-);
+const { POST: processReceipt } =
+	await import("@/app/api/upload/travel-expense/report-receipt/route");
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
@@ -346,8 +343,8 @@ async function exportPayroll(period: Period) {
 		requestedById: ids.finance,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO(period.start, { zone: "utc" }),
-				end: DateTime.fromISO(period.end, { zone: "utc" }),
+				start: parsePlainDate(period.start),
+				end: parsePlainDate(period.end),
 			},
 		},
 	});

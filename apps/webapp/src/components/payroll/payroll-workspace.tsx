@@ -2,6 +2,7 @@
 
 import { IconScale } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useReducer, useRef, useTransition } from "react";
 import { toast } from "sonner";
@@ -60,6 +61,7 @@ export function PayrollWorkspace(props: PayrollWorkspaceProps) {
  */
 function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
 		summary: initialSummary,
 		dateMode: "month",
@@ -202,6 +204,7 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 			dispatch,
 			endDate,
 			filteredEmployeeIds,
+			locale,
 			refreshSummary,
 			startDate,
 			summary,

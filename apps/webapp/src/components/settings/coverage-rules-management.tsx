@@ -16,7 +16,7 @@ import {
 	getCoverageRules,
 	getCoverageSettings,
 	updateCoverageSettings,
-} from "@/app/[locale]/(app)/settings/coverage-rules/actions";
+} from "@/app/[locale]/(app)/settings/shifts/coverage-rule-actions";
 import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

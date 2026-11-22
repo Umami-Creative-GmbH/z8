@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { getHolidayCategories } from "@/app/[locale]/(app)/settings/holidays/actions";
+import { getHolidayCategories } from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,

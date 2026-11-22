@@ -1,7 +1,6 @@
 import "server-only";
 
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db, timeRecord } from "@/db";
 import { mapConcurrently } from "@/lib/async/map-concurrently";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
@@ -39,15 +38,13 @@ export async function loadPersonnelIdentifierClashes(input: {
 	// The whole organization, as an export without an employee or team selection.
 	const filters = {
 		dateRange: {
-			start: DateTime.fromISO(input.from.toString(), { zone: "utc" }),
-			end: DateTime.fromISO(input.asOf.toString(), { zone: "utc" }),
+			start: input.from,
+			end: input.asOf,
 		},
 	};
 	// Read-only pool queries, with two formats at a time to limit database load.
 	const clashes = await mapConcurrently(input.configs, 2, async (config) => {
-		const employeeIds = new Set(
-			employeesWithRecords.map((row) => row.employeeId),
-		);
+		const employeeIds = new Set(employeesWithRecords.map((row) => row.employeeId));
 		const otherRows = await employeesWithPayoutsOrExpenseLines({
 			organizationId: input.organizationId,
 			formatId: config.formatId,

@@ -16,7 +16,7 @@ import {
 	reviewApprovalEscalationPolicyConflicts,
 	transferApprovalEscalationAssignment,
 	updateApprovalEscalationPolicy,
-} from "@/app/[locale]/(app)/settings/approval-escalation/actions";
+} from "@/app/[locale]/(app)/settings/approval-policies/escalation-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -7,7 +7,7 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
-import { listEmailTemplates } from "../../email-templates/actions";
+import { listEmailTemplates } from "./template-actions";
 import { getEmailConfig, getSecretStoreConnectionStatus } from "./actions";
 
 async function EmailConfigContent() {

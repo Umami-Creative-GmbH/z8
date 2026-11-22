@@ -6,6 +6,7 @@
  */
 import { and, eq, gte, lte } from "drizzle-orm";
 import { auditLog, db } from "@/db";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { uploadExport } from "@/lib/storage/export-s3-client";
 import type { AuditReportConfig, ExecutionResult, ReportConfig } from "../../domain/types";
@@ -45,8 +46,8 @@ export class AuditReportExecutor implements IReportExecutor {
 			{
 				organizationId,
 				dateRange: {
-					start: dateRange.start.toISODate(),
-					end: dateRange.end.toISODate(),
+					start: dateRange.start.toPlainDate().toString(),
+					end: dateRange.end.toPlainDate().toString(),
 				},
 				eventTypes: config.auditEventTypes,
 			},
@@ -57,8 +58,8 @@ export class AuditReportExecutor implements IReportExecutor {
 			// Build query conditions
 			const conditions = [
 				eq(auditLog.organizationId, organizationId),
-				gte(auditLog.timestamp, dateRange.start.toJSDate()),
-				lte(auditLog.timestamp, dateRange.end.toJSDate()),
+				gte(auditLog.timestamp, dateFromInstant(dateRange.start.toInstant())),
+				lte(auditLog.timestamp, dateFromInstant(dateRange.end.toInstant())),
 			];
 
 			// Fetch audit logs
@@ -68,9 +69,7 @@ export class AuditReportExecutor implements IReportExecutor {
 			});
 
 			// Filter by event types if specified
-			const auditEventTypeSet = config.auditEventTypes
-				? new Set(config.auditEventTypes)
-				: null;
+			const auditEventTypeSet = config.auditEventTypes ? new Set(config.auditEventTypes) : null;
 			const filteredLogs =
 				auditEventTypeSet && auditEventTypeSet.size > 0
 					? logs.filter((log) => auditEventTypeSet.has(log.action))
@@ -83,8 +82,8 @@ export class AuditReportExecutor implements IReportExecutor {
 
 			// One object per run, so a later run never replaces a file an earlier
 			// one linked to. The file name keeps the date range readable.
-			const start = dateRange.start.toFormat("yyyyMMdd");
-			const end = dateRange.end.toFormat("yyyyMMdd");
+			const start = dateRange.start.toPlainDate().toString().replaceAll("-", "");
+			const end = dateRange.end.toPlainDate().toString().replaceAll("-", "");
 			const s3Key = `audit-reports/${assertKeySegment(organizationId)}/${assertKeySegment(executionId)}/audit_report_${start}_${end}.csv`;
 
 			// Upload to S3

@@ -17,7 +17,7 @@ import {
 	regenerateSecret,
 	testWebhook,
 	updateWebhook,
-} from "@/app/[locale]/(app)/settings/webhooks/actions";
+} from "@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions";
 import {
 	AlertDialog,
 	AlertDialogCancel,

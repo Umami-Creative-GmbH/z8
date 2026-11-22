@@ -16,6 +16,7 @@ import { actionErrorMessage } from "@/lib/organization-action/action-error-messa
 import type { SurchargeCalculationWithDetails } from "@/lib/surcharges/validation";
 import { SURCHARGE_REPORT_ROW_LIMIT } from "./constants";
 import { getDefaultFilters, parseFilterDate } from "./helpers";
+import { compareInstants, dateFromInstant } from "@/lib/datetime/temporal-core";
 import { SurchargeResultsTable } from "./results-table";
 import { SurchargeSummaryCards } from "./summary-cards";
 import type { FilterValues, SurchargeReportsProps } from "./types";
@@ -100,9 +101,12 @@ function surchargeReportReducer(
 	}
 }
 
-export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
+export function SurchargeReports({
+	organizationId,
+	organizationTimezone = "UTC",
+}: SurchargeReportsProps) {
 	const { t } = useTranslate();
-	const [defaultFilters] = useState(getDefaultFilters);
+	const [defaultFilters] = useState(() => getDefaultFilters(organizationTimezone));
 	const [state, dispatch] = useReducer(surchargeReportReducer, defaultFilters, (activeFilters) => ({
 		activeFilters,
 		dateError: null,
@@ -119,10 +123,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 	const runLoadCalculations = async (filters: FilterValues, background = false) => {
 		const requestId = latestRequestId.current + 1;
 		latestRequestId.current = requestId;
-		const startDate = parseFilterDate(filters.startDate, "start");
-		const endDate = parseFilterDate(filters.endDate, "end");
+		const startDate = parseFilterDate(filters.startDate, "start", organizationTimezone);
+		const endDate = parseFilterDate(filters.endDate, "end", organizationTimezone);
 
-		if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
+		if (!startDate || !endDate || compareInstants(startDate, endDate) > 0) {
 			loadedRowsOrganizationIdRef.current = null;
 			dispatch({
 				type: "invalidRange",
@@ -143,8 +147,8 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 
 		const employeeId = filters.employeeId.trim() || undefined;
 		const result = await getSurchargeCalculationsForPeriod({
-			startDate: startDate.toJSDate(),
-			endDate: endDate.toJSDate(),
+			startDate: dateFromInstant(startDate),
+			endDate: dateFromInstant(endDate),
 			employeeId,
 		}).catch(() => ({ success: false as const, code: null }));
 		const isLatestRequest = requestId === latestRequestId.current;
@@ -346,6 +350,7 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 				<CardContent>
 					<SurchargeResultsTable
 						isLoading={state.isLoading}
+						organizationTimezone={organizationTimezone}
 						rows={displayRows}
 						expandedId={state.expandedId}
 						onExpandedChange={(id) => dispatch({ type: "setExpandedId", id })}

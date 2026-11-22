@@ -11,7 +11,7 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
-vi.mock("@/app/[locale]/(app)/settings/permissions/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/roles/team-permission-actions", () => ({
 	grantTeamPermissions: mocks.grant,
 	revokeTeamPermissions: mocks.revoke,
 }));

@@ -2,18 +2,15 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { z } from "zod";
 import { employee } from "@/db/schema";
 import { env } from "@/env";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { encryptImportCredential } from "@/lib/import-review/credential-secret";
 import { partitionDateRangeByMonth } from "@/lib/import-review/partitioning";
-import {
-	enqueueImportCommitJob,
-	enqueueImportScanJob,
-} from "@/lib/import-review/queue";
+import { enqueueImportCommitJob, enqueueImportScanJob } from "@/lib/import-review/queue";
 import {
 	applyImportRowDecision,
 	createCommitJobsForAcceptedRows,
@@ -45,8 +42,7 @@ const MAX_REVIEW_PAGE_OFFSET = 100_000;
 const MAX_DECISION_REASON_LENGTH = 1_000;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
-const UUID_PATTERN =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const GENERIC_SCAN_START_ERROR = "Failed to start import review scan";
 const GENERIC_COMMIT_START_ERROR = "Failed to start import commit";
 function isImportProvider(value: string): value is ImportApiProvider {
@@ -94,8 +90,7 @@ export interface StartImportReviewScanInput {
 	entityTypes: ImportEntityType[];
 }
 
-interface ValidatedStartImportReviewScanInput
-	extends StartImportReviewScanInput {
+interface ValidatedStartImportReviewScanInput extends StartImportReviewScanInput {
 	credential: string;
 	employeeMappings: ImportEmployeeMapping[];
 }
@@ -133,12 +128,16 @@ function validateImportDate(value: unknown, label: "start" | "end"): string {
 		throw new Error(`Invalid import ${label} date: ${String(value)}`);
 	}
 
-	const parsed = DateTime.fromISO(value, { zone: "utc" });
-	if (!parsed.isValid || parsed.toISODate() !== value) {
-		throw new Error(`Invalid import ${label} date: ${value}`);
+	try {
+		const parsed = parsePlainDate(value);
+		if (parsed.toString() === value) {
+			return value;
+		}
+	} catch {
+		// Fall through to Error below.
 	}
 
-	return value;
+	throw new Error(`Invalid import ${label} date: ${value}`);
 }
 
 function validateSafeId(value: unknown, label: string): string {
@@ -149,9 +148,7 @@ function validateSafeId(value: unknown, label: string): string {
 	return value.trim();
 }
 
-function validateImportReviewBatchInput(
-	input: unknown,
-): ImportReviewBatchInput {
+function validateImportReviewBatchInput(input: unknown): ImportReviewBatchInput {
 	if (!isRecord(input)) throw new Error("Invalid import review input");
 
 	return {
@@ -159,9 +156,7 @@ function validateImportReviewBatchInput(
 	};
 }
 
-function validateListImportReviewRowsInput(
-	input: unknown,
-): ListImportReviewRowsInput {
+function validateListImportReviewRowsInput(input: unknown): ListImportReviewRowsInput {
 	const batchInput = validateImportReviewBatchInput(input);
 	if (!isRecord(input)) throw new Error("Invalid import review row list input");
 
@@ -198,9 +193,7 @@ function validateListImportReviewRowsInput(
 	};
 }
 
-function validateApplyImportDecisionInput(
-	input: unknown,
-): ApplyImportDecisionInput {
+function validateApplyImportDecisionInput(input: unknown): ApplyImportDecisionInput {
 	const batchInput = validateImportReviewBatchInput(input);
 	if (!isRecord(input)) throw new Error("Invalid import review decision input");
 
@@ -212,9 +205,7 @@ function validateApplyImportDecisionInput(
 		throw new Error("Too many import review rows requested");
 	}
 
-	const rowIds = input.rowIds.map((rowId) =>
-		validateSafeId(rowId, "Import review row ID"),
-	);
+	const rowIds = input.rowIds.map((rowId) => validateSafeId(rowId, "Import review row ID"));
 	if (new Set(rowIds).size !== rowIds.length) {
 		throw new Error("Duplicate import review row IDs are not allowed");
 	}
@@ -225,8 +216,7 @@ function validateApplyImportDecisionInput(
 
 	let reason: string | null | undefined;
 	if (input.reason !== undefined && input.reason !== null) {
-		if (typeof input.reason !== "string")
-			throw new Error("Invalid import review decision reason");
+		if (typeof input.reason !== "string") throw new Error("Invalid import review decision reason");
 		reason = input.reason.trim();
 		if (reason.length > MAX_DECISION_REASON_LENGTH)
 			throw new Error("Import review decision reason is too long");
@@ -258,9 +248,7 @@ function validateApplyImportDecisionInput(
 	};
 }
 
-function validateStartImportReviewScanInput(
-	input: unknown,
-): ValidatedStartImportReviewScanInput {
+function validateStartImportReviewScanInput(input: unknown): ValidatedStartImportReviewScanInput {
 	if (!isRecord(input)) {
 		throw new Error("Invalid import review scan input");
 	}
@@ -269,8 +257,7 @@ function validateStartImportReviewScanInput(
 		throw new Error("Invalid import provider");
 	}
 
-	const credential =
-		typeof input.credential === "string" ? input.credential.trim() : "";
+	const credential = typeof input.credential === "string" ? input.credential.trim() : "";
 	if (!credential) {
 		throw new Error("Import credential is required");
 	}
@@ -319,17 +306,11 @@ function validateStartImportReviewScanInput(
 		}
 
 		employeeMappings = input.employeeMappings.map((mapping) => {
-			if (!isRecord(mapping))
-				throw new Error("Invalid import employee mapping");
+			if (!isRecord(mapping)) throw new Error("Invalid import employee mapping");
 
 			const providerEmployeeId =
-				typeof mapping.providerEmployeeId === "string"
-					? mapping.providerEmployeeId.trim()
-					: "";
-			if (
-				!providerEmployeeId ||
-				providerEmployeeId.length > MAX_EMPLOYEE_ID_LENGTH
-			) {
+				typeof mapping.providerEmployeeId === "string" ? mapping.providerEmployeeId.trim() : "";
+			if (!providerEmployeeId || providerEmployeeId.length > MAX_EMPLOYEE_ID_LENGTH) {
 				throw new Error("Invalid import provider employee ID");
 			}
 
@@ -354,8 +335,7 @@ function validateStartImportReviewScanInput(
 
 	if (
 		input.entityTypes.some(
-			(entityType) =>
-				typeof entityType !== "string" || !isImportEntityType(entityType),
+			(entityType) => typeof entityType !== "string" || !isImportEntityType(entityType),
 		)
 	) {
 		throw new Error("Invalid import entity type");
@@ -430,10 +410,7 @@ function validateMappedEmployeesInOrganization(
 				.select({ id: employee.id })
 				.from(employee)
 				.where(
-					and(
-						eq(employee.organizationId, organizationId),
-						inArray(employee.id, mappedEmployeeIds),
-					),
+					and(eq(employee.organizationId, organizationId), inArray(employee.id, mappedEmployeeIds)),
 				),
 		);
 		const validIds = new Set(validEmployees.map((entry) => entry.id));

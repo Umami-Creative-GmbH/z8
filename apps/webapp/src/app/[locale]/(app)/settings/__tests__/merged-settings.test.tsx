@@ -24,6 +24,17 @@ const mocks = vi.hoisted(() => ({
 	reminders: vi.fn(),
 	submissions: vi.fn(),
 	organization: vi.fn(),
+	datev: vi.fn(),
+	lexware: vi.fn(),
+	sage: vi.fn(),
+	personio: vi.fn(),
+	successfactors: vi.fn(),
+	workday: vi.fn(),
+	payrollHistory: vi.fn(),
+	payrollIdentifierFields: vi.fn(),
+	organizationTimezone: vi.fn(),
+	vehicles: vi.fn(),
+	vehicleUse: vi.fn(),
 	redirect: vi.fn((url: string) => {
 		throw new Error(`redirect:${url}`);
 	}),
@@ -51,11 +62,14 @@ vi.mock("@/lib/auth-domain-config", () => ({
 	getOrganizationPlatformOrigins: () => ["https://org-1.example.com"],
 }));
 vi.mock("@/lib/app-url", () => ({ getOrganizationBaseUrl: mocks.organizationBaseUrl }));
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: mocks.organizationTimezone,
+}));
 vi.mock("../enterprise/email/actions", () => ({
 	getEmailConfig: mocks.email,
 	getSecretStoreConnectionStatus: mocks.secretStatus,
 }));
-vi.mock("../email-templates/actions", () => ({
+vi.mock("../enterprise/email/template-actions", () => ({
 	listEmailTemplates: mocks.templates,
 }));
 vi.mock("../enterprise/api-keys/actions", () => ({ listApiKeys: mocks.keys }));
@@ -84,9 +98,27 @@ vi.mock("../notification-channels/actions", () => ({
 	updateSlackNotificationChannelSettings: vi.fn(),
 	updateTeamsNotificationChannelSettings: vi.fn(),
 	updateDiscordNotificationChannelSettings: vi.fn(),
+	connectDiscordBot: vi.fn(),
+	disconnectDiscordBot: vi.fn(),
 }));
 vi.mock("../notification-channels/telegram-panel", () => ({
 	TelegramPanel: () => null,
+}));
+vi.mock("../payroll-export/actions", () => ({
+	getDatevConfigAction: mocks.datev,
+	getLexwareConfigAction: mocks.lexware,
+	getSageConfigAction: mocks.sage,
+	getPersonioConfigAction: mocks.personio,
+	getSuccessFactorsConfigAction: mocks.successfactors,
+	getWorkdayConfigAction: mocks.workday,
+	getExportHistoryAction: mocks.payrollHistory,
+	getPayrollIdentifierFieldsAction: mocks.payrollIdentifierFields,
+}));
+vi.mock("../vehicles/actions", () => ({
+	getVehicleSettings: mocks.vehicles,
+}));
+vi.mock("../vehicles/vehicle-use-actions", () => ({
+	getVehicleUseAdminDataAction: mocks.vehicleUse,
 }));
 vi.mock("@/lib/organization/tracking-settings", () => ({
 	loadOrganizationTrackingSettings: mocks.tracking,
@@ -103,15 +135,17 @@ vi.mock("@/lib/time-tracking/period-submissions/settings", () => ({
 vi.mock("@/components/settings/settings-tabbed-page", () => ({
 	SettingsTabbedPage: () => null,
 }));
-vi.mock(
-	"@/components/settings/email-templates/email-template-settings-client",
-	() => ({ EmailTemplateSettingsClient: () => null }),
-);
+vi.mock("@/components/settings/email-templates/email-template-settings-client", () => ({
+	EmailTemplateSettingsClient: () => null,
+}));
 vi.mock("@/components/settings/enterprise/email-config-form", () => ({
 	EmailConfigForm: () => null,
 }));
 vi.mock("@/components/settings/notification-channel-settings", () => ({
 	NotificationChannelSettings: () => null,
+}));
+vi.mock("@/components/settings/discord-channel-settings", () => ({
+	DiscordChannelSettings: () => null,
 }));
 vi.mock("@/components/enterprise/api-key-page-client", () => ({
 	ApiKeyPageClient: () => null,
@@ -146,26 +180,104 @@ vi.mock("@/components/settings/enterprise/social-oauth-management", () => ({
 vi.mock("@/components/organization/organization-auto-clock-out-card", () => ({
 	OrganizationAutoClockOutCard: () => null,
 }));
-vi.mock(
-	"@/components/organization/organization-clocking-reminders-card",
-	() => ({ OrganizationClockingRemindersCard: () => null }),
-);
-vi.mock(
-	"@/components/organization/organization-period-submissions-card",
-	() => ({ OrganizationPeriodSubmissionsCard: () => null }),
-);
+vi.mock("@/components/organization/organization-clocking-reminders-card", () => ({
+	OrganizationClockingRemindersCard: () => null,
+}));
+vi.mock("@/components/organization/organization-period-submissions-card", () => ({
+	OrganizationPeriodSubmissionsCard: () => null,
+}));
 vi.mock("@/components/organization/organization-tracking-card", () => ({
 	OrganizationTrackingCard: () => null,
 }));
+vi.mock("@/components/settings/custom-roles/custom-roles-management", () => ({
+	CustomRolesManagement: () => null,
+}));
+vi.mock("@/components/settings/custom-roles/team-permissions-tab", () => ({
+	TeamPermissionsTab: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/export-form", () => ({
+	ExportForm: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/datev-config-form", () => ({
+	DatevConfigForm: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/lexware-config-form", () => ({
+	LexwareConfigForm: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/sage-config-form", () => ({
+	SageConfigForm: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/personio-config-form", () => ({
+	PersonioConfigForm: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/successfactors-config-form", () => ({
+	SuccessFactorsConfigForm: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/workday-config-form", () => ({
+	WorkdayConfigForm: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/wage-type-mappings", () => ({
+	WageTypeMappings: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/expense-wage-type-mappings", () => ({
+	ExpenseWageTypeMappings: () => null,
+}));
+vi.mock("@/components/settings/payroll-export/export-history", () => ({
+	ExportHistory: () => null,
+}));
+vi.mock("@/components/settings/vehicles/vehicle-settings", () => ({
+	VehicleSettings: () => null,
+}));
+vi.mock("@/components/settings/vehicle-use/vehicle-use-settings", () => ({
+	VehicleUseSwitch: () => null,
+	VehicleUseAssignments: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/travel-expense-settings-tabs", () => ({
+	TravelExpenseSettingsTabs: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/allowance-overrides-settings", () => ({
+	AllowanceOverridesSettingsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/expense-officer-settings", () => ({
+	ExpenseOfficerSettingsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/foreign-expense-conversions", () => ({
+	ForeignExpenseConversionsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/mileage-policy-settings", () => ({
+	MileagePolicySettingsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/per-diem-policy-settings", () => ({
+	PerDiemPolicySettingsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/reference-rate-settings", () => ({
+	ReferenceRateSettingsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/reimbursement-channel-settings", () => ({
+	ReimbursementChannelSettingsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/reimbursement-currency-settings", () => ({
+	ReimbursementCurrencySettingsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/travel-expense-approver-settings", () => ({
+	TravelExpenseApproverSettingsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/travel-expense-policy-management", () => ({
+	TravelExpensePolicyManagement: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/travel-expense-project-exceptions", () => ({
+	TravelExpenseProjectExceptionsCard: () => null,
+}));
+vi.mock("@/components/settings/travel-expense/travel-expense-receipt-exception-settings", () => ({
+	TravelExpenseReceiptExceptionSettingsCard: () => null,
+}));
+vi.mock("@/components/travel-expenses/finance/officer-coverage-gap", () => ({
+	OfficerCoverageGapNotice: () => null,
+}));
 
 import AuditPage from "../audit-export/page";
-import LegacyAuditPage from "../audit-log/page";
 import ClockingPage from "../clocking/page";
-import LegacyDiscordPage from "../discord/page";
-import LegacyEmailPage from "../email-templates/page";
 import DeveloperPage from "../enterprise/api-keys/page";
-import LegacyEnterpriseAuditPage from "../enterprise/audit-log/page";
-import LegacyBrandingPage from "../enterprise/branding/page";
 
 vi.mock("@/components/settings/enterprise/domains-branding-tabs", () => ({
 	DomainsAndBrandingTabs: () => null,
@@ -174,12 +286,11 @@ vi.mock("@/components/settings/enterprise/domains-branding-tabs", () => ({
 import DomainsPage from "../enterprise/domains/page";
 import EmailPage from "../enterprise/email/page";
 import IdentityPage from "../enterprise/identity-setup/page";
-import LegacySSOPage from "../enterprise/sso/page";
 import ChatPage from "../notification-channels/page";
-import LegacySlackPage from "../slack/page";
-import LegacyTeamsPage from "../teams-notifications/page";
-import LegacyTelegramPage from "../telegram/page";
-import LegacyWebhooksPage from "../webhooks/page";
+import PayrollExportPage from "../payroll-export/page";
+import RolesPage from "../roles/page";
+import TravelExpensesPage from "../travel-expenses/page";
+import VehiclesPage from "../vehicles/page";
 
 const mergedPages = [
 	EmailPage,
@@ -188,6 +299,10 @@ const mergedPages = [
 	IdentityPage,
 	ChatPage,
 	ClockingPage,
+	RolesPage,
+	PayrollExportPage,
+	TravelExpensesPage,
+	VehiclesPage,
 ];
 async function content(page: (typeof mergedPages)[number]) {
 	return page().props.children.type();
@@ -226,13 +341,33 @@ beforeEach(() => {
 		timezone: "Europe/Berlin",
 		createdAt: new Date("2026-01-01T00:00:00Z"),
 	});
-	for (const loader of [
-		mocks.tracking,
-		mocks.autoClockOut,
-		mocks.reminders,
-		mocks.submissions,
-	])
+	for (const loader of [mocks.tracking, mocks.autoClockOut, mocks.reminders, mocks.submissions])
 		loader.mockResolvedValue({});
+	for (const loader of [
+		mocks.datev,
+		mocks.lexware,
+		mocks.sage,
+		mocks.personio,
+		mocks.successfactors,
+		mocks.workday,
+	])
+		loader.mockResolvedValue({ success: true, data: null });
+	mocks.payrollHistory.mockResolvedValue({ success: true, data: [] });
+	mocks.payrollIdentifierFields.mockResolvedValue({ success: true, data: [] });
+	mocks.organizationTimezone.mockResolvedValue("Europe/Berlin");
+	mocks.vehicles.mockResolvedValue({
+		success: true,
+		data: { vehicles: [], employees: [], teams: [] },
+	});
+	mocks.vehicleUse.mockResolvedValue({
+		success: true,
+		data: {
+			settings: { enabled: true },
+			assignments: [],
+			employees: [],
+			teams: [],
+		},
+	});
 });
 describe("merged organization settings", () => {
 	it.each(mergedPages)(
@@ -254,6 +389,16 @@ describe("merged organization settings", () => {
 				mocks.slack,
 				mocks.teams,
 				mocks.discord,
+				mocks.datev,
+				mocks.lexware,
+				mocks.sage,
+				mocks.personio,
+				mocks.successfactors,
+				mocks.workday,
+				mocks.payrollHistory,
+				mocks.payrollIdentifierFields,
+				mocks.vehicles,
+				mocks.vehicleUse,
 			])
 				expect(loader).not.toHaveBeenCalled();
 		},
@@ -296,11 +441,7 @@ describe("merged organization settings", () => {
 	});
 	it("keeps signing keys unavailable until audit configuration exists", async () => {
 		mocks.auditConfig.mockResolvedValue({ success: true, data: null });
-		expect(tabs(await content(AuditPage))).toEqual([
-			"activity",
-			"config",
-			"packages",
-		]);
+		expect(tabs(await content(AuditPage))).toEqual(["activity", "config", "packages"]);
 	});
 	it("puts guided identity setup, SSO and social login together using the organization callback origin", async () => {
 		const page = await content(IdentityPage);
@@ -317,12 +458,7 @@ describe("merged organization settings", () => {
 	});
 	it("loads moved clocking settings for the active organization", async () => {
 		const page = await content(ClockingPage);
-		expect(tabs(page)).toEqual([
-			"tracking",
-			"automatic-clock-out",
-			"reminders",
-			"submissions",
-		]);
+		expect(tabs(page)).toEqual(["tracking", "automatic-clock-out", "reminders", "submissions"]);
 		for (const loader of [mocks.tracking, mocks.autoClockOut, mocks.reminders])
 			expect(loader).toHaveBeenCalledWith(expect.anything(), "org-1");
 		expect(mocks.submissions).toHaveBeenCalledWith(
@@ -334,30 +470,59 @@ describe("merged organization settings", () => {
 			settingsAccess: "orgAdmin",
 		});
 	});
-	it.each([
-		[LegacyEmailPage, "/settings/enterprise/email?tab=templates"],
-		[LegacyTelegramPage, "/settings/notification-channels?tab=telegram"],
-		[LegacyWebhooksPage, "/settings/enterprise/api-keys?tab=webhooks"],
-		[LegacyAuditPage, "/settings/audit-export?tab=activity"],
-		[LegacyEnterpriseAuditPage, "/settings/audit-export?tab=activity"],
-		[LegacySlackPage, "/settings/notification-channels?tab=slack"],
-		[LegacyTeamsPage, "/settings/notification-channels?tab=teams"],
-		[LegacyDiscordPage, "/settings/notification-channels?tab=discord"],
-		[LegacySSOPage, "/settings/enterprise/identity-setup?tab=sso"],
-		[LegacyBrandingPage, "/settings/enterprise/domains?tab=branding"],
-	])("preserves a guarded legacy route", async (page, target) => {
-		const render = () => {
-			// Every Next page receives searchParams; the webhooks redirect forwards them.
-			const result = (page as (props: unknown) => ReturnType<typeof page>)({
-				searchParams: Promise.resolve({}),
-			});
-			return result instanceof Promise
-				? result
-				: result.props.children.type(result.props.children.props);
-		};
-		await expect(render()).rejects.toThrow(`redirect:${target}`);
-		mocks.access.mockRejectedValue(new Error("denied"));
-		await expect(render()).rejects.toThrow("denied");
+	it("combines custom roles and team permissions for the active organization", async () => {
+		const page = await content(RolesPage);
+		expect(page.key).toBe("org-1");
+		expect(page.props.defaultTab).toBe("roles");
+		expect(tabs(page)).toEqual(["roles", "team-permissions"]);
+		expect(page.props.tabs[0].panel.props).toMatchObject({
+			organizationId: "org-1",
+		});
+		expect(page.props.tabs[1].panel.props).toMatchObject({
+			organizationId: "org-1",
+		});
+	});
+	it("renders all nine payroll export tabs on SettingsTabbedPage with smart default", async () => {
+		const unconfigured = await content(PayrollExportPage);
+		expect(unconfigured.key).toBe("org-1");
+		expect(unconfigured.props.measure).toBe(true);
+		expect(unconfigured.props.defaultTab).toBe("datev");
+		expect(tabs(unconfigured)).toEqual([
+			"export",
+			"datev",
+			"lexware",
+			"sage",
+			"personio",
+			"successfactors",
+			"workday",
+			"mappings",
+			"history",
+		]);
+		expect(unconfigured.props.tabs[8].panel.props).toMatchObject({
+			organizationTimezone: "Europe/Berlin",
+		});
+
+		mocks.datev.mockResolvedValue({ success: true, data: { id: "datev-1" } });
+		const configured = await content(PayrollExportPage);
+		expect(configured.props.defaultTab).toBe("export");
+	});
+	it("mounts travel expense settings tabs scoped to the active organization", async () => {
+		const page = await content(TravelExpensesPage);
+		expect(page.key).toBe("org-1");
+		expect(Object.keys(page.props)).toEqual([
+			"review",
+			"currencies",
+			"rates",
+			"exceptions",
+			"access",
+		]);
+	});
+	it("combines vehicle settings, usage, and assignments on SettingsTabbedPage", async () => {
+		const page = await content(VehiclesPage);
+		expect(page.key).toBe("org-1");
+		expect(page.props.measure).toBe(true);
+		expect(page.props.defaultTab).toBe("vehicles");
+		expect(tabs(page)).toEqual(["vehicles", "use", "assignments"]);
 	});
 	it.each(["sso", "social-oauth"])(
 		"redirects a legacy identity tab on the domains URL",
@@ -366,9 +531,7 @@ describe("merged organization settings", () => {
 				DomainsPage({
 					searchParams: Promise.resolve({ tab }),
 				}).props.children.type({ searchParams: Promise.resolve({ tab }) }),
-			).rejects.toThrow(
-				`redirect:/settings/enterprise/identity-setup?tab=${tab}`,
-			);
+			).rejects.toThrow(`redirect:/settings/enterprise/identity-setup?tab=${tab}`);
 			expect(mocks.domains).not.toHaveBeenCalled();
 			expect(mocks.providers).not.toHaveBeenCalled();
 		},

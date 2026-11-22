@@ -7,13 +7,13 @@ import {
 	deleteWebhook,
 	regenerateSecret,
 	updateWebhook,
-} from "@/app/[locale]/(app)/settings/webhooks/actions";
+} from "@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions";
 import type { PublicWebhookEndpoint } from "@/lib/webhooks/types";
 import { render } from "@/test/render-with-translations";
 import { WebhookEndpointCard } from "./webhook-endpoint-card";
 import { webhookEndpointLabel } from "./webhook-endpoint-label";
 
-vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions", () => ({
 	deleteWebhook: vi.fn(),
 	updateWebhook: vi.fn(),
 	testWebhook: vi.fn(),

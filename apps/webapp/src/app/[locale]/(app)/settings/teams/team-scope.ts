@@ -1,6 +1,9 @@
 import type { team } from "@/db/schema";
 import type { TeamPermissions } from "@/lib/authorization";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 
 export type ScopedTeam = typeof team.$inferSelect & {
 	canManageMembers: boolean;
@@ -13,16 +16,16 @@ export interface TeamSettingsSurface {
 	teams: ScopedTeam[];
 }
 
-export function canUseManagerScopedTeamSettings(accessTier: SettingsAccessTier): boolean {
-	return accessTier === "manager" || accessTier === "orgAdmin";
+export function canUseManagerScopedTeamSettings(settingsAccess: SettingsAccess | null): boolean {
+	return meetsSettingsAccess(settingsAccess, "scopedManager");
 }
 
 export function getScopedTeamFlags(input: {
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	permissions: TeamPermissions;
 	teamId: string;
 }): Pick<ScopedTeam, "canManageMembers" | "canManageSettings"> {
-	if (input.accessTier === "orgAdmin") {
+	if (meetsSettingsAccess(input.settingsAccess, "orgAdmin")) {
 		return {
 			canManageMembers: true,
 			canManageSettings: true,
@@ -38,14 +41,14 @@ export function getScopedTeamFlags(input: {
 }
 
 export function buildTeamSettingsSurface(input: {
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	teams: Array<typeof team.$inferSelect>;
 	permissions: TeamPermissions;
 }): TeamSettingsSurface {
-	const canAccessOrganizationAdminSurface = input.accessTier === "orgAdmin";
+	const canAccessOrganizationAdminSurface = meetsSettingsAccess(input.settingsAccess, "orgAdmin");
 	const canCreateTeams = canAccessOrganizationAdminSurface;
 
-	if (!canUseManagerScopedTeamSettings(input.accessTier)) {
+	if (!canUseManagerScopedTeamSettings(input.settingsAccess)) {
 		return {
 			canAccessOrganizationAdminSurface: false,
 			canCreateTeams: false,
@@ -57,7 +60,7 @@ export function buildTeamSettingsSurface(input: {
 		const scopedTeam = {
 			...currentTeam,
 			...getScopedTeamFlags({
-				accessTier: input.accessTier,
+				settingsAccess: input.settingsAccess,
 				permissions: input.permissions,
 				teamId: currentTeam.id,
 			}),

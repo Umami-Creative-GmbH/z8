@@ -139,11 +139,12 @@ export async function TimelineRegion({
 }): Promise<ReactNode> {
 	let result: Awaited<ReturnType<typeof getWorkdayTimelineData>>;
 	try {
-		const { date } = await searchParams;
+		const [{ date }, locale] = await Promise.all([searchParams, getLocale()]);
 		result = await getWorkdayTimelineData({
 			employeeId: context.employee.id,
 			organizationId: context.employee.organizationId,
 			timezone: context.timezone,
+			locale,
 			timeFormat: context.timeFormat,
 			dateParam: date,
 		});

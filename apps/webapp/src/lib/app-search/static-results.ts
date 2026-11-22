@@ -1,8 +1,5 @@
 import { getResolvedSettingsVisibility } from "@/components/settings/settings-config";
-import {
-	APP_ROUTE_METADATA,
-	type AppRouteMetadata,
-} from "@/lib/navigation/route-metadata";
+import { APP_ROUTE_METADATA, type AppRouteMetadata } from "@/lib/navigation/route-metadata";
 import type { AppSearchResult, StaticAppSearchInput } from "./types";
 
 type SearchKeywordDefinition = {
@@ -71,13 +68,9 @@ const PAYROLL_PAGE_DESTINATION = routeMetadata("payroll");
 const SETTINGS_PAGE_DESTINATION = routeMetadata("settings");
 
 const MY_DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata("driving-licence");
-const TEAM_DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata(
-	"team-driving-licence",
-);
+const TEAM_DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata("team-driving-licence");
 
-function isManagerOrAdmin(
-	employeeRole: StaticAppSearchInput["employeeRole"],
-): boolean {
+function isManagerOrAdmin(employeeRole: StaticAppSearchInput["employeeRole"]): boolean {
 	return employeeRole === "admin" || employeeRole === "manager";
 }
 
@@ -105,24 +98,21 @@ function translateKeywords(
 export function buildStaticAppSearchResults({
 	t,
 	employeeRole,
-	settingsAccessTier,
+	settingsAccess,
 	billingEnabled,
 	showComplianceNav,
 	showPayrollNav,
 	featureFlags,
-	managesProject,
+	settingsCapabilities,
 	showMyDrivingLicenceNav,
 	showTeamDrivingLicenceNav,
-	drivingLicenceSettingsVisible,
 }: StaticAppSearchInput): AppSearchResult[] {
-	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map(
-		(destination) => ({
-			type: "page",
-			id: `page:${destination.id}`,
-			title: t(destination.titleKey, destination.titleDefault),
-			href: destination.href,
-		}),
-	);
+	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map((destination) => ({
+		type: "page",
+		id: `page:${destination.id}`,
+		title: t(destination.titleKey, destination.titleDefault),
+		href: destination.href,
+	}));
 
 	if (isManagerOrAdmin(employeeRole)) {
 		pageResults.push(
@@ -140,10 +130,7 @@ export function buildStaticAppSearchResults({
 
 				return {
 					...result,
-					subtitle: t(
-						destination.descriptionKey,
-						destination.descriptionDefault,
-					),
+					subtitle: t(destination.descriptionKey, destination.descriptionDefault),
 					keywords: translateKeywords(destination.keywords, t),
 				};
 			}),
@@ -197,10 +184,7 @@ export function buildStaticAppSearchResults({
 		pageResults.push({
 			type: "page",
 			id: `page:${PAYROLL_PAGE_DESTINATION.id}`,
-			title: t(
-				PAYROLL_PAGE_DESTINATION.titleKey,
-				PAYROLL_PAGE_DESTINATION.titleDefault,
-			),
+			title: t(PAYROLL_PAGE_DESTINATION.titleKey, PAYROLL_PAGE_DESTINATION.titleDefault),
 			href: PAYROLL_PAGE_DESTINATION.href,
 		});
 	}
@@ -208,19 +192,15 @@ export function buildStaticAppSearchResults({
 	pageResults.push({
 		type: "page",
 		id: `page:${SETTINGS_PAGE_DESTINATION.id}`,
-		title: t(
-			SETTINGS_PAGE_DESTINATION.titleKey,
-			SETTINGS_PAGE_DESTINATION.titleDefault,
-		),
+		title: t(SETTINGS_PAGE_DESTINATION.titleKey, SETTINGS_PAGE_DESTINATION.titleDefault),
 		href: SETTINGS_PAGE_DESTINATION.href,
 	});
 
 	const { visibleSettings } = getResolvedSettingsVisibility({
-		accessTier: settingsAccessTier,
+		settingsAccess,
 		billingEnabled,
 		featureFlags,
-		managesProject,
-		drivingLicenceSettingsVisible,
+		settingsCapabilities,
 	});
 
 	const settingsResults: AppSearchResult[] = visibleSettings.map((setting) => ({

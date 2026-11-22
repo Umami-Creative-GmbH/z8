@@ -21,7 +21,8 @@ const {
 	appSidebarSpy,
 	getUserOrganizationsMock,
 	getAuthContextMock,
-	getCurrentSettingsAccessTierMock,
+	getRenderSettingsAccessMock,
+	getRenderOrganizationAbilityMock,
 	requireAbilityMock,
 	canCreateOrganizationsForDeploymentMock,
 	canViewWorksCouncilPortalMock,
@@ -32,6 +33,8 @@ const {
 	listWhoIsInLocationsMock,
 	readDrivingLicenceVisibilityMock,
 	readEquipmentNavigationMock,
+	hasTaskManagedProjectMock,
+	hasActiveOrganizationShareLinksMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -40,7 +43,8 @@ const {
 	appSidebarSpy: vi.fn(),
 	getUserOrganizationsMock: vi.fn(),
 	getAuthContextMock: vi.fn(),
-	getCurrentSettingsAccessTierMock: vi.fn(),
+	getRenderSettingsAccessMock: vi.fn(),
+	getRenderOrganizationAbilityMock: vi.fn(),
 	requireAbilityMock: vi.fn(),
 	canCreateOrganizationsForDeploymentMock: vi.fn(),
 	canViewWorksCouncilPortalMock: vi.fn(),
@@ -51,6 +55,8 @@ const {
 	listWhoIsInLocationsMock: vi.fn(),
 	readDrivingLicenceVisibilityMock: vi.fn(),
 	readEquipmentNavigationMock: vi.fn(),
+	hasTaskManagedProjectMock: vi.fn(),
+	hasActiveOrganizationShareLinksMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -69,7 +75,8 @@ vi.mock("@/lib/auth-client", () => ({
 vi.mock("@/lib/auth/render-context", () => ({
 	getRenderAuthContext: getAuthContextMock,
 	getRenderUserOrganizations: getUserOrganizationsMock,
-	getRenderSettingsAccessTier: getCurrentSettingsAccessTierMock,
+	getRenderSettingsAccess: getRenderSettingsAccessMock,
+	getRenderOrganizationAbility: async () => getRenderOrganizationAbilityMock(),
 	getRenderAbility: async () => requireAbilityMock(),
 	getRenderOrganizationIdentity: async () => {
 		const context = await getAuthContextMock();
@@ -114,6 +121,15 @@ vi.mock("@/lib/time-tracking/who-is-in/queries", () => ({
 
 vi.mock("@/lib/organization/driving-licence/visibility", () => ({
 	readDrivingLicenceVisibilityForIdentity: readDrivingLicenceVisibilityMock,
+	showsDrivingLicenceSettings: (view: { settings: string }) => view.settings !== "hidden",
+}));
+
+vi.mock("@/lib/projects/project-task-permission", () => ({
+	hasTaskManagedProject: hasTaskManagedProjectMock,
+}));
+
+vi.mock("@/lib/projects/report-share/report-share-links", () => ({
+	hasActiveOrganizationShareLinks: hasActiveOrganizationShareLinksMock,
 }));
 
 vi.mock("@/lib/organization/equipment/access", () => ({
@@ -125,11 +141,7 @@ vi.mock("@/components/travel-expenses/finance/finance-nav-badge", () => ({
 }));
 
 vi.mock("@/components/nav-main", () => ({
-	NavMain: ({
-		items,
-	}: {
-		items: Array<{ title: string; url: string; icon: unknown }>;
-	}) => {
+	NavMain: ({ items }: { items: Array<{ title: string; url: string; icon: unknown }> }) => {
 		navMainSpy(items);
 		return (
 			<nav aria-label="primary">
@@ -162,11 +174,7 @@ vi.mock("@/components/app-search", () => ({
 }));
 
 vi.mock("@/components/nav-team", () => ({
-	NavTeam: ({
-		items,
-	}: {
-		items: Array<{ title: string; url: string; icon: unknown }>;
-	}) => {
+	NavTeam: ({ items }: { items: Array<{ title: string; url: string; icon: unknown }> }) => {
 		navTeamSpy(items);
 		return <div data-testid="nav-team" />;
 	},
@@ -206,18 +214,10 @@ vi.mock("@/components/nav-secondary", () => ({
 }));
 
 vi.mock("@/components/ui/sidebar", () => ({
-	Sidebar: ({ children, ...props }: { children: ReactNode }) => (
-		<div {...props}>{children}</div>
-	),
-	SidebarContent: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	SidebarFooter: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	SidebarHeader: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
+	Sidebar: ({ children, ...props }: { children: ReactNode }) => <div {...props}>{children}</div>,
+	SidebarContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	SidebarFooter: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	SidebarHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 import { AppSidebar } from "./app-sidebar";
@@ -235,7 +235,13 @@ describe("app sidebar compliance navigation", () => {
 		appSidebarSpy.mockReset();
 		getUserOrganizationsMock.mockReset();
 		getAuthContextMock.mockReset();
-		getCurrentSettingsAccessTierMock.mockReset();
+		getRenderSettingsAccessMock.mockReset();
+		getRenderOrganizationAbilityMock.mockReset();
+		getRenderOrganizationAbilityMock.mockResolvedValue(null);
+		hasTaskManagedProjectMock.mockReset();
+		hasTaskManagedProjectMock.mockResolvedValue(false);
+		hasActiveOrganizationShareLinksMock.mockReset();
+		hasActiveOrganizationShareLinksMock.mockResolvedValue(false);
 		requireAbilityMock.mockReset();
 		canCreateOrganizationsForDeploymentMock.mockReset();
 		canViewWorksCouncilPortalMock.mockReset();
@@ -270,9 +276,9 @@ describe("app sidebar compliance navigation", () => {
 	it("renders My Requests as a primary personal navigation item", () => {
 		render(<AppSidebar />);
 
-		expect(
-			screen.getByRole("link", { name: "My Requests" }).getAttribute("href"),
-		).toBe("/my-requests");
+		expect(screen.getByRole("link", { name: "My Requests" }).getAttribute("href")).toBe(
+			"/my-requests",
+		);
 		expect(navMainSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "My Requests", url: "/my-requests" }),
@@ -315,13 +321,11 @@ describe("app sidebar compliance navigation", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByRole("link", { name: "My Documents" }).getAttribute("href"),
-		).toBe("/my-documents");
-		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
-		expect(urls.indexOf("/my-documents")).toBe(
-			urls.indexOf("/my-requests") + 1,
+		expect(screen.getByRole("link", { name: "My Documents" }).getAttribute("href")).toBe(
+			"/my-documents",
 		);
+		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
+		expect(urls.indexOf("/my-documents")).toBe(urls.indexOf("/my-requests") + 1);
 	});
 
 	it("renders Personnel Files after My Documents only with the capability (#866)", () => {
@@ -345,15 +349,11 @@ describe("app sidebar compliance navigation", () => {
 			/>,
 		);
 
-		expect(
-			screen
-				.getByRole("link", { name: "Personnel Files" })
-				.getAttribute("href"),
-		).toBe("/personnel-files");
-		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
-		expect(urls.indexOf("/personnel-files")).toBe(
-			urls.indexOf("/my-documents") + 1,
+		expect(screen.getByRole("link", { name: "Personnel Files" }).getAttribute("href")).toBe(
+			"/personnel-files",
 		);
+		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
+		expect(urls.indexOf("/personnel-files")).toBe(urls.indexOf("/my-documents") + 1);
 	});
 
 	it("renders My driving licence after Personnel Files only with the capability (#1420, #1937)", () => {
@@ -377,15 +377,11 @@ describe("app sidebar compliance navigation", () => {
 			/>,
 		);
 
-		expect(
-			screen
-				.getByRole("link", { name: "My driving licence" })
-				.getAttribute("href"),
-		).toBe("/driving-licence");
-		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
-		expect(urls.indexOf("/driving-licence")).toBe(
-			urls.indexOf("/personnel-files") + 1,
+		expect(screen.getByRole("link", { name: "My driving licence" }).getAttribute("href")).toBe(
+			"/driving-licence",
 		);
+		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
+		expect(urls.indexOf("/driving-licence")).toBe(urls.indexOf("/personnel-files") + 1);
 		expect(screen.queryByRole("link", { name: "Driving licences" })).toBeNull();
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
 			expect.objectContaining({
@@ -416,16 +412,16 @@ describe("app sidebar compliance navigation", () => {
 		);
 
 		expect(screen.getByTestId("nav-team")).toBeTruthy();
-		expect(
-			navTeamSpy.mock.lastCall?.[0].map(({ title, url }) => ({ title, url })),
-		).toEqual([{ title: "Driving licences", url: "/team/driving-licence" }]);
+		expect(navTeamSpy.mock.lastCall?.[0].map(({ title, url }) => ({ title, url }))).toEqual([
+			{ title: "Driving licences", url: "/team/driving-licence" },
+		]);
 	});
 
 	it("adds Driving licences last to a manager's Team & organization section (#1937)", () => {
 		const { unmount } = render(<AppSidebar employeeRole="manager" />);
-		expect(
-			navTeamSpy.mock.lastCall?.[0].map((item) => item.url),
-		).not.toContain("/team/driving-licence");
+		expect(navTeamSpy.mock.lastCall?.[0].map((item) => item.url)).not.toContain(
+			"/team/driving-licence",
+		);
 		unmount();
 
 		render(
@@ -478,9 +474,7 @@ describe("app sidebar compliance navigation", () => {
 		"%s Personnel Files navigation from the personnel file access resolver (flag %s, #866)",
 		async (_verb, enabled, current, personnelFiles) => {
 			vi.stubEnv("BILLING_ENABLED", "false");
-			canCreateOrganizationsForDeploymentMock.mockImplementation(
-				(value: boolean) => value,
-			);
+			canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 			getUserOrganizationsMock.mockResolvedValue([
 				{
 					id: "org_1",
@@ -497,7 +491,7 @@ describe("app sidebar compliance navigation", () => {
 				session: { activeOrganizationId: "org_1" },
 				employee: { id: "emp_1", organizationId: "org_1", role: "employee" },
 			});
-			getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+			getRenderSettingsAccessMock.mockResolvedValueOnce("member");
 			hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 			loadFinanceActorMock.mockResolvedValue(null);
 			loadCurrentPersonnelFileAccessMock.mockResolvedValue(current);
@@ -505,12 +499,10 @@ describe("app sidebar compliance navigation", () => {
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
-				canCreateOrganizationsForDeployment:
-					canCreateOrganizationsForDeploymentMock,
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 			}));
 			vi.doMock("./app-sidebar", () => ({
 				AppSidebar: SidebarProxy,
@@ -526,8 +518,7 @@ describe("app sidebar compliance navigation", () => {
 						navigationCapabilities: expect.objectContaining({ personnelFiles }),
 					}),
 				);
-				if (!enabled)
-					expect(loadCurrentPersonnelFileAccessMock).not.toHaveBeenCalled();
+				if (!enabled) expect(loadCurrentPersonnelFileAccessMock).not.toHaveBeenCalled();
 			} finally {
 				// Later tests render the real sidebar through the server component.
 				vi.doUnmock("./app-sidebar");
@@ -593,9 +584,7 @@ describe("app sidebar compliance navigation", () => {
 		"decides the Driving licence items and settings entry from the visibility reader (%s, #1420, #1937)",
 		async (_case, view, items, drivingLicenceSettingsVisible) => {
 			vi.stubEnv("BILLING_ENABLED", "false");
-			canCreateOrganizationsForDeploymentMock.mockImplementation(
-				(value: boolean) => value,
-			);
+			canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 			getUserOrganizationsMock.mockResolvedValue([
 				{
 					id: "org_1",
@@ -612,7 +601,7 @@ describe("app sidebar compliance navigation", () => {
 				session: { activeOrganizationId: "org_1" },
 				employee: { id: "emp_1", organizationId: "org_1", role: "employee" },
 			});
-			getCurrentSettingsAccessTierMock.mockResolvedValueOnce("orgAdmin");
+			getRenderSettingsAccessMock.mockResolvedValueOnce("orgAdmin");
 			hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 			loadFinanceActorMock.mockResolvedValue(null);
 			readDrivingLicenceVisibilityMock.mockResolvedValue({
@@ -627,12 +616,10 @@ describe("app sidebar compliance navigation", () => {
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
-				canCreateOrganizationsForDeployment:
-					canCreateOrganizationsForDeploymentMock,
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 			}));
 			vi.doMock("./app-sidebar", () => ({
 				AppSidebar: SidebarProxy,
@@ -652,7 +639,9 @@ describe("app sidebar compliance navigation", () => {
 				expect(appSidebarSpy).toHaveBeenCalledWith(
 					expect.objectContaining({
 						navigationCapabilities: expect.objectContaining(items),
-						drivingLicenceSettingsVisible,
+						settingsCapabilities: expect.objectContaining({
+							canManageDrivingLicence: drivingLicenceSettingsVisible,
+						}),
 					}),
 				);
 			} finally {
@@ -664,9 +653,9 @@ describe("app sidebar compliance navigation", () => {
 	it("renders Org Explorer as a primary personal navigation item", () => {
 		render(<AppSidebar />);
 
-		expect(
-			screen.getByRole("link", { name: "Org Explorer" }).getAttribute("href"),
-		).toBe("/organization");
+		expect(screen.getByRole("link", { name: "Org Explorer" }).getAttribute("href")).toBe(
+			"/organization",
+		);
 		expect(navMainSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({
@@ -708,12 +697,8 @@ describe("app sidebar compliance navigation", () => {
 		expect(screen.queryByText("Payroll")).toBeNull();
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
 			expect.objectContaining({
-				staticResults: expect.not.arrayContaining([
-					expect.objectContaining({ href: "/payroll" }),
-				]),
-				staticCommands: expect.not.arrayContaining([
-					expect.objectContaining({ href: "/payroll" }),
-				]),
+				staticResults: expect.not.arrayContaining([expect.objectContaining({ href: "/payroll" })]),
+				staticCommands: expect.not.arrayContaining([expect.objectContaining({ href: "/payroll" })]),
 			}),
 		);
 	});
@@ -729,7 +714,7 @@ describe("app sidebar compliance navigation", () => {
 					demoDataEnabled: false,
 					worksCouncilEnabled: false,
 				}}
-				settingsAccessTier="member"
+				settingsAccess="member"
 			/>,
 		);
 
@@ -786,7 +771,7 @@ describe("app sidebar compliance navigation", () => {
 	});
 
 	it("passes the approvals command action for managers", () => {
-		render(<AppSidebar employeeRole="manager" settingsAccessTier="member" />);
+		render(<AppSidebar employeeRole="manager" settingsAccess="member" />);
 
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
 			expect.objectContaining({
@@ -803,9 +788,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("renders surcharge settings search navigation when the organization feature flag is enabled", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -826,17 +809,15 @@ describe("app sidebar compliance navigation", () => {
 				role: "manager",
 			},
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValue("manager");
+		getRenderSettingsAccessMock.mockResolvedValue("scopedManager");
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		const { ServerAppSidebar } = await import("./server-app-sidebar");
@@ -857,9 +838,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("passes works council feature state from the active organization", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -875,46 +854,38 @@ describe("app sidebar compliance navigation", () => {
 			session: { activeOrganizationId: "org_1" },
 			employee: { organizationId: "org_1", role: "admin" },
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		getRenderSettingsAccessMock.mockResolvedValue("orgAdmin");
 		requireAbilityMock.mockResolvedValue({});
 		canViewWorksCouncilPortalMock.mockReturnValue(true);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		const { ServerAppSidebar } = await import("./server-app-sidebar");
 
 		render(await ServerAppSidebar({ showWorksCouncilNav: true }));
 
-		expect(
-			screen.getByRole("link", { name: "Works Council" }).getAttribute("href"),
-		).toBe("/works-council");
+		expect(screen.getByRole("link", { name: "Works Council" }).getAttribute("href")).toBe(
+			"/works-council",
+		);
 		expect(appSearchSpy).toHaveBeenLastCalledWith(
 			expect.objectContaining({
 				staticCommands: expect.any(Array),
 			}),
 		);
 		expect(requireAbilityMock).toHaveBeenCalled();
-		expect(canViewWorksCouncilPortalMock).toHaveBeenCalledWith(
-			{},
-			"org_1",
-			"org_1",
-		);
+		expect(canViewWorksCouncilPortalMock).toHaveBeenCalledWith({}, "org_1", "org_1");
 	});
 
 	it("uses the active organization for works council navigation when no employee exists", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -930,41 +901,33 @@ describe("app sidebar compliance navigation", () => {
 			session: { activeOrganizationId: "org_1" },
 			employee: null,
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		getRenderSettingsAccessMock.mockResolvedValue("orgAdmin");
 		requireAbilityMock.mockResolvedValue({});
 		canViewWorksCouncilPortalMock.mockReturnValue(true);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		const { ServerAppSidebar } = await import("./server-app-sidebar");
 
 		render(await ServerAppSidebar({ showWorksCouncilNav: true }));
 
-		expect(
-			screen.getByRole("link", { name: "Works Council" }).getAttribute("href"),
-		).toBe("/works-council");
-		expect(requireAbilityMock).toHaveBeenCalled();
-		expect(canViewWorksCouncilPortalMock).toHaveBeenCalledWith(
-			{},
-			"org_1",
-			"org_1",
+		expect(screen.getByRole("link", { name: "Works Council" }).getAttribute("href")).toBe(
+			"/works-council",
 		);
+		expect(requireAbilityMock).toHaveBeenCalled();
+		expect(canViewWorksCouncilPortalMock).toHaveBeenCalledWith({}, "org_1", "org_1");
 	});
 
 	it("hides works council navigation when the organization feature flag is disabled", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -980,18 +943,16 @@ describe("app sidebar compliance navigation", () => {
 			session: { activeOrganizationId: "org_1" },
 			employee: { organizationId: "org_1", role: "admin" },
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		getRenderSettingsAccessMock.mockResolvedValue("orgAdmin");
 		canViewWorksCouncilPortalMock.mockReturnValue(true);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		const { ServerAppSidebar } = await import("./server-app-sidebar");
@@ -1015,16 +976,11 @@ describe("app sidebar compliance navigation", () => {
 		const { rerender } = render(<AppSidebar employeeRole="employee" />);
 		expect(screen.queryByRole("link", { name: "My Schedule" })).toBeNull();
 
-		rerender(
-			<AppSidebar
-				employeeRole="employee"
-				navigationCapabilities={capabilities}
-			/>,
-		);
+		rerender(<AppSidebar employeeRole="employee" navigationCapabilities={capabilities} />);
 
-		expect(
-			screen.getByRole("link", { name: "My Schedule" }).getAttribute("href"),
-		).toBe("/scheduling");
+		expect(screen.getByRole("link", { name: "My Schedule" }).getAttribute("href")).toBe(
+			"/scheduling",
+		);
 		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
 		expect(urls.indexOf("/scheduling")).toBe(urls.indexOf("/calendar") + 1);
 		expect(navTeamSpy).not.toHaveBeenCalled();
@@ -1045,9 +1001,7 @@ describe("app sidebar compliance navigation", () => {
 			/>,
 		);
 
-		expect(navMainSpy.mock.lastCall?.[0].map((item) => item.url)).not.toContain(
-			"/scheduling",
-		);
+		expect(navMainSpy.mock.lastCall?.[0].map((item) => item.url)).not.toContain("/scheduling");
 		expect(navTeamSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Scheduling", url: "/scheduling" }),
@@ -1068,9 +1022,7 @@ describe("app sidebar compliance navigation", () => {
 				teamPresence: false,
 			};
 			const { rerender } = render(<AppSidebar employeeRole={role} />);
-			expect(
-				navTeamSpy.mock.lastCall?.[0].map((item) => item.url),
-			).not.toContain("/team/presence");
+			expect(navTeamSpy.mock.lastCall?.[0].map((item) => item.url)).not.toContain("/team/presence");
 			rerender(
 				<AppSidebar
 					employeeRole={role}
@@ -1085,15 +1037,8 @@ describe("app sidebar compliance navigation", () => {
 					}),
 				]),
 			);
-			rerender(
-				<AppSidebar
-					employeeRole={role}
-					navigationCapabilities={capabilities}
-				/>,
-			);
-			expect(
-				navTeamSpy.mock.lastCall?.[0].map((item) => item.url),
-			).not.toContain("/team/presence");
+			rerender(<AppSidebar employeeRole={role} navigationCapabilities={capabilities} />);
+			expect(navTeamSpy.mock.lastCall?.[0].map((item) => item.url)).not.toContain("/team/presence");
 		},
 	);
 
@@ -1112,23 +1057,17 @@ describe("app sidebar compliance navigation", () => {
 				session: { activeOrganizationId },
 				employee: { id: "emp_1", organizationId: "org_1", role },
 			});
-			getCurrentSettingsAccessTierMock.mockResolvedValue(
-				role === "admin"
-					? "orgAdmin"
-					: role === "manager"
-						? "manager"
-						: "member",
+			getRenderSettingsAccessMock.mockResolvedValue(
+				role === "admin" ? "orgAdmin" : role === "manager" ? "scopedManager" : "member",
 			);
 			listWhoIsInLocationsMock.mockResolvedValue(locations);
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
-				canCreateOrganizationsForDeployment:
-					canCreateOrganizationsForDeploymentMock,
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 			}));
 			vi.doMock("./app-sidebar", () => ({
 				AppSidebar: SidebarProxy,
@@ -1142,10 +1081,9 @@ describe("app sidebar compliance navigation", () => {
 					}),
 				);
 				if (role !== "employee" && activeOrganizationId)
-					expect(listWhoIsInLocationsMock).toHaveBeenCalledWith(
-						expect.anything(),
-						{ organizationId: "org_1" },
-					);
+					expect(listWhoIsInLocationsMock).toHaveBeenCalledWith(expect.anything(), {
+						organizationId: "org_1",
+					});
 				else expect(listWhoIsInLocationsMock).not.toHaveBeenCalled();
 			} finally {
 				vi.doUnmock("./app-sidebar");
@@ -1194,9 +1132,7 @@ describe("app sidebar compliance navigation", () => {
 		"%s Period Submissions navigation for role %s while collecting is %s (#1075)",
 		async (_verb, role, collects, periodSubmissions) => {
 			vi.stubEnv("BILLING_ENABLED", "false");
-			canCreateOrganizationsForDeploymentMock.mockImplementation(
-				(value: boolean) => value,
-			);
+			canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 			getUserOrganizationsMock.mockResolvedValue([
 				{
 					id: "org_1",
@@ -1212,12 +1148,8 @@ describe("app sidebar compliance navigation", () => {
 				session: { activeOrganizationId: "org_1" },
 				employee: { id: "emp_1", organizationId: "org_1", role },
 			});
-			getCurrentSettingsAccessTierMock.mockResolvedValueOnce(
-				role === "admin"
-					? "orgAdmin"
-					: role === "manager"
-						? "manager"
-						: "member",
+			getRenderSettingsAccessMock.mockResolvedValueOnce(
+				role === "admin" ? "orgAdmin" : role === "manager" ? "scopedManager" : "member",
 			);
 			hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 			loadFinanceActorMock.mockResolvedValue(null);
@@ -1226,12 +1158,10 @@ describe("app sidebar compliance navigation", () => {
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
-				canCreateOrganizationsForDeployment:
-					canCreateOrganizationsForDeploymentMock,
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 			}));
 			vi.doMock("./app-sidebar", () => ({
 				AppSidebar: SidebarProxy,
@@ -1277,9 +1207,10 @@ describe("app sidebar compliance navigation", () => {
 				}),
 			]),
 		);
-		expect(
-			navTeamSpy.mock.lastCall?.[0].map((item) => item.url).slice(0, 2),
-		).toEqual(["/team", "/team/absences"]);
+		expect(navTeamSpy.mock.lastCall?.[0].map((item) => item.url).slice(0, 2)).toEqual([
+			"/team",
+			"/team/absences",
+		]);
 
 		navTeamSpy.mockClear();
 		rerender(<AppSidebar employeeRole="employee" />);
@@ -1304,9 +1235,9 @@ describe("app sidebar compliance navigation", () => {
 				}}
 			/>,
 		);
-		expect(
-			screen.getByRole("link", { name: "Finance" }).getAttribute("href"),
-		).toBe("/travel-expenses/finance");
+		expect(screen.getByRole("link", { name: "Finance" }).getAttribute("href")).toBe(
+			"/travel-expenses/finance",
+		);
 		const items = navMainSpy.mock.lastCall?.[0] ?? [];
 		expect(items.map((item: { url: string }) => item.url).slice(4, 6)).toEqual([
 			"/travel-expenses",
@@ -1323,9 +1254,7 @@ describe("app sidebar compliance navigation", () => {
 		"%s Finance navigation from the finance actor's read access (#753)",
 		async (_verb, actor, finance) => {
 			vi.stubEnv("BILLING_ENABLED", "false");
-			canCreateOrganizationsForDeploymentMock.mockImplementation(
-				(value: boolean) => value,
-			);
+			canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 			getUserOrganizationsMock.mockResolvedValue([
 				{
 					id: "org_1",
@@ -1341,19 +1270,17 @@ describe("app sidebar compliance navigation", () => {
 				session: { activeOrganizationId: "org_1" },
 				employee: { id: "emp_1", organizationId: "org_1", role: "employee" },
 			});
-			getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+			getRenderSettingsAccessMock.mockResolvedValueOnce("member");
 			hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 			loadFinanceActorMock.mockResolvedValue(actor);
 
 			vi.doMock("@/lib/auth-helpers", () => ({
 				getUserOrganizations: getUserOrganizationsMock,
 				getAuthContext: getAuthContextMock,
-				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 				requireAbility: requireAbilityMock,
 			}));
 			vi.doMock("@/lib/organization/creation-policy.server", () => ({
-				canCreateOrganizationsForDeployment:
-					canCreateOrganizationsForDeploymentMock,
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 			}));
 			vi.doMock("./app-sidebar", () => ({
 				AppSidebar: SidebarProxy,
@@ -1374,12 +1301,12 @@ describe("app sidebar compliance navigation", () => {
 	it("renders help and feedback entries in secondary navigation", () => {
 		render(<AppSidebar />);
 
-		expect(
-			screen.getByRole("link", { name: "Get Help" }).getAttribute("href"),
-		).toBe("https://docs.z8-time.app/docs");
-		expect(
-			screen.getByRole("link", { name: "Feedback" }).getAttribute("href"),
-		).toBe("https://github.com/Umami-Creative-GmbH/z8/issues");
+		expect(screen.getByRole("link", { name: "Get Help" }).getAttribute("href")).toBe(
+			"https://docs.z8-time.app/docs",
+		);
+		expect(screen.getByRole("link", { name: "Feedback" }).getAttribute("href")).toBe(
+			"https://github.com/Umami-Creative-GmbH/z8/issues",
+		);
 		expect(navSecondarySpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({
@@ -1425,9 +1352,9 @@ describe("app sidebar compliance navigation", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByRole("link", { name: "Platform Admin" }).getAttribute("href"),
-		).toBe("/platform-admin");
+		expect(screen.getByRole("link", { name: "Platform Admin" }).getAttribute("href")).toBe(
+			"/platform-admin",
+		);
 
 		const secondaryItems = navSecondarySpy.mock.lastCall?.[0] ?? [];
 		expect(secondaryItems).toEqual(
@@ -1458,9 +1385,9 @@ describe("app sidebar compliance navigation", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByRole("link", { name: "Compliance" }).getAttribute("href"),
-		).toBe("/compliance");
+		expect(screen.getByRole("link", { name: "Compliance" }).getAttribute("href")).toBe(
+			"/compliance",
+		);
 		expect(navSecondarySpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({
@@ -1509,9 +1436,9 @@ describe("app sidebar compliance navigation", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByRole("link", { name: "Works Council" }).getAttribute("href"),
-		).toBe("/works-council");
+		expect(screen.getByRole("link", { name: "Works Council" }).getAttribute("href")).toBe(
+			"/works-council",
+		);
 		expect(navSecondarySpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({
@@ -1531,9 +1458,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("passes showComplianceNav from the org-admin settings tier at runtime", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -1555,18 +1480,16 @@ describe("app sidebar compliance navigation", () => {
 				role: "admin",
 			},
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("orgAdmin");
+		getRenderSettingsAccessMock.mockResolvedValueOnce("orgAdmin");
 		hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		vi.doMock("./app-sidebar", () => ({
@@ -1587,7 +1510,7 @@ describe("app sidebar compliance navigation", () => {
 					scheduling: true,
 				}),
 				employeeRole: "admin",
-				settingsAccessTier: "orgAdmin",
+				settingsAccess: "orgAdmin",
 				billingEnabled: false,
 				canCreateOrganizations: false,
 				featureFlags: {
@@ -1608,7 +1531,7 @@ describe("app sidebar compliance navigation", () => {
 		});
 
 		appSidebarSpy.mockReset();
-		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+		getRenderSettingsAccessMock.mockResolvedValueOnce("member");
 
 		render(await ServerAppSidebar({}));
 
@@ -1620,7 +1543,7 @@ describe("app sidebar compliance navigation", () => {
 					platformAdmin: false,
 					scheduling: true,
 				}),
-				settingsAccessTier: "member",
+				settingsAccess: "member",
 				billingEnabled: false,
 				canCreateOrganizations: false,
 				featureFlags: {
@@ -1639,9 +1562,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("passes scoped payroll navigation for active employees with payroll access grants", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -1661,18 +1582,16 @@ describe("app sidebar compliance navigation", () => {
 				role: "employee",
 			},
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+		getRenderSettingsAccessMock.mockResolvedValueOnce("member");
 		hasActivePayrollAccessGrantMock.mockResolvedValue(true);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		vi.doMock("./app-sidebar", () => ({
@@ -1697,9 +1616,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("hides payroll navigation for admins without an active payroll grant", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -1722,18 +1639,16 @@ describe("app sidebar compliance navigation", () => {
 				role: "admin",
 			},
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		getRenderSettingsAccessMock.mockResolvedValue("orgAdmin");
 		hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 		vi.doMock("./app-sidebar", () => ({
 			AppSidebar: SidebarProxy,
@@ -1757,9 +1672,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("shows payroll navigation for admins with an active payroll grant", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -1782,18 +1695,16 @@ describe("app sidebar compliance navigation", () => {
 				role: "admin",
 			},
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValue("orgAdmin");
+		getRenderSettingsAccessMock.mockResolvedValue("orgAdmin");
 		hasActivePayrollAccessGrantMock.mockResolvedValue(true);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 		vi.doMock("./app-sidebar", () => ({
 			AppSidebar: SidebarProxy,
@@ -1817,9 +1728,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("hides scoped payroll navigation for employees without active grants", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -1839,18 +1748,16 @@ describe("app sidebar compliance navigation", () => {
 				role: "employee",
 			},
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+		getRenderSettingsAccessMock.mockResolvedValueOnce("member");
 		hasActivePayrollAccessGrantMock.mockResolvedValue(false);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		vi.doMock("./app-sidebar", () => ({
@@ -1871,9 +1778,7 @@ describe("app sidebar compliance navigation", () => {
 
 	it("passes platform admin navigation from the authenticated platform role", async () => {
 		vi.stubEnv("BILLING_ENABLED", "false");
-		canCreateOrganizationsForDeploymentMock.mockImplementation(
-			(value: boolean) => value,
-		);
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
 		getUserOrganizationsMock.mockResolvedValue([
 			{
 				id: "org_1",
@@ -1894,17 +1799,15 @@ describe("app sidebar compliance navigation", () => {
 				role: "employee",
 			},
 		});
-		getCurrentSettingsAccessTierMock.mockResolvedValueOnce("member");
+		getRenderSettingsAccessMock.mockResolvedValueOnce("member");
 
 		vi.doMock("@/lib/auth-helpers", () => ({
 			getUserOrganizations: getUserOrganizationsMock,
 			getAuthContext: getAuthContextMock,
-			getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
 			requireAbility: requireAbilityMock,
 		}));
 		vi.doMock("@/lib/organization/creation-policy.server", () => ({
-			canCreateOrganizationsForDeployment:
-				canCreateOrganizationsForDeploymentMock,
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
 		}));
 
 		vi.doMock("./app-sidebar", () => ({
@@ -1922,9 +1825,120 @@ describe("app sidebar compliance navigation", () => {
 					platformAdmin: true,
 				}),
 				employeeRole: "employee",
-				settingsAccessTier: "member",
+				settingsAccess: "member",
 				canCreateOrganizations: true,
 			}),
 		);
+	});
+
+	it("exposes account-only settings in app search when settingsAccess is null (former employee or unapproved membership)", () => {
+		render(
+			<AppSidebar
+				employeeRole={null}
+				settingsAccess={null}
+				settingsCapabilities={{
+					canAccessClosedMonths: true,
+					canManageApprovalEscalation: true,
+					canManageProjects: true,
+					canManageDrivingLicence: true,
+					hasActiveReportShareLinks: true,
+				}}
+			/>,
+		);
+
+		const lastCall = appSearchSpy.mock.lastCall?.[0] as {
+			staticResults: Array<{ type: string; href: string }>;
+		};
+		const settingHrefs = lastCall.staticResults
+			.filter((result) => result.type === "setting")
+			.map((result) => result.href);
+		expect(settingHrefs).toEqual([
+			"/settings/profile",
+			"/settings/security",
+			"/settings/notifications",
+			"/settings/wellness",
+		]);
+	});
+
+	it("passes custom-role settingsCapabilities and owner compliance access from ServerAppSidebar to AppSidebar and AppSearch", async () => {
+		vi.stubEnv("BILLING_ENABLED", "false");
+		canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+		getUserOrganizationsMock.mockResolvedValue([
+			{
+				id: "org_1",
+				shiftsEnabled: false,
+				projectsEnabled: false,
+				surchargesEnabled: false,
+				demoDataEnabled: true,
+				worksCouncilEnabled: false,
+			},
+		]);
+		getAuthContextMock.mockResolvedValue({
+			user: { id: "user_1", role: "user" },
+			session: { activeOrganizationId: "org_1" },
+			employee: { id: "emp_1", organizationId: "org_1", role: "employee" },
+		});
+		getRenderSettingsAccessMock.mockResolvedValueOnce("member");
+		getRenderOrganizationAbilityMock.mockResolvedValueOnce({
+			can: (action: string, subject: string) =>
+				(action === "close" && subject === "PayrollPeriod") ||
+				(action === "manage" && subject === "Approval"),
+		});
+		hasActivePayrollAccessGrantMock.mockResolvedValue(false);
+		loadFinanceActorMock.mockResolvedValue(null);
+
+		vi.doUnmock("./app-sidebar");
+		vi.resetModules();
+		vi.doMock("@/lib/organization/creation-policy.server", () => ({
+			canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+		}));
+
+		const { ServerAppSidebar } = await import("./server-app-sidebar");
+		const { unmount } = render(await ServerAppSidebar({}));
+
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticResults: expect.arrayContaining([
+					expect.objectContaining({
+						type: "setting",
+						href: "/settings/closed-months",
+					}),
+					expect.objectContaining({
+						type: "setting",
+						href: "/settings/approval-policies",
+					}),
+				]),
+			}),
+		);
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticResults: expect.not.arrayContaining([
+					expect.objectContaining({ href: "/settings/organization" }),
+				]),
+			}),
+		);
+		unmount();
+
+		// Owner gets compliance nav and owner settingsAccess.
+		getRenderSettingsAccessMock.mockResolvedValueOnce("owner");
+		getRenderOrganizationAbilityMock.mockResolvedValueOnce(null);
+		vi.resetModules();
+		vi.doMock("./app-sidebar", () => ({ AppSidebar: SidebarProxy }));
+		try {
+			const { ServerAppSidebar: ServerAppSidebarProxied } = await import("./server-app-sidebar");
+			render(await ServerAppSidebarProxied({}));
+
+			expect(appSidebarSpy).toHaveBeenCalledWith(
+				expect.objectContaining({
+					settingsAccess: "owner",
+					navigationCapabilities: expect.objectContaining({ compliance: true }),
+					settingsCapabilities: expect.objectContaining({
+						canAccessClosedMonths: true,
+					}),
+				}),
+			);
+		} finally {
+			vi.doUnmock("./app-sidebar");
+		}
 	});
 });

@@ -2847,8 +2847,7 @@
       "description": "Wähl us, wie und wenn du benachrichtigt wärde wotsch",
       "digestTime": "Zytpunkt für Zämefassig",
       "discord": {
-        "description": "Konfiguriere Discord-Benachrichtigunge für dini Organisation.",
-        "setupInstructions": "Die Verbindung zu Discord ist auf dieser Seite noch nicht verfügbar. Für die Verbindung werden der Bot-Token, die Anwendungs-ID und der öffentliche Schlüssel Ihrer Discord-Anwendung benötigt."
+        "description": "Konfiguriere Discord-Benachrichtigunge für dini Organisation."
       },
       "escalations": "Eskalatione",
       "escalationsDescription": "Eskaliere unbeantworteti Gnehmigungs-Aafroge nach em konfigurierte Timeout.",

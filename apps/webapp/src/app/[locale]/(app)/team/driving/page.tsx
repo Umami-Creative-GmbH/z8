@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { drivingDetailsTeamScope } from "@/lib/time-tracking/vehicle-use/driving-details-team-store";
 import { getTranslate } from "@/tolgee/server";
@@ -16,20 +16,20 @@ function param(params: Record<string, string | string[] | undefined>, name: stri
 	return typeof value === "string" && value.length > 0 ? value : null;
 }
 async function TeamDrivingContent({ searchParams }: TeamDrivingPageProps) {
-	const [t, params, context] = await Promise.all([
+	const [t, params, caller] = await Promise.all([
 		getTranslate(),
 		searchParams,
-		getCurrentSettingsRouteContext(),
+		getCurrentSettingsAccess(),
 	]);
-	const organizationId = context?.authContext.session.activeOrganizationId;
-	const scope =
-		context && organizationId
-			? drivingDetailsTeamScope({
-					accessTier: context.accessTier,
-					organizationId,
-					employee: context.authContext.employee ?? null,
-				})
-			: null;
+	const scope = caller
+		? drivingDetailsTeamScope({
+				settingsAccess: caller.settingsAccess,
+				organizationId: caller.organizationId,
+				employee: caller.employee
+					? { id: caller.employee.id, organizationId: caller.organizationId }
+					: null,
+			})
+		: null;
 	if (!scope) return redirectWithLocale("/");
 	return (
 		<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">

@@ -39,7 +39,6 @@ interface WorkPolicyComplianceContentProps {
 	violations: WorkPolicyViolationWithDetails[] | undefined;
 	onDateRangeChange: (range: DateRange) => void;
 	onExport: () => void;
-	onRefresh: () => void;
 	onAcknowledge: (violation: WorkPolicyViolationWithDetails) => void;
 }
 
@@ -84,7 +83,6 @@ export function WorkPolicyComplianceContent({
 	violations,
 	onDateRangeChange,
 	onExport,
-	onRefresh,
 	onAcknowledge,
 }: WorkPolicyComplianceContentProps) {
 	const { t } = useTranslate();
@@ -129,10 +127,6 @@ export function WorkPolicyComplianceContent({
 					>
 						<IconDownload className="mr-2 size-4" aria-hidden="true" />
 						{t("settings.workPolicies.exportCsv", "Export CSV")}
-					</Button>
-					<Button variant="ghost" size="icon" onClick={onRefresh}>
-						<IconRefresh className="size-4" aria-hidden="true" />
-						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
 					</Button>
 				</div>
 			</div>

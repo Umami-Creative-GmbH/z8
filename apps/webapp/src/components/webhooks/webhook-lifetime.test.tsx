@@ -3,11 +3,11 @@ import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Activity, useState } from "react";
 import { afterEach, expect, it, vi } from "vitest";
-import { createWebhook } from "@/app/[locale]/(app)/settings/webhooks/actions";
+import { createWebhook } from "@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions";
 import { render } from "@/test/render-with-translations";
 import { WebhookFormDialog } from "./webhook-form-dialog";
 
-vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/enterprise/api-keys/webhook-actions", () => ({
 	createWebhook: vi.fn(),
 	updateWebhook: vi.fn(),
 }));

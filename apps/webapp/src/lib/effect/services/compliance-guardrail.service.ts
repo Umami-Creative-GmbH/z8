@@ -1,6 +1,5 @@
 import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import {
 	type ComplianceAlert,
 	type ComplianceStatus,
@@ -12,7 +11,15 @@ import {
 	workPeriod,
 	workPolicyViolation,
 } from "@/db/schema";
+import { localDayRange, localMonthRange, localWeekRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	dateFromInstant,
+	instantFromDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { parseTimeZone } from "@/lib/timezone/validation";
 import { DatabaseService } from "./database.service";
 import { WorkPolicyService } from "./work-policy.service";
 
@@ -262,13 +269,17 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			Effect.gen(function* () {
 				const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
 
-				const now = DateTime.now().setZone(params.timezone);
-				const startOfDay = now.startOf("day").toJSDate();
-				const endOfDay = now.endOf("day").toJSDate();
-				const startOfWeek = now.startOf("week").toJSDate();
-				const endOfWeek = now.endOf("week").toJSDate();
-				const startOfMonth = now.startOf("month").toJSDate();
-				const endOfMonth = now.endOf("month").toJSDate();
+				const timezone = parseTimeZone(params.timezone);
+				const todayKey = plainDateAt(systemClock.nowInstant(), timezone).toString();
+				const dayRange = localDayRange(todayKey, timezone);
+				const weekRange = localWeekRange(todayKey, timezone, "monday");
+				const monthRange = localMonthRange(todayKey, timezone);
+				const startOfDay = dateFromInstant(dayRange.start);
+				const endOfDay = dateFromInstant(dayRange.endExclusive.subtract({ milliseconds: 1 }));
+				const startOfWeek = dateFromInstant(weekRange.start);
+				const endOfWeek = dateFromInstant(weekRange.endExclusive.subtract({ milliseconds: 1 }));
+				const startOfMonth = dateFromInstant(monthRange.start);
+				const endOfMonth = dateFromInstant(monthRange.endExclusive.subtract({ milliseconds: 1 }));
 
 				// Get worked minutes for each period
 				const [dailyMinutes, weeklyMinutes, monthlyMinutes] = yield* Effect.all([
@@ -352,9 +363,10 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					}
 
 					// Calculate rest period in minutes
-					const now = DateTime.now();
-					const lastClockOut = DateTime.fromJSDate(lastClockOutTime);
-					const restPeriodMinutes = Math.floor(now.diff(lastClockOut, "minutes").minutes);
+					const now = systemClock.nowInstant();
+					const nowDate = dateFromInstant(now);
+					const lastClockOut = instantFromDate(lastClockOutTime);
+					const restPeriodMinutes = Math.floor(now.since(lastClockOut).total({ unit: "minutes" }));
 
 					// If rest period is satisfied, allow clock-in
 					if (restPeriodMinutes >= minRestMinutes) {
@@ -376,8 +388,8 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 									eq(complianceException.employeeId, params.employeeId),
 									eq(complianceException.exceptionType, "rest_period"),
 									eq(complianceException.status, "approved"),
-									lte(complianceException.validFrom, now.toJSDate()),
-									gte(complianceException.validUntil, now.toJSDate()),
+									lte(complianceException.validFrom, nowDate),
+									gte(complianceException.validUntil, nowDate),
 									eq(complianceException.wasUsed, false),
 								),
 							)
@@ -388,9 +400,11 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 					const shortfallMinutes = minRestMinutes - restPeriodMinutes;
 
+					// Calculate when clock-in will be allowed
+					const nextAllowedClockIn = dateFromInstant(lastClockOut.add({ minutes: minRestMinutes }));
+
 					// If there's a valid exception, allow clock-in
 					if (exceptionResult) {
-						const nextAllowedClockIn = lastClockOut.plus({ minutes: minRestMinutes }).toJSDate();
 						return {
 							canClockIn: true,
 							enforcement,
@@ -406,9 +420,6 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 							nextAllowedClockIn,
 						} satisfies RestPeriodCheckResult;
 					}
-
-					// Calculate when clock-in will be allowed
-					const nextAllowedClockIn = lastClockOut.plus({ minutes: minRestMinutes }).toJSDate();
 
 					// No valid exception - check enforcement mode
 					return {
@@ -643,9 +654,9 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 			requestException: (input) =>
 				Effect.gen(function* () {
-					const now = DateTime.now();
-					const validFrom = now.toJSDate();
-					const validUntil = now.plus({ hours: 24 }).toJSDate();
+					const now = systemClock.nowInstant();
+					const validFrom = dateFromInstant(now);
+					const validUntil = dateFromInstant(now.add({ hours: 24 }));
 
 					const [newException] = yield* dbService.query("createException", async () => {
 						return await dbService.db

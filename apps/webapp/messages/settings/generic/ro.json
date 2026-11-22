@@ -2847,8 +2847,7 @@
       "description": "Alegeți cum și când doriți să fiți notificat",
       "digestTime": "Ora rezumatului",
       "discord": {
-        "description": "Configurați notificările Discord pentru organizația dumneavoastră.",
-        "setupInstructions": "Conectarea Discord din această pagină nu este încă disponibilă. Conexiunea necesită tokenul de bot al aplicației dvs. Discord, ID-ul aplicației și cheia publică."
+        "description": "Configurați notificările Discord pentru organizația dumneavoastră."
       },
       "escalations": "Escaladări",
       "escalationsDescription": "Escaladați cererile de aprobare fără răspuns după expirarea timpului configurat.",

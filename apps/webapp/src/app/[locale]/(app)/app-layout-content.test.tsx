@@ -60,6 +60,15 @@ vi.mock("@/components/position-capture/position-consent-dialog", () => ({
 	PositionConsentDialogHost: () => null,
 }));
 
+vi.mock("@/components/billing/billing-recovery-header", () => ({
+	BillingRecoveryHeader: ({ canAccessBilling }: { canAccessBilling: boolean }) => (
+		<header
+			data-testid="billing-recovery-header"
+			data-can-access-billing={String(canAccessBilling)}
+		/>
+	),
+}));
+
 vi.mock("@/components/billing/trial-banner", () => ({
 	TrialBanner: () => null,
 }));
@@ -198,6 +207,17 @@ vi.mock("@/lib/auth/render-context", () => ({
 		updatedAt: 0,
 	}),
 	getRenderApprovedMembership: mockState.findMember,
+	getRenderSettingsAccess: async () => "owner",
+	getRenderUserOrganizations: async () => [
+		{
+			id: "organization-1",
+			name: "Organization 1",
+			slug: "organization-1",
+			logo: null,
+			memberRole: "owner",
+			hasEmployeeRecord: true,
+		},
+	],
 }));
 
 vi.mock("@/proxy", () => ({

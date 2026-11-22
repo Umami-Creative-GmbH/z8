@@ -12,6 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -23,8 +24,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
-import { formatRelative as formatDistanceToNow } from "@/lib/datetime/luxon-utils";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { queryKeys } from "@/lib/query/keys";
+
+function formatRelativeTime(date: Date, locale: string): string {
+	const diffSeconds = Math.round(
+		(instantFromDate(date).epochMilliseconds - systemClock.nowInstant().epochMilliseconds) / 1000,
+	);
+	const absSeconds = Math.abs(diffSeconds);
+	const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+	if (absSeconds < 60) return formatter.format(diffSeconds, "second");
+	const diffMinutes = Math.round(diffSeconds / 60);
+	if (Math.abs(diffMinutes) < 60) return formatter.format(diffMinutes, "minute");
+	const diffHours = Math.round(diffMinutes / 60);
+	if (Math.abs(diffHours) < 24) return formatter.format(diffHours, "hour");
+	const diffDays = Math.round(diffHours / 24);
+	if (Math.abs(diffDays) < 30) return formatter.format(diffDays, "day");
+	const diffMonths = Math.round(diffDays / 30);
+	if (Math.abs(diffMonths) < 12) return formatter.format(diffMonths, "month");
+	return formatter.format(Math.round(diffDays / 365), "year");
+}
 
 interface Session {
 	id: string;
@@ -343,6 +362,7 @@ function ActiveSessionsList({
 	revokingSessionId: string | null;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	return (
 		<div className="space-y-4">
 			{sessions.length === 0 ? (
@@ -401,7 +421,7 @@ function ActiveSessionsList({
 											)}
 											<span>
 												{t("settings.sessions.signedIn", "Signed in")}{" "}
-												{formatDistanceToNow(new Date(session.createdAt))}
+												{formatRelativeTime(new Date(session.createdAt), locale)}
 											</span>
 										</div>
 									</div>

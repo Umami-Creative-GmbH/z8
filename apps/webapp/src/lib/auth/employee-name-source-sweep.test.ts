@@ -39,7 +39,7 @@ const targetedForbiddenPatterns: Record<string, RegExp[]> = {
 		/\bemployeeRecord\.firstName\b/,
 		/\bemployeeRecord\.lastName\b/,
 	],
-	"src/app/[locale]/(app)/settings/change-policies/actions.ts": [
+	"src/app/[locale]/(app)/settings/work-policies/change-policy-actions.ts": [
 		/columns:\s*\{\s*id:\s*true,\s*firstName:\s*true,\s*lastName:\s*true/s,
 	],
 	"src/app/[locale]/(app)/settings/surcharges/actions.ts": [
@@ -50,7 +50,7 @@ const targetedForbiddenPatterns: Record<string, RegExp[]> = {
 		/columns:\s*\{\s*id:\s*true,\s*firstName:\s*true,\s*lastName:\s*true,\s*employeeNumber:\s*true/s,
 		/orderBy:\s*\([^)]*\)\s*=>\s*\[asc\([^)]*\.lastName\),\s*asc\([^)]*\.firstName\)\]/,
 	],
-	"src/app/[locale]/(app)/settings/holidays/actions.ts": [
+	"src/app/[locale]/(app)/settings/vacation/holiday-actions.ts": [
 		/columns:\s*\{\s*id:\s*true,\s*firstName:\s*true,\s*lastName:\s*true/s,
 	],
 	"src/app/[locale]/(app)/settings/calendar/actions.ts": [

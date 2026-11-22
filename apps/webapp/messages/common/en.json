@@ -130,6 +130,11 @@
     }
   },
   "billing": {
+    "recovery": {
+      "billingAndSubscription": "Billing & Subscription",
+      "navigationLabel": "Billing recovery navigation",
+      "suspensionNotice": "Suspension notice"
+    },
     "suspended": {
       "accessConsequence": "Access to this organization is paused until billing is updated.",
       "adminDescription": "Your trial ended or subscription is no longer valid. Update billing to continue using Z8.",

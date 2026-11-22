@@ -77,7 +77,7 @@ const checks: Array<{ file: string; patterns: RegExp[] }> = [
 		patterns: [/aria-label="Select all"/, /aria-label="Select row"/],
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/permissions/permissions-page-client.tsx",
+		file: "src/components/settings/custom-roles/team-permissions-tab.tsx",
 		patterns: [/\|\| "Failed to load employees"/],
 	},
 	{

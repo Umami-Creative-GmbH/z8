@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { listEmployeeCostRates } from "@/lib/billable-time/cost-rates";
@@ -47,8 +47,8 @@ describe("current contract type reads", () => {
 			organizationId: fixture.organizationId,
 			allowedEmployeeIds: [fixture.employeeId],
 			period: {
-				start: DateTime.fromISO("2026-03-01", { zone: "UTC" }),
-				end: DateTime.fromISO("2026-03-31", { zone: "UTC" }),
+				start: parsePlainDate("2026-03-01"),
+				end: parsePlainDate("2026-03-31"),
 				label: "March 2026",
 			},
 			generatedBy: { id: fixture.ownerUserId, name: "Owner" },

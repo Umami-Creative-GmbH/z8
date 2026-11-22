@@ -2,7 +2,7 @@
  * Absence transformation for SAP SuccessFactors
  * Transforms AbsenceData to SAP SuccessFactors absence/time-off requests
  */
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import type { AbsenceData, WageTypeMapping } from "../../../types";
 import { wageTypeCodeFor } from "../../../wage-type-code";
@@ -72,9 +72,9 @@ export function transformAbsences(
 		matchedCount++;
 
 		// Calculate duration in days
-		const startDate = DateTime.fromISO(absence.startDate);
-		const endDate = DateTime.fromISO(absence.endDate);
-		const quantityInDays = Math.floor(endDate.diff(startDate, "days").days) + 1;
+		const startDate = parsePlainDate(absence.startDate);
+		const endDate = parsePlainDate(absence.endDate);
+		const quantityInDays = startDate.until(endDate, { largestUnit: "days" }).days + 1;
 
 		const request: SFAbsenceRequest = {
 			userId,
@@ -146,13 +146,13 @@ export function aggregateAbsencesForCSV(
 		const note = absence.absenceCategoryName || "";
 
 		// Expand multi-day absences into daily entries
-		const startDate = DateTime.fromISO(absence.startDate).startOf("day");
-		const endDate = DateTime.fromISO(absence.endDate).startOf("day");
-		const days = Math.floor(endDate.diff(startDate, "days").days) + 1;
+		const startDate = parsePlainDate(absence.startDate);
+		const endDate = parsePlainDate(absence.endDate);
+		const days = startDate.until(endDate, { largestUnit: "days" }).days + 1;
 
 		for (let i = 0; i < days; i++) {
-			const currentDate = startDate.plus({ days: i });
-			const dateStr = currentDate.toISODate()!;
+			const currentDate = startDate.add({ days: i });
+			const dateStr = currentDate.toString();
 
 			// Initialize nested maps if needed
 			if (!aggregatedData.has(userId)) {

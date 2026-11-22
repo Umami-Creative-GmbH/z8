@@ -32,14 +32,7 @@ vi.mock("next-intl/server", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({
-		href,
-		children,
-		...props
-	}: {
-		href: string;
-		children: React.ReactNode;
-	}) => (
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
 		<a href={href} {...props}>
 			{children}
 		</a>
@@ -58,17 +51,11 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: mockState.getTranslate,
 }));
 
-vi.mock(
-	"@/components/settings/payroll-readiness/payroll-readiness-dashboard",
-	() => ({
-		PayrollReadinessDashboard: ({ data }: { data: unknown }) => (
-			<div
-				data-testid="payroll-readiness-dashboard"
-				data-value={JSON.stringify(data)}
-			/>
-		),
-	}),
-);
+vi.mock("@/components/settings/payroll-readiness/payroll-readiness-dashboard", () => ({
+	PayrollReadinessDashboard: ({ data }: { data: unknown }) => (
+		<div data-testid="payroll-readiness-dashboard" data-value={JSON.stringify(data)} />
+	),
+}));
 
 const { default: PayrollReadinessPage } = await import("./page");
 
@@ -91,36 +78,27 @@ describe("PayrollReadinessPage", () => {
 	it.each([
 		[
 			"access",
-			() =>
-				mockState.requireOrgAdminSettingsAccess.mockReturnValue(
-					new Promise(() => {}),
-				),
+			() => mockState.requireOrgAdminSettingsAccess.mockReturnValue(new Promise(() => {})),
 		],
 		["search params", () => undefined],
-	])(
-		"renders the stable shell while %s remain unresolved",
-		(_name, arrange) => {
-			arrange();
-			mockState.getTranslate.mockReturnValue(new Promise(() => {}));
-			const pendingSearchParams = new Promise<never>(() => {});
-			const searchParams =
-				_name === "search params" ? pendingSearchParams : Promise.resolve({});
+	])("renders the stable shell while %s remain unresolved", (_name, arrange) => {
+		arrange();
+		mockState.getTranslate.mockReturnValue(new Promise(() => {}));
+		const pendingSearchParams = new Promise<never>(() => {});
+		const searchParams = _name === "search params" ? pendingSearchParams : Promise.resolve({});
 
-			const page = PayrollReadinessPage({ searchParams });
-			const pageContent = page.props.children;
-			const contentFrame = pageContent.type(pageContent.props);
+		const page = PayrollReadinessPage({ searchParams });
+		const pageContent = page.props.children;
+		const contentFrame = pageContent.type(pageContent.props);
 
-			expect(contentFrame.type).toBe("div");
-			expect(contentFrame.props.children).toHaveLength(2);
-			render(page);
+		expect(contentFrame.type).toBe("div");
+		expect(contentFrame.props.children).toHaveLength(2);
+		render(page);
 
-			expect(
-				screen.getByTestId("payroll-readiness-header-loading"),
-			).toBeTruthy();
-			expect(screen.queryByRole("heading")).toBeNull();
-			expect(screen.getByLabelText("Loading settings")).toBeTruthy();
-		},
-	);
+		expect(screen.getByTestId("payroll-readiness-header-loading")).toBeTruthy();
+		expect(screen.queryByRole("heading")).toBeNull();
+		expect(screen.getByLabelText("Loading settings")).toBeTruthy();
+	});
 
 	it("renders the localized header after translation resolves", async () => {
 		const page = PayrollReadinessPage({});
@@ -130,13 +108,9 @@ describe("PayrollReadinessPage", () => {
 
 		render(await headerElement.type(headerElement.props));
 
+		expect(screen.getByRole("heading", { name: "Abrechnungsbereitschaft" })).toBeTruthy();
 		expect(
-			screen.getByRole("heading", { name: "Abrechnungsbereitschaft" }),
-		).toBeTruthy();
-		expect(
-			screen.getByText(
-				"Prüfen Sie die Bereitschaft für den Abrechnungszeitraum.",
-			),
+			screen.getByText("Prüfen Sie die Bereitschaft für den Abrechnungszeitraum."),
 		).toBeTruthy();
 		expect(screen.queryByText("Payroll Readiness")).toBeNull();
 	});
@@ -178,13 +152,14 @@ describe("PayrollReadinessPage", () => {
 		expect(mockState.getPayrollReadiness).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			period: {
-				start: expect.objectContaining({ zoneName: "UTC" }),
-				end: expect.objectContaining({ zoneName: "UTC" }),
+				start: expect.objectContaining({ year: 2026, month: 7, day: 1 }),
+				end: expect.objectContaining({ year: 2026, month: 7, day: 31 }),
 			},
+			locale: "en",
 		});
 		const [{ period }] = mockState.getPayrollReadiness.mock.calls[0];
-		expect(period.start.toISODate()).toBe("2026-07-01");
-		expect(period.end.toISODate()).toBe("2026-07-31");
+		expect(period.start.toString()).toBe("2026-07-01");
+		expect(period.end.toString()).toBe("2026-07-31");
 		expect(dashboard.props.data).toEqual({ status: "ready" });
 		expect(dashboard.props.t).toBe(mockState.translate);
 		expect(dashboard.props.periodLabel).toBe("July 2026");

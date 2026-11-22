@@ -8,58 +8,39 @@ import { ProrationNotice } from "@/components/settings/vacation/proration-notice
 import { WorkingWeekNotice } from "@/components/settings/vacation/working-week-notice";
 import { VacationManagement } from "@/components/settings/vacation/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation/vacation-policies-table";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db";
 import { loadAbsenceSettings } from "@/lib/absences/absence-settings";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { loadProrationNoticeForPage } from "@/lib/absences/proration-notice-store";
 import { loadWorkingWeekNoticeForPage } from "@/lib/absences/working-week-notice-store";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { isPersonnelFilesEnabled } from "@/lib/personnel-file/access-store";
 import { getTranslate } from "@/tolgee/server";
 
 async function VacationSettingsContent() {
-	const [t, settingsRouteContext] = await Promise.all([
-		getTranslate(),
-		getCurrentSettingsRouteContext(),
-	]);
+	const [t, caller] = await Promise.all([getTranslate(), getCurrentSettingsAccess()]);
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
-
-	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
+	const { organizationId, settingsAccess } = caller;
+	const canManagePolicies = meetsSettingsAccess(settingsAccess, "orgAdmin");
 
 	// Owners and admins only: managers can open this page too (#1112).
-	const [
-		absenceSettings,
-		personnelFilesEnabled,
-		,
-		prorationNotice,
-		workingWeekNotice,
-	] = canManagePolicies
-		? await Promise.all([
-				loadAbsenceSettings(db, organizationId),
-				isPersonnelFilesEnabled(db, organizationId),
-				ensureDefaultAbsenceCategoriesForOrganization(organizationId),
-				loadProrationNoticeForPage(db, { organizationId }),
-				loadWorkingWeekNoticeForPage(db, { organizationId }),
-			])
-		: [null, false, undefined, null, null];
+	const [absenceSettings, personnelFilesEnabled, , prorationNotice, workingWeekNotice] =
+		canManagePolicies
+			? await Promise.all([
+					loadAbsenceSettings(db, organizationId),
+					isPersonnelFilesEnabled(db, organizationId),
+					ensureDefaultAbsenceCategoriesForOrganization(organizationId),
+					loadProrationNoticeForPage(db, { organizationId }),
+					loadWorkingWeekNoticeForPage(db, { organizationId }),
+				])
+			: [null, false, undefined, null, null];
 
 	const allowedAssignmentTypes = canManagePolicies
 		? (["team", "employee"] as const)
@@ -77,9 +58,7 @@ async function VacationSettingsContent() {
 						notice={
 							prorationNotice?.length || workingWeekNotice?.length ? (
 								<>
-									{prorationNotice?.length ? (
-										<ProrationNotice rows={prorationNotice} />
-									) : null}
+									{prorationNotice?.length ? <ProrationNotice rows={prorationNotice} /> : null}
 									{workingWeekNotice?.length ? (
 										<WorkingWeekNotice rows={workingWeekNotice} />
 									) : null}
@@ -100,10 +79,7 @@ async function VacationSettingsContent() {
 								<CardHeader>
 									<CardTitle className="flex items-center gap-2">
 										<IconCalendar className="size-5" />
-										{t(
-											"settings.vacation.vacationPolicies",
-											"Vacation Policies",
-										)}
+										{t("settings.vacation.vacationPolicies", "Vacation Policies")}
 									</CardTitle>
 									<CardDescription>
 										{t(
@@ -123,10 +99,7 @@ async function VacationSettingsContent() {
 					</VacationManagement>
 				),
 				holidays: (
-					<HolidayManagement
-						organizationId={organizationId}
-						canManage={canManagePolicies}
-					/>
+					<HolidayManagement organizationId={organizationId} canManage={canManagePolicies} />
 				),
 			}}
 		/>

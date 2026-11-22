@@ -129,8 +129,8 @@ const holidayRoute = await import("@/app/api/org-admin/holidays/[id]/route");
 const holidayImportRoute = await import("@/app/api/org-admin/holidays/import/route");
 const categoriesRoute = await import("@/app/api/org-admin/holiday-categories/route");
 const categoryRoute = await import("@/app/api/org-admin/holiday-categories/[id]/route");
-const holidayActions = await import("@/app/[locale]/(app)/settings/holidays/actions");
-const policyActions = await import("@/app/[locale]/(app)/settings/change-policies/actions");
+const holidayActions = await import("@/app/[locale]/(app)/settings/vacation/holiday-actions");
+const policyActions = await import("@/app/[locale]/(app)/settings/work-policies/change-policy-actions");
 const teamActions = await import("@/app/[locale]/(app)/settings/teams/actions");
 
 const ids = {

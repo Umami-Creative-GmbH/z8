@@ -6,13 +6,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	requireUser: vi.fn(),
-	getCurrentSettingsAccessTier: vi.fn(),
+	getCurrentSettingsAccess: vi.fn(),
 	findUser: vi.fn(),
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
 	requireUser: mockState.requireUser,
-	getCurrentSettingsAccessTier: mockState.getCurrentSettingsAccessTier,
+	getCurrentSettingsAccess: mockState.getCurrentSettingsAccess,
 }));
 vi.mock("@/tolgee/server", () => ({
 	getTranslate: async () => (_key: string, fallback: string) => fallback,
@@ -23,7 +23,15 @@ vi.mock("@/db", () => ({
 vi.mock("@/db/auth-schema", () => ({ user: { id: "user.id" } }));
 vi.mock("@/env", () => ({ env: {} }));
 vi.mock("@/navigation", () => ({
-	Link: ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => (
+	Link: ({
+		href,
+		children,
+		className,
+	}: {
+		href: string;
+		children: ReactNode;
+		className?: string;
+	}) => (
 		<a href={href} className={className}>
 			{children}
 		</a>
@@ -62,34 +70,69 @@ describe("SecuritySettingsPage organization policy link", () => {
 		mockState.findUser.mockResolvedValue({ twoFactorEnabled: false });
 	});
 
-	it("shows the policy link to organization owners and admins", async () => {
-		mockState.getCurrentSettingsAccessTier.mockResolvedValue("orgAdmin");
-		await renderPage();
+	it.each(["owner", "orgAdmin"] as const)(
+		"shows the policy link to organization %s callers",
+		async (settingsAccess) => {
+			mockState.getCurrentSettingsAccess.mockResolvedValue({
+				userId: "user-1",
+				organizationId: "org-1",
+				settingsAccess,
+				membershipRole: settingsAccess === "owner" ? "owner" : "admin",
+				employee: null,
+			});
+			await renderPage();
 
-		expect(screen.getByRole("link", { name: POLICY_LINK }).getAttribute("href")).toBe(
-			"/settings/enterprise/identity-setup?tab=local-mfa",
-		);
-		expect(
-			screen.getByRole("link", {
-				name: "Verify authentication and review organization requirements",
-			}),
-		).toBeTruthy();
-	});
+			expect(screen.getByRole("link", { name: POLICY_LINK }).getAttribute("href")).toBe(
+				"/settings/enterprise/identity-setup?tab=local-mfa",
+			);
+			expect(
+				screen.getByRole("link", {
+					name: "Verify authentication and review organization requirements",
+				}),
+			).toBeTruthy();
+		},
+	);
 
-	it.each(["manager", "member", null])("hides the policy link for the %s tier", async (tier) => {
-		mockState.getCurrentSettingsAccessTier.mockResolvedValue(tier);
+	it.each(["scopedManager", "member", null] as const)(
+		"hides the policy link for %s settings access while keeping personal security accessible",
+		async (settingsAccess) => {
+			mockState.getCurrentSettingsAccess.mockResolvedValue(
+				settingsAccess === null
+					? {
+							userId: "user-1",
+							organizationId: "org-1",
+							settingsAccess: null,
+							membershipRole: null,
+							employee: null,
+						}
+					: {
+							userId: "user-1",
+							organizationId: "org-1",
+							settingsAccess,
+							membershipRole: "member",
+							employee: null,
+						},
+			);
+			await renderPage();
+
+			expect(screen.queryByRole("link", { name: POLICY_LINK })).toBeNull();
+			expect(
+				screen.getByRole("link", {
+					name: "Verify authentication and review organization requirements",
+				}),
+			).toBeTruthy();
+		},
+	);
+
+	it("hides the policy link when the caller has no active organization", async () => {
+		mockState.getCurrentSettingsAccess.mockResolvedValue(null);
 		await renderPage();
 
 		expect(screen.queryByRole("link", { name: POLICY_LINK })).toBeNull();
-		expect(
-			screen.getByRole("link", {
-				name: "Verify authentication and review organization requirements",
-			}),
-		).toBeTruthy();
 	});
 
 	it("hides the policy link when the access lookup fails", async () => {
-		mockState.getCurrentSettingsAccessTier.mockRejectedValue(new Error("db down"));
+		mockState.getCurrentSettingsAccess.mockRejectedValue(new Error("db down"));
 		await renderPage();
 
 		expect(screen.queryByRole("link", { name: POLICY_LINK })).toBeNull();

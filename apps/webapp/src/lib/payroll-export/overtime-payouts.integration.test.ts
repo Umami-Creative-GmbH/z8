@@ -6,7 +6,7 @@
  * object storage is replaced.
  */
 
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -128,8 +128,8 @@ async function exportJuly(employeeIds?: string[], formatId = "datev_lohn") {
 		requestedById: ids.owner,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO("2026-07-01", { zone: "utc" }),
-				end: DateTime.fromISO("2026-07-31", { zone: "utc" }),
+				start: parsePlainDate("2026-07-01"),
+				end: parsePlainDate("2026-07-31"),
 			},
 			employeeIds,
 		},
@@ -273,8 +273,8 @@ describe("overtime payouts in the SAP SuccessFactors CSV file on PostgreSQL (#10
 		const payoutId = await adjustment({ employeeId: ids.worker, day: "2026-07-15", minutes: -300 });
 		const filters = {
 			dateRange: {
-				start: DateTime.fromISO("2026-07-01", { zone: "utc" }),
-				end: DateTime.fromISO("2026-07-31", { zone: "utc" }),
+				start: parsePlainDate("2026-07-01"),
+				end: parsePlainDate("2026-07-31"),
 			},
 		};
 		const unmapped = [{ id: payoutId, employeeId: ids.worker, day: "2026-07-15", minutes: 300 }];

@@ -16,18 +16,19 @@ import {
 import { CurrencySelect } from "@/components/travel-expenses/currency-select";
 import { formatMoney, formatPlainDate } from "@/components/travel-expenses/report/format";
 import { policySourceLabel } from "@/components/travel-expenses/report/mileage-labels";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -179,7 +180,7 @@ export function PerDiemPolicySettingsCard() {
 				)}
 				{data && <PerDiemPolicyContent data={data} onOpen={setTarget} />}
 			</CardContent>
-			<PerDiemPolicyVersionDialog
+			<PerDiemPolicyVersionPanel
 				key={target ? JSON.stringify(target) : "closed"}
 				target={target}
 				onClose={() => setTarget(null)}
@@ -514,7 +515,7 @@ function perDiemActivationInput(
 			};
 }
 
-function PerDiemPolicyVersionDialog({
+function PerDiemPolicyVersionPanel({
 	target,
 	onClose,
 }: {
@@ -660,10 +661,13 @@ function PerDiemPolicyVersionDialog({
 	);
 
 	return (
-		<Dialog open={target !== null} onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle>
+		<ActionPanel
+			open={target !== null}
+			onOpenChange={(open) => !open && !form.state.isSubmitting && onClose()}
+		>
+			<ActionPanelContent>
+				<ActionPanelHeader>
+					<ActionPanelTitle>
 						{target?.source !== "statutory_default"
 							? t("settings.travelExpenses.perDiem.addTitle", "Add a per diem rate version")
 							: target.entry.foreignTableKey
@@ -675,118 +679,123 @@ function PerDiemPolicyVersionDialog({
 										"settings.travelExpenses.perDiem.adoptTitle",
 										"Adopt the German statutory per diem",
 									)}
-					</DialogTitle>
-					<DialogDescription>
+					</ActionPanelTitle>
+					<ActionPanelDescription>
 						{t(
 							"settings.travelExpenses.perDiem.dialogDescription",
 							"The version applies from its start date until the next version starts. Earlier versions and submitted reports are not changed.",
 						)}
-					</DialogDescription>
-				</DialogHeader>
+					</ActionPanelDescription>
+				</ActionPanelHeader>
 				<form
 					noValidate
-					className="space-y-4"
+					className="flex min-h-0 flex-1 flex-col"
 					onSubmit={(event) => {
 						event.preventDefault();
+						if (form.state.isSubmitting) return;
 						void form.handleSubmit();
 					}}
 				>
-					<form.Field name="effectiveFrom" validators={validators("effectiveFrom")}>
-						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)}>
-									{t("settings.travelExpenses.perDiem.validFrom", "Valid from")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<DatePicker
-										name="effectiveFrom"
-										value={field.state.value}
-										onChange={(value) => {
-											field.handleChange(value);
-											setReplaceVersionId(null);
-										}}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
-						)}
-					</form.Field>
-
-					{target?.source === "statutory_default" ? (
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.travelExpenses.perDiem.adoptDescription",
-								"Amounts and source are taken from the verified catalog: {reference} ({version}).",
-								{ reference: target.entry.reference, version: target.entry.version },
+					<ActionPanelBody className="space-y-4">
+						<form.Field name="effectiveFrom" validators={validators("effectiveFrom")}>
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("settings.travelExpenses.perDiem.validFrom", "Valid from")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<DatePicker
+											name="effectiveFrom"
+											value={field.state.value}
+											onChange={(value) => {
+												field.handleChange(value);
+												setReplaceVersionId(null);
+											}}
+											onBlur={field.handleBlur}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
 							)}
-						</p>
-					) : (
-						<>
-							{textField("currency", t("settings.travelExpenses.perDiem.currency", "Currency"), {
-								description: t(
-									"settings.travelExpenses.perDiem.currencyDescription",
-									"Must match the reimbursement currency of reports; per diem is never converted.",
-								),
-							})}
-							{PER_DIEM_RATE_FIELDS.map((field) => (
-								<div key={field}>
-									{textField(field, rateLabel(t, field), { decimal: true, placeholder: "0.00" })}
-								</div>
-							))}
-							{textField(
-								"sourceReference",
-								t("settings.travelExpenses.perDiem.sourceReference", "Source"),
-								{
-									placeholder: t(
-										"settings.travelExpenses.perDiem.sourceReferencePlaceholder",
-										"e.g. Travel policy, works agreement 3/2026",
+						</form.Field>
+
+						{target?.source === "statutory_default" ? (
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"settings.travelExpenses.perDiem.adoptDescription",
+									"Amounts and source are taken from the verified catalog: {reference} ({version}).",
+									{ reference: target.entry.reference, version: target.entry.version },
+								)}
+							</p>
+						) : (
+							<>
+								{textField("currency", t("settings.travelExpenses.perDiem.currency", "Currency"), {
+									description: t(
+										"settings.travelExpenses.perDiem.currencyDescription",
+										"Must match the reimbursement currency of reports; per diem is never converted.",
 									),
-								},
-							)}
-						</>
-					)}
-
-					{textField("note", t("settings.travelExpenses.perDiem.note", "Note (optional)"))}
-
-					{replaceVersionId && (
-						<Alert>
-							<IconAlertTriangle aria-hidden="true" className="size-4" />
-							<AlertTitle>
-								{t(
-									"settings.travelExpenses.perDiem.replaceTitle",
-									"Replace the version starting that day",
+								})}
+								{PER_DIEM_RATE_FIELDS.map((field) => (
+									<div key={field}>
+										{textField(field, rateLabel(t, field), { decimal: true, placeholder: "0.00" })}
+									</div>
+								))}
+								{textField(
+									"sourceReference",
+									t("settings.travelExpenses.perDiem.sourceReference", "Source"),
+									{
+										placeholder: t(
+											"settings.travelExpenses.perDiem.sourceReferencePlaceholder",
+											"e.g. Travel policy, works agreement 3/2026",
+										),
+									},
 								)}
-							</AlertTitle>
-							<AlertDescription>
-								{t(
-									"settings.travelExpenses.perDiem.replaceDescription",
-									"An active version already starts on {date}. Saving replaces it; the replaced version is kept in the history.",
-									{ date: formatPlainDate(locale, form.state.values.effectiveFrom || "") },
-								)}
-							</AlertDescription>
-						</Alert>
-					)}
+							</>
+						)}
 
-					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onClose}>
-							{t("common.cancel", "Cancel")}
-						</Button>
+						{textField("note", t("settings.travelExpenses.perDiem.note", "Note (optional)"))}
+
+						{replaceVersionId && (
+							<Alert>
+								<IconAlertTriangle aria-hidden="true" className="size-4" />
+								<AlertTitle>
+									{t(
+										"settings.travelExpenses.perDiem.replaceTitle",
+										"Replace the version starting that day",
+									)}
+								</AlertTitle>
+								<AlertDescription>
+									{t(
+										"settings.travelExpenses.perDiem.replaceDescription",
+										"An active version already starts on {date}. Saving replaces it; the replaced version is kept in the history.",
+										{ date: formatPlainDate(locale, form.state.values.effectiveFrom || "") },
+									)}
+								</AlertDescription>
+							</Alert>
+						)}
+					</ActionPanelBody>
+
+					<ActionPanelFooter>
 						<form.Subscribe selector={(state) => state.isSubmitting}>
 							{(isSubmitting) => (
-								<Button type="submit" disabled={isSubmitting}>
-									{isSubmitting && (
-										<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-									)}
-									{replaceVersionId
-										? t("settings.travelExpenses.perDiem.replaceConfirm", "Replace version")
-										: t("settings.travelExpenses.perDiem.activate", "Activate version")}
-								</Button>
+								<>
+									<Button type="button" variant="outline" disabled={isSubmitting} onClick={onClose}>
+										{t("common.cancel", "Cancel")}
+									</Button>
+									<Button type="submit" disabled={isSubmitting}>
+										{isSubmitting && (
+											<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+										)}
+										{replaceVersionId
+											? t("settings.travelExpenses.perDiem.replaceConfirm", "Replace version")
+											: t("settings.travelExpenses.perDiem.activate", "Activate version")}
+									</Button>
+								</>
 							)}
 						</form.Subscribe>
-					</DialogFooter>
+					</ActionPanelFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }

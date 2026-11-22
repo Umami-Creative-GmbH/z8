@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { DiscordChannelSettings } from "@/components/settings/discord-channel-settings";
 import { NotificationChannelSettings } from "@/components/settings/notification-channel-settings";
 
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
@@ -6,6 +7,8 @@ import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
+	connectDiscordBot,
+	disconnectDiscordBot,
 	getDiscordNotificationChannelConfig,
 	getSlackNotificationChannelConfig,
 	getTeamsNotificationChannelConfig,
@@ -32,10 +35,7 @@ async function ChatSettingsContent() {
 	return (
 		<SettingsTabbedPage
 			key={organizationId}
-			title={t(
-				"settings.navigation.chat-integrations.title",
-				"Chat Integrations",
-			)}
+			title={t("settings.navigation.chat-integrations.title", "Chat Integrations")}
 			defaultTab="slack"
 			tabs={[
 				{
@@ -98,18 +98,11 @@ async function ChatSettingsContent() {
 					),
 					measure: true,
 					panel: (
-						<NotificationChannelSettings
-							channelName="Discord"
+						<DiscordChannelSettings
 							config={discord.success ? discord.data : null}
 							updateAction={updateDiscordNotificationChannelSettings}
-							connectAction={
-								<p className="text-sm">
-									{t(
-										"settings.notifications.discord.setupInstructions",
-										"Connecting Discord from this page is not available yet. The connection needs your Discord application's bot token, application ID and public key.",
-									)}
-								</p>
-							}
+							connectAction={connectDiscordBot}
+							disconnectAction={disconnectDiscordBot}
 						/>
 					),
 				},

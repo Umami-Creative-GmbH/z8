@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import type { Temporal } from "temporal-polyfill";
 import { buildPayrollSummaryFromRows } from "@/lib/payroll-workspace/summary";
 import type { PayrollBlocker, PayrollPeriod } from "@/lib/payroll-workspace/types";
@@ -59,8 +58,7 @@ export function buildPayrollPeriodRead(input: {
 		organizationId: input.organizationId,
 		organizationName: sources.organizationName,
 		period: input.period,
-		// The Overview's builder predates Temporal; this is its one Luxon boundary.
-		generatedAt: DateTime.fromMillis(input.generatedAt.epochMilliseconds, { zone: "utc" }),
+		generatedAt: input.generatedAt,
 		generatedBy: input.generatedBy,
 		employees: sources.employees.map(
 			({ timezone: _timezone, departure: _departure, ...employee }) => employee,

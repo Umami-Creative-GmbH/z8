@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconPlus, IconRefresh } from "@tabler/icons-react";
+import { IconPlus, IconRefresh } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -204,26 +204,17 @@ export function WorkPolicyTable({
 				onSearchChange={setSearch}
 				searchPlaceholder={t("settings.workPolicies.searchPlaceholder", "Search policies...")}
 				actions={
-					<div className="flex items-center gap-2">
-						<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-							{isFetching ? (
-								<IconLoader2 className="size-4 animate-spin" />
-							) : (
-								<IconRefresh className="size-4" />
-							)}
-							<span className="sr-only">{t("common.refresh", "Refresh")}</span>
+					canManagePolicies ? (
+						<Button onClick={onCreateClick}>
+							<IconPlus className="mr-2 size-4" />
+							{t("settings.workPolicies.create", "Create Policy")}
 						</Button>
-						{canManagePolicies ? (
-							<Button onClick={onCreateClick}>
-								<IconPlus className="mr-2 size-4" />
-								{t("settings.workPolicies.create", "Create Policy")}
-							</Button>
-						) : null}
-					</div>
+					) : undefined
 				}
 			/>
 
-			<DataTable mobileLayout="stacked"
+			<DataTable
+				mobileLayout="stacked"
 				columns={columns}
 				data={filteredPolicies}
 				isFetching={isFetching}

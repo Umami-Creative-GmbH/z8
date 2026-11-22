@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
 	createCoverageRule,
 	updateCoverageRule,
-} from "@/app/[locale]/(app)/settings/coverage-rules/actions";
+} from "@/app/[locale]/(app)/settings/shifts/coverage-rule-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,

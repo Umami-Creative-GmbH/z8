@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
-import { getTargetHeatmapData } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
+import { getTargetHeatmapData } from "@/app/[locale]/(app)/settings/shifts/coverage-rule-actions";
 import { ApiError } from "@/lib/api-error";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";

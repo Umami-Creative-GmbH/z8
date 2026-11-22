@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	access: vi.fn(),
 	locations: vi.fn(),
+	requireOrganizationFeatureEnabled: vi.fn(),
 	redirect: vi.fn((url: string) => {
 		throw new Error(`redirect:${url}`);
 	}),
@@ -10,6 +11,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/settings-scheduling-access", () => ({
 	getSchedulingSettingsAccessContext: mocks.access,
 	getScopedSchedulingLocationsForSettings: mocks.locations,
+}));
+vi.mock("@/lib/settings/feature-flags.server", () => ({
+	requireOrganizationFeatureEnabled: mocks.requireOrganizationFeatureEnabled,
 }));
 vi.mock("@/lib/navigation/locale-redirect", () => ({
 	redirectWithLocale: mocks.redirect,
@@ -24,13 +28,13 @@ vi.mock("@/components/settings/coverage-rules-management", () => ({
 	CoverageRulesManagement: () => null,
 }));
 
-import LegacyCoveragePage from "../coverage-rules/page";
 import PlanningPage from "./page";
 
 const renderPage = () => PlanningPage().props.children.type();
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.locations.mockResolvedValue([]);
+	mocks.requireOrganizationFeatureEnabled.mockResolvedValue(undefined);
 	mocks.access.mockResolvedValue({
 		organizationId: "org-1",
 		canAccessShiftTemplates: true,
@@ -56,9 +60,7 @@ describe("merged Shift Planning permissions", () => {
 			organizationId: "org-1",
 			manageableSubareaIds: new Set(["coverage-area"]),
 		});
-		expect(page.props.tabs[0].panel.props.manageableSubareaIds).toEqual([
-			"template-area",
-		]);
+		expect(page.props.tabs[0].panel.props.manageableSubareaIds).toEqual(["template-area"]);
 		expect(page.props.tabs[1].panel.props).toMatchObject({
 			organizationId: "org-1",
 			manageableSubareaIds: ["coverage-area"],
@@ -75,9 +77,7 @@ describe("merged Shift Planning permissions", () => {
 		});
 		const page = await renderPage();
 		expect(page.props.defaultTab).toBe("coverage");
-		expect(page.props.tabs.map((tab: { value: string }) => tab.value)).toEqual([
-			"coverage",
-		]);
+		expect(page.props.tabs.map((tab: { value: string }) => tab.value)).toEqual(["coverage"]);
 		expect(mocks.locations).toHaveBeenCalledTimes(1);
 	});
 	it("keeps coverage hidden from a template-only actor", async () => {
@@ -88,26 +88,26 @@ describe("merged Shift Planning permissions", () => {
 			manageableShiftTemplateSubareaIds: new Set(["template-area"]),
 		});
 		const page = await renderPage();
-		expect(page.props.tabs.map((tab: { value: string }) => tab.value)).toEqual([
-			"templates",
-		]);
+		expect(page.props.tabs.map((tab: { value: string }) => tab.value)).toEqual(["templates"]);
 		expect(mocks.locations).toHaveBeenCalledTimes(1);
 	});
-	it.each([
-		null,
-		{ canAccessShiftTemplates: false, canAccessCoverageRules: false },
-	])("rejects actors without either planning permission", async (access) => {
-		mocks.access.mockResolvedValue(access);
-		await expect(renderPage()).rejects.toThrow("redirect:/settings");
+	it.each([null, { canAccessShiftTemplates: false, canAccessCoverageRules: false }])(
+		"rejects actors without either planning permission",
+		async (access) => {
+			mocks.access.mockResolvedValue(access);
+			await expect(renderPage()).rejects.toThrow("redirect:/settings");
+			expect(mocks.requireOrganizationFeatureEnabled).not.toHaveBeenCalled();
+			expect(mocks.locations).not.toHaveBeenCalled();
+		},
+	);
+	it("returns notFound without loading locations when shiftsEnabled is off", async () => {
+		mocks.requireOrganizationFeatureEnabled.mockRejectedValue(new Error("NEXT_NOT_FOUND"));
+		await expect(renderPage()).rejects.toThrow("NEXT_NOT_FOUND");
+		expect(mocks.requireOrganizationFeatureEnabled).toHaveBeenCalledWith("org-1", "shiftsEnabled");
 		expect(mocks.locations).not.toHaveBeenCalled();
 	});
-	it("redirects the legacy coverage route to its tab with its original guard", async () => {
-		await expect(LegacyCoveragePage().props.children.type()).rejects.toThrow(
-			"redirect:/settings/shifts?tab=coverage",
-		);
-		mocks.access.mockResolvedValue({ canAccessCoverageRules: false });
-		await expect(LegacyCoveragePage().props.children.type()).rejects.toThrow(
-			"redirect:/settings",
-		);
+	it("checks shiftsEnabled before rendering when shift planning is enabled", async () => {
+		await renderPage();
+		expect(mocks.requireOrganizationFeatureEnabled).toHaveBeenCalledWith("org-1", "shiftsEnabled");
 	});
 });

@@ -249,7 +249,7 @@ const ROSTER_SURFACES: Surface[] = [
 		note: "position capture assignment picker",
 	},
 	{
-		file: "app/[locale]/(app)/settings/vehicle-use/actions.ts",
+		file: "app/[locale]/(app)/settings/vehicles/vehicle-use-actions.ts",
 		functions: ["loadVehicleUseAdminData"],
 		note: "vehicle use assignment picker",
 	},

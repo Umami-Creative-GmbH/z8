@@ -5,9 +5,8 @@
  * ADR-0004), so it is skipped and stays a half pair; the rest of the organization is still
  * backfilled and payroll doesn't fail. No closed-month bypass is involved.
  */
-import { DateTime } from "luxon";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { fetchWorkPeriodsForExport } from "@/lib/payroll-export/data-fetcher";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
 import { reopenMonthAttachingWork } from "@/lib/time-tracking/closed-months/reopen-month";
@@ -119,8 +118,8 @@ describe("the canonical backfill with closed months", () => {
 		await expect(
 			fetchWorkPeriodsForExport(org.organizationId, {
 				dateRange: {
-					start: DateTime.fromISO("2026-04-01", { zone: "UTC" }),
-					end: DateTime.fromISO("2026-04-30", { zone: "UTC" }),
+					start: parsePlainDate("2026-04-01"),
+					end: parsePlainDate("2026-04-30"),
 				},
 			}),
 		).resolves.toEqual([expect.objectContaining({ employeeId: person.employeeId })]);
@@ -129,8 +128,8 @@ describe("the canonical backfill with closed months", () => {
 				organizationId: org.organizationId,
 				allowedEmployeeIds: [],
 				period: {
-					start: DateTime.fromISO("2026-04-01", { zone: "UTC" }),
-					end: DateTime.fromISO("2026-04-30", { zone: "UTC" }),
+					start: parsePlainDate("2026-04-01"),
+					end: parsePlainDate("2026-04-30"),
 					label: "April 2026",
 				},
 				generatedBy: { id: org.ownerUserId, name: "Owner" },

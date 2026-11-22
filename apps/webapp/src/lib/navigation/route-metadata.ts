@@ -174,9 +174,7 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 	},
 	// Equipment's and Approval's new titles still need Tolgee sync. Until then the
 	// shell uses their catalog-backed Settings ancestor; the page/nav have dedicated defaults.
-	...SETTINGS_ENTRIES.filter(
-		(entry) => entry.id !== "equipment" && entry.id !== "approval",
-	).map(
+	...SETTINGS_ENTRIES.filter((entry) => entry.id !== "equipment" && entry.id !== "approval").map(
 		(entry) => ({
 			id: `settings-${entry.id}`,
 			href: entry.href,
@@ -200,19 +198,15 @@ export const UNKNOWN_ROUTE_METADATA: AppRouteMetadata = {
 };
 
 export function normalizeAppPath(pathname: string): string {
-	const [firstSegment, ...remainingSegments] = pathname
-		.split("/")
-		.filter(Boolean);
-	const segments = ALL_LANGUAGES.includes(
-		firstSegment as (typeof ALL_LANGUAGES)[number],
-	)
+	const [firstSegment, ...remainingSegments] = pathname.split("/").filter(Boolean);
+	const segments = ALL_LANGUAGES.includes(firstSegment as (typeof ALL_LANGUAGES)[number])
 		? remainingSegments
 		: [firstSegment, ...remainingSegments].filter(Boolean);
 	return segments.length === 0 ? "/" : `/${segments.join("/")}`;
 }
 
 /** Settings routes that render their own PageHeader (or SettingsTabbedPage) h1.
- * Redirect-only legacy routes are deliberately absent: they keep the shell title.
+ * Legacy settings URLs redirect in `proxy.ts` and are not listed here.
  */
 const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings",
@@ -253,7 +247,6 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings/payroll-access",
 	"/settings/payroll-export",
 	"/settings/payroll-readiness",
-	"/settings/permissions",
 	"/settings/personnel-files",
 	"/settings/position-capture",
 	"/settings/position-stamps",
@@ -279,7 +272,7 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 
 /** Settings record pages (one dynamic segment) that render their own h1. */
 const SETTINGS_RECORD_HEADING_ROUTES: readonly RegExp[] = [
-	// `new` is a redirect-only legacy route and keeps the shell title.
+	// `new` is a retired legacy URL redirected in `proxy.ts`, not an employee detail record.
 	/^\/settings\/employees\/(?!new$)[^/]+$/,
 	/^\/settings\/teams\/[^/]+$/,
 	/^\/settings\/locations\/[^/]+$/,
@@ -367,7 +360,6 @@ export function resolveAppRouteMetadata(pathname: string): AppRouteMetadata {
 	return (
 		[...APP_ROUTE_METADATA]
 			.sort((left, right) => right.href.length - left.href.length)
-			.find((route) => routeMatches(normalizedPath, route.href)) ??
-		UNKNOWN_ROUTE_METADATA
+			.find((route) => routeMatches(normalizedPath, route.href)) ?? UNKNOWN_ROUTE_METADATA
 	);
 }
