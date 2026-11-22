@@ -45,6 +45,10 @@ import type {
 	ProjectSummary,
 } from "@/lib/reports/project-types";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import {
+	type EmployeeProjectReportAccess,
+	getCachedProjectReportAccess,
+} from "./project-report-access-loader";
 
 const logger = createLogger("ProjectReportsActions");
 
@@ -484,65 +488,6 @@ export async function getCurrentEmployeeForReports(): Promise<typeof employee.$i
 	return emp || null;
 }
 
-export async function getCurrentEmployeeProjectReportAccess(): Promise<{
-	employee: typeof employee.$inferSelect | null;
-	projectsEnabled: boolean;
-	canViewProjectReports: boolean;
-} | null> {
-	let authContext;
-	try {
-		authContext = await requireAuth();
-	} catch {
-		return null;
-	}
-
-	const organizationId = authContext.session.activeOrganizationId;
-	if (!organizationId) {
-		return null;
-	}
-
-	const [org, emp] = await Promise.all([
-		db.query.organization.findFirst({
-			where: eq(organization.id, organizationId),
-			columns: { projectsEnabled: true },
-		}),
-		getCurrentEmployeeForReports(),
-	]);
-
-	const projectsEnabled = org?.projectsEnabled ?? false;
-	if (!projectsEnabled) {
-		return {
-			employee: emp,
-			projectsEnabled: false,
-			canViewProjectReports: false,
-		};
-	}
-
-	if (!emp) {
-		return {
-			employee: null,
-			projectsEnabled: true,
-			canViewProjectReports: false,
-		};
-	}
-
-	if (emp.role === "admin" || emp.role === "manager") {
-		return {
-			employee: emp,
-			projectsEnabled: true,
-			canViewProjectReports: true,
-		};
-	}
-
-	const viewer = await loadProjectReportViewer(db, {
-		organizationId: emp.organizationId,
-		userId: authContext.user.id,
-		employee: emp,
-	});
-
-	return {
-		employee: emp,
-		projectsEnabled: true,
-		canViewProjectReports: canViewProjectReports(viewer),
-	};
+export async function getCurrentEmployeeProjectReportAccess(): Promise<EmployeeProjectReportAccess | null> {
+	return getCachedProjectReportAccess(getCurrentEmployeeForReports);
 }
