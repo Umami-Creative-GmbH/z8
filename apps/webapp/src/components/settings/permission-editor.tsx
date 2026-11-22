@@ -9,13 +9,7 @@ import {
 	revokeTeamPermissions,
 } from "@/app/[locale]/(app)/settings/permissions/actions";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -82,9 +76,7 @@ export function PermissionEditor({
 }: PermissionEditorProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
-	const [teamScope, setTeamScope] = useState<string>(
-		currentPermissions?.teamId || "all",
-	);
+	const [teamScope, setTeamScope] = useState<string>(currentPermissions?.teamId || "all");
 	const [permissions, setPermissions] = useState({
 		canCreateTeams: currentPermissions?.canCreateTeams || false,
 		canManageTeamMembers: currentPermissions?.canManageTeamMembers || false,
@@ -92,10 +84,7 @@ export function PermissionEditor({
 		canApproveTeamRequests: currentPermissions?.canApproveTeamRequests || false,
 	});
 
-	const handlePermissionChange = (
-		permission: keyof typeof permissions,
-		checked: boolean,
-	) => {
+	const handlePermissionChange = (permission: keyof typeof permissions, checked: boolean) => {
 		setPermissions((prev) => ({
 			...prev,
 			[permission]: checked,
@@ -123,12 +112,7 @@ export function PermissionEditor({
 		}
 
 		if (result.success) {
-			toast.success(
-				t(
-					"settings.permissions.updateSuccess",
-					"Permissions updated successfully",
-				),
-			);
+			toast.success(t("settings.permissions.updateSuccess", "Permissions updated successfully"));
 			onSuccess?.();
 		} else {
 			toast.error(
@@ -160,12 +144,7 @@ export function PermissionEditor({
 		}
 
 		if (result.success) {
-			toast.success(
-				t(
-					"settings.permissions.revokeSuccess",
-					"Permissions revoked successfully",
-				),
-			);
+			toast.success(t("settings.permissions.revokeSuccess", "Permissions revoked successfully"));
 			onSuccess?.();
 		} else {
 			toast.error(
@@ -182,22 +161,17 @@ export function PermissionEditor({
 	const isChanged =
 		teamScope !== (currentPermissions?.teamId || "all") ||
 		permissions.canCreateTeams !== currentPermissions?.canCreateTeams ||
-		permissions.canManageTeamMembers !==
-			currentPermissions?.canManageTeamMembers ||
-		permissions.canManageTeamSettings !==
-			currentPermissions?.canManageTeamSettings ||
-		permissions.canApproveTeamRequests !==
-			currentPermissions?.canApproveTeamRequests;
+		permissions.canManageTeamMembers !== currentPermissions?.canManageTeamMembers ||
+		permissions.canManageTeamSettings !== currentPermissions?.canManageTeamSettings ||
+		permissions.canApproveTeamRequests !== currentPermissions?.canApproveTeamRequests;
 
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
-					{t("settings.permissions.title", "Team Permissions")}
-				</CardTitle>
+				<CardTitle>{t("settings.permissions.title", "Team Permissions")}</CardTitle>
 				<CardDescription>
 					{t(
-						"settings.permissions.description",
+						"settings.permissions.editor.description",
 						"Configure permissions for {employeeName}. Admins automatically have all permissions.",
 						{ employeeName },
 					)}
@@ -206,19 +180,14 @@ export function PermissionEditor({
 			<CardContent className="space-y-6">
 				{/* Team Scope Selection */}
 				<div className="space-y-2">
-					<Label htmlFor="teamScope">
-						{t("settings.permissions.scope", "Permission Scope")}
-					</Label>
+					<Label htmlFor="teamScope">{t("settings.permissions.scope", "Permission Scope")}</Label>
 					<Select value={teamScope} onValueChange={setTeamScope}>
 						<SelectTrigger id="teamScope">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="all">
-								{t(
-									"settings.permissions.allTeams",
-									"All Teams (Organization-wide)",
-								)}
+								{t("settings.permissions.allTeams", "All Teams (Organization-wide)")}
 							</SelectItem>
 							{availableTeams.map((team) => (
 								<SelectItem key={team.id} value={team.id}>
@@ -247,18 +216,12 @@ export function PermissionEditor({
 					</Label>
 					<div className="space-y-4">
 						{Object.entries(PERMISSION_KEYS).map(([key, item]) => (
-							<div
-								key={key}
-								className="flex items-start gap-x-3 rounded-lg border p-3"
-							>
+							<div key={key} className="flex items-start gap-x-3 rounded-lg border p-3">
 								<Checkbox
 									id={key}
 									checked={permissions[key as keyof typeof permissions]}
 									onCheckedChange={(checked) =>
-										handlePermissionChange(
-											key as keyof typeof permissions,
-											checked as boolean,
-										)
+										handlePermissionChange(key as keyof typeof permissions, checked as boolean)
 									}
 									disabled={loading}
 								/>
@@ -282,15 +245,8 @@ export function PermissionEditor({
 				<div className="flex justify-between pt-4">
 					<div>
 						{currentPermissions && hasAnyPermission && (
-							<Button
-								type="button"
-								variant="destructive"
-								onClick={handleRevoke}
-								disabled={loading}
-							>
-								{loading && (
-									<IconLoader2 className="mr-2 size-4 animate-spin" />
-								)}
+							<Button type="button" variant="destructive" onClick={handleRevoke} disabled={loading}>
+								{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 								<IconX className="mr-2 size-4" />
 								{t("settings.permissions.revokeAll", "Revoke All")}
 							</Button>
@@ -298,19 +254,11 @@ export function PermissionEditor({
 					</div>
 					<div className="flex gap-2">
 						{onCancel && (
-							<Button
-								type="button"
-								variant="outline"
-								onClick={onCancel}
-								disabled={loading}
-							>
+							<Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
 								{t("common.cancel", "Cancel")}
 							</Button>
 						)}
-						<Button
-							onClick={handleSave}
-							disabled={loading || !isChanged || !hasAnyPermission}
-						>
+						<Button onClick={handleSave} disabled={loading || !isChanged || !hasAnyPermission}>
 							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 							<IconCheck className="mr-2 size-4" />
 							{t("settings.permissions.save", "Save Permissions")}

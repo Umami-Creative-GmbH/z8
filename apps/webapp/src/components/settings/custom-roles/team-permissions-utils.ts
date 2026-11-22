@@ -1,62 +1,62 @@
+import type { SelectableEmployee } from "@/app/[locale]/(app)/settings/employees/employee-action-types";
 import type { EmployeePermissions } from "@/lib/effect/services/permissions.service";
-import type { SelectableEmployee } from "../employees/actions";
 
 export type TeamItem = { id: string; name: string };
 
-export interface PermissionsPageState {
+export interface TeamPermissionsState {
+	loadedOrganizationId: string | null;
 	employees: SelectableEmployee[];
 	teams: TeamItem[];
 	permissions: Record<string, EmployeePermissions>;
 	loading: boolean;
-	currentEmployee: {
-		id: string;
-		role: string;
-		organizationId: string;
-	} | null;
-	noEmployee: boolean;
 	/** The last bootstrap load failed; distinct from an organization without employees. */
 	loadFailed: boolean;
-	isAdmin: boolean;
 	searchQuery: string;
 	selectedEmployee: SelectableEmployee | null;
 }
 
-export type PermissionsPageAction =
+export type TeamPermissionsAction =
 	| { type: "setLoading"; value: boolean }
 	| {
 			type: "setBootstrapped";
 			payload: Pick<
-				PermissionsPageState,
-				"employees" | "teams" | "permissions" | "currentEmployee" | "isAdmin" | "noEmployee"
+				TeamPermissionsState,
+				"loadedOrganizationId" | "employees" | "teams" | "permissions"
 			> &
-				Partial<Pick<PermissionsPageState, "loadFailed">>;
+				Partial<Pick<TeamPermissionsState, "loadFailed">>;
 	  }
-	| { type: "setEmployees"; employees: SelectableEmployee[] }
-	| { type: "setPermissions"; permissions: Record<string, EmployeePermissions> }
+	| { type: "resetForOrganization" }
 	| { type: "setSearchQuery"; searchQuery: string }
-	| { type: "setSelectedEmployee"; employee: SelectableEmployee | null }
-	| { type: "setNoEmployee"; value: boolean };
+	| { type: "setSelectedEmployee"; employee: SelectableEmployee | null };
 
-export const initialPermissionsPageState: PermissionsPageState = {
+export const initialTeamPermissionsState: TeamPermissionsState = {
+	loadedOrganizationId: null,
 	employees: [],
 	teams: [],
 	permissions: {},
 	loading: true,
-	currentEmployee: null,
-	noEmployee: false,
 	loadFailed: false,
-	isAdmin: false,
 	searchQuery: "",
 	selectedEmployee: null,
 };
 
-export function permissionsPageReducer(
-	state: PermissionsPageState,
-	action: PermissionsPageAction,
-): PermissionsPageState {
+export function teamPermissionsReducer(
+	state: TeamPermissionsState,
+	action: TeamPermissionsAction,
+): TeamPermissionsState {
 	switch (action.type) {
 		case "setLoading":
 			return { ...state, loading: action.value };
+		case "resetForOrganization":
+			return {
+				...state,
+				loading: true,
+				loadFailed: false,
+				employees: [],
+				teams: [],
+				permissions: {},
+				selectedEmployee: null,
+			};
 		case "setBootstrapped":
 			return {
 				...state,
@@ -64,16 +64,10 @@ export function permissionsPageReducer(
 				loadFailed: action.payload.loadFailed ?? false,
 				loading: false,
 			};
-		case "setEmployees":
-			return { ...state, employees: action.employees };
-		case "setPermissions":
-			return { ...state, permissions: action.permissions };
 		case "setSearchQuery":
 			return { ...state, searchQuery: action.searchQuery };
 		case "setSelectedEmployee":
 			return { ...state, selectedEmployee: action.employee };
-		case "setNoEmployee":
-			return { ...state, noEmployee: action.value, loading: false };
 	}
 	return state;
 }
