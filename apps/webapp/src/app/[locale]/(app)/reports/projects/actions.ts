@@ -4,6 +4,7 @@ import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { employee, project, workPeriod } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
@@ -69,6 +70,19 @@ function projectReportReader() {
 			return yield* Effect.fail(
 				new AuthorizationError({
 					message: "Active organization required",
+				}),
+			);
+		}
+		const org = yield* dbService.query("getProjectReportOrganization", () =>
+			dbService.db.query.organization.findFirst({
+				where: eq(organization.id, organizationId),
+				columns: { projectsEnabled: true },
+			}),
+		);
+		if (!org?.projectsEnabled) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Projects are disabled for this organization",
 				}),
 			);
 		}
@@ -426,6 +440,14 @@ export async function getProjectsForFilter(): Promise<
 		return { success: false, error: "Unauthorized" };
 	}
 
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, emp.organizationId),
+		columns: { projectsEnabled: true },
+	});
+	if (!org?.projectsEnabled) {
+		return { success: false, error: "Projects are disabled for this organization" };
+	}
+
 	const projects = await db.query.project.findMany({
 		where: eq(project.organizationId, emp.organizationId),
 		columns: {
@@ -463,25 +485,64 @@ export async function getCurrentEmployeeForReports(): Promise<typeof employee.$i
 }
 
 export async function getCurrentEmployeeProjectReportAccess(): Promise<{
-	employee: typeof employee.$inferSelect;
+	employee: typeof employee.$inferSelect | null;
+	projectsEnabled: boolean;
 	canViewProjectReports: boolean;
 } | null> {
-	const emp = await getCurrentEmployeeForReports();
-
-	if (!emp) {
+	let authContext;
+	try {
+		authContext = await requireAuth();
+	} catch {
 		return null;
 	}
 
-	if (emp.role === "admin" || emp.role === "manager") {
-		return { employee: emp, canViewProjectReports: true };
+	const organizationId = authContext.session.activeOrganizationId;
+	if (!organizationId) {
+		return null;
 	}
 
-	const authContext = await requireAuth();
+	const [org, emp] = await Promise.all([
+		db.query.organization.findFirst({
+			where: eq(organization.id, organizationId),
+			columns: { projectsEnabled: true },
+		}),
+		getCurrentEmployeeForReports(),
+	]);
+
+	const projectsEnabled = org?.projectsEnabled ?? false;
+	if (!projectsEnabled) {
+		return {
+			employee: emp,
+			projectsEnabled: false,
+			canViewProjectReports: false,
+		};
+	}
+
+	if (!emp) {
+		return {
+			employee: null,
+			projectsEnabled: true,
+			canViewProjectReports: false,
+		};
+	}
+
+	if (emp.role === "admin" || emp.role === "manager") {
+		return {
+			employee: emp,
+			projectsEnabled: true,
+			canViewProjectReports: true,
+		};
+	}
+
 	const viewer = await loadProjectReportViewer(db, {
 		organizationId: emp.organizationId,
 		userId: authContext.user.id,
 		employee: emp,
 	});
 
-	return { employee: emp, canViewProjectReports: canViewProjectReports(viewer) };
+	return {
+		employee: emp,
+		projectsEnabled: true,
+		canViewProjectReports: canViewProjectReports(viewer),
+	};
 }

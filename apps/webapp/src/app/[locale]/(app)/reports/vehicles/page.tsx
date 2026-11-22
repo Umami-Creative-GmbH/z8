@@ -40,7 +40,7 @@ async function VehicleDistanceReportPageContent() {
 
 	if (!employee) {
 		return (
-			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+			<div className="flex min-w-0 flex-1 flex-col gap-6">
 				<PageHeader
 					title={t("reports.vehicles.title", "Distance per Vehicle")}
 					actions={missingVehicleLogsAction}
@@ -53,7 +53,7 @@ async function VehicleDistanceReportPageContent() {
 	}
 
 	return (
-		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+		<div className="flex min-w-0 flex-1 flex-col gap-6">
 			<PageHeader
 				title={t("reports.vehicles.title", "Distance per Vehicle")}
 				description={t(
@@ -76,7 +76,7 @@ async function VehicleDistanceReportPageLoading() {
 				labelKey: "common.loadingRegions.vehicleDistanceReport",
 				labelDefault: "Loading the distance per vehicle report",
 			}}
-			className="@container/main page-frame flex flex-1 flex-col gap-6"
+			className="flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 		>
 			<div className="space-y-3">
