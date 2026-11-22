@@ -15,11 +15,20 @@ const mocks = vi.hoisted(() => ({
 		teamsTenantConfig: vi.fn(),
 		telegramBotConfig: vi.fn(),
 		webhookEndpoint: vi.fn(),
-		notificationPreference: vi.fn(),
 		employee: vi.fn(),
 		implementationChecklistManualState: vi.fn(),
 		organization: vi.fn(),
 	},
+	selectChain: {
+		from: vi.fn(),
+		innerJoin: vi.fn(),
+		leftJoin: vi.fn(),
+		where: vi.fn(),
+		limit: vi.fn(),
+	},
+	onCurrentRoster: vi.fn((organizationId: string, columns: unknown) => ({
+		onCurrentRoster: [organizationId, columns],
+	})),
 	runGoLiveChecks: vi.fn(),
 	loadGoLiveGroupSettings: vi.fn(),
 	loadFirstWorkflowEvidence: vi.fn(),
@@ -87,11 +96,29 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: vi.fn((...conditions: unknown[]) => ({ and: conditions })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+	isNull: vi.fn((column: unknown) => ({ isNull: column })),
 	ne: vi.fn((left: unknown, right: unknown) => ({ ne: [left, right] })),
+	or: vi.fn((...conditions: unknown[]) => ({ or: conditions })),
+}));
+
+vi.mock("@/lib/employee-lifecycle/current-roster", () => ({
+	onCurrentRoster: mocks.onCurrentRoster,
+}));
+
+vi.mock("@/db/auth-schema", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/db/auth-schema")>()),
+	member: {
+		userId: "member.userId",
+		organizationId: "member.organizationId",
+		status: "member.status",
+	},
 }));
 
 vi.mock("@/db", () => ({
 	db: {
+		select: vi.fn(() => ({
+			from: mocks.selectChain.from,
+		})),
 		query: {
 			holiday: { findFirst: mocks.findFirst.holiday },
 			holidayAssignment: { findFirst: mocks.findFirst.holidayAssignment },
@@ -103,7 +130,6 @@ vi.mock("@/db", () => ({
 			teamsTenantConfig: { findFirst: mocks.findFirst.teamsTenantConfig },
 			telegramBotConfig: { findFirst: mocks.findFirst.telegramBotConfig },
 			webhookEndpoint: { findFirst: mocks.findFirst.webhookEndpoint },
-			notificationPreference: { findFirst: mocks.findFirst.notificationPreference },
 			employee: { findFirst: mocks.findFirst.employee },
 			implementationChecklistManualState: {
 				findFirst: mocks.findFirst.implementationChecklistManualState,
@@ -120,6 +146,7 @@ vi.mock("@/db/schema", async (importOriginal) => ({
 		setupStatus: "discord.setupStatus",
 	},
 	employee: {
+		id: "employee.id",
 		organizationId: "employee.organizationId",
 		isActive: "employee.isActive",
 		userId: "employee.userId",
@@ -141,6 +168,8 @@ vi.mock("@/db/schema", async (importOriginal) => ({
 		completedByUserId: "manualState.completedByUserId",
 	},
 	notificationPreference: {
+		id: "notificationPreference.id",
+		userId: "notificationPreference.userId",
 		organizationId: "notificationPreference.organizationId",
 		enabled: "notificationPreference.enabled",
 	},
@@ -216,6 +245,14 @@ describe("implementation checklist actions", () => {
 			findFirst.mockReset();
 			findFirst.mockResolvedValue(undefined);
 		}
+		mocks.selectChain.from.mockReset().mockReturnValue({ innerJoin: mocks.selectChain.innerJoin });
+		mocks.selectChain.innerJoin
+			.mockReset()
+			.mockReturnValue({ leftJoin: mocks.selectChain.leftJoin });
+		mocks.selectChain.leftJoin.mockReset().mockReturnValue({ where: mocks.selectChain.where });
+		mocks.selectChain.where.mockReset().mockReturnValue({ limit: mocks.selectChain.limit });
+		mocks.selectChain.limit.mockReset().mockResolvedValue([]);
+		mocks.onCurrentRoster.mockClear();
 
 		mocks.findFirst.organization.mockResolvedValue({
 			id: "org-active",
@@ -377,8 +414,8 @@ describe("implementation checklist actions", () => {
 		);
 	});
 
-	it("only completes notifications from enabled notification preferences", async () => {
-		mocks.findFirst.notificationPreference.mockResolvedValue({ id: "preference-1" });
+	it("completes notifications from enabled user-level preferences scoped through current org members", async () => {
+		mocks.selectChain.limit.mockResolvedValue([{ id: "preference-1" }]);
 
 		const result = await getImplementationChecklist();
 
@@ -390,16 +427,39 @@ describe("implementation checklist actions", () => {
 			status: "configured",
 			completionSource: "automatic",
 		});
-		expect(mocks.findFirst.notificationPreference).toHaveBeenCalledWith(
-			expect.objectContaining({
-				where: expect.objectContaining({
-					and: expect.arrayContaining([
-						{ eq: ["notificationPreference.organizationId", "org-active"] },
-						{ eq: ["notificationPreference.enabled", true] },
-					]),
-				}),
-			}),
+		expect(mocks.selectChain.innerJoin).toHaveBeenCalledWith(
+			expect.objectContaining({ status: "member.status" }),
+			{
+				and: [
+					{ eq: ["member.userId", "notificationPreference.userId"] },
+					{ eq: ["member.organizationId", "org-active"] },
+					{ eq: ["member.status", "approved"] },
+				],
+			},
 		);
+		expect(mocks.selectChain.leftJoin).toHaveBeenCalledWith(
+			expect.objectContaining({ id: "employee.id" }),
+			{
+				and: [
+					{ eq: ["employee.userId", "member.userId"] },
+					{ eq: ["employee.organizationId", "org-active"] },
+				],
+			},
+		);
+		expect(mocks.selectChain.where).toHaveBeenCalledWith({
+			and: [
+				{ eq: ["notificationPreference.enabled", true] },
+				{
+					or: [
+						{ isNull: "employee.id" },
+						{
+							onCurrentRoster: ["org-active", expect.objectContaining({ id: "employee.id" })],
+						},
+					],
+				},
+			],
+		});
+		expect(mocks.selectChain.limit).toHaveBeenCalledWith(1);
 	});
 
 	it("fails closed for a detector when its query throws", async () => {
