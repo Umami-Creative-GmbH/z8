@@ -2,18 +2,23 @@ import { sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import {
 	compareInstants,
+	comparePlainDates,
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { equipmentDepartureDeadline } from "@/lib/organization/equipment/deadlines";
 import { readEquipmentDepartureReturns } from "@/lib/organization/equipment/lifecycle";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
-import { departureCutoff } from "./cutoff";
+import { departureCutoff, retrospectiveDepartureCutoff } from "./cutoff";
 import { countDeputyAssignmentsNotEnded } from "./deputy-release";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
 import { readOpenDeactivation } from "./receipts";
+import { isEligibleReplacementEmployee } from "./replacement-search";
+import { inspectRetrospectiveDepartureImpact } from "./retrospective-reconciliation";
 import { actorMayResolveDepartureWork } from "./reviews";
 import type {
 	DeparturePreviewException,
@@ -22,6 +27,7 @@ import type {
 	EmployeeOffboardingView,
 	OffboardingFollowUpTaskKind,
 	OffboardingReviewKind,
+	PastDeparturePreview,
 } from "./view-types";
 
 type QueryDatabase = Pick<typeof rootDatabase, "execute" | "select">;
@@ -31,7 +37,7 @@ const MACHINE_REASON = /^[a-z][a-z_]{0,63}$/;
 export type DepartureFact = {
 	id: string;
 	employmentPeriodId: string;
-	mode: "scheduled" | "immediate";
+	mode: "scheduled" | "immediate" | "retrospective";
 	status: "pending" | "canceled" | "blocked" | "effective";
 	revision: number;
 	lastWorkingDay: string | null;
@@ -117,6 +123,7 @@ export function deriveOffboardingCapabilities(input: {
 	authority: DepartureBlockedReason | null;
 	state: EmployeeOffboardingState;
 	hasPreviousPeriod: boolean;
+	hasEffectiveDeparture?: boolean;
 	followUp: { failed: number; openReviews: number };
 }): EmployeeOffboardingView["capabilities"] {
 	const manage =
@@ -126,13 +133,19 @@ export function deriveOffboardingCapabilities(input: {
 		input.authority !== "owner_authorization_required";
 	const depart = manage && input.authority !== "final_accessible_owner";
 	const { state } = input;
+	const canDepartNow =
+		depart && (state === "active" || state === "scheduled" || state === "blocked");
 	return {
-		schedule: depart && (state === "active" || state === "scheduled" || state === "blocked"),
+		schedule: canDepartNow,
 		cancel: manage && (state === "scheduled" || state === "blocked"),
-		offboardNow: depart && (state === "active" || state === "scheduled" || state === "blocked"),
+		offboardNow: canDepartNow,
 		rehire: manage && state === "offboarded" && input.hasPreviousPeriod,
 		resolve:
 			input.viewer === "admin" && (input.followUp.openReviews > 0 || input.followUp.failed > 0),
+		recordPastDeparture: canDepartNow,
+		correctPastDepartureDate:
+			manage && state === "offboarded" && (input.hasEffectiveDeparture ?? input.hasPreviousPeriod),
+		recordHistoricalDepartureDate: manage && state === "legacy_inactive",
 	};
 }
 
@@ -315,7 +328,7 @@ export async function getEmployeeOffboardingView(
 	const departures = await database.execute<{
 		id: string;
 		employment_period_id: string;
-		mode: "scheduled" | "immediate";
+		mode: "scheduled" | "immediate" | "retrospective";
 		status: DepartureFact["status"];
 		revision: number;
 		last_working_day: string | null;
@@ -443,6 +456,7 @@ export async function getEmployeeOffboardingView(
 				authority,
 				state: derived.state,
 				hasPreviousPeriod: derived.previousEmploymentPeriodId !== null,
+				hasEffectiveDeparture: derived.departure?.status === "effective",
 				followUp,
 			}),
 		},
@@ -617,6 +631,7 @@ export async function previewEmployeeDeparture(
 					AND a.end_date >= ${cutoffDate}::date AND a.status IN ('pending', 'approved')) AS future_absences
 	`);
 	const fact = facts.rows[0];
+	// Bounded preview page (max 50); full searchable picker uses `searchReplacementEmployees`.
 	const options = await database.execute<{
 		id: string;
 		name: string | null;
@@ -628,6 +643,7 @@ export async function previewEmployeeDeparture(
 			AND e.is_active = true AND m.status = 'approved' AND e.role IN ('admin', 'manager')
 			AND NOT employee_departure_denies_access(e.organization_id, e.id, ${now}::timestamptz)
 		ORDER BY u.name, e.id
+		LIMIT 50
 	`);
 	const authority = await evaluateDepartureAuthority(database, {
 		organizationId: input.organizationId,
@@ -637,10 +653,15 @@ export async function previewEmployeeDeparture(
 
 	const canonicalDuties = Number(fact?.canonical_duties ?? 0);
 	const legacyDuties = Number(fact?.legacy_duties ?? 0);
-	// Advisory: the offered set; the handover re-checks each duty's authority.
+	// Point eligibility check so large orgs validate replacements beyond the first 50 rows.
 	const hasReplacement =
 		input.replacementEmployeeId !== null &&
-		options.rows.some((option) => option.id === input.replacementEmployeeId);
+		(await isEligibleReplacementEmployee(database, {
+			organizationId: input.organizationId,
+			excludeEmployeeId: input.employeeId,
+			replacementEmployeeId: input.replacementEmployeeId,
+			now: input.now,
+		}));
 	const exceptions: DeparturePreviewException[] = [];
 	if (fact?.running_timer) exceptions.push("running_timer");
 	if (Number(fact?.future_shifts ?? 0) > 0) exceptions.push("future_shifts");
@@ -686,6 +707,218 @@ export async function previewEmployeeDeparture(
 				name: row.name ?? "",
 			})),
 			exceptions,
+		},
+	};
+}
+
+export type PastDeparturePreviewResult =
+	| { kind: "ok"; preview: PastDeparturePreview }
+	| { kind: "not_found" }
+	| { kind: "forbidden" }
+	| {
+			kind: "invalid";
+			code:
+				| "departure_date_not_in_past"
+				| "departure_before_employment_start"
+				| "no_open_employment_period"
+				| "invalid_timezone";
+	  };
+
+/**
+ * Advisory, strictly read-only preview for a retrospective ("Has Left")
+ * departure: computes post-cutoff recorded work, overlapping closed months and
+ * settled payroll days, equipment returns, approval duties, and exceptions
+ * without writing anything.
+ */
+export async function previewPastDeparture(
+	database: QueryDatabase,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		lastWorkingDay: string;
+		replacementEmployeeId: string | null;
+		now: Instant;
+	},
+): Promise<PastDeparturePreviewResult> {
+	if (
+		!(await actorMayResolveDepartureWork(
+			database,
+			input.organizationId,
+			input.actorUserId,
+			input.now,
+		))
+	) {
+		return { kind: "forbidden" };
+	}
+	const targets = await database.execute<{
+		user_id: string;
+		timezone: string | null;
+		open_period_id: string | null;
+		open_period_started_at: Date | null;
+	}>(sql`
+		SELECT e.user_id, o.timezone,
+			p.id AS open_period_id, p.started_at AS open_period_started_at
+		FROM employee e
+		JOIN organization o ON o.id = e.organization_id
+		LEFT JOIN employee_employment_period p
+			ON p.organization_id = e.organization_id
+			AND p.employee_id = e.id
+			AND p.status = 'open'
+		WHERE e.organization_id = ${input.organizationId}
+			AND e.id = ${input.employeeId}::uuid
+		LIMIT 1
+	`);
+	const target = targets.rows[0];
+	if (!target) return { kind: "not_found" };
+	if (target.user_id === input.actorUserId) return { kind: "forbidden" };
+	if (!target.open_period_id) {
+		return { kind: "invalid", code: "no_open_employment_period" };
+	}
+
+	let cutoff: ReturnType<typeof retrospectiveDepartureCutoff>;
+	try {
+		cutoff = retrospectiveDepartureCutoff({
+			lastWorkingDay: input.lastWorkingDay,
+			timezone: target.timezone,
+			now: input.now,
+		});
+	} catch (error) {
+		if (error instanceof Error && error.message === "departure_date_not_in_past") {
+			return { kind: "invalid", code: "departure_date_not_in_past" };
+		}
+		if (error instanceof RangeError) return { kind: "invalid", code: "invalid_timezone" };
+		throw error;
+	}
+
+	if (target.open_period_started_at) {
+		const startInstant = instantFromDate(new Date(target.open_period_started_at));
+		const startLocalDate = plainDateAt(startInstant, cutoff.timezone);
+		if (
+			comparePlainDates(parsePlainDate(cutoff.lastWorkingDay), startLocalDate) < 0 ||
+			compareInstants(cutoff.cutoff, startInstant) < 0
+		) {
+			return { kind: "invalid", code: "departure_before_employment_start" };
+		}
+	}
+
+	const cutoffDate = cutoff.cutoffLocalDate;
+	const replacementEmployeeId = input.replacementEmployeeId ?? null;
+	const facts = await database.execute<{
+		canonical_duties: number;
+		replacement_requested_duties: number;
+		later_stages: number;
+		legacy_duties: number;
+		running_timer: boolean;
+		future_shifts: number;
+		future_absences: number;
+	}>(sql`
+		WITH duties AS (
+			SELECT w.requester_employee_id FROM approval_stage_assignment a
+			JOIN approval_workflow_stage s ON s.id = a.stage_id AND s.organization_id = a.organization_id
+			JOIN approval_workflow w ON w.id = a.workflow_id AND w.organization_id = a.organization_id
+			WHERE a.organization_id = ${input.organizationId}
+				AND a.approver_employee_id = ${input.employeeId}::uuid AND a.status = 'pending'
+				AND w.status = 'pending' AND s.status = 'pending' AND s.activation_mode = 'human'
+				AND s.stage_order = w.current_stage_order
+		)
+		SELECT
+			(SELECT count(*)::int FROM duties) AS canonical_duties,
+			(SELECT count(*)::int FROM duties
+				WHERE requester_employee_id = ${replacementEmployeeId}::uuid) AS replacement_requested_duties,
+			(SELECT count(*)::int FROM approval_workflow_stage s
+				JOIN approval_workflow w ON w.id = s.workflow_id AND w.organization_id = s.organization_id
+				WHERE s.organization_id = ${input.organizationId}
+					AND w.status = 'pending' AND s.status = 'waiting'
+					AND s.resolver_snapshot->>'approverType' = 'specific_employee'
+					AND s.resolver_snapshot->>'approverEmployeeId' = ${input.employeeId}
+					AND s.resolver_snapshot->>'fallbackBehavior' = 'fail') AS later_stages,
+			(SELECT count(*)::int FROM approval_request r
+				WHERE r.organization_id = ${input.organizationId}
+					AND r.approver_id = ${input.employeeId}::uuid AND r.status = 'pending'
+					AND NOT EXISTS (
+						SELECT 1 FROM approval_workflow_stage s
+						WHERE s.organization_id = r.organization_id AND s.legacy_approval_request_id = r.id
+					)) AS legacy_duties,
+			EXISTS (SELECT 1 FROM work_period p
+				WHERE p.organization_id = ${input.organizationId} AND p.employee_id = ${input.employeeId}::uuid
+					AND p.end_time IS NULL AND p.deleted_at IS NULL) AS running_timer,
+			(SELECT count(*)::int FROM shift s
+				WHERE s.organization_id = ${input.organizationId} AND s.employee_id = ${input.employeeId}::uuid
+					AND s.date::date >= ${cutoffDate}::date) AS future_shifts,
+			(SELECT count(*)::int FROM absence_entry a
+				WHERE a.organization_id = ${input.organizationId} AND a.employee_id = ${input.employeeId}::uuid
+					AND a.end_date >= ${cutoffDate}::date AND a.status IN ('pending', 'approved')) AS future_absences
+	`);
+	const fact = facts.rows[0];
+	const [impact, authority, hasReplacement, deputyAbsences, equipment] = await Promise.all([
+		inspectRetrospectiveDepartureImpact(database, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			cutoff: cutoff.cutoff,
+			timezone: cutoff.timezone,
+			lastWorkingDay: cutoff.lastWorkingDay,
+		}),
+		evaluateDepartureAuthority(database, {
+			organizationId: input.organizationId,
+			targetUserId: target.user_id,
+			initiatorUserId: input.actorUserId,
+		}),
+		input.replacementEmployeeId !== null
+			? isEligibleReplacementEmployee(database, {
+					organizationId: input.organizationId,
+					excludeEmployeeId: input.employeeId,
+					replacementEmployeeId: input.replacementEmployeeId,
+					now: input.now,
+				})
+			: Promise.resolve(false),
+		countDeputyAssignmentsNotEnded(database, {
+			organizationId: input.organizationId,
+			deputyEmployeeId: input.employeeId,
+			at: cutoff.cutoff,
+		}),
+		readEquipmentDepartureReturns(
+			database,
+			input,
+			equipmentDepartureDeadline(cutoff.cutoff, cutoff.timezone, "retrospective"),
+		),
+	]);
+
+	const canonicalDuties = Number(fact?.canonical_duties ?? 0);
+	const legacyDuties = Number(fact?.legacy_duties ?? 0);
+	const exceptions: DeparturePreviewException[] = [];
+	if (fact?.running_timer) exceptions.push("running_timer");
+	if (impact.requiresWorkAfterCutoffReview) exceptions.push("work_after_cutoff");
+	if (impact.requiresPayrollReconciliationReview) exceptions.push("payroll_reconciliation");
+	if (Number(fact?.future_shifts ?? 0) > 0) exceptions.push("future_shifts");
+	if (Number(fact?.future_absences ?? 0) > 0) exceptions.push("future_absences");
+	if (deputyAbsences > 0) exceptions.push("deputy_absences");
+	if (input.replacementEmployeeId !== null && !hasReplacement) {
+		exceptions.push("replacement_ineligible");
+	}
+	if (canonicalDuties > 0 && !hasReplacement) exceptions.push("unassigned_approval_duties");
+	if (hasReplacement && Number(fact?.replacement_requested_duties ?? 0) > 0) {
+		exceptions.push("replacement_requested_duties");
+	}
+	if (!hasReplacement && Number(fact?.later_stages ?? 0) > 0) {
+		exceptions.push("later_stages_without_replacement");
+	}
+	if (legacyDuties > 0) exceptions.push("legacy_approval_duties");
+	if (authority === "owner_authorization_required" || authority === "final_accessible_owner") {
+		exceptions.push(authority);
+	}
+
+	return {
+		kind: "ok",
+		preview: {
+			equipment,
+			lastWorkingDay: cutoff.lastWorkingDay,
+			cutoff: cutoff.cutoff.toString(),
+			timezone: cutoff.timezone,
+			pendingDutyCount: canonicalDuties + legacyDuties,
+			replacementOptions: [],
+			exceptions,
+			impact,
 		},
 	};
 }

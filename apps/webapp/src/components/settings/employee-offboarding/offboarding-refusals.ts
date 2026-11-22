@@ -49,6 +49,26 @@ export const OFFBOARDING_REFUSALS = {
 		"settings.employees.offboarding.errors.departureDateInPast",
 		"The last working day cannot be in the past.",
 	],
+	departure_date_not_in_past: [
+		"settings.employees.offboarding.errors.departureDateNotInPast",
+		"Choose a past last working day before today.",
+	],
+	departure_before_employment_start: [
+		"settings.employees.offboarding.errors.departureBeforeEmploymentStart",
+		"The leaving date cannot be before the employment period started.",
+	],
+	departure_not_effective: [
+		"settings.employees.offboarding.errors.departureNotEffective",
+		"Only an already-effective departure date can be corrected here.",
+	],
+	departure_reopen_forbidden: [
+		"settings.employees.offboarding.errors.departureReopenForbidden",
+		"An effective departure cannot be reopened by moving its date to today or the future. Rehire the employee instead.",
+	],
+	departure_overlaps_rehire: [
+		"settings.employees.offboarding.errors.departureOverlapsRehire",
+		"The corrected leaving date cannot overlap a subsequent rehire period.",
+	],
 	invalid_timezone: [
 		"settings.employees.offboarding.errors.invalidTimezone",
 		"The organization timezone is invalid. Fix it in organization settings first.",

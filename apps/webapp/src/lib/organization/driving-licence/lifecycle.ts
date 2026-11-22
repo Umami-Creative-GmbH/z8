@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, isNull, ne, or, type SQL } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, or, type SQL, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
 	drivingAuthorization,
@@ -128,6 +128,7 @@ export async function endDrivingLicenceEmployment(
 		.select({ id: drivingAuthorization.id, state: drivingAuthorization.state })
 		.from(drivingAuthorization)
 		.where(live);
+	const cutoffDate = dateFromInstant(cutoff);
 	const rows =
 		before.length === 0
 			? []
@@ -136,7 +137,8 @@ export async function endDrivingLicenceEmployment(
 					.set({
 						state: "ended",
 						suspensionReason: "employment_ended",
-						suspendedAt: dateFromInstant(cutoff),
+						// A retrospective cutoff never dates the ending before the supporting check.
+						suspendedAt: sql`greatest(coalesce(${drivingAuthorization.lastSuccessfulAt}, ${cutoffDate}::timestamptz), ${cutoffDate}::timestamptz)`,
 					})
 					.where(
 						and(

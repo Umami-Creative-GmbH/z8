@@ -104,7 +104,8 @@ export async function endEquipmentEmployment(
   ON CONFLICT DO NOTHING`);
 	const revoked = await tx.execute<{
 		id: string;
-	}>(sql`UPDATE equipment_officer_grant SET revoked_at=${at}, updated_at=${at}, updated_by=${input.actorUserId}, revision=revision+1
+	}>(sql`UPDATE equipment_officer_grant
+  SET revoked_at=greatest(updated_at, ${at}::timestamptz), updated_at=greatest(updated_at, ${at}::timestamptz), updated_by=${input.actorUserId}, revision=revision+1
   WHERE organization_id=${input.organizationId} AND employee_id=${input.employeeId}::uuid AND revoked_at IS NULL RETURNING employee_id AS id`);
 	if (input.deactivationId || input.departureId) {
 		await tx.execute(sql`UPDATE equipment_assignment SET deactivation_id=${input.deactivationId ?? null}::uuid, departure_id=${input.departureId ?? null}::uuid, revision=revision+1, last_activity_at=${dateFromInstant(systemClock.nowInstant())}
@@ -130,7 +131,7 @@ export async function synchronizeEquipmentDeparture(
 	const result = await tx.execute<{
 		cutoff_at: string;
 		timezone: string;
-		mode: "scheduled" | "immediate";
+		mode: "scheduled" | "immediate" | "retrospective";
 		status: string;
 	}>(sql`
   SELECT cutoff_at, timezone, mode, status FROM employee_departure

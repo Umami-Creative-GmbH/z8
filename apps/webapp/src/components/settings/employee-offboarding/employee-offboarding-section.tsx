@@ -137,7 +137,6 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 				followUpSource.timezone,
 			)}`}
 			highlightedReviewId={props.highlightedReviewId}
-			replacementOptions={props.managers}
 			resolveReview={offboarding.resolveReview}
 			retryTask={offboarding.retryTask}
 			assignReplacement={offboarding.assignReplacement}
@@ -226,10 +225,7 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 				error={cancellation.error}
 				onConfirm={() =>
 					void cancellation.confirm(cancelDeparture, (failure) =>
-						describeFailure(
-							failure,
-							t("common.unexpectedError", "An unexpected error occurred"),
-						),
+						describeFailure(failure, t("common.unexpectedError", "An unexpected error occurred")),
 					)
 				}
 			/>

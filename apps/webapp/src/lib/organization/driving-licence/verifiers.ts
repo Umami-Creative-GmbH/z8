@@ -46,29 +46,20 @@ export const verifierGrantInput = z
 				message: "Send either an until date or an expiry instant",
 				path: ["until"],
 			});
-		if (
-			value.scope === "specific" &&
-			value.teamIds.length + value.employeeIds.length === 0
-		)
+		if (value.scope === "specific" && value.teamIds.length + value.employeeIds.length === 0)
 			context.addIssue({
 				code: "custom",
 				message: "Choose employees or teams",
 				path: ["scope"],
 			});
-		if (
-			value.scope === "all" &&
-			value.teamIds.length + value.employeeIds.length > 0
-		)
+		if (value.scope === "all" && value.teamIds.length + value.employeeIds.length > 0)
 			context.addIssue({
 				code: "custom",
-				message:
-					"Organization scope cannot contain selected employees or teams",
+				message: "Organization scope cannot contain selected employees or teams",
 				path: ["scope"],
 			});
 	});
-export type SaveDrivingLicenceVerifierGrantInput = z.input<
-	typeof verifierGrantInput
->;
+export type SaveDrivingLicenceVerifierGrantInput = z.input<typeof verifierGrantInput>;
 export interface DrivingLicenceVerifierGrantRecord {
 	id: string;
 	verifierEmployeeId: string;
@@ -108,16 +99,12 @@ export async function readDrivingLicenceCalendarTimezone(
 			organization: organization.timezone,
 		})
 		.from(organization)
-		.leftJoin(
-			drivingLicencePolicy,
-			eq(drivingLicencePolicy.organizationId, organization.id),
-		)
+		.leftJoin(drivingLicencePolicy, eq(drivingLicencePolicy.organizationId, organization.id))
 		.where(eq(organization.id, organizationId))
 		.limit(1);
 	return row?.policy ?? row?.organization ?? "UTC";
 }
-export interface DrivingLicenceVerifierGrantView
-	extends DrivingLicenceVerifierGrantRecord {
+export interface DrivingLicenceVerifierGrantView extends DrivingLicenceVerifierGrantRecord {
 	/** Last covered calendar day in `timezone`, or null for no end. */
 	until: string | null;
 	expired: boolean;
@@ -131,9 +118,7 @@ export function viewDrivingLicenceVerifierGrant(
 	return {
 		...grant,
 		until: expiresAt ? verifierGrantUntil(expiresAt, timezone) : null,
-		expired: expiresAt
-			? expiresAt.epochNanoseconds <= now.epochNanoseconds
-			: false,
+		expired: expiresAt ? expiresAt.epochNanoseconds <= now.epochNanoseconds : false,
 	};
 }
 export async function listDrivingLicenceVerifierGrants(
@@ -145,10 +130,7 @@ export async function listDrivingLicenceVerifierGrants(
 			.select()
 			.from(drivingLicenceVerifierGrant)
 			.where(eq(drivingLicenceVerifierGrant.organizationId, organizationId))
-			.orderBy(
-				drivingLicenceVerifierGrant.grantedAt,
-				drivingLicenceVerifierGrant.id,
-			)
+			.orderBy(drivingLicenceVerifierGrant.grantedAt, drivingLicenceVerifierGrant.id)
 	).map(present);
 }
 /** Fresh membership and departure checks are mandatory even for notification/worklist callers. */
@@ -178,10 +160,7 @@ export async function loadDrivingLicenceVerifierGrant(
 		.where(
 			and(
 				eq(drivingLicenceVerifierGrant.organizationId, input.organizationId),
-				eq(
-					drivingLicenceVerifierGrant.verifierEmployeeId,
-					input.verifierEmployeeId,
-				),
+				eq(drivingLicenceVerifierGrant.verifierEmployeeId, input.verifierEmployeeId),
 				isNull(drivingLicenceVerifierGrant.revokedAt),
 				employeeHasOrganizationAccess(input.now),
 				sql`(${drivingLicenceVerifierGrant.expiresAt} IS NULL OR ${drivingLicenceVerifierGrant.expiresAt} > ${at})`,
@@ -210,10 +189,7 @@ export async function saveDrivingLicenceVerifierGrant(
 	const now = systemClock.nowInstant();
 	let expiresAt = value.expiresAt ? parseInstant(value.expiresAt) : null;
 	if (value.until) {
-		const timezone = await readDrivingLicenceCalendarTimezone(
-			tx,
-			input.organizationId,
-		);
+		const timezone = await readDrivingLicenceCalendarTimezone(tx, input.organizationId);
 		if (comparePlainDates(parsePlainDate(value.until), plainDateAt(now, timezone)) < 0)
 			throw new Error(VERIFIER_UNTIL_IN_PAST);
 		expiresAt = verifierGrantExpiry(value.until, timezone);
@@ -239,8 +215,7 @@ export async function saveDrivingLicenceVerifierGrant(
 			),
 		)
 		.limit(1);
-	if (!recipient)
-		throw new Error("Choose a current employee of this organization");
+	if (!recipient) throw new Error("Choose a current employee of this organization");
 	const people = await (value.employeeIds.length
 		? tx
 				.select({ id: employee.id })
@@ -293,10 +268,7 @@ export async function saveDrivingLicenceVerifierGrant(
 		.where(
 			and(
 				eq(drivingLicenceVerifierGrant.organizationId, input.organizationId),
-				eq(
-					drivingLicenceVerifierGrant.verifierEmployeeId,
-					value.verifierEmployeeId,
-				),
+				eq(drivingLicenceVerifierGrant.verifierEmployeeId, value.verifierEmployeeId),
 				isNull(drivingLicenceVerifierGrant.revokedAt),
 			),
 		);
@@ -364,24 +336,20 @@ export async function revokeDrivingLicenceVerifierGrantsHeldBy(
 		now?: Instant;
 	},
 ): Promise<string[]> {
+	const revokedAt = dateFromInstant(input.now ?? systemClock.nowInstant());
 	const revoked = await tx
 		.update(drivingLicenceVerifierGrant)
 		.set({
-			revokedAt: dateFromInstant(input.now ?? systemClock.nowInstant()),
+			// A retrospective cutoff never dates the revocation before the grant was issued.
+			revokedAt: sql`greatest(${drivingLicenceVerifierGrant.grantedAt}, ${revokedAt}::timestamptz)`,
 			revokedBy: input.actorUserId,
 		})
 		.where(
 			and(
 				eq(drivingLicenceVerifierGrant.organizationId, input.organizationId),
-				eq(
-					drivingLicenceVerifierGrant.verifierEmployeeId,
-					input.verifierEmployeeId,
-				),
+				eq(drivingLicenceVerifierGrant.verifierEmployeeId, input.verifierEmployeeId),
 				input.employmentPeriodId
-					? eq(
-							drivingLicenceVerifierGrant.employmentPeriodId,
-							input.employmentPeriodId,
-						)
+					? eq(drivingLicenceVerifierGrant.employmentPeriodId, input.employmentPeriodId)
 					: isNull(drivingLicenceVerifierGrant.employmentPeriodId),
 				isNull(drivingLicenceVerifierGrant.revokedAt),
 			),
