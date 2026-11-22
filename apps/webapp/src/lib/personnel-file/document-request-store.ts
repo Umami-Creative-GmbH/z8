@@ -250,7 +250,8 @@ export async function applyDocumentRequestEvent(
 	},
 ): Promise<ApplyDocumentRequestEventResult> {
 	const { request, event } = input;
-	const at = dateFromInstant(input.now ?? systemClock.nowInstant());
+	const rawAt = dateFromInstant(input.now ?? systemClock.nowInstant());
+	const at = request.createdAt.getTime() > rawAt.getTime() ? request.createdAt : rawAt;
 	const next = nextDocumentRequestStatus(request.status, event.kind);
 	if (
 		next === null ||

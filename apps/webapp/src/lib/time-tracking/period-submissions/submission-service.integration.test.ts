@@ -198,16 +198,24 @@ describe("period submissions on PostgreSQL", () => {
 			 values ($1, $2, 'Weekdays', true, false, $3, now())`,
 			[policyId, organizationId, ownerUserId],
 		);
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3) returning id`,
+			[policyId, organizationId, ownerUserId],
+		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule (id, policy_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
-			 values ($1, $2, 'weekly', 'detailed', 'custom', now())`,
-			[scheduleId, policyId],
+			`insert into work_policy_schedule (id, policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
+			 values ($1, $2, $3, 'weekly', 'detailed', 'custom', now())`,
+			[scheduleId, policyId, policyVersion.id],
 		);
 		for (const day of ["monday", "tuesday", "wednesday", "thursday", "friday"]) {
 			await fixture.pool.query(
-				`insert into work_policy_schedule_day (schedule_id, day_of_week, hours_per_day, is_work_day)
-				 values ($1, $2, '8.00', true)`,
-				[scheduleId, day],
+				`insert into work_policy_schedule_day (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day)
+				 values ($1, $2, $3, '8.00', true)`,
+				[scheduleId, policyVersion.id, day],
 			);
 		}
 		await fixture.pool.query(

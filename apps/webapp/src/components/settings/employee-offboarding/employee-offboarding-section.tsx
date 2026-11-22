@@ -137,7 +137,6 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 				followUpSource.timezone,
 			)}`}
 			highlightedReviewId={props.highlightedReviewId}
-			replacementOptions={props.managers}
 			resolveReview={offboarding.resolveReview}
 			retryTask={offboarding.retryTask}
 			assignReplacement={offboarding.assignReplacement}

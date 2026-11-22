@@ -51,6 +51,16 @@ export function useOffboardingLabels() {
 					"settings.employees.offboarding.reviews.employmentTerms",
 					"Future employment terms need review",
 				);
+			case "work_after_cutoff":
+				return t(
+					"settings.employees.offboarding.reviews.workAfterCutoff",
+					"Work recorded after leaving date needs review",
+				);
+			case "payroll_reconciliation":
+				return t(
+					"settings.employees.offboarding.reviews.payrollReconciliation",
+					"Closed or settled payroll needs reconciliation",
+				);
 		}
 	};
 
@@ -138,6 +148,16 @@ export function useOffboardingLabels() {
 					"settings.employees.offboarding.reasons.appendAdopted",
 					"The running timer was left open because this organization only accepts coordinated clock commands. Close it with a time correction.",
 				);
+			case "work_recorded_after_cutoff":
+				return t(
+					"settings.employees.offboarding.reasons.workRecordedAfterCutoff",
+					"Recorded work exists after the retrospective leaving date. Review and correct it if needed.",
+				);
+			case "closed_or_settled_payroll_overlap":
+				return t(
+					"settings.employees.offboarding.reasons.closedOrSettledPayrollOverlap",
+					"Closed months or settled payroll days overlap the retrospective leaving date. Closed and settled payroll records were left untouched for manual reconciliation.",
+				);
 			default:
 				return null;
 		}
@@ -199,6 +219,16 @@ export function useOffboardingLabels() {
 				return t(
 					"settings.employees.offboarding.exceptions.finalOwner",
 					"Assign and activate another approved owner before this employee leaves.",
+				);
+			case "work_after_cutoff":
+				return t(
+					"settings.employees.offboarding.exceptions.workAfterCutoff",
+					"Recorded work exists after this past leaving date. A review item will be opened.",
+				);
+			case "payroll_reconciliation":
+				return t(
+					"settings.employees.offboarding.exceptions.payrollReconciliation",
+					"Closed months or settled payroll days overlap this past leaving date. They will remain untouched and a reconciliation review item will be opened.",
 				);
 		}
 	};

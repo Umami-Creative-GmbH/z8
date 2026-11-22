@@ -7,18 +7,44 @@ import {
 	assignDepartureReplacement,
 } from "./approval-handover";
 import type { createDepartureCommands } from "./commands";
-import { getEmployeeOffboardingView, previewEmployeeDeparture } from "./queries";
+import {
+	getEmployeeOffboardingView,
+	previewEmployeeDeparture,
+	previewPastDeparture as previewPastDepartureQuery,
+} from "./queries";
+import {
+	getReplacementEmployeeById,
+	type SearchReplacementEmployeesInput,
+	searchReplacementEmployees,
+} from "./replacement-search";
 import { resolveDepartureReview, retryDepartureTask } from "./reviews";
 import { createProductionDepartureCommands } from "./runtime";
-import type { LifecycleActor } from "./types";
+import type {
+	CorrectPastDepartureDate,
+	LifecycleActor,
+	RecordHistoricalDepartureDate,
+	RecordPastDeparture,
+} from "./types";
 
 export { employeeHasOrganizationAccess, resolveEmployeeOrganizationAccess } from "./access";
 export {
 	AssignDepartureReplacementError,
 	type AssignDepartureReplacementErrorCode,
 } from "./approval-handover";
-export { DepartureCommandError, type DepartureCommandErrorCode } from "./commands";
+export {
+	createDepartureCommands,
+	DepartureCommandError,
+	type DepartureCommandErrorCode,
+} from "./commands";
+export { departureCutoff, retrospectiveDepartureCutoff } from "./cutoff";
+export { previewPastDeparture as previewPastDepartureWithDb } from "./queries";
 export { assertEmployeeOffboardingReleased, EMPLOYEE_OFFBOARDING_RELEASE_READY } from "./release";
+export {
+	getReplacementEmployeeById,
+	type SearchReplacementEmployeesInput,
+	searchReplacementEmployees,
+} from "./replacement-search";
+export { inspectRetrospectiveDepartureImpact } from "./retrospective-reconciliation";
 export { ResolveDepartureReviewError, RetryDepartureTaskError } from "./reviews";
 
 /**
@@ -27,6 +53,32 @@ export { ResolveDepartureReviewError, RetryDepartureTaskError } from "./reviews"
  */
 export function getDepartureCommands(): ReturnType<typeof createDepartureCommands> {
 	return createProductionDepartureCommands();
+}
+
+/** Direct production command helpers for unified leaving-date callers (#1928, #1929, #1930). */
+export function recordPastDeparture(actor: LifecycleActor, input: RecordPastDeparture) {
+	return getDepartureCommands().recordPastDeparture(actor, input);
+}
+
+export function correctPastDepartureDate(actor: LifecycleActor, input: CorrectPastDepartureDate) {
+	return getDepartureCommands().correctPastDepartureDate(actor, input);
+}
+
+export function recordHistoricalDepartureDate(
+	actor: LifecycleActor,
+	input: RecordHistoricalDepartureDate,
+) {
+	return getDepartureCommands().recordHistoricalDepartureDate(actor, input);
+}
+
+export function previewPastDeparture(input: {
+	organizationId: string;
+	employeeId: string;
+	actorUserId: string;
+	lastWorkingDay: string;
+	replacementEmployeeId: string | null;
+}) {
+	return previewPastDepartureQuery(db, { ...input, now: systemClock.nowInstant() });
 }
 
 /** Read-only lifecycle views at the server's current instant. */
@@ -41,6 +93,17 @@ export function getOffboardingQueries() {
 			lastWorkingDay: string | null;
 			replacementEmployeeId: string | null;
 		}) => previewEmployeeDeparture(db, { ...input, now: systemClock.nowInstant() }),
+		previewPast: (input: {
+			organizationId: string;
+			employeeId: string;
+			actorUserId: string;
+			lastWorkingDay: string;
+			replacementEmployeeId: string | null;
+		}) => previewPastDepartureQuery(db, { ...input, now: systemClock.nowInstant() }),
+		searchReplacements: (input: Omit<SearchReplacementEmployeesInput, "now">) =>
+			searchReplacementEmployees(db, { ...input, now: systemClock.nowInstant() }),
+		getReplacementById: (input: { organizationId: string; employeeId: string }) =>
+			getReplacementEmployeeById(db, { ...input, now: systemClock.nowInstant() }),
 	};
 }
 

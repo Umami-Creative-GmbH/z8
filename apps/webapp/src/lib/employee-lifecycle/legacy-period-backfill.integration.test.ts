@@ -54,13 +54,18 @@ describe("legacy employment period backfill", () => {
 		return result.rows;
 	}
 
-	async function insertTerms(employeeId: string, validFrom: Date, reviewState: string) {
+	async function insertTerms(
+		employeeId: string,
+		validFrom: Date,
+		reviewState: string,
+		validUntil: Date | null = null,
+	) {
 		const result = await fixture.pool.query<{ id: string }>(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, valid_from, weekly_contract_minutes, review_state,
+			 (employee_id, organization_id, valid_from, valid_until, valid_from_date, valid_until_date, weekly_contract_minutes, review_state,
 			  created_by, updated_at)
-			 values ($1, $2, $3, 2400, $4, $5, $3) returning id`,
-			[employeeId, fixture.organizationId, validFrom, reviewState, fixture.ownerUserId],
+			 values ($1, $2, $3, $4, $3::timestamp::date, $4::timestamp::date, 2400, $5, $6, $3) returning id`,
+			[employeeId, fixture.organizationId, validFrom, validUntil, reviewState, fixture.ownerUserId],
 		);
 		return result.rows[0]?.id;
 	}
@@ -100,7 +105,7 @@ describe("legacy employment period backfill", () => {
 	it("falls back to the earliest confirmed terms when no start date exists", async () => {
 		const target = await seedLegacyEmployee({ startDate: null });
 		await insertTerms(target.employeeId, JAN, "draft");
-		await insertTerms(target.employeeId, MAR, "confirmed");
+		await insertTerms(target.employeeId, MAR, "confirmed", JUN);
 		await insertTerms(target.employeeId, JUN, "confirmed");
 
 		await backfill(target.employeeId);

@@ -78,25 +78,35 @@ describe("time KPI reads on disposable PostgreSQL", () => {
 			 values ($1, $2, 'Weekdays', true, $3, $4, now())`,
 			[policyId, org, regulation !== null, user],
 		);
+		const {
+			rows: [policyVersion],
+		} = await admin.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, $3, false, true, $4)
+			 returning id`,
+			[policyId, org, regulation !== null, user],
+		);
 		await admin.query(
-			`insert into work_policy_schedule (id, policy_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
-			 values ($1, $2, 'weekly', 'detailed', 'custom', now())`,
-			[scheduleId, policyId],
+			`insert into work_policy_schedule (id, policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
+			 values ($1, $2, $3, 'weekly', 'detailed', 'custom', now())`,
+			[scheduleId, policyId, policyVersion.id],
 		);
 		for (const day of ["monday", "tuesday", "wednesday", "thursday", "friday"]) {
 			await admin.query(
-				`insert into work_policy_schedule_day (schedule_id, day_of_week, hours_per_day, is_work_day)
-				 values ($1, $2, '8.00', true)`,
-				[scheduleId, day],
+				`insert into work_policy_schedule_day (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day)
+				 values ($1, $2, $3, '8.00', true)`,
+				[scheduleId, policyVersion.id, day],
 			);
 		}
 		if (regulation) {
 			await admin.query(
 				`insert into work_policy_regulation
-				 (policy_id, max_daily_minutes, max_weekly_minutes, alert_before_limit_minutes, updated_at)
-				 values ($1, $2, $3, $4, now())`,
+				 (policy_id, policy_version_id, max_daily_minutes, max_weekly_minutes, alert_before_limit_minutes, updated_at)
+				 values ($1, $2, $3, $4, $5, now())`,
 				[
 					policyId,
+					policyVersion.id,
 					regulation.maxDailyMinutes,
 					regulation.maxWeeklyMinutes,
 					regulation.alertBeforeLimitMinutes,

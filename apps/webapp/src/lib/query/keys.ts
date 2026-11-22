@@ -349,6 +349,27 @@ export const queryKeys = {
 				lastWorkingDay,
 				replacementEmployeeId,
 			] as const,
+		offboardingPastPreview: (
+			orgId: string,
+			employeeId: string,
+			lastWorkingDay: string,
+			replacementEmployeeId: string | null,
+		) =>
+			[
+				"employees",
+				orgId,
+				"offboarding",
+				employeeId,
+				"past-preview",
+				lastWorkingDay,
+				replacementEmployeeId,
+			] as const,
+		offboardingReplacementSearch: (
+			orgId: string,
+			excludeEmployeeId: string | null,
+			search: string,
+		) =>
+			["employees", orgId, "offboarding", "replacement-search", excludeEmployeeId, search] as const,
 	},
 
 	// Report share links (#806)
@@ -819,8 +840,12 @@ export const queryKeys = {
 		all: ["compliance"] as const,
 		clockScope: (userId: string | null, organizationId: string | null, employeeId: string | null) =>
 			["compliance", "clock", userId, organizationId, employeeId] as const,
-		clock: (userId: string | null, organizationId: string | null, employeeId: string | null, mode: "idle" | "active") =>
-			["compliance", "clock", userId, organizationId, employeeId, mode] as const,
+		clock: (
+			userId: string | null,
+			organizationId: string | null,
+			employeeId: string | null,
+			mode: "idle" | "active",
+		) => ["compliance", "clock", userId, organizationId, employeeId, mode] as const,
 		// Schedule compliance warnings for scheduler publish flow
 		scheduleWarnings: (orgId: string, dateRange: { startDate: string; endDateExclusive: string }) =>
 			["compliance", "schedule-warnings", orgId, dateRange] as const,

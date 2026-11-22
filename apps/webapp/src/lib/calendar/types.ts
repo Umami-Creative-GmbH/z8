@@ -1,11 +1,6 @@
 import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 
-export type CalendarEventType =
-	| "holiday"
-	| "absence"
-	| "time_entry"
-	| "work_period"
-	| "break";
+export type CalendarEventType = "holiday" | "absence" | "time_entry" | "work_period" | "break";
 
 export interface CalendarEvent {
 	id: string;
@@ -24,6 +19,8 @@ export interface DailyWorkRequirement {
 	requiredMinutes: number;
 	policyId: string;
 	policyName: string;
+	balanceMode?: "tracked" | "trust_based";
+	contributesZeroBalanceDelta?: boolean;
 }
 
 export type DailyWorkRequirements = Record<string, DailyWorkRequirement>;

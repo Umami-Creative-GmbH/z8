@@ -1,11 +1,13 @@
 import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
+import { db } from "@/db";
 import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { EmployeeReadScope } from "@/lib/organization/employee-read-types";
 import { getEmployeeEquipment } from "@/lib/organization/equipment/actions";
 import { loadPersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { type EmployeeDetailRecord, getEmployee } from "../actions";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
@@ -41,13 +43,14 @@ async function EmployeeDetailPageContent({ params, searchParams }: EmployeeDetai
 	}
 	const { organizationId, userId: currentUserId, settingsAccess } = caller;
 
-	const [employeeResult, personnelFile, equipment] = await Promise.all([
+	const [employeeResult, personnelFile, equipment, organizationTimezone] = await Promise.all([
 		getEmployee(employeeId),
 		// Decided by the personnel file access resolver, never by settings access:
 		// managers reach this page but not the personnel file (#865, ADR 0001).
 		loadPersonnelFilePanelCapability(employeeId),
 		// Equipment authority is independent of settings access and manager role.
 		getEmployeeEquipment(employeeId),
+		loadOrganizationTimezone(db, organizationId),
 	]);
 
 	if (!employeeResult.success || employeeResult.data.organizationId !== organizationId) {
@@ -59,6 +62,7 @@ async function EmployeeDetailPageContent({ params, searchParams }: EmployeeDetai
 			params={Promise.resolve({ employeeId })}
 			currentUserId={currentUserId}
 			organizationId={organizationId}
+			organizationTimezone={organizationTimezone}
 			initialSnapshot={snapshotDetail(
 				{ userId: currentUserId, organizationId },
 				employeeResult.data,

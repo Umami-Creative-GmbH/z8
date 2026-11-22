@@ -4,8 +4,23 @@ import {
 	type EmployeeEmploymentHistory,
 	employee,
 	employeeEmploymentHistory,
-	workPolicy,
+	employeeEmploymentHistoryDay,
 } from "@/db/schema";
+import type {
+	ArbzgScope,
+	BalanceMode,
+	EmploymentProfile,
+	OnCallHoursKind,
+	PresenceOverride,
+	ScheduleMode,
+	ScheduleSource,
+} from "@/db/schema/contract-types";
+import {
+	doesLinkedTermsPolicyAssignmentCoverDayInTx,
+	lockEmployeeActivePolicyAssignmentsInTx,
+	transferLinkedTermsAssignmentOnSplitInTx,
+	verifyWorkPolicyForTermsInTx,
+} from "@/lib/contracts/policy-assignment-intervals";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { compareInstants, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -25,7 +40,6 @@ import {
 import { loadTermsInForceOn } from "./load-terms-in-force";
 import { utcMidnight } from "./terms-in-force";
 import { adjustConfirmedTimeline } from "./timeline";
-import { removeTermsPolicy, syncTermsPolicy } from "./assignment-sync";
 
 /**
  * The one command that writes employment terms, and with them every hourly
@@ -61,17 +75,33 @@ export type EmploymentTermsInput = {
 	validFrom: Date;
 	status: EmploymentStatus;
 	contractType: ContractType;
-	weeklyContractMinutes: number;
+	weeklyContractMinutes: number | null;
 	probationStartsOn?: Date | null;
 	probationEndsOn?: Date | null;
-	workModel: WorkModel;
+	workModel: WorkModel | null;
 	workPolicyId?: string | null;
 	/** Required for hourly terms; dropped for fixed terms. */
 	hourlyRate: number | null;
 	currency: string;
 	changeReason?: string | null;
 	reviewState: EmploymentReviewState;
+	/** Optional unified-contract fields preserved across pay-only edits (A1-4). */
+	scheduleMode?: ScheduleMode | null;
+	presenceOverride?: PresenceOverride | null;
+	balanceMode?: BalanceMode | null;
+	scheduleSource?: ScheduleSource | null;
+	sourceTemplateVersionId?: string | null;
+	employmentProfile?: EmploymentProfile;
+	arbzgScope?: ArbzgScope;
+	onCallHoursKind?: OnCallHoursKind | null;
+	onCallWeeklyMinutes?: number | null;
+	onCallDailyMinutes?: number | null;
+	migratedLegacyTerms?: boolean;
 };
+
+function toUtcPlainDateString(date: Date): string {
+	return date.toISOString().slice(0, 10);
+}
 
 /** Locks the employee row; refuses an employee outside the organization. */
 async function lockEmployee(tx: TermsWriteClient, scope: TermsWriteScope) {
@@ -115,21 +145,46 @@ async function requireTermsEmploymentPeriod(
 	}
 }
 
+async function lockOrgKeyShare(tx: TermsWriteClient, organizationId: string) {
+	await tx.execute(sql`
+		SELECT id
+		FROM organization
+		WHERE id = ${organizationId}
+		FOR KEY SHARE
+	`);
+}
+
+async function lockOrgPolicyShared(tx: TermsWriteClient, organizationId: string) {
+	// F11-3 / Astra #2 & #3: Align terms writes with universal lock order
+	// (0 org policy advisory SHARED -> 1.5 organization FOR KEY SHARE -> 2 employee -> 4 work_policy FOR SHARE).
+	const orgLockKey = `contract_default_org:${organizationId}`;
+	await tx.execute(sql`SELECT pg_advisory_xact_lock_shared(hashtext(${orgLockKey}))`);
+	await lockOrgKeyShare(tx, organizationId);
+}
+
 async function requireOrganizationWorkPolicy(
 	tx: TermsWriteClient,
 	organizationId: string,
 	workPolicyId: string,
+	allowHistoricalUntilDateIso: string | null = null,
 ) {
-	const [policy] = await tx
-		.select({ id: workPolicy.id })
-		.from(workPolicy)
-		.where(and(eq(workPolicy.id, workPolicyId), eq(workPolicy.organizationId, organizationId)))
-		.limit(1);
-	if (!policy) {
+	const status = await verifyWorkPolicyForTermsInTx(tx as never, {
+		organizationId,
+		policyId: workPolicyId,
+		allowHistoricalUntilDateIso,
+	});
+	if (status === "not_found") {
 		throw new NotFoundError({
 			message: "Work policy not found",
 			entityType: "work_policy",
 			entityId: workPolicyId,
+		});
+	}
+	if (status === "inactive") {
+		throw new ValidationError({
+			message: "Inactive work policies cannot be assigned to employment terms.",
+			field: "workPolicyId",
+			refusal: "work_policy_inactive",
 		});
 	}
 }
@@ -171,11 +226,15 @@ async function adjustNeighbours(
 	next: EmployeeEmploymentHistory,
 ) {
 	const adjusted = adjustConfirmedTimeline({ existing, next });
-	const existingById = new Map(existing.map((row) => [row.id, row]));
 	for (const update of adjusted.updates) {
 		await tx
 			.update(employeeEmploymentHistory)
-			.set({ validUntil: update.validUntil, updatedBy: scope.actorUserId, updatedAt: scope.now })
+			.set({
+				validUntil: update.validUntil,
+				validUntilDate: update.validUntil ? toUtcPlainDateString(update.validUntil) : null,
+				updatedBy: scope.actorUserId,
+				updatedAt: scope.now,
+			})
 			.where(
 				and(
 					eq(employeeEmploymentHistory.id, update.id),
@@ -183,12 +242,14 @@ async function adjustNeighbours(
 					eq(employeeEmploymentHistory.organizationId, scope.organizationId),
 				),
 			);
-		const previous = existingById.get(update.id);
-		if (previous) {
-			await syncTermsPolicy(tx, scope, { ...previous, validUntil: update.validUntil });
-		}
 	}
-	return adjusted.next;
+	return {
+		...adjusted.next,
+		validFromDate: toUtcPlainDateString(adjusted.next.validFrom),
+		validUntilDate: adjusted.next.validUntil
+			? toUtcPlainDateString(adjusted.next.validUntil)
+			: null,
+	};
 }
 
 /** Projects the contract type of the terms in force today onto `employee.contract_type`. */
@@ -208,13 +269,11 @@ async function projectCurrentTerms(
 
 async function insertTerms(
 	tx: TermsWriteClient,
-	scope: TermsWriteScope & { now: Date },
+	scope: TermsWriteScope & { now: Date; useDbClockTimestamp?: boolean },
 	terms: EmploymentTermsInput,
+	options?: { allowCopiedHistoricalPolicy?: boolean; sourceTermsValidUntilDate?: string | null },
 ): Promise<EmployeeEmploymentHistory> {
 	requireHourlyWage(terms);
-	if (terms.workPolicyId) {
-		await requireOrganizationWorkPolicy(tx, scope.organizationId, terms.workPolicyId);
-	}
 
 	const employmentPeriodId = await requireTermsEmploymentPeriod(tx, {
 		organizationId: scope.organizationId,
@@ -233,13 +292,15 @@ async function insertTerms(
 			),
 		);
 
-	const next = await adjustNeighbours(tx, scope, existing, {
+	const draftNext: EmployeeEmploymentHistory = {
 		id: randomUUID(),
 		employeeId: scope.employeeId,
 		organizationId: scope.organizationId,
 		employmentPeriodId,
 		validFrom: terms.validFrom,
 		validUntil: null,
+		validFromDate: toUtcPlainDateString(terms.validFrom),
+		validUntilDate: null,
 		status: terms.status,
 		contractType: terms.contractType,
 		weeklyContractMinutes: terms.weeklyContractMinutes,
@@ -247,6 +308,18 @@ async function insertTerms(
 		probationEndsOn: terms.probationEndsOn ?? null,
 		workModel: terms.workModel,
 		workPolicyId: terms.workPolicyId ?? null,
+		scheduleMode: terms.scheduleMode ?? null,
+		presenceOverride: terms.presenceOverride ?? null,
+		balanceMode: terms.balanceMode ?? null,
+		scheduleSource: terms.scheduleSource ?? null,
+		sourceTemplateVersionId: terms.sourceTemplateVersionId ?? null,
+		sourceBatchItemId: null,
+		employmentProfile: terms.employmentProfile ?? "regular",
+		arbzgScope: terms.arbzgScope ?? "standard",
+		onCallHoursKind: terms.onCallHoursKind ?? null,
+		onCallWeeklyMinutes: terms.onCallWeeklyMinutes ?? null,
+		onCallDailyMinutes: terms.onCallDailyMinutes ?? null,
+		migratedLegacyTerms: terms.migratedLegacyTerms ?? false,
 		hourlyRate: wageForContract(terms.contractType, terms.hourlyRate),
 		currency: terms.currency,
 		changeReason: terms.changeReason ?? null,
@@ -255,23 +328,63 @@ async function insertTerms(
 		createdAt: scope.now,
 		updatedBy: scope.actorUserId,
 		updatedAt: scope.now,
-	});
+	};
 
-	const [inserted] = await tx.insert(employeeEmploymentHistory).values(next).returning();
+	if (terms.workPolicyId) {
+		let allowHistoricalUntilDateIso: string | null = null;
+		if (options?.allowCopiedHistoricalPolicy) {
+			// Astra #3 / Opus #2 (Pass 8/13): Only allow an inactive policy when the actual
+			// confirmed interval bounded by existing period terms has a finite end date <= retirement!
+			const hypotheticalConfirmed = adjustConfirmedTimeline({
+				existing,
+				next: { ...draftNext, reviewState: "confirmed" },
+			});
+			allowHistoricalUntilDateIso = hypotheticalConfirmed.next.validUntil
+				? toUtcPlainDateString(hypotheticalConfirmed.next.validUntil)
+				: null;
+		}
+		await requireOrganizationWorkPolicy(
+			tx,
+			scope.organizationId,
+			terms.workPolicyId,
+			allowHistoricalUntilDateIso,
+		);
+	}
+
+	const next = await adjustNeighbours(tx, scope, existing, draftNext);
+
+	const [inserted] = await tx
+		.insert(employeeEmploymentHistory)
+		.values({
+			...next,
+			createdAt: scope.useDbClockTimestamp ? sql`clock_timestamp()` : next.createdAt,
+		})
+		.returning();
 	if (!inserted) throw new Error("Employment history insert returned no row");
 
 	await projectCurrentTerms(tx, scope, inserted);
-	await syncTermsPolicy(tx, scope, inserted);
 	return inserted;
 }
 
 /** Writes new terms, confirmed or not, in the caller's transaction. */
 export async function writeEmploymentTerms(
 	tx: TermsWriteClient,
-	input: TermsWriteScope & { terms: EmploymentTermsInput },
+	input: TermsWriteScope & { terms: EmploymentTermsInput; useDbClockTimestamp?: boolean },
 ): Promise<EmployeeEmploymentHistory> {
-	const scope = { ...input, now: input.now ?? currentTimestamp() };
-	await lockEmployee(tx, scope);
+	// Astra #2: Always lock (1.5) organization FOR KEY SHARE before (2) employee FOR UPDATE,
+	// and acquire (0) SHARED when pinning a work policy.
+	if (input.terms.workPolicyId) {
+		await lockOrgPolicyShared(tx, input.organizationId);
+	} else {
+		await lockOrgKeyShare(tx, input.organizationId);
+	}
+	await lockEmployee(tx, input);
+	// Astra #8: Capture timestamp strictly AFTER acquiring locks.
+	const scope = {
+		...input,
+		now: input.now ?? currentTimestamp(),
+		useDbClockTimestamp: input.useDbClockTimestamp ?? input.now === undefined,
+	};
 	return insertTerms(tx, scope, input.terms);
 }
 
@@ -280,8 +393,14 @@ export async function confirmEmploymentTerms(
 	tx: TermsWriteClient,
 	input: TermsWriteScope & { termsId: string },
 ): Promise<EmployeeEmploymentHistory> {
+	await lockOrgPolicyShared(tx, input.organizationId);
+	await lockEmployee(tx, input);
+	await lockEmployeeActivePolicyAssignmentsInTx(
+		tx as never,
+		input.organizationId,
+		input.employeeId,
+	);
 	const scope = { ...input, now: input.now ?? currentTimestamp() };
-	await lockEmployee(tx, scope);
 
 	const existing = await tx
 		.select()
@@ -307,9 +426,6 @@ export async function confirmEmploymentTerms(
 		});
 	}
 	requireHourlyWage(target);
-	if (target.workPolicyId) {
-		await requireOrganizationWorkPolicy(tx, scope.organizationId, target.workPolicyId);
-	}
 
 	const employmentPeriodId = await requireTermsEmploymentPeriod(tx, {
 		organizationId: scope.organizationId,
@@ -323,18 +439,37 @@ export async function confirmEmploymentTerms(
 		});
 	}
 
-	const next = await adjustNeighbours(
-		tx,
-		scope,
-		existing.filter((row) => row.employmentPeriodId === employmentPeriodId),
-		{ ...target, employmentPeriodId, reviewState: "confirmed" },
-	);
+	const periodExisting = existing.filter((row) => row.employmentPeriodId === employmentPeriodId);
+	const previewAdjusted = adjustConfirmedTimeline({
+		existing: periodExisting,
+		next: { ...target, employmentPeriodId, reviewState: "confirmed" },
+	});
+	if (target.workPolicyId) {
+		// Opus #1: Allow confirming a backdated historical draft whose entire confirmed interval ends
+		// on or before the policy's retirement date, while rejecting active/future pins to inactive policies.
+		const confirmedEndDateIso = previewAdjusted.next.validUntil
+			? toUtcPlainDateString(previewAdjusted.next.validUntil)
+			: null;
+		await requireOrganizationWorkPolicy(
+			tx,
+			scope.organizationId,
+			target.workPolicyId,
+			confirmedEndDateIso,
+		);
+	}
+
+	const next = await adjustNeighbours(tx, scope, periodExisting, {
+		...target,
+		employmentPeriodId,
+		reviewState: "confirmed",
+	});
 
 	const [updated] = await tx
 		.update(employeeEmploymentHistory)
 		.set({
 			employmentPeriodId,
 			validUntil: next.validUntil,
+			validUntilDate: next.validUntilDate,
 			reviewState: "confirmed",
 			updatedBy: scope.actorUserId,
 			updatedAt: scope.now,
@@ -349,8 +484,26 @@ export async function confirmEmploymentTerms(
 		.returning();
 	if (!updated) throw new Error("Employment history update returned no row");
 
+	if (updated.workPolicyId) {
+		const trimmedPredecessor = previewAdjusted.updates.find(
+			(u) => u.validUntil?.getTime() === updated.validFrom.getTime(),
+		);
+		if (trimmedPredecessor) {
+			await transferLinkedTermsAssignmentOnSplitInTx(tx as never, {
+				organizationId: scope.organizationId,
+				employeeId: scope.employeeId,
+				actorUserId: scope.actorUserId,
+				fromHistoryId: trimmedPredecessor.id,
+				toHistoryId: updated.id,
+				policyId: updated.workPolicyId,
+				splitDateIso: updated.validFromDate,
+				toUntilDateIso: updated.validUntilDate,
+				now: scope.now,
+			});
+		}
+	}
+
 	await projectCurrentTerms(tx, scope, updated);
-	await syncTermsPolicy(tx, scope, updated);
 	return updated;
 }
 
@@ -368,8 +521,18 @@ export async function changeHourlyWage(
 		reviewState: "confirmed" | "draft";
 	},
 ): Promise<EmployeeEmploymentHistory> {
-	const scope = { ...input, now: input.now ?? currentTimestamp() };
-	await lockEmployee(tx, scope);
+	await lockOrgPolicyShared(tx, input.organizationId);
+	await lockEmployee(tx, input);
+	await lockEmployeeActivePolicyAssignmentsInTx(
+		tx as never,
+		input.organizationId,
+		input.employeeId,
+	);
+	const scope = {
+		...input,
+		now: input.now ?? currentTimestamp(),
+		useDbClockTimestamp: input.now === undefined,
+	};
 
 	const inForce = await loadTermsInForceOn(tx, {
 		organizationId: scope.organizationId,
@@ -385,20 +548,103 @@ export async function changeHourlyWage(
 		});
 	}
 
-	return insertTerms(tx, scope, {
-		validFrom: utcMidnight(input.effectiveOn),
-		status: inForce.status,
-		contractType: inForce.contractType,
-		weeklyContractMinutes: inForce.weeklyContractMinutes,
-		probationStartsOn: inForce.probationStartsOn,
-		probationEndsOn: inForce.probationEndsOn,
-		workModel: inForce.workModel,
-		workPolicyId: inForce.workPolicyId,
-		hourlyRate: input.hourlyRate,
-		currency: inForce.currency,
-		changeReason: input.changeReason,
-		reviewState: input.reviewState,
-	});
+	// Astra #4: If the source terms row carries a policy pin backed by a linked
+	// `work_policy_assignment` that no longer actively covers `effectiveOn` (e.g. capped on
+	// retirement or superseded), clear `workPolicyId` so a pay-only edit never revives or fails on it.
+	let copiedWorkPolicyId = inForce.workPolicyId;
+	if (copiedWorkPolicyId) {
+		const coversDay = await doesLinkedTermsPolicyAssignmentCoverDayInTx(tx as never, {
+			organizationId: scope.organizationId,
+			employmentHistoryId: inForce.id,
+			policyId: copiedWorkPolicyId,
+			dayIso: input.effectiveOn.toString(),
+		});
+		if (!coversDay) {
+			copiedWorkPolicyId = null;
+		}
+	}
+
+	// A1-4: Preserve all classification, statutory on-call, operational divergences, and
+	// normalized custom working days when recording a pay-only hourly wage change.
+	const existingDays = await tx
+		.select({
+			dayOfWeek: employeeEmploymentHistoryDay.dayOfWeek,
+			minutesPerDay: employeeEmploymentHistoryDay.minutesPerDay,
+			isWorkDay: employeeEmploymentHistoryDay.isWorkDay,
+			latestClockIn: employeeEmploymentHistoryDay.latestClockIn,
+		})
+		.from(employeeEmploymentHistoryDay)
+		.where(
+			and(
+				eq(employeeEmploymentHistoryDay.organizationId, scope.organizationId),
+				eq(employeeEmploymentHistoryDay.employmentHistoryId, inForce.id),
+			),
+		);
+
+	const inserted = await insertTerms(
+		tx,
+		scope,
+		{
+			validFrom: utcMidnight(input.effectiveOn),
+			status: inForce.status,
+			contractType: inForce.contractType,
+			weeklyContractMinutes: inForce.weeklyContractMinutes,
+			probationStartsOn: inForce.probationStartsOn,
+			probationEndsOn: inForce.probationEndsOn,
+			workModel: inForce.workModel,
+			workPolicyId: copiedWorkPolicyId,
+			scheduleMode: inForce.scheduleMode,
+			presenceOverride: inForce.presenceOverride,
+			balanceMode: inForce.balanceMode,
+			scheduleSource: inForce.scheduleSource,
+			sourceTemplateVersionId: inForce.sourceTemplateVersionId,
+			employmentProfile: inForce.employmentProfile,
+			arbzgScope: inForce.arbzgScope,
+			onCallHoursKind: inForce.onCallHoursKind,
+			onCallWeeklyMinutes: inForce.onCallWeeklyMinutes,
+			onCallDailyMinutes: inForce.onCallDailyMinutes,
+			migratedLegacyTerms: inForce.migratedLegacyTerms,
+			hourlyRate: input.hourlyRate,
+			currency: inForce.currency,
+			changeReason: input.changeReason,
+			reviewState: input.reviewState,
+		},
+		{
+			allowCopiedHistoricalPolicy: true,
+		},
+	);
+
+	// Astra #2 (Pass 8): When a confirmed wage edit splits an existing terms row backed by a
+	// linked `work_policy_assignment`, split/transfer the assignment slice onto the new wage row so
+	// the wage row never turns into an unbounded unlinked pin that overrides a later scheduled policy!
+	if (input.reviewState === "confirmed" && copiedWorkPolicyId) {
+		await transferLinkedTermsAssignmentOnSplitInTx(tx as never, {
+			organizationId: scope.organizationId,
+			employeeId: scope.employeeId,
+			actorUserId: scope.actorUserId,
+			fromHistoryId: inForce.id,
+			toHistoryId: inserted.id,
+			policyId: copiedWorkPolicyId,
+			splitDateIso: inserted.validFromDate,
+			toUntilDateIso: inserted.validUntilDate,
+			now: scope.now,
+		});
+	}
+
+	if (existingDays.length > 0) {
+		await tx.insert(employeeEmploymentHistoryDay).values(
+			existingDays.map((day) => ({
+				organizationId: scope.organizationId,
+				employmentHistoryId: inserted.id,
+				dayOfWeek: day.dayOfWeek,
+				minutesPerDay: day.minutesPerDay,
+				isWorkDay: day.isWorkDay,
+				latestClockIn: day.latestClockIn,
+			})),
+		);
+	}
+
+	return inserted;
 }
 
 export function canCancelEmploymentHistoryRow(
@@ -416,16 +662,14 @@ export async function cancelEmploymentTerms(
 	tx: TermsWriteClient,
 	input: TermsWriteScope & { termsId: string },
 ): Promise<EmployeeEmploymentHistory> {
+	await lockOrgKeyShare(tx, input.organizationId);
+	await lockEmployee(tx, input);
 	const scope = { ...input, now: input.now ?? currentTimestamp() };
-	await lockEmployee(tx, scope);
 	const termsScope = and(
 		eq(employeeEmploymentHistory.employeeId, scope.employeeId),
 		eq(employeeEmploymentHistory.organizationId, scope.organizationId),
 	);
-	const existing = await tx
-		.select()
-		.from(employeeEmploymentHistory)
-		.where(termsScope);
+	const existing = await tx.select().from(employeeEmploymentHistory).where(termsScope);
 	const target = existing.find((row) => row.id === input.termsId);
 	if (!target)
 		throw new NotFoundError({
@@ -444,7 +688,6 @@ export async function cancelEmploymentTerms(
 		.where(and(termsScope, eq(employeeEmploymentHistory.id, target.id)));
 	if (target.reviewState !== "confirmed") return target;
 
-	await removeTermsPolicy(tx, scope, target);
 	const period = await resolveCurrentEmploymentPeriod(tx, {
 		organizationId: scope.organizationId,
 		employeeId: scope.employeeId,
@@ -459,69 +702,47 @@ export async function cancelEmploymentTerms(
 				row.reviewState === "confirmed" &&
 				row.employmentPeriodId === target.employmentPeriodId &&
 				(!row.validUntil ||
-					compareInstants(
-						instantFromDate(row.validUntil),
-						instantFromDate(row.validFrom),
-					) > 0),
+					compareInstants(instantFromDate(row.validUntil), instantFromDate(row.validFrom)) > 0),
 		)
-		.sort((a, b) =>
-			compareInstants(
-				instantFromDate(a.validFrom),
-				instantFromDate(b.validFrom),
-			),
-		);
-	// A superseded same-start row owns no interval. Its cancellation must not
-	// remove a replacement that happens to carry the same policy/natural key.
+		.sort((a, b) => compareInstants(instantFromDate(a.validFrom), instantFromDate(b.validFrom)));
+	// A superseded same-start row owns no interval; leave the active replacement intact.
 	const replacement = confirmed.find(
 		(row) =>
-			compareInstants(
-				instantFromDate(row.validFrom),
-				instantFromDate(target.validFrom),
-			) === 0,
+			compareInstants(instantFromDate(row.validFrom), instantFromDate(target.validFrom)) === 0,
 	);
 	if (replacement) {
-		await syncTermsPolicy(tx, scope, replacement);
 		return target;
 	}
 	if (
 		target.validUntil &&
-		compareInstants(
-			instantFromDate(target.validUntil),
-			instantFromDate(target.validFrom),
-		) <= 0
+		compareInstants(instantFromDate(target.validUntil), instantFromDate(target.validFrom)) <= 0
 	)
 		return target;
 
 	const previous = confirmed
 		.filter(
 			(row) =>
-				compareInstants(
-					instantFromDate(row.validFrom),
-					instantFromDate(target.validFrom),
-				) < 0,
+				compareInstants(instantFromDate(row.validFrom), instantFromDate(target.validFrom)) < 0,
 		)
 		.at(-1);
 	// Only undo a boundary introduced by these terms; do not bridge a pre-existing gap.
 	if (
 		!previous?.validUntil ||
-		compareInstants(
-			instantFromDate(previous.validUntil),
-			instantFromDate(target.validFrom),
-		) !== 0
+		compareInstants(instantFromDate(previous.validUntil), instantFromDate(target.validFrom)) !== 0
 	)
 		return target;
 	const next = confirmed.find(
-		(row) =>
-			compareInstants(
-				instantFromDate(row.validFrom),
-				instantFromDate(target.validFrom),
-			) > 0,
+		(row) => compareInstants(instantFromDate(row.validFrom), instantFromDate(target.validFrom)) > 0,
 	);
 	const validUntil = next?.validFrom ?? null;
 	await tx
 		.update(employeeEmploymentHistory)
-		.set({ validUntil, updatedBy: scope.actorUserId, updatedAt: scope.now })
+		.set({
+			validUntil,
+			validUntilDate: validUntil ? toUtcPlainDateString(validUntil) : null,
+			updatedBy: scope.actorUserId,
+			updatedAt: scope.now,
+		})
 		.where(and(termsScope, eq(employeeEmploymentHistory.id, previous.id)));
-	await syncTermsPolicy(tx, scope, { ...previous, validUntil });
 	return target;
 }

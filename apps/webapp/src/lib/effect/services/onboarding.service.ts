@@ -9,8 +9,8 @@ import {
 	userSettings,
 	vacationAllowance,
 	workPolicy,
-	workPolicyAssignment,
 } from "@/db/schema";
+import { hasEmployeeOrOrgWorkPolicy } from "@/lib/work-policy/policy-queries";
 import { env } from "@/env";
 import { defaultStatutoryMinimumDays } from "@/lib/absences/vacation-policy-settings";
 import { auth, runAuthMutation } from "@/lib/auth";
@@ -655,27 +655,10 @@ export const OnboardingServiceLive = Layer.effect(
 						let hasWorkTemplate = false;
 
 						if (membership?.organizationId) {
-							// Check for org-level work policy assignment
-							const orgAssignment = await dbService.db.query.workPolicyAssignment.findFirst({
-								where: and(
-									eq(workPolicyAssignment.organizationId, membership.organizationId),
-									eq(workPolicyAssignment.assignmentType, "organization"),
-									eq(workPolicyAssignment.isActive, true),
-								),
+							hasWorkPolicy = await hasEmployeeOrOrgWorkPolicy(dbService.db, {
+								organizationId: membership.organizationId,
+								employeeId: emp?.id ?? null,
 							});
-							hasWorkPolicy = !!orgAssignment;
-
-							// Or check for employee-specific assignment
-							if (!hasWorkPolicy && emp?.id) {
-								const empAssignment = await dbService.db.query.workPolicyAssignment.findFirst({
-									where: and(
-										eq(workPolicyAssignment.employeeId, emp.id),
-										eq(workPolicyAssignment.assignmentType, "employee"),
-										eq(workPolicyAssignment.isActive, true),
-									),
-								});
-								hasWorkPolicy = !!empAssignment;
-							}
 
 							// Check for vacation policy (admin only)
 							if (isAdmin) {

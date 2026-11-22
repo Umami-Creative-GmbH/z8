@@ -5,9 +5,13 @@ import { useState } from "react";
 import {
 	assignDepartureReplacementAction,
 	cancelEmployeeDepartureAction,
+	correctPastDepartureDateAction,
 	getEmployeeOffboardingViewAction,
 	offboardEmployeeNowAction,
 	previewEmployeeDepartureAction,
+	previewPastDepartureAction,
+	recordHistoricalDepartureDateAction,
+	recordPastDepartureAction,
 	rehireEmployeeAction,
 	resolveDepartureReviewAction,
 	retryDepartureTaskAction,
@@ -110,6 +114,18 @@ export function useEmployeeOffboarding(options: {
 		mutationFn: offboardEmployeeNowAction,
 		onSettled: (result) => (result ? refreshAfter(result) : undefined),
 	});
+	const recordPastDepartureMutation = useMutation({
+		mutationFn: recordPastDepartureAction,
+		onSettled: (result) => (result ? refreshAfter(result) : undefined),
+	});
+	const correctPastDepartureDateMutation = useMutation({
+		mutationFn: correctPastDepartureDateAction,
+		onSettled: (result) => (result ? refreshAfter(result) : undefined),
+	});
+	const recordHistoricalDepartureDateMutation = useMutation({
+		mutationFn: recordHistoricalDepartureDateAction,
+		onSettled: (result) => (result ? refreshAfter(result) : undefined),
+	});
 	const rehireMutation = useMutation({
 		mutationFn: rehireEmployeeAction,
 		onSettled: (result) => (result ? refreshAfter(result) : undefined),
@@ -135,6 +151,9 @@ export function useEmployeeOffboarding(options: {
 		scheduleDeparture: scheduleMutation.mutateAsync,
 		cancelDeparture: cancelMutation.mutateAsync,
 		offboardNow: offboardNowMutation.mutateAsync,
+		recordPastDeparture: recordPastDepartureMutation.mutateAsync,
+		correctPastDepartureDate: correctPastDepartureDateMutation.mutateAsync,
+		recordHistoricalDepartureDate: recordHistoricalDepartureDateMutation.mutateAsync,
 		rehire: rehireMutation.mutateAsync,
 		resolveReview: resolveReviewMutation.mutateAsync,
 		retryTask: retryTaskMutation.mutateAsync,
@@ -143,6 +162,9 @@ export function useEmployeeOffboarding(options: {
 			scheduleMutation.isPending ||
 			cancelMutation.isPending ||
 			offboardNowMutation.isPending ||
+			recordPastDepartureMutation.isPending ||
+			correctPastDepartureDateMutation.isPending ||
+			recordHistoricalDepartureDateMutation.isPending ||
 			rehireMutation.isPending ||
 			resolveReviewMutation.isPending ||
 			retryTaskMutation.isPending ||
@@ -175,6 +197,31 @@ export function useDeparturePreview(options: {
 		staleTime: 0,
 		retry: false,
 		// Keep the replacement list while a changed choice is re-checked.
+		placeholderData: keepPreviousData,
+	});
+}
+
+/** Advisory server preview of a retrospective ("Has Left") departure. */
+export function usePastDeparturePreview(options: {
+	organizationId: string;
+	employeeId: string;
+	lastWorkingDay: string;
+	replacementEmployeeId: string | null;
+	enabled: boolean;
+}) {
+	const { organizationId, employeeId, lastWorkingDay, replacementEmployeeId, enabled } = options;
+	return useQuery({
+		queryKey: queryKeys.employees.offboardingPastPreview(
+			organizationId,
+			employeeId,
+			lastWorkingDay,
+			replacementEmployeeId,
+		),
+		queryFn: () =>
+			unwrap(previewPastDepartureAction({ employeeId, lastWorkingDay, replacementEmployeeId })),
+		enabled: enabled && Boolean(lastWorkingDay),
+		staleTime: 0,
+		retry: false,
 		placeholderData: keepPreviousData,
 	});
 }

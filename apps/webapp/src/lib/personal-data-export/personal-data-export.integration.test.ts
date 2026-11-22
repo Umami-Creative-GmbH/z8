@@ -6,15 +6,7 @@
  */
 
 import JSZip from "jszip";
-import {
-	afterAll,
-	beforeAll,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -28,9 +20,7 @@ const harness = vi.hoisted(() => ({
 	signed: [] as { key: string; expiresInSeconds: number; fileName: string }[],
 }));
 
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -56,10 +46,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 vi.mock("@/lib/queue", async (original) => ({
 	...(await original<typeof import("@/lib/queue")>()),
-	addJob: async (
-		_name: string,
-		data: { organizationId: string; exportId: string },
-	) => {
+	addJob: async (_name: string, data: { organizationId: string; exportId: string }) => {
 		if (harness.queueDown) throw new Error("Redis is down");
 		harness.jobs.push({
 			organizationId: data.organizationId,
@@ -75,10 +62,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 		key: string,
 		body: ReadableStream<Uint8Array>,
 	) {
-		harness.objects.set(
-			key,
-			new Uint8Array(await new Response(body).arrayBuffer()),
-		);
+		harness.objects.set(key, new Uint8Array(await new Response(body).arrayBuffer()));
 		return { bucket: "t1165-private", versionId: `v-${key}` };
 	},
 	async deletePrivateObject(input: { key: string }) {
@@ -98,11 +82,8 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 }));
 
 const { db } = await import("@/db");
-const {
-	getMyDataOverview,
-	requestMyPersonalDataExport,
-	getPersonalDataExportDownloadUrl,
-} = await import("@/app/[locale]/(app)/settings/my-data/actions");
+const { getMyDataOverview, requestMyPersonalDataExport, getPersonalDataExportDownloadUrl } =
+	await import("@/app/[locale]/(app)/settings/my-data/actions");
 const { processPersonalDataExport } = await import("./processor");
 const { PERSONAL_DATA_COLLECTORS } = await import("./collectors");
 const { runPersonalDataExportSweep } = await import("@/lib/jobs/personal-data-export-sweep");
@@ -137,10 +118,9 @@ const admin = integrationAdminPool();
 async function cleanup() {
 	for (const org of [ORG, OTHER_ORG]) {
 		await admin.query("delete from organization where id = $1", [org]);
-		await admin.query(
-			"delete from personal_data_export_file_cleanup where organization_id = $1",
-			[org],
-		);
+		await admin.query("delete from personal_data_export_file_cleanup where organization_id = $1", [
+			org,
+		]);
 	}
 	await admin.query('delete from "user" where id like $1', ["t1165-%"]);
 }
@@ -152,19 +132,10 @@ async function seedUser(name: string, displayName: string) {
 	);
 }
 
-async function seedMember(
-	organizationId: string,
-	name: string,
-	role = "member",
-) {
+async function seedMember(organizationId: string, name: string, role = "member") {
 	await admin.query(
 		"insert into member (id,organization_id,user_id,role,status,created_at) values ($1,$2,$3,$4,'approved',now())",
-		[
-			`t1165-member-${name}-${organizationId}`,
-			organizationId,
-			`t1165-${name}`,
-			role,
-		],
+		[`t1165-member-${name}-${organizationId}`, organizationId, `t1165-${name}`, role],
 	);
 }
 
@@ -177,13 +148,7 @@ async function seedEmployee(
 	await admin.query(
 		`insert into employee (id,user_id,organization_id,role,is_active,position,updated_at)
 		 values ($1,$2,$3,'employee',$4,$5,now())`,
-		[
-			id,
-			`t1165-${name}`,
-			organizationId,
-			fields.isActive ?? true,
-			fields.position ?? null,
-		],
+		[id, `t1165-${name}`, organizationId, fields.isActive ?? true, fields.position ?? null],
 	);
 }
 
@@ -241,8 +206,7 @@ async function zipFiles(exportId: string): Promise<Record<string, string>> {
 async function exportAdaData(): Promise<string> {
 	signIn("ada");
 	const requested = await requestMyPersonalDataExport();
-	if (!requested.success)
-		throw new Error(`request refused: ${requested.error}`);
+	if (!requested.success) throw new Error(`request refused: ${requested.error}`);
 	expect(harness.jobs.at(-1)).toEqual({
 		organizationId: ORG,
 		exportId: requested.data.exportId,
@@ -256,10 +220,10 @@ async function exportAdaData(): Promise<string> {
 }
 
 async function forgetExports() {
-	await admin.query(
-		"delete from personal_data_export where organization_id in ($1, $2)",
-		[ORG, OTHER_ORG],
-	);
+	await admin.query("delete from personal_data_export where organization_id in ($1, $2)", [
+		ORG,
+		OTHER_ORG,
+	]);
 	await admin.query(
 		"delete from personal_data_export_file_cleanup where organization_id in ($1, $2)",
 		[ORG, OTHER_ORG],
@@ -308,10 +272,7 @@ describe("personal data export pipeline (#1165)", () => {
 			   ($1, $3, 'Platform', now()), ($2, $3, 'Secret Team', now())`,
 			[ids.teamAda, ids.teamOther, ORG],
 		);
-		await admin.query("update employee set team_id = $1 where id = $2", [
-			ids.teamAda,
-			ids.ada,
-		]);
+		await admin.query("update employee set team_id = $1 where id = $2", [ids.teamAda, ids.ada]);
 		await admin.query(
 			"insert into team_membership (organization_id, team_id, employee_id, created_by) values ($1, $2, $3, 't1165-owner')",
 			[ORG, ids.teamAda, ids.ada],
@@ -319,11 +280,11 @@ describe("personal data export pipeline (#1165)", () => {
 		// Employment terms with the hourly wage: the terms are the only wage history (#814).
 		await admin.query(
 			`insert into employee_employment_history (employee_id, organization_id, valid_from, valid_until,
-			   contract_type, weekly_contract_minutes, hourly_rate, currency, change_reason, review_state,
-			   created_by, updated_at)
-			 values ($1, $2, '2026-01-01 00:00:00', '2026-07-01 00:00:00', 'hourly', 2400, '21.50', 'EUR',
+			   valid_from_date, valid_until_date, contract_type, weekly_contract_minutes, hourly_rate, currency,
+			   change_reason, review_state, created_by, updated_at)
+			 values ($1, $2, '2026-01-01 00:00:00', '2026-07-01 00:00:00', '2026-01-01', '2026-07-01', 'hourly', 2400, '21.50', 'EUR',
 			           'Hired', 'confirmed', 't1165-owner', now()),
-			        ($1, $2, '2026-07-01 00:00:00', null, 'hourly', 2400, '23.00', 'EUR',
+			        ($1, $2, '2026-07-01 00:00:00', null, '2026-07-01', null, 'hourly', 2400, '23.00', 'EUR',
 			           'Raise', 'confirmed', 't1165-owner', now())`,
 			[ids.ada, ORG],
 		);
@@ -356,14 +317,7 @@ describe("personal data export pipeline (#1165)", () => {
 			   ($1, $4, 'organization', null, 0, 't1165-owner', now()),
 			   ($2, $4, 'team', $5, 1, 't1165-owner', now()),
 			   ($3, $4, 'team', $6, 1, 't1165-owner', now())`,
-			[
-				ids.policyDefault,
-				ids.policyTeam,
-				ids.policyOtherTeam,
-				ORG,
-				ids.teamAda,
-				ids.teamOther,
-			],
+			[ids.policyDefault, ids.policyTeam, ids.policyOtherTeam, ORG, ids.teamAda, ids.teamOther],
 		);
 		await admin.query(
 			`insert into project (id, organization_id, name, created_by, updated_at) values
@@ -469,15 +423,11 @@ describe("personal data export pipeline (#1165)", () => {
 				added_by: "Olga Owner",
 			}),
 		]);
+		expect(employment.project_assignments.map((row: { project: string }) => row.project)).toEqual([
+			"Platform rebuild",
+		]);
 		expect(
-			employment.project_assignments.map(
-				(row: { project: string }) => row.project,
-			),
-		).toEqual(["Platform rebuild"]);
-		expect(
-			employment.policy_assignments
-				.map((row: { policy: string }) => row.policy)
-				.sort(),
+			employment.policy_assignments.map((row: { policy: string }) => row.policy).sort(),
 		).toEqual(["Platform on-call", "Standard week"]);
 		// Withheld from the employee export: custom fields above employee visibility.
 		expect(employment.custom_fields).toEqual([
@@ -508,17 +458,14 @@ describe("personal data export pipeline (#1165)", () => {
 		const includedCategories = PERSONAL_DATA_COLLECTORS.map(
 			(collector) => collector.category,
 		).filter((category) =>
-			manifest.files.some(
-				(file: { category: string | null }) => file.category === category,
-			),
+			manifest.files.some((file: { category: string | null }) => file.category === category),
 		);
 		expect(manifest.categories).toEqual(includedCategories);
 		expect(manifest.categories).not.toContain("planning");
 		expect(files).not.toHaveProperty("planning.json");
 		expect(files["README.txt"]).not.toContain("planning.json");
 		for (const file of manifest.files) {
-			if (file.format === "csv" || file.format === "json")
-				expect(file.records).toBeGreaterThan(0);
+			if (file.format === "csv" || file.format === "json") expect(file.records).toBeGreaterThan(0);
 		}
 		// Archive order: Employment first, Account last; other categories sit between.
 		expect(manifest.categories[0]).toBe("employment");
@@ -535,9 +482,7 @@ describe("personal data export pipeline (#1165)", () => {
 			const files = await zipFiles(await exportAdaData());
 			expect(JSON.parse(files["_manifest.json"] as string).locale).toBe("de");
 		} finally {
-			await admin.query(
-				"delete from user_settings where user_id = 't1165-ada'",
-			);
+			await admin.query("delete from user_settings where user_id = 't1165-ada'");
 		}
 	});
 
@@ -559,16 +504,14 @@ describe("personal data export pipeline (#1165)", () => {
 				action_url: "/settings/my-data",
 			}),
 		]);
-		expect(
-			`${notifications[0]?.title} ${notifications[0]?.message}`,
-		).not.toMatch(/https?:|personal-data-exports\//);
+		expect(`${notifications[0]?.title} ${notifications[0]?.message}`).not.toMatch(
+			/https?:|personal-data-exports\//,
+		);
 
 		await vi.waitFor(() => expect(vi.mocked(sendEmail)).toHaveBeenCalled(), {
 			timeout: 10_000,
 		});
-		for (const [email] of vi.mocked(sendEmail).mock.calls as unknown as [
-			{ html: string },
-		][]) {
+		for (const [email] of vi.mocked(sendEmail).mock.calls as unknown as [{ html: string }][]) {
 			expect(email.html).not.toContain("storage.test");
 			expect(email.html).not.toContain("personal-data-exports/");
 		}
@@ -597,9 +540,7 @@ describe("personal data export pipeline (#1165)", () => {
 		expect(download).toEqual({
 			success: true,
 			data: {
-				url: expect.stringContaining(
-					"https://storage.test/personal-data-exports/",
-				),
+				url: expect.stringContaining("https://storage.test/personal-data-exports/"),
 			},
 		});
 		expect(harness.signed).toEqual([
@@ -609,23 +550,19 @@ describe("personal data export pipeline (#1165)", () => {
 			}),
 		]);
 
-		expect(await auditRows("personal_data_export.requested", exportId)).toEqual(
-			[
-				{
-					performed_by: "t1165-ada",
-					employee_id: ids.ada,
-					entity_type: "personal_data_export",
-					metadata: {
-						kind: "employee",
-						employeeId: ids.ada,
-						requestedByUserId: "t1165-ada",
-					},
+		expect(await auditRows("personal_data_export.requested", exportId)).toEqual([
+			{
+				performed_by: "t1165-ada",
+				employee_id: ids.ada,
+				entity_type: "personal_data_export",
+				metadata: {
+					kind: "employee",
+					employeeId: ids.ada,
+					requestedByUserId: "t1165-ada",
 				},
-			],
-		);
-		expect(
-			await auditRows("personal_data_export.downloaded", exportId),
-		).toEqual([
+			},
+		]);
+		expect(await auditRows("personal_data_export.downloaded", exportId)).toEqual([
 			expect.objectContaining({
 				performed_by: "t1165-ada",
 				employee_id: ids.ada,
@@ -649,9 +586,9 @@ describe("personal data export pipeline (#1165)", () => {
 		} finally {
 			harness.queueDown = false;
 		}
-		expect(
-			(await exportRows(ids.ada)).map((row) => [row.status, row.error_code]),
-		).toEqual([["failed", "enqueue_failed"]]);
+		expect((await exportRows(ids.ada)).map((row) => [row.status, row.error_code])).toEqual([
+			["failed", "enqueue_failed"],
+		]);
 		expect(await requestMyPersonalDataExport()).toMatchObject({
 			success: true,
 		});
@@ -677,9 +614,7 @@ describe("personal data export pipeline (#1165)", () => {
 		expect(sameDay).toMatchObject({ success: false, refusal: "daily_limit" });
 
 		// An admin export in progress for Ada blocks her request too, whoever started it.
-		await admin.query(
-			"update personal_data_export set created_at = now() - interval '25 hours'",
-		);
+		await admin.query("update personal_data_export set created_at = now() - interval '25 hours'");
 		await admin.query(
 			`insert into personal_data_export (organization_id, employee_id, kind, requested_by_user_id, status, expires_at)
 			 values ($1, $2, 'admin', 't1165-owner', 'processing', now() + interval '7 days')`,
@@ -700,14 +635,9 @@ describe("personal data export pipeline (#1165)", () => {
 			const nextDay = await requestMyPersonalDataExport();
 			expect(nextDay.success).toBe(true);
 		} finally {
-			await admin.query("delete from data_export where organization_id = $1", [
-				ORG,
-			]);
+			await admin.query("delete from data_export where organization_id = $1", [ORG]);
 		}
-		expect((await exportRows(ids.ada)).map((row) => row.status)).toEqual([
-			"completed",
-			"pending",
-		]);
+		expect((await exportRows(ids.ada)).map((row) => row.status)).toEqual(["completed", "pending"]);
 	});
 
 	it("keeps each organization's export to that organization", async () => {
@@ -725,17 +655,11 @@ describe("personal data export pipeline (#1165)", () => {
 			position: "Secret other-org role",
 			organization: "Other AG",
 		});
-		expect(
-			otherEmployment.skills.map((row: { skill: string }) => row.skill),
-		).toEqual(["Other-org skill"]);
+		expect(otherEmployment.skills.map((row: { skill: string }) => row.skill)).toEqual([
+			"Other-org skill",
+		]);
 		const everything = Object.values(otherFiles).join("\n");
-		for (const leaked of [
-			"Forklift licence",
-			"P-0042",
-			"Platform",
-			"Shirt size",
-			"Acme GmbH",
-		]) {
+		for (const leaked of ["Forklift licence", "P-0042", "Platform", "Shirt size", "Acme GmbH"]) {
 			expect(everything, leaked).not.toContain(leaked);
 		}
 
@@ -745,9 +669,7 @@ describe("personal data export pipeline (#1165)", () => {
 			success: true,
 			data: { status: "available", exports: [] },
 		});
-		expect(
-			await getPersonalDataExportDownloadUrl(requested.data.exportId),
-		).toMatchObject({
+		expect(await getPersonalDataExportDownloadUrl(requested.data.exportId)).toMatchObject({
 			success: false,
 			code: "NotFoundError",
 		});
@@ -806,9 +728,7 @@ describe("personal data export pipeline (#1165)", () => {
 		const bobKey = (await exportRows(ids.bob))[0]?.storage_key as string;
 		expect(harness.objects.has(bobKey)).toBe(true);
 		// Audit rows keep their employee reference (no cascade); remove them to delete Bob.
-		await admin.query("delete from audit_log where employee_id = $1", [
-			ids.bob,
-		]);
+		await admin.query("delete from audit_log where employee_id = $1", [ids.bob]);
 		await admin.query("delete from employee where id = $1", [ids.bob]);
 		await runPersonalDataExportSweep();
 		expect(harness.objects.has(bobKey)).toBe(false);
@@ -826,9 +746,7 @@ describe("personal data export pipeline (#1165)", () => {
 			const result = await drainPersonalDataExportFileCleanup(db, {
 				now: systemClock.nowInstant(),
 				deleteObject: async () => {
-					throw new Error(
-						"Private storage bucket changed; object cleanup needs review",
-					);
+					throw new Error("Private storage bucket changed; object cleanup needs review");
 				},
 			});
 			expect(result).toEqual({ deleted: 0, failed: 1, dropped: 1 });

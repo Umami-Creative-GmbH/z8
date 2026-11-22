@@ -169,7 +169,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			if (!scope) throw new ApiError("Employee context is unavailable", 401);
 			return (await fetchEmployeeRead("employment-history", scope, { employeeId }, signal)).data;
 		},
-		enabled: canLoadEmployeeDetails,
+		enabled: canLoadEmployeeDetails && isOrgAdmin,
 		staleTime: 30_000,
 		retry: false,
 	});

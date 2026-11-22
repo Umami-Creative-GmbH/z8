@@ -18,17 +18,28 @@ import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 import type { EmployeeDetailFormApi } from "./page-utils";
 
-const { pushMock, useEmployeeMock, formSection, saveEmployeeMock, teamApi } = vi.hoisted(() => ({
+const {
+	pushMock,
+	useEmployeeMock,
+	formSection,
+	saveEmployeeMock,
+	teamApi,
+	teamContractPreviewMock,
+} = vi.hoisted(() => ({
 	pushMock: vi.fn(),
 	useEmployeeMock: vi.fn(),
 	formSection: { real: false },
 	saveEmployeeMock: vi.fn(),
 	teamApi: { list: vi.fn(), preview: vi.fn() },
+	teamContractPreviewMock: vi.fn(),
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/teams/actions", () => ({ listTeams: teamApi.list }));
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	previewEmployeeTeamChange: teamApi.preview,
+}));
+vi.mock("@/app/[locale]/(app)/settings/employees/employee-mutations.actions", () => ({
+	previewEmployeeTeamChangeContractImpact: teamContractPreviewMock,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -91,11 +102,39 @@ vi.mock("./page-sections", async () => {
 });
 
 vi.mock("@/components/settings/employee-offboarding/employee-offboarding-section", () => ({
-	EmployeeOffboardingSection: ({ employeeId }: { employeeId: string }) => (
-		<section aria-label="Employment and departure">{employeeId}</section>
+	EmployeeOffboardingSection: ({
+		employeeId,
+		highlightedReviewId,
+	}: {
+		employeeId: string;
+		highlightedReviewId?: string | null;
+	}) => (
+		<section id="offboarding" aria-label="Employment and departure">
+			{employeeId}
+			{highlightedReviewId ? (
+				<div id={`offboarding-review-${highlightedReviewId}`}>Review {highlightedReviewId}</div>
+			) : null}
+		</section>
 	),
 }));
 
+vi.mock("@/components/settings/employee-offboarding/leaving-date-panel", () => ({
+	LeavingDatePanel: ({ employeeId }: { employeeId: string }) => (
+		<section aria-label="Leaving Date">{employeeId}</section>
+	),
+}));
+
+vi.mock("@/components/settings/contracts/employee-contract-tab", () => ({
+	EmployeeContractTab: ({ employeeId }: { employeeId: string }) => (
+		<section aria-label="Effective Contract">{employeeId}</section>
+	),
+}));
+
+vi.mock("@/components/settings/contracts/scoped-manager-policy-card", () => ({
+	ScopedManagerPolicyCard: ({ employeeId }: { employeeId: string }) => (
+		<section aria-label="Work Policy Assignment">{employeeId}</section>
+	),
+}));
 vi.mock("@/components/settings/personal-data-export/employee-personal-data-export-card", () => ({
 	EmployeePersonalDataExportCard: ({ isOwnRecord }: { isOwnRecord: boolean }) => (
 		<section aria-label="Personal data export">{isOwnRecord ? "own record" : "colleague"}</section>
@@ -273,11 +312,13 @@ function renderDetail({
 	currentUserId = "owner-user",
 	settingsAccess = "owner",
 	personnelFile = null,
+	highlightedReviewId = null,
 }: {
 	employee?: EmployeeDetail;
 	currentUserId?: string;
 	settingsAccess?: SettingsAccess | null;
 	personnelFile?: { employeeId: string; categories: []; today: string } | null;
+	highlightedReviewId?: string | null;
 } = {}) {
 	const snapshot = {
 		scope: { userId: currentUserId, organizationId: employee.organizationId },
@@ -315,6 +356,7 @@ function renderDetail({
 					currentUserId={currentUserId}
 					settingsAccess={settingsAccess}
 					personnelFile={personnelFile}
+					highlightedReviewId={highlightedReviewId}
 				/>
 			</QueryClientProvider>,
 		),
@@ -340,6 +382,37 @@ describe("employee detail Team field (#1575)", () => {
 		teamApi.preview.mockResolvedValue({
 			success: true,
 			data: { detail: "full", employees: [], previewToken: token },
+		});
+		teamContractPreviewMock.mockResolvedValue({
+			success: true,
+			data: {
+				employeeId: "employee-2",
+				effectiveOnDate: "2026-07-01",
+				currentPrimaryTeamId: "team-1",
+				currentPrimaryTeamName: "Umami",
+				targetPrimaryTeamId: "team-2",
+				targetPrimaryTeamName: "Vertrieb",
+				hasOperationalChanges: true,
+				changes: [
+					{
+						field: "workModel",
+						before: "hybrid",
+						after: "onsite",
+						beforeLabel: "hybrid",
+						afterLabel: "onsite",
+						beforeSource: "team_default",
+						afterSource: "team_default",
+					},
+				],
+				preservedPersonalDivergences: [],
+				preservedEmployeeOwnedTerms: {
+					contractType: "fixed",
+					employmentProfile: "regular",
+					arbzgScope: "standard",
+					onCallTerms: null,
+				},
+				mismatchWarning: null,
+			},
 		});
 		saveEmployeeMock.mockResolvedValue({ success: true, data: undefined });
 	});
@@ -420,13 +493,21 @@ describe("employee detail heading", () => {
 });
 
 describe("employee detail admin-only custom roles (#1475)", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		window.location.hash = "";
+	});
 
 	it.each(["scopedManager", "member", null] as const)(
 		"does not mount the custom roles card for %s settings access",
 		async (settingsAccess) => {
 			renderDetail({ settingsAccess });
 			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+			const tab = screen.getByRole("tab", { name: "Access & Roles" });
+			act(() => {
+				fireEvent.mouseDown(tab);
+				fireEvent.click(tab);
+			});
 			expect(screen.queryByText(/Custom roles for/)).toBeNull();
 		},
 	);
@@ -435,6 +516,11 @@ describe("employee detail admin-only custom roles (#1475)", () => {
 		"mounts the custom roles card with the employee scope for %s settings access",
 		async (settingsAccess) => {
 			renderDetail({ settingsAccess });
+			const tab = await screen.findByRole("tab", { name: "Access & Roles" });
+			act(() => {
+				fireEvent.mouseDown(tab);
+				fireEvent.click(tab);
+			});
 			expect((await screen.findByRole("region", { name: "Custom roles" })).textContent).toBe(
 				"Custom roles for employee-2 in org-1: admin",
 			);
@@ -443,17 +529,61 @@ describe("employee detail admin-only custom roles (#1475)", () => {
 });
 
 describe("employee detail wage history merge note (#1176)", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		window.location.hash = "";
+	});
 
 	it("shows the note on the terms card to org admins", async () => {
 		renderDetail({ settingsAccess: "orgAdmin" });
+		const tab = await screen.findByRole("tab", { name: "Contract" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
 		expect(await screen.findByText("Merge note for employee-2")).toBeTruthy();
 	});
 
-	it("shows no note to managers", async () => {
+	it("shows no note to managers and isolates to wage-free policy assignment (A1)", async () => {
 		renderDetail({ settingsAccess: "scopedManager" });
-		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		const tab = await screen.findByRole("tab", { name: "Work policy" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Work Policy Assignment" })).toBeTruthy();
 		expect(screen.queryByText(/Merge note/)).toBeNull();
+		expect(screen.queryByRole("region", { name: "Effective Contract" })).toBeNull();
+		expect(screen.queryByRole("tab", { name: "Leaving Date" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
+	});
+});
+
+describe("employee detail 6-tab deep links (#1930)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		window.location.hash = "";
+	});
+
+	it("auto-activates Contract tab for #employment-history deep link", async () => {
+		window.location.hash = "#employment-history";
+		renderDetail({ settingsAccess: "orgAdmin" });
+		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
+	});
+
+	it("auto-activates Leaving Date tab for #offboarding deep link", async () => {
+		window.location.hash = "#offboarding";
+		renderDetail({ settingsAccess: "orgAdmin" });
+		expect(await screen.findByRole("region", { name: "Leaving Date" })).toBeTruthy();
+		expect(screen.getByRole("region", { name: "Employment and departure" })).toBeTruthy();
+	});
+
+	it("auto-activates Leaving Date tab and highlights target review for ?review=<id>", async () => {
+		renderDetail({
+			settingsAccess: "orgAdmin",
+			highlightedReviewId: "11111111-1111-4111-8111-111111111111",
+		});
+		expect(await screen.findByText("Review 11111111-1111-4111-8111-111111111111")).toBeTruthy();
 	});
 });
 
@@ -498,8 +628,14 @@ describe("employee detail Change wage (#1177)", () => {
 	} as EmployeeDetail;
 
 	it("offers Change wage to an org admin while today's terms are hourly", async () => {
+		window.location.hash = "";
 		renderDetail({ employee: hourlyToday });
-		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		const tab = await screen.findByRole("tab", { name: "Contract" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
 
 		expect(employmentHistoryCardProps.last?.changeWage).toEqual({
 			onSubmit: expect.any(Function),
@@ -507,25 +643,35 @@ describe("employee detail Change wage (#1177)", () => {
 		});
 	});
 
-	it("offers no Change wage to a scoped manager", async () => {
+	it("offers no Change wage or employment terms to a scoped manager", async () => {
+		window.location.hash = "";
 		renderDetail({
 			employee: hourlyToday,
 			settingsAccess: "scopedManager",
 		});
-		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
-
-		expect(employmentHistoryCardProps.last).not.toBeNull();
-		expect(employmentHistoryCardProps.last?.changeWage).toBeUndefined();
+		const tab = await screen.findByRole("tab", { name: "Work policy" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Work Policy Assignment" })).toBeTruthy();
+		expect(employmentHistoryCardProps.last).toBeNull();
 	});
 
 	it("offers no Change wage while today's terms are fixed", async () => {
+		window.location.hash = "";
 		renderDetail({
 			employee: {
 				...realEmployee,
 				contractTypeToday: "fixed",
 			} as EmployeeDetail,
 		});
-		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		const tab = await screen.findByRole("tab", { name: "Contract" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
 
 		expect(employmentHistoryCardProps.last?.changeWage).toBeUndefined();
 	});
@@ -620,34 +766,54 @@ describe("employee detail lifecycle integration", () => {
 		},
 	);
 
-	it.each(["owner", "orgAdmin", "scopedManager"] as const)(
-		"shows the departure section to %s viewers of a real employee",
-		async (settingsAccess) => {
-			renderDetail({ settingsAccess });
+	it("shows the departure section and Leaving Date panel to org admins only, hiding both from managers (A1-2)", async () => {
+		window.location.hash = "";
+		const adminRender = renderDetail({
+			settingsAccess: "orgAdmin",
+		});
+		const tab = await screen.findByRole("tab", { name: "Leaving Date" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Employment and departure" })).toBeTruthy();
+		expect(screen.getByRole("region", { name: "Leaving Date" })).toBeTruthy();
+		adminRender.unmount();
 
-			expect(await screen.findByRole("region", { name: "Employment and departure" })).toBeTruthy();
-		},
-	);
+		renderDetail({
+			settingsAccess: "scopedManager",
+		});
+		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		expect(screen.queryByRole("tab", { name: "Leaving Date" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Leaving Date" })).toBeNull();
+	});
 
 	it("offers the admin export to org admins only, marked on their own record (#1166)", async () => {
-		const { unmount } = renderDetail({ settingsAccess: "orgAdmin" });
-		expect((await screen.findByRole("region", { name: "Personal data export" })).textContent).toBe(
-			"colleague",
-		);
-		unmount();
+		try {
+			window.location.hash = "#offboarding";
+			const { unmount } = renderDetail({ settingsAccess: "orgAdmin" });
+			expect(
+				(await screen.findByRole("region", { name: "Personal data export" })).textContent,
+			).toBe("colleague");
+			unmount();
 
-		const own = renderDetail({
-			settingsAccess: "orgAdmin",
-			currentUserId: "user-2",
-		});
-		expect((await screen.findByRole("region", { name: "Personal data export" })).textContent).toBe(
-			"own record",
-		);
-		own.unmount();
+			const own = renderDetail({
+				settingsAccess: "orgAdmin",
+				currentUserId: "user-2",
+			});
+			expect(
+				(await screen.findByRole("region", { name: "Personal data export" })).textContent,
+			).toBe("own record");
+			own.unmount();
 
-		renderDetail({ settingsAccess: "scopedManager" });
-		await screen.findByRole("region", { name: "Employment and departure" });
-		expect(screen.queryByRole("region", { name: "Personal data export" })).toBeNull();
+			renderDetail({ settingsAccess: "scopedManager" });
+			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+			expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
+			expect(screen.queryByRole("region", { name: "Personal data export" })).toBeNull();
+		} finally {
+			window.location.hash = "";
+		}
 	});
 
 	it("never offers departure controls on an invitation draft", async () => {

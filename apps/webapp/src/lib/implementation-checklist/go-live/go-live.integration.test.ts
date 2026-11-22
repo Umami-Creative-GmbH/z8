@@ -34,6 +34,11 @@ describe("go-live checks (PostgreSQL)", () => {
 		);
 		const id = rows[0]?.id;
 		if (!id) throw new Error("work policy insert returned no row");
+		await fixture.pool.query(
+			`insert into work_policy_version (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3)`,
+			[id, organizationId, fixture.ownerUserId],
+		);
 		return id;
 	}
 
@@ -278,6 +283,30 @@ describe("go-live checks (PostgreSQL)", () => {
 		const broken = new Proxy(db, {
 			get(target, property, receiver) {
 				if (property === "query") throw new Error("lookup failed");
+				if (property === "select") {
+					return (...args: unknown[]) => {
+						const builder = (
+							target.select as (...a: unknown[]) => { from: (t: unknown) => unknown }
+						)(...args);
+						return new Proxy(builder, {
+							get(bTarget, bProp, bReceiver) {
+								if (bProp === "from") {
+									return (table: unknown) => {
+										const tableName =
+											typeof table === "object" && table !== null
+												? Reflect.get(table, Symbol.for("drizzle:Name"))
+												: null;
+										if (typeof tableName === "string" && tableName.startsWith("work_policy")) {
+											throw new Error("lookup failed");
+										}
+										return bTarget.from(table);
+									};
+								}
+								return Reflect.get(bTarget, bProp, bReceiver);
+							},
+						});
+					};
+				}
 				return Reflect.get(target, property, receiver);
 			},
 		});

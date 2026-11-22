@@ -157,13 +157,17 @@ export const selectableEmployeeColumns = {
 	},
 };
 
-export function mapSelectableEmployeeRow(row: SelectableEmployeeRow): SelectableEmployee {
+export function mapSelectableEmployeeRow(
+	row: SelectableEmployeeRow,
+	options?: { includeFormerSince?: boolean },
+): SelectableEmployee {
 	const { formerSince, ...employeeColumns } = row.employee;
 	const isFormer = employeeColumns.isFormer === true;
 	return {
 		...employeeColumns,
 		isFormer,
-		...formerSinceField(isFormer, formerSince),
+		// Spec #1921 Story 22 / A3-1 / H2: Leaving dates (`formerSince`) are restricted to org admins.
+		...formerSinceField(isFormer && options?.includeFormerSince === true, formerSince),
 		firstName: row.user.firstName,
 		lastName: row.user.lastName,
 		user: row.user,
@@ -189,6 +193,7 @@ export function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 					!meetsSettingsAccess(actor.settingsAccess, "orgAdmin") && actor.currentEmployee
 						? actor.currentEmployee.id
 						: undefined,
+				includeFormerSince: meetsSettingsAccess(actor.settingsAccess, "orgAdmin"),
 			},
 			params,
 		);
@@ -205,6 +210,7 @@ export function selectableEmployeePage(
 		organizationId: string;
 		onlyEmployeeIds?: ReadonlySet<string> | null;
 		managerId?: string;
+		includeFormerSince?: boolean;
 	},
 	params: EmployeeSelectParams,
 ) {
@@ -242,8 +248,9 @@ export function selectableEmployeePage(
 
 		const total = totalResult[0]?.total ?? 0;
 		const typedRows = rows as unknown as SelectableEmployeeRow[];
+		const includeFormerSince = scope.includeFormerSince === true;
 		return {
-			employees: typedRows.map(mapSelectableEmployeeRow),
+			employees: typedRows.map((row) => mapSelectableEmployeeRow(row, { includeFormerSince })),
 			total,
 			hasMore: offset + rows.length < total,
 		};

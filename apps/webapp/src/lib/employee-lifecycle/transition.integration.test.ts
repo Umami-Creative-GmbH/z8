@@ -91,9 +91,9 @@ describe("departure transition", () => {
 		const target = await fixture.seedEmployee();
 		await fixture.pool.query(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, employment_period_id, valid_from, weekly_contract_minutes,
-			  review_state, created_by, updated_at)
-			 values ($1, $2, $3, '2026-01-01', 2400, 'confirmed', $4, now())`,
+			 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date,
+			  weekly_contract_minutes, review_state, created_by, updated_at)
+			 values ($1, $2, $3, '2026-01-01', '2026-01-01', 2400, 'confirmed', $4, now())`,
 			[target.employeeId, fixture.organizationId, target.employmentPeriodId, fixture.ownerUserId],
 		);
 		const identity = await schedulePending(target);

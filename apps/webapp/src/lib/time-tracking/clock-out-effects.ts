@@ -81,7 +81,7 @@ export async function checkComplianceAfterClockOut(
 				breaksTakenMinutes: totals.breakMinutes,
 			});
 
-			const { policyId } = result;
+			const { policyId, policyVersionId } = result;
 			if (policyId) {
 				for (const warning of result.warnings) {
 					if (warning.severity === "violation") {
@@ -89,6 +89,7 @@ export async function checkComplianceAfterClockOut(
 							employeeId,
 							organizationId,
 							policyId,
+							policyVersionId,
 							workPeriodId,
 							violationAt: work.start,
 							violationType: warning.type,

@@ -4,14 +4,14 @@ import { Temporal } from "temporal-polyfill";
 import {
 	absenceCategory,
 	absenceEntry,
-	type EmployeeEmploymentHistory,
 	employee,
-	employeeEmploymentHistory,
 	shift,
 	workPeriod,
-	workPolicy,
+	type workPolicy,
 } from "@/db/schema";
 import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
+import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import {
 	comparePlainDates,
 	dateFromInstant,
@@ -20,6 +20,7 @@ import {
 	instantFromDate,
 	laterInstant,
 	parseInstant,
+	type PlainDate,
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
@@ -31,7 +32,6 @@ import {
 } from "@/lib/effect/services/database.service";
 import {
 	type EffectiveWorkPolicy,
-	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import {
@@ -39,12 +39,6 @@ import {
 	type EmploymentInterval,
 } from "@/lib/employee-lifecycle/employment-coverage";
 import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
-import { loadConfirmedTermsSpans } from "@/lib/employment-history/load-terms-in-force";
-import {
-	type CalendarDateRange,
-	clipTermsSpans,
-	type TermsSpan,
-} from "@/lib/employment-history/terms-in-force";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import {
@@ -64,6 +58,7 @@ import {
 	applyAssignedHolidayAdjustmentsToRequirements,
 	getAssignedHolidaysForEmployee,
 } from "./assigned-holidays";
+import { attachTrustBasedBalanceDates, preserveTrustBasedBalanceDates } from "./trust-based-dates";
 import type { DailyWorkRequirements } from "./types";
 
 type EffectiveWorkPolicyScheduleDayName = NonNullable<
@@ -216,24 +211,6 @@ export function buildDailyWorkRequirements({
 	}
 
 	return requirements;
-}
-
-function mergeDailyWorkRequirements(
-	target: DailyWorkRequirements,
-	source: DailyWorkRequirements,
-): DailyWorkRequirements {
-	for (const [dateKey, requirement] of Object.entries(source)) {
-		const existing = target[dateKey];
-		target[dateKey] = existing
-			? {
-					requiredMinutes: existing.requiredMinutes + requirement.requiredMinutes,
-					policyId: requirement.policyId,
-					policyName: requirement.policyName,
-				}
-			: requirement;
-	}
-
-	return target;
 }
 
 export function mapPolicyToEffective(policy: PolicyWithDetails): EffectiveWorkPolicy {
@@ -409,128 +386,101 @@ export async function getPublishedShiftRequirementsForEmployee(params: {
 	});
 }
 
-async function getEmploymentHistoryWorkPolicy(params: {
-	database: typeof DatabaseService.Service;
-	organizationId: string;
-	policyId: string;
-}): Promise<EffectiveWorkPolicy | null> {
-	const policy = await Effect.runPromise(
-		params.database.query("getEmploymentHistoryRequirementPolicy", async () => {
-			return params.database.db.query.workPolicy.findFirst({
-				where: and(
-					eq(workPolicy.id, params.policyId),
-					eq(workPolicy.organizationId, params.organizationId),
-					eq(workPolicy.isActive, true),
-				),
-				with: {
-					schedule: { with: { days: true } },
-				},
-			});
-		}),
-	);
-
-	return policy ? mapPolicyToEffective(policy as PolicyWithDetails) : null;
+function enumeratePlainDates(start: PlainDate, end: PlainDate): PlainDate[] {
+	if (comparePlainDates(start, end) > 0) return [];
+	const dates: PlainDate[] = [];
+	for (let cursor = start; comparePlainDates(cursor, end) <= 0; cursor = cursor.add({ days: 1 })) {
+		dates.push(cursor);
+	}
+	return dates;
 }
 
-async function buildEmploymentHistoryDailyRequirements(params: {
+async function buildContractDailyRequirements(params: {
 	database: typeof DatabaseService.Service;
 	organizationId: string;
 	employeeId: string;
 	startDate: Date;
 	endDate: Date;
 	timezone?: string | null;
-	fallbackPolicy: EffectiveWorkPolicy | null;
+	employeeEmploymentStartDateOverride?: string;
 	evidence?: EmployeeRequirementInputs;
-}): Promise<DailyWorkRequirements | null> {
+}): Promise<DailyWorkRequirements> {
 	const timezone =
 		params.timezone && isValidIanaTimeZone(params.timezone) ? params.timezone : "UTC";
-	const range: CalendarDateRange = {
-		from: plainDateAt(instantFromDate(params.startDate), timezone),
-		toExclusive: plainDateAt(instantFromDate(params.endDate), timezone).add({
-			days: 1,
-		}),
-	};
-	const spans =
-		params.evidence?.termsSpans ??
-		(await Effect.runPromise(
-			params.database.query("getConfirmedEmploymentRequirementSlices", () =>
-				loadConfirmedTermsSpans(params.database.db, {
-					organizationId: params.organizationId,
-					employeeId: params.employeeId,
-					range,
-					timezone,
-				}),
-			),
-		));
-	if (spans.length === 0) {
-		// Only employees without confirmed terms use the legacy policy fallback.
-		// A gap in an established terms timeline must not manufacture required time.
-		const anyTerms = params.evidence
-			? params.evidence.hasConfirmedTerms
-			: await Effect.runPromise(
-					params.database.query("calendarRequirements.hasConfirmedTerms", () =>
-						params.database.db.query.employeeEmploymentHistory.findFirst({
-							where: and(
-								eq(employeeEmploymentHistory.organizationId, params.organizationId),
-								eq(employeeEmploymentHistory.employeeId, params.employeeId),
-								eq(employeeEmploymentHistory.reviewState, "confirmed"),
-							),
-							columns: { id: true },
-						}),
-					),
-				);
-		return anyTerms ? {} : null;
-	}
+	const firstDay = plainDateAt(instantFromDate(params.startDate), timezone);
+	const lastDay = plainDateAt(instantFromDate(params.endDate), timezone);
+	const dates = enumeratePlainDates(firstDay, lastDay);
+	if (dates.length === 0) return {};
 
+	const contractsByDate =
+		params.evidence?.contracts ??
+		(
+			await Effect.runPromise(
+				params.database.query("calendar.resolveContractsForEmployee", () =>
+					loadEffectiveContractsBatch(params.database.db, {
+						organizationId: params.organizationId,
+						employeeIds: [params.employeeId],
+						dates,
+						timezoneOverride: timezone,
+						employmentStartDateOverride: params.employeeEmploymentStartDateOverride,
+					}),
+				),
+			)
+		).get(params.employeeId) ??
+		new Map<string, EffectiveContractOnDay>();
+
+	const shiftDays = new Set<string>();
+	const trustBasedDates = new Set<string>();
 	const requirements: DailyWorkRequirements = {};
-	const resolveSlice = async ({ terms: slice, from, until }: (typeof spans)[number]) => {
-		// Resolve calendar ownership before converting back to reader boundary instants.
-		const start = dateFromInstant(from.toZonedDateTime(timezone).toInstant());
-		const end = dateFromInstant(
-			(until ?? range.toExclusive).subtract({ days: 1 }).toZonedDateTime(timezone).toInstant(),
-		);
+	for (const day of dates) {
+		const dateKey = day.toString();
+		const contract = contractsByDate.get(dateKey);
+		if (!contract) continue;
 
-		if (slice.contractType === "hourly") {
-			return getPublishedShiftRequirementsForEmployee({
-				database: params.database,
-				organizationId: params.organizationId,
-				employeeId: params.employeeId,
-				startDate: start,
-				endDate: end,
-				timezone,
-				evidence: params.evidence?.shifts,
-			});
+		if (contract.contributesZeroBalanceDelta) {
+			trustBasedDates.add(dateKey);
+		}
+		if (!contract.isEmployedOnDay) continue;
+
+		if (contract.contractType === "hourly" || contract.scheduleSource === "published_shifts") {
+			shiftDays.add(dateKey);
+			continue;
 		}
 
-		const policy = slice.workPolicyId
-			? params.evidence
-				? (params.evidence.policies.get(slice.workPolicyId) ?? null)
-				: await getEmploymentHistoryWorkPolicy({
-						database: params.database,
-						organizationId: params.organizationId,
-						policyId: slice.workPolicyId,
-					})
-			: params.fallbackPolicy;
+		if (contract.requiredMinutes > 0) {
+			requirements[dateKey] = {
+				requiredMinutes: contract.requiredMinutes,
+				policyId: contract.workPolicy?.policyId ?? "contract",
+				policyName: contract.workPolicy?.policyName ?? "Contract",
+				balanceMode: contract.balanceMode,
+				contributesZeroBalanceDelta: contract.contributesZeroBalanceDelta,
+			};
+		}
+	}
 
-		return buildDailyWorkRequirements({
-			policy,
-			startDate: start,
-			endDate: end,
+	if (shiftDays.size > 0) {
+		const shiftRequirements = await getPublishedShiftRequirementsForEmployee({
+			database: params.database,
+			organizationId: params.organizationId,
+			employeeId: params.employeeId,
+			startDate: params.startDate,
+			endDate: params.endDate,
 			timezone,
-			weeklyContractMinutes: slice.weeklyContractMinutes,
+			evidence: params.evidence?.shifts,
 		});
-	};
-	// One after another: `params.database` may be one connection, and pg@9 refuses a query while another is executing.
-	const sliceRequirements: Awaited<ReturnType<typeof resolveSlice>>[] = [];
-	for (const termsSlice of clipTermsSpans(spans, range)) {
-		sliceRequirements.push(await resolveSlice(termsSlice));
+		for (const dateKey of shiftDays) {
+			const shiftReq = shiftRequirements[dateKey];
+			if (!shiftReq) continue;
+			const contract = contractsByDate.get(dateKey);
+			requirements[dateKey] = {
+				...shiftReq,
+				balanceMode: contract?.balanceMode,
+				contributesZeroBalanceDelta: contract?.contributesZeroBalanceDelta,
+			};
+		}
 	}
 
-	for (const sliceRequirement of sliceRequirements) {
-		if (sliceRequirement) mergeDailyWorkRequirements(requirements, sliceRequirement);
-	}
-
-	return requirements;
+	return attachTrustBasedBalanceDates(requirements, trustBasedDates);
 }
 
 async function getFirstCompletedWorkPeriodBeforeAccount(params: {
@@ -581,10 +531,7 @@ export type EmployeeRequirementInputs = {
 		userSettings: { timezone: string | null } | null;
 		organization: { timezone: string | null };
 	};
-	fallbackPolicy: EffectiveWorkPolicy | null;
-	termsSpans: TermsSpan<EmployeeEmploymentHistory>[];
-	hasConfirmedTerms: boolean;
-	policies: ReadonlyMap<string, EffectiveWorkPolicy>;
+	contracts?: ReadonlyMap<string, EffectiveContractOnDay>;
 	shifts: { organizationTimezone: string; shifts: ShiftRequirementSource[] };
 	absences: ApprovedAbsenceRange[];
 	employmentCoverage: EmploymentInterval[] | null;
@@ -593,7 +540,7 @@ export type EmployeeRequirementInputs = {
 
 /**
  * The employee's daily work requirements from `startDate`'s day through `endDate`'s, as an effect
- * on the caller's `DatabaseService` and `WorkPolicyService`.
+ * on the caller's `DatabaseService`.
  */
 export function loadDailyWorkRequirementsForEmployee(
 	params: DailyWorkRequirementsParams,
@@ -667,42 +614,18 @@ export function loadDailyWorkRequirementsForEmployee(
 		);
 		if (effectiveStartDate > params.endDate) return {};
 
-		const service = yield* WorkPolicyService;
-		const fallbackPolicy = preloaded?.inputs
-			? preloaded.inputs.fallbackPolicy
-			: yield* service.getEffectivePolicy(params.employeeId);
-		const historyRequirements = yield* Effect.promise(() =>
-			buildEmploymentHistoryDailyRequirements({
+		const requirements = yield* Effect.promise(() =>
+			buildContractDailyRequirements({
 				database,
 				organizationId: params.organizationId,
 				employeeId: params.employeeId,
 				startDate: effectiveStartDate,
 				endDate: params.endDate,
 				timezone: params.timezone,
-				fallbackPolicy,
+				employeeEmploymentStartDateOverride: params.employeeEmploymentStartDateOverride,
 				evidence: preloaded?.inputs,
 			}),
 		);
-		const requirements =
-			historyRequirements ??
-			(scopedEmployee.contractType === "hourly"
-				? yield* Effect.promise(() =>
-						getPublishedShiftRequirementsForEmployee({
-							database,
-							organizationId: params.organizationId,
-							employeeId: params.employeeId,
-							startDate: effectiveStartDate,
-							endDate: params.endDate,
-							timezone: params.timezone,
-							evidence: preloaded?.inputs?.shifts,
-						}),
-					)
-				: buildDailyWorkRequirements({
-						policy: fallbackPolicy,
-						startDate: effectiveStartDate,
-						endDate: params.endDate,
-						timezone: params.timezone,
-					}));
 		const approvedAbsences =
 			preloaded?.inputs?.absences ??
 			(yield* Effect.promise(() =>
@@ -726,10 +649,9 @@ export function loadDailyWorkRequirementsForEmployee(
 						employeeId: params.employeeId,
 					}),
 				);
-		const employedRequirements = clipRequirementsToEmployment(
+		const employedRequirements = preserveTrustBasedBalanceDates(
 			requirements,
-			employmentCoverage,
-			params.timezone,
+			clipRequirementsToEmployment(requirements, employmentCoverage, params.timezone),
 		);
 
 		// Existing regression contract matches the call sequence.

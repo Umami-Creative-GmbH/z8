@@ -40,12 +40,18 @@ export function EmploymentHistoryContext({
 			{entry ? (
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="default">
-							{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", {
-								hours: formatWeeklyHours(entry.weeklyContractMinutes),
-							})}
-						</Badge>
-						<Badge variant="outline">{entry.workModel}</Badge>
+						{entry.weeklyContractMinutes !== null ? (
+							<Badge variant="default">
+								{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", {
+									hours: formatWeeklyHours(entry.weeklyContractMinutes),
+								})}
+							</Badge>
+						) : (
+							<Badge variant="outline">
+								{t("settings.employmentHistory.inheritedHours", "Inherited hours")}
+							</Badge>
+						)}
+						{entry.workModel && <Badge variant="outline">{entry.workModel}</Badge>}
 						<Badge variant="secondary">{entry.contractType}</Badge>
 					</div>
 					<div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -201,9 +207,11 @@ function TimelineRow({
 				<div className="space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
 						<span className={cn("font-medium", current && "text-primary")}>
-							{t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", {
-								hours: formatWeeklyHours(entry.weeklyContractMinutes),
-							})}
+							{entry.weeklyContractMinutes !== null
+								? t("settings.employmentHistory.weeklyHoursValue", "{hours} / week", {
+										hours: formatWeeklyHours(entry.weeklyContractMinutes),
+									})
+								: t("settings.employmentHistory.inheritedHours", "Inherited hours")}
 						</span>
 						<Badge variant={entry.reviewState === "confirmed" ? "default" : "secondary"}>
 							{entry.reviewState}
@@ -211,8 +219,12 @@ function TimelineRow({
 						{current && <Badge variant="outline">{t("common.current", "Current")}</Badge>}
 					</div>
 					<div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-						<span>{entry.workModel}</span>
-						<span aria-hidden="true">·</span>
+						{entry.workModel && (
+							<>
+								<span>{entry.workModel}</span>
+								<span aria-hidden="true">·</span>
+							</>
+						)}
 						<span>{entry.contractType}</span>
 						{hourlyRate && (
 							<>

@@ -259,6 +259,7 @@
     "goToDashboard": "Zum Dashboard",
     "inactive": "Inaktiv",
     "label": "Bezeichnung",
+    "loadMore": "Mehr laden",
     "loading": "Laden...",
     "loadingLabel": "Wird geladen",
     "loadingRegions": {
@@ -270,17 +271,18 @@
       "authentication": "Authentifizierung wird geladen",
       "billableTimeSettings": "Einstellungen für abrechenbare Zeiten werden geladen",
       "changePolicySettings": "Einstellungen für Änderungsrichtlinien werden geladen",
+      "contractsSettings": "Vertragseinstellungen werden geladen",
       "coverageRuleSettings": "Einstellungen für Abdeckungsregeln werden geladen",
-      "customerSettings": "Kundeneinstellungen werden geladen",
       "customRoleSettings": "Einstellungen für benutzerdefinierte Rollen werden geladen",
+      "customerSettings": "Kundeneinstellungen werden geladen",
       "dashboard": "Dashboard wird geladen",
       "dataExportSettings": "Datenexporteinstellungen werden geladen",
       "demoDataSettings": "Demodateneinstellungen werden geladen",
       "deploymentDiagnostics": "Bereitstellungsdiagnose wird geladen",
       "employeeReports": "Mitarbeiterberichte werden geladen",
-      "employees": "Mitarbeiter werden geladen",
       "employeeVacationAllowance": "Urlaubsanspruch der Mitarbeiter wird geladen",
       "employeeVacationAllowances": "Urlaubsansprüche der Mitarbeiter werden geladen",
+      "employees": "Mitarbeiter werden geladen",
       "exportOperations": "Exportvorgänge werden geladen",
       "holidaySettings": "Feiertagseinstellungen werden geladen",
       "importReview": "Importprüfung wird geladen",
@@ -305,19 +307,18 @@
       "surchargeSettings": "Zuschlagseinstellungen werden geladen",
       "team": "Team wird geladen",
       "todaySManagerBriefing": "Heutiges Manager-Briefing wird geladen",
-      "travelExpenses": "Reisekosten werden geladen",
       "travelExpenseSettings": "Reisekosteneinstellungen werden geladen",
+      "travelExpenses": "Reisekosten werden geladen",
       "twoFactorVerification": "Zwei-Faktor-Verifizierung wird geladen",
       "vacationSettings": "Urlaubseinstellungen werden geladen",
       "vehicleDistanceReport": "Bericht „Strecke pro Fahrzeug“ wird geladen",
       "wellnessSettings": "Wellness-Einstellungen werden geladen",
       "workCategorySettings": "Arbeitskategorie-Einstellungen werden geladen",
-      "workerQueue": "Worker-Warteschlange wird geladen",
       "workPolicySettings": "Arbeitsrichtlinien-Einstellungen werden geladen",
+      "workerQueue": "Worker-Warteschlange wird geladen",
       "worksCouncilPortal": "Betriebsratsportal wird geladen",
       "yourRequests": "Ihre Anfragen werden geladen"
     },
-    "loadMore": "Mehr laden",
     "months": {
       "april": "April",
       "august": "August",
@@ -342,8 +343,8 @@
     "new": "Neu",
     "next": "Weiter",
     "no": "Nein",
-    "notApplicable": "n. v.",
     "not-available": "Nicht verfügbar",
+    "notApplicable": "n. v.",
     "notifications": {
       "bellLabel": "{count, plural, =0 {Benachrichtigungen} other {Benachrichtigungen (# ungelesen)}}"
     },
@@ -412,9 +413,9 @@
     "save": "Speichern",
     "saveChanges": "Änderungen speichern",
     "saving": "Speichern...",
+    "select-language": "Sprache auswählen",
     "selectAll": "Alle auswählen",
     "selected": "ausgewählt",
-    "select-language": "Sprache auswählen",
     "set": "Satz",
     "sets": "Sätze",
     "sidebar": {
@@ -523,8 +524,8 @@
         "enabled": "Erfassung",
         "noEmployeeAssignments": "Keine Mitarbeiterzuweisungen.",
         "noNotice": "Es wurde kein Hinweis veröffentlicht.",
-        "notAssigned": "Nicht zugewiesen",
         "noTeamAssignments": "Keine Teamzuweisungen.",
+        "notAssigned": "Nicht zugewiesen",
         "noticeHistory": "Hinweisversionen",
         "noticeVersion": "{days, plural, one {Version {version}, veröffentlicht {publishedAt}, Standorte # Tag aufbewahrt} other {Version {version}, veröffentlicht {publishedAt}, Standorte # Tage aufbewahrt}}",
         "off": "Aus",
@@ -561,8 +562,8 @@
         "modeExpected": "Erwartet",
         "modeOff": "Aus",
         "noEmployeeAssignments": "Keine Mitarbeiterzuweisungen.",
-        "notAssigned": "Nicht zugewiesen",
         "noTeamAssignments": "Keine Teamzuweisungen.",
+        "notAssigned": "Nicht zugewiesen",
         "off": "Aus",
         "on": "An",
         "organizationAssignment": "Gesamte Organisation",
@@ -574,13 +575,13 @@
     "yes": "Ja"
   },
   "drivingLicence": {
-    "applyingInterval": "Wird angewendet…",
     "applyInterval": "Intervalländerung anwenden",
+    "applyingInterval": "Wird angewendet…",
     "check": {
       "attestations": "Persönliche Sichtprüfung und Erklärungen",
       "chooseClasses": "Wählen Sie die Klassen aus, die Sie tatsächlich geprüft haben.",
-      "classes": "Tatsächlich geprüfte Klassen",
       "classExpiry": "Ablaufdatum der Klasse (falls zutreffend)",
+      "classes": "Tatsächlich geprüfte Klassen",
       "documentDates": "Daten des Originaldokuments",
       "employeeDeclaration": "Der Mitarbeiter hat die oben gezeigte Erklärung bei dieser Prüfung persönlich abgegeben; ich bestätige diese Erklärung.",
       "expiryDate": "Ablaufdatum des Dokuments",
@@ -738,8 +739,8 @@
       "recordingError": "Erfassungsfehler",
       "reinstated": "Berechtigung nach erneuter Prüfung ausdrücklich wiedererteilt",
       "save": "Ergänzung speichern",
-      "saved": "Ergänzung gespeichert",
       "saveError": "Die Ergänzung konnte nicht gespeichert werden. Überprüfen Sie Ihre aktuelle Zuständigkeit und die Korrekturdetails.",
+      "saved": "Ergänzung gespeichert",
       "snapshot": "Richtlinie {version}; Intervall {months} Monate; Zeitzone der Frist {timezone}",
       "supplementBy": "Ergänzung durch {name}",
       "supplementHelp": "Dadurch wird eine datierte Korrektur mit Ihrer Identität hinzugefügt. Die ursprüngliche Bestätigung bleibt unverändert. Frühere Befristungen, fehlgeschlagene Ergebnisse und neue Einschränkungen setzen die betroffene aktuelle Freigabe aus; eine Ergänzung verlängert oder reaktiviert eine Berechtigung niemals.",
@@ -755,16 +756,16 @@
     "impediment": {
       "newCheckRequired": "Erfassen Sie vor der Wiedererteilung eine neue erfolgreiche Originalprüfung für die ausgesetzten Klassen.",
       "reinstate": "Ausgewählte Klassen wiedererteilen",
-      "reinstated": "Die ausgewählten Klassen wurden ausdrücklich wiedererteilt.",
       "reinstateFailed": "Die Wiedererteilung wurde abgelehnt. Aktualisieren und überprüfen Sie den aktuellen Datensatz, Ihre Zuständigkeit und eine neue Originalprüfung.",
       "reinstateHelp": "Erfassen Sie nach der Aussetzung zunächst eine neue persönliche Originalprüfung. Stellen Sie sicher, dass jedes Hindernis behoben wurde; prüfen Sie alle erforderlichen Nachweise außerhalb von Z8. Die bloße Ansicht des Führerscheins reicht möglicherweise nicht aus. Es werden nur die ausgewählten, erfolgreich geprüften Klassen wiedererteilt.",
       "reinstateTitle": "Fahrberechtigung ausdrücklich wiedererteilen",
+      "reinstated": "Die ausgewählten Klassen wurden ausdrücklich wiedererteilt.",
       "reinstating": "Wiedererteilung wird gespeichert…",
       "report": "Melden, dass ich nicht fahren kann",
-      "reported": "Alle Ihre Klassenberechtigungen sind ausgesetzt. Wenden Sie sich an Ihren zuständigen Prüfer für eine neue Originalprüfung und die ausdrückliche Wiedererteilung, sobald das Hindernis behoben ist.",
-      "reportedToast": "Bericht gespeichert",
       "reportFailed": "Die Meldung konnte nicht gespeichert werden. Versuchen Sie es erneut oder wenden Sie sich umgehend an Ihren zuständigen Prüfer.",
       "reportHelp": "Melden Sie eine aktuelle Fahruntauglichkeit. Alle Klassenberechtigungen werden sofort ausgesetzt. Sie müssen keine persönlichen Gründe angeben.",
+      "reported": "Alle Ihre Klassenberechtigungen sind ausgesetzt. Wenden Sie sich an Ihren zuständigen Prüfer für eine neue Originalprüfung und die ausdrückliche Wiedererteilung, sobald das Hindernis behoben ist.",
+      "reportedToast": "Bericht gespeichert",
       "reporting": "Meldung wird gespeichert…",
       "resolutionConfirmation": "Ich habe festgestellt, dass alle personenbezogenen, dokumentenweiten und gemeldeten Hindernisse behoben sind, erforderliche Nachweise außerhalb von Z8 geprüft und erteile die Berechtigung für die ausgewählten Klassen hiermit ausdrücklich erneut.",
       "selectClasses": "Aus der letzten Originalprüfung wiederzuerteilende Klassen",
@@ -807,8 +808,8 @@
     },
     "myTitle": "Meine Fahrberechtigung",
     "newInterval": "Neues Routineintervall (Monate)",
-    "newlyOverdue": "Neu überfällig – wird ausgesetzt",
     "newRoutineDate": "Nächste Routineprüfung",
+    "newlyOverdue": "Neu überfällig – wird ausgesetzt",
     "noEmployeeRecord": "In dieser Organisation ist kein Führerscheindatensatz für Mitarbeiter verfügbar.",
     "noIntervalClasses": "Keine bestehenden Klassenberechtigungen erfordern eine Neuberechnung.",
     "notChecked": "Noch nicht geprüft – keine Fahrberechtigung",
@@ -836,8 +837,8 @@
       "title": "Führerschein"
     },
     "policyTitle": "Organisationsrichtlinie",
-    "previewingInterval": "Auswirkungen werden geladen…",
     "previewInterval": "Auswirkungen des Intervalls in der Vorschau anzeigen",
+    "previewingInterval": "Auswirkungen werden geladen…",
     "reminders": "Vorlaufzeit für Erinnerungen (Tage)",
     "remindersHelp": "Kommagetrennte ganze Tage vor einer Frist, von 0 bis 365. Die anfänglichen Vorschläge sind 30 und 7 Tage.",
     "result": {
@@ -858,7 +859,6 @@
     "retention.empty": "Keine aufbewahrten Prüfdatensätze.",
     "retention.error": "Die Aufbewahrungsverwaltung konnte nicht abgeschlossen werden. Aktualisieren Sie die Seite und überprüfen Sie Ihren Zugriff sowie die Falldetails.",
     "retention.help": "Die Aufbewahrung beginnt, wenn eine Prüfung keine aktive Klasse mehr belegt. Eine Sperre erfordert einen konkreten Rechtsfall, schützt auch zugehörige Berichtsnachweise aus demselben Beschäftigungszeitraum und muss aufgehoben werden, sobald die Aufbewahrung nicht mehr erforderlich ist. Diese Kontrollen gewähren keinen Prüfungszugriff. Geben Sie keine medizinischen oder persönlichen Hintergrundinformationen ein.",
-    "retentionHelp": "Erforderlich für die Aktivierung: 1–120 Monate, nachdem Nachweise keine aktive Klassenberechtigung mehr stützen. Behalten Sie bei der Deaktivierung der Führerscheinkontrolle eine begründete, begrenzte Frist bei; die Bereinigung wird fortgesetzt.",
     "retention.holdDetails": "Fall {case}: {reason}. Gesetzt von {actor} am {time}.",
     "retention.loading": "Aufbewahrungsdatensätze werden geladen…",
     "retention.place": "Fallspezifische Sperre setzen",
@@ -866,22 +866,23 @@
     "retention.reason": "Warum dieser Fall eine Aufbewahrung erfordert",
     "retention.record": "{employee} · Prüfung {date}",
     "retention.release": "Sperre aufheben",
-    "retention.released": "Aufgehoben von {actor} um {time}: {reason}",
     "retention.releaseError": "Die Sperre konnte nicht aufgehoben werden. Überprüfen Sie Ihre Zugriffsrechte und den Aufhebungsgrund.",
     "retention.releaseReason": "Warum keine Aufbewahrung mehr erforderlich ist",
+    "retention.released": "Aufgehoben von {actor} um {time}: {reason}",
     "retention.report": "{employee} · Meldung {date}",
     "retention.reportHeld": "Geschützt durch Fall {case} bei zugehörigen Prüfnachweisen aus diesem Beschäftigungszeitraum. Heben Sie die Sperre für diese Prüfung auf, wenn die Aufbewahrung nicht mehr erforderlich ist.",
     "retention.reportProtected": "Geschützt, solange die aktuelle Meldung ungelöst bleibt oder ihre Klärungsprüfung eine aktive Berechtigung stützt.",
     "retention.reportsTitle": "Aufbewahrung von Hindernismeldungen",
-    "retentionRequiredError": "Behalten Sie bei der Deaktivierung der Führerscheinkontrolle eine begrenzte, begründete Aufbewahrungsfrist bei. Bestehende Nachweise unterliegen weiterhin der Bereinigung.",
     "retention.run": "{time}: {deleted} gelöscht, {held} zurückgestellt, {protected} geschützt. Akteur: {actor}",
     "retention.runs": "Aktuelle Bereinigungsergebnisse",
     "retention.saveError": "Die Sperre konnte nicht gespeichert werden. Überprüfen Sie die Falldetails und Ihre Zugriffsrechte.",
     "retention.scheduled": "Geplante Verarbeitung",
     "retention.title": "Nachweisaufbewahrung und rechtliche Aufbewahrungssperren",
+    "retentionHelp": "Erforderlich für die Aktivierung: 1–120 Monate, nachdem Nachweise keine aktive Klassenberechtigung mehr stützen. Behalten Sie bei der Deaktivierung der Führerscheinkontrolle eine begründete, begrenzte Frist bei; die Bereinigung wird fortgesetzt.",
+    "retentionRequiredError": "Behalten Sie bei der Deaktivierung der Führerscheinkontrolle eine begrenzte, begründete Aufbewahrungsfrist bei. Bestehende Nachweise unterliegen weiterhin der Bereinigung.",
     "save": "Richtlinie speichern",
-    "saved": "Richtlinie gespeichert",
     "saveError": "Die Richtlinie konnte nicht gespeichert werden. Überprüfen Sie das Intervall, die Zeitzone, die Erinnerungen und die begründete Aufbewahrungsfrist.",
+    "saved": "Richtlinie gespeichert",
     "saving": "Speichern…",
     "settingsSummary": "Legen Sie die Prüfrichtlinie, vorgesehene Fahrer, Prüfer und die Nachweisaufbewahrung fest",
     "settingsTabs": {
@@ -947,8 +948,8 @@
       "assign": "Zuständigkeit zuweisen",
       "class": "Klasse {classCode}",
       "complete": "Persönliche Erinnerung als erledigt markieren",
-      "completedToast": "Persönliche Erinnerung als erledigt markiert",
       "completeError": "Diese Aufgabe konnte nicht abgeschlossen werden. Überprüfen Sie Ihre aktuelle Prüferzuständigkeit.",
+      "completedToast": "Persönliche Erinnerung als erledigt markiert",
       "completing": "Wird abgeschlossen…",
       "deadline": "Originalprüfung fällig",
       "directUnavailable": "Direkte Mitarbeiterbenachrichtigung war nicht verfügbar. Erinnern Sie diesen Mitarbeiter persönlich.",
@@ -978,11 +979,11 @@
     "removeSelected": "{name} entfernen",
     "role": "Rolle",
     "searchPlaceholder": "Suche nach Name, E-Mail oder Position...",
-    "selected": "{count} ausgewählt",
     "selectEmployee": "Mitarbeiter auswählen",
     "selectEmployees": "Mitarbeiter auswählen",
     "selectMultipleEmployees": "Wählen Sie einen oder mehrere Mitarbeiter aus der Liste aus",
     "selectOneEmployee": "Wählen Sie einen Mitarbeiter aus der Liste aus",
+    "selected": "{count} ausgewählt",
     "status": "Status",
     "team": "Team",
     "totalEmployees": "{count} Mitarbeiter",
@@ -1039,12 +1040,12 @@
     "clock-out": "Ausstempeln",
     "timezone": {
       "current": "Aktuelle Zeitzone {timezone}, {time}, {offset}",
-      "savedTimezone": "Gespeicherte Zeitzone",
       "saveTimezone": "Zeitzone speichern",
+      "savedTimezone": "Gespeicherte Zeitzone",
       "saving": "Wird gespeichert...",
-      "updated": "Zeitzone erfolgreich aktualisiert",
       "updateError": "Beim Aktualisieren der Zeitzone ist ein Fehler aufgetreten",
-      "updateFailed": "Zeitzone konnte nicht aktualisiert werden"
+      "updateFailed": "Zeitzone konnte nicht aktualisiert werden",
+      "updated": "Zeitzone erfolgreich aktualisiert"
     }
   },
   "info": {
@@ -1206,9 +1207,9 @@
     "secondary-label": "Einstellungen & Hilfe",
     "settings": "Einstellungen",
     "team": "Team",
+    "team-organization-label": "Team & Organisation",
     "teamAbsences": "Team-Abwesenheiten",
     "teamDriving": "Fahrtdetails",
-    "team-organization-label": "Team & Organisation",
     "teamPeriodSubmissions": "Zeitraum-Einreichungen",
     "teamPresence": "Wer ist anwesend",
     "time-tracking": "Zeiterfassung",
@@ -1233,14 +1234,14 @@
       "absenceCancellation": {
         "message": "Stornierungsantrag für {original}. {decision}"
       },
+      "absenceChange": {
+        "message": "Erfasste Daten: {original}. Vorgeschlagene Daten: {proposed}. {decision}"
+      },
       "absenceChangeApproved": {
         "title": "Antrag auf Abwesenheitsänderung genehmigt"
       },
       "absenceChangeExpired": {
         "title": "Antrag auf Abwesenheitsänderung abgelaufen"
-      },
-      "absenceChange": {
-        "message": "Erfasste Daten: {original}. Vorgeschlagene Daten: {proposed}. {decision}"
       },
       "absenceChangeObsolete": {
         "title": "Antrag auf Abwesenheitsänderung hinfällig"
@@ -1387,12 +1388,12 @@
         "message": "Die Fahrberechtigung für {employeeName} ({classes}) ist ausgesetzt. Vor dem Fahren ist eine erneute Prüfung und eine ausdrückliche Wiederinkraftsetzung erforderlich.",
         "title": "Fahrberechtigung ausgesetzt"
       },
-      "drivingDetailsMissingReminderMany": {
-        "message": "Für {count} Arbeitszeiträume von {dates} fehlt das Fahrzeug oder ein Kilometerstand. Fügen Sie diese den Arbeitszeiträumen hinzu."
-      },
       "drivingDetailsMissingReminder": {
         "message": "Für Ihre Arbeitszeit am {date} fehlt das Fahrzeug oder ein Kilometerstand. Fügen Sie diese dem Arbeitszeitraum hinzu.",
         "title": "Fahrtdetails hinzufügen"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "Für {count} Arbeitszeiträume von {dates} fehlt das Fahrzeug oder ein Kilometerstand. Fügen Sie diese den Arbeitszeiträumen hinzu."
       },
       "drivingLicenceAssignment": {
         "message": "Weisen Sie {employeeName} einen verfügbaren Prüfer zu. Diese Aufgabe gewährt keine Prüfrechte und verlängert keine Fristen.",
@@ -1480,9 +1481,9 @@
       },
       "newTimeCorrectionRequest": {
         "message": "{employeeName} hat einen Zeitkorrekturantrag für {date} eingereicht.",
+        "messageWithReason": "{employeeName} hat einen Antrag auf Zeitkorrektur für {date} eingereicht. Grund: {reason}",
         "messageWithoutDate": "{employeeName} hat einen Antrag auf Zeitkorrektur eingereicht.",
         "messageWithoutDateWithReason": "{employeeName} hat einen Antrag auf Zeitkorrektur eingereicht. Grund: {reason}",
-        "messageWithReason": "{employeeName} hat einen Antrag auf Zeitkorrektur für {date} eingereicht. Grund: {reason}",
         "title": "Neuer Antrag auf Zeitkorrektur"
       },
       "openShiftAvailable": {
@@ -1556,10 +1557,6 @@
         "message": "Bitte laden Sie \"{title}\" heute hoch.",
         "title": "Dokument heute fällig"
       },
-      "personnelFileDocumentRequested": {
-        "message": "Bitte laden Sie \"{title}\" bis zum {deadline} hoch.",
-        "title": "Dokument angefordert"
-      },
       "personnelFileDocumentRequestOverdue": {
         "message": "\"{title}\" war am {deadline} fällig. Bitte laden Sie es hoch.",
         "officerMessage": "{employee} hat das am {deadline} fällige Dokument \"{title}\" nicht eingereicht.",
@@ -1574,6 +1571,10 @@
       "personnelFileDocumentRequestSubmitted": {
         "message": "{name} hat Dokumente für \"{title}\" eingereicht. Bitte überprüfen Sie diese.",
         "title": "Dokumente eingereicht"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Bitte laden Sie \"{title}\" bis zum {deadline} hoch.",
+        "title": "Dokument angefordert"
       },
       "personnelFileDocumentShared": {
         "message": "Das Dokument \"{title}\" wurde mit Ihnen geteilt.",
@@ -1650,13 +1651,13 @@
         "message": "Ihnen verbleiben {remaining} der erforderlichen Ruhezeit. Nächstes zulässiges Einstempeln: {nextAllowedClockIn}.",
         "title": "Ruhezeit-Erinnerung"
       },
-      "scheduledExportPaused": {
-        "message": "„{scheduleName}“ wurde pausiert, da der Eigentümer {ownerName} kein Organisations-Admin mehr ist. Machen Sie sich selbst oder einen anderen Organisations-Admin zum Eigentümer, um ihn fortzusetzen.",
-        "title": "Geplanter Export pausiert"
-      },
       "schedulePublished": {
         "message": "{shiftCount, plural, one {# Schicht wurde für {dateRange} veröffentlicht.} other {# Schichten wurden für {dateRange} veröffentlicht.}}",
         "title": "Neuer Schichtplan veröffentlicht"
+      },
+      "scheduledExportPaused": {
+        "message": "„{scheduleName}“ wurde pausiert, da der Eigentümer {ownerName} kein Organisations-Admin mehr ist. Machen Sie sich selbst oder einen anderen Organisations-Admin zum Eigentümer, um ihn fortzusetzen.",
+        "title": "Geplanter Export pausiert"
       },
       "shiftAssigned": {
         "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
@@ -1763,9 +1764,9 @@
       },
       "travelExpenseRejected": {
         "message": "Ihre Reisekostenabrechnung für {destination} ({amount}) wurde von {approverName} abgelehnt.",
+        "messageWithReason": "Ihre Reisekostenabrechnung für {destination} ({amount}) wurde von {approverName} abgelehnt. Grund: {reason}",
         "messageWithoutDestination": "Ihre Reisekostenabrechnung über {amount} wurde von {approverName} abgelehnt.",
         "messageWithoutDestinationWithReason": "Ihre Reisekostenabrechnung über {amount} wurde von {approverName} abgelehnt. Grund: {reason}",
-        "messageWithReason": "Ihre Reisekostenabrechnung für {destination} ({amount}) wurde von {approverName} abgelehnt. Grund: {reason}",
         "title": "Reisekosten abgelehnt"
       },
       "travelExpenseReportApproved": {
@@ -1890,11 +1891,11 @@
         "blockedTitle": "Push-Benachrichtigungen blockiert",
         "enableButton": "Push-Benachrichtigungen aktivieren",
         "enableDescription": "Erhalten Sie sofort Benachrichtigungen, auch wenn Sie die App gerade nicht nutzen",
+        "enableFailedToast": "Push-Benachrichtigungen konnten nicht aktiviert werden",
+        "enableTitle": "Push-Benachrichtigungen aktivieren",
         "enabledIndicator": "Push-Benachrichtigungen sind aktiviert",
         "enabledToast": "Push-Benachrichtigungen aktiviert",
         "enabledToastDescription": "Sie erhalten nun Browser-Push-Benachrichtigungen",
-        "enableFailedToast": "Push-Benachrichtigungen konnten nicht aktiviert werden",
-        "enableTitle": "Push-Benachrichtigungen aktivieren",
         "errorToast": "Fehler bei Push-Benachrichtigung"
       },
       "toggleAria": "{channel}-Benachrichtigungen für {type}",
@@ -1925,10 +1926,10 @@
         "personal_data_export_ready": "Export der personenbezogenen Daten bereit",
         "personal_data_export_reminder": "Laden Sie Ihre Daten herunter, bevor Sie gehen",
         "personnel_file_document_request_decided": "Dokumentanforderung akzeptiert, zurückgegeben oder abgebrochen",
-        "personnel_file_document_requested": "Dokument von Ihnen angefordert",
         "personnel_file_document_request_overdue": "Dokumentanforderung überfällig",
         "personnel_file_document_request_reminder": "Angefordertes Dokument bald fällig",
         "personnel_file_document_request_submitted": "Angeforderte Dokumente eingereicht (Personalaktenverantwortliche)",
+        "personnel_file_document_requested": "Dokument von Ihnen angefordert",
         "skill_expired_today": "Skill läuft heute ab",
         "skill_expiry_upcoming": "Skill läuft bald ab",
         "work_balance_adjustment_cancelled": "Saldoanpassung storniert",
@@ -1957,11 +1958,11 @@
     },
     "title": "Benachrichtigungen",
     "toasts": {
-      "deleted": "{count} Benachrichtigungen gelöscht",
       "deleteFailed": "Löschen der Benachrichtigungen fehlgeschlagen",
       "deletePartial": "{count} gelöscht; {failed} fehlgeschlagen. Versuchen Sie es für die verbleibende Auswahl erneut.",
-      "markedRead": "{count} Benachrichtigungen als gelesen markiert",
+      "deleted": "{count} Benachrichtigungen gelöscht",
       "markReadFailed": "Markieren der Benachrichtigungen als gelesen fehlgeschlagen",
+      "markedRead": "{count} Benachrichtigungen als gelesen markiert",
       "readPartial": "{count} als gelesen markiert; {failed} fehlgeschlagen. Versuchen Sie es für die verbleibende Auswahl erneut."
     },
     "unreadBadge": "{count} ungelesen",
@@ -2025,8 +2026,8 @@
       "accessExpenseReimburse": "Rückerstattungen erfassen",
       "accessIntro": "Außer Ihnen können zum Zeitpunkt der Erstellung dieses Exports folgende Personen bei {organization} auf Ihre Daten in Z8 zugreifen:",
       "accessManagerDirect": "{name} (Ihre Führungskraft)",
-      "accessManagers": "Führungskräfte (Ihre Arbeitszeiten, Abwesenheiten, Dienstpläne und Anträge, soweit es ihre Rolle erlaubt):",
       "accessManagerTeam": "{name} (Teamberechtigungen für Ihr Team)",
+      "accessManagers": "Führungskräfte (Ihre Arbeitszeiten, Abwesenheiten, Dienstpläne und Anträge, soweit es ihre Rolle erlaubt):",
       "accessNobody": "Niemand.",
       "accessOwner": "{name} (Inhaber)",
       "accessOwnersAdmins": "Inhaber und Administratoren (alle Ihre Daten in der Organisation):",
@@ -2210,16 +2211,16 @@
             "mdmCompliant": "Ob das Geräteverwaltungssystem es als konform gemeldet hat.",
             "mdmProvider": "Das Geräteverwaltungssystem, falls vorhanden.",
             "platform": "Das Betriebssystem.",
+            "revokeReason": "Warum es entzogen wurde.",
             "revokedAt": "Wann das Vertrauen entzogen wurde.",
             "revokedBy": "Wer es entzogen hat.",
-            "revokeReason": "Warum es entzogen wurde.",
             "summary": "Geräte, denen diese Organisation für Ihre Anmeldungen vertraut.",
             "trustSource": "Warum dem Gerät vertraut wird: ein Passkey, ein Administrator, Ihre Auswahl, es sich zu merken, oder die Geräteverwaltung (MDM)."
           },
           "user": {
             "banExpires": "Wann die Sperre endet; leer, wenn sie nicht endet.",
-            "banned": "Ob die Plattform Ihr Konto gesperrt hat.",
             "banReason": "Warum die Plattform es gesperrt hat.",
+            "banned": "Ob die Plattform Ihr Konto gesperrt hat.",
             "canCreateOrganizations": "Ob Sie eigene Organisationen erstellen dürfen.",
             "email": "Die E-Mail-Adresse, mit der Sie sich anmelden.",
             "emailVerified": "Ob Sie diese E-Mail-Adresse bestätigt haben.",
@@ -2239,12 +2240,6 @@
           }
         },
         "approvals": {
-          "approvalChains": {
-            "completedAt": "Wann über den letzten Schritt entschieden wurde (UTC).",
-            "policy": "Die Genehmigungsrichtlinie, die die Schritte festgelegt hat, nach ihrem damaligen Namen.",
-            "status": "Wo die Genehmigung steht.",
-            "summary": "Mehrstufige Genehmigungen Ihrer Anträge, wie von einer früheren Version des Genehmigungssystems erfasst."
-          },
           "approvalChainStages": {
             "approver": "Die Person, die gebeten wurde, über den Schritt zu entscheiden.",
             "chainId": "Die ID der Genehmigung in approval_chains.",
@@ -2253,6 +2248,12 @@
             "status": "Wo der Schritt steht.",
             "step": "Die Position des Schritts: 1 ist der erste Schritt.",
             "summary": "Die Schritte dieser mehrstufigen Genehmigungen."
+          },
+          "approvalChains": {
+            "completedAt": "Wann über den letzten Schritt entschieden wurde (UTC).",
+            "policy": "Die Genehmigungsrichtlinie, die die Schritte festgelegt hat, nach ihrem damaligen Namen.",
+            "status": "Wo die Genehmigung steht.",
+            "summary": "Mehrstufige Genehmigungen Ihrer Anträge, wie von einer früheren Version des Genehmigungssystems erfasst."
           },
           "decisionsOnOthers": {
             "actedAt": "Wann Sie entschieden haben (UTC).",
@@ -2324,6 +2325,13 @@
             "reason": "Der angegebene Grund.",
             "summary": "Alles, was bei Ihren Genehmigungen geschehen ist, in chronologischer Reihenfolge."
           },
+          "workflowStages": {
+            "activatedAt": "Wann der Schritt gestartet wurde (UTC).",
+            "decidedAt": "Wann über den Schritt entschieden wurde (UTC).",
+            "stageOrder": "Die Position des Schritts: 1 ist der erste Schritt.",
+            "status": "Status des Schritts: waiting (nicht gestartet), pending, approved, rejected, cancelled oder expired.",
+            "summary": "Die Schritte, die jede Ihrer Genehmigungen durchlaufen hat, in der entsprechenden Reihenfolge."
+          },
           "workflows": {
             "cancelledAt": "Wann die Anfrage storniert wurde (UTC).",
             "completedAt": "Wann die endgültige Entscheidung getroffen wurde (UTC).",
@@ -2331,13 +2339,6 @@
             "submittedAt": "Wann die Anfrage eingereicht wurde (UTC).",
             "summary": "Ihre Genehmigungsanfragen im aktuellen Genehmigungssystem, eine pro Anfrage.",
             "workflowType": "Was genehmigt wird, zum Beispiel eine Abwesenheit, eine Zeiterfassungskorrektur oder die Einreichung einer Periode."
-          },
-          "workflowStages": {
-            "activatedAt": "Wann der Schritt gestartet wurde (UTC).",
-            "decidedAt": "Wann über den Schritt entschieden wurde (UTC).",
-            "stageOrder": "Die Position des Schritts: 1 ist der erste Schritt.",
-            "status": "Status des Schritts: waiting (nicht gestartet), pending, approved, rejected, cancelled oder expired.",
-            "summary": "Die Schritte, die jede Ihrer Genehmigungen durchlaufen hat, in der entsprechenden Reihenfolge."
           }
         },
         "auditLog": {
@@ -2379,24 +2380,24 @@
           "actor_name": "Der Name der Person, die diese Aktion ausgeführt hat; leer bei einer Systemaktion oder nicht verfügbarem Akteur.",
           "assigned_at": "Zeitpunkt (UTC), zu dem Ihre eigene Zuweisung als vorgesehener Fahrer erstmals gespeichert wurde.",
           "assigned_by": "Der Name der Person, die Ihre eigene Zuweisung als vorgesehener Fahrer erstmals gespeichert hat.",
+          "author_name": "Der erfasste Name der Person, die diesen Nachtrag hinzugefügt hat.",
           "authorization_events": {
             "summary": "Ihre Fahrberechtigungshistorie, einschließlich Meldungen von Hinderungsgründen, Klärungen und ausdrücklicher Wiederinkraftsetzungen."
           },
           "authorizations": {
             "summary": "Ihre gespeicherten klassenspezifischen Berechtigungsdatensätze; die Ereignishistorie erläutert Änderungen und Wirkungszeitpunkte."
           },
-          "author_name": "Der erfasste Name der Person, die diesen Nachtrag hinzugefügt hat.",
           "caseReference": "Die Referenz des konkreten Rechtsfalls, der die Aufbewahrung dieser Prüfung erfordert.",
           "changed_at": "Zeitpunkt, zu dem diese Version der Organisationsrichtlinie erfasst wurde (als UTC-Zeitpunkt).",
+          "check_id": "Die Originalprüfung, auf die sich diese Klasse, dieser Nachtrag oder diese Berechtigung bezieht.",
           "checked_classes": {
             "summary": "Die ausdrücklich geprüften Klassen und deren erfasste Ergebnisse, Einschränkungen und Ablaufdaten."
           },
-          "check_id": "Die Originalprüfung, auf die sich diese Klasse, dieser Nachtrag oder diese Berechtigung bezieht.",
-          "checks_performed": {
-            "summary": "Prüfungen, die Sie an anderen Mitarbeitern durchgeführt haben: nur opake Personen- und Datensatz-IDs sowie der Prüfzeitpunkt."
-          },
           "checks": {
             "summary": "Original-Prüfungsdatensätze des Führerscheins mit den genauen Erklärungs- und Prüfbestätigungen."
+          },
+          "checks_performed": {
+            "summary": "Prüfungen, die Sie an anderen Mitarbeitern durchgeführt haben: nur opake Personen- und Datensatz-IDs sowie der Prüfzeitpunkt."
           },
           "class_code": "Die ausdrücklich geprüfte Führerscheinklasse; leer bei einem personen- oder dokumentweiten Ereignis.",
           "class_valid_through": "Der letzte von der Gültigkeit dieser Klasse abgedeckte Kalendertag; leer, wenn kein Klassenablauf erfasst wurde.",
@@ -2410,8 +2411,8 @@
           "document_issued_on": "Das Ausstellungsdatum des Dokuments ohne Uhrzeit oder Zeitzone.",
           "document_valid_through": "Der letzte Kalendertag, der von der Gültigkeit des Dokuments abgedeckt wird.",
           "effective_at": "Wann das Autorisierungsereignis wirksam wurde, als UTC-Zeitpunkt.",
-          "emailedAtProviderSuccess": "Wann der Provider-Erfolg für diese E-Mail erfasst wurde. Leer schließt auch ungewisse Versuche ein; es beweist weder, dass die E-Mail nicht gesendet wurde, noch dass sie gelesen wurde.",
           "emailStateWithUncertainAttempts": "E-Mail-Zustellungsstatus: ausstehend, versucht (ungewisses Provider-Ergebnis; wird nie automatisch erneut gesendet), gesendet (Provider-Erfolg erfasst), unterdrückt, veraltet oder nicht verfügbar. Kein Status bestätigt das Lesen.",
+          "emailedAtProviderSuccess": "Wann der Provider-Erfolg für diese E-Mail erfasst wurde. Leer schließt auch ungewisse Versuche ein; es beweist weder, dass die E-Mail nicht gesendet wurde, noch dass sie gelesen wurde.",
           "employee_declaration": "Gibt an, ob Ihre Erklärung während der Prüfung bestätigt wurde.",
           "employee_id": "Die opake ID einer anderen Person, für deren Datensatz Sie tätig waren; die Inhalte von deren Überprüfung sind ausgeschlossen.",
           "employee_ids": "Die opaken Mitarbeiter-IDs in Ihrem spezifischen Prüferbereich, codiert als JSON-Array.",
@@ -2450,19 +2451,19 @@
           "reason": "Der strukturierte Grund für den Nachtrag oder das Autorisierungsereignis; Berichtsreferenzen verweisen auf eine Ereignis-ID.",
           "recipientName": "Der Name der Person, an die diese Erinnerung bezüglich Ihrer Prüfung adressiert war.",
           "recorded_at": "Wann der Nachtrag oder das Ereignis erfasst wurde, als UTC-Zeitpunkt.",
+          "releaseReason": "Der dokumentierte Grund, aus dem diese Fall-Aufbewahrungssperre aufgehoben wurde; die Aufhebung nimmt die reguläre, richtliniengesteuerte Löschung wieder auf.",
           "releasedAt": "Wann diese Fall-Aufbewahrungssperre aufgehoben wurde; leer, solange sie aktiv bleibt.",
           "releasedBy": "Der Name des Administrators, der diese Fall-Aufbewahrungssperre aufgehoben hat.",
-          "releaseReason": "Der dokumentierte Grund, aus dem diese Fall-Aufbewahrungssperre aufgehoben wurde; die Aufhebung nimmt die reguläre, richtliniengesteuerte Löschung wieder auf.",
           "reminderDeliveries": {
             "summary": "Die Erinnerungszustellungsdatensätze zu Ihren Prüfungen, ohne E-Mail-Adressen, Übertragungs-Wiederholungsversuche oder Lesebestätigungen."
-          },
-          "reminder_lead_days": "Die konfigurierten Vorlaufzeiten für Erinnerungen in Kalendertagen, codiert als JSON-Array.",
-          "reminderTasksCompleted": {
-            "summary": "Erinnerungsaufgaben, die Sie für andere Mitarbeiter erledigt haben, beschränkt auf opake IDs, Aufgabenart und Erledigungszeitpunkt."
           },
           "reminderTasks": {
             "summary": "Persönliche Erinnerungs- und Neuzuweisungsaufgaben zu Ihren Prüfungen, einschließlich deren erfasster Erledigung; die Erledigung stellt keine direkte Zustellung oder Lesebestätigung dar."
           },
+          "reminderTasksCompleted": {
+            "summary": "Erinnerungsaufgaben, die Sie für andere Mitarbeiter erledigt haben, beschränkt auf opake IDs, Aufgabenart und Erledigungszeitpunkt."
+          },
+          "reminder_lead_days": "Die konfigurierten Vorlaufzeiten für Erinnerungen in Kalendertagen, codiert als JSON-Array.",
           "reportedAt": "Wann Sie ein personenweites Fahrhindernis gemeldet haben, als UTC-Zeitpunkt.",
           "reporterName": "Der Name der Person, die das Hindernis gemeldet hat.",
           "required": "Gibt an, ob Ihre eigene Zuweisung Sie zu einem vorgesehenen Fahrer macht (wahr) oder Sie von einer Team- oder Organisationszuweisung ausschließt (falsch).",
@@ -2470,22 +2471,22 @@
           "resolvedBy": "Der Name des Prüfers, der diese Meldung explizit gelöst hat.",
           "restrictions": "Die relevanten Fahrbeschränkungen, die für diese Klasse erfasst wurden.",
           "result": "Das Ergebnis für diese geprüfte Klasse: erfolgreich, nicht erfolgreich oder unschlüssig.",
-          "retention_justification": "Der dokumentierte Grund der Organisation für ihre Aufbewahrungsfrist von Nachweisen.",
-          "retention_months": "Die berechtigte Aufbewahrungsfrist der Organisation in Monaten, nachdem Nachweise keine aktive Berechtigung mehr unterstützen.",
-          "retentionStartedAtEvidence": "Wann Prüfnachweise keine aktive Berechtigung mehr unterstützt haben oder Meldungsnachweise nach Klärung und abschließender Klärungsprüfung oder Beschäftigungsende inaktiv wurden. Die berechtigte Aufbewahrungsfrist der Organisation läuft ab diesem UTC-Zeitpunkt; eine Aufbewahrungssperre verschiebt die Löschung.",
           "retention": {
             "summary": "Der Aufbewahrungsbeginn jeder einbehaltenen Prüfung; leer, solange die Prüfung noch eine aktive Berechtigung unterstützt. Ein Export verlängert die Aufbewahrungsfrist nicht."
           },
+          "retentionStartedAtEvidence": "Wann Prüfnachweise keine aktive Berechtigung mehr unterstützt haben oder Meldungsnachweise nach Klärung und abschließender Klärungsprüfung oder Beschäftigungsende inaktiv wurden. Die berechtigte Aufbewahrungsfrist der Organisation läuft ab diesem UTC-Zeitpunkt; eine Aufbewahrungssperre verschiebt die Löschung.",
+          "retention_justification": "Der dokumentierte Grund der Organisation für ihre Aufbewahrungsfrist von Nachweisen.",
+          "retention_months": "Die berechtigte Aufbewahrungsfrist der Organisation in Monaten, nachdem Nachweise keine aktive Berechtigung mehr unterstützen.",
           "revoked_at": "Wann Ihre Prüferzuständigkeit widerrufen wurde; leer, solange sie nicht widerrufen wurde.",
           "revoked_by": "Der Name der Person, die Ihre Prüferzuständigkeit widerrufen hat.",
           "routine_valid_through": "Der letzte Kalendertag, der durch das routinemäßige Prüfintervall abgedeckt ist.",
           "scope": "Der Geltungsbereich einer personenweiten Meldung (Person) oder ob Ihre Prüferzuständigkeit alle Mitarbeiter oder bestimmte Mitarbeiter und Teams abdeckt.",
           "state": "Der gespeicherte Klassenberechtigungsstatus (aktiv, ausgesetzt, beendet) oder Erinnerungsaufgabenstatus (ausstehend, abgeschlossen, veraltet); der Verlauf erläutert die Änderungen.",
-          "supplements_authored": {
-            "summary": "Ergänzungen, die Sie zu Datensätzen anderer Mitarbeiter verfasst haben, ohne die Nachweiswerte dieser Mitarbeiter."
-          },
           "supplements": {
             "summary": "Datierte, zugeordnete und typisierte Korrekturen, die neben jeder ursprünglichen Prüfung aufbewahrt werden."
+          },
+          "supplements_authored": {
+            "summary": "Ergänzungen, die Sie zu Datensätzen anderer Mitarbeiter verfasst haben, ohne die Nachweiswerte dieser Mitarbeiter."
           },
           "suspended_at": "Wann die Berechtigung ausgesetzt wurde, als UTC-Zeitpunkt.",
           "suspension": {
@@ -2567,6 +2568,13 @@
             "subjectId": "Die ID des zu überprüfenden Datensatzes.",
             "summary": "Datensätze, die aufgrund Ihres Austritts überprüft werden mussten."
           },
+          "departureTasks": {
+            "completedAt": "Wann die Aufgabe abgeschlossen wurde.",
+            "departureId": "Die ID des Austritts unter „departures“.",
+            "kind": "Was die Aufgabe tut.",
+            "status": "Der Status der Aufgabe.",
+            "summary": "Die Aufgaben, die die App für Ihren Austritt ausgeführt hat."
+          },
           "departures": {
             "blockedReason": "Warum der Austritt nicht abgeschlossen werden konnte, falls dies der Fall war.",
             "cutoffAt": "Wann Ihr Zugriff auf die Organisation endet.",
@@ -2577,13 +2585,6 @@
             "status": "Der Status des Austritts.",
             "summary": "Ihre Austritte aus der Organisation.",
             "timezone": "Die Zeitzone des letzten Arbeitstags."
-          },
-          "departureTasks": {
-            "completedAt": "Wann die Aufgabe abgeschlossen wurde.",
-            "departureId": "Die ID des Austritts unter „departures“.",
-            "kind": "Was die Aufgabe tut.",
-            "status": "Der Status der Aufgabe.",
-            "summary": "Die Aufgaben, die die App für Ihren Austritt ausgeführt hat."
           },
           "employee": {
             "birthday": "Ihr Geburtsdatum (JJJJ-MM-TT).",
@@ -2609,8 +2610,8 @@
           },
           "employmentPeriods": {
             "endedAt": "Wann der Zeitraum endete; leer, solange er offen ist.",
-            "startedAt": "Wann der Zeitraum begann.",
             "startProvenance": "Ursprung des Beginns, zum Beispiel eine Einstellung oder Wiedereinstellung.",
+            "startedAt": "Wann der Zeitraum begann.",
             "status": "Ob der Zeitraum offen oder geschlossen ist.",
             "summary": "Jeder Zeitraum, in dem Sie bei der Organisation angestellt waren."
           },
@@ -2818,17 +2819,17 @@
             "serialNumber": "Die Seriennummer des Chips, wie vom Lesegerät des Kiosks erfasst.",
             "summary": "Die NFC-Karten oder -Transponder, die Sie an einem Kiosk registriert haben (aktuelle und beendete). Durch Vorhalten werden Sie am Kiosk ausgewählt; Ihre Kiosk-PIN bestätigt weiterhin Ihre Identität."
           },
-          "kioskPinEvents": {
-            "event": "Fehlgeschlagen bei falscher PIN, erfolgreich bei richtiger PIN, gelöscht, wenn Ihre PIN entsperrt, zurückgesetzt oder geändert wurde.",
-            "occurredAt": "Wann die PIN eingegeben oder die Sperre aufgehoben wurde (UTC).",
-            "offline": "Gibt an, ob die PIN an einem Terminal ohne Verbindung eingegeben und nach der Wiederverbindung überprüft wurde.",
-            "summary": "Ihre letzten Terminal-PIN-Versuche und PIN-Entsperrungen, die etwa eine Woche lang gespeichert werden, um zu entscheiden, ob Sie nach fünf falschen PINs in Folge gesperrt werden. Die eingegebenen PINs werden niemals gespeichert."
-          },
           "kioskPin": {
             "pinSet": "Ob eine Kiosk-PIN für Sie festgelegt ist.",
             "setAt": "Wann die PIN zuletzt festgelegt wurde (UTC).",
             "setBy": "Wer die PIN festgelegt hat.",
             "summary": "Ob Sie eine PIN zum Einstempeln an einem Kiosk-Terminal haben. Die PIN selbst wird niemals lesbar gespeichert und ist nicht enthalten."
+          },
+          "kioskPinEvents": {
+            "event": "Fehlgeschlagen bei falscher PIN, erfolgreich bei richtiger PIN, gelöscht, wenn Ihre PIN entsperrt, zurückgesetzt oder geändert wurde.",
+            "occurredAt": "Wann die PIN eingegeben oder die Sperre aufgehoben wurde (UTC).",
+            "offline": "Gibt an, ob die PIN an einem Terminal ohne Verbindung eingegeben und nach der Wiederverbindung überprüft wurde.",
+            "summary": "Ihre letzten Terminal-PIN-Versuche und PIN-Entsperrungen, die etwa eine Woche lang gespeichert werden, um zu entscheiden, ob Sie nach fünf falschen PINs in Folge gesperrt werden. Die eingegebenen PINs werden niemals gespeichert."
           },
           "kioskRefusedClockings": {
             "action": "clock_in, clock_out, start_break oder resume_break.",
@@ -3310,8 +3311,8 @@
       "filesTitle": "Dateien",
       "formatJson": "Die JSON-Dateien sind die vollständige, maschinenlesbare Kopie Ihrer Daten. Die CSV-Dateien wiederholen diese Tabellen für Tabellenkalkulationsprogramme.",
       "formatOtherPeople": "Personen, die Aktionen für Ihre Datensätze ausgeführt haben, werden namentlich genannt. Personen, für die Sie Aktionen ausgeführt haben, erscheinen nur als anonyme ID.",
-      "formatsTitle": "Formate",
       "formatTimes": "Zeitpunkte werden in UTC angegeben (ISO 8601, endend auf Z). Zeiteinträge enthalten zusätzlich den UTC-Offset, der am Ort ihrer Erfassung galt. Kalendertage werden als YYYY-MM-DD angegeben.",
+      "formatsTitle": "Formate",
       "intro": "Dieses Archiv enthält die personenbezogenen Daten, die {organization} über {employee} speichert, Stand {exportedAt} (UTC).",
       "kindAdmin": "Ein Administrator von {organization} hat diesen Export in Ihrem Namen erstellt.",
       "kindEmployee": "Sie haben diesen Export selbst angefordert.",
@@ -3382,10 +3383,10 @@
     "reviewer": "Prüfer",
     "rowsPerPage": "Zeilen pro Seite",
     "searchPlaceholder": "Suchen...",
-    "selectedOfTotal": "{selected} von {total} Zeile(n) ausgewählt",
     "select-reviewer": "Prüfer auswählen",
     "select-status": "Status auswählen",
     "select-type": "Typ auswählen",
+    "selectedOfTotal": "{selected} von {total} Zeile(n) ausgewählt",
     "showing-visitors": "Zeigt die Gesamtbesucher der letzten 6 Monate",
     "sortAscending": "Aufsteigend",
     "sortDescending": "Absteigend",
@@ -3421,9 +3422,9 @@
     "font-size": "Schriftgröße",
     "language": "Sprache",
     "loadingAccount": "Konto wird geladen",
-    "logging-out": "Logge aus...",
     "log-out": "Abmelden",
     "log-out-failed": "Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "logging-out": "Logge aus...",
     "profile": "Profil",
     "security": "Sicherheit",
     "theme": "Design",

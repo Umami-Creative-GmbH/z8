@@ -440,6 +440,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		requiresBilling: true,
 	},
 	{
+		id: "contracts",
+		titleKey: "settings.contracts.title",
+		titleDefault: "Contracts",
+		descriptionKey: "settings.contracts.description",
+		descriptionDefault:
+			"Manage default contracts, templates, work policy versions, bulk updates, and review queues",
+		href: "/settings/contracts",
+		icon: "file-text",
+		minimumAccess: "orgAdmin",
+		group: "policies",
+	},
+	{
 		id: "work-policies",
 		titleKey: "settings.workPolicies.title",
 		titleDefault: "Work Policies",

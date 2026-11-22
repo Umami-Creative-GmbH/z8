@@ -69,9 +69,9 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 	) {
 		await fixture.pool.query(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, employment_period_id, valid_from, contract_type,
+			 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date, contract_type,
 			  weekly_contract_minutes, review_state, created_by, updated_at)
-			 values ($1, $2, $3, $4, 'fixed', 2400, 'confirmed', $5, now())`,
+			 values ($1, $2, $3, $4, $4::timestamp::date, 'fixed', 2400, 'confirmed', $5, now())`,
 			[
 				employee.employeeId,
 				organizationId,

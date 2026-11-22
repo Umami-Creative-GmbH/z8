@@ -146,8 +146,15 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	],
 	"/settings/audit-export": ["common", "settings/generic", "settings/auditExport"],
 	"/settings/calendar": ["common", "settings/generic", "settings/integrations"],
+	"/settings/contracts": [
+		"common",
+		"settings/generic",
+		"settings/workPolicies",
+		"settings/rules",
+		"settings/people",
+	],
 	"/settings/demo": ["common", "settings/generic", "settings/demo"],
-	"/settings/employees": ["common", "settings/generic", "settings/people"],
+	"/settings/employees": ["common", "settings/generic", "settings/people", "settings/workPolicies"],
 	// One boundary (enterprise/layout.tsx) serves every enterprise page; nested
 	// scopes would ship the enterprise catalog twice. webhooks: the API key pages
 	// embed the webhook management client.

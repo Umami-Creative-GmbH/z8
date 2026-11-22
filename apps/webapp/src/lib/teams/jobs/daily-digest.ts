@@ -5,7 +5,7 @@
  * Runs every 15 minutes to check for digests due to be sent.
  */
 
-import { gt, and, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -19,7 +19,6 @@ import {
 	locationSubarea,
 	shift,
 	workPeriod,
-	workPolicyAssignment,
 } from "@/db/schema";
 import { env } from "@/env";
 import {
@@ -28,6 +27,7 @@ import {
 } from "@/lib/bot-platform/current-roster-team";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
 	dateFromInstant,
 	type Instant,
@@ -57,32 +57,6 @@ const deputyUser = alias(user, "deputy_user");
 
 const logger = createLogger("TeamsDailyDigest");
 
-const WEEKDAY_BY_NUMBER: Record<number, string> = {
-	1: "monday",
-	2: "tuesday",
-	3: "wednesday",
-	4: "thursday",
-	5: "friday",
-	6: "saturday",
-	7: "sunday",
-};
-
-const PRESET_WORK_DAYS: Record<string, readonly string[]> = {
-	weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
-	weekends: ["saturday", "sunday"],
-	all_days: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
-};
-
-const policyWithConfig = {
-	policy: {
-		with: {
-			schedule: {
-				with: { days: true },
-			},
-		},
-	},
-} as const;
-
 /** Returns whether a manager should not receive a digest on their local day. */
 export async function shouldSkipDigestForManager(
 	employeeId: string,
@@ -108,83 +82,24 @@ export async function shouldSkipDigestForManager(
 		return true;
 	}
 
-	const nowDate = new Date();
-	const dateConditions = and(
-		eq(workPolicyAssignment.isActive, true),
-		or(
-			isNull(workPolicyAssignment.effectiveFrom),
-			lte(workPolicyAssignment.effectiveFrom, nowDate),
-		),
-		or(
-			isNull(workPolicyAssignment.effectiveUntil),
-			gt(workPolicyAssignment.effectiveUntil, nowDate),
-		),
-	);
-	const [emp, employeeAssignment] = await Promise.all([
-		db.query.employee.findFirst({
-			where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-			columns: { teamId: true },
-		}),
-		db.query.workPolicyAssignment.findFirst({
-			where: and(
-				eq(workPolicyAssignment.organizationId, organizationId),
-				eq(workPolicyAssignment.employeeId, employeeId),
-				eq(workPolicyAssignment.assignmentType, "employee"),
-				dateConditions,
-			),
-			with: policyWithConfig,
-		}),
-	]);
+	const contract = await resolveEffectiveContractOnDay(db, {
+		organizationId,
+		employeeId,
+		date: todayStr,
+		timezoneOverride: timezone,
+	});
+	if (!contract) return false;
 
-	type ScheduleInfo = {
-		scheduleType: string;
-		workingDaysPreset: string;
-		days: Array<{ dayOfWeek: string; isWorkDay: boolean }>;
-	};
-	let scheduleInfo: ScheduleInfo | null = null;
+	const hasEffectiveSchedule =
+		contract.scheduleSource === "policy" &&
+		(contract.scheduleMode === "custom_days" ||
+			contract.scheduleMode === "hours_only" ||
+			Boolean(contract.workPolicy?.scheduleEnabled && contract.workPolicy.schedule));
+	if (!hasEffectiveSchedule) return false;
 
-	if (employeeAssignment?.policy?.isActive && employeeAssignment.policy.scheduleEnabled) {
-		scheduleInfo = employeeAssignment.policy.schedule as ScheduleInfo | null;
-	} else if (emp?.teamId) {
-		const teamAssignment = await db.query.workPolicyAssignment.findFirst({
-			where: and(
-				eq(workPolicyAssignment.organizationId, organizationId),
-				eq(workPolicyAssignment.teamId, emp.teamId),
-				eq(workPolicyAssignment.assignmentType, "team"),
-				dateConditions,
-			),
-			with: policyWithConfig,
-		});
-		if (teamAssignment?.policy?.isActive && teamAssignment.policy.scheduleEnabled) {
-			scheduleInfo = teamAssignment.policy.schedule as ScheduleInfo | null;
-		}
-	}
-
-	if (!scheduleInfo) {
-		const orgAssignment = await db.query.workPolicyAssignment.findFirst({
-			where: and(
-				eq(workPolicyAssignment.organizationId, organizationId),
-				eq(workPolicyAssignment.assignmentType, "organization"),
-				dateConditions,
-			),
-			with: policyWithConfig,
-		});
-		if (orgAssignment?.policy?.isActive && orgAssignment.policy.scheduleEnabled) {
-			scheduleInfo = orgAssignment.policy.schedule as ScheduleInfo | null;
-		}
-	}
-
-	if (!scheduleInfo) return false;
-
-	const todayDayName = WEEKDAY_BY_NUMBER[now.dayOfWeek];
-	const isTodayWorkDay =
-		scheduleInfo.scheduleType === "detailed" || scheduleInfo.workingDaysPreset === "custom"
-			? (scheduleInfo.days.find((day) => day.dayOfWeek === todayDayName)?.isWorkDay ?? false)
-			: (PRESET_WORK_DAYS[scheduleInfo.workingDaysPreset] ?? []).includes(todayDayName ?? "");
-
-	if (!isTodayWorkDay) {
+	if (!contract.isWorkDay) {
 		logger.debug(
-			{ employeeId, todayStr, todayDayName },
+			{ employeeId, todayStr, todayDayName: contract.dayOfWeek },
 			"Skipping digest: today is not a work day for manager",
 		);
 		return true;

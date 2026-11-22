@@ -70,6 +70,15 @@ describe("German route catalogs", () => {
 			"common.loadingRegions.travelExpenseSettings",
 			"Reisekosteneinstellungen werden geladen",
 		],
+		["/settings/contracts", "settings.contracts.title", "Verträge"],
+		["/settings/contracts", "settings.contracts.tabs.defaults", "Standards"],
+		[
+			"/settings/contracts",
+			"settings.contracts.onCall.statutoryMinDaily",
+			"Keine tägliche Abrufdauer vereinbart — nach § 12 Abs. 1 TzBfG gelten mindestens drei aufeinanderfolgende Stunden je Abruf",
+		],
+		["/settings/employees", "settings.employees.leavingDate.title", "Austrittsdatum"],
+		["/settings/employees", "settings.contracts.employee.effectiveTitle", "Wirksamer Vertrag"],
 		["/settings/notification-channels", "settings.discord.connect", "Discord-Bot verbinden"],
 		[
 			"/settings/notification-channels",

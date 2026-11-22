@@ -19,6 +19,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { holidayCalendarDate, holidayStoredDates } from "@/lib/holidays/recurrence";
+import { preserveTrustBasedBalanceDates } from "./trust-based-dates";
 import type { DailyWorkRequirements, HolidayEvent } from "./types";
 
 export interface AssignedHolidayRange {
@@ -123,7 +124,7 @@ export function applyAssignedHolidayAdjustmentsToRequirements(
 		};
 	}
 
-	return adjusted;
+	return preserveTrustBasedBalanceDates(requirements, adjusted);
 }
 
 export function assignedHolidayToCalendarEvent(holiday: AssignedHolidayRange): HolidayEvent {

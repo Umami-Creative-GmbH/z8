@@ -60,6 +60,7 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings/custom-fields",
 	"/settings/customers",
 	"/settings/demo",
+	"/settings/contracts",
 	"/settings/driving-licence",
 	"/settings/employees",
 	"/settings/enterprise/api-keys",

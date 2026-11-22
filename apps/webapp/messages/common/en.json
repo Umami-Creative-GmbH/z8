@@ -259,6 +259,7 @@
     "goToDashboard": "Go to Dashboard",
     "inactive": "Inactive",
     "label": "Label",
+    "loadMore": "Load More",
     "loading": "Loading...",
     "loadingLabel": "Loading",
     "loadingRegions": {
@@ -270,17 +271,18 @@
       "authentication": "Loading authentication",
       "billableTimeSettings": "Loading billable time settings",
       "changePolicySettings": "Loading change policy settings",
+      "contractsSettings": "Loading contracts settings",
       "coverageRuleSettings": "Loading coverage rule settings",
-      "customerSettings": "Loading customer settings",
       "customRoleSettings": "Loading custom role settings",
+      "customerSettings": "Loading customer settings",
       "dashboard": "Loading dashboard",
       "dataExportSettings": "Loading data export settings",
       "demoDataSettings": "Loading demo data settings",
       "deploymentDiagnostics": "Loading deployment diagnostics",
       "employeeReports": "Loading employee reports",
-      "employees": "Loading employees",
       "employeeVacationAllowance": "Loading employee vacation allowance",
       "employeeVacationAllowances": "Loading employee vacation allowances",
+      "employees": "Loading employees",
       "exportOperations": "Loading export operations",
       "holidaySettings": "Loading holiday settings",
       "importReview": "Loading import review",
@@ -305,19 +307,18 @@
       "surchargeSettings": "Loading surcharge settings",
       "team": "Loading team",
       "todaySManagerBriefing": "Loading today's manager briefing",
-      "travelExpenses": "Loading travel expenses",
       "travelExpenseSettings": "Loading travel expense settings",
+      "travelExpenses": "Loading travel expenses",
       "twoFactorVerification": "Loading two-factor verification",
       "vacationSettings": "Loading vacation settings",
       "vehicleDistanceReport": "Loading the distance per vehicle report",
       "wellnessSettings": "Loading wellness settings",
       "workCategorySettings": "Loading work category settings",
-      "workerQueue": "Loading worker queue",
       "workPolicySettings": "Loading work policy settings",
+      "workerQueue": "Loading worker queue",
       "worksCouncilPortal": "Loading Works Council portal",
       "yourRequests": "Loading your requests"
     },
-    "loadMore": "Load More",
     "months": {
       "april": "April",
       "august": "August",
@@ -342,8 +343,8 @@
     "new": "New",
     "next": "Next",
     "no": "No",
-    "notApplicable": "N/A",
     "not-available": "Not available",
+    "notApplicable": "N/A",
     "notifications": {
       "bellLabel": "{count, plural, =0 {Notifications} other {Notifications (# unread)}}"
     },
@@ -412,9 +413,9 @@
     "save": "Save",
     "saveChanges": "Save Changes",
     "saving": "Saving...",
+    "select-language": "Select language",
     "selectAll": "Select All",
     "selected": "selected",
-    "select-language": "Select language",
     "set": "set",
     "sets": "sets",
     "sidebar": {
@@ -523,8 +524,8 @@
         "enabled": "Capture",
         "noEmployeeAssignments": "No employee assignments.",
         "noNotice": "No notice has been published.",
-        "notAssigned": "Not assigned",
         "noTeamAssignments": "No team assignments.",
+        "notAssigned": "Not assigned",
         "noticeHistory": "Notice versions",
         "noticeVersion": "{days, plural, one {Version {version}, published {publishedAt}, positions kept # day} other {Version {version}, published {publishedAt}, positions kept # days}}",
         "off": "Off",
@@ -561,8 +562,8 @@
         "modeExpected": "Expected",
         "modeOff": "Off",
         "noEmployeeAssignments": "No employee assignments.",
-        "notAssigned": "Not assigned",
         "noTeamAssignments": "No team assignments.",
+        "notAssigned": "Not assigned",
         "off": "Off",
         "on": "On",
         "organizationAssignment": "Whole organization",
@@ -574,13 +575,13 @@
     "yes": "Yes"
   },
   "drivingLicence": {
-    "applyingInterval": "Applying…",
     "applyInterval": "Apply interval change",
+    "applyingInterval": "Applying…",
     "check": {
       "attestations": "Personal inspection and declarations",
       "chooseClasses": "Select the classes you actually inspected.",
-      "classes": "Classes actually inspected",
       "classExpiry": "Class expiry (if applicable)",
+      "classes": "Classes actually inspected",
       "documentDates": "Original document dates",
       "employeeDeclaration": "The employee personally made the declaration shown above during this check; I attest that declaration.",
       "expiryDate": "Document expiry date",
@@ -738,8 +739,8 @@
       "recordingError": "Recording error",
       "reinstated": "Authorization explicitly reinstated after a new check",
       "save": "Save supplement",
-      "saved": "Supplement saved",
       "saveError": "The supplement could not be saved. Check your current responsibility and correction details.",
+      "saved": "Supplement saved",
       "snapshot": "Policy {version}; interval {months} months; deadline timezone {timezone}",
       "supplementBy": "Supplement by {name}",
       "supplementHelp": "This adds a dated correction with your identity. The original confirmation stays unchanged. Earlier limits, failed outcomes and new restrictions suspend affected current clearance; a supplement never renews or reinstates authorization.",
@@ -755,16 +756,16 @@
     "impediment": {
       "newCheckRequired": "Record a new successful original check for the suspended classes before reinstatement.",
       "reinstate": "Reinstate selected classes",
-      "reinstated": "The selected classes were explicitly reinstated.",
       "reinstateFailed": "Reinstatement was refused. Refresh and review the current record, your responsibility and a new original check.",
       "reinstateHelp": "First record a new personal original check after the suspension. Establish that every impediment has been resolved; inspect any necessary supporting evidence outside Z8. Seeing the licence card alone may be insufficient. Only the selected successfully checked classes will be reinstated.",
       "reinstateTitle": "Explicitly reinstate driving authorization",
+      "reinstated": "The selected classes were explicitly reinstated.",
       "reinstating": "Saving reinstatement…",
       "report": "Report that I cannot drive",
-      "reported": "All your class authorizations are suspended. Contact your responsible verifier for a new original check and explicit reinstatement after the impediment is resolved.",
-      "reportedToast": "Report saved",
       "reportFailed": "The report could not be saved. Retry or contact your responsible verifier immediately.",
       "reportHelp": "Report a current inability to drive. All class authorizations will be suspended immediately. You do not need to provide personal reasons.",
+      "reported": "All your class authorizations are suspended. Contact your responsible verifier for a new original check and explicit reinstatement after the impediment is resolved.",
+      "reportedToast": "Report saved",
       "reporting": "Saving report…",
       "resolutionConfirmation": "I have established that all person-wide, document-wide and reported impediments are resolved, examined necessary supporting evidence outside Z8, and explicitly authorize the selected classes again.",
       "selectClasses": "Classes to reinstate from the latest original check",
@@ -807,8 +808,8 @@
     },
     "myTitle": "My driving authorization",
     "newInterval": "New routine interval (months)",
-    "newlyOverdue": "Newly overdue — will be suspended",
     "newRoutineDate": "Next routine check",
+    "newlyOverdue": "Newly overdue — will be suspended",
     "noEmployeeRecord": "No employee driving licence record is available in this organization.",
     "noIntervalClasses": "No existing class authorizations need recalculation.",
     "notChecked": "Not yet checked — no driving authorization",
@@ -836,8 +837,8 @@
       "title": "Driving licence"
     },
     "policyTitle": "Organization policy",
-    "previewingInterval": "Loading impact…",
     "previewInterval": "Preview interval impact",
+    "previewingInterval": "Loading impact…",
     "reminders": "Reminder lead days",
     "remindersHelp": "Comma-separated whole days before a deadline, from 0 to 365. The initial suggestions are 30 and 7 days.",
     "result": {
@@ -858,7 +859,6 @@
     "retention.empty": "No retained check records.",
     "retention.error": "Retention administration could not be completed. Refresh and check your access and case details.",
     "retention.help": "Retention starts when a check no longer supports any active class. A hold requires a specific legal case, also protects related report evidence from the same employment period, and must be released when preservation is no longer required. These controls do not grant inspection access. Do not enter medical or personal background details.",
-    "retentionHelp": "Required for activation: 1–120 months after evidence no longer supports any active class authorization. Keep a justified finite period when disabling licence control; cleanup continues.",
     "retention.holdDetails": "Case {case}: {reason}. Placed by {actor} at {time}.",
     "retention.loading": "Loading retention records…",
     "retention.place": "Place a specific-case hold",
@@ -866,22 +866,23 @@
     "retention.reason": "Why this case requires preservation",
     "retention.record": "{employee} · Check {date}",
     "retention.release": "Release hold",
-    "retention.released": "Released by {actor} at {time}: {reason}",
     "retention.releaseError": "The hold could not be released. Check your access and release reason.",
     "retention.releaseReason": "Why preservation is no longer required",
+    "retention.released": "Released by {actor} at {time}: {reason}",
     "retention.report": "{employee} · Report {date}",
     "retention.reportHeld": "Protected by case {case} on related check evidence from this employment period. Release the hold on that check when preservation is no longer required.",
     "retention.reportProtected": "Protected while the current report remains unresolved or its resolution check supports active authorization.",
     "retention.reportsTitle": "Impediment report retention",
-    "retentionRequiredError": "Keep a finite, justified retention period when disabling licence control. Existing evidence remains subject to cleanup.",
     "retention.run": "{time}: {deleted} deleted, {held} held, {protected} protected. Actor: {actor}",
     "retention.runs": "Recent cleanup results",
     "retention.saveError": "The hold could not be saved. Check the case details and your access.",
     "retention.scheduled": "Scheduled processing",
     "retention.title": "Evidence retention and legal-case holds",
+    "retentionHelp": "Required for activation: 1–120 months after evidence no longer supports any active class authorization. Keep a justified finite period when disabling licence control; cleanup continues.",
+    "retentionRequiredError": "Keep a finite, justified retention period when disabling licence control. Existing evidence remains subject to cleanup.",
     "save": "Save policy",
-    "saved": "Policy saved",
     "saveError": "The policy could not be saved. Check the interval, timezone, reminders and justified retention period.",
+    "saved": "Policy saved",
     "saving": "Saving…",
     "settingsSummary": "Set the check policy, intended drivers, verifiers and evidence retention",
     "settingsTabs": {
@@ -947,8 +948,8 @@
       "assign": "Assign responsibility",
       "class": "Class {classCode}",
       "complete": "Mark personal reminder completed",
-      "completedToast": "Personal reminder marked completed",
       "completeError": "Could not complete this task. Check your current verifier responsibility.",
+      "completedToast": "Personal reminder marked completed",
       "completing": "Completing…",
       "deadline": "Original check due",
       "directUnavailable": "Direct employee notification was unavailable. Remind this employee in person.",
@@ -978,11 +979,11 @@
     "removeSelected": "Remove {name}",
     "role": "Role",
     "searchPlaceholder": "Search by name, email, or position...",
-    "selected": "{count} selected",
     "selectEmployee": "Select employee",
     "selectEmployees": "Select employees",
     "selectMultipleEmployees": "Choose one or more employees from the list",
     "selectOneEmployee": "Choose an employee from the list",
+    "selected": "{count} selected",
     "status": "Status",
     "team": "Team",
     "totalEmployees": "{count} employees",
@@ -1039,12 +1040,12 @@
     "clock-out": "Clock Out",
     "timezone": {
       "current": "Current timezone {timezone}, {time}, {offset}",
-      "savedTimezone": "Saved timezone",
       "saveTimezone": "Save timezone",
+      "savedTimezone": "Saved timezone",
       "saving": "Saving...",
-      "updated": "Timezone updated successfully",
       "updateError": "An error occurred while updating timezone",
-      "updateFailed": "Failed to update timezone"
+      "updateFailed": "Failed to update timezone",
+      "updated": "Timezone updated successfully"
     }
   },
   "info": {
@@ -1206,9 +1207,9 @@
     "secondary-label": "Settings & help",
     "settings": "Settings",
     "team": "Team",
+    "team-organization-label": "Team & organization",
     "teamAbsences": "Team Absences",
     "teamDriving": "Driving Details",
-    "team-organization-label": "Team & organization",
     "teamPeriodSubmissions": "Period Submissions",
     "teamPresence": "Who Is In",
     "time-tracking": "Time Tracking",
@@ -1233,14 +1234,14 @@
       "absenceCancellation": {
         "message": "Cancellation request for {original}. {decision}"
       },
+      "absenceChange": {
+        "message": "Recorded dates: {original}. Proposed dates: {proposed}. {decision}"
+      },
       "absenceChangeApproved": {
         "title": "Absence change request approved"
       },
       "absenceChangeExpired": {
         "title": "Absence change request expired"
-      },
-      "absenceChange": {
-        "message": "Recorded dates: {original}. Proposed dates: {proposed}. {decision}"
       },
       "absenceChangeObsolete": {
         "title": "Absence change request obsolete"
@@ -1387,12 +1388,12 @@
         "message": "Driving authorization for {employeeName} ({classes}) is suspended. A new check and explicit reinstatement are required before driving.",
         "title": "Driving authorization suspended"
       },
-      "drivingDetailsMissingReminderMany": {
-        "message": "{count} work periods from {dates} are missing their vehicle or an odometer reading. Add them to the work periods."
-      },
       "drivingDetailsMissingReminder": {
         "message": "Your work on {date} is missing its vehicle or an odometer reading. Add them to the work period.",
         "title": "Add your driving details"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "{count} work periods from {dates} are missing their vehicle or an odometer reading. Add them to the work periods."
       },
       "drivingLicenceAssignment": {
         "message": "Arrange an available verifier for {employeeName}. This task grants no inspection rights and does not extend any deadline.",
@@ -1480,9 +1481,9 @@
       },
       "newTimeCorrectionRequest": {
         "message": "{employeeName} submitted a time correction request for {date}.",
+        "messageWithReason": "{employeeName} submitted a time correction request for {date}. Reason: {reason}",
         "messageWithoutDate": "{employeeName} submitted a time correction request.",
         "messageWithoutDateWithReason": "{employeeName} submitted a time correction request. Reason: {reason}",
-        "messageWithReason": "{employeeName} submitted a time correction request for {date}. Reason: {reason}",
         "title": "New time correction request"
       },
       "openShiftAvailable": {
@@ -1556,10 +1557,6 @@
         "message": "Please upload \"{title}\" today.",
         "title": "Document due today"
       },
-      "personnelFileDocumentRequested": {
-        "message": "Please upload \"{title}\" by {deadline}.",
-        "title": "Document requested"
-      },
       "personnelFileDocumentRequestOverdue": {
         "message": "\"{title}\" was due on {deadline}. Please upload it.",
         "officerMessage": "{employee} has not handed in \"{title}\", due on {deadline}.",
@@ -1574,6 +1571,10 @@
       "personnelFileDocumentRequestSubmitted": {
         "message": "{name} submitted documents for \"{title}\". Please review them.",
         "title": "Documents submitted"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Please upload \"{title}\" by {deadline}.",
+        "title": "Document requested"
       },
       "personnelFileDocumentShared": {
         "message": "The document \"{title}\" was shared with you.",
@@ -1650,13 +1651,13 @@
         "message": "You have {remaining} of required rest remaining. Next allowed clock-in: {nextAllowedClockIn}.",
         "title": "Rest period reminder"
       },
-      "scheduledExportPaused": {
-        "message": "\"{scheduleName}\" was paused because its owner, {ownerName}, is no longer an org admin. Make yourself or another org admin its owner to resume it.",
-        "title": "Scheduled export paused"
-      },
       "schedulePublished": {
         "message": "{shiftCount, plural, one {# shift has been published for {dateRange}.} other {# shifts have been published for {dateRange}.}}",
         "title": "New schedule published"
+      },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" was paused because its owner, {ownerName}, is no longer an org admin. Make yourself or another org admin its owner to resume it.",
+        "title": "Scheduled export paused"
       },
       "shiftAssigned": {
         "message": "You have been assigned a shift on {shiftDate} from {startTime} to {endTime} by {assignedByName}.",
@@ -1763,9 +1764,9 @@
       },
       "travelExpenseRejected": {
         "message": "Your travel expense claim for {destination} ({amount}) was rejected by {approverName}.",
+        "messageWithReason": "Your travel expense claim for {destination} ({amount}) was rejected by {approverName}. Reason: {reason}",
         "messageWithoutDestination": "Your travel expense claim for {amount} was rejected by {approverName}.",
         "messageWithoutDestinationWithReason": "Your travel expense claim for {amount} was rejected by {approverName}. Reason: {reason}",
-        "messageWithReason": "Your travel expense claim for {destination} ({amount}) was rejected by {approverName}. Reason: {reason}",
         "title": "Travel expense rejected"
       },
       "travelExpenseReportApproved": {
@@ -1890,11 +1891,11 @@
         "blockedTitle": "Push Notifications Blocked",
         "enableButton": "Enable Push Notifications",
         "enableDescription": "Get notified instantly even when you're not using the app",
+        "enableFailedToast": "Could not enable push notifications",
+        "enableTitle": "Enable Push Notifications",
         "enabledIndicator": "Push notifications are enabled",
         "enabledToast": "Push notifications enabled",
         "enabledToastDescription": "You will now receive browser push notifications",
-        "enableFailedToast": "Could not enable push notifications",
-        "enableTitle": "Enable Push Notifications",
         "errorToast": "Push notification error"
       },
       "toggleAria": "{channel} notifications for {type}",
@@ -1925,10 +1926,10 @@
         "personal_data_export_ready": "Personal data export ready",
         "personal_data_export_reminder": "Download your data before you leave",
         "personnel_file_document_request_decided": "Document request accepted, returned or cancelled",
-        "personnel_file_document_requested": "Document requested from you",
         "personnel_file_document_request_overdue": "Document request overdue",
         "personnel_file_document_request_reminder": "Requested document due soon",
         "personnel_file_document_request_submitted": "Requested documents submitted (personnel file officers)",
+        "personnel_file_document_requested": "Document requested from you",
         "skill_expired_today": "Skill expires today",
         "skill_expiry_upcoming": "Skill expires soon",
         "work_balance_adjustment_cancelled": "Balance adjustment cancelled",
@@ -1957,11 +1958,11 @@
     },
     "title": "Notifications",
     "toasts": {
-      "deleted": "Deleted {count} notifications",
       "deleteFailed": "Failed to delete notifications",
       "deletePartial": "{count} deleted; {failed} failed. Retry the remaining selection.",
-      "markedRead": "Marked {count} notifications as read",
+      "deleted": "Deleted {count} notifications",
       "markReadFailed": "Failed to mark notifications as read",
+      "markedRead": "Marked {count} notifications as read",
       "readPartial": "{count} marked read; {failed} failed. Retry the remaining selection."
     },
     "unreadBadge": "{count} unread",
@@ -2025,8 +2026,8 @@
       "accessExpenseReimburse": "record reimbursements",
       "accessIntro": "Besides you, these people at {organization} can access your data in Z8, as of when this export was created:",
       "accessManagerDirect": "{name} (your manager)",
-      "accessManagers": "Managers (your time, absences, schedules and requests, as their role allows):",
       "accessManagerTeam": "{name} (team permissions for your team)",
+      "accessManagers": "Managers (your time, absences, schedules and requests, as their role allows):",
       "accessNobody": "Nobody.",
       "accessOwner": "{name} (owner)",
       "accessOwnersAdmins": "Owners and administrators (all of your data in the organization):",
@@ -2210,16 +2211,16 @@
             "mdmCompliant": "Whether the device management system reported it compliant.",
             "mdmProvider": "The device management system, if any.",
             "platform": "The operating system.",
+            "revokeReason": "Why it was withdrawn.",
             "revokedAt": "When the trust was withdrawn.",
             "revokedBy": "Who withdrew it.",
-            "revokeReason": "Why it was withdrawn.",
             "summary": "Devices this organization trusts for your sign-ins.",
             "trustSource": "Why it is trusted: a passkey, an administrator, your choice to remember it, or device management (MDM)."
           },
           "user": {
             "banExpires": "When the block ends; empty if it does not end.",
-            "banned": "Whether the platform blocked your account.",
             "banReason": "Why the platform blocked it.",
+            "banned": "Whether the platform blocked your account.",
             "canCreateOrganizations": "Whether you may create organizations of your own.",
             "email": "The email address you sign in with.",
             "emailVerified": "Whether you confirmed that email address.",
@@ -2239,12 +2240,6 @@
           }
         },
         "approvals": {
-          "approvalChains": {
-            "completedAt": "When the last step was decided (UTC).",
-            "policy": "The approval policy that set the steps, by its name at the time.",
-            "status": "Where the approval stands.",
-            "summary": "Multi-step approvals of your requests, as recorded by an earlier version of the approval system."
-          },
           "approvalChainStages": {
             "approver": "The person asked to decide on the step.",
             "chainId": "The ID of the approval in approval_chains.",
@@ -2253,6 +2248,12 @@
             "status": "Where the step stands.",
             "step": "The step's position: 1 is the first step.",
             "summary": "The steps of those multi-step approvals."
+          },
+          "approvalChains": {
+            "completedAt": "When the last step was decided (UTC).",
+            "policy": "The approval policy that set the steps, by its name at the time.",
+            "status": "Where the approval stands.",
+            "summary": "Multi-step approvals of your requests, as recorded by an earlier version of the approval system."
           },
           "decisionsOnOthers": {
             "actedAt": "When you decided (UTC).",
@@ -2324,6 +2325,13 @@
             "reason": "The reason given.",
             "summary": "Everything that happened to your approvals, in order."
           },
+          "workflowStages": {
+            "activatedAt": "When the step started (UTC).",
+            "decidedAt": "When the step was decided (UTC).",
+            "stageOrder": "The step's position: 1 is the first step.",
+            "status": "Where the step stands: waiting (not started), pending, approved, rejected, cancelled or expired.",
+            "summary": "The steps each of your approvals went through, in order."
+          },
           "workflows": {
             "cancelledAt": "When the request was cancelled (UTC).",
             "completedAt": "When the final decision was made (UTC).",
@@ -2331,13 +2339,6 @@
             "submittedAt": "When the request was submitted (UTC).",
             "summary": "Your requests for approval in the current approval system, one per request.",
             "workflowType": "What is being approved, for example an absence, a time correction or a period submission."
-          },
-          "workflowStages": {
-            "activatedAt": "When the step started (UTC).",
-            "decidedAt": "When the step was decided (UTC).",
-            "stageOrder": "The step's position: 1 is the first step.",
-            "status": "Where the step stands: waiting (not started), pending, approved, rejected, cancelled or expired.",
-            "summary": "The steps each of your approvals went through, in order."
           }
         },
         "auditLog": {
@@ -2379,24 +2380,24 @@
           "actor_name": "The name of the person who performed this action; empty for a system action or unavailable actor.",
           "assigned_at": "When your own intended-driver assignment was first saved, as a UTC instant.",
           "assigned_by": "The name of the person who first saved your own intended-driver assignment.",
+          "author_name": "The recorded name of the person who added this supplement.",
           "authorization_events": {
             "summary": "Your driving authorization history, including impediment reports, resolutions and explicit reinstatements."
           },
           "authorizations": {
             "summary": "Your stored class-specific authorization records; the event history explains changes and effective times."
           },
-          "author_name": "The recorded name of the person who added this supplement.",
           "caseReference": "The reference of the specific legal case requiring preservation of this check.",
           "changed_at": "When this organization policy version was recorded, as a UTC instant.",
+          "check_id": "The original check this class, supplement or authorization references.",
           "checked_classes": {
             "summary": "The explicitly inspected classes and their recorded outcomes, restrictions and expiry dates."
           },
-          "check_id": "The original check this class, supplement or authorization references.",
-          "checks_performed": {
-            "summary": "Checks you performed on other employees: only opaque subject and record IDs and the inspection time."
-          },
           "checks": {
             "summary": "Driving licence original check records, with the exact declaration and inspection confirmations."
+          },
+          "checks_performed": {
+            "summary": "Checks you performed on other employees: only opaque subject and record IDs and the inspection time."
           },
           "class_code": "The explicitly inspected licence class; empty for a person-wide or document-wide event.",
           "class_valid_through": "The last calendar day covered by this class's validity; empty when no class expiry was recorded.",
@@ -2410,8 +2411,8 @@
           "document_issued_on": "The document's issue date, without a time or time zone.",
           "document_valid_through": "The last calendar day covered by the document's validity.",
           "effective_at": "When the authorization event took effect, as a UTC instant.",
-          "emailedAtProviderSuccess": "When provider success was recorded for this email. Empty also covers uncertain attempts; it does not prove the email was not sent or that it was read.",
           "emailStateWithUncertainAttempts": "Email delivery state: pending, attempted (uncertain provider outcome; never automatically resent), sent (provider success recorded), suppressed, obsolete or unavailable. No state confirms reading.",
+          "emailedAtProviderSuccess": "When provider success was recorded for this email. Empty also covers uncertain attempts; it does not prove the email was not sent or that it was read.",
           "employee_declaration": "Whether your declaration was confirmed during the inspection.",
           "employee_id": "The opaque ID of another employee whose record you acted on; their check contents are excluded.",
           "employee_ids": "The opaque employee IDs in your specific verifier scope, encoded as a JSON array.",
@@ -2450,19 +2451,19 @@
           "reason": "The structured reason for the supplement or authorization event; report references link to an event ID.",
           "recipientName": "The name of the person to whom this reminder about your check was addressed.",
           "recorded_at": "When the supplement or event was recorded, as a UTC instant.",
+          "releaseReason": "The documented reason this case hold was released; release resumes ordinary policy-governed deletion.",
           "releasedAt": "When this case hold was released; empty while it remains active.",
           "releasedBy": "The name of the administrator who released this case hold.",
-          "releaseReason": "The documented reason this case hold was released; release resumes ordinary policy-governed deletion.",
           "reminderDeliveries": {
             "summary": "The reminder delivery records concerning your checks, without email addresses, transport retries or read receipts."
-          },
-          "reminder_lead_days": "The configured reminder lead times in calendar days, encoded as a JSON array.",
-          "reminderTasksCompleted": {
-            "summary": "Reminder tasks you completed for other employees, limited to opaque IDs, task kind and completion time."
           },
           "reminderTasks": {
             "summary": "Personal-reminder and reassignment tasks concerning your checks, including their recorded completion; completion does not establish direct delivery or reading."
           },
+          "reminderTasksCompleted": {
+            "summary": "Reminder tasks you completed for other employees, limited to opaque IDs, task kind and completion time."
+          },
+          "reminder_lead_days": "The configured reminder lead times in calendar days, encoded as a JSON array.",
           "reportedAt": "When you reported a person-wide driving impediment, as a UTC instant.",
           "reporterName": "The name of the person who reported the impediment.",
           "required": "Whether your own assignment makes you an intended driver (true) or excludes you from a team or organization assignment (false).",
@@ -2470,22 +2471,22 @@
           "resolvedBy": "The name of the verifier who explicitly resolved this report.",
           "restrictions": "The relevant driving restrictions recorded for this class.",
           "result": "The outcome for this inspected class: successful, unsuccessful or inconclusive.",
-          "retention_justification": "The organization's documented reason for its evidence retention period.",
-          "retention_months": "The organization's justified retention period in months after evidence no longer supports active authorization.",
-          "retentionStartedAtEvidence": "When check evidence stopped supporting active authorization, or report evidence became inactive after resolution and final resolution-check support or employment end. The organization's justified retention period runs from this UTC instant; a case hold postpones deletion.",
           "retention": {
             "summary": "The retention starting point of each retained check; empty while the check still supports active authorization. Exporting does not extend retention."
           },
+          "retentionStartedAtEvidence": "When check evidence stopped supporting active authorization, or report evidence became inactive after resolution and final resolution-check support or employment end. The organization's justified retention period runs from this UTC instant; a case hold postpones deletion.",
+          "retention_justification": "The organization's documented reason for its evidence retention period.",
+          "retention_months": "The organization's justified retention period in months after evidence no longer supports active authorization.",
           "revoked_at": "When your verifier responsibility was revoked; empty while it has not been revoked.",
           "revoked_by": "The name of the person who revoked your verifier responsibility.",
           "routine_valid_through": "The last calendar day covered by the routine check interval.",
           "scope": "The scope of a person-wide report (person), or whether your verifier responsibility covers all employees or specific employees and teams.",
           "state": "The stored class authorization state (active, suspended, ended) or reminder task state (pending, completed, obsolete); history explains the changes.",
-          "supplements_authored": {
-            "summary": "Supplements you authored on other employees' records, without those employees' evidence values."
-          },
           "supplements": {
             "summary": "Dated, attributed, typed corrections kept alongside each original check."
+          },
+          "supplements_authored": {
+            "summary": "Supplements you authored on other employees' records, without those employees' evidence values."
           },
           "suspended_at": "When the authorization was suspended, as a UTC instant.",
           "suspension": {
@@ -2567,6 +2568,13 @@
             "subjectId": "The ID of the record under review.",
             "summary": "Records that needed a review because of your departure."
           },
+          "departureTasks": {
+            "completedAt": "When the task completed.",
+            "departureId": "The ID of the departure in departures.",
+            "kind": "What the task does.",
+            "status": "Where the task stands.",
+            "summary": "The tasks the app ran for your departure."
+          },
           "departures": {
             "blockedReason": "Why the departure could not complete, if it could not.",
             "cutoffAt": "When your access to the organization ends.",
@@ -2577,13 +2585,6 @@
             "status": "Where the departure stands.",
             "summary": "Your departures from the organization.",
             "timezone": "The time zone of the last working day."
-          },
-          "departureTasks": {
-            "completedAt": "When the task completed.",
-            "departureId": "The ID of the departure in departures.",
-            "kind": "What the task does.",
-            "status": "Where the task stands.",
-            "summary": "The tasks the app ran for your departure."
           },
           "employee": {
             "birthday": "Your birthday (YYYY-MM-DD).",
@@ -2609,8 +2610,8 @@
           },
           "employmentPeriods": {
             "endedAt": "When the period ended; empty while it is open.",
-            "startedAt": "When the period started.",
             "startProvenance": "Where the start comes from, for example a hire or a rehire.",
+            "startedAt": "When the period started.",
             "status": "Whether the period is open or closed.",
             "summary": "Each period you were employed by the organization."
           },
@@ -2818,17 +2819,17 @@
             "serialNumber": "The chip's serial number, as the kiosk's reader read it.",
             "summary": "The NFC cards or fobs you registered at a kiosk, current and ended. Tapping one selects you at the kiosk; your kiosk PIN still proves it is you."
           },
-          "kioskPinEvents": {
-            "event": "failure for a wrong PIN, success for a correct one, cleared when your PIN was unlocked, reset or changed.",
-            "occurredAt": "When the PIN was entered or the lockout cleared (UTC).",
-            "offline": "Whether the PIN was entered at a kiosk without a connection and checked when it reconnected.",
-            "summary": "Your recent kiosk PIN attempts and PIN unlocks, kept for about a week to decide whether you are locked out after five wrong PINs in a row. The PINs entered are never stored."
-          },
           "kioskPin": {
             "pinSet": "Whether a kiosk PIN is set for you.",
             "setAt": "When the PIN was last set (UTC).",
             "setBy": "Who set the PIN.",
             "summary": "Whether you have a PIN for clocking in at a kiosk terminal. The PIN itself is never stored readably and is not included."
+          },
+          "kioskPinEvents": {
+            "event": "failure for a wrong PIN, success for a correct one, cleared when your PIN was unlocked, reset or changed.",
+            "occurredAt": "When the PIN was entered or the lockout cleared (UTC).",
+            "offline": "Whether the PIN was entered at a kiosk without a connection and checked when it reconnected.",
+            "summary": "Your recent kiosk PIN attempts and PIN unlocks, kept for about a week to decide whether you are locked out after five wrong PINs in a row. The PINs entered are never stored."
           },
           "kioskRefusedClockings": {
             "action": "clock_in, clock_out, start_break or resume_break.",
@@ -3310,8 +3311,8 @@
       "filesTitle": "Files",
       "formatJson": "The JSON files are the complete, machine-readable copy of your data. The CSV files repeat their tables for spreadsheets.",
       "formatOtherPeople": "People who acted on your records are named. People you acted on appear only as an anonymous ID.",
-      "formatsTitle": "Formats",
       "formatTimes": "Points in time are written in UTC (ISO 8601, ending in Z). Time entries also carry the UTC offset in effect where they were recorded. Calendar days are written as YYYY-MM-DD.",
+      "formatsTitle": "Formats",
       "intro": "This archive holds the personal data {organization} keeps about {employee}, as read on {exportedAt} (UTC).",
       "kindAdmin": "An administrator of {organization} created this export on your behalf.",
       "kindEmployee": "You requested this export yourself.",
@@ -3382,10 +3383,10 @@
     "reviewer": "Reviewer",
     "rowsPerPage": "Rows per page",
     "searchPlaceholder": "Search...",
-    "selectedOfTotal": "{selected} of {total} row(s) selected",
     "select-reviewer": "Select a reviewer",
     "select-status": "Select a status",
     "select-type": "Select a type",
+    "selectedOfTotal": "{selected} of {total} row(s) selected",
     "showing-visitors": "Showing total visitors for the last 6 months",
     "sortAscending": "Ascending",
     "sortDescending": "Descending",
@@ -3421,9 +3422,9 @@
     "font-size": "Font size",
     "language": "Language",
     "loadingAccount": "Loading account",
-    "logging-out": "Logging out...",
     "log-out": "Log out",
     "log-out-failed": "Could not log out. Please try again.",
+    "logging-out": "Logging out...",
     "profile": "Profile",
     "security": "Security",
     "theme": "Theme",

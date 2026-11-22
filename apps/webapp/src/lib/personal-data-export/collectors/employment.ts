@@ -73,8 +73,8 @@ import {
 	workCategorySet,
 	workCategorySetAssignment,
 	workPolicy,
-	workPolicyAssignment,
 } from "@/db/schema";
+import { listEmployeeWorkPolicyAssignmentsForPersonalDataExport } from "@/lib/work-policy/policy-queries";
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
@@ -1104,27 +1104,11 @@ async function collectPolicyAssignments(
 		holidays,
 		holidayCategories,
 	] = await Promise.all([
-		database
-			.select({
-				policy: workPolicy.name,
-				assignmentType: workPolicyAssignment.assignmentType,
-				teamId: workPolicyAssignment.teamId,
-				priority: workPolicyAssignment.priority,
-				effectiveFrom: workPolicyAssignment.effectiveFrom,
-				effectiveUntil: workPolicyAssignment.effectiveUntil,
-				isActive: workPolicyAssignment.isActive,
-				createdAt: workPolicyAssignment.createdAt,
-				createdBy: workPolicyAssignment.createdBy,
-			})
-			.from(workPolicyAssignment)
-			.innerJoin(
-				workPolicy,
-				and(
-					eq(workPolicy.id, workPolicyAssignment.policyId),
-					eq(workPolicy.organizationId, organizationId),
-				),
-			)
-			.where(reachesEmployee(workPolicyAssignment)),
+		listEmployeeWorkPolicyAssignmentsForPersonalDataExport(
+			database,
+			organizationId,
+			reachesEmployee,
+		),
 		database
 			.select({
 				policy: vacationAllowance.name,

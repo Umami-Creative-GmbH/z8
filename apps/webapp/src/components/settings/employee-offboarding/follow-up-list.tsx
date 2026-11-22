@@ -3,7 +3,6 @@
 import { IconExternalLink, IconLoader2, IconRefresh } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
-import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -17,6 +16,7 @@ import type { AssignDepartureReplacementInput } from "@/lib/validations/employee
 import { Link } from "@/navigation";
 import { useOffboardingLabels } from "./labels";
 import { OFFBOARDING_REFUSALS } from "./offboarding-refusals";
+import { ReplacementEmployeeSelect } from "./replacement-employee-select";
 
 type Review = EmployeeOffboardingView["reviews"][number];
 
@@ -45,7 +45,8 @@ export type FollowUpListProps = {
 	/** Canonical place to correct this employee's time around the cutoff. */
 	timeCorrectionHref: string;
 	highlightedReviewId: string | null;
-	replacementOptions: Array<{ id: string; name: string }>;
+	/** Deprecated unbounded list; kept optional for compatibility while picker searches server-side. */
+	replacementOptions?: Array<{ id: string; name: string }>;
 	resolveReview: (input: {
 		reviewId: string;
 		resolution: string;
@@ -145,7 +146,10 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 	const [note, setNote] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [pending, setPending] = useState(false);
-	const isTimeReview = review.kind === "clock_out" || review.kind === "clock_repair";
+	const isTimeReview =
+		review.kind === "clock_out" ||
+		review.kind === "clock_repair" ||
+		review.kind === "work_after_cutoff";
 	const reason = review.reason ? labels.reason(review.reason) : null;
 
 	async function resolve() {
@@ -183,9 +187,9 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 
 			{target && props.canResolve && (
 				<ReplacementAssignment
+					employeeId={props.employeeId}
 					anchor={props.anchor}
 					target={target}
-					options={props.replacementOptions}
 					assignReplacement={props.assignReplacement}
 				/>
 			)}
@@ -223,19 +227,20 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 }
 
 function ReplacementAssignment(props: {
+	employeeId: string;
 	anchor: FollowUpAnchor;
 	target: ReplacementTarget;
-	options: Array<{ id: string; name: string }>;
 	assignReplacement: FollowUpListProps["assignReplacement"];
 }) {
 	const { t } = useTranslate();
 	const requestIdentity = useRequestIdentity();
 	const labelId = useId();
-	const [replacementId, setReplacementId] = useState("");
+	const [replacementId, setReplacementId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [pending, setPending] = useState(false);
 
 	async function assign() {
+		if (!replacementId) return;
 		setError(null);
 		const intent = {
 			...props.anchor,
@@ -255,20 +260,16 @@ function ReplacementAssignment(props: {
 				{t("settings.employees.offboarding.replacement", "Replacement for approvals")}
 			</Label>
 			<div className="flex flex-wrap gap-2">
-				<EmployeeSingleSelect
-					className="w-64 space-y-0"
+				<ReplacementEmployeeSelect
+					excludeEmployeeId={props.employeeId}
+					value={replacementId}
+					onChange={setReplacementId}
+					allowNone={false}
 					aria-labelledby={labelId}
+					className="w-64"
 					placeholder={t(
 						"settings.employees.offboarding.chooseReplacement",
 						"Choose a replacement",
-					)}
-					value={replacementId || null}
-					onChange={(value) => setReplacementId(value ?? "")}
-					employees={props.options.map((option) =>
-						toSelectableEmployee({
-							id: option.id,
-							name: option.name,
-						}),
 					)}
 				/>
 				<Button

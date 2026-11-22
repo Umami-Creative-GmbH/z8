@@ -29,16 +29,10 @@ import {
 	vacationAllowance,
 	vacationPolicyAssignment,
 	workPeriod,
-	workPolicy,
-	workPolicyAssignment,
-	workPolicyBreakOption,
-	workPolicyBreakRule,
-	workPolicyRegulation,
-	workPolicySchedule,
-	workPolicyScheduleDay,
 } from "@/db";
 import { balanceAdjustment, customer, organizationVehicle, projectTask } from "@/db/schema";
 import { env } from "@/env";
+import { loadWorkPoliciesForExport } from "@/lib/work-policy/policy-queries";
 import {
 	type AuthUserDisplayNameInput,
 	buildAuthUserDisplayName,
@@ -873,117 +867,21 @@ export async function fetchVacation(organizationId: string) {
 }
 
 /**
- * Fetch all work policies for an organization
+ * Fetch all work policies for an organization (version-scoped: one active version per policy,
+ * zero duplicate rows across multi-version policies).
  * Format: JSON (complex nested structure)
  */
-export async function fetchSchedules(organizationId: string) {
+export async function fetchSchedules(organizationId: string, asOfDate?: string) {
 	logger.info({ organizationId }, "Fetching work policies for export");
 
-	const policies = await db.query.workPolicy.findMany({
-		where: eq(workPolicy.organizationId, organizationId),
-	});
-
-	const policyIds = policies.map((p) => p.id);
-
-	const schedules =
-		policyIds.length > 0
-			? await db.query.workPolicySchedule.findMany({
-					where: inArray(workPolicySchedule.policyId, policyIds),
-				})
-			: [];
-
-	const scheduleIds = schedules.map((s) => s.id);
-	const scheduleDays =
-		scheduleIds.length > 0
-			? await db.query.workPolicyScheduleDay.findMany({
-					where: inArray(workPolicyScheduleDay.scheduleId, scheduleIds),
-				})
-			: [];
-
-	const regulations =
-		policyIds.length > 0
-			? await db.query.workPolicyRegulation.findMany({
-					where: inArray(workPolicyRegulation.policyId, policyIds),
-				})
-			: [];
-
-	const regulationIds = regulations.map((r) => r.id);
-	const breakRules =
-		regulationIds.length > 0
-			? await db.query.workPolicyBreakRule.findMany({
-					where: inArray(workPolicyBreakRule.regulationId, regulationIds),
-				})
-			: [];
-
-	const breakRuleIds = breakRules.map((r) => r.id);
-	const breakOptions =
-		breakRuleIds.length > 0
-			? await db.query.workPolicyBreakOption.findMany({
-					where: inArray(workPolicyBreakOption.breakRuleId, breakRuleIds),
-				})
-			: [];
-
-	const assignments = await db.query.workPolicyAssignment.findMany({
-		where: eq(workPolicyAssignment.organizationId, organizationId),
-	});
+	const exported = await loadWorkPoliciesForExport(db, organizationId, asOfDate);
 
 	logger.info(
-		{ policiesCount: policies.length, assignmentsCount: assignments.length },
+		{ policiesCount: exported.policies.length, assignmentsCount: exported.assignments.length },
 		"Fetched work policies",
 	);
 
-	return {
-		policies: policies.map((p) => ({
-			id: p.id,
-			name: p.name,
-			description: p.description,
-			scheduleEnabled: p.scheduleEnabled,
-			regulationEnabled: p.regulationEnabled,
-			isDefault: p.isDefault,
-			isActive: p.isActive,
-		})),
-		schedules: schedules.map((s) => ({
-			policyId: s.policyId,
-			scheduleCycle: s.scheduleCycle,
-			scheduleType: s.scheduleType,
-			hoursPerCycle: s.hoursPerCycle,
-			homeOfficeDaysPerCycle: s.homeOfficeDaysPerCycle,
-			workingDaysPreset: s.workingDaysPreset,
-		})),
-		scheduleDays: scheduleDays.map((sd) => ({
-			scheduleId: sd.scheduleId,
-			dayOfWeek: sd.dayOfWeek,
-			hoursPerDay: sd.hoursPerDay,
-			isWorkDay: sd.isWorkDay,
-			cycleWeek: sd.cycleWeek,
-			latestClockIn: sd.latestClockIn,
-		})),
-		regulations: regulations.map((r) => ({
-			policyId: r.policyId,
-			maxDailyMinutes: r.maxDailyMinutes,
-			maxWeeklyMinutes: r.maxWeeklyMinutes,
-			maxUninterruptedMinutes: r.maxUninterruptedMinutes,
-		})),
-		breakRules: breakRules.map((br) => ({
-			regulationId: br.regulationId,
-			workingMinutesThreshold: br.workingMinutesThreshold,
-			requiredBreakMinutes: br.requiredBreakMinutes,
-		})),
-		breakOptions: breakOptions.map((bo) => ({
-			breakRuleId: bo.breakRuleId,
-			splitCount: bo.splitCount,
-			minimumSplitMinutes: bo.minimumSplitMinutes,
-			minimumLongestSplitMinutes: bo.minimumLongestSplitMinutes,
-		})),
-		assignments: assignments.map((a) => ({
-			policyId: a.policyId,
-			employeeId: a.employeeId,
-			teamId: a.teamId,
-			priority: a.priority,
-			effectiveFrom: a.effectiveFrom,
-			effectiveUntil: a.effectiveUntil,
-		})),
-	};
+	return exported;
 }
 
 /**

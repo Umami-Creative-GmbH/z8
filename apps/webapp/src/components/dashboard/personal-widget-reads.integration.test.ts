@@ -57,6 +57,7 @@ import {
 	workPolicyAssignment,
 	workPolicyPresence,
 	workPolicySchedule,
+	workPolicyVersion,
 } from "@/db/schema";
 
 const traces = vi.hoisted(() => ({ queries: [] as string[] }));
@@ -105,8 +106,23 @@ describe("scoped personal Dashboard snapshots", () => {
 			})
 			.returning();
 		policyId = policy.id;
+		const [version] = await fixture.db
+			.insert(workPolicyVersion)
+			.values({
+				policyId,
+				organizationId: fixture.organizationId,
+				versionNumber: 1,
+				effectiveFromDate: "1970-01-01",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: true,
+				isLegacyBaseline: true,
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
 		await fixture.db.insert(workPolicySchedule).values({
 			policyId,
+			policyVersionId: version.id,
 			scheduleType: "simple",
 			scheduleCycle: "weekly",
 			workingDaysPreset: "weekdays",
@@ -121,6 +137,7 @@ describe("scoped personal Dashboard snapshots", () => {
 		});
 		await fixture.db.insert(workPolicyPresence).values({
 			policyId,
+			policyVersionId: version.id,
 			presenceMode: "minimum_count",
 			evaluationPeriod: "weekly",
 			requiredOnsiteDays: 3,
@@ -369,6 +386,10 @@ describe("scoped personal Dashboard snapshots", () => {
 			.update(workPolicy)
 			.set({ presenceEnabled: false })
 			.where(eq(workPolicy.id, policyId));
+		await fixture.pool.query(
+			`update work_policy_version set presence_enabled = false where policy_id = $1`,
+			[policyId],
+		);
 		try {
 			traces.queries = [];
 			expect((await read("presence-status"))?.presenceEnabled).toBe(false);
@@ -378,6 +399,10 @@ describe("scoped personal Dashboard snapshots", () => {
 				.update(workPolicy)
 				.set({ presenceEnabled: true })
 				.where(eq(workPolicy.id, policyId));
+			await fixture.pool.query(
+				`update work_policy_version set presence_enabled = true where policy_id = $1`,
+				[policyId],
+			);
 		}
 	});
 });

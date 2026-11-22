@@ -34,9 +34,9 @@ describe("effective contract types", () => {
 	}) {
 		await fixture.pool.query(
 			`insert into employee_employment_history
-			 (employee_id, organization_id, valid_from, valid_until, contract_type,
-			  weekly_contract_minutes, review_state, created_by, created_at, updated_at)
-			 values ($1, $2, $3, $4, $5, 2400, $6, $7, $8, now())`,
+			 (employee_id, organization_id, valid_from, valid_until, valid_from_date, valid_until_date,
+			  contract_type, weekly_contract_minutes, review_state, created_by, created_at, updated_at)
+			 values ($1, $2, $3, $4, $3::timestamp::date, $4::timestamp::date, $5, 2400, $6, $7, $8, now())`,
 			[
 				input.employeeId ?? fixture.employeeId,
 				input.organizationId ?? fixture.organizationId,

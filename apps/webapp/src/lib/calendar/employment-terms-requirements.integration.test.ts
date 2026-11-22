@@ -13,6 +13,7 @@ import {
 	workPolicy,
 	workPolicyAssignment,
 	workPolicySchedule,
+	workPolicyVersion,
 } from "@/db/schema";
 import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { SeededEmployee } from "@/lib/employee-lifecycle/testing/database.test.fixture";
@@ -33,9 +34,7 @@ const TIMEZONES = ["UTC", "Europe/Berlin", "America/New_York", "Asia/Tokyo"];
 type ContractType = "fixed" | "hourly";
 
 function dayStart(day: string, timezone: string): Date {
-	return dateFromInstant(
-		parsePlainDate(day).toZonedDateTime(timezone).toInstant(),
-	);
+	return dateFromInstant(parsePlainDate(day).toZonedDateTime(timezone).toInstant());
 }
 
 describe("employment terms calendar-day ownership", () => {
@@ -61,8 +60,23 @@ describe("employment terms calendar-day ownership", () => {
 			createdBy: org.creator.userId,
 			updatedAt: new Date(),
 		});
+		const [version] = await fixture.db
+			.insert(workPolicyVersion)
+			.values({
+				policyId: id,
+				organizationId: org.organizationId,
+				versionNumber: 1,
+				effectiveFromDate: "1970-01-01",
+				scheduleEnabled: true,
+				regulationEnabled: true,
+				presenceEnabled: false,
+				isLegacyBaseline: true,
+				createdBy: org.creator.userId,
+			})
+			.returning();
 		await fixture.db.insert(workPolicySchedule).values({
 			policyId: id,
+			policyVersionId: version.id,
 			scheduleCycle,
 			scheduleType: "simple",
 			workingDaysPreset: "all_days",
@@ -90,11 +104,11 @@ describe("employment terms calendar-day ownership", () => {
 			id,
 			organizationId: input.organizationId ?? org.organizationId,
 			employeeId: person.employeeId,
-			employmentPeriodId: input.organizationId
-				? null
-				: person.employmentPeriodId,
+			employmentPeriodId: input.organizationId ? null : person.employmentPeriodId,
 			validFrom: new Date(input.from + "T00:00:00Z"),
 			validUntil: input.until ? new Date(input.until + "T00:00:00Z") : null,
+			validFromDate: input.from,
+			validUntilDate: input.until ?? null,
 			contractType: input.contractType ?? "fixed",
 			weeklyContractMinutes: input.minutes ?? 3360,
 			workPolicyId: input.policyId,
@@ -173,12 +187,7 @@ describe("employment terms calendar-day ownership", () => {
 
 	type Scenario = Awaited<ReturnType<typeof scenario>>;
 
-	function requirements(
-		subject: Scenario,
-		from: string,
-		through = from,
-		viewerTimezone = "UTC",
-	) {
+	function requirements(subject: Scenario, from: string, through = from, viewerTimezone = "UTC") {
 		return getDailyWorkRequirementsForEmployee(
 			{
 				...subject.scope,
@@ -192,28 +201,22 @@ describe("employment terms calendar-day ownership", () => {
 
 	function minutesByDay(result: Awaited<ReturnType<typeof requirements>>) {
 		return Object.fromEntries(
-			Object.entries(result).map(([day, requirement]) => [
-				day,
-				requirement.requiredMinutes,
-			]),
+			Object.entries(result).map(([day, requirement]) => [day, requirement.requiredMinutes]),
 		);
 	}
 
-	it.each(TIMEZONES)(
-		"gives the boundary day to the new terms only in %s",
-		async (timezone) => {
-			const subject = await scenario(timezone);
-			const wide = await requirements(subject, "2026-01-14", "2026-01-16");
-			const boundaryOnly = await requirements(subject, "2026-01-15");
+	it.each(TIMEZONES)("gives the boundary day to the new terms only in %s", async (timezone) => {
+		const subject = await scenario(timezone);
+		const wide = await requirements(subject, "2026-01-14", "2026-01-16");
+		const boundaryOnly = await requirements(subject, "2026-01-15");
 
-			expect(minutesByDay(wide)).toEqual({
-				"2026-01-14": 480,
-				"2026-01-15": 240,
-				"2026-01-16": 240,
-			});
-			expect(minutesByDay(boundaryOnly)).toEqual({ "2026-01-15": 240 });
-		},
-	);
+		expect(minutesByDay(wide)).toEqual({
+			"2026-01-14": 480,
+			"2026-01-15": 240,
+			"2026-01-16": 240,
+		});
+		expect(minutesByDay(boundaryOnly)).toEqual({ "2026-01-15": 240 });
+	});
 
 	it.each(["missing", "inactive", "disabled"] as const)(
 		"uses the employee calendar when tracking is %s",
@@ -224,22 +227,12 @@ describe("employment terms calendar-day ownership", () => {
 			if (mode === "missing") {
 				await fixture.db
 					.delete(organizationTrackingSettings)
-					.where(
-						eq(
-							organizationTrackingSettings.organizationId,
-							subject.org.organizationId,
-						),
-					);
+					.where(eq(organizationTrackingSettings.organizationId, subject.org.organizationId));
 			} else if (mode === "inactive") {
 				await fixture.db
 					.update(organizationTrackingSettings)
 					.set({ activatedAt: null })
-					.where(
-						eq(
-							organizationTrackingSettings.organizationId,
-							subject.org.organizationId,
-						),
-					);
+					.where(eq(organizationTrackingSettings.organizationId, subject.org.organizationId));
 			}
 			const result = await getDailyWorkRequirementsForEmployee(
 				{
@@ -263,12 +256,7 @@ describe("employment terms calendar-day ownership", () => {
 		const subject = await scenario("America/New_York");
 		await fixture.db
 			.delete(organizationTrackingSettings)
-			.where(
-				eq(
-					organizationTrackingSettings.organizationId,
-					subject.org.organizationId,
-				),
-			);
+			.where(eq(organizationTrackingSettings.organizationId, subject.org.organizationId));
 
 		const result = await getDailyWorkRequirementsForEmployee(
 			{
@@ -298,9 +286,10 @@ describe("employment terms calendar-day ownership", () => {
 			.set({ validUntil: new Date("2026-01-16T00:00:00Z") })
 			.where(eq(employeeEmploymentHistory.id, subject.newTermsId));
 
-		expect(
-			minutesByDay(await requirements(subject, "2026-01-14", "2026-02-01")),
-		).toEqual({ "2026-01-14": 480, "2026-01-15": 240 });
+		expect(minutesByDay(await requirements(subject, "2026-01-14", "2026-02-01"))).toEqual({
+			"2026-01-14": 480,
+			"2026-01-15": 240,
+		});
 		expect(await requirements(subject, "2026-02-01")).toEqual({});
 	});
 
@@ -310,14 +299,7 @@ describe("employment terms calendar-day ownership", () => {
 		});
 
 		expect(
-			minutesByDay(
-				await requirements(
-					subject,
-					"2026-01-14",
-					"2026-01-15",
-					"Europe/Berlin",
-				),
-			),
+			minutesByDay(await requirements(subject, "2026-01-14", "2026-01-15", "Europe/Berlin")),
 		).toEqual({ "2026-01-14": 480, "2026-01-15": 240 });
 	});
 
@@ -360,26 +342,23 @@ describe("employment terms calendar-day ownership", () => {
 				newContract: "fixed" as const,
 			},
 		]),
-	)(
-		"selects one source for $oldContract to $newContract in $timezone",
-		async (input) => {
-			const subject = await scenario(input.timezone, input);
-			for (const day of ["2026-01-14", "2026-01-15"]) {
-				await fixture.shift(subject.org, {
-					employeeId: subject.person.employeeId,
-					stored: shiftStoredDate(day, input.timezone).toISOString(),
-					startTime: "08:00",
-					endTime: "11:00",
-				});
-			}
-			const result = await requirements(subject, "2026-01-14", "2026-01-15");
-
-			expect(minutesByDay(result)).toEqual({
-				"2026-01-14": input.oldContract === "hourly" ? 180 : 480,
-				"2026-01-15": input.newContract === "hourly" ? 180 : 240,
+	)("selects one source for $oldContract to $newContract in $timezone", async (input) => {
+		const subject = await scenario(input.timezone, input);
+		for (const day of ["2026-01-14", "2026-01-15"]) {
+			await fixture.shift(subject.org, {
+				employeeId: subject.person.employeeId,
+				stored: shiftStoredDate(day, input.timezone).toISOString(),
+				startTime: "08:00",
+				endTime: "11:00",
 			});
-		},
-	);
+		}
+		const result = await requirements(subject, "2026-01-14", "2026-01-15");
+
+		expect(minutesByDay(result)).toEqual({
+			"2026-01-14": input.oldContract === "hourly" ? 180 : 480,
+			"2026-01-15": input.newContract === "hourly" ? 180 : 240,
+		});
+	});
 
 	it("ignores draft, pending and other-organization terms", async () => {
 		const subject = await scenario("Europe/Berlin");
@@ -431,9 +410,7 @@ describe("employment terms calendar-day ownership", () => {
 		const subject = await scenario("America/New_York");
 		await fixture.db
 			.delete(employeeEmploymentHistory)
-			.where(
-				eq(employeeEmploymentHistory.employeeId, subject.person.employeeId),
-			);
+			.where(eq(employeeEmploymentHistory.employeeId, subject.person.employeeId));
 
 		expect(minutesByDay(await requirements(subject, "2026-01-15"))).toEqual({
 			"2026-01-15": 480,
@@ -459,70 +436,67 @@ describe("employment terms calendar-day ownership", () => {
 		).toBe(-720);
 	});
 
-	it.each(TIMEZONES)(
-		"uses the shift date to select staffing terms in %s",
-		async (timezone) => {
-			const subject = await scenario(timezone, {
-				newContract: "hourly",
-				organizationTimezone: timezone,
-			});
-			const monthlyPolicy = await seedPolicy(subject.org, "monthly");
-			await fixture.db
-				.update(employeeEmploymentHistory)
-				.set({ workPolicyId: monthlyPolicy })
-				.where(eq(employeeEmploymentHistory.id, subject.newTermsId));
-			const second = await fixture.seedEmployee({
+	it.each(TIMEZONES)("uses the shift date to select staffing terms in %s", async (timezone) => {
+		const subject = await scenario(timezone, {
+			newContract: "hourly",
+			organizationTimezone: timezone,
+		});
+		const monthlyPolicy = await seedPolicy(subject.org, "monthly");
+		await fixture.db
+			.update(employeeEmploymentHistory)
+			.set({ workPolicyId: monthlyPolicy })
+			.where(eq(employeeEmploymentHistory.id, subject.newTermsId));
+		const second = await fixture.seedEmployee({
+			organizationId: subject.org.organizationId,
+		});
+		await seedTerms(subject.org, second, {
+			from: "2026-01-15",
+			contractType: "hourly",
+			policyId: null,
+		});
+		const foreign = await fixture.organization("UTC");
+		await seedTerms(subject.org, subject.person, {
+			from: "2026-01-15",
+			policyId: null,
+			organizationId: foreign.organizationId,
+		});
+		await seedTerms(subject.org, subject.person, {
+			from: "2026-01-15",
+			policyId: null,
+			reviewState: "draft",
+		});
+		await seedTerms(subject.org, subject.person, {
+			from: "2026-01-15",
+			policyId: null,
+			reviewState: "pending",
+		});
+
+		async function staffing(day: string) {
+			return loadStaffingRankingFacts(fixture.db, {
 				organizationId: subject.org.organizationId,
+				employeeIds: [subject.person.employeeId, second.employeeId],
+				timezone,
+				shiftDate: parsePlainDate(day),
+				shiftsFrom: parsePlainDate("2026-01-12"),
+				until: parsePlainDate("2026-01-19"),
+				excludeShiftId: null,
 			});
-			await seedTerms(subject.org, second, {
-				from: "2026-01-15",
-				contractType: "hourly",
-				policyId: null,
-			});
-			const foreign = await fixture.organization("UTC");
-			await seedTerms(subject.org, subject.person, {
-				from: "2026-01-15",
-				policyId: null,
-				organizationId: foreign.organizationId,
-			});
-			await seedTerms(subject.org, subject.person, {
-				from: "2026-01-15",
-				policyId: null,
-				reviewState: "draft",
-			});
-			await seedTerms(subject.org, subject.person, {
-				from: "2026-01-15",
-				policyId: null,
-				reviewState: "pending",
-			});
+		}
 
-			async function staffing(day: string) {
-				return loadStaffingRankingFacts(fixture.db, {
-					organizationId: subject.org.organizationId,
-					employeeIds: [subject.person.employeeId, second.employeeId],
-					timezone,
-					shiftDate: parsePlainDate(day),
-					shiftsFrom: parsePlainDate("2026-01-12"),
-					until: parsePlainDate("2026-01-19"),
-					excludeShiftId: null,
-				});
-			}
+		const before = await staffing("2026-01-14");
+		const onBoundary = await staffing("2026-01-15");
 
-			const before = await staffing("2026-01-14");
-			const onBoundary = await staffing("2026-01-15");
-
-			expect(before.get(subject.person.employeeId)?.contract).toEqual({
-				contractType: "fixed",
-				termsScheduleCycle: { cycle: "weekly" },
-			});
-			expect(onBoundary.get(subject.person.employeeId)?.contract).toEqual({
-				contractType: "hourly",
-				termsScheduleCycle: { cycle: "monthly" },
-			});
-			expect(onBoundary.get(second.employeeId)?.contract).toEqual({
-				contractType: "hourly",
-				termsScheduleCycle: null,
-			});
-		},
-	);
+		expect(before.get(subject.person.employeeId)?.contract).toEqual({
+			contractType: "fixed",
+			termsScheduleCycle: { cycle: "weekly" },
+		});
+		expect(onBoundary.get(subject.person.employeeId)?.contract).toEqual({
+			contractType: "hourly",
+			termsScheduleCycle: { cycle: "monthly" },
+		});
+		expect(onBoundary.get(second.employeeId)?.contract).toEqual({
+			contractType: "hourly",
+			termsScheduleCycle: null,
+		});
+	});
 });

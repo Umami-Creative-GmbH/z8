@@ -13,7 +13,7 @@ export type LifecycleClient = WorkTransactionClient;
 export type DepartureScope = WorkTransactionScope;
 
 export type DepartureStatus = "pending" | "canceled" | "blocked" | "effective";
-export type DepartureMode = "scheduled" | "immediate";
+export type DepartureMode = "scheduled" | "immediate" | "retrospective";
 
 export type LifecycleActor = { userId: string; organizationId: string };
 
@@ -38,6 +38,64 @@ export type OffboardNow = {
 	requestId: string;
 	replacementEmployeeId: string | null;
 	acknowledgeUnassignedDuties: boolean;
+};
+
+export type RecordPastDeparture = {
+	employeeId: string;
+	requestId: string;
+	lastWorkingDay: string;
+	replacementEmployeeId: string | null;
+	acknowledgeUnassignedDuties: boolean;
+};
+
+export type RecordPastDepartureResult =
+	| {
+			status: "effective";
+			departureId: string;
+			revision: number;
+			employmentPeriodId: string;
+			lastWorkingDay: string;
+			cutoff: string;
+			timezone: string;
+			followUpPending: boolean;
+			workAfterCutoffReviewOpened: boolean;
+			payrollReconciliationReviewOpened: boolean;
+	  }
+	| { status: "blocked"; departureId: string; reason: string };
+
+export type CorrectPastDepartureDate = {
+	employeeId: string;
+	departureId: string;
+	expectedRevision: number;
+	lastWorkingDay: string;
+	requestId: string;
+	reason?: string | null;
+};
+
+export type CorrectPastDepartureDateResult = {
+	departureId: string;
+	revision: number;
+	previousLastWorkingDay: string | null;
+	lastWorkingDay: string;
+	cutoff: string;
+	timezone: string;
+	workAfterCutoffReviewOpened: boolean;
+	payrollReconciliationReviewOpened: boolean;
+};
+
+export type RecordHistoricalDepartureDate = {
+	employeeId: string;
+	lastWorkingDay: string;
+	requestId: string;
+	reason?: string | null;
+};
+
+export type RecordHistoricalDepartureDateResult = {
+	employeeId: string;
+	employmentPeriodId: string;
+	lastWorkingDay: string;
+	cutoff: string;
+	timezone: string;
 };
 
 export type DepartureIdentity = {

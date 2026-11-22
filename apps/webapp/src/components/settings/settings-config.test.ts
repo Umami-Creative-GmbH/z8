@@ -354,6 +354,7 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 	it("groups all policy settings around one Approval entry", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		expect(entries.filter((entry) => entry.group === "policies").map((entry) => entry.id)).toEqual([
+			"contracts",
 			"work-policies",
 			"absences",
 			"employee-allowances",
@@ -394,9 +395,7 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 	it("separates personal notification preferences from organization delivery settings", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		expect(
-			entries
-				.filter((entry) => entry.group === "integrations-channels")
-				.map((entry) => entry.id),
+			entries.filter((entry) => entry.group === "integrations-channels").map((entry) => entry.id),
 		).toEqual(["email", "chat-integrations", "calendar", "developer-access"]);
 		expect(entries.find((entry) => entry.id === "notifications")).toMatchObject({
 			group: "account",
@@ -420,9 +419,7 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 		});
 		expect(entries.find((entry) => entry.id === "custom-domains")?.group).toBe("organization");
 		expect(
-			entries
-				.filter((entry) => entry.group === "integrations-channels")
-				.map((entry) => entry.id),
+			entries.filter((entry) => entry.group === "integrations-channels").map((entry) => entry.id),
 		).toEqual(["email", "chat-integrations", "calendar", "developer-access"]);
 		const personnel = entries.find((entry) => entry.id === "personnel-files");
 		expect(personnel).toMatchObject({
@@ -822,9 +819,9 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 		});
 
 		it("guards the area's entry as org admin only", () => {
-			expect(
-				SETTINGS_ENTRIES.find((entry) => entry.id === "billable-time")?.minimumAccess,
-			).toBe("orgAdmin");
+			expect(SETTINGS_ENTRIES.find((entry) => entry.id === "billable-time")?.minimumAccess).toBe(
+				"orgAdmin",
+			);
 		});
 	});
 
@@ -882,9 +879,7 @@ describe("settings visibility and minimumAccess (ADR 0003)", () => {
 				"data",
 			]);
 			expect(SETTINGS_GROUPS).toHaveLength(10);
-			expect(
-				SETTINGS_GROUPS.find((group) => group.id === "integrations-channels"),
-			).toMatchObject({
+			expect(SETTINGS_GROUPS.find((group) => group.id === "integrations-channels")).toMatchObject({
 				labelKey: "settings.group.integrationsChannels",
 				labelDefault: "Integrations & Channels",
 			});

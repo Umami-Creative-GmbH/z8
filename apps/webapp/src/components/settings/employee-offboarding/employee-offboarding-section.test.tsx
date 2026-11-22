@@ -11,6 +11,8 @@ const hook = vi.hoisted(() => ({
 	useEmployeeOffboarding: vi.fn(),
 	scheduleDeparture: vi.fn(),
 	recordOvertimePayoutAction: vi.fn(),
+	searchReplacementEmployeesAction: vi.fn(),
+	getReplacementEmployeeAction: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -58,6 +60,24 @@ vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions", () => ({
 	getEmployeeWorkBalanceSectionAction: vi.fn(),
 	cancelBalanceAdjustmentAction: vi.fn(),
 	recordOvertimePayoutAction: hook.recordOvertimePayoutAction,
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/employees/employee-offboarding.actions", () => ({
+	assignDepartureReplacementAction: vi.fn(),
+	cancelEmployeeDepartureAction: vi.fn(),
+	correctPastDepartureDateAction: vi.fn(),
+	getEmployeeOffboardingViewAction: vi.fn(),
+	offboardEmployeeNowAction: vi.fn(),
+	previewEmployeeDepartureAction: vi.fn(),
+	previewPastDepartureAction: vi.fn(),
+	recordHistoricalDepartureDateAction: vi.fn(),
+	recordPastDepartureAction: vi.fn(),
+	rehireEmployeeAction: vi.fn(),
+	resolveDepartureReviewAction: vi.fn(),
+	retryDepartureTaskAction: vi.fn(),
+	scheduleEmployeeDepartureAction: vi.fn(),
+	searchReplacementEmployeesAction: hook.searchReplacementEmployeesAction,
+	getReplacementEmployeeAction: hook.getReplacementEmployeeAction,
 }));
 
 vi.mock("@/lib/query/use-employee-offboarding", async (importOriginal) => ({
@@ -123,6 +143,34 @@ describe("EmployeeOffboardingSection", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		hook.scheduleDeparture.mockResolvedValue({ success: true, data: {} });
+		hook.searchReplacementEmployeesAction.mockResolvedValue({
+			success: true,
+			data: {
+				items: [
+					{
+						employeeId: employeeB,
+						name: "Robin Admin",
+						email: null,
+						position: null,
+						teamName: null,
+						role: "admin",
+					},
+				],
+				nextCursor: null,
+				hasMore: false,
+			},
+		});
+		hook.getReplacementEmployeeAction.mockResolvedValue({
+			success: true,
+			data: {
+				employeeId: employeeB,
+				name: "Robin Admin",
+				email: null,
+				position: null,
+				teamName: null,
+				role: "admin",
+			},
+		});
 		hook.useEmployeeOffboarding.mockImplementation(({ employeeId }: { employeeId: string }) => ({
 			view: activeView(employeeId),
 			isLoading: false,
@@ -267,9 +315,7 @@ describe("EmployeeOffboardingSection", () => {
 		);
 		await user.click(review.getByRole("combobox", { name: "Replacement for approvals" }));
 		await user.click(await screen.findByRole("option", { name: /Robin Admin/ }));
-		await waitFor(() =>
-			expect(screen.queryByRole("option", { name: /Robin Admin/ })).toBeNull(),
-		);
+		await waitFor(() => expect(screen.queryByRole("option", { name: /Robin Admin/ })).toBeNull());
 		await user.click(review.getByRole("button", { name: "Assign replacement" }));
 
 		await waitFor(() =>

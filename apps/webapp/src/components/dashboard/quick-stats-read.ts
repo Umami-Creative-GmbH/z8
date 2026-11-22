@@ -1,17 +1,12 @@
 import "server-only";
 
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { Temporal } from "temporal-polyfill";
 import { organization } from "@/db/auth-schema";
-import {
-	absenceEntry,
-	employee,
-	userSettings,
-	workPeriod,
-	workPolicyAssignment,
-} from "@/db/schema";
+import { absenceEntry, employee, userSettings, workPeriod } from "@/db/schema";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { localDayRange, localMonthRange, localWeekRange } from "@/lib/datetime/temporal-boundaries";
 import {
@@ -51,20 +46,6 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 			.query("getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({
 					where: and(eq(employee.userId, userId), onCurrentRoster(organizationId)),
-					with: {
-						workPolicyAssignments: {
-							where: eq(workPolicyAssignment.isActive, true),
-							orderBy: [desc(workPolicyAssignment.effectiveFrom)],
-							limit: 1,
-							with: {
-								policy: {
-									with: {
-										schedule: true,
-									},
-								},
-							},
-						},
-					},
 				});
 			})
 			.pipe(
@@ -246,7 +227,22 @@ export function loadQuickStatsForSubject(subject: DashboardScope) {
 		const weekActual = weekMinutes / 60;
 		const monthActual = monthMinutes / 60;
 
-		const schedule = currentEmployee.workPolicyAssignments?.[0]?.policy?.schedule ?? null;
+		const resolvedContract = yield* dbService.query("dashboard.quickStatsContract", () =>
+			resolveEffectiveContractOnDay(dbService.db, {
+				organizationId,
+				employeeId: currentEmployee.id,
+				date: today,
+			}),
+		);
+		const rawSchedule = resolvedContract?.workPolicy?.scheduleEnabled
+			? (resolvedContract.workPolicy.schedule ?? null)
+			: null;
+		const schedule = rawSchedule
+			? {
+					...rawSchedule,
+					days: rawSchedule.days.map((d) => ({ ...d })),
+				}
+			: null;
 		const weekExpected = calculateAdjustedExpectedHoursForRange({
 			schedule,
 			start: weekStartZdt,

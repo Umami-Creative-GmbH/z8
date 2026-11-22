@@ -9,7 +9,6 @@ import {
 } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
-import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { EquipmentDepartureSummary } from "@/components/equipment/equipment-departure-summary";
 import { Alert } from "@/components/ui/alert";
 import { AlertDescription } from "@/components/ui/alert-description";
@@ -37,6 +36,7 @@ import type {
 } from "@/lib/validations/employee-offboarding";
 import { useOffboardingLabels } from "./labels";
 import { OFFBOARDING_REFUSALS } from "./offboarding-refusals";
+import { ReplacementEmployeeSelect } from "./replacement-employee-select";
 
 const NO_REPLACEMENT = "__none__";
 
@@ -373,20 +373,13 @@ function DeparturePreviewFields({
 							{t("settings.employees.offboarding.replacement", "Replacement for approvals")}
 						</TFormLabel>
 						<TFormControl hasError={fieldHasError(field)}>
-							<EmployeeSingleSelect
-								className="space-y-0"
+							<ReplacementEmployeeSelect
+								excludeEmployeeId={employeeId}
 								value={field.state.value === NO_REPLACEMENT ? null : field.state.value}
-								onChange={(value) => field.handleChange(value ?? NO_REPLACEMENT)}
+								onChange={(selectedId) => field.handleChange(selectedId ?? NO_REPLACEMENT)}
 								onBlur={field.handleBlur}
-								placeholder={t("settings.employees.offboarding.noReplacement", "No replacement")}
-								allowClear
-								clearLabel={t("settings.employees.offboarding.noReplacement", "No replacement")}
-								employees={(data?.replacementOptions ?? []).map((option) =>
-									toSelectableEmployee({
-										id: option.employeeId,
-										name: option.name || option.employeeId,
-									}),
-								)}
+								allowNone
+								noneLabel={t("settings.employees.offboarding.noReplacement", "No replacement")}
 							/>
 						</TFormControl>
 						<TFormDescription>

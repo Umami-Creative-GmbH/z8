@@ -3,7 +3,10 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+const searchReplacementsMock = vi.hoisted(() => vi.fn());
+const getReplacementMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -19,6 +22,11 @@ vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/employees/employee-offboarding.actions", () => ({
+	searchReplacementEmployeesAction: searchReplacementsMock,
+	getReplacementEmployeeAction: getReplacementMock,
 }));
 
 beforeAll(() => {
@@ -94,6 +102,38 @@ async function pickReplacement(
 }
 
 describe("FollowUpList", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		searchReplacementsMock.mockResolvedValue({
+			success: true,
+			data: {
+				items: [
+					{
+						employeeId: "replacement-1",
+						name: "Robin Admin",
+						email: null,
+						position: null,
+						teamName: null,
+						role: "admin",
+					},
+				],
+				nextCursor: null,
+				hasMore: false,
+			},
+		});
+		getReplacementMock.mockResolvedValue({
+			success: true,
+			data: {
+				employeeId: "replacement-1",
+				name: "Robin Admin",
+				email: null,
+				position: null,
+				teamName: null,
+				role: "admin",
+			},
+		});
+	});
+
 	it("links a clock review to the canonical time correction instead of clearing it", () => {
 		renderList();
 
