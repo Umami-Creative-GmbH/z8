@@ -37,13 +37,19 @@ import {
 import {
 	assignDepartureReplacementSchema,
 	cancelDepartureSchema,
+	correctPastDepartureDateSchema,
 	employeeOffboardingViewSchema,
+	getReplacementEmployeeSchema,
 	offboardNowSchema,
 	previewDepartureSchema,
+	previewPastDepartureSchema,
+	recordHistoricalDepartureDateSchema,
+	recordPastDepartureSchema,
 	rehireEmployeeSchema,
 	resolveDepartureReviewSchema,
 	retryDepartureTaskSchema,
 	scheduleDepartureSchema,
+	searchReplacementEmployeesSchema,
 } from "@/lib/validations/employee-offboarding";
 import { mayWriteBalanceAdjustments } from "@/lib/work-balance/adjustments/authorization";
 import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
@@ -68,6 +74,14 @@ const commandMessages: Record<DepartureCommandErrorCode, string> = {
 	departure_already_effective:
 		"This departure has already taken effect. Rehire the employee to restore access.",
 	departure_date_in_past: "The last working day cannot be in the past.",
+	departure_date_not_in_past: "Choose a past last working day before today.",
+	departure_before_employment_start:
+		"The leaving date cannot be before the employment period started.",
+	departure_not_effective: "Only an already-effective departure date can be corrected here.",
+	departure_reopen_forbidden:
+		"An effective departure cannot be reopened by moving its date to today or the future. Rehire the employee instead.",
+	departure_overlaps_rehire:
+		"The corrected leaving date cannot overlap a subsequent rehire period.",
 	invalid_timezone: "The organization timezone is invalid. Fix it in organization settings first.",
 	replacement_invalid: "Choose an active colleague in this organization as the replacement.",
 	replacement_required:
@@ -182,6 +196,136 @@ export const offboardEmployeeNowAction = organizationAction(
 		runDepartureCommand("offboardEmployeeNow", context, (actor) =>
 			getDepartureCommands().offboardNow(actor, context.input),
 		),
+);
+
+export const recordPastDepartureAction = organizationAction(
+	{
+		name: "employeeOffboarding.recordPastDeparture",
+		requires: "orgAdmin",
+		schema: recordPastDepartureSchema,
+		addsEmployees: (input) => [input.replacementEmployeeId],
+	},
+	(context) =>
+		runDepartureCommand("recordPastDeparture", context, (actor) =>
+			getDepartureCommands().recordPastDeparture(actor, context.input),
+		),
+);
+
+export const previewPastDepartureAction = organizationAction(
+	{
+		name: "employeeOffboarding.previewPastDeparture",
+		requires: "orgAdmin",
+		schema: previewPastDepartureSchema,
+	},
+	(context) =>
+		runDepartureCommand("previewPastDeparture", context, async (actor) => {
+			const data = context.input;
+			const result = await getOffboardingQueries().previewPast({
+				organizationId: actor.organizationId,
+				employeeId: data.employeeId,
+				actorUserId: actor.userId,
+				lastWorkingDay: data.lastWorkingDay,
+				replacementEmployeeId: data.replacementEmployeeId,
+			});
+			if (result.kind === "ok") return result.preview;
+			if (result.kind === "invalid") throw new DepartureCommandError(result.code);
+			throw new DepartureCommandError(
+				result.kind === "not_found" ? "employee_not_found" : "actor_not_authorized",
+			);
+		}),
+);
+
+/**
+ * Date-only correction of an already-effective past departure stays available
+ * regardless of the release gate, just like resolving follow-up reviews.
+ */
+export const correctPastDepartureDateAction = organizationAction(
+	{
+		name: "employeeOffboarding.correctPastDepartureDate",
+		requires: "orgAdmin",
+		schema: correctPastDepartureDateSchema,
+	},
+	(context) =>
+		Effect.gen(function* () {
+			const actor = lifecycleActorOf(context);
+			const dbService = yield* DatabaseService;
+			const result = yield* dbService
+				.query("employeeOffboarding.correctPastDepartureDate", () =>
+					getDepartureCommands().correctPastDepartureDate(actor, context.input),
+				)
+				.pipe(Effect.mapError((error) => toAppError(error, actor, "correctPastDepartureDate")));
+			revalidateEmployeesCache(actor.organizationId);
+			return result;
+		}),
+);
+
+/**
+ * Historical leaving-date backfill for legacy former employees (no active
+ * offboarding side effects); available to org admins regardless of the gate.
+ */
+export const recordHistoricalDepartureDateAction = organizationAction(
+	{
+		name: "employeeOffboarding.recordHistoricalDepartureDate",
+		requires: "orgAdmin",
+		schema: recordHistoricalDepartureDateSchema,
+	},
+	(context) =>
+		Effect.gen(function* () {
+			const actor = lifecycleActorOf(context);
+			const dbService = yield* DatabaseService;
+			const result = yield* dbService
+				.query("employeeOffboarding.recordHistoricalDepartureDate", () =>
+					getDepartureCommands().recordHistoricalDepartureDate(actor, context.input),
+				)
+				.pipe(
+					Effect.mapError((error) => toAppError(error, actor, "recordHistoricalDepartureDate")),
+				);
+			revalidateEmployeesCache(actor.organizationId);
+			return result;
+		}),
+);
+
+/**
+ * Scalable cursor- and search-bounded lookup for eligible approval replacements
+ * in large organizations (max 50 per page, tenant-scoped, current roster only).
+ */
+export const searchReplacementEmployeesAction = organizationAction(
+	{
+		name: "employeeOffboarding.searchReplacements",
+		requires: "orgAdmin",
+		schema: searchReplacementEmployeesSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("employeeOffboarding.searchReplacements", () =>
+				getOffboardingQueries().searchReplacements({
+					organizationId,
+					excludeEmployeeId: input.excludeEmployeeId ?? null,
+					search: input.search ?? null,
+					cursor: input.cursor ?? null,
+					limit: input.limit,
+				}),
+			);
+		}),
+);
+
+export const getReplacementEmployeeAction = organizationAction(
+	{
+		name: "employeeOffboarding.getReplacementById",
+		requires: "orgAdmin",
+		schema: getReplacementEmployeeSchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("employeeOffboarding.getReplacementById", () =>
+				getOffboardingQueries().getReplacementById({
+					organizationId,
+					employeeId: input.employeeId,
+				}),
+			);
+		}),
 );
 
 export const rehireEmployeeAction = organizationAction(
@@ -327,6 +471,7 @@ export const getEmployeeOffboardingViewAction = organizationAction(
 					cancel: false,
 					offboardNow: false,
 					rehire: false,
+					recordPastDeparture: false,
 				},
 			};
 		}),

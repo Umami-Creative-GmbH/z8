@@ -3,7 +3,10 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const searchReplacementsMock = vi.hoisted(() => vi.fn());
+const getReplacementMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -21,34 +24,10 @@ vi.mock("@/navigation", () => ({
 	),
 }));
 
-vi.mock("@/components/ui/select", async () => {
-	const { createContext, useContext } = await import("react");
-	const Choose = createContext<(value: string) => void>(() => {});
-	return {
-		Select: ({
-			onValueChange,
-			children,
-		}: {
-			onValueChange: (value: string) => void;
-			children: ReactNode;
-		}) => <Choose.Provider value={onValueChange}>{children}</Choose.Provider>,
-		SelectTrigger: ({ children, ...props }: { children: ReactNode }) => (
-			<button type="button" {...props}>
-				{children}
-			</button>
-		),
-		SelectValue: () => null,
-		SelectContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-		SelectItem: ({ value, children }: { value: string; children: ReactNode }) => {
-			const choose = useContext(Choose);
-			return (
-				<button type="button" role="option" aria-selected={false} onClick={() => choose(value)}>
-					{children}
-				</button>
-			);
-		},
-	};
-});
+vi.mock("@/app/[locale]/(app)/settings/employees/employee-offboarding.actions", () => ({
+	searchReplacementEmployeesAction: searchReplacementsMock,
+	getReplacementEmployeeAction: getReplacementMock,
+}));
 
 import { FollowUpList, type FollowUpListProps } from "./follow-up-list";
 
@@ -105,6 +84,38 @@ function reviewItem(label: string) {
 }
 
 describe("FollowUpList", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		searchReplacementsMock.mockResolvedValue({
+			success: true,
+			data: {
+				items: [
+					{
+						employeeId: "replacement-1",
+						name: "Robin Admin",
+						email: null,
+						position: null,
+						teamName: null,
+						role: "admin",
+					},
+				],
+				nextCursor: null,
+				hasMore: false,
+			},
+		});
+		getReplacementMock.mockResolvedValue({
+			success: true,
+			data: {
+				employeeId: "replacement-1",
+				name: "Robin Admin",
+				email: null,
+				position: null,
+				teamName: null,
+				role: "admin",
+			},
+		});
+	});
+
 	it("links a clock review to the canonical time correction instead of clearing it", () => {
 		renderList();
 
@@ -150,7 +161,8 @@ describe("FollowUpList", () => {
 		const handover = reviewItem("Approval duties need a replacement");
 
 		expect(handover.getByText("No replacement was chosen.")).toBeTruthy();
-		await user.click(handover.getByRole("option", { name: "Robin Admin" }));
+		await user.click(handover.getByRole("combobox", { name: "Replacement for approvals" }));
+		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
 		await user.click(handover.getByRole("button", { name: "Assign replacement" }));
 		await handover.findByRole("alert");
 		await user.click(handover.getByRole("button", { name: "Assign replacement" }));
@@ -183,7 +195,8 @@ describe("FollowUpList", () => {
 		});
 		const stage = reviewItem("Approval duties need a replacement");
 
-		await user.click(stage.getByRole("option", { name: "Robin Admin" }));
+		await user.click(stage.getByRole("combobox", { name: "Replacement for approvals" }));
+		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
 		await user.click(stage.getByRole("button", { name: "Assign replacement" }));
 
 		await waitFor(() => expect(assignReplacement).toHaveBeenCalledTimes(1));
@@ -201,7 +214,8 @@ describe("FollowUpList", () => {
 		renderList({ assignReplacement, anchor: { deactivationId: "deactivation-1" } });
 		const handover = reviewItem("Approval duties need a replacement");
 
-		await user.click(handover.getByRole("option", { name: "Robin Admin" }));
+		await user.click(handover.getByRole("combobox", { name: "Replacement for approvals" }));
+		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
 		await user.click(handover.getByRole("button", { name: "Assign replacement" }));
 
 		await waitFor(() => expect(assignReplacement).toHaveBeenCalledTimes(1));

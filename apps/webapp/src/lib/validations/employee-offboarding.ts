@@ -30,6 +30,47 @@ export const offboardNowSchema = z.object({
 	acknowledgeUnassignedDuties: z.boolean(),
 });
 
+export const recordPastDepartureSchema = z.object({
+	employeeId: z.uuid(),
+	requestId: z.uuid(),
+	lastWorkingDay: z.iso.date(),
+	replacementEmployeeId: z.uuid().nullable(),
+	acknowledgeUnassignedDuties: z.boolean(),
+});
+
+export const previewPastDepartureSchema = z.object({
+	employeeId: z.uuid(),
+	lastWorkingDay: z.iso.date(),
+	replacementEmployeeId: z.uuid().nullable().default(null),
+});
+
+export const correctPastDepartureDateSchema = z.object({
+	employeeId: z.uuid(),
+	departureId: z.uuid(),
+	expectedRevision: z.number().int().positive(),
+	lastWorkingDay: z.iso.date(),
+	requestId: z.uuid(),
+	reason: z.string().trim().max(1000).nullable().optional(),
+});
+
+export const recordHistoricalDepartureDateSchema = z.object({
+	employeeId: z.uuid(),
+	lastWorkingDay: z.iso.date(),
+	requestId: z.uuid(),
+	reason: z.string().trim().max(1000).nullable().optional(),
+});
+
+export const searchReplacementEmployeesSchema = z.object({
+	excludeEmployeeId: z.uuid().nullable().optional(),
+	search: z.string().max(200).nullable().optional(),
+	cursor: z.string().max(512).nullable().optional(),
+	limit: z.number().int().min(1).max(50).optional(),
+});
+
+export const getReplacementEmployeeSchema = z.object({
+	employeeId: z.uuid(),
+});
+
 export const rehireEmployeeSchema = z
 	.object({
 		employeeId: z.uuid(),
@@ -99,6 +140,15 @@ export const assignDepartureReplacementSchema = z.union([
 export type ScheduleDepartureInput = z.infer<typeof scheduleDepartureSchema>;
 export type CancelDepartureInput = z.infer<typeof cancelDepartureSchema>;
 export type OffboardNowInput = z.infer<typeof offboardNowSchema>;
+export type RecordPastDepartureInput = z.infer<typeof recordPastDepartureSchema>;
+export type PreviewPastDepartureInput = z.infer<typeof previewPastDepartureSchema>;
+export type CorrectPastDepartureDateInput = z.infer<typeof correctPastDepartureDateSchema>;
+export type RecordHistoricalDepartureDateInput = z.infer<
+	typeof recordHistoricalDepartureDateSchema
+>;
+export type SearchReplacementEmployeesActionInput = z.infer<
+	typeof searchReplacementEmployeesSchema
+>;
 export type RehireEmployeeInput = z.infer<typeof rehireEmployeeSchema>;
 export type PreviewDepartureInput = z.infer<typeof previewDepartureSchema>;
 export type ResolveDepartureReviewInput = z.infer<typeof resolveDepartureReviewSchema>;

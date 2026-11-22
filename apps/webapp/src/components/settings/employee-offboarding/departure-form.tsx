@@ -18,13 +18,6 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
 	TFormControl,
 	TFormDescription,
 	TFormItem,
@@ -43,6 +36,7 @@ import type {
 } from "@/lib/validations/employee-offboarding";
 import { useOffboardingLabels } from "./labels";
 import { OFFBOARDING_REFUSALS } from "./offboarding-refusals";
+import { ReplacementEmployeeSelect } from "./replacement-employee-select";
 
 const NO_REPLACEMENT = "__none__";
 
@@ -378,23 +372,16 @@ function DeparturePreviewFields({
 						<TFormLabel hasError={fieldHasError(field)}>
 							{t("settings.employees.offboarding.replacement", "Replacement for approvals")}
 						</TFormLabel>
-						<Select value={field.state.value} onValueChange={field.handleChange}>
-							<TFormControl hasError={fieldHasError(field)}>
-								<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-									<SelectValue />
-								</SelectTrigger>
-							</TFormControl>
-							<SelectContent>
-								<SelectItem value={NO_REPLACEMENT}>
-									{t("settings.employees.offboarding.noReplacement", "No replacement")}
-								</SelectItem>
-								{data?.replacementOptions.map((option) => (
-									<SelectItem key={option.employeeId} value={option.employeeId}>
-										{option.name || option.employeeId}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<TFormControl hasError={fieldHasError(field)}>
+							<ReplacementEmployeeSelect
+								excludeEmployeeId={employeeId}
+								value={field.state.value === NO_REPLACEMENT ? null : field.state.value}
+								onChange={(selectedId) => field.handleChange(selectedId ?? NO_REPLACEMENT)}
+								onBlur={field.handleBlur}
+								allowNone
+								noneLabel={t("settings.employees.offboarding.noReplacement", "No replacement")}
+							/>
+						</TFormControl>
 						<TFormDescription>
 							{t(
 								"settings.employees.offboarding.replacementHelp",

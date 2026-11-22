@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import { departureCutoff } from "./cutoff";
+import { departureCutoff, retrospectiveDepartureCutoff } from "./cutoff";
 
 const JANUARY = parseInstant("2026-01-01T00:00:00Z");
 
@@ -70,5 +70,67 @@ describe("departureCutoff", () => {
 				now: JANUARY,
 			}),
 		).toThrow();
+	});
+});
+
+describe("retrospectiveDepartureCutoff", () => {
+	const NOVEMBER = parseInstant("2026-11-15T12:00:00Z");
+
+	it.each([
+		["2026-03-28", "Europe/Berlin", "2026-03-28T23:00:00Z", "2026-03-29"],
+		["2026-03-29", "Europe/Berlin", "2026-03-29T22:00:00Z", "2026-03-30"],
+		["2026-10-25", "Europe/Berlin", "2026-10-25T23:00:00Z", "2026-10-26"],
+		["2026-09-14", "UTC", "2026-09-15T00:00:00Z", "2026-09-15"],
+		["2026-09-05", "America/Santiago", "2026-09-06T04:00:00Z", "2026-09-06"],
+	])("ends %s in %s at %s (%s)", (lastWorkingDay, timezone, expected, expectedLocalDate) => {
+		const result = retrospectiveDepartureCutoff({ lastWorkingDay, timezone, now: NOVEMBER });
+
+		expect(result.cutoff.toString()).toBe(expected);
+		expect(result.cutoffLocalDate).toBe(expectedLocalDate);
+		expect(result).toMatchObject({ lastWorkingDay, timezone });
+	});
+
+	it("resolves a missing organization timezone to UTC", () => {
+		const result = retrospectiveDepartureCutoff({
+			lastWorkingDay: "2026-09-14",
+			timezone: null,
+			now: NOVEMBER,
+		});
+
+		expect(result.timezone).toBe("UTC");
+		expect(result.cutoff.toString()).toBe("2026-09-15T00:00:00Z");
+		expect(result.cutoffLocalDate).toBe("2026-09-15");
+	});
+
+	it("rejects today in the organization zone even when UTC is already tomorrow", () => {
+		expect(() =>
+			retrospectiveDepartureCutoff({
+				lastWorkingDay: "2026-09-14",
+				timezone: "America/New_York",
+				now: parseInstant("2026-09-15T02:00:00Z"),
+			}),
+		).toThrow("departure_date_not_in_past");
+	});
+
+	it("rejects a future local date", () => {
+		expect(() =>
+			retrospectiveDepartureCutoff({
+				lastWorkingDay: "2026-11-16",
+				timezone: "Europe/Berlin",
+				now: NOVEMBER,
+			}),
+		).toThrow("departure_date_not_in_past");
+	});
+
+	it("allows yesterday in the organization zone", () => {
+		const result = retrospectiveDepartureCutoff({
+			lastWorkingDay: "2026-11-14",
+			timezone: "Europe/Berlin",
+			now: NOVEMBER,
+		});
+
+		expect(result.lastWorkingDay).toBe("2026-11-14");
+		expect(result.cutoffLocalDate).toBe("2026-11-15");
+		expect(result.cutoff.toString()).toBe("2026-11-14T23:00:00Z");
 	});
 });
