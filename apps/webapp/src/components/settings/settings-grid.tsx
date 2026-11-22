@@ -2,34 +2,38 @@
 
 import { useTranslate } from "@tolgee/react";
 import { SettingsCard } from "@/components/settings/settings-card";
-import type {
-	FeatureFlag,
-	SettingsEntry,
-	SettingsGroupConfig,
+import {
+	type FeatureFlag,
+	isSettingFeatureBypassed,
+	type SettingsEntry,
+	type SettingsGroupConfig,
 } from "@/components/settings/settings-config";
 import { PageHeader } from "@/components/ui/page-header";
-import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import {
-	SettingsSearch,
-	SettingsSearchEmpty,
-	useSettingsSearch,
-} from "./settings-search";
+	resolveSettingsCapabilitiesInput,
+	type SettingsCapabilities,
+} from "@/lib/settings/capabilities";
+import { useOrganizationSettings } from "@/stores/organization-settings-store";
+import { SettingsSearch, SettingsSearchEmpty, useSettingsSearch } from "./settings-search";
 
 interface SettingsGridProps {
 	visibleSettings: SettingsEntry[];
 	visibleGroups: SettingsGroupConfig[];
 	/** The viewer reaches Organization settings, where features are switched on. */
 	canChangeFeatures?: boolean;
+	settingsCapabilities?: Partial<SettingsCapabilities>;
 }
 
 export function SettingsGrid({
 	visibleSettings,
 	visibleGroups,
 	canChangeFeatures = false,
+	settingsCapabilities,
 }: SettingsGridProps) {
 	const { t } = useTranslate();
 	const orgSettings = useOrganizationSettings();
 	const isHydrated = orgSettings.isHydrated;
+	const resolvedCapabilities = resolveSettingsCapabilitiesInput(settingsCapabilities);
 	const { query, setQuery, matchingGroups } = useSettingsSearch(visibleSettings, visibleGroups);
 
 	const isFeatureEnabled = (feature: FeatureFlag | undefined): boolean => {
@@ -57,9 +61,13 @@ export function SettingsGrid({
 							<ul className="grid gap-4 md:grid-cols-2">
 								{group.entries.map((entry) => {
 									const hasFeatureFlag = !!entry.requiredFeature;
-									const isLoading = hasFeatureFlag && !isHydrated;
+									const isFeatureBypassed = isSettingFeatureBypassed(entry, resolvedCapabilities);
+									const isLoading = hasFeatureFlag && !isFeatureBypassed && !isHydrated;
 									const isDisabled =
-										hasFeatureFlag && isHydrated && !isFeatureEnabled(entry.requiredFeature);
+										hasFeatureFlag &&
+										!isFeatureBypassed &&
+										isHydrated &&
+										!isFeatureEnabled(entry.requiredFeature);
 
 									return (
 										<li key={entry.id} className="min-w-0">

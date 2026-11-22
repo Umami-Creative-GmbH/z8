@@ -43,7 +43,7 @@ describe("SettingsGrid", () => {
 			descriptionDefault: "Manage your profile",
 			href: "/settings/profile",
 			icon: "user-circle",
-			minimumTier: "member",
+			minimumAccess: null,
 			group: "account",
 		},
 		{
@@ -54,7 +54,7 @@ describe("SettingsGrid", () => {
 			descriptionDefault: "Manage invitations and employee access",
 			href: "/settings/employees",
 			icon: "users",
-			minimumTier: "orgAdmin",
+			minimumAccess: "orgAdmin",
 			group: "organization",
 		},
 	];

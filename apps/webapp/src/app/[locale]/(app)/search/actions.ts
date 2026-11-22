@@ -6,7 +6,7 @@ import {
 	type TeamSearchPermission,
 } from "@/lib/app-search/live-results";
 import type { LiveAppSearchResults } from "@/lib/app-search/types";
-import { getCurrentSettingsAccessTier, getPrincipalContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess, getPrincipalContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 
 const EMPTY_RESULTS: LiveAppSearchResults = EMPTY_LIVE_APP_SEARCH_RESULTS;
@@ -15,12 +15,13 @@ export async function searchAppRecordsAction(
 	query: string,
 ): Promise<ServerActionResult<LiveAppSearchResults>> {
 	try {
-		const [principal, accessTier] = await Promise.all([
+		const [principal, settingsAccessCaller] = await Promise.all([
 			getPrincipalContext(),
-			getCurrentSettingsAccessTier(),
+			getCurrentSettingsAccess(),
 		]);
+		const settingsAccess = settingsAccessCaller?.settingsAccess ?? null;
 
-		if (!principal?.activeOrganizationId || !accessTier) {
+		if (!principal?.activeOrganizationId || !settingsAccess) {
 			return { success: true, data: EMPTY_RESULTS };
 		}
 
@@ -35,7 +36,7 @@ export async function searchAppRecordsAction(
 
 		const data = await searchLiveAppResults({
 			query,
-			accessTier,
+			settingsAccess,
 			organizationId: principal.activeOrganizationId,
 			currentEmployeeId: principal.employee?.id ?? null,
 			permissionsByTeamId,
