@@ -153,31 +153,45 @@ describe("buildStaticAppSearchResults", () => {
 		expect(new Set(keys).size).toBe(keys.length);
 	});
 
-	it("finds Driving licence pages only where the visibility reader shows them (#1420)", () => {
+	it("finds Driving licence pages only where the visibility reader shows them (#1420, #1937)", () => {
 		const input = {
 			t,
-			employeeRole: "admin" as const,
+			employeeRole: "employee" as const,
 			settingsAccessTier: "orgAdmin" as const,
 			billingEnabled: true,
 			showComplianceNav: true,
 			featureFlags: enabledFeatures,
 		};
-		const hrefs = (extra: {
-			showDrivingLicenceNav?: boolean;
+		const results = (extra: {
+			showMyDrivingLicenceNav?: boolean;
+			showTeamDrivingLicenceNav?: boolean;
 			drivingLicenceSettingsVisible?: boolean;
-		}) => buildStaticAppSearchResults({ ...input, ...extra }).map((result) => result.href);
+		}) => buildStaticAppSearchResults({ ...input, ...extra });
+		const hrefs = (extra: Parameters<typeof results>[0]) =>
+			results(extra).map((result) => result.href);
 
 		expect(hrefs({})).not.toContain("/driving-licence");
+		expect(hrefs({})).not.toContain("/team/driving-licence");
 		expect(hrefs({})).not.toContain("/settings/driving-licence");
 		expect(
-			buildStaticAppSearchResults({
-				...input,
-				showDrivingLicenceNav: true,
-			}).find((result) => result.href === "/driving-licence"),
+			results({ showMyDrivingLicenceNav: true }).find(
+				(result) => result.href === "/driving-licence",
+			),
 		).toMatchObject({
 			type: "page",
 			id: "page:driving-licence",
-			title: "Driving licence",
+			title: "My driving licence",
+		});
+		expect(hrefs({ showMyDrivingLicenceNav: true })).not.toContain("/team/driving-licence");
+		// A verifier who is not a manager still finds the team page.
+		expect(
+			results({ showTeamDrivingLicenceNav: true }).find(
+				(result) => result.href === "/team/driving-licence",
+			),
+		).toMatchObject({
+			type: "page",
+			id: "page:team-driving-licence",
+			title: "Driving licences",
 		});
 		expect(hrefs({ drivingLicenceSettingsVisible: true })).toContain("/settings/driving-licence");
 	});

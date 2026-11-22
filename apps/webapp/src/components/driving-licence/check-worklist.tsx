@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import {
 	Empty,
+	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
@@ -45,7 +46,10 @@ import { useSession } from "@/lib/auth-client";
 import { getDrivingLicenceCheckWorklistAction } from "@/lib/organization/driving-licence/check-actions";
 import type { AuthorizationStatus } from "@/lib/organization/driving-licence/check-types";
 import type { DrivingLicenceWorklistRow } from "@/lib/organization/driving-licence/checks";
-import { drivingLicenceCheckPath } from "@/lib/organization/driving-licence/paths";
+import {
+	DRIVING_LICENCE_INTENDED_DRIVERS_SETTINGS_PATH,
+	drivingLicenceCheckPath,
+} from "@/lib/organization/driving-licence/paths";
 import {
 	DRIVING_LICENCE_WORKLIST_STATUSES,
 	type DrivingLicenceWorklistDirection,
@@ -145,12 +149,24 @@ const STATUS_BADGE: Record<
 	not_enrolled: "outline",
 };
 
+/** What the empty Checks table explains (#1937). */
+export interface DrivingLicenceWorklistEmptyGuidance {
+	/** The viewer administers driving licence control, so the empty state links to Intended drivers. */
+	canAssignIntendedDrivers: boolean;
+	/** The viewer is an intended driver: their own check needs another verifier. */
+	selfIsIntendedDriver: boolean;
+}
+
 /**
  * The verifier's Checks table (#1428): intended drivers in scope, searched, filtered and sorted
  * on the server; by default checks due now first, then the soonest deadline. A row's action opens that
  * employee's check page (#1429).
  */
-export function DrivingLicenceVerifierWorklist() {
+export function DrivingLicenceVerifierWorklist({
+	emptyGuidance,
+}: {
+	emptyGuidance: DrivingLicenceWorklistEmptyGuidance;
+}) {
 	const { t } = useTranslate();
 	const { data: session } = useSession();
 	const organizationId = session?.session.activeOrganizationId;
@@ -290,6 +306,7 @@ export function DrivingLicenceVerifierWorklist() {
 					loading={worklist.isPending}
 					rows={rows}
 					filtered={filtered}
+					emptyGuidance={emptyGuidance}
 				>
 					{rows ? (
 						<WorklistTable
@@ -309,11 +326,13 @@ function WorklistRecords({
 	loading,
 	rows,
 	filtered,
+	emptyGuidance,
 	children,
 }: {
 	loading: boolean;
 	rows: readonly DrivingLicenceWorklistRow[] | null;
 	filtered: boolean;
+	emptyGuidance: DrivingLicenceWorklistEmptyGuidance;
 	children: React.ReactNode;
 }) {
 	const { t } = useTranslate();
@@ -324,12 +343,22 @@ function WorklistRecords({
 			</p>
 		);
 	if (!rows) return null;
-	if (!rows.length) return <WorklistEmpty filtered={filtered} />;
+	if (!rows.length)
+		return <WorklistEmpty filtered={filtered} guidance={emptyGuidance} />;
 	return children;
 }
 
-/** No rows: either nothing matches the search or filter, or nobody is in scope yet. */
-function WorklistEmpty({ filtered }: { filtered: boolean }) {
+/**
+ * No rows: either nothing matches the search or filter, or nobody is in scope yet. Checks never
+ * depend on the organization's vehicles, so the empty state names the two real reasons (#1937).
+ */
+function WorklistEmpty({
+	filtered,
+	guidance,
+}: {
+	filtered: boolean;
+	guidance: DrivingLicenceWorklistEmptyGuidance;
+}) {
 	const { t } = useTranslate();
 	if (filtered)
 		return (
@@ -350,12 +379,37 @@ function WorklistEmpty({ filtered }: { filtered: boolean }) {
 					{t("drivingLicence.checks.empty.title", "Nobody to check yet")}
 				</EmptyTitle>
 				<EmptyDescription>
-					{t(
-						"drivingLicence.checks.empty.description",
-						"Intended drivers in your verifier responsibility appear here. Ask an administrator if someone is missing.",
-					)}
+					{guidance.canAssignIntendedDrivers
+						? t(
+								"drivingLicence.checks.empty.assignDescription",
+								"Only intended drivers in your verifier responsibility appear here, and nobody is one yet. Assign intended drivers for the organization, a team or single employees.",
+							)
+						: t(
+								"drivingLicence.checks.empty.askDescription",
+								"Only intended drivers in your verifier responsibility appear here, and nobody is one yet. Ask an administrator to assign intended drivers.",
+							)}
 				</EmptyDescription>
+				{guidance.selfIsIntendedDriver ? (
+					<EmptyDescription>
+						{t(
+							"drivingLicence.checks.empty.self",
+							"You never appear in your own list: another verifier must check your licence.",
+						)}
+					</EmptyDescription>
+				) : null}
 			</EmptyHeader>
+			{guidance.canAssignIntendedDrivers ? (
+				<EmptyContent>
+					<Button asChild variant="outline">
+						<Link href={DRIVING_LICENCE_INTENDED_DRIVERS_SETTINGS_PATH}>
+							{t(
+								"drivingLicence.checks.empty.assignAction",
+								"Assign intended drivers",
+							)}
+						</Link>
+					</Button>
+				</EmptyContent>
+			) : null}
 		</Empty>
 	);
 }

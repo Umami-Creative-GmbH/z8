@@ -171,15 +171,19 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);
 		expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);
 	});
-	it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {
+	it("adopts both licence pages and the employee check while retaining other descendants and settings headings", () => {
 		expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
-		expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
+		expect(appPageOwnsHeading("/de/team/driving-licence")).toBe(true);
+		expect(appPageOwnsHeading("/en/team/driving-licence/employee-1")).toBe(
 			true,
 		);
 		expect(
-			appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),
+			appPageOwnsHeading("/en/team/driving-licence/employee-1/detail"),
 		).toBe(false);
-		expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);
+		// The old check route only redirects (#1937).
+		expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
+			false,
+		);
 		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(true);
 	});
 	it("retains independent approvals page headings", () => {
@@ -259,7 +263,8 @@ describe("route metadata", () => {
 		["/en/team/absences", "Team Absences"],
 		["/en/team/driving", "Driving Details"],
 		["/en/driving-licence", "My driving authorization"],
-		["/en/driving-licence/checks/employee-1", "My driving authorization"],
+		["/en/team/driving-licence", "Driving licence"],
+		["/en/team/driving-licence/employee-1", "Driving licence"],
 		["/en/reports/projects", "Project Reports"],
 		["/en/reports/vehicles", "Distance per Vehicle"],
 		["/en/settings/employees/employee-1", "Employees"],

@@ -33,6 +33,7 @@ export async function completeDrivingLicenceCheckAction(input: unknown) {
 			input,
 		);
 		revalidatePath("/driving-licence");
+		revalidatePath("/team/driving-licence", "layout");
 		revalidatePath("/settings/driving-licence");
 		return result;
 	});

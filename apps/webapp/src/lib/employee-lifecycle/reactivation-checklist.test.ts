@@ -233,7 +233,7 @@ describe("reactivation checklist", () => {
 				group: "access",
 				kind: "driving_authorizations",
 				count: 2,
-				href: `/driving-licence/checks/${PERSON}`,
+				href: `/team/driving-licence/${PERSON}`,
 			},
 			{
 				group: "grants",
@@ -294,7 +294,7 @@ describe("reactivation checklist", () => {
 				group: "access",
 				kind: "driving_authorizations",
 				count: 2,
-				href: `/driving-licence/checks/${PERSON}`,
+				href: `/team/driving-licence/${PERSON}`,
 			},
 			{
 				group: "shareLinks",

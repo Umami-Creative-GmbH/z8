@@ -70,7 +70,10 @@ const PAYROLL_PAGE_DESTINATION = routeMetadata("payroll");
 
 const SETTINGS_PAGE_DESTINATION = routeMetadata("settings");
 
-const DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata("driving-licence");
+const MY_DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata("driving-licence");
+const TEAM_DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata(
+	"team-driving-licence",
+);
 
 function isManagerOrAdmin(
 	employeeRole: StaticAppSearchInput["employeeRole"],
@@ -108,7 +111,8 @@ export function buildStaticAppSearchResults({
 	showPayrollNav,
 	featureFlags,
 	managesProject,
-	showDrivingLicenceNav,
+	showMyDrivingLicenceNav,
+	showTeamDrivingLicenceNav,
 	drivingLicenceSettingsVisible,
 }: StaticAppSearchInput): AppSearchResult[] {
 	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map(
@@ -162,13 +166,21 @@ export function buildStaticAppSearchResults({
 		});
 	}
 
-	// Named like the personal sidebar item, which the visibility reader also decides (#1420).
-	if (showDrivingLicenceNav) {
+	// Named like the sidebar items, which the visibility reader also decides (#1937).
+	if (showMyDrivingLicenceNav) {
 		pageResults.push({
 			type: "page",
-			id: `page:${DRIVING_LICENCE_PAGE_DESTINATION.id}`,
-			title: t("nav.driving-licence", "Driving licence"),
-			href: DRIVING_LICENCE_PAGE_DESTINATION.href,
+			id: `page:${MY_DRIVING_LICENCE_PAGE_DESTINATION.id}`,
+			title: t("nav.my-driving-licence", "My driving licence"),
+			href: MY_DRIVING_LICENCE_PAGE_DESTINATION.href,
+		});
+	}
+	if (showTeamDrivingLicenceNav) {
+		pageResults.push({
+			type: "page",
+			id: `page:${TEAM_DRIVING_LICENCE_PAGE_DESTINATION.id}`,
+			title: t("nav.team-driving-licences", "Driving licences"),
+			href: TEAM_DRIVING_LICENCE_PAGE_DESTINATION.href,
 		});
 	}
 

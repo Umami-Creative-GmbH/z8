@@ -12,8 +12,9 @@ import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation
 import { readDrivingLicenceVisibilityForIdentity } from "@/lib/organization/driving-licence/visibility";
 import {
 	HIDDEN_DRIVING_LICENCE_VISIBILITY,
-	showsDrivingLicenceNavigation,
 	showsDrivingLicenceSettings,
+	showsMyDrivingLicence,
+	showsTeamDrivingLicence,
 } from "@/lib/organization/driving-licence/visibility-rules";
 import { readEquipmentNavigation } from "@/lib/organization/equipment/access";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
@@ -66,7 +67,8 @@ export async function ServerAppSidebar({
 		showPersonnelFilesNav,
 		showPeriodSubmissionsNav,
 		showTeamPresenceNav,
-		showDrivingLicenceNav,
+		showMyDrivingLicenceNav,
+		showTeamDrivingLicenceNav,
 		drivingLicenceSettingsVisible,
 		managesProject,
 		authContext,
@@ -99,7 +101,8 @@ export async function ServerAppSidebar({
 				personnelFiles: showPersonnelFilesNav,
 				periodSubmissions: showPeriodSubmissionsNav,
 				teamPresence: showTeamPresenceNav,
-				drivingLicence: showDrivingLicenceNav,
+				myDrivingLicence: showMyDrivingLicenceNav,
+				teamDrivingLicence: showTeamDrivingLicenceNav,
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccessTier={settingsAccessTier ?? "member"}
@@ -231,7 +234,10 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 	const showFinanceNav = financeActor?.canRead ?? false;
 	const showPersonnelFilesNav =
 		!!personnelFileAccess && managesAnyDocuments(personnelFileAccess);
-	const showDrivingLicenceNav = showsDrivingLicenceNavigation(
+	const showMyDrivingLicenceNav = showsMyDrivingLicence(
+		drivingLicenceVisibility,
+	);
+	const showTeamDrivingLicenceNav = showsTeamDrivingLicence(
 		drivingLicenceVisibility,
 	);
 	const drivingLicenceSettingsVisible = showsDrivingLicenceSettings(
@@ -250,7 +256,8 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		showPersonnelFilesNav,
 		showPeriodSubmissionsNav,
 		showTeamPresenceNav,
-		showDrivingLicenceNav,
+		showMyDrivingLicenceNav,
+		showTeamDrivingLicenceNav,
 		drivingLicenceSettingsVisible,
 		managesProject,
 		authContext,

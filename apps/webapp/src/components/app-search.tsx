@@ -10,6 +10,7 @@ import {
 	IconHierarchy,
 	IconReceipt,
 	IconReport,
+	IconLicense,
 	IconSearch,
 	IconSettings,
 	IconShieldCheck,
@@ -74,6 +75,8 @@ const RESULT_ICON_BY_HREF: Record<string, SearchIcon> = {
 	"/team": IconUsers,
 	"/team/absences": IconBeach,
 	"/team/driving": IconSteeringWheel,
+	"/team/driving-licence": IconLicense,
+	"/driving-licence": IconSteeringWheel,
 	"/time-tracking": IconClock,
 	"/travel-expenses": IconReceipt,
 };

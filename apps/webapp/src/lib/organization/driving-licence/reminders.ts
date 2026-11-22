@@ -39,7 +39,7 @@ import {
 	drivingLicenceOffPeriods,
 	reminderOccasionFellWhileOff,
 } from "./off-periods";
-import { DRIVING_LICENCE_PATH, drivingLicenceCheckPath } from "./paths";
+import { drivingLicenceCheckPath, MY_DRIVING_LICENCE_PATH } from "./paths";
 import { reconcileDrivingLicenceTasks } from "./tasks";
 import type {
 	DrivingLicenceDatabase,
@@ -484,7 +484,7 @@ function reminderParams(
 		entityId: occasion.employeeId,
 		actionUrl:
 			recipientUserId === employee.userId
-				? DRIVING_LICENCE_PATH
+				? MY_DRIVING_LICENCE_PATH
 				: drivingLicenceCheckPath(occasion.employeeId),
 		idempotencyKey: `driving:${occasion.key}:${recipientUserId}`,
 		metadata: {

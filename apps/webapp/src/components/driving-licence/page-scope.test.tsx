@@ -26,16 +26,16 @@ afterEach(() => {
 	remote.userId = "viewer";
 });
 it("names the route during streamed first arrival without exposing role panels", () => {
-	render(<DrivingLicencePageLoading />);
+	render(<DrivingLicencePageLoading kind="team" />);
 	expect(
 		screen.getAllByRole("heading", { level: 1 }).map((n) => n.textContent),
-	).toEqual(["Driving licence"]);
+	).toEqual(["Driving licences"]);
 	expect(screen.getByRole("status")).toBeTruthy();
 	expect(screen.queryByRole("button")).toBeNull();
 });
 it("withdraws old role panels and action targets while the new organization render is pending", () => {
 	const view = render(
-		<DrivingLicencePageScope organizationId="old" userId="viewer">
+		<DrivingLicencePageScope kind="my" organizationId="old" userId="viewer">
 			<button type="button">Report impediment</button>
 		</DrivingLicencePageScope>,
 	);
@@ -44,14 +44,14 @@ it("withdraws old role panels and action targets while the new organization rend
 	).toBeTruthy();
 	remote.organizationId = "new";
 	view.rerender(
-		<DrivingLicencePageScope organizationId="old" userId="viewer">
+		<DrivingLicencePageScope kind="my" organizationId="old" userId="viewer">
 			<button type="button">Report impediment</button>
 		</DrivingLicencePageScope>,
 	);
 	expect(screen.queryByRole("button")).toBeNull();
 	expect(screen.getByRole("status")).toBeTruthy();
 	view.rerender(
-		<DrivingLicencePageScope organizationId="new" userId="viewer">
+		<DrivingLicencePageScope kind="my" organizationId="new" userId="viewer">
 			<p>New organization</p>
 		</DrivingLicencePageScope>,
 	);
@@ -60,7 +60,7 @@ it("withdraws old role panels and action targets while the new organization rend
 it("withdraws the old snapshot after identity loss", () => {
 	remote.userId = "";
 	render(
-		<DrivingLicencePageScope organizationId="old" userId="viewer">
+		<DrivingLicencePageScope kind="my" organizationId="old" userId="viewer">
 			<p>Private record</p>
 		</DrivingLicencePageScope>,
 	);
