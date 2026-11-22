@@ -2,6 +2,7 @@
 
 import { IconLoader2, IconUserCog } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import type { SelectableEmployee } from "@/app/[locale]/(app)/settings/employees/employee-action-types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,6 @@ import {
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
-import type { SelectableEmployee } from "../employees/actions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -40,7 +40,7 @@ function scopeLabel(scope: "team" | "organization", t: Translate) {
 		: t("settings.permissions.scope.organization", "Organization-wide");
 }
 
-export function PermissionsTableCard(props: {
+export function TeamPermissionsTableCard(props: {
 	loading: boolean;
 	/** The employee list failed to load: shown as an error with retry, not as "no employees". */
 	loadFailed?: boolean;
@@ -49,9 +49,7 @@ export function PermissionsTableCard(props: {
 	onRefresh: () => void;
 	employees: SelectableEmployee[];
 	onEdit: (employee: SelectableEmployee) => void;
-	getSummary: (
-		employeeId: string,
-	) => { count: number; scope: "team" | "organization" } | null;
+	getSummary: (employeeId: string) => { count: number; scope: "team" | "organization" } | null;
 }) {
 	const { t } = useTranslate();
 	const {
@@ -112,7 +110,10 @@ export function PermissionsTableCard(props: {
 							role="status"
 							aria-label={t("settings.permissions.loading", "Loading employee permissions")}
 						>
-							<IconLoader2 className="size-8 animate-spin text-muted-foreground" aria-hidden="true" />
+							<IconLoader2
+								className="size-8 animate-spin text-muted-foreground"
+								aria-hidden="true"
+							/>
 						</div>
 					) : loadFailed ? (
 						<div
@@ -120,10 +121,7 @@ export function PermissionsTableCard(props: {
 							className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
 						>
 							<p className="text-sm">
-								{t(
-									"settings.permissions.loadFailed",
-									"Employee permissions could not be loaded.",
-								)}
+								{t("settings.permissions.loadFailed", "Employee permissions could not be loaded.")}
 							</p>
 							<Button variant="outline" size="sm" onClick={onRefresh}>
 								{t("common.retry", "Try again")}
@@ -203,7 +201,9 @@ export function PermissionsTableCard(props: {
 																},
 															)}
 														</Badge>
-														<Badge variant="outline">{scopeLabel(permissionSummary.scope, t)}</Badge>
+														<Badge variant="outline">
+															{scopeLabel(permissionSummary.scope, t)}
+														</Badge>
 													</div>
 												) : (
 													<span className="text-sm text-muted-foreground">

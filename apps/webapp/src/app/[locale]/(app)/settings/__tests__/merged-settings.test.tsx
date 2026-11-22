@@ -159,6 +159,12 @@ vi.mock("@/components/organization/organization-period-submissions-card", () => 
 vi.mock("@/components/organization/organization-tracking-card", () => ({
 	OrganizationTrackingCard: () => null,
 }));
+vi.mock("@/components/settings/custom-roles/custom-roles-management", () => ({
+	CustomRolesManagement: () => null,
+}));
+vi.mock("@/components/settings/custom-roles/team-permissions-tab", () => ({
+	TeamPermissionsTab: () => null,
+}));
 
 import AuditPage from "../audit-export/page";
 import LegacyAuditPage from "../audit-log/page";
@@ -178,12 +184,22 @@ import EmailPage from "../enterprise/email/page";
 import IdentityPage from "../enterprise/identity-setup/page";
 import LegacySSOPage from "../enterprise/sso/page";
 import ChatPage from "../notification-channels/page";
+import LegacyPermissionsPage from "../permissions/page";
+import RolesPage from "../roles/page";
 import LegacySlackPage from "../slack/page";
 import LegacyTeamsPage from "../teams-notifications/page";
 import LegacyTelegramPage from "../telegram/page";
 import LegacyWebhooksPage from "../webhooks/page";
 
-const mergedPages = [EmailPage, DeveloperPage, AuditPage, IdentityPage, ChatPage, ClockingPage];
+const mergedPages = [
+	EmailPage,
+	DeveloperPage,
+	AuditPage,
+	IdentityPage,
+	ChatPage,
+	ClockingPage,
+	RolesPage,
+];
 async function content(page: (typeof mergedPages)[number]) {
 	return page().props.children.type();
 }
@@ -315,6 +331,18 @@ describe("merged organization settings", () => {
 			settingsAccess: "orgAdmin",
 		});
 	});
+	it("combines custom roles and team permissions for the active organization", async () => {
+		const page = await content(RolesPage);
+		expect(page.key).toBe("org-1");
+		expect(page.props.defaultTab).toBe("roles");
+		expect(tabs(page)).toEqual(["roles", "team-permissions"]);
+		expect(page.props.tabs[0].panel.props).toMatchObject({
+			organizationId: "org-1",
+		});
+		expect(page.props.tabs[1].panel.props).toMatchObject({
+			organizationId: "org-1",
+		});
+	});
 	it.each([
 		[LegacyEmailPage, "/settings/enterprise/email?tab=templates"],
 		[LegacyTelegramPage, "/settings/notification-channels?tab=telegram"],
@@ -326,6 +354,7 @@ describe("merged organization settings", () => {
 		[LegacyDiscordPage, "/settings/notification-channels?tab=discord"],
 		[LegacySSOPage, "/settings/enterprise/identity-setup?tab=sso"],
 		[LegacyBrandingPage, "/settings/enterprise/domains?tab=branding"],
+		[LegacyPermissionsPage, "/settings/roles?tab=team-permissions"],
 	])("preserves a guarded legacy route", async (page, target) => {
 		const render = () => {
 			// Every Next page receives searchParams; the webhooks redirect forwards them.

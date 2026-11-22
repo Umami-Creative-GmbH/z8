@@ -923,12 +923,17 @@
       "adminRequired": "Administratorzugriff erforderlich",
       "allTeams": "Alle Teams (organisationsweit)",
       "allTeamsHelp": "Berechtigungen gelten für alle Teams in der Organisation",
+      "approveTeamRequests": "Teamanfragen genehmigen",
+      "approveTeamRequestsDescription": "Genehmigen von Urlaubs- und Abwesenheitsanträgen erlauben",
       "badge": {
         "allPermissions": "Alle Berechtigungen",
         "permissionCount": "{count} Berechtigung(en)"
       },
+      "createTeams": "Teams erstellen",
+      "createTeamsDescription": "Erstellen neuer Teams in der Organisation erlauben",
       "description": "Mitarbeiterberechtigungen für Teamvorgänge verwalten",
       "editor": {
+        "description": "Berechtigungen für {employeeName} konfigurieren. Administratoren haben automatisch alle Berechtigungen.",
         "title": "Berechtigungen bearbeiten - {name}"
       },
       "employeePermissions": {
@@ -938,6 +943,10 @@
       "emptyState": "Keine Mitarbeiter gefunden",
       "loadFailed": "Mitarbeiterberechtigungen konnten nicht geladen werden.",
       "loading": "Mitarbeiterberechtigungen werden geladen",
+      "manageTeamMembers": "Teammitglieder verwalten",
+      "manageTeamMembersDescription": "Hinzufügen und Entfernen von Teammitgliedern erlauben",
+      "manageTeamSettings": "Teameinstellungen verwalten",
+      "manageTeamSettingsDescription": "Bearbeiten von Teaminformationen und -einstellungen erlauben",
       "noEmployeeFeature": "Berechtigungen verwalten",
       "noPermissions": "Keine Berechtigungen",
       "permissions": "Berechtigungen",
