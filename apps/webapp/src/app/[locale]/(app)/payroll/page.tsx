@@ -10,9 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAbility, getAuthContext, getCurrentSettingsAccess } from "@/lib/auth-helpers";
+import { getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { isOrgAdminForOrganization } from "@/lib/payroll-access/org-admin";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { getPayrollReadiness } from "@/lib/payroll-readiness/get-payroll-readiness";
 import { canCloseMonths, canReopenMonths } from "@/lib/time-tracking/closed-months/permissions";
@@ -36,10 +36,9 @@ async function PayrollPageContent() {
 		label: start.toFormat("LLLL yyyy"),
 	};
 
-	const [t, authContext, settingsCaller, ability] = await Promise.all([
+	const [t, authContext, ability] = await Promise.all([
 		getTranslate(),
 		getAuthContext(),
-		getCurrentSettingsAccess(),
 		getAbility(),
 	]);
 
@@ -48,11 +47,7 @@ async function PayrollPageContent() {
 		return <PayrollFailureState code="AuthenticationError" t={t} />;
 	}
 
-	const isOrgAdmin = Boolean(
-		settingsCaller?.settingsAccess &&
-			settingsCaller.organizationId === organizationId &&
-			meetsSettingsAccess(settingsCaller.settingsAccess, "orgAdmin"),
-	);
+	const isOrgAdmin = await isOrgAdminForOrganization(organizationId);
 	const hasPayrollGrant =
 		!isOrgAdmin &&
 		Boolean(
@@ -135,6 +130,14 @@ async function PayrollPageContent() {
 		);
 	}
 
+	const closedMonthsError =
+		canManageClosedMonths && closedMonthsResult && !closedMonthsResult.success
+			? actionErrorMessage(t, closedMonthsResult, {}, [
+					"settings.closedMonths.loadErrorDescription",
+					"Reload the page to try again.",
+				])
+			: null;
+
 	return (
 		<PayrollWorkspace
 			initialSummary={summaryResult.data}
@@ -142,6 +145,7 @@ async function PayrollPageContent() {
 			isOrgAdmin={isOrgAdmin}
 			initialReadiness={initialReadiness}
 			closedMonthsOverview={closedMonthsResult?.success ? closedMonthsResult.data : null}
+			closedMonthsError={closedMonthsError}
 		/>
 	);
 }

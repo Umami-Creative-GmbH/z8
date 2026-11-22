@@ -484,6 +484,49 @@ describe("payroll actions access paths & scoped export history (#1957)", () => {
 				expect(deniedOrgWideDownload.code).toBe("AuthorizationError");
 			}
 		});
+
+		it("hides and refuses download when carried days stay in scope but job filters include an out-of-scope employee or unfiltered org-wide scope", async () => {
+			// emp-2 had no carried work days (e.g. only absences/payouts), so carried = { emp-1 }
+			// while filters.employeeIds = [emp-1, emp-2] or unfiltered org-wide.
+			mockState.carriedDayRows = [
+				{ jobId: JOB_IN_SCOPE, employeeId: "emp-1" },
+				{ jobId: JOB_OUT_OF_SCOPE, employeeId: "emp-1" },
+				{ jobId: JOB_ORG_WIDE, employeeId: "emp-1" },
+			];
+
+			const history = await getPayrollExportHistoryAction();
+			expect(history.success).toBe(true);
+			if (history.success) {
+				expect(history.data.exports.map((job) => job.id)).toEqual([JOB_IN_SCOPE]);
+			}
+
+			mockState.jobLookupRow = {
+				id: JOB_OUT_OF_SCOPE,
+				organizationId: "org-1",
+				filters: {
+					dateRange: { start: "2026-06-01", end: "2026-06-30" },
+					employeeIds: ["emp-1", "emp-2"],
+				},
+			};
+			const deniedMixed = await getPayrollExportDownloadUrlAction(JOB_OUT_OF_SCOPE);
+			expect(deniedMixed.success).toBe(false);
+			if (!deniedMixed.success) {
+				expect(deniedMixed.code).toBe("AuthorizationError");
+			}
+
+			mockState.jobLookupRow = {
+				id: JOB_ORG_WIDE,
+				organizationId: "org-1",
+				filters: {
+					dateRange: { start: "2026-06-01", end: "2026-06-30" },
+				},
+			};
+			const deniedOrgWide = await getPayrollExportDownloadUrlAction(JOB_ORG_WIDE);
+			expect(deniedOrgWide.success).toBe(false);
+			if (!deniedOrgWide.success) {
+				expect(deniedOrgWide.code).toBe("AuthorizationError");
+			}
+		});
 	});
 
 	describe("Close-month-only custom-role holder (no org admin, no payroll grant)", () => {
@@ -513,6 +556,30 @@ describe("payroll actions access paths & scoped export history (#1957)", () => {
 				getPayrollExportDownloadUrlAction(JOB_IN_SCOPE),
 				startScopedPayrollExportAction({ ...baseRequest, formatId: "datev_lohn" }),
 				settlePayrollDaysAction(baseRequest),
+			]);
+
+			for (const result of results) {
+				expect(result.success).toBe(false);
+				if (!result.success) {
+					expect(result.code).toBe("AuthorizationError");
+				}
+			}
+		});
+
+		it("returns AuthorizationError (not AuthenticationError) for an employee-less close-month-only user", async () => {
+			mockState.authContext = {
+				user: { id: "user-closer-no-emp", email: "closer2@example.com", name: "Closer No Emp" },
+				session: { activeOrganizationId: "org-1" },
+				employee: null,
+			};
+
+			const results = await Promise.all([
+				getPayrollWorkspaceSummaryAction(baseRequest),
+				getPayrollExportHistoryAction(),
+				getPayrollReadinessForWorkspaceAction({
+					startDate: "2026-06-01",
+					endDate: "2026-06-30",
+				}),
 			]);
 
 			for (const result of results) {

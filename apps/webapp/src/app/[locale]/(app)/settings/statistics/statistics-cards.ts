@@ -128,7 +128,7 @@ export function attentionCards(
 			),
 			link: links.payrollReadiness
 				? {
-						href: "/settings/payroll-readiness",
+						href: "/payroll",
 						label: t("settings.statistics.kpi.openPayrollReadiness", "Review in payroll readiness"),
 					}
 				: undefined,

@@ -72,7 +72,7 @@ describe("attentionCards", () => {
 
 		expect(withLinks.cards.map((card) => [card.key, card.tone, card.link?.href])).toEqual([
 			["pendingApprovals", "warning", "/approvals/inbox"],
-			["staleLiveWork", "warning", "/settings/payroll-readiness"],
+			["staleLiveWork", "warning", "/payroll"],
 			["openViolations", "neutral", "/settings/work-policies"],
 		]);
 		expect(withoutLinks.cards.every((card) => card.link === undefined)).toBe(true);

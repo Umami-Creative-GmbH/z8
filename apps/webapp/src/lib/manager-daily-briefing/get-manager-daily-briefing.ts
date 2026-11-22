@@ -647,7 +647,7 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 				description:
 					"No active wage type mappings are configured for the active payroll export setup.",
 				descriptionKey: "today.briefing.items.payrollWageMappings.description",
-				href: "/settings/payroll-readiness",
+				href: "/payroll",
 			},
 		];
 	},

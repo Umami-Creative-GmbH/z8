@@ -148,7 +148,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		actionLabel: "Review payroll readiness",
 		actionLabelKey: "settings.implementationChecklist.items.payrollReadiness.actionLabel",
 		confirmationCovers: "payroll-export",
-		href: "/settings/payroll-readiness",
+		href: "/payroll",
 		detector: "go-live",
 		// An optional business confirmation; it never verifies the item.
 		canManualComplete: true,

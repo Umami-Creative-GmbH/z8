@@ -2723,4 +2723,22 @@ describe("PayrollWorkspace unified IA (#1957)", () => {
 		expect(screen.queryByRole("link", { name: "Work balances" })).toBeNull();
 		expect(screen.queryByRole("link", { name: "Payroll export settings" })).toBeNull();
 	});
+
+	it("keeps the Closed months tab visible with an error alert when loading closed months fails", () => {
+		window.history.replaceState(null, "", "/payroll?tab=closed-months");
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[]}
+				isOrgAdmin
+				closedMonthsOverview={null}
+				closedMonthsError="Reload the page to try again."
+			/>,
+		);
+
+		expect(screen.getByRole("tab", { name: "Closed months", selected: true })).toBeTruthy();
+		expect(screen.getByText("Closed months could not be loaded")).toBeTruthy();
+		expect(screen.getByText("Reload the page to try again.")).toBeTruthy();
+		window.history.replaceState(null, "", "/payroll");
+	});
 });

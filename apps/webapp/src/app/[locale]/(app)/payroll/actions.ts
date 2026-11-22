@@ -9,11 +9,11 @@ import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { payrollBlockerDismissal, payrollExportCarriedDay, payrollExportJob } from "@/db/schema";
-import { getAbility, getAuthContext, getCurrentSettingsAccess } from "@/lib/auth-helpers";
+import { getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { isOrgAdminForOrganization } from "@/lib/payroll-access/org-admin";
 import {
 	getActivePayrollAccessGrantScope,
 	hasActivePayrollAccessGrant,
@@ -904,21 +904,30 @@ export interface PayrollWorkspaceExportHistory {
  * admins, strictly limited to jobs within the active payroll access grant for
  * delegated payroll officers. Denied to close-month-only actors.
  */
+const PAYROLL_EXPORT_HISTORY_LIMIT = 50;
+const PAYROLL_OFFICER_HISTORY_SCAN_LIMIT = 250;
+
 export async function getPayrollExportHistoryAction(): Promise<
 	ServerActionResult<PayrollWorkspaceExportHistory>
 > {
 	return runPayrollWorkspaceAction(async (t) => {
 		const actor = await requirePayrollWorkspaceActor(t);
+		const fetchLimit = actor.isOrgAdmin
+			? PAYROLL_EXPORT_HISTORY_LIMIT
+			: PAYROLL_OFFICER_HISTORY_SCAN_LIMIT;
 		const [[orgRow], jobs] = await Promise.all([
 			db
 				.select({ timezone: organization.timezone })
 				.from(organization)
 				.where(eq(organization.id, actor.organizationId))
 				.limit(1),
-			getExportJobHistory(actor.organizationId),
+			getExportJobHistory(actor.organizationId, fetchLimit),
 		]);
 		const organizationTimezone = resolveOrganizationTimezone(orgRow?.timezone).timezone;
-		const exports = await filterExportJobsForPayrollActor(actor, jobs);
+		const exports = (await filterExportJobsForPayrollActor(actor, jobs)).slice(
+			0,
+			PAYROLL_EXPORT_HISTORY_LIMIT,
+		);
 		return { exports, organizationTimezone };
 	});
 }
@@ -1019,12 +1028,17 @@ async function filterExportJobsForPayrollActor<
 		const allowed = allowedByStart.get(job.filters.dateRange.start) ?? new Set<string>();
 		const carried = carriedByJob.get(job.id);
 		if (carried && carried.size > 0) {
-			return allowed.size > 0 && Array.from(carried).every((id) => allowed.has(id));
+			if (allowed.size === 0 || !Array.from(carried).every((id) => allowed.has(id))) {
+				return false;
+			}
 		}
 		const explicitEmployeeIds = job.filters.employeeIds;
 		const hasNonEmployeeFilters =
 			(job.filters.teamIds?.length ?? 0) > 0 || (job.filters.projectIds?.length ?? 0) > 0;
-		if (explicitEmployeeIds && explicitEmployeeIds.length > 0 && !hasNonEmployeeFilters) {
+		if (hasNonEmployeeFilters) {
+			return grantScope === "all";
+		}
+		if (explicitEmployeeIds && explicitEmployeeIds.length > 0) {
 			return allowed.size > 0 && explicitEmployeeIds.every((id) => allowed.has(id));
 		}
 		return grantScope === "all";
@@ -1098,10 +1112,7 @@ async function resolveActivePayrollEmployeesForActor(
  * restricted payroll figures, settlement, or export actions.
  */
 async function requirePayrollWorkspaceActor(t: PayrollTranslate): Promise<PayrollWorkspaceActor> {
-	const [authContext, settingsCaller] = await Promise.all([
-		getAuthContext(),
-		getCurrentSettingsAccess?.() ?? Promise.resolve(null),
-	]);
+	const authContext = await getAuthContext();
 	const organizationId = authContext?.session.activeOrganizationId;
 	if (!authContext || !organizationId) {
 		throw new AuthenticationError({
@@ -1109,11 +1120,7 @@ async function requirePayrollWorkspaceActor(t: PayrollTranslate): Promise<Payrol
 		});
 	}
 
-	const isOrgAdmin = Boolean(
-		settingsCaller?.settingsAccess &&
-			settingsCaller.organizationId === organizationId &&
-			meetsSettingsAccess(settingsCaller.settingsAccess, "orgAdmin"),
-	);
+	const isOrgAdmin = await isOrgAdminForOrganization(organizationId);
 
 	if (isOrgAdmin) {
 		const activeEmployee =
@@ -1129,8 +1136,14 @@ async function requirePayrollWorkspaceActor(t: PayrollTranslate): Promise<Payrol
 	}
 
 	if (!authContext.employee) {
-		throw new AuthenticationError({
-			message: t("payroll.errors.authenticationRequired", "Authentication required"),
+		throw new AuthorizationError({
+			message: t(
+				"payroll.errors.noAssignedEmployees",
+				"No payroll employees are assigned to your access scope",
+			),
+			userId: authContext.user.id,
+			resource: "payroll_workspace",
+			action: "read",
 		});
 	}
 

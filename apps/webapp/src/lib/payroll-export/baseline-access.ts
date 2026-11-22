@@ -9,15 +9,15 @@ import {
 	payrollExportBaseline,
 	payrollExportJob,
 } from "@/db/schema";
-import { getAuthContext, getCurrentSettingsAccess } from "@/lib/auth-helpers";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthenticationError,
 	AuthorizationError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
+import { isOrgAdminForOrganization } from "@/lib/payroll-access/org-admin";
 import {
 	resolveOrganizationPayrollEmployeeIds,
 	resolvePayrollAccessibleEmployeeIds,
@@ -46,12 +46,7 @@ export async function requireBaselineActor(
 		throw new AuthenticationError({ message: "Authentication required" });
 	const organizationId = auth.session.activeOrganizationId;
 	if (!organizationId) throw denied(auth.user.id);
-	const settingsCaller = await getCurrentSettingsAccess?.();
-	if (
-		settingsCaller?.settingsAccess &&
-		settingsCaller.organizationId === organizationId &&
-		meetsSettingsAccess(settingsCaller.settingsAccess, "orgAdmin")
-	) {
+	if (await isOrgAdminForOrganization(organizationId)) {
 		const activeScope = await resolveOrganizationPayrollEmployeeIds(
 			organizationId,
 			database,

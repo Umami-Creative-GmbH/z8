@@ -187,6 +187,35 @@ describe("PayrollPage actor paths (#1957)", () => {
 				isOrgAdmin: true,
 				initialReadiness: sampleReadiness,
 				closedMonthsOverview: sampleClosedMonths,
+				closedMonthsError: null,
+			}),
+		);
+	});
+
+	it("passes closedMonthsError instead of hiding the Closed months tab when loading fails for an org admin", async () => {
+		mockState.authContext = {
+			user: { id: "user-owner", email: "owner@example.com", name: "Owner" },
+			session: { activeOrganizationId: "org-1" },
+			employee: null,
+		};
+		mockState.settingsCaller = {
+			organizationId: "org-1",
+			settingsAccess: { tier: "orgAdmin" },
+		};
+		mockState.canClose = true;
+		mockState.getClosedMonthsOverview.mockResolvedValue({
+			success: false,
+			error: "Database unavailable",
+			code: "DatabaseError",
+		});
+
+		await renderPayrollPageContent();
+
+		expect(mockState.workspaceSpy).toHaveBeenCalledWith(
+			expect.objectContaining({
+				isOrgAdmin: true,
+				closedMonthsOverview: null,
+				closedMonthsError: "Reload the page to try again.",
 			}),
 		);
 	});

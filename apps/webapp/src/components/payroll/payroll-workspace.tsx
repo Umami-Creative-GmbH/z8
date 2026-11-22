@@ -1,6 +1,6 @@
 "use client";
 
-import { IconScale, IconSettings } from "@tabler/icons-react";
+import { IconAlertTriangle, IconScale, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import Link from "next/link";
 import { useReducer, useRef, useTransition } from "react";
@@ -9,6 +9,7 @@ import type { PayrollExportFormatOption } from "@/app/[locale]/(app)/payroll/act
 import type { ClosedMonthsOverview } from "@/app/[locale]/(app)/settings/closed-months/actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { ClosedMonthsSettings } from "@/components/settings/closed-months/closed-months-settings";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import type { PayrollReadinessResult } from "@/lib/payroll-readiness/get-payroll-readiness";
@@ -49,6 +50,8 @@ interface PayrollWorkspaceProps {
 	initialReadiness?: PayrollReadinessResult | null;
 	/** Present when the actor is authorized to close or reopen months (#1957). */
 	closedMonthsOverview?: ClosedMonthsOverview | null;
+	/** Present when the actor may manage closed months but loading the overview failed (#1957). */
+	closedMonthsError?: string | null;
 }
 
 export function PayrollWorkspace(props: PayrollWorkspaceProps) {
@@ -73,6 +76,7 @@ function PayrollWorkspaceContent({
 	isOrgAdmin = false,
 	initialReadiness = null,
 	closedMonthsOverview = null,
+	closedMonthsError = null,
 }: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
@@ -338,7 +342,22 @@ function PayrollWorkspaceContent({
 							? {
 									"closed-months": <ClosedMonthsSettings overview={closedMonthsOverview} />,
 								}
-							: {}),
+							: closedMonthsError
+								? {
+										"closed-months": (
+											<Alert variant="destructive">
+												<IconAlertTriangle aria-hidden="true" />
+												<AlertTitle>
+													{t(
+														"settings.closedMonths.loadErrorTitle",
+														"Closed months could not be loaded",
+													)}
+												</AlertTitle>
+												<AlertDescription>{closedMonthsError}</AlertDescription>
+											</Alert>
+										),
+									}
+								: {}),
 					}}
 				/>
 			</div>
