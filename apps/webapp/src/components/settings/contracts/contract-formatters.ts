@@ -212,6 +212,8 @@ export function useContractLabels() {
 				return t("settings.contracts.fields.weeklyHours", "Weekly hours");
 			case "scheduleMode":
 				return t("settings.contracts.fields.scheduleMode", "Schedule mode");
+			case "weeklyScheduleDays":
+				return t("settings.contracts.fields.weeklyScheduleDays", "Working days");
 			case "workModel":
 				return t("settings.contracts.fields.workModel", "Work model");
 			case "presenceOverride":

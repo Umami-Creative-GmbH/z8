@@ -106,6 +106,7 @@ export interface ContractDefaultFieldDiff {
 		| "workPolicy"
 		| "weeklyContractMinutes"
 		| "scheduleMode"
+		| "weeklyScheduleDays"
 		| "workModel"
 		| "presenceOverride"
 		| "presenceStatus"
@@ -738,6 +739,33 @@ export async function scheduleContractDefaultPolicyUpdate(
 	return db.transaction((tx) => scheduleContractDefaultPolicyUpdateInTx(tx, input));
 }
 
+const CANONICAL_DAY_ORDER: readonly DayOfWeek[] = [
+	"monday",
+	"tuesday",
+	"wednesday",
+	"thursday",
+	"friday",
+	"saturday",
+	"sunday",
+];
+
+function serializeWeeklyScheduleGrid(
+	days: readonly {
+		readonly dayOfWeek: DayOfWeek;
+		readonly isWorkDay: boolean;
+		readonly minutesPerDay: number;
+		readonly latestClockIn: string | null;
+	}[],
+): string {
+	if (days.length === 0) return "";
+	const byDay = new Map(days.map((d) => [d.dayOfWeek, d]));
+	return CANONICAL_DAY_ORDER.map((day) => {
+		const row = byDay.get(day);
+		if (!row) return `${day}:0:0:`;
+		return `${day}:${row.isWorkDay ? 1 : 0}:${row.minutesPerDay}:${row.latestClockIn ?? ""}`;
+	}).join("|");
+}
+
 function diffOperationalContracts(
 	before: EffectiveContractOnDay,
 	after: EffectiveContractOnDay,
@@ -745,6 +773,9 @@ function diffOperationalContracts(
 	changes: ContractDefaultFieldDiff[];
 	preservedDivergenceFields: string[];
 } {
+	const beforeGrid = serializeWeeklyScheduleGrid(before.weeklyScheduleDays);
+	const afterGrid = serializeWeeklyScheduleGrid(after.weeklyScheduleDays);
+
 	const comparisons: {
 		field: ContractDefaultFieldDiff["field"];
 		beforeVal: string | number | null;
@@ -770,6 +801,13 @@ function diffOperationalContracts(
 			field: "scheduleMode",
 			beforeVal: before.scheduleMode,
 			afterVal: after.scheduleMode,
+			beforeSource: before.scheduleModeSource,
+			afterSource: after.scheduleModeSource,
+		},
+		{
+			field: "weeklyScheduleDays",
+			beforeVal: beforeGrid || null,
+			afterVal: afterGrid || null,
 			beforeSource: before.scheduleModeSource,
 			afterSource: after.scheduleModeSource,
 		},
@@ -822,7 +860,11 @@ function diffOperationalContracts(
 				beforeSource: entry.beforeSource,
 				afterSource: entry.afterSource,
 			});
-		} else if (entry.field !== "presenceStatus" && entry.afterSource === "employee_override") {
+		} else if (
+			entry.field !== "presenceStatus" &&
+			entry.field !== "weeklyScheduleDays" &&
+			entry.afterSource === "employee_override"
+		) {
 			preservedDivergenceFields.push(entry.field);
 		}
 	}

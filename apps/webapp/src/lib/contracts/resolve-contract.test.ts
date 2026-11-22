@@ -351,4 +351,172 @@ describe("contracts pure helpers & resolver", () => {
 				.employmentPeriodId,
 		).toBe("period-1");
 	});
+
+	it("does not fall back to currentTeamId when teamHistory is empty (A1-11)", () => {
+		expect(
+			resolvePrimaryTeamAtDayStart({
+				teamHistory: [],
+				day: parsePlainDate("2026-06-15"),
+				employeeCalendarTimezone: "Europe/Berlin",
+				foreignTeamIds: new Set(),
+				currentTeamId: "team-b",
+			}),
+		).toBeNull();
+		// Explicit synthetic/preview override still applies
+		expect(
+			resolvePrimaryTeamAtDayStart({
+				teamHistory: [],
+				day: parsePlainDate("2026-06-15"),
+				employeeCalendarTimezone: "Europe/Berlin",
+				foreignTeamIds: new Set(),
+				teamIdOverride: "team-b",
+				hasTeamIdOverride: true,
+			}),
+		).toBe("team-b");
+	});
+
+	it("preserves historical eligibility of a retired policy on dates before its dated assignment end (A1-12)", () => {
+		const retiredPolicy = detailedPolicy({ id: "policy-retired", isActive: false });
+		const assignment = {
+			id: "asgn-retired",
+			policyId: retiredPolicy.id,
+			assignmentType: "employee" as const,
+			teamId: null,
+			employeeId: "emp-1",
+			sourceKind: "employment_terms",
+			effectiveFrom: new Date("2026-01-01T00:00:00Z"),
+			effectiveUntil: new Date("2026-06-01T00:00:00Z"),
+			effectiveFromDate: "2026-01-01",
+			effectiveUntilDate: "2026-06-01",
+			priority: 0,
+			isActive: true,
+			createdAt: new Date("2026-01-01T00:00:00Z"),
+		};
+
+		const historicalDay = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-05-11"), // Monday before retirement end
+				policiesById: new Map([[retiredPolicy.id, retiredPolicy]]),
+				policyAssignments: [assignment],
+			}),
+		);
+		expect(historicalDay.workPolicy?.policyId).toBe(retiredPolicy.id);
+		expect(historicalDay.requiredMinutes).toBe(540);
+
+		const afterEnd = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-01"),
+				policiesById: new Map([[retiredPolicy.id, retiredPolicy]]),
+				policyAssignments: [assignment],
+			}),
+		);
+		expect(afterEnd.workPolicy).toBeNull();
+	});
+
+	it("resolves alternating biweekly cycleWeek days and monthly/biweekly/yearly simple cycles (A1-13)", () => {
+		const biweeklyPolicy: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-biweekly",
+			versions: [
+				{
+					...detailedPolicy().versions[0]!,
+					effectiveFromDate: "2026-06-01", // Monday (week 1)
+					schedule: {
+						id: "sched-bi",
+						scheduleCycle: "biweekly",
+						scheduleType: "detailed",
+						workingDaysPreset: "custom",
+						hoursPerCycle: null,
+						normalizedCycleMinutes: null,
+						homeOfficeDaysPerCycle: 0,
+						days: [
+							{
+								dayOfWeek: "monday",
+								hoursPerDay: "8.00",
+								minutesPerDay: 480,
+								isWorkDay: true,
+								cycleWeek: 1,
+								latestClockIn: null,
+							},
+							{
+								dayOfWeek: "tuesday",
+								hoursPerDay: "6.00",
+								minutesPerDay: 360,
+								isWorkDay: true,
+								cycleWeek: 2,
+								latestClockIn: null,
+							},
+						],
+					},
+				},
+			],
+		};
+
+		const asgn = {
+			id: "asgn-bi",
+			policyId: biweeklyPolicy.id,
+			assignmentType: "employee" as const,
+			teamId: null,
+			employeeId: "emp-1",
+			sourceKind: "employment_terms",
+			effectiveFrom: new Date("2026-06-01T00:00:00Z"),
+			effectiveUntil: null,
+			effectiveFromDate: "2026-06-01",
+			effectiveUntilDate: null,
+			priority: 0,
+			isActive: true,
+			createdAt: new Date("2026-06-01T00:00:00Z"),
+		};
+
+		// Week 1 (2026-06-01 Mon -> 480m, 2026-06-02 Tue -> 0m)
+		const w1Mon = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-01"),
+				policiesById: new Map([[biweeklyPolicy.id, biweeklyPolicy]]),
+				policyAssignments: [asgn],
+			}),
+		);
+		expect(w1Mon.requiredMinutes).toBe(480);
+		expect(w1Mon.weeklyScheduleDays.find((d) => d.dayOfWeek === "tuesday")?.isWorkDay).toBe(false);
+
+		// Week 2 (2026-06-08 Mon -> 0m, 2026-06-09 Tue -> 360m)
+		const w2Tue = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-09"),
+				policiesById: new Map([[biweeklyPolicy.id, biweeklyPolicy]]),
+				policyAssignments: [asgn],
+			}),
+		);
+		expect(w2Tue.requiredMinutes).toBe(360);
+		expect(w2Tue.weeklyScheduleDays.find((d) => d.dayOfWeek === "monday")?.isWorkDay).toBe(false);
+
+		// Simple biweekly (80h / 2 = 40h = 2400m -> 480m per weekday)
+		const simpleBiweekly: WorkPolicySnapshot = {
+			...detailedPolicy(),
+			id: "policy-simple-bi",
+			versions: [
+				{
+					...detailedPolicy().versions[0]!,
+					schedule: {
+						id: "sched-sbi",
+						scheduleCycle: "biweekly",
+						scheduleType: "simple",
+						workingDaysPreset: "weekdays",
+						hoursPerCycle: "80.00",
+						normalizedCycleMinutes: 4800,
+						homeOfficeDaysPerCycle: 0,
+						days: [],
+					},
+				},
+			],
+		};
+		const simpleBiRes = resolveEffectiveContractPure(
+			baseInput({
+				date: parsePlainDate("2026-06-01"),
+				policiesById: new Map([[simpleBiweekly.id, simpleBiweekly]]),
+				policyAssignments: [{ ...asgn, id: "asgn-sbi", policyId: simpleBiweekly.id }],
+			}),
+		);
+		expect(simpleBiRes.requiredMinutes).toBe(480);
+	});
 });

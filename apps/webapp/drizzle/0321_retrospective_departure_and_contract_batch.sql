@@ -142,3 +142,8 @@ ALTER TABLE "employee_employment_history"
 	FOREIGN KEY ("source_batch_item_id", "organization_id")
 	REFERENCES "contract_change_batch_item"("id", "organization_id")
 	ON DELETE NO ACTION NOT VALID;
+--> statement-breakpoint
+-- A1-16: Expand nullable source_batch_item_id on work_policy_assignment in Phase 1 (0321)
+-- so new assignment writers can run cleanly while parked at Drain Gate 1 before 0322 adds constraints.
+ALTER TABLE "work_policy_assignment"
+	ADD COLUMN IF NOT EXISTS "source_batch_item_id" uuid;

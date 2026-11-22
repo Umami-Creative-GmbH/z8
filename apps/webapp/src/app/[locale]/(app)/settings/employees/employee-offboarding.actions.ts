@@ -236,8 +236,8 @@ export const previewPastDepartureAction = organizationAction(
 );
 
 /**
- * Date-only correction of an already-effective past departure stays available
- * regardless of the release gate, just like resolving follow-up reviews.
+ * Date-only correction of an already-effective past departure; gated by
+ * `EMPLOYEE_OFFBOARDING_RELEASE_READY` per `docs/refs/employee-offboarding.md`.
  */
 export const correctPastDepartureDateAction = organizationAction(
 	{
@@ -246,22 +246,14 @@ export const correctPastDepartureDateAction = organizationAction(
 		schema: correctPastDepartureDateSchema,
 	},
 	(context) =>
-		Effect.gen(function* () {
-			const actor = lifecycleActorOf(context);
-			const dbService = yield* DatabaseService;
-			const result = yield* dbService
-				.query("employeeOffboarding.correctPastDepartureDate", () =>
-					getDepartureCommands().correctPastDepartureDate(actor, context.input),
-				)
-				.pipe(Effect.mapError((error) => toAppError(error, actor, "correctPastDepartureDate")));
-			revalidateEmployeesCache(actor.organizationId);
-			return result;
-		}),
+		runDepartureCommand("correctPastDepartureDate", context, (actor) =>
+			getDepartureCommands().correctPastDepartureDate(actor, context.input),
+		),
 );
 
 /**
- * Historical leaving-date backfill for legacy former employees (no active
- * offboarding side effects); available to org admins regardless of the gate.
+ * Historical leaving-date backfill for legacy former employees; gated by
+ * `EMPLOYEE_OFFBOARDING_RELEASE_READY` per `docs/refs/employee-offboarding.md`.
  */
 export const recordHistoricalDepartureDateAction = organizationAction(
 	{
@@ -270,19 +262,9 @@ export const recordHistoricalDepartureDateAction = organizationAction(
 		schema: recordHistoricalDepartureDateSchema,
 	},
 	(context) =>
-		Effect.gen(function* () {
-			const actor = lifecycleActorOf(context);
-			const dbService = yield* DatabaseService;
-			const result = yield* dbService
-				.query("employeeOffboarding.recordHistoricalDepartureDate", () =>
-					getDepartureCommands().recordHistoricalDepartureDate(actor, context.input),
-				)
-				.pipe(
-					Effect.mapError((error) => toAppError(error, actor, "recordHistoricalDepartureDate")),
-				);
-			revalidateEmployeesCache(actor.organizationId);
-			return result;
-		}),
+		runDepartureCommand("recordHistoricalDepartureDate", context, (actor) =>
+			getDepartureCommands().recordHistoricalDepartureDate(actor, context.input),
+		),
 );
 
 /**
@@ -408,13 +390,13 @@ function runFollowUpCommand<TResult>(
 }
 
 /**
- * The lifecycle view for the employee detail page. Managers of the employee
- * get a read-only view; commands are only offered once the release gate opens.
+ * The lifecycle view for the employee detail page (org admins only per Spec #1921 Story 22;
+ * scoped managers cannot see or edit leaving dates).
  */
 export const getEmployeeOffboardingViewAction = organizationAction(
 	{
 		name: "employeeOffboarding.view",
-		requires: "scopedManager",
+		requires: "orgAdmin",
 		schema: employeeOffboardingViewSchema,
 	},
 	({ actor, organizationId, input: { employeeId } }) =>

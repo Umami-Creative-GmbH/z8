@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { organization, user } from "@/db/auth-schema";
 import {
 	closedMonthEmployee,
+	contractChangeBatch,
 	employee,
 	employeeDeparture,
 	employeeEmploymentPeriod,
@@ -22,6 +23,7 @@ import { ConflictError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { departureCutoff, retrospectiveDepartureCutoff } from "@/lib/employee-lifecycle/cutoff";
+import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
 import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
 import type { ContractType } from "@/lib/validations/employee";
 import {
@@ -33,6 +35,7 @@ import {
 	type CsvDepartureItemAction,
 	INLINE_BATCH_THRESHOLD,
 	type RunContractChangeBatchOptions,
+	replayExistingContractChangeBatch,
 	submitContractChangeBatch,
 } from "./bulk-batch-engine";
 import {
@@ -54,11 +57,27 @@ import type { EffectiveContractOnDay, WorkModel } from "./types";
 
 const LOOKUP_CHUNK_SIZE = 1000;
 const PREVIEW_CONTRACT_CHUNK_SIZE = 1000;
+const MAX_ERROR_ROW_DETAILS = 500;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const VALID_WORK_MODELS: readonly WorkModel[] = ["onsite", "hybrid", "remote", "flexible"];
 const VALID_CONTRACT_TYPES: readonly ContractType[] = ["fixed", "hourly"];
 
 export type CsvImportRowStatus = "valid" | "warning" | "error";
+
+export interface CsvRowDiagnostic {
+	readonly code: string;
+	readonly params?: Readonly<Record<string, string | number>>;
+	readonly message: string;
+}
+
+function pushDiagnostic(
+	list: CsvRowDiagnostic[],
+	code: string,
+	message: string,
+	params?: Readonly<Record<string, string | number>>,
+): void {
+	list.push(params ? { code, params, message } : { code, message });
+}
 
 export interface CsvContractPreviewRow {
 	readonly rowNumber: number;
@@ -69,6 +88,8 @@ export interface CsvContractPreviewRow {
 	readonly effectiveFromDate: string | null;
 	readonly errors: readonly string[];
 	readonly warnings: readonly string[];
+	readonly errorDetails: readonly CsvRowDiagnostic[];
+	readonly warningDetails: readonly CsvRowDiagnostic[];
 	readonly previewDiff: Readonly<Record<string, { before: unknown; after: unknown }>>;
 	readonly normalizedPayload: CsvContractBatchItemPayload | null;
 }
@@ -95,6 +116,8 @@ export interface PreviewCsvContractImportResult {
 	readonly confirmationFingerprint: string;
 	readonly rowsTruncated: boolean;
 	readonly rows: readonly CsvContractPreviewRow[];
+	readonly errorRowsTruncated: boolean;
+	readonly errorRowDetails: readonly CsvContractPreviewRow[];
 }
 
 export interface CsvLeavingDatePreviewRow {
@@ -107,6 +130,8 @@ export interface CsvLeavingDatePreviewRow {
 	readonly action: CsvDepartureItemAction | null;
 	readonly errors: readonly string[];
 	readonly warnings: readonly string[];
+	readonly errorDetails: readonly CsvRowDiagnostic[];
+	readonly warningDetails: readonly CsvRowDiagnostic[];
 	readonly normalizedPayload: CsvDepartureBatchItemPayload | null;
 }
 
@@ -134,6 +159,8 @@ export interface PreviewCsvLeavingDateImportResult {
 	readonly confirmationFingerprint: string;
 	readonly rowsTruncated: boolean;
 	readonly rows: readonly CsvLeavingDatePreviewRow[];
+	readonly errorRowsTruncated: boolean;
+	readonly errorRowDetails: readonly CsvLeavingDatePreviewRow[];
 }
 
 export interface CommitCsvImportBatchInput {
@@ -285,7 +312,7 @@ async function resolveEmployeesByIdentifiers(
 function matchEmployeeForRow(
 	values: Readonly<Record<string, string>>,
 	lookup: Awaited<ReturnType<typeof resolveEmployeesByIdentifiers>>,
-	errors: string[],
+	errorDetails: CsvRowDiagnostic[],
 	prefix = "",
 ): ResolvedEmployeeRecord | null {
 	const idKey = prefix ? `${prefix}employee_id` : "employee_id";
@@ -298,7 +325,11 @@ function matchEmployeeForRow(
 
 	if (!rawId && !rawNum && !rawEmail) {
 		if (!prefix) {
-			errors.push("Missing employee identifier (employee_id, employee_number, or email).");
+			pushDiagnostic(
+				errorDetails,
+				"missing_employee_identifier",
+				"Missing employee identifier (employee_id, employee_number, or email).",
+			);
 		}
 		return null;
 	}
@@ -307,11 +338,22 @@ function matchEmployeeForRow(
 
 	if (rawId) {
 		if (!UUID_REGEX.test(rawId)) {
-			errors.push(`Invalid ${idKey} UUID "${rawId}".`);
+			pushDiagnostic(errorDetails, "invalid_employee_uuid", `Invalid ${idKey} UUID "${rawId}".`, {
+				column: idKey,
+				value: rawId,
+			});
 		} else {
 			const hit = lookup.byId.get(rawId.toLowerCase());
-			if (!hit) errors.push(`Employee not found in organization for ${idKey} "${rawId}".`);
-			else matches.push(hit);
+			if (!hit) {
+				pushDiagnostic(
+					errorDetails,
+					"employee_not_found",
+					`Employee not found in organization for ${idKey} "${rawId}".`,
+					{ column: idKey, value: rawId },
+				);
+			} else {
+				matches.push(hit);
+			}
 		}
 	}
 
@@ -319,7 +361,12 @@ function matchEmployeeForRow(
 		const norm = normalizePersonnelNumber(rawNum)?.toLowerCase();
 		const hit = norm ? lookup.byNumber.get(norm) : undefined;
 		if (!hit) {
-			errors.push(`Employee not found in organization for ${numKey} "${rawNum}".`);
+			pushDiagnostic(
+				errorDetails,
+				"employee_not_found",
+				`Employee not found in organization for ${numKey} "${rawNum}".`,
+				{ column: numKey, value: rawNum },
+			);
 		} else {
 			matches.push(hit);
 		}
@@ -328,11 +375,21 @@ function matchEmployeeForRow(
 	if (rawEmail) {
 		const normEmail = rawEmail.toLowerCase();
 		if (lookup.ambiguousEmails.has(normEmail)) {
-			errors.push(`Multiple employees match ${emailKey} "${rawEmail}".`);
+			pushDiagnostic(
+				errorDetails,
+				"ambiguous_employee_email",
+				`Multiple employees match ${emailKey} "${rawEmail}".`,
+				{ column: emailKey, value: rawEmail },
+			);
 		} else {
 			const hit = lookup.byEmail.get(normEmail);
 			if (!hit) {
-				errors.push(`Employee not found in organization for ${emailKey} "${rawEmail}".`);
+				pushDiagnostic(
+					errorDetails,
+					"employee_not_found",
+					`Employee not found in organization for ${emailKey} "${rawEmail}".`,
+					{ column: emailKey, value: rawEmail },
+				);
 			} else {
 				matches.push(hit);
 			}
@@ -342,7 +399,11 @@ function matchEmployeeForRow(
 	if (matches.length === 0) return null;
 	const first = matches[0];
 	if (matches.some((m) => m.id !== first.id)) {
-		errors.push("Conflicting employee identifiers point to different employees.");
+		pushDiagnostic(
+			errorDetails,
+			"conflicting_employee_identifiers",
+			"Conflicting employee identifiers point to different employees.",
+		);
 		return null;
 	}
 	return first;
@@ -367,18 +428,40 @@ function computeCsvConfirmationFingerprint(input: {
 		.digest("hex");
 }
 
+function computeCsvSubmittedIntentFingerprint(input: CommitCsvImportBatchInput): string {
+	return createHash("sha256")
+		.update(
+			JSON.stringify({
+				organizationId: input.organizationId,
+				operationKind: input.operationKind,
+				csvText: input.csvText,
+				confirmationFingerprint: input.confirmationFingerprint,
+				defaultEffectiveFromDate: input.defaultEffectiveFromDate ?? null,
+				overwritePersonalDivergences: input.overwritePersonalDivergences ?? false,
+				defaultAcknowledgeUnassignedDuties: input.defaultAcknowledgeUnassignedDuties ?? true,
+				delimiter: input.delimiter ?? null,
+			}),
+		)
+		.digest("hex");
+}
+
 function parseEnumCell<T extends string>(
 	raw: string | undefined,
 	allowed: readonly T[],
 	field: string,
-	errors: string[],
+	errorDetails: CsvRowDiagnostic[],
 ): T | undefined {
 	if (raw === undefined || raw.trim() === "") return undefined;
 	const lower = raw.trim().toLowerCase();
 	if ((allowed as readonly string[]).includes(lower)) {
 		return lower as T;
 	}
-	errors.push(`Invalid ${field} "${raw}". Allowed: ${allowed.join(", ")}.`);
+	pushDiagnostic(
+		errorDetails,
+		"invalid_enum_value",
+		`Invalid ${field} "${raw}". Allowed: ${allowed.join(", ")}.`,
+		{ field, value: raw, allowed: allowed.join(", ") },
+	);
 	return undefined;
 }
 
@@ -443,26 +526,34 @@ export async function previewCsvContractImport(
 		employee: ResolvedEmployeeRecord | null;
 		effectiveFromDate: string | null;
 		changes: BulkTermsUpdateChanges;
-		errors: string[];
-		warnings: string[];
+		errorDetails: CsvRowDiagnostic[];
+		warningDetails: CsvRowDiagnostic[];
 	}
 
 	const seenEmployeeIds = new Set<string>();
 	const intermediates: IntermediateRow[] = [];
 
 	for (const row of parsed.rows) {
-		const errors: string[] = [];
-		const warnings: string[] = [];
+		const errorDetails: CsvRowDiagnostic[] = [];
+		const warningDetails: CsvRowDiagnostic[] = [];
 		const v = row.values;
 		const employeeIdentifier = buildEmployeeIdentifierLabel(v);
 
-		const emp = matchEmployeeForRow(v, empLookup, errors);
+		const emp = matchEmployeeForRow(v, empLookup, errorDetails);
 		if (emp) {
 			if (emp.isFormer) {
-				errors.push("Employee is no longer on the current roster (rehire before updating terms).");
+				pushDiagnostic(
+					errorDetails,
+					"employee_not_on_roster",
+					"Employee is no longer on the current roster (rehire before updating terms).",
+				);
 			}
 			if (seenEmployeeIds.has(emp.id)) {
-				errors.push("Duplicate employee row in CSV import.");
+				pushDiagnostic(
+					errorDetails,
+					"duplicate_employee_row",
+					"Duplicate employee row in CSV import.",
+				);
 			} else {
 				seenEmployeeIds.add(emp.id);
 			}
@@ -473,11 +564,19 @@ export async function previewCsvContractImport(
 			try {
 				effectiveFromDate = parseIsoCalendarDate(v.effective_from_date, "effective_from_date");
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid effective_from_date.");
+				const detail = error instanceof Error ? error.message : "Invalid effective_from_date.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "effective_from_date",
+					detail,
+				});
 			}
 		}
 		if (!effectiveFromDate) {
-			errors.push("Missing effective_from_date (and no default effective date provided).");
+			pushDiagnostic(
+				errorDetails,
+				"missing_effective_from_date",
+				"Missing effective_from_date (and no default effective date provided).",
+			);
 		}
 
 		const changes: Record<string, unknown> = {};
@@ -487,7 +586,12 @@ export async function previewCsvContractImport(
 			try {
 				return parseCsvBoolean(v.clear_personal_policy_pin);
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid clear_personal_policy_pin.");
+				const detail =
+					error instanceof Error ? error.message : "Invalid clear_personal_policy_pin.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "clear_personal_policy_pin",
+					detail,
+				});
 				return null;
 			}
 		})();
@@ -496,18 +600,38 @@ export async function previewCsvContractImport(
 		} else if (v.work_policy_id) {
 			const policy = policyById.get(v.work_policy_id.toLowerCase());
 			if (!policy) {
-				errors.push(`Work policy not found in organization: "${v.work_policy_id}".`);
+				pushDiagnostic(
+					errorDetails,
+					"work_policy_not_found",
+					`Work policy not found in organization: "${v.work_policy_id}".`,
+					{ value: v.work_policy_id },
+				);
 			} else if (!policy.isActive) {
-				errors.push(`Work policy "${policy.name}" is inactive.`);
+				pushDiagnostic(
+					errorDetails,
+					"work_policy_inactive",
+					`Work policy "${policy.name}" is inactive.`,
+					{ name: policy.name },
+				);
 			} else {
 				changes.workPolicyId = policy.id;
 			}
 		} else if (v.work_policy_name) {
 			const policy = policyByName.get(v.work_policy_name.trim().toLowerCase());
 			if (!policy) {
-				errors.push(`Work policy not found in organization: "${v.work_policy_name}".`);
+				pushDiagnostic(
+					errorDetails,
+					"work_policy_not_found",
+					`Work policy not found in organization: "${v.work_policy_name}".`,
+					{ value: v.work_policy_name },
+				);
 			} else if (!policy.isActive) {
-				errors.push(`Work policy "${policy.name}" is inactive.`);
+				pushDiagnostic(
+					errorDetails,
+					"work_policy_inactive",
+					`Work policy "${policy.name}" is inactive.`,
+					{ name: policy.name },
+				);
 			} else {
 				changes.workPolicyId = policy.id;
 			}
@@ -524,7 +648,11 @@ export async function previewCsvContractImport(
 					);
 				}
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid weekly_contract_minutes.");
+				const detail = error instanceof Error ? error.message : "Invalid weekly_contract_minutes.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "weekly_contract_minutes",
+					detail,
+				});
 			}
 		} else if (v.weekly_hours) {
 			try {
@@ -536,7 +664,11 @@ export async function previewCsvContractImport(
 					);
 				}
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid weekly_hours.");
+				const detail = error instanceof Error ? error.message : "Invalid weekly_hours.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "weekly_hours",
+					detail,
+				});
 			}
 		}
 
@@ -544,7 +676,7 @@ export async function previewCsvContractImport(
 			v.schedule_mode,
 			VALID_SCHEDULE_MODES,
 			"schedule_mode",
-			errors,
+			errorDetails,
 		);
 		if (scheduleMode !== undefined) changes.scheduleMode = scheduleMode;
 
@@ -563,31 +695,44 @@ export async function previewCsvContractImport(
 					}
 				}
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid custom_days.");
+				const detail = error instanceof Error ? error.message : "Invalid custom_days.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "custom_days",
+					detail,
+				});
 			}
 		} else if (scheduleMode === "custom_days") {
-			errors.push("custom_days is required when schedule_mode is custom_days.");
+			pushDiagnostic(
+				errorDetails,
+				"custom_days_required",
+				"custom_days is required when schedule_mode is custom_days.",
+			);
 		}
 
-		const workModel = parseEnumCell(v.work_model, VALID_WORK_MODELS, "work_model", errors);
+		const workModel = parseEnumCell(v.work_model, VALID_WORK_MODELS, "work_model", errorDetails);
 		if (workModel !== undefined) changes.workModel = workModel;
 
 		const presenceOverride = parseEnumCell(
 			v.presence_override,
 			VALID_PRESENCE_OVERRIDES,
 			"presence_override",
-			errors,
+			errorDetails,
 		);
 		if (presenceOverride !== undefined) changes.presenceOverride = presenceOverride;
 
-		const balanceMode = parseEnumCell(v.balance_mode, VALID_BALANCE_MODES, "balance_mode", errors);
+		const balanceMode = parseEnumCell(
+			v.balance_mode,
+			VALID_BALANCE_MODES,
+			"balance_mode",
+			errorDetails,
+		);
 		if (balanceMode !== undefined) changes.balanceMode = balanceMode;
 
 		const scheduleSource = parseEnumCell(
 			v.schedule_source,
 			VALID_SCHEDULE_SOURCES,
 			"schedule_source",
-			errors,
+			errorDetails,
 		);
 		if (scheduleSource !== undefined) changes.scheduleSource = scheduleSource;
 
@@ -595,7 +740,7 @@ export async function previewCsvContractImport(
 			v.contract_type,
 			VALID_CONTRACT_TYPES,
 			"contract_type",
-			errors,
+			errorDetails,
 		);
 		if (contractType !== undefined) changes.contractType = contractType;
 
@@ -603,18 +748,31 @@ export async function previewCsvContractImport(
 			try {
 				const rate = parseCsvNumber(v.hourly_rate);
 				if (rate !== null) {
-					if (rate < 0) errors.push("hourly_rate must be non-negative.");
-					else changes.hourlyRate = rate;
+					if (rate < 0) {
+						pushDiagnostic(
+							errorDetails,
+							"negative_hourly_rate",
+							"hourly_rate must be non-negative.",
+						);
+					} else {
+						changes.hourlyRate = rate;
+					}
 				}
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid hourly_rate.");
+				const detail = error instanceof Error ? error.message : "Invalid hourly_rate.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "hourly_rate",
+					detail,
+				});
 			}
 		}
 
 		if (v.currency) {
 			const cur = v.currency.trim().toUpperCase();
 			if (cur.length < 3 || cur.length > 10) {
-				errors.push(`Invalid currency "${v.currency}".`);
+				pushDiagnostic(errorDetails, "invalid_currency", `Invalid currency "${v.currency}".`, {
+					value: v.currency,
+				});
 			} else {
 				changes.currency = cur;
 			}
@@ -624,18 +782,23 @@ export async function previewCsvContractImport(
 			v.employment_profile,
 			VALID_EMPLOYMENT_PROFILES,
 			"employment_profile",
-			errors,
+			errorDetails,
 		);
 		if (employmentProfile !== undefined) changes.employmentProfile = employmentProfile;
 
-		const arbzgScope = parseEnumCell(v.arbzg_scope, VALID_ARBZG_SCOPES, "arbzg_scope", errors);
+		const arbzgScope = parseEnumCell(
+			v.arbzg_scope,
+			VALID_ARBZG_SCOPES,
+			"arbzg_scope",
+			errorDetails,
+		);
 		if (arbzgScope !== undefined) changes.arbzgScope = arbzgScope;
 
 		const onCallHoursKind = parseEnumCell(
 			v.on_call_hours_kind,
 			VALID_ON_CALL_HOURS_KINDS,
 			"on_call_hours_kind",
-			errors,
+			errorDetails,
 		);
 		let onCallWeeklyMinutes: number | null | undefined;
 		if (v.on_call_weekly_minutes) {
@@ -643,14 +806,22 @@ export async function previewCsvContractImport(
 				const n = parseCsvNumber(v.on_call_weekly_minutes);
 				if (n !== null) onCallWeeklyMinutes = Math.round(n);
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid on_call_weekly_minutes.");
+				const detail = error instanceof Error ? error.message : "Invalid on_call_weekly_minutes.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "on_call_weekly_minutes",
+					detail,
+				});
 			}
 		} else if (v.on_call_weekly_hours) {
 			try {
 				const h = parseCsvNumber(v.on_call_weekly_hours);
 				if (h !== null) onCallWeeklyMinutes = Math.round(h * 60);
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid on_call_weekly_hours.");
+				const detail = error instanceof Error ? error.message : "Invalid on_call_weekly_hours.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "on_call_weekly_hours",
+					detail,
+				});
 			}
 		}
 		let onCallDailyMinutes: number | null | undefined;
@@ -659,7 +830,11 @@ export async function previewCsvContractImport(
 				const n = parseCsvNumber(v.on_call_daily_minutes);
 				if (n !== null) onCallDailyMinutes = Math.round(n);
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid on_call_daily_minutes.");
+				const detail = error instanceof Error ? error.message : "Invalid on_call_daily_minutes.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "on_call_daily_minutes",
+					detail,
+				});
 			}
 		}
 
@@ -683,7 +858,11 @@ export async function previewCsvContractImport(
 					changes.onCallDailyMinutes = validatedOnCall.onCallDailyMinutes;
 				}
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid on-call agreement fields.");
+				const detail = error instanceof Error ? error.message : "Invalid on-call agreement fields.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "on_call",
+					detail,
+				});
 			}
 		}
 
@@ -692,7 +871,11 @@ export async function previewCsvContractImport(
 
 		const substantiveKeys = Object.keys(changes).filter((k) => k !== "changeReason");
 		if (substantiveKeys.length === 0) {
-			errors.push("Row does not specify any contract fields to update.");
+			pushDiagnostic(
+				errorDetails,
+				"no_contract_fields",
+				"Row does not specify any contract fields to update.",
+			);
 		}
 
 		intermediates.push({
@@ -701,8 +884,8 @@ export async function previewCsvContractImport(
 			employee: emp,
 			effectiveFromDate,
 			changes: changes as BulkTermsUpdateChanges,
-			errors,
-			warnings,
+			errorDetails,
+			warningDetails,
 		});
 	}
 
@@ -710,7 +893,7 @@ export async function previewCsvContractImport(
 	const contractsByKey = new Map<string, EffectiveContractOnDay>();
 	const employeeIdsByDate = new Map<string, Set<string>>();
 	for (const row of intermediates) {
-		if (row.errors.length === 0 && row.employee && row.effectiveFromDate) {
+		if (row.errorDetails.length === 0 && row.employee && row.effectiveFromDate) {
 			const set = employeeIdsByDate.get(row.effectiveFromDate) ?? new Set<string>();
 			set.add(row.employee.id);
 			employeeIdsByDate.set(row.effectiveFromDate, set);
@@ -735,6 +918,7 @@ export async function previewCsvContractImport(
 
 	const maxPreviewRows = input.maxPreviewRows ?? Number.POSITIVE_INFINITY;
 	const previewRows: CsvContractPreviewRow[] = [];
+	const errorRowDetails: CsvContractPreviewRow[] = [];
 	const fingerprintItems: { employeeId: string; payload: CsvContractBatchItemPayload }[] = [];
 
 	let validRows = 0;
@@ -742,8 +926,8 @@ export async function previewCsvContractImport(
 	let errorRows = 0;
 
 	for (const row of intermediates) {
-		const errors = [...row.errors];
-		const warnings = [...row.warnings];
+		const errorDetails = [...row.errorDetails];
+		const warningDetails = [...row.warningDetails];
 		const previewDiff: Record<string, { before: unknown; after: unknown }> = {};
 
 		const current =
@@ -751,15 +935,23 @@ export async function previewCsvContractImport(
 				? contractsByKey.get(`${row.employee.id}:${row.effectiveFromDate}`)
 				: undefined;
 
-		if (errors.length === 0 && current) {
+		if (errorDetails.length === 0 && current) {
 			if (!current.isEmployedOnDay) {
-				errors.push("Employee has no active employment period on the effective date.");
+				pushDiagnostic(
+					errorDetails,
+					"no_active_employment_period",
+					"Employee has no active employment period on the effective date.",
+				);
 			}
 			const nextContractType = row.changes.contractType ?? current.contractType;
 			const nextHourlyRate =
 				row.changes.hourlyRate !== undefined ? row.changes.hourlyRate : current.hourlyRate;
 			if (nextContractType === "hourly" && nextHourlyRate == null) {
-				errors.push("Hourly contract requires an hourly_rate value.");
+				pushDiagnostic(
+					errorDetails,
+					"hourly_rate_required",
+					"Hourly contract requires an hourly_rate value.",
+				);
 			}
 
 			const checkField = (
@@ -770,7 +962,12 @@ export async function previewCsvContractImport(
 			) => {
 				if (requested === undefined) return;
 				if (!overwritePersonalDivergences && isDiverged) {
-					warnings.push(`Personal divergence on ${field} will be preserved.`);
+					pushDiagnostic(
+						warningDetails,
+						"personal_divergence_preserved",
+						`Personal divergence on ${field} will be preserved.`,
+						{ field },
+					);
 				} else if (requested !== currentVal) {
 					previewDiff[field] = { before: currentVal, after: requested };
 				}
@@ -845,9 +1042,12 @@ export async function previewCsvContractImport(
 			}
 		}
 
+		const errors = errorDetails.map((d) => d.message);
+		const warnings = warningDetails.map((d) => d.message);
+
 		let status: CsvImportRowStatus;
 		let normalizedPayload: CsvContractBatchItemPayload | null = null;
-		if (errors.length > 0 || !row.employee || !row.effectiveFromDate) {
+		if (errorDetails.length > 0 || !row.employee || !row.effectiveFromDate) {
 			status = "error";
 			errorRows += 1;
 		} else {
@@ -858,7 +1058,7 @@ export async function previewCsvContractImport(
 				changes: row.changes,
 			};
 			fingerprintItems.push({ employeeId: row.employee.id, payload: normalizedPayload });
-			if (warnings.length > 0) {
+			if (warningDetails.length > 0) {
 				status = "warning";
 				warningRows += 1;
 				validRows += 1;
@@ -868,19 +1068,26 @@ export async function previewCsvContractImport(
 			}
 		}
 
+		const builtRow: CsvContractPreviewRow = {
+			rowNumber: row.rowNumber,
+			status,
+			employeeIdentifier: row.employeeIdentifier,
+			employeeId: row.employee?.id ?? null,
+			employeeName: row.employee ? formatEmployeeName(row.employee) : null,
+			effectiveFromDate: row.effectiveFromDate,
+			errors,
+			warnings,
+			errorDetails,
+			warningDetails,
+			previewDiff,
+			normalizedPayload,
+		};
+
 		if (previewRows.length < maxPreviewRows) {
-			previewRows.push({
-				rowNumber: row.rowNumber,
-				status,
-				employeeIdentifier: row.employeeIdentifier,
-				employeeId: row.employee?.id ?? null,
-				employeeName: row.employee ? formatEmployeeName(row.employee) : null,
-				effectiveFromDate: row.effectiveFromDate,
-				errors,
-				warnings,
-				previewDiff,
-				normalizedPayload,
-			});
+			previewRows.push(builtRow);
+		}
+		if (status === "error" && errorRowDetails.length < MAX_ERROR_ROW_DETAILS) {
+			errorRowDetails.push(builtRow);
 		}
 	}
 
@@ -904,6 +1111,8 @@ export async function previewCsvContractImport(
 		confirmationFingerprint,
 		rowsTruncated: intermediates.length > previewRows.length,
 		rows: previewRows,
+		errorRowsTruncated: errorRows > errorRowDetails.length,
+		errorRowDetails,
 	};
 }
 
@@ -965,7 +1174,7 @@ export async function previewCsvLeavingDateImport(
 	// Collect matched employee IDs to preload periods, departures, closed months, and settled days in bulk
 	const matchedEmployeeIds = new Set<string>();
 	for (const row of parsed.rows) {
-		const tmpErrors: string[] = [];
+		const tmpErrors: CsvRowDiagnostic[] = [];
 		const emp = matchEmployeeForRow(row.values, empLookup, tmpErrors);
 		if (emp) matchedEmployeeIds.add(emp.id);
 	}
@@ -1079,6 +1288,7 @@ export async function previewCsvLeavingDateImport(
 
 	const maxPreviewRows = input.maxPreviewRows ?? Number.POSITIVE_INFINITY;
 	const previewRows: CsvLeavingDatePreviewRow[] = [];
+	const errorRowDetails: CsvLeavingDatePreviewRow[] = [];
 	const fingerprintItems: { employeeId: string; payload: CsvDepartureBatchItemPayload }[] = [];
 	const seenEmployees = new Set<string>();
 
@@ -1088,30 +1298,46 @@ export async function previewCsvLeavingDateImport(
 
 	for (const row of parsed.rows) {
 		const v = row.values;
-		const errors: string[] = [];
-		const warnings: string[] = [];
+		const errorDetails: CsvRowDiagnostic[] = [];
+		const warningDetails: CsvRowDiagnostic[] = [];
 		const employeeIdentifier = buildEmployeeIdentifierLabel(v);
 
-		const emp = matchEmployeeForRow(v, empLookup, errors);
+		const emp = matchEmployeeForRow(v, empLookup, errorDetails);
 		if (emp) {
 			if (seenEmployees.has(emp.id)) {
-				errors.push("Duplicate employee row in CSV import.");
+				pushDiagnostic(
+					errorDetails,
+					"duplicate_employee_row",
+					"Duplicate employee row in CSV import.",
+				);
 			} else {
 				seenEmployees.add(emp.id);
 			}
 			if (input.actorUserId && emp.userId === input.actorUserId && !emp.isFormer) {
-				errors.push("You cannot record a departure for your own employee record.");
+				pushDiagnostic(
+					errorDetails,
+					"cannot_depart_self",
+					"You cannot record a departure for your own employee record.",
+				);
 			}
 		}
 
 		let lastWorkingDay: string | null = null;
 		if (!v.last_working_day) {
-			errors.push("Missing last_working_day (leaving date).");
+			pushDiagnostic(
+				errorDetails,
+				"missing_last_working_day",
+				"Missing last_working_day (leaving date).",
+			);
 		} else {
 			try {
 				lastWorkingDay = parseIsoCalendarDate(v.last_working_day, "last_working_day");
 			} catch (error) {
-				errors.push(error instanceof Error ? error.message : "Invalid last_working_day.");
+				const detail = error instanceof Error ? error.message : "Invalid last_working_day.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "last_working_day",
+					detail,
+				});
 			}
 		}
 
@@ -1122,23 +1348,38 @@ export async function previewCsvLeavingDateImport(
 			modeRaw !== "immediate" &&
 			modeRaw !== "retrospective"
 		) {
-			errors.push(
+			pushDiagnostic(
+				errorDetails,
+				"invalid_departure_mode",
 				`Invalid departure_mode "${v.departure_mode}". Allowed: scheduled, immediate, retrospective.`,
+				{ value: v.departure_mode ?? "" },
 			);
 		}
 
 		let replacement: ResolvedEmployeeRecord | null = null;
 		if (v.replacement_employee_id || v.replacement_employee_number || v.replacement_email) {
-			replacement = matchEmployeeForRow(v, empLookup, errors, "replacement_");
+			replacement = matchEmployeeForRow(v, empLookup, errorDetails, "replacement_");
 			if (replacement) {
 				if (emp && replacement.id === emp.id) {
-					errors.push("Replacement employee cannot be the departing employee.");
+					pushDiagnostic(
+						errorDetails,
+						"replacement_is_self",
+						"Replacement employee cannot be the departing employee.",
+					);
 				}
 				if (replacement.isFormer) {
-					errors.push("Replacement employee must be on the current roster.");
+					pushDiagnostic(
+						errorDetails,
+						"replacement_not_on_roster",
+						"Replacement employee must be on the current roster.",
+					);
 				}
 				if (replacement.role !== "admin" && replacement.role !== "manager") {
-					errors.push("Replacement employee must be an admin or manager.");
+					pushDiagnostic(
+						errorDetails,
+						"replacement_not_manager_or_admin",
+						"Replacement employee must be an admin or manager.",
+					);
 				}
 			}
 		}
@@ -1149,9 +1390,12 @@ export async function previewCsvLeavingDateImport(
 				const parsedAck = parseCsvBoolean(v.acknowledge_unassigned_duties);
 				if (parsedAck !== null) acknowledgeUnassignedDuties = parsedAck;
 			} catch (error) {
-				errors.push(
-					error instanceof Error ? error.message : "Invalid acknowledge_unassigned_duties.",
-				);
+				const detail =
+					error instanceof Error ? error.message : "Invalid acknowledge_unassigned_duties.";
+				pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+					field: "acknowledge_unassigned_duties",
+					detail,
+				});
 			}
 		}
 
@@ -1161,7 +1405,7 @@ export async function previewCsvLeavingDateImport(
 		let expectedDepartureId: string | null = null;
 		let expectedRevision: number | null = null;
 
-		if (errors.length === 0 && emp && lastWorkingDay) {
+		if (errorDetails.length === 0 && emp && lastWorkingDay) {
 			const parsedDay = parsePlainDate(lastWorkingDay);
 			const dayCmp = comparePlainDates(parsedDay, today);
 			const empPeriods = periodsByEmp.get(emp.id) ?? [];
@@ -1170,97 +1414,158 @@ export async function previewCsvLeavingDateImport(
 			const pendingDeparture = empDepartures.find((d) => d.status === "pending");
 			const effectiveDeparture = empDepartures.find((d) => d.status === "effective");
 
-			if (!emp.isFormer && openPeriod) {
-				if (modeRaw === "immediate" || (dayCmp === 0 && modeRaw !== "scheduled")) {
+			// A1-23: Validate any explicitly supplied departure_mode against the leaving date
+			// BEFORE inferring an action so contradictory rows always produce a row error.
+			if (modeRaw === "immediate" && dayCmp !== 0) {
+				pushDiagnostic(
+					errorDetails,
+					"departure_immediate_requires_today",
+					"Immediate departure mode requires today's leaving date and cannot be combined with a past or future date.",
+				);
+			} else if (modeRaw === "retrospective" && dayCmp >= 0) {
+				pushDiagnostic(
+					errorDetails,
+					"departure_retrospective_requires_past",
+					"Retrospective departure mode requires a strictly past leaving date.",
+				);
+			} else if (modeRaw === "scheduled" && dayCmp < 0) {
+				pushDiagnostic(
+					errorDetails,
+					"departure_scheduled_forbids_past",
+					"Scheduled departure mode cannot use a past leaving date.",
+				);
+			}
+
+			if (errorDetails.length === 0 && !emp.isFormer && openPeriod) {
+				if (modeRaw === "immediate" || (modeRaw === null && dayCmp === 0)) {
 					action = "offboard_immediately";
 					if (pendingDeparture) {
-						warnings.push("Will supersede existing pending scheduled departure.");
+						pushDiagnostic(
+							warningDetails,
+							"departure_supersedes_pending",
+							"Will supersede existing pending scheduled departure.",
+						);
 					}
-				} else if (dayCmp > 0 || (dayCmp === 0 && modeRaw === "scheduled")) {
-					if (modeRaw === "retrospective") {
-						errors.push("Retrospective departure mode requires a strictly past leaving date.");
-					} else {
-						try {
-							departureCutoff({ lastWorkingDay, timezone: orgTimezone, now: nowInstant });
-							action = "schedule_departure";
-							if (pendingDeparture) {
-								expectedDepartureId = pendingDeparture.id;
-								expectedRevision = pendingDeparture.revision;
-								warnings.push("Will reschedule existing pending departure.");
-							}
-						} catch (error) {
-							errors.push(error instanceof Error ? error.message : "Invalid future leaving date.");
+				} else if (modeRaw === "scheduled" || (modeRaw === null && dayCmp > 0)) {
+					try {
+						departureCutoff({ lastWorkingDay, timezone: orgTimezone, now: nowInstant });
+						action = "schedule_departure";
+						if (pendingDeparture) {
+							expectedDepartureId = pendingDeparture.id;
+							expectedRevision = pendingDeparture.revision;
+							pushDiagnostic(
+								warningDetails,
+								"departure_reschedules_pending",
+								"Will reschedule existing pending departure.",
+							);
 						}
+					} catch (error) {
+						const detail = error instanceof Error ? error.message : "Invalid future leaving date.";
+						pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+							field: "last_working_day",
+							detail,
+						});
 					}
 				} else {
 					// Strictly past date for an active employee -> retrospective departure
-					if (modeRaw === "scheduled") {
-						errors.push("Scheduled departure mode cannot use a past leaving date.");
-					} else {
-						try {
-							const cutoff = retrospectiveDepartureCutoff({
-								lastWorkingDay,
-								timezone: orgTimezone,
-								now: nowInstant,
-							});
-							if (
-								openPeriod.startedAt &&
-								cutoff.cutoff.epochMilliseconds <
-									instantFromDate(openPeriod.startedAt).epochMilliseconds
-							) {
-								errors.push("Leaving date cannot be earlier than the employee's start date.");
-							} else {
-								action = "record_past_departure";
-								if (pendingDeparture) {
-									warnings.push("Will supersede existing pending scheduled departure.");
-								}
-								const closedMonths = (closedMonthsByEmp.get(emp.id) ?? []).filter(
-									(m) => m.rangeEnd.getTime() > cutoff.cutoff.epochMilliseconds,
+					try {
+						const cutoff = retrospectiveDepartureCutoff({
+							lastWorkingDay,
+							timezone: orgTimezone,
+							now: nowInstant,
+						});
+						if (
+							openPeriod.startedAt &&
+							cutoff.cutoff.epochMilliseconds <
+								instantFromDate(openPeriod.startedAt).epochMilliseconds
+						) {
+							pushDiagnostic(
+								errorDetails,
+								"departure_before_start_date",
+								"Leaving date cannot be earlier than the employee's start date.",
+							);
+						} else {
+							action = "record_past_departure";
+							if (pendingDeparture) {
+								pushDiagnostic(
+									warningDetails,
+									"departure_supersedes_pending",
+									"Will supersede existing pending scheduled departure.",
 								);
-								const settledDays = (settledDaysByEmp.get(emp.id) ?? []).filter(
-									(d) => d >= cutoff.cutoffLocalDate,
-								);
-								if (closedMonths.length > 0 || settledDays.length > 0) {
-									warnings.push(
-										"Touches closed month(s) or settled payroll days; payroll will stay untouched and a payroll_reconciliation review will be opened.",
-									);
-								}
 							}
-						} catch (error) {
-							errors.push(error instanceof Error ? error.message : "Invalid past leaving date.");
+							const closedMonths = (closedMonthsByEmp.get(emp.id) ?? []).filter(
+								(m) => m.rangeEnd.getTime() > cutoff.cutoff.epochMilliseconds,
+							);
+							const settledDays = (settledDaysByEmp.get(emp.id) ?? []).filter(
+								(d) => d >= cutoff.cutoffLocalDate,
+							);
+							if (closedMonths.length > 0 || settledDays.length > 0) {
+								pushDiagnostic(
+									warningDetails,
+									"departure_payroll_reconciliation",
+									"Touches closed month(s) or settled payroll days; payroll will stay untouched and a payroll_reconciliation review will be opened.",
+								);
+							}
 						}
+					} catch (error) {
+						const detail = error instanceof Error ? error.message : "Invalid past leaving date.";
+						pushDiagnostic(errorDetails, "invalid_field_value", detail, {
+							field: "last_working_day",
+							detail,
+						});
 					}
 				}
-			} else {
+			} else if (errorDetails.length === 0) {
 				// Employee is already former / inactive
-				if (dayCmp >= 0) {
-					errors.push(
+				if (modeRaw === "scheduled" || modeRaw === "immediate") {
+					pushDiagnostic(
+						errorDetails,
+						"departure_former_forbids_active_mode",
+						"Scheduled and immediate departure modes cannot be used for an already-former employee.",
+					);
+				} else if (dayCmp >= 0) {
+					pushDiagnostic(
+						errorDetails,
+						"departure_reopen_forbidden",
 						"Cannot set today or a future leaving date for an already-former employee (departure_reopen_forbidden; use rehire instead).",
 					);
 				} else if (effectiveDeparture) {
 					if (effectiveDeparture.lastWorkingDay === lastWorkingDay) {
 						action = "skip_unchanged";
-						warnings.push(
+						pushDiagnostic(
+							warningDetails,
+							"departure_unchanged_skip",
 							"Effective departure already has this exact leaving date; row will be skipped.",
 						);
 					} else {
 						action = "correct_past_departure_date";
 						expectedDepartureId = effectiveDeparture.id;
 						expectedRevision = effectiveDeparture.revision;
-						warnings.push(
-							`Will apply date-only correction to effective departure (${effectiveDeparture.lastWorkingDay ?? "unset"} → ${lastWorkingDay}).`,
+						const fromDate = effectiveDeparture.lastWorkingDay ?? "unset";
+						pushDiagnostic(
+							warningDetails,
+							"departure_past_date_correction",
+							`Will apply date-only correction to effective departure (${fromDate} → ${lastWorkingDay}).`,
+							{ from: fromDate, to: lastWorkingDay },
 						);
 					}
 				} else {
 					action = "record_historical_departure_date";
-					warnings.push("Will backfill historical leaving date for legacy former employee.");
+					pushDiagnostic(
+						warningDetails,
+						"departure_historical_backfill",
+						"Will backfill historical leaving date for legacy former employee.",
+					);
 				}
 			}
 		}
 
+		const errors = errorDetails.map((d) => d.message);
+		const warnings = warningDetails.map((d) => d.message);
+
 		let status: CsvImportRowStatus;
 		let normalizedPayload: CsvDepartureBatchItemPayload | null = null;
-		if (errors.length > 0 || !emp || !lastWorkingDay || !action) {
+		if (errorDetails.length > 0 || !emp || !lastWorkingDay || !action) {
 			status = "error";
 			errorRows += 1;
 		} else {
@@ -1275,7 +1580,7 @@ export async function previewCsvLeavingDateImport(
 				expectedRevision,
 			};
 			fingerprintItems.push({ employeeId: emp.id, payload: normalizedPayload });
-			if (warnings.length > 0) {
+			if (warningDetails.length > 0) {
 				status = "warning";
 				warningRows += 1;
 				validRows += 1;
@@ -1285,19 +1590,26 @@ export async function previewCsvLeavingDateImport(
 			}
 		}
 
+		const builtRow: CsvLeavingDatePreviewRow = {
+			rowNumber: row.rowNumber,
+			status,
+			employeeIdentifier,
+			employeeId: emp?.id ?? null,
+			employeeName: emp ? formatEmployeeName(emp) : null,
+			lastWorkingDay,
+			action,
+			errors,
+			warnings,
+			errorDetails,
+			warningDetails,
+			normalizedPayload,
+		};
+
 		if (previewRows.length < maxPreviewRows) {
-			previewRows.push({
-				rowNumber: row.rowNumber,
-				status,
-				employeeIdentifier,
-				employeeId: emp?.id ?? null,
-				employeeName: emp ? formatEmployeeName(emp) : null,
-				lastWorkingDay,
-				action,
-				errors,
-				warnings,
-				normalizedPayload,
-			});
+			previewRows.push(builtRow);
+		}
+		if (status === "error" && errorRowDetails.length < MAX_ERROR_ROW_DETAILS) {
+			errorRowDetails.push(builtRow);
 		}
 	}
 
@@ -1322,6 +1634,8 @@ export async function previewCsvLeavingDateImport(
 		confirmationFingerprint,
 		rowsTruncated: parsed.rows.length > previewRows.length,
 		rows: previewRows,
+		errorRowsTruncated: errorRows > errorRowDetails.length,
+		errorRowDetails,
 	};
 }
 
@@ -1334,6 +1648,62 @@ export async function commitCsvImportBatch(
 	db: DatabaseClient,
 	input: CommitCsvImportBatchInput,
 ): Promise<ContractChangeBatchReceipt> {
+	// A1-24: Enforce the employee offboarding release gate at the common entry point for
+	// departure CSV imports.
+	if (input.operationKind === "csv_departure_import" && !EMPLOYEE_OFFBOARDING_RELEASE_READY) {
+		throw new ValidationError({
+			message: "Employee offboarding is not available yet.",
+			field: "operationKind",
+			refusal: "employee_offboarding_not_released",
+		});
+	}
+
+	const submittedIntentFingerprint = computeCsvSubmittedIntentFingerprint(input);
+
+	// A1-28: Check existing organization-scoped requestId BEFORE rebuilding live preview,
+	// because a committed departure import alters live employee/departure state and would
+	// otherwise fail the confirmationFingerprint check on identical retry.
+	if (input.requestId) {
+		if (!UUID_REGEX.test(input.requestId)) {
+			throw new ValidationError({
+				message: "Invalid UUID for requestId.",
+				field: "requestId",
+				refusal: "invalid_uuid",
+			});
+		}
+		const [existing] = await db
+			.select()
+			.from(contractChangeBatch)
+			.where(
+				and(
+					eq(contractChangeBatch.organizationId, input.organizationId),
+					eq(contractChangeBatch.requestId, input.requestId),
+				),
+			)
+			.limit(1);
+		if (existing) {
+			const storedIntent = (existing.payload as { submittedIntentFingerprint?: unknown } | null)
+				?.submittedIntentFingerprint;
+			if (
+				existing.operationKind === input.operationKind &&
+				storedIntent === submittedIntentFingerprint
+			) {
+				return replayExistingContractChangeBatch(db, {
+					organizationId: input.organizationId,
+					existingBatch: existing,
+					enqueueAsyncJob: input.enqueueAsyncJob,
+					skipImmediateExecution: input.skipImmediateExecution,
+					runnerOptions: input.runnerOptions,
+				});
+			}
+			throw new ConflictError({
+				message: "This request ID was already used with a different batch payload.",
+				conflictType: "request_conflict",
+				details: { requestId: input.requestId },
+			});
+		}
+	}
+
 	const requestId = input.requestId ?? randomUUID();
 
 	if (input.operationKind === "csv_contract_import") {
@@ -1389,6 +1759,7 @@ export async function commitCsvImportBatch(
 			operationKind: "csv_contract_import",
 			payload: {
 				confirmationFingerprint: preview.confirmationFingerprint,
+				submittedIntentFingerprint,
 				defaultEffectiveFromDate: input.defaultEffectiveFromDate ?? null,
 				overwritePersonalDivergences: input.overwritePersonalDivergences ?? false,
 				totalRows: preview.totalRows,
@@ -1454,6 +1825,7 @@ export async function commitCsvImportBatch(
 		operationKind: "csv_departure_import",
 		payload: {
 			confirmationFingerprint: preview.confirmationFingerprint,
+			submittedIntentFingerprint,
 			defaultAcknowledgeUnassignedDuties: input.defaultAcknowledgeUnassignedDuties ?? true,
 			totalRows: preview.totalRows,
 		},

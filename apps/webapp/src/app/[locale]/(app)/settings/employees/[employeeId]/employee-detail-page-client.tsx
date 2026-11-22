@@ -67,11 +67,13 @@ export function resolveEmployeeDetailTabFromDeepLink(input: {
 	hash: string;
 	highlightedReviewId: string | null;
 	hasPersonnelFile: boolean;
+	canViewOffboarding?: boolean;
 }): EmployeeDetailTab {
-	if (input.highlightedReviewId) return "offboarding";
+	const canViewOffboarding = input.canViewOffboarding ?? true;
+	if (input.highlightedReviewId) return canViewOffboarding ? "offboarding" : "overview";
 	const normalized = input.hash.toLowerCase();
 	if (normalized === "#offboarding" || normalized.startsWith("#offboarding-")) {
-		return "offboarding";
+		return canViewOffboarding ? "offboarding" : "overview";
 	}
 	if (normalized === "#employment-history" || normalized === "#contract") {
 		return "contract";
@@ -194,12 +196,14 @@ export function EmployeeDetailPageClient({
 	const { push } = useRouter();
 	const queryClient = useQueryClient();
 
+	const isOrgAdmin = accessTier === "orgAdmin" && meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const hasPersonnelFile = Boolean(personnelFile);
 	const [activeTab, setActiveTab] = useState<EmployeeDetailTab>(() =>
 		resolveEmployeeDetailTabFromDeepLink({
 			hash: typeof window !== "undefined" ? window.location.hash : "",
 			highlightedReviewId,
 			hasPersonnelFile,
+			canViewOffboarding: isOrgAdmin,
 		}),
 	);
 
@@ -211,6 +215,7 @@ export function EmployeeDetailPageClient({
 				hash,
 				highlightedReviewId,
 				hasPersonnelFile,
+				canViewOffboarding: isOrgAdmin,
 			});
 			if (hash || highlightedReviewId) {
 				setActiveTab(resolved);
@@ -231,7 +236,7 @@ export function EmployeeDetailPageClient({
 		syncFromLocation();
 		window.addEventListener("hashchange", syncFromLocation);
 		return () => window.removeEventListener("hashchange", syncFromLocation);
-	}, [highlightedReviewId, hasPersonnelFile]);
+	}, [highlightedReviewId, hasPersonnelFile, isOrgAdmin]);
 
 	const employeeData = useEmployee({
 		employeeId,
@@ -270,7 +275,6 @@ export function EmployeeDetailPageClient({
 	const isDraft = employee.kind === "invitationDraft";
 	const canShowRealEmployeeSections = !isDraft;
 	const canEditDraftDetails = !isDraft || !employee.realEmployeeId;
-	const isOrgAdmin = accessTier === "orgAdmin" && meetsSettingsAccess(settingsAccess, "orgAdmin");
 	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
 	const { availableManagers, workPolicies } = employeeData;
 
@@ -348,9 +352,11 @@ export function EmployeeDetailPageClient({
 								<TabsTrigger value="assignments">
 									{t("settings.employees.detailView.tabs.assignments", "Access & Roles")}
 								</TabsTrigger>
-								<TabsTrigger value="offboarding">
-									{t("settings.employees.detailView.tabs.leavingDate", "Leaving Date")}
-								</TabsTrigger>
+								{isOrgAdmin && (
+									<TabsTrigger value="offboarding">
+										{t("settings.employees.detailView.tabs.leavingDate", "Leaving Date")}
+									</TabsTrigger>
+								)}
 								{personnelFile && (
 									<TabsTrigger value="personnel-file">
 										{t("settings.personnelFiles.panel.tab", "Personnel file")}
@@ -483,15 +489,13 @@ export function EmployeeDetailPageClient({
 							<EmployeeKioskCard employeeId={employeeId} />
 						</TabsContent>
 
-						{/* Tab 5: Leaving Date & Offboarding */}
-						<TabsContent value="offboarding" className="flex flex-col gap-4">
-							{isOrgAdmin && (
+						{/* Tab 5: Leaving Date & Offboarding (Org Admin only per Story 22) */}
+						{isOrgAdmin && (
+							<TabsContent value="offboarding" className="flex flex-col gap-4">
 								<LeavingDatePanel
 									organizationId={employee.organizationId}
 									employeeId={employeeId}
 								/>
-							)}
-							{isOrgAdminOrManager && (
 								<EmployeeOffboardingSection
 									organizationId={employee.organizationId}
 									employeeId={employeeId}
@@ -505,16 +509,14 @@ export function EmployeeDetailPageClient({
 										name: policy.name,
 									}))}
 								/>
-							)}
-							{/* Admin export (#1166): org admins only, never for their own record. */}
-							{isOrgAdmin && (
+								{/* Admin export (#1166): org admins only, never for their own record. */}
 								<EmployeePersonalDataExportCard
 									organizationId={employee.organizationId}
 									employeeId={employeeId}
 									isOwnRecord={employee.userId === currentUserId}
 								/>
-							)}
-						</TabsContent>
+							</TabsContent>
+						)}
 
 						{/* Tab 6: Personnel File (server-capability gated) */}
 						{personnelFile && (

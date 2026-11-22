@@ -2,15 +2,17 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, asc, eq, exists, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import {
+	contractChangeBatch,
 	contractTemplate,
 	contractTemplateVersion,
 	contractTemplateVersionDay,
 	employee,
 	employeeEmploymentHistory,
+	employeeEmploymentPeriod,
 	workPolicy,
 } from "@/db/schema";
 import type { ContractChangeBatchExecutionMode } from "@/db/schema/contract-types";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import type { ContractType } from "@/lib/validations/employee";
@@ -24,6 +26,7 @@ import {
 	INLINE_BATCH_THRESHOLD,
 	type OperationalDivergenceField,
 	type RunContractChangeBatchOptions,
+	replayExistingContractChangeBatch,
 	submitContractChangeBatch,
 } from "./bulk-batch-engine";
 import {
@@ -37,6 +40,106 @@ import type { CustomWorkDay, EffectiveContractOnDay } from "./types";
 
 const PREVIEW_CHUNK_SIZE = 1000;
 const DEFAULT_SAMPLE_LIMIT = 200;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function sortKeysCanonical(value: unknown): unknown {
+	if (Array.isArray(value)) return value.map(sortKeysCanonical);
+	if (value && typeof value === "object") {
+		const out: Record<string, unknown> = {};
+		for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+			const v = (value as Record<string, unknown>)[key];
+			if (v !== undefined) out[key] = sortKeysCanonical(v);
+		}
+		return out;
+	}
+	return value;
+}
+
+function normalizeActionSpecForFingerprint(spec: BulkContractActionSpec): Record<string, unknown> {
+	if (spec.actionKind === "apply_template_version") {
+		return {
+			actionKind: spec.actionKind,
+			templateVersionId: spec.templateVersionId,
+			overwritePersonalDivergences: spec.overwritePersonalDivergences ?? false,
+			changeReason: spec.changeReason ?? null,
+		};
+	}
+	if (spec.actionKind === "adopt_default") {
+		return {
+			actionKind: spec.actionKind,
+			keepDivergenceFields: [...(spec.keepDivergenceFields ?? [])].sort(),
+			changeReason: spec.changeReason ?? null,
+		};
+	}
+	return {
+		actionKind: spec.actionKind,
+		overwritePersonalDivergences: spec.overwritePersonalDivergences ?? false,
+		changes: sortKeysCanonical(spec.changes),
+		changeReason: spec.changeReason ?? null,
+	};
+}
+
+function computeBulkConfirmationFingerprint(input: {
+	organizationId: string;
+	spec: BulkContractActionSpec;
+	effectiveFromDate: string;
+	employeeIds: readonly string[];
+	onlyLegacyTerms: boolean;
+}): string {
+	return createHash("sha256")
+		.update(
+			JSON.stringify(
+				sortKeysCanonical({
+					organizationId: input.organizationId,
+					effectiveFromDate: input.effectiveFromDate,
+					onlyLegacyTerms: input.onlyLegacyTerms,
+					spec: normalizeActionSpecForFingerprint(input.spec),
+					employeeIds: [...input.employeeIds].sort(),
+				}),
+			),
+		)
+		.digest("hex");
+}
+
+function computeBulkSubmittedIntentFingerprint(input: {
+	organizationId: string;
+	spec: BulkContractActionSpec;
+	effectiveFromDate: string;
+	target: BulkEmployeeTargetFilter;
+	onlyLegacyTerms: boolean;
+	confirmationFingerprint?: string;
+}): string {
+	return createHash("sha256")
+		.update(
+			JSON.stringify(
+				sortKeysCanonical({
+					organizationId: input.organizationId,
+					effectiveFromDate: input.effectiveFromDate,
+					onlyLegacyTerms: input.onlyLegacyTerms,
+					confirmationFingerprint: input.confirmationFingerprint ?? null,
+					target: {
+						employeeIds: input.target.employeeIds
+							? [...new Set(input.target.employeeIds)].sort()
+							: null,
+						teamId: input.target.teamId ?? null,
+						contractType: input.target.contractType ?? null,
+						onlyLegacyTerms: input.target.onlyLegacyTerms ?? null,
+					},
+					spec: normalizeActionSpecForFingerprint(input.spec),
+				}),
+			),
+		)
+		.digest("hex");
+}
+
+function resolveOnlyLegacyFlag(
+	target: BulkEmployeeTargetFilter,
+	defaultOnlyLegacyTerms: boolean,
+): boolean {
+	return target.onlyLegacyTerms !== undefined
+		? target.onlyLegacyTerms
+		: defaultOnlyLegacyTerms && !(target.employeeIds && target.employeeIds.length > 0);
+}
 
 export interface BulkEmployeeTargetFilter {
 	/** Explicit employee IDs (strictly filtered to current roster in `organizationId`). */
@@ -113,6 +216,7 @@ export type SubmitBulkContractActionInput = BulkContractActionSpec & {
 	readonly organizationId: string;
 	readonly actorUserId: string;
 	readonly requestId?: string;
+	readonly confirmationFingerprint?: string;
 	readonly target: BulkEmployeeTargetFilter;
 	readonly now?: Date;
 	readonly enqueueAsyncJob?: AsyncBatchEnqueuer;
@@ -133,6 +237,7 @@ async function resolveTargetEmployees(
 	organizationId: string,
 	target: BulkEmployeeTargetFilter,
 	defaultOnlyLegacyTerms: boolean,
+	effectiveFromDate: string,
 ): Promise<readonly MatchedEmployeeRow[]> {
 	const conditions: SQL[] = [onCurrentRoster(organizationId)];
 
@@ -147,26 +252,38 @@ async function resolveTargetEmployees(
 		conditions.push(eq(employee.contractType, target.contractType));
 	}
 
-	const onlyLegacy =
-		target.onlyLegacyTerms !== undefined
-			? target.onlyLegacyTerms
-			: defaultOnlyLegacyTerms && !(target.employeeIds && target.employeeIds.length > 0);
+	const onlyLegacy = resolveOnlyLegacyFlag(target, defaultOnlyLegacyTerms);
 
 	if (onlyLegacy) {
+		// A1-19: Determine eligibility strictly from the confirmed terms covering
+		// `effectiveFromDate` in the employee's active employment period, never from
+		// already-superseded historical legacy rows.
 		conditions.push(
 			exists(
 				db
 					.select({ one: sql`1` })
 					.from(employeeEmploymentHistory)
+					.leftJoin(
+						employeeEmploymentPeriod,
+						and(
+							eq(employeeEmploymentPeriod.id, employeeEmploymentHistory.employmentPeriodId),
+							eq(employeeEmploymentPeriod.organizationId, organizationId),
+						),
+					)
 					.where(
 						and(
 							eq(employeeEmploymentHistory.organizationId, organizationId),
 							eq(employeeEmploymentHistory.employeeId, employee.id),
 							eq(employeeEmploymentHistory.reviewState, "confirmed"),
 							eq(employeeEmploymentHistory.migratedLegacyTerms, true),
+							sql`${employeeEmploymentHistory.validFromDate} <= ${effectiveFromDate}::date`,
 							or(
 								isNull(employeeEmploymentHistory.validUntilDate),
-								sql`${employeeEmploymentHistory.validUntilDate} > ${employeeEmploymentHistory.validFromDate}`,
+								sql`${employeeEmploymentHistory.validUntilDate} > ${effectiveFromDate}::date`,
+							),
+							or(
+								isNull(employeeEmploymentHistory.employmentPeriodId),
+								eq(employeeEmploymentPeriod.status, "open"),
 							),
 						),
 					),
@@ -607,11 +724,13 @@ export async function previewBulkContractAction(
 		input,
 	);
 
+	const onlyLegacyTerms = resolveOnlyLegacyFlag(input.target, input.actionKind === "adopt_default");
 	const matched = await resolveTargetEmployees(
 		db,
 		input.organizationId,
 		input.target,
 		input.actionKind === "adopt_default",
+		effectiveFromDate,
 	);
 
 	const sampleLimit = Math.max(input.sampleLimit ?? DEFAULT_SAMPLE_LIMIT, 0);
@@ -659,16 +778,13 @@ export async function previewBulkContractAction(
 		}
 	}
 
-	const confirmationFingerprint = createHash("sha256")
-		.update(
-			JSON.stringify({
-				organizationId: input.organizationId,
-				actionKind: input.actionKind,
-				effectiveFromDate,
-				employeeIds: matched.map((m) => m.id),
-			}),
-		)
-		.digest("hex");
+	const confirmationFingerprint = computeBulkConfirmationFingerprint({
+		organizationId: input.organizationId,
+		spec: input,
+		effectiveFromDate,
+		employeeIds: matched.map((m) => m.id),
+		onlyLegacyTerms,
+	});
 
 	const executionMode: ContractChangeBatchExecutionMode =
 		matched.length <= INLINE_BATCH_THRESHOLD ? "inline" : "async";
@@ -699,11 +815,63 @@ export async function submitBulkContractAction(
 	input: SubmitBulkContractActionInput,
 ): Promise<ContractChangeBatchReceipt> {
 	const { effectiveFromDate } = await validateBulkActionInputs(db, input.organizationId, input);
+	const onlyLegacyTerms = resolveOnlyLegacyFlag(input.target, input.actionKind === "adopt_default");
+	const submittedIntentFingerprint = computeBulkSubmittedIntentFingerprint({
+		organizationId: input.organizationId,
+		spec: input,
+		effectiveFromDate,
+		target: input.target,
+		onlyLegacyTerms,
+		confirmationFingerprint: input.confirmationFingerprint,
+	});
+
+	// Replay check BEFORE re-resolving live target employees so an identical retry after
+	// commit (e.g. `onlyLegacyTerms: true` after legacy terms were just adopted) returns
+	// the original receipt instead of failing on post-commit target drift (A1-21/A1-22).
+	if (input.requestId) {
+		if (!UUID_REGEX.test(input.requestId)) {
+			throw new ValidationError({
+				message: "Invalid UUID for requestId.",
+				field: "requestId",
+				refusal: "invalid_uuid",
+			});
+		}
+		const [existing] = await db
+			.select()
+			.from(contractChangeBatch)
+			.where(
+				and(
+					eq(contractChangeBatch.organizationId, input.organizationId),
+					eq(contractChangeBatch.requestId, input.requestId),
+				),
+			)
+			.limit(1);
+		if (existing) {
+			const storedIntent = (existing.payload as { submittedIntentFingerprint?: unknown } | null)
+				?.submittedIntentFingerprint;
+			if (storedIntent === submittedIntentFingerprint) {
+				return replayExistingContractChangeBatch(db, {
+					organizationId: input.organizationId,
+					existingBatch: existing,
+					enqueueAsyncJob: input.enqueueAsyncJob,
+					skipImmediateExecution: input.skipImmediateExecution,
+					runnerOptions: input.runnerOptions,
+				});
+			}
+			throw new ConflictError({
+				message: "This request ID was already used with a different batch payload.",
+				conflictType: "request_conflict",
+				details: { requestId: input.requestId },
+			});
+		}
+	}
+
 	const matched = await resolveTargetEmployees(
 		db,
 		input.organizationId,
 		input.target,
 		input.actionKind === "adopt_default",
+		effectiveFromDate,
 	);
 
 	if (matched.length === 0) {
@@ -714,14 +882,32 @@ export async function submitBulkContractAction(
 		});
 	}
 
+	// A1-21: Verify confirmation fingerprint against the normalized operation and exact
+	// matched employee IDs so roster/operation drift after preview requires a fresh preview.
+	const currentFingerprint = computeBulkConfirmationFingerprint({
+		organizationId: input.organizationId,
+		spec: input,
+		effectiveFromDate,
+		employeeIds: matched.map((m) => m.id),
+		onlyLegacyTerms,
+	});
+	if (input.confirmationFingerprint && input.confirmationFingerprint !== currentFingerprint) {
+		throw new ConflictError({
+			message:
+				"Bulk action preview is stale because matching employees or parameters changed. Re-run preview before submitting.",
+			conflictType: "confirmation_fingerprint_mismatch",
+		});
+	}
+
 	const requestId = input.requestId ?? randomUUID();
 
 	if (input.actionKind === "apply_template_version") {
-		const payload: BulkTemplateApplyBatchPayload = {
+		const payload: BulkTemplateApplyBatchPayload & { submittedIntentFingerprint: string } = {
 			templateVersionId: input.templateVersionId,
 			effectiveFromDate,
 			overwritePersonalDivergences: input.overwritePersonalDivergences ?? false,
 			changeReason: input.changeReason ?? null,
+			submittedIntentFingerprint,
 		};
 		return submitContractChangeBatch(db, {
 			organizationId: input.organizationId,
@@ -738,10 +924,12 @@ export async function submitBulkContractAction(
 	}
 
 	if (input.actionKind === "adopt_default") {
-		const payload: BulkAdoptDefaultBatchPayload = {
+		const payload: BulkAdoptDefaultBatchPayload & { submittedIntentFingerprint: string } = {
 			effectiveFromDate,
 			keepDivergenceFields: input.keepDivergenceFields ?? [],
+			onlyLegacyTerms,
 			changeReason: input.changeReason ?? null,
+			submittedIntentFingerprint,
 		};
 		return submitContractChangeBatch(db, {
 			organizationId: input.organizationId,
@@ -757,11 +945,12 @@ export async function submitBulkContractAction(
 		});
 	}
 
-	const payload: BulkTermsUpdateBatchPayload = {
+	const payload: BulkTermsUpdateBatchPayload & { submittedIntentFingerprint: string } = {
 		effectiveFromDate,
 		overwritePersonalDivergences: input.overwritePersonalDivergences ?? false,
 		changes: input.changes,
 		changeReason: input.changeReason ?? null,
+		submittedIntentFingerprint,
 	};
 	return submitContractChangeBatch(db, {
 		organizationId: input.organizationId,

@@ -777,14 +777,15 @@ export async function createVersionedWorkPolicyInTx(
 		createdBy: actorUserId,
 	});
 
-	// Step 5: Insert children with explicit policyVersionId.
-	if (data.scheduleEnabled && data.schedule) {
+	// Step 5: Insert children with explicit policyVersionId independently of enablement flags
+	// so saved child rules are retained across toggles and duplications (Spec #1921 Story 12 / A1-14).
+	if (data.schedule) {
 		await insertScheduleForVersionInTx(tx, newPolicy.id, v1.id, data.schedule);
 	}
-	if (data.regulationEnabled && data.regulation) {
+	if (data.regulation) {
 		await insertRegulationForVersionInTx(tx, newPolicy.id, v1.id, data.regulation, null);
 	}
-	if (data.presenceEnabled && data.presence) {
+	if (data.presence) {
 		await insertPresenceForVersionInTx(tx, newPolicy.id, v1.id, data.presence);
 	}
 
@@ -896,6 +897,43 @@ export async function updateOrPublishWorkPolicyInTx(
 
 	// Step 2: Metadata-only edit updates work_policy in place without creating empty versions.
 	if (!input.forceNewVersion && isMetadataOnlyEdit(existingPolicy, data)) {
+		const versions = await listPolicyVersionsOrderedInTx(tx, policyId);
+
+		// A1-30: Reactivating an inactive policy must lock & validate presence locations on effective
+		// and future presence-enabled versions so an active policy can never point at an archived location.
+		if (data.isActive === true && !existingPolicy.isActive && versions.length > 0) {
+			const orgTimezone = await loadOrganizationTimezone(tx, organizationId);
+			const nowInstant = input.now ? instantFromDate(input.now) : systemClock.nowInstant();
+			const orgTodayDate = plainDateAt(nowInstant, orgTimezone).toString();
+
+			const currentEffective = versions.find((v) => v.effectiveFromDate <= orgTodayDate) ?? null;
+			const futureVersions = versions.filter((v) => v.effectiveFromDate > orgTodayDate);
+			const activePresenceVersionIds = [
+				...(currentEffective && currentEffective.presenceEnabled ? [currentEffective.id] : []),
+				...futureVersions.filter((v) => v.presenceEnabled).map((v) => v.id),
+			];
+
+			if (activePresenceVersionIds.length > 0) {
+				const presenceRows = await tx
+					.select({ locationId: workPolicyPresence.locationId })
+					.from(workPolicyPresence)
+					.where(
+						and(
+							eq(workPolicyPresence.policyId, policyId),
+							inArray(workPolicyPresence.policyVersionId, activePresenceVersionIds),
+						),
+					);
+				const uniqueLocationIds = [
+					...new Set(
+						presenceRows.map((row) => row.locationId).filter((id): id is string => Boolean(id)),
+					),
+				].sort((a, b) => a.localeCompare(b));
+				for (const locId of uniqueLocationIds) {
+					await lockActiveLocationForShareInTx(tx, organizationId, locId);
+				}
+			}
+		}
+
 		await tx
 			.update(workPolicy)
 			.set({
@@ -907,7 +945,6 @@ export async function updateOrPublishWorkPolicyInTx(
 			})
 			.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
 
-		const versions = await listPolicyVersionsOrderedInTx(tx, policyId);
 		const latestVersion =
 			versions[0] ??
 			(await ensurePolicyV1IdempotentlyInTx(tx, {
@@ -993,6 +1030,16 @@ export async function updateOrPublishWorkPolicyInTx(
 		sealedCutoverAt !== null || versions.some((version) => version.sealedAt !== null);
 
 	if (!isPostCutover) {
+		// A1-15: Refuse future-dated version publishing while only in-place unsealed v1 editing is
+		// available, so future rules never take effect prematurely during rollout.
+		if (requestedEffectiveFromDate && requestedEffectiveFromDate > orgTodayDate) {
+			throw new ValidationError({
+				message: `Future-dated work policy versions (${requestedEffectiveFromDate}) cannot be scheduled before policy versioning cutover completes.`,
+				field: "effectiveFromDate",
+				refusal: "versioning_not_sealed",
+			});
+		}
+
 		// Pre-cutover (pre-0326 or parked-0326): update unsealed v1 in place and dual-write the 3 enablement flags.
 		const v1 = await ensurePolicyV1IdempotentlyInTx(tx, {
 			organizationId,
@@ -1054,7 +1101,7 @@ export async function updateOrPublishWorkPolicyInTx(
 					.delete(workPolicyPresence)
 					.where(eq(workPolicyPresence.id, currentDetails.presence.id));
 			}
-			if (nextPresenceEnabled && data.presence) {
+			if (data.presence) {
 				await insertPresenceForVersionInTx(tx, policyId, v1.id, data.presence);
 			}
 		}
@@ -1234,12 +1281,13 @@ export async function updateOrPublishWorkPolicyInTx(
 		);
 	}
 
-	// 6: Presence
+	// 6: Presence — retain saved presence rules independently of `presenceEnabled` so toggling
+	// presence off and back on restores saved location/fixed days (Spec #1921 Story 12 / A1-14).
 	if (data.presence !== undefined) {
-		if (data.presence !== null && nextPresenceEnabled) {
+		if (data.presence !== null) {
 			await insertPresenceForVersionInTx(tx, policyId, createdVersion.id, data.presence);
 		}
-	} else if (currentDetails?.presence && nextPresenceEnabled) {
+	} else if (currentDetails?.presence) {
 		const src = currentDetails.presence;
 		let fixedDays: string[] | undefined;
 		if (src.requiredOnsiteFixedDays) {

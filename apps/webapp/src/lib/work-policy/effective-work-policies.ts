@@ -418,15 +418,13 @@ export async function loadEffectiveWorkPolicies(
 	const dayStr = day.toString();
 	const employeeIds = [...new Set(input.employees.map((person) => person.id))];
 
-	// Resolve real employees through the unified read-only contract resolver so single and
-	// batched policy lookups share one canonical implementation.
-	const teamIdOverrides = new Map(input.employees.map((person) => [person.id, person.teamId]));
+	// Resolve real employees through the unified read-only contract resolver using captured
+	// `employee_team_history` (never overriding real employees with caller's current `teamId` — A1-11).
 	const batch = await loadEffectiveContractsBatch(db, {
 		organizationId: input.organizationId,
 		employeeIds,
 		dates: [day],
 		at: input.at,
-		teamIdOverrides,
 	});
 
 	const syntheticTargets: { id: string; teamId: string | null }[] = [];

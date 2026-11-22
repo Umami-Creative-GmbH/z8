@@ -9,6 +9,7 @@ import {
 	employeeEmploymentPeriod,
 } from "@/db/schema/employee-lifecycle";
 import { AuditAction } from "@/lib/audit-logger";
+import { replacePolicyAssignmentWindowInTx } from "@/lib/contracts/policy-assignment-intervals";
 import {
 	type Clock,
 	compareInstants,
@@ -875,19 +876,32 @@ async function correctPastDepartureDate(
 
 		assertCutoffNotBeforePeriodStart(period.startedAt, nextCutoff);
 
-		// Ensure the corrected cutoff never overlaps a subsequent rehire period.
+		// Ensure the corrected cutoff never overlaps a subsequent rehire period and find the
+		// earliest subsequent period start to bound assignment/reconciliation updates to this stint.
 		const previousCutoff = departure.cutoffAt;
 		const newCutoffDate = dateFromInstant(nextCutoff.cutoff);
+		let nextPeriodStart: Date | null = null;
 		for (const other of periods) {
 			if (other.id === period.id || !other.startedAt) continue;
 			const startedAfterOriginal =
 				period.endedAt === null
 					? other.startedAt.getTime() >= previousCutoff.getTime()
 					: other.startedAt.getTime() >= period.endedAt.getTime();
-			if (startedAfterOriginal && newCutoffDate.getTime() > other.startedAt.getTime()) {
-				throw new DepartureCommandError("departure_overlaps_rehire");
+			if (startedAfterOriginal) {
+				if (newCutoffDate.getTime() > other.startedAt.getTime()) {
+					throw new DepartureCommandError("departure_overlaps_rehire");
+				}
+				if (nextPeriodStart === null || other.startedAt.getTime() < nextPeriodStart.getTime()) {
+					nextPeriodStart = other.startedAt;
+				}
 			}
 		}
+		const nextPeriodStartLocalDate = nextPeriodStart
+			? instantFromDate(nextPeriodStart)
+					.toZonedDateTimeISO(nextCutoff.timezone)
+					.toPlainDate()
+					.toString()
+			: null;
 
 		const previousCutoffLocalDate = instantFromDate(previousCutoff)
 			.toZonedDateTimeISO(departure.timezone)
@@ -1030,7 +1044,23 @@ async function correctPastDepartureDate(
 			}
 		}
 
-		// Cap or deactivate active employee policy assignments beyond the corrected cutoff using canonical dates.
+		// Cap or deactivate active employee policy assignments beyond the corrected cutoff using
+		// canonical dates, strictly bounded to the corrected stint (never touching a subsequent rehire
+		// period's assignments — A1-3).
+		const stintProvenanceGuard = sql`AND (
+			source_employment_history_id IS NULL
+			OR source_employment_history_id IN (
+				SELECT id
+				FROM employee_employment_history
+				WHERE organization_id = ${actor.organizationId}
+					AND employee_id = ${target.id}::uuid
+					AND employment_period_id = ${period.id}::uuid
+			)
+		)`;
+		const nextPeriodUpperBoundGuard = nextPeriodStartLocalDate
+			? sql`AND effective_from_date < ${nextPeriodStartLocalDate}::date`
+			: sql``;
+
 		await tx.execute(sql`
 			UPDATE work_policy_assignment
 			SET effective_until = ${newCutoffDate},
@@ -1042,6 +1072,7 @@ async function correctPastDepartureDate(
 				AND is_active = true
 				AND effective_from_date < ${nextCutoff.cutoffLocalDate}::date
 				AND (effective_until_date IS NULL OR effective_until_date > ${nextCutoff.cutoffLocalDate}::date)
+				${stintProvenanceGuard}
 		`);
 		await tx.execute(sql`
 			UPDATE work_policy_assignment
@@ -1051,6 +1082,8 @@ async function correctPastDepartureDate(
 				AND employee_id = ${target.id}::uuid
 				AND is_active = true
 				AND effective_from_date >= ${nextCutoff.cutoffLocalDate}::date
+				${nextPeriodUpperBoundGuard}
+				${stintProvenanceGuard}
 		`);
 
 		const reconciliation = await reconcileRetrospectiveDepartureReviewsInTx(tx, {
@@ -1059,6 +1092,7 @@ async function correctPastDepartureDate(
 			employmentPeriodId: period.id,
 			departureId: departure.id,
 			cutoff: nextCutoff.cutoff,
+			upperBound: nextPeriodStart ? instantFromDate(nextPeriodStart) : null,
 			timezone: nextCutoff.timezone,
 			lastWorkingDay: nextCutoff.lastWorkingDay,
 			now,
@@ -1479,13 +1513,14 @@ async function rehireEmployee(
 
 		// The period starts at the rehire instant; its terms start on the
 		// org-local rehire date, stored as a calendar date like all terms (D1).
-		await writeEmploymentTerms(tx, {
+		const rehirePlainDate = plainDateAt(now, timezone);
+		const insertedTerms = await writeEmploymentTerms(tx, {
 			organizationId: actor.organizationId,
 			employeeId: target.id,
 			actorUserId: actor.userId,
 			now: nowDate,
 			terms: {
-				validFrom: utcMidnight(plainDateAt(now, timezone)),
+				validFrom: utcMidnight(rehirePlainDate),
 				status: "active",
 				contractType: input.contractType,
 				weeklyContractMinutes: input.weeklyContractMinutes,
@@ -1499,6 +1534,27 @@ async function rehireEmployee(
 				reviewState: "confirmed",
 			},
 		});
+		// A1-8: Project the rehire work policy into `work_policy_assignment` in the same
+		// transaction so transactional clock-out break snapshots resolve the selected policy.
+		if (input.workPolicyId) {
+			await replacePolicyAssignmentWindowInTx(tx, {
+				organizationId: actor.organizationId,
+				actorUserId: actor.userId,
+				target: {
+					assignmentType: "employee",
+					teamId: null,
+					employeeId: target.id,
+					priority: 2,
+				},
+				policyId: input.workPolicyId,
+				effectiveFromDate: rehirePlainDate.toString(),
+				effectiveUntilDate: null,
+				sourceKind: "employment_terms",
+				sourceContractDefaultId: null,
+				sourceEmploymentHistoryId: insertedTerms.id,
+				now: nowDate,
+			});
+		}
 		await tx.delete(employeeManagers).where(eq(employeeManagers.employeeId, target.id));
 		if (input.primaryManagerId) {
 			await tx.insert(employeeManagers).values({

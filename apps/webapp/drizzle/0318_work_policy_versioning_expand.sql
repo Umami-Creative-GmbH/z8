@@ -2,6 +2,8 @@
 -- Pre-step concurrent unique index `work_policy_id_org_uidx` is built non-transactionally
 -- by the shared boundary-aware migration engine before this migration executes.
 
+SET LOCAL lock_timeout = '500ms';
+--> statement-breakpoint
 ALTER TABLE "work_policy"
 	ADD CONSTRAINT "work_policy_id_org_uidx" UNIQUE USING INDEX "work_policy_id_org_uidx";
 --> statement-breakpoint

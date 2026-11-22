@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { z } from "zod";
 import { employee, team, workPolicy, workPolicyPreset, workPolicyViolation } from "@/db/schema";
@@ -12,7 +12,12 @@ import {
 	scheduleContractDefaultPolicyUpdate,
 } from "@/lib/contracts";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -20,6 +25,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import {
 	noInput,
 	type OrganizationActor,
@@ -453,14 +459,44 @@ export const deleteWorkPolicy = organizationAction(
 			}
 
 			yield* dbService.query("softDelete", async () => {
-				await dbService.db
-					.update(workPolicy)
-					.set({
-						isActive: false,
-						updatedBy: actor.userId,
-						updatedAt: currentTimestamp(),
-					})
-					.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
+				const orgTimezone = await loadOrganizationTimezone(dbService.db, organizationId);
+				const now = currentTimestamp();
+				const orgTodayDate = plainDateAt(instantFromDate(now), orgTimezone).toString();
+				const orgTodayMidnight = utcMidnight(parsePlainDate(orgTodayDate));
+
+				await dbService.db.transaction(async (tx) => {
+					await tx
+						.update(workPolicy)
+						.set({
+							isActive: false,
+							updatedBy: actor.userId,
+							updatedAt: now,
+						})
+						.where(and(eq(workPolicy.id, policyId), eq(workPolicy.organizationId, organizationId)));
+
+					// A1-12: Record a dated end (`orgTodayDate`) on active assignments referencing this
+					// retired policy so historical days keep resolving the retired policy while today
+					// and future dates stop applying it.
+					await tx.execute(sql`
+						UPDATE work_policy_assignment
+						SET effective_until = ${orgTodayMidnight},
+							effective_until_date = ${orgTodayDate}::date,
+							updated_at = ${now}
+						WHERE organization_id = ${organizationId}
+							AND policy_id = ${policyId}::uuid
+							AND is_active = true
+							AND effective_from_date < ${orgTodayDate}::date
+							AND (effective_until_date IS NULL OR effective_until_date > ${orgTodayDate}::date)
+					`);
+					await tx.execute(sql`
+						UPDATE work_policy_assignment
+						SET is_active = false, updated_at = ${now}
+						WHERE organization_id = ${organizationId}
+							AND policy_id = ${policyId}::uuid
+							AND is_active = true
+							AND effective_from_date >= ${orgTodayDate}::date
+					`);
+				});
 			});
 
 			yield* markWorkBalancesDirty(organizationId);

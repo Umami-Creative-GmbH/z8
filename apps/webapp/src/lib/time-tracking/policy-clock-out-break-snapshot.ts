@@ -438,7 +438,8 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				select employee.id, employee.organization_id as "organizationId",
 					employee.team_id as "teamId",
 					user_settings.timezone as "userTimezone",
-					organization.timezone as "organizationTimezone"
+					organization.timezone as "organizationTimezone",
+					(${endTimeDate}::timestamptz at time zone coalesce(nullif(user_settings.timezone, ''), nullif(organization.timezone, ''), 'UTC'))::date as "clockOutLocalDate"
 				from employee
 				left join user_settings on user_settings.user_id = employee.user_id
 				left join organization on organization.id = employee.organization_id
@@ -467,8 +468,18 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					on assignment.organization_id = employee_row."organizationId"
 				where assignment.organization_id = ${input.organizationId}
 					and assignment.is_active = true
-					and (assignment.effective_from is null or assignment.effective_from <= ${endTimeDate})
-					and (assignment.effective_until is null or assignment.effective_until > ${endTimeDate})
+					and (
+						(
+							assignment.source_kind <> 'legacy'
+							and assignment.effective_from_date <= employee_row."clockOutLocalDate"
+							and (assignment.effective_until_date is null or assignment.effective_until_date > employee_row."clockOutLocalDate")
+						)
+						or (
+							assignment.source_kind = 'legacy'
+							and (assignment.effective_from is null or assignment.effective_from <= ${endTimeDate})
+							and (assignment.effective_until is null or assignment.effective_until > ${endTimeDate})
+						)
+					)
 					and (
 						(assignment.assignment_type = 'employee' and assignment.employee_id = employee_row.id)
 						or (assignment.assignment_type = 'team' and assignment.team_id = employee_row."teamId")

@@ -1248,4 +1248,165 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 			`[10k benchmark] preview=${Math.round(previewMs)}ms submit=${Math.round(submitMs)}ms csvDryRun=${Math.round(csvMs)}ms`,
 		);
 	});
+
+	it("enforces Astra regression invariants: covering legacy eligibility (A1-19), bulk confirmation fingerprint (A1-21), CSV mode/date contradictions & diagnostic codes (A1-23/A1-31), leaving-date CSV retry replay (A1-28), and errorRowDetails beyond row 50 (A1-29)", async () => {
+		const teamId = await seedTeam("Astra Bulk Team");
+		const empAdopted = await seedEmployee({
+			key: "astra-adopted",
+			teamId,
+			employeeNumber: "AST-001",
+		});
+		const empStillLegacy = await seedEmployee({
+			key: "astra-legacy",
+			teamId,
+			employeeNumber: "AST-002",
+		});
+
+		// Both start with migrated_legacy_terms = true on 2026-01-01
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: empAdopted.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-01-01",
+			weeklyContractMinutes: 2100,
+			migratedLegacyTerms: true,
+		});
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: empStillLegacy.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-01-01",
+			weeklyContractMinutes: 2100,
+			migratedLegacyTerms: true,
+		});
+		// empAdopted adopts defaults on 2026-03-01 and later sets a personal override on 2026-04-01
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: empAdopted.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-03-01",
+			migratedLegacyTerms: false,
+		});
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: empAdopted.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-04-01",
+			weeklyContractMinutes: 1920,
+			migratedLegacyTerms: false,
+		});
+
+		// A1-19: onlyLegacyTerms on 2026-06-01 matches ONLY empStillLegacy, NOT empAdopted
+		const legacyPreview = await previewBulkContractAction(db, {
+			organizationId: ORG_ID,
+			actionKind: "adopt_default",
+			effectiveFromDate: "2026-06-01",
+			target: { teamId, onlyLegacyTerms: true },
+		});
+		expect(legacyPreview.employees.map((e) => e.employeeId)).toEqual([empStillLegacy.employeeId]);
+
+		// A1-21: Adding a new employee to the team after preview invalidates confirmationFingerprint
+		const teamPreview = await previewBulkContractAction(db, {
+			organizationId: ORG_ID,
+			actionKind: "bulk_operational_update",
+			effectiveFromDate: "2026-07-01",
+			changes: { workModel: "hybrid" },
+			target: { teamId },
+		});
+		await seedEmployee({ key: "astra-late-joiner", teamId, employeeNumber: "AST-003" });
+		await expect(
+			submitBulkContractAction(db, {
+				organizationId: ORG_ID,
+				actorUserId: ADMIN_USER_ID,
+				actionKind: "bulk_operational_update",
+				effectiveFromDate: "2026-07-01",
+				changes: { workModel: "hybrid" },
+				target: { teamId },
+				confirmationFingerprint: teamPreview.confirmationFingerprint,
+			}),
+		).rejects.toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "confirmation_fingerprint_mismatch",
+		} satisfies Partial<ConflictError>);
+
+		// A1-23 + A1-31: Contradictory explicit departure_mode yields row errors with structured diagnostic codes
+		const clockNow = parseInstant("2026-06-15T10:00:00Z");
+		const badDepartureCsv = [
+			"employee_number,last_working_day,departure_mode",
+			"AST-001,2026-09-30,immediate",
+			"AST-002,2026-06-15,retrospective",
+		].join("\n");
+		const badDepPreview = await previewCsvLeavingDateImport(db, {
+			organizationId: ORG_ID,
+			csvText: badDepartureCsv,
+			now: clockNow,
+		});
+		expect(badDepPreview.canCommit).toBe(false);
+		expect(badDepPreview.errorRows).toBe(2);
+		expect(badDepPreview.rows[0]?.errorDetails[0]?.code).toBe("departure_immediate_requires_today");
+		expect(badDepPreview.rows[1]?.errorDetails[0]?.code).toBe(
+			"departure_retrospective_requires_past",
+		);
+
+		// A1-28: Retrying a committed leaving-date CSV import with the same requestId replays the original receipt
+		await seedEmployee({ key: "astra-dep-retry", employeeNumber: "AST-DEP-1" });
+		const validDepCsv = ["employee_number,last_working_day", "AST-DEP-1,2026-09-30"].join("\n");
+		const depPreview = await previewCsvLeavingDateImport(db, {
+			organizationId: ORG_ID,
+			csvText: validDepCsv,
+			now: clockNow,
+		});
+		expect(depPreview.canCommit).toBe(true);
+		const retryRequestId = randomUUID();
+		const stubClockOut: DepartureClockOutPort = {
+			async close() {
+				return { kind: "not_running" };
+			},
+		};
+		const depCommands = createDepartureCommands({
+			db,
+			clock: { nowInstant: () => clockNow },
+			clockOut: stubClockOut,
+		});
+		const firstDepCommit = await commitCsvImportBatch(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			requestId: retryRequestId,
+			operationKind: "csv_departure_import",
+			csvText: validDepCsv,
+			confirmationFingerprint: depPreview.confirmationFingerprint,
+			clockNow,
+			runnerOptions: { departureCommands: depCommands, skipBalanceDirtyNotification: true },
+		});
+		expect(firstDepCommit.batch.status).toBe("completed");
+		expect(firstDepCommit.replayed).toBe(false);
+
+		// Retry with identical requestId AFTER the scheduled departure has already committed
+		const secondDepCommit = await commitCsvImportBatch(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			requestId: retryRequestId,
+			operationKind: "csv_departure_import",
+			csvText: validDepCsv,
+			confirmationFingerprint: depPreview.confirmationFingerprint,
+			clockNow,
+			runnerOptions: { departureCommands: depCommands, skipBalanceDirtyNotification: true },
+		});
+		expect(secondDepCommit.replayed).toBe(true);
+		expect(secondDepCommit.batch.id).toBe(firstDepCommit.batch.id);
+
+		// A1-29: Row 55 error is returned in errorRowDetails even when maxPreviewRows = 50
+		const manyLines = ["employee_number,effective_from_date,work_model"];
+		for (let i = 1; i <= 54; i++) {
+			manyLines.push(`AST-001,2026-07-01,hybrid`);
+		}
+		manyLines.push(`UNKNOWN-ROW-55,2026-07-01,teleporting`);
+		const deepErrorPreview = await previewCsvContractImport(db, {
+			organizationId: ORG_ID,
+			csvText: manyLines.join("\n"),
+			maxPreviewRows: 50,
+		});
+		expect(deepErrorPreview.rows).toHaveLength(50);
+		expect(deepErrorPreview.errorRowDetails.some((r) => r.rowNumber === 56)).toBe(true);
+	});
 });

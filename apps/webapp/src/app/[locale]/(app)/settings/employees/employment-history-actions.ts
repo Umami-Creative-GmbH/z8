@@ -69,7 +69,7 @@ function afterTermsChange(
 }
 
 export const listEmployeeEmploymentHistoryAction = organizationAction(
-	{ name: "employmentHistory.list", requires: "scopedManager", schema: employeeIdSchema },
+	{ name: "employmentHistory.list", requires: "orgAdmin", schema: employeeIdSchema },
 	(context) =>
 		Effect.gen(function* () {
 			const { organizationId, input: employeeId } = context;
@@ -104,14 +104,12 @@ export const listEmployeeEmploymentHistoryAction = organizationAction(
 			);
 			const periodById = new Map(periods.map((period) => [period.id, period]));
 
-			return history.map(
-				(entry): EmployeeEmploymentHistoryWithPeriod => ({
-					...entry,
-					employmentPeriod: entry.employmentPeriodId
-						? (periodById.get(entry.employmentPeriodId) ?? null)
-						: null,
-				}),
-			);
+			return history.map((entry): EmployeeEmploymentHistoryWithPeriod => ({
+				...entry,
+				employmentPeriod: entry.employmentPeriodId
+					? (periodById.get(entry.employmentPeriodId) ?? null)
+					: null,
+			}));
 		}),
 );
 

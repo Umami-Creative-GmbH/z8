@@ -73,15 +73,25 @@ describe("employment history actions (#1613)", () => {
 		}));
 	});
 
-	it("lists a managed employee's terms for their scoped manager", async () => {
-		mocks.caller = scopedManager;
-		mocks.managedEmployeeIds = [EMPLOYEE_ID];
+	it("lists an employee's terms for an org admin", async () => {
+		mocks.caller = { ...scopedManager, membershipRole: "admin", employee: null };
 		mocks.findHistory.mockResolvedValueOnce([{ id: HISTORY_ID, employmentPeriodId: null }]);
 
 		await expect(listEmployeeEmploymentHistoryAction(EMPLOYEE_ID)).resolves.toEqual({
 			success: true,
 			data: [{ id: HISTORY_ID, employmentPeriodId: null, employmentPeriod: null }],
 		});
+	});
+
+	it("refuses full employment history and wages to a scoped manager (Story 22 / A1-1)", async () => {
+		mocks.caller = scopedManager;
+		mocks.managedEmployeeIds = [EMPLOYEE_ID];
+
+		await expect(listEmployeeEmploymentHistoryAction(EMPLOYEE_ID)).resolves.toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(mocks.findHistory).not.toHaveBeenCalled();
 	});
 
 	it("refuses a scoped manager an employee they do not manage", async () => {

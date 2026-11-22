@@ -24,8 +24,9 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import * as schema from "@/db/schema";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { changeHourlyWage } from "@/lib/employment-history/write-terms";
 import { createVersionedWorkPolicy } from "@/lib/work-policy/versioned-policy-writer";
 import { integrationAdminPool } from "@/test/integration-database";
 import {
@@ -644,7 +645,8 @@ describe("contract defaults, templates, employee divergence & fixed-term command
 			callInMaxBandMinutes: 1000,
 		});
 
-		// 3. 1-click Reset to default clears operational divergences while preserving employee-owned terms
+		// 3. 1-click Reset to default clears operational divergences while preserving employee-owned
+		// terms including § 12 TzBfG on-call statutory agreements (A1-6).
 		await resetEmployeeContractDivergences(db, {
 			organizationId: ORG_ID,
 			employeeId: emp.employeeId,
@@ -658,8 +660,11 @@ describe("contract defaults, templates, employee divergence & fixed-term command
 		});
 		expect(afterReset?.workModel).toBe("onsite");
 		expect(afterReset?.workModelSource).toBe("org_default");
-		expect(afterReset?.scheduleSource).toBe("policy");
-		expect(afterReset?.onCallTerms).toBeNull();
+		expect(afterReset?.scheduleSource).toBe("on_call");
+		expect(afterReset?.onCallTerms).toMatchObject({
+			hoursKind: "unspecified",
+			statutoryFallbackWeeklyMinutes: 1200,
+		});
 		expect(afterReset?.contractType).toBe("hourly");
 		expect(afterReset?.hourlyRate).toBe(30);
 		expect(afterReset?.employmentProfile).toBe("minijob");
@@ -1117,5 +1122,123 @@ describe("contract defaults, templates, employee divergence & fixed-term command
 			emp.employeeId,
 		]);
 		expect(empAfter.team_id).toBe(teamOffice);
+	});
+
+	it("preserves unified contract terms & custom days across wage edits (A1-4), selects prior terms covering the date (A1-5), and detects custom-day swaps in default previews (A1-27)", async () => {
+		const emp = await seedEmployee({ key: "wage-preserve", contractType: "hourly" });
+
+		// Initial confirmed contract with custom_days, trust_based, minijob, executive_exempt, hourly €20
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: emp.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-01-01",
+			contractType: "hourly",
+			hourlyRate: 20,
+			currency: "EUR",
+			employmentProfile: "minijob",
+			arbzgScope: "executive_exempt",
+			workModel: "remote",
+			presenceOverride: "exempt",
+			balanceMode: "trust_based",
+			scheduleMode: "custom_days",
+			customDays: [
+				{ dayOfWeek: "monday", minutesPerDay: 480, isWorkDay: true, latestClockIn: "09:00" },
+				{ dayOfWeek: "wednesday", minutesPerDay: 360, isWorkDay: true, latestClockIn: "10:00" },
+			],
+		});
+
+		// A1-4: Pay-only wage edit must preserve ALL classification, operational divergences, and custom days
+		await db.transaction((tx) =>
+			changeHourlyWage(tx as unknown as Parameters<typeof changeHourlyWage>[0], {
+				organizationId: ORG_ID,
+				employeeId: emp.employeeId,
+				actorUserId: ADMIN_USER_ID,
+				effectiveOn: parsePlainDate("2026-03-01"),
+				hourlyRate: 24.5,
+				changeReason: "Annual raise",
+				reviewState: "confirmed",
+			}),
+		);
+
+		const afterWage = await resolveEffectiveContractOnDay(db, {
+			organizationId: ORG_ID,
+			employeeId: emp.employeeId,
+			date: "2026-03-02", // Monday
+		});
+		expect(afterWage?.hourlyRate).toBe(24.5);
+		expect(afterWage?.employmentProfile).toBe("minijob");
+		expect(afterWage?.arbzgScope).toBe("executive_exempt");
+		expect(afterWage?.balanceMode).toBe("trust_based");
+		expect(afterWage?.workModel).toBe("remote");
+		expect(afterWage?.scheduleMode).toBe("custom_days");
+		expect(afterWage?.requiredMinutes).toBe(480);
+		expect(
+			afterWage?.weeklyScheduleDays.find((d) => d.dayOfWeek === "wednesday")?.minutesPerDay,
+		).toBe(360);
+
+		// A1-5: Operational edit on an earlier date must NOT pull future confirmed terms forward
+		const empFuture = await seedEmployee({ key: "future-terms", contractType: "hourly" });
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: empFuture.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-01-01",
+			contractType: "hourly",
+			hourlyRate: 18,
+			employmentProfile: "regular",
+		});
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: empFuture.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-08-01",
+			contractType: "hourly",
+			hourlyRate: 35,
+			employmentProfile: "working_student",
+		});
+		// Operational edit on 2026-04-01 should inherit 2026-01-01's €18/regular, NOT 2026-08-01's €35/working_student!
+		await commitContractChange(db, {
+			organizationId: ORG_ID,
+			employeeId: empFuture.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			validFromDate: "2026-04-01",
+			workModel: "hybrid",
+		});
+		const aprilContract = await resolveEffectiveContractOnDay(db, {
+			organizationId: ORG_ID,
+			employeeId: empFuture.employeeId,
+			date: "2026-04-06",
+		});
+		expect(aprilContract?.hourlyRate).toBe(18);
+		expect(aprilContract?.employmentProfile).toBe("regular");
+		expect(aprilContract?.workModel).toBe("hybrid");
+
+		// A1-27: Swapping 8h from Monday to Tuesday in org default preview marks inheriting employees affected
+		const empInheriting = await seedEmployee({ key: "swap-days" });
+		await scheduleContractDefault(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			scope: "organization",
+			effectiveFromDate: "2026-01-01",
+			scheduleMode: "custom_days",
+			customDays: [
+				{ dayOfWeek: "monday", minutesPerDay: 480, isWorkDay: true, latestClockIn: null },
+			],
+		});
+		const swapPreview = await previewContractDefaultChange(db, {
+			organizationId: ORG_ID,
+			scope: "organization",
+			effectiveFromDate: "2026-06-01",
+			scheduleMode: "custom_days",
+			customDays: [
+				{ dayOfWeek: "tuesday", minutesPerDay: 480, isWorkDay: true, latestClockIn: null },
+			],
+		});
+		const affectedEmp = swapPreview.inheritingEmployees.find(
+			(e) => e.employeeId === empInheriting.employeeId,
+		);
+		expect(affectedEmp).toBeDefined();
+		expect(affectedEmp?.changes.map((c) => c.field)).toContain("weeklyScheduleDays");
 	});
 });

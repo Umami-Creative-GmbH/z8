@@ -301,10 +301,9 @@ export function resolvePrimaryTeamAtDayStart(input: {
 		return null;
 	}
 
+	// A1-11: Strictly honor migration 0120's non-inference invariant — never extrapolate
+	// primary team membership backward from `employee.teamId` when `employee_team_history` is empty.
 	if (input.teamHistory.length === 0) {
-		if (input.currentTeamId && !input.foreignTeamIds.has(input.currentTeamId)) {
-			return input.currentTeamId;
-		}
 		return null;
 	}
 
@@ -530,7 +529,13 @@ function selectPolicyAssignmentAtLevel(input: {
 			return false;
 		}
 		const policy = input.policiesById.get(row.policyId);
-		return Boolean(policy?.isActive);
+		if (!policy) return false;
+		// A1-12: Preserve historical eligibility for retired policies on dates covered by an
+		// ended dated assignment (`effectiveUntilDate` set on retirement/replacement), while
+		// still letting open-ended inactive policies fall through.
+		return Boolean(
+			policy.isActive || (row.effectiveUntilDate !== null && input.dayStr < row.effectiveUntilDate),
+		);
 	});
 
 	if (matching.length === 0) return null;
@@ -639,10 +644,43 @@ function getWorkDaysFromPolicySchedule(schedule: ResolvedWorkPolicySchedule): Da
 	return [...(PRESET_WORK_DAYS[schedule.workingDaysPreset] ?? WEEKDAY_NAMES)];
 }
 
+function resolveCycleWeekForDate(
+	day: PlainDate,
+	anchorDateStr: string | null,
+	maxCycleWeek: number,
+): number {
+	if (maxCycleWeek <= 1) return 1;
+	const anchor = anchorDateStr ? parsePlainDate(anchorDateStr) : parsePlainDate("1970-01-05");
+	const anchorMonday = anchor.subtract({ days: anchor.dayOfWeek - 1 });
+	const dayMonday = day.subtract({ days: day.dayOfWeek - 1 });
+	const diffDays = dayMonday.since(anchorMonday, { largestUnit: "days" }).days;
+	const diffWeeks = Math.floor(diffDays / 7);
+	return (((diffWeeks % maxCycleWeek) + maxCycleWeek) % maxCycleWeek) + 1;
+}
+
+function normalizeSimpleCycleToWeeklyMinutes(
+	scheduleCycle: ResolvedWorkPolicySchedule["scheduleCycle"],
+	cycleMinutes: number,
+): number {
+	switch (scheduleCycle) {
+		case "weekly":
+			return cycleMinutes;
+		case "biweekly":
+			return Math.round(cycleMinutes / 2);
+		case "monthly":
+			return Math.round((cycleMinutes * 12) / 52);
+		case "yearly":
+			return Math.round(cycleMinutes / 52);
+		case "daily":
+			return cycleMinutes * 5;
+	}
+}
+
 function buildSevenDayMap(
 	workDays: readonly DayOfWeek[],
 	minutesForWorkDays: readonly number[],
 	latestClockIns?: ReadonlyMap<DayOfWeek, string | null>,
+	cycleWeek = 1,
 ): ResolvedScheduleDay[] {
 	const workDayIndex = new Map(workDays.map((day, index) => [day, index]));
 	return DAY_OF_WEEK_ORDER.map((dayOfWeek) => {
@@ -654,7 +692,7 @@ function buildSevenDayMap(
 			minutesPerDay,
 			isWorkDay,
 			latestClockIn: isWorkDay ? (latestClockIns?.get(dayOfWeek) ?? null) : null,
-			cycleWeek: 1,
+			cycleWeek,
 		};
 	});
 }
@@ -670,6 +708,7 @@ function emptyWeekSchedule(): ResolvedScheduleDay[] {
 }
 
 function resolveScheduleForWeek(input: {
+	day: PlainDate;
 	scheduleSource: ScheduleSource;
 	scheduleMode: Exclude<ScheduleMode, "inherit">;
 	scheduleModeSource: ContractFieldSource;
@@ -717,8 +756,14 @@ function resolveScheduleForWeek(input: {
 
 	// 2. hours_only mode: distribute weeklyContractMinutes across working days
 	if (input.scheduleMode === "hours_only") {
-		const targetMinutes =
-			input.weeklyContractMinutes ?? activePolicySchedule?.normalizedCycleMinutes ?? 0;
+		const fallbackWeekly =
+			activePolicySchedule?.normalizedCycleMinutes != null
+				? normalizeSimpleCycleToWeeklyMinutes(
+						activePolicySchedule.scheduleCycle,
+						activePolicySchedule.normalizedCycleMinutes,
+					)
+				: 0;
+		const targetMinutes = input.weeklyContractMinutes ?? fallbackWeekly;
 		const workDays = activePolicySchedule
 			? getWorkDaysFromPolicySchedule(activePolicySchedule)
 			: [...WEEKDAY_NAMES];
@@ -740,9 +785,26 @@ function resolveScheduleForWeek(input: {
 		}
 
 		if (activePolicySchedule.scheduleType === "detailed") {
-			const week1Days = activePolicySchedule.days.filter((d) => (d.cycleWeek ?? 1) === 1);
+			// A1-13: Resolve the active cycleWeek for multi-week detailed schedules (e.g. biweekly)
+			// instead of hardcoding week 1.
+			const maxCycleWeek = activePolicySchedule.days.reduce(
+				(max, d) => Math.max(max, d.cycleWeek ?? 1),
+				1,
+			);
+			const activeCycleWeek = resolveCycleWeekForDate(
+				input.day,
+				input.workPolicy.effectiveFromDate,
+				maxCycleWeek,
+			);
+			const matchedCycleDays = activePolicySchedule.days.filter(
+				(d) => (d.cycleWeek ?? 1) === activeCycleWeek,
+			);
+			const effectiveCycleDays =
+				matchedCycleDays.length > 0
+					? matchedCycleDays
+					: activePolicySchedule.days.filter((d) => (d.cycleWeek ?? 1) === 1);
 			const order = new Map(DAY_OF_WEEK_ORDER.map((day, idx) => [day, idx]));
-			const sortedWorkDays = week1Days
+			const sortedWorkDays = effectiveCycleDays
 				.filter((d) => d.isWorkDay)
 				.sort((a, b) => (order.get(a.dayOfWeek) ?? 0) - (order.get(b.dayOfWeek) ?? 0));
 
@@ -761,7 +823,12 @@ function resolveScheduleForWeek(input: {
 			) {
 				const scaled = distributeMinutesLargestRemainder(input.weeklyContractMinutes, rawWeights);
 				return {
-					weeklyScheduleDays: buildSevenDayMap(workDayNames, scaled, latestClockIns),
+					weeklyScheduleDays: buildSevenDayMap(
+						workDayNames,
+						scaled,
+						latestClockIns,
+						activeCycleWeek,
+					),
 					mismatchWarning: {
 						kind: "weekly_hours_policy_day_sum_mismatch",
 						employeeWeeklyMinutes: input.weeklyContractMinutes,
@@ -773,27 +840,17 @@ function resolveScheduleForWeek(input: {
 			}
 
 			return {
-				weeklyScheduleDays: buildSevenDayMap(workDayNames, rawWeights, latestClockIns),
+				weeklyScheduleDays: buildSevenDayMap(
+					workDayNames,
+					rawWeights,
+					latestClockIns,
+					activeCycleWeek,
+				),
 				mismatchWarning: null,
 			};
 		}
 
-		// Simple policy schedule
-		if (activePolicySchedule.scheduleCycle === "weekly") {
-			const workDays = getWorkDaysFromPolicySchedule(activePolicySchedule);
-			const targetMinutes =
-				input.weeklyContractMinutes ?? activePolicySchedule.normalizedCycleMinutes ?? 0;
-			const distributed = distributeMinutesLargestRemainder(
-				targetMinutes,
-				workDays.map(() => 1),
-			);
-			return {
-				weeklyScheduleDays: buildSevenDayMap(workDays, distributed),
-				mismatchWarning: null,
-			};
-		}
-
-		// Daily simple schedule
+		// Simple policy schedule (daily, weekly, biweekly, monthly, yearly — A1-13)
 		if (activePolicySchedule.scheduleCycle === "daily") {
 			const workDays = getWorkDaysFromPolicySchedule(activePolicySchedule);
 			const dailyMinutes = activePolicySchedule.normalizedCycleMinutes ?? 0;
@@ -806,7 +863,23 @@ function resolveScheduleForWeek(input: {
 			};
 		}
 
-		return { weeklyScheduleDays: emptyWeekSchedule(), mismatchWarning: null };
+		const workDays = getWorkDaysFromPolicySchedule(activePolicySchedule);
+		const weeklyFromCycle =
+			activePolicySchedule.normalizedCycleMinutes !== null
+				? normalizeSimpleCycleToWeeklyMinutes(
+						activePolicySchedule.scheduleCycle,
+						activePolicySchedule.normalizedCycleMinutes,
+					)
+				: 0;
+		const targetMinutes = input.weeklyContractMinutes ?? weeklyFromCycle;
+		const distributed = distributeMinutesLargestRemainder(
+			targetMinutes,
+			workDays.map(() => 1),
+		);
+		return {
+			weeklyScheduleDays: buildSevenDayMap(workDays, distributed),
+			mismatchWarning: null,
+		};
 	}
 
 	// 4. No work policy at all: fall back to weeklyContractMinutes (0 only after checking employee terms & defaults)
@@ -945,7 +1018,9 @@ export function resolveEffectiveContractPure(
 
 	if (!workPolicyResolved && !hasUnresolvedTermsPolicy && teamDefault?.workPolicyId) {
 		const policy = input.policiesById.get(teamDefault.workPolicyId);
-		if (policy?.isActive) {
+		const historicalDefaultEnded =
+			teamDefault.effectiveUntilDate !== null && dayStr < teamDefault.effectiveUntilDate;
+		if (policy && (policy.isActive || historicalDefaultEnded)) {
 			workPolicyResolved = selectActivePolicyVersionOnDay(policy, dayStr, {
 				assignmentType: "team",
 				assignmentId: null,
@@ -982,7 +1057,9 @@ export function resolveEffectiveContractPure(
 
 	if (!workPolicyResolved && !hasUnresolvedTermsPolicy && orgDefault?.workPolicyId) {
 		const policy = input.policiesById.get(orgDefault.workPolicyId);
-		if (policy?.isActive) {
+		const historicalDefaultEnded =
+			orgDefault.effectiveUntilDate !== null && dayStr < orgDefault.effectiveUntilDate;
+		if (policy && (policy.isActive || historicalDefaultEnded)) {
 			workPolicyResolved = selectActivePolicyVersionOnDay(policy, dayStr, {
 				assignmentType: "organization",
 				assignmentId: null,
@@ -1094,6 +1171,7 @@ export function resolveEffectiveContractPure(
 	const { weeklyScheduleDays, mismatchWarning } = hasUnresolvedTermsPolicy
 		? { weeklyScheduleDays: emptyWeekSchedule(), mismatchWarning: null }
 		: resolveScheduleForWeek({
+				day,
 				scheduleSource: scheduleSourceRes.value,
 				scheduleMode: scheduleModeRes.value,
 				scheduleModeSource: scheduleModeRes.source,

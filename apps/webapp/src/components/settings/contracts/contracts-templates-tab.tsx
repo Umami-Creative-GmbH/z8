@@ -964,6 +964,12 @@ function ApplyTemplatePanel({
 	const [teamId, setTeamId] = useState<string>(NO_VALUE);
 	const [overwritePersonalDivergences, setOverwritePersonalDivergences] = useState(false);
 	const [preview, setPreview] = useState<PreviewBulkContractActionResult | null>(null);
+	const [requestId, setRequestId] = useState<string | null>(null);
+
+	const clearPreview = () => {
+		setPreview(null);
+		setRequestId(null);
+	};
 
 	const templateVersionId = template.latestVersion?.id ?? "";
 
@@ -979,7 +985,10 @@ function ApplyTemplatePanel({
 			if (!result.success) throw new Error(result.error || "Failed to preview template apply");
 			return result.data;
 		},
-		onSuccess: (data) => setPreview(data),
+		onSuccess: (data) => {
+			setPreview(data);
+			setRequestId(globalThis.crypto.randomUUID());
+		},
 		onError: (err) => {
 			toast.error(
 				err instanceof Error
@@ -991,12 +1000,21 @@ function ApplyTemplatePanel({
 
 	const submitMutation = useMutation({
 		mutationFn: async () => {
+			if (!preview || !preview.canSubmit) {
+				throw new Error(
+					t("settings.contracts.templates.applyPreviewFailed", "Could not preview application"),
+				);
+			}
+			const activeRequestId = requestId ?? globalThis.crypto.randomUUID();
+			if (!requestId) setRequestId(activeRequestId);
 			const result = await submitBulkContractActionAction({
 				actionKind: "apply_template_version",
 				templateVersionId,
 				effectiveFromDate,
 				overwritePersonalDivergences,
 				target: teamId !== NO_VALUE ? { teamId } : {},
+				requestId: activeRequestId,
+				confirmationFingerprint: preview.confirmationFingerprint,
 			});
 			if (!result.success) throw new Error(result.error || "Failed to apply template");
 			return result.data;
@@ -1009,6 +1027,7 @@ function ApplyTemplatePanel({
 					{ count: receipt.batch.totalItems, mode: receipt.executionMode },
 				),
 			);
+			clearPreview();
 			onSubmitted();
 		},
 		onError: (err) => {
@@ -1033,7 +1052,7 @@ function ApplyTemplatePanel({
 						value={effectiveFromDate}
 						onChange={(e) => {
 							setEffectiveFromDate(e.target.value);
-							setPreview(null);
+							clearPreview();
 						}}
 					/>
 				</div>
@@ -1046,7 +1065,7 @@ function ApplyTemplatePanel({
 						value={teamId}
 						onValueChange={(v) => {
 							setTeamId(v);
-							setPreview(null);
+							clearPreview();
 						}}
 					>
 						<SelectTrigger id="apply-template-team">
@@ -1072,7 +1091,7 @@ function ApplyTemplatePanel({
 					checked={overwritePersonalDivergences}
 					onCheckedChange={(checked) => {
 						setOverwritePersonalDivergences(checked === true);
-						setPreview(null);
+						clearPreview();
 					}}
 				/>
 				<Label htmlFor="apply-overwrite-divergences" className="text-sm leading-snug">

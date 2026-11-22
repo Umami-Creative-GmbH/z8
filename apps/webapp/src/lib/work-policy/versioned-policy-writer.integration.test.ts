@@ -845,4 +845,163 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			}
 		}
 	});
+
+	it("preserves presence children across disable/re-enable & duplicate (A1-14), refuses pre-seal future publication (A1-15), and refuses reactivating a policy referencing an archived location (A1-30)", async () => {
+		const locId = await seedLocation(siblingPool, ORG_ID, USER_ID, "Berlin HQ");
+		const now = new Date("2026-06-01T10:00:00Z");
+
+		// Ensure pre-seal (parked) state first to test A1-15
+		await siblingPool.query(
+			`UPDATE "work_policy_versioning_state" SET "sealed_cutover_at" = NULL WHERE "singleton" = true`,
+		);
+		const prePolicy = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			now,
+			data: {
+				name: "Pre-Seal Policy",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: true,
+				schedule: {
+					scheduleCycle: "weekly",
+					scheduleType: "simple",
+					workingDaysPreset: "weekdays",
+					hoursPerCycle: "40",
+				},
+				presence: {
+					presenceMode: "minimum_count",
+					requiredOnsiteDays: 2,
+					locationId: locId,
+				},
+			},
+		});
+
+		// A1-15: Future-dated publication before 0327 seal must be refused instead of mutating v1
+		await expect(
+			updateOrPublishWorkPolicy(siblingDb, {
+				organizationId: ORG_ID,
+				actorUserId: USER_ID,
+				policyId: prePolicy.policy.id,
+				now,
+				data: {
+					effectiveFromDate: "2026-07-01",
+					schedule: {
+						scheduleCycle: "weekly",
+						scheduleType: "simple",
+						workingDaysPreset: "weekdays",
+						hoursPerCycle: "35",
+					},
+				},
+			}),
+		).rejects.toMatchObject({ refusal: "versioning_not_sealed" });
+
+		// Seal cutover -> test A1-14 & A1-30
+		await siblingPool.query(
+			`UPDATE "work_policy_versioning_state" SET "sealed_cutover_at" = now() WHERE "singleton" = true`,
+		);
+
+		// A1-14: Disable presence -> child row must STILL be copied on the new version so re-enabling restores it!
+		const disabledVer = await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: prePolicy.policy.id,
+			now,
+			data: {
+				effectiveFromDate: "2026-07-01",
+				presenceEnabled: false,
+			},
+		});
+		const { rows: disabledPresence } = await siblingPool.query<{
+			location_id: string | null;
+			required_onsite_days: number | null;
+		}>(
+			`SELECT location_id, required_onsite_days FROM work_policy_presence WHERE policy_version_id = $1`,
+			[disabledVer.version.id],
+		);
+		expect(disabledPresence).toEqual([{ location_id: locId, required_onsite_days: 2 }]);
+
+		// Re-enabling presence without resending presence payload restores saved location & count
+		const reenabledVer = await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: prePolicy.policy.id,
+			now,
+			data: {
+				effectiveFromDate: "2026-08-01",
+				presenceEnabled: true,
+			},
+		});
+		const { rows: reenabledPresence } = await siblingPool.query<{
+			location_id: string | null;
+			required_onsite_days: number | null;
+		}>(
+			`SELECT location_id, required_onsite_days FROM work_policy_presence WHERE policy_version_id = $1`,
+			[reenabledVer.version.id],
+		);
+		expect(reenabledPresence).toEqual([{ location_id: locId, required_onsite_days: 2 }]);
+
+		// Duplicating while presenceEnabled=false on latest version still preserves the presence child!
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: prePolicy.policy.id,
+			now,
+			data: {
+				effectiveFromDate: "2026-09-01",
+				presenceEnabled: false,
+			},
+		});
+		const duplicated = await duplicateVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: prePolicy.policy.id,
+		});
+		const { rows: dupPresence } = await siblingPool.query<{ location_id: string | null }>(
+			`SELECT location_id FROM work_policy_presence WHERE policy_version_id = $1`,
+			[duplicated.version.id],
+		);
+		expect(dupPresence).toEqual([{ location_id: locId }]);
+
+		// A1-30: Deactivate policy with active presence -> archive location -> reactivating policy MUST be refused!
+		const locArch = await seedLocation(siblingPool, ORG_ID, USER_ID, "Closing Branch");
+		const reactPolicy = await createVersionedWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			now,
+			data: {
+				name: "Branch Policy",
+				scheduleEnabled: false,
+				regulationEnabled: false,
+				presenceEnabled: true,
+				presence: {
+					presenceMode: "minimum_count",
+					requiredOnsiteDays: 1,
+					locationId: locArch,
+				},
+			},
+		});
+		await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: reactPolicy.policy.id,
+			now,
+			data: { isActive: false },
+		});
+		await deleteOrArchiveLocationGuarded(siblingDb, {
+			organizationId: ORG_ID,
+			locationId: locArch,
+			actorUserId: USER_ID,
+			asOfDate: "2026-06-01",
+		});
+		await expect(
+			updateOrPublishWorkPolicy(siblingDb, {
+				organizationId: ORG_ID,
+				actorUserId: USER_ID,
+				policyId: reactPolicy.policy.id,
+				now,
+				data: { isActive: true },
+			}),
+		).rejects.toMatchObject({ refusal: "location_inactive" });
+	});
 });

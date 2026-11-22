@@ -61,6 +61,7 @@ export function ContractsReviewsTab({
 	const [includeResolved, setIncludeResolved] = useState(false);
 	const [adoptDate, setAdoptDate] = useState(() => todayIsoDateInTimezone(organizationTimezone));
 	const [adoptPreview, setAdoptPreview] = useState<PreviewBulkContractActionResult | null>(null);
+	const [adoptRequestId, setAdoptRequestId] = useState<string | null>(null);
 	const [notes, setNotes] = useState<Record<string, string>>({});
 
 	const queueQuery = useQuery({
@@ -83,7 +84,10 @@ export function ContractsReviewsTab({
 			if (!result.success) throw new Error(result.error || "Failed to preview legacy adoption");
 			return result.data;
 		},
-		onSuccess: (data) => setAdoptPreview(data),
+		onSuccess: (data) => {
+			setAdoptPreview(data);
+			setAdoptRequestId(globalThis.crypto.randomUUID());
+		},
 		onError: (err) => {
 			toast.error(
 				err instanceof Error
@@ -98,10 +102,14 @@ export function ContractsReviewsTab({
 
 	const submitAdoptMutation = useMutation({
 		mutationFn: async () => {
+			const activeRequestId = adoptRequestId ?? globalThis.crypto.randomUUID();
+			if (!adoptRequestId) setAdoptRequestId(activeRequestId);
 			const result = await submitBulkContractActionAction({
 				actionKind: "adopt_default",
 				effectiveFromDate: adoptDate,
 				target: { onlyLegacyTerms: true },
+				requestId: activeRequestId,
+				...(adoptPreview ? { confirmationFingerprint: adoptPreview.confirmationFingerprint } : {}),
 			});
 			if (!result.success) throw new Error(result.error || "Failed to adopt Org/Team default");
 			return result.data;
@@ -115,6 +123,7 @@ export function ContractsReviewsTab({
 				),
 			);
 			setAdoptPreview(null);
+			setAdoptRequestId(null);
 			void Promise.all([
 				queryClient.invalidateQueries({ queryKey: ["contracts", "review-queue", organizationId] }),
 				queryClient.invalidateQueries({ queryKey: ["contracts", "batches", organizationId] }),
@@ -235,6 +244,7 @@ export function ContractsReviewsTab({
 									onChange={(e) => {
 										setAdoptDate(e.target.value);
 										setAdoptPreview(null);
+										setAdoptRequestId(null);
 									}}
 									className="h-8 w-44"
 								/>

@@ -60,6 +60,7 @@ export interface PrimaryTeamMoveOperationalChange {
 		| "workPolicy"
 		| "weeklyContractMinutes"
 		| "scheduleMode"
+		| "weeklyScheduleDays"
 		| "workModel"
 		| "presenceOverride"
 		| "presenceStatus"
@@ -628,6 +629,34 @@ export async function previewPrimaryTeamMove(
 		teamHistory: targetTeamHistory,
 	});
 
+	const CANONICAL_DAY_ORDER: readonly DayOfWeek[] = [
+		"monday",
+		"tuesday",
+		"wednesday",
+		"thursday",
+		"friday",
+		"saturday",
+		"sunday",
+	];
+	const serializeGrid = (
+		days: readonly {
+			readonly dayOfWeek: DayOfWeek;
+			readonly isWorkDay: boolean;
+			readonly minutesPerDay: number;
+			readonly latestClockIn: string | null;
+		}[],
+	) => {
+		if (days.length === 0) return "";
+		const byDay = new Map(days.map((d) => [d.dayOfWeek, d]));
+		return CANONICAL_DAY_ORDER.map((day) => {
+			const row = byDay.get(day);
+			if (!row) return `${day}:0:0:`;
+			return `${day}:${row.isWorkDay ? 1 : 0}:${row.minutesPerDay}:${row.latestClockIn ?? ""}`;
+		}).join("|");
+	};
+	const currentGrid = serializeGrid(currentContract.weeklyScheduleDays);
+	const projectedGrid = serializeGrid(projectedContract.weeklyScheduleDays);
+
 	const comparisons: {
 		field: PrimaryTeamMoveOperationalChange["field"];
 		before: string | number | null;
@@ -667,6 +696,15 @@ export async function previewPrimaryTeamMove(
 			after: projectedContract.scheduleMode,
 			beforeLabel: currentContract.scheduleMode,
 			afterLabel: projectedContract.scheduleMode,
+			beforeSource: currentContract.scheduleModeSource,
+			afterSource: projectedContract.scheduleModeSource,
+		},
+		{
+			field: "weeklyScheduleDays",
+			before: currentGrid || null,
+			after: projectedGrid || null,
+			beforeLabel: currentGrid || null,
+			afterLabel: projectedGrid || null,
 			beforeSource: currentContract.scheduleModeSource,
 			afterSource: projectedContract.scheduleModeSource,
 		},

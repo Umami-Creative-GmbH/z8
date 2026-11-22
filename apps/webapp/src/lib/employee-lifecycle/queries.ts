@@ -323,7 +323,8 @@ export async function getEmployeeOffboardingView(
 	const target = employees.rows[0];
 	if (!target) return { kind: "not_found" };
 	const viewer = await resolveViewer(database, input);
-	if (!viewer) return { kind: "forbidden" };
+	// Spec #1921 Story 22: scoped managers cannot view employee leaving dates or departure details.
+	if (viewer !== "admin") return { kind: "forbidden" };
 
 	const departures = await database.execute<{
 		id: string;

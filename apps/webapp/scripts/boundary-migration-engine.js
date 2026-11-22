@@ -549,6 +549,9 @@ async function executeMigrationStageInTransaction(client, stage, options = {}) {
 		async () => {
 			await client.query("BEGIN");
 			try {
+				if (stage.id === "phase1_expand_0318_0321") {
+					await client.query("SET LOCAL lock_timeout = '500ms'");
+				}
 				for (const migration of stage.migrations) {
 					for (const statement of migration.sql) {
 						if (statement.trim().length === 0) continue;
@@ -920,6 +923,58 @@ export async function runPhase1ChunkedBackfill(client, options = {}) {
 
 				let processed = 0;
 				for (const row of rowsResult.rows) {
+					const fromStr =
+						row.effective_from_date instanceof Date
+							? row.effective_from_date.toISOString().slice(0, 10)
+							: String(row.effective_from_date);
+					const untilStr =
+						row.effective_until_date === null || row.effective_until_date === undefined
+							? null
+							: row.effective_until_date instanceof Date
+								? row.effective_until_date.toISOString().slice(0, 10)
+								: String(row.effective_until_date);
+
+					// A1-17: Normalize and skip empty/inverted legacy assignment ranges BEFORE promoting
+					// into contract_default so 0319's effective_until_date > effective_from_date check never fails.
+					if (untilStr !== null && untilStr <= fromStr) {
+						await tx.query(
+							`
+							INSERT INTO "contract_migration_conflict" (
+								"organization_id",
+								"work_policy_id",
+								"conflict_kind",
+								"dedupe_key",
+								"details"
+							)
+							VALUES ($1, $2, 'legacy_assignment_conflict', $3, $4::jsonb)
+							ON CONFLICT ("organization_id", "dedupe_key") DO NOTHING
+							`,
+							[
+								row.organization_id,
+								row.policy_id,
+								`legacy_assignment_inverted:${row.id}`,
+								JSON.stringify({
+									assignmentId: row.id,
+									scope: row.scope,
+									teamId: row.team_id,
+									effectiveFromDate: fromStr,
+									effectiveUntilDate: untilStr,
+									resolution: "deactivated_and_cleared_until",
+								}),
+							],
+						);
+						await tx.query(
+							`
+							UPDATE "work_policy_assignment"
+							SET "is_active" = false, "effective_until_date" = NULL, "effective_until" = NULL
+							WHERE "id" = $1
+							`,
+							[row.id],
+						);
+						processed += 1;
+						continue;
+					}
+
 					const existingResult = await tx.query(
 						`
 						SELECT cd.id, ctv.work_policy_id

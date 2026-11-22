@@ -72,6 +72,7 @@ export interface BulkTemplateApplyBatchPayload {
 export interface BulkAdoptDefaultBatchPayload {
 	readonly effectiveFromDate: string;
 	readonly keepDivergenceFields: readonly OperationalDivergenceField[];
+	readonly onlyLegacyTerms?: boolean;
 	readonly changeReason: string | null;
 }
 
@@ -304,6 +305,58 @@ async function readBatchById(
 	return row ?? null;
 }
 
+export async function replayExistingContractChangeBatch(
+	db: DatabaseClient,
+	input: {
+		readonly organizationId: string;
+		readonly existingBatch: ContractChangeBatch;
+		readonly enqueueAsyncJob?: AsyncBatchEnqueuer;
+		readonly skipImmediateExecution?: boolean;
+		readonly runnerOptions?: RunContractChangeBatchOptions;
+	},
+): Promise<ContractChangeBatchReceipt> {
+	const enqueue = input.enqueueAsyncJob ?? defaultEnqueueAsyncBatchJob;
+	let currentBatch = input.existingBatch;
+	let recoveryNudged = false;
+	const checkNow = input.runnerOptions?.now?.() ?? currentTimestamp();
+	const isStalled =
+		currentBatch.status === "pending" ||
+		(currentBatch.status === "running" &&
+			(currentBatch.leaseExpiresAt === null ||
+				currentBatch.leaseExpiresAt.getTime() < checkNow.getTime()));
+
+	if (isStalled && !input.skipImmediateExecution) {
+		recoveryNudged = true;
+		if (currentBatch.executionMode === "inline") {
+			const runResult = await runContractChangeBatch(db, {
+				organizationId: input.organizationId,
+				batchId: currentBatch.id,
+				...input.runnerOptions,
+			});
+			currentBatch = runResult.batch;
+		} else {
+			try {
+				await enqueue({
+					batchId: currentBatch.id,
+					organizationId: input.organizationId,
+				});
+			} catch (enqueueError) {
+				logger.warn(
+					{ error: enqueueError, batchId: currentBatch.id, organizationId: input.organizationId },
+					"Failed to nudge async contract batch job on replay; recovery sweeper will pick it up",
+				);
+			}
+		}
+	}
+
+	return {
+		batch: currentBatch,
+		replayed: true,
+		executionMode: currentBatch.executionMode,
+		recoveryNudged,
+	};
+}
+
 /**
  * Commit-first durable batch submission with `(organization_id, request_id)` uniqueness
  * and canonical SHA-256 `request_fingerprint` verification:
@@ -453,45 +506,13 @@ export async function submitContractChangeBatch(
 	const enqueue = input.enqueueAsyncJob ?? defaultEnqueueAsyncBatchJob;
 
 	if (committed.replayed) {
-		let currentBatch = committed.batch;
-		let recoveryNudged = false;
-		const checkNow = input.runnerOptions?.now?.() ?? currentTimestamp();
-		const isStalled =
-			currentBatch.status === "pending" ||
-			(currentBatch.status === "running" &&
-				(currentBatch.leaseExpiresAt === null ||
-					currentBatch.leaseExpiresAt.getTime() < checkNow.getTime()));
-
-		if (isStalled && !input.skipImmediateExecution) {
-			recoveryNudged = true;
-			if (currentBatch.executionMode === "inline") {
-				const runResult = await runContractChangeBatch(db, {
-					organizationId: input.organizationId,
-					batchId: currentBatch.id,
-					...input.runnerOptions,
-				});
-				currentBatch = runResult.batch;
-			} else {
-				try {
-					await enqueue({
-						batchId: currentBatch.id,
-						organizationId: input.organizationId,
-					});
-				} catch (enqueueError) {
-					logger.warn(
-						{ error: enqueueError, batchId: currentBatch.id, organizationId: input.organizationId },
-						"Failed to nudge async contract batch job on replay; recovery sweeper will pick it up",
-					);
-				}
-			}
-		}
-
-		return {
-			batch: currentBatch,
-			replayed: true,
-			executionMode: currentBatch.executionMode,
-			recoveryNudged,
-		};
+		return replayExistingContractChangeBatch(db, {
+			organizationId: input.organizationId,
+			existingBatch: committed.batch,
+			enqueueAsyncJob: enqueue,
+			skipImmediateExecution: input.skipImmediateExecution,
+			runnerOptions: input.runnerOptions,
+		});
 	}
 
 	if (input.skipImmediateExecution) {
@@ -879,6 +900,16 @@ async function executeSparseContractMutationInTx(
 			alreadyTerminal: true,
 		};
 	}
+
+	// A1-20: Acquire the employee row lock BEFORE reading prior sparse state so concurrent
+	// contract edits on other fields cannot commit between read and write and be clobbered.
+	await tx.execute(sql`
+		SELECT id
+		FROM employee
+		WHERE id = ${input.item.employeeId}::uuid
+			AND organization_id = ${input.organizationId}
+		FOR UPDATE
+	`);
 
 	// 1. Check crash-recovery deduplication FIRST before evaluating current divergences,
 	//    because a pre-crash commit for this exact batch item would already appear on the employee!
@@ -1333,6 +1364,14 @@ export async function runContractChangeBatch(
 
 	let departureCommands: ReturnType<typeof createDepartureCommands> | null = null;
 	if (claimedBatch.operationKind === "csv_departure_import") {
+		const { EMPLOYEE_OFFBOARDING_RELEASE_READY } = await import("@/lib/employee-lifecycle/release");
+		if (!EMPLOYEE_OFFBOARDING_RELEASE_READY) {
+			throw new ValidationError({
+				message: "Employee offboarding is not available yet.",
+				field: "operationKind",
+				refusal: "employee_offboarding_not_released",
+			});
+		}
 		if (input.departureCommands) {
 			departureCommands = input.departureCommands;
 		} else {
@@ -1456,6 +1495,59 @@ export async function runContractChangeBatch(
 						if (!lockedItem.claimable) {
 							return { status: lockedItem.status, alreadyTerminal: true };
 						}
+						// Lock employee before rechecking eligibility and committing adoption (A1-19).
+						await tx.execute(sql`
+							SELECT id
+							FROM employee
+							WHERE id = ${item.employeeId}::uuid
+								AND organization_id = ${input.organizationId}
+							FOR UPDATE
+						`);
+						const existingHistory = await findExistingBatchHistoryInTx(
+							tx,
+							input.organizationId,
+							item.id,
+						);
+						if (existingHistory) {
+							await markBatchItemOutcomeInTx(tx, {
+								organizationId: input.organizationId,
+								itemId: item.id,
+								status: "completed",
+								result: {
+									employmentHistoryId: existingHistory.id,
+									deduplicated: true,
+								},
+								now: itemNow,
+							});
+							return { status: "completed" as const, alreadyTerminal: false };
+						}
+						if (batchPayload.onlyLegacyTerms) {
+							const coveringLegacy = await tx.execute<{ id: string }>(sql`
+								SELECT h.id
+								FROM employee_employment_history h
+								LEFT JOIN employee_employment_period p
+									ON p.id = h.employment_period_id
+									AND p.organization_id = h.organization_id
+								WHERE h.organization_id = ${input.organizationId}
+									AND h.employee_id = ${item.employeeId}::uuid
+									AND h.review_state = 'confirmed'
+									AND h.migrated_legacy_terms = true
+									AND h.valid_from_date <= ${effectiveFromDate}::date
+									AND (h.valid_until_date IS NULL OR h.valid_until_date > ${effectiveFromDate}::date)
+									AND (h.employment_period_id IS NULL OR p.status = 'open')
+								LIMIT 1
+							`);
+							if (coveringLegacy.rows.length === 0) {
+								await markBatchItemOutcomeInTx(tx, {
+									organizationId: input.organizationId,
+									itemId: item.id,
+									status: "skipped",
+									result: { reason: "not_legacy_terms" },
+									now: itemNow,
+								});
+								return { status: "skipped" as const, alreadyTerminal: false };
+							}
+						}
 						const commitResult = await adoptContractDefaultInTx(tx, {
 							organizationId: input.organizationId,
 							employeeId: item.employeeId,
@@ -1482,7 +1574,7 @@ export async function runContractChangeBatch(
 					itemStatus = adoptOutcome.status;
 					if (adoptOutcome.alreadyTerminal) {
 						encounteredTerminalItem = true;
-					} else {
+					} else if (adoptOutcome.status === "completed") {
 						anyContractMutationCompleted = true;
 					}
 				} else if (claimedBatch.operationKind === "bulk_terms_update") {

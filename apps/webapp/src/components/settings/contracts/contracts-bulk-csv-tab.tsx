@@ -34,6 +34,8 @@ import { Textarea } from "@/components/ui/textarea";
 import type { BalanceMode } from "@/db/schema/contract-types";
 import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-operations";
 import type {
+	CsvImportRowStatus,
+	CsvRowDiagnostic,
 	PreviewCsvContractImportResult,
 	PreviewCsvLeavingDateImportResult,
 } from "@/lib/contracts/csv-import";
@@ -41,6 +43,227 @@ import type { WorkModel } from "@/lib/contracts/types";
 import { todayIsoDateInTimezone, useContractLabels } from "./contract-formatters";
 
 const ALL_VALUE = "__all__";
+
+function createClientRequestId(): string {
+	return globalThis.crypto.randomUUID();
+}
+
+function translateCsvStatus(
+	status: CsvImportRowStatus,
+	t: ReturnType<typeof useTranslate>["t"],
+): string {
+	switch (status) {
+		case "valid":
+			return t("settings.contracts.csv.statusValid", "Valid");
+		case "warning":
+			return t("settings.contracts.csv.statusWarning", "Warning");
+		case "error":
+			return t("settings.contracts.csv.statusError", "Error");
+	}
+}
+
+function translateCsvDiagnostic(
+	diag: CsvRowDiagnostic,
+	t: ReturnType<typeof useTranslate>["t"],
+): string {
+	const p = diag.params ?? {};
+	switch (diag.code) {
+		case "missing_employee_identifier":
+			return t(
+				"settings.contracts.csv.diag.missingEmployeeIdentifier",
+				"Missing employee identifier (employee_id, employee_number, or email).",
+			);
+		case "invalid_employee_uuid":
+			return t(
+				"settings.contracts.csv.diag.invalidEmployeeUuid",
+				'Invalid {column} UUID "{value}".',
+				p,
+			);
+		case "employee_not_found":
+			return t(
+				"settings.contracts.csv.diag.employeeNotFound",
+				'Employee not found in organization for {column} "{value}".',
+				p,
+			);
+		case "ambiguous_employee_email":
+			return t(
+				"settings.contracts.csv.diag.ambiguousEmployeeEmail",
+				'Multiple employees match {column} "{value}".',
+				p,
+			);
+		case "conflicting_employee_identifiers":
+			return t(
+				"settings.contracts.csv.diag.conflictingEmployeeIdentifiers",
+				"Conflicting employee identifiers point to different employees.",
+			);
+		case "invalid_enum_value":
+			return t(
+				"settings.contracts.csv.diag.invalidEnumValue",
+				'Invalid {field} "{value}". Allowed: {allowed}.',
+				p,
+			);
+		case "employee_not_on_roster":
+			return t(
+				"settings.contracts.csv.diag.employeeNotOnRoster",
+				"Employee is no longer on the current roster (rehire before updating terms).",
+			);
+		case "duplicate_employee_row":
+			return t(
+				"settings.contracts.csv.diag.duplicateEmployeeRow",
+				"Duplicate employee row in CSV import.",
+			);
+		case "missing_effective_from_date":
+			return t(
+				"settings.contracts.csv.diag.missingEffectiveFromDate",
+				"Missing effective_from_date (and no default effective date provided).",
+			);
+		case "invalid_field_value":
+			return t(
+				"settings.contracts.csv.diag.invalidFieldValue",
+				"Invalid value for {field}: {detail}",
+				p,
+			);
+		case "work_policy_not_found":
+			return t(
+				"settings.contracts.csv.diag.workPolicyNotFound",
+				'Work policy not found in organization: "{value}".',
+				p,
+			);
+		case "work_policy_inactive":
+			return t(
+				"settings.contracts.csv.diag.workPolicyInactive",
+				'Work policy "{name}" is inactive.',
+				p,
+			);
+		case "custom_days_required":
+			return t(
+				"settings.contracts.csv.diag.customDaysRequired",
+				"custom_days is required when schedule_mode is custom_days.",
+			);
+		case "negative_hourly_rate":
+			return t(
+				"settings.contracts.csv.diag.negativeHourlyRate",
+				"hourly_rate must be non-negative.",
+			);
+		case "invalid_currency":
+			return t("settings.contracts.csv.diag.invalidCurrency", 'Invalid currency "{value}".', p);
+		case "no_contract_fields":
+			return t(
+				"settings.contracts.csv.diag.noContractFields",
+				"Row does not specify any contract fields to update.",
+			);
+		case "no_active_employment_period":
+			return t(
+				"settings.contracts.csv.diag.noActiveEmploymentPeriod",
+				"Employee has no active employment period on the effective date.",
+			);
+		case "hourly_rate_required":
+			return t(
+				"settings.contracts.csv.diag.hourlyRateRequired",
+				"Hourly contract requires an hourly_rate value.",
+			);
+		case "personal_divergence_preserved":
+			return t(
+				"settings.contracts.csv.diag.personalDivergencePreserved",
+				"Personal divergence on {field} will be preserved.",
+				p,
+			);
+		case "cannot_depart_self":
+			return t(
+				"settings.contracts.csv.diag.cannotDepartSelf",
+				"You cannot record a departure for your own employee record.",
+			);
+		case "missing_last_working_day":
+			return t(
+				"settings.contracts.csv.diag.missingLastWorkingDay",
+				"Missing last_working_day (leaving date).",
+			);
+		case "invalid_departure_mode":
+			return t(
+				"settings.contracts.csv.diag.invalidDepartureMode",
+				'Invalid departure_mode "{value}". Allowed: scheduled, immediate, retrospective.',
+				p,
+			);
+		case "replacement_is_self":
+			return t(
+				"settings.contracts.csv.diag.replacementIsSelf",
+				"Replacement employee cannot be the departing employee.",
+			);
+		case "replacement_not_on_roster":
+			return t(
+				"settings.contracts.csv.diag.replacementNotOnRoster",
+				"Replacement employee must be on the current roster.",
+			);
+		case "replacement_not_manager_or_admin":
+			return t(
+				"settings.contracts.csv.diag.replacementNotManagerOrAdmin",
+				"Replacement employee must be an admin or manager.",
+			);
+		case "departure_immediate_requires_today":
+			return t(
+				"settings.contracts.csv.diag.departureImmediateRequiresToday",
+				"Immediate departure mode requires today's leaving date and cannot be combined with a past or future date.",
+			);
+		case "departure_retrospective_requires_past":
+			return t(
+				"settings.contracts.csv.diag.departureRetrospectiveRequiresPast",
+				"Retrospective departure mode requires a strictly past leaving date.",
+			);
+		case "departure_scheduled_forbids_past":
+			return t(
+				"settings.contracts.csv.diag.departureScheduledForbidsPast",
+				"Scheduled departure mode cannot use a past leaving date.",
+			);
+		case "departure_former_forbids_active_mode":
+			return t(
+				"settings.contracts.csv.diag.departureFormerForbidsActiveMode",
+				"Scheduled and immediate departure modes cannot be used for an already-former employee.",
+			);
+		case "departure_before_start_date":
+			return t(
+				"settings.contracts.csv.diag.departureBeforeStartDate",
+				"Leaving date cannot be earlier than the employee's start date.",
+			);
+		case "departure_reopen_forbidden":
+			return t(
+				"settings.contracts.csv.diag.departureReopenForbidden",
+				"Cannot set today or a future leaving date for an already-former employee (use rehire instead).",
+			);
+		case "departure_supersedes_pending":
+			return t(
+				"settings.contracts.csv.diag.departureSupersedesPending",
+				"Will supersede existing pending scheduled departure.",
+			);
+		case "departure_reschedules_pending":
+			return t(
+				"settings.contracts.csv.diag.departureReschedulesPending",
+				"Will reschedule existing pending departure.",
+			);
+		case "departure_payroll_reconciliation":
+			return t(
+				"settings.contracts.csv.diag.departurePayrollReconciliation",
+				"Touches closed month(s) or settled payroll days; payroll will stay untouched and a payroll reconciliation review will be opened.",
+			);
+		case "departure_unchanged_skip":
+			return t(
+				"settings.contracts.csv.diag.departureUnchangedSkip",
+				"Effective departure already has this exact leaving date; row will be skipped.",
+			);
+		case "departure_past_date_correction":
+			return t(
+				"settings.contracts.csv.diag.departurePastDateCorrection",
+				"Will apply date-only correction to effective departure ({from} → {to}).",
+				p,
+			);
+		case "departure_historical_backfill":
+			return t(
+				"settings.contracts.csv.diag.departureHistoricalBackfill",
+				"Will backfill historical leaving date for legacy former employee.",
+			);
+		default:
+			return diag.message;
+	}
+}
 
 export interface ContractsBulkCsvTabProps {
 	organizationId: string;
@@ -67,6 +290,7 @@ export function ContractsBulkCsvTab({
 	const [bulkOnlyLegacy, setBulkOnlyLegacy] = useState(true);
 	const [bulkOverwrite, setBulkOverwrite] = useState(false);
 	const [bulkPreview, setBulkPreview] = useState<PreviewBulkContractActionResult | null>(null);
+	const [bulkRequestId, setBulkRequestId] = useState<string | null>(null);
 
 	// CSV wizard state
 	const [csvKind, setCsvKind] = useState<"csv_contract_import" | "csv_departure_import">(
@@ -82,6 +306,18 @@ export function ContractsBulkCsvTab({
 		useState<PreviewCsvContractImportResult | null>(null);
 	const [csvDeparturePreview, setCsvDeparturePreview] =
 		useState<PreviewCsvLeavingDateImportResult | null>(null);
+	const [csvRequestId, setCsvRequestId] = useState<string | null>(null);
+
+	const clearBulkPreview = () => {
+		setBulkPreview(null);
+		setBulkRequestId(null);
+	};
+
+	const clearCsvPreview = () => {
+		setCsvContractPreview(null);
+		setCsvDeparturePreview(null);
+		setCsvRequestId(null);
+	};
 
 	// Batch inspector state
 	const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
@@ -169,7 +405,10 @@ export function ContractsBulkCsvTab({
 			if (!result.success) throw new Error(result.error || "Bulk dry-run failed");
 			return result.data;
 		},
-		onSuccess: (data) => setBulkPreview(data),
+		onSuccess: (data) => {
+			setBulkPreview(data);
+			setBulkRequestId(createClientRequestId());
+		},
 		onError: (err) => {
 			toast.error(
 				err instanceof Error
@@ -181,7 +420,16 @@ export function ContractsBulkCsvTab({
 
 	const bulkSubmitMutation = useMutation({
 		mutationFn: async () => {
-			const result = await submitBulkContractActionAction(buildBulkSpec());
+			if (!bulkPreview || !bulkPreview.canSubmit) {
+				throw new Error(t("settings.contracts.bulk.previewFailed", "Bulk dry-run preview failed."));
+			}
+			const requestId = bulkRequestId ?? createClientRequestId();
+			if (!bulkRequestId) setBulkRequestId(requestId);
+			const result = await submitBulkContractActionAction({
+				...buildBulkSpec(),
+				requestId,
+				confirmationFingerprint: bulkPreview.confirmationFingerprint,
+			});
 			if (!result.success) throw new Error(result.error || "Bulk submission failed");
 			return result.data;
 		},
@@ -192,7 +440,7 @@ export function ContractsBulkCsvTab({
 					mode: receipt.executionMode,
 				}),
 			);
-			setBulkPreview(null);
+			clearBulkPreview();
 			setSelectedBatchId(receipt.batch.id);
 			void queryClient.invalidateQueries({ queryKey: ["contracts", "batches", organizationId] });
 		},
@@ -238,6 +486,7 @@ export function ContractsBulkCsvTab({
 				setCsvDeparturePreview(res.data);
 				setCsvContractPreview(null);
 			}
+			setCsvRequestId(createClientRequestId());
 		},
 		onError: (err) => {
 			toast.error(
@@ -257,7 +506,10 @@ export function ContractsBulkCsvTab({
 					t("settings.contracts.csv.fixBeforeCommit", "Resolve CSV validation errors first."),
 				);
 			}
+			const requestId = csvRequestId ?? createClientRequestId();
+			if (!csvRequestId) setCsvRequestId(requestId);
 			const result = await commitCsvImportBatchAction({
+				requestId,
 				operationKind: csvKind,
 				csvText,
 				confirmationFingerprint: activePreview.confirmationFingerprint,
@@ -276,8 +528,7 @@ export function ContractsBulkCsvTab({
 					mode: receipt.executionMode,
 				}),
 			);
-			setCsvContractPreview(null);
-			setCsvDeparturePreview(null);
+			clearCsvPreview();
 			setCsvText("");
 			setSelectedBatchId(receipt.batch.id);
 			void queryClient.invalidateQueries({ queryKey: ["contracts", "batches", organizationId] });
@@ -296,12 +547,30 @@ export function ContractsBulkCsvTab({
 		if (!file) return;
 		const content = await file.text();
 		setCsvText(content);
-		setCsvContractPreview(null);
-		setCsvDeparturePreview(null);
+		clearCsvPreview();
 	};
 
 	const activeCsvPreview =
 		csvKind === "csv_contract_import" ? csvContractPreview : csvDeparturePreview;
+	const displayedCsvRows = (() => {
+		if (!activeCsvPreview) return [];
+		const seen = new Set<number>();
+		const ordered: (typeof activeCsvPreview.rows)[number][] = [];
+		// A1-29: Always surface all validation errors (even rows 51+) ahead of the sample.
+		for (const row of activeCsvPreview.errorRowDetails) {
+			if (!seen.has(row.rowNumber)) {
+				seen.add(row.rowNumber);
+				ordered.push(row);
+			}
+		}
+		for (const row of activeCsvPreview.rows) {
+			if (!seen.has(row.rowNumber)) {
+				seen.add(row.rowNumber);
+				ordered.push(row);
+			}
+		}
+		return ordered;
+	})();
 
 	return (
 		<div className="space-y-6">
@@ -326,7 +595,7 @@ export function ContractsBulkCsvTab({
 								value={bulkKind}
 								onValueChange={(v) => {
 									setBulkKind(v as typeof bulkKind);
-									setBulkPreview(null);
+									clearBulkPreview();
 								}}
 							>
 								<SelectTrigger id="bulk-action-kind">
@@ -362,7 +631,7 @@ export function ContractsBulkCsvTab({
 								value={bulkDate}
 								onChange={(e) => {
 									setBulkDate(e.target.value);
-									setBulkPreview(null);
+									clearBulkPreview();
 								}}
 							/>
 						</div>
@@ -375,7 +644,7 @@ export function ContractsBulkCsvTab({
 								value={bulkTeamId}
 								onValueChange={(v) => {
 									setBulkTeamId(v);
-									setBulkPreview(null);
+									clearBulkPreview();
 								}}
 							>
 								<SelectTrigger id="bulk-target-team">
@@ -404,7 +673,7 @@ export function ContractsBulkCsvTab({
 								value={bulkTemplateVersionId}
 								onValueChange={(v) => {
 									setBulkTemplateVersionId(v);
-									setBulkPreview(null);
+									clearBulkPreview();
 								}}
 							>
 								<SelectTrigger id="bulk-template-select">
@@ -438,7 +707,7 @@ export function ContractsBulkCsvTab({
 									value={bulkWorkModel || ALL_VALUE}
 									onValueChange={(v) => {
 										setBulkWorkModel(v === ALL_VALUE ? "" : (v as WorkModel));
-										setBulkPreview(null);
+										clearBulkPreview();
 									}}
 								>
 									<SelectTrigger id="bulk-work-model">
@@ -463,7 +732,7 @@ export function ContractsBulkCsvTab({
 									value={bulkBalanceMode || ALL_VALUE}
 									onValueChange={(v) => {
 										setBulkBalanceMode(v === ALL_VALUE ? "" : (v as BalanceMode));
-										setBulkPreview(null);
+										clearBulkPreview();
 									}}
 								>
 									<SelectTrigger id="bulk-balance-mode">
@@ -488,7 +757,7 @@ export function ContractsBulkCsvTab({
 								checked={bulkOnlyLegacy}
 								onCheckedChange={(c) => {
 									setBulkOnlyLegacy(c === true);
-									setBulkPreview(null);
+									clearBulkPreview();
 								}}
 							/>
 							<Label htmlFor="bulk-only-legacy">
@@ -505,7 +774,7 @@ export function ContractsBulkCsvTab({
 								checked={bulkOverwrite}
 								onCheckedChange={(c) => {
 									setBulkOverwrite(c === true);
-									setBulkPreview(null);
+									clearBulkPreview();
 								}}
 							/>
 							<Label htmlFor="bulk-overwrite-divergences">
@@ -617,8 +886,7 @@ export function ContractsBulkCsvTab({
 								value={csvKind}
 								onValueChange={(v) => {
 									setCsvKind(v as typeof csvKind);
-									setCsvContractPreview(null);
-									setCsvDeparturePreview(null);
+									clearCsvPreview();
 								}}
 							>
 								<SelectTrigger id="csv-import-kind">
@@ -646,7 +914,7 @@ export function ContractsBulkCsvTab({
 									value={csvDefaultDate}
 									onChange={(e) => {
 										setCsvDefaultDate(e.target.value);
-										setCsvContractPreview(null);
+										clearCsvPreview();
 									}}
 								/>
 							</div>
@@ -678,8 +946,7 @@ export function ContractsBulkCsvTab({
 							value={csvText}
 							onChange={(e) => {
 								setCsvText(e.target.value);
-								setCsvContractPreview(null);
-								setCsvDeparturePreview(null);
+								clearCsvPreview();
 							}}
 							placeholder={
 								csvKind === "csv_contract_import"
@@ -696,7 +963,7 @@ export function ContractsBulkCsvTab({
 								checked={csvOverwrite}
 								onCheckedChange={(c) => {
 									setCsvOverwrite(c === true);
-									setCsvContractPreview(null);
+									clearCsvPreview();
 								}}
 							/>
 							<Label htmlFor="csv-overwrite-divergences">
@@ -713,7 +980,7 @@ export function ContractsBulkCsvTab({
 								checked={csvAckDuties}
 								onCheckedChange={(c) => {
 									setCsvAckDuties(c === true);
-									setCsvDeparturePreview(null);
+									clearCsvPreview();
 								}}
 							/>
 							<Label htmlFor="csv-ack-duties">
@@ -776,7 +1043,7 @@ export function ContractsBulkCsvTab({
 										</tr>
 									</thead>
 									<tbody className="divide-y">
-										{activeCsvPreview.rows.map((row) => (
+										{displayedCsvRows.map((row) => (
 											<tr key={row.rowNumber}>
 												<td className="px-2.5 py-1.5 tabular-nums">{row.rowNumber}</td>
 												<td className="px-2.5 py-1.5">
@@ -792,14 +1059,18 @@ export function ContractsBulkCsvTab({
 																	: "outline"
 														}
 													>
-														{row.status}
+														{translateCsvStatus(row.status, t)}
 													</Badge>
 												</td>
 												<td className="px-2.5 py-1.5 text-muted-foreground">
-													{row.errors.length > 0
-														? row.errors.join("; ")
-														: row.warnings.length > 0
-															? row.warnings.join("; ")
+													{row.errorDetails.length > 0
+														? row.errorDetails
+																.map((diag) => translateCsvDiagnostic(diag, t))
+																.join("; ")
+														: row.warningDetails.length > 0
+															? row.warningDetails
+																	.map((diag) => translateCsvDiagnostic(diag, t))
+																	.join("; ")
 															: t("settings.contracts.csv.rowReady", "Ready to commit")}
 												</td>
 											</tr>
@@ -807,6 +1078,28 @@ export function ContractsBulkCsvTab({
 									</tbody>
 								</table>
 							</div>
+							{(activeCsvPreview.rowsTruncated || activeCsvPreview.errorRowsTruncated) && (
+								<p className="text-muted-foreground text-xs">
+									{activeCsvPreview.errorRowsTruncated
+										? t(
+												"settings.contracts.csv.errorRowsTruncatedNote",
+												"Showing the first {shown} of {total} validation errors.",
+												{
+													shown: activeCsvPreview.errorRowDetails.length,
+													total: activeCsvPreview.errorRows,
+												},
+											)
+										: t(
+												"settings.contracts.csv.rowsTruncatedNote",
+												"Showing all {errorCount} error rows plus the first {sampleCount} of {totalCount} rows.",
+												{
+													errorCount: activeCsvPreview.errorRows,
+													sampleCount: activeCsvPreview.rows.length,
+													totalCount: activeCsvPreview.totalRows,
+												},
+											)}
+								</p>
+							)}
 						</div>
 					)}
 

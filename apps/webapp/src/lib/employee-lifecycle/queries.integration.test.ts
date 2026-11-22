@@ -186,7 +186,7 @@ describe("employee offboarding read models", () => {
 	});
 
 	describe("authorization", () => {
-		it("gives the employee's manager a read-only view and denies unrelated members", async () => {
+		it("denies scoped managers (Story 22 / A1-2) and unrelated members from viewing pending or effective departures", async () => {
 			now = NOW;
 			const manager = await fixture.seedEmployee();
 			const employee = await fixture.seedEmployee();
@@ -198,16 +198,32 @@ describe("employee offboarding read models", () => {
 			);
 			await schedule(employee);
 
-			expect(await view(employee, manager.userId)).toMatchObject({
-				state: "scheduled",
-				capabilities: {
-					schedule: false,
-					cancel: false,
-					offboardNow: false,
-					rehire: false,
-					resolve: false,
-				},
+			// Pending departure is forbidden to scoped managers
+			await expect(
+				getEmployeeOffboardingView(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeId: employee.employeeId,
+					actorUserId: manager.userId,
+					now,
+				}),
+			).resolves.toEqual({ kind: "forbidden" });
+
+			// Effective departure is also forbidden to scoped managers
+			await commands().offboardNow(owner(), {
+				employeeId: employee.employeeId,
+				requestId: randomUUID(),
+				replacementEmployeeId: null,
+				acknowledgeUnassignedDuties: true,
 			});
+			await expect(
+				getEmployeeOffboardingView(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeId: employee.employeeId,
+					actorUserId: manager.userId,
+					now,
+				}),
+			).resolves.toEqual({ kind: "forbidden" });
+
 			await expect(
 				getEmployeeOffboardingView(fixture.db, {
 					organizationId: fixture.organizationId,

@@ -158,6 +158,8 @@ const departureCommands = [
 	],
 	["offboard now", () => offboardEmployeeNowAction(offboardInput)],
 	["record past", () => recordPastDepartureAction(recordPastInput)],
+	["correct past date", () => correctPastDepartureDateAction(correctPastInput)],
+	["record historical date", () => recordHistoricalDepartureDateAction(historicalInput)],
 	[
 		"preview",
 		() => previewEmployeeDepartureAction({ employeeId: uuid, lastWorkingDay: "2026-09-30" }),
@@ -181,8 +183,6 @@ const followUpCommands = [
 			}),
 	],
 	["resolution", () => resolveDepartureReviewAction({ reviewId: uuid, resolution: "Ok" })],
-	["correct past date", () => correctPastDepartureDateAction(correctPastInput)],
-	["record historical date", () => recordHistoricalDepartureDateAction(historicalInput)],
 	[
 		"search replacements",
 		() => searchReplacementEmployeesAction({ excludeEmployeeId: uuid, limit: 20 }),
@@ -250,7 +250,7 @@ describe("employee offboarding follow-up actions", () => {
 	});
 
 	it("scopes the view to the actor's organization and maps a foreign employee to not found", async () => {
-		mocks.caller = scopedManager;
+		mocks.caller = orgAdmin;
 		const view = vi.fn().mockResolvedValue({ kind: "not_found" });
 		mocks.getOffboardingQueries.mockReturnValue({ view });
 
@@ -264,12 +264,14 @@ describe("employee offboarding follow-up actions", () => {
 		expect(result).toMatchObject({ success: false, error: "Employee not found." });
 	});
 
-	it("refuses the view to an org member, one level below a scoped manager", async () => {
+	it("refuses the view to a scoped manager and an org member (Story 22 / A1-2)", async () => {
+		mocks.caller = scopedManager;
+		const managerResult = await getEmployeeOffboardingViewAction({ employeeId: uuid });
+		expect(managerResult).toMatchObject({ success: false, code: "AuthorizationError" });
+
 		mocks.caller = orgMember;
-
-		const result = await getEmployeeOffboardingViewAction({ employeeId: uuid });
-
-		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		const memberResult = await getEmployeeOffboardingViewAction({ employeeId: uuid });
+		expect(memberResult).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mocks.getOffboardingQueries).not.toHaveBeenCalled();
 	});
 

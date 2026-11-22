@@ -4,8 +4,18 @@ import {
 	type EmployeeEmploymentHistory,
 	employee,
 	employeeEmploymentHistory,
+	employeeEmploymentHistoryDay,
 	workPolicy,
 } from "@/db/schema";
+import type {
+	ArbzgScope,
+	BalanceMode,
+	EmploymentProfile,
+	OnCallHoursKind,
+	PresenceOverride,
+	ScheduleMode,
+	ScheduleSource,
+} from "@/db/schema/contract-types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { compareInstants, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -70,6 +80,18 @@ export type EmploymentTermsInput = {
 	currency: string;
 	changeReason?: string | null;
 	reviewState: EmploymentReviewState;
+	/** Optional unified-contract fields preserved across pay-only edits (A1-4). */
+	scheduleMode?: ScheduleMode | null;
+	presenceOverride?: PresenceOverride | null;
+	balanceMode?: BalanceMode | null;
+	scheduleSource?: ScheduleSource | null;
+	sourceTemplateVersionId?: string | null;
+	employmentProfile?: EmploymentProfile;
+	arbzgScope?: ArbzgScope;
+	onCallHoursKind?: OnCallHoursKind | null;
+	onCallWeeklyMinutes?: number | null;
+	onCallDailyMinutes?: number | null;
+	migratedLegacyTerms?: boolean;
 };
 
 function toUtcPlainDateString(date: Date): string {
@@ -258,18 +280,18 @@ async function insertTerms(
 		probationEndsOn: terms.probationEndsOn ?? null,
 		workModel: terms.workModel,
 		workPolicyId: terms.workPolicyId ?? null,
-		scheduleMode: null,
-		presenceOverride: null,
-		balanceMode: null,
-		scheduleSource: null,
-		sourceTemplateVersionId: null,
+		scheduleMode: terms.scheduleMode ?? null,
+		presenceOverride: terms.presenceOverride ?? null,
+		balanceMode: terms.balanceMode ?? null,
+		scheduleSource: terms.scheduleSource ?? null,
+		sourceTemplateVersionId: terms.sourceTemplateVersionId ?? null,
 		sourceBatchItemId: null,
-		employmentProfile: "regular",
-		arbzgScope: "standard",
-		onCallHoursKind: null,
-		onCallWeeklyMinutes: null,
-		onCallDailyMinutes: null,
-		migratedLegacyTerms: false,
+		employmentProfile: terms.employmentProfile ?? "regular",
+		arbzgScope: terms.arbzgScope ?? "standard",
+		onCallHoursKind: terms.onCallHoursKind ?? null,
+		onCallWeeklyMinutes: terms.onCallWeeklyMinutes ?? null,
+		onCallDailyMinutes: terms.onCallDailyMinutes ?? null,
+		migratedLegacyTerms: terms.migratedLegacyTerms ?? false,
 		hourlyRate: wageForContract(terms.contractType, terms.hourlyRate),
 		currency: terms.currency,
 		changeReason: terms.changeReason ?? null,
@@ -407,7 +429,24 @@ export async function changeHourlyWage(
 		});
 	}
 
-	return insertTerms(tx, scope, {
+	// A1-4: Preserve all classification, statutory on-call, operational divergences, and
+	// normalized custom working days when recording a pay-only hourly wage change.
+	const existingDays = await tx
+		.select({
+			dayOfWeek: employeeEmploymentHistoryDay.dayOfWeek,
+			minutesPerDay: employeeEmploymentHistoryDay.minutesPerDay,
+			isWorkDay: employeeEmploymentHistoryDay.isWorkDay,
+			latestClockIn: employeeEmploymentHistoryDay.latestClockIn,
+		})
+		.from(employeeEmploymentHistoryDay)
+		.where(
+			and(
+				eq(employeeEmploymentHistoryDay.organizationId, scope.organizationId),
+				eq(employeeEmploymentHistoryDay.employmentHistoryId, inForce.id),
+			),
+		);
+
+	const inserted = await insertTerms(tx, scope, {
 		validFrom: utcMidnight(input.effectiveOn),
 		status: inForce.status,
 		contractType: inForce.contractType,
@@ -416,11 +455,37 @@ export async function changeHourlyWage(
 		probationEndsOn: inForce.probationEndsOn,
 		workModel: inForce.workModel,
 		workPolicyId: inForce.workPolicyId,
+		scheduleMode: inForce.scheduleMode,
+		presenceOverride: inForce.presenceOverride,
+		balanceMode: inForce.balanceMode,
+		scheduleSource: inForce.scheduleSource,
+		sourceTemplateVersionId: inForce.sourceTemplateVersionId,
+		employmentProfile: inForce.employmentProfile,
+		arbzgScope: inForce.arbzgScope,
+		onCallHoursKind: inForce.onCallHoursKind,
+		onCallWeeklyMinutes: inForce.onCallWeeklyMinutes,
+		onCallDailyMinutes: inForce.onCallDailyMinutes,
+		migratedLegacyTerms: inForce.migratedLegacyTerms,
 		hourlyRate: input.hourlyRate,
 		currency: inForce.currency,
 		changeReason: input.changeReason,
 		reviewState: input.reviewState,
 	});
+
+	if (existingDays.length > 0) {
+		await tx.insert(employeeEmploymentHistoryDay).values(
+			existingDays.map((day) => ({
+				organizationId: scope.organizationId,
+				employmentHistoryId: inserted.id,
+				dayOfWeek: day.dayOfWeek,
+				minutesPerDay: day.minutesPerDay,
+				isWorkDay: day.isWorkDay,
+				latestClockIn: day.latestClockIn,
+			})),
+		);
+	}
+
+	return inserted;
 }
 
 export function canCancelEmploymentHistoryRow(

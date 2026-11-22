@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, gte, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, gte, isNull, lt, or, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { payrollSettledDay, timeEntry, workPeriod } from "@/db/schema";
 import { employeeDepartureReview } from "@/db/schema/employee-lifecycle";
@@ -34,12 +34,19 @@ export async function inspectRetrospectiveDepartureImpact(
 		organizationId: string;
 		employeeId: string;
 		cutoff: Instant;
+		/** Optional exclusive upper bound (e.g. subsequent rehire period start) to avoid flagging a later stint (A1-25). */
+		upperBound?: Instant | null;
 		timezone: string;
 		lastWorkingDay: string;
 	},
 ): Promise<PastDepartureImpactSummary> {
 	const cutoffDate = dateFromInstant(input.cutoff);
 	const cutoffLocalDate = input.cutoff.toZonedDateTimeISO(input.timezone).toPlainDate().toString();
+	const upperBound = input.upperBound ?? null;
+	const upperBoundDate = upperBound ? dateFromInstant(upperBound) : null;
+	const upperBoundLocalDate = upperBound
+		? upperBound.toZonedDateTimeISO(input.timezone).toPlainDate().toString()
+		: null;
 
 	const [workRows, timeEntryAgg, closedRanges, settledRows] = await Promise.all([
 		database
@@ -59,6 +66,7 @@ export async function inspectRetrospectiveDepartureImpact(
 						gt(workPeriod.endTime, cutoffDate),
 						isNull(workPeriod.endTime),
 					),
+					...(upperBoundDate ? [lt(workPeriod.startTime, upperBoundDate)] : []),
 				),
 			)
 			.orderBy(asc(workPeriod.startTime), asc(workPeriod.id)),
@@ -74,6 +82,7 @@ export async function inspectRetrospectiveDepartureImpact(
 					eq(timeEntry.organizationId, input.organizationId),
 					eq(timeEntry.employeeId, input.employeeId),
 					gt(timeEntry.timestamp, cutoffDate),
+					...(upperBoundDate ? [lt(timeEntry.timestamp, upperBoundDate)] : []),
 				),
 			),
 		closedRangesForEmployee(database, {
@@ -91,6 +100,7 @@ export async function inspectRetrospectiveDepartureImpact(
 					eq(payrollSettledDay.employeeId, input.employeeId),
 					isNull(payrollSettledDay.unsettledAt),
 					gte(payrollSettledDay.date, cutoffLocalDate),
+					...(upperBoundLocalDate ? [lt(payrollSettledDay.date, upperBoundLocalDate)] : []),
 				),
 			)
 			.orderBy(asc(payrollSettledDay.date)),
@@ -140,7 +150,11 @@ export async function inspectRetrospectiveDepartureImpact(
 	}
 
 	const overlappingClosedMonths = closedRanges
-		.filter((range) => compareInstants(range.endExclusive, input.cutoff) > 0)
+		.filter(
+			(range) =>
+				compareInstants(range.endExclusive, input.cutoff) > 0 &&
+				(upperBound === null || compareInstants(range.start, upperBound) < 0),
+		)
 		.map((range) => range.month);
 
 	const uniqueSettledDates = [...new Set(settledRows.map((row) => row.date))].sort();
@@ -193,6 +207,7 @@ export async function reconcileRetrospectiveDepartureReviewsInTx(
 		employmentPeriodId: string;
 		departureId: string;
 		cutoff: Instant;
+		upperBound?: Instant | null;
 		timezone: string;
 		lastWorkingDay: string;
 		now: Instant;
@@ -204,6 +219,7 @@ export async function reconcileRetrospectiveDepartureReviewsInTx(
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		cutoff: input.cutoff,
+		upperBound: input.upperBound ?? null,
 		timezone: input.timezone,
 		lastWorkingDay: input.lastWorkingDay,
 	});
@@ -239,6 +255,7 @@ export async function reconcileRetrospectiveDepartureReviewsInTx(
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		cutoff: input.cutoff,
+		upperBound: input.upperBound ?? null,
 		timezone: input.timezone,
 		latestSettledDate: impact.payrollReconciliation.latestSettledDate,
 	});
@@ -287,11 +304,14 @@ async function computePayrollAffectedEnd(
 		organizationId: string;
 		employeeId: string;
 		cutoff: Instant;
+		upperBound?: Instant | null;
 		timezone: string;
 		latestSettledDate: string | null;
 	},
 ): Promise<Date> {
 	const cutoffMs = input.cutoff.epochMilliseconds;
+	const upperBound = input.upperBound ?? null;
+	const upperBoundMs = upperBound ? upperBound.epochMilliseconds : null;
 	let maxMs = cutoffMs;
 
 	const closedRanges = await closedRangesForEmployee(tx, {
@@ -299,9 +319,16 @@ async function computePayrollAffectedEnd(
 		employeeId: input.employeeId,
 	});
 	for (const range of closedRanges) {
-		if (compareInstants(range.endExclusive, input.cutoff) > 0) {
-			if (range.endExclusive.epochMilliseconds > maxMs) {
-				maxMs = range.endExclusive.epochMilliseconds;
+		if (
+			compareInstants(range.endExclusive, input.cutoff) > 0 &&
+			(upperBound === null || compareInstants(range.start, upperBound) < 0)
+		) {
+			const effectiveEndMs =
+				upperBoundMs !== null
+					? Math.min(range.endExclusive.epochMilliseconds, upperBoundMs)
+					: range.endExclusive.epochMilliseconds;
+			if (effectiveEndMs > maxMs) {
+				maxMs = effectiveEndMs;
 			}
 		}
 	}
@@ -311,8 +338,12 @@ async function computePayrollAffectedEnd(
 			.add({ days: 1 })
 			.toZonedDateTime(input.timezone)
 			.toInstant();
-		if (nextDay.epochMilliseconds > maxMs) {
-			maxMs = nextDay.epochMilliseconds;
+		const effectiveSettledMs =
+			upperBoundMs !== null
+				? Math.min(nextDay.epochMilliseconds, upperBoundMs)
+				: nextDay.epochMilliseconds;
+		if (effectiveSettledMs > maxMs) {
+			maxMs = effectiveSettledMs;
 		}
 	}
 

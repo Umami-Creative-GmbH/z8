@@ -11,7 +11,7 @@ import {
 	mondayToFriday,
 } from "./absence-days";
 import { getVacationHolidays } from "./vacation-holidays";
-import { scheduledWeekdays, type WeekdayName, type WorkingWeekPeriod } from "./working-days";
+import type { WeekdayName, WorkingWeekPeriod } from "./working-days";
 
 /** The caller's client: the global `db`, its `DatabaseService`'s, or a transaction. */
 export type AbsenceDaysDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -53,12 +53,15 @@ function enumerateDateRange(startDate: string, endDate: string): Temporal.PlainD
 /**
  * Resolves the effective scheduled ISO weekdays (1=Mon..7=Sun) from a single day's
  * unified contract, or `null` when no schedule applies (so absences fall back to Mon-Fri).
- * Honors versioned `scheduleEnabled` flags, custom working days, and all schedule cycles.
+ * Honors `isEmployedOnDay` (A1-26), multi-week `cycleWeek` and all simple cycles resolved by
+ * `resolveEffectiveContractPure` (A1-13), versioned `scheduleEnabled` flags, and custom working days.
  */
 function effectiveScheduledWeekdaysForContract(
 	contract: EffectiveContractOnDay | undefined,
 ): ReadonlySet<number> | null {
-	if (!contract || contract.scheduleSource !== "policy") return null;
+	if (!contract) return null;
+	if (!contract.isEmployedOnDay) return new Set();
+	if (contract.scheduleSource !== "policy") return null;
 
 	if (contract.scheduleMode === "custom_days" || contract.scheduleMode === "hours_only") {
 		const days = contract.weeklyScheduleDays.flatMap((d) =>
@@ -73,14 +76,11 @@ function effectiveScheduledWeekdaysForContract(
 			: null;
 	if (!activeSchedule) return null;
 
-	return scheduledWeekdays({
-		scheduleType: activeSchedule.scheduleType,
-		workingDaysPreset: activeSchedule.workingDaysPreset,
-		days: activeSchedule.days.map((d) => ({
-			dayOfWeek: d.dayOfWeek,
-			isWorkDay: d.isWorkDay,
-		})),
-	});
+	// Consume the canonical per-day schedule already resolved for this exact day & cycleWeek.
+	const days = contract.weeklyScheduleDays.flatMap((d) =>
+		d.isWorkDay ? [ISO_WEEKDAY[d.dayOfWeek]] : [],
+	);
+	return new Set(days);
 }
 
 /**

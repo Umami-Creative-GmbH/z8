@@ -159,7 +159,6 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 						userTimezone: person.userSettings?.timezone ?? null,
 					})),
 					preloadedPeriods,
-					at: nowInstant,
 				}),
 			),
 			database.query("calendar.rangeApprovedAbsences", () =>

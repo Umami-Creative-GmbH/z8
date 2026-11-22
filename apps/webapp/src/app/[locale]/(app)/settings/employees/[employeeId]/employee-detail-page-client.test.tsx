@@ -558,6 +558,8 @@ describe("employee detail wage history merge note (#1176)", () => {
 		expect(await screen.findByRole("region", { name: "Work Policy Assignment" })).toBeTruthy();
 		expect(screen.queryByText(/Merge note/)).toBeNull();
 		expect(screen.queryByRole("region", { name: "Effective Contract" })).toBeNull();
+		expect(screen.queryByRole("tab", { name: "Leaving Date" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
 	});
 });
 
@@ -776,50 +778,56 @@ describe("employee detail lifecycle integration", () => {
 		},
 	);
 
-	it.each(["orgAdmin", "manager"] as const)(
-		"shows the departure section to %s viewers of a real employee (and Leaving Date panel to org admins only)",
-		async (accessTier) => {
-			window.location.hash = "";
-			renderDetail({
-				accessTier,
-				settingsAccess: accessTier === "orgAdmin" ? "orgAdmin" : "scopedManager",
-			});
-			const tab = await screen.findByRole("tab", { name: "Leaving Date" });
-			act(() => {
-				fireEvent.mouseDown(tab);
-				fireEvent.click(tab);
-			});
+	it("shows the departure section and Leaving Date panel to org admins only, hiding both from managers (A1-2)", async () => {
+		window.location.hash = "";
+		const adminRender = renderDetail({
+			accessTier: "orgAdmin",
+			settingsAccess: "orgAdmin",
+		});
+		const tab = await screen.findByRole("tab", { name: "Leaving Date" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		expect(await screen.findByRole("region", { name: "Employment and departure" })).toBeTruthy();
+		expect(screen.getByRole("region", { name: "Leaving Date" })).toBeTruthy();
+		adminRender.unmount();
 
-			expect(await screen.findByRole("region", { name: "Employment and departure" })).toBeTruthy();
-			if (accessTier === "orgAdmin") {
-				expect(screen.getByRole("region", { name: "Leaving Date" })).toBeTruthy();
-			} else {
-				expect(screen.queryByRole("region", { name: "Leaving Date" })).toBeNull();
-			}
-		},
-	);
+		renderDetail({
+			accessTier: "manager",
+			settingsAccess: "scopedManager",
+		});
+		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		expect(screen.queryByRole("tab", { name: "Leaving Date" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Leaving Date" })).toBeNull();
+	});
 
 	it("offers the admin export to org admins only, marked on their own record (#1166)", async () => {
-		window.location.hash = "#offboarding";
-		const { unmount } = renderDetail({ accessTier: "orgAdmin" });
-		expect((await screen.findByRole("region", { name: "Personal data export" })).textContent).toBe(
-			"colleague",
-		);
-		unmount();
+		try {
+			window.location.hash = "#offboarding";
+			const { unmount } = renderDetail({ accessTier: "orgAdmin" });
+			expect(
+				(await screen.findByRole("region", { name: "Personal data export" })).textContent,
+			).toBe("colleague");
+			unmount();
 
-		const own = renderDetail({
-			accessTier: "orgAdmin",
-			currentUserId: "user-2",
-		});
-		expect((await screen.findByRole("region", { name: "Personal data export" })).textContent).toBe(
-			"own record",
-		);
-		own.unmount();
+			const own = renderDetail({
+				accessTier: "orgAdmin",
+				currentUserId: "user-2",
+			});
+			expect(
+				(await screen.findByRole("region", { name: "Personal data export" })).textContent,
+			).toBe("own record");
+			own.unmount();
 
-		renderDetail({ accessTier: "manager", settingsAccess: "scopedManager" });
-		await screen.findByRole("region", { name: "Employment and departure" });
-		expect(screen.queryByRole("region", { name: "Personal data export" })).toBeNull();
-		window.location.hash = "";
+			renderDetail({ accessTier: "manager", settingsAccess: "scopedManager" });
+			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+			expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
+			expect(screen.queryByRole("region", { name: "Personal data export" })).toBeNull();
+		} finally {
+			window.location.hash = "";
+		}
 	});
 
 	it("never offers departure controls on an invitation draft", async () => {

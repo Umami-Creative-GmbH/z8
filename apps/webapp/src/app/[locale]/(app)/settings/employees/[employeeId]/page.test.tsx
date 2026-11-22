@@ -34,6 +34,9 @@ vi.mock("@/lib/organization/equipment/actions", () => ({
 vi.mock("./employee-detail-page-client", () => ({
 	EmployeeDetailPageClient: "EmployeeDetailPageClient",
 }));
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: vi.fn(async () => "Europe/Berlin"),
+}));
 
 const { default: EmployeeDetailPage } = await import("./page");
 
@@ -136,9 +139,7 @@ describe("EmployeeDetailPage viewer settings access", () => {
 		const contentElement = getContentElement(page);
 		const detailPage = await contentElement.type(contentElement.props);
 
-		expect(mockState.loadPersonnelFilePanelCapability).toHaveBeenCalledWith(
-			"employee-1",
-		);
+		expect(mockState.loadPersonnelFilePanelCapability).toHaveBeenCalledWith("employee-1");
 		expect(detailPage.props.personnelFile).toEqual(capability);
 	});
 

@@ -1119,4 +1119,103 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			]);
 		}
 	});
+
+	it("writes work_policy_assignment on rehire (A1-8) and keeps second-stint policy & work/payroll untouched when correcting the first departure (A1-3, A1-25)", async () => {
+		now = TODAY;
+		const person = await fixture.seedEmployee();
+		const {
+			rows: [pol1],
+		} = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy (organization_id, name, schedule_enabled, regulation_enabled, presence_enabled, is_active, created_by, updated_at)
+			 VALUES ($1, 'Stint1 Policy', true, false, false, true, $2, now())
+			 RETURNING id`,
+			[fixture.organizationId, fixture.ownerUserId],
+		);
+		const {
+			rows: [pol2],
+		} = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy (organization_id, name, schedule_enabled, regulation_enabled, presence_enabled, is_active, created_by, updated_at)
+			 VALUES ($1, 'Stint2 Policy', true, false, false, true, $2, now())
+			 RETURNING id`,
+			[fixture.organizationId, fixture.ownerUserId],
+		);
+		await seedConfirmedTerms(person, "2026-01-01", null);
+		await fixture.pool.query(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES ($1, $2, 'employee', $3, 2, '2026-01-01T00:00:00Z', '2026-01-01', 'employment_terms', true, $4, now())`,
+			[pol1!.id, fixture.organizationId, person.employeeId, fixture.ownerUserId],
+		);
+
+		// 1. Record past departure for stint 1 on 2026-06-15
+		const firstDep = await commands().recordPastDeparture(ownerActor(), {
+			employeeId: person.employeeId,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-15",
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+		if (firstDep.status !== "effective") throw new Error("expected effective departure");
+
+		// 2. Rehire employee on 2026-09-01 selecting pol2 (A1-8)
+		now = parseInstant("2026-09-01T09:00:00Z");
+		await commands().rehireEmployee(ownerActor(), {
+			employeeId: person.employeeId,
+			requestId: randomUUID(),
+			previousEmploymentPeriodId: person.employmentPeriodId,
+			role: "employee",
+			teamId: null,
+			primaryManagerId: null,
+			workPolicyId: pol2!.id,
+			weeklyContractMinutes: 2400,
+			contractType: "fixed",
+			workModel: "onsite",
+			hourlyRate: null,
+			currency: "EUR",
+			probationStartsOn: null,
+			probationEndsOn: null,
+			changeReason: "Rehire for stint 2",
+		});
+
+		// Verify A1-8: active work_policy_assignment was projected for pol2 starting 2026-09-01
+		const rehireAssign = await fixture.pool.query<{
+			policy_id: string;
+			effective_from_date: string;
+			is_active: boolean;
+		}>(
+			`SELECT policy_id, effective_from_date::text, is_active
+			 FROM work_policy_assignment
+			 WHERE employee_id = $1 AND policy_id = $2`,
+			[person.employeeId, pol2!.id],
+		);
+		expect(rehireAssign.rows).toEqual([
+			{ policy_id: pol2!.id, effective_from_date: "2026-09-01", is_active: true },
+		]);
+
+		// Seed legitimate work & settled payroll during stint 2 (September 2026)
+		await seedPostCutoffWork(person, "2026-09-10T08:00:00Z", "2026-09-10T16:00:00Z");
+		await seedSettledDay(person, "2026-09-10", 480);
+
+		// 3. Correct stint 1's departure date from 2026-06-15 to 2026-06-10
+		now = TODAY;
+		const corrected = await commands().correctPastDepartureDate(ownerActor(), {
+			employeeId: person.employeeId,
+			departureId: firstDep.departureId,
+			expectedRevision: firstDep.revision,
+			requestId: randomUUID(),
+			lastWorkingDay: "2026-06-10",
+		});
+
+		// Verify A1-25: legitimate stint-2 work & settled payroll do NOT open reviews on stint 1's departure!
+		expect(corrected.workAfterCutoffReviewOpened).toBe(false);
+		expect(corrected.payrollReconciliationReviewOpened).toBe(false);
+
+		// Verify A1-3: stint-2's pol2 work_policy_assignment remains ACTIVE!
+		const stint2AssignAfter = await fixture.pool.query<{ is_active: boolean }>(
+			`SELECT is_active FROM work_policy_assignment WHERE employee_id = $1 AND policy_id = $2`,
+			[person.employeeId, pol2!.id],
+		);
+		expect(stint2AssignAfter.rows[0]?.is_active).toBe(true);
+	});
 });

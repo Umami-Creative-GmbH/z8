@@ -184,12 +184,14 @@ async function findLatestConfirmedTermsInPeriod(
 			asc(employeeEmploymentHistory.createdAt),
 		);
 
-	const activeOnOrBefore = rows.filter(
+	// A1-5: Select strictly the confirmed row whose half-open interval [validFromDate, validUntilDate)
+	// covers the requested `validFromDate`. Never pull future terms backward or revive expired gaps.
+	const covering = rows.filter(
 		(row) =>
 			row.validFromDate <= input.validFromDate &&
-			(row.validUntilDate === null || row.validUntilDate > row.validFromDate),
+			(row.validUntilDate === null || row.validUntilDate > input.validFromDate),
 	);
-	return activeOnOrBefore.at(-1) ?? rows.at(-1) ?? null;
+	return covering.at(-1) ?? null;
 }
 
 /**
@@ -576,17 +578,26 @@ export interface ResetEmployeeContractDivergencesInput {
 
 /**
  * 1-click "Reset to default": clears all personal operational divergences and personal
- * work policy pin as of `effectiveFromDate` while preserving employee-owned legal & pay terms.
+ * work policy pin as of `effectiveFromDate` while preserving employee-owned legal, pay,
+ * and confirmed § 12 TzBfG on-call statutory agreement terms (A1-6).
  */
 export async function resetEmployeeContractDivergencesInTx(
 	tx: ContractWriteTx,
 	input: ResetEmployeeContractDivergencesInput,
 ): Promise<CommitContractChangeResult> {
+	const effectiveFromDate = parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate");
+	const current = await resolveEffectiveContractOnDay(tx, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		date: effectiveFromDate,
+	});
+	const preserveOnCall = current?.scheduleSource === "on_call" && current.onCallTerms !== null;
+
 	return commitContractChangeInTx(tx, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		actorUserId: input.actorUserId,
-		validFromDate: input.effectiveFromDate,
+		validFromDate: effectiveFromDate,
 		reviewState: "confirmed",
 		workPolicyId: null,
 		weeklyContractMinutes: null,
@@ -595,10 +606,10 @@ export async function resetEmployeeContractDivergencesInTx(
 		workModel: null,
 		presenceOverride: null,
 		balanceMode: null,
-		scheduleSource: null,
-		onCallHoursKind: null,
-		onCallWeeklyMinutes: null,
-		onCallDailyMinutes: null,
+		scheduleSource: preserveOnCall ? "on_call" : null,
+		onCallHoursKind: preserveOnCall ? current.onCallTerms.hoursKind : null,
+		onCallWeeklyMinutes: preserveOnCall ? current.onCallTerms.weeklyMinutes : null,
+		onCallDailyMinutes: preserveOnCall ? current.onCallTerms.dailyMinutes : null,
 		migratedLegacyTerms: false,
 		changeReason: input.changeReason ?? "Reset operational terms to organization/team default",
 		sourceBatchItemId: input.sourceBatchItemId ?? null,
@@ -683,8 +694,14 @@ export async function adoptContractDefaultInTx(
 		}));
 	}
 
-	const keptScheduleSource = keep.has("scheduleSource") ? current.scheduleSource : null;
-	const keepOnCall = keptScheduleSource === "on_call" && current.onCallTerms !== null;
+	// A1-6: Employee-owned § 12 TzBfG on-call statutory agreements always carry through default adoption.
+	const preserveOnCall = current.scheduleSource === "on_call" && current.onCallTerms !== null;
+	const keptScheduleSource = preserveOnCall
+		? "on_call"
+		: keep.has("scheduleSource")
+			? current.scheduleSource
+			: null;
+	const keepOnCall = preserveOnCall;
 
 	return commitContractChangeInTx(tx, {
 		organizationId: input.organizationId,

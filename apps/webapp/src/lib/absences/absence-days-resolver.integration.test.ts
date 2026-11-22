@@ -512,4 +512,30 @@ describe("absence days resolved from work policies and holidays", () => {
 			),
 		).toEqual([4, 4]);
 	});
+
+	it("returns 0 working days for dates outside employment periods during an employment gap (A1-26)", async () => {
+		const { organizationId, employeeId } = await organizationWithEmployee();
+		// Replace open employment period with two stints leaving Oct 14-15 (Wed-Thu) as an employment gap
+		await fixture.pool.query(
+			`DELETE FROM employee_employment_period WHERE organization_id = $1 AND employee_id = $2`,
+			[organizationId, employeeId],
+		);
+		await fixture.pool.query(
+			`INSERT INTO employee_employment_period (
+				organization_id, employee_id, status, started_at, start_provenance, ended_at
+			) VALUES
+				($1, $2, 'closed', '2026-01-01T00:00:00Z', 'recorded', '2026-10-14T00:00:00Z'),
+				($1, $2, 'open', '2026-10-16T00:00:00Z', 'recorded', NULL)`,
+			[organizationId, employeeId],
+		);
+
+		// Mon Oct 12 - Fri Oct 16: Mon (1), Tue (1), Wed (gap=0), Thu (gap=0), Fri (1) -> 3 working days!
+		expect(
+			await getAbsenceDays(db, {
+				organizationId,
+				employeeId,
+				absence: fullDays({ startDate: "2026-10-12", endDate: "2026-10-16" }),
+			}),
+		).toBe(3);
+	});
 });
