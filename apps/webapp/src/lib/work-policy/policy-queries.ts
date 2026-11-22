@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, or, type SQL } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
 	contractDefault,
@@ -180,10 +180,17 @@ export async function loadWorkPoliciesWithLatestVersion(
 		.orderBy(desc(workPolicyVersion.effectiveFromDate), desc(workPolicyVersion.versionNumber));
 
 	const latestVersionByPolicyId = new Map<string, typeof workPolicyVersion.$inferSelect>();
+	const versionDatesByPolicyId = new Map<string, Set<string>>();
 	for (const version of versionRows) {
 		if (!latestVersionByPolicyId.has(version.policyId)) {
 			latestVersionByPolicyId.set(version.policyId, version);
 		}
+		let dates = versionDatesByPolicyId.get(version.policyId);
+		if (!dates) {
+			dates = new Set<string>();
+			versionDatesByPolicyId.set(version.policyId, dates);
+		}
+		dates.add(version.effectiveFromDate);
 	}
 
 	const selectedVersionIds = [...latestVersionByPolicyId.values()].map((v) => v.id);
@@ -267,8 +274,10 @@ export async function loadWorkPoliciesWithLatestVersion(
 
 	return policyRows.map((policyRow) => {
 		const version = latestVersionByPolicyId.get(policyRow.id);
+		const versionEffectiveDates = [...(versionDatesByPolicyId.get(policyRow.id) ?? [])].sort();
 		return {
 			...policyRow,
+			versionEffectiveDates,
 			scheduleEnabled: version ? version.scheduleEnabled : policyRow.scheduleEnabled,
 			regulationEnabled: version ? version.regulationEnabled : policyRow.regulationEnabled,
 			presenceEnabled: version ? version.presenceEnabled : policyRow.presenceEnabled,
@@ -318,10 +327,16 @@ export async function setOrganizationDefaultWorkPolicy(
 }
 
 export async function listWorkPolicyAssignmentsForOrganization(db: ReadDb, organizationId: string) {
+	const orgTimezone = await loadOrganizationTimezone(db as DatabaseClient, organizationId);
+	const orgTodayDate = plainDateAt(systemClock.nowInstant(), orgTimezone).toString();
 	return db.query.workPolicyAssignment.findMany({
 		where: and(
 			eq(workPolicyAssignment.organizationId, organizationId),
 			eq(workPolicyAssignment.isActive, true),
+			or(
+				isNull(workPolicyAssignment.effectiveUntilDate),
+				gt(workPolicyAssignment.effectiveUntilDate, orgTodayDate),
+			),
 		),
 		with: {
 			policy: {
@@ -339,40 +354,6 @@ export async function listWorkPolicyAssignmentsForOrganization(db: ReadDb, organ
 	});
 }
 
-export async function createWorkPolicyAssignmentRecord(
-	db: DatabaseClient,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		policyId: string;
-		assignmentType: "organization" | "team" | "employee";
-		teamId?: string;
-		employeeId?: string;
-	},
-) {
-	const priority =
-		input.assignmentType === "employee" ? 2 : input.assignmentType === "team" ? 1 : 0;
-
-	const [assignment] = await db
-		.insert(workPolicyAssignment)
-		.values({
-			policyId: input.policyId,
-			organizationId: input.organizationId,
-			assignmentType: input.assignmentType,
-			teamId: input.teamId ?? null,
-			employeeId: input.employeeId ?? null,
-			priority,
-			effectiveFromDate: "1970-01-01",
-			sourceKind: input.assignmentType === "employee" ? "manager_assignment" : "legacy",
-			isActive: true,
-			createdBy: input.actorUserId,
-			updatedAt: currentTimestamp(),
-		})
-		.returning();
-
-	return assignment;
-}
-
 export async function findWorkPolicyAssignmentInOrganization(
 	db: ReadDb,
 	organizationId: string,
@@ -384,22 +365,6 @@ export async function findWorkPolicyAssignmentInOrganization(
 			eq(workPolicyAssignment.organizationId, organizationId),
 		),
 	});
-}
-
-export async function deactivateWorkPolicyAssignmentRecord(
-	db: DatabaseClient,
-	organizationId: string,
-	assignmentId: string,
-) {
-	await db
-		.update(workPolicyAssignment)
-		.set({ isActive: false, updatedAt: currentTimestamp() })
-		.where(
-			and(
-				eq(workPolicyAssignment.id, assignmentId),
-				eq(workPolicyAssignment.organizationId, organizationId),
-			),
-		);
 }
 
 /** Whether any active work policy, assignment, or contract default is configured for the org. */

@@ -227,19 +227,19 @@ async function closeEmploymentWindows(
 	await tx.execute(sql`
 		UPDATE work_policy_assignment
 		SET effective_until = ${cutoff},
-			effective_until_date = GREATEST(effective_from_date, ${cutoffLocalDate}::date),
+			effective_until_date = ${cutoffLocalDate}::date,
 			updated_at = ${now}
 		WHERE organization_id = ${identity.organizationId} AND assignment_type = 'employee'
 			AND employee_id = ${identity.employeeId} AND is_active = true
-			AND (effective_from IS NULL OR effective_from < ${cutoff})
-			AND (effective_until IS NULL OR effective_until > ${cutoff})
+			AND effective_from_date < ${cutoffLocalDate}::date
+			AND (effective_until_date IS NULL OR effective_until_date > ${cutoffLocalDate}::date)
 	`);
 	const deactivated = await tx.execute<{ id: string }>(sql`
 		UPDATE work_policy_assignment
 		SET is_active = false, updated_at = ${now}
 		WHERE organization_id = ${identity.organizationId} AND assignment_type = 'employee'
 			AND employee_id = ${identity.employeeId} AND is_active = true
-			AND effective_from >= ${cutoff}
+			AND effective_from_date >= ${cutoffLocalDate}::date
 		RETURNING id
 	`);
 

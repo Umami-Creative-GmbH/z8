@@ -3,6 +3,10 @@ export {
 	type AssignEmployeeWorkPolicyResult,
 	assignEmployeeWorkPolicy,
 	assignEmployeeWorkPolicyInTx,
+	type CloseManualWorkPolicyAssignmentInput,
+	type CloseManualWorkPolicyAssignmentResult,
+	closeManualWorkPolicyAssignment,
+	closeManualWorkPolicyAssignmentInTx,
 	refuseIfAdminPinnedContractTermsPolicyInTx,
 } from "./assign-employee-work-policy";
 export {

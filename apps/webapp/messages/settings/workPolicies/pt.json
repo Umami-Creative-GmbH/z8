@@ -291,7 +291,8 @@
 			"sameDayWarningTitle": "Same-day revision replaces earlier version",
 			"sameDayWarningBody": "Publishing a second revision effective {date} replaces the earlier revision for that entire calendar day.",
 			"sameDayConfirmLabel": "I understand this replaces the earlier revision for {date}",
-			"publishVersion": "Publish version"
+			"publishVersion": "Publish version",
+			"versionDateInPast": "New policy versions cannot take effect on a past date."
 		},
 		"workSchedules": {
 			"allDays": "Todos os dias",

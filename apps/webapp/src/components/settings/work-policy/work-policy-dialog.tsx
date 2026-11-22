@@ -56,9 +56,24 @@ interface WorkPolicyDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	organizationTimezone?: string;
 	editingPolicy: WorkPolicyWithDetails | null;
 	workPolicyVersioningEnabled?: boolean;
 	onSuccess: () => void;
+}
+
+function todayIsoDateInTimezone(timeZone?: string): string {
+	if (!timeZone) return todayIsoDate();
+	try {
+		return new Intl.DateTimeFormat("en-CA", {
+			timeZone,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).format(new Date());
+	} catch {
+		return todayIsoDate();
+	}
 }
 
 const DAYS_OF_WEEK = [
@@ -234,6 +249,7 @@ function useWorkPolicyForm({
 	open,
 	onOpenChange,
 	organizationId,
+	organizationTimezone,
 	editingPolicy,
 	workPolicyVersioningEnabled = false,
 	onSuccess,
@@ -242,7 +258,8 @@ function useWorkPolicyForm({
 	const queryClient = useQueryClient();
 	const isEditing = !!editingPolicy;
 	const initialFormValues = buildWorkPolicyFormValues(editingPolicy);
-	const [effectiveFromDate, setEffectiveFromDate] = useState(() => todayIsoDate());
+	const orgTodayDate = todayIsoDateInTimezone(organizationTimezone);
+	const [effectiveFromDate, setEffectiveFromDate] = useState(() => orgTodayDate);
 	const [confirmSameDayReplace, setConfirmSameDayReplace] = useState(false);
 
 	const isMetadataOnlyEdit = (value: typeof formDefaultValues): boolean => {
@@ -335,6 +352,15 @@ function useWorkPolicyForm({
 			};
 
 			if (isEditing && workPolicyVersioningEnabled && !metadataOnly) {
+				if (effectiveFromDate < orgTodayDate) {
+					toast.error(
+						t(
+							"settings.workPolicies.versionDateInPast",
+							"New policy versions cannot take effect on a past date.",
+						),
+					);
+					return;
+				}
 				publishVersionMutation.mutate({
 					effectiveFromDate,
 					data: input,
@@ -352,12 +378,12 @@ function useWorkPolicyForm({
 		if (open && resetScopeRef.current !== nextResetScope) {
 			resetScopeRef.current = nextResetScope;
 			form.reset(initialFormValues);
-			setEffectiveFromDate(todayIsoDate());
+			setEffectiveFromDate(orgTodayDate);
 			setConfirmSameDayReplace(false);
 		} else if (!open && resetScopeRef.current !== "") {
 			resetScopeRef.current = "";
 		}
-	}, [open, editingPolicy, form, initialFormValues]);
+	}, [open, editingPolicy, form, initialFormValues, orgTodayDate]);
 
 	// Create mutation
 	const createMutation = useMutation({
@@ -530,16 +556,18 @@ function useWorkPolicyForm({
 
 	const currentValues = useStore(form.store, (state) => state.values);
 	const isRuleEdit = isEditing && !isMetadataOnlyEdit(currentValues);
-	const editedToday =
-		Boolean(editingPolicy?.updatedAt) &&
-		new Date(editingPolicy!.updatedAt).toISOString().slice(0, 10) === effectiveFromDate;
-	const requiresSameDayConfirmation = workPolicyVersioningEnabled && isRuleEdit && editedToday;
+	const matchesExistingVersionDate = Boolean(
+		editingPolicy?.versionEffectiveDates?.includes(effectiveFromDate),
+	);
+	const requiresSameDayConfirmation =
+		workPolicyVersioningEnabled && isRuleEdit && matchesExistingVersionDate;
 
 	return {
 		open,
 		onOpenChange,
 		isEditing,
 		workPolicyVersioningEnabled,
+		orgTodayDate,
 		effectiveFromDate,
 		setEffectiveFromDate,
 		confirmSameDayReplace,
@@ -566,6 +594,7 @@ export function WorkPolicyDialog({
 	open,
 	onOpenChange,
 	organizationId,
+	organizationTimezone,
 	editingPolicy,
 	workPolicyVersioningEnabled = false,
 	onSuccess,
@@ -573,6 +602,7 @@ export function WorkPolicyDialog({
 	const {
 		noSectionsEnabled,
 		isEditing,
+		orgTodayDate,
 		effectiveFromDate,
 		setEffectiveFromDate,
 		confirmSameDayReplace,
@@ -595,6 +625,7 @@ export function WorkPolicyDialog({
 		open,
 		onOpenChange,
 		organizationId,
+		organizationTimezone,
 		editingPolicy,
 		workPolicyVersioningEnabled,
 		onSuccess,
@@ -715,6 +746,7 @@ export function WorkPolicyDialog({
 										<Input
 											id="work-policy-effective-from"
 											type="date"
+											min={orgTodayDate}
 											value={effectiveFromDate}
 											onChange={(e) => {
 												setEffectiveFromDate(e.target.value);

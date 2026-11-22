@@ -45,6 +45,7 @@ import {
 	previewTemplateApplication,
 	publishContractTemplateVersion,
 	recordFixedTermExtension,
+	recordFixedTermExtensionInTx,
 	resetEmployeeContractDivergences,
 	resolveEffectiveContractOnDay,
 	STATUTORY_ON_CALL_DAILY_PREVIEW_NOTE,
@@ -870,6 +871,77 @@ describe("contract defaults, templates, employee divergence & fixed-term command
 		});
 		expect(listed.agreements.map((a) => a.sequenceNumber)).toEqual([1, 2, 3, 4]);
 		expect(listed.pendingScheduledDeparture).toBeNull();
+
+		// F7: A pending scheduled departure whose cutoff_at <= now MUST NOT be postponed by update_leaving_date!
+		await admin.query(
+			`INSERT INTO member (id, organization_id, user_id, role, status, created_at)
+			 VALUES ($1, $2, $3, 'owner', 'approved', now())
+			 ON CONFLICT DO NOTHING`,
+			[randomUUID(), ORG_ID, ADMIN_USER_ID],
+		);
+		const dueEmp = await seedEmployee({ key: "ft-due-emp" });
+		await createInitialEmploymentAgreement(db, {
+			organizationId: ORG_ID,
+			employeeId: dueEmp.employeeId,
+			actorUserId: ADMIN_USER_ID,
+			kind: "fixed_term",
+			startsOn: "2026-01-01",
+			endsOn: "2026-05-31",
+			reason: "Short fixed term",
+		});
+		const {
+			rows: [dueDep],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO employee_departure (
+				organization_id, employee_id, employment_period_id, mode, last_working_day,
+				timezone, cutoff_at, status, revision, created_by, request_id, request_fingerprint
+			) VALUES (
+				$1, $2, $3, 'scheduled', '2026-05-31',
+				'Europe/Berlin', '2026-05-31T22:00:00Z', 'pending', 1, $4, $5, 'fp-due'
+			)
+			RETURNING id`,
+			[ORG_ID, dueEmp.employeeId, dueEmp.employmentPeriodId, ADMIN_USER_ID, randomUUID()],
+		);
+
+		// Calling recordFixedTermExtensionInTx directly refuses with departure_revision_conflict (cutoff_at <= now)
+		await expect(
+			db.transaction((tx) =>
+				recordFixedTermExtensionInTx(tx, {
+					organizationId: ORG_ID,
+					employeeId: dueEmp.employeeId,
+					actorUserId: ADMIN_USER_ID,
+					kind: "fixed_term",
+					startsOn: "2026-06-01",
+					endsOn: "2026-12-31",
+					reason: "Too-late extension",
+					departureSyncAction: "update_leaving_date",
+					now: parseInstant("2026-06-01T10:00:00Z"),
+				}),
+			),
+		).rejects.toMatchObject({ conflictType: "departure_revision_conflict" });
+
+		// Calling recordFixedTermExtension runs materializeDueDeparture first so the due departure becomes effective
+		// in its own transaction (closing the employment period) instead of being postponed into the future!
+		await expect(
+			recordFixedTermExtension(db, {
+				organizationId: ORG_ID,
+				employeeId: dueEmp.employeeId,
+				actorUserId: ADMIN_USER_ID,
+				kind: "fixed_term",
+				startsOn: "2026-06-01",
+				endsOn: "2026-12-31",
+				reason: "Late extension after cutoff",
+				departureSyncAction: "update_leaving_date",
+				now: parseInstant("2026-06-01T10:00:00Z"),
+			}),
+		).rejects.toThrow();
+		const {
+			rows: [dueAfter],
+		} = await admin.query<{ status: string; last_working_day: string }>(
+			`SELECT status, last_working_day::text FROM employee_departure WHERE id = $1`,
+			[dueDep.id],
+		);
+		expect(dueAfter).toEqual({ status: "effective", last_working_day: "2026-05-31" });
 	});
 
 	it("enforces A1 scoped-manager wage-free policy assignment and refuses overwriting admin-pinned contract_terms policies", async () => {

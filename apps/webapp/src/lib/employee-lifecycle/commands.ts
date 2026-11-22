@@ -156,7 +156,7 @@ function executeDeparture(
  * lifecycle command is admitted. It commits in its own transaction so a later
  * command failure cannot roll the effective departure back.
  */
-async function materializeDueDeparture(
+export async function materializeDueDeparture(
 	deps: DepartureCommandDependencies,
 	organizationId: string,
 	employeeId: string,
@@ -1030,18 +1030,18 @@ async function correctPastDepartureDate(
 			}
 		}
 
-		// Cap or deactivate active employee policy assignments beyond the corrected cutoff.
+		// Cap or deactivate active employee policy assignments beyond the corrected cutoff using canonical dates.
 		await tx.execute(sql`
 			UPDATE work_policy_assignment
 			SET effective_until = ${newCutoffDate},
-				effective_until_date = GREATEST(effective_from_date, ${nextCutoff.cutoffLocalDate}::date),
+				effective_until_date = ${nextCutoff.cutoffLocalDate}::date,
 				updated_at = ${nowDate}
 			WHERE organization_id = ${actor.organizationId}
 				AND assignment_type = 'employee'
 				AND employee_id = ${target.id}::uuid
 				AND is_active = true
-				AND (effective_from IS NULL OR effective_from < ${newCutoffDate})
-				AND (effective_until IS NULL OR effective_until > ${newCutoffDate})
+				AND effective_from_date < ${nextCutoff.cutoffLocalDate}::date
+				AND (effective_until_date IS NULL OR effective_until_date > ${nextCutoff.cutoffLocalDate}::date)
 		`);
 		await tx.execute(sql`
 			UPDATE work_policy_assignment
@@ -1050,7 +1050,7 @@ async function correctPastDepartureDate(
 				AND assignment_type = 'employee'
 				AND employee_id = ${target.id}::uuid
 				AND is_active = true
-				AND effective_from >= ${newCutoffDate}
+				AND effective_from_date >= ${nextCutoff.cutoffLocalDate}::date
 		`);
 
 		const reconciliation = await reconcileRetrospectiveDepartureReviewsInTx(tx, {

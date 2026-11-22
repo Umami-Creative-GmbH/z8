@@ -10,7 +10,7 @@ import {
 	workPolicyVersion,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import { instantFromDate, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { hasValidLatestClockIns, latestClockInForDay } from "@/lib/scheduling/latest-clock-in";
@@ -112,7 +112,14 @@ export interface PolicyVersionSummary {
 	readonly sealedAt: Date | null;
 }
 
+export interface LaterScheduledVersionWarning {
+	readonly id: string;
+	readonly versionNumber: number;
+	readonly effectiveFromDate: string;
+}
+
 export type VersionedWorkPolicyDetails = typeof workPolicy.$inferSelect & {
+	versionEffectiveDates?: string[];
 	schedule:
 		| (typeof workPolicySchedule.$inferSelect & {
 				days: (typeof workPolicyScheduleDay.$inferSelect)[];
@@ -132,6 +139,7 @@ export interface PublishWorkPolicyVersionResult {
 	readonly policy: VersionedWorkPolicyDetails;
 	readonly version: PolicyVersionSummary;
 	readonly replacesSameDayVersion: SameDayReplacementWarning | null;
+	readonly laterScheduledVersions: readonly LaterScheduledVersionWarning[];
 	readonly metadataOnly: boolean;
 }
 
@@ -846,6 +854,7 @@ export async function updateOrPublishWorkPolicyInTx(
 		policyId: string;
 		data: UpdateVersionedPolicyInput;
 		forceNewVersion?: boolean;
+		now?: Date;
 	},
 ): Promise<PublishWorkPolicyVersionResult> {
 	const { organizationId, actorUserId, policyId, data } = input;
@@ -925,24 +934,40 @@ export async function updateOrPublishWorkPolicyInTx(
 			policy: saved,
 			version: latestVersion,
 			replacesSameDayVersion: null,
+			laterScheduledVersions: [],
 			metadataOnly: true,
 		};
 	}
 
-	// Load current version + children so partial edits preserve unmodified sections & all 7 ArbZG columns.
+	const orgTimezone = await loadOrganizationTimezone(tx, organizationId);
+	const nowInstant = input.now ? instantFromDate(input.now) : systemClock.nowInstant();
+	const orgTodayDate = plainDateAt(nowInstant, orgTimezone).toString();
+	const targetEffectiveFromDate = requestedEffectiveFromDate ?? orgTodayDate;
+
+	const selectBaseVersionForDate = (
+		orderedVersions: PolicyVersionSummary[],
+		targetDate: string,
+	): PolicyVersionSummary | null =>
+		orderedVersions.find((v) => v.effectiveFromDate <= targetDate) ??
+		orderedVersions[orderedVersions.length - 1] ??
+		null;
+
+	// Load the version in effect on targetEffectiveFromDate so partial edits preserve unmodified
+	// sections & all 7 ArbZG columns without leaking future-scheduled rules into earlier dates.
 	const initialVersions = await listPolicyVersionsOrderedInTx(tx, policyId);
-	const currentVersion = initialVersions[0] ?? null;
-	const currentDetails = await loadWorkPolicyVersionDetailsInTx(tx, {
+	const initialBaseVersion = selectBaseVersionForDate(initialVersions, targetEffectiveFromDate);
+	let currentVersion = initialBaseVersion;
+	let currentDetails = await loadWorkPolicyVersionDetailsInTx(tx, {
 		organizationId,
 		policyId,
 		policyVersionId: currentVersion?.id,
 	});
 
-	const nextScheduleEnabled =
+	let nextScheduleEnabled =
 		data.scheduleEnabled ?? currentVersion?.scheduleEnabled ?? existingPolicy.scheduleEnabled;
-	const nextRegulationEnabled =
+	let nextRegulationEnabled =
 		data.regulationEnabled ?? currentVersion?.regulationEnabled ?? existingPolicy.regulationEnabled;
-	const nextPresenceEnabled =
+	let nextPresenceEnabled =
 		data.presenceEnabled ?? currentVersion?.presenceEnabled ?? existingPolicy.presenceEnabled;
 
 	// Determine target presence location for lock acquisition BEFORE reading cutover/seal state.
@@ -1055,14 +1080,39 @@ export async function updateOrPublishWorkPolicyInTx(
 				presenceEnabled: nextPresenceEnabled,
 			},
 			replacesSameDayVersion: null,
+			laterScheduledVersions: [],
 			metadataOnly: false,
 		};
 	}
 
-	// Post-cutover: insert a new unsealed immutable version, populate all 6 child/grandchild sets, and seal as FINAL statement.
-	const orgTimezone = await loadOrganizationTimezone(tx, organizationId);
-	const orgTodayDate = plainDateAt(systemClock.nowInstant(), orgTimezone).toString();
-	const effectiveFromDate = requestedEffectiveFromDate ?? orgTodayDate;
+	// Post-cutover: refuse historical effective dates so past absences, balances, and compliance never drift.
+	const effectiveFromDate = targetEffectiveFromDate;
+	if (effectiveFromDate < orgTodayDate) {
+		throw new ValidationError({
+			message: `New work policy versions cannot take effect in the past (${effectiveFromDate} is before ${orgTodayDate}).`,
+			field: "effectiveFromDate",
+			refusal: "effective_date_in_past",
+		});
+	}
+
+	// Re-resolve base version from the post-lock version list in case another writer committed concurrently.
+	const lockedBaseVersion = selectBaseVersionForDate(versions, effectiveFromDate);
+	if (lockedBaseVersion && lockedBaseVersion.id !== currentVersion?.id) {
+		currentVersion = lockedBaseVersion;
+		currentDetails = await loadWorkPolicyVersionDetailsInTx(tx, {
+			organizationId,
+			policyId,
+			policyVersionId: currentVersion.id,
+		});
+		nextScheduleEnabled =
+			data.scheduleEnabled ?? currentVersion.scheduleEnabled ?? existingPolicy.scheduleEnabled;
+		nextRegulationEnabled =
+			data.regulationEnabled ??
+			currentVersion.regulationEnabled ??
+			existingPolicy.regulationEnabled;
+		nextPresenceEnabled =
+			data.presenceEnabled ?? currentVersion.presenceEnabled ?? existingPolicy.presenceEnabled;
+	}
 
 	const sameDayExisting =
 		versions
@@ -1077,6 +1127,14 @@ export async function updateOrPublishWorkPolicyInTx(
 				message: `Replaces version ${sameDayExisting.versionNumber} effective ${effectiveFromDate} for the entire day.`,
 			}
 		: null;
+
+	const laterScheduledVersions: LaterScheduledVersionWarning[] = versions
+		.filter((v) => v.effectiveFromDate > effectiveFromDate)
+		.map((v) => ({
+			id: v.id,
+			versionNumber: v.versionNumber,
+			effectiveFromDate: v.effectiveFromDate,
+		}));
 
 	const nextVersionNumber = versions.reduce((max, v) => Math.max(max, v.versionNumber), 0) + 1;
 
@@ -1229,6 +1287,7 @@ export async function updateOrPublishWorkPolicyInTx(
 			sealedAt,
 		},
 		replacesSameDayVersion,
+		laterScheduledVersions,
 		metadataOnly: false,
 	};
 }

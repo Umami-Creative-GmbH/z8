@@ -59,8 +59,14 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-const { createWorkPolicy, duplicateWorkPolicy, getWorkPolicy, updateWorkPolicy } =
-	await import("./actions");
+const {
+	createWorkPolicy,
+	createWorkPolicyAssignment,
+	deleteWorkPolicyAssignment,
+	duplicateWorkPolicy,
+	getWorkPolicy,
+	updateWorkPolicy,
+} = await import("./actions");
 
 const ids = {
 	organization: "t1922-org",
@@ -547,5 +553,134 @@ describe("work policy ArbZG regulation persistence & transaction atomicity (Post
 			evaluationPeriod: "weekly",
 			enforcement: "warn",
 		});
+	});
+
+	it("routes createWorkPolicyAssignment and deleteWorkPolicyAssignment through dated canonical commands without 23P01 or history loss (F3)", async () => {
+		const { policyId: policyA } = await seedPolicyWithAllArbzgFields("Assign Policy A");
+		const { policyId: policyB } = await seedPolicyWithAllArbzgFields("Assign Policy B");
+
+		const {
+			rows: [teamRow],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO team (organization_id, name, created_at, updated_at)
+			 VALUES ($1, 'Ops Team', now(), now()) RETURNING id`,
+			[ids.organization],
+		);
+		const {
+			rows: [empRow],
+		} = await admin.query<{ id: string }>(
+			`SELECT id FROM employee WHERE organization_id = $1 AND user_id = $2 LIMIT 1`,
+			[ids.organization, ids.adminUser],
+		);
+
+		// 1) Org assignment routes through scheduleContractDefault (source_kind = 'contract_default') and reassigns cleanly without 23P01
+		const orgAssign1 = await createWorkPolicyAssignment({
+			policyId: policyA,
+			assignmentType: "organization",
+		});
+		expect(orgAssign1.success).toBe(true);
+		const orgAssign2 = await createWorkPolicyAssignment({
+			policyId: policyB,
+			assignmentType: "organization",
+		});
+		expect(orgAssign2.success).toBe(true);
+		if (!orgAssign2.success) return;
+
+		const { rows: orgAssignRows } = await admin.query<{
+			id: string;
+			source_kind: string;
+			source_contract_default_id: string | null;
+			policy_id: string;
+		}>(
+			`SELECT id, source_kind, source_contract_default_id, policy_id
+			 FROM work_policy_assignment
+			 WHERE organization_id = $1 AND assignment_type = 'organization' AND is_active = true`,
+			[ids.organization],
+		);
+		expect(orgAssignRows).toHaveLength(1);
+		expect(orgAssignRows[0]).toMatchObject({
+			policy_id: policyB,
+			source_kind: "contract_default",
+		});
+		expect(orgAssignRows[0]?.source_contract_default_id).not.toBeNull();
+
+		// Deleting a contract_default projection row is refused even for an org admin!
+		const deleteOrgDefault = await deleteWorkPolicyAssignment(orgAssignRows[0]!.id);
+		expect(deleteOrgDefault).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "contract_default_assignment_protected",
+		});
+
+		// 2) Team assignment also routes through scheduleContractDefault cleanly without 23P01
+		const teamAssign1 = await createWorkPolicyAssignment({
+			policyId: policyA,
+			assignmentType: "team",
+			teamId: teamRow.id,
+		});
+		expect(teamAssign1.success).toBe(true);
+		const teamAssign2 = await createWorkPolicyAssignment({
+			policyId: policyB,
+			assignmentType: "team",
+			teamId: teamRow.id,
+		});
+		expect(teamAssign2.success).toBe(true);
+
+		// 3) Employee assignment preserves historical assignment before today and closes cleanly on delete!
+		await admin.query(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'employee', $3, 2,
+				'2025-01-01T00:00:00Z', '2025-01-01', 'manager_assignment', true, $4, now()
+			)`,
+			[policyA, ids.organization, empRow.id, ids.adminUser],
+		);
+
+		const empAssign = await createWorkPolicyAssignment({
+			policyId: policyB,
+			assignmentType: "employee",
+			employeeId: empRow.id,
+		});
+		expect(empAssign.success).toBe(true);
+		if (!empAssign.success) return;
+
+		const { rows: empHistoryRows } = await admin.query<{
+			policy_id: string;
+			effective_from_date: string;
+			effective_until_date: string | null;
+			is_active: boolean;
+		}>(
+			`SELECT policy_id, effective_from_date::text, effective_until_date::text, is_active
+			 FROM work_policy_assignment
+			 WHERE employee_id = $1 AND is_active = true
+			 ORDER BY effective_from_date`,
+			[empRow.id],
+		);
+		expect(empHistoryRows).toHaveLength(2);
+		expect(empHistoryRows[0]?.policy_id).toBe(policyA);
+		expect(empHistoryRows[0]?.effective_from_date).toBe("2025-01-01");
+		expect(empHistoryRows[0]?.effective_until_date).toBe(empHistoryRows[1]?.effective_from_date);
+		expect(empHistoryRows[1]?.policy_id).toBe(policyB);
+		expect(empHistoryRows[1]?.effective_until_date).toBeNull();
+
+		// Deleting today's manual assignment closes from today onward while preserving the historical 2025 row!
+		const deleteEmpAssign = await deleteWorkPolicyAssignment(empAssign.data.id);
+		expect(deleteEmpAssign.success).toBe(true);
+		const { rows: afterDeleteRows } = await admin.query<{
+			policy_id: string;
+			effective_from_date: string;
+			effective_until_date: string | null;
+		}>(
+			`SELECT policy_id, effective_from_date::text, effective_until_date::text
+			 FROM work_policy_assignment
+			 WHERE employee_id = $1 AND is_active = true
+			 ORDER BY effective_from_date`,
+			[empRow.id],
+		);
+		expect(afterDeleteRows).toHaveLength(1);
+		expect(afterDeleteRows[0]?.policy_id).toBe(policyA);
+		expect(afterDeleteRows[0]?.effective_from_date).toBe("2025-01-01");
 	});
 });

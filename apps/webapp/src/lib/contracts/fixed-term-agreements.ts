@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, or, sql } from "drizzle-orm";
 import {
 	contractMigrationConflict,
 	type EmploymentTermAgreement,
@@ -17,6 +17,8 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { createDepartureClockOut } from "@/lib/employee-lifecycle/clock-out";
+import { materializeDueDeparture } from "@/lib/employee-lifecycle/commands";
 import { departureCutoff } from "@/lib/employee-lifecycle/cutoff";
 import { queueDataExportReminder } from "@/lib/employee-lifecycle/data-export-reminder";
 import { resolveCurrentEmploymentPeriod } from "@/lib/employee-lifecycle/employment-periods";
@@ -395,6 +397,10 @@ export async function recordFixedTermExtensionInTx(
 					eq(employeeDeparture.id, pendingDeparture.id),
 					eq(employeeDeparture.organizationId, input.organizationId),
 					eq(employeeDeparture.revision, pendingDeparture.revision),
+					or(
+						eq(employeeDeparture.status, "blocked"),
+						and(eq(employeeDeparture.status, "pending"), gt(employeeDeparture.cutoffAt, nowDate)),
+					),
 				),
 			)
 			.returning({
@@ -404,7 +410,8 @@ export async function recordFixedTermExtensionInTx(
 
 		if (!updatedDeparture) {
 			throw new ConflictError({
-				message: "Pending departure was modified concurrently.",
+				message:
+					"Pending departure can no longer be rescheduled (already due, effective, or modified).",
 				conflictType: "departure_revision_conflict",
 			});
 		}
@@ -581,6 +588,16 @@ export async function recordFixedTermExtension(
 	db: DatabaseClient,
 	input: RecordFixedTermExtensionInput,
 ): Promise<RecordFixedTermExtensionResult> {
+	const nowInstant = input.now ?? systemClock.nowInstant();
+	await materializeDueDeparture(
+		{
+			db: db as never,
+			clock: { nowInstant: () => nowInstant },
+			clockOut: createDepartureClockOut(),
+		},
+		input.organizationId,
+		input.employeeId,
+	);
 	return db.transaction((tx) => recordFixedTermExtensionInTx(tx, input));
 }
 

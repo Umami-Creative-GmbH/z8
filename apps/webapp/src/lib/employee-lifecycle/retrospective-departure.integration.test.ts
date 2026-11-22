@@ -997,4 +997,126 @@ describe("retrospective leaving dates, date-only corrections, historical backfil
 			}),
 		).toBeNull();
 	});
+
+	it("caps/deactivates work_policy_assignment by canonical effective_from_date without 23514 on Offboard Now and west-of-UTC departures (F2)", async () => {
+		// 1) Offboard Now when an assignment starts TODAY (effective_from_date === cutoffLocalDate)
+		now = parseInstant("2026-10-10T14:00:00Z");
+		const person = await fixture.seedEmployee();
+		const policyRes = await fixture.pool.query<{ id: string }>(
+			`INSERT INTO work_policy (organization_id, name, schedule_enabled, regulation_enabled, presence_enabled, is_active, created_by, updated_at)
+			 VALUES ($1, 'Same-Day Policy', true, false, false, true, $2, now())
+			 RETURNING id`,
+			[fixture.organizationId, fixture.ownerUserId],
+		);
+		const policyId = policyRes.rows[0]!.id;
+
+		// Seed an employee policy assignment effective TODAY (2026-10-10), effective_from = 2026-10-10T00:00:00Z < now (14:00Z)
+		await fixture.pool.query(
+			`INSERT INTO work_policy_assignment (
+				policy_id, organization_id, assignment_type, employee_id, priority,
+				effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+			) VALUES (
+				$1, $2, 'employee', $3, 2,
+				'2026-10-10T00:00:00Z', '2026-10-10', 'manager_assignment', true, $4, now()
+			)`,
+			[policyId, fixture.organizationId, person.employeeId, fixture.ownerUserId],
+		);
+
+		const offboarded = await commands().offboardImmediately(ownerActor(), {
+			employeeId: person.employeeId,
+			requestId: randomUUID(),
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+		expect(offboarded.status).toBe("effective");
+
+		const todayAssignment = await fixture.pool.query<{ is_active: boolean }>(
+			`SELECT is_active FROM work_policy_assignment WHERE employee_id = $1 AND effective_from_date = '2026-10-10'`,
+			[person.employeeId],
+		);
+		expect(todayAssignment.rows[0]?.is_active).toBe(false);
+
+		// 2) West-of-UTC org (America/New_York): retrospective departure lastWorkingDay = 2026-08-15
+		//    -> cutoffLocalDate = 2026-08-16, cutoff = 2026-08-16T04:00:00Z (after 2026-08-16T00:00:00Z!)
+		await fixture.pool.query(
+			`UPDATE organization SET timezone = 'America/New_York' WHERE id = $1`,
+			[fixture.organizationId],
+		);
+		try {
+			const nyPerson = await fixture.seedEmployee();
+			// Assignment 1: earlier range [2026-01-01, 2026-08-16) -> should stay capped at 2026-08-16
+			// Assignment 2: starts ON cutoffLocalDate (2026-08-16, effective_from = 2026-08-16T00:00:00Z < 04:00:00Z) -> must deactivate, NOT hit 23514!
+			await fixture.pool.query(
+				`INSERT INTO work_policy_assignment (
+					policy_id, organization_id, assignment_type, employee_id, priority,
+					effective_from, effective_until, effective_from_date, effective_until_date,
+					source_kind, is_active, created_by, updated_at
+				) VALUES
+					($1, $2, 'employee', $3, 2, '2026-01-01T00:00:00Z', '2026-08-16T00:00:00Z', '2026-01-01', '2026-08-16', 'manager_assignment', true, $4, now()),
+					($1, $2, 'employee', $3, 2, '2026-08-16T00:00:00Z', NULL, '2026-08-16', NULL, 'manager_assignment', true, $4, now())`,
+				[policyId, fixture.organizationId, nyPerson.employeeId, fixture.ownerUserId],
+			);
+
+			const nyPast = await commands().recordPastDeparture(ownerActor(), {
+				employeeId: nyPerson.employeeId,
+				requestId: randomUUID(),
+				lastWorkingDay: "2026-08-15",
+				replacementEmployeeId: null,
+				acknowledgeUnassignedDuties: true,
+			});
+			expect(nyPast.status).toBe("effective");
+
+			const nyRows = await fixture.pool.query<{
+				effective_from_date: string;
+				effective_until_date: string | null;
+				is_active: boolean;
+			}>(
+				`SELECT effective_from_date::text, effective_until_date::text, is_active
+				 FROM work_policy_assignment
+				 WHERE employee_id = $1
+				 ORDER BY effective_from_date`,
+				[nyPerson.employeeId],
+			);
+			expect(nyRows.rows).toEqual([
+				{ effective_from_date: "2026-01-01", effective_until_date: "2026-08-16", is_active: true },
+				{ effective_from_date: "2026-08-16", effective_until_date: null, is_active: false },
+			]);
+
+			// Also test correctPastDepartureDate moving cutoff to 2026-08-10 with a non-overlapping assignment starting on 2026-08-11
+			await fixture.pool.query(
+				`UPDATE work_policy_assignment
+				 SET effective_until_date = '2026-08-11', effective_until = '2026-08-11T00:00:00Z'
+				 WHERE employee_id = $1 AND effective_from_date = '2026-01-01'`,
+				[nyPerson.employeeId],
+			);
+			await fixture.pool.query(
+				`INSERT INTO work_policy_assignment (
+					policy_id, organization_id, assignment_type, employee_id, priority,
+					effective_from, effective_from_date, source_kind, is_active, created_by, updated_at
+				) VALUES (
+					$1, $2, 'employee', $3, 2,
+					'2026-08-11T00:00:00Z', '2026-08-11', 'manager_assignment', true, $4, now()
+				)`,
+				[policyId, fixture.organizationId, nyPerson.employeeId, fixture.ownerUserId],
+			);
+			if (nyPast.status !== "effective") throw new Error("expected effective departure");
+			const nyCorrected = await commands().correctPastDepartureDate(ownerActor(), {
+				employeeId: nyPerson.employeeId,
+				departureId: nyPast.departureId,
+				expectedRevision: nyPast.revision,
+				requestId: randomUUID(),
+				lastWorkingDay: "2026-08-10",
+			});
+			expect(nyCorrected.lastWorkingDay).toBe("2026-08-10");
+			const correctedAssign = await fixture.pool.query<{ is_active: boolean }>(
+				`SELECT is_active FROM work_policy_assignment WHERE employee_id = $1 AND effective_from_date = '2026-08-11'`,
+				[nyPerson.employeeId],
+			);
+			expect(correctedAssign.rows[0]?.is_active).toBe(false);
+		} finally {
+			await fixture.pool.query(`UPDATE organization SET timezone = 'UTC' WHERE id = $1`, [
+				fixture.organizationId,
+			]);
+		}
+	});
 });

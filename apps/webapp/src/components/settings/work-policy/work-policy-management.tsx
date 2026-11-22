@@ -163,6 +163,7 @@ export function WorkPolicyManagement({
 					open={policyDialogOpen}
 					onOpenChange={setPolicyDialogOpen}
 					organizationId={organizationId}
+					organizationTimezone={organizationTimezone}
 					editingPolicy={editingPolicy}
 					workPolicyVersioningEnabled={workPolicyVersioningEnabled}
 					onSuccess={handlePolicySuccess}

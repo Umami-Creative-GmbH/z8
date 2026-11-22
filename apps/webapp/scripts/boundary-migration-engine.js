@@ -2092,11 +2092,12 @@ export async function runBoundaryAwareMigrations(options) {
 			});
 		}
 
-		// 4. Drain Gate 1: stop cleanly at 0321 unless explicitly authorized.
+		// 4. Drain Gate 1: stop cleanly at 0321 unless explicitly authorized (only while 0322 is unapplied).
 		const postPhase1Stages = stages.filter(
 			(s) => s.id !== "historical_prefix_0000_0317" && s.id !== "phase1_expand_0318_0321",
 		);
-		if (postPhase1Stages.length > 0 && !allowContractConstraints) {
+		const hasContractConstraintStages = postPhase1Stages.some((s) => s.id !== "post_0327");
+		if (!is0322Applied && hasContractConstraintStages && !allowContractConstraints) {
 			stoppedAtGate = "drain_gate_1";
 			logger.info?.(
 				"[migration] Drain Gate 1 active (DB_ALLOW_CONTRACT_CONSTRAINTS !== 'true'); stopping cleanly after 0321 and backfill completeness verification.",
@@ -2111,19 +2112,17 @@ export async function runBoundaryAwareMigrations(options) {
 
 		// 5. Phase 2 isolated boundaries: 0322, 0323, pre-0324 concurrent indexes, 0324, 0325, 0326, Drain Gate 2, 0327, >0327
 		for (const stage of postPhase1Stages) {
-			if (stage.id === "phase2_0327" || stage.id === "post_0327") {
-				if (!allowPolicyV1Seal) {
-					stoppedAtGate = "drain_gate_2";
-					logger.info?.(
-						"[migration] Drain Gate 2 active (DB_ALLOW_POLICY_V1_SEAL !== 'true'); stopping cleanly after 0326 before v1 seal (0327).",
-					);
-					return {
-						appliedStages,
-						indexActions,
-						backfillStats,
-						stoppedAtGate,
-					};
-				}
+			if (stage.id === "phase2_0327" && !allowPolicyV1Seal) {
+				stoppedAtGate = "drain_gate_2";
+				logger.info?.(
+					"[migration] Drain Gate 2 active (DB_ALLOW_POLICY_V1_SEAL !== 'true'); stopping cleanly after 0326 before v1 seal (0327).",
+				);
+				return {
+					appliedStages,
+					indexActions,
+					backfillStats,
+					stoppedAtGate,
+				};
 			}
 
 			if (stage.id === "phase2_0322") {

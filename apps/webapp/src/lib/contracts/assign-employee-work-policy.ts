@@ -6,7 +6,11 @@ import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { type ContractWriteTx, parseIsoCalendarDate } from "./contract-validation";
-import { replacePolicyAssignmentWindowInTx } from "./policy-assignment-intervals";
+import {
+	clearPolicyAssignmentWindowInTx,
+	type PolicyAssignmentScopeTarget,
+	replacePolicyAssignmentWindowInTx,
+} from "./policy-assignment-intervals";
 
 export interface AssignEmployeeWorkPolicyInput {
 	readonly organizationId: string;
@@ -217,4 +221,164 @@ export async function assignEmployeeWorkPolicy(
 	input: AssignEmployeeWorkPolicyInput,
 ): Promise<AssignEmployeeWorkPolicyResult> {
 	return db.transaction((tx) => assignEmployeeWorkPolicyInTx(tx, input));
+}
+
+export interface CloseManualWorkPolicyAssignmentInput {
+	readonly organizationId: string;
+	readonly assignmentId: string;
+	readonly actorIsOrgAdmin: boolean;
+	readonly effectiveFromDate?: string;
+	readonly now?: Date;
+}
+
+export interface CloseManualWorkPolicyAssignmentResult {
+	readonly assignmentId: string;
+	readonly closedFromDate: string;
+	readonly assignmentType: "organization" | "team" | "employee";
+}
+
+/**
+ * Closes a manual or legacy work policy assignment from `effectiveFromDate` (defaulting to
+ * the organization's today) onward through `clearPolicyAssignmentWindowInTx`, preserving all
+ * historical days before `effectiveFromDate`.
+ *
+ * Refuses to remove projection rows owned by `contract_default` or `employment_terms` (for
+ * all actors) and enforces A1 scoped-manager pin protection atomically inside the transaction.
+ */
+export async function closeManualWorkPolicyAssignmentInTx(
+	tx: ContractWriteTx,
+	input: CloseManualWorkPolicyAssignmentInput,
+): Promise<CloseManualWorkPolicyAssignmentResult> {
+	const now = input.now ?? currentTimestamp();
+
+	// Read target first to establish acyclic lock order (`employee` before `work_policy_assignment`).
+	const [initialRow] = await tx
+		.select({
+			id: workPolicyAssignment.id,
+			employeeId: workPolicyAssignment.employeeId,
+		})
+		.from(workPolicyAssignment)
+		.where(
+			and(
+				eq(workPolicyAssignment.id, input.assignmentId),
+				eq(workPolicyAssignment.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+
+	if (!initialRow) {
+		throw new NotFoundError({
+			message: "Work policy assignment not found",
+			entityType: "work_policy_assignment",
+			entityId: input.assignmentId,
+		});
+	}
+
+	if (initialRow.employeeId) {
+		await tx.execute(sql`
+			SELECT id
+			FROM employee
+			WHERE id = ${initialRow.employeeId}::uuid
+				AND organization_id = ${input.organizationId}
+			FOR UPDATE
+		`);
+	}
+
+	const [assignment] = await tx
+		.select()
+		.from(workPolicyAssignment)
+		.where(
+			and(
+				eq(workPolicyAssignment.id, input.assignmentId),
+				eq(workPolicyAssignment.organizationId, input.organizationId),
+			),
+		)
+		.for("update");
+
+	if (!assignment || !assignment.isActive) {
+		throw new NotFoundError({
+			message: "Work policy assignment not found",
+			entityType: "work_policy_assignment",
+			entityId: input.assignmentId,
+		});
+	}
+
+	if (assignment.sourceKind === "contract_default") {
+		throw new ValidationError({
+			message:
+				"Organization and primary-team default policy assignments are managed through Contract Defaults and cannot be deleted directly.",
+			field: "assignmentId",
+			refusal: "contract_default_assignment_protected",
+		});
+	}
+
+	if (assignment.sourceKind === "employment_terms") {
+		throw new ValidationError({
+			message:
+				"Work policy assignments pinned by employee contract terms must be changed through the employee's Contract tab and cannot be deleted directly.",
+			field: "assignmentId",
+			refusal: "contract_terms_policy_pinned",
+		});
+	}
+
+	const effectiveFromDate = input.effectiveFromDate
+		? parseIsoCalendarDate(input.effectiveFromDate, "effectiveFromDate")
+		: plainDateAt(
+				systemClock.nowInstant(),
+				await loadOrganizationTimezone(tx as unknown as DatabaseClient, input.organizationId),
+			).toString();
+
+	if (assignment.assignmentType === "employee" && assignment.employeeId) {
+		await refuseIfAdminPinnedContractTermsPolicyInTx(tx, {
+			organizationId: input.organizationId,
+			employeeId: assignment.employeeId,
+			effectiveFromDate,
+			actorIsOrgAdmin: input.actorIsOrgAdmin,
+		});
+	}
+
+	let target: PolicyAssignmentScopeTarget;
+	if (assignment.assignmentType === "employee" && assignment.employeeId) {
+		target = {
+			assignmentType: "employee",
+			teamId: null,
+			employeeId: assignment.employeeId,
+			priority: 2,
+		};
+	} else if (assignment.assignmentType === "team" && assignment.teamId) {
+		target = {
+			assignmentType: "team",
+			teamId: assignment.teamId,
+			employeeId: null,
+			priority: 1,
+		};
+	} else {
+		target = {
+			assignmentType: "organization",
+			teamId: null,
+			employeeId: null,
+			priority: 0,
+		};
+	}
+
+	await clearPolicyAssignmentWindowInTx(tx, {
+		organizationId: input.organizationId,
+		target,
+		effectiveFromDate,
+		effectiveUntilDate: null,
+		now,
+	});
+
+	return {
+		assignmentId: assignment.id,
+		closedFromDate: effectiveFromDate,
+		assignmentType: assignment.assignmentType,
+	};
+}
+
+export async function closeManualWorkPolicyAssignment(
+	db: DatabaseClient,
+	input: CloseManualWorkPolicyAssignmentInput,
+): Promise<CloseManualWorkPolicyAssignmentResult> {
+	return db.transaction((tx) => closeManualWorkPolicyAssignmentInTx(tx, input));
 }

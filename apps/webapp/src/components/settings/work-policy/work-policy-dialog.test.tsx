@@ -27,6 +27,7 @@ vi.mock("sonner", () => ({
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({
 	createWorkPolicy: vi.fn(),
 	updateWorkPolicy: vi.fn(),
+	publishWorkPolicyVersion: vi.fn(),
 }));
 
 beforeAll(() => {
@@ -348,5 +349,49 @@ describe("WorkPolicyDialog", () => {
 			alertBeforeLimitMinutes: 15,
 			alertThresholdPercent: 75,
 		});
+	});
+
+	it("checks actual versionEffectiveDates (not updatedAt) for same-day replacement warnings and sets min to org today", async () => {
+		const todayUtc = new Date().toISOString().slice(0, 10);
+		const futureScheduledDate = "2099-05-15";
+		const otherFutureDate = "2099-06-20";
+		const versionedPolicy = {
+			...editablePolicy,
+			// Deliberately set updatedAt to today even though today has NO version and 2099-05-15 DOES!
+			updatedAt: new Date(`${todayUtc}T12:00:00.000Z`),
+			versionEffectiveDates: ["1970-01-01", futureScheduledDate],
+		} as unknown as WorkPolicyWithDetails;
+
+		renderWithQueryClient(
+			<WorkPolicyDialog
+				open={true}
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				organizationTimezone="UTC"
+				editingPolicy={versionedPolicy}
+				workPolicyVersioningEnabled={true}
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		const dateInput = (await screen.findByLabelText(
+			"New version effective from",
+		)) as HTMLInputElement;
+		expect(dateInput.min).toBe(todayUtc);
+		expect(dateInput.value).toBe(todayUtc);
+
+		// Make a rule edit so isRuleEdit is true
+		fireEvent.change(screen.getByLabelText("Hours per Cycle"), { target: { value: "36" } });
+
+		// Today is NOT in versionEffectiveDates (even though updatedAt is today) -> NO same-day warning!
+		expect(screen.queryByText("Same-day revision replaces earlier version")).toBeNull();
+
+		// Selecting futureScheduledDate (which IS in versionEffectiveDates) -> MUST show warning!
+		fireEvent.change(dateInput, { target: { value: futureScheduledDate } });
+		expect(await screen.findByText("Same-day revision replaces earlier version")).toBeTruthy();
+
+		// Selecting another future date not in versionEffectiveDates -> warning clears!
+		fireEvent.change(dateInput, { target: { value: otherFutureDate } });
+		expect(screen.queryByText("Same-day revision replaces earlier version")).toBeNull();
 	});
 });

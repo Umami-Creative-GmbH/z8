@@ -463,6 +463,69 @@ describe("Phase 2A/2B constraints, O(1) policy metadata swap, and zero-DDL v1 se
 					)
 				).rows[0];
 				expect(cutoverAt0327?.sealed_cutover_at).toBeInstanceOf(Date);
+
+				// Step 4 (F1 regression): once 0327 is applied, a future post-0327 migration (0328)
+				// MUST run cleanly even when BOTH drain-gate flags are false (the Compose/K8s defaults)!
+				const postCutoverDir = await mkdtemp(join(tmpdir(), "z8-phase3-post0327-"));
+				try {
+					await cp(migrationsFolder, postCutoverDir, { recursive: true });
+					const postMetaDir = join(postCutoverDir, "meta");
+					const fullJournal = JSON.parse(
+						await readFile(join(postMetaDir, "_journal.json"), "utf8"),
+					) as {
+						version: string;
+						dialect: string;
+						entries: Array<{
+							idx: number;
+							version: string;
+							when: number;
+							tag: string;
+							breakpoints: boolean;
+						}>;
+					};
+					const maxWhen = Math.max(...fullJournal.entries.map((e) => e.when));
+					fullJournal.entries.push({
+						idx: fullJournal.entries.length,
+						version: "7",
+						when: maxWhen + 86_400_000,
+						tag: "0328_post_cutover_probe",
+						breakpoints: true,
+					});
+					await writeFile(
+						join(postCutoverDir, "0328_post_cutover_probe.sql"),
+						`CREATE TABLE IF NOT EXISTS "z8_post_0327_probe" ("id" integer PRIMARY KEY);\n`,
+						"utf8",
+					);
+					await writeFile(
+						join(postMetaDir, "_journal.json"),
+						JSON.stringify(fullJournal, null, 2),
+						"utf8",
+					);
+
+					const postResult = await runBoundaryAwareMigrations({
+						pool: sibling.pool,
+						migrationsFolder: postCutoverDir,
+						allowContractConstraints: false,
+						allowPolicyV1Seal: false,
+						logger: silentLogger,
+					});
+					expect(postResult.stoppedAtGate).toBeNull();
+					expect(postResult.appliedStages).toEqual(["post_0327"]);
+					const maxLedgerCreatedAt = Number(
+						(
+							await sibling.pool.query<{ max_created_at: string }>(
+								`SELECT MAX(created_at)::text AS max_created_at FROM drizzle.__drizzle_migrations`,
+							)
+						).rows[0]?.max_created_at,
+					);
+					expect(maxLedgerCreatedAt).toBe(maxWhen + 86_400_000);
+					const probeExists = await sibling.pool.query<{ exists: boolean }>(
+						`SELECT to_regclass('public.z8_post_0327_probe') IS NOT NULL AS exists`,
+					);
+					expect(probeExists.rows[0]?.exists).toBe(true);
+				} finally {
+					await rm(postCutoverDir, { recursive: true, force: true });
+				}
 			} finally {
 				await sibling.cleanup();
 				await rm(tempDir, { recursive: true, force: true });

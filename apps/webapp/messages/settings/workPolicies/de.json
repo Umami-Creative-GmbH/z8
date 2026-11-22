@@ -313,7 +313,8 @@
 			"sameDayWarningTitle": "Revision am selben Tag ersetzt frühere Version",
 			"sameDayWarningBody": "Das Veröffentlichen einer zweiten Revision ab {date} ersetzt die frühere Revision für den gesamten Kalendertag.",
 			"sameDayConfirmLabel": "Mir ist bewusst, dass dadurch die frühere Revision für den {date} ersetzt wird",
-			"publishVersion": "Version veröffentlichen"
+			"publishVersion": "Version veröffentlichen",
+			"versionDateInPast": "Neue Richtlinienversionen können nicht rückwirkend für ein vergangenes Datum in Kraft treten."
 		},
 		"workSchedules": {
 			"allDays": "Alle Tage",

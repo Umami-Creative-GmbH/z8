@@ -405,11 +405,33 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 		expect(metaOnlyPost.metadataOnly).toBe(true);
 		expect(metaOnlyPost.version.versionNumber).toBe(1);
 
+		const testNow = new Date("2026-06-15T08:00:00.000Z");
+
+		// F4: Publishing with a past effectiveFromDate (< orgTodayDate 2026-06-15) is refused!
+		await expect(
+			updateOrPublishWorkPolicy(siblingDb, {
+				organizationId: ORG_ID,
+				actorUserId: USER_ID,
+				policyId: postCreated.policy.id,
+				now: testNow,
+				data: {
+					effectiveFromDate: "2026-06-14",
+					schedule: {
+						scheduleCycle: "weekly",
+						scheduleType: "simple",
+						workingDaysPreset: "weekdays",
+						hoursPerCycle: "32",
+					},
+				},
+			}),
+		).rejects.toMatchObject({ refusal: "effective_date_in_past" });
+
 		// Publish v2 effective 2026-07-01 moving presence to locB
 		const v2 = await updateOrPublishWorkPolicy(siblingDb, {
 			organizationId: ORG_ID,
 			actorUserId: USER_ID,
 			policyId: postCreated.policy.id,
+			now: testNow,
 			data: {
 				effectiveFromDate: "2026-07-01",
 				schedule: {
@@ -432,11 +454,36 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 		// Preserved ArbZG fields from v1
 		expect(v2.policy.regulation?.minRestPeriodMinutes).toBe(660);
 
-		// Publish v3 on the SAME effective date (2026-07-01) -> warns about replacing v2!
+		// F5: With future v2 scheduled for 2026-07-01 (38h, locB), publishing a regulation-only edit
+		// effective today (2026-06-15) clones v1 (40h, locA) — NOT future v2 — and reports laterScheduledVersions!
+		const todayRegEdit = await updateOrPublishWorkPolicy(siblingDb, {
+			organizationId: ORG_ID,
+			actorUserId: USER_ID,
+			policyId: postCreated.policy.id,
+			now: testNow,
+			data: {
+				effectiveFromDate: "2026-06-15",
+				regulation: {
+					maxDailyMinutes: 540,
+					breakRules: [],
+				},
+			},
+		});
+		expect(todayRegEdit.version.versionNumber).toBe(3);
+		expect(Number(todayRegEdit.policy.schedule?.hoursPerCycle)).toBe(40);
+		expect(todayRegEdit.policy.presence?.locationId).toBe(locA);
+		expect(todayRegEdit.policy.regulation?.maxDailyMinutes).toBe(540);
+		expect(todayRegEdit.policy.regulation?.minRestPeriodMinutes).toBe(660);
+		expect(todayRegEdit.laterScheduledVersions).toEqual([
+			{ id: v2.version.id, versionNumber: 2, effectiveFromDate: "2026-07-01" },
+		]);
+
+		// Publish v4 on the SAME effective date (2026-07-01) -> warns about replacing v2!
 		const v3 = await updateOrPublishWorkPolicy(siblingDb, {
 			organizationId: ORG_ID,
 			actorUserId: USER_ID,
 			policyId: postCreated.policy.id,
+			now: testNow,
 			data: {
 				effectiveFromDate: "2026-07-01",
 				schedule: {
@@ -447,7 +494,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 				},
 			},
 		});
-		expect(v3.version.versionNumber).toBe(3);
+		expect(v3.version.versionNumber).toBe(4);
 		expect(v3.version.sealedAt).not.toBeNull();
 		expect(v3.replacesSameDayVersion).toEqual({
 			replacedVersionId: v2.version.id,
@@ -456,7 +503,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			message: "Replaces version 2 effective 2026-07-01 for the entire day.",
 		});
 
-		// Verify deterministic ordering: (effective_from_date DESC, version_number DESC) puts v3 first
+		// Verify deterministic ordering: (effective_from_date DESC, version_number DESC) puts v4 first
 		const { rows: orderedVersions } = await siblingPool.query<{
 			version_number: number;
 			effective_from_date: string;
@@ -467,7 +514,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			 ORDER BY effective_from_date DESC, version_number DESC`,
 			[postCreated.policy.id],
 		);
-		expect(orderedVersions.map((r) => r.version_number)).toEqual([3, 2, 1]);
+		expect(orderedVersions.map((r) => r.version_number)).toEqual([4, 2, 3, 1]);
 
 		// Failed child insert rolls back the entire version publish (duplicate dayOfWeek hits unique index)
 		await expect(
@@ -475,6 +522,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 				organizationId: ORG_ID,
 				actorUserId: USER_ID,
 				policyId: postCreated.policy.id,
+				now: testNow,
 				data: {
 					effectiveFromDate: "2026-08-01",
 					schedule: {
@@ -494,7 +542,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			"SELECT version_number FROM work_policy_version WHERE policy_id = $1",
 			[postCreated.policy.id],
 		);
-		expect(versionsAfterRollback).toHaveLength(3); // v4 rolled back completely!
+		expect(versionsAfterRollback).toHaveLength(4); // v5 rolled back completely!
 
 		// --- SINGLE-LOCATION ARCHIVAL & FULL-ORG TEARDOWN ---
 		// On 2026-08-01, active version is v3 (locB). locA is ONLY referenced by sealed historical v1!
@@ -531,7 +579,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 			outcome: "archived",
 			id: locA,
 			name: "Munich Office",
-			historicalReferenceCount: 2, // parkedCreated v1 + postCreated v1
+			historicalReferenceCount: 3, // parkedCreated v1 + postCreated v1 + todayRegEdit v3
 		});
 
 		const {
@@ -611,7 +659,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 					actorUserId: USER_ID,
 					policyId: policy.policy.id,
 					data: {
-						effectiveFromDate: "2026-09-01",
+						effectiveFromDate: "2099-09-01",
 						presenceEnabled: true,
 						presence: { presenceMode: "minimum_count", requiredOnsiteDays: 2, locationId: locId },
 					},
@@ -670,7 +718,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 							actorUserId: USER_ID,
 							policyId: policy.policy.id,
 							data: {
-								effectiveFromDate: "2026-09-01",
+								effectiveFromDate: "2099-09-01",
 								presenceEnabled: true,
 								presence: {
 									presenceMode: "minimum_count",
@@ -711,7 +759,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 					actorUserId: USER_ID,
 					policyId: policy.policy.id,
 					data: {
-						effectiveFromDate: "2026-09-01",
+						effectiveFromDate: "2099-09-01",
 						presenceEnabled: true,
 						presence: { presenceMode: "minimum_count", requiredOnsiteDays: 1, locationId: locId },
 					},
@@ -770,7 +818,7 @@ describe("versioned work policy writers & serialized location archival (PostgreS
 							actorUserId: USER_ID,
 							policyId: policy.policy.id,
 							data: {
-								effectiveFromDate: "2026-09-01",
+								effectiveFromDate: "2099-09-01",
 								presenceEnabled: true,
 								presence: {
 									presenceMode: "minimum_count",

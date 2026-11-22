@@ -2,6 +2,7 @@ import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ValidationError } from "@/lib/effect/errors";
 import type { StubCaller } from "@/test/organization-action";
 
 // oxlint-disable-next-line typescript/no-explicit-any -- loose row stand-ins for a mocked database
@@ -28,13 +29,17 @@ const state = vi.hoisted(() => ({
 	markOrganizationWorkBalancesDirty: vi.fn(),
 	formerEmployeeIds: new Set<string>(),
 	resolveEffectiveContractOnDay: vi.fn(),
-	refuseIfAdminPinnedContractTermsPolicyInTx: vi.fn(),
+	assignEmployeeWorkPolicy: vi.fn(),
+	closeManualWorkPolicyAssignment: vi.fn(),
+	scheduleContractDefault: vi.fn(),
 	setOrganizationDefaultWorkPolicy: vi.fn(),
 }));
 
 vi.mock("@/lib/contracts", () => ({
 	resolveEffectiveContractOnDay: state.resolveEffectiveContractOnDay,
-	refuseIfAdminPinnedContractTermsPolicyInTx: state.refuseIfAdminPinnedContractTermsPolicyInTx,
+	assignEmployeeWorkPolicy: state.assignEmployeeWorkPolicy,
+	closeManualWorkPolicyAssignment: state.closeManualWorkPolicyAssignment,
+	scheduleContractDefault: state.scheduleContractDefault,
 }));
 
 vi.mock("@/lib/work-policy/policy-queries", async (importOriginal) => {
@@ -622,10 +627,16 @@ describe("work policy settings scope actions", () => {
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 
-	it("lets managers assign work policies to managed members and marks balances dirty", async () => {
+	it("lets managers assign work policies to managed members via assignEmployeeWorkPolicy and marks balances dirty", async () => {
 		state.selectQueue = [[{ id: "employee-1" }]];
 		state.workPolicyQueue = [{ id: "policy-1" }];
-		state.insertQueue = [[{ id: "assignment-1" }]];
+		state.assignEmployeeWorkPolicy.mockResolvedValueOnce({
+			assignmentId: "assignment-1",
+			employeeId: "employee-1",
+			policyId: "policy-1",
+			effectiveFromDate: "2026-01-01",
+			sourceKind: "manager_assignment",
+		});
 
 		const result = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
@@ -634,10 +645,64 @@ describe("work policy settings scope actions", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
-		expect(state.insertValues[0]).toMatchObject({ organizationId: "org-1", createdBy: "user-1" });
+		expect(state.assignEmployeeWorkPolicy).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			policyId: "policy-1",
+			actorUserId: "user-1",
+			actorIsOrgAdmin: false,
+		});
 		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
+	});
+
+	it("routes organization and team assignments through scheduleContractDefault", async () => {
+		state.caller = orgAdmin;
+		state.workPolicyQueue = [{ id: "policy-1" }, { id: "policy-1" }];
+		state.teamQueue = [{ id: "team-1" }];
+		state.scheduleContractDefault
+			.mockResolvedValueOnce({
+				contractDefaultId: "def-org",
+				workPolicyAssignmentId: "assign-org",
+			})
+			.mockResolvedValueOnce({
+				contractDefaultId: "def-team",
+				workPolicyAssignmentId: "assign-team",
+			});
+
+		const orgResult = await actions.createWorkPolicyAssignment({
+			policyId: "policy-1",
+			assignmentType: "organization",
+		});
+		const teamResult = await actions.createWorkPolicyAssignment({
+			policyId: "policy-1",
+			assignmentType: "team",
+			teamId: "team-1",
+		});
+
+		expect(orgResult).toEqual({ success: true, data: { id: "assign-org" } });
+		expect(teamResult).toEqual({ success: true, data: { id: "assign-team" } });
+		expect(state.scheduleContractDefault).toHaveBeenNthCalledWith(
+			1,
+			expect.anything(),
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: "organization",
+				teamId: null,
+				workPolicyId: "policy-1",
+			}),
+		);
+		expect(state.scheduleContractDefault).toHaveBeenNthCalledWith(
+			2,
+			expect.anything(),
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: "team",
+				teamId: "team-1",
+				workPolicyId: "policy-1",
+			}),
+		);
 	});
 
 	it("refuses a manager an organization-wide assignment", async () => {
@@ -647,10 +712,10 @@ describe("work policy settings scope actions", () => {
 		});
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
-		expect(state.insertValues).toHaveLength(0);
+		expect(state.scheduleContractDefault).not.toHaveBeenCalled();
 	});
 
-	it("marks organization work balances dirty after deleting a work policy assignment", async () => {
+	it("marks organization work balances dirty after closing a manual work policy assignment", async () => {
 		state.assignmentQueue = [
 			{
 				id: "assignment-1",
@@ -660,10 +725,20 @@ describe("work policy settings scope actions", () => {
 				sourceKind: "manager_assignment",
 			},
 		];
+		state.closeManualWorkPolicyAssignment.mockResolvedValueOnce({
+			assignmentId: "assignment-1",
+			closedFromDate: "2026-01-01",
+			assignmentType: "employee",
+		});
 
 		const result = await actions.deleteWorkPolicyAssignment("assignment-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
+		expect(state.closeManualWorkPolicyAssignment).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			assignmentId: "assignment-1",
+			actorIsOrgAdmin: false,
+		});
 		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
@@ -679,6 +754,13 @@ describe("work policy settings scope actions", () => {
 				sourceKind: "employment_terms",
 			},
 		];
+		state.closeManualWorkPolicyAssignment.mockRejectedValueOnce(
+			new ValidationError({
+				message: "Pinned by administrator contract terms.",
+				field: "assignmentId",
+				refusal: "contract_terms_policy_pinned",
+			}),
+		);
 
 		const result = await actions.deleteWorkPolicyAssignment("assignment-pinned");
 

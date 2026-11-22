@@ -298,6 +298,7 @@ describe("cross-consumer contract reader parity (PostgreSQL, #1925)", () => {
 			actorUserId: ADMIN_USER_ID,
 			policyId,
 			forceNewVersion: true,
+			now: new Date("2026-06-01T08:00:00.000Z"),
 			data: {
 				effectiveFromDate: "2026-07-01",
 				scheduleEnabled: false,
