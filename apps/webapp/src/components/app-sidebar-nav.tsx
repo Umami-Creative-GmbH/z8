@@ -68,8 +68,8 @@ export function buildPersonalNav(
 }
 
 /**
- * Team & organization section. Its team pages are for managers and above; a verifier or
- * planner without that role sees only Driving licences (#1937). An empty list hides the section.
+ * Team section: manager and planner daily oversight, leading with Today (#1953).
+ * An empty list hides the section.
  */
 export function buildTeamNav(
 	t: Translate,
@@ -78,6 +78,19 @@ export function buildTeamNav(
 	options?: SidebarNavOptions,
 ) {
 	return buildSectionNav("team", t, navigationCapabilities, employeeRole, options);
+}
+
+/**
+ * Organization section: organization-wide and specialist officer consoles (#1953).
+ * An empty list hides the section.
+ */
+export function buildOrganizationNav(
+	t: Translate,
+	navigationCapabilities: NavigationCapabilities,
+	employeeRole: SidebarEmployeeRole,
+	options?: SidebarNavOptions,
+) {
+	return buildSectionNav("organization", t, navigationCapabilities, employeeRole, options);
 }
 
 export function buildSecondaryNav(

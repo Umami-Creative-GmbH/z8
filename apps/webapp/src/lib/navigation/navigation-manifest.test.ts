@@ -1,6 +1,11 @@
 import { IconGauge, IconLicense, IconReportMoney, IconSteeringWheel } from "@tabler/icons-react";
 import { describe, expect, it } from "vitest";
-import { buildPersonalNav, buildSecondaryNav, buildTeamNav } from "@/components/app-sidebar-nav";
+import {
+	buildOrganizationNav,
+	buildPersonalNav,
+	buildSecondaryNav,
+	buildTeamNav,
+} from "@/components/app-sidebar-nav";
 import { buildStaticAppSearchResults } from "@/lib/app-search/static-results";
 import {
 	APP_NAVIGATION_MANIFEST,
@@ -25,6 +30,7 @@ const ALL_CAPABILITIES: NavigationCapabilities = {
 	teamPresence: true,
 	myDrivingLicence: true,
 	teamDrivingLicence: true,
+	missingVehicleLogs: true,
 	analytics: true,
 	projectReports: true,
 	platformAdmin: true,
@@ -44,6 +50,7 @@ const NO_CAPABILITIES: NavigationCapabilities = {
 	teamPresence: false,
 	myDrivingLicence: false,
 	teamDrivingLicence: false,
+	missingVehicleLogs: false,
 	analytics: false,
 	projectReports: false,
 	platformAdmin: false,
@@ -56,8 +63,13 @@ describe("navigation manifest", () => {
 	});
 
 	it("unifies driving-licence, Expense Finance, and Missing vehicle logs across sidebar, Cmd+K, and route metadata", () => {
-		const personalNav = buildPersonalNav(t, ALL_CAPABILITIES, "admin");
-		const teamNav = buildTeamNav(t, ALL_CAPABILITIES, "admin");
+		const navOptions = {
+			settingsAccessTier: "orgAdmin" as const,
+			featureFlags: { shiftsEnabled: true, projectsEnabled: true },
+			managesProject: false,
+		};
+		const personalNav = buildPersonalNav(t, ALL_CAPABILITIES, "admin", navOptions);
+		const organizationNav = buildOrganizationNav(t, ALL_CAPABILITIES, "admin", navOptions);
 		const searchResults = buildStaticAppSearchResults({
 			t,
 			employeeRole: "admin",
@@ -72,7 +84,7 @@ describe("navigation manifest", () => {
 		const findPage = (href: string) =>
 			searchResults.find((r) => r.type === "page" && r.href === href);
 
-		// Driving licences: "My driving licence" and "Driving licences"
+		// Driving licences: "My driving licence" (Workplace) and "Driving licences" (Organization)
 		expect(personalNav.find((item) => item.url === "/driving-licence")?.title).toBe(
 			"My driving licence",
 		);
@@ -80,7 +92,7 @@ describe("navigation manifest", () => {
 		expect(resolveAppRouteMetadata("/en/driving-licence").titleDefault).toBe("My driving licence");
 		expect(getNavigationIconForHref("/driving-licence")).toBe(IconSteeringWheel);
 
-		expect(teamNav.find((item) => item.url === "/team/driving-licence")?.title).toBe(
+		expect(organizationNav.find((item) => item.url === "/team/driving-licence")?.title).toBe(
 			"Driving licences",
 		);
 		expect(findPage("/team/driving-licence")?.title).toBe("Driving licences");
@@ -89,8 +101,8 @@ describe("navigation manifest", () => {
 		);
 		expect(getNavigationIconForHref("/team/driving-licence")).toBe(IconLicense);
 
-		// Expense Finance
-		expect(personalNav.find((item) => item.url === "/travel-expenses/finance")?.title).toBe(
+		// Expense Finance (Organization)
+		expect(organizationNav.find((item) => item.url === "/travel-expenses/finance")?.title).toBe(
 			"Expense Finance",
 		);
 		expect(findPage("/travel-expenses/finance")?.title).toBe("Expense Finance");
@@ -105,6 +117,62 @@ describe("navigation manifest", () => {
 		const missingVehicleLogsIcon = getNavigationIconForHref("/team/driving");
 		expect(missingVehicleLogsIcon).toBe(IconGauge);
 		expect(missingVehicleLogsIcon).not.toBe(IconSteeringWheel);
+	});
+
+	it("organizes the four bounded sidebar sections and split-pair personal/staff routes (#1953)", () => {
+		const navOptions = {
+			settingsAccessTier: "orgAdmin" as const,
+			featureFlags: { shiftsEnabled: true, projectsEnabled: true },
+			managesProject: false,
+		};
+
+		expect(
+			buildPersonalNav(t, ALL_CAPABILITIES, "employee", navOptions).map((item) => item.url),
+		).toEqual([
+			"/",
+			"/time-tracking",
+			"/calendar",
+			"/scheduling",
+			"/absences",
+			"/travel-expenses",
+			"/my-requests",
+			"/my-documents",
+			"/driving-licence",
+			"/my-equipment",
+			"/reports",
+			"/organization",
+		]);
+
+		expect(
+			buildTeamNav(t, ALL_CAPABILITIES, "manager", navOptions).map((item) => item.url),
+		).toEqual([
+			"/today",
+			"/team",
+			"/team/absences",
+			"/team/presence",
+			"/team/period-submissions",
+			"/scheduling",
+			"/approvals/inbox",
+		]);
+
+		expect(
+			buildOrganizationNav(t, ALL_CAPABILITIES, "admin", navOptions).map((item) => item.url),
+		).toEqual([
+			"/payroll",
+			"/travel-expenses/finance",
+			"/personnel-files",
+			"/equipment",
+			"/team/driving-licence",
+			"/compliance",
+			"/works-council",
+		]);
+
+		expect(buildSecondaryNav(t, ALL_CAPABILITIES, navOptions).map((item) => item.url)).toEqual([
+			"/settings",
+			"https://docs.z8-time.app/docs",
+			"https://github.com/Umami-Creative-GmbH/z8/issues",
+			"/platform-admin",
+		]);
 	});
 
 	it("indexes all previously omitted active routes in Cmd+K only when authorized", () => {
@@ -177,7 +245,7 @@ describe("navigation manifest", () => {
 		}
 	});
 
-	it("exposes Missing vehicle logs to org admins even without an employee record and to managers with an employee record", () => {
+	it("exposes Missing vehicle logs by server capability or tier fallback", () => {
 		const orgAdminNoEmployee = buildStaticAppSearchResults({
 			t,
 			employeeRole: null,
@@ -186,6 +254,16 @@ describe("navigation manifest", () => {
 			showComplianceNav: true,
 		});
 		expect(orgAdminNoEmployee.some((r) => r.href === "/team/driving")).toBe(true);
+
+		const serverDeniedOverride = buildStaticAppSearchResults({
+			t,
+			employeeRole: "admin",
+			settingsAccessTier: "orgAdmin",
+			billingEnabled: false,
+			showComplianceNav: true,
+			navigationCapabilities: { ...ALL_CAPABILITIES, missingVehicleLogs: false },
+		});
+		expect(serverDeniedOverride.some((r) => r.href === "/team/driving")).toBe(false);
 
 		const managerWithoutEmployee = buildStaticAppSearchResults({
 			t,
@@ -207,10 +285,16 @@ describe("navigation manifest", () => {
 	});
 
 	it("keeps sidebar items aligned with manifest titles, hrefs, and icons", () => {
+		const navOptions = {
+			settingsAccessTier: "orgAdmin" as const,
+			featureFlags: { shiftsEnabled: true, projectsEnabled: true },
+			managesProject: true,
+		};
 		const sidebarItems = [
-			...buildPersonalNav(t, ALL_CAPABILITIES, "employee"),
-			...buildTeamNav(t, ALL_CAPABILITIES, "manager"),
-			...buildSecondaryNav(t, ALL_CAPABILITIES),
+			...buildPersonalNav(t, ALL_CAPABILITIES, "employee", navOptions),
+			...buildTeamNav(t, ALL_CAPABILITIES, "manager", navOptions),
+			...buildOrganizationNav(t, ALL_CAPABILITIES, "admin", navOptions),
+			...buildSecondaryNav(t, ALL_CAPABILITIES, navOptions),
 		];
 		for (const item of sidebarItems) {
 			if ("external" in item && item.external) continue;

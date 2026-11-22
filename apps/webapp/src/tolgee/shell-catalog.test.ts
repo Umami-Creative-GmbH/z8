@@ -18,6 +18,7 @@ const SHELL_SOURCES = [
 	"components/app-sidebar.tsx",
 	"components/app-search.tsx",
 	"components/nav-main.tsx",
+	"components/nav-organization.tsx",
 	"components/nav-secondary.tsx",
 	"components/nav-team.tsx",
 	"components/nav-user.tsx",

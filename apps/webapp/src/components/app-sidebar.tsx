@@ -5,6 +5,7 @@ import type * as React from "react";
 import { Suspense } from "react";
 import { AppSearch } from "@/components/app-search";
 import {
+	buildOrganizationNav,
 	buildPersonalNav,
 	buildSecondaryNav,
 	buildTeamNav,
@@ -12,6 +13,7 @@ import {
 	toNavUser,
 } from "@/components/app-sidebar-nav";
 import { NavMain } from "@/components/nav-main";
+import { NavOrganization } from "@/components/nav-organization";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
@@ -137,7 +139,19 @@ export function AppSidebar({
 	};
 	const navPersonal = buildPersonalNav(translate, navigationCapabilities, employeeRole, navOptions);
 	const navTeam = buildTeamNav(translate, navigationCapabilities, employeeRole, navOptions);
+	const navOrganization = buildOrganizationNav(
+		translate,
+		navigationCapabilities,
+		employeeRole,
+		navOptions,
+	);
 	const navSecondary = buildSecondaryNav(translate, navigationCapabilities, navOptions);
+	const allNavHrefs = [
+		...navPersonal,
+		...navTeam,
+		...navOrganization,
+		...navSecondary.filter((item) => !item.external),
+	].map((item) => item.url);
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
@@ -152,13 +166,22 @@ export function AppSidebar({
 			<SidebarContent className="gap-3 group-data-[collapsible=icon]:overflow-y-auto">
 				<AppSearch staticCommands={staticCommands} staticResults={staticSearchResults} />
 				<Suspense fallback={<SidebarNavigationLoading rows={8} />}>
-					<NavMain items={navPersonal} label={t("nav.workplace-label", "Workplace")} />
+					<NavMain
+						items={navPersonal}
+						label={t("nav.workplace-label", "Workplace")}
+						allNavHrefs={allNavHrefs}
+					/>
 				</Suspense>
 				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
-					{navTeam.length > 0 && <NavTeam items={navTeam} />}
+					{navTeam.length > 0 && <NavTeam items={navTeam} allNavHrefs={allNavHrefs} />}
+				</Suspense>
+				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
+					{navOrganization.length > 0 && (
+						<NavOrganization items={navOrganization} allNavHrefs={allNavHrefs} />
+					)}
 				</Suspense>
 				<Suspense fallback={<SidebarSecondaryNavigationLoading />}>
-					<NavSecondary className="mt-auto" items={navSecondary} />
+					<NavSecondary className="mt-auto" items={navSecondary} allNavHrefs={allNavHrefs} />
 				</Suspense>
 			</SidebarContent>
 			<SidebarFooter className="border-t border-sidebar-border">

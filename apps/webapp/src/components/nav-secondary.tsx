@@ -12,10 +12,11 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Link, usePathname } from "@/navigation";
-import { isNavItemActive } from "./nav-active";
+import { activeNavHref } from "./nav-active";
 
 export function NavSecondary({
 	items,
+	allNavHrefs,
 	...props
 }: {
 	items: {
@@ -24,9 +25,13 @@ export function NavSecondary({
 		icon: Icon;
 		external?: boolean;
 	}[];
+	allNavHrefs?: readonly string[];
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
 	const pathname = usePathname();
 	const { t } = useTranslate();
+	const internalHrefs =
+		allNavHrefs ?? items.filter((item) => !item.external).map((item) => item.url);
+	const activeUrl = activeNavHref(pathname, internalHrefs);
 
 	return (
 		<SidebarGroup {...props}>
@@ -34,16 +39,11 @@ export function NavSecondary({
 				<SidebarGroupContent>
 					<SidebarMenu>
 						{items.map((item) => {
-							const isActive =
-								!item.external && isNavItemActive(pathname, item.url);
+							const isActive = !item.external && item.url === activeUrl;
 
 							return (
 								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton
-										asChild
-										isActive={isActive}
-										tooltip={item.title}
-									>
+									<SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
 										<Link
 											href={item.url}
 											aria-label={item.title}

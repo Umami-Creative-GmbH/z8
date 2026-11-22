@@ -1,0 +1,67 @@
+"use client";
+
+import type { Icon } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
+import type { ReactNode } from "react";
+import {
+	SidebarGroup,
+	SidebarGroupContent,
+	SidebarGroupLabel,
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import { Link, usePathname } from "@/navigation";
+import { activeNavHref } from "./nav-active";
+
+export function NavOrganization({
+	items,
+	allNavHrefs,
+}: {
+	items: {
+		title: string;
+		url: string;
+		icon?: Icon;
+		/** Rendered after the item's button, e.g. a SidebarMenuBadge count. */
+		badge?: ReactNode;
+	}[];
+	allNavHrefs?: readonly string[];
+}) {
+	const { t } = useTranslate();
+	const pathname = usePathname();
+	const activeUrl = activeNavHref(pathname, allNavHrefs ?? items.map((item) => item.url));
+	const label = t("nav.organization-label", "Organization");
+
+	return (
+		<SidebarGroup>
+			<nav aria-label={label}>
+				<SidebarGroupLabel className="font-semibold uppercase tracking-wide">
+					{label}
+				</SidebarGroupLabel>
+				<SidebarGroupContent>
+					<SidebarMenu>
+						{items.map((item) => {
+							const isActive = item.url === activeUrl;
+
+							return (
+								<SidebarMenuItem key={item.title}>
+									<SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+										<Link
+											href={item.url}
+											aria-label={item.title}
+											aria-current={isActive ? "page" : undefined}
+										>
+											{item.icon && <item.icon />}
+											<span>{item.title}</span>
+										</Link>
+									</SidebarMenuButton>
+									{item.badge}
+								</SidebarMenuItem>
+							);
+						})}
+					</SidebarMenu>
+				</SidebarGroupContent>
+			</nav>
+		</SidebarGroup>
+	);
+}
