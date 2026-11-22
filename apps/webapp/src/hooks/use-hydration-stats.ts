@@ -1,11 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	getHydrationStats,
-	logWaterIntake,
-	snoozeWaterReminder,
-} from "@/app/[locale]/(app)/wellness/actions";
+import { getHydrationStats, logWaterIntake, snoozeWaterReminder } from "@/lib/wellness/actions";
 import { queryKeys } from "@/lib/query/keys";
 import type {
 	HydrationStats,

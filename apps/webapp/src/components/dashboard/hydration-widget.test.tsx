@@ -58,7 +58,7 @@ vi.mock("@dnd-kit/utilities", () => ({
 	CSS: { Translate: { toString: () => undefined } },
 }));
 
-vi.mock("@/app/[locale]/(app)/wellness/actions", () => ({
+vi.mock("@/lib/wellness/actions", () => ({
 	logWaterIntake: logWaterIntakeMock,
 }));
 

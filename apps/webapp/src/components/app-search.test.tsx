@@ -56,7 +56,7 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push: pushMock }),
 }));
 
-vi.mock("@/app/[locale]/(app)/search/actions", () => ({
+vi.mock("@/lib/app-search/actions", () => ({
 	searchAppRecordsAction: searchAppRecordsActionMock,
 }));
 

@@ -69,7 +69,7 @@ vi.mock("@/db", async () =>
 import type { ServerWidgetId } from "./dashboard-types";
 
 const { readDashboardWidget, readDashboardLayout } = await import("./dashboard-reads");
-const { logWaterIntake } = await import("@/app/[locale]/(app)/wellness/actions");
+const { logWaterIntake } = await import("@/lib/wellness/actions");
 const { getPresenceStatus } = await import("@/app/[locale]/(app)/time-tracking/actions");
 
 describe("scoped personal Dashboard snapshots", () => {
