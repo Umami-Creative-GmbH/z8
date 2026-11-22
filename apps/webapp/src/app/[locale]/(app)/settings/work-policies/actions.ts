@@ -5,7 +5,10 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { employee, team, workPolicy, workPolicyPreset, workPolicyViolation } from "@/db/schema";
 import type { TimeRegulationBreakRulesPreset } from "@/db/schema/types";
-import { resolveEffectiveContractOnDay } from "@/lib/contracts";
+import {
+	refuseIfAdminPinnedContractTermsPolicyInTx,
+	resolveEffectiveContractOnDay,
+} from "@/lib/contracts";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import {
@@ -20,6 +23,7 @@ import {
 	type OrganizationActor,
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import { storeStep } from "@/lib/organization-action/store-step";
 import { hasValidLatestClockIns } from "@/lib/scheduling/latest-clock-in";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -594,6 +598,21 @@ export const createWorkPolicyAssignment = organizationAction(
 				return yield* policyNotFound(data.policyId);
 			}
 
+			const actorIsOrgAdmin = meetsSettingsAccess(actor.settingsAccess, "orgAdmin");
+			if (data.assignmentType === "employee" && data.employeeId && !actorIsOrgAdmin) {
+				const targetEmployeeId = data.employeeId;
+				yield* storeStep("workPolicies.checkPinnedContractTerms", async (db) => {
+					const orgTz = await loadOrganizationTimezone(db, organizationId);
+					const today = plainDateAt(systemClock.nowInstant(), orgTz).toString();
+					await refuseIfAdminPinnedContractTermsPolicyInTx(db, {
+						organizationId,
+						employeeId: targetEmployeeId,
+						effectiveFromDate: today,
+						actorIsOrgAdmin: false,
+					});
+				});
+			}
+
 			const assignment = yield* dbService.query("createWorkPolicyAssignment", () =>
 				createWorkPolicyAssignmentRecord(dbService.db, {
 					organizationId,
@@ -634,6 +653,19 @@ export const deleteWorkPolicyAssignment = organizationAction(
 			}
 			if (assignment.employeeId) {
 				yield* refuseUnlessManaged(actor, assignment.employeeId, "delete");
+			}
+			if (
+				!meetsSettingsAccess(actor.settingsAccess, "orgAdmin") &&
+				assignment.sourceKind === "employment_terms"
+			) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message:
+							"This work policy assignment is pinned by administrator contract terms and cannot be removed by a scoped manager.",
+						field: "assignmentId",
+						refusal: "contract_terms_policy_pinned",
+					}),
+				);
 			}
 
 			yield* dbService.query("deleteWorkPolicyAssignment", () =>

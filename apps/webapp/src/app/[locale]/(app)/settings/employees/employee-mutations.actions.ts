@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import { z } from "zod";
 import { invitation, user } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft, team } from "@/db/schema";
+import { previewPrimaryTeamMove } from "@/lib/contracts";
 import { AuditAction, type AuditLogEntry, logAudit } from "@/lib/audit-logger";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
@@ -49,6 +50,7 @@ import {
 	organizationAction,
 } from "@/lib/organization-action/organization-action";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import {
@@ -147,6 +149,35 @@ function scopedEmployeeUpdate(
 		return { validatedData: parsed.data as UpdateEmployee, targetEmployee };
 	});
 }
+
+/**
+ * Read-only operational contract preview before moving an employee's primary team (#1927):
+ * compares old and new primary-team defaults while preserving personal divergences and
+ * never mutating employee-owned legal, pay, or divergence fields.
+ */
+export const previewEmployeeTeamChangeContractImpact = organizationAction(
+	{
+		name: "employees.previewTeamChangeContractImpact",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			employeeId: employeeIdSchema,
+			teamId: z.uuid("Invalid team ID").nullable(),
+			effectiveOnDate: z
+				.string()
+				.regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD date")
+				.optional(),
+		}),
+	},
+	({ organizationId, input }) =>
+		storeStep("employee.previewTeamChangeContractImpact", (db) =>
+			previewPrimaryTeamMove(db, {
+				organizationId,
+				employeeId: input.employeeId,
+				targetTeamId: input.teamId,
+				effectiveOnDate: input.effectiveOnDate,
+			}),
+		),
+);
 
 /**
  * The warning before saving a new primary team on the employee (#1425): what the actor may
