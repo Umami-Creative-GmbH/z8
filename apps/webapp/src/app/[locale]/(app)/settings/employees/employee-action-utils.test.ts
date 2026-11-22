@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect, Layer } from "effect";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { getEmployeeSettingsActorContext } from "./employee-action-utils";
@@ -51,8 +52,14 @@ function runSettingsActorContext(
 		organizationId: string;
 		role: string;
 		isActive: boolean;
+		former?: boolean;
 	} | null,
+	onEmployeeFindFirst?: (args: unknown) => void,
 ) {
+	const employeeFindFirst = vi.fn(async (args: unknown) => {
+		onEmployeeFindFirst?.(args);
+		return employeeRecord;
+	});
 	const authLayer = Layer.succeed(AuthService, {
 		getSession: () =>
 			Effect.succeed({
@@ -64,7 +71,7 @@ function runSettingsActorContext(
 		db: {
 			query: {
 				member: { findFirst: async () => membershipRecord },
-				employee: { findFirst: async () => employeeRecord },
+				employee: { findFirst: employeeFindFirst },
 			},
 		} as never,
 		query: (_name, execute) => Effect.promise(execute),
@@ -88,6 +95,32 @@ describe("getEmployeeSettingsActorContext", () => {
 				},
 			),
 		).rejects.toThrow("Organization access is inactive");
+	});
+
+	it("denies active employees whose departure has come due (former=true) and queries isFormerEmployee", async () => {
+		let capturedArgs: { extras?: { former?: unknown } } | undefined;
+
+		await expect(
+			runSettingsActorContext(
+				{ role: "member" },
+				{
+					id: "employee-1",
+					organizationId: "org-1",
+					role: "manager",
+					isActive: true,
+					former: true,
+				},
+				(args) => {
+					capturedArgs = args as { extras?: { former?: unknown } };
+				},
+			),
+		).rejects.toThrow("Organization access is inactive");
+
+		const formerExtra = capturedArgs?.extras?.former as {
+			sql: Parameters<PgDialect["sqlToQuery"]>[0];
+		};
+		const sql = new PgDialect().sqlToQuery(formerExtra.sql).sql;
+		expect(sql).toContain("employee_departure_denies_access");
 	});
 
 	it.each([

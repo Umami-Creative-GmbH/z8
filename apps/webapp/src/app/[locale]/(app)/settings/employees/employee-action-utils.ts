@@ -7,6 +7,7 @@ import { CACHE_TAGS } from "@/lib/cache/tags";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { createLogger } from "@/lib/logger";
 import {
 	meetsSettingsAccess,
@@ -96,6 +97,9 @@ export function getEmployeeSettingsActorContext(options?: {
 						eq(employee.userId, session.user.id),
 						eq(employee.organizationId, organizationId),
 					),
+					extras: {
+						former: isFormerEmployee(employee).as("former"),
+					},
 				});
 			}),
 		]);
@@ -133,7 +137,11 @@ export function getEmployeeSettingsActorContext(options?: {
 			);
 		}
 
-		if (employeeRecord?.isActive === false) {
+		const employeeIsFormer = employeeRecord
+			? Boolean(employeeRecord.former || employeeRecord.isActive === false)
+			: false;
+
+		if (employeeRecord && employeeIsFormer) {
 			yield* logDenial("inactive_employee", membershipRecord, employeeRecord);
 			return yield* Effect.fail(
 				new AuthorizationError({
@@ -151,7 +159,7 @@ export function getEmployeeSettingsActorContext(options?: {
 				? {
 						id: employeeRecord.id,
 						role: employeeRecord.role,
-						former: false,
+						former: employeeIsFormer,
 					}
 				: null,
 		});
