@@ -64,10 +64,7 @@ export type PendingApprovalPreviewItem = {
 export type PendingApprovalsData = {
 	/** Every pending approval, covered ones included: the inbox badge's total. */
 	total: number;
-	/**
-	 * What waits in "Covering for" sections, each section's full count as its header shows
-	 * it. Within a section's first 100 rows this is the covered share of the total.
-	 */
+	/** The covered share of `total`: the "Covering for" rows the badge counts, never more. */
 	coveringCount: number;
 	/** Approval types whose list or count could not be read: the numbers may miss them. */
 	unavailableTypes: ApprovalInboxType[];

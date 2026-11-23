@@ -1,10 +1,21 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, screen, within } from "@testing-library/react";
+import {
+	fireEvent,
+	render as renderWithoutTranslations,
+	screen,
+	within,
+} from "@testing-library/react";
+import { TolgeeProvider } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "@/test/render-with-translations";
+import {
+	GERMAN_SUMMARY_CASES,
+	GERMAN_SUMMARY_TRANSLATIONS,
+	inboxRowFromDisplay,
+} from "@/test/german-approval-summaries";
+import { createTestTolgee, render } from "@/test/render-with-translations";
 
 vi.mock("@/hooks/use-organization", () => ({
 	useOrganization: () => ({
@@ -264,6 +275,42 @@ describe("Pending Approvals widget (#1978)", () => {
 		).toBeTruthy();
 		expect(within(rows[1]).queryByText(/Your own request/)).toBeNull();
 	});
+
+	it.each(GERMAN_SUMMARY_CASES)(
+		"previews $name in the viewer's language and formats",
+		({ type, display, title, detail }) => {
+			const { summary } = inboxRowFromDisplay("approval-1", type, display);
+			renderWithoutTranslations(
+				<TolgeeProvider tolgee={createTestTolgee("de", GERMAN_SUMMARY_TRANSLATIONS)}>
+					<QueryClientProvider client={new QueryClient()}>
+						<PendingApprovalsWidget
+							initialSnapshot={delivered({
+								...pending,
+								preview: [
+									{
+										id: "approval-1",
+										type,
+										requesterName: "Ada Lovelace",
+										// As the Dashboard reader passes them on.
+										title: summary.localized?.title ?? summary.title,
+										detail: summary.localized?.detail ?? summary.detail,
+										coveringForName: null,
+										ownRequest: false,
+									},
+								],
+							})}
+						/>
+					</QueryClientProvider>
+				</TolgeeProvider>,
+			);
+
+			const [row] = within(
+				screen.getByRole("list", { name: "Most urgent pending approvals" }),
+			).getAllByRole("listitem");
+			expect(within(row).getByText(title)).toBeTruthy();
+			expect(within(row).getByText(detail)).toBeTruthy();
+		},
+	);
 
 	it("shows the retryable widget error when the read failed", () => {
 		widget({ scope, updatedAt: Date.now(), result: { success: false, error: "Unavailable" } });

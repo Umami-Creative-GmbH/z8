@@ -787,6 +787,16 @@ describe("shared time-entry approval presentation", () => {
 			expect(display.summary).toBe(english);
 		});
 
+		it("names its badge in the viewer's language", async () => {
+			const de = await translatorFor("de", {
+				"approvals:approvals.timeApproval.badge.manual": "Manuell",
+			});
+			const { display } = buildTimeApprovalReview(period, manual, []);
+
+			expect(display.badge?.label).toBe("Manual");
+			expect(resolveReviewText(display.localized!.badge!, de, "de")).toBe("Manuell");
+		});
+
 		it("localizes the unclassified warning and title", async () => {
 			const en = await translatorFor("en");
 			const { localized } = buildTimeApprovalReview(

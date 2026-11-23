@@ -21,9 +21,9 @@ export interface ApprovalInboxTopItems {
 	/** The badge's total: the sum of `counts`. */
 	total: number;
 	/**
-	 * What waits in the viewer's "Covering for" sections: each section's full count, as its
-	 * header shows it. Beyond a section's first 100 rows the badge, and so `counts` and
-	 * `total`, count only the rows the section lists, so this can then exceed their covered share.
+	 * The covered share of `total` (#1978): the rows the viewer's "Covering for" sections list,
+	 * exactly the rows the badge counts. A section past its first 100 rows has more waiting
+	 * than this counts, as the badge does.
 	 */
 	coveringCount: number;
 	/** The first `limit` pending items, own and covered, in the inbox's order. */
@@ -50,7 +50,7 @@ const itemKey = (type: string, id: string) => `${type}:${id}`;
  * rows of each canonical read and of the compliance exceptions, in their pre-evidence order
  * (the inbox's own page cap); and each "Covering for" section's first 100 rows, also chosen
  * in pre-evidence order. A covered item past its section's 100 rows is never previewed, just
- * as the inbox doesn't list it; `coveringCount` still counts it.
+ * as the inbox doesn't list it, and neither the total nor `coveringCount` counts it.
  *
  * The viewer's own pending requests count and appear as the badge has them (#1978): an
  * org-wide viewer's own request is listed read-only, marked `capabilities.ownRequest`.
@@ -120,7 +120,7 @@ export async function getApprovalInboxTopItems(
 	return {
 		counts,
 		total: Object.values(counts).reduce<number>((total, count) => total + (count ?? 0), 0),
-		coveringCount: (list.covering ?? []).reduce((total, section) => total + section.count, 0),
+		coveringCount: (list.covering ?? []).reduce((total, section) => total + section.rows.length, 0),
 		items: top,
 		warnings: list.warnings,
 	};

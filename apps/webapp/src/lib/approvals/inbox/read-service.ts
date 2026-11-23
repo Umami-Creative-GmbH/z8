@@ -282,6 +282,51 @@ const priorityRank: Record<UnifiedApprovalItem["priority"], number> = {
 	low: 3,
 };
 
+type SourceFailure = "list" | "count" | "covering";
+
+const SOURCE_FAILURE_WARNINGS: Record<
+	SourceFailure,
+	{ message: (displayName: string) => string; localized: ApprovalInboxLocalizedText }
+> = {
+	list: {
+		message: (displayName) => `${displayName} approvals could not be loaded.`,
+		localized: {
+			key: "approvals:approvals.inboxWarning.notLoaded",
+			fallback: "These approvals could not be loaded. Lists and totals may be incomplete.",
+		},
+	},
+	count: {
+		message: (displayName) => `${displayName} approvals could not be counted.`,
+		localized: {
+			key: "approvals:approvals.inboxWarning.notCounted",
+			fallback: "These approvals could not be counted. Totals may be incomplete.",
+		},
+	},
+	covering: {
+		message: (displayName) =>
+			`${displayName} approvals of a "Covering for" section could not be loaded.`,
+		localized: {
+			key: "approvals:approvals.inboxWarning.coveringNotLoaded",
+			fallback:
+				'These approvals could not be loaded for a "Covering for" section. Totals may be incomplete.',
+		},
+	},
+};
+
+/**
+ * Records that a source failed, as one warning per source (#1978): a gap in the list or the
+ * totals, never a silent zero. A source's first failure names it; later ones add nothing.
+ */
+function warnSourceFailed(
+	warnings: ApprovalInboxWarning[],
+	source: Pick<ApprovalInboxSource, "type" | "displayName">,
+	failure: SourceFailure,
+): void {
+	if (warnings.some((warning) => warning.source === source.type)) return;
+	const { message, localized } = SOURCE_FAILURE_WARNINGS[failure];
+	warnings.push({ source: source.type, message: message(source.displayName), localized });
+}
+
 export async function getApprovalInboxListFromSources({
 	sources: approvalSources,
 	params,
@@ -331,10 +376,7 @@ export async function getApprovalInboxListFromSources({
 	);
 	for (const { source, approvalsExit } of approvalResults) {
 		if (Exit.isFailure(approvalsExit)) {
-			warnings.push({
-				source: source.type,
-				message: `${source.displayName} approvals could not be loaded.`,
-			});
+			warnSourceFailed(warnings, source, "list");
 		} else {
 			items.push(
 				...(await Promise.all(
@@ -364,13 +406,7 @@ export async function getApprovalInboxListFromSources({
 	);
 	for (const { source, countExit } of countResults) {
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
-		// A failed count is a gap in the totals, never a silent zero (#1978).
-		if (Exit.isFailure(countExit)) {
-			warnings.push({
-				source: source.type,
-				message: `${source.displayName} approvals could not be counted.`,
-			});
-		}
+		if (Exit.isFailure(countExit)) warnSourceFailed(warnings, source, "count");
 	}
 
 	const pending = (params.status ?? "pending") === "pending";
@@ -459,6 +495,7 @@ export async function getApprovalInboxListFromSources({
 					now: effectiveNow,
 					triagePolicy,
 					loadTriageEvidence,
+					onSourceFailed: (source) => warnSourceFailed(warnings, source, "covering"),
 				})
 			: undefined;
 
@@ -548,6 +585,8 @@ async function loadCoveringSections(input: {
 	now: Date;
 	triagePolicy: ApprovalTriagePolicy;
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
+	/** A source whose covered list or count failed: the sections may miss its approvals. */
+	onSourceFailed: (source: ApprovalInboxSource) => void;
 }): Promise<ApprovalInboxCoveringSection[]> {
 	const { params } = input;
 	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
@@ -571,6 +610,7 @@ async function loadCoveringSections(input: {
 				Promise.all(
 					deputySources.map(async (source) => {
 						const exit = await runtime.runPromiseExit(source.handler.getApprovals(sectionParams));
+						if (Exit.isFailure(exit)) input.onSourceFailed(source);
 						return Exit.isSuccess(exit)
 							? await Promise.all(
 									exit.value
@@ -645,6 +685,7 @@ async function loadCoveringSections(input: {
 							sources: deputySources,
 							canonicalReads: deputyReads,
 							now: input.now,
+							onSourceFailed: input.onSourceFailed,
 						})
 					)[0]?.count ?? shown.length)
 				: shown.length;
@@ -663,6 +704,8 @@ async function countCoveringSections(input: {
 	sources: ApprovalInboxSource[];
 	canonicalReads: readonly InboxCanonicalRead[];
 	now: Date;
+	/** A source whose count failed: the total misses its approvals. */
+	onSourceFailed?: (source: ApprovalInboxSource) => void;
 }): Promise<Array<ApprovalInboxCover & { count: number }>> {
 	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
 	const deputyReads = input.canonicalReads.filter((read) => isDeputyDecisionEntityType(read.type));
@@ -674,6 +717,7 @@ async function countCoveringSections(input: {
 						const exit = await runtime.runPromiseExit(
 							source.handler.getCount(cover.approverId, input.organizationId, {}),
 						);
+						if (Exit.isFailure(exit)) input.onSourceFailed?.(source);
 						return Exit.isSuccess(exit) ? exit.value : 0;
 					}),
 				),
@@ -1173,6 +1217,9 @@ async function toInboxItem(
 							title: approval.display.localized.title,
 							subtitle: approval.display.localized.subtitle,
 							detail: approval.display.localized.summary,
+							...(approval.display.localized.badge
+								? { badge: approval.display.localized.badge }
+								: {}),
 						},
 					}
 				: {}),

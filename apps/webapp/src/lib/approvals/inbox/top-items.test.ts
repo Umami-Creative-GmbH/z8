@@ -371,7 +371,7 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 		expect(result.top).not.toContain("t0");
 	});
 
-	it("counts a Covering section's full total, beyond the 100 rows it lists", async () => {
+	it("counts covered work as the total does: the rows a Covering section lists (#1978)", async () => {
 		const covered = Array.from({ length: 105 }, (_, index) =>
 			approval(`x${index}`, "absence_entry", absenceAt(index % 60), "normal", {
 				approverId: ABSENT,
@@ -387,9 +387,10 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 			new Set(),
 		);
 
-		// The section header's count; the badge (and so the total) counts the rows listed.
-		expect(result.coveringCount).toBe(105);
+		// The badge, and so the total, counts the 100 rows the section lists, never all 105:
+		// the covered share of the total can never exceed the total.
 		expect(result.total).toBe(101);
+		expect(result.coveringCount).toBe(100);
 	});
 
 	it("counts and previews the viewer's own pending request as the badge does, marked as theirs", async () => {

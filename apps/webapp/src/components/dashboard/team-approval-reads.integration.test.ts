@@ -663,6 +663,43 @@ describe("authorized Dashboard approval delivery", () => {
 				}
 			});
 
+			it("lists a manager's own self-assigned pending request read-only, counted as the badge counts it", async () => {
+				// The oldest request of the organization: the manager requested it and it waits for them.
+				const ownId = await seedRequest(
+					fixture.organizationId,
+					managerId,
+					managerId,
+					"pending",
+					"2026-09-15T12:00:00Z",
+				);
+				try {
+					const { widget, scope } = await readBoth({
+						userId: managerUserId,
+						employeeId: managerId,
+						role: "manager",
+					});
+					if (!scope) throw new Error("expected an Approval inbox scope");
+
+					// readBoth already holds the total and per-type counts to the badge's.
+					const own = widget?.preview.find((row) => row.id === ownId);
+					expect(own).toMatchObject({ ownRequest: true, type: "absence_entry" });
+					expect(widget?.preview.filter((row) => row.ownRequest)).toHaveLength(1);
+					const inbox = await getApprovalInboxList({
+						...scope,
+						status: "pending",
+						limit: Number.MAX_SAFE_INTEGER,
+					});
+					expect(inbox.items.find((item) => item.id === ownId)?.capabilities).toMatchObject({
+						ownRequest: true,
+						canApprove: false,
+						canReject: false,
+						canBulkApprove: false,
+					});
+				} finally {
+					await fixture.pool.query(`delete from approval_request where id = $1`, [ownId]);
+				}
+			});
+
 			it("shows a viewer who only manages Compliance the exceptions and no ordinary approval", async () => {
 				const officer = await customRoleViewer("Grace Officer", ["manage", "Compliance"]);
 				const { widget, scope } = await readBoth(officer);

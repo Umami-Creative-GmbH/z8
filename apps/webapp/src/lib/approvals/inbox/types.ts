@@ -54,6 +54,8 @@ export interface ApprovalInboxSummary {
 		subtitle: ApprovalInboxLocalizedText;
 		/** None when `detail` is text a person entered, shown as written (#1977). */
 		detail?: ApprovalInboxLocalizedText;
+		/** The badge's label, when it names a kind rather than data such as a category (#1978). */
+		badge?: ApprovalInboxLocalizedText;
 	};
 }
 
@@ -249,6 +251,8 @@ export interface ApprovalInboxDetailResult {
 export interface ApprovalInboxWarning {
 	source: string;
 	message: string;
+	/** The message in the viewer's language (#1978); `source` then names an approval type. */
+	localized?: ApprovalInboxLocalizedText;
 }
 
 export interface ApprovalInboxListResult {

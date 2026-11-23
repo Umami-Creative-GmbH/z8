@@ -15,12 +15,13 @@ const RISK_RANK: Record<ApprovalInboxItem["triage"]["riskLevel"], number> = {
 	high: 3,
 };
 
+/** One warning per source (#1978): its first, even when later pages failed differently. */
 export function dedupeWarnings(warnings: ApprovalInboxWarning[]): ApprovalInboxWarning[] {
 	const seen = new Set<string>();
 	const uniqueWarnings: ApprovalInboxWarning[] = [];
 
 	for (const warning of warnings) {
-		const key = `${warning.source}:${warning.message}`;
+		const key = warning.source;
 		if (seen.has(key)) {
 			continue;
 		}

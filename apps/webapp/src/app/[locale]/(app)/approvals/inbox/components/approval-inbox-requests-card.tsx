@@ -5,6 +5,7 @@ import type { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
+import { resolveReviewText } from "@/lib/approvals/inbox/summary-text";
 import type {
 	ApprovalInboxCoveringSection,
 	ApprovalInboxItem,
@@ -19,6 +20,7 @@ import {
 import { ApprovalFastLanes } from "./approval-fast-lanes";
 import { ApprovalInboxTable } from "./approval-inbox-table";
 import { ApprovalInboxToolbar } from "./approval-inbox-toolbar";
+import { getApprovalTypeLabels } from "./approval-type-labels";
 import { getCoveringForDescription, getCoveringForTitle } from "./covering-notes";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -33,8 +35,17 @@ export type ApprovalInboxRequestActivityState = {
 	isFetching: boolean;
 };
 
-function ApprovalInboxWarnings({ warnings }: { warnings: ApprovalInboxWarning[] }) {
+function ApprovalInboxWarnings({
+	t,
+	warnings,
+}: {
+	t: Translate;
+	warnings: ApprovalInboxWarning[];
+}) {
 	if (warnings.length === 0) return null;
+	const typeLabels: Record<string, string> = getApprovalTypeLabels(t);
+	const translate = (key: string, fallback: string, params?: Record<string, string | number>) =>
+		params ? t(key, fallback, params) : t(key, fallback);
 
 	return (
 		<div className="mb-4 space-y-2">
@@ -45,8 +56,13 @@ function ApprovalInboxWarnings({ warnings }: { warnings: ApprovalInboxWarning[] 
 				>
 					<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
 					<div>
-						<div className="font-medium">{warning.source}</div>
-						<div>{warning.message}</div>
+						{/* An approval type by its name, in the viewer's language (#1978). */}
+						<div className="font-medium">{typeLabels[warning.source] ?? warning.source}</div>
+						<div>
+							{warning.localized
+								? resolveReviewText(warning.localized, translate)
+								: warning.message}
+						</div>
 					</div>
 				</div>
 			))}
@@ -172,7 +188,7 @@ export function ApprovalInboxRequestsCard({
 
 	return (
 		<div className="flex flex-col gap-6">
-			<ApprovalInboxWarnings warnings={warnings} />
+			<ApprovalInboxWarnings t={t} warnings={warnings} />
 			<Card>
 				<CardHeader className="pb-0">
 					<CardTitle className="flex flex-wrap items-center gap-2">

@@ -5,6 +5,11 @@ import { TolgeeProvider } from "@tolgee/react";
 import { describe, expect, it, vi } from "vitest";
 import { AbsenceRequestHandler } from "@/lib/approvals/handlers/absence-request.handler";
 import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
+import {
+	GERMAN_SUMMARY_CASES,
+	GERMAN_SUMMARY_TRANSLATIONS,
+	inboxRowFromDisplay,
+} from "@/test/german-approval-summaries";
 import { createTestTolgee } from "@/test/render-with-translations";
 import { ApprovalInboxTable } from "./approval-inbox-table";
 
@@ -111,4 +116,26 @@ describe("a legacy absence request in the inbox table, in German (#1978)", () =>
 		expect(screen.getByText("4 Tage frei – 01.06.2026 – 04.06.2026")).toBeTruthy();
 		expect(screen.queryByText(/days off/)).toBeNull();
 	});
+});
+
+describe("list summaries once sent in English only, in German (#1978)", () => {
+	it.each(GERMAN_SUMMARY_CASES)(
+		"renders $name in the viewer's language and formats",
+		({ type, display, title, detail }) => {
+			render(
+				<TolgeeProvider tolgee={createTestTolgee("de", GERMAN_SUMMARY_TRANSLATIONS)}>
+					<ApprovalInboxTable
+						items={[inboxRowFromDisplay("approval-1", type, display)]}
+						selectedIds={new Set()}
+						onSelectItem={vi.fn()}
+						onRowClick={vi.fn()}
+						isFetching={false}
+					/>
+				</TolgeeProvider>,
+			);
+
+			expect(screen.getByText(title)).toBeTruthy();
+			expect(screen.getByText(detail)).toBeTruthy();
+		},
+	);
 });

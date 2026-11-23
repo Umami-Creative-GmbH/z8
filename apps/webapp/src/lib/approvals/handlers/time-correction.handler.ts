@@ -17,12 +17,8 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
-import { instantFromDate, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
-import {
-	formatCapturedOffsetInstant,
-	formatInstant,
-	workDayOf,
-} from "@/lib/datetime/temporal-format";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { formatCapturedOffsetInstant, formatInstant } from "@/lib/datetime/temporal-format";
 import { isValidTimeZone } from "@/lib/timezone/validation";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -35,7 +31,11 @@ import type {
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
 } from "../domain/types";
-import type { ApprovalInboxLocalizedText, ApprovalInboxTimeComparison } from "../inbox/types";
+import type { ApprovalInboxTimeComparison } from "../inbox/types";
+import {
+	localizedTimeApprovalSummary,
+	UNCLASSIFIED_TIME_APPROVAL_WARNING,
+} from "../presentation/time-approval-summary-text";
 import {
 	addVehicleLabelsForOrganization,
 	categoryIdsFromTimeCorrectionMetadata,
@@ -308,73 +308,6 @@ function correctionMetadataFromRequest(request: { metadata?: unknown }) {
 		: undefined;
 }
 
-const UNCLASSIFIED_TIME_APPROVAL_WARNING =
-	"This legacy time approval could not be classified. Reconcile it before making a decision.";
-
-/** The work-local day of a captured endpoint, at its captured offset (`docs/refs/timekeeping.md`). */
-function capturedWorkDay(entry: {
-	timestamp: Date;
-	utcOffsetMinutes?: number;
-	timezone?: string | null;
-}): string {
-	const instant = instantFromDate(entry.timestamp);
-	return (
-		typeof entry.utcOffsetMinutes === "number"
-			? workDayOf(instant, entry.utcOffsetMinutes)
-			: plainDateAt(
-					instant,
-					entry.timezone && isValidTimeZone(entry.timezone) ? entry.timezone : "UTC",
-				)
-	).toString();
-}
-
-/** A worked duration as the list summary names it, for the viewer's language (#1978). */
-function localizedDuration(minutes: number | null): ApprovalInboxLocalizedText {
-	if (minutes === null) {
-		return { key: "approvals:approvals.timeApproval.inProgress", fallback: "In progress" };
-	}
-	const hours = Math.floor(minutes / 60);
-	const mins = minutes % 60;
-	if (hours === 0) {
-		return {
-			key: "approvals:approvals.timeApproval.durationMinutes",
-			fallback: "{minutes}m",
-			params: { minutes: mins },
-		};
-	}
-	if (mins === 0) {
-		return {
-			key: "approvals:approvals.timeApproval.durationHours",
-			fallback: "{hours}h",
-			params: { hours },
-		};
-	}
-	return {
-		key: "approvals:approvals.timeApproval.durationHoursMinutes",
-		fallback: "{hours}h {minutes}m",
-		params: { hours, minutes: mins },
-	};
-}
-
-const TIME_APPROVAL_TITLES = {
-	manual_time_submission: {
-		key: "approvals:approvals.timeApproval.title.manualTimeSubmission",
-		fallback: "Manual Time Submission",
-	},
-	policy_clock_out: {
-		key: "approvals:approvals.timeApproval.title.policyClockOut",
-		fallback: "Clock-out Approval",
-	},
-	unclassified: {
-		key: "approvals:approvals.timeApproval.title.unclassified",
-		fallback: "Unclassified Time Approval",
-	},
-	time_correction: {
-		key: "approvals:approvals.timeApproval.title.timeCorrection",
-		fallback: "Time Correction",
-	},
-} satisfies Record<TimeApprovalKind, ApprovalInboxLocalizedText>;
-
 function displayMetadataForKind(
 	period: WorkPeriodWithRelations,
 	kind: TimeApprovalKind,
@@ -388,34 +321,14 @@ function displayMetadataForKind(
 		subtitle: `${date} - ${startTime} to ${endTime}`,
 		summary: `${duration} on ${date}`,
 	};
-	// The same texts for the viewer's language: the work day as a calendar day of its captured
-	// offset, formatted in the viewer's locale; times stay 24h at their captured offsets.
-	const workDay = { kind: "plain_date" as const, date: capturedWorkDay(period.clockIn) };
-	const localized = {
-		title: TIME_APPROVAL_TITLES[kind],
-		subtitle: {
-			key: "approvals:approvals.timeApproval.subtitle",
-			fallback: "{date} - {start} to {end}",
-			params: {
-				date: workDay,
-				start: startTime,
-				end: period.clockOut
-					? endTime
-					: { key: "approvals:approvals.timeApproval.ongoing", fallback: "ongoing" },
-			},
-		},
-		summary:
-			kind === "unclassified"
-				? {
-						key: "approvals:approvals.timeApproval.unclassifiedWarning",
-						fallback: UNCLASSIFIED_TIME_APPROVAL_WARNING,
-					}
-				: {
-						key: "approvals:approvals.timeApproval.summary",
-						fallback: "{duration} on {date}",
-						params: { duration: localizedDuration(period.durationMinutes), date: workDay },
-					},
-	} satisfies NonNullable<ApprovalDisplayMetadata["localized"]>;
+	// The same texts for the viewer's language (#1978).
+	const localized = localizedTimeApprovalSummary({
+		kind,
+		clockIn: period.clockIn,
+		startTime,
+		endTime: period.clockOut ? endTime : null,
+		durationMinutes: period.durationMinutes,
+	}) satisfies NonNullable<ApprovalDisplayMetadata["localized"]>;
 	const ordinaryStage = stage ? { stage } : {};
 
 	switch (kind) {

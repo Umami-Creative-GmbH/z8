@@ -13,7 +13,15 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
-				(text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
+				(text, [key, value]) =>
+					text
+						// English ICU plurals: `{count, plural, one {…#…} other {…#…}}`.
+						.replace(
+							new RegExp(`\\{${key}, plural, one \\{([^}]*)\\} other \\{([^}]*)\\}\\}`),
+							(_match, one: string, other: string) =>
+								(value === 1 ? one : other).replaceAll("#", String(value)),
+						)
+						.replaceAll(`{${key}}`, String(value)),
 				fallback,
 			),
 	}),
@@ -56,7 +64,7 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 	getCurrentEmployee: vi.fn(),
 }));
 
-import type { DashboardWidgetSnapshot } from "./dashboard-types";
+import type { DashboardWidgetSnapshot, PendingApprovalsData } from "./dashboard-types";
 import { ManagedEmployeesWidget } from "./managed-employees-widget";
 import { PendingApprovalsWidget } from "./pending-approvals-widget";
 import { RecentlyApprovedWidget } from "./recently-approved-widget";
@@ -82,29 +90,32 @@ const managed = {
 const pending = {
 	total: 2,
 	coveringCount: 0,
+	unavailableTypes: [],
 	typeCounts: [
-		{ type: "absence_entry" as const, count: 1 },
-		{ type: "time_entry" as const, count: 1 },
+		{ type: "absence_entry", count: 1 },
+		{ type: "time_entry", count: 1 },
 	],
 	preview: [
 		{
 			id: "absence-a",
-			type: "absence_entry" as const,
+			type: "absence_entry",
 			requesterName: "Grace Hopper",
 			title: "Vacation",
 			detail: "Oct 26 – 27, 2026",
 			coveringForName: null,
+			ownRequest: false,
 		},
 		{
 			id: "correction-a",
-			type: "time_entry" as const,
+			type: "time_entry",
 			requesterName: "Katherine Johnson",
 			title: "Time correction",
 			detail: "Oct 23, 2026",
 			coveringForName: null,
+			ownRequest: false,
 		},
 	],
-};
+} satisfies PendingApprovalsData;
 const approved = [
 	{
 		id: "approved-a",
@@ -151,6 +162,7 @@ it("renders all four authorized server deliveries without an initial GET, retain
 		"/settings/employees/report-a",
 	);
 	expect(screen.getByText("7")).toBeTruthy();
+	expect(screen.getByText("2 pending approvals")).toBeTruthy();
 	expect(screen.getByText("Grace Hopper")).toBeTruthy();
 	expect(screen.getByText("Oct 23, 2026")).toBeTruthy();
 	expect(screen.getByText("Dorothy Vaughan")).toBeTruthy();

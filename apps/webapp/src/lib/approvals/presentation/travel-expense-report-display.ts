@@ -22,11 +22,21 @@ export function travelExpenseReportDisplay(
 	facts: Pick<TravelExpenseReportSubmittedFacts, "trip" | "items" | "totals"> | null,
 ): ApprovalDisplayMetadata {
 	if (!facts) {
+		const unavailable = text(
+			"approvals:approvals.reportSummary.factsUnavailable",
+			"Submitted facts unavailable",
+		);
 		return {
 			title: "Expense report",
 			subtitle: "Submitted facts unavailable",
 			summary: "",
 			icon: "receipt",
+			// The list row shows title and detail, so the detail says it too (#1978).
+			localized: {
+				title: text("approvals:approvals.reportSummary.title", "Expense report"),
+				subtitle: unavailable,
+				summary: unavailable,
+			},
 		};
 	}
 	const { trip, totals, items } = facts;
