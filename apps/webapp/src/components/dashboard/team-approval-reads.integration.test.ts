@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -79,6 +80,8 @@ describe("authorized Dashboard approval delivery", () => {
 			`insert into employee (id, organization_id, user_id, role, is_active, updated_at) values ($1,$2,$3,'employee',true,now())`,
 			[randomUUID(), otherOrg, managerUserId],
 		);
+		// The Approval inbox lists a manager's own assignments (#1978).
+		await fixture.pool.query(`update employee set role = 'manager' where id = $1`, [managerId]);
 		pendingId = await seedRequest(
 			fixture.organizationId,
 			requester,
@@ -86,14 +89,7 @@ describe("authorized Dashboard approval delivery", () => {
 			"pending",
 			"2026-10-22T12:00:00Z",
 		);
-		// Own request and requests assigned elsewhere are not this viewer's pending work.
-		await seedRequest(
-			fixture.organizationId,
-			managerId,
-			managerId,
-			"pending",
-			"2026-10-23T12:00:00Z",
-		);
+		// Requests assigned elsewhere are not this viewer's pending work.
 		await seedRequest(
 			fixture.organizationId,
 			requester,
@@ -196,60 +192,6 @@ describe("authorized Dashboard approval delivery", () => {
 		},
 	);
 
-	it("delivers only assigned pending approvals and preserves calendar strings after an actual JSON response", async () => {
-		const snapshot = await read("pending-approvals");
-		expect(snapshot.result.success).toBe(true);
-		if (!snapshot.result.success) throw new Error(snapshot.result.error);
-		expect(snapshot.result.data?.absenceApprovals.map((row) => row.id)).toEqual([pendingId]);
-		expect(snapshot.result.data?.absenceApprovals[0].absence).toEqual({
-			startDate: "2026-10-26",
-			endDate: "2026-10-27",
-			category: { name: "Vacation" },
-		});
-		expect(await Response.json(snapshot).json()).toEqual(snapshot);
-	});
-	it("serializes a real pending correction's UTC work-period instant without changing its card meaning", async () => {
-		const originalId = randomUUID(),
-			correctionId = randomUUID(),
-			periodId = randomUUID(),
-			requestId = randomUUID();
-		const organizationId = fixture.organizationId;
-		await fixture.pool.query(
-			`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1::uuid,$2,$3,'clock_in','2026-10-23T08:00:00Z',120,'Europe/Berlin','backfill',$1::text,$4)`,
-			[originalId, requester, organizationId, fixture.ownerUserId],
-		);
-		await fixture.pool.query(
-			`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by,replaces_entry_id) values ($1::uuid,$2,$3,'correction','2026-10-23T09:00:00Z',120,'Europe/Berlin','backfill',$1::text,$4,$5)`,
-			[correctionId, requester, organizationId, fixture.ownerUserId, originalId],
-		);
-		await fixture.pool.query(
-			`insert into work_period (id,employee_id,organization_id,clock_in_id,start_time,updated_at) values ($1,$2,$3,$4,'2026-10-23T08:00:00Z',now())`,
-			[periodId, requester, organizationId, originalId],
-		);
-		await fixture.pool.query(
-			`insert into approval_request (id,organization_id,entity_type,entity_id,requested_by,approver_id,status,created_at,updated_at) values ($1,$2,'time_entry',$3,$4,$5,'pending',now(),now())`,
-			[requestId, organizationId, periodId, requester, managerId],
-		);
-		try {
-			const snapshot = await read("pending-approvals");
-			if (!snapshot.result.success) throw new Error(snapshot.result.error);
-			expect(snapshot.result.data?.timeCorrectionApprovals).toEqual([
-				{
-					id: requestId,
-					requester: { user: { name: "Lifecycle" } },
-					workPeriod: { startTime: "2026-10-23T08:00:00.000Z" },
-				},
-			]);
-			expect(await Response.json(snapshot).json()).toEqual(snapshot);
-		} finally {
-			await fixture.pool.query(`delete from approval_request where id=$1`, [requestId]);
-			await fixture.pool.query(`delete from work_period where id=$1`, [periodId]);
-			await fixture.pool.query(`delete from time_entry where id=any($1::uuid[])`, [
-				[originalId, correctionId],
-			]);
-		}
-	});
-
 	it("retains recent approval order and UTC instants while excluding the other organization", async () => {
 		const snapshot = await read("recently-approved");
 		if (!snapshot.result.success) throw new Error(snapshot.result.error);
@@ -277,7 +219,7 @@ describe("authorized Dashboard approval delivery", () => {
 			const pending = await read("pending-approvals");
 			const recent = await read("recently-approved");
 			if (!pending.result.success || !recent.result.success) throw new Error("read failed");
-			expect(pending.result.data?.absenceApprovals).toEqual([]);
+			expect(pending.result.data?.preview.map((row) => row.id)).not.toContain(pendingId);
 			expect(recent.result.data?.map((row) => row.id)).toEqual([pendingId, recentId, olderId]);
 		} finally {
 			await fixture.pool.query(
@@ -286,10 +228,248 @@ describe("authorized Dashboard approval delivery", () => {
 			);
 		}
 	});
-	it("retains assigned approval visibility for an employee base role while withholding organization statistics", async () => {
-		const approvals = await read("pending-approvals", "employee");
-		if (!approvals.result.success) throw new Error(approvals.result.error);
-		expect(approvals.result.data?.absenceApprovals.map((row) => row.id)).toEqual([pendingId]);
+	it("withholds organization statistics from an employee base role", async () => {
 		expect((await read("team-overview", "employee")).result).toEqual({ success: true, data: null });
+	});
+
+	describe("pending approvals from the unified Approval inbox (#1978)", () => {
+		let colleagueId: string;
+		let adaId: string;
+		let katherineId: string;
+		let exceptionId: string;
+		let coveredId: string;
+		let oldestId: string;
+		let olderOwnId: string;
+		let laterOwnId: string;
+		let newestOwnId: string;
+
+		async function named(name: string, role: "manager" | "employee" = "employee") {
+			const seeded = await fixture.seedEmployee();
+			await fixture.pool.query(`update "user" set name = $2 where id = $1`, [seeded.userId, name]);
+			await fixture.pool.query(`update employee set role = $2 where id = $1`, [
+				seeded.employeeId,
+				role,
+			]);
+			return seeded;
+		}
+
+		beforeAll(async () => {
+			const organizationId = fixture.organizationId;
+			colleagueId = (await named("Clara Colleague", "manager")).employeeId;
+			katherineId = (await named("Katherine Johnson")).employeeId;
+			adaId = (await named("Ada Lovelace")).employeeId;
+			// The manager manages Ada, so they see her ArbZG compliance exceptions.
+			await fixture.pool.query(
+				`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by) values ($1,$2,$3,true,$4)`,
+				[randomUUID(), adaId, managerId, fixture.ownerUserId],
+			);
+			// Clara is away today and the manager covers for her (#1016).
+			await fixture.pool.query(
+				`insert into approval_setting (organization_id, deputy_decisions_enabled) values ($1, true)
+				 on conflict (organization_id) do update set deputy_decisions_enabled = true`,
+				[organizationId],
+			);
+			const today = systemClock.nowInstant().toZonedDateTimeISO("UTC").toPlainDate();
+			const categoryId = randomUUID();
+			categoryIds.push(categoryId);
+			await fixture.pool.query(
+				`insert into absence_category (id,organization_id,type,name,requires_approval,requires_work_time,counts_against_vacation,is_active,updated_at) values ($1,$2,'vacation','Vacation',true,false,true,true,now())`,
+				[categoryId, organizationId],
+			);
+			const awayId = randomUUID();
+			absenceIds.push(awayId);
+			await fixture.pool.query(
+				`insert into absence_entry (id,organization_id,employee_id,category_id,start_date,end_date,status,deputy_employee_id,updated_at) values ($1,$2,$3,$4,$5,$6,'approved',$7,now())`,
+				[
+					awayId,
+					organizationId,
+					colleagueId,
+					categoryId,
+					today.subtract({ days: 1 }).toString(),
+					today.add({ days: 1 }).toString(),
+					managerId,
+				],
+			);
+			oldestId = await seedRequest(
+				organizationId,
+				katherineId,
+				managerId,
+				"pending",
+				"2026-10-01T12:00:00Z",
+			);
+			coveredId = await seedRequest(
+				organizationId,
+				katherineId,
+				colleagueId,
+				"pending",
+				"2026-10-03T12:00:00Z",
+			);
+			olderOwnId = await seedRequest(
+				organizationId,
+				katherineId,
+				managerId,
+				"pending",
+				"2026-10-05T12:00:00Z",
+			);
+			laterOwnId = await seedRequest(
+				organizationId,
+				katherineId,
+				managerId,
+				"pending",
+				"2026-10-10T12:00:00Z",
+			);
+			newestOwnId = await seedRequest(
+				organizationId,
+				katherineId,
+				managerId,
+				"pending",
+				"2026-11-20T12:00:00Z",
+			);
+			// Older than every absence request and still valid for a day: pending, not expired.
+			const validUntil = systemClock.nowInstant().add({ hours: 23 });
+			exceptionId = randomUUID();
+			await fixture.pool.query(
+				`insert into compliance_exception
+				 (id, organization_id, employee_id, exception_type, status, reason, planned_duration_minutes,
+				  valid_from, valid_until, created_at, created_by, updated_at)
+				 values ($1,$2,$3,'overtime_daily','pending','Inventory count runs late',90,$4,$5,$4,$6,$4)`,
+				[
+					exceptionId,
+					organizationId,
+					adaId,
+					"2026-09-01T12:00:00Z",
+					validUntil.toString(),
+					fixture.ownerUserId,
+				],
+			);
+		});
+
+		async function pendingData() {
+			const snapshot = await read("pending-approvals");
+			if (!snapshot.result.success) throw new Error(snapshot.result.error);
+			expect(await Response.json(snapshot).json()).toEqual(snapshot);
+			if (!snapshot.result.data) throw new Error("expected pending approvals");
+			return snapshot.result.data;
+		}
+
+		it("counts every type the inbox badge counts, covered approvals included and flagged", async () => {
+			const originalId = randomUUID(),
+				correctionId = randomUUID(),
+				periodId = randomUUID(),
+				requestId = randomUUID();
+			const organizationId = fixture.organizationId;
+			await fixture.pool.query(
+				`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1::uuid,$2,$3,'clock_in','2026-10-23T08:00:00Z',120,'Europe/Berlin','backfill',$1::text,$4)`,
+				[originalId, katherineId, organizationId, fixture.ownerUserId],
+			);
+			await fixture.pool.query(
+				`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by,replaces_entry_id) values ($1::uuid,$2,$3,'correction','2026-10-23T09:00:00Z',120,'Europe/Berlin','backfill',$1::text,$4,$5)`,
+				[correctionId, katherineId, organizationId, fixture.ownerUserId, originalId],
+			);
+			await fixture.pool.query(
+				`insert into work_period (id,employee_id,organization_id,clock_in_id,start_time,updated_at) values ($1,$2,$3,$4,'2026-10-23T08:00:00Z',now())`,
+				[periodId, katherineId, organizationId, originalId],
+			);
+			await fixture.pool.query(
+				`insert into approval_request (id,organization_id,entity_type,entity_id,requested_by,approver_id,status,created_at,updated_at) values ($1,$2,'time_entry',$3,$4,$5,'pending',now(),now())`,
+				[requestId, organizationId, periodId, katherineId, managerId],
+			);
+			try {
+				const data = await pendingData();
+				// Own absences: pendingId plus four of Katherine's; one more covered for Clara.
+				expect({
+					total: data.total,
+					coveringCount: data.coveringCount,
+					typeCounts: data.typeCounts,
+				}).toEqual({
+					total: 8,
+					coveringCount: 1,
+					typeCounts: [
+						{ type: "absence_entry", count: 6 },
+						{ type: "time_entry", count: 1 },
+						{ type: "compliance_exception", count: 1 },
+					],
+				});
+			} finally {
+				await fixture.pool.query(`delete from approval_request where id=$1`, [requestId]);
+				await fixture.pool.query(`delete from work_period where id=$1`, [periodId]);
+				await fixture.pool.query(`delete from time_entry where id=any($1::uuid[])`, [
+					[originalId, correctionId],
+				]);
+			}
+		});
+
+		it("previews the five most urgent pending approvals in inbox risk, priority and age order, tagging covered ones", async () => {
+			const data = await pendingData();
+
+			// These stale absence requests are high risk, the compliance exception medium: risk
+			// outranks age, so the oldest item waits behind them. Own and covered absences
+			// interleave by age; the newest falls outside the five.
+			expect(data.preview.map((row) => row.id)).toEqual([
+				oldestId,
+				coveredId,
+				olderOwnId,
+				laterOwnId,
+				pendingId,
+			]);
+			expect(data.preview.map((row) => row.id)).not.toContain(exceptionId);
+			expect(data.preview.map((row) => row.id)).not.toContain(newestOwnId);
+			expect(data.preview[1]).toMatchObject({
+				type: "absence_entry",
+				requesterName: "Katherine Johnson",
+				coveringForName: "Clara Colleague",
+			});
+			expect(data.preview[0]?.coveringForName).toBeNull();
+			for (const row of data.preview) {
+				expect(row.title).toBeTruthy();
+			}
+		});
+
+		it("previews a compliance exception with its requester and localized summary once nothing outranks it", async () => {
+			const absenceRequests = [oldestId, coveredId, olderOwnId, laterOwnId, newestOwnId, pendingId];
+			await fixture.pool.query(
+				`update approval_request set status = 'approved' where id = any($1::uuid[])`,
+				[absenceRequests],
+			);
+			try {
+				const data = await pendingData();
+				expect(data).toMatchObject({
+					total: 1,
+					coveringCount: 0,
+					typeCounts: [{ type: "compliance_exception", count: 1 }],
+				});
+				expect(data.preview).toEqual([
+					{
+						id: exceptionId,
+						type: "compliance_exception",
+						requesterName: "Ada Lovelace",
+						title: expect.objectContaining({ key: expect.stringMatching(/^approvals:/) }),
+						// The employee's reason is shown as written.
+						detail: "Inventory count runs late",
+						coveringForName: null,
+					},
+				]);
+			} finally {
+				await fixture.pool.query(
+					`update approval_request set status = 'pending' where id = any($1::uuid[])`,
+					[absenceRequests],
+				);
+			}
+		});
+
+		it("shows no approvals to an employee who may not open the Approval inbox", async () => {
+			const plain = await fixture.seedEmployee();
+			harness.userId = plain.userId;
+			const snapshot = await readDashboardWidget("pending-approvals", {
+				userId: plain.userId,
+				organizationId: fixture.organizationId,
+				employee: {
+					id: plain.employeeId,
+					organizationId: fixture.organizationId,
+					role: "employee",
+				},
+			});
+			expect(snapshot.result).toEqual({ success: true, data: null });
+		});
 	});
 });

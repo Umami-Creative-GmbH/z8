@@ -770,6 +770,18 @@ export function countsWithCoveringSections(
 	return counts;
 }
 
+/**
+ * The viewer's own items and their "Covering for" sections' rows as one list (#1978), in
+ * the inbox's order: risk, priority, then age. The rows the counts above add up.
+ */
+export function itemsWithCoveringSections(
+	result: Pick<ApprovalInboxListResult, "items" | "covering">,
+): ApprovalInboxItem[] {
+	return [...result.items, ...(result.covering ?? []).flatMap((section) => section.rows)].sort(
+		compareInboxItems,
+	);
+}
+
 export async function getApprovalInboxDetailFromRequest({
 	request,
 	handler,

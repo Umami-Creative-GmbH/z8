@@ -1,38 +1,32 @@
 "use client";
 
-import {
-	IconAlertCircle,
-	IconArrowRight,
-	IconBeach,
-	IconClock,
-	IconClockEdit,
-} from "@tabler/icons-react";
+import { IconAlertCircle, IconArrowRight, IconClock, IconUserShare } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
+import { getApprovalTypeLabels } from "@/app/[locale]/(app)/approvals/inbox/components/approval-type-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { resolveLocalizedText } from "@/lib/approvals/inbox/localized-text";
+import type { ApprovalInboxLocalizedText, ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import type {
 	DashboardWidgetData,
 	DashboardWidgetSnapshot,
+	PendingApprovalPreviewItem,
+	PendingApprovalsData,
 } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
-import {
-	formatDashboardDate,
-	formatDashboardDateWithYear,
-} from "./format-dashboard-date";
 import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
 import { WidgetReadError } from "./widget-read-error";
 
-function UrgencyIndicator({ count }: { count: number }) {
+function UrgencyIndicator({
+	total,
+	coveringCount,
+}: Pick<PendingApprovalsData, "total" | "coveringCount">) {
 	const { t } = useTranslate();
-	const isUrgent = count >= 5;
-	const isWarning = count >= 3;
-	const requestLabel =
-		count === 1
-			? t("dashboard.pending-approvals.request", "request")
-			: t("dashboard.pending-approvals.requests", "requests");
+	const isUrgent = total >= 5;
+	const isWarning = total >= 3;
 
 	return (
 		<div
@@ -46,94 +40,109 @@ function UrgencyIndicator({ count }: { count: number }) {
 			)}
 		>
 			<div className="flex items-center justify-center rounded-full bg-white/20 p-2">
-				<IconAlertCircle className="size-5" />
+				<IconAlertCircle className="size-5" aria-hidden="true" />
 			</div>
 			<div className="flex-1">
 				<p className="font-semibold">
 					{t(
-						"dashboard.pending-approvals.pending-requests",
-						"{count} pending {request}",
-						{
-							count,
-							request: requestLabel,
-						},
+						"dashboard.pending-approvals.pending-total",
+						"{count, plural, one {# pending approval} other {# pending approvals}}",
+						{ count: total },
 					)}
 				</p>
+				{coveringCount > 0 && (
+					<p className="text-xs">
+						{t(
+							"dashboard.pending-approvals.includes-covering",
+							"Includes {count, plural, one {# approval} other {# approvals}} you cover for",
+							{ count: coveringCount },
+						)}
+					</p>
+				)}
 				<p className="text-xs opacity-90">
 					{isUrgent
-						? t(
-								"dashboard.pending-approvals.requires-attention",
-								"Requires immediate attention",
-							)
-						: t(
-								"dashboard.pending-approvals.awaiting-approval",
-								"Awaiting your approval",
-							)}
+						? t("dashboard.pending-approvals.requires-attention", "Requires immediate attention")
+						: t("dashboard.pending-approvals.awaiting-approval", "Awaiting your approval")}
 				</p>
 			</div>
 		</div>
 	);
 }
 
-function ApprovalSection({
-	title,
-	icon: Icon,
-	iconColor,
-	count,
-	children,
+function TypePills({
+	typeCounts,
+	labels,
 }: {
-	title: string;
-	icon: React.ElementType;
-	iconColor: string;
-	count: number;
-	children: React.ReactNode;
+	typeCounts: PendingApprovalsData["typeCounts"];
+	labels: Record<ApprovalInboxType, string>;
 }) {
+	const { t } = useTranslate();
 	return (
-		<div className="rounded-xl border bg-card">
-			<div className="flex items-center justify-between border-b px-4 py-3">
-				<div className="flex items-center gap-2">
-					<div className={cn("rounded-lg p-1.5", iconColor)}>
-						<Icon className="size-4 text-white" />
-					</div>
-					<span className="font-medium text-sm">{title}</span>
-				</div>
-				<Badge variant="secondary" className="font-semibold">
-					{count}
-				</Badge>
-			</div>
-			<div className="p-3 space-y-2">{children}</div>
-		</div>
+		<ul
+			aria-label={t("dashboard.pending-approvals.by-type", "Pending approvals by type")}
+			className="flex flex-wrap gap-2"
+		>
+			{typeCounts.map(({ type, count }) => (
+				<li key={type}>
+					<Link
+						href={`/approvals/inbox?types=${type}`}
+						className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					>
+						<span>{labels[type]}</span>{" "}
+						<span className="rounded-full bg-muted px-1.5 font-semibold tabular-nums">{count}</span>
+					</Link>
+				</li>
+			))}
+		</ul>
 	);
 }
 
-function ApprovalItem({
-	name,
-	subtitle,
-	badge,
+function PreviewRow({
+	item,
+	typeLabel,
+	text,
 }: {
-	name: string;
-	subtitle: string;
-	badge: string;
+	item: PendingApprovalPreviewItem;
+	typeLabel: string;
+	text: (value: string | ApprovalInboxLocalizedText) => string;
 }) {
+	const { t } = useTranslate();
+	const detail = text(item.detail);
 	return (
-		<div className="flex items-center justify-between rounded-lg bg-muted/50 p-2.5 transition-colors hover:bg-muted">
-			<div className="min-w-0 flex-1">
-				<p className="font-medium text-sm truncate">{name}</p>
-				<p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+		<li className="rounded-lg bg-muted/50 p-2.5">
+			<div className="flex items-center justify-between gap-2">
+				<p className="min-w-0 truncate font-medium text-sm">
+					{item.requesterName || t("common.unknown", "Unknown")}
+				</p>
+				<Badge variant="outline" className="shrink-0 text-xs">
+					{typeLabel}
+				</Badge>
 			</div>
-			<Badge variant="outline" className="shrink-0 ml-2 text-xs">
-				{badge}
-			</Badge>
-		</div>
+			<p className="truncate text-xs text-muted-foreground">
+				<span>{text(item.title)}</span>
+				{detail ? (
+					<>
+						{" · "}
+						<span>{detail}</span>
+					</>
+				) : null}
+			</p>
+			{item.coveringForName ? (
+				<p className="mt-1 inline-flex items-center gap-1 text-xs text-primary">
+					<IconUserShare className="size-3.5" aria-hidden="true" />
+					{t("dashboard.pending-approvals.covering-for", "Covering for {name}", {
+						name: item.coveringForName,
+					})}
+				</p>
+			) : null}
+		</li>
 	);
 }
 
 export function PendingApprovalsWidget({
 	initialSnapshot,
 }: {
-	initialSnapshot?: DashboardWidgetSnapshot<
-		DashboardWidgetData["pending-approvals"]
-	>;
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["pending-approvals"]>;
 } = {}) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee();
@@ -142,9 +151,14 @@ export function PendingApprovalsWidget({
 		"pending-approvals",
 		initialSnapshot,
 	);
-	const absenceApprovals = data?.absenceApprovals ?? [];
-	const timeCorrectionApprovals = data?.timeCorrectionApprovals ?? [];
-	const totalPending = absenceApprovals.length + timeCorrectionApprovals.length;
+	const typeLabels = getApprovalTypeLabels(t);
+	const text = (value: string | ApprovalInboxLocalizedText) =>
+		resolveLocalizedText(
+			value,
+			(key, fallback, params) => (params ? t(key, fallback, params) : t(key, fallback)),
+			locale,
+		);
+	const total = data?.total ?? 0;
 
 	return (
 		<DashboardWidget id="pending-approvals">
@@ -162,108 +176,36 @@ export function PendingApprovalsWidget({
 				<div className="space-y-4">
 					{error ? (
 						<WidgetReadError
-							title={t(
-								"dashboard.pending-approvals.title",
-								"Pending Approvals",
-							)}
+							title={t("dashboard.pending-approvals.title", "Pending Approvals")}
 							message={error}
 							retry={refetch}
 							refreshing={refreshing}
 						/>
-					) : totalPending === 0 ? (
-						<p role="status">
-							{t("dashboard.pending-approvals.empty", "No pending approvals")}
-						</p>
+					) : !data || total === 0 ? (
+						<p role="status">{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
 					) : (
 						<>
-							{/* Urgency Banner */}
-							<UrgencyIndicator count={totalPending} />
-
-							{/* Absence Requests */}
-							{absenceApprovals.length > 0 && (
-								<ApprovalSection
-									title={t(
-										"dashboard.pending-approvals.absence-requests",
-										"Absence Requests",
-									)}
-									icon={IconBeach}
-									iconColor="bg-amber-500"
-									count={absenceApprovals.length}
-								>
-									{absenceApprovals.slice(0, 3).map((approval) => (
-										<ApprovalItem
-											key={approval.id}
-											name={
-												approval.requester.user.name ||
-												t("common.unknown", "Unknown")
-											}
-											subtitle={`${formatDashboardDate(approval.absence.startDate, locale)} - ${formatDashboardDateWithYear(approval.absence.endDate, locale)}`}
-											badge={approval.absence.category.name}
-										/>
-									))}
-									{absenceApprovals.length > 3 && (
-										<p className="text-center text-xs text-muted-foreground pt-1">
-											{t(
-												"dashboard.pending-approvals.more-requests",
-												"+{count} more requests",
-												{
-													count: absenceApprovals.length - 3,
-												},
-											)}
-										</p>
-									)}
-								</ApprovalSection>
-							)}
-
-							{/* Time Correction Requests */}
-							{timeCorrectionApprovals.length > 0 && (
-								<ApprovalSection
-									title={t(
-										"dashboard.pending-approvals.time-corrections",
-										"Time Corrections",
-									)}
-									icon={IconClockEdit}
-									iconColor="bg-blue-500"
-									count={timeCorrectionApprovals.length}
-								>
-									{timeCorrectionApprovals.slice(0, 3).map((approval) => (
-										<ApprovalItem
-											key={approval.id}
-											name={
-												approval.requester.user.name ||
-												t("common.unknown", "Unknown")
-											}
-											subtitle={formatDashboardDateWithYear(
-												approval.workPeriod.startTime,
-												locale,
-											)}
-											badge={t(
-												"dashboard.pending-approvals.correction",
-												"Correction",
-											)}
-										/>
-									))}
-									{timeCorrectionApprovals.length > 3 && (
-										<p className="text-center text-xs text-muted-foreground pt-1">
-											{t(
-												"dashboard.pending-approvals.more-requests",
-												"+{count} more requests",
-												{
-													count: timeCorrectionApprovals.length - 3,
-												},
-											)}
-										</p>
-									)}
-								</ApprovalSection>
-							)}
-
-							{/* Action Button */}
+							<UrgencyIndicator total={total} coveringCount={data.coveringCount} />
+							<TypePills typeCounts={data.typeCounts} labels={typeLabels} />
+							<ul
+								aria-label={t(
+									"dashboard.pending-approvals.most-urgent",
+									"Most urgent pending approvals",
+								)}
+								className="space-y-2"
+							>
+								{data.preview.map((item) => (
+									<PreviewRow
+										key={`${item.type}:${item.id}`}
+										item={item}
+										typeLabel={typeLabels[item.type]}
+										text={text}
+									/>
+								))}
+							</ul>
 							<Button className="w-full group" asChild>
 								<Link href="/approvals/inbox">
-									{t(
-										"dashboard.pending-approvals.review-all",
-										"Review All Approvals",
-									)}
+									{t("dashboard.pending-approvals.review-all", "Review All Approvals")}
 									<IconArrowRight
 										className="ml-2 size-4 transition-transform group-hover:translate-x-1"
 										aria-hidden="true"

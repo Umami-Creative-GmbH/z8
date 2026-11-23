@@ -3,7 +3,14 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { approvalRequest, employee as employeeTable, team } from "@/db/schema";
-import { loadPendingApprovalsForEmployee } from "@/lib/approvals/server/queries";
+import {
+	countsWithCoveringSections,
+	getApprovalInboxList,
+	itemsWithCoveringSections,
+} from "@/lib/approvals/inbox/read-service";
+import { SUPPORTED_APPROVAL_INBOX_TYPES } from "@/lib/approvals/inbox/types";
+import { resolveApprovalInboxViewerScope } from "@/lib/approvals/inbox/viewer-scope";
+import { getAbility } from "@/lib/auth-helpers";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { currentRosterAverageWeeklyHours, currentRosterCount } from "./current-roster-queries";
@@ -13,6 +20,9 @@ import type {
 	RecentlyApprovedData,
 } from "./dashboard-types";
 import { mapRecentlyApprovedRequestRows } from "./recently-approved-requests";
+
+// The inbox reads need the approval handlers registered.
+import "@/lib/approvals/init";
 
 /** Only a render or freshly authorized request can supply this employee. */
 export function loadManagedEmployeesForEmployee(
@@ -116,32 +126,46 @@ export function loadRecentlyApprovedForOrganization(organizationId: string, limi
 	});
 }
 
-/** Preserve the canonical pending-list filtering and order, but deliver only card fields. */
+const PENDING_APPROVALS_PREVIEW_LIMIT = 5;
+
+/**
+ * What waits in the viewer's Approval inbox (#1978), read through the inbox itself with its
+ * own viewer scope, so the total matches the inbox badge: every supported type, the compliance
+ * exceptions they see and their "Covering for" work. Null when they may not open the inbox.
+ */
 export async function loadPendingApprovalsForSubject(
 	subject: DashboardSubject,
-): Promise<PendingApprovalsData> {
+): Promise<PendingApprovalsData | null> {
 	if (!subject.employee) throw new Error("Employee access required");
-	const result = await loadPendingApprovalsForEmployee({
-		...subject.employee,
-		userId: subject.userId,
+	const ability = await getAbility();
+	if (!ability) throw new Error("Approval inbox access required");
+	const scope = await resolveApprovalInboxViewerScope({ ability, employee: subject.employee });
+	if (!scope) return null;
+	const result = await getApprovalInboxList({
+		...scope,
+		status: "pending",
+		limit: PENDING_APPROVALS_PREVIEW_LIMIT,
 	});
+	const counts = countsWithCoveringSections(result);
 	return {
-		absenceApprovals: result.absenceApprovals.map(({ id, requester, absence }) => ({
-			id,
-			requester: { user: { name: requester.user.name } },
-			absence: {
-				startDate: absence.startDate,
-				endDate: absence.endDate,
-				category: { name: absence.category.name },
-			},
-		})),
-		timeCorrectionApprovals: result.timeCorrectionApprovals.map(
-			({ id, requester, workPeriod }) => ({
-				id,
-				requester: { user: { name: requester.user.name } },
-				workPeriod: { startTime: workPeriod.startTime.toISOString() },
-			}),
+		total: Object.values(counts).reduce<number>((total, count) => total + (count ?? 0), 0),
+		coveringCount: (result.covering ?? []).reduce(
+			(total, section) => total + section.rows.length,
+			0,
 		),
+		typeCounts: SUPPORTED_APPROVAL_INBOX_TYPES.flatMap((type) =>
+			(counts[type] ?? 0) > 0 ? [{ type, count: counts[type] }] : [],
+		),
+		preview: itemsWithCoveringSections(result)
+			.slice(0, PENDING_APPROVALS_PREVIEW_LIMIT)
+			.map((item) => ({
+				id: item.id,
+				type: item.type,
+				requesterName: item.requester.name,
+				title: item.summary.localized?.title ?? item.summary.title,
+				detail: item.summary.localized?.detail ?? item.summary.detail,
+				coveringForName: item.coveringFor?.approverName ?? null,
+			})),
 	};
 }
 

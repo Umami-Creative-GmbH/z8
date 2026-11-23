@@ -2,6 +2,7 @@ import type { PresenceStatusSummary } from "@/app/[locale]/(app)/time-tracking/a
 import type { DashboardWidgetOrder } from "@/db/schema";
 import type { CoverDuties } from "@/lib/absences/cover-duties";
 import type { VacationBalanceConfiguration } from "@/lib/absences/types";
+import type { ApprovalInboxLocalizedText, ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import type { UpcomingShifts } from "@/lib/scheduling/upcoming-shifts";
 import type {
 	ManagedEmployeesResult,
@@ -45,17 +46,28 @@ export type DashboardSubject = DashboardScope & {
 	} | null;
 };
 
+/** One pending approval of the widget's preview, as the Approval inbox lists it (#1978). */
+export type PendingApprovalPreviewItem = {
+	id: string;
+	type: ApprovalInboxType;
+	requesterName: string;
+	/** The inbox row's title and detail: localized when the source sends a localized form. */
+	title: string | ApprovalInboxLocalizedText;
+	detail: string | ApprovalInboxLocalizedText;
+	/** The absent approver this waits for when it is covered work, else null. */
+	coveringForName: string | null;
+};
+
+/** What waits in the viewer's Approval inbox, counted as its badge counts it (#1978). */
 export type PendingApprovalsData = {
-	absenceApprovals: {
-		id: string;
-		requester: { user: { name: string } };
-		absence: { startDate: string; endDate: string; category: { name: string } };
-	}[];
-	timeCorrectionApprovals: {
-		id: string;
-		requester: { user: { name: string } };
-		workPeriod: { startTime: string };
-	}[];
+	/** Every pending approval, covered ones included. */
+	total: number;
+	/** Of the total, those waiting in "Covering for" sections. */
+	coveringCount: number;
+	/** The types with pending approvals, in inbox type order. */
+	typeCounts: { type: ApprovalInboxType; count: number }[];
+	/** The five most urgent pending approvals, in inbox order. */
+	preview: PendingApprovalPreviewItem[];
 };
 
 export type RecentlyApprovedData = {

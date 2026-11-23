@@ -80,18 +80,28 @@ const managed = {
 	],
 };
 const pending = {
-	absenceApprovals: [
+	total: 2,
+	coveringCount: 0,
+	typeCounts: [
+		{ type: "absence_entry" as const, count: 1 },
+		{ type: "time_entry" as const, count: 1 },
+	],
+	preview: [
 		{
 			id: "absence-a",
-			requester: { user: { name: "Grace Hopper" } },
-			absence: { startDate: "2026-10-26", endDate: "2026-10-27", category: { name: "Vacation" } },
+			type: "absence_entry" as const,
+			requesterName: "Grace Hopper",
+			title: "Vacation",
+			detail: "Oct 26 – 27, 2026",
+			coveringForName: null,
 		},
-	],
-	timeCorrectionApprovals: [
 		{
 			id: "correction-a",
-			requester: { user: { name: "Katherine Johnson" } },
-			workPeriod: { startTime: "2026-10-23T08:00:00.000Z" },
+			type: "time_entry" as const,
+			requesterName: "Katherine Johnson",
+			title: "Time correction",
+			detail: "Oct 23, 2026",
+			coveringForName: null,
 		},
 	],
 };
@@ -141,7 +151,6 @@ it("renders all four authorized server deliveries without an initial GET, retain
 		"/settings/employees/report-a",
 	);
 	expect(screen.getByText("7")).toBeTruthy();
-	expect(screen.getByText("2 pending requests")).toBeTruthy();
 	expect(screen.getByText("Grace Hopper")).toBeTruthy();
 	expect(screen.getByText("Oct 23, 2026")).toBeTruthy();
 	expect(screen.getByText("Dorothy Vaughan")).toBeTruthy();

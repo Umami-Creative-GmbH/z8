@@ -38,6 +38,9 @@ const AUTH_SET = new Set(AUTH_ROUTES);
 // thirds of `common` (~125 KB of en JSON), which every auth page would inline otherwise.
 const AUTH_OMITTED_COMMON_SUBTREES = ["drivingLicence", "notifications", "personalDataExport"];
 const DEPENDENCIES: Record<string, Namespace[]> = {
+	// The Pending Approvals widget shows inbox type labels and summaries (#1978); summaries
+	// name per diem places with travelExpenses copy, as on /approvals.
+	"/": ["approvals", "travelExpenses"],
 	"/sign-in": ["setup"],
 	"/setup": ["auth"],
 	"/init": ["organization"],
