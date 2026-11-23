@@ -36,6 +36,7 @@
         "activeHelp": "Aktive Kategorien stehen für neue Abwesenheitsanträge zur Verfügung.",
         "color": "Farbe",
         "colorHelp": "Kalendermarkierung",
+        "contractorUnavailabilityRules": "Die Nichtverfügbarkeit Externer Dienstleister ist nur eine Kalendermarkierung: Sie verbraucht nie Urlaub, Arbeitszeit oder Arbeitszeitsaldo.",
         "countsAgainstVacation": "Wird vom Urlaubsguthaben abgezogen",
         "countsAgainstVacationHelp": "Genehmigte Tage vom Urlaubsanspruch des Mitarbeiters abziehen.",
         "deputyRequired": "Vertretung erforderlich",
