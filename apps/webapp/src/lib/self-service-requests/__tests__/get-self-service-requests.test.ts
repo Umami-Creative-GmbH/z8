@@ -17,11 +17,7 @@ const dbMocks = vi.hoisted(() => ({
 	reportCycleClosures: vi.fn(),
 	reportAdjustments: vi.fn(),
 	complianceExceptions: vi.fn(),
-	organizationTimezone: vi.fn(),
-}));
-
-vi.mock("@/lib/timezone/load-organization-timezone", () => ({
-	loadOrganizationTimezone: dbMocks.organizationTimezone,
+	organizationReads: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -42,7 +38,10 @@ vi.mock("drizzle-orm", () => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		// The two ways the organization (and its time zone) could be read; the loader must not.
+		select: dbMocks.organizationReads,
 		query: {
+			organization: { findFirst: dbMocks.organizationReads },
 			approvalRequest: { findMany: dbMocks.approvalRequests },
 			approvalWorkflow: { findMany: dbMocks.approvalWorkflows },
 			approvalWorkflowRollout: {
@@ -452,7 +451,7 @@ describe("getSelfServiceRequests", () => {
 		dbMocks.reportCycleClosures.mockReset();
 		dbMocks.reportAdjustments.mockReset();
 		dbMocks.complianceExceptions.mockReset();
-		dbMocks.organizationTimezone.mockReset();
+		dbMocks.organizationReads.mockReset();
 		dbMocks.travelExpenseReports.mockResolvedValue([]);
 		dbMocks.reportItems.mockResolvedValue([]);
 		dbMocks.reportCycleClosures.mockResolvedValue([]);
@@ -2254,9 +2253,12 @@ describe("getSelfServiceRequests", () => {
 				timeZone: "America/New_York",
 			});
 
+			expect(result.sourceErrors).toEqual([]);
 			expect(result.timeZone).toBe("America/New_York");
-			expect(result.items[0]?.details).toMatchObject({ timeZone: "America/New_York" });
-			expect(dbMocks.organizationTimezone).not.toHaveBeenCalled();
+			expect(result.items.map((item) => item.details)).toEqual([
+				expect.objectContaining({ kind: "compliance_exception", timeZone: "America/New_York" }),
+			]);
+			expect(dbMocks.organizationReads).not.toHaveBeenCalled();
 		});
 
 		it("reports a compliance exception source failure", async () => {

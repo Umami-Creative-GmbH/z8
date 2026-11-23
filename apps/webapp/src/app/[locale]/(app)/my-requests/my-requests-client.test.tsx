@@ -343,7 +343,7 @@ describe("MyRequestsClient", () => {
 		expect(within(vacationCard as HTMLElement).getByText("Decision: 22. Apr. 2026")).toBeTruthy();
 	});
 
-	it("reads submission and decision instants in the organization's zone, like a validity window", () => {
+	it("reads submission and decision instants in the viewer's effective zone, like a validity window", () => {
 		const [rejected] = createResult().items;
 		render(
 			<MyRequestsClient
@@ -818,6 +818,37 @@ describe("MyRequestsClient", () => {
 			expect(within(history).getAllByRole("row")).toHaveLength(4);
 		});
 
+		it("labels a returned report's return date as returned, not as a decision", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						counts: { pending: 0, requiredFixes: 1, recentDecisions: 0, total: 1 },
+						items: [
+							expenseReport({
+								id: "travel_expense_report:report-returned",
+								sourceId: "report-returned",
+								status: "returned",
+								resolvedAt: new Date("2026-04-25T08:00:00.000Z"),
+								availableActions: ["fix", "view"],
+								title: "Returned trip",
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const card = within(screen.getByRole("region", { name: "Needs attention" }))
+				.getByText(/^Returned trip/)
+				.closest("article") as HTMLElement;
+			expect(within(card).getByText("Returned: 25. Apr. 2026")).toBeTruthy();
+			expect(within(card).queryByText(/^Decision:/)).toBeNull();
+			const row = within(screen.getByRole("region", { name: "All requests" }))
+				.getByText(/^Returned trip/)
+				.closest("tr") as HTMLElement;
+			expect(within(row).getByText("Returned: 25. Apr. 2026")).toBeTruthy();
+			expect(screen.queryByRole("region", { name: "Recently decided" })).toBeNull();
+		});
+
 		it("shows compliance exceptions view-only with their window, and expired ones only in history", () => {
 			render(
 				<MyRequestsClient
@@ -866,7 +897,7 @@ describe("MyRequestsClient", () => {
 			const pendingCard = pending as HTMLElement;
 			expect(within(pendingCard).getByText("In review")).toBeTruthy();
 			expect(within(pendingCard).getByText("Compliance exception")).toBeTruthy();
-			// The window is read in the organization's zone: 06:00 UTC is 08:00 in Berlin.
+			// The window is read in the viewer's effective zone: 06:00 UTC is 08:00 in Berlin.
 			expect(pendingCard.textContent).toMatch(/Planned: 1 h 30 min/);
 			expect(pendingCard.textContent).toMatch(/Valid: [^·]*08:00[^·]*08:00/);
 			expect(pendingCard.textContent).toContain("Europe/Berlin");

@@ -418,7 +418,10 @@ function formatPlannedDuration(minutes: number, t: Translate) {
 	});
 }
 
-/** The planned duration and the 24-hour validity window, read in the organization's time zone. */
+/**
+ * The planned duration and the 24-hour validity window, read in the viewer's effective time zone
+ * (their own setting, else the organization's, else UTC).
+ */
 function formatComplianceExceptionSubtitle(
 	details: ComplianceExceptionRequestDetails,
 	locale: string,
@@ -495,7 +498,7 @@ function formatTravelExpenseSubtitle(value: string, locale: string) {
 	return prefix ? `${prefix}${separator}${formattedAmount}` : formattedAmount;
 }
 
-/** A request instant's date in the organization's zone. */
+/** A request instant's date in the viewer's effective time zone. */
 function formatDate(date: Date, locale: string, timeZone: string) {
 	return getDateFormatter(locale, timeZone).format(date);
 }
@@ -984,7 +987,7 @@ function RequestSection({
 	title: string;
 	description?: string;
 	items: SelfServiceRequestItem[];
-	/** The organization's zone, in which request instants are read. */
+	/** The viewer's effective time zone, in which request instants are read. */
 	timeZone: string;
 	allowCancel?: boolean;
 	preferFix?: boolean;
@@ -1082,8 +1085,7 @@ function RequestCard({
 							</span>
 							{item.resolvedAt ? (
 								<span>
-									{t("myRequests:myRequests.card.decision", "Decision")}:{" "}
-									{formatDate(item.resolvedAt, locale, timeZone)}
+									<ResolvedAtLabel item={item} />: {formatDate(item.resolvedAt, locale, timeZone)}
 								</span>
 							) : null}
 						</div>
@@ -1118,6 +1120,17 @@ function RequestCard({
 			</div>
 		</article>
 	);
+}
+
+/**
+ * What a request's `resolvedAt` marks: a decision, or for a returned report the return, which
+ * hands it back to the employee to fix rather than deciding it.
+ */
+function ResolvedAtLabel({ item }: { item: SelfServiceRequestItem }) {
+	const { t } = useTranslate();
+	return item.status === "returned"
+		? t("myRequests:myRequests.card.returned", "Returned")
+		: t("myRequests:myRequests.card.decision", "Decision");
 }
 
 /** Every loaded request once, as an aligned record table; it opens records but never cancels them. */
@@ -1197,7 +1210,15 @@ function RequestHistoryRow({
 				{formatDate(item.submittedAt, locale, timeZone)}
 			</TableCell>
 			<TableCell className="text-muted-foreground tabular-nums">
-				{item.resolvedAt ? formatDate(item.resolvedAt, locale, timeZone) : "—"}
+				{item.resolvedAt === null ? (
+					"—"
+				) : item.status === "returned" ? (
+					<>
+						<ResolvedAtLabel item={item} />: {formatDate(item.resolvedAt, locale, timeZone)}
+					</>
+				) : (
+					formatDate(item.resolvedAt, locale, timeZone)
+				)}
 			</TableCell>
 			<TableCell className="pr-4 sm:text-right md:pr-5">
 				{primaryAction ? (

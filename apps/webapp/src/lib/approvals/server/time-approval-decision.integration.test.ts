@@ -745,6 +745,8 @@ describe("time approval decision (PostgreSQL)", () => {
 
 	describe("requester correction listing", () => {
 		const scope = { organizationId: ids.organization, employeeId: ids.requester };
+		/** The requester's own listing, read in their effective zone (UTC, like the bounds). */
+		const requesterListing = { ...scope, timeZone: "UTC" };
 		const bounds = {
 			...scope,
 			timezone: "UTC",
@@ -758,7 +760,7 @@ describe("time approval decision (PostgreSQL)", () => {
 
 		async function pendingRequests() {
 			const result = await getSelfServiceRequests({
-				...scope,
+				...requesterListing,
 				filters: { sourceType: "time_correction", status: "pending" },
 			});
 			expect(result.sourceErrors).toEqual([]);
@@ -826,7 +828,7 @@ describe("time approval decision (PostgreSQL)", () => {
 					expect(await pendingRequests()).toEqual([]);
 					expect(await listedPeriods(workPeriodId)).toEqual(new Set());
 					expect(await findPeriodSubmissionBlockers(db, bounds)).toEqual([]);
-					const history = await getSelfServiceRequests({ ...scope });
+					const history = await getSelfServiceRequests(requesterListing);
 					expect(history.items).toMatchObject([
 						{ sourceId: workPeriodId, status: "cancelled", availableActions: ["view"] },
 					]);
@@ -1009,7 +1011,7 @@ describe("time approval decision (PostgreSQL)", () => {
 		it("keeps a finalized current correction visible as approved", async () => {
 			const { workPeriodId, approval } = await submitted("time_correction", "legacy");
 			await decide(actors.approver, approval.id, { as: "approver" });
-			const history = await getSelfServiceRequests(scope);
+			const history = await getSelfServiceRequests(requesterListing);
 			expect(history.items).toMatchObject([
 				{ sourceId: workPeriodId, status: "approved", availableActions: ["view"] },
 			]);
