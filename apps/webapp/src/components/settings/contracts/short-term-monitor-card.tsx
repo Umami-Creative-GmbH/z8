@@ -567,11 +567,21 @@ export function ShortTermMonitorCard({
 			if (year === null) setCurrentYear(result.data.year);
 			return result.data;
 		},
+		// While another year loads, keep this employee's card (and the focused year selector) on
+		// screen. Never another organization's or employee's data.
+		placeholderData: (previous, previousQuery) => {
+			const [, , previousOrganization, previousEmployee] = previousQuery?.queryKey ?? [];
+			return previousOrganization === organizationId && previousEmployee === employeeId
+				? previous
+				: undefined;
+		},
 	});
 	const monitor = query.data;
+	const loadingYear = query.isPlaceholderData;
 	// Nothing to show for employees who are not short-term this year.
-	if (!monitor || (year === null && !monitor.applies)) return null;
+	if (!monitor || (year === null && !loadingYear && !monitor.applies)) return null;
 	const thisYear = currentYear ?? monitor.year;
+	const shownYear = year ?? thisYear;
 
 	return (
 		<Card id="short-term">
@@ -590,7 +600,7 @@ export function ShortTermMonitorCard({
 						</CardDescription>
 					</div>
 					<Select
-						value={String(monitor.year)}
+						value={String(shownYear)}
 						onValueChange={(value) => {
 							const chosen = Number(value);
 							setYear(chosen === thisYear ? null : chosen);
@@ -600,7 +610,7 @@ export function ShortTermMonitorCard({
 							className="w-28"
 							aria-label={t("settings.contracts.shortTerm.year", "Calendar year")}
 						>
-							<SelectValue>{String(monitor.year)}</SelectValue>
+							<SelectValue>{String(shownYear)}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
 							{[thisYear, thisYear - 1].map((option) => (
@@ -613,11 +623,13 @@ export function ShortTermMonitorCard({
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-6">
-				{query.isFetching && !query.data ? (
-					<IconLoader2
-						className="size-4 animate-spin motion-reduce:animate-none"
-						aria-hidden="true"
-					/>
+				{loadingYear ? (
+					<span role="status" aria-label={t("common.loading", "Loading…")}>
+						<IconLoader2
+							className="size-4 animate-spin motion-reduce:animate-none"
+							aria-hidden="true"
+						/>
+					</span>
 				) : !monitor.applies ? (
 					<p className="text-muted-foreground text-sm">
 						{t("settings.contracts.shortTerm.notApplicable", "Not employed short-term in {year}.", {
@@ -635,7 +647,7 @@ export function ShortTermMonitorCard({
 						)}
 					</p>
 				)}
-				{isOrgAdmin && monitor.audience === "full" && (
+				{isOrgAdmin && monitor.audience === "full" && !loadingYear && (
 					<>
 						<VerificationSection monitor={monitor} t={t} />
 						<PriorEmploymentSection organizationId={organizationId} monitor={monitor} t={t} />
