@@ -56,6 +56,7 @@ function Panel(props: Partial<ComponentProps<typeof InviteMemberDialog>> = {}) {
 		<InviteMemberDialog
 			organizationId="org-a"
 			organizationName="Synthetic organization"
+			organizationToday="2026-11-23"
 			settingsAccess="orgAdmin"
 			open={open}
 			onOpenChange={(next) => {

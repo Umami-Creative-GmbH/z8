@@ -9,7 +9,8 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { todayInOrganization } from "@/lib/personnel-file/organization-day";
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/cache", async (original) =>
@@ -252,6 +253,8 @@ describe("external contractor engagement kind (#1995)", () => {
 			teamId: string | null;
 			projectIds: string[];
 			plannedEndDate: string | null;
+			/** The admin who prepared the invitation; the owner unless named. */
+			preparedBy?: string;
 		}) {
 			const userId = randomUUID();
 			const memberId = randomUUID();
@@ -286,7 +289,7 @@ describe("external contractor engagement kind (#1995)", () => {
 					draft.teamId,
 					draft.plannedEndDate,
 					draft.projectIds,
-					fixture.ownerUserId,
+					draft.preparedBy ?? fixture.ownerUserId,
 				],
 			);
 			return { userId, memberId, invitationId };
@@ -598,6 +601,106 @@ describe("external contractor engagement kind (#1995)", () => {
 				},
 			]);
 		});
+
+		async function joinAndSettle(joiner: {
+			userId: string;
+			memberId: string;
+			invitationId: string;
+		}) {
+			const joining = await fixture.db.transaction((tx) =>
+				joinOrganization(tx, {
+					organizationId: fixture.organizationId,
+					userId: joiner.userId,
+					membership: { id: joiner.memberId, role: "member" },
+					invitation: { id: joiner.invitationId },
+				}),
+			);
+			await joining.afterCommit.run();
+			return joining.outcome.employee.id;
+		}
+
+		async function plannedEndFollowUp(employeeId: string) {
+			const { rows: departures } = await fixture.pool.query(
+				`select status, last_working_day::text from employee_departure
+				 where organization_id = $1 and employee_id = $2`,
+				[fixture.organizationId, employeeId],
+			);
+			const { rows: audits } = await fixture.pool.query<{ metadata: string }>(
+				`select metadata from audit_log where organization_id = $1 and employee_id = $2
+				 and action = 'employee.planned_engagement_end_not_applied'`,
+				[fixture.organizationId, employeeId],
+			);
+			const { rows: notices } = await fixture.pool.query<{ user_id: string; type: string }>(
+				`select user_id, type from notification
+				 where organization_id = $1 and entity_type = 'employee' and entity_id = $2`,
+				[fixture.organizationId, employeeId],
+			);
+			return {
+				departures,
+				audits: audits.map((audit) => JSON.parse(audit.metadata)),
+				notices,
+			};
+		}
+
+		it("schedules a planned end that passed before the contractor joined for today, and tells the admins", async () => {
+			const joiner = await acceptedContractorInvitation({
+				teamId: null,
+				projectIds: [],
+				plannedEndDate: "2020-01-31",
+			});
+			const { rows: organization } = await fixture.pool.query<{ timezone: string | null }>(
+				"select timezone from organization where id = $1",
+				[fixture.organizationId],
+			);
+			const today = todayInOrganization(
+				systemClock.nowInstant(),
+				organization[0]?.timezone,
+			).toString();
+
+			const employeeId = await joinAndSettle(joiner);
+
+			const followUp = await plannedEndFollowUp(employeeId);
+			expect(followUp.departures).toEqual([{ status: "pending", last_working_day: today }]);
+			expect(followUp.audits).toEqual([
+				expect.objectContaining({
+					reason: "planned_end_passed",
+					plannedEndDate: "2020-01-31",
+					scheduledLastWorkingDay: today,
+				}),
+			]);
+			expect(followUp.notices).toContainEqual({
+				user_id: fixture.ownerUserId,
+				type: "employee_offboarding_review",
+			});
+		});
+
+		it("never drops a planned end silently when it cannot be scheduled, and tells the admins", async () => {
+			// The admin who prepared the invitation is no longer one when the contractor joins.
+			const formerAdmin = await fixture.seedEmployee();
+			const joiner = await acceptedContractorInvitation({
+				teamId: null,
+				projectIds: [],
+				plannedEndDate: "2099-06-30",
+				preparedBy: formerAdmin.userId,
+			});
+
+			const employeeId = await joinAndSettle(joiner);
+
+			const followUp = await plannedEndFollowUp(employeeId);
+			expect(followUp.departures).toEqual([]);
+			expect(followUp.audits).toEqual([
+				expect.objectContaining({
+					reason: "schedule_refused",
+					refusal: "actor_not_authorized",
+					plannedEndDate: "2099-06-30",
+				}),
+			]);
+			expect(followUp.notices).toContainEqual({
+				user_id: fixture.ownerUserId,
+				type: "employee_offboarding_review",
+			});
+			expect(followUp.notices.map((notice) => notice.user_id)).not.toContain(formerAdmin.userId);
+		});
 	});
 
 	describe("converting by ending the period and starting a new one", () => {
@@ -820,6 +923,60 @@ describe("external contractor engagement kind (#1995)", () => {
 			expect((await seats(organizationId)).total).toBe(1);
 			expect(reconcileSeats).toHaveBeenCalledWith(organizationId);
 		});
+
+		it("counts a contractor holding a kiosk seat as a kiosk seat until departure or deactivation ends it", async () => {
+			now = parseInstant("2026-03-02T10:00:00Z");
+			const organizationId = await fixture.createOrganization();
+			const owner = await fixture.seedEmployee({ organizationId, role: "owner" });
+			// No kiosk-only contractor can be created in the app yet: seeded directly.
+			const kioskContractor = async () => {
+				const contractor = await fixture.seedEmployee({
+					organizationId,
+					engagementKind: "contractor",
+				});
+				await fixture.pool.query(`update "user" set email = $2 where id = $1`, [
+					contractor.userId,
+					`${randomUUID()}@kiosk.invalid`,
+				]);
+				return contractor;
+			};
+			const departing = await kioskContractor();
+			const deactivated = await kioskContractor();
+			expect(await seats(organizationId)).toEqual({ total: 3, byType: { full: 1, kiosk: 2 } });
+
+			const departed = await commands().offboardNow(
+				{ userId: owner.userId, organizationId },
+				{
+					employeeId: departing.employeeId,
+					requestId: randomUUID(),
+					replacementEmployeeId: null,
+					acknowledgeUnassignedDuties: true,
+				},
+			);
+			expect(departed.status).toBe("effective");
+			expect(await seats(organizationId)).toEqual({ total: 2, byType: { full: 1, kiosk: 1 } });
+
+			const outcome = await deactivate(
+				db,
+				{
+					organizationId,
+					actorUserId: owner.userId,
+					employeeId: deactivated.employeeId,
+					requestId: randomUUID(),
+					replacementManagers: {},
+				},
+				{
+					clock,
+					effects: {
+						revokeSessions: async () => undefined,
+						reconcileSeats: async () => undefined,
+						pauseOwnedExports: async () => undefined,
+					},
+				},
+			);
+			expect(outcome.kind).toBe("deactivated");
+			expect(await seats(organizationId)).toEqual({ total: 1, byType: { full: 1, kiosk: 0 } });
+		});
 	});
 
 	describe("ending a contractor engagement", () => {
@@ -875,18 +1032,28 @@ describe("external contractor engagement kind (#1995)", () => {
 		it("previews a contractor's retrospective end without the payroll reconciliation exception", async () => {
 			now = TODAY;
 			const contractor = await seedContractor();
-			await seedSettledPayrollDay(contractor, "2026-08-22");
+			const employee = await fixture.seedEmployee();
+			for (const person of [contractor, employee])
+				await seedSettledPayrollDay(person, "2026-08-22");
+			const previewOf = (person: SeededEmployee) =>
+				previewPastDeparture(fixture.db, {
+					organizationId: fixture.organizationId,
+					actorUserId: fixture.ownerUserId,
+					employeeId: person.employeeId,
+					lastWorkingDay: "2026-08-15",
+					replacementEmployeeId: null,
+					now,
+				});
 
-			const preview = await previewPastDeparture(fixture.db, {
-				organizationId: fixture.organizationId,
-				actorUserId: fixture.ownerUserId,
-				employeeId: contractor.employeeId,
-				lastWorkingDay: "2026-08-15",
-				replacementEmployeeId: null,
-				now,
+			const contractorPreview = (await previewOf(contractor)).preview;
+			const employeePreview = (await previewOf(employee)).preview;
+
+			expect(contractorPreview).toMatchObject({ exceptions: expect.any(Array) });
+			expect(contractorPreview?.exceptions).not.toContain("payroll_reconciliation");
+			// The same settled day for an employee does show the exception.
+			expect(employeePreview).toMatchObject({
+				exceptions: expect.arrayContaining(["payroll_reconciliation"]),
 			});
-
-			expect(preview.preview?.exceptions ?? []).not.toContain("payroll_reconciliation");
 		});
 
 		it("ends a contractor's access through canonical employment ending", async () => {

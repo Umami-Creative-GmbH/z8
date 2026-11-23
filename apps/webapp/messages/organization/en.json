@@ -223,6 +223,7 @@
         "noProjects": "No active projects yet. You can assign projects later.",
         "plannedEndDate": "Planned engagement end",
         "plannedEndDateDescription": "The last working day. Once they join, it becomes a scheduled leaving date that ends their access and seat.",
+        "plannedEndDateNotFuture": "The planned engagement end must be after today.",
         "projects": "Projects",
         "referenceCode": "PO or cost center",
         "vatId": "VAT ID"

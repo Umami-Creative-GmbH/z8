@@ -1704,6 +1704,11 @@
         "message": "Ihre Gehaltsabrechnung für {payPeriod} wurde mit Ihnen geteilt.",
         "title": "Neue Gehaltsabrechnung in Ihrer Personalakte"
       },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Das geplante Auftragsende von {name} ({plannedEndDate}) konnte nicht als Austrittsdatum geplant werden. Planen Sie es auf der Mitarbeiterseite.",
+        "passed": "Das geplante Auftragsende von {name} ({plannedEndDate}) war beim Beitritt bereits vorbei, deshalb ist das Austrittsdatum heute ({leavingDate}). Ändern Sie es, falls der Auftrag weiterläuft.",
+        "title": "Ein geplantes Auftragsende muss geprüft werden"
+      },
       "policyForgottenClockOutReminder": {
         "message": "Sie haben die erforderlichen Stunden für {day} um {endTime} ({timezone}) erreicht. Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben."
       },

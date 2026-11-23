@@ -358,6 +358,39 @@ describe("sendInvitation", () => {
 		);
 	});
 
+	it.each([
+		["today in the organization's timezone", "2027-06-30"],
+		["a past day", "2027-06-29"],
+	])("refuses a planned engagement end of %s before inviting (#1995)", async (_case, date) => {
+		// 22:30 UTC on 29 June is already 30 June in Berlin.
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date("2027-06-29T22:30:00.000Z"));
+		mocks.db.query.organization.findFirst.mockResolvedValue({
+			id: "org-1",
+			name: "Organization One",
+			timezone: "Europe/Berlin",
+			deletedAt: null,
+		});
+		try {
+			expect(
+				await sendInvitation({
+					email: "grace@hopper.example",
+					role: "member",
+					engagementKind: "contractor",
+					contractor: { plannedEndDate: date },
+				}),
+			).toMatchObject({
+				success: false,
+				code: "ValidationError",
+				error: "The planned engagement end must be after today",
+			});
+			expect(api.createInvitation).not.toHaveBeenCalled();
+			expect(mocks.persistDraft).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("refuses a contractor's project outside the organization before inviting (#1995)", async () => {
 		mocks.db.query.project.findMany.mockResolvedValue([]);
 

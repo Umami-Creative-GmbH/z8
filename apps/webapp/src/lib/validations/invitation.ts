@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
 import { engagementKinds } from "@/lib/engagement/engagement-kind";
@@ -28,6 +29,20 @@ export const contractorInvitationSchema = z.object({
 });
 
 export type ContractorInvitation = z.infer<typeof contractorInvitationSchema>;
+
+export const PLANNED_END_NOT_FUTURE_MESSAGE = "The planned engagement end must be after today";
+
+/**
+ * A planned engagement end is a later day than the organization's today
+ * (#1995). Only such a day can still be scheduled as a leaving date when the
+ * contractor joins; both are org-local ISO calendar dates.
+ */
+export function isPlannedEndAfterOrganizationToday(
+	plannedEndDate: string,
+	organizationToday: Temporal.PlainDate,
+): boolean {
+	return Temporal.PlainDate.compare(Temporal.PlainDate.from(plannedEndDate), organizationToday) > 0;
+}
 
 /**
  * Contracting details belong only to an External Contractor invitation. Shared

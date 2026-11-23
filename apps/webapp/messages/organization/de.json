@@ -223,6 +223,7 @@
         "noProjects": "Noch keine aktiven Projekte. Sie können Projekte später zuweisen.",
         "plannedEndDate": "Geplantes Auftragsende",
         "plannedEndDateDescription": "Der letzte Arbeitstag. Nach dem Beitritt wird daraus ein geplantes Austrittsdatum, das Zugang und Lizenzplatz beendet.",
+        "plannedEndDateNotFuture": "Das geplante Auftragsende muss nach dem heutigen Tag liegen.",
         "projects": "Projekte",
         "referenceCode": "Bestellnummer oder Kostenstelle",
         "vatId": "USt-IdNr."

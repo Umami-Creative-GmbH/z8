@@ -32,8 +32,10 @@ import {
 	writeDraftFirstTerms,
 	writeWithDraftPersonnelNumber,
 } from "./invitation-draft";
+import { type PlannedEngagementEnd, schedulePlannedEngagementEnd } from "./planned-engagement-end";
 
 export type { JoiningTransaction } from "./invitation-draft";
+export type { PlannedEngagementEnd } from "./planned-engagement-end";
 
 type Employee = typeof employee.$inferSelect;
 
@@ -98,16 +100,6 @@ export type JoiningOutcome =
 	| { kind: "reactivated"; employee: Employee; reactivationRequestId: string | null }
 	| { kind: "already_current"; employee: Employee }
 	| { kind: "membership_only"; employee: Employee };
-
-/** The departure a contractor invitation's planned end date becomes (#1995). */
-export type PlannedEngagementEnd = {
-	organizationId: string;
-	employeeId: string;
-	/** Org-local ISO calendar date. */
-	lastWorkingDay: string;
-	requestId: string;
-	actorUserId: string;
-};
 
 /** The seat signal of the new membership, sent after commit. */
 export type SeatSignal = {
@@ -415,7 +407,7 @@ async function settleArrivingEmployee(
 /**
  * The planned engagement end of a contractor invitation (#1995), scheduled once
  * the joining committed as a canonical departure by the admin who prepared the
- * invitation. The draft's id is the request id, so a repeated step replays.
+ * invitation (`schedulePlannedEngagementEnd`).
  */
 function plannedEngagementEndOf(
 	outcome: JoiningOutcome,
@@ -425,40 +417,15 @@ function plannedEngagementEndOf(
 	if (outcome.kind !== "joined" && outcome.kind !== "reactivated") return null;
 	if (outcome.employee.engagementKind !== "contractor") return null;
 	if (draft?.engagementKind !== "contractor" || !draft.plannedEndDate) return null;
-	const actorUserId = draft.updatedBy ?? input.actorUserId;
-	if (!actorUserId) return null;
 	return {
 		organizationId: input.organizationId,
 		employeeId: outcome.employee.id,
+		userId: input.userId,
 		lastWorkingDay: draft.plannedEndDate,
 		requestId: draft.id,
-		actorUserId,
+		invitationId: draft.invitationId,
+		actorUserId: draft.updatedBy ?? input.actorUserId ?? null,
 	};
-}
-
-/** Best effort after commit: a failure is logged; admins can still schedule it by hand. */
-async function schedulePlannedEngagementEnd(planned: PlannedEngagementEnd) {
-	try {
-		const { EMPLOYEE_OFFBOARDING_RELEASE_READY } = await import("../release");
-		if (!EMPLOYEE_OFFBOARDING_RELEASE_READY) return;
-		const { createProductionDepartureCommands } = await import("../runtime");
-		await createProductionDepartureCommands().scheduleDeparture(
-			{ userId: planned.actorUserId, organizationId: planned.organizationId },
-			{
-				employeeId: planned.employeeId,
-				requestId: planned.requestId,
-				expectedRevision: null,
-				lastWorkingDay: planned.lastWorkingDay,
-				replacementEmployeeId: null,
-				acknowledgeUnassignedDuties: true,
-			},
-		);
-	} catch (error) {
-		logger.error(
-			{ error, organizationId: planned.organizationId, employeeId: planned.employeeId },
-			"Could not schedule the planned end of a contractor engagement",
-		);
-	}
 }
 
 /**

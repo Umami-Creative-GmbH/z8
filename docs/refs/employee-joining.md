@@ -20,6 +20,7 @@ hands back an outcome and one after-commit step that the caller runs once its tr
 | --- | --- |
 | `joining.ts` | `joinOrganization(tx, input)`, the outcome, the after-commit step, `acquireJoiningLocks` |
 | `invitation-draft.ts` | Loading the invitation draft, applying its values, first terms and personnel number, and the draft clean-up |
+| `planned-engagement-end.ts` | Scheduling a contractor invitation's planned engagement end after commit, and telling admins when it is not scheduled as planned |
 | `member-without-employee.ts` | `joinMemberWithoutEmployee`: joins a member with no employee row, never touches one who has a row |
 | `backfill.ts` | The one-time backfill of members without an employee (#1671) |
 
@@ -61,7 +62,24 @@ a planned engagement end. Joining then creates the employee with that engagement
 - writes the contracting details to `employee_contractor_profile` and assigns the draft's projects
   that belong to the organization (`applyContractorDraft`),
 - schedules the planned end as a canonical departure after commit, by the admin who prepared the
-  invitation, with the draft's id as the request id (best effort; a failure is logged).
+  invitation, with the draft's id as the request id (`joining/planned-engagement-end.ts`).
+
+The invitation only accepts a planned end after the organization's today (`sendInvitation` checks
+it in the organization's timezone; the picker starts at tomorrow). The invitation can still be
+accepted after that day, or scheduling can be refused, so joining never drops a planned end
+silently:
+
+- **The day passed before they joined:** the leaving date is today in the organization's timezone,
+  the earliest a scheduled departure allows. The contractor keeps access for the rest of today and
+  never past the end the organization set; an admin who extends the engagement moves the leaving date.
+- **Scheduling refused or impossible** (the preparing admin is no longer one, no admin can be named,
+  the offboarding release gate is off, any other refusal): nothing is scheduled.
+
+Both write the audit entry `employee.planned_engagement_end_not_applied` (reason
+`planned_end_passed` with `scheduledLastWorkingDay`, or `schedule_refused` with the command's
+`refusal` code, `no_admin_actor` or `offboarding_not_released`; always with `plannedEndDate`,
+`draftId` and `invitationId`). The organization's current owners and admins also get an
+`employee_offboarding_review` notification that links to the employee's page.
 
 A reactivation never applies the draft's engagement kind: the open period's kind cannot change in
 place. When the draft's kind differs from the returning employee's (a contractor invitation for a
@@ -81,8 +99,11 @@ contracting details, projects and planned end.
 `afterCommit.run()` runs once the caller's transaction committed:
 
 1. forwards the audit entries joining recorded to the external audit service,
-2. consumes the invitation draft (`draftCleanup`),
-3. sends the seat signal (`syncBillingSeatsAfterMemberChange`, best effort; the hourly seat
+2. schedules a contractor invitation's planned engagement end (`plannedEngagementEnd`, see
+   [External Contractors](#external-contractors)), before the draft whose id it replays on is consumed,
+3. consumes the invitation draft (`draftCleanup`),
+4. sends the rehire notice of a `membership_only` outcome (`rehireNotice`),
+5. sends the seat signal (`syncBillingSeatsAfterMemberChange`, best effort; the hourly seat
    reconciliation is the safety net).
 
 `run({ seatSignal: false })` skips the seat signal for an older membership, where no seat changed now.

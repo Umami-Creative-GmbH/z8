@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	type CreateKioskOnlyEmployeeActionInput,
 	createKioskOnlyEmployeeAction,
@@ -49,6 +50,8 @@ import { useRouter } from "@/navigation";
 interface InviteMemberDialogProps {
 	organizationId: string;
 	organizationName: string;
+	/** Today in the organization's timezone (ISO date), worked out on the server. */
+	organizationToday: string;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 	open: boolean;
@@ -134,11 +137,16 @@ function useMemberMutations(
 export function InviteMemberDialog({
 	organizationId,
 	organizationName,
+	organizationToday,
 	settingsAccess,
 	open,
 	onOpenChange,
 }: InviteMemberDialogProps) {
 	const { t } = useTranslate();
+	// The earliest planned engagement end: the organization's tomorrow (#1995).
+	const firstPlannedEndDate = Temporal.PlainDate.from(organizationToday)
+		.add({ days: 1 })
+		.toString();
 	const { refresh } = useRouter();
 	const session = useSession();
 	const actorId = session.data?.user.id;
@@ -628,7 +636,21 @@ export function InviteMemberDialog({
 												)}
 											</form.Field>
 										</div>
-										<form.Field name="plannedEndDate">
+										<form.Field
+											name="plannedEndDate"
+											validators={{
+												// A leaving date that has started can no longer be scheduled (#1995).
+												onChange: ({ value, fieldApi }) =>
+													!value ||
+													fieldApi.form.getFieldValue("engagementKind") !== "contractor" ||
+													value >= firstPlannedEndDate
+														? undefined
+														: t(
+																"organization.invite.contractor.plannedEndDateNotFuture",
+																"The planned engagement end must be after today.",
+															),
+											}}
+										>
 											{(field) => (
 												<div className="space-y-2">
 													<Label htmlFor="plannedEndDate">
@@ -640,6 +662,8 @@ export function InviteMemberDialog({
 													<DatePicker
 														id="plannedEndDate"
 														value={field.state.value || null}
+														min={firstPlannedEndDate}
+														aria-invalid={field.state.meta.errors.length > 0}
 														onChange={field.handleChange}
 													/>
 													<p className="text-xs text-muted-foreground">
@@ -648,6 +672,11 @@ export function InviteMemberDialog({
 															"The last working day. Once they join, it becomes a scheduled leaving date that ends their access and seat.",
 														)}
 													</p>
+													{field.state.meta.errors.length > 0 ? (
+														<p className="text-sm text-destructive" role="alert">
+															{String(field.state.meta.errors[0])}
+														</p>
+													) : null}
 												</div>
 											)}
 										</form.Field>

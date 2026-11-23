@@ -18,13 +18,14 @@ import {
 	persistEmployeeInvitationDraft,
 	syncInvitationTargetTeam,
 } from "@/lib/auth/employee-invitation-draft";
-import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { todayInOrganization } from "@/lib/personnel-file/organization-day";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone-change";
@@ -32,6 +33,8 @@ import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
 	contractorInvitationSchema,
 	invitationSchema,
+	isPlannedEndAfterOrganizationToday,
+	PLANNED_END_NOT_FUTURE_MESSAGE,
 	refineInvitationEngagement,
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
@@ -126,6 +129,37 @@ function validateInvitationProjects(organizationId: string, projectIds: readonly
 }
 
 /**
+ * A contractor's planned engagement end is a later day than the organization's
+ * today (#1995): joining schedules it as a leaving date, which cannot be in the past.
+ */
+function validatePlannedEndDate(
+	organizationId: string,
+	plannedEndDate: string | null | undefined,
+	now: Instant,
+) {
+	return Effect.gen(function* () {
+		if (!plannedEndDate) return;
+		const dbService = yield* DatabaseService;
+		const organization = yield* dbService.query("getInvitationOrganizationTimezone", () =>
+			dbService.db.query.organization.findFirst({
+				where: eq(authSchema.organization.id, organizationId),
+				columns: { timezone: true },
+			}),
+		);
+		const today = todayInOrganization(now, organization?.timezone);
+		if (!isPlannedEndAfterOrganizationToday(plannedEndDate, today)) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: PLANNED_END_NOT_FUTURE_MESSAGE,
+					field: "contractor.plannedEndDate",
+					value: plannedEndDate,
+				}),
+			);
+		}
+	});
+}
+
+/**
  * Send an invitation to join the organization
  */
 export const sendInvitation = organizationAction(
@@ -157,6 +191,11 @@ export const sendInvitation = organizationAction(
 			yield* validateInvitationProjects(
 				organizationId,
 				draftFields.engagement.contractor?.projectIds ?? [],
+			);
+			yield* validatePlannedEndDate(
+				organizationId,
+				draftFields.engagement.contractor?.plannedEndDate,
+				now,
 			);
 			yield* validateInvitationAllowed(organizationId, input.email);
 

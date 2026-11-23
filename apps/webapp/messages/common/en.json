@@ -1704,6 +1704,11 @@
         "message": "Your payslip for {payPeriod} was shared with you.",
         "title": "New payslip in your personnel file"
       },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "The planned engagement end of {name} ({plannedEndDate}) could not be scheduled as their leaving date. Schedule it on their employee page.",
+        "passed": "The planned engagement end of {name} ({plannedEndDate}) had passed when they joined, so their leaving date is today ({leavingDate}). Change it if the engagement continues.",
+        "title": "A planned engagement end needs review"
+      },
       "policyForgottenClockOutReminder": {
         "message": "You reached the required hours for {day} at {endTime} ({timezone}). Clock out if you have finished working."
       },

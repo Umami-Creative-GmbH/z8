@@ -228,6 +228,7 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 					<InviteMemberDialog
 						organizationId={props.organizationId}
 						organizationName={people.organizationName}
+						organizationToday={people.organizationToday}
 						settingsAccess={props.settingsAccess}
 						open={inviteDialogOpen}
 						onOpenChange={setInviteDialogOpen}

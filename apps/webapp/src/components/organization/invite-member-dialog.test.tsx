@@ -115,12 +115,21 @@ vi.mock("@/components/ui/date-picker", () => ({
 	DatePicker: ({
 		id,
 		value,
+		min,
 		onChange,
 	}: {
 		id: string;
 		value?: string | null;
+		min?: string;
 		onChange: (value: string) => void;
-	}) => <input id={id} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />,
+	}) => (
+		<input
+			id={id}
+			data-min={min}
+			value={value ?? ""}
+			onChange={(event) => onChange(event.target.value)}
+		/>
+	),
 }));
 
 const source = () =>
@@ -147,6 +156,7 @@ describe("InviteMemberDialog target team form", () => {
 				<InviteMemberDialog
 					organizationId="org-1"
 					organizationName="Test Organization"
+					organizationToday="2026-11-23"
 					settingsAccess="orgAdmin"
 					open
 					onOpenChange={onOpenChange}
@@ -314,6 +324,20 @@ describe("InviteMemberDialog target team form", () => {
 				}),
 			),
 		);
+	});
+
+	it("offers only planned engagement ends after the organization's today (#1995)", async () => {
+		renderDialog();
+
+		fireEvent.click(screen.getByRole("option", { name: /External Contractor/ }));
+		const plannedEnd = screen.getByLabelText("Planned engagement end");
+		expect(plannedEnd.getAttribute("data-min")).toBe("2026-11-24");
+
+		fireEvent.change(plannedEnd, { target: { value: "2026-11-23" } });
+		submitInvitation();
+
+		expect(await screen.findByText("The planned engagement end must be after today.")).toBeTruthy();
+		expect(sendInvitationMock).not.toHaveBeenCalled();
 	});
 
 	it("renders an accessible target team select below role", () => {

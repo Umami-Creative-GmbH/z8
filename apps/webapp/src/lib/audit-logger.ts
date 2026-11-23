@@ -43,6 +43,8 @@ export enum AuditAction {
 	EMPLOYEE_PERSONNEL_NUMBER_DROPPED = "employee.personnel_number_dropped",
 	/** A former employee regained a membership but stays off the roster, so joining discarded the invitation draft (#1665). */
 	EMPLOYEE_INVITATION_DRAFT_NOT_APPLIED = "employee.invitation_draft_not_applied",
+	/** A contractor invitation's planned engagement end was not scheduled as planned when they joined (#1995). */
+	EMPLOYEE_PLANNED_ENGAGEMENT_END_NOT_APPLIED = "employee.planned_engagement_end_not_applied",
 
 	// Organization Operations
 	ORGANIZATION_CREATED = "organization.created",
