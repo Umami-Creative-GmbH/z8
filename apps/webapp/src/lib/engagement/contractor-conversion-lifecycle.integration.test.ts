@@ -103,6 +103,7 @@ describe("an External Contractor hired as an employee, across every module (#200
 	const seats: Record<string, number> = {};
 	/** Work balance of the contractor days, read while Kim was still a contractor. */
 	let contractorDaysBalance: Awaited<ReturnType<typeof computeEmployeePeriodBalance>>;
+	let contractorDaysBalanceAfterRehire: Awaited<ReturnType<typeof computeEmployeePeriodBalance>>;
 
 	const commands = () =>
 		createDepartureCommands({
@@ -305,6 +306,9 @@ describe("an External Contractor hired as an employee, across every module (#200
 		await completedWork("2026-04-14T08:00:00Z", "2026-04-14T16:00:00Z");
 
 		now = parseInstant("2026-04-30T20:00:00Z");
+		// Read again once Kim is an employee: the contractor days must stay out of the balance
+		// even though the person's engagement kind today is "employee".
+		contractorDaysBalanceAfterRehire = await workBalance("2026-03-02", "2026-03-03");
 		session.userId = fixture.ownerUserId;
 		session.organizationId = organizationId;
 	});
@@ -385,6 +389,10 @@ describe("an External Contractor hired as an employee, across every module (#200
 
 		it("has no required time and no work balance, though the organization has a default policy", () => {
 			expect(contractorDaysBalance).toMatchObject({ requiredMinutes: 0, balanceMinutes: 0 });
+			expect(contractorDaysBalanceAfterRehire).toMatchObject({
+				requiredMinutes: 0,
+				balanceMinutes: 0,
+			});
 		});
 
 		it("is not checked against ArbZG limits, and carries no statutory profile", async () => {
