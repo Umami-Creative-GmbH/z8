@@ -1,7 +1,9 @@
 /**
  * Documents an on-call employee's voluntary agreement to a call announced with less than four
  * full days' notice (§ 12 Abs. 3 TzBfG). The finding is recomputed here, server-side, and its own
- * subject and input fingerprint are recorded: a client never supplies them. Moving, reassigning or
+ * subject and input fingerprint are recorded: a client never supplies them. The client sends the
+ * fingerprint it showed as a precondition only, so nobody documents an agreement to a call they
+ * never saw (a shift moved meanwhile is refused). Moving, reassigning or
  * re-announcing the shift on another day changes the fingerprint and makes the agreement stale.
  * Clocking is never blocked either way.
  */
@@ -18,15 +20,19 @@ import {
 } from "../acknowledgements";
 import { evaluateOnCallFindings } from "./monitor";
 
-export type OnCallAcknowledgementRefusal = "on_call_notice_finding_not_open";
+export type OnCallAcknowledgementRefusal =
+	| "on_call_notice_finding_not_open"
+	| "on_call_notice_finding_changed";
 
 export async function acknowledgeOnCallShortNotice(
-	db: Pick<DatabaseClient, "select" | "insert">,
+	db: Pick<DatabaseClient, "select" | "query" | "insert">,
 	input: {
 		readonly organizationId: string;
 		readonly timezone: string;
 		readonly actorUserId: string;
 		readonly shiftId: string;
+		/** The finding's fingerprint as the admin was shown it: they agree to those figures only. */
+		readonly expectedFingerprint: string;
 		readonly reason: string;
 		readonly legalNote?: string | null;
 		readonly now: Instant;
@@ -63,6 +69,13 @@ export async function acknowledgeOnCallShortNotice(
 			message: "This shift has no open short-notice finding to acknowledge",
 			field: "shiftId",
 			refusal: "on_call_notice_finding_not_open" satisfies OnCallAcknowledgementRefusal,
+		});
+	}
+	if (finding.inputFingerprint !== input.expectedFingerprint) {
+		throw new ValidationError({
+			message: "The shift changed since it was shown; review it again",
+			field: "expectedFingerprint",
+			refusal: "on_call_notice_finding_changed" satisfies OnCallAcknowledgementRefusal,
 		});
 	}
 	return recordStatutoryAcknowledgement(db, {

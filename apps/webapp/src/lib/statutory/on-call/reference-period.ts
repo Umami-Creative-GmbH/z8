@@ -16,15 +16,12 @@
  * the payroll allocation rule. It only reads: it never writes work balances, settled payroll days
  * or closed months, so payroll can quote it without changing what was paid.
  */
-import { and, eq, gt, gte, inArray, isNotNull, lt, lte, min } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNotNull, lt, min } from "drizzle-orm";
 import { absenceCategory, absenceEntry, workPeriod } from "@/db/schema";
-import {
-	getAssignedHolidayDateKeys,
-	getAssignedHolidaysForEmployee,
-} from "@/lib/calendar/assigned-holidays";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import {
+	compareInstants,
 	comparePlainDates,
 	dateFromInstant,
 	type PlainDate,
@@ -36,6 +33,7 @@ import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { allocateTrackedDailyWorkMinutes } from "@/lib/work-balance/tracked-work";
 import { loadEmployeeInOrganization } from "../employee-scope";
 import { daysOf } from "./facts";
+import { loadOnCallReleasedDays, type OnCallReleaseReason } from "./released-days";
 
 /** Select and relational reads only: the calculator never writes. */
 export type OnCallReferenceReader = Pick<DatabaseClient, "select" | "query">;
@@ -98,14 +96,9 @@ export function referenceStartOf(eventDate: PlainDate, method: OnCallReferenceMe
 		: eventDate.subtract({ weeks: 13 });
 }
 
-const UNPAID_ABSENCE_TYPES = new Set(["unpaid", "parental"]);
-
 interface ReferenceFacts {
 	readonly contracts: ReadonlyMap<string, EffectiveContractOnDay>;
-	readonly exclusionByDay: ReadonlyMap<
-		string,
-		Exclude<OnCallReferenceExclusionReason, "not_employed">
-	>;
+	readonly exclusionByDay: ReadonlyMap<string, OnCallReleaseReason>;
 	readonly workMinutesByDay: Readonly<Record<string, number>>;
 	readonly timezone: string;
 	/** Approved sick leave touching the loaded days, `endDate` inclusive. */
@@ -119,18 +112,22 @@ function onCallOn(facts: ReferenceFacts, day: string): boolean {
 	return Boolean(contract?.isEmployedOnDay && contract.onCallTerms);
 }
 
-/** The first day of approved sick leave that is still running on `from` or starts before `until`. */
-async function earliestSickStart(
+/**
+ * Per employee, the first day of approved sick leave that is still running on `from` or starts
+ * before `untilExclusive`. One grouped query for every employee.
+ */
+async function earliestSickStarts(
 	db: OnCallReferenceReader,
 	input: {
 		readonly organizationId: string;
-		readonly employeeId: string;
+		readonly employeeIds: readonly string[];
 		readonly from: string;
 		readonly untilExclusive: string;
 	},
-): Promise<string | null> {
-	const [row] = await db
-		.select({ startDate: min(absenceEntry.startDate) })
+): Promise<Map<string, string>> {
+	if (input.employeeIds.length === 0) return new Map();
+	const rows = await db
+		.select({ employeeId: absenceEntry.employeeId, startDate: min(absenceEntry.startDate) })
 		.from(absenceEntry)
 		.innerJoin(
 			absenceCategory,
@@ -142,25 +139,106 @@ async function earliestSickStart(
 		.where(
 			and(
 				eq(absenceEntry.organizationId, input.organizationId),
-				eq(absenceEntry.employeeId, input.employeeId),
+				inArray(absenceEntry.employeeId, [...input.employeeIds]),
 				eq(absenceEntry.status, "approved"),
 				eq(absenceCategory.type, "sick"),
 				eq(absenceCategory.requiresWorkTime, false),
 				lt(absenceEntry.startDate, input.untilExclusive),
 				gte(absenceEntry.endDate, input.from),
 			),
-		);
-	return row?.startDate ?? null;
+		)
+		.groupBy(absenceEntry.employeeId);
+	return new Map(
+		rows.flatMap((row) => (row.startDate ? [[row.employeeId, row.startDate] as const] : [])),
+	);
 }
 
-const RANK: Record<OnCallReferenceExclusionReason, number> = {
-	not_employed: 4,
-	unpaid_absence: 3,
-	paid_absence: 2,
-	public_holiday: 1,
-};
+/**
+ * Loads the facts of `[from, untilExclusive)` for employees of the organization the caller has
+ * already scoped. Batched: one contract resolution, one absence and holiday read and one work
+ * read for all of them. Reads only.
+ */
+async function loadReferenceFactsBatch(
+	db: OnCallReferenceReader,
+	input: {
+		readonly organizationId: string;
+		readonly employeeIds: readonly string[];
+		readonly from: PlainDate;
+		readonly untilExclusive: PlainDate;
+	},
+): Promise<Map<string, ReferenceFacts>> {
+	const result = new Map<string, ReferenceFacts>();
+	if (input.employeeIds.length === 0) return result;
+	const from = input.from.toString();
+	const last = input.untilExclusive.subtract({ days: 1 }).toString();
+	const days = daysOf(input.from, input.untilExclusive);
 
-/** Loads the facts of `[from, untilExclusive)` for one employee; reads only. */
+	const contractsByEmployee = await loadEffectiveContractsBatch(db, {
+		organizationId: input.organizationId,
+		employeeIds: input.employeeIds,
+		dates: days,
+	});
+	const timezoneOf = (employeeId: string) =>
+		contractsByEmployee.get(employeeId)?.get(last)?.calendarTimezone ?? "UTC";
+
+	const released = await loadOnCallReleasedDays(db, {
+		organizationId: input.organizationId,
+		employeeIds: input.employeeIds,
+		from: input.from,
+		untilExclusive: input.untilExclusive,
+	});
+
+	// One read spanning every employee's local window; the allocator clips to each one.
+	const windows = [...new Set(input.employeeIds.map(timezoneOf))].map((timezone) =>
+		employeePayrollWindow(from, last, timezone),
+	);
+	const windowStart = windows
+		.map((w) => w.start)
+		.reduce((a, b) => (compareInstants(a, b) <= 0 ? a : b));
+	const windowEnd = windows
+		.map((w) => w.endExclusive)
+		.reduce((a, b) => (compareInstants(a, b) >= 0 ? a : b));
+	const periods = await db
+		.select({
+			employeeId: workPeriod.employeeId,
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			durationMinutes: workPeriod.durationMinutes,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, input.organizationId),
+				inArray(workPeriod.employeeId, [...input.employeeIds]),
+				completedWorkPeriodCondition(),
+				isNotNull(workPeriod.endTime),
+				isNotNull(workPeriod.durationMinutes),
+				lt(workPeriod.startTime, dateFromInstant(windowEnd)),
+				gt(workPeriod.endTime, dateFromInstant(windowStart)),
+			),
+		);
+	const periodsByEmployee = Map.groupBy(periods, (row) => row.employeeId);
+
+	for (const employeeId of input.employeeIds) {
+		const timezone = timezoneOf(employeeId);
+		const { minutesByDate } = allocateTrackedDailyWorkMinutes(
+			periodsByEmployee.get(employeeId) ?? [],
+			{ startDate: from, throughDate: last, timezone },
+		);
+		const days = released.get(employeeId);
+		result.set(employeeId, {
+			contracts: contractsByEmployee.get(employeeId) ?? new Map<string, EffectiveContractOnDay>(),
+			exclusionByDay: days?.reasonByDay ?? new Map(),
+			workMinutesByDay: minutesByDate,
+			timezone,
+			sickLeaves: days?.sickLeaves ?? [],
+			holidays: days?.holidays ?? new Set(),
+		});
+	}
+	return result;
+}
+
+/** Loads the facts of `[from, untilExclusive)` for one employee of the organization; reads only. */
 async function loadReferenceFacts(
 	db: OnCallReferenceReader,
 	input: {
@@ -171,118 +249,10 @@ async function loadReferenceFacts(
 	},
 ): Promise<ReferenceFacts> {
 	await loadEmployeeInOrganization(db, input);
-	const from = input.from.toString();
-	const until = input.untilExclusive.toString();
-	const last = input.untilExclusive.subtract({ days: 1 }).toString();
-	const days = daysOf(input.from, input.untilExclusive);
-
-	const contracts =
-		(
-			await loadEffectiveContractsBatch(db, {
-				organizationId: input.organizationId,
-				employeeIds: [input.employeeId],
-				dates: days,
-			})
-		).get(input.employeeId) ?? new Map<string, EffectiveContractOnDay>();
-	const timezone = contracts.get(last)?.calendarTimezone ?? "UTC";
-
-	const absences = await db
-		.select({
-			startDate: absenceEntry.startDate,
-			endDate: absenceEntry.endDate,
-			type: absenceCategory.type,
-			requiresWorkTime: absenceCategory.requiresWorkTime,
-		})
-		.from(absenceEntry)
-		.innerJoin(
-			absenceCategory,
-			and(
-				eq(absenceCategory.id, absenceEntry.categoryId),
-				eq(absenceCategory.organizationId, input.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(absenceEntry.organizationId, input.organizationId),
-				eq(absenceEntry.employeeId, input.employeeId),
-				eq(absenceEntry.status, "approved"),
-				lte(absenceEntry.startDate, last),
-				gte(absenceEntry.endDate, from),
-			),
-		);
-
-	const exclusionByDay = new Map<string, Exclude<OnCallReferenceExclusionReason, "not_employed">>();
-	const exclude = (
-		day: string,
-		reason: Exclude<OnCallReferenceExclusionReason, "not_employed">,
-	) => {
-		const current = exclusionByDay.get(day);
-		if (!current || RANK[reason] > RANK[current]) exclusionByDay.set(day, reason);
-	};
-	const sickLeaves: { startDate: string; endDate: string }[] = [];
-	for (const absence of absences) {
-		// Home office and other categories that require work are work, not absence.
-		if (absence.requiresWorkTime) continue;
-		const reason = UNPAID_ABSENCE_TYPES.has(absence.type) ? "unpaid_absence" : "paid_absence";
-		if (absence.type === "sick") {
-			sickLeaves.push({ startDate: absence.startDate, endDate: absence.endDate });
-		}
-		for (
-			let day = parsePlainDate(absence.startDate > from ? absence.startDate : from);
-			day.toString() <= absence.endDate && day.toString() <= last;
-			day = day.add({ days: 1 })
-		) {
-			// A half-day absence leaves the whole day out: it is no full reference day.
-			exclude(day.toString(), reason);
-		}
-	}
-
-	const holidays = getAssignedHolidayDateKeys(
-		await getAssignedHolidaysForEmployee({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			startDate: new Date(`${from}T00:00:00.000Z`),
-			endDate: new Date(`${last}T23:59:59.999Z`),
-			// The holiday reader only selects; it takes the full client type.
-			database: db as DatabaseClient,
-		}),
-	);
-	const holidaysInRange = new Set([...holidays].filter((day) => day >= from && day < until));
-	for (const day of holidaysInRange) exclude(day, "public_holiday");
-
-	const window = employeePayrollWindow(from, last, timezone);
-	const periods = await db
-		.select({
-			startTime: workPeriod.startTime,
-			endTime: workPeriod.endTime,
-			durationMinutes: workPeriod.durationMinutes,
-		})
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, input.organizationId),
-				inArray(workPeriod.employeeId, [input.employeeId]),
-				completedWorkPeriodCondition(),
-				isNotNull(workPeriod.endTime),
-				isNotNull(workPeriod.durationMinutes),
-				lt(workPeriod.startTime, dateFromInstant(window.endExclusive)),
-				gt(workPeriod.endTime, dateFromInstant(window.start)),
-			),
-		);
-	const { minutesByDate } = allocateTrackedDailyWorkMinutes(periods, {
-		startDate: from,
-		throughDate: last,
-		timezone,
-	});
-
-	return {
-		contracts,
-		exclusionByDay,
-		workMinutesByDay: minutesByDate,
-		timezone,
-		sickLeaves,
-		holidays: holidaysInRange,
-	};
+	const facts = await loadReferenceFactsBatch(db, { ...input, employeeIds: [input.employeeId] });
+	const own = facts.get(input.employeeId);
+	if (!own) throw new Error("reference facts missing for a loaded employee");
+	return own;
 }
 
 function computeBreakdown(
@@ -376,36 +346,15 @@ export async function calculateOnCallReferencePeriod(
 	return computeBreakdown(facts, { employeeId: input.employeeId, eventDate, method: input.method });
 }
 
-/**
- * The on-call employee's approved sick leave and public holidays in `[from, untilExclusive)` on
- * days they are on call, each with its reference-period breakdown. One load covers all events.
- * Sick leave that began before `from` and runs into the range is listed too, dated (and its
- * reference period counted) from its own first day, so a payroll period covers it.
- */
-export async function listOnCallReferenceEvents(
-	db: OnCallReferenceReader,
+function eventsOf(
+	facts: ReferenceFacts,
 	input: {
-		readonly organizationId: string;
 		readonly employeeId: string;
 		readonly from: string;
 		readonly untilExclusive: string;
 		readonly method: OnCallReferenceMethod;
 	},
-): Promise<OnCallReferenceEvent[]> {
-	const from = parsePlainDate(input.from);
-	const until = parsePlainDate(input.untilExclusive);
-	if (comparePlainDates(from, until) >= 0) return [];
-	const sickSince = await earliestSickStart(db, input);
-	const firstEvent =
-		sickSince && comparePlainDates(parsePlainDate(sickSince), from) < 0
-			? parsePlainDate(sickSince)
-			: from;
-	const facts = await loadReferenceFacts(db, {
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		from: referenceStartOf(firstEvent, input.method),
-		untilExclusive: until,
-	});
+): OnCallReferenceEvent[] {
 	const inRange = (day: string) => day >= input.from && day < input.untilExclusive;
 	const sickStarts = new Set(
 		facts.sickLeaves
@@ -429,4 +378,63 @@ export async function listOnCallReferenceEvents(
 				method: input.method,
 			}),
 		}));
+}
+
+/**
+ * The approved sick leave and public holidays in `[from, untilExclusive)` of employees the caller
+ * has scoped to the organization, on days they are on call, each with its reference-period
+ * breakdown. Sick leave that began before `from` and runs into the range is listed too, dated
+ * (and its reference period counted) from its own first day, so a payroll period covers it.
+ * One batched load covers every employee and event.
+ */
+export async function listOnCallReferenceEventsBatch(
+	db: OnCallReferenceReader,
+	input: {
+		readonly organizationId: string;
+		readonly employeeIds: readonly string[];
+		readonly from: string;
+		readonly untilExclusive: string;
+		readonly method: OnCallReferenceMethod;
+	},
+): Promise<Map<string, OnCallReferenceEvent[]>> {
+	const result = new Map<string, OnCallReferenceEvent[]>();
+	const from = parsePlainDate(input.from);
+	const until = parsePlainDate(input.untilExclusive);
+	if (input.employeeIds.length === 0 || comparePlainDates(from, until) >= 0) return result;
+	const sickSince = await earliestSickStarts(db, input);
+	// The earliest event of any employee sets the loaded range; days are judged per employee.
+	let firstEvent = from;
+	for (const start of sickSince.values()) {
+		const day = parsePlainDate(start);
+		if (comparePlainDates(day, firstEvent) < 0) firstEvent = day;
+	}
+	const facts = await loadReferenceFactsBatch(db, {
+		organizationId: input.organizationId,
+		employeeIds: input.employeeIds,
+		from: referenceStartOf(firstEvent, input.method),
+		untilExclusive: until,
+	});
+	for (const [employeeId, own] of facts) {
+		result.set(employeeId, eventsOf(own, { ...input, employeeId }));
+	}
+	return result;
+}
+
+/** {@link listOnCallReferenceEventsBatch} for one employee, checked to belong to the organization. */
+export async function listOnCallReferenceEvents(
+	db: OnCallReferenceReader,
+	input: {
+		readonly organizationId: string;
+		readonly employeeId: string;
+		readonly from: string;
+		readonly untilExclusive: string;
+		readonly method: OnCallReferenceMethod;
+	},
+): Promise<OnCallReferenceEvent[]> {
+	await loadEmployeeInOrganization(db, input);
+	const events = await listOnCallReferenceEventsBatch(db, {
+		...input,
+		employeeIds: [input.employeeId],
+	});
+	return events.get(input.employeeId) ?? [];
 }

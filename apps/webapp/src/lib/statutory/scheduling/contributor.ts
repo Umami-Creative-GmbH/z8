@@ -19,7 +19,8 @@ export interface StatutoryProposedShift {
 }
 
 export interface StatutoryScheduleContext {
-	readonly db: Pick<DatabaseClient, "select">;
+	/** Selects, plus relational reads for shared readers (e.g. assigned holidays). */
+	readonly db: Pick<DatabaseClient, "select" | "query">;
 	readonly organizationId: string;
 	/** Organization calendar timezone: compliance weeks, months and years are local to it. */
 	readonly timezone: string;

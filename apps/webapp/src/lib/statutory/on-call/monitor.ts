@@ -6,24 +6,27 @@
  *   the shift day. A shorter notice is only fine with the employee's voluntary agreement, which
  *   an org admin documents as an `on_call_short_notice_agreement` acknowledgement.
  * - **Minimum call** (§ 12 Abs. 1 Satz 4): each call lasts at least the agreed daily minutes, or
- *   the statutory minimum (three hours) when none is agreed — for shifts and for each finished
- *   worked call (work periods joined only by breaks).
+ *   the statutory minimum (three hours) when none is agreed — for each planned call and each
+ *   finished worked call (shifts or work periods joined only by breaks).
  * - **Weekly call-off band** (§ 12 Abs. 2): per compliance week (Monday–Sunday) the planned and
  *   worked minutes stay inside the band of the agreed weekly minutes: `minimum` from the agreement
  *   up to +25 %, `maximum` from −20 % up to the agreement, `exact` exactly the agreement,
  *   `unspecified` exactly the statutory default (20 h, § 12 Abs. 1 Satz 3). A running clock-in
- *   counts up to now.
+ *   counts up to now. Days of approved absence and public holidays that were not worked are paid
+ *   by § 12 Abs. 4–5 instead of called: the band is prorated to the remaining days.
  *
  * Every limit comes from `statutory_threshold` for the day judged. Findings carry minutes and
  * days only, never wages. Read-only; it never blocks anything.
  */
 import {
+	compareInstants,
 	comparePlainDates,
 	type Instant,
 	type PlainDate,
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import {
 	classifyStatutoryUsage,
 	type StatutoryFinding,
@@ -37,10 +40,12 @@ import type { StatutoryProposedShift } from "../scheduling/contributor";
 import {
 	daysOf,
 	loadOnCallFacts,
+	ON_CALL_MAX_BREAK_MINUTES,
 	type OnCallFacts,
 	type OnCallReader,
 	type OnCallShift,
 	type OnCallWorkCall,
+	overlapMinutes,
 	shiftMinutes,
 } from "./facts";
 import { fullNoticeDays, notificationDay, shiftNotificationInstant } from "./notice";
@@ -175,27 +180,72 @@ function minimumCallMinutes(
 	);
 }
 
-function shortCallFinding(base: Base, shift: OnCallShift, minimum: number): OnCallFinding | null {
-	if (shift.minutes >= minimum) return null;
-	const subjectKey = shiftSubject(shift);
+/**
+ * Planned shifts joined into calls (§ 12 Abs. 1 Satz 4 TzBfG), in start order: shifts that touch
+ * or are at most a break ({@link ON_CALL_MAX_BREAK_MINUTES}) apart are one call, as worked calls.
+ */
+function plannedCalls(shifts: readonly OnCallShift[], timezone: string): PlannedCall[] {
+	const timed = shifts
+		.map((shift) => ({ shift, interval: shiftInterval(shift, timezone) }))
+		.toSorted((a, b) => compareInstants(a.interval.start, b.interval.start));
+	const calls: PlannedCall[] = [];
+	let current: { shifts: OnCallShift[]; minutes: number; end: Instant } | null = null;
+	for (const { shift, interval } of timed) {
+		if (
+			current &&
+			current.end.until(interval.start).total("minutes") <= ON_CALL_MAX_BREAK_MINUTES
+		) {
+			current.shifts.push(shift);
+			// Overlapping shifts count their shared time once.
+			if (compareInstants(interval.end, current.end) > 0) {
+				const from =
+					compareInstants(interval.start, current.end) > 0 ? interval.start : current.end;
+				current.minutes += Math.round(from.until(interval.end).total("minutes"));
+				current.end = interval.end;
+			}
+			continue;
+		}
+		if (current) calls.push(current);
+		current = { shifts: [shift], minutes: shift.minutes, end: interval.end };
+	}
+	if (current) calls.push(current);
+	return calls;
+}
+
+interface PlannedCall {
+	/** In start order; at least one. */
+	readonly shifts: readonly OnCallShift[];
+	/** Planned minutes of the call, breaks between its shifts left out. */
+	readonly minutes: number;
+}
+
+/** A planned call shorter than the minimum, reported on its first shift. */
+function shortCallFinding(base: Base, call: PlannedCall, minimum: number): OnCallFinding | null {
+	const [first] = call.shifts;
+	const { minutes } = call;
+	if (!first || minutes >= minimum) return null;
+	const subjectKey = shiftSubject(first);
 	return finding(base, {
 		kind: "on_call_short_call",
 		severity: "warning",
 		subjectKey,
-		periodStart: shift.date.toString(),
-		periodEnd: shift.date.add({ days: 1 }).toString(),
+		periodStart: first.date.toString(),
+		periodEnd: first.date.add({ days: 1 }).toString(),
 		legalReference: MINIMUM_CALL_REFERENCE,
 		summary: {
-			used: { unit: "minutes", value: shift.minutes },
+			used: { unit: "minutes", value: minutes },
 			limit: { unit: "minutes", value: minimum },
 		},
 		inputFingerprint: statutoryInputFingerprint({
 			kind: "on_call_short_call",
 			employeeId: base.employeeId,
 			subjectKey,
-			date: shift.date.toString(),
-			startTime: shift.startTime,
-			endTime: shift.endTime,
+			shifts: call.shifts.map((shift) => [
+				shiftSubject(shift),
+				shift.date.toString(),
+				shift.startTime,
+				shift.endTime,
+			]),
 			minimumMinutes: minimum,
 		}),
 		acknowledgementKind: null,
@@ -311,6 +361,7 @@ function bandFindings(
 		readonly facts: OnCallFacts;
 		readonly shifts: readonly OnCallShift[];
 		readonly today: PlainDate;
+		readonly timezone: string;
 		readonly preferences: StatutoryPreferences;
 	},
 ): OnCallFinding[] {
@@ -318,23 +369,39 @@ function bandFindings(
 	if (!terms) return [];
 	const week = daysOf(input.monday, input.monday.add({ days: 7 }));
 	const onCallDays = week.filter((day) => terms.has(day.toString()));
-	const lastOnCallDay = onCallDays.at(-1);
-	if (!lastOnCallDay) return [];
-	const lastTerms = terms.get(lastOnCallDay.toString());
-	if (!lastTerms) return [];
-	const band = onCallWeeklyBand(input.facts, lastTerms, lastOnCallDay, onCallDays.length);
-	if (!band) return [];
-
 	const work = input.facts.workMinutesByEmployee.get(base.employeeId);
-	// Past days count what was worked; today and later count the plan, or the work if more.
-	const minutesByDay = onCallDays.map((day) => {
+	const pieces = input.facts.workPiecesByEmployee.get(base.employeeId) ?? [];
+	const released = input.facts.releasedDaysByEmployee.get(base.employeeId);
+	// Past days count what was worked. Today and later add what is still planned: each shift's
+	// minutes not yet worked inside it (an unplanned call adds to a later shift; a call running on
+	// its shift counts once).
+	const minutesOn = (day: PlainDate) => {
 		const worked = work?.get(day.toString()) ?? 0;
-		const planned = input.shifts
+		if (comparePlainDates(day, input.today) < 0) return worked;
+		const stillPlanned = input.shifts
 			.filter((shift) => shift.date.equals(day))
-			.reduce((sum, shift) => sum + shift.minutes, 0);
-		const minutes = comparePlainDates(day, input.today) < 0 ? worked : Math.max(worked, planned);
-		return [day.toString(), minutes] as const;
-	});
+			.reduce(
+				(sum, shift) =>
+					sum +
+					Math.max(0, shift.minutes - overlapMinutes(pieces, shiftInterval(shift, input.timezone))),
+				0,
+			);
+		return worked + stillPlanned;
+	};
+	// § 12 Abs. 4–5 TzBfG: approved absence and public holidays are paid by the reference period,
+	// not called. Unless worked anyway, such a day leaves the band, which is prorated to the days
+	// that could be called, as for days outside the on-call terms.
+	const isReleased = (day: PlainDate) =>
+		released?.has(day.toString()) === true && (work?.get(day.toString()) ?? 0) === 0;
+	const releasedDays = onCallDays.filter(isReleased).map((day) => day.toString());
+	const callableDays = onCallDays.filter((day) => !isReleased(day));
+	const lastCallableDay = callableDays.at(-1);
+	if (!lastCallableDay) return [];
+	const lastTerms = terms.get(lastCallableDay.toString());
+	if (!lastTerms) return [];
+	const band = onCallWeeklyBand(input.facts, lastTerms, lastCallableDay, callableDays.length);
+	if (!band) return [];
+	const minutesByDay = callableDays.map((day) => [day.toString(), minutesOn(day)] as const);
 	const used = minutesByDay.reduce((sum, [, minutes]) => sum + minutes, 0);
 	const subjectKey = isoWeekKey(input.monday);
 	const weekEnded = comparePlainDates(input.monday.add({ days: 7 }), input.today) <= 0;
@@ -349,6 +416,7 @@ function bandFindings(
 			lowerMinutes: band.lowerMinutes,
 			upperMinutes: band.upperMinutes,
 			minutesByDay: minutesByDay.map(([day, minutes]) => [day, minutes]),
+			releasedDays,
 		});
 	const period = {
 		periodStart: input.monday.toString(),
@@ -465,12 +533,18 @@ export async function evaluateOnCallFindings(
 
 		for (const shift of shifts) {
 			if (!inWindow(shift.date, windowStart, windowEnd)) continue;
-			const dayTerms = terms.get(shift.date.toString());
-			if (!dayTerms) continue;
+			if (!terms.has(shift.date.toString())) continue;
 			const notice = noticeFinding(base, shift, facts, request.timezone, request.now);
 			if (notice) findings.push(notice);
-			const minimum = minimumCallMinutes(facts, dayTerms, shift.date);
-			const short = minimum === null ? null : shortCallFinding(base, shift, minimum);
+		}
+
+		for (const call of plannedCalls(shifts, request.timezone)) {
+			const [first] = call.shifts;
+			if (!first || !inWindow(first.date, windowStart, windowEnd)) continue;
+			const dayTerms = terms.get(first.date.toString());
+			if (!dayTerms) continue;
+			const minimum = minimumCallMinutes(facts, dayTerms, first.date);
+			const short = minimum === null ? null : shortCallFinding(base, call, minimum);
 			if (short) findings.push(short);
 		}
 
@@ -490,7 +564,16 @@ export async function evaluateOnCallFindings(
 			comparePlainDates(monday, weeksEnd) < 0;
 			monday = monday.add({ days: 7 })
 		) {
-			findings.push(...bandFindings(base, { monday, facts, shifts, today, preferences }));
+			findings.push(
+				...bandFindings(base, {
+					monday,
+					facts,
+					shifts,
+					today,
+					timezone: request.timezone,
+					preferences,
+				}),
+			);
 		}
 	}
 	return findings;

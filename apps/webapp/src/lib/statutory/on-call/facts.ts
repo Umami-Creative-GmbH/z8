@@ -21,8 +21,10 @@ import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { loadStatutoryThresholds, type StatutoryThresholdTable } from "../thresholds";
+import { loadOnCallReleasedDays, type OnCallReleaseReason } from "./released-days";
 
-export type OnCallReader = Pick<DatabaseClient, "select">;
+/** Selects, and the relational reads of the shared holiday reader. */
+export type OnCallReader = Pick<DatabaseClient, "select" | "query">;
 
 export const ON_CALL_THRESHOLD_KEYS = [
 	"de_on_call_notice_full_days",
@@ -76,6 +78,13 @@ export interface OnCallFacts {
 	readonly workMinutesByEmployee: ReadonlyMap<string, ReadonlyMap<string, number>>;
 	/** Worked calls in start order. */
 	readonly workCallsByEmployee: ReadonlyMap<string, readonly OnCallWorkCall[]>;
+	/** Work periods (a running clock-in up to now), to match work to the shifts it fulfils. */
+	readonly workPiecesByEmployee: ReadonlyMap<string, readonly OnCallWorkPiece[]>;
+	/**
+	 * Days released from work (approved absence, public holidays) per on-call employee: § 12
+	 * Abs. 4–5 TzBfG pays them by the reference period; they are not called.
+	 */
+	readonly releasedDaysByEmployee: ReadonlyMap<string, ReadonlyMap<string, OnCallReleaseReason>>;
 }
 
 export function daysOf(from: PlainDate, untilExclusive: PlainDate): PlainDate[] {
@@ -130,6 +139,8 @@ export async function loadOnCallFacts(
 		shiftsByEmployee: new Map(),
 		workMinutesByEmployee: new Map(),
 		workCallsByEmployee: new Map(),
+		workPiecesByEmployee: new Map(),
+		releasedDaysByEmployee: new Map(),
 	};
 	if (input.employeeIds?.length === 0) return empty;
 
@@ -248,7 +259,7 @@ export async function loadOnCallFacts(
 				lt(workPeriod.startTime, bounds.endExclusive),
 			),
 		);
-	const piecesByEmployee = new Map<string, WorkPiece[]>();
+	const piecesByEmployee = new Map<string, OnCallWorkPiece[]>();
 	for (const row of workRows) {
 		const start = instantFromDate(row.startTime);
 		const running = row.isActive || !row.endTime;
@@ -276,30 +287,57 @@ export async function loadOnCallFacts(
 		);
 	}
 
+	const released = await loadOnCallReleasedDays(db, {
+		organizationId: input.organizationId,
+		employeeIds: onCallIds,
+		from: input.from,
+		untilExclusive: input.untilExclusive,
+	});
+	const releasedDaysByEmployee = new Map(
+		[...released].map(([employeeId, days]) => [employeeId, days.reasonByDay] as const),
+	);
+
 	return {
 		thresholds,
 		termsByEmployee,
 		shiftsByEmployee,
 		workMinutesByEmployee,
 		workCallsByEmployee,
+		workPiecesByEmployee: piecesByEmployee,
+		releasedDaysByEmployee,
 	};
 }
 
-interface WorkPiece {
+/** One work period; a running clock-in ends now. */
+export interface OnCallWorkPiece {
 	readonly start: Instant;
 	readonly end: Instant;
 	readonly minutes: number;
 	readonly running: boolean;
 }
 
+/** Minutes of `pieces` inside `[start, end)`. */
+export function overlapMinutes(
+	pieces: readonly OnCallWorkPiece[],
+	interval: { readonly start: Instant; readonly end: Instant },
+): number {
+	let minutes = 0;
+	for (const piece of pieces) {
+		const start = compareInstants(piece.start, interval.start) > 0 ? piece.start : interval.start;
+		const end = compareInstants(piece.end, interval.end) < 0 ? piece.end : interval.end;
+		if (compareInstants(end, start) > 0) minutes += start.until(end).total("minutes");
+	}
+	return Math.round(minutes);
+}
+
 /** Joins an employee's work periods into calls: periods separated only by breaks are one call. */
 function workCalls(
-	pieces: readonly WorkPiece[],
+	pieces: readonly OnCallWorkPiece[],
 	shifts: readonly OnCallShift[],
 	timezone: string,
 ): OnCallWorkCall[] {
 	const shiftIntervals = shifts.map((s) => shiftInterval(s, timezone));
-	const shiftsOf = (piece: WorkPiece) =>
+	const shiftsOf = (piece: OnCallWorkPiece) =>
 		shiftIntervals.filter(
 			(interval) =>
 				compareInstants(piece.start, interval.end) < 0 &&
@@ -307,7 +345,8 @@ function workCalls(
 		);
 	const sorted = pieces.toSorted((a, b) => compareInstants(a.start, b.start));
 	const calls: OnCallWorkCall[] = [];
-	let current: { first: WorkPiece; end: Instant; minutes: number; running: boolean } | null = null;
+	let current: { first: OnCallWorkPiece; end: Instant; minutes: number; running: boolean } | null =
+		null;
 	let currentShifts = new Set<(typeof shiftIntervals)[number]>();
 	const close = () => {
 		if (!current) return;

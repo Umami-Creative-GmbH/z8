@@ -206,7 +206,8 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			const twoHours59 = await shift(statutory, "09:00", "11:59");
 			await shift(statutory, "13:00", "16:00");
 			const threeHours = await shift(agreed, "09:00", "12:00");
-			await shift(agreed, "13:00", "17:00");
+			// More than a break later: a call of its own.
+			await shift(agreed, "13:30", "17:30");
 			await onCall.work(org, statutory, {
 				date: "2026-03-10",
 				startTime: "09:00",
@@ -281,6 +282,49 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 				["work:2026-03-10T08:00", "2026-03-10", 120],
 				["work:2026-03-10T16:00", "2026-03-10", 120],
 			]);
+		});
+
+		it("joins planned shifts that are adjacent or a break apart into one call", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			const shift = (date: string, startTime: string, endTime: string) =>
+				onCall.shift(org, {
+					employeeId: worker.employeeId,
+					date,
+					startTime,
+					endTime,
+					publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+				});
+			// Tuesday: 08–10 and 10–12 are one 4-hour call.
+			await shift("2026-03-10", "08:00", "10:00");
+			await shift("2026-03-10", "10:00", "12:00");
+			// Wednesday: 1.5 h, a 1-hour break, 1.5 h: one 3-hour call.
+			await shift("2026-03-11", "08:00", "09:30");
+			await shift("2026-03-11", "10:30", "12:00");
+			// Thursday: two 2-hour calls 4 hours apart are two short calls.
+			const morning = await shift("2026-03-12", "08:00", "10:00");
+			const afternoon = await shift("2026-03-12", "14:00", "16:00");
+
+			const findings = await evaluateOnCallFindings(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-09", endExclusive: "2026-03-16" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from("2026-03-01T12:00:00Z"),
+			});
+
+			expect(
+				findings
+					.filter((f) => f.kind === "on_call_short_call")
+					.map((f) => [f.subjectKey, f.summary.used?.value])
+					.toSorted((a, b) => String(a).localeCompare(String(b))),
+			).toEqual(
+				[
+					[`shift:${morning}`, 120],
+					[`shift:${afternoon}`, 120],
+				].toSorted((a, b) => String(a).localeCompare(String(b))),
+			);
 		});
 
 		it("does not judge a call that is still running", async () => {
@@ -475,6 +519,136 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 				publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
 			});
 			expect(await evaluate()).toEqual([]);
+		});
+
+		describe("absence and public holidays (§ 12 Abs. 4–5 TzBfG: paid, not called)", () => {
+			async function worker(kind: "exact" | "maximum") {
+				const org = await onCall.organization("a");
+				const who = await fx.employee(org, "worker");
+				await onCall.onCallTerms(org, who, { kind, weeklyMinutes: 600 });
+				return { org, who };
+			}
+			const bandFindings = (org: { id: string; timezone: string }, employeeId: string) =>
+				evaluateOnCallFindings(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: WEEK,
+					employeeIds: [employeeId],
+					now: AFTER_WEEK,
+				}).then((findings) =>
+					findings
+						.filter((f) => f.kind.startsWith("on_call_weekly"))
+						.map((f) => [f.kind, f.summary.used?.value, f.summary.limit?.value]),
+				);
+
+			it("leaves a week of approved vacation out of an exact agreement", async () => {
+				const { org, who } = await worker("exact");
+				await onCall.absence(org, who, {
+					type: "vacation",
+					startDate: "2026-03-09",
+					endDate: "2026-03-15",
+				});
+
+				expect(await bandFindings(org, who.employeeId)).toEqual([]);
+			});
+
+			it("prorates a maximum agreement for three sick days", async () => {
+				const { org, who } = await worker("maximum");
+				await onCall.absence(org, who, {
+					type: "sick",
+					startDate: "2026-03-09",
+					endDate: "2026-03-11",
+				});
+				// Four callable days: at least 480 × 4/7 = 274, at most 600 × 4/7 = 343 minutes.
+				await onCall.work(org, who, { date: "2026-03-12", startTime: "08:00", endTime: "13:00" });
+
+				expect(await bandFindings(org, who.employeeId)).toEqual([]);
+			});
+
+			it("prorates the band for a public holiday, and still flags a week short of it", async () => {
+				const { org, who } = await worker("maximum");
+				await onCall.holiday(org, who, "2026-03-09");
+				// Six callable days: at least 480 × 6/7 = 411 minutes.
+				await onCall.work(org, who, { date: "2026-03-10", startTime: "08:00", endTime: "12:00" });
+				await onCall.work(org, who, { date: "2026-03-11", startTime: "08:00", endTime: "11:00" });
+				expect(await bandFindings(org, who.employeeId)).toEqual([]);
+
+				await fx.cleanup();
+				const again = await worker("maximum");
+				await onCall.holiday(again.org, again.who, "2026-03-09");
+				await onCall.work(again.org, again.who, {
+					date: "2026-03-10",
+					startTime: "08:00",
+					endTime: "14:00",
+				});
+				expect(await bandFindings(again.org, again.who.employeeId)).toEqual([
+					["on_call_weekly_under_band", 360, 411],
+				]);
+			});
+
+			it("counts a holiday that was worked like any other day", async () => {
+				const { org, who } = await worker("exact");
+				await onCall.holiday(org, who, "2026-03-09");
+				await onCall.work(org, who, { date: "2026-03-09", startTime: "08:00", endTime: "13:00" });
+				await onCall.work(org, who, { date: "2026-03-10", startTime: "08:00", endTime: "13:00" });
+
+				expect(await bandFindings(org, who.employeeId)).toEqual([]);
+			});
+		});
+
+		it("adds today's unplanned call to the shift still to come", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "exact", weeklyMinutes: 600 });
+			await onCall.work(org, worker, { date: "2026-03-09", startTime: "08:00", endTime: "12:00" });
+			// Tuesday: called in 06:00–08:00 unplanned, and planned 14:00–18:00 later the same day.
+			await onCall.work(org, worker, { date: "2026-03-10", startTime: "06:00", endTime: "08:00" });
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-10",
+				startTime: "14:00",
+				endTime: "18:00",
+				publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+			});
+
+			const band = (
+				await evaluateOnCallFindings(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: WEEK,
+					employeeIds: [worker.employeeId],
+					now: localInstant("2026-03-10", "12:00", org.timezone),
+				})
+			).filter((f) => f.kind.startsWith("on_call_weekly"));
+
+			expect(band).toEqual([]);
+		});
+
+		it("counts a running call on a planned shift once: up to now, then the rest of the shift", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "exact", weeklyMinutes: 600 });
+			await onCall.work(org, worker, { date: "2026-03-09", startTime: "08:00", endTime: "12:00" });
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-10",
+				startTime: "08:00",
+				endTime: "14:00",
+				publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+			});
+			await onCall.openWork(org, worker, { date: "2026-03-10", startTime: "08:00" });
+
+			const band = (
+				await evaluateOnCallFindings(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: WEEK,
+					employeeIds: [worker.employeeId],
+					now: localInstant("2026-03-10", "11:00", org.timezone),
+				})
+			).filter((f) => f.kind.startsWith("on_call_weekly"));
+
+			expect(band).toEqual([]);
 		});
 
 		it("counts a running clock-in up to now", async () => {
