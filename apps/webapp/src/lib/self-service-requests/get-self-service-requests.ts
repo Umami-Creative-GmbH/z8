@@ -9,6 +9,7 @@ import {
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
 	travelExpenseReport,
+	travelExpenseReportAdjustment,
 	travelExpenseReportCycleClosure,
 	travelExpenseReportItem,
 	workPeriod,
@@ -54,6 +55,8 @@ interface GetSelfServiceRequestsInput {
 	now?: Date;
 	/** The request sources to read; every source when omitted. */
 	sources?: readonly SelfServiceRequestSourceType[];
+	/** The organization's time zone when the caller has already read it; read here otherwise. */
+	timeZone?: string;
 }
 
 type SourceLoadResult =
@@ -180,7 +183,10 @@ export async function getSelfServiceRequests(
 	input: GetSelfServiceRequestsInput,
 ): Promise<SelfServiceRequestResult> {
 	// Read once: request dates and compliance exception windows are both shown in this zone.
-	const organizationTimeZone = loadOrganizationTimezone(db, input.organizationId);
+	const organizationTimeZone =
+		input.timeZone === undefined
+			? loadOrganizationTimezone(db, input.organizationId)
+			: Promise.resolve(input.timeZone);
 	// Without it, request dates read in UTC; only the exceptions, whose windows need it, fail.
 	const timeZone = organizationTimeZone.catch(() => "UTC");
 	const loaders: Record<SelfServiceRequestSourceType, () => Promise<SelfServiceRequestItem[]>> = {
@@ -786,9 +792,11 @@ async function loadTravelExpenses(
 }
 
 /**
- * The employee's expense reports once submitted. A returned report waits for the employee's fix
- * and carries the reviewer's return note; a rejected one is final, with the rejection reason.
- * Withdrawal stays on the report page, so no request here offers cancellation.
+ * The employee's expense reports once submitted, each named by its trip purpose or its expense's
+ * description or route. An adjustment report copies its original's purpose and dates, so it also
+ * names the report it adjusts. A returned report waits for the employee's fix and carries the
+ * reviewer's return note; a rejected one is final, with the rejection reason. Withdrawal stays on
+ * the report page, so no request here offers cancellation.
  */
 async function loadExpenseReports(
 	input: GetSelfServiceRequestsInput,
@@ -809,15 +817,18 @@ async function loadExpenseReports(
 			row.organizationId === input.organizationId &&
 			row.employeeId === input.employeeId,
 	);
-	const [returnNotes, rejectionReasons, standaloneExpenses] = await Promise.all([
+	const [returnNotes, rejectionReasons, standaloneExpenses, adjustmentLinks] = await Promise.all([
 		loadReturnNotes(input.organizationId, rows),
 		loadReportRejectionReasons(input.organizationId, rows),
 		loadStandaloneExpenses(input.organizationId, rows),
+		loadAdjustmentLinks(input.organizationId, rows),
 	]);
+	const adjustmentOf = await nameAdjustedReports(input, rows, standaloneExpenses, adjustmentLinks);
 
 	return rows.map((row) => {
 		const status = mapExpenseReportStatus(row.status);
 		const expense = standaloneExpenses.get(row.id);
+		const adjusted = adjustmentOf.get(row.id);
 		return {
 			id: `travel_expense_report:${row.id}`,
 			sourceType: "travel_expense_report",
@@ -827,15 +838,13 @@ async function loadExpenseReports(
 			status,
 			submittedAt: row.submittedAt ?? row.createdAt,
 			resolvedAt: row.decidedAt,
-			title:
-				(row.kind === "trip"
-					? row.tripPurpose?.trim()
-					: expense?.description?.trim() || expense?.mileageRoute?.trim()) || "",
+			title: expenseReportTitle(row, expense),
 			subtitle: expenseReportSubtitle(row),
 			details: {
 				kind: "expense_report",
 				reportKind: row.kind,
 				itemType: row.kind === "standalone" ? (expense?.type ?? null) : null,
+				...(adjusted ? { adjustmentOf: adjusted } : {}),
 			},
 			decisionReason:
 				status === "returned"
@@ -847,6 +856,79 @@ async function loadExpenseReports(
 			sourceHref: `/travel-expenses/reports/${row.id}`,
 		};
 	});
+}
+
+/** A report's name: its trip purpose, or its (only) expense's description or route; "" if none. */
+function expenseReportTitle(row: ExpenseReportRow, expense: StandaloneExpenseRow | undefined) {
+	return (
+		(row.kind === "trip"
+			? row.tripPurpose?.trim()
+			: expense?.description?.trim() || expense?.mileageRoute?.trim()) || ""
+	);
+}
+
+/** Which of these reports are adjustment reports (#615), mapped to the report each adjusts. */
+async function loadAdjustmentLinks(organizationId: string, rows: ExpenseReportRow[]) {
+	const links = new Map<string, string>();
+	if (rows.length === 0) return links;
+	const adjustments = (await db.query.travelExpenseReportAdjustment.findMany({
+		columns: { organizationId: true, reportId: true, originalReportId: true },
+		where: and(
+			eq(travelExpenseReportAdjustment.organizationId, organizationId),
+			inArray(
+				travelExpenseReportAdjustment.reportId,
+				rows.map((row) => row.id),
+			),
+		),
+	})) as Array<{ organizationId: string; reportId: string; originalReportId: string }>;
+	for (const adjustment of adjustments) {
+		if (adjustment.organizationId !== organizationId) continue;
+		links.set(adjustment.reportId, adjustment.originalReportId);
+	}
+	return links;
+}
+
+/**
+ * The report each adjustment adjusts, named as that report is. An original beyond the listed
+ * reports is read by id, still only among the employee's own; one that cannot be read, or has no
+ * name, is named null.
+ */
+async function nameAdjustedReports(
+	input: GetSelfServiceRequestsInput,
+	rows: ExpenseReportRow[],
+	standaloneExpenses: Map<string, StandaloneExpenseRow>,
+	links: Map<string, string>,
+) {
+	const adjusted = new Map<string, { reportId: string; title: string | null }>();
+	if (links.size === 0) return adjusted;
+	const reports = new Map(rows.map((row) => [row.id, row]));
+	const expenses = new Map(standaloneExpenses);
+	const unlisted = [...new Set(links.values())].filter((id) => !reports.has(id));
+	if (unlisted.length > 0) {
+		const originals = (
+			(await db.query.travelExpenseReport.findMany({
+				where: and(
+					eq(travelExpenseReport.organizationId, input.organizationId),
+					eq(travelExpenseReport.employeeId, input.employeeId),
+					inArray(travelExpenseReport.id, unlisted),
+				),
+			})) as ExpenseReportRow[]
+		).filter(
+			(row) => row.organizationId === input.organizationId && row.employeeId === input.employeeId,
+		);
+		for (const original of originals) reports.set(original.id, original);
+		for (const [id, expense] of await loadStandaloneExpenses(input.organizationId, originals)) {
+			expenses.set(id, expense);
+		}
+	}
+	for (const [reportId, originalReportId] of links) {
+		const original = reports.get(originalReportId);
+		adjusted.set(reportId, {
+			reportId: originalReportId,
+			title: original ? expenseReportTitle(original, expenses.get(original.id)) || null : null,
+		});
+	}
+	return adjusted;
 }
 
 /** Closures that send a report back to its employee with a reviewer's note. */
@@ -1096,8 +1178,13 @@ function countItems(items: SelfServiceRequestItem[], now: Date): SelfServiceRequ
 	return {
 		pending: items.filter((item) => item.status === "pending").length,
 		requiredFixes: items.filter(needsFix).length,
+		// A rejection that needs a fix is counted, and shown, as a required fix only.
 		recentDecisions: items.filter((item) => {
-			if ((item.status !== "approved" && item.status !== "rejected") || item.resolvedAt === null) {
+			if (
+				(item.status !== "approved" && item.status !== "rejected") ||
+				item.resolvedAt === null ||
+				needsFix(item)
+			) {
 				return false;
 			}
 

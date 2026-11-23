@@ -935,7 +935,7 @@ describe("MyRequestsClient", () => {
 			).toBeTruthy();
 		});
 
-		it("names expense reports as the rest of the app does, under the Expense report type", () => {
+		it("names expense reports as reportName and reportKindLabel do, under the Expense report type", () => {
 			render(
 				<MyRequestsClient
 					initialResult={createResult({
@@ -970,6 +970,54 @@ describe("MyRequestsClient", () => {
 				expect(within(card(name)).getByText("Expense report")).toBeTruthy();
 			}
 			expect(document.body.textContent).not.toMatch(/Travel expense report|without a trip/);
+		});
+
+		it("tells an adjustment report apart from the report it adjusts", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						items: [
+							expenseReport(),
+							// Adjustments copy their original's purpose and dates.
+							expenseReport({
+								id: "travel_expense_report:report-adjustment",
+								sourceId: "report-adjustment",
+								details: {
+									kind: "expense_report",
+									reportKind: "trip",
+									itemType: null,
+									adjustmentOf: { reportId: "report-1", title: "Customer workshop" },
+								},
+							}),
+							expenseReport({
+								id: "travel_expense_report:report-adjustment-untitled",
+								sourceId: "report-adjustment-untitled",
+								title: "Hotel Hamburg",
+								subtitle: "",
+								details: {
+									kind: "expense_report",
+									reportKind: "standalone",
+									itemType: "receipt",
+									adjustmentOf: { reportId: "report-gone", title: null },
+								},
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const inReview = screen.getByRole("region", { name: "In review" });
+			const [original, adjustment] = within(inReview)
+				.getAllByRole("heading", { level: 3, name: "Customer workshop" })
+				.map((heading) => heading.closest("article") as HTMLElement);
+			expect(original?.textContent).not.toMatch(/Adjustment/);
+			expect(adjustment?.textContent).toMatch(
+				/Adjustment of “Customer workshop” · Trip report · 20\.–22\. Apr\. 2026/,
+			);
+			const untitled = within(inReview)
+				.getByRole("heading", { level: 3, name: "Hotel Hamburg" })
+				.closest("article") as HTMLElement;
+			expect(untitled.textContent).toMatch(/Adjustment of an earlier report · Standalone receipt/);
 		});
 
 		it("never calls a request legacy, with the shipped English copy", () => {

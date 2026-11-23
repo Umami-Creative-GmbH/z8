@@ -15,6 +15,7 @@ const dbMocks = vi.hoisted(() => ({
 	travelExpenseReports: vi.fn(),
 	reportItems: vi.fn(),
 	reportCycleClosures: vi.fn(),
+	reportAdjustments: vi.fn(),
 	complianceExceptions: vi.fn(),
 	organizationTimezone: vi.fn(),
 }));
@@ -54,6 +55,7 @@ vi.mock("@/db", () => ({
 			travelExpenseReport: { findMany: dbMocks.travelExpenseReports },
 			travelExpenseReportItem: { findMany: dbMocks.reportItems },
 			travelExpenseReportCycleClosure: { findMany: dbMocks.reportCycleClosures },
+			travelExpenseReportAdjustment: { findMany: dbMocks.reportAdjustments },
 			complianceException: { findMany: dbMocks.complianceExceptions },
 		},
 	},
@@ -117,6 +119,7 @@ vi.mock("@/db/schema", () => ({
 		createdAt: "travelExpenseDecisionLog.createdAt",
 	},
 	travelExpenseReport: {
+		id: "travelExpenseReport.id",
 		createdAt: "travelExpenseReport.createdAt",
 		employeeId: "travelExpenseReport.employeeId",
 		organizationId: "travelExpenseReport.organizationId",
@@ -131,6 +134,10 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "travelExpenseReportCycleClosure.organizationId",
 		reportId: "travelExpenseReportCycleClosure.reportId",
 		kind: "travelExpenseReportCycleClosure.kind",
+	},
+	travelExpenseReportAdjustment: {
+		organizationId: "travelExpenseReportAdjustment.organizationId",
+		reportId: "travelExpenseReportAdjustment.reportId",
 	},
 	complianceException: {
 		createdAt: "complianceException.createdAt",
@@ -436,11 +443,13 @@ describe("getSelfServiceRequests", () => {
 		dbMocks.travelExpenseReports.mockReset();
 		dbMocks.reportItems.mockReset();
 		dbMocks.reportCycleClosures.mockReset();
+		dbMocks.reportAdjustments.mockReset();
 		dbMocks.complianceExceptions.mockReset();
 		dbMocks.organizationTimezone.mockReset();
 		dbMocks.travelExpenseReports.mockResolvedValue([]);
 		dbMocks.reportItems.mockResolvedValue([]);
 		dbMocks.reportCycleClosures.mockResolvedValue([]);
+		dbMocks.reportAdjustments.mockResolvedValue([]);
 		dbMocks.complianceExceptions.mockResolvedValue([]);
 		dbMocks.organizationTimezone.mockResolvedValue("Europe/Berlin");
 		dbMocks.approvalRequests.mockResolvedValue([timeCorrection()]);
@@ -1042,10 +1051,11 @@ describe("getSelfServiceRequests", () => {
 			"time_correction",
 			"travel_expense",
 		]);
+		// The rejected absence needs a fix: it counts there, never again as a recent decision.
 		expect(result.counts).toEqual({
 			pending: 1,
 			requiredFixes: 1,
-			recentDecisions: 2,
+			recentDecisions: 1,
 			total: 3,
 		});
 		expect(result.sourceErrors).toEqual([]);
@@ -1453,7 +1463,7 @@ describe("getSelfServiceRequests", () => {
 		expect(result.counts).toEqual({
 			pending: 2,
 			requiredFixes: 1,
-			recentDecisions: 1,
+			recentDecisions: 0,
 			total: 3,
 		});
 	});
@@ -1497,6 +1507,9 @@ describe("getSelfServiceRequests", () => {
 	});
 
 	it("excludes decisions outside the 30 day recent window from recent decision count", async () => {
+		dbMocks.absenceEntries.mockResolvedValue([
+			absence({ status: "approved", rejectionReason: null }),
+		]);
 		dbMocks.travelExpenseClaims.mockResolvedValue([
 			travelExpense({ decidedAt: new Date("2026-02-01T08:00:00.000Z") }),
 		]);
@@ -1630,7 +1643,7 @@ describe("getSelfServiceRequests", () => {
 			]);
 		});
 
-		it("names each report as the rest of the app does: trip purpose, or its expense's description or route", async () => {
+		it("names each report by its trip purpose, or its expense's description or route", async () => {
 			dbMocks.travelExpenseReports.mockResolvedValue([
 				expenseReport({ id: "report-trip" }),
 				...["report-receipt", "report-mileage", "report-empty"].map((id) =>
@@ -1699,6 +1712,119 @@ describe("getSelfServiceRequests", () => {
 			expectWhereConditions(dbMocks.reportItems, [
 				{ left: "travelExpenseReportItem.organizationId", right: "org-1" },
 			]);
+		});
+
+		it("marks an adjustment report with the report it adjusts, named as that report is", async () => {
+			dbMocks.travelExpenseReports.mockImplementation(async (query: { where?: unknown }) => {
+				const conditions = (query.where as { conditions?: Array<{ op?: string; left?: unknown }> })
+					?.conditions;
+				// Originals beyond the listed reports are read by id, still the employee's own.
+				if (conditions?.some((condition) => condition?.left === "travelExpenseReport.id")) {
+					return [
+						expenseReport({
+							id: "report-older-original",
+							status: "approved",
+							kind: "standalone",
+							tripPurpose: null,
+							tripStartDate: null,
+							tripEndDate: null,
+						}),
+					];
+				}
+				return [
+					// Adjustments copy their original's purpose and dates.
+					expenseReport({ id: "report-adjustment" }),
+					expenseReport({ id: "report-original", status: "approved" }),
+					expenseReport({
+						id: "report-older-adjustment",
+						kind: "standalone",
+						tripPurpose: null,
+						tripStartDate: null,
+						tripEndDate: null,
+					}),
+				];
+			});
+			dbMocks.reportItems.mockResolvedValue([
+				{
+					organizationId: "org-1",
+					reportId: "report-older-original",
+					position: 0,
+					type: "receipt",
+					description: "Hotel Hamburg",
+					mileageRoute: null,
+				},
+			]);
+			dbMocks.reportAdjustments.mockResolvedValue([
+				{
+					organizationId: "org-1",
+					reportId: "report-adjustment",
+					originalReportId: "report-original",
+				},
+				{
+					organizationId: "org-1",
+					reportId: "report-older-adjustment",
+					originalReportId: "report-older-original",
+				},
+			]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				sources: ["travel_expense_report"],
+			});
+			const byId = new Map(result.items.map((item) => [item.sourceId, item]));
+
+			expect(byId.get("report-adjustment")?.details).toEqual({
+				kind: "expense_report",
+				reportKind: "trip",
+				itemType: null,
+				adjustmentOf: { reportId: "report-original", title: "Customer workshop" },
+			});
+			expect(byId.get("report-older-adjustment")?.details).toMatchObject({
+				adjustmentOf: { reportId: "report-older-original", title: "Hotel Hamburg" },
+			});
+			expect(byId.get("report-original")?.details).toEqual({
+				kind: "expense_report",
+				reportKind: "trip",
+				itemType: null,
+			});
+			expect(result.items.map((item) => item.sourceId)).not.toContain("report-older-original");
+			expectWhereConditions(dbMocks.reportAdjustments, [
+				{ left: "travelExpenseReportAdjustment.organizationId", right: "org-1" },
+			]);
+		});
+
+		it("marks an adjustment whose original cannot be read as adjusting an untitled report", async () => {
+			dbMocks.travelExpenseReports.mockImplementation(async (query: { where?: unknown }) => {
+				const conditions = (query.where as { conditions?: Array<{ left?: unknown }> })?.conditions;
+				if (conditions?.some((condition) => condition?.left === "travelExpenseReport.id")) {
+					return [];
+				}
+				return [expenseReport({ id: "report-adjustment" })];
+			});
+			dbMocks.reportAdjustments.mockResolvedValue([
+				{
+					organizationId: "org-1",
+					reportId: "report-adjustment",
+					originalReportId: "report-gone",
+				},
+				// Another organization's link never marks a report.
+				{
+					organizationId: "org-2",
+					reportId: "report-adjustment",
+					originalReportId: "report-foreign",
+				},
+			]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				sources: ["travel_expense_report"],
+			});
+
+			expect(result.items[0]?.details).toMatchObject({
+				adjustmentOf: { reportId: "report-gone", title: null },
+			});
 		});
 
 		it("shows the reopen reason on a report reopened from approved", async () => {
@@ -2054,6 +2180,21 @@ describe("getSelfServiceRequests", () => {
 			expect(result.items[0]?.details).toMatchObject({ timeZone: "Europe/Berlin" });
 			expect(dbMocks.organizationTimezone).toHaveBeenCalledTimes(1);
 			expect(dbMocks.organizationTimezone).toHaveBeenCalledWith(expect.anything(), "org-1");
+		});
+
+		it("uses a time zone the caller already knows, without reading it again", async () => {
+			dbMocks.complianceExceptions.mockResolvedValue([exception()]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				now: new Date("2026-04-28T12:00:00.000Z"),
+				timeZone: "America/New_York",
+			});
+
+			expect(result.timeZone).toBe("America/New_York");
+			expect(result.items[0]?.details).toMatchObject({ timeZone: "America/New_York" });
+			expect(dbMocks.organizationTimezone).not.toHaveBeenCalled();
 		});
 
 		it("reads request dates in UTC when the time zone cannot be loaded, failing only exceptions", async () => {

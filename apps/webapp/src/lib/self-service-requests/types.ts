@@ -41,14 +41,19 @@ export interface ComplianceExceptionRequestDetails {
 }
 
 /**
- * What names an expense report, as the rest of the app does (`reportName`, `reportKindLabel`): the
- * item's title is the trip purpose or the standalone expense's description or route ("" if none).
+ * What names an expense report, as `reportName` and `reportKindLabel` do: the item's title is the
+ * trip purpose or the standalone expense's description or route ("" if none).
  */
 export interface ExpenseReportRequestDetails {
 	kind: "expense_report";
 	reportKind: TravelExpenseReportKind;
 	/** A standalone report's (only) expense type; null for a trip or before an expense exists. */
 	itemType: TravelExpenseReportItemType | null;
+	/**
+	 * Only on an adjustment report, which copies its original's purpose and dates: the report it
+	 * adjusts, named as that report is (null when it has no name or cannot be read).
+	 */
+	adjustmentOf?: { reportId: string; title: string | null };
 }
 
 export interface SelfServiceRequestItem {

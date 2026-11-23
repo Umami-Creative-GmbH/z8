@@ -98,6 +98,8 @@ describe("getWorkdayTimelineData", () => {
 			filters: { status: "pending" },
 			// Expense reports and compliance exceptions are not tied to a working day (#1979).
 			sources: ["time_correction", "absence", "travel_expense"],
+			// The organization's zone, read once for the shifts, is not read again for requests.
+			timeZone: "Europe/Berlin",
 		});
 	});
 

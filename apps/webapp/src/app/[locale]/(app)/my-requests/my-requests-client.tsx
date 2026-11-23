@@ -327,9 +327,10 @@ function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Transl
 	}
 
 	if (item.details?.kind === "expense_report") {
+		const adjustment = expenseReportAdjustmentLabel(item.details, t);
 		const kind = expenseReportKindLabel(item.details, t);
 		const dates = formatStoredDateRange(item.subtitle, locale);
-		return dates ? `${kind} · ${dates}` : kind;
+		return [adjustment, kind, dates].filter(Boolean).join(" · ");
 	}
 
 	if (item.details?.kind === "compliance_exception") {
@@ -353,6 +354,27 @@ function expenseReportName(title: string, details: ExpenseReportRequestDetails, 
 		return t("myRequests:myRequests.requests.expenseReport.untitledMileage", "Untitled mileage");
 	}
 	return t("myRequests:myRequests.requests.expenseReport.untitledReceipt", "Untitled receipt");
+}
+
+/**
+ * The report an adjustment adjusts, as the expense history names it. An adjustment copies its
+ * original's name and dates, so without this the two would read the same.
+ */
+function expenseReportAdjustmentLabel(details: ExpenseReportRequestDetails, t: Translate) {
+	if (!details.adjustmentOf) return null;
+	if (details.adjustmentOf.title) {
+		return t(
+			"myRequests:myRequests.requests.expenseReport.adjustmentOf",
+			"Adjustment of “{title}”",
+			{
+				title: details.adjustmentOf.title,
+			},
+		);
+	}
+	return t(
+		"myRequests:myRequests.requests.expenseReport.adjustmentOfUntitled",
+		"Adjustment of an earlier report",
+	);
 }
 
 /** A report's kind, as `reportKindLabel` gives it: trip report, standalone receipt or mileage. */

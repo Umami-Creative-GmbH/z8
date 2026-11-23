@@ -27,12 +27,15 @@ const ids = {
 	rejectedSilently: "e1979100-0000-4000-8000-000000000006",
 	colleagues: "e1979100-0000-4000-8000-000000000007",
 	foreign: "e1979100-0000-4000-8000-000000000008",
+	approved: "e1979100-0000-4000-8000-000000000009",
+	adjustment: "e1979100-0000-4000-8000-00000000000a",
 	exceptionOpen: "e1979200-0000-4000-8000-000000000001",
 	exceptionLapsed: "e1979200-0000-4000-8000-000000000002",
 	exceptionRejected: "e1979200-0000-4000-8000-000000000003",
 	exceptionUsed: "e1979200-0000-4000-8000-000000000004",
 	exceptionColleague: "e1979200-0000-4000-8000-000000000005",
 	exceptionForeign: "e1979200-0000-4000-8000-000000000006",
+	exceptionExpired: "e1979200-0000-4000-8000-000000000007",
 } as const;
 
 async function cleanup() {
@@ -333,6 +336,55 @@ describe("My Requests expense reports and compliance exceptions (#1979)", () => 
 			decisionReason: "Team is fully staffed",
 			details: { kind: "compliance_exception", timeZone: "Europe/Berlin" },
 		});
+	});
+
+	it("lists a plain approved report and marks an adjustment with the report it adjusts", async () => {
+		await report(ids.approved, { status: "approved" });
+		// An adjustment copies its original's expense, so both carry the same name.
+		await report(ids.adjustment, { status: "submitted" });
+		await admin.query(
+			`insert into travel_expense_report_item (organization_id, report_id, type, position, description)
+			 values ($1, $2, 'receipt', 0, 'Hotel Hamburg'), ($1, $3, 'receipt', 0, 'Hotel Hamburg')`,
+			[ORG, ids.approved, ids.adjustment],
+		);
+		await admin.query(
+			`insert into travel_expense_report_adjustment (organization_id, report_id, original_report_id,
+			   source_report_id, source_revision_id, reason, idempotency_key, created_by_employee_id, created_by_user_id)
+			 values ($1, $2, $3, $3, gen_random_uuid(), 'Hotel was cheaper', 't1979-adjustment', $4, 't1979-requester')`,
+			[ORG, ids.adjustment, ids.approved, ids.requester],
+		);
+
+		const byId = new Map((await requestsOf(ids.requester)).map((item) => [item.sourceId, item]));
+
+		expect(byId.get(ids.approved)).toMatchObject({
+			status: "approved",
+			resolvedAt: new Date("2026-11-12T09:00:00Z"),
+			decisionReason: null,
+			availableActions: ["view"],
+			title: "Hotel Hamburg",
+		});
+		expect(byId.get(ids.approved)?.details).not.toHaveProperty("adjustmentOf");
+		expect(byId.get(ids.adjustment)).toMatchObject({
+			status: "pending",
+			title: "Hotel Hamburg",
+			details: {
+				kind: "expense_report",
+				adjustmentOf: { reportId: ids.approved, title: "Hotel Hamburg" },
+			},
+		});
+	});
+
+	it("shows a persisted expired exception as expired, undecided", async () => {
+		await exception(ids.exceptionExpired, {
+			status: "expired",
+			validUntil: "2026-11-19T06:00:00Z",
+		});
+
+		const item = (await requestsOf(ids.requester)).find(
+			(candidate) => candidate.sourceId === ids.exceptionExpired,
+		);
+
+		expect(item).toMatchObject({ status: "expired", resolvedAt: null, decisionReason: null });
 	});
 
 	it("never shows another employee's or organization's requests", async () => {
