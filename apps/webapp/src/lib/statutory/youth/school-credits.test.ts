@@ -35,6 +35,60 @@ describe("youthSchoolCreditsOf (§§ 9 Abs. 2, 10 Abs. 2 JArbSchG)", () => {
 		]);
 	});
 
+	it("counts a day at most once: a full release absorbs a school day on the same date", () => {
+		expect(
+			youthSchoolCreditsOf([
+				day("2027-03-03", "a", "pre_exam_day"),
+				day("2027-03-03", "b", "vocational_school_day"),
+				day("2027-03-04", "c", "vocational_school_day", 200),
+				day("2027-03-04", "d", "exam_day", 150),
+			]).map((credit) => [credit.date, credit.minutes]),
+		).toEqual([
+			["2027-03-03", 480],
+			["2027-03-04", 200],
+		]);
+	});
+
+	it("never counts more than one working day on a date when judging the week", () => {
+		const limits: JarbschgLimits = {
+			maxDailyMinutes: 480,
+			maxDailyCompensatoryMinutes: 510,
+			maxWeeklyMinutes: 2400,
+			maxDaysPerWeek: 5,
+			minRestMinutes: 720,
+			breakAfter270Minutes: 30,
+			breakAfter360Minutes: 60,
+			minBreakSegmentMinutes: 15,
+			maxUninterruptedMinutes: 270,
+			nightStartMinuteOfDay: 1200,
+			nightEndMinuteOfDay: 360,
+		};
+		const zone = "Europe/Berlin";
+		const at = (date: string, time: string) =>
+			Temporal.PlainDateTime.from(`${date}T${time}`).toZonedDateTime(zone).toInstant();
+		// Mon, Tue and Fri 8 h of work; Wed a pre-exam day and a school day; Thu the exam.
+		const breaches = evaluateJarbschg({
+			timezone: zone,
+			intervals: ["2027-03-01", "2027-03-02", "2027-03-05"].map((date) => ({
+				ref: `shift:${date}`,
+				start: at(date, "08:00"),
+				end: at(date, "17:00"),
+				workMinutes: 480,
+				recorded: false,
+			})),
+			judged: { start: "2027-03-01", endExclusive: "2027-03-08" },
+			isMinorOn: () => true,
+			limitsOn: () => limits,
+			holidays: new Set(),
+			credits: [
+				{ ref: "release:pre", date: "2027-03-03", minutes: 480 },
+				{ ref: "release:school", date: "2027-03-03", minutes: 480 },
+				{ ref: "release:exam", date: "2027-03-04", minutes: 480 },
+			],
+		});
+		expect(breaches.map((breach) => breach.rule)).not.toContain("jarbschg_weekly_max");
+	});
+
 	it("counts other school days with their school time including breaks", () => {
 		expect(youthSchoolCreditsOf([day("2027-03-04", "a", "vocational_school_day", 180)])).toEqual([
 			{ ref: "release:a", date: "2027-03-04", minutes: 180 },

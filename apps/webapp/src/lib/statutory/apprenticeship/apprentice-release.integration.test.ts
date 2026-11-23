@@ -395,6 +395,108 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		]);
 	});
 
+	it("credits a pre-exam day once: a school day entered on it is refused, the week stays lawful", async () => {
+		const minor = await apprentice("onceaday", "2011-01-01");
+		const scope = {
+			organizationId: org.id,
+			employeeId: minor.employeeId,
+			actorUserId: owner.userId,
+		};
+		// Exam on Thursday 4 March 2027 with its pre-exam day on Wednesday.
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "exam_day",
+			startsOn: "2027-03-04",
+			endsOn: "2027-03-04",
+			includePreExamDay: true,
+		});
+		// Wednesday's long school day is entered afterwards.
+		await expect(
+			recordApprenticeReleaseWithCredit(db, {
+				...scope,
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-03",
+				endsOn: "2027-03-03",
+				lessonCount: 6,
+			}),
+		).rejects.toMatchObject({ refusal: "apprentice_release_day_already_released" });
+
+		const credits = await loadYouthSchoolCredits(db, {
+			organizationId: org.id,
+			employeeIds: [minor.employeeId],
+			from: "2027-03-01",
+			until: "2027-03-08",
+		});
+		expect(
+			(credits.get(minor.employeeId) ?? [])
+				.filter((credit) => credit.date === "2027-03-03")
+				.map((credit) => credit.minutes),
+		).toEqual([480]);
+
+		// Monday, Tuesday and Friday 8 h each: 40 h with Wednesday and Thursday.
+		const subareaId = await seed.subarea(org, owner);
+		for (const date of ["2027-03-01", "2027-03-02", "2027-03-05"]) {
+			await seed.shift(org, minor, {
+				subareaId,
+				creatorUserId: owner.userId,
+				date,
+				startTime: "08:00",
+				endTime: "17:00",
+			});
+		}
+		const findings = await jarbschgScheduleContributor.evaluate({
+			db,
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2027-03-01", endExclusive: "2027-03-08" },
+			employeeIds: [minor.employeeId],
+			proposedShifts: [],
+			replacesShiftId: null,
+			preferences: DEFAULT_STATUTORY_PREFERENCES,
+			now: localInstant("2027-02-20", "12:00", org.timezone),
+		});
+		expect(findings.map((finding) => finding.kind)).not.toContain("jarbschg_weekly_max");
+	});
+
+	it("checks a pre-exam day recorded on its own like one recorded with its exam", async () => {
+		const learner = await apprentice("standalone", "2005-05-05");
+		const scope = {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+		};
+		const preExamDay = (date: string) =>
+			recordApprenticeReleaseWithCredit(db, {
+				...scope,
+				releaseKind: "pre_exam_day",
+				startsOn: date,
+				endsOn: date,
+			});
+		// An exam is never voided for a pre-exam day.
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "exam_day",
+			startsOn: "2027-03-02",
+			endsOn: "2027-03-02",
+		});
+		await expect(preExamDay("2027-03-02")).rejects.toMatchObject({
+			refusal: "apprentice_release_day_already_released",
+		});
+		// A partly credited school day is replaced, with its reason.
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "vocational_school_day",
+			startsOn: "2027-03-04",
+			endsOn: "2027-03-04",
+			lessonCount: 4,
+		});
+		await preExamDay("2027-03-04");
+		expect(await activeReleases(learner)).toEqual([
+			{ release_kind: "exam_day", starts_on: "2027-03-02", school_minutes: null },
+			{ release_kind: "pre_exam_day", starts_on: "2027-03-04", school_minutes: null },
+		]);
+	});
+
 	it("keeps the pre-exam day released in full when a later school day takes the week's full credit", async () => {
 		const learner = await apprentice("fullbefore", "2005-05-05");
 		const scope = {

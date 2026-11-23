@@ -361,11 +361,11 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 	};
 
 	const byDay = groupBy(located, (interval) => interval.dayKey);
-	/** Credited school and exam minutes per local day. */
+	/** Credited school and exam minutes per local day: the largest credit, never a sum. */
 	const creditOn = new Map<string, number>();
 	for (const credit of input.credits ?? []) {
 		if (credit.minutes <= 0) continue;
-		creditOn.set(credit.date, (creditOn.get(credit.date) ?? 0) + credit.minutes);
+		creditOn.set(credit.date, Math.max(creditOn.get(credit.date) ?? 0, credit.minutes));
 	}
 	const dayMinutes = (dayKey: string) =>
 		(creditOn.get(dayKey) ?? 0) +

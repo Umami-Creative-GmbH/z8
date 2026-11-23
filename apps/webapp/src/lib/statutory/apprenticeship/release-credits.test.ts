@@ -211,4 +211,25 @@ describe("applyApprenticeReleaseCredits", () => {
 		// 5 × 45 = 225 school minutes exceed the 180 required: credited down to zero, not below.
 		expect(credited["2026-03-05"]?.requiredMinutes).toBe(0);
 	});
+
+	it("credits a day once: two partial releases on one date credit the larger, not their sum", () => {
+		const credited = applyApprenticeReleaseCredits(requirementsOf({ "2026-03-04": 480 }), [
+			{
+				date: "2026-03-04",
+				releaseId: "a",
+				releaseKind: "vocational_school_day",
+				credit: "school_minutes",
+				minutes: 300,
+			},
+			{
+				date: "2026-03-04",
+				releaseId: "b",
+				releaseKind: "exam_day",
+				credit: "school_minutes",
+				minutes: 120,
+				examStartTime: "08:00",
+			},
+		]);
+		expect(credited["2026-03-04"]?.requiredMinutes).toBe(180);
+	});
 });

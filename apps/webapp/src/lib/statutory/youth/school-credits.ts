@@ -27,13 +27,14 @@ const FALLBACK_WEEK_MINUTES = 40 * 60;
 
 /**
  * The working time credited on each release day; each day on its own, so any part of a release
- * is credited as in the whole. A full block week's school days are its five weekdays.
+ * is credited as in the whole. A full block week's school days are its five weekdays. A date is
+ * credited at most once: of several releases on it, the largest credit counts (a full release
+ * absorbs a school day on the same date), as Work Balance releases the day once.
  */
 export function youthSchoolCreditsOf(days: readonly ApprenticeReleaseDay[]): YouthCreditedTime[] {
-	return days.map((day) => ({
-		ref: `release:${day.releaseId}`,
-		date: day.date,
-		minutes:
+	const byDate = new Map<string, YouthCreditedTime>();
+	for (const day of days) {
+		const minutes =
 			day.credit === "school_minutes"
 				? (day.minutes ?? 0)
 				: day.releaseKind === "vocational_school_block_week"
@@ -41,8 +42,13 @@ export function youthSchoolCreditsOf(days: readonly ApprenticeReleaseDay[]): You
 							(day.averageWorkingTime?.weeklyMinutes ?? FALLBACK_WEEK_MINUTES) /
 								SCHOOL_DAYS_PER_WEEK,
 						)
-					: (day.averageWorkingTime?.dailyMinutes ?? FALLBACK_DAY_MINUTES),
-	}));
+					: (day.averageWorkingTime?.dailyMinutes ?? FALLBACK_DAY_MINUTES);
+		const earlier = byDate.get(day.date);
+		if (!earlier || minutes > earlier.minutes) {
+			byDate.set(day.date, { ref: `release:${day.releaseId}`, date: day.date, minutes });
+		}
+	}
+	return [...byDate.values()];
 }
 
 /** Credited school and exam time on the local days `[from, until)`, per employee. */

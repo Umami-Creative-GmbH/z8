@@ -203,7 +203,9 @@ export function fullReleaseDates(days: readonly ApprenticeReleaseDay[]): Set<str
 
 /**
  * Releases required working time on credited days: a full release day requires nothing, a
- * school-time credit lowers the requirement, never below zero.
+ * school-time credit lowers the requirement, never below zero. A day is released at most once:
+ * several releases on one date credit the largest of them, never their sum, as JArbSchG counts
+ * them (`youthSchoolCreditsOf`).
  */
 export function applyApprenticeReleaseCredits(
 	requirements: DailyWorkRequirements,
@@ -213,7 +215,7 @@ export function applyApprenticeReleaseCredits(
 	const credits = new Map<string, number>();
 	for (const day of days) {
 		const credit = day.credit === "full_day" ? Number.POSITIVE_INFINITY : (day.minutes ?? 0);
-		credits.set(day.date, (credits.get(day.date) ?? 0) + credit);
+		credits.set(day.date, Math.max(credits.get(day.date) ?? 0, credit));
 	}
 	const credited: DailyWorkRequirements = {};
 	for (const [date, requirement] of Object.entries(requirements)) {
