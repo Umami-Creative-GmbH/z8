@@ -15,6 +15,10 @@ import {
 	workCategory,
 } from "@/db/schema";
 import {
+	ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES,
+	engagementCategoryRefusal,
+} from "@/lib/absences/category-rules";
+import {
 	assertHistoricalVacationNotOverlapping,
 	historicalVacationRefusalOf,
 } from "@/lib/absences/historical-vacation";
@@ -290,6 +294,7 @@ async function assertEmployeeInOrganization(
 	if (!found) {
 		throw new Error(`Employee ${employeeId} does not belong to organization ${organizationId}`);
 	}
+	return found;
 }
 
 async function getChainHead(
@@ -483,7 +488,11 @@ async function commitAbsence(
 	reviewed?: PlannedReconciledAbsence,
 ): Promise<CommitRowOutcome> {
 	const payload = row.normalizedPayload as unknown as AbsencePayload;
-	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
+	const absent = await assertEmployeeInOrganization(
+		database,
+		payload.employeeId,
+		job.organizationId,
+	);
 	const startDate =
 		reviewed?.absence.startDate ??
 		parseUtcInstant(payload.startsAt, "startsAt")
@@ -504,6 +513,31 @@ async function commitAbsence(
 					),
 				})
 			: null);
+	// An External Contractor gets only unavailability, an employee never (#1996). An unmapped
+	// category is written as the custom "Imported absence" category below.
+	const categoryName = payload.categoryName?.trim() || "Imported absence";
+	const categoryType =
+		knownCategory?.type ??
+		(
+			await database.query.absenceCategory.findFirst({
+				where: and(
+					eq(absenceCategory.organizationId, job.organizationId),
+					eq(absenceCategory.name, categoryName),
+				),
+				columns: { type: true },
+			})
+		)?.type ??
+		"custom";
+	const engagementRefusal = engagementCategoryRefusal(absent.engagementKind, categoryType);
+	if (engagementRefusal) {
+		return blockRow(
+			database,
+			row.id,
+			job,
+			ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES[engagementRefusal],
+			options,
+		);
+	}
 	// An absence touching a closed month is blocked, never written (#762).
 	try {
 		await assertAbsenceDaysOpen(database, {
@@ -529,11 +563,7 @@ async function commitAbsence(
 
 	const categoryId =
 		reviewed?.category.id ??
-		(await ensureAbsenceCategory(
-			database,
-			job.organizationId,
-			payload.categoryName?.trim() || "Imported absence",
-		));
+		(await ensureAbsenceCategory(database, job.organizationId, categoryName));
 	const [absence] = await database
 		.insert(absenceEntry)
 		.values({

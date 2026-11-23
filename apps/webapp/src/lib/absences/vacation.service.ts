@@ -116,6 +116,8 @@ export async function getEnhancedVacationBalanceResult(input: {
 }): Promise<{
 	balance: EnhancedVacationBalance | null;
 	configuration: VacationBalanceConfiguration | null;
+	/** An External Contractor that year (#1996): vacation does not apply, nothing is missing. */
+	externalContractor: boolean;
 }> {
 	const {
 		employeeId,
@@ -132,7 +134,7 @@ export async function getEnhancedVacationBalanceResult(input: {
 		),
 		columns: { organizationId: true },
 	});
-	if (!emp) return { balance: null, configuration: null };
+	if (!emp) return { balance: null, configuration: null, externalContractor: false };
 	const result = await loadVacationBalances(db, {
 		organizationId: emp.organizationId,
 		employeeIds: [employeeId],
@@ -151,6 +153,7 @@ export async function getEnhancedVacationBalanceResult(input: {
 				})
 			: null,
 		configuration: result.configurations.get(employeeId) ?? null,
+		externalContractor: result.externalContractors.has(employeeId),
 	};
 }
 

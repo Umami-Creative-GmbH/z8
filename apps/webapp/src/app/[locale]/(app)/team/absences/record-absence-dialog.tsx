@@ -39,9 +39,11 @@ import {
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { engagementCategoryRefusal } from "@/lib/absences/category-rules";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
 import type { AbsenceDurationKind, SickDetail } from "@/lib/absences/types";
 import type { ReconciliationProof } from "@/lib/absences/vacation-reconciliation-types";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { useRouter } from "@/navigation";
 import { recordAbsenceForEmployee, recordAbsenceWithSickNotes } from "./actions";
 import {
@@ -64,7 +66,8 @@ type AbsenceCategoryOption = {
 type RecordAbsenceDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	employee: { id: string; name: string } | null;
+	employee: { id: string; name: string; engagementKind?: EngagementKind } | null;
+	/** The organization's categories; the dialog offers those the employee's kind allows. */
 	categories: AbsenceCategoryOption[];
 	/** Personnel files are on: the recorder may add the sick note (#984). */
 	sickNotesEnabled?: boolean;
@@ -251,11 +254,16 @@ export function RecordAbsenceDialog({
 	open,
 	onOpenChange,
 	employee,
-	categories,
+	categories: organizationCategories,
 	sickNotesEnabled = false,
 	actionAvailable = true,
 }: RecordAbsenceDialogProps) {
 	const { t } = useTranslate();
+	// An External Contractor records only unavailability; an employee never does (#1996).
+	const categories = organizationCategories.filter(
+		(category) =>
+			engagementCategoryRefusal(employee?.engagementKind ?? "employee", category.type) === null,
+	);
 	const {
 		isRecording,
 		reconciliation,
