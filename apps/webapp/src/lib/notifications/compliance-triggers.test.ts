@@ -71,6 +71,8 @@ describe("compliance notification triggers", () => {
 			managerId: "manager-1",
 			title: "Compliance exception requested",
 			message: 'Ada Lovelace requested a weekly overtime exception: "Release week"',
+			// Reviewed in the Approval inbox (#1977), not the retired /settings/compliance queue.
+			actionUrl: "/approvals/inbox?types=compliance_exception",
 		});
 		expect(notification.metadata.i18n).toEqual({
 			titleKey: "common:notifications.content.complianceExceptionRequested.title",

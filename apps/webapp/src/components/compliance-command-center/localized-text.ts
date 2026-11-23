@@ -164,6 +164,10 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.links.openComplianceSettings",
 		default: "Open Compliance Settings",
 	},
+	linkReviewComplianceExceptions: {
+		key: "compliance.commandCenter.links.reviewComplianceExceptions",
+		default: "Review compliance exceptions",
+	},
 	linkReviewAuditExport: {
 		key: "compliance.commandCenter.links.reviewAuditExport",
 		default: "Review audit export",

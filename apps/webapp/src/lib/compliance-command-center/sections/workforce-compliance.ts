@@ -54,8 +54,8 @@ export function deriveWorkforceComplianceSection(
 			],
 			updatedAt: snapshot.latestViolationAt ?? systemClock.nowInstant().toString(),
 			primaryLink: {
-				label: text("compliance.commandCenter.links.openComplianceSettings"),
-				href: "/settings/compliance",
+				label: text("compliance.commandCenter.links.reviewComplianceExceptions"),
+				href: "/approvals/inbox?types=compliance_exception",
 			},
 		},
 		recentCriticalEvents:
@@ -74,8 +74,8 @@ export function deriveWorkforceComplianceSection(
 							}),
 							occurredAt: snapshot.latestViolationAt ?? systemClock.nowInstant().toString(),
 							primaryLink: {
-								label: text("compliance.commandCenter.links.inspectCompliance"),
-								href: "/settings/compliance",
+								label: text("compliance.commandCenter.links.reviewComplianceExceptions"),
+								href: "/approvals/inbox?types=compliance_exception",
 							},
 						},
 					],

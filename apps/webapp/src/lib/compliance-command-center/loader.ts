@@ -45,8 +45,8 @@ export async function getComplianceCommandCenterData(
 			unavailableSection(
 				"workforceCompliance",
 				{
-					label: text("compliance.commandCenter.links.openComplianceSettings"),
-					href: "/settings/compliance",
+					label: text("compliance.commandCenter.links.reviewComplianceExceptions"),
+					href: "/approvals/inbox?types=compliance_exception",
 				},
 				text("compliance.commandCenter.facts.unavailable.workforceCompliance"),
 			),

@@ -1,6 +1,8 @@
 export interface LegacySettingsRedirectTarget {
 	readonly pathname: string;
 	readonly tab?: string;
+	/** A fixed Approval inbox type filter (`?types=`), replacing any the old URL carried. */
+	readonly types?: string;
 }
 
 /**
@@ -32,6 +34,9 @@ export const LEGACY_SETTINGS_REDIRECTS: Readonly<Record<string, LegacySettingsRe
 	"/settings/permissions": { pathname: "/settings/roles", tab: "team-permissions" },
 	// The retired two-tab approvals workspace; the Approval inbox is canonical (#1976).
 	"/approvals": { pathname: "/approvals/inbox" },
+	// The standalone ArbZG exception queue; the Approval inbox lists them (#1977, ADR-0005).
+	// Exact match: `/settings/compliance/works-council` stays its own page.
+	"/settings/compliance": { pathname: "/approvals/inbox", types: "compliance_exception" },
 };
 
 /**
@@ -53,6 +58,9 @@ export function resolveLegacySettingsRedirect(
 	const mergedSearch = new URLSearchParams(searchParams);
 	if (target.tab !== undefined) {
 		mergedSearch.set("tab", target.tab);
+	}
+	if (target.types !== undefined) {
+		mergedSearch.set("types", target.types);
 	}
 	const query = mergedSearch.toString();
 	return `/${locale}${target.pathname}${query ? `?${query}` : ""}`;

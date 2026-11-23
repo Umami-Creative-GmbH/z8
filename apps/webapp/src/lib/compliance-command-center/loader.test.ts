@@ -22,7 +22,7 @@ vi.mock("./sections/workforce-compliance", () => ({
 			headline: "warnings",
 			facts: [],
 			updatedAt: "2026-04-11T10:00:00.000Z",
-			primaryLink: { label: "Compliance", href: "/settings/compliance" },
+			primaryLink: { label: "Compliance", href: "/approvals/inbox?types=compliance_exception" },
 		},
 		recentCriticalEvents: [],
 	})),
@@ -76,5 +76,18 @@ describe("getComplianceCommandCenterData", () => {
 		const accessControls = data.sections.find((section) => section.key === "accessControls");
 		expect(accessControls?.status).toBe("unavailable");
 		expect(accessControls?.primaryLink.href).toBe("/settings/audit-export?tab=activity");
+	});
+
+	it("points an unavailable workforce card at the inbox's compliance exceptions (#1977)", async () => {
+		const { getWorkforceComplianceSection } = await import("./sections/workforce-compliance");
+		vi.mocked(getWorkforceComplianceSection).mockRejectedValueOnce(new Error("offline"));
+
+		const data = await getComplianceCommandCenterData("org-1");
+
+		const workforce = data.sections.find((section) => section.key === "workforceCompliance");
+		expect(workforce?.primaryLink).toEqual({
+			label: { key: "compliance.commandCenter.links.reviewComplianceExceptions" },
+			href: "/approvals/inbox?types=compliance_exception",
+		});
 	});
 });

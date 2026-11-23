@@ -79,6 +79,23 @@ describe("deriveWorkforceComplianceSection", () => {
 
 		expect(result.card.status).toBe("warning");
 	});
+
+	it("sends exception triage to the Approval inbox's compliance exceptions (#1977)", () => {
+		const result = deriveWorkforceComplianceSection({
+			restPeriodViolations: 1,
+			generalPolicyViolations: 0,
+			overtimeViolations: 0,
+			pendingExceptions: 2,
+			latestViolationAt: DateTime.utc().minus({ hours: 2 }).toISO(),
+		});
+
+		const review = {
+			label: { key: "compliance.commandCenter.links.reviewComplianceExceptions" },
+			href: "/approvals/inbox?types=compliance_exception",
+		};
+		expect(result.card.primaryLink).toEqual(review);
+		expect(result.recentCriticalEvents.map((event) => event.primaryLink)).toEqual([review]);
+	});
 });
 
 describe("getWorkforceComplianceSection", () => {

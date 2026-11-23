@@ -197,7 +197,8 @@ export async function onComplianceExceptionRequested(
 				),
 				entityType: "compliance_exception",
 				entityId: params.exceptionId,
-				actionUrl: "/settings/compliance",
+				// Decided in the Approval inbox (#1977, Approvals ADR-0005).
+				actionUrl: "/approvals/inbox?types=compliance_exception",
 				metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 			});
 		}

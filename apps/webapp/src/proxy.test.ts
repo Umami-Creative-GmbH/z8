@@ -285,6 +285,38 @@ describe("legacy settings 308 redirects (#1963)", () => {
 		}
 	});
 
+	it("redirects the retired /settings/compliance queue to the inbox's compliance exceptions with 308 (#1977)", async () => {
+		platform.configured = true;
+		try {
+			const response = await proxy(
+				new NextRequest(
+					"https://app.example.com/de/settings/compliance?types=absence_entry&ref=mail",
+				),
+			);
+			expect(response.status).toBe(308);
+			const location = new URL(response.headers.get("location") ?? "");
+			expect(location.pathname).toBe("/de/approvals/inbox");
+			expect(location.searchParams.getAll("types")).toEqual(["compliance_exception"]);
+			expect(location.searchParams.get("ref")).toBe("mail");
+
+			const bare = await proxy(new NextRequest("https://app.example.com/settings/compliance/"));
+			expect(bare.status).toBe(308);
+			expect(bare.headers.get("location")).toBe(
+				"https://app.example.com/en/approvals/inbox?types=compliance_exception",
+			);
+
+			const worksCouncil = await proxy(
+				new NextRequest("https://app.example.com/de/settings/compliance/works-council", {
+					headers: { cookie: "better-auth.session_token=session" },
+				}),
+			);
+			expect(worksCouncil.status).not.toBe(308);
+			expect(worksCouncil.headers.get("location")).toBeNull();
+		} finally {
+			platform.configured = false;
+		}
+	});
+
 	it("handles trailing slashes without hijacking canonical sibling or child routes", async () => {
 		platform.configured = true;
 		try {

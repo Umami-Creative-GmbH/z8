@@ -175,6 +175,10 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);
 	});
+	it("keeps Works Council's heading while /settings/compliance only redirects (#1977)", () => {
+		expect(appPageOwnsHeading("/de/settings/compliance")).toBe(false);
+		expect(appPageOwnsHeading("/de/settings/compliance/works-council")).toBe(true);
+	});
 	it("adopts only the deputy history record, preserving other approval headings", () => {
 		expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);
