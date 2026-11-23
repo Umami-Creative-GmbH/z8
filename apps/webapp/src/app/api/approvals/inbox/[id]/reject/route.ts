@@ -153,7 +153,8 @@ export async function POST(
 					entityType: "compliance_exception",
 					entityId: id,
 					approverId: currentEmployee.id,
-					reason,
+					// Never the reason's text: a manager's reason may carry personal data.
+					reasonLength: reason.length,
 				},
 				"Compliance exception rejected via unified inbox",
 			);
@@ -273,7 +274,7 @@ export async function POST(
 				entityType: approvalReq.entityType,
 				entityId: approvalReq.entityId,
 				approverId: currentEmployee.id,
-				reason,
+				reasonLength: reason.length,
 			},
 			"Approval rejected via unified inbox",
 		);

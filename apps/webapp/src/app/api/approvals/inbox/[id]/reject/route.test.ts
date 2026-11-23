@@ -235,7 +235,7 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			expect(mockState.rejectApprovalInboxItem).not.toHaveBeenCalled();
 		});
 
-		it("logs the rejection with the approver, the exception and the reason", async () => {
+		it("logs the rejection with the approver and the exception, never the reason's text", async () => {
 			mockState.decideComplianceExceptionForActor.mockResolvedValue({
 				id: "exception-1",
 				type: "compliance_exception",
@@ -252,10 +252,11 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 					entityType: "compliance_exception",
 					entityId: "exception-1",
 					approverId: "employee-1",
-					reason: "Cover is planned",
+					reasonLength: 16,
 				},
 				"Compliance exception rejected via unified inbox",
 			);
+			expect(JSON.stringify(mockState.logger.info.mock.calls)).not.toContain("Cover is planned");
 		});
 
 		it("logs a failed decision with its compliance exception target", async () => {
@@ -426,6 +427,38 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			expect(mockState.rejectApprovalInboxItem).not.toHaveBeenCalled();
 			expect(mockState.coversCurrentApprover).not.toHaveBeenCalled();
 		});
+	});
+
+	it("logs an approval's rejection without the reason's text", async () => {
+		mockState.getAbility.mockResolvedValue(createManagerAbility());
+		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			targetType: "compatibility_request",
+			entityId: "entity-1",
+			entityType: "absence_entry",
+			approverId: "employee-2",
+			requestedBy: "requester-1",
+			requesterEmployeeId: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+
+		await POST(createRequest({ reason: "Missing receipt" }), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(mockState.logger.info).toHaveBeenCalledWith(
+			{
+				approvalId: "approval-1",
+				entityType: "absence_entry",
+				entityId: "entity-1",
+				approverId: "employee-1",
+				reasonLength: 15,
+			},
+			"Approval rejected via unified inbox",
+		);
+		expect(JSON.stringify(mockState.logger.info.mock.calls)).not.toContain("Missing receipt");
 	});
 
 	it("allows an eligible fallback team manager to reject a request assigned to another manager", async () => {

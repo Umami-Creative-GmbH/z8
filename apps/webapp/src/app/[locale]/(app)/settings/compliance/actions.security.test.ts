@@ -72,8 +72,10 @@ vi.mock("@/lib/notifications/compliance-triggers", () => ({
 	onComplianceExceptionRequested: vi.fn(async () => undefined),
 }));
 
+const logger = vi.hoisted(() => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }));
+
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }),
+	createLogger: () => logger,
 }));
 
 const actions = await import("./actions");
@@ -176,6 +178,21 @@ describe("compliance actions", () => {
 				createdBy: "user-1",
 			}),
 		);
+	});
+
+	it("logs a failed request without the employee's reason text", async () => {
+		mocks.caller = { ...orgAdmin, employee: null };
+
+		await actions.requestComplianceException({
+			exceptionType: "rest_period",
+			reason: "Caring for my sick child",
+		});
+
+		expect(logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({ exceptionType: "rest_period", reasonLength: 24 }),
+			"Failed to request compliance exception",
+		);
+		expect(JSON.stringify(logger.error.mock.calls)).not.toContain("sick child");
 	});
 
 	it("rejects an unknown exception type before requesting it", async () => {

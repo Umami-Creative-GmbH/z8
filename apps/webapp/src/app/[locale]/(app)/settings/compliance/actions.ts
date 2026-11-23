@@ -214,7 +214,18 @@ export const requestComplianceException = organizationAction(
 			return { exceptionId };
 		}).pipe(
 			Effect.tapError((error) =>
-				Effect.sync(() => logger.error({ error, input }, "Failed to request compliance exception")),
+				// Never the reason's text: an employee's reason may carry personal data.
+				Effect.sync(() =>
+					logger.error(
+						{
+							error,
+							exceptionType: input.exceptionType,
+							plannedDurationMinutes: input.plannedDurationMinutes,
+							reasonLength: input.reason.length,
+						},
+						"Failed to request compliance exception",
+					),
+				),
 			),
 			Effect.provide(ComplianceGuardrailServiceLive),
 		),
