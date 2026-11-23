@@ -829,6 +829,59 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			}
 		});
 
+		it("counts time shared by overlapping shifts once, before and while a call runs on them", async () => {
+			const seedOverlap =
+				(clockIn: string | null) =>
+				async (
+					org: Awaited<ReturnType<typeof onCall.organization>>,
+					worker: Awaited<ReturnType<typeof fx.employee>>,
+				) => {
+					await onCall.work(org, worker, {
+						date: "2026-03-09",
+						startTime: "08:00",
+						endTime: "14:00",
+					});
+					// Tuesday 09:00–13:00, and a draft 11:00–15:00 next to it: 09:00–15:00, 360 minutes.
+					await onCall.shift(org, {
+						employeeId: worker.employeeId,
+						date: "2026-03-10",
+						startTime: "09:00",
+						endTime: "13:00",
+						publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+					});
+					await onCall.shift(org, {
+						employeeId: worker.employeeId,
+						date: "2026-03-10",
+						startTime: "11:00",
+						endTime: "15:00",
+						status: "draft",
+						publishedAt: null,
+					});
+					if (clockIn) {
+						await onCall.openWork(org, worker, { date: "2026-03-10", startTime: clockIn });
+					}
+				};
+
+			// Monday evening, before Tuesday: 360 worked + 360 planned, not 360 + 480.
+			const planned = await exactWeek(
+				(timezone) => localInstant("2026-03-09", "20:00", timezone),
+				seedOverlap(null),
+			);
+			expect(await planned()).toEqual([["on_call_weekly_over_band", "warning", 720]]);
+			await fx.cleanup();
+
+			// Tuesday, clocked in across both shifts: worked up to now plus the rest of 09:00–15:00 once.
+			const running = await exactWeek(
+				(timezone) => localInstant("2026-03-10", "12:00:10", timezone),
+				seedOverlap("08:59:42"),
+			);
+			for (const second of ["12:00:10", "12:00:35", "12:00:50"]) {
+				expect(await running(localInstant("2026-03-10", second, "Europe/Berlin"))).toEqual([
+					["on_call_weekly_over_band", "warning", 720],
+				]);
+			}
+		});
+
 		it("keeps the rest of yesterday's overnight shift still running past midnight", async () => {
 			const seedOvernight =
 				(clockIn: string | null) =>

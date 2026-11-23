@@ -412,7 +412,7 @@ function bandFindings(
 	// started, such as last night's shift past midnight. A running clock-in on the shift ends on its
 	// whole-minute grid, so the rest of the shift is measured from there and the total stays
 	// constant within the minute.
-	const stillPlannedIn = (shift: OnCallShift) => {
+	const stillPlannedRest = (shift: OnCallShift) => {
 		const interval = shiftInterval(shift, input.timezone);
 		const runningOnShift = running.filter(
 			(piece) => compareInstants(piece.start, interval.end) < 0,
@@ -423,20 +423,31 @@ function bandFindings(
 					.reduce((a, b) => (compareInstants(a, b) >= 0 ? a : b))
 			: input.now;
 		const from = compareInstants(cut, interval.start) > 0 ? cut : interval.start;
-		if (compareInstants(from, interval.end) >= 0) return 0;
-		const rest = { start: from, end: interval.end };
-		return Math.max(
+		if (compareInstants(from, interval.end) >= 0) return null;
+		return { shift, start: from, end: interval.end };
+	};
+	// Overlapping shifts count their shared time once, as in `plannedCalls`: in start order, each
+	// shift adds only the part of its rest after the rests before it, to its own day.
+	const stillPlannedByDay = new Map<string, number>();
+	let plannedUntil: Instant | null = null;
+	for (const rest of input.shifts
+		.map(stillPlannedRest)
+		.filter((rest) => rest !== null)
+		.toSorted((a, b) => compareInstants(a.start, b.start))) {
+		const start: Instant =
+			plannedUntil && compareInstants(plannedUntil, rest.start) > 0 ? plannedUntil : rest.start;
+		if (compareInstants(start, rest.end) >= 0) continue;
+		plannedUntil = rest.end;
+		const minutes = Math.max(
 			0,
-			Math.round(from.until(interval.end).total("minutes")) - overlapMinutes(pieces, rest),
+			Math.round(start.until(rest.end).total("minutes")) -
+				overlapMinutes(pieces, { start, end: rest.end }),
 		);
-	};
-	const minutesOn = (day: PlainDate) => {
-		const worked = work?.get(day.toString()) ?? 0;
-		const stillPlanned = input.shifts
-			.filter((shift) => shift.date.equals(day))
-			.reduce((sum, shift) => sum + stillPlannedIn(shift), 0);
-		return worked + stillPlanned;
-	};
+		const day = rest.shift.date.toString();
+		stillPlannedByDay.set(day, (stillPlannedByDay.get(day) ?? 0) + minutes);
+	}
+	const minutesOn = (day: PlainDate) =>
+		(work?.get(day.toString()) ?? 0) + (stillPlannedByDay.get(day.toString()) ?? 0);
 	// § 12 Abs. 4–5 TzBfG: approved absence and public holidays are paid by the reference period,
 	// not called. Unless worked anyway or still planned (a call scheduled on it counts like any
 	// other), such a day leaves the band, which is prorated to the days that could be called, as for
