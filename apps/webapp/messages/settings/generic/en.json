@@ -4320,7 +4320,8 @@
       "credit": {
         "fullDays": "{count, plural, one {# working day credited in full} other {# working days credited in full}}",
         "minutes": "{minutes} min of school time credited",
-        "exam": "Exam from {start}: {minutes} min credited"
+        "exam": "Exam from {start}: {minutes} min credited",
+        "schoolTime": "School {start}–{end}: {minutes} min credited"
       },
       "lessons": "{count} lessons",
       "workplaceReturn": "Under 18: no return to work after this full school day (§ 9 Abs. 1 Nr. 2 JArbSchG)",

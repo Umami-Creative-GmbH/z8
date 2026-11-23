@@ -4320,7 +4320,8 @@
       "credit": {
         "fullDays": "{count, plural, one {# Arbeitstag voll angerechnet} other {# Arbeitstage voll angerechnet}}",
         "minutes": "{minutes} Min. Unterrichtszeit angerechnet",
-        "exam": "Prüfung ab {start}: {minutes} Min. angerechnet"
+        "exam": "Prüfung ab {start}: {minutes} Min. angerechnet",
+        "schoolTime": "Unterricht {start}–{end}: {minutes} Min. angerechnet"
       },
       "lessons": "{count} Unterrichtsstunden",
       "workplaceReturn": "Unter 18: keine Rückkehr in den Betrieb nach diesem vollen Berufsschultag (§ 9 Abs. 1 Nr. 2 JArbSchG)",

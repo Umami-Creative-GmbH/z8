@@ -236,10 +236,20 @@ export const employeeApprenticeRelease = pgTable(
 		/** When an exam starts (local wall time); with it, the exam day credits only its time. */
 		examStartTime: time("exam_start_time"),
 		/**
-		 * On a pre-exam day: the exam it was released for. On a release voided to make room for that
-		 * pre-exam day: the same exam. Voiding the exam voids the one and restores the other.
+		 * When a short school day's lessons start and end (local wall time): shifts during them, and
+		 * before lessons starting before 09:00, conflict with the release (§ 9 Abs. 1 JArbSchG,
+		 * § 15 Abs. 1 BBiG). Its `school_minutes` hold the school time between them.
 		 */
+		schoolStartTime: time("school_start_time"),
+		schoolEndTime: time("school_end_time"),
+		/** On a pre-exam day: the exam it was released for. Voiding the exam voids it. */
 		examReleaseId: uuid("exam_release_id"),
+		/**
+		 * On a release voided to make room for another (a school day for a pre-exam day, a pre-exam
+		 * day for a full block day): that release. Voiding it restores this one, when its days are
+		 * still free.
+		 */
+		supersededByReleaseId: uuid("superseded_by_release_id"),
 		note: text("note"),
 		...auditColumns,
 	},
@@ -253,6 +263,19 @@ export const employeeApprenticeRelease = pgTable(
 		check(
 			"employee_apprentice_release_exam_link_check",
 			sql`"exam_release_id" IS NULL OR "release_kind" <> 'exam_day'`,
+		),
+		foreignKey({
+			name: "employee_apprentice_release_superseded_by_fk",
+			columns: [table.supersededByReleaseId],
+			foreignColumns: [table.id],
+		}),
+		check(
+			"employee_apprentice_release_superseded_check",
+			sql`"superseded_by_release_id" IS NULL OR "voided_at" IS NOT NULL`,
+		),
+		check(
+			"employee_apprentice_release_school_time_check",
+			sql`("school_start_time" IS NULL AND "school_end_time" IS NULL) OR ("release_kind" = 'vocational_school_day' AND "school_start_time" IS NOT NULL AND "school_end_time" IS NOT NULL AND "school_end_time" > "school_start_time" AND "school_minutes" IS NOT NULL)`,
 		),
 		check("employee_apprentice_release_kind_check", textIn("release_kind", apprenticeReleaseKinds)),
 		check("employee_apprentice_release_date_range_check", sql`"ends_on" >= "starts_on"`),

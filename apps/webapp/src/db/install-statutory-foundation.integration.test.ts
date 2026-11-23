@@ -124,8 +124,13 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 				columns: config.columns.map((column) => column.name).sort(),
 			}).toEqual({ table: config.name, columns: rows.map((row) => row.column_name) });
 		}
-		expect(
-			getTableConfig(employeeApprenticeRelease).columns.map((column) => column.name),
-		).toContain("exam_release_id");
+		expect(getTableConfig(employeeApprenticeRelease).columns.map((column) => column.name)).toEqual(
+			expect.arrayContaining([
+				"exam_release_id",
+				"school_start_time",
+				"school_end_time",
+				"superseded_by_release_id",
+			]),
+		);
 	});
 });

@@ -76,6 +76,21 @@ function creditText(release: ApprenticeReleaseCreditView, t: Translate): string 
 			},
 		);
 	}
+	if (
+		release.schoolStartTime !== null &&
+		release.schoolEndTime !== null &&
+		release.creditedMinutes > 0
+	) {
+		return t(
+			"settings.apprenticeRelease.credit.schoolTime",
+			"School {start}–{end}: {minutes} min credited",
+			{
+				start: release.schoolStartTime,
+				end: release.schoolEndTime,
+				minutes: release.creditedMinutes,
+			},
+		);
+	}
 	if (release.creditedMinutes === 0) {
 		return t(
 			"settings.apprenticeRelease.credit.fullDays",

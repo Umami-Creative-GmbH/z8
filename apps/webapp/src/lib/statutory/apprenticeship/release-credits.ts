@@ -45,6 +45,9 @@ export interface ApprenticeReleaseRecord {
 	readonly schoolMinutes: number | null;
 	/** An exam's local start time (`HH:MM[:SS]`); its `schoolMinutes` are its duration. */
 	readonly examStartTime: string | null;
+	/** A school day's lesson start and end (`HH:MM[:SS]`), when recorded. */
+	readonly schoolStartTime?: string | null;
+	readonly schoolEndTime?: string | null;
 }
 
 /** One credited release day. */
@@ -57,6 +60,8 @@ export interface ApprenticeReleaseDay {
 	readonly minutes: number | null;
 	/** An exam credited with its time: when it starts, local wall time. */
 	readonly examStartTime?: string;
+	/** A school day recorded with its lesson times: when they start and end, local wall time. */
+	readonly schoolTime?: { readonly start: string; readonly end: string };
 	/**
 	 * The employee's average working day and week under their effective terms on this day, which
 	 * a full release day or block week is credited with as working time (§ 15 Abs. 2 BBiG, §§ 9
@@ -143,6 +148,10 @@ export function apprenticeReleaseDays(
 				break;
 			case "vocational_school_day": {
 				const week = mondayOf(parsePlainDate(release.startsOn));
+				const schoolTime =
+					release.schoolStartTime && release.schoolEndTime
+						? { start: release.schoolStartTime, end: release.schoolEndTime }
+						: undefined;
 				if (isLongSchoolDay(release) && !weeksWithFullSchoolDay.has(week)) {
 					weeksWithFullSchoolDay.add(week);
 					days.push({ ...base, date: release.startsOn, credit: "full_day", minutes: null });
@@ -152,6 +161,7 @@ export function apprenticeReleaseDays(
 						date: release.startsOn,
 						credit: "school_minutes",
 						minutes: schoolMinutesOf(release),
+						...(schoolTime ? { schoolTime } : {}),
 					});
 				}
 				break;

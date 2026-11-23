@@ -453,6 +453,104 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		);
 	});
 
+	describe("voiding a pre-exam day restores the school day it replaced", () => {
+		const schoolDay = (who: FixtureEmployee) =>
+			recordApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: who.employeeId,
+				actorUserId: owner.userId,
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-03",
+				endsOn: "2027-03-03",
+				lessonCount: 4,
+				schoolStartTime: "08:00",
+				schoolEndTime: "11:30",
+				note: "Berufsschule",
+			});
+		const preExamDayId = async (who: FixtureEmployee) =>
+			(
+				await admin.query<{ id: string }>(
+					`select id from employee_apprentice_release
+					 where organization_id = $1 and employee_id = $2 and release_kind = 'pre_exam_day'
+					   and voided_at is null`,
+					[org.id, who.employeeId],
+				)
+			).rows[0].id;
+		const restored = async (who: FixtureEmployee) =>
+			(
+				await admin.query<{
+					release_kind: string;
+					starts_on: string;
+					lesson_count: number | null;
+					school_minutes: number | null;
+					school_start_time: string | null;
+					school_end_time: string | null;
+					note: string | null;
+				}>(
+					`select release_kind, to_char(starts_on, 'YYYY-MM-DD') as starts_on, lesson_count,
+					        school_minutes, school_start_time::text, school_end_time::text, note
+					 from employee_apprentice_release
+					 where organization_id = $1 and employee_id = $2 and voided_at is null
+					 order by starts_on`,
+					[org.id, who.employeeId],
+				)
+			).rows;
+		const wednesday = {
+			release_kind: "vocational_school_day",
+			starts_on: "2027-03-03",
+			lesson_count: 4,
+			school_minutes: 210,
+			school_start_time: "08:00:00",
+			school_end_time: "11:30:00",
+			note: expect.stringMatching(/^Berufsschule\n.*restored.*pre-exam day/is),
+		};
+
+		it("when a pre-exam day recorded on its own is voided", async () => {
+			const learner = await apprentice("standalonevoid", "2005-05-05");
+			const scope = {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+			};
+			await schoolDay(learner);
+			await recordApprenticeReleaseWithCredit(db, {
+				...scope,
+				releaseKind: "pre_exam_day",
+				startsOn: "2027-03-03",
+				endsOn: "2027-03-03",
+			});
+			await voidApprenticeReleaseWithCredit(db, {
+				...scope,
+				releaseId: await preExamDayId(learner),
+				reason: "Recorded by mistake",
+			});
+
+			expect(await restored(learner)).toEqual([wednesday]);
+			const required = await requirementsOf(learner);
+			expect(required["2027-03-03"]?.requiredMinutes).toBe(
+				(required["2027-03-01"]?.requiredMinutes ?? 0) - 210,
+			);
+		});
+
+		it("when an exam's pre-exam day is voided, and the exam stays", async () => {
+			const learner = await apprentice("linkedvoid", "2005-05-05");
+			await schoolDay(learner);
+			await timedExam(learner, "2027-03-04");
+			await voidApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseId: await preExamDayId(learner),
+				reason: "Not the written final exam",
+			});
+
+			expect(await restored(learner)).toEqual([
+				wednesday,
+				expect.objectContaining({ release_kind: "exam_day", starts_on: "2027-03-04" }),
+			]);
+		});
+	});
+
 	it("moves the pre-exam day of a multi-day exam when its first exam day is voided", async () => {
 		const learner = await apprentice("voidfirst", "2005-05-05");
 		await timedExam(learner, "2027-03-03");
@@ -561,6 +659,105 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			},
 		]);
 		expect((await requirementsOf(learner))["2027-03-03"]?.requiredMinutes).toBe(workday - 300);
+	});
+
+	describe("a block recorded over a pre-exam day", () => {
+		const block = (who: FixtureEmployee, endsOn: string, schoolMinutes: number) =>
+			recordApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: who.employeeId,
+				actorUserId: owner.userId,
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-01",
+				endsOn,
+				schoolMinutes,
+			});
+		const idOf = async (who: FixtureEmployee, kind: string) =>
+			(
+				await admin.query<{ id: string }>(
+					`select id from employee_apprentice_release
+					 where organization_id = $1 and employee_id = $2 and release_kind = $3
+					   and voided_at is null`,
+					[org.id, who.employeeId, kind],
+				)
+			).rows[0].id;
+
+		it("lies under the pre-exam day when it credits the day only partly, also when corrected", async () => {
+			const learner = await apprentice("blocklater", "2005-05-05");
+			// The exam on Friday 5 March 2027 makes Thursday its pre-exam day.
+			await recordExamWithPreExamDay(learner, "2027-03-05");
+			// The week's 20 h block, Monday to Thursday, entered afterwards.
+			await block(learner, "2027-03-04", 1200);
+			// Corrected: voided and entered again with other hours.
+			await voidApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseId: await idOf(learner, "vocational_school_block_week"),
+				reason: "Wrong hours",
+			});
+			await block(learner, "2027-03-04", 960);
+
+			expect(await activeReleases(learner)).toEqual([
+				{
+					release_kind: "vocational_school_block_week",
+					starts_on: "2027-03-01",
+					school_minutes: 960,
+				},
+				{ release_kind: "pre_exam_day", starts_on: "2027-03-04", school_minutes: null },
+				{ release_kind: "exam_day", starts_on: "2027-03-05", school_minutes: null },
+			]);
+			const required = await requirementsOf(learner);
+			expect(required["2027-03-04"]?.requiredMinutes).toBe(0);
+			expect(required["2027-03-03"]?.requiredMinutes).toBe(
+				(required["2027-03-08"]?.requiredMinutes ?? 0) - 240,
+			);
+		});
+
+		it("replaces the pre-exam day on a full block day, and gives it back when voided", async () => {
+			const learner = await apprentice("fullblocklater", "2005-05-05");
+			// The exam on Monday 8 March 2027 makes Friday 5 March its pre-exam day.
+			const [exam] = await recordExamWithPreExamDay(learner, "2027-03-08");
+			// A full block week, Monday to Friday, 25 h: Friday stays released in full by the block.
+			await block(learner, "2027-03-05", 1500);
+			expect(await activeReleases(learner)).toEqual([
+				{
+					release_kind: "vocational_school_block_week",
+					starts_on: "2027-03-01",
+					school_minutes: 1500,
+				},
+				{ release_kind: "exam_day", starts_on: "2027-03-08", school_minutes: null },
+			]);
+
+			await voidApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseId: await idOf(learner, "vocational_school_block_week"),
+				reason: "Block cancelled",
+			});
+			expect(await activeReleases(learner)).toEqual([
+				{ release_kind: "pre_exam_day", starts_on: "2027-03-05", school_minutes: null },
+				{ release_kind: "exam_day", starts_on: "2027-03-08", school_minutes: null },
+			]);
+			// The restored pre-exam day still belongs to its exam.
+			await voidApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseId: exam.id,
+				reason: "Exam moved",
+			});
+			expect(await activeReleases(learner)).toEqual([]);
+		});
+
+		it("is still refused over an exam day", async () => {
+			const learner = await apprentice("blockexam", "2005-05-05");
+			await recordExamWithPreExamDay(learner, "2027-03-04");
+			await expect(block(learner, "2027-03-05", 1500)).rejects.toMatchObject({
+				refusal: "apprentice_release_day_already_released",
+			});
+		});
 	});
 
 	/** Records a written exam on `date` with its pre-exam day; returns the exam row. */
@@ -792,6 +989,69 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			"minor block week": "§ 9 Abs. 1 Nr. 3 JArbSchG",
 			"minor pre-exam day": "§ 10 Abs. 1 Nr. 2 JArbSchG",
 			"minor exam day": "§ 10 Abs. 1 Nr. 1 JArbSchG",
+		});
+	});
+
+	it("flags shifts during a short school day's lessons, and before lessons starting before 9", async () => {
+		const adult = await apprentice("adultlessons", "2005-05-05");
+		const minor = await apprentice("minorlessons", "2011-01-01");
+		const subareaId = await seed.subarea(org, owner);
+		// Monday 1 to Friday 5 March 2027: four lessons each day, only partly credited.
+		const days = [
+			{ date: "2027-03-01", school: ["08:00", "11:30"], shift: ["07:00", "12:00"], case: "during" },
+			{ date: "2027-03-02", school: ["08:00", "11:30"], shift: ["06:00", "07:30"], case: "before" },
+			{ date: "2027-03-03", school: ["08:00", "11:30"], shift: ["12:30", "16:00"], case: "after" },
+			{ date: "2027-03-04", school: ["09:30", "12:45"], shift: ["07:00", "09:00"], case: "late" },
+			{ date: "2027-03-05", school: null, shift: ["07:00", "12:00"], case: "untimed" },
+		] as const;
+		const caseOfShift = new Map<string, string>();
+		for (const who of [adult, minor]) {
+			for (const day of days) {
+				await recordApprenticeReleaseWithCredit(db, {
+					organizationId: org.id,
+					employeeId: who.employeeId,
+					actorUserId: owner.userId,
+					releaseKind: "vocational_school_day",
+					startsOn: day.date,
+					endsOn: day.date,
+					lessonCount: 4,
+					schoolStartTime: day.school?.[0] ?? null,
+					schoolEndTime: day.school?.[1] ?? null,
+				});
+				const id = await seed.shift(org, who, {
+					subareaId,
+					creatorUserId: owner.userId,
+					date: day.date,
+					startTime: day.shift[0],
+					endTime: day.shift[1],
+				});
+				caseOfShift.set(`shift:${id}`, `${who === minor ? "minor" : "adult"} ${day.case}`);
+			}
+		}
+
+		const findings = await apprenticeReleaseScheduleContributor.evaluate({
+			db,
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2027-03-01", endExclusive: "2027-03-08" },
+			employeeIds: [adult.employeeId, minor.employeeId],
+			proposedShifts: [],
+			replacesShiftId: null,
+			preferences: { ...DEFAULT_STATUTORY_PREFERENCES, blockJarbschgShiftPublish: true },
+			now: localInstant("2027-02-20", "12:00", org.timezone),
+		});
+		expect(
+			Object.fromEntries(
+				findings.map((finding) => [
+					caseOfShift.get(finding.subjectKey),
+					[finding.kind, finding.severity, finding.legalReference, finding.blocksPublication],
+				]),
+			),
+		).toEqual({
+			"adult during": ["bbig_release_day_shift", "warning", "§ 15 Abs. 1 Satz 1 BBiG", false],
+			"adult before": ["bbig_release_day_shift", "warning", "§ 15 Abs. 1 Satz 2 Nr. 1 BBiG", false],
+			"minor during": ["bbig_release_day_shift", "critical", "§ 9 Abs. 1 Satz 1 JArbSchG", true],
+			"minor before": ["bbig_release_day_shift", "critical", "§ 9 Abs. 1 Nr. 1 JArbSchG", true],
 		});
 	});
 

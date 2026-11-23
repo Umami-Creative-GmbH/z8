@@ -1,7 +1,8 @@
 /**
  * Apprentice school and exam release conflicts in Scheduling and Staffing (#1993). A shift on a
  * day released in full (credited school day, block-release week, pre-exam day, or an exam day
- * recorded without its time), or during an exam recorded with its time, is a
+ * recorded without its time), during an exam recorded with its time, during a short school day's
+ * lessons recorded with their times, or before such lessons starting before 09:00, is a
  * conflict for every apprentice, and prohibited for one under 18 (§§ 9, 10 JArbSchG): with the
  * organization's `blockJarbschgShiftPublish` on, that shift blocks publication. On the week's full
  * school day (more than five lessons) an apprentice under 18 may not return to the workplace
@@ -14,6 +15,7 @@ import {
 	type Instant,
 	type PlainDate,
 	parsePlainDate,
+	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { type StatutoryFinding, statutoryFindingId } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
@@ -48,17 +50,67 @@ const minorReleaseReference: Record<ApprenticeReleaseKind, string> = {
 	pre_exam_day: "§ 10 Abs. 1 Nr. 2 JArbSchG",
 };
 
-/** Whether planned work overlaps an exam credited with its time, resolved in `timezone`. */
-function overlapsExam(work: PlannedWork, release: ApprenticeReleaseDay, timezone: string): boolean {
-	if (!release.examStartTime || release.minutes === null) return false;
-	const start = work.date
-		.toZonedDateTime({
-			timeZone: timezone,
-			plainTime: Temporal.PlainTime.from(release.examStartTime),
-		})
-		.toInstant();
-	const end = start.add({ minutes: release.minutes });
-	return compareInstants(work.start, end) < 0 && compareInstants(start, work.end) < 0;
+/** Lessons starting before this local time bar any work before them that day. */
+const EARLY_LESSONS_BEFORE = Temporal.PlainTime.from("09:00");
+
+/**
+ * What planned work conflicts with on a release day:
+ * - `release_day`: a day released in full, or the exam itself on an exam day credited with its time;
+ * - `lessons`: the lessons of a school day recorded with its lesson times (§ 9 Abs. 1 Satz 1
+ *   JArbSchG, § 15 Abs. 1 Satz 1 BBiG);
+ * - `before_early_lessons`: work before lessons that start before 09:00 (§ 9 Abs. 1 Nr. 1 JArbSchG,
+ *   § 15 Abs. 1 Satz 2 Nr. 1 BBiG).
+ */
+type ReleaseConflict = "release_day" | "lessons" | "before_early_lessons";
+
+const adultReference: Record<ReleaseConflict, string> = {
+	release_day: "§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
+	lessons: "§ 15 Abs. 1 Satz 1 BBiG",
+	before_early_lessons: "§ 15 Abs. 1 Satz 2 Nr. 1 BBiG",
+};
+
+const minorLessonReference: Record<Exclude<ReleaseConflict, "release_day">, string> = {
+	lessons: "§ 9 Abs. 1 Satz 1 JArbSchG",
+	before_early_lessons: "§ 9 Abs. 1 Nr. 1 JArbSchG",
+};
+
+const overlaps = (work: PlannedWork, start: Instant, end: Instant) =>
+	compareInstants(work.start, end) < 0 && compareInstants(start, work.end) < 0;
+
+/** A local wall time on `day` in `timezone`. */
+const instantOn = (day: PlainDate, time: string, timezone: string) =>
+	day.toZonedDateTime({ timeZone: timezone, plainTime: Temporal.PlainTime.from(time) }).toInstant();
+
+/**
+ * How planned work conflicts with the release on `day`, resolved in `timezone`, or null. A partly
+ * credited school or exam day leaves the rest of the day to work, for minors too; for them the
+ * youth rules count its credited time toward the day's limit (`youth/school-credits.ts`). Only work
+ * during the exam or the lessons, or before lessons starting before 09:00, conflicts. A school day
+ * recorded without its lesson times cannot be compared with work, as before they were recorded.
+ */
+function conflictOf(
+	work: PlannedWork,
+	release: ApprenticeReleaseDay,
+	day: PlainDate,
+	timezone: string,
+): ReleaseConflict | null {
+	if (release.credit === "full_day") return day.equals(work.date) ? "release_day" : null;
+	if (release.examStartTime && release.minutes !== null) {
+		const start = instantOn(day, release.examStartTime, timezone);
+		return overlaps(work, start, start.add({ minutes: release.minutes })) ? "release_day" : null;
+	}
+	if (!release.schoolTime) return null;
+	const lessonsStart = instantOn(day, release.schoolTime.start, timezone);
+	if (overlaps(work, lessonsStart, instantOn(day, release.schoolTime.end, timezone))) {
+		return "lessons";
+	}
+	const early =
+		Temporal.PlainTime.compare(
+			Temporal.PlainTime.from(release.schoolTime.start),
+			EARLY_LESSONS_BEFORE,
+		) < 0;
+	const startOfDay = day.toZonedDateTime({ timeZone: timezone }).toInstant();
+	return early && overlaps(work, startOfDay, lessonsStart) ? "before_early_lessons" : null;
 }
 
 async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFinding[]> {
@@ -66,7 +118,8 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		organizationId: context.organizationId,
 		employeeIds: context.employeeIds,
 		from: context.window.start,
-		until: context.window.endExclusive,
+		// The day after the window too: a night shift may run into a school morning.
+		until: parsePlainDate(context.window.endExclusive).add({ days: 1 }).toString(),
 	});
 	if (releaseDays.size === 0) return [];
 
@@ -113,15 +166,23 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 
 	const findings: StatutoryFinding<ApprenticeReleaseFindingKind>[] = [];
 	for (const work of planned) {
-		const release = releaseOn.get(`${work.employeeId}:${work.date}`);
-		if (!release) continue;
-		// A partly credited school or exam day leaves the rest of the day to work, for minors too;
-		// for them the youth rules count its credited time toward the day's limit
-		// (`youth/school-credits.ts`). Only work during the exam itself conflicts.
-		if (release.credit !== "full_day" && !overlapsExam(work, release, context.timezone)) continue;
+		// Its own day, and the next one when it runs past midnight into a school morning.
+		const lastDay = plainDateAt(work.end.subtract({ nanoseconds: 1 }), context.timezone);
+		const days = lastDay.equals(work.date) ? [work.date] : [work.date, lastDay];
+		let found: { release: ApprenticeReleaseDay; conflict: ReleaseConflict } | null = null;
+		for (const day of days) {
+			const release = releaseOn.get(`${work.employeeId}:${day}`);
+			const conflict = release ? conflictOf(work, release, day, context.timezone) : null;
+			if (release && conflict) {
+				found = { release, conflict };
+				break;
+			}
+		}
+		if (!found) continue;
+		const { release, conflict } = found;
 		const minor = isMinorOn(birthdays.get(work.employeeId) ?? null, work.date);
 		const kind: ApprenticeReleaseFindingKind =
-			minor && release.releaseKind === "vocational_school_day"
+			minor && release.releaseKind === "vocational_school_day" && conflict === "release_day"
 				? "jarbschg_school_day_workplace_return"
 				: "bbig_release_day_shift";
 		const subjectKey = work.ref;
@@ -135,9 +196,11 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 			subjectKey,
 			periodStart: work.date.toString(),
 			periodEnd: work.date.add({ days: 1 }).toString(),
-			legalReference: minor
-				? minorReleaseReference[release.releaseKind]
-				: "§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
+			legalReference: !minor
+				? adultReference[conflict]
+				: conflict === "release_day"
+					? minorReleaseReference[release.releaseKind]
+					: minorLessonReference[conflict],
 			summary: { tier: "exceeded" },
 			adminDetail: null,
 			inputFingerprint: statutoryInputFingerprint({
@@ -149,6 +212,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 				releaseId: release.releaseId,
 				releaseKind: release.releaseKind,
 				credit: release.credit,
+				conflict,
 				minor,
 			}),
 			acknowledgementKind: null,
