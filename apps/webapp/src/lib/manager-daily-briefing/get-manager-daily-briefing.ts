@@ -716,8 +716,16 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		}
 		const unavailableTypes = [...unavailable];
 		const uncountedTypes = [...uncounted].filter((type) => !unavailable.has(type));
+		// A type whose count failed still read its rows: count at least those, as the Dashboard
+		// does (#1978), so a cut-off list never reads as complete.
+		const listed: Partial<Record<string, number>> = "listed" in result ? result.listed : {};
+		const counts: Partial<Record<string, number>> = result.counts;
+		const unseen = uncountedTypes.reduce(
+			(sum, type) => sum + Math.max(0, (listed[type] ?? 0) - (counts[type] ?? 0)),
+			0,
+		);
 		return Object.assign(result.items, {
-			totalCount: result.total,
+			totalCount: result.total + unseen,
 			...(unavailableTypes.length > 0 ? { unavailableTypes } : {}),
 			...(uncountedTypes.length > 0 ? { uncountedTypes } : {}),
 		});

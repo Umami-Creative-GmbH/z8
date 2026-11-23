@@ -26,6 +26,7 @@ const fixture = vi.hoisted(() => ({
 	mostInFlight: 0,
 	loaded: [] as string[],
 	scopeInputs: [] as unknown[],
+	countFails: false,
 }));
 
 vi.mock("@/lib/approvals/init", () => ({}));
@@ -112,13 +113,15 @@ vi.mock("@/lib/approvals/inbox/read-service", async (importOriginal) => {
 				organizationId: string,
 				options?: { requesterEmployeeIds?: string[] },
 			) =>
-				Effect.succeed(
-					matching({
-						approverId,
-						organizationId,
-						requesterEmployeeIds: options?.requesterEmployeeIds,
-					}).length,
-				),
+				fixture.countFails
+					? Effect.fail(new Error("count read failed"))
+					: Effect.succeed(
+							matching({
+								approverId,
+								organizationId,
+								requesterEmployeeIds: options?.requesterEmployeeIds,
+							}).length,
+						),
 		},
 	} as never;
 	return {
@@ -178,6 +181,21 @@ describe("the briefing's approvals with bounded triage evidence (#1980)", () => 
 		fixture.mostInFlight = 0;
 		fixture.loaded = [];
 		fixture.scopeInputs = [];
+		fixture.countFails = false;
+	});
+
+	it("counts at least the rows it read for a type whose count failed, so the list shows as cut off", async () => {
+		// 40 pending absences, every one read, but the absence count failed.
+		fixture.approvals = Array.from({ length: 40 }, (_, index) => absence(`a${index}`, index));
+		fixture.shortfalls = new Set();
+		fixture.countFails = true;
+
+		const approvals = await readBriefingApprovals();
+
+		expect(approvals).toHaveLength(25);
+		expect(approvals.uncountedTypes).toEqual(["absence_entry"]);
+		// The 40 rows in hand, not the 25 shown: "Showing 25 of at least 40".
+		expect(approvals.totalCount).toBe(40);
 	});
 
 	it("asks the inbox scope for no deputy covers: the briefing shows no Covering sections", async () => {
