@@ -20,6 +20,7 @@ import {
 	statutoryFixture,
 } from "@/test/statutory-fixtures";
 import {
+	attachAcknowledgementStates,
 	recordStatutoryAcknowledgement,
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
@@ -337,6 +338,85 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		// Work the shift does not cover is still recorded.
 		await clockOut(minor, "2026-03-05", "17:00", 240);
 		expect(await types(minor)).toEqual(["jarbschg_night_work"]);
+	});
+
+	describe("a § 12 shift span acknowledged as a sector exception", () => {
+		const evaluateSpan = async (who: FixtureEmployee, now: ReturnType<typeof localInstant>) =>
+			(
+				await jarbschgScheduleContributor.evaluate({
+					db,
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: { start: "2026-03-02", endExclusive: "2026-03-09" },
+					employeeIds: [who.employeeId],
+					proposedShifts: [],
+					replacesShiftId: null,
+					preferences: DEFAULT_STATUTORY_PREFERENCES,
+					now,
+				})
+			).find((finding) => finding.kind === "jarbschg_shift_span");
+
+		/** Hospitality: 08:00–12:00 and 15:00–18:30 on Tuesday, a 630 min span, acknowledged. */
+		async function acknowledgedSpan(key: string) {
+			const minor = await fx.employee(org, key, { birthday: "2010-06-01" });
+			const subareaId = await seed.subarea(org, owner);
+			for (const [startTime, endTime] of [
+				["08:00", "12:00"],
+				["15:00", "18:30"],
+			] as const) {
+				await seed.shift(org, minor, {
+					subareaId,
+					creatorUserId: owner.userId,
+					date: "2026-03-03",
+					startTime,
+					endTime,
+				});
+			}
+			const span = await evaluateSpan(minor, localInstant("2026-03-01", "12:00", org.timezone));
+			const subject = span ? statutoryAcknowledgementSubjectOf(span) : null;
+			if (!span || !subject) throw new Error("expected an acknowledgeable shift span finding");
+			expect(span.summary.used).toEqual({ unit: "minutes", value: 630 });
+			await recordStatutoryAcknowledgement(db, {
+				...subject,
+				organizationId: org.id,
+				actorUserId: owner.userId,
+				inputFingerprint: span.inputFingerprint,
+				reason: "Hospitality: § 12 JArbSchG allows a shift span of 11 hours",
+			});
+			return minor;
+		}
+		const spanState = async (who: FixtureEmployee) => {
+			const span = await evaluateSpan(who, localInstant("2026-03-03", "21:00", org.timezone));
+			if (!span) throw new Error("expected a shift span finding");
+			const [attached] = await attachAcknowledgementStates(db, org.id, [span]);
+			return attached?.acknowledgement?.status;
+		};
+
+		it("stays current and records nothing when the day is worked a few minutes off its plan", async () => {
+			const minor = await acknowledgedSpan("span-ok");
+			await clockOut(minor, "2026-03-03", "07:57", 243); // 07:57–12:00.
+			await clockOut(minor, "2026-03-03", "15:00", 205); // 15:00–18:25.
+			expect(await types(minor)).not.toContain("jarbschg_shift_span");
+			expect(await spanState(minor)).toBe("current");
+		});
+
+		it("goes stale and records the span once it grows by 15 minutes or more", async () => {
+			const minor = await acknowledgedSpan("span-longer");
+			await clockOut(minor, "2026-03-03", "08:00", 240);
+			await clockOut(minor, "2026-03-03", "15:00", 230); // Until 18:50: a 650 min span.
+			expect(await spanState(minor)).toBe("stale");
+			expect(await types(minor)).toContain("jarbschg_shift_span");
+		});
+
+		it("records a span over 11 hours, which no acknowledgement covers", async () => {
+			const minor = await acknowledgedSpan("span-over");
+			await clockOut(minor, "2026-03-03", "07:50", 250);
+			await clockOut(minor, "2026-03-03", "15:00", 240); // Until 19:00: a 670 min span.
+			const recorded = (await seed.violations(minor)).find(
+				(row) => row.violation_type === "jarbschg_shift_span",
+			);
+			expect(JSON.parse(recorded?.details ?? "{}")).toMatchObject({ actualMinutes: 670 });
+		});
 	});
 
 	it("records each day's own night minutes of a night shift clocked across midnight", async () => {

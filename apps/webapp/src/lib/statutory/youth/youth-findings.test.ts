@@ -473,4 +473,67 @@ describe("the § 12 JArbSchG shift span", () => {
 		expect(spanOf("18:00")?.acknowledgementKind).toBe("jarbschg_sector_exception");
 		expect(spanOf("18:15")?.acknowledgementKind).toBeNull();
 	});
+
+	describe("acknowledged as a sector exception", () => {
+		// Hospitality: 08:00–12:00 and 15:00–18:30, a 630 min span.
+		const plannedShifts = [
+			shift("am", "2026-03-03", "08:00", "12:00"),
+			shift("pm", "2026-03-03", "15:00", "18:30"),
+		];
+		const spanFinding = (worked?: { amStart: string; pmEnd: string }) =>
+			findings({
+				shifts: plannedShifts,
+				work: worked
+					? [
+							work("am", at("2026-03-03", worked.amStart), at("2026-03-03", "12:00")),
+							work("pm", at("2026-03-03", "15:00"), at("2026-03-03", worked.pmEnd)),
+						]
+					: [],
+				now: worked ? at("2026-03-03", "21:00") : at("2026-03-01", "12:00"),
+			}).find((finding) => finding.kind === "jarbschg_shift_span");
+		const acknowledged = () => spanFinding()?.inputFingerprint;
+
+		it("stays current while the day is worked roughly as planned", () => {
+			expect(spanFinding()).toMatchObject({
+				summary: { used: { unit: "minutes", value: 630 } },
+				acknowledgementKind: "jarbschg_sector_exception",
+			});
+			expect(spanFinding({ amStart: "07:57", pmEnd: "18:25" })?.inputFingerprint).toBe(
+				acknowledged(),
+			);
+			expect(spanFinding({ amStart: "07:57", pmEnd: "18:30" })?.inputFingerprint).toBe(
+				acknowledged(),
+			);
+			expect(spanFinding({ amStart: "08:00", pmEnd: "18:44" })?.inputFingerprint).toBe(
+				acknowledged(),
+			);
+		});
+
+		it("goes stale once the span grows by a material step of 15 minutes", () => {
+			expect(spanFinding({ amStart: "08:00", pmEnd: "18:45" })?.inputFingerprint).not.toBe(
+				acknowledged(),
+			);
+			expect(spanFinding({ amStart: "07:45", pmEnd: "18:30" })?.inputFingerprint).not.toBe(
+				acknowledged(),
+			);
+		});
+
+		it("goes stale when the day's shifts change", () => {
+			const moved = findings({
+				shifts: [
+					shift("am", "2026-03-03", "08:30", "12:00"),
+					shift("pm", "2026-03-03", "15:00", "19:00"),
+				],
+				now: at("2026-03-01", "12:00"),
+			}).find((finding) => finding.kind === "jarbschg_shift_span");
+			expect(moved?.inputFingerprint).not.toBe(acknowledged());
+		});
+
+		it("is never acknowledgeable past 11 hours", () => {
+			const long = spanFinding({ amStart: "07:50", pmEnd: "19:00" });
+			expect(long?.summary.used?.value).toBe(670);
+			expect(long?.acknowledgementKind).toBeNull();
+			expect(long?.inputFingerprint).not.toBe(acknowledged());
+		});
+	});
 });

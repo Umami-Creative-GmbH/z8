@@ -2,7 +2,13 @@
  * JArbSchG breaches as statutory findings (#1993), pure. Shared by Scheduling, Staffing and the
  * clock-out check so all three agree on subjects and fingerprints.
  */
-import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	type Instant,
+	type PlainDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { statutoryFindingId, type StatutoryFinding } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
 import { isMinorOn } from "./age";
@@ -76,11 +82,86 @@ export function sectorExceptionFingerprint(input: {
 	});
 }
 
+/** A planned shift's bounds, as the day's shift span is judged against them. */
+interface PlannedShiftBounds {
+	readonly ref: string;
+	readonly start: Instant;
+	readonly end: Instant;
+}
+
+/**
+ * The planned shifts behind a local day's work: the shifts its work belongs to and those still to
+ * be worked, each once, in start order. The same before, while and after the day is worked.
+ */
+export function plannedShiftsOfDay(
+	intervals: readonly YouthWorkInterval[],
+	day: string,
+	timezone: string,
+): PlannedShiftBounds[] {
+	const shifts = new Map<string, PlannedShiftBounds>();
+	for (const interval of intervals) {
+		if (plainDateAt(interval.start, timezone).toString() !== day) continue;
+		const shift =
+			interval.plannedShift ?? (!interval.recorded && !interval.inProgress ? interval : null);
+		if (shift && !shifts.has(shift.ref)) {
+			shifts.set(shift.ref, { ref: shift.ref, start: shift.start, end: shift.end });
+		}
+	}
+	return [...shifts.values()].sort(
+		(a, b) => compareInstants(a.start, b.start) || compareInstants(a.end, b.end),
+	);
+}
+
+/**
+ * The input fingerprint of a § 12 shift span acknowledged as a sector exception: the day, its
+ * planned shifts' exact times and how far the span runs past the planned shifts' span, in whole
+ * material steps (rounded down). Working the day roughly as planned (clocked in a few minutes
+ * early, out a few minutes late or early) keeps the acknowledgement current; other shifts, or a
+ * span 15 minutes or more past the planned one, make it stale. Work without planned shifts is
+ * judged by its whole span, in the same steps. A span past 11 hours is never acknowledgeable.
+ */
+export function sectorShiftSpanFingerprint(input: {
+	readonly employeeId: string;
+	readonly subjectKey: string;
+	readonly day: string;
+	readonly spanMinutes: number;
+	readonly plannedShifts: readonly PlannedShiftBounds[];
+}): string {
+	const first = input.plannedShifts[0];
+	const plannedSpan = first
+		? Math.round(
+				first.start
+					.until(
+						input.plannedShifts.reduce(
+							(latest, shift) => (compareInstants(shift.end, latest) > 0 ? shift.end : latest),
+							first.end,
+						),
+					)
+					.total({ unit: "minutes" }),
+			)
+		: 0;
+	const overrun = Math.max(0, input.spanMinutes - plannedSpan);
+	return statutoryInputFingerprint({
+		rule: "jarbschg_shift_span",
+		employeeId: input.employeeId,
+		subjectKey: input.subjectKey,
+		day: input.day,
+		shifts: input.plannedShifts.map((shift) => [
+			shift.ref,
+			shift.start.toString(),
+			shift.end.toString(),
+		]),
+		overrunSteps: Math.floor(overrun / SECTOR_EXCEPTION_STEP_MINUTES),
+	});
+}
+
 export function jarbschgFindingOf(input: {
 	readonly organizationId: string;
 	readonly employeeId: string;
 	readonly breach: JarbschgBreach;
 	readonly interval: YouthWorkInterval;
+	/** The planned shifts of the breach's day (`plannedShiftsOfDay`), for a § 12 shift span. */
+	readonly dayPlannedShifts?: readonly PlannedShiftBounds[];
 	readonly blockPublish: boolean;
 }): StatutoryFinding<JarbschgRule> {
 	const { breach, interval } = input;
@@ -120,13 +201,12 @@ export function jarbschgFindingOf(input: {
 					interval,
 				})
 			: sectorShiftSpan
-				? // The day's span: unchanged while the day is worked as planned.
-					statutoryInputFingerprint({
-						rule: breach.rule,
+				? sectorShiftSpanFingerprint({
 						employeeId: input.employeeId,
 						subjectKey,
 						day: breach.day,
-						actual: breach.actual,
+						spanMinutes: breach.actual,
+						plannedShifts: input.dayPlannedShifts ?? [],
 					})
 				: statutoryInputFingerprint({
 						rule: breach.rule,
@@ -222,6 +302,9 @@ export function youthFindingsOf(input: {
 					employeeId: input.employeeId,
 					breach,
 					interval,
+					...(breach.rule === "jarbschg_shift_span"
+						? { dayPlannedShifts: plannedShiftsOfDay(input.intervals, breach.day, input.timezone) }
+						: {}),
 					blockPublish: input.blockPublish,
 				})
 			: null;

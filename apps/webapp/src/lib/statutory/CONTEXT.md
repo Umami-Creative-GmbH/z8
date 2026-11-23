@@ -69,7 +69,10 @@ A minor's working time plus breaks on a local day, from the start of the first w
 the last, planned and recorded work alike. At most 10 hours; 11 hours in hospitality,
 agriculture, animal husbandry and on construction and assembly sites, which an org admin
 documents by acknowledging the span as a sector exception. A span over 11 hours cannot be
-acknowledged. `executive_exempt` does not change it.
+acknowledged. `executive_exempt` does not change it. The acknowledgement documents the day's
+planned shifts and stays current while the day is worked roughly as planned (clocked in a few
+minutes early, out a few minutes late); other shifts, or a span 15 minutes or more past the
+planned shifts' span, make it stale.
 
 ## Relationships
 
