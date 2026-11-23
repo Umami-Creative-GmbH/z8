@@ -190,4 +190,34 @@ describe("sector exception fingerprints", () => {
 		expect(overrun?.summary.used).toEqual({ unit: "minutes", value: 330 });
 		expect(overrun?.inputFingerprint).not.toBe(plannedFinding()?.inputFingerprint);
 	});
+
+	it("do not depend on the judged days when a shift's work spans midnight", () => {
+		// A night shift 22:00–02:00 clocked as two pieces, before and after midnight.
+		const night = shift("night", "2026-03-03", "22:00", "02:00");
+		const pieces = (secondEnd: string) => [
+			work("before", at("2026-03-03", "22:00"), at("2026-03-04", "00:00")),
+			work("after", at("2026-03-04", "00:00"), at("2026-03-04", secondEnd)),
+		];
+		const fingerprint = (secondEnd: string, judged: { start: string; endExclusive: string }) =>
+			nightOf(
+				findings({
+					work: pieces(secondEnd),
+					shifts: [night],
+					now: at("2026-03-05", "09:00"),
+					judged,
+				}),
+			)?.inputFingerprint;
+		const tuesday = { start: "2026-03-03", endExclusive: "2026-03-04" };
+		const wednesday = { start: "2026-03-04", endExclusive: "2026-03-05" };
+		const week = { start: "2026-03-02", endExclusive: "2026-03-09" };
+		const planned = nightOf(findings({ shifts: [night], now: at("2026-03-01", "12:00") }));
+
+		expect(fingerprint("02:00", tuesday)).toBe(planned?.inputFingerprint);
+		expect(fingerprint("02:00", wednesday)).toBe(planned?.inputFingerprint);
+		expect(fingerprint("02:00", week)).toBe(planned?.inputFingerprint);
+		// The second piece overruns to 03:30: stale whichever day is judged.
+		expect(fingerprint("03:30", tuesday)).not.toBe(planned?.inputFingerprint);
+		expect(fingerprint("03:30", tuesday)).toBe(fingerprint("03:30", wednesday));
+		expect(fingerprint("03:30", week)).toBe(fingerprint("03:30", wednesday));
+	});
 });

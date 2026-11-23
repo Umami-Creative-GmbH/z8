@@ -104,6 +104,9 @@ export function jarbschgFindingOf(input: {
 	};
 }
 
+/** Every local day: sector-exception totals cover all the work given, not only the judged days. */
+const EVERY_DAY = { start: "0001-01-01", endExclusive: "9999-12-31" } as const;
+
 /** One employee's JArbSchG findings on the judged days; one finding per rule and subject. */
 export function youthFindingsOf(input: {
 	readonly organizationId: string;
@@ -118,54 +121,79 @@ export function youthFindingsOf(input: {
 	readonly blockPublish: boolean;
 }): StatutoryFinding<JarbschgRule>[] {
 	const byRef = new Map(input.intervals.map((interval) => [interval.ref, interval]));
-	const findings = new Map<string, StatutoryFinding<JarbschgRule>>();
-	for (const breach of evaluateJarbschg({
-		timezone: input.timezone,
-		intervals: input.intervals,
-		judged: input.judged,
-		report: input.report,
-		isMinorOn: (day) => isMinorOn(input.birthday, day),
-		limitsOn: input.limitsOn,
-		holidays: input.holidays,
-	})) {
-		const interval = byRef.get(breach.ref);
-		if (!interval) continue;
-		const finding = jarbschgFindingOf({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			breach,
-			interval,
-			blockPublish: input.blockPublish,
+	const evaluate = (
+		judged: JarbschgEvaluationInput["judged"],
+		report: JarbschgEvaluationInput["report"],
+	) =>
+		evaluateJarbschg({
+			timezone: input.timezone,
+			intervals: input.intervals,
+			judged,
+			report,
+			isMinorOn: (day) => isMinorOn(input.birthday, day),
+			limitsOn: input.limitsOn,
+			holidays: input.holidays,
 		});
+	const findingOf = (breach: JarbschgBreach) => {
+		const interval = byRef.get(breach.ref);
+		return interval
+			? jarbschgFindingOf({
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					breach,
+					interval,
+					blockPublish: input.blockPublish,
+				})
+			: null;
+	};
+
+	// A shift's work may lie on several days (a night shift clocked before and after midnight):
+	// its sector-exception finding totals every piece, whichever days are judged, so Scheduling,
+	// Staffing, clock-out and the acknowledgement action agree on its fingerprint.
+	const sectorTotals = new Map<string, { night: number; outside: number }>();
+	for (const breach of evaluate(EVERY_DAY, "judged_days")) {
+		if (!jarbschgSectorExceptionRules.has(breach.rule)) continue;
+		const finding = findingOf(breach);
+		if (!finding) continue;
+		const total = sectorTotals.get(finding.id) ?? { night: 0, outside: 0 };
+		if (breach.unit === "minutes") total.night += breach.actual;
+		total.outside += breach.outsidePlannedShift ?? 0;
+		sectorTotals.set(finding.id, total);
+	}
+
+	const findings = new Map<string, StatutoryFinding<JarbschgRule>>();
+	for (const breach of evaluate(input.judged, input.report)) {
+		const total = sectorTotals.get(
+			statutoryFindingId(breach.rule, input.employeeId, subjectKeyOf(breach)),
+		);
+		const finding = findingOf(
+			total
+				? {
+						...breach,
+						actual: breach.unit === "minutes" ? total.night : breach.actual,
+						outsidePlannedShift: total.outside,
+					}
+				: breach,
+		);
+		if (!finding) continue;
 		const earlier = findings.get(finding.id);
-		findings.set(finding.id, earlier ? mergeSameSubject(earlier, finding) : finding);
+		findings.set(
+			finding.id,
+			earlier
+				? {
+						...earlier,
+						blocksPublication:
+							(earlier.blocksPublication ?? false) || (finding.blocksPublication ?? false),
+					}
+				: finding,
+		);
 	}
 	return [...findings.values()];
-}
 
-/**
- * Several pieces of work on one shift share a sector-exception subject: night minutes add up, and
- * the fingerprint covers every piece, so one overrunning piece makes the acknowledgement stale.
- * Other rules keep the first finding of a subject.
- */
-function mergeSameSubject(
-	earlier: StatutoryFinding<JarbschgRule>,
-	later: StatutoryFinding<JarbschgRule>,
-): StatutoryFinding<JarbschgRule> {
-	if (!jarbschgSectorExceptionRules.has(earlier.kind)) return earlier;
-	const used = earlier.summary.used;
-	const fingerprints = [...new Set([earlier.inputFingerprint, later.inputFingerprint])].sort();
-	return {
-		...earlier,
-		summary:
-			used?.unit === "minutes"
-				? {
-						...earlier.summary,
-						used: { ...used, value: used.value + (later.summary.used?.value ?? 0) },
-					}
-				: earlier.summary,
-		inputFingerprint:
-			fingerprints.length === 1 ? fingerprints[0] : statutoryInputFingerprint(fingerprints),
-		blocksPublication: (earlier.blocksPublication ?? false) || (later.blocksPublication ?? false),
-	};
+	function subjectKeyOf(breach: JarbschgBreach): string {
+		const interval = byRef.get(breach.ref);
+		return jarbschgSectorExceptionRules.has(breach.rule)
+			? (interval?.plannedShift?.ref ?? breach.ref)
+			: breach.ref;
+	}
 }

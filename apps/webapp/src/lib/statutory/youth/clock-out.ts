@@ -53,7 +53,8 @@ export async function recordJarbschgViolationsAfterClockOut(
 	const monday = day.subtract({ days: day.dayOfWeek - 1 });
 	const range = {
 		from: monday.subtract({ days: 1 }).toString(),
-		until: monday.add({ days: 7 }).toString(),
+		// The next Monday too: a Sunday night shift's work after midnight belongs to its subject.
+		until: monday.add({ days: 8 }).toString(),
 	};
 	const scope = { organizationId: input.organizationId, employeeIds: [input.employeeId] };
 	const organizationTimezone = await loadOrganizationTimezone(db, input.organizationId);
