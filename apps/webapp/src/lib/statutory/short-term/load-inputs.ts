@@ -9,7 +9,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
-import type { ContractFieldSource, EffectiveContractOnDay } from "@/lib/contracts/types";
+import type { ContractFieldSource, DayOfWeek, EffectiveContractOnDay } from "@/lib/contracts/types";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	compareInstants,
@@ -99,7 +99,12 @@ export interface ShortTermPriorOffset {
 
 /** The working week behind one calendar year's short-term terms. */
 export interface ShortTermYearWeek {
-	/** Average work days per week of each short-term terms version that plans real week days. */
+	/**
+	 * Average work days per week of each short-term terms version that plans real week days and
+	 * says something about the week: a fixed-term employment's, agreed in advance, or open-ended
+	 * framework terms with counted days under them. Framework terms nobody worked or was planned
+	 * under choose nothing, as with terms that plan no week of their own.
+	 */
 	readonly plannedWorkDaysPerWeek: readonly number[];
 	/**
 	 * Counted days (`YYYY-MM-DD`, sorted, distinct) under short-term terms that plan no real week of
@@ -131,6 +136,27 @@ export interface ShortTermEmployment {
 	 * agreement, which only lasts while the employee works.
 	 */
 	readonly fixedTermEndsOn: string | null;
+	/**
+	 * For a fixed-term employment, the employee's own week over its agreed length, by the terms in
+	 * force on each part (sorted, without gaps): what the agreement plans in advance, which the
+	 * 70-working-day limit counts before any shift is planned. Empty for a framework agreement.
+	 */
+	readonly agreedWeeks: readonly ShortTermAgreedWeek[];
+}
+
+/** The week the employee's own terms plan over part of a fixed-term employment's agreed length. */
+export interface ShortTermAgreedWeek {
+	/** First day, `YYYY-MM-DD`. */
+	readonly from: string;
+	/** Day after the last day, `YYYY-MM-DD`. */
+	readonly until: string;
+	/** ISO weekdays (1 = Monday) the week plans when it repeats every week; else null. */
+	readonly weekdays: readonly number[] | null;
+	/**
+	 * Average work days per week of a multi-week rota (`averageWorkDaysPerWeek`), when `weekdays`
+	 * is null. Both null when those terms plan no week of their own (see `plansRealWeek`).
+	 */
+	readonly workDaysPerWeek: number | null;
 }
 
 export interface ShortTermEmployeeInputs {
@@ -196,17 +222,8 @@ function plansRealWeek(contract: EffectiveContractOnDay): boolean {
 export function averageWorkDaysPerWeek(contract: EffectiveContractOnDay): number | null {
 	if (!plansRealWeek(contract)) return null;
 	const schedule = contract.workPolicy?.scheduleEnabled ? contract.workPolicy.schedule : null;
-	const cycleWeeks = schedule
-		? schedule.days.reduce((max, day) => Math.max(max, day.cycleWeek ?? 1), 1)
-		: 1;
-	// The resolver reads a multi-week cycle only for detailed or custom-day policy schedules, one
-	// week at a time; custom days on the terms have no cycle.
-	if (
-		schedule &&
-		cycleWeeks > 1 &&
-		contract.scheduleMode !== "custom_days" &&
-		(schedule.scheduleType === "detailed" || schedule.workingDaysPreset === "custom")
-	) {
+	const cycleWeeks = rotaCycleWeeks(contract);
+	if (schedule && cycleWeeks > 1) {
 		let workDays = 0;
 		for (let week = 1; week <= cycleWeeks; week++) {
 			const rows = schedule.days.filter((day) => (day.cycleWeek ?? 1) === week);
@@ -218,6 +235,51 @@ export function averageWorkDaysPerWeek(contract: EffectiveContractOnDay): number
 	}
 	const workDays = contract.weeklyScheduleDays.filter((day) => day.isWorkDay).length;
 	return workDays > 0 ? workDays : null;
+}
+
+/**
+ * Weeks in the contract's rota cycle. The resolver reads a multi-week cycle only for detailed or
+ * custom-day policy schedules, one week at a time; custom days on the terms have no cycle.
+ */
+function rotaCycleWeeks(contract: EffectiveContractOnDay): number {
+	const schedule = contract.workPolicy?.scheduleEnabled ? contract.workPolicy.schedule : null;
+	if (
+		!schedule ||
+		contract.scheduleMode === "custom_days" ||
+		(schedule.scheduleType !== "detailed" && schedule.workingDaysPreset !== "custom")
+	) {
+		return 1;
+	}
+	return schedule.days.reduce((max, day) => Math.max(max, day.cycleWeek ?? 1), 1);
+}
+
+const ISO_WEEKDAY: Readonly<Record<DayOfWeek, number>> = {
+	monday: 1,
+	tuesday: 2,
+	wednesday: 3,
+	thursday: 4,
+	friday: 5,
+	saturday: 6,
+	sunday: 7,
+};
+
+/**
+ * The week the employee's own terms plan, for counting the working days a fixed term agrees:
+ * the ISO weekdays of a week that repeats every week, or a multi-week rota's average.
+ */
+function agreedWeekOf(
+	contract: EffectiveContractOnDay | null,
+): Pick<ShortTermAgreedWeek, "weekdays" | "workDaysPerWeek"> {
+	const perWeek = contract ? averageWorkDaysPerWeek(contract) : null;
+	if (!contract || perWeek === null) return { weekdays: null, workDaysPerWeek: null };
+	if (rotaCycleWeeks(contract) > 1) return { weekdays: null, workDaysPerWeek: perWeek };
+	return {
+		weekdays: contract.weeklyScheduleDays
+			.filter((day) => day.isWorkDay)
+			.map((day) => ISO_WEEKDAY[day.dayOfWeek])
+			.sort((a, b) => a - b),
+		workDaysPerWeek: null,
+	};
 }
 
 /** The start of `instant`'s minute: open work and the rest of its shift meet on this grid. */
@@ -397,7 +459,7 @@ export function shortTermEmployments(
 			);
 		let current: { from: string; until: string | null } | null = null;
 		const close = () => {
-			if (current) employments.push({ ...current, fixedTermEndsOn });
+			if (current) employments.push({ ...current, fixedTermEndsOn, agreedWeeks: [] });
 			current = null;
 		};
 		for (const [index, row] of ordered.entries()) {
@@ -560,14 +622,26 @@ export async function loadShortTermInputs(
 	const employmentsByEmployee = new Map<string, ShortTermEmployment[]>();
 	const spansByEmployee = new Map<string, DaySpan[]>();
 	const rangeByEmployee = new Map<string, DaySpan>();
+	/**
+	 * Per fixed-term employment overlapping the window, its agreed span and the days its terms may
+	 * change within it (the span's first day and each later terms row's start): its agreed week is
+	 * resolved once on each, not on every day.
+	 */
+	const agreedWeekStarts = new Map<ShortTermEmployment, { span: DaySpan; starts: string[] }>();
 	for (const employeeId of candidates) {
-		const employments = shortTermEmployments(
-			allTermRowsByEmployee.get(employeeId) ?? [],
-			fixedTermEndsOnByPeriod,
-		);
+		const termRowsOfEmployee = allTermRowsByEmployee.get(employeeId) ?? [];
+		const employments = shortTermEmployments(termRowsOfEmployee, fixedTermEndsOnByPeriod);
 		const spans = employments.flatMap((employment) => {
 			const span = agreedSpanOf(employment);
-			return span && overlaps(span, window) ? [span] : [];
+			if (!span || !overlaps(span, window)) return [];
+			const starts = new Set([span.from]);
+			for (const row of termRowsOfEmployee) {
+				if (span.from < row.validFromDate && row.validFromDate < span.until) {
+					starts.add(row.validFromDate);
+				}
+			}
+			agreedWeekStarts.set(employment, { span, starts: [...starts].sort() });
+			return [span];
 		});
 		const range = { from: window.from, until: window.until };
 		for (const span of spans) {
@@ -583,9 +657,10 @@ export async function loadShortTermInputs(
 			),
 		);
 	}
-	const inLoadedSpan = (employeeId: string, date: string) =>
-		inYears(date) ||
+	const inAgreedSpan = (employeeId: string, date: string) =>
 		(spansByEmployee.get(employeeId) ?? []).some((span) => span.from <= date && date < span.until);
+	const inLoadedSpan = (employeeId: string, date: string) =>
+		inYears(date) || inAgreedSpan(employeeId, date);
 
 	// Work belonging to a shift counts on the shift's date, so work from the day before an
 	// employee's range is read too: a shift on its first day may have work from the evening before
@@ -925,6 +1000,9 @@ export async function loadShortTermInputs(
 		}
 		for (const item of workByEmployee.get(employeeId) ?? []) own.add(item.date);
 		for (const item of plannedByEmployee.get(employeeId) ?? []) own.add(item.date);
+		for (const employment of employmentsByEmployee.get(employeeId) ?? []) {
+			for (const date of agreedWeekStarts.get(employment)?.starts ?? []) own.add(date);
+		}
 		datesByEmployee.set(employeeId, [...own]);
 		for (const date of own) allDates.add(date);
 	}
@@ -990,7 +1068,11 @@ export async function loadShortTermInputs(
 				anyTerms = true;
 				const perWeek = averageWorkDaysPerWeek(contract);
 				if (perWeek !== null) {
-					plannedWorkDaysPerWeek.push(perWeek);
+					// A fixed term's week is agreed in advance; framework terms tell the week only
+					// through the days worked or planned under them.
+					if (countedDays.has(date) || inAgreedSpan(employeeId, date)) {
+						plannedWorkDaysPerWeek.push(perWeek);
+					}
 					continue;
 				}
 				if (countedDays.has(date)) unplannedDays.add(date);
@@ -1014,7 +1096,18 @@ export async function loadShortTermInputs(
 					year: yearOf(row.validFromDate),
 					count: row.countValue ?? 0,
 				})),
-			employments: employmentsByEmployee.get(employeeId) ?? [],
+			employments: (employmentsByEmployee.get(employeeId) ?? []).map((employment) => {
+				const agreed = agreedWeekStarts.get(employment);
+				if (!agreed) return employment;
+				return {
+					...employment,
+					agreedWeeks: agreed.starts.map((start, index) => ({
+						from: start,
+						until: agreed.starts[index + 1] ?? agreed.span.until,
+						...agreedWeekOf(shortTermOn(start)),
+					})),
+				};
+			}),
 			weekByYear,
 			absenceDays: [...(absenceDaysByEmployee.get(employeeId) ?? [])].sort(),
 		});

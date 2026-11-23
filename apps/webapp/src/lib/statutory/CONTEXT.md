@@ -76,7 +76,8 @@ end: § 8 Abs. 1 Nr. 2 SGB IV asks whether the employment is limited *in advance
 the Geringfügigkeits-Richtlinien apply that to an employment across the year end too. So the
 agreed length counts as soon as it is agreed, before any shift is planned, and in every calendar
 year it touches: a fixed term from 1 November to 28 February is over 3 months in both years.
-Under the 70-working-day limit its short-term days in the other calendar year count as well.
+Under the 70-working-day limit its agreed working days (see **70-working-day limit**) and its
+short-term days in the other calendar year count as well.
 The ticket's "reset on January 1" applies to adding up separate employments within a calendar
 year, not to one continuing fixed-term employment.
 
@@ -101,7 +102,13 @@ calendar month counting as 30; the time between stints never counts.
 
 **70-working-day limit**:
 Applies to a week of fewer than 5 days or an irregular week, and to the whole year as soon as any
-stint has one. Counts short-term days.
+stint has one. Counts short-term days. A fixed-term employment whose terms plan the employee's own
+week counts its **agreed working days** instead: every calendar day of its agreed length that the
+week in force that day plans (a multi-week rota by its mean), plus short-term days the week does
+not plan. Like the agreed length, they count as soon as it is agreed: a fixed term from 1 March to
+28 February planning Monday and Tuesday holds 104 working days and is exceeded before any shift is
+planned (reason `agreed_fixed_term_exceeds_working_days`, with `agreedWorkingDays`, in the
+finding's admin detail). Without an own week, only its short-term days count.
 
 **Limit choice**:
 Taken from the employee's own planned week: custom days or a work policy set on their terms or
@@ -109,8 +116,9 @@ assigned to them. A week inherited from a team or organization default, weekly h
 published shifts and on-call terms are no agreed week; the limit then follows the mean full week
 observed in the short-term days worked or planned under them. A week off inside a stint, and a
 week left short by an approved absence (sickness, leave; not home office), are not observed
-weeks: they say nothing about the week. Such terms with no short-term days say nothing about the
-week and do not choose the limit.
+weeks: they say nothing about the week. Open-ended framework terms with no short-term days say
+nothing about the week and do not choose the limit, whether or not they plan an own week; a
+fixed-term employment's own week does, as it is agreed in advance.
 
 **Prior-employer offset**:
 Short-term working days or months another employer used in the same calendar year, recorded as

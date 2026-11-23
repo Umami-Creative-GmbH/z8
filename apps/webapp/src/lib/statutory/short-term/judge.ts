@@ -36,8 +36,8 @@ export interface ShortTermAllowance {
 	/** Used days or months: own short-term work and plans plus prior employers. */
 	readonly used: number;
 	/**
-	 * Days from Z8's own short-term employments: agreed fixed-term lengths, completed work and
-	 * planned shifts.
+	 * Days from Z8's own short-term employments: agreed fixed-term lengths (in calendar days, or the
+	 * working days an agreed week plans), completed work and planned shifts.
 	 */
 	readonly ownUsed: number;
 	/** Days (or months) recorded for prior employers in this calendar year. */
@@ -116,6 +116,11 @@ function observedRuns(
 	return runs;
 }
 
+/** The `employmentKeys` key of `employments[index]`. */
+function employmentKey(index: number): string {
+	return `employment:${index}`;
+}
+
 /**
  * Which employment each counted day belongs to: the short-term employment covering it, else (should
  * the terms rows not cover it) its employment period. Days of one employment share a key.
@@ -133,7 +138,7 @@ function employmentKeys(
 			);
 			return [
 				day,
-				index >= 0 ? `employment:${index}` : `period:${employmentPeriodOf.get(day) ?? ""}`,
+				index >= 0 ? employmentKey(index) : `period:${employmentPeriodOf.get(day) ?? ""}`,
 			];
 		}),
 	);
@@ -162,7 +167,7 @@ function agreedStints(
 				? lastBeforeLaterTerms
 				: employment.fixedTermEndsOn;
 		if (lastDay < employment.from || lastDay < yearStart || employment.from > yearEnd) continue;
-		const key = `employment:${index}`;
+		const key = employmentKey(index);
 		stints.set(key, { firstDay: employment.from, lastDay, agreedEmployment: key });
 	}
 	return stints;
@@ -249,10 +254,11 @@ export function observedWorkDaysPerWeek(
  * The allowance the employee's own short-term terms call for: `months` only when every terms
  * version that sets the employee's own week plans 5 or more work days a week, and the days under
  * terms without one (inherited defaults included) show a full week of 5 or more days, weeks off
- * and weeks left short by approved absences aside (`observedWorkDaysPerWeek`). Terms
- * without an own week that nobody worked under say nothing about the week and do not choose the
- * limit; with no week planned or observed at all, the year counts working days. Prior employers
- * may still switch the year to working days.
+ * and weeks left short by approved absences aside (`observedWorkDaysPerWeek`). Open-ended
+ * framework terms that nobody worked or was planned under say nothing about the week and do not
+ * choose the limit, with or without an own week; a fixed term's own week does, being agreed in
+ * advance (`plannedWorkDaysPerWeek`). With no week planned or observed at all, the year counts
+ * working days. Prior employers may still switch the year to working days.
  */
 function ownLimitKindOf(
 	week: ShortTermYearWeek,
@@ -320,13 +326,86 @@ function priorEmployerTotals(employee: ShortTermEmployeeInputs, year: number): P
 	return { days, months };
 }
 
+/** A fixed-term employment's agreed working days and what it uses of the 70-working-day limit. */
+interface AgreedWorkingDays {
+	readonly stint: ShortTermStint;
+	/** Working days its agreed week plans over its agreed length. */
+	readonly agreed: number;
+	/** Those, plus days worked or planned that the week does not plan. */
+	readonly used: number;
+}
+
+/**
+ * The working days a fixed-term employment uses of the 70-working-day limit when its terms plan
+ * the employee's own week (`agreedWeeks`): § 8 Abs. 1 Nr. 2 SGB IV asks whether the employment is
+ * limited in advance by contract, so the working days its week plans over the agreed length count
+ * as soon as it is agreed, before any shift is planned. Counted per calendar day of the agreed
+ * length, under the week in force that day: a day the week plans counts, and so does a counted
+ * day it does not plan (work on a free day). A multi-week rota counts its mean per day, rounded
+ * once, or its counted days where they are more. Parts without an own week count their counted
+ * days only. Null when no part plans a week: then only counted days count.
+ */
+function agreedWorkingDaysOf(
+	stint: ShortTermStint,
+	employment: ShortTermEmployment,
+	counted: ReadonlySet<string>,
+): AgreedWorkingDays | null {
+	const weeks = employment.agreedWeeks;
+	if (!weeks.some((week) => week.weekdays !== null || week.workDaysPerWeek !== null)) return null;
+	let plannedDays = 0;
+	let exactDays = 0;
+	let rotaShare = 0;
+	let rotaCounted = 0;
+	let weekIndex = 0;
+	const last = parsePlainDate(stint.lastDay);
+	for (
+		let cursor = parsePlainDate(stint.firstDay);
+		comparePlainDates(cursor, last) <= 0;
+		cursor = cursor.add({ days: 1 })
+	) {
+		const day = cursor.toString();
+		while ((weeks[weekIndex]?.until ?? "9999-12-31") <= day) weekIndex++;
+		const current = weeks[weekIndex];
+		const week = current && current.from <= day ? current : null;
+		if (week?.weekdays) {
+			const planned = week.weekdays.includes(cursor.dayOfWeek);
+			if (planned) plannedDays++;
+			if (planned || counted.has(day)) exactDays++;
+		} else if (week && week.workDaysPerWeek !== null) {
+			rotaShare += week.workDaysPerWeek / 7;
+			if (counted.has(day)) rotaCounted++;
+		} else if (counted.has(day)) {
+			exactDays++;
+		}
+	}
+	const rotaDays = Math.round(rotaShare);
+	return {
+		stint,
+		agreed: plannedDays + rotaDays,
+		used: exactDays + Math.max(rotaDays, rotaCounted),
+	};
+}
+
+/** What an agreed fixed term alone exceeds, from the day it is agreed. */
+interface AgreedTermOverLimit {
+	readonly stint: ShortTermStint;
+	readonly reason: "agreed_fixed_term_exceeds_limit" | "agreed_fixed_term_exceeds_working_days";
+	/** Under the 70-working-day limit: the working days its agreed week plans. */
+	readonly agreedWorkingDays: number | null;
+}
+
 interface AllowanceCount {
 	readonly limitKind: ShortTermLimitKind;
 	readonly limit: number;
 	readonly ownUsed: number;
 	readonly priorEmployerUsed: number;
-	/** Under the 3-month limit: an agreed fixed term longer than 3 time months on its own. */
-	readonly agreedTermOverLimit: ShortTermStint | null;
+	/**
+	 * An agreed fixed term over the limit on its own: longer than 3 time months, or planning more
+	 * than 70 working days.
+	 */
+	readonly agreedTermOverLimit: AgreedTermOverLimit | null;
+	/** Under the 70-working-day limit: each fixed term's agreed working days (fingerprinted). */
+	readonly agreedWorkingDays: readonly AgreedWorkingDays[];
 }
 
 /**
@@ -344,34 +423,64 @@ interface AllowanceCount {
  *   90 calendar days. The pauses between stints never count.
  * - **70 working days** as soon as one stint has a shorter or irregular week, and also when such
  *   stints meet ≥ 5-day stints: then every stint counts with its working days (`workingDays`:
- *   a fixed-term employment's in the other calendar year too). Prior employers' working days count
- *   as recorded; a prior employer's months, whose working days are not recorded, count as 70 / 3
- *   working days each (the ratio of the two limits), rounded up.
+ *   a fixed-term employment's in the other calendar year too). A fixed-term employment whose
+ *   terms plan the employee's own week counts the working days that week plans over its whole
+ *   agreed length as soon as it is agreed (`agreedWorkingDaysOf`); planning more than 70, it is
+ *   exceeded before any shift is planned. Prior employers' working days count as recorded; a prior
+ *   employer's months, whose working days are not recorded, count as 70 / 3 working days each (the
+ *   ratio of the two limits), rounded up.
  */
 function countAllowance(input: {
 	readonly ownLimitKind: ShortTermLimitKind;
 	readonly workingDays: readonly string[];
 	readonly stints: readonly ShortTermStint[];
+	readonly employments: readonly ShortTermEmployment[];
 	readonly prior: PriorEmployerTotals;
 	readonly dayLimit: number;
 	readonly monthLimit: number;
 }): AllowanceCount {
 	const { prior, stints, dayLimit, monthLimit } = input;
 	if (input.ownLimitKind === "work_days" || prior.days > 0) {
+		const counted = new Set(input.workingDays);
+		const agreedWorkingDays = stints.flatMap((stint) => {
+			const employment = input.employments.find(
+				(_, index) => employmentKey(index) === stint.agreedEmployment,
+			);
+			const agreed = employment ? agreedWorkingDaysOf(stint, employment, counted) : null;
+			return agreed ? [agreed] : [];
+		});
+		const otherDays = input.workingDays.filter(
+			(day) =>
+				!agreedWorkingDays.some(({ stint }) => stint.firstDay <= day && day <= stint.lastDay),
+		);
+		const overLimit = agreedWorkingDays.find(({ agreed }) => agreed > dayLimit);
 		return {
 			limitKind: "work_days",
 			limit: dayLimit,
-			ownUsed: input.workingDays.length,
+			ownUsed: agreedWorkingDays.reduce((sum, { used }) => sum + used, otherDays.length),
 			priorEmployerUsed: prior.days + Math.ceil((prior.months * dayLimit) / monthLimit),
-			agreedTermOverLimit: null,
+			agreedTermOverLimit: overLimit
+				? {
+						stint: overLimit.stint,
+						reason: "agreed_fixed_term_exceeds_working_days",
+						agreedWorkingDays: overLimit.agreed,
+					}
+				: null,
+			agreedWorkingDays,
 		};
 	}
 	const ownLimit = (stint: ShortTermStint) =>
 		timeMonthsDays(parsePlainDate(stint.firstDay), monthLimit);
-	const agreedTermOverLimit =
-		stints.find(
-			(stint) => stint.agreedEmployment !== null && calendarDays(stint) > ownLimit(stint),
-		) ?? null;
+	const overLimitStint = stints.find(
+		(stint) => stint.agreedEmployment !== null && calendarDays(stint) > ownLimit(stint),
+	);
+	const agreedTermOverLimit: AgreedTermOverLimit | null = overLimitStint
+		? {
+				stint: overLimitStint,
+				reason: "agreed_fixed_term_exceeds_limit",
+				agreedWorkingDays: null,
+			}
+		: null;
 	const [only] = stints;
 	if (stints.length === 1 && only && prior.months === 0) {
 		return {
@@ -380,6 +489,7 @@ function countAllowance(input: {
 			ownUsed: calendarDays(only),
 			priorEmployerUsed: 0,
 			agreedTermOverLimit,
+			agreedWorkingDays: [],
 		};
 	}
 	const limit = monthLimit * SHORT_TERM_DAYS_PER_FULL_MONTH;
@@ -390,13 +500,21 @@ function countAllowance(input: {
 		// term alone runs past its 3 time months: that term is not short-term on its own.
 		return {
 			limitKind: "months",
-			limit: ownLimit(agreedTermOverLimit),
-			ownUsed: calendarDays(agreedTermOverLimit),
+			limit: ownLimit(agreedTermOverLimit.stint),
+			ownUsed: calendarDays(agreedTermOverLimit.stint),
 			priorEmployerUsed: 0,
 			agreedTermOverLimit,
+			agreedWorkingDays: [],
 		};
 	}
-	return { limitKind: "months", limit, ownUsed, priorEmployerUsed, agreedTermOverLimit };
+	return {
+		limitKind: "months",
+		limit,
+		ownUsed,
+		priorEmployerUsed,
+		agreedTermOverLimit,
+		agreedWorkingDays: [],
+	};
 }
 
 export function judgeShortTermYear(input: {
@@ -445,14 +563,16 @@ export function judgeShortTermYear(input: {
 		return { employeeId: employee.employeeId, year, allowance: null, findings: [] };
 	}
 	const prior = priorEmployerTotals(employee, year);
-	const { limitKind, limit, ownUsed, priorEmployerUsed, agreedTermOverLimit } = countAllowance({
-		ownLimitKind,
-		workingDays,
-		stints,
-		prior,
-		dayLimit,
-		monthLimit,
-	});
+	const { limitKind, limit, ownUsed, priorEmployerUsed, agreedTermOverLimit, agreedWorkingDays } =
+		countAllowance({
+			ownLimitKind,
+			workingDays,
+			stints,
+			employments: employee.employments,
+			prior,
+			dayLimit,
+			monthLimit,
+		});
 	const used = ownUsed + priorEmployerUsed;
 	const { tier, usedPercent } = classifyStatutoryUsage({ used, limit }, preferences);
 	const allowance: ShortTermAllowance = {
@@ -505,9 +625,12 @@ export function judgeShortTermYear(input: {
 					firstDay,
 					lastDay,
 					...(agreedTermOverLimit && {
-						reason: "agreed_fixed_term_exceeds_limit",
-						agreedFirstDay: agreedTermOverLimit.firstDay,
-						agreedLastDay: agreedTermOverLimit.lastDay,
+						reason: agreedTermOverLimit.reason,
+						agreedFirstDay: agreedTermOverLimit.stint.firstDay,
+						agreedLastDay: agreedTermOverLimit.stint.lastDay,
+						...(agreedTermOverLimit.agreedWorkingDays !== null && {
+							agreedWorkingDays: agreedTermOverLimit.agreedWorkingDays,
+						}),
 					}),
 				},
 			},
@@ -517,6 +640,10 @@ export function judgeShortTermYear(input: {
 				limit,
 				days: workingDays,
 				stints: stints.map((stint) => [stint.firstDay, stint.lastDay]),
+				// A fixed term's agreed week counts before any day is worked or planned.
+				...(agreedWorkingDays.length > 0 && {
+					agreedWorkingDays: agreedWorkingDays.map(({ stint, agreed }) => [stint.firstDay, agreed]),
+				}),
 				priorDays: prior.days,
 				priorMonths: prior.months,
 			}),
