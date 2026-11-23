@@ -18,10 +18,18 @@ import type { ContractorCompensation } from "./terms";
  * elapsed time (`splitElapsedTime`), so its recorded duration (net of breaks)
  * adds up exactly.
  *
- * **Terms.** Each (contractor, local day) is priced by the terms in force on
- * that day: the period whose `[from, to)` contains the day. Should two contain
- * it (the last day of one engagement and the first of the next), the later
- * `from` wins. A day without terms is unpriced, never priced at zero.
+ * **Engagements.** Only work inside a contractor employment period is
+ * contractor work: the period's instant span `[startedAt, endedAt)`. Work
+ * outside every contractor engagement (as an employee before or after a
+ * conversion, or with no engagement at all) is left out entirely: neither
+ * priced nor unpriced. Work across an engagement boundary is split there by
+ * elapsed time, like at local midnight. Each local day is priced per
+ * engagement, so on a day two engagements share (a same-day conversion or
+ * rehire) each engagement's work makes its own day with its own units.
+ *
+ * **Terms.** Each (contractor, engagement, local day) is priced by that
+ * engagement's terms in force on that day: the terms whose `[from, to)`
+ * contains the day. A day without terms is unpriced, never priced at zero.
  *
  * **Units and amounts.** `hourly`: hours = worked time ÷ 1 h. `daily`: the
  * day-unit rule on the day's total worked time (`any_work_full_day` 1.0,
@@ -49,6 +57,18 @@ export interface ContractorWork {
 	durationMinutes: number;
 }
 
+/**
+ * One contractor employment period as an instant span, half-open
+ * `[startedAt, endedAt)`; null is unbounded on that side.
+ */
+export interface ContractorEngagement {
+	/** The employment period id. */
+	id: string;
+	employeeId: string;
+	startedAt: Instant | null;
+	endedAt: Instant | null;
+}
+
 /** One effective-dated set of terms of one contractor employment period. */
 export interface ContractorTermsPeriod {
 	id: string;
@@ -67,9 +87,11 @@ export interface ContractorUnits {
 	denominator: bigint;
 }
 
-/** The part of one work period that falls on one local day. */
+/** The part of one work period that falls on one local day of one engagement. */
 export interface ContractorWorkShare {
 	workId: string;
+	/** The contractor engagement the share was worked in. */
+	employmentPeriodId: string;
 	start: Instant;
 	end: Instant;
 	durationMs: number;
@@ -95,8 +117,11 @@ export type ContractorDayPricing =
 	  }
 	| { kind: "unpriced" };
 
+/** One contractor's work on one local day within one engagement. */
 export interface ContractorDay {
 	employeeId: string;
+	/** The contractor engagement; a day two engagements share has one entry each. */
+	employmentPeriodId: string;
 	/** The contractor-local calendar day. */
 	date: PlainDate;
 	workedMs: number;
@@ -117,11 +142,11 @@ export interface ContractorTotal {
 }
 
 export interface ContractorPricing {
-	/** Ordered by contractor, then day. */
+	/** Ordered by contractor, then day, then the engagement's first work. */
 	days: ContractorDay[];
 	/** Ordered by contractor, then currency. */
 	totals: ContractorTotal[];
-	/** Worked time on days without terms, per contractor. */
+	/** Contractor work on engagement days without terms, per contractor. */
 	unpriced: { employeeId: string; workedMs: number; days: number }[];
 }
 
@@ -232,15 +257,22 @@ function pick(share: ContractorWorkShare) {
 
 const compareDates = Temporal.PlainDate.compare;
 
-/** The terms in force on `date`; of two, the later-starting. */
+/**
+ * The terms in force on `date`, of one engagement when `employmentPeriodId` is
+ * given; of two, the later-starting.
+ */
 export function termsInForceOn(
 	employeeId: string,
 	date: PlainDate,
 	terms: readonly ContractorTermsPeriod[],
+	employmentPeriodId?: string,
 ): ContractorTermsPeriod | null {
 	let found: ContractorTermsPeriod | null = null;
 	for (const candidate of terms) {
 		if (candidate.employeeId !== employeeId) continue;
+		if (employmentPeriodId !== undefined && candidate.employmentPeriodId !== employmentPeriodId) {
+			continue;
+		}
 		if (compareDates(candidate.from, date) > 0) continue;
 		if (candidate.to !== null && compareDates(date, candidate.to) >= 0) continue;
 		if (
@@ -254,18 +286,83 @@ export function termsInForceOn(
 	return found;
 }
 
-/** The shares of one work period per local day at its start offset. */
-function sharesByDay(item: ContractorWork): { date: PlainDate; share: ContractorWorkShare }[] {
+type Span = { id: string; start: Instant | null; end: Instant | null };
+
+/** Null-aware bounds: a null start is the earliest, a null end the latest. */
+function laterStart(left: Instant | null, right: Instant | null): Instant | null {
+	if (left === null) return right;
+	if (right === null) return left;
+	return compareInstants(left, right) >= 0 ? left : right;
+}
+
+function earlierEnd(left: Instant | null, right: Instant | null): Instant | null {
+	if (left === null) return right;
+	if (right === null) return left;
+	return compareInstants(left, right) <= 0 ? left : right;
+}
+
+function isEmpty(start: Instant | null, end: Instant | null): boolean {
+	return start !== null && end !== null && compareInstants(start, end) >= 0;
+}
+
+/**
+ * Each contractor's engagements as non-overlapping spans in time order.
+ * Employment periods do not overlap; should two ever do, the earlier keeps
+ * the shared time, so no work is priced twice.
+ */
+function engagementSpans(engagements: readonly ContractorEngagement[]): Map<string, Span[]> {
+	const byEmployee = new Map<string, ContractorEngagement[]>();
+	for (const engagement of engagements) {
+		byEmployee.set(engagement.employeeId, [
+			...(byEmployee.get(engagement.employeeId) ?? []),
+			engagement,
+		]);
+	}
+	const result = new Map<string, Span[]>();
+	for (const [employeeId, list] of byEmployee) {
+		const sorted = [...list].sort((left, right) => {
+			if (left.startedAt === null) return right.startedAt === null ? 0 : -1;
+			if (right.startedAt === null) return 1;
+			return compareInstants(left.startedAt, right.startedAt);
+		});
+		const spans: Span[] = [];
+		for (const engagement of sorted) {
+			const previous = spans.at(-1);
+			if (previous && previous.end === null) break;
+			const start = previous
+				? laterStart(engagement.startedAt, previous.end)
+				: engagement.startedAt;
+			if (isEmpty(start, engagement.endedAt)) continue;
+			spans.push({ id: engagement.id, start, end: engagement.endedAt });
+		}
+		result.set(employeeId, spans);
+	}
+	return result;
+}
+
+/** The shares of one work period per (local day at its start offset, engagement). */
+function sharesByDay(
+	item: ContractorWork,
+	spans: readonly Span[],
+): { date: PlainDate; share: ContractorWorkShare }[] {
+	if (spans.length === 0) return [];
 	const timeZone = offsetMinutesToTimeZoneId(item.startOffsetMinutes);
 	const firstDay = workDayOf(item.startedAt, item.startOffsetMinutes);
 	const lastDay = workDayOf(item.endedAt, item.startOffsetMinutes);
-	const intervals: { start: Instant; end: Instant; value: PlainDate }[] = [];
+	const intervals: {
+		start: Instant | null;
+		end: Instant | null;
+		value: { date: PlainDate; employmentPeriodId: string };
+	}[] = [];
 	for (let date = firstDay; compareDates(date, lastDay) <= 0; date = date.add({ days: 1 })) {
-		intervals.push({
-			start: date.toZonedDateTime({ timeZone }).toInstant(),
-			end: date.add({ days: 1 }).toZonedDateTime({ timeZone }).toInstant(),
-			value: date,
-		});
+		const dayStart = date.toZonedDateTime({ timeZone }).toInstant();
+		const dayEnd = date.add({ days: 1 }).toZonedDateTime({ timeZone }).toInstant();
+		for (const span of spans) {
+			const start = laterStart(dayStart, span.start);
+			const end = earlierEnd(dayEnd, span.end);
+			if (isEmpty(start, end)) continue;
+			intervals.push({ start, end, value: { date, employmentPeriodId: span.id } });
+		}
 	}
 	return splitElapsedTime(
 		{ start: item.startedAt, end: item.endedAt, durationMinutes: item.durationMinutes },
@@ -275,9 +372,10 @@ function sharesByDay(item: ContractorWork): { date: PlainDate; share: Contractor
 			? []
 			: [
 					{
-						date: share.value,
+						date: share.value.date,
 						share: {
 							workId: item.id,
+							employmentPeriodId: share.value.employmentPeriodId,
 							start: share.start,
 							end: share.end,
 							durationMs: share.durationMs,
@@ -292,45 +390,66 @@ function inRange(date: PlainDate, range: { fromDay: PlainDate; toDay: PlainDate 
 }
 
 /**
- * Prices contractors' completed work per local day. With `range`, only days
+ * Prices contractors' completed work per local day of each contractor
+ * engagement. Work outside `engagements` is left out. With `range`, only days
  * from `fromDay` through `toDay` (inclusive) are priced; the parts of work on
  * other days are left out.
  */
 export function priceContractorWork(input: {
 	work: readonly ContractorWork[];
+	/** The contractors' contractor employment periods; only work inside them is priced. */
+	engagements: readonly ContractorEngagement[];
 	terms: readonly ContractorTermsPeriod[];
 	range?: { fromDay: PlainDate; toDay: PlainDate };
 }): ContractorPricing {
+	const spans = engagementSpans(input.engagements);
 	const byDay = new Map<
 		string,
-		{ employeeId: string; date: PlainDate; shares: ContractorWorkShare[] }
+		{
+			employeeId: string;
+			employmentPeriodId: string;
+			date: PlainDate;
+			shares: ContractorWorkShare[];
+		}
 	>();
 	for (const item of input.work) {
-		for (const { date, share } of sharesByDay(item)) {
+		for (const { date, share } of sharesByDay(item, spans.get(item.employeeId) ?? [])) {
 			if (!inRange(date, input.range)) continue;
-			const key = `${item.employeeId}|${date.toString()}`;
-			const entry = byDay.get(key) ?? { employeeId: item.employeeId, date, shares: [] };
+			const key = `${item.employeeId}|${share.employmentPeriodId}|${date.toString()}`;
+			const entry = byDay.get(key) ?? {
+				employeeId: item.employeeId,
+				employmentPeriodId: share.employmentPeriodId,
+				date,
+				shares: [],
+			};
 			entry.shares.push(share);
 			byDay.set(key, entry);
 		}
 	}
 
-	const days: ContractorDay[] = [...byDay.values()]
+	const compareShares = (left: ContractorWorkShare, right: ContractorWorkShare) =>
+		compareInstants(left.start, right.start) ||
+		(left.workId < right.workId ? -1 : left.workId > right.workId ? 1 : 0);
+	const entries = [...byDay.values()];
+	for (const entry of entries) entry.shares.sort(compareShares);
+
+	const days: ContractorDay[] = entries
 		.sort((left, right) =>
 			left.employeeId === right.employeeId
-				? compareDates(left.date, right.date)
+				? compareDates(left.date, right.date) || compareShares(left.shares[0], right.shares[0])
 				: left.employeeId < right.employeeId
 					? -1
 					: 1,
 		)
 		.map((entry) => {
-			const shares = entry.shares.sort(
-				(left, right) =>
-					compareInstants(left.start, right.start) ||
-					(left.workId < right.workId ? -1 : left.workId > right.workId ? 1 : 0),
-			);
+			const { shares } = entry;
 			const workedMs = shares.reduce((sum, share) => sum + share.durationMs, 0);
-			const inForce = termsInForceOn(entry.employeeId, entry.date, input.terms);
+			const inForce = termsInForceOn(
+				entry.employeeId,
+				entry.date,
+				input.terms,
+				entry.employmentPeriodId,
+			);
 			if (!inForce) {
 				return { ...entry, shares, workedMs, pricing: { kind: "unpriced" } as const };
 			}

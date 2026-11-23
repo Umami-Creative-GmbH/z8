@@ -1,6 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import {
+	type ContractorEngagement,
 	type ContractorTermsPeriod,
 	type ContractorWork,
 	priceContractorWork,
@@ -48,16 +49,31 @@ function hourly(rateMinor: number, currency = "EUR"): ContractorCompensation {
 	return { basis: "hourly", currency, rateMinor: BigInt(rateMinor) };
 }
 
+function engagement(
+	input: { id?: string; employeeId?: string; start?: string; end?: string } = {},
+): ContractorEngagement {
+	return {
+		id: input.id ?? PERIOD,
+		employeeId: input.employeeId ?? EMPLOYEE,
+		startedAt: input.start ? instant(input.start) : null,
+		endedAt: input.end ? instant(input.end) : null,
+	};
+}
+
+/** One contractor engagement without bounds: every test's work is contractor work. */
+const ALWAYS = [engagement()];
+
 function terms(
 	compensation: ContractorCompensation,
 	from = "2026-01-01",
 	to: string | null = null,
 	id = `terms-${from}`,
+	employmentPeriodId = PERIOD,
 ): ContractorTermsPeriod {
 	return {
 		id,
 		employeeId: EMPLOYEE,
-		employmentPeriodId: PERIOD,
+		employmentPeriodId,
 		from: day(from),
 		to: to === null ? null : day(to),
 		compensation,
@@ -79,6 +95,7 @@ describe("daily rate: any work is a full day", () => {
 
 	it("bills 1.0 day for a single minute and for a long day alike", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-03-02T09:00:00Z", end: "2026-03-02T09:01:00Z" }),
 				work({ start: "2026-03-03T08:00:00Z", end: "2026-03-03T19:00:00Z" }),
@@ -102,6 +119,7 @@ describe("daily rate: any work is a full day", () => {
 
 	it("counts several work periods on one local day once", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-03-02T08:00:00Z", end: "2026-03-02T10:00:00Z" }),
 				work({ start: "2026-03-02T13:00:00Z", end: "2026-03-02T15:00:00Z" }),
@@ -120,6 +138,7 @@ describe("daily rate: half and full days", () => {
 
 	it("bills a half day up to and including the threshold and a full day above it", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-03-02T09:00:00Z", end: "2026-03-02T09:01:00Z" }),
 				work({ start: "2026-03-03T09:00:00Z", end: "2026-03-03T13:00:00Z" }),
@@ -137,6 +156,7 @@ describe("daily rate: half and full days", () => {
 
 	it("honours a configured threshold", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [work({ start: "2026-03-02T09:00:00Z", end: "2026-03-02T12:00:00Z" })],
 			terms: [terms(daily(60_000, { kind: "half_and_full_day", halfDayThresholdMinutes: 120 }))],
 		});
@@ -146,6 +166,7 @@ describe("daily rate: half and full days", () => {
 
 	it("rounds a half day of an odd rate half up to the minor unit", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [work({ start: "2026-03-02T09:00:00Z", end: "2026-03-02T10:00:00Z" })],
 			terms: [terms(daily(60_001, rule))],
 		});
@@ -164,6 +185,7 @@ describe("daily rate: prorated by a standard day", () => {
 
 	it("prorates below the standard day and caps at 1.0 day when capped", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-03-02T09:00:00Z", end: "2026-03-02T15:00:00Z" }),
 				work({ start: "2026-03-03T08:00:00Z", end: "2026-03-03T16:00:00Z" }),
@@ -181,6 +203,7 @@ describe("daily rate: prorated by a standard day", () => {
 
 	it("bills beyond 1.0 day when not capped", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [work({ start: "2026-03-04T07:00:00Z", end: "2026-03-04T17:00:00Z" })],
 			terms: [terms(daily(80_000, uncapped))],
 		});
@@ -193,6 +216,7 @@ describe("daily rate: prorated by a standard day", () => {
 	it("keeps units exact and rounds the amount once", () => {
 		// 100 of 480 minutes is 5/24 day; 5/24 × 700.00 = 145.8333… → 145.83.
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [work({ start: "2026-03-02T09:00:00Z", end: "2026-03-02T10:40:00Z" })],
 			terms: [terms(daily(70_000, capped))],
 		});
@@ -209,6 +233,7 @@ describe("daily rate: prorated by a standard day", () => {
 describe("hourly rate", () => {
 	it("bills worked hours at the rate, net of breaks", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			// 9:00–17:30 with a 30-minute break: 8 hours.
 			work: [work({ start: "2026-03-02T09:00:00Z", end: "2026-03-02T17:30:00Z", minutes: 480 })],
 			terms: [terms(hourly(9_550))],
@@ -222,6 +247,7 @@ describe("hourly rate", () => {
 
 	it("applies a renegotiated rate from its effective date without repricing earlier days", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-03-31T09:00:00Z", end: "2026-03-31T11:00:00Z" }),
 				work({ start: "2026-04-01T09:00:00Z", end: "2026-04-01T11:00:00Z" }),
@@ -242,6 +268,7 @@ describe("hourly rate", () => {
 
 	it("switches from an hourly to a daily basis on the effective date", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-03-31T09:00:00Z", end: "2026-03-31T12:00:00Z" }),
 				work({ start: "2026-04-01T09:00:00Z", end: "2026-04-01T12:00:00Z" }),
@@ -268,6 +295,7 @@ describe("local days, midnight and time zones", () => {
 	it("groups work by the day at its captured offset, not by the UTC day", () => {
 		// 23:30–01:30 UTC is 00:30–02:30 on 3 March in Berlin (+01:00).
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [work({ start: "2026-03-02T23:30:00Z", end: "2026-03-03T01:30:00Z", offset: 60 })],
 			terms: [terms(daily(60_000, { kind: "any_work_full_day" }))],
 		});
@@ -278,6 +306,7 @@ describe("local days, midnight and time zones", () => {
 	it("splits work across local midnight into two billed days", () => {
 		// 20:00–04:00 local (+02:00): 4 h on each local day, so two half days.
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [work({ start: "2026-06-01T18:00:00Z", end: "2026-06-02T02:00:00Z", offset: 120 })],
 			terms: [terms(daily(60_000, halfDay))],
 		});
@@ -291,6 +320,7 @@ describe("local days, midnight and time zones", () => {
 	it("uses each work period's own offset when a contractor travels", () => {
 		// The same UTC evening: in New York (-04:00) it is still 1 June, in Berlin already 2 June.
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-06-01T23:00:00Z", end: "2026-06-02T01:00:00Z", offset: -240 }),
 				work({ start: "2026-06-02T00:30:00Z", end: "2026-06-02T01:30:00Z", offset: 120 }),
@@ -306,6 +336,7 @@ describe("local days, midnight and time zones", () => {
 
 	it("prices each side of midnight by the terms of its own day", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [work({ start: "2026-03-31T22:00:00Z", end: "2026-04-01T02:00:00Z" })],
 			terms: [
 				terms(hourly(9_000), "2026-01-01", "2026-04-01"),
@@ -321,6 +352,7 @@ describe("local days, midnight and time zones", () => {
 
 	it("prices only the days inside the range, including a part of work across its edge", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-03-31T22:00:00Z", end: "2026-04-01T02:00:00Z" }),
 				work({ start: "2026-04-02T09:00:00Z", end: "2026-04-02T10:00:00Z" }),
@@ -338,6 +370,7 @@ describe("local days, midnight and time zones", () => {
 describe("allocating a day's amount across its work", () => {
 	it("splits a daily rate over same-day projects by duration and sums exactly to the day", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ id: "a", start: "2026-03-02T08:00:00Z", end: "2026-03-02T09:00:00Z" }),
 				work({ id: "b", start: "2026-03-02T10:00:00Z", end: "2026-03-02T11:00:00Z" }),
@@ -358,6 +391,7 @@ describe("allocating a day's amount across its work", () => {
 
 	it("allocates in proportion to duration", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ id: "long", start: "2026-03-02T08:00:00Z", end: "2026-03-02T14:00:00Z" }),
 				work({ id: "short", start: "2026-03-02T15:00:00Z", end: "2026-03-02T17:00:00Z" }),
@@ -376,6 +410,7 @@ describe("allocating a day's amount across its work", () => {
 describe("days without terms", () => {
 	it("leaves them unpriced, never priced at zero", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-02-27T09:00:00Z", end: "2026-02-27T11:00:00Z" }),
 				work({ start: "2026-03-02T09:00:00Z", end: "2026-03-02T11:00:00Z" }),
@@ -390,6 +425,7 @@ describe("days without terms", () => {
 
 	it("ignores another contractor's terms", () => {
 		const result = priceContractorWork({
+			engagements: [...ALWAYS, engagement({ id: "other-period", employeeId: "other" })],
 			work: [
 				work({
 					employeeId: "other",
@@ -403,22 +439,126 @@ describe("days without terms", () => {
 		expect(result.days[0].pricing.kind).toBe("unpriced");
 	});
 
-	it("prefers the later engagement on a day two engagements share", () => {
+	it("never prices with another engagement's terms", () => {
 		const result = priceContractorWork({
-			work: [work({ start: "2026-04-01T09:00:00Z", end: "2026-04-01T10:00:00Z" })],
+			engagements: [engagement({ id: "later", start: "2026-04-01T00:00:00Z" })],
+			work: [work({ start: "2026-04-02T09:00:00Z", end: "2026-04-02T10:00:00Z" })],
+			terms: [terms(hourly(9_000), "2026-01-01", null, "earlier-terms", "earlier")],
+		});
+
+		expect(result.days.map((entry) => entry.pricing.kind)).toEqual(["unpriced"]);
+	});
+});
+
+describe("contractor engagements", () => {
+	const halfDay: DayUnitRule = { kind: "half_and_full_day", halfDayThresholdMinutes: 240 };
+
+	it("prices only work inside a contractor engagement and never reports the rest", () => {
+		// Offboarded as a contractor at 12:00 on 4 May, rehired as an employee from 13:00.
+		const result = priceContractorWork({
+			engagements: [engagement({ end: "2026-05-04T12:00:00Z" })],
+			work: [
+				work({ start: "2026-05-04T09:00:00Z", end: "2026-05-04T12:00:00Z" }),
+				work({ start: "2026-05-04T13:00:00Z", end: "2026-05-04T17:00:00Z" }),
+				work({ start: "2026-05-05T09:00:00Z", end: "2026-05-05T17:00:00Z" }),
+			],
+			terms: [terms(hourly(9_000))],
+		});
+
+		expect(summary(result)).toEqual([
+			{ date: "2026-05-04", workedMinutes: 180, units: "3.0000", amountMinor: BigInt(27_000) },
+		]);
+		expect(result.unpriced).toEqual([]);
+		expect(result.totals[0]).toMatchObject({ amountMinor: BigInt(27_000), pricedMs: 10_800_000 });
+	});
+
+	it("counts only contractor work toward a day's units", () => {
+		// An employee until 12:00, a contractor from 13:00: 3 h + 2 h is not more than a half day.
+		const result = priceContractorWork({
+			engagements: [engagement({ start: "2026-05-04T13:00:00Z" })],
+			work: [
+				work({ start: "2026-05-04T08:00:00Z", end: "2026-05-04T11:00:00Z" }),
+				work({ start: "2026-05-04T13:00:00Z", end: "2026-05-04T15:00:00Z" }),
+			],
+			terms: [terms(daily(60_000, halfDay), "2026-05-04")],
+		});
+
+		expect(summary(result)).toEqual([
+			{ date: "2026-05-04", workedMinutes: 120, units: "0.5000", amountMinor: BigInt(30_000) },
+		]);
+	});
+
+	it("splits work across an engagement boundary by elapsed time", () => {
+		// 11:00–15:00 with a 40-minute break (200 min) across a 13:00 start: half the elapsed time.
+		const result = priceContractorWork({
+			engagements: [engagement({ start: "2026-05-04T13:00:00Z" })],
+			work: [
+				work({ id: "x", start: "2026-05-04T11:00:00Z", end: "2026-05-04T15:00:00Z", minutes: 200 }),
+			],
+			terms: [terms(hourly(6_000), "2026-05-04")],
+		});
+
+		expect(result.days).toHaveLength(1);
+		expect(result.days[0].shares).toEqual([
+			{
+				workId: "x",
+				employmentPeriodId: PERIOD,
+				start: instant("2026-05-04T13:00:00Z"),
+				end: instant("2026-05-04T15:00:00Z"),
+				durationMs: 6_000_000,
+			},
+		]);
+		expect(result.days[0].pricing).toMatchObject({ amountMinor: BigInt(10_000) });
+	});
+
+	it("carries the employment period on each day and share", () => {
+		const result = priceContractorWork({
+			engagements: ALWAYS,
+			work: [work({ start: "2026-05-04T09:00:00Z", end: "2026-05-04T10:00:00Z" })],
+			terms: [],
+		});
+
+		expect(result.days[0]).toMatchObject({
+			employmentPeriodId: PERIOD,
+			shares: [{ employmentPeriodId: PERIOD }],
+		});
+	});
+
+	it("prices two contractor engagements on one day apart, each by its own terms", () => {
+		const result = priceContractorWork({
+			engagements: [
+				engagement({ id: "old", end: "2026-04-01T12:00:00Z" }),
+				engagement({ id: "new", start: "2026-04-01T12:00:00Z" }),
+			],
+			work: [
+				work({ start: "2026-04-01T09:00:00Z", end: "2026-04-01T10:00:00Z" }),
+				work({ start: "2026-04-01T13:00:00Z", end: "2026-04-01T14:00:00Z" }),
+			],
 			terms: [
-				terms(hourly(9_000), "2026-01-01", "2026-04-02", "old"),
-				terms(hourly(12_000), "2026-04-01", null, "new"),
+				terms(hourly(9_000), "2026-01-01", "2026-04-02", "old-terms", "old"),
+				terms(hourly(12_000), "2026-04-01", null, "new-terms", "new"),
 			],
 		});
 
-		expect(result.days[0].pricing).toMatchObject({ termsId: "new", amountMinor: BigInt(12_000) });
+		expect(
+			result.days.map((entry) => [
+				entry.date.toString(),
+				entry.employmentPeriodId,
+				entry.pricing.kind === "priced" ? entry.pricing.termsId : null,
+				entry.pricing.kind === "priced" ? entry.pricing.amountMinor : null,
+			]),
+		).toEqual([
+			["2026-04-01", "old", "old-terms", BigInt(9_000)],
+			["2026-04-01", "new", "new-terms", BigInt(12_000)],
+		]);
+		expect(result.totals[0].amountMinor).toBe(BigInt(21_000));
 	});
 });
 
 describe("currencies", () => {
 	it("prices in the terms' currency and totals each currency apart", () => {
 		const result = priceContractorWork({
+			engagements: ALWAYS,
 			work: [
 				work({ start: "2026-03-31T09:00:00Z", end: "2026-03-31T10:00:00Z" }),
 				work({ start: "2026-04-01T09:00:00Z", end: "2026-04-01T10:00:00Z" }),

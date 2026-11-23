@@ -308,7 +308,202 @@ describe("contractor pricing on PostgreSQL", () => {
 		]);
 	});
 
-	it("stops pricing at the end of the engagement even when its terms were left open", async () => {
+	/**
+	 * Ends the person's open engagement at `endedAt` and starts one of the other
+	 * kind at `startedAt`, as an effective departure and a rehire leave them.
+	 */
+	async function convert(
+		employeeId: string,
+		input: { endedAt: string; startedAt: string; to: "employee" | "contractor" },
+	) {
+		await fixture.pool.query(
+			`update employee_employment_period set status = 'closed', ended_at = $2
+			 where employee_id = $1 and status = 'open'`,
+			[employeeId, input.endedAt],
+		);
+		const {
+			rows: [created],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+			 values ($1, $2, 'open', $3, 'recorded', $4) returning id`,
+			[fixture.organizationId, employeeId, input.startedAt, input.to],
+		);
+		await fixture.pool.query(`update employee set engagement_kind = $2 where id = $1`, [
+			employeeId,
+			input.to,
+		]);
+		return created.id;
+	}
+
+	async function contractorPeriodIds(employeeId: string, fromDay: string, toDay: string) {
+		const result = await priceContractorDays(db, fixture.organizationId, {
+			employeeIds: [employeeId],
+			fromDay: day(fromDay),
+			toDay: day(toDay),
+		});
+		return {
+			days: result.days.map((entry) => [entry.date.toString(), entry.employmentPeriodId]),
+			shares: result.days.flatMap((entry) => entry.shares.map((share) => share.employmentPeriodId)),
+			unpriced: result.unpriced,
+		};
+	}
+
+	describe("conversions between employee and contractor", () => {
+		it("prices a contractor rehired as an employee the same day only up to the conversion", async () => {
+			const seeded = await fixture.seedEmployee({ engagementKind: "contractor" });
+			const employeeId = seeded.employeeId;
+			await setTerms(employeeId, "2026-03-01", {
+				basis: "hourly",
+				rateAmount: "90",
+				currency: "EUR",
+			});
+			await convert(employeeId, {
+				endedAt: "2026-05-04T12:00:00Z",
+				startedAt: "2026-05-04T13:00:00Z",
+				to: "employee",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-04T09:00:00Z",
+				end: "2026-05-04T12:00:00Z",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-04T13:00:00Z",
+				end: "2026-05-04T17:00:00Z",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-05T09:00:00Z",
+				end: "2026-05-05T17:00:00Z",
+			});
+
+			expect(await price(employeeId, "2026-05-01", "2026-05-31")).toEqual({
+				days: [{ date: "2026-05-04", minutes: 180, units: "3.0000", amount: 27_000 }],
+				totals: [{ currency: "EUR", amount: 27_000, days: "0.00", hours: "3.00" }],
+			});
+			expect(await contractorPeriodIds(employeeId, "2026-05-01", "2026-05-31")).toEqual({
+				days: [["2026-05-04", seeded.employmentPeriodId]],
+				shares: [seeded.employmentPeriodId],
+				unpriced: [],
+			});
+		});
+
+		it("prices a contractor rehired as an employee the next day only up to the conversion", async () => {
+			const employeeId = await contractor();
+			await setTerms(employeeId, "2026-03-01", {
+				basis: "daily",
+				rateAmount: "650",
+				currency: "EUR",
+				dayUnitRule: "any_work_full_day",
+			});
+			await convert(employeeId, {
+				endedAt: "2026-05-05T00:00:00Z",
+				startedAt: "2026-05-05T00:00:00Z",
+				to: "employee",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-04T10:00:00Z",
+				end: "2026-05-04T12:00:00Z",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-05T10:00:00Z",
+				end: "2026-05-05T12:00:00Z",
+			});
+
+			expect(await price(employeeId, "2026-05-01", "2026-05-31")).toEqual({
+				days: [{ date: "2026-05-04", minutes: 120, units: "1.0000", amount: 65_000 }],
+				totals: [{ currency: "EUR", amount: 65_000, days: "1.00", hours: "0.00" }],
+			});
+			expect((await contractorPeriodIds(employeeId, "2026-05-01", "2026-05-31")).unpriced).toEqual(
+				[],
+			);
+		});
+
+		it("counts only the contractor part of a same-day conversion toward a daily rule", async () => {
+			const { employeeId } = await fixture.seedEmployee();
+			const contractorPeriod = await convert(employeeId, {
+				endedAt: "2026-05-04T12:00:00Z",
+				startedAt: "2026-05-04T13:00:00Z",
+				to: "contractor",
+			});
+			await setTerms(employeeId, "2026-05-04", {
+				basis: "daily",
+				rateAmount: "600",
+				currency: "EUR",
+				dayUnitRule: "half_and_full_day",
+				halfDayThresholdMinutes: 240,
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-03T09:00:00Z",
+				end: "2026-05-03T17:00:00Z",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-04T07:00:00Z",
+				end: "2026-05-04T10:00:00Z",
+			});
+			// Across the conversion: of 4 h elapsed, the 2 h from 13:00 are contractor work.
+			await completedWork({
+				employeeId,
+				start: "2026-05-04T11:00:00Z",
+				end: "2026-05-04T15:00:00Z",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-04T15:00:00Z",
+				end: "2026-05-04T16:00:00Z",
+			});
+
+			expect(await price(employeeId, "2026-05-01", "2026-05-31")).toEqual({
+				days: [{ date: "2026-05-04", minutes: 180, units: "0.5000", amount: 30_000 }],
+				totals: [{ currency: "EUR", amount: 30_000, days: "0.50", hours: "0.00" }],
+			});
+			expect(await contractorPeriodIds(employeeId, "2026-05-01", "2026-05-31")).toEqual({
+				days: [["2026-05-04", contractorPeriod]],
+				shares: [contractorPeriod, contractorPeriod],
+				unpriced: [],
+			});
+		});
+
+		it("prices an employee rehired as a contractor the next day from the conversion", async () => {
+			const { employeeId } = await fixture.seedEmployee();
+			await convert(employeeId, {
+				endedAt: "2026-05-04T00:00:00Z",
+				startedAt: "2026-05-04T00:00:00Z",
+				to: "contractor",
+			});
+			await setTerms(employeeId, "2026-05-04", {
+				basis: "hourly",
+				rateAmount: "100",
+				currency: "EUR",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-03T09:00:00Z",
+				end: "2026-05-03T17:00:00Z",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-05-04T09:00:00Z",
+				end: "2026-05-04T11:00:00Z",
+			});
+
+			expect(await price(employeeId, "2026-05-01", "2026-05-31")).toEqual({
+				days: [{ date: "2026-05-04", minutes: 120, units: "2.0000", amount: 20_000 }],
+				totals: [{ currency: "EUR", amount: 20_000, days: "0.00", hours: "2.00" }],
+			});
+			expect((await contractorPeriodIds(employeeId, "2026-05-01", "2026-05-31")).unpriced).toEqual(
+				[],
+			);
+		});
+	});
+
+	it("stops pricing at the end of the engagement and leaves later work out, though its terms were left open", async () => {
 		const employeeId = await contractor();
 		await setTerms(employeeId, "2026-03-01", {
 			basis: "hourly",
@@ -328,10 +523,7 @@ describe("contractor pricing on PostgreSQL", () => {
 				entry.date,
 				entry.amount,
 			]),
-		).toEqual([
-			["2026-03-15", 9_000],
-			["2026-03-17", null],
-		]);
+		).toEqual([["2026-03-15", 9_000]]);
 	});
 
 	it("never prices another organization's contractor", async () => {
