@@ -41,6 +41,8 @@ const record = {
 	enrolled: true,
 	status: "partially_active",
 	authorizedClasses: ["B"],
+	declared: null,
+	declaredUnchecked: [],
 	timezone: "Europe/Berlin",
 	uncertainEmailCount: 0,
 	classes: [
@@ -91,8 +93,9 @@ describe("My licence", () => {
 		const headings = screen
 			.getAllByRole("heading", { level: 2 })
 			.map((h) => h.textContent);
-		expect(headings.slice(0, 3)).toEqual([
+		expect(headings.slice(0, 4)).toEqual([
 			"Some driving classes are suspended",
+			"Got another licence class?",
 			"Unable to drive?",
 			"Original check evidence",
 		]);
@@ -111,8 +114,8 @@ describe("My licence", () => {
 					.map((c) => c.textContent),
 			),
 		).toEqual([
-			["B", "Authorized", "Jul 31, 2026 (Europe/Berlin)", "Corrective lenses"],
-			["C", "Suspended", "Jan 15, 2026 (Europe/Berlin)", "—"],
+			["B Car", "Authorized", "Jul 31, 2026 (Europe/Berlin)", "Corrective lenses"],
+			["C Truck", "Suspended", "Jan 15, 2026 (Europe/Berlin)", "—"],
 		]);
 		expect(screen.getByRole("heading", { name: "Original check evidence" })).toBeTruthy();
 		expect(screen.getByRole("heading", { name: "Unable to drive?" })).toBeTruthy();
@@ -142,6 +145,8 @@ describe("My licence", () => {
 						personWideReason: "person_impediment",
 						classes: [],
 						authorizedClasses: [],
+						declared: null,
+						declaredUnchecked: [],
 					}}
 					employeeId="driver-employee"
 					intendedDriver

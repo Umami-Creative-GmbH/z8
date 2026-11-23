@@ -136,6 +136,8 @@ export async function readOperationalDrivingStatus(
 				status,
 				restrictions,
 			})),
+			// Declared, not checked (#2003): the codes only, apart from authorization.
+			declaredClasses: effective.declaredUnchecked,
 		};
 	});
 }

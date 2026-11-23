@@ -44,6 +44,8 @@ const record = {
 	enrolled: true,
 	status: "suspended",
 	authorizedClasses: [],
+	declared: null,
+	declaredUnchecked: [],
 	timezone: "Europe/Berlin",
 	uncertainEmailCount: 0,
 	classes: [suspendedClass("B"), suspendedClass("C")],
