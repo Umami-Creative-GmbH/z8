@@ -14,6 +14,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import { type EngagementKind, engagementKinds } from "@/lib/engagement/engagement-kind";
 import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 import { currentTimestamp } from "./timestamp";
@@ -112,12 +113,21 @@ export const employeeEmploymentPeriod = pgTable(
 		startProvenance: text("start_provenance").$type<EmploymentPeriodStartProvenance>().notNull(),
 		/** Why a legacy period could not be classified from existing dates. */
 		legacyDiagnostic: text("legacy_diagnostic"),
+		/**
+		 * Employee or External Contractor for this stint (#1995). Never changes once
+		 * written (migration 0328); converting ends the period and starts a new one.
+		 */
+		engagementKind: text("engagement_kind").$type<EngagementKind>().default("employee").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		createdBy: text("created_by").references(() => user.id, {
 			onDelete: "set null",
 		}),
 	},
 	(table) => [
+		check(
+			"employeeEmploymentPeriod_engagement_kind_check",
+			textIn("engagement_kind", engagementKinds),
+		),
 		unique("employeeEmploymentPeriod_id_org_unique").on(table.id, table.organizationId),
 		unique("employeeEmploymentPeriod_id_org_employee_unique").on(
 			table.id,

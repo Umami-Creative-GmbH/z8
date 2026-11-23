@@ -71,6 +71,7 @@ export * from "./driving-licence-tasks";
 export * from "./driving-licence-verifiers";
 export * from "./email-template";
 export * from "./employee-invitation-draft";
+export * from "./contractor-profile";
 // Employee offboarding and rehire (employment periods, departures)
 export * from "./employee-lifecycle";
 export * from "./employee-tracking-settings";

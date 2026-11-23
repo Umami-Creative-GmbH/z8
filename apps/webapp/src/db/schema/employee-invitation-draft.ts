@@ -1,5 +1,8 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
+	date,
 	decimal,
 	index,
 	pgTable,
@@ -8,6 +11,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { currentTimestamp } from "./timestamp";
 import { invitation, organization, user } from "../auth-schema";
 import { contractTypeEnum, genderEnum, roleEnum } from "./enums";
@@ -38,6 +42,20 @@ export const employeeInvitationDraft = pgTable(
 		endDate: timestamp("end_date"),
 		contractType: contractTypeEnum("contract_type").default("fixed").notNull(),
 		currentHourlyRate: decimal("current_hourly_rate", { precision: 10, scale: 2 }),
+		// An External Contractor invitation (#1995): employee-only fields above
+		// (contract type, wage) are not applied; the contracting details become the
+		// contractor profile, the projects are assigned, and a planned end date
+		// becomes a scheduled departure once the person joined.
+		engagementKind: text("engagement_kind").$type<EngagementKind>().default("employee").notNull(),
+		contractorCompanyName: text("contractor_company_name"),
+		contractorVatId: text("contractor_vat_id"),
+		contractorReferenceCode: text("contractor_reference_code"),
+		/** Org-local calendar date; the planned last working day. */
+		plannedEndDate: date("planned_end_date", { mode: "string" }),
+		projectIds: uuid("project_ids")
+			.array()
+			.default(sql`'{}'::uuid[]`)
+			.notNull(),
 		updatedBy: text("updated_by").references(() => user.id),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -57,5 +75,9 @@ export const employeeInvitationDraft = pgTable(
 		// Latest snapshots copy their exact deployed metadata forward from the 0050 snapshot.
 		// The team/org composite FK is migration-only so team deletion can null only team_id.
 		index("employeeInvitationDraft_teamId_idx").on(table.teamId),
+		check(
+			"employeeInvitationDraft_engagement_kind_check",
+			sql`${table.engagementKind} IN ('employee', 'contractor')`,
+		),
 	],
 );

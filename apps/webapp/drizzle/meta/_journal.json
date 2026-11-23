@@ -2297,6 +2297,13 @@
       "when": 1812988800000,
       "tag": "0327_work_policy_v1_seal",
       "breakpoints": true
+    },
+    {
+      "idx": 328,
+      "version": "7",
+      "when": 1813075200000,
+      "tag": "0328_contractor_engagement_kind",
+      "breakpoints": true
     }
   ]
 }
