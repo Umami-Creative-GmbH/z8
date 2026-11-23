@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-operations";
 import { Link } from "@/navigation";
 import { todayIsoDateInTimezone } from "./contract-formatters";
+import { YouthSectorExceptionsSection } from "./youth-sector-exceptions-section";
 
 type ReviewFilterKind =
 	| "all"
@@ -511,6 +512,7 @@ export function ContractsReviewsTab({
 					)}
 				</CardContent>
 			</Card>
+			<YouthSectorExceptionsSection organizationId={organizationId} />
 		</div>
 	);
 }

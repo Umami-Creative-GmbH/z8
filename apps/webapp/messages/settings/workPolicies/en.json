@@ -332,7 +332,26 @@
         "queueDescription": "Resolve contract migration mismatches, post-cutoff work reviews, and closed/settled payroll reconciliations.",
         "queueTitle": "Reviews & Conflicts Queue",
         "resolveFailed": "Could not resolve review item.",
-        "showResolved": "Show resolved"
+        "showResolved": "Show resolved",
+        "youth": {
+          "acknowledge": "Record sector exception…",
+          "acknowledged": "Sector exception recorded",
+          "confirm": "Record sector exception",
+          "description": "Employees under 18 may work at night, on weekends or on public holidays only under a statutory sector exception (§§ 14, 16–18 JArbSchG). Record why it applies; it covers the shift as shown here.",
+          "kind": {
+            "holiday": "Public holiday work",
+            "night": "Night work (20:00–06:00)",
+            "saturday": "Saturday work",
+            "sunday": "Sunday work"
+          },
+          "legalNote": "Legal basis (optional), e.g. § 14 Abs. 2 Nr. 1 JArbSchG",
+          "loadFailed": "Could not load youth protection findings.",
+          "nightMinutes": "{minutes} min at night",
+          "reason": "Why does a sector exception apply?",
+          "reasonRequired": "Explain which sector exception applies.",
+          "stale": "Changed since last acknowledged",
+          "title": "Youth protection: sector exceptions"
+        }
       },
       "scheduleMode": {
         "customDays": "Custom working days",

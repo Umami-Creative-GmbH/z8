@@ -332,7 +332,26 @@
         "queueDescription": "Beheben Sie Abweichungen bei der Vertragsmigration, Prüfungen von Arbeitszeiten nach dem Stichtag und abgeschlossene Entgeltabgleiche.",
         "queueTitle": "Warteschlange für Prüfungen & Konflikte",
         "resolveFailed": "Prüfungselement konnte nicht gelöst werden.",
-        "showResolved": "Gelöste anzeigen"
+        "showResolved": "Gelöste anzeigen",
+        "youth": {
+          "acknowledge": "Branchenausnahme erfassen…",
+          "acknowledged": "Branchenausnahme erfasst",
+          "confirm": "Branchenausnahme erfassen",
+          "description": "Beschäftigte unter 18 dürfen nachts, am Wochenende oder an Feiertagen nur im Rahmen einer gesetzlichen Branchenausnahme arbeiten (§§ 14, 16–18 JArbSchG). Halten Sie fest, warum sie gilt; sie deckt die Schicht so ab, wie sie hier angezeigt wird.",
+          "kind": {
+            "holiday": "Arbeit an einem Feiertag",
+            "night": "Nachtarbeit (20:00–06:00)",
+            "saturday": "Arbeit am Samstag",
+            "sunday": "Arbeit am Sonntag"
+          },
+          "legalNote": "Rechtsgrundlage (optional), z. B. § 14 Abs. 2 Nr. 1 JArbSchG",
+          "loadFailed": "Jugendschutz-Hinweise konnten nicht geladen werden.",
+          "nightMinutes": "{minutes} Min. nachts",
+          "reason": "Warum gilt eine Branchenausnahme?",
+          "reasonRequired": "Erklären Sie, welche Branchenausnahme gilt.",
+          "stale": "Seit der letzten Bestätigung geändert",
+          "title": "Jugendarbeitsschutz: Branchenausnahmen"
+        }
       },
       "scheduleMode": {
         "customDays": "Benutzerdefinierte Arbeitstage",
