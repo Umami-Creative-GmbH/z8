@@ -23,7 +23,8 @@
  *   without one (published shifts, on call, weekly hours alone, a work policy only inherited from a
  *   team or organization default) show 5 or more counted days in the mean full week (a public
  *   holiday may cost one in four weeks a day; a week off and a week left short by an approved
- *   absence are left out), and no prior
+ *   absence are left out; each stint on its own), no year a fixed term across the year end links
+ *   it to has a shorter week, and no prior
  *   employer recorded working days; otherwise the 70-working-day limit applies to every stint's
  *   working days. The 3-month limit is counted in calendar days: one stint in time months from its
  *   first day, several stints (prior employers' months included) added up to 90, a full calendar
@@ -37,7 +38,7 @@
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadOrganizationStatutoryPreferences, type StatutoryPreferences } from "../preferences";
-import { judgeShortTermYear, type ShortTermYearEvaluation } from "./judge";
+import { judgeShortTermYear, type ShortTermYearEvaluation, shortTermLinkedYears } from "./judge";
 import { loadShortTermInputs, type ShortTermReader } from "./load-inputs";
 
 export interface ShortTermEvaluationRequest {
@@ -64,16 +65,31 @@ export async function evaluateShortTermEmployment(
 	request: ShortTermEvaluationRequest,
 ): Promise<ShortTermYearEvaluation[]> {
 	if (request.employeeIds.length === 0 || request.years.length === 0) return [];
-	const inputs = await loadShortTermInputs(db, {
-		organizationId: request.organizationId,
-		timezone: request.timezone,
-		employeeIds: request.employeeIds,
-		years: request.years,
-		now: request.now,
-		scopeDates: request.scopeDates,
-		proposedShifts: request.proposedShifts ?? [],
-		replacesShiftId: request.replacesShiftId ?? null,
-	});
+	const load = (years: readonly number[]) =>
+		loadShortTermInputs(db, {
+			organizationId: request.organizationId,
+			timezone: request.timezone,
+			employeeIds: request.employeeIds,
+			years,
+			now: request.now,
+			scopeDates: request.scopeDates,
+			proposedShifts: request.proposedShifts ?? [],
+			replacesShiftId: request.replacesShiftId ?? null,
+		});
+	// A fixed-term employment across the year end has one limit in every year it touches, so the
+	// weeks of those years are loaded too (`shortTermLinkedYears`); only the requested ones are
+	// judged. Reloaded until no employment reaches further: rarely more than once.
+	let loadedYears = [...new Set(request.years)];
+	let inputs = await load(loadedYears);
+	for (;;) {
+		const linked = new Set(loadedYears);
+		for (const employee of inputs.employees) {
+			for (const year of shortTermLinkedYears(loadedYears, employee.employments)) linked.add(year);
+		}
+		if (linked.size === loadedYears.length) break;
+		loadedYears = [...linked].sort((a, b) => a - b);
+		inputs = await load(loadedYears);
+	}
 	if (inputs.employees.length === 0) return [];
 	const preferences =
 		request.preferences ?? (await loadOrganizationStatutoryPreferences(db, request.organizationId));

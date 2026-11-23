@@ -477,6 +477,33 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				expect(onlyNextYear?.allowance).toMatchObject(whole);
 			});
 
+			it("chooses one limit for the term in both years when the other year has a shorter stint", async () => {
+				const org = await fx.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				// A Monday – Friday fixed term from 1 December to 28 February, then framework terms
+				// without an own week, under which Monday – Thursday from 3 to 13 May 2027 is planned.
+				await st.terms(worker, { from: "2026-12-01", workPolicyId: await st.weekdayPolicy(org) });
+				await st.fixedTermAgreement(worker, "2026-12-01", "2027-02-28");
+				await st.terms(worker, { from: "2027-03-01", weeklyMinutes: 960 });
+				for (const date of datesOn("2027-05-03", "2027-05-13", [1, 2, 3, 4])) {
+					await st.shift(org, worker, date);
+				}
+				const now = Temporal.Instant.from("2026-11-20T12:00:00Z");
+
+				const both = await evaluate(org, [worker.employeeId], { years: [2026, 2027], now });
+				const [onlyThisYear] = await evaluate(org, [worker.employeeId], { years: [2026], now });
+				const [onlyNextYear] = await evaluate(org, [worker.employeeId], { years: [2027], now });
+
+				// The May stint's four-day week puts 2027 under 70 working days, and with it the fixed
+				// term, which counts in 2026 too.
+				expect(both.map((e) => [e.year, e.allowance?.limitKind])).toEqual([
+					[2026, "work_days"],
+					[2027, "work_days"],
+				]);
+				expect(onlyThisYear?.allowance).toMatchObject({ year: 2026, limitKind: "work_days" });
+				expect(onlyNextYear?.allowance).toMatchObject({ year: 2027, limitKind: "work_days" });
+			});
+
 			it("judges only the short-term fixed term after a long fixed-term regular one", async () => {
 				const org = await fx.organization("a");
 				const longServing = await fx.employee(org, "long", { contractType: "hourly" });
@@ -684,6 +711,26 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				limitKind: "work_days",
 				used: 17,
 				limit: 70,
+			});
+		});
+
+		it("applies 70 working days to the year once one stint has a shorter week", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			// Framework terms without an own week: weekly hours alone.
+			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 1200 });
+			// Monday – Saturday from 1 January to 15 March (63 days), then Monday – Thursday from 4 to
+			// 14 May (8 days): the longer stint's six-day weeks do not hide the shorter one's.
+			await workOn(org, worker, datesOn("2026-01-01", "2026-03-15", [1, 2, 3, 4, 5, 6]));
+			await workOn(org, worker, datesOn("2026-05-04", "2026-05-14", [1, 2, 3, 4]));
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "work_days",
+				used: 71,
+				limit: 70,
+				tier: "exceeded",
 			});
 		});
 

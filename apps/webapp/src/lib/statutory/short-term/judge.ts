@@ -202,14 +202,16 @@ export function shortTermStints(input: {
 }
 
 /**
- * Work days per week read from counted days, for terms that plan no real week: the mean number
- * of counted days per Monday–Sunday week whose Monday to Friday lie within one stint, like the
- * mean over a planned rota's cycle (`averageWorkDaysPerWeek`). Irregular weeks of 3 and 5 days
- * average 4. A week one day short may have lost that day to a public holiday: up to one in four
- * full weeks (at least one, never all of them) count that day. Some weeks say nothing about the
- * pattern and are left out: partial first and last weeks, a week without counted days inside a
- * stint (a week off), and a week left short by an approved absence (`absenceDays`: a day of it
- * absent and not worked). Null until one full week that says something has been seen.
+ * Work days per week of one stint read from its counted days, for terms that plan no real week:
+ * the mean number of counted days per Monday–Sunday week whose Monday to Friday lie within one run
+ * of them, like the mean over a planned rota's cycle (`averageWorkDaysPerWeek`). Irregular weeks
+ * of 3 and 5 days average 4. A week one day short may have lost that day to a public holiday: up
+ * to one in four full weeks (at least one, never all of them) count that day. Some weeks say
+ * nothing about the pattern and are left out: partial first and last weeks, a week without
+ * counted days inside a stint (a week off), and a week left short by an approved absence
+ * (`absenceDays`: a day of it absent and not worked). Null until one full week that says
+ * something has been seen. Each stint is read on its own (`observedStintWeeks`): the longer weeks
+ * of one stint never hide the shorter week of another.
  */
 export function observedWorkDaysPerWeek(
 	days: readonly string[],
@@ -251,30 +253,127 @@ export function observedWorkDaysPerWeek(
 }
 
 /**
- * The allowance the employee's own short-term terms call for: `months` only when every terms
- * version that sets the employee's own week plans 5 or more work days a week, and the days under
- * terms without one (inherited defaults included) show a full week of 5 or more days, weeks off
- * and weeks left short by approved absences aside (`observedWorkDaysPerWeek`). Open-ended
- * framework terms that nobody worked or was planned under say nothing about the week and do not
- * choose the limit, with or without an own week; a fixed term's own week does, being agreed in
- * advance (`plannedWorkDaysPerWeek`). With no week planned or observed at all, the year counts
- * working days. Prior employers may still switch the year to working days.
+ * The observed week of each stint with counted days under terms without an own week
+ * (`observedWorkDaysPerWeek`), leaving out stints without a full week that says something. A
+ * fixed-term stint reads its days over its whole agreed length, the other year's included.
  */
-function ownLimitKindOf(
-	week: ShortTermYearWeek,
+function observedStintWeeks(
+	days: readonly string[],
+	stints: readonly ShortTermStint[],
 	employmentOf: ReadonlyMap<string, string>,
 	absenceDays: ReadonlySet<string>,
-): ShortTermLimitKind {
+): number[] {
+	const daysByStint = new Map<ShortTermStint, string[]>();
+	for (const day of days) {
+		const employment = employmentOf.get(day);
+		const stint =
+			stints.find(
+				(candidate) =>
+					candidate.agreedEmployment !== null &&
+					candidate.agreedEmployment === employment &&
+					candidate.firstDay <= day &&
+					day <= candidate.lastDay,
+			) ??
+			stints.find(
+				(candidate) =>
+					candidate.agreedEmployment === null &&
+					employmentOf.get(candidate.firstDay) === employment &&
+					candidate.firstDay <= day &&
+					day <= candidate.lastDay,
+			);
+		if (!stint) continue;
+		const list = daysByStint.get(stint);
+		if (list) list.push(day);
+		else daysByStint.set(stint, [day]);
+	}
+	return [...daysByStint.values()].flatMap((stintDays) => {
+		const perWeek = observedWorkDaysPerWeek(stintDays, employmentOf, absenceDays);
+		return perWeek === null ? [] : [perWeek];
+	});
+}
+
+/**
+ * What one calendar year's own short-term terms and days say about the week:
+ *
+ * - `short` when a terms version that sets the employee's own week plans fewer than 5 work days
+ *   a week, when one stint's days under terms without one (inherited defaults included) show a
+ *   shorter or irregular week (`observedStintWeeks`, weeks off and weeks left short by approved
+ *   absences aside), or when such days show no full week at all;
+ * - `full` when every week planned or observed has 5 or more days;
+ * - `unseen` when no week is planned or observed at all.
+ *
+ * Open-ended framework terms that nobody worked or was planned under say nothing about the week,
+ * with or without an own week; a fixed term's own week does, being agreed in advance
+ * (`plannedWorkDaysPerWeek`).
+ */
+type YearWeekVerdict = "short" | "full" | "unseen";
+
+function yearWeekVerdict(
+	week: ShortTermYearWeek,
+	stints: readonly ShortTermStint[],
+	employmentOf: ReadonlyMap<string, string>,
+	absenceDays: ReadonlySet<string>,
+): YearWeekVerdict {
 	if (week.plannedWorkDaysPerWeek.some((perWeek) => perWeek < SHORT_TERM_FULL_WEEK_DAYS)) {
-		return "work_days";
+		return "short";
 	}
 	if (week.unplannedDays.length === 0) {
-		return week.plannedWorkDaysPerWeek.length > 0 ? "months" : "work_days";
+		return week.plannedWorkDaysPerWeek.length > 0 ? "full" : "unseen";
 	}
-	return (observedWorkDaysPerWeek(week.unplannedDays, employmentOf, absenceDays) ?? 0) >=
-		SHORT_TERM_FULL_WEEK_DAYS
-		? "months"
-		: "work_days";
+	const observed = observedStintWeeks(week.unplannedDays, stints, employmentOf, absenceDays);
+	return observed.length === 0 || observed.some((perWeek) => perWeek < SHORT_TERM_FULL_WEEK_DAYS)
+		? "short"
+		: "full";
+}
+
+/** Calendar years `[first, last]` a stint touches. */
+function yearsOf(stint: ShortTermStint): number[] {
+	const first = Number(stint.firstDay.slice(0, 4));
+	const last = Number(stint.lastDay.slice(0, 4));
+	return Array.from({ length: last - first + 1 }, (_, index) => first + index);
+}
+
+/**
+ * `years` and every calendar year a fixed-term short-term employment overlapping one of them
+ * reaches into, followed from year to year: such an employment has one limit in all of them,
+ * so their weeks are judged together (`judgeShortTermYear`). The evaluator loads these years.
+ */
+export function shortTermLinkedYears(
+	years: Iterable<number>,
+	employments: readonly ShortTermEmployment[],
+): Set<number> {
+	const linked = new Set(years);
+	const queue = [...linked];
+	for (let year = queue.shift(); year !== undefined; year = queue.shift()) {
+		for (const stint of agreedStints(year, employments).values()) {
+			for (const other of yearsOf(stint)) {
+				if (linked.has(other)) continue;
+				linked.add(other);
+				queue.push(other);
+			}
+		}
+	}
+	return linked;
+}
+
+/**
+ * The allowance the employee's own short-term terms call for: `months` only when the year's
+ * week is `full` (`yearWeekVerdict`) and no year linked to it by a fixed-term employment across
+ * the year end (`shortTermLinkedYears`) has a `short` week: that employment has one limit, and
+ * the 70 working days a shorter stint brings into one of its years hold in the other too. With no
+ * week planned or observed at all, the year counts working days. Prior employers may still switch
+ * the year to working days.
+ */
+function ownLimitKindOf(
+	verdictOf: (year: number) => YearWeekVerdict,
+	year: number,
+	linked: ReadonlySet<number>,
+): ShortTermLimitKind {
+	if (verdictOf(year) !== "full") return "work_days";
+	for (const other of linked) {
+		if (other !== year && verdictOf(other) === "short") return "work_days";
+	}
+	return "months";
 }
 
 /**
@@ -551,7 +650,26 @@ export function judgeShortTermYear(input: {
 					day <= stint.lastDay,
 			),
 	);
-	const ownLimitKind = ownLimitKindOf(week, employmentOf, new Set(employee.absenceDays));
+	const absenceDays = new Set(employee.absenceDays);
+	const verdictOf = (other: number): YearWeekVerdict => {
+		const otherWeek = employee.weekByYear.get(other);
+		if (!otherWeek) return "unseen";
+		const otherStints =
+			other === year
+				? stints
+				: shortTermStints({
+						year: other,
+						days: allDays.filter((day) => day.startsWith(`${other}-`)),
+						employments: employee.employments,
+						employmentOf,
+					});
+		return yearWeekVerdict(otherWeek, otherStints, employmentOf, absenceDays);
+	};
+	const ownLimitKind = ownLimitKindOf(
+		verdictOf,
+		year,
+		shortTermLinkedYears([year], employee.employments),
+	);
 	const firstDay = days[0] ?? null;
 	const lastDay = days.at(-1) ?? null;
 
