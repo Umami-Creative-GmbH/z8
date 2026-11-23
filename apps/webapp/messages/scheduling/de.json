@@ -234,6 +234,10 @@
         "daysExceeded": "Tagesgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Arbeitstagen in diesem Jahr",
         "calendarDaysRemaining": "Kurzfristige Beschäftigung (Dreimonatsgrenze): noch {remaining} von {limit} Kalendertagen in diesem Jahr",
         "calendarDaysExceeded": "Dreimonatsgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Kalendertagen in diesem Jahr"
+      },
+      "workingStudent": {
+        "lectureWeek": "Werkstudierende/r über 20 Std. in einer Vorlesungswoche: {hours} Std. Arbeit werktags tagsüber (Grenze {limit} Std.)",
+        "ceiling": "Werkstudierende/r: {used} von {limit} Wochen über 20 Std. in 12 Monaten"
       }
     }
   }

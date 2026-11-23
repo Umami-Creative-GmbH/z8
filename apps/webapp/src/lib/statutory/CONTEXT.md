@@ -44,7 +44,9 @@ amounts, wages, external earnings or EUR baselines.
 - **Contracts → Statutory Compliance**: a monitor applies to an employee through the effective
   contract's employment profile, ArbZG scope and on-call terms; Statutory Compliance never changes them
 - **Statutory Compliance → Scheduling**: monitors contribute wage-free `statutory` findings to the
-  schedule compliance evaluation and Staffing suggestions through the contributor registry
+  schedule compliance evaluation and Staffing suggestions through the contributor registry. Staffing
+  shows a finding a proposal changes (severity, tier, acknowledgement, block) or deepens past its
+  visible `limit` (`used` grows above it, same unit)
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
 
