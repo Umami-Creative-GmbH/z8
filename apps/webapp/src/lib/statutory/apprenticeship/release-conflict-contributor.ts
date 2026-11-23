@@ -8,6 +8,7 @@
  * afterwards (§ 9 Abs. 1 Nr. 2 JArbSchG); after a shorter school day they may.
  */
 import { Temporal } from "temporal-polyfill";
+import type { ApprenticeReleaseKind } from "@/db/schema";
 import {
 	compareInstants,
 	type Instant,
@@ -38,6 +39,14 @@ interface PlannedWork {
 	readonly start: Instant;
 	readonly end: Instant;
 }
+
+/** The JArbSchG provision that releases an under-18 apprentice on each kind of release day. */
+const minorReleaseReference: Record<ApprenticeReleaseKind, string> = {
+	vocational_school_day: "§ 9 Abs. 1 Nr. 2 JArbSchG",
+	vocational_school_block_week: "§ 9 Abs. 1 Nr. 3 JArbSchG",
+	exam_day: "§ 10 Abs. 1 Nr. 1 JArbSchG",
+	pre_exam_day: "§ 10 Abs. 1 Nr. 2 JArbSchG",
+};
 
 /** Whether planned work overlaps an exam credited with its time, resolved in `timezone`. */
 function overlapsExam(work: PlannedWork, release: ApprenticeReleaseDay, timezone: string): boolean {
@@ -126,7 +135,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 			subjectKey,
 			periodStart: work.date.toString(),
 			periodEnd: work.date.add({ days: 1 }).toString(),
-			legalReference: minor ? "§ 9 Abs. 1 JArbSchG" : "§ 15 Abs. 2 BBiG",
+			legalReference: minor ? minorReleaseReference[release.releaseKind] : "§ 15 Abs. 2 BBiG",
 			summary: { tier: "exceeded" },
 			adminDetail: null,
 			inputFingerprint: statutoryInputFingerprint({

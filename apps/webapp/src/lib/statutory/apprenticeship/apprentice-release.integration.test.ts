@@ -25,6 +25,7 @@ import {
 } from "@/test/statutory-fixtures";
 import { recordApprenticeRelease } from "../employee-context";
 import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
+import { apprenticeReleaseScheduleContributor } from "./release-conflict-contributor";
 import { recordApprenticeReleaseWithCredit } from "./release-credit-view";
 import { jarbschgScheduleContributor } from "../youth/jarbschg-contributor";
 import { loadYouthSchoolCredits } from "../youth/school-credits";
@@ -339,33 +340,113 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		]);
 	});
 
-	it("keeps a pre-exam day that is already released in full", async () => {
+	it("keeps the pre-exam day released in full when a later school day takes the week's full credit", async () => {
 		const learner = await apprentice("fullbefore", "2005-05-05");
 		const scope = {
 			organizationId: org.id,
 			employeeId: learner.employeeId,
 			actorUserId: owner.userId,
 		};
+		// Thursday 4 March 2027: six lessons, for now the week's full school day.
 		await recordApprenticeRelease(db, {
 			...scope,
 			releaseKind: "vocational_school_day",
-			startsOn: "2027-03-03",
-			endsOn: "2027-03-03",
+			startsOn: "2027-03-04",
+			endsOn: "2027-03-04",
 			lessonCount: 6,
 		});
+		// The written final exam on Friday releases Thursday in full.
 		await recordApprenticeReleaseWithCredit(db, {
 			...scope,
 			releaseKind: "exam_day",
-			startsOn: "2027-03-04",
-			endsOn: "2027-03-04",
+			startsOn: "2027-03-05",
+			endsOn: "2027-03-05",
 			includePreExamDay: true,
 		});
-		const { rows } = await admin.query<{ release_kind: string; voided_at: Date | null }>(
-			`select release_kind, voided_at from employee_apprentice_release
-			 where organization_id = $1 and employee_id = $2 and starts_on = '2027-03-03'`,
-			[org.id, learner.employeeId],
+		// Monday's six-lesson school day, recorded later, is now the week's first long school day.
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "vocational_school_day",
+			startsOn: "2027-03-01",
+			endsOn: "2027-03-01",
+			lessonCount: 6,
+		});
+
+		const required = await requirementsOf(learner);
+		expect(required["2027-03-01"]?.requiredMinutes).toBe(0);
+		expect(required["2027-03-04"]?.requiredMinutes).toBe(0);
+
+		const subareaId = await seed.subarea(org, owner);
+		const [suggestion] = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* StaffingSuggestionService;
+				return yield* service.suggestForShift({
+					organizationId: org.id,
+					timezone: org.timezone,
+					candidates: [{ employeeId: learner.employeeId, displayName: "Learner", isActive: true }],
+					shift: { subareaId, date: "2027-03-04", startTime: "13:00", endTime: "17:00" },
+				});
+			}).pipe(Effect.provide(staffingLayer)),
 		);
-		expect(rows).toEqual([{ release_kind: "vocational_school_day", voided_at: null }]);
+		expect(
+			(suggestion?.warnings ?? []).flatMap((warning) =>
+				warning.type === "compliance" && warning.finding.type === "statutory"
+					? [warning.finding.statutoryKind]
+					: [],
+			),
+		).toContain("bbig_release_day_shift");
+	});
+
+	it("cites the release a shift conflicts with: § 9 for school, § 10 for exams, BBiG for adults", async () => {
+		const adult = await apprentice("adultcite", "2005-05-05");
+		const minor = await apprentice("minorcite", "2011-01-01");
+		const subareaId = await seed.subarea(org, owner);
+		const days = {
+			"2027-03-02": "school day",
+			"2027-03-09": "block week",
+			"2027-03-16": "pre-exam day",
+			"2027-03-17": "exam day",
+		} as const;
+		const releaseOfShift = new Map<string, string>();
+		for (const who of [adult, minor]) {
+			await recordReleases(who);
+			for (const [date, release] of Object.entries(days)) {
+				const id = await seed.shift(org, who, {
+					subareaId,
+					creatorUserId: owner.userId,
+					date,
+					startTime: "13:00",
+					endTime: "15:00",
+				});
+				releaseOfShift.set(`shift:${id}`, `${who === minor ? "minor" : "adult"} ${release}`);
+			}
+		}
+
+		const findings = await apprenticeReleaseScheduleContributor.evaluate({
+			db,
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2027-03-01", endExclusive: "2027-03-22" },
+			employeeIds: [adult.employeeId, minor.employeeId],
+			proposedShifts: [],
+			replacesShiftId: null,
+			preferences: DEFAULT_STATUTORY_PREFERENCES,
+			now: localInstant("2027-02-20", "12:00", org.timezone),
+		});
+		expect(
+			Object.fromEntries(
+				findings.map((finding) => [releaseOfShift.get(finding.subjectKey), finding.legalReference]),
+			),
+		).toEqual({
+			"adult school day": "§ 15 Abs. 2 BBiG",
+			"adult block week": "§ 15 Abs. 2 BBiG",
+			"adult pre-exam day": "§ 15 Abs. 2 BBiG",
+			"adult exam day": "§ 15 Abs. 2 BBiG",
+			"minor school day": "§ 9 Abs. 1 Nr. 2 JArbSchG",
+			"minor block week": "§ 9 Abs. 1 Nr. 3 JArbSchG",
+			"minor pre-exam day": "§ 10 Abs. 1 Nr. 2 JArbSchG",
+			"minor exam day": "§ 10 Abs. 1 Nr. 1 JArbSchG",
+		});
 	});
 
 	it("does not credit releases of an employee who is not an apprentice", async () => {

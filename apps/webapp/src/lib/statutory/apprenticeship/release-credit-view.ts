@@ -128,8 +128,8 @@ export async function loadApprenticeReleaseCredits(
  * Records a release for an apprentice. Every released day must fall under apprentice terms; a
  * school day needs its lesson count and a block week its school minutes. With
  * `includePreExamDay`, an exam day also releases the working day immediately before it in full,
- * unless that day is already released in full; a partly credited single-day release on it is
- * replaced (`makeRoomForPreExamDay`).
+ * unless that day is already released in full for good; a single-day school or timed exam
+ * release on it is replaced (`makeRoomForPreExamDay`).
  */
 export async function recordApprenticeReleaseWithCredit(
 	db: Pick<DatabaseClient, "select" | "insert" | "update" | "transaction">,
@@ -268,10 +268,11 @@ export const PRE_EXAM_DAY_SUPERSEDES_REASON =
 
 /**
  * Whether the pre-exam day can be released in full, inside the recording transaction. A day
- * already released in full (e.g. the week's full school day) is not recorded twice. A day that is
- * only partly credited (a short school day, a timed exam) is upgraded: its single-day release is
- * voided with an audit reason, so the full pre-exam release takes its place without overlapping
- * it. A block week is never split: a day inside a block stays as the block credits it.
+ * already released in full for good (a full block week, an exam without its time, a pre-exam day)
+ * is not recorded twice. Any other single-day release on it (a school day, whose full credit may
+ * move to a long school day recorded later in the week, or a timed exam) is voided with an audit
+ * reason, so the full pre-exam release takes its place without overlapping it. A block week is
+ * never split: a day inside a block stays as the block credits it.
  */
 async function makeRoomForPreExamDay(
 	tx: Pick<DatabaseClient, "select" | "insert" | "update">,
@@ -296,7 +297,16 @@ async function makeRoomForPreExamDay(
 		).get(input.employeeId) ?? [];
 	const onDay = apprenticeReleaseDays(records).filter((credited) => credited.date === day);
 	if (onDay.length === 0) return true;
-	if (onDay.some((credited) => credited.credit === "full_day")) return false;
+	// A school day's full credit goes to the week's first long school day, so a school day
+	// recorded earlier in the week later takes it: only other full releases stay full for good.
+	if (
+		onDay.some(
+			(credited) =>
+				credited.credit === "full_day" && credited.releaseKind !== "vocational_school_day",
+		)
+	) {
+		return false;
+	}
 	const covering = records.filter((record) => record.startsOn <= day && record.endsOn >= day);
 	if (covering.some((record) => record.startsOn !== record.endsOn)) return false;
 	for (const record of covering) {
