@@ -12,6 +12,7 @@ import { employee } from "@/db/schema";
 import { type Instant, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { birthdayCalendarDate } from "@/lib/organization/employee-birthday";
 import {
 	attachAcknowledgementStates,
@@ -126,8 +127,7 @@ export async function listOpenYouthSectorExceptions(
 		.leftJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(
-				eq(employee.organizationId, input.organizationId),
-				eq(employee.isActive, true),
+				onCurrentRoster(input.organizationId, employee, input.now),
 				isNotNull(employee.birthday),
 			),
 		);

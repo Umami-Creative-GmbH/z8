@@ -446,7 +446,8 @@ function perEmployeeRange(
 	return or(...[...groups.values()].map((group) => condition(group.employeeIds, group.range)));
 }
 
-const TERMS_ROW_COLUMNS = {
+/** Read lazily: a module-level table reference breaks test files that mock `@/db/schema`. */
+const termsRowColumns = () => ({
 	id: employeeEmploymentHistory.id,
 	employeeId: employeeEmploymentHistory.employeeId,
 	employmentPeriodId: employeeEmploymentHistory.employmentPeriodId,
@@ -455,7 +456,7 @@ const TERMS_ROW_COLUMNS = {
 	validUntilDate: employeeEmploymentHistory.validUntilDate,
 	createdAt: employeeEmploymentHistory.createdAt,
 	workPolicyId: employeeEmploymentHistory.workPolicyId,
-};
+});
 
 interface TermsRow {
 	readonly id: string;
@@ -549,7 +550,7 @@ export async function loadShortTermInputs(
 	// Confirmed terms of every profile in the years: later terms cut short-term ones. Cheap
 	// pre-filter: only employees with confirmed short-term terms in the years matter.
 	const confirmedTermRows = await db
-		.select(TERMS_ROW_COLUMNS)
+		.select(termsRowColumns())
 		.from(employeeEmploymentHistory)
 		.where(
 			and(
@@ -624,7 +625,7 @@ export async function loadShortTermInputs(
 		fixedPeriodIds.length === 0
 			? []
 			: await db
-					.select(TERMS_ROW_COLUMNS)
+					.select(termsRowColumns())
 					.from(employeeEmploymentHistory)
 					.where(
 						and(

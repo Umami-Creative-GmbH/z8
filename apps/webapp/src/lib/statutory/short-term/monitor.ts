@@ -4,7 +4,9 @@
  * and its audited acknowledgement.
  */
 import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
+import { user } from "@/db/auth-schema";
 import { employee, employeeEmploymentHistory, employeeStatutoryOffset } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { plainDateAt } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
@@ -318,8 +320,11 @@ export async function listShortTermBerufsmaessigkeitReviews(
 	const rows = await db
 		.select({
 			employeeId: employeeEmploymentHistory.employeeId,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			// The display name derives from the user, not the deprecated employee name columns.
+			firstName: user.firstName,
+			lastName: user.lastName,
+			name: user.name,
+			email: user.email,
 		})
 		.from(employeeEmploymentHistory)
 		.innerJoin(
@@ -329,6 +334,7 @@ export async function listShortTermBerufsmaessigkeitReviews(
 				eq(employee.organizationId, input.organizationId),
 			),
 		)
+		.leftJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(
 				eq(employeeEmploymentHistory.organizationId, input.organizationId),
@@ -343,10 +349,7 @@ export async function listShortTermBerufsmaessigkeitReviews(
 		);
 	if (rows.length === 0) return [];
 	const names = new Map(
-		rows.map((row) => [
-			row.employeeId,
-			[row.firstName, row.lastName].filter(Boolean).join(" ") || row.employeeId,
-		]),
+		rows.map((row) => [row.employeeId, buildAuthUserDisplayName(row) || row.employeeId]),
 	);
 	const { findings } = await evaluateYearWithAcknowledgements(db, {
 		organizationId: input.organizationId,

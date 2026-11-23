@@ -4,7 +4,9 @@
  * authorize; every view a restricted reader gets is redacted here.
  */
 import { and, eq, inArray } from "drizzle-orm";
+import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import {
 	type Instant,
 	type PlainDate,
@@ -279,21 +281,24 @@ export async function listWorkingStudentReviewItems(
 		evaluations.flatMap((evaluation) => evaluation.findings),
 	);
 	if (findings.length === 0) return [];
+	// The display name derives from the user, not the deprecated employee name columns.
 	const people = await db
-		.select({ id: employee.id, firstName: employee.firstName, lastName: employee.lastName })
+		.select({
+			id: employee.id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			name: user.name,
+			email: user.email,
+		})
 		.from(employee)
+		.leftJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(
 				eq(employee.organizationId, input.organizationId),
 				inArray(employee.id, [...new Set(findings.map((finding) => finding.employeeId))]),
 			),
 		);
-	const names = new Map(
-		people.map((person) => [
-			person.id,
-			[person.firstName, person.lastName].filter(Boolean).join(" ").trim(),
-		]),
-	);
+	const names = new Map(people.map((person) => [person.id, buildAuthUserDisplayName(person)]));
 	const rank = { critical: 0, warning: 1, info: 2 } as const;
 	return findings
 		.map((finding) => ({ employeeName: names.get(finding.employeeId) ?? "", finding }))
