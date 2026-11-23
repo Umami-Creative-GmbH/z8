@@ -38,9 +38,9 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 		},
 
 		/**
-		 * Confirmed employee terms from `from` (inclusive) to `until` (exclusive). `weeklyMinutes`
-		 * without a work policy resolves to a Monday–Friday week (≥ 5 days: the 3-month limit);
-		 * without it the employee has no fixed weekly days (the 70-day limit).
+		 * Confirmed employee terms from `from` (inclusive) to `until` (exclusive). Only a work policy
+		 * plans real week days: `weeklyMinutes` alone (which the resolver spreads Monday–Friday) and
+		 * `scheduleSource: "published_shifts"` leave the week to the shifts and work actually done.
 		 */
 		async terms(
 			employee: FixtureEmployee,
@@ -52,6 +52,7 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 				weeklyMinutes?: number | null;
 				/** A work policy from `workPolicy()` whose schedule plans the work days. */
 				workPolicyId?: string;
+				scheduleSource?: "policy" | "published_shifts" | "on_call";
 			},
 		): Promise<void> {
 			const { userId } = await creator();
@@ -60,8 +61,8 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 				`INSERT INTO employee_employment_history
 				 (employee_id, organization_id, valid_from, valid_until, valid_from_date, valid_until_date,
 				  contract_type, weekly_contract_minutes, employment_profile, hourly_rate, currency,
-				  review_state, created_by, updated_at, work_policy_id)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'EUR', 'confirmed', $11, now(), $12)`,
+				  review_state, created_by, updated_at, work_policy_id, schedule_source)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'EUR', 'confirmed', $11, now(), $12, $13)`,
 				[
 					employee.employeeId,
 					employee.organizationId,
@@ -75,8 +76,14 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 					hourly ? (options.hourlyRate ?? 15) : null,
 					userId,
 					options.workPolicyId ?? null,
+					options.scheduleSource ?? null,
 				],
 			);
+		},
+
+		/** A work policy planning Monday to Friday every week (the 3-month limit). */
+		async weekdayPolicy(org: FixtureOrganization) {
+			return this.workPolicy(org, [["monday", "tuesday", "wednesday", "thursday", "friday"]]);
 		},
 
 		/**
@@ -91,8 +98,8 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 			} = await admin.query<{ id: string }>(
 				`INSERT INTO work_policy
 				 (organization_id, name, schedule_enabled, regulation_enabled, presence_enabled, created_by, updated_at)
-				 VALUES ($1, 'Rota', true, false, false, $2, now()) RETURNING id`,
-				[org.id, userId],
+				 VALUES ($1, $2, true, false, false, $3, now()) RETURNING id`,
+				[org.id, `Rota ${randomUUID().slice(0, 8)}`, userId],
 			);
 			const {
 				rows: [version],

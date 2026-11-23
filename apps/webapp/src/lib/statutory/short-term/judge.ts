@@ -13,7 +13,7 @@ import {
 import { statutoryInputFingerprint } from "../fingerprint";
 import type { StatutoryPreferences } from "../preferences";
 import type { StatutoryThresholdTable } from "../thresholds";
-import type { ShortTermEmployeeInputs, ShortTermLimitKind } from "./load-inputs";
+import type { ShortTermEmployeeInputs, ShortTermLimitKind, ShortTermYearWeek } from "./load-inputs";
 
 export const SHORT_TERM_LEGAL_REFERENCE = "§ 8 Abs. 1 Nr. 2 SGB IV";
 
@@ -91,6 +91,56 @@ export function shortTermStints(
 		}
 	}
 	return stints;
+}
+
+/**
+ * Work days per week read from counted days, for terms that plan no real week: the median number
+ * of counted days per Monday–Sunday week whose Monday to Friday lie within one stint (the upper
+ * median, so a public holiday in one of two weeks does not break a five-day pattern). Partial
+ * first and last weeks say nothing about the pattern. Null until one full week has been seen.
+ */
+export function observedWorkDaysPerWeek(
+	days: readonly string[],
+	employmentPeriodOf: ReadonlyMap<string, string | null>,
+): number | null {
+	const counted = new Set(days);
+	const perWeek: number[] = [];
+	for (const stint of shortTermStints(days, employmentPeriodOf)) {
+		const first = parsePlainDate(stint.firstDay);
+		const last = parsePlainDate(stint.lastDay);
+		let monday = first.subtract({ days: first.dayOfWeek - 1 });
+		if (comparePlainDates(monday, first) < 0) monday = monday.add({ weeks: 1 });
+		for (
+			;
+			comparePlainDates(monday.add({ days: 4 }), last) <= 0;
+			monday = monday.add({ weeks: 1 })
+		) {
+			let count = 0;
+			for (let offset = 0; offset < 7; offset++) {
+				if (counted.has(monday.add({ days: offset }).toString())) count++;
+			}
+			perWeek.push(count);
+		}
+	}
+	if (perWeek.length === 0) return null;
+	perWeek.sort((a, b) => a - b);
+	return perWeek[Math.floor(perWeek.length / 2)] ?? null;
+}
+
+/**
+ * The allowance the employee's own short-term terms call for: `months` only when every terms
+ * version plans 5 or more work days a week, and the days under terms without a planned week
+ * show a full week of 5 or more days. Prior employers may still switch the year to working days.
+ */
+function ownLimitKindOf(
+	week: ShortTermYearWeek,
+	employmentPeriodOf: ReadonlyMap<string, string | null>,
+): ShortTermLimitKind {
+	if (week.plannedWorkDaysPerWeek.some((perWeek) => perWeek < 5)) return "work_days";
+	if (!week.unplannedTerms) return "months";
+	return (observedWorkDaysPerWeek(week.unplannedDays, employmentPeriodOf) ?? 0) >= 5
+		? "months"
+		: "work_days";
 }
 
 function calendarDays(stint: ShortTermStint): number {
@@ -192,13 +242,14 @@ export function judgeShortTermYear(input: {
 	readonly preferences: StatutoryPreferences;
 }): ShortTermYearEvaluation | null {
 	const { employee, year, thresholds, preferences } = input;
-	const ownLimitKind = employee.ownLimitKindByYear.get(year);
-	if (!ownLimitKind) return null;
+	const week = employee.weekByYear.get(year);
+	if (!week) return null;
 	const inYear = (date: string) => date.startsWith(`${year}-`);
 	const counted = [...employee.work, ...employee.planned].filter((item) => inYear(item.date));
 	const days = [...new Set(counted.map((item) => item.date))].sort();
 	const employmentPeriodOf = new Map(counted.map((item) => [item.date, item.employmentPeriodId]));
 	const stints = shortTermStints(days, employmentPeriodOf);
+	const ownLimitKind = ownLimitKindOf(week, employmentPeriodOf);
 	const firstDay = days[0] ?? null;
 	const lastDay = days.at(-1) ?? null;
 

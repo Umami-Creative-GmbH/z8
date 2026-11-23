@@ -86,7 +86,7 @@ describe("short-term allowance in Scheduling and Staffing (PostgreSQL)", () => {
 		async function springStint() {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			await st.terms(worker, { from: "2026-01-01", workPolicyId: await st.weekdayPolicy(org) });
 			for (const date of ["2026-03-10", "2026-03-23", "2026-04-06", "2026-04-20"]) {
 				await st.work(org, worker, date);
 			}

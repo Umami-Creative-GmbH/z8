@@ -89,7 +89,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			const over = await fx.employee(org, "over", { contractType: "hourly" });
 			const stint = ["2026-06-15", "2026-06-26", "2026-07-08", "2026-07-20", "2026-08-01"];
 			for (const worker of [atLimit, over]) {
-				await st.terms(worker, { from: "2026-06-01", weeklyMinutes: 2400 });
+				await st.terms(worker, { from: "2026-06-01", workPolicyId: await st.weekdayPolicy(org) });
 				await workOn(org, worker, [...stint, "2026-08-14", "2026-08-28", "2026-09-07"]);
 			}
 			// 15 June to 14 September is 3 months: 92 calendar days.
@@ -133,7 +133,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		it("does not use up a started month: two months and a day leave a month", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, { from: "2026-06-01", weeklyMinutes: 2400 });
+			await st.terms(worker, { from: "2026-06-01", workPolicyId: await st.weekdayPolicy(org) });
 			await workOn(org, worker, ["2026-06-15", "2026-06-26", "2026-07-08", "2026-07-20"]);
 			await workOn(org, worker, ["2026-08-01", "2026-08-14"]);
 			await st.shift(org, worker, "2026-08-15");
@@ -155,7 +155,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		it("adds separate stints in calendar days against 90, not the months between them", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			await st.terms(worker, { from: "2026-01-01", workPolicyId: await st.weekdayPolicy(org) });
 			// Three weeks in February and three in August.
 			await workOn(org, worker, ["2026-02-02", "2026-02-10", "2026-02-20"]);
 			await workOn(org, worker, ["2026-08-03", "2026-08-12", "2026-08-21"]);
@@ -177,7 +177,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		it("counts a full calendar month of a stint as 30 days", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			await st.terms(worker, { from: "2026-01-01", workPolicyId: await st.weekdayPolicy(org) });
 			// All of July (31 days) and all of September.
 			await workOn(org, worker, ["2026-07-01", "2026-07-10", "2026-07-20", "2026-07-31"]);
 			await workOn(org, worker, ["2026-09-01", "2026-09-14", "2026-09-28", "2026-09-30"]);
@@ -190,7 +190,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		it("adds prior-employer months as 30 calendar days each", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			await st.terms(worker, { from: "2026-01-01", workPolicyId: await st.weekdayPolicy(org) });
 			await workOn(org, worker, ["2026-07-01", "2026-07-08", "2026-07-15"]);
 			await st.priorShortTerm(worker, "prior_short_term_months", 2026, 1);
 
@@ -227,7 +227,11 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		it("takes the limit from the year's short-term terms when today is outside them", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, { from: "2026-06-01", until: "2026-09-01", weeklyMinutes: 2400 });
+			await st.terms(worker, {
+				from: "2026-06-01",
+				until: "2026-09-01",
+				workPolicyId: await st.weekdayPolicy(org),
+			});
 
 			const [evaluation] = await evaluate(org, [worker.employeeId]);
 
@@ -235,11 +239,64 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		});
 	});
 
+	describe("limit chosen from the real week when the terms plan none", () => {
+		/** Every `weekdays` (ISO 1–7) day from `from` to `until`, both inclusive. */
+		function datesOn(from: string, until: string, weekdays: readonly number[]): string[] {
+			const dates: string[] = [];
+			for (
+				let date = Temporal.PlainDate.from(from);
+				Temporal.PlainDate.compare(date, until) <= 0;
+				date = date.add({ days: 1 })
+			) {
+				if (weekdays.includes(date.dayOfWeek)) dates.push(date.toString());
+			}
+			return dates;
+		}
+
+		it("applies 3 months to a Monday–Friday roster of published shifts", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-06-01", scheduleSource: "published_shifts" });
+			for (const date of datesOn("2026-06-01", "2026-09-04", [1, 2, 3, 4, 5])) {
+				await st.shift(org, worker, date, "09:00", "13:00", "published");
+			}
+
+			const [evaluation] = await evaluate(org, [worker.employeeId], {
+				now: Temporal.Instant.from("2026-05-31T12:00:00Z"),
+			});
+
+			// 1 June – 31 August is 3 months (92 days); 1 June – 4 September uses 96.
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 96,
+				limit: 92,
+				tier: "exceeded",
+			});
+		});
+
+		it("applies 70 working days to a weekly-hours helper who works two days a week", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			// 12 hours a week, no work policy: the resolver spreads them Monday–Friday.
+			await st.terms(worker, { from: "2026-06-01", weeklyMinutes: 720 });
+			await workOn(org, worker, datesOn("2026-06-02", "2026-09-03", [2, 4]));
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "work_days",
+				used: 28,
+				limit: 70,
+				tier: "ok",
+			});
+		});
+	});
+
 	describe("stints counted in different units", () => {
 		it("judges against 70 working days when prior working days meet a five-day week", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			await st.terms(worker, { from: "2026-01-01", workPolicyId: await st.weekdayPolicy(org) });
 			await workOn(org, worker, ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09"]);
 			await st.work(org, worker, "2026-07-10");
 			await st.priorShortTerm(worker, "prior_short_term_work_days", 2026, 10);

@@ -64,18 +64,29 @@ export interface ShortTermPriorOffset {
 	readonly count: number;
 }
 
+/** The working week behind one calendar year's short-term terms. */
+export interface ShortTermYearWeek {
+	/** Average work days per week of each short-term terms version that plans real week days. */
+	readonly plannedWorkDaysPerWeek: readonly number[];
+	/**
+	 * Whether some short-term terms of the year plan no real week: a schedule from published
+	 * shifts or on-call terms, or weekly hours alone (which the resolver spreads Monday–Friday).
+	 */
+	readonly unplannedTerms: boolean;
+	/** Counted days (`YYYY-MM-DD`, sorted, distinct) under such terms: their week is read from them. */
+	readonly unplannedDays: readonly string[];
+}
+
 export interface ShortTermEmployeeInputs {
 	readonly employeeId: string;
 	readonly work: readonly ShortTermWorkItem[];
 	readonly planned: readonly ShortTermPlanItem[];
 	readonly priorOffsets: readonly ShortTermPriorOffset[];
 	/**
-	 * Per year with effective short-term terms: the allowance the employee's own short-term terms
-	 * call for (`months` only when every one of them plans 5 or more work days a week). Years
-	 * without effective short-term terms are absent. Prior employers may still switch the year to
-	 * working days (see `judge.ts`).
+	 * Per year with effective short-term terms, the week those terms call for (`judge.ts` chooses
+	 * the limit from it). Years without effective short-term terms are absent.
 	 */
-	readonly ownLimitKindByYear: ReadonlyMap<number, ShortTermLimitKind>;
+	readonly weekByYear: ReadonlyMap<number, ShortTermYearWeek>;
 }
 
 export interface ShortTermInputs {
@@ -89,12 +100,24 @@ export function shiftMinutes(interval: ShiftInterval): number {
 }
 
 /**
+ * Whether the terms plan real week days: custom days on the terms or an active work-policy
+ * schedule. Weekly hours alone are not a week: the resolver spreads them Monday–Friday.
+ */
+function plansRealWeek(contract: EffectiveContractOnDay): boolean {
+	if (contract.scheduleSource !== "policy") return false;
+	if (contract.scheduleMode === "custom_days") {
+		return contract.weeklyScheduleDays.some((day) => day.isWorkDay);
+	}
+	return Boolean(contract.workPolicy?.scheduleEnabled && contract.workPolicy.schedule);
+}
+
+/**
  * Average work days per week the contract plans, over the whole schedule cycle (a fortnightly
- * rota of 5 and 3 days averages 4). Null when nothing plans fixed week days (no policy schedule
- * and no weekly hours, or a schedule taken from published shifts or on-call terms).
+ * rota of 5 and 3 days averages 4). Null when the terms plan no real week days (see
+ * `plansRealWeek`): then the week is read from the shifts and work actually counted.
  */
 export function averageWorkDaysPerWeek(contract: EffectiveContractOnDay): number | null {
-	if (contract.scheduleSource !== "policy") return null;
+	if (!plansRealWeek(contract)) return null;
 	const schedule = contract.workPolicy?.scheduleEnabled ? contract.workPolicy.schedule : null;
 	const cycleWeeks = schedule
 		? schedule.days.reduce((max, day) => Math.max(max, day.cycleWeek ?? 1), 1)
@@ -120,12 +143,15 @@ export function averageWorkDaysPerWeek(contract: EffectiveContractOnDay): number
 	return workDays > 0 ? workDays : null;
 }
 
-/**
- * The 3-month limit applies to a continuous week of 5 or more work days on average; anything
- * shorter, irregular or without planned week days falls under the 70-working-day limit.
- */
-function limitKindOf(contract: EffectiveContractOnDay): ShortTermLimitKind {
-	return (averageWorkDaysPerWeek(contract) ?? 0) >= 5 ? "months" : "work_days";
+function groupBy<T>(rows: readonly T[], keyOf: (row: T) => string): Map<string, T[]> {
+	const groups = new Map<string, T[]>();
+	for (const row of rows) {
+		const key = keyOf(row);
+		const list = groups.get(key);
+		if (list) list.push(row);
+		else groups.set(key, [row]);
+	}
+	return groups;
 }
 
 function yearOf(date: string): number {
@@ -155,7 +181,10 @@ function termSampleDates(
 				row.validUntilDate !== null && row.validUntilDate < nextYear
 					? row.validUntilDate
 					: nextYear;
-			if (start < end) samples.set(year, [...(samples.get(year) ?? []), start]);
+			if (start >= end) continue;
+			const list = samples.get(year);
+			if (list) list.push(start);
+			else samples.set(year, [start]);
 		}
 	}
 	return samples;
@@ -322,14 +351,14 @@ export async function loadShortTermInputs(
 			{ date: parsePlainDate(item.date), startTime: item.startTime, endTime: item.endTime },
 			input.timezone,
 		);
-		plannedByEmployee.set(employeeId, [
-			...(plannedByEmployee.get(employeeId) ?? []),
-			{
-				...item,
-				minutes: shiftMinutes(interval),
-				started: compareInstants(interval.start, input.now) <= 0,
-			},
-		]);
+		const planned = {
+			...item,
+			minutes: shiftMinutes(interval),
+			started: compareInstants(interval.start, input.now) <= 0,
+		};
+		const list = plannedByEmployee.get(employeeId);
+		if (list) list.push(planned);
+		else plannedByEmployee.set(employeeId, [planned]);
 	};
 	for (const row of shiftRows) {
 		if (!row.employeeId) continue;
@@ -353,22 +382,38 @@ export async function loadShortTermInputs(
 		});
 	}
 
+	const termRowsByEmployee = groupBy(termRows, (row) => row.employeeId);
 	const samplesByEmployee = new Map(
 		candidates.map((employeeId) => [
 			employeeId,
-			termSampleDates(
-				termRows.filter((row) => row.employeeId === employeeId),
-				input.years,
-			),
+			termSampleDates(termRowsByEmployee.get(employeeId) ?? [], input.years),
 		]),
 	);
-	const dates = new Set<string>();
-	for (const samples of samplesByEmployee.values()) {
-		for (const list of samples.values()) for (const date of list) dates.add(date);
+	// Each employee is resolved on its own term starts and counted days only.
+	const datesByEmployee = new Map<string, string[]>();
+	const allDates = new Set<string>();
+	for (const employeeId of candidates) {
+		const own = new Set<string>();
+		for (const list of samplesByEmployee.get(employeeId)?.values() ?? []) {
+			for (const date of list) own.add(date);
+		}
+		for (const item of workByEmployee.get(employeeId) ?? []) own.add(item.date);
+		for (const item of plannedByEmployee.get(employeeId) ?? []) own.add(item.date);
+		datesByEmployee.set(employeeId, [...own]);
+		for (const date of own) allDates.add(date);
 	}
-	for (const list of workByEmployee.values()) for (const item of list) dates.add(item.date);
-	for (const list of plannedByEmployee.values()) for (const item of list) dates.add(item.date);
-	const contracts = await contractsOn(candidates, [...dates]);
+	const contracts =
+		allDates.size === 0
+			? new Map<string, Map<string, EffectiveContractOnDay>>()
+			: await loadEffectiveContractsBatch(db, {
+					organizationId: input.organizationId,
+					employeeIds: candidates,
+					dates: [...allDates],
+					datesByEmployee,
+					organizationTimezone: input.timezone,
+					timezoneOverride: input.timezone,
+				});
+	const offsetsByEmployee = groupBy(offsetRows, (row) => row.employeeId);
 
 	const employees: ShortTermEmployeeInputs[] = [];
 	for (const employeeId of candidates) {
@@ -404,35 +449,48 @@ export async function loadShortTermInputs(
 
 		// A year is judged when the resolver returns short-term terms on any of its days we look
 		// at, and its limit follows all of those terms, not the cycle week of one day.
-		const ownLimitKindByYear = new Map<number, ShortTermLimitKind>();
+		const weekByYear = new Map<number, ShortTermYearWeek>();
 		const samples = samplesByEmployee.get(employeeId) ?? new Map<number, string[]>();
+		const countedDays = new Set([...work, ...planned].map((item) => item.date));
 		for (const year of input.years) {
-			const counted = [...work, ...planned]
-				.map((item) => item.date)
-				.filter((date) => yearOf(date) === year);
-			const terms = [...(samples.get(year) ?? []), ...counted]
-				.map(shortTermOn)
-				.filter((contract) => contract !== null);
-			if (terms.length === 0) continue;
-			ownLimitKindByYear.set(
-				year,
-				terms.every((contract) => limitKindOf(contract) === "months") ? "months" : "work_days",
-			);
+			const counted = [...countedDays].filter((date) => yearOf(date) === year);
+			const plannedWorkDaysPerWeek: number[] = [];
+			const unplannedDays = new Set<string>();
+			let unplannedTerms = false;
+			let anyTerms = false;
+			for (const date of [...(samples.get(year) ?? []), ...counted]) {
+				const contract = shortTermOn(date);
+				if (!contract) continue;
+				anyTerms = true;
+				const perWeek = averageWorkDaysPerWeek(contract);
+				if (perWeek !== null) {
+					plannedWorkDaysPerWeek.push(perWeek);
+					continue;
+				}
+				unplannedTerms = true;
+				if (countedDays.has(date)) unplannedDays.add(date);
+			}
+			if (!anyTerms) continue;
+			weekByYear.set(year, {
+				plannedWorkDaysPerWeek,
+				unplannedTerms,
+				unplannedDays: [...unplannedDays].sort(),
+			});
 		}
 
 		employees.push({
 			employeeId,
 			work,
 			planned,
-			priorOffsets: offsetRows
-				.filter((row) => row.employeeId === employeeId && row.countValue !== null)
+			priorOffsets: (offsetsByEmployee.get(employeeId) ?? [])
+				.filter((row) => row.countValue !== null)
 				.map((row) => ({
 					offsetId: row.id,
 					kind: row.offsetKind as ShortTermPriorOffset["kind"],
 					year: yearOf(row.validFromDate),
 					count: row.countValue ?? 0,
 				})),
-			ownLimitKindByYear,
+			weekByYear,
 		});
 	}
 	return { employees, thresholds };
