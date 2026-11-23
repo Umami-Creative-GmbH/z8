@@ -2064,6 +2064,29 @@ describe("getSelfServiceRequests", () => {
 			});
 		});
 
+		it("sorts a final rejection with the decided items, below open work", async () => {
+			dbMocks.travelExpenseClaims.mockResolvedValue([
+				travelExpense({
+					id: "claim-rejected",
+					status: "rejected",
+					decidedAt: new Date("2026-04-27T08:00:00.000Z"),
+				}),
+				travelExpense({ id: "claim-pending", status: "pending", decidedAt: null }),
+			]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				now: new Date("2026-04-28T12:00:00.000Z"),
+				sources: ["travel_expense"],
+			});
+
+			expect(result.items.map((item) => [item.sourceId, item.status])).toEqual([
+				["claim-pending", "pending"],
+				["claim-rejected", "rejected"],
+			]);
+		});
+
 		it("reports an expense report source failure without losing other requests", async () => {
 			dbMocks.travelExpenseReports.mockRejectedValue(new Error("database unavailable"));
 

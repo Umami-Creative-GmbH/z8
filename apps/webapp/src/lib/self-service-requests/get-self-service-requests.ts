@@ -1226,7 +1226,7 @@ function applyFilters(
 }
 
 function compareItems(a: SelfServiceRequestItem, b: SelfServiceRequestItem): number {
-	const statusDelta = statusRank(a.status) - statusRank(b.status);
+	const statusDelta = statusRank(a) - statusRank(b);
 
 	if (statusDelta !== 0) {
 		return statusDelta;
@@ -1235,12 +1235,13 @@ function compareItems(a: SelfServiceRequestItem, b: SelfServiceRequestItem): num
 	return relevantDate(b).getTime() - relevantDate(a).getTime();
 }
 
-function statusRank(status: SelfServiceRequestStatus): number {
-	if (status === "rejected" || status === "returned") {
+/** Work the employee must fix first, then requests in review, then every final decision. */
+function statusRank(item: SelfServiceRequestItem): number {
+	if (needsFix(item)) {
 		return 0;
 	}
 
-	if (status === "pending") {
+	if (item.status === "pending") {
 		return 1;
 	}
 
