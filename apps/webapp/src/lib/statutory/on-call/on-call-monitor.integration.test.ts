@@ -9,6 +9,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { evaluateOnCallFindings } from "./monitor";
 import { localInstant, onCallFixture } from "./testing/on-call-fixture";
+import { loadOnCallEmployeeStatus } from "./views";
 
 describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -887,6 +888,54 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			expect(band.map((f) => [f.kind, f.summary.used?.value, f.summary.limit?.value])).toEqual([
 				["on_call_weekly_under_band", 900, 943],
 			]);
+		});
+	});
+
+	describe("employee status: drafts stay with the planners", () => {
+		// Wednesday of ISO week 2026-W10; the draft call is on Saturday 2026-03-07.
+		const NOW = Temporal.Instant.from("2026-03-04T10:00:00Z");
+
+		it("shows the employee no finding and no band minutes of a draft call until it is published", async () => {
+			const { org, worker } = await onCallWorker();
+			const draft = await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-07",
+				startTime: "09:00",
+				endTime: "11:00",
+				status: "draft",
+			});
+			const statusOf = (viewer: { audience: "full" | "restricted"; selfView: boolean }) =>
+				loadOnCallEmployeeStatus(db, {
+					organizationId: org.id,
+					employeeId: worker.employeeId,
+					timezone: org.timezone,
+					now: NOW,
+					method: "three_months",
+					...viewer,
+				}).then((status) =>
+					status.findings
+						.filter((f) => f.periodStart <= "2026-03-07" && f.periodEnd > "2026-03-07")
+						.map((f) => [f.kind, f.summary.used?.value])
+						.toSorted(),
+				);
+			const self = { audience: "restricted", selfView: true } as const;
+
+			// The employee sees an empty planned week: 0 of the statutory 20 hours, nothing short.
+			expect(await statusOf(self)).toEqual([["on_call_weekly_under_band", 0]]);
+			// Org admins and planners still judge the draft.
+			const planned = [
+				["on_call_short_call", 120],
+				["on_call_short_notice", 2],
+				["on_call_weekly_under_band", 120],
+			];
+			expect(await statusOf({ audience: "full", selfView: false })).toEqual(planned);
+			expect(await statusOf({ audience: "restricted", selfView: false })).toEqual(planned);
+
+			await admin.query(`UPDATE shift SET status = 'published', published_at = $2 WHERE id = $1`, [
+				draft,
+				new Date(NOW.epochMilliseconds),
+			]);
+			expect(await statusOf(self)).toEqual(planned);
 		});
 	});
 });

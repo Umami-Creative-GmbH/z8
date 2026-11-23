@@ -12,7 +12,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { calculateOnCallReferencePeriod, listOnCallReferenceEvents } from "./reference-period";
 import { onCallFixture } from "./testing/on-call-fixture";
-import { loadOnCallEmployeeStatus } from "./views";
+import { listOnCallPayrollReferenceRows, loadOnCallEmployeeStatus } from "./views";
 
 describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -245,6 +245,86 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 		expect(fromMay.referenceStart).toBe("2026-02-28");
 	});
 
+	it("dates a continued illness recorded as back-to-back sick leave from its first day", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const periodId = await onCall.employmentPeriod(org, worker, "2025-11-30T23:00:00Z");
+		await onCall.onCallTerms(org, worker, {
+			kind: "unspecified",
+			from: "2025-12-01",
+			employmentPeriodId: periodId,
+		});
+		// 4 h on every Tuesday from 2025-12-02 through 2026-02-24 (13 days).
+		for (let day = Temporal.PlainDate.from("2025-12-02"); day.toString() < "2026-03-01";) {
+			await onCall.work(org, worker, {
+				date: day.toString(),
+				startTime: "09:00",
+				endTime: "13:00",
+			});
+			day = day.add({ days: 7 });
+		}
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-03-02",
+			endDate: "2026-03-08",
+		});
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-03-09",
+			endDate: "2026-03-15",
+		});
+		// A new illness after a gap day is a new event.
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-03-17",
+			endDate: "2026-03-18",
+		});
+
+		const fromMarch2 = await calculateOnCallReferencePeriod(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			eventDate: "2026-03-02",
+			method: "three_months",
+		});
+		// 2025-12-02 … 2026-03-01: 30 + 31 + 28 + 1 = 90 days, 13 Tuesdays × 240 minutes.
+		expect(fromMarch2).toMatchObject({
+			referenceStart: "2025-12-02",
+			denominatorDays: 90,
+			numeratorMinutes: 3120,
+			averageMinutesPerDay: 35,
+		});
+
+		const listed = (from: string) =>
+			listOnCallReferenceEvents(db, {
+				organizationId: org.id,
+				employeeId: worker.employeeId,
+				from,
+				untilExclusive: "2026-04-01",
+				method: "three_months",
+			});
+		// Both leaves in the range, and only the second one running into it.
+		for (const from of ["2026-03-01", "2026-03-10"]) {
+			const events = await listed(from);
+			expect(events.map((event) => [event.kind, event.eventDate])).toEqual([
+				["sick_leave", "2026-03-02"],
+				["sick_leave", "2026-03-17"],
+			]);
+			expect(events[0]?.breakdown).toEqual(fromMarch2);
+		}
+		// A payroll period starting with the second leave lists the illness once, from its start.
+		const payroll = await listOnCallPayrollReferenceRows(db, {
+			organizationId: org.id,
+			startDate: "2026-03-09",
+			endDate: "2026-03-31",
+			method: "three_months",
+		});
+		expect(payroll.map((row) => [row.kind, row.eventDate])).toEqual([
+			["sick_leave", "2026-03-02"],
+			["sick_leave", "2026-03-17"],
+		]);
+		expect(payroll[0]?.breakdown).toEqual(fromMarch2);
+	});
+
 	it("lists no event for days after the employment ended, though the on-call terms run on", async () => {
 		const org = await onCall.organization("a");
 		const worker = await fx.employee(org, "worker");
@@ -293,6 +373,7 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			timezone: org.timezone,
 			now: Temporal.Instant.from("2026-06-20T10:00:00Z"),
 			audience: "full",
+			selfView: false,
 			method: "three_months",
 		});
 		expect(status).toMatchObject({ hasOnCallTerms: true, terms: null });

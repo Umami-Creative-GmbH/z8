@@ -1,7 +1,7 @@
 /**
  * Everything the § 12 TzBfG on-call monitor reads, loaded once per evaluation and batched across
  * employees: who is on call on which day (confirmed terms through the contract resolver), their
- * shifts (draft and published), their work per organization-local day and per call (a running
+ * shifts (draft and published, or published only for readers who never see drafts), their work per organization-local day and per call (a running
  * clock-in counts up to now) and the on-call baselines. Read-only: `select` only.
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
@@ -122,6 +122,8 @@ export async function loadOnCallFacts(
 		readonly untilExclusive: PlainDate;
 		readonly employeeIds: readonly string[] | null;
 		readonly replacesShiftId: string | null;
+		/** Leave draft shifts out: for readers who only see published shifts, such as the employee. */
+		readonly publishedShiftsOnly?: boolean;
 		/** A running clock-in counts up to this instant. */
 		readonly now: Instant;
 	},
@@ -207,6 +209,7 @@ export async function loadOnCallFacts(
 				gte(shift.date, bounds.start),
 				lt(shift.date, bounds.endExclusive),
 				input.replacesShiftId ? ne(shift.id, input.replacesShiftId) : undefined,
+				input.publishedShiftsOnly ? eq(shift.status, "published") : undefined,
 			),
 		);
 	const shiftsByEmployee = new Map<string, OnCallShift[]>();

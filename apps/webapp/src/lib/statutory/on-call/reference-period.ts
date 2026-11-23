@@ -115,45 +115,98 @@ function onCallOn(facts: ReferenceFacts, day: string): boolean {
 	return Boolean(contract?.isEmployedOnDay && contract.onCallTerms);
 }
 
+interface SickLeave {
+	readonly startDate: string;
+	/** Inclusive. */
+	readonly endDate: string;
+}
+
 /**
- * Per employee, the first day of approved sick leave that is still running on `from` or starts
- * before `untilExclusive`. One grouped query for every employee.
+ * Sick leave joined into illnesses: leave that overlaps or adjoins earlier leave (no day between)
+ * continues the same illness, so § 12 Abs. 4 TzBfG dates it, and its reference period, from the
+ * first leave's start. In start order.
  */
-async function earliestSickStarts(
-	db: OnCallReferenceReader,
+export function continuedSickLeaves(leaves: readonly SickLeave[]): SickLeave[] {
+	const merged: SickLeave[] = [];
+	for (const leave of leaves.toSorted((a, b) => a.startDate.localeCompare(b.startDate))) {
+		const previous = merged.at(-1);
+		if (previous && leave.startDate <= dayAfter(previous.endDate)) {
+			if (leave.endDate > previous.endDate) {
+				merged[merged.length - 1] = { startDate: previous.startDate, endDate: leave.endDate };
+			}
+			continue;
+		}
+		merged.push(leave);
+	}
+	return merged;
+}
+
+function dayAfter(date: string): string {
+	return parsePlainDate(date).add({ days: 1 }).toString();
+}
+
+/**
+ * Per employee, the start of the earliest illness (approved sick leave joined by
+ * {@link continuedSickLeaves}) that is still running on `from` or starts before `untilExclusive`.
+ * One grouped query for every employee, then one per step back through leave adjoining it.
+ */
+export async function earliestSickStarts(
+	db: Pick<DatabaseClient, "select">,
 	input: {
 		readonly organizationId: string;
-		readonly employeeIds: readonly string[];
+		/** Null: every employee of the organization. */
+		readonly employeeIds: readonly string[] | null;
 		readonly from: string;
 		readonly untilExclusive: string;
 	},
 ): Promise<Map<string, string>> {
-	if (input.employeeIds.length === 0) return new Map();
-	const rows = await db
-		.select({ employeeId: absenceEntry.employeeId, startDate: min(absenceEntry.startDate) })
-		.from(absenceEntry)
-		.innerJoin(
-			absenceCategory,
-			and(
-				eq(absenceCategory.id, absenceEntry.categoryId),
-				eq(absenceCategory.organizationId, input.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(absenceEntry.organizationId, input.organizationId),
-				inArray(absenceEntry.employeeId, [...input.employeeIds]),
-				eq(absenceEntry.status, "approved"),
-				eq(absenceCategory.type, "sick"),
-				eq(absenceCategory.requiresWorkTime, false),
-				lt(absenceEntry.startDate, input.untilExclusive),
-				gte(absenceEntry.endDate, input.from),
-			),
-		)
-		.groupBy(absenceEntry.employeeId);
-	return new Map(
-		rows.flatMap((row) => (row.startDate ? [[row.employeeId, row.startDate] as const] : [])),
-	);
+	const earliest = async (
+		employeeIds: readonly string[] | null,
+		untilExclusive: string,
+		from: string,
+	) =>
+		new Map(
+			(
+				await db
+					.select({ employeeId: absenceEntry.employeeId, startDate: min(absenceEntry.startDate) })
+					.from(absenceEntry)
+					.innerJoin(
+						absenceCategory,
+						and(
+							eq(absenceCategory.id, absenceEntry.categoryId),
+							eq(absenceCategory.organizationId, input.organizationId),
+						),
+					)
+					.where(
+						and(
+							eq(absenceEntry.organizationId, input.organizationId),
+							employeeIds ? inArray(absenceEntry.employeeId, [...employeeIds]) : undefined,
+							eq(absenceEntry.status, "approved"),
+							eq(absenceCategory.type, "sick"),
+							eq(absenceCategory.requiresWorkTime, false),
+							lt(absenceEntry.startDate, untilExclusive),
+							gte(absenceEntry.endDate, from),
+						),
+					)
+					.groupBy(absenceEntry.employeeId)
+			).flatMap((row) => (row.startDate ? [[row.employeeId, row.startDate] as const] : [])),
+		);
+	if (input.employeeIds?.length === 0) return new Map();
+	const result = await earliest(input.employeeIds, input.untilExclusive, input.from);
+	// Step back while earlier leave ends on or after the day before the illness found so far.
+	let open = [...result.keys()];
+	while (open.length > 0) {
+		const stepped: string[] = [];
+		for (const [start, employeeIds] of Map.groupBy(open, (id) => result.get(id) ?? "")) {
+			const dayBefore = parsePlainDate(start).subtract({ days: 1 }).toString();
+			for (const [employeeId, earlier] of await earliest(employeeIds, start, dayBefore)) {
+				result.set(employeeId, earlier);
+				stepped.push(employeeId);
+			}
+		}
+		open = stepped;
+	}
+	return result;
 }
 
 /**
@@ -363,7 +416,7 @@ function eventsOf(
 ): OnCallReferenceEvent[] {
 	const inRange = (day: string) => day >= input.from && day < input.untilExclusive;
 	const sickStarts = new Set(
-		facts.sickLeaves
+		continuedSickLeaves(facts.sickLeaves)
 			.filter((leave) => leave.startDate < input.untilExclusive && leave.endDate >= input.from)
 			.map((leave) => leave.startDate),
 	);

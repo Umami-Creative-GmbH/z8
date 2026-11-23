@@ -74,6 +74,11 @@ export interface OnCallEvaluationRequest {
 	readonly employeeIds?: readonly string[] | null;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
 	readonly replacesShiftId?: string | null;
+	/**
+	 * Judge published shifts only, for readers who never see drafts (the employee's own status).
+	 * Left out: drafts count too, as planners see them.
+	 */
+	readonly publishedShiftsOnly?: boolean;
 	readonly preferences?: StatutoryPreferences;
 	/** Notification instant of unpublished shifts and "today" for completed weeks and days. */
 	readonly now: Instant;
@@ -541,6 +546,7 @@ export async function evaluateOnCallFindings(
 		untilExclusive: weeksEnd,
 		employeeIds: request.employeeIds ?? null,
 		replacesShiftId: request.replacesShiftId ?? null,
+		publishedShiftsOnly: request.publishedShiftsOnly ?? false,
 		now: request.now,
 	});
 	const preferences = request.preferences ?? DEFAULT_STATUTORY_PREFERENCES;

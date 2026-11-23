@@ -4,8 +4,8 @@
  * preparation list. Everything here is minutes and days only; findings are redacted for the
  * restricted audience before they leave the server.
  */
-import { and, asc, eq, gt, gte, inArray, isNull, lt, min, or } from "drizzle-orm";
-import { absenceCategory, absenceEntry, employee, employeeEmploymentHistory } from "@/db/schema";
+import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
+import { employee, employeeEmploymentHistory } from "@/db/schema";
 import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
 	comparePlainDates,
@@ -25,6 +25,7 @@ import {
 } from "../redaction";
 import { evaluateOnCallFindings, type OnCallFinding, type OnCallFindingKind } from "./monitor";
 import {
+	earliestSickStarts,
 	listOnCallReferenceEvents,
 	listOnCallReferenceEventsBatch,
 	type OnCallReferenceEvent,
@@ -132,6 +133,8 @@ export interface OnCallEmployeeStatus {
 /**
  * One employee's on-call status for Employee Detail, the employee's own profile and Absences.
  * The caller authorizes (org admin, a manager whose scope reaches the employee, or the employee).
+ * The employee's own view (unless they are an org admin) judges published shifts only: employees
+ * never see draft shifts, so a draft call must not show up as a finding or as band minutes.
  */
 export async function loadOnCallEmployeeStatus(
 	db: Reader,
@@ -141,6 +144,8 @@ export async function loadOnCallEmployeeStatus(
 		readonly timezone: string;
 		readonly now: Instant;
 		readonly audience: StatutoryAudience;
+		/** Whether the viewer is the employee themself. */
+		readonly selfView: boolean;
 		readonly method: OnCallReferenceMethod;
 	},
 ): Promise<OnCallEmployeeStatus> {
@@ -193,6 +198,7 @@ export async function loadOnCallEmployeeStatus(
 			timezone: input.timezone,
 			window: reviewWindow(input.now, input.timezone),
 			employeeIds: [input.employeeId],
+			publishedShiftsOnly: input.selfView && input.audience === "restricted",
 			preferences,
 			now: input.now,
 		}),
@@ -253,31 +259,15 @@ export async function listOnCallPayrollReferenceRows(
 	if (comparePlainDates(end, start) < 0) return [];
 	const until = end.add({ days: 1 }).toString();
 
-	// Sick leave running into the period is dated from its own start: terms must cover that day.
-	const sickSince = await db
-		.select({ employeeId: absenceEntry.employeeId, startDate: min(absenceEntry.startDate) })
-		.from(absenceEntry)
-		.innerJoin(
-			absenceCategory,
-			and(
-				eq(absenceCategory.id, absenceEntry.categoryId),
-				eq(absenceCategory.organizationId, input.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(absenceEntry.organizationId, input.organizationId),
-				eq(absenceEntry.status, "approved"),
-				eq(absenceCategory.type, "sick"),
-				eq(absenceCategory.requiresWorkTime, false),
-				lt(absenceEntry.startDate, input.startDate),
-				gte(absenceEntry.endDate, input.startDate),
-			),
-		)
-		.groupBy(absenceEntry.employeeId);
-	const firstEventOf = new Map(
-		sickSince.flatMap((row) => (row.startDate ? [[row.employeeId, row.startDate] as const] : [])),
-	);
+	// An illness running into the period is dated from its own (first leave's) start: terms must
+	// cover that day.
+	const firstEventOf = await earliestSickStarts(db, {
+		organizationId: input.organizationId,
+		employeeIds: null,
+		from: input.startDate,
+		// Leave starting on the first day may continue an illness from before the period.
+		untilExclusive: start.add({ days: 1 }).toString(),
+	});
 	const earliest = [...firstEventOf.values()].reduce((a, b) => (a < b ? a : b), input.startDate);
 	const terms = await db
 		.select({

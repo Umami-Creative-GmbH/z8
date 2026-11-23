@@ -96,6 +96,7 @@ export const getEmployeeOnCallStatusAction = organizationAction(
 					timezone: await loadOrganizationTimezone(db, organizationId),
 					now: systemClock.nowInstant(),
 					audience: statutoryAudienceOf(actor.settingsAccess),
+					selfView: actor.employee?.id === input.employeeId,
 					method: input.method ?? "three_months",
 				}),
 			);
