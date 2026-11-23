@@ -10,6 +10,7 @@ import {
 	createShiftDatabaseFixture,
 	SHIFT_TEST_TIMEZONES,
 	type ShiftDatabaseFixture,
+	type ShiftTestOrganization,
 	STORED_SHIFT_DATES,
 } from "@/lib/scheduling/testing/shift-database.test.fixture";
 import { buildDigestDataForManager } from "./daily-digest";
@@ -86,17 +87,32 @@ describe("daily digest shifts", () => {
 		},
 	);
 
-	it("counts only pending compliance exceptions whose validity window is still open (#1977)", async () => {
-		const org = await fixture.organization("UTC");
-		const manager = await fixture.seedEmployee({ organizationId: org.organizationId });
-		const report = await fixture.seedEmployee({ organizationId: org.organizationId });
-		await fixture.pool.query(
-			`insert into employee_managers (employee_id, manager_id, is_primary, assigned_by)
-			 values ($1, $2, true, $3)`,
-			[report.employeeId, manager.employeeId, org.creator.userId],
-		);
+	describe("pending compliance exceptions (#1977)", () => {
 		const now = Temporal.Instant.from(NOON.UTC);
-		const exception = async (validFrom: Temporal.Instant) => {
+
+		async function directReport(org: ShiftTestOrganization, managerEmployeeId: string) {
+			const report = await fixture.seedEmployee({ organizationId: org.organizationId });
+			await fixture.pool.query(
+				`insert into employee_managers (employee_id, manager_id, is_primary, assigned_by)
+				 values ($1, $2, true, $3)`,
+				[report.employeeId, managerEmployeeId, org.creator.userId],
+			);
+			return report;
+		}
+
+		async function manager(org: ShiftTestOrganization) {
+			const person = await fixture.seedEmployee({ organizationId: org.organizationId });
+			await fixture.pool.query("update employee set role = 'manager' where id = $1", [
+				person.employeeId,
+			]);
+			return person;
+		}
+
+		async function exception(
+			org: ShiftTestOrganization,
+			employeeId: string,
+			validFrom: Temporal.Instant = now.subtract({ hours: 2 }),
+		) {
 			await fixture.pool.query(
 				`insert into compliance_exception
 				 (id, organization_id, employee_id, exception_type, status, reason, valid_from, valid_until,
@@ -105,25 +121,57 @@ describe("daily digest shifts", () => {
 				[
 					randomUUID(),
 					org.organizationId,
-					report.employeeId,
+					employeeId,
 					validFrom.toString(),
 					validFrom.add({ hours: 24 }).toString(),
 					org.creator.userId,
 				],
 			);
-		};
-		await exception(now.subtract({ hours: 2 }));
-		// Lapsed an hour ago: the Approval inbox lists it as expired, not pending.
-		await exception(now.subtract({ hours: 25 }));
+		}
 
-		const digest = await buildDigestDataForManager(
-			manager.employeeId,
-			org.organizationId,
-			"UTC",
-			"en",
-			now,
-		);
+		function digestFor(org: ShiftTestOrganization, managerEmployeeId: string) {
+			return buildDigestDataForManager(managerEmployeeId, org.organizationId, "UTC", "en", now);
+		}
 
-		expect(digest.compliancePending).toBe(1);
+		it("counts only those whose validity window is still open", async () => {
+			const org = await fixture.organization("UTC");
+			const lead = await manager(org);
+			const report = await directReport(org, lead.employeeId);
+			await exception(org, report.employeeId);
+			// Lapsed an hour ago: the Approval inbox lists it as expired, not pending.
+			await exception(org, report.employeeId, now.subtract({ hours: 25 }));
+
+			expect((await digestFor(org, lead.employeeId)).compliancePending).toBe(1);
+		});
+
+		it("counts a team member without a direct manager for the team's primary manager, as the inbox does", async () => {
+			const org = await fixture.organization("UTC");
+			const lead = await manager(org);
+			// A direct report too, so this manager receives a digest at all.
+			await directReport(org, lead.employeeId);
+			const member = await fixture.seedEmployee({ organizationId: org.organizationId });
+			const teamId = randomUUID();
+			await fixture.pool.query(
+				`insert into team (id, organization_id, name, primary_manager_id, updated_at)
+				 values ($1, $2, 'Floor team', $3, now())`,
+				[teamId, org.organizationId, lead.employeeId],
+			);
+			await fixture.pool.query("update employee set team_id = $2 where id = $1", [
+				member.employeeId,
+				teamId,
+			]);
+			await exception(org, member.employeeId);
+
+			expect((await digestFor(org, lead.employeeId)).compliancePending).toBe(1);
+		});
+
+		it("counts none for an employee-role user with a direct report, who is no eligible manager", async () => {
+			const org = await fixture.organization("UTC");
+			const linked = await fixture.seedEmployee({ organizationId: org.organizationId });
+			const report = await directReport(org, linked.employeeId);
+			await exception(org, report.employeeId);
+
+			expect((await digestFor(org, linked.employeeId)).compliancePending).toBeUndefined();
+		});
 	});
 });

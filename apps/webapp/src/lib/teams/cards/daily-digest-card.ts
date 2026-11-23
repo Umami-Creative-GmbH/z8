@@ -374,6 +374,16 @@ export function buildDailyDigestCard(
 						},
 					]
 				: []),
+			// Where the recipient decides the exceptions counted above (#1977).
+			...(data.compliancePending && data.compliancePending > 0
+				? [
+						{
+							type: "Action.OpenUrl",
+							title: t("teamsBot:digest.reviewComplianceExceptions", "Review exception requests"),
+							url: `${appUrl}/approvals/inbox?types=compliance_exception`,
+						},
+					]
+				: []),
 		],
 	};
 }

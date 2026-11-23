@@ -734,6 +734,163 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 			expect(await row(exceptionId)).toMatchObject({ status: "pending", approver_id: null });
 			expect(notify.approved).not.toHaveBeenCalled();
 		});
+
+		describe("through a manager's scope", () => {
+			let secondManager: { employeeId: string; userId: string };
+
+			beforeEach(async () => {
+				secondManager = await fixture.employee({ organizationId });
+				await fixture.pool.query("update employee set role = 'manager' where id = $1", [
+					secondManager.employeeId,
+				]);
+				await fixture.pool.query(
+					`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+					 values ($1, $2, $3, false, $4)`,
+					[randomUUID(), employee.employeeId, secondManager.employeeId, ownerUserId],
+				);
+			});
+
+			async function managedScope(actor: { employeeId: string }): Promise<ComplianceScope> {
+				const scope = await resolveComplianceExceptionInboxScope({
+					organizationId,
+					employeeId: actor.employeeId,
+					canManageCompliance: false,
+				});
+				expect(scope).toEqual({ kind: "managed", employeeIds: [employee.employeeId] });
+				return scope ?? { kind: "managed", employeeIds: [] };
+			}
+
+			it("lets exactly one of two concurrent manager decisions win", async () => {
+				const exceptionId = await exception({ employeeId: employee.employeeId });
+				const notify = notifications();
+				const [managerScope, secondScope] = await Promise.all([
+					managedScope(manager),
+					managedScope(secondManager),
+				]);
+
+				const results = await Promise.allSettled([
+					decideComplianceExceptionFromInbox({
+						organizationId,
+						exceptionId,
+						actorEmployeeId: manager.employeeId,
+						scope: managerScope,
+						action: "approve",
+						clock: AT_NOW,
+						notify,
+					}),
+					decideComplianceExceptionFromInbox({
+						organizationId,
+						exceptionId,
+						actorEmployeeId: secondManager.employeeId,
+						scope: secondScope,
+						action: "reject",
+						reason: "Cover is already planned",
+						clock: AT_NOW,
+						notify,
+					}),
+				]);
+
+				const won = results.filter((result) => result.status === "fulfilled");
+				const lost = results.filter((result) => result.status === "rejected");
+				expect(won).toHaveLength(1);
+				expect(lost).toHaveLength(1);
+				expect(lost[0]?.reason).toBeInstanceOf(ConflictError);
+				const winner = won[0]?.value;
+				expect(lost[0]?.reason.message).toBe(`Request is already ${winner?.status}`);
+				expect(await row(exceptionId)).toMatchObject({
+					status: winner?.status,
+					approver_id:
+						winner?.status === "approved" ? manager.employeeId : secondManager.employeeId,
+				});
+				expect(notify.approved.mock.calls.length + notify.rejected.mock.calls.length).toBe(1);
+			});
+
+			it.each([
+				["demoted", "role = 'employee'"],
+				["deactivated", "is_active = false"],
+			])(
+				"refuses the write when the manager is %s while the decision waits for their row",
+				async (_change, set) => {
+					const exceptionId = await exception({ employeeId: employee.employeeId });
+					const scope = await managedScope(manager);
+					const notify = notifications();
+					// Another session changes the manager's row and has not committed when the decision
+					// re-checks the scope; it commits while the decision waits for that row.
+					const session = await fixture.pool.connect();
+					let committed: Promise<unknown> | undefined;
+					try {
+						const decision = decideComplianceExceptionFromInbox({
+							organizationId,
+							exceptionId,
+							actorEmployeeId: manager.employeeId,
+							scope,
+							action: "approve",
+							clock: AT_NOW,
+							notify,
+							inFlight: async (stage) => {
+								if (stage !== "rechecking_scope") return;
+								await session.query("begin");
+								await session.query(`update employee set ${set} where id = $1`, [
+									manager.employeeId,
+								]);
+								committed = new Promise((resolve) => setTimeout(resolve, 300)).then(() =>
+									session.query("commit"),
+								);
+							},
+						});
+
+						await expect(decision).rejects.toBeInstanceOf(NotFoundError);
+						await committed;
+						expect(await row(exceptionId)).toMatchObject({ status: "pending", approver_id: null });
+						expect(notify.approved).not.toHaveBeenCalled();
+					} finally {
+						await committed?.catch(() => undefined);
+						session.release();
+					}
+				},
+			);
+
+			it("holds a demotion that starts after the scope re-check until the decision commits", async () => {
+				const exceptionId = await exception({ employeeId: employee.employeeId });
+				const scope = await managedScope(manager);
+				let demotion: Promise<unknown> | undefined;
+				let demotedInFlight: boolean | undefined;
+
+				const decided = await decideComplianceExceptionFromInbox({
+					organizationId,
+					exceptionId,
+					actorEmployeeId: manager.employeeId,
+					scope,
+					action: "approve",
+					clock: AT_NOW,
+					notify: notifications(),
+					inFlight: async (stage) => {
+						if (stage !== "writing") return;
+						demotion = fixture.pool.query("update employee set role = 'employee' where id = $1", [
+							manager.employeeId,
+						]);
+						demotedInFlight = await Promise.race([
+							demotion.then(() => true),
+							new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 300)),
+						]);
+					},
+				});
+				await demotion;
+
+				// The demotion waited for the decision, so the manager decided as a manager.
+				expect(demotedInFlight).toBe(false);
+				expect(decided).toMatchObject({ status: "approved" });
+				expect(await row(exceptionId)).toMatchObject({
+					status: "approved",
+					approver_id: manager.employeeId,
+				});
+				const { rows } = await fixture.pool.query<{ role: string }>(
+					"select role from employee where id = $1",
+					[manager.employeeId],
+				);
+				expect(rows).toEqual([{ role: "employee" }]);
+			});
+		});
 	});
 
 	describe("a team's primary manager", () => {

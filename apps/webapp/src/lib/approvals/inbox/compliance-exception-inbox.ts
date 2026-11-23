@@ -636,6 +636,11 @@ export async function decideComplianceExceptionFromInbox(input: {
 	clock?: Clock;
 	notify?: ComplianceExceptionDecisionNotifications;
 	database?: ComplianceExceptionDecisionDatabase;
+	/**
+	 * Test seam: runs inside the decision's transaction, before it re-checks the actor's scope
+	 * and before it writes, so a suite can change the actor's row while the decision is in flight.
+	 */
+	inFlight?: (stage: "rechecking_scope" | "writing") => Promise<void>;
 }): Promise<ApprovalInboxDecisionSuccess> {
 	const database = input.database ?? (db as unknown as ComplianceExceptionDecisionDatabase);
 	const clock = input.clock ?? systemClock;
@@ -701,6 +706,7 @@ export async function decideComplianceExceptionFromInbox(input: {
 			where organization_id = ${input.organizationId} and id = ${input.exceptionId}::uuid
 			for update
 		`);
+		await input.inFlight?.("rechecking_scope");
 		const inScope = await actorStillDecides(tx, {
 			organizationId: input.organizationId,
 			actorEmployeeId: input.actorEmployeeId,
@@ -708,6 +714,7 @@ export async function decideComplianceExceptionFromInbox(input: {
 			scope: input.scope,
 		});
 		if (!inScope) return [];
+		await input.inFlight?.("writing");
 		return resultRows(
 			await tx.execute(sql`
 				update compliance_exception exception

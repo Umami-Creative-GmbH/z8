@@ -302,6 +302,20 @@ export function buildDailyDigestBlocks(
 				},
 				url: `${appUrl}/dashboard`,
 			},
+			// Where the recipient decides the compliance exceptions counted above (#1977).
+			...(data.compliancePending && data.compliancePending > 0
+				? [
+						{
+							type: "button",
+							text: {
+								type: "plain_text",
+								text: t("bot.digest.reviewComplianceExceptions", "Review exception requests"),
+								emoji: true,
+							},
+							url: `${appUrl}/approvals/inbox?types=compliance_exception`,
+						},
+					]
+				: []),
 		],
 	});
 

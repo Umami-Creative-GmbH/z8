@@ -275,13 +275,15 @@ export function buildDailyDigestEmbed(
 
 	// Compliance
 	if (data.compliancePending && data.compliancePending > 0) {
+		// Where the recipient decides them (#1977).
+		const reviewLink = `[${t("bot.digest.reviewComplianceExceptions", "Review exception requests")}](${appUrl}/approvals/inbox?types=compliance_exception)`;
 		fields.push({
 			name: t("bot.digest.complianceTitle", "Compliance"),
-			value: t(
+			value: `${t(
 				"teamsBot:digest.pendingExceptionRequests",
 				"{count, plural, one {# pending exception request awaiting review} other {# pending exception requests awaiting review}}",
 				{ count: data.compliancePending },
-			),
+			)}\n${reviewLink}`,
 			inline: true,
 		});
 	}

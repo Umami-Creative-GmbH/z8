@@ -358,6 +358,12 @@ export function buildDailyDigestMessage(
 				`${data.compliancePending} pending exception request${data.compliancePending > 1 ? "s" : ""}`,
 			),
 		);
+		// Where the recipient decides them (#1977).
+		const reviewText = t
+			? t("bot.digest.reviewComplianceExceptions", "Review exception requests")
+			: "Review exception requests";
+		const reviewUrl = `${appUrl}/approvals/inbox?types=compliance_exception`;
+		lines.push(`[${escapeMarkdownV2(reviewText)}](${escapeMarkdownV2(reviewUrl)})`);
 		lines.push("");
 	}
 

@@ -21,6 +21,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { env } from "@/env";
+import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import {
 	currentRosterDigestManager,
 	currentRosterReportIds,
@@ -286,6 +287,37 @@ export function digestTitleDate(date: Date, timezone: string, locale: string): s
 }
 
 /**
+ * The pending compliance exceptions this manager decides in the Approval inbox the digest links
+ * to (#1977): those of the employees they are an eligible manager of, as the inbox resolves it,
+ * so a team's primary manager counts a member who has no direct manager, and a direct link
+ * alone counts nothing. Not a lapsed one: the inbox lists it as expired.
+ */
+async function countPendingComplianceExceptionsForManager(
+	managerId: string,
+	organizationId: string,
+	nowInstant: Instant,
+): Promise<number> {
+	const scopes = await getEligibleApprovalScopesForManager({
+		db,
+		managerEmployeeId: managerId,
+		organizationId,
+	});
+	const employeeIds = scopes.map((scope) => scope.requesterEmployeeId);
+	if (employeeIds.length === 0) return 0;
+	const [result] = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(complianceException)
+		.where(
+			and(
+				eq(complianceException.organizationId, organizationId),
+				awaitingComplianceExceptionDecision(nowInstant),
+				inArray(complianceException.employeeId, employeeIds),
+			),
+		);
+	return Number(result?.count) || 0;
+}
+
+/**
  * Build digest data for a specific manager
  */
 export async function buildDigestDataForManager(
@@ -311,6 +343,7 @@ export async function buildDigestDataForManager(
 		managedEmployeeIds,
 		[todayShiftsResult, tomorrowShiftsResult],
 		scheduledShifts,
+		pendingComplianceExceptions,
 	] = await Promise.all([
 		// Pending approvals for this manager
 		db.query.approvalRequest.findMany({
@@ -366,6 +399,7 @@ export async function buildDigestDataForManager(
 				endTime: true,
 			},
 		}),
+		countPendingComplianceExceptionsForManager(managerId, organizationId, nowInstant),
 	]);
 
 	// Process Phase 1 results
@@ -373,6 +407,8 @@ export async function buildDigestDataForManager(
 	const tomorrowCount = Number(tomorrowShiftsResult[0]?.count) || 0;
 	const openShiftsToday = todayCount > 0 ? todayCount : undefined;
 	const openShiftsTomorrow = tomorrowCount > 0 ? tomorrowCount : undefined;
+	const compliancePending =
+		pendingComplianceExceptions > 0 ? pendingComplianceExceptions : undefined;
 
 	// =========================================
 	// Phase 2: Queries that depend on managedEmployeeIds
@@ -389,10 +425,9 @@ export async function buildDigestDataForManager(
 		startTime: Date;
 		employeeName: string | null;
 	}> = [];
-	let compliancePending: number | undefined;
 
 	if (managedEmployeeIds.length > 0) {
-		const [absences, activeWorkPeriodsResult, [pendingExceptionsResult]] = await Promise.all([
+		const [absences, activeWorkPeriodsResult] = await Promise.all([
 			// Employees out today
 			db
 				.select({
@@ -442,18 +477,6 @@ export async function buildDigestDataForManager(
 						inArray(workPeriod.employeeId, managedEmployeeIds),
 					),
 				),
-			// Pending compliance exceptions
-			db
-				.select({ count: sql<number>`count(*)` })
-				.from(complianceException)
-				.where(
-					and(
-						eq(complianceException.organizationId, organizationId),
-						// Not a lapsed one: the Approval inbox lists it as expired (#1977).
-						awaitingComplianceExceptionDecision(nowInstant),
-						inArray(complianceException.employeeId, managedEmployeeIds),
-					),
-				),
 		]);
 
 		// Process Phase 2 results
@@ -483,9 +506,6 @@ export async function buildDigestDataForManager(
 				durationSoFar: `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
 			};
 		});
-
-		const pendingCount = Number(pendingExceptionsResult?.count) || 0;
-		if (pendingCount > 0) compliancePending = pendingCount;
 	}
 
 	// =========================================
