@@ -20,9 +20,18 @@ import {
 } from "@/lib/notifications/compliance-triggers";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
+import { defineAbilityFor } from "@/lib/authorization/ability";
 import {
+	loadOrganizationPrincipalContexts,
+	type PrincipalLoaderExecutor,
+} from "@/lib/authorization/principal-loader";
+import type { PrincipalContext } from "@/lib/authorization/types";
+import {
+	eligibleApprovalScopesOf,
 	getEligibleApprovalScopesForManager,
 	getEligibleManagerIdsForRequester,
+	loadOrganizationApprovalEligibility,
+	type OrganizationApprovalEligibility,
 } from "../policies/manager-eligibility-db";
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { periodSubmissionHours } from "../presentation/period-submission-review";
@@ -891,6 +900,71 @@ export async function resolveComplianceExceptionInboxScope(input: {
 		}));
 	const employeeIds = scopes.map((scope) => scope.requesterEmployeeId);
 	return employeeIds.length > 0 ? { kind: "managed", employeeIds } : null;
+}
+
+/** Each recipient's compliance exception scope, as their Approval inbox resolves it. */
+export interface ComplianceExceptionInboxScopes {
+	of(recipient: {
+		userId: string;
+		employeeId: string;
+	}): Promise<ComplianceExceptionInboxScope | null>;
+}
+
+type ComplianceExceptionScopesDatabase = Parameters<
+	typeof loadOrganizationApprovalEligibility
+>[0]["db"] &
+	PrincipalLoaderExecutor;
+
+/**
+ * The compliance exception scopes of many recipients of one organization (#1977), for a digest
+ * run: `manage Compliance` is the organization, else the employees they are an eligible manager
+ * of. The organization's eligibility and these users' permissions are read once, when the first
+ * recipient asks, and every recipient's scope is resolved from them.
+ */
+export function complianceExceptionInboxScopesFor(input: {
+	organizationId: string;
+	/** Every recipient who may ask; their permissions are read together. */
+	userIds: readonly string[];
+	database?: ComplianceExceptionScopesDatabase;
+}): ComplianceExceptionInboxScopes {
+	const database = input.database ?? (db as unknown as ComplianceExceptionScopesDatabase);
+	let loaded:
+		| Promise<readonly [OrganizationApprovalEligibility, Map<string, PrincipalContext>]>
+		| undefined;
+	const load = () => {
+		// One after another: `database` may be a transaction, which is one connection.
+		loaded ??= (async () => {
+			const eligibility = await loadOrganizationApprovalEligibility({
+				db: database,
+				organizationId: input.organizationId,
+			});
+			const principals = await loadOrganizationPrincipalContexts(database, {
+				organizationId: input.organizationId,
+				userIds: input.userIds,
+			});
+			return [eligibility, principals] as const;
+		})().catch((error: unknown) => {
+			// A failed read is not kept: a later recipient reads again.
+			loaded = undefined;
+			throw error;
+		});
+		return loaded;
+	};
+	return {
+		async of(recipient) {
+			const [eligibility, principals] = await load();
+			const principal = principals.get(recipient.userId);
+			const canManageCompliance = principal
+				? defineAbilityFor(principal).cannot("manage", "Compliance") === false
+				: false;
+			return resolveComplianceExceptionInboxScope({
+				organizationId: input.organizationId,
+				employeeId: recipient.employeeId,
+				canManageCompliance,
+				eligibleApprovalScopes: eligibleApprovalScopesOf(eligibility, recipient.employeeId),
+			});
+		},
+	};
 }
 
 /** Compliance exceptions in the inbox: listed, counted, opened and decided by this adapter. */

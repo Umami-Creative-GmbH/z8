@@ -3,6 +3,8 @@ import { processTelegramBotDigest } from "./daily-digest";
 
 const {
 	buildDigestDataForManagerMock,
+	complianceExceptionInboxScopesForMock,
+	complianceScopeOfMock,
 	getBotTranslateMock,
 	getOrganizationPrivateConversationsMock,
 	claimTelegramDigestDeliveryMock,
@@ -14,6 +16,8 @@ const {
 	shouldSkipDigestForManagerMock,
 } = vi.hoisted(() => ({
 	buildDigestDataForManagerMock: vi.fn(),
+	complianceExceptionInboxScopesForMock: vi.fn(),
+	complianceScopeOfMock: vi.fn(),
 	getBotTranslateMock: vi.fn(),
 	getOrganizationPrivateConversationsMock: vi.fn(),
 	claimTelegramDigestDeliveryMock: vi.fn(),
@@ -37,6 +41,7 @@ vi.mock("@/lib/notifications/recipient-display-context", () => ({
 }));
 vi.mock("@/lib/teams/jobs/daily-digest", () => ({
 	buildDigestDataForManager: buildDigestDataForManagerMock,
+	complianceExceptionInboxScopesFor: complianceExceptionInboxScopesForMock,
 	shouldSkipDigestForManager: shouldSkipDigestForManagerMock,
 }));
 vi.mock("../api", () => ({ sendMessage: sendMessageMock }));
@@ -66,6 +71,11 @@ describe("processTelegramBotDigest", () => {
 				timezone: "America/New_York",
 			});
 		buildDigestDataForManagerMock.mockResolvedValue({});
+		complianceExceptionInboxScopesForMock.mockReturnValue({ of: complianceScopeOfMock });
+		complianceScopeOfMock.mockImplementation(async (recipient: { employeeId: string }) => ({
+			kind: "managed",
+			employeeIds: [`report-of-${recipient.employeeId}`],
+		}));
 		getBotTranslateMock.mockResolvedValue(() => "digest");
 		sendMessageMock.mockResolvedValue({});
 		claimTelegramDigestDeliveryMock.mockResolvedValue(true);
@@ -238,12 +248,44 @@ describe("processTelegramBotDigest", () => {
 			"org-a",
 			"Europe/Berlin",
 			"de",
+			{ kind: "managed", employeeIds: ["report-of-employee-berlin"] },
 		);
 		expect(buildDigestDataForManagerMock).toHaveBeenCalledWith(
 			"employee-new-york",
 			"org-a",
 			"America/New_York",
 			"en-US",
+			{ kind: "managed", employeeIds: ["report-of-employee-new-york"] },
 		);
+	});
+
+	it("resolves every recipient's compliance exception scope from one read per run (#1977)", async () => {
+		currentRosterDigestManagerMock
+			.mockResolvedValueOnce({ id: "employee-berlin" })
+			.mockResolvedValueOnce({ id: "employee-new-york" });
+
+		await processTelegramBotDigest(
+			{
+				botToken: "token",
+				digestTime: "02:00",
+				digestTimezone: "Europe/Berlin",
+				organizationId: "org-a",
+			},
+			new Date("2026-07-10T00:05:00.000Z"),
+		);
+
+		expect(complianceExceptionInboxScopesForMock).toHaveBeenCalledTimes(1);
+		expect(complianceExceptionInboxScopesForMock).toHaveBeenCalledWith({
+			organizationId: "org-a",
+			userIds: ["manager-berlin", "manager-new-york"],
+		});
+		expect(complianceScopeOfMock).toHaveBeenCalledWith({
+			userId: "manager-berlin",
+			employeeId: "employee-berlin",
+		});
+		expect(complianceScopeOfMock).toHaveBeenCalledWith({
+			userId: "manager-new-york",
+			employeeId: "employee-new-york",
+		});
 	});
 });

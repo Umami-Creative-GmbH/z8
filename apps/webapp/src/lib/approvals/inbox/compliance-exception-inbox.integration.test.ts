@@ -760,6 +760,20 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 				return scope ?? { kind: "managed", employeeIds: [] };
 			}
 
+			/** Resolves once a session of this database waits for a row lock on a compliance exception. */
+			async function someoneWaitsForTheExceptionLock() {
+				for (let attempt = 0; attempt < 100; attempt += 1) {
+					const { rows } = await fixture.pool.query<{ waiting: number }>(
+						`select count(*)::int as waiting from pg_stat_activity
+						 where datname = current_database() and wait_event_type = 'Lock'
+							and query ilike '%from compliance_exception%for update%'`,
+					);
+					if ((rows[0]?.waiting ?? 0) > 0) return;
+					await new Promise((resolve) => setTimeout(resolve, 50));
+				}
+				throw new Error("The second decision never waited for the exception's lock");
+			}
+
 			it("lets exactly one of two concurrent manager decisions win", async () => {
 				const exceptionId = await exception({ employeeId: employee.employeeId });
 				const notify = notifications();
@@ -767,42 +781,52 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 					managedScope(manager),
 					managedScope(secondManager),
 				]);
+				const secondStages: string[] = [];
+				let second: Promise<unknown> | undefined;
 
-				const results = await Promise.allSettled([
-					decideComplianceExceptionFromInbox({
-						organizationId,
-						exceptionId,
-						actorEmployeeId: manager.employeeId,
-						scope: managerScope,
-						action: "approve",
-						clock: AT_NOW,
-						notify,
-					}),
-					decideComplianceExceptionFromInbox({
-						organizationId,
-						exceptionId,
-						actorEmployeeId: secondManager.employeeId,
-						scope: secondScope,
-						action: "reject",
-						reason: "Cover is already planned",
-						clock: AT_NOW,
-						notify,
-					}),
-				]);
-
-				const won = results.filter((result) => result.status === "fulfilled");
-				const lost = results.filter((result) => result.status === "rejected");
-				expect(won).toHaveLength(1);
-				expect(lost).toHaveLength(1);
-				expect(lost[0]?.reason).toBeInstanceOf(ConflictError);
-				const winner = won[0]?.value;
-				expect(lost[0]?.reason.message).toBe(`Request is already ${winner?.status}`);
-				expect(await row(exceptionId)).toMatchObject({
-					status: winner?.status,
-					approver_id:
-						winner?.status === "approved" ? manager.employeeId : secondManager.employeeId,
+				// The first decision holds the exception's lock and, before it writes, waits until the
+				// second has passed its own pre-transaction checks (the exception is still pending to
+				// it) and waits for that lock inside its transaction.
+				const first = await decideComplianceExceptionFromInbox({
+					organizationId,
+					exceptionId,
+					actorEmployeeId: manager.employeeId,
+					scope: managerScope,
+					action: "approve",
+					clock: AT_NOW,
+					notify,
+					inFlight: async (stage) => {
+						if (stage !== "writing") return;
+						second = decideComplianceExceptionFromInbox({
+							organizationId,
+							exceptionId,
+							actorEmployeeId: secondManager.employeeId,
+							scope: secondScope,
+							action: "reject",
+							reason: "Cover is already planned",
+							clock: AT_NOW,
+							notify,
+							inFlight: async (secondStage) => {
+								secondStages.push(secondStage);
+							},
+						});
+						second.catch(() => undefined);
+						await someoneWaitsForTheExceptionLock();
+					},
 				});
-				expect(notify.approved.mock.calls.length + notify.rejected.mock.calls.length).toBe(1);
+
+				expect(first).toMatchObject({ status: "approved" });
+				// The second got the lock after the first committed, re-checked its scope, and lost at
+				// the conditional update: not at the stale check before its transaction.
+				await expect(second).rejects.toBeInstanceOf(ConflictError);
+				await expect(second).rejects.toThrow("Request is already approved");
+				expect(secondStages).toEqual(["rechecking_scope", "writing"]);
+				expect(await row(exceptionId)).toMatchObject({
+					status: "approved",
+					approver_id: manager.employeeId,
+				});
+				expect(notify.approved).toHaveBeenCalledTimes(1);
+				expect(notify.rejected).not.toHaveBeenCalled();
 			});
 
 			it.each([

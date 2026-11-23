@@ -6,6 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { complianceExceptionInboxScopesFor } from "@/lib/approvals/inbox/compliance-exception-inbox";
 import {
 	createShiftDatabaseFixture,
 	SHIFT_TEST_TIMEZONES,
@@ -13,7 +14,43 @@ import {
 	type ShiftTestOrganization,
 	STORED_SHIFT_DATES,
 } from "@/lib/scheduling/testing/shift-database.test.fixture";
+import { buildDailyDigestCard } from "../cards/daily-digest-card";
 import { buildDigestDataForManager } from "./daily-digest";
+
+/** The database with every query it starts counted, by relational table or builder method. */
+function countingReads<Database extends { query: object }>(database: Database) {
+	const counts: Record<string, number> = {};
+	const bump = (key: string) => {
+		counts[key] = (counts[key] ?? 0) + 1;
+	};
+	const query = new Proxy(database.query, {
+		get(tables, table) {
+			const builder = Reflect.get(tables, table) as Record<string, (input: unknown) => unknown>;
+			return {
+				findMany: (input: unknown) => {
+					bump(`query.${String(table)}`);
+					return builder.findMany(input);
+				},
+				findFirst: (input: unknown) => {
+					bump(`query.${String(table)}`);
+					return builder.findFirst(input);
+				},
+			};
+		},
+	});
+	const counted = new Proxy(database, {
+		get(target, property) {
+			if (property === "query") return query;
+			const value = Reflect.get(target, property, target);
+			if (typeof value !== "function") return value;
+			return (...args: unknown[]) => {
+				bump(String(property));
+				return value.apply(target, args);
+			};
+		},
+	});
+	return { database: counted, count: () => ({ ...counts }) };
+}
 
 /** Noon on 2026-10-09 in each zone, so today is 2026-10-09 and tomorrow 2026-10-10. */
 const NOON = {
@@ -68,6 +105,7 @@ describe("daily digest shifts", () => {
 				org.organizationId,
 				timezone,
 				"en",
+				null,
 				Temporal.Instant.from(NOON[timezone]),
 			);
 
@@ -129,8 +167,23 @@ describe("daily digest shifts", () => {
 			);
 		}
 
-		function digestFor(org: ShiftTestOrganization, managerEmployeeId: string) {
-			return buildDigestDataForManager(managerEmployeeId, org.organizationId, "UTC", "en", now);
+		/** The digest of a recipient, scoped as the tenant run scopes its recipients. */
+		async function digestFor(
+			org: ShiftTestOrganization,
+			recipient: { employeeId: string; userId: string },
+		) {
+			const scopes = complianceExceptionInboxScopesFor({
+				organizationId: org.organizationId,
+				userIds: [recipient.userId],
+			});
+			return buildDigestDataForManager(
+				recipient.employeeId,
+				org.organizationId,
+				"UTC",
+				"en",
+				await scopes.of(recipient),
+				now,
+			);
 		}
 
 		it("counts only those whose validity window is still open", async () => {
@@ -141,7 +194,70 @@ describe("daily digest shifts", () => {
 			// Lapsed an hour ago: the Approval inbox lists it as expired, not pending.
 			await exception(org, report.employeeId, now.subtract({ hours: 25 }));
 
-			expect((await digestFor(org, lead.employeeId)).compliancePending).toBe(1);
+			expect((await digestFor(org, lead)).compliancePending).toBe(1);
+		});
+
+		it("counts and links every pending exception of the organization for a recipient who manages Compliance", async () => {
+			const org = await fixture.organization("UTC");
+			// An org admin manages Compliance; their own report has nothing pending.
+			const admin = await fixture.seedEmployee({
+				organizationId: org.organizationId,
+				role: "admin",
+			});
+			await directReport(org, admin.employeeId);
+			const lead = await manager(org);
+			const report = await directReport(org, lead.employeeId);
+			await exception(org, report.employeeId);
+			await exception(org, report.employeeId);
+
+			const digest = await digestFor(org, admin);
+
+			expect(digest.compliancePending).toBe(2);
+			expect(JSON.stringify(buildDailyDigestCard(digest, "https://z8.test", "en"))).toContain(
+				"https://z8.test/approvals/inbox?types=compliance_exception",
+			);
+			// The manager still counts only their own eligible scope.
+			expect((await digestFor(org, lead)).compliancePending).toBe(2);
+			const otherLead = await manager(org);
+			await directReport(org, otherLead.employeeId);
+			expect((await digestFor(org, otherLead)).compliancePending).toBeUndefined();
+		});
+
+		it("reads the organization's eligibility and its recipients' permissions once per tenant run", async () => {
+			const org = await fixture.organization("UTC");
+			const recipients = await Promise.all([manager(org), manager(org), manager(org)]);
+			for (const recipient of recipients) {
+				await exception(org, (await directReport(org, recipient.employeeId)).employeeId);
+			}
+			const admin = await fixture.seedEmployee({
+				organizationId: org.organizationId,
+				role: "admin",
+			});
+			recipients.push(admin);
+
+			async function readsFor(people: { employeeId: string; userId: string }[]) {
+				const reads = countingReads(fixture.db);
+				const scopes = complianceExceptionInboxScopesFor({
+					organizationId: org.organizationId,
+					userIds: people.map((person) => person.userId),
+					database: reads.database,
+				});
+				const resolved = await Promise.all(people.map((person) => scopes.of(person)));
+				return { resolved, reads: reads.count() };
+			}
+
+			const one = await readsFor(recipients.slice(0, 1));
+			const all = await readsFor(recipients);
+
+			// The organization's employees are read once, however many recipients there are.
+			expect(one.reads["query.employee"]).toBe(1);
+			expect(all.reads).toEqual(one.reads);
+			expect(all.resolved.map((scope) => scope?.kind)).toEqual([
+				"managed",
+				"managed",
+				"managed",
+				"organization",
+			]);
 		});
 
 		it("counts a team member without a direct manager for the team's primary manager, as the inbox does", async () => {
@@ -162,7 +278,7 @@ describe("daily digest shifts", () => {
 			]);
 			await exception(org, member.employeeId);
 
-			expect((await digestFor(org, lead.employeeId)).compliancePending).toBe(1);
+			expect((await digestFor(org, lead)).compliancePending).toBe(1);
 		});
 
 		it("counts none for an employee-role user with a direct report, who is no eligible manager", async () => {
@@ -171,7 +287,7 @@ describe("daily digest shifts", () => {
 			const report = await directReport(org, linked.employeeId);
 			await exception(org, report.employeeId);
 
-			expect((await digestFor(org, linked.employeeId)).compliancePending).toBeUndefined();
+			expect((await digestFor(org, linked)).compliancePending).toBeUndefined();
 		});
 	});
 });

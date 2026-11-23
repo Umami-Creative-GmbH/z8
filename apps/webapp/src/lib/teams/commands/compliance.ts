@@ -69,6 +69,7 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 			const complianceService = yield* TeamsComplianceService;
 			const summary = yield* complianceService.getComplianceSummary({
 				managerId: ctx.employeeId,
+				userId: ctx.userId,
 				organizationId: ctx.organizationId,
 				daysBack,
 				timezone: ctx.config.digestTimezone,

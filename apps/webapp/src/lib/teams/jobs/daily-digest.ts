@@ -21,7 +21,10 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { env } from "@/env";
-import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
+import {
+	type ComplianceExceptionInboxScope,
+	complianceExceptionInboxScopesFor,
+} from "@/lib/approvals/inbox/compliance-exception-inbox";
 import {
 	currentRosterDigestManager,
 	currentRosterReportIds,
@@ -46,7 +49,6 @@ import {
 import { createLogger } from "@/lib/logger";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
 import { buildDailyDigestCard } from "../cards/daily-digest-card";
 import { getOrganizationPersonalConversations } from "../conversation-manager";
@@ -58,6 +60,12 @@ const deputyEmployee = alias(employee, "deputy_employee");
 const deputyUser = alias(user, "deputy_user");
 
 const logger = createLogger("TeamsDailyDigest");
+
+/**
+ * Every digest run (Teams, Slack, Discord, Telegram) resolves its recipients' compliance exception
+ * scopes through one of these per tenant, so the organization is read once per run (#1977).
+ */
+export { complianceExceptionInboxScopesFor };
 
 /** Returns whether a manager should not receive a digest on their local day. */
 export async function shouldSkipDigestForManager(
@@ -219,6 +227,10 @@ async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 	}
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
+	const complianceScopes = complianceExceptionInboxScopesFor({
+		organizationId: tenant.organizationId,
+		userIds: conversations.map((conv) => conv.userId),
+	});
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
@@ -249,6 +261,7 @@ async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 					tenant.organizationId,
 					temporal.effectiveTimezone,
 					temporal.locale,
+					await complianceScopes.of({ userId: conv.userId, employeeId: emp.id }),
 				);
 
 				// Build and send card
@@ -287,23 +300,18 @@ export function digestTitleDate(date: Date, timezone: string, locale: string): s
 }
 
 /**
- * The pending compliance exceptions this manager decides in the Approval inbox the digest links
- * to (#1977): those of the employees they are an eligible manager of, as the inbox resolves it,
- * so a team's primary manager counts a member who has no direct manager, and a direct link
- * alone counts nothing. Not a lapsed one: the inbox lists it as expired.
+ * The pending compliance exceptions this recipient decides in the Approval inbox the digest links
+ * to (#1977), in the scope that inbox gives them: the organization's with `manage Compliance`,
+ * else those of the employees they are an eligible manager of. Not a lapsed one: the inbox lists
+ * it as expired.
  */
-async function countPendingComplianceExceptionsForManager(
-	managerId: string,
+async function countPendingComplianceExceptionsInScope(
+	scope: ComplianceExceptionInboxScope | null,
 	organizationId: string,
 	nowInstant: Instant,
 ): Promise<number> {
-	const scopes = await getEligibleApprovalScopesForManager({
-		db,
-		managerEmployeeId: managerId,
-		organizationId,
-	});
-	const employeeIds = scopes.map((scope) => scope.requesterEmployeeId);
-	if (employeeIds.length === 0) return 0;
+	if (!scope) return 0;
+	if (scope.kind === "managed" && scope.employeeIds.length === 0) return 0;
 	const [result] = await db
 		.select({ count: sql<number>`count(*)` })
 		.from(complianceException)
@@ -311,20 +319,24 @@ async function countPendingComplianceExceptionsForManager(
 			and(
 				eq(complianceException.organizationId, organizationId),
 				awaitingComplianceExceptionDecision(nowInstant),
-				inArray(complianceException.employeeId, employeeIds),
+				scope.kind === "managed"
+					? inArray(complianceException.employeeId, [...scope.employeeIds])
+					: undefined,
 			),
 		);
 	return Number(result?.count) || 0;
 }
 
 /**
- * Build digest data for a specific manager
+ * Build digest data for a specific manager. `complianceExceptionScope` is the recipient's, from
+ * the run's `complianceExceptionInboxScopesFor`.
  */
 export async function buildDigestDataForManager(
 	managerId: string,
 	organizationId: string,
 	timezone: string,
-	locale: string = DEFAULT_LANGUAGE,
+	locale: string,
+	complianceExceptionScope: ComplianceExceptionInboxScope | null,
 	nowInstant: Instant = systemClock.nowInstant(),
 ): Promise<DailyDigestData> {
 	const today = plainDateAt(nowInstant, timezone);
@@ -399,7 +411,7 @@ export async function buildDigestDataForManager(
 				endTime: true,
 			},
 		}),
-		countPendingComplianceExceptionsForManager(managerId, organizationId, nowInstant),
+		countPendingComplianceExceptionsInScope(complianceExceptionScope, organizationId, nowInstant),
 	]);
 
 	// Process Phase 1 results

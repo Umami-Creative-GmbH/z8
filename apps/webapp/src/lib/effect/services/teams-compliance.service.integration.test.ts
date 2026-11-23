@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { Effect, Layer } from "effect";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { buildComplianceCard } from "@/lib/teams/cards/compliance-card";
 import {
 	type ClosedMonthDatabaseFixture,
 	createClosedMonthDatabaseFixture,
@@ -89,8 +90,8 @@ describe("Teams compliance card on PostgreSQL", () => {
 		return id;
 	}
 
-	function cardFor(viewer: { employeeId: string }) {
-		const params = { managerId: viewer.employeeId, organizationId };
+	function cardFor(viewer: { employeeId: string; userId: string }) {
+		const params = { managerId: viewer.employeeId, userId: viewer.userId, organizationId };
 		return Effect.runPromise(
 			Effect.gen(function* () {
 				const service = yield* TeamsComplianceService;
@@ -122,6 +123,56 @@ describe("Teams compliance card on PostgreSQL", () => {
 
 		expect(card.pending.map((pending) => pending.id)).toEqual([openId]);
 		expect(card.count).toBe(1);
+	});
+
+	it("lists every pending exception of the organization, with the button to review them, for a recipient who manages Compliance", async () => {
+		// An org admin manages Compliance; their own report has nothing pending.
+		const admin = await fixture.seedEmployee({ organizationId, role: "admin" });
+		const report = await fixture.employee({ organizationId });
+		await fixture.pool.query(
+			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+			 values ($1, $2, $3, true, $4)`,
+			[randomUUID(), report.employeeId, admin.employeeId, ownerUserId],
+		);
+		const exceptionId = await exception({ employeeId: employee.employeeId });
+		const reportViolationId = await violation(report.employeeId);
+		await violation(employee.employeeId);
+
+		const card = await cardFor(admin);
+		const summary = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* TeamsComplianceService;
+				return yield* service.getComplianceSummary({
+					managerId: admin.employeeId,
+					userId: admin.userId,
+					organizationId,
+					timezone: "Europe/Berlin",
+				});
+			}).pipe(Effect.provide(layer)),
+		);
+
+		expect(card.pending).toEqual([
+			expect.objectContaining({ id: exceptionId, employeeId: employee.employeeId }),
+		]);
+		expect(card.pending[0]?.employeeName).not.toBe("Unknown");
+		expect(card.count).toBe(1);
+		// The violations stay those of the admin's own eligible scope.
+		expect(card.alerts.map((alert) => alert.id)).toEqual([reportViolationId]);
+		const actions = buildComplianceCard({
+			summary,
+			daysBack: 7,
+			appUrl: "https://z8.test",
+			locale: "en",
+			canOpenViolationsView: true,
+		}).actions;
+		expect(actions).toContainEqual(
+			expect.objectContaining({
+				title: "Review Exceptions",
+				url: "https://z8.test/approvals/inbox?types=compliance_exception",
+			}),
+		);
+		// A manager still sees only their own eligible scope.
+		expect((await cardFor(manager)).pending.map((pending) => pending.id)).toEqual([exceptionId]);
 	});
 
 	describe("a team's primary manager", () => {
