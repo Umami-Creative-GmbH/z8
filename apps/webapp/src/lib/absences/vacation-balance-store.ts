@@ -11,6 +11,7 @@ import {
 } from "./absence-days-resolver";
 import { FIRST_WORKING_WEEK_YEAR } from "./prorated-allowance";
 import {
+	loadEmployeeEmployments,
 	loadEmployeeVacationOverrides,
 	loadProratedVacationAllowances,
 } from "./prorated-allowance-store";
@@ -57,6 +58,11 @@ export interface VacationBalances {
 	balances: Map<string, VacationBalance>;
 	/** Each balance's adjustments by kind (#1105, #1106); same keys as `balances`. */
 	adjustments: Map<string, VacationAdjustmentSums>;
+	/**
+	 * Requested employees who were only ever External Contractors (#1996). They have no vacation:
+	 * no policy coverage, configuration or balance, so no coverage gap is reported for them.
+	 */
+	externalContractors: Set<string>;
 }
 
 /**
@@ -97,7 +103,7 @@ export async function loadVacationBalances(
 		year,
 	});
 	const requestedIds = [...new Set(input.employeeIds)];
-	const employeeIds = requestedIds.length
+	const organizationEmployeeIds = requestedIds.length
 		? (
 				await database.query.employee.findMany({
 					where: and(
@@ -108,6 +114,17 @@ export async function loadVacationBalances(
 				})
 			).map((row) => row.id)
 		: [];
+	// Someone who was only ever an External Contractor has no employment for vacation (#1996).
+	const externalContractors = new Set<string>();
+	if (organizationEmployeeIds.length > 0) {
+		for (const [employeeId, employments] of await loadEmployeeEmployments(database, {
+			organizationId,
+			employeeIds: organizationEmployeeIds,
+		})) {
+			if (employments.employments.length === 0) externalContractors.add(employeeId);
+		}
+	}
+	const employeeIds = organizationEmployeeIds.filter((id) => !externalContractors.has(id));
 	if (employeeIds.length === 0) {
 		return {
 			policy,
@@ -117,6 +134,7 @@ export async function loadVacationBalances(
 			workingWeeks: new Map(),
 			balances: new Map(),
 			adjustments: new Map(),
+			externalContractors,
 		};
 	}
 
@@ -183,6 +201,7 @@ export async function loadVacationBalances(
 			workingWeeks,
 			balances: new Map(),
 			adjustments: new Map(),
+			externalContractors,
 		};
 	const overrides = await loadEmployeeVacationOverrides(database, {
 		organizationId,
@@ -298,5 +317,6 @@ export async function loadVacationBalances(
 		workingWeeks,
 		balances,
 		adjustments,
+		externalContractors,
 	};
 }

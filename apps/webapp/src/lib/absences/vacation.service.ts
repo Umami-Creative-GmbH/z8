@@ -22,7 +22,10 @@ import {
 	upsertEmployeeVacationAllowance,
 } from "@/lib/query/vacation.queries";
 import { calculateCarryoverExpiryDate } from "./date-utils";
-import { loadProratedVacationAllowances } from "./prorated-allowance-store";
+import {
+	loadEmployeeEmployments,
+	loadProratedVacationAllowances,
+} from "./prorated-allowance-store";
 import {
 	type VacationBalance,
 	type VacationBalanceConfiguration,
@@ -239,10 +242,18 @@ export async function calculateAnnualCarryover(
 		};
 	}
 
-	// Get all employees with vacation data
-	const employees = await getEmployeesWithVacationData(
+	// Get all employees with vacation data; someone who was only ever an External Contractor
+	// has no vacation to carry (#1996).
+	const withVacationData = await getEmployeesWithVacationData(
 		organizationId,
 		fromYear,
+	);
+	const employments = await loadEmployeeEmployments(db, {
+		organizationId,
+		employeeIds: withVacationData.map((emp) => emp.id),
+	});
+	const employees = withVacationData.filter(
+		(emp) => (employments.get(emp.id)?.employments.length ?? 0) > 0,
 	);
 	// The fromYear allowance of each employee, prorated in a start or exit year (#1110), and
 	// their adjustments, manual and accrual (#1105, #1106)
