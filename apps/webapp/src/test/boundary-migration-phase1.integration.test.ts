@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,6 +20,13 @@ type Journal = {
 	dialect: string;
 	entries: Array<{ idx: number; version: string; when: number; tag: string; breakpoints: boolean }>;
 };
+
+/** Migrations after the 0327 seal (0328 on, #1935) run in one `post_0327` stage right after it. */
+const POST_0327_STAGES = (
+	JSON.parse(readFileSync(join(migrationsFolder, "meta", "_journal.json"), "utf8")) as Journal
+).entries.some((entry) => Number.parseInt(entry.tag.slice(0, 4), 10) > 327)
+	? ["post_0327"]
+	: [];
 
 async function createSiblingDatabase(prefix: string): Promise<{
 	databaseName: string;
@@ -197,8 +205,8 @@ describe("boundary-aware migration engine and Phase 1 expand schema (0318-0321)"
 					},
 				});
 				expect(sealDone.stoppedAtGate).toBeNull();
-				expect(sealDone.appliedStages).toEqual(["phase2_0327"]);
-				expect(sealStages).toHaveLength(1);
+				expect(sealDone.appliedStages).toEqual(["phase2_0327", ...POST_0327_STAGES]);
+				expect(sealStages).toHaveLength(1 + POST_0327_STAGES.length);
 				expect(sealStages[0]?.xid).not.toBe(gate2Stages[4]?.xid);
 			} finally {
 				await sibling.cleanup();
