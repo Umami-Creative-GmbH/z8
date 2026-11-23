@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useDisplayContext } from "@/hooks/use-display-context";
+import { formatBillableAmount, formatRateDate, lastDayBefore } from "@/lib/billable-time/format";
 import type {
 	ContractorCompensationRecord,
 	ContractorTermsView,
@@ -121,25 +122,9 @@ export const CONTRACTOR_COMPENSATION_REFUSALS = {
 	],
 } satisfies RefusalMessages<TermsRefusal | "NotFoundError">;
 
-function formatMoney(locale: string, amount: string, currency: string): string {
-	try {
-		return new Intl.NumberFormat(locale, { style: "currency", currency }).format(Number(amount));
-	} catch {
-		return `${amount} ${currency}`;
-	}
-}
-
-function formatDay(locale: string, value: string): string {
-	const [year, month, day] = value.split("-").map(Number);
-	return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
-		new Date(Date.UTC(year, month - 1, day)),
-	);
-}
-
-function lastDayBefore(value: string): string {
-	const [year, month, day] = value.split("-").map(Number);
-	return new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
-}
+// Display only: the decimal string and the plain day are formatted as they are.
+const formatMoney = formatBillableAmount;
+const formatDay = formatRateDate;
 
 /** "€650.00 per day" and how worked days are counted. */
 export function describeCompensation(
