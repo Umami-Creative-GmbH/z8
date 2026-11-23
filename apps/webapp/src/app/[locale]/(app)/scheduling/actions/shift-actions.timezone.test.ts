@@ -57,6 +57,7 @@ vi.mock("@/lib/effect/services/schedule-compliance.service", async () => {
 				evaluateScheduleWindow: (input: unknown) => {
 					mockState.evaluateScheduleWindow(input);
 					return Effect.succeed({
+						findings: [],
 						summary: { totalFindings: 0, byType: {} },
 						fingerprint: "fingerprint-1",
 					});
