@@ -4,9 +4,9 @@
  * organization blocks JArbSchG shift publication, the save runs the same statutory check for the
  * shift's day before and after the edit, and is refused when it newly blocks publication of the
  * edited shift or of another published shift of the same employee, or deepens such a block past
- * its limit. A blocking finding the shift already had and the edit leaves no worse, also on the
- * day it moves to, does not refuse the save; nor does a rest-period or daily or weekly maximum
- * breach that a reordered day moves to another shift without deepening it
+ * its limit. A blocking breach the edit leaves no worse in its scope (its judged day or week, its
+ * release day, or its own shift on its day) does not refuse the save, also when a reordered day
+ * moves it to another shift; carried to a day or week that had none, it is a new breach there
  * (`causedBlockingFindings`). A current sector exception lifts the block as at
  * publication. Drafts are judged when they are published.
  */

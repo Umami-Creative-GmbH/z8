@@ -67,9 +67,14 @@ _Avoid_: counting `child_sick` absence as sick leave
   edit or a publication by the same rule, running only the monitors that can block publication
   (`statutoryBlockingScheduleContributors`). It counts only breaches on what goes live (the
   edited shift, the range's drafts, published shifts); a breach on a draft outside the range is
-  judged when that draft is published. A rest-period, daily, weekly or days-per-week breach is
-  the same breach before and after while it judges the same day (or week), even when a reordered
-  day moves it to another shift (`causedBlockingFindings`)
+  judged when that draft is published. A breach is the same before and after only within its
+  scope (`breachScopeOf`, `causedBlockingFindings`): a rest-period, daily, weekly or days-per-week
+  breach its judged day (or week), whichever shift a reordered day moves it to; an apprentice
+  release conflict its release day; any other breach (night, weekend, holiday work, breaks) its
+  own shift on its local day. Within the scope a change is caused only when it goes past the
+  deepest breach the scope had. A breach carried to a day or week that had none is new there, at
+  any figures: moving a published 10 h Tuesday to Wednesday at 9 h is refused, shortening it to
+  9 h on Tuesday saves
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
 
