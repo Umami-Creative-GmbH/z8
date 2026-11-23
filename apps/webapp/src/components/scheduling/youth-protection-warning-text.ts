@@ -12,6 +12,21 @@ function releaseDateText(finding: StatutoryComplianceFinding, locale: string): s
 		: "—";
 }
 
+/** The day of a youth-protection finding, as the reader's locale writes it. */
+function findingDayText(finding: StatutoryComplianceFinding, locale: string): string {
+	return finding.day ? formatPlainDate(parsePlainDate(finding.day), locale, "dateMedium") : "—";
+}
+
+/**
+ * The Monday of the week of a youth-protection finding (§ 8 counts Monday to Sunday), as the
+ * reader's locale writes it: every shift past the weekly cap carries a finding of that week.
+ */
+function findingWeekText(finding: StatutoryComplianceFinding, locale: string): string {
+	if (!finding.day) return "—";
+	const day = parsePlainDate(finding.day);
+	return formatPlainDate(day.subtract({ days: day.dayOfWeek - 1 }), locale, "dateMedium");
+}
+
 /**
  * Planner text for JArbSchG youth-protection and BBiG apprentice-release findings (#1993), or
  * null for other statutory kinds. Quantities are minutes or days, never money.
@@ -24,17 +39,19 @@ export function youthProtectionWarningText(
 	const used = finding.summary.used?.value ?? 0;
 	const limit = finding.summary.limit?.value ?? 0;
 	switch (finding.statutoryKind) {
+		// Every piece of work past a cap has a finding: the line names its day or week, so
+		// Staffing can show one line per day and per week.
 		case "jarbschg_daily_max":
 			return t(
-				"scheduling:scheduling.statutory.jarbschg.dailyMax",
-				"Under 18: {used} min of work on this day exceeds the {limit} min youth limit",
-				{ used, limit },
+				"scheduling:scheduling.statutory.jarbschg.dailyMaxOn",
+				"Under 18: {used} min of work on {date} exceeds the {limit} min youth limit",
+				{ used, limit, date: findingDayText(finding, locale) },
 			);
 		case "jarbschg_weekly_max":
 			return t(
-				"scheduling:scheduling.statutory.jarbschg.weeklyMax",
-				"Under 18: {used} min of work this week exceeds the {limit} min youth limit",
-				{ used, limit },
+				"scheduling:scheduling.statutory.jarbschg.weeklyMaxWeekOf",
+				"Under 18: {used} min of work in the week of {date} exceeds the {limit} min youth limit",
+				{ used, limit, date: findingWeekText(finding, locale) },
 			);
 		case "jarbschg_days_per_week":
 			return t(

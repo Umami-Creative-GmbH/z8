@@ -232,8 +232,8 @@
         "apprenticeship": "Freistellung Auszubildende (BBiG)"
       },
       "jarbschg": {
-        "dailyMax": "Unter 18: {used} Min. Arbeit an diesem Tag überschreiten die Jugendgrenze von {limit} Min.",
-        "weeklyMax": "Unter 18: {used} Min. Arbeit in dieser Woche überschreiten die Jugendgrenze von {limit} Min.",
+        "dailyMaxOn": "Unter 18: {used} Min. Arbeit am {date} überschreiten die Jugendgrenze von {limit} Min.",
+        "weeklyMaxWeekOf": "Unter 18: {used} Min. Arbeit in der Woche ab {date} überschreiten die Jugendgrenze von {limit} Min.",
         "daysPerWeek": "Unter 18: {used} Arbeitstage in dieser Woche, höchstens {limit} erlaubt",
         "restPeriod": "Unter 18: nur {used} Min. Ruhezeit vor dieser Schicht, {limit} Min. erforderlich",
         "break": "Unter 18: {used} Min. Pause genommen, {limit} Min. erforderlich",

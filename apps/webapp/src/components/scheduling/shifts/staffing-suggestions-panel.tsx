@@ -154,6 +154,24 @@ function warningText(warning: StaffingWarning, t: Translate, locale: string): st
 	}
 }
 
+/**
+ * One line per distinct text, keyed by its first warning. Statutory maximums sit on every shift
+ * past the cap, so a proposal can bring several findings that read the same (one per week); the
+ * findings themselves stay as they are.
+ */
+function warningLines(
+	warnings: readonly StaffingWarning[],
+	t: Translate,
+	locale: string,
+): { key: string; text: string; warning: StaffingWarning }[] {
+	const lines = new Map<string, { key: string; text: string; warning: StaffingWarning }>();
+	for (const warning of warnings) {
+		const text = warningText(warning, t, locale);
+		if (!lines.has(text)) lines.set(text, { key: warningKey(warning), text, warning });
+	}
+	return [...lines.values()];
+}
+
 function noteText(note: StaffingNote, t: Translate): string {
 	return t(
 		"scheduling:scheduling.staffingSuggestions.note.missingPreferredSkill",
@@ -231,10 +249,9 @@ export function StaffingSuggestionsPanel({
 								</p>
 								{suggestion.warnings.length > 0 && (
 									<ul className="flex flex-col gap-y-0.5 text-xs text-amber-700 dark:text-amber-400">
-										{suggestion.warnings.map((warning) => {
-											const text = warningText(warning, t, locale);
+										{warningLines(suggestion.warnings, t, locale).map(({ key, text, warning }) => {
 											return (
-												<li key={warningKey(warning)} className="flex flex-wrap items-center gap-1">
+												<li key={key} className="flex flex-wrap items-center gap-1">
 													<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />
 													<span>{text}</span>
 													{/* Only that one is on file: opening it takes personnel file access (#1144). */}

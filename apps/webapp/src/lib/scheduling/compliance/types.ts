@@ -89,6 +89,11 @@ export interface StatutoryComplianceFinding {
 	 * shift through two release days has a conflict on each. A date, never money.
 	 */
 	releaseDay?: string;
+	/**
+	 * The local day (`YYYY-MM-DD`) a JArbSchG youth-protection finding is about (#1993): daily
+	 * and weekly maximums sit on every piece of work past the cap. A date, never money.
+	 */
+	day?: string;
 	/** Null when the finding cannot be acknowledged. */
 	acknowledgementStatus: "none" | "current" | "stale" | null;
 	/** True when the organization blocks publishing this finding (JArbSchG hard limits). */

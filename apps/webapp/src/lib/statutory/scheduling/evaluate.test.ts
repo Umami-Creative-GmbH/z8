@@ -128,4 +128,12 @@ describe("limitDirection reaches Scheduling and restricted readers", () => {
 				toStatutoryComplianceFinding(finding({ used: minutes(540), limit: minutes(480) })).summary,
 		).toBe(false);
 	});
+
+	it("dates a youth-protection finding by its day, so planners can tell two days apart", () => {
+		const projected = toStatutoryComplianceFinding(
+			finding({ used: minutes(540), limit: minutes(480) }),
+		);
+		expect(projected.day).toBe("2027-03-02");
+		expect(projected.releaseDay).toBeUndefined();
+	});
 });

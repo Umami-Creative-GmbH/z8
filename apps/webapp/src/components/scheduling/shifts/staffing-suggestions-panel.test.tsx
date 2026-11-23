@@ -165,6 +165,73 @@ describe("StaffingSuggestionsPanel", () => {
 		consoleError.mockRestore();
 	});
 
+	describe("youth working-time maximums on several shifts past the cap (#1993)", () => {
+		const youthMax = (
+			statutoryKind: "jarbschg_daily_max" | "jarbschg_weekly_max",
+			shift: string,
+			day: string,
+			used: number,
+			limit: number,
+		): StaffingWarning => ({
+			type: "compliance",
+			findingType: "statutory",
+			finding: {
+				type: "statutory",
+				employeeId: "id-Anna Berg",
+				findingId: `${statutoryKind}:id-Anna Berg:shift:${shift}`,
+				statutoryKind,
+				domain: "youth_protection",
+				severity: "critical",
+				subjectKey: `shift:${shift}`,
+				legalReference: "§ 8 JArbSchG",
+				summary: {
+					used: { unit: "minutes", value: used },
+					limit: { unit: "minutes", value: limit },
+				},
+				day,
+				acknowledgementStatus: null,
+				blocksPublication: true,
+			},
+		});
+
+		it("shows one line per week for weekly-maximum findings of that week", () => {
+			const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+			renderPanel([
+				suggestion("Anna Berg", {
+					warnings: [
+						youthMax("jarbschg_weekly_max", "thu", "2027-03-04", 2_700, 2_400),
+						youthMax("jarbschg_weekly_max", "fri", "2027-03-05", 2_700, 2_400),
+						youthMax("jarbschg_weekly_max", "sat", "2027-03-06", 2_700, 2_400),
+					],
+				}),
+			]);
+
+			expect(screen.getAllByText(/^Under 18/).map((line) => line.textContent)).toEqual([
+				"Under 18: 2700 min of work in the week of Mar 1, 2027 exceeds the 2400 min youth limit",
+			]);
+			expect(consoleError.mock.calls.filter((args) => args.join(" ").includes("same key"))).toEqual(
+				[],
+			);
+			consoleError.mockRestore();
+		});
+
+		it("names the day of each daily-maximum finding, one line each", () => {
+			renderPanel([
+				suggestion("Anna Berg", {
+					warnings: [
+						youthMax("jarbschg_daily_max", "mon", "2027-03-01", 540, 480),
+						youthMax("jarbschg_daily_max", "tue", "2027-03-02", 540, 480),
+					],
+				}),
+			]);
+
+			expect(screen.getAllByText(/^Under 18/).map((line) => line.textContent)).toEqual([
+				"Under 18: 540 min of work on Mar 1, 2027 exceeds the 480 min youth limit",
+				"Under 18: 540 min of work on Mar 2, 2027 exceeds the 480 min youth limit",
+			]);
+		});
+	});
+
 	it("passes the picked employee on", () => {
 		const onPick = renderPanel([suggestion("Anna Berg")]);
 

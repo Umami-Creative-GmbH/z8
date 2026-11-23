@@ -232,8 +232,8 @@
         "apprenticeship": "Apprentice release (BBiG)"
       },
       "jarbschg": {
-        "dailyMax": "Under 18: {used} min of work on this day exceeds the {limit} min youth limit",
-        "weeklyMax": "Under 18: {used} min of work this week exceeds the {limit} min youth limit",
+        "dailyMaxOn": "Under 18: {used} min of work on {date} exceeds the {limit} min youth limit",
+        "weeklyMaxWeekOf": "Under 18: {used} min of work in the week of {date} exceeds the {limit} min youth limit",
         "daysPerWeek": "Under 18: {used} working days this week, at most {limit} allowed",
         "restPeriod": "Under 18: only {used} min of rest before this shift, {limit} min required",
         "break": "Under 18: {used} min of breaks taken, {limit} min required",

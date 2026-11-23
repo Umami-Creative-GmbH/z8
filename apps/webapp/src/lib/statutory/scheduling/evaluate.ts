@@ -44,6 +44,7 @@ export function toStatutoryComplianceFinding(
 		summary: restrictedSummary(finding),
 		// Apprentice release conflicts are dated by their release day (#1993).
 		...(finding.domain === "apprenticeship" ? { releaseDay: finding.periodStart } : {}),
+		...(finding.domain === "youth_protection" ? { day: finding.periodStart } : {}),
 		acknowledgementStatus: finding.acknowledgementKind
 			? (finding.acknowledgement?.status ?? "none")
 			: null,
