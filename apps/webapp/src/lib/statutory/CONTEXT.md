@@ -47,3 +47,43 @@ amounts, wages, external earnings or EUR baselines.
   schedule compliance evaluation and Staffing suggestions through the contributor registry
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
+
+## Short-term employment
+
+§ 8 Abs. 1 Nr. 2 SGB IV (*kurzfristige Beschäftigung*), judged per calendar year in the
+organization's calendar timezone.
+
+**Short-term day**:
+An organization-local calendar day under short-term terms with completed work, an open clock-in
+or a shift that has not ended. Counted once, however many work periods or shifts it has.
+
+**Stint**:
+A run of short-term days no more than 14 calendar days apart within one employment period. A
+longer pause or a new employment period starts a new stint.
+_Avoid_: contract, assignment
+
+**3-month limit**:
+Applies when the employee works a continuous week of 5 or more days. Counted in calendar days. One
+stint alone is measured in **time months** (*Zeitmonate*) from its first day: 15 June – 14 September
+is 3 months. Several stints, prior employers' included, are added up against **90 calendar days**,
+a full calendar month counting as 30; the pauses between stints never count.
+
+**70-working-day limit**:
+Applies to a week of fewer than 5 days or an irregular week, and to the whole year as soon as any
+stint has one. Counts short-term days.
+
+**Limit choice**:
+Taken from the employee's own planned week: custom days or a work policy set on their terms or
+assigned to them. A week inherited from a team or organization default, weekly hours alone,
+published shifts and on-call terms are no agreed week; the limit then follows the mean full week
+observed in the counted days.
+
+**Prior-employer offset**:
+Short-term working days or months another employer used in the same calendar year, recorded as
+statutory context. Recorded working days switch the year to the 70-working-day limit; recorded
+months count as 30 calendar days each (or 70 / 3 working days each under that limit).
+
+**Berufsmäßigkeit verification**:
+When a month's short-term earnings exceed the Minijob monthly limit, the employer must verify that
+the employment is not *berufsmäßig* (not the person's livelihood). Z8 prompts and an org admin
+documents the verification as an acknowledgement; Z8 never decides social-security status.
