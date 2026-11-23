@@ -12,6 +12,7 @@ import { listApprenticeReleases, recordApprenticeRelease } from "../employee-con
 import { isMinorOn } from "../youth/age";
 import { loadEmployeeBirthdays, loadHolidayDateKeys } from "../youth/youth-facts";
 import { apprenticeReleaseDays } from "./release-credits";
+import { loadApprenticeReleaseRecords } from "./release-facts";
 
 type Reader = Pick<DatabaseClient, "select">;
 
@@ -108,7 +109,8 @@ export async function loadApprenticeReleaseCredits(
 /**
  * Records a release for an apprentice. Every released day must fall under apprentice terms; a
  * school day needs its lesson count and a block week its school minutes. With
- * `includePreExamDay`, an exam day also releases the working day immediately before it.
+ * `includePreExamDay`, an exam day also releases the working day immediately before it, unless
+ * that day is already released.
  */
 export async function recordApprenticeReleaseWithCredit(
 	db: Pick<DatabaseClient, "select" | "insert" | "update" | "transaction">,
@@ -203,7 +205,18 @@ export async function recordApprenticeReleaseWithCredit(
 		note: input.note,
 	};
 	await db.transaction(async (tx) => {
-		if (preExamDay) {
+		// A pre-exam day that is already released (e.g. a school day) is not recorded twice.
+		const alreadyReleased =
+			preExamDay &&
+			(
+				await loadApprenticeReleaseRecords(tx, {
+					organizationId: input.organizationId,
+					employeeIds: [input.employeeId],
+					from: preExamDay.toString(),
+					until: preExamDay.add({ days: 1 }).toString(),
+				})
+			).has(input.employeeId);
+		if (preExamDay && !alreadyReleased) {
 			await recordApprenticeRelease(tx, {
 				...base,
 				releaseKind: "pre_exam_day",

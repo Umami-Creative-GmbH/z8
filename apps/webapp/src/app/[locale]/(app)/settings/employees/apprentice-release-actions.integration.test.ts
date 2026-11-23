@@ -141,6 +141,35 @@ describe("apprentice release actions (PostgreSQL)", () => {
 		);
 	});
 
+	it("records the exam when the working day before it is already released", async () => {
+		// Tuesday 11 May 2027 is already a full school day; the exam is on Wednesday.
+		expect(
+			await recordApprenticeReleaseAction({
+				employeeId: learner.employeeId,
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-05-11",
+				endsOn: "2027-05-11",
+				lessonCount: 6,
+			}),
+		).toMatchObject({ success: true });
+		expect(
+			await recordApprenticeReleaseAction({
+				employeeId: learner.employeeId,
+				releaseKind: "exam_day",
+				startsOn: "2027-05-12",
+				endsOn: "2027-05-12",
+				includePreExamDay: true,
+			}),
+		).toMatchObject({ success: true });
+
+		const result = await getApprenticeReleaseCreditsAction({ employeeId: learner.employeeId });
+		if (!result.success) throw new Error(result.error);
+		expect(result.data.releases.map((release) => [release.releaseKind, release.startsOn])).toEqual([
+			["exam_day", "2027-05-12"],
+			["vocational_school_day", "2027-05-11"],
+		]);
+	});
+
 	it("refuses release days for employees who are not apprentices, and a school day without lessons", async () => {
 		const regular = await fx.employee(org, "regular", { birthday: "2000-01-01" });
 		expect(
