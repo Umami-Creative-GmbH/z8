@@ -349,6 +349,12 @@
           "nightMinutes": "{minutes} Min. nachts",
           "reason": "Warum gilt eine Branchenausnahme?",
           "reasonRequired": "Erklären Sie, welche Branchenausnahme gilt.",
+          "refusal": {
+            "changed": "Die Schicht hat sich geändert, seit diese Liste geladen wurde. Prüfen Sie sie erneut, bevor Sie die Ausnahme erfassen.",
+            "notFound": "Dieser Befund ist nicht mehr offen. Die Liste zeigt die aktuellen Befunde.",
+            "reasonRequired": "Erklären Sie, welche Branchenausnahme gilt.",
+            "subjectRequired": "Dieser Befund kann nicht bestätigt werden. Laden Sie die Liste neu und versuchen Sie es erneut."
+          },
           "stale": "Seit der letzten Bestätigung geändert",
           "title": "Jugendarbeitsschutz: Branchenausnahmen"
         }

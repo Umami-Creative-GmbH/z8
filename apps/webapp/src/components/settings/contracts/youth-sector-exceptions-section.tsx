@@ -3,7 +3,7 @@
 import { IconLoader2, IconMoonStars, IconShieldCheck } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -16,13 +16,41 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import {
+	actionErrorMessage,
+	type RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
+import { queryKeys } from "@/lib/query/keys";
+import type { StatutoryAcknowledgementRefusal } from "@/lib/statutory/acknowledgements";
 import type {
 	JarbschgSectorExceptionKind,
 	OpenYouthSectorException,
+	YouthSectorExceptionRefusal,
 } from "@/lib/statutory/youth/sector-exception-review";
-import { queryKeys } from "@/lib/query/keys";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** Every refusal recording a sector exception can return, as admins read it. */
+export const youthSectorExceptionRefusals = {
+	statutory_finding_not_found: [
+		"settings.contracts.reviews.youth.refusal.notFound",
+		"This finding is no longer open. The list shows the current findings.",
+	],
+	statutory_finding_changed: [
+		"settings.contracts.reviews.youth.refusal.changed",
+		"The shift changed since this list was loaded. Review it again before recording the exception.",
+	],
+	statutory_reason_required: [
+		"settings.contracts.reviews.youth.refusal.reasonRequired",
+		"Explain which sector exception applies.",
+	],
+	statutory_subject_required: [
+		"settings.contracts.reviews.youth.refusal.subjectRequired",
+		"This finding cannot be acknowledged. Reload the list and try again.",
+	],
+} as const satisfies RefusalMessages<YouthSectorExceptionRefusal | StatutoryAcknowledgementRefusal>;
 
 const youthSectorExceptionsKey = (organizationId: string) =>
 	["contracts", "youth-sector-exceptions", organizationId] as const;
@@ -51,7 +79,7 @@ export function YouthSectorExceptionsSection({ organizationId }: { organizationI
 		queryKey: youthSectorExceptionsKey(organizationId),
 		queryFn: async (): Promise<OpenYouthSectorException[]> => {
 			const result = await listYouthSectorExceptionsAction();
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 	});
@@ -104,6 +132,7 @@ function YouthSectorExceptionItem({
 	finding: OpenYouthSectorException;
 }) {
 	const { t } = useTranslate();
+	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const queryClient = useQueryClient();
 	const [open, setOpen] = useState(false);
 	const mutation = useMutation({
@@ -117,7 +146,9 @@ function YouthSectorExceptionItem({
 				reason: value.reason,
 				legalNote: value.legalNote.trim() || null,
 			});
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				throw new Error(actionErrorMessage(t, result, youthSectorExceptionRefusals));
+			}
 		},
 		onSuccess: () => {
 			toast.success(
@@ -137,7 +168,8 @@ function YouthSectorExceptionItem({
 	const form = useForm({
 		defaultValues: { reason: "", legalNote: "" },
 		onSubmit: async ({ value }) => {
-			await mutation.mutateAsync(value);
+			// A refusal is shown by onError; the form keeps what was entered.
+			await mutation.mutateAsync(value).catch(() => undefined);
 		},
 	});
 
@@ -146,7 +178,9 @@ function YouthSectorExceptionItem({
 			<div className="flex flex-wrap items-center gap-2">
 				<span className="font-medium">{finding.employeeName}</span>
 				<Badge variant="outline">{kindLabel(finding.findingKind, t)}</Badge>
-				<span className="text-muted-foreground text-sm tabular-nums">{finding.periodStart}</span>
+				<span className="text-muted-foreground text-sm tabular-nums">
+					{formatPlainDate(parsePlainDate(finding.periodStart), locale, "dateMedium")}
+				</span>
 				{finding.used?.unit === "minutes" ? (
 					<span className="text-muted-foreground text-sm tabular-nums">
 						{t("settings.contracts.reviews.youth.nightMinutes", "{minutes} min at night", {

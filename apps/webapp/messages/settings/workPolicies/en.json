@@ -349,6 +349,12 @@
           "nightMinutes": "{minutes} min at night",
           "reason": "Why does a sector exception apply?",
           "reasonRequired": "Explain which sector exception applies.",
+          "refusal": {
+            "changed": "The shift changed since this list was loaded. Review it again before recording the exception.",
+            "notFound": "This finding is no longer open. The list shows the current findings.",
+            "reasonRequired": "Explain which sector exception applies.",
+            "subjectRequired": "This finding cannot be acknowledged. Reload the list and try again."
+          },
           "stale": "Changed since last acknowledged",
           "title": "Youth protection: sector exceptions"
         }
