@@ -65,7 +65,11 @@ _Avoid_: counting `child_sick` absence as sick leave
   visible `limit` (same unit: `used` grows above a ceiling, or falls below a floor when the summary
   says `limitDirection: "floor"`, e.g. a youth rest period). The JArbSchG publish block refuses an
   edit or a publication by the same rule, running only the monitors that can block publication
-  (`statutoryBlockingScheduleContributors`)
+  (`statutoryBlockingScheduleContributors`). It counts only breaches on what goes live (the
+  edited shift, the range's drafts, published shifts); a breach on a draft outside the range is
+  judged when that draft is published. A rest-period, daily, weekly or days-per-week breach is
+  the same breach before and after while it judges the same day (or week), even when a reordered
+  day moves it to another shift (`causedBlockingFindings`)
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
 
