@@ -246,14 +246,15 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		);
 	});
 
-	it("counts a started shift in full until its work period closes", async () => {
+	it("counts a started shift in full until work is recorded for it, then the work and the rest", async () => {
 		const { org, owner, worker } = await setup();
 		const finished = await fx.employee(org, "finished", { contractType: "hourly" });
 		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
 		await mj.terms(finished, owner, { from: "2026-01-01", hourlyRate: 20 });
 		// Both shifts run 09:00–17:00 Berlin and now is 13:00. The worker has not clocked in yet:
 		// the whole shift (160 €) is still planned. The other one worked 09:00–11:00 and clocked
-		// out: their recorded 2 h (40 €) replace the shift.
+		// out: their recorded 2 h (40 €) replace the past of the shift; the 4 h still ahead (80 €)
+		// stay planned until the shift ends, as for a break.
 		await mj.shift(org, worker, owner, {
 			date: "2026-11-23",
 			startTime: "09:00",
@@ -274,7 +275,7 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 			result.employees.get(employeeId)?.find((m) => m.month === "2026-11");
 
 		expect(month(worker.employeeId)).toMatchObject({ earnedCents: 0, plannedCents: 16_000 });
-		expect(month(finished.employeeId)).toMatchObject({ earnedCents: 4_000, plannedCents: 0 });
+		expect(month(finished.employeeId)).toMatchObject({ earnedCents: 4_000, plannedCents: 8_000 });
 	});
 
 	it("counts one clock-in over back-to-back shifts once", async () => {
@@ -306,6 +307,93 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 			plannedCents: 4_000,
 			totalCents: 16_000,
 		});
+	});
+
+	it("counts the rest of a running shift during a clocked-out break", async () => {
+		const { org, owner, worker } = await setup();
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
+		// Shift 08:00–18:00 Berlin, worked 08:00–12:00, on a break at 12:15: 4 h worked (80 €) and
+		// the 5 h 45 min still ahead (115 €).
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-23",
+			startTime: "08:00",
+			endTime: "18:00",
+		});
+		await mj.work(org, worker, "2026-11-23", 240, "08:00");
+
+		const { employees } = await evaluate(
+			org,
+			[worker.employeeId],
+			{ from: "2026-11", until: "2026-12" },
+			"2026-11-23T11:15:00Z",
+		);
+
+		expect(employees.get(worker.employeeId)?.find((m) => m.month === "2026-11")).toMatchObject({
+			earnedCents: 8_000,
+			plannedCents: 11_500,
+			totalCents: 19_500,
+		});
+	});
+
+	it("keeps the projected total of a clock-in with seconds steady within the minute", async () => {
+		const { org, owner, worker } = await setup();
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
+		// Shift 09:00–13:00 Berlin, clocked in at 09:00:42: 3 h 59 min 18 s to the shift end.
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-23",
+			startTime: "09:00",
+			endTime: "13:00",
+		});
+		await mj.openWork(org, worker, "2026-11-23", "09:00:42");
+
+		const november = { from: "2026-11", until: "2026-12" };
+		const totalAt = async (now: string) =>
+			(await evaluate(org, [worker.employeeId], november, now)).employees
+				.get(worker.employeeId)
+				?.find((m) => m.month === "2026-11")?.totalCents;
+
+		const atTen = await totalAt("2026-11-23T09:00:00Z");
+		expect(await totalAt("2026-11-23T09:00:50Z")).toBe(atTen);
+		expect(await totalAt("2026-11-23T11:30:21.500Z")).toBe(atTen);
+	});
+
+	it("counts work for a shift in the shift's month", async () => {
+		const { org, owner, worker } = await setup();
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
+		// Shift 00:00–04:00 Berlin on 1 November; clocked in at 23:50 on 31 October.
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-01",
+			startTime: "00:00",
+			endTime: "04:00",
+		});
+		const months = { from: "2026-10", until: "2026-12" };
+		const byMonth = async (now: string) =>
+			Object.fromEntries(
+				(
+					(await evaluate(org, [worker.employeeId], months, now)).employees.get(
+						worker.employeeId,
+					) ?? []
+				)
+					.filter((m) => m.month >= "2026-10")
+					.map((m) => [m.month, { total: m.totalCents, fingerprint: m.fingerprint }]),
+			);
+
+		// 30 October, 12:00 Berlin: the shift is ahead, 4 h (80 €).
+		const before = await byMonth("2026-10-30T11:00:00Z");
+		const workId = await mj.openWork(org, worker, "2026-10-31", "23:50");
+		// 1 November, 01:00 Berlin: 4 h 10 min from the clock-in to the shift end, once.
+		const open = await byMonth("2026-11-01T00:00:00Z");
+		await mj.closeWork(workId, 250);
+		const closed = await byMonth("2026-11-01T05:00:00Z");
+
+		expect(before["2026-11"]?.total).toBe(8_000);
+		for (const state of [open, closed]) {
+			expect(state["2026-10"]?.total).toBe(0);
+			expect(state["2026-11"]).toEqual({
+				total: 8_333,
+				fingerprint: before["2026-11"]?.fingerprint,
+			});
+		}
 	});
 
 	it("prices each day at the terms in force and covers only months with Minijob days", async () => {

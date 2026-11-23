@@ -85,6 +85,135 @@ describe("Minijob month judgement (#1989)", () => {
 		]);
 	});
 
+	describe("acknowledgement fingerprint of a month with shifts", () => {
+		const baseline = { capCents: 60_300, unforeseeableMultiplier: 2, maxUnforeseeableMonths: 2 };
+		/** December: eight 10 h shifts from the 1st, at 10 € an hour. */
+		const shifts = Array.from({ length: 8 }, (_, i) => ({
+			id: `s${i + 1}`,
+			date: `2026-12-0${i + 1}`,
+			minutes: 600,
+			hourlyRateCents: 1000,
+		}));
+		const planned = (from: number) =>
+			shifts.slice(from).map((shift) => ({ source: "shift" as const, ...shift }));
+		const worked = (shiftIds: string[], date: string, minutes: number, id = `w-${date}`) => ({
+			source: "work" as const,
+			id,
+			date,
+			minutes,
+			hourlyRateCents: 1000,
+			shiftIds,
+		});
+		const fingerprintOf = (items: MinijobMonthFacts["items"]) =>
+			computeMinijobMonths("e1", [
+				{
+					month: "2026-12",
+					isMinijob: true,
+					...baseline,
+					items,
+					shifts,
+					externalOffsets: [],
+				},
+			])[0]?.fingerprint;
+
+		it("stays current while a shift is worked as planned", () => {
+			const acknowledged = fingerprintOf(planned(0));
+
+			expect(fingerprintOf([worked(["s1"], "2026-12-01", 600), ...planned(1)])).toBe(acknowledged);
+			// A few minutes over the plan are not material.
+			expect(fingerprintOf([worked(["s1"], "2026-12-01", 610), ...planned(1)])).toBe(acknowledged);
+		});
+
+		it("goes stale on extra work although an earlier shift was missed", () => {
+			// The 1 December shift was never worked: the admin acknowledged the 700 € left.
+			const acknowledged = fingerprintOf(planned(1));
+
+			// 18 h on the 10 h shift of 2 December: 780 €.
+			expect(fingerprintOf([worked(["s2"], "2026-12-02", 1080), ...planned(2)])).not.toBe(
+				acknowledged,
+			);
+		});
+
+		it("goes stale on an overrun after a short shift", () => {
+			const acknowledged = fingerprintOf([worked(["s1"], "2026-12-01", 300), ...planned(1)]);
+
+			// 1 December was cut to 5 h; 2 December ran 5 h over.
+			expect(
+				fingerprintOf([
+					worked(["s1"], "2026-12-01", 300),
+					worked(["s2"], "2026-12-02", 900),
+					...planned(2),
+				]),
+			).not.toBe(acknowledged);
+		});
+
+		it("can keep an acknowledgement current while the month crosses twice the cap", () => {
+			const facts = (minutes: number): MinijobMonthFacts => ({
+				month: "2026-12",
+				isMinijob: true,
+				...baseline,
+				// Twice the cap is 800 €: exactly what the eight shifts earn.
+				capCents: 40_000,
+				items: [worked(["s1"], "2026-12-01", minutes), ...planned(1)],
+				shifts,
+				externalOffsets: [],
+			});
+			const [acknowledged] = computeMinijobMonths("e1", [facts(600)]);
+			// Ten minutes over the first shift: immaterial for the fingerprint, but above twice the cap.
+			const later = computeMinijobMonths("e1", [facts(610)]);
+
+			const [judged] = judgeMinijobMonths(
+				later,
+				(m) => (m.fingerprint === acknowledged?.fingerprint ? "current" : "none"),
+				DEFAULT_STATUTORY_PREFERENCES,
+			);
+			expect(judged?.exceedance?.status).toBe("over_double_cap");
+			expect(judged?.fingerprint).toBe(acknowledged?.fingerprint);
+		});
+
+		it("nets one clock-in over back-to-back shifts against both", () => {
+			const acknowledged = fingerprintOf(planned(0));
+
+			expect(fingerprintOf([worked(["s1", "s2"], "2026-12-01", 1200), ...planned(2)])).toBe(
+				acknowledged,
+			);
+		});
+	});
+
+	it("prices the month's minutes once, however they split between work and plan", () => {
+		const totalOf = (workMinutes: number, restMinutes: number) =>
+			computeMinijobMonths("e1", [
+				{
+					...month("2026-12", 0, {
+						capCents: 60_300,
+						unforeseeableMultiplier: 2,
+						maxUnforeseeableMonths: 2,
+					}),
+					// 12.50 € an hour: 20.83 ct a minute.
+					items: [
+						{
+							source: "work",
+							id: "w",
+							date: "2026-12-01",
+							minutes: workMinutes,
+							hourlyRateCents: 1250,
+						},
+						{
+							source: "shift",
+							id: "s",
+							date: "2026-12-01",
+							minutes: restMinutes,
+							hourlyRateCents: 1250,
+						},
+					],
+				},
+			])[0]?.totalCents;
+
+		// Four minutes: 83.33 ct.
+		expect(totalOf(2, 2)).toBe(83);
+		expect(totalOf(4, 0)).toBe(83);
+	});
+
 	it("does not judge months without a baseline", () => {
 		const [judged] = judgeMinijobMonths(
 			computeMinijobMonths("e1", [

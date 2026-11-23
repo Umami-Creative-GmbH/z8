@@ -41,8 +41,11 @@ export interface MinijobEarningItem {
 	 * not go stale minute by minute; it changes when the work period closes.
 	 */
 	readonly inProgress?: boolean;
-	/** Work that belongs to a shift: the shift, not the work, stands for it in the fingerprint. */
-	readonly forShift?: boolean;
+	/**
+	 * Work that belongs to shifts: their ids (several for one clock-in over back-to-back shifts).
+	 * The shifts, not the work, stand for it in the fingerprint.
+	 */
+	readonly shiftIds?: readonly string[];
 }
 
 /** A persisted shift of the month as planned, whether it is ahead, under way or over. */
@@ -155,8 +158,12 @@ export function firstDayOf(month: string): string {
 	return `${month}-01`;
 }
 
-export function itemCents(item: Pick<MinijobEarningItem, "minutes" | "hourlyRateCents">): number {
-	return item.hourlyRateCents === null ? 0 : Math.round((item.minutes * item.hourlyRateCents) / 60);
+/**
+ * Cent-minutes (cents × 60), unrounded: the month rounds its sums once, so how its minutes split
+ * between items never shows in the total.
+ */
+function itemCentMinutes(item: Pick<MinijobEarningItem, "minutes" | "hourlyRateCents">): number {
+	return item.hourlyRateCents === null ? 0 : item.minutes * item.hourlyRateCents;
 }
 
 function byText<T>(key: (value: T) => string) {
@@ -164,21 +171,55 @@ function byText<T>(key: (value: T) => string) {
 }
 
 /**
+ * Minutes worked beyond the shifts, shift by shift: a missed or short shift is no slack for
+ * extra work on another. Shifts that one clock-in spans (back to back) are judged together.
+ */
+function shiftOverrunMinutes(facts: MinijobMonthFacts): number {
+	const parent = new Map<string, string>();
+	const root = (id: string): string => {
+		let current = id;
+		for (let next = parent.get(current); next && next !== current; next = parent.get(current)) {
+			current = next;
+		}
+		return current;
+	};
+	for (const item of facts.items) {
+		const [first, ...rest] = item.shiftIds ?? [];
+		if (!first) continue;
+		for (const id of rest) {
+			const [a, b] = [root(first), root(id)];
+			if (a !== b) parent.set(b, a);
+		}
+	}
+	const worked = new Map<string, number>();
+	const add = (into: Map<string, number>, id: string, minutes: number) => {
+		const key = root(id);
+		into.set(key, (into.get(key) ?? 0) + minutes);
+	};
+	for (const item of facts.items) {
+		if (item.source === "shift") add(worked, item.id, item.minutes);
+		else if (item.source === "work" && item.shiftIds?.[0])
+			add(worked, item.shiftIds[0], item.minutes);
+	}
+	const planned = new Map<string, number>();
+	for (const shift of facts.shifts) add(planned, shift.id, shift.minutes);
+	let overrun = 0;
+	for (const [key, minutes] of worked) overrun += Math.max(0, minutes - (planned.get(key) ?? 0));
+	return overrun;
+}
+
+/**
  * What an acknowledgement of the month's earnings rests on, independent of how far the plan has
  * been worked: the shifts as planned, proposals, work outside any shift, and how far work for
- * the shifts runs beyond them in material steps. A shift worked as planned — before, during and
+ * each shift runs beyond it in material steps. A shift worked as planned — before, during and
  * after the clock-in — leaves it unchanged; an added, removed or moved shift, unplanned work or
- * a material overrun changes it. Work short of the plan does not: the earnings only fall.
+ * a material overrun of any shift changes it. Work short of a shift does not: the earnings only
+ * fall.
  */
 function plannedBasisOf(facts: MinijobMonthFacts) {
-	let shiftWorkMinutes = 0;
-	const unplanned: MinijobEarningItem[] = [];
-	for (const item of facts.items) {
-		if (item.source === "shift" || (item.source === "work" && item.forShift)) {
-			shiftWorkMinutes += item.minutes;
-		} else unplanned.push(item);
-	}
-	const plannedMinutes = facts.shifts.reduce((sum, shift) => sum + shift.minutes, 0);
+	const unplanned = facts.items.filter(
+		(item) => item.source !== "shift" && !(item.source === "work" && item.shiftIds?.length),
+	);
 	return {
 		shifts: [...facts.shifts]
 			.sort(byText((shift) => shift.id))
@@ -192,9 +233,7 @@ function plannedBasisOf(facts: MinijobMonthFacts) {
 				item.inProgress ? "in_progress" : item.minutes,
 				item.hourlyRateCents,
 			]),
-		overrunSteps: Math.floor(
-			Math.max(0, shiftWorkMinutes - plannedMinutes) / MINIJOB_MATERIAL_OVERRUN_MINUTES,
-		),
+		overrunSteps: Math.floor(shiftOverrunMinutes(facts) / MINIJOB_MATERIAL_OVERRUN_MINUTES),
 	};
 }
 
@@ -207,16 +246,19 @@ export function computeMinijobMonths(
 	facts: readonly MinijobMonthFacts[],
 ): MinijobMonth[] {
 	const totals = facts.map((month) => {
-		let earned = 0;
-		let planned = 0;
+		let earnedCentMinutes = 0;
+		let plannedCentMinutes = 0;
 		let missingWageMinutes = 0;
 		for (const item of month.items) {
 			if (item.hourlyRateCents === null) missingWageMinutes += item.minutes;
-			if (item.source === "work") earned += itemCents(item);
-			else planned += itemCents(item);
+			if (item.source === "work") earnedCentMinutes += itemCentMinutes(item);
+			else plannedCentMinutes += itemCentMinutes(item);
 		}
 		const external = month.externalOffsets.reduce((sum, offset) => sum + offset.amountCents, 0);
-		const total = earned + planned + external;
+		// The total rounds once; planned takes the remainder, so the split adds up to it.
+		const earned = Math.round(earnedCentMinutes / 60);
+		const total = Math.round((earnedCentMinutes + plannedCentMinutes) / 60) + external;
+		const planned = total - external - earned;
 		const doubleCap =
 			month.capCents !== null && month.unforeseeableMultiplier !== null
 				? Math.round(month.capCents * month.unforeseeableMultiplier)

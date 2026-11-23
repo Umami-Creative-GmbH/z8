@@ -6,10 +6,11 @@
  * shifts, and active external Minijob offsets; then judges the months (`minijob-months.ts`).
  *
  * Work in progress counts too: an open clock-in up to now, plus the rest of the started shift it
- * belongs to. A started shift nobody has clocked in for counts in full until its work closes;
- * then the recorded work replaces it.
+ * belongs to. A started shift nobody has clocked in for counts in full; once work has been
+ * recorded for it, the recorded work plus whatever of the shift is still ahead (a break).
  *
- * Work and shifts count on the organization-local day they start, as in schedule compliance.
+ * Shifts count on the organization-local day they start, as in schedule compliance; work for a
+ * shift counts with the shift, other work on the day it starts.
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
 import { employeeStatutoryOffset, shift, workPeriod } from "@/db/schema";
@@ -256,7 +257,7 @@ export async function evaluateMinijobEarnings(
 		else shiftsOf.set(row.employeeId, [entry]);
 	}
 
-	const workOf = new Map<string, { start: Instant; end: Instant | null }[]>();
+	const workOf = new Map<string, { start: Instant; end: Instant | null; minutes: number }[]>();
 	for (const row of workRows) {
 		const start = instantFromDate(row.startTime);
 		const open = row.isActive;
@@ -265,23 +266,28 @@ export async function evaluateMinijobEarnings(
 			: row.endTime
 				? instantFromDate(row.endTime)
 				: start.add({ minutes: row.durationMinutes ?? 0 });
-		const list = workOf.get(row.employeeId);
-		const work = { start, end };
-		if (list) list.push(work);
-		else workOf.set(row.employeeId, [work]);
-		const forShift = (shiftsOf.get(row.employeeId) ?? []).some((shift) =>
-			workBelongsToShift(shift.interval, work, input.now),
-		);
-		addItem(row.employeeId, {
-			source: "work",
-			id: row.id,
-			date: plainDateAt(start, timezone).toString(),
-			// Whole minutes so far: with the rest of its shift rounded up, the sum stays put.
+		const work = {
+			start,
+			end,
+			// Whole minutes since the clock-in; the rest of its shift makes up the difference.
 			minutes: open
 				? Math.max(0, Math.floor(minutesBetween(start, input.now)))
 				: (row.durationMinutes ?? 0),
+		};
+		const list = workOf.get(row.employeeId);
+		if (list) list.push(work);
+		else workOf.set(row.employeeId, [work]);
+		const shifts = (shiftsOf.get(row.employeeId) ?? [])
+			.filter((shift) => workBelongsToShift(shift.interval, work, input.now))
+			.sort((a, b) => compareInstants(a.interval.start, b.interval.start));
+		addItem(row.employeeId, {
+			source: "work",
+			id: row.id,
+			// Work for a shift counts in the shift's month (and on its day), wherever it starts.
+			date: shifts[0]?.date ?? plainDateAt(start, timezone).toString(),
+			minutes: work.minutes,
 			...(open ? { inProgress: true } : {}),
-			...(forShift ? { forShift: true } : {}),
+			...(shifts.length > 0 ? { shiftIds: shifts.map((shift) => shift.row.id) } : {}),
 		});
 	}
 
@@ -296,18 +302,31 @@ export async function evaluateMinijobEarnings(
 			}
 			// Over: what was worked is recorded work.
 			if (compareInstants(interval.end, input.now) <= 0) continue;
-			// In progress: the open clock-in counts up to now, the shift for its rest. Once its work
-			// has closed, the recorded work replaces it; until anyone clocks in, it counts in full.
+			// Running: recorded work counts as recorded, the rest of the shift as planned; until
+			// anyone clocks in, the shift counts in full.
 			const matched = (workOf.get(employeeId) ?? []).filter((work) =>
 				workBelongsToShift(interval, work, input.now),
 			);
-			if (matched.some((work) => work.end === null)) {
+			const openWork = matched
+				.filter((work) => work.end === null)
+				.sort((a, b) => compareInstants(a.start, b.start))[0];
+			if (openWork) {
+				// Clock-in to shift end on one minute grid: whole minutes worked so far plus the
+				// rest, so the projection does not move while the clock runs.
+				const span = Math.round(minutesBetween(openWork.start, interval.end));
+				addItem(employeeId, {
+					...item,
+					minutes: Math.max(0, span - openWork.minutes),
+					inProgress: true,
+				});
+			} else if (matched.length > 0) {
+				// Clocked out within the shift (a break): what is left of the shift is still planned.
 				addItem(employeeId, {
 					...item,
 					minutes: Math.ceil(minutesBetween(input.now, interval.end)),
 					inProgress: true,
 				});
-			} else if (matched.length === 0) {
+			} else {
 				addItem(employeeId, { ...item, minutes: shiftMinutes });
 			}
 		}
