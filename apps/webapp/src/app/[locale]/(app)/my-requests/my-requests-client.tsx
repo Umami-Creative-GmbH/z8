@@ -283,12 +283,31 @@ function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Transla
 	return t("myRequests:myRequests.sourceError.absence", "Absence requests could not be loaded.");
 }
 
+/** An earlier claim's title names its type, as the finance list's "Earlier {type} claim" does. */
+const earlierClaimTitleKeys: Partial<Record<string, { key: string; fallback: string }>> = {
+	receipt: {
+		key: "myRequests:myRequests.requests.earlierClaim.receipt",
+		fallback: "Earlier receipt claim",
+	},
+	mileage: {
+		key: "myRequests:myRequests.requests.earlierClaim.mileage",
+		fallback: "Earlier mileage claim",
+	},
+	per_diem: {
+		key: "myRequests:myRequests.requests.earlierClaim.perDiem",
+		fallback: "Earlier per diem claim",
+	},
+};
+
 function requestTitle(item: SelfServiceRequestItem, t: Translate) {
 	if (item.sourceType === "time_correction") {
 		return t("myRequests:myRequests.requests.timeCorrection.title", "Time correction request");
 	}
 
 	if (item.sourceType === "travel_expense") {
+		const claimType = item.details?.kind === "earlier_claim" ? item.details.claimType : null;
+		const named = claimType ? earlierClaimTitleKeys[claimType] : undefined;
+		if (named) return t(named.key, named.fallback);
 		return t("myRequests:myRequests.requests.earlierClaim.title", "Earlier claim");
 	}
 

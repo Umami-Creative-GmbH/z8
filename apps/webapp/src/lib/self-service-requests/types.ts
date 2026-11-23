@@ -70,7 +70,17 @@ export interface SelfServiceRequestItem {
 	decisionReason: string | null;
 	availableActions: SelfServiceRequestAction[];
 	sourceHref: string;
-	details?: ComplianceExceptionRequestDetails | ExpenseReportRequestDetails;
+	details?:
+		| ComplianceExceptionRequestDetails
+		| ExpenseReportRequestDetails
+		| EarlierClaimRequestDetails;
+}
+
+/** What names an earlier claim, as the finance list does ("Earlier {type} claim"). */
+export interface EarlierClaimRequestDetails {
+	kind: "earlier_claim";
+	/** The claim's type as stored (receipt, mileage, per_diem). */
+	claimType: string;
 }
 
 export interface SelfServiceRequestCounts {

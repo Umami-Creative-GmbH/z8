@@ -2054,6 +2054,7 @@ describe("getSelfServiceRequests", () => {
 					decisionReason: "Missing receipt",
 					availableActions: ["view"],
 					sourceHref: "/travel-expenses/claim-rejected",
+					details: { kind: "earlier_claim", claimType: travelExpense().type },
 				}),
 			]);
 			expect(result.counts).toEqual({

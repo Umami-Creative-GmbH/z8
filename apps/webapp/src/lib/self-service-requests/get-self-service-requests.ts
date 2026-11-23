@@ -786,6 +786,7 @@ async function loadTravelExpenses(
 				// An earlier claim is read-only once decided: a rejection is final, never a fix.
 				availableActions: ["view"],
 				sourceHref: `/travel-expenses/${row.id}`,
+				details: { kind: "earlier_claim", claimType: row.type },
 			},
 		];
 	});

@@ -204,6 +204,7 @@ function createResult(overrides: Partial<SelfServiceRequestResult> = {}): SelfSe
 				decisionReason: null,
 				availableActions: ["view"],
 				sourceHref: "/travel-expenses",
+				details: { kind: "earlier_claim", claimType: "per_diem" },
 			},
 		],
 		...overrides,
@@ -289,15 +290,18 @@ describe("MyRequestsClient", () => {
 		const recentlyDecided = screen.getByRole("region", {
 			name: "Recently decided",
 		});
-		expect(within(recentlyDecided).getByRole("heading", { name: "Earlier claim" })).toBeTruthy();
+		expect(
+			within(recentlyDecided).getByRole("heading", { name: "Earlier per diem claim" }),
+		).toBeTruthy();
 		// The rejection to fix is a recent decision too, but is shown once, under "Needs attention".
 		expect(within(recentlyDecided).queryByText("Vacation")).toBeNull();
 
 		const allRequests = screen.getByRole("region", { name: "All requests" });
 		expect(within(allRequests).getByText("Vacation")).toBeTruthy();
 		expect(within(allRequests).getByText("Time correction request")).toBeTruthy();
-		// Its title and its type both name it an earlier claim.
-		expect(within(allRequests).getAllByText("Earlier claim")).toHaveLength(2);
+		// Its title names the claim's type, as the finance list does; its type names it an earlier claim.
+		expect(within(allRequests).getByText("Earlier per diem claim")).toBeTruthy();
+		expect(within(allRequests).getByText("Earlier claim")).toBeTruthy();
 		// An earlier claim is never named like the travel expense report that replaced it.
 		expect(document.body.textContent).not.toMatch(/Travel expense claim/);
 	});
