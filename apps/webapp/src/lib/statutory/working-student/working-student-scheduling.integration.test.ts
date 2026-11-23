@@ -3,6 +3,7 @@
  * banner) and Staffing suggestions through the real contributor registry, wage-free.
  */
 import { Effect, Layer } from "effect";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
@@ -90,6 +91,58 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 				blocksPublication: false,
 			},
 		]);
+	});
+
+	it("keeps the publish fingerprint steady while a clock-in without a shift runs", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 20 h worked Monday and Tuesday; clocked in at 09:00:42 on Wednesday without a shift. A
+		// Friday evening shift keeps the student in the window.
+		await fx.work(org, student, weekdays("2026-03-02", "08:00", "18:00").slice(0, 2));
+		await fx.openWork(org, student, { date: "2026-03-04", start: "09:00:42" });
+		await fx.shift(org, subareaId, student, { date: "2026-03-06", start: "18:00", end: "19:00" });
+
+		const evaluate = async (now: string) => {
+			// The service judges at the system clock.
+			const clock = vi.spyOn(Temporal.Now, "instant").mockReturnValue(Temporal.Instant.from(now));
+			try {
+				return await Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* ScheduleComplianceService;
+						return yield* service.evaluateScheduleWindow({
+							organizationId: org.id,
+							startDate: shiftDateBounds("2026-03-02", TZ).start,
+							endDateExclusive: shiftDateBounds("2026-03-09", TZ).start,
+							timezone: TZ,
+						});
+					}).pipe(
+						Effect.provide(
+							ScheduleComplianceServiceLive.pipe(
+								Layer.provide(workPolicyLayer),
+								Layer.provide(DatabaseServiceLive),
+							),
+						),
+					),
+				);
+			} finally {
+				clock.mockRestore();
+			}
+		};
+		const usedOf = (result: Awaited<ReturnType<typeof evaluate>>) =>
+			result.findings.flatMap((finding) =>
+				finding.type === "statutory" && finding.statutoryKind === "working_student_lecture_week"
+					? [finding.summary.used?.value]
+					: [],
+			);
+
+		// Berlin is UTC+1 in March: 11:00:10 and 11:01:10 on Wednesday.
+		const first = await evaluate("2026-03-04T10:00:10Z");
+		const second = await evaluate("2026-03-04T10:01:10Z");
+
+		// The running clock-in grew the week by a minute; what the planner acknowledges did not change.
+		expect([usedOf(first), usedOf(second)]).toEqual([[1200 + 120], [1200 + 121]]);
+		expect(second.fingerprint).toBe(first.fingerprint);
 	});
 
 	it("warns Staffing about the working student a proposed daytime shift pushes over 20 h", async () => {
