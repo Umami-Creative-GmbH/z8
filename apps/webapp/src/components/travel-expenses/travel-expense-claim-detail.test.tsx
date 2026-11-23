@@ -74,7 +74,17 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions", () => ({
 	getLegacyTravelExpenseConversion: legacyDraft.conversion,
 }));
 
+import englishTravelExpenses from "../../../messages/travelExpenses/en.json";
 import { TravelExpenseClaimDetail } from "./travel-expense-claim-detail";
+
+function flattenCatalog(value: unknown, prefix = ""): Record<string, string> {
+	if (typeof value === "string") return { [prefix]: value };
+	return Object.entries(value as Record<string, unknown>).reduce<Record<string, string>>(
+		(messages, [key, child]) =>
+			Object.assign(messages, flattenCatalog(child, prefix ? `${prefix}.${key}` : key)),
+		{},
+	);
+}
 
 afterEach(() => {
 	cleanup();
@@ -331,7 +341,7 @@ describe("stored travel claim detail", () => {
 		);
 		const client = mount();
 		expect(await screen.findByText("Original context")).toBeTruthy();
-		expect(screen.getByText("Trip date context not recorded (legacy claim)")).toBeTruthy();
+		expect(screen.getByText("Trip date context not recorded (earlier claim)")).toBeTruthy();
 		expect(screen.getByText("Original approval note")).toBeTruthy();
 		expect(screen.getByText("Original decision reason")).toBeTruthy();
 		expect(screen.getByRole("link", { name: "Preview hotel.pdf" }).getAttribute("href")).toBe(
@@ -340,6 +350,21 @@ describe("stored travel claim detail", () => {
 		expect(screen.getByRole("link", { name: "Download hotel.pdf" }).getAttribute("href")).toBe(
 			"/api/travel-expenses/old-claim/receipts/receipt?download=1",
 		);
+		client.clear();
+	});
+	it("describes an earlier claim in plain product words, never as legacy (#1979)", async () => {
+		// The shipped English catalog: a key whose stored copy still says "legacy" must not be used.
+		catalog.messages = flattenCatalog(englishTravelExpenses);
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => Response.json(storedDetail)),
+		);
+		const client = mount();
+		await screen.findByText("Original context");
+		expect(screen.getByText(/^Earlier claim/)).toBeTruthy();
+		expect(screen.getByText("Earlier receipt: content checksum was not recorded.")).toBeTruthy();
+		expect(screen.getByText("Trip date context not recorded (earlier claim)")).toBeTruthy();
+		expect(document.body.textContent).not.toMatch(/legacy/i);
 		client.clear();
 	});
 	it("labels the claim type, status and decisions with catalog keys (#680)", async () => {

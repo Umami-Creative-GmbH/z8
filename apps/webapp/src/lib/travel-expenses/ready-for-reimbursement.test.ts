@@ -237,6 +237,19 @@ describe("buildReadyForReimbursementNotification (#756)", () => {
 		});
 	});
 
+	it("names an earlier claim in plain product words, never as legacy (#1979)", () => {
+		const claim = account({
+			source: { type: "legacy_claim", id: "claim-1" },
+			title: { kind: "legacy_claim", claimType: "receipt", startDate: null, endDate: null },
+		});
+		const due = readyForReimbursement(claim, claim);
+		if (!due) throw new Error("not due");
+		const notification = buildReadyForReimbursementNotification(due, { userId: "user-all" });
+
+		expect(notification.metadata?.i18n?.params).toMatchObject({ report: "Earlier claim" });
+		expect(notification.message).not.toMatch(/legacy/i);
+	});
+
 	it("tells of an adjustment on the original report, keyed by the adjustment's revision", () => {
 		const original = account({
 			entitlement: [

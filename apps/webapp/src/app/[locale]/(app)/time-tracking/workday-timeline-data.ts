@@ -97,6 +97,9 @@ export async function getWorkdayTimelineData({
 				employeeId,
 				organizationId,
 				filters: { status: "pending" },
+				sources: TIMELINE_REQUEST_SOURCES,
+				// The viewer's zone, as /my-requests reads request dates; the organization's is for shifts.
+				timeZone: timezone,
 			}),
 		]);
 
@@ -127,7 +130,7 @@ export async function getWorkdayTimelineData({
 				workPeriods,
 				shifts,
 				absences,
-				pendingRequests: relevantPendingRequests.map(mapPendingRequest),
+				pendingRequests: relevantPendingRequests.flatMap(mapPendingRequest),
 			}),
 		};
 	} catch (error) {
@@ -320,16 +323,32 @@ export async function getRelevantTimeCorrectionRequestIds({
 	);
 }
 
-function mapPendingRequest(request: SelfServiceRequestItem): WorkdayPendingRequestSource {
-	return {
-		id: request.id,
-		sourceType: request.sourceType,
-		status: request.status,
-		title: request.title,
-		subtitle: request.subtitle,
-		submittedAt: request.submittedAt,
-		sourceHref: request.sourceHref,
-	};
+/** The pending requests the timeline shows: those tied to a working day. */
+const TIMELINE_REQUEST_SOURCES = ["time_correction", "absence", "travel_expense"] as const;
+type TimelineRequestSource = (typeof TIMELINE_REQUEST_SOURCES)[number];
+
+function isTimelineRequestSource(
+	sourceType: SelfServiceRequestItem["sourceType"],
+): sourceType is TimelineRequestSource {
+	return (TIMELINE_REQUEST_SOURCES as readonly string[]).includes(sourceType);
+}
+
+function mapPendingRequest(request: SelfServiceRequestItem): WorkdayPendingRequestSource[] {
+	const { sourceType, status } = request;
+	if (!isTimelineRequestSource(sourceType) || status === "returned" || status === "expired") {
+		return [];
+	}
+	return [
+		{
+			id: request.id,
+			sourceType,
+			status,
+			title: request.title,
+			subtitle: request.subtitle,
+			submittedAt: request.submittedAt,
+			sourceHref: request.sourceHref,
+		},
+	];
 }
 
 export function isRequestRelevantToSelectedDate(
