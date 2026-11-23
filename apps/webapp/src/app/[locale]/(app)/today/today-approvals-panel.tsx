@@ -112,8 +112,12 @@ export function TodayApprovalsPanel({
 	const rejectionPending = rejecting !== null && actingApprovalId === rejecting.approvalId;
 	// A refresh can drop the item the panel was opened for; then the panel is gone too,
 	// unless its rejection is already on its way.
-	const rejectingListed =
-		rejecting !== null && items.some((item) => item.approvalId === rejecting.approvalId);
+	// The item as the latest briefing lists it: a refresh can change what it may still do.
+	const rejectingCurrent =
+		rejecting === null ? undefined : items.find((item) => item.approvalId === rejecting.approvalId);
+	const rejectingListed = rejectingCurrent !== undefined;
+	const rejectingStillRejectable =
+		rejectingCurrent !== undefined && rejectingCurrent.canReject && !rejectingCurrent.ownRequest;
 	const rejectPanelOpen = rejecting !== null && (rejectingListed || rejectionPending);
 	// Once the item is gone, the dropped rejection ends with it, so it can't reopen by itself
 	// if a later refresh lists the item again, or leave its error behind on the card.
@@ -437,7 +441,9 @@ export function TodayApprovalsPanel({
 									onCancel={closeRejectPanel}
 									onConfirm={confirmRejection}
 									// Off while any decision or refresh is under way, so confirming never does nothing.
-									canReject={rejectingListed && !decisionsOff && !decided.has(rejecting.approvalId)}
+									canReject={
+										rejectingStillRejectable && !decisionsOff && !decided.has(rejecting.approvalId)
+									}
 									isPending={rejectionPending}
 								/>
 							</>

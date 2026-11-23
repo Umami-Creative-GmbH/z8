@@ -515,6 +515,31 @@ describe("TodayApprovalsPanel", () => {
 		},
 	);
 
+	it("stops offering the open rejection when a refresh says the item can no longer be rejected", () => {
+		const { rerender } = render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Overlaps the inventory week." },
+		});
+		expect(
+			(within(panel).getByRole("button", { name: "Confirm Rejection" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(false);
+
+		// Another decision's refresh brings the item back, no longer rejectable from here.
+		rerender(<TodayApprovalsPanel items={[approvalItem({ canReject: false })]} total={1} />);
+
+		expect(
+			(
+				within(screen.getByRole("dialog", { name: "Reject request" })).getByRole("button", {
+					name: "Confirm Rejection",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+	});
+
 	it("drops a refused rejection's error with its item, not into the card", async () => {
 		global.fetch = vi.fn().mockResolvedValue({
 			ok: true,
