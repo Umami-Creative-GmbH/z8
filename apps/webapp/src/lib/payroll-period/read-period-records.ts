@@ -5,6 +5,7 @@ import { Temporal } from "temporal-polyfill";
 import { timeRecord, timeRecordBreak } from "@/db/schema";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { loadPayrollScope } from "@/lib/engagement/payroll-scope";
 import {
 	attributeRecordsToLocalDays,
 	type PayrollPeriodRecordSource,
@@ -20,7 +21,9 @@ const EMPLOYEE_BATCH_SIZE = 500;
  * (#1900 day sheets): the records `readPeriodDay` shows for one employee-day, for every
  * day of the period at once. Non-rejected records touching a local day in the
  * employee's zone are on it, with local wall-clock times; a record across local
- * midnight is on each day it touches, a running record on the days up to `now`.
+ * midnight is on each day it touches, a running record on the days up to `now`. Only
+ * employee time is read (#1997): a record across a conversion is read from or up to it,
+ * and External Contractor records not at all.
  *
  * `employees` must already be resolved through the payroll access grant, with the
  * effective zone the period read attributes their days in (`PayrollPeriodEmployee`).
@@ -88,11 +91,19 @@ export async function readPeriodRecordsForEmployees(
 			)
 			.orderBy(asc(timeRecord.startAt), asc(timeRecord.id));
 
+		// Payroll shows employee time only (#1997): a record across a conversion keeps its employee
+		// part, and External Contractor records are left out.
+		const scope = await loadPayrollScope(
+			db,
+			organizationId,
+			batch.map((person) => person.id),
+			{ startDate: query.startDate, endDate: query.endDate },
+		);
 		const byEmployee = new Map<string, PayrollPeriodRecordSource[]>();
 		for (const row of rows) {
 			if (row.kind !== "work" && row.kind !== "break") continue;
 			if (row.approvalState === "rejected") continue;
-			const source: PayrollPeriodRecordSource = {
+			const source = scope.clipRecord<PayrollPeriodRecordSource>(row.employeeId, {
 				id: row.id,
 				kind: row.kind,
 				approvalState: row.approvalState,
@@ -100,7 +111,8 @@ export async function readPeriodRecordsForEmployees(
 				endAt: row.endAt ? instantFromDate(row.endAt) : null,
 				durationMinutes: row.durationMinutes,
 				isPaid: row.isPaid,
-			};
+			});
+			if (!source) continue;
 			const list = byEmployee.get(row.employeeId);
 			if (list) list.push(source);
 			else byEmployee.set(row.employeeId, [source]);

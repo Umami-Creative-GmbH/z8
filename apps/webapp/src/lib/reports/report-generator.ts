@@ -584,6 +584,11 @@ async function calculateHourlyEarnings(
 	workPeriods: CompletedWorkPeriod[],
 	reportRange: ReportDateRange,
 ): Promise<HourlyEarningsData | undefined> {
+	const employeeTime = await loadEmployeeTime(db, organizationId, [employeeId]);
+	// A range spent wholly as an External Contractor earns no wage at all (#1997), not a zero one,
+	// even under hourly terms still in force from an earlier employee stint.
+	if (employeeTime.within(employeeId, reportRange).length === 0) return undefined;
+
 	const spans = await loadConfirmedTermsSpans(db, {
 		organizationId,
 		employeeId,
@@ -592,8 +597,6 @@ async function calculateHourlyEarnings(
 			toExclusive: parsePlainDate(reportRange.endDate).add({ days: 1 }),
 		},
 	});
-
-	const employeeTime = await loadEmployeeTime(db, organizationId, [employeeId]);
 
 	return calculateHourlyEarningsFromTerms({
 		spans,

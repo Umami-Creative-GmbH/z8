@@ -51,13 +51,19 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 vi.mock("@/lib/queue", () => ({ addJob: async () => ({ id: "queued" }) }));
 
 const {
+	getPayrollDayRecordsAction,
 	getPayrollExportScopeAction,
 	getPayrollReadinessForWorkspaceAction,
+	getPayrollRunReadinessAction,
 	getPayrollWorkspaceSummaryAction,
 	startScopedPayrollExportAction,
 } = await import("@/app/[locale]/(app)/payroll/actions");
 const { fetchAbsencesForExport, fetchOvertimePayoutsForExport, fetchWorkPeriodsForExport } =
 	await import("./data-fetcher");
+const { listCompatiblePayrollBaselines, preparePayrollComparison } =
+	await import("./comparison-service");
+const { readPeriodRecordsForEmployees } = await import("@/lib/payroll-period/read-period-records");
+const { readExportCarriedDays } = await import("@/lib/payroll-period/carried-days");
 
 const admin = integrationAdminPool();
 const ORG = "t1997p-org";
@@ -105,12 +111,50 @@ async function stint(
 	engagementKind: "employee" | "contractor",
 	startedAt: string,
 	endedAt: string | null,
-) {
-	await admin.query(
+): Promise<string> {
+	const { rows } = await admin.query(
 		`insert into employee_employment_period
 		   (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
-		 values ($1, $2, $3, $4, $5, 'recorded', $6)`,
+		 values ($1, $2, $3, $4, $5, 'recorded', $6) returning id`,
 		[ORG, employeeId, endedAt ? "closed" : "open", startedAt, endedAt, engagementKind],
+	);
+	return rows[0].id;
+}
+
+/** An open departure clock repair of a timer that ran from `start` until `end`. */
+async function clockRepair(employeeId: string, start: string, end: string) {
+	const { rows: periods } = await admin.query(
+		`select id from employee_employment_period
+		 where organization_id = $1 and employee_id = $2 and started_at < $3
+		 order by started_at desc limit 1`,
+		[ORG, employeeId, end],
+	);
+	const { rows: departure } = await admin.query(
+		`insert into employee_departure
+		 (organization_id, employee_id, employment_period_id, mode, timezone, cutoff_at, created_by,
+		  request_id, request_fingerprint, revision, status, effective_at)
+		 values ($1, $2, $3, 'immediate', 'UTC', $4, 't1997p-owner', gen_random_uuid(), 'test', 1,
+		         'effective', $4) returning id`,
+		[ORG, employeeId, periods[0].id, end],
+	);
+	await admin.query(
+		`insert into employee_departure_review
+		 (organization_id, employee_id, employment_period_id, departure_id, kind, subject_id, status,
+		  affected_start_at, affected_end_at)
+		 values ($1, $2, $3, $4, 'clock_repair', gen_random_uuid(), 'open', $5, $6)`,
+		[ORG, employeeId, periods[0].id, departure[0].id, start, end],
+	);
+}
+
+/** An approved legacy expense claim awaiting reimbursement, decided in July. */
+async function approvedClaim(employeeId: string) {
+	await admin.query(
+		`insert into travel_expense_claim (id, organization_id, employee_id, type, status, trip_start, trip_end,
+		   original_currency, original_amount, calculated_currency, calculated_amount,
+		   submitted_at, decided_at, created_by, updated_at)
+		 values (gen_random_uuid(), $1, $2, 'receipt', 'approved', '2026-07-14', '2026-07-14', 'EUR', '42.00',
+		   'EUR', '42.00', '2026-07-16T08:00:00Z', '2026-07-17T08:00:00Z', 't1997p-owner', now())`,
+		[ORG, employeeId],
 	);
 }
 
@@ -420,5 +464,129 @@ describe("External Contractor periods never reach employee payroll (#1997)", () 
 		expect(affected(ids.converted)).toEqual(["missing-employment-history"]);
 		// The control: an employee without terms is named.
 		expect(affected(ids.worker)).toEqual(["missing-employment-history"]);
+	});
+
+	it("compares an export against its baseline with an External Contractor in the organization", async () => {
+		const exported = await startScopedPayrollExportAction({ ...july, formatId: "datev_lohn" });
+		expect(exported.success).toBe(true);
+		const request = { startDate: july.startDate, endDate: july.endDate };
+
+		const baselines = await listCompatiblePayrollBaselines(request);
+		expect(baselines).toHaveLength(1);
+		// The converted person's pending absence on a contractor day (9 July) and the contractor's
+		// pending leave are no payroll input.
+		const prepared = await preparePayrollComparison({
+			baselineId: baselines[0]?.id ?? "",
+			...request,
+		});
+
+		expect(prepared).toMatchObject({ status: "ready" });
+	});
+
+	it("shows only employee records in the Days side panel, a record across the conversion from it", async () => {
+		const contractor = await getPayrollDayRecordsAction({
+			employeeId: ids.contractor,
+			date: "2026-07-14",
+		});
+		const contractorStint = await getPayrollDayRecordsAction({
+			employeeId: ids.converted,
+			date: "2026-07-10",
+		});
+		const conversionDay = await getPayrollDayRecordsAction({
+			employeeId: ids.converted,
+			date: "2026-07-15",
+		});
+		const control = await getPayrollDayRecordsAction({
+			employeeId: ids.worker,
+			date: "2026-07-14",
+		});
+
+		expect(contractor).toMatchObject({ success: true, data: { records: [] } });
+		expect(contractorStint).toMatchObject({ success: true, data: { records: [] } });
+		expect(conversionDay.success && conversionDay.data.records).toMatchObject([
+			{ kind: "work", start: "2026-07-15T12:00", end: "2026-07-15T14:00", durationMinutes: 120 },
+		]);
+		expect(control.success && control.data.records).toMatchObject([
+			{ kind: "work", start: "2026-07-14T09:00", end: "2026-07-14T13:00", durationMinutes: 240 },
+		]);
+	});
+
+	it("prints only employee records on the PDF day sheets", async () => {
+		const records = await readPeriodRecordsForEmployees(ORG, {
+			employees: [
+				{ id: ids.converted, timezone: "Europe/Berlin" },
+				{ id: ids.contractor, timezone: "Europe/Berlin" },
+			],
+			startDate: july.startDate,
+			endDate: july.endDate,
+		});
+
+		expect([...(records.get(ids.converted)?.keys() ?? [])]).toEqual(["2026-07-15", "2026-07-20"]);
+		expect(records.get(ids.converted)?.get("2026-07-15")).toMatchObject([
+			{ start: "2026-07-15T12:00", end: "2026-07-15T14:00", durationMinutes: 120 },
+		]);
+		expect(records.get(ids.contractor)?.size ?? 0).toBe(0);
+	});
+
+	it("carries only the days with employee time, so confirming the export never settles a contractor day", async () => {
+		const days = await readExportCarriedDays({
+			organizationId: ORG,
+			startDate: july.startDate,
+			endDate: july.endDate,
+			employeeIds: [ids.converted, ids.worker, ids.contractor],
+		});
+		const dates = (employeeId: string) =>
+			days.filter((day) => day.employeeId === employeeId).map((day) => day.date);
+
+		expect(dates(ids.contractor)).toEqual([]);
+		expect(dates(ids.converted)).toHaveLength(17);
+		expect(dates(ids.converted)[0]).toBe("2026-07-15");
+		expect(
+			days.find((day) => day.employeeId === ids.converted && day.date === "2026-07-15")
+				?.creditedMinutes,
+		).toBe(120);
+		// The control carries every day of the period.
+		expect(dates(ids.worker)).toHaveLength(31);
+	});
+
+	it("lists no External Contractor's expenses in payroll-run readiness", async () => {
+		await admin.query(
+			`insert into travel_expense_settings (organization_id, reimbursement_channel, reimbursement_currency)
+			 values ($1, 'payroll_run', 'EUR')`,
+			[ORG],
+		);
+		await admin.query(
+			"insert into travel_expense_payroll_run_preview_control (organization_id, mode) values ($1, 'active')",
+			[ORG],
+		);
+		await approvedClaim(ids.worker);
+		await approvedClaim(ids.contractor);
+
+		const readiness = await getPayrollRunReadinessAction({ ...july, formatId: "datev_lohn" });
+
+		expect(readiness.success).toBe(true);
+		if (!readiness.success || !readiness.data.applies) throw new Error("Expected readiness");
+		expect(readiness.data.entries.map((entry) => entry.employeeId)).toEqual([ids.worker]);
+	});
+
+	it("is not blocked by a departure clock repair of a timer that ran in a contractor stint", async () => {
+		// The contractor stint's running timer, stopped at the conversion.
+		await clockRepair(ids.converted, "2026-07-14T16:00:00Z", CONVERTED_AT);
+
+		const workPeriods = await fetchWorkPeriodsForExport(ORG, julyFilters);
+
+		expect(workPeriods.map((row) => row.employeeNumber).toSorted()).toEqual([
+			"CNV-1",
+			"CNV-1",
+			"WRK-1",
+		]);
+	});
+
+	it("is blocked by a departure clock repair of a timer that ran in employee time (control)", async () => {
+		await clockRepair(ids.converted, "2026-07-20T12:00:00Z", "2026-07-20T16:00:00Z");
+
+		await expect(fetchWorkPeriodsForExport(ORG, julyFilters)).rejects.toThrow(
+			"unresolved offboarding clock-out",
+		);
 	});
 });

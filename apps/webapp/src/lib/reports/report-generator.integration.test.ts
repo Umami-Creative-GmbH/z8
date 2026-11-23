@@ -572,5 +572,16 @@ describe("employee report on PostgreSQL", () => {
 			// The hour after noon on the 15th and 3 hours on the 20th.
 			expect((await report()).hourlyEarnings).toMatchObject({ totalHours: 4, totalEarnings: 80 });
 		});
+
+		it("shows no hourly earnings for a range spent wholly as an External Contractor", async () => {
+			await terms({ from: "2026-01-01" });
+			await marchWork();
+			await converted("employee", "2026-02-15T12:00:00Z");
+
+			const result = await report();
+
+			expect(result.hourlyEarnings).toBeUndefined();
+			expect(result.workHours.totalMinutes).toBe(540);
+		});
 	});
 });

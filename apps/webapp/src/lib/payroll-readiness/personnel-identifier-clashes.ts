@@ -4,7 +4,7 @@ import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { db, timeRecord } from "@/db";
 import { mapConcurrently } from "@/lib/async/map-concurrently";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
-import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
+import { loadPayrollScope } from "@/lib/engagement/payroll-scope";
 import { employeesWithPayoutsOrExpenseLines } from "@/lib/payroll-export/payout-and-expense-employees";
 import type { PersonnelIdentifierClash } from "@/lib/payroll-export/personnel-identifier";
 import { findPersonnelIdentifierClashes } from "@/lib/payroll-export/personnel-identifier-store";
@@ -43,24 +43,27 @@ export async function loadPersonnelIdentifierClashes(input: {
 			end: input.asOf,
 		},
 	};
+	// The export carries employee time only (#1997): an External Contractor clashes with nobody.
+	// Payouts and expense lines already come from the export's own payroll scope.
+	const withRecords = await loadPayrollScope(
+		db,
+		input.organizationId,
+		employeesWithRecords.map((row) => row.employeeId),
+		{ startDate: input.from.toString(), endDate: input.asOf.toString() },
+	);
 	// Read-only pool queries, with two formats at a time to limit database load.
 	const clashes = await mapConcurrently(input.configs, 2, async (config) => {
-		const employeeIds = new Set(employeesWithRecords.map((row) => row.employeeId));
+		const employeeIds = new Set(withRecords.employeeIds);
 		const otherRows = await employeesWithPayoutsOrExpenseLines({
 			organizationId: input.organizationId,
 			formatId: config.formatId,
 			filters,
 		});
 		for (const employeeId of otherRows) employeeIds.add(employeeId);
-		// The export carries employee time only (#1997): an External Contractor clashes with nobody.
-		const candidates = [...employeeIds];
-		const carried = (
-			await loadEmployeeTime(db, input.organizationId, candidates)
-		).withEmployeeTimeOn(candidates, input.from.toString(), input.asOf.toString());
 		return findPersonnelIdentifierClashes(db, {
 			organizationId: input.organizationId,
 			configs: [config],
-			employeeIds: carried,
+			employeeIds: [...employeeIds],
 			asOf: input.asOf,
 		});
 	});

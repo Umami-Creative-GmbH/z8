@@ -31,7 +31,8 @@ import {
 } from "@/lib/employee-lifecycle/reviews";
 import { loadCurrentContractTypes } from "@/lib/employment-history/load-terms-in-force";
 import { PLAIN_EMPLOYEE_STINTS } from "@/lib/engagement/employee-time";
-import { type EmployeeTime, loadEmployeeTime } from "@/lib/engagement/engagement-stints";
+import type { EmployeeTime } from "@/lib/engagement/engagement-stints";
+import { loadPayrollScope, type PayrollScope } from "@/lib/engagement/payroll-scope";
 import { allocateEmployeeMinutes } from "@/lib/payroll-allocation/employee-minutes";
 import { employeePayrollWindow } from "@/lib/payroll-allocation/protected-minutes";
 import {
@@ -417,6 +418,8 @@ export async function loadPayrollPeriodSources(input: {
 }): Promise<{
 	period: PayrollPeriod;
 	organizationTimezone: string | null;
+	/** Who and what of the period is payroll (#1997): the sources read nothing else. */
+	payrollScope: PayrollScope;
 	sources: PayrollPeriodSources;
 }> {
 	const { db } = await import("@/db");
@@ -441,13 +444,19 @@ export async function loadPayrollPeriodSources(input: {
 
 	// Payroll reads employee time only (#1997): an External Contractor has no row, work,
 	// absence or blocker here, and a converted person only those of their employee stint.
-	const candidates = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
-	const employeeTime = await loadEmployeeTime(db, input.organizationId, candidates);
-	const allowedEmployeeIds = employeeTime.withEmployeeTimeOn(candidates, period.start, period.end);
+	const payrollScope = await loadPayrollScope(
+		db,
+		input.organizationId,
+		Array.from(new Set(input.allowedEmployeeIds)).toSorted(),
+		{ startDate: period.start, endDate: period.end },
+	);
+	const { employeeTime } = payrollScope;
+	const allowedEmployeeIds = [...payrollScope.employeeIds];
 	if (allowedEmployeeIds.length === 0) {
 		return {
 			period,
 			organizationTimezone,
+			payrollScope,
 			sources: { organizationName, employees: [], work: [], absences: [], blockers: [] },
 		};
 	}
@@ -472,7 +481,7 @@ export async function loadPayrollPeriodSources(input: {
 			getAbsenceRows(input.organizationId, allowedEmployeeIds, period, employeeTime),
 			getBlockers(input.organizationId, allowedEmployeeIds, input.period, organizationTimezone, {
 				collectionOwnsWorkBlockers: true,
-				employeeTime,
+				payrollScope,
 			}),
 		]);
 
@@ -480,6 +489,7 @@ export async function loadPayrollPeriodSources(input: {
 		return {
 			period,
 			organizationTimezone,
+			payrollScope,
 			sources: {
 				organizationName,
 				employees: employeeRows,
@@ -508,7 +518,7 @@ export async function loadPayrollPeriodSources(input: {
 		getWorkRows(input.organizationId, allowedEmployeeIds, period, organizationTimezone),
 		getAbsenceRows(input.organizationId, allowedEmployeeIds, period, employeeTime),
 		getBlockers(input.organizationId, allowedEmployeeIds, input.period, organizationTimezone, {
-			employeeTime,
+			payrollScope,
 		}),
 	]);
 
@@ -516,6 +526,7 @@ export async function loadPayrollPeriodSources(input: {
 	return {
 		period,
 		organizationTimezone,
+		payrollScope,
 		sources: {
 			organizationName,
 			employees: employeeRows,
@@ -856,12 +867,13 @@ async function getBlockers(
 		/** Scoped collection reports open work, corrections and departure timers itself (#322). */
 		collectionOwnsWorkBlockers?: boolean;
 		/** Only employee time blocks payroll (#1997); absent, all time is employee time. */
-		employeeTime?: Pick<EmployeeTime, "within" | "employeeDaysOf">;
+		payrollScope?: PayrollScope;
 	} = {},
 ): Promise<PayrollBlocker[]> {
 	const { db } = await import("@/db");
 	const collectionOwnsWorkBlockers = options.collectionOwnsWorkBlockers === true;
-	const employeeTime = options.employeeTime;
+	const payrollScope = options.payrollScope;
+	const employeeTime = payrollScope?.employeeTime;
 	const inEmployeeTime = (employeeId: string, start: Date, end: Date | null) =>
 		!employeeTime ||
 		employeeTime.within(employeeId, {
@@ -995,15 +1007,9 @@ async function getBlockers(
 	const pendingApprovalRows = allPendingApprovalRows.filter((row) =>
 		inEmployeeTime(row.employeeId, row.startAt, row.endAt),
 	);
-	const clockRepairs = allClockRepairs.filter(
-		(repair) =>
-			!repair.affectedEndAt ||
-			inEmployeeTime(
-				repair.employeeId,
-				new Date(repair.affectedEndAt.getTime() - 1),
-				repair.affectedEndAt,
-			),
-	);
+	const clockRepairs = payrollScope
+		? payrollScope.blockingClockRepairs(allClockRepairs)
+		: allClockRepairs;
 
 	const affectedEmployeeIds = Array.from(
 		new Set(
