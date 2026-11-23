@@ -419,6 +419,56 @@ describe("getApprovalInboxListFromSources", () => {
 				}),
 			]);
 		});
+
+		/** A source whose own list or count fails, and whose covered list fails too. */
+		function failingWithCovering(fail: { list?: boolean; count?: boolean }) {
+			const covered = failingSource("absence_entry", {});
+			const handler = covered.handler as unknown as {
+				getApprovals: ReturnType<typeof vi.fn>;
+				getCount: ReturnType<typeof vi.fn>;
+			};
+			handler.getApprovals.mockImplementation((query: { approverId: string }) =>
+				query.approverId === "absent-1" || fail.list
+					? Effect.die(new Error("list"))
+					: Effect.succeed([]),
+			);
+			if (fail.count) handler.getCount.mockImplementation(() => Effect.die(new Error("count")));
+			return covered;
+		}
+
+		it("warns of missing Covering rows rather than a failed count when both fail", async () => {
+			const result = await getApprovalInboxListFromSources({
+				sources: [failingWithCovering({ count: true })],
+				params: { ...params, covering: [{ approverId: "absent-1", approverName: "Xenia" }] },
+			});
+
+			// Rows are missing from the list, not only from the totals: the graver failure names it.
+			expect(result.warnings).toEqual([
+				expect.objectContaining({
+					source: "absence_entry",
+					message: 'absence_entry approvals of a "Covering for" section could not be loaded.',
+					localized: expect.objectContaining({
+						key: "approvals:approvals.inboxWarning.coveringNotLoaded",
+					}),
+					failure: "covering",
+				}),
+			]);
+		});
+
+		it("warns of a failed list rather than missing Covering rows when both fail", async () => {
+			const result = await getApprovalInboxListFromSources({
+				sources: [failingWithCovering({ list: true, count: true })],
+				params: { ...params, covering: [{ approverId: "absent-1", approverName: "Xenia" }] },
+			});
+
+			expect(result.warnings).toEqual([
+				expect.objectContaining({
+					source: "absence_entry",
+					localized: expect.objectContaining({ key: "approvals:approvals.inboxWarning.notLoaded" }),
+					failure: "list",
+				}),
+			]);
+		});
 	});
 
 	it("provides database services required by registered approval handlers", async () => {

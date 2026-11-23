@@ -279,10 +279,12 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 		const loader = evidenceLoader(new Set());
 		let inFlight = 0;
 		let rounds = 0;
+		let mostInFlight = 0;
 		const countingLoader = async (target: ApprovalInboxTriageTarget) => {
 			// A round is a set of loads that run together: one starts while none is in flight.
 			if (inFlight === 0) rounds += 1;
 			inFlight += 1;
+			mostInFlight = Math.max(mostInFlight, inFlight);
 			await new Promise((resolve) => setTimeout(resolve, 0));
 			inFlight -= 1;
 			return loader(target);
@@ -299,8 +301,10 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 
 		expect(top.items.map((item) => item.id)).toEqual(bruteForce);
 		expect(loader).toHaveBeenCalledTimes(60);
-		// Two rounds of five, then everything that could still reach the top at once.
+		// Two rounds of five, then everything that could still reach the top in one round.
 		expect(rounds).toBe(3);
+		// That last round reads the remaining fifty at most five at a time, never all at once.
+		expect(mostInFlight).toBe(5);
 	});
 
 	it("keeps the inbox order when current evidence lowers the oldest and raises newer ones", async () => {
@@ -431,6 +435,34 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 		// the covered share of the total can never exceed the total.
 		expect(result.total).toBe(101);
 		expect(result.coveringCount).toBe(100);
+	});
+
+	it("keeps the Covering rows the inbox keeps, cut to 100 after current evidence (#1978)", async () => {
+		// 101 recent covered absences: only the newest has a staffing shortfall (high risk), so
+		// the inbox's section keeps it first and cuts the oldest clear one instead.
+		const covered = Array.from({ length: 101 }, (_, index) =>
+			approval(
+				`x${index}`,
+				"absence_entry",
+				new Date(NOW.getTime() - (101 - index) * 60_000).toISOString(),
+				"normal",
+				{
+					approverId: ABSENT,
+				},
+			),
+		);
+		const result = await topFive(
+			{
+				params: { covering: [{ approverId: ABSENT, approverName: "Xenia" }] },
+				sources: [source("absence_entry", covered)],
+			},
+			new Set(["x100"]),
+		);
+
+		expect(result.top[0]).toBe("x100");
+		expect(result.top).toEqual(result.bruteForce);
+		expect(result.coveringCount).toBe(100);
+		expect(result.total).toBe(100);
 	});
 
 	it("counts and previews the viewer's own pending request as the badge does, marked as theirs", async () => {

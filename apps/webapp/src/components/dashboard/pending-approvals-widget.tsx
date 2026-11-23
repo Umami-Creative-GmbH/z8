@@ -27,7 +27,11 @@ import { WidgetReadError } from "./widget-read-error";
 function UrgencyIndicator({
 	total,
 	coveringCount,
-}: Pick<PendingApprovalsData, "total" | "coveringCount">) {
+	incomplete,
+}: Pick<PendingApprovalsData, "total" | "coveringCount"> & {
+	/** A source failed, so `total` is a lower bound: the banner says "at least". */
+	incomplete: boolean;
+}) {
 	const { t } = useTranslate();
 	const isUrgent = total >= 5;
 	const isWarning = total >= 3;
@@ -48,11 +52,17 @@ function UrgencyIndicator({
 			</div>
 			<div className="flex-1">
 				<p className="font-semibold">
-					{t(
-						"dashboard.pending-approvals.pending-total",
-						"{count, plural, one {# pending approval} other {# pending approvals}}",
-						{ count: total },
-					)}
+					{incomplete
+						? t(
+								"dashboard.pending-approvals.pending-total-at-least",
+								"{count, plural, one {At least # pending approval} other {At least # pending approvals}}",
+								{ count: total },
+							)
+						: t(
+								"dashboard.pending-approvals.pending-total",
+								"{count, plural, one {# pending approval} other {# pending approvals}}",
+								{ count: total },
+							)}
 				</p>
 				{coveringCount > 0 && (
 					<p className="text-xs">
@@ -167,7 +177,9 @@ export function PendingApprovalsWidget({
 			(key, fallback, params) => (params ? t(key, fallback, params) : t(key, fallback)),
 			locale,
 		);
-	const total = data?.total ?? 0;
+	const preview = data?.preview ?? [];
+	// A failed count leaves its listed rows out of the total: never state fewer than are shown.
+	const total = Math.max(data?.total ?? 0, preview.length);
 	const typeList = (types: ApprovalInboxType[]) =>
 		new Intl.ListFormat(locale, { type: "conjunction" }).format(
 			types.map((type) => typeLabels[type]),
@@ -236,13 +248,17 @@ export function PendingApprovalsWidget({
 							refreshing={refreshing}
 						/>
 					) : total === 0 && partialFailure ? (
-						// Nothing counted, but not nothing pending: the inbox may still list some.
+						// Nothing counted or listed, but not nothing pending: the inbox may still list some.
 						reviewAll
 					) : !data || total === 0 ? (
 						<p role="status">{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
 					) : (
 						<>
-							<UrgencyIndicator total={total} coveringCount={data.coveringCount} />
+							<UrgencyIndicator
+								total={total}
+								coveringCount={data.coveringCount}
+								incomplete={partialFailure !== ""}
+							/>
 							<TypePills typeCounts={data.typeCounts} labels={typeLabels} />
 							<ul
 								aria-label={t(
@@ -251,7 +267,7 @@ export function PendingApprovalsWidget({
 								)}
 								className="space-y-2"
 							>
-								{data.preview.map((item) => (
+								{preview.map((item) => (
 									<PreviewRow
 										key={`${item.type}:${item.id}`}
 										item={item}

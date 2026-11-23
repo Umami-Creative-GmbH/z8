@@ -271,7 +271,8 @@ describe("Pending Approvals widget (#1978)", () => {
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Retry Pending Approvals" }));
 		expect(fetch).toHaveBeenCalled();
-		expect(screen.getByText("7 pending approvals")).toBeTruthy();
+		// The totals may be incomplete, so the banner does not claim them whole.
+		expect(screen.getByText("At least 7 pending approvals")).toBeTruthy();
 	});
 
 	it("says a type whose rows list but whose count failed could not be counted, not loaded", () => {
@@ -348,23 +349,52 @@ describe("Pending Approvals widget (#1978)", () => {
 		);
 	});
 
-	it("keeps the inbox link when nothing was counted but some type failed to count", () => {
+	it("previews the rows of an expense report whose count failed, though nothing was counted", () => {
+		// The legacy expense report source listed its row, but its count failed: a total of 0.
 		widget(
 			delivered({
 				total: 0,
 				coveringCount: 0,
 				typeCounts: [],
-				preview: [],
+				preview: [{ ...pending.preview[0], id: "report-a", type: "travel_expense_report" }],
 				notLoadedTypes: [],
-				notCountedTypes: ["compliance_exception"],
+				notCountedTypes: ["travel_expense_report"],
 			}),
 		);
 
-		expect(screen.getByRole("alert").textContent).toContain("could not be counted");
+		expect(screen.getByRole("alert").textContent).toContain(
+			"could not be counted (Expense Reports)",
+		);
 		expect(screen.queryByText("No pending approvals")).toBeNull();
+		// Never fewer than the rows it shows, and never claimed as the whole total.
+		expect(screen.getByText("At least 1 pending approval")).toBeTruthy();
+		const rows = within(
+			screen.getByRole("list", { name: "Most urgent pending approvals" }),
+		).getAllByRole("listitem");
+		expect(rows).toHaveLength(1);
+		expect(within(rows[0]).getByText("Expense report")).toBeTruthy();
 		expect(screen.getByRole("link", { name: /Review All Approvals/ }).getAttribute("href")).toBe(
 			"/approvals/inbox",
 		);
+	});
+
+	it("never states a total below the rows it previews when a count failed", () => {
+		widget(
+			delivered({
+				...pending,
+				total: 1,
+				coveringCount: 0,
+				typeCounts: [{ type: "absence_entry", count: 1 }],
+				preview: [
+					pending.preview[1],
+					{ ...pending.preview[0], id: "report-a", type: "travel_expense_report" },
+					{ ...pending.preview[0], id: "report-b", type: "travel_expense_report" },
+				],
+				notCountedTypes: ["travel_expense_report"],
+			}),
+		);
+
+		expect(screen.getByText("At least 3 pending approvals")).toBeTruthy();
 	});
 
 	it("shows no partial-failure notice when every type loaded", () => {

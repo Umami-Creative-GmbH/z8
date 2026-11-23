@@ -254,8 +254,8 @@ export interface ApprovalInboxWarning {
 	/** The message in the viewer's language (#1978); `source` then names an approval type. */
 	localized?: ApprovalInboxLocalizedText;
 	/**
-	 * What failed first (#1978): its list ("list"), its count ("count"; its rows still list),
-	 * or its rows of a "Covering for" section ("covering").
+	 * The gravest of what failed (#1978): its list ("list"), its rows of a "Covering for"
+	 * section ("covering"), or only its count ("count"; its rows still list).
 	 */
 	failure?: ApprovalInboxSourceFailure;
 }

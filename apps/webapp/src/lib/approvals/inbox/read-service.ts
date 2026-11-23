@@ -125,6 +125,12 @@ interface GetApprovalInboxListFromSourcesInput {
 	complianceExceptionRead?: ComplianceExceptionInboxRead;
 	triagePolicy?: ApprovalTriagePolicy;
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
+	/**
+	 * Every row of each "Covering for" section, in order, instead of its first
+	 * `COVERING_SECTION_LIMIT` (#1978): for a caller that reads evidence itself and must cut
+	 * each section after it, as the inbox does. A section's `hasMore` and `count` are unchanged.
+	 */
+	uncutCoveringSections?: boolean;
 	sources: ApprovalInboxSource[];
 	params: ApprovalInboxListParams;
 	now?: Date;
@@ -313,22 +319,31 @@ const SOURCE_FAILURE_WARNINGS: Record<
 };
 
 /**
+ * How grave a failure is, gravest first: rows missing from the list, rows missing from a
+ * "Covering for" section, then rows missing only from the totals.
+ */
+const SOURCE_FAILURE_SEVERITY: Record<ApprovalInboxSourceFailure, number> = {
+	list: 0,
+	covering: 1,
+	count: 2,
+};
+
+/**
  * Records that a source failed, as one warning per source (#1978): a gap in the list or the
- * totals, never a silent zero. A source's first failure names it; later ones add nothing.
+ * totals, never a silent zero. A source's gravest failure names it, whichever came first.
  */
 function warnSourceFailed(
 	warnings: ApprovalInboxWarning[],
 	source: Pick<ApprovalInboxSource, "type" | "displayName">,
 	failure: ApprovalInboxSourceFailure,
 ): void {
-	if (warnings.some((warning) => warning.source === source.type)) return;
+	const index = warnings.findIndex((warning) => warning.source === source.type);
+	const known = warnings[index]?.failure;
+	if (known && SOURCE_FAILURE_SEVERITY[known] <= SOURCE_FAILURE_SEVERITY[failure]) return;
 	const { message, localized } = SOURCE_FAILURE_WARNINGS[failure];
-	warnings.push({
-		source: source.type,
-		message: message(source.displayName),
-		localized,
-		failure,
-	});
+	const warning = { source: source.type, message: message(source.displayName), localized, failure };
+	if (index === -1) warnings.push(warning);
+	else warnings[index] = warning;
 }
 
 export async function getApprovalInboxListFromSources({
@@ -341,6 +356,7 @@ export async function getApprovalInboxListFromSources({
 	loadDeputyDecidedEarlierStages: loadDecidedEarlier = async () => new Set<string>(),
 	triagePolicy = DEFAULT_APPROVAL_TRIAGE_POLICY,
 	loadTriageEvidence = unknownApprovalInboxTriageEvidence,
+	uncutCoveringSections = false,
 	complianceExceptionRead,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
 	// Managing Compliance alone is no approver right (#1977): no approvals, only exceptions.
@@ -499,6 +515,7 @@ export async function getApprovalInboxListFromSources({
 					now: effectiveNow,
 					triagePolicy,
 					loadTriageEvidence,
+					uncut: uncutCoveringSections,
 					onSourceFailed: (source) => warnSourceFailed(warnings, source, "covering"),
 				})
 			: undefined;
@@ -568,7 +585,7 @@ async function loadComplianceExceptionInboxRows(input: {
 }
 
 /** The most rows one "Covering for" section lists at once. */
-const COVERING_SECTION_LIMIT = 100;
+export const COVERING_SECTION_LIMIT = 100;
 
 /**
  * Each "Covering for" section's own rows (#1016): the absent approver's
@@ -589,6 +606,8 @@ async function loadCoveringSections(input: {
 	now: Date;
 	triagePolicy: ApprovalTriagePolicy;
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
+	/** Every row, not the first `COVERING_SECTION_LIMIT` (#1978). */
+	uncut?: boolean;
 	/** A source whose covered list or count failed: the sections may miss its approvals. */
 	onSourceFailed: (source: ApprovalInboxSource) => void;
 }): Promise<ApprovalInboxCoveringSection[]> {
@@ -679,7 +698,7 @@ async function loadCoveringSections(input: {
 			const sorted = rows
 				.map((row) => (decidedEarlier.has(row.id) ? markDecidedEarlierStage(row) : row))
 				.sort(compareInboxItems);
-			const shown = sorted.slice(0, COVERING_SECTION_LIMIT);
+			const shown = input.uncut ? sorted : sorted.slice(0, COVERING_SECTION_LIMIT);
 			const hasMore = truncated || sorted.length > COVERING_SECTION_LIMIT;
 			const count = hasMore
 				? ((
@@ -770,7 +789,7 @@ export async function countCoveredApproverPending(input: {
 /** What a caller may hold fixed for one read: its clock, triage policy and evidence (#1978). */
 export type ApprovalInboxListReadOptions = Pick<
 	GetApprovalInboxListFromSourcesInput,
-	"now" | "triagePolicy" | "loadTriageEvidence"
+	"now" | "triagePolicy" | "loadTriageEvidence" | "uncutCoveringSections"
 >;
 
 export async function getApprovalInboxList(
@@ -788,6 +807,7 @@ export async function getApprovalInboxList(
 				organizationId: params.organizationId,
 			})),
 		loadTriageEvidence: options.loadTriageEvidence ?? loadCurrentApprovalTriageEvidence,
+		uncutCoveringSections: options.uncutCoveringSections,
 		loadDeputyDecidedEarlierStages: (input) => loadDeputyDecidedEarlierStages(db, input),
 		complianceExceptionRead: complianceExceptionInboxRead,
 	});
