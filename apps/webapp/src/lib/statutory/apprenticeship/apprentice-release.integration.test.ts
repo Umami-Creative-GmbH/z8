@@ -1380,6 +1380,78 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		});
 	});
 
+	it("counts the release time a shift covers on every release day it conflicts with", async () => {
+		const learner = await apprentice("blocknight", "2005-05-05");
+		const subareaId = await seed.subarea(org, owner);
+		const scope = {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+		};
+		// Mon 1 Mar 2027: six lessons from 07:45, the week's full school day; Mon 8 to Fri 12 Mar: a
+		// full block week.
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "vocational_school_day",
+			startsOn: "2027-03-01",
+			endsOn: "2027-03-01",
+			lessonCount: 6,
+			schoolStartTime: "07:45",
+			schoolEndTime: "13:00",
+		});
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "vocational_school_block_week",
+			startsOn: "2027-03-08",
+			endsOn: "2027-03-12",
+			schoolMinutes: 1500,
+		});
+		const shiftOf = (date: string, startTime: string, endTime: string) =>
+			seed.shift(org, learner, {
+				subareaId,
+				creatorUserId: owner.userId,
+				date,
+				startTime,
+				endTime,
+			});
+		// From before the lessons through the full school day: the whole of it, counted once.
+		const schoolDay = await shiftOf("2027-03-01", "06:00", "14:00");
+		// Monday night into Tuesday, both block days.
+		const blockNight = await shiftOf("2027-03-08", "22:00", "06:00");
+
+		const findings = await apprenticeReleaseScheduleContributor.evaluate({
+			db,
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2027-03-01", endExclusive: "2027-03-15" },
+			employeeIds: [learner.employeeId],
+			proposedShifts: [],
+			replacesShiftId: null,
+			preferences: { ...DEFAULT_STATUTORY_PREFERENCES, blockJarbschgShiftPublish: true },
+			now: localInstant("2027-02-20", "12:00", org.timezone),
+		});
+		const coverage = (id: string) => {
+			const finding = findings.find((candidate) => candidate.subjectKey === `shift:${id}`);
+			return [finding?.periodStart, finding?.coveredMinutes, finding?.coveredSpan];
+		};
+		expect(coverage(schoolDay)).toEqual([
+			"2027-03-01",
+			480,
+			{
+				start: localInstant("2027-03-01", "06:00", org.timezone).toString(),
+				end: localInstant("2027-03-01", "14:00", org.timezone).toString(),
+			},
+		]);
+		expect(coverage(blockNight)).toEqual([
+			"2027-03-08",
+			480,
+			{
+				start: localInstant("2027-03-08", "22:00", org.timezone).toString(),
+				end: localInstant("2027-03-09", "06:00", org.timezone).toString(),
+			},
+		]);
+	});
+
 	it("does not credit releases of an employee who is not an apprentice", async () => {
 		const regular = await apprentice("regular", "2005-05-05", "regular");
 		await recordReleases(regular);

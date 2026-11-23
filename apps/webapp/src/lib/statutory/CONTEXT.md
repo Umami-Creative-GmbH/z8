@@ -71,16 +71,20 @@ _Avoid_: counting `child_sick` absence as sick leave
   scope (`breachScopeOf`, `causedBlockingFindings`): a rest-period, daily, weekly or days-per-week
   breach its judged day (or week), whichever shift a reordered day moves it to; an apprentice
   release conflict its release day (for a night shift into a school morning, the next day), not
-  the day its shift starts; any other breach (night, weekend, holiday work, breaks) its own shift
+  the day its shift starts nor the rule it cites (a minor's shift before early lessons on a full
+  school day cites § 9 Abs. 1 Nr. 1, shortened past the lessons' start § 9 Abs. 1 Nr. 2: still the
+  same day's conflict); any other breach (night, weekend, holiday work, breaks) its own shift
   on its local day. Within the scope a change is caused only when it goes deeper than every
   breach the scope had (for a weekend or holiday breach counted in days: more work on that day).
   A release conflict is as deep as the planned work inside the conflicting release time (the
   exam, the lessons and the time before lessons starting before 09:00, or the whole day released
-  in full; `coveredMinutes`). Its release day is judged by the total of all its conflicts, work
+  in full; `coveredMinutes`), on every release day its shift conflicts with (a night shift
+  through two block days covers both). Its release day is judged by the total of all its conflicts, work
   that overlapping shifts share counted once: more of it, on the edited shift or on one moved in,
   is caused; the same or less is not. A shift published across the first 15 minutes of an exam
   may be shortened, not lengthened, and no other shift may be moved into the exam
-  beside it. Sector exceptions are judged the same way, though their scope holds one shift.
+  beside it. Sector exceptions are judged the same way, though their scope holds one shift:
+  the work of all its pieces (worked before a lunch break and the rest still planned) counts.
   A breach whose block an acknowledged sector exception lifted counts as one the scope had: the
   edit makes the acknowledgement stale and the new state cannot be acknowledged before it is
   saved, so easing it saves and extending it is refused. A breach carried to a day or week that

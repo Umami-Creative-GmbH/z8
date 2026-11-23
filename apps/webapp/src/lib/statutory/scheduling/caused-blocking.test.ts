@@ -211,14 +211,42 @@ describe("causedBlockingFindings", () => {
 			 * A conflict of `shiftId` on Tuesday's release covering its planned work from `from` to
 			 * `to` (UTC wall times) inside the release time.
 			 */
-			const covering = (shiftId: string, from: string, to: string) => {
+			const covering = (
+				shiftId: string,
+				from: string,
+				to: string,
+				kind = "bbig_release_day_shift",
+			) => {
 				const start = Temporal.Instant.from(`2027-03-02T${from}:00Z`);
 				const end = Temporal.Instant.from(`2027-03-02T${to}:00Z`);
-				return breach("bbig_release_day_shift", shiftId, "2027-03-02", undefined, {
+				return breach(kind, shiftId, "2027-03-02", undefined, {
 					coveredMinutes: start.until(end).total("minutes"),
 					coveredSpan: { start: start.toString(), end: end.toString() },
 				});
 			};
+
+			describe("whichever rule each conflict cites", () => {
+				// A minor's full school day with lessons from 07:30: a shift touching the time before
+				// the lessons is cited as such (BBiG kind), one starting after them as a return to the
+				// workplace (JArbSchG kind). Both conflict with the same release day.
+				const beforeLessons = covering("a", "06:00", "14:00");
+				const afterLessonsStart = covering(
+					"a",
+					"10:00",
+					"14:00",
+					"jarbschg_school_day_workplace_return",
+				);
+
+				it("is not caused when an edit only reduces the day's conflict", () => {
+					expect(causedBlockingFindings([beforeLessons], [afterLessonsStart])).toEqual([]);
+				});
+
+				it("is caused when an edit covers more of the release day, citing another rule", () => {
+					expect(kinds(causedBlockingFindings([afterLessonsStart], [beforeLessons]))).toEqual([
+						"bbig_release_day_shift",
+					]);
+				});
+			});
 
 			it("is not caused when the same work conflicts, on the same or another shift", () => {
 				const before = [covering("x", "09:00", "09:15")];

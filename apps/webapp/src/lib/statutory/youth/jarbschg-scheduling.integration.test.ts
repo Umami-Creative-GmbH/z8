@@ -956,6 +956,59 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 					expect(refusedWith).toContain("jarbschg_night_work");
 					expect(refusedWith).not.toContain("bbig_release_day_shift");
 				});
+
+				describe("whichever rule the shift's conflict cites on a full school day with early lessons", () => {
+					let learner: FixtureEmployee;
+					let tuesday: string;
+					const edit = (startTime: string) =>
+						upsertShift({
+							id: tuesday,
+							employeeId: learner.employeeId,
+							subareaId,
+							date: "2027-03-02",
+							startTime,
+							endTime: "14:00",
+						});
+
+					beforeEach(async () => {
+						await seed.blockJarbschgPublish(org);
+						learner = await apprentice("early-lessons");
+						// Tuesday: six lessons from 07:30 to 13:30, the week's full school day.
+						await release(learner, {
+							releaseKind: "vocational_school_day",
+							startsOn: "2027-03-02",
+							endsOn: "2027-03-02",
+							lessonCount: 6,
+							schoolMinutes: 360,
+							schoolStartTime: "07:30",
+							schoolEndTime: "13:30",
+						});
+						// Published before the block, from before the lessons through the day.
+						tuesday = await published(learner, "2027-03-02", "06:00", "14:00");
+						await findingOn("bbig_release_day_shift", tuesday);
+					});
+
+					it("saves shortening the shift to start after the lessons began", async () => {
+						expect(await edit("10:00")).toMatchObject({ success: true });
+						expect((await shiftRow(tuesday))?.start_time).toBe("10:00");
+						await findingOn("jarbschg_school_day_workplace_return", tuesday);
+					});
+
+					it("refuses lengthening it back before the lessons: it covers more of the day", async () => {
+						expect(await edit("10:00")).toMatchObject({ success: true });
+						const lengthen = {
+							from: "2027-03-02",
+							date: "2027-03-02",
+							startTime: "06:00",
+							endTime: "14:00",
+						};
+						expect(await refusedKinds(learner, tuesday, lengthen)).toContain(
+							"bbig_release_day_shift",
+						);
+						expect(await edit("06:00")).toMatchObject(refused);
+						expect((await shiftRow(tuesday))?.start_time).toBe("10:00");
+					});
+				});
 			});
 
 			describe("a release conflict deepens with more planned work inside the release time", () => {

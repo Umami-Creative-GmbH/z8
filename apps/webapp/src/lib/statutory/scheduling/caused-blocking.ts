@@ -17,7 +17,8 @@ type Reader = Pick<DatabaseClient, "select">;
  * What a blocking breach is about, so a change that carries it elsewhere is a new breach:
  * - a breach the rules attribute by position (rest period, daily and weekly maximum, days per
  *   week): its judged day or compliance week, whichever shift carries it;
- * - an apprentice release conflict: its release day, whichever shift conflicts;
+ * - an apprentice release conflict: its release day, whichever shift conflicts and whichever rule
+ *   it cites;
  * - any other breach is about its own work (night, weekend, holiday work, breaks): that finding on
  *   its local day.
  */

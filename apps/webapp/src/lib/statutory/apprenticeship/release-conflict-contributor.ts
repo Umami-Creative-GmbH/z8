@@ -40,15 +40,17 @@ const apprenticeReleaseFindingKinds: ReadonlySet<string> = new Set<ApprenticeRel
 ]);
 
 /**
- * What a release conflict is about: rule, employee and the release day it conflicts with
- * (`periodStart`), whichever shift it is and whichever day that shift starts on. Null for other
- * findings.
+ * What a release conflict is about: employee and the release day it conflicts with
+ * (`periodStart`), whichever shift it is, whichever day that shift starts on, and whichever rule
+ * the conflict cites. The rule follows from where the shift lies on the day (before early lessons,
+ * or after the lessons began), so an edit that shortens a shift may change it; the day's conflicts
+ * are judged together by the release time they cover. Null for other findings.
  */
 export function apprenticeReleaseScopeOf(
 	finding: Pick<StatutoryFinding, "kind" | "employeeId" | "periodStart">,
 ): string | null {
 	if (!apprenticeReleaseFindingKinds.has(finding.kind)) return null;
-	return JSON.stringify([finding.kind, finding.employeeId, "release", finding.periodStart]);
+	return JSON.stringify(["apprentice_release", finding.employeeId, finding.periodStart]);
 }
 
 interface PlannedWork {
@@ -174,25 +176,47 @@ function releaseTimeOf(
 	};
 }
 
-/**
- * The planned work inside the release time, and its minutes: how deep the conflict is. An edit or
- * a move that puts more work there deepens the release day's conflict (`causedBlockingFindings`).
- */
-function coverageOf(
+/** The planned work inside the release time of `day`, or null. */
+function coveredPartOf(
 	work: PlannedWork,
 	release: ApprenticeReleaseDay,
 	day: PlainDate,
 	timezone: string,
-): Pick<StatutoryFinding, "coveredMinutes" | "coveredSpan"> {
+): { readonly start: Instant; readonly end: Instant } | null {
 	const time = releaseTimeOf(release, day, timezone);
-	if (!time) return {};
+	if (!time) return null;
 	const start = compareInstants(work.start, time.start) > 0 ? work.start : time.start;
 	const end = compareInstants(work.end, time.end) < 0 ? work.end : time.end;
-	if (compareInstants(start, end) >= 0) return {};
-	return {
-		coveredMinutes: Math.round(start.until(end).total("minutes")),
-		coveredSpan: { start: start.toString(), end: end.toString() },
-	};
+	return compareInstants(start, end) < 0 ? { start, end } : null;
+}
+
+/**
+ * The planned work inside the release time of every release day it conflicts with, and its
+ * minutes: how deep the conflict is. An edit or a move that puts more work there deepens the
+ * release day's conflict (`causedBlockingFindings`). A night shift across two release days covers
+ * both; the release times of different days never overlap, so nothing is counted twice. One span
+ * when the parts join (a night through two days released in full), else the minutes alone.
+ */
+function coverageOf(
+	parts: readonly { readonly start: Instant; readonly end: Instant }[],
+): Pick<StatutoryFinding, "coveredMinutes" | "coveredSpan"> {
+	if (parts.length === 0) return {};
+	const coveredMinutes = parts.reduce(
+		(total, part) => total + Math.round(part.start.until(part.end).total("minutes")),
+		0,
+	);
+	const joined = parts.every(
+		(part, index) => index === 0 || part.start.equals(parts[index - 1].end),
+	);
+	return joined
+		? {
+				coveredMinutes,
+				coveredSpan: {
+					start: parts[0].start.toString(),
+					end: parts[parts.length - 1].end.toString(),
+				},
+			}
+		: { coveredMinutes };
 }
 
 async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFinding[]> {
@@ -251,18 +275,21 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		// Its own day, and the next one when it runs past midnight into a school morning.
 		const lastDay = plainDateAt(work.end.subtract({ nanoseconds: 1 }), context.timezone);
 		const days = lastDay.equals(work.date) ? [work.date] : [work.date, lastDay];
+		// The first release day it conflicts with dates and cites the conflict; the work it covers
+		// on every conflicting release day is its depth.
 		let found: {
 			release: ApprenticeReleaseDay;
 			releaseDay: PlainDate;
 			conflict: ReleaseConflict;
 		} | null = null;
+		const covered: { start: Instant; end: Instant }[] = [];
 		for (const day of days) {
 			const release = releaseOn.get(`${work.employeeId}:${day}`);
 			const conflict = release ? conflictOf(work, release, day, context.timezone) : null;
-			if (release && conflict) {
-				found = { release, releaseDay: day, conflict };
-				break;
-			}
+			if (!release || !conflict) continue;
+			found ??= { release, releaseDay: day, conflict };
+			const part = coveredPartOf(work, release, day, context.timezone);
+			if (part) covered.push(part);
 		}
 		if (!found) continue;
 		const { release, releaseDay, conflict } = found;
@@ -289,7 +316,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 					? minorReleaseReference[release.releaseKind]
 					: minorLessonReference[conflict],
 			summary: { tier: "exceeded" },
-			...coverageOf(work, release, releaseDay, context.timezone),
+			...coverageOf(covered),
 			adminDetail: null,
 			inputFingerprint: statutoryInputFingerprint({
 				kind,
