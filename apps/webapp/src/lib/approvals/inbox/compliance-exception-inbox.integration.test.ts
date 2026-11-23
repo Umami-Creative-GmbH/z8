@@ -6,9 +6,13 @@
  * Local contract: pnpm --filter webapp test:integration
  */
 import { randomUUID } from "node:crypto";
+import type { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "@/db";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { type AppAbility, defineAbilityFor } from "@/lib/authorization/ability";
 import { type Clock, parseInstant } from "@/lib/datetime/temporal-core";
 import {
@@ -700,6 +704,109 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 			await expect(decision).rejects.toThrow("Request is already expired");
 			expect(await row(exceptionId)).toMatchObject({ status: "pending", approver_id: null });
 			expect(notify.approved).not.toHaveBeenCalled();
+		});
+
+		it("refuses as not found when the manager's scope is revoked before the decision is written", async () => {
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+			const dialect = new PgDialect();
+			// The manager link goes away after the exception was read in scope, before the write.
+			const revokingDatabase = {
+				async execute(statement: SQL) {
+					if (/^\s*update\b/i.test(dialect.sqlToQuery(statement).sql)) {
+						await fixture.pool.query(
+							"delete from employee_managers where employee_id = $1 and manager_id = $2",
+							[employee.employeeId, manager.employeeId],
+						);
+					}
+					return db.execute(statement);
+				},
+			};
+			const notify = notifications();
+
+			const decision = decideComplianceExceptionFromInbox({
+				organizationId,
+				exceptionId,
+				actorEmployeeId: manager.employeeId,
+				scope: { kind: "managed", employeeIds: [employee.employeeId] },
+				action: "approve",
+				clock: AT_NOW,
+				notify,
+				database: revokingDatabase,
+			});
+
+			await expect(decision).rejects.toBeInstanceOf(NotFoundError);
+			await expect(decision).rejects.toThrow("Approval not found");
+			expect(await row(exceptionId)).toMatchObject({ status: "pending", approver_id: null });
+			expect(notify.approved).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("a team's primary manager", () => {
+		let teamLead: { employeeId: string; userId: string };
+		let teamId: string;
+
+		beforeEach(async () => {
+			teamLead = await fixture.employee({ organizationId });
+			await fixture.pool.query("update employee set role = 'manager' where id = $1", [
+				teamLead.employeeId,
+			]);
+			teamId = await fixture.team(organizationId);
+			await fixture.pool.query("update team set primary_manager_id = $2 where id = $1", [
+				teamId,
+				teamLead.employeeId,
+			]);
+			// The outsider has no direct manager; the employee has one, the manager.
+			await fixture.setEmployeeTeam(outsider.employeeId, teamId);
+			await fixture.setEmployeeTeam(employee.employeeId, teamId);
+		});
+
+		const rejectAs = (actor: { employeeId: string }, exceptionId: string) =>
+			decideComplianceExceptionForActor({
+				organizationId,
+				exceptionId,
+				actorEmployeeId: actor.employeeId,
+				canManageCompliance: false,
+				action: "reject",
+				reason: "Cover is already planned",
+				clock: AT_NOW,
+			});
+
+		it("sees and decides the exception of a team member who has no direct manager", async () => {
+			const exceptionId = await exception({ employeeId: outsider.employeeId });
+
+			const list = await listFor(teamLead);
+
+			expect(list.items.map((item) => item.id)).toEqual([exceptionId]);
+			expect(list.counts.compliance_exception).toBe(1);
+			await expect(rejectAs(teamLead, exceptionId)).resolves.toMatchObject({
+				status: "rejected",
+			});
+		});
+
+		it("neither sees nor decides the exception of a team member with a direct manager", async () => {
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+
+			const list = await listFor(teamLead);
+
+			expect(list.items).toEqual([]);
+			await expect(rejectAs(teamLead, exceptionId)).rejects.toBeInstanceOf(NotFoundError);
+			await expect(rejectAs(manager, exceptionId)).resolves.toMatchObject({ status: "rejected" });
+		});
+
+		it("lets the manager a requested exception notifies decide it", async () => {
+			for (const requester of [outsider, employee]) {
+				const exceptionId = await exception({ employeeId: requester.employeeId });
+				const notifiedManagerId = await getPrimaryEligibleManagerIdForRequester({
+					db,
+					requesterEmployeeId: requester.employeeId,
+					organizationId,
+				});
+				expect(notifiedManagerId).not.toBeNull();
+
+				await expect(
+					rejectAs({ employeeId: notifiedManagerId ?? "" }, exceptionId),
+				).resolves.toMatchObject({ status: "rejected" });
+			}
 		});
 	});
 

@@ -367,14 +367,21 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 		type: "AdaptiveCard",
 		version: "1.4",
 		body,
-		// Compliance exceptions are decided in the Approval inbox (#1977, Approvals ADR-0005);
-		// the retired `/settings/compliance` queue only redirects there.
+		// Pending compliance exceptions are decided in the Approval inbox (#1977, Approvals
+		// ADR-0005), never the retired `/settings/compliance` queue; with none pending, the card
+		// opens the violations, as the command center does.
 		actions: [
-			{
-				type: "Action.OpenUrl",
-				title: t("teamsBot:commands.compliance.reviewExceptions", "Review Exceptions"),
-				url: `${appUrl}/approvals/inbox?types=compliance_exception`,
-			},
+			summary.pendingExceptions.length > 0
+				? {
+						type: "Action.OpenUrl",
+						title: t("teamsBot:commands.compliance.reviewExceptions", "Review Exceptions"),
+						url: `${appUrl}/approvals/inbox?types=compliance_exception`,
+					}
+				: {
+						type: "Action.OpenUrl",
+						title: t("teamsBot:commands.compliance.viewDashboard", "View Compliance Dashboard"),
+						url: `${appUrl}/settings/work-policies?tab=work&view=compliance`,
+					},
 		],
 	};
 }
