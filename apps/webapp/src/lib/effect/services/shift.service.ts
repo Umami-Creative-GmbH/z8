@@ -32,7 +32,13 @@ import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 import {
 	STATUTORY_PUBLICATION_BLOCKED,
 	STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+	statutoryPublicationRefusal,
 } from "@/lib/statutory/scheduling/publication-block";
+import {
+	findingsBlockingDraftPublication,
+	lockPublicationDrafts,
+	type PublicationScope,
+} from "@/lib/statutory/scheduling/publish-blocking";
 import {
 	guardPublishedShiftEdit,
 	PublishedShiftEditBlocked,
@@ -181,13 +187,18 @@ export class ShiftService extends Context.Service<
 		readonly getShiftById: (id: string) => Effect.Effect<ShiftWithRelations | null, DatabaseError>;
 
 		// Publishing workflow
+		/**
+		 * Publishes the range's drafts. They are judged by the JArbSchG publish block in the same
+		 * transaction, as `statutory` describes the range (organization-local days of `dateRange`).
+		 */
 		readonly publishShifts: (
 			organizationId: string,
 			dateRange: DateRange,
 			publishedBy: string,
+			statutory: Omit<PublicationScope, "organizationId">,
 		) => Effect.Effect<
 			{ count: number; affectedEmployeeIds: string[] },
-			AuthorizationError | DatabaseError
+			AuthorizationError | ValidationError | DatabaseError
 		>;
 
 		// Analytics
@@ -541,6 +552,7 @@ export const ShiftServiceLive = Layer.effect(
 												published: existing.status === "published",
 												employeeId,
 												date: plainDateAt(instantFromDate(input.date), input.timezone),
+												previousDate: plainDateAt(instantFromDate(existing.date), input.timezone),
 												now: systemClock.nowInstant(),
 											},
 											() =>
@@ -852,48 +864,58 @@ export const ShiftServiceLive = Layer.effect(
 					return result as ShiftWithRelations | null;
 				}),
 
-			publishShifts: (organizationId, dateRange, publishedBy) =>
+			publishShifts: (organizationId, dateRange, publishedBy, statutory) =>
 				Effect.gen(function* () {
-					// Get all draft shifts in the date range
-					const draftShifts = yield* dbService.query("getDraftShifts", async () => {
-						return await dbService.db.query.shift.findMany({
-							where: and(
-								eq(shift.organizationId, organizationId),
-								eq(shift.status, "draft"),
-								gte(shift.date, dateRange.start),
-								lt(shift.date, dateRange.endExclusive),
-							),
-						});
-					});
+					// The publish block (#1993) judges the drafts it publishes in the publication's
+					// transaction, with those drafts locked: a draft saved or edited after the check
+					// is never published unchecked.
+					const outcome = yield* dbService.query("publishShifts", () =>
+						dbService.db.transaction(async (tx) => {
+							const drafts = await lockPublicationDrafts(tx, organizationId, dateRange);
+							if (drafts.length === 0) {
+								return { kind: "published", count: 0, affectedEmployeeIds: [] } as const;
+							}
+							const blocking = await findingsBlockingDraftPublication(
+								tx,
+								{ organizationId, ...statutory },
+								drafts,
+							);
+							const refusal = statutoryPublicationRefusal(blocking);
+							if (refusal) return { kind: "statutory_blocked", refusal } as const;
 
-					if (draftShifts.length === 0) {
-						return { count: 0, affectedEmployeeIds: [] };
+							await tx
+								.update(shift)
+								.set({ status: "published", publishedAt: new Date(), publishedBy })
+								.where(
+									and(
+										eq(shift.organizationId, organizationId),
+										inArray(
+											shift.id,
+											drafts.map((draft) => draft.id),
+										),
+									),
+								);
+							return {
+								kind: "published",
+								count: drafts.length,
+								// Open shifts have no assignee.
+								affectedEmployeeIds: [
+									...new Set(drafts.flatMap((draft) => draft.employeeId ?? [])),
+								],
+							} as const;
+						}),
+					);
+
+					if (outcome.kind === "statutory_blocked") {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: outcome.refusal,
+								field: "shifts",
+								refusal: STATUTORY_PUBLICATION_BLOCKED,
+							}),
+						);
 					}
-
-					// Collect unique employee IDs (excluding open shifts)
-					const affectedEmployeeIds = [
-						...new Set(
-							draftShifts.filter((s) => s.employeeId !== null).map((s) => s.employeeId as string),
-						),
-					];
-
-					// Update all draft shifts to published
-					yield* dbService.query("publishShifts", async () => {
-						const shiftIds = draftShifts.map((s) => s.id);
-						await dbService.db
-							.update(shift)
-							.set({
-								status: "published",
-								publishedAt: new Date(),
-								publishedBy,
-							})
-							.where(and(eq(shift.organizationId, organizationId), inArray(shift.id, shiftIds)));
-					});
-
-					return {
-						count: draftShifts.length,
-						affectedEmployeeIds,
-					};
+					return { count: outcome.count, affectedEmployeeIds: [...outcome.affectedEmployeeIds] };
 				}),
 
 			getIncompleteDays: (organizationId, dateRange, timezone) =>

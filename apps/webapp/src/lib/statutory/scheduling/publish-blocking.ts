@@ -31,7 +31,74 @@ export interface PublicationScope {
 	readonly now: Instant;
 }
 
-/** The blocking findings of `findings` (the range's evaluation) that the publication causes. */
+/** A draft of the range: what the publication turns into a published shift. */
+export interface PublicationDraft {
+	readonly id: string;
+	readonly employeeId: string | null;
+}
+
+/** The drafts whose `shift.date` lies in `[bounds.start, bounds.endExclusive)`. */
+function publicationDraftsWhere(
+	organizationId: string,
+	bounds: { readonly start: Date; readonly endExclusive: Date },
+) {
+	return and(
+		eq(shift.organizationId, organizationId),
+		eq(shift.status, "draft"),
+		gte(shift.date, bounds.start),
+		lt(shift.date, bounds.endExclusive),
+	);
+}
+
+/**
+ * The range's drafts, locked until `tx` ends: the publication publishes exactly these, after
+ * judging them with `findingsBlockingDraftPublication` in the same transaction. A draft saved
+ * meanwhile stays a draft; an edit of a locked one waits for the publication.
+ */
+export async function lockPublicationDrafts(
+	tx: Pick<DatabaseClient, "select">,
+	organizationId: string,
+	bounds: { readonly start: Date; readonly endExclusive: Date },
+): Promise<PublicationDraft[]> {
+	return tx
+		.select({ id: shift.id, employeeId: shift.employeeId })
+		.from(shift)
+		.where(publicationDraftsWhere(organizationId, bounds))
+		.orderBy(shift.id)
+		.for("update");
+}
+
+/**
+ * The blocking findings publishing `drafts` causes, judged afresh (only the monitors that can
+ * block publication). Run it in the publication's transaction with drafts from
+ * `lockPublicationDrafts`, so nothing is published that was not judged.
+ */
+export async function findingsBlockingDraftPublication(
+	db: Reader,
+	scope: PublicationScope,
+	drafts: readonly PublicationDraft[],
+): Promise<StatutoryComplianceFinding[]> {
+	const employeeIds = [...new Set(drafts.flatMap((draft) => draft.employeeId ?? []))];
+	if (employeeIds.length === 0) return [];
+	const findings = await evaluateStatutoryScheduleFindings(
+		db,
+		{
+			organizationId: scope.organizationId,
+			timezone: scope.timezone,
+			window: scope.window,
+			employeeIds,
+			now: scope.now,
+		},
+		statutoryBlockingScheduleContributors,
+	);
+	return causedBlockingFindings(db, scope, publicationBlockingFindings(findings), drafts);
+}
+
+/**
+ * The blocking findings of `findings` (the range's evaluation) that the publication causes. The
+ * early check before the planner's acknowledgement; the publication itself judges its locked
+ * drafts again with `findingsBlockingDraftPublication`.
+ */
 export async function findingsBlockingPublication(
 	db: Reader,
 	scope: PublicationScope,
@@ -39,23 +106,25 @@ export async function findingsBlockingPublication(
 ): Promise<StatutoryComplianceFinding[]> {
 	const blocking = publicationBlockingFindings(findings);
 	if (blocking.length === 0) return [];
-
-	const bounds = shiftDateRangeBounds(
-		scope.window.start,
-		scope.window.endExclusive,
-		scope.timezone,
-	);
 	const drafts = await db
 		.select({ id: shift.id, employeeId: shift.employeeId })
 		.from(shift)
 		.where(
-			and(
-				eq(shift.organizationId, scope.organizationId),
-				eq(shift.status, "draft"),
-				gte(shift.date, bounds.start),
-				lt(shift.date, bounds.endExclusive),
+			publicationDraftsWhere(
+				scope.organizationId,
+				shiftDateRangeBounds(scope.window.start, scope.window.endExclusive, scope.timezone),
 			),
 		);
+	return causedBlockingFindings(db, scope, blocking, drafts);
+}
+
+async function causedBlockingFindings(
+	db: Reader,
+	scope: PublicationScope,
+	blocking: readonly StatutoryComplianceFinding[],
+	drafts: readonly PublicationDraft[],
+): Promise<StatutoryComplianceFinding[]> {
+	if (blocking.length === 0) return [];
 	const draftSubjects = new Set(drafts.map((draft) => `shift:${draft.id}`));
 	const onDrafts = blocking.filter((finding) => draftSubjects.has(finding.subjectKey));
 	// Youth findings depend on the employee's own shifts only: other employees' drafts cannot

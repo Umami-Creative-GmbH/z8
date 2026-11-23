@@ -127,6 +127,11 @@ describe("publishShifts organization timezone boundary", () => {
 				endExclusive: expectedRange.endDate,
 			},
 			"user-1",
+			{
+				timezone: "Europe/Berlin",
+				window: { start: "2026-03-01", endExclusive: "2026-03-08" },
+				now: expect.anything(),
+			},
 		);
 	});
 });

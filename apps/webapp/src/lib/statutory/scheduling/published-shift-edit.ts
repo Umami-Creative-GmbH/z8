@@ -2,11 +2,11 @@
  * The publish block on edits of published shifts (#1993). Saving a published shift keeps it
  * published, so a new date, time or assignee would go live without the publish gate. While the
  * organization blocks JArbSchG shift publication, the save runs the same statutory check for the
- * shift's day and is refused when it newly blocks publication of the edited shift or of another
- * published shift of the same employee, or deepens such a block past its limit. A blocking
- * finding the shift already had and the edit leaves no worse does not refuse the save. A current
- * sector exception lifts the
- * block as at publication. Drafts are judged when they are published.
+ * shift's day before and after the edit, and is refused when it newly blocks publication of the
+ * edited shift or of another published shift of the same employee, or deepens such a block past
+ * its limit. A blocking finding the shift already had and the edit leaves no worse, also on the
+ * day it moves to, does not refuse the save. A current sector exception lifts the block as at
+ * publication. Drafts are judged when they are published.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { shift } from "@/db/schema";
@@ -31,6 +31,8 @@ export interface PublishedShiftEdit {
 	readonly employeeId: string | null;
 	/** Organization-local shift date after the save. */
 	readonly date: PlainDate;
+	/** Organization-local shift date before the save, when the edit may move the shift. */
+	readonly previousDate?: PlainDate;
 	readonly now: Instant;
 }
 
@@ -56,16 +58,32 @@ export async function guardPublishedShiftEdit<T>(
 	const preferences = await loadOrganizationStatutoryPreferences(db, edit.organizationId);
 	if (!preferences.blockJarbschgShiftPublish) return write();
 
-	const request = {
-		organizationId: edit.organizationId,
-		timezone: edit.timezone,
-		window: { start: edit.date.toString(), endExclusive: edit.date.add({ days: 1 }).toString() },
-		employeeIds: [edit.employeeId],
-		now: edit.now,
+	const employeeId = edit.employeeId;
+	// Before and after are judged on the same days: the shift's day before the save and after it.
+	// A breach the shift takes with it to another day is then the same finding on both sides.
+	const days = [edit.date];
+	if (edit.previousDate && !edit.previousDate.equals(edit.date)) days.push(edit.previousDate);
+	// Only monitors that can block publication: the save holds the shift row locked. One day after
+	// another: `db` is the save's transaction (one connection).
+	const evaluate = async () => {
+		const findings: StatutoryComplianceFinding[] = [];
+		for (const day of days) {
+			findings.push(
+				...(await evaluateStatutoryScheduleFindings(
+					db,
+					{
+						organizationId: edit.organizationId,
+						timezone: edit.timezone,
+						window: { start: day.toString(), endExclusive: day.add({ days: 1 }).toString() },
+						employeeIds: [employeeId],
+						now: edit.now,
+					},
+					statutoryBlockingScheduleContributors,
+				)),
+			);
+		}
+		return findings;
 	};
-	// Only monitors that can block publication: the save holds the shift row locked.
-	const evaluate = () =>
-		evaluateStatutoryScheduleFindings(db, request, statutoryBlockingScheduleContributors);
 	const before = new Map(
 		(await evaluate()).map((finding) => [statutoryFindingChangeKey(finding), finding] as const),
 	);
@@ -74,7 +92,10 @@ export async function guardPublishedShiftEdit<T>(
 	// deepens past its limit (a longer week, a shorter rest). A breach the shift already had (e.g.
 	// published before the org turned the block on) does not lock its notes, colour or an edit
 	// that eases it.
-	const caused = (await evaluate()).filter((finding) => {
+	const after = new Map(
+		(await evaluate()).map((finding) => [statutoryFindingChangeKey(finding), finding] as const),
+	);
+	const caused = [...after.values()].filter((finding) => {
 		if (!finding.blocksPublication) return false;
 		const prior = before.get(statutoryFindingChangeKey(finding));
 		return !prior || deepensBreachedLimit(prior, finding);

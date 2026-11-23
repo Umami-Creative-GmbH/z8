@@ -300,16 +300,18 @@ export async function publishShifts(
 			organizationId: currentEmployee.organizationId,
 			session,
 		});
+		const statutoryScope = {
+			timezone,
+			window: { start: dateRange.startDate, endExclusive: dateRange.endDateExclusive },
+			now: systemClock.nowInstant(),
+		};
 		// Only what this publication causes blocks it: findings on its drafts, or new ones they cause.
+		// Refused here before the planner is asked to acknowledge warnings; the publication judges
+		// the drafts it publishes again, in its transaction.
 		const blocking = yield* dbService.query("statutoryPublicationBlocking", () =>
 			findingsBlockingPublication(
 				dbService.db,
-				{
-					organizationId: currentEmployee.organizationId,
-					timezone,
-					window: { start: dateRange.startDate, endExclusive: dateRange.endDateExclusive },
-					now: systemClock.nowInstant(),
-				},
+				{ organizationId: currentEmployee.organizationId, ...statutoryScope },
 				evaluation.findings,
 			),
 		);
@@ -340,6 +342,7 @@ export async function publishShifts(
 			currentEmployee.organizationId,
 			serviceDateRange,
 			session.user.id,
+			statutoryScope,
 		);
 
 		if (evaluation.summary.totalFindings > 0) {

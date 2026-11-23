@@ -27,9 +27,10 @@ export const statutoryScheduleContributors: readonly StatutoryScheduleContributo
 
 /**
  * The registered monitors whose findings may set `blocksPublication`. The publish block's guards
- * (an edit of a published shift, the findings a publication causes) run inside the save
- * transaction with the shift row locked, so they evaluate only these. A monitor that starts
- * blocking publication is added here too.
+ * evaluate only these: an edit of a published shift runs inside the save transaction with the
+ * shift row locked, and a publication judges the drafts it publishes inside the publish
+ * transaction with those drafts locked (after an early check outside it, before the planner
+ * acknowledges warnings). A monitor that starts blocking publication is added here too.
  */
 export const statutoryBlockingScheduleContributors: readonly StatutoryScheduleContributor[] = [
 	jarbschgScheduleContributor,

@@ -13,6 +13,7 @@ import {
 	ScheduleComplianceService,
 	ScheduleComplianceServiceLive,
 } from "@/lib/effect/services/schedule-compliance.service";
+import { ShiftService, ShiftServiceLive } from "@/lib/effect/services/shift.service";
 import {
 	ShiftRequestService,
 	ShiftRequestServiceLive,
@@ -258,6 +259,59 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			refusal: STATUTORY_PUBLICATION_BLOCKED,
 		});
 		expect(await shiftStatus(monday)).toBe("draft");
+	});
+
+	describe("the publication checks the drafts it publishes", () => {
+		const publishInService = () =>
+			Effect.runPromise(
+				Effect.gen(function* () {
+					const service = yield* ShiftService;
+					return yield* service.publishShifts(
+						org.id,
+						{
+							start: shiftDateBounds(WEEK.startDate, org.timezone).start,
+							endExclusive: shiftDateBounds(WEEK.endDateExclusive, org.timezone).start,
+						},
+						owner.userId,
+						{
+							timezone: org.timezone,
+							window: { start: WEEK.startDate, endExclusive: WEEK.endDateExclusive },
+							now: systemClock.nowInstant(),
+						},
+					);
+				}).pipe(
+					Effect.provide(ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+					Effect.result,
+				),
+			);
+
+		it("refuses a blocked draft saved after the planner's publish check passed", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "racing", { birthday: "2011-01-01" });
+			const adult = await fx.employee(org, "checked", { birthday: "1990-01-01" });
+			const checked = await shift(adult, "2027-03-02", "09:00", "17:00");
+			// Planner B's night draft for a minor, saved after planner A's check saw a clean week.
+			const night = await shift(minor, "2027-03-03", "17:00", "21:00");
+
+			expect(await publishInService()).toMatchObject({
+				_tag: "Failure",
+				failure: { _tag: "ValidationError", refusal: STATUTORY_PUBLICATION_BLOCKED },
+			});
+			expect(await shiftStatus(night)).toBe("draft");
+			expect(await shiftStatus(checked)).toBe("draft");
+		});
+
+		it("publishes the checked drafts when none is blocked", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "clean", { birthday: "2011-01-01" });
+			const day = await shift(minor, "2027-03-02", "09:00", "13:00");
+
+			expect(await publishInService()).toMatchObject({
+				_tag: "Success",
+				success: { count: 1, affectedEmployeeIds: [minor.employeeId] },
+			});
+			expect(await shiftStatus(day)).toBe("published");
+		});
 	});
 
 	describe("publishing drafts next to a breach already published", () => {
@@ -576,6 +630,62 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 				}),
 			).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
 			expect((await shiftRow(monday))?.start_time).toBe("08:00");
+		});
+
+		describe("moving a published shift to another day", () => {
+			let minor: FixtureEmployee;
+			let tuesday: string;
+			const moveToWednesday = (startTime: string, endTime: string) =>
+				upsertShift({
+					id: tuesday,
+					employeeId: minor.employeeId,
+					subareaId,
+					date: "2027-03-03",
+					startTime,
+					endTime,
+				});
+
+			beforeEach(async () => {
+				await seed.blockJarbschgPublish(org);
+				minor = await fx.employee(org, "mover", { birthday: "2011-01-01" });
+				// Published before the block: 07:00–18:00 is 10 h of work after the 60 min break.
+				tuesday = await published(minor, "2027-03-02", "07:00", "18:00");
+				expect((await evaluateWeek()).findings).toContainEqual(
+					expect.objectContaining({
+						statutoryKind: "jarbschg_daily_max",
+						subjectKey: `shift:${tuesday}`,
+						blocksPublication: true,
+					}),
+				);
+			});
+
+			it("saves moving the breach to Wednesday when the move shortens it to 9 h", async () => {
+				expect(await moveToWednesday("07:00", "17:00")).toMatchObject({ success: true });
+				expect((await shiftRow(tuesday))?.end_time).toBe("17:00");
+			});
+
+			it("refuses moving it to Wednesday at 11 h, deeper past the daily maximum", async () => {
+				expect(await moveToWednesday("07:00", "19:00")).toMatchObject({
+					success: false,
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				});
+				expect((await shiftRow(tuesday))?.end_time).toBe("18:00");
+			});
+
+			it("refuses moving a clean published shift onto a day where it breaks the daily maximum", async () => {
+				const clean = await published(minor, "2027-03-04", "09:00", "13:00");
+				expect(
+					await upsertShift({
+						id: clean,
+						employeeId: minor.employeeId,
+						subareaId,
+						date: "2027-03-05",
+						startTime: "07:00",
+						endTime: "18:00",
+					}),
+				).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
+				expect((await shiftRow(clean))?.start_time).toBe("09:00");
+			});
 		});
 
 		it("refuses lengthening a minor's published 24 December shift further past 14:00", async () => {

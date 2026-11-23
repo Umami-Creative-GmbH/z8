@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 import { db } from "@/db";
 import { parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
+import { shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { integrationAdminPool } from "@/test/integration-database";
 import {
 	type FixtureEmployee,
@@ -18,7 +19,11 @@ import {
 	statutoryBlockingScheduleContributors,
 	statutoryScheduleContributors,
 } from "./contributors";
-import { findingsBlockingPublication } from "./publish-blocking";
+import {
+	findingsBlockingDraftPublication,
+	findingsBlockingPublication,
+	lockPublicationDrafts,
+} from "./publish-blocking";
 import { guardPublishedShiftEdit } from "./published-shift-edit";
 
 describe("publish block guards evaluate only blocking monitors (PostgreSQL)", () => {
@@ -124,6 +129,33 @@ describe("publish block guards evaluate only blocking monitors (PostgreSQL)", ()
 			[blocking],
 		);
 
+		expect(ran()).toEqual([...statutoryBlockingScheduleContributors]);
+	});
+
+	it("runs only the blocking monitors when the publication judges its locked drafts", async () => {
+		await shift("2027-03-02", "draft");
+		const ran = spyOnMonitors();
+
+		const blocking = await db.transaction(async (tx) => {
+			const drafts = await lockPublicationDrafts(
+				tx,
+				org.id,
+				shiftDateRangeBounds("2027-03-01", "2027-03-08", org.timezone),
+			);
+			expect(drafts).toHaveLength(1);
+			return findingsBlockingDraftPublication(
+				tx,
+				{
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: { start: "2027-03-01", endExclusive: "2027-03-08" },
+					now: systemClock.nowInstant(),
+				},
+				drafts,
+			);
+		});
+
+		expect(blocking).toEqual([]);
 		expect(ran()).toEqual([...statutoryBlockingScheduleContributors]);
 	});
 });
