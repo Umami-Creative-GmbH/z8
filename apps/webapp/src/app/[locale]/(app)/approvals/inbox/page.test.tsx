@@ -33,6 +33,9 @@ vi.mock("@/lib/navigation/locale-redirect", () => ({ redirectWithLocale }));
 vi.mock("@/components/errors/no-employee-error", () => ({
 	NoEmployeeError: ({ feature }: { feature?: string }) => <p>No employee profile to {feature}</p>,
 }));
+vi.mock("@/tolgee/server", () => ({
+	getTranslate: async () => (_key: string, fallback: string) => fallback,
+}));
 vi.mock("./approval-inbox-view", () => ({
 	ApprovalInboxView: () => <h1>Approval inbox shell</h1>,
 }));
@@ -131,6 +134,8 @@ describe("/approvals/inbox server guard", () => {
 		const outcome = await gateOutcome();
 
 		render(outcome.rendered);
+		// The page owns its heading, so the missing-employee state keeps the page h1.
+		expect(screen.getByRole("heading", { level: 1, name: "Approval Inbox" })).toBeTruthy();
 		expect(screen.getByText("No employee profile to approve requests")).toBeTruthy();
 		expect(screen.queryByText("Approval inbox shell")).toBeNull();
 	});

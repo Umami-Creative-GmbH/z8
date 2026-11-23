@@ -170,7 +170,8 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(true);
 	});
 	it("retains independent approvals page headings", () => {
-		expect(appPageOwnsHeading("/de/approvals")).toBe(true);
+		// `/approvals` only redirects to the Approval inbox (#1976).
+		expect(appPageOwnsHeading("/de/approvals")).toBe(false);
 		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);
 	});

@@ -412,7 +412,6 @@ export const APP_NAVIGATION_MANIFEST: readonly NavigationManifestEntry[] = [
 		icon: IconClipboardCheck,
 		sidebarSection: "team",
 		ownsHeading: true,
-		ownedHeadingSubpaths: ["/approvals"],
 		cmdK: { include: true },
 		isVisible: (ctx) => isManagerOrAdmin(ctx.employeeRole),
 	},
