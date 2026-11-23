@@ -240,11 +240,7 @@ function PayrollWorkspaceContent({
 	return (
 		<PayrollSettlementRefreshProvider refreshSummary={refreshWorkspaceSummary}>
 			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-4">
-				<PayrollHeader
-					organizationName={summary.organizationName}
-					isOrgAdmin={isOrgAdmin}
-					t={t}
-				/>
+				<PayrollHeader organizationName={summary.organizationName} isOrgAdmin={isOrgAdmin} t={t} />
 				<PayrollPeriodBar
 					dateMode={dateMode}
 					dispatch={dispatch}
@@ -320,14 +316,13 @@ function PayrollWorkspaceContent({
 									request={request}
 									t={t}
 								/>
-								{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992). */}
-								{isOrgAdmin ? (
-									<OnCallReferencePayrollCard
-										organizationId={summary.organizationId}
-										startDate={request.startDate}
-										endDate={request.endDate}
-									/>
-								) : null}
+								{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992): for
+								    every reader of the workspace, scoped by the action to their payroll access. */}
+								<OnCallReferencePayrollCard
+									organizationId={summary.organizationId}
+									startDate={request.startDate}
+									endDate={request.endDate}
+								/>
 							</>
 						),
 						settlement: (
@@ -402,10 +397,7 @@ function PayrollHeader({
 						<Button asChild variant="outline">
 							<Link href="/settings/payroll-export">
 								<IconSettings aria-hidden="true" className="size-4" />
-								{t(
-									"settings.payrollExport.connectorsTitle",
-									"Payroll Connectors & Wage Types",
-								)}
+								{t("settings.payrollExport.connectorsTitle", "Payroll Connectors & Wage Types")}
 							</Link>
 						</Button>
 					) : null}

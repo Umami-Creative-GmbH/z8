@@ -247,6 +247,56 @@ describe("on-call actions (PostgreSQL)", () => {
 		]);
 	});
 
+	it("lists payroll reference rows to a payroll-grant holder for the employees the grant covers only", async () => {
+		const { org, owner, worker, today, as } = await scenario();
+		const second = await fx.employee(org, "second");
+		await onCall.onCallTerms(org, second, { kind: "exact", weeklyMinutes: 600 });
+		await onCall.holiday(org, second, today.subtract({ days: 2 }).toString());
+		const officer = await fx.employee(org, "officer");
+		await fx.membership(org, officer, "member");
+		const grantId = crypto.randomUUID();
+		await admin.query(
+			`INSERT INTO payroll_access_grant
+			 (id, organization_id, payroll_employee_id, scope, is_active, created_by, updated_at)
+			 VALUES ($1, $2, $3, 'specific', true, $4, now())`,
+			[grantId, org.id, officer.employeeId, owner.userId],
+		);
+		await admin.query(
+			`INSERT INTO payroll_access_employee (organization_id, grant_id, employee_id, created_by)
+			 VALUES ($1, $2, $3, $4)`,
+			[org.id, grantId, worker.employeeId, owner.userId],
+		);
+		const period = {
+			startDate: today.subtract({ days: 3 }).toString(),
+			endDate: today.toString(),
+			method: "three_months" as const,
+		};
+		const listed = (rows: Awaited<ReturnType<typeof listOnCallPayrollReferenceRowsAction>>) =>
+			rows.success ? rows.data.map((row) => [row.employeeId, row.kind, row.eventDate]) : rows;
+
+		as(officer, "member", { id: officer.employeeId, role: "employee", former: false });
+		const rows = await listOnCallPayrollReferenceRowsAction(period);
+		expect(listed(rows)).toEqual([
+			[worker.employeeId, "sick_leave", today.subtract({ days: 1 }).toString()],
+		]);
+		// Hours only, never wages or amounts.
+		expect(JSON.stringify(rows)).not.toMatch(/hourly|wage|rate|cents|€/i);
+
+		// Without the grant (and not an org admin) the list is refused.
+		await admin.query(`UPDATE payroll_access_grant SET is_active = false WHERE id = $1`, [grantId]);
+		expect(await listOnCallPayrollReferenceRowsAction(period)).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+
+		// An org admin still sees everyone.
+		as(owner, "owner", null);
+		expect(listed(await listOnCallPayrollReferenceRowsAction(period))).toEqual([
+			[second.employeeId, "public_holiday", today.subtract({ days: 2 }).toString()],
+			[worker.employeeId, "sick_leave", today.subtract({ days: 1 }).toString()],
+		]);
+	});
+
 	it("refuses a payroll range longer than three months", async () => {
 		const { owner, as } = await scenario();
 		as(owner, "owner", null);

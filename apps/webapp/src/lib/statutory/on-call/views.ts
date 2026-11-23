@@ -245,6 +245,8 @@ export async function listOnCallPayrollReferenceRows(
 		readonly startDate: string;
 		readonly endDate: string;
 		readonly method: OnCallReferenceMethod;
+		/** The reader's payroll scope; null or left out: every employee of the organization. */
+		readonly employeeIds?: readonly string[] | null;
 	},
 ): Promise<OnCallPayrollReferenceRow[]> {
 	const start = parsePlainDate(input.startDate);
@@ -257,6 +259,7 @@ export async function listOnCallPayrollReferenceRows(
 		});
 	}
 	if (comparePlainDates(end, start) < 0) return [];
+	if (input.employeeIds?.length === 0) return [];
 	const until = end.add({ days: 1 }).toString();
 
 	// Confirmed on-call terms starting before the period ends. Their end is checked below, against
@@ -273,6 +276,9 @@ export async function listOnCallPayrollReferenceRows(
 				eq(employeeEmploymentHistory.scheduleSource, "on_call"),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				lt(employeeEmploymentHistory.validFromDate, until),
+				input.employeeIds
+					? inArray(employeeEmploymentHistory.employeeId, [...input.employeeIds])
+					: undefined,
 			),
 		);
 	if (terms.length === 0) return [];

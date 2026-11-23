@@ -6,7 +6,12 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import { organizationAction } from "@/lib/organization-action/organization-action";
 import type { OrganizationActor } from "@/lib/organization-action/organization-action";
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import { storeStep } from "@/lib/organization-action/store-step";
+import {
+	getActivePayrollAccessGrantScope,
+	resolvePayrollAccessibleEmployeeIds,
+} from "@/lib/payroll-access/permissions";
 import { acknowledgeOnCallShortNotice } from "@/lib/statutory/on-call/acknowledge";
 import {
 	calculateOnCallReferencePeriod,
@@ -122,18 +127,47 @@ export const getOnCallReferencePeriodAction = organizationAction(
 		}),
 );
 
+/**
+ * The employees whose payroll the actor prepares, as the payroll workspace admits them: an org
+ * admin the whole organization (null), a holder of an active payroll access grant the employees
+ * it covers. Anyone else is refused.
+ */
+function payrollReferenceScope(actor: OrganizationActor, organizationId: string) {
+	return Effect.gen(function* () {
+		if (meetsSettingsAccess(actor.settingsAccess, "orgAdmin")) return null;
+		const holder = { organizationId, payrollEmployeeId: actor.employee?.id ?? "" };
+		const grantScope = holder.payrollEmployeeId
+			? yield* storeStep("contracts.onCall.payrollReferenceGrant", (db) =>
+					getActivePayrollAccessGrantScope(holder, db),
+				)
+			: null;
+		yield* refuseUnless(grantScope !== null, {
+			userId: actor.userId,
+			message: "Payroll access is required to list on-call reference hours",
+			resource: "payroll_workspace",
+			action: "read",
+		});
+		return yield* storeStep("contracts.onCall.payrollReferenceScope", (db) =>
+			resolvePayrollAccessibleEmployeeIds(holder, db),
+		);
+	});
+}
+
 export const listOnCallPayrollReferenceRowsAction = organizationAction(
 	{
 		name: "contracts.onCall.listPayrollReferenceRows",
-		// Payroll preparation: org admins (the reference hours are wage-free, but the list spans the
-		// whole organization).
-		requires: "orgAdmin",
+		// Payroll preparation: whoever the payroll workspace admits (org admins, payroll access grant
+		// holders), checked in the handler. The reference hours are wage-free.
+		requires: "member",
 		schema: z
 			.strictObject({ startDate: isoDate, endDate: isoDate, method: methodSchema })
 			.refine((input) => input.startDate <= input.endDate, { path: ["endDate"] }),
 	},
-	({ organizationId, input }) =>
-		storeStep("contracts.onCall.listPayrollReferenceRows", (db) =>
-			listOnCallPayrollReferenceRows(db, { organizationId, ...input }),
-		),
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const employeeIds = yield* payrollReferenceScope(actor, organizationId);
+			return yield* storeStep("contracts.onCall.listPayrollReferenceRows", (db) =>
+				listOnCallPayrollReferenceRows(db, { organizationId, ...input, employeeIds }),
+			);
+		}),
 );
