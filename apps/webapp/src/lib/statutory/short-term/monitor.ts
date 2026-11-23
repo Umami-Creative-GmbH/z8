@@ -220,8 +220,8 @@ export interface ShortTermBerufsmaessigkeitReview {
 }
 
 /**
- * Berufsmäßigkeit prompts of the organization's short-term employees in the current and the
- * previous calendar year: open ones (no or a stale acknowledgement), and with `includeResolved`
+ * Berufsmäßigkeit prompts of the organization's short-term employees in the previous, the current
+ * and the next calendar year: open ones (no or a stale acknowledgement), and with `includeResolved`
  * also those with a current one. Org admins only: the findings carry EUR amounts.
  */
 export async function listShortTermBerufsmaessigkeitReviews(
@@ -234,7 +234,9 @@ export async function listShortTermBerufsmaessigkeitReviews(
 	},
 ): Promise<ShortTermBerufsmaessigkeitReview[]> {
 	const year = plainDateAt(input.now, input.timezone).year;
-	const years = [year - 1, year];
+	// Next year too: the monitor card shows it once it is planned (a fixed term across the year end,
+	// next January's rota), and this inbox is where its prompts are documented.
+	const years = [year - 1, year, year + 1];
 	const rows = await db
 		.select({
 			employeeId: employeeEmploymentHistory.employeeId,
@@ -254,7 +256,7 @@ export async function listShortTermBerufsmaessigkeitReviews(
 				eq(employeeEmploymentHistory.organizationId, input.organizationId),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				eq(employeeEmploymentHistory.employmentProfile, "short_term"),
-				lt(employeeEmploymentHistory.validFromDate, `${year + 1}-01-01`),
+				lt(employeeEmploymentHistory.validFromDate, `${year + 2}-01-01`),
 				or(
 					isNull(employeeEmploymentHistory.validUntilDate),
 					gt(employeeEmploymentHistory.validUntilDate, `${year - 1}-01-01`),

@@ -1695,6 +1695,44 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			});
 		});
 
+		it("lists next year's prompt in Reviews & Conflicts and acknowledges it", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			const owner = await fx.user("owner");
+			await st.terms(worker, { from: "2026-12-01", hourlyRate: 20 });
+			await st.fixedTermAgreement(worker, "2026-12-01", "2027-01-31");
+			// The January rota: nine 4-hour shifts at 20 EUR, 720 EUR against the 633 EUR cap of 2027.
+			for (let day = 4; day <= 12; day++) {
+				await st.shift(org, worker, `2027-01-${String(day).padStart(2, "0")}`);
+			}
+			const now = Temporal.Instant.from("2026-11-23T12:00:00Z");
+
+			const reviews = await listShortTermBerufsmaessigkeitReviews(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				now,
+			});
+			const shown = reviews.find((review) => review.month === "2027-01");
+
+			expect(shown?.finding.adminDetail?.amountsCents).toMatchObject({
+				earned: 0,
+				planned: 72_000,
+				total: 72_000,
+			});
+			await expect(
+				acknowledgeShortTermBerufsmaessigkeit(db, {
+					organizationId: org.id,
+					actorUserId: owner.userId,
+					employeeId: worker.employeeId,
+					timezone: org.timezone,
+					month: "2027-01",
+					reason: "Student, no other employment next year",
+					expectedFingerprint: shown?.finding.inputFingerprint ?? "",
+					now,
+				}),
+			).resolves.toMatchObject({ subjectKey: "2027-01" });
+		});
+
 		it("keeps a second shift of a day with completed work while its clock-in is open", async () => {
 			const { org, worker } = await earner("a", 7);
 			// 15:00 in Berlin: the morning shift is worked, the afternoon one runs since 14:00.
