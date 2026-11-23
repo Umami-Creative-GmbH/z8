@@ -164,6 +164,9 @@ export const shift = pgTable(
 		status: shiftStatusEnum("status").default("draft").notNull(),
 		publishedAt: timestamp("published_at"),
 		publishedBy: text("published_by").references(() => user.id),
+		// Last material assignment change (assignee, day, start or end): with `publishedAt`, the
+		// instant an on-call employee learns of the call-in (§ 12 Abs. 3 TzBfG, #1992).
+		assignmentChangedAt: timestamp("assignment_changed_at").defaultNow().notNull(),
 
 		// Metadata
 		notes: text("notes"),

@@ -2313,6 +2313,13 @@
       "breakpoints": true
     },
     {
+      "idx": 330,
+      "version": "7",
+      "when": 1813507200000,
+      "tag": "0330_shift_assignment_changed_at",
+      "breakpoints": true
+    },
+    {
       "idx": 334,
       "version": "7",
       "when": 1813593600000,

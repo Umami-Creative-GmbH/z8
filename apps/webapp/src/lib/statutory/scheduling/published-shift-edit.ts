@@ -15,7 +15,7 @@ import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { evaluateStatutoryScheduleFindings } from "./evaluate";
 import { statutoryFindingChangeKey } from "./finding-key";
 
-type Reader = Pick<DatabaseClient, "select">;
+type Reader = Pick<DatabaseClient, "select" | "query">;
 
 export interface PublishedShiftEdit {
 	readonly organizationId: string;

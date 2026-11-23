@@ -18,7 +18,7 @@ import { evaluateStatutoryScheduleFindings } from "./evaluate";
 import { statutoryFindingChangeKey } from "./finding-key";
 import { publicationBlockingFindings } from "./publication-block";
 
-type Reader = Pick<DatabaseClient, "select">;
+type Reader = Pick<DatabaseClient, "select" | "query">;
 
 export interface PublicationScope {
 	readonly organizationId: string;

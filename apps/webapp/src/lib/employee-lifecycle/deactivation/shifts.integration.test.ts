@@ -247,4 +247,29 @@ describe("deactivation opens upcoming shifts (#1440)", () => {
 		for (const step of again.afterCommit) await step();
 		expect(createNotification).toHaveBeenCalledTimes(1);
 	});
+
+	it("stamps the assignment change of each opened shift and leaves the others (#1992)", async () => {
+		const org = await organization();
+		const leaver = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const past = await shift(org, leaver, "2026-10-23", "08:00", "16:00");
+		const upcoming = await shift(org, leaver, "2026-10-25", "08:00", "16:00");
+		await fixture.pool.query(
+			`update shift set assignment_changed_at = '2026-01-01T00:00:00Z' where organization_id = $1`,
+			[org.organizationId],
+		);
+		const ctx = context(org.organizationId, leaver);
+		const before = new Date();
+
+		await fixture.db.transaction(async (tx) =>
+			applyShiftsToOpen(tx, ctx, await planShiftsToOpen(tx, ctx)),
+		);
+
+		const { rows } = await fixture.pool.query<{ id: string; assignment_changed_at: Date }>(
+			`select id, assignment_changed_at from shift where organization_id = $1`,
+			[org.organizationId],
+		);
+		const changedAt = new Map(rows.map((row) => [row.id, row.assignment_changed_at.getTime()]));
+		expect(changedAt.get(past)).toBe(Date.parse("2026-01-01T00:00:00Z"));
+		expect(changedAt.get(upcoming)).toBeGreaterThanOrEqual(before.getTime() - 1_000);
+	});
 });

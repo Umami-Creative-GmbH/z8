@@ -255,6 +255,14 @@
         "rollingExceeded": "Minijob-Verdienstgrenze für 12 Monate überschritten",
         "rollingApproaching": "Minijob-Verdienstgrenze für 12 Monate rückt näher"
       },
+      "onCall": {
+        "shortNotice": "Abruf: {days, plural, one {# voller Tag} other {# volle Tage}} Vorlauf, {required} erforderlich (§ 12 Abs. 3 TzBfG)",
+        "shortCall": "Abruf: Einsatz von {duration} unter dem Minimum von {minimum}",
+        "shortWorkCall": "Abruf: Einsatz von {duration} gearbeitet, unter dem Mindesteinsatz von {minimum}",
+        "nearBand": "Abruf: Woche mit {used}, nahe an der Grenze des Abrufkorridors von {limit}",
+        "overBand": "Abruf: Woche mit {used}, über dem Abrufkorridor von {limit}",
+        "underBand": "Abruf: Woche mit {used}, unter dem Abrufkorridor von {limit}"
+      },
       "workingStudent": {
         "lectureWeek": "Werkstudierende/r über 20 Std. in einer Vorlesungswoche: {hours} Std. Arbeit werktags tagsüber (Grenze {limit} Std.)",
         "ceiling": "Werkstudierende/r: {used} von {limit} Wochen über 20 Std. in 12 Monaten"

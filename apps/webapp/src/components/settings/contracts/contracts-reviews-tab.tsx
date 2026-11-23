@@ -38,6 +38,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-operations";
 import { Link } from "@/navigation";
+import { OnCallReviewsSection } from "./on-call-reviews-section";
 import { todayIsoDateInTimezone } from "./contract-formatters";
 import { MinijobExceedanceReviews } from "./minijob-exceedance-reviews";
 import { WorkingStudentReviewsSection } from "./working-student-reviews-section";
@@ -520,6 +521,7 @@ export function ContractsReviewsTab({
 					includeAcknowledged={includeResolved}
 				/>
 			)}
+			<OnCallReviewsSection organizationId={organizationId} />
 			<WorkingStudentReviewsSection
 				organizationId={organizationId}
 				includeResolved={includeResolved}

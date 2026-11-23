@@ -24,7 +24,7 @@ import { isMinorOn } from "./age";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
 import { type JarbschgRule, jarbschgSectorExceptionRules } from "./jarbschg-rules";
 
-type Reader = Pick<DatabaseClient, "select">;
+type Reader = Pick<DatabaseClient, "select" | "query">;
 
 /** Days before today still listed: recently worked shifts can be documented. */
 export const SECTOR_EXCEPTION_LOOKBACK_DAYS = 7;
@@ -171,7 +171,7 @@ export async function listOpenYouthSectorExceptions(
  * the fingerprint is the one the admin was shown (`expectedFingerprint`).
  */
 export async function acknowledgeYouthSectorException(
-	db: Pick<DatabaseClient, "select" | "insert">,
+	db: Pick<DatabaseClient, "select" | "query" | "insert">,
 	input: {
 		readonly organizationId: string;
 		readonly actorUserId: string;

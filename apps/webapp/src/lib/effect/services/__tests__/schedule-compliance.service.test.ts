@@ -7,7 +7,7 @@ import {
 } from "../schedule-compliance.service";
 import { WorkPolicyService } from "../work-policy.service";
 
-// The statutory monitors read their own tables; their PostgreSQL suites cover them (#1993).
+// The statutory monitors read PostgreSQL; their seam has its own integration suites (#1993).
 vi.mock("@/lib/statutory/scheduling/contributors", () => ({ statutoryScheduleContributors: [] }));
 vi.mock("@/lib/statutory/youth/executive-exempt", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/statutory/youth/executive-exempt")>()),

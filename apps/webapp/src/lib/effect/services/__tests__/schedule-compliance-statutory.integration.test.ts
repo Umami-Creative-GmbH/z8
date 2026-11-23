@@ -20,7 +20,11 @@ import {
 } from "../schedule-compliance.service";
 import { WorkPolicyService } from "../work-policy.service";
 
-const contributor = vi.hoisted(() => ({ contexts: [] as unknown[] }));
+const contributor = vi.hoisted(() => ({
+	contexts: [] as unknown[],
+	/** Fields replacing the default finding's, for one test. */
+	overrides: {} as Record<string, unknown>,
+}));
 
 vi.mock("@/lib/statutory/scheduling/contributors", () => ({
 	statutoryScheduleContributors: [
@@ -43,6 +47,7 @@ vi.mock("@/lib/statutory/scheduling/contributors", () => ({
 					adminDetail: { currency: "EUR", amountsCents: { earned: 62_700, cap: 60_300 } },
 					inputFingerprint: "v1:test",
 					acknowledgementKind: "minijob_unforeseeable_exceedance",
+					...contributor.overrides,
 				}));
 			},
 		},
@@ -142,5 +147,79 @@ describe("schedule compliance with statutory contributors (PostgreSQL)", () => {
 		]);
 		expect(JSON.stringify(result.findings)).not.toMatch(/62700|60300|EUR/);
 		expect(result.fingerprint).toMatch(/^[0-9a-f]{64}$/);
+	});
+
+	it("fingerprints what a planner acknowledges of a statutory finding, not its running totals", async () => {
+		const organizationId = await fixture.createOrganization();
+		const creator = await fixture.seedEmployee({ organizationId, role: "owner" });
+		const person = await fixture.seedEmployee({ organizationId });
+		const locationId = randomUUID();
+		const subareaId = randomUUID();
+		await fixture.pool.query(
+			`insert into location (id, organization_id, name, created_by, updated_at)
+			 values ($1, $2, 'Store', $3, now())`,
+			[locationId, organizationId, creator.userId],
+		);
+		await fixture.pool.query(
+			`insert into location_subarea (id, location_id, name, created_by, updated_at)
+			 values ($1, $2, 'Floor', $3, now())`,
+			[subareaId, locationId, creator.userId],
+		);
+		await fixture.pool.query(
+			`insert into shift
+			 (id, organization_id, employee_id, subarea_id, date, start_time, end_time, status, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, '09:00', '17:00', 'draft', $6, now())`,
+			[
+				randomUUID(),
+				organizationId,
+				person.employeeId,
+				subareaId,
+				shiftDateBounds("2026-03-04", timezone).start,
+				creator.userId,
+			],
+		);
+		const weekly = (severity: string, tier: string, used: number) => ({
+			id: `on_call_weekly_over_band:${person.employeeId}:2026-W10`,
+			domain: "on_call",
+			kind: "on_call_weekly_over_band",
+			severity,
+			subjectKey: "2026-W10",
+			legalReference: "§ 12 Abs. 2 TzBfG",
+			summary: {
+				tier,
+				usedPercent: Math.round((used / 750) * 100),
+				used: { unit: "minutes", value: used },
+				limit: { unit: "minutes", value: 750 },
+				remaining: { unit: "minutes", value: Math.max(0, 750 - used) },
+			},
+			adminDetail: null,
+			acknowledgementKind: null,
+		});
+		const fingerprintWith = async (overrides: Record<string, unknown>) => {
+			contributor.overrides = overrides;
+			try {
+				const result = await Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* ScheduleComplianceService;
+						return yield* service.evaluateScheduleWindow({
+							organizationId,
+							startDate: shiftDateBounds("2026-03-02", timezone).start,
+							endDateExclusive: shiftDateBounds("2026-03-09", timezone).start,
+							timezone,
+						});
+					}).pipe(Effect.provide(serviceLayer)),
+				);
+				return result.fingerprint;
+			} finally {
+				contributor.overrides = {};
+			}
+		};
+
+		const shown = await fingerprintWith(weekly("warning", "warning", 700));
+		// A minute later the running totals moved; nothing the planner acknowledges did.
+		expect(await fingerprintWith(weekly("warning", "warning", 701))).toBe(shown);
+		// A new tier, or a new severity, is a new warning to acknowledge.
+		expect(await fingerprintWith(weekly("warning", "critical", 700))).not.toBe(shown);
+		expect(await fingerprintWith(weekly("critical", "warning", 700))).not.toBe(shown);
 	});
 });
