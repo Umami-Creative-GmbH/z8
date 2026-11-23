@@ -15,12 +15,13 @@ import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import {
+	SHIFT_WORK_ASSOCIATION_LEAD_MINUTES,
 	type ShiftInterval,
 	shiftInterval,
-	workMatchesShift,
 } from "@/lib/scheduling/shift-occasion";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadStatutoryThresholds, type StatutoryThresholdTable } from "../thresholds";
+import { matchWorkToShifts, splitWorkAtShiftStarts } from "./work-shift-matching";
 
 export type ShortTermReader = Pick<DatabaseClient, "select">;
 
@@ -33,7 +34,11 @@ export const SHORT_TERM_THRESHOLD_KEYS = [
 	"de_minijob_monthly_limit_cents",
 ] as const;
 
-/** Completed work or an open clock-in on a short-term day, bucketed on its start day. */
+/**
+ * Completed work or an open clock-in on a short-term day: the date of the shift it belongs to
+ * (one clock-in over shifts on two days is split at the later shift's start), else its clock-in's
+ * local day.
+ */
 export interface ShortTermWorkItem {
 	readonly workPeriodId: string;
 	readonly date: string;
@@ -377,7 +382,13 @@ export async function loadShortTermInputs(
 		if (candidates.length === 0) return { employees: [], thresholds };
 	}
 
-	const yearStart = dateFromInstant(localDayRange(from, input.timezone).start);
+	// Work and shifts just outside the years too: work belonging to a shift counts on the shift's
+	// date (a clock-in at 23:50 on 31 December for a shift on 1 January counts in the new year).
+	const yearStart = dateFromInstant(
+		localDayRange(from, input.timezone).start.subtract({
+			minutes: SHIFT_WORK_ASSOCIATION_LEAD_MINUTES,
+		}),
+	);
 	const yearEnd = dateFromInstant(localDayRange(until, input.timezone).start);
 	const workRows = await db
 		.select({
@@ -403,7 +414,11 @@ export async function loadShortTermInputs(
 			),
 		);
 
-	const shiftBounds = shiftDateRangeBounds(from, until, input.timezone);
+	const shiftBounds = shiftDateRangeBounds(
+		parsePlainDate(from).subtract({ days: 1 }).toString(),
+		parsePlainDate(until).add({ days: 1 }).toString(),
+		input.timezone,
+	);
 	const shiftConditions = [
 		eq(shift.organizationId, input.organizationId),
 		inArray(shift.employeeId, candidates),
@@ -449,13 +464,13 @@ export async function loadShortTermInputs(
 	// Running work and the rest of its shift meet on one minute grid, so their sum stays put
 	// whatever seconds the clock-in or the evaluation instant carry.
 	const nowOnGrid = minuteGrid(input.now);
-	type BucketedWork = Pick<ShortTermWorkItem, "date" | "minutes"> & {
+	type RecordedWork = Pick<ShortTermWorkItem, "minutes"> & {
 		readonly id: string;
 		readonly start: Instant;
 		/** Null while the clock-in is open. */
 		readonly end: Instant | null;
 	};
-	const workByEmployee = new Map<string, BucketedWork[]>();
+	const recordedByEmployee = new Map<string, RecordedWork[]>();
 	for (const row of workRows) {
 		const start = instantFromDate(row.startTime);
 		const open = row.isActive && row.endTime === null;
@@ -464,9 +479,8 @@ export async function loadShortTermInputs(
 			: row.endTime
 				? instantFromDate(row.endTime)
 				: start.add({ minutes: row.durationMinutes ?? 0 });
-		const item: BucketedWork = {
+		const item: RecordedWork = {
 			id: row.id,
-			date: plainDateAt(start, input.timezone).toString(),
 			start,
 			end,
 			// Whole grid minutes, so far while open: with the rest of its shift from the same grid
@@ -481,74 +495,126 @@ export async function loadShortTermInputs(
 					: minuteGrid(start).until(nowOnGrid).total("minutes"),
 			),
 		};
-		const list = workByEmployee.get(row.employeeId);
+		const list = recordedByEmployee.get(row.employeeId);
 		if (list) list.push(item);
-		else workByEmployee.set(row.employeeId, [item]);
+		else recordedByEmployee.set(row.employeeId, [item]);
 	}
+	interface LoadedShift {
+		readonly id: string;
+		readonly date: string;
+		readonly startTime: string;
+		readonly endTime: string;
+		readonly interval: ShiftInterval;
+	}
+	const shiftsByEmployee = new Map<string, LoadedShift[]>();
+	for (const row of shiftRows) {
+		if (!row.employeeId) continue;
+		const date = shiftCalendarDate(row.date, input.timezone);
+		const loaded: LoadedShift = {
+			id: row.id,
+			date: date.toString(),
+			startTime: row.startTime,
+			endTime: row.endTime,
+			interval: shiftInterval(
+				{ date, startTime: row.startTime, endTime: row.endTime },
+				input.timezone,
+			),
+		};
+		const list = shiftsByEmployee.get(row.employeeId);
+		if (list) list.push(loaded);
+		else shiftsByEmployee.set(row.employeeId, [loaded]);
+	}
+
+	/** Recorded work dated by the shift it belongs to, split at shift starts (see the matching). */
+	type DatedWork = RecordedWork & {
+		readonly date: string;
+		readonly inProgress: ShortTermWorkItem["inProgress"];
+	};
+	const workByEmployee = new Map<string, DatedWork[]>();
 	type PlannedShift = Pick<
 		ShortTermPlanItem,
 		"shiftId" | "date" | "startTime" | "endTime" | "minutes" | "inProgress"
 	>;
 	const plannedByEmployee = new Map<string, PlannedShift[]>();
-	/** Open clock-in → the running shift whose rest is counted with it. */
-	const runningShiftOf = new Map<string, string>();
+	for (const employeeId of candidates) {
+		const recorded = recordedByEmployee.get(employeeId) ?? [];
+		const shifts = shiftsByEmployee.get(employeeId) ?? [];
+		const shiftsOfWork = matchWorkToShifts(shifts, recorded, input.now);
+		/** Shift → the work belonging to it; an open clock-in only to the shift it is running for. */
+		const workOfShift = new Map<string, RecordedWork[]>();
+		/**
+		 * Open clock-in → the shift whose rest is counted with it: the first it belongs to that has
+		 * not ended (a clock-in at 23:50 for a shift from midnight too). One clock-in never stands
+		 * for the rest of two shifts.
+		 */
+		const runningShiftOf = new Map<string, LoadedShift>();
+		for (const [work, belongs] of shiftsOfWork) {
+			const running =
+				work.end === null
+					? belongs.find((s) => compareInstants(s.interval.end, input.now) > 0)
+					: undefined;
+			if (running) runningShiftOf.set(work.id, running);
+			for (const s of belongs) {
+				if (work.end === null && s !== running) continue;
+				const list = workOfShift.get(s.id);
+				if (list) list.push(work);
+				else workOfShift.set(s.id, [work]);
+			}
+		}
+
+		const dated: DatedWork[] = [];
+		for (const work of recorded) {
+			const running = runningShiftOf.get(work.id);
+			const inProgress: DatedWork["inProgress"] =
+				work.end !== null ? null : running ? { shiftId: running.id } : "unplanned";
+			const belongs = shiftsOfWork.get(work);
+			const parts = belongs
+				? splitWorkAtShiftStarts(work, belongs, input.now, minuteGrid).map((part) => ({
+						date: part.shift.date,
+						minutes: part.minutes,
+					}))
+				: [{ date: plainDateAt(work.start, input.timezone).toString(), minutes: work.minutes }];
+			for (const part of parts) {
+				if (inYears(part.date)) dated.push({ ...work, ...part, inProgress });
+			}
+		}
+		workByEmployee.set(employeeId, dated);
+
+		const planned: PlannedShift[] = [];
+		for (const s of shifts) {
+			if (!inYears(s.date)) continue;
+			// Over: what was worked is recorded work.
+			if (compareInstants(s.interval.end, input.now) <= 0) continue;
+			const item = { shiftId: s.id, date: s.date, startTime: s.startTime, endTime: s.endTime };
+			const matched = workOfShift.get(s.id) ?? [];
+			const started = compareInstants(s.interval.start, input.now) <= 0;
+			const open = matched.some((work) => work.end === null);
+			// Not started and nobody clocked in for it, or running and nobody clocked in yet: in full.
+			if (matched.length === 0 || (!started && !open)) {
+				planned.push({ ...item, minutes: shiftMinutes(s.interval), inProgress: false });
+				continue;
+			}
+			// An open clock-in counts up to now and the shift for its rest from now, also when it
+			// started early for a shift still ahead. During a clocked-out break, the rest counts from
+			// the end of the work recorded for it, so nothing moves until the shift ends or work
+			// resumes.
+			let lastEnd = s.interval.start;
+			for (const work of matched) {
+				if (work.end !== null && compareInstants(work.end, lastEnd) > 0) lastEnd = work.end;
+			}
+			const restStart = open ? nowOnGrid : minuteGrid(lastEnd);
+			planned.push({
+				...item,
+				minutes: Math.max(0, restStart.until(s.interval.end).total("minutes")),
+				inProgress: true,
+			});
+		}
+		plannedByEmployee.set(employeeId, planned);
+	}
 	const addPlanned = (employeeId: string, item: PlannedShift) => {
 		const list = plannedByEmployee.get(employeeId);
 		if (list) list.push(item);
 		else plannedByEmployee.set(employeeId, [item]);
-	};
-	for (const row of shiftRows) {
-		if (!row.employeeId) continue;
-		const date = shiftCalendarDate(row.date, input.timezone);
-		if (!inYears(date.toString())) continue;
-		const interval = shiftInterval(
-			{ date, startTime: row.startTime, endTime: row.endTime },
-			input.timezone,
-		);
-		const item = {
-			shiftId: row.id,
-			date: date.toString(),
-			startTime: row.startTime,
-			endTime: row.endTime,
-		};
-		if (compareInstants(interval.start, input.now) > 0) {
-			addPlanned(row.employeeId, { ...item, minutes: shiftMinutes(interval), inProgress: false });
-			continue;
-		}
-		// Over: what was worked is recorded work.
-		if (compareInstants(interval.end, input.now) <= 0) continue;
-		// Running: until anyone clocks in, it counts in full. An open clock-in counts up to now and
-		// the shift for its rest from now. During a clocked-out break, the rest counts from the end
-		// of the work recorded for it, so nothing moves until the shift ends or work resumes.
-		const matched = (workByEmployee.get(row.employeeId) ?? []).filter((work) =>
-			workMatchesShift(interval, work),
-		);
-		if (matched.length === 0) {
-			addPlanned(row.employeeId, { ...item, minutes: shiftMinutes(interval), inProgress: false });
-			continue;
-		}
-		let open = false;
-		let lastEnd = interval.start;
-		for (const work of matched) {
-			if (work.end === null) {
-				open = true;
-				if (!runningShiftOf.has(work.id)) runningShiftOf.set(work.id, row.id);
-			} else if (compareInstants(work.end, lastEnd) > 0) {
-				lastEnd = work.end;
-			}
-		}
-		const restFrom = open ? nowOnGrid : minuteGrid(lastEnd);
-		const restStart = compareInstants(restFrom, interval.start) > 0 ? restFrom : interval.start;
-		addPlanned(row.employeeId, {
-			...item,
-			minutes: Math.max(0, restStart.until(interval.end).total("minutes")),
-			inProgress: true,
-		});
-	}
-	const inProgressOf = (work: BucketedWork): ShortTermWorkItem["inProgress"] => {
-		if (work.end) return null;
-		const shiftId = runningShiftOf.get(work.id);
-		return shiftId ? { shiftId } : "unplanned";
 	};
 	const inScope = new Set(candidates);
 	for (const proposed of input.proposedShifts) {
@@ -620,7 +686,7 @@ export async function loadShortTermInputs(
 				workPeriodId: item.id,
 				date: item.date,
 				minutes: item.minutes,
-				inProgress: inProgressOf(item),
+				inProgress: item.inProgress,
 				hourlyRateCents: centsOf(contract.hourlyRate),
 				currency: contract.currency,
 				employmentPeriodId: contract.employmentPeriodId,

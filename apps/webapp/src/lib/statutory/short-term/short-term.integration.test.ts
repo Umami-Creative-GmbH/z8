@@ -765,6 +765,74 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				for (const later of seen) expect(later).toEqual(seen[0]);
 			});
 
+			it("dates an early clock-in for a midnight shift on the shift's day throughout", async () => {
+				const { org, worker } = await earner("a", 7);
+				await st.shift(org, worker, "2026-05-20", "00:00", "06:00");
+				const clockIn = await st.openWork(org, worker, "2026-05-19", "23:50");
+				const allowanceAt = async (at: string) =>
+					(await evaluate(org, [worker.employeeId], { now: Temporal.Instant.from(at) }))[0]
+						?.allowance;
+
+				// 23:55 on 19 May and 03:00 on 20 May in Berlin.
+				const open = await promptsAt(org, worker.employeeId, [
+					"2026-05-19T21:55:00Z",
+					"2026-05-20T01:00:00Z",
+				]);
+				expect(await allowanceAt("2026-05-19T21:55:00Z")).toMatchObject({
+					used: 8,
+					lastDay: "2026-05-20",
+				});
+				await st.clockOut(org, clockIn, "2026-05-20", "06:00");
+				const [closed] = await promptsAt(org, worker.employeeId, ["2026-05-20T05:00:00Z"]);
+
+				// 560 EUR before + 23:50–06:00 at 20 EUR.
+				expect(open[0]?.total).toBe(68_333);
+				for (const later of [open[1], closed]) expect(later).toEqual(open[0]);
+				expect(await allowanceAt("2026-05-20T05:00:00Z")).toMatchObject({
+					used: 8,
+					lastDay: "2026-05-20",
+				});
+			});
+
+			it("keeps an early clock-in for a shift on the 1st in the shift's month", async () => {
+				const { org, worker } = await earner("a", 7);
+				await st.shift(org, worker, "2026-06-01", "00:00", "06:00");
+				const clockIn = await st.openWork(org, worker, "2026-05-31", "23:50");
+				const mayAt = async (at: string) => {
+					const [evaluation] = await evaluate(org, [worker.employeeId], {
+						now: Temporal.Instant.from(at),
+					});
+					return {
+						days: evaluation?.allowance?.used,
+						mayPrompt: evaluation?.findings.some((f) => f.subjectKey === "2026-05"),
+					};
+				};
+
+				// 23:55 on 31 May and 03:00 on 1 June in Berlin, then after clocking out.
+				const before = await mayAt("2026-05-31T21:55:00Z");
+				const during = await mayAt("2026-06-01T01:00:00Z");
+				await st.clockOut(org, clockIn, "2026-06-01", "06:00");
+				const after = await mayAt("2026-06-01T05:00:00Z");
+
+				// May keeps its 560 EUR below the cap; the night's 123 EUR belong to June.
+				expect(before).toEqual({ days: 8, mayPrompt: false });
+				expect(during).toEqual(before);
+				expect(after).toEqual(before);
+			});
+
+			it("splits one clock-in over shifts on two days at the later shift's start", async () => {
+				const { org, worker } = await earner("a", 7);
+				await st.shift(org, worker, "2026-05-31", "22:00", "00:00");
+				await st.shift(org, worker, "2026-06-01", "00:00", "06:00");
+				await st.work(org, worker, "2026-05-31", "22:00", "06:00");
+
+				const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+				// 31 May keeps 2 hours (600 EUR in May, below the cap); 1 June gets the other 6.
+				expect(evaluation?.allowance).toMatchObject({ used: 9, lastDay: "2026-06-01" });
+				expect(evaluation?.findings.some((f) => f.subjectKey === "2026-05")).toBe(false);
+			});
+
 			it("keeps counting the rest of the shift during a clocked-out break", async () => {
 				const { org, worker } = await earner("a", 7);
 				await st.shift(org, worker, "2026-05-20", "08:00", "18:00");

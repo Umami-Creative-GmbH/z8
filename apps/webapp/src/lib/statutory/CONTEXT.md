@@ -55,18 +55,29 @@ organization's calendar timezone.
 
 **Short-term day**:
 An organization-local calendar day under short-term terms with completed work, an open clock-in
-or a shift that has not ended. Counted once, however many work periods or shifts it has.
+or a shift that has not ended. Counted once, however many work periods or shifts it has. Work that
+belongs to a shift counts on the shift's date (a clock-in at 23:50 for a 00:00 shift counts on the
+shift's day); other work on its clock-in's day.
+
+**Short-term employment**:
+Confirmed short-term terms of one employment period that follow each other without a gap, as in
+force after later confirmed terms supersede them. A new wage or week does not end it; other terms
+or a gap do. **Fixed-term** when its terms were agreed with an end date, else an open-ended
+**framework agreement**.
 
 **Stint**:
-A run of short-term days no more than 14 calendar days apart within one employment period. A
-longer pause or a new employment period starts a new stint.
+The part of the year that counts towards the limit. A fixed-term employment is one stint from its
+first day (or January 1) to its last short-term day, pauses included: one continuing employment
+counts in full. Under a framework agreement, a run of short-term days no more than 14 calendar days
+apart is a stint, and a longer pause starts a new one. Separate employments are separate stints.
 _Avoid_: contract, assignment
 
 **3-month limit**:
 Applies when the employee works a continuous week of 5 or more days. Counted in calendar days. One
 stint alone is measured in **time months** (*Zeitmonate*) from its first day: 15 June – 14 September
-is 3 months. Several stints, prior employers' included, are added up against **90 calendar days**,
-a full calendar month counting as 30; the pauses between stints never count.
+is 3 months, and a fixed-term employment from 1 June to 31 August uses all 92 days even with July
+off. Several stints, prior employers' included, are added up against **90 calendar days**, a full
+calendar month counting as 30; the time between stints never counts.
 
 **70-working-day limit**:
 Applies to a week of fewer than 5 days or an irregular week, and to the whole year as soon as any
