@@ -5,7 +5,9 @@
  * restricted audience before they leave the server.
  */
 import { and, asc, eq, inArray, lt } from "drizzle-orm";
+import { user } from "@/db/auth-schema";
 import { employee, employeeEmploymentHistory } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
 	comparePlainDates,
@@ -61,15 +63,21 @@ async function employeeNames(
 	employeeIds: readonly string[],
 ): Promise<Map<string, string>> {
 	if (employeeIds.length === 0) return new Map();
+	// The display name derives from the user, not the deprecated employee name columns.
 	const rows = await db
-		.select({ id: employee.id, firstName: employee.firstName, lastName: employee.lastName })
+		.select({
+			id: employee.id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			name: user.name,
+			email: user.email,
+		})
 		.from(employee)
+		.leftJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])),
 		);
-	return new Map(
-		rows.map((row) => [row.id, [row.firstName, row.lastName].filter(Boolean).join(" ") || row.id]),
-	);
+	return new Map(rows.map((row) => [row.id, buildAuthUserDisplayName(row) || row.id]));
 }
 
 function reviewWindow(now: Instant, timezone: string) {

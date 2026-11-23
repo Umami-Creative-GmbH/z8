@@ -85,6 +85,14 @@ describe("on-call actions (PostgreSQL)", () => {
 	it("lets an org admin list, acknowledge and see the documented reason", async () => {
 		const { owner, worker, shiftId, as } = await scenario();
 		as(owner, "owner", null);
+		// The name comes from the user, not the deprecated employee name columns.
+		await admin.query(
+			`UPDATE "user" SET first_name = 'Ada', last_name = 'Lovelace' WHERE id = $1`,
+			[worker.userId],
+		);
+		await admin.query(`UPDATE employee SET first_name = NULL, last_name = NULL WHERE id = $1`, [
+			worker.employeeId,
+		]);
 
 		const listed = await listOnCallReviewItemsAction({});
 		expect(listed.success).toBe(true);
@@ -93,7 +101,7 @@ describe("on-call actions (PostgreSQL)", () => {
 			: undefined;
 		expect(notice).toMatchObject({
 			employeeId: worker.employeeId,
-			employeeName: "worker Test",
+			employeeName: "Ada Lovelace",
 			finding: { subjectKey: `shift:${shiftId}`, acknowledgement: { status: "none" } },
 		});
 
@@ -208,7 +216,8 @@ describe("on-call actions (PostgreSQL)", () => {
 			data: [
 				{
 					employeeId: worker.employeeId,
-					employeeName: "worker Test",
+					// The user's name, not the employee columns ("worker Test").
+					employeeName: "worker",
 					kind: "sick_leave",
 					eventDate: today.subtract({ days: 1 }).toString(),
 				},
