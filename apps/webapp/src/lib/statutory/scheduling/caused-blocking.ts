@@ -5,30 +5,47 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { shift } from "@/db/schema";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { apprenticeReleaseScopeOf } from "../apprenticeship/release-conflict-contributor";
 import type { StatutoryFinding } from "../finding";
 import { youthBreachScopeOf } from "../youth/youth-findings";
 import { deepensBreachedLimit } from "./evaluate";
 
 type Reader = Pick<DatabaseClient, "select">;
 
-/** Whether `prior` (before the change) is the blocking breach `finding` (after it) already was. */
-function sameBreach(prior: StatutoryFinding, finding: StatutoryFinding): boolean {
-	if (!prior.blocksPublication) return false;
-	if (prior.severity !== finding.severity) return false;
-	if ((prior.summary.tier ?? null) !== (finding.summary.tier ?? null)) return false;
-	// The same finding, also when the change takes its shift to another day; or a breach the rules
-	// attribute by position (the day's first shift, the shift past the running cap) on the same
-	// judged day or week, wherever the change moved it.
-	if (prior.id === finding.id) return true;
-	const scope = youthBreachScopeOf(finding);
-	return scope !== null && youthBreachScopeOf(prior) === scope;
+/**
+ * What a blocking breach is about, so a change that carries it elsewhere is a new breach:
+ * - a breach the rules attribute by position (rest period, daily and weekly maximum, days per
+ *   week): its judged day or compliance week, whichever shift carries it;
+ * - an apprentice release conflict: its release day, whichever shift conflicts;
+ * - any other breach is about its own work (night, weekend, holiday work, breaks): that finding on
+ *   its local day.
+ */
+export function breachScopeOf(
+	finding: Pick<StatutoryFinding, "id" | "kind" | "employeeId" | "periodStart">,
+): string {
+	return (
+		youthBreachScopeOf(finding) ??
+		apprenticeReleaseScopeOf(finding) ??
+		JSON.stringify([finding.id, "day", finding.periodStart])
+	);
+}
+
+/** Whether `prior` (before the change) is a blocking breach of the same scope and standing. */
+function sameScope(prior: StatutoryFinding, finding: StatutoryFinding, scope: string): boolean {
+	return (
+		(prior.blocksPublication ?? false) &&
+		prior.severity === finding.severity &&
+		(prior.summary.tier ?? null) === (finding.summary.tier ?? null) &&
+		breachScopeOf(prior) === scope
+	);
 }
 
 /**
  * The blocking findings of `after` that a change causes, against `before` (the same judgement
- * without the change): a breach that was not there, or one the change deepens past its limit (a
- * longer day or week, a shorter rest). A breach the change leaves as it is, or eases, does not
- * block it, also when it moves to another shift of the same day.
+ * without the change): a breach in a scope (`breachScopeOf`) that had none, or one the change
+ * takes past the deepest breach the scope had (a longer day or week, a shorter rest). A breach the
+ * change leaves as it is, or eases, in its scope does not block it, also when it moves to another
+ * shift of the same day; carried to another day or week, it is a new breach there.
  */
 export function causedBlockingFindings<F extends StatutoryFinding>(
 	before: readonly StatutoryFinding[],
@@ -36,10 +53,13 @@ export function causedBlockingFindings<F extends StatutoryFinding>(
 ): F[] {
 	return after.filter((finding) => {
 		if (!finding.blocksPublication) return false;
-		// No such breach before (caused), or deeper than each one there was.
-		return before
-			.filter((prior) => sameBreach(prior, finding))
-			.every((prior) => deepensBreachedLimit(prior, finding));
+		const scope = breachScopeOf(finding);
+		const priors = before.filter((prior) => sameScope(prior, finding, scope));
+		if (priors.length === 0) return true;
+		const deepest = priors.reduce((deepest, prior) =>
+			deepensBreachedLimit(deepest, prior) ? prior : deepest,
+		);
+		return deepensBreachedLimit(deepest, finding);
 	});
 }
 

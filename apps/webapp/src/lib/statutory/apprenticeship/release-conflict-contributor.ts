@@ -34,6 +34,22 @@ export type ApprenticeReleaseFindingKind =
 	| "bbig_release_day_shift"
 	| "jarbschg_school_day_workplace_return";
 
+const apprenticeReleaseFindingKinds: ReadonlySet<string> = new Set<ApprenticeReleaseFindingKind>([
+	"bbig_release_day_shift",
+	"jarbschg_school_day_workplace_return",
+]);
+
+/**
+ * What a release conflict is about: rule, employee and the day of the shift that conflicts
+ * (`periodStart`), whichever shift it is. Null for other findings.
+ */
+export function apprenticeReleaseScopeOf(
+	finding: Pick<StatutoryFinding, "kind" | "employeeId" | "periodStart">,
+): string | null {
+	if (!apprenticeReleaseFindingKinds.has(finding.kind)) return null;
+	return JSON.stringify([finding.kind, finding.employeeId, "release", finding.periodStart]);
+}
+
 interface PlannedWork {
 	readonly employeeId: string;
 	readonly date: PlainDate;
