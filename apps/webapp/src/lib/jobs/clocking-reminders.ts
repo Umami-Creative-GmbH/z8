@@ -258,14 +258,14 @@ async function withoutExemptDays(
 	);
 }
 
-/** The regulation of the work policy in force for the employee at `at`. */
+/** The adult ArbZG regulation in force for the employee at `at`: none for `executive_exempt`. */
 async function loadBreakRegulation(input: {
 	organizationId: string;
 	employeeId: string;
 	at: Instant;
 }): Promise<BreakDueRegulation | null> {
-	const { readEffectiveWorkPolicyAt } = await import("@/lib/time-tracking/effective-work-policy");
-	return (await readEffectiveWorkPolicyAt(input))?.regulation ?? null;
+	const { readAdultArbzgPolicyAt } = await import("@/lib/time-tracking/effective-work-policy");
+	return (await readAdultArbzgPolicyAt(input))?.regulation ?? null;
 }
 
 /** Production wiring; tests pass their own database and clock. */
