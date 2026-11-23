@@ -74,7 +74,8 @@ export function youthProtectionWarningText(
 		case "jarbschg_holiday_prohibited":
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.holidayProhibited",
-				"Under 18: no work after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+				"Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+				{ used },
 			);
 		case "bbig_release_day_shift":
 			return t(

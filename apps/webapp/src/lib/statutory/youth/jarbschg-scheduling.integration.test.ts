@@ -578,6 +578,31 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			expect((await shiftRow(monday))?.start_time).toBe("08:00");
 		});
 
+		it("refuses lengthening a minor's published 24 December shift further past 14:00", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "eve", { birthday: "2011-01-01" });
+			// Published before the block: one hour after 14:00 on Christmas Eve.
+			const eve = await published(minor, "2026-12-24", "10:00", "15:00");
+			const editEve = (endTime: string) =>
+				upsertShift({
+					id: eve,
+					employeeId: minor.employeeId,
+					subareaId,
+					date: "2026-12-24",
+					startTime: "10:00",
+					endTime,
+				});
+
+			expect(await editEve("19:00")).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect((await shiftRow(eve))?.end_time).toBe("15:00");
+
+			expect(await editEve("14:30")).toMatchObject({ success: true });
+			expect((await shiftRow(eve))?.end_time).toBe("14:30");
+		});
+
 		describe("a rest period already too short", () => {
 			let minor: FixtureEmployee;
 			let monday: string;
@@ -765,6 +790,21 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			const minor = await fx.employee(org, "early", { birthday: "2011-01-01" });
 			await shift(minor, "2027-03-02", "06:00", "12:00");
 			expect(await youthWarnings(minor, "2027-03-01", "14:00", "20:00")).toContain(
+				"jarbschg_rest_period",
+			);
+		});
+
+		it("warns when a Monday proposal cuts a rest before Tuesday that is already too short", async () => {
+			const minor = await fx.employee(org, "short", { birthday: "2011-01-01" });
+			// 10.5 h of rest before Tuesday 06:00: already under the 12 h floor.
+			await shift(minor, "2027-03-01", "12:00", "19:30");
+			await shift(minor, "2027-03-02", "06:00", "10:00");
+			// Ending at 19:55 leaves 10 h 05 min: the breach deepens below its floor.
+			expect(await youthWarnings(minor, "2027-03-01", "19:40", "19:55")).toContain(
+				"jarbschg_rest_period",
+			);
+			// A Monday morning proposal leaves the rest as it is.
+			expect(await youthWarnings(minor, "2027-03-01", "08:00", "09:00")).not.toContain(
 				"jarbschg_rest_period",
 			);
 		});

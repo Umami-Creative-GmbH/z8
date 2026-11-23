@@ -597,20 +597,22 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 				sector("jarbschg_holiday_work", 1, "days", holiday.outside, Math.round(holiday.minutes));
 			}
 			// § 18 Abs. 1: on 24 and 31 December no work after 14:00; § 18 Abs. 2: never on 25
-			// December, 1 January, Easter Sunday or 1 May. No exception lifts either.
-			const prohibitedDays = touched.filter(isProhibitedHoliday).length;
-			const afterEveCutoff = touched.filter(
-				(day) =>
-					day.month === 12 &&
-					(day.day === 24 || day.day === 31) &&
-					overlapMinutes(
-						minorSpan,
-						day.toZonedDateTime({ timeZone: input.timezone, plainTime: EVE_CUTOFF }).toInstant(),
-						startOfDay(day.add({ days: 1 })),
-					) > 0,
-			).length;
-			if (prohibitedDays + afterEveCutoff > 0) {
-				breach("jarbschg_holiday_prohibited", interval, prohibitedDays + afterEveCutoff, 0, "days");
+			// December, 1 January, Easter Sunday or 1 May. No exception lifts either. Measured in
+			// minutes, as night work is, so longer prohibited work on the day is a deeper breach.
+			const prohibitedMinutes = Math.round(
+				touched.reduce((total, day) => {
+					const prohibitedFrom = isProhibitedHoliday(day)
+						? startOfDay(day)
+						: day.month === 12 && (day.day === 24 || day.day === 31)
+							? day.toZonedDateTime({ timeZone: input.timezone, plainTime: EVE_CUTOFF }).toInstant()
+							: null;
+					return prohibitedFrom
+						? total + overlapMinutes(minorSpan, prohibitedFrom, startOfDay(day.add({ days: 1 })))
+						: total;
+				}, 0),
+			);
+			if (prohibitedMinutes > 0) {
+				breach("jarbschg_holiday_prohibited", interval, prohibitedMinutes, 0, "minutes");
 			}
 		}
 	}

@@ -221,6 +221,27 @@ describe("evaluateJarbschg", () => {
 		expect(rules(evaluate([shift("2026-12-23", "12:00", "16:00")], december))).toEqual([]);
 	});
 
+	it("measures prohibited holiday work in minutes, so longer work on the day is a deeper breach", () => {
+		const december = { judged: { start: "2026-12-21", endExclusive: "2027-01-04" } };
+		const prohibited = (interval: YouthWorkInterval) =>
+			evaluate([interval], december).find(
+				(breach) => breach.rule === "jarbschg_holiday_prohibited",
+			);
+		// 24 December: only the work after 14:00 is prohibited.
+		expect(prohibited(shift("2026-12-24", "10:00", "15:00"))).toMatchObject({
+			actual: 60,
+			limit: 0,
+			unit: "minutes",
+		});
+		expect(prohibited(shift("2026-12-24", "10:00", "19:00"))).toMatchObject({
+			actual: 300,
+			unit: "minutes",
+		});
+		// 25 December: the whole day; overnight from 24 December, both parts count.
+		expect(prohibited(shift("2026-12-25", "09:00", "13:00"))?.actual).toBe(240);
+		expect(prohibited(shift("2026-12-24", "22:00", "02:00"))?.actual).toBe(240);
+	});
+
 	it("flags work on 25 December, 1 January, Easter Sunday and 1 May as prohibited (§ 18 Abs. 2)", () => {
 		const judged = (day: string) => ({
 			judged: { start: day, endExclusive: parsePlainDate(day).add({ days: 1 }).toString() },
