@@ -95,8 +95,11 @@ export async function acknowledgeMinijobExceedance(
 		reason: input.reason,
 		legalNote: input.legalNote,
 		metadata: {
+			// The total is what the acknowledgement documents: a later rise beyond it makes it stale.
 			amountsCents: finding.adminDetail?.amountsCents ?? {},
 			evaluatedOn: plainDateAt(input.now, timezone).toString(),
 		},
+		// Documenting a risen total of an unchanged fingerprint records a new acknowledgement.
+		revision: `total:${finding.adminDetail?.amountsCents?.total ?? ""}`,
 	});
 }

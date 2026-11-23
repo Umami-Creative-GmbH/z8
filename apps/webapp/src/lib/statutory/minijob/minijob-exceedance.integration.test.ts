@@ -32,13 +32,13 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 	});
 	afterAll(fx.cleanup);
 
-	async function setup() {
+	async function setup(hourlyRate = 10) {
 		const org = await fx.organization("a");
 		const owner = await fx.user("owner");
 		await fx.membership(org, owner, "owner");
 		const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-		// 10 € an hour; the 2026 cap is 603 €, twice the cap 1,206 €.
-		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 10 });
+		// 10 € an hour by default; the 2026 cap is 603 €, twice the cap 1,206 €.
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate });
 		return { org, owner, worker };
 	}
 	type Setup = Awaited<ReturnType<typeof setup>>;
@@ -401,5 +401,163 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 		expect(
 			await monthly(s, "2026-12", "2027-01", Temporal.Instant.from("2026-12-01T20:00:00Z")),
 		).toEqual([status]);
+	});
+
+	describe("work recorded for a missed or short shift", () => {
+		/** 2 December, 13:00 Berlin: the 1 December shift is over. */
+		const AFTER_FIRST_SHIFT = Temporal.Instant.from("2026-12-02T12:00:00Z");
+
+		/** 60 planned hours in December at 13 € an hour (780 €), the first an 8-hour shift on the 1st. */
+		async function december() {
+			const s = await setup(13);
+			await mj.shift(s.org, s.worker, s.owner, {
+				date: "2026-12-01",
+				startTime: "08:00",
+				endTime: "16:00",
+			});
+			for (const date of ["2026-12-02", "2026-12-03", "2026-12-04", "2026-12-07", "2026-12-08"]) {
+				await mj.shift(s.org, s.worker, s.owner, { date, startTime: "08:00", endTime: "18:00" });
+			}
+			await mj.shift(s.org, s.worker, s.owner, {
+				date: "2026-12-09",
+				startTime: "08:00",
+				endTime: "10:00",
+			});
+			return s;
+		}
+
+		async function reviewedDecember(s: Setup, now: Temporal.Instant) {
+			const reviews = await loadMinijobExceedanceReviews(db, {
+				organizationId: s.org.id,
+				now,
+				includeAcknowledged: true,
+			});
+			return reviews.find((review) => review.month === "2026-12");
+		}
+
+		/** Documents December as an org admin shown it at `now`. */
+		async function acknowledgeDecember(s: Setup, now: Temporal.Instant) {
+			const shown = await reviewedDecember(s, now);
+			return acknowledgeMinijobExceedance(db, {
+				organizationId: s.org.id,
+				actorUserId: s.owner.userId,
+				employeeId: s.worker.employeeId,
+				month: "2026-12",
+				reason: "Christmas cover agreed after a resignation",
+				expectedFingerprint: shown?.inputFingerprint ?? "",
+				now,
+			});
+		}
+
+		/** December's state on every surface: monitor, Reviews & Conflicts and Scheduling. */
+		async function decemberEverywhere(s: Setup, now: Temporal.Instant) {
+			const [[, severity, status] = []] = await monthly(s, "2026-12", "2027-01", now);
+			const view = await loadEmployeeMinijobMonitor(db, {
+				organizationId: s.org.id,
+				employeeId: s.worker.employeeId,
+				audience: "full",
+				now,
+			});
+			const detail =
+				view.audience === "full" ? view.months.find((m) => m.month === "2026-12") : undefined;
+			const review = await reviewedDecember(s, now);
+			const scheduled = (
+				await evaluateStatutoryScheduleFindings(
+					db,
+					{
+						organizationId: s.org.id,
+						timezone: s.org.timezone,
+						window: { start: "2026-12-07", endExclusive: "2026-12-14" },
+						employeeIds: [s.worker.employeeId],
+						now,
+					},
+					[minijobScheduleContributor],
+				)
+			).find((f) => f.subjectKey === "2026-12" && f.statutoryKind === "minijob_monthly_cap");
+			return {
+				totalCents: detail?.totalCents,
+				evaluated: [severity, status],
+				monitor: detail?.exceedance?.status,
+				reviews: [review?.status, review?.acknowledgement.status],
+				scheduling: [scheduled?.severity, scheduled?.acknowledgementStatus],
+			};
+		}
+
+		const documented = {
+			evaluated: ["info", "acknowledged"],
+			monitor: "acknowledged",
+			reviews: ["acknowledged", "current"],
+			scheduling: ["info", "current"],
+		};
+		const outdated = {
+			evaluated: ["critical", "stale"],
+			monitor: "stale",
+			reviews: ["stale", "stale"],
+			scheduling: ["critical", "stale"],
+		};
+
+		it("turns the acknowledgement stale when a forgotten entry is added for a lapsed shift", async () => {
+			const s = await december();
+			// The 1 December shift lapsed unworked: 52 hours, 676 €, documented as such.
+			await acknowledgeDecember(s, AFTER_FIRST_SHIFT);
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 67_600,
+				...documented,
+			});
+
+			// A manager adds the forgotten 8 hours: 780 €, more than the admin documented.
+			await mj.work(s.org, s.worker, "2026-12-01", 480);
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 78_000,
+				...outdated,
+			});
+
+			// Documenting the new figures makes the month current again.
+			await acknowledgeDecember(s, AFTER_FIRST_SHIFT);
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 78_000,
+				...documented,
+			});
+		});
+
+		it("turns the acknowledgement stale when a short work period is corrected upward", async () => {
+			const s = await december();
+			// Four of the eight hours recorded: 56 hours, 728 €, documented as such.
+			const work = await mj.work(s.org, s.worker, "2026-12-01", 240);
+			await acknowledgeDecember(s, AFTER_FIRST_SHIFT);
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 72_800,
+				...documented,
+			});
+
+			await mj.closeWork(work, 480);
+
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 78_000,
+				...outdated,
+			});
+		});
+
+		it("keeps the acknowledgement current when the shift is worked as planned", async () => {
+			const s = await december();
+			await acknowledgeDecember(s, NOW);
+
+			await mj.work(s.org, s.worker, "2026-12-01", 480);
+
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 78_000,
+				...documented,
+			});
+		});
+
+		it("keeps the acknowledgement current when a lapsed shift lowers the total", async () => {
+			const s = await december();
+			await acknowledgeDecember(s, NOW);
+
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 67_600,
+				...documented,
+			});
+		});
 	});
 });

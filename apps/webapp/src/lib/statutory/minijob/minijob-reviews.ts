@@ -9,7 +9,6 @@ import { employee } from "@/db/schema";
 import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { attachAcknowledgementStates } from "../acknowledgements";
 import type { StatutorySeverity } from "../finding";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { evaluateMinijobEarnings } from "./evaluate-minijob";
@@ -86,10 +85,9 @@ export async function loadMinijobExceedanceReviews(
 		preferences,
 		now: input.now,
 	});
-	const exceedances = await attachAcknowledgementStates(
-		db,
-		input.organizationId,
-		findings.filter((f) => f.kind === MINIJOB_MONTHLY_FINDING && f.acknowledgementKind !== null),
+	// The evaluation attaches each month's acknowledgement, judged by fingerprint and total.
+	const exceedances = findings.filter(
+		(f) => f.kind === MINIJOB_MONTHLY_FINDING && f.acknowledgementKind !== null,
 	);
 	const shown = exceedances.filter(
 		(f) => input.includeAcknowledged || f.adminDetail?.facts?.exceedanceStatus !== "acknowledged",

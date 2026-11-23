@@ -31,11 +31,12 @@ import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { type ShiftInterval, shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { loadStatutoryAcknowledgementStates } from "../acknowledgements";
-import type { StatutoryFinding } from "../finding";
+import type { StatutoryFinding, StatutoryFindingAcknowledgement } from "../finding";
 import type { StatutoryPreferences } from "../preferences";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadStatutoryThresholds } from "../thresholds";
 import {
+	acknowledgedTotalCentsOf,
 	addMonths,
 	computeMinijobMonths,
 	firstDayOf,
@@ -48,6 +49,7 @@ import {
 	type MinijobFindingKind,
 	type MinijobMonthFacts,
 	type MinijobPlannedShift,
+	minijobAcknowledgementStatus,
 	minijobFindingsOf,
 	monthsBetween,
 } from "./minijob-months";
@@ -431,28 +433,53 @@ export async function evaluateMinijobEarnings(
 	const findings: StatutoryFinding<MinijobFindingKind>[] = [];
 	for (const [employeeId, months] of computed) {
 		if (!months.some((month) => month.isMinijob)) continue;
+		/**
+		 * Each exceeded month's acknowledgement, judged once by fingerprint and acknowledged total
+		 * (`minijobAcknowledgementStatus`) and carried on its finding, so the monitor, Reviews and
+		 * Scheduling/Staffing (whose seam keeps an attached acknowledgement) all agree.
+		 */
+		const acknowledgementOf = new Map(
+			months
+				.filter((month) => month.exceeded)
+				.map((month) => {
+					// `get` judges against the fingerprint the subject was loaded with.
+					const state = acknowledgements.get({
+						employeeId,
+						kind: MINIJOB_EXCEEDANCE_ACKNOWLEDGEMENT,
+						findingKind: MINIJOB_MONTHLY_FINDING,
+						subjectKey: month.month,
+					});
+					const acknowledgement: StatutoryFindingAcknowledgement = {
+						status: minijobAcknowledgementStatus(month, {
+							status: state.status,
+							acknowledgedTotalCents: state.latest
+								? acknowledgedTotalCentsOf(state.latest.metadata)
+								: null,
+						}),
+						acknowledgedAt: state.latest?.acknowledgedAt ?? null,
+						acknowledgedBy: state.latest?.acknowledgedBy ?? null,
+						reason: state.latest?.reason ?? null,
+					};
+					return [month.month, acknowledgement] as const;
+				}),
+		);
 		const judged = judgeMinijobMonths(
 			months,
-			(month) => {
-				const state = acknowledgements.get({
-					employeeId,
-					kind: MINIJOB_EXCEEDANCE_ACKNOWLEDGEMENT,
-					findingKind: MINIJOB_MONTHLY_FINDING,
-					subjectKey: month.month,
-				});
-				// `get` judges against the fingerprint the subject was loaded with.
-				return state.status;
-			},
+			(month) => acknowledgementOf.get(month.month)?.status ?? "none",
 			input.preferences,
 		);
 		employees.set(employeeId, judged);
-		findings.push(
-			...minijobFindingsOf(
-				{ organizationId: input.organizationId, employeeId },
-				judged,
-				reportedMonths,
-			),
-		);
+		for (const finding of minijobFindingsOf(
+			{ organizationId: input.organizationId, employeeId },
+			judged,
+			reportedMonths,
+		)) {
+			const acknowledgement =
+				finding.acknowledgementKind && finding.kind === MINIJOB_MONTHLY_FINDING
+					? acknowledgementOf.get(finding.subjectKey)
+					: undefined;
+			findings.push(acknowledgement ? { ...finding, acknowledgement } : finding);
+		}
 	}
 	return { findings, employees };
 }

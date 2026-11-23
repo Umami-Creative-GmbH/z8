@@ -4,6 +4,7 @@ import {
 	computeMinijobMonths,
 	judgeMinijobMonths,
 	type MinijobMonthFacts,
+	minijobAcknowledgementStatus,
 	monthsBetween,
 } from "./minijob-months";
 
@@ -47,6 +48,24 @@ const statuses = (facts: MinijobMonthFacts[], acknowledged: Set<string>) =>
 		.map((m) => [m.month, m.exceedance?.status]);
 
 describe("Minijob month judgement (#1989)", () => {
+	it("keeps an acknowledgement current up to 15 minutes' pay above the documented total", () => {
+		const baseline = { capCents: 60_300, unforeseeableMultiplier: 2, maxUnforeseeableMonths: 2 };
+		// 10 € an hour: one material step is 2.50 €.
+		const status = (cents: number, acknowledgedTotalCents: number | null) =>
+			minijobAcknowledgementStatus(
+				computeMinijobMonths("e1", [month("2026-01", cents, baseline)])[0],
+				{
+					status: "current",
+					acknowledgedTotalCents,
+				},
+			);
+
+		expect(status(70_000, 70_000)).toBe("current");
+		expect(status(60_500, 70_000)).toBe("current");
+		expect(status(70_250, 70_000)).toBe("current");
+		expect(status(70_251, 70_000)).toBe("stale");
+		expect(status(70_000, null)).toBe("stale");
+	});
 	it("applies the allowance in force each month: three months and no multiplier before October 2022", () => {
 		const before = { capCents: 45_000, unforeseeableMultiplier: null, maxUnforeseeableMonths: 3 };
 		const months = monthsBetween("2022-01", "2022-05").map((key) => month(key, 150_000, before));

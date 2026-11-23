@@ -91,6 +91,12 @@ export interface MinijobMonth {
 	readonly priorExceedanceMonths: readonly string[];
 	/** Fingerprint of everything the month's judgement depends on. */
 	readonly fingerprint: string;
+	/**
+	 * One material step of earnings: 15 minutes of pay at the highest wage of the month's work and
+	 * shifts, in (unrounded) cents. A total that rises by more than this above the acknowledged one
+	 * makes the acknowledgement stale (`minijobAcknowledgementStatus`).
+	 */
+	readonly materialRiseCents: number;
 }
 
 export type MinijobExceedanceStatus =
@@ -263,6 +269,11 @@ export function computeMinijobMonths(
 				? Math.round(month.capCents * month.unforeseeableMultiplier)
 				: null;
 		const exceeded = month.isMinijob && month.capCents !== null && total > month.capCents;
+		// The highest wage: a non-material overrun at any of the month's wages stays within a step.
+		const highestRateCents = [...month.items, ...month.shifts].reduce(
+			(highest, entry) => Math.max(highest, entry.hourlyRateCents ?? 0),
+			0,
+		);
 		return {
 			facts: month,
 			earned,
@@ -273,6 +284,7 @@ export function computeMinijobMonths(
 			doubleCap,
 			exceeded,
 			overDoubleCap: exceeded && doubleCap !== null && total > doubleCap,
+			materialRiseCents: (highestRateCents * MINIJOB_MATERIAL_OVERRUN_MINUTES) / 60,
 		};
 	});
 	const exceededMonths = new Set(totals.filter((t) => t.exceeded).map((t) => t.facts.month));
@@ -313,8 +325,45 @@ export function computeMinijobMonths(
 			overDoubleCap: month.overDoubleCap,
 			priorExceedanceMonths,
 			fingerprint,
+			materialRiseCents: month.materialRiseCents,
 		};
 	});
+}
+
+/** The month's total an acknowledgement documented (`metadata.amountsCents.total`), if any. */
+export function acknowledgedTotalCentsOf(
+	metadata: Readonly<Record<string, unknown>>,
+): number | null {
+	const amounts = metadata.amountsCents;
+	if (typeof amounts !== "object" || amounts === null) return null;
+	const total = (amounts as Record<string, unknown>).total;
+	return typeof total === "number" && Number.isFinite(total) ? total : null;
+}
+
+/**
+ * The acknowledgement state of a month, from the state its fingerprint found and the total the
+ * matching acknowledgement documented.
+ *
+ * The fingerprint lists shifts as planned, so it stays put while the plan is worked and as shifts
+ * lapse — and therefore cannot see work recorded later for a shift that lapsed or ran short, or
+ * such work corrected upward to the shift's length. The total does: an acknowledgement matching
+ * the fingerprint stays current only while the month's total is at most one material step
+ * (`materialRiseCents`) above the total the admin acknowledged. As time passes the total can only
+ * fall (shifts lapse; running work counts to its shift's end), so this does not tie staleness to
+ * the clock. An acknowledgement without a documented total covers no figures and is stale.
+ */
+export function minijobAcknowledgementStatus(
+	month: Pick<MinijobMonth, "totalCents" | "materialRiseCents">,
+	acknowledgement: {
+		readonly status: MinijobAcknowledgementStatus;
+		readonly acknowledgedTotalCents: number | null;
+	},
+): MinijobAcknowledgementStatus {
+	if (acknowledgement.status !== "current") return acknowledgement.status;
+	const acknowledged = acknowledgement.acknowledgedTotalCents;
+	return acknowledged !== null && month.totalCents - acknowledged <= month.materialRiseCents
+		? "current"
+		: "stale";
 }
 
 /**
