@@ -8,7 +8,12 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { ValidationError } from "@/lib/effect/errors";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import {
+	ScheduleComplianceService,
+	ScheduleComplianceServiceLive,
+} from "@/lib/effect/services/schedule-compliance.service";
 import { ShiftService, ShiftServiceLive } from "@/lib/effect/services/shift.service";
+import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
@@ -23,6 +28,14 @@ import { evaluateOnCallFindings } from "./monitor";
 import { localInstant, onCallFixture } from "./testing/on-call-fixture";
 
 const shiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
+const complianceLayer = ScheduleComplianceServiceLive.pipe(
+	Layer.provide(
+		Layer.succeed(WorkPolicyService, {
+			getEffectivePolicy: () => Effect.succeed(null),
+		} as never),
+	),
+	Layer.provide(DatabaseServiceLive),
+);
 
 describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -404,6 +417,53 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 			_tag: "ValidationError",
 			refusal: "on_call_notice_finding_not_open",
 		} satisfies Partial<ValidationError>);
+	});
+
+	it("keeps the publish fingerprint steady while an unplanned clock-in runs", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+		// Assigned later in the week; clocked in today without a shift.
+		await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: "2026-03-13",
+			startTime: "09:00",
+			endTime: "13:00",
+			publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+		});
+		await onCall.openWork(org, worker, { date: "2026-03-10", startTime: "08:00:42" });
+		const evaluate = async (now: Temporal.Instant) => {
+			// The service judges at the system clock.
+			const clock = vi.spyOn(Temporal.Now, "instant").mockReturnValue(now);
+			try {
+				return await Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* ScheduleComplianceService;
+						return yield* service.evaluateScheduleWindow({
+							organizationId: org.id,
+							startDate: shiftStoredDate("2026-03-09", org.timezone),
+							endDateExclusive: shiftStoredDate("2026-03-16", org.timezone),
+							timezone: org.timezone,
+						});
+					}).pipe(Effect.provide(complianceLayer)),
+				);
+			} finally {
+				clock.mockRestore();
+			}
+		};
+		const usedOf = (result: Awaited<ReturnType<typeof evaluate>>) =>
+			result.findings.flatMap((f) =>
+				f.type === "statutory" && f.statutoryKind === "on_call_weekly_under_band"
+					? [f.summary.used?.value]
+					: [],
+			);
+
+		const first = await evaluate(localInstant("2026-03-10", "10:00:10", org.timezone));
+		const second = await evaluate(localInstant("2026-03-10", "10:01:10", org.timezone));
+
+		// The running clock-in moved the week's total by a minute; the planner's decision did not change.
+		expect([usedOf(first), usedOf(second)]).toEqual([[119 + 240], [120 + 240]]);
+		expect(second.fingerprint).toBe(first.fingerprint);
 	});
 
 	it("tells Staffing that an on-call candidate's short-notice, short call would add findings", async () => {
