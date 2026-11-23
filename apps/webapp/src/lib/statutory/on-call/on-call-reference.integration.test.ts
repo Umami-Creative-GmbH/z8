@@ -208,6 +208,42 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 		});
 	});
 
+	it("lists only holidays on which work was lost and that no listed illness already pays", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const periodId = await onCall.employmentPeriod(org, worker, "2026-03-31T22:00:00Z");
+		await onCall.onCallTerms(org, worker, {
+			kind: "unspecified",
+			from: "2026-04-01",
+			employmentPeriodId: periodId,
+		});
+		// Good Friday, not worked: paid by § 12 Abs. 4 TzBfG, listed.
+		await onCall.holiday(org, worker, "2026-04-03");
+		// Easter Monday, worked anyway: no work was lost, nothing to pay.
+		await onCall.holiday(org, worker, "2026-04-06");
+		await onCall.work(org, worker, { date: "2026-04-06", startTime: "09:00", endTime: "13:00" });
+		// A 10-day illness with a holiday on its third day: the sick leave pays that day once.
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-04-13",
+			endDate: "2026-04-22",
+		});
+		await onCall.holiday(org, worker, "2026-04-15");
+
+		const events = await listOnCallReferenceEvents(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			from: "2026-04-01",
+			untilExclusive: "2026-05-01",
+			method: "three_months",
+		});
+
+		expect(events.map((event) => [event.kind, event.eventDate])).toEqual([
+			["public_holiday", "2026-04-03"],
+			["sick_leave", "2026-04-13"],
+		]);
+	});
+
 	it("lists sick leave that started before the period and runs into it, from its own start", async () => {
 		const { org, worker } = await seededWorker();
 		await onCall.absence(org, worker, {

@@ -415,19 +415,28 @@ function eventsOf(
 	},
 ): OnCallReferenceEvent[] {
 	const inRange = (day: string) => day >= input.from && day < input.untilExclusive;
-	const sickStarts = new Set(
-		continuedSickLeaves(facts.sickLeaves)
-			.filter((leave) => leave.startDate < input.untilExclusive && leave.endDate >= input.from)
-			.map((leave) => leave.startDate),
+	// Illnesses listed: running in the range and on call on their first day.
+	const illnesses = continuedSickLeaves(facts.sickLeaves).filter(
+		(leave) =>
+			leave.startDate < input.untilExclusive &&
+			leave.endDate >= input.from &&
+			onCallOn(facts, leave.startDate),
 	);
+	// A holiday is paid only where work was lost (as the band and the denominator see it), and only
+	// once: a holiday inside a listed illness is paid by that sick leave.
+	const holidayPaid = (day: string) =>
+		(facts.workMinutesByDay[day] ?? 0) === 0 &&
+		!illnesses.some((leave) => leave.startDate <= day && day <= leave.endDate);
 	const candidates: { kind: OnCallReferenceEventKind; eventDate: string }[] = [
-		...[...sickStarts].map((eventDate) => ({ kind: "sick_leave" as const, eventDate })),
+		...[...new Set(illnesses.map((leave) => leave.startDate))].map((eventDate) => ({
+			kind: "sick_leave" as const,
+			eventDate,
+		})),
 		...[...facts.holidays]
-			.filter(inRange)
+			.filter((day) => inRange(day) && onCallOn(facts, day) && holidayPaid(day))
 			.map((eventDate) => ({ kind: "public_holiday" as const, eventDate })),
 	];
 	return candidates
-		.filter((event) => onCallOn(facts, event.eventDate))
 		.toSorted((a, b) => a.eventDate.localeCompare(b.eventDate) || a.kind.localeCompare(b.kind))
 		.map((event) => ({
 			...event,
