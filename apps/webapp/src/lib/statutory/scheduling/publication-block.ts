@@ -5,7 +5,10 @@
  * range is refused, whatever the planner acknowledged in the publish dialog. Clock-in and
  * clock-out are never blocked.
  */
-import type { ComplianceFinding, StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
+import type {
+	ComplianceFinding,
+	StatutoryComplianceFinding,
+} from "@/lib/scheduling/compliance/types";
 
 export const STATUTORY_PUBLICATION_BLOCKED = "statutory_publication_blocked";
 

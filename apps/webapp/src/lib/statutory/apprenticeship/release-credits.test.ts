@@ -7,7 +7,8 @@ import {
 } from "./release-credits";
 
 function release(
-	partial: Partial<ApprenticeReleaseRecord> & Pick<ApprenticeReleaseRecord, "releaseKind" | "startsOn">,
+	partial: Partial<ApprenticeReleaseRecord> &
+		Pick<ApprenticeReleaseRecord, "releaseKind" | "startsOn">,
 ): ApprenticeReleaseRecord {
 	return {
 		id: `${partial.releaseKind}-${partial.startsOn}`,

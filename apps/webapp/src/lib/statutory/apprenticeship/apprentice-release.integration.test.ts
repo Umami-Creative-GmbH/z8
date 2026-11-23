@@ -51,9 +51,17 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 	});
 	afterAll(fx.cleanup);
 
-	async function apprentice(key: string, birthday: string, profile: "apprentice" | "regular" = "apprentice") {
+	async function apprentice(
+		key: string,
+		birthday: string,
+		profile: "apprentice" | "regular" = "apprentice",
+	) {
 		const who = await fx.employee(org, key, { birthday });
-		await seed.terms(who, { from: "2026-01-01", createdBy: owner.userId, employmentProfile: profile });
+		await seed.terms(who, {
+			from: "2026-01-01",
+			createdBy: owner.userId,
+			employmentProfile: profile,
+		});
 		return who;
 	}
 
@@ -134,7 +142,13 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		const single = await requirementsOf(learner);
 		const people = await db.query.employee.findMany({
 			where: (table, { eq }) => eq(table.id, learner.employeeId),
-			columns: { id: true, organizationId: true, teamId: true, startDate: true, contractType: true },
+			columns: {
+				id: true,
+				organizationId: true,
+				teamId: true,
+				startDate: true,
+				contractType: true,
+			},
 			with: {
 				user: { columns: { createdAt: true } },
 				userSettings: { columns: { timezone: true } },

@@ -228,6 +228,22 @@
         "onCall": "On-call work (§ 12 TzBfG)",
         "youthProtection": "Youth protection (JArbSchG)",
         "apprenticeship": "Apprentice release (BBiG)"
+      },
+      "jarbschg": {
+        "dailyMax": "Under 18: {used} min of work on this day exceeds the {limit} min youth limit",
+        "weeklyMax": "Under 18: {used} min of work this week exceeds the {limit} min youth limit",
+        "daysPerWeek": "Under 18: {used} working days this week, at most {limit} allowed",
+        "restPeriod": "Under 18: only {used} min of rest before this shift, {limit} min required",
+        "break": "Under 18: {used} min of breaks taken, {limit} min required",
+        "uninterrupted": "Under 18: {used} min worked without a break, at most {limit} min allowed",
+        "nightWork": "Under 18: {used} min of night work between 20:00 and 06:00",
+        "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
+        "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
+        "holidayWork": "Under 18: public holiday work needs a statutory sector exception"
+      },
+      "apprenticeship": {
+        "releaseDayShift": "Apprentice release day: school, block-release or exam day",
+        "workplaceReturn": "Under 18: return to work after vocational school"
       }
     }
   }

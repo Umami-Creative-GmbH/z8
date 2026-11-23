@@ -29,6 +29,7 @@ import { EmploymentDateCorrectionCard } from "@/components/settings/employment-d
 import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { EmployeePersonalDataExportCard } from "@/components/settings/personal-data-export/employee-personal-data-export-card";
+import { ApprenticeReleaseCard } from "@/components/settings/employees/apprentice-release-card";
 import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
 import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
@@ -450,6 +451,13 @@ export function EmployeeDetailPageClient({
 						<TabsContent value="time-balance" className="flex flex-col gap-4">
 							{isOrgAdminOrManager && <EmployeeTrackingDateCard employeeId={employeeId} />}
 							{isOrgAdminOrManager && <EmployeeWorkBalanceSection employeeId={employeeId} />}
+							{isOrgAdminOrManager && (
+								<ApprenticeReleaseCard
+									view="employee"
+									employeeId={employeeId}
+									canManage={isOrgAdmin}
+								/>
+							)}
 							{isOrgAdmin && (
 								<WorkBalanceRecalculationCard
 									employeeName={buildAuthUserDisplayName(employee.user) || employee.id}

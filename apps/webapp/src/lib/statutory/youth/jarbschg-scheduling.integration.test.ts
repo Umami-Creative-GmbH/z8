@@ -20,7 +20,10 @@ import {
 	type FixtureOrganization,
 	statutoryFixture,
 } from "@/test/statutory-fixtures";
-import { recordStatutoryAcknowledgement, statutoryAcknowledgementSubjectOf } from "../acknowledgements";
+import {
+	recordStatutoryAcknowledgement,
+	statutoryAcknowledgementSubjectOf,
+} from "../acknowledgements";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
 import { youthSeed } from "./testing/youth-seed";
@@ -135,27 +138,29 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		const result = await evaluateWeek();
 		const statutory = result.findings.filter((finding) => finding.type === "statutory");
 		expect(statutory).toHaveLength(2);
-		expect(statutory).toEqual(expect.arrayContaining([
-			expect.objectContaining({
-				employeeId: turning.employeeId,
-				statutoryKind: "jarbschg_night_work",
-				domain: "youth_protection",
-				subjectKey: `shift:${tuesday}`,
-				legalReference: "§ 14 JArbSchG",
-				summary: {
-					tier: "exceeded",
-					used: { unit: "minutes", value: 60 },
-					limit: { unit: "minutes", value: 0 },
-				},
-				acknowledgementStatus: "none",
-				blocksPublication: false,
-			}),
-			expect.objectContaining({
-				employeeId: minor.employeeId,
-				statutoryKind: "jarbschg_sunday_work",
-				subjectKey: `shift:${sunday}`,
-			}),
-		]));
+		expect(statutory).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					employeeId: turning.employeeId,
+					statutoryKind: "jarbschg_night_work",
+					domain: "youth_protection",
+					subjectKey: `shift:${tuesday}`,
+					legalReference: "§ 14 JArbSchG",
+					summary: {
+						tier: "exceeded",
+						used: { unit: "minutes", value: 60 },
+						limit: { unit: "minutes", value: 0 },
+					},
+					acknowledgementStatus: "none",
+					blocksPublication: false,
+				}),
+				expect.objectContaining({
+					employeeId: minor.employeeId,
+					statutoryKind: "jarbschg_sunday_work",
+					subjectKey: `shift:${sunday}`,
+				}),
+			]),
+		);
 		expect(result.summary.byType.statutory).toBe(2);
 	});
 

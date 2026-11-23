@@ -28,7 +28,11 @@ export async function loadExecutiveExemptDays(
 	if (input.employeeIds.length === 0) return result;
 	const dates: PlainDate[] = [];
 	const until = parsePlainDate(input.until);
-	for (let day = parsePlainDate(input.from); day.until(until).sign > 0; day = day.add({ days: 1 })) {
+	for (
+		let day = parsePlainDate(input.from);
+		day.until(until).sign > 0;
+		day = day.add({ days: 1 })
+	) {
 		dates.push(day);
 	}
 	if (dates.length === 0) return result;

@@ -4298,6 +4298,38 @@
       "visibleLocationsDescription": "Leave empty to include all locations.",
       "visibleTeams": "Visible teams",
       "visibleTeamsDescription": "Leave empty to include all teams."
+    },
+    "apprenticeRelease": {
+      "title": "School and exam release",
+      "description": "Vocational school, block-release weeks and exam days are paid release (§ 15 BBiG): they are credited as working time, never deducted from vacation and never leave a negative work balance.",
+      "empty": "No release days recorded yet.",
+      "kind": {
+        "schoolDay": "Vocational school day",
+        "blockWeek": "Block-release school week",
+        "examDay": "Exam day",
+        "preExamDay": "Working day before the exam"
+      },
+      "credit": {
+        "fullDays": "{count, plural, one {# working day credited in full} other {# working days credited in full}}",
+        "minutes": "{minutes} min of school time credited"
+      },
+      "lessons": "{count} lessons",
+      "workplaceReturn": "Under 18: returning to work after school is flagged (§ 9 JArbSchG)",
+      "void": "Remove",
+      "voidReason": "Why is it removed?",
+      "voidConfirm": "Remove release day",
+      "voided": "Release day removed",
+      "recorded": "Release day recorded",
+      "record": "Record release day",
+      "fields": {
+        "kind": "Release",
+        "date": "Date",
+        "endsOn": "Last day",
+        "schoolHours": "School hours in the block",
+        "lessons": "Lessons (45 min each)",
+        "includePreExamDay": "Also release the working day before the written final exam",
+        "note": "Note (optional)"
+      }
     }
   }
 }

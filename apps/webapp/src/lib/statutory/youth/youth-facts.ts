@@ -5,7 +5,10 @@
  */
 import { and, eq, gte, inArray, isNull, lt, ne } from "drizzle-orm";
 import { employee, shift, workPeriod } from "@/db/schema";
-import { getAssignedHolidayDateKeys, getAssignedHolidaysForEmployees } from "@/lib/calendar/assigned-holidays";
+import {
+	getAssignedHolidayDateKeys,
+	getAssignedHolidaysForEmployees,
+} from "@/lib/calendar/assigned-holidays";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	dateFromInstant,
@@ -20,7 +23,11 @@ import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion
 import { statutoryInputFingerprint } from "../fingerprint";
 import { loadStatutoryThresholds } from "../thresholds";
 import type { StatutoryThresholdKey } from "../threshold-catalog";
-import { type JarbschgLimits, plannedShiftWorkMinutes, type YouthWorkInterval } from "./jarbschg-rules";
+import {
+	type JarbschgLimits,
+	plannedShiftWorkMinutes,
+	type YouthWorkInterval,
+} from "./jarbschg-rules";
 
 type Reader = Pick<DatabaseClient, "select">;
 
@@ -51,7 +58,10 @@ export async function loadJarbschgLimits(
 	return (day) => {
 		const date = day.toString();
 		const limits: Partial<Record<keyof JarbschgLimits, number>> = {};
-		for (const [field, key] of Object.entries(LIMIT_KEYS) as [keyof JarbschgLimits, StatutoryThresholdKey][]) {
+		for (const [field, key] of Object.entries(LIMIT_KEYS) as [
+			keyof JarbschgLimits,
+			StatutoryThresholdKey,
+		][]) {
 			const value = table.valueOn(key, date);
 			if (value === null) return null;
 			limits[field] = value;

@@ -198,7 +198,14 @@ export function youthSeed(admin: Pool) {
 
 		async violations(
 			who: FixtureEmployee,
-		): Promise<{ violation_type: string; policy_id: string | null; work_period_id: string | null; details: string }[]> {
+		): Promise<
+			{
+				violation_type: string;
+				policy_id: string | null;
+				work_period_id: string | null;
+				details: string;
+			}[]
+		> {
 			const { rows } = await admin.query(
 				`select violation_type, policy_id, work_period_id, details from work_policy_violation
 				 where organization_id = $1 and employee_id = $2 order by violation_type::text`,

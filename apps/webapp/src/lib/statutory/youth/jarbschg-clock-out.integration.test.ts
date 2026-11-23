@@ -10,7 +10,11 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { checkComplianceAfterClockOut } from "@/lib/time-tracking/clock-out-effects";
 import { integrationAdminPool } from "@/test/integration-database";
-import { type FixtureEmployee, type FixtureOrganization, statutoryFixture } from "@/test/statutory-fixtures";
+import {
+	type FixtureEmployee,
+	type FixtureOrganization,
+	statutoryFixture,
+} from "@/test/statutory-fixtures";
 import {
 	recordStatutoryAcknowledgement,
 	statutoryAcknowledgementSubjectOf,
@@ -50,12 +54,7 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		}
 	});
 
-	async function clockOut(
-		who: FixtureEmployee,
-		date: string,
-		time: string,
-		minutes: number,
-	) {
+	async function clockOut(who: FixtureEmployee, date: string, time: string, minutes: number) {
 		const work = await seed.work(org, who, date, time, minutes);
 		const warnings = await checkComplianceAfterClockOut(
 			{

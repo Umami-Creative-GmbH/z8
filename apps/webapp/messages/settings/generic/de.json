@@ -4298,6 +4298,38 @@
       "visibleLocationsDescription": "Leer lassen, um alle Standorte einzuschließen.",
       "visibleTeams": "Sichtbare Teams",
       "visibleTeamsDescription": "Leer lassen, um alle Teams einzuschließen."
+    },
+    "apprenticeRelease": {
+      "title": "Berufsschul- und Prüfungsfreistellung",
+      "description": "Berufsschultage, Blockunterricht und Prüfungstage sind bezahlte Freistellung (§ 15 BBiG): Sie werden als Arbeitszeit angerechnet, nie vom Urlaub abgezogen und führen nie zu einem negativen Arbeitszeitsaldo.",
+      "empty": "Noch keine Freistellungstage erfasst.",
+      "kind": {
+        "schoolDay": "Berufsschultag",
+        "blockWeek": "Blockunterrichtswoche",
+        "examDay": "Prüfungstag",
+        "preExamDay": "Arbeitstag vor der Prüfung"
+      },
+      "credit": {
+        "fullDays": "{count, plural, one {# Arbeitstag voll angerechnet} other {# Arbeitstage voll angerechnet}}",
+        "minutes": "{minutes} Min. Unterrichtszeit angerechnet"
+      },
+      "lessons": "{count} Unterrichtsstunden",
+      "workplaceReturn": "Unter 18: Rückkehr in den Betrieb nach der Schule wird markiert (§ 9 JArbSchG)",
+      "void": "Entfernen",
+      "voidReason": "Warum wird er entfernt?",
+      "voidConfirm": "Freistellungstag entfernen",
+      "voided": "Freistellungstag entfernt",
+      "recorded": "Freistellungstag erfasst",
+      "record": "Freistellungstag erfassen",
+      "fields": {
+        "kind": "Freistellung",
+        "date": "Datum",
+        "endsOn": "Letzter Tag",
+        "schoolHours": "Unterrichtsstunden im Block (Zeitstunden)",
+        "lessons": "Unterrichtsstunden (je 45 Min.)",
+        "includePreExamDay": "Auch den Arbeitstag vor der schriftlichen Abschlussprüfung freistellen",
+        "note": "Notiz (optional)"
+      }
     }
   }
 }

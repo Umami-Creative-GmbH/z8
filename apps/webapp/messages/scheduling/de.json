@@ -228,6 +228,22 @@
         "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
         "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
         "apprenticeship": "Freistellung Auszubildende (BBiG)"
+      },
+      "jarbschg": {
+        "dailyMax": "Unter 18: {used} Min. Arbeit an diesem Tag überschreiten die Jugendgrenze von {limit} Min.",
+        "weeklyMax": "Unter 18: {used} Min. Arbeit in dieser Woche überschreiten die Jugendgrenze von {limit} Min.",
+        "daysPerWeek": "Unter 18: {used} Arbeitstage in dieser Woche, höchstens {limit} erlaubt",
+        "restPeriod": "Unter 18: nur {used} Min. Ruhezeit vor dieser Schicht, {limit} Min. erforderlich",
+        "break": "Unter 18: {used} Min. Pause genommen, {limit} Min. erforderlich",
+        "uninterrupted": "Unter 18: {used} Min. ohne Pause gearbeitet, höchstens {limit} Min. erlaubt",
+        "nightWork": "Unter 18: {used} Min. Nachtarbeit zwischen 20:00 und 06:00 Uhr",
+        "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
+        "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
+        "holidayWork": "Unter 18: Feiertagsarbeit braucht eine gesetzliche Branchenausnahme"
+      },
+      "apprenticeship": {
+        "releaseDayShift": "Freistellungstag für Auszubildende: Berufsschul-, Blockunterrichts- oder Prüfungstag",
+        "workplaceReturn": "Unter 18: Rückkehr in den Betrieb nach der Berufsschule"
       }
     }
   }

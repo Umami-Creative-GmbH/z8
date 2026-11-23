@@ -205,7 +205,10 @@ describe("evaluateJarbschg", () => {
 			expect.objectContaining({ rule: "jarbschg_break", actual: 20, limit: 60 }),
 		]);
 		// Gaps under 15 min are no break segment.
-		const short = evaluate([work("2026-03-03", "08:00", "11:00"), work("2026-03-03", "11:10", "13:00")]);
+		const short = evaluate([
+			work("2026-03-03", "08:00", "11:00"),
+			work("2026-03-03", "11:10", "13:00"),
+		]);
 		expect(rules(short)).toEqual(["jarbschg_uninterrupted", "jarbschg_break"]);
 	});
 

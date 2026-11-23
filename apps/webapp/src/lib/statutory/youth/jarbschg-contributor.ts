@@ -13,7 +13,10 @@
 import { plainDateAt, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { statutoryFindingId, type StatutoryFinding } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
-import type { StatutoryScheduleContext, StatutoryScheduleContributor } from "../scheduling/contributor";
+import type {
+	StatutoryScheduleContext,
+	StatutoryScheduleContributor,
+} from "../scheduling/contributor";
 import { isMinorOn } from "./age";
 import {
 	evaluateJarbschg,

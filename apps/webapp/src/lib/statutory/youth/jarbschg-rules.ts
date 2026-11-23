@@ -141,7 +141,8 @@ interface LocatedInterval extends YouthWorkInterval {
 const minutesBetween = (from: Instant, to: Instant) =>
 	Math.round(from.until(to).total({ unit: "minutes" }));
 
-const elapsedMinutes = (interval: YouthWorkInterval) => minutesBetween(interval.start, interval.end);
+const elapsedMinutes = (interval: YouthWorkInterval) =>
+	minutesBetween(interval.start, interval.end);
 
 function mondayOf(day: PlainDate): PlainDate {
 	return day.subtract({ days: day.dayOfWeek - 1 });
