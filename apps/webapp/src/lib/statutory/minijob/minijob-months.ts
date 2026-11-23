@@ -172,7 +172,9 @@ function byText<T>(key: (value: T) => string) {
 
 /**
  * Minutes worked beyond the shifts, shift by shift: a missed or short shift is no slack for
- * extra work on another. Shifts that one clock-in spans (back to back) are judged together.
+ * extra work on another. Shifts of the month that one clock-in spans (back to back) are judged
+ * together; the evaluator splits such a clock-in at the shift starts, so a part in another month
+ * counts against that month's shifts.
  */
 function shiftOverrunMinutes(facts: MinijobMonthFacts): number {
 	const parent = new Map<string, string>();

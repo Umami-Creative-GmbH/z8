@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
+import { acknowledgeMinijobExceedance } from "./acknowledge-minijob-exceedance";
 import { evaluateMinijobEarnings } from "./evaluate-minijob";
 import { minijobFixture } from "./minijob-database.test.fixture";
 
@@ -392,6 +393,75 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 			expect(state["2026-11"]).toEqual({
 				total: 8_333,
 				fingerprint: before["2026-11"]?.fingerprint,
+			});
+		}
+	});
+
+	it("splits one clock-in over back-to-back shifts across a month boundary at the shift start", async () => {
+		const { org, owner, worker } = await setup();
+		// 10 € until 31 January, 20 € from 1 February.
+		await mj.terms(worker, owner, { from: "2026-01-01", until: "2026-02-01", hourlyRate: 10 });
+		await mj.terms(worker, owner, { from: "2026-02-01", hourlyRate: 20 });
+		// 700 € earned in January (cap 603 €): an exceedance, documented before the night shift.
+		await mj.monthWork(org, worker, "2026-01", 4200);
+		// Shifts 31 January 18:00–24:00 and 1 February 00:00–06:00 Berlin, worked with one clock-in.
+		await mj.shift(org, worker, owner, {
+			date: "2026-01-31",
+			startTime: "18:00",
+			endTime: "00:00",
+		});
+		await mj.shift(org, worker, owner, {
+			date: "2026-02-01",
+			startTime: "00:00",
+			endTime: "06:00",
+		});
+		const months = { from: "2026-01", until: "2026-03" };
+		const byMonth = async (now: string) =>
+			Object.fromEntries(
+				(
+					(await evaluate(org, [worker.employeeId], months, now)).employees.get(
+						worker.employeeId,
+					) ?? []
+				)
+					.filter((m) => m.month >= "2026-01")
+					.map((m) => [
+						m.month,
+						{
+							total: m.totalCents,
+							status: m.exceedance?.status ?? null,
+							fingerprint: m.fingerprint,
+						},
+					]),
+			);
+		const planned = await byMonth("2026-01-31T11:00:00Z");
+		await acknowledgeMinijobExceedance(db, {
+			organizationId: org.id,
+			actorUserId: owner.userId,
+			employeeId: worker.employeeId,
+			month: "2026-01",
+			reason: "Covered a sick colleague",
+			expectedFingerprint: planned["2026-01"]?.fingerprint ?? "",
+			now: Temporal.Instant.from("2026-01-31T11:00:00Z"),
+		});
+
+		const workId = await mj.openWork(org, worker, "2026-01-31", "18:00");
+		// 1 February, 03:00 Berlin: still clocked in.
+		const running = await byMonth("2026-02-01T02:00:00Z");
+		await mj.closeWork(workId, 720);
+		// 07:00 Berlin: clocked out on time.
+		const closed = await byMonth("2026-02-01T06:00:00Z");
+
+		// January: 700 € + 6 h × 10 €; February: 6 h × 20 €. Worked as planned, no overrun.
+		expect(planned["2026-01"]?.total).toBe(76_000);
+		expect(planned["2026-02"]?.total).toBe(12_000);
+		for (const state of [running, closed]) {
+			expect(state).toEqual({
+				"2026-01": {
+					total: 76_000,
+					status: "acknowledged",
+					fingerprint: planned["2026-01"]?.fingerprint,
+				},
+				"2026-02": { total: 12_000, status: null, fingerprint: planned["2026-02"]?.fingerprint },
 			});
 		}
 	});

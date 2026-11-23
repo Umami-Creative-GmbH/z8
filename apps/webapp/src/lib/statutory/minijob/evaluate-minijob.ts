@@ -10,7 +10,9 @@
  * recorded for it, the recorded work plus whatever of the shift is still ahead (a break).
  *
  * Shifts count on the organization-local day they start, as in schedule compliance; work for a
- * shift counts with the shift, other work on the day it starts.
+ * shift counts with the shift, other work on the day it starts. One clock-in over back-to-back
+ * shifts is split at each later shift's start, so a night across a month boundary counts in both
+ * months.
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
 import { employeeStatutoryOffset, shift, workPeriod } from "@/db/schema";
@@ -27,11 +29,7 @@ import {
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
-import {
-	type ShiftInterval,
-	shiftInterval,
-	workMatchesShift,
-} from "@/lib/scheduling/shift-occasion";
+import { type ShiftInterval, shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { loadStatutoryAcknowledgementStates } from "../acknowledgements";
 import type { StatutoryFinding } from "../finding";
 import type { StatutoryPreferences } from "../preferences";
@@ -54,6 +52,7 @@ import {
 	monthsBetween,
 } from "./minijob-months";
 import { isMinijobDay, loadMinijobCandidates, loadMinijobTerms } from "./minijob-terms";
+import { matchWorkToShifts, splitWorkAtShiftStarts } from "./work-shift-matching";
 
 type Reader = Pick<DatabaseClient, "select">;
 
@@ -90,21 +89,6 @@ export interface MinijobEvaluation {
 
 /** A judged month needs exceedances up to 11 months before each of the 12 months it sums. */
 const LOAD_LOOKBACK_MONTHS = 2 * MINIJOB_LOOKBACK_MONTHS;
-
-/**
- * Whether work belongs to a shift: it matches the shift (`workMatchesShift`) or overlaps it — an
- * open clock-in up to now. One clock-in over back-to-back shifts belongs to each of them, so
- * none of them is counted on top of it.
- */
-function workBelongsToShift(
-	shift: ShiftInterval,
-	work: { start: Instant; end: Instant | null },
-	now: Instant,
-): boolean {
-	if (workMatchesShift(shift, work)) return true;
-	const workEnd = work.end ?? now;
-	return compareInstants(work.start, shift.end) < 0 && compareInstants(workEnd, shift.start) > 0;
-}
 
 function rateCentsOf(contract: EffectiveContractOnDay): number | null {
 	return contract.hourlyRate === null ? null : Math.round(contract.hourlyRate * 100);
@@ -257,7 +241,8 @@ export async function evaluateMinijobEarnings(
 		else shiftsOf.set(row.employeeId, [entry]);
 	}
 
-	const workOf = new Map<string, { start: Instant; end: Instant | null; minutes: number }[]>();
+	type Work = { id: string; start: Instant; end: Instant | null; minutes: number };
+	const workOf = new Map<string, Work[]>();
 	for (const row of workRows) {
 		const start = instantFromDate(row.startTime);
 		const open = row.isActive;
@@ -267,6 +252,7 @@ export async function evaluateMinijobEarnings(
 				? instantFromDate(row.endTime)
 				: start.add({ minutes: row.durationMinutes ?? 0 });
 		const work = {
+			id: row.id,
 			start,
 			end,
 			// Whole minutes since the clock-in; the rest of its shift makes up the difference.
@@ -277,18 +263,48 @@ export async function evaluateMinijobEarnings(
 		const list = workOf.get(row.employeeId);
 		if (list) list.push(work);
 		else workOf.set(row.employeeId, [work]);
-		const shifts = (shiftsOf.get(row.employeeId) ?? [])
-			.filter((shift) => workBelongsToShift(shift.interval, work, input.now))
-			.sort((a, b) => compareInstants(a.interval.start, b.interval.start));
-		addItem(row.employeeId, {
-			source: "work",
-			id: row.id,
-			// Work for a shift counts in the shift's month (and on its day), wherever it starts.
-			date: shifts[0]?.date ?? plainDateAt(start, timezone).toString(),
-			minutes: work.minutes,
-			...(open ? { inProgress: true } : {}),
-			...(shifts.length > 0 ? { shiftIds: shifts.map((shift) => shift.row.id) } : {}),
-		});
+	}
+
+	/** Work per shift id, for shifts under way. */
+	const workForShift = new Map<string, Work[]>();
+	for (const [employeeId, works] of workOf) {
+		const matches = matchWorkToShifts(shiftsOf.get(employeeId) ?? [], works, input.now);
+		for (const work of works) {
+			const inProgress = work.end === null ? { inProgress: true } : {};
+			const shifts = matches.get(work);
+			if (!shifts) {
+				addItem(employeeId, {
+					source: "work",
+					id: work.id,
+					date: plainDateAt(work.start, timezone).toString(),
+					minutes: work.minutes,
+					...inProgress,
+				});
+				continue;
+			}
+			for (const shift of shifts) {
+				const list = workForShift.get(shift.row.id);
+				if (list) list.push(work);
+				else workForShift.set(shift.row.id, [work]);
+			}
+			// Work for a shift counts with the shift — in its month, on its day — wherever it
+			// starts; over shifts of several days, each part with its own shift. Shifts of the
+			// same month that one clock-in spans are judged together against their plan.
+			for (const part of splitWorkAtShiftStarts(work, shifts, input.now)) {
+				const month = part.shift.date.slice(0, 7);
+				const sameMonth = shifts.filter(
+					(other) => other !== part.shift && other.date.slice(0, 7) === month,
+				);
+				addItem(employeeId, {
+					source: "work",
+					id: work.id,
+					date: part.shift.date,
+					minutes: part.minutes,
+					...inProgress,
+					shiftIds: [part.shift.row.id, ...sameMonth.map((other) => other.row.id)],
+				});
+			}
+		}
 	}
 
 	for (const [employeeId, shifts] of shiftsOf) {
@@ -304,9 +320,7 @@ export async function evaluateMinijobEarnings(
 			if (compareInstants(interval.end, input.now) <= 0) continue;
 			// Running: recorded work counts as recorded, the rest of the shift as planned; until
 			// anyone clocks in, the shift counts in full.
-			const matched = (workOf.get(employeeId) ?? []).filter((work) =>
-				workBelongsToShift(interval, work, input.now),
-			);
+			const matched = workForShift.get(row.id) ?? [];
 			const openWork = matched
 				.filter((work) => work.end === null)
 				.sort((a, b) => compareInstants(a.start, b.start))[0];
