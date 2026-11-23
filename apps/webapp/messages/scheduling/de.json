@@ -232,8 +232,8 @@
       "shortTerm": {
         "daysRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Arbeitstagen in diesem Jahr",
         "daysExceeded": "Tagesgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Arbeitstagen in diesem Jahr",
-        "monthsRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Monaten in diesem Jahr",
-        "monthsExceeded": "Monatsgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Monaten in diesem Jahr"
+        "calendarDaysRemaining": "Kurzfristige Beschäftigung (Dreimonatsgrenze): noch {remaining} von {limit} Kalendertagen in diesem Jahr",
+        "calendarDaysExceeded": "Dreimonatsgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Kalendertagen in diesem Jahr"
       }
     }
   }

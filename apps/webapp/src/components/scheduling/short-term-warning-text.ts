@@ -5,7 +5,7 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 
 /**
  * #1990: planner text for the short-term allowance (70 working days or 3 months per calendar
- * year), with the remaining days or months. Returns null for other findings.
+ * year), with the remaining working or calendar days. Returns null for other findings.
  */
 export function shortTermWarningText(
 	finding: StatutoryComplianceFinding,
@@ -27,16 +27,17 @@ export function shortTermWarningText(
 						"Short-term employment: {remaining} of {limit} working days left this year",
 						params,
 					);
+		// The 3-month limit is counted in calendar days (one stint's 3 months, or 90 days in total).
 		case "short_term_months":
 			return tier === "exceeded"
 				? t(
-						"scheduling:scheduling.statutory.shortTerm.monthsExceeded",
-						"Short-term month limit exceeded: {used} of {limit} months this year",
+						"scheduling:scheduling.statutory.shortTerm.calendarDaysExceeded",
+						"Short-term 3-month limit exceeded: {used} of {limit} calendar days this year",
 						params,
 					)
 				: t(
-						"scheduling:scheduling.statutory.shortTerm.monthsRemaining",
-						"Short-term employment: {remaining} of {limit} months left this year",
+						"scheduling:scheduling.statutory.shortTerm.calendarDaysRemaining",
+						"Short-term employment (3-month limit): {remaining} of {limit} calendar days left this year",
 						params,
 					);
 		default:

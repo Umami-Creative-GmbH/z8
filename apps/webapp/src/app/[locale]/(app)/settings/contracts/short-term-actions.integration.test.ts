@@ -240,6 +240,63 @@ describe("short-term employment actions (PostgreSQL)", () => {
 		expect(await open()).toEqual([["worker Test", JANUARY]]);
 	});
 
+	it("keeps another organization's admin away from the employee's monitor and records", async () => {
+		const { org, owner, worker } = await seed();
+		signInAsOwner(org, owner);
+		const recorded = await recordShortTermPriorEmploymentAction({
+			employeeId: worker.employeeId,
+			kind: "prior_short_term_work_days",
+			calendarYear: YEAR,
+			count: 20,
+			note: "Certificate",
+		});
+		if (!recorded.success) throw new Error(recorded.error);
+		const otherOrg = await fx.organization("b");
+		const otherOwner = await fx.user("other-owner");
+		await fx.membership(otherOrg, otherOwner, "owner");
+		signInAsOwner(otherOrg, otherOwner);
+
+		const attempts = [
+			await getShortTermMonitorAction({ employeeId: worker.employeeId, year: YEAR }),
+			await recordShortTermPriorEmploymentAction({
+				employeeId: worker.employeeId,
+				kind: "prior_short_term_months",
+				calendarYear: YEAR,
+				count: 1,
+				note: "Certificate",
+			}),
+			await voidShortTermPriorEmploymentAction({
+				employeeId: worker.employeeId,
+				offsetId: recorded.data.id,
+				reason: "Not ours",
+			}),
+			await acknowledgeShortTermBerufsmaessigkeitAction({
+				employeeId: worker.employeeId,
+				month: JANUARY,
+				reason: "Verified",
+			}),
+		];
+		const reviews = await listShortTermBerufsmaessigkeitReviewsAction({ includeResolved: true });
+
+		expect(attempts.map((attempt) => attempt.success)).toEqual([false, false, false, false]);
+		expect(reviews).toMatchObject({ success: true, data: [] });
+		signInAsOwner(org, owner);
+		expect(
+			await getShortTermMonitorAction({ employeeId: worker.employeeId, year: YEAR }),
+		).toMatchObject({
+			success: true,
+			data: {
+				allowance: { used: 28 },
+				priorEmployment: [{ kind: "prior_short_term_work_days", count: 20 }],
+				findings: [
+					expect.objectContaining({
+						acknowledgement: expect.objectContaining({ status: "none" }),
+					}),
+				],
+			},
+		});
+	});
+
 	it("refuses to acknowledge a month without a prompt", async () => {
 		const { org, owner, worker } = await seed();
 		signInAsOwner(org, owner);

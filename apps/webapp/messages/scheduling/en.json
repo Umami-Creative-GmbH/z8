@@ -232,8 +232,8 @@
       "shortTerm": {
         "daysRemaining": "Short-term employment: {remaining} of {limit} working days left this year",
         "daysExceeded": "Short-term day limit exceeded: {used} of {limit} working days this year",
-        "monthsRemaining": "Short-term employment: {remaining} of {limit} months left this year",
-        "monthsExceeded": "Short-term month limit exceeded: {used} of {limit} months this year"
+        "calendarDaysRemaining": "Short-term employment (3-month limit): {remaining} of {limit} calendar days left this year",
+        "calendarDaysExceeded": "Short-term 3-month limit exceeded: {used} of {limit} calendar days this year"
       }
     }
   }

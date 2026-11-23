@@ -50,6 +50,8 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 				profile?: "short_term" | "regular" | "minijob";
 				hourlyRate?: number | null;
 				weeklyMinutes?: number | null;
+				/** A work policy from `workPolicy()` whose schedule plans the work days. */
+				workPolicyId?: string;
 			},
 		): Promise<void> {
 			const { userId } = await creator();
@@ -58,8 +60,8 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 				`INSERT INTO employee_employment_history
 				 (employee_id, organization_id, valid_from, valid_until, valid_from_date, valid_until_date,
 				  contract_type, weekly_contract_minutes, employment_profile, hourly_rate, currency,
-				  review_state, created_by, updated_at)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'EUR', 'confirmed', $11, now())`,
+				  review_state, created_by, updated_at, work_policy_id)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'EUR', 'confirmed', $11, now(), $12)`,
 				[
 					employee.employeeId,
 					employee.organizationId,
@@ -72,8 +74,64 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 					options.profile ?? "short_term",
 					hourly ? (options.hourlyRate ?? 15) : null,
 					userId,
+					options.workPolicyId ?? null,
 				],
 			);
+		},
+
+		/**
+		 * A work policy with a detailed schedule cycle: `weeks[n]` lists the work days of cycle week
+		 * n + 1, 4 hours each. The cycle is anchored on Monday 1970-01-05, so cycle week 1 is every
+		 * week whose Monday lies a multiple of `weeks.length` weeks after it.
+		 */
+		async workPolicy(org: FixtureOrganization, weeks: readonly (readonly string[])[]) {
+			const { userId } = await creator();
+			const {
+				rows: [policy],
+			} = await admin.query<{ id: string }>(
+				`INSERT INTO work_policy
+				 (organization_id, name, schedule_enabled, regulation_enabled, presence_enabled, created_by, updated_at)
+				 VALUES ($1, 'Rota', true, false, false, $2, now()) RETURNING id`,
+				[org.id, userId],
+			);
+			const {
+				rows: [version],
+			} = await admin.query<{ id: string }>(
+				`INSERT INTO work_policy_version
+				 (organization_id, policy_id, version_number, effective_from_date, schedule_enabled,
+				  regulation_enabled, presence_enabled, is_legacy_baseline, sealed_at, created_by)
+				 VALUES ($1, $2, 1, '1970-01-05', true, false, false, true, NULL, $3) RETURNING id`,
+				[org.id, policy.id, userId],
+			);
+			const {
+				rows: [schedule],
+			} = await admin.query<{ id: string }>(
+				`INSERT INTO work_policy_schedule
+				 (policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
+				 VALUES ($1, $2, $3, 'detailed', 'custom', now()) RETURNING id`,
+				[policy.id, version.id, weeks.length > 1 ? "biweekly" : "weekly"],
+			);
+			const allDays = [
+				"monday",
+				"tuesday",
+				"wednesday",
+				"thursday",
+				"friday",
+				"saturday",
+				"sunday",
+			];
+			for (const [index, workDays] of weeks.entries()) {
+				for (const day of allDays) {
+					const isWorkDay = workDays.includes(day);
+					await admin.query(
+						`INSERT INTO work_policy_schedule_day
+						 (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day, cycle_week)
+						 VALUES ($1, $2, $3, $4, $5, $6)`,
+						[schedule.id, version.id, day, isWorkDay ? "4.00" : "0.00", isWorkDay, index + 1],
+					);
+				}
+			}
+			return policy.id;
 		},
 
 		/** A completed work period between two organization-local wall times starting on `date`. */

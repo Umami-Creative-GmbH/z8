@@ -73,49 +73,215 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		});
 	}
 
-	it("judges a continuous five-day week against 3 months, from the first to the last day", async () => {
-		const org = await fx.organization("a");
-		const atLimit = await fx.employee(org, "at-limit", { contractType: "hourly" });
-		const over = await fx.employee(org, "over", { contractType: "hourly" });
-		for (const worker of [atLimit, over]) {
+	/** Work on each of `dates` (a stint is not interrupted by up to 14 days without work). */
+	async function workOn(
+		org: { id: string; timezone: string },
+		worker: Awaited<ReturnType<typeof fx.employee>>,
+		dates: readonly string[],
+	) {
+		for (const date of dates) await st.work(org, worker, date);
+	}
+
+	describe("3-month limit (continuous week of five or more work days)", () => {
+		it("measures one stint in time months from its first day, in calendar days", async () => {
+			const org = await fx.organization("a");
+			const atLimit = await fx.employee(org, "at-limit", { contractType: "hourly" });
+			const over = await fx.employee(org, "over", { contractType: "hourly" });
+			const stint = ["2026-06-15", "2026-06-26", "2026-07-08", "2026-07-20", "2026-08-01"];
+			for (const worker of [atLimit, over]) {
+				await st.terms(worker, { from: "2026-06-01", weeklyMinutes: 2400 });
+				await workOn(org, worker, [...stint, "2026-08-14", "2026-08-28", "2026-09-07"]);
+			}
+			// 15 June to 14 September is 3 months: 92 calendar days.
+			await st.work(org, atLimit, "2026-09-14");
+			await st.work(org, over, "2026-09-15");
+
+			const evaluations = await evaluate(org, [atLimit.employeeId, over.employeeId]);
+			const byEmployee = new Map(evaluations.map((e) => [e.employeeId, e]));
+
+			expect(byEmployee.get(atLimit.employeeId)?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 92,
+				limit: 92,
+				remaining: 0,
+				tier: "critical",
+			});
+			expect(byEmployee.get(over.employeeId)?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 93,
+				tier: "exceeded",
+			});
+			expect(byEmployee.get(over.employeeId)?.findings).toEqual([
+				expect.objectContaining({
+					id: `short_term_months:${over.employeeId}:2026`,
+					kind: "short_term_months",
+					domain: "short_term",
+					severity: "critical",
+					subjectKey: "2026",
+					summary: {
+						tier: "exceeded",
+						usedPercent: 101,
+						used: { unit: "days", value: 93 },
+						limit: { unit: "days", value: 92 },
+						remaining: { unit: "days", value: 0 },
+					},
+					acknowledgementKind: null,
+				}),
+			]);
+		});
+
+		it("does not use up a started month: two months and a day leave a month", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
 			await st.terms(worker, { from: "2026-06-01", weeklyMinutes: 2400 });
-			await st.work(org, worker, "2026-06-15");
-		}
-		await st.work(org, atLimit, "2026-09-14");
-		await st.work(org, over, "2026-09-15");
+			await workOn(org, worker, ["2026-06-15", "2026-06-26", "2026-07-08", "2026-07-20"]);
+			await workOn(org, worker, ["2026-08-01", "2026-08-14"]);
+			await st.shift(org, worker, "2026-08-15");
 
-		const evaluations = await evaluate(org, [atLimit.employeeId, over.employeeId]);
-		const byEmployee = new Map(evaluations.map((e) => [e.employeeId, e]));
+			const [evaluation] = await evaluate(org, [worker.employeeId], {
+				now: Temporal.Instant.from("2026-08-15T05:00:00Z"),
+			});
 
-		expect(byEmployee.get(atLimit.employeeId)?.allowance).toMatchObject({
-			limitKind: "months",
-			used: 3,
-			limit: 3,
-			remaining: 0,
-			tier: "critical",
+			// 15 June – 15 August is 62 of the 92 days up to 14 September.
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 62,
+				limit: 92,
+				remaining: 30,
+				tier: "ok",
+			});
 		});
-		expect(byEmployee.get(over.employeeId)?.allowance).toMatchObject({
-			limitKind: "months",
-			used: 4,
-			tier: "exceeded",
+
+		it("adds separate stints in calendar days against 90, not the months between them", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			// Three weeks in February and three in August.
+			await workOn(org, worker, ["2026-02-02", "2026-02-10", "2026-02-20"]);
+			await workOn(org, worker, ["2026-08-03", "2026-08-12", "2026-08-21"]);
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 38,
+				ownUsed: 38,
+				limit: 90,
+				remaining: 52,
+				tier: "ok",
+				firstDay: "2026-02-02",
+				lastDay: "2026-08-21",
+			});
 		});
-		expect(byEmployee.get(over.employeeId)?.findings).toEqual([
-			expect.objectContaining({
-				id: `short_term_months:${over.employeeId}:2026`,
-				kind: "short_term_months",
-				domain: "short_term",
-				severity: "critical",
-				subjectKey: "2026",
-				summary: {
-					tier: "exceeded",
-					usedPercent: 133,
-					used: { unit: "months", value: 4 },
-					limit: { unit: "months", value: 3 },
-					remaining: { unit: "months", value: 0 },
-				},
-				acknowledgementKind: null,
-			}),
-		]);
+
+		it("counts a full calendar month of a stint as 30 days", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			// All of July (31 days) and all of September.
+			await workOn(org, worker, ["2026-07-01", "2026-07-10", "2026-07-20", "2026-07-31"]);
+			await workOn(org, worker, ["2026-09-01", "2026-09-14", "2026-09-28", "2026-09-30"]);
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({ used: 60, limit: 90, remaining: 30 });
+		});
+
+		it("adds prior-employer months as 30 calendar days each", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			await workOn(org, worker, ["2026-07-01", "2026-07-08", "2026-07-15"]);
+			await st.priorShortTerm(worker, "prior_short_term_months", 2026, 1);
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 45,
+				ownUsed: 15,
+				priorEmployerUsed: 30,
+				limit: 90,
+			});
+		});
+
+		it("averages the work days of a multi-week schedule cycle", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			// Five days one week, three the next: 4 a week on average.
+			const rota = await st.workPolicy(org, [
+				["monday", "tuesday", "wednesday", "thursday", "friday"],
+				["monday", "tuesday", "wednesday"],
+			]);
+			await st.terms(worker, { from: "2026-01-01", workPolicyId: rota });
+			// A Friday in the five-day cycle week (an even number of weeks after 1970-01-05).
+			const weeks = Temporal.PlainDate.from("1970-01-05").until("2026-06-01").days / 7;
+			const fiveDayMonday = Temporal.PlainDate.from("2026-06-01").add({ weeks: weeks % 2 });
+			await st.work(org, worker, fiveDayMonday.add({ days: 4 }).toString());
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({ limitKind: "work_days", used: 1, limit: 70 });
+		});
+
+		it("takes the limit from the year's short-term terms when today is outside them", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-06-01", until: "2026-09-01", weeklyMinutes: 2400 });
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({ limitKind: "months", used: 0, limit: 90 });
+		});
+	});
+
+	describe("stints counted in different units", () => {
+		it("judges against 70 working days when prior working days meet a five-day week", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			await workOn(org, worker, ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09"]);
+			await st.work(org, worker, "2026-07-10");
+			await st.priorShortTerm(worker, "prior_short_term_work_days", 2026, 10);
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "work_days",
+				used: 15,
+				ownUsed: 5,
+				priorEmployerUsed: 10,
+				limit: 70,
+			});
+		});
+
+		it("counts prior-employer months as working days against 70 for a short week", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-01-01" });
+			await workOn(org, worker, ["2026-07-06", "2026-07-07"]);
+			// One month of a five-day week is 70 / 3 working days, rounded up.
+			await st.priorShortTerm(worker, "prior_short_term_months", 2026, 1);
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "work_days",
+				used: 26,
+				ownUsed: 2,
+				priorEmployerUsed: 24,
+			});
+		});
+	});
+
+	it("ignores short-term terms superseded by later regular terms", async () => {
+		const org = await fx.organization("a");
+		const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+		await st.terms(worker, { from: "2025-06-01" });
+		await st.terms(worker, { from: "2026-01-01", profile: "regular" });
+		await st.work(org, worker, "2026-03-02");
+
+		expect(await evaluate(org, [worker.employeeId])).toEqual([]);
 	});
 
 	it("adds prior-employer days of the same calendar year and warns from the org's tier", async () => {
@@ -266,6 +432,51 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 
 			await st.shift(org, worker, "2026-05-29");
 			expect(await stateOf()).toBe("stale");
+		});
+
+		it("prices a shift that has not started yet on a day that already has completed work", async () => {
+			const { org, worker } = await earner("a", 7);
+			// 08:00 in Berlin: the morning's work is done, the afternoon shift is still ahead.
+			const now = Temporal.Instant.from("2026-05-20T06:00:00Z");
+			await st.work(org, worker, "2026-05-20", "05:00", "07:00");
+			// Started this morning: its recorded work stands for it.
+			await st.shift(org, worker, "2026-05-20", "05:00", "07:00");
+			await st.shift(org, worker, "2026-05-20", "14:00", "18:00");
+
+			const [evaluation] = await evaluate(org, [worker.employeeId], { now });
+
+			// 560 EUR before today + 40 EUR this morning + 80 EUR planned this afternoon.
+			expect(evaluation?.findings).toEqual([
+				expect.objectContaining({
+					kind: "short_term_berufsmaessigkeit_check",
+					adminDetail: expect.objectContaining({
+						amountsCents: { earned: 60_000, planned: 8_000, total: 68_000, cap: 60_300 },
+					}),
+				}),
+			]);
+		});
+
+		it("prices a planned shift across the end of summer time by its real length", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-01-01", hourlyRate: 20 });
+			await workOn(org, worker, ["2026-10-01", "2026-10-02", "2026-10-05", "2026-10-06"]);
+			await workOn(org, worker, ["2026-10-07", "2026-10-08", "2026-10-09"]);
+			// Clocks go back at 03:00 on 25 October 2026: midnight to 06:00 is seven hours.
+			await st.shift(org, worker, "2026-10-25", "00:00", "06:00");
+
+			const [evaluation] = await evaluate(org, [worker.employeeId], {
+				now: Temporal.Instant.from("2026-10-20T06:00:00Z"),
+			});
+
+			expect(evaluation?.findings).toEqual([
+				expect.objectContaining({
+					kind: "short_term_berufsmaessigkeit_check",
+					adminDetail: expect.objectContaining({
+						amountsCents: { earned: 56_000, planned: 14_000, total: 70_000, cap: 60_300 },
+					}),
+				}),
+			]);
 		});
 
 		it("goes stale when completed work of the month changes", async () => {

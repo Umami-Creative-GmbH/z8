@@ -10,17 +10,19 @@
  * - A working day is an organization-local calendar day with completed work (bucketed on its start
  *   day, so a night shift is one day) or, from today on, a planned shift (draft or published) or
  *   Staffing's proposed shift; only days under short-term terms count, each once.
- * - The 70-working-day limit applies unless the terms plan a continuous week of 5 or more work
- *   days; then the 3-month limit applies, measured in time months (*Zeitmonate*) from the first to
- *   the last counted day of the year, a started month counting in full.
- * - Prior-employer days or months of the same calendar year are added; an entry in the other unit
- *   converts by the ratio of the two limits, rounded up.
- * - Monthly earnings = completed work × the confirmed hourly wage of its day, plus planned shifts
- *   (on days without completed work) × the wage of their day. Above the Minijob cap of the month
- *   they prompt for a Berufsmäßigkeit verification; Z8 never decides social-security status.
+ * - A stint is a run of counted days no more than 14 days apart within one employment period.
+ * - The 3-month limit applies when every short-term terms version of the year plans 5 or more work
+ *   days a week on average over its schedule cycle, and no prior employer recorded working days;
+ *   otherwise the 70-working-day limit applies to every stint's working days. The 3-month limit is
+ *   counted in calendar days: one stint in time months from its first day, several stints (prior
+ *   employers' months included) added up to 90, a full calendar month as 30 (`judge.ts`).
+ * - Monthly earnings = completed work × the confirmed hourly wage of its day, plus planned shifts ×
+ *   the wage of their day, priced by their real length in the organization's timezone. A shift that
+ *   has started on a day with completed work is represented by that work. Above the Minijob cap of
+ *   the month they prompt for a Berufsmäßigkeit verification; Z8 never decides social-security
+ *   status.
  */
 import type { Instant } from "@/lib/datetime/temporal-core";
-import { plainDateAt } from "@/lib/datetime/temporal-core";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadOrganizationStatutoryPreferences, type StatutoryPreferences } from "../preferences";
 import { judgeShortTermYear, type ShortTermYearEvaluation } from "./judge";
@@ -55,7 +57,7 @@ export async function evaluateShortTermEmployment(
 		timezone: request.timezone,
 		employeeIds: request.employeeIds,
 		years: request.years,
-		today: plainDateAt(request.now, request.timezone).toString(),
+		now: request.now,
 		scopeDates: request.scopeDates,
 		proposedShifts: request.proposedShifts ?? [],
 		replacesShiftId: request.replacesShiftId ?? null,

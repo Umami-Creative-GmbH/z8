@@ -81,6 +81,76 @@ describe("short-term allowance in Scheduling and Staffing (PostgreSQL)", () => {
 		]);
 	});
 
+	describe("3-month limit", () => {
+		/** A five-day week stint from 10 March, worked every two weeks or less until 29 May. */
+		async function springStint() {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 2400 });
+			for (const date of ["2026-03-10", "2026-03-23", "2026-04-06", "2026-04-20"]) {
+				await st.work(org, worker, date);
+			}
+			for (const date of ["2026-05-04", "2026-05-18", "2026-05-29"]) {
+				await st.work(org, worker, date);
+			}
+			return { org, worker };
+		}
+
+		it("warns planners with the calendar days left of the stint's 3 months", async () => {
+			const { org, worker } = await springStint();
+			await st.shift(org, worker, "2026-06-03", "09:00", "17:00", "published");
+
+			const findings = await evaluateStatutoryScheduleFindings(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-06-01", endExclusive: "2026-06-08" },
+				employeeIds: [worker.employeeId],
+				now: NOW,
+			});
+
+			// 10 March – 3 June is 86 of the 92 days up to 9 June.
+			expect(findings.map((f) => [f.statutoryKind, f.summary])).toEqual([
+				[
+					"short_term_months",
+					{
+						tier: "warning",
+						usedPercent: 93,
+						used: { unit: "days", value: 86 },
+						limit: { unit: "days", value: 92 },
+						remaining: { unit: "days", value: 6 },
+					},
+				],
+			]);
+		});
+
+		it("tells Staffing that a shift after the 3 months would exceed the limit", async () => {
+			const { org, worker } = await springStint();
+
+			const added = await addedStatutoryScheduleFindings(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-06-08", endExclusive: "2026-06-11" },
+				employeeIds: [worker.employeeId],
+				now: NOW,
+				proposedShift: { date: "2026-06-10", startTime: "09:00", endTime: "17:00" },
+				replacesShiftId: null,
+			});
+
+			expect(added.get(worker.employeeId)?.map((f) => [f.statutoryKind, f.summary])).toEqual([
+				[
+					"short_term_months",
+					{
+						tier: "exceeded",
+						usedPercent: 101,
+						used: { unit: "days", value: 93 },
+						limit: { unit: "days", value: 92 },
+						remaining: { unit: "days", value: 0 },
+					},
+				],
+			]);
+		});
+	});
+
 	it("skips employees who are not short-term in the judged window", async () => {
 		const org = await fx.organization("a");
 		const former = await fx.employee(org, "former", { contractType: "hourly" });

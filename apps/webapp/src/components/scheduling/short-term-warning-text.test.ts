@@ -45,14 +45,29 @@ describe("short-term warning text (#1990)", () => {
 			statutoryWarningText(
 				finding("short_term_months", {
 					tier: "critical",
-					usedPercent: 100,
-					used: { unit: "months", value: 3 },
-					limit: { unit: "months", value: 3 },
-					remaining: { unit: "months", value: 0 },
+					usedPercent: 98,
+					used: { unit: "days", value: 90 },
+					limit: { unit: "days", value: 92 },
+					remaining: { unit: "days", value: 2 },
 				}),
 				t,
 			),
-		).toBe("Short-term employment: 0 of 3 months left this year");
+		).toBe("Short-term employment (3-month limit): 2 of 92 calendar days left this year");
+	});
+
+	it("says when the 3-month limit is exceeded, in calendar days", () => {
+		expect(
+			statutoryWarningText(
+				finding("short_term_months", {
+					tier: "exceeded",
+					usedPercent: 101,
+					used: { unit: "days", value: 91 },
+					limit: { unit: "days", value: 90 },
+					remaining: { unit: "days", value: 0 },
+				}),
+				t,
+			),
+		).toBe("Short-term 3-month limit exceeded: 91 of 90 calendar days this year");
 	});
 
 	it("says when the limit is exceeded", () => {

@@ -2,7 +2,7 @@
  * Pure judgement of one employee's short-term calendar year (#1990). Inputs come from
  * `loadShortTermInputs`; nothing here reads the database.
  */
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	classifyStatutoryUsage,
 	type StatutoryFinding,
@@ -50,26 +50,74 @@ export interface ShortTermYearEvaluation {
 }
 
 /**
- * Months used by a continuous ≥ 5-day pattern: the time months (*Zeitmonate*) from the first to
- * the last counted day, a started month counting in full. 15 June to 14 September is 3 months.
+ * Counted days at most this many calendar days apart belong to one stint: weekends, public
+ * holidays and a week's leave do not end an employment, a longer pause does.
  */
-export function spannedMonths(firstDay: string, lastDay: string): number {
-	const span = parsePlainDate(firstDay).until(parsePlainDate(lastDay).add({ days: 1 }), {
-		largestUnit: "months",
-	});
-	return span.years * 12 + span.months + (span.days > 0 ? 1 : 0);
+export const SHORT_TERM_STINT_GAP_DAYS = 14;
+
+/**
+ * When stints are added together, a full calendar month counts as 30 calendar days and
+ * 3 months × 30 = 90 calendar days replace the 3-month limit (Geringfügigkeits-Richtlinien,
+ * Zusammenrechnung mehrerer kurzfristiger Beschäftigungen).
+ */
+export const SHORT_TERM_DAYS_PER_FULL_MONTH = 30;
+
+/** A run of counted short-term days, `YYYY-MM-DD` inclusive. */
+export interface ShortTermStint {
+	readonly firstDay: string;
+	readonly lastDay: string;
 }
 
 /**
- * Prior-employer offsets recorded in the other unit convert by the ratio of the two limits
- * (70 days ≙ 3 months), rounded up so the allowance is never overstated.
+ * Splits the year's counted days (sorted, distinct) into stints: a new stint starts after a pause
+ * of more than `SHORT_TERM_STINT_GAP_DAYS` or with a new employment period.
  */
-function priorEmployerUsed(
-	employee: ShortTermEmployeeInputs,
-	year: number,
-	limitKind: ShortTermLimitKind,
-	limits: { days: number; months: number },
-): { used: number; days: number; months: number } {
+export function shortTermStints(
+	days: readonly string[],
+	employmentPeriodOf: ReadonlyMap<string, string | null>,
+): ShortTermStint[] {
+	const stints: { firstDay: string; lastDay: string }[] = [];
+	for (const day of days) {
+		const current = stints.at(-1);
+		if (
+			current &&
+			parsePlainDate(current.lastDay).until(parsePlainDate(day)).days <=
+				SHORT_TERM_STINT_GAP_DAYS &&
+			employmentPeriodOf.get(current.lastDay) === employmentPeriodOf.get(day)
+		) {
+			current.lastDay = day;
+		} else {
+			stints.push({ firstDay: day, lastDay: day });
+		}
+	}
+	return stints;
+}
+
+function calendarDays(stint: ShortTermStint): number {
+	return parsePlainDate(stint.firstDay).until(parsePlainDate(stint.lastDay)).days + 1;
+}
+
+/** A stint's calendar days when stints are added: full calendar months count as 30 days. */
+function combinedCalendarDays(stint: ShortTermStint): number {
+	const last = parsePlainDate(stint.lastDay);
+	let cursor = parsePlainDate(stint.firstDay);
+	let total = 0;
+	while (comparePlainDates(cursor, last) <= 0) {
+		const monthEnd = cursor.with({ day: cursor.daysInMonth });
+		const segmentEnd = comparePlainDates(monthEnd, last) < 0 ? monthEnd : last;
+		const fullMonth = cursor.day === 1 && segmentEnd.equals(monthEnd);
+		total += fullMonth ? SHORT_TERM_DAYS_PER_FULL_MONTH : cursor.until(segmentEnd).days + 1;
+		cursor = segmentEnd.add({ days: 1 });
+	}
+	return total;
+}
+
+interface PriorEmployerTotals {
+	readonly days: number;
+	readonly months: number;
+}
+
+function priorEmployerTotals(employee: ShortTermEmployeeInputs, year: number): PriorEmployerTotals {
 	let days = 0;
 	let months = 0;
 	for (const offset of employee.priorOffsets) {
@@ -77,11 +125,63 @@ function priorEmployerUsed(
 		if (offset.kind === "prior_short_term_work_days") days += offset.count;
 		else months += offset.count;
 	}
-	const used =
-		limitKind === "work_days"
-			? days + Math.ceil((months * limits.days) / limits.months)
-			: months + Math.ceil((days * limits.months) / limits.days);
-	return { used, days, months };
+	return { days, months };
+}
+
+interface AllowanceCount {
+	readonly limitKind: ShortTermLimitKind;
+	readonly limit: number;
+	readonly ownUsed: number;
+	readonly priorEmployerUsed: number;
+}
+
+/**
+ * The year's allowance under § 8 Abs. 1 Nr. 2 SGB IV and the Geringfügigkeits-Richtlinien:
+ *
+ * - **3 months** when every stint follows a continuous week of 5 or more work days, counted in
+ *   calendar days. One stint alone is measured in time months (*Zeitmonate*) from its first day:
+ *   15 June – 14 September is 3 months (92 days), and 15 June – 15 August uses 62 of them, not a
+ *   started third month. Several stints (also a prior employer's) are added: a full calendar month
+ *   counts as 30 days, a part month with its actual days, against 90 calendar days. The pauses
+ *   between stints never count.
+ * - **70 working days** as soon as one stint has a shorter or irregular week, and also when such
+ *   stints meet ≥ 5-day stints: then every stint counts with its working days. Prior employers'
+ *   working days count as recorded; a prior employer's months, whose working days are not
+ *   recorded, count as 70 / 3 working days each (the ratio of the two limits), rounded up.
+ */
+function countAllowance(input: {
+	readonly ownLimitKind: ShortTermLimitKind;
+	readonly days: readonly string[];
+	readonly stints: readonly ShortTermStint[];
+	readonly prior: PriorEmployerTotals;
+	readonly dayLimit: number;
+	readonly monthLimit: number;
+}): AllowanceCount {
+	const { prior, stints, dayLimit, monthLimit } = input;
+	if (input.ownLimitKind === "work_days" || prior.days > 0) {
+		return {
+			limitKind: "work_days",
+			limit: dayLimit,
+			ownUsed: input.days.length,
+			priorEmployerUsed: prior.days + Math.ceil((prior.months * dayLimit) / monthLimit),
+		};
+	}
+	const [only] = stints;
+	if (stints.length === 1 && only && prior.months === 0) {
+		const start = parsePlainDate(only.firstDay);
+		return {
+			limitKind: "months",
+			limit: start.until(start.add({ months: monthLimit })).days,
+			ownUsed: calendarDays(only),
+			priorEmployerUsed: 0,
+		};
+	}
+	return {
+		limitKind: "months",
+		limit: monthLimit * SHORT_TERM_DAYS_PER_FULL_MONTH,
+		ownUsed: stints.reduce((sum, stint) => sum + combinedCalendarDays(stint), 0),
+		priorEmployerUsed: prior.months * SHORT_TERM_DAYS_PER_FULL_MONTH,
+	};
 }
 
 export function judgeShortTermYear(input: {
@@ -92,14 +192,15 @@ export function judgeShortTermYear(input: {
 	readonly preferences: StatutoryPreferences;
 }): ShortTermYearEvaluation | null {
 	const { employee, year, thresholds, preferences } = input;
-	if (!employee.shortTermYears.has(year)) return null;
+	const ownLimitKind = employee.ownLimitKindByYear.get(year);
+	if (!ownLimitKind) return null;
 	const inYear = (date: string) => date.startsWith(`${year}-`);
-	const days = [
-		...new Set([...employee.work, ...employee.planned].map((item) => item.date).filter(inYear)),
-	].sort();
+	const counted = [...employee.work, ...employee.planned].filter((item) => inYear(item.date));
+	const days = [...new Set(counted.map((item) => item.date))].sort();
+	const employmentPeriodOf = new Map(counted.map((item) => [item.date, item.employmentPeriodId]));
+	const stints = shortTermStints(days, employmentPeriodOf);
 	const firstDay = days[0] ?? null;
 	const lastDay = days.at(-1) ?? null;
-	const limitKind = employee.limitKindByYear.get(year) ?? "work_days";
 
 	// The baseline in force on the last counted day (or the year's start) governs the year.
 	const governingDay = lastDay ?? `${year}-01-01`;
@@ -108,18 +209,16 @@ export function judgeShortTermYear(input: {
 	if (dayLimit === null || monthLimit === null) {
 		return { employeeId: employee.employeeId, year, allowance: null, findings: [] };
 	}
-	const limit = limitKind === "work_days" ? dayLimit : monthLimit;
-	const ownUsed =
-		limitKind === "work_days"
-			? days.length
-			: firstDay && lastDay
-				? spannedMonths(firstDay, lastDay)
-				: 0;
-	const prior = priorEmployerUsed(employee, year, limitKind, {
-		days: dayLimit,
-		months: monthLimit,
+	const prior = priorEmployerTotals(employee, year);
+	const { limitKind, limit, ownUsed, priorEmployerUsed } = countAllowance({
+		ownLimitKind,
+		days,
+		stints,
+		prior,
+		dayLimit,
+		monthLimit,
 	});
-	const used = ownUsed + prior.used;
+	const used = ownUsed + priorEmployerUsed;
 	const { tier, usedPercent } = classifyStatutoryUsage({ used, limit }, preferences);
 	const allowance: ShortTermAllowance = {
 		employeeId: employee.employeeId,
@@ -127,7 +226,7 @@ export function judgeShortTermYear(input: {
 		limitKind,
 		used,
 		ownUsed,
-		priorEmployerUsed: prior.used,
+		priorEmployerUsed,
 		limit,
 		remaining: Math.max(0, limit - used),
 		tier,
@@ -141,7 +240,8 @@ export function judgeShortTermYear(input: {
 	if (severity) {
 		const kind: ShortTermFindingKind =
 			limitKind === "work_days" ? "short_term_work_days" : "short_term_months";
-		const unit = limitKind === "work_days" ? "days" : "months";
+		// Working days for the 70-day limit, calendar days for the 3-month limit (see the kind).
+		const unit = "days";
 		const subjectKey = String(year);
 		findings.push({
 			id: statutoryFindingId(kind, employee.employeeId, subjectKey),
@@ -166,6 +266,7 @@ export function judgeShortTermYear(input: {
 					ownUsed,
 					priorEmployerDays: prior.days,
 					priorEmployerMonths: prior.months,
+					stints: stints.length,
 					firstDay,
 					lastDay,
 				},
@@ -175,6 +276,7 @@ export function judgeShortTermYear(input: {
 				year,
 				limit,
 				days,
+				stints: stints.map((stint) => [stint.firstDay, stint.lastDay]),
 				priorDays: prior.days,
 				priorMonths: prior.months,
 			}),
@@ -191,8 +293,9 @@ function earningsCents(minutes: number, hourlyRateCents: number): number {
 }
 
 /**
- * One prompt per month of `year` whose short-term earnings (completed work, plus planned shifts on
- * days without completed work) exceed that month's Minijob cap. Earning more than a Minijob is not
+ * One prompt per month of `year` whose short-term earnings (completed work plus planned shifts)
+ * exceed that month's Minijob cap. A shift that has started on a day with completed work is
+ * represented by that work; shifts still ahead count, even later the same day. Earning more than a Minijob is not
  * itself a breach: the employer must verify the employment is not *berufsmäßig*. Z8 never decides
  * that; an org admin documents the verification as a `short_term_berufsmaessigkeit_verified`
  * acknowledgement, which goes stale when the month's work, shifts, wages or cap change.
@@ -219,9 +322,8 @@ function berufsmaessigkeitFindings(input: {
 		const work = employee.work
 			.filter((item) => item.date.startsWith(month))
 			.sort((a, b) => a.workPeriodId.localeCompare(b.workPeriodId));
-		// Completed work replaces the plan for its day.
 		const planned = employee.planned
-			.filter((item) => item.date.startsWith(month) && !workedDays.has(item.date))
+			.filter((item) => item.date.startsWith(month) && !(item.started && workedDays.has(item.date)))
 			.sort(
 				(a, b) =>
 					a.date.localeCompare(b.date) ||

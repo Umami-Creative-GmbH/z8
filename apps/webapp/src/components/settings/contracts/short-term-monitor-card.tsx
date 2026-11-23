@@ -72,9 +72,11 @@ function quantity(value: number, kind: ShortTermAllowance["limitKind"], t: Trans
 				"{count, plural, one {# working day} other {# working days}}",
 				{ count: value },
 			)
-		: t("settings.contracts.shortTerm.months", "{count, plural, one {# month} other {# months}}", {
-				count: value,
-			});
+		: t(
+				"settings.contracts.shortTerm.calendarDays",
+				"{count, plural, one {# calendar day} other {# calendar days}}",
+				{ count: value },
+			);
 }
 
 function priorKindLabel(kind: PriorKind, t: Translate): string {
@@ -121,11 +123,11 @@ function AllowanceSummary({ allowance, t }: { allowance: ShortTermAllowance; t: 
 				{allowance.limitKind === "work_days"
 					? t(
 							"settings.contracts.shortTerm.limitDays",
-							"70-working-day limit: fewer than 5 working days a week or an irregular pattern.",
+							"70-working-day limit: fewer than 5 working days a week on average, an irregular pattern, or such work together with 5-day weeks or prior working days. Every stint counts with its working days; a prior employer's month counts as 70 / 3 working days.",
 						)
 					: t(
 							"settings.contracts.shortTerm.limitMonths",
-							"3-month limit: a continuous pattern of 5 or more working days a week, counted from the first to the last working day.",
+							"3-month limit: 5 or more working days a week throughout. A single stint counts in calendar days up to 3 months from its first day; several stints, including prior employers, add up to 90 calendar days, a full calendar month counting as 30. Pauses between stints do not count.",
 						)}{" "}
 				{t(
 					"settings.contracts.shortTerm.breakdown",

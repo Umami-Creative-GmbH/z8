@@ -4,7 +4,9 @@ import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
+	compareInstants,
 	dateFromInstant,
+	type Instant,
 	instantFromDate,
 	parsePlainDate,
 	plainDateAt,
@@ -12,6 +14,7 @@ import {
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
+import { type ShiftInterval, shiftInterval } from "@/lib/scheduling/shift-occasion";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadStatutoryThresholds, type StatutoryThresholdTable } from "../thresholds";
 
@@ -34,6 +37,8 @@ export interface ShortTermWorkItem {
 	/** Confirmed hourly wage on that day in minor units; null for fixed terms or a missing wage. */
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
+	/** The employment period of that day: a new one starts a new stint. */
+	readonly employmentPeriodId: string | null;
 }
 
 /** A planned shift (persisted from today on, or proposed by Staffing) on a short-term day. */
@@ -43,9 +48,13 @@ export interface ShortTermPlanItem {
 	readonly date: string;
 	readonly startTime: string;
 	readonly endTime: string;
+	/** Real length between the start and end instants in the organization's timezone. */
 	readonly minutes: number;
+	/** Whether the shift had started at the evaluation instant. */
+	readonly started: boolean;
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
+	readonly employmentPeriodId: string | null;
 }
 
 export interface ShortTermPriorOffset {
@@ -60,10 +69,13 @@ export interface ShortTermEmployeeInputs {
 	readonly work: readonly ShortTermWorkItem[];
 	readonly planned: readonly ShortTermPlanItem[];
 	readonly priorOffsets: readonly ShortTermPriorOffset[];
-	/** The allowance applying in each requested year, from the latest short-term terms in it. */
-	readonly limitKindByYear: ReadonlyMap<number, ShortTermLimitKind>;
-	/** Years in which the employee has short-term terms at all. */
-	readonly shortTermYears: ReadonlySet<number>;
+	/**
+	 * Per year with effective short-term terms: the allowance the employee's own short-term terms
+	 * call for (`months` only when every one of them plans 5 or more work days a week). Years
+	 * without effective short-term terms are absent. Prior employers may still switch the year to
+	 * working days (see `judge.ts`).
+	 */
+	readonly ownLimitKindByYear: ReadonlyMap<number, ShortTermLimitKind>;
 }
 
 export interface ShortTermInputs {
@@ -71,27 +83,49 @@ export interface ShortTermInputs {
 	readonly thresholds: StatutoryThresholdTable;
 }
 
-const MINUTES_PER_DAY = 24 * 60;
-
-function minutesOfDay(time: string): number {
-	const [hours, minutes] = time.split(":").map(Number);
-	return (hours ?? 0) * 60 + (minutes ?? 0);
-}
-
-/** Wall-clock length of a shift; an end at or before the start runs into the next day. */
-export function shiftMinutes(startTime: string, endTime: string): number {
-	const length = minutesOfDay(endTime) - minutesOfDay(startTime);
-	return length > 0 ? length : length + MINUTES_PER_DAY;
+/** Real length of a shift in `timezone`, so a shift across a DST change is priced correctly. */
+export function shiftMinutes(interval: ShiftInterval): number {
+	return interval.start.until(interval.end).total("minutes");
 }
 
 /**
- * Days of a work week the contract plans as work days. A policy schedule (or weekly hours without
- * a policy, which resolve to Monday–Friday) of five or more days is a continuous ≥ 5-day pattern.
+ * Average work days per week the contract plans, over the whole schedule cycle (a fortnightly
+ * rota of 5 and 3 days averages 4). Null when nothing plans fixed week days (no policy schedule
+ * and no weekly hours, or a schedule taken from published shifts or on-call terms).
  */
-function limitKindOf(contract: EffectiveContractOnDay | undefined): ShortTermLimitKind {
-	if (!contract || contract.scheduleSource !== "policy") return "work_days";
+export function averageWorkDaysPerWeek(contract: EffectiveContractOnDay): number | null {
+	if (contract.scheduleSource !== "policy") return null;
+	const schedule = contract.workPolicy?.scheduleEnabled ? contract.workPolicy.schedule : null;
+	const cycleWeeks = schedule
+		? schedule.days.reduce((max, day) => Math.max(max, day.cycleWeek ?? 1), 1)
+		: 1;
+	// The resolver reads a multi-week cycle only for detailed or custom-day policy schedules, one
+	// week at a time; custom days on the terms have no cycle.
+	if (
+		schedule &&
+		cycleWeeks > 1 &&
+		contract.scheduleMode !== "custom_days" &&
+		(schedule.scheduleType === "detailed" || schedule.workingDaysPreset === "custom")
+	) {
+		let workDays = 0;
+		for (let week = 1; week <= cycleWeeks; week++) {
+			const rows = schedule.days.filter((day) => (day.cycleWeek ?? 1) === week);
+			const effective =
+				rows.length > 0 ? rows : schedule.days.filter((day) => (day.cycleWeek ?? 1) === 1);
+			workDays += effective.filter((day) => day.isWorkDay).length;
+		}
+		return workDays / cycleWeeks;
+	}
 	const workDays = contract.weeklyScheduleDays.filter((day) => day.isWorkDay).length;
-	return workDays >= 5 ? "months" : "work_days";
+	return workDays > 0 ? workDays : null;
+}
+
+/**
+ * The 3-month limit applies to a continuous week of 5 or more work days on average; anything
+ * shorter, irregular or without planned week days falls under the 70-working-day limit.
+ */
+function limitKindOf(contract: EffectiveContractOnDay): ShortTermLimitKind {
+	return (averageWorkDaysPerWeek(contract) ?? 0) >= 5 ? "months" : "work_days";
 }
 
 function yearOf(date: string): number {
@@ -102,11 +136,29 @@ function centsOf(rate: number | null): number | null {
 	return rate === null ? null : Math.round(rate * 100);
 }
 
-/** The latest of `today` clamped into `year`: the day whose terms speak for a year without work. */
-function referenceDate(year: number, today: string): string {
-	if (yearOf(today) < year) return `${year}-01-01`;
-	if (yearOf(today) > year) return `${year}-12-31`;
-	return today;
+/**
+ * The first day of each raw short-term terms row within each year. Supersession only ever cuts a
+ * row's end (a later confirmed row takes over from its own start), so a row is effective in a
+ * year exactly when the resolver returns short-term terms on this day.
+ */
+function termSampleDates(
+	rows: readonly { validFromDate: string; validUntilDate: string | null }[],
+	years: readonly number[],
+): Map<number, string[]> {
+	const samples = new Map<number, string[]>();
+	for (const year of years) {
+		const yearStart = `${year}-01-01`;
+		const nextYear = `${year + 1}-01-01`;
+		for (const row of rows) {
+			const start = row.validFromDate > yearStart ? row.validFromDate : yearStart;
+			const end =
+				row.validUntilDate !== null && row.validUntilDate < nextYear
+					? row.validUntilDate
+					: nextYear;
+			if (start < end) samples.set(year, [...(samples.get(year) ?? []), start]);
+		}
+	}
+	return samples;
 }
 
 /**
@@ -121,8 +173,8 @@ export async function loadShortTermInputs(
 		readonly timezone: string;
 		readonly employeeIds: readonly string[];
 		readonly years: readonly number[];
-		/** Organization-local today: shifts from today on are planned work. */
-		readonly today: string;
+		/** Shifts from this instant's organization-local day on are planned work. */
+		readonly now: Instant;
 		readonly scopeDates?: readonly string[];
 		readonly proposedShifts: readonly StatutoryProposedShift[];
 		readonly replacesShiftId: string | null;
@@ -130,6 +182,7 @@ export async function loadShortTermInputs(
 ): Promise<ShortTermInputs> {
 	const firstYear = Math.min(...input.years);
 	const lastYear = Math.max(...input.years);
+	const today = plainDateAt(input.now, input.timezone).toString();
 	const from = `${firstYear}-01-01`;
 	const until = `${lastYear + 1}-01-01`;
 	const thresholds = await loadStatutoryThresholds(db, {
@@ -255,22 +308,34 @@ export async function loadShortTermInputs(
 		list.push({ id: row.id, date: plainDateAt(start, input.timezone).toString(), minutes });
 		workByEmployee.set(row.employeeId, list);
 	}
-	const plannedByEmployee = new Map<
-		string,
-		{ shiftId: string | null; date: string; startTime: string; endTime: string }[]
-	>();
+	type PlannedShift = Pick<
+		ShortTermPlanItem,
+		"shiftId" | "date" | "startTime" | "endTime" | "minutes" | "started"
+	>;
+	const plannedByEmployee = new Map<string, PlannedShift[]>();
 	const addPlanned = (
 		employeeId: string,
-		item: { shiftId: string | null; date: string; startTime: string; endTime: string },
+		item: Pick<ShortTermPlanItem, "shiftId" | "date" | "startTime" | "endTime">,
 	) => {
 		if (!inYears(item.date)) return;
-		plannedByEmployee.set(employeeId, [...(plannedByEmployee.get(employeeId) ?? []), item]);
+		const interval = shiftInterval(
+			{ date: parsePlainDate(item.date), startTime: item.startTime, endTime: item.endTime },
+			input.timezone,
+		);
+		plannedByEmployee.set(employeeId, [
+			...(plannedByEmployee.get(employeeId) ?? []),
+			{
+				...item,
+				minutes: shiftMinutes(interval),
+				started: compareInstants(interval.start, input.now) <= 0,
+			},
+		]);
 	};
 	for (const row of shiftRows) {
 		if (!row.employeeId) continue;
 		const date = shiftCalendarDate(row.date, input.timezone).toString();
 		// Past shifts are not planned work any more: completed work speaks for those days.
-		if (date < input.today) continue;
+		if (date < today) continue;
 		addPlanned(row.employeeId, {
 			shiftId: row.id,
 			date,
@@ -280,7 +345,6 @@ export async function loadShortTermInputs(
 	}
 	for (const proposed of input.proposedShifts) {
 		if (!candidates.includes(proposed.employeeId)) continue;
-		parsePlainDate(proposed.date);
 		addPlanned(proposed.employeeId, {
 			shiftId: null,
 			date: proposed.date,
@@ -289,8 +353,19 @@ export async function loadShortTermInputs(
 		});
 	}
 
-	const references = input.years.map((year) => referenceDate(year, input.today));
-	const dates = new Set<string>(references);
+	const samplesByEmployee = new Map(
+		candidates.map((employeeId) => [
+			employeeId,
+			termSampleDates(
+				termRows.filter((row) => row.employeeId === employeeId),
+				input.years,
+			),
+		]),
+	);
+	const dates = new Set<string>();
+	for (const samples of samplesByEmployee.values()) {
+		for (const list of samples.values()) for (const date of list) dates.add(date);
+	}
 	for (const list of workByEmployee.values()) for (const item of list) dates.add(item.date);
 	for (const list of plannedByEmployee.values()) for (const item of list) dates.add(item.date);
 	const contracts = await contractsOn(candidates, [...dates]);
@@ -312,6 +387,7 @@ export async function loadShortTermInputs(
 				minutes: item.minutes,
 				hourlyRateCents: centsOf(contract.hourlyRate),
 				currency: contract.currency,
+				employmentPeriodId: contract.employmentPeriodId,
 			});
 		}
 		const planned: ShortTermPlanItem[] = [];
@@ -320,33 +396,27 @@ export async function loadShortTermInputs(
 			if (!contract) continue;
 			planned.push({
 				...item,
-				minutes: shiftMinutes(item.startTime, item.endTime),
 				hourlyRateCents: centsOf(contract.hourlyRate),
 				currency: contract.currency,
+				employmentPeriodId: contract.employmentPeriodId,
 			});
 		}
 
-		const limitKindByYear = new Map<number, ShortTermLimitKind>();
-		const shortTermYears = new Set<number>();
-		for (const row of termRows) {
-			if (row.employeeId !== employeeId) continue;
-			for (const year of input.years) {
-				const overlaps =
-					row.validFromDate < `${year + 1}-01-01` &&
-					(row.validUntilDate === null || row.validUntilDate > `${year}-01-01`);
-				if (overlaps) shortTermYears.add(year);
-			}
-		}
+		// A year is judged when the resolver returns short-term terms on any of its days we look
+		// at, and its limit follows all of those terms, not the cycle week of one day.
+		const ownLimitKindByYear = new Map<number, ShortTermLimitKind>();
+		const samples = samplesByEmployee.get(employeeId) ?? new Map<number, string[]>();
 		for (const year of input.years) {
 			const counted = [...work, ...planned]
 				.map((item) => item.date)
-				.filter((date) => yearOf(date) === year)
-				.sort();
-			const latest = counted.at(-1);
-			const reference = referenceDate(year, input.today);
-			limitKindByYear.set(
+				.filter((date) => yearOf(date) === year);
+			const terms = [...(samples.get(year) ?? []), ...counted]
+				.map(shortTermOn)
+				.filter((contract) => contract !== null);
+			if (terms.length === 0) continue;
+			ownLimitKindByYear.set(
 				year,
-				limitKindOf(latest ? byDate.get(latest) : (shortTermOn(reference) ?? undefined)),
+				terms.every((contract) => limitKindOf(contract) === "months") ? "months" : "work_days",
 			);
 		}
 
@@ -362,8 +432,7 @@ export async function loadShortTermInputs(
 					year: yearOf(row.validFromDate),
 					count: row.countValue ?? 0,
 				})),
-			limitKindByYear,
-			shortTermYears,
+			ownLimitKindByYear,
 		});
 	}
 	return { employees, thresholds };
