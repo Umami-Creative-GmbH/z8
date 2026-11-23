@@ -3,6 +3,7 @@ import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/typ
 import type { StatutoryDomain } from "@/lib/statutory/threshold-catalog";
 import { minijobWarningText } from "./minijob-warning-text";
 import { onCallWarningText } from "./on-call-warning-text";
+import { shortTermWarningText } from "./short-term-warning-text";
 import { workingStudentWarningText } from "./working-student-warning-text";
 import { youthProtectionWarningText } from "./youth-protection-warning-text";
 
@@ -40,6 +41,7 @@ export function statutoryDomainLabel(domain: StatutoryDomain, t: Translate): str
 export function statutoryWarningText(finding: StatutoryComplianceFinding, t: Translate): string {
 	const specific =
 		minijobWarningText(finding, t) ?? // #1989
+		shortTermWarningText(finding, t) ?? // #1990
 		workingStudentWarningText(finding, t) ?? // #1991
 		onCallWarningText(finding, t) ?? // #1992
 		youthProtectionWarningText(finding, t); // #1993

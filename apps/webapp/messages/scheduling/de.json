@@ -248,6 +248,12 @@
         "releaseDayShift": "Freistellungstag für Auszubildende: Berufsschul-, Blockunterrichts- oder Prüfungstag",
         "workplaceReturn": "Unter 18: keine Arbeit am vollen Berufsschultag der Woche"
       },
+      "shortTerm": {
+        "daysRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Arbeitstagen in diesem Jahr",
+        "daysExceeded": "Tagesgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Arbeitstagen in diesem Jahr",
+        "calendarDaysRemaining": "Kurzfristige Beschäftigung (Dreimonatsgrenze): noch {remaining} von {limit} Kalendertagen in diesem Jahr",
+        "calendarDaysExceeded": "Dreimonatsgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Kalendertagen in diesem Jahr"
+      },
       "minijob": {
         "monthlyDocumented": "Minijob-Monatsgrenze überschritten (als unvorhersehbar dokumentiert)",
         "monthlyExceeded": "Minijob-Monatsgrenze überschritten",

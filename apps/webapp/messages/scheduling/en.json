@@ -248,6 +248,12 @@
         "releaseDayShift": "Apprentice release day: school, block-release or exam day",
         "workplaceReturn": "Under 18: no work on the week's full vocational school day"
       },
+      "shortTerm": {
+        "daysRemaining": "Short-term employment: {remaining} of {limit} working days left this year",
+        "daysExceeded": "Short-term day limit exceeded: {used} of {limit} working days this year",
+        "calendarDaysRemaining": "Short-term employment (3-month limit): {remaining} of {limit} calendar days left this year",
+        "calendarDaysExceeded": "Short-term 3-month limit exceeded: {used} of {limit} calendar days this year"
+      },
       "minijob": {
         "monthlyDocumented": "Minijob monthly limit exceeded (documented as unforeseeable)",
         "monthlyExceeded": "Minijob monthly limit exceeded",

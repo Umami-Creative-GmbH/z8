@@ -40,6 +40,11 @@ export interface MinijobEarningItem {
 	 * The shifts, not the work, stand for it in the fingerprint.
 	 */
 	readonly shiftIds?: readonly string[];
+	/**
+	 * Work still clocked in. Only the fingerprint basis reads it: work in progress never enters
+	 * the fingerprint by its minutes, only closed work does.
+	 */
+	readonly open?: boolean;
 }
 
 /** A persisted shift of the month as planned, whether it is ahead, under way or over. */
@@ -72,6 +77,9 @@ export interface MinijobMonthFacts {
 	readonly shifts: readonly MinijobPlannedShift[];
 	readonly externalOffsets: readonly { readonly id: string; readonly amountCents: number }[];
 }
+
+/** A month's paid time and its persisted shifts as planned, what `plannedBasisOf` hashes. */
+export type PlannedEarningsFacts = Pick<MinijobMonthFacts, "items" | "shifts">;
 
 export interface MinijobMonth {
 	readonly month: string;
@@ -176,9 +184,11 @@ function byText<T>(key: (value: T) => string) {
  * judged together; the evaluator splits such a clock-in at the shift starts, so a part in another
  * month counts against that month's shifts. A shift with any of its plan still ahead (an item of
  * source `shift`: not begun, or running) is left out until it is over: its running clock-in is
- * projected to the shift's end, and that projection is no overrun anybody worked.
+ * projected to the shift's end, and that projection is no overrun anybody worked. So is a shift
+ * (or back-to-back group) whose work is still open past its end: its overrun counts once that work
+ * is closed.
  */
-function overShiftOverrunMinutes(facts: MinijobMonthFacts): number {
+function overShiftOverrunMinutes(facts: PlannedEarningsFacts): number {
 	const parent = new Map<string, string>();
 	const root = (id: string): string => {
 		let current = id;
@@ -195,9 +205,13 @@ function overShiftOverrunMinutes(facts: MinijobMonthFacts): number {
 			if (a !== b) parent.set(b, a);
 		}
 	}
-	const notOver = new Set(
-		facts.items.filter((item) => item.source === "shift").map((item) => root(item.id)),
-	);
+	const notOver = new Set<string>();
+	for (const item of facts.items) {
+		if (item.source === "shift") notOver.add(root(item.id));
+		else if (item.source === "work" && item.open && item.shiftIds?.[0]) {
+			notOver.add(root(item.shiftIds[0]));
+		}
+	}
 	const worked = new Map<string, number>();
 	const add = (into: Map<string, number>, id: string, minutes: number) => {
 		const key = root(id);
@@ -218,15 +232,18 @@ function overShiftOverrunMinutes(facts: MinijobMonthFacts): number {
 
 /**
  * What an acknowledgement of the month's earnings rests on, independent of how far the plan has
- * been worked: the shifts as planned, proposals, work outside any shift (in material steps), and
- * how far work ran beyond the shifts that are over, in material steps. A shift worked as planned —
- * before, during and after the clock-in — leaves it unchanged; an added, removed or moved shift,
- * unplanned work or a material overrun of a shift that is over changes it. Work short of a shift
- * does not: the earnings only fall. A running shift's projection stays out, so an early clock-in
- * followed by an early clock-out changes nothing; a rise while a shift runs shows in the month's
- * total, which the documented total catches (`minijobAcknowledgementStatus`).
+ * been worked: the shifts as planned, proposals, work outside any shift (closed work in material
+ * steps, open work by its id alone), and how far closed work ran beyond the shifts that are over,
+ * in material steps. Work in progress never enters it by its minutes, so a running clock-in keeps
+ * it steady across quarter hours; its growth shows in the month's total, which the documented
+ * total catches (`minijobAcknowledgementStatus`), and the clock-out that fixes its minutes may
+ * change it. A shift worked as planned — before, during and after the clock-in — leaves it
+ * unchanged; an added, removed or moved shift, unplanned work or a material overrun of a shift
+ * that is over changes it. Work short of a shift does not: the earnings only fall. A running
+ * shift's projection stays out, so an early clock-in followed by an early clock-out changes
+ * nothing. The short-term Berufsmäßigkeit verification rests on the same basis.
  */
-function plannedBasisOf(facts: MinijobMonthFacts) {
+export function plannedBasisOf(facts: PlannedEarningsFacts) {
 	const unplanned = facts.items.filter(
 		(item) => item.source !== "shift" && !(item.source === "work" && item.shiftIds?.length),
 	);
@@ -234,18 +251,22 @@ function plannedBasisOf(facts: MinijobMonthFacts) {
 		shifts: [...facts.shifts]
 			.sort(byText((shift) => shift.id))
 			.map((shift) => [shift.id, shift.date, shift.minutes, shift.hourlyRateCents]),
-		unplanned: unplanned.sort(byText((item) => `${item.source}:${item.id}`)).map((item) => [
-			item.source,
-			item.id,
-			item.date,
-			// Work outside any shift counts in material steps, open or closed: a running
-			// clock-in stays steady minute by minute and through its clock-out, but hours of
-			// further work make the acknowledgement stale.
-			item.source === "work"
-				? Math.floor(item.minutes / MINIJOB_MATERIAL_OVERRUN_MINUTES)
-				: item.minutes,
-			item.hourlyRateCents,
-		]),
+		unplanned: unplanned.sort(byText((item) => `${item.source}:${item.id}`)).map((item) =>
+			// Open work outside any shift by id, date and wage alone: its minutes grow with the
+			// clock. Closed work counts in material steps, so a correction by a few minutes keeps
+			// it, but hours of further work make the acknowledgement stale.
+			item.source === "work" && item.open
+				? [item.source, item.id, item.date, "open", item.hourlyRateCents]
+				: [
+						item.source,
+						item.id,
+						item.date,
+						item.source === "work"
+							? Math.floor(item.minutes / MINIJOB_MATERIAL_OVERRUN_MINUTES)
+							: item.minutes,
+						item.hourlyRateCents,
+					],
+		),
 		overrunSteps: Math.floor(overShiftOverrunMinutes(facts) / MINIJOB_MATERIAL_OVERRUN_MINUTES),
 	};
 }
@@ -362,9 +383,13 @@ export function acknowledgedTotalCentsOf(
  * lapse — and therefore cannot see work recorded later for a shift that lapsed or ran short, or
  * such work corrected upward to the shift's length. The total does: an acknowledgement matching
  * the fingerprint stays current only while the month's total is at most one material step
- * (`materialRiseCents`) above the total the admin acknowledged. As time passes the total can only
- * fall (shifts lapse; running work counts to its shift's end), so this does not tie staleness to
- * the clock. An acknowledgement without a documented total covers no figures and is stale.
+ * (`materialRiseCents`) above the total the admin acknowledged.
+ *
+ * This is also the only check on work in progress: open work outside any shift, or running past the
+ * end of a shift that is over, keeps the fingerprint steady (`plannedBasisOf`) while its minutes
+ * grow the total, so the acknowledgement goes stale here once that growth passes a step. Work for
+ * a running shift counts to the shift's end and does not grow the total; shifts that lapse only
+ * lower it. An acknowledgement without a documented total covers no figures and is stale.
  */
 export function minijobAcknowledgementStatus(
 	month: Pick<MinijobMonth, "totalCents" | "materialRiseCents">,

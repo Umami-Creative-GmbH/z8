@@ -550,6 +550,74 @@
           "warningBelowCritical": "Die Warnstufe muss unter der kritischen Stufe liegen."
         }
       },
+      "shortTerm": {
+        "title": "Kurzfristige Beschäftigung",
+        "description": "Zeitgrenze im Kalenderjahr nach § 8 Abs. 1 Nr. 2 SGB IV aus erfasster Arbeit, geplanten Schichten und Vorbeschäftigungen. Warnungen blockieren nie das Ein- oder Ausstempeln.",
+        "year": "Kalenderjahr",
+        "breakdown": "Arbeit und geplante Schichten in Z8: {own}; Vorbeschäftigungen: {prior}.",
+        "limitDays": "Grenze von 70 Arbeitstagen: im Durchschnitt weniger als 5 Arbeitstage pro Woche, unregelmäßige Einsätze oder solche Einsätze zusammen mit 5-Tage-Wochen oder Arbeitstagen bei Vorarbeitgebern. Jeder Einsatz zählt mit seinen Arbeitstagen; ein Monat bei einem Vorarbeitgeber zählt als 70 / 3 Arbeitstage.",
+        "limitMonths": "Grenze von 3 Monaten: durchgehend 5 oder mehr Arbeitstage pro Woche. Ein einzelner Einsatz zählt in Kalendertagen bis 3 Monate nach seinem ersten Tag; mehrere Einsätze, auch bei Vorarbeitgebern, werden bis 90 Kalendertage zusammengerechnet, ein voller Kalendermonat mit 30 Tagen. Pausen zwischen den Einsätzen zählen nicht.",
+        "calendarDays": "{count, plural, one {# Kalendertag} other {# Kalendertage}}",
+        "workDays": "{count, plural, one {# Arbeitstag} other {# Arbeitstage}}",
+        "noBaseline": "Für {year} ist keine gesetzliche Grenze hinterlegt.",
+        "notApplicable": "{year} nicht kurzfristig beschäftigt.",
+        "remaining": "Noch {remaining} in {year}",
+        "usedLabel": "Verbrauchter Anteil der Zeitgrenze",
+        "tier": {
+          "ok": "Innerhalb der Grenze",
+          "warning": "Grenze rückt näher",
+          "critical": "Grenze fast erreicht",
+          "exceeded": "Grenze überschritten"
+        },
+        "prior": {
+          "title": "Vorbeschäftigungen {year}",
+          "empty": "Keine kurzfristigen Vorbeschäftigungen erfasst.",
+          "addTitle": "Vorbeschäftigung {year} hinzufügen",
+          "kind": "Gezählt in",
+          "kindDays": "Arbeitstagen",
+          "kindMonths": "Monaten",
+          "count": "Anzahl",
+          "sourceEmployer": "Früherer Arbeitgeber (optional)",
+          "note": "Nachweis",
+          "notePlaceholder": "z. B. Arbeitsbescheinigung des früheren Arbeitgebers",
+          "submit": "Vorbeschäftigung erfassen",
+          "recorded": "Vorbeschäftigung erfasst",
+          "void": "Stornieren",
+          "voidReason": "Warum ist dieser Eintrag falsch?",
+          "voidSubmit": "Eintrag stornieren",
+          "voided": "Eintrag storniert"
+        },
+        "verification": {
+          "title": "Verdienst über der Minijob-Grenze",
+          "amounts": "{total} von {cap}",
+          "openReviews": "Prüfungen & Konflikte öffnen",
+          "needed": "Prüfung erforderlich",
+          "stale": "Erneut prüfen: Arbeit oder Schichten geändert",
+          "verified": "Geprüft",
+          "reason": "Wie wurde geprüft?",
+          "reasonPlaceholder": "z. B. Fragebogen für Studierende liegt vor; keine weitere Beschäftigung in diesem Jahr",
+          "legalNote": "Rechtlicher Hinweis (optional)",
+          "submit": "Prüfung dokumentieren",
+          "recorded": "Prüfung dokumentiert"
+        },
+        "reviews": {
+          "title": "Kurzfristige Beschäftigung: Prüfung der Berufsmäßigkeit",
+          "description": "Eine kurzfristig beschäftigte Person hat in diesen Monaten mehr als die Minijob-Grenze verdient. Prüfen Sie, dass die Beschäftigung nicht berufsmäßig ausgeübt wird, und dokumentieren Sie, wie. Ändern sich Arbeit oder Schichten des Monats, ist die Prüfung zu erneuern.",
+          "earnings": "Verdienst {total} (gearbeitet {earned}, geplant {planned}) bei einer Minijob-Grenze von {cap}",
+          "empty": "Keine kurzfristigen Verdienste über der Minijob-Grenze zu prüfen.",
+          "lastReason": "Letzte Prüfung: {reason}"
+        },
+        "refusal": {
+          "noPrompt": "Der Verdienst dieses Monats liegt nicht mehr über der Minijob-Grenze. Laden Sie die Seite neu, um den aktuellen Stand zu sehen.",
+          "figuresChanged": "Arbeitszeiten, Schichten oder Verdienst dieses Monats haben sich geändert, seit Sie ihn geöffnet haben. Prüfen Sie die aktuellen Zahlen und bestätigen Sie erneut.",
+          "reasonRequired": "Beschreiben Sie, wie die Berufsmäßigkeit geprüft wurde.",
+          "subjectRequired": "Die Prüfung konnte nicht dokumentiert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
+          "noteRequired": "Geben Sie eine Notiz oder einen Grund an.",
+          "invalidValue": "Geben Sie ganze Arbeitstage (1–366) oder Monate (1–12) ein.",
+          "invalidRange": "Wählen Sie ein gültiges Kalenderjahr.",
+          "overlap": "Dieser Eintrag überschneidet sich mit einem vorhandenen."
+        }
+      },
       "minijob": {
         "column": {
           "month": "Monat",
