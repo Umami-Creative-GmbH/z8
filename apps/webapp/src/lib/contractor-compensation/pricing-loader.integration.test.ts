@@ -526,6 +526,149 @@ describe("contractor pricing on PostgreSQL", () => {
 		).toEqual([["2026-03-15", 9_000]]);
 	});
 
+	describe("engagement edges for a contractor in another time zone than the organization", () => {
+		let berlinOrganization: string;
+
+		beforeAll(async () => {
+			berlinOrganization = await fixture.createOrganization();
+			await fixture.pool.query(`update organization set timezone = 'Europe/Berlin' where id = $1`, [
+				berlinOrganization,
+			]);
+		});
+
+		async function berlinContractor(startedAt: string) {
+			const seeded = await fixture.seedEmployee({
+				organizationId: berlinOrganization,
+				engagementKind: "contractor",
+			});
+			await fixture.pool.query(
+				`update employee_employment_period set started_at = $2 where id = $1`,
+				[seeded.employmentPeriodId, startedAt],
+			);
+			return seeded.employeeId;
+		}
+
+		it("prices work on the contractor's local day before the engagement's first day in the organization's calendar", async () => {
+			// 22:00 UTC on 31 May is 1 June in Berlin, still 31 May (18:00) in New York.
+			const employeeId = await berlinContractor("2026-05-31T22:00:00Z");
+			await setTerms(
+				employeeId,
+				"2026-05-31",
+				{ basis: "hourly", rateAmount: "90", currency: "EUR" },
+				berlinOrganization,
+			);
+			// Before the engagement: left out. Inside it, 19:00–21:00 on 31 May in New York.
+			await completedWork({
+				employeeId,
+				organizationId: berlinOrganization,
+				start: "2026-05-31T20:00:00Z",
+				end: "2026-05-31T21:00:00Z",
+				offset: -240,
+				timezone: "America/New_York",
+			});
+			await completedWork({
+				employeeId,
+				organizationId: berlinOrganization,
+				start: "2026-05-31T23:00:00Z",
+				end: "2026-06-01T01:00:00Z",
+				offset: -240,
+				timezone: "America/New_York",
+			});
+
+			expect(await price(employeeId, "2026-05-01", "2026-06-30", berlinOrganization)).toEqual({
+				days: [{ date: "2026-05-31", minutes: 120, units: "2.0000", amount: 18_000 }],
+				totals: [{ currency: "EUR", amount: 18_000, days: "0.00", hours: "2.00" }],
+			});
+		});
+
+		it("prices work on the contractor's local day after the engagement's last day in the organization's calendar, and nothing after its end", async () => {
+			const employeeId = await berlinContractor("2026-05-31T22:00:00Z");
+			await setTerms(
+				employeeId,
+				"2026-06-01",
+				{ basis: "hourly", rateAmount: "90", currency: "EUR" },
+				berlinOrganization,
+			);
+			// Midnight in Berlin after 30 June: 07:00 on 1 July in Tokyo.
+			await fixture.pool.query(
+				`update employee_employment_period set status = 'closed', ended_at = '2026-06-30T22:00:00Z'
+				 where employee_id = $1`,
+				[employeeId],
+			);
+			// 05:00–06:00 on 1 July in Tokyo, inside the engagement.
+			await completedWork({
+				employeeId,
+				organizationId: berlinOrganization,
+				start: "2026-06-30T20:00:00Z",
+				end: "2026-06-30T21:00:00Z",
+				offset: 540,
+				timezone: "Asia/Tokyo",
+			});
+			// After the engagement, though its terms were left open.
+			await completedWork({
+				employeeId,
+				organizationId: berlinOrganization,
+				start: "2026-06-30T22:00:00Z",
+				end: "2026-06-30T23:00:00Z",
+				offset: 540,
+				timezone: "Asia/Tokyo",
+			});
+
+			const result = await priceContractorDays(db, berlinOrganization, {
+				employeeIds: [employeeId],
+				fromDay: day("2026-06-01"),
+				toDay: day("2026-07-31"),
+			});
+			expect(
+				result.days.map((entry) => [
+					entry.date.toString(),
+					entry.workedMs / 60_000,
+					entry.pricing.kind === "priced" ? Number(entry.pricing.amountMinor) : null,
+				]),
+			).toEqual([["2026-07-01", 60, 9_000]]);
+			expect(result.unpriced).toEqual([]);
+		});
+
+		it("never prices a new engagement's work by the terms the previous one left open", async () => {
+			const employeeId = await berlinContractor("2026-05-31T22:00:00Z");
+			await setTerms(
+				employeeId,
+				"2026-06-01",
+				{ basis: "hourly", rateAmount: "90", currency: "EUR" },
+				berlinOrganization,
+			);
+			await fixture.pool.query(
+				`update employee_employment_period set status = 'closed', ended_at = '2026-06-30T22:00:00Z'
+				 where employee_id = $1`,
+				[employeeId],
+			);
+			await fixture.pool.query(
+				`insert into employee_employment_period
+				 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+				 values ($1, $2, 'open', '2026-06-30T22:00:00Z', 'recorded', 'contractor')`,
+				[berlinOrganization, employeeId],
+			);
+			// 07:00–08:00 on 1 July in Tokyo, in the new engagement without terms.
+			await completedWork({
+				employeeId,
+				organizationId: berlinOrganization,
+				start: "2026-06-30T22:00:00Z",
+				end: "2026-06-30T23:00:00Z",
+				offset: 540,
+				timezone: "Asia/Tokyo",
+			});
+
+			const result = await priceContractorDays(db, berlinOrganization, {
+				employeeIds: [employeeId],
+				fromDay: day("2026-06-01"),
+				toDay: day("2026-07-31"),
+			});
+			expect(result.days.map((entry) => [entry.date.toString(), entry.pricing.kind])).toEqual([
+				["2026-07-01", "unpriced"],
+			]);
+		});
+	});
+
 	it("never prices another organization's contractor", async () => {
 		const otherOrganization = await fixture.createOrganization();
 		const foreign = await contractor(otherOrganization);
