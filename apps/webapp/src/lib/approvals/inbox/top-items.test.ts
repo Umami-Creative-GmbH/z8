@@ -269,6 +269,40 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 		);
 	});
 
+	it("never waits through more than three rounds of evidence when few items turn out high", async () => {
+		// Sixty recent absences, every check clear: none ever reaches high risk, so no five
+		// known items ever outrank the next one's best case and every absence needs evidence.
+		const absences = Array.from({ length: 60 }, (_, index) =>
+			approval(`a${index}`, "absence_entry", absenceAt(index)),
+		);
+		const sourcesOf = () => ({ sources: [source("absence_entry", absences)] });
+		const loader = evidenceLoader(new Set());
+		let inFlight = 0;
+		let rounds = 0;
+		const countingLoader = async (target: ApprovalInboxTriageTarget) => {
+			// A round is a set of loads that run together: one starts while none is in flight.
+			if (inFlight === 0) rounds += 1;
+			inFlight += 1;
+			await new Promise((resolve) => setTimeout(resolve, 0));
+			inFlight -= 1;
+			return loader(target);
+		};
+		const top = await getApprovalInboxTopItems(params, {
+			limit: 5,
+			now: NOW,
+			triagePolicy: DEFAULT_APPROVAL_TRIAGE_POLICY,
+			loadTriageEvidence: countingLoader,
+			readList: (listParams, overrides) =>
+				getApprovalInboxListFromSources({ ...sourcesOf(), params: listParams, ...overrides }),
+		});
+		const { bruteForce } = await topFive(sourcesOf(), new Set());
+
+		expect(top.items.map((item) => item.id)).toEqual(bruteForce);
+		expect(loader).toHaveBeenCalledTimes(60);
+		// Two rounds of five, then everything that could still reach the top at once.
+		expect(rounds).toBe(3);
+	});
+
 	it("keeps the inbox order when current evidence lowers the oldest and raises newer ones", async () => {
 		const absences = Array.from({ length: 12 }, (_, index) =>
 			approval(`a${index}`, "absence_entry", absenceAt(index)),
@@ -364,11 +398,17 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 			new Set(),
 		);
 
-		expect(result.warnings.map((warning) => warning.source).sort()).toEqual([
-			"travel_expense_claim",
-			"travel_expense_report",
+		expect(
+			result.warnings
+				.map((warning) => [warning.source, warning.failure])
+				.sort(([left], [right]) => String(left).localeCompare(String(right))),
+		).toEqual([
+			["travel_expense_claim", "list"],
+			["travel_expense_report", "count"],
 		]);
 		expect(result.top).not.toContain("t0");
+		// A count failure still lists its rows, only the totals miss them.
+		expect(result.top).toContain("r0");
 	});
 
 	it("counts covered work as the total does: the rows a Covering section lists (#1978)", async () => {

@@ -168,8 +168,43 @@ export function PendingApprovalsWidget({
 			locale,
 		);
 	const total = data?.total ?? 0;
-	const unavailableTypes = data?.unavailableTypes ?? [];
+	const typeList = (types: ApprovalInboxType[]) =>
+		new Intl.ListFormat(locale, { type: "conjunction" }).format(
+			types.map((type) => typeLabels[type]),
+		);
+	const notLoadedTypes = data?.notLoadedTypes ?? [];
+	const notCountedTypes = data?.notCountedTypes ?? [];
+	// A source failed: what loaded still shows, as the inbox tells its warnings apart (#1978).
+	const partialFailure = [
+		notLoadedTypes.length > 0
+			? t(
+					"dashboard.pending-approvals.not-loaded",
+					"Some approvals could not be loaded ({types}). The list and totals may be incomplete.",
+					{ types: typeList(notLoadedTypes) },
+				)
+			: null,
+		notCountedTypes.length > 0
+			? t(
+					"dashboard.pending-approvals.not-counted",
+					"Some approvals could not be counted ({types}). Totals may be incomplete.",
+					{ types: typeList(notCountedTypes) },
+				)
+			: null,
+	]
+		.filter((sentence) => sentence !== null)
+		.join(" ");
 	const title = t("dashboard.pending-approvals.title", "Pending Approvals");
+	const reviewAll = (
+		<Button className="w-full group" asChild>
+			<Link href="/approvals/inbox">
+				{t("dashboard.pending-approvals.review-all", "Review All Approvals")}
+				<IconArrowRight
+					className="ml-2 size-4 transition-transform group-hover:translate-x-1"
+					aria-hidden="true"
+				/>
+			</Link>
+		</Button>
+	);
 
 	return (
 		<DashboardWidget id="pending-approvals">
@@ -185,19 +220,10 @@ export function PendingApprovalsWidget({
 				onRefresh={refetch}
 			>
 				<div className="space-y-4">
-					{!error && unavailableTypes.length > 0 ? (
-						// A source failed: what loaded still shows, but its numbers may be short (#1978).
+					{!error && partialFailure ? (
 						<WidgetReadError
 							title={title}
-							message={t(
-								"dashboard.pending-approvals.partially-unavailable",
-								"Some approvals could not be loaded ({types}). Totals may be incomplete.",
-								{
-									types: new Intl.ListFormat(locale, { type: "conjunction" }).format(
-										unavailableTypes.map((type) => typeLabels[type]),
-									),
-								},
-							)}
+							message={partialFailure}
 							retry={refetch}
 							refreshing={refreshing}
 						/>
@@ -209,7 +235,10 @@ export function PendingApprovalsWidget({
 							retry={refetch}
 							refreshing={refreshing}
 						/>
-					) : total === 0 && unavailableTypes.length > 0 ? null : !data || total === 0 ? (
+					) : total === 0 && partialFailure ? (
+						// Nothing counted, but not nothing pending: the inbox may still list some.
+						reviewAll
+					) : !data || total === 0 ? (
 						<p role="status">{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
 					) : (
 						<>
@@ -231,15 +260,7 @@ export function PendingApprovalsWidget({
 									/>
 								))}
 							</ul>
-							<Button className="w-full group" asChild>
-								<Link href="/approvals/inbox">
-									{t("dashboard.pending-approvals.review-all", "Review All Approvals")}
-									<IconArrowRight
-										className="ml-2 size-4 transition-transform group-hover:translate-x-1"
-										aria-hidden="true"
-									/>
-								</Link>
-							</Button>
+							{reviewAll}
 						</>
 					)}
 				</div>

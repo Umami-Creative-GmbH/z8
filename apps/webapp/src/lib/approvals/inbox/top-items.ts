@@ -34,6 +34,9 @@ export interface ApprovalInboxTopItems {
 
 const itemKey = (type: string, id: string) => `${type}:${id}`;
 
+/** Rounds of `limit` evidence reads before every remaining candidate is read at once. */
+const SMALL_EVIDENCE_ROUNDS = 2;
+
 /**
  * The viewer's pending work and its most urgent items, exactly as the inbox orders them
  * (#1978), for a surface that shows only a few, such as the Dashboard.
@@ -42,7 +45,9 @@ const itemKey = (type: string, id: string) => `${type}:${id}`;
  * sets the risk of absences, absence changes and time corrections. Evidence costs queries per
  * item, so it is read only for the items that could still reach the first `limit`: evidence
  * never lowers an item below "high" before it is read, so an item is evaluated, best case
- * first, until the `limit` items already known outrank the next one's best case. Every other
+ * first, until the `limit` items already known outrank the next one's best case. Two small
+ * rounds come first; a third reads every item that could still reach the top at once, so a
+ * dashboard never waits through more rounds than that. Every other
  * kind's risk needs no evidence. The rows themselves are read as the inbox reads them, one
  * query per source as the badge does, so the counts stay the badge's.
  *
@@ -104,11 +109,24 @@ export async function getApprovalInboxTopItems(
 		})
 		.sort((left, right) => compareInboxItems(left.best, right.best));
 	let top = candidates.filter((item) => !deferred.has(itemKey(item.type, item.id))).slice(0, limit);
-	let next = 0;
-	while (next < pending.length) {
+	// Whether the known top already outranks this item's best case, and so every later one's.
+	const outranks = (index: number) => {
 		const last = top.length >= limit ? top[limit - 1] : undefined;
-		if (last && compareInboxItems(last, pending[next].best) < 0) break;
-		const batch = pending.slice(next, next + limit);
+		return last !== undefined && compareInboxItems(last, pending[index].best) < 0;
+	};
+	let next = 0;
+	for (let round = 0; next < pending.length; round += 1) {
+		if (outranks(next)) break;
+		// Small rounds first, as most dashboards fill their top from the oldest high-risk items.
+		// Past them, evidence is read at once, as the inbox reads it, for every remaining item
+		// whose best case could still reach the top: the known top only improves, so an item
+		// it already outranks never enters it, and no dashboard waits through more rounds.
+		let end = next + limit;
+		if (round >= SMALL_EVIDENCE_ROUNDS) {
+			end = next + 1;
+			while (end < pending.length && !outranks(end)) end += 1;
+		}
+		const batch = pending.slice(next, end);
 		next += batch.length;
 		const evaluated = await Promise.all(
 			batch.map(async ({ item, target }) => ({

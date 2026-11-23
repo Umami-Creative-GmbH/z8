@@ -66,8 +66,10 @@ export type PendingApprovalsData = {
 	total: number;
 	/** The covered share of `total`: the "Covering for" rows the badge counts, never more. */
 	coveringCount: number;
-	/** Approval types whose list or count could not be read: the numbers may miss them. */
-	unavailableTypes: ApprovalInboxType[];
+	/** Approval types whose list or "Covering for" rows could not be read: rows may be missing. */
+	notLoadedTypes: ApprovalInboxType[];
+	/** Approval types whose count alone could not be read: their rows list, the totals miss them. */
+	notCountedTypes: ApprovalInboxType[];
 	/** The types with pending approvals, in inbox type order. */
 	typeCounts: { type: ApprovalInboxType; count: number }[];
 	/** The five most urgent pending approvals, in inbox order. */

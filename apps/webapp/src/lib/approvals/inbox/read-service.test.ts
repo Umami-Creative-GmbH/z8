@@ -302,6 +302,7 @@ describe("getApprovalInboxListFromSources", () => {
 					key: "approvals:approvals.inboxWarning.notLoaded",
 					fallback: "These approvals could not be loaded. Lists and totals may be incomplete.",
 				},
+				failure: "list",
 			},
 		]);
 	});
@@ -341,6 +342,7 @@ describe("getApprovalInboxListFromSources", () => {
 						key: "approvals:approvals.inboxWarning.notCounted",
 						fallback: "These approvals could not be counted. Totals may be incomplete.",
 					},
+					failure: "count",
 				},
 			]);
 		});
@@ -355,6 +357,7 @@ describe("getApprovalInboxListFromSources", () => {
 			expect(result.warnings[0]).toMatchObject({
 				source: "travel_expense_claim",
 				localized: { key: "approvals:approvals.inboxWarning.notLoaded" },
+				failure: "list",
 			});
 		});
 
@@ -378,6 +381,7 @@ describe("getApprovalInboxListFromSources", () => {
 					localized: expect.objectContaining({
 						key: "approvals:approvals.inboxWarning.coveringNotLoaded",
 					}),
+					failure: "covering",
 				}),
 			]);
 		});
@@ -411,6 +415,7 @@ describe("getApprovalInboxListFromSources", () => {
 					localized: expect.objectContaining({
 						key: "approvals:approvals.inboxWarning.coveringNotLoaded",
 					}),
+					failure: "covering",
 				}),
 			]);
 		});

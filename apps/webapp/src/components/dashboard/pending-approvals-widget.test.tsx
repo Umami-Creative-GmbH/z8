@@ -62,7 +62,8 @@ const pending: PendingApprovalsData = {
 		{ type: "travel_expense_report", count: 2 },
 		{ type: "compliance_exception", count: 1 },
 	],
-	unavailableTypes: [],
+	notLoadedTypes: [],
+	notCountedTypes: [],
 	preview: [
 		{
 			id: "exception-a",
@@ -245,7 +246,14 @@ describe("Pending Approvals widget (#1978)", () => {
 	it.each([
 		[
 			"nothing pending",
-			{ total: 0, coveringCount: 0, typeCounts: [], preview: [], unavailableTypes: [] },
+			{
+				total: 0,
+				coveringCount: 0,
+				typeCounts: [],
+				preview: [],
+				notLoadedTypes: [],
+				notCountedTypes: [],
+			},
 		],
 		["no Approval inbox", null],
 	] as const)("shows the empty state for %s", (_case, data) => {
@@ -256,31 +264,59 @@ describe("Pending Approvals widget (#1978)", () => {
 	});
 
 	it("says which approval types could not be loaded and offers a retry, keeping what loaded", () => {
-		widget(delivered({ ...pending, unavailableTypes: ["travel_expense_claim", "time_entry"] }));
+		widget(delivered({ ...pending, notLoadedTypes: ["time_entry", "travel_expense_claim"] }));
 
 		expect(screen.getByRole("alert").textContent).toBe(
-			"Some approvals could not be loaded (Travel Expenses and Time Corrections). Totals may be incomplete.",
+			"Some approvals could not be loaded (Time Corrections and Travel Expenses). The list and totals may be incomplete.",
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Retry Pending Approvals" }));
 		expect(fetch).toHaveBeenCalled();
 		expect(screen.getByText("7 pending approvals")).toBeTruthy();
 	});
 
-	it("lists the approval types that could not be loaded as the viewer's language does", () => {
+	it("says a type whose rows list but whose count failed could not be counted, not loaded", () => {
+		widget(delivered({ ...pending, notCountedTypes: ["travel_expense_report"] }));
+
+		expect(screen.getByRole("alert").textContent).toBe(
+			"Some approvals could not be counted (Expense Reports). Totals may be incomplete.",
+		);
+	});
+
+	it("names both kinds of failure when some types failed to load and others to count", () => {
+		widget(
+			delivered({
+				...pending,
+				notLoadedTypes: ["time_entry"],
+				notCountedTypes: ["travel_expense_report", "compliance_exception"],
+			}),
+		);
+
+		expect(screen.getByRole("alert").textContent).toBe(
+			"Some approvals could not be loaded (Time Corrections). The list and totals may be incomplete. " +
+				"Some approvals could not be counted (Expense Reports and Compliance Exceptions). Totals may be incomplete.",
+		);
+	});
+
+	it("lists the approval types that could not be loaded or counted as the viewer's language does", () => {
 		renderWithoutTranslations(
 			<TolgeeProvider
 				tolgee={createTestTolgee("de", {
-					"dashboard.pending-approvals.partially-unavailable":
+					"dashboard.pending-approvals.not-loaded":
 						"Einige Genehmigungen konnten nicht geladen werden ({types}).",
+					"dashboard.pending-approvals.not-counted":
+						"Einige Genehmigungen konnten nicht gezählt werden ({types}).",
 					"approvals:approvals.types.travel_expense_claim": "Reisekosten",
 					"approvals:approvals.types.time_entry": "Zeitkorrekturen",
+					"approvals:approvals.types.travel_expense_report": "Spesenabrechnungen",
+					"approvals:approvals.types.period_submission": "Zeitraumabgaben",
 				})}
 			>
 				<QueryClientProvider client={new QueryClient()}>
 					<PendingApprovalsWidget
 						initialSnapshot={delivered({
 							...pending,
-							unavailableTypes: ["travel_expense_claim", "time_entry"],
+							notLoadedTypes: ["time_entry", "travel_expense_claim"],
+							notCountedTypes: ["travel_expense_report", "period_submission"],
 						})}
 					/>
 				</QueryClientProvider>
@@ -288,23 +324,47 @@ describe("Pending Approvals widget (#1978)", () => {
 		);
 
 		expect(screen.getByRole("alert").textContent).toBe(
-			"Einige Genehmigungen konnten nicht geladen werden (Reisekosten und Zeitkorrekturen).",
+			"Einige Genehmigungen konnten nicht geladen werden (Zeitkorrekturen und Reisekosten). " +
+				"Einige Genehmigungen konnten nicht gezählt werden (Spesenabrechnungen und Zeitraumabgaben).",
 		);
 	});
 
-	it("does not claim nothing is pending when an approval type failed to load", () => {
+	it("does not claim nothing is pending when an approval type failed to load, and still links to the inbox", () => {
 		widget(
 			delivered({
 				total: 0,
 				coveringCount: 0,
 				typeCounts: [],
 				preview: [],
-				unavailableTypes: ["absence_entry"],
+				notLoadedTypes: ["absence_entry"],
+				notCountedTypes: [],
 			}),
 		);
 
 		expect(screen.getByRole("alert").textContent).toContain("Absence Requests");
 		expect(screen.queryByText("No pending approvals")).toBeNull();
+		expect(screen.getByRole("link", { name: /Review All Approvals/ }).getAttribute("href")).toBe(
+			"/approvals/inbox",
+		);
+	});
+
+	it("keeps the inbox link when nothing was counted but some type failed to count", () => {
+		widget(
+			delivered({
+				total: 0,
+				coveringCount: 0,
+				typeCounts: [],
+				preview: [],
+				notLoadedTypes: [],
+				notCountedTypes: ["compliance_exception"],
+			}),
+		);
+
+		expect(screen.getByRole("alert").textContent).toContain("could not be counted");
+		expect(screen.queryByText("No pending approvals")).toBeNull();
+		expect(screen.getByRole("link", { name: /Review All Approvals/ }).getAttribute("href")).toBe(
+			"/approvals/inbox",
+		);
 	});
 
 	it("shows no partial-failure notice when every type loaded", () => {

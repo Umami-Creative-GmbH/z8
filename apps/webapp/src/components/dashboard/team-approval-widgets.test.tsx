@@ -90,7 +90,8 @@ const managed = {
 const pending = {
 	total: 2,
 	coveringCount: 0,
-	unavailableTypes: [],
+	notLoadedTypes: [],
+	notCountedTypes: [],
 	typeCounts: [
 		{ type: "absence_entry", count: 1 },
 		{ type: "time_entry", count: 1 },

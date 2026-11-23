@@ -595,7 +595,8 @@ describe("authorized Dashboard approval delivery", () => {
 						.slice(0, 5)
 						.map((item) => item.id),
 				);
-				expect(widget.unavailableTypes).toEqual([]);
+				expect(widget.notLoadedTypes).toEqual([]);
+				expect(widget.notCountedTypes).toEqual([]);
 				return { widget, scope };
 			}
 

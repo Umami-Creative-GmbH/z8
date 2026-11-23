@@ -97,6 +97,7 @@ import type {
 	ApprovalInboxListResult,
 	ApprovalInboxLocalizedText,
 	ApprovalInboxRiskLevel,
+	ApprovalInboxSourceFailure,
 	ApprovalInboxStatus,
 	ApprovalInboxTimeComparison,
 	ApprovalInboxType,
@@ -282,10 +283,8 @@ const priorityRank: Record<UnifiedApprovalItem["priority"], number> = {
 	low: 3,
 };
 
-type SourceFailure = "list" | "count" | "covering";
-
 const SOURCE_FAILURE_WARNINGS: Record<
-	SourceFailure,
+	ApprovalInboxSourceFailure,
 	{ message: (displayName: string) => string; localized: ApprovalInboxLocalizedText }
 > = {
 	list: {
@@ -320,11 +319,16 @@ const SOURCE_FAILURE_WARNINGS: Record<
 function warnSourceFailed(
 	warnings: ApprovalInboxWarning[],
 	source: Pick<ApprovalInboxSource, "type" | "displayName">,
-	failure: SourceFailure,
+	failure: ApprovalInboxSourceFailure,
 ): void {
 	if (warnings.some((warning) => warning.source === source.type)) return;
 	const { message, localized } = SOURCE_FAILURE_WARNINGS[failure];
-	warnings.push({ source: source.type, message: message(source.displayName), localized });
+	warnings.push({
+		source: source.type,
+		message: message(source.displayName),
+		localized,
+		failure,
+	});
 }
 
 export async function getApprovalInboxListFromSources({

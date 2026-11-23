@@ -253,7 +253,14 @@ export interface ApprovalInboxWarning {
 	message: string;
 	/** The message in the viewer's language (#1978); `source` then names an approval type. */
 	localized?: ApprovalInboxLocalizedText;
+	/**
+	 * What failed first (#1978): its list ("list"), its count ("count"; its rows still list),
+	 * or its rows of a "Covering for" section ("covering").
+	 */
+	failure?: ApprovalInboxSourceFailure;
 }
+
+export type ApprovalInboxSourceFailure = "list" | "count" | "covering";
 
 export interface ApprovalInboxListResult {
 	items: ApprovalInboxItem[];
