@@ -1,6 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { type Instant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { causedBlockingFindings } from "../scheduling/caused-blocking";
 import type { JarbschgLimits } from "./jarbschg-rules";
 import { youthFindingsOf } from "./youth-findings";
 import { type YouthShiftRecord, type YouthWorkRecord, youthIntervalsOf } from "./youth-intervals";
@@ -328,6 +329,88 @@ describe("sector exception fingerprints", () => {
 			// Within the same 15-minute step: the same work for the exception.
 			expect(saturday("13:50")).toBe(saturday("14:00"));
 			expect(saturday("18:00")).not.toBe(saturday("14:00"));
+		});
+	});
+
+	describe("of a shift the minor clocked out of for lunch", () => {
+		// Saturday 7 March 2026, clocked in 08:00, out for lunch at 11:00.
+		const morning = work("am", at("2026-03-07", "08:00"), at("2026-03-07", "11:00"));
+		const saturdayOf = (end: string, now: Instant, records: YouthWorkRecord[] = [morning]) =>
+			findings({
+				work: records,
+				shifts: [shift("sat", "2026-03-07", "08:00", end)],
+				now,
+			}).filter((finding) => finding.kind === "jarbschg_saturday_work");
+
+		it("covers the worked piece and the planned rest of the shift", () => {
+			// 08:00–11:00 worked, 11:30–14:00 still planned.
+			expect(saturdayOf("14:00", at("2026-03-07", "11:30"))).toEqual([
+				expect.objectContaining({ subjectKey: "shift:sat", coveredMinutes: 330 }),
+			]);
+		});
+
+		it("is caused when the shift is extended during the break", () => {
+			const now = at("2026-03-07", "11:30");
+			const before = saturdayOf("14:00", now);
+			const after = saturdayOf("18:00", now);
+			expect(after).toEqual([expect.objectContaining({ coveredMinutes: 570 })]);
+			expect(causedBlockingFindings(before, after).map((finding) => finding.kind)).toEqual([
+				"jarbschg_saturday_work",
+			]);
+		});
+
+		it("keeps the covered minutes of a shift worked as planned across clocking out, and an unrelated edit is not caused", () => {
+			const planned = saturdayOf("14:00", at("2026-03-07", "07:00"), []);
+			const working = saturdayOf("14:00", at("2026-03-07", "10:00"), [
+				work("am", at("2026-03-07", "08:00"), null),
+			]);
+			const clockedOut = saturdayOf("14:00", at("2026-03-07", "11:00"));
+			for (const list of [planned, working, clockedOut]) {
+				expect(list).toEqual([expect.objectContaining({ coveredMinutes: 360 })]);
+			}
+			// A notes edit during the break: the same findings before and after.
+			const now = at("2026-03-07", "11:20");
+			expect(causedBlockingFindings(saturdayOf("14:00", now), saturdayOf("14:00", now))).toEqual(
+				[],
+			);
+		});
+
+		it("is caused when a 24 December shift is extended past 14:00 during the break", () => {
+			// Thursday 24 December 2026: 10:00–12:00 worked, the rest of 10:00–15:00 still planned.
+			const now = at("2026-12-24", "12:30");
+			const eve = (end: string) =>
+				findings({
+					work: [work("am", at("2026-12-24", "10:00"), at("2026-12-24", "12:00"))],
+					shifts: [shift("eve", "2026-12-24", "10:00", end)],
+					now,
+					judged: { start: "2026-12-21", endExclusive: "2026-12-28" },
+				}).filter((finding) => finding.kind === "jarbschg_holiday_prohibited");
+			expect(eve("15:00")).toEqual([
+				expect.objectContaining({
+					subjectKey: "shift:eve",
+					summary: expect.objectContaining({ used: { unit: "minutes", value: 60 } }),
+				}),
+			]);
+			expect(causedBlockingFindings(eve("15:00"), eve("19:00")).map((f) => f.kind)).toEqual([
+				"jarbschg_holiday_prohibited",
+			]);
+			expect(causedBlockingFindings(eve("15:00"), eve("15:00"))).toEqual([]);
+		});
+
+		it("covers every night minute of a night shift clocked out of before midnight", () => {
+			// Tuesday 22:00–02:00, 22:00–23:00 worked, the rest still planned from 23:30.
+			const night = nightOf(
+				findings({
+					work: [work("first", at("2026-03-03", "22:00"), at("2026-03-03", "23:00"))],
+					shifts: [shift("night", "2026-03-03", "22:00", "02:00")],
+					now: at("2026-03-03", "23:30"),
+				}),
+			);
+			expect(night).toMatchObject({
+				subjectKey: "shift:night",
+				summary: { used: { unit: "minutes", value: 210 } },
+				coveredMinutes: 210,
+			});
 		});
 	});
 

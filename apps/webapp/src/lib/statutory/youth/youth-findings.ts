@@ -210,30 +210,38 @@ export function youthFindingsOf(input: {
 			: null;
 	};
 
-	// A shift's work may lie on several days (a night shift clocked before and after midnight):
-	// its sector-exception finding totals every piece, whichever days are judged, so Scheduling,
-	// Staffing, clock-out and the acknowledgement action agree on its fingerprint.
-	const sectorTotals = new Map<string, { night: number; outside: number }>();
+	// A shift's work may lie in several pieces (a night shift clocked before and after midnight, a
+	// shift clocked out of for lunch with the rest still planned): its sector-exception finding
+	// totals every piece, whichever days are judged, so Scheduling, Staffing, clock-out and the
+	// acknowledgement action agree on its fingerprint, and an edit that extends the shift deepens it.
+	const sectorTotals = new Map<string, { night: number; outside: number; covered: number }>();
 	for (const breach of evaluate(EVERY_DAY, "judged_days")) {
 		if (!jarbschgSectorExceptionRules.has(breach.rule)) continue;
 		const finding = findingOf(breach);
 		if (!finding) continue;
-		const total = sectorTotals.get(finding.id) ?? { night: 0, outside: 0 };
+		const total = sectorTotals.get(finding.id) ?? { night: 0, outside: 0, covered: 0 };
 		if (breach.unit === "minutes") total.night += breach.actual;
 		total.outside += breach.outsidePlannedShift ?? 0;
+		total.covered += breach.coveredMinutes ?? 0;
 		sectorTotals.set(finding.id, total);
 	}
 
 	const judgedBreaches = evaluate(input.judged, input.report);
 	const sectorIdOf = (breach: JarbschgBreach) =>
 		statutoryFindingId(breach.rule, input.employeeId, subjectKeyOf(breach));
-	/** A sector finding's minutes in the judged breaches alone (`sectorMinutes: "judged_days"`). */
-	const judgedNight = new Map<string, number>();
+	/**
+	 * A sector finding's minutes in the judged breaches alone (`sectorMinutes: "judged_days"`): its
+	 * night minutes, and the work it covers.
+	 */
+	const judgedTotals = new Map<string, { night: number; covered: number }>();
 	if (input.sectorMinutes === "judged_days") {
 		for (const breach of judgedBreaches) {
-			if (!jarbschgSectorExceptionRules.has(breach.rule) || breach.unit !== "minutes") continue;
+			if (!jarbschgSectorExceptionRules.has(breach.rule)) continue;
 			const id = sectorIdOf(breach);
-			judgedNight.set(id, (judgedNight.get(id) ?? 0) + breach.actual);
+			const total = judgedTotals.get(id) ?? { night: 0, covered: 0 };
+			if (breach.unit === "minutes") total.night += breach.actual;
+			total.covered += breach.coveredMinutes ?? 0;
+			judgedTotals.set(id, total);
 		}
 	}
 
@@ -241,13 +249,14 @@ export function youthFindingsOf(input: {
 	for (const breach of judgedBreaches) {
 		const id = sectorIdOf(breach);
 		const total = sectorTotals.get(id);
+		const judged = judgedTotals.get(id);
 		const finding = findingOf(
 			total
 				? {
 						...breach,
-						actual:
-							breach.unit === "minutes" ? (judgedNight.get(id) ?? total.night) : breach.actual,
+						actual: breach.unit === "minutes" ? (judged?.night ?? total.night) : breach.actual,
 						outsidePlannedShift: total.outside,
+						coveredMinutes: judged?.covered ?? total.covered,
 					}
 				: breach,
 		);
