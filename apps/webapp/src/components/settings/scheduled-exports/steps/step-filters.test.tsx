@@ -23,13 +23,20 @@ vi.mock("../filter-selector", () => ({ FilterSelector: () => null }));
 
 afterEach(cleanup);
 
-function formWith(filters: { employeeIds?: string[] }) {
+function formWith(filters: { employeeIds?: string[] }, reportType = "payroll_export") {
 	const Field = ({ name, children }: { name: string; children: (field: unknown) => ReactNode }) =>
 		children({
 			state: { value: name === "filters" ? filters : "previous_month" },
 			handleChange: vi.fn(),
 		});
-	return { Field } as unknown as ScheduledExportForm;
+	const Subscribe = ({
+		selector,
+		children,
+	}: {
+		selector: (state: unknown) => unknown;
+		children: (value: unknown) => ReactNode;
+	}) => children(selector({ values: { reportType, filters } }));
+	return { Field, Subscribe } as unknown as ScheduledExportForm;
 }
 
 const options = (employees: FilterOptions["employees"]): FilterOptions => ({
@@ -71,6 +78,19 @@ describe("scheduled export filters: All | Employees | External Contractors (#199
 		expect(screen.getByText(hint)).toBeTruthy();
 		fireEvent.click(screen.getByRole("radio", { name: "All" }));
 		expect(screen.queryByText(hint)).toBeNull();
+	});
+
+	it("says a payroll export leaves External Contractor time out, even for a picked person (#1997)", () => {
+		const note =
+			"Payroll exports include only time worked as an employee. Time worked as an External Contractor is always left out, even if you pick the person.";
+
+		render(<StepFilters form={formWith({})} filterOptions={options(people)} />);
+		expect(screen.getByText(note)).toBeTruthy();
+		cleanup();
+
+		// Not for a data export, which includes External Contractors.
+		render(<StepFilters form={formWith({}, "data_export")} filterOptions={options(people)} />);
+		expect(screen.queryByText(note)).toBeNull();
 	});
 
 	it("offers no engagement filter while the organization has no External Contractors", () => {

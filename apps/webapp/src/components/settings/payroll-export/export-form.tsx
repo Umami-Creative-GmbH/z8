@@ -532,8 +532,8 @@ function FiltersSection({
 	t: Translate;
 }) {
 	// All | Employees | External Contractors (#1995): narrows the picker, never the chosen people
-	// nor what the export includes, and says so. Payroll exports leave contractor periods out by
-	// themselves once #1997 ships, so this is no export scope.
+	// nor what the export includes, and says so. Payroll exports leave contractor time out by
+	// themselves (#1997), even for a picked External Contractor, so this is no export scope.
 	const [engagement, setEngagement] = useState<EngagementFilter>("all");
 	const allEmployees = options?.employees ?? [];
 	const hasContractors = allEmployees.some((row) => row.engagementKind === "contractor");
@@ -564,6 +564,14 @@ function FiltersSection({
 					{t(
 						"settings.payrollExport.export.engagementPickerHint",
 						"This only narrows the list of people to pick from. With nobody selected, the export includes everyone.",
+					)}
+				</p>
+			)}
+			{hasContractors && (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.payrollExport.export.contractorTimeExcluded",
+						"Payroll exports include only time worked as an employee. Time worked as an External Contractor is always left out, even if you pick the person.",
 					)}
 				</p>
 			)}
