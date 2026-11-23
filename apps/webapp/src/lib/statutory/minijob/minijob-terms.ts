@@ -1,9 +1,9 @@
 /**
  * Who is on Minijob terms, and on what terms each day (#1989). Effective terms come from the
  * unified contract resolver, but only where they can change: on the first of every month and
- * around every confirmed terms row and employment period boundary. Between two such dates the
- * resolver's profile, wage and employment status stay the same, so each day takes the terms
- * resolved on the latest sample date at or before it.
+ * around each employee's own confirmed terms row and employment period boundaries. Between two
+ * such dates of an employee the resolver's profile, wage and employment status stay the same, so
+ * each day takes the terms resolved on the employee's latest sample date at or before it.
  */
 import { and, eq, gt, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
 import { employeeEmploymentHistory, employeeEmploymentPeriod } from "@/db/schema";
@@ -138,11 +138,13 @@ export async function loadMinijobTerms(
 			),
 		);
 
-	// The resolver takes one list of dates for every employee: the month starts plus every
-	// boundary inside the range.
-	const samples = new Set(months.map(firstDayOf));
-	const addBoundary = (date: string | null) => {
-		if (!date) return;
+	// Each employee is resolved on the month starts plus its own boundaries inside the range,
+	// so the cost grows with each employee's own changes, not with everyone's.
+	const monthStarts = months.map(firstDayOf);
+	const samplesOf = new Map(employeeIds.map((id) => [id, new Set(monthStarts)]));
+	const addBoundary = (employeeId: string, date: string | null) => {
+		const samples = samplesOf.get(employeeId);
+		if (!date || !samples) return;
 		const day = parsePlainDate(date);
 		for (let offset = -BOUNDARY_MARGIN_DAYS; offset <= BOUNDARY_MARGIN_DAYS; offset++) {
 			const sample = day.add({ days: offset }).toString();
@@ -152,31 +154,36 @@ export async function loadMinijobTerms(
 	const localDate = (value: Date | null) =>
 		value ? plainDateAt(instantFromDate(value), timezone).toString() : null;
 	for (const row of termsRows) {
-		addBoundary(row.validFromDate);
-		addBoundary(row.validUntilDate);
-		addBoundary(localDate(row.validFrom));
-		addBoundary(localDate(row.validUntil));
+		addBoundary(row.employeeId, row.validFromDate);
+		addBoundary(row.employeeId, row.validUntilDate);
+		addBoundary(row.employeeId, localDate(row.validFrom));
+		addBoundary(row.employeeId, localDate(row.validUntil));
 	}
 	for (const row of periodRows) {
-		addBoundary(localDate(row.startedAt));
-		addBoundary(localDate(row.endedAt));
+		addBoundary(row.employeeId, localDate(row.startedAt));
+		addBoundary(row.employeeId, localDate(row.endedAt));
 	}
-	const sampleDates = [...samples].sort();
+	const sampleDatesOf = new Map(
+		[...samplesOf].map(([employeeId, samples]) => [employeeId, [...samples].sort()]),
+	);
 
 	const contracts = await loadEffectiveContractsBatch(db, {
 		organizationId,
 		employeeIds,
-		dates: sampleDates,
+		dates: monthStarts,
+		datesByEmployee: sampleDatesOf,
 		timezoneOverride: timezone,
 		organizationTimezone: timezone,
 	});
 
 	const contractOn = (employeeId: string, date: string) => {
+		const sampleDates = sampleDatesOf.get(employeeId);
+		if (!sampleDates) return undefined;
 		const index = latestAtOrBefore(sampleDates, date);
 		return index < 0 ? undefined : contracts.get(employeeId)?.get(sampleDates[index]);
 	};
 	const minijobMonths = new Map<string, Set<string>>();
-	for (const employeeId of employeeIds) {
+	for (const [employeeId, sampleDates] of sampleDatesOf) {
 		const days = contracts.get(employeeId);
 		const covered = new Set<string>();
 		for (const date of sampleDates) {

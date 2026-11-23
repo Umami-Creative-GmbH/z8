@@ -493,6 +493,50 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		]);
 	});
 
+	it("prices every employee at its own terms changes when several are evaluated together", async () => {
+		const { org, owner, worker: early } = await setup();
+		const late = await fx.employee(org, "late", { contractType: "hourly" });
+		const leaver = await fx.employee(org, "leaver", { contractType: "hourly" });
+		// early: 10 € → 20 € on 16 March. late: 12 € → 24 € on 10 April. leaver: 15 € Minijob until
+		// 19 March, a regular job from 20 March.
+		await mj.terms(early, owner, { from: "2026-01-01", until: "2026-03-16", hourlyRate: 10 });
+		await mj.terms(early, owner, { from: "2026-03-16", hourlyRate: 20 });
+		await mj.terms(late, owner, { from: "2026-01-01", until: "2026-04-10", hourlyRate: 12 });
+		await mj.terms(late, owner, { from: "2026-04-10", hourlyRate: 24 });
+		await mj.terms(leaver, owner, { from: "2026-01-01", until: "2026-03-20", hourlyRate: 15 });
+		await mj.terms(leaver, owner, { from: "2026-03-20", hourlyRate: 30, profile: "regular" });
+		for (const date of ["2026-03-15", "2026-03-16", "2026-04-09", "2026-04-10"]) {
+			await mj.work(org, early, date, 60);
+			await mj.work(org, late, date, 60);
+		}
+		for (const date of ["2026-03-19", "2026-03-20", "2026-04-10"]) {
+			await mj.work(org, leaver, date, 60);
+		}
+
+		const { employees } = await evaluate(
+			org,
+			[early.employeeId, late.employeeId, leaver.employeeId],
+			{ from: "2026-03", until: "2026-05" },
+		);
+		const months = (employeeId: string) =>
+			(employees.get(employeeId) ?? [])
+				.filter((m) => m.month >= "2026-03")
+				.map((m) => [m.month, m.isMinijob, m.earnedCents]);
+
+		expect(months(early.employeeId)).toEqual([
+			["2026-03", true, 3_000],
+			["2026-04", true, 4_000],
+		]);
+		expect(months(late.employeeId)).toEqual([
+			["2026-03", true, 2_400],
+			["2026-04", true, 3_600],
+		]);
+		expect(months(leaver.employeeId)).toEqual([
+			["2026-03", true, 1_500],
+			["2026-04", false, 0],
+		]);
+	});
+
 	it("attributes work to the organization-local month it starts in", async () => {
 		const { org, owner, worker } = await setup();
 		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 15 });
