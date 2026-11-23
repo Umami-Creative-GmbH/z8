@@ -4,6 +4,8 @@ import { calculateHash } from "./blockchain";
 import {
 	type ClockingStore,
 	createClockingService,
+	createDatabaseClockingStore,
+	insertChainedClockIn,
 	LiveWorkOccupiedError,
 } from "./clocking-core";
 import { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
@@ -160,5 +162,68 @@ describe("coordinated live clock-in append admission", () => {
 		expect(store.admitAppend).not.toHaveBeenCalled();
 		expect(inserted).toEqual([expect.objectContaining({ previousHash: "latest-created-hash" })]);
 		expect(inserted[0]).not.toHaveProperty("previousEntryId");
+	});
+});
+
+describe("database clocking store chained clock-in ordering", () => {
+	it("sets createdAt strictly after previousEntryId so same-transaction break resumes never tie with clock-out", async () => {
+		const insertedValues: Record<string, unknown>[] = [];
+		const fakeTx = {
+			insert: vi.fn(() => ({
+				values: vi.fn((vals: Record<string, unknown>) => {
+					insertedValues.push(vals);
+					return {
+						returning: vi.fn(async () => [{ id: vals.id ?? "entry-resumed", ...vals }]),
+					};
+				}),
+			})),
+		};
+
+		const store = createDatabaseClockingStore(fakeTx as never);
+		await insertChainedClockIn(
+			store,
+			{
+				...scope,
+				createdBy: "user-1",
+				actionId: "resume-op-1",
+				action: { instant, utcOffsetMinutes: 0, timezone: "UTC", timezoneSource: "browser" },
+				source: { ipAddress: null, deviceInfo: "web" },
+			},
+			predecessor,
+		);
+
+		expect(insertedValues).toHaveLength(1);
+		expect(insertedValues[0]?.previousEntryId).toBe(predecessor.id);
+		expect(insertedValues[0]?.createdAt).toBeDefined();
+	});
+
+	it("omits createdAt when there is no predecessor entry", async () => {
+		const insertedValues: Record<string, unknown>[] = [];
+		const fakeTx = {
+			insert: vi.fn(() => ({
+				values: vi.fn((vals: Record<string, unknown>) => {
+					insertedValues.push(vals);
+					return {
+						returning: vi.fn(async () => [{ id: vals.id ?? "entry-first", ...vals }]),
+					};
+				}),
+			})),
+		};
+
+		const store = createDatabaseClockingStore(fakeTx as never);
+		await insertChainedClockIn(
+			store,
+			{
+				...scope,
+				createdBy: "user-1",
+				actionId: "first-op-1",
+				action: { instant, utcOffsetMinutes: 0, timezone: "UTC", timezoneSource: "browser" },
+				source: { ipAddress: null, deviceInfo: "web" },
+			},
+			null,
+		);
+
+		expect(insertedValues).toHaveLength(1);
+		expect(insertedValues[0]).not.toHaveProperty("createdAt");
 	});
 });

@@ -8,7 +8,7 @@ import { organization } from "@/db/auth-schema";
 import { getOrganizationPlatformOrigins } from "@/lib/auth-domain-config";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
-import { getBrandingAction, listDomainsAction } from "../actions";
+import { getBrandingAction, getPlatformAuthConfigAction, listDomainsAction } from "../actions";
 
 async function DomainSettingsContent({
 	searchParams,
@@ -20,9 +20,10 @@ async function DomainSettingsContent({
 	const { tab } = await searchParams;
 	if (tab === "sso" || tab === "social-oauth")
 		return redirectWithLocale(`/settings/enterprise/identity-setup?tab=${tab}`);
-	const [domains, branding, organizationRecord] = await Promise.all([
+	const [domains, branding, platformAuth, organizationRecord] = await Promise.all([
 		actionData(listDomainsAction()),
 		actionData(getBrandingAction()),
+		actionData(getPlatformAuthConfigAction()),
 
 		db.query.organization.findFirst({
 			where: eq(organization.id, organizationId),
@@ -38,6 +39,7 @@ async function DomainSettingsContent({
 		<DomainsAndBrandingTabs
 			initialDomains={domains}
 			initialBranding={branding}
+			initialPlatformAuth={platformAuth}
 			organizationId={organizationId}
 			defaultUrls={{ canonical: canonicalDefaultUrl }}
 		/>

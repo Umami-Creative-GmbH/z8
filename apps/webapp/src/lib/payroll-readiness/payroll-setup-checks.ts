@@ -58,48 +58,46 @@ export async function loadPayrollSetupChecks(
 	input: LoadPayrollSetupChecksInput,
 ): Promise<PayrollSetupChecks> {
 	const { organizationId } = input;
-	const [employmentHistoryRows, exportConfigs] = await Promise.all([
-		reader.query.employeeEmploymentHistory.findMany({
-			where: and(
-				eq(employeeEmploymentHistory.organizationId, organizationId),
-				eq(employeeEmploymentHistory.reviewState, "confirmed"),
-				lte(employeeEmploymentHistory.validFrom, input.termsWindow.end),
-				or(
-					isNull(employeeEmploymentHistory.validUntil),
-					gt(employeeEmploymentHistory.validUntil, input.termsWindow.start),
-				),
+	// One after another: `reader` may be a transaction (one connection), and pg@9 refuses a query while another is executing.
+	const employmentHistoryRows = await reader.query.employeeEmploymentHistory.findMany({
+		where: and(
+			eq(employeeEmploymentHistory.organizationId, organizationId),
+			eq(employeeEmploymentHistory.reviewState, "confirmed"),
+			lte(employeeEmploymentHistory.validFrom, input.termsWindow.end),
+			or(
+				isNull(employeeEmploymentHistory.validUntil),
+				gt(employeeEmploymentHistory.validUntil, input.termsWindow.start),
 			),
-		}),
-		reader.query.payrollExportConfig.findMany({
-			where: and(
-				eq(payrollExportConfig.organizationId, organizationId),
-				eq(payrollExportConfig.isActive, true),
-			),
-		}),
-	]);
+		),
+	});
+	const exportConfigs = await reader.query.payrollExportConfig.findMany({
+		where: and(
+			eq(payrollExportConfig.organizationId, organizationId),
+			eq(payrollExportConfig.isActive, true),
+		),
+	});
 
-	const [wageMappings, identifierClashLookup] = await Promise.all([
+	const wageMappings =
 		exportConfigs.length > 0
-			? reader.query.payrollWageTypeMapping.findMany({
+			? await reader.query.payrollWageTypeMapping.findMany({
 					where: and(
 						eq(payrollWageTypeMapping.isActive, true),
 						eq(payrollWageTypeMapping.organizationId, organizationId),
 					),
 				})
-			: [],
-		// Employees an export would merge under one personnel identifier (#1198); a failed
-		// lookup must surface as unavailable, never as ready.
-		input.findIdentifierClashes(exportConfigs).then(
-			(clashes) => ({ available: true as const, clashes }),
-			(error: unknown) => {
-				logger.error(
-					{ organizationId, error },
-					"Payroll readiness could not check for shared personnel identifiers",
-				);
-				return { available: false as const, clashes: [] };
-			},
-		),
-	]);
+			: [];
+	// Employees an export would merge under one personnel identifier (#1198); a failed
+	// lookup must surface as unavailable, never as ready.
+	const identifierClashLookup = await input.findIdentifierClashes(exportConfigs).then(
+		(clashes) => ({ available: true as const, clashes }),
+		(error: unknown) => {
+			logger.error(
+				{ organizationId, error },
+				"Payroll readiness could not check for shared personnel identifiers",
+			);
+			return { available: false as const, clashes: [] };
+		},
+	);
 
 	const employeesWithEmploymentHistory = new Set(
 		employmentHistoryRows.map((row) => row.employeeId),

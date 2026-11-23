@@ -56,7 +56,7 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push: pushMock }),
 }));
 
-vi.mock("@/app/[locale]/(app)/search/actions", () => ({
+vi.mock("@/lib/app-search/actions", () => ({
 	searchAppRecordsAction: searchAppRecordsActionMock,
 }));
 
@@ -344,6 +344,41 @@ describe("AppSearch", () => {
 		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
 
 		expect(screen.getByTestId("app-search-icon-employees")).not.toBeNull();
+	});
+
+	it("renders distinct manifest icons for Missing vehicle logs and My driving licence (#1952)", () => {
+		renderAppSearch({
+			results: [
+				{
+					type: "page",
+					id: "page:team-driving",
+					title: "Missing vehicle logs",
+					href: "/team/driving",
+				},
+				{
+					type: "page",
+					id: "page:driving-licence",
+					title: "My driving licence",
+					href: "/driving-licence",
+				},
+				{
+					type: "page",
+					id: "page:travel-expenses-finance",
+					title: "Expense Finance",
+					href: "/travel-expenses/finance",
+				},
+			],
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: /^search$/i }));
+
+		const vehicleLogsIcon = screen.getByTestId("app-search-icon-page:team-driving");
+		const myLicenceIcon = screen.getByTestId("app-search-icon-page:driving-licence");
+		const expenseFinanceIcon = screen.getByTestId("app-search-icon-page:travel-expenses-finance");
+
+		expect(vehicleLogsIcon.getAttribute("class")).toContain("tabler-icon-gauge");
+		expect(myLicenceIcon.getAttribute("class")).toContain("tabler-icon-steering-wheel");
+		expect(expenseFinanceIcon.getAttribute("class")).toContain("tabler-icon-report-money");
 	});
 
 	it("orders actions before live people, teams, pages, and settings", async () => {

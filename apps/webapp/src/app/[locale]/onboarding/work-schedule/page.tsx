@@ -1,11 +1,7 @@
-import type { Metadata } from "next";
-import WorkSchedulePageClient from "./page-client";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
-export const metadata: Metadata = {
-	title: "Work schedule setup | Z8",
-	description: "Set weekly work schedule defaults for Z8 time tracking.",
-};
+export const instant = false;
 
-export default function WorkSchedulePage() {
-	return <WorkSchedulePageClient />;
+export default async function WorkSchedulePage() {
+	return redirectWithLocale("/onboarding");
 }

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { renderToReadableStream } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { CatalogSlice } from "@/tolgee/catalog-slices";
-import LocaleLayout, { viewport } from "./layout";
+import LocaleLayout, { generateStaticParams, viewport } from "./layout";
 
 vi.mock("@tolgee/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@tolgee/react")>()),
@@ -181,6 +181,10 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 describe("LocaleLayout", () => {
+	it("prerenders only the default locale at build time so other locales resolve on demand", async () => {
+		expect(await generateStaticParams()).toEqual([{ locale: "en" }]);
+	});
+
 	it("lets the page draw edge to edge so safe-area insets reach the app (#846)", () => {
 		expect(viewport).toMatchObject({
 			width: "device-width",

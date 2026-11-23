@@ -44,7 +44,7 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 const dashboard = await import("./actions");
-const wellness = await import("@/app/[locale]/(app)/wellness/actions");
+const wellness = await import("@/lib/wellness/actions");
 const { getPresenceStatus } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions"
 );

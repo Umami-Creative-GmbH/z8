@@ -1,7 +1,4 @@
-import {
-	isSupportedPayrollFormat,
-	payrollDestination,
-} from "./supported-format";
+import { isSupportedPayrollFormat, payrollDestination } from "./supported-format";
 /**
  * Payroll Export Service
  * Orchestrates the export process: data fetching, transformation, and file generation
@@ -9,11 +6,16 @@ import {
 
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import type { PayrollExportJobPersonnelIdentifier } from "@/db/schema";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import {
+	insertExportCarriedDays,
+	type PayrollCarriedDay,
+	readExportCarriedDays,
+} from "@/lib/payroll-period/carried-days";
+import { settledDaysFor } from "@/lib/payroll-period/settled-days-for";
 import {
 	insertPayrollExportWorkInput,
 	PayrollExportWorkInputIntegrityError,
@@ -36,20 +38,14 @@ import {
 	type PayrollRunSkipped,
 } from "@/lib/travel-expenses/payroll-run";
 import { notifyPayrollRunExported } from "@/lib/travel-expenses/payroll-run-notifications";
-import {
-	collectPayrollBaselineWindows,
-	insertPayrollBaseline,
-} from "./baseline-evidence";
+import { collectPayrollBaselineWindows, insertPayrollBaseline } from "./baseline-evidence";
 import type { PayrollBaselineEvidence } from "./baseline-types";
 import {
 	insertPayrollBaselineWindowInput,
 	payrollWindowsFromCollection,
 	readPayrollBaselineWindowInput,
 } from "./baseline-window-input";
-import {
-	parsePayrollLogicalDate,
-	serializePayrollLogicalDate,
-} from "./calendar-boundaries";
+import { parsePayrollLogicalDate, serializePayrollLogicalDate } from "./calendar-boundaries";
 import { workPeriodsFromCollectedInput } from "./collected-work";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
@@ -75,15 +71,10 @@ import {
 } from "./format-registry";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
-import {
-	overtimePayoutCodeFormat,
-	overtimePayoutsForFormat,
-} from "./formatters/overtime-payouts";
+import { overtimePayoutCodeFormat, overtimePayoutsForFormat } from "./formatters/overtime-payouts";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
-import {
-	employeesWithPayoutsOrExpenseLines,
-	logicalPeriod,
-} from "./payout-and-expense-employees";
+import { leaveOutSettledDays } from "./leave-out-settled-days";
+import { employeesWithPayoutsOrExpenseLines, logicalPeriod } from "./payout-and-expense-employees";
 import {
 	employeesWithoutIdentifier,
 	PayrollIdentifierChangedError,
@@ -115,10 +106,7 @@ const logger = createLogger("PayrollExportService");
  * One implementation per format in the format registry (#823), of the format's
  * kind: a format registered without one fails typechecking.
  */
-const fileFormatters: Record<
-	PayrollExportFileFormatId,
-	IPayrollExportFormatter
-> = {
+const fileFormatters: Record<PayrollExportFileFormatId, IPayrollExportFormatter> = {
 	datev_lohn: new DatevLohnFormatter(),
 	lexware_lohn: new LexwareLohnFormatter(),
 	sage_lohn: new SageLohnFormatter(),
@@ -133,9 +121,7 @@ const apiConnectors: Record<PayrollExportApiFormatId, PayrollApiConnector> = {
 /**
  * Registry of available file-based export formatters (DATEV, SAGE, etc.)
  */
-const formatters = new Map<string, IPayrollExportFormatter>(
-	Object.entries(fileFormatters),
-);
+const formatters = new Map<string, IPayrollExportFormatter>(Object.entries(fileFormatters));
 
 /**
  * Registry of available API-based exporters (Personio, etc.)
@@ -148,9 +134,7 @@ for (const connector of Object.values(apiConnectors)) {
 /**
  * Get formatter by ID
  */
-export function getFormatter(
-	formatId: string,
-): IPayrollExportFormatter | undefined {
+export function getFormatter(formatId: string): IPayrollExportFormatter | undefined {
 	return formatters.get(formatId);
 }
 
@@ -209,6 +193,12 @@ export async function createExportJob(params: {
 	 * before collection (#322). Omitted, collection runs without repair.
 	 */
 	repairActorUserId?: string | null;
+	/**
+	 * The payroll workspace's choice for settled and changed-since-settled days (#1898):
+	 * `leave_out` so they are not paid twice, or `include` to reissue a file with them.
+	 * Omitted (settings and scheduled exports), the file keeps them, as before.
+	 */
+	settledDays?: "leave_out" | "include";
 }): Promise<{
 	jobId: string;
 	isAsync: boolean;
@@ -227,23 +217,15 @@ export async function createExportJob(params: {
 	}
 
 	// Verify configuration exists
-	const configResult = await getPayrollExportConfig(
-		params.organizationId,
-		params.formatId,
-	);
+	const configResult = await getPayrollExportConfig(params.organizationId, params.formatId);
 	if (!configResult) {
 		throw new Error(`No configuration found for format: ${params.formatId}`);
 	}
 
 	// A custom field identifier (#821) is checked for every employee the export
 	// carries rows for, before the job exists, and frozen with it.
-	const identifierFieldId = payrollIdentifierCustomFieldId(
-		configResult.config.config,
-	);
-	const scopedCollection = await isPayrollWorkCollectionActive(
-		db,
-		params.organizationId,
-	);
+	const identifierFieldId = payrollIdentifierCustomFieldId(configResult.config.config);
+	const scopedCollection = await isPayrollWorkCollectionActive(db, params.organizationId);
 	const employeesWithOtherRows =
 		identifierFieldId === null
 			? []
@@ -281,8 +263,7 @@ export async function createExportJob(params: {
 	const count = collectedInput
 		? collectedInput.work.length
 		: await countWorkPeriods(params.organizationId, params.filters);
-	const syncThreshold =
-		formatter?.getSyncThreshold() ?? exporter?.getSyncThreshold() ?? 500;
+	const syncThreshold = formatter?.getSyncThreshold() ?? exporter?.getSyncThreshold() ?? 500;
 	const isAsync = count > syncThreshold;
 
 	// Serialize filters for storage
@@ -306,17 +287,14 @@ export async function createExportJob(params: {
 				requestedById: params.requestedById,
 				filters: serializedFilters,
 				personnelIdentifier: legacyIdentifier,
+				includesSettledDays: params.settledDays === "include",
+				leavesOutSettledDays: params.settledDays === "leave_out",
 				isAsync,
 				status: "pending",
 			})
 			.returning();
-		if (collectedInput)
-			await insertPayrollExportWorkInput(tx, created.id, collectedInput);
-		if (
-			collectedInput &&
-			isSupportedPayrollFormat(params.formatId) &&
-			collectedRead
-		)
+		if (collectedInput) await insertPayrollExportWorkInput(tx, created.id, collectedInput);
+		if (collectedInput && isSupportedPayrollFormat(params.formatId) && collectedRead)
 			await insertPayrollBaselineWindowInput(tx, {
 				jobId: created.id,
 				organizationId: params.organizationId,
@@ -328,10 +306,7 @@ export async function createExportJob(params: {
 		return created;
 	});
 
-	logger.info(
-		{ jobId: job.id, isAsync, workPeriodCount: count },
-		"Payroll export job created",
-	);
+	logger.info({ jobId: job.id, isAsync, workPeriodCount: count }, "Payroll export job created");
 
 	return { jobId: job.id, isAsync };
 }
@@ -351,6 +326,8 @@ export async function processExportJob(
 	downloadUrl?: string;
 	/** The uploaded file's object key. */
 	s3Key?: string;
+	/** Settled and changed-since-settled employee-days a file left out (#1898). */
+	settledDaysLeftOut?: number;
 }> {
 	logger.info({ jobId, organizationId }, "Processing payroll export job");
 
@@ -359,10 +336,7 @@ export async function processExportJob(
 		.update(payrollExportJob)
 		.set({ status: "processing", startedAt: new Date() })
 		.where(
-			and(
-				eq(payrollExportJob.id, jobId),
-				eq(payrollExportJob.organizationId, organizationId),
-			),
+			and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
 		);
 
 	try {
@@ -406,11 +380,7 @@ export async function processExportJob(
 
 		// A job collected under scoped collection reuses its stored input, including on
 		// recovery; changed work is never reread for it.
-		const storedInput = await readPayrollExportWorkInput(
-			db,
-			job.organizationId,
-			jobId,
-		);
+		const storedInput = await readPayrollExportWorkInput(db, job.organizationId, jobId);
 		if (
 			storedInput &&
 			(storedInput.scope.startDate !== job.filters.dateRange.start ||
@@ -424,10 +394,7 @@ export async function processExportJob(
 			? [
 					...new Set([
 						...(storedInput?.scope.employeeIds ?? []),
-						...(await resolvePayrollRunEmployeeIds(
-							job.organizationId,
-							filters,
-						)),
+						...(await resolvePayrollRunEmployeeIds(job.organizationId, filters)),
 					]),
 				].sort()
 			: [];
@@ -444,9 +411,7 @@ export async function processExportJob(
 				employeeWindowsUnavailable = true;
 				baselineWindows = [];
 			} else {
-				const frozenIds = new Set(
-					frozen?.map((window) => window.employeeId) ?? [],
-				);
+				const frozenIds = new Set(frozen?.map((window) => window.employeeId) ?? []);
 				const current = await collectPayrollBaselineWindows(db, {
 					organizationId: job.organizationId,
 					employeeIds: baselineEmployeeIds.filter((id) => !frozenIds.has(id)),
@@ -458,17 +423,15 @@ export async function processExportJob(
 			}
 		}
 		// Fetch data
-		const [collectedWorkPeriods, fetchedAbsences, mappings] = await Promise.all(
-			[
-				storedInput
-					? workPeriodsFromCollectedInput(storedInput)
-					: fetchWorkPeriodsForExport(job.organizationId, filters),
-				fetchAbsencesForExport(job.organizationId, filters, {
-					canonicalReadiness: storedInput ? "absences" : "cutover",
-				}),
-				getWageTypeMappings(job.organizationId),
-			],
-		);
+		const [collectedWorkPeriods, fetchedAbsences, mappings] = await Promise.all([
+			storedInput
+				? workPeriodsFromCollectedInput(storedInput)
+				: fetchWorkPeriodsForExport(job.organizationId, filters),
+			fetchAbsencesForExport(job.organizationId, filters, {
+				canonicalReadiness: storedInput ? "absences" : "cutover",
+			}),
+			getWageTypeMappings(job.organizationId),
+		]);
 
 		// A custom field identifier (#821): the run's frozen values, never the employee number.
 		const identify = personnelIdentifierResolver({
@@ -520,10 +483,7 @@ export async function processExportJob(
 						: `${apiResult.failedRecords} of ${apiResult.totalRecords} records failed to sync`,
 				})
 				.where(
-					and(
-						eq(payrollExportJob.id, jobId),
-						eq(payrollExportJob.organizationId, organizationId),
-					),
+					and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
 				);
 
 			logger.info(
@@ -543,11 +503,38 @@ export async function processExportJob(
 		// BRANCH: File-based formatter (DATEV, etc.)
 		if (formatter) {
 			const formatId = job.config.formatId;
+			const fileEmployeeIds = await resolvePayrollRunEmployeeIds(job.organizationId, filters);
+			// The employee-days the file carries (#1899), recorded with the completed job.
+			const periodDays = await readExportCarriedDays({
+				organizationId: job.organizationId,
+				startDate: job.filters.dateRange.start,
+				endDate: job.filters.dateRange.end,
+				employeeIds: fileEmployeeIds,
+				collectedWork: storedInput?.work,
+			});
+			// A file the workspace prepares leaves settled and changed-since-settled days
+			// out of the file and of what it carried (#1898), unless the officer chose to
+			// include them. Settings and scheduled exports keep them, as before.
+			const {
+				workPeriods: fileWorkPeriods,
+				absences: fileAbsences,
+				carriedDays,
+				settledDaysLeftOut,
+			} = await withoutSettledDays({
+				organizationId: job.organizationId,
+				leavesOutSettledDays: job.leavesOutSettledDays,
+				period: {
+					startDate: job.filters.dateRange.start,
+					endDate: job.filters.dateRange.end,
+				},
+				employeeIds: fileEmployeeIds,
+				workPeriods,
+				absences,
+				periodDays,
+			});
 			// Overtime payouts (#1001), read now like absences; the formatter maps them.
 			const overtimePayouts = overtimePayoutCodeFormat(formatId)
-				? await identify.rows(
-						await fetchOvertimePayoutsForExport(job.organizationId, filters),
-					)
+				? await identify.rows(await fetchOvertimePayoutsForExport(job.organizationId, filters))
 				: [];
 			const payrollRun =
 				isExpensePayrollFormat(formatId) &&
@@ -564,12 +551,7 @@ export async function processExportJob(
 					organizationId: job.organizationId,
 					formatId,
 					config: job.config.config,
-					rows: [
-						...workPeriods,
-						...absences,
-						...overtimePayouts,
-						...expenseLines,
-					],
+					rows: [...workPeriods, ...absences, ...overtimePayouts, ...expenseLines],
 				});
 			// Awaited inside the try: a failed delivery must reach the catch that marks the job failed.
 			if (!payrollRun) {
@@ -578,8 +560,8 @@ export async function processExportJob(
 					db,
 					job,
 					formatter.transform(
-						workPeriods,
-						absences,
+						fileWorkPeriods,
+						fileAbsences,
 						[],
 						mappings,
 						job.config.config as Record<string, unknown>,
@@ -589,15 +571,14 @@ export async function processExportJob(
 					baselineWindows,
 					baselineEmployeeIds,
 					employeeWindowsUnavailable,
+					carriedDays,
+					settledDaysLeftOut,
 				);
 			}
 
 			// A payroll run (#852): the inclusions commit with the finished job, or not at all,
 			// so a failed export never holds reports and earlier runs keep theirs.
-			const employeeIds = await resolvePayrollRunEmployeeIds(
-				job.organizationId,
-				filters,
-			);
+			const employeeIds = await resolvePayrollRunEmployeeIds(job.organizationId, filters);
 			let skipped: PayrollRunSkipped[] = [];
 			const exported = await db.transaction(async (tx) => {
 				const inclusion = await includeReportsInPayrollRun(tx, {
@@ -631,8 +612,8 @@ export async function processExportJob(
 					tx,
 					job,
 					formatter.transform(
-						workPeriods,
-						absences,
+						fileWorkPeriods,
+						fileAbsences,
 						expenseLines,
 						mappings,
 						job.config.config as Record<string, unknown>,
@@ -642,6 +623,8 @@ export async function processExportJob(
 					baselineWindows,
 					baselineEmployeeIds,
 					employeeWindowsUnavailable,
+					carriedDays,
+					settledDaysLeftOut,
 				);
 			});
 			// After the commit (#855): officers learn of the run and of the reports it left out.
@@ -656,12 +639,8 @@ export async function processExportJob(
 
 		throw new Error("Neither formatter nor exporter available");
 	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : "Unknown error";
-		logger.error(
-			{ jobId, organizationId, error: errorMessage },
-			"Payroll export job failed",
-		);
+		const errorMessage = error instanceof Error ? error.message : "Unknown error";
+		logger.error({ jobId, organizationId, error: errorMessage }, "Payroll export job failed");
 
 		await markPayrollExportJobFailed({ jobId, organizationId, errorMessage });
 
@@ -674,9 +653,7 @@ export async function processExportJob(
  * `storeFile` asks for it (#1008), otherwise returned inline. `database` is
  * the payroll run's transaction when the file carries expense lines (#852).
  */
-type ExportDatabase =
-	| typeof db
-	| Parameters<Parameters<typeof db.transaction>[0]>[0];
+type ExportDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * The duplicate-identifier check of a format (#1198, #1199): refuses the rows
@@ -703,6 +680,63 @@ async function refuseDuplicatePersonnelIdentifiersOfFormat(
 	});
 }
 
+/**
+ * A file's work, absences and carried days without the employee-days that have an
+ * active settlement (#1898), and how many such days it left out. A file that does not
+ * leave them out (a reissue the officer chose, a settings or scheduled export) keeps
+ * everything. Overtime payouts and expense lines keep their own safeguards and are never
+ * touched.
+ */
+async function withoutSettledDays(input: {
+	organizationId: string;
+	leavesOutSettledDays: boolean;
+	period: { startDate: string; endDate: string };
+	employeeIds: readonly string[];
+	workPeriods: WorkPeriodData[];
+	absences: AbsenceData[];
+	periodDays: PayrollCarriedDay[];
+}): Promise<{
+	workPeriods: WorkPeriodData[];
+	absences: AbsenceData[];
+	carriedDays: PayrollCarriedDay[];
+	settledDaysLeftOut: number;
+}> {
+	const unchanged = {
+		workPeriods: input.workPeriods,
+		absences: input.absences,
+		carriedDays: input.periodDays,
+		settledDaysLeftOut: 0,
+	};
+	if (!input.leavesOutSettledDays) return unchanged;
+	const employeeIds = [
+		...new Set([
+			...input.employeeIds,
+			...input.workPeriods.map((row) => row.employeeId),
+			...input.absences.map((row) => row.employeeId),
+		]),
+	];
+	const settled = await settledDaysFor(input.organizationId, { employeeIds }, input.period);
+	if (settled.length === 0) return unchanged;
+	// Days are cut by each employee's timezone as the period module reads it.
+	const timezones = new Map([
+		...settled.map((day) => [day.employeeId, day.timezone] as const),
+		...input.periodDays.map((day) => [day.employeeId, day.timezone] as const),
+	]);
+	const settledKeys = new Set(settled.map((day) => `${day.employeeId}:${day.date}`));
+	return {
+		...leaveOutSettledDays({
+			workPeriods: input.workPeriods,
+			absences: input.absences,
+			settledDays: settled,
+			timezones,
+		}),
+		carriedDays: input.periodDays.filter(
+			(day) => !settledKeys.has(`${day.employeeId}:${day.date}`),
+		),
+		settledDaysLeftOut: settled.length,
+	};
+}
+
 async function writeFileExport(
 	database: ExportDatabase,
 	job: {
@@ -718,7 +752,14 @@ async function writeFileExport(
 	baselineWindows?: PayrollBaselineEvidence["employeeWindows"],
 	baselineEmployeeIds: string[] = [],
 	employeeWindowsUnavailable?: true,
-): Promise<{ result?: ExportResult; downloadUrl?: string; s3Key?: string }> {
+	carriedDays: readonly PayrollCarriedDay[] = [],
+	settledDaysLeftOut = 0,
+): Promise<{
+	result?: ExportResult;
+	downloadUrl?: string;
+	s3Key?: string;
+	settledDaysLeftOut: number;
+}> {
 	const contentBuffer =
 		typeof exportResult.content === "string"
 			? Buffer.from(exportResult.content, exportResult.encoding)
@@ -728,12 +769,7 @@ async function writeFileExport(
 	let downloadUrl: string | undefined;
 	if (job.isAsync || storeFile) {
 		s3Key = `payroll-exports/${job.organizationId}/${job.id}/${attemptId}/${exportResult.fileName}`;
-		await uploadExport(
-			job.organizationId,
-			s3Key,
-			contentBuffer,
-			exportResult.mimeType,
-		);
+		await uploadExport(job.organizationId, s3Key, contentBuffer, exportResult.mimeType);
 		downloadUrl = await getPresignedUrl(job.organizationId, s3Key);
 	}
 	const completedAt = new Date();
@@ -753,11 +789,7 @@ async function writeFileExport(
 					version: 1,
 					attemptId,
 					fileDigest: createHash("sha256").update(contentBuffer).digest("hex"),
-					destination: payrollDestination(
-						job.config.formatId,
-						job.config.id,
-						config,
-					),
+					destination: payrollDestination(job.config.formatId, job.config.id, config),
 					config: {
 						mandantennummer: config.mandantennummer,
 						beraternummer: config.beraternummer,
@@ -768,8 +800,7 @@ async function writeFileExport(
 						outputFormat: config.outputFormat,
 						...(config.personnelNumberCustomFieldId
 							? {
-									personnelNumberCustomFieldId:
-										config.personnelNumberCustomFieldId,
+									personnelNumberCustomFieldId: config.personnelNumberCustomFieldId,
 								}
 							: {}),
 					},
@@ -785,18 +816,31 @@ async function writeFileExport(
 				},
 			});
 		}
+		// What the file carried commits with its completion (#1899), so a confirmation
+		// as paid never settles days of an attempt that failed.
+		await insertExportCarriedDays(tx, {
+			organizationId: job.organizationId,
+			jobId: job.id,
+			days: carriedDays,
+		});
 		await tx
 			.update(payrollExportJob)
 			.set({
 				status: "completed",
 				fileName: exportResult.fileName,
 				...(s3Key
-					? { s3Key, expiresAt: DateTime.now().plus({ days: 30 }).toJSDate() }
+					? {
+							s3Key,
+							expiresAt: dateFromInstant(
+								systemClock.nowInstant().toZonedDateTimeISO("UTC").add({ days: 30 }).toInstant(),
+							),
+						}
 					: {}),
 				fileSizeBytes: contentBuffer.length,
 				workPeriodCount: exportResult.metadata.workPeriodCount,
 				employeeCount: exportResult.metadata.employeeCount,
 				unmappedOvertimePayouts: exportResult.metadata.unmappedOvertimePayouts,
+				settledDaysLeftOut,
 				completedAt,
 				errorMessage: null,
 			})
@@ -808,8 +852,12 @@ async function writeFileExport(
 			);
 	});
 	return job.isAsync && !storeFile
-		? { downloadUrl, s3Key }
-		: { ...(s3Key ? { downloadUrl, s3Key } : {}), result: exportResult };
+		? { downloadUrl, s3Key, settledDaysLeftOut }
+		: {
+				...(s3Key ? { downloadUrl, s3Key } : {}),
+				result: exportResult,
+				settledDaysLeftOut,
+			};
 }
 /**
  * Scoped collection for an export (#322): eligible repair, then readiness and
@@ -828,11 +876,8 @@ async function collectExportWorkInput(params: {
 	input: CollectedPayrollWorkInput;
 	employeeTimezones: Record<string, string>;
 }> {
-	const startDate = params.filters.dateRange.start.toISODate();
-	const endDate = params.filters.dateRange.end.toISODate();
-	if (!startDate || !endDate) {
-		throw new Error("Invalid payroll export date range");
-	}
+	const startDate = params.filters.dateRange.start.toString();
+	const endDate = params.filters.dateRange.end.toString();
 
 	const { collection, repair } = await collectPayrollWork(db, {
 		organizationId: params.organizationId,
@@ -856,10 +901,7 @@ async function collectExportWorkInput(params: {
 			},
 			"Payroll export blocked by uncertain work in the requested scope",
 		);
-		throw new PayrollWorkCollectionBlockedError(
-			params.organizationId,
-			collection.blockers,
-		);
+		throw new PayrollWorkCollectionBlockedError(params.organizationId, collection.blockers);
 	}
 
 	logger.info(
@@ -889,13 +931,9 @@ async function employeesWithNonWorkRows(input: {
 	filters: PayrollExportFilters;
 	scopedCollection: boolean;
 }): Promise<string[]> {
-	const absences = await fetchAbsencesForExport(
-		input.organizationId,
-		input.filters,
-		{
-			canonicalReadiness: input.scopedCollection ? "absences" : "cutover",
-		},
-	);
+	const absences = await fetchAbsencesForExport(input.organizationId, input.filters, {
+		canonicalReadiness: input.scopedCollection ? "absences" : "cutover",
+	});
 	const employeeIds = new Set(absences.map((absence) => absence.employeeId));
 	for (const employeeId of await employeesWithPayoutsOrExpenseLines(input)) {
 		employeeIds.add(employeeId);
@@ -927,10 +965,9 @@ async function freezeLegacyPersonnelIdentifier(input: {
 		asOf: parsePlainDate(endDate),
 	});
 	const missing = employeesWithoutIdentifier(
-		[
-			...workPeriods.map((period) => period.employeeId),
-			...input.employeesWithOtherRows,
-		].map((employeeId) => ({ employeeId })),
+		[...workPeriods.map((period) => period.employeeId), ...input.employeesWithOtherRows].map(
+			(employeeId) => ({ employeeId }),
+		),
 		values,
 	);
 	if (missing.length > 0) {
@@ -959,10 +996,7 @@ function personnelIdentifierResolver(input: {
 	function frozenValues(): Record<string, string> {
 		if (customFieldId === null) return {};
 		if (input.frozen?.customFieldId !== customFieldId) {
-			throw new PayrollIdentifierChangedError(
-				input.jobId,
-				input.organizationId,
-			);
+			throw new PayrollIdentifierChangedError(input.jobId, input.organizationId);
 		}
 		return input.frozen.values;
 	}
@@ -1010,10 +1044,7 @@ export async function markPayrollExportJobFailed({
 			completedAt: new Date(),
 		})
 		.where(
-			and(
-				eq(payrollExportJob.id, jobId),
-				eq(payrollExportJob.organizationId, organizationId),
-			),
+			and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
 		);
 }
 
@@ -1144,6 +1175,8 @@ export async function getExportJobHistory(
 		filters: job.filters,
 		payrollRunIncludedReports: included.get(job.id) ?? 0,
 		unmappedOvertimePayoutCount: job.unmappedOvertimePayouts.length,
+		settledDaysLeftOut: job.settledDaysLeftOut,
+		includesSettledDays: job.includesSettledDays,
 	}));
 }
 

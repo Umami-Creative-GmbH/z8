@@ -213,6 +213,13 @@ export const queryKeys = {
 		/** How many employees an export of the period would cover (#1001). */
 		exportScope: (request: { startDate: string; endDate: string }) =>
 			["payroll", "export-scope", request.startDate, request.endDate] as const,
+		/** Completed exports the reader may confirm as paid (#1899). */
+		exportsToConfirm: () => ["payroll", "exports-to-confirm"] as const,
+		/** Scoped payroll export job history (#1957). */
+		exportHistory: () => ["payroll", "export-history"] as const,
+		/** Organization-level payroll readiness checks for org admins (#1957). */
+		readiness: (request: { startDate: string; endDate: string }) =>
+			["payroll", "readiness", request.startDate, request.endDate] as const,
 		/** Overtime payouts an export of the period, format and employees would leave out (#1001). */
 		overtimePayoutReadiness: (request: {
 			startDate: string;
@@ -226,6 +233,49 @@ export const queryKeys = {
 				request.startDate,
 				request.endDate,
 				request.formatId,
+				request.employeeIds?.join(",") ?? "scope",
+			] as const,
+		/** Every payroll period read, to refetch them all after a settlement change. */
+		periods: () => ["payroll", "period"] as const,
+		/**
+		 * The payroll period read (#1891) behind the Days and Absences tabs. `refreshedAt`
+		 * is the summary's generation time, so a workspace refresh refetches it too.
+		 */
+		period: (request: {
+			startDate: string;
+			endDate: string;
+			employeeIds?: readonly string[];
+			refreshedAt: string;
+		}) =>
+			[
+				"payroll",
+				"period",
+				request.startDate,
+				request.endDate,
+				request.employeeIds?.join(",") ?? "scope",
+				request.refreshedAt,
+			] as const,
+		/** The records of one employee-day, for the Days tab's side panel (#1894). */
+		dayRecords: (request: { employeeId: string; date: string; refreshedAt: string }) =>
+			["payroll", "day-records", request.employeeId, request.date, request.refreshedAt] as const,
+		/** Every employee-day's settlement history, to refetch them after a settlement change. */
+		daySettlementHistories: () => ["payroll", "day-settlement-history"] as const,
+		/** The settlement history of one employee-day, for the side panel (#1897). */
+		daySettlementHistory: (request: { employeeId: string; date: string }) =>
+			["payroll", "day-settlement-history", request.employeeId, request.date] as const,
+		/** Every settlement history of a period, to refetch them after a settlement change. */
+		settlementHistories: () => ["payroll", "settlement-history"] as const,
+		/** The settlement history of the workspace's period and scope, for the Settlement tab. */
+		settlementHistory: (request: {
+			startDate: string;
+			endDate: string;
+			employeeIds?: readonly string[];
+		}) =>
+			[
+				"payroll",
+				"settlement-history",
+				request.startDate,
+				request.endDate,
 				request.employeeIds?.join(",") ?? "scope",
 			] as const,
 	},
@@ -299,6 +349,27 @@ export const queryKeys = {
 				lastWorkingDay,
 				replacementEmployeeId,
 			] as const,
+		offboardingPastPreview: (
+			orgId: string,
+			employeeId: string,
+			lastWorkingDay: string,
+			replacementEmployeeId: string | null,
+		) =>
+			[
+				"employees",
+				orgId,
+				"offboarding",
+				employeeId,
+				"past-preview",
+				lastWorkingDay,
+				replacementEmployeeId,
+			] as const,
+		offboardingReplacementSearch: (
+			orgId: string,
+			excludeEmployeeId: string | null,
+			search: string,
+		) =>
+			["employees", orgId, "offboarding", "replacement-search", excludeEmployeeId, search] as const,
 	},
 
 	// Report share links (#806)
@@ -769,8 +840,12 @@ export const queryKeys = {
 		all: ["compliance"] as const,
 		clockScope: (userId: string | null, organizationId: string | null, employeeId: string | null) =>
 			["compliance", "clock", userId, organizationId, employeeId] as const,
-		clock: (userId: string | null, organizationId: string | null, employeeId: string | null, mode: "idle" | "active") =>
-			["compliance", "clock", userId, organizationId, employeeId, mode] as const,
+		clock: (
+			userId: string | null,
+			organizationId: string | null,
+			employeeId: string | null,
+			mode: "idle" | "active",
+		) => ["compliance", "clock", userId, organizationId, employeeId, mode] as const,
 		// Schedule compliance warnings for scheduler publish flow
 		scheduleWarnings: (orgId: string, dateRange: { startDate: string; endDateExclusive: string }) =>
 			["compliance", "schedule-warnings", orgId, dateRange] as const,

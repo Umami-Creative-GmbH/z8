@@ -2,7 +2,11 @@
 
 import { IconEdit, IconLoader2, IconPlus, IconUserOff } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { EmployeeMultiSelect, type SelectableEmployee } from "@/components/employee-select";
+import {
+	EmployeeMultiSelect,
+	type SelectableEmployee,
+} from "@/components/employee-select";
+import { toSelectableEmployee as buildSelectableEmployee } from "@/components/employee-select/to-selectable-employee";
 import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import {
 	AlertDialog,
@@ -47,20 +51,7 @@ export function toSelectableEmployee(
 	person: GrantPersonOption,
 	{ isActive, formerSince }: { isActive: boolean; formerSince?: string | null },
 ): SelectableEmployee {
-	return {
-		id: person.id,
-		userId: person.id,
-		firstName: null,
-		lastName: null,
-		pronouns: null,
-		position: null,
-		role: "employee",
-		isActive,
-		...(!isActive && formerSince !== undefined ? { formerSince } : {}),
-		teamId: null,
-		user: { id: person.id, name: person.name, email: person.email, image: null },
-		team: null,
-	};
+	return buildSelectableEmployee(person, { isActive, formerSince });
 }
 
 function toggleId(values: string[], id: string, checked: boolean): string[] {

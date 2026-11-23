@@ -17,6 +17,7 @@ export type AuditRecord = {
 	organizationId: string;
 	action: AuditAction;
 	actorUserId: string;
+	actorEmail?: string;
 	targetType: NonNullable<AuditLogEntry["targetType"]>;
 	targetId: string;
 	employeeId?: string | null;
@@ -37,6 +38,10 @@ export class AuditTrail {
 
 	async record(tx: AuditInsertClient, record: AuditRecord): Promise<void> {
 		const timestamp = new Date();
+		const metadata =
+			record.actorEmail === undefined
+				? record.metadata
+				: { ...record.metadata, actorEmail: record.actorEmail };
 		await tx.insert(auditLog).values({
 			organizationId: record.organizationId,
 			entityType: record.targetType,
@@ -45,7 +50,7 @@ export class AuditTrail {
 			performedBy: record.actorUserId,
 			employeeId: record.employeeId ?? null,
 			changes: record.changes ? JSON.stringify(record.changes) : null,
-			metadata: record.metadata ? JSON.stringify(record.metadata) : null,
+			metadata: metadata ? JSON.stringify(metadata) : null,
 			ipAddress: record.ipAddress ?? null,
 			userAgent: record.userAgent ?? null,
 			timestamp,
@@ -53,6 +58,7 @@ export class AuditTrail {
 		this.#committedLater.push({
 			action: record.action,
 			actorId: record.actorUserId,
+			actorEmail: record.actorEmail,
 			employeeId: record.employeeId ?? undefined,
 			targetId: record.targetId,
 			targetType: record.targetType,

@@ -43,10 +43,14 @@ vi.mock("@marsidev/react-turnstile", () => ({
 		onError: () => void;
 		onExpire: () => void;
 		onTimeout: () => void;
+		onBeforeInteractive?: () => void;
 	}) => {
 		useImperativeHandle(props.ref, () => ({ reset: mocks.reset }));
 		return (
 			<div>
+				<button type="button" onClick={props.onBeforeInteractive}>
+					Challenge needs interaction
+				</button>
 				<button type="button" onClick={() => props.onSuccess("unit-challenge-one")}>
 					Complete challenge
 				</button>
@@ -140,14 +144,33 @@ describe("current-domain sign-in journey", () => {
 		vi.useRealTimers();
 	});
 
-	it("explains required verification and offers a real-widget retry after timeout", async () => {
+	it("keeps background verification out of sight until it needs the person", () => {
+		const view = arrival();
+		const verification = () => view.container.querySelector("[data-state]");
+		expect(verification()?.getAttribute("data-state")).toBe("hidden");
+		expect(screen.queryByRole("status")).toBeNull();
+		expect(screen.queryByRole("button", { name: "Retry verification" })).toBeNull();
+		challenge();
+		expect(verification()?.getAttribute("data-state")).toBe("hidden");
+		expect(screen.queryByRole("status")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Challenge expiry" }));
+		expect(verification()?.getAttribute("data-state")).toBe("hidden");
+		expect(screen.queryByRole("status")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Challenge needs interaction" }));
+		expect(verification()?.getAttribute("data-state")).toBe("visible");
+		expect(screen.queryByRole("status")).toBeNull();
+		challenge();
+		expect(verification()?.getAttribute("data-state")).toBe("hidden");
+	});
+
+	it("explains failed verification and offers a real-widget retry after timeout", async () => {
 		arrival();
 		expect(screen.getByRole("button", { name: "Login", exact: true })).toHaveProperty(
 			"disabled",
 			true,
 		);
-		expect(screen.getByRole("status").textContent).toContain("verification");
 		fireEvent.click(screen.getByRole("button", { name: "Challenge timeout" }));
+		expect(screen.getByRole("status").textContent).toContain("Verification timed out");
 		fireEvent.click(screen.getByRole("button", { name: "Retry verification" }));
 		expect(mocks.reset).toHaveBeenCalled();
 		expect(mocks.email).not.toHaveBeenCalled();
@@ -217,21 +240,24 @@ describe("current-domain sign-in journey", () => {
 		});
 	});
 
-	it.each(["Challenge error", "Challenge expiry", "Challenge timeout"])(
-		"invalidates a token after %s and requires a fresh completion",
-		async (event) => {
-			arrival();
-			credentials();
-			challenge();
-			fireEvent.click(screen.getByRole("button", { name: event }));
-			expect(screen.getByRole("button", { name: "Login", exact: true })).toHaveProperty(
-				"disabled",
-				true,
-			);
-			expect(screen.getByRole("status").textContent).toMatch(/try again/);
-			expect(mocks.email).not.toHaveBeenCalled();
-		},
-	);
+	it.each([
+		["Challenge error", true],
+		["Challenge expiry", false],
+		["Challenge timeout", true],
+	])("invalidates a token after %s and requires a fresh completion", async (event, explained) => {
+		arrival();
+		credentials();
+		challenge();
+		fireEvent.click(screen.getByRole("button", { name: event }));
+		expect(screen.getByRole("button", { name: "Login", exact: true })).toHaveProperty(
+			"disabled",
+			true,
+		);
+		if (explained) expect(screen.getByRole("status").textContent).toMatch(/try again/);
+		// An expired token re-verifies in the background, so nothing is shown.
+		else expect(screen.queryByRole("status")).toBeNull();
+		expect(mocks.email).not.toHaveBeenCalled();
+	});
 
 	it.each(["success", "refusal", "rejection"])(
 		"ignores a late email %s after domain policy changes",
@@ -449,7 +475,7 @@ describe("current-domain sign-in journey", () => {
 		await act(async () => {});
 		expect(mocks.email).not.toHaveBeenCalled();
 	});
-	it("keeps the configured SSO method and exact canonical callback payload", async () => {
+	it("uses the domain's button label and icon while signing in through the configured SSO provider", async () => {
 		mocks.search = new URLSearchParams({ callbackUrl: "/calendar" });
 		arrival({
 			...domain,
@@ -458,11 +484,15 @@ describe("current-domain sign-in journey", () => {
 				passkeyEnabled: false,
 				ssoEnabled: true,
 				ssoProviderId: "unit-sso",
+				ssoButtonLabel: "Mit Microsoft anmelden",
+				ssoButtonIcon: "microsoft",
 				socialProvidersEnabled: [],
 			},
 		});
 		expect(screen.queryByLabelText("Email")).toBeNull();
-		fireEvent.click(screen.getByRole("button", { name: "Sign in with SSO" }));
+		const button = screen.getByRole("button", { name: "Mit Microsoft anmelden" });
+		expect(button.querySelector(".tabler-icon-brand-windows")).toBeTruthy();
+		fireEvent.click(button);
 		await waitFor(() =>
 			expect(mocks.sso).toHaveBeenCalledWith({
 				providerId: "unit-sso",
@@ -471,9 +501,16 @@ describe("current-domain sign-in journey", () => {
 		);
 		expect(mocks.email).not.toHaveBeenCalled();
 	});
+	it("hides the sign-up link where registration is off (#1885)", () => {
+		arrival({ ...domain, authConfig: { ...DEFAULT_AUTH_CONFIG, registrationEnabled: false } });
+		expect(screen.getByLabelText("Email")).toBeTruthy();
+		expect(screen.queryByRole("link", { name: "Sign up" })).toBeNull();
+	});
 	it("reports missing SSO configuration without invoking a provider", async () => {
 		arrival({ ...domain, authConfig: { ...DEFAULT_AUTH_CONFIG, ssoEnabled: true } });
-		fireEvent.click(screen.getByRole("button", { name: "Sign in with SSO" }));
+		const button = screen.getByRole("button", { name: "Sign in with SSO" });
+		expect(button.querySelector(".tabler-icon-fingerprint")).toBeTruthy();
+		fireEvent.click(button);
 		expect(await screen.findByText("SSO is not configured for this domain")).toBeTruthy();
 		expect(mocks.sso).not.toHaveBeenCalled();
 	});

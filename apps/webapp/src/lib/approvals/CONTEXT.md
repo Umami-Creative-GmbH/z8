@@ -44,11 +44,23 @@ _Avoid_: route (unqualified; Time Tracking's scope routing is a different thing)
 Working out approval routes without starting a workflow or writing a request, by the same rules a submission applies. Where the outcome depends on the request itself (how far back it reaches, its amount, category or items), it shows the route for when approval is needed rather than guessing a skip.
 _Avoid_: dry run, simulation
 
+**Shift request decider**:
+A manager or admin on the current roster at the instant, who may approve or reject shift requests (swaps and pickups), except their own (ADR-0004). The pending shift request list and the decision check use this one rule.
+_Avoid_: shift approver, shift manager
+
 **Prospective requester**:
 Someone who is not an employee yet, previewed as a member of a team with no managers, groups or account of their own.
 _Avoid_: invitee (Organization's word for how they arrive), synthetic employee
 
 ### Deciding
+
+**Approval inbox**:
+The single workspace (`/approvals/inbox`) where authorized approvers review and decide pending requests across all supported approval kinds, including absences, absence change requests, time approvals, expense reports, earlier expense claims, period submissions, and ArbZG compliance exceptions.
+_Avoid_: legacy approvals page, approvals workspace, compliance settings queue
+
+**Compliance exception approval**:
+A manager or compliance-manager decision on an employee's ArbZG working-time or rest-period waiver (`compliance_exception`), surfaced in the Approval inbox via a dedicated adapter with deliberate single-item review, required rejection reason, and no deputy covering (ADR-0005).
+_Avoid_: compliance settings, ArbZG settings queue
 
 **Time approval**:
 An approval of one of the three time kinds, each about one work period: a time correction, a manual time submission or a policy clock-out.

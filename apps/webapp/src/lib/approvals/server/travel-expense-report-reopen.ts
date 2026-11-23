@@ -254,25 +254,32 @@ async function evaluateReopen(
 	// take its approved delta out of that account, so it needs a further
 	// adjustment instead.
 	const settledReportIds = adjustment ? [reportId, adjustment.originalReportId] : [reportId];
-	const [reimbursed, exported] =
-		approvalRecorded && authorized
-			? await Promise.all([
-					Promise.all(
-						settledReportIds.map((id) =>
-							hasRecordedSettlement(database, { organizationId, source: { type: "report", id } }),
-						),
-					).then((found) => found.some(Boolean)),
-					Promise.all([
-						...settledReportIds.map((id) =>
-							loadTravelExpenseReportExportState(database, { organizationId, reportId: id }).then(
-								(state) => state.exported,
-							),
-						),
-						// A payroll run's file carries it like an export (#853).
-						isCarriedByPayrollRun(database, { organizationId, reportIds: settledReportIds }),
-					]).then((found) => found.some(Boolean)),
-				])
-			: [false, false];
+	let reimbursed = false;
+	let exported = false;
+	if (approvalRecorded && authorized) {
+		// One after another: `database` may be a transaction, which is one connection,
+		// and pg@9 refuses a query while another is executing.
+		const settled: boolean[] = [];
+		for (const id of settledReportIds) {
+			settled.push(
+				await hasRecordedSettlement(database, { organizationId, source: { type: "report", id } }),
+			);
+		}
+		reimbursed = settled.some(Boolean);
+		const carried: boolean[] = [];
+		for (const id of settledReportIds) {
+			const state = await loadTravelExpenseReportExportState(database, {
+				organizationId,
+				reportId: id,
+			});
+			carried.push(state.exported);
+		}
+		// A payroll run's file carries it like an export (#853).
+		carried.push(
+			await isCarriedByPayrollRun(database, { organizationId, reportIds: settledReportIds }),
+		);
+		exported = carried.some(Boolean);
+	}
 	return {
 		report,
 		revision,

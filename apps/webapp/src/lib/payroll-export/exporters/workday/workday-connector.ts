@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { isPrivateIP, resolveAndValidateUrl } from "@/lib/webhooks/url-validation";
 import {
 	CUSTOM_FIELD_IDENTIFIER,
@@ -228,8 +228,8 @@ export class WorkdayConnector implements IPayrollExporter {
 					await client.createAttendance(token.accessToken, {
 						workerId: worker.id,
 						sourceId: period.id,
-						startDate: period.startTime.toISODate() ?? "",
-						endDate: (period.endTime ?? period.startTime).toISODate() ?? "",
+						startDate: period.startTime.toPlainDate().toString(),
+						endDate: (period.endTime ?? period.startTime).toPlainDate().toString(),
 						hours: Number(((period.durationMinutes ?? 0) / 60).toFixed(2)),
 						projectName: period.projectName,
 						categoryName: period.workCategoryName,
@@ -419,36 +419,37 @@ export class WorkdayConnector implements IPayrollExporter {
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
 	): { start: string; end: string } {
-		let start: DateTime | null = null;
-		let end: DateTime | null = null;
+		let start: PlainDate | null = null;
+		let end: PlainDate | null = null;
 
 		for (const period of workPeriods) {
-			if (!start || period.startTime < start) {
-				start = period.startTime;
+			const periodStart = period.startTime.toPlainDate();
+			if (!start || comparePlainDates(periodStart, start) < 0) {
+				start = periodStart;
 			}
 
-			const periodEnd = period.endTime ?? period.startTime;
-			if (!end || periodEnd > end) {
+			const periodEnd = (period.endTime ?? period.startTime).toPlainDate();
+			if (!end || comparePlainDates(periodEnd, end) > 0) {
 				end = periodEnd;
 			}
 		}
 
 		for (const absence of absences) {
-			const absenceStart = DateTime.fromISO(absence.startDate);
-			const absenceEnd = DateTime.fromISO(absence.endDate);
+			const absenceStart = parsePlainDate(absence.startDate);
+			const absenceEnd = parsePlainDate(absence.endDate);
 
-			if (!start || absenceStart < start) {
+			if (!start || comparePlainDates(absenceStart, start) < 0) {
 				start = absenceStart;
 			}
 
-			if (!end || absenceEnd > end) {
+			if (!end || comparePlainDates(absenceEnd, end) > 0) {
 				end = absenceEnd;
 			}
 		}
 
 		return {
-			start: start?.toISODate() ?? "",
-			end: end?.toISODate() ?? "",
+			start: start?.toString() ?? "",
+			end: end?.toString() ?? "",
 		};
 	}
 

@@ -14,6 +14,7 @@ export async function reportDrivingImpedimentAction(input: unknown) {
 			input,
 		);
 		revalidatePath("/driving-licence");
+		revalidatePath("/team/driving-licence", "layout");
 		revalidatePath("/settings/driving-licence");
 		return { success: true as const, data };
 	} catch {
@@ -50,6 +51,7 @@ export async function reinstateDrivingAuthorizationAction(input: unknown) {
 			input,
 		);
 		revalidatePath("/driving-licence");
+		revalidatePath("/team/driving-licence", "layout");
 		revalidatePath("/settings/driving-licence");
 		revalidatePath("/settings/driving-licence");
 		return { success: true as const, data };

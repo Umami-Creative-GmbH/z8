@@ -5,7 +5,6 @@ import {
 	IconClock,
 	IconDownload,
 	IconLoader2,
-	IconRefresh,
 	IconTrash,
 	IconX,
 } from "@tabler/icons-react";
@@ -52,15 +51,11 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 
 	const handleDownload = async (exportId: string) => {
 		setLoadingAction(`download-${exportId}`);
-		const result = await regenerateDownloadUrlAction({ exportId }).catch(
-			(error: unknown) => {
-				toast.error(
-					t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"),
-				);
-				console.error("Download error:", error);
-				return null;
-			},
-		);
+		const result = await regenerateDownloadUrlAction({ exportId }).catch((error: unknown) => {
+			toast.error(t("settings.dataExport.history.unexpectedError", "An unexpected error occurred"));
+			console.error("Download error:", error);
+			return null;
+		});
 
 		if (!result) {
 			setLoadingAction(null);
@@ -136,17 +131,11 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 
 	return (
 		<Card>
-			<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-				<div className="min-w-0">
-					<CardTitle>{t("settings.dataExport.history.title", "Export History")}</CardTitle>
-					<CardDescription>
-						{t("settings.dataExport.history.description", "Your previous data exports")}
-					</CardDescription>
-				</div>
-				<Button variant="outline" size="sm" onClick={() => router.refresh()}>
-					<IconRefresh className="mr-2 size-4" aria-hidden="true" />
-					{t("common.refresh", "Refresh")}
-				</Button>
+			<CardHeader>
+				<CardTitle>{t("settings.dataExport.history.title", "Export History")}</CardTitle>
+				<CardDescription>
+					{t("settings.dataExport.history.description", "Your previous data exports")}
+				</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<Table>
@@ -190,13 +179,9 @@ export function ExportHistory({ exports }: ExportHistoryProps) {
 										))}
 										{exp.categories.length > 3 && (
 											<Badge variant="outline" className="text-xs">
-												{t(
-													"settings.dataExport.history.moreCategories",
-													"+{count} more",
-													{
-														count: exp.categories.length - 3,
-													},
-												)}
+												{t("settings.dataExport.history.moreCategories", "+{count} more", {
+													count: exp.categories.length - 3,
+												})}
 											</Badge>
 										)}
 									</div>
@@ -318,7 +303,10 @@ function StatusBadge({
 						{t("settings.dataExport.history.statusFailed", "Failed")}
 					</Badge>
 					{errorMessage ? (
-						<p className="line-clamp-2 max-w-64 break-words text-xs text-destructive" title={errorMessage}>
+						<p
+							className="line-clamp-2 max-w-64 break-words text-xs text-destructive"
+							title={errorMessage}
+						>
 							{errorMessage}
 						</p>
 					) : null}

@@ -12,6 +12,7 @@ export function ContractTypeCell({
 	contractType: EmployeeDirectoryRow["contractType"];
 }) {
 	const { t } = useTranslate();
+	if (contractType === null) return null;
 	const isHourly = contractType === "hourly";
 	const Icon = isHourly ? IconClock : IconCalendar;
 

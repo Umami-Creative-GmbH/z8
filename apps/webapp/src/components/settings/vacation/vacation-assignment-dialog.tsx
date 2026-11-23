@@ -8,7 +8,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
-import { getTeamsForAssignment } from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+import { getTeamsForAssignment } from "@/app/[locale]/(app)/settings/vacation/holiday-preset-actions";
 import {
 	createVacationPolicyAssignment,
 	getVacationPolicies,

@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { Temporal } from "temporal-polyfill";
+import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
 import { systemNoteOf } from "@/lib/time-tracking/system-notes";
 import {
@@ -42,10 +42,7 @@ export function getTimeCorrectionDefaultValues(
 	workPeriod: TimeCorrectionWorkPeriod,
 	employeeTimezone: string,
 ): TimeCorrectionFormValues {
-	const clockIn = getTimeCorrectionEndpointValues(
-		workPeriod.startTime,
-		employeeTimezone,
-	);
+	const clockIn = getTimeCorrectionEndpointValues(workPeriod.startTime, employeeTimezone);
 	const clockOut = workPeriod.endTime
 		? getTimeCorrectionEndpointValues(workPeriod.endTime, employeeTimezone)
 		: null;
@@ -68,10 +65,7 @@ export function hasTimeCorrectionChanges(params: {
 	employeeTimezone: string;
 	values: TimeCorrectionFormValues;
 }): boolean {
-	const currentValues = getTimeCorrectionDefaultValues(
-		params.workPeriod,
-		params.employeeTimezone,
-	);
+	const currentValues = getTimeCorrectionDefaultValues(params.workPeriod, params.employeeTimezone);
 
 	return (
 		params.values.clockInDate !== currentValues.clockInDate ||
@@ -103,8 +97,7 @@ export function isDirectSameDayEdit(params: {
 
 	return (
 		params.values.clockInDate === originalClockInDate &&
-		(!params.workPeriod.endTime ||
-			params.values.clockOutDate === originalClockOutDate)
+		(!params.workPeriod.endTime || params.values.clockOutDate === originalClockOutDate)
 	);
 }
 
@@ -122,12 +115,16 @@ export function isValidClockRange(
 		return false;
 	}
 
-	const clockIn = DateTime.fromISO(`${clockInDate}T${clockInTime}`);
-	const clockOut = DateTime.fromISO(`${clockOutDate}T${clockOutTime}`);
+	try {
+		const clockIn = parsePlainDate(clockInDate).toPlainDateTime(
+			Temporal.PlainTime.from(clockInTime, { overflow: "reject" }),
+		);
+		const clockOut = parsePlainDate(clockOutDate).toPlainDateTime(
+			Temporal.PlainTime.from(clockOutTime, { overflow: "reject" }),
+		);
 
-	if (!clockIn.isValid || !clockOut.isValid) {
+		return Temporal.PlainDateTime.compare(clockIn, clockOut) < 0;
+	} catch {
 		return false;
 	}
-
-	return clockIn < clockOut;
 }

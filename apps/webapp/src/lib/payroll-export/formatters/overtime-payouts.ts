@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { type PayrollExportFileFormatId, payrollExportFormatKind } from "../format-registry";
 import type {
 	OvertimePayoutData,
@@ -105,14 +105,14 @@ export function addOvertimePayoutHours<Entry>(
 
 /** A file's date range widened to the days of the payouts it carries. */
 export function widenDateRangeByPayouts(
-	range: { start: DateTime | null; end: DateTime | null },
+	range: { start: PlainDate | null; end: PlainDate | null },
 	mapped: readonly MappedOvertimePayout[],
-): { start: DateTime | null; end: DateTime | null } {
+): { start: PlainDate | null; end: PlainDate | null } {
 	let { start, end } = range;
 	for (const { payout } of mapped) {
-		const payoutDay = DateTime.fromISO(payout.day);
-		if (!start || payoutDay < start) start = payoutDay;
-		if (!end || payoutDay > end) end = payoutDay;
+		const payoutDay = parsePlainDate(payout.day);
+		if (!start || comparePlainDates(payoutDay, start) < 0) start = payoutDay;
+		if (!end || comparePlainDates(payoutDay, end) > 0) end = payoutDay;
 	}
 	return { start, end };
 }

@@ -73,9 +73,10 @@ describe("employment terms wage command", () => {
 		const { rows } = await fixture.pool.query<{ id: string }>(
 			`insert into employee_employment_history
 			 (employee_id, organization_id, employment_period_id, valid_from, valid_until,
+			  valid_from_date, valid_until_date,
 			  contract_type, weekly_contract_minutes, work_model, work_policy_id, hourly_rate, currency,
 			  review_state, created_by, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())
+			 values ($1, $2, $3, $4, $5, $6::date, $7::date, $8, $9, $10, $11, $12, $13, $14, $15, now())
 			 returning id`,
 			[
 				input.employeeId ?? fixture.employeeId,
@@ -83,6 +84,8 @@ describe("employment terms wage command", () => {
 				input.employeeId ? null : fixture.employmentPeriodId,
 				`${input.validFrom} 00:00:00`,
 				input.validUntil ? `${input.validUntil} 00:00:00` : null,
+				input.validFrom,
+				input.validUntil ?? null,
 				input.contractType ?? "hourly",
 				input.weeklyMinutes ?? 2400,
 				input.workModel ?? "onsite",
@@ -127,12 +130,12 @@ describe("employment terms wage command", () => {
 	});
 
 	it("closes the previous confirmed terms and ends the new terms where the next ones start", async () => {
-		const previous = await seedTerms({ validFrom: "2026-01-01", hourlyRate: "20.00" });
+		const previous = await seedTerms({
+			validFrom: "2026-01-01",
+			validUntil: "2026-09-01",
+			hourlyRate: "20.00",
+		});
 		const following = await seedTerms({ validFrom: "2026-09-01", hourlyRate: "30.00" });
-		await fixture.pool.query(
-			"update employee_employment_history set valid_until = $2 where id = $1",
-			[previous, "2026-09-01 00:00:00"],
-		);
 
 		const written = await fixture.db.transaction((tx) =>
 			writeEmploymentTerms(tx, {
@@ -230,14 +233,20 @@ describe("employment terms wage command", () => {
 					settled = true;
 				});
 
-			// While the row is held, a concurrent confirmed terms row lands first.
+			// While the row is held, a concurrent confirmed terms row lands first (closing Jan at Mar 1).
 			await new Promise((resolve) => setTimeout(resolve, 300));
 			expect(settled).toBe(false);
 			await holder.query(
+				`update employee_employment_history
+				 set valid_until = '2026-03-01 00:00:00', valid_until_date = '2026-03-01'
+				 where employee_id = $1 and valid_from_date = '2026-01-01'`,
+				[fixture.employeeId],
+			);
+			await holder.query(
 				`insert into employee_employment_history
-				 (employee_id, organization_id, employment_period_id, valid_from, contract_type,
+				 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date, contract_type,
 				  weekly_contract_minutes, hourly_rate, currency, review_state, created_by, updated_at)
-				 values ($1, $2, $3, '2026-03-01 00:00:00', 'hourly', 2400, 22, 'EUR', 'confirmed', $4, now())`,
+				 values ($1, $2, $3, '2026-03-01 00:00:00', '2026-03-01', 'hourly', 2400, 22, 'EUR', 'confirmed', $4, now())`,
 				[
 					fixture.employeeId,
 					fixture.organizationId,
@@ -259,7 +268,7 @@ describe("employment terms wage command", () => {
 				row.valid_until?.toISOString().slice(0, 10) ?? null,
 			]),
 		).toEqual([
-			["2026-01-01", null],
+			["2026-01-01", "2026-03-01"],
 			["2026-03-01", "2026-05-01"],
 			["2026-05-01", null],
 		]);

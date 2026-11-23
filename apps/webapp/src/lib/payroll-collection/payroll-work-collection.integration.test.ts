@@ -16,7 +16,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { asHistory } from "@/lib/time-tracking/work-records/__tests__/historical-work";
@@ -115,18 +115,15 @@ vi.mock("@/lib/time-tracking/historical-work-diagnostics-reader", async (importO
 });
 
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
-const { getPayrollWorkspaceSummaryAction, startScopedPayrollExportAction } = await import(
-	"@/app/[locale]/(app)/payroll/actions"
-);
+const { getPayrollWorkspaceSummaryAction, startScopedPayrollExportAction } =
+	await import("@/app/[locale]/(app)/payroll/actions");
 const { createExportJob, processExportJob } = await import("@/lib/payroll-export/export-service");
 const { DatevLohnFormatter } = await import("@/lib/payroll-export/formatters/datev-lohn-formatter");
-const { PayrollWorkCollectionBlockedError } = await import(
-	"./payroll-work-collection-blocked-error"
-);
+const { PayrollWorkCollectionBlockedError } =
+	await import("./payroll-work-collection-blocked-error");
 const { payrollWorkInputDigest } = await import("./payroll-work-collection");
-const { PAYROLL_COLLECTION_REPAIR_REASON, readPayrollWorkCollection } = await import(
-	"./payroll-work-collection-reader"
-);
+const { PAYROLL_COLLECTION_REPAIR_REASON, readPayrollWorkCollection } =
+	await import("./payroll-work-collection-reader");
 const { db } = await import("@/db");
 
 const ids = {
@@ -489,8 +486,8 @@ describe("scoped payroll work collection on PostgreSQL", () => {
 			requestedById: ids.owner,
 			filters: {
 				dateRange: {
-					start: DateTime.fromISO(july.startDate, { zone: "utc" }),
-					end: DateTime.fromISO(july.endDate, { zone: "utc" }),
+					start: parsePlainDate(july.startDate),
+					end: parsePlainDate(july.endDate),
 				},
 			},
 		});

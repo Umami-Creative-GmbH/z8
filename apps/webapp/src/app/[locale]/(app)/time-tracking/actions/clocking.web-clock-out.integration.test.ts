@@ -1012,6 +1012,13 @@ describe("web clock-out outer transaction on PostgreSQL", () => {
 			[ids.workPolicy, ids.organization, ids.managerUser, timestamp],
 		);
 		await admin.query(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date,
+			  schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', false, false, false, true, $3)`,
+			[ids.workPolicy, ids.organization, ids.managerUser],
+		);
+		await admin.query(
 			`insert into work_policy_assignment
 			 (id, policy_id, organization_id, assignment_type, employee_id,
 			  priority, is_active, created_by, updated_at)

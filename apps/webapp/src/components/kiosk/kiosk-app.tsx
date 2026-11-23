@@ -2,7 +2,7 @@
 
 import { IconLoader2, IconWifiOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	forgetKioskToken,
@@ -101,13 +101,27 @@ async function screenFor(session: KioskSession, initialCode: string): Promise<Ki
  */
 export function KioskApp() {
 	const [screen, setScreen] = useState<KioskScreen>({ state: "loading" });
+	const initialCodeRef = useRef<string | null>(null);
 
 	// The first screen waits for the session answer, so it is set from the promise, not during the Effect.
+	// Store the QR pairing code in a ref so React StrictMode's remount replay does not lose it after
+	// `takePairingCodeFromUrl()` removes `?code=` from the address bar.
 	useEffect(() => {
-		const initialCode = takePairingCodeFromUrl();
+		let cancelled = false;
+		if (initialCodeRef.current === null) {
+			initialCodeRef.current = takePairingCodeFromUrl();
+		}
+		const initialCode = initialCodeRef.current;
 		void loadKioskSession()
 			.then((session) => screenFor(session, initialCode))
-			.then(setScreen);
+			.then((nextScreen) => {
+				if (!cancelled) {
+					setScreen(nextScreen);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
 	async function retry() {

@@ -409,6 +409,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 	"src/lib/time-tracking/clocking-core.ts": [
 		{
 			columns: [
+				"created_at",
 				"created_by",
 				"device_info",
 				"employee_id",
@@ -911,6 +912,22 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			functionName: "clearProjectMissingTasks",
 			operation: "update",
 			table: "time_record_allocation",
+		},
+	],
+	// Work records prunes unreferenced canonical work-record residue already replaced by a linked period,
+	// preserving computation_metadata on the linked canonical detail when missing.
+	"src/lib/time-tracking/work-records/prune-orphaned-records.ts": [
+		{
+			columns: ["computation_metadata"],
+			functionName: "pruneOrphanedWorkRecord",
+			operation: "update",
+			table: "time_record_work",
+		},
+		{
+			columns: [],
+			functionName: "pruneOrphanedWorkRecord",
+			operation: "delete",
+			table: "time_record",
 		},
 	],
 	// Work records (ADR 0010, #1224, #1226) attaches a missing canonical work record and repairs a pair.

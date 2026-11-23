@@ -66,6 +66,30 @@ import {
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import Page from "./page";
 
+const { refreshErrors } = vi.hoisted(() => ({
+	refreshErrors: [] as Error[],
+}));
+vi.mock("@/components/providers/view-refresh-provider", async (importOriginal) => {
+	const actual =
+		await importOriginal<
+			typeof import("@/components/providers/view-refresh-provider")
+		>();
+	return {
+		...actual,
+		useViewRefresh: (handler: () => Promise<void> | void) =>
+			actual.useViewRefresh(async () => {
+				try {
+					await handler();
+				} catch (error) {
+					if (error instanceof Error) {
+						refreshErrors.push(error);
+					}
+					throw error;
+				}
+			}),
+	};
+});
+
 const exports: unknown[] = [];
 function Refresh() {
 	const { refresh } = useViewRefreshAction();
@@ -124,6 +148,7 @@ const data = {
 beforeEach(() => {
 	read.mockReset();
 	exports.length = 0;
+	refreshErrors.length = 0;
 	useOrganizationSettings.getState().reset();
 	hydrate();
 });
@@ -159,6 +184,9 @@ it("retains usable rows during failed background refresh, blocks export, and rep
 		pending.resolve({ success: false, error: "Temporary outage" }),
 	);
 	await screen.findByText(/Showing previously loaded data/);
+	expect(refreshErrors.map((err) => err.message)).toEqual([
+		"Work hours refresh failed",
+	]);
 	expect(screen.getByText("Alex")).toBeTruthy();
 	expect(
 		screen.getByRole("button", { name: "Export" }).hasAttribute("disabled"),

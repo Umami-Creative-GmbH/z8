@@ -2,9 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getDeputyCandidates,
 	getDeputyDecisionCapability,
@@ -13,8 +12,8 @@ import { DeputyPicker } from "./deputy-picker";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string>) =>
-			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => params?.[name] ?? `{${name}}`),
+		t: (_key: string, fallback?: string, params?: Record<string, string>) =>
+			(fallback ?? _key).replace(/\{(\w+)\}/g, (_match, name: string) => params?.[name] ?? `{${name}}`),
 	}),
 }));
 
@@ -29,47 +28,11 @@ vi.mock("@/app/[locale]/(app)/absences/deputy-actions", () => ({
 	getDeputyDecisionCapability: vi.fn(),
 }));
 
-vi.mock("@/components/ui/select", async () => {
-	const React = await import("react");
-
-	function collectOptions(children: ReactNode): ReactElement[] {
-		return React.Children.toArray(children).flatMap((child) => {
-			if (!React.isValidElement<{ children?: ReactNode; value?: string; label?: string }>(child))
-				return [];
-			if (child.props.value) {
-				return [
-					<option key={child.props.value} value={child.props.value}>
-						{child.props.label ?? child.props.value}
-					</option>,
-				];
-			}
-			return collectOptions(child.props.children);
-		});
-	}
-
-	return {
-		Select: ({
-			children,
-			onValueChange,
-			value,
-		}: {
-			children: ReactNode;
-			onValueChange: (value: string) => void;
-			value: string;
-		}) => (
-			<select
-				aria-label="Deputy"
-				onChange={(event) => onValueChange(event.target.value)}
-				value={value}
-			>
-				<option value="">Select option</option>
-				{collectOptions(children)}
-			</select>
-		),
-		SelectContent: ({ children }: { children: ReactNode }) => <>{children}</>,
-		SelectItem: ({ children }: { children: ReactNode }) => <>{children}</>,
-		SelectTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
-		SelectValue: () => null,
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
 	};
 });
 
@@ -112,13 +75,21 @@ beforeEach(() => {
 	}));
 });
 
+async function openDeputyPicker() {
+	const trigger = screen.getByRole("combobox", { name: "Deputy" });
+	await waitFor(() => expect(trigger.hasAttribute("disabled")).toBe(false));
+	fireEvent.click(trigger);
+	return trigger;
+}
+
 describe("DeputyPicker", () => {
 	it("marks colleagues who are away during the requested dates", async () => {
 		render(<Harness />);
+		await openDeputyPicker();
 
-		const ben = await screen.findByRole("option", { name: /^Ben Example · Away / });
-		expect(ben.textContent).toMatch(/Jun 3.*5/);
-		expect(screen.getByRole("option", { name: "Carla Example" })).toBeTruthy();
+		const ben = await screen.findByRole("option", { name: /Ben Example/ });
+		expect(ben.textContent).toMatch(/Away .*Jun 3.*5/);
+		expect(screen.getByRole("option", { name: /Carla Example/ })).toBeTruthy();
 		expect(getDeputyCandidates).toHaveBeenCalledWith({
 			startDate: "2026-06-01",
 			endDate: "2026-06-10",
@@ -127,9 +98,8 @@ describe("DeputyPicker", () => {
 
 	it("warns about an overlapping deputy and notes a contact only, but keeps the choice", async () => {
 		render(<Harness />);
-		await screen.findByRole("option", { name: "Carla Example" });
-
-		fireEvent.change(screen.getByLabelText("Deputy"), { target: { value: BEN } });
+		const trigger = await openDeputyPicker();
+		fireEvent.click(await screen.findByRole("option", { name: /Ben Example/ }));
 
 		expect(
 			await screen.findByText("Ben Example is away during these dates. You can still choose them."),
@@ -139,14 +109,13 @@ describe("DeputyPicker", () => {
 				"Ben Example will be shown as a contact only and cannot decide approvals.",
 			),
 		).toBeTruthy();
-		expect((screen.getByLabelText("Deputy") as HTMLSelectElement).value).toBe(BEN);
+		expect(trigger.textContent).toContain("Ben Example");
 	});
 
 	it("shows neither note for an available deputy who can decide approvals", async () => {
 		render(<Harness />);
-		await screen.findByRole("option", { name: "Carla Example" });
-
-		fireEvent.change(screen.getByLabelText("Deputy"), { target: { value: CARLA } });
+		await openDeputyPicker();
+		fireEvent.click(await screen.findByRole("option", { name: /Carla Example/ }));
 
 		await waitFor(() =>
 			expect(getDeputyDecisionCapability).toHaveBeenCalledWith({ deputyEmployeeId: CARLA }),
@@ -157,11 +126,13 @@ describe("DeputyPicker", () => {
 
 	it("offers no deputy only when the absence type does not require one", async () => {
 		const { unmount } = render(<Harness />);
+		await openDeputyPicker();
 		expect(await screen.findByRole("option", { name: "No deputy" })).toBeTruthy();
 		unmount();
 
 		render(<Harness required />);
-		await screen.findByRole("option", { name: "Carla Example" });
+		await openDeputyPicker();
+		await screen.findByRole("option", { name: /Carla Example/ });
 		expect(screen.queryByRole("option", { name: "No deputy" })).toBeNull();
 	});
 });

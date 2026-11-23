@@ -10,17 +10,11 @@ import { defineAbilityFor } from "@/lib/authorization";
 import { loadOrganizationPrincipalForIdentity } from "@/lib/authorization/principal-loader";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { type SettingsAccess, settingsAccessOf } from "@/lib/organization-action/settings-access";
 import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
-import {
-	isSettingsAccessMembershipRole,
-	resolveSettingsAccessTier,
-} from "@/lib/settings-access";
 import { getRenderUserSettings } from "@/lib/user-preferences/render-snapshot";
 import { mapSessionUserToAuthContextUser } from "./auth-context-user";
-import {
-	organizationForDisplay,
-	organizationSettingsForDisplay,
-} from "./organization-display";
+import { organizationForDisplay, organizationSettingsForDisplay } from "./organization-display";
 import type { OrganizationDisplayContext } from "./organization-display-context";
 import type { AuthorizedOrganizationIdentity } from "./organization-identity";
 import { getRenderSession } from "./render-session";
@@ -92,13 +86,10 @@ const getRenderIdentityRecords = cache(async () => {
 		activeMembership:
 			memberships.find(
 				(entry) =>
-					entry.organization.id === activeOrganizationId &&
-					entry.membership.status === "approved",
+					entry.organization.id === activeOrganizationId && entry.membership.status === "approved",
 			) ?? null,
 		activeProfile:
-			profiles.find(
-				(profile) => profile.organizationId === activeOrganizationId,
-			) ?? null,
+			profiles.find((profile) => profile.organizationId === activeOrganizationId) ?? null,
 	};
 });
 
@@ -111,54 +102,43 @@ const getRenderOrganizationAdmission = cache(async () => {
 	)
 		return false;
 	const organizationId = session.session.activeOrganizationId;
-	return (
-		!organizationId || canAccessOrganization(session.session, organizationId)
-	);
+	return !organizationId || canAccessOrganization(session.session, organizationId);
 });
 
-export const getRenderAuthContext = cache(
-	async (): Promise<AuthContext | null> => {
-		const session = await getRenderSession();
-		if (!session?.user || !(await getRenderOrganizationAdmission()))
-			return null;
-		const records = await getRenderIdentityRecords();
-		const profile =
-			records?.activeMembership && records.activeProfile?.eligible
-				? records.activeProfile
-				: null;
-		return {
-			user: mapSessionUserToAuthContextUser(session.user),
-			session: { activeOrganizationId: records?.activeOrganizationId ?? null },
-			employee: profile
-				? {
-						id: profile.id,
-						organizationId: profile.organizationId,
-						role: profile.role,
-						teamId: profile.teamId,
-					}
-				: null,
-		};
-	},
-);
+export const getRenderAuthContext = cache(async (): Promise<AuthContext | null> => {
+	const session = await getRenderSession();
+	if (!session?.user || !(await getRenderOrganizationAdmission())) return null;
+	const records = await getRenderIdentityRecords();
+	const profile =
+		records?.activeMembership && records.activeProfile?.eligible ? records.activeProfile : null;
+	return {
+		user: mapSessionUserToAuthContextUser(session.user),
+		session: { activeOrganizationId: records?.activeOrganizationId ?? null },
+		employee: profile
+			? {
+					id: profile.id,
+					organizationId: profile.organizationId,
+					role: profile.role,
+					teamId: profile.teamId,
+				}
+			: null,
+	};
+});
 
-export const getRenderUserOrganizations = cache(
-	async (): Promise<UserOrganization[]> => {
-		const records = await getRenderIdentityRecords();
-		if (!records) return [];
-		const eligibleOrganizations = new Set(
-			records.profiles
-				.filter((profile) => profile.eligible)
-				.map((profile) => profile.organizationId),
-		);
-		return records.memberships.map(({ organization, membership }) =>
-			organizationForDisplay(
-				organization,
-				membership.role,
-				eligibleOrganizations.has(organization.id),
-			),
-		);
-	},
-);
+export const getRenderUserOrganizations = cache(async (): Promise<UserOrganization[]> => {
+	const records = await getRenderIdentityRecords();
+	if (!records) return [];
+	const eligibleOrganizations = new Set(
+		records.profiles.filter((profile) => profile.eligible).map((profile) => profile.organizationId),
+	);
+	return records.memberships.map(({ organization, membership }) =>
+		organizationForDisplay(
+			organization,
+			membership.role,
+			eligibleOrganizations.has(organization.id),
+		),
+	);
+});
 
 export const getRenderOrganizationSettings = cache(async () => {
 	const records = await getRenderIdentityRecords();
@@ -189,8 +169,7 @@ export const getRenderOrganizationDisplayContext = cache(
 );
 
 export const getRenderApprovedMembership = cache(
-	async () =>
-		(await getRenderIdentityRecords())?.activeMembership?.membership ?? null,
+	async () => (await getRenderIdentityRecords())?.activeMembership?.membership ?? null,
 );
 
 /** Internal RSC evidence only: distinguishes no employee from departed employment. */
@@ -199,8 +178,7 @@ export const getRenderOrganizationIdentity = cache(
 		const context = await getRenderAuthContext();
 		if (!context) return null;
 		const records = await getRenderIdentityRecords();
-		if (!records?.activeMembership || records.activeProfile?.eligible === false)
-			return null;
+		if (!records?.activeMembership || records.activeProfile?.eligible === false) return null;
 		return {
 			userId: context.user.id,
 			organizationId: records.activeMembership.organization.id,
@@ -209,6 +187,14 @@ export const getRenderOrganizationIdentity = cache(
 		};
 	},
 );
+
+/** Organization-scoped CASL ability for the active organization (never platform-admin override). */
+export const getRenderOrganizationAbility = cache(async () => {
+	const identity = await getRenderOrganizationIdentity();
+	return identity
+		? defineAbilityFor(await loadOrganizationPrincipalForIdentity(db, identity))
+		: null;
+});
 
 export const getRenderAbility = cache(async () => {
 	const context = await getRenderAuthContext();
@@ -225,29 +211,31 @@ export const getRenderAbility = cache(async () => {
 			customRoles: [],
 		});
 	}
-	const identity = await getRenderOrganizationIdentity();
-	return identity
-		? defineAbilityFor(await loadOrganizationPrincipalForIdentity(db, identity))
-		: null;
+	return getRenderOrganizationAbility();
 });
 
-export const getRenderSettingsAccessTier = cache(async () => {
+/**
+ * The viewer's Settings access in the active organization (ADR 0002 / ADR 0003).
+ * Returns `null` when signed out, SSO/MFA-gated, without an active organization,
+ * with a pending/missing membership, or when the viewer is a former employee.
+ */
+export const getRenderSettingsAccess = cache(async (): Promise<SettingsAccess | null> => {
 	const session = await getRenderSession();
 	if (!session?.user) return null;
+	if (!(await getRenderOrganizationAdmission())) return null;
 	const records = await getRenderIdentityRecords();
-	const admitted = await getRenderOrganizationAdmission();
-	const membershipRole = records?.activeMembership?.membership.role;
-	const inactive = records?.activeProfile?.eligible === false;
-	return resolveSettingsAccessTier({
-		activeOrganizationId: records?.activeOrganizationId ?? null,
-		membershipRole:
-			admitted && !inactive && isSettingsAccessMembershipRole(membershipRole)
-				? membershipRole
-				: null,
-		employeeRole:
-			admitted && !inactive && records?.activeMembership
-				? (records.activeProfile?.role ?? null)
-				: null,
+	if (!records?.activeOrganizationId || !records.activeMembership) {
+		return null;
+	}
+	return settingsAccessOf({
+		membershipRole: records.activeMembership.membership.role,
+		employee: records.activeProfile
+			? {
+					id: records.activeProfile.id,
+					role: records.activeProfile.role,
+					former: !records.activeProfile.eligible,
+				}
+			: null,
 	});
 });
 

@@ -43,6 +43,7 @@ vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	requestSSODomainVerificationAction: vi.fn(),
 	storeTurnstileSecretAction: vi.fn(),
 	updateDomainAuthConfigAction: vi.fn(),
+	updatePlatformAuthConfigAction: vi.fn(),
 	verifyDomainAction: vi.fn(),
 	verifySSODomainAction: vi.fn(),
 }));
@@ -71,6 +72,17 @@ const domain = {
 		passkeyEnabled: false,
 	},
 	createdAt: new Date("2026-01-01T00:00:00.000Z"),
+};
+
+const platformAuth = {
+	config: {
+		emailPasswordEnabled: true,
+		socialProvidersEnabled: [],
+		ssoEnabled: true,
+		passkeyEnabled: true,
+		registrationEnabled: true,
+	},
+	ssoProviderAvailable: true,
 };
 
 const provider = {
@@ -115,6 +127,29 @@ describe("enterprise management visual surfaces", () => {
 		expect(screen.getByText("new-provider-token")).toBeTruthy();
 		expect(screen.queryByText("provider-token")).toBeNull();
 	});
+
+	it("shows the DNS record name and copies the record parts", async () => {
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+		render(
+			<SsoProviderListCard
+				busyProviderId={null}
+				providers={[provider]}
+				tokenByProviderId={{}}
+				onDelete={vi.fn()}
+				onRequestVerificationToken={vi.fn()}
+				onVerifyDomain={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("_z8-auth--acme-okta")).toBeTruthy();
+		expect(screen.getByText("_z8-auth--acme-okta.acme.test")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Copy record name" }));
+		await waitFor(() => expect(writeText).toHaveBeenCalledWith("_z8-auth--acme-okta"));
+		fireEvent.click(screen.getByRole("button", { name: "Copy TXT token" }));
+		await waitFor(() => expect(writeText).toHaveBeenCalledWith("provider-token"));
+	});
 });
 
 describe("enterprise management deletion", () => {
@@ -124,6 +159,7 @@ describe("enterprise management deletion", () => {
 			<DomainManagement
 				defaultUrls={{ canonical: "https://acme.z8.test" }}
 				initialDomains={[domain]}
+				initialPlatformAuth={platformAuth}
 				organizationId="org_123"
 			/>,
 		);
@@ -183,8 +219,7 @@ function deferred<T>() {
 	return { promise, resolve, reject };
 }
 
-const refusal = () =>
-	new ActionFailureError({ error: "Refused", code: "AuthorizationError" });
+const refusal = () => new ActionFailureError({ error: "Refused", code: "AuthorizationError" });
 
 const socialConfig = {
 	id: "social_123",
@@ -202,6 +237,7 @@ const removals = [
 				<DomainManagement
 					defaultUrls={{ canonical: "https://acme.z8.test" }}
 					initialDomains={[domain]}
+					initialPlatformAuth={platformAuth}
 					organizationId="org_123"
 				/>,
 			),
@@ -216,7 +252,10 @@ const removals = [
 		mock: deleteSSOProviderActionMock,
 		mount: () =>
 			render(
-				<SSOProviderManagement initialProviders={[provider]} callbackBaseUrl="https://acme.z8.test" />,
+				<SSOProviderManagement
+					initialProviders={[provider]}
+					callbackBaseUrl="https://acme.z8.test"
+				/>,
 			),
 		open: "Delete SSO provider acme-okta",
 		confirm: "Delete provider",

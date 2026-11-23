@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getAvailableEmployees } from "@/app/[locale]/(app)/settings/locations/actions";
 import { assignLocationEmployee } from "@/app/[locale]/(app)/settings/locations/assignment-actions";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -20,13 +21,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query";
@@ -172,31 +166,25 @@ function LocationEmployeeDialogContent({
 							{/* Employee Selection */}
 							<form.Field name="employeeId">
 								{(field) => (
-									<div className="space-y-2">
-										<Label>{t("settings.locations.employee", "Employee")}</Label>
-										<Select value={field.state.value} onValueChange={field.handleChange}>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.locations.selectEmployeePlaceholder",
-														"Select an employee",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{employees?.map((emp) => (
-													<SelectItem key={emp.id} value={emp.id}>
-														<div className="flex flex-col">
-															<span>{getEmployeeName(emp)}</span>
-															<span className="text-xs text-muted-foreground">
-																{emp.user.email}
-															</span>
-														</div>
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
+									<EmployeeSingleSelect
+										label={t("settings.locations.employee", "Employee")}
+										placeholder={t(
+											"settings.locations.selectEmployeePlaceholder",
+											"Select an employee",
+										)}
+										value={field.state.value || null}
+										onChange={(value) => field.handleChange(value ?? "")}
+										onBlur={field.handleBlur}
+										employees={(employees ?? []).map((emp) =>
+											toSelectableEmployee({
+												id: emp.id,
+												firstName: emp.firstName,
+												lastName: emp.lastName,
+												name: getEmployeeName(emp),
+												email: emp.user.email,
+											}),
+										)}
+									/>
 								)}
 							</form.Field>
 

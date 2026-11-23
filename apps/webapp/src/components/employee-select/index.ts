@@ -67,6 +67,11 @@ export { EmployeeSelectItem } from "./employee-select-item";
 export { EmployeeSelectList } from "./employee-select-list";
 export { EmployeeSelectModal } from "./employee-select-modal";
 export { EmployeeChips, EmployeeSelectTrigger } from "./employee-select-trigger";
+export {
+	type SelectableEmployeeSource,
+	type ToSelectableEmployeeOverrides,
+	toSelectableEmployee,
+} from "./to-selectable-employee";
 // Types
 export type {
 	EmployeeSelectCommonProps,

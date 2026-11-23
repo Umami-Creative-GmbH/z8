@@ -1,9 +1,10 @@
 "use client";
 
 import { IconCheck, IconClock, IconLoader2, IconRefresh, IconX } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	approveComplianceException,
@@ -19,7 +20,10 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { ClientForm } from "@/components/ui/client-form";
 import { PageHeader } from "@/components/ui/page-header";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatDistance } from "@/lib/datetime/format";
@@ -29,7 +33,6 @@ import { queryKeys } from "@/lib/query";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Label } from "../ui/label";
 import { Skeleton } from "../ui/skeleton";
 import { Textarea } from "../ui/textarea";
 
@@ -39,7 +42,9 @@ function formatExceptionEmployeeName(
 	employeeRecord: ExceptionWithDetails["employee"],
 	t: Translate,
 ) {
-	return buildAuthUserDisplayName(employeeRecord) || t("common.unknownEmployee", "Unknown Employee");
+	return (
+		buildAuthUserDisplayName(employeeRecord) || t("common.unknownEmployee", "Unknown Employee")
+	);
 }
 
 interface ComplianceExceptionsManagerProps {
@@ -75,10 +80,7 @@ export function ComplianceExceptionsManager({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
-	// Rejection dialog state
-	const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
 	const [rejectingException, setRejectingException] = useState<ExceptionWithDetails | null>(null);
-	const [rejectionReason, setRejectionReason] = useState("");
 
 	// Query for pending exceptions
 	const {
@@ -133,47 +135,10 @@ export function ComplianceExceptionsManager({
 				return Promise.reject(new Error(actionErrorMessage(t, result)));
 			}
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.compliance.pendingExceptions(organizationId),
-			});
-			setRejectionDialogOpen(false);
-			setRejectingException(null);
-			setRejectionReason("");
-			toast.success(t("compliance:compliance.exception.rejected", "Exception Rejected"), {
-				description: t(
-					"compliance:compliance.exception.rejectedDescription",
-					"The compliance exception has been rejected.",
-				),
-			});
-		},
-		onError: (error: unknown) => {
-			const message = error instanceof Error ? error.message : String(error);
-			toast.error(t("compliance:compliance.exception.rejectFailed", "Failed to Reject"), {
-				description: message,
-			});
-		},
 	});
 
 	const handleApprove = (exception: ExceptionWithDetails) => {
 		approveMutation.mutate(exception.id);
-	};
-
-	const handleRejectClick = (exception: ExceptionWithDetails) => {
-		if (rejectingException?.id !== exception.id) {
-			setRejectionReason("");
-		}
-		setRejectingException(exception);
-		setRejectionDialogOpen(true);
-	};
-
-	const handleRejectConfirm = () => {
-		if (rejectingException) {
-			rejectMutation.mutate({
-				exceptionId: rejectingException.id,
-				reason: rejectionReason || undefined,
-			});
-		}
 	};
 
 	const exceptions = exceptionsResult || [];
@@ -181,85 +146,167 @@ export function ComplianceExceptionsManager({
 	return (
 		<div className="page-frame">
 			<div className="page-measure space-y-6">
-			<PageHeader
-				title={t("settings.compliance.title", "ArbZG Compliance")}
-				description={t(
-					"settings.compliance.description",
-					"Review and manage compliance exception requests from team members",
-				)}
-			/>
-
-			{/* Pending Exceptions Section */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2 text-lg">
-						<IconClock className="size-5" aria-hidden="true" />
-						<h2>{t("compliance:compliance.pendingExceptions", "Pending Exception Requests")}</h2>
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"compliance:compliance.pendingExceptionsDescription",
-							"Review exception requests that require your approval",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{isLoading ? (
-						<div className="space-y-3">
-							{[1, 2, 3].map((i) => (
-								<div key={i} className="flex items-center gap-4 rounded-lg border p-4">
-									<Skeleton className="size-10 rounded-full" />
-									<div className="flex-1 space-y-2">
-										<Skeleton className="h-4 w-1/3" />
-										<Skeleton className="h-3 w-2/3" />
-									</div>
-									<Skeleton className="h-9 w-20" />
-								</div>
-							))}
-						</div>
-					) : isError ? (
-						<div className="flex flex-col items-center gap-4 py-8 text-center">
-							<p role="alert" className="text-sm text-destructive">
-								{t(
-									"compliance:compliance.exception.loadError",
-									"Pending exception requests could not be loaded.",
-								)}
-							</p>
-							<Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
-								<IconRefresh className="mr-2 size-4" aria-hidden="true" />
-								{t("common.retry", "Retry")}
-							</Button>
-						</div>
-					) : exceptions.length === 0 ? (
-						<div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-							<IconCheck className="size-6 text-muted-foreground" aria-hidden="true" />
-							<p className="text-sm text-muted-foreground">
-								{t("compliance:compliance.noExceptions", "No pending exception requests")}
-							</p>
-						</div>
-					) : (
-						<ul className="space-y-3">
-							{exceptions.map((exception) => (
-								<li key={exception.id}>
-									<ExceptionCard
-										exception={exception}
-										onApprove={() => handleApprove(exception)}
-										onReject={() => handleRejectClick(exception)}
-										isApproving={approveMutation.isPending}
-										isApprovingThis={
-											approveMutation.isPending && approveMutation.variables === exception.id
-										}
-									/>
-								</li>
-							))}
-						</ul>
+				<PageHeader
+					title={t("settings.compliance.title", "ArbZG Compliance")}
+					description={t(
+						"settings.compliance.description",
+						"Review and manage compliance exception requests from team members",
 					)}
-				</CardContent>
-			</Card>
+				/>
 
-			{/* Rejection Dialog */}
-			<ActionPanel open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
-				<ActionPanelContent>
+				{/* Pending Exceptions Section */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2 text-lg">
+							<IconClock className="size-5" aria-hidden="true" />
+							<h2>{t("compliance:compliance.pendingExceptions", "Pending Exception Requests")}</h2>
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"compliance:compliance.pendingExceptionsDescription",
+								"Review exception requests that require your approval",
+							)}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{isLoading ? (
+							<div className="space-y-3">
+								{[1, 2, 3].map((i) => (
+									<div key={i} className="flex items-center gap-4 rounded-lg border p-4">
+										<Skeleton className="size-10 rounded-full" />
+										<div className="flex-1 space-y-2">
+											<Skeleton className="h-4 w-1/3" />
+											<Skeleton className="h-3 w-2/3" />
+										</div>
+										<Skeleton className="h-9 w-20" />
+									</div>
+								))}
+							</div>
+						) : isError ? (
+							<div className="flex flex-col items-center gap-4 py-8 text-center">
+								<p role="alert" className="text-sm text-destructive">
+									{t(
+										"compliance:compliance.exception.loadError",
+										"Pending exception requests could not be loaded.",
+									)}
+								</p>
+								<Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
+									<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+									{t("common.retry", "Retry")}
+								</Button>
+							</div>
+						) : exceptions.length === 0 ? (
+							<div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+								<IconCheck className="size-6 text-muted-foreground" aria-hidden="true" />
+								<p className="text-sm text-muted-foreground">
+									{t("compliance:compliance.noExceptions", "No pending exception requests")}
+								</p>
+							</div>
+						) : (
+							<ul className="space-y-3">
+								{exceptions.map((exception) => (
+									<li key={exception.id}>
+										<ExceptionCard
+											exception={exception}
+											onApprove={() => handleApprove(exception)}
+											onReject={() => setRejectingException(exception)}
+											isApproving={approveMutation.isPending}
+											isApprovingThis={
+												approveMutation.isPending && approveMutation.variables === exception.id
+											}
+										/>
+									</li>
+								))}
+							</ul>
+						)}
+					</CardContent>
+				</Card>
+
+				<RejectExceptionPanel
+					key={rejectingException?.id ?? "closed"}
+					exception={rejectingException}
+					onClose={() => setRejectingException(null)}
+					onReject={async (exceptionId, reason) => {
+						await rejectMutation.mutateAsync({ exceptionId, reason });
+						await queryClient.invalidateQueries({
+							queryKey: queryKeys.compliance.pendingExceptions(organizationId),
+						});
+					}}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function RejectExceptionPanel({
+	exception,
+	onClose,
+	onReject,
+}: {
+	exception: ExceptionWithDetails | null;
+	onClose: () => void;
+	onReject: (exceptionId: string, reason?: string) => Promise<void>;
+}) {
+	const { t } = useTranslate();
+	const submittingRef = useRef(false);
+
+	const form = useForm({
+		defaultValues: { reason: "" },
+		onSubmit: async ({ value, formApi }) => {
+			if (!exception || submittingRef.current) return;
+			submittingRef.current = true;
+
+			const run = async () => {
+				try {
+					await onReject(exception.id, value.reason.trim() || undefined);
+					toast.success(t("compliance:compliance.exception.rejected", "Exception Rejected"), {
+						description: t(
+							"compliance:compliance.exception.rejectedDescription",
+							"The compliance exception has been rejected.",
+						),
+					});
+					formApi.reset();
+					onClose();
+				} catch (error: unknown) {
+					const message = error instanceof Error ? error.message : String(error);
+					toast.error(t("compliance:compliance.exception.rejectFailed", "Failed to Reject"), {
+						description: message,
+					});
+				}
+			};
+
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await run().finally(() => {
+				submittingRef.current = false;
+			});
+		},
+	});
+
+	const handleOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen && !submittingRef.current) {
+			onClose();
+		}
+	};
+
+	return (
+		<ActionPanel open={exception !== null} onOpenChange={handleOpenChange}>
+			<ActionPanelContent
+				onEscapeKeyDown={(event) => {
+					if (submittingRef.current) event.preventDefault();
+				}}
+				onInteractOutside={(event) => {
+					if (submittingRef.current) event.preventDefault();
+				}}
+			>
+				<ClientForm
+					className="flex min-h-0 flex-1 flex-col"
+					noValidate
+					onSubmit={() => {
+						if (submittingRef.current) return;
+						void form.handleSubmit();
+					}}
+				>
 					<ActionPanelHeader>
 						<ActionPanelTitle>
 							{t("compliance:compliance.exception.rejectTitle", "Reject Exception Request")}
@@ -273,57 +320,82 @@ export function ComplianceExceptionsManager({
 					</ActionPanelHeader>
 
 					<ActionPanelBody className="space-y-4">
-						{rejectingException && (
+						{exception && (
 							<div className="rounded-lg border bg-muted/50 p-3">
-								<p className="text-sm font-medium break-words">
-									{formatExceptionEmployeeName(rejectingException.employee, t)}
+								<p className="break-words text-sm font-medium">
+									{formatExceptionEmployeeName(exception.employee, t)}
 								</p>
-								<p className="text-sm text-muted-foreground break-words">
-									{exceptionTypeLabel(rejectingException.exceptionType, t)}:{" "}
-									{rejectingException.reason}
+								<p className="break-words text-sm text-muted-foreground">
+									{exceptionTypeLabel(exception.exceptionType, t)}: {exception.reason}
 								</p>
 							</div>
 						)}
 
-						<div className="space-y-2">
-							<Label htmlFor="rejection-reason">
-								{t("compliance:compliance.exception.rejectionReason", "Reason for rejection")}
-							</Label>
-							<Textarea
-								id="rejection-reason"
-								placeholder={t(
-									"compliance:compliance.exception.rejectionPlaceholder",
-									"Enter reason for rejecting this exception...",
-								)}
-								value={rejectionReason}
-								onChange={(e) => setRejectionReason(e.target.value)}
-								rows={3}
-							/>
-						</div>
+						<form.Field
+							name="reason"
+							validators={{
+								onChange: ({ value }) =>
+									value.length > 500
+										? t(
+												"compliance:compliance.exception.rejectionReasonTooLong",
+												"Reason must be 500 characters or fewer.",
+											)
+										: undefined,
+							}}
+						>
+							{(field) => (
+								<TFormItem>
+									<TFormLabel hasError={fieldHasError(field)}>
+										{t("compliance:compliance.exception.rejectionReason", "Reason for rejection")}
+									</TFormLabel>
+									<TFormControl hasError={fieldHasError(field)}>
+										<Textarea
+											name="reason"
+											placeholder={t(
+												"compliance:compliance.exception.rejectionPlaceholder",
+												"Enter reason for rejecting this exception...",
+											)}
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+											rows={3}
+										/>
+									</TFormControl>
+									<TFormMessage field={field} />
+								</TFormItem>
+							)}
+						</form.Field>
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
-						<Button
-							variant="outline"
-							onClick={() => setRejectionDialogOpen(false)}
-							disabled={rejectMutation.isPending}
-						>
-							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleRejectConfirm}
-							disabled={rejectMutation.isPending}
-						>
-							{rejectMutation.isPending
-								? t("common.rejecting", "Rejecting…")
-								: t("common.reject", "Reject")}
-						</Button>
+						<form.Subscribe selector={(state) => state.isSubmitting}>
+							{(isSubmitting) => (
+								<>
+									<Button
+										type="button"
+										variant="outline"
+										onClick={() => handleOpenChange(false)}
+										disabled={isSubmitting}
+									>
+										{t("common.cancel", "Cancel")}
+									</Button>
+									<Button type="submit" variant="destructive" disabled={isSubmitting}>
+										{isSubmitting ? (
+											<>
+												<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+												{t("common.rejecting", "Rejecting…")}
+											</>
+										) : (
+											t("common.reject", "Reject")
+										)}
+									</Button>
+								</>
+							)}
+						</form.Subscribe>
 					</ActionPanelFooter>
-				</ActionPanelContent>
-			</ActionPanel>
-			</div>
-		</div>
+				</ClientForm>
+			</ActionPanelContent>
+		</ActionPanel>
 	);
 }
 

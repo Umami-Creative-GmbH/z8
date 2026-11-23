@@ -89,8 +89,7 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-const { getPrincipalContext, getSettingsAccessInputForUser, isOrgAdminCasl } =
-	await import("./auth-helpers");
+const { getPrincipalContext, isOrgAdminCasl } = await import("./auth-helpers");
 
 describe("SSO-required organization authorization boundaries", () => {
 	beforeEach(() => {
@@ -129,12 +128,6 @@ describe("SSO-required organization authorization boundaries", () => {
 	it("no longer exports isOrgOwnerCasl", async () => {
 		const helpers = await import("./auth-helpers");
 		expect(helpers).not.toHaveProperty("isOrgOwnerCasl");
-	});
-
-	it("does not derive settings authorization from membership alone", async () => {
-		expect(
-			await getSettingsAccessInputForUser("user-1", "org-other"),
-		).toMatchObject({ membershipRole: null, employeeRole: null });
 	});
 
 	it("does not turn a quarantined platform-admin session into unrestricted global abilities", async () => {
@@ -207,7 +200,6 @@ describe("getAuthContext", () => {
 
 		for (const marker of [
 			"export async function verifyOrgMembership",
-			"export async function getSettingsAccessInputForUser",
 			"export async function isOrgAdminCasl",
 		]) {
 			const start = source.indexOf(marker);
@@ -218,14 +210,6 @@ describe("getAuthContext", () => {
 			);
 			expect(body).toContain('eq(member.status, "approved")');
 		}
-
-		const settingsAccessBody = source.slice(
-			source.indexOf("export async function getSettingsAccessInputForUser"),
-			source.indexOf("export async function getSettingsAccessTierForUser"),
-		);
-		expect(settingsAccessBody).toContain(
-			"membershipRecord && !employeeIsInactive",
-		);
 	});
 });
 
@@ -310,89 +294,6 @@ describe("getPrincipalContext", () => {
 		expect(principal?.employee).toBeNull();
 		expect(principal?.permissions.orgWide).toBeNull();
 		expect(principal?.customRoles).toEqual([]);
-	});
-});
-
-describe("getSettingsAccessInputForUser", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		mockState.selectResults = [];
-	});
-
-	it("queries the employee without an active filter so inactivity remains explicit", async () => {
-		const source = readFileSync(
-			fileURLToPath(new URL("./auth-helpers.ts", import.meta.url)),
-			"utf8",
-		);
-		const body = source.slice(
-			source.indexOf("export async function getSettingsAccessInputForUser"),
-			source.indexOf("export async function getSettingsAccessTierForUser"),
-		);
-
-		// Selected, not filtered: a due departure counts as inactive, and an
-		// inactive profile must never fall back to member-only access.
-		expect(body).toContain("isActive: employeeHasOrganizationAccess()");
-		expect(body).not.toContain("eq(employee.isActive, true)");
-	});
-
-	it.each(["owner", "admin"])(
-		"preserves approved %s bootstrap access when no employee exists",
-		async (role) => {
-			mockState.selectResults = [[{ role }], []];
-
-			await expect(
-				getSettingsAccessInputForUser("user-1", "org-1"),
-			).resolves.toEqual({
-				activeOrganizationId: "org-1",
-				membershipRole: role,
-				employeeRole: null,
-			});
-		},
-	);
-
-	it.each(["pending", "rejected"])(
-		"does not expose org-admin access for %s membership",
-		async () => {
-			mockState.selectResults = [[], [{ role: "admin", isActive: true }]];
-
-			await expect(
-				getSettingsAccessInputForUser("user-1", "org-1"),
-			).resolves.toEqual({
-				activeOrganizationId: "org-1",
-				membershipRole: null,
-				employeeRole: null,
-			});
-		},
-	);
-
-	it("suppresses membership and employee roles for an explicitly inactive employee", async () => {
-		mockState.selectResults = [
-			[{ role: "owner" }],
-			[{ role: "admin", isActive: false }],
-		];
-
-		await expect(
-			getSettingsAccessInputForUser("user-1", "org-1"),
-		).resolves.toEqual({
-			activeOrganizationId: "org-1",
-			membershipRole: null,
-			employeeRole: null,
-		});
-	});
-
-	it("preserves approved membership and active manager access", async () => {
-		mockState.selectResults = [
-			[{ role: "member" }],
-			[{ role: "manager", isActive: true }],
-		];
-
-		await expect(
-			getSettingsAccessInputForUser("user-1", "org-1"),
-		).resolves.toEqual({
-			activeOrganizationId: "org-1",
-			membershipRole: "member",
-			employeeRole: "manager",
-		});
 	});
 });
 

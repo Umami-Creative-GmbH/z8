@@ -2,7 +2,7 @@
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GoLiveRehearsal } from "@/lib/implementation-checklist/go-live/rehearsal-types";
 
 const rehearse = vi.hoisted(() => vi.fn());
@@ -38,32 +38,13 @@ vi.mock("@/components/ui/sheet", () => ({
 	SheetDescription: ({ children }: { children: ReactNode }) => <p>{children}</p>,
 }));
 
-vi.mock("@/components/ui/searchable-select", () => ({
-	SearchableSelect: ({
-		options,
-		value,
-		onValueChange,
-		"aria-label": ariaLabel,
-	}: {
-		options: { code: string; name: string }[];
-		value: string;
-		onValueChange: (value: string) => void;
-		"aria-label"?: string;
-	}) => (
-		<select
-			aria-label={ariaLabel}
-			onChange={(event) => onValueChange(event.target.value)}
-			value={value}
-		>
-			<option value="" />
-			{options.map((option) => (
-				<option key={option.code} value={option.code}>
-					{option.name}
-				</option>
-			))}
-		</select>
-	),
-}));
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
 
 import { GoLiveFailureGroupView } from "./go-live-check-panel";
 import { GoLiveRehearsalPicker, GoLiveRehearsalProvider } from "./go-live-rehearsal";
@@ -161,7 +142,11 @@ describe("go-live rehearsal", () => {
 			</GoLiveRehearsalProvider>,
 		);
 
-		fireEvent.change(screen.getByLabelText("Person"), { target: { value: "employee:e-sam" } });
+		fireEvent.click(screen.getByRole("combobox", { name: "Person" }));
+		fireEvent.click(await screen.findByRole("option", { name: /Sam Subject/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("option", { name: /Sam Subject/ })).toBeNull(),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Rehearse" }));
 
 		expect(rehearse).toHaveBeenCalledWith("employee:e-sam");

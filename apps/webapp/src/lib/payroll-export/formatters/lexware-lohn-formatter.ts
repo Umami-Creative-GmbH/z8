@@ -8,7 +8,12 @@
  * - Required columns: Jahr, Monat, Personalnummer, Lohnartennummer, Wert
  * - Optional columns: Stunden, Stundensatz
  */
-import { DateTime } from "luxon";
+import {
+	comparePlainDates,
+	type PlainDate,
+	parsePlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
@@ -31,10 +36,7 @@ import {
 	expenseLinesInFileOrder,
 	germanPersonnelNumber,
 } from "./expense-lines";
-import {
-	overtimePayoutsForFormat,
-	widenDateRangeByPayouts,
-} from "./overtime-payouts";
+import { overtimePayoutsForFormat, widenDateRangeByPayouts } from "./overtime-payouts";
 
 const logger = createLogger("LexwareLohnFormatter");
 
@@ -116,31 +118,18 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		);
 
 		// Add absence data
-		this.addAbsenceData(
-			absences,
-			absenceCategoryMappings,
-			aggregatedData,
-			lexwareConfig,
-		);
+		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, lexwareConfig);
 
 		// Overtime payouts (#1001): hours in the payout day's month under the "overtime" wage type.
-		const payouts = overtimePayoutsForFormat(
-			overtimePayouts,
-			mappings,
-			"lexware",
-		);
-		const overtimeMapping = mappings.find(
-			(m) => m.specialCategory === "overtime",
-		);
+		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "lexware");
+		const overtimeMapping = mappings.find((m) => m.specialCategory === "overtime");
 		for (const { payout, wageTypeCode, hours } of payouts.mapped) {
 			const personnelNumber = this.personnelNumber(payout, lexwareConfig);
 			const employeeData =
-				aggregatedData.get(personnelNumber) ??
-				new Map<string, Map<string, AggregatedEntry>>();
+				aggregatedData.get(personnelNumber) ?? new Map<string, Map<string, AggregatedEntry>>();
 			aggregatedData.set(personnelNumber, employeeData);
 			const month = payout.day.slice(0, 7);
-			const monthData =
-				employeeData.get(month) ?? new Map<string, AggregatedEntry>();
+			const monthData = employeeData.get(month) ?? new Map<string, AggregatedEntry>();
 			employeeData.set(month, monthData);
 			const existing = monthData.get(wageTypeCode);
 			monthData.set(wageTypeCode, {
@@ -191,9 +180,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 							renderedColumns.Stunden = this.formatDecimal(data.hours);
 						if (lexwareConfig.includeStundensatz)
 							renderedColumns.Stundensatz =
-								data.hourlyRate !== null
-									? this.formatDecimal(data.hourlyRate)
-									: "";
+								data.hourlyRate !== null ? this.formatDecimal(data.hourlyRate) : "";
 						supportedRows.push({
 							personnelNumber,
 							wageTypeCode,
@@ -222,9 +209,8 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		}
 
 		// Expense money lines (#852): the euro amount is the Wert, with no hours or rate.
-		for (const { personnelNumber, line } of expenseLinesInFileOrder(
-			expenseLines,
-			(line) => germanPersonnelNumber(line, lexwareConfig),
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
+			germanPersonnelNumber(line, lexwareConfig),
 		)) {
 			const [year, month] = line.date.split("-");
 			const fields = [
@@ -243,8 +229,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		for (const absence of absences) uniqueEmployees.add(absence.employeeId);
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
-		for (const { payout } of payouts.mapped)
-			uniqueEmployees.add(payout.employeeId);
+		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
 
 		const dateRange = widenDateRangeByPayouts(
 			this.getDateRange(workPeriods, absences),
@@ -281,8 +266,8 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 				workPeriodCount: workPeriods.length,
 				employeeCount: uniqueEmployees.size,
 				dateRange: {
-					start: dateRange.start?.toISODate() || "",
-					end: dateRange.end?.toISODate() || "",
+					start: dateRange.start?.toString() || "",
+					end: dateRange.end?.toString() || "",
 				},
 				unmappedOvertimePayouts: payouts.unmapped,
 			},
@@ -304,9 +289,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 			if (!period.durationMinutes || !period.endTime) continue;
 
 			const personnelNumber = this.personnelNumber(period, config);
-			const year = period.startTime.toFormat("yyyy");
-			const month = period.startTime.toFormat("MM");
-			const yearMonth = `${year}-${month}`;
+			const yearMonth = period.startTime.toPlainDate().toPlainYearMonth().toString();
 			const hours = period.durationMinutes / 60;
 
 			// Determine wage type code (use Lexware-specific column)
@@ -348,8 +331,8 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 						...this.contributionIdentity(period, hours),
 						kind: "work",
 						facts: {
-							startAt: period.startTime.toUTC().toISO(),
-							endAt: period.endTime.toUTC().toISO(),
+							startAt: period.startTime.toInstant().toString({ fractionalSecondDigits: 3 }),
+							endAt: period.endTime.toInstant().toString({ fractionalSecondDigits: 3 }),
 							durationMinutes: period.durationMinutes,
 							workCategoryId: period.workCategoryId,
 							workCategoryName: period.workCategoryName,
@@ -385,16 +368,14 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 			const wageTypeCode = mappedCode;
 
 			// Calculate days
-			const startDate = DateTime.fromISO(absence.startDate).startOf("day");
-			const endDate = DateTime.fromISO(absence.endDate).startOf("day");
-			const days = Math.floor(endDate.diff(startDate, "days").days) + 1;
+			const startDate = parsePlainDate(absence.startDate);
+			const endDate = parsePlainDate(absence.endDate);
+			const days = startDate.until(endDate, { largestUnit: "days" }).days + 1;
 
 			// Add an entry for each day of the absence (grouped by month)
 			for (let i = 0; i < days; i++) {
-				const currentDate = startDate.plus({ days: i });
-				const year = currentDate.toFormat("yyyy");
-				const month = currentDate.toFormat("MM");
-				const yearMonth = `${year}-${month}`;
+				const currentDate = startDate.add({ days: i });
+				const yearMonth = currentDate.toPlainYearMonth().toString();
 
 				// Initialize nested maps if needed
 				if (!aggregatedData.has(personnelNumber)) {
@@ -475,10 +456,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
 		config: LexwareLohnConfig,
 	): string {
-		if (
-			config.personnelNumberType === "employeeNumber" &&
-			!row.employeeNumber
-		) {
+		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
 			logger.warn(
 				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
@@ -491,13 +469,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	 * Generate CSV header row
 	 */
 	private generateHeaderRow(config: LexwareLohnConfig): string {
-		const headers = [
-			"Jahr",
-			"Monat",
-			"Personalnummer",
-			"Lohnartennummer",
-			"Wert",
-		];
+		const headers = ["Jahr", "Monat", "Personalnummer", "Lohnartennummer", "Wert"];
 
 		if (config.includeStunden) {
 			headers.push("Stunden");
@@ -567,27 +539,31 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	private getDateRange(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
-	): { start: DateTime | null; end: DateTime | null } {
-		let start: DateTime | null = null;
-		let end: DateTime | null = null;
+	): { start: PlainDate | null; end: PlainDate | null } {
+		let start: PlainDate | null = null;
+		let end: PlainDate | null = null;
 
 		for (const period of workPeriods) {
-			if (!start || period.startTime < start) {
-				start = period.startTime;
+			const periodStart = period.startTime.toPlainDate();
+			if (!start || comparePlainDates(periodStart, start) < 0) {
+				start = periodStart;
 			}
-			if (period.endTime && (!end || period.endTime > end)) {
-				end = period.endTime;
+			if (period.endTime) {
+				const periodEnd = period.endTime.toPlainDate();
+				if (!end || comparePlainDates(periodEnd, end) > 0) {
+					end = periodEnd;
+				}
 			}
 		}
 
 		for (const absence of absences) {
-			const absStart = DateTime.fromISO(absence.startDate);
-			const absEnd = DateTime.fromISO(absence.endDate);
+			const absStart = parsePlainDate(absence.startDate);
+			const absEnd = parsePlainDate(absence.endDate);
 
-			if (!start || absStart < start) {
+			if (!start || comparePlainDates(absStart, start) < 0) {
 				start = absStart;
 			}
-			if (!end || absEnd > end) {
+			if (!end || comparePlainDates(absEnd, end) > 0) {
 				end = absEnd;
 			}
 		}
@@ -598,15 +574,13 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate file name based on date range
 	 */
-	private generateFileName(dateRange: {
-		start: DateTime | null;
-		end: DateTime | null;
-	}): string {
-		const now = DateTime.now();
+	private generateFileName(dateRange: { start: PlainDate | null; end: PlainDate | null }): string {
+		const now = systemClock.nowInstant().toZonedDateTimeISO("UTC");
 		const dateStr = dateRange.start
-			? dateRange.start.toFormat("yyyy-MM")
-			: now.toFormat("yyyy-MM");
-		return `lexware_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
+			? dateRange.start.toPlainYearMonth().toString()
+			: now.toPlainDate().toPlainYearMonth().toString();
+		const stamp = `${now.year}${String(now.month).padStart(2, "0")}${String(now.day).padStart(2, "0")}_${String(now.hour).padStart(2, "0")}${String(now.minute).padStart(2, "0")}${String(now.second).padStart(2, "0")}`;
+		return `lexware_lohn_${dateStr}_${stamp}.csv`;
 	}
 }
 

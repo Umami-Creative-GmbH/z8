@@ -4,7 +4,7 @@ import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 import { Effect } from "effect";
 import { z } from "zod";
 import { invitation, member, user } from "@/db/auth-schema";
-import { employee, employeeInvitationDraft, team, workPolicyAssignment } from "@/db/schema";
+import { employee, employeeInvitationDraft, team } from "@/db/schema";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
@@ -108,13 +108,17 @@ function mapEmployeeRow(
 	const isFormer = row.isFormer === true;
 	return {
 		...row.employee,
+		// Spec #1921 Story 22 / A3-1: Redact contract & leaving-date projections for scoped managers.
+		contractType: viewer.isOrgAdmin ? row.employee.contractType : null,
+		deactivatedAt: viewer.isOrgAdmin ? row.employee.deactivatedAt : null,
+		endDate: viewer.isOrgAdmin ? row.employee.endDate : null,
 		birthday: birthdayVisibleTo(viewer, row.employee.birthday),
 		kind: "employee",
 		user: row.user,
 		team: row.team,
 		membership: row.membership?.id ? row.membership : null,
 		isFormer,
-		...formerSinceField(isFormer, row.formerSince),
+		...formerSinceField(viewer.isOrgAdmin && isFormer, row.formerSince),
 	};
 }
 
@@ -225,22 +229,28 @@ function enrichEmployeeDirectoryRows(viewer: DirectoryViewer, rows: EmployeeDire
 					viewer: { kind: "actor", userId: viewer.userId },
 				}),
 			),
-			dbService.query("employeeContracts.current", () =>
-				loadCurrentContractTypes(dbService.db, {
-					organizationId: viewer.organizationId,
-					employees,
-				}),
-			),
+			viewer.isOrgAdmin
+				? dbService.query("employeeContracts.current", () =>
+						loadCurrentContractTypes(dbService.db, {
+							organizationId: viewer.organizationId,
+							employees: employees.map((row) => ({
+								id: row.id,
+								contractType: row.contractType ?? "fixed",
+							})),
+						}),
+					)
+				: Effect.succeed(new Map<string, EmployeeWithRelations["contractType"]>()),
 		]);
-		return rows.map(
-			(row): EmployeeDirectoryRow =>
-				row.kind === "employee"
-					? {
-							...row,
-							contractType: contractTypes.get(row.id) ?? row.contractType,
-							missingRequiredCustomFields: missing.has(row.id),
-						}
-					: row,
+		return rows.map((row): EmployeeDirectoryRow =>
+			row.kind === "employee"
+				? {
+						...row,
+						contractType: viewer.isOrgAdmin
+							? (contractTypes.get(row.id) ?? row.contractType)
+							: null,
+						missingRequiredCustomFields: missing.has(row.id),
+					}
+				: row,
 		);
 	});
 }
@@ -473,28 +483,29 @@ export const getEmployeeAction = organizationAction(
 						user: true,
 						team: true,
 						managers: {
+							columns: {
+								id: true,
+								isPrimary: true,
+							},
 							with: {
 								manager: {
-									with: {
-										user: true,
+									columns: {
+										id: true,
+										userId: true,
 									},
-								},
-							},
-						},
-						workPolicyAssignments: {
-							with: {
-								policy: {
 									with: {
-										schedule: {
-											with: {
-												days: true,
+										user: {
+											columns: {
+												firstName: true,
+												lastName: true,
+												name: true,
+												email: true,
+												image: true,
 											},
 										},
 									},
 								},
 							},
-							orderBy: [desc(workPolicyAssignment.effectiveFrom)],
-							limit: 1,
 						},
 					},
 				});
@@ -504,28 +515,52 @@ export const getEmployeeAction = organizationAction(
 				return yield* Effect.fail(employeeNotFound(employeeId));
 			}
 
-			// The edit form shows today's contract type read-only (#1177).
-			const termsToday = yield* dbService.query("employmentTerms.getToday", async () => {
-				const { timezone, today } = await loadOrganizationDay(dbService.db, {
-					organizationId,
-					now: systemClock.nowInstant(),
-				});
-				return loadTermsInForceOn(dbService.db, {
-					organizationId,
-					employeeId,
-					date: today,
-					timezone,
-				});
-			});
+			// The edit form shows today's contract type read-only (#1177), restricted to org admins (A2-1).
+			const termsToday = viewer.isOrgAdmin
+				? yield* dbService.query("employmentTerms.getToday", async () => {
+						const { timezone, today } = await loadOrganizationDay(dbService.db, {
+							organizationId,
+							now: systemClock.nowInstant(),
+						});
+						return loadTermsInForceOn(dbService.db, {
+							organizationId,
+							employeeId,
+							date: today,
+							timezone,
+						});
+					})
+				: null;
 
 			return {
 				...detail,
+				managers: (detail.managers ?? []).map((m) => ({
+					id: m.id,
+					isPrimary: m.isPrimary,
+					manager: {
+						id: m.manager.id,
+						userId: m.manager.userId,
+						user: {
+							firstName: m.manager.user.firstName,
+							lastName: m.manager.user.lastName,
+							name: m.manager.user.name,
+							email: m.manager.user.email,
+							image: m.manager.user.image,
+						},
+					},
+				})),
+				contractType: viewer.isOrgAdmin ? detail.contractType : null,
+				deactivatedAt: viewer.isOrgAdmin ? detail.deactivatedAt : null,
+				endDate: viewer.isOrgAdmin ? detail.endDate : null,
 				birthday: birthdayVisibleTo(viewer, detail.birthday),
 				kind: "employee",
 				membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
-				contractTypeToday: termsToday?.contractType ?? null,
+				contractTypeToday: viewer.isOrgAdmin ? (termsToday?.contractType ?? null) : null,
 				isFormer: targetEmployee.isFormer === true,
-				...formerSinceField(targetEmployee.isFormer === true, targetEmployee.formerSince),
+				// Leaving dates (`formerSince`) are restricted to org admins (Spec #1921 Story 22 / A2-1 / A3-1).
+				...formerSinceField(
+					viewer.isOrgAdmin && targetEmployee.isFormer === true,
+					targetEmployee.formerSince,
+				),
 			} as EmployeeWithRelations;
 		}),
 );
@@ -545,8 +580,13 @@ export const listEmployeesForSelectAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
+			const viewer = directoryViewerOf(actor, organizationId);
 			return yield* selectableEmployeePage(
-				{ organizationId, onlyEmployeeIds: managedEmployeeIdsOf(yield* actor.managedScope()) },
+				{
+					organizationId,
+					onlyEmployeeIds: managedEmployeeIdsOf(yield* actor.managedScope()),
+					includeFormerSince: viewer.isOrgAdmin,
+				},
 				input,
 			);
 		}),
@@ -562,10 +602,12 @@ export const getEmployeesByIdsAction = organizationAction(
 	({ actor, organizationId, input: employeeIds }) =>
 		Effect.gen(function* () {
 			if (employeeIds.length === 0) return [];
+			const viewer = directoryViewerOf(actor, organizationId);
 			return yield* loadEmployeesByIds(
 				organizationId,
 				managedEmployeeIdsOf(yield* actor.managedScope()),
 				employeeIds,
+				viewer.isOrgAdmin,
 			);
 		}),
 );
@@ -574,6 +616,7 @@ function loadEmployeesByIds(
 	organizationId: string,
 	onlyEmployeeIds: ReadonlySet<string> | null,
 	employeeIds: string[],
+	includeFormerSince: boolean,
 ) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
@@ -597,6 +640,6 @@ function loadEmployeesByIds(
 		});
 
 		const typedRows = rows as unknown as SelectableEmployeeRow[];
-		return typedRows.map(mapSelectableEmployeeRow);
+		return typedRows.map((row) => mapSelectableEmployeeRow(row, { includeFormerSince }));
 	});
 }

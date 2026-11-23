@@ -9,14 +9,17 @@ import type {
 	PaginatedEmployeeResponse,
 } from "@/app/[locale]/(app)/settings/employees/employee-action-types";
 import { useOrganization } from "@/hooks/use-organization";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { fetchEmployeeRead } from "./employee-read-client";
 import { queryKeys } from "./keys";
 
 interface UseEmployeesOptions {
 	initialPageSize?: number;
 	organizationId?: string;
-	accessTier?: SettingsAccessTier;
+	settingsAccess?: SettingsAccess | null;
 }
 
 export function useEmployees(options: UseEmployeesOptions = {}) {
@@ -44,11 +47,10 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		offset: pagination.pageIndex * pagination.pageSize,
 	};
 
-	const orgId =
-		organization.activeOrganizationId ?? organization.organizationId;
+	const orgId = organization.activeOrganizationId ?? organization.organizationId;
 	const userId = organization.userId;
-	const hasEmployee =
-		Boolean(organization.employeeId) || options.accessTier === "orgAdmin";
+	const isOrgAdmin = meetsSettingsAccess(options.settingsAccess ?? null, "orgAdmin");
+	const hasEmployee = Boolean(organization.employeeId) || isOrgAdmin;
 	const canLoad =
 		hasEmployee &&
 		!organization.isLoading &&
@@ -61,24 +63,16 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		queryFn: async ({ signal }): Promise<PaginatedEmployeeResponse> => {
 			if (!userId || !orgId) throw new Error("Employee context is unavailable");
 			return (
-				await fetchEmployeeRead(
-					"directory",
-					{ userId, organizationId: orgId },
-					params,
-					signal,
-				)
+				await fetchEmployeeRead("directory", { userId, organizationId: orgId }, params, signal)
 			).data;
 		},
 		enabled: canLoad,
 		staleTime: 30 * 1000,
 		retry: false,
 		placeholderData: (previous, query) =>
-			query?.queryKey[1] === orgId && query.queryKey[3] === userId
-				? previous
-				: undefined,
+			query?.queryKey[1] === orgId && query.queryKey[3] === userId ? previous : undefined,
 	});
-	const data =
-		canLoad && !employeesQuery.isError ? employeesQuery.data : undefined;
+	const data = canLoad && !employeesQuery.isError ? employeesQuery.data : undefined;
 	const contextError = organization.error
 		? new Error(organization.error)
 		: !organization.isLoading && hasEmployee && !canLoad
@@ -124,7 +118,7 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 
 		// Auth
 		hasEmployee,
-		isAdmin: options.accessTier === "orgAdmin",
+		isAdmin: isOrgAdmin,
 
 		// Filters
 		search,

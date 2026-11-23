@@ -89,6 +89,16 @@ async function openTransfer(user: ReturnType<typeof userEvent.setup>) {
 	};
 }
 
+async function pickEmployee(
+	user: ReturnType<typeof userEvent.setup>,
+	scope: ReturnType<typeof within>,
+	name: RegExp,
+) {
+	await user.click(scope.getByLabelText(/^Current employee/));
+	await user.click(await screen.findByRole("option", { name }));
+	await waitFor(() => expect(screen.queryByRole("option", { name })).toBeNull());
+}
+
 it("records separate receipt and issuance evidence, new terms, and a stable request on uncertain retries", async () => {
 	api.change.mockResolvedValue({ success: false, code: "DatabaseError" });
 	const user = userEvent.setup();
@@ -115,13 +125,13 @@ it("records separate receipt and issuance evidence, new terms, and a stable requ
 		"Received with charger",
 	);
 	const target = issuance.getByLabelText(/^Current employee/);
-	expect(
-		within(target).queryByRole("option", { name: "Alex Current" }),
-	).toBeNull();
-	expect(
-		within(target).queryByRole("option", { name: "Robin Former" }),
-	).toBeNull();
-	await user.selectOptions(target, ids.jamie);
+	await user.click(target);
+	expect(screen.queryByRole("option", { name: /Alex Current/ })).toBeNull();
+	expect(screen.queryByRole("option", { name: /Robin Former/ })).toBeNull();
+	await user.click(await screen.findByRole("option", { name: /Jamie New/ }));
+	await waitFor(() =>
+		expect(screen.queryByRole("option", { name: /Jamie New/ })).toBeNull(),
+	);
 	await user.type(
 		issuance.getByLabelText(/^Actual handover date/),
 		"2026-11-04",
@@ -190,10 +200,7 @@ it("validates a partial quantity and date order before submitting the new return
 		/>,
 	);
 	const { panel, receipt, issuance } = await openTransfer(user);
-	await user.selectOptions(
-		issuance.getByLabelText(/^Current employee/),
-		ids.jamie,
-	);
+	await pickEmployee(user, issuance, /Jamie New/);
 	await user.type(
 		receipt.getByLabelText(/^Actual handover date/),
 		"2026-11-04",
@@ -255,10 +262,7 @@ it("keeps a stale transfer reviewable and uses a new identity after editing the 
 		issuance.getByLabelText(/^Actual handover date/),
 		"2026-11-04",
 	);
-	await user.selectOptions(
-		issuance.getByLabelText(/^Current employee/),
-		ids.jamie,
-	);
+	await pickEmployee(user, issuance, /Jamie New/);
 	await user.click(
 		panel.getByRole("button", { name: "Confirm receipt and issuance" }),
 	);
@@ -347,10 +351,7 @@ it("records a dated transfer from an unknown-date historical holding on the assi
 		receipt.getByLabelText(/^Actual handover date/),
 		"2026-11-03",
 	);
-	await user.selectOptions(
-		issuance.getByLabelText(/^Current employee/),
-		ids.jamie,
-	);
+	await pickEmployee(user, issuance, /Jamie New/);
 	await user.type(
 		issuance.getByLabelText(/^Actual handover date/),
 		"2026-11-04",

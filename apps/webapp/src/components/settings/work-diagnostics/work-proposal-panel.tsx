@@ -4,6 +4,7 @@ import { IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -518,29 +519,23 @@ function ContinuationProposalForm({
 			</p>
 			<form.Field name="employeeId">
 				{(field) => (
-					<div className="space-y-2">
-						<Label htmlFor="work-proposal-employee">
-							{t("settings.workDiagnostics.proposals.employee", "Employee")}
-						</Label>
-						<select
-							id="work-proposal-employee"
-							className={SELECT_CLASS}
-							value={field.state.value}
-							onChange={(event) => {
-								field.handleChange(event.target.value);
-								const target = targets.find(
-									(candidate) => candidate.employeeId === event.target.value,
-								);
-								form.setFieldValue("anchorEntryId", target?.candidates[0]?.entryId ?? "");
-							}}
-						>
-							{targets.map((target) => (
-								<option key={target.employeeId} value={target.employeeId}>
-									{employeeLabel(target.employeeId)}
-								</option>
-							))}
-						</select>
-					</div>
+					<EmployeeSingleSelect
+						id="work-proposal-employee"
+						label={t("settings.workDiagnostics.proposals.employee", "Employee")}
+						value={field.state.value || null}
+						onChange={(value) => {
+							const next = value ?? "";
+							field.handleChange(next);
+							const target = targets.find((candidate) => candidate.employeeId === next);
+							form.setFieldValue("anchorEntryId", target?.candidates[0]?.entryId ?? "");
+						}}
+						employees={targets.map((target) =>
+							toSelectableEmployee({
+								id: target.employeeId,
+								name: employeeLabel(target.employeeId),
+							}),
+						)}
+					/>
 				)}
 			</form.Field>
 			<form.Subscribe selector={(state) => state.values.employeeId}>

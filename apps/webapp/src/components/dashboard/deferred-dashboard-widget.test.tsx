@@ -23,7 +23,7 @@ vi.mock("@tolgee/react", () => ({
 	}),
 	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
-vi.mock("@/app/[locale]/(app)/wellness/actions", () => ({
+vi.mock("@/lib/wellness/actions", () => ({
 	logWaterIntake: vi.fn(),
 }));
 vi.mock("canvas-confetti", () => ({ default: vi.fn() }));

@@ -25,48 +25,48 @@ export async function loadEscalationCandidateFacts(
 	input: { organizationId: string; requesterEmployeeId: string },
 ): Promise<EscalationCandidateFact[]> {
 	const { organizationId, requesterEmployeeId } = input;
-	const [employees, links, memberships, teams] = await Promise.all([
-		executor
-			.select({
-				id: employee.id,
-				organizationId: employee.organizationId,
-				isActive: employee.isActive,
-				role: employee.role,
-				teamId: employee.teamId,
-				userId: employee.userId,
-			})
-			.from(employee)
-			.where(eq(employee.organizationId, organizationId)),
-		executor
-			.select({
-				employeeId: employeeManagers.employeeId,
-				managerId: employeeManagers.managerId,
-				isPrimary: employeeManagers.isPrimary,
-				assignedAt: employeeManagers.assignedAt,
-			})
-			.from(employeeManagers)
-			.where(eq(employeeManagers.employeeId, requesterEmployeeId)),
-		executor
-			.select({
-				employeeId: teamMembership.employeeId,
-				teamId: teamMembership.teamId,
-			})
-			.from(teamMembership)
-			.where(
-				and(
-					eq(teamMembership.organizationId, organizationId),
-					eq(teamMembership.employeeId, requesterEmployeeId),
-				),
+	// One after another: `executor` may be a transaction, which is one connection,
+	// and pg@9 refuses a query while another is executing.
+	const employees = await executor
+		.select({
+			id: employee.id,
+			organizationId: employee.organizationId,
+			isActive: employee.isActive,
+			role: employee.role,
+			teamId: employee.teamId,
+			userId: employee.userId,
+		})
+		.from(employee)
+		.where(eq(employee.organizationId, organizationId));
+	const links = await executor
+		.select({
+			employeeId: employeeManagers.employeeId,
+			managerId: employeeManagers.managerId,
+			isPrimary: employeeManagers.isPrimary,
+			assignedAt: employeeManagers.assignedAt,
+		})
+		.from(employeeManagers)
+		.where(eq(employeeManagers.employeeId, requesterEmployeeId));
+	const memberships = await executor
+		.select({
+			employeeId: teamMembership.employeeId,
+			teamId: teamMembership.teamId,
+		})
+		.from(teamMembership)
+		.where(
+			and(
+				eq(teamMembership.organizationId, organizationId),
+				eq(teamMembership.employeeId, requesterEmployeeId),
 			),
-		executor
-			.select({
-				id: team.id,
-				organizationId: team.organizationId,
-				primaryManagerId: team.primaryManagerId,
-			})
-			.from(team)
-			.where(eq(team.organizationId, organizationId)),
-	]);
+		);
+	const teams = await executor
+		.select({
+			id: team.id,
+			organizationId: team.organizationId,
+			primaryManagerId: team.primaryManagerId,
+		})
+		.from(team)
+		.where(eq(team.organizationId, organizationId));
 
 	const eligible = resolveEligibleManagers({
 		organizationId,
@@ -80,25 +80,25 @@ export async function loadEscalationCandidateFacts(
 
 	const employeeById = new Map(employees.map((row) => [row.id, row]));
 	const linkByManager = new Map(links.map((link) => [link.managerId, link]));
-	return Promise.all(
-		eligible.managerIds.map(async (managerId): Promise<EscalationCandidateFact> => {
-			const manager = employeeById.get(managerId);
-			const link = linkByManager.get(managerId);
-			return {
-				employeeId: managerId,
-				isPrimary: link?.isPrimary === true,
-				relationshipSince: link ? instantFromDate(link.assignedAt) : null,
-				hasDecisionPath: manager
-					? await hasApprovalDecisionPath(executor, {
-							organizationId,
-							requesterEmployeeId,
-							managerEmployeeId: managerId,
-							managerUserId: manager.userId,
-						})
-					: false,
-			};
-		}),
-	);
+	const facts: EscalationCandidateFact[] = [];
+	for (const managerId of eligible.managerIds) {
+		const manager = employeeById.get(managerId);
+		const link = linkByManager.get(managerId);
+		facts.push({
+			employeeId: managerId,
+			isPrimary: link?.isPrimary === true,
+			relationshipSince: link ? instantFromDate(link.assignedAt) : null,
+			hasDecisionPath: manager
+				? await hasApprovalDecisionPath(executor, {
+						organizationId,
+						requesterEmployeeId,
+						managerEmployeeId: managerId,
+						managerUserId: manager.userId,
+					})
+				: false,
+		});
+	}
+	return facts;
 }
 
 /**

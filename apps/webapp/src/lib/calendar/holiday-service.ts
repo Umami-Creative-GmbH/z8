@@ -1,12 +1,18 @@
 import "server-only";
 
 import { and, eq, gte, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { holiday, holidayCategory } from "@/db/schema";
-import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { compareInstants, dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDB, instantToDB } from "@/lib/datetime/drizzle-adapter";
+import { localDayRange, localMonthRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	compareInstants,
+	dateFromInstant,
+	instantFromDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import { holidayStoredDatesInclude } from "@/lib/holidays/recurrence";
 import type { HolidayEvent } from "./types";
 
 /** Legacy calculation exclusion semantics, loaded once on the caller's scoped client. */
@@ -31,15 +37,10 @@ export async function loadCalculationExclusions(
 					eq(holiday.recurrenceType, "yearly"),
 					and(
 						eq(holiday.recurrenceType, "none"),
-						lte(
-							holiday.startDate,
-							dateFromInstant(instantFromDate(endDate).add({ hours: 48 })),
-						),
+						lte(holiday.startDate, dateFromInstant(instantFromDate(endDate).add({ hours: 48 }))),
 						gte(
 							holiday.endDate,
-							dateFromInstant(
-								instantFromDate(startDate).subtract({ hours: 48 }),
-							),
+							dateFromInstant(instantFromDate(startDate).subtract({ hours: 48 })),
 						),
 					),
 				),
@@ -48,14 +49,12 @@ export async function loadCalculationExclusions(
 	return (date) => {
 		const instant = instantFromDate(date);
 		const day = instant.toZonedDateTimeISO("UTC");
-		const window = localDayRange(day.toPlainDate().toString(), "UTC");
+		// One-off rows are read on their calendar dates, as the assigned-holiday reader does.
 		if (
 			rows.some(
 				({ holiday: h }) =>
 					h.recurrenceType === "none" &&
-					compareInstants(instantFromDate(h.startDate), window.endExclusive) <
-						0 &&
-					compareInstants(instantFromDate(h.endDate), window.start) >= 0,
+					holidayStoredDatesInclude(h.startDate, h.endDate, day.toPlainDate()),
 			)
 		)
 			return true;
@@ -90,16 +89,16 @@ export async function isHolidayBlockingTimeEntry(
 	/** A protected operation passes its transaction; defaults to the global client. */
 	reader: Pick<typeof db, "select"> = db,
 ): Promise<{ isBlocked: boolean; holiday: HolidayWithCategory | null }> {
-	// Convert to DateTime (UTC from database)
-	const dateDT = dateFromDB(date);
-	if (!dateDT) return { isBlocked: false, holiday: null };
+	const instant = instantFromDB(date);
+	if (!instant) return { isBlocked: false, holiday: null };
 
 	// Convert to employee's timezone to get their calendar day
-	const employeeLocalDT = dateDT.setZone(employeeTimezone);
+	const employeeLocalDate = plainDateAt(instant, employeeTimezone);
 
 	// Get day boundaries in employee's timezone, then convert back to UTC for DB query
-	const dateStart = dateToDB(employeeLocalDT.startOf("day").toUTC())!;
-	const dateEnd = dateToDB(employeeLocalDT.endOf("day").toUTC())!;
+	const dayWindow = localDayRange(employeeLocalDate.toString(), employeeTimezone);
+	const dateStart = dateFromInstant(dayWindow.start);
+	const dateEnd = dateFromInstant(dayWindow.endExclusive.subtract({ milliseconds: 1 }));
 
 	// Query non-recurring holidays
 	const nonRecurringHolidays = await reader
@@ -154,14 +153,14 @@ export async function isHolidayBlockingTimeEntry(
 		if (h.recurrenceRule) {
 			const rule = JSON.parse(h.recurrenceRule);
 			// Use employee's local date for recurring holiday matching
-			const dateMonth = employeeLocalDT.month; // Luxon months are 1-indexed
-			const dateDay = employeeLocalDT.day;
+			const dateMonth = employeeLocalDate.month;
+			const dateDay = employeeLocalDate.day;
 
 			if (rule.month === dateMonth && rule.day === dateDay) {
 				// Check if recurrence has ended
 				if (h.recurrenceEndDate) {
-					const recurrenceEndDT = dateFromDB(h.recurrenceEndDate);
-					if (recurrenceEndDT && dateDT > recurrenceEndDT) {
+					const recurrenceEndInstant = instantFromDB(h.recurrenceEndDate);
+					if (recurrenceEndInstant && compareInstants(instant, recurrenceEndInstant) > 0) {
 						continue;
 					}
 				}
@@ -203,10 +202,12 @@ export async function expandRecurringHolidays(
 
 	const events: HolidayEvent[] = [];
 
-	// Convert date range to DateTime
-	const startDT = dateFromDB(startDate);
-	const endDT = dateFromDB(endDate);
-	if (!startDT || !endDT) return events;
+	const startInstant = instantFromDB(startDate);
+	const endInstant = instantFromDB(endDate);
+	if (!startInstant || !endInstant) return events;
+
+	const startYear = plainDateAt(startInstant, "UTC").year;
+	const endYear = plainDateAt(endInstant, "UTC").year;
 
 	for (const { holiday: h, category: cat } of recurringHolidays) {
 		if (!h.recurrenceRule) continue;
@@ -214,18 +215,30 @@ export async function expandRecurringHolidays(
 		const rule = JSON.parse(h.recurrenceRule);
 
 		// Generate instances for each year in the date range
-		for (let year = startDT.year; year <= endDT.year; year++) {
-			const instanceDT = DateTime.utc(year, rule.month, rule.day);
+		for (let year = startYear; year <= endYear; year++) {
+			let instanceDate: Temporal.PlainDate;
+			try {
+				instanceDate = Temporal.PlainDate.from(
+					{ year, month: rule.month, day: rule.day },
+					{ overflow: "reject" },
+				);
+			} catch {
+				continue;
+			}
+			const instanceInstant = instanceDate.toZonedDateTime("UTC").toInstant();
 
 			// Check if instance is within the date range
-			if (instanceDT < startDT || instanceDT > endDT) {
+			if (
+				compareInstants(instanceInstant, startInstant) < 0 ||
+				compareInstants(instanceInstant, endInstant) > 0
+			) {
 				continue;
 			}
 
 			// Check if recurrence has ended
 			if (h.recurrenceEndDate) {
-				const recurrenceEndDT = dateFromDB(h.recurrenceEndDate);
-				if (recurrenceEndDT && instanceDT > recurrenceEndDT) {
+				const recurrenceEndInstant = instantFromDB(h.recurrenceEndDate);
+				if (recurrenceEndInstant && compareInstants(instanceInstant, recurrenceEndInstant) > 0) {
 					continue;
 				}
 			}
@@ -233,7 +246,7 @@ export async function expandRecurringHolidays(
 			events.push({
 				id: `${h.id}-${year}`,
 				type: "holiday",
-				date: dateToDB(instanceDT)!, // Convert back to Date for interface compatibility
+				date: instantToDB(instanceInstant)!, // Convert back to Date for interface compatibility
 				title: h.name,
 				description: h.description || undefined,
 				color: cat.color || "#f59e0b",
@@ -258,13 +271,11 @@ export async function getHolidaysForMonth(
 	month: number, // 0-11 (JS month format)
 	year: number,
 ): Promise<HolidayEvent[]> {
-	// Calculate date range for the month (month is 0-indexed in JavaScript, 1-indexed in Luxon)
-	const startDT = DateTime.utc(year, month + 1, 1).startOf("day");
-	const endDT = startDT.endOf("month");
+	const monthRange = localMonthRange(`${year}-${String(month + 1).padStart(2, "0")}-01`, "UTC");
 
 	// Convert to Date objects for Drizzle query
-	const startDate = dateToDB(startDT)!;
-	const endDate = dateToDB(endDT)!;
+	const startDate = dateFromInstant(monthRange.start);
+	const endDate = dateFromInstant(monthRange.endExclusive.subtract({ milliseconds: 1 }));
 
 	// Get non-recurring holidays
 	const nonRecurringHolidays = await db
@@ -314,32 +325,37 @@ export async function shouldExcludeFromCalculations(
 	organizationId: string,
 	date: Date,
 ): Promise<boolean> {
-	// Convert to DateTime and get day boundaries
-	const dateDT = dateFromDB(date);
-	if (!dateDT) return false;
+	const instant = instantFromDB(date);
+	if (!instant) return false;
 
-	const dateStart = dateToDB(dateDT.startOf("day"))!;
-	const dateEnd = dateToDB(dateDT.endOf("day"))!;
+	// Imported rows hold local-midnight instants up to 14 hours off the UTC day; the
+	// candidates are read on their calendar dates (`holidayStoredDates`).
+	const calendarDay = plainDateAt(instant, "UTC");
+	const dayWindow = localDayRange(calendarDay.toString(), "UTC");
 
 	// Check non-recurring holidays
 	const nonRecurringHolidays = await db
-		.select()
+		.select({ holiday })
 		.from(holiday)
 		.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
 		.where(
 			and(
 				eq(holiday.organizationId, organizationId),
+				eq(holidayCategory.organizationId, organizationId),
 				eq(holiday.isActive, true),
 				eq(holidayCategory.isActive, true),
 				eq(holidayCategory.excludeFromCalculations, true),
 				eq(holiday.recurrenceType, "none"),
-				lte(holiday.startDate, dateEnd),
-				gte(holiday.endDate, dateStart),
+				lte(holiday.startDate, dateFromInstant(dayWindow.endExclusive.add({ hours: 48 }))),
+				gte(holiday.endDate, dateFromInstant(dayWindow.start.subtract({ hours: 48 }))),
 			),
-		)
-		.limit(1);
+		);
 
-	if (nonRecurringHolidays.length > 0) {
+	if (
+		nonRecurringHolidays.some(({ holiday: h }) =>
+			holidayStoredDatesInclude(h.startDate, h.endDate, calendarDay),
+		)
+	) {
 		return true;
 	}
 
@@ -364,13 +380,13 @@ export async function shouldExcludeFromCalculations(
 	for (const { holiday: h } of recurringHolidays) {
 		if (h.recurrenceRule) {
 			const rule = JSON.parse(h.recurrenceRule);
-			const dateMonth = dateDT.month; // Luxon months are 1-indexed
-			const dateDay = dateDT.day;
+			const dateMonth = calendarDay.month;
+			const dateDay = calendarDay.day;
 
 			if (rule.month === dateMonth && rule.day === dateDay) {
 				if (h.recurrenceEndDate) {
-					const recurrenceEndDT = dateFromDB(h.recurrenceEndDate);
-					if (recurrenceEndDT && dateDT > recurrenceEndDT) {
+					const recurrenceEndInstant = instantFromDB(h.recurrenceEndDate);
+					if (recurrenceEndInstant && compareInstants(instant, recurrenceEndInstant) > 0) {
 						continue;
 					}
 				}

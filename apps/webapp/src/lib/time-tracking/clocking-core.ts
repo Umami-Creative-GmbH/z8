@@ -5,7 +5,7 @@
  * can use it directly. Request paths use the access-coordinated
  * `clockingService` from `./clocking-service`.
  */
-import { and, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
@@ -556,9 +556,11 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 						eq(workPeriod.organizationId, organizationId),
 						eq(workPeriod.isActive, true),
 						isNull(workPeriod.endTime),
+						isNull(workPeriod.deletedAt),
 						...(workPeriodId ? [eq(workPeriod.id, workPeriodId)] : []),
 					),
 				)
+				.orderBy(desc(workPeriod.startTime), desc(workPeriod.createdAt))
 				.limit(1);
 			return period ?? null;
 		},
@@ -587,17 +589,26 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 						eq(timeEntry.organizationId, organizationId),
 					),
 				)
-				.orderBy(desc(timeEntry.createdAt))
+				.orderBy(desc(timeEntry.createdAt), desc(timeEntry.id))
 				.limit(1);
 			return latest?.hash ?? null;
 		},
 		admitAppend: (scope, operation) => admitTimeEntryAppend(tx, scope, operation),
 		// Explicit columns: the approval write-boundary scanner checks live work's writes.
+		// A chained clock-in (such as a break's resume in the same transaction as its
+		// clock-out) must be created strictly after its predecessor so latest-entry head
+		// selection never picks the break's clock-out and forks the hash chain.
 		insertEntry: async (values) => {
+			const previousEntryId = values.previousEntryId ?? null;
+			const createdAt =
+				previousEntryId === null
+					? undefined
+					: sql<Date>`greatest(now(), (select ${timeEntry.createdAt} + interval '1 microsecond' from ${timeEntry} where ${timeEntry.id} = ${previousEntryId} and ${timeEntry.organizationId} = ${values.organizationId}))`;
 			const [entry] = await tx
 				.insert(timeEntry)
 				.values({
 					id: values.id,
+					...(createdAt === undefined ? {} : { createdAt }),
 					previousEntryId: values.previousEntryId,
 					employeeId: values.employeeId,
 					organizationId: values.organizationId,

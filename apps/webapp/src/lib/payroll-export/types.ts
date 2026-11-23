@@ -1,7 +1,7 @@
 /**
  * Core types for payroll export system
  */
-import type { DateTime } from "luxon";
+import type { PlainDate, ZonedDateTime } from "@/lib/datetime/temporal-core";
 import type { PersonnelNumberType } from "./personnel-identifier";
 import type { SupportedPayrollOutputEvidence } from "./supported-output-evidence";
 
@@ -92,10 +92,7 @@ export type {
 export { DEFAULT_SUCCESSFACTORS_CONFIG } from "./exporters/successfactors/types";
 
 // Workday types - re-exported from exporter module
-export type {
-	WorkdayConfig,
-	WorkdayEmployeeMatchStrategy,
-} from "./exporters/workday/types";
+export type { WorkdayConfig, WorkdayEmployeeMatchStrategy } from "./exporters/workday/types";
 export { DEFAULT_WORKDAY_CONFIG } from "./exporters/workday/types";
 
 // ============================================
@@ -116,10 +113,7 @@ export type SpecialWageCategory = (typeof SPECIAL_WAGE_CATEGORIES)[number];
 /**
  * Default DATEV wage type codes (Lohnarten)
  */
-export const DEFAULT_DATEV_LOHNARTEN: Record<
-	string,
-	{ code: string; name: string }
-> = {
+export const DEFAULT_DATEV_LOHNARTEN: Record<string, { code: string; name: string }> = {
 	// Work time
 	arbeitszeit: { code: "1000", name: "Arbeitszeit" },
 	// Overtime
@@ -193,8 +187,8 @@ export interface WageTypeMapping {
  */
 export interface PayrollExportFilters {
 	dateRange: {
-		start: DateTime;
-		end: DateTime;
+		start: PlainDate;
+		end: PlainDate;
 	};
 	employeeIds?: string[];
 	teamIds?: string[];
@@ -233,8 +227,8 @@ export interface WorkPeriodData {
 	lastName: string | null;
 	/** The frozen custom field identifier value, when the configuration names one (#821). */
 	personnelIdentifier?: string | null;
-	startTime: DateTime;
-	endTime: DateTime | null;
+	startTime: ZonedDateTime;
+	endTime: ZonedDateTime | null;
 	durationMinutes: number | null;
 	workCategoryId: string | null;
 	workCategoryName: string | null;
@@ -351,11 +345,7 @@ export interface ExportResult {
 /**
  * Export job status
  */
-export type PayrollExportStatus =
-	| "pending"
-	| "processing"
-	| "completed"
-	| "failed";
+export type PayrollExportStatus = "pending" | "processing" | "completed" | "failed";
 
 /**
  * Export job summary
@@ -378,6 +368,10 @@ export interface PayrollExportJobSummary {
 	payrollRunIncludedReports: number;
 	/** How many overtime payouts the file left out for want of an "overtime" mapping (#1001). */
 	unmappedOvertimePayoutCount: number;
+	/** Settled and changed-since-settled employee-days the file left out (#1898). */
+	settledDaysLeftOut: number;
+	/** The officer chose "Include settled days" to reissue the file (#1898). */
+	includesSettledDays: boolean;
 }
 
 // ============================================

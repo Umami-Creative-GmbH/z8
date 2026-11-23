@@ -73,10 +73,15 @@ const allowanceItem = (itemId: string, overridden: boolean) => ({
 
 function mount() {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	render(
+	const view = render(
 		<QueryClientProvider client={client}>
 			<TravelExpenseSettingsTabs
-				review={<p>Review cards</p>}
+				review={
+					<>
+						<p>Review cards</p>
+						<input aria-label="Review draft" defaultValue="" />
+					</>
+				}
 				currencies={<p>Currency cards</p>}
 				rates={<p>Rate cards</p>}
 				exceptions={<p>Exception cards</p>}
@@ -84,7 +89,7 @@ function mount() {
 			/>
 		</QueryClientProvider>,
 	);
-	return client;
+	return { client, ...view };
 }
 
 beforeEach(() => {
@@ -98,10 +103,17 @@ afterEach(() => {
 });
 
 describe("travel expense settings tabs (#689)", () => {
-	it("opens Review without a tab in the URL", () => {
-		mount();
+	it("opens Review without a tab in the URL inside the shared measured tabbed frame", () => {
+		const { container } = mount();
+		expect(container.querySelector(".page-frame .page-measure")).toBeTruthy();
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(screen.getByRole("heading", { level: 1, name: "Travel Expense Policies" })).toBeTruthy();
+		const tablist = screen.getByRole("tablist", { name: "Travel Expense Policies" });
+		expect(tablist.parentElement?.className).toContain("max-w-full");
+		expect(tablist.parentElement?.className).toContain("overflow-x-auto");
 		expect(screen.getByRole("tab", { name: "Review" }).getAttribute("aria-selected")).toBe("true");
 		expect(screen.getByText("Review cards")).toBeTruthy();
+		expect(screen.queryByText("Currency cards")).toBeNull();
 	});
 
 	it("falls back to Review for an unknown tab", () => {
@@ -116,6 +128,7 @@ describe("travel expense settings tabs (#689)", () => {
 		mount();
 		expect(screen.getByRole("tab", { name: "Rates" }).getAttribute("aria-selected")).toBe("true");
 		expect(screen.getByText("Rate cards")).toBeTruthy();
+		expect(screen.queryByText("Review cards")).toBeNull();
 	});
 
 	it("opens the expense officers on the Access tab (#747)", () => {
@@ -125,14 +138,25 @@ describe("travel expense settings tabs (#689)", () => {
 		expect(screen.getByText("Access cards")).toBeTruthy();
 	});
 
-	it("writes the chosen tab to the URL and keeps other search params", async () => {
-		window.history.replaceState(null, "", "/settings/travel-expenses?from=nav");
+	it("writes the chosen tab to the URL, keeps other URL state, and retains visited edits", async () => {
+		window.history.replaceState(null, "", "/settings/travel-expenses?from=nav#rules");
 		mount();
+		fireEvent.change(screen.getByLabelText("Review draft"), {
+			target: { value: "Unsaved review note" },
+		});
 		fireEvent.click(screen.getByRole("tab", { name: "Currencies" }));
 		await waitFor(() => expect(screen.getByText("Currency cards")).toBeTruthy());
 		expect(window.location.pathname).toBe("/settings/travel-expenses");
+		expect(window.location.hash).toBe("#rules");
 		expect(new URLSearchParams(window.location.search).get("tab")).toBe("currencies");
 		expect(new URLSearchParams(window.location.search).get("from")).toBe("nav");
+
+		fireEvent.click(screen.getByRole("tab", { name: "Review" }));
+		await waitFor(() =>
+			expect(screen.getByRole("tabpanel").querySelector("input")?.value).toBe(
+				"Unsaved review note",
+			),
+		);
 	});
 
 	it("counts unconverted foreign items and allowances without an override on Exceptions", async () => {
@@ -145,7 +169,11 @@ describe("travel expense settings tabs (#689)", () => {
 			data: [allowanceItem("a1", false), allowanceItem("a2", true)],
 		});
 		mount();
-		expect(await screen.findByRole("tab", { name: "Exceptions, 3 pending" })).toBeTruthy();
+		const exceptionsTab = await screen.findByRole("tab", { name: "Exceptions, 3 pending" });
+		expect(exceptionsTab).toBeTruthy();
+		expect(exceptionsTab.querySelector('[data-slot="badge"]')?.getAttribute("aria-hidden")).toBe(
+			"true",
+		);
 		// Visible while another tab is active.
 		expect(screen.getByRole("tab", { name: "Review" }).getAttribute("aria-selected")).toBe("true");
 		expect(screen.getByRole("tab", { name: "Review" }).textContent).toBe("Review");
@@ -186,7 +214,7 @@ describe("travel expense settings tabs (#689)", () => {
 			success: true,
 			data: [foreignItem("f1", false), foreignItem("f2", false)],
 		});
-		const client = mount();
+		const { client } = mount();
 		expect(await screen.findByRole("tab", { name: "Exceptions, 2 pending" })).toBeTruthy();
 
 		actions.getForeignDraftExpenses.mockResolvedValue({
@@ -209,7 +237,7 @@ describe("travel expense settings tabs (#689)", () => {
 			success: true,
 			data: [allowanceItem("a1", false)],
 		});
-		const client = mount();
+		const { client } = mount();
 		expect(await screen.findByRole("tab", { name: "Exceptions, 1 pending" })).toBeTruthy();
 
 		actions.getAllowanceExceptionItems.mockResolvedValue({

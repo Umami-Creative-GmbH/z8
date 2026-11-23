@@ -8,9 +8,15 @@
 
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import { complianceException, employeeManagers, workPolicyViolation } from "@/db/schema";
+import {
+	dateFromInstant,
+	instantFromDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { DatabaseError } from "@/lib/effect/errors";
+import { parseTimeZone } from "@/lib/timezone/validation";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -190,8 +196,11 @@ export const TeamsComplianceServiceLive = Layer.effect(
 					}
 
 					const managedEmployeeIds = [...managedEmployees.keys()];
-					const now = DateTime.now().setZone(timezone);
-					const startDate = now.minus({ days: daysBack }).startOf("day").toJSDate();
+					const resolvedTimezone = parseTimeZone(timezone);
+					const today = plainDateAt(systemClock.nowInstant(), resolvedTimezone);
+					const startDate = dateFromInstant(
+						today.subtract({ days: daysBack }).toZonedDateTime(resolvedTimezone).toInstant(),
+					);
 
 					// Get violations for managed employees
 					const violations = yield* dbService.query("getViolations", async () => {
@@ -232,7 +241,9 @@ export const TeamsComplianceServiceLive = Layer.effect(
 							(ex) =>
 								ex.exceptionType === v.violationType &&
 								ex.usedAt &&
-								DateTime.fromJSDate(ex.usedAt).hasSame(DateTime.fromJSDate(v.violationDate), "day"),
+								plainDateAt(instantFromDate(ex.usedAt), resolvedTimezone).equals(
+									plainDateAt(instantFromDate(v.violationDate), resolvedTimezone),
+								),
 						);
 
 						return {

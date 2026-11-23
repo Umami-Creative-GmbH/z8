@@ -15,7 +15,7 @@ import {
 	sql,
 } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
@@ -66,7 +66,6 @@ import { deriveTimeCorrectionRowId } from "@/lib/approvals/workflow/identity";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import { approvalWorkTransactionPort } from "@/lib/approvals/workflow/work-transaction-port";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	compareInstants,
 	comparePlainDates,
@@ -124,9 +123,7 @@ class DemoCorrectionHeldForReviewError extends Error {
 	}
 }
 
-const DEMO_CORRECTION_TIMEZONE_SOURCES = new Set<
-	TimeEntryTimezoneCapture["timezoneSource"]
->([
+const DEMO_CORRECTION_TIMEZONE_SOURCES = new Set<TimeEntryTimezoneCapture["timezoneSource"]>([
 	"browser",
 	"user_setting",
 	"manager_target_user_setting",
@@ -151,9 +148,7 @@ function sameDemoInstant(left: Date | null, right: Date | null): boolean {
 function validDemoTimezoneSource(
 	value: string,
 ): value is TimeEntryTimezoneCapture["timezoneSource"] {
-	return DEMO_CORRECTION_TIMEZONE_SOURCES.has(
-		value as TimeEntryTimezoneCapture["timezoneSource"],
-	);
+	return DEMO_CORRECTION_TIMEZONE_SOURCES.has(value as TimeEntryTimezoneCapture["timezoneSource"]);
 }
 
 /**
@@ -171,8 +166,7 @@ function generateWorkDescription(): string {
 		() => `Email correspondence with ${faker.person.fullName()}`,
 		() => "Team standup and planning",
 		() => `Reviewing ${faker.commerce.productName()} requirements`,
-		() =>
-			`Testing ${faker.commerce.productAdjective().toLowerCase()} functionality`,
+		() => `Testing ${faker.commerce.productAdjective().toLowerCase()} functionality`,
 		() => "Database optimization work",
 		() => `Client call: ${faker.company.name()}`,
 		() => "Infrastructure monitoring",
@@ -211,8 +205,7 @@ function generateEndOfDayDescription(): string {
 		() => "Preparing tomorrow's priorities",
 		() => `Completed ${faker.hacker.verb()} tasks`,
 		() => "Final code review and commits",
-		() =>
-			`Finished ${faker.commerce.productAdjective().toLowerCase()} feature work`,
+		() => `Finished ${faker.commerce.productAdjective().toLowerCase()} feature work`,
 	];
 	return faker.helpers.arrayElement(eodTasks)();
 }
@@ -321,8 +314,7 @@ function randomTimeBetween(
 	maxMinute = 59,
 ): number {
 	const hour = Math.floor(Math.random() * (maxHour - minHour + 1)) + minHour;
-	const minute =
-		Math.floor(Math.random() * (maxMinute - minMinute + 1)) + minMinute;
+	const minute = Math.floor(Math.random() * (maxMinute - minMinute + 1)) + minMinute;
 	return hour * 60 + minute;
 }
 
@@ -609,8 +601,7 @@ export async function generateDemoPendingAbsenceApprovals(
 		),
 	});
 
-	const category =
-		categories.find((c) => c.type === "vacation") ?? categories[0];
+	const category = categories.find((c) => c.type === "vacation") ?? categories[0];
 
 	if (!category) {
 		return { pendingAbsenceApprovalsCreated: 0 };
@@ -633,24 +624,24 @@ export async function generateDemoPendingAbsenceApprovals(
 				employeeIdSet.has(assignment.managerId),
 		);
 		const approverId =
-			assignedManager?.managerId ??
-			employees.find((emp) => emp.id !== requester.id)?.id;
+			assignedManager?.managerId ?? employees.find((emp) => emp.id !== requester.id)?.id;
 		const approver = approverId ? employeeById.get(approverId) : undefined;
 
 		if (!approverId || !approver) {
 			continue;
 		}
 
-		const startDate = DateTime.utc().plus({ days: 14 + index * 3 });
-		const endDate = startDate.plus({ days: index % 2 });
+		const todayUtc = plainDateAt(systemClock.nowInstant(), "UTC");
+		const startDate = todayUtc.add({ days: 14 + index * 3 });
+		const endDate = startDate.add({ days: index % 2 });
 		const [insertedAbsence] = await db
 			.insert(absenceEntry)
 			.values({
 				organizationId: options.organizationId,
 				employeeId: requester.id,
 				categoryId: category.id,
-				startDate: startDate.toISODate()!,
-				endDate: endDate.toISODate()!,
+				startDate: startDate.toString(),
+				endDate: endDate.toString(),
 				status: "pending",
 				notes: "Demo data - Pending approval request",
 			})
@@ -674,8 +665,8 @@ export async function generateDemoPendingAbsenceApprovals(
 		const content = absencePendingApprovalContent({
 			employeeName: requester.user?.name ?? "",
 			categoryName: category.name,
-			startDate: startDate.toISODate()!,
-			endDate: endDate.toISODate()!,
+			startDate: startDate.toString(),
+			endDate: endDate.toString(),
 		});
 		await db.insert(notification).values({
 			userId: approver.userId,
@@ -703,9 +694,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 			eq(workPeriod.organizationId, options.organizationId),
 			eq(workPeriod.isActive, false),
 			isNotNull(workPeriod.canonicalRecordId),
-			...(options.employeeIds?.length
-				? [inArray(workPeriod.employeeId, options.employeeIds)]
-				: []),
+			...(options.employeeIds?.length ? [inArray(workPeriod.employeeId, options.employeeIds)] : []),
 		),
 		orderBy: (period, { asc }) => [asc(period.startTime), asc(period.id)],
 		limit: 20,
@@ -719,30 +708,20 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 	const managerAssignmentLimit = requesterIds.length * 2;
 	const managerAssignments = await db.query.employeeManagers.findMany({
 		where: inArray(employeeManagers.employeeId, requesterIds),
-		orderBy: (assignment, { asc }) => [
-			asc(assignment.employeeId),
-			asc(assignment.managerId),
-		],
+		orderBy: (assignment, { asc }) => [asc(assignment.employeeId), asc(assignment.managerId)],
 		limit: managerAssignmentLimit + 1,
 	});
 	if (managerAssignments.length > managerAssignmentLimit) {
 		return { pendingTimeCorrectionApprovalsCreated: 0 };
 	}
-	const managerAssignmentsByRequester = new Map<
-		string,
-		typeof managerAssignments
-	>();
+	const managerAssignmentsByRequester = new Map<string, typeof managerAssignments>();
 	for (const assignment of managerAssignments) {
-		const assignments =
-			managerAssignmentsByRequester.get(assignment.employeeId) ?? [];
+		const assignments = managerAssignmentsByRequester.get(assignment.employeeId) ?? [];
 		assignments.push(assignment);
 		managerAssignmentsByRequester.set(assignment.employeeId, assignments);
 	}
 	const candidateEmployeeIds = [
-		...new Set([
-			...requesterIds,
-			...managerAssignments.map((assignment) => assignment.managerId),
-		]),
+		...new Set([...requesterIds, ...managerAssignments.map((assignment) => assignment.managerId)]),
 	];
 	const employees = await db.query.employee.findMany({
 		where: and(
@@ -752,8 +731,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 		),
 	});
 	const needsFallback = requesterIds.some(
-		(requesterId) =>
-			(managerAssignmentsByRequester.get(requesterId)?.length ?? 0) === 0,
+		(requesterId) => (managerAssignmentsByRequester.get(requesterId)?.length ?? 0) === 0,
 	);
 	const [fallbackEmployee] = needsFallback
 		? await db
@@ -792,9 +770,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 		).map((row) => [row.id, row.user?.name ?? ""]),
 	);
 	const employeeIdSet = new Set(employees.map((candidate) => candidate.id));
-	const employeesById = new Map(
-		employees.map((candidate) => [candidate.id, candidate]),
-	);
+	const employeesById = new Map(employees.map((candidate) => [candidate.id, candidate]));
 	if (fallbackEmployee) {
 		employeeIdSet.add(fallbackEmployee.id);
 		employeesById.set(fallbackEmployee.id, fallbackEmployee);
@@ -805,35 +781,29 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 	};
 	const createRuntime = (database: ApprovalWorkflowDatabase) =>
 		createProductionApprovalWorkflowRuntime({
-		db: database,
-		adapters: {
-			absence: {
-				clock: systemClock,
-				finalizeAbsenceTerminal: async () => {
-					throw new Error(
-						"Absence finalization is outside demo correction generation",
-					);
+			db: database,
+			adapters: {
+				absence: {
+					clock: systemClock,
+					finalizeAbsenceTerminal: async () => {
+						throw new Error("Absence finalization is outside demo correction generation");
+					},
+					deleteCancelledAbsence: async () => {
+						throw new Error("Absence cancellation is outside demo correction generation");
+					},
 				},
-				deleteCancelledAbsence: async () => {
-					throw new Error(
-						"Absence cancellation is outside demo correction generation",
-					);
+				timeCorrection: {
+					clock: systemClock,
+					finalizeTimeCorrectionTerminal: finalizeTimeCorrectionTerminalInTransaction,
+					deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
+				},
+				ordinaryWorkPeriod: {
+					finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 				},
 			},
-			timeCorrection: {
-				clock: systemClock,
-				finalizeTimeCorrectionTerminal:
-					finalizeTimeCorrectionTerminalInTransaction,
-				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
-			},
-			ordinaryWorkPeriod: {
-				finalizeTerminal:
-					finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
-			},
-		},
-		canManageApproval: async () => false,
-		clock: systemClock,
-	});
+			canManageApproval: async () => false,
+			clock: systemClock,
+		});
 
 	let pendingTimeCorrectionApprovalsCreated = 0;
 
@@ -859,8 +829,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 			continue;
 		}
 
-		const requesterManagerAssignments =
-			managerAssignmentsByRequester.get(requester.id) ?? [];
+		const requesterManagerAssignments = managerAssignmentsByRequester.get(requester.id) ?? [];
 		if (requesterManagerAssignments.length > 1) {
 			continue;
 		}
@@ -911,9 +880,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 			continue;
 		}
 		let submission: {
-			result: Awaited<
-				ReturnType<typeof executeTimeCorrectionSubmissionInTransaction>
-			>;
+			result: Awaited<ReturnType<typeof executeTimeCorrectionSubmissionInTransaction>>;
 			submissionId: string;
 		};
 		try {
@@ -936,426 +903,417 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					}),
 				},
 				async (scope) => {
-				const context = scope.approval;
-				const tx = context.dbService.db as unknown as typeof db;
-				const lockedEmployees = await tx
-					.select()
-					.from(employee)
-					.where(
-						and(
-							eq(employee.organizationId, options.organizationId),
-							inArray(employee.id, [requester.id, approverId]),
-						),
-					)
-					.orderBy(asc(employee.id))
-					.for("update");
-				const currentRequester = lockedEmployees.find(
-					(candidate) => candidate.id === requester.id,
-				);
-				if (
-					!currentRequester ||
-					currentRequester.id !== requester.id ||
-					currentRequester.organizationId !== options.organizationId ||
-					currentRequester.userId !== requester.userId ||
-					currentRequester.teamId !== requester.teamId ||
-					currentRequester.isActive !== true
-				) {
-					throw new DemoCorrectionSourceChangedError();
-				}
-				const currentApprover = lockedEmployees.find(
-					(candidate) => candidate.id === approverId,
-				);
-				if (
-					!currentApprover ||
-					currentApprover.organizationId !== options.organizationId ||
-					currentApprover.isActive !== true
-				) {
-					throw new DemoCorrectionSourceChangedError();
-				}
-				const lockedManagerAssignments = await tx
-					.select()
-					.from(employeeManagers)
-					.where(eq(employeeManagers.employeeId, requester.id))
-					.for("update");
-				if (
-					(assignedManager &&
-						(lockedManagerAssignments.length !== 1 ||
-							lockedManagerAssignments[0]?.managerId !== approverId)) ||
-					(usesFallback && lockedManagerAssignments.length !== 0)
-				) {
-					throw new DemoCorrectionSourceChangedError();
-				}
-				if (usesFallback) {
-					const [lockedFallbackMember] = await tx
+					const context = scope.approval;
+					const tx = context.dbService.db as unknown as typeof db;
+					const lockedEmployees = await tx
 						.select()
-						.from(member)
+						.from(employee)
 						.where(
 							and(
-								eq(member.userId, currentApprover.userId),
-								eq(member.organizationId, options.organizationId),
-								eq(member.status, "approved"),
+								eq(employee.organizationId, options.organizationId),
+								inArray(employee.id, [requester.id, approverId]),
+							),
+						)
+						.orderBy(asc(employee.id))
+						.for("update");
+					const currentRequester = lockedEmployees.find(
+						(candidate) => candidate.id === requester.id,
+					);
+					if (
+						!currentRequester ||
+						currentRequester.id !== requester.id ||
+						currentRequester.organizationId !== options.organizationId ||
+						currentRequester.userId !== requester.userId ||
+						currentRequester.teamId !== requester.teamId ||
+						currentRequester.isActive !== true
+					) {
+						throw new DemoCorrectionSourceChangedError();
+					}
+					const currentApprover = lockedEmployees.find((candidate) => candidate.id === approverId);
+					if (
+						!currentApprover ||
+						currentApprover.organizationId !== options.organizationId ||
+						currentApprover.isActive !== true
+					) {
+						throw new DemoCorrectionSourceChangedError();
+					}
+					const lockedManagerAssignments = await tx
+						.select()
+						.from(employeeManagers)
+						.where(eq(employeeManagers.employeeId, requester.id))
+						.for("update");
+					if (
+						(assignedManager &&
+							(lockedManagerAssignments.length !== 1 ||
+								lockedManagerAssignments[0]?.managerId !== approverId)) ||
+						(usesFallback && lockedManagerAssignments.length !== 0)
+					) {
+						throw new DemoCorrectionSourceChangedError();
+					}
+					if (usesFallback) {
+						const [lockedFallbackMember] = await tx
+							.select()
+							.from(member)
+							.where(
+								and(
+									eq(member.userId, currentApprover.userId),
+									eq(member.organizationId, options.organizationId),
+									eq(member.status, "approved"),
+								),
+							)
+							.for("update");
+						if (
+							!lockedFallbackMember ||
+							lockedFallbackMember.userId !== currentApprover.userId ||
+							lockedFallbackMember.organizationId !== options.organizationId ||
+							lockedFallbackMember.status !== "approved"
+						) {
+							throw new DemoCorrectionSourceChangedError();
+						}
+					}
+					const lockedTeamMemberships = await tx
+						.select()
+						.from(teamMembership)
+						.where(
+							and(
+								eq(teamMembership.organizationId, options.organizationId),
+								eq(teamMembership.employeeId, requester.id),
+							),
+						)
+						.orderBy(asc(teamMembership.teamId))
+						.for("update");
+					let teamId: string | null = null;
+					const lockedTeamMembership = requester.teamId
+						? lockedTeamMemberships.find(
+								(membership) =>
+									membership.organizationId === options.organizationId &&
+									membership.employeeId === requester.id &&
+									membership.teamId === requester.teamId,
+							)
+						: undefined;
+					if (lockedTeamMembership) {
+						const [currentTeam] = await tx
+							.select()
+							.from(team)
+							.where(
+								and(
+									eq(team.id, lockedTeamMembership.teamId),
+									eq(team.organizationId, options.organizationId),
+								),
+							)
+							.for("update");
+						if (
+							!currentTeam ||
+							currentTeam.id !== lockedTeamMembership.teamId ||
+							currentTeam.organizationId !== options.organizationId
+						) {
+							throw new DemoCorrectionSourceChangedError();
+						}
+						teamId = currentTeam.id;
+					}
+					const [lockedPeriod] = await tx
+						.select()
+						.from(workPeriod)
+						.where(
+							and(
+								eq(workPeriod.id, period.id),
+								eq(workPeriod.organizationId, options.organizationId),
+								eq(workPeriod.employeeId, requester.id),
 							),
 						)
 						.for("update");
 					if (
-						!lockedFallbackMember ||
-						lockedFallbackMember.userId !== currentApprover.userId ||
-						lockedFallbackMember.organizationId !== options.organizationId ||
-						lockedFallbackMember.status !== "approved"
+						!lockedPeriod ||
+						lockedPeriod.id !== period.id ||
+						lockedPeriod.organizationId !== options.organizationId ||
+						lockedPeriod.employeeId !== requester.id ||
+						lockedPeriod.clockInId !== period.clockInId ||
+						lockedPeriod.clockOutId !== period.clockOutId ||
+						!lockedPeriod.canonicalRecordId ||
+						lockedPeriod.canonicalRecordId !== period.canonicalRecordId ||
+						!sameDemoInstant(lockedPeriod.startTime, period.startTime) ||
+						!sameDemoInstant(lockedPeriod.endTime, period.endTime) ||
+						lockedPeriod.durationMinutes !== period.durationMinutes ||
+						lockedPeriod.isActive ||
+						lockedPeriod.clockOutId === null ||
+						lockedPeriod.endTime === null ||
+						lockedPeriod.approvalStatus !== "approved" ||
+						lockedPeriod.pendingChanges !== null ||
+						lockedPeriod.deletedAt !== null
 					) {
 						throw new DemoCorrectionSourceChangedError();
 					}
-				}
-				const lockedTeamMemberships = await tx
-					.select()
-					.from(teamMembership)
-					.where(
-						and(
-							eq(teamMembership.organizationId, options.organizationId),
-							eq(teamMembership.employeeId, requester.id),
-						),
-					)
-					.orderBy(asc(teamMembership.teamId))
-					.for("update");
-				let teamId: string | null = null;
-				const lockedTeamMembership = requester.teamId
-					? lockedTeamMemberships.find(
-							(membership) =>
-								membership.organizationId === options.organizationId &&
-								membership.employeeId === requester.id &&
-								membership.teamId === requester.teamId,
-						)
-					: undefined;
-				if (lockedTeamMembership) {
-					const [currentTeam] = await tx
+					const [lockedOriginal] = await tx
 						.select()
-						.from(team)
+						.from(timeEntry)
 						.where(
 							and(
-								eq(team.id, lockedTeamMembership.teamId),
-								eq(team.organizationId, options.organizationId),
+								eq(timeEntry.id, lockedPeriod.clockInId),
+								eq(timeEntry.organizationId, options.organizationId),
+								eq(timeEntry.employeeId, requester.id),
 							),
 						)
 						.for("update");
 					if (
-						!currentTeam ||
-						currentTeam.id !== lockedTeamMembership.teamId ||
-						currentTeam.organizationId !== options.organizationId
+						!lockedOriginal ||
+						lockedOriginal.id !== lockedPeriod.clockInId ||
+						lockedOriginal.id !== original.id ||
+						lockedOriginal.organizationId !== options.organizationId ||
+						lockedOriginal.employeeId !== requester.id ||
+						lockedOriginal.type !== "clock_in" ||
+						lockedOriginal.replacesEntryId !== null ||
+						lockedOriginal.isSuperseded ||
+						lockedOriginal.supersededById !== null ||
+						!sameDemoInstant(lockedOriginal.timestamp, lockedPeriod.startTime)
 					) {
 						throw new DemoCorrectionSourceChangedError();
 					}
-					teamId = currentTeam.id;
-				}
-				const [lockedPeriod] = await tx
-					.select()
-					.from(workPeriod)
-					.where(
-						and(
-							eq(workPeriod.id, period.id),
-							eq(workPeriod.organizationId, options.organizationId),
-							eq(workPeriod.employeeId, requester.id),
-						),
-					)
-					.for("update");
-				if (
-					!lockedPeriod ||
-					lockedPeriod.id !== period.id ||
-					lockedPeriod.organizationId !== options.organizationId ||
-					lockedPeriod.employeeId !== requester.id ||
-					lockedPeriod.clockInId !== period.clockInId ||
-					lockedPeriod.clockOutId !== period.clockOutId ||
-					!lockedPeriod.canonicalRecordId ||
-					lockedPeriod.canonicalRecordId !== period.canonicalRecordId ||
-					!sameDemoInstant(lockedPeriod.startTime, period.startTime) ||
-					!sameDemoInstant(lockedPeriod.endTime, period.endTime) ||
-					lockedPeriod.durationMinutes !== period.durationMinutes ||
-					lockedPeriod.isActive ||
-					lockedPeriod.clockOutId === null ||
-					lockedPeriod.endTime === null ||
-					lockedPeriod.approvalStatus !== "approved" ||
-					lockedPeriod.pendingChanges !== null ||
-					lockedPeriod.deletedAt !== null
-				) {
-					throw new DemoCorrectionSourceChangedError();
-				}
-				const [lockedOriginal] = await tx
-					.select()
-					.from(timeEntry)
-					.where(
-						and(
-							eq(timeEntry.id, lockedPeriod.clockInId),
+					const [lockedCanonical] = await tx
+						.select()
+						.from(timeRecord)
+						.where(
+							and(
+								eq(timeRecord.id, lockedPeriod.canonicalRecordId),
+								eq(timeRecord.organizationId, options.organizationId),
+								eq(timeRecord.employeeId, requester.id),
+								eq(timeRecord.recordKind, "work"),
+							),
+						)
+						.for("update");
+					if (
+						!lockedCanonical ||
+						lockedCanonical.id !== lockedPeriod.canonicalRecordId ||
+						lockedCanonical.organizationId !== options.organizationId ||
+						lockedCanonical.employeeId !== requester.id ||
+						lockedCanonical.recordKind !== "work" ||
+						lockedCanonical.origin !== "clock" ||
+						!sameDemoInstant(lockedCanonical.startAt, lockedPeriod.startTime) ||
+						!sameDemoInstant(lockedCanonical.endAt, lockedPeriod.endTime) ||
+						lockedCanonical.durationMinutes !== lockedPeriod.durationMinutes ||
+						lockedCanonical.approvalState !== lockedPeriod.approvalStatus
+					) {
+						throw new DemoCorrectionSourceChangedError();
+					}
+					if (
+						!lockedOriginal.timezone ||
+						!validDemoTimezoneSource(lockedOriginal.timezoneSource) ||
+						!Number.isInteger(lockedOriginal.utcOffsetMinutes) ||
+						lockedOriginal.utcOffsetMinutes < -840 ||
+						lockedOriginal.utcOffsetMinutes > 840
+					) {
+						throw new DemoCorrectionSourceChangedError();
+					}
+					const originalInstant = instantFromTimeCorrectionBoundary(lockedOriginal.timestamp);
+					try {
+						validateTimeCorrectionTimezoneEvidence({
+							instant: originalInstant,
+							timezone: lockedOriginal.timezone,
+							utcOffsetMinutes: lockedOriginal.utcOffsetMinutes,
+						});
+					} catch {
+						throw new DemoCorrectionSourceChangedError();
+					}
+					const correctionInstant = originalInstant.add({ minutes: 15 });
+					const correctionTimestamp = dateFromInstant(correctionInstant);
+					const timezoneCapture: TimeEntryTimezoneCapture = {
+						timezone: lockedOriginal.timezone,
+						timezoneSource: lockedOriginal.timezoneSource,
+						utcOffsetMinutes:
+							correctionInstant.toZonedDateTimeISO(lockedOriginal.timezone).offsetNanoseconds /
+							60_000_000_000,
+					};
+					const workLocationType = normalizeWorkLocationType(lockedPeriod.workLocationType);
+					const workCategoryId = lockedPeriod.workCategoryId ?? null;
+					const businessSubmissionKey = deriveTimeCorrectionSubmissionKey({
+						organizationId: options.organizationId,
+						workPeriodId: lockedPeriod.id,
+						action: "edit",
+						workLocationType,
+						workCategoryId,
+						clockIn: {
+							originalEntryId: lockedOriginal.id,
+							instant: correctionInstant,
+						},
+					});
+					const submissionId = deriveTimeCorrectionRowId({
+						submissionKey: `demo-submission:${businessSubmissionKey}`,
+						endpointType: "clock_in",
+					});
+					const submissionKey = `time-correction-cycle:v2:${submissionId}:${businessSubmissionKey}`;
+					const correctionId = deriveTimeCorrectionRowId({
+						submissionKey,
+						endpointType: "clock_in",
+					});
+					const existing = await tx.query.timeEntry.findFirst({
+						where: and(
+							eq(timeEntry.id, correctionId),
 							eq(timeEntry.organizationId, options.organizationId),
 							eq(timeEntry.employeeId, requester.id),
 						),
-					)
-					.for("update");
-				if (
-					!lockedOriginal ||
-					lockedOriginal.id !== lockedPeriod.clockInId ||
-					lockedOriginal.id !== original.id ||
-					lockedOriginal.organizationId !== options.organizationId ||
-					lockedOriginal.employeeId !== requester.id ||
-					lockedOriginal.type !== "clock_in" ||
-					lockedOriginal.replacesEntryId !== null ||
-					lockedOriginal.isSuperseded ||
-					lockedOriginal.supersededById !== null ||
-					!sameDemoInstant(lockedOriginal.timestamp, lockedPeriod.startTime)
-				) {
-					throw new DemoCorrectionSourceChangedError();
-				}
-				const [lockedCanonical] = await tx
-					.select()
-					.from(timeRecord)
-					.where(
-						and(
-							eq(timeRecord.id, lockedPeriod.canonicalRecordId),
-							eq(timeRecord.organizationId, options.organizationId),
-							eq(timeRecord.employeeId, requester.id),
-							eq(timeRecord.recordKind, "work"),
-						),
-					)
-					.for("update");
-				if (
-					!lockedCanonical ||
-					lockedCanonical.id !== lockedPeriod.canonicalRecordId ||
-					lockedCanonical.organizationId !== options.organizationId ||
-					lockedCanonical.employeeId !== requester.id ||
-					lockedCanonical.recordKind !== "work" ||
-					lockedCanonical.origin !== "clock" ||
-					!sameDemoInstant(lockedCanonical.startAt, lockedPeriod.startTime) ||
-					!sameDemoInstant(lockedCanonical.endAt, lockedPeriod.endTime) ||
-					lockedCanonical.durationMinutes !== lockedPeriod.durationMinutes ||
-					lockedCanonical.approvalState !== lockedPeriod.approvalStatus
-				) {
-					throw new DemoCorrectionSourceChangedError();
-				}
-				if (
-					!lockedOriginal.timezone ||
-					!validDemoTimezoneSource(lockedOriginal.timezoneSource) ||
-					!Number.isInteger(lockedOriginal.utcOffsetMinutes) ||
-					lockedOriginal.utcOffsetMinutes < -840 ||
-					lockedOriginal.utcOffsetMinutes > 840
-				) {
-					throw new DemoCorrectionSourceChangedError();
-				}
-				const originalInstant = instantFromTimeCorrectionBoundary(
-					lockedOriginal.timestamp,
-				);
-				try {
-					validateTimeCorrectionTimezoneEvidence({
-						instant: originalInstant,
-						timezone: lockedOriginal.timezone,
-						utcOffsetMinutes: lockedOriginal.utcOffsetMinutes,
 					});
-				} catch {
-					throw new DemoCorrectionSourceChangedError();
-				}
-				const correctionInstant = originalInstant.add({ minutes: 15 });
-				const correctionTimestamp = dateFromInstant(correctionInstant);
-				const timezoneCapture: TimeEntryTimezoneCapture = {
-					timezone: lockedOriginal.timezone,
-					timezoneSource: lockedOriginal.timezoneSource,
-					utcOffsetMinutes:
-						correctionInstant.toZonedDateTimeISO(lockedOriginal.timezone)
-							.offsetNanoseconds / 60_000_000_000,
-				};
-				const workLocationType = normalizeWorkLocationType(
-					lockedPeriod.workLocationType,
-				);
-				const workCategoryId = lockedPeriod.workCategoryId ?? null;
-				const businessSubmissionKey = deriveTimeCorrectionSubmissionKey({
-					organizationId: options.organizationId,
-					workPeriodId: lockedPeriod.id,
-					action: "edit",
-					workLocationType,
-					workCategoryId,
-					clockIn: {
-						originalEntryId: lockedOriginal.id,
-						instant: correctionInstant,
-					},
-				});
-				const submissionId = deriveTimeCorrectionRowId({
-					submissionKey: `demo-submission:${businessSubmissionKey}`,
-					endpointType: "clock_in",
-				});
-				const submissionKey = `time-correction-cycle:v2:${submissionId}:${businessSubmissionKey}`;
-				const correctionId = deriveTimeCorrectionRowId({
-					submissionKey,
-					endpointType: "clock_in",
-				});
-				const existing = await tx.query.timeEntry.findFirst({
-					where: and(
-						eq(timeEntry.id, correctionId),
-						eq(timeEntry.organizationId, options.organizationId),
-						eq(timeEntry.employeeId, requester.id),
-					),
-				});
-				const transactionDbService: ApprovalDbService = {
-					db: context.dbService.db as unknown as ApprovalDbService["db"],
-					query: dbService.query,
-				};
-				let insertedCorrection = false;
-				let append: TimeEntryAppend | null = null;
-				if (existing) {
-					const [lockedPredecessor] = existing.previousEntryId
-						? await tx
+					const transactionDbService: ApprovalDbService = {
+						db: context.dbService.db as unknown as ApprovalDbService["db"],
+						query: dbService.query,
+					};
+					let insertedCorrection = false;
+					let append: TimeEntryAppend | null = null;
+					if (existing) {
+						const [lockedPredecessor] = existing.previousEntryId
+							? await tx
+									.select()
+									.from(timeEntry)
+									.where(
+										and(
+											eq(timeEntry.id, existing.previousEntryId),
+											eq(timeEntry.organizationId, options.organizationId),
+											eq(timeEntry.employeeId, requester.id),
+										),
+									)
+									.for("update")
+							: [];
+						const correctionHash = calculateHash({
+							employeeId: requester.id,
+							type: "correction",
+							timestamp: correctionTimestamp.toISOString(),
+							previousHash: existing.previousHash,
+						});
+						if (
+							existing.id !== correctionId ||
+							existing.organizationId !== options.organizationId ||
+							existing.employeeId !== requester.id ||
+							existing.type !== "correction" ||
+							existing.replacesEntryId !== lockedOriginal.id ||
+							existing.timestamp.getTime() !== correctionTimestamp.getTime() ||
+							!existing.previousEntryId ||
+							!lockedPredecessor ||
+							lockedPredecessor.id !== existing.previousEntryId ||
+							lockedPredecessor.hash !== existing.previousHash ||
+							existing.hash !== correctionHash ||
+							!existing.isSuperseded ||
+							existing.supersededById !== null ||
+							existing.utcOffsetMinutes !== timezoneCapture.utcOffsetMinutes ||
+							existing.timezone !== timezoneCapture.timezone ||
+							existing.timezoneSource !== timezoneCapture.timezoneSource ||
+							existing.notes !== "Demo data - Pending time correction" ||
+							existing.location !== null ||
+							existing.ipAddress !== null ||
+							existing.deviceInfo !== null
+						) {
+							throw new Error("Demo time correction identity conflicts with existing data");
+						}
+					} else {
+						let predecessor: { id: string; hash: string };
+						if (scope.admission === "append") {
+							// Adopted: the exact predecessor admitted from evidence, never the
+							// latest-created row.
+							const admitted = await admitTimeEntryAppend(
+								tx,
+								{ organizationId: options.organizationId, employeeId: requester.id },
+								"demo_correction",
+							);
+							if (admitted.kind === "review_required") {
+								throw new DemoCorrectionHeldForReviewError(admitted.requirement);
+							}
+							if (!admitted.append.predecessor) {
+								throw new DemoCorrectionSourceChangedError();
+							}
+							predecessor = admitted.append.predecessor;
+							append = admitted.append;
+						} else {
+							const [lockedChainTail] = await tx
 								.select()
 								.from(timeEntry)
 								.where(
 									and(
-										eq(timeEntry.id, existing.previousEntryId),
 										eq(timeEntry.organizationId, options.organizationId),
 										eq(timeEntry.employeeId, requester.id),
 									),
 								)
-								.for("update")
-						: [];
-					const correctionHash = calculateHash({
-						employeeId: requester.id,
-						type: "correction",
-						timestamp: correctionTimestamp.toISOString(),
-						previousHash: existing.previousHash,
-					});
-					if (
-						existing.id !== correctionId ||
-						existing.organizationId !== options.organizationId ||
-						existing.employeeId !== requester.id ||
-						existing.type !== "correction" ||
-						existing.replacesEntryId !== lockedOriginal.id ||
-						existing.timestamp.getTime() !== correctionTimestamp.getTime() ||
-						!existing.previousEntryId ||
-						!lockedPredecessor ||
-						lockedPredecessor.id !== existing.previousEntryId ||
-						lockedPredecessor.hash !== existing.previousHash ||
-						existing.hash !== correctionHash ||
-						!existing.isSuperseded ||
-						existing.supersededById !== null ||
-						existing.utcOffsetMinutes !== timezoneCapture.utcOffsetMinutes ||
-						existing.timezone !== timezoneCapture.timezone ||
-						existing.timezoneSource !== timezoneCapture.timezoneSource ||
-						existing.notes !== "Demo data - Pending time correction" ||
-						existing.location !== null ||
-						existing.ipAddress !== null ||
-						existing.deviceInfo !== null
-					) {
-						throw new Error(
-							"Demo time correction identity conflicts with existing data",
-						);
+								.orderBy(desc(timeEntry.createdAt))
+								.limit(1)
+								.for("update");
+							if (!lockedChainTail) {
+								throw new DemoCorrectionSourceChangedError();
+							}
+							predecessor = lockedChainTail;
+						}
+						const correctionHash = calculateHash({
+							employeeId: requester.id,
+							type: "correction",
+							timestamp: correctionTimestamp.toISOString(),
+							previousHash: predecessor.hash,
+						});
+						const created = await insertTimeCorrectionSourceEntry({
+							dbService: transactionDbService,
+							id: correctionId,
+							employeeId: requester.id,
+							organizationId: options.organizationId,
+							timestamp: correctionTimestamp,
+							hash: correctionHash,
+							previousHash: predecessor.hash,
+							previousEntryId: predecessor.id,
+							replacesEntryId: lockedOriginal.id,
+							notes: "Demo data - Pending time correction",
+							createdBy: options.createdBy,
+							ipAddress: null,
+							deviceInfo: null,
+							timezoneCapture,
+						});
+						if (!created) throw new Error("Demo time correction row was not created");
+						await append?.record({
+							id: correctionId,
+							hash: correctionHash,
+							previousEntryId: predecessor.id,
+							previousHash: predecessor.hash,
+						});
+						insertedCorrection = true;
 					}
-				} else {
-					let predecessor: { id: string; hash: string };
-					if (scope.admission === "append") {
-						// Adopted: the exact predecessor admitted from evidence, never the
-						// latest-created row.
-						const admitted = await admitTimeEntryAppend(
-							tx,
-							{ organizationId: options.organizationId, employeeId: requester.id },
-							"demo_correction",
-						);
-						if (admitted.kind === "review_required") {
-							throw new DemoCorrectionHeldForReviewError(admitted.requirement);
-						}
-						if (!admitted.append.predecessor) {
-							throw new DemoCorrectionSourceChangedError();
-						}
-						predecessor = admitted.append.predecessor;
-						append = admitted.append;
-					} else {
-						const [lockedChainTail] = await tx
-							.select()
-							.from(timeEntry)
+					const result = await executeTimeCorrectionSubmissionInTransaction({
+						dbService: transactionDbService,
+						context,
+						organizationId: options.organizationId,
+						requesterEmployeeId: requester.id,
+						teamId,
+						workPeriodId: period.id,
+						defaultApproverId: approverId,
+						reason: DEMO_TIME_CORRECTION_REASON,
+						overtimeRisk: null,
+						submissionKey,
+						submissionId,
+						correction: {
+							action: "edit",
+							clockInCorrectionId: correctionId,
+							workLocationType,
+							workCategoryId,
+						},
+						correctionEntriesCommitted: !insertedCorrection,
+					});
+					if (result.kind === "auto_completed") {
+						throw new DemoCorrectionAutoCompletedError();
+					}
+					if (result.disposition === "replayed" && insertedCorrection) {
+						// The admitted row already advanced the append position: roll the
+						// speculative write back with it instead of deleting a positioned tip.
+						if (append) throw new DemoCorrectionReplayedError();
+						const deleted = await tx
+							.delete(timeEntry)
 							.where(
 								and(
+									eq(timeEntry.id, correctionId),
 									eq(timeEntry.organizationId, options.organizationId),
 									eq(timeEntry.employeeId, requester.id),
+									eq(timeEntry.type, "correction"),
+									eq(timeEntry.replacesEntryId, lockedOriginal.id),
+									eq(timeEntry.isSuperseded, true),
+									isNull(timeEntry.supersededById),
 								),
 							)
-							.orderBy(desc(timeEntry.createdAt))
-							.limit(1)
-							.for("update");
-						if (!lockedChainTail) {
-							throw new DemoCorrectionSourceChangedError();
+							.returning({ id: timeEntry.id });
+						if (deleted.length !== 1 || deleted[0]?.id !== correctionId) {
+							throw new Error("Demo time correction replay cleanup failed");
 						}
-						predecessor = lockedChainTail;
 					}
-					const correctionHash = calculateHash({
-						employeeId: requester.id,
-						type: "correction",
-						timestamp: correctionTimestamp.toISOString(),
-						previousHash: predecessor.hash,
-					});
-					const created = await insertTimeCorrectionSourceEntry({
-						dbService: transactionDbService,
-						id: correctionId,
-						employeeId: requester.id,
-						organizationId: options.organizationId,
-						timestamp: correctionTimestamp,
-						hash: correctionHash,
-						previousHash: predecessor.hash,
-						previousEntryId: predecessor.id,
-						replacesEntryId: lockedOriginal.id,
-						notes: "Demo data - Pending time correction",
-						createdBy: options.createdBy,
-						ipAddress: null,
-						deviceInfo: null,
-						timezoneCapture,
-					});
-					if (!created)
-						throw new Error("Demo time correction row was not created");
-					await append?.record({
-						id: correctionId,
-						hash: correctionHash,
-						previousEntryId: predecessor.id,
-						previousHash: predecessor.hash,
-					});
-					insertedCorrection = true;
-				}
-				const result = await executeTimeCorrectionSubmissionInTransaction({
-					dbService: transactionDbService,
-					context,
-					organizationId: options.organizationId,
-					requesterEmployeeId: requester.id,
-					teamId,
-					workPeriodId: period.id,
-					defaultApproverId: approverId,
-					reason: DEMO_TIME_CORRECTION_REASON,
-					overtimeRisk: null,
-					submissionKey,
-					submissionId,
-					correction: {
-						action: "edit",
-						clockInCorrectionId: correctionId,
-						workLocationType,
-						workCategoryId,
-					},
-					correctionEntriesCommitted: !insertedCorrection,
-				});
-				if (result.kind === "auto_completed") {
-					throw new DemoCorrectionAutoCompletedError();
-				}
-				if (result.disposition === "replayed" && insertedCorrection) {
-					// The admitted row already advanced the append position: roll the
-					// speculative write back with it instead of deleting a positioned tip.
-					if (append) throw new DemoCorrectionReplayedError();
-					const deleted = await tx
-						.delete(timeEntry)
-						.where(
-							and(
-								eq(timeEntry.id, correctionId),
-								eq(timeEntry.organizationId, options.organizationId),
-								eq(timeEntry.employeeId, requester.id),
-								eq(timeEntry.type, "correction"),
-								eq(timeEntry.replacesEntryId, lockedOriginal.id),
-								eq(timeEntry.isSuperseded, true),
-								isNull(timeEntry.supersededById),
-							),
-						)
-						.returning({ id: timeEntry.id });
-					if (deleted.length !== 1 || deleted[0]?.id !== correctionId) {
-						throw new Error("Demo time correction replay cleanup failed");
-					}
-				}
-				return { result, submissionId };
+					return { result, submissionId };
 				},
 			);
 		} catch (error) {
@@ -1421,8 +1379,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					durableRequest.status !== "pending" ||
 					!durableRequest.approverId ||
 					(submission.result.postCommit.submittedToEmployeeId !== null &&
-						submission.result.postCommit.submittedToEmployeeId !==
-							durableRequest.approverId)
+						submission.result.postCommit.submittedToEmployeeId !== durableRequest.approverId)
 				) {
 					continue;
 				}
@@ -1483,7 +1440,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 
 /**
  * Generate a random absence record
- * Uses Luxon DateTime in UTC for consistent date handling
+ * Uses Temporal PlainDate in UTC for consistent date handling
  */
 function generateRandomAbsence(
 	employeeId: string,
@@ -1494,19 +1451,22 @@ function generateRandomAbsence(
 	approverId: string,
 	approvedRate = 0.7,
 ): typeof absenceEntry.$inferInsert {
-	// Random start date within the year (Luxon months are 1-indexed)
+	// Random start date within the year (1-indexed months)
 	const startMonth = Math.floor(Math.random() * 12) + 1; // 1-12
 	const startDay = Math.floor(Math.random() * 28) + 1; // 1-28
-	const startDT = DateTime.utc(year, startMonth, startDay);
+	const startPlain = Temporal.PlainDate.from({
+		year,
+		month: startMonth,
+		day: startDay,
+	});
 
 	// Random duration
-	const duration =
-		Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
-	const endDT = startDT.plus({ days: duration - 1 });
+	const duration = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
+	const endPlain = startPlain.add({ days: duration - 1 });
 
 	// Convert to ISO date strings for database (date columns expect YYYY-MM-DD)
-	const startDate = startDT.toISODate()!;
-	const endDate = endDT.toISODate()!;
+	const startDate = startPlain.toString();
+	const endDate = endPlain.toString();
 
 	// Determine status: 70% approved, 20% pending, 10% rejected
 	const statusRand = Math.random();
@@ -1519,20 +1479,20 @@ function generateRandomAbsence(
 		status = "approved";
 		approvedBy = approverId;
 		// Approved 1-7 days before start
-		const approvedDT = startDT.minus({
+		const approvedPlain = startPlain.subtract({
 			days: Math.floor(Math.random() * 7) + 1,
 		});
-		approvedAt = dateToDB(approvedDT);
+		approvedAt = dateFromInstant(approvedPlain.toZonedDateTime("UTC").toInstant());
 	} else if (statusRand < approvedRate + 0.2) {
 		status = "pending";
 	} else {
 		status = "rejected";
 		approvedBy = approverId;
 		// Rejected 1-7 days before start
-		const rejectedDT = startDT.minus({
+		const rejectedPlain = startPlain.subtract({
 			days: Math.floor(Math.random() * 7) + 1,
 		});
-		approvedAt = dateToDB(rejectedDT);
+		approvedAt = dateFromInstant(rejectedPlain.toZonedDateTime("UTC").toInstant());
 		rejectionReason = "Demo data - Auto-rejected";
 	}
 
@@ -1618,12 +1578,8 @@ async function generateDemoTeamsInTransaction(
 	}
 
 	// Determine number of teams to create (default: 3-5, max based on employee count)
-	const maxTeams = Math.min(
-		Math.ceil(employees.length / 2),
-		defaultTeamNames.length,
-	);
-	const teamCount =
-		options.teamCount ?? Math.min(Math.floor(Math.random() * 3) + 3, maxTeams);
+	const maxTeams = Math.min(Math.ceil(employees.length / 2), defaultTeamNames.length);
+	const teamCount = options.teamCount ?? Math.min(Math.floor(Math.random() * 3) + 3, maxTeams);
 
 	if (teamCount <= 0) {
 		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
@@ -1676,11 +1632,7 @@ async function generateDemoTeamsInTransaction(
 		});
 
 	// Ensure each team gets at least one employee
-	for (
-		let i = 0;
-		i < createdTeams.length && i < shuffledEmployees.length;
-		i++
-	) {
+	for (let i = 0; i < createdTeams.length && i < shuffledEmployees.length; i++) {
 		await assign(shuffledEmployees[i].id, createdTeams[i].id);
 		employeesAssigned++;
 	}
@@ -1775,8 +1727,7 @@ export async function generateDemoProjects(
 	}
 
 	// Determine number of projects to create (default: 5-8)
-	const projectCount =
-		options.projectCount ?? Math.floor(Math.random() * 4) + 5;
+	const projectCount = options.projectCount ?? Math.floor(Math.random() * 4) + 5;
 
 	if (projectCount <= 0) {
 		return { projectsCreated: 0 };
@@ -1803,9 +1754,14 @@ export async function generateDemoProjects(
 	// Create projects
 	const projects: Array<typeof project.$inferInsert> = [];
 	// Valid statuses from projectStatusEnum: planned, active, paused, completed, archived
-	const statuses: Array<
-		"planned" | "active" | "paused" | "completed" | "archived"
-	> = ["planned", "active", "active", "active", "paused", "completed"];
+	const statuses: Array<"planned" | "active" | "paused" | "completed" | "archived"> = [
+		"planned",
+		"active",
+		"active",
+		"active",
+		"paused",
+		"completed",
+	];
 
 	for (let i = 0; i < projectNames.length; i++) {
 		const name = projectNames[i];
@@ -1851,58 +1807,61 @@ export async function generateDemoProjects(
 export async function generateDemoManagerAssignments(
 	options: DemoDataOptions,
 ): Promise<{ managerAssignmentsCreated: number }> {
-	return withDemoConfigurationMutation(options.organizationId, async (tx, organizationEmployees) => {
-		// The current user's employee record in this organization (the owner/admin)
-		const ownerEmployee = organizationEmployees.find((row) => row.userId === options.createdBy);
+	return withDemoConfigurationMutation(
+		options.organizationId,
+		async (tx, organizationEmployees) => {
+			// The current user's employee record in this organization (the owner/admin)
+			const ownerEmployee = organizationEmployees.find((row) => row.userId === options.createdBy);
 
-		if (!ownerEmployee) {
-			return { managerAssignmentsCreated: 0 };
-		}
+			if (!ownerEmployee) {
+				return { managerAssignmentsCreated: 0 };
+			}
 
-		// Filter out the owner and get employees without managers
-		const employeesWithoutOwner = selectDemoEmployees(
-			organizationEmployees,
-			options.employeeIds?.length ? options.employeeIds : undefined,
-		).filter((e) => e.id !== ownerEmployee.id);
+			// Filter out the owner and get employees without managers
+			const employeesWithoutOwner = selectDemoEmployees(
+				organizationEmployees,
+				options.employeeIds?.length ? options.employeeIds : undefined,
+			).filter((e) => e.id !== ownerEmployee.id);
 
-		if (employeesWithoutOwner.length === 0) {
-			return { managerAssignmentsCreated: 0 };
-		}
+			if (employeesWithoutOwner.length === 0) {
+				return { managerAssignmentsCreated: 0 };
+			}
 
-		// Check existing manager assignments to avoid duplicates
-		const existingAssignments = await tx.query.employeeManagers.findMany({
-			where: inArray(
-				employeeManagers.employeeId,
-				employeesWithoutOwner.map((e) => e.id),
-			),
-		});
-
-		const employeesWithManagers = new Set(existingAssignments.map((a) => a.employeeId));
-
-		// Assign ~60-80% of employees without managers to the owner
-		const employeesNeedingManagers = employeesWithoutOwner.filter(
-			(e) => !employeesWithManagers.has(e.id),
-		);
-
-		const assignmentRate = 0.6 + Math.random() * 0.2; // 60-80%
-		const employeesToAssign = faker.helpers
-			.shuffle(employeesNeedingManagers)
-			.slice(0, Math.ceil(employeesNeedingManagers.length * assignmentRate));
-
-		let managerAssignmentsCreated = 0;
-
-		for (const emp of employeesToAssign) {
-			await tx.insert(employeeManagers).values({
-				employeeId: emp.id,
-				managerId: ownerEmployee.id,
-				isPrimary: true,
-				assignedBy: options.createdBy,
+			// Check existing manager assignments to avoid duplicates
+			const existingAssignments = await tx.query.employeeManagers.findMany({
+				where: inArray(
+					employeeManagers.employeeId,
+					employeesWithoutOwner.map((e) => e.id),
+				),
 			});
-			managerAssignmentsCreated++;
-		}
 
-		return { managerAssignmentsCreated };
-	});
+			const employeesWithManagers = new Set(existingAssignments.map((a) => a.employeeId));
+
+			// Assign ~60-80% of employees without managers to the owner
+			const employeesNeedingManagers = employeesWithoutOwner.filter(
+				(e) => !employeesWithManagers.has(e.id),
+			);
+
+			const assignmentRate = 0.6 + Math.random() * 0.2; // 60-80%
+			const employeesToAssign = faker.helpers
+				.shuffle(employeesNeedingManagers)
+				.slice(0, Math.ceil(employeesNeedingManagers.length * assignmentRate));
+
+			let managerAssignmentsCreated = 0;
+
+			for (const emp of employeesToAssign) {
+				await tx.insert(employeeManagers).values({
+					employeeId: emp.id,
+					managerId: ownerEmployee.id,
+					isPrimary: true,
+					assignedBy: options.createdBy,
+				});
+				managerAssignmentsCreated++;
+			}
+
+			return { managerAssignmentsCreated };
+		},
+	);
 }
 
 // ============================================
@@ -1958,18 +1917,14 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 		where: eq(employee.organizationId, options.organizationId),
 	});
 
-	const locationCount =
-		options.locationCount ?? Math.floor(Math.random() * 2) + 2; // 2-3 default
-	const subareasPerLocation =
-		options.subareasPerLocation ?? Math.floor(Math.random() * 2) + 3; // 3-4 default
+	const locationCount = options.locationCount ?? Math.floor(Math.random() * 2) + 2; // 2-3 default
+	const subareasPerLocation = options.subareasPerLocation ?? Math.floor(Math.random() * 2) + 3; // 3-4 default
 
 	let locationsCreated = 0;
 	let subareasCreated = 0;
 	let supervisorAssignmentsCreated = 0;
 
-	const shuffledLocationNames = faker.helpers.shuffle([
-		...getDefaultLocationNames(),
-	]);
+	const shuffledLocationNames = faker.helpers.shuffle([...getDefaultLocationNames()]);
 	const shuffledEmployees = faker.helpers.shuffle([...employees]);
 
 	for (let i = 0; i < locationCount; i++) {
@@ -2009,14 +1964,8 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 		}
 
 		// Create subareas for this location
-		const shuffledSubareaNames = faker.helpers.shuffle([
-			...getDefaultSubareaNames(),
-		]);
-		for (
-			let j = 0;
-			j < subareasPerLocation && j < shuffledSubareaNames.length;
-			j++
-		) {
+		const shuffledSubareaNames = faker.helpers.shuffle([...getDefaultSubareaNames()]);
+		for (let j = 0; j < subareasPerLocation && j < shuffledSubareaNames.length; j++) {
 			const [newSubarea] = await db
 				.insert(locationSubarea)
 				.values({
@@ -2033,9 +1982,7 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 			// Assign a subarea supervisor (30% chance)
 			if (shuffledEmployees.length > 0 && Math.random() < 0.3) {
 				const supervisor =
-					shuffledEmployees[
-						(i * subareasPerLocation + j) % shuffledEmployees.length
-					];
+					shuffledEmployees[(i * subareasPerLocation + j) % shuffledEmployees.length];
 				await db.insert(subareaEmployee).values({
 					subareaId: newSubarea.id,
 					employeeId: supervisor.id,
@@ -2077,7 +2024,12 @@ export async function generateDemoVehicles(
 	const driverTeam = teams.length > 0 ? faker.helpers.arrayElement(teams) : null;
 	const demoVehicles = [
 		{ name: "Service van 1", licencePlate: "Z8-DEMO 1", employeeId: driver?.id, teamId: undefined },
-		{ name: "Service van 2", licencePlate: "Z8-DEMO 2", employeeId: undefined, teamId: driverTeam?.id },
+		{
+			name: "Service van 2",
+			licencePlate: "Z8-DEMO 2",
+			employeeId: undefined,
+			teamId: driverTeam?.id,
+		},
 		{ name: "Pool car", licencePlate: "Z8-DEMO 3", employeeId: undefined, teamId: undefined },
 	];
 
@@ -2150,9 +2102,7 @@ function getWorkCategorySetTemplates() {
 /**
  * Generate demo work category sets and categories
  */
-export async function generateDemoWorkCategories(
-	options: DemoDataOptions,
-): Promise<{
+export async function generateDemoWorkCategories(options: DemoDataOptions): Promise<{
 	setsCreated: number;
 	categoriesCreated: number;
 	assignmentsCreated: number;
@@ -2165,8 +2115,7 @@ export async function generateDemoWorkCategories(
 		const workCategoryTemplates = getWorkCategoryTemplates();
 		const workCategorySetTemplates = getWorkCategorySetTemplates();
 		const setCount = options.workCategorySetCount ?? 2;
-		const categoryCount =
-			options.workCategoryCount ?? Math.min(8, workCategoryTemplates.length);
+		const categoryCount = options.workCategoryCount ?? Math.min(8, workCategoryTemplates.length);
 
 		let setsCreated = 0;
 		let categoriesCreated = 0;
@@ -2255,16 +2204,9 @@ export async function generateDemoWorkCategories(
 				});
 
 				const shuffledTeams = faker.helpers.shuffle(teams);
-				const teamsToAssign = shuffledTeams.slice(
-					0,
-					Math.min(2, shuffledTeams.length),
-				);
+				const teamsToAssign = shuffledTeams.slice(0, Math.min(2, shuffledTeams.length));
 
-				for (
-					let i = 0;
-					i < teamsToAssign.length && i + 1 < createdSets.length;
-					i++
-				) {
+				for (let i = 0; i < teamsToAssign.length && i + 1 < createdSets.length; i++) {
 					await tx.insert(workCategorySetAssignment).values({
 						setId: createdSets[i + 1].id,
 						organizationId: options.organizationId,
@@ -2292,16 +2234,14 @@ function getChangePolicyTemplates() {
 	return [
 		{
 			name: "Standard Policy",
-			description:
-				"Default policy with same-day free edits, 7-day approval window",
+			description: "Default policy with same-day free edits, 7-day approval window",
 			selfServiceDays: 0,
 			approvalDays: 7,
 			noApprovalRequired: false,
 		},
 		{
 			name: "Flexible Policy",
-			description:
-				"Liberal policy allowing edits within 3 days without approval",
+			description: "Liberal policy allowing edits within 3 days without approval",
 			selfServiceDays: 3,
 			approvalDays: 14,
 			noApprovalRequired: false,
@@ -2326,9 +2266,7 @@ function getChangePolicyTemplates() {
 /**
  * Generate demo change policies
  */
-export async function generateDemoChangePolicies(
-	options: DemoDataOptions,
-): Promise<{
+export async function generateDemoChangePolicies(options: DemoDataOptions): Promise<{
 	policiesCreated: number;
 	assignmentsCreated: number;
 }> {
@@ -2453,15 +2391,13 @@ export async function generateDemoShiftTemplates(
 	});
 
 	const shiftTemplateData = getShiftTemplateData();
-	const templateCount =
-		options.shiftTemplateCount ?? Math.min(4, shiftTemplateData.length);
+	const templateCount = options.shiftTemplateCount ?? Math.min(4, shiftTemplateData.length);
 	let templatesCreated = 0;
 
 	for (let i = 0; i < templateCount && i < shiftTemplateData.length; i++) {
 		const template = shiftTemplateData[i];
 		// Assign to a random subarea if available
-		const subarea =
-			subareas.length > 0 ? faker.helpers.arrayElement(subareas) : null;
+		const subarea = subareas.length > 0 ? faker.helpers.arrayElement(subareas) : null;
 
 		await db.insert(shiftTemplate).values({
 			organizationId: options.organizationId,
@@ -2488,10 +2424,7 @@ interface DemoShiftDay {
 }
 
 /** The organization-local calendar days of a demo range, both ends inclusive. */
-function demoShiftDays(
-	range: DemoDataOptions["dateRange"],
-	timezone: string,
-): DemoShiftDay[] {
+function demoShiftDays(range: DemoDataOptions["dateRange"], timezone: string): DemoShiftDay[] {
 	const days: DemoShiftDay[] = [];
 	const lastDay = plainDateAt(instantFromDate(range.end), timezone);
 	for (
@@ -2598,8 +2531,7 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 		for (const shiftDay of shiftDays) {
 			if (shiftDay.isWeekday) {
 				// 70% assigned to employee, 30% open shifts
-				const assignToEmployee =
-					Math.random() < 0.7 && shuffledEmployees.length > 0;
+				const assignToEmployee = Math.random() < 0.7 && shuffledEmployees.length > 0;
 				const assignedEmployee = assignToEmployee
 					? shuffledEmployees[employeeIndex % shuffledEmployees.length]
 					: null;
@@ -2632,32 +2564,20 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 				shiftsCreated++;
 
 				// 10% chance to create a shift request for published, assigned shifts
-				if (
-					isPublished &&
-					assignedEmployee &&
-					Math.random() < 0.1 &&
-					employees.length > 1
-				) {
-					const otherEmployees = employees.filter(
-						(e) => e.id !== assignedEmployee.id,
-					);
+				if (isPublished && assignedEmployee && Math.random() < 0.1 && employees.length > 1) {
+					const otherEmployees = employees.filter((e) => e.id !== assignedEmployee.id);
 					const targetEmployee =
-						Math.random() < 0.5
-							? faker.helpers.arrayElement(otherEmployees)
-							: null;
+						Math.random() < 0.5 ? faker.helpers.arrayElement(otherEmployees) : null;
 
-					const requestTypes: Array<"swap" | "assignment" | "pickup"> =
-						targetEmployee ? ["swap"] : ["pickup"];
+					const requestTypes: Array<"swap" | "assignment" | "pickup"> = targetEmployee
+						? ["swap"]
+						: ["pickup"];
 					const requestType = faker.helpers.arrayElement(requestTypes);
 
 					// 60% approved, 25% pending, 15% rejected
 					const statusRand = Math.random();
 					const requestStatus: "pending" | "approved" | "rejected" =
-						statusRand < 0.6
-							? "approved"
-							: statusRand < 0.85
-								? "pending"
-								: "rejected";
+						statusRand < 0.6 ? "approved" : statusRand < 0.85 ? "pending" : "rejected";
 
 					await db.insert(shiftRequest).values({
 						shiftId: newShift.id,
@@ -2679,8 +2599,7 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 						]),
 						approverId: requestStatus !== "pending" ? employees[0]?.id : null,
 						approvedAt: requestStatus !== "pending" ? new Date() : null,
-						rejectionReason:
-							requestStatus === "rejected" ? "Schedule conflict" : null,
+						rejectionReason: requestStatus === "rejected" ? "Schedule conflict" : null,
 						updatedAt: new Date(),
 					});
 
@@ -2754,11 +2673,7 @@ export async function assignWorkCategoriesToPeriods(
 	for (const cat of categories) {
 		// More weight for common categories
 		const weight =
-			cat.name === "Normal Work" || cat.name === "Meeting"
-				? 5
-				: cat.name === "Training"
-					? 3
-					: 1;
+			cat.name === "Normal Work" || cat.name === "Meeting" ? 5 : cat.name === "Training" ? 3 : 1;
 		for (let i = 0; i < weight; i++) {
 			weightedCategories.push(cat.id);
 		}
@@ -2803,9 +2718,7 @@ export async function assignWorkCategoriesToPeriods(
 /**
  * Generate all demo data
  */
-export async function generateDemoData(
-	options: DemoDataOptions,
-): Promise<DemoDataResult> {
+export async function generateDemoData(options: DemoDataOptions): Promise<DemoDataResult> {
 	// Phase 1: Foundation data (teams, projects, locations)
 	const teamResult = await generateDemoTeams(options);
 	const projectResult = await generateDemoProjects(options);
@@ -2828,10 +2741,9 @@ export async function generateDemoData(
 	const pendingAbsenceApprovalResult = options.includePendingAbsenceApprovals
 		? await generateDemoPendingAbsenceApprovals(options)
 		: { pendingAbsenceApprovalsCreated: 0 };
-	const pendingTimeCorrectionApprovalResult =
-		options.includePendingTimeCorrectionApprovals
-			? await generateDemoPendingTimeCorrectionApprovals(options)
-			: { pendingTimeCorrectionApprovalsCreated: 0 };
+	const pendingTimeCorrectionApprovalResult = options.includePendingTimeCorrectionApprovals
+		? await generateDemoPendingTimeCorrectionApprovals(options)
+		: { pendingTimeCorrectionApprovalsCreated: 0 };
 
 	// Phase 6: Shift instances (depends on templates + employees)
 	const shiftResult = await generateDemoShifts(options);
@@ -2859,8 +2771,7 @@ export async function generateDemoData(
 		workCategorySetsCreated: workCategoryResult.setsCreated,
 		workCategoriesCreated: workCategoryResult.categoriesCreated,
 		workCategoryAssignmentsCreated: workCategoryResult.assignmentsCreated,
-		workCategoriesAssignedToPeriods:
-			categoryAssignmentResult.workCategoriesAssigned,
+		workCategoriesAssignedToPeriods: categoryAssignmentResult.workCategoriesAssigned,
 		vehicleUseRecorded: vehicleUseResult.vehicleUseRecorded,
 		drivingDetailsMissing: vehicleUseResult.drivingDetailsMissing,
 		// NEW: Change policy results
@@ -2871,8 +2782,7 @@ export async function generateDemoData(
 		shiftRecurrencesCreated: shiftResult.recurrencesCreated,
 		shiftsCreated: shiftResult.shiftsCreated,
 		shiftRequestsCreated: shiftResult.requestsCreated,
-		pendingAbsenceApprovalsCreated:
-			pendingAbsenceApprovalResult.pendingAbsenceApprovalsCreated,
+		pendingAbsenceApprovalsCreated: pendingAbsenceApprovalResult.pendingAbsenceApprovalsCreated,
 		pendingTimeCorrectionApprovalsCreated:
 			pendingTimeCorrectionApprovalResult.pendingTimeCorrectionApprovalsCreated,
 	};
@@ -2932,9 +2842,7 @@ export async function clearOrganizationTimeData(
 			where: inArray(shiftRequest.shiftId, shiftIds),
 		});
 		if (shiftRequestsToDelete.length > 0) {
-			await db
-				.delete(shiftRequest)
-				.where(inArray(shiftRequest.shiftId, shiftIds));
+			await db.delete(shiftRequest).where(inArray(shiftRequest.shiftId, shiftIds));
 			result.shiftRequestsDeleted = shiftRequestsToDelete.length;
 		}
 
@@ -2948,9 +2856,7 @@ export async function clearOrganizationTimeData(
 		where: eq(shiftRecurrence.organizationId, organizationId),
 	});
 	if (shiftRecurrencesToDelete.length > 0) {
-		await db
-			.delete(shiftRecurrence)
-			.where(eq(shiftRecurrence.organizationId, organizationId));
+		await db.delete(shiftRecurrence).where(eq(shiftRecurrence.organizationId, organizationId));
 		result.shiftRecurrencesDeleted = shiftRecurrencesToDelete.length;
 	}
 
@@ -2958,9 +2864,7 @@ export async function clearOrganizationTimeData(
 	const allShiftTemplates = await db.query.shiftTemplate.findMany({
 		where: eq(shiftTemplate.organizationId, organizationId),
 	});
-	const shiftTemplatesToDelete = allShiftTemplates.filter((t) =>
-		t.name.startsWith("Demo "),
-	);
+	const shiftTemplatesToDelete = allShiftTemplates.filter((t) => t.name.startsWith("Demo "));
 	if (shiftTemplatesToDelete.length > 0) {
 		await db.delete(shiftTemplate).where(
 			inArray(
@@ -3094,9 +2998,7 @@ export async function clearOrganizationTimeData(
 		const allLocations = await tx.query.location.findMany({
 			where: eq(location.organizationId, organizationId),
 		});
-		const locationsToDelete = allLocations.filter((l) =>
-			l.name.startsWith("Demo - "),
-		);
+		const locationsToDelete = allLocations.filter((l) => l.name.startsWith("Demo - "));
 		if (locationsToDelete.length > 0) {
 			const locationIdsToDelete = locationsToDelete.map((l) => l.id);
 
@@ -3184,10 +3086,9 @@ export async function clearOrganizationTimeData(
 			}
 
 			// Delete employee vacation allowances (reset to org defaults)
-			const allowancesToDelete =
-				await tx.query.employeeVacationAllowance.findMany({
-					where: inArray(employeeVacationAllowance.employeeId, organizationEmployeeIds),
-				});
+			const allowancesToDelete = await tx.query.employeeVacationAllowance.findMany({
+				where: inArray(employeeVacationAllowance.employeeId, organizationEmployeeIds),
+			});
 			if (allowancesToDelete.length > 0) {
 				await tx
 					.delete(employeeVacationAllowance)
@@ -3220,11 +3121,9 @@ export async function clearOrganizationTimeData(
 			}
 
 			// Delete manager assignments for these employees
-			const managerAssignmentsToDelete = await tx.query.employeeManagers.findMany(
-				{
-					where: inArray(employeeManagers.employeeId, organizationEmployeeIds),
-				},
-			);
+			const managerAssignmentsToDelete = await tx.query.employeeManagers.findMany({
+				where: inArray(employeeManagers.employeeId, organizationEmployeeIds),
+			});
 			if (managerAssignmentsToDelete.length > 0) {
 				await tx
 					.delete(employeeManagers)
@@ -3237,9 +3136,7 @@ export async function clearOrganizationTimeData(
 		const allTeams = await tx.query.team.findMany({
 			where: eq(team.organizationId, organizationId),
 		});
-		const teamsToDelete = allTeams.filter((t) =>
-			t.description?.startsWith("Demo team - "),
-		);
+		const teamsToDelete = allTeams.filter((t) => t.description?.startsWith("Demo team - "));
 		if (teamsToDelete.length > 0) {
 			await tx.delete(team).where(
 				inArray(

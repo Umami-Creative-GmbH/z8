@@ -15,6 +15,7 @@ import {
 	workPolicyAssignment,
 	workPolicySchedule,
 	workPolicyScheduleDay,
+	workPolicyVersion,
 } from "@/db/schema";
 import {
 	createLifecycleDatabaseFixture,
@@ -84,11 +85,26 @@ describe("absence days resolved from work policies and holidays", () => {
 				createdBy: fixture.ownerUserId,
 			})
 			.returning();
+		const [version] = await fixture.db
+			.insert(workPolicyVersion)
+			.values({
+				policyId: policy.id,
+				organizationId,
+				versionNumber: 1,
+				effectiveFromDate: "1970-01-01",
+				scheduleEnabled: options.scheduleEnabled ?? schedule !== null,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				isLegacyBaseline: true,
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
 		if (schedule) {
 			const [row] = await fixture.db
 				.insert(workPolicySchedule)
 				.values({
 					policyId: policy.id,
+					policyVersionId: version.id,
 					scheduleType: schedule.scheduleType,
 					workingDaysPreset: schedule.workingDaysPreset ?? "weekdays",
 					scheduleCycle: schedule.scheduleCycle ?? "weekly",
@@ -98,6 +114,7 @@ describe("absence days resolved from work policies and holidays", () => {
 				await fixture.db.insert(workPolicyScheduleDay).values(
 					ALL_WEEKDAYS.map((dayOfWeek) => ({
 						scheduleId: row.id,
+						policyVersionId: version.id,
 						dayOfWeek,
 						hoursPerDay: "8",
 						isWorkDay: schedule.workDays?.includes(dayOfWeek) ?? false,
@@ -124,6 +141,12 @@ describe("absence days resolved from work policies and holidays", () => {
 			priority: { organization: 0, team: 1, employee: 2 }[target.assignmentType],
 			effectiveFrom: window.effectiveFrom ?? null,
 			effectiveUntil: window.effectiveUntil ?? null,
+			effectiveFromDate: window.effectiveFrom
+				? window.effectiveFrom.toISOString().slice(0, 10)
+				: "1970-01-01",
+			effectiveUntilDate: window.effectiveUntil
+				? window.effectiveUntil.toISOString().slice(0, 10)
+				: null,
 			createdBy: fixture.ownerUserId,
 		});
 	}
@@ -224,6 +247,12 @@ describe("absence days resolved from work policies and holidays", () => {
 			.update(employee)
 			.set({ teamId: teamRow.id })
 			.where(eq(employee.id, individual.employeeId));
+		// Backdate 0120 team history so team membership is effective on 2026-10-12.
+		await fixture.pool.query(
+			`update employee_team_history set effective_from = '2026-01-01T00:00:00Z'
+			 where employee_id = any($1::uuid[])`,
+			[[teamMember.employeeId, individual.employeeId]],
+		);
 
 		await assign(
 			organizationId,
@@ -299,8 +328,12 @@ describe("absence days resolved from work policies and holidays", () => {
 			scheduleType: "simple",
 			workingDaysPreset: "all_days",
 		});
-		// Even an assignment row in this organization pointing at the foreign policy is ignored.
-		await assign(organizationId, foreignPolicy, { assignmentType: "employee", employeeId });
+		// Migration 0322 enforces tenant isolation directly on work_policy_assignment.
+		await expect(
+			assign(organizationId, foreignPolicy, { assignmentType: "employee", employeeId }),
+		).rejects.toThrow();
+		// A valid org-wide assignment in the foreign organization does not affect this organization.
+		await assign(foreignOrganization, foreignPolicy, { assignmentType: "organization" });
 
 		expect(
 			await getAbsenceDays(db, {
@@ -417,8 +450,8 @@ describe("absence days resolved from work policies and holidays", () => {
 
 		expect(week).toBeGreaterThan(0);
 		expect(year).toBe(week);
-		// Employees and assignments once, then each employee's holidays.
-		expect(year).toBeLessThanOrEqual(2 + 4 * employeeIds.length);
+		// Unified contract batch load (O(1) w.r.t. range length), then each employee's holidays.
+		expect(year).toBeLessThanOrEqual(20 + 4 * employeeIds.length);
 	});
 
 	it("charges a Monday-to-Thursday employee 4 days for a Monday-to-Friday vacation everywhere", async () => {
@@ -478,5 +511,31 @@ describe("absence days resolved from work policies and holidays", () => {
 				(entry) => entry.absenceDays,
 			),
 		).toEqual([4, 4]);
+	});
+
+	it("returns 0 working days for dates outside employment periods during an employment gap (A1-26)", async () => {
+		const { organizationId, employeeId } = await organizationWithEmployee();
+		// Replace open employment period with two stints leaving Oct 14-15 (Wed-Thu) as an employment gap
+		await fixture.pool.query(
+			`DELETE FROM employee_employment_period WHERE organization_id = $1 AND employee_id = $2`,
+			[organizationId, employeeId],
+		);
+		await fixture.pool.query(
+			`INSERT INTO employee_employment_period (
+				organization_id, employee_id, status, started_at, start_provenance, ended_at
+			) VALUES
+				($1, $2, 'closed', '2026-01-01T00:00:00Z', 'recorded', '2026-10-14T00:00:00Z'),
+				($1, $2, 'open', '2026-10-16T00:00:00Z', 'recorded', NULL)`,
+			[organizationId, employeeId],
+		);
+
+		// Mon Oct 12 - Fri Oct 16: Mon (1), Tue (1), Wed (gap=0), Thu (gap=0), Fri (1) -> 3 working days!
+		expect(
+			await getAbsenceDays(db, {
+				organizationId,
+				employeeId,
+				absence: fullDays({ startDate: "2026-10-12", endDate: "2026-10-16" }),
+			}),
+		).toBe(3);
 	});
 });

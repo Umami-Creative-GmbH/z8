@@ -5,8 +5,15 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const previewMock = vi.hoisted(() => vi.fn());
+const searchReplacementsMock = vi.hoisted(() => vi.fn());
+const getReplacementMock = vi.hoisted(() => vi.fn());
 vi.mock("@/navigation", () => ({
 	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/employees/employee-offboarding.actions", () => ({
+	searchReplacementEmployeesAction: searchReplacementsMock,
+	getReplacementEmployeeAction: getReplacementMock,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -69,6 +76,34 @@ function renderForm(overrides: Partial<DepartureFormProps> = {}) {
 describe("DepartureForm", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		searchReplacementsMock.mockResolvedValue({
+			success: true,
+			data: {
+				items: [
+					{
+						employeeId: "33333333-3333-4333-8333-333333333333",
+						name: "Robin Admin",
+						email: null,
+						position: null,
+						teamName: null,
+						role: "admin",
+					},
+				],
+				nextCursor: null,
+				hasMore: false,
+			},
+		});
+		getReplacementMock.mockResolvedValue({
+			success: true,
+			data: {
+				employeeId: "33333333-3333-4333-8333-333333333333",
+				name: "Robin Admin",
+				email: null,
+				position: null,
+				teamName: null,
+				role: "admin",
+			},
+		});
 		previewMock.mockReturnValue({
 			data: {
 				lastWorkingDay: "2026-09-30",
@@ -357,5 +392,26 @@ describe("DepartureForm", () => {
 
 		expect(screen.queryByRole("radio", { name: "Schedule departure" })).toBeNull();
 		expect(screen.getByRole("button", { name: "Offboard now" })).toBeTruthy();
+	});
+
+	it("searches and picks a replacement via the scalable server-backed picker", async () => {
+		const user = userEvent.setup();
+		const props = renderForm();
+
+		await user.type(screen.getByLabelText("lastWorkingDay"), "2026-09-30");
+		await user.click(screen.getByRole("combobox", { name: "Replacement for approvals" }));
+		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
+		await user.click(screen.getByRole("button", { name: "Schedule departure" }));
+
+		await waitFor(() =>
+			expect(props.scheduleDeparture).toHaveBeenCalledWith(
+				expect.objectContaining({
+					replacementEmployeeId: "33333333-3333-4333-8333-333333333333",
+				}),
+			),
+		);
+		expect(searchReplacementsMock).toHaveBeenCalledWith(
+			expect.objectContaining({ excludeEmployeeId: employeeId, limit: 20 }),
+		);
 	});
 });

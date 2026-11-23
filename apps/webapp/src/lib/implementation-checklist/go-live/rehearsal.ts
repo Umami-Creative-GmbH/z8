@@ -394,12 +394,6 @@ function skipReason(reason: ApproverSkipReason): GoLiveMessage {
 				key: "settings.implementationChecklist.rehearsal.approvals.skip.ownApprover",
 				fallback: "They are their own approver, so their requests complete at once.",
 			};
-		case "requester_only_decider":
-			return {
-				key: "settings.implementationChecklist.rehearsal.approvals.skip.ownDecider",
-				fallback:
-					"They are the only manager or admin who can decide shift requests, so theirs stay pending until they approve them.",
-			};
 		case "owner_self_approval":
 			return {
 				key: "settings.implementationChecklist.rehearsal.approvals.skip.ownerSelfApproval",

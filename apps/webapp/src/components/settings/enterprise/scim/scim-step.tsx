@@ -107,29 +107,20 @@ export function ScimStep({
 	return (
 		<section className="min-w-0 space-y-4" data-scim-state={displayedState}>
 			<div className="rounded-lg border bg-muted/20 p-4">
-				<div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div className="min-w-0">
-						<div className="flex items-center gap-2">
-							<IconShieldCheck
-								className="size-5 text-primary"
-								aria-hidden="true"
-							/>
-							<h3 className="font-semibold">
-								{t(
-									"settings.enterprise.identity.scim.title",
-									"SCIM Provisioning",
-								)}
-							</h3>
-						</div>
-						<p className="mt-1 text-muted-foreground text-sm">
-							{t(
-								"settings.enterprise.identity.scim.description",
-								"Connect your identity provider to provision and manage workforce access.",
-							)}
-						</p>
-					</div>
+				{/* The surrounding wizard step names and explains SCIM; this row only states the connection. */}
+				<div className="flex min-w-0 flex-wrap items-center gap-2">
+					<IconShieldCheck
+						className="size-4 shrink-0 text-primary"
+						aria-hidden="true"
+					/>
 					<Badge className="w-fit">{connectionStatusLabel}</Badge>
 				</div>
+				<p className="mt-2 text-pretty text-muted-foreground text-sm">
+					{t(
+						"settings.enterprise.identity.scim.description",
+						"SCIM verification updates after your identity provider sends a test user or group change.",
+					)}
+				</p>
 				<dl className="mt-4 grid min-w-0 gap-3 text-sm sm:grid-cols-3">
 					<div>
 						<dt className="text-muted-foreground">

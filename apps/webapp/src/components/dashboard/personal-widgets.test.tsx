@@ -63,7 +63,7 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	getCurrentEmployee: vi.fn(),
 	getPresenceStatus: vi.fn(),
 }));
-vi.mock("@/app/[locale]/(app)/wellness/actions", () => ({ logWaterIntake: waterCommand }));
+vi.mock("@/lib/wellness/actions", () => ({ logWaterIntake: waterCommand }));
 
 import { HeaderRefreshButton } from "@/components/header-refresh-button";
 import { ViewRefreshProvider } from "@/components/providers/view-refresh-provider";

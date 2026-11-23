@@ -18,11 +18,15 @@ import { type TermsWriteClient, type TermsWriteScope, writeEmploymentTerms } fro
  * contracts, and hourly contracts without a wage, get no terms.
  */
 
-/** The terms form defaults (`employee-employment-history/utils.ts`). */
+/**
+ * Sparse employee-owned first-terms defaults (A1-7): operational fields (`weeklyContractMinutes`,
+ * `workModel`, `workPolicyId`) stay `null` so newly hired hourly employees inherit their
+ * organization or primary-team contract defaults instead of diverging automatically.
+ */
 const FIRST_TERMS_DEFAULTS = {
 	status: "active",
-	weeklyContractMinutes: 40 * 60,
-	workModel: "onsite",
+	weeklyContractMinutes: null,
+	workModel: null,
 	workPolicyId: null,
 	currency: "EUR",
 	probationStartsOn: null,

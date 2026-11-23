@@ -19,7 +19,7 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: mocks.t }),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/telegram/actions", () => ({}));
+vi.mock("@/app/[locale]/(app)/settings/notification-channels/telegram-actions", () => ({}));
 
 const start = Temporal.Instant.from("2026-11-19T10:00:00Z");
 

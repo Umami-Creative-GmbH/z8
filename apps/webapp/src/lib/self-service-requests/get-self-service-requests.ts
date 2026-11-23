@@ -1,5 +1,4 @@
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
-import { DateTime } from "luxon";
 
 import { db } from "@/db";
 import {
@@ -19,7 +18,7 @@ import {
 import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
 import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
-import { compareInstants, parseInstant } from "@/lib/datetime/temporal-core";
+import { compareInstants, instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
 
 import type {
 	SelfServiceRequestAction,
@@ -115,8 +114,7 @@ const SOURCE_ERROR_MESSAGES: Record<SelfServiceRequestSourceType, string> = {
 };
 
 const SOURCE_QUERY_LIMIT = 100;
-const UUID =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function getSelfServiceRequests(
 	input: GetSelfServiceRequestsInput,
@@ -144,9 +142,7 @@ async function loadSource(
 	} catch {
 		return {
 			items: [],
-			sourceErrors: [
-				{ sourceType, message: SOURCE_ERROR_MESSAGES[sourceType] },
-			],
+			sourceErrors: [{ sourceType, message: SOURCE_ERROR_MESSAGES[sourceType] }],
 		};
 	}
 }
@@ -222,9 +218,7 @@ async function loadTimeCorrections(
 	return [
 		...legacyItems,
 		...canonicalRows.flatMap((row) =>
-			legacyWorkflowIds.has(row.id)
-				? []
-				: mapCanonicalTimeCorrection(row, input),
+			legacyWorkflowIds.has(row.id) ? [] : mapCanonicalTimeCorrection(row, input),
 		),
 	];
 }
@@ -367,11 +361,7 @@ function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {
 	const workflow = Object.getOwnPropertyDescriptor(value, "workflow");
 	let workflowId: string | null = null;
 	if (workflow) {
-		if (
-			!workflow.enumerable ||
-			!("value" in workflow) ||
-			!record(workflow.value)
-		) {
+		if (!workflow.enumerable || !("value" in workflow) || !record(workflow.value)) {
 			throw new Error();
 		}
 		if (
@@ -415,18 +405,13 @@ function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {
 				: ["key", "resultKind", "originalStatus"],
 		);
 		if (
-			(cancellation.chainInstanceId === null &&
-				submission.resultKind !== "default_created") ||
-			(cancellation.chainInstanceId !== null &&
-				submission.resultKind !== "chain_created")
+			(cancellation.chainInstanceId === null && submission.resultKind !== "default_created") ||
+			(cancellation.chainInstanceId !== null && submission.resultKind !== "chain_created")
 		) {
 			throw new Error();
 		}
 		const approvedAt = instantFromDB(row.approvedAt);
-		if (
-			!approvedAt ||
-			compareInstants(parseInstant(cancellation.cancelledAt), approvedAt) !== 0
-		) {
+		if (!approvedAt || compareInstants(parseInstant(cancellation.cancelledAt), approvedAt) !== 0) {
 			throw new Error();
 		}
 		return { workflowId, cancellationState: "requester" };
@@ -502,8 +487,7 @@ function record(value: unknown): value is Record<string, unknown> {
 		typeof value === "object" &&
 		value !== null &&
 		!Array.isArray(value) &&
-		(Object.getPrototypeOf(value) === Object.prototype ||
-			Object.getPrototypeOf(value) === null)
+		(Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null)
 	);
 }
 
@@ -517,21 +501,16 @@ function parseCanonicalTimeCorrectionContext(value: unknown) {
 	const hasSubmissionId = Object.hasOwn(submission, "submissionId");
 	if (
 		keys.length !== (hasSubmissionId ? 4 : 3) ||
-		!keys.every((key) =>
-			["key", "submissionId", "resultKind", "originalStatus"].includes(key),
-		) ||
+		!keys.every((key) => ["key", "submissionId", "resultKind", "originalStatus"].includes(key)) ||
 		typeof submission.key !== "string" ||
 		submission.key.length === 0 ||
 		(hasSubmissionId &&
-			(typeof submission.submissionId !== "string" ||
-				!UUID.test(submission.submissionId))) ||
+			(typeof submission.submissionId !== "string" || !UUID.test(submission.submissionId))) ||
 		(submission.resultKind !== "default_created" &&
 			submission.resultKind !== "chain_created" &&
 			submission.resultKind !== "auto_completed") ||
-		(submission.originalStatus !== "pending" &&
-			submission.originalStatus !== "approved") ||
-		(submission.resultKind === "auto_completed") !==
-			(submission.originalStatus === "approved")
+		(submission.originalStatus !== "pending" && submission.originalStatus !== "approved") ||
+		(submission.resultKind === "auto_completed") !== (submission.originalStatus === "approved")
 	) {
 		throw new Error();
 	}
@@ -540,9 +519,7 @@ function parseCanonicalTimeCorrectionContext(value: unknown) {
 
 function parseCanonicalTimeCorrectionDisplay(
 	value: unknown,
-	correction: ReturnType<
-		typeof normalizeTimeCorrectionWorkflowPayload
-	>["timeCorrection"],
+	correction: ReturnType<typeof normalizeTimeCorrectionWorkflowPayload>["timeCorrection"],
 	requesterEmployeeId: string,
 	originalWorkMetadata: unknown,
 ): { title: string; subtitle: string } {
@@ -626,11 +603,7 @@ function strictOwnDataRecord(
 	return result;
 }
 
-function safeDisplayString(
-	value: unknown,
-	maxLength: number,
-	allowEmpty: boolean,
-): string {
+function safeDisplayString(value: unknown, maxLength: number, allowEmpty: boolean): string {
 	if (
 		typeof value !== "string" ||
 		value.length > maxLength ||
@@ -645,10 +618,7 @@ function safeDisplayString(
 	return value;
 }
 
-function strictStringArrayEquals(
-	value: unknown,
-	expected: readonly string[],
-): boolean {
+function strictStringArrayEquals(value: unknown, expected: readonly string[]): boolean {
 	if (
 		!Array.isArray(value) ||
 		Object.getPrototypeOf(value) !== Array.prototype ||
@@ -667,17 +637,11 @@ function strictStringArrayEquals(
 	}
 	return expected.every((item, index) => {
 		const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
-		return (
-			descriptor?.enumerable &&
-			"value" in descriptor &&
-			descriptor.value === item
-		);
+		return descriptor?.enumerable && "value" in descriptor && descriptor.value === item;
 	});
 }
 
-async function loadAbsences(
-	input: GetSelfServiceRequestsInput,
-): Promise<SelfServiceRequestItem[]> {
+async function loadAbsences(input: GetSelfServiceRequestsInput): Promise<SelfServiceRequestItem[]> {
 	const rows = (await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.organizationId, input.organizationId),
@@ -742,8 +706,7 @@ async function loadTravelExpenses(
 				resolvedAt: row.decidedAt,
 				title: "travel_expense",
 				subtitle: travelExpenseSubtitle(row),
-				decisionReason:
-					latestDecisionLog?.reason ?? latestDecisionLog?.comment ?? null,
+				decisionReason: latestDecisionLog?.reason ?? latestDecisionLog?.comment ?? null,
 				availableActions: actionsFor(status),
 				sourceHref: "/travel-expenses",
 			},
@@ -763,16 +726,12 @@ function absenceResolvedAt(row: AbsenceRow): Date | null {
 	return null;
 }
 
-function mapTravelExpenseStatus(
-	status: TravelExpenseRow["status"],
-): SelfServiceRequestStatus {
+function mapTravelExpenseStatus(status: TravelExpenseRow["status"]): SelfServiceRequestStatus {
 	return status === "approved" || status === "rejected" ? status : "pending";
 }
 
 function travelExpenseSubtitle(row: TravelExpenseRow): string {
-	const destination = [row.destinationCity, row.destinationCountry]
-		.filter(Boolean)
-		.join(", ");
+	const destination = [row.destinationCity, row.destinationCountry].filter(Boolean).join(", ");
 	const amount = `${row.calculatedAmount} ${row.calculatedCurrency}`;
 
 	return destination ? `${destination} · ${amount}` : amount;
@@ -786,37 +745,30 @@ function actionsFor(
 		return ["fix", "view"];
 	}
 
-	if (
-		status === "pending" &&
-		(sourceType === "absence" || sourceType === "time_correction")
-	) {
+	if (status === "pending" && (sourceType === "absence" || sourceType === "time_correction")) {
 		return ["cancel", "view"];
 	}
 
 	return ["view"];
 }
 
-function countItems(
-	items: SelfServiceRequestItem[],
-	now: Date,
-): SelfServiceRequestCounts {
-	const recentCutoff = DateTime.fromJSDate(now).minus({ days: 30 });
+function countItems(items: SelfServiceRequestItem[], now: Date): SelfServiceRequestCounts {
+	const recentCutoff = instantFromDate(now)
+		.toZonedDateTimeISO("UTC")
+		.subtract({ days: 30 })
+		.toInstant();
 
 	return {
 		pending: items.filter((item) => item.status === "pending").length,
 		requiredFixes: items.filter(
-			(item) =>
-				item.status === "rejected" && item.availableActions.includes("fix"),
+			(item) => item.status === "rejected" && item.availableActions.includes("fix"),
 		).length,
 		recentDecisions: items.filter((item) => {
-			if (
-				(item.status !== "approved" && item.status !== "rejected") ||
-				item.resolvedAt === null
-			) {
+			if ((item.status !== "approved" && item.status !== "rejected") || item.resolvedAt === null) {
 				return false;
 			}
 
-			return DateTime.fromJSDate(item.resolvedAt) >= recentCutoff;
+			return compareInstants(instantFromDate(item.resolvedAt), recentCutoff) >= 0;
 		}).length,
 		total: items.length,
 	};
@@ -829,11 +781,7 @@ function applyFilters(
 	const search = filters?.search?.trim().toLowerCase();
 
 	return items.filter((item) => {
-		if (
-			filters?.status &&
-			filters.status !== "all" &&
-			item.status !== filters.status
-		) {
+		if (filters?.status && filters.status !== "all" && item.status !== filters.status) {
 			return false;
 		}
 
@@ -855,10 +803,7 @@ function applyFilters(
 	});
 }
 
-function compareItems(
-	a: SelfServiceRequestItem,
-	b: SelfServiceRequestItem,
-): number {
+function compareItems(a: SelfServiceRequestItem, b: SelfServiceRequestItem): number {
 	const statusDelta = statusRank(a.status) - statusRank(b.status);
 
 	if (statusDelta !== 0) {

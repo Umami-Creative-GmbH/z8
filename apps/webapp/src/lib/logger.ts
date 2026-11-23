@@ -17,8 +17,8 @@ const transport = isDev
 		}
 	: hasRemoteOtel
 		? {
-				// Resolve statically so standalone tracing follows this worker's dependencies.
-				target: require.resolve("pino-opentelemetry-transport"),
+				// The image includes this worker and its dependencies for Pino to load by name.
+				target: "pino-opentelemetry-transport",
 			}
 		: undefined;
 

@@ -122,10 +122,18 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 			[organizationId, name, owner.userId],
 		);
 		const policyId = rows[0].id as string;
+		const {
+			rows: [policyVersion],
+		} = await sql(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3) returning id`,
+			[policyId, organizationId, owner.userId],
+		);
 		await sql(
-			`insert into work_policy_schedule (policy_id, schedule_cycle, schedule_type, working_days_preset, hours_per_cycle, updated_at)
-			 values ($1, 'weekly', 'simple', 'weekdays', $2, now())`,
-			[policyId, hoursPerWeek],
+			`insert into work_policy_schedule (policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, hours_per_cycle, updated_at)
+			 values ($1, $2, 'weekly', 'simple', 'weekdays', $3, now())`,
+			[policyId, policyVersion.id, hoursPerWeek],
 		);
 		await sql(
 			`insert into work_policy_assignment
@@ -257,7 +265,7 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 		});
 	});
 
-	it("says a lone shift decider's own requests wait for their approval", async () => {
+	it("says a lone shift decider's own requests are approved at once (#1597)", async () => {
 		await sql(`update organization set shifts_enabled = true where id = $1`, [organizationId]);
 		const lead = await seed({ role: "manager" });
 		await sql(`update employee set role = 'employee' where id = $1`, [owner.employeeId]);
@@ -266,7 +274,7 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 
 		expect(shifts).toMatchObject({
 			status: "skipped",
-			reason: { key: "settings.implementationChecklist.rehearsal.approvals.skip.ownDecider" },
+			reason: { key: "settings.implementationChecklist.rehearsal.approvals.skip.ownApprover" },
 		});
 	});
 

@@ -37,6 +37,7 @@ export async function applyDrivingLicenceIntervalAction(input: unknown) {
 		);
 		revalidatePath("/settings/driving-licence");
 		revalidatePath("/driving-licence");
+		revalidatePath("/team/driving-licence", "layout");
 		return { success: true as const, data };
 	} catch (error) {
 		return failure(error);

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gt, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	approvalRequest,
@@ -49,8 +49,11 @@ export async function readActiveWorkPeriod(
 		where: and(
 			eq(workPeriod.employeeId, scope.employeeId),
 			eq(workPeriod.organizationId, scope.organizationId),
+			eq(workPeriod.isActive, true),
 			isNull(workPeriod.endTime),
+			isNull(workPeriod.deletedAt),
 		),
+		orderBy: [desc(workPeriod.startTime), desc(workPeriod.createdAt)],
 		with: {
 			clockIn: true,
 			clockOut: true,

@@ -1,69 +1,27 @@
-import { IconAlertTriangle } from "@tabler/icons-react";
 import { Suspense } from "react";
-import { ClosedMonthsSettings } from "@/components/settings/closed-months/closed-months-settings";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PageHeader } from "@/components/ui/page-header";
-import { Skeleton } from "@/components/ui/skeleton";
-import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import { getTranslate } from "@/tolgee/server";
-import { getClosedMonthsOverview } from "./actions";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
+import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
-/**
- * Closed months (#762). Open to anyone allowed to close or reopen months, which
- * custom roles may grant beyond owners and admins; the actions check it.
- */
-async function ClosedMonthsSettingsPageContent() {
-	const [t, overview] = await Promise.all([getTranslate(), getClosedMonthsOverview()]);
+async function ClosedMonthsRedirect() {
+	return redirectWithLocale("/payroll?tab=closed-months");
+}
 
+function ClosedMonthsLoading() {
 	return (
-		<div className="page-frame">
-			<div className="min-w-0 space-y-6">
-				<PageHeader
-					title={t("settings.closedMonths.title", "Closed months")}
-					description={t(
-						"settings.closedMonths.description",
-						"Close months after payroll so their work and absences can no longer change",
-					)}
-				/>
-				{overview.success ? (
-					<ClosedMonthsSettings overview={overview.data} />
-				) : (
-					<Alert variant="destructive">
-						<IconAlertTriangle aria-hidden="true" />
-						<AlertTitle>
-							{t("settings.closedMonths.loadErrorTitle", "Closed months could not be loaded")}
-						</AlertTitle>
-						<AlertDescription>
-							{actionErrorMessage(t, overview, {}, [
-								"settings.closedMonths.loadErrorDescription",
-								"Reload the page to try again.",
-							])}
-						</AlertDescription>
-					</Alert>
-				)}
-			</div>
-		</div>
+		<SettingsPageSkeleton
+			label={{
+				labelKey: "common.loadingRegions.settings",
+				labelDefault: "Loading settings",
+			}}
+		/>
 	);
 }
 
-function ClosedMonthsSettingsPageLoading() {
-	return (
-		<div className="page-frame" aria-busy="true">
-			<div className="min-w-0 space-y-6">
-				<div className="space-y-2">
-					<Skeleton className="h-8 w-56" aria-hidden="true" />
-					<Skeleton className="h-5 w-full max-w-xl" aria-hidden="true" />
-				</div>
-				<Skeleton className="h-96 w-full" aria-hidden="true" />
-			</div>
-		</div>
-	);
-}
-
+/** Legacy `/settings/closed-months` route redirects to `/payroll?tab=closed-months` (#1957). */
 export default function ClosedMonthsSettingsPage() {
 	return (
-		<Suspense fallback={<ClosedMonthsSettingsPageLoading />}>
-			<ClosedMonthsSettingsPageContent />
+		<Suspense fallback={<ClosedMonthsLoading />}>
+			<ClosedMonthsRedirect />
 		</Suspense>
 	);
 }

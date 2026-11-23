@@ -10,8 +10,9 @@ import { getEmployeeEffectiveScheduleDetails } from "@/app/[locale]/(app)/settin
 import { env } from "@/env";
 import { ORGANIZATION_CONTEXT_HEADERS } from "@/lib/auth/organization-display-context";
 import { getRequestSession } from "@/lib/auth/request-session";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import {
 	getEmployeeManagerChoices,
 	getEmployeeWorkPolicyChoices,
@@ -28,9 +29,7 @@ const headers = { "Cache-Control": "private, no-store" };
 const directoryQuery = z.object({
 	search: z.string().max(2000).optional(),
 	role: z.enum(["admin", "manager", "employee", "all"]).optional(),
-	status: z
-		.enum(["current", "former", "draft", "all", "active", "inactive"])
-		.optional(),
+	status: z.enum(["current", "former", "draft", "all", "active", "inactive"]).optional(),
 	limit: z.coerce.number().int().min(1).max(1000).optional(),
 	offset: z.coerce.number().int().min(0).optional(),
 });
@@ -38,22 +37,26 @@ const directoryQuery = z.object({
 const errorResponse = (error: string, status: number) =>
 	NextResponse.json({ error }, { status, headers });
 
-async function authorize(
-	request: Request,
-): Promise<EmployeeReadScope | NextResponse> {
-	const actor = await getCurrentSettingsRouteContext();
-	if (!actor) return errorResponse("Authentication required", 401);
-	if (actor.accessTier === "member")
-		return errorResponse("Employee settings access required", 403);
-	const context = actor.authContext;
-	const organizationId = context.session.activeOrganizationId;
-	if (!organizationId)
-		return errorResponse("No active organization selected", 403);
+async function authorize(request: Request): Promise<EmployeeReadScope | NextResponse> {
+	const session = await getRequestSession();
 	if (
-		request.headers.get(ORGANIZATION_CONTEXT_HEADERS.user) !==
-			context.user.id ||
-		request.headers.get(ORGANIZATION_CONTEXT_HEADERS.organization) !==
-			organizationId
+		!session?.user ||
+		("ssoRequired" in session && session.ssoRequired === true) ||
+		("mfaRequired" in session && !!session.mfaRequired)
+	) {
+		return errorResponse("Authentication required", 401);
+	}
+	if (!session.session.activeOrganizationId) {
+		return errorResponse("No active organization selected", 403);
+	}
+	const actor = await getCurrentSettingsAccess();
+	if (!actor || !meetsSettingsAccess(actor.settingsAccess, "scopedManager")) {
+		return errorResponse("Employee settings access required", 403);
+	}
+	const organizationId = actor.organizationId;
+	if (
+		request.headers.get(ORGANIZATION_CONTEXT_HEADERS.user) !== actor.userId ||
+		request.headers.get(ORGANIZATION_CONTEXT_HEADERS.organization) !== organizationId
 	) {
 		return errorResponse("Employee context changed. Refresh to continue.", 409);
 	}
@@ -67,9 +70,9 @@ async function authorize(
 			return response;
 		}
 	}
-	// The business reader separately enforces approved membership, settings tier,
+	// The business reader separately enforces approved membership, settings access,
 	// current employee access and target/manager scope. Display headers grant none.
-	return { userId: context.user.id, organizationId };
+	return { userId: actor.userId, organizationId };
 }
 
 async function scopeIsCurrent(scope: EmployeeReadScope) {
@@ -82,10 +85,7 @@ async function scopeIsCurrent(scope: EmployeeReadScope) {
 	);
 }
 
-export async function GET(
-	request: Request,
-	{ params }: { params: Promise<{ dataset: string }> },
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ dataset: string }> }) {
 	try {
 		const scope = await authorize(request);
 		if (scope instanceof NextResponse) return scope;
@@ -99,11 +99,7 @@ export async function GET(
 		} else if (dataset === "work-policies") {
 			result = await getEmployeeWorkPolicyChoices();
 		} else {
-			if (
-				!["detail", "schedule", "managers", "employment-history"].includes(
-					dataset,
-				)
-			)
+			if (!["detail", "schedule", "managers", "employment-history"].includes(dataset))
 				return errorResponse("Unknown employee dataset", 404);
 			const employeeId = query.get("employeeId");
 			let validId = false;
@@ -116,8 +112,7 @@ export async function GET(
 			} catch {
 				/* Malformed percent encoding is an invalid target, not a server failure. */
 			}
-			if (!employeeId || !validId)
-				return errorResponse("Invalid employee target", 400);
+			if (!employeeId || !validId) return errorResponse("Invalid employee target", 400);
 			if (dataset === "detail") result = await getEmployeeAction(employeeId);
 			else if (dataset === "schedule")
 				result = await getEmployeeEffectiveScheduleDetails(employeeId);
@@ -128,10 +123,7 @@ export async function GET(
 			}
 		}
 		if (!(await scopeIsCurrent(scope)))
-			return errorResponse(
-				"Employee context changed. Refresh to continue.",
-				409,
-			);
+			return errorResponse("Employee context changed. Refresh to continue.", 409);
 		if (!result.success) {
 			const status =
 				result.code === "AuthenticationError"
@@ -148,10 +140,7 @@ export async function GET(
 				status,
 			);
 		}
-		return superJsonResponse(
-			{ scope, data: result.data, updatedAt: Date.now() },
-			{ headers },
-		);
+		return superJsonResponse({ scope, data: result.data, updatedAt: Date.now() }, { headers });
 	} catch {
 		return errorResponse("Employee data could not be loaded", 500);
 	}

@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import {
 	buildSummaryCounts,
@@ -9,9 +9,11 @@ import {
 } from "../logic";
 import type { BriefingActionItem } from "../types";
 
+const berlin = (iso: string) => Temporal.Instant.from(iso).toZonedDateTimeISO("Europe/Berlin");
+
 describe("manager daily briefing logic", () => {
 	it("detects missing and late clock-ins from published shifts only", () => {
-		const now = DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true });
+		const now = berlin("2026-04-28T09:20:00.000+02:00");
 		const shifts = [
 			{
 				id: "shift-1",
@@ -58,13 +60,13 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-2",
-				startAt: DateTime.fromISO("2026-04-28T09:55:00.000+02:00", { setZone: true }).toJSDate(),
+				startAt: new Date("2026-04-28T09:55:00.000+02:00"),
 				endAt: null,
 			},
 			{
 				id: "record-2",
 				employeeId: "emp-4",
-				startAt: DateTime.fromISO("2026-04-28T08:40:00.000+02:00", { setZone: true }).toJSDate(),
+				startAt: new Date("2026-04-28T08:40:00.000+02:00"),
 				endAt: null,
 			},
 		];
@@ -85,7 +87,7 @@ describe("manager daily briefing logic", () => {
 	});
 
 	it("matches attendance records to the shift window before suppressing exceptions", () => {
-		const now = DateTime.fromISO("2026-04-28T14:20:00.000+02:00", { setZone: true });
+		const now = berlin("2026-04-28T14:20:00.000+02:00");
 		const shifts = [
 			{
 				id: "shift-1",
@@ -112,8 +114,8 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-1",
-				startAt: DateTime.fromISO("2026-04-28T09:03:00.000+02:00", { setZone: true }).toJSDate(),
-				endAt: DateTime.fromISO("2026-04-28T12:00:00.000+02:00", { setZone: true }).toJSDate(),
+				startAt: new Date("2026-04-28T09:03:00.000+02:00"),
+				endAt: new Date("2026-04-28T12:00:00.000+02:00"),
 			},
 		];
 
@@ -128,7 +130,7 @@ describe("manager daily briefing logic", () => {
 	});
 
 	it("does not let earlier closed records suppress later split-shift exceptions", () => {
-		const now = DateTime.fromISO("2026-04-28T14:20:00.000+02:00", { setZone: true });
+		const now = berlin("2026-04-28T14:20:00.000+02:00");
 		const shifts = [
 			{
 				id: "shift-1",
@@ -145,8 +147,8 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-1",
-				startAt: DateTime.fromISO("2026-04-28T12:00:00.000+02:00", { setZone: true }).toJSDate(),
-				endAt: DateTime.fromISO("2026-04-28T13:00:00.000+02:00", { setZone: true }).toJSDate(),
+				startAt: new Date("2026-04-28T12:00:00.000+02:00"),
+				endAt: new Date("2026-04-28T13:00:00.000+02:00"),
 			},
 		];
 
@@ -161,7 +163,7 @@ describe("manager daily briefing logic", () => {
 	});
 
 	it("allows early clock-ins within two hours before shift start", () => {
-		const now = DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true });
+		const now = berlin("2026-04-28T09:20:00.000+02:00");
 		const shifts = [
 			{
 				id: "shift-1",
@@ -178,7 +180,7 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-1",
-				startAt: DateTime.fromISO("2026-04-28T08:55:00.000+02:00", { setZone: true }).toJSDate(),
+				startAt: new Date("2026-04-28T08:55:00.000+02:00"),
 				endAt: null,
 			},
 		];
@@ -213,14 +215,14 @@ describe("manager daily briefing logic", () => {
 			{
 				id: "record-1",
 				employeeId: "emp-1",
-				startAt: DateTime.fromISO("2026-04-28T22:03:00.000+02:00", { setZone: true }).toJSDate(),
+				startAt: new Date("2026-04-28T22:03:00.000+02:00"),
 				endAt: null,
 			},
 		];
 
 		expect(
 			detectAttendanceExceptions({
-				now: DateTime.fromISO("2026-04-28T22:20:00.000+02:00", { setZone: true }),
+				now: berlin("2026-04-28T22:20:00.000+02:00"),
 				shifts,
 				records,
 				graceMinutes: 5,
@@ -236,7 +238,7 @@ describe("manager daily briefing logic", () => {
 	});
 
 	it("returns approved absences overlapping today", () => {
-		const today = DateTime.fromISO("2026-04-28T12:00:00.000+02:00", { setZone: true });
+		const today = berlin("2026-04-28T12:00:00.000+02:00");
 		const result = detectAbsencesToday({
 			today,
 			absences: [
@@ -416,7 +418,7 @@ describe("manager daily briefing logic", () => {
 				severity: "warning",
 				title: "B item",
 				description: "",
-				href: "/settings/payroll-readiness",
+				href: "/payroll",
 			},
 			{
 				id: "1",

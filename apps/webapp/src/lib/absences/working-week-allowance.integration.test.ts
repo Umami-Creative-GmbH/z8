@@ -29,15 +29,14 @@ const {
 	workPolicyAssignment,
 	workPolicySchedule,
 	workPolicyScheduleDay,
+	workPolicyVersion,
 } = await import("@/db/schema");
-const { createLifecycleDatabaseFixture } = await import(
-	"@/lib/employee-lifecycle/testing/database.test.fixture"
-);
+const { createLifecycleDatabaseFixture } =
+	await import("@/lib/employee-lifecycle/testing/database.test.fixture");
 const { accrueVacationPeriods } = await import("./vacation-accrual");
 const { loadVacationBalances } = await import("./vacation-balance-store");
-const { dismissWorkingWeekNotice, loadWorkingWeekNotice } = await import(
-	"./working-week-notice-store"
-);
+const { dismissWorkingWeekNotice, loadWorkingWeekNotice } =
+	await import("./working-week-notice-store");
 
 const ALL_WEEKDAYS: WeekdayName[] = [
 	"monday",
@@ -117,10 +116,25 @@ describe("working-week vacation allowances (#990)", () => {
 				createdBy: fixture.ownerUserId,
 			})
 			.returning();
+		const [version] = await fixture.db
+			.insert(workPolicyVersion)
+			.values({
+				policyId: policy.id,
+				organizationId,
+				versionNumber: 1,
+				effectiveFromDate: "1970-01-01",
+				scheduleEnabled: true,
+				regulationEnabled: false,
+				presenceEnabled: false,
+				isLegacyBaseline: true,
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
 		const [schedule] = await fixture.db
 			.insert(workPolicySchedule)
 			.values({
 				policyId: policy.id,
+				policyVersionId: version.id,
 				scheduleType: "detailed",
 				workingDaysPreset: "custom",
 				scheduleCycle: "weekly",
@@ -129,6 +143,7 @@ describe("working-week vacation allowances (#990)", () => {
 		await fixture.db.insert(workPolicyScheduleDay).values(
 			ALL_WEEKDAYS.map((dayOfWeek) => ({
 				scheduleId: schedule.id,
+				policyVersionId: version.id,
 				dayOfWeek,
 				hoursPerDay: "6",
 				isWorkDay: workDays.includes(dayOfWeek),
@@ -158,6 +173,12 @@ describe("working-week vacation allowances (#990)", () => {
 					}),
 			effectiveFrom: window.effectiveFrom ?? null,
 			effectiveUntil: window.effectiveUntil ?? null,
+			effectiveFromDate: window.effectiveFrom
+				? window.effectiveFrom.toISOString().slice(0, 10)
+				: "1970-01-01",
+			effectiveUntilDate: window.effectiveUntil
+				? window.effectiveUntil.toISOString().slice(0, 10)
+				: null,
 			createdBy: fixture.ownerUserId,
 		});
 	}

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq, isNull, or } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import {
 	employee,
@@ -10,7 +10,8 @@ import {
 	holidayPresetAssignment,
 	holidayPresetHoliday,
 } from "@/db/schema";
-import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { instantFromDB, instantToDB } from "@/lib/datetime/drizzle-adapter";
+import { compareInstants, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { HolidayEvent } from "./types";
 
 // Type for a resolved preset with source info
@@ -164,11 +165,12 @@ export async function isHolidayForEmployee(
 	employeeId: string,
 	date: Date,
 ): Promise<HolidayCheckResult> {
-	const dateDT = dateFromDB(date);
-	if (!dateDT) return { isHoliday: false, source: null };
+	const instant = instantFromDB(date);
+	if (!instant) return { isHoliday: false, source: null };
 
-	const month = dateDT.month; // Luxon months are 1-indexed
-	const day = dateDT.day;
+	const utcDate = plainDateAt(instant, "UTC");
+	const month = utcDate.month;
+	const day = utcDate.day;
 
 	// Get the employee's effective preset
 	const { preset } = await getEffectivePresetForEmployee(employeeId);
@@ -218,9 +220,12 @@ export async function getEmployeeHolidaysInRange(
 ): Promise<HolidayEvent[]> {
 	const events: HolidayEvent[] = [];
 
-	const startDT = dateFromDB(startDate);
-	const endDT = dateFromDB(endDate);
-	if (!startDT || !endDT) return events;
+	const startInstant = instantFromDB(startDate);
+	const endInstant = instantFromDB(endDate);
+	if (!startInstant || !endInstant) return events;
+
+	const startYear = plainDateAt(startInstant, "UTC").year;
+	const endYear = plainDateAt(endInstant, "UTC").year;
 
 	// Get the employee's effective preset
 	const { preset, source } = await getEffectivePresetForEmployee(employeeId);
@@ -242,23 +247,37 @@ export async function getEmployeeHolidaysInRange(
 		);
 
 	// Generate holiday instances for each year in the range
-	for (let year = startDT.year; year <= endDT.year; year++) {
+	for (let year = startYear; year <= endYear; year++) {
 		for (const { holiday: h, category: cat } of presetHolidays) {
-			// Create date for this year
-			const holidayDT = DateTime.utc(year, h.month, h.day);
+			let holidayPlainDate: Temporal.PlainDate;
+			try {
+				holidayPlainDate = Temporal.PlainDate.from(
+					{ year, month: h.month, day: h.day },
+					{ overflow: "reject" },
+				);
+			} catch {
+				continue;
+			}
+			const holidayInstant = holidayPlainDate.toZonedDateTime("UTC").toInstant();
 
 			// Check if within range
-			if (holidayDT < startDT || holidayDT > endDT) {
+			if (
+				compareInstants(holidayInstant, startInstant) < 0 ||
+				compareInstants(holidayInstant, endInstant) > 0
+			) {
 				continue;
 			}
 
 			// Handle multi-day holidays
 			const duration = h.durationDays || 1;
 			for (let d = 0; d < duration; d++) {
-				const instanceDT = holidayDT.plus({ days: d });
-				if (instanceDT > endDT) break;
+				const instanceInstant = holidayPlainDate
+					.add({ days: d })
+					.toZonedDateTime("UTC")
+					.toInstant();
+				if (compareInstants(instanceInstant, endInstant) > 0) break;
 
-				const instanceDate = dateToDB(instanceDT);
+				const instanceDate = instantToDB(instanceInstant);
 				if (!instanceDate) continue;
 
 				events.push({

@@ -4,6 +4,10 @@ import {
 	type PlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import { type SubmissionCadenceChange, scheduledSubmissionPeriods } from "./cadence";
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
 import {
@@ -27,16 +31,19 @@ export type PeriodSubmissionOverviewScope =
 	| { kind: "managed"; managerEmployeeId: string };
 
 /**
- * The viewer's scope in the active organization, by settings access tier: owners and admins see
- * every covered employee, managers the ones they manage, everyone else nothing (null).
+ * The viewer's scope in the active organization, by settings access: owners and admins see
+ * every covered employee, scoped managers the ones they manage, everyone else nothing (null).
  */
 export function periodSubmissionOverviewScope(input: {
-	accessTier: "member" | "manager" | "orgAdmin";
+	settingsAccess: SettingsAccess | null;
 	organizationId: string;
 	employee: { id: string; organizationId: string } | null;
 }): PeriodSubmissionOverviewScope | null {
-	if (input.accessTier === "orgAdmin") return { kind: "all" };
-	if (input.accessTier === "manager" && input.employee?.organizationId === input.organizationId) {
+	if (meetsSettingsAccess(input.settingsAccess, "orgAdmin")) return { kind: "all" };
+	if (
+		meetsSettingsAccess(input.settingsAccess, "scopedManager") &&
+		input.employee?.organizationId === input.organizationId
+	) {
 		return { kind: "managed", managerEmployeeId: input.employee.id };
 	}
 	return null;

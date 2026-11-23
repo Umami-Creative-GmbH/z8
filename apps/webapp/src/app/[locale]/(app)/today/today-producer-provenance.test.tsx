@@ -1,7 +1,6 @@
 /* @vitest-environment jsdom */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { DateTime } from "luxon";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readTodayBriefing } from "@/app/[locale]/(app)/today/actions";
@@ -15,6 +14,7 @@ import {
 	ViewRefreshProvider,
 } from "@/components/providers/view-refresh-provider";
 import type { OrganizationDisplayContext } from "@/lib/auth/organization-display-context";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	getManagerDailyBriefingFromSources,
 	type ManagerDailyBriefingSources,
@@ -109,7 +109,7 @@ async function build({ currentEmployee }: { currentEmployee: ReturnType<typeof e
 	return getManagerDailyBriefingFromSources({
 		organizationId: currentEmployee.organizationId,
 		currentEmployee,
-		now: DateTime.fromISO("2026-11-17T12:00:00Z"),
+		now: parseInstant("2026-11-17T12:00:00Z"),
 		timezone: "Europe/Berlin",
 		sources,
 	});

@@ -4,7 +4,7 @@ import { IconLoader2, IconPencil, IconPlus, IconTrash } from "@tabler/icons-reac
 import type { PaginationState } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import type { Dispatch, SetStateAction } from "react";
-import type { HolidayWithCategory } from "@/app/[locale]/(app)/settings/holidays/actions";
+import type { HolidayWithCategory } from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import {
 	DataTablePagination,
 	DataTableSkeleton,

@@ -4,7 +4,7 @@
  * forever and must not warn; submitted reports in the period must.
  */
 
-import { DateTime } from "luxon";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -159,10 +159,10 @@ describe("payroll readiness travel expense warning", () => {
 		const result = await getPayrollReadiness({
 			organizationId: ORG,
 			period: {
-				start: DateTime.fromISO("2026-04-01T00:00:00", { zone: "Europe/Berlin" }),
-				end: DateTime.fromISO("2026-04-30T00:00:00", { zone: "Europe/Berlin" }),
+				start: parsePlainDate("2026-04-01"),
+				end: parsePlainDate("2026-04-30"),
 			},
-			now: DateTime.fromISO("2026-05-02T12:00:00Z"),
+			now: parseInstant("2026-05-02T12:00:00Z"),
 		});
 		const check = result.groups
 			.flatMap((group) => group.checks)
@@ -186,10 +186,10 @@ describe("payroll readiness travel expense warning", () => {
 		const later = await getPayrollReadiness({
 			organizationId: ORG,
 			period: {
-				start: DateTime.fromISO("2026-04-01T00:00:00", { zone: "Europe/Berlin" }),
-				end: DateTime.fromISO("2026-04-30T00:00:00", { zone: "Europe/Berlin" }),
+				start: parsePlainDate("2026-04-01"),
+				end: parsePlainDate("2026-04-30"),
 			},
-			now: DateTime.fromISO("2026-05-02T12:00:00Z"),
+			now: parseInstant("2026-05-02T12:00:00Z"),
 		});
 		expect(
 			later.groups

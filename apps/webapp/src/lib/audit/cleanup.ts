@@ -7,7 +7,9 @@ import { AUDIT_LOG_RETENTION_DAYS } from "./retention";
 const logger = createLogger("AuditCleanup");
 
 /**
- * Delete old audit logs (cleanup job)
+ * Delete old audit logs (cleanup job).
+ * Preserves durable `work_policy.retired` retirement boundaries permanently so historical
+ * past-departure corrections never extend assignments past a policy retirement (F11-2 / M9).
  */
 export async function deleteOldAuditLogs(
 	olderThanDays: number = AUDIT_LOG_RETENTION_DAYS,
@@ -17,7 +19,9 @@ export async function deleteOldAuditLogs(
 
 		const result = await db
 			.delete(auditLog)
-			.where(sql`${auditLog.timestamp} < ${cutoffDate}`)
+			.where(
+				sql`${auditLog.timestamp} < ${cutoffDate} AND NOT (${auditLog.entityType} = 'work_policy' AND ${auditLog.action} = 'work_policy.retired')`,
+			)
 			.returning({ id: auditLog.id });
 
 		const deletedCount = result.length;

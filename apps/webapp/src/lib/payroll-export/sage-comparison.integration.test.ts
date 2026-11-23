@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
@@ -26,16 +26,12 @@ vi.mock("@/lib/auth-helpers", () => ({
 		session: { activeOrganizationId: actor.organizationId },
 		employee: { id: actor.employeeId, organizationId: actor.organizationId },
 	}),
+	getCurrentSettingsAccess: async () => null,
 }));
 const { createExportJob, processExportJob } = await import("./export-service");
-const {
-	readPayrollBaseline,
-	cleanupExpiredPayrollBaselines,
-	eraseEmployeePayrollBaselines,
-} = await import("./baseline-evidence");
-const { listPayrollBaselines, inspectPayrollBaseline } = await import(
-	"./baseline-access"
-);
+const { readPayrollBaseline, cleanupExpiredPayrollBaselines, eraseEmployeePayrollBaselines } =
+	await import("./baseline-evidence");
+const { listPayrollBaselines, inspectPayrollBaseline } = await import("./baseline-access");
 const admin = integrationAdminPool();
 const ORG = "t1346-org";
 const OWNER = "d1346000-0000-4000-8000-000000000001";
@@ -82,8 +78,8 @@ async function job() {
 		requestedById: OWNER,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO("2026-07-01", { zone: "UTC" }),
-				end: DateTime.fromISO("2026-07-31", { zone: "UTC" }),
+				start: parsePlainDate("2026-07-01"),
+				end: parsePlainDate("2026-07-31"),
 			},
 			employeeIds: [WORKER],
 		},
@@ -135,9 +131,7 @@ describe("Sage retained output and reviewed comparisons", () => {
 		await grant();
 		await payout();
 		const { retained, output } = await exported();
-		expect(String(output.result?.content)).toContain(
-			'"WRK";"1900";"1,50";"2026-07-15"',
-		);
+		expect(String(output.result?.content)).toContain('"WRK";"1900";"1,50";"2026-07-15"');
 		expect(retained.summary).toMatchObject({
 			formatId: "sage_lohn",
 			availability: "available",
@@ -186,9 +180,9 @@ describe("Sage retained output and reviewed comparisons", () => {
 				})
 			).map((row) => row.id),
 		).toEqual([retained.summary.id]);
-		expect(
-			(await downloadPayrollComparison(result.result.id))?.content,
-		).toContain("Expense reimbursements are excluded");
+		expect((await downloadPayrollComparison(result.result.id))?.content).toContain(
+			"Expense reimbursements are excluded",
+		);
 		const after = await admin.query(
 			"select (select count(*) from payroll_export_job where organization_id=$1)::int jobs,(select count(*) from balance_adjustment where organization_id=$1)::int payouts,(select count(*) from travel_expense_payroll_run_inclusion where organization_id=$1)::int runs",
 			[ORG],
@@ -221,10 +215,7 @@ describe("Sage retained output and reviewed comparisons", () => {
 			"update payroll_wage_type_mapping set sage_wage_type_code='2900' where organization_id=$1",
 			[ORG],
 		);
-		await admin.query(
-			"update employee set employee_number='WRK-NEW' where id=$1",
-			[WORKER],
-		);
+		await admin.query("update employee set employee_number='WRK-NEW' where id=$1", [WORKER]);
 		const changedCodes = await prepare(retained.summary.id);
 		if (changedCodes.status !== "ready") throw new Error("Expected ready");
 		expect(changedCodes.result.comparison.totals).toMatchObject([
@@ -266,9 +257,7 @@ describe("Sage retained output and reviewed comparisons", () => {
 			"update balance_adjustment set cancelled_at=now(),cancelled_by='t1346-owner',cancellation_reason='Entered twice' where organization_id=$1",
 			[ORG],
 		);
-		expect(await getPayrollComparison(reviewed.result.id)).toEqual(
-			reviewed.result,
-		);
+		expect(await getPayrollComparison(reviewed.result.id)).toEqual(reviewed.result);
 		expect(await downloadPayrollComparison(reviewed.result.id)).toEqual(csv);
 		const fresh = await prepare(retained.summary.id);
 		if (fresh.status !== "ready") throw new Error("Expected ready");
@@ -281,20 +270,18 @@ describe("Sage retained output and reviewed comparisons", () => {
 		const { retained } = await exported();
 		const prepared = await prepare(retained.summary.id);
 		if (prepared.status !== "ready") throw new Error("Expected ready");
-		await admin.query(
-			"update payroll_access_grant set scope='specific' where organization_id=$1",
-			[ORG],
-		);
+		await admin.query("update payroll_access_grant set scope='specific' where organization_id=$1", [
+			ORG,
+		]);
 		expect(await getPayrollComparison(prepared.result.id)).toBeNull();
 		expect(await downloadPayrollComparison(prepared.result.id)).toBeNull();
 		expect(await listPayrollBaselines()).toEqual([]);
 		expect(await prepare(retained.summary.id)).toEqual({
 			status: "unavailable",
 		});
-		await admin.query(
-			"update payroll_access_grant set scope='all' where organization_id=$1",
-			[ORG],
-		);
+		await admin.query("update payroll_access_grant set scope='all' where organization_id=$1", [
+			ORG,
+		]);
 		await eraseEmployeePayrollBaselines(db, {
 			organizationId: ORG,
 			employeeId: WORKER,
@@ -318,10 +305,7 @@ describe("Sage retained output and reviewed comparisons", () => {
 			[jobId],
 		);
 		expect(await inspectPayrollBaseline(retained.summary.id)).toEqual(retained);
-		await admin.query(
-			"delete from payroll_export_config where organization_id=$1",
-			[ORG],
-		);
+		await admin.query("delete from payroll_export_config where organization_id=$1", [ORG]);
 		await admin.query("delete from employee where id=$1", [OWNER]);
 		expect(
 			await readPayrollBaseline({
@@ -368,17 +352,12 @@ describe("Sage retained output and reviewed comparisons", () => {
 			for (const mode of ["interactive", "async", "scheduled"]) {
 				const { jobId } = await job();
 				if (mode === "async")
-					await admin.query(
-						"update payroll_export_job set is_async=true where id=$1",
-						[jobId],
-					);
+					await admin.query("update payroll_export_job set is_async=true where id=$1", [jobId]);
 				storage.fail = true;
 				await expect(
 					processExportJob({ jobId, organizationId: ORG }, { storeFile: true }),
 				).rejects.toThrow("test delivery failure");
-				expect(
-					await readPayrollBaseline({ organizationId: ORG, jobId }),
-				).toBeNull();
+				expect(await readPayrollBaseline({ organizationId: ORG, jobId })).toBeNull();
 				storage.fail = false;
 				await processExportJob(
 					{ jobId, organizationId: ORG },

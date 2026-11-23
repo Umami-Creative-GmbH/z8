@@ -1,5 +1,8 @@
 import type { CreateCustomerInput } from "@/app/[locale]/(app)/settings/customers/actions";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 
 export interface CustomerDialogFormValues {
 	projectId: string;
@@ -12,8 +15,8 @@ export interface CustomerDialogFormValues {
 	website: string;
 }
 
-export function requiresScopedProjectSelection(accessTier: SettingsAccessTier, isEditing: boolean) {
-	return accessTier === "manager" && !isEditing;
+export function requiresScopedProjectSelection(settingsAccess: SettingsAccess, isEditing: boolean) {
+	return !meetsSettingsAccess(settingsAccess, "orgAdmin") && !isEditing;
 }
 
 export function buildCreateCustomerInput(value: CustomerDialogFormValues): CreateCustomerInput {

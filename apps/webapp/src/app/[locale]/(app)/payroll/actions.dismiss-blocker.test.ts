@@ -1,9 +1,6 @@
 import { PgDialect } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-import type {
-	PayrollBlockerType,
-	PayrollWorkspaceSummary,
-} from "@/lib/payroll-workspace/types";
+import type { PayrollBlockerType, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 
 const mockState = vi.hoisted(() => {
 	const returning = vi.fn(async () => [{ id: "dismissal-1" }]);
@@ -27,6 +24,7 @@ const mockState = vi.hoisted(() => {
 		})),
 		getPayrollWorkspaceSummary: vi.fn(),
 		insert: vi.fn(() => ({ values })),
+		listDepartedEmployeesCoveredForExport: vi.fn(async (): Promise<string[]> => []),
 		onConflictDoNothing,
 		resolvePayrollAccessibleEmployeeIds: vi.fn(async () => [
 			"22222222-2222-4222-8222-222222222222",
@@ -47,11 +45,14 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: mockState.getAuthContext,
+	getCurrentSettingsAccess: vi.fn(async () => null),
 }));
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
-	resolvePayrollAccessibleEmployeeIds:
-		mockState.resolvePayrollAccessibleEmployeeIds,
+	getActivePayrollAccessGrantScope: vi.fn(async () => "specific"),
+	hasActivePayrollAccessGrant: vi.fn(async () => true),
+	resolveOrganizationPayrollEmployeeIds: vi.fn(async () => []),
+	resolvePayrollAccessibleEmployeeIds: mockState.resolvePayrollAccessibleEmployeeIds,
 	intersectPayrollScope: ({
 		allowedEmployeeIds,
 		requestedEmployeeIds,
@@ -64,16 +65,24 @@ vi.mock("@/lib/payroll-access/permissions", () => ({
 			.sort(),
 }));
 
+vi.mock("@/lib/payroll-access/adjustment-coverage", () => ({
+	listDepartedEmployeesCoveredForExport: mockState.listDepartedEmployeesCoveredForExport,
+	listOrganizationDepartedEmployeesForExport: vi.fn(async () => []),
+}));
+
 vi.mock("@/lib/payroll-export", () => ({
 	createExportJob: vi.fn(),
 	enqueuePayrollExportJob: vi.fn(),
+	getExportDownloadUrl: vi.fn(),
+	getExportJobHistory: vi.fn(async () => []),
 	getFormatter: vi.fn(() => ({})),
 	getPayrollExportConfig: vi.fn(),
 	processExportJob: vi.fn(),
+	unmappedOvertimePayoutsForExport: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/payroll-workspace/pdf-exporter", () => ({
-	exportPayrollSummaryToPDF: vi.fn(),
+	exportPayrollPeriodToPDF: vi.fn(),
 	generatePayrollPDFFilename: vi.fn(),
 }));
 
@@ -89,16 +98,13 @@ vi.mock("@/lib/effect/result", async () => {
 	const { Cause, Effect, Exit, Option } = await import("effect");
 
 	return {
-		runServerActionSafe: async <T>(
-			effect: Parameters<typeof Effect.runPromise<T>>[0],
-		) => {
+		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromise<T>>[0]) => {
 			const exit = await Effect.runPromiseExit(effect);
-			if (Exit.isSuccess(exit))
-				return { success: true as const, data: exit.value };
+			if (Exit.isSuccess(exit)) return { success: true as const, data: exit.value };
 
-			const appError = Option.getOrUndefined(
-				Cause.findErrorOption(exit.cause),
-			) as { _tag?: string; message?: string } | undefined;
+			const appError = Option.getOrUndefined(Cause.findErrorOption(exit.cause)) as
+				| { _tag?: string; message?: string }
+				| undefined;
 			return {
 				success: false as const,
 				error: appError?.message ?? "Unknown error",
@@ -109,8 +115,7 @@ vi.mock("@/lib/effect/result", async () => {
 });
 
 const { dismissPayrollBlockerAction } = await import("./actions");
-type DismissPayrollBlockerRequest =
-	import("./actions").DismissPayrollBlockerRequest;
+type DismissPayrollBlockerRequest = import("./actions").DismissPayrollBlockerRequest;
 
 const sourceId = "33333333-3333-4333-8333-333333333333";
 const employeeId = "22222222-2222-4222-8222-222222222222";
@@ -124,10 +129,7 @@ const baseRequest: DismissPayrollBlockerRequest = {
 	blockerType: "missing_clock_out",
 };
 
-function summaryWithBlocker(
-	type: PayrollBlockerType,
-	blockerEmployeeId = employeeId,
-) {
+function summaryWithBlocker(type: PayrollBlockerType, blockerEmployeeId = employeeId) {
 	return {
 		blockers: [
 			{
@@ -146,22 +148,40 @@ describe("dismissPayrollBlockerAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.findFirst.mockResolvedValue(undefined);
-		mockState.getPayrollWorkspaceSummary.mockResolvedValue(
-			summaryWithBlocker("missing_clock_out"),
-		);
-		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([
-			employeeId,
-		]);
+		mockState.getPayrollWorkspaceSummary.mockResolvedValue(summaryWithBlocker("missing_clock_out"));
+		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([employeeId]);
 		mockState.returning.mockResolvedValue([{ id: "dismissal-1" }]);
+		mockState.listDepartedEmployeesCoveredForExport.mockResolvedValue([]);
+	});
+
+	it("dismisses a blocker of an employee who left during the period, as the workspace shows it", async () => {
+		const departedId = "66666666-6666-4666-8666-666666666666";
+		mockState.listDepartedEmployeesCoveredForExport.mockResolvedValue([departedId]);
+		mockState.getPayrollWorkspaceSummary.mockResolvedValue(
+			summaryWithBlocker("missing_clock_out", departedId),
+		);
+
+		const result = await dismissPayrollBlockerAction({ ...baseRequest, employeeIds: [departedId] });
+
+		expect(result).toEqual({ success: true, data: { dismissed: true } });
+		expect(mockState.listDepartedEmployeesCoveredForExport).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				organizationId: "org-1",
+				actorUserId: "user-1",
+				fromDate: "2026-01-01",
+			},
+		);
+		expect(mockState.values).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ employeeId: departedId }),
+		);
 	});
 
 	it("inserts only server-resolved values for an in-scope live blocker", async () => {
 		const result = await dismissPayrollBlockerAction(baseRequest);
 
 		expect(result).toEqual({ success: true, data: { dismissed: true } });
-		expect(
-			mockState.getPayrollWorkspaceSummary,
-		).toHaveBeenCalledExactlyOnceWith({
+		expect(mockState.getPayrollWorkspaceSummary).toHaveBeenCalledExactlyOnceWith({
 			organizationId: "org-1",
 			allowedEmployeeIds: [employeeId],
 			period: expect.objectContaining({ label: "January 2026" }),
@@ -237,10 +257,7 @@ describe("dismissPayrollBlockerAction", () => {
 
 	it("rejects a source whose affected employee is outside the requested and allowed scope", async () => {
 		mockState.getPayrollWorkspaceSummary.mockResolvedValue(
-			summaryWithBlocker(
-				"missing_clock_out",
-				"44444444-4444-4444-8444-444444444444",
-			),
+			summaryWithBlocker("missing_clock_out", "44444444-4444-4444-8444-444444444444"),
 		);
 
 		const result = await dismissPayrollBlockerAction(baseRequest);
@@ -275,23 +292,16 @@ describe("dismissPayrollBlockerAction", () => {
 	it.each([
 		[{ ...baseRequest, blockerId: "not-a-uuid" }, "blockerId"],
 		[{ ...baseRequest, blockerType: "arbitrary" }, "blockerType"],
-	])(
-		"rejects invalid blocker input before database access",
-		async (request, _field) => {
-			const result = await dismissPayrollBlockerAction(
-				request as DismissPayrollBlockerRequest,
-			);
+	])("rejects invalid blocker input before database access", async (request, _field) => {
+		const result = await dismissPayrollBlockerAction(request as DismissPayrollBlockerRequest);
 
-			expect(result).toMatchObject({ success: false, code: "ValidationError" });
-			expect(mockState.getAuthContext).toHaveBeenCalledOnce();
-			expect(
-				mockState.resolvePayrollAccessibleEmployeeIds,
-			).not.toHaveBeenCalled();
-			expect(mockState.findFirst).not.toHaveBeenCalled();
-			expect(mockState.getPayrollWorkspaceSummary).not.toHaveBeenCalled();
-			expect(mockState.insert).not.toHaveBeenCalled();
-		},
-	);
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.getAuthContext).toHaveBeenCalledOnce();
+		expect(mockState.resolvePayrollAccessibleEmployeeIds).not.toHaveBeenCalled();
+		expect(mockState.findFirst).not.toHaveBeenCalled();
+		expect(mockState.getPayrollWorkspaceSummary).not.toHaveBeenCalled();
+		expect(mockState.insert).not.toHaveBeenCalled();
+	});
 
 	it("ignores malicious runtime organization, employee, actor, and timestamp fields", async () => {
 		type ForbiddenClientFields = Extract<
@@ -396,23 +406,20 @@ describe("dismissPayrollBlockerAction", () => {
 		expect(mockState.insert).not.toHaveBeenCalled();
 	});
 
-	it.each<PayrollBlockerType>([
-		"missing_clock_out",
-		"pending_absence",
-		"pending_time_correction",
-	])("matches and dismisses supported blocker type %s", async (blockerType) => {
-		mockState.getPayrollWorkspaceSummary.mockResolvedValue(
-			summaryWithBlocker(blockerType),
-		);
+	it.each<PayrollBlockerType>(["missing_clock_out", "pending_absence", "pending_time_correction"])(
+		"matches and dismisses supported blocker type %s",
+		async (blockerType) => {
+			mockState.getPayrollWorkspaceSummary.mockResolvedValue(summaryWithBlocker(blockerType));
 
-		const result = await dismissPayrollBlockerAction({
-			...baseRequest,
-			blockerType,
-		});
+			const result = await dismissPayrollBlockerAction({
+				...baseRequest,
+				blockerType,
+			});
 
-		expect(result).toEqual({ success: true, data: { dismissed: true } });
-		expect(mockState.values).toHaveBeenCalledWith(
-			expect.objectContaining({ blockerType, sourceId }),
-		);
-	});
+			expect(result).toEqual({ success: true, data: { dismissed: true } });
+			expect(mockState.values).toHaveBeenCalledWith(
+				expect.objectContaining({ blockerType, sourceId }),
+			);
+		},
+	);
 });

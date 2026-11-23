@@ -7,7 +7,6 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { AuditTrail } from "@/lib/audit-trail";
 import { auth, runAuthMutation } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
@@ -71,7 +70,7 @@ type ReactivationTransactionResult =
 			type: "success";
 			changed: boolean;
 			targetEmployee: LifecycleTargetEmployee;
-			/** The closed deactivation follow-up, forwarded after the commit. */
+			/** The `employee.reactivated` entry and the closed follow-up, forwarded after the commit. */
 			audit?: AuditTrail;
 	  }
 	| LifecycleRefusal;
@@ -302,6 +301,7 @@ export const reactivateEmployeeAction = organizationAction(
 				const dbService = yield* DatabaseService;
 				// Identifies this reactivation in the ledger, the history event and the audit entry.
 				const requestId = randomUUID();
+				const email = yield* actorEmail();
 				const transactionResult = yield* dbService
 					.query("setEmployeeLifecycleState", async () => {
 						// The target's active state feeds manual creation, so its protection
@@ -330,7 +330,8 @@ export const reactivateEmployeeAction = organizationAction(
 								if (check.type !== "change") return check;
 
 								// Restores nothing the deactivation ended (#1441); the admin
-								// re-grants from the checklist.
+								// re-grants from the checklist. The `employee.reactivated` entry
+								// is recorded into `audit` with the ledger (#1640).
 								const audit = new AuditTrail();
 								const reactivation = await executeReactivation(
 									tx,
@@ -340,6 +341,7 @@ export const reactivateEmployeeAction = organizationAction(
 										employeeId,
 										requestId,
 										at: systemClock.nowInstant(),
+										actorEmail: email,
 									},
 									audit,
 								);
@@ -377,27 +379,6 @@ export const reactivateEmployeeAction = organizationAction(
 
 				if (transactionResult.changed) {
 					transactionResult.audit?.forwardCommitted();
-					const email = yield* actorEmail();
-					yield* Effect.promise(() =>
-						logAudit({
-							action: AuditAction.EMPLOYEE_REACTIVATED,
-							actorId: actor.userId,
-							actorEmail: email,
-							employeeId: transactionResult.targetEmployee.id,
-							targetId: transactionResult.targetEmployee.id,
-							targetType: "employee",
-							organizationId,
-							changes: {
-								isActive: {
-									from: transactionResult.targetEmployee.isActive,
-									to: true,
-								},
-							},
-							// The employment history shows this reactivation once (#1441).
-							metadata: { reactivationRequestId: requestId },
-							timestamp: new Date(),
-						}),
-					);
 					// Reactivation takes a paid seat again (#1439).
 					yield* Effect.promise(() =>
 						reconcileBillingSeatsForOrganization(organizationId, {

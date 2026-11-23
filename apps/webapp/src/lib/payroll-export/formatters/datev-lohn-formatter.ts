@@ -2,7 +2,12 @@
  * DATEV Lohn & Gehalt CSV formatter
  * Implements DATEV ASCII format specification for payroll data
  */
-import { DateTime } from "luxon";
+import {
+	comparePlainDates,
+	type PlainDate,
+	parsePlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
@@ -126,30 +131,17 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		);
 
 		// Add absence data
-		this.addAbsenceData(
-			absences,
-			absenceCategoryMappings,
-			aggregatedData,
-			datevConfig,
-		);
+		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, datevConfig);
 
 		// Overtime payouts (#1001): hours on the payout's day under the "overtime" wage type.
-		const payouts = overtimePayoutsForFormat(
-			overtimePayouts,
-			mappings,
-			"datev",
-		);
-		const overtimeMapping = mappings.find(
-			(mapping) => mapping.specialCategory === "overtime",
-		);
+		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "datev");
+		const overtimeMapping = mappings.find((mapping) => mapping.specialCategory === "overtime");
 		for (const { payout, wageTypeCode, hours } of payouts.mapped) {
 			const personnelNumber = this.personnelNumber(payout, datevConfig);
 			const employeeData =
-				aggregatedData.get(personnelNumber) ??
-				new Map<string, Map<string, AggregatedEntry>>();
+				aggregatedData.get(personnelNumber) ?? new Map<string, Map<string, AggregatedEntry>>();
 			aggregatedData.set(personnelNumber, employeeData);
-			const dateData =
-				employeeData.get(payout.day) ?? new Map<string, AggregatedEntry>();
+			const dateData = employeeData.get(payout.day) ?? new Map<string, AggregatedEntry>();
 			employeeData.set(payout.day, dateData);
 			const existing = dateData.get(wageTypeCode);
 			dateData.set(wageTypeCode, {
@@ -193,13 +185,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 					if (data.hours > 0 || datevConfig.includeZeroHours) {
 						const quantity = this.formatHours(data.hours);
 						lines.push(
-							this.generateDataRow(
-								personnelNumber,
-								wageTypeCode,
-								quantity,
-								dateStr,
-								data.note,
-							),
+							this.generateDataRow(personnelNumber, wageTypeCode, quantity, dateStr, data.note),
 						);
 						supportedRows.push({
 							personnelNumber,
@@ -216,9 +202,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		}
 
 		// Expense money lines (#852): a euro Betrag on the period's last day, labeled as money.
-		for (const { personnelNumber, line } of expenseLinesInFileOrder(
-			expenseLines,
-			(line) => germanPersonnelNumber(line, datevConfig),
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
+			germanPersonnelNumber(line, datevConfig),
 		)) {
 			lines.push(
 				[
@@ -237,8 +222,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			uniqueEmployees.add(a.employeeId);
 		});
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
-		for (const { payout } of payouts.mapped)
-			uniqueEmployees.add(payout.employeeId);
+		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
 
 		const dateRange = widenDateRangeByPayouts(
 			this.getDateRange(workPeriods, absences),
@@ -275,8 +259,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 				workPeriodCount: workPeriods.length,
 				employeeCount: uniqueEmployees.size,
 				dateRange: {
-					start: dateRange.start?.toISODate() || "",
-					end: dateRange.end?.toISODate() || "",
+					start: dateRange.start?.toString() || "",
+					end: dateRange.end?.toString() || "",
 				},
 				unmappedOvertimePayouts: payouts.unmapped,
 			},
@@ -297,7 +281,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			if (!period.durationMinutes || !period.endTime) continue;
 
 			const personnelNumber = this.personnelNumber(period, config);
-			const dateStr = period.startTime.toISODate()!;
+			const dateStr = period.startTime.toPlainDate().toString();
 			const hours = period.durationMinutes / 60;
 
 			// Determine wage type code (use DATEV-specific column)
@@ -346,8 +330,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 						...this.contributionIdentity(period, hours),
 						kind: "work",
 						facts: {
-							startAt: period.startTime.toUTC().toISO(),
-							endAt: period.endTime.toUTC().toISO(),
+							startAt: period.startTime.toInstant().toString({ fractionalSecondDigits: 3 }),
+							endAt: period.endTime.toInstant().toString({ fractionalSecondDigits: 3 }),
 							durationMinutes: period.durationMinutes,
 							workCategoryId: period.workCategoryId,
 							workCategoryName: period.workCategoryName,
@@ -381,19 +365,17 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 			const personnelNumber = this.personnelNumber(absence, config);
 			const wageTypeCode = mappedCode;
-			const note =
-				mapping.datevWageTypeName || absence.absenceCategoryName || "";
+			const note = mapping.datevWageTypeName || absence.absenceCategoryName || "";
 
 			// Calculate days (DATEV typically uses days for absences, not hours)
-			// Use startOf('day') to ensure consistent date comparison
-			const startDate = DateTime.fromISO(absence.startDate).startOf("day");
-			const endDate = DateTime.fromISO(absence.endDate).startOf("day");
-			const days = Math.floor(endDate.diff(startDate, "days").days) + 1;
+			const startDate = parsePlainDate(absence.startDate);
+			const endDate = parsePlainDate(absence.endDate);
+			const days = startDate.until(endDate, { largestUnit: "days" }).days + 1;
 
 			// Add an entry for each day of the absence
 			for (let i = 0; i < days; i++) {
-				const currentDate = startDate.plus({ days: i });
-				const dateStr = currentDate.toISODate()!;
+				const currentDate = startDate.add({ days: i });
+				const dateStr = currentDate.toString();
 
 				// Initialize nested maps if needed
 				if (!aggregatedData.has(personnelNumber)) {
@@ -461,10 +443,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
 		config: DatevLohnConfig,
 	): string {
-		if (
-			config.personnelNumberType === "employeeNumber" &&
-			!row.employeeNumber
-		) {
+		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
 			logger.warn(
 				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
@@ -524,27 +503,31 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	private getDateRange(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
-	): { start: DateTime | null; end: DateTime | null } {
-		let start: DateTime | null = null;
-		let end: DateTime | null = null;
+	): { start: PlainDate | null; end: PlainDate | null } {
+		let start: PlainDate | null = null;
+		let end: PlainDate | null = null;
 
 		for (const period of workPeriods) {
-			if (!start || period.startTime < start) {
-				start = period.startTime;
+			const periodStart = period.startTime.toPlainDate();
+			if (!start || comparePlainDates(periodStart, start) < 0) {
+				start = periodStart;
 			}
-			if (period.endTime && (!end || period.endTime > end)) {
-				end = period.endTime;
+			if (period.endTime) {
+				const periodEnd = period.endTime.toPlainDate();
+				if (!end || comparePlainDates(periodEnd, end) > 0) {
+					end = periodEnd;
+				}
 			}
 		}
 
 		for (const absence of absences) {
-			const absStart = DateTime.fromISO(absence.startDate);
-			const absEnd = DateTime.fromISO(absence.endDate);
+			const absStart = parsePlainDate(absence.startDate);
+			const absEnd = parsePlainDate(absence.endDate);
 
-			if (!start || absStart < start) {
+			if (!start || comparePlainDates(absStart, start) < 0) {
 				start = absStart;
 			}
-			if (!end || absEnd > end) {
+			if (!end || comparePlainDates(absEnd, end) > 0) {
 				end = absEnd;
 			}
 		}
@@ -555,15 +538,13 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate file name based on date range
 	 */
-	private generateFileName(dateRange: {
-		start: DateTime | null;
-		end: DateTime | null;
-	}): string {
-		const now = DateTime.now();
+	private generateFileName(dateRange: { start: PlainDate | null; end: PlainDate | null }): string {
+		const now = systemClock.nowInstant().toZonedDateTimeISO("UTC");
 		const dateStr = dateRange.start
-			? dateRange.start.toFormat("yyyy-MM")
-			: now.toFormat("yyyy-MM");
-		return `datev_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
+			? dateRange.start.toPlainYearMonth().toString()
+			: now.toPlainDate().toPlainYearMonth().toString();
+		const stamp = `${now.year}${String(now.month).padStart(2, "0")}${String(now.day).padStart(2, "0")}_${String(now.hour).padStart(2, "0")}${String(now.minute).padStart(2, "0")}${String(now.second).padStart(2, "0")}`;
+		return `datev_lohn_${dateStr}_${stamp}.csv`;
 	}
 }
 

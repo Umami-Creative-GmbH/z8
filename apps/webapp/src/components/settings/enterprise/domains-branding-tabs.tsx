@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import type { PlatformAuthConfigResponse } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
 import { BrandingForm } from "./branding-form";
@@ -24,12 +25,13 @@ interface DomainsAndBrandingTabsProps {
 	defaultUrls: {
 		canonical: string;
 	};
+	initialPlatformAuth: PlatformAuthConfigResponse;
 }
 
 export function DomainsAndBrandingTabs({
 	initialDomains,
 	initialBranding,
-
+	initialPlatformAuth,
 	organizationId,
 	defaultUrls,
 }: DomainsAndBrandingTabsProps) {
@@ -54,6 +56,7 @@ export function DomainsAndBrandingTabs({
 							initialDomains={initialDomains}
 							organizationId={organizationId}
 							defaultUrls={defaultUrls}
+							initialPlatformAuth={initialPlatformAuth}
 						/>
 					),
 				},

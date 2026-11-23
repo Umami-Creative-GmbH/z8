@@ -98,6 +98,28 @@ describe("deriveOffboardingState", () => {
 		).toEqual({ state: "active", departure: null, previousEmploymentPeriodId: null });
 	});
 
+	it("is offboarded after an effective retrospective departure", () => {
+		const effective = departure({
+			mode: "retrospective",
+			status: "effective",
+			lastWorkingDay: "2026-09-10",
+			cutoffAt: parseInstant("2026-09-10T22:00:00Z"),
+			effectiveAt: parseInstant("2026-09-10T22:00:00Z"),
+		});
+		expect(
+			deriveOffboardingState({
+				employeeActive: false,
+				openPeriodId: null,
+				departures: [effective],
+				now: NOW,
+			}),
+		).toEqual({
+			state: "offboarded",
+			departure: effective,
+			previousEmploymentPeriodId: "period-1",
+		});
+	});
+
 	it("keeps unknown legacy history without inventing a cutoff", () => {
 		expect(
 			deriveOffboardingState({
@@ -119,21 +141,27 @@ describe("deriveOffboardingCapabilities", () => {
 		followUp: { failed: 0, openReviews: 0 },
 	};
 
-	it("offers schedule and immediate departure for an active employee", () => {
+	it("offers schedule, immediate and retrospective departure for an active employee", () => {
 		expect(deriveOffboardingCapabilities({ ...base, state: "active" })).toEqual({
 			schedule: true,
 			cancel: false,
 			offboardNow: true,
 			rehire: false,
 			resolve: false,
+			recordPastDeparture: true,
+			correctPastDepartureDate: false,
+			recordHistoricalDepartureDate: false,
 		});
 	});
 
-	it("offers edit, cancel and immediate departure while scheduled", () => {
+	it("offers edit, cancel, immediate and retrospective departure while scheduled", () => {
 		expect(deriveOffboardingCapabilities({ ...base, state: "scheduled" })).toMatchObject({
 			schedule: true,
 			cancel: true,
 			offboardNow: true,
+			recordPastDeparture: true,
+			correctPastDepartureDate: false,
+			recordHistoricalDepartureDate: false,
 		});
 	});
 
@@ -144,18 +172,42 @@ describe("deriveOffboardingCapabilities", () => {
 				state: "blocked",
 				authority: "final_accessible_owner",
 			}),
-		).toMatchObject({ schedule: false, offboardNow: false, cancel: true });
+		).toMatchObject({
+			schedule: false,
+			offboardNow: false,
+			recordPastDeparture: false,
+			cancel: true,
+		});
 	});
 
-	it("offers rehire only after an effective departure", () => {
+	it("offers rehire and past-date correction after an effective departure, and historical backfill for legacy inactive", () => {
 		expect(
 			deriveOffboardingCapabilities({ ...base, state: "offboarded", hasPreviousPeriod: true }),
-		).toMatchObject({ rehire: true, schedule: false, offboardNow: false });
-		expect(deriveOffboardingCapabilities({ ...base, state: "legacy_inactive" }).rehire).toBe(false);
+		).toMatchObject({
+			rehire: true,
+			correctPastDepartureDate: true,
+			recordHistoricalDepartureDate: false,
+			schedule: false,
+			offboardNow: false,
+			recordPastDeparture: false,
+		});
+		expect(deriveOffboardingCapabilities({ ...base, state: "legacy_inactive" })).toMatchObject({
+			rehire: false,
+			correctPastDepartureDate: false,
+			recordHistoricalDepartureDate: true,
+		});
 	});
 
 	it("gives managers, self targets and non-owners of an owner a read-only view", () => {
-		const none = { schedule: false, cancel: false, offboardNow: false, rehire: false };
+		const none = {
+			schedule: false,
+			cancel: false,
+			offboardNow: false,
+			rehire: false,
+			recordPastDeparture: false,
+			correctPastDepartureDate: false,
+			recordHistoricalDepartureDate: false,
+		};
 		expect(
 			deriveOffboardingCapabilities({
 				...base,

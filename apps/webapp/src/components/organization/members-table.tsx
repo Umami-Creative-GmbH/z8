@@ -8,7 +8,6 @@ import {
 	IconLoader2,
 	IconMail,
 	IconPencil,
-	IconRefresh,
 	IconShield,
 	IconUser,
 	IconX,
@@ -53,10 +52,7 @@ import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useRouter } from "@/navigation";
 import { EditInvitationTargetTeamDialog } from "./edit-invitation-target-team-dialog";
 import { EmployeeLifecycleActions } from "./employee-lifecycle-actions";
-import type {
-	InvitationWithInviter,
-	MemberWithUserAndEmployee,
-} from "./people-management-types";
+import type { InvitationWithInviter, MemberWithUserAndEmployee } from "./people-management-types";
 
 interface MembersTableProps {
 	organizationId: string;
@@ -66,7 +62,6 @@ interface MembersTableProps {
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 	currentUserId: string;
-	onRefresh?: () => void;
 	isRefreshing?: boolean;
 }
 
@@ -92,7 +87,6 @@ function useMembersTableController({
 	defaultTab = "members",
 	settingsAccess,
 	currentUserId,
-	onRefresh,
 	isRefreshing,
 }: MembersTableProps) {
 	const { t } = useTranslate();
@@ -108,8 +102,7 @@ function useMembersTableController({
 	}));
 	const [invitationToEditTargetTeam, setInvitationToEditTargetTeam] =
 		useState<InvitationWithInviter | null>(null);
-	const [editTargetTeamDialogOpen, setEditTargetTeamDialogOpen] =
-		useState(false);
+	const [editTargetTeamDialogOpen, setEditTargetTeamDialogOpen] = useState(false);
 	const [memberSearch, setMemberSearch] = useState("");
 	const [invitationSearch, setInvitationSearch] = useState("");
 
@@ -146,18 +139,11 @@ function useMembersTableController({
 			value: typeof updater === "function" ? updater(current.value) : updater,
 		}));
 	};
-	const restoreInvitation = (
-		invitation: InvitationWithInviter,
-		index: number,
-	) => {
+	const restoreInvitation = (invitation: InvitationWithInviter, index: number) => {
 		setInvitations((current) => {
 			if (current.some((item) => item.id === invitation.id)) return current;
 			const restored = [...current];
-			restored.splice(
-				Math.min(Math.max(index, 0), restored.length),
-				0,
-				invitation,
-			);
+			restored.splice(Math.min(Math.max(index, 0), restored.length), 0, invitation);
 			return restored;
 		});
 	};
@@ -184,19 +170,14 @@ function useMembersTableController({
 		onMutate: async ({ userId, role }) => {
 			const previousMembers = members;
 			setMembers((prev) =>
-				prev.map((m) =>
-					m.user.id === userId ? { ...m, member: { ...m.member, role } } : m,
-				),
+				prev.map((m) => (m.user.id === userId ? { ...m, member: { ...m.member, role } } : m)),
 			);
 			return { previousMembers };
 		},
 		onSuccess: async (result, _variables, context) => {
 			if (result.success) {
 				toast.success(
-					t(
-						"organization.members.roleUpdateSuccess",
-						"Member role updated successfully",
-					),
+					t("organization.members.roleUpdateSuccess", "Member role updated successfully"),
 				);
 				await queryClient.invalidateQueries({
 					queryKey: queryKeys.members.list(organizationId),
@@ -205,22 +186,13 @@ function useMembersTableController({
 			} else {
 				if (context?.previousMembers) setMembers(context.previousMembers);
 				toast.error(
-					result.error ||
-						t(
-							"organization.members.roleUpdateError",
-							"Failed to update member role",
-						),
+					result.error || t("organization.members.roleUpdateError", "Failed to update member role"),
 				);
 			}
 		},
 		onError: (_error, _vars, context) => {
 			if (context?.previousMembers) setMembers(context.previousMembers);
-			toast.error(
-				t(
-					"organization.members.roleUpdateError",
-					"Failed to update member role",
-				),
-			);
+			toast.error(t("organization.members.roleUpdateError", "Failed to update member role"));
 		},
 	});
 
@@ -228,21 +200,14 @@ function useMembersTableController({
 	const cancelInvitationMutation = useMutation({
 		mutationFn: (invitationId: string) => cancelInvitation(invitationId),
 		onMutate: async (invitationId) => {
-			const invitationIndex = invitations.findIndex(
-				(item) => item.id === invitationId,
-			);
+			const invitationIndex = invitations.findIndex((item) => item.id === invitationId);
 			const removedInvitation = invitations[invitationIndex];
 			setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
 			return { invitationIndex, removedInvitation };
 		},
 		onSuccess: async (result, _invitationId, context) => {
 			if (result.success) {
-				toast.success(
-					t(
-						"organization.members.invitationCancelSuccess",
-						"Invitation cancelled",
-					),
-				);
+				toast.success(t("organization.members.invitationCancelSuccess", "Invitation cancelled"));
 				await Promise.all([
 					queryClient.invalidateQueries({
 						queryKey: queryKeys.invitations.list(organizationId),
@@ -256,41 +221,25 @@ function useMembersTableController({
 				if (context?.removedInvitation) {
 					restoreInvitation(context.removedInvitation, context.invitationIndex);
 				}
-				toast.error(
-					t(
-						"organization.members.invitationCancelError",
-						"Failed to cancel invitation",
-					),
-				);
+				toast.error(t("organization.members.invitationCancelError", "Failed to cancel invitation"));
 			}
 		},
 		onError: (_error, _invitationId, context) => {
 			if (context?.removedInvitation) {
 				restoreInvitation(context.removedInvitation, context.invitationIndex);
 			}
-			toast.error(
-				t(
-					"organization.members.invitationCancelError",
-					"Failed to cancel invitation",
-				),
-			);
+			toast.error(t("organization.members.invitationCancelError", "Failed to cancel invitation"));
 		},
 	});
 
 	// Resend invitation mutation
 	const resendInvitationMutation = useMutation({
-		mutationFn: (invitation: InvitationWithInviter) =>
-			resendInvitation(invitation.id),
+		mutationFn: (invitation: InvitationWithInviter) => resendInvitation(invitation.id),
 		onSuccess: async (result, invitation) => {
 			if (result.success) {
-				setInvitations((current) =>
-					current.filter((item) => item.id !== invitation.id),
-				);
+				setInvitations((current) => current.filter((item) => item.id !== invitation.id));
 				toast.success(
-					t(
-						"organization.members.invitationResendSuccess",
-						"Invitation resent successfully",
-					),
+					t("organization.members.invitationResendSuccess", "Invitation resent successfully"),
 				);
 				await Promise.all([
 					queryClient.invalidateQueries({
@@ -304,20 +253,12 @@ function useMembersTableController({
 			} else {
 				toast.error(
 					result.error ||
-						t(
-							"organization.members.invitationResendError",
-							"Failed to resend invitation",
-						),
+						t("organization.members.invitationResendError", "Failed to resend invitation"),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(
-				t(
-					"organization.members.invitationResendError",
-					"Failed to resend invitation",
-				),
-			);
+			toast.error(t("organization.members.invitationResendError", "Failed to resend invitation"));
 		},
 	});
 
@@ -337,9 +278,7 @@ function useMembersTableController({
 		resendInvitationMutation.mutate(invitation);
 	};
 
-	const handleEditInvitationTargetTeam = (
-		invitation: InvitationWithInviter,
-	) => {
+	const handleEditInvitationTargetTeam = (invitation: InvitationWithInviter) => {
 		setInvitationToEditTargetTeam(invitation);
 		setEditTargetTeamDialogOpen(true);
 	};
@@ -385,18 +324,13 @@ function useMembersTableController({
 	};
 
 	const removeLocalMembershipRow = (employeeId: string) => {
-		setMembers((current) =>
-			current.filter((member) => member.employee?.id !== employeeId),
-		);
+		setMembers((current) => current.filter((member) => member.employee?.id !== employeeId));
 	};
 
 	const isActioning = (id: string) =>
-		(updateRoleMutation.isPending &&
-			updateRoleMutation.variables?.userId === id) ||
-		(cancelInvitationMutation.isPending &&
-			cancelInvitationMutation.variables === id) ||
-		(resendInvitationMutation.isPending &&
-			resendInvitationMutation.variables?.id === id);
+		(updateRoleMutation.isPending && updateRoleMutation.variables?.userId === id) ||
+		(cancelInvitationMutation.isPending && cancelInvitationMutation.variables === id) ||
+		(resendInvitationMutation.isPending && resendInvitationMutation.variables?.id === id);
 
 	// Filter members by search
 	const filteredMembers = (() => {
@@ -413,9 +347,7 @@ function useMembersTableController({
 	const filteredInvitations = (() => {
 		if (!invitationSearch) return invitations;
 		const searchLower = invitationSearch.toLowerCase();
-		return invitations.filter((i) =>
-			i.email.toLowerCase().includes(searchLower),
-		);
+		return invitations.filter((i) => i.email.toLowerCase().includes(searchLower));
 	})();
 
 	// Invitation columns
@@ -433,9 +365,7 @@ function useMembersTableController({
 		{
 			accessorKey: "role",
 			header: t("organization.members.role", "Role"),
-			cell: ({ row }) => (
-				<RoleBadge role={row.original.role || "member"} />
-			),
+			cell: ({ row }) => <RoleBadge role={row.original.role || "member"} />,
 		},
 		{
 			accessorKey: "targetTeam",
@@ -453,9 +383,7 @@ function useMembersTableController({
 			accessorKey: "invitedBy",
 			header: t("organization.members.invitedBy", "Invited By"),
 			cell: ({ row }) => (
-				<span className="text-sm text-muted-foreground">
-					{row.original.user.name}
-				</span>
+				<span className="text-sm text-muted-foreground">{row.original.user.name}</span>
 			),
 		},
 		{
@@ -473,9 +401,7 @@ function useMembersTableController({
 			cell: ({ row }) => {
 				const expired = isInvitationExpired(row.original.expiresAt);
 				return expired ? (
-					<Badge variant="destructive">
-						{t("organization.members.expired", "Expired")}
-					</Badge>
+					<Badge variant="destructive">{t("organization.members.expired", "Expired")}</Badge>
 				) : (
 					<span className="text-sm text-muted-foreground">
 						{formatDistanceToNow(new Date(row.original.expiresAt))}
@@ -512,18 +438,12 @@ function useMembersTableController({
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<DropdownMenuLabel>
-									{t("common.actions", "Actions")}
-								</DropdownMenuLabel>
-								<DropdownMenuItem
-									onClick={() => handleResendInvitation(row.original)}
-								>
+								<DropdownMenuLabel>{t("common.actions", "Actions")}</DropdownMenuLabel>
+								<DropdownMenuItem onClick={() => handleResendInvitation(row.original)}>
 									<IconMail className="mr-2 size-4" />
 									{t("organization.members.resend", "Resend")}
 								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={() => handleEditInvitationTargetTeam(row.original)}
-								>
+								<DropdownMenuItem onClick={() => handleEditInvitationTargetTeam(row.original)}>
 									<IconPencil className="mr-2 size-4" />
 									{t("organization.members.editTargetTeam", "Edit target team")}
 								</DropdownMenuItem>
@@ -558,9 +478,7 @@ function useMembersTableController({
 							name={row.original.user.name}
 							size="sm"
 							clockStatus={
-								row.original.employee?.id
-									? presence.getStatus(row.original.employee.id)
-									: "unknown"
+								row.original.employee?.id ? presence.getStatus(row.original.employee.id) : "unknown"
 							}
 						/>
 						<div>
@@ -572,9 +490,7 @@ function useMembersTableController({
 									</span>
 								)}
 							</div>
-							<div className="text-sm text-muted-foreground">
-								{row.original.user.email}
-							</div>
+							<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
 						</div>
 					</div>
 				);
@@ -585,9 +501,7 @@ function useMembersTableController({
 			header: t("organization.members.role", "Role"),
 			cell: ({ row }) => {
 				const isCurrentUser = row.original.user.id === currentUserId;
-				return canManageMembers &&
-					!isCurrentUser &&
-					row.original.member.status === "approved" ? (
+				return canManageMembers && !isCurrentUser && row.original.member.status === "approved" ? (
 					<Select
 						value={row.original.member.role || "member"}
 						onValueChange={(value) =>
@@ -628,16 +542,12 @@ function useMembersTableController({
 				row.original.user.emailVerified ? (
 					<div className="flex items-center gap-1 text-success">
 						<IconCheck className="size-4" aria-hidden="true" />
-						<span className="text-sm">
-							{t("organization.members.verified", "Verified")}
-						</span>
+						<span className="text-sm">{t("organization.members.verified", "Verified")}</span>
 					</div>
 				) : (
 					<div className="flex items-center gap-1 text-warning">
 						<IconClock className="size-4" aria-hidden="true" />
-						<span className="text-sm">
-							{t("organization.members.pending", "Pending")}
-						</span>
+						<span className="text-sm">{t("organization.members.pending", "Pending")}</span>
 					</div>
 				),
 		},
@@ -648,9 +558,7 @@ function useMembersTableController({
 				row.original.employee?.isActive ? (
 					<div className="flex items-center gap-2">
 						<div aria-hidden="true" className="size-2 rounded-full bg-success" />
-						<span className="text-sm">
-							{t("organization.members.active", "Active")}
-						</span>
+						<span className="text-sm">{t("organization.members.active", "Active")}</span>
 					</div>
 				) : (
 					<div className="flex items-center gap-2">
@@ -691,11 +599,9 @@ function useMembersTableController({
 									type="button"
 									variant="ghost"
 									size="sm"
-									aria-label={t(
-										"organization.members.memberActionsLabel",
-										"Actions for {name}",
-										{ name: row.original.user.name },
-									)}
+									aria-label={t("organization.members.memberActionsLabel", "Actions for {name}", {
+										name: row.original.user.name,
+									})}
 								>
 									<IconDots className="size-4" />
 								</Button>
@@ -720,7 +626,6 @@ function useMembersTableController({
 		filteredInvitations,
 		memberColumns,
 		invitationColumns,
-		onRefresh,
 		isRefreshing,
 		invitationToEditTargetTeam,
 		editTargetTeamDialogOpen,
@@ -736,7 +641,6 @@ function MembersView({
 	memberColumns,
 	memberSearch,
 	onMemberSearchChange,
-	onRefresh,
 	isRefreshing,
 	t,
 }: {
@@ -745,7 +649,6 @@ function MembersView({
 	memberColumns: ColumnDef<DataTableFeatures, MemberWithUserAndEmployee>[];
 	memberSearch: string;
 	onMemberSearchChange: (search: string) => void;
-	onRefresh?: () => void;
 	isRefreshing?: boolean;
 	t: ReturnType<typeof useTranslate>["t"];
 }) {
@@ -757,38 +660,16 @@ function MembersView({
 						{t("organization.members.activeMembers", "Active Members")}
 					</h3>
 					<p className="text-sm text-muted-foreground">
-						{t(
-							"organization.members.memberCount",
-							"{count} member(s) in this organization",
-							{ count: members.length },
-						)}
+						{t("organization.members.memberCount", "{count} member(s) in this organization", {
+							count: members.length,
+						})}
 					</p>
 				</div>
 			</div>
 			<DataTableToolbar
 				search={memberSearch}
 				onSearchChange={onMemberSearchChange}
-				searchPlaceholder={t(
-					"organization.members.searchMembers",
-					"Search members...",
-				)}
-				actions={
-					onRefresh && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={onRefresh}
-							disabled={isRefreshing}
-						>
-							{isRefreshing ? (
-								<IconLoader2 className="size-4 animate-spin" />
-							) : (
-								<IconRefresh className="size-4" />
-							)}
-							<span className="ml-2">{t("common.refresh", "Refresh")}</span>
-						</Button>
-					)
-				}
+				searchPlaceholder={t("organization.members.searchMembers", "Search members...")}
 			/>
 			<DataTable
 				columns={memberColumns}
@@ -796,14 +677,8 @@ function MembersView({
 				isFetching={isRefreshing}
 				emptyMessage={
 					memberSearch
-						? t(
-								"organization.members.noMemberResults",
-								"No members match your search.",
-							)
-						: t(
-								"organization.members.noMembers",
-								"No members in this organization.",
-							)
+						? t("organization.members.noMemberResults", "No members match your search.")
+						: t("organization.members.noMembers", "No members in this organization.")
 				}
 			/>
 		</TabsContent>
@@ -842,20 +717,14 @@ function InvitationsView({
 			<DataTableToolbar
 				search={invitationSearch}
 				onSearchChange={onInvitationSearchChange}
-				searchPlaceholder={t(
-					"organization.members.searchInvitations",
-					"Search invitations...",
-				)}
+				searchPlaceholder={t("organization.members.searchInvitations", "Search invitations...")}
 			/>
 			<DataTable
 				columns={invitationColumns}
 				data={filteredInvitations}
 				emptyMessage={
 					invitationSearch
-						? t(
-								"organization.members.noInvitationResults",
-								"No invitations match your search.",
-							)
+						? t("organization.members.noInvitationResults", "No invitations match your search.")
 						: t("organization.members.noInvitations", "No pending invitations.")
 				}
 			/>
@@ -878,7 +747,6 @@ export function MembersTable(props: MembersTableProps) {
 		filteredInvitations,
 		memberColumns,
 		invitationColumns,
-		onRefresh,
 		isRefreshing,
 		invitationToEditTargetTeam,
 		editTargetTeamDialogOpen,
@@ -892,15 +760,11 @@ export function MembersTable(props: MembersTableProps) {
 			<Tabs defaultValue={defaultTab} className="space-y-4">
 				<TabsList className="grid w-full grid-cols-2">
 					<TabsTrigger value="members">
-						{t("organization.members.activeMembers", "Active Members")} (
-						{members.length})
+						{t("organization.members.activeMembers", "Active Members")} ({members.length})
 					</TabsTrigger>
 					<TabsTrigger value="invitations">
-						{t(
-							"organization.members.pendingInvitations",
-							"Pending Invitations",
-						)}{" "}
-						({invitations.length})
+						{t("organization.members.pendingInvitations", "Pending Invitations")} (
+						{invitations.length})
 					</TabsTrigger>
 				</TabsList>
 				<MembersView
@@ -909,7 +773,6 @@ export function MembersTable(props: MembersTableProps) {
 					memberColumns={memberColumns}
 					memberSearch={memberSearch}
 					onMemberSearchChange={setMemberSearch}
-					onRefresh={onRefresh}
 					isRefreshing={isRefreshing}
 					t={t}
 				/>

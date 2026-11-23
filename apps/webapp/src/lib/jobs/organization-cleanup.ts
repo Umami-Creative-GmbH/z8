@@ -145,16 +145,16 @@ async function permanentlyDeleteOrganization(
 			organizationId,
 			organizationWide: true,
 			route: async (tx) => {
-				const [employees, members] = await Promise.all([
-					tx.query.employee.findMany({
-						where: eq(employee.organizationId, organizationId),
-						columns: { userId: true },
-					}),
-					tx.query.member.findMany({
-						where: eq(authSchema.member.organizationId, organizationId),
-						columns: { userId: true },
-					}),
-				]);
+				// One after another: `tx` is one connection, and pg@9 refuses a query while
+				// another is executing.
+				const employees = await tx.query.employee.findMany({
+					where: eq(employee.organizationId, organizationId),
+					columns: { userId: true },
+				});
+				const members = await tx.query.member.findMany({
+					where: eq(authSchema.member.organizationId, organizationId),
+					columns: { userId: true },
+				});
 				employeeUserIds = employees.flatMap((e) => (e.userId ? [e.userId] : []));
 				return { userIds: [...employeeUserIds, ...members.map((m) => m.userId)] };
 			},
@@ -167,26 +167,26 @@ async function permanentlyDeleteOrganization(
 			// them before commit. Water intake logs are personal wellness history,
 			// like hydration stats, and outlive the organization with the user.
 			if (employeeUserIds.length > 0) {
-				const [otherMemberships, otherEmployees] = await Promise.all([
-					tx
-						.select({ userId: authSchema.member.userId })
-						.from(authSchema.member)
-						.where(
-							and(
-								inArray(authSchema.member.userId, employeeUserIds),
-								ne(authSchema.member.organizationId, organizationId),
-							),
+				// One after another: `tx` is one connection, and pg@9 refuses a query while
+				// another is executing.
+				const otherMemberships = await tx
+					.select({ userId: authSchema.member.userId })
+					.from(authSchema.member)
+					.where(
+						and(
+							inArray(authSchema.member.userId, employeeUserIds),
+							ne(authSchema.member.organizationId, organizationId),
 						),
-					tx
-						.select({ userId: employee.userId })
-						.from(employee)
-						.where(
-							and(
-								inArray(employee.userId, employeeUserIds),
-								ne(employee.organizationId, organizationId),
-							),
+					);
+				const otherEmployees = await tx
+					.select({ userId: employee.userId })
+					.from(employee)
+					.where(
+						and(
+							inArray(employee.userId, employeeUserIds),
+							ne(employee.organizationId, organizationId),
 						),
-				]);
+					);
 				const retainedUserIds = new Set(
 					[...otherMemberships, ...otherEmployees].map((row) => row.userId),
 				);

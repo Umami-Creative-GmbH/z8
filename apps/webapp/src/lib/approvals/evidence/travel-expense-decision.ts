@@ -169,54 +169,54 @@ async function readDecisionRows(
 	database: ApprovalDatabase,
 	input: { organizationId: string; claimId: string; approvalRequestId: string },
 ): Promise<LegacyTravelExpenseDecisionRows> {
-	const [requests, stages, claims] = await Promise.all([
-		database
-			.select({
-				id: approvalRequest.id,
-				status: approvalRequest.status,
-				approverId: approvalRequest.approverId,
-				approvedAt: approvalRequest.approvedAt,
-				updatedAt: approvalRequest.updatedAt,
-				entityType: approvalRequest.entityType,
-				entityId: approvalRequest.entityId,
-			})
-			.from(approvalRequest)
-			.where(
-				and(
-					eq(approvalRequest.id, input.approvalRequestId),
-					eq(approvalRequest.organizationId, input.organizationId),
-				),
-			)
-			.limit(2),
-		database
-			.select({
-				id: approvalChainStageInstance.id,
-				status: approvalChainStageInstance.status,
-				decidedAt: approvalChainStageInstance.decidedAt,
-				decidedBy: approvalChainStageInstance.decidedBy,
-			})
-			.from(approvalChainStageInstance)
-			.where(
-				and(
-					eq(approvalChainStageInstance.organizationId, input.organizationId),
-					eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
-				),
-			)
-			.limit(2),
-		database
-			.select({
-				status: travelExpenseClaim.status,
-				decidedAt: travelExpenseClaim.decidedAt,
-			})
-			.from(travelExpenseClaim)
-			.where(
-				and(
-					eq(travelExpenseClaim.id, input.claimId),
-					eq(travelExpenseClaim.organizationId, input.organizationId),
-				),
-			)
-			.limit(2),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const requests = await database
+		.select({
+			id: approvalRequest.id,
+			status: approvalRequest.status,
+			approverId: approvalRequest.approverId,
+			approvedAt: approvalRequest.approvedAt,
+			updatedAt: approvalRequest.updatedAt,
+			entityType: approvalRequest.entityType,
+			entityId: approvalRequest.entityId,
+		})
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, input.organizationId),
+			),
+		)
+		.limit(2);
+	const stages = await database
+		.select({
+			id: approvalChainStageInstance.id,
+			status: approvalChainStageInstance.status,
+			decidedAt: approvalChainStageInstance.decidedAt,
+			decidedBy: approvalChainStageInstance.decidedBy,
+		})
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+			),
+		)
+		.limit(2);
+	const claims = await database
+		.select({
+			status: travelExpenseClaim.status,
+			decidedAt: travelExpenseClaim.decidedAt,
+		})
+		.from(travelExpenseClaim)
+		.where(
+			and(
+				eq(travelExpenseClaim.id, input.claimId),
+				eq(travelExpenseClaim.organizationId, input.organizationId),
+			),
+		)
+		.limit(2);
 	const request = requests[0];
 	const claim = claims[0];
 	if (
@@ -289,13 +289,13 @@ export async function prepareLegacyTravelExpenseDecisionEvidence(
 	database: ApprovalDatabase,
 	input: { organizationId: string; claimId: string },
 ): Promise<LegacyTravelExpenseSubmittedRevisionRecord | null> {
-	const [mode, revision] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
-			workflowType: "travel_expense",
-		}),
-		loadLegacyTravelExpenseSubmittedRevision(database, input),
-	]);
+	// One after another: `database` is the decision's transaction, one connection,
+	// and pg@9 refuses a query while another is executing.
+	const mode = await readApprovalEvidenceMode(database, {
+		organizationId: input.organizationId,
+		workflowType: "travel_expense",
+	});
+	const revision = await loadLegacyTravelExpenseSubmittedRevision(database, input);
 	if (!revision) {
 		if (mode === "capture") throw new ApprovalEvidenceError("evidence_required");
 		return null;

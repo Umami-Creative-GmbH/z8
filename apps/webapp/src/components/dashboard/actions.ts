@@ -2,23 +2,22 @@
 
 import { and, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { organization } from "@/db/auth-schema";
 import type { DashboardWidgetOrder } from "@/db/schema";
-import {
-	absenceEntry,
-	employee,
-	userSettings,
-} from "@/db/schema";
+import { absenceEntry, employee, userSettings } from "@/db/schema";
 import type { VacationBalanceConfiguration } from "@/lib/absences/types";
 import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { systemClock } from "@/lib/datetime/temporal-core";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
+	comparePlainDates,
+	earlierPlainDate,
+	laterPlainDate,
+	parsePlainDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { activeOrganizationSession } from "@/lib/auth/active-organization-session";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ManagedEmployee } from "@/lib/effect/services/manager.service";
@@ -102,22 +101,19 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 
 		const dbService = yield* DatabaseService;
 
-		const currentEmployee = yield* dbService.query(
-			"getManagerTodayCurrentEmployee",
-			async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, activeOrganizationId),
-					),
-					columns: {
-						id: true,
-						role: true,
-						organizationId: true,
-					},
-				});
-			},
-		);
+		const currentEmployee = yield* dbService.query("getManagerTodayCurrentEmployee", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, activeOrganizationId),
+				),
+				columns: {
+					id: true,
+					role: true,
+					organizationId: true,
+				},
+			});
+		});
 
 		if (!currentEmployee) {
 			return { role: null, summary: null };
@@ -169,9 +165,7 @@ export type ManagedEmployeesResult = {
  * The caller's own direct reports in the active organization (#1436). The
  * manager always comes from the session, never from the client.
  */
-export async function getManagedEmployees(): Promise<
-	ServerActionResult<ManagedEmployeesResult>
-> {
+export async function getManagedEmployees(): Promise<ServerActionResult<ManagedEmployeesResult>> {
 	const effect = Effect.gen(function* () {
 		const session = yield* activeOrganizationSession;
 		const activeOrganizationId = session.session.activeOrganizationId;
@@ -211,9 +205,7 @@ export async function getManagedEmployees(): Promise<
 /**
  * Get upcoming absences for the organization
  */
-export async function getUpcomingAbsences(
-	limit: number = 5,
-): Promise<ServerActionResult<any[]>> {
+export async function getUpcomingAbsences(limit: number = 5): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* () {
 		const currentEmployee = yield* sessionEmployee;
 
@@ -235,20 +227,19 @@ export async function getTeamCalendarData(
 		const currentEmployee = yield* sessionEmployee;
 
 		// Calculate date range for the month (as YYYY-MM-DD strings)
-		const monthDT = DateTime.utc(year, month, 1);
-		const monthStartStr = monthDT.startOf("month").toFormat("yyyy-MM-dd");
-		const monthEndStr = monthDT.endOf("month").toFormat("yyyy-MM-dd");
+		const monthStartDate = Temporal.PlainDate.from({ year, month, day: 1 });
+		const monthEndDate = monthStartDate.with({ day: monthStartDate.daysInMonth });
+		const monthStartStr = monthStartDate.toString();
+		const monthEndStr = monthEndDate.toString();
 
 		// A past calendar is a view of the past (#1438): a former employee's
 		// absences stay up to today, in the organization's timezone, as in the team
 		// calendar feed; later ones are left out with them.
-		const [currentIds, orgEmployeeIds, organizationRow] =
-			yield* dbService.query("dashboard.teamCalendar.employees", () =>
+		const [currentIds, orgEmployeeIds, organizationRow] = yield* dbService.query(
+			"dashboard.teamCalendar.employees",
+			() =>
 				Promise.all([
-					currentRosterEmployeeIds(
-						dbService.db,
-						currentEmployee.organizationId,
-					),
+					currentRosterEmployeeIds(dbService.db, currentEmployee.organizationId),
 					dbService.db
 						.select({ id: employee.id })
 						.from(employee)
@@ -259,14 +250,11 @@ export async function getTeamCalendarData(
 						columns: { timezone: true },
 					}),
 				]),
-			);
+		);
 		const today = todayCalendarDateKey(organizationRow?.timezone || "UTC");
 		const currentOrStartedByToday =
 			currentIds.length > 0
-				? or(
-						inArray(absenceEntry.employeeId, currentIds),
-						lte(absenceEntry.startDate, today),
-					)
+				? or(inArray(absenceEntry.employeeId, currentIds), lte(absenceEntry.startDate, today))
 				: lte(absenceEntry.startDate, today);
 
 		// Get all absences for this month
@@ -282,14 +270,8 @@ export async function getTeamCalendarData(
 							gte(absenceEntry.startDate, monthStartStr),
 							lte(absenceEntry.startDate, monthEndStr),
 						),
-						and(
-							gte(absenceEntry.endDate, monthStartStr),
-							lte(absenceEntry.endDate, monthEndStr),
-						),
-						and(
-							lte(absenceEntry.startDate, monthStartStr),
-							gte(absenceEntry.endDate, monthEndStr),
-						),
+						and(gte(absenceEntry.endDate, monthStartStr), lte(absenceEntry.endDate, monthEndStr)),
+						and(lte(absenceEntry.startDate, monthStartStr), gte(absenceEntry.endDate, monthEndStr)),
 					),
 				),
 				with: {
@@ -307,28 +289,27 @@ export async function getTeamCalendarData(
 		});
 
 		// Group absences by date
-		const absenceDayMap = new Map<
-			string,
-			{ date: string; employees: any[]; count: number }
-		>();
-		const monthStartDT = DateTime.fromISO(monthStartStr);
-		const monthEndDT = DateTime.fromISO(monthEndStr);
+		const absenceDayMap = new Map<string, { date: string; employees: any[]; count: number }>();
 
 		const typedAbsences = absences as unknown as DashboardAbsenceEmployeeRow[];
 
 		for (const absence of typedAbsences) {
-			// absence.startDate and absence.endDate are now YYYY-MM-DD strings
-			const startDT = DateTime.fromISO(absence.startDate);
-			const endDT = DateTime.fromISO(absence.endDate);
-
-			if (!startDT.isValid || !endDT.isValid) continue;
+			// absence.startDate and absence.endDate are YYYY-MM-DD strings
+			let startDate: Temporal.PlainDate;
+			let endDate: Temporal.PlainDate;
+			try {
+				startDate = parsePlainDate(absence.startDate);
+				endDate = parsePlainDate(absence.endDate);
+			} catch {
+				continue;
+			}
 
 			// Iterate through each day of the absence
-			let currentDT = startDT > monthStartDT ? startDT : monthStartDT;
-			const lastDT = endDT < monthEndDT ? endDT : monthEndDT;
+			let currentDate = laterPlainDate(startDate, monthStartDate);
+			const lastDate = earlierPlainDate(endDate, monthEndDate);
 
-			while (currentDT <= lastDT) {
-				const dateKey = currentDT.toFormat("yyyy-MM-dd");
+			while (comparePlainDates(currentDate, lastDate) <= 0) {
+				const dateKey = currentDate.toString();
 
 				if (!absenceDayMap.has(dateKey)) {
 					absenceDayMap.set(dateKey, {
@@ -345,7 +326,7 @@ export async function getTeamCalendarData(
 				});
 				dayData.count = dayData.employees.length;
 
-				currentDT = currentDT.plus({ days: 1 });
+				currentDate = currentDate.add({ days: 1 });
 			}
 		}
 
@@ -409,9 +390,7 @@ export type TeamOverviewStats = {
 	avgWorkHours: number;
 };
 
-export async function getTeamOverviewStats(): Promise<
-	ServerActionResult<TeamOverviewStats>
-> {
+export async function getTeamOverviewStats(): Promise<ServerActionResult<TeamOverviewStats>> {
 	const effect = Effect.gen(function* () {
 		const currentEmployee = yield* sessionEmployee;
 
@@ -442,9 +421,7 @@ export type WhosOutToday = {
 	totalOut: number;
 };
 
-export async function getWhosOutToday(): Promise<
-	ServerActionResult<WhosOutToday>
-> {
+export async function getWhosOutToday(): Promise<ServerActionResult<WhosOutToday>> {
 	const effect = Effect.gen(function* () {
 		const currentEmployee = yield* sessionEmployee;
 		return yield* loadWhosOutForOrganization(currentEmployee.organizationId);
@@ -497,9 +474,7 @@ export async function getVacationBalanceResult(): Promise<
 /**
  * Get hydration widget data for dashboard
  */
-export async function getHydrationWidgetData(options?: {
-	fresh?: boolean;
-}): Promise<
+export async function getHydrationWidgetData(options?: { fresh?: boolean }): Promise<
 	ServerActionResult<{
 		enabled: boolean;
 		currentStreak: number;

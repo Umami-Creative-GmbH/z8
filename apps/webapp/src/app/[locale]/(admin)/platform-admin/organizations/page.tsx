@@ -200,11 +200,9 @@ function OrganizationsPageContent({
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
-		const searchTimeout = searchTimeoutRef.current;
-
 		return () => {
-			if (searchTimeout) {
-				clearTimeout(searchTimeout);
+			if (searchTimeoutRef.current) {
+				clearTimeout(searchTimeoutRef.current);
 			}
 		};
 	}, []);

@@ -85,9 +85,7 @@ export type ApprovalRouteNote =
 	/** Expense reports: currency and item rules are checked against the report when submitted. */
 	| { code: "report_contents_checked_at_submit" }
 	/** Expense reports: the owner approves their own report because nobody else can (#679). */
-	| { code: "owner_self_approval" }
-	/** Shift requests: the requester is the only decider, so theirs wait for their own decision. */
-	| { code: "requester_only_decider" };
+	| { code: "owner_self_approval" };
 
 /**
  * A canonical stage resolved as it would activate, later stages included (`traceStages`). A later

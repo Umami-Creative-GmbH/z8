@@ -229,6 +229,7 @@ export function calculatePresenceStatusSummary({
 	workDays,
 	workPeriods,
 	approvedHomeOfficeDates = [],
+	exemptDates = [],
 }: {
 	presenceMode: PresenceMode;
 	requiredOnsiteDays: number | null;
@@ -241,6 +242,7 @@ export function calculatePresenceStatusSummary({
 	workDays: PresenceDayOfWeek[] | null;
 	workPeriods: Array<{ startTime: Date; workLocationType: string | null }>;
 	approvedHomeOfficeDates?: string[];
+	exemptDates?: readonly string[];
 }): PresenceStatusSummary {
 	const zone = timezone || "utc";
 	const start = periodStart.setZone(zone).startOf("day");
@@ -252,7 +254,7 @@ export function calculatePresenceStatusSummary({
 	const officeDates = new Set<string>();
 	const homeDates = new Set<string>();
 	const workedDates = new Set<string>();
-	const approvedHomeOfficeDateSet = new Set(approvedHomeOfficeDates);
+	const approvedHomeOfficeDateSet = new Set([...approvedHomeOfficeDates, ...exemptDates]);
 
 	for (const workPeriod of workPeriods) {
 		const dateTime = DateTime.fromJSDate(workPeriod.startTime, { zone });

@@ -1,8 +1,8 @@
-import { desc, type SQL, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { workPolicyAssignment } from "@/db/schema";
+import { ValidationError } from "@/lib/effect/errors";
 import type { StubCaller } from "@/test/organization-action";
 
 // oxlint-disable-next-line typescript/no-explicit-any -- loose row stand-ins for a mocked database
@@ -28,6 +28,32 @@ const state = vi.hoisted(() => ({
 	updateWhereArgs: [] as Row[],
 	markOrganizationWorkBalancesDirty: vi.fn(),
 	formerEmployeeIds: new Set<string>(),
+	resolveEffectiveContractOnDay: vi.fn(),
+	assignEmployeeWorkPolicy: vi.fn(),
+	closeManualWorkPolicyAssignment: vi.fn(),
+	scheduleContractDefaultPolicyUpdate: vi.fn(),
+	setOrganizationDefaultWorkPolicy: vi.fn(),
+}));
+
+vi.mock("@/lib/contracts", () => ({
+	resolveEffectiveContractOnDay: state.resolveEffectiveContractOnDay,
+	assignEmployeeWorkPolicy: state.assignEmployeeWorkPolicy,
+	closeManualWorkPolicyAssignment: state.closeManualWorkPolicyAssignment,
+	scheduleContractDefaultPolicyUpdate: state.scheduleContractDefaultPolicyUpdate,
+}));
+
+vi.mock("@/lib/work-policy/policy-queries", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/work-policy/policy-queries")>();
+	return {
+		...actual,
+		loadWorkPoliciesWithLatestVersion: vi.fn(async () => state.workPolicies),
+		loadWorkPolicyWithLatestVersion: vi.fn(async () => state.workPolicyQueue.shift() ?? null),
+		setOrganizationDefaultWorkPolicy: state.setOrganizationDefaultWorkPolicy,
+	};
+});
+
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: vi.fn(async () => "UTC"),
 }));
 
 vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
@@ -44,7 +70,37 @@ vi.mock("@/lib/datetime/drizzle-adapter", () => ({
 	currentTimestamp: () => new Date("2026-01-01T00:00:00.000Z"),
 }));
 
-const db = {
+const db: Row = {
+	transaction: vi.fn(async (fn: (tx: Row) => Promise<unknown>) => fn(db)),
+	execute: vi.fn(async (query: SQL) => {
+		const renderedSql = dialect.sqlToQuery(query).sql;
+		if (renderedSql.includes('FROM "work_policy"') && renderedSql.includes("FOR UPDATE")) {
+			const row = state.workPolicyQueue.shift() ?? null;
+			return { rows: row ? [row] : [] };
+		}
+		if (renderedSql.includes('FROM "work_policy_versioning_state"')) {
+			return { rows: [{ sealedCutoverAt: null }] };
+		}
+		if (
+			renderedSql.includes('FROM "work_policy_version"') &&
+			renderedSql.includes("version_number")
+		) {
+			return {
+				rows: [
+					{
+						id: "version-1",
+						versionNumber: 1,
+						effectiveFromDate: "1970-01-01",
+						scheduleEnabled: true,
+						regulationEnabled: false,
+						presenceEnabled: false,
+						sealedAt: null,
+					},
+				],
+			};
+		}
+		return { rows: [] };
+	}),
 	query: {
 		workPolicy: {
 			findMany: vi.fn(async () => state.workPolicies),
@@ -72,9 +128,24 @@ const db = {
 		employee: { findFirst: vi.fn(async () => state.employeeQueue.shift() ?? null) },
 	},
 	select: vi.fn(() => ({
-		from: vi.fn(() => ({
-			where: vi.fn(() => ({ limit: vi.fn(async () => state.selectQueue.shift() ?? []) })),
-		})),
+		from: vi.fn(() => {
+			const makeResult = () => {
+				const rows = state.selectQueue.shift() ?? [];
+				const promise = Promise.resolve(rows) as Promise<Row[]> & {
+					limit: ReturnType<typeof vi.fn>;
+					orderBy: ReturnType<typeof vi.fn>;
+				};
+				promise.limit = vi.fn(async () => rows);
+				promise.orderBy = vi.fn(async () => rows);
+				return promise;
+			};
+			const chain: Row = {
+				innerJoin: vi.fn(() => chain),
+				leftJoin: vi.fn(() => chain),
+				where: vi.fn(() => makeResult()),
+			};
+			return chain;
+		}),
 	})),
 	insert: vi.fn(() => ({
 		values: vi.fn((input: unknown) => {
@@ -397,11 +468,15 @@ describe("work policy settings scope actions", () => {
 			id: "policy-from-preset",
 			organizationId: "org-1",
 			name: "Reviewed Policy",
+			scheduleEnabled: false,
+			regulationEnabled: true,
+			presenceEnabled: false,
 			schedule: null,
 			regulation: null,
 			presence: null,
 		};
-		state.workPolicyQueue = [null, created];
+		state.workPolicyQueue = [null];
+		state.selectQueue = [[created], [], [], [], []];
 		state.insertQueue = [
 			[{ id: "policy-from-preset" }],
 			[{ id: "regulation-1" }],
@@ -555,10 +630,16 @@ describe("work policy settings scope actions", () => {
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
 
-	it("lets managers assign work policies to managed members and marks balances dirty", async () => {
+	it("lets managers assign work policies to managed members via assignEmployeeWorkPolicy and marks balances dirty", async () => {
 		state.selectQueue = [[{ id: "employee-1" }]];
 		state.workPolicyQueue = [{ id: "policy-1" }];
-		state.insertQueue = [[{ id: "assignment-1" }]];
+		state.assignEmployeeWorkPolicy.mockResolvedValueOnce({
+			assignmentId: "assignment-1",
+			employeeId: "employee-1",
+			policyId: "policy-1",
+			effectiveFromDate: "2026-01-01",
+			sourceKind: "manager_assignment",
+		});
 
 		const result = await actions.createWorkPolicyAssignment({
 			policyId: "policy-1",
@@ -567,10 +648,64 @@ describe("work policy settings scope actions", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
-		expect(state.insertValues[0]).toMatchObject({ organizationId: "org-1", createdBy: "user-1" });
+		expect(state.assignEmployeeWorkPolicy).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			policyId: "policy-1",
+			actorUserId: "user-1",
+			actorIsOrgAdmin: false,
+		});
 		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
+	});
+
+	it("routes organization and team assignments through scheduleContractDefaultPolicyUpdate", async () => {
+		state.caller = orgAdmin;
+		state.workPolicyQueue = [{ id: "policy-1" }, { id: "policy-1" }];
+		state.teamQueue = [{ id: "team-1" }];
+		state.scheduleContractDefaultPolicyUpdate
+			.mockResolvedValueOnce({
+				contractDefaultId: "def-org",
+				workPolicyAssignmentId: "assign-org",
+			})
+			.mockResolvedValueOnce({
+				contractDefaultId: "def-team",
+				workPolicyAssignmentId: "assign-team",
+			});
+
+		const orgResult = await actions.createWorkPolicyAssignment({
+			policyId: "policy-1",
+			assignmentType: "organization",
+		});
+		const teamResult = await actions.createWorkPolicyAssignment({
+			policyId: "policy-1",
+			assignmentType: "team",
+			teamId: "team-1",
+		});
+
+		expect(orgResult).toEqual({ success: true, data: { id: "assign-org" } });
+		expect(teamResult).toEqual({ success: true, data: { id: "assign-team" } });
+		expect(state.scheduleContractDefaultPolicyUpdate).toHaveBeenNthCalledWith(
+			1,
+			expect.anything(),
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: "organization",
+				teamId: null,
+				workPolicyId: "policy-1",
+			}),
+		);
+		expect(state.scheduleContractDefaultPolicyUpdate).toHaveBeenNthCalledWith(
+			2,
+			expect.anything(),
+			expect.objectContaining({
+				organizationId: "org-1",
+				scope: "team",
+				teamId: "team-1",
+				workPolicyId: "policy-1",
+			}),
+		);
 	});
 
 	it("refuses a manager an organization-wide assignment", async () => {
@@ -580,44 +715,80 @@ describe("work policy settings scope actions", () => {
 		});
 
 		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
-		expect(state.insertValues).toHaveLength(0);
+		expect(state.scheduleContractDefaultPolicyUpdate).not.toHaveBeenCalled();
 	});
 
-	it("marks organization work balances dirty after deleting a work policy assignment", async () => {
+	it("marks organization work balances dirty after closing a manual work policy assignment", async () => {
 		state.assignmentQueue = [
 			{
 				id: "assignment-1",
 				organizationId: "org-1",
 				assignmentType: "employee",
 				employeeId: "employee-1",
+				sourceKind: "manager_assignment",
 			},
 		];
+		state.closeManualWorkPolicyAssignment.mockResolvedValueOnce({
+			assignmentId: "assignment-1",
+			closedFromDate: "2026-01-01",
+			assignmentType: "employee",
+		});
 
 		const result = await actions.deleteWorkPolicyAssignment("assignment-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
+		expect(state.closeManualWorkPolicyAssignment).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			assignmentId: "assignment-1",
+			actorIsOrgAdmin: false,
+		});
 		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
 	});
 
+	it("refuses a scoped manager deleting an admin-pinned contract_terms work policy assignment (A1)", async () => {
+		state.assignmentQueue = [
+			{
+				id: "assignment-pinned",
+				organizationId: "org-1",
+				assignmentType: "employee",
+				employeeId: "employee-1",
+				sourceKind: "employment_terms",
+			},
+		];
+		state.closeManualWorkPolicyAssignment.mockRejectedValueOnce(
+			new ValidationError({
+				message: "Pinned by administrator contract terms.",
+				field: "assignmentId",
+				refusal: "contract_terms_policy_pinned",
+			}),
+		);
+
+		const result = await actions.deleteWorkPolicyAssignment("assignment-pinned");
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "contract_terms_policy_pinned",
+		});
+		expect(state.updateSets).toHaveLength(0);
+	});
+
 	it("marks organization work balances dirty after schedule-affecting work policy updates", async () => {
 		state.caller = orgAdmin;
-		state.workPolicyQueue = [
-			{
-				id: "policy-1",
-				organizationId: "org-1",
-				name: "Standard",
-				description: null,
-				scheduleEnabled: true,
-				regulationEnabled: false,
-				presenceEnabled: false,
-				schedule: null,
-				regulation: null,
-				presence: null,
-			},
-			{ id: "policy-1", organizationId: "org-1", name: "Standard", schedule: null },
-		];
+		const existingPolicy = {
+			id: "policy-1",
+			organizationId: "org-1",
+			name: "Standard",
+			description: null,
+			scheduleEnabled: true,
+			regulationEnabled: false,
+			presenceEnabled: false,
+			isActive: true,
+		};
+		state.workPolicyQueue = [existingPolicy];
+		state.selectQueue = [[existingPolicy], [], [], [], [], [existingPolicy], [], [], [], []];
 
 		const result = await actions.updateWorkPolicy({
 			policyId: "policy-1",
@@ -639,9 +810,7 @@ describe("work policy settings scope actions", () => {
 			scheduleEnabled: true,
 			regulationEnabled: false,
 			presenceEnabled: false,
-			schedule: null,
-			regulation: null,
-			presence: null,
+			isActive: true,
 		};
 		const day = (
 			dayOfWeek: "monday" | "tuesday" | "saturday",
@@ -668,7 +837,8 @@ describe("work policy settings scope actions", () => {
 
 		beforeEach(() => {
 			state.caller = orgAdmin;
-			state.workPolicyQueue = [existing, { ...existing, schedule: null }];
+			state.workPolicyQueue = [existing];
+			state.selectQueue = [[existing], [], [], [], [], [existing], [], [], [], []];
 			state.insertQueue = [[{ id: "schedule-1" }]];
 		});
 
@@ -697,6 +867,28 @@ describe("work policy settings scope actions", () => {
 		});
 	});
 
+	it("rejects out-of-range ArbZG regulation fields via Zod schema validation", async () => {
+		state.caller = orgAdmin;
+
+		const invalidRest = await actions.updateWorkPolicy({
+			policyId: "policy-1",
+			data: { regulation: { minRestPeriodMinutes: 0, breakRules: [] } },
+		});
+		const invalidAlertPercent = await actions.updateWorkPolicy({
+			policyId: "policy-1",
+			data: { regulation: { alertThresholdPercent: 101, breakRules: [] } },
+		});
+		const invalidAlertMinutes = await actions.updateWorkPolicy({
+			policyId: "policy-1",
+			data: { regulation: { alertBeforeLimitMinutes: -5, breakRules: [] } },
+		});
+
+		expect(invalidRest).toMatchObject({ success: false, code: "ValidationError" });
+		expect(invalidAlertPercent).toMatchObject({ success: false, code: "ValidationError" });
+		expect(invalidAlertMinutes).toMatchObject({ success: false, code: "ValidationError" });
+		expect(db.transaction).not.toHaveBeenCalled();
+	});
+
 	it("marks organization work balances dirty after deleting a work policy", async () => {
 		state.caller = orgAdmin;
 		state.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
@@ -711,11 +903,16 @@ describe("work policy settings scope actions", () => {
 
 	it("marks organization work balances dirty after changing the default work policy", async () => {
 		state.caller = orgAdmin;
-		state.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		state.setOrganizationDefaultWorkPolicy.mockResolvedValueOnce(undefined);
 
 		const result = await actions.setDefaultWorkPolicy("policy-1");
 
 		expect(result).toEqual({ success: true, data: undefined });
+		expect(state.setOrganizationDefaultWorkPolicy).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			actorUserId: "user-1",
+			policyId: "policy-1",
+		});
 		expect(state.markOrganizationWorkBalancesDirty).toHaveBeenCalledWith({
 			organizationId: "org-1",
 		});
@@ -783,24 +980,22 @@ describe("work policy settings scope actions", () => {
 		expect(conflictingIds).toMatchObject({ success: false, code: "ValidationError" });
 	});
 
-	it("looks up effective assignments using date predicates and null effective dates as fallback", async () => {
+	it("resolves effective schedule details through the unified contract resolver", async () => {
 		state.employeeQueue = [
 			{ id: "employee-1", organizationId: "org-1", teamId: "team-1", team: null },
 		];
+		state.resolveEffectiveContractOnDay.mockResolvedValueOnce(null);
 
 		const result = await actions.getEmployeeEffectiveScheduleDetails("employee-1");
 
 		expect(result).toEqual({ success: true, data: null });
-		expect(state.assignmentFindFirstArgs).toHaveLength(3);
-		for (const assignmentLookup of state.assignmentFindFirstArgs) {
-			const where = rendered(assignmentLookup.where).sql;
-			expect(where).toContain("effective_from");
-			expect(where).toContain("effective_until");
-			const orderBy = rendered(
-				sql.join(assignmentLookup.orderBy(workPolicyAssignment, { desc }), sql`, `),
-			).sql;
-			expect(orderBy).toContain("DESC NULLS LAST");
-		}
+		expect(state.resolveEffectiveContractOnDay).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+			}),
+		);
 	});
 
 	it("reads an employee outside the active organization as not found", async () => {

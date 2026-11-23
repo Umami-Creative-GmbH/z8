@@ -4,6 +4,7 @@ import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useEffect, useId, useRef } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Alert } from "@/components/ui/alert";
 import { AlertDescription } from "@/components/ui/alert-description";
@@ -16,13 +17,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { parseInstant } from "@/lib/datetime/temporal-core";
@@ -253,29 +247,27 @@ function DeactivationPreviewForm(props: DeactivationPreviewDialogProps) {
 											{ name: report.name },
 										)}
 									</TFormLabel>
-									<Select
-										value={field.state.value ?? ""}
-										onValueChange={(value) => {
-											const next = typeof value === "string" ? value : "";
-											field.handleChange(next);
-											changePick(report.employeeId, next);
-										}}
-									>
-										<TFormControl hasError={fieldHasError(field)}>
-											<SelectTrigger className="w-full" onBlur={field.handleBlur}>
-												<SelectValue />
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											{options
+									<TFormControl hasError={fieldHasError(field)}>
+										<EmployeeSingleSelect
+											className="space-y-0"
+											value={field.state.value || null}
+											onChange={(value) => {
+												const next = value ?? "";
+												field.handleChange(next);
+												changePick(report.employeeId, next);
+											}}
+											onBlur={field.handleBlur}
+											employees={options
 												.filter((option) => option.employeeId !== report.employeeId)
-												.map((option) => (
-													<SelectItem key={option.employeeId} value={option.employeeId}>
-														{option.name || option.employeeId}
-													</SelectItem>
-												))}
-										</SelectContent>
-									</Select>
+												.map((option) =>
+													toSelectableEmployee({
+														id: option.employeeId,
+														name: option.name || option.employeeId,
+														role: "manager",
+													}),
+												)}
+										/>
+									</TFormControl>
 									<TFormMessage field={field}>
 										{ineligibleMessage(report, field.state.value)}
 									</TFormMessage>

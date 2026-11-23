@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
 
@@ -13,8 +13,8 @@ describe("calculateAdjustedExpectedHoursForRange", () => {
 		expect(
 			calculateAdjustedExpectedHoursForRange({
 				schedule: weeklySimpleSchedule,
-				start: DateTime.fromISO("2026-11-01T00:00:00Z"),
-				end: DateTime.fromISO("2026-11-30T23:59:59Z"),
+				start: Temporal.Instant.from("2026-11-01T00:00:00Z").toZonedDateTimeISO("UTC"),
+				end: Temporal.Instant.from("2026-11-30T23:59:59Z").toZonedDateTimeISO("UTC"),
 				excludedDates: new Set(),
 			}),
 		).toBe(171.43);
@@ -22,8 +22,8 @@ describe("calculateAdjustedExpectedHoursForRange", () => {
 	it("subtracts scheduled work hours for holidays and approved absences", () => {
 		const expected = calculateAdjustedExpectedHoursForRange({
 			schedule: weeklySimpleSchedule,
-			start: DateTime.fromISO("2026-05-11T00:00:00Z"),
-			end: DateTime.fromISO("2026-05-17T23:59:59Z"),
+			start: Temporal.Instant.from("2026-05-11T00:00:00Z").toZonedDateTimeISO("UTC"),
+			end: Temporal.Instant.from("2026-05-17T23:59:59Z").toZonedDateTimeISO("UTC"),
 			excludedDates: new Set(["2026-05-13", "2026-05-15"]),
 		});
 

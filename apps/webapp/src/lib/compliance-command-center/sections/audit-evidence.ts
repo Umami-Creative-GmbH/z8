@@ -1,8 +1,8 @@
 import { and, desc, eq, gte } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { auditExportPackage, auditPackRequest, auditVerificationLog } from "@/db/schema";
 import { configurationService } from "@/lib/audit-export";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import type { ComplianceSectionResult, ComplianceText } from "../types";
 
 const AUDIT_EVIDENCE_LOOKBACK_DAYS = 7;
@@ -89,7 +89,7 @@ export function deriveAuditEvidenceSection(
 						? text("compliance.commandCenter.sections.auditEvidence.headline.warning")
 						: text("compliance.commandCenter.sections.auditEvidence.headline.healthy"),
 			facts,
-			updatedAt: DateTime.utc().toISO(),
+			updatedAt: systemClock.nowInstant().toString(),
 			primaryLink: {
 				label: text("compliance.commandCenter.links.openAuditExport"),
 				href: "/settings/audit-export",
@@ -104,7 +104,7 @@ export function deriveAuditEvidenceSection(
 							severity: "critical",
 							title: criticalEvent.title,
 							description: criticalEvent.description,
-							occurredAt: snapshot.latestIncidentAt ?? DateTime.utc().toISO()!,
+							occurredAt: snapshot.latestIncidentAt ?? systemClock.nowInstant().toString(),
 							primaryLink: {
 								label: text("compliance.commandCenter.links.reviewAuditExport"),
 								href: "/settings/audit-export",
@@ -118,7 +118,13 @@ export function deriveAuditEvidenceSection(
 export async function getAuditEvidenceSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
-	const lookbackStart = DateTime.utc().minus({ days: AUDIT_EVIDENCE_LOOKBACK_DAYS }).toJSDate();
+	const lookbackStart = dateFromInstant(
+		systemClock
+			.nowInstant()
+			.toZonedDateTimeISO("UTC")
+			.subtract({ days: AUDIT_EVIDENCE_LOOKBACK_DAYS })
+			.toInstant(),
+	);
 	const [config, recentFailedRequests, latestSuccess, invalidVerifications] = await Promise.all([
 		configurationService.getConfig(organizationId),
 		db.query.auditPackRequest.findMany({

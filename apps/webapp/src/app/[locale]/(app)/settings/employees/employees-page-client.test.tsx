@@ -59,8 +59,8 @@ vi.mock("./columns", () => ({
 }));
 
 // The directory tests exercise pagination and actor props; bulk review has its own public-action suite.
-vi.mock("@/components/settings/employment-date-upload-dialog", () => ({
-	EmploymentDateUploadDialog: () => null,
+vi.mock("@/components/settings/employment-date-upload-panel", () => ({
+	EmploymentDateUploadPanel: () => null,
 }));
 
 vi.mock("@/components/errors/no-employee-error", () => ({
@@ -137,7 +137,6 @@ function renderEmployeeDirectory() {
 				}}
 			>
 				<EmployeesPageClient
-					accessTier="member"
 					organizationId="org-1"
 					currentUserId="user-1"
 					currentEmployee={{ id: "employee-1", role: "employee" }}

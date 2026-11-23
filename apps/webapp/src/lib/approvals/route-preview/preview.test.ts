@@ -711,7 +711,7 @@ describe("approval route preview: shift requests", () => {
 		expect(new Set(approversOf(found))).toEqual(new Set([manager.id, admin.id]));
 	});
 
-	it("names a requesting decider among the deciders, as the decision check admits them", async () => {
+	it("routes a requesting decider's request to the other deciders, never to the requester (#1597)", async () => {
 		const org = organization();
 		const lead = org.person({ role: "manager" });
 		const admin = org.person({ role: "admin" });
@@ -720,19 +720,23 @@ describe("approval route preview: shift requests", () => {
 
 		expect(own.variants[0]?.outcome).toMatchObject({
 			stages: [{ activation: "human" }],
+			autoCompleted: false,
 			notes: [],
 		});
-		expect(new Set(approversOf(own))).toEqual(new Set([lead.id, admin.id]));
+		expect(new Set(approversOf(own))).toEqual(new Set([admin.id]));
 	});
 
-	it("notes a lone decider's own requests wait for them, and is unroutable with no decider", async () => {
+	it("approves a lone decider's own request on submission, and is unroutable with no decider", async () => {
 		const org = organization();
 		const lead = org.person({ role: "manager" });
 		const subject = org.person();
 
 		const own = await route(org.snapshot, employee(lead), "shift_request");
 		expect(own).toMatchObject({ kind: "routed" });
-		expect(own.variants[0]?.outcome).toMatchObject({ notes: [{ code: "requester_only_decider" }] });
+		expect(own.variants[0]?.outcome).toMatchObject({
+			autoCompleted: true,
+			stages: [{ activation: "requester_auto_approve", approverEmployeeIds: [] }],
+		});
 
 		org.departed(lead.id);
 		expect(await route(org.snapshot, employee(subject), "shift_request")).toMatchObject({

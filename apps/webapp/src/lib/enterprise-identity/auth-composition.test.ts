@@ -285,6 +285,7 @@ describe("production auth plugin composition with installed Better Auth", () => 
 		const ids = productionAuth.options.plugins?.map((plugin) => plugin.id);
 		expect(ids).toEqual([
 			"z8-turnstile-auth-guard",
+			"z8-sign-in-method-guard",
 			"z8-account-ban",
 			"z8-reserved-email-guard",
 			"z8-password-setup-verification",
@@ -296,6 +297,7 @@ describe("production auth plugin composition with installed Better Auth", () => 
 			"organization",
 			"two-factor",
 			"passkey",
+			"z8-sso-request-origin",
 			"sso",
 			"z8-sso-verified-domain-membership",
 			"z8-auth-mutation-coordination",

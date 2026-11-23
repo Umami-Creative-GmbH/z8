@@ -1,38 +1,35 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Client } from "pg";
+import {
+	parseDrainGateConfig,
+	runBoundaryAwareMigrations,
+	runCommandWithLockRetry,
+} from "./boundary-migration-engine.js";
 import { getMigrateCommand } from "./drizzle-migrate-command.js";
 
 const utcPostgresOption = "-c timezone=UTC";
 
 function withUtcPostgresOptions(options) {
 	const existingOptions = options?.trim();
-	return existingOptions
-		? `${existingOptions} ${utcPostgresOption}`
-		: utcPostgresOption;
+	return existingOptions ? `${existingOptions} ${utcPostgresOption}` : utcPostgresOption;
 }
 
 process.env.TZ ||= "UTC";
 process.env.PGOPTIONS = withUtcPostgresOptions(process.env.PGOPTIONS);
 
-const sslModes = new Set([
-	"disable",
-	"prefer",
-	"require",
-	"verify-ca",
-	"verify-full",
-]);
+const sslModes = new Set(["disable", "prefer", "require", "verify-ca", "verify-full"]);
 
 function getPostgresSslConfig(
 	env = process.env,
-	readCertificateFile = (path) => readFileSync(path, "utf8"),
+	readCertificateFile = (certPath) => readFileSync(certPath, "utf8"),
 ) {
 	const mode = env.POSTGRES_SSL_MODE || "disable";
 
 	if (!sslModes.has(mode)) {
-		throw new Error(
-			`POSTGRES_SSL_MODE must be one of: ${Array.from(sslModes).join(", ")}`,
-		);
+		throw new Error(`POSTGRES_SSL_MODE must be one of: ${Array.from(sslModes).join(", ")}`);
 	}
 
 	if (mode === "disable") {
@@ -46,9 +43,7 @@ function getPostgresSslConfig(
 			: undefined);
 
 	if (mode === "prefer" || mode === "require") {
-		return ca
-			? { ca, rejectUnauthorized: true }
-			: { rejectUnauthorized: false };
+		return ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false };
 	}
 
 	return {
@@ -64,6 +59,8 @@ const lockId = Number.parseInt(lockIdRaw, 10);
 if (!Number.isInteger(lockId)) {
 	throw new Error("DB_MIGRATION_LOCK_ID must be an integer.");
 }
+
+const drainGateConfig = parseDrainGateConfig(process.env);
 
 const databaseUrl =
 	process.env.DATABASE_URL ||
@@ -87,40 +84,56 @@ if (!databaseUrl) {
 	);
 }
 
-const migrateCommand = getMigrateCommand();
-
 const hasExplicitSslConfig =
 	process.env.POSTGRES_SSL_MODE ||
 	process.env.POSTGRES_SSL_CA_CERT ||
 	process.env.POSTGRES_SSL_ROOT_CERT_PATH;
 
+const migrationsFolder =
+	process.env.DRIZZLE_MIGRATIONS_FOLDER ||
+	path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../drizzle");
+
 const run = async () => {
-	const client = new Client({
+	const clientConfig = {
 		connectionString: databaseUrl,
 		options: process.env.PGOPTIONS,
 		...(hasExplicitSslConfig ? { ssl: getPostgresSslConfig() } : {}),
-	});
-	await client.connect();
+	};
+
+	const lockClient = new Client(clientConfig);
+	await lockClient.connect();
 
 	try {
-		await client.query("SELECT pg_advisory_lock($1);", [lockId]);
+		await lockClient.query("SELECT pg_advisory_lock($1);", [lockId]);
 
-		const result = spawnSync(migrateCommand.command, migrateCommand.args, {
-			shell: migrateCommand.shell,
-			stdio: "inherit",
-		});
+		if (process.env.DRIZZLE_MIGRATE_COMMAND != null) {
+			const migrateCommand = getMigrateCommand(process.env);
+			await runCommandWithLockRetry(migrateCommand, {
+				stepName: "custom-migrate-command",
+				maxRetries: drainGateConfig.lockRetries,
+				spawnSyncImpl: spawnSync,
+			});
+			return;
+		}
 
-		if (result.status !== 0) {
-			throw new Error(
-				`Migration command failed with exit code ${result.status ?? "unknown"}.`,
-				{ cause: result.error },
-			);
+		const workClient = new Client(clientConfig);
+		await workClient.connect();
+		try {
+			await runBoundaryAwareMigrations({
+				client: workClient,
+				migrationsFolder,
+				allowContractConstraints: drainGateConfig.allowContractConstraints,
+				allowPolicyV1Seal: drainGateConfig.allowPolicyV1Seal,
+				lockRetries: drainGateConfig.lockRetries,
+			});
+		} finally {
+			await workClient.end();
 		}
 	} finally {
 		try {
-			await client.query("SELECT pg_advisory_unlock($1);", [lockId]);
+			await lockClient.query("SELECT pg_advisory_unlock($1);", [lockId]);
 		} finally {
-			await client.end();
+			await lockClient.end();
 		}
 	}
 };

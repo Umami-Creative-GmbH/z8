@@ -1,37 +1,50 @@
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StubCaller } from "@/test/organization-action";
 
+type Answer = unknown | ((call: number) => unknown);
+
 const mocks = vi.hoisted(() => ({
 	caller: null as StubCaller | null,
-	teamPermissionsRows: [] as Array<{ teamId: string | null }>,
-	teamScopedEmployees: [] as Array<{ id: string; isActive: boolean }>,
-	selectResults: [] as Array<Array<{ count: number }>>,
-	select: vi.fn(),
+	answers: {} as Record<string, unknown>,
+	calls: [] as string[],
 }));
 
-const db = vi.hoisted(() => ({
-	select: () => {
-		mocks.select();
-		return {
-			from: () => ({
-				where: async () => mocks.selectResults.shift() ?? [{ count: 0 }],
-			}),
-		};
-	},
-	query: {
-		organization: { findFirst: async () => ({ timezone: "Europe/Berlin" }) },
-		teamPermissions: { findMany: async () => mocks.teamPermissionsRows },
-		employee: { findMany: async () => mocks.teamScopedEmployees },
-	},
-}));
+/** Every query builder chain resolves to nothing; the reads run through named queries below. */
+const chain: unknown = new Proxy(() => {}, {
+	get: (_target, property) => (property === "then" ? undefined : () => chain),
+	apply: () => chain,
+});
 
 vi.mock("@/lib/effect/runtime", async () => {
 	const { runtimeModuleOver } = await import("@/test/effect-runtime");
 	const { organizationActionStubLayer } = await import("@/test/organization-action");
-	return runtimeModuleOver(organizationActionStubLayer(() => mocks.caller, { db }));
+	return runtimeModuleOver(
+		organizationActionStubLayer(() => mocks.caller, {
+			db: { select: () => chain, selectDistinct: () => chain },
+			query: (name, _fn) => {
+				const call = mocks.calls.filter((called) => called === name).length;
+				mocks.calls.push(name);
+				const answer = mocks.answers[name] as Answer;
+				if (answer === undefined) {
+					return Effect.die(new Error(`unexpected query ${name}`)) as never;
+				}
+				if (answer instanceof Error) {
+					return Effect.die(answer) as never;
+				}
+				return Effect.succeed(typeof answer === "function" ? answer(call) : answer) as never;
+			},
+		}),
+	);
 });
 
-const { getManagerStatisticsReadView, getOrganizationStats } = await import("./actions");
+const {
+	getAdoptionStatistics,
+	getAttentionStatistics,
+	getMonthStatistics,
+	getStatisticsScope,
+	getWorkforceStatistics,
+} = await import("./actions");
 
 const owner: StubCaller = {
 	userId: "user-owner",
@@ -56,165 +69,143 @@ const orgMember: StubCaller = {
 
 const refused = { success: false, code: "AuthorizationError" };
 
+const ORGANIZATION_ANSWERS: Record<string, unknown> = {
+	"statistics.organizationTimezone": { timezone: "Europe/Berlin" },
+	"statistics.staleLiveWork": [{ count: 2 }],
+	"statistics.openViolations": [{ count: 1 }],
+	// This month first, then the comparison window.
+	"statistics.workedMinutes": (call: number) => [{ minutes: call === 0 ? 600 : 480 }],
+	"statistics.completedWorkPeriods": (call: number) => [{ count: call === 0 ? 12 : 10 }],
+	"statistics.approvedAbsences": [],
+	"statistics.clockedIn": [{ count: 3 }],
+	"statistics.manualEntryShare": [{ manualMinutes: 60, totalMinutes: 600 }],
+	"statistics.coverageRoster": [],
+	"statistics.rosterMovement": [{ roster: 8, joined: 2, left: 1 }],
+	"statistics.teams": [{ count: 4 }],
+	"statistics.setupRoster": [],
+	"statistics.usersSignedIn": [{ count: 5 }],
+};
+
 describe("statistics actions", () => {
 	beforeEach(() => {
+		mocks.caller = owner;
+		mocks.answers = { ...ORGANIZATION_ANSWERS };
+		mocks.calls = [];
+	});
+
+	it("gives an org admin every group of the whole organization, with users signed in", async () => {
+		await expect(getStatisticsScope()).resolves.toMatchObject({
+			success: true,
+			data: { scope: { organizationWide: true } },
+		});
+		await expect(getAttentionStatistics()).resolves.toMatchObject({
+			success: true,
+			data: {
+				staleLiveWork: { status: "ok", value: 2 },
+				openViolations: { status: "ok", value: 1 },
+			},
+		});
+		await expect(getMonthStatistics()).resolves.toMatchObject({
+			success: true,
+			data: {
+				workedMinutes: { status: "ok", value: { current: 600, previous: 480 } },
+				absenceDays: { status: "ok", value: { current: 0, previous: 0 } },
+				completedWorkPeriods: { status: "ok", value: { current: 12, previous: 10 } },
+			},
+		});
+		await expect(getAdoptionStatistics()).resolves.toMatchObject({
+			success: true,
+			data: {
+				coverage: { status: "ok", value: { tracked: 0, expected: 0 } },
+				clockedIn: { status: "ok", value: 3 },
+				manualEntryShare: { status: "ok", value: { manualMinutes: 60, totalMinutes: 600 } },
+			},
+		});
+		await expect(getWorkforceStatistics()).resolves.toMatchObject({
+			success: true,
+			data: {
+				roster: { status: "ok", value: { roster: 8, joined: 2, left: 1 } },
+				teams: { status: "ok", value: 4 },
+				incompleteSetup: { status: "ok", value: 0 },
+				usersSignedIn: { status: "ok", value: 5 },
+			},
+		});
+	});
+
+	it("gives a workforce admin the whole organization without users signed in", async () => {
+		mocks.caller = workforceAdmin;
+
+		await expect(getStatisticsScope()).resolves.toMatchObject({
+			success: true,
+			data: { scope: { organizationWide: true } },
+		});
+		const result = await getWorkforceStatistics();
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).not.toHaveProperty("usersSignedIn");
+		expect(mocks.calls).not.toContain("statistics.usersSignedIn");
+		expect(mocks.calls).not.toContain("statistics.manageableTeams");
+	});
+
+	it("scopes a manager to the teams whose settings they manage, without users signed in", async () => {
 		mocks.caller = manager;
-		mocks.teamPermissionsRows = [{ teamId: "team-managed" }];
-		mocks.teamScopedEmployees = [
-			{ id: "employee-1", isActive: true },
-			{ id: "employee-2", isActive: false },
-		];
-		mocks.selectResults = [];
-		mocks.select.mockClear();
-	});
+		mocks.answers["statistics.manageableTeams"] = [{ teamId: "team-a" }, { teamId: "team-b" }];
 
-	it("returns only team-scoped analytics for manager read access", async () => {
-		mocks.selectResults = [
-			[{ count: 1 }],
-			[{ count: 6 }],
-			[{ count: 4 }],
-			[{ count: 2 }],
-			[{ count: 3 }],
-			[{ count: 1 }],
-			[{ count: 1 }],
-			[{ count: 1 }],
-			[{ count: 2 }],
-			[{ count: 1 }],
-		];
-
-		const result = await getManagerStatisticsReadView();
-
-		expect(result.success).toBe(true);
-		if (!result.success) return;
-		expect(result.data).toMatchObject({
-			totalEmployees: 2,
-			activeEmployees: 1,
-			inactiveEmployees: 1,
-			totalTeams: 1,
-			totalTimeEntries: 6,
-			timeEntriesThisMonth: 4,
-			timeEntriesLastMonth: 2,
-			totalAbsences: 3,
-			pendingAbsences: 1,
-			approvedAbsences: 1,
-			rejectedAbsences: 1,
-			totalApprovals: 2,
-			pendingApprovals: 1,
+		await expect(getStatisticsScope()).resolves.toMatchObject({
+			success: true,
+			data: { scope: { organizationWide: false, teamCount: 2 } },
 		});
-		expect(result.data).not.toHaveProperty("activeSessions");
-		expect(typeof result.data.fetchedAt).toBe("string");
-	});
-
-	it("gives a workforce admin the organization's statistics without the org-admin sessions count", async () => {
-		mocks.caller = workforceAdmin;
-		mocks.teamPermissionsRows = [];
-		mocks.selectResults = [
-			[{ count: 8 }],
-			[{ count: 6 }],
-			[{ count: 4 }],
-			[{ count: 30 }],
-			[{ count: 12 }],
-			[{ count: 9 }],
-			[{ count: 7 }],
-			[{ count: 2 }],
-			[{ count: 3 }],
-			[{ count: 2 }],
-			[{ count: 6 }],
-			[{ count: 1 }],
-		];
-
-		const result = await getManagerStatisticsReadView();
-
-		expect(result.success).toBe(true);
+		const result = await getWorkforceStatistics();
+		expect(result).toMatchObject({ success: true, data: { teams: { status: "ok", value: 4 } } });
 		if (!result.success) return;
-		expect(result.data).toMatchObject({
-			totalEmployees: 8,
-			activeEmployees: 6,
-			inactiveEmployees: 2,
-			totalTeams: 4,
-			totalTimeEntries: 30,
-			timeEntriesThisMonth: 12,
-			timeEntriesLastMonth: 9,
-			totalAbsences: 7,
-			pendingAbsences: 2,
-			approvedAbsences: 3,
-			rejectedAbsences: 2,
-			totalApprovals: 6,
-			pendingApprovals: 1,
+		expect(result.data).not.toHaveProperty("usersSignedIn");
+		expect(mocks.calls).not.toContain("statistics.usersSignedIn");
+	});
+
+	it("gives a manager without managed teams known zeros without reading any figure", async () => {
+		mocks.caller = manager;
+		mocks.answers["statistics.manageableTeams"] = [];
+
+		await expect(getAttentionStatistics()).resolves.toMatchObject({
+			success: true,
+			data: {
+				staleLiveWork: { status: "ok", value: 0 },
+				openViolations: { status: "ok", value: 0 },
+			},
 		});
-		expect(result.data).not.toHaveProperty("activeSessions");
-		expect(mocks.select).toHaveBeenCalledTimes(12);
+		await expect(getWorkforceStatistics()).resolves.toMatchObject({
+			success: true,
+			data: { roster: { status: "ok", value: { roster: 0, joined: 0, left: 0 } } },
+		});
+		expect(mocks.calls.every((name) => name === "statistics.manageableTeams")).toBe(true);
 	});
 
-	it("still refuses a workforce admin the org-admin statistics", async () => {
-		mocks.caller = workforceAdmin;
+	it("keeps a failed figure unknown while the rest of its group still loads", async () => {
+		mocks.answers["statistics.staleLiveWork"] = new Error("connection reset");
 
-		await expect(getOrganizationStats()).resolves.toMatchObject(refused);
+		await expect(getAttentionStatistics()).resolves.toMatchObject({
+			success: true,
+			data: {
+				staleLiveWork: { status: "failed" },
+				openViolations: { status: "ok", value: 1 },
+			},
+		});
 	});
 
-	it("gives a scoped manager without managed teams empty statistics", async () => {
-		mocks.teamPermissionsRows = [];
-
-		const result = await getManagerStatisticsReadView();
-
-		expect(result).toMatchObject({ success: true, data: { totalEmployees: 0, totalTeams: 0 } });
-		expect(mocks.select).not.toHaveBeenCalled();
-	});
-
-	it("refuses an org member the manager statistics", async () => {
+	it("refuses an org member every statistics group", async () => {
 		mocks.caller = orgMember;
 
-		await expect(getManagerStatisticsReadView()).resolves.toMatchObject(refused);
+		await expect(getStatisticsScope()).resolves.toMatchObject(refused);
+		await expect(getAttentionStatistics()).resolves.toMatchObject(refused);
+		await expect(getMonthStatistics()).resolves.toMatchObject(refused);
+		await expect(getAdoptionStatistics()).resolves.toMatchObject(refused);
+		await expect(getWorkforceStatistics()).resolves.toMatchObject(refused);
+		expect(mocks.calls).toEqual([]);
 	});
 
-	it("keeps owner and admin parity with active-organization statistics only", async () => {
-		mocks.caller = owner;
-		mocks.selectResults = [
-			[{ count: 8 }],
-			[{ count: 6 }],
-			[{ count: 4 }],
-			[{ count: 30 }],
-			[{ count: 12 }],
-			[{ count: 9 }],
-			[{ count: 7 }],
-			[{ count: 2 }],
-			[{ count: 3 }],
-			[{ count: 2 }],
-			[{ count: 6 }],
-			[{ count: 1 }],
-			[{ count: 5 }],
-		];
-
-		const result = await getOrganizationStats();
-
-		expect(result.success).toBe(true);
-		if (!result.success) return;
-		expect(result.data).toMatchObject({
-			totalEmployees: 8,
-			activeEmployees: 6,
-			inactiveEmployees: 2,
-			totalTeams: 4,
-			totalTimeEntries: 30,
-			timeEntriesThisMonth: 12,
-			timeEntriesLastMonth: 9,
-			totalAbsences: 7,
-			pendingAbsences: 2,
-			approvedAbsences: 3,
-			rejectedAbsences: 2,
-			totalApprovals: 6,
-			pendingApprovals: 1,
-			activeSessions: 5,
-		});
-	});
-
-	it("refuses a scoped manager the org-wide statistics", async () => {
-		await expect(getOrganizationStats()).resolves.toMatchObject(refused);
-		expect(mocks.select).not.toHaveBeenCalled();
-	});
-
-	it("refuses a former owner the org-wide statistics", async () => {
+	it("refuses a former owner", async () => {
 		mocks.caller = { ...owner, employee: { id: "employee-owner", role: "admin", former: true } };
 
-		await expect(getOrganizationStats()).resolves.toMatchObject(refused);
+		await expect(getWorkforceStatistics()).resolves.toMatchObject(refused);
 	});
 });

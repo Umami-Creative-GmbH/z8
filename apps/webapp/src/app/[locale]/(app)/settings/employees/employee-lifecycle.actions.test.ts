@@ -4,7 +4,7 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
+import { auditLog, employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { auth } from "@/lib/auth";
 import { CACHE_TAGS } from "@/lib/cache/tags";
@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 	authRemoveMember: vi.fn(),
 	completeRemovedMemberCleanup: vi.fn(),
 	deactivate: vi.fn(),
+	forwardAuditToExternalService: vi.fn(),
 	/** The reactivation tests still assert under the command's former name (#1638). */
 	get executeDeactivation() {
 		return this.deactivate;
@@ -127,6 +128,7 @@ vi.mock("next/headers", () => ({
 vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
 	logAudit: mocks.logAudit,
+	forwardAuditToExternalService: mocks.forwardAuditToExternalService,
 }));
 
 vi.mock("@/lib/auth/organization-session-revocation", () => ({
@@ -281,6 +283,16 @@ function setup(state: LifecycleState = {}) {
 	const updateWhere = vi.fn(() => ({ returning }));
 	const updateSet = vi.fn(() => ({ where: updateWhere }));
 	const update = vi.fn(() => ({ set: updateSet }));
+	// The audit rows the transaction inserted, through the transaction client.
+	const auditRows: Array<typeof auditLog.$inferInsert> = [];
+	const insert = vi.fn((table: unknown) => ({
+		values: async (row: typeof auditLog.$inferInsert) => {
+			if (table === auditLog) {
+				auditRows.push(row);
+				events.push(`audit-recorded:${row.action}`);
+			}
+		},
+	}));
 	const transaction = vi.fn(async (run) => {
 		if (state.transactionError) throw state.transactionError;
 		const result = await run({
@@ -296,6 +308,7 @@ function setup(state: LifecycleState = {}) {
 			),
 			select,
 			update,
+			insert,
 		});
 		events.push("transaction-committed");
 		return result;
@@ -323,6 +336,9 @@ function setup(state: LifecycleState = {}) {
 	mocks.logAudit.mockImplementation(async () => {
 		events.push("audit-logged");
 	});
+	mocks.forwardAuditToExternalService.mockImplementation((entry: { action: string }) => {
+		events.push(`audit-forwarded:${entry.action}`);
+	});
 	mocks.reconcileBillingSeatsForOrganization.mockImplementation(async () => {
 		events.push("seats-reconciled");
 	});
@@ -343,6 +359,7 @@ function setup(state: LifecycleState = {}) {
 	});
 
 	return {
+		auditRows,
 		dbService,
 		events,
 		findEmployee,
@@ -639,7 +656,7 @@ describe("employee lifecycle actions", () => {
 	});
 
 	it("reactivates the same employee row without session revocation and audits only the real change", async () => {
-		const { update, updateSet } = setup({
+		const { auditRows, events, update, updateSet } = setup({
 			target: {
 				id: employeeId,
 				userId: targetUserId,
@@ -659,27 +676,47 @@ describe("employee lifecycle actions", () => {
 			organizationId,
 			{ alsoWhenBillingDisabled: true },
 		);
-		expect(mocks.logAudit).toHaveBeenCalledWith({
-			action: AuditAction.EMPLOYEE_REACTIVATED,
-			actorId: actorUserId,
-			actorEmail,
-			employeeId,
-			targetId: employeeId,
-			targetType: "employee",
+		// Recorded through the transaction client, so it commits with the ledger (#1640).
+		const [reactivated, ...others] = auditRows.filter(
+			(row) => row.action === AuditAction.EMPLOYEE_REACTIVATED,
+		);
+		expect(others).toEqual([]);
+		expect(reactivated).toMatchObject({
 			organizationId,
-			changes: { isActive: { from: false, to: true } },
-			metadata: { reactivationRequestId: expect.any(String) },
-			timestamp: expect.any(Date),
+			entityType: "employee",
+			entityId: employeeId,
+			performedBy: actorUserId,
+			employeeId,
 		});
+		expect(JSON.parse(reactivated.changes as string)).toEqual({
+			isActive: { from: false, to: true },
+		});
+		const { reactivationRequestId, ...metadata } = JSON.parse(reactivated.metadata as string);
+		expect(metadata).toEqual({ actorEmail });
+		// The employment history shows this reactivation once, by the ledger's request id.
+		expect(mocks.markDeactivationReactivated).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ reactivationRequestId }),
+		);
+		expect(mocks.logAudit).not.toHaveBeenCalled();
+		// Forwarded once, after the commit.
+		const forwarded = `audit-forwarded:${AuditAction.EMPLOYEE_REACTIVATED}`;
+		expect(events.filter((event) => event === forwarded)).toHaveLength(1);
+		expect(events.indexOf(`audit-recorded:${AuditAction.EMPLOYEE_REACTIVATED}`)).toBeLessThan(
+			events.indexOf("transaction-committed"),
+		);
+		expect(events.indexOf("transaction-committed")).toBeLessThan(events.indexOf(forwarded));
 	});
 
 	it("does not update or audit an already active reactivation retry", async () => {
-		const { update } = setup();
+		const { auditRows, update } = setup();
 
 		const result = await reactivateEmployeeAction(employeeId);
 
 		expect(result).toEqual({ success: true, data: undefined });
 		expect(update).not.toHaveBeenCalled();
+		expect(auditRows).toEqual([]);
+		expect(mocks.forwardAuditToExternalService).not.toHaveBeenCalled();
 		expect(mocks.logAudit).not.toHaveBeenCalled();
 		expect(mocks.revokeOrganizationActiveSessions).not.toHaveBeenCalled();
 		expect(mocks.reconcileBillingSeatsForOrganization).not.toHaveBeenCalled();

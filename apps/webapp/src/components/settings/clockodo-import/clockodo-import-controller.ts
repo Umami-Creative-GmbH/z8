@@ -17,7 +17,7 @@ import {
 	validateClockodoCredentials,
 	type Z8EmployeeInfo,
 	type Z8ProjectInfo,
-} from "@/app/[locale]/(app)/settings/clockodo-import/actions";
+} from "@/app/[locale]/(app)/settings/import/clockodo-actions";
 import { startImportReviewScan } from "@/app/[locale]/(app)/settings/import/review-actions";
 import { buildProjectMappings } from "@/lib/clockodo/project-mappings";
 import type {

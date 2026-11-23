@@ -9,7 +9,7 @@ import {
 	type RepairTarget,
 } from "@/components/settings/work-diagnostics/work-proposal-targets";
 import { WorkRepairPanel } from "@/components/settings/work-diagnostics/work-repair-panel";
-import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db, user } from "@/db";
@@ -42,10 +42,26 @@ export default function WorkDiagnosticsPage(props: WorkDiagnosticsPageProps) {
 			<Suspense fallback={<WorkDiagnosticsHeaderLoading />}>
 				<WorkDiagnosticsHeader />
 			</Suspense>
-			<Suspense fallback={<SettingsContentLoading />}>
+			<Suspense fallback={<WorkDiagnosticsBodyLoading />}>
 				<WorkDiagnosticsContent {...props} />
 			</Suspense>
 		</div>
+	);
+}
+
+function WorkDiagnosticsBodyLoading() {
+	return (
+		<LoadingRegion
+			className="space-y-6"
+			role="status"
+			label={{
+				labelKey: "settings.loading",
+				labelDefault: "Loading settings",
+			}}
+		>
+			<Skeleton aria-hidden="true" className="h-56 w-full rounded-xl" />
+			<Skeleton aria-hidden="true" className="h-44 w-full rounded-xl" />
+		</LoadingRegion>
 	);
 }
 

@@ -71,6 +71,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 		session: { activeOrganizationId: auth.organizationId },
 		employee: { id: auth.employeeId, organizationId: auth.organizationId },
 	}),
+	getCurrentSettingsAccess: async () => null,
 }));
 const {
 	preparePayrollComparison,
@@ -410,7 +411,7 @@ describe("authorized read-only reviewed payroll comparisons", () => {
 			[category, ORG],
 		);
 		await admin.query(
-			"insert into time_record(id,organization_id,employee_id,record_kind,start_at,end_at,approval_state,created_by,updated_at) values($1,$2,$3,'absence','2026-07-15T00:00:00Z','2026-07-16T00:00:00Z','approved','t1344-owner',now())",
+			"insert into time_record(id,organization_id,employee_id,record_kind,start_at,end_at,approval_state,created_by,updated_at) values($1,$2,$3,'absence','2026-07-15T00:00:00Z','2026-07-17T00:00:00Z','approved','t1344-owner',now())",
 			[record, ORG, WORKER],
 		);
 		await admin.query(

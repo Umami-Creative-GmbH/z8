@@ -9,6 +9,7 @@ import {
 	employeeDepartureTask,
 } from "@/db/schema/employee-lifecycle";
 import { AuditTrail } from "@/lib/audit-trail";
+import { capAndDeactivateEmployeePolicyAssignmentsOnDepartureInTx } from "@/lib/contracts/policy-assignment-intervals";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -22,6 +23,7 @@ import { endEmployment } from "./employment-ending";
 import { lockEmployeeRow } from "./locks";
 import { enqueueReviewNotifications } from "./notifications";
 import { evaluateDepartureAuthority } from "./owner-invariant";
+import { reconcileRetrospectiveDepartureReviewsInTx } from "./retrospective-reconciliation";
 import type {
 	DepartureClockOutPort,
 	DepartureClockOutResult,
@@ -75,6 +77,7 @@ export async function executeDepartureInTransaction(
 
 	const nowDate = dateFromInstant(now);
 	const cutoffDate = departure.cutoffAt;
+	const cutoffLocalDate = cutoff.toZonedDateTimeISO(departure.timezone).toPlainDate().toString();
 
 	const [target] = await tx
 		.select({ userId: employee.userId })
@@ -132,13 +135,21 @@ export async function executeDepartureInTransaction(
 	`);
 	await tx.execute(sql`
 		UPDATE employee_employment_history
-		SET valid_until = ${cutoffDate}, updated_at = ${nowDate}
+		SET valid_until = ${cutoffDate},
+			valid_until_date = GREATEST(valid_from_date, ${cutoffLocalDate}::date),
+			updated_at = ${nowDate}
 		WHERE organization_id = ${identity.organizationId} AND employee_id = ${identity.employeeId}
 			AND employment_period_id = ${identity.employmentPeriodId}
 			AND review_state = 'confirmed' AND valid_from < ${cutoffDate}
 			AND (valid_until IS NULL OR valid_until > ${cutoffDate})
 	`);
-	await closeEmploymentWindows(tx, identity, cutoffDate, nowDate);
+	const { cappedAssignments } = await closeEmploymentWindows(
+		tx,
+		identity,
+		cutoffDate,
+		cutoffLocalDate,
+		nowDate,
+	);
 	await tx.execute(sql`
 		UPDATE employee SET is_active = false, deactivated_at = ${cutoffDate}, updated_at = ${nowDate}
 		WHERE organization_id = ${identity.organizationId} AND id = ${identity.employeeId}
@@ -149,24 +160,28 @@ export async function executeDepartureInTransaction(
 		actorUserId: departure.createdBy,
 		clockOutActionId: departure.clockOutActionId,
 	});
-	await recordClockOutReview(
-		tx,
-		identity,
-		clockResult,
-		cutoffDate,
-		departure.clockOutActionId,
-	);
+	await recordClockOutReview(tx, identity, clockResult, cutoffDate, departure.clockOutActionId);
 	await persistFollowUpIntent(tx, identity, target.userId);
 	// Under the lifecycle locks, so every duty held at this instant is captured.
-	await captureApprovalHandoverDuties(
-		tx,
-		identity,
-		departure.replacementEmployeeId,
-	);
+	await captureApprovalHandoverDuties(tx, identity, departure.replacementEmployeeId);
+	if (departure.mode === "retrospective" && departure.lastWorkingDay) {
+		await reconcileRetrospectiveDepartureReviewsInTx(tx, {
+			organizationId: identity.organizationId,
+			employeeId: identity.employeeId,
+			employmentPeriodId: identity.employmentPeriodId,
+			departureId: identity.departureId,
+			cutoff,
+			timezone: departure.timezone,
+			lastWorkingDay: departure.lastWorkingDay,
+			now,
+			actorUserId: departure.createdBy,
+		});
+	}
 	await enqueueReviewNotifications(tx, identity);
 
 	await recordSystemEvent(tx, identity, "departure_effective", nowDate, {
 		cutoff: cutoffDate.toISOString(),
+		cappedPolicyAssignments: cappedAssignments,
 	});
 
 	return {
@@ -208,6 +223,7 @@ async function closeEmploymentWindows(
 	tx: LifecycleClient,
 	identity: DepartureIdentity,
 	cutoff: Date,
+	cutoffLocalDate: string,
 	now: Date,
 ) {
 	const scope = {
@@ -216,22 +232,14 @@ async function closeEmploymentWindows(
 		employmentPeriodId: identity.employmentPeriodId,
 		departureId: identity.departureId,
 	};
-	await tx.execute(sql`
-		UPDATE work_policy_assignment
-		SET effective_until = ${cutoff}, updated_at = ${now}
-		WHERE organization_id = ${identity.organizationId} AND assignment_type = 'employee'
-			AND employee_id = ${identity.employeeId} AND is_active = true
-			AND (effective_from IS NULL OR effective_from < ${cutoff})
-			AND (effective_until IS NULL OR effective_until > ${cutoff})
-	`);
-	const deactivated = await tx.execute<{ id: string }>(sql`
-		UPDATE work_policy_assignment
-		SET is_active = false, updated_at = ${now}
-		WHERE organization_id = ${identity.organizationId} AND assignment_type = 'employee'
-			AND employee_id = ${identity.employeeId} AND is_active = true
-			AND effective_from >= ${cutoff}
-		RETURNING id
-	`);
+	const { cappedAssignments, deactivatedAssignmentIds } =
+		await capAndDeactivateEmployeePolicyAssignmentsOnDepartureInTx(tx, {
+			organizationId: identity.organizationId,
+			employeeId: identity.employeeId,
+			cutoff,
+			cutoffLocalDate,
+			now,
+		});
 
 	const futureTerms = await tx
 		.select({
@@ -243,43 +251,35 @@ async function closeEmploymentWindows(
 			and(
 				eq(employeeEmploymentHistory.organizationId, identity.organizationId),
 				eq(employeeEmploymentHistory.employeeId, identity.employeeId),
-				eq(
-					employeeEmploymentHistory.employmentPeriodId,
-					identity.employmentPeriodId,
-				),
+				eq(employeeEmploymentHistory.employmentPeriodId, identity.employmentPeriodId),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				gte(employeeEmploymentHistory.validFrom, cutoff),
 			),
 		);
-	const reviews: (typeof employeeDepartureReview.$inferInsert)[] =
-		futureTerms.map((terms) => ({
-			...scope,
-			kind: "employment_terms",
-			subjectId: terms.id,
-			metadata: {
-				reason: "future_terms_after_departure",
-				validFrom: terms.validFrom.toISOString(),
-			},
-		}));
-	if (deactivated.rows.length > 0) {
+	const reviews: (typeof employeeDepartureReview.$inferInsert)[] = futureTerms.map((terms) => ({
+		...scope,
+		kind: "employment_terms",
+		subjectId: terms.id,
+		metadata: {
+			reason: "future_terms_after_departure",
+			validFrom: terms.validFrom.toISOString(),
+		},
+	}));
+	if (deactivatedAssignmentIds.length > 0) {
 		reviews.push({
 			...scope,
 			kind: "employment_terms",
 			subjectId: null,
 			metadata: {
 				reason: "future_assignments_deactivated",
-				workPolicyAssignmentIds: deactivated.rows.map(
-					(assignment) => assignment.id,
-				),
+				workPolicyAssignmentIds: deactivatedAssignmentIds,
 			},
 		});
 	}
 	if (reviews.length > 0) {
-		await tx
-			.insert(employeeDepartureReview)
-			.values(reviews)
-			.onConflictDoNothing();
+		await tx.insert(employeeDepartureReview).values(reviews).onConflictDoNothing();
 	}
+	return { cappedAssignments };
 }
 
 /**
@@ -414,13 +414,9 @@ async function recordClockOutReview(
 		// that began after the cutoff is covered from the cutoff to its start.
 		const periodStart = result.activePeriodStartedAt ?? null;
 		const affectedStartAt =
-			periodStart && periodStart.getTime() > cutoff.getTime()
-				? cutoff
-				: periodStart;
+			periodStart && periodStart.getTime() > cutoff.getTime() ? cutoff : periodStart;
 		const affectedEndAt =
-			periodStart && periodStart.getTime() > cutoff.getTime()
-				? periodStart
-				: cutoff;
+			periodStart && periodStart.getTime() > cutoff.getTime() ? periodStart : cutoff;
 		await tx
 			.insert(employeeDepartureReview)
 			.values({

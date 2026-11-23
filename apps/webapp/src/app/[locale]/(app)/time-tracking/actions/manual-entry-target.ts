@@ -104,16 +104,15 @@ export async function resolveManualEntryTargetZone(
 	/** Protected preparation passes its transaction; defaults to the global client. */
 	reader: Pick<typeof db, "query"> = db,
 ): Promise<ManualEntryTargetZone> {
-	const [settings, organizationRecord] = await Promise.all([
-		reader.query.userSettings.findFirst({
-			where: eq(userSettings.userId, targetEmployee.userId),
-			columns: { timezone: true },
-		}),
-		reader.query.organization.findFirst({
-			where: eq(organization.id, targetEmployee.organizationId),
-			columns: { timezone: true },
-		}),
-	]);
+	// One after another: `reader` may be one connection, and pg@9 refuses a query while another is executing.
+	const settings = await reader.query.userSettings.findFirst({
+		where: eq(userSettings.userId, targetEmployee.userId),
+		columns: { timezone: true },
+	});
+	const organizationRecord = await reader.query.organization.findFirst({
+		where: eq(organization.id, targetEmployee.organizationId),
+		columns: { timezone: true },
+	});
 
 	const resolution = resolvePersonalTimezone({
 		userTimezone: settings?.timezone,

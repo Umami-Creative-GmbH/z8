@@ -472,16 +472,31 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 			 values ($1, $2, $3, false, true, true, $4, $5)`,
 			[policy.id, ids.organization, `T524 limits ${policy.id}`, ids.ownerUser, timestamp],
 		);
-		await admin.query(
-			`insert into work_policy_regulation (id, policy_id, max_daily_minutes, max_weekly_minutes, updated_at)
-			 values ($1, $2, $3, $4, $5)`,
-			[policy.regulationId, policy.id, limits.daily, limits.weekly, timestamp],
+		const {
+			rows: [policyVersion],
+		} = await admin.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', false, true, false, true, $3)
+			 returning id`,
+			[policy.id, ids.organization, ids.ownerUser],
 		);
+		await admin.query(
+			`insert into work_policy_regulation (id, policy_id, policy_version_id, max_daily_minutes, max_weekly_minutes, updated_at)
+			 values ($1, $2, $3, $4, $5, $6)`,
+			[policy.regulationId, policy.id, policyVersion.id, limits.daily, limits.weekly, timestamp],
+		);
+		const effectiveFromDate = policy.effectiveFrom
+			? dateFromInstant(policy.effectiveFrom).toISOString().slice(0, 10)
+			: "1970-01-01";
+		const effectiveUntilDate = policy.effectiveUntil
+			? dateFromInstant(policy.effectiveUntil).toISOString().slice(0, 10)
+			: null;
 		await admin.query(
 			`insert into work_policy_assignment
 			 (id, policy_id, organization_id, assignment_type, employee_id, priority, is_active,
-			  effective_from, effective_until, created_by, updated_at)
-			 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6, $7, $8)`,
+			  effective_from, effective_until, effective_from_date, effective_until_date, created_by, updated_at)
+			 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6, $7, $8, $9, $10)`,
 			[
 				policy.assignmentId,
 				policy.id,
@@ -489,6 +504,8 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 				ids.target,
 				policy.effectiveFrom ? dateFromInstant(policy.effectiveFrom) : null,
 				policy.effectiveUntil ? dateFromInstant(policy.effectiveUntil) : null,
+				effectiveFromDate,
+				effectiveUntilDate,
 				ids.ownerUser,
 				timestamp,
 			],

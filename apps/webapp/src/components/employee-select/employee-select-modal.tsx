@@ -111,25 +111,54 @@ function employeeSelectReducer(
 	}
 }
 
+type ServerModalData = {
+	employees: SelectableEmployee[];
+	total: number;
+	hasMore: boolean;
+	isLoading: boolean;
+	isFetching: boolean;
+	search: string;
+	setSearch: (value: string) => void;
+	roleFilter: string;
+	setRoleFilter: (value: string) => void;
+	statusFilter: string;
+	setStatusFilter: (value: string) => void;
+	canFilterStatus: boolean;
+	teamFilter: string;
+	setTeamFilter: (value: string) => void;
+	loadMore: () => void;
+	teams?: Array<{ id: string; name: string }>;
+};
+
 /**
  * Modal dialog for selecting employees with search and filters
  */
-function useEmployeeSelectModalViewModel({
-	open,
-	onOpenChange,
-	listboxId,
-	mode,
-	selectedIds,
-	onSelect,
-	onDeselect,
-	onConfirm,
-	excludeIds,
-	filters,
-	includeFormerEmployees = false,
-	showFilters = true,
-	maxSelections,
-	employees: preFilteredEmployees,
-}: EmployeeSelectModalProps) {
+function useEmployeeSelectModalViewModel(
+	{
+		open,
+		onOpenChange,
+		listboxId,
+		mode,
+		selectedIds,
+		onSelect,
+		onDeselect,
+		onConfirm,
+		allowClear = false,
+		clearLabel,
+		searchPlaceholder,
+		emptyMessage,
+		title,
+		description,
+		onSearchChange,
+		isLoading: externalIsLoading = false,
+		excludeIds,
+		showFilters = true,
+		maxSelections,
+		employees: preFilteredEmployees,
+		pinnedIds,
+	}: EmployeeSelectModalProps,
+	serverData?: ServerModalData,
+) {
 	const { t } = useTranslate();
 
 	const effectiveExcludeIds = excludeIds ?? EMPTY_EXCLUDE_IDS;
@@ -147,33 +176,43 @@ function useEmployeeSelectModalViewModel({
 		selectionState;
 	const activePendingIds = hasPendingChanges ? pendingIds : selectedIds;
 
-	// Use the employee select hook (only when not using pre-filtered list)
-	const serverData = useEmployeeSelect({
-		filters,
-		includeFormerEmployees,
-		excludeIds: effectiveExcludeIds,
-		enabled: open && !usePreFiltered,
-	});
-
 	// Determine which data source to use
-	const search = usePreFiltered ? localSearch : serverData.search;
+	const search = usePreFiltered ? localSearch : (serverData?.search ?? "");
 	const setSearch = usePreFiltered
-		? (value: string) => dispatchSelection({ type: "set-local-search", value })
-		: serverData.setSearch;
+		? (value: string) => {
+				dispatchSelection({ type: "set-local-search", value });
+				onSearchChange?.(value);
+			}
+		: (serverData?.setSearch ?? (() => {}));
 
-	// Filter pre-filtered employees by search (client-side)
+	const excludeIdSet = new Set(effectiveExcludeIds);
+	const basePreFilteredEmployees =
+		usePreFiltered && preFilteredEmployees
+			? effectiveExcludeIds.length > 0
+				? preFilteredEmployees.filter((emp) => !excludeIdSet.has(emp.id))
+				: preFilteredEmployees
+			: [];
+
+	// Filter pre-filtered employees by search (client-side unless caller handles search externally)
 	const filteredPreFilteredEmployees = (() => {
-		if (!usePreFiltered || !preFilteredEmployees) return [];
-		if (!localSearch) return preFilteredEmployees;
+		if (!usePreFiltered) return [];
+		if (onSearchChange) return basePreFilteredEmployees;
+		const trimmedSearch = localSearch.trim();
+		if (!trimmedSearch) return basePreFilteredEmployees;
 
-		const searchLower = localSearch.toLowerCase();
-		return preFilteredEmployees.filter((emp) => {
+		const searchLower = trimmedSearch.toLowerCase();
+		return basePreFilteredEmployees.filter((emp) => {
 			const displayName = buildAuthUserDisplayName(emp.user).toLowerCase();
 
 			return (
 				displayName.includes(searchLower) ||
 				emp.user.email.toLowerCase().includes(searchLower) ||
-				emp.position?.toLowerCase().includes(searchLower)
+				emp.position?.toLowerCase().includes(searchLower) ||
+				emp.team?.name.toLowerCase().includes(searchLower) ||
+				emp.secondaryText?.toLowerCase().includes(searchLower) ||
+				emp.searchKeywords?.some((keyword) =>
+					keyword.toLowerCase().includes(searchLower),
+				)
 			);
 		});
 	})();
@@ -181,40 +220,32 @@ function useEmployeeSelectModalViewModel({
 	// Select the appropriate data source
 	const employees = usePreFiltered
 		? filteredPreFilteredEmployees
-		: serverData.employees;
+		: (serverData?.employees ?? []);
 	const total = usePreFiltered
-		? (preFilteredEmployees?.length ?? 0)
-		: serverData.total;
-	const hasMore = usePreFiltered ? false : serverData.hasMore;
-	const isLoading = usePreFiltered ? false : serverData.isLoading;
-	const isFetching = usePreFiltered ? false : serverData.isFetching;
-	const loadMore = usePreFiltered ? () => {} : serverData.loadMore;
+		? basePreFilteredEmployees.length
+		: (serverData?.total ?? 0);
+	const hasMore = usePreFiltered ? false : (serverData?.hasMore ?? false);
+	const isLoading = usePreFiltered
+		? externalIsLoading
+		: (serverData?.isLoading ?? false);
+	const isFetching = usePreFiltered
+		? externalIsLoading
+		: (serverData?.isFetching ?? false);
+	const loadMore = usePreFiltered
+		? () => {}
+		: (serverData?.loadMore ?? (() => {}));
 
 	// Filter controls (only for server-side mode)
-	const roleFilter = serverData.roleFilter;
-	const setRoleFilter = serverData.setRoleFilter;
-	const statusFilter = serverData.statusFilter;
-	const setStatusFilter = serverData.setStatusFilter;
-	const canFilterStatus = serverData.canFilterStatus;
-	const teamFilter = serverData.teamFilter;
-	const setTeamFilter = serverData.setTeamFilter;
+	const roleFilter = serverData?.roleFilter ?? "all";
+	const setRoleFilter = serverData?.setRoleFilter ?? (() => {});
+	const statusFilter = serverData?.statusFilter ?? "current";
+	const setStatusFilter = serverData?.setStatusFilter ?? (() => {});
+	const canFilterStatus = serverData?.canFilterStatus ?? false;
+	const teamFilter = serverData?.teamFilter ?? "";
+	const setTeamFilter = serverData?.setTeamFilter ?? (() => {});
 
 	// Don't show filters when using pre-filtered list
 	const effectiveShowFilters = showFilters && !usePreFiltered;
-
-	// Fetch teams for filter dropdown
-	const teamsQuery = useQuery({
-		queryKey: queryKeys.teams.list(""),
-		queryFn: async () => {
-			const result = await listTeams();
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch teams");
-			}
-			return result.data;
-		},
-		enabled: open && effectiveShowFilters,
-		staleTime: 5 * 60 * 1000,
-	});
 
 	useEffect(() => {
 		if (open) {
@@ -246,12 +277,22 @@ function useEmployeeSelectModalViewModel({
 	const handleDeselect = (employeeId: string) => {
 		if (mode === "single") {
 			onDeselect(employeeId);
+			if (allowClear) {
+				onOpenChange(false);
+			}
 		} else {
 			dispatchSelection({
 				type: "set-deselected",
 				employeeId,
 				pendingIds: activePendingIds.filter((id) => id !== employeeId),
 			});
+		}
+	};
+
+	const handleClearSingle = () => {
+		if (mode === "single") {
+			onDeselect(selectedIds[0] ?? "");
+			onOpenChange(false);
 		}
 	};
 
@@ -337,12 +378,17 @@ function useEmployeeSelectModalViewModel({
 
 	return {
 		activePendingIds,
+		allowClear,
 		canFilterStatus,
+		clearLabel,
+		description,
 		effectiveSelectedIds,
 		effectiveShowFilters,
 		employees,
+		emptyMessage,
 		handleCancel,
 		handleClearAll,
+		handleClearSingle,
 		handleConfirm,
 		handleDeselect,
 		handleSelect,
@@ -356,8 +402,10 @@ function useEmployeeSelectModalViewModel({
 		maxSelections,
 		mode,
 		open,
+		pinnedIds,
 		roleFilter,
 		search,
+		searchPlaceholder,
 		selectedEmployeesMap,
 		selectionCount,
 		setRoleFilter,
@@ -367,7 +415,8 @@ function useEmployeeSelectModalViewModel({
 		statusFilter,
 		t,
 		teamFilter,
-		teams: teamsQuery.data,
+		teams: serverData?.teams,
+		title,
 		total,
 	};
 }
@@ -379,12 +428,17 @@ function EmployeeSelectModalView({
 }) {
 	const {
 		activePendingIds,
+		allowClear,
 		canFilterStatus,
+		clearLabel,
+		description,
 		effectiveSelectedIds,
 		effectiveShowFilters,
 		employees,
+		emptyMessage,
 		handleCancel,
 		handleClearAll,
+		handleClearSingle,
 		handleConfirm,
 		handleDeselect,
 		handleSelect,
@@ -398,8 +452,10 @@ function EmployeeSelectModalView({
 		maxSelections,
 		mode,
 		open,
+		pinnedIds,
 		roleFilter,
 		search,
+		searchPlaceholder,
 		selectedEmployeesMap,
 		selectionCount,
 		setRoleFilter,
@@ -410,6 +466,7 @@ function EmployeeSelectModalView({
 		t,
 		teamFilter,
 		teams,
+		title,
 		total,
 	} = viewModel;
 
@@ -418,20 +475,22 @@ function EmployeeSelectModalView({
 			<ActionPanelContent showCloseButton={false}>
 				<ActionPanelHeader className="sr-only">
 					<ActionPanelTitle>
-						{mode === "single"
-							? t("common:employeeSelect.selectEmployee", "Select Employee")
-							: t("common:employeeSelect.selectEmployees", "Select Employees")}
+						{title ??
+							(mode === "single"
+								? t("common:employeeSelect.selectEmployee", "Select Employee")
+								: t("common:employeeSelect.selectEmployees", "Select Employees"))}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
-						{mode === "single"
-							? t(
-									"common:employeeSelect.selectOneEmployee",
-									"Choose an employee from the list",
-								)
-							: t(
-									"common:employeeSelect.selectMultipleEmployees",
-									"Choose one or more employees from the list",
-								)}
+						{description ??
+							(mode === "single"
+								? t(
+										"common:employeeSelect.selectOneEmployee",
+										"Choose an employee from the list",
+									)
+								: t(
+										"common:employeeSelect.selectMultipleEmployees",
+										"Choose one or more employees from the list",
+									))}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
@@ -447,10 +506,13 @@ function EmployeeSelectModalView({
 						<div className="flex items-center gap-2 border-b border-border/50 px-4">
 							<IconSearch className="size-4 shrink-0 text-muted-foreground" />
 							<CommandPrimitive.Input
-								placeholder={t(
-									"common:employeeSelect.searchPlaceholder",
-									"Search by name, email, or position...",
-								)}
+								placeholder={
+									searchPlaceholder ??
+									t(
+										"common:employeeSelect.searchPlaceholder",
+										"Search by name, email, or position...",
+									)
+								}
 								value={search}
 								onValueChange={setSearch}
 								className={cn(
@@ -633,6 +695,11 @@ function EmployeeSelectModalView({
 								mode={mode}
 								onSelect={handleSelect}
 								onDeselect={handleDeselect}
+								allowClear={allowClear}
+								clearLabel={clearLabel}
+								onClear={handleClearSingle}
+								pinnedIds={pinnedIds}
+								emptyMessage={emptyMessage}
 								isLoading={isLoading || isFetching}
 								hasMore={hasMore}
 								onLoadMore={loadMore}
@@ -671,10 +738,45 @@ function EmployeeSelectModalView({
 	);
 }
 
+function PreFilteredEmployeeSelectModal(props: EmployeeSelectModalProps) {
+	const viewModel = useEmployeeSelectModalViewModel(props);
+	return <EmployeeSelectModalView viewModel={viewModel} />;
+}
+
+function ServerEmployeeSelectModal(props: EmployeeSelectModalProps) {
+	const effectiveExcludeIds = props.excludeIds ?? EMPTY_EXCLUDE_IDS;
+	const showFilters = props.showFilters ?? true;
+	const serverQuery = useEmployeeSelect({
+		filters: props.filters,
+		includeFormerEmployees: props.includeFormerEmployees ?? false,
+		excludeIds: effectiveExcludeIds,
+		enabled: props.open,
+	});
+	const teamsQuery = useQuery({
+		queryKey: queryKeys.teams.list(""),
+		queryFn: async () => {
+			const result = await listTeams();
+			if (!result.success) {
+				throw new Error(result.error || "Failed to fetch teams");
+			}
+			return result.data;
+		},
+		enabled: props.open && showFilters,
+		staleTime: 5 * 60 * 1000,
+	});
+	const viewModel = useEmployeeSelectModalViewModel(props, {
+		...serverQuery,
+		teams: teamsQuery.data,
+	});
+	return <EmployeeSelectModalView viewModel={viewModel} />;
+}
+
 /**
  * Modal dialog for selecting employees with search and filters
  */
 export function EmployeeSelectModal(props: EmployeeSelectModalProps) {
-	const viewModel = useEmployeeSelectModalViewModel(props);
-	return <EmployeeSelectModalView viewModel={viewModel} />;
+	if (props.employees !== undefined) {
+		return <PreFilteredEmployeeSelectModal {...props} />;
+	}
+	return <ServerEmployeeSelectModal {...props} />;
 }

@@ -2,6 +2,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -67,12 +68,15 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 		},
 	];
 
-	// Convert filter options to FilterItem format
-	const employeeItems: FilterItem[] = (filterOptions?.employees || []).map((emp) => ({
-		id: emp.id,
-		label: `${emp.firstName} ${emp.lastName}`,
-		sublabel: emp.employeeNumber,
-	}));
+	// Convert filter options for selectors
+	const selectableEmployees = (filterOptions?.employees || []).map((emp) =>
+		toSelectableEmployee({
+			id: emp.id,
+			firstName: emp.firstName,
+			lastName: emp.lastName,
+			employeeNumber: emp.employeeNumber,
+		}),
+	);
 
 	const teamItems: FilterItem[] = (filterOptions?.teams || []).map((team) => ({
 		id: team.id,
@@ -150,29 +154,20 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 
 						return (
 							<>
-								<FilterSelector
+								<EmployeeMultiSelect
 									label={t("settings.scheduledExports.filters.employees", "Employees")}
-									items={employeeItems}
-									selectedIds={employeeIds}
-									onSelectionChange={(ids) => updateFilter("employeeIds", ids)}
-									allLabel={t("settings.scheduledExports.filters.allEmployees", "All Employees")}
-									selectedLabel={(count) =>
-										t("settings.scheduledExports.filters.selectedCount", "{count} selected", {
-											count,
-										})
-									}
+									placeholder={t("settings.scheduledExports.filters.allEmployees", "All Employees")}
 									emptyMessage={t(
 										"settings.scheduledExports.filters.noEmployees",
 										"No employees found",
 									)}
-									clearLabel={t(
-										"settings.scheduledExports.filters.clearSelection",
-										"Clear Selection",
-									)}
-									ariaLabel={t(
+									aria-label={t(
 										"settings.scheduledExports.filters.selectEmployees",
 										"Select employees to filter",
 									)}
+									employees={selectableEmployees}
+									value={employeeIds}
+									onChange={(ids) => updateFilter("employeeIds", ids)}
 								/>
 
 								<FilterSelector

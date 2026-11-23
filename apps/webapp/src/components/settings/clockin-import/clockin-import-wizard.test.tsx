@@ -2,7 +2,7 @@
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ChangeEvent, InputHTMLAttributes, ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	validateClockinCredentials: vi.fn(),
@@ -59,6 +59,14 @@ vi.mock("@/app/[locale]/(app)/settings/import/review-actions", () => ({
 }));
 
 import { ClockinImportWizard } from "./clockin-import-wizard";
+
+beforeAll(() => {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+});
 
 describe("ClockinImportWizard", () => {
 	beforeEach(() => {
@@ -118,7 +126,11 @@ describe("ClockinImportWizard", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Map Employees" }));
 		await screen.findByRole("button", { name: "Continue" });
-		fireEvent.change(screen.getByLabelText("Map Grace Hopper"), { target: { value: "" } });
+		fireEvent.click(screen.getByRole("combobox", { name: "Map Grace Hopper" }));
+		fireEvent.click(await screen.findByRole("option", { name: "Skip this employee" }));
+		await waitFor(() =>
+			expect(screen.queryByRole("option", { name: "Skip this employee" })).toBeNull(),
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 		await screen.findByText("Import Scope");

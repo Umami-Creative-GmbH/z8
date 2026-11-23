@@ -9,11 +9,11 @@ import {
 	deleteHolidayCategoryAssignment,
 	getHolidayAssignments,
 	getHolidayCategoryAssignments,
-} from "@/app/[locale]/(app)/settings/holidays/actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-actions";
 import {
 	deletePresetAssignment,
 	getPresetAssignments,
-} from "@/app/[locale]/(app)/settings/holidays/preset-actions";
+} from "@/app/[locale]/(app)/settings/vacation/holiday-preset-actions";
 import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
 import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
 import { SettingsLoadError } from "@/components/settings/settings-load-error";

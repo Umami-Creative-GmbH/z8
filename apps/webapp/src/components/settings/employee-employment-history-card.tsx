@@ -3,7 +3,7 @@
 import { IconCash, IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { ChangeWageForm } from "./employee-employment-history/change-wage-form";
 import { EmploymentHistoryForm } from "./employee-employment-history/form";
@@ -34,8 +35,8 @@ import {
 	formatWeeklyHours,
 	isCurrentConfirmed,
 	isFutureConfirmed,
-	toDateTime,
 	toEmploymentHistoryPayload,
+	toInstant,
 } from "./employee-employment-history/utils";
 
 export type {
@@ -60,12 +61,14 @@ export function EmployeeEmploymentHistoryCard({
 	changeWage,
 }: EmployeeEmploymentHistoryCardProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [isAdding, setIsAdding] = useState(false);
 	const [isChangingWage, setIsChangingWage] = useState(false);
-	const now = DateTime.utc();
+	const now = systemClock.nowInstant();
 	const sortedHistory = history.toSorted(
 		(a, b) =>
-			(toDateTime(b.validFrom)?.toMillis() ?? 0) - (toDateTime(a.validFrom)?.toMillis() ?? 0),
+			(toInstant(b.validFrom)?.epochMilliseconds ?? 0) -
+			(toInstant(a.validFrom)?.epochMilliseconds ?? 0),
 	);
 	const policyNameById = new Map(workPolicies.map((policy) => [policy.id, policy.name]));
 	const current = sortedHistory.find((entry) => isCurrentConfirmed(entry, now));
@@ -73,7 +76,8 @@ export function EmployeeEmploymentHistoryCard({
 		.filter((entry) => isFutureConfirmed(entry, now))
 		.toSorted(
 			(a, b) =>
-				(toDateTime(a.validFrom)?.toMillis() ?? 0) - (toDateTime(b.validFrom)?.toMillis() ?? 0),
+				(toInstant(a.validFrom)?.epochMilliseconds ?? 0) -
+				(toInstant(b.validFrom)?.epochMilliseconds ?? 0),
 		)[0];
 	const form = useForm({
 		defaultValues: defaultFormValues,
@@ -122,7 +126,9 @@ export function EmployeeEmploymentHistoryCard({
 	const pendingCancelEntry = pendingCancelId
 		? sortedHistory.find((entry) => entry.id === pendingCancelId)
 		: undefined;
-	const pendingCancelDate = pendingCancelEntry ? formatDate(pendingCancelEntry.validFrom) : null;
+	const pendingCancelDate = pendingCancelEntry
+		? formatDate(pendingCancelEntry.validFrom, locale)
+		: null;
 	const requestCancel = (historyId: string) => {
 		setCancelError(null);
 		setPendingCancelId(historyId);
@@ -200,6 +206,7 @@ export function EmployeeEmploymentHistoryCard({
 							"No confirmed contract context",
 						)}
 						t={t}
+						locale={locale}
 						policyNameById={policyNameById}
 					/>
 					<EmploymentHistoryContext
@@ -213,6 +220,7 @@ export function EmployeeEmploymentHistoryCard({
 							"No confirmed change scheduled",
 						)}
 						t={t}
+						locale={locale}
 						policyNameById={policyNameById}
 					/>
 				</div>
@@ -239,6 +247,7 @@ export function EmployeeEmploymentHistoryCard({
 					onConfirm={handleConfirm}
 					onCancel={requestCancel}
 					t={t}
+					locale={locale}
 					policyNameById={policyNameById}
 				/>
 				{lifecycleEvents}
@@ -315,8 +324,13 @@ function CancelEmploymentChangeDialog({
 							"settings.employmentHistory.cancelConfirmSummary",
 							"{hours} / week · {workModel} · {reviewState}",
 							{
-								hours: formatWeeklyHours(pendingCancelEntry.weeklyContractMinutes),
-								workModel: pendingCancelEntry.workModel,
+								hours:
+									pendingCancelEntry.weeklyContractMinutes !== null
+										? formatWeeklyHours(pendingCancelEntry.weeklyContractMinutes)
+										: t("settings.employmentHistory.inherited", "Inherited"),
+								workModel:
+									pendingCancelEntry.workModel ??
+									t("settings.employmentHistory.inherited", "Inherited"),
 								reviewState: pendingCancelEntry.reviewState,
 							},
 						)}

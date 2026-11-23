@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useRef } from "react";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { Input } from "@/components/ui/input";
 import {
 	TFormControl,
@@ -27,7 +28,6 @@ import {
 	ActualDateField,
 	ConditionField,
 	EquipmentFormPanel,
-	equipmentSelectClass,
 	NotesField,
 	QuantityField,
 	type SubmitHandover,
@@ -235,36 +235,33 @@ export function TransferEquipmentForm({
 								{t("settings.equipment.handover.employee", "Current employee")}
 							</TFormLabel>
 							<TFormControl hasError={field.state.meta.errors.length > 0}>
-								<select
+								<EmployeeSingleSelect
+									className="space-y-0"
 									aria-label={t(
 										"settings.equipment.handover.employee",
 										"Current employee",
 									)}
-									name={field.name}
-									className={equipmentSelectClass}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
+									value={field.state.value || null}
+									onChange={(value) => field.handleChange(value ?? "")}
 									onBlur={field.handleBlur}
-								>
-									<option value="">
-										{t(
-											"settings.equipment.handover.selectEmployee",
-											"Select a current employee…",
-										)}
-									</option>
-									{data.employees
+									placeholder={t(
+										"settings.equipment.handover.selectEmployee",
+										"Select a current employee…",
+									)}
+									employees={data.employees
 										.filter(
 											(employee) =>
 												!employee.former &&
 												employee.canIssue !== false &&
 												employee.id !== assignment.employeeId,
 										)
-										.map((employee) => (
-											<option key={employee.id} value={employee.id}>
-												{employee.name}
-											</option>
-										))}
-								</select>
+										.map((employee) =>
+											toSelectableEmployee({
+												id: employee.id,
+												name: employee.name,
+											}),
+										)}
+								/>
 							</TFormControl>
 							<TFormMessage field={field} />
 						</TFormItem>

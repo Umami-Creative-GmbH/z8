@@ -64,6 +64,21 @@ spec:
                 secretKeyRef:
                   name: z8-secrets
                   key: postgres-password
+            - name: DB_ALLOW_CONTRACT_CONSTRAINTS
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: db-allow-contract-constraints
+            - name: DB_ALLOW_POLICY_V1_SEAL
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: db-allow-policy-v1-seal
+            - name: DB_MIGRATION_LOCK_RETRIES
+              valueFrom:
+                configMapKeyRef:
+                  name: z8-config
+                  key: db-migration-lock-retries
           resources:
             requests:
               cpu: 100m

@@ -54,38 +54,71 @@ const state = vi.hoisted(() => ({
 	deleted: 0,
 }));
 
-const db = vi.hoisted(() => ({
-	query: {
-		location: {
-			findMany: vi.fn(async () => state.locations),
-			findFirst: vi.fn(async () => state.foundLocation),
-		},
-		locationSubarea: { findFirst: vi.fn(async () => state.foundSubarea) },
-		teamPermissions: { findMany: vi.fn(async () => state.teamPermissions) },
-		subareaEmployee: { findMany: vi.fn(async () => state.ownSubareas) },
-		employee: { findMany: vi.fn(async () => state.teamEmployees) },
-	},
-	insert: vi.fn(() => ({
-		values: (value: unknown) => ({
-			returning: async () => {
-				state.inserted.push(value);
-				return [{ id: "created-1" }];
-			},
+const db = vi.hoisted(() => {
+	const client: Record<string, any> = {
+		transaction: vi.fn(async (fn: (tx: Record<string, any>) => Promise<unknown>) => fn(client)),
+		execute: vi.fn(async (query: unknown) => {
+			const { PgDialect } = await import("drizzle-orm/pg-core");
+			const compiled = new PgDialect().sqlToQuery(query as never);
+			if (compiled.sql.includes('FROM "location"') && compiled.sql.includes("FOR UPDATE")) {
+				return {
+					rows: state.foundLocation
+						? [
+								{
+									id: state.foundLocation.id,
+									organizationId: state.foundLocation.organizationId,
+									name: state.foundLocation.name,
+									isActive: state.foundLocation.isActive,
+								},
+							]
+						: [],
+				};
+			}
+			if (compiled.sql.includes('FROM "work_policy_presence"')) {
+				return { rows: [] };
+			}
+			return { rows: [] };
 		}),
-	})),
-	update: vi.fn(() => ({
-		set: (value: unknown) => ({
+		select: vi.fn(() => ({
+			from: vi.fn(() => ({
+				where: vi.fn(() => ({
+					limit: vi.fn(async () => [{ timezone: "UTC" }]),
+				})),
+			})),
+		})),
+		query: {
+			location: {
+				findMany: vi.fn(async () => state.locations),
+				findFirst: vi.fn(async () => state.foundLocation),
+			},
+			locationSubarea: { findFirst: vi.fn(async () => state.foundSubarea) },
+			teamPermissions: { findMany: vi.fn(async () => state.teamPermissions) },
+			subareaEmployee: { findMany: vi.fn(async () => state.ownSubareas) },
+			employee: { findMany: vi.fn(async () => state.teamEmployees) },
+		},
+		insert: vi.fn(() => ({
+			values: (value: unknown) => ({
+				returning: async () => {
+					state.inserted.push(value);
+					return [{ id: "created-1" }];
+				},
+			}),
+		})),
+		update: vi.fn(() => ({
+			set: (value: unknown) => ({
+				where: async () => {
+					state.updated.push(value);
+				},
+			}),
+		})),
+		delete: vi.fn(() => ({
 			where: async () => {
-				state.updated.push(value);
+				state.deleted += 1;
 			},
-		}),
-	})),
-	delete: vi.fn(() => ({
-		where: async () => {
-			state.deleted += 1;
-		},
-	})),
-}));
+		})),
+	};
+	return client;
+});
 
 vi.mock("@/db", () => ({ db }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }));
@@ -302,7 +335,10 @@ describe("location and subarea writes", () => {
 			success: true,
 			data: undefined,
 		});
-		expect(await deleteLocation(NORTH)).toEqual({ success: true, data: undefined });
+		expect(await deleteLocation(NORTH)).toEqual({
+			success: true,
+			data: { outcome: "deleted", id: NORTH, name: "North Hub" },
+		});
 		expect(state.updated).toEqual([
 			expect.objectContaining({ city: "Bremen", updatedBy: "user-1" }),
 		]);

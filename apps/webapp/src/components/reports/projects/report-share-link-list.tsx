@@ -48,6 +48,8 @@ interface ReportShareLinkListProps {
 	target?: ShareTarget;
 	/** Show which project or customer each link shares (organization list). */
 	showReport?: boolean;
+	/** Called after a link is revoked successfully. */
+	onRevoked?: () => void;
 }
 
 /**
@@ -107,6 +109,7 @@ export function ReportShareLinkList(props: ReportShareLinkListProps) {
 function ReportShareLinkArrival({
 	target,
 	showReport = false,
+	onRevoked,
 	userId,
 	organizationId,
 }: ReportShareLinkListProps & { userId: string; organizationId: string }) {
@@ -153,7 +156,13 @@ function ReportShareLinkArrival({
 	return (
 		<ul className="divide-y rounded-lg border">
 			{query.data.map((link) => (
-				<ReportShareLinkRow key={link.id} link={link} showReport={showReport} scope={scope} />
+				<ReportShareLinkRow
+					key={link.id}
+					link={link}
+					showReport={showReport}
+					onRevoked={onRevoked}
+					scope={scope}
+				/>
 			))}
 		</ul>
 	);
@@ -173,10 +182,12 @@ function StatusBadge({ status }: { status: ShareLinkStatus }) {
 function ReportShareLinkRow({
 	link,
 	showReport,
+	onRevoked,
 	scope,
 }: {
 	link: ShareLinkSummary;
 	showReport: boolean;
+	onRevoked?: () => void;
 	scope: ShareReadScope;
 }) {
 	const { t } = useTranslate();
@@ -229,6 +240,7 @@ function ReportShareLinkRow({
 					await queryClient.invalidateQueries({
 						queryKey: queryKeys.reportShareLinks.all,
 					});
+					onRevoked?.();
 				} catch {
 					if (lifetime.current === generation) setRevokeError({ detail: null });
 				}

@@ -2,9 +2,11 @@
 
 import { IconAlertCircle, IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import { previewNextExecutionsAction } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { ScheduleType } from "@/lib/scheduled-exports/domain/types";
 
@@ -16,6 +18,7 @@ interface CronPreviewProps {
 
 export function CronPreview({ scheduleType, cronExpression, timezone }: CronPreviewProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const hasValidInput = scheduleType !== "cron" || Boolean(cronExpression);
 	const [nextRuns, setNextRuns] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -114,11 +117,19 @@ export function CronPreview({ scheduleType, cronExpression, timezone }: CronPrev
 				)}
 			>
 				{displayRuns.map((run) => {
-					const dt = DateTime.fromISO(run).setZone(timezone);
+					const formatted = formatInstant(
+						parseInstant(run),
+						{
+							locale,
+							timezone,
+							timeFormat: localeDefaultTimeFormat(locale),
+						},
+						"dateTimeMedium",
+					);
 					return (
 						<li key={run} className="flex items-center gap-2">
 							<span className="size-2 rounded-full bg-primary/50" aria-hidden="true" />
-							{dt.toLocaleString(DateTime.DATETIME_MED_WITH_WEEKDAY)}
+							{formatted}
 						</li>
 					);
 				})}

@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { OrganizationMfaPolicyPanel } from "@/components/organization-mfa/settings";
 import { actionData } from "@/components/settings/enterprise/action-data";
@@ -7,9 +6,7 @@ import { SocialOAuthManagement } from "@/components/settings/enterprise/social-o
 import { SSOProviderManagement } from "@/components/settings/enterprise/sso-provider-management";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
-import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
-import { getOrganizationPlatformOrigins } from "@/lib/auth-domain-config";
+import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import {
@@ -25,18 +22,11 @@ async function IdentitySettingsContent() {
 		actionData(getEnterpriseIdentitySetupAction()),
 	]);
 
-	const [providers, socialOAuthConfigs, organizationRecord] = await Promise.all([
+	const [providers, socialOAuthConfigs, callbackBaseUrl] = await Promise.all([
 		actionData(listSSOProvidersAction()),
 		actionData(listSocialOAuthConfigsAction()),
-		db.query.organization.findFirst({
-			where: eq(organization.id, organizationId),
-			columns: { id: true, slug: true },
-		}),
+		getOrganizationBaseUrl(organizationId),
 	]);
-	const [callbackBaseUrl] = getOrganizationPlatformOrigins({
-		id: organizationId,
-		slug: organizationRecord?.slug ?? organizationId,
-	});
 	return (
 		<SettingsTabbedPage
 			key={organizationId}
@@ -50,7 +40,7 @@ async function IdentitySettingsContent() {
 						"mfa.policy.tabDescription",
 						"Require verified local authentication with controlled enrollment deadlines",
 					),
-					measure: true,
+					// The member table needs the full frame; the policy form bounds itself.
 					panel: <OrganizationMfaPolicyPanel organizationId={organizationId} />,
 				},
 				{
@@ -60,12 +50,13 @@ async function IdentitySettingsContent() {
 						"settings.enterpriseIdentitySetup.description",
 						"Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization.",
 					),
-					measure: true,
+					// The wizard bounds its own step column; its step list needs the room beside it.
 					panel: (
 						<IdentitySetupWizard
 							callbackBaseUrl={callbackBaseUrl}
 							initialSetup={setup}
 							organizationId={organizationId}
+							ssoProviders={providers}
 						/>
 					),
 				},

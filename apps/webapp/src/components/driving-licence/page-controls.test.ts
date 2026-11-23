@@ -20,16 +20,18 @@ function sources(directory: string): string[] {
 const FILES = [
 	...sources("src/components/driving-licence"),
 	...sources("src/app/[locale]/(app)/driving-licence"),
+	...sources("src/app/[locale]/(app)/team/driving-licence"),
 	...sources("src/app/[locale]/(app)/settings/driving-licence"),
 ];
 
 describe("driving licence controls", () => {
-	it("scans the component folder and both route folders", () => {
+	it("scans the component folder and the route folders", () => {
 		expect(FILES).toEqual(
 			expect.arrayContaining([
 				"src/components/driving-licence/supplement-form.tsx",
 				"src/app/[locale]/(app)/driving-licence/page.tsx",
-				"src/app/[locale]/(app)/driving-licence/checks/[employee]/page.tsx",
+				"src/app/[locale]/(app)/team/driving-licence/page.tsx",
+				"src/app/[locale]/(app)/team/driving-licence/[employee]/page.tsx",
 				"src/app/[locale]/(app)/settings/driving-licence/page.tsx",
 			]),
 		);

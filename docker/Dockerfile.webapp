@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
 ARG PNPM_VERSION=12.21.0
-ARG TURBO_VERSION=2.11.7
+ARG TURBO_VERSION=2.11.12
 ARG NEXT_DEPLOYMENT_ID
 ARG BUILD_HASH
 ARG NEXT_PUBLIC_BUILD_HASH
 
-FROM node:${NODE_VERSION}-alpine AS base
+FROM node:${NODE_VERSION}-alpine AS runtime-base
 
 RUN apk add --no-cache \
     ca-certificates \
@@ -15,20 +15,24 @@ RUN apk add --no-cache \
     libstdc++ \
     tini
 
-ARG PNPM_VERSION
-ENV PNPM_HOME=/pnpm
-ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
+    TURBO_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     TZ=UTC \
     PGOPTIONS="-c timezone=UTC"
 
+WORKDIR /app
+
+FROM runtime-base AS base
+
+ARG PNPM_VERSION
+ENV PNPM_HOME=/pnpm
+ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
+
 RUN mkdir -p "${PNPM_HOME}" && \
     npm install --global pnpm@${PNPM_VERSION}
-
-WORKDIR /app
 
 FROM base AS turbo-source
 
@@ -50,45 +54,40 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --store-dir /root/.local/share/pnpm/store --lockfile-only && \
     pnpm install --store-dir /root/.local/share/pnpm/store --frozen-lockfile
 
-FROM base AS workspace
+FROM deps AS workspace
 ENV SKIP_ENV_VALIDATION=1
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 COPY --from=pruner /app/out/full/ ./
-COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY .oxfmtrc.json ./
 
 FROM workspace AS webapp-builder
 ENV CI=true
+RUN pnpm --filter webapp run generate-licenses || echo "{}" > apps/webapp/src/data/licenses.json
+RUN pnpm --filter webapp run i18n:metadata
 ARG NEXT_DEPLOYMENT_ID
 ARG BUILD_HASH
 ARG NEXT_PUBLIC_BUILD_HASH
 ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID} \
     BUILD_HASH=${BUILD_HASH} \
     NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}
-RUN pnpm --filter webapp run generate-licenses || echo "{}" > apps/webapp/src/data/licenses.json
-RUN pnpm --filter webapp run i18n:metadata
 # Server action IDs are salted with NEXT_SERVER_ACTIONS_ENCRYPTION_KEY at build
 # time. A stable key keeps IDs stable across deployments so open tabs keep working.
+# Preserve pnpm's relative links and the files used by the logging worker, then
+# drop builder-only .next/server duplicates so layer caching stays compact.
 RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
+    --mount=type=bind,source=docker/scripts,target=/tmp/docker-scripts \
     --mount=type=secret,id=next_server_actions_encryption_key,required=false \
+    set -o pipefail && \
     if [ -s /run/secrets/next_server_actions_encryption_key ]; then \
       export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/next_server_actions_encryption_key)"; \
     else \
       echo "WARNING: next_server_actions_encryption_key build secret missing; server action IDs will change on every build" >&2; \
     fi && \
-    pnpm --filter webapp exec next build
+    pnpm --filter webapp exec next build && \
+    node /tmp/docker-scripts/standalone-runtime-files.mjs > /tmp/runtime-files && \
+    tar -cf - -T /tmp/runtime-files | tar -xf - -C apps/webapp/.next/standalone && \
+    rm -rf /tmp/runtime-files apps/webapp/.next/server apps/webapp/.next/types apps/webapp/.next/diagnostics apps/webapp/.next/trace
 
-FROM node:${NODE_VERSION}-alpine AS webapp
-
-RUN apk add --no-cache ca-certificates curl libc6-compat libstdc++ tini
-ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3000 \
-    HOSTNAME=0.0.0.0 \
-    TZ=UTC \
-    PGOPTIONS="-c timezone=UTC"
-WORKDIR /app
+FROM runtime-base AS webapp
 
 ARG NEXT_DEPLOYMENT_ID
 ARG BUILD_HASH

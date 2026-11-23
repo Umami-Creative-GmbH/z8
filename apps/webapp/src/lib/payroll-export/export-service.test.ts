@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 
 const mockState = vi.hoisted(() => ({
 	findFirst: vi.fn(),
@@ -69,9 +69,7 @@ vi.mock("@/db", () => {
 						values: vi.fn((values: unknown) => {
 							mockState.inserts.push({ table, values });
 							return {
-								returning: async () => [
-									{ id: "job-new", ...(values as object) },
-								],
+								returning: async () => [{ id: "job-new", ...(values as object) }],
 							};
 						}),
 					})),
@@ -95,6 +93,16 @@ vi.mock("@/lib/payroll-collection/payroll-work-collection-reader", () => ({
 vi.mock("@/lib/payroll-collection/payroll-export-work-input", () => ({
 	insertPayrollExportWorkInput: mockState.insertInput,
 	readPayrollExportWorkInput: mockState.readInput,
+}));
+
+// The days a file carried (#1899) are tested on PostgreSQL with confirming it as paid.
+vi.mock("@/lib/payroll-period/carried-days", () => ({
+	readExportCarriedDays: vi.fn(async () => []),
+	insertExportCarriedDays: vi.fn(async () => undefined),
+}));
+// Leaving settled days out (#1898) is tested on PostgreSQL too.
+vi.mock("@/lib/payroll-period/settled-days-for", () => ({
+	settledDaysFor: vi.fn(async () => []),
 }));
 
 // The custom field identifier read (#821) has its own PostgreSQL suite.
@@ -183,9 +191,8 @@ vi.mock("./data-fetcher", () => ({
 const { createExportJob, markPayrollExportJobFailed, processExportJob } =
 	await import("./export-service");
 const dataFetcher = await import("./data-fetcher");
-const { PayrollWorkCollectionBlockedError } = await import(
-	"@/lib/payroll-collection/payroll-work-collection-blocked-error"
-);
+const { PayrollWorkCollectionBlockedError } =
+	await import("@/lib/payroll-collection/payroll-work-collection-blocked-error");
 
 const scopedPredicate = (jobId: string, organizationId: string) => ({
 	operator: "and",
@@ -215,17 +222,13 @@ describe("payroll export job transitions", () => {
 		);
 
 		expect(mockState.updates).toHaveLength(2);
-		expect(mockState.updates[0]?.where).toEqual(
-			scopedPredicate(jobId, organizationId),
-		);
+		expect(mockState.updates[0]?.where).toEqual(scopedPredicate(jobId, organizationId));
 		expect(mockState.findFirst).toHaveBeenCalledWith(
 			expect.objectContaining({
 				where: scopedPredicate(jobId, organizationId),
 			}),
 		);
-		expect(mockState.updates[1]?.where).toEqual(
-			scopedPredicate(jobId, organizationId),
-		);
+		expect(mockState.updates[1]?.where).toEqual(scopedPredicate(jobId, organizationId));
 	});
 
 	it("marks a payroll export job failed with a generic message and tenant scope", async () => {
@@ -257,8 +260,8 @@ describe("payroll export job transitions", () => {
 describe("payroll export under scoped work collection (#322)", () => {
 	const filters = {
 		dateRange: {
-			start: DateTime.fromISO("2026-07-01", { zone: "utc" }),
-			end: DateTime.fromISO("2026-07-31", { zone: "utc" }),
+			start: parsePlainDate("2026-07-01"),
+			end: parsePlainDate("2026-07-31"),
 		},
 		employeeIds: ["employee-1"],
 	};
@@ -327,22 +330,19 @@ describe("payroll export under scoped work collection (#322)", () => {
 			repairActorUserId: "user-1",
 		});
 
-		expect(mockState.collectPayrollWork).toHaveBeenCalledWith(
-			expect.anything(),
-			{
-				organizationId: "org-1",
-				filters: {
-					startDate: "2026-07-01",
-					endDate: "2026-07-31",
-					employeeIds: ["employee-1"],
-					teamIds: undefined,
-					projectIds: undefined,
-				},
-				repairActorUserId: "user-1",
-				// The configuration names no custom field identifier (#821).
-				personnelIdentifier: null,
+		expect(mockState.collectPayrollWork).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			filters: {
+				startDate: "2026-07-01",
+				endDate: "2026-07-31",
+				employeeIds: ["employee-1"],
+				teamIds: undefined,
+				projectIds: undefined,
 			},
-		);
+			repairActorUserId: "user-1",
+			// The configuration names no custom field identifier (#821).
+			personnelIdentifier: null,
+		});
 		expect(dataFetcher.countWorkPeriods).not.toHaveBeenCalled();
 		expect(mockState.inserts).toHaveLength(1);
 		expect(mockState.insertInput).toHaveBeenCalledWith(
@@ -402,9 +402,7 @@ describe("payroll export under scoped work collection (#322)", () => {
 			filters,
 		});
 
-		await expect(refusal).rejects.toBeInstanceOf(
-			PayrollWorkCollectionBlockedError,
-		);
+		await expect(refusal).rejects.toBeInstanceOf(PayrollWorkCollectionBlockedError);
 		await expect(refusal).rejects.toMatchObject({
 			blockers: [expect.objectContaining({ kind: "pending_work_approval" })],
 		});
@@ -457,19 +455,11 @@ describe("payroll export under scoped work collection (#322)", () => {
 		await processExportJob({ jobId: "job-1", organizationId: "org-1" });
 
 		expect(dataFetcher.fetchWorkPeriodsForExport).not.toHaveBeenCalled();
-		expect(mockState.readInput).toHaveBeenCalledWith(
-			expect.anything(),
-			"org-1",
-			"job-1",
-		);
-		expect(dataFetcher.fetchAbsencesForExport).toHaveBeenCalledWith(
-			"org-1",
-			expect.anything(),
-			{ canonicalReadiness: "absences" },
-		);
-		const [firstLines, secondLines] = mockState.transform.mock.calls.map(
-			([lines]) => lines,
-		);
+		expect(mockState.readInput).toHaveBeenCalledWith(expect.anything(), "org-1", "job-1");
+		expect(dataFetcher.fetchAbsencesForExport).toHaveBeenCalledWith("org-1", expect.anything(), {
+			canonicalReadiness: "absences",
+		});
+		const [firstLines, secondLines] = mockState.transform.mock.calls.map(([lines]) => lines);
 		expect(secondLines).toEqual(firstLines);
 		expect(firstLines).toEqual([
 			expect.objectContaining({
@@ -479,8 +469,12 @@ describe("payroll export under scoped work collection (#322)", () => {
 				employeeNumber: "E-1",
 			}),
 		]);
-		expect(firstLines[0].startTime.toISO()).toBe("2026-07-10T07:00:00.000Z");
-		expect(firstLines[0].endTime.toISO()).toBe("2026-07-10T09:00:40.000Z");
+		expect(firstLines[0].startTime.toInstant().toString({ fractionalSecondDigits: 3 })).toBe(
+			"2026-07-10T07:00:00.000Z",
+		);
+		expect(firstLines[0].endTime.toInstant().toString({ fractionalSecondDigits: 3 })).toBe(
+			"2026-07-10T09:00:40.000Z",
+		);
 	});
 });
 
@@ -511,9 +505,7 @@ describe("stored payroll export files (#1008)", () => {
 		vi.mocked(dataFetcher.getWageTypeMappings).mockResolvedValue([]);
 		mockState.transform.mockReturnValue(exported);
 		const storage = await import("@/lib/storage/export-s3-client");
-		vi.mocked(storage.getPresignedUrl).mockResolvedValue(
-			"https://s3.example/signed",
-		);
+		vi.mocked(storage.getPresignedUrl).mockResolvedValue("https://s3.example/signed");
 	});
 
 	it("uploads a run under the sync threshold when asked to store it and returns its key", async () => {
@@ -526,9 +518,7 @@ describe("stored payroll export files (#1008)", () => {
 		);
 
 		const s3Key = outcome.s3Key;
-		expect(s3Key).toMatch(
-			/^payroll-exports\/org-1\/job-1\/[0-9a-f-]{36}\/export\.csv$/,
-		);
+		expect(s3Key).toMatch(/^payroll-exports\/org-1\/job-1\/[0-9a-f-]{36}\/export\.csv$/);
 		expect(storage.uploadExport).toHaveBeenCalledWith(
 			"org-1",
 			s3Key,
@@ -555,13 +545,8 @@ describe("stored payroll export files (#1008)", () => {
 			{ storeFile: true },
 		);
 
-		expect(outcome.s3Key).toMatch(
-			/^payroll-exports\/org-1\/job-1\/[0-9a-f-]{36}\/export\.csv$/,
-		);
-		expect(storage.getPresignedUrl).toHaveBeenCalledWith(
-			"org-1",
-			outcome.s3Key,
-		);
+		expect(outcome.s3Key).toMatch(/^payroll-exports\/org-1\/job-1\/[0-9a-f-]{36}\/export\.csv$/);
+		expect(storage.getPresignedUrl).toHaveBeenCalledWith("org-1", outcome.s3Key);
 	});
 
 	it("keeps an interactive run under the threshold inline, without an upload", async () => {
@@ -574,7 +559,7 @@ describe("stored payroll export files (#1008)", () => {
 		});
 
 		expect(storage.uploadExport).not.toHaveBeenCalled();
-		expect(outcome).toEqual({ result: exported });
+		expect(outcome).toEqual({ result: exported, settledDaysLeftOut: 0 });
 		expect(mockState.updates.at(-1)?.set).not.toHaveProperty("s3Key");
 	});
 });

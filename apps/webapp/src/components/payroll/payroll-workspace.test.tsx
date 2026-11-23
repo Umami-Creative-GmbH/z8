@@ -5,6 +5,7 @@ import { Activity } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { payrollBlockerIdentity } from "@/lib/payroll-workspace/blocker-identity";
 import type { PayrollBlockerType, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
+import { PayrollClosedMonthsWorkspace } from "./payroll-closed-months-workspace";
 import { PayrollWorkspace } from "./payroll-workspace";
 
 const actionMocks = vi.hoisted(() => ({
@@ -34,11 +35,41 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("next-intl", () => ({
 	useLocale: () => activeLocale,
 }));
+// The app router keeps useSearchParams in step with history.replaceState.
+vi.mock("next/navigation", () => ({
+	useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+}));
 vi.mock("sonner", () => ({ toast: toastMocks }));
 vi.mock("@tanstack/react-query", () => ({
 	useQueryClient: () => ({ invalidateQueries: async () => undefined }),
 }));
 vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
+// The Days grid only displays the payroll period read; it has no seam of its own (#1891).
+vi.mock("./workspace/payroll-days-tab", () => ({ PayrollDaysTab: () => null }));
+// Settling reads and writes through the payroll period module, tested on PostgreSQL (#1896).
+vi.mock("./workspace/payroll-settlement-tab", () => ({
+	PayrollSettlementTab: () => <p>Settlement tab</p>,
+}));
+// Confirming an export as paid is tested on PostgreSQL at the payroll period module (#1899).
+vi.mock("./workspace/payroll-confirm-paid-card", () => ({ PayrollConfirmPaidCard: () => null }));
+vi.mock("./workspace/payroll-export-history-card", () => ({
+	PayrollExportHistoryCard: () => <div data-testid="payroll-export-history-card">Export History</div>,
+}));
+vi.mock("./workspace/payroll-overview-readiness-section", () => ({
+	PayrollOverviewReadinessSection: () => (
+		<section data-testid="payroll-overview-readiness-section">Payroll Readiness</section>
+	),
+}));
+vi.mock("@/components/settings/closed-months/closed-months-settings", () => ({
+	ClosedMonthsSettings: () => <div data-testid="closed-months-settings">Closed months panel</div>,
+}));
+vi.mock("./workspace/payroll-settlement-figures", () => ({
+	PayrollSettlementFigures: () => null,
+}));
+vi.mock("./workspace/payroll-absences-tab", () => ({ PayrollAbsencesTab: () => null }));
 vi.mock("./payroll-baselines-card", () => ({
 	PayrollBaselinesCard: () => null,
 }));
@@ -132,6 +163,10 @@ function blockerSelector(type: PayrollBlockerType, id: string) {
 	return `[data-payroll-blocker-key="${payrollBlockerIdentity({ id, type })}"]`;
 }
 
+function openPayrollTab(name: "Overview" | "Days" | "Absences" | "Settlement" | "Export") {
+	fireEvent.click(screen.getByRole("tab", { name }));
+}
+
 function expandPayrollBlockers(name: string | RegExp = /payroll blockers need review/) {
 	const region = screen.getByRole("region", { name });
 	const trigger = within(region).getByRole("button", { name });
@@ -162,6 +197,61 @@ function deferred<T>() {
 }
 
 describe("PayrollWorkspace", () => {
+	it("opens on the Overview tab with the Days, Absences, Settlement and Export tabs beside it", () => {
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
+		expect(tabs).toEqual(["Overview", "Days", "Absences", "Settlement", "Export"]);
+		expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		expect(screen.getByRole("heading", { name: "Employee totals" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Trigger export" })).toBeNull();
+	});
+	it("stores the selected tab in the URL and keeps it on the next visit", () => {
+		const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		openPayrollTab("Export");
+		expect(new URLSearchParams(window.location.search).get("tab")).toBe("export");
+		expect(screen.getByRole("button", { name: "Trigger export" })).toBeTruthy();
+		view.unmount();
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expect(screen.getByRole("tab", { name: "Export" }).getAttribute("aria-selected")).toBe("true");
+		expect(screen.getByRole("button", { name: "Trigger export" })).toBeTruthy();
+	});
+	it("moves settling days by hand from the Export tab to the Settlement tab", () => {
+		window.history.replaceState(null, "", "/payroll");
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+
+		openPayrollTab("Settlement");
+		expect(new URLSearchParams(window.location.search).get("tab")).toBe("settlement");
+		expect(screen.getByText("Settlement tab")).toBeTruthy();
+
+		openPayrollTab("Export");
+		expect(
+			screen.getByText(
+				"To settle days by hand, for example when you pay from the PDF, use the Settlement tab.",
+			),
+		).toBeTruthy();
+	});
+	it("opens the Settlement tab from a shared link", () => {
+		window.history.replaceState(null, "", "/payroll?tab=settlement");
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expect(screen.getByRole("tab", { name: "Settlement" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+	});
+	it("opens the tab named in a shared link and ignores an unknown one", () => {
+		window.history.replaceState(null, "", "/payroll?tab=absences");
+		const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expect(screen.getByRole("tab", { name: "Absences" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		view.unmount();
+		window.history.replaceState(null, "", "/payroll?tab=nonsense");
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+	});
 	it("replaces records when another organization arrives for the same actor and organization name", () => {
 		const formats = [{ id: "datev_lohn", label: "DATEV" }];
 		const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
@@ -213,6 +303,7 @@ describe("PayrollWorkspace", () => {
 			actionMocks.startScopedPayrollExportAction.mockReturnValueOnce(pending.promise);
 			const formats = [{ id: "datev_lohn", label: "DATEV" }];
 			const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+			openPayrollTab("Export");
 			fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
 			view.rerender(
 				<PayrollWorkspace initialSummary={arrivingScope(scope)} exportFormats={formats} />,
@@ -243,6 +334,7 @@ describe("PayrollWorkspace", () => {
 			try {
 				const formats = [{ id: "datev_lohn", label: "DATEV" }];
 				const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+				openPayrollTab("Export");
 				fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
 				view.rerender(
 					<PayrollWorkspace initialSummary={arrivingScope(scope)} exportFormats={formats} />,
@@ -301,6 +393,7 @@ describe("PayrollWorkspace", () => {
 			/>
 		);
 		const view = render(<Activity mode="visible">{workspace}</Activity>);
+		openPayrollTab("Export");
 		fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
 		view.rerender(<Activity mode="hidden">{workspace}</Activity>);
 		view.rerender(<Activity mode="visible">{workspace}</Activity>);
@@ -321,6 +414,7 @@ describe("PayrollWorkspace", () => {
 		vi.stubGlobal("URL", { createObjectURL, revokeObjectURL: vi.fn() });
 		try {
 			const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+			openPayrollTab("Export");
 			fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
 			view.unmount();
 			await act(async () =>
@@ -341,13 +435,14 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		openPayrollTab("Export");
 		fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
-		await waitFor(() =>
-			expect(toastMocks.error).toHaveBeenCalledWith("Payroll workspace action failed"),
-		);
-		expect(screen.getByRole("button", { name: "Trigger export" }).hasAttribute("disabled")).toBe(
-			false,
-		);
+		await waitFor(() => {
+			expect(toastMocks.error).toHaveBeenCalledWith("Payroll workspace action failed");
+			expect(screen.getByRole("button", { name: "Trigger export" }).hasAttribute("disabled")).toBe(
+				false,
+			);
+		});
 	});
 	it("does not announce a late export after leaving the payroll workspace", async () => {
 		const pending =
@@ -365,6 +460,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		openPayrollTab("Export");
 		fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
 		view.unmount();
 		await act(async () =>
@@ -372,7 +468,7 @@ describe("PayrollWorkspace", () => {
 		);
 		expect(toastMocks.success).not.toHaveBeenCalled();
 	});
-	it("states the organization and puts employee totals before supporting comparison records", () => {
+	it("states the organization, shows employee totals on Overview and comparison records on Export", () => {
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -380,11 +476,11 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 		expect(screen.getByText("Acme GmbH")).toBeTruthy();
-		const totals = screen.getByRole("heading", { name: "Employee totals" });
-		const comparison = screen.getByLabelText("Comparison selection");
-		expect(
-			totals.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING,
-		).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Employee totals" })).toBeTruthy();
+		expect(screen.queryByLabelText("Comparison selection")).toBeNull();
+		openPayrollTab("Export");
+		expect(screen.getByLabelText("Comparison selection")).toBeTruthy();
+		expect(screen.queryByRole("heading", { name: "Employee totals" })).toBeNull();
 		expect(
 			screen.getByText("Export prepares payroll data. It does not make a payment."),
 		).toBeTruthy();
@@ -409,6 +505,12 @@ describe("PayrollWorkspace", () => {
 
 	beforeEach(() => {
 		vi.resetAllMocks();
+		globalThis.ResizeObserver = class ResizeObserver {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		};
+		window.history.replaceState(null, "", "/payroll");
 		translateOverrides = {};
 		activeLocale = "en";
 		actionMocks.dismissPayrollBlockerAction.mockResolvedValue({
@@ -440,6 +542,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Translated payroll")).toBeTruthy();
 		expect(screen.getByText("Translated payroll description")).toBeTruthy();
 		expect(screen.getByText("Translated selected period")).toBeTruthy();
+		openPayrollTab("Export");
 		expect(screen.getByRole("button", { name: "Translated download PDF" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Translated trigger export" })).toBeTruthy();
 	});
@@ -511,6 +614,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.queryByLabelText("Engineering")).toBeNull();
 		expect(screen.getAllByText("Ada Lovelace").length).toBeGreaterThanOrEqual(1);
 		expect(screen.getByText("Missing clock-out")).toBeTruthy();
+		openPayrollTab("Export");
 		expect(screen.getByText("Download PDF")).toBeTruthy();
 		expect(screen.getByText("Trigger export")).toBeTruthy();
 	});
@@ -720,8 +824,8 @@ describe("PayrollWorkspace", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Confirm (1)" }));
 		await waitFor(() => expect(screen.getByText("1 employees selected")).toBeTruthy());
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
@@ -829,11 +933,10 @@ describe("PayrollWorkspace", () => {
 			})),
 			blockers: [],
 		});
-		actionMocks.dismissPayrollBlockerAction.mockImplementation(
-			(request: { blockerType: string }) =>
-				request.blockerType === "missing_clock_out"
-					? firstDismissal.promise
-					: secondDismissal.promise,
+		actionMocks.dismissPayrollBlockerAction.mockImplementation((request: { blockerType: string }) =>
+			request.blockerType === "missing_clock_out"
+				? firstDismissal.promise
+				: secondDismissal.promise,
 		);
 		actionMocks.getPayrollWorkspaceSummaryAction
 			.mockReturnValueOnce(firstRefresh.promise)
@@ -1451,7 +1554,7 @@ describe("PayrollWorkspace", () => {
 		await waitFor(() =>
 			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
 		);
-		const chosenControl = screen.getByRole("button", { name: "Download PDF" });
+		const chosenControl = screen.getByRole("button", { name: "Specific teams" });
 		chosenControl.focus();
 		expect(document.activeElement).toBe(chosenControl);
 
@@ -1604,7 +1707,7 @@ describe("PayrollWorkspace", () => {
 		clearButton.focus();
 		fireEvent.click(clearButton);
 		await waitFor(() => expect(clearButton).toHaveProperty("disabled", true));
-		const chosenControl = screen.getByRole("button", { name: "Download PDF" });
+		const chosenControl = screen.getByRole("button", { name: "Specific teams" });
 		chosenControl.focus();
 		expect(document.activeElement).toBe(chosenControl);
 		await act(async () => dismissal.resolve({ success: false, error: "Still blocked" }));
@@ -1926,22 +2029,20 @@ describe("PayrollWorkspace", () => {
 			"[data-payroll-period-controls]",
 		);
 		expect(controlsRail).toBeTruthy();
-		expect(controlsRail?.className).toContain("lg:grid-cols-[minmax(0,1fr)_minmax(22rem,auto)]");
 
 		const dateControls = (periodCard as HTMLElement).querySelector("[data-payroll-date-controls]");
 		expect(dateControls).toBeTruthy();
 		expect(dateControls?.className).toContain("lg:grid-cols-[auto_minmax(0,1fr)]");
 
-		const exportControls = (periodCard as HTMLElement).querySelector(
-			"[data-payroll-export-controls]",
-		);
-		expect(exportControls).toBeTruthy();
-		expect(exportControls?.className).toContain("sm:grid-cols-[minmax(0,1fr)]");
+		// The period and scope share one bar; the export controls live on the Export tab.
+		expect((periodCard as HTMLElement).querySelector("[data-payroll-scope-controls]")).toBeTruthy();
+		expect((periodCard as HTMLElement).querySelector("[data-payroll-export-controls]")).toBeNull();
 	});
 
 	it("disables export controls when no export formats are configured", () => {
 		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
 
+		openPayrollTab("Export");
 		const exportLabel = screen.getByText("Payroll export target");
 		const exportTarget = screen.getByLabelText("Payroll export target") as HTMLButtonElement;
 		const triggerExportButton = screen.getByRole("button", {
@@ -1969,6 +2070,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.queryByLabelText("Ada Lovelace")).toBeNull();
 		expect(screen.queryByLabelText("Engineering")).toBeNull();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+		openPayrollTab("Export");
 		expect(
 			(
 				screen.getByRole("button", {
@@ -2013,7 +2115,7 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getAllByText("Specific employees").length).toBeGreaterThanOrEqual(2);
 		expect(screen.getByText("Choose employees to include in this payroll scope.")).toBeTruthy();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
-		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		fireEvent.click(screen.getByRole("button", { name: "Close" }));
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog", { name: "Specific employees" })).toBeNull();
 		});
@@ -2131,11 +2233,11 @@ describe("PayrollWorkspace", () => {
 
 		const sheet = await screen.findByRole("dialog");
 		expect(within(sheet).getByRole("heading", { name: "Specific employees" })).toBeTruthy();
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
 
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 
-		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Confirm (1)" }));
 
 		await waitFor(() => {
 			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
@@ -2156,12 +2258,12 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Grace Hopper" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Grace Hopper/i }));
 
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 
-		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Confirm (2)" }));
 
 		await waitFor(() => {
 			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith(
@@ -2181,8 +2283,8 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		const sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
 
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog")).toBeNull();
@@ -2202,8 +2304,8 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 
 		let sheet = await screen.findByRole("dialog");
-		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
-		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		fireEvent.click(within(sheet).getByRole("option", { name: /Ada Lovelace/i }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Confirm (1)" }));
 
 		await waitFor(() => {
 			expect(screen.getByText("1 employees selected")).toBeTruthy();
@@ -2228,6 +2330,7 @@ describe("PayrollWorkspace", () => {
 		expect(employeeSummaryCard).toBeTruthy();
 		expect(within(employeeSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
 		expect(screen.queryByText("E-1")).toBeNull();
+		openPayrollTab("Export");
 		expect(
 			(
 				screen.getByRole("button", {
@@ -2265,7 +2368,7 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 		sheet = await screen.findByRole("dialog");
 		expect(within(sheet).getByText("No assigned employees in this payroll scope.")).toBeTruthy();
-		fireEvent.click(within(sheet).getByRole("button", { name: "Cancel" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
 
 		await waitFor(() => {
 			expect(screen.queryByRole("dialog")).toBeNull();
@@ -2542,6 +2645,7 @@ it.each([
 			exportFormats={[{ id: formatId, label: formatId }]}
 		/>,
 	);
+	openPayrollTab("Export");
 	const comparison = screen.queryByLabelText("Comparison selection");
 	expect(Boolean(comparison)).toBe(visible);
 	if (comparison)
@@ -2550,4 +2654,94 @@ it.each([
 			startDate: "2026-06-01",
 			endDate: "2026-06-30",
 		});
+});
+
+describe("PayrollWorkspace unified IA (#1957)", () => {
+	const closedMonthsOverview = {
+		canClose: true,
+		canReopen: true,
+		timezone: "Europe/Berlin",
+		months: [],
+		history: [],
+		teams: [],
+		locations: [],
+		employees: [],
+		settings: { autoCloseEnabled: false, autoCloseAfterDays: 5 },
+	};
+
+	it("shows org-level readiness, /settings/payroll-export link, Export History, and Closed months tab for org admins", () => {
+		window.history.replaceState(null, "", "/payroll?tab=closed-months");
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+				isOrgAdmin
+				closedMonthsOverview={closedMonthsOverview}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("link", { name: "Payroll Connectors & Wage Types" }).getAttribute("href"),
+		).toBe("/settings/payroll-export");
+		expect(screen.getByRole("tab", { name: "Closed months", selected: true })).toBeTruthy();
+		expect(screen.getByTestId("closed-months-settings")).toBeTruthy();
+
+		openPayrollTab("Overview");
+		expect(screen.getByTestId("payroll-overview-readiness-section")).toBeTruthy();
+
+		openPayrollTab("Export");
+		expect(screen.getByTestId("payroll-export-history-card")).toBeTruthy();
+		window.history.replaceState(null, "", "/payroll");
+	});
+
+	it("hides org-level readiness, /settings/payroll-export link, and Closed months tab for delegated payroll officers without month-closure permission", () => {
+		window.history.replaceState(null, "", "/payroll");
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+				isOrgAdmin={false}
+			/>,
+		);
+
+		expect(screen.queryByRole("link", { name: "Payroll Connectors & Wage Types" })).toBeNull();
+		expect(screen.queryByTestId("payroll-overview-readiness-section")).toBeNull();
+		expect(screen.queryByRole("tab", { name: "Closed months" })).toBeNull();
+
+		openPayrollTab("Export");
+		expect(screen.getByTestId("payroll-export-history-card")).toBeTruthy();
+	});
+
+	it("renders only the Closed months tab for close-month-only custom-role holders", () => {
+		window.history.replaceState(null, "", "/payroll");
+		render(<PayrollClosedMonthsWorkspace overview={closedMonthsOverview} />);
+
+		expect(screen.getByRole("tab", { name: "Closed months", selected: true })).toBeTruthy();
+		expect(screen.getByTestId("closed-months-settings")).toBeTruthy();
+		expect(screen.queryByRole("tab", { name: "Overview" })).toBeNull();
+		expect(screen.queryByRole("tab", { name: "Days" })).toBeNull();
+		expect(screen.queryByRole("tab", { name: "Absences" })).toBeNull();
+		expect(screen.queryByRole("tab", { name: "Settlement" })).toBeNull();
+		expect(screen.queryByRole("tab", { name: "Export" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Work balances" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Payroll Connectors & Wage Types" })).toBeNull();
+	});
+
+	it("keeps the Closed months tab visible with an error alert when loading closed months fails", () => {
+		window.history.replaceState(null, "", "/payroll?tab=closed-months");
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[]}
+				isOrgAdmin
+				closedMonthsOverview={null}
+				closedMonthsError="Reload the page to try again."
+			/>,
+		);
+
+		expect(screen.getByRole("tab", { name: "Closed months", selected: true })).toBeTruthy();
+		expect(screen.getByText("Closed months could not be loaded")).toBeTruthy();
+		expect(screen.getByText("Reload the page to try again.")).toBeTruthy();
+		window.history.replaceState(null, "", "/payroll");
+	});
 });

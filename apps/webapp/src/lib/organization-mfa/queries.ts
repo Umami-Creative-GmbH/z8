@@ -100,6 +100,7 @@ export async function getOrganizationMfaCoverage(
 				userId: user.id,
 				name: user.name,
 				email: user.email,
+				role: member.role,
 				status: member.status,
 				twoFactorEnabled: user.twoFactorEnabled,
 				hasPasskey: sql<boolean>`EXISTS (SELECT 1 FROM passkey p WHERE p.user_id=${user.id})`,
@@ -128,6 +129,11 @@ export async function getOrganizationMfaCoverage(
 		return {
 			userId: row.userId,
 			name: row.name,
+			email: outsideScope ? null : row.email,
+			isAdministrator:
+				!outsideScope &&
+				(hasOrganizationRole(row.role, "owner") ||
+					hasOrganizationRole(row.role, "admin")),
 			kioskOnly: outsideScope,
 			methods: outsideScope
 				? []
@@ -154,6 +160,7 @@ export async function getOrganizationMfaCoverage(
 	return {
 		enabled: policy?.enabled ?? false,
 		gracePeriodDays: policy?.gracePeriodDays ?? 14,
+		updatedAt: policy ? instantFromDate(policy.updatedAt).toString() : null,
 		timezone: scope?.timezone ?? "UTC",
 		members: coverage,
 	};

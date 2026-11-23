@@ -6,11 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { type ReactNode, StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getWaterReminderStatus } from "@/app/[locale]/(app)/wellness/actions";
+import { getWaterReminderStatus } from "@/lib/wellness/actions";
 import { useHydrationStats } from "./use-hydration-stats";
 import { useWaterReminder } from "./use-water-reminder";
 
-vi.mock("@/app/[locale]/(app)/wellness/actions", () => ({
+vi.mock("@/lib/wellness/actions", () => ({
 	getWaterReminderStatus: vi.fn(),
 }));
 

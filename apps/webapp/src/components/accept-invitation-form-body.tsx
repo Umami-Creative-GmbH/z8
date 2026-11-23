@@ -11,6 +11,7 @@ export interface InvitationDetails {
 	email: string;
 	inviterName: string | null;
 	isExpired: boolean;
+	organizationId: string;
 	organizationName: string | null;
 	role: string | null;
 	status: string;
@@ -46,15 +47,10 @@ export function AcceptInvitationFormBody({
 	const { t } = useTranslate();
 	const branding = useBranding();
 	return (
-		<AuthFormWrapper
-			branding={branding}
-			title={t("auth.accept-invitation", "Accept invitation")}
-		>
+		<AuthFormWrapper branding={branding} title={t("auth.accept-invitation", "Accept invitation")}>
 			{fatalError ? (
 				<Alert variant="destructive">
-					<AlertTitle>
-						{t("auth.invitation-unavailable", "Invitation unavailable")}
-					</AlertTitle>
+					<AlertTitle>{t("auth.invitation-unavailable", "Invitation unavailable")}</AlertTitle>
 					<AlertDescription>
 						<p>{fatalError}</p>
 						<p>
@@ -80,20 +76,14 @@ export function AcceptInvitationFormBody({
 				</p>
 			)}
 			{invitation ? (
-				<section
-					aria-labelledby="invitation-details-heading"
-					className="min-w-0"
-				>
+				<section aria-labelledby="invitation-details-heading" className="min-w-0">
 					<h2 id="invitation-details-heading" className="font-medium text-sm">
 						{t("auth.invitation-details", "Invitation details")}
 					</h2>
 					<dl className="mt-3 divide-y border-y text-sm [&>div]:grid [&>div]:gap-1 [&>div]:py-3 [&_dt]:text-muted-foreground [&_dd]:min-w-0 [&_dd]:font-medium [&_dd]:[overflow-wrap:anywhere]">
 						<div>
 							<dt>{t("auth.workspace", "Workspace")}</dt>
-							<dd>
-								{invitation.organizationName ??
-									t("common.not-available", "Not available")}
-							</dd>
+							<dd>{invitation.organizationName ?? t("common.not-available", "Not available")}</dd>
 						</div>
 						<div>
 							<dt>{t("auth.invited-email", "Invited email")}</dt>
@@ -153,10 +143,7 @@ export function AcceptInvitationFormBody({
 				) : null}
 				{!fatalError && !session ? (
 					<>
-						<section
-							aria-labelledby="invitation-next-heading"
-							className="space-y-2 text-sm"
-						>
+						<section aria-labelledby="invitation-next-heading" className="space-y-2 text-sm">
 							<h2 id="invitation-next-heading" className="font-medium">
 								{t("auth.what-happens-next", "What happens next")}
 							</h2>
@@ -173,15 +160,9 @@ export function AcceptInvitationFormBody({
 								)}
 							</p>
 						</section>
-						<Button
-							asChild
-							className="h-auto min-h-11 w-full whitespace-normal py-2"
-						>
+						<Button asChild className="h-auto min-h-11 w-full whitespace-normal py-2">
 							<Link href={signUpUrl}>
-								{t(
-									"auth.create-account-invited-email",
-									"Create account with invited email",
-								)}
+								{t("auth.create-account-invited-email", "Create account with invited email")}
 							</Link>
 						</Button>
 						<Button

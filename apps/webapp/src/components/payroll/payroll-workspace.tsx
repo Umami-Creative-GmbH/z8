@@ -1,647 +1,58 @@
 "use client";
 
-import {
-	IconAlertTriangle,
-	IconCalendarWeek,
-	IconChevronDown,
-	IconChevronLeft,
-	IconChevronRight,
-	IconDownload,
-	IconFileExport,
-	IconLoader2,
-	IconRefresh,
-	IconScale,
-	IconUsers,
-} from "@tabler/icons-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { IconAlertTriangle, IconScale, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
-import Link from "next/link";
 import { useLocale } from "next-intl";
-import type React from "react";
-import { useEffect, useReducer, useRef, useState, useTransition } from "react";
+import { useReducer, useRef, useTransition } from "react";
 import { toast } from "sonner";
-import { Temporal } from "temporal-polyfill";
-import {
-	dismissPayrollBlockerAction,
-	exportPayrollPdfAction,
-	getPayrollWorkspaceSummaryAction,
-	type PayrollExportFormatOption,
-	startScopedPayrollExportAction,
-} from "@/app/[locale]/(app)/payroll/actions";
-import { MonthClosureStrip } from "@/components/closed-months/month-closure-strip";
-import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
+import type { PayrollExportFormatOption } from "@/app/[locale]/(app)/payroll/actions";
+import type { ClosedMonthsOverview } from "@/app/[locale]/(app)/settings/closed-months/actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
-import { Badge } from "@/components/ui/badge";
+import { ClosedMonthsSettings } from "@/components/settings/closed-months/closed-months-settings";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
-	Sheet,
-	SheetClose,
-	SheetContent,
-	SheetDescription,
-	SheetFooter,
-	SheetHeader,
-	SheetTitle,
-	SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { isSupportedPayrollFormat } from "@/lib/payroll-export/supported-format";
-import {
-	type DismissiblePayrollBlocker,
-	isDismissiblePayrollBlocker,
-} from "@/lib/payroll-workspace/blocker-dismissals";
-import {
-	type PayrollBlockerIdentity,
-	payrollBlockerIdentity,
-} from "@/lib/payroll-workspace/blocker-identity";
-import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
-import { queryKeys } from "@/lib/query/keys";
+import type { PayrollReadinessResult } from "@/lib/payroll-readiness/get-payroll-readiness";
+import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
-import { OvertimePayoutReadinessAlert } from "./overtime-payout-readiness-alert";
-import { PayrollBaselinesCard } from "./payroll-baselines-card";
-import { PayrollComparisonCard } from "./payroll-comparison-card";
-import { PayrollRunReadinessCard } from "./payroll-run-readiness-card";
-import { PayrollRunsCard } from "./payroll-runs-card";
-
-type PayrollTranslate = ReturnType<typeof useTranslate>["t"];
+import { Link } from "@/navigation";
+import { PayrollAbsencesTab } from "./workspace/payroll-absences-tab";
+import { PayrollDaysTab } from "./workspace/payroll-days-tab";
+import { PayrollExportTab } from "./workspace/payroll-export-tab";
+import { PayrollOverviewTab } from "./workspace/payroll-overview-tab";
+import { PayrollPeriodBar } from "./workspace/payroll-period-bar";
+import { PayrollSettlementFigures } from "./workspace/payroll-settlement-figures";
+import { PayrollSettlementTab } from "./workspace/payroll-settlement-tab";
+import { PayrollStatusStrip } from "./workspace/payroll-status-strip";
+import { PayrollWorkspaceTabs } from "./workspace/payroll-workspace-tabs";
+import {
+	basePeriodRequest,
+	getFilteredEmployeeIds,
+	getTeamOptions,
+	type PayrollPeriodRequest,
+	type PayrollTranslate,
+	payrollWorkspaceReducer,
+} from "./workspace/state";
+import { usePayrollBlockerClearing } from "./workspace/use-payroll-blocker-clearing";
+import { usePayrollExportActions } from "./workspace/use-payroll-export-actions";
+import { PayrollSettlementRefreshProvider } from "./workspace/use-payroll-settlement-changed";
+import {
+	payrollPeriodActions,
+	useMountedRef,
+	usePayrollSummaryLoader,
+} from "./workspace/use-payroll-summary";
 
 interface PayrollWorkspaceProps {
 	initialSummary: PayrollWorkspaceSummary;
 	exportFormats: PayrollExportFormatOption[];
-}
-
-interface PayrollPeriodRequest {
-	startDate: string;
-	endDate: string;
-	label: string;
-	employeeIds?: string[];
-}
-
-interface PayrollWorkspaceState {
-	summary: PayrollWorkspaceSummary;
-	dateMode: PayrollDateRangeMode;
-	startDate: string;
-	endDate: string;
-	selectedEmployeeIds: string[];
-	selectedTeamNames: string[];
-	formatId: string;
-}
-
-type PayrollWorkspaceAction =
-	| { type: "summaryRefreshed"; summary: PayrollWorkspaceSummary }
-	| { type: "summaryDataRefreshed"; summary: PayrollWorkspaceSummary }
-	| { type: "dateModeChanged"; dateMode: PayrollDateRangeMode }
-	| { type: "startDateChanged"; value: string }
-	| { type: "endDateChanged"; value: string }
-	| { type: "employeeFilterChanged"; employeeIds: string[] }
-	| { type: "teamFilterChanged"; teamNames: string[] }
-	| { type: "formatChanged"; formatId: string };
-
-type SummaryLoadResult =
-	| { status: "applied"; summary: PayrollWorkspaceSummary }
-	| { status: "failed" | "stale" | "unmounted" };
-
-interface BlockerFocusRequest {
-	id: number;
-	targetBlockerKey: PayrollBlockerIdentity | null;
-}
-
-function payrollWorkspaceReducer(
-	state: PayrollWorkspaceState,
-	action: PayrollWorkspaceAction,
-): PayrollWorkspaceState {
-	switch (action.type) {
-		case "summaryDataRefreshed":
-			return { ...state, summary: action.summary };
-		case "summaryRefreshed":
-			return {
-				...state,
-				summary: action.summary,
-				startDate: action.summary.period.start,
-				endDate: action.summary.period.end,
-			};
-		case "dateModeChanged":
-			return { ...state, dateMode: action.dateMode };
-		case "startDateChanged":
-			return { ...state, startDate: action.value };
-		case "endDateChanged":
-			return { ...state, endDate: action.value };
-		case "employeeFilterChanged":
-			return { ...state, selectedEmployeeIds: action.employeeIds };
-		case "teamFilterChanged":
-			return { ...state, selectedTeamNames: action.teamNames };
-		case "formatChanged":
-			return { ...state, formatId: action.formatId };
-	}
-}
-
-function useMountedRef() {
-	const isMountedRef = useRef(true);
-
-	useEffect(() => {
-		isMountedRef.current = true;
-		return () => {
-			isMountedRef.current = false;
-		};
-	}, []);
-
-	return isMountedRef;
-}
-
-function usePayrollSummaryLoader({
-	dispatch,
-	initialRequest,
-	isMountedRef,
-}: {
-	dispatch: React.Dispatch<PayrollWorkspaceAction>;
-	initialRequest: PayrollPeriodRequest;
-	isMountedRef: React.RefObject<boolean>;
-}) {
-	const latestRequestRef = useRef(initialRequest);
-	const requestGenerationRef = useRef(0);
-	useEffect(
-		() => () => {
-			requestGenerationRef.current += 1;
-		},
-		[],
-	);
-
-	async function loadSummary(
-		nextRequest: PayrollPeriodRequest,
-		options: {
-			onError: (error?: string) => void;
-			onSuccess?: () => void;
-			preserveDraft?: boolean;
-		},
-	): Promise<SummaryLoadResult> {
-		if (!isMountedRef.current) return { status: "unmounted" };
-
-		latestRequestRef.current = nextRequest;
-		const requestGeneration = requestGenerationRef.current + 1;
-		requestGenerationRef.current = requestGeneration;
-
-		try {
-			const result = await getPayrollWorkspaceSummaryAction(nextRequest);
-
-			if (!isMountedRef.current) return { status: "unmounted" };
-			if (requestGeneration !== requestGenerationRef.current) return { status: "stale" };
-
-			if (!result.success) {
-				options.onError(result.error);
-				return { status: "failed" };
-			}
-
-			dispatch({
-				type: options.preserveDraft ? "summaryDataRefreshed" : "summaryRefreshed",
-				summary: result.data,
-			});
-			options.onSuccess?.();
-			return { status: "applied", summary: result.data };
-		} catch {
-			if (!isMountedRef.current) return { status: "unmounted" };
-			if (requestGeneration !== requestGenerationRef.current) return { status: "stale" };
-
-			options.onError();
-			return { status: "failed" };
-		}
-	}
-
-	function refreshLatestSummary(options: {
-		preserveDraft?: boolean;
-		onError: (error?: string) => void;
-	}): Promise<SummaryLoadResult> {
-		return loadSummary(latestRequestRef.current, options);
-	}
-
-	return { loadSummary, refreshLatestSummary };
-}
-
-async function clearPayrollBlockerAndRefresh({
-	blocker,
-	clickRequest,
-	isMountedRef,
-	onFinished,
-	onRemoved,
-	refreshLatestSummary,
-	t,
-}: {
-	blocker: DismissiblePayrollBlocker;
-	clickRequest: PayrollPeriodRequest;
-	isMountedRef: React.RefObject<boolean>;
-	onFinished: (blockerKey: PayrollBlockerIdentity, dismissalSucceeded: boolean) => void;
-	onRemoved: (summary: PayrollWorkspaceSummary) => void;
-	refreshLatestSummary: (options: {
-		onError: (error?: string) => void;
-	}) => Promise<SummaryLoadResult>;
-	t: PayrollTranslate;
-}) {
-	let dismissalSucceeded = false;
-	const blockerKey = payrollBlockerIdentity(blocker);
-
-	try {
-		const dismissalResult = await dismissPayrollBlockerAction({
-			...clickRequest,
-			blockerId: blocker.id,
-			blockerType: blocker.type,
-		});
-		if (!isMountedRef.current) return;
-
-		if (!dismissalResult.success) {
-			toast.error(
-				dismissalResult.error ||
-					t("payroll.blockers.clearFailed", "Could not clear payroll blocker"),
-			);
-			return;
-		}
-
-		dismissalSucceeded = true;
-		const refreshResult = await refreshLatestSummary({
-			onError: () =>
-				toast.error(
-					t(
-						"payroll.blockers.refreshAfterClearFailed",
-						"Blocker cleared, but payroll could not be refreshed",
-					),
-				),
-		});
-		if (!isMountedRef.current) return;
-
-		if (
-			refreshResult.status === "applied" &&
-			!refreshResult.summary.blockers.some(
-				(currentBlocker) => payrollBlockerIdentity(currentBlocker) === blockerKey,
-			)
-		) {
-			onRemoved(refreshResult.summary);
-		}
-	} catch {
-		if (isMountedRef.current) {
-			toast.error(
-				dismissalSucceeded
-					? t(
-							"payroll.blockers.refreshAfterClearFailed",
-							"Blocker cleared, but payroll could not be refreshed",
-						)
-					: t("payroll.blockers.clearFailed", "Could not clear payroll blocker"),
-			);
-		}
-	} finally {
-		if (isMountedRef.current) onFinished(blockerKey, dismissalSucceeded);
-	}
-}
-
-function usePayrollBlockerClearing({
-	blockers,
-	clickRequest,
-	isMountedRef,
-	refreshLatestSummary,
-	t,
-}: {
-	blockers: PayrollWorkspaceSummary["blockers"];
-	clickRequest: PayrollPeriodRequest;
-	isMountedRef: React.RefObject<boolean>;
-	refreshLatestSummary: (options: {
-		onError: (error?: string) => void;
-	}) => Promise<SummaryLoadResult>;
-	t: PayrollTranslate;
-}) {
-	const [clearingBlockerKeys, setClearingBlockerKeys] = useState<
-		ReadonlySet<PayrollBlockerIdentity>
-	>(() => new Set());
-	const clearingBlockerKeysRef = useRef(new Set<PayrollBlockerIdentity>());
-	const clearBlockerQueueRef = useRef<Promise<void> | null>(null);
-	const focusRequestIdRef = useRef(0);
-	const [focusRequest, setFocusRequest] = useState<BlockerFocusRequest | null>(null);
-
-	function clearPayrollBlocker(
-		blocker: DismissiblePayrollBlocker,
-		activatedControl: HTMLButtonElement,
-	) {
-		if (!isMountedRef.current) return;
-		const blockerKey = payrollBlockerIdentity(blocker);
-		if (clearingBlockerKeysRef.current.has(blockerKey)) return;
-
-		clearingBlockerKeysRef.current.add(blockerKey);
-		setClearingBlockerKeys((currentKeys) => new Set(currentKeys).add(blockerKey));
-		const currentClickRequest = clickRequest;
-		const blockerOrder = blockers.map(payrollBlockerIdentity);
-		const activatedControlHadFocus = document.activeElement === activatedControl;
-
-		clearBlockerQueueRef.current = (clearBlockerQueueRef.current ?? Promise.resolve()).then(() =>
-			isMountedRef.current
-				? clearPayrollBlockerAndRefresh({
-						blocker,
-						clickRequest: currentClickRequest,
-						isMountedRef,
-						onFinished: (finishedBlockerKey, dismissalSucceeded) => {
-							clearingBlockerKeysRef.current.delete(finishedBlockerKey);
-							setClearingBlockerKeys((currentKeys) => {
-								const nextKeys = new Set(currentKeys);
-								nextKeys.delete(finishedBlockerKey);
-								return nextKeys;
-							});
-							if (
-								!dismissalSucceeded &&
-								activatedControlHadFocus &&
-								activatedControl.isConnected &&
-								(document.activeElement === activatedControl ||
-									document.activeElement === document.body)
-							) {
-								focusRequestIdRef.current += 1;
-								setFocusRequest({
-									id: focusRequestIdRef.current,
-									targetBlockerKey: finishedBlockerKey,
-								});
-							}
-						},
-						onRemoved: (nextSummary) => {
-							if (
-								document.activeElement !== activatedControl &&
-								!(activatedControlHadFocus && document.activeElement === document.body)
-							)
-								return;
-
-							const removedIndex = blockerOrder.indexOf(blockerKey);
-							const remainingBlockerKeys = new Set(
-								nextSummary.blockers.map(payrollBlockerIdentity),
-							);
-							const nextBlockerKey = blockerOrder
-								.slice(removedIndex + 1)
-								.find((currentBlockerKey) => remainingBlockerKeys.has(currentBlockerKey));
-							const previousBlockerKey = blockerOrder
-								.slice(0, removedIndex)
-								.reverse()
-								.find((currentBlockerKey) => remainingBlockerKeys.has(currentBlockerKey));
-							focusRequestIdRef.current += 1;
-							setFocusRequest({
-								id: focusRequestIdRef.current,
-								targetBlockerKey: nextBlockerKey ?? previousBlockerKey ?? null,
-							});
-						},
-						refreshLatestSummary,
-						t,
-					})
-				: undefined,
-		);
-	}
-
-	return { clearingBlockerKeys, clearPayrollBlocker, focusRequest };
-}
-
-/** Switching the date mode, stepping between periods and applying a custom range. */
-function payrollPeriodActions({
-	dateMode,
-	dispatch,
-	endDate,
-	filteredEmployeeIds,
-	refreshSummary,
-	startDate,
-	summary,
-}: {
-	dateMode: PayrollDateRangeMode;
-	dispatch: React.Dispatch<PayrollWorkspaceAction>;
-	endDate: string;
-	filteredEmployeeIds: string[] | undefined;
-	refreshSummary: (
-		nextRequest: PayrollPeriodRequest,
-		employeeIds?: string[],
-		onSuccess?: () => void,
-	) => void;
-	startDate: string;
-	summary: PayrollWorkspaceSummary;
-}) {
-	function applyDateMode(nextMode: PayrollDateRangeMode) {
-		if (nextMode === "custom") {
-			dispatch({ type: "dateModeChanged", dateMode: nextMode });
-			return;
-		}
-
-		refreshSummary(
-			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
-			filteredEmployeeIds,
-			() => dispatch({ type: "dateModeChanged", dateMode: nextMode }),
-		);
-	}
-
-	function navigatePeriod(direction: "previous" | "next") {
-		if (dateMode === "custom") return;
-
-		const currentStart = DateTime.fromISO(summary.period.start, {
-			zone: "utc",
-		});
-		const amount = direction === "previous" ? -1 : 1;
-		const nextStart = currentStart.plus({ [dateMode]: amount }).startOf(dateMode);
-
-		refreshSummary(buildPeriodRequest(nextStart, dateMode));
-	}
-
-	function returnToCurrentPeriod() {
-		if (dateMode === "custom") return;
-
-		refreshSummary(buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode));
-	}
-
-	function applyCustomRange() {
-		const start = DateTime.fromISO(startDate);
-		const end = DateTime.fromISO(endDate);
-
-		refreshSummary({
-			startDate,
-			endDate,
-			label: formatPeriodLabel(start, end, "custom"),
-		});
-	}
-
-	return {
-		applyCustomRange,
-		applyDateMode,
-		navigatePeriod,
-		returnToCurrentPeriod,
-	};
-}
-
-/** The PDF download and the payroll export for the current request. */
-function usePayrollExportActions({
-	filtersHaveNoMatches,
-	formatId,
-	request,
-	startTransition,
-	t,
-}: {
-	filtersHaveNoMatches: boolean;
-	formatId: string;
-	request: PayrollPeriodRequest;
-	startTransition: React.TransitionStartFunction;
-	t: PayrollTranslate;
-}) {
-	const queryClient = useQueryClient();
-	const lifetime = useRef(0);
-	useEffect(
-		() => () => {
-			lifetime.current += 1;
-		},
-		[],
-	);
-
-	function downloadPdf() {
-		if (filtersHaveNoMatches) {
-			toast.error(
-				t(
-					"payroll.filters.noMatchingEmployees",
-					"No employees match the selected payroll filters.",
-				),
-			);
-			return;
-		}
-
-		startTransition(async () => {
-			const generation = lifetime.current;
-			const result = await exportPayrollPdfAction(request).catch(() => ({
-				success: false as const,
-				error: t("payroll.errors.actionFailed", "Payroll workspace action failed"),
-			}));
-			if (generation !== lifetime.current) return;
-
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-
-			const blob = new Blob([new Uint8Array(result.data.data)], {
-				type: "application/pdf",
-			});
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = result.data.filename;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			URL.revokeObjectURL(url);
-		});
-	}
-
-	function triggerExport() {
-		if (!formatId) return;
-		if (filtersHaveNoMatches) {
-			toast.error(
-				t(
-					"payroll.filters.noMatchingEmployees",
-					"No employees match the selected payroll filters.",
-				),
-			);
-			return;
-		}
-
-		startTransition(async () => {
-			const generation = lifetime.current;
-			const result = await startScopedPayrollExportAction({
-				...request,
-				formatId,
-			}).catch(() => ({
-				success: false as const,
-				error: t("payroll.errors.actionFailed", "Payroll workspace action failed"),
-			}));
-			if (generation !== lifetime.current) return;
-
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-
-			toast.success(
-				result.data.isAsync
-					? t("payroll.export.queued", "Payroll export queued")
-					: t("payroll.export.completed", "Payroll export completed"),
-			);
-			if (result.data.unmappedOvertimePayoutCount) {
-				toast.warning(
-					t(
-						"payroll.export.unmappedOvertimePayouts",
-						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
-						{ count: result.data.unmappedOvertimePayoutCount },
-					),
-					{
-						description: t(
-							"payroll.export.unmappedOvertimePayoutsDescription",
-							"No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way.",
-						),
-					},
-				);
-			}
-			void queryClient.invalidateQueries({
-				queryKey: ["payroll", "baselines"],
-			});
-			void queryClient.invalidateQueries({
-				queryKey: ["payroll", "comparisonBaselines"],
-			});
-			// A payroll run may now include expense reports (#852), which changes readiness (#854).
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.travelExpenses.payrollRuns(),
-			});
-		});
-	}
-
-	return { downloadPdf, triggerExport };
-}
-
-function PayrollSummaryCards({
-	blockersSummaryRef,
-	displayedTotals,
-	readyEmployeeCount,
-	t,
-}: {
-	blockersSummaryRef: React.RefObject<HTMLDivElement | null>;
-	displayedTotals: PayrollWorkspaceSummary["totals"];
-	readyEmployeeCount: number;
-	t: PayrollTranslate;
-}) {
-	return (
-		<section
-			aria-label={t("payroll.summary.title", "Payroll readiness summary")}
-			className="grid grid-cols-2 divide-x divide-y rounded-lg border bg-card sm:grid-cols-4 sm:divide-y-0"
-		>
-			<SummaryCard
-				icon={<IconUsers aria-hidden="true" className="size-5" />}
-				label={t("payroll.summary.employees", "Employees")}
-				value={displayedTotals.employeeCount.toString()}
-			/>
-			<SummaryCard
-				label={t("payroll.summary.workedHours", "Worked hours")}
-				value={formatHours(displayedTotals.totalWorkedHours)}
-			/>
-			<SummaryCard
-				label={t("payroll.summary.ready", "Ready")}
-				value={readyEmployeeCount.toString()}
-			/>
-			<SummaryCard
-				focusRef={blockersSummaryRef}
-				label={t("payroll.summary.blockers", "Blockers")}
-				value={displayedTotals.blockerCount.toString()}
-				tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
-			/>
-		</section>
-	);
+	/** Organization administrators see org-level readiness and the contextual `/settings/payroll-export` link (#1957). */
+	isOrgAdmin?: boolean;
+	/** Initial organization-level payroll readiness snapshot for org admins (#1957). */
+	initialReadiness?: PayrollReadinessResult | null;
+	/** Present when the actor is authorized to close or reopen months (#1957). */
+	closedMonthsOverview?: ClosedMonthsOverview | null;
+	/** Present when the actor may manage closed months but loading the overview failed (#1957). */
+	closedMonthsError?: string | null;
 }
 
 export function PayrollWorkspace(props: PayrollWorkspaceProps) {
@@ -655,8 +66,21 @@ export function PayrollWorkspace(props: PayrollWorkspaceProps) {
 	return <PayrollWorkspaceContent key={scopeKey} {...props} />;
 }
 
-function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
+/**
+ * The payroll workspace: a period and scope bar, a status strip, and the Overview,
+ * Days, Absences, Settlement, Export, and (when permitted) Closed Months tabs.
+ * The period, scope and format state is shared by all tabs.
+ */
+function PayrollWorkspaceContent({
+	initialSummary,
+	exportFormats,
+	isOrgAdmin = false,
+	initialReadiness = null,
+	closedMonthsOverview = null,
+	closedMonthsError = null,
+}: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
 		summary: initialSummary,
 		dateMode: "month",
@@ -680,14 +104,12 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 	const blockersSummaryRef = useRef<HTMLDivElement | null>(null);
 
 	const scopedEmployees = initialSummary.employees;
-	const teamOptions = getTeamOptions(scopedEmployees);
 	const filteredEmployeeIds = getFilteredEmployeeIds(
 		scopedEmployees,
 		selectedEmployeeIds,
 		selectedTeamNames,
 	);
 	const filtersHaveNoMatches = filteredEmployeeIds?.length === 0;
-	const hasExportFormats = exportFormats.length > 0;
 	const displayedEmployees = filtersHaveNoMatches ? [] : summary.employees;
 	const displayedBlockers = filtersHaveNoMatches ? [] : summary.blockers;
 	const displayedTotals = filtersHaveNoMatches
@@ -708,13 +130,13 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 		initialRequest: request,
 		isMountedRef,
 	});
-	useViewRefresh(() =>
+	const refreshWorkspaceSummary = () =>
 		refreshLatestSummary({
 			preserveDraft: true,
 			onError: (error) =>
 				toast.error(error ?? t("payroll.errors.actionFailed", "Payroll workspace action failed")),
-		}),
-	);
+		});
+	useViewRefresh(refreshWorkspaceSummary);
 	const { clearingBlockerKeys, clearPayrollBlocker, focusRequest } = usePayrollBlockerClearing({
 		blockers: displayedBlockers,
 		clickRequest: request,
@@ -752,44 +174,47 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 		});
 	}
 
-	function applyEmployeeFilter(nextEmployeeIds: string[], onSuccess?: () => void) {
+	function applyScopeFilter(
+		nextEmployeeIds: string[],
+		nextTeamNames: string[],
+		commit: () => void,
+		onSuccess?: () => void,
+	) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			nextEmployeeIds,
-			selectedTeamNames,
-		);
-
-		if (nextFilteredEmployeeIds?.length === 0) {
-			dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
-			refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
-			onSuccess?.();
-			return;
-		}
-
-		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds, () => {
-			dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds });
-			onSuccess?.();
-		});
-	}
-
-	function applyTeamFilter(nextTeamNames: string[], onSuccess?: () => void) {
-		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
-			scopedEmployees,
-			selectedEmployeeIds,
 			nextTeamNames,
 		);
 
 		if (nextFilteredEmployeeIds?.length === 0) {
-			dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
+			commit();
 			refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds);
 			onSuccess?.();
 			return;
 		}
 
 		refreshSummary(basePeriodRequest(summary), nextFilteredEmployeeIds, () => {
-			dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames });
+			commit();
 			onSuccess?.();
 		});
+	}
+
+	function applyEmployeeFilter(nextEmployeeIds: string[], onSuccess?: () => void) {
+		applyScopeFilter(
+			nextEmployeeIds,
+			selectedTeamNames,
+			() => dispatch({ type: "employeeFilterChanged", employeeIds: nextEmployeeIds }),
+			onSuccess,
+		);
+	}
+
+	function applyTeamFilter(nextTeamNames: string[], onSuccess?: () => void) {
+		applyScopeFilter(
+			selectedEmployeeIds,
+			nextTeamNames,
+			() => dispatch({ type: "teamFilterChanged", teamNames: nextTeamNames }),
+			onSuccess,
+		);
 	}
 
 	const { applyCustomRange, applyDateMode, navigatePeriod, returnToCurrentPeriod } =
@@ -798,6 +223,7 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 			dispatch,
 			endDate,
 			filteredEmployeeIds,
+			locale,
 			refreshSummary,
 			startDate,
 			summary,
@@ -811,88 +237,146 @@ function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorks
 	});
 
 	return (
-		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
-			<PayrollHeader organizationName={summary.organizationName} t={t} />
-			<PayrollPeriodCard
-				dateMode={dateMode}
-				dispatch={dispatch}
-				displayedTotals={displayedTotals}
-				exportFormats={exportFormats}
-				filtersHaveNoMatches={filtersHaveNoMatches}
-				formatId={formatId}
-				hasExportFormats={hasExportFormats}
-				isPending={isPending}
-				onApplyCustomRange={applyCustomRange}
-				onApplyDateMode={applyDateMode}
-				onDownloadPdf={downloadPdf}
-				onNavigatePeriod={navigatePeriod}
-				onReturnToCurrentPeriod={returnToCurrentPeriod}
-				onTriggerExport={triggerExport}
-				startDate={startDate}
-				endDate={endDate}
-				summary={summary}
-				t={t}
-			/>
-
-			<PayrollScopeCard
-				filtersHaveNoMatches={filtersHaveNoMatches}
-				isPending={isPending}
-				onApplyEmployees={applyEmployeeFilter}
-				onApplyTeams={applyTeamFilter}
-				scopedEmployees={scopedEmployees}
-				selectedEmployeeIds={selectedEmployeeIds}
-				selectedTeamNames={selectedTeamNames}
-				teamOptions={teamOptions}
-				t={t}
-			/>
-			<PayrollSummaryCards
-				blockersSummaryRef={blockersSummaryRef}
-				displayedTotals={displayedTotals}
-				readyEmployeeCount={readyEmployeeCount}
-				t={t}
-			/>
-
-			{filtersHaveNoMatches ? null : (
-				// Whether the period's months are closed for this selection (#762).
-				<>
-					<MonthClosureStrip months={periodMonths} employeeIds={closureEmployeeIds} />
-					<UnclosedMonthsNotice months={periodMonths} employeeIds={closureEmployeeIds} />
-				</>
-			)}
-			<PayrollBlockersAlert
-				blockers={displayedBlockers}
-				clearingBlockerKeys={clearingBlockerKeys}
-				employees={displayedEmployees}
-				fallbackFocusRef={blockersSummaryRef}
-				focusRequest={focusRequest}
-				onClearBlocker={clearPayrollBlocker}
-				t={t}
-			/>
-			{filtersHaveNoMatches ? null : (
-				<OvertimePayoutReadinessAlert request={{ ...request, formatId }} />
-			)}
-			{filtersHaveNoMatches ? null : <PayrollRunReadinessCard request={{ ...request, formatId }} />}
-			<EmployeeTotalsCard employees={displayedEmployees} t={t} />
-			<PayrollRunsCard />
-			<PayrollBaselinesCard
-				key={formatId}
-				formatId={formatId}
-				startDate={summary.period.start}
-				endDate={summary.period.end}
-			/>
-			{isSupportedPayrollFormat(formatId) ? (
-				<PayrollComparisonCard
-					formatId={formatId}
-					startDate={summary.period.start}
-					endDate={summary.period.end}
-					employeeIds={filteredEmployeeIds}
+		<PayrollSettlementRefreshProvider refreshSummary={refreshWorkspaceSummary}>
+			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-4">
+				<PayrollHeader
+					organizationName={summary.organizationName}
+					isOrgAdmin={isOrgAdmin}
+					t={t}
 				/>
-			) : null}
-		</div>
+				<PayrollPeriodBar
+					dateMode={dateMode}
+					dispatch={dispatch}
+					employeeCount={displayedTotals.employeeCount}
+					endDate={endDate}
+					filtersHaveNoMatches={filtersHaveNoMatches}
+					isPending={isPending}
+					onApplyCustomRange={applyCustomRange}
+					onApplyDateMode={applyDateMode}
+					onApplyEmployees={applyEmployeeFilter}
+					onApplyTeams={applyTeamFilter}
+					onNavigatePeriod={navigatePeriod}
+					onReturnToCurrentPeriod={returnToCurrentPeriod}
+					scopedEmployees={scopedEmployees}
+					selectedEmployeeIds={selectedEmployeeIds}
+					selectedTeamNames={selectedTeamNames}
+					startDate={startDate}
+					summary={summary}
+					teamOptions={getTeamOptions(scopedEmployees)}
+					t={t}
+				/>
+				<PayrollStatusStrip
+					blockersSummaryRef={blockersSummaryRef}
+					displayedTotals={displayedTotals}
+					readyEmployeeCount={readyEmployeeCount}
+					t={t}
+				>
+					<PayrollSettlementFigures
+						filtersHaveNoMatches={filtersHaveNoMatches}
+						refreshedAt={summary.generatedAt}
+						request={request}
+						t={t}
+					/>
+				</PayrollStatusStrip>
+				<PayrollWorkspaceTabs
+					t={t}
+					panels={{
+						overview: (
+							<PayrollOverviewTab
+								blockers={displayedBlockers}
+								blockersSummaryRef={blockersSummaryRef}
+								clearingBlockerKeys={clearingBlockerKeys}
+								closureEmployeeIds={closureEmployeeIds}
+								employees={displayedEmployees}
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								focusRequest={focusRequest}
+								formatId={formatId}
+								initialPeriod={{
+									startDate: initialSummary.period.start,
+									endDate: initialSummary.period.end,
+								}}
+								initialReadiness={initialReadiness}
+								isOrgAdmin={isOrgAdmin}
+								onClearBlocker={clearPayrollBlocker}
+								periodMonths={periodMonths}
+								request={request}
+								t={t}
+							/>
+						),
+						days: (
+							<PayrollDaysTab
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								refreshedAt={summary.generatedAt}
+								request={request}
+								t={t}
+							/>
+						),
+						absences: (
+							<PayrollAbsencesTab
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								refreshedAt={summary.generatedAt}
+								request={request}
+								t={t}
+							/>
+						),
+						settlement: (
+							<PayrollSettlementTab
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								refreshedAt={summary.generatedAt}
+								request={request}
+								t={t}
+							/>
+						),
+						export: (
+							<PayrollExportTab
+								dispatch={dispatch}
+								exportFormats={exportFormats}
+								filteredEmployeeIds={filteredEmployeeIds}
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								formatId={formatId}
+								isPending={isPending}
+								onDownloadPdf={downloadPdf}
+								onTriggerExport={triggerExport}
+								period={summary.period}
+								t={t}
+							/>
+						),
+						...(closedMonthsOverview
+							? {
+									"closed-months": <ClosedMonthsSettings overview={closedMonthsOverview} />,
+								}
+							: closedMonthsError
+								? {
+										"closed-months": (
+											<Alert variant="destructive">
+												<IconAlertTriangle aria-hidden="true" />
+												<AlertTitle>
+													{t(
+														"settings.closedMonths.loadErrorTitle",
+														"Closed months could not be loaded",
+													)}
+												</AlertTitle>
+												<AlertDescription>{closedMonthsError}</AlertDescription>
+											</Alert>
+										),
+									}
+								: {}),
+					}}
+				/>
+			</div>
+		</PayrollSettlementRefreshProvider>
 	);
 }
 
-function PayrollHeader({ organizationName, t }: { organizationName: string; t: PayrollTranslate }) {
+function PayrollHeader({
+	organizationName,
+	isOrgAdmin,
+	t,
+}: {
+	organizationName: string;
+	isOrgAdmin: boolean;
+	t: PayrollTranslate;
+}) {
 	return (
 		<PageHeader
 			scope={organizationName}
@@ -902,1104 +386,26 @@ function PayrollHeader({ organizationName, t }: { organizationName: string; t: P
 				"Review payroll totals, readiness, and exports for the selected period.",
 			)}
 			actions={
-				<Button asChild variant="outline">
-					<Link href="/payroll/work-balances">
-						<IconScale aria-hidden="true" className="size-4" />
-						{t("payroll.workBalances.open", "Work balances")}
-					</Link>
-				</Button>
+				<div className="flex flex-wrap items-center gap-2">
+					{isOrgAdmin ? (
+						<Button asChild variant="outline">
+							<Link href="/settings/payroll-export">
+								<IconSettings aria-hidden="true" className="size-4" />
+								{t(
+									"settings.payrollExport.connectorsTitle",
+									"Payroll Connectors & Wage Types",
+								)}
+							</Link>
+						</Button>
+					) : null}
+					<Button asChild variant="outline">
+						<Link href="/payroll/work-balances">
+							<IconScale aria-hidden="true" className="size-4" />
+							{t("payroll.workBalances.open", "Work balances")}
+						</Link>
+					</Button>
+				</div>
 			}
 		/>
 	);
-}
-
-function PayrollPeriodCard({
-	dateMode,
-	dispatch,
-	displayedTotals,
-	endDate,
-	exportFormats,
-	filtersHaveNoMatches,
-	formatId,
-	hasExportFormats,
-	isPending,
-	onApplyCustomRange,
-	onApplyDateMode,
-	onDownloadPdf,
-	onNavigatePeriod,
-	onReturnToCurrentPeriod,
-	onTriggerExport,
-	startDate,
-	summary,
-	t,
-}: {
-	dateMode: PayrollDateRangeMode;
-	dispatch: React.Dispatch<PayrollWorkspaceAction>;
-	displayedTotals: PayrollWorkspaceSummary["totals"];
-	endDate: string;
-	exportFormats: PayrollExportFormatOption[];
-	filtersHaveNoMatches: boolean;
-	formatId: string;
-	hasExportFormats: boolean;
-	isPending: boolean;
-	onApplyCustomRange: () => void;
-	onApplyDateMode: (mode: PayrollDateRangeMode) => void;
-	onDownloadPdf: () => void;
-	onNavigatePeriod: (direction: "previous" | "next") => void;
-	onReturnToCurrentPeriod: () => void;
-	onTriggerExport: () => void;
-	startDate: string;
-	summary: PayrollWorkspaceSummary;
-	t: PayrollTranslate;
-}) {
-	const locale = useLocale();
-	return (
-		<Card>
-			<CardHeader className="gap-4 lg:flex lg:flex-row lg:items-start lg:justify-between">
-				<div className="space-y-2">
-					<div className="flex items-center gap-2 text-muted-foreground text-sm">
-						<IconCalendarWeek aria-hidden="true" className="size-4" />
-						<span>{t("payroll.period.selected", "Selected period")}</span>
-					</div>
-					<div>
-						<CardTitle aria-level={2} className="text-2xl" role="heading">
-							{formatDisplayedPeriod(summary.period.start, summary.period.end, dateMode, locale)}
-						</CardTitle>
-						<CardDescription>
-							{t("payroll.period.dateRange", "{start} to {end}", {
-								start: summary.period.start,
-								end: summary.period.end,
-							})}
-						</CardDescription>
-					</div>
-					<p className="text-muted-foreground text-sm">
-						{t("payroll.period.employeesInScope", "{count} employees in scope", {
-							count: displayedTotals.employeeCount,
-						})}
-					</p>
-					{filtersHaveNoMatches ? (
-						<p className="text-destructive text-sm">
-							{t(
-								"payroll.filters.noMatchingEmployees",
-								"No employees match the selected payroll filters.",
-							)}
-						</p>
-					) : null}
-				</div>
-
-				<div className="grid gap-2 sm:grid-cols-3 lg:min-w-[28rem] lg:justify-end">
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						disabled={dateMode === "custom" || isPending}
-						onClick={() => onNavigatePeriod("previous")}
-					>
-						<IconChevronLeft aria-hidden="true" className="size-4" />
-						{t("payroll.period.previous", "Previous period")}
-					</Button>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						disabled={dateMode === "custom" || isPending}
-						onClick={() => onNavigatePeriod("next")}
-					>
-						{t("payroll.period.next", "Next period")}
-						<IconChevronRight aria-hidden="true" className="size-4" />
-					</Button>
-					<Button
-						type="button"
-						variant="secondary"
-						size="sm"
-						disabled={dateMode === "custom" || isPending}
-						onClick={onReturnToCurrentPeriod}
-					>
-						<IconRefresh aria-hidden="true" className="size-4" />
-						{t("payroll.period.current", "Current period")}
-					</Button>
-				</div>
-			</CardHeader>
-			<CardContent
-				data-payroll-period-controls=""
-				className="grid gap-5 border-t pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,auto)] lg:items-end"
-			>
-				<PayrollDateControls
-					dateMode={dateMode}
-					dispatch={dispatch}
-					endDate={endDate}
-					isPending={isPending}
-					onApplyCustomRange={onApplyCustomRange}
-					onApplyDateMode={onApplyDateMode}
-					startDate={startDate}
-					t={t}
-				/>
-				<PayrollExportControls
-					dispatch={dispatch}
-					exportFormats={exportFormats}
-					filtersHaveNoMatches={filtersHaveNoMatches}
-					formatId={formatId}
-					hasExportFormats={hasExportFormats}
-					isPending={isPending}
-					onDownloadPdf={onDownloadPdf}
-					onTriggerExport={onTriggerExport}
-					t={t}
-				/>
-			</CardContent>
-		</Card>
-	);
-}
-
-function PayrollDateControls({
-	dateMode,
-	dispatch,
-	endDate,
-	isPending,
-	onApplyCustomRange,
-	onApplyDateMode,
-	startDate,
-	t,
-}: {
-	dateMode: PayrollDateRangeMode;
-	dispatch: React.Dispatch<PayrollWorkspaceAction>;
-	endDate: string;
-	isPending: boolean;
-	onApplyCustomRange: () => void;
-	onApplyDateMode: (mode: PayrollDateRangeMode) => void;
-	startDate: string;
-	t: PayrollTranslate;
-}) {
-	return (
-		<div
-			data-payroll-date-controls=""
-			className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-end"
-		>
-			<div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 lg:w-fit">
-				{(["month", "week", "custom"] as const).map((mode) => (
-					<Button
-						key={mode}
-						type="button"
-						variant={dateMode === mode ? "default" : "ghost"}
-						size="sm"
-						disabled={isPending}
-						aria-pressed={dateMode === mode}
-						onClick={() => onApplyDateMode(mode)}
-					>
-						{getDateModeLabel(t, mode)}
-					</Button>
-				))}
-			</div>
-
-			<div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
-				<div className="space-y-1">
-					<Label htmlFor="payroll-start-date">{t("payroll.period.start", "Start")}</Label>
-					<Input
-						id="payroll-start-date"
-						name="payroll-start-date"
-						autoComplete="off"
-						type="date"
-						value={startDate}
-						disabled={dateMode !== "custom" || isPending}
-						onChange={(event) => dispatch({ type: "startDateChanged", value: event.target.value })}
-					/>
-				</div>
-				<div className="space-y-1">
-					<Label htmlFor="payroll-end-date">{t("payroll.period.end", "End")}</Label>
-					<Input
-						id="payroll-end-date"
-						name="payroll-end-date"
-						autoComplete="off"
-						type="date"
-						value={endDate}
-						disabled={dateMode !== "custom" || isPending}
-						onChange={(event) => dispatch({ type: "endDateChanged", value: event.target.value })}
-					/>
-				</div>
-				<Button
-					type="button"
-					className="sm:self-end"
-					disabled={dateMode !== "custom" || isPending}
-					onClick={onApplyCustomRange}
-				>
-					{isPending ? (
-						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-					) : (
-						<IconCalendarWeek aria-hidden="true" className="size-4" />
-					)}
-					{t("payroll.actions.apply", "Apply")}
-				</Button>
-			</div>
-		</div>
-	);
-}
-
-function PayrollExportControls({
-	dispatch,
-	exportFormats,
-	filtersHaveNoMatches,
-	formatId,
-	hasExportFormats,
-	isPending,
-	onDownloadPdf,
-	onTriggerExport,
-	t,
-}: {
-	dispatch: React.Dispatch<PayrollWorkspaceAction>;
-	exportFormats: PayrollExportFormatOption[];
-	filtersHaveNoMatches: boolean;
-	formatId: string;
-	hasExportFormats: boolean;
-	isPending: boolean;
-	onDownloadPdf: () => void;
-	onTriggerExport: () => void;
-	t: PayrollTranslate;
-}) {
-	return (
-		<div
-			data-payroll-export-controls=""
-			className="grid gap-3 sm:grid-cols-[minmax(0,1fr)] lg:w-88 lg:justify-self-end"
-		>
-			<div className="flex min-w-0 flex-col gap-2 sm:min-w-56">
-				<Label htmlFor="payroll-export-target">
-					{t("payroll.export.target", "Payroll export target")}
-				</Label>
-				<Select
-					value={formatId}
-					onValueChange={(formatId) => dispatch({ type: "formatChanged", formatId })}
-					disabled={!hasExportFormats || isPending}
-				>
-					<SelectTrigger id="payroll-export-target" className="w-full">
-						<SelectValue placeholder={t("payroll.export.selectFormat", "Select format")} />
-					</SelectTrigger>
-					<SelectContent>
-						{exportFormats.map((format) => (
-							<SelectItem key={format.id} value={format.id}>
-								{format.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				{!hasExportFormats ? (
-					<p className="text-muted-foreground text-sm">
-						{t("payroll.export.noConfiguredTarget", "No configured payroll export target")}
-					</p>
-				) : null}
-			</div>
-
-			<div className="grid gap-2 sm:grid-cols-2">
-				<Button
-					type="button"
-					variant="outline"
-					className="w-full justify-center"
-					disabled={isPending || filtersHaveNoMatches}
-					onClick={onDownloadPdf}
-				>
-					{isPending ? (
-						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-					) : (
-						<IconDownload aria-hidden="true" className="size-4" />
-					)}
-					{t("payroll.actions.downloadPdf", "Download PDF")}
-				</Button>
-
-				<Button
-					type="button"
-					className="w-full justify-center"
-					disabled={!hasExportFormats || isPending || filtersHaveNoMatches}
-					onClick={onTriggerExport}
-				>
-					{isPending ? (
-						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-					) : (
-						<IconFileExport aria-hidden="true" className="size-4" />
-					)}
-					{t("payroll.actions.triggerExport", "Trigger export")}
-				</Button>
-			</div>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"payroll.export.notPayment",
-					"Export prepares payroll data. It does not make a payment.",
-				)}
-			</p>
-		</div>
-	);
-}
-
-function PayrollScopeCard({
-	filtersHaveNoMatches,
-	isPending,
-	onApplyEmployees,
-	onApplyTeams,
-	scopedEmployees,
-	selectedEmployeeIds,
-	selectedTeamNames,
-	teamOptions,
-	t,
-}: {
-	filtersHaveNoMatches: boolean;
-	isPending: boolean;
-	onApplyEmployees: (employeeIds: string[], onSuccess?: () => void) => void;
-	onApplyTeams: (teamNames: string[], onSuccess?: () => void) => void;
-	scopedEmployees: PayrollWorkspaceSummary["employees"];
-	selectedEmployeeIds: string[];
-	selectedTeamNames: string[];
-	teamOptions: string[];
-	t: PayrollTranslate;
-}) {
-	const [employeeSheetOpen, setEmployeeSheetOpen] = useState(false);
-	const [draftEmployeeIds, setDraftEmployeeIds] = useState(selectedEmployeeIds);
-	const [teamSheetOpen, setTeamSheetOpen] = useState(false);
-	const [draftTeamNames, setDraftTeamNames] = useState(selectedTeamNames);
-	const scopeSummary = getPayrollScopeSummary({
-		selectedEmployeeIds,
-		selectedTeamNames,
-		t,
-	});
-
-	function openTeamSheet(open: boolean) {
-		setTeamSheetOpen(open);
-		if (open) {
-			setDraftTeamNames(selectedTeamNames);
-		}
-	}
-
-	function openEmployeeSheet(open: boolean) {
-		setEmployeeSheetOpen(open);
-		if (open) {
-			setDraftEmployeeIds(selectedEmployeeIds);
-		}
-	}
-
-	function toggleDraftTeam(teamName: string, checked: boolean) {
-		setDraftTeamNames((currentTeamNames) =>
-			checked
-				? [...currentTeamNames, teamName]
-				: currentTeamNames.filter((currentTeamName) => currentTeamName !== teamName),
-		);
-	}
-
-	function toggleDraftEmployee(employeeId: string, checked: boolean) {
-		setDraftEmployeeIds((currentIds) =>
-			checked
-				? [...currentIds, employeeId]
-				: currentIds.filter((currentId) => currentId !== employeeId),
-		);
-	}
-
-	function applyTeamDraft() {
-		const selectedTeamNameSet = new Set(selectedTeamNames);
-		const teamDraftChanged =
-			draftTeamNames.length !== selectedTeamNames.length ||
-			draftTeamNames.some((teamName) => !selectedTeamNameSet.has(teamName));
-
-		if (teamDraftChanged) {
-			onApplyTeams(draftTeamNames, () => setTeamSheetOpen(false));
-			return;
-		}
-
-		setTeamSheetOpen(false);
-	}
-
-	function applyEmployeeDraft() {
-		const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
-		const employeeDraftChanged =
-			draftEmployeeIds.length !== selectedEmployeeIds.length ||
-			draftEmployeeIds.some((employeeId) => !selectedEmployeeIdSet.has(employeeId));
-
-		if (employeeDraftChanged) {
-			onApplyEmployees(draftEmployeeIds, () => setEmployeeSheetOpen(false));
-			return;
-		}
-
-		setEmployeeSheetOpen(false);
-	}
-
-	const draftTeamNameSet = new Set(draftTeamNames);
-	const draftEmployeeIdSet = new Set(draftEmployeeIds);
-
-	return (
-		<Card className="gap-3 py-4">
-			<CardHeader>
-				<CardTitle role="heading" aria-level={2}>
-					{t("payroll.scope.title", "Payroll scope")}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"payroll.scope.description",
-						"Narrow this payroll workspace by assigned employees or teams.",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent className="flex flex-wrap items-center justify-between gap-3">
-				<div className="min-w-0">
-					<div className="font-medium text-sm">
-						{t("payroll.scope.currentScope", "Current scope")}
-					</div>
-					<p className="mt-1 text-muted-foreground text-sm">{scopeSummary}</p>
-				</div>
-
-				<div className="flex flex-col gap-2 sm:flex-row">
-					<Sheet onOpenChange={openTeamSheet} open={teamSheetOpen}>
-						<SheetTrigger asChild>
-							<Button disabled={isPending} type="button" variant="outline">
-								{t("payroll.scope.specificTeams", "Specific teams")}
-							</Button>
-						</SheetTrigger>
-						<SheetContent className="overflow-y-auto">
-							<SheetHeader>
-								<SheetTitle>{t("payroll.scope.specificTeams", "Specific teams")}</SheetTitle>
-								<SheetDescription>
-									{t(
-										"payroll.scope.specificTeamsDescription",
-										"Choose teams to include in this payroll scope.",
-									)}
-								</SheetDescription>
-							</SheetHeader>
-							<div className="space-y-3 px-4 pb-4">
-								{teamOptions.map((teamName, index) => {
-									const checkboxId = `payroll-scope-team-${index}`;
-
-									return (
-										<div key={teamName} className="flex items-center gap-2">
-											<Checkbox
-												checked={draftTeamNameSet.has(teamName)}
-												disabled={isPending}
-												id={checkboxId}
-												onCheckedChange={(checked) => toggleDraftTeam(teamName, checked === true)}
-											/>
-											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
-												{teamName}
-											</label>
-										</div>
-									);
-								})}
-								{teamOptions.length > 0 ? null : (
-									<p className="text-muted-foreground text-sm">
-										{t("payroll.scope.noAssignedTeams", "No assigned teams in this payroll scope.")}
-									</p>
-								)}
-							</div>
-							<SheetFooter>
-								<Button disabled={isPending} type="button" onClick={applyTeamDraft}>
-									{t("payroll.scope.apply", "Apply")}
-								</Button>
-								<SheetClose asChild>
-									<Button disabled={isPending} type="button" variant="outline">
-										{t("payroll.scope.cancel", "Cancel")}
-									</Button>
-								</SheetClose>
-							</SheetFooter>
-						</SheetContent>
-					</Sheet>
-
-					<Sheet onOpenChange={openEmployeeSheet} open={employeeSheetOpen}>
-						<SheetTrigger asChild>
-							<Button disabled={isPending} type="button" variant="outline">
-								{t("payroll.scope.specificEmployees", "Specific employees")}
-							</Button>
-						</SheetTrigger>
-						<SheetContent className="overflow-y-auto">
-							<SheetHeader>
-								<SheetTitle>
-									{t("payroll.scope.specificEmployees", "Specific employees")}
-								</SheetTitle>
-								<SheetDescription>
-									{t(
-										"payroll.scope.specificEmployeesDescription",
-										"Choose employees to include in this payroll scope.",
-									)}
-								</SheetDescription>
-							</SheetHeader>
-							<div className="space-y-3 px-4 pb-4">
-								{scopedEmployees.map((employee) => {
-									const checkboxId = `payroll-scope-employee-${employee.id}`;
-
-									return (
-										<div key={employee.id} className="flex items-center gap-2">
-											<Checkbox
-												checked={draftEmployeeIdSet.has(employee.id)}
-												disabled={isPending}
-												id={checkboxId}
-												onCheckedChange={(checked) =>
-													toggleDraftEmployee(employee.id, checked === true)
-												}
-											/>
-											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
-												{employee.name}
-											</label>
-										</div>
-									);
-								})}
-								{scopedEmployees.length > 0 ? null : (
-									<p className="text-muted-foreground text-sm">
-										{t(
-											"payroll.scope.noAssignedEmployees",
-											"No assigned employees in this payroll scope.",
-										)}
-									</p>
-								)}
-							</div>
-							<SheetFooter>
-								<Button disabled={isPending} type="button" onClick={applyEmployeeDraft}>
-									{t("payroll.scope.apply", "Apply")}
-								</Button>
-								<SheetClose asChild>
-									<Button disabled={isPending} type="button" variant="outline">
-										{t("payroll.scope.cancel", "Cancel")}
-									</Button>
-								</SheetClose>
-							</SheetFooter>
-						</SheetContent>
-					</Sheet>
-				</div>
-
-				{filtersHaveNoMatches ? (
-					<p className="text-destructive text-sm">
-						{t(
-							"payroll.filters.noMatchingEmployees",
-							"No employees match the selected payroll filters.",
-						)}
-					</p>
-				) : null}
-			</CardContent>
-		</Card>
-	);
-}
-
-function getPayrollScopeSummary({
-	selectedEmployeeIds,
-	selectedTeamNames,
-	t,
-}: {
-	selectedEmployeeIds: string[];
-	selectedTeamNames: string[];
-	t: PayrollTranslate;
-}) {
-	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0) {
-		return t("payroll.scope.allManaged", "All employees and teams I manage");
-	}
-
-	const parts: string[] = [];
-
-	if (selectedTeamNames.length > 0) {
-		parts.push(
-			t("payroll.scope.selectedTeamsCount", "{count} teams", {
-				count: selectedTeamNames.length,
-			}),
-		);
-	}
-
-	if (selectedEmployeeIds.length > 0) {
-		parts.push(
-			t("payroll.scope.selectedEmployeesCount", "{count} employees", {
-				count: selectedEmployeeIds.length,
-			}),
-		);
-	}
-
-	return t("payroll.scope.selectedSummary", "{summary} selected", {
-		summary: parts.join(", "),
-	});
-}
-
-/** The blocker's type label and the action that resolves it. */
-function payrollBlockerAction(
-	blocker: PayrollWorkspaceSummary["blockers"][number],
-	formattedDate: string | null,
-	t: PayrollTranslate,
-) {
-	let blockerType: string;
-	let actionLabel: string;
-	let href: string;
-
-	switch (blocker.type) {
-		case "missing_clock_out":
-		case "unresolved_work_minutes":
-			blockerType =
-				blocker.type === "missing_clock_out"
-					? t("payroll.blockers.missingClockOut", "Missing clock-out")
-					: t("payroll.blockers.unresolvedWorkMinutes", "Work minutes need review");
-			actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
-			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-				formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
-			}`;
-			break;
-		case "offboarding_clock_repair":
-			// Fixed through the existing time correction flow on the calendar.
-			blockerType = t(
-				"payroll.blockers.offboardingClockRepair",
-				"Offboarding clock-out needs repair",
-			);
-			actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
-			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-				formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
-			}`;
-			break;
-		case "open_work":
-			blockerType = t("payroll.blockers.openWork", "Work without clock-out");
-			actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
-			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-				formattedDate && blocker.date ? `?date=${encodeURIComponent(blocker.date)}` : ""
-			}`;
-			break;
-		case "pending_work_approval":
-		case "pending_work_correction":
-			blockerType =
-				blocker.type === "pending_work_approval"
-					? t("payroll.blockers.pendingWorkApproval", "Work awaiting approval")
-					: t("payroll.blockers.pendingTimeCorrection", "Pending time correction");
-			actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
-			href = "/approvals/inbox?types=time_entry";
-			break;
-		case "uncertain_historical_work":
-			blockerType = t("payroll.blockers.uncertainHistoricalWork", "Historical work needs review");
-			actionLabel = t("payroll.blockers.openWorkDiagnostics", "Open work diagnostics");
-			href = "/settings/work-diagnostics";
-			break;
-		case "pending_time_correction":
-			blockerType = t("payroll.blockers.pendingTimeCorrection", "Pending time correction");
-			actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
-			href = "/approvals/inbox?types=time_entry";
-			break;
-		case "pending_absence":
-			blockerType = t("payroll.blockers.pendingAbsence", "Pending absence");
-			actionLabel = t("payroll.blockers.openApprovals", "Open approvals");
-			href = "/approvals/inbox?types=absence_entry";
-			break;
-		case "missing_identifier":
-			// The configured custom field identifier has no value (#821).
-			blockerType = t("payroll.blockers.missingIdentifier", "Missing identifier");
-			actionLabel = t("payroll.blockers.openEmployee", "Open employee");
-			href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
-			break;
-	}
-
-	return { blockerType, actionLabel, href };
-}
-
-function PayrollBlockersAlert({
-	blockers,
-	clearingBlockerKeys,
-	employees,
-	fallbackFocusRef,
-	focusRequest,
-	onClearBlocker,
-	t,
-}: {
-	blockers: PayrollWorkspaceSummary["blockers"];
-	clearingBlockerKeys: ReadonlySet<PayrollBlockerIdentity>;
-	employees: PayrollWorkspaceSummary["employees"];
-	fallbackFocusRef: React.RefObject<HTMLDivElement | null>;
-	focusRequest: BlockerFocusRequest | null;
-	onClearBlocker: (blocker: DismissiblePayrollBlocker, activatedControl: HTMLButtonElement) => void;
-	t: PayrollTranslate;
-}) {
-	const locale = useLocale();
-	const triggerRef = useRef<HTMLButtonElement | null>(null);
-	const handledFocusRequestIdRef = useRef(0);
-	const blockerControlRefs = useRef(
-		new Map<
-			PayrollBlockerIdentity,
-			{ action: HTMLAnchorElement | null; clear: HTMLButtonElement | null }
-		>(),
-	);
-	const employeeNames = new Map(employees.map((employee) => [employee.id, employee.name]));
-	const title = t("payroll.blockers.needReview", "{count} payroll blockers need review", {
-		count: blockers.length,
-	});
-
-	useEffect(() => {
-		if (!focusRequest || handledFocusRequestIdRef.current === focusRequest.id) return;
-
-		handledFocusRequestIdRef.current = focusRequest.id;
-		const controls = focusRequest.targetBlockerKey
-			? blockerControlRefs.current.get(focusRequest.targetBlockerKey)
-			: undefined;
-		const targetControl =
-			controls?.clear && !controls.clear.disabled ? controls.clear : controls?.action;
-		const fallbackTarget = blockers.length === 0 ? fallbackFocusRef.current : triggerRef.current;
-		(targetControl ?? fallbackTarget)?.focus();
-	}, [blockers.length, fallbackFocusRef, focusRequest]);
-
-	function setBlockerControlRef(
-		blockerKey: PayrollBlockerIdentity,
-		control: "action" | "clear",
-		node: HTMLAnchorElement | HTMLButtonElement | null,
-	) {
-		const refs = blockerControlRefs.current.get(blockerKey) ?? {
-			action: null,
-			clear: null,
-		};
-		if (control === "action") refs.action = node as HTMLAnchorElement | null;
-		else refs.clear = node as HTMLButtonElement | null;
-
-		if (!refs.action && !refs.clear) blockerControlRefs.current.delete(blockerKey);
-		else blockerControlRefs.current.set(blockerKey, refs);
-	}
-
-	if (blockers.length === 0) return null;
-
-	return (
-		<Collapsible asChild>
-			<section
-				aria-labelledby="payroll-blockers-title"
-				className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
-			>
-				<header>
-					<h2 id="payroll-blockers-title">
-						<CollapsibleTrigger asChild>
-							<button
-								className="flex min-h-11 w-full items-start gap-3 rounded-sm text-left font-medium leading-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&[data-panel-open]>svg:last-child]:rotate-180"
-								ref={triggerRef}
-								type="button"
-							>
-								<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-								<span className="min-w-0 flex-1">{title}</span>
-								<IconChevronDown
-									aria-hidden="true"
-									className="size-4 shrink-0 transition-transform"
-								/>
-							</button>
-						</CollapsibleTrigger>
-					</h2>
-				</header>
-				<CollapsibleContent asChild>
-					<ul className="mt-3 grid gap-2">
-						{blockers.map((blocker) => {
-							const blockerKey = payrollBlockerIdentity(blocker);
-							const isClearing = clearingBlockerKeys.has(blockerKey);
-							const summaryEmployeeName = employeeNames.get(blocker.employeeId);
-							const employeeName =
-								summaryEmployeeName && summaryEmployeeName !== blocker.employeeId
-									? summaryEmployeeName
-									: t("payroll.blockers.unknownEmployee", "Unknown employee");
-							const formattedDate = formatPayrollBlockerDate(blocker.date, locale);
-							const metadata = formattedDate
-								? [formattedDate, blocker.time].filter(Boolean).join(", ")
-								: t("payroll.blockers.dateUnavailable", "Date unavailable");
-							const { blockerType, actionLabel, href } = payrollBlockerAction(
-								blocker,
-								formattedDate,
-								t,
-							);
-
-							return (
-								<li
-									className="grid min-w-0 gap-2 rounded-md border bg-background px-3 py-2 text-foreground lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4"
-									data-payroll-blocker-key={blockerKey}
-									key={blockerKey}
-								>
-									<div className="grid min-w-0 gap-1 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,auto)] lg:items-center lg:gap-4">
-										<span className="min-w-0 break-words font-medium">{employeeName}</span>
-										<span className="min-w-0 break-words">{blockerType}</span>
-										{formattedDate && blocker.date ? (
-											<time
-												className="min-w-0 text-muted-foreground text-xs tabular-nums"
-												dateTime={`${blocker.date}${blocker.time ? `T${blocker.time}` : ""}`}
-											>
-												{metadata}
-											</time>
-										) : (
-											<span className="text-muted-foreground text-xs">{metadata}</span>
-										)}
-									</div>
-									<div
-										className={`grid gap-1 lg:flex lg:items-center lg:justify-end ${
-											isDismissiblePayrollBlocker(blocker) ? "sm:grid-cols-2" : ""
-										}`}
-									>
-										<Button asChild className="w-full lg:w-auto" size="sm" variant="outline">
-											<Link
-												aria-label={`${actionLabel}: ${employeeName}, ${blockerType}, ${metadata}`}
-												href={href}
-												ref={(node) => setBlockerControlRef(blockerKey, "action", node)}
-											>
-												{actionLabel}
-											</Link>
-										</Button>
-										{isDismissiblePayrollBlocker(blocker) ? (
-											<Button
-												aria-label={`${
-													isClearing
-														? t("payroll.blockers.clearingFalsePositive", "Clearing false positive")
-														: t("payroll.blockers.clearFalsePositive", "Clear false positive")
-												}: ${employeeName}, ${blockerType}, ${metadata}`}
-												aria-busy={isClearing}
-												className="w-full lg:w-auto"
-												disabled={isClearing}
-												onClick={(event) => onClearBlocker(blocker, event.currentTarget)}
-												ref={(node) => setBlockerControlRef(blockerKey, "clear", node)}
-												size="sm"
-												type="button"
-												variant="ghost"
-											>
-												{isClearing
-													? t("payroll.blockers.clearingFalsePositive", "Clearing false positive")
-													: t("payroll.blockers.clearFalsePositive", "Clear false positive")}
-											</Button>
-										) : null}
-									</div>
-								</li>
-							);
-						})}
-					</ul>
-				</CollapsibleContent>
-			</section>
-		</Collapsible>
-	);
-}
-
-function formatPayrollBlockerDate(date: string | null, locale: string): string | null {
-	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date ?? "");
-	if (!match) return null;
-
-	const year = Number(match[1]);
-	const month = Number(match[2]);
-	const day = Number(match[3]);
-	const bridgeDate = new Date(0);
-	bridgeDate.setUTCFullYear(year, month - 1, day);
-	bridgeDate.setUTCHours(0, 0, 0, 0);
-
-	if (
-		bridgeDate.getUTCFullYear() !== year ||
-		bridgeDate.getUTCMonth() !== month - 1 ||
-		bridgeDate.getUTCDate() !== day
-	) {
-		return null;
-	}
-
-	return Intl.DateTimeFormat(locale, {
-		dateStyle: "medium",
-		timeZone: "UTC",
-	}).format(bridgeDate);
-}
-
-function EmployeeTotalsCard({
-	employees,
-	t,
-}: {
-	employees: PayrollWorkspaceSummary["employees"];
-	t: PayrollTranslate;
-}) {
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle role="heading" aria-level={2}>
-					{t("payroll.employeeTotals.title", "Employee totals")}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"payroll.employeeTotals.description",
-						"Worked time, absence totals, contract type, and payroll status.",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<div
-					role="region"
-					aria-label={t("payroll.employeeTotals.title", "Employee totals")}
-					// biome-ignore lint/a11y/noNoninteractiveTabindex: Named comparison region needs keyboard scrolling.
-					tabIndex={0}
-					className="max-w-full overflow-x-auto rounded-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&>div]:overflow-visible"
-				>
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>{t("payroll.employeeTotals.employee", "Employee")}</TableHead>
-								<TableHead>{t("payroll.employeeTotals.team", "Team")}</TableHead>
-								<TableHead>{t("payroll.employeeTotals.contract", "Contract")}</TableHead>
-								<TableHead className="text-right">
-									{t("payroll.employeeTotals.hours", "Hours")}
-								</TableHead>
-								<TableHead>{t("payroll.employeeTotals.absences", "Absences")}</TableHead>
-								<TableHead>{t("payroll.employeeTotals.status", "Status")}</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{employees.length > 0 ? (
-								employees.map((employee) => (
-									<TableRow key={employee.id}>
-										<TableCell>
-											<div className="font-medium">{employee.name}</div>
-											<div className="text-muted-foreground text-xs">
-												{employee.employeeNumber ??
-													t("payroll.employeeTotals.noEmployeeNumber", "No employee number")}
-											</div>
-										</TableCell>
-										<TableCell>
-											{employee.teamName ?? t("payroll.employeeTotals.noTeam", "No team")}
-										</TableCell>
-										<TableCell>
-											<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
-												{employee.contractType === "hourly"
-													? t("payroll.employeeTotals.contractHourly", "Hourly")
-													: t("payroll.employeeTotals.contractFixed", "Fixed")}
-											</Badge>
-										</TableCell>
-										<TableCell className="text-right tabular-nums">
-											{formatTableHours(employee.workedHours)}
-										</TableCell>
-										<TableCell>{formatAbsences(t, employee.absenceDaysByCategory)}</TableCell>
-										<TableCell>
-											<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
-												{employee.hasBlockers
-													? t("payroll.employeeTotals.blocked", "Blocked")
-													: t("payroll.employeeTotals.readyForPayroll", "Ready for payroll")}
-											</Badge>
-										</TableCell>
-									</TableRow>
-								))
-							) : (
-								<TableRow>
-									<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-										{t(
-											"payroll.filters.noMatchingEmployees",
-											"No employees match the selected payroll filters.",
-										)}
-									</TableCell>
-								</TableRow>
-							)}
-						</TableBody>
-					</Table>
-				</div>
-			</CardContent>
-		</Card>
-	);
-}
-
-function SummaryCard({
-	focusRef,
-	icon,
-	label,
-	value,
-	tone = "default",
-}: {
-	focusRef?: React.Ref<HTMLDivElement>;
-	icon?: React.ReactNode;
-	label: string;
-	value: string;
-	tone?: "default" | "warning";
-}) {
-	return (
-		<div
-			role="group"
-			aria-label={label}
-			className={[
-				"min-w-0 space-y-2 p-4",
-				tone === "warning"
-					? "border-amber-200 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/20"
-					: undefined,
-				focusRef
-					? "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-					: undefined,
-			]
-				.filter(Boolean)
-				.join(" ")}
-			ref={focusRef}
-			tabIndex={focusRef ? -1 : undefined}
-		>
-			<div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-				<span>{label}</span>
-				{icon}
-			</div>
-			<div className="text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
-		</div>
-	);
-}
-
-function formatHours(hours: number) {
-	return `${hours.toFixed(2)} h`;
-}
-
-function formatTableHours(hours: number) {
-	return `${hours.toLocaleString(undefined, { maximumFractionDigits: 2 })} h`;
-}
-
-function formatAbsences(
-	t: PayrollTranslate,
-	absences: PayrollWorkspaceSummary["employees"][number]["absenceDaysByCategory"],
-) {
-	if (absences.length === 0) return t("payroll.employeeTotals.noAbsences", "None");
-
-	return absences.map((absence) => `${absence.categoryName}: ${absence.days}`).join(", ");
-}
-
-function getDateModeLabel(t: PayrollTranslate, mode: PayrollDateRangeMode) {
-	if (mode === "month") return t("payroll.period.mode.month", "Month");
-	if (mode === "week") return t("payroll.period.mode.week", "Week");
-
-	return t("payroll.period.mode.custom", "Custom");
-}
-
-function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeriodRequest {
-	return {
-		startDate: summary.period.start,
-		endDate: summary.period.end,
-		label: summary.period.label,
-	};
-}
-
-function buildPeriodRequest(start: DateTime, mode: Exclude<PayrollDateRangeMode, "custom">) {
-	const normalizedStart = start.startOf(mode);
-	const end = normalizedStart.endOf(mode);
-
-	return {
-		startDate: normalizedStart.toISODate() ?? "",
-		endDate: end.toISODate() ?? "",
-		label: formatPeriodLabel(normalizedStart, end, mode),
-	};
-}
-
-function getTeamOptions(employees: PayrollWorkspaceSummary["employees"]): string[] {
-	return Array.from(
-		new Set(employees.flatMap((employee) => (employee.teamName ? [employee.teamName] : []))),
-	).toSorted() as string[];
-}
-
-function getFilteredEmployeeIds(
-	employees: PayrollWorkspaceSummary["employees"],
-	selectedEmployeeIds: string[],
-	selectedTeamNames: string[],
-): string[] | undefined {
-	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0) return undefined;
-
-	const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
-	const selectedTeamNameSet = new Set(selectedTeamNames);
-	const employeeIds: string[] = [];
-
-	for (const employee of employees) {
-		const matchesEmployee =
-			selectedEmployeeIds.length === 0 || selectedEmployeeIdSet.has(employee.id);
-		const matchesTeam =
-			selectedTeamNames.length === 0 ||
-			(employee.teamName !== null && selectedTeamNameSet.has(employee.teamName));
-
-		if (matchesEmployee && matchesTeam) {
-			employeeIds.push(employee.id);
-		}
-	}
-
-	return employeeIds;
-}
-
-function formatPeriodLabel(start: DateTime, end: DateTime, mode: PayrollDateRangeMode) {
-	if (mode === "month") return start.toFormat("LLLL yyyy");
-	if (mode === "week") return `${start.toFormat("LLL d")} - ${end.toFormat("LLL d, yyyy")}`;
-
-	return `${start.toISODate()} - ${end.toISODate()}`;
-}
-
-function formatDisplayedPeriod(
-	start: string,
-	end: string,
-	mode: PayrollDateRangeMode,
-	locale: string,
-) {
-	const startDate = Temporal.PlainDate.from(start);
-	const endDate = Temporal.PlainDate.from(end);
-	if (mode === "month") return startDate.toLocaleString(locale, { month: "long", year: "numeric" });
-	if (mode === "week")
-		return `${startDate.toLocaleString(locale, { month: "short", day: "numeric" })} - ${endDate.toLocaleString(locale, { month: "short", day: "numeric", year: "numeric" })}`;
-	return `${startDate.toLocaleString(locale)} - ${endDate.toLocaleString(locale)}`;
 }

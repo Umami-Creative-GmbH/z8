@@ -90,6 +90,16 @@ async function openHistorical(user: ReturnType<typeof userEvent.setup>) {
 	);
 	return within(await screen.findByRole("dialog"));
 }
+async function pickEmployee(
+	user: ReturnType<typeof userEvent.setup>,
+	panel: ReturnType<typeof within>,
+	label: string | RegExp,
+	name: RegExp,
+) {
+	await user.click(panel.getByLabelText(label));
+	await user.click(await screen.findByRole("option", { name }));
+	await waitFor(() => expect(screen.queryByRole("option", { name })).toBeNull());
+}
 
 describe("Equipment overview", () => {
 	it("names the authorized summary scope and keeps partial outstanding returns distinct from overdue", async () => {
@@ -399,10 +409,7 @@ describe("Issuing equipment", () => {
 			ids.laptopType,
 		);
 		await user.type(panel.getByLabelText(/Equipment identifier/), "L-NEW");
-		await user.selectOptions(
-			panel.getByLabelText("Current employee"),
-			ids.alex,
-		);
+		await pickEmployee(user, panel, "Current employee", /Alex Current/);
 		await user.type(panel.getByLabelText(/Actual handover date/), "2026-11-04");
 		await user.click(panel.getByRole("button", { name: "Record issuance" }));
 		await waitFor(() =>
@@ -431,10 +438,12 @@ describe("Issuing equipment", () => {
 			ids.laptop,
 		);
 		const employeeSelect = panel.getByLabelText(/^Current employee/);
-		await user.selectOptions(employeeSelect, ids.alex);
-		expect(
-			within(employeeSelect).queryByRole("option", { name: "Robin Former" }),
-		).toBeNull();
+		await user.click(employeeSelect);
+		expect(screen.queryByRole("option", { name: /Robin Former/ })).toBeNull();
+		await user.click(await screen.findByRole("option", { name: /Alex Current/ }));
+		await waitFor(() =>
+			expect(screen.queryByRole("option", { name: /Alex Current/ })).toBeNull(),
+		);
 		expect(
 			(panel.getByLabelText("Return required") as HTMLInputElement).checked,
 		).toBe(false);
@@ -495,10 +504,7 @@ describe("Issuing equipment", () => {
 			panel.getByLabelText(/^Equipment item/),
 			quantityType.id,
 		);
-		await user.selectOptions(
-			panel.getByLabelText(/^Current employee/),
-			ids.alex,
-		);
+		await pickEmployee(user, panel, /^Current employee/, /Alex Current/);
 		await user.type(
 			panel.getByLabelText(/^Actual handover date/),
 			"2026-11-04",
@@ -538,10 +544,7 @@ describe("Issuing equipment", () => {
 			panel.getByLabelText(/^Equipment item/),
 			quantityType.id,
 		);
-		await user.selectOptions(
-			panel.getByLabelText(/^Current employee/),
-			ids.alex,
-		);
+		await pickEmployee(user, panel, /^Current employee/, /Alex Current/);
 		await user.type(
 			panel.getByLabelText(/^Actual handover date/),
 			"2026-11-04",
@@ -586,10 +589,7 @@ describe("Issuing equipment", () => {
 			panel.getByLabelText(/Equipment item/),
 			ids.laptopType,
 		);
-		await user.selectOptions(
-			panel.getByLabelText("Current or former employee"),
-			ids.robin,
-		);
+		await pickEmployee(user, panel, "Current or former employee", /Robin Former/);
 		await user.clear(panel.getByLabelText(/Quantity/));
 		await user.type(panel.getByLabelText(/Quantity/), "3");
 		await user.type(panel.getByLabelText(/Actual handover date/), "2026-11-06");
@@ -837,8 +837,8 @@ describe("Employee equipment", () => {
 		const panel = await openPanel(user, "Issue equipment");
 		const holder = panel.getByLabelText(
 			/^Current employee/,
-		) as HTMLSelectElement;
-		expect(holder.value).toBe(ids.alex);
+		) as HTMLButtonElement;
+		expect(holder.textContent).toContain("Alex Current");
 		expect(holder.disabled).toBe(true);
 	});
 

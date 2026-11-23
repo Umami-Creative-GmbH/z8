@@ -1,6 +1,5 @@
 import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
-import type { Temporal } from "temporal-polyfill";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import {
 	employee,
@@ -12,7 +11,15 @@ import {
 	holidayPresetAssignment,
 	type holidayPresetHoliday,
 } from "@/db/schema";
-import { holidayCalendarDate } from "@/lib/holidays/recurrence";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	instantFromDate,
+	type PlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import { holidayCalendarDate, holidayStoredDates } from "@/lib/holidays/recurrence";
+import { preserveTrustBasedBalanceDates } from "./trust-based-dates";
 import type { DailyWorkRequirements, HolidayEvent } from "./types";
 
 export interface AssignedHolidayRange {
@@ -78,22 +85,25 @@ type HolidayPresetAssignmentWithPreset = {
 		| null;
 };
 
-function toUtcDay(date: Date): DateTime {
-	return DateTime.fromJSDate(date, { zone: "utc" }).startOf("day");
+function tryToUtcDay(date: Date): PlainDate | null {
+	try {
+		return plainDateAt(instantFromDate(date), "UTC");
+	} catch {
+		return null;
+	}
 }
 
 export function getAssignedHolidayDateKeys(holidays: AssignedHolidayRange[]): Set<string> {
 	const dateKeys = new Set<string>();
 
 	for (const holiday of holidays) {
-		let cursor = toUtcDay(holiday.startDate);
-		const end = toUtcDay(holiday.endDate);
-		if (!cursor.isValid || !end.isValid || end < cursor) continue;
+		let cursor = tryToUtcDay(holiday.startDate);
+		const end = tryToUtcDay(holiday.endDate);
+		if (!cursor || !end || comparePlainDates(end, cursor) < 0) continue;
 
-		while (cursor <= end) {
-			const dateKey = cursor.toISODate();
-			if (dateKey) dateKeys.add(dateKey);
-			cursor = cursor.plus({ days: 1 });
+		while (comparePlainDates(cursor, end) <= 0) {
+			dateKeys.add(cursor.toString());
+			cursor = cursor.add({ days: 1 });
 		}
 	}
 
@@ -114,7 +124,7 @@ export function applyAssignedHolidayAdjustmentsToRequirements(
 		};
 	}
 
-	return adjusted;
+	return preserveTrustBasedBalanceDates(requirements, adjusted);
 }
 
 export function assignedHolidayToCalendarEvent(holiday: AssignedHolidayRange): HolidayEvent {
@@ -148,9 +158,7 @@ function assignmentAppliesTo(
 	return (
 		row.assignmentType === "organization" ||
 		(row.assignmentType === "employee" && row.employeeId === person.id) ||
-		(row.assignmentType === "team" &&
-			row.teamId !== null &&
-			row.teamId === person.teamId)
+		(row.assignmentType === "team" && row.teamId !== null && row.teamId === person.teamId)
 	);
 }
 function getBatchAssignmentScope(
@@ -163,10 +171,7 @@ function getBatchAssignmentScope(
 ) {
 	return [
 		eq(table.assignmentType, "organization"),
-		and(
-			eq(table.assignmentType, "employee"),
-			inArray(table.employeeId, employeeIds),
-		),
+		and(eq(table.assignmentType, "employee"), inArray(table.employeeId, employeeIds)),
 		teamIds.length
 			? and(eq(table.assignmentType, "team"), inArray(table.teamId, teamIds))
 			: undefined,
@@ -174,12 +179,12 @@ function getBatchAssignmentScope(
 }
 
 export function getPresetHolidayExpansionYears(startDate: Date, endDate: Date): number[] {
-	const startYear = toUtcDay(startDate).year;
-	const endYear = toUtcDay(endDate).year;
-	if (!Number.isFinite(startYear) || !Number.isFinite(endYear) || endYear < startYear) return [];
+	const start = tryToUtcDay(startDate);
+	const end = tryToUtcDay(endDate);
+	if (!start || !end || end.year < start.year) return [];
 
 	const years: number[] = [];
-	for (let year = startYear - 1; year <= endYear; year++) {
+	for (let year = start.year - 1; year <= end.year; year++) {
 		years.push(year);
 	}
 	return years;
@@ -195,21 +200,29 @@ function expandPresetHolidayForYear(params: {
 	>;
 	year: number;
 }): AssignedHolidayRange | null {
-	const start = DateTime.utc(
-		params.year,
-		params.presetHoliday.month,
-		params.presetHoliday.day,
-	).startOf("day");
-	if (!start.isValid) return null;
+	let startDate: PlainDate;
+	try {
+		startDate = Temporal.PlainDate.from(
+			{
+				year: params.year,
+				month: params.presetHoliday.month,
+				day: params.presetHoliday.day,
+			},
+			{ overflow: "reject" },
+		);
+	} catch {
+		return null;
+	}
 
 	const durationDays = Math.max(1, params.presetHoliday.durationDays ?? 1);
-	const end = start.plus({ days: durationDays - 1 }).endOf("day");
+	const endDate = startDate.add({ days: durationDays - 1 });
+	const range = utcDayRange(startDate, endDate);
 
 	return {
 		id: `preset-${params.presetId}-${params.presetHoliday.id}-${params.year}`,
 		name: params.presetHoliday.name,
-		startDate: start.toJSDate(),
-		endDate: end.toJSDate(),
+		startDate: range.startDate,
+		endDate: range.endDate,
 		categoryId: params.presetHoliday.categoryId,
 		color: params.presetColor,
 		description: params.presetHoliday.description,
@@ -225,6 +238,16 @@ function overlapsRange(holiday: AssignedHolidayRange, startDate: Date, endDate: 
 	return holiday.startDate <= endDate && holiday.endDate >= startDate;
 }
 
+/** Inclusive calendar dates as UTC midnight to the end of the last day, as presets are. */
+function utcDayRange(start: PlainDate, end: PlainDate): { startDate: Date; endDate: Date } {
+	return {
+		startDate: dateFromInstant(start.toZonedDateTime("UTC").toInstant()),
+		endDate: dateFromInstant(
+			end.add({ days: 1 }).toZonedDateTime("UTC").toInstant().subtract({ milliseconds: 1 }),
+		),
+	};
+}
+
 function toAssignedHolidayRange(
 	holiday: CustomAssignedHoliday,
 	dateRange: { startDate: Date; endDate: Date },
@@ -233,7 +256,7 @@ function toAssignedHolidayRange(
 		id:
 			dateRange.startDate.getTime() === holiday.startDate.getTime()
 				? holiday.id
-				: `${holiday.id}-${toUtcDay(dateRange.startDate).year}`,
+				: `${holiday.id}-${plainDateAt(instantFromDate(dateRange.startDate), "UTC").year}`,
 		name: holiday.name,
 		startDate: dateRange.startDate,
 		endDate: dateRange.endDate,
@@ -251,26 +274,37 @@ export function expandCustomAssignedHoliday(
 ): AssignedHolidayRange[] {
 	if (!holiday.isActive) return [];
 
-	const requestedStart = toUtcDay(requestedRange.startDate);
-	const requestedEnd = toUtcDay(requestedRange.endDate).endOf("day");
-	const originalStart = toUtcDay(holiday.startDate);
-	const originalEnd = toUtcDay(holiday.endDate);
+	const requestedStart = tryToUtcDay(requestedRange.startDate);
+	const requestedEnd = tryToUtcDay(requestedRange.endDate);
+	const originalStart = tryToUtcDay(holiday.startDate);
+	const originalEnd = tryToUtcDay(holiday.endDate);
 	if (
-		!requestedStart.isValid ||
-		!requestedEnd.isValid ||
-		requestedEnd < requestedStart ||
-		!originalStart.isValid ||
-		!originalEnd.isValid ||
-		originalEnd < originalStart
+		!requestedStart ||
+		!requestedEnd ||
+		comparePlainDates(requestedEnd, requestedStart) < 0 ||
+		!originalStart ||
+		!originalEnd ||
+		comparePlainDates(originalEnd, originalStart) < 0
 	) {
 		return [];
 	}
 
+	// Imported rows hold local-midnight instants; they are read on their calendar dates.
+	const storedDates = holidayStoredDates(holiday.startDate, holiday.endDate);
+
 	if (holiday.recurrenceType === "none") {
-		const assignedHoliday = toAssignedHolidayRange(holiday, {
-			startDate: holiday.startDate,
-			endDate: holiday.endDate,
-		});
+		const storedAsUtcDates =
+			storedDates.start.equals(holidayCalendarDate(holiday.startDate)) &&
+			storedDates.end.equals(holidayCalendarDate(holiday.endDate));
+		const assignedHoliday = storedAsUtcDates
+			? toAssignedHolidayRange(holiday, {
+					startDate: holiday.startDate,
+					endDate: holiday.endDate,
+				})
+			: {
+					...toAssignedHolidayRange(holiday, utcDayRange(storedDates.start, storedDates.end)),
+					id: holiday.id,
+				};
 		return overlapsRange(assignedHoliday, requestedRange.startDate, requestedRange.endDate)
 			? [assignedHoliday]
 			: [];
@@ -279,32 +313,39 @@ export function expandCustomAssignedHoliday(
 	if (holiday.recurrenceType !== "yearly") return [];
 
 	// The saved start date is authoritative, including for legacy malformed rules.
-	const originalDate = holidayCalendarDate(holiday.startDate);
+	const originalDate = storedDates.start;
 
-	const durationDays = originalDate.until(holidayCalendarDate(holiday.endDate)).days + 1;
-	const recurrenceEnd = holiday.recurrenceEndDate
-		? toUtcDay(holiday.recurrenceEndDate).endOf("day")
+	const durationDays = originalDate.until(storedDates.end).days + 1;
+	const recurrenceEndDay = holiday.recurrenceEndDate
+		? tryToUtcDay(holiday.recurrenceEndDate)
+		: null;
+	const recurrenceEndMs = recurrenceEndDay
+		? recurrenceEndDay
+				.add({ days: 1 })
+				.toZonedDateTime("UTC")
+				.toInstant()
+				.subtract({ milliseconds: 1 }).epochMilliseconds
 		: null;
 	const expanded: AssignedHolidayRange[] = [];
-	const firstExpansionYear = Math.max(requestedStart.year - 1, originalStart.year);
+	const firstExpansionYear = Math.max(requestedStart.year - 1, originalDate.year);
 
 	for (let year = firstExpansionYear; year <= requestedEnd.year; year++) {
-		let occurrence: Temporal.PlainDate;
+		let occurrence: PlainDate;
 		try {
 			occurrence = originalDate.with({ year }, { overflow: "reject" });
 		} catch {
 			continue; // February 29 has no occurrence in a non-leap year.
 		}
 		const start = occurrence.toZonedDateTime("UTC").toInstant();
-		if (recurrenceEnd && start.epochMilliseconds > recurrenceEnd.toMillis()) continue;
+		if (recurrenceEndMs !== null && start.epochMilliseconds > recurrenceEndMs) continue;
 		const end = occurrence
 			.add({ days: durationDays })
 			.toZonedDateTime("UTC")
 			.toInstant()
 			.subtract({ milliseconds: 1 });
 		const assignedHoliday = toAssignedHolidayRange(holiday, {
-			startDate: new Date(start.epochMilliseconds),
-			endDate: new Date(end.epochMilliseconds),
+			startDate: dateFromInstant(start),
+			endDate: dateFromInstant(end),
 		});
 		if (overlapsRange(assignedHoliday, requestedRange.startDate, requestedRange.endDate)) {
 			expanded.push(assignedHoliday);
@@ -383,8 +424,7 @@ export async function getAssignedHolidaysForEmployees(params: {
 	const scopedEmployees = params.employees
 		? params.employees.filter(
 				(person) =>
-					person.organizationId === params.organizationId &&
-					params.employeeIds.includes(person.id),
+					person.organizationId === params.organizationId && params.employeeIds.includes(person.id),
 			)
 		: await database.query.employee.findMany({
 				where: and(
@@ -396,9 +436,7 @@ export async function getAssignedHolidaysForEmployees(params: {
 
 	if (!scopedEmployees.length) return new Map();
 	const employeeIds = scopedEmployees.map((person) => person.id);
-	const teamIds = scopedEmployees.flatMap((person) =>
-		person.teamId ? [person.teamId] : [],
-	);
+	const teamIds = scopedEmployees.flatMap((person) => (person.teamId ? [person.teamId] : []));
 
 	const customAssignments = (await database.query.holidayAssignment.findMany({
 		where: and(
@@ -425,128 +463,110 @@ export async function getAssignedHolidaysForEmployees(params: {
 		},
 	})) as unknown as (DirectCustomHolidayAssignment & AssignmentScope)[];
 
-	const categoryAssignments =
-		(await database.query.holidayCategoryAssignment.findMany({
-			where: and(
-				eq(holidayCategoryAssignment.organizationId, params.organizationId),
-				eq(holidayCategoryAssignment.isActive, true),
-				or(
-					...getBatchAssignmentScope(
-						holidayCategoryAssignment,
-						employeeIds,
-						teamIds,
-					),
-				),
-			),
-			with: {
-				category: {
-					columns: { organizationId: true, isActive: true },
-					with: {
-						holidays: {
-							columns: {
-								id: true,
-								name: true,
-								organizationId: true,
-								startDate: true,
-								endDate: true,
-								categoryId: true,
-								description: true,
-								isActive: true,
-								recurrenceType: true,
-								recurrenceRule: true,
-								recurrenceEndDate: true,
-							},
-							where: and(
-								eq(holiday.organizationId, params.organizationId),
-								eq(holiday.isActive, true),
-								or(
-									and(
-										eq(holiday.recurrenceType, "none"),
-										lte(holiday.startDate, params.endDate),
-										gte(holiday.endDate, params.startDate),
-									),
-									and(
-										eq(holiday.recurrenceType, "yearly"),
-										lte(holiday.startDate, params.endDate),
-										or(
-											isNull(holiday.recurrenceEndDate),
-											gte(holiday.recurrenceEndDate, params.startDate),
-										),
+	const categoryAssignments = (await database.query.holidayCategoryAssignment.findMany({
+		where: and(
+			eq(holidayCategoryAssignment.organizationId, params.organizationId),
+			eq(holidayCategoryAssignment.isActive, true),
+			or(...getBatchAssignmentScope(holidayCategoryAssignment, employeeIds, teamIds)),
+		),
+		with: {
+			category: {
+				columns: { organizationId: true, isActive: true },
+				with: {
+					holidays: {
+						columns: {
+							id: true,
+							name: true,
+							organizationId: true,
+							startDate: true,
+							endDate: true,
+							categoryId: true,
+							description: true,
+							isActive: true,
+							recurrenceType: true,
+							recurrenceRule: true,
+							recurrenceEndDate: true,
+						},
+						where: and(
+							eq(holiday.organizationId, params.organizationId),
+							eq(holiday.isActive, true),
+							or(
+								and(
+									eq(holiday.recurrenceType, "none"),
+									lte(holiday.startDate, params.endDate),
+									gte(holiday.endDate, params.startDate),
+								),
+								and(
+									eq(holiday.recurrenceType, "yearly"),
+									lte(holiday.startDate, params.endDate),
+									or(
+										isNull(holiday.recurrenceEndDate),
+										gte(holiday.recurrenceEndDate, params.startDate),
 									),
 								),
 							),
-						},
+						),
 					},
 				},
 			},
-		})) as unknown as (CategoryCustomHolidayAssignment & AssignmentScope)[];
+		},
+	})) as unknown as (CategoryCustomHolidayAssignment & AssignmentScope)[];
 
-	const presetAssignments =
-		(await database.query.holidayPresetAssignment.findMany({
-			columns: {
-				assignmentType: true,
-				employeeId: true,
-				teamId: true,
-				effectiveFrom: true,
-				effectiveUntil: true,
-			},
-			where: and(
-				eq(holidayPresetAssignment.organizationId, params.organizationId),
-				eq(holidayPresetAssignment.isActive, true),
-				or(
-					...getBatchAssignmentScope(
-						holidayPresetAssignment,
-						employeeIds,
-						teamIds,
-					),
-				),
-				or(
-					isNull(holidayPresetAssignment.effectiveFrom),
-					lte(holidayPresetAssignment.effectiveFrom, params.endDate),
-				),
-				or(
-					isNull(holidayPresetAssignment.effectiveUntil),
-					gte(holidayPresetAssignment.effectiveUntil, params.startDate),
-				),
+	const presetAssignments = (await database.query.holidayPresetAssignment.findMany({
+		columns: {
+			assignmentType: true,
+			employeeId: true,
+			teamId: true,
+			effectiveFrom: true,
+			effectiveUntil: true,
+		},
+		where: and(
+			eq(holidayPresetAssignment.organizationId, params.organizationId),
+			eq(holidayPresetAssignment.isActive, true),
+			or(...getBatchAssignmentScope(holidayPresetAssignment, employeeIds, teamIds)),
+			or(
+				isNull(holidayPresetAssignment.effectiveFrom),
+				lte(holidayPresetAssignment.effectiveFrom, params.endDate),
 			),
-			with: {
-				preset: {
-					columns: {
-						id: true,
-						name: true,
-						organizationId: true,
-						color: true,
-						isActive: true,
-					},
-					with: {
-						holidays: {
-							columns: {
-								id: true,
-								name: true,
-								description: true,
-								month: true,
-								day: true,
-								durationDays: true,
-								categoryId: true,
-								isActive: true,
-							},
+			or(
+				isNull(holidayPresetAssignment.effectiveUntil),
+				gte(holidayPresetAssignment.effectiveUntil, params.startDate),
+			),
+		),
+		with: {
+			preset: {
+				columns: {
+					id: true,
+					name: true,
+					organizationId: true,
+					color: true,
+					isActive: true,
+				},
+				with: {
+					holidays: {
+						columns: {
+							id: true,
+							name: true,
+							description: true,
+							month: true,
+							day: true,
+							durationDays: true,
+							categoryId: true,
+							isActive: true,
 						},
 					},
 				},
 			},
-		})) as unknown as (HolidayPresetAssignmentWithPreset & AssignmentScope)[];
+		},
+	})) as unknown as (HolidayPresetAssignmentWithPreset & AssignmentScope)[];
 
 	const result = new Map<string, AssignedHolidayRange[]>();
 	for (const person of scopedEmployees) {
 		const holidaysById = new Map<string, AssignedHolidayRange>();
 
 		for (const expandedHoliday of mergeAssignedCustomHolidays({
-			directAssignments: customAssignments.filter((row) =>
-				assignmentAppliesTo(row, person),
-			),
-			categoryAssignments: categoryAssignments.filter((row) =>
-				assignmentAppliesTo(row, person),
-			),
+			directAssignments: customAssignments.filter((row) => assignmentAppliesTo(row, person)),
+			categoryAssignments: categoryAssignments.filter((row) => assignmentAppliesTo(row, person)),
 			organizationId: params.organizationId,
 			startDate: params.startDate,
 			endDate: params.endDate,
@@ -554,16 +574,10 @@ export async function getAssignedHolidaysForEmployees(params: {
 			holidaysById.set(`custom-${expandedHoliday.id}`, expandedHoliday);
 		}
 
-		const expansionYears = getPresetHolidayExpansionYears(
-			params.startDate,
-			params.endDate,
-		);
-		for (const assignment of presetAssignments.filter((row) =>
-			assignmentAppliesTo(row, person),
-		)) {
+		const expansionYears = getPresetHolidayExpansionYears(params.startDate, params.endDate);
+		for (const assignment of presetAssignments.filter((row) => assignmentAppliesTo(row, person))) {
 			const preset = assignment.preset;
-			if (!preset?.isActive || preset.organizationId !== params.organizationId)
-				continue;
+			if (!preset?.isActive || preset.organizationId !== params.organizationId) continue;
 
 			for (const year of expansionYears) {
 				for (const presetHoliday of preset.holidays) {

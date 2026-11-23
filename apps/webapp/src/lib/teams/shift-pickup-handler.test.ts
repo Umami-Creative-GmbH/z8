@@ -1,6 +1,10 @@
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ConflictError, ValidationError } from "@/lib/effect/errors";
+import { ShiftRequestService } from "@/lib/effect/services/shift-request.service";
 
 const mocks = vi.hoisted(() => ({
+	requestPickup: vi.fn(),
 	createNotification: vi.fn(),
 	employeeFindFirst: vi.fn(),
 	managerRecipients: vi.fn(),
@@ -29,7 +33,113 @@ vi.mock("@/lib/notifications/manager-notice-recipients", () => ({
 	currentRosterManagerRecipients: mocks.managerRecipients,
 }));
 
-import { notifyPrimaryManagerAboutShiftPickup } from "./shift-pickup-handler";
+// The bot submits through the shift request service; the fake stands in for its outcome.
+vi.mock("@/lib/effect/runtime", () => ({
+	runtime: {
+		runPromise: <A, E>(effect: Effect.Effect<A, E, ShiftRequestService>) =>
+			Effect.runPromise(
+				effect.pipe(
+					Effect.provide(
+						Layer.succeed(
+							ShiftRequestService,
+							ShiftRequestService.of({ requestPickup: mocks.requestPickup } as never),
+						),
+					),
+				),
+			),
+	},
+}));
+
+import {
+	handleShiftPickupAction,
+	notifyPrimaryManagerAboutShiftPickup,
+} from "./shift-pickup-handler";
+
+describe("handleShiftPickupAction (#1597)", () => {
+	const sendActivity = vi.fn();
+	const context = { sendActivity } as never;
+	const tenant = { tenantId: "tenant-1", organizationId: "org-1" } as never;
+	const replies = () => sendActivity.mock.calls.map(([activity]) => activity.text as string);
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.loadOrganizationTimezone.mockResolvedValue("Europe/Berlin");
+		mocks.managerRecipients.mockResolvedValue({ userIds: ["manager-user-1"], reason: "managers" });
+		mocks.employeeFindFirst.mockResolvedValue({ userId: "requester-user", firstName: "Ada" });
+		mocks.shiftFindFirst.mockResolvedValue({
+			date: new Date("2026-06-01T22:00:00.000Z"),
+			startTime: "09:00",
+			endTime: "17:00",
+		});
+	});
+
+	it("submits the pickup through the shift request service and asks the manager to review it", async () => {
+		mocks.requestPickup.mockReturnValue(Effect.succeed({ id: "request-1", status: "pending" }));
+
+		await handleShiftPickupAction(context, "shift-1", "employee-1", tenant);
+
+		expect(mocks.requestPickup).toHaveBeenCalledWith("org-1", {
+			shiftId: "shift-1",
+			requesterId: "employee-1",
+		});
+		expect(replies()).toEqual([expect.stringContaining("Shift pickup request submitted")]);
+		expect(mocks.createNotification).toHaveBeenCalledOnce();
+	});
+
+	it("tells the only decider their pickup is approved and asks nobody to review it", async () => {
+		mocks.requestPickup.mockReturnValue(Effect.succeed({ id: "request-1", status: "approved" }));
+
+		await handleShiftPickupAction(context, "shift-1", "employee-1", tenant);
+
+		expect(replies()).toEqual([expect.stringContaining("Shift picked up")]);
+		expect(mocks.createNotification).not.toHaveBeenCalled();
+	});
+
+	it("says the shift is no longer available when it was assigned meanwhile", async () => {
+		mocks.requestPickup.mockReturnValue(
+			Effect.fail(
+				new ValidationError({
+					message: "This shift is already assigned. Use swap request instead.",
+					field: "employeeId",
+				}),
+			),
+		);
+
+		await handleShiftPickupAction(context, "shift-1", "employee-1", tenant);
+
+		expect(replies()).toEqual([expect.stringContaining("Shift no longer available")]);
+	});
+
+	it("sends the only decider to the planner when they lack a required skill for the shift", async () => {
+		mocks.requestPickup.mockReturnValue(
+			Effect.fail(
+				new ValidationError({
+					message: "Give a reason to assign an employee without every required skill",
+					field: "skillOverrideReason",
+				}),
+			),
+		);
+
+		await handleShiftPickupAction(context, "shift-1", "employee-1", tenant);
+
+		expect(replies()).toEqual([expect.stringContaining("Required skill missing")]);
+	});
+
+	it("says a pickup is already pending for a duplicate request", async () => {
+		mocks.requestPickup.mockReturnValue(
+			Effect.fail(
+				new ConflictError({
+					message: "You already have a pending request for this shift",
+					conflictType: "duplicate_request",
+				}),
+			),
+		);
+
+		await handleShiftPickupAction(context, "shift-1", "employee-1", tenant);
+
+		expect(replies()).toEqual([expect.stringContaining("Request already pending")]);
+	});
+});
 
 describe("notifyPrimaryManagerAboutShiftPickup", () => {
 	beforeEach(() => {
@@ -44,7 +154,10 @@ describe("notifyPrimaryManagerAboutShiftPickup", () => {
 		"notifies the requester's primary manager of a $timezone organization's shift date",
 		async ({ timezone, stored }) => {
 			mocks.loadOrganizationTimezone.mockResolvedValue(timezone);
-			mocks.managerRecipients.mockResolvedValue({ userIds: ["manager-user-1"], reason: "managers" });
+			mocks.managerRecipients.mockResolvedValue({
+				userIds: ["manager-user-1"],
+				reason: "managers",
+			});
 			mocks.employeeFindFirst.mockResolvedValue({
 				userId: "requester-user",
 				firstName: "Ada",

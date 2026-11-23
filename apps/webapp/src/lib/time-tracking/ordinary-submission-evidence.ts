@@ -202,28 +202,28 @@ export async function loadCanonicalEvidence(
 	organizationId: string,
 ) {
 	if (!period?.canonicalRecordId) throw new Error("Submission collision");
-	const [record, workRows, allocations] = await Promise.all([
-		tx.query.timeRecord.findFirst({
-			where: and(
-				eq(timeRecord.id, period.canonicalRecordId),
-				eq(timeRecord.organizationId, organizationId),
-			),
-		}),
-		tx.query.timeRecordWork.findMany({
-			where: and(
-				eq(timeRecordWork.recordId, period.canonicalRecordId),
-				eq(timeRecordWork.organizationId, organizationId),
-			),
-			limit: 2,
-		}),
-		tx.query.timeRecordAllocation.findMany({
-			where: and(
-				eq(timeRecordAllocation.recordId, period.canonicalRecordId),
-				eq(timeRecordAllocation.organizationId, organizationId),
-			),
-			limit: 2,
-		}),
-	]);
+	// One after another: a transaction is one connection, and pg@9 drops queries
+	// queued on a connection that is still executing another.
+	const record = await tx.query.timeRecord.findFirst({
+		where: and(
+			eq(timeRecord.id, period.canonicalRecordId),
+			eq(timeRecord.organizationId, organizationId),
+		),
+	});
+	const workRows = await tx.query.timeRecordWork.findMany({
+		where: and(
+			eq(timeRecordWork.recordId, period.canonicalRecordId),
+			eq(timeRecordWork.organizationId, organizationId),
+		),
+		limit: 2,
+	});
+	const allocations = await tx.query.timeRecordAllocation.findMany({
+		where: and(
+			eq(timeRecordAllocation.recordId, period.canonicalRecordId),
+			eq(timeRecordAllocation.organizationId, organizationId),
+		),
+		limit: 2,
+	});
 	return { record, workRows, allocations };
 }
 

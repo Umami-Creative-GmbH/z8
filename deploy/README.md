@@ -60,9 +60,9 @@ The workflow at `.github/workflows/publish-images.yml` builds and publishes the 
 
 Workflow details:
 
-- Uses native `amd64` and native `arm64` runners (no QEMU emulation)
+- Builds only `linux/amd64` images while ARM64 publishing is paused
 - Builds `webapp`, `worker`, and `migration` directly from `docker/Dockerfile.webapp`, `docker/Dockerfile.worker`, and `docker/Dockerfile.migration`
-- Publishes multi-arch manifests for `z8-webapp`, `z8-worker`, and `z8-migration` from those target-specific digests
+- Publishes manifests for `z8-webapp`, `z8-worker`, and `z8-migration` from those target-specific digests
 - Passes the `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` repository secret to the webapp build as the `next_server_actions_encryption_key` build secret. Next.js salts server action IDs with it at build time. Keep the value stable across releases: if it changes or is missing, action IDs change every deploy, and tabs opened before the deploy fail their next server action call. Generate it with `openssl rand -base64 32`.
 
 ### Build cache experiment
@@ -111,13 +111,13 @@ The docs image is published separately by `.github/workflows/publish-docs-image.
 
 - `ghcr.io/umami-creative-gmbh/z8-docs`
 
-That workflow follows the same native `amd64` and `arm64` multi-arch publishing pattern and publishes `latest` from `main` plus `sha-<shortsha>` and semver tags.
+That workflow follows the same `linux/amd64` publishing pattern and publishes `latest` from `main` plus `sha-<shortsha>` and semver tags.
 
 The marketing image is published separately by `.github/workflows/publish-marketing-image.yml`:
 
 - `ghcr.io/umami-creative-gmbh/z8-marketing`
 
-That workflow follows the same native `amd64` and `arm64` multi-arch publishing pattern and publishes `latest` from `main` plus `sha-<shortsha>` and semver tags.
+That workflow follows the same `linux/amd64` publishing pattern and publishes `latest` from `main` plus `sha-<shortsha>` and semver tags.
 
 ### Published Tags
 

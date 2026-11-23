@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { KIOSK_TOKEN_STORAGE_KEY, type KioskDeviceInfo } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskApp } from "./kiosk-app";
@@ -80,6 +81,21 @@ describe("KioskApp", () => {
 		expect(JSON.parse(String(calls[0].init?.body))).toEqual({ code: "ABCDE-FGHJK" });
 		expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBe("z8k_device-token");
 		expect(window.localStorage.length).toBe(1);
+	});
+
+	it("keeps the QR pairing code across React StrictMode effect replays", async () => {
+		window.history.replaceState(null, "", "/en/kiosk?code=ABCDE-FGHJK");
+		stubFetch(() => Response.json({}, { status: 404 }));
+
+		render(
+			<StrictMode>
+				<KioskApp />
+			</StrictMode>,
+		);
+
+		const input = (await screen.findByLabelText("Pairing code")) as HTMLInputElement;
+		expect(input.value).toBe("ABCDE-FGHJK");
+		expect(window.location.search).toBe("");
 	});
 
 	it("explains a refused code and stays unpaired", async () => {

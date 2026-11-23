@@ -9,15 +9,7 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Effect } from "effect";
 import type { Pool, PoolClient } from "pg";
-import {
-	afterAll,
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
 import * as schema from "@/db/schema";
@@ -101,8 +93,7 @@ const inboxObservation = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original =
-		await importOriginal<typeof import("@/lib/notifications/triggers")>();
+	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
 	const observed = <Name extends keyof typeof original>(trigger: Name) =>
 		(async (params: { workPeriodId?: unknown }) => {
 			if (!inboxObservation.active) {
@@ -141,10 +132,7 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 });
 
 const integrationSource = readFileSync(
-	join(
-		process.cwd(),
-		"src/lib/approvals/server/work-period-approvals.integration.test.ts",
-	),
+	join(process.cwd(), "src/lib/approvals/server/work-period-approvals.integration.test.ts"),
 	"utf8",
 );
 
@@ -199,10 +187,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"`insert into employee (id, user_id, organization_id, updated_at) values",
 			seedStart,
 		);
-		const managerStart = integrationSource.indexOf(
-			"`insert into employee_managers",
-			employeeStart,
-		);
+		const managerStart = integrationSource.indexOf("`insert into employee_managers", employeeStart);
 		const employeeSeed = integrationSource.slice(employeeStart, managerStart);
 		expect(employeeSeed).toMatch(
 			/\(\$1, \$2, \$7, \$9\), \(\$3, \$4, \$7, \$9\), \(\$5, \$6, \$8, \$9\)/,
@@ -214,24 +199,13 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 
 	it("routes every checked-out transaction client through bounded rollback cleanup", () => {
 		expect(integrationSource).toContain("async function withRollbackClient");
-		const helperStart = integrationSource.lastIndexOf(
-			"async function withRollbackClient",
-		);
-		const helperEnd = integrationSource.indexOf(
-			"describe(",
-			helperStart,
-		);
-		expect(integrationSource.slice(helperStart, helperEnd)).toContain(
-			"} finally {",
-		);
+		const helperStart = integrationSource.lastIndexOf("async function withRollbackClient");
+		const helperEnd = integrationSource.indexOf("describe(", helperStart);
+		expect(integrationSource.slice(helperStart, helperEnd)).toContain("} finally {");
 		expect(integrationSource.match(/pool\.connect\(\)/g)).toHaveLength(1);
-		expect(integrationSource.match(/client\.query\("begin"\)/g)).toHaveLength(
-			1,
-		);
+		expect(integrationSource.match(/client\.query\("begin"\)/g)).toHaveLength(1);
 		expect(integrationSource).toContain("set local statement_timeout = '15s'");
-		expect(integrationSource).toContain(
-			"set local idle_in_transaction_session_timeout = '10s'",
-		);
+		expect(integrationSource).toContain("set local idle_in_transaction_session_timeout = '10s'");
 	});
 
 	it("selects both private policy snapshots in every PostgreSQL parity query", () => {
@@ -262,17 +236,14 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 		expect(registration).not.toMatch(/it\.(?:todo|skip)/);
 		expect(registration).toMatch(/async\s*\(/);
 		const expected = modes.flatMap((mode) =>
-			(["assignment replacement", "rule deletion"] as const).flatMap(
-				(mutation) =>
-					([false, true] as const).map((split) =>
-						JSON.stringify({ mode, mutation, split }),
-					),
+			(["assignment replacement", "rule deletion"] as const).flatMap((mutation) =>
+				([false, true] as const).map((split) => JSON.stringify({ mode, mutation, split })),
 			),
 		);
 		expect(surchargeMutationCases).toHaveLength(20);
-		expect(
-			surchargeMutationCases.map((value) => JSON.stringify(value)).sort(),
-		).toEqual(expected.sort());
+		expect(surchargeMutationCases.map((value) => JSON.stringify(value)).sort()).toEqual(
+			expected.sort(),
+		);
 	});
 
 	it("registers every captured surcharge toggle mode and split combination", () => {
@@ -280,27 +251,22 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"uses captured surcharge enablement after $toggle with split=$split in $mode mode";
 		expect(integrationSource.split(scenario)).toHaveLength(3);
 		const expected = modes.flatMap((mode) =>
-			(["disabled to enabled", "enabled to disabled"] as const).flatMap(
-				(toggle) =>
-					([false, true] as const).map((split) =>
-						JSON.stringify({ mode, toggle, split }),
-					),
+			(["disabled to enabled", "enabled to disabled"] as const).flatMap((toggle) =>
+				([false, true] as const).map((split) => JSON.stringify({ mode, toggle, split })),
 			),
 		);
 		expect(surchargeToggleCases).toHaveLength(20);
-		expect(
-			surchargeToggleCases.map((value) => JSON.stringify(value)).sort(),
-		).toEqual(expected.sort());
+		expect(surchargeToggleCases.map((value) => JSON.stringify(value)).sort()).toEqual(
+			expected.sort(),
+		);
 	});
 
 	it("executes every terminal maintenance scenario without placeholders", () => {
 		for (const scenario of [
 			"reconciles stale surcharge and clean balance for terminal " +
 				"split/no-split/reject in %s mode",
-			"rolls back surcharge reconciliation atomically with terminal " +
-				"maintenance",
-			"replays terminal maintenance without duplicate surcharge or " +
-				"balance writes",
+			"rolls back surcharge reconciliation atomically with terminal " + "maintenance",
+			"replays terminal maintenance without duplicate surcharge or " + "balance writes",
 		] as const) {
 			const scenarioIndex = integrationSource.lastIndexOf(scenario);
 			const registration = integrationSource.slice(
@@ -427,17 +393,13 @@ const disabledSurchargeSnapshot = {
 function dbService(db: unknown): ApprovalDbService {
 	return {
 		db: db as ApprovalDbService["db"],
-		query: <T>(_name: string, operation: () => Promise<T>) =>
-			Effect.promise(operation),
+		query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
 	};
 }
 
 async function withRollbackClient<T>(
 	pool: Pool,
-	operation: (input: {
-		client: PoolClient;
-		commit: () => Promise<void>;
-	}) => Promise<T>,
+	operation: (input: { client: PoolClient; commit: () => Promise<void> }) => Promise<T>,
 ): Promise<T> {
 	const client = await pool.connect();
 	let transactionOpen = false;
@@ -479,11 +441,7 @@ async function withRollbackClient<T>(
 		}
 		try {
 			client.release(
-				cleanupFailed
-					? cleanupError instanceof Error
-						? cleanupError
-						: true
-					: undefined,
+				cleanupFailed ? (cleanupError instanceof Error ? cleanupError : true) : undefined,
 			);
 		} catch (error) {
 			if (!cleanupFailed) cleanupError = error;
@@ -496,1285 +454,1217 @@ async function withRollbackClient<T>(
 	return result.value;
 }
 
-describe(
-	"ordinary work-period PostgreSQL concurrency and rollback",
-	() => {
-		const pool = openIntegrationPool({ max: 20 });
-		const database = drizzle({ client: pool, schema: databaseSchema });
-		const manager: CurrentApprover = {
-			id: ids.manager,
-			userId: ids.managerUser,
-			organizationId: ids.organization,
-			user: {
-				id: ids.managerUser,
-				name: "Task 11 Manager",
-				email: "task11-manager@example.test",
-				image: null,
-			},
-		};
+describe("ordinary work-period PostgreSQL concurrency and rollback", () => {
+	const pool = openIntegrationPool({ max: 20 });
+	const database = drizzle({ client: pool, schema: databaseSchema });
+	const manager: CurrentApprover = {
+		id: ids.manager,
+		userId: ids.managerUser,
+		organizationId: ids.organization,
+		user: {
+			id: ids.managerUser,
+			name: "Task 11 Manager",
+			email: "task11-manager@example.test",
+			image: null,
+		},
+	};
 
-		function runtime(
-			borrowed: ApprovalWorkflowDatabase = database as unknown as ApprovalWorkflowDatabase,
-			clock: { nowInstant: () => typeof now } = { nowInstant: () => now },
-		) {
-			return createProductionApprovalWorkflowRuntime({
-				db: borrowed,
-				adapters: {
-					absence: {
-						clock: systemClock,
-						finalizeAbsenceTerminal: async () => {
-							throw new Error("absence is outside Task 11");
-						},
-						deleteCancelledAbsence: async () => {
-							throw new Error("absence is outside Task 11");
-						},
+	function runtime(
+		borrowed: ApprovalWorkflowDatabase = database as unknown as ApprovalWorkflowDatabase,
+		clock: { nowInstant: () => typeof now } = { nowInstant: () => now },
+	) {
+		return createProductionApprovalWorkflowRuntime({
+			db: borrowed,
+			adapters: {
+				absence: {
+					clock: systemClock,
+					finalizeAbsenceTerminal: async () => {
+						throw new Error("absence is outside Task 11");
 					},
-					timeCorrection: {
-						clock: systemClock,
-						finalizeTimeCorrectionTerminal: async () => {
-							throw new Error("time correction is outside Task 11");
-						},
-						deleteCancelledCorrections: async () => {
-							throw new Error("time correction is outside Task 11");
-						},
-					},
-					ordinaryWorkPeriod: {
-						finalizeTerminal:
-							finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+					deleteCancelledAbsence: async () => {
+						throw new Error("absence is outside Task 11");
 					},
 				},
-				canManageApproval: async ({ organizationId, actorEmployeeId }) =>
-					organizationId === ids.organization &&
-					actorEmployeeId === ids.manager,
-				clock,
-			});
-		}
+				timeCorrection: {
+					clock: systemClock,
+					finalizeTimeCorrectionTerminal: async () => {
+						throw new Error("time correction is outside Task 11");
+					},
+					deleteCancelledCorrections: async () => {
+						throw new Error("time correction is outside Task 11");
+					},
+				},
+				ordinaryWorkPeriod: {
+					finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+				},
+			},
+			canManageApproval: async ({ organizationId, actorEmployeeId }) =>
+				organizationId === ids.organization && actorEmployeeId === ids.manager,
+			clock,
+		});
+	}
 
-		async function cleanup() {
-			await pool.query("delete from organization where id in ($1, $2)", [
-				ids.organization,
-				ids.foreignOrganization,
-			]);
-			await pool.query('delete from "user" where id in ($1, $2, $3)', [
-				ids.requesterUser,
-				ids.managerUser,
-				ids.foreignUser,
-			]);
-		}
+	async function cleanup() {
+		await pool.query("delete from organization where id in ($1, $2)", [
+			ids.organization,
+			ids.foreignOrganization,
+		]);
+		await pool.query('delete from "user" where id in ($1, $2, $3)', [
+			ids.requesterUser,
+			ids.managerUser,
+			ids.foreignUser,
+		]);
+	}
 
-		async function seed(
-			kind: OrdinaryWorkPeriodApprovalKind = "manual_time_submission",
-			withBreakPolicy = false,
-			mode: ApprovalWorkflowLifecycleMode = "canonical",
-			requesterAutoApproves = false,
-			withApprovalChain = false,
-			submittedSurchargeSnapshot: unknown = surchargeSnapshot,
-		) {
-			await cleanup();
-			const timestamp = new Date(now.epochMilliseconds);
-			await pool.query(
-				`insert into organization (id, name, slug, created_at) values
+	async function seed(
+		kind: OrdinaryWorkPeriodApprovalKind = "manual_time_submission",
+		withBreakPolicy = false,
+		mode: ApprovalWorkflowLifecycleMode = "canonical",
+		requesterAutoApproves = false,
+		withApprovalChain = false,
+		submittedSurchargeSnapshot: unknown = surchargeSnapshot,
+	) {
+		await cleanup();
+		const timestamp = new Date(now.epochMilliseconds);
+		await pool.query(
+			`insert into organization (id, name, slug, created_at) values
 			 ($1, 'Task 11 Ordinary', $1, $3), ($2, 'Task 11 Foreign', $2, $3)`,
-				[ids.organization, ids.foreignOrganization, timestamp],
-			);
-			await pool.query(
-				`insert into "user" (id, name, email, created_at, updated_at) values
+			[ids.organization, ids.foreignOrganization, timestamp],
+		);
+		await pool.query(
+			`insert into "user" (id, name, email, created_at, updated_at) values
 			 ($1, 'Requester', 'task11-requester@example.test', $4, $4),
 			 ($2, 'Manager', 'task11-manager@example.test', $4, $4),
 			 ($3, 'Foreign', 'task11-foreign@example.test', $4, $4)`,
-				[ids.requesterUser, ids.managerUser, ids.foreignUser, timestamp],
-			);
-			await pool.query(
-				`insert into member (id, organization_id, user_id, role, created_at) values
+			[ids.requesterUser, ids.managerUser, ids.foreignUser, timestamp],
+		);
+		await pool.query(
+			`insert into member (id, organization_id, user_id, role, created_at) values
 			 ($1, $3, $4, 'member', $6), ($2, $3, $5, 'manager', $6)`,
-				[
-					ids.requesterMember,
-					ids.managerMember,
-					ids.organization,
-					ids.requesterUser,
-					ids.managerUser,
-					timestamp,
-				],
-			);
-			await pool.query(
-				`insert into employee (id, user_id, organization_id, updated_at) values
+			[
+				ids.requesterMember,
+				ids.managerMember,
+				ids.organization,
+				ids.requesterUser,
+				ids.managerUser,
+				timestamp,
+			],
+		);
+		await pool.query(
+			`insert into employee (id, user_id, organization_id, updated_at) values
 			 ($1, $2, $7, $9), ($3, $4, $7, $9), ($5, $6, $8, $9)`,
-				[
-					ids.requester,
-					ids.requesterUser,
-					ids.manager,
-					ids.managerUser,
-					ids.foreignEmployee,
-					ids.foreignUser,
-					ids.organization,
-					ids.foreignOrganization,
-					timestamp,
-				],
-			);
+			[
+				ids.requester,
+				ids.requesterUser,
+				ids.manager,
+				ids.managerUser,
+				ids.foreignEmployee,
+				ids.foreignUser,
+				ids.organization,
+				ids.foreignOrganization,
+				timestamp,
+			],
+		);
+		await pool.query(
+			"update employee set role = 'manager' where id = $1 and organization_id = $2",
+			[ids.manager, ids.organization],
+		);
+		if (requesterAutoApproves) {
 			await pool.query(
 				"update employee set role = 'manager' where id = $1 and organization_id = $2",
-				[ids.manager, ids.organization],
+				[ids.requester, ids.organization],
 			);
-			if (requesterAutoApproves) {
-				await pool.query(
-					"update employee set role = 'manager' where id = $1 and organization_id = $2",
-					[ids.requester, ids.organization],
-				);
-			}
-			await pool.query(
-				`insert into employee_managers
+		}
+		await pool.query(
+			`insert into employee_managers
 			 (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
 			 values ($1, $2, $3, true, $4, $5, $5)`,
-				[
-					ids.managerLink,
-					ids.requester,
-					requesterAutoApproves ? ids.requester : ids.manager,
-					requesterAutoApproves ? ids.requesterUser : ids.managerUser,
-					timestamp,
-				],
-			);
-			await pool.query(
-				`insert into user_settings (user_id, timezone, updated_at)
+			[
+				ids.managerLink,
+				ids.requester,
+				requesterAutoApproves ? ids.requester : ids.manager,
+				requesterAutoApproves ? ids.requesterUser : ids.managerUser,
+				timestamp,
+			],
+		);
+		await pool.query(
+			`insert into user_settings (user_id, timezone, updated_at)
 			 values ($1, 'UTC', $2)`,
-				[ids.requesterUser, timestamp],
-			);
-			const clockInHash = calculateHash({
-				employeeId: ids.requester,
-				type: "clock_in",
-				timestamp: startTime.toISOString(),
-				previousHash: null,
-			});
-			const clockOutHash = calculateHash({
-				employeeId: ids.requester,
-				type: "clock_out",
-				timestamp: endTime.toISOString(),
-				previousHash: clockInHash,
-			});
-			await pool.query(
-				`insert into time_entry (
+			[ids.requesterUser, timestamp],
+		);
+		const clockInHash = calculateHash({
+			employeeId: ids.requester,
+			type: "clock_in",
+			timestamp: startTime.toISOString(),
+			previousHash: null,
+		});
+		const clockOutHash = calculateHash({
+			employeeId: ids.requester,
+			type: "clock_out",
+			timestamp: endTime.toISOString(),
+			previousHash: clockInHash,
+		});
+		await pool.query(
+			`insert into time_entry (
 			 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
 			 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 			 created_by, created_at
 			 ) values
 			 ($1, $3, $4, 'clock_in', $5, 0, 'UTC', 'backfill', null, $8, null, $7, $5),
 			 ($2, $3, $4, 'clock_out', $6, 0, 'UTC', 'backfill', $1, $9, $8, $7, $6)`,
-				[
-					ids.clockIn,
-					ids.clockOut,
-					ids.organization,
-					ids.requester,
-					startTime,
-					endTime,
-					ids.requesterUser,
-					clockInHash,
-					clockOutHash,
-				],
-			);
-			await pool.query(
-				`insert into project
+			[
+				ids.clockIn,
+				ids.clockOut,
+				ids.organization,
+				ids.requester,
+				startTime,
+				endTime,
+				ids.requesterUser,
+				clockInHash,
+				clockOutHash,
+			],
+		);
+		await pool.query(
+			`insert into project
 			 (id, organization_id, name, status, is_active, created_by, updated_at)
 			 values ($1, $2, 'Task 11 project', 'active', true, $3, $4)`,
-				[ids.project, ids.organization, ids.managerUser, timestamp],
-			);
-			await pool.query(
-				`insert into time_record (
+			[ids.project, ids.organization, ids.managerUser, timestamp],
+		);
+		await pool.query(
+			`insert into time_record (
 			 id, organization_id, employee_id, record_kind, start_at, end_at,
 			 duration_minutes, approval_state, origin, created_at, created_by, updated_at
 			 ) values ($1, $2, $3, 'work', $4, $5, 480, 'pending', $6, $7, $8, $7)`,
-				[
-					ids.canonical,
-					ids.organization,
-					ids.requester,
-					startTime,
-					endTime,
-					kind === "policy_clock_out" ? "clock" : "manual",
-					timestamp,
-					ids.requesterUser,
-				],
-			);
-			await pool.query(
-				"insert into time_record_work (record_id, organization_id, record_kind) values ($1, $2, 'work')",
-				[ids.canonical, ids.organization],
-			);
-			await pool.query(
-				`insert into time_record_allocation
+			[
+				ids.canonical,
+				ids.organization,
+				ids.requester,
+				startTime,
+				endTime,
+				kind === "policy_clock_out" ? "clock" : "manual",
+				timestamp,
+				ids.requesterUser,
+			],
+		);
+		await pool.query(
+			"insert into time_record_work (record_id, organization_id, record_kind) values ($1, $2, 'work')",
+			[ids.canonical, ids.organization],
+		);
+		await pool.query(
+			`insert into time_record_allocation
 			 (id, organization_id, record_id, allocation_kind, project_id, weight_percent, created_at)
 			 values ($1, $2, $3, 'project', $4, 100, $5)`,
-				[
-					ids.allocation,
-					ids.organization,
-					ids.canonical,
-					ids.project,
-					timestamp,
-				],
-			);
-			await pool.query(
-				`insert into work_period (
+			[ids.allocation, ids.organization, ids.canonical, ids.project, timestamp],
+		);
+		await pool.query(
+			`insert into work_period (
 			 id, organization_id, employee_id, clock_in_id, clock_out_id,
 			 canonical_record_id, project_id, start_time, end_time, duration_minutes, is_active,
 			 approval_status, pending_changes, updated_at
 			 ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 480, false, 'pending', $10, $11)`,
-				[
-					ids.period,
-					ids.organization,
-					ids.requester,
-					ids.clockIn,
-					ids.clockOut,
-					ids.canonical,
-					ids.project,
-					startTime,
-					endTime,
-					JSON.stringify(
-						kind === "manual_time_submission"
-							? {
-									isManualEntry: true,
-									ordinarySubmission: {
-										submissionId: ids.submission,
-										kind,
-									},
-									surchargeSnapshot: submittedSurchargeSnapshot,
-								}
-							: {
-									isNewClockOut: true,
-									ordinarySubmission: {
-										submissionId: ids.submission,
-										kind,
-									},
-									breakPolicySnapshot: withBreakPolicy
-										? {
-												version: 1,
-												evaluatedAt: "2026-07-22T16:00:00Z",
-												resolution: "work_policy",
-												teamId: null,
-												assignment: {
-													id: ids.policyAssignment,
-													type: "employee",
-												},
-												policy: {
-													id: ids.policy,
-													name: "Task 11 break",
-												},
-												regulationEnabled: true,
-												regulation: {
-													id: ids.regulation,
-													name: "Task 11 break",
-													maxUninterruptedMinutes: 360,
-												},
-												breakRules: [
-													{
-														id: ids.breakRule,
-														workingMinutesThreshold: 360,
-														requiredBreakMinutes: 30,
-													},
-												],
-											}
-										: {
-												version: 1,
-												evaluatedAt: "2026-07-22T16:00:00Z",
-												resolution: "none",
-											},
-									surchargeSnapshot: submittedSurchargeSnapshot,
+			[
+				ids.period,
+				ids.organization,
+				ids.requester,
+				ids.clockIn,
+				ids.clockOut,
+				ids.canonical,
+				ids.project,
+				startTime,
+				endTime,
+				JSON.stringify(
+					kind === "manual_time_submission"
+						? {
+								isManualEntry: true,
+								ordinarySubmission: {
+									submissionId: ids.submission,
+									kind,
 								},
-					),
+								surchargeSnapshot: submittedSurchargeSnapshot,
+							}
+						: {
+								isNewClockOut: true,
+								ordinarySubmission: {
+									submissionId: ids.submission,
+									kind,
+								},
+								breakPolicySnapshot: withBreakPolicy
+									? {
+											version: 1,
+											evaluatedAt: "2026-07-22T16:00:00Z",
+											resolution: "work_policy",
+											teamId: null,
+											assignment: {
+												id: ids.policyAssignment,
+												type: "employee",
+											},
+											policy: {
+												id: ids.policy,
+												name: "Task 11 break",
+											},
+											regulationEnabled: true,
+											regulation: {
+												id: ids.regulation,
+												name: "Task 11 break",
+												maxUninterruptedMinutes: 360,
+											},
+											breakRules: [
+												{
+													id: ids.breakRule,
+													workingMinutesThreshold: 360,
+													requiredBreakMinutes: 30,
+												},
+											],
+										}
+									: {
+											version: 1,
+											evaluatedAt: "2026-07-22T16:00:00Z",
+											resolution: "none",
+										},
+								surchargeSnapshot: submittedSurchargeSnapshot,
+							},
+				),
+				timestamp,
+			],
+		);
+		await pool.query(
+			`insert into approval_workflow_rollout
+			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+			 values ($1, $2, $3, $4, $5, $5)`,
+			[
+				ids.organization,
+				kind,
+				mode,
+				mode === "canonical" || mode === "complete" ? "canonical" : "legacy",
+				timestamp,
+			],
+		);
+		if (withApprovalChain) {
+			await pool.query(
+				`insert into approval_policy
+					 (id, organization_id, name, is_active, priority, created_by, updated_at)
+					 values ($1, $2, 'Task 11 two-stage', true, 1, $3, $4)`,
+				[ids.approvalPolicy, ids.organization, ids.managerUser, timestamp],
+			);
+			await pool.query(
+				`insert into approval_policy_condition
+					 (id, organization_id, policy_id, condition_type, operator, value_json, updated_at)
+					 values ($1, $2, $3, 'approval_type', 'in', $4::jsonb, $5)`,
+				[
+					ids.approvalCondition,
+					ids.organization,
+					ids.approvalPolicy,
+					JSON.stringify(["time_entry"]),
 					timestamp,
 				],
 			);
 			await pool.query(
-				`insert into approval_workflow_rollout
-			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
-			 values ($1, $2, $3, $4, $5, $5)`,
-				[
-					ids.organization,
-					kind,
-					mode,
-					mode === "canonical" || mode === "complete" ? "canonical" : "legacy",
-					timestamp,
-				],
-			);
-			if (withApprovalChain) {
-				await pool.query(
-					`insert into approval_policy
-					 (id, organization_id, name, is_active, priority, created_by, updated_at)
-					 values ($1, $2, 'Task 11 two-stage', true, 1, $3, $4)`,
-					[ids.approvalPolicy, ids.organization, ids.managerUser, timestamp],
-				);
-				await pool.query(
-					`insert into approval_policy_condition
-					 (id, organization_id, policy_id, condition_type, operator, value_json, updated_at)
-					 values ($1, $2, $3, 'approval_type', 'in', $4::jsonb, $5)`,
-					[
-						ids.approvalCondition,
-						ids.organization,
-						ids.approvalPolicy,
-						JSON.stringify(["time_entry"]),
-						timestamp,
-					],
-				);
-				await pool.query(
-					`insert into approval_policy_stage
+				`insert into approval_policy_stage
 					 (id, organization_id, policy_id, step_order, label, approver_type,
 					  fallback_behavior, updated_at)
 					 values
 					 ($1, $3, $4, 1, 'Manager one', 'direct_manager', 'fail', $5),
 					 ($2, $3, $4, 2, 'Manager two', 'direct_manager', 'fail', $5)`,
-					[
-						ids.approvalStageOne,
-						ids.approvalStageTwo,
-						ids.organization,
-						ids.approvalPolicy,
-						timestamp,
-					],
-				);
-			}
-			if (withBreakPolicy) {
-				await pool.query(
-					`insert into work_policy
+				[
+					ids.approvalStageOne,
+					ids.approvalStageTwo,
+					ids.organization,
+					ids.approvalPolicy,
+					timestamp,
+				],
+			);
+		}
+		if (withBreakPolicy) {
+			await pool.query(
+				`insert into work_policy
 				 (id, organization_id, name, schedule_enabled, regulation_enabled,
 				  is_active, created_by, updated_at)
 				 values ($1, $2, 'Task 11 break', false, true, true, $3, $4)`,
-					[ids.policy, ids.organization, ids.managerUser, timestamp],
-				);
-				await pool.query(
-					`insert into work_policy_regulation
-				 (id, policy_id, max_uninterrupted_minutes, updated_at)
-				 values ($1, $2, 360, $3)`,
-					[ids.regulation, ids.policy, timestamp],
-				);
-				await pool.query(
-					`insert into work_policy_break_rule
-				 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
-				 values ($1, $2, 360, 30, $3)`,
-					[ids.breakRule, ids.regulation, timestamp],
-				);
-				await pool.query(
-					`insert into work_policy_assignment
+				[ids.policy, ids.organization, ids.managerUser, timestamp],
+			);
+			const {
+				rows: [policyVersion],
+			} = await pool.query<{ id: string }>(
+				`insert into work_policy_version
+				 (policy_id, organization_id, version_number, effective_from_date,
+				  schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+				 values ($1, $2, 1, '1970-01-01', false, true, false, true, $3)
+				 returning id`,
+				[ids.policy, ids.organization, ids.managerUser],
+			);
+			await pool.query(
+				`insert into work_policy_regulation
+				 (id, policy_id, policy_version_id, max_uninterrupted_minutes, updated_at)
+				 values ($1, $2, $3, 360, $4)`,
+				[ids.regulation, ids.policy, policyVersion.id, timestamp],
+			);
+			await pool.query(
+				`insert into work_policy_break_rule
+				 (id, regulation_id, policy_version_id, working_minutes_threshold, required_break_minutes, updated_at)
+				 values ($1, $2, $3, 360, 30, $4)`,
+				[ids.breakRule, ids.regulation, policyVersion.id, timestamp],
+			);
+			await pool.query(
+				`insert into work_policy_assignment
 				 (id, policy_id, organization_id, assignment_type, employee_id,
 				  priority, is_active, created_by, updated_at)
 				 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
-					[
-						ids.policyAssignment,
-						ids.policy,
-						ids.organization,
-						ids.requester,
-						ids.managerUser,
-						timestamp,
-					],
-				);
-			}
-		}
-
-		async function submit(
-			kind: OrdinaryWorkPeriodApprovalKind,
-			submissionId = ids.submission,
-			applicationName?: string,
-			clock?: { nowInstant: () => typeof now },
-		) {
-			const productionRuntime = runtime(undefined, clock);
-			return productionRuntime.repository.withTransaction(async (context) => {
-				if (applicationName) {
-					await context.dbService.db.execute(
-						sql`select set_config('application_name', ${applicationName}, true), set_config('lock_timeout', '5s', true)`,
-					);
-				}
-				return executeOrdinaryWorkPeriodSubmissionInTransaction({
-					dbService: dbService(context.dbService.db),
-					context,
-					organizationId: ids.organization,
-					workPeriodId: ids.period,
-					submissionId,
-					requesterEmployeeId: ids.requester,
-					requesterUserId: ids.requesterUser,
-					teamId: null,
-					defaultApproverId: ids.manager,
-					reason:
-						kind === "policy_clock_out"
-							? "Clock-out requires approval (0-day policy)"
-							: "Manual time entry: Task 11",
-					overtimeRisk: null,
-					kind,
-					metadata: {},
-				});
-			});
-		}
-
-		async function decide(
-			approvalRequestId: string,
-			decision:
-				| { kind: "approve"; reason: string | null }
-				| { kind: "reject"; reason: string },
-		) {
-			// The manager is the configured approver of every stage here.
-			return decideTimeApproval({
-				organizationId: ids.organization,
-				approvalId: approvalRequestId,
-				actor: { employeeId: manager.id, userId: manager.userId },
-				right: { as: "approver" },
-				decision:
-					decision.kind === "approve"
-						? { kind: "approve" }
-						: { kind: "reject", reason: decision.reason },
-				database: database as never,
-				clock: { nowInstant: () => now },
-			});
-		}
-
-		async function snapshot() {
-			const tables = [
-				"employee",
-				"approval_workflow",
-				"approval_workflow_stage",
-				"approval_stage_assignment",
-				"approval_workflow_event",
-				"approval_workflow_command",
-				"approval_requester_projection",
-				"approval_inbox_projection",
-				"approval_outbox",
-				"approval_request",
-				"approval_chain_instance",
-				"approval_chain_stage_instance",
-				"time_entry",
-				"work_period",
-				"time_record",
-				"time_record_work",
-				"time_record_allocation",
-				"time_record_approval_decision",
-			] as const;
-			const tenantIds = [ids.organization, ids.foreignOrganization];
-			const durable = Object.fromEntries(
-				await Promise.all(
-					tables.map(async (table) => [
-						table,
-						(
-							await pool.query<{ row: unknown }>(
-								`select to_jsonb(row) as row from ${table} row where organization_id = any($1::text[]) order by 1`,
-								[tenantIds],
-							)
-						).rows.map(({ row }) => row),
-					]),
-				),
-			);
-			const organizations = await pool.query<{ row: unknown }>(
-				"select to_jsonb(row) as row from organization row where id = any($1::text[]) order by id",
-				[tenantIds],
-			);
-			return {
-				organization: organizations.rows.map(({ row }) => row),
-				...durable,
-			};
-		}
-
-		async function mutateAfterSubmission(
-			operation: (client: PoolClient) => Promise<void>,
-		) {
-			await withRollbackClient(pool, async ({ client, commit }) => {
-				await operation(client);
-				await commit();
-			});
-		}
-
-		async function seedMaintenanceState() {
-			const timestamp = new Date(now.epochMilliseconds);
-			await pool.query(
-				"update organization set surcharges_enabled = true, timezone = 'UTC' where id = $1",
-				[ids.organization],
-			);
-			await pool.query(
-				`insert into surcharge_model
-				 (id, organization_id, name, is_active, created_by, created_at, updated_at)
-				 values ($1, $2, 'Task 15 Wednesday', true, $3, $4, $4)`,
-				[ids.surchargeModel, ids.organization, ids.managerUser, timestamp],
-			);
-			await pool.query(
-				`insert into surcharge_rule
-				 (id, model_id, name, rule_type, percentage, day_of_week,
-				  priority, is_active, created_by, created_at)
-				 values ($1, $2, 'Task 15 Wednesday 50%', 'day_of_week', 0.5,
-				  'wednesday', 1, true, $3, $4)`,
-				[ids.surchargeRule, ids.surchargeModel, ids.managerUser, timestamp],
-			);
-			await pool.query(
-				`insert into surcharge_model_assignment
-				 (id, model_id, organization_id, assignment_type, employee_id,
-				  priority, is_active, created_by, created_at, updated_at)
-				 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6, $6)`,
 				[
-					ids.surchargeAssignment,
-					ids.surchargeModel,
+					ids.policyAssignment,
+					ids.policy,
 					ids.organization,
 					ids.requester,
 					ids.managerUser,
 					timestamp,
 				],
 			);
-			await pool.query(
-				`insert into surcharge_calculation
+		}
+	}
+
+	async function submit(
+		kind: OrdinaryWorkPeriodApprovalKind,
+		submissionId = ids.submission,
+		applicationName?: string,
+		clock?: { nowInstant: () => typeof now },
+	) {
+		const productionRuntime = runtime(undefined, clock);
+		return productionRuntime.repository.withTransaction(async (context) => {
+			if (applicationName) {
+				await context.dbService.db.execute(
+					sql`select set_config('application_name', ${applicationName}, true), set_config('lock_timeout', '5s', true)`,
+				);
+			}
+			return executeOrdinaryWorkPeriodSubmissionInTransaction({
+				dbService: dbService(context.dbService.db),
+				context,
+				organizationId: ids.organization,
+				workPeriodId: ids.period,
+				submissionId,
+				requesterEmployeeId: ids.requester,
+				requesterUserId: ids.requesterUser,
+				teamId: null,
+				defaultApproverId: ids.manager,
+				reason:
+					kind === "policy_clock_out"
+						? "Clock-out requires approval (0-day policy)"
+						: "Manual time entry: Task 11",
+				overtimeRisk: null,
+				kind,
+				metadata: {},
+			});
+		});
+	}
+
+	async function decide(
+		approvalRequestId: string,
+		decision: { kind: "approve"; reason: string | null } | { kind: "reject"; reason: string },
+	) {
+		// The manager is the configured approver of every stage here.
+		return decideTimeApproval({
+			organizationId: ids.organization,
+			approvalId: approvalRequestId,
+			actor: { employeeId: manager.id, userId: manager.userId },
+			right: { as: "approver" },
+			decision:
+				decision.kind === "approve"
+					? { kind: "approve" }
+					: { kind: "reject", reason: decision.reason },
+			database: database as never,
+			clock: { nowInstant: () => now },
+		});
+	}
+
+	async function snapshot() {
+		const tables = [
+			"employee",
+			"approval_workflow",
+			"approval_workflow_stage",
+			"approval_stage_assignment",
+			"approval_workflow_event",
+			"approval_workflow_command",
+			"approval_requester_projection",
+			"approval_inbox_projection",
+			"approval_outbox",
+			"approval_request",
+			"approval_chain_instance",
+			"approval_chain_stage_instance",
+			"time_entry",
+			"work_period",
+			"time_record",
+			"time_record_work",
+			"time_record_allocation",
+			"time_record_approval_decision",
+		] as const;
+		const tenantIds = [ids.organization, ids.foreignOrganization];
+		const durable = Object.fromEntries(
+			await Promise.all(
+				tables.map(async (table) => [
+					table,
+					(
+						await pool.query<{ row: unknown }>(
+							`select to_jsonb(row) as row from ${table} row where organization_id = any($1::text[]) order by 1`,
+							[tenantIds],
+						)
+					).rows.map(({ row }) => row),
+				]),
+			),
+		);
+		const organizations = await pool.query<{ row: unknown }>(
+			"select to_jsonb(row) as row from organization row where id = any($1::text[]) order by id",
+			[tenantIds],
+		);
+		return {
+			organization: organizations.rows.map(({ row }) => row),
+			...durable,
+		};
+	}
+
+	async function mutateAfterSubmission(operation: (client: PoolClient) => Promise<void>) {
+		await withRollbackClient(pool, async ({ client, commit }) => {
+			await operation(client);
+			await commit();
+		});
+	}
+
+	async function seedMaintenanceState() {
+		const timestamp = new Date(now.epochMilliseconds);
+		await pool.query(
+			"update organization set surcharges_enabled = true, timezone = 'UTC' where id = $1",
+			[ids.organization],
+		);
+		await pool.query(
+			`insert into surcharge_model
+				 (id, organization_id, name, is_active, created_by, created_at, updated_at)
+				 values ($1, $2, 'Task 15 Wednesday', true, $3, $4, $4)`,
+			[ids.surchargeModel, ids.organization, ids.managerUser, timestamp],
+		);
+		await pool.query(
+			`insert into surcharge_rule
+				 (id, model_id, name, rule_type, percentage, day_of_week,
+				  priority, is_active, created_by, created_at)
+				 values ($1, $2, 'Task 15 Wednesday 50%', 'day_of_week', 0.5,
+				  'wednesday', 1, true, $3, $4)`,
+			[ids.surchargeRule, ids.surchargeModel, ids.managerUser, timestamp],
+		);
+		await pool.query(
+			`insert into surcharge_model_assignment
+				 (id, model_id, organization_id, assignment_type, employee_id,
+				  priority, is_active, created_by, created_at, updated_at)
+				 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6, $6)`,
+			[
+				ids.surchargeAssignment,
+				ids.surchargeModel,
+				ids.organization,
+				ids.requester,
+				ids.managerUser,
+				timestamp,
+			],
+		);
+		await pool.query(
+			`insert into surcharge_calculation
 				 (id, employee_id, organization_id, work_period_id, surcharge_rule_id,
 				  surcharge_model_id, calculation_date, base_minutes, qualifying_minutes,
 				  surcharge_minutes, applied_percentage, calculation_details, created_at)
 				 values ($1, $2, $3, $4, $5, $6, $7, 999, 999, 999, 0.5,
 				  '{"seed":"stale"}', $7)`,
-				[
-					ids.staleSurchargeCalculation,
-					ids.requester,
-					ids.organization,
-					ids.period,
-					ids.surchargeRule,
-					ids.surchargeModel,
-					timestamp,
-				],
-			);
-			await pool.query(
-				`insert into surcharge_model
+			[
+				ids.staleSurchargeCalculation,
+				ids.requester,
+				ids.organization,
+				ids.period,
+				ids.surchargeRule,
+				ids.surchargeModel,
+				timestamp,
+			],
+		);
+		await pool.query(
+			`insert into surcharge_model
 				 (id, organization_id, name, is_active, created_by, created_at, updated_at)
 				 values ($1, $2, 'Task 15 Foreign', true, $3, $4, $4)`,
-				[
-					ids.foreignSurchargeModel,
-					ids.foreignOrganization,
-					ids.foreignUser,
-					timestamp,
-				],
-			);
-			await pool.query(
-				`insert into surcharge_rule
+			[ids.foreignSurchargeModel, ids.foreignOrganization, ids.foreignUser, timestamp],
+		);
+		await pool.query(
+			`insert into surcharge_rule
 				 (id, model_id, name, rule_type, percentage, day_of_week,
 				  priority, is_active, created_by, created_at)
 				 values ($1, $2, 'Task 15 Foreign Wednesday', 'day_of_week', 0.5,
 				  'wednesday', 1, true, $3, $4)`,
-				[
-					ids.foreignSurchargeRule,
-					ids.foreignSurchargeModel,
-					ids.foreignUser,
-					timestamp,
-				],
-			);
-			await pool.query(
-				`insert into time_entry (
+			[ids.foreignSurchargeRule, ids.foreignSurchargeModel, ids.foreignUser, timestamp],
+		);
+		await pool.query(
+			`insert into time_entry (
 				 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
 				 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 				 created_by, created_at
 				 ) values
 				 ($1, $3, $4, 'clock_in', $5, 0, 'UTC', 'backfill', null, 'foreign-in', null, $7, $5),
 				 ($2, $3, $4, 'clock_out', $6, 0, 'UTC', 'backfill', $1, 'foreign-out', 'foreign-in', $7, $6)`,
-				[
-					ids.foreignClockIn,
-					ids.foreignClockOut,
-					ids.foreignOrganization,
-					ids.foreignEmployee,
-					startTime,
-					endTime,
-					ids.foreignUser,
-				],
-			);
-			await withCanonicalRecords(pool, (client) =>
-				client.query(
-					`insert into work_period (
+			[
+				ids.foreignClockIn,
+				ids.foreignClockOut,
+				ids.foreignOrganization,
+				ids.foreignEmployee,
+				startTime,
+				endTime,
+				ids.foreignUser,
+			],
+		);
+		await withCanonicalRecords(pool, (client) =>
+			client.query(
+				`insert into work_period (
 					 id, organization_id, employee_id, clock_in_id, clock_out_id,
 					 start_time, end_time, duration_minutes, is_active, approval_status, updated_at
 					 ) values ($1, $2, $3, $4, $5, $6, $7, 480, false, 'approved', $8)`,
-					[
-						ids.foreignPeriod,
-						ids.foreignOrganization,
-						ids.foreignEmployee,
-						ids.foreignClockIn,
-						ids.foreignClockOut,
-						startTime,
-						endTime,
-						timestamp,
-					],
-				),
-			);
-			await pool.query(
-				`insert into surcharge_calculation
+				[
+					ids.foreignPeriod,
+					ids.foreignOrganization,
+					ids.foreignEmployee,
+					ids.foreignClockIn,
+					ids.foreignClockOut,
+					startTime,
+					endTime,
+					timestamp,
+				],
+			),
+		);
+		await pool.query(
+			`insert into surcharge_calculation
 				 (id, employee_id, organization_id, work_period_id, surcharge_rule_id,
 				  surcharge_model_id, calculation_date, base_minutes, qualifying_minutes,
 				  surcharge_minutes, applied_percentage, calculation_details, created_at)
 				 values ($1, $2, $3, $4, $5, $6, $7, 777, 777, 777, 0.5,
 				  '{"seed":"foreign"}', $7)`,
-				[
-					ids.foreignSurchargeCalculation,
-					ids.foreignEmployee,
-					ids.foreignOrganization,
-					ids.foreignPeriod,
-					ids.foreignSurchargeRule,
-					ids.foreignSurchargeModel,
-					timestamp,
-				],
-			);
-			await pool.query(
-				`insert into employee_work_balance (
+			[
+				ids.foreignSurchargeCalculation,
+				ids.foreignEmployee,
+				ids.foreignOrganization,
+				ids.foreignPeriod,
+				ids.foreignSurchargeRule,
+				ids.foreignSurchargeModel,
+				timestamp,
+			],
+		);
+		await pool.query(
+			`insert into employee_work_balance (
 				 employee_id, organization_id, actual_minutes, required_minutes,
 				 balance_minutes, computed_from_date, computed_through_date, computed_at,
 				 is_dirty, dirty_from_date, refresh_requested_at, created_at, updated_at
 				 ) values
 				 ($1, $3, 480, 480, 0, '2026-07-01', '2026-07-22', $5, false, null, null, $5, $5),
 				 ($2, $4, 777, 700, 77, '2026-07-01', '2026-07-22', $5, false, null, null, $5, $5)`,
-				[
-					ids.requester,
-					ids.foreignEmployee,
-					ids.organization,
-					ids.foreignOrganization,
-					timestamp,
-				],
-			);
-		}
+			[ids.requester, ids.foreignEmployee, ids.organization, ids.foreignOrganization, timestamp],
+		);
+	}
 
-		async function maintenanceSnapshot() {
-			const calculations = await pool.query<{
-				id: string;
-				organization_id: string;
-				employee_id: string;
-				work_period_id: string;
-				base_minutes: number;
-				qualifying_minutes: number;
-				surcharge_minutes: number;
-			}>(
-				`select id, organization_id, employee_id, work_period_id, base_minutes,
+	async function maintenanceSnapshot() {
+		const calculations = await pool.query<{
+			id: string;
+			organization_id: string;
+			employee_id: string;
+			work_period_id: string;
+			base_minutes: number;
+			qualifying_minutes: number;
+			surcharge_minutes: number;
+		}>(
+			`select id, organization_id, employee_id, work_period_id, base_minutes,
 				 qualifying_minutes, surcharge_minutes
 				 from surcharge_calculation
 				 where organization_id = any($1::text[]) order by organization_id, work_period_id`,
-				[[ids.organization, ids.foreignOrganization]],
-			);
-			const balances = await pool.query<{
-				organization_id: string;
-				employee_id: string;
-				actual_minutes: number;
-				is_dirty: boolean;
-				dirty_from_date: string | null;
-			}>(
-				`select organization_id, employee_id, actual_minutes, is_dirty,
+			[[ids.organization, ids.foreignOrganization]],
+		);
+		const balances = await pool.query<{
+			organization_id: string;
+			employee_id: string;
+			actual_minutes: number;
+			is_dirty: boolean;
+			dirty_from_date: string | null;
+		}>(
+			`select organization_id, employee_id, actual_minutes, is_dirty,
 				 dirty_from_date::text as dirty_from_date
 				 from employee_work_balance
 				 where organization_id = any($1::text[]) order by organization_id, employee_id`,
-				[[ids.organization, ids.foreignOrganization]],
-			);
-			return { calculations: calculations.rows, balances: balances.rows };
-		}
+			[[ids.organization, ids.foreignOrganization]],
+		);
+		return { calculations: calculations.rows, balances: balances.rows };
+	}
 
-		async function completeDecision(
-			approvalRequestId: string,
-			decision:
-				| { kind: "approve"; reason: string | null }
-				| { kind: "reject"; reason: string },
-		) {
-			// The time approval decision runs the after-commit work itself; its
-			// notifications and logged failures are observed.
-			const observing = inboxObservation.active;
-			inboxObservation.active = true;
-			inboxObservation.notifications = [];
-			inboxObservation.loggedErrors = [];
-			try {
-				const execution = await decide(approvalRequestId, decision);
-				const logged = (message: string) =>
-					inboxObservation.loggedErrors.filter((entry) => entry.message === message);
-				return {
-					execution,
-					dispatches: inboxObservation.notifications.length,
-					dispatchErrors: logged("Ordinary work-period decision after-commit work failed"),
-					maintenanceErrors: logged("Ordinary work-period maintenance after commit failed"),
-				};
-			} finally {
-				inboxObservation.active = observing;
-			}
-		}
-
-		async function assertSubmittedBreakSnapshotParity(
-			mode: (typeof modes)[number],
-		) {
-			const source = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot,
-				 pending_changes::jsonb -> 'surchargeSnapshot' as surcharge_snapshot
-				 from work_period where id = $1 and organization_id = $2`,
-				[ids.period, ids.organization],
-			);
-			const expected = source.rows[0]?.break_snapshot;
-			expect(expected).toMatchObject({
-				version: 1,
-				resolution: "work_policy",
-				policy: { id: ids.policy, name: "Task 11 break" },
-				regulationEnabled: true,
-			});
-			expect(source.rows[0]?.surcharge_snapshot).toEqual(surchargeSnapshot);
-			const requests = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select metadata -> 'breakPolicySnapshot' as break_snapshot,
-				 metadata -> 'surchargeSnapshot' as surcharge_snapshot
-				 from approval_request
-				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
-				[ids.organization, ids.period],
-			);
-			expect(requests.rows.length).toBe(mode === "complete" ? 0 : 1);
-			for (const request of requests.rows) {
-				expect(request.break_snapshot).toEqual(expected);
-				expect(request.surcharge_snapshot).toEqual(surchargeSnapshot);
-			}
-			const workflows = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
-				 context_snapshot -> 'surchargeSnapshot' as surcharge_snapshot
-				 from approval_workflow
-				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
-				[ids.organization, ids.period],
-			);
-			expect(workflows.rows.length).toBe(mode === "legacy" ? 0 : 1);
-			for (const workflow of workflows.rows) {
-				expect(workflow.break_snapshot).toEqual(expected);
-				expect(workflow.surcharge_snapshot).toEqual(surchargeSnapshot);
-			}
-			return expected;
-		}
-
-		async function assertSubmittedNoneSnapshotParity(
-			mode: (typeof modes)[number],
-		) {
-			const expected = {
-				version: 1,
-				evaluatedAt: "2026-07-22T16:00:00Z",
-				resolution: "none",
+	async function completeDecision(
+		approvalRequestId: string,
+		decision: { kind: "approve"; reason: string | null } | { kind: "reject"; reason: string },
+	) {
+		// The time approval decision runs the after-commit work itself; its
+		// notifications and logged failures are observed.
+		const observing = inboxObservation.active;
+		inboxObservation.active = true;
+		inboxObservation.notifications = [];
+		inboxObservation.loggedErrors = [];
+		try {
+			const execution = await decide(approvalRequestId, decision);
+			const logged = (message: string) =>
+				inboxObservation.loggedErrors.filter((entry) => entry.message === message);
+			return {
+				execution,
+				dispatches: inboxObservation.notifications.length,
+				dispatchErrors: logged("Ordinary work-period decision after-commit work failed"),
+				maintenanceErrors: logged("Ordinary work-period maintenance after commit failed"),
 			};
-			const source = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot,
+		} finally {
+			inboxObservation.active = observing;
+		}
+	}
+
+	async function assertSubmittedBreakSnapshotParity(mode: (typeof modes)[number]) {
+		const source = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot,
 				 pending_changes::jsonb -> 'surchargeSnapshot' as surcharge_snapshot
 				 from work_period where id = $1 and organization_id = $2`,
-				[ids.period, ids.organization],
-			);
-			expect(source.rows).toEqual([
-				{ break_snapshot: expected, surcharge_snapshot: surchargeSnapshot },
-			]);
-			const requests = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select metadata -> 'breakPolicySnapshot' as break_snapshot,
+			[ids.period, ids.organization],
+		);
+		const expected = source.rows[0]?.break_snapshot;
+		expect(expected).toMatchObject({
+			version: 1,
+			resolution: "work_policy",
+			policy: { id: ids.policy, name: "Task 11 break" },
+			regulationEnabled: true,
+		});
+		expect(source.rows[0]?.surcharge_snapshot).toEqual(surchargeSnapshot);
+		const requests = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select metadata -> 'breakPolicySnapshot' as break_snapshot,
 				 metadata -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_request
 				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
-				[ids.organization, ids.period],
-			);
-			expect(requests.rows.length).toBe(mode === "complete" ? 0 : 1);
-			for (const request of requests.rows) {
-				expect(request.break_snapshot).toEqual(expected);
-				expect(request.surcharge_snapshot).toEqual(surchargeSnapshot);
-			}
-			const workflows = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
+			[ids.organization, ids.period],
+		);
+		expect(requests.rows.length).toBe(mode === "complete" ? 0 : 1);
+		for (const request of requests.rows) {
+			expect(request.break_snapshot).toEqual(expected);
+			expect(request.surcharge_snapshot).toEqual(surchargeSnapshot);
+		}
+		const workflows = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
 				 context_snapshot -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_workflow
 				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
-				[ids.organization, ids.period],
-			);
-			expect(workflows.rows.length).toBe(mode === "legacy" ? 0 : 1);
-			for (const workflow of workflows.rows) {
-				expect(workflow.break_snapshot).toEqual(expected);
-				expect(workflow.surcharge_snapshot).toEqual(surchargeSnapshot);
-			}
+			[ids.organization, ids.period],
+		);
+		expect(workflows.rows.length).toBe(mode === "legacy" ? 0 : 1);
+		for (const workflow of workflows.rows) {
+			expect(workflow.break_snapshot).toEqual(expected);
+			expect(workflow.surcharge_snapshot).toEqual(surchargeSnapshot);
 		}
+		return expected;
+	}
 
-		async function assertTerminalPolicySnapshotParity(input: {
-			mode: (typeof modes)[number];
-			status: "approved" | "rejected";
-			split: boolean;
-			expectedSnapshot: unknown;
-		}) {
-			const periods = await pool.query<{
-				approval_status: string;
-				pending_changes: unknown;
-				end_time: Date;
-				original_end_time: Date | null;
-			}>(
-				`select approval_status, pending_changes, end_time, original_end_time
+	async function assertSubmittedNoneSnapshotParity(mode: (typeof modes)[number]) {
+		const expected = {
+			version: 1,
+			evaluatedAt: "2026-07-22T16:00:00Z",
+			resolution: "none",
+		};
+		const source = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot,
+				 pending_changes::jsonb -> 'surchargeSnapshot' as surcharge_snapshot
 				 from work_period where id = $1 and organization_id = $2`,
-				[ids.period, ids.organization],
-			);
-			expect(periods.rows).toHaveLength(1);
-			expect(periods.rows[0]).toMatchObject({
-				approval_status: input.status,
-				pending_changes: null,
-				original_end_time: input.split ? endTime : null,
-			});
-			if (input.split) {
-				expect(periods.rows[0]?.end_time.getTime()).toBeLessThan(
-					endTime.getTime(),
-				);
-			} else {
-				expect(periods.rows[0]?.end_time).toEqual(endTime);
-			}
-			const requests = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select metadata -> 'breakPolicySnapshot' as break_snapshot,
+			[ids.period, ids.organization],
+		);
+		expect(source.rows).toEqual([
+			{ break_snapshot: expected, surcharge_snapshot: surchargeSnapshot },
+		]);
+		const requests = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select metadata -> 'breakPolicySnapshot' as break_snapshot,
 				 metadata -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_request
 				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
-				[ids.organization, ids.period],
-			);
-			expect(requests.rows).toEqual(
-				input.mode === "complete"
-					? []
-					: [
-							{
-								break_snapshot: input.expectedSnapshot,
-								surcharge_snapshot: surchargeSnapshot,
-							},
-						],
-			);
-			const workflows = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
-				 context_snapshot -> 'surchargeSnapshot' as surcharge_snapshot
-				 from approval_workflow
-				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
-				[ids.organization, ids.period],
-			);
-			expect(workflows.rows).toEqual(
-				input.mode === "legacy"
-					? []
-					: [
-							{
-								break_snapshot: input.expectedSnapshot,
-								surcharge_snapshot: surchargeSnapshot,
-							},
-						],
-			);
+			[ids.organization, ids.period],
+		);
+		expect(requests.rows.length).toBe(mode === "complete" ? 0 : 1);
+		for (const request of requests.rows) {
+			expect(request.break_snapshot).toEqual(expected);
+			expect(request.surcharge_snapshot).toEqual(surchargeSnapshot);
 		}
-
-		async function assertDelayedSnapshotMutation(input: {
-			mode: (typeof modes)[number];
-			mutate(client: PoolClient): Promise<void>;
-		}) {
-			await seed("policy_clock_out", true, input.mode);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			const expectedSnapshot = await assertSubmittedBreakSnapshotParity(
-				input.mode,
-			);
-			await mutateAfterSubmission(input.mutate);
-
-			await decide(target, { kind: "approve", reason: null });
-			const beforeReplay = await pool.query<Record<string, unknown>>(
-				`select id, start_time, end_time, duration_minutes
-				 from work_period where organization_id = $1 and employee_id = $2
-				 order by start_time, id`,
-				[ids.organization, ids.requester],
-			);
-			expect(beforeReplay.rows).toMatchObject([
-				{
-					id: ids.period,
-					end_time: new Date("2026-07-22T14:00:00Z"),
-					duration_minutes: 360,
-				},
-				{
-					start_time: new Date("2026-07-22T14:30:00Z"),
-					end_time: endTime,
-					duration_minutes: 90,
-				},
-			]);
-			const workflow = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
+		const workflows = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
 				 context_snapshot -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_workflow
 				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
-				[ids.organization, ids.period],
-			);
-			expect(workflow.rows.length).toBe(input.mode === "legacy" ? 0 : 1);
-			for (const row of workflow.rows) {
-				expect(row.break_snapshot).toEqual(expectedSnapshot);
-				expect(row.surcharge_snapshot).toEqual(surchargeSnapshot);
-			}
-			const terminalRequests = await pool.query<{
-				break_snapshot: unknown;
-				surcharge_snapshot: unknown;
-			}>(
-				`select metadata -> 'breakPolicySnapshot' as break_snapshot,
+			[ids.organization, ids.period],
+		);
+		expect(workflows.rows.length).toBe(mode === "legacy" ? 0 : 1);
+		for (const workflow of workflows.rows) {
+			expect(workflow.break_snapshot).toEqual(expected);
+			expect(workflow.surcharge_snapshot).toEqual(surchargeSnapshot);
+		}
+	}
+
+	async function assertTerminalPolicySnapshotParity(input: {
+		mode: (typeof modes)[number];
+		status: "approved" | "rejected";
+		split: boolean;
+		expectedSnapshot: unknown;
+	}) {
+		const periods = await pool.query<{
+			approval_status: string;
+			pending_changes: unknown;
+			end_time: Date;
+			original_end_time: Date | null;
+		}>(
+			`select approval_status, pending_changes, end_time, original_end_time
+				 from work_period where id = $1 and organization_id = $2`,
+			[ids.period, ids.organization],
+		);
+		expect(periods.rows).toHaveLength(1);
+		expect(periods.rows[0]).toMatchObject({
+			approval_status: input.status,
+			pending_changes: null,
+			original_end_time: input.split ? endTime : null,
+		});
+		if (input.split) {
+			expect(periods.rows[0]?.end_time.getTime()).toBeLessThan(endTime.getTime());
+		} else {
+			expect(periods.rows[0]?.end_time).toEqual(endTime);
+		}
+		const requests = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select metadata -> 'breakPolicySnapshot' as break_snapshot,
 				 metadata -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_request
 				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
-				[ids.organization, ids.period],
-			);
-			expect(terminalRequests.rows.length).toBe(
-				input.mode === "complete" ? 0 : 1,
-			);
-			for (const row of terminalRequests.rows) {
-				expect(row.break_snapshot).toEqual(expectedSnapshot);
-				expect(row.surcharge_snapshot).toEqual(surchargeSnapshot);
-			}
+			[ids.organization, ids.period],
+		);
+		expect(requests.rows).toEqual(
+			input.mode === "complete"
+				? []
+				: [
+						{
+							break_snapshot: input.expectedSnapshot,
+							surcharge_snapshot: surchargeSnapshot,
+						},
+					],
+		);
+		const workflows = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
+				 context_snapshot -> 'surchargeSnapshot' as surcharge_snapshot
+				 from approval_workflow
+				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
+			[ids.organization, ids.period],
+		);
+		expect(workflows.rows).toEqual(
+			input.mode === "legacy"
+				? []
+				: [
+						{
+							break_snapshot: input.expectedSnapshot,
+							surcharge_snapshot: surchargeSnapshot,
+						},
+					],
+		);
+	}
 
-			await decide(target, { kind: "approve", reason: null });
-			const afterReplay = await pool.query<Record<string, unknown>>(
-				`select id, start_time, end_time, duration_minutes
+	async function assertDelayedSnapshotMutation(input: {
+		mode: (typeof modes)[number];
+		mutate(client: PoolClient): Promise<void>;
+	}) {
+		await seed("policy_clock_out", true, input.mode);
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+		const expectedSnapshot = await assertSubmittedBreakSnapshotParity(input.mode);
+		await mutateAfterSubmission(input.mutate);
+
+		await decide(target, { kind: "approve", reason: null });
+		const beforeReplay = await pool.query<Record<string, unknown>>(
+			`select id, start_time, end_time, duration_minutes
 				 from work_period where organization_id = $1 and employee_id = $2
 				 order by start_time, id`,
-				[ids.organization, ids.requester],
-			);
-			expect(afterReplay.rows).toEqual(beforeReplay.rows);
+			[ids.organization, ids.requester],
+		);
+		expect(beforeReplay.rows).toMatchObject([
+			{
+				id: ids.period,
+				end_time: new Date("2026-07-22T14:00:00Z"),
+				duration_minutes: 360,
+			},
+			{
+				start_time: new Date("2026-07-22T14:30:00Z"),
+				end_time: endTime,
+				duration_minutes: 90,
+			},
+		]);
+		const workflow = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
+				 context_snapshot -> 'surchargeSnapshot' as surcharge_snapshot
+				 from approval_workflow
+				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
+			[ids.organization, ids.period],
+		);
+		expect(workflow.rows.length).toBe(input.mode === "legacy" ? 0 : 1);
+		for (const row of workflow.rows) {
+			expect(row.break_snapshot).toEqual(expectedSnapshot);
+			expect(row.surcharge_snapshot).toEqual(surchargeSnapshot);
+		}
+		const terminalRequests = await pool.query<{
+			break_snapshot: unknown;
+			surcharge_snapshot: unknown;
+		}>(
+			`select metadata -> 'breakPolicySnapshot' as break_snapshot,
+				 metadata -> 'surchargeSnapshot' as surcharge_snapshot
+				 from approval_request
+				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
+			[ids.organization, ids.period],
+		);
+		expect(terminalRequests.rows.length).toBe(input.mode === "complete" ? 0 : 1);
+		for (const row of terminalRequests.rows) {
+			expect(row.break_snapshot).toEqual(expectedSnapshot);
+			expect(row.surcharge_snapshot).toEqual(surchargeSnapshot);
 		}
 
-		async function assertDelayedSurchargeMutation(input: {
-			mode: (typeof modes)[number];
-			split: boolean;
-			mutate(client: PoolClient): Promise<void>;
-		}) {
-			await seed("policy_clock_out", input.split, input.mode);
-			await seedMaintenanceState();
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			const expectedBreakSnapshot = input.split
-				? await assertSubmittedBreakSnapshotParity(input.mode)
-				: {
-						version: 1,
-						evaluatedAt: "2026-07-22T16:00:00Z",
-						resolution: "none",
-					};
-			if (!input.split) await assertSubmittedNoneSnapshotParity(input.mode);
-			await mutateAfterSubmission(input.mutate);
+		await decide(target, { kind: "approve", reason: null });
+		const afterReplay = await pool.query<Record<string, unknown>>(
+			`select id, start_time, end_time, duration_minutes
+				 from work_period where organization_id = $1 and employee_id = $2
+				 order by start_time, id`,
+			[ids.organization, ids.requester],
+		);
+		expect(afterReplay.rows).toEqual(beforeReplay.rows);
+	}
 
-			const completed = await completeDecision(target, {
-				kind: "approve",
-				reason: null,
-			});
-			expect(completed.maintenanceErrors).toEqual([]);
-			await assertTerminalPolicySnapshotParity({
-				mode: input.mode,
-				status: "approved",
-				split: input.split,
-				expectedSnapshot: expectedBreakSnapshot,
-			});
-			const periods = await pool.query<{
-				id: string;
-				start_time: Date;
-				end_time: Date;
-				duration_minutes: number;
-			}>(
-				`select id, start_time, end_time, duration_minutes
+	async function assertDelayedSurchargeMutation(input: {
+		mode: (typeof modes)[number];
+		split: boolean;
+		mutate(client: PoolClient): Promise<void>;
+	}) {
+		await seed("policy_clock_out", input.split, input.mode);
+		await seedMaintenanceState();
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+		const expectedBreakSnapshot = input.split
+			? await assertSubmittedBreakSnapshotParity(input.mode)
+			: {
+					version: 1,
+					evaluatedAt: "2026-07-22T16:00:00Z",
+					resolution: "none",
+				};
+		if (!input.split) await assertSubmittedNoneSnapshotParity(input.mode);
+		await mutateAfterSubmission(input.mutate);
+
+		const completed = await completeDecision(target, {
+			kind: "approve",
+			reason: null,
+		});
+		expect(completed.maintenanceErrors).toEqual([]);
+		await assertTerminalPolicySnapshotParity({
+			mode: input.mode,
+			status: "approved",
+			split: input.split,
+			expectedSnapshot: expectedBreakSnapshot,
+		});
+		const periods = await pool.query<{
+			id: string;
+			start_time: Date;
+			end_time: Date;
+			duration_minutes: number;
+		}>(
+			`select id, start_time, end_time, duration_minutes
 				 from work_period
 				 where organization_id = $1 and employee_id = $2
 				 order by start_time, id`,
-				[ids.organization, ids.requester],
-			);
-			expect(periods.rows).toEqual(
-				input.split
-					? [
-							expect.objectContaining({
-								id: ids.period,
-								start_time: startTime,
-								end_time: new Date("2026-07-22T14:00:00Z"),
-								duration_minutes: 360,
-							}),
-							expect.objectContaining({
-								start_time: new Date("2026-07-22T14:30:00Z"),
-								end_time: endTime,
-								duration_minutes: 90,
-							}),
-						]
-					: [
-							expect.objectContaining({
-								id: ids.period,
-								start_time: startTime,
-								end_time: endTime,
-								duration_minutes: 480,
-							}),
-						],
-			);
-			if (input.split) {
-				expect(periods.rows[1]?.id).not.toBe(ids.period);
-			}
-			const surchargePeriodIds = periods.rows.map(({ id }) => id).sort();
-			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
-			const beforeReplay = await maintenanceSnapshot();
-			const calculations = beforeReplay.calculations.filter(
-				({ organization_id }) => organization_id === ids.organization,
-			);
-			for (const calculation of calculations) {
-				expect(calculation.id).toMatch(
-					/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
-				);
-			}
-			expect(new Set(calculations.map(({ id }) => id)).size).toBe(
-				calculations.length,
-			);
-			expect(
-				calculations
-					.map(
-						({
-							work_period_id,
-							base_minutes,
-							qualifying_minutes,
-							surcharge_minutes,
-						}) => ({
-							work_period_id,
-							base_minutes,
-							qualifying_minutes,
-							surcharge_minutes,
+			[ids.organization, ids.requester],
+		);
+		expect(periods.rows).toEqual(
+			input.split
+				? [
+						expect.objectContaining({
+							id: ids.period,
+							start_time: startTime,
+							end_time: new Date("2026-07-22T14:00:00Z"),
+							duration_minutes: 360,
 						}),
-					)
-					.sort((left, right) =>
-						left.work_period_id.localeCompare(right.work_period_id),
-					),
-			).toEqual(
-				(input.split
-					? [
-							{
-								work_period_id: periods.rows[0]?.id,
-								base_minutes: 360,
-								qualifying_minutes: 360,
-								surcharge_minutes: 180,
-							},
-							{
-								work_period_id: periods.rows[1]?.id,
-								base_minutes: 90,
-								qualifying_minutes: 90,
-								surcharge_minutes: 45,
-							},
-						]
-					: [
-							{
-								work_period_id: ids.period,
-								base_minutes: 480,
-								qualifying_minutes: 480,
-								surcharge_minutes: 240,
-							},
-						]
-				).sort((left, right) =>
-					(left.work_period_id ?? "").localeCompare(right.work_period_id ?? ""),
-				),
-			);
-
-			const replay = await completeDecision(target, {
-				kind: "approve",
-				reason: null,
-			});
-			expect(replay.execution).toMatchObject({ status: "decided", replayed: true });
-			expect(replay.maintenanceErrors).toEqual([]);
-			expect(await maintenanceSnapshot()).toEqual(beforeReplay);
+						expect.objectContaining({
+							start_time: new Date("2026-07-22T14:30:00Z"),
+							end_time: endTime,
+							duration_minutes: 90,
+						}),
+					]
+				: [
+						expect.objectContaining({
+							id: ids.period,
+							start_time: startTime,
+							end_time: endTime,
+							duration_minutes: 480,
+						}),
+					],
+		);
+		if (input.split) {
+			expect(periods.rows[1]?.id).not.toBe(ids.period);
 		}
-
-		async function assertCapturedSurchargeToggle(input: {
-			mode: (typeof modes)[number];
-			split: boolean;
-			toggle: "disabled to enabled" | "enabled to disabled";
-		}) {
-			const capturedSnapshot =
-				input.toggle === "disabled to enabled"
-					? disabledSurchargeSnapshot
-					: surchargeSnapshot;
-			await seed(
-				"policy_clock_out",
-				input.split,
-				input.mode,
-				false,
-				false,
-				capturedSnapshot,
+		const surchargePeriodIds = periods.rows.map(({ id }) => id).sort();
+		expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
+		const beforeReplay = await maintenanceSnapshot();
+		const calculations = beforeReplay.calculations.filter(
+			({ organization_id }) => organization_id === ids.organization,
+		);
+		for (const calculation of calculations) {
+			expect(calculation.id).toMatch(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
 			);
-			await seedMaintenanceState();
-			await pool.query(
-				"update organization set surcharges_enabled = $1 where id = $2",
-				[input.toggle === "enabled to disabled", ids.organization],
-			);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
+		}
+		expect(new Set(calculations.map(({ id }) => id)).size).toBe(calculations.length);
+		expect(
+			calculations
+				.map(({ work_period_id, base_minutes, qualifying_minutes, surcharge_minutes }) => ({
+					work_period_id,
+					base_minutes,
+					qualifying_minutes,
+					surcharge_minutes,
+				}))
+				.sort((left, right) => left.work_period_id.localeCompare(right.work_period_id)),
+		).toEqual(
+			(input.split
+				? [
+						{
+							work_period_id: periods.rows[0]?.id,
+							base_minutes: 360,
+							qualifying_minutes: 360,
+							surcharge_minutes: 180,
+						},
+						{
+							work_period_id: periods.rows[1]?.id,
+							base_minutes: 90,
+							qualifying_minutes: 90,
+							surcharge_minutes: 45,
+						},
+					]
+				: [
+						{
+							work_period_id: ids.period,
+							base_minutes: 480,
+							qualifying_minutes: 480,
+							surcharge_minutes: 240,
+						},
+					]
+			).sort((left, right) =>
+				(left.work_period_id ?? "").localeCompare(right.work_period_id ?? ""),
+			),
+		);
 
-			const source = await pool.query<{ surcharge_snapshot: unknown }>(
-				`select pending_changes::jsonb -> 'surchargeSnapshot' as surcharge_snapshot
+		const replay = await completeDecision(target, {
+			kind: "approve",
+			reason: null,
+		});
+		expect(replay.execution).toMatchObject({ status: "decided", replayed: true });
+		expect(replay.maintenanceErrors).toEqual([]);
+		expect(await maintenanceSnapshot()).toEqual(beforeReplay);
+	}
+
+	async function assertCapturedSurchargeToggle(input: {
+		mode: (typeof modes)[number];
+		split: boolean;
+		toggle: "disabled to enabled" | "enabled to disabled";
+	}) {
+		const capturedSnapshot =
+			input.toggle === "disabled to enabled" ? disabledSurchargeSnapshot : surchargeSnapshot;
+		await seed("policy_clock_out", input.split, input.mode, false, false, capturedSnapshot);
+		await seedMaintenanceState();
+		await pool.query("update organization set surcharges_enabled = $1 where id = $2", [
+			input.toggle === "enabled to disabled",
+			ids.organization,
+		]);
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+
+		const source = await pool.query<{ surcharge_snapshot: unknown }>(
+			`select pending_changes::jsonb -> 'surchargeSnapshot' as surcharge_snapshot
 				 from work_period where id = $1 and organization_id = $2`,
-				[ids.period, ids.organization],
-			);
-			expect(source.rows).toEqual([{ surcharge_snapshot: capturedSnapshot }]);
-			await pool.query(
-				"update organization set surcharges_enabled = $1 where id = $2",
-				[input.toggle === "disabled to enabled", ids.organization],
-			);
+			[ids.period, ids.organization],
+		);
+		expect(source.rows).toEqual([{ surcharge_snapshot: capturedSnapshot }]);
+		await pool.query("update organization set surcharges_enabled = $1 where id = $2", [
+			input.toggle === "disabled to enabled",
+			ids.organization,
+		]);
 
-			const completed = await completeDecision(target, {
-				kind: "approve",
-				reason: null,
-			});
-			expect(completed.maintenanceErrors).toEqual([]);
-			const periods = await pool.query<{ id: string }>(
-				`select id from work_period
+		const completed = await completeDecision(target, {
+			kind: "approve",
+			reason: null,
+		});
+		expect(completed.maintenanceErrors).toEqual([]);
+		const periods = await pool.query<{ id: string }>(
+			`select id from work_period
 				 where organization_id = $1 and employee_id = $2 order by start_time, id`,
-				[ids.organization, ids.requester],
+			[ids.organization, ids.requester],
+		);
+		expect(periods.rows).toHaveLength(input.split ? 2 : 1);
+		expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
+		const state = await maintenanceSnapshot();
+		const calculations = state.calculations.filter(
+			({ organization_id }) => organization_id === ids.organization,
+		);
+		if (input.toggle === "disabled to enabled") {
+			expect(calculations).toEqual([]);
+		} else {
+			expect(calculations.map(({ work_period_id }) => work_period_id).sort()).toEqual(
+				periods.rows.map(({ id }) => id).sort(),
 			);
-			expect(periods.rows).toHaveLength(input.split ? 2 : 1);
-			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
-			const state = await maintenanceSnapshot();
-			const calculations = state.calculations.filter(
-				({ organization_id }) => organization_id === ids.organization,
-			);
-			if (input.toggle === "disabled to enabled") {
-				expect(calculations).toEqual([]);
-			} else {
-				expect(
-					calculations.map(({ work_period_id }) => work_period_id).sort(),
-				).toEqual(periods.rows.map(({ id }) => id).sort());
-			}
 		}
+	}
 
-		async function withFailureTrigger<T>(input: {
-			table: string;
-			operation: "insert" | "update";
-			name: string;
-			run: () => Promise<T>;
-		}) {
-			const functionName = `task11_fail_${input.name.replaceAll(/[^a-zA-Z0-9_]/g, "_")}`;
-			const triggerName = `${functionName}_trigger`;
-			await pool.query(`create or replace function ${functionName}() returns trigger as $$
+	async function withFailureTrigger<T>(input: {
+		table: string;
+		operation: "insert" | "update";
+		name: string;
+		run: () => Promise<T>;
+	}) {
+		const functionName = `task11_fail_${input.name.replaceAll(/[^a-zA-Z0-9_]/g, "_")}`;
+		const triggerName = `${functionName}_trigger`;
+		await pool.query(`create or replace function ${functionName}() returns trigger as $$
 		begin raise exception 'task11 failpoint: ${input.name}'; end;
 		$$ language plpgsql`);
-			await pool.query(
-				`create trigger ${triggerName} after ${input.operation} on ${input.table} for each row execute function ${functionName}()`,
-			);
-			try {
-				return await input.run();
-			} finally {
-				await pool.query(
-					`drop trigger if exists ${triggerName} on ${input.table}`,
-				);
-				await pool.query(`drop function if exists ${functionName}()`);
-			}
+		await pool.query(
+			`create trigger ${triggerName} after ${input.operation} on ${input.table} for each row execute function ${functionName}()`,
+		);
+		try {
+			return await input.run();
+		} finally {
+			await pool.query(`drop trigger if exists ${triggerName} on ${input.table}`);
+			await pool.query(`drop function if exists ${functionName}()`);
 		}
+	}
 
-		async function insertWorkflowHistory(input: {
-			id: string;
-			status: "pending" | "approved";
-			sourceId?: string;
-		}) {
-			const timestamp = new Date(now.epochMilliseconds);
-			await pool.query(
-				`insert into approval_workflow (
+	async function insertWorkflowHistory(input: {
+		id: string;
+		status: "pending" | "approved";
+		sourceId?: string;
+	}) {
+		const timestamp = new Date(now.epochMilliseconds);
+		await pool.query(
+			`insert into approval_workflow (
 				 id, organization_id, workflow_type, source_type, source_id,
 				 requester_employee_id, status, current_stage_order, version,
 				 policy_snapshot, context_snapshot, display_snapshot, submitted_at,
 				 completed_at, created_at, updated_at
 				 ) values ($1, $2, 'manual_time_submission', 'time_entry', $3, $4,
 				 $5, $6, $7, '{}', $8, '{}', $9, $10, $9, $9)`,
-				[
-					input.id,
-					ids.organization,
-					input.sourceId ?? ids.period,
-					ids.requester,
-					input.status,
-					input.status === "pending" ? 1 : null,
-					input.status === "pending" ? 1 : 2,
-					JSON.stringify({ timeRequest: { kind: "manual_time_submission" } }),
-					timestamp,
-					input.status === "approved" ? timestamp : null,
-				],
-			);
-		}
+			[
+				input.id,
+				ids.organization,
+				input.sourceId ?? ids.period,
+				ids.requester,
+				input.status,
+				input.status === "pending" ? 1 : null,
+				input.status === "pending" ? 1 : 2,
+				JSON.stringify({ timeRequest: { kind: "manual_time_submission" } }),
+				timestamp,
+				input.status === "approved" ? timestamp : null,
+			],
+		);
+	}
 
-		async function waitForObservedLock(
-			applicationName: string,
-			blockingPid: number,
-		) {
-			const deadline = Date.now() + 5_000;
-			while (Date.now() < deadline) {
-				const result = await pool.query<{
-					wait_event_type: string | null;
-					blocking_pids: number[];
-				}>(
-					`select wait_event_type, pg_blocking_pids(pid) as blocking_pids
+	async function waitForObservedLock(applicationName: string, blockingPid: number) {
+		const deadline = Date.now() + 5_000;
+		while (Date.now() < deadline) {
+			const result = await pool.query<{
+				wait_event_type: string | null;
+				blocking_pids: number[];
+			}>(
+				`select wait_event_type, pg_blocking_pids(pid) as blocking_pids
 					 from pg_stat_activity
 					 where datname = current_database() and application_name = $1`,
-					[applicationName],
-				);
-				const row = result.rows[0];
-				if (
-					row?.wait_event_type === "Lock" &&
-					row.blocking_pids.includes(blockingPid)
-				) {
-					return row;
-				}
-				await new Promise<void>((resolve) => setTimeout(resolve, 20));
-			}
-			throw new Error(
-				`Timed out observing Task 11 lock for ${applicationName}`,
+				[applicationName],
 			);
+			const row = result.rows[0];
+			if (row?.wait_event_type === "Lock" && row.blocking_pids.includes(blockingPid)) {
+				return row;
+			}
+			await new Promise<void>((resolve) => setTimeout(resolve, 20));
 		}
+		throw new Error(`Timed out observing Task 11 lock for ${applicationName}`);
+	}
 
-		async function waitForBlocker(blockingPid: number) {
-			const deadline = Date.now() + 5_000;
-			while (Date.now() < deadline) {
-				const result = await pool.query<{
-					pid: number;
-					wait_event_type: string | null;
-					blocking_pids: number[];
-				}>(
-					`select pid, wait_event_type, pg_blocking_pids(pid) as blocking_pids
+	async function waitForBlocker(blockingPid: number) {
+		const deadline = Date.now() + 5_000;
+		while (Date.now() < deadline) {
+			const result = await pool.query<{
+				pid: number;
+				wait_event_type: string | null;
+				blocking_pids: number[];
+			}>(
+				`select pid, wait_event_type, pg_blocking_pids(pid) as blocking_pids
 					 from pg_stat_activity
 					 where datname = current_database() and wait_event_type = 'Lock'`,
-				);
-				const row = result.rows.find(({ blocking_pids }) =>
-					blocking_pids.includes(blockingPid),
-				);
-				if (row) return row;
-				await new Promise<void>((resolve) => setTimeout(resolve, 20));
-			}
-			throw new Error("Timed out observing Task 11 employee advisory lock");
+			);
+			const row = result.rows.find(({ blocking_pids }) => blocking_pids.includes(blockingPid));
+			if (row) return row;
+			await new Promise<void>((resolve) => setTimeout(resolve, 20));
 		}
+		throw new Error("Timed out observing Task 11 employee advisory lock");
+	}
 
-		beforeEach(() => seed());
+	beforeEach(() => seed());
 
-		afterAll(async () => {
-			await cleanup();
-		});
+	afterAll(async () => {
+		await cleanup();
+	});
 
-		it("decodes the ordinary source database boundary before strict validation", async () => {
-			await seed("manual_time_submission", false, "canonical");
-			const rawResult = await database.execute(sql`
+	it("decodes the ordinary source database boundary before strict validation", async () => {
+		await seed("manual_time_submission", false, "canonical");
+		const rawResult = await database.execute(sql`
 				select start_time as "startTime", end_time as "endTime",
 					pending_changes as "pendingChanges"
 				from work_period
 				where id = ${ids.period}::uuid
 			`);
-			const rawSource = rawResult.rows[0] as Record<string, unknown>;
-			const [typedSource] = await database
-				.select({
-					startTime: schema.workPeriod.startTime,
-					endTime: schema.workPeriod.endTime,
-					pendingChanges: schema.workPeriod.pendingChanges,
-				})
-				.from(schema.workPeriod)
-				.where(sql`${schema.workPeriod.id} = ${ids.period}`)
-				.limit(1);
+		const rawSource = rawResult.rows[0] as Record<string, unknown>;
+		const [typedSource] = await database
+			.select({
+				startTime: schema.workPeriod.startTime,
+				endTime: schema.workPeriod.endTime,
+				pendingChanges: schema.workPeriod.pendingChanges,
+			})
+			.from(schema.workPeriod)
+			.where(sql`${schema.workPeriod.id} = ${ids.period}`)
+			.limit(1);
 
-			expect(typeof rawSource.startTime).toBe("string");
-			expect(typeof rawSource.endTime).toBe("string");
-			expect(typeof rawSource.pendingChanges).toBe("string");
-			expect(typedSource?.startTime).toBeInstanceOf(Date);
-			expect(typedSource?.endTime).toBeInstanceOf(Date);
-			expect(typeof typedSource?.pendingChanges).toBe("string");
-			await expect(submit("manual_time_submission")).resolves.toMatchObject({
-				disposition: "executed",
-			});
+		expect(typeof rawSource.startTime).toBe("string");
+		expect(typeof rawSource.endTime).toBe("string");
+		expect(typeof rawSource.pendingChanges).toBe("string");
+		expect(typedSource?.startTime).toBeInstanceOf(Date);
+		expect(typedSource?.endTime).toBeInstanceOf(Date);
+		expect(typeof typedSource?.pendingChanges).toBe("string");
+		await expect(submit("manual_time_submission")).resolves.toMatchObject({
+			disposition: "executed",
 		});
+	});
 
-		it.each(
-			(["shadow", "ready"] as const).flatMap((mode) => [
-				{ mode, action: "approve" as const },
-				{ mode, action: "reject" as const },
-			]),
-		)("late-mirrors an unmarked pre-shadow manual $action in $mode mode", async ({
-			mode,
-			action,
-		}) => {
+	it.each(
+		(["shadow", "ready"] as const).flatMap((mode) => [
+			{ mode, action: "approve" as const },
+			{ mode, action: "reject" as const },
+		]),
+	)(
+		"late-mirrors an unmarked pre-shadow manual $action in $mode mode",
+		async ({ mode, action }) => {
 			await seed("manual_time_submission", false, "legacy");
 			const submitted = await submit("manual_time_submission");
 			await pool.query(
@@ -1788,9 +1678,7 @@ describe(
 				 and entity_id = $3 and status = 'pending' returning id`,
 				[submitted.result.approvalRequestId, ids.organization, ids.period],
 			);
-			expect(unmarked.rows).toEqual([
-				{ id: submitted.result.approvalRequestId },
-			]);
+			expect(unmarked.rows).toEqual([{ id: submitted.result.approvalRequestId }]);
 			await expect(
 				loadOrdinaryWorkPeriodLegacyDecisionEvidence({
 					dbService: dbService(database),
@@ -1806,8 +1694,7 @@ describe(
 			const before = await snapshot();
 			expect(before.approval_workflow).toEqual([]);
 			expect(
-				(before.work_period as Array<Record<string, unknown>>)[0]
-					?.approval_workflow_id,
+				(before.work_period as Array<Record<string, unknown>>)[0]?.approval_workflow_id,
 			).toBeNull();
 
 			await pool.query(
@@ -1830,9 +1717,7 @@ describe(
 			const graph = await snapshot();
 			const expectedStatus = action === "approve" ? "approved" : "rejected";
 			const periods = graph.work_period as Array<Record<string, unknown>>;
-			const workflows = graph.approval_workflow as Array<
-				Record<string, unknown>
-			>;
+			const workflows = graph.approval_workflow as Array<Record<string, unknown>>;
 			expect(workflows).toHaveLength(1);
 			expect(workflows[0]).toMatchObject({
 				status: expectedStatus,
@@ -1854,122 +1739,117 @@ describe(
 					)
 				).rows[0]?.count;
 			expect(Number(await lateMirrorEvents())).toBeGreaterThan(0);
-		});
+		},
+	);
 
-		it.each(["shadow", "ready"] as const)(
-			"late-mirrors a pre-shadow decision once and replays its retry in %s mode",
-			async (mode) => {
-				await seed("manual_time_submission", false, "legacy");
-				const submitted = await submit("manual_time_submission");
-				await pool.query(
-					`update approval_workflow_rollout set lifecycle_mode = $1, updated_at = now()
+	it.each(["shadow", "ready"] as const)(
+		"late-mirrors a pre-shadow decision once and replays its retry in %s mode",
+		async (mode) => {
+			await seed("manual_time_submission", false, "legacy");
+			const submitted = await submit("manual_time_submission");
+			await pool.query(
+				`update approval_workflow_rollout set lifecycle_mode = $1, updated_at = now()
 					 where organization_id = $2 and workflow_type = 'manual_time_submission'`,
-					[mode, ids.organization],
-				);
-				const lateMirrorEvents = async () =>
-					(
-						await pool.query<{ idempotency_key: string }>(
-							`select idempotency_key from approval_workflow_event
+				[mode, ids.organization],
+			);
+			const lateMirrorEvents = async () =>
+				(
+					await pool.query<{ idempotency_key: string }>(
+						`select idempotency_key from approval_workflow_event
 							 where organization_id = $1 and idempotency_key like 'late-mirror:%'
 							 order by idempotency_key`,
-							[ids.organization],
-						)
-					).rows.map((row) => row.idempotency_key);
+						[ids.organization],
+					)
+				).rows.map((row) => row.idempotency_key);
 
-				await expect(
-					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
-				).resolves.toMatchObject({ status: "decided", outcome: "approved" });
-				const decided = await snapshot();
-				const lateMirrored = await lateMirrorEvents();
-				expect(lateMirrored.length).toBeGreaterThan(0);
-				expect(lateMirrored[0]).toMatch(
-					`late-mirror:${ids.organization}:manual_time_submission:time_entry:${ids.period}:${submitted.result.approvalRequestId}`,
-				);
-				expect(decided.approval_workflow).toEqual([
-					expect.objectContaining({ status: "approved", version: 2 }),
-				]);
-
-				// The retry replays: no second late mirror or observed workflow.
-				await expect(
-					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
-				).resolves.toMatchObject({ status: "decided", outcome: "approved", replayed: true });
-				expect(await lateMirrorEvents()).toEqual(lateMirrored);
-				expect(await snapshot()).toEqual(decided);
-			},
-		);
-
-		it.each(
-			modes,
-		)("composes submission and terminal decisions in %s mode", async (mode) => {
-			await seed("manual_time_submission", false, mode);
-			const submitted = await submit("manual_time_submission");
-			expect(submitted.disposition).toBe("executed");
 			await expect(
-				decide(submitted.result.approvalRequestId, {
-					kind: "approve",
-					reason: null,
-				}),
+				decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
 			).resolves.toMatchObject({ status: "decided", outcome: "approved" });
-			const graph = await snapshot();
-			const periods = graph.work_period as Array<Record<string, unknown>>;
-			const records = graph.time_record as Array<Record<string, unknown>>;
-			const workflows = graph.approval_workflow as Array<
-				Record<string, unknown>
-			>;
-			const requests = graph.approval_request as Array<Record<string, unknown>>;
-			expect(periods).toHaveLength(1);
-			expect(periods[0]).toMatchObject({
-				organization_id: ids.organization,
-				employee_id: ids.requester,
-				approval_status: "approved",
-			});
-			expect(records[0]).toMatchObject({
-				id: ids.canonical,
-				organization_id: ids.organization,
-				employee_id: ids.requester,
-				approval_state: "approved",
-			});
-			expect(graph.time_record_approval_decision).toHaveLength(1);
-			if (mode === "legacy") {
-				expect(workflows).toEqual([]);
-				expect(periods[0]?.approval_workflow_id).toBeNull();
-			} else {
-				expect(workflows).toHaveLength(1);
-				expect(workflows[0]).toMatchObject({ status: "approved", version: 2 });
-				expect(periods[0]?.approval_workflow_id).toBe(workflows[0]?.id);
-			}
-			if (mode === "complete") {
-				expect(requests).toEqual([]);
-			} else {
-				expect(requests).toHaveLength(1);
-				expect(requests[0]).toMatchObject({ status: "approved" });
-			}
-		});
+			const decided = await snapshot();
+			const lateMirrored = await lateMirrorEvents();
+			expect(lateMirrored.length).toBeGreaterThan(0);
+			expect(lateMirrored[0]).toMatch(
+				`late-mirror:${ids.organization}:manual_time_submission:time_entry:${ids.period}:${submitted.result.approvalRequestId}`,
+			);
+			expect(decided.approval_workflow).toEqual([
+				expect.objectContaining({ status: "approved", version: 2 }),
+			]);
 
-		it.each(
-			modes,
-		)("preserves policy snapshot through production submission capture in %s mode", async (mode) => {
+			// The retry replays: no second late mirror or observed workflow.
+			await expect(
+				decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
+			).resolves.toMatchObject({ status: "decided", outcome: "approved", replayed: true });
+			expect(await lateMirrorEvents()).toEqual(lateMirrored);
+			expect(await snapshot()).toEqual(decided);
+		},
+	);
+
+	it.each(modes)("composes submission and terminal decisions in %s mode", async (mode) => {
+		await seed("manual_time_submission", false, mode);
+		const submitted = await submit("manual_time_submission");
+		expect(submitted.disposition).toBe("executed");
+		await expect(
+			decide(submitted.result.approvalRequestId, {
+				kind: "approve",
+				reason: null,
+			}),
+		).resolves.toMatchObject({ status: "decided", outcome: "approved" });
+		const graph = await snapshot();
+		const periods = graph.work_period as Array<Record<string, unknown>>;
+		const records = graph.time_record as Array<Record<string, unknown>>;
+		const workflows = graph.approval_workflow as Array<Record<string, unknown>>;
+		const requests = graph.approval_request as Array<Record<string, unknown>>;
+		expect(periods).toHaveLength(1);
+		expect(periods[0]).toMatchObject({
+			organization_id: ids.organization,
+			employee_id: ids.requester,
+			approval_status: "approved",
+		});
+		expect(records[0]).toMatchObject({
+			id: ids.canonical,
+			organization_id: ids.organization,
+			employee_id: ids.requester,
+			approval_state: "approved",
+		});
+		expect(graph.time_record_approval_decision).toHaveLength(1);
+		if (mode === "legacy") {
+			expect(workflows).toEqual([]);
+			expect(periods[0]?.approval_workflow_id).toBeNull();
+		} else {
+			expect(workflows).toHaveLength(1);
+			expect(workflows[0]).toMatchObject({ status: "approved", version: 2 });
+			expect(periods[0]?.approval_workflow_id).toBe(workflows[0]?.id);
+		}
+		if (mode === "complete") {
+			expect(requests).toEqual([]);
+		} else {
+			expect(requests).toHaveLength(1);
+			expect(requests[0]).toMatchObject({ status: "approved" });
+		}
+	});
+
+	it.each(modes)(
+		"preserves policy snapshot through production submission capture in %s mode",
+		async (mode) => {
 			await seed("policy_clock_out", true, mode);
 			await expect(submit("policy_clock_out")).resolves.toMatchObject({
 				disposition: "executed",
 			});
 			await assertSubmittedBreakSnapshotParity(mode);
-		});
+		},
+	);
 
-		it.each(
-			modes.flatMap((mode) => [
-				{ mode, action: "approve" as const, split: false },
-				{ mode, action: "approve" as const, split: true },
-				{ mode, action: "reject" as const, split: false },
-			]),
-		)("retains terminal policy evidence for $action with split=$split in $mode mode", async ({
-			mode,
-			action,
-			split,
-		}) => {
+	it.each(
+		modes.flatMap((mode) => [
+			{ mode, action: "approve" as const, split: false },
+			{ mode, action: "approve" as const, split: true },
+			{ mode, action: "reject" as const, split: false },
+		]),
+	)(
+		"retains terminal policy evidence for $action with split=$split in $mode mode",
+		async ({ mode, action, split }) => {
 			await seed("policy_clock_out", split, mode);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
+			const target = (await submit("policy_clock_out")).result.approvalRequestId;
 			let expectedSnapshot: unknown;
 			if (split) {
 				expectedSnapshot = await assertSubmittedBreakSnapshotParity(mode);
@@ -1993,26 +1873,23 @@ describe(
 				split,
 				expectedSnapshot,
 			});
-		});
+		},
+	);
 
-		it.each(
-			(["shadow", "ready"] as const).flatMap((mode) =>
-				(["missing", "mismatch"] as const).map((evidence) => ({
-					mode,
-					evidence,
-				})),
-			),
-		)("rolls back terminal policy $evidence evidence in $mode mode", async ({
-			mode,
-			evidence,
-		}) => {
-			await seed("policy_clock_out", true, mode);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			const before = await snapshot();
-			await pool.query(
-				evidence === "missing"
-					? `create function task11_mutate_terminal_policy_evidence() returns trigger
+	it.each(
+		(["shadow", "ready"] as const).flatMap((mode) =>
+			(["missing", "mismatch"] as const).map((evidence) => ({
+				mode,
+				evidence,
+			})),
+		),
+	)("rolls back terminal policy $evidence evidence in $mode mode", async ({ mode, evidence }) => {
+		await seed("policy_clock_out", true, mode);
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+		const before = await snapshot();
+		await pool.query(
+			evidence === "missing"
+				? `create function task11_mutate_terminal_policy_evidence() returns trigger
 					   language plpgsql as $$ begin
 					     update approval_request
 					     set metadata = metadata - 'breakPolicySnapshot'
@@ -2020,7 +1897,7 @@ describe(
 					       and entity_type = 'time_entry' and entity_id = new.id;
 					     return new;
 					   end $$`
-					: `create function task11_mutate_terminal_policy_evidence() returns trigger
+				: `create function task11_mutate_terminal_policy_evidence() returns trigger
 					   language plpgsql as $$ begin
 					     update approval_request
 					     set metadata = jsonb_set(
@@ -2031,76 +1908,61 @@ describe(
 					       and entity_type = 'time_entry' and entity_id = new.id;
 					     return new;
 					   end $$`,
-			);
-			try {
-				await pool.query(
-					`create trigger task11_mutate_terminal_policy_evidence
+		);
+		try {
+			await pool.query(
+				`create trigger task11_mutate_terminal_policy_evidence
 					 after update of approval_status on work_period
 					 for each row when (new.approval_status in ('approved', 'rejected'))
 					 execute function task11_mutate_terminal_policy_evidence()`,
-				);
-				await expect(
-					decide(target, { kind: "approve", reason: null }),
-				).rejects.toThrow();
-				expect(await snapshot()).toEqual(before);
-			} finally {
-				await pool.query(
-					"drop trigger if exists task11_mutate_terminal_policy_evidence on work_period",
-				);
-				await pool.query(
-					"drop function if exists task11_mutate_terminal_policy_evidence()",
-				);
-			}
-		});
+			);
+			await expect(decide(target, { kind: "approve", reason: null })).rejects.toThrow();
+			expect(await snapshot()).toEqual(before);
+		} finally {
+			await pool.query(
+				"drop trigger if exists task11_mutate_terminal_policy_evidence on work_period",
+			);
+			await pool.query("drop function if exists task11_mutate_terminal_policy_evidence()");
+		}
+	});
 
-		it.each(
-			modes,
-		)("uses the submitted break snapshot after delayed team change in %s mode", async (mode) => {
+	it.each(modes)(
+		"uses the submitted break snapshot after delayed team change in %s mode",
+		async (mode) => {
 			await assertDelayedSnapshotMutation({
 				mode,
 				mutate: async (client) => {
 					await client.query(
 						"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Changed team', $3)",
-						[
-							ids.changedTeam,
-							ids.organization,
-							new Date(now.epochMilliseconds),
-						],
+						[ids.changedTeam, ids.organization, new Date(now.epochMilliseconds)],
 					);
 					await client.query(
 						"update employee set team_id = $1, updated_at = $2 where id = $3 and organization_id = $4",
-						[
-							ids.changedTeam,
-							new Date(now.epochMilliseconds),
-							ids.requester,
-							ids.organization,
-						],
+						[ids.changedTeam, new Date(now.epochMilliseconds), ids.requester, ids.organization],
 					);
 				},
 			});
-		});
+		},
+	);
 
-		it.each(
-			modes,
-		)("uses the submitted break snapshot after assignment deactivation in %s mode", async (mode) => {
+	it.each(modes)(
+		"uses the submitted break snapshot after assignment deactivation in %s mode",
+		async (mode) => {
 			await assertDelayedSnapshotMutation({
 				mode,
 				mutate: async (client) => {
 					await client.query(
 						"update work_policy_assignment set is_active = false, updated_at = $1 where id = $2 and organization_id = $3",
-						[
-							new Date(now.epochMilliseconds),
-							ids.policyAssignment,
-							ids.organization,
-						],
+						[new Date(now.epochMilliseconds), ids.policyAssignment, ids.organization],
 					);
 				},
 			});
-		});
+		},
+	);
 
-		it.each(
-			modes,
-		)("uses the submitted break snapshot after policy replacement and archive in %s mode", async (mode) => {
+	it.each(modes)(
+		"uses the submitted break snapshot after policy replacement and archive in %s mode",
+		async (mode) => {
 			await assertDelayedSnapshotMutation({
 				mode,
 				mutate: async (client) => {
@@ -2118,30 +1980,35 @@ describe(
 							 (id, organization_id, name, schedule_enabled, regulation_enabled,
 							  is_active, created_by, updated_at)
 							 values ($1, $2, 'Replacement policy', false, true, true, $3, $4)`,
-						[
-							ids.replacementPolicy,
-							ids.organization,
-							ids.managerUser,
-							timestamp,
-						],
+						[ids.replacementPolicy, ids.organization, ids.managerUser, timestamp],
+					);
+					const {
+						rows: [replacementVersion],
+					} = await client.query<{ id: string }>(
+						`insert into work_policy_version
+							 (policy_id, organization_id, version_number, effective_from_date,
+							  schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+							 values ($1, $2, 1, '1970-01-01', false, true, false, true, $3)
+							 returning id`,
+						[ids.replacementPolicy, ids.organization, ids.managerUser],
 					);
 					await client.query(
 						`insert into work_policy_regulation
-							 (id, policy_id, max_uninterrupted_minutes, updated_at)
-							 values ($1, $2, 60, $3)`,
-						[ids.replacementRegulation, ids.replacementPolicy, timestamp],
+							 (id, policy_id, policy_version_id, max_uninterrupted_minutes, updated_at)
+							 values ($1, $2, $3, 60, $4)`,
+						[ids.replacementRegulation, ids.replacementPolicy, replacementVersion.id, timestamp],
 					);
 					await client.query(
 						`insert into work_policy_break_rule
-							 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
-							 values ($1, $2, 60, 5, $3)`,
-						[ids.replacementBreakRule, ids.replacementRegulation, timestamp],
+							 (id, regulation_id, policy_version_id, working_minutes_threshold, required_break_minutes, updated_at)
+							 values ($1, $2, $3, 60, 5, $4)`,
+						[ids.replacementBreakRule, ids.replacementRegulation, replacementVersion.id, timestamp],
 					);
 					await client.query(
 						`insert into work_policy_assignment
 							 (id, policy_id, organization_id, assignment_type, employee_id,
 							  priority, is_active, created_by, updated_at)
-							 values ($1, $2, $3, 'employee', $4, 99, true, $5, $6)`,
+							 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
 						[
 							ids.replacementAssignment,
 							ids.replacementPolicy,
@@ -2153,11 +2020,12 @@ describe(
 					);
 				},
 			});
-		});
+		},
+	);
 
-		it.each(
-			modes,
-		)("uses the submitted break snapshot after rule edit and delete in %s mode", async (mode) => {
+	it.each(modes)(
+		"uses the submitted break snapshot after rule edit and delete in %s mode",
+		async (mode) => {
 			await assertDelayedSnapshotMutation({
 				mode,
 				mutate: async (client) => {
@@ -2165,20 +2033,17 @@ describe(
 						"update work_policy_break_rule set required_break_minutes = 5, updated_at = $1 where id = $2",
 						[new Date(now.epochMilliseconds), ids.breakRule],
 					);
-					await client.query(
-						"delete from work_policy_break_rule where id = $1",
-						[ids.breakRule],
-					);
+					await client.query("delete from work_policy_break_rule where id = $1", [ids.breakRule]);
 				},
 			});
-		});
+		},
+	);
 
-		it.each(
-			modes,
-		)("keeps submitted resolution none after a policy is assigned in %s mode", async (mode) => {
+	it.each(modes)(
+		"keeps submitted resolution none after a policy is assigned in %s mode",
+		async (mode) => {
 			await seed("policy_clock_out", false, mode);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
+			const target = (await submit("policy_clock_out")).result.approvalRequestId;
 			await assertSubmittedNoneSnapshotParity(mode);
 
 			await mutateAfterSubmission(async (client) => {
@@ -2190,23 +2055,33 @@ describe(
 					 values ($1, $2, 'Late break policy', false, true, true, $3, $4)`,
 					[ids.policy, ids.organization, ids.managerUser, timestamp],
 				);
+				const {
+					rows: [latePolicyVersion],
+				} = await client.query<{ id: string }>(
+					`insert into work_policy_version
+					 (policy_id, organization_id, version_number, effective_from_date,
+					  schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+					 values ($1, $2, 1, '1970-01-01', false, true, false, true, $3)
+					 returning id`,
+					[ids.policy, ids.organization, ids.managerUser],
+				);
 				await client.query(
 					`insert into work_policy_regulation
-					 (id, policy_id, max_uninterrupted_minutes, updated_at)
-					 values ($1, $2, 360, $3)`,
-					[ids.regulation, ids.policy, timestamp],
+					 (id, policy_id, policy_version_id, max_uninterrupted_minutes, updated_at)
+					 values ($1, $2, $3, 360, $4)`,
+					[ids.regulation, ids.policy, latePolicyVersion.id, timestamp],
 				);
 				await client.query(
 					`insert into work_policy_break_rule
-					 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
-					 values ($1, $2, 360, 30, $3)`,
-					[ids.breakRule, ids.regulation, timestamp],
+					 (id, regulation_id, policy_version_id, working_minutes_threshold, required_break_minutes, updated_at)
+					 values ($1, $2, $3, 360, 30, $4)`,
+					[ids.breakRule, ids.regulation, latePolicyVersion.id, timestamp],
 				);
 				await client.query(
 					`insert into work_policy_assignment
 					 (id, policy_id, organization_id, assignment_type, employee_id,
 					  priority, is_active, created_by, updated_at)
-					 values ($1, $2, $3, 'employee', $4, 99, true, $5, $6)`,
+					 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
 					[
 						ids.policyAssignment,
 						ids.policy,
@@ -2239,10 +2114,7 @@ describe(
 				 order by timestamp, id`,
 				[ids.organization, ids.requester],
 			);
-			expect(entriesBeforeReplay.rows.map(({ id }) => id)).toEqual([
-				ids.clockIn,
-				ids.clockOut,
-			]);
+			expect(entriesBeforeReplay.rows.map(({ id }) => id)).toEqual([ids.clockIn, ids.clockOut]);
 			await decide(target, { kind: "approve", reason: null });
 			const afterReplay = await pool.query<Record<string, unknown>>(
 				`select id, start_time, end_time, duration_minutes
@@ -2258,14 +2130,12 @@ describe(
 			);
 			expect(afterReplay.rows).toEqual(beforeReplay.rows);
 			expect(entriesAfterReplay.rows).toEqual(entriesBeforeReplay.rows);
-		});
+		},
+	);
 
-		it.each([
-			"shadow",
-			"ready",
-			"canonical",
-			"complete",
-		] as const)("discovers snapshot-backed policy approvals through list, count, and detail in %s mode", async (mode) => {
+	it.each(["shadow", "ready", "canonical", "complete"] as const)(
+		"discovers snapshot-backed policy approvals through list, count, and detail in %s mode",
+		async (mode) => {
 			await seed("policy_clock_out", true, mode);
 			const submitted = await submit("policy_clock_out");
 			const canonical = await loadOrdinaryCanonicalApprovals({
@@ -2317,24 +2187,20 @@ describe(
 					approvalId: submitted.result.approvalRequestId,
 				}).pipe(Effect.provideService(DatabaseService, service)),
 			);
-			expect(approvals.map(({ id }) => id)).toEqual([
-				submitted.result.approvalRequestId,
-			]);
+			expect(approvals.map(({ id }) => id)).toEqual([submitted.result.approvalRequestId]);
 			expect(count).toBe(1);
 			expect(detail.approval.id).toBe(submitted.result.approvalRequestId);
-			expect(JSON.stringify({ approvals, detail })).not.toContain(
-				"breakPolicySnapshot",
-			);
-		});
+			expect(JSON.stringify({ approvals, detail })).not.toContain("breakPolicySnapshot");
+		},
+	);
 
-		it.each([
-			{ action: "approve" as const, autoAdjusted: false },
-			{ action: "approve" as const, autoAdjusted: true },
-			{ action: "reject" as const, autoAdjusted: true },
-		])("preserves unmarked historical policy $action with auto-adjusted=$autoAdjusted", async ({
-			action,
-			autoAdjusted,
-		}) => {
+	it.each([
+		{ action: "approve" as const, autoAdjusted: false },
+		{ action: "approve" as const, autoAdjusted: true },
+		{ action: "reject" as const, autoAdjusted: true },
+	])(
+		"preserves unmarked historical policy $action with auto-adjusted=$autoAdjusted",
+		async ({ action, autoAdjusted }) => {
 			await seed("policy_clock_out", true, "legacy");
 			await pool.query(
 				`update work_period set pending_changes = $3, was_auto_adjusted = $4,
@@ -2408,10 +2274,7 @@ describe(
 					[ids.organization, ids.requester],
 				),
 			).toMatchObject({
-				rows: expect.arrayContaining([
-					{ id: ids.clockIn },
-					{ id: ids.clockOut },
-				]),
+				rows: expect.arrayContaining([{ id: ids.clockIn }, { id: ids.clockOut }]),
 			});
 			expect(
 				await pool.query(
@@ -2419,42 +2282,39 @@ describe(
 					[ids.organization, ids.canonical],
 				),
 			).toMatchObject({ rows: [{ count: 1 }] });
-		});
+		},
+	);
 
-		it("pages past malformed canonical policy evidence with exact list and count", async () => {
-			await seed("policy_clock_out", true, "complete");
-			await submit("policy_clock_out");
-			const sourceWorkflow = await pool.query<{ approval_workflow_id: string }>(
-				"select approval_workflow_id from work_period where id = $1 and organization_id = $2",
-				[ids.period, ids.organization],
-			);
-			const sourceWorkflowId = sourceWorkflow.rows[0]?.approval_workflow_id;
-			if (!sourceWorkflowId)
-				throw new Error("Expected submitted workflow binding");
-			const sourceAssignment = await pool.query<{ id: string }>(
-				"select id from approval_stage_assignment where workflow_id = $1 and organization_id = $2",
-				[sourceWorkflowId, ids.organization],
-			);
-			const sourceAssignmentId = sourceAssignment.rows[0]?.id;
-			if (!sourceAssignmentId) throw new Error("Expected submitted assignment");
-			const cloneId = (prefix: string, index: number) =>
-				`${prefix}0000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
-			for (const index of Array.from(
-				{ length: 102 },
-				(_, offset) => offset + 1,
-			)) {
-				const clone = {
-					clockIn: cloneId("d", index * 10 + 1),
-					clockOut: cloneId("d", index * 10 + 2),
-					record: cloneId("d", index * 10 + 3),
-					period: cloneId("d", index * 10 + 4),
-					workflow: cloneId("d", index * 10 + 5),
-					stage: cloneId("d", index * 10 + 6),
-					assignment: cloneId("d", index * 10 + 7),
-					projection: cloneId("d", index * 10 + 8),
-				};
-				await pool.query(
-					`insert into time_entry (
+	it("pages past malformed canonical policy evidence with exact list and count", async () => {
+		await seed("policy_clock_out", true, "complete");
+		await submit("policy_clock_out");
+		const sourceWorkflow = await pool.query<{ approval_workflow_id: string }>(
+			"select approval_workflow_id from work_period where id = $1 and organization_id = $2",
+			[ids.period, ids.organization],
+		);
+		const sourceWorkflowId = sourceWorkflow.rows[0]?.approval_workflow_id;
+		if (!sourceWorkflowId) throw new Error("Expected submitted workflow binding");
+		const sourceAssignment = await pool.query<{ id: string }>(
+			"select id from approval_stage_assignment where workflow_id = $1 and organization_id = $2",
+			[sourceWorkflowId, ids.organization],
+		);
+		const sourceAssignmentId = sourceAssignment.rows[0]?.id;
+		if (!sourceAssignmentId) throw new Error("Expected submitted assignment");
+		const cloneId = (prefix: string, index: number) =>
+			`${prefix}0000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+		for (const index of Array.from({ length: 102 }, (_, offset) => offset + 1)) {
+			const clone = {
+				clockIn: cloneId("d", index * 10 + 1),
+				clockOut: cloneId("d", index * 10 + 2),
+				record: cloneId("d", index * 10 + 3),
+				period: cloneId("d", index * 10 + 4),
+				workflow: cloneId("d", index * 10 + 5),
+				stage: cloneId("d", index * 10 + 6),
+				assignment: cloneId("d", index * 10 + 7),
+				projection: cloneId("d", index * 10 + 8),
+			};
+			await pool.query(
+				`insert into time_entry (
 					 id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
 					 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 					 replaces_entry_id, is_superseded, superseded_by_id, notes, location,
@@ -2463,10 +2323,10 @@ describe(
 					 timezone, timezone_source, null, hash, previous_hash, replaces_entry_id,
 					 is_superseded, superseded_by_id, notes, location, ip_address, device_info,
 					 created_at, created_by from time_entry where id = $2 and organization_id = $3`,
-					[clone.clockIn, ids.clockIn, ids.organization],
-				);
-				await pool.query(
-					`insert into time_entry (
+				[clone.clockIn, ids.clockIn, ids.organization],
+			);
+			await pool.query(
+				`insert into time_entry (
 					 id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
 					 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 					 replaces_entry_id, is_superseded, superseded_by_id, notes, location,
@@ -2475,20 +2335,20 @@ describe(
 					 timezone, timezone_source, $2, hash, previous_hash, replaces_entry_id,
 					 is_superseded, superseded_by_id, notes, location, ip_address, device_info,
 					 created_at, created_by from time_entry where id = $3 and organization_id = $4`,
-					[clone.clockOut, clone.clockIn, ids.clockOut, ids.organization],
-				);
-				await pool.query(
-					`insert into time_record (
+				[clone.clockOut, clone.clockIn, ids.clockOut, ids.organization],
+			);
+			await pool.query(
+				`insert into time_record (
 					 id, organization_id, employee_id, record_kind, start_at, end_at,
 					 duration_minutes, approval_state, origin, created_at, created_by,
 					 updated_at, updated_by)
 					 select $1, organization_id, employee_id, record_kind, start_at, end_at,
 					 duration_minutes, approval_state, origin, created_at, created_by,
 					 updated_at, updated_by from time_record where id = $2 and organization_id = $3`,
-					[clone.record, ids.canonical, ids.organization],
-				);
-				await pool.query(
-					`insert into approval_workflow (
+				[clone.record, ids.canonical, ids.organization],
+			);
+			await pool.query(
+				`insert into approval_workflow (
 					 id, organization_id, workflow_type, source_type, source_id,
 					 requester_employee_id, status, current_stage_order, version,
 					 policy_snapshot, context_snapshot, display_snapshot, submitted_at,
@@ -2503,16 +2363,10 @@ describe(
 					 display_snapshot, submitted_at - ($3 * interval '1 hour'), completed_at,
 					 cancelled_at, decision_reason, created_at, updated_at
 					 from approval_workflow where id = $4 and organization_id = $5`,
-					[
-						clone.workflow,
-						clone.period,
-						index,
-						sourceWorkflowId,
-						ids.organization,
-					],
-				);
-				await pool.query(
-					`insert into approval_workflow_stage (
+				[clone.workflow, clone.period, index, sourceWorkflowId, ids.organization],
+			);
+			await pool.query(
+				`insert into approval_workflow_stage (
 					 id, organization_id, workflow_id, stage_order, label, resolver_snapshot,
 					 activation_mode, status, activated_at, decided_at, decision_reason,
 					 legacy_approval_request_id, created_at, updated_at)
@@ -2520,10 +2374,10 @@ describe(
 					 activation_mode, status, activated_at, decided_at, decision_reason,
 					 null, created_at, updated_at from approval_workflow_stage
 					 where workflow_id = $3 and organization_id = $4`,
-					[clone.stage, clone.workflow, sourceWorkflowId, ids.organization],
-				);
-				await pool.query(
-					`insert into approval_stage_assignment (
+				[clone.stage, clone.workflow, sourceWorkflowId, ids.organization],
+			);
+			await pool.query(
+				`insert into approval_stage_assignment (
 					 id, organization_id, workflow_id, stage_id, assignment_sequence,
 					 approver_employee_id, status, assigned_at, resolved_at,
 					 resolved_by_actor_kind, resolved_by_actor_id, reassigned_by_employee_id,
@@ -2533,32 +2387,26 @@ describe(
 					 resolved_by_actor_kind, resolved_by_actor_id, reassigned_by_employee_id,
 					 reassigned_from_assignment_id, reassignment_metadata, created_at, updated_at
 					 from approval_stage_assignment where workflow_id = $4 and organization_id = $5`,
-					[
-						clone.assignment,
-						clone.workflow,
-						clone.stage,
-						sourceWorkflowId,
-						ids.organization,
-					],
-				);
-				await pool.query(
-					`insert into approval_inbox_projection (
+				[clone.assignment, clone.workflow, clone.stage, sourceWorkflowId, ids.organization],
+			);
+			await pool.query(
+				`insert into approval_inbox_projection (
 					 id, organization_id, workflow_id, active_stage_id, source_type,
 					 source_id, status, display_payload, search_text, created_at, updated_at)
 					 select $1, organization_id, $2, $3, source_type, $4, status,
 					 display_payload, search_text, created_at, updated_at
 					 from approval_inbox_projection where workflow_id = $5 and organization_id = $6`,
-					[
-						clone.projection,
-						clone.workflow,
-						clone.stage,
-						clone.period,
-						sourceWorkflowId,
-						ids.organization,
-					],
-				);
-				await pool.query(
-					`insert into work_period (
+				[
+					clone.projection,
+					clone.workflow,
+					clone.stage,
+					clone.period,
+					sourceWorkflowId,
+					ids.organization,
+				],
+			);
+			await pool.query(
+				`insert into work_period (
 					 id, employee_id, organization_id, clock_in_id, clock_out_id, project_id,
 					 work_category_id, work_location_type, start_time, end_time,
 					 duration_minutes, is_active, approval_status, pending_changes,
@@ -2573,226 +2421,210 @@ describe(
 					 was_auto_adjusted, auto_adjustment_reason, auto_adjusted_at,
 					 original_end_time, original_duration_minutes, $4, $5, created_at, updated_at
 					 from work_period where id = $6 and organization_id = $7`,
-					[
-						clone.period,
-						clone.clockIn,
-						clone.clockOut,
-						clone.record,
-						clone.workflow,
-						ids.period,
-						ids.organization,
-					],
-				);
-			}
+				[
+					clone.period,
+					clone.clockIn,
+					clone.clockOut,
+					clone.record,
+					clone.workflow,
+					ids.period,
+					ids.organization,
+				],
+			);
+		}
 
-			const approvals = await loadOrdinaryCanonicalApprovals({
-				database,
-				organizationId: ids.organization,
-				approverId: ids.manager,
-				limit: 1,
-			});
-			const count = await countOrdinaryCanonicalApprovals({
-				database,
-				organizationId: ids.organization,
-				approverId: ids.manager,
-			});
-
-			expect(approvals.map(({ item }) => item.id)).toEqual([
-				sourceAssignmentId,
-			]);
-			expect(approvals.totalCount).toBe(1);
-			expect(count).toBe(1);
-			const first = approvals[0];
-			if (!first) throw new Error("Expected one strict-valid approval");
-			const afterCursor = await loadOrdinaryCanonicalApprovals({
-				database,
-				organizationId: ids.organization,
-				approverId: ids.manager,
-				limit: 1,
-				cursor: {
-					riskLevel: first.item.triage.riskLevel,
-					priority: first.item.triage.priority,
-					createdAt: first.item.timing.createdAt,
-					id: first.item.id,
-				},
-			});
-			expect(afterCursor).toHaveLength(0);
-			expect(afterCursor.totalCount).toBe(0);
-			expect(
-				await pool.query(
-					"select count(*)::int as count from approval_workflow where organization_id = $1 and context_snapshot -> 'breakPolicySnapshot' is not null",
-					[ids.organization],
-				),
-			).toMatchObject({ rows: [{ count: 103 }] });
+		const approvals = await loadOrdinaryCanonicalApprovals({
+			database,
+			organizationId: ids.organization,
+			approverId: ids.manager,
+			limit: 1,
+		});
+		const count = await countOrdinaryCanonicalApprovals({
+			database,
+			organizationId: ids.organization,
+			approverId: ids.manager,
 		});
 
-		it.each(
-			modes.flatMap((mode) =>
-				(["missing", "malformed"] as const).map((evidence) => ({
-					mode,
-					evidence,
-				})),
+		expect(approvals.map(({ item }) => item.id)).toEqual([sourceAssignmentId]);
+		expect(approvals.totalCount).toBe(1);
+		expect(count).toBe(1);
+		const first = approvals[0];
+		if (!first) throw new Error("Expected one strict-valid approval");
+		const afterCursor = await loadOrdinaryCanonicalApprovals({
+			database,
+			organizationId: ids.organization,
+			approverId: ids.manager,
+			limit: 1,
+			cursor: {
+				riskLevel: first.item.triage.riskLevel,
+				priority: first.item.triage.priority,
+				createdAt: first.item.timing.createdAt,
+				id: first.item.id,
+			},
+		});
+		expect(afterCursor).toHaveLength(0);
+		expect(afterCursor.totalCount).toBe(0);
+		expect(
+			await pool.query(
+				"select count(*)::int as count from approval_workflow where organization_id = $1 and context_snapshot -> 'breakPolicySnapshot' is not null",
+				[ids.organization],
 			),
-		)("fails closed on $evidence stored break evidence in $mode mode", async ({
-			mode,
-			evidence,
-		}) => {
-			await seed("policy_clock_out", true, mode);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			await mutateAfterSubmission(async (client) => {
-				await client.query(
-					evidence === "missing"
-						? `update work_period
+		).toMatchObject({ rows: [{ count: 103 }] });
+	});
+
+	it.each(
+		modes.flatMap((mode) =>
+			(["missing", "malformed"] as const).map((evidence) => ({
+				mode,
+				evidence,
+			})),
+		),
+	)("fails closed on $evidence stored break evidence in $mode mode", async ({ mode, evidence }) => {
+		await seed("policy_clock_out", true, mode);
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+		await mutateAfterSubmission(async (client) => {
+			await client.query(
+				evidence === "missing"
+					? `update work_period
 						   set pending_changes = (pending_changes::jsonb - 'breakPolicySnapshot')::text
 						   where id = $1 and organization_id = $2`
-						: `update work_period
+					: `update work_period
 						   set pending_changes = jsonb_set(
 						     pending_changes::jsonb, '{breakPolicySnapshot,version}', '0'::jsonb
 						   )::text
 						   where id = $1 and organization_id = $2`,
-					[ids.period, ids.organization],
-				);
-			});
+				[ids.period, ids.organization],
+			);
+		});
 
-			await expect(
-				decide(target, { kind: "approve", reason: null }),
-			).rejects.toThrow();
-			const periods = await pool.query<{
-				approval_status: string;
-			}>(
-				`select approval_status from work_period
+		await expect(decide(target, { kind: "approve", reason: null })).rejects.toThrow();
+		const periods = await pool.query<{
+			approval_status: string;
+		}>(
+			`select approval_status from work_period
 				 where organization_id = $1 and employee_id = $2`,
-				[ids.organization, ids.requester],
-			);
-			expect(periods.rows).toEqual([{ approval_status: "pending" }]);
-			const records = await pool.query<{ approval_state: string }>(
-				`select approval_state from time_record
+			[ids.organization, ids.requester],
+		);
+		expect(periods.rows).toEqual([{ approval_status: "pending" }]);
+		const records = await pool.query<{ approval_state: string }>(
+			`select approval_state from time_record
 				 where organization_id = $1 and employee_id = $2`,
-				[ids.organization, ids.requester],
-			);
-			expect(records.rows).toEqual([{ approval_state: "pending" }]);
-			const entries = await pool.query(
-				`select id from time_entry
+			[ids.organization, ids.requester],
+		);
+		expect(records.rows).toEqual([{ approval_state: "pending" }]);
+		const entries = await pool.query(
+			`select id from time_entry
 				 where organization_id = $1 and employee_id = $2`,
-				[ids.organization, ids.requester],
-			);
-			expect(entries.rows).toHaveLength(2);
-			const decisions = await pool.query(
-				`select id from time_record_approval_decision
+			[ids.organization, ids.requester],
+		);
+		expect(entries.rows).toHaveLength(2);
+		const decisions = await pool.query(
+			`select id from time_record_approval_decision
 				 where organization_id = $1 and record_id = $2`,
-				[ids.organization, ids.canonical],
-			);
-			expect(decisions.rows).toEqual([]);
+			[ids.organization, ids.canonical],
+		);
+		expect(decisions.rows).toEqual([]);
+	});
+
+	it("complete submission writes zero approval requests and canonical reader discovers the assignment", async () => {
+		await seed("manual_time_submission", false, "complete");
+		const submitted = await submit("manual_time_submission");
+		const requests = await pool.query(
+			"select id from approval_request where organization_id = $1",
+			[ids.organization],
+		);
+		const approvals = await loadOrdinaryCanonicalApprovals({
+			database,
+			organizationId: ids.organization,
+			approverId: ids.manager,
 		});
 
-		it("complete submission writes zero approval requests and canonical reader discovers the assignment", async () => {
-			await seed("manual_time_submission", false, "complete");
-			const submitted = await submit("manual_time_submission");
-			const requests = await pool.query(
-				"select id from approval_request where organization_id = $1",
-				[ids.organization],
-			);
-			const approvals = await loadOrdinaryCanonicalApprovals({
-				database,
-				organizationId: ids.organization,
-				approverId: ids.manager,
+		expect(requests.rows).toEqual([]);
+		expect(approvals.map(({ item }) => item.id)).toEqual([submitted.result.approvalRequestId]);
+	});
+
+	it("opens a canonical-only assignment by exact review link after rechecking entitlement", async () => {
+		await seed("manual_time_submission", false, "complete");
+		const submitted = await submit("manual_time_submission");
+		const assignmentId = submitted.result.approvalRequestId;
+		const arrive = (userId: string, kind: string) => {
+			reviewSession.userId = userId;
+			reviewSession.organizationId = ids.organization;
+			return resolveApprovalReviewArrival({
+				userId,
+				activeOrganizationId: ids.organization,
+				target: parseApprovalReviewTarget({
+					organizationId: ids.organization,
+					kind,
+					id: assignmentId,
+				}),
+			});
+		};
+		try {
+			await expect(arrive(ids.managerUser, "canonical")).resolves.toMatchObject({
+				status: "ready",
+				item: { id: assignmentId, status: "pending" },
+			});
+			// No compatibility request exists; the exact kind never retargets.
+			await expect(arrive(ids.managerUser, "compatibility")).resolves.toEqual({
+				status: "unavailable",
+			});
+			await expect(arrive(ids.requesterUser, "canonical")).resolves.toEqual({
+				status: "unavailable",
 			});
 
-			expect(requests.rows).toEqual([]);
-			expect(approvals.map(({ item }) => item.id)).toEqual([
-				submitted.result.approvalRequestId,
-			]);
-		});
+			await decide(assignmentId, { kind: "approve", reason: null });
+			// A decided canonical step is not re-disclosed through its old link.
+			await expect(arrive(ids.managerUser, "canonical")).resolves.toEqual({
+				status: "unavailable",
+			});
+		} finally {
+			reviewSession.userId = null;
+			reviewSession.organizationId = null;
+		}
+	});
 
-		it("opens a canonical-only assignment by exact review link after rechecking entitlement", async () => {
-			await seed("manual_time_submission", false, "complete");
-			const submitted = await submit("manual_time_submission");
-			const assignmentId = submitted.result.approvalRequestId;
-			const arrive = (userId: string, kind: string) => {
-				reviewSession.userId = userId;
-				reviewSession.organizationId = ids.organization;
-				return resolveApprovalReviewArrival({
-					userId,
-					activeOrganizationId: ids.organization,
-					target: parseApprovalReviewTarget({
-						organizationId: ids.organization,
-						kind,
-						id: assignmentId,
-					}),
-				});
-			};
-			try {
-				await expect(arrive(ids.managerUser, "canonical")).resolves.toMatchObject({
-					status: "ready",
-					item: { id: assignmentId, status: "pending" },
-				});
-				// No compatibility request exists; the exact kind never retargets.
-				await expect(arrive(ids.managerUser, "compatibility")).resolves.toEqual({
-					status: "unavailable",
-				});
-				await expect(arrive(ids.requesterUser, "canonical")).resolves.toEqual({
-					status: "unavailable",
-				});
-
-				await decide(assignmentId, { kind: "approve", reason: null });
-				// A decided canonical step is not re-disclosed through its old link.
-				await expect(arrive(ids.managerUser, "canonical")).resolves.toEqual({
-					status: "unavailable",
-				});
-			} finally {
-				reviewSession.userId = null;
-				reviewSession.organizationId = null;
-			}
-		});
-
-		const submissionRollbackCases = [
-			...["legacy", "shadow", "ready"].map((mode) => ({
+	const submissionRollbackCases = [
+		...["legacy", "shadow", "ready"].map((mode) => ({
+			mode: mode as ApprovalWorkflowLifecycleMode,
+			stage: "legacy request/chain",
+			table: "approval_request",
+			operation: "insert" as const,
+			chain: false,
+		})),
+		...["legacy", "shadow", "ready"].map((mode) => ({
+			mode: mode as ApprovalWorkflowLifecycleMode,
+			stage: "legacy chain",
+			table: "approval_chain_stage_instance",
+			operation: "insert" as const,
+			chain: true,
+		})),
+		...["shadow", "ready", "canonical", "complete"].flatMap((mode) =>
+			[
+				["workflow", "approval_workflow", "insert"],
+				["projection", "approval_requester_projection", "insert"],
+				["outbox", "approval_outbox", "insert"],
+				["source binding", "work_period", "update"],
+			].map(([stage, table, operation]) => ({
 				mode: mode as ApprovalWorkflowLifecycleMode,
-				stage: "legacy request/chain",
-				table: "approval_request",
-				operation: "insert" as const,
+				stage,
+				table,
+				operation: operation as "insert" | "update",
 				chain: false,
 			})),
-			...["legacy", "shadow", "ready"].map((mode) => ({
-				mode: mode as ApprovalWorkflowLifecycleMode,
-				stage: "legacy chain",
-				table: "approval_chain_stage_instance",
-				operation: "insert" as const,
-				chain: true,
-			})),
-			...["shadow", "ready", "canonical", "complete"].flatMap((mode) =>
-				[
-					["workflow", "approval_workflow", "insert"],
-					["projection", "approval_requester_projection", "insert"],
-					["outbox", "approval_outbox", "insert"],
-					["source binding", "work_period", "update"],
-				].map(([stage, table, operation]) => ({
-					mode: mode as ApprovalWorkflowLifecycleMode,
-					stage,
-					table,
-					operation: operation as "insert" | "update",
-					chain: false,
-				})),
-			),
-			{
-				mode: "canonical" as const,
-				stage: "compatibility",
-				table: "approval_request",
-				operation: "insert" as const,
-				chain: false,
-			},
-		];
+		),
+		{
+			mode: "canonical" as const,
+			stage: "compatibility",
+			table: "approval_request",
+			operation: "insert" as const,
+			chain: false,
+		},
+	];
 
-		it.each(
-			submissionRollbackCases,
-		)("rolls back $stage submission stage in $mode mode without residue", async ({
-			mode,
-			stage,
-			table,
-			operation,
-			chain,
-		}) => {
+	it.each(submissionRollbackCases)(
+		"rolls back $stage submission stage in $mode mode without residue",
+		async ({ mode, stage, table, operation, chain }) => {
 			await seed("manual_time_submission", false, mode, false, chain);
 			const before = await snapshot();
 			await expect(
@@ -2804,11 +2636,12 @@ describe(
 				}),
 			).rejects.toThrow("Ordinary work-period submission failed");
 			expect(await snapshot()).toEqual(before);
-		});
+		},
+	);
 
-		it.each(
-			modes,
-		)("requester auto-finalization failure rolls the complete submission back in %s mode", async (mode) => {
+	it.each(modes)(
+		"requester auto-finalization failure rolls the complete submission back in %s mode",
+		async (mode) => {
 			await seed("manual_time_submission", false, mode, true);
 			const before = await snapshot();
 			await expect(
@@ -2820,415 +2653,376 @@ describe(
 				}),
 			).rejects.toThrow("Ordinary work-period submission failed");
 			expect(await snapshot()).toEqual(before);
+		},
+	);
+
+	it("terminal requester-auto duplicate submission replays the prior result without effects", async () => {
+		await seed("manual_time_submission", false, "legacy", true);
+		const first = await submit("manual_time_submission");
+		expect(first).toMatchObject({
+			disposition: "executed",
+			result: { kind: "auto_completed" },
 		});
+		const beforeReplay = await snapshot();
 
-		it("terminal requester-auto duplicate submission replays the prior result without effects", async () => {
-			await seed("manual_time_submission", false, "legacy", true);
-			const first = await submit("manual_time_submission");
-			expect(first).toMatchObject({
-				disposition: "executed",
-				result: { kind: "auto_completed" },
-			});
-			const beforeReplay = await snapshot();
+		const replay = await submit("manual_time_submission");
 
-			const replay = await submit("manual_time_submission");
+		expect(replay.result).toEqual(first.result);
+		expect(replay.disposition).toBe("replayed");
+		expect(replay.postCommit).toBeNull();
+		expect(await snapshot()).toEqual(beforeReplay);
+	});
 
-			expect(replay.result).toEqual(first.result);
-			expect(replay.disposition).toBe("replayed");
-			expect(replay.postCommit).toBeNull();
-			expect(await snapshot()).toEqual(beforeReplay);
+	it("completed-chain duplicate submission replays the prior result without effects", async () => {
+		await seed("manual_time_submission", false, "legacy", false, true);
+		const first = await submit("manual_time_submission");
+		expect(first).toMatchObject({
+			disposition: "executed",
+			result: { kind: "chain_created" },
 		});
-
-		it("completed-chain duplicate submission replays the prior result without effects", async () => {
-			await seed("manual_time_submission", false, "legacy", false, true);
-			const first = await submit("manual_time_submission");
-			expect(first).toMatchObject({
-				disposition: "executed",
-				result: { kind: "chain_created" },
-			});
-			await decide(first.result.approvalRequestId, {
-				kind: "approve",
-				reason: null,
-			});
-			const pending = await pool.query<{ id: string }>(
-				`select id from approval_request
+		await decide(first.result.approvalRequestId, {
+			kind: "approve",
+			reason: null,
+		});
+		const pending = await pool.query<{ id: string }>(
+			`select id from approval_request
 				where organization_id = $1 and entity_type = 'time_entry'
 				and entity_id = $2 and status = 'pending'`,
-				[ids.organization, ids.period],
-			);
-			expect(pending.rows).toHaveLength(1);
-			await decide(pending.rows[0]?.id ?? "", {
-				kind: "approve",
-				reason: null,
-			});
-			const beforeReplay = await snapshot();
-
-			const replay = await submit("manual_time_submission");
-
-			expect(replay.result).toEqual(first.result);
-			expect(replay.disposition).toBe("replayed");
-			expect(replay.postCommit).toBeNull();
-			expect(await snapshot()).toEqual(beforeReplay);
+			[ids.organization, ids.period],
+		);
+		expect(pending.rows).toHaveLength(1);
+		await decide(pending.rows[0]?.id ?? "", {
+			kind: "approve",
+			reason: null,
 		});
+		const beforeReplay = await snapshot();
 
-		it("exact duplicate retry commits once and replays while distinct same-kind submissions commit one conflicting pending workflow", async () => {
-			const [left, right] = await Promise.all([submitting(), submitting()]);
-			expect([left.disposition, right.disposition].sort()).toEqual([
-				"executed",
-				"replayed",
-			]);
-			const retry = await submit("manual_time_submission");
-			expect(retry.disposition).toBe("replayed");
-			expect(
-				await pool.query(
-					"select count(*)::int as count from approval_workflow where organization_id = $1 and status = 'pending'",
-					[ids.organization],
-				),
-			).toMatchObject({ rows: [{ count: 1 }] });
+		const replay = await submit("manual_time_submission");
 
-			await seed();
-			const distinct = await Promise.allSettled([
-				submit("manual_time_submission"),
-				submit("manual_time_submission", ids.otherSubmission),
-			]);
-			expect(
-				distinct.filter(({ status }) => status === "fulfilled"),
-			).toHaveLength(1);
-			expect(
-				distinct.filter(({ status }) => status === "rejected"),
-			).toHaveLength(1);
-		});
+		expect(replay.result).toEqual(first.result);
+		expect(replay.disposition).toBe("replayed");
+		expect(replay.postCommit).toBeNull();
+		expect(await snapshot()).toEqual(beforeReplay);
+	});
 
-		it("exact source advisory lock blocks then commits and replays after release", async () => {
-			const applicationName = `task11-source-lock-${process.pid}`;
-			let waiting: ReturnType<typeof submit> | undefined;
-			try {
-				await withRollbackClient(pool, async ({ client, commit }) => {
-					const pidResult = await client.query<{ pid: number }>(
-						"select pg_backend_pid() as pid",
-					);
-					const blockingPid = pidResult.rows[0]?.pid;
-					if (!blockingPid)
-						throw new Error("Task 11 blocker has no backend pid");
-					const exactLockKey = JSON.stringify([
-						ids.organization,
-						"manual_time_submission",
-						"time_entry",
-						ids.period,
-					]);
-					await client.query(
-						"select pg_advisory_xact_lock(hashtextextended($1, 0))",
-						[exactLockKey],
-					);
-					waiting = submit(
-						"manual_time_submission",
-						ids.submission,
-						applicationName,
-					);
-					await expect(
-						waitForObservedLock(applicationName, blockingPid),
-					).resolves.toMatchObject({ wait_event_type: "Lock" });
-					await commit();
-				});
-				if (!waiting) throw new Error("Task 11 lock waiter was not started");
-				await expect(waiting).resolves.toMatchObject({
-					disposition: "executed",
-				});
-				await expect(submit("manual_time_submission")).resolves.toMatchObject({
-					disposition: "replayed",
-				});
-			} catch (error) {
-				if (waiting) await Promise.allSettled([waiting]);
-				throw error;
-			}
-		});
-
-		async function submitting() {
-			return submit("manual_time_submission");
-		}
-
-		it("manual versus policy-clockout competition uses exact source advisory locks", async () => {
-			const results = await Promise.allSettled([
-				submit("manual_time_submission"),
-				submit("policy_clock_out", ids.otherSubmission),
-			]);
-			expect(
-				results.filter(({ status }) => status === "fulfilled"),
-			).toHaveLength(1);
-			expect(
-				results.filter(({ status }) => status === "rejected"),
-			).toHaveLength(1);
-			const rows = await pool.query<{ workflow_type: string; status: string }>(
-				"select workflow_type, status from approval_workflow where organization_id = $1",
-				[ids.organization],
-			);
-			expect(rows.rows).toHaveLength(1);
-			expect(rows.rows[0]?.status).toBe("pending");
-		});
-
-		it("terminal prior history remains immutable while one new conflicting pending submission wins", async () => {
-			await insertWorkflowHistory({
-				id: ids.terminalWorkflow,
-				status: "approved",
-			});
+	it("exact duplicate retry commits once and replays while distinct same-kind submissions commit one conflicting pending workflow", async () => {
+		const [left, right] = await Promise.all([submitting(), submitting()]);
+		expect([left.disposition, right.disposition].sort()).toEqual(["executed", "replayed"]);
+		const retry = await submit("manual_time_submission");
+		expect(retry.disposition).toBe("replayed");
+		expect(
 			await pool.query(
-				`insert into approval_request (
+				"select count(*)::int as count from approval_workflow where organization_id = $1 and status = 'pending'",
+				[ids.organization],
+			),
+		).toMatchObject({ rows: [{ count: 1 }] });
+
+		await seed();
+		const distinct = await Promise.allSettled([
+			submit("manual_time_submission"),
+			submit("manual_time_submission", ids.otherSubmission),
+		]);
+		expect(distinct.filter(({ status }) => status === "fulfilled")).toHaveLength(1);
+		expect(distinct.filter(({ status }) => status === "rejected")).toHaveLength(1);
+	});
+
+	it("exact source advisory lock blocks then commits and replays after release", async () => {
+		const applicationName = `task11-source-lock-${process.pid}`;
+		let waiting: ReturnType<typeof submit> | undefined;
+		try {
+			await withRollbackClient(pool, async ({ client, commit }) => {
+				const pidResult = await client.query<{ pid: number }>("select pg_backend_pid() as pid");
+				const blockingPid = pidResult.rows[0]?.pid;
+				if (!blockingPid) throw new Error("Task 11 blocker has no backend pid");
+				const exactLockKey = JSON.stringify([
+					ids.organization,
+					"manual_time_submission",
+					"time_entry",
+					ids.period,
+				]);
+				await client.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [exactLockKey]);
+				waiting = submit("manual_time_submission", ids.submission, applicationName);
+				await expect(waitForObservedLock(applicationName, blockingPid)).resolves.toMatchObject({
+					wait_event_type: "Lock",
+				});
+				await commit();
+			});
+			if (!waiting) throw new Error("Task 11 lock waiter was not started");
+			await expect(waiting).resolves.toMatchObject({
+				disposition: "executed",
+			});
+			await expect(submit("manual_time_submission")).resolves.toMatchObject({
+				disposition: "replayed",
+			});
+		} catch (error) {
+			if (waiting) await Promise.allSettled([waiting]);
+			throw error;
+		}
+	});
+
+	async function submitting() {
+		return submit("manual_time_submission");
+	}
+
+	it("manual versus policy-clockout competition uses exact source advisory locks", async () => {
+		const results = await Promise.allSettled([
+			submit("manual_time_submission"),
+			submit("policy_clock_out", ids.otherSubmission),
+		]);
+		expect(results.filter(({ status }) => status === "fulfilled")).toHaveLength(1);
+		expect(results.filter(({ status }) => status === "rejected")).toHaveLength(1);
+		const rows = await pool.query<{ workflow_type: string; status: string }>(
+			"select workflow_type, status from approval_workflow where organization_id = $1",
+			[ids.organization],
+		);
+		expect(rows.rows).toHaveLength(1);
+		expect(rows.rows[0]?.status).toBe("pending");
+	});
+
+	it("terminal prior history remains immutable while one new conflicting pending submission wins", async () => {
+		await insertWorkflowHistory({
+			id: ids.terminalWorkflow,
+			status: "approved",
+		});
+		await pool.query(
+			`insert into approval_request (
 				 id, organization_id, entity_type, entity_id, canonical_record_id,
 				 requested_by, approver_id, status, reason, metadata, approved_at, updated_at
 				 ) values ($1, $2, 'time_entry', $3, $4, $5, $6, 'approved',
 				 'Task 11 terminal history', $7, $8, $8)`,
-				[
-					ids.terminalRequest,
-					ids.organization,
-					ids.period,
-					ids.canonical,
-					ids.requester,
-					ids.manager,
-					JSON.stringify({ timeRequest: { kind: "manual_time_submission" } }),
-					new Date(now.epochMilliseconds),
-				],
-			);
-			const beforeHistory = await pool.query(
-				"select to_jsonb(history) as row from approval_workflow history where id = $1 and organization_id = $2",
-				[ids.terminalWorkflow, ids.organization],
-			);
-			const competing = await Promise.allSettled([
-				submit("manual_time_submission"),
-				submit("manual_time_submission", ids.otherSubmission),
-			]);
-			expect(
-				competing.filter(({ status }) => status === "fulfilled"),
-			).toHaveLength(1);
-			expect(
-				competing.filter(({ status }) => status === "rejected"),
-			).toHaveLength(1);
-			const workflows = await pool.query(
-				"select to_jsonb(workflow) as row from approval_workflow workflow where organization_id = $1 order by id",
-				[ids.organization],
-			);
-			expect(workflows.rows).toHaveLength(2);
-			expect(workflows.rows).toContainEqual(beforeHistory.rows[0]);
-			expect(
-				workflows.rows.filter(
-					({ row }: { row: { status?: string } }) => row.status === "pending",
-				),
-			).toHaveLength(1);
-		});
+			[
+				ids.terminalRequest,
+				ids.organization,
+				ids.period,
+				ids.canonical,
+				ids.requester,
+				ids.manager,
+				JSON.stringify({ timeRequest: { kind: "manual_time_submission" } }),
+				new Date(now.epochMilliseconds),
+			],
+		);
+		const beforeHistory = await pool.query(
+			"select to_jsonb(history) as row from approval_workflow history where id = $1 and organization_id = $2",
+			[ids.terminalWorkflow, ids.organization],
+		);
+		const competing = await Promise.allSettled([
+			submit("manual_time_submission"),
+			submit("manual_time_submission", ids.otherSubmission),
+		]);
+		expect(competing.filter(({ status }) => status === "fulfilled")).toHaveLength(1);
+		expect(competing.filter(({ status }) => status === "rejected")).toHaveLength(1);
+		const workflows = await pool.query(
+			"select to_jsonb(workflow) as row from approval_workflow workflow where organization_id = $1 order by id",
+			[ids.organization],
+		);
+		expect(workflows.rows).toHaveLength(2);
+		expect(workflows.rows).toContainEqual(beforeHistory.rows[0]);
+		expect(
+			workflows.rows.filter(({ row }: { row: { status?: string } }) => row.status === "pending"),
+		).toHaveLength(1);
+	});
 
-		it("stale same-organization source link fails generically and rolls back", async () => {
-			await insertWorkflowHistory({
-				id: ids.staleWorkflow,
-				status: "pending",
-				sourceId: ids.clockIn,
-			});
-			await pool.query(
-				"update work_period set approval_workflow_id = $1 where id = $2 and organization_id = $3 and employee_id = $4",
-				[ids.staleWorkflow, ids.period, ids.organization, ids.requester],
-			);
-			const before = await snapshot();
-			await expect(submit("manual_time_submission")).rejects.toThrow(
-				"Ordinary work-period submission failed",
-			);
-			expect(await snapshot()).toEqual(before);
+	it("stale same-organization source link fails generically and rolls back", async () => {
+		await insertWorkflowHistory({
+			id: ids.staleWorkflow,
+			status: "pending",
+			sourceId: ids.clockIn,
 		});
+		await pool.query(
+			"update work_period set approval_workflow_id = $1 where id = $2 and organization_id = $3 and employee_id = $4",
+			[ids.staleWorkflow, ids.period, ids.organization, ids.requester],
+		);
+		const before = await snapshot();
+		await expect(submit("manual_time_submission")).rejects.toThrow(
+			"Ordinary work-period submission failed",
+		);
+		expect(await snapshot()).toEqual(before);
+	});
 
-		it("foreign organization rollback snapshots both tenants and every durable graph", async () => {
-			const before = await snapshot();
-			expect(
-				(before.organization as Array<{ id: string }>).map(({ id }) => id),
-			).toEqual([ids.foreignOrganization, ids.organization].sort());
-			expect(
-				(before.employee as Array<{ id: string }>).map(({ id }) => id).sort(),
-			).toEqual([ids.foreignEmployee, ids.manager, ids.requester].sort());
-			await expect(
-				runtime().repository.withTransaction((context) =>
-					executeOrdinaryWorkPeriodSubmissionInTransaction({
-						dbService: dbService(context.dbService.db),
-						context,
-						organizationId: ids.foreignOrganization,
-						workPeriodId: ids.period,
-						submissionId: ids.submission,
-						requesterEmployeeId: ids.requester,
-						requesterUserId: ids.requesterUser,
-						teamId: null,
-						defaultApproverId: ids.manager,
-						reason: "Manual time entry: foreign",
-						overtimeRisk: null,
-						kind: "manual_time_submission",
-						metadata: {},
-					}),
-				),
-			).rejects.toThrow("Ordinary work-period submission failed");
-			const after = await snapshot();
-			expect(after).toEqual(before);
-			for (const table of [
-				"approval_workflow",
-				"approval_workflow_stage",
-				"approval_stage_assignment",
-				"approval_workflow_event",
-				"approval_workflow_command",
-				"approval_requester_projection",
-				"approval_inbox_projection",
-				"approval_outbox",
-				"approval_request",
-				"approval_chain_instance",
-				"approval_chain_stage_instance",
-				"time_entry",
-				"work_period",
-				"time_record",
-				"time_record_work",
-				"time_record_allocation",
-				"time_record_approval_decision",
-			] as const) {
-				expect(
-					(after[table] as Array<{ organization_id?: string }>).filter(
-						({ organization_id }) =>
-							organization_id === ids.foreignOrganization,
-					),
-				).toEqual([]);
-			}
-		});
-
-		it("foreign employee ownership fails without revealing or mutating the source", async () => {
-			const before = await snapshot();
-			await expect(
-				runtime().repository.withTransaction((context) =>
-					executeOrdinaryWorkPeriodSubmissionInTransaction({
-						dbService: dbService(context.dbService.db),
-						context,
-						organizationId: ids.organization,
-						workPeriodId: ids.period,
-						submissionId: ids.submission,
-						requesterEmployeeId: ids.foreignEmployee,
-						requesterUserId: ids.foreignUser,
-						teamId: null,
-						defaultApproverId: ids.manager,
-						reason: "Manual time entry: foreign employee",
-						overtimeRisk: null,
-						kind: "manual_time_submission",
-						metadata: {},
-					}),
-				),
-			).rejects.toThrow("Ordinary work-period submission failed");
-			expect(await snapshot()).toEqual(before);
-		});
-
-		async function assertTerminalGraph(
-			expectedStatus: "approved" | "rejected",
-		) {
-			const graph = await snapshot();
-			const period = (graph.work_period as Array<Record<string, unknown>>)[0];
-			const canonical = (
-				graph.time_record as Array<Record<string, unknown>>
-			)[0];
-			const workflow = (
-				graph.approval_workflow as Array<Record<string, unknown>>
-			)[0];
-			const requests = graph.approval_request as Array<Record<string, unknown>>;
-			const decisions = graph.time_record_approval_decision as Array<
-				Record<string, unknown>
-			>;
-			const receipts = graph.approval_workflow_command as Array<
-				Record<string, unknown>
-			>;
-			const requesterProjection = graph.approval_requester_projection as Array<
-				Record<string, unknown>
-			>;
-			const outbox = graph.approval_outbox as Array<Record<string, unknown>>;
-			expect(period).toMatchObject({
-				id: ids.period,
-				organization_id: ids.organization,
-				employee_id: ids.requester,
-				canonical_record_id: ids.canonical,
-				approval_status: expectedStatus,
-			});
-			expect(canonical).toMatchObject({
-				id: ids.canonical,
-				organization_id: ids.organization,
-				employee_id: ids.requester,
-				approval_state: expectedStatus,
-				start_at: period?.start_time,
-				end_at: period?.end_time,
-				duration_minutes: period?.duration_minutes,
-			});
-			expect(workflow).toMatchObject({
-				id: period?.approval_workflow_id,
-				status: expectedStatus,
-				version: 2,
-			});
-			expect(requests).toHaveLength(1);
-			expect(requests[0]).toMatchObject({
-				status: expectedStatus,
-				entity_id: ids.period,
-				metadata: {
-					workflow: { id: workflow?.id, organizationId: ids.organization },
-					timeRequest: { kind: "manual_time_submission" },
-				},
-			});
-			expect(decisions).toHaveLength(1);
-			expect(decisions[0]).toMatchObject({ action: expectedStatus });
-			expect(receipts).toHaveLength(1);
-			expect(receipts[0]).toMatchObject({ state: "completed" });
-			expect(requesterProjection).toHaveLength(1);
-			expect(requesterProjection[0]).toMatchObject({
-				workflow_id: workflow?.id,
-				status: expectedStatus,
-			});
-			expect(graph.approval_inbox_projection).toEqual([]);
-			expect(outbox.length).toBeGreaterThanOrEqual(2);
-			expect(outbox).toContainEqual(
-				expect.objectContaining({
-					workflow_id: workflow?.id,
-					event_type: `workflow.${expectedStatus}`,
-					disposition: "observe",
+	it("foreign organization rollback snapshots both tenants and every durable graph", async () => {
+		const before = await snapshot();
+		expect((before.organization as Array<{ id: string }>).map(({ id }) => id)).toEqual(
+			[ids.foreignOrganization, ids.organization].sort(),
+		);
+		expect((before.employee as Array<{ id: string }>).map(({ id }) => id).sort()).toEqual(
+			[ids.foreignEmployee, ids.manager, ids.requester].sort(),
+		);
+		await expect(
+			runtime().repository.withTransaction((context) =>
+				executeOrdinaryWorkPeriodSubmissionInTransaction({
+					dbService: dbService(context.dbService.db),
+					context,
+					organizationId: ids.foreignOrganization,
+					workPeriodId: ids.period,
+					submissionId: ids.submission,
+					requesterEmployeeId: ids.requester,
+					requesterUserId: ids.requesterUser,
+					teamId: null,
+					defaultApproverId: ids.manager,
+					reason: "Manual time entry: foreign",
+					overtimeRisk: null,
+					kind: "manual_time_submission",
+					metadata: {},
 				}),
-			);
-			for (const row of outbox) {
-				expect(row.workflow_id).toBe(workflow?.id);
-				expect(row.disposition).toBe("observe");
-			}
-			for (const row of [...requests, ...decisions, ...receipts, ...outbox]) {
-				expect(row.organization_id).toBe(ids.organization);
-			}
-		}
-
-		it("approve versus reject leaves one coherent terminal graph and an already-decided loser", async () => {
-			const submitted = await submit("manual_time_submission");
-			const target = submitted.result.approvalRequestId;
-			const competing = await Promise.all([
-				decide(target, { kind: "approve", reason: null }),
-				decide(target, { kind: "reject", reason: "reject" }),
-			]);
-			const winners = competing.filter((result) => result.status === "decided");
-			const losers = competing.filter((result) => result.status === "refused");
-			expect(winners).toHaveLength(1);
-			expect(losers).toEqual([{ status: "refused", reason: "already_decided" }]);
-			const winner = winners[0];
-			if (winner?.status !== "decided") {
-				throw new Error("Task 11 terminal race did not produce one winner");
-			}
-			await assertTerminalGraph(winner.outcome === "approved" ? "approved" : "rejected");
-		});
-
-		it("duplicate approve replays one coherent terminal graph", async () => {
-			const duplicateTarget = (await submit("manual_time_submission")).result
-				.approvalRequestId;
-			const duplicate = await Promise.allSettled([
-				decide(duplicateTarget, { kind: "approve", reason: null }),
-				decide(duplicateTarget, { kind: "approve", reason: null }),
-			]);
+			),
+		).rejects.toThrow("Ordinary work-period submission failed");
+		const after = await snapshot();
+		expect(after).toEqual(before);
+		for (const table of [
+			"approval_workflow",
+			"approval_workflow_stage",
+			"approval_stage_assignment",
+			"approval_workflow_event",
+			"approval_workflow_command",
+			"approval_requester_projection",
+			"approval_inbox_projection",
+			"approval_outbox",
+			"approval_request",
+			"approval_chain_instance",
+			"approval_chain_stage_instance",
+			"time_entry",
+			"work_period",
+			"time_record",
+			"time_record_work",
+			"time_record_allocation",
+			"time_record_approval_decision",
+		] as const) {
 			expect(
-				duplicate.filter(({ status }) => status === "fulfilled"),
-			).toHaveLength(2);
-			await assertTerminalGraph("approved");
-		});
+				(after[table] as Array<{ organization_id?: string }>).filter(
+					({ organization_id }) => organization_id === ids.foreignOrganization,
+				),
+			).toEqual([]);
+		}
+	});
 
-		it.each([
-			["approve", "approved"],
-			["reject", "rejected"],
-		] as const)("a manager can %s ordinary time submitted before the requester departed", async (action, status) => {
-			const target = (await submit("manual_time_submission")).result
-				.approvalRequestId;
+	it("foreign employee ownership fails without revealing or mutating the source", async () => {
+		const before = await snapshot();
+		await expect(
+			runtime().repository.withTransaction((context) =>
+				executeOrdinaryWorkPeriodSubmissionInTransaction({
+					dbService: dbService(context.dbService.db),
+					context,
+					organizationId: ids.organization,
+					workPeriodId: ids.period,
+					submissionId: ids.submission,
+					requesterEmployeeId: ids.foreignEmployee,
+					requesterUserId: ids.foreignUser,
+					teamId: null,
+					defaultApproverId: ids.manager,
+					reason: "Manual time entry: foreign employee",
+					overtimeRisk: null,
+					kind: "manual_time_submission",
+					metadata: {},
+				}),
+			),
+		).rejects.toThrow("Ordinary work-period submission failed");
+		expect(await snapshot()).toEqual(before);
+	});
+
+	async function assertTerminalGraph(expectedStatus: "approved" | "rejected") {
+		const graph = await snapshot();
+		const period = (graph.work_period as Array<Record<string, unknown>>)[0];
+		const canonical = (graph.time_record as Array<Record<string, unknown>>)[0];
+		const workflow = (graph.approval_workflow as Array<Record<string, unknown>>)[0];
+		const requests = graph.approval_request as Array<Record<string, unknown>>;
+		const decisions = graph.time_record_approval_decision as Array<Record<string, unknown>>;
+		const receipts = graph.approval_workflow_command as Array<Record<string, unknown>>;
+		const requesterProjection = graph.approval_requester_projection as Array<
+			Record<string, unknown>
+		>;
+		const outbox = graph.approval_outbox as Array<Record<string, unknown>>;
+		expect(period).toMatchObject({
+			id: ids.period,
+			organization_id: ids.organization,
+			employee_id: ids.requester,
+			canonical_record_id: ids.canonical,
+			approval_status: expectedStatus,
+		});
+		expect(canonical).toMatchObject({
+			id: ids.canonical,
+			organization_id: ids.organization,
+			employee_id: ids.requester,
+			approval_state: expectedStatus,
+			start_at: period?.start_time,
+			end_at: period?.end_time,
+			duration_minutes: period?.duration_minutes,
+		});
+		expect(workflow).toMatchObject({
+			id: period?.approval_workflow_id,
+			status: expectedStatus,
+			version: 2,
+		});
+		expect(requests).toHaveLength(1);
+		expect(requests[0]).toMatchObject({
+			status: expectedStatus,
+			entity_id: ids.period,
+			metadata: {
+				workflow: { id: workflow?.id, organizationId: ids.organization },
+				timeRequest: { kind: "manual_time_submission" },
+			},
+		});
+		expect(decisions).toHaveLength(1);
+		expect(decisions[0]).toMatchObject({ action: expectedStatus });
+		expect(receipts).toHaveLength(1);
+		expect(receipts[0]).toMatchObject({ state: "completed" });
+		expect(requesterProjection).toHaveLength(1);
+		expect(requesterProjection[0]).toMatchObject({
+			workflow_id: workflow?.id,
+			status: expectedStatus,
+		});
+		expect(graph.approval_inbox_projection).toEqual([]);
+		expect(outbox.length).toBeGreaterThanOrEqual(2);
+		expect(outbox).toContainEqual(
+			expect.objectContaining({
+				workflow_id: workflow?.id,
+				event_type: `workflow.${expectedStatus}`,
+				disposition: "observe",
+			}),
+		);
+		for (const row of outbox) {
+			expect(row.workflow_id).toBe(workflow?.id);
+			expect(row.disposition).toBe("observe");
+		}
+		for (const row of [...requests, ...decisions, ...receipts, ...outbox]) {
+			expect(row.organization_id).toBe(ids.organization);
+		}
+	}
+
+	it("approve versus reject leaves one coherent terminal graph and an already-decided loser", async () => {
+		const submitted = await submit("manual_time_submission");
+		const target = submitted.result.approvalRequestId;
+		const competing = await Promise.all([
+			decide(target, { kind: "approve", reason: null }),
+			decide(target, { kind: "reject", reason: "reject" }),
+		]);
+		const winners = competing.filter((result) => result.status === "decided");
+		const losers = competing.filter((result) => result.status === "refused");
+		expect(winners).toHaveLength(1);
+		expect(losers).toEqual([{ status: "refused", reason: "already_decided" }]);
+		const winner = winners[0];
+		if (winner?.status !== "decided") {
+			throw new Error("Task 11 terminal race did not produce one winner");
+		}
+		await assertTerminalGraph(winner.outcome === "approved" ? "approved" : "rejected");
+	});
+
+	it("duplicate approve replays one coherent terminal graph", async () => {
+		const duplicateTarget = (await submit("manual_time_submission")).result.approvalRequestId;
+		const duplicate = await Promise.allSettled([
+			decide(duplicateTarget, { kind: "approve", reason: null }),
+			decide(duplicateTarget, { kind: "approve", reason: null }),
+		]);
+		expect(duplicate.filter(({ status }) => status === "fulfilled")).toHaveLength(2);
+		await assertTerminalGraph("approved");
+	});
+
+	it.each([
+		["approve", "approved"],
+		["reject", "rejected"],
+	] as const)(
+		"a manager can %s ordinary time submitted before the requester departed",
+		async (action, status) => {
+			const target = (await submit("manual_time_submission")).result.approvalRequestId;
 			await pool.query(
 				"update employee set is_active = false where organization_id = $1 and id = $2",
 				[ids.organization, ids.requester],
@@ -3254,32 +3048,29 @@ describe(
 			).resolves.toMatchObject({
 				rows: [{ status, requester_employee_id: ids.requester }],
 			});
-		});
+		},
+	);
 
-		it("Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity", async () => {
-			await seed("policy_clock_out", true);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			const beforeEntries = await pool.query(
-				"select id from time_entry where organization_id = $1",
-				[ids.organization],
-			);
-			const decisions = await Promise.allSettled([
-				decide(target, { kind: "approve", reason: null }),
-				decide(target, { kind: "approve", reason: null }),
-			]);
-			expect(
-				decisions.filter(({ status }) => status === "fulfilled"),
-			).toHaveLength(2);
-			const periods = await pool.query<Record<string, unknown>>(
-				`select id, organization_id, employee_id, clock_in_id, clock_out_id,
+	it("Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity", async () => {
+		await seed("policy_clock_out", true);
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+		const beforeEntries = await pool.query("select id from time_entry where organization_id = $1", [
+			ids.organization,
+		]);
+		const decisions = await Promise.allSettled([
+			decide(target, { kind: "approve", reason: null }),
+			decide(target, { kind: "approve", reason: null }),
+		]);
+		expect(decisions.filter(({ status }) => status === "fulfilled")).toHaveLength(2);
+		const periods = await pool.query<Record<string, unknown>>(
+			`select id, organization_id, employee_id, clock_in_id, clock_out_id,
 				 canonical_record_id, approval_workflow_id, approval_status,
 				 start_time, end_time, duration_minutes
 				 from work_period where organization_id = $1 order by start_time, id`,
-				[ids.organization],
-			);
-			const records = await pool.query<Record<string, unknown>>(
-				`select record.id, record.organization_id, record.employee_id,
+			[ids.organization],
+		);
+		const records = await pool.query<Record<string, unknown>>(
+			`select record.id, record.organization_id, record.employee_id,
 				 record.approval_state, record.start_at, record.end_at,
 				 record.duration_minutes, work.record_id as work_record_id,
 				 work.work_category_id, work.work_location_type, work.computation_metadata
@@ -3287,151 +3078,144 @@ describe(
 				 join time_record_work work on work.record_id = record.id and work.organization_id = record.organization_id
 				 where record.organization_id = $1 and record.record_kind = 'work'
 				 order by record.start_at, record.id`,
-				[ids.organization],
-			);
-			const allocations = await pool.query<Record<string, unknown>>(
-				`select allocation.record_id, allocation.organization_id,
+			[ids.organization],
+		);
+		const allocations = await pool.query<Record<string, unknown>>(
+			`select allocation.record_id, allocation.organization_id,
 				 allocation.allocation_kind, allocation.project_id, allocation.weight_percent
 				 from time_record_allocation allocation
 				 where allocation.organization_id = $1 order by allocation.record_id`,
-				[ids.organization],
-			);
-			const synthetic = await pool.query<Record<string, unknown>>(
-				`select id, organization_id, employee_id, type, timestamp,
+			[ids.organization],
+		);
+		const synthetic = await pool.query<Record<string, unknown>>(
+			`select id, organization_id, employee_id, type, timestamp,
 				 utc_offset_minutes, timezone, timezone_source, previous_entry_id,
 				 hash, previous_hash
 				 from time_entry where organization_id = $1 and notes = 'z8:system-note:break-enforcement'
 				 order by timestamp, id`,
-				[ids.organization],
-			);
-			expect(periods.rows).toHaveLength(2);
-			expect(records.rows).toHaveLength(2);
-			expect(allocations.rows).toHaveLength(2);
-			expect(synthetic.rows).toHaveLength(2);
-			expect(beforeEntries.rows).toHaveLength(2);
-			for (const period of periods.rows) {
-				expect(period).toMatchObject({
-					organization_id: ids.organization,
-					employee_id: ids.requester,
-					approval_status: "approved",
-				});
-				const record = records.rows.find(
-					(candidate) => candidate.id === period.canonical_record_id,
-				);
-				expect(record).toMatchObject({
-					work_record_id: period.canonical_record_id,
-					organization_id: period.organization_id,
-					employee_id: period.employee_id,
-					approval_state: "approved",
-					work_category_id: null,
-					work_location_type: null,
-					computation_metadata: null,
-					start_at: period.start_time,
-					end_at: period.end_time,
-					duration_minutes: period.duration_minutes,
-				});
-			}
-			expect(periods.rows[0]).toMatchObject({
-				id: ids.period,
-				canonical_record_id: ids.canonical,
-				clock_in_id: ids.clockIn,
-				clock_out_id: synthetic.rows[0]?.id,
-				start_time: startTime,
-				end_time: new Date("2026-07-22T14:00:00Z"),
-				duration_minutes: 360,
+			[ids.organization],
+		);
+		expect(periods.rows).toHaveLength(2);
+		expect(records.rows).toHaveLength(2);
+		expect(allocations.rows).toHaveLength(2);
+		expect(synthetic.rows).toHaveLength(2);
+		expect(beforeEntries.rows).toHaveLength(2);
+		for (const period of periods.rows) {
+			expect(period).toMatchObject({
+				organization_id: ids.organization,
+				employee_id: ids.requester,
+				approval_status: "approved",
 			});
-			expect(typeof periods.rows[0]?.approval_workflow_id).toBe("string");
-			expect(periods.rows[1]).toMatchObject({
-				clock_in_id: synthetic.rows[1]?.id,
-				clock_out_id: ids.clockOut,
-				approval_workflow_id: null,
-				start_time: new Date("2026-07-22T14:30:00Z"),
-				end_time: endTime,
-				duration_minutes: 90,
+			const record = records.rows.find((candidate) => candidate.id === period.canonical_record_id);
+			expect(record).toMatchObject({
+				work_record_id: period.canonical_record_id,
+				organization_id: period.organization_id,
+				employee_id: period.employee_id,
+				approval_state: "approved",
+				work_category_id: null,
+				work_location_type: null,
+				computation_metadata: null,
+				start_at: period.start_time,
+				end_at: period.end_time,
+				duration_minutes: period.duration_minutes,
 			});
-			expect(
-				allocations.rows.map(
-					({ allocation_kind, project_id, weight_percent }) => ({
-						allocation_kind,
-						project_id,
-						weight_percent,
-					}),
-				),
-			).toEqual([
-				{
-					allocation_kind: "project",
-					project_id: ids.project,
-					weight_percent: 100,
-				},
-				{
-					allocation_kind: "project",
-					project_id: ids.project,
-					weight_percent: 100,
-				},
-			]);
-			expect(synthetic.rows).toMatchObject([
-				{
-					organization_id: ids.organization,
-					employee_id: ids.requester,
-					type: "clock_out",
-					timestamp: new Date("2026-07-22T14:00:00Z"),
-					utc_offset_minutes: 0,
-					timezone: "UTC",
-				},
-				{
-					organization_id: ids.organization,
-					employee_id: ids.requester,
-					type: "clock_in",
-					timestamp: new Date("2026-07-22T14:30:00Z"),
-					utc_offset_minutes: 0,
-					timezone: "UTC",
-					previous_entry_id: synthetic.rows[0]?.id,
-				},
-			]);
-			expect(
-				await pool.query(
-					"select count(*)::int as count from approval_workflow where organization_id = $1",
-					[ids.organization],
-				),
-			).toMatchObject({ rows: [{ count: 1 }] });
+		}
+		expect(periods.rows[0]).toMatchObject({
+			id: ids.period,
+			canonical_record_id: ids.canonical,
+			clock_in_id: ids.clockIn,
+			clock_out_id: synthetic.rows[0]?.id,
+			start_time: startTime,
+			end_time: new Date("2026-07-22T14:00:00Z"),
+			duration_minutes: 360,
 		});
+		expect(typeof periods.rows[0]?.approval_workflow_id).toBe("string");
+		expect(periods.rows[1]).toMatchObject({
+			clock_in_id: synthetic.rows[1]?.id,
+			clock_out_id: ids.clockOut,
+			approval_workflow_id: null,
+			start_time: new Date("2026-07-22T14:30:00Z"),
+			end_time: endTime,
+			duration_minutes: 90,
+		});
+		expect(
+			allocations.rows.map(({ allocation_kind, project_id, weight_percent }) => ({
+				allocation_kind,
+				project_id,
+				weight_percent,
+			})),
+		).toEqual([
+			{
+				allocation_kind: "project",
+				project_id: ids.project,
+				weight_percent: 100,
+			},
+			{
+				allocation_kind: "project",
+				project_id: ids.project,
+				weight_percent: 100,
+			},
+		]);
+		expect(synthetic.rows).toMatchObject([
+			{
+				organization_id: ids.organization,
+				employee_id: ids.requester,
+				type: "clock_out",
+				timestamp: new Date("2026-07-22T14:00:00Z"),
+				utc_offset_minutes: 0,
+				timezone: "UTC",
+			},
+			{
+				organization_id: ids.organization,
+				employee_id: ids.requester,
+				type: "clock_in",
+				timestamp: new Date("2026-07-22T14:30:00Z"),
+				utc_offset_minutes: 0,
+				timezone: "UTC",
+				previous_entry_id: synthetic.rows[0]?.id,
+			},
+		]);
+		expect(
+			await pool.query(
+				"select count(*)::int as count from approval_workflow where organization_id = $1",
+				[ids.organization],
+			),
+		).toMatchObject({ rows: [{ count: 1 }] });
+	});
 
-		it.each(
-			modes,
-		)("uses the submitted break snapshot after mutable policy deletion in %s mode", async (mode) => {
+	it.each(modes)(
+		"uses the submitted break snapshot after mutable policy deletion in %s mode",
+		async (mode) => {
 			await assertDelayedSnapshotMutation({
 				mode,
 				mutate: async (client) => {
-					await client.query(
-						"delete from work_policy where id = $1 and organization_id = $2",
-						[ids.policy, ids.organization],
-					);
+					await client.query("delete from work_policy where id = $1 and organization_id = $2", [
+						ids.policy,
+						ids.organization,
+					]);
 				},
 			});
-		});
+		},
+	);
 
-		it.each([
-			"first entry",
-			"second entry",
-			"original period",
-			"original canonical",
-			"new canonical base",
-			"new canonical work",
-			"new canonical allocation",
-			"second period",
-			"decision",
-		] as const)("injected failure after %s restores the original pending graph and time-entry chain", async (stage) => {
+	it.each([
+		"first entry",
+		"second entry",
+		"original period",
+		"original canonical",
+		"new canonical base",
+		"new canonical work",
+		"new canonical allocation",
+		"second period",
+		"decision",
+	] as const)(
+		"injected failure after %s restores the original pending graph and time-entry chain",
+		async (stage) => {
 			await seed("policy_clock_out", true);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
+			const target = (await submit("policy_clock_out")).result.approvalRequestId;
 			const before = await snapshot();
-			await pool.query(
-				"create table task11_split_failpoint (stage text primary key)",
-			);
-			await pool.query(
-				"insert into task11_split_failpoint (stage) values ($1)",
-				[stage],
-			);
+			await pool.query("create table task11_split_failpoint (stage text primary key)");
+			await pool.query("insert into task11_split_failpoint (stage) values ($1)", [stage]);
 			await pool.query(`create or replace function task11_fail_split_stage() returns trigger as $$
 		declare selected_stage text;
 		begin
@@ -3464,28 +3248,27 @@ describe(
 				);
 			}
 			try {
-				await expect(
-					decide(target, { kind: "approve", reason: null }),
-				).rejects.toThrow();
+				await expect(decide(target, { kind: "approve", reason: null })).rejects.toThrow();
 			} finally {
 				for (const table of triggerTables) {
-					await pool.query(
-						`drop trigger if exists task11_split_failure on ${table}`,
-					);
+					await pool.query(`drop trigger if exists task11_split_failure on ${table}`);
 				}
 				await pool.query("drop function if exists task11_fail_split_stage()");
 				await pool.query("drop table if exists task11_split_failpoint");
 			}
 			expect(await snapshot()).toEqual(before);
-		});
+		},
+	);
 
-		it.each([
-			["workflow", "approval_workflow", "insert"],
-			["projection", "approval_requester_projection", "insert"],
-			["outbox", "approval_outbox", "insert"],
-			["compatibility", "approval_request", "insert"],
-			["binding", "work_period", "update"],
-		] as const)("rollback after %s submission failure leaves no workflow graph", async (_stage, table, operation) => {
+	it.each([
+		["workflow", "approval_workflow", "insert"],
+		["projection", "approval_requester_projection", "insert"],
+		["outbox", "approval_outbox", "insert"],
+		["compatibility", "approval_request", "insert"],
+		["binding", "work_period", "update"],
+	] as const)(
+		"rollback after %s submission failure leaves no workflow graph",
+		async (_stage, table, operation) => {
 			const before = await snapshot();
 			await pool.query(`create or replace function task11_fail_submission() returns trigger as $$
 		begin raise exception 'task11 submission failpoint'; end;
@@ -3498,36 +3281,37 @@ describe(
 					"Ordinary work-period submission failed",
 				);
 			} finally {
-				await pool.query(
-					`drop trigger if exists task11_submission_failure on ${table}`,
-				);
+				await pool.query(`drop trigger if exists task11_submission_failure on ${table}`);
 				await pool.query("drop function if exists task11_fail_submission()");
 			}
 			expect(await snapshot()).toEqual(before);
-		});
+		},
+	);
 
-		it.each([
-			["generic work-period", "work_period", "true", false],
-			["generic canonical-record", "time_record", "true", false],
-			[
-				"source-link binding",
-				"work_period",
-				"OLD.approval_workflow_id is null and NEW.approval_workflow_id is not null",
-				true,
-			],
-			[
-				"split-sensitive work-period",
-				"work_period",
-				"OLD.was_auto_adjusted = false and NEW.was_auto_adjusted = true",
-				false,
-			],
-			[
-				"split-sensitive canonical-record",
-				"time_record",
-				"NEW.end_at is distinct from OLD.end_at",
-				false,
-			],
-		] as const)("forced %s CAS zero row rolls the entire decision back", async (scenario, table, predicate, submissionCas) => {
+	it.each([
+		["generic work-period", "work_period", "true", false],
+		["generic canonical-record", "time_record", "true", false],
+		[
+			"source-link binding",
+			"work_period",
+			"OLD.approval_workflow_id is null and NEW.approval_workflow_id is not null",
+			true,
+		],
+		[
+			"split-sensitive work-period",
+			"work_period",
+			"OLD.was_auto_adjusted = false and NEW.was_auto_adjusted = true",
+			false,
+		],
+		[
+			"split-sensitive canonical-record",
+			"time_record",
+			"NEW.end_at is distinct from OLD.end_at",
+			false,
+		],
+	] as const)(
+		"forced %s CAS zero row rolls the entire decision back",
+		async (scenario, table, predicate, submissionCas) => {
 			if (scenario.startsWith("split-sensitive")) {
 				await seed("policy_clock_out", true);
 			}
@@ -3558,178 +3342,154 @@ describe(
 						"Ordinary work-period submission failed",
 					);
 				} else {
-					await expect(
-						decide(target ?? "", { kind: "approve", reason: null }),
-					).rejects.toThrow();
+					await expect(decide(target ?? "", { kind: "approve", reason: null })).rejects.toThrow();
 				}
 			} finally {
 				await pool.query(`drop trigger if exists task11_zero_row on ${table}`);
 				await pool.query("drop function if exists task11_zero_row()");
 			}
 			expect(await snapshot()).toEqual(before);
-		});
+		},
+	);
 
-		it("decision INSERT RETURNING zero rows rolls the complete transaction back", async () => {
-			const target = (await submit("manual_time_submission")).result
-				.approvalRequestId;
-			const before = await snapshot();
-			await pool.query(`create or replace function task11_zero_decision_insert() returns trigger as $$
+	it("decision INSERT RETURNING zero rows rolls the complete transaction back", async () => {
+		const target = (await submit("manual_time_submission")).result.approvalRequestId;
+		const before = await snapshot();
+		await pool.query(`create or replace function task11_zero_decision_insert() returns trigger as $$
 		begin
 			return null;
 		end;
 		$$ language plpgsql`);
-			await pool.query(
-				`create trigger task11_zero_decision_insert
+		await pool.query(
+			`create trigger task11_zero_decision_insert
 				 before insert on time_record_approval_decision
 				 for each row execute function task11_zero_decision_insert()`,
+		);
+		try {
+			await expect(decide(target, { kind: "approve", reason: null })).rejects.toThrow();
+		} finally {
+			await pool.query(
+				"drop trigger if exists task11_zero_decision_insert on time_record_approval_decision",
 			);
-			try {
-				await expect(
-					decide(target, { kind: "approve", reason: null }),
-				).rejects.toThrow();
-			} finally {
-				await pool.query(
-					"drop trigger if exists task11_zero_decision_insert on time_record_approval_decision",
-				);
-				await pool.query(
-					"drop function if exists task11_zero_decision_insert()",
-				);
-			}
-			expect(await snapshot()).toEqual(before);
-		});
+			await pool.query("drop function if exists task11_zero_decision_insert()");
+		}
+		expect(await snapshot()).toEqual(before);
+	});
 
-		it("split races a locked competing employee entry into one reachable hash chain", async () => {
-			await seed("policy_clock_out", true);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			let approval: ReturnType<typeof decide> | undefined;
-			try {
-				await withRollbackClient(pool, async ({ client, commit }) => {
-					await client.query(
-						"select pg_advisory_xact_lock(hashtextextended($1, 0))",
-						[ids.requester],
-					);
-					const blockerPid = await client.query<{ pid: number }>(
-						"select pg_backend_pid() as pid",
-					);
-					const latest = await client.query<{ hash: string }>(
-						"select hash from time_entry where id = $1 and organization_id = $2 and employee_id = $3",
-						[ids.clockOut, ids.organization, ids.requester],
-					);
-					const previousHash = latest.rows[0]?.hash;
-					if (!previousHash || !blockerPid.rows[0]?.pid) {
-						throw new Error("Task 11 competing entry prerequisite is missing");
-					}
-					const competingHash = calculateHash({
-						employeeId: ids.requester,
-						type: "correction",
-						timestamp: endTime.toISOString(),
-						previousHash,
-					});
-					approval = decide(target, { kind: "approve", reason: null });
-					await expect(
-						waitForBlocker(blockerPid.rows[0].pid),
-					).resolves.toMatchObject({ wait_event_type: "Lock" });
-					// Created when the blocker's transaction started, before the waiting split's:
-					// the break entries work records appends carry their own transaction's time (#1221).
-					await client.query(
-						`insert into time_entry (
+	it("split races a locked competing employee entry into one reachable hash chain", async () => {
+		await seed("policy_clock_out", true);
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+		let approval: ReturnType<typeof decide> | undefined;
+		try {
+			await withRollbackClient(pool, async ({ client, commit }) => {
+				await client.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [
+					ids.requester,
+				]);
+				const blockerPid = await client.query<{ pid: number }>("select pg_backend_pid() as pid");
+				const latest = await client.query<{ hash: string }>(
+					"select hash from time_entry where id = $1 and organization_id = $2 and employee_id = $3",
+					[ids.clockOut, ids.organization, ids.requester],
+				);
+				const previousHash = latest.rows[0]?.hash;
+				if (!previousHash || !blockerPid.rows[0]?.pid) {
+					throw new Error("Task 11 competing entry prerequisite is missing");
+				}
+				const competingHash = calculateHash({
+					employeeId: ids.requester,
+					type: "correction",
+					timestamp: endTime.toISOString(),
+					previousHash,
+				});
+				approval = decide(target, { kind: "approve", reason: null });
+				await expect(waitForBlocker(blockerPid.rows[0].pid)).resolves.toMatchObject({
+					wait_event_type: "Lock",
+				});
+				// Created when the blocker's transaction started, before the waiting split's:
+				// the break entries work records appends carry their own transaction's time (#1221).
+				await client.query(
+					`insert into time_entry (
 			 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
 			 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 			 created_by, created_at
 			 ) values ($1, $2, $3, 'correction', $4, 0, 'UTC', 'backfill', $5,
 			 $6, $7, $8, now())`,
-						[
-							ids.competingEntry,
-							ids.organization,
-							ids.requester,
-							endTime,
-							ids.clockOut,
-							competingHash,
-							previousHash,
-							ids.managerUser,
-						],
-					);
-					await commit();
-				});
-				if (!approval)
-					throw new Error("Task 11 split approval was not started");
-				await expect(approval).resolves.toBeDefined();
-			} catch (error) {
-				if (approval) await Promise.allSettled([approval]);
-				throw error;
-			}
-			const chain = await pool.query<{
-				id: string;
-				employee_id: string;
-				type: string;
-				timestamp: Date;
-				created_at: Date;
-				previous_entry_id: string | null;
-				hash: string;
-				previous_hash: string | null;
-			}>(
-				`select id, employee_id, type, timestamp, created_at,
+					[
+						ids.competingEntry,
+						ids.organization,
+						ids.requester,
+						endTime,
+						ids.clockOut,
+						competingHash,
+						previousHash,
+						ids.managerUser,
+					],
+				);
+				await commit();
+			});
+			if (!approval) throw new Error("Task 11 split approval was not started");
+			await expect(approval).resolves.toBeDefined();
+		} catch (error) {
+			if (approval) await Promise.allSettled([approval]);
+			throw error;
+		}
+		const chain = await pool.query<{
+			id: string;
+			employee_id: string;
+			type: string;
+			timestamp: Date;
+			created_at: Date;
+			previous_entry_id: string | null;
+			hash: string;
+			previous_hash: string | null;
+		}>(
+			`select id, employee_id, type, timestamp, created_at,
 				 previous_entry_id, hash, previous_hash
 				 from time_entry where organization_id = $1 and employee_id = $2
 				 order by created_at, id`,
-				[ids.organization, ids.requester],
-			);
-			expect(chain.rows).toHaveLength(5);
-			const byId = new Map(chain.rows.map((entry) => [entry.id, entry]));
-			const roots = chain.rows.filter(
-				({ previous_entry_id }) => previous_entry_id === null,
-			);
-			expect(roots).toHaveLength(1);
-			const successors = new Map<string, string[]>();
-			for (const entry of chain.rows) {
-				const predecessor = entry.previous_entry_id
-					? byId.get(entry.previous_entry_id)
-					: null;
-				if (entry.previous_entry_id !== null) expect(predecessor).toBeDefined();
-				if (predecessor) {
-					expect(entry.previous_hash).toBe(predecessor.hash);
-					expect(entry.created_at.getTime()).toBeGreaterThanOrEqual(
-						predecessor.created_at.getTime(),
-					);
-					successors.set(entry.previous_entry_id, [
-						...(successors.get(entry.previous_entry_id) ?? []),
-						entry.id,
-					]);
-				} else {
-					expect(entry.previous_hash).toBeNull();
-				}
-				expect(entry.hash).toBe(
-					calculateHash({
-						employeeId: entry.employee_id,
-						type: entry.type,
-						timestamp: entry.timestamp.toISOString(),
-						previousHash: entry.previous_hash,
-					}),
-				);
+			[ids.organization, ids.requester],
+		);
+		expect(chain.rows).toHaveLength(5);
+		const byId = new Map(chain.rows.map((entry) => [entry.id, entry]));
+		const roots = chain.rows.filter(({ previous_entry_id }) => previous_entry_id === null);
+		expect(roots).toHaveLength(1);
+		const successors = new Map<string, string[]>();
+		for (const entry of chain.rows) {
+			const predecessor = entry.previous_entry_id ? byId.get(entry.previous_entry_id) : null;
+			if (entry.previous_entry_id !== null) expect(predecessor).toBeDefined();
+			if (predecessor) {
+				expect(entry.previous_hash).toBe(predecessor.hash);
+				expect(entry.created_at.getTime()).toBeGreaterThanOrEqual(predecessor.created_at.getTime());
+				successors.set(entry.previous_entry_id, [
+					...(successors.get(entry.previous_entry_id) ?? []),
+					entry.id,
+				]);
+			} else {
+				expect(entry.previous_hash).toBeNull();
 			}
-			for (const children of successors.values())
-				expect(children).toHaveLength(1);
-			const reached = new Set<string>();
-			let cursor = roots[0]?.id;
-			while (cursor) {
-				expect(reached.has(cursor)).toBe(false);
-				reached.add(cursor);
-				cursor = successors.get(cursor)?.[0];
-			}
-			expect(reached.size).toBe(chain.rows.length);
-			expect(byId.get(ids.competingEntry)?.previous_entry_id).toBe(
-				ids.clockOut,
+			expect(entry.hash).toBe(
+				calculateHash({
+					employeeId: entry.employee_id,
+					type: entry.type,
+					timestamp: entry.timestamp.toISOString(),
+					previousHash: entry.previous_hash,
+				}),
 			);
-		});
+		}
+		for (const children of successors.values()) expect(children).toHaveLength(1);
+		const reached = new Set<string>();
+		let cursor = roots[0]?.id;
+		while (cursor) {
+			expect(reached.has(cursor)).toBe(false);
+			reached.add(cursor);
+			cursor = successors.get(cursor)?.[0];
+		}
+		expect(reached.size).toBe(chain.rows.length);
+		expect(byId.get(ids.competingEntry)?.previous_entry_id).toBe(ids.clockOut);
+	});
 
-		it.each([
-			"legacy",
-			"shadow",
-			"ready",
-			"canonical",
-			"complete",
-		] as const)("reconciles stale surcharge and clean balance for terminal split/no-split/reject in %s mode", async (mode) => {
+	it.each(["legacy", "shadow", "ready", "canonical", "complete"] as const)(
+		"reconciles stale surcharge and clean balance for terminal split/no-split/reject in %s mode",
+		async (mode) => {
 			for (const terminalCase of [
 				{
 					name: "split",
@@ -3752,8 +3512,7 @@ describe(
 			]) {
 				await seed(terminalCase.kind, terminalCase.split, mode);
 				await seedMaintenanceState();
-				const target = (await submit(terminalCase.kind)).result
-					.approvalRequestId;
+				const target = (await submit(terminalCase.kind)).result.approvalRequestId;
 				const completed = await completeDecision(
 					target,
 					terminalCase.action === "approve"
@@ -3778,9 +3537,7 @@ describe(
 					[ids.organization, ids.requester],
 				);
 				const surchargePeriodIds =
-					terminalCase.action === "approve"
-						? ownedPeriods.rows.map(({ id }) => id).sort()
-						: [];
+					terminalCase.action === "approve" ? ownedPeriods.rows.map(({ id }) => id).sort() : [];
 
 				const state = await maintenanceSnapshot();
 				const localCalculations = state.calculations.filter(
@@ -3822,13 +3579,12 @@ describe(
 					expect(calculation.organization_id).toBe(ids.organization);
 					expect(calculation.employee_id).toBe(ids.requester);
 				}
-				expect(
-					localCalculations.map(({ work_period_id }) => work_period_id).sort(),
-				).toEqual(surchargePeriodIds);
+				expect(localCalculations.map(({ work_period_id }) => work_period_id).sort()).toEqual(
+					surchargePeriodIds,
+				);
 				expect(
 					state.calculations.filter(
-						({ organization_id }) =>
-							organization_id === ids.foreignOrganization,
+						({ organization_id }) => organization_id === ids.foreignOrganization,
 					),
 				).toEqual([
 					expect.objectContaining({
@@ -3856,68 +3612,59 @@ describe(
 					},
 				]);
 			}
+		},
+	);
+
+	describe("time approval inbox handler decision", () => {
+		// Submitted just after the work ended, so the handler's real clock decides later.
+		const submittedAt = parseInstant("2026-07-22T17:00:00Z");
+
+		beforeEach(() => {
+			inboxObservation.active = true;
+			inboxObservation.notifications = [];
+			inboxObservation.loggedErrors = [];
 		});
 
-		describe("time approval inbox handler decision", () => {
-			// Submitted just after the work ended, so the handler's real clock decides later.
-			const submittedAt = parseInstant("2026-07-22T17:00:00Z");
+		afterEach(() => {
+			inboxObservation.active = false;
+		});
 
-			beforeEach(() => {
-				inboxObservation.active = true;
-				inboxObservation.notifications = [];
-				inboxObservation.loggedErrors = [];
-			});
+		async function submitForInbox(
+			kind: OrdinaryWorkPeriodApprovalKind,
+			mode: ApprovalWorkflowLifecycleMode,
+			withApprovalChain = false,
+		) {
+			await seed(kind, false, mode, false, withApprovalChain);
+			await seedMaintenanceState();
+			return (await submit(kind, ids.submission, undefined, { nowInstant: () => submittedAt }))
+				.result.approvalRequestId;
+		}
 
-			afterEach(() => {
-				inboxObservation.active = false;
-			});
+		async function decideFromInbox(approvalRequestId: string, action: "approve" | "reject") {
+			const service = DatabaseService.of(dbService(database) as never);
+			// The manager is the approver; the handler decides under one claimed right (#1676).
+			const options = { approvalRequestId, decisionRight: { as: "approver" } as const };
+			await Effect.runPromise(
+				(action === "approve"
+					? TimeCorrectionHandler.approve(ids.period, ids.manager, options)
+					: TimeCorrectionHandler.reject(ids.period, ids.manager, "Inbox rejection", options)
+				).pipe(Effect.provideService(DatabaseService, service)),
+			);
+		}
 
-			async function submitForInbox(
-				kind: OrdinaryWorkPeriodApprovalKind,
-				mode: ApprovalWorkflowLifecycleMode,
-				withApprovalChain = false,
-			) {
-				await seed(kind, false, mode, false, withApprovalChain);
-				await seedMaintenanceState();
-				return (
-					await submit(kind, ids.submission, undefined, { nowInstant: () => submittedAt })
-				).result.approvalRequestId;
-			}
+		async function localCalculations() {
+			return (await maintenanceSnapshot()).calculations
+				.filter(({ organization_id }) => organization_id === ids.organization)
+				.map(({ work_period_id, base_minutes, surcharge_minutes }) => ({
+					work_period_id,
+					base_minutes,
+					surcharge_minutes,
+				}));
+		}
 
-			async function decideFromInbox(
-				approvalRequestId: string,
-				action: "approve" | "reject",
-			) {
-				const service = DatabaseService.of(dbService(database) as never);
-				// The manager is the approver; the handler decides under one claimed right (#1676).
-				const options = { approvalRequestId, decisionRight: { as: "approver" } as const };
-				await Effect.runPromise(
-					(action === "approve"
-						? TimeCorrectionHandler.approve(ids.period, ids.manager, options)
-						: TimeCorrectionHandler.reject(
-								ids.period,
-								ids.manager,
-								"Inbox rejection",
-								options,
-							)
-					).pipe(Effect.provideService(DatabaseService, service)),
-				);
-			}
-
-			async function localCalculations() {
-				return (await maintenanceSnapshot()).calculations
-					.filter(({ organization_id }) => organization_id === ids.organization)
-					.map(({ work_period_id, base_minutes, surcharge_minutes }) => ({
-						work_period_id,
-						base_minutes,
-						surcharge_minutes,
-					}));
-			}
-
-			it.each([
-				"legacy",
-				"canonical",
-			] as const)("approving a manual time submission runs surcharge maintenance once after commit under %s authority", async (mode) => {
+		it.each(["legacy", "canonical"] as const)(
+			"approving a manual time submission runs surcharge maintenance once after commit under %s authority",
+			async (mode) => {
 				const target = await submitForInbox("manual_time_submission", mode);
 
 				await decideFromInbox(target, "approve");
@@ -3936,16 +3683,14 @@ describe(
 				// Legacy authority notifies from this path; canonical authority notifies
 				// through the workflow outbox.
 				expect(inboxObservation.notifications).toEqual(
-					mode === "legacy"
-						? [{ trigger: "onManualEntryApproved", workPeriodId: ids.period }]
-						: [],
+					mode === "legacy" ? [{ trigger: "onManualEntryApproved", workPeriodId: ids.period }] : [],
 				);
-			});
+			},
+		);
 
-			it.each([
-				"legacy",
-				"canonical",
-			] as const)("rejecting a manual time submission removes its stale surcharges after commit under %s authority", async (mode) => {
+		it.each(["legacy", "canonical"] as const)(
+			"rejecting a manual time submission removes its stale surcharges after commit under %s authority",
+			async (mode) => {
 				const target = await submitForInbox("manual_time_submission", mode);
 
 				await decideFromInbox(target, "reject");
@@ -3959,206 +3704,190 @@ describe(
 				expect(await localCalculations()).toEqual([]);
 				expect(inboxObservation.loggedErrors).toEqual([]);
 				expect(inboxObservation.notifications).toEqual(
-					mode === "legacy"
-						? [{ trigger: "onManualEntryRejected", workPeriodId: ids.period }]
-						: [],
+					mode === "legacy" ? [{ trigger: "onManualEntryRejected", workPeriodId: ids.period }] : [],
 				);
-			});
+			},
+		);
 
-			it("approving a policy clock-out runs surcharge maintenance after commit", async () => {
-				const target = await submitForInbox("policy_clock_out", "legacy");
+		it("approving a policy clock-out runs surcharge maintenance after commit", async () => {
+			const target = await submitForInbox("policy_clock_out", "legacy");
 
-				await decideFromInbox(target, "approve");
+			await decideFromInbox(target, "approve");
 
-				expect(await localCalculations()).toEqual([
-					{ work_period_id: ids.period, base_minutes: 480, surcharge_minutes: 240 },
-				]);
-				expect(inboxObservation.notifications).toEqual([
-					{ trigger: "onClockOutApproved", workPeriodId: ids.period },
-				]);
-			});
-
-			it("a decision that only advances to the next stage runs no maintenance", async () => {
-				const target = await submitForInbox("manual_time_submission", "legacy", true);
-
-				await decideFromInbox(target, "approve");
-
-				expect(
-					await pool.query(
-						"select approval_status from work_period where id = $1 and organization_id = $2",
-						[ids.period, ids.organization],
-					),
-				).toMatchObject({ rows: [{ approval_status: "pending" }] });
-				expect(await localCalculations()).toEqual([
-					{ work_period_id: ids.period, base_minutes: 999, surcharge_minutes: 999 },
-				]);
-				expect(inboxObservation.notifications).toEqual([]);
-				expect(inboxObservation.loggedErrors).toEqual([]);
-			});
-
-			it("a failing maintenance run is logged without changing the decision or stopping the notification", async () => {
-				const target = await submitForInbox("manual_time_submission", "legacy");
-				await pool.query(`create or replace function inbox1674_fail_surcharge_delete() returns trigger as $$
-			begin raise exception 'inbox surcharge reconciliation failure'; end;
-			$$ language plpgsql`);
-				await pool.query(
-					`create trigger inbox1674_fail_surcharge_delete
-					 before delete on surcharge_calculation
-					 for each row execute function inbox1674_fail_surcharge_delete()`,
-				);
-				try {
-					await expect(decideFromInbox(target, "approve")).resolves.toBeUndefined();
-				} finally {
-					await pool.query(
-						"drop trigger if exists inbox1674_fail_surcharge_delete on surcharge_calculation",
-					);
-					await pool.query("drop function if exists inbox1674_fail_surcharge_delete()");
-				}
-
-				expect(
-					await pool.query(
-						"select approval_status from work_period where id = $1 and organization_id = $2",
-						[ids.period, ids.organization],
-					),
-				).toMatchObject({ rows: [{ approval_status: "approved" }] });
-				expect(await localCalculations()).toEqual([
-					{ work_period_id: ids.period, base_minutes: 999, surcharge_minutes: 999 },
-				]);
-				expect(inboxObservation.loggedErrors).toEqual([
-					{
-						component: "TimeApprovalDecision",
-						message: "Ordinary work-period maintenance after commit failed",
-					},
-				]);
-				expect(inboxObservation.notifications).toEqual([
-					{ trigger: "onManualEntryApproved", workPeriodId: ids.period },
-				]);
-			});
+			expect(await localCalculations()).toEqual([
+				{ work_period_id: ids.period, base_minutes: 480, surcharge_minutes: 240 },
+			]);
+			expect(inboxObservation.notifications).toEqual([
+				{ trigger: "onClockOutApproved", workPeriodId: ids.period },
+			]);
 		});
 
-		it("rolls back surcharge reconciliation atomically with terminal maintenance", async () => {
-			await seed("manual_time_submission", false, "canonical");
-			await seedMaintenanceState();
-			const target = (await submit("manual_time_submission")).result
-				.approvalRequestId;
-			const beforeRollback = await maintenanceSnapshot();
-			await expect(
-				withFailureTrigger({
-					table: "time_record_approval_decision",
-					operation: "insert",
-					name: "terminal-maintenance-precommit",
-					run: () =>
-						completeDecision(target, { kind: "approve", reason: null }),
-				}),
-			).rejects.toThrow();
-			expect(await maintenanceSnapshot()).toEqual(beforeRollback);
+		it("a decision that only advances to the next stage runs no maintenance", async () => {
+			const target = await submitForInbox("manual_time_submission", "legacy", true);
+
+			await decideFromInbox(target, "approve");
+
 			expect(
 				await pool.query(
 					"select approval_status from work_period where id = $1 and organization_id = $2",
 					[ids.period, ids.organization],
 				),
 			).toMatchObject({ rows: [{ approval_status: "pending" }] });
+			expect(await localCalculations()).toEqual([
+				{ work_period_id: ids.period, base_minutes: 999, surcharge_minutes: 999 },
+			]);
+			expect(inboxObservation.notifications).toEqual([]);
+			expect(inboxObservation.loggedErrors).toEqual([]);
+		});
 
-			await seed("manual_time_submission", false, "canonical");
-			await seedMaintenanceState();
-			const committedTarget = (await submit("manual_time_submission")).result
-				.approvalRequestId;
-			await pool.query(`create or replace function task15_fail_surcharge_delete() returns trigger as $$
-		begin raise exception 'task15 surcharge reconciliation failure'; end;
-		$$ language plpgsql`);
+		it("a failing maintenance run is logged without changing the decision or stopping the notification", async () => {
+			const target = await submitForInbox("manual_time_submission", "legacy");
+			await pool.query(`create or replace function inbox1674_fail_surcharge_delete() returns trigger as $$
+			begin raise exception 'inbox surcharge reconciliation failure'; end;
+			$$ language plpgsql`);
 			await pool.query(
-				`create trigger task15_fail_surcharge_delete
-				 before delete on surcharge_calculation
-				 for each row execute function task15_fail_surcharge_delete()`,
+				`create trigger inbox1674_fail_surcharge_delete
+					 before delete on surcharge_calculation
+					 for each row execute function inbox1674_fail_surcharge_delete()`,
 			);
-			let completed: Awaited<ReturnType<typeof completeDecision>>;
 			try {
-				completed = await completeDecision(committedTarget, {
-					kind: "approve",
-					reason: null,
-				});
+				await expect(decideFromInbox(target, "approve")).resolves.toBeUndefined();
 			} finally {
 				await pool.query(
-					"drop trigger if exists task15_fail_surcharge_delete on surcharge_calculation",
+					"drop trigger if exists inbox1674_fail_surcharge_delete on surcharge_calculation",
 				);
-				await pool.query(
-					"drop function if exists task15_fail_surcharge_delete()",
-				);
+				await pool.query("drop function if exists inbox1674_fail_surcharge_delete()");
 			}
-			expect(completed.maintenanceErrors).toHaveLength(1);
-			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
+
 			expect(
 				await pool.query(
 					"select approval_status from work_period where id = $1 and organization_id = $2",
 					[ids.period, ids.organization],
 				),
 			).toMatchObject({ rows: [{ approval_status: "approved" }] });
-			const failedState = await maintenanceSnapshot();
-			expect(
-				failedState.calculations.filter(
-					({ organization_id }) => organization_id === ids.organization,
-				),
-			).toEqual([
-				expect.objectContaining({
-					id: ids.staleSurchargeCalculation,
-					base_minutes: 999,
-				}),
+			expect(await localCalculations()).toEqual([
+				{ work_period_id: ids.period, base_minutes: 999, surcharge_minutes: 999 },
 			]);
-			expect(
-				failedState.balances.find(
-					({ organization_id }) => organization_id === ids.organization,
-				),
-			).toMatchObject({ is_dirty: true, dirty_from_date: "2026-07-22" });
+			expect(inboxObservation.loggedErrors).toEqual([
+				{
+					component: "TimeApprovalDecision",
+					message: "Ordinary work-period maintenance after commit failed",
+				},
+			]);
+			expect(inboxObservation.notifications).toEqual([
+				{ trigger: "onManualEntryApproved", workPeriodId: ids.period },
+			]);
 		});
+	});
 
-		it("replays terminal maintenance without duplicate surcharge or balance writes", async () => {
-			await seed("manual_time_submission", false, "canonical");
-			await seedMaintenanceState();
-			const target = (await submit("manual_time_submission")).result
-				.approvalRequestId;
-			const first = await completeDecision(target, {
+	it("rolls back surcharge reconciliation atomically with terminal maintenance", async () => {
+		await seed("manual_time_submission", false, "canonical");
+		await seedMaintenanceState();
+		const target = (await submit("manual_time_submission")).result.approvalRequestId;
+		const beforeRollback = await maintenanceSnapshot();
+		await expect(
+			withFailureTrigger({
+				table: "time_record_approval_decision",
+				operation: "insert",
+				name: "terminal-maintenance-precommit",
+				run: () => completeDecision(target, { kind: "approve", reason: null }),
+			}),
+		).rejects.toThrow();
+		expect(await maintenanceSnapshot()).toEqual(beforeRollback);
+		expect(
+			await pool.query(
+				"select approval_status from work_period where id = $1 and organization_id = $2",
+				[ids.period, ids.organization],
+			),
+		).toMatchObject({ rows: [{ approval_status: "pending" }] });
+
+		await seed("manual_time_submission", false, "canonical");
+		await seedMaintenanceState();
+		const committedTarget = (await submit("manual_time_submission")).result.approvalRequestId;
+		await pool.query(`create or replace function task15_fail_surcharge_delete() returns trigger as $$
+		begin raise exception 'task15 surcharge reconciliation failure'; end;
+		$$ language plpgsql`);
+		await pool.query(
+			`create trigger task15_fail_surcharge_delete
+				 before delete on surcharge_calculation
+				 for each row execute function task15_fail_surcharge_delete()`,
+		);
+		let completed: Awaited<ReturnType<typeof completeDecision>>;
+		try {
+			completed = await completeDecision(committedTarget, {
 				kind: "approve",
 				reason: null,
 			});
-			expect(first.maintenanceErrors).toEqual([]);
-			const afterFirst = await maintenanceSnapshot();
-			const replay = await completeDecision(target, {
-				kind: "approve",
-				reason: null,
-			});
-			expect(replay.execution).toMatchObject({ status: "decided", replayed: true });
-			expect(replay.dispatches).toBe(0);
-			expect(replay.maintenanceErrors).toEqual([]);
-			const afterReplay = await maintenanceSnapshot();
-			expect(afterReplay).toEqual(afterFirst);
-			expect(
-				afterReplay.calculations.filter(
-					({ organization_id }) => organization_id === ids.organization,
-				),
-			).toHaveLength(1);
-			expect(
-				afterReplay.balances.filter(
-					({ organization_id }) => organization_id === ids.organization,
-				),
-			).toHaveLength(1);
-		});
+		} finally {
+			await pool.query(
+				"drop trigger if exists task15_fail_surcharge_delete on surcharge_calculation",
+			);
+			await pool.query("drop function if exists task15_fail_surcharge_delete()");
+		}
+		expect(completed.maintenanceErrors).toHaveLength(1);
+		expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
+		expect(
+			await pool.query(
+				"select approval_status from work_period where id = $1 and organization_id = $2",
+				[ids.period, ids.organization],
+			),
+		).toMatchObject({ rows: [{ approval_status: "approved" }] });
+		const failedState = await maintenanceSnapshot();
+		expect(
+			failedState.calculations.filter(
+				({ organization_id }) => organization_id === ids.organization,
+			),
+		).toEqual([
+			expect.objectContaining({
+				id: ids.staleSurchargeCalculation,
+				base_minutes: 999,
+			}),
+		]);
+		expect(
+			failedState.balances.find(({ organization_id }) => organization_id === ids.organization),
+		).toMatchObject({ is_dirty: true, dirty_from_date: "2026-07-22" });
+	});
 
-		it.each(
-			modes,
-		)("uses submitted surcharge evidence after delayed model mutation in %s mode", async (mode) => {
+	it("replays terminal maintenance without duplicate surcharge or balance writes", async () => {
+		await seed("manual_time_submission", false, "canonical");
+		await seedMaintenanceState();
+		const target = (await submit("manual_time_submission")).result.approvalRequestId;
+		const first = await completeDecision(target, {
+			kind: "approve",
+			reason: null,
+		});
+		expect(first.maintenanceErrors).toEqual([]);
+		const afterFirst = await maintenanceSnapshot();
+		const replay = await completeDecision(target, {
+			kind: "approve",
+			reason: null,
+		});
+		expect(replay.execution).toMatchObject({ status: "decided", replayed: true });
+		expect(replay.dispatches).toBe(0);
+		expect(replay.maintenanceErrors).toEqual([]);
+		const afterReplay = await maintenanceSnapshot();
+		expect(afterReplay).toEqual(afterFirst);
+		expect(
+			afterReplay.calculations.filter(
+				({ organization_id }) => organization_id === ids.organization,
+			),
+		).toHaveLength(1);
+		expect(
+			afterReplay.balances.filter(({ organization_id }) => organization_id === ids.organization),
+		).toHaveLength(1);
+	});
+
+	it.each(modes)(
+		"uses submitted surcharge evidence after delayed model mutation in %s mode",
+		async (mode) => {
 			await seed("policy_clock_out", false, mode);
 			await seedMaintenanceState();
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
+			const target = (await submit("policy_clock_out")).result.approvalRequestId;
 			await pool.query(
 				`update surcharge_model_assignment
 					 set is_active = false, updated_at = $1
 					 where id = $2 and organization_id = $3`,
-				[
-					new Date(now.epochMilliseconds),
-					ids.surchargeAssignment,
-					ids.organization,
-				],
+				[new Date(now.epochMilliseconds), ids.surchargeAssignment, ids.organization],
 			);
 			await pool.query(
 				"update surcharge_model set is_active = false, name = 'mutated' where id = $1 and organization_id = $2",
@@ -4174,10 +3903,11 @@ describe(
 				"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Changed team', $3)",
 				[ids.changedTeam, ids.organization, new Date(now.epochMilliseconds)],
 			);
-			await pool.query(
-				"update employee set team_id = $1 where id = $2 and organization_id = $3",
-				[ids.changedTeam, ids.requester, ids.organization],
-			);
+			await pool.query("update employee set team_id = $1 where id = $2 and organization_id = $3", [
+				ids.changedTeam,
+				ids.requester,
+				ids.organization,
+			]);
 
 			const completed = await completeDecision(target, {
 				kind: "approve",
@@ -4187,9 +3917,7 @@ describe(
 			expect(completed.maintenanceErrors).toEqual([]);
 			const state = await maintenanceSnapshot();
 			expect(
-				state.calculations.filter(
-					({ organization_id }) => organization_id === ids.organization,
-				),
+				state.calculations.filter(({ organization_id }) => organization_id === ids.organization),
 			).toEqual([
 				expect.objectContaining({
 					work_period_id: ids.period,
@@ -4198,35 +3926,22 @@ describe(
 					surcharge_minutes: 240,
 				}),
 			]);
-		});
+		},
+	);
 
-		it.each(
-			modes,
-		)("uses immutable manual surcharge evidence for explicit and requester-auto terminal approval in %s mode", async (mode) => {
+	it.each(modes)(
+		"uses immutable manual surcharge evidence for explicit and requester-auto terminal approval in %s mode",
+		async (mode) => {
 			for (const requesterAutoApproves of [false, true] as const) {
-				for (const snapshot of [
-					surchargeSnapshot,
-					disabledSurchargeSnapshot,
-				] as const) {
-					await seed(
-						"manual_time_submission",
-						false,
-						mode,
-						requesterAutoApproves,
-						false,
-						snapshot,
-					);
+				for (const snapshot of [surchargeSnapshot, disabledSurchargeSnapshot] as const) {
+					await seed("manual_time_submission", false, mode, requesterAutoApproves, false, snapshot);
 					await seedMaintenanceState();
 					const submitted = await submit("manual_time_submission");
 					await pool.query(
 						`update surcharge_model_assignment
 						 set is_active = false, updated_at = $1
 						 where id = $2 and organization_id = $3`,
-						[
-							new Date(now.epochMilliseconds),
-							ids.surchargeAssignment,
-							ids.organization,
-						],
+						[new Date(now.epochMilliseconds), ids.surchargeAssignment, ids.organization],
 					);
 					await pool.query(
 						"update surcharge_model set is_active = false, name = 'mutated' where id = $1 and organization_id = $2",
@@ -4238,11 +3953,7 @@ describe(
 					);
 					await pool.query(
 						"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Changed team', $3)",
-						[
-							ids.changedTeam,
-							ids.organization,
-							new Date(now.epochMilliseconds),
-						],
+						[ids.changedTeam, ids.organization, new Date(now.epochMilliseconds)],
 					);
 					await pool.query(
 						"update employee set team_id = $1 where id = $2 and organization_id = $3",
@@ -4289,15 +4000,12 @@ describe(
 					);
 				}
 			}
-		});
+		},
+	);
 
-		it.each(
-			surchargeMutationCases,
-		)("uses submitted surcharge evidence after delayed $mutation with split=$split in $mode mode", async ({
-			mode,
-			mutation,
-			split,
-		}) => {
+	it.each(surchargeMutationCases)(
+		"uses submitted surcharge evidence after delayed $mutation with split=$split in $mode mode",
+		async ({ mode, mutation, split }) => {
 			await assertDelayedSurchargeMutation({
 				mode,
 				split,
@@ -4307,10 +4015,10 @@ describe(
 							"delete from surcharge_calculation where id = $1 and organization_id = $2",
 							[ids.staleSurchargeCalculation, ids.organization],
 						);
-						await client.query(
-							"delete from surcharge_rule where id = $1 and model_id = $2",
-							[ids.surchargeRule, ids.surchargeModel],
-						);
+						await client.query("delete from surcharge_rule where id = $1 and model_id = $2", [
+							ids.surchargeRule,
+							ids.surchargeModel,
+						]);
 						return;
 					}
 
@@ -4323,12 +4031,7 @@ describe(
 						`insert into surcharge_model
 							 (id, organization_id, name, is_active, created_by, created_at, updated_at)
 							 values ($1, $2, 'Replacement 900%', true, $3, $4, $4)`,
-						[
-							ids.replacementSurchargeModel,
-							ids.organization,
-							ids.managerUser,
-							timestamp,
-						],
+						[ids.replacementSurchargeModel, ids.organization, ids.managerUser, timestamp],
 					);
 					await client.query(
 						`insert into surcharge_rule
@@ -4359,197 +4062,189 @@ describe(
 					);
 				},
 			});
-		});
+		},
+	);
 
-		it.each(
-			surchargeToggleCases,
-		)("uses captured surcharge enablement after $toggle with split=$split in $mode mode", async ({
-			mode,
-			split,
-			toggle,
-		}) => {
+	it.each(surchargeToggleCases)(
+		"uses captured surcharge enablement after $toggle with split=$split in $mode mode",
+		async ({ mode, split, toggle }) => {
 			await assertCapturedSurchargeToggle({ mode, split, toggle });
-		});
+		},
+	);
 
-		it("captures every surcharge rule with inclusive period validity overlap", async () => {
-			await seed("policy_clock_out", false, "canonical");
-			await seedMaintenanceState();
-			const timestamp = new Date(now.epochMilliseconds);
-			const validityRules = [
-				{
-					id: "cc000000-0000-4000-8000-000000000101",
-					name: "Starts mid-period",
-					priority: 7,
-					validFrom: new Date("2026-07-22T12:00:00Z"),
-					validUntil: null,
-				},
-				{
-					id: "cc000000-0000-4000-8000-000000000102",
-					name: "Expires mid-period",
-					priority: 6,
-					validFrom: null,
-					validUntil: new Date("2026-07-22T12:00:00Z"),
-				},
-				{
-					id: "cc000000-0000-4000-8000-000000000103",
-					name: "Expires at start",
-					priority: 5,
-					validFrom: null,
-					validUntil: startTime,
-				},
-				{
-					id: "cc000000-0000-4000-8000-000000000104",
-					name: "Starts at end",
-					priority: 4,
-					validFrom: endTime,
-					validUntil: null,
-				},
-				{
-					id: "cc000000-0000-4000-8000-000000000105",
-					name: "Ends before period",
-					priority: 3,
-					validFrom: null,
-					validUntil: new Date("2026-07-22T07:59:59Z"),
-				},
-				{
-					id: "cc000000-0000-4000-8000-000000000106",
-					name: "Starts after period",
-					priority: 2,
-					validFrom: new Date("2026-07-22T16:00:01Z"),
-					validUntil: null,
-				},
-			] as const;
-			for (const rule of validityRules) {
-				await pool.query(
-					`insert into surcharge_rule
+	it("captures every surcharge rule with inclusive period validity overlap", async () => {
+		await seed("policy_clock_out", false, "canonical");
+		await seedMaintenanceState();
+		const timestamp = new Date(now.epochMilliseconds);
+		const validityRules = [
+			{
+				id: "cc000000-0000-4000-8000-000000000101",
+				name: "Starts mid-period",
+				priority: 7,
+				validFrom: new Date("2026-07-22T12:00:00Z"),
+				validUntil: null,
+			},
+			{
+				id: "cc000000-0000-4000-8000-000000000102",
+				name: "Expires mid-period",
+				priority: 6,
+				validFrom: null,
+				validUntil: new Date("2026-07-22T12:00:00Z"),
+			},
+			{
+				id: "cc000000-0000-4000-8000-000000000103",
+				name: "Expires at start",
+				priority: 5,
+				validFrom: null,
+				validUntil: startTime,
+			},
+			{
+				id: "cc000000-0000-4000-8000-000000000104",
+				name: "Starts at end",
+				priority: 4,
+				validFrom: endTime,
+				validUntil: null,
+			},
+			{
+				id: "cc000000-0000-4000-8000-000000000105",
+				name: "Ends before period",
+				priority: 3,
+				validFrom: null,
+				validUntil: new Date("2026-07-22T07:59:59Z"),
+			},
+			{
+				id: "cc000000-0000-4000-8000-000000000106",
+				name: "Starts after period",
+				priority: 2,
+				validFrom: new Date("2026-07-22T16:00:01Z"),
+				validUntil: null,
+			},
+		] as const;
+		for (const rule of validityRules) {
+			await pool.query(
+				`insert into surcharge_rule
 					 (id, model_id, name, rule_type, percentage, day_of_week, priority,
 					  valid_from, valid_until, is_active, created_by, created_at)
 					 values ($1, $2, $3, 'day_of_week', 0.5000, 'wednesday', $4,
 					  $5, $6, true, $7, $8)`,
-					[
-						rule.id,
-						ids.surchargeModel,
-						rule.name,
-						rule.priority,
-						rule.validFrom,
-						rule.validUntil,
-						ids.managerUser,
-						timestamp,
-					],
-				);
-			}
-
-			const snapshot = await database.transaction(async (transaction) =>
-				resolvePolicyClockOutSurchargeSnapshotInTransaction({
-					dbService: { db: transaction } as never,
-					organizationId: ids.organization,
-					employeeId: ids.requester,
-					startTime: parseInstant(startTime.toISOString()),
-					endTime: parseInstant(endTime.toISOString()),
-				}),
-			);
-			expect(snapshot.resolution.kind).toBe("surcharge_model");
-			if (snapshot.resolution.kind !== "surcharge_model") return;
-			expect(snapshot.resolution.rules.map(({ id }) => id)).toEqual([
-				validityRules[0].id,
-				validityRules[1].id,
-				validityRules[2].id,
-				validityRules[3].id,
-				ids.surchargeRule,
-			]);
-		});
-
-		it("does not re-read a foreign-mutated model during terminal surcharge evaluation", async () => {
-			await seed("policy_clock_out", false, "canonical");
-			await seedMaintenanceState();
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			await pool.query(
-				"update surcharge_model set organization_id = $1 where id = $2 and organization_id = $3",
-				[ids.foreignOrganization, ids.surchargeModel, ids.organization],
-			);
-
-			const completed = await completeDecision(target, {
-				kind: "approve",
-				reason: null,
-			});
-
-			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
-			expect(completed.maintenanceErrors).toEqual([]);
-			const state = await maintenanceSnapshot();
-			expect(
-				state.calculations.filter(
-					({ organization_id }) => organization_id === ids.organization,
-				),
-			).toEqual([
-				expect.objectContaining({
-					work_period_id: ids.period,
-					base_minutes: 480,
-					surcharge_minutes: 240,
-				}),
-			]);
-		});
-
-		it("does not re-resolve ambiguous assignments during terminal surcharge evaluation", async () => {
-			await seed("policy_clock_out", false, "canonical");
-			await seedMaintenanceState();
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			const timestamp = new Date(now.epochMilliseconds);
-			await pool.query(
-				`insert into surcharge_model_assignment
-				 (id, model_id, organization_id, assignment_type, employee_id,
-				  priority, effective_from, effective_until, is_active,
-				  created_by, created_at, updated_at)
-				 values ($1, $2, $3, 'employee', $4, 2, $5, null, false, $6, $7, $7)`,
 				[
-					ids.ambiguousSurchargeAssignment,
+					rule.id,
 					ids.surchargeModel,
-					ids.organization,
-					ids.requester,
-					new Date("2026-01-01T00:00:00Z"),
+					rule.name,
+					rule.priority,
+					rule.validFrom,
+					rule.validUntil,
 					ids.managerUser,
 					timestamp,
 				],
 			);
+		}
 
-			const completed = await completeDecision(target, {
-				kind: "approve",
-				reason: null,
-			});
+		const snapshot = await database.transaction(async (transaction) =>
+			resolvePolicyClockOutSurchargeSnapshotInTransaction({
+				dbService: { db: transaction } as never,
+				organizationId: ids.organization,
+				employeeId: ids.requester,
+				startTime: parseInstant(startTime.toISOString()),
+				endTime: parseInstant(endTime.toISOString()),
+			}),
+		);
+		expect(snapshot.resolution.kind).toBe("surcharge_model");
+		if (snapshot.resolution.kind !== "surcharge_model") return;
+		expect(snapshot.resolution.rules.map(({ id }) => id)).toEqual([
+			validityRules[0].id,
+			validityRules[1].id,
+			validityRules[2].id,
+			validityRules[3].id,
+			ids.surchargeRule,
+		]);
+	});
 
-			expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
-			expect(completed.maintenanceErrors).toEqual([]);
-			const state = await maintenanceSnapshot();
-			expect(
-				state.calculations.filter(
-					({ organization_id }) => organization_id === ids.organization,
-				),
-			).toEqual([
-				expect.objectContaining({
-					work_period_id: ids.period,
-					base_minutes: 480,
-					surcharge_minutes: 240,
-				}),
-			]);
+	it("does not re-read a foreign-mutated model during terminal surcharge evaluation", async () => {
+		await seed("policy_clock_out", false, "canonical");
+		await seedMaintenanceState();
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+		await pool.query(
+			"update surcharge_model set organization_id = $1 where id = $2 and organization_id = $3",
+			[ids.foreignOrganization, ids.surchargeModel, ids.organization],
+		);
+
+		const completed = await completeDecision(target, {
+			kind: "approve",
+			reason: null,
 		});
 
-		describe("repair of surcharges skipped by inbox decisions (#1690)", () => {
-			const tenants = [ids.organization, ids.foreignOrganization];
+		expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
+		expect(completed.maintenanceErrors).toEqual([]);
+		const state = await maintenanceSnapshot();
+		expect(
+			state.calculations.filter(({ organization_id }) => organization_id === ids.organization),
+		).toEqual([
+			expect.objectContaining({
+				work_period_id: ids.period,
+				base_minutes: 480,
+				surcharge_minutes: 240,
+			}),
+		]);
+	});
 
-			function repair(apply: boolean) {
-				return repairInboxDecisionSurcharges(database as never, {
-					organizationIds: tenants,
-					apply,
-				});
-			}
+	it("does not re-resolve ambiguous assignments during terminal surcharge evaluation", async () => {
+		await seed("policy_clock_out", false, "canonical");
+		await seedMaintenanceState();
+		const target = (await submit("policy_clock_out")).result.approvalRequestId;
+		const timestamp = new Date(now.epochMilliseconds);
+		await pool.query(
+			`insert into surcharge_model_assignment
+				 (id, model_id, organization_id, assignment_type, employee_id,
+				  priority, effective_from, effective_until, is_active,
+				  created_by, created_at, updated_at)
+				 values ($1, $2, $3, 'employee', $4, 2, $5, null, false, $6, $7, $7)`,
+			[
+				ids.ambiguousSurchargeAssignment,
+				ids.surchargeModel,
+				ids.organization,
+				ids.requester,
+				new Date("2026-01-01T00:00:00Z"),
+				ids.managerUser,
+				timestamp,
+			],
+		);
 
-			// The surcharge rows of both tenants, by period interval, without the
-			// per-run identity and calculation instant.
-			async function surchargeRows() {
-				return (
-					await pool.query(
-						`select calculation.organization_id, period.start_time, period.end_time,
+		const completed = await completeDecision(target, {
+			kind: "approve",
+			reason: null,
+		});
+
+		expect(completed.execution).toMatchObject({ status: "decided", outcome: "approved" });
+		expect(completed.maintenanceErrors).toEqual([]);
+		const state = await maintenanceSnapshot();
+		expect(
+			state.calculations.filter(({ organization_id }) => organization_id === ids.organization),
+		).toEqual([
+			expect.objectContaining({
+				work_period_id: ids.period,
+				base_minutes: 480,
+				surcharge_minutes: 240,
+			}),
+		]);
+	});
+
+	describe("repair of surcharges skipped by inbox decisions (#1690)", () => {
+		const tenants = [ids.organization, ids.foreignOrganization];
+
+		function repair(apply: boolean) {
+			return repairInboxDecisionSurcharges(database as never, {
+				organizationIds: tenants,
+				apply,
+			});
+		}
+
+		// The surcharge rows of both tenants, by period interval, without the
+		// per-run identity and calculation instant.
+		async function surchargeRows() {
+			return (
+				await pool.query(
+					`select calculation.organization_id, period.start_time, period.end_time,
 						 calculation.employee_id, calculation.surcharge_rule_id,
 						 calculation.surcharge_model_id, calculation.base_minutes,
 						 calculation.qualifying_minutes, calculation.surcharge_minutes,
@@ -4562,82 +4257,74 @@ describe(
 						   and period.organization_id = calculation.organization_id
 						 where calculation.organization_id = any($1::text[])
 						 order by calculation.organization_id, period.start_time`,
-						[tenants],
-					)
-				).rows;
-			}
+					[tenants],
+				)
+			).rows;
+		}
 
-			// Every surcharge row of both tenants exactly, its identity and instant included.
-			async function storedSurchargeRows() {
-				return (
-					await pool.query(
-						`select to_jsonb(calculation) as row from surcharge_calculation calculation
+		// Every surcharge row of both tenants exactly, its identity and instant included.
+		async function storedSurchargeRows() {
+			return (
+				await pool.query(
+					`select to_jsonb(calculation) as row from surcharge_calculation calculation
 						 where organization_id = any($1::text[]) order by id`,
-						[tenants],
-					)
-				).rows;
-			}
+					[tenants],
+				)
+			).rows;
+		}
 
-			async function submitted(
-				kind: OrdinaryWorkPeriodApprovalKind,
-				mode: ApprovalWorkflowLifecycleMode,
-				split: boolean,
-			) {
-				await seed(kind, split, mode);
-				await seedMaintenanceState();
-				return (await submit(kind)).result.approvalRequestId;
-			}
+		async function submitted(
+			kind: OrdinaryWorkPeriodApprovalKind,
+			mode: ApprovalWorkflowLifecycleMode,
+			split: boolean,
+		) {
+			await seed(kind, split, mode);
+			await seedMaintenanceState();
+			return (await submit(kind)).result.approvalRequestId;
+		}
 
-			function decision(action: "approve" | "reject") {
-				return action === "approve"
-					? ({ kind: "approve", reason: null } as const)
-					: ({ kind: "reject", reason: "Inbox rejection" } as const);
-			}
+		function decision(action: "approve" | "reject") {
+			return action === "approve"
+				? ({ kind: "approve", reason: null } as const)
+				: ({ kind: "reject", reason: "Inbox rejection" } as const);
+		}
 
-			// A terminal decision whose after-commit surcharge maintenance never
-			// ran, as the approval inbox decided from 2026-07-24 until #1674.
-			async function decideSkippingMaintenance(
-				target: string,
-				action: "approve" | "reject",
-			) {
-				await pool.query(`create or replace function repair1690_skip_maintenance() returns trigger as $$
+		// A terminal decision whose after-commit surcharge maintenance never
+		// ran, as the approval inbox decided from 2026-07-24 until #1674.
+		async function decideSkippingMaintenance(target: string, action: "approve" | "reject") {
+			await pool.query(`create or replace function repair1690_skip_maintenance() returns trigger as $$
 			begin raise exception 'repair1690 skipped maintenance'; end;
 			$$ language plpgsql`);
-				await pool.query(
-					`create trigger repair1690_skip_maintenance
+			await pool.query(
+				`create trigger repair1690_skip_maintenance
 					 before insert or delete on surcharge_calculation
 					 for each row execute function repair1690_skip_maintenance()`,
+			);
+			try {
+				const completed = await completeDecision(target, decision(action));
+				expect(completed.execution).toMatchObject({ status: "decided" });
+			} finally {
+				await pool.query(
+					"drop trigger if exists repair1690_skip_maintenance on surcharge_calculation",
 				);
-				try {
-					const completed = await completeDecision(target, decision(action));
-					expect(completed.execution).toMatchObject({ status: "decided" });
-				} finally {
-					await pool.query(
-						"drop trigger if exists repair1690_skip_maintenance on surcharge_calculation",
-					);
-					await pool.query("drop function if exists repair1690_skip_maintenance()");
-				}
+				await pool.query("drop function if exists repair1690_skip_maintenance()");
 			}
+		}
 
-			const affectedCases = [
-				{ kind: "manual_time_submission", mode: "legacy", split: false, action: "approve" },
-				{ kind: "manual_time_submission", mode: "canonical", split: false, action: "approve" },
-				{ kind: "policy_clock_out", mode: "legacy", split: true, action: "approve" },
-				{ kind: "policy_clock_out", mode: "canonical", split: true, action: "approve" },
-				{ kind: "policy_clock_out", mode: "shadow", split: false, action: "approve" },
-				{ kind: "manual_time_submission", mode: "legacy", split: false, action: "reject" },
-				{ kind: "manual_time_submission", mode: "canonical", split: false, action: "reject" },
-				{ kind: "policy_clock_out", mode: "legacy", split: true, action: "reject" },
-			] as const;
+		const affectedCases = [
+			{ kind: "manual_time_submission", mode: "legacy", split: false, action: "approve" },
+			{ kind: "manual_time_submission", mode: "canonical", split: false, action: "approve" },
+			{ kind: "policy_clock_out", mode: "legacy", split: true, action: "approve" },
+			{ kind: "policy_clock_out", mode: "canonical", split: true, action: "approve" },
+			{ kind: "policy_clock_out", mode: "shadow", split: false, action: "approve" },
+			{ kind: "manual_time_submission", mode: "legacy", split: false, action: "reject" },
+			{ kind: "manual_time_submission", mode: "canonical", split: false, action: "reject" },
+			{ kind: "policy_clock_out", mode: "legacy", split: true, action: "reject" },
+		] as const;
 
-			it.each(
-				affectedCases,
-			)("repairs a $action of a $kind (split=$split) in $mode mode to the rows its maintenance writes", async ({
-				kind,
-				mode,
-				split,
-				action,
-			}) => {
+		it.each(affectedCases)(
+			"repairs a $action of a $kind (split=$split) in $mode mode to the rows its maintenance writes",
+			async ({ kind, mode, split, action }) => {
 				// The rows a decision with its maintenance leaves.
 				const maintained = await submitted(kind, mode, split);
 				const reference = await completeDecision(maintained, decision(action));
@@ -4663,166 +4350,165 @@ describe(
 					},
 				]);
 				expect(await surchargeRows()).toEqual(expected);
-			});
+			},
+		);
 
-			it("dry run reports the counts and changes nothing; a second repair changes nothing", async () => {
-				const target = await submitted("policy_clock_out", "legacy", true);
-				await decideSkippingMaintenance(target, "approve");
-				const before = await storedSurchargeRows();
+		it("dry run reports the counts and changes nothing; a second repair changes nothing", async () => {
+			const target = await submitted("policy_clock_out", "legacy", true);
+			await decideSkippingMaintenance(target, "approve");
+			const before = await storedSurchargeRows();
 
-				const dryRun = await repair(false);
+			const dryRun = await repair(false);
 
-				expect(dryRun).toEqual([
-					{
-						organizationId: ids.organization,
-						decided: 1,
-						approvedRepairs: 1,
-						rejectedRepairs: 0,
-						unchanged: 0,
-						skipped: [],
-						failed: [],
-					},
-				]);
-				expect(await storedSurchargeRows()).toEqual(before);
+			expect(dryRun).toEqual([
+				{
+					organizationId: ids.organization,
+					decided: 1,
+					approvedRepairs: 1,
+					rejectedRepairs: 0,
+					unchanged: 0,
+					skipped: [],
+					failed: [],
+				},
+			]);
+			expect(await storedSurchargeRows()).toEqual(before);
 
-				await repair(true);
-				const repaired = await storedSurchargeRows();
-				expect(repaired).not.toEqual(before);
+			await repair(true);
+			const repaired = await storedSurchargeRows();
+			expect(repaired).not.toEqual(before);
 
-				const again = await repair(true);
+			const again = await repair(true);
 
-				expect(again).toEqual([
-					{
-						organizationId: ids.organization,
-						decided: 1,
-						approvedRepairs: 0,
-						rejectedRepairs: 0,
-						unchanged: 1,
-						skipped: [],
-						failed: [],
-					},
-				]);
-				expect(await storedSurchargeRows()).toEqual(repaired);
-			});
-
-			it("leaves a decision whose maintenance ran untouched", async () => {
-				const target = await submitted("manual_time_submission", "legacy", false);
-				expect((await completeDecision(target, decision("approve"))).maintenanceErrors).toEqual(
-					[],
-				);
-				const before = await storedSurchargeRows();
-
-				expect(await repair(true)).toEqual([
-					{
-						organizationId: ids.organization,
-						decided: 1,
-						approvedRepairs: 0,
-						rejectedRepairs: 0,
-						unchanged: 1,
-						skipped: [],
-						failed: [],
-					},
-				]);
-				expect(await storedSurchargeRows()).toEqual(before);
-			});
-
-			it("leaves a pending submission untouched", async () => {
-				await submitted("manual_time_submission", "canonical", false);
-				const before = await storedSurchargeRows();
-
-				expect(await repair(true)).toEqual([
-					{
-						organizationId: ids.organization,
-						decided: 0,
-						approvedRepairs: 0,
-						rejectedRepairs: 0,
-						unchanged: 0,
-						skipped: [],
-						failed: [],
-					},
-				]);
-				expect(await storedSurchargeRows()).toEqual(before);
-			});
-
-			it("leaves an organization with surcharges disabled untouched", async () => {
-				const target = await submitted("manual_time_submission", "legacy", false);
-				await decideSkippingMaintenance(target, "approve");
-				await pool.query("update organization set surcharges_enabled = false where id = $1", [
-					ids.organization,
-				]);
-				const before = await storedSurchargeRows();
-
-				expect(await repair(true)).toEqual([]);
-				expect(await storedSurchargeRows()).toEqual(before);
-			});
-
-			it("leaves a decision before 2026-07-24 untouched", async () => {
-				const target = await submitted("manual_time_submission", "canonical", false);
-				await decideSkippingMaintenance(target, "approve");
-				await pool.query(
-					`update time_record_approval_decision set created_at = '2026-07-23T23:59:59Z'
-					 where organization_id = $1 and record_id = $2`,
-					[ids.organization, ids.canonical],
-				);
-				const before = await storedSurchargeRows();
-
-				expect(await repair(true)).toEqual([
-					{
-						organizationId: ids.organization,
-						decided: 0,
-						approvedRepairs: 0,
-						rejectedRepairs: 0,
-						unchanged: 0,
-						skipped: [],
-						failed: [],
-					},
-				]);
-				expect(await storedSurchargeRows()).toEqual(before);
-			});
-
-			it("repairs only the organizations named and never another tenant's rows", async () => {
-				const target = await submitted("manual_time_submission", "legacy", false);
-				await decideSkippingMaintenance(target, "approve");
-				await pool.query("update organization set surcharges_enabled = true where id = $1", [
-					ids.foreignOrganization,
-				]);
-				const foreignBefore = (await storedSurchargeRows()).filter(
-					({ row }) => (row as { organization_id: string }).organization_id === ids.foreignOrganization,
-				);
-
-				const reports = await repairInboxDecisionSurcharges(database as never, {
-					organizationIds: [ids.foreignOrganization],
-					apply: true,
-				});
-
-				expect(reports).toEqual([
-					{
-						organizationId: ids.foreignOrganization,
-						decided: 0,
-						approvedRepairs: 0,
-						rejectedRepairs: 0,
-						unchanged: 0,
-						skipped: [],
-						failed: [],
-					},
-				]);
-				const after = await storedSurchargeRows();
-				expect(
-					after.filter(
-						({ row }) =>
-							(row as { organization_id: string }).organization_id === ids.foreignOrganization,
-					),
-				).toEqual(foreignBefore);
-				expect(
-					after.filter(
-						({ row }) => (row as { organization_id: string }).organization_id === ids.organization,
-					),
-				).toEqual([
-					expect.objectContaining({
-						row: expect.objectContaining({ id: ids.staleSurchargeCalculation }),
-					}),
-				]);
-			});
+			expect(again).toEqual([
+				{
+					organizationId: ids.organization,
+					decided: 1,
+					approvedRepairs: 0,
+					rejectedRepairs: 0,
+					unchanged: 1,
+					skipped: [],
+					failed: [],
+				},
+			]);
+			expect(await storedSurchargeRows()).toEqual(repaired);
 		});
-	},
-);
+
+		it("leaves a decision whose maintenance ran untouched", async () => {
+			const target = await submitted("manual_time_submission", "legacy", false);
+			expect((await completeDecision(target, decision("approve"))).maintenanceErrors).toEqual([]);
+			const before = await storedSurchargeRows();
+
+			expect(await repair(true)).toEqual([
+				{
+					organizationId: ids.organization,
+					decided: 1,
+					approvedRepairs: 0,
+					rejectedRepairs: 0,
+					unchanged: 1,
+					skipped: [],
+					failed: [],
+				},
+			]);
+			expect(await storedSurchargeRows()).toEqual(before);
+		});
+
+		it("leaves a pending submission untouched", async () => {
+			await submitted("manual_time_submission", "canonical", false);
+			const before = await storedSurchargeRows();
+
+			expect(await repair(true)).toEqual([
+				{
+					organizationId: ids.organization,
+					decided: 0,
+					approvedRepairs: 0,
+					rejectedRepairs: 0,
+					unchanged: 0,
+					skipped: [],
+					failed: [],
+				},
+			]);
+			expect(await storedSurchargeRows()).toEqual(before);
+		});
+
+		it("leaves an organization with surcharges disabled untouched", async () => {
+			const target = await submitted("manual_time_submission", "legacy", false);
+			await decideSkippingMaintenance(target, "approve");
+			await pool.query("update organization set surcharges_enabled = false where id = $1", [
+				ids.organization,
+			]);
+			const before = await storedSurchargeRows();
+
+			expect(await repair(true)).toEqual([]);
+			expect(await storedSurchargeRows()).toEqual(before);
+		});
+
+		it("leaves a decision before 2026-07-24 untouched", async () => {
+			const target = await submitted("manual_time_submission", "canonical", false);
+			await decideSkippingMaintenance(target, "approve");
+			await pool.query(
+				`update time_record_approval_decision set created_at = '2026-07-23T23:59:59Z'
+					 where organization_id = $1 and record_id = $2`,
+				[ids.organization, ids.canonical],
+			);
+			const before = await storedSurchargeRows();
+
+			expect(await repair(true)).toEqual([
+				{
+					organizationId: ids.organization,
+					decided: 0,
+					approvedRepairs: 0,
+					rejectedRepairs: 0,
+					unchanged: 0,
+					skipped: [],
+					failed: [],
+				},
+			]);
+			expect(await storedSurchargeRows()).toEqual(before);
+		});
+
+		it("repairs only the organizations named and never another tenant's rows", async () => {
+			const target = await submitted("manual_time_submission", "legacy", false);
+			await decideSkippingMaintenance(target, "approve");
+			await pool.query("update organization set surcharges_enabled = true where id = $1", [
+				ids.foreignOrganization,
+			]);
+			const foreignBefore = (await storedSurchargeRows()).filter(
+				({ row }) =>
+					(row as { organization_id: string }).organization_id === ids.foreignOrganization,
+			);
+
+			const reports = await repairInboxDecisionSurcharges(database as never, {
+				organizationIds: [ids.foreignOrganization],
+				apply: true,
+			});
+
+			expect(reports).toEqual([
+				{
+					organizationId: ids.foreignOrganization,
+					decided: 0,
+					approvedRepairs: 0,
+					rejectedRepairs: 0,
+					unchanged: 0,
+					skipped: [],
+					failed: [],
+				},
+			]);
+			const after = await storedSurchargeRows();
+			expect(
+				after.filter(
+					({ row }) =>
+						(row as { organization_id: string }).organization_id === ids.foreignOrganization,
+				),
+			).toEqual(foreignBefore);
+			expect(
+				after.filter(
+					({ row }) => (row as { organization_id: string }).organization_id === ids.organization,
+				),
+			).toEqual([
+				expect.objectContaining({
+					row: expect.objectContaining({ id: ids.staleSurchargeCalculation }),
+				}),
+			]);
+		});
+	});
+});

@@ -1,5 +1,5 @@
-import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { AbsenceData, WorkPeriodData } from "../../types";
 import { DEFAULT_WORKDAY_CONFIG } from "./types";
 import { WorkdayConnector } from "./workday-connector";
@@ -196,8 +196,8 @@ describe("WorkdayConnector", () => {
 				firstName: "Ada",
 				lastName: "Lovelace",
 				email: "ada@example.com",
-				startTime: DateTime.fromISO("2026-01-10T08:00:00Z"),
-				endTime: DateTime.fromISO("2026-01-10T12:00:00Z"),
+				startTime: parseInstant("2026-01-10T08:00:00Z").toZonedDateTimeISO("UTC"),
+				endTime: parseInstant("2026-01-10T12:00:00Z").toZonedDateTimeISO("UTC"),
 				durationMinutes: 240,
 				workCategoryId: null,
 				workCategoryName: null,
@@ -212,8 +212,8 @@ describe("WorkdayConnector", () => {
 				firstName: "Zero",
 				lastName: "Hours",
 				email: "zero@example.com",
-				startTime: DateTime.fromISO("2026-01-12T08:00:00Z"),
-				endTime: DateTime.fromISO("2026-01-12T08:00:00Z"),
+				startTime: parseInstant("2026-01-12T08:00:00Z").toZonedDateTimeISO("UTC"),
+				endTime: parseInstant("2026-01-12T08:00:00Z").toZonedDateTimeISO("UTC"),
 				durationMinutes: 0,
 				workCategoryId: null,
 				workCategoryName: "Regular",
@@ -321,8 +321,8 @@ describe("WorkdayConnector", () => {
 					firstName: "Email",
 					lastName: "Match",
 					email: "email@example.com",
-					startTime: DateTime.fromISO("2026-01-10T08:00:00Z"),
-					endTime: DateTime.fromISO("2026-01-10T10:00:00Z"),
+					startTime: parseInstant("2026-01-10T08:00:00Z").toZonedDateTimeISO("UTC"),
+					endTime: parseInstant("2026-01-10T10:00:00Z").toZonedDateTimeISO("UTC"),
 					durationMinutes: 120,
 					workCategoryId: null,
 					workCategoryName: "Regular",
@@ -385,8 +385,8 @@ describe("WorkdayConnector", () => {
 					firstName: "Field",
 					lastName: "Match",
 					email: "field@example.com",
-					startTime: DateTime.fromISO("2026-01-10T08:00:00Z"),
-					endTime: DateTime.fromISO("2026-01-10T10:00:00Z"),
+					startTime: parseInstant("2026-01-10T08:00:00Z").toZonedDateTimeISO("UTC"),
+					endTime: parseInstant("2026-01-10T10:00:00Z").toZonedDateTimeISO("UTC"),
 					durationMinutes: 120,
 					workCategoryId: null,
 					workCategoryName: "Regular",

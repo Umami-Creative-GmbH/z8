@@ -43,7 +43,7 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({
 	approveShiftRequest: vi.fn(),
 	rejectShiftRequest: vi.fn(),
 }));
-vi.mock("@/app/[locale]/(app)/settings/coverage-rules/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/shifts/coverage-rule-actions", () => ({
 	getTargetHeatmapData: transport.coverage,
 }));
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({

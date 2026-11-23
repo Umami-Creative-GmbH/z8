@@ -4,8 +4,16 @@ import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { type AuthConfig, organizationBranding, organizationDomain } from "@/db/schema";
+import { env } from "@/env";
 import { getConfiguredProviders } from "@/lib/social-oauth";
+import { normalizeCustomDomain } from "./custom-domain-hostname";
 import { domainCache } from "./domain-cache";
+import { getPlatformRootDomain, normalizeDomainHost } from "./platform-domain";
+import {
+	listUsableSsoProviderIds,
+	parseStoredAuthConfig,
+	withUsableSsoProvider,
+} from "./host-auth-config";
 import {
 	DEFAULT_AUTH_CONFIG,
 	DEFAULT_BRANDING,
@@ -53,18 +61,15 @@ export async function getDomainConfig(hostname: string): Promise<DomainAuthConte
 		where: eq(organizationBranding.organizationId, domainRecord.organizationId),
 	});
 
-	// Parse auth config from JSON string
-	let authConfig: AuthConfig = DEFAULT_AUTH_CONFIG;
-	if (domainRecord.authConfig) {
-		try {
-			authConfig =
-				typeof domainRecord.authConfig === "string"
-					? JSON.parse(domainRecord.authConfig)
-					: domainRecord.authConfig;
-		} catch {
-			console.warn(`Failed to parse auth config for domain ${hostname}`);
-		}
+	const storedAuthConfig = parseStoredAuthConfig(domainRecord.authConfig);
+	if (domainRecord.authConfig && !storedAuthConfig) {
+		console.warn(`Failed to parse auth config for domain ${hostname}`);
 	}
+	// SSO needs a provider the organization can still sign in with (#1885).
+	const authConfig: AuthConfig = withUsableSsoProvider(
+		storedAuthConfig ?? DEFAULT_AUTH_CONFIG,
+		await listUsableSsoProviderIds(domainRecord.organizationId),
+	);
 
 	// Build branding object
 	let branding: OrganizationBranding | null = null;
@@ -153,6 +158,14 @@ export async function registerCustomDomain(
 	domain: string,
 	_isPrimary = false,
 ): Promise<{ id: string; verificationToken: string }> {
+	const normalizedDomain = normalizeCustomDomain(domain);
+	for (const root of [getPlatformRootDomain(), normalizeDomainHost(env.MAIN_DOMAIN ?? null)]) {
+		const hostname = root?.replace(/\.$/, "");
+		if (hostname && (normalizedDomain === hostname || normalizedDomain.endsWith(`.${hostname}`))) {
+			throw new Error("This domain is reserved for the platform");
+		}
+	}
+
 	// Check if organization already has a domain (limit: 1 per org)
 	const existingDomain = await db.query.organizationDomain.findFirst({
 		where: eq(organizationDomain.organizationId, organizationId),
@@ -161,9 +174,6 @@ export async function registerCustomDomain(
 	if (existingDomain) {
 		throw new Error("Organization can only have one custom domain");
 	}
-
-	// Normalize domain
-	const normalizedDomain = domain.toLowerCase().replace(/:\d+$/, "");
 
 	// Generate verification token
 	const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -331,10 +341,7 @@ export async function listOrganizationDomains(organizationId: string): Promise<
 		isPrimary: d.isPrimary,
 		verificationToken: d.verificationToken,
 		verificationTokenExpiresAt: d.verificationTokenExpiresAt,
-		authConfig:
-			typeof d.authConfig === "string"
-				? JSON.parse(d.authConfig)
-				: (d.authConfig ?? DEFAULT_AUTH_CONFIG),
+		authConfig: parseStoredAuthConfig(d.authConfig) ?? DEFAULT_AUTH_CONFIG,
 		createdAt: d.createdAt,
 	}));
 }

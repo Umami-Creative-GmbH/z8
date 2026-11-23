@@ -1,7 +1,10 @@
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import type { ActiveAssignedEmployee } from "../assigned-locations/queries";
 import type { ClockPresence } from "../clock-presence";
 
@@ -85,11 +88,11 @@ export function toKioskBoard(
 
 /** Owners and admins see every assigned employee, managers the ones they manage, others nobody. */
 export function whoIsInScopeFor(input: {
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess | null;
 	managedEmployeeIds: readonly string[];
 }): WhoIsInScope {
-	if (input.accessTier === "orgAdmin") return { kind: "all" };
-	if (input.accessTier === "manager") {
+	if (meetsSettingsAccess(input.settingsAccess, "orgAdmin")) return { kind: "all" };
+	if (meetsSettingsAccess(input.settingsAccess, "scopedManager")) {
 		return { kind: "managed", employeeIds: new Set(input.managedEmployeeIds) };
 	}
 	return { kind: "none" };

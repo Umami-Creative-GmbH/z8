@@ -7,11 +7,19 @@
  * - fixed_days: requires presence on specific days of the week
  */
 
-import { DateTime } from "luxon";
 import type {
 	ComplianceFindingSeverity,
 	PresenceRequirementEvidence,
 } from "@/db/schema/compliance-finding";
+import type { EffectiveContractOnDay } from "@/lib/contracts/types";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	instantFromDate,
+	type PlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import { parseTimeZone } from "@/lib/timezone/validation";
 import type {
 	ComplianceFindingResult,
 	ComplianceRule,
@@ -74,6 +82,32 @@ export interface PresenceRuleDetectionInput extends RuleDetectionInput {
 	presenceConfig: PresenceConfig;
 	absenceDays: AbsenceDay[];
 	holidayDays: HolidayDay[];
+	/** Dates where the employee's effective contract exempts on-site presence (e.g., `remote` work model). */
+	exemptDays?: readonly { date: string; reason: string }[];
+}
+
+/**
+ * Extracts presence-exempt dates from unified per-day contracts so midweek `remote` or
+ * `presence_override = 'exempt'` transitions have exact parity with `loadPresenceStatusForSubject`.
+ */
+export function buildPresenceExemptDaysFromContracts(
+	contractsByDate: ReadonlyMap<string, EffectiveContractOnDay>,
+): Array<{ date: string; reason: string }> {
+	const exempt: Array<{ date: string; reason: string }> = [];
+	for (const [date, contract] of contractsByDate) {
+		if (contract.presenceStatus !== "required") {
+			exempt.push({
+				date,
+				reason:
+					contract.presenceStatus === "exempt"
+						? contract.workModel === "remote"
+							? "remote_work_model"
+							: "presence_exempt"
+						: "presence_not_configured",
+			});
+		}
+	}
+	return exempt;
 }
 
 // ============================================
@@ -117,18 +151,17 @@ function calculatePresenceSeverity(
 }
 
 /**
- * Get all weekday dates (Mon-Fri) in a date range (inclusive), in the given timezone
+ * Get all weekday dates (Mon-Fri) in a date range (inclusive)
  */
-function getWeekdayDates(start: DateTime, end: DateTime): DateTime[] {
-	const days: DateTime[] = [];
-	let current = start.startOf("day");
-	const endDay = end.startOf("day");
+function getWeekdayDates(start: PlainDate, end: PlainDate): PlainDate[] {
+	const days: PlainDate[] = [];
+	let current = start;
 
-	while (current <= endDay) {
-		if (current.weekday >= 1 && current.weekday <= 5) {
+	while (comparePlainDates(current, end) <= 0) {
+		if (current.dayOfWeek >= 1 && current.dayOfWeek <= 5) {
 			days.push(current);
 		}
-		current = current.plus({ days: 1 });
+		current = current.add({ days: 1 });
 	}
 
 	return days;
@@ -143,8 +176,15 @@ export class PresenceRequirementRule implements ComplianceRule {
 		// This rule requires the extended input type
 		const presenceInput = input as PresenceRuleDetectionInput;
 
-		const { employee, workPeriods, dateRange, presenceConfig, absenceDays, holidayDays } =
-			presenceInput;
+		const {
+			employee,
+			workPeriods,
+			dateRange,
+			presenceConfig,
+			absenceDays,
+			holidayDays,
+			exemptDays = [],
+		} = presenceInput;
 
 		// Skip if enforcement is disabled
 		if (presenceConfig.enforcement === "none") {
@@ -152,12 +192,12 @@ export class PresenceRequirementRule implements ComplianceRule {
 		}
 
 		const findings: ComplianceFindingResult[] = [];
-		const timezone = employee.timezone;
+		const timezone = parseTimeZone(employee.timezone);
 
 		// Filter to completed work periods only
 		const completedPeriods = workPeriods.filter((wp) => wp.endTime !== null && !wp.isActive);
 
-		// Build set of excluded dates (absences + holidays)
+		// Build set of excluded dates (absences + holidays + contract presence exemptions)
 		const excludedDates = new Set<string>();
 		const excludedReasons: string[] = [];
 
@@ -169,6 +209,10 @@ export class PresenceRequirementRule implements ComplianceRule {
 			excludedDates.add(holiday.date);
 			excludedReasons.push("holiday");
 		}
+		for (const exempt of exemptDays) {
+			excludedDates.add(exempt.date);
+			excludedReasons.push(exempt.reason);
+		}
 
 		// Determine on-site days: group work periods by calendar date in employee timezone
 		const onsiteDateSet = new Set<string>();
@@ -177,8 +221,7 @@ export class PresenceRequirementRule implements ComplianceRule {
 		for (const period of completedPeriods) {
 			if (!isOnsite(period.workLocationType)) continue;
 
-			const dt = DateTime.fromJSDate(period.startTime, { zone: timezone });
-			const dateKey = dt.toISODate()!;
+			const dateKey = plainDateAt(instantFromDate(period.startTime), timezone).toString();
 			onsiteDateSet.add(dateKey);
 			onsiteWorkPeriodIds.push(period.id);
 		}
@@ -186,13 +229,15 @@ export class PresenceRequirementRule implements ComplianceRule {
 		const actualOnsiteDays = onsiteDateSet.size;
 
 		// Get evaluation period boundaries
-		const periodStart = dateRange.start.setZone(timezone).startOf("day");
-		const periodEnd = dateRange.end.setZone(timezone).startOf("day");
+		const periodStart = plainDateAt(dateRange.start, timezone);
+		const periodEnd = plainDateAt(dateRange.end, timezone);
+		const periodStartDate = dateFromInstant(periodStart.toZonedDateTime(timezone).toInstant());
+		const periodEndDate = dateFromInstant(periodEnd.toZonedDateTime(timezone).toInstant());
 
 		if (presenceConfig.presenceMode === "minimum_count") {
 			// Calculate available working days
 			const allWeekdays = getWeekdayDates(periodStart, periodEnd);
-			const availableWeekdays = allWeekdays.filter((d) => !excludedDates.has(d.toISODate()!));
+			const availableWeekdays = allWeekdays.filter((d) => !excludedDates.has(d.toString()));
 			const workingDayCount = availableWeekdays.length;
 
 			// Cap requirement to available days
@@ -205,8 +250,8 @@ export class PresenceRequirementRule implements ComplianceRule {
 				const evidence: PresenceRequirementEvidence = {
 					type: "presence_requirement",
 					mode: "minimum_count",
-					evaluationStart: periodStart.toISODate()!,
-					evaluationEnd: periodEnd.toISODate()!,
+					evaluationStart: periodStart.toString(),
+					evaluationEnd: periodEnd.toString(),
 					requiredDays: adjustedRequirement,
 					actualOnsiteDays,
 					excludedDays: Array.from(excludedDates),
@@ -220,9 +265,9 @@ export class PresenceRequirementRule implements ComplianceRule {
 					employeeId: employee.id,
 					type: this.type,
 					severity,
-					occurrenceDate: periodEnd.toJSDate(),
-					periodStart: periodStart.toJSDate(),
-					periodEnd: periodEnd.toJSDate(),
+					occurrenceDate: periodEndDate,
+					periodStart: periodStartDate,
+					periodEnd: periodEndDate,
 					evidence,
 					workPolicyId: employee.policy?.policyId ?? null,
 				});
@@ -234,9 +279,9 @@ export class PresenceRequirementRule implements ComplianceRule {
 			for (const requiredWeekday of presenceConfig.requiredOnsiteFixedDays) {
 				// Find all dates in the period matching this weekday
 				let current = periodStart;
-				while (current <= periodEnd) {
-					if (current.weekday === requiredWeekday) {
-						const dateKey = current.toISODate()!;
+				while (comparePlainDates(current, periodEnd) <= 0) {
+					if (current.dayOfWeek === requiredWeekday) {
+						const dateKey = current.toString();
 
 						// If it's an excluded day (absence/holiday), it's excused
 						if (!excludedDates.has(dateKey)) {
@@ -247,7 +292,7 @@ export class PresenceRequirementRule implements ComplianceRule {
 							}
 						}
 					}
-					current = current.plus({ days: 1 });
+					current = current.add({ days: 1 });
 				}
 			}
 
@@ -259,8 +304,8 @@ export class PresenceRequirementRule implements ComplianceRule {
 				const evidence: PresenceRequirementEvidence = {
 					type: "presence_requirement",
 					mode: "fixed_days",
-					evaluationStart: periodStart.toISODate()!,
-					evaluationEnd: periodEnd.toISODate()!,
+					evaluationStart: periodStart.toString(),
+					evaluationEnd: periodEnd.toString(),
 					requiredDays: requiredCount,
 					actualOnsiteDays,
 					missedDays: Array.from(missedDays),
@@ -275,9 +320,9 @@ export class PresenceRequirementRule implements ComplianceRule {
 					employeeId: employee.id,
 					type: this.type,
 					severity,
-					occurrenceDate: periodEnd.toJSDate(),
-					periodStart: periodStart.toJSDate(),
-					periodEnd: periodEnd.toJSDate(),
+					occurrenceDate: periodEndDate,
+					periodStart: periodStartDate,
+					periodEnd: periodEndDate,
 					evidence,
 					workPolicyId: employee.policy?.policyId ?? null,
 				});

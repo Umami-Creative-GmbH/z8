@@ -20,6 +20,8 @@ export type LoginActionsProps = {
 	turnstile: LoginActionsTurnstileProps;
 	forgotPasswordHref: string;
 	signUpHref: string;
+	/** Registration is open on this host. */
+	showSignUp?: boolean;
 	children: ReactNode;
 };
 
@@ -31,6 +33,7 @@ export function LoginActions({
 	turnstile,
 	forgotPasswordHref,
 	signUpHref,
+	showSignUp = true,
 	children,
 }: LoginActionsProps) {
 	const { t } = useTranslate();
@@ -67,7 +70,7 @@ export function LoginActions({
 				</>
 			)}
 			{children}
-			{!requires2FA && showEmailPassword && (
+			{!requires2FA && showEmailPassword && showSignUp && (
 				<div className="text-center text-sm">
 					{t("auth.dont-have-account", "Don't have an account?")}{" "}
 					<Link className="underline underline-offset-4" href={signUpHref}>

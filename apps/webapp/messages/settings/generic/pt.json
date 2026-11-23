@@ -2847,8 +2847,7 @@
       "description": "Escolha como e quando você deseja ser notificado",
       "digestTime": "Horário do resumo",
       "discord": {
-        "description": "Configure as notificações do Discord para sua organização.",
-        "setupInstructions": "A conexão do Discord a partir desta página ainda não está disponível. A conexão precisa do token de bot, ID de aplicativo e chave pública do seu aplicativo Discord."
+        "description": "Configure as notificações do Discord para sua organização."
       },
       "escalations": "Escalonamentos",
       "escalationsDescription": "Escalonar solicitações de aprovação não respondidas após o tempo limite configurado.",

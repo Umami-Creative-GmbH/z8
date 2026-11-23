@@ -4,7 +4,7 @@ import { IconLoader2, IconUserShare } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { saveDeputyDecisionsEnabledAction } from "@/app/[locale]/(app)/settings/approval-escalation/deputy-decisions-actions";
+import { saveDeputyDecisionsEnabledAction } from "@/app/[locale]/(app)/settings/approval-policies/deputy-decisions-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";

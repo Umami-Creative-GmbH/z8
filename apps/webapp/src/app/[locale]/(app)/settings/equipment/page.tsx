@@ -2,10 +2,7 @@ import { IconPackage } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { EquipmentOfficers } from "@/components/settings/equipment/equipment-officers";
-import {
-	EquipmentLoadError,
-	EquipmentRefreshButton,
-} from "@/components/settings/equipment/equipment-page-actions";
+import { EquipmentLoadError } from "@/components/settings/equipment/equipment-page-actions";
 import { EquipmentSettings } from "@/components/settings/equipment/equipment-settings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -15,10 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { isEquipmentEnabled } from "@/lib/organization/equipment/access";
-import {
-	getEquipmentOfficerGrants,
-	getEquipmentSetup,
-} from "@/lib/organization/equipment/actions";
+import { getEquipmentOfficerGrants, getEquipmentSetup } from "@/lib/organization/equipment/actions";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
@@ -40,25 +34,19 @@ async function EquipmentSettingsContent() {
 						"Configure equipment types, item identities and record retention.",
 					)}
 					actions={
-						<>
-							<EquipmentRefreshButton />
-							<Button asChild variant="outline">
-								<Link href="/equipment">
-									<IconPackage className="size-4" aria-hidden="true" />
-									{t("settings.equipment.openOverview", "Open equipment overview")}
-								</Link>
-							</Button>
-						</>
+						<Button asChild variant="outline">
+							<Link href="/equipment">
+								<IconPackage className="size-4" aria-hidden="true" />
+								{t("settings.equipment.openOverview", "Open equipment overview")}
+							</Link>
+						</Button>
 					}
 				/>
 				{result.success ? (
 					<EquipmentSettings key={organizationId} initialData={result.data} />
 				) : (
 					<EquipmentLoadError
-						title={t(
-							"settings.equipment.errors.loadTitle",
-							"Equipment setup could not be loaded",
-						)}
+						title={t("settings.equipment.errors.loadTitle", "Equipment setup could not be loaded")}
 						description={t(
 							"settings.equipment.errors.loadRetry",
 							"Check your organization access, then try again.",
@@ -96,10 +84,7 @@ function SkeletonCard({ rows }: { rows: number }) {
 			<CardContent>
 				<div className="divide-y rounded-lg border">
 					{SKELETON_ROWS.slice(0, rows).map((row) => (
-						<div
-							key={row}
-							className="flex items-center justify-between gap-4 p-4"
-						>
+						<div key={row} className="flex items-center justify-between gap-4 p-4">
 							<Skeleton aria-hidden="true" className="h-4 w-40" />
 							<Skeleton aria-hidden="true" className="h-5 w-24 rounded-md" />
 						</div>
@@ -127,7 +112,6 @@ function EquipmentSettingsLoading() {
 						<Skeleton aria-hidden="true" className="h-5 w-72 max-w-full" />
 					</div>
 					<div className="flex gap-2">
-						<Skeleton aria-hidden="true" className="size-9" />
 						<Skeleton aria-hidden="true" className="h-9 w-52" />
 					</div>
 				</div>

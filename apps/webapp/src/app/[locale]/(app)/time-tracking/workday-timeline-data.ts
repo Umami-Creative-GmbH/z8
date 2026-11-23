@@ -1,14 +1,15 @@
 import { and, asc, eq, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
-import { DateTime } from "luxon";
 
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, shift, workPeriod } from "@/db/schema";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { instantToDB } from "@/lib/datetime/drizzle-adapter";
+import { dateFromInstant, instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { shiftCalendarDate, shiftDateBounds } from "@/lib/scheduling/shift-date";
-import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { getSelfServiceRequests } from "@/lib/self-service-requests/get-self-service-requests";
 import type { SelfServiceRequestItem } from "@/lib/self-service-requests/types";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { isValidTimeZone, parseTimeZone } from "@/lib/timezone/validation";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import type { WorkdayTimelineResult } from "./workday-timeline.types";
 import { getSelectedWorkdayDate } from "./workday-timeline-date";
@@ -26,6 +27,7 @@ interface GetWorkdayTimelineDataInput {
 	employeeId: string;
 	organizationId: string;
 	timezone: string;
+	locale?: string;
 	timeFormat?: TimeFormat;
 	dateParam: string | undefined;
 	now?: Date;
@@ -70,13 +72,14 @@ export async function getWorkdayTimelineData({
 	employeeId,
 	organizationId,
 	timezone,
+	locale,
 	timeFormat,
 	dateParam,
 	now,
 }: GetWorkdayTimelineDataInput): Promise<WorkdayTimelineResult> {
-	const selectedDate = getSelectedWorkdayDate({ dateParam, timezone, now });
-	const startBound = dateToDB(selectedDate.startUtc)!;
-	const endBound = dateToDB(selectedDate.endUtc)!;
+	const selectedDate = getSelectedWorkdayDate({ dateParam, timezone, locale, now });
+	const startBound = instantToDB(selectedDate.startUtc)!;
+	const endBound = instantToDB(selectedDate.endUtc)!;
 	const selectedLogicalDate = selectedDate.dateKey;
 
 	try {
@@ -334,7 +337,8 @@ export function isRequestRelevantToSelectedDate(
 	selectedDateKey: string,
 	timezone: string,
 ): boolean {
-	const submittedDateKey = DateTime.fromJSDate(request.submittedAt).setZone(timezone).toISODate();
+	const zone = isValidTimeZone(timezone) ? parseTimeZone(timezone) : "UTC";
+	const submittedDateKey = plainDateAt(instantFromDate(request.submittedAt), zone).toString();
 
 	if (submittedDateKey === selectedDateKey) return true;
 	if (request.subtitle.includes(selectedDateKey)) return true;
@@ -349,8 +353,8 @@ export function isWorkPeriodRelevantToSelectedDate(
 	period: Pick<WorkPeriodRow, "startTime" | "endTime">,
 	selectedDate: Pick<ReturnType<typeof getSelectedWorkdayDate>, "startUtc" | "endUtc">,
 ): boolean {
-	const selectedStart = selectedDate.startUtc.toJSDate();
-	const selectedEnd = selectedDate.endUtc.toJSDate();
+	const selectedStart = dateFromInstant(selectedDate.startUtc);
+	const selectedEnd = dateFromInstant(selectedDate.endUtc);
 
 	return (
 		period.startTime <= selectedEnd && (period.endTime === null || period.endTime >= selectedStart)

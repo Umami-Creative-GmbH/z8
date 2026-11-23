@@ -526,10 +526,9 @@ export async function applyImportRowDecision(input: {
 			(row: { issueSeverity: ImportIssueSeverity; id: string }) =>
 				row.issueSeverity !== "blocking" ? [row.id] : [],
 		);
-		const [acceptedUpdated, blockedUpdated] = await Promise.all([
-			updateRows(acceptedRows, "accepted"),
-			updateRows(blockingRows, "blocked"),
-		]);
+		// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+		const acceptedUpdated = await updateRows(acceptedRows, "accepted");
+		const blockedUpdated = await updateRows(blockingRows, "blocked");
 
 		return { updatedCount: acceptedUpdated.length + blockedUpdated.length };
 	});

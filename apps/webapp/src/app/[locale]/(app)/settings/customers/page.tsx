@@ -2,27 +2,24 @@ import { Suspense } from "react";
 import { CustomerManagement } from "@/components/settings/customer-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
+import { requireOrganizationFeatureEnabled } from "@/lib/settings/feature-flags.server";
 
 async function CustomerSettingsPageContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const caller = await getCurrentSettingsAccess();
 
-	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
+	if (!caller?.settingsAccess || !meetsSettingsAccess(caller.settingsAccess, "scopedManager")) {
 		return redirectWithLocale("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
-
-	if (!organizationId) {
-		return redirectWithLocale("/settings");
-	}
+	await requireOrganizationFeatureEnabled(caller.organizationId, "projectsEnabled");
 
 	return (
 		<CustomerManagement
-			organizationId={organizationId}
-			accessTier={settingsRouteContext.accessTier}
+			organizationId={caller.organizationId}
+			settingsAccess={caller.settingsAccess}
 		/>
 	);
 }

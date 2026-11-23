@@ -61,35 +61,22 @@ jobs:
             arch: amd64
             platform: linux/amd64
             runner: ubuntu-latest
-          - repository: z8-webapp
-            dockerfile: docker/Dockerfile.webapp
-            arch: arm64
-            platform: linux/arm64
-            runner: ubuntu-24.04-arm
           - repository: z8-worker
             dockerfile: docker/Dockerfile.worker
             arch: amd64
             platform: linux/amd64
             runner: ubuntu-latest
-          - repository: z8-worker
-            dockerfile: docker/Dockerfile.worker
-            arch: arm64
-            platform: linux/arm64
-            runner: ubuntu-24.04-arm
           - repository: z8-migration
             dockerfile: docker/Dockerfile.migration
             arch: amd64
             platform: linux/amd64
             runner: ubuntu-latest
-          - repository: z8-migration
-            dockerfile: docker/Dockerfile.migration
-            arch: arm64
-            platform: linux/arm64
-            runner: ubuntu-24.04-arm
 
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Verify workflow contract
         run: node scripts/ci/verify-publish-images-workflow.mjs
@@ -134,8 +121,8 @@ jobs:
             NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}
           secrets: |
             next_server_actions_encryption_key=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
-          cache-from: type=gha,scope=${{ matrix.repository }}-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.repository }}-${{ matrix.arch }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.repository }}:buildcache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.repository }}:buildcache-${{ matrix.arch }},mode=max,image-manifest=true,oci-mediatypes=true,compression=zstd,compression-level=3,ignore-error=true
 
       - name: Export webapp build mounts
         if: matrix.repository == 'z8-webapp' && steps.build_mounts.outputs.cache-hit != 'true' && (inputs.persist_build_cache || vars.NEXT_BUILD_CACHE_ENABLED == 'true')
@@ -230,70 +217,56 @@ jobs:
           name: target-digest-${{ matrix.repository }}-amd64
           path: ${{ env.DIGEST_ROOT }}/targets/amd64
 
-      - name: Download arm64 digest
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: target-digest-${{ matrix.repository }}-arm64
-          path: ${{ env.DIGEST_ROOT }}/targets/arm64
-
       - name: Validate target artifacts
         run: |
           set -euo pipefail
 
-          AMD64_ARTIFACT_DIR="${DIGEST_ROOT}/targets/amd64"
-          ARM64_ARTIFACT_DIR="${DIGEST_ROOT}/targets/arm64"
+          artifact_dir="${DIGEST_ROOT}/targets/amd64"
           EXPECTED_REPOSITORY="${REGISTRY}/${IMAGE_NAMESPACE}/${{ matrix.repository }}"
 
-          for artifact_dir in "${AMD64_ARTIFACT_DIR}" "${ARM64_ARTIFACT_DIR}"; do
-            if [ ! -s "${artifact_dir}/reference.txt" ]; then
-              echo "::error::target artifact is missing reference.txt"
-              exit 1
-            fi
-            if [ ! -s "${artifact_dir}/digest.txt" ]; then
-              echo "::error::target artifact is missing digest.txt"
-              exit 1
-            fi
-            if [ ! -s "${artifact_dir}/repository.txt" ]; then
-              echo "::error::target artifact is missing repository.txt"
-              exit 1
-            fi
-            if [ ! -s "${artifact_dir}/arch.txt" ]; then
-              echo "::error::target artifact is missing arch.txt"
-              exit 1
-            fi
-
-            ARTIFACT_REFERENCE="$(tr -d '\n' < "${artifact_dir}/reference.txt")"
-            ARTIFACT_DIGEST="$(tr -d '\n' < "${artifact_dir}/digest.txt")"
-            ARTIFACT_REPOSITORY="$(tr -d '\n' < "${artifact_dir}/repository.txt")"
-
-            if [ -z "${ARTIFACT_REFERENCE}" ]; then
-              echo "::error::target artifact reference is empty"
-              exit 1
-            fi
-
-            if [ -z "${ARTIFACT_DIGEST}" ]; then
-              echo "::error::target artifact digest is empty"
-              exit 1
-            fi
-
-            if [ "${ARTIFACT_REPOSITORY}" != "${EXPECTED_REPOSITORY}" ]; then
-              echo "::error::target artifact repository mismatch"
-              exit 1
-            fi
-
-            if [ "${ARTIFACT_REFERENCE}" != "${ARTIFACT_REPOSITORY}@${ARTIFACT_DIGEST}" ]; then
-              echo "::error::target artifact reference does not match repository and digest"
-              exit 1
-            fi
-          done
-
-          if [ "$(tr -d '\n' < "${AMD64_ARTIFACT_DIR}/arch.txt")" != "amd64" ]; then
-            echo "::error::target artifact arch mismatch for amd64"
+          if [ ! -s "${artifact_dir}/reference.txt" ]; then
+            echo "::error::target artifact is missing reference.txt"
+            exit 1
+          fi
+          if [ ! -s "${artifact_dir}/digest.txt" ]; then
+            echo "::error::target artifact is missing digest.txt"
+            exit 1
+          fi
+          if [ ! -s "${artifact_dir}/repository.txt" ]; then
+            echo "::error::target artifact is missing repository.txt"
+            exit 1
+          fi
+          if [ ! -s "${artifact_dir}/arch.txt" ]; then
+            echo "::error::target artifact is missing arch.txt"
             exit 1
           fi
 
-          if [ "$(tr -d '\n' < "${ARM64_ARTIFACT_DIR}/arch.txt")" != "arm64" ]; then
-            echo "::error::target artifact arch mismatch for arm64"
+          ARTIFACT_REFERENCE="$(tr -d '\n' < "${artifact_dir}/reference.txt")"
+          ARTIFACT_DIGEST="$(tr -d '\n' < "${artifact_dir}/digest.txt")"
+          ARTIFACT_REPOSITORY="$(tr -d '\n' < "${artifact_dir}/repository.txt")"
+
+          if [ -z "${ARTIFACT_REFERENCE}" ]; then
+            echo "::error::target artifact reference is empty"
+            exit 1
+          fi
+
+          if [ -z "${ARTIFACT_DIGEST}" ]; then
+            echo "::error::target artifact digest is empty"
+            exit 1
+          fi
+
+          if [ "${ARTIFACT_REPOSITORY}" != "${EXPECTED_REPOSITORY}" ]; then
+            echo "::error::target artifact repository mismatch"
+            exit 1
+          fi
+
+          if [ "${ARTIFACT_REFERENCE}" != "${ARTIFACT_REPOSITORY}@${ARTIFACT_DIGEST}" ]; then
+            echo "::error::target artifact reference does not match repository and digest"
+            exit 1
+          fi
+
+          if [ "$(tr -d '\n' < "${artifact_dir}/arch.txt")" != "amd64" ]; then
+            echo "::error::target artifact arch mismatch for amd64"
             exit 1
           fi
 
@@ -309,22 +282,20 @@ jobs:
             type=semver,pattern=v{{major}}.{{minor}}
             type=semver,pattern=v{{major}}
 
-      - name: Create and push multi-arch manifests
+      - name: Create and push manifests
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           set -euo pipefail
 
           AMD64_REFERENCE="$(tr -d '\n' < "${DIGEST_ROOT}/targets/amd64/reference.txt")"
-          ARM64_REFERENCE="$(tr -d '\n' < "${DIGEST_ROOT}/targets/arm64/reference.txt")"
 
           test -n "$TAGS"
           for tag in $TAGS; do
             docker buildx imagetools create \
               --metadata-file /tmp/manifest-metadata.json \
               -t "$tag" \
-              "$AMD64_REFERENCE" \
-              "$ARM64_REFERENCE"
+              "$AMD64_REFERENCE"
           done
 
           mkdir -p /tmp/release-digests
@@ -353,6 +324,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: app
+          sparse-checkout: scripts/ci
           persist-credentials: false
 
       - name: Checkout infrastructure

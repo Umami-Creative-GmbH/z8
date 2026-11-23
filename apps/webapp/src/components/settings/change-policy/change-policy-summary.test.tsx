@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ChangePolicyRecord } from "@/app/[locale]/(app)/settings/change-policies/actions";
+import type { ChangePolicyRecord } from "@/app/[locale]/(app)/settings/work-policies/change-policy-actions";
 import { ChangePolicyDialog } from "./change-policy-dialog";
 import { ChangePolicyTable } from "./change-policy-table";
 
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 	getChangePolicies: vi.fn(),
 }));
 
-vi.mock("@/app/[locale]/(app)/settings/change-policies/actions", () => ({
+vi.mock("@/app/[locale]/(app)/settings/work-policies/change-policy-actions", () => ({
 	getChangePolicies: mocks.getChangePolicies,
 	deleteChangePolicy: vi.fn(),
 	createChangePolicy: vi.fn(),

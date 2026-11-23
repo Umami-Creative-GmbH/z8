@@ -31,12 +31,11 @@ export const TRAVEL_EXPENSES_HREF = "/settings/travel-expenses";
 
 /**
  * A pass the go-live check notes: the request path writes no request, or the route needs nobody
- * but the requester (they approve it at once, or decide it themselves).
+ * but the requester (they approve it at once).
  */
 export type ApproverSkipReason =
 	| ApprovalRouteSkipReason
 	| "requester_is_approver"
-	| "requester_only_decider"
 	| "owner_self_approval";
 
 type RoutedOutcome = Extract<ApprovalRouteOutcome, { kind: "routed" }>;
@@ -129,9 +128,6 @@ function variantResult(outcome: ApprovalRouteOutcome): ApproverVariantResult {
 	if (outcome.kind === "unroutable") return { status: "unroutable", cause: outcome.reason };
 	const noted = (code: ApprovalRouteNote["code"]) =>
 		outcome.notes.some((note) => note.code === code);
-	if (noted("requester_only_decider")) {
-		return { status: "skipped", reason: "requester_only_decider", route: outcome };
-	}
 	if (outcome.autoCompleted) {
 		return {
 			status: "skipped",
@@ -427,13 +423,6 @@ function skipNote(
 				key: "settings.implementationChecklist.goLive.approver.skipOwnApprover",
 				fallback:
 					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: {count, plural, one {# employee} other {# employees}} are their own approver.",
-				params,
-			};
-		case "requester_only_decider":
-			return {
-				key: "settings.implementationChecklist.goLive.approver.skipOwnDecider",
-				fallback:
-					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: {count, plural, one {# employee is} other {# employees are}} the only one who can decide them, so their own requests wait for their own approval.",
 				params,
 			};
 		case "owner_self_approval":

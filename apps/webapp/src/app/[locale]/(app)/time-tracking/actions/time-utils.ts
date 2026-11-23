@@ -1,5 +1,6 @@
-import { DateTime } from "luxon";
-import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { instantFromDB, instantToDB } from "@/lib/datetime/drizzle-adapter";
+import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { isValidTimeZone, parseTimeZone } from "@/lib/timezone/validation";
 
 interface ParsedTime {
 	hour: number;
@@ -25,48 +26,52 @@ export function parseTimeString(value: string): ParsedTime | null {
 
 export function setTimeOnStoredDate(baseDate: Date, time: string, timezone?: string): Date | null {
 	const parsedTime = parseTimeString(time);
-	const baseDateTime = dateFromDB(baseDate);
+	const baseInstant = instantFromDB(baseDate);
 
-	if (!parsedTime || !baseDateTime) {
+	if (!parsedTime || !baseInstant) {
 		return null;
 	}
 
-	const zonedDateTime = timezone ? baseDateTime.setZone(timezone) : baseDateTime;
-
-	return (
-		dateToDB(
-			zonedDateTime
-				.set({
-					hour: parsedTime.hour,
-					minute: parsedTime.minute,
-					second: 0,
-					millisecond: 0,
-				})
-				.toUTC(),
-		) ?? null
-	);
-}
-
-export function createUtcDateTime(date: string, time: string, timezone: string): Date | null {
-	const parsedTime = parseTimeString(time);
-	const dateTime = DateTime.fromISO(date, { zone: timezone });
-
-	if (!parsedTime || !dateTime.isValid) {
+	if (timezone && !isValidTimeZone(timezone)) {
 		return null;
 	}
 
-	const combinedDateTime = dateTime.set({
+	const zone = timezone ? parseTimeZone(timezone) : "UTC";
+	const zonedDateTime = baseInstant.toZonedDateTimeISO(zone).with({
 		hour: parsedTime.hour,
 		minute: parsedTime.minute,
 		second: 0,
 		millisecond: 0,
+		microsecond: 0,
+		nanosecond: 0,
 	});
 
-	if (!combinedDateTime.isValid) {
+	return instantToDB(zonedDateTime.toInstant());
+}
+
+export function createUtcDateTime(date: string, time: string, timezone: string): Date | null {
+	const parsedTime = parseTimeString(time);
+	if (!parsedTime || !isValidTimeZone(timezone)) {
 		return null;
 	}
 
-	return dateToDB(combinedDateTime.toUTC()) ?? null;
+	let plainDate: PlainDate;
+	try {
+		plainDate = parsePlainDate(date);
+	} catch {
+		return null;
+	}
+
+	const combinedDateTime = plainDate
+		.toPlainDateTime({
+			hour: parsedTime.hour,
+			minute: parsedTime.minute,
+			second: 0,
+			millisecond: 0,
+		})
+		.toZonedDateTime(parseTimeZone(timezone));
+
+	return instantToDB(combinedDateTime.toInstant());
 }
 
 export function createCorrectionDateTime(input: {

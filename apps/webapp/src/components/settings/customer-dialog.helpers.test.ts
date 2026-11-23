@@ -5,10 +5,11 @@ import {
 } from "./customer-dialog.helpers";
 
 describe("customer dialog helpers", () => {
-	it("requires a project selection for manager creates only", () => {
-		expect(requiresScopedProjectSelection("manager", false)).toBe(true);
-		expect(requiresScopedProjectSelection("manager", true)).toBe(false);
+	it("requires a project selection for scoped-manager creates only", () => {
+		expect(requiresScopedProjectSelection("scopedManager", false)).toBe(true);
+		expect(requiresScopedProjectSelection("scopedManager", true)).toBe(false);
 		expect(requiresScopedProjectSelection("orgAdmin", false)).toBe(false);
+		expect(requiresScopedProjectSelection("owner", false)).toBe(false);
 	});
 
 	it("builds a create payload with the selected scoped project id", () => {

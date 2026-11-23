@@ -8,16 +8,12 @@ import {
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 const queries = vi.hoisted(() => [] as string[]);
-const statements = vi.hoisted(
-	() => [] as { text: string; params: unknown[] }[],
-);
+const statements = vi.hoisted(() => [] as { text: string; params: unknown[] }[]);
 const caller = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -51,18 +47,11 @@ vi.mock("@/db", async () =>
 	}),
 );
 const { db } = await import("@/db");
-const { AnalyticsService } = await import(
-	"@/lib/effect/services/analytics.service"
-);
-const { DatabaseService, makeDatabaseService } = await import(
-	"@/lib/effect/services/database.service"
-);
-const { WorkPolicyServiceLive } = await import(
-	"@/lib/effect/services/work-policy.service"
-);
-const { getTeamPerformanceData } = await import(
-	"@/app/[locale]/(app)/analytics/actions"
-);
+const { AnalyticsService } = await import("@/lib/effect/services/analytics.service");
+const { DatabaseService, makeDatabaseService } =
+	await import("@/lib/effect/services/database.service");
+const { WorkPolicyServiceLive } = await import("@/lib/effect/services/work-policy.service");
+const { getTeamPerformanceData } = await import("@/app/[locale]/(app)/analytics/actions");
 const range = {
 	start: new Date("2026-03-02T00:00:00Z"),
 	end: new Date("2026-03-08T23:59:59.999Z"),
@@ -86,24 +75,24 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			`insert into work_policy (id,organization_id,name,regulation_enabled,schedule_enabled,created_by,updated_at) values ($1,$2,'Team weekdays',false,true,$3,now())`,
 			[policyId, fixture.organizationId, fixture.ownerUserId],
 		);
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by) values ($1,$2,1,'1970-01-01',true,false,false,true,$3) returning id`,
+			[policyId, fixture.organizationId, fixture.ownerUserId],
+		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule (policy_id,schedule_type,hours_per_cycle,updated_at) values ($1,'simple',40,now())`,
-			[policyId],
+			`insert into work_policy_schedule (policy_id,policy_version_id,schedule_type,hours_per_cycle,updated_at) values ($1,$2,'simple',40,now())`,
+			[policyId, policyVersion.id],
 		);
 		const schedule = await fixture.pool.query(
 			`select id from work_policy_schedule where policy_id=$1`,
 			[policyId],
 		);
-		for (const day of [
-			"monday",
-			"tuesday",
-			"wednesday",
-			"thursday",
-			"friday",
-		]) {
+		for (const day of ["monday", "tuesday", "wednesday", "thursday", "friday"]) {
 			await fixture.pool.query(
-				`insert into work_policy_schedule_day (schedule_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,8,true)`,
-				[schedule.rows[0].id, day],
+				`insert into work_policy_schedule_day (schedule_id,policy_version_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,$3,8,true)`,
+				[schedule.rows[0].id, policyVersion.id, day],
 			);
 		}
 		await fixture.pool.query(
@@ -114,13 +103,8 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			const person = await fixture.seedEmployee();
 			people.push(person.employeeId);
 			await fixture.pool.query(
-				`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z',2400,'confirmed',$4,now())`,
-				[
-					person.employeeId,
-					fixture.organizationId,
-					person.employmentPeriodId,
-					fixture.ownerUserId,
-				],
+				`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,valid_from_date,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z','2026-01-01',2400,'confirmed',$4,now())`,
+				[person.employeeId, fixture.organizationId, person.employmentPeriodId, fixture.ownerUserId],
 			);
 			for (const day of ["02", "03", "04", "05", "06"]) {
 				await addWork(
@@ -158,16 +142,8 @@ describe("team-performance range evidence on PostgreSQL", () => {
 					end,
 					startOffset,
 					endOffset,
-					startOffset > 0
-						? "Europe/Berlin"
-						: startOffset < 0
-							? "America/New_York"
-							: "UTC",
-					endOffset > 0
-						? "Europe/Berlin"
-						: endOffset < 0
-							? "America/New_York"
-							: "UTC",
+					startOffset > 0 ? "Europe/Berlin" : startOffset < 0 ? "America/New_York" : "UTC",
+					endOffset > 0 ? "Europe/Berlin" : endOffset < 0 ? "America/New_York" : "UTC",
 				],
 			);
 			await client.query(
@@ -179,9 +155,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 	async function read(
 		dates = range,
 		teamId?: string,
-		scope:
-			| { role: "admin" }
-			| { role: "manager"; managerEmployeeId: string } = { role: "admin" },
+		scope: { role: "admin" } | { role: "manager"; managerEmployeeId: string } = { role: "admin" },
 		client: Parameters<typeof makeDatabaseService>[0] = db,
 	) {
 		queries.length = 0;
@@ -199,9 +173,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			}).pipe(
 				Effect.provide(AnalyticsService.Live),
 				Effect.provide(WorkPolicyServiceLive),
-				Effect.provide(
-					Layer.succeed(DatabaseService, makeDatabaseService(client)),
-				),
+				Effect.provide(Layer.succeed(DatabaseService, makeDatabaseService(client))),
 			),
 		);
 		return {
@@ -211,8 +183,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 				tracking: queries.filter((text) =>
 					text.includes('left join "organization_tracking_settings"'),
 				).length,
-				periods: queries.filter((text) => text.includes('from "work_period"'))
-					.length,
+				periods: queries.filter((text) => text.includes('from "work_period"')).length,
 				elapsedMs: performance.now() - start,
 			},
 		};
@@ -233,7 +204,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			[person.userId, timezone],
 		);
 		await fixture.pool.query(
-			`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z',$5,'confirmed',$4,now())`,
+			`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,valid_from_date,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z','2026-01-01',$5,'confirmed',$4,now())`,
 			[
 				person.employeeId,
 				fixture.organizationId,
@@ -302,10 +273,11 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			`insert into team (id,organization_id,name,updated_at) values ($1,$2,'Visible team',now())`,
 			[teamId, fixture.organizationId],
 		);
-		await fixture.pool.query(
-			`update employee set team_id=$2 where id in ($1,$3)`,
-			[people[0], teamId, people[1]],
-		);
+		await fixture.pool.query(`update employee set team_id=$2 where id in ($1,$3)`, [
+			people[0],
+			teamId,
+			people[1],
+		]);
 		await fixture.pool.query(
 			`insert into employee_managers (employee_id,manager_id,assigned_by) values ($1,$2,$3)`,
 			[people[0], fixture.employeeId, fixture.ownerUserId],
@@ -333,21 +305,15 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			},
 		]);
 		const captured = [...statements];
-		const roster = captured.find((row) =>
-			row.text.includes('"employee"."is_active"'),
-		);
+		const roster = captured.find((row) => row.text.includes('"employee"."is_active"'));
 		expect(roster?.text).toContain("employee_managers");
 		if (!roster) throw new Error("Expected the authorized roster query");
 		const retrieved = await fixture.pool.query(roster.text, roster.params);
 		expect(retrieved.rows).toHaveLength(1);
-		for (const statement of captured.filter((row) =>
-			row.text.includes('from "work_period"'),
-		)) {
+		for (const statement of captured.filter((row) => row.text.includes('from "work_period"'))) {
 			expect(statement.params).toContain(fixture.organizationId);
 			const rows = await fixture.pool.query(statement.text, statement.params);
-			expect(rows.rows.every((row) => row.employee_id === people[0])).toBe(
-				true,
-			);
+			expect(rows.rows.every((row) => row.employee_id === people[0])).toBe(true);
 		}
 		expect(
 			(
@@ -360,14 +326,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 	});
 	it("retains raw chart hours and whole-window protected stored minutes across midnight and travel", async () => {
 		const person = await personWithTerms();
-		await addWork(
-			person.employeeId,
-			"2026-03-02T22:00:00Z",
-			"2026-03-03T02:00:00Z",
-			180,
-			60,
-			-300,
-		);
+		await addWork(person.employeeId, "2026-03-02T22:00:00Z", "2026-03-03T02:00:00Z", 180, 60, -300);
 		const response = await read(range, person.teamId);
 		expect(response.result.teams[0].employees).toEqual([
 			{
@@ -379,15 +338,11 @@ describe("team-performance range evidence on PostgreSQL", () => {
 				percentageOfExpected: 0,
 			},
 		]);
-		await addWork(
-			person.employeeId,
-			"2026-03-04T00:00:00Z",
-			"2026-03-04T00:02:30Z",
-			3,
-		);
-		expect(
-			(await read(range, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({ totalHours: 4.03, variance: 3.05 });
+		await addWork(person.employeeId, "2026-03-04T00:00:00Z", "2026-03-04T00:02:30Z", 3);
+		expect((await read(range, person.teamId)).result.teams[0].employees[0]).toMatchObject({
+			totalHours: 4.03,
+			variance: 3.05,
+		});
 	});
 	it("uses employee local DST boundaries rather than the viewing timezone or captured travel offsets", async () => {
 		const person = await personWithTerms("Europe/Berlin");
@@ -406,9 +361,11 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			endDate: "2026-03-29",
 			timezone: "Europe/Berlin",
 		};
-		expect(
-			(await read(dates, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({ totalHours: 23, expectedHours: 0, variance: 23 });
+		expect((await read(dates, person.teamId)).result.teams[0].employees[0]).toMatchObject({
+			totalHours: 23,
+			expectedHours: 0,
+			variance: 23,
+		});
 	});
 	it("retains confirmed term changes, assigned holiday and half absence requirements without per-person IO", async () => {
 		const person = await personWithTerms("UTC", 2400);
@@ -435,32 +392,22 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			`insert into holiday_assignment (holiday_id,organization_id,assignment_type,employee_id,created_by,updated_at) values ($1,$2,'employee',$3,$4,now())`,
 			[holiday, fixture.organizationId, person.employeeId, fixture.ownerUserId],
 		);
-		await addWork(
-			person.employeeId,
-			"2026-03-02T00:00:00Z",
-			"2026-03-04T00:00:00Z",
-			2880,
-		);
-		expect(
-			(await read(range, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({
+		await addWork(person.employeeId, "2026-03-02T00:00:00Z", "2026-03-04T00:00:00Z", 2880);
+		expect((await read(range, person.teamId)).result.teams[0].employees[0]).toMatchObject({
 			totalHours: 48,
 			expectedHours: 28,
 			variance: 20,
 			percentageOfExpected: 171.43,
 		});
 		await fixture.pool.query(
-			`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-03-04T00:00:00Z',1200,'confirmed',$4,now()),($1,$2,$3,'2026-03-01T00:00:00Z',600,'draft',$4,now())`,
-			[
-				person.employeeId,
-				fixture.organizationId,
-				person.employmentPeriodId,
-				fixture.ownerUserId,
-			],
+			`update employee_employment_history set valid_until='2026-03-04T00:00:00Z', valid_until_date='2026-03-04' where employee_id=$1 and review_state='confirmed' and valid_until is null`,
+			[person.employeeId],
 		);
-		expect(
-			(await read(range, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({
+		await fixture.pool.query(
+			`insert into employee_employment_history (employee_id,organization_id,employment_period_id,valid_from,valid_from_date,weekly_contract_minutes,review_state,created_by,updated_at) values ($1,$2,$3,'2026-03-04T00:00:00Z','2026-03-04',1200,'confirmed',$4,now()),($1,$2,$3,'2026-03-01T00:00:00Z','2026-03-01',600,'draft',$4,now())`,
+			[person.employeeId, fixture.organizationId, person.employmentPeriodId, fixture.ownerUserId],
+		);
+		expect((await read(range, person.teamId)).result.teams[0].employees[0]).toMatchObject({
 			expectedHours: 16,
 			variance: 32,
 			percentageOfExpected: 300,
@@ -481,26 +428,22 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			success: true,
 			data: { organizationTotal: 45, teams: [{ employeeCount: 1 }] },
 		});
-		await fixture.pool.query(
-			`delete from employee_managers where manager_id=$1`,
-			[manager.employeeId],
-		);
+		await fixture.pool.query(`delete from employee_managers where manager_id=$1`, [
+			manager.employeeId,
+		]);
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: true,
 			data: { organizationTotal: 0, teams: [] },
 		});
-		await fixture.pool.query(
-			`update employee set role='employee' where id=$1`,
-			[manager.employeeId],
-		);
+		await fixture.pool.query(`update employee set role='employee' where id=$1`, [
+			manager.employeeId,
+		]);
 		queries.length = 0;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 		});
-		expect(queries.some((text) => text.includes('from "work_period"'))).toBe(
-			false,
-		);
+		expect(queries.some((text) => text.includes('from "work_period"'))).toBe(false);
 		caller.userId = null;
 		expect(await getTeamPerformanceData(range)).toMatchObject({
 			success: false,
@@ -512,19 +455,11 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			`insert into employee_tracking_settings (organization_id,employee_id,tracking_start_date) values ($1,$2,'2026-03-04')`,
 			[fixture.organizationId, person.employeeId],
 		);
-		await fixture.pool.query(
-			`update employee set start_date='2026-03-05T00:00:00Z' where id=$1`,
-			[person.employeeId],
-		);
-		await addWork(
+		await fixture.pool.query(`update employee set start_date='2026-03-05T00:00:00Z' where id=$1`, [
 			person.employeeId,
-			"2026-03-04T00:00:00Z",
-			"2026-03-07T00:00:00Z",
-			4320,
-		);
-		expect(
-			(await read(range, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({
+		]);
+		await addWork(person.employeeId, "2026-03-04T00:00:00Z", "2026-03-07T00:00:00Z", 4320);
+		expect((await read(range, person.teamId)).result.teams[0].employees[0]).toMatchObject({
 			totalHours: 72,
 			expectedHours: 16,
 			variance: 32,
@@ -535,19 +470,11 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			`insert into employee_tracking_settings (organization_id,employee_id,tracking_start_date) values ($1,$2,'2026-03-04')`,
 			[fixture.organizationId, ambiguous.employeeId],
 		);
-		await addWork(
+		await addWork(ambiguous.employeeId, "2026-03-03T22:00:00Z", "2026-03-04T02:00:00Z", 180);
+		await expect(read(range, ambiguous.teamId)).rejects.toThrow("interval reconciliation");
+		await fixture.pool.query("update employee set is_active=false where id=$1", [
 			ambiguous.employeeId,
-			"2026-03-03T22:00:00Z",
-			"2026-03-04T02:00:00Z",
-			180,
-		);
-		await expect(read(range, ambiguous.teamId)).rejects.toThrow(
-			"interval reconciliation",
-		);
-		await fixture.pool.query(
-			"update employee set is_active=false where id=$1",
-			[ambiguous.employeeId],
-		);
+		]);
 	});
 	it("excludes deleted and live periods from chart and variance totals, with exact half-open edges", async () => {
 		const person = await personWithTerms();
@@ -569,9 +496,11 @@ describe("team-performance range evidence on PostgreSQL", () => {
 				[person.employeeId],
 			);
 		});
-		expect(
-			(await read(range, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({ totalHours: 1, expectedHours: 0, variance: 1 });
+		expect((await read(range, person.teamId)).result.teams[0].employees[0]).toMatchObject({
+			totalHours: 1,
+			expectedHours: 0,
+			variance: 1,
+		});
 	});
 	it("keeps legacy raw elapsed work and current team-policy expectations with global holiday exclusions", async () => {
 		const person = await personWithTerms("UTC", 0);
@@ -587,36 +516,41 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			[fixture.organizationId],
 		);
 		try {
-			await addWork(
-				person.employeeId,
-				"2026-03-09T09:00:00Z",
-				"2026-03-09T10:00:00Z",
-				30,
-			);
-			expect(
-				(await read(legacyRange, person.teamId)).result.teams[0].employees[0],
-			).toMatchObject({ totalHours: 1, expectedHours: 40, variance: -39 });
+			await addWork(person.employeeId, "2026-03-09T09:00:00Z", "2026-03-09T10:00:00Z", 30);
+			expect((await read(legacyRange, person.teamId)).result.teams[0].employees[0]).toMatchObject({
+				totalHours: 1,
+				expectedHours: 40,
+				variance: -39,
+			});
 			const policy = randomUUID();
 			await fixture.pool.query(
 				`insert into work_policy (id,organization_id,name,regulation_enabled,schedule_enabled,created_by,updated_at) values ($1,$2,'Two days',false,true,$3,now())`,
 				[policy, fixture.organizationId, fixture.ownerUserId],
 			);
+			const {
+				rows: [twoDayVersion],
+			} = await fixture.pool.query<{ id: string }>(
+				`insert into work_policy_version (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by) values ($1,$2,1,'1970-01-01',true,false,false,true,$3) returning id`,
+				[policy, fixture.organizationId, fixture.ownerUserId],
+			);
 			const schedule = await fixture.pool.query(
-				`insert into work_policy_schedule (policy_id,schedule_type,hours_per_cycle,updated_at) values ($1,'simple',12,now()) returning id`,
-				[policy],
+				`insert into work_policy_schedule (policy_id,policy_version_id,schedule_type,hours_per_cycle,updated_at) values ($1,$2,'simple',12,now()) returning id`,
+				[policy, twoDayVersion.id],
 			);
 			for (const day of ["tuesday", "thursday"])
 				await fixture.pool.query(
-					`insert into work_policy_schedule_day (schedule_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,6,true)`,
-					[schedule.rows[0].id, day],
+					`insert into work_policy_schedule_day (schedule_id,policy_version_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,$3,6,true)`,
+					[schedule.rows[0].id, twoDayVersion.id, day],
 				);
 			await fixture.pool.query(
-				`insert into work_policy_assignment (policy_id,organization_id,assignment_type,team_id,created_by,updated_at) values ($1,$2,'team',$3,$4,now())`,
+				`insert into work_policy_assignment (policy_id,organization_id,assignment_type,team_id,priority,created_by,updated_at) values ($1,$2,'team',$3,1,$4,now())`,
 				[policy, fixture.organizationId, person.teamId, fixture.ownerUserId],
 			);
-			expect(
-				(await read(legacyRange, person.teamId)).result.teams[0].employees[0],
-			).toMatchObject({ totalHours: 1, expectedHours: 12, variance: -11 });
+			expect((await read(legacyRange, person.teamId)).result.teams[0].employees[0]).toMatchObject({
+				totalHours: 1,
+				expectedHours: 12,
+				variance: -11,
+			});
 			const category = randomUUID();
 			await fixture.pool.query(
 				`insert into holiday_category (id,organization_id,type,name,exclude_from_calculations,updated_at) values ($1,$2,'company_holiday','Global only',true,now())`,
@@ -626,9 +560,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 				`insert into holiday (organization_id,category_id,name,start_date,end_date,created_by,updated_at) values ($1,$2,'Unassigned global','2026-03-10T00:00:00Z','2026-03-10T23:59:59.999Z',$3,now())`,
 				[fixture.organizationId, category, fixture.ownerUserId],
 			);
-			expect(
-				(await read(legacyRange, person.teamId)).result.teams[0].employees[0],
-			).toMatchObject({
+			expect((await read(legacyRange, person.teamId)).result.teams[0].employees[0]).toMatchObject({
 				totalHours: 1,
 				expectedHours: 6,
 				variance: -5,
@@ -643,33 +575,26 @@ describe("team-performance range evidence on PostgreSQL", () => {
 	});
 	it("preserves unassigned-team labels and refreshes names and current roster membership", async () => {
 		const person = await personWithTerms();
-		await fixture.pool.query(`update employee set team_id=null where id=$1`, [
-			person.employeeId,
-		]);
-		await fixture.pool.query(`update "user" set name='' where id=$1`, [
-			person.userId,
-		]);
+		await fixture.pool.query(`update employee set team_id=null where id=$1`, [person.employeeId]);
+		await fixture.pool.query(`update "user" set name='' where id=$1`, [person.userId]);
 		let response = await read(range);
 		const noTeam = response.result.teams.find((row) => row.teamId === "");
 		expect(noTeam?.teamName).toBe("No Team");
 		expect(
-			noTeam?.employees.find((row) => row.employeeId === person.employeeId)
-				?.employeeName,
+			noTeam?.employees.find((row) => row.employeeId === person.employeeId)?.employeeName,
 		).toBe("Unknown");
-		await fixture.pool.query(
-			`update "user" set name='Renamed colleague' where id=$1`,
-			[person.userId],
-		);
+		await fixture.pool.query(`update "user" set name='Renamed colleague' where id=$1`, [
+			person.userId,
+		]);
 		response = await read(range);
 		expect(
 			response.result.teams
 				.flatMap((row) => row.employees)
 				.find((row) => row.employeeId === person.employeeId)?.employeeName,
 		).toBe("Renamed colleague");
-		await fixture.pool.query(
-			`update employee set is_active=false where id=$1`,
-			[person.employeeId],
-		);
+		await fixture.pool.query(`update employee set is_active=false where id=$1`, [
+			person.employeeId,
+		]);
 		expect(
 			(await read(range)).result.teams
 				.flatMap((row) => row.employees)
@@ -678,15 +603,11 @@ describe("team-performance range evidence on PostgreSQL", () => {
 	});
 	it("reads transaction-local tracking and confirmed terms through the bound database", async () => {
 		const person = await personWithTerms("UTC", 2400);
-		await addWork(
-			person.employeeId,
-			"2026-03-02T09:00:00Z",
-			"2026-03-02T17:00:00Z",
-			480,
-		);
-		expect(
-			(await read(range, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({ expectedHours: 40, variance: -32 });
+		await addWork(person.employeeId, "2026-03-02T09:00:00Z", "2026-03-02T17:00:00Z", 480);
+		expect((await read(range, person.teamId)).result.teams[0].employees[0]).toMatchObject({
+			expectedHours: 40,
+			variance: -32,
+		});
 		await expect(
 			db.transaction(async (tx) => {
 				const { sql } = await import("drizzle-orm");
@@ -697,15 +618,15 @@ describe("team-performance range evidence on PostgreSQL", () => {
 					sql`update employee_employment_history set weekly_contract_minutes=1200 where employee_id=${person.employeeId} and review_state='confirmed'`,
 				);
 				expect(
-					(await read(range, person.teamId, { role: "admin" }, tx)).result
-						.teams[0].employees[0],
+					(await read(range, person.teamId, { role: "admin" }, tx)).result.teams[0].employees[0],
 				).toMatchObject({ totalHours: 8, expectedHours: 12, variance: -12 });
 				throw new Error("rollback team fixture");
 			}),
 		).rejects.toThrow("rollback team fixture");
-		expect(
-			(await read(range, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({ expectedHours: 40, variance: -32 });
+		expect((await read(range, person.teamId)).result.teams[0].employees[0]).toMatchObject({
+			expectedHours: 40,
+			variance: -32,
+		});
 	});
 	it("does not retrieve unrelated organizations even when their synthetic work dominates the requested range", async () => {
 		const person = await personWithTerms();
@@ -713,12 +634,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 		const outsider = await fixture.seedEmployee({
 			organizationId: otherOrganization,
 		});
-		await addWork(
-			person.employeeId,
-			"2026-03-02T08:00:00Z",
-			"2026-03-02T09:00:00Z",
-			60,
-		);
+		await addWork(person.employeeId, "2026-03-02T08:00:00Z", "2026-03-02T09:00:00Z", 60);
 		await addWork(
 			outsider.employeeId,
 			"2026-03-02T08:00:00Z",
@@ -730,14 +646,10 @@ describe("team-performance range evidence on PostgreSQL", () => {
 		);
 		expect((await read(range, person.teamId)).result.organizationTotal).toBe(1);
 		const captured = [...statements];
-		for (const statement of captured.filter((row) =>
-			row.text.includes('from "work_period"'),
-		)) {
+		for (const statement of captured.filter((row) => row.text.includes('from "work_period"'))) {
 			expect(statement.params).toContain(fixture.organizationId);
 			const rows = await fixture.pool.query(statement.text, statement.params);
-			expect(
-				rows.rows.every((row) => row.employee_id === person.employeeId),
-			).toBe(true);
+			expect(rows.rows.every((row) => row.employee_id === person.employeeId)).toBe(true);
 		}
 	});
 	it("uses serial batches of at most64 employees and shares a one-connection pool with an interactive read", async () => {
@@ -775,13 +687,9 @@ describe("team-performance range evidence on PostgreSQL", () => {
 		expect(annual.evidence.tracking).toBe(2);
 		expect(annual.evidence.periods).toBe(4);
 		expect(annual.evidence.queries).toBe(week.evidence.queries);
-		for (const statement of statements.filter((row) =>
-			row.text.includes('from "work_period"'),
-		)) {
+		for (const statement of statements.filter((row) => row.text.includes('from "work_period"'))) {
 			const admitted = new Set(
-				statement.params
-					.flat()
-					.filter((value) => typeof value === "string" && ids.has(value)),
+				statement.params.flat().filter((value) => typeof value === "string" && ids.has(value)),
 			);
 			expect(admitted.size).toBeGreaterThan(0);
 			expect(admitted.size).toBeLessThanOrEqual(64);
@@ -844,16 +752,17 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			endDate: "2026-11-01",
 			timezone: "America/New_York",
 		};
-		expect(
-			(await read(dates, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({ totalHours: 25, expectedHours: 0, variance: 25 });
+		expect((await read(dates, person.teamId)).result.teams[0].employees[0]).toMatchObject({
+			totalHours: 25,
+			expectedHours: 0,
+			variance: 25,
+		});
 	});
 	it("keeps hourly team requirements on published organization-calendar shifts", async () => {
 		const person = await personWithTerms();
-		await fixture.pool.query(
-			`update employee set contract_type='hourly' where id=$1`,
-			[person.employeeId],
-		);
+		await fixture.pool.query(`update employee set contract_type='hourly' where id=$1`, [
+			person.employeeId,
+		]);
 		await fixture.pool.query(
 			`update employee_employment_history set contract_type='hourly' where employee_id=$1 and review_state='confirmed'`,
 			[person.employeeId],
@@ -872,15 +781,8 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			`insert into shift (organization_id,employee_id,subarea_id,date,start_time,end_time,status,created_by,updated_at) values ($1,$2,$3,'2026-03-02T00:00:00Z','09:00','17:00','published',$4,now()),($1,$2,$3,'2026-03-03T00:00:00Z','09:00','17:00','draft',$4,now()),($1,$2,$3,'2026-03-09T00:00:00Z','09:00','17:00','published',$4,now())`,
 			[fixture.organizationId, person.employeeId, subarea, fixture.ownerUserId],
 		);
-		await addWork(
-			person.employeeId,
-			"2026-03-02T09:00:00Z",
-			"2026-03-02T17:00:00Z",
-			480,
-		);
-		expect(
-			(await read(range, person.teamId)).result.teams[0].employees[0],
-		).toMatchObject({
+		await addWork(person.employeeId, "2026-03-02T09:00:00Z", "2026-03-02T17:00:00Z", 480);
+		expect((await read(range, person.teamId)).result.teams[0].employees[0]).toMatchObject({
 			totalHours: 8,
 			expectedHours: 8,
 			variance: 0,

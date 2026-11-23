@@ -10,6 +10,7 @@ import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useId, useState, useTransition } from "react";
 import { AbsenceSickNotesPanel } from "@/components/absences/sick-notes/absence-sick-notes-panel";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { useOrganization } from "@/components/providers/organization-context-provider";
 import { Badge } from "@/components/ui/badge";
@@ -275,34 +276,29 @@ function SickLeaveRecord(props: SickLeaveOverviewProps) {
 					)}
 				>
 					{(id) => (
-						<Select
-							value={filters.employeeId ?? ALL}
-							onValueChange={(employeeId) => update({ employeeId })}
+						<EmployeeSingleSelect
+							className="space-y-0"
+							aria-labelledby={id}
+							value={filters.employeeId}
+							onChange={(employeeId) => update({ employeeId: employeeId ?? ALL })}
 							disabled={isPending}
-						>
-							<SelectTrigger aria-labelledby={id} className="w-full">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value={ALL}>
-									{t(
-										"settings.personnelFiles.sickLeave.filters.allEmployees",
-										"All employees",
-									)}
-								</SelectItem>
-								{props.employees.map((employee) => (
-									<SelectItem key={employee.id} value={employee.id}>
-										{employee.isActive
-											? employee.name
-											: t(
-													"settings.personnelFiles.sickLeave.filters.formerEmployee",
-													"{name} (former)",
-													{ name: employee.name },
-												)}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+							allowClear
+							clearLabel={t(
+								"settings.personnelFiles.sickLeave.filters.allEmployees",
+								"All employees",
+							)}
+							placeholder={t(
+								"settings.personnelFiles.sickLeave.filters.allEmployees",
+								"All employees",
+							)}
+							employees={props.employees.map((employee) =>
+								toSelectableEmployee({
+									id: employee.id,
+									name: employee.name,
+									isActive: employee.isActive,
+								}),
+							)}
+						/>
 					)}
 				</FilterField>
 				<FilterField

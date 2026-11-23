@@ -12,7 +12,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -102,15 +102,13 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
-const { discardPayrollRunAction } = await import(
-	"@/app/[locale]/(app)/settings/payroll-export/actions"
-);
+const { discardPayrollRunAction } =
+	await import("@/app/[locale]/(app)/settings/payroll-export/actions");
 const { DEFAULT_FINANCE_QUEUE_VIEW } = await import("@/lib/travel-expenses/finance-queue-params");
 const { createExportJob, processExportJob } = await import("@/lib/payroll-export/export-service");
 const { sendEmail } = await import("@/lib/email/email-service");
-const { POST: processReceipt } = await import(
-	"@/app/api/upload/travel-expense/report-receipt/route"
-);
+const { POST: processReceipt } =
+	await import("@/app/api/upload/travel-expense/report-receipt/route");
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
@@ -370,8 +368,8 @@ async function exportPayroll(formatId: "datev_lohn" | "lexware_lohn", period: Pe
 		requestedById: ids.finance,
 		filters: {
 			dateRange: {
-				start: DateTime.fromISO(period.start, { zone: "utc" }),
-				end: DateTime.fromISO(period.end, { zone: "utc" }),
+				start: parsePlainDate(period.start),
+				end: parsePlainDate(period.end),
 			},
 		},
 	});

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
 ARG PNPM_VERSION=12.21.0
-ARG TURBO_VERSION=2.11.7
+ARG TURBO_VERSION=2.11.12
 
 FROM node:${NODE_VERSION}-alpine AS base
 
@@ -17,6 +17,7 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
+    TURBO_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
@@ -47,12 +48,9 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --lockfile-only && \
     pnpm install --frozen-lockfile
 
-FROM base AS docs-workspace
+FROM docs-deps AS docs-workspace
 ENV SKIP_ENV_VALIDATION=1
-COPY --from=docs-deps /app/node_modules ./node_modules
-COPY --from=docs-deps /app/apps/docs/node_modules ./apps/docs/node_modules
 COPY --from=docs-pruner /app/out/full/ ./
-COPY --from=docs-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 # The API reference renders the webapp's committed spec, which `turbo prune docs` leaves out.
 COPY apps/webapp/openapi/public-api-v1.json ./apps/webapp/openapi/
 

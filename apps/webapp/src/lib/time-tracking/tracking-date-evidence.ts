@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
+import { loadContractTrackingReviewEvidence } from "@/lib/contracts/evidence-queries";
 import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 
 /** Stable serialization for reviewed source evidence, never returned to the browser. */
@@ -49,8 +50,6 @@ export async function loadTrackingReviewEvidence(
 		"work_period",
 		"time_entry",
 		"balance_adjustment",
-		"work_policy",
-		"work_policy_assignment",
 		"holiday",
 		"holiday_category",
 		"holiday_assignment",
@@ -81,14 +80,7 @@ export async function loadTrackingReviewEvidence(
 		"user_settings",
 		sql`select jsonb_build_object('user_id',t.user_id,'timezone',t.timezone) as data from user_settings t where t.user_id in (select user_id from employee where organization_id = ${organizationId}) ${guard}`,
 	);
-	await read(
-		"work_policy_schedule",
-		sql`select to_jsonb(t) as data from work_policy_schedule t where t.policy_id in (select id from work_policy where organization_id = ${organizationId}) ${guard}`,
-	);
-	await read(
-		"work_policy_schedule_day",
-		sql`select to_jsonb(t) as data from work_policy_schedule_day t where t.schedule_id in (select s.id from work_policy_schedule s join work_policy p on p.id = s.policy_id where p.organization_id = ${organizationId}) ${guard}`,
-	);
+	await loadContractTrackingReviewEvidence(client, organizationId, lock, read);
 	await read(
 		"holiday_preset",
 		sql`select to_jsonb(t) as data from holiday_preset t where t.id in (select preset_id from holiday_preset_assignment where organization_id = ${organizationId}) ${guard}`,

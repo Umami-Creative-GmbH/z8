@@ -98,8 +98,8 @@ describe("employment periods", () => {
 		const result = await fixture.pool.query<{ id: string }>(
 			`insert into work_policy_assignment
 			 (policy_id, organization_id, assignment_type, employee_id, priority, effective_from,
-			  effective_until, is_active, created_by, updated_at)
-			 values ($1, $2, 'employee', $3, 2, $4, $5, true, $6, now()) returning id`,
+			  effective_until, effective_from_date, effective_until_date, is_active, created_by, updated_at)
+			 values ($1, $2, 'employee', $3, 2, $4, $5, $4::timestamp::date, $5::timestamp::date, true, $6, now()) returning id`,
 			[
 				input.policyId,
 				fixture.organizationId,
@@ -121,8 +121,8 @@ describe("employment periods", () => {
 		const result = await fixture.pool.query<{ id: string }>(
 			`insert into employee_employment_history
 			 (employee_id, organization_id, employment_period_id, valid_from, valid_until,
-			  weekly_contract_minutes, review_state, created_by, updated_at)
-			 values ($1, $2, $3, $4, $5, 2400, 'confirmed', $6, now()) returning id`,
+			  valid_from_date, valid_until_date, weekly_contract_minutes, review_state, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, $4::timestamp::date, $5::timestamp::date, 2400, 'confirmed', $6, now()) returning id`,
 			[
 				input.employeeId,
 				fixture.organizationId,
@@ -166,6 +166,7 @@ describe("employment periods", () => {
 			...scope,
 			policyId,
 			from: "2026-06-01",
+			until: "2026-12-01",
 		});
 		const futureAssignment = await insertAssignment({
 			...scope,
@@ -365,19 +366,12 @@ describe("employment periods", () => {
 		});
 		expect(
 			await row(
-				`select effective_from, effective_until from work_policy_assignment
-				 where employee_id = $1 and is_active = true and policy_id = $2`,
-				[target.employeeId, policyId],
+				`select count(*)::int as count from work_policy_assignment
+				 where employee_id = $1 and organization_id = $2 and assignment_type = 'employee' and is_active = true`,
+				[target.employeeId, fixture.organizationId],
 			),
-		).toEqual({ effective_from: rehireDay, effective_until: null });
-		expect(
-      await row(
-        `select count(*)::int as count from work_policy_assignment
-         where employee_id = $1 and organization_id = $2 and assignment_type = 'employee' and is_active = true`,
-        [target.employeeId, fixture.organizationId],
-      ),
-    ).toEqual({ count: 1 });
-    expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+		).toEqual({ count: 0 });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
 			is_active: true,
 		});
 		expect(

@@ -17,7 +17,7 @@ import { Temporal } from "temporal-polyfill";
 import {
 	exportAuditLogsAction,
 	getAuditLogsAction,
-} from "@/app/[locale]/(app)/settings/audit-log/actions";
+} from "@/app/[locale]/(app)/settings/audit-export/audit-log-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,

@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
 import { loadShellTranslations } from "@/tolgee/load-translations";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query/provider";
@@ -23,9 +23,12 @@ type Props = {
 	params: Promise<{ locale: string }>;
 };
 
-// Generate static params for all locales to enable static generation
+// Prerender only the default locale at build time. With Cache Components enabled,
+// this validates every route and emits the /[locale] fallback shell while other
+// locales render on demand and cache via "use cache" instead of prerendering
+// 18x every route (3,382+ pages) during every Docker build.
 export async function generateStaticParams() {
-	return ALL_LANGUAGES.map((locale) => ({ locale }));
+	return [{ locale: DEFAULT_LANGUAGE }];
 }
 
 // Separate component for loading translations to wrap in Suspense

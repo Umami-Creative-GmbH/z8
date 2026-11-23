@@ -49,9 +49,8 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 const actions = await import("@/app/[locale]/(app)/settings/organization/tracking-date-actions");
 const monthActions = await import("@/app/[locale]/(app)/settings/closed-months/actions");
-const adjustmentActions = await import(
-	"@/app/[locale]/(app)/settings/employees/work-balance-actions"
-);
+const adjustmentActions =
+	await import("@/app/[locale]/(app)/settings/employees/work-balance-actions");
 const balances = await import("@/lib/work-balance/service");
 const { loadOrganizationTrackingSettings } = await import("@/lib/organization/tracking-settings");
 const { loadVacationBalances } = await import("@/lib/absences/vacation-balance-store");
@@ -78,14 +77,20 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 			`insert into work_policy (id,organization_id,name,schedule_enabled,regulation_enabled,created_by,updated_at) values ($1,$2,'Monday hour',true,false,$3,now())`,
 			[policy, fixture.organizationId, fixture.ownerUserId],
 		);
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by) values ($1,$2,1,'1970-01-01',true,false,false,true,$3) returning id`,
+			[policy, fixture.organizationId, fixture.ownerUserId],
+		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule (id,policy_id,schedule_cycle,schedule_type,working_days_preset,updated_at) values ($1,$2,'weekly','detailed','custom',now())`,
-			[schedule, policy],
+			`insert into work_policy_schedule (id,policy_id,policy_version_id,schedule_cycle,schedule_type,working_days_preset,updated_at) values ($1,$2,$3,'weekly','detailed','custom',now())`,
+			[schedule, policy, policyVersion.id],
 		);
 		// One working day a week converts the 30-day allowance to 6 (Absences ADR 0003).
 		await fixture.pool.query(
-			`insert into work_policy_schedule_day (schedule_id,day_of_week,hours_per_day,is_work_day) values ($1,'monday','1.00',true)`,
-			[schedule],
+			`insert into work_policy_schedule_day (schedule_id,policy_version_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,'monday','1.00',true)`,
+			[schedule, policyVersion.id],
 		);
 		await fixture.pool.query(
 			`insert into work_policy_assignment (policy_id,organization_id,assignment_type,employee_id,priority,created_by,updated_at) values ($1,$2,'employee',$3,2,$4,now())`,
@@ -125,20 +130,20 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 	}
 	async function seedWork(start: string, end: string, minutes: number) {
 		await withCanonicalRecords(fixture.pool, async (client) => {
-		const clockIn = randomUUID(),
-			clockOut = randomUUID();
-		for (const [id, type, timestamp] of [
-			[clockIn, "clock_in", start],
-			[clockOut, "clock_out", end],
-		])
+			const clockIn = randomUUID(),
+				clockOut = randomUUID();
+			for (const [id, type, timestamp] of [
+				[clockIn, "clock_in", start],
+				[clockOut, "clock_out", end],
+			])
+				await client.query(
+					`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1,$2,$3,$4,$5,120,'Europe/Berlin','user_setting',$7,$6)`,
+					[id, employeeId, fixture.organizationId, type, timestamp, fixture.ownerUserId, id],
+				);
 			await client.query(
-				`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1,$2,$3,$4,$5,120,'Europe/Berlin','user_setting',$7,$6)`,
-				[id, employeeId, fixture.organizationId, type, timestamp, fixture.ownerUserId, id],
+				`insert into work_period (employee_id,organization_id,clock_in_id,clock_out_id,start_time,end_time,duration_minutes,is_active,updated_at) values ($1,$2,$3,$4,$5,$6,$7,false,now())`,
+				[employeeId, fixture.organizationId, clockIn, clockOut, start, end, minutes],
 			);
-		await client.query(
-			`insert into work_period (employee_id,organization_id,clock_in_id,clock_out_id,start_time,end_time,duration_minutes,is_active,updated_at) values ($1,$2,$3,$4,$5,$6,$7,false,now())`,
-			[employeeId, fixture.organizationId, clockIn, clockOut, start, end, minutes],
-		);
 		});
 	}
 	it("keeps legacy behavior during preview, then activates reviewed dates and refreshes public balances", async () => {
@@ -216,7 +221,10 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 		await fixture.pool.query(`update employee set start_date='2026-01-02T00:00:00Z' where id=$1`, [
 			employeeId,
 		]);
-		expect(await commitPreview(preview)).toMatchObject({ success: false, refusal: "stale_preview" });
+		expect(await commitPreview(preview)).toMatchObject({
+			success: false,
+			refusal: "stale_preview",
+		});
 		expect(await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId)).toEqual({
 			active: false,
 			trackingStartDate: null,
@@ -226,7 +234,10 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 	it("refuses changed work evidence and keeps history and legacy calculation intact", async () => {
 		const preview = await previewDate();
 		await seedWork("2026-05-20T20:00:00Z", "2026-05-20T21:00:00Z", 60);
-		expect(await commitPreview(preview)).toMatchObject({ success: false, refusal: "stale_preview" });
+		expect(await commitPreview(preview)).toMatchObject({
+			success: false,
+			refusal: "stale_preview",
+		});
 		expect(await currentBalance()).toBe(-1200);
 		expect(
 			await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId),
@@ -269,7 +280,10 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 			negative: false,
 			reason: "Prior system",
 		});
-		expect(await commitPreview(preview)).toMatchObject({ success: false, refusal: "stale_preview" });
+		expect(await commitPreview(preview)).toMatchObject({
+			success: false,
+			refusal: "stale_preview",
+		});
 		expect(await currentBalance()).toBe(60);
 		expect(
 			await loadOrganizationTrackingSettings(fixture.db, fixture.organizationId),
@@ -333,7 +347,10 @@ describe("reviewed tracking-date activation through public admin actions", () =>
 		harness.userId = admin.userId;
 		const preview = await previewDate();
 		await fixture.pool.query(`update member set role='member' where id=$1`, [admin.memberId]);
-		expect(await commitPreview(preview)).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(await commitPreview(preview)).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
 		harness.userId = fixture.ownerUserId;
 		const ownerPreview = await previewDate();
 		harness.organizationId = await fixture.createOrganization();

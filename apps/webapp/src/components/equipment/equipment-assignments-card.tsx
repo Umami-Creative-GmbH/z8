@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { type ReactNode, useId, useState } from "react";
 import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
+import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
 import { ShowFormerEmployeesSwitch } from "@/components/former-employees/former-employee-ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -16,7 +17,6 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
 	Select,
 	SelectContent,
@@ -114,12 +114,14 @@ function FilterBar({
 	const { t } = useTranslate();
 	const searchId = useId();
 	const typeId = useId();
-	const holderOptions = data.employees.map((employee) => ({
-		code: employee.id,
-		name: employee.former
-			? `${employee.name} · ${t("common:formerEmployees.former", "Former")}`
-			: employee.name,
-	}));
+	const holderEmployees = data.employees.map((employee) =>
+		toSelectableEmployee({
+			id: employee.id,
+			name: employee.name,
+			isActive: !employee.former,
+			isFormer: employee.former,
+		}),
+	);
 	const allHolders = t("settings.equipment.list.allHolders", "All holders");
 	const typeItems = [
 		{
@@ -159,25 +161,25 @@ function FilterBar({
 							/>
 						</div>
 						{showHolder ? (
-							<SearchableSelect
-								className="w-full sm:w-48"
+							<EmployeeSingleSelect
+								className="w-full sm:w-48 space-y-0"
 								aria-label={t("settings.equipment.filters.holder", "Holder")}
-								options={holderOptions}
-								value={filters.holderId ?? ""}
-								onValueChange={(value) =>
-									onFiltersChange({ ...filters, holderId: value || null })
+								employees={holderEmployees}
+								value={filters.holderId}
+								onChange={(value) =>
+									onFiltersChange({ ...filters, holderId: value })
 								}
 								placeholder={allHolders}
 								searchPlaceholder={t(
 									"settings.equipment.list.searchHolders",
 									"Search holders…",
 								)}
-								emptyText={t(
+								emptyMessage={t(
 									"settings.equipment.list.noHolder",
 									"No holder found.",
 								)}
-								allowEmpty
-								emptyLabel={allHolders}
+								allowClear
+								clearLabel={allHolders}
 							/>
 						) : null}
 						{data.types.length ? (

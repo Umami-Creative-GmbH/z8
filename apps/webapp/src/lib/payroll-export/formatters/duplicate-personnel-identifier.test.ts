@@ -6,8 +6,8 @@
  * numbers that differ only in leading zeros as two employees.
  */
 
-import { DateTime } from "luxon";
 import { describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { IPayrollExportFormatter, WorkPeriodData } from "../types";
 import { DatevLohnFormatter } from "./datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./lexware-lohn-formatter";
@@ -24,8 +24,8 @@ function shift(employeeId: string, employeeNumber: string | null): WorkPeriodDat
 		employeeNumber,
 		firstName: null,
 		lastName: null,
-		startTime: DateTime.fromISO("2026-09-10T08:00:00Z", { zone: "utc" }),
-		endTime: DateTime.fromISO("2026-09-10T16:00:00Z", { zone: "utc" }),
+		startTime: parseInstant("2026-09-10T08:00:00Z").toZonedDateTimeISO("UTC"),
+		endTime: parseInstant("2026-09-10T16:00:00Z").toZonedDateTimeISO("UTC"),
 		durationMinutes: 480,
 		workCategoryId: null,
 		workCategoryName: null,

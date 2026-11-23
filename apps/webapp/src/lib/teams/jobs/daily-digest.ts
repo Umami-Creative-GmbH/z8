@@ -5,9 +5,8 @@
  * Runs every 15 minutes to check for digests due to be sent.
  */
 
-import { gt, and, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -20,22 +19,28 @@ import {
 	locationSubarea,
 	shift,
 	workPeriod,
-	workPolicyAssignment,
 } from "@/db/schema";
 import { env } from "@/env";
 import {
 	currentRosterDigestManager,
 	currentRosterReportIds,
 } from "@/lib/bot-platform/current-roster-team";
-import { fmtTime, fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
+import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
+	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	parsePlainDate,
 	plainDateAt,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import {
+	formatInstant,
+	formatPlainDate,
+	localeDefaultTimeFormat,
+} from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -52,41 +57,14 @@ const deputyUser = alias(user, "deputy_user");
 
 const logger = createLogger("TeamsDailyDigest");
 
-const WEEKDAY_BY_NUMBER: Record<number, string> = {
-	1: "monday",
-	2: "tuesday",
-	3: "wednesday",
-	4: "thursday",
-	5: "friday",
-	6: "saturday",
-	7: "sunday",
-};
-
-const PRESET_WORK_DAYS: Record<string, readonly string[]> = {
-	weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
-	weekends: ["saturday", "sunday"],
-	all_days: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
-};
-
-const policyWithConfig = {
-	policy: {
-		with: {
-			schedule: {
-				with: { days: true },
-			},
-		},
-	},
-} as const;
-
 /** Returns whether a manager should not receive a digest on their local day. */
 export async function shouldSkipDigestForManager(
 	employeeId: string,
 	organizationId: string,
 	timezone: string,
 ): Promise<boolean> {
-	const now = DateTime.utc().setZone(timezone);
-	const todayStr = now.toISODate();
-	if (!todayStr) return false;
+	const now = systemClock.nowInstant().toZonedDateTimeISO(timezone);
+	const todayStr = now.toPlainDate().toString();
 
 	const absence = await db.query.absenceEntry.findFirst({
 		where: and(
@@ -104,83 +82,24 @@ export async function shouldSkipDigestForManager(
 		return true;
 	}
 
-	const nowDate = new Date();
-	const dateConditions = and(
-		eq(workPolicyAssignment.isActive, true),
-		or(
-			isNull(workPolicyAssignment.effectiveFrom),
-			lte(workPolicyAssignment.effectiveFrom, nowDate),
-		),
-		or(
-			isNull(workPolicyAssignment.effectiveUntil),
-			gt(workPolicyAssignment.effectiveUntil, nowDate),
-		),
-	);
-	const [emp, employeeAssignment] = await Promise.all([
-		db.query.employee.findFirst({
-			where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-			columns: { teamId: true },
-		}),
-		db.query.workPolicyAssignment.findFirst({
-			where: and(
-				eq(workPolicyAssignment.organizationId, organizationId),
-				eq(workPolicyAssignment.employeeId, employeeId),
-				eq(workPolicyAssignment.assignmentType, "employee"),
-				dateConditions,
-			),
-			with: policyWithConfig,
-		}),
-	]);
+	const contract = await resolveEffectiveContractOnDay(db, {
+		organizationId,
+		employeeId,
+		date: todayStr,
+		timezoneOverride: timezone,
+	});
+	if (!contract) return false;
 
-	type ScheduleInfo = {
-		scheduleType: string;
-		workingDaysPreset: string;
-		days: Array<{ dayOfWeek: string; isWorkDay: boolean }>;
-	};
-	let scheduleInfo: ScheduleInfo | null = null;
+	const hasEffectiveSchedule =
+		contract.scheduleSource === "policy" &&
+		(contract.scheduleMode === "custom_days" ||
+			contract.scheduleMode === "hours_only" ||
+			Boolean(contract.workPolicy?.scheduleEnabled && contract.workPolicy.schedule));
+	if (!hasEffectiveSchedule) return false;
 
-	if (employeeAssignment?.policy?.isActive && employeeAssignment.policy.scheduleEnabled) {
-		scheduleInfo = employeeAssignment.policy.schedule as ScheduleInfo | null;
-	} else if (emp?.teamId) {
-		const teamAssignment = await db.query.workPolicyAssignment.findFirst({
-			where: and(
-				eq(workPolicyAssignment.organizationId, organizationId),
-				eq(workPolicyAssignment.teamId, emp.teamId),
-				eq(workPolicyAssignment.assignmentType, "team"),
-				dateConditions,
-			),
-			with: policyWithConfig,
-		});
-		if (teamAssignment?.policy?.isActive && teamAssignment.policy.scheduleEnabled) {
-			scheduleInfo = teamAssignment.policy.schedule as ScheduleInfo | null;
-		}
-	}
-
-	if (!scheduleInfo) {
-		const orgAssignment = await db.query.workPolicyAssignment.findFirst({
-			where: and(
-				eq(workPolicyAssignment.organizationId, organizationId),
-				eq(workPolicyAssignment.assignmentType, "organization"),
-				dateConditions,
-			),
-			with: policyWithConfig,
-		});
-		if (orgAssignment?.policy?.isActive && orgAssignment.policy.scheduleEnabled) {
-			scheduleInfo = orgAssignment.policy.schedule as ScheduleInfo | null;
-		}
-	}
-
-	if (!scheduleInfo) return false;
-
-	const todayDayName = WEEKDAY_BY_NUMBER[now.weekday];
-	const isTodayWorkDay =
-		scheduleInfo.scheduleType === "detailed" || scheduleInfo.workingDaysPreset === "custom"
-			? (scheduleInfo.days.find((day) => day.dayOfWeek === todayDayName)?.isWorkDay ?? false)
-			: (PRESET_WORK_DAYS[scheduleInfo.workingDaysPreset] ?? []).includes(todayDayName ?? "");
-
-	if (!isTodayWorkDay) {
+	if (!contract.isWorkDay) {
 		logger.debug(
-			{ employeeId, todayStr, todayDayName },
+			{ employeeId, todayStr, todayDayName: contract.dayOfWeek },
 			"Skipping digest: today is not a work day for manager",
 		);
 		return true;
@@ -262,16 +181,19 @@ type DigestTenant = {
 
 async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 	// Check if it's time to send the digest
-	const now = DateTime.now().setZone(tenant.digestTimezone);
+	const now = systemClock.nowInstant().toZonedDateTimeISO(tenant.digestTimezone);
 	const [digestHour, digestMinute] = tenant.digestTime.split(":").map(Number);
 
 	// Only send if within the 15-minute window of the digest time
-	const digestTime = now.set({
+	const digestTime = now.with({
 		hour: digestHour,
 		minute: digestMinute,
 		second: 0,
+		millisecond: 0,
+		microsecond: 0,
+		nanosecond: 0,
 	});
-	const minutesSinceDigestTime = now.diff(digestTime, "minutes").minutes;
+	const minutesSinceDigestTime = (now.epochMilliseconds - digestTime.epochMilliseconds) / 60_000;
 
 	// Send if we're within 0-15 minutes after the digest time
 	if (minutesSinceDigestTime < 0 || minutesSinceDigestTime >= 15) {
@@ -279,7 +201,7 @@ async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 			{
 				tenantId: tenant.tenantId,
 				digestTime: tenant.digestTime,
-				currentTime: now.toISO(),
+				currentTime: now.toString(),
 			},
 			"Not digest time for tenant",
 		);
@@ -372,7 +294,6 @@ export async function buildDigestDataForManager(
 	locale: string = DEFAULT_LANGUAGE,
 	nowInstant: Instant = systemClock.nowInstant(),
 ): Promise<DailyDigestData> {
-	const now = DateTime.fromMillis(nowInstant.epochMilliseconds, { zone: timezone });
 	const today = plainDateAt(nowInstant, timezone);
 	const todayStr = today.toString();
 	// `shift.date` is keyed in the organization's zone: read the shifts of today's calendar date.
@@ -537,19 +458,27 @@ export async function buildDigestDataForManager(
 		employeesOut = absences.map((a) => ({
 			name: a.employeeName || "Unknown",
 			category: a.categoryName || "Leave",
-			returnDate: fmtWeekdayShortDate(DateTime.fromISO(a.endDate).plus({ days: 1 }), locale),
+			returnDate: formatPlainDate(
+				parsePlainDate(a.endDate).add({ days: 1 }),
+				locale,
+				"weekdayMonthDay",
+			),
 			deputyName: a.deputyName,
 		}));
 
 		activeWorkPeriods = activeWorkPeriodsResult;
+		const timeFormat = localeDefaultTimeFormat(locale);
 		employeesClockedIn = activeWorkPeriods.map((e) => {
-			const clockInTime = DateTime.fromJSDate(e.startTime).setZone(timezone);
-			const duration = now.diff(clockInTime, ["hours", "minutes"]);
+			const clockInInstant = instantFromDate(e.startTime);
+			const totalMinutes = Math.max(
+				0,
+				Math.floor((nowInstant.epochMilliseconds - clockInInstant.epochMilliseconds) / 60_000),
+			);
 
 			return {
 				name: e.employeeName || "Unknown",
-				clockedInAt: fmtTime(clockInTime, locale),
-				durationSoFar: `${Math.floor(duration.hours)}h ${Math.floor(duration.minutes % 60)}m`,
+				clockedInAt: formatInstant(clockInInstant, { locale, timezone, timeFormat }, "time"),
+				durationSoFar: `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
 			};
 		});
 
@@ -644,7 +573,7 @@ export async function buildDigestDataForManager(
 	}
 
 	return {
-		date: now.toJSDate(),
+		date: dateFromInstant(nowInstant),
 		timezone,
 		pendingApprovals: pendingApprovals.length,
 		employeesOut,

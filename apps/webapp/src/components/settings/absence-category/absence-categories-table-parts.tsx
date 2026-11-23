@@ -3,7 +3,6 @@
 import {
 	IconCheck,
 	IconDots,
-	IconLoader2,
 	IconPencil,
 	IconPlus,
 	IconRefresh,
@@ -195,30 +194,15 @@ export function AbsenceCategoriesErrorState({ onRetry, t }: { onRetry: () => voi
 
 export function AbsenceCategoriesToolbarActions({
 	canManageCategories,
-	isFetching,
 	onCreate,
-	onRefresh,
 	t,
 }: {
 	canManageCategories: boolean;
-	isFetching: boolean;
 	onCreate: () => void;
-	onRefresh: () => void;
 	t: Translate;
 }) {
-	return (
-		<div className="flex items-center gap-2">
-			<Button variant="ghost" size="icon" onClick={onRefresh} disabled={isFetching}>
-				{isFetching ? (
-					<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-				) : (
-					<IconRefresh aria-hidden="true" className="size-4" />
-				)}
-				<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-			</Button>
-			{canManageCategories ? <AddAbsenceCategoryButton onClick={onCreate} t={t} /> : null}
-		</div>
-	);
+	if (!canManageCategories) return null;
+	return <AddAbsenceCategoryButton onClick={onCreate} t={t} />;
 }
 
 export function DeleteAbsenceCategoryDialog({

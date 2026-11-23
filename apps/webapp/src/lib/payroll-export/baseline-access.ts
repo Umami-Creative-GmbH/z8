@@ -17,7 +17,11 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
-import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
+import { isOrgAdminForOrganization } from "@/lib/payroll-access/org-admin";
+import {
+	resolveOrganizationPayrollEmployeeIds,
+	resolvePayrollAccessibleEmployeeIds,
+} from "@/lib/payroll-access/permissions";
 import { payrollBaselineDetail } from "./baseline-evidence";
 import type {
 	PayrollBaselineDetail,
@@ -41,30 +45,39 @@ export async function requireBaselineActor(
 	if (!auth)
 		throw new AuthenticationError({ message: "Authentication required" });
 	const organizationId = auth.session.activeOrganizationId;
-	if (
-		!organizationId ||
-		!auth.employee ||
-		auth.employee.organizationId !== organizationId
-	)
+	if (!organizationId) throw denied(auth.user.id);
+	if (await isOrgAdminForOrganization(organizationId)) {
+		const activeScope = await resolveOrganizationPayrollEmployeeIds(
+			organizationId,
+			database,
+		);
+		return {
+			organizationId,
+			userId: auth.user.id,
+			all: true,
+			orgAdmin: true,
+			activeScope,
+		};
+	}
+	if (!auth.employee || auth.employee.organizationId !== organizationId)
 		throw denied(auth.user.id);
-	const [actor, grant] = await Promise.all([
-		database.query.employee.findFirst({
-			where: and(
-				eq(employee.id, auth.employee.id),
-				eq(employee.organizationId, organizationId),
-				eq(employee.userId, auth.user.id),
-				eq(employee.isActive, true),
-			),
-			columns: { id: true },
-		}),
-		database.query.payrollAccessGrant.findFirst({
-			where: and(
-				eq(payrollAccessGrant.organizationId, organizationId),
-				eq(payrollAccessGrant.payrollEmployeeId, auth.employee.id),
-				eq(payrollAccessGrant.isActive, true),
-			),
-		}),
-	]);
+	// One after another: `database` may be a transaction, one connection, and pg@9 refuses a query while another is executing.
+	const actor = await database.query.employee.findFirst({
+		where: and(
+			eq(employee.id, auth.employee.id),
+			eq(employee.organizationId, organizationId),
+			eq(employee.userId, auth.user.id),
+			eq(employee.isActive, true),
+		),
+		columns: { id: true },
+	});
+	const grant = await database.query.payrollAccessGrant.findFirst({
+		where: and(
+			eq(payrollAccessGrant.organizationId, organizationId),
+			eq(payrollAccessGrant.payrollEmployeeId, auth.employee.id),
+			eq(payrollAccessGrant.isActive, true),
+		),
+	});
 	if (!actor || !grant) throw denied(auth.user.id);
 	const activeScope = await resolvePayrollAccessibleEmployeeIds(
 		{
@@ -77,6 +90,7 @@ export async function requireBaselineActor(
 		organizationId,
 		userId: auth.user.id,
 		all: grant.scope === "all",
+		orgAdmin: false,
 		activeScope,
 	};
 }

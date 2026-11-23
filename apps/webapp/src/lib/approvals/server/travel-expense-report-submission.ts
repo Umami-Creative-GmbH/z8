@@ -141,61 +141,59 @@ async function loadRoutingDirectory(
 	tx: ApprovalDbService["db"],
 	input: { organizationId: string; requesterEmployeeId: string; requesterUserId: string },
 ) {
-	const [employees, managerLinks, memberships, teams, settings, requesterMembership] =
-		await Promise.all([
-			tx
-				.select({
-					id: employee.id,
-					organizationId: employee.organizationId,
-					isActive: employee.isActive,
-					role: employee.role,
-					teamId: employee.teamId,
-				})
-				.from(employee)
-				.where(eq(employee.organizationId, input.organizationId)),
-			tx
-				.select({
-					employeeId: employeeManagers.employeeId,
-					managerId: employeeManagers.managerId,
-					isPrimary: employeeManagers.isPrimary,
-				})
-				.from(employeeManagers)
-				.where(eq(employeeManagers.employeeId, input.requesterEmployeeId)),
-			tx
-				.select({ employeeId: teamMembership.employeeId, teamId: teamMembership.teamId })
-				.from(teamMembership)
-				.where(
-					and(
-						eq(teamMembership.organizationId, input.organizationId),
-						eq(teamMembership.employeeId, input.requesterEmployeeId),
-					),
-				),
-			tx
-				.select({
-					id: team.id,
-					organizationId: team.organizationId,
-					primaryManagerId: team.primaryManagerId,
-				})
-				.from(team)
-				.where(eq(team.organizationId, input.organizationId)),
-			tx
-				.select({ expenseApproverEmployeeId: travelExpenseSettings.expenseApproverEmployeeId })
-				.from(travelExpenseSettings)
-				.where(eq(travelExpenseSettings.organizationId, input.organizationId))
-				.limit(1),
-			// The owner's self-approval (#679) reads the membership in this transaction.
-			tx
-				.select({ role: member.role })
-				.from(member)
-				.where(
-					and(
-						eq(member.organizationId, input.organizationId),
-						eq(member.userId, input.requesterUserId),
-						eq(member.status, "approved"),
-					),
-				)
-				.limit(1),
-		]);
+	// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+	const employees = await tx
+		.select({
+			id: employee.id,
+			organizationId: employee.organizationId,
+			isActive: employee.isActive,
+			role: employee.role,
+			teamId: employee.teamId,
+		})
+		.from(employee)
+		.where(eq(employee.organizationId, input.organizationId));
+	const managerLinks = await tx
+		.select({
+			employeeId: employeeManagers.employeeId,
+			managerId: employeeManagers.managerId,
+			isPrimary: employeeManagers.isPrimary,
+		})
+		.from(employeeManagers)
+		.where(eq(employeeManagers.employeeId, input.requesterEmployeeId));
+	const memberships = await tx
+		.select({ employeeId: teamMembership.employeeId, teamId: teamMembership.teamId })
+		.from(teamMembership)
+		.where(
+			and(
+				eq(teamMembership.organizationId, input.organizationId),
+				eq(teamMembership.employeeId, input.requesterEmployeeId),
+			),
+		);
+	const teams = await tx
+		.select({
+			id: team.id,
+			organizationId: team.organizationId,
+			primaryManagerId: team.primaryManagerId,
+		})
+		.from(team)
+		.where(eq(team.organizationId, input.organizationId));
+	const settings = await tx
+		.select({ expenseApproverEmployeeId: travelExpenseSettings.expenseApproverEmployeeId })
+		.from(travelExpenseSettings)
+		.where(eq(travelExpenseSettings.organizationId, input.organizationId))
+		.limit(1);
+	// The owner's self-approval (#679) reads the membership in this transaction.
+	const requesterMembership = await tx
+		.select({ role: member.role })
+		.from(member)
+		.where(
+			and(
+				eq(member.organizationId, input.organizationId),
+				eq(member.userId, input.requesterUserId),
+				eq(member.status, "approved"),
+			),
+		)
+		.limit(1);
 	return {
 		employees,
 		managerLinks,
@@ -538,10 +536,13 @@ export async function submitTravelExpenseReport(
 				const blockers = ownerSelfApprovalBlockers(facts.items);
 				if (blockers.length > 0) refuse({ kind: "self_approval_blocked", blockers });
 			}
-			const [subject, submitter] = await Promise.all([
-				loadEmployeeLabel(tx, owner.organizationId, { employeeId: owner.employeeId }),
-				loadEmployeeLabel(tx, owner.organizationId, { userId: owner.userId }),
-			]);
+			// One after another: `tx` is one connection, and pg@9 refuses a query while another is executing.
+			const subject = await loadEmployeeLabel(tx, owner.organizationId, {
+				employeeId: owner.employeeId,
+			});
+			const submitter = await loadEmployeeLabel(tx, owner.organizationId, {
+				userId: owner.userId,
+			});
 			if (!subject || submitter?.employeeId !== owner.employeeId) {
 				throw new Error("The submitting employee could not be identified");
 			}

@@ -4,6 +4,7 @@ version = "0.2.0"
 description = "Z8 Desktop Timer - Time tracking companion app"
 authors = ["Z8"]
 edition = "2021"
+rust-version = "1.95"
 
 [lib]
 name = "z8_timer_lib"
@@ -28,25 +29,25 @@ tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full", "sync"] }
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
-rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+reqwest = { version = "0.13", features = ["json", "rustls"], default-features = false }
+rusqlite = { version = "0.43", features = ["bundled", "backup"] }
 rdev = "0.5"
 chrono = { version = "0.4", features = ["serde"] }
 log = "0.4"
 env_logger = "0.11"
 anyhow = "1.0"
-base64 = "0.22"
-dirs = "5"
+base64 = "0.23"
+dirs = "7"
 once_cell = "1.20"
-parking_lot = "0.12"
-rand = "0.8"
-sha2 = "0.10"
+parking_lot = "0.13"
+rand = "0.10"
+sha2 = "0.11"
 url = "2"
 uuid = { version = "1", features = ["v4"] }
 iana-time-zone = "0.1"
 
 [target.'cfg(windows)'.dependencies]
-winreg = "0.52"
+winreg = "0.56"
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security_Credentials"] }
 
 [profile.release]

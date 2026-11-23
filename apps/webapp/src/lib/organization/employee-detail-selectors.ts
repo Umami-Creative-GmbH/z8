@@ -13,18 +13,18 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, workPolicy } from "@/db/schema";
 import { DatabaseError } from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import {
+	meetsSettingsAccess,
+	type SettingsAccess,
+} from "@/lib/organization-action/settings-access-level";
 import type { EmployeeManagerChoice } from "./employee-read-types";
 
 type SelectorScope = {
 	userId: string;
 	organizationId: string;
-	accessTier: SettingsAccessTier;
+	settingsAccess: SettingsAccess;
 	managerId: string | null;
 };
 
@@ -92,10 +92,7 @@ async function cachedManagerChoices(
 }
 
 const activePolicies = (organizationId: string) =>
-	and(
-		eq(workPolicy.organizationId, organizationId),
-		eq(workPolicy.isActive, true),
-	);
+	and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isActive, true));
 
 async function policyRevision(reader: DatabaseClient, organizationId: string) {
 	const [row] = await reader
@@ -123,11 +120,10 @@ function displayScope(
 	return {
 		userId: actor.session.user.id,
 		organizationId: actor.organizationId,
-		accessTier: actor.accessTier,
-		managerId:
-			actor.accessTier === "manager"
-				? (actor.currentEmployee?.id ?? null)
-				: null,
+		settingsAccess: actor.settingsAccess,
+		managerId: !meetsSettingsAccess(actor.settingsAccess, "orgAdmin")
+			? (actor.currentEmployee?.id ?? null)
+			: null,
 	};
 }
 
@@ -166,9 +162,8 @@ export async function getEmployeeManagerChoices(excludeId: string) {
 				roles: ["admin", "manager"],
 				status: "current",
 			};
-			const revision = yield* actor.dbService.query(
-				"employeeDetail.managerChoicesRevision",
-				() => managerRevision(actor.dbService.db, scope, filter),
+			const revision = yield* actor.dbService.query("employeeDetail.managerChoicesRevision", () =>
+				managerRevision(actor.dbService.db, scope, filter),
 			);
 			return { scope, filter, revision };
 		}),
@@ -187,9 +182,8 @@ export async function getEmployeeWorkPolicyChoices() {
 				queryName: "employeeDetail.policyChoices:actor",
 			});
 			const scope = displayScope(actor);
-			const revision = yield* actor.dbService.query(
-				"employeeDetail.policyChoicesRevision",
-				() => policyRevision(actor.dbService.db, scope.organizationId),
+			const revision = yield* actor.dbService.query("employeeDetail.policyChoicesRevision", () =>
+				policyRevision(actor.dbService.db, scope.organizationId),
 			);
 			return { scope, revision };
 		}),

@@ -152,16 +152,24 @@ describe("clocking reminders from work policies on PostgreSQL", () => {
 			 values ($1, $2, 'Office', true, false, $3, now())`,
 			[policyId, organizationId, creator.userId],
 		);
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version
+			 (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+			 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3) returning id`,
+			[policyId, organizationId, creator.userId],
+		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule (id, policy_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
-			 values ($1, $2, 'weekly', 'detailed', 'custom', now())`,
-			[scheduleId, policyId],
+			`insert into work_policy_schedule (id, policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
+			 values ($1, $2, $3, 'weekly', 'detailed', 'custom', now())`,
+			[scheduleId, policyId, policyVersion.id],
 		);
 		for (const day of days) {
 			await fixture.pool.query(
-				`insert into work_policy_schedule_day (schedule_id, day_of_week, hours_per_day, is_work_day, latest_clock_in)
-				 values ($1, $2, $3, $4, $5)`,
-				[scheduleId, day.dayOfWeek, day.hours, day.isWorkDay, day.latestClockIn],
+				`insert into work_policy_schedule_day (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day, latest_clock_in)
+				 values ($1, $2, $3, $4, $5, $6)`,
+				[scheduleId, policyVersion.id, day.dayOfWeek, day.hours, day.isWorkDay, day.latestClockIn],
 			);
 		}
 		await fixture.pool.query(

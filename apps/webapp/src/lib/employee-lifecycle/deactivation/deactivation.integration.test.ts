@@ -1527,7 +1527,7 @@ describe("deactivation acceptance (#1440)", () => {
 				group: "access",
 				kind: "driving_authorizations",
 				count: 2,
-				href: `/driving-licence/checks/${person}`,
+				href: `/team/driving-licence/${person}`,
 			},
 			{
 				group: "documentRequests",

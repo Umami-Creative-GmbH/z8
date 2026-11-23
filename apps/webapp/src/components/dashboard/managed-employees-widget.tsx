@@ -51,9 +51,12 @@ function EmployeeRow({ employee }: { employee: ManagedEmployeeCard }) {
 			breakStartedZone={employee.breakStartedZone}
 		/>
 	);
+	// Columns follow the card width: a narrow card stacks status and activity under the
+	// name, a medium card adds a status column, a wide card shows team and activity too.
+	// `w-full max-w-0` lets the employee cell take the remaining width and truncate.
 	return (
 		<tr className="border-b last:border-b-0">
-			<td className="py-3 pr-3 align-top">
+			<td className="w-full max-w-0 py-3 pr-3 align-middle">
 				<Link
 					href={`/settings/employees/${employee.id}`}
 					className="group/employee flex min-h-11 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-ring"
@@ -66,19 +69,26 @@ function EmployeeRow({ employee }: { employee: ManagedEmployeeCard }) {
 						size="md"
 					/>
 					<div className="min-w-0 flex-1">
-						<div className="font-medium text-sm break-words group-hover/employee:text-primary transition-colors">
+						<div className="truncate font-medium text-sm group-hover/employee:text-primary transition-colors">
 							{employee.user.name}
 						</div>
-						<p className="text-sm text-muted-foreground break-all">
+						<p
+							className="truncate text-sm text-muted-foreground"
+							title={employee.user.email}
+						>
 							{employee.user.email}
 						</p>
 						{employee.position ? (
-							<p className="text-sm text-muted-foreground">
+							<p className="truncate text-sm text-muted-foreground">
 								{employee.position}
 							</p>
 						) : null}
-						<div className="mt-1 space-y-1 text-sm text-muted-foreground sm:hidden">
-							{employee.team ? <p>{employee.team.name}</p> : null}
+						{employee.team ? (
+							<p className="truncate text-sm text-muted-foreground @2xl/widget:hidden">
+								{employee.team.name}
+							</p>
+						) : null}
+						<div className="mt-1 space-y-0.5 text-sm text-muted-foreground @md/widget:hidden">
 							<p>{status}</p>
 							{activity}
 						</div>
@@ -89,13 +99,14 @@ function EmployeeRow({ employee }: { employee: ManagedEmployeeCard }) {
 					/>
 				</Link>
 			</td>
-			<td className="hidden px-3 py-3 align-middle text-sm text-muted-foreground sm:table-cell">
+			<td className="hidden whitespace-nowrap px-3 py-3 align-middle text-sm text-muted-foreground @2xl/widget:table-cell">
 				{employee.team?.name ?? "?"}
 			</td>
-			<td className="hidden px-3 py-3 align-middle text-sm text-muted-foreground sm:table-cell">
-				{status}
+			<td className="hidden whitespace-nowrap py-3 pl-3 align-middle text-sm text-muted-foreground @md/widget:table-cell @2xl/widget:pr-3">
+				<p>{status}</p>
+				<div className="@2xl/widget:hidden">{activity}</div>
 			</td>
-			<td className="hidden py-3 pl-3 align-middle sm:table-cell">
+			<td className="hidden whitespace-nowrap py-3 pl-3 align-middle @2xl/widget:table-cell">
 				{activity}
 			</td>
 		</tr>
@@ -224,19 +235,19 @@ export function ManagedEmployeesWidget({
 										</th>
 										<th
 											scope="col"
-											className="hidden px-3 py-2 font-medium sm:table-cell"
+											className="hidden px-3 py-2 font-medium @2xl/widget:table-cell"
 										>
 											{t("dashboard.refresh.team", "Team")}
 										</th>
 										<th
 											scope="col"
-											className="hidden px-3 py-2 font-medium sm:table-cell"
+											className="hidden py-2 pl-3 font-medium @md/widget:table-cell @2xl/widget:pr-3"
 										>
 											{t("dashboard.refresh.status", "Status")}
 										</th>
 										<th
 											scope="col"
-											className="hidden py-2 pl-3 font-medium sm:table-cell"
+											className="hidden whitespace-nowrap py-2 pl-3 font-medium @2xl/widget:table-cell"
 										>
 											{t("dashboard.refresh.activity", "Latest activity")}
 										</th>

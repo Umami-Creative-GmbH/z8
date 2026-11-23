@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -71,8 +71,11 @@ export async function GET() {
 			where: and(
 				eq(workPeriod.employeeId, emp.id),
 				eq(workPeriod.organizationId, activeOrgId),
+				eq(workPeriod.isActive, true),
 				isNull(workPeriod.endTime),
+				isNull(workPeriod.deletedAt),
 			),
+			orderBy: [desc(workPeriod.startTime), desc(workPeriod.createdAt)],
 		});
 
 		const response = {

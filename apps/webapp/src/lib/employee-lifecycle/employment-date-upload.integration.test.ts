@@ -46,13 +46,11 @@ vi.mock("@/lib/email/email-service", async (original) =>
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
-const actions = await import(
-	"@/app/[locale]/(app)/settings/employees/employment-date-upload-actions"
-);
+const actions =
+	await import("@/app/[locale]/(app)/settings/employees/employment-date-upload-actions");
 const { loadVacationBalances } = await import("@/lib/absences/vacation-balance-store");
-const { getEmployeeTrackingDateAction } = await import(
-	"@/app/[locale]/(app)/settings/employees/employee-tracking-date-actions"
-);
+const { getEmployeeTrackingDateAction } =
+	await import("@/app/[locale]/(app)/settings/employees/employee-tracking-date-actions");
 const balances = await import("@/lib/work-balance/service");
 describe("reviewed bulk employment corrections through public upload actions", () => {
 	vi.setConfig({ testTimeout: 180_000, hookTimeout: 180_000 });
@@ -92,13 +90,19 @@ describe("reviewed bulk employment corrections through public upload actions", (
 			`insert into work_policy (id,organization_id,name,schedule_enabled,regulation_enabled,created_by,updated_at) values ($1,$2,'Monday hour',true,false,$3,now())`,
 			[policy, fixture.organizationId, fixture.ownerUserId],
 		);
-		await fixture.pool.query(
-			`insert into work_policy_schedule (id,policy_id,schedule_cycle,schedule_type,working_days_preset,updated_at) values ($1,$2,'weekly','detailed','custom',now())`,
-			[schedule, policy],
+		const {
+			rows: [policyVersion],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into work_policy_version (policy_id,organization_id,version_number,effective_from_date,schedule_enabled,regulation_enabled,presence_enabled,is_legacy_baseline,created_by) values ($1,$2,1,'1970-01-01',true,false,false,true,$3) returning id`,
+			[policy, fixture.organizationId, fixture.ownerUserId],
 		);
 		await fixture.pool.query(
-			`insert into work_policy_schedule_day (schedule_id,day_of_week,hours_per_day,is_work_day) values ($1,'monday','1.00',true)`,
-			[schedule],
+			`insert into work_policy_schedule (id,policy_id,policy_version_id,schedule_cycle,schedule_type,working_days_preset,updated_at) values ($1,$2,$3,'weekly','detailed','custom',now())`,
+			[schedule, policy, policyVersion.id],
+		);
+		await fixture.pool.query(
+			`insert into work_policy_schedule_day (schedule_id,policy_version_id,day_of_week,hours_per_day,is_work_day) values ($1,$2,'monday','1.00',true)`,
+			[schedule, policyVersion.id],
 		);
 		for (const employeeId of [fixture.employeeId, secondId])
 			await fixture.pool.query(
@@ -131,9 +135,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 	}
 	it("refreshes assigned accrual and annual employees together through a reviewed upload", async () => {
 		vi.setSystemTime(new Date("2027-06-01T10:00:00Z"));
-		const { vacationAllowance, vacationPolicyAssignment } = await import(
-			"@/db/schema"
-		);
+		const { vacationAllowance, vacationPolicyAssignment } = await import("@/db/schema");
 		const [policy] = await fixture.db
 			.insert(vacationAllowance)
 			.values({
@@ -159,12 +161,12 @@ describe("reviewed bulk employment corrections through public upload actions", (
 			[fixture.organizationId],
 		);
 		const review = await readyUpload();
-		expect(
-			review.rows[0].impact?.vacation.find((row) => row.year === 2027)?.after,
-		).toMatchObject({ totalDays: 2.4 });
-		expect(
-			review.rows[1].impact?.vacation.find((row) => row.year === 2027)?.after,
-		).toMatchObject({ totalDays: 6 });
+		expect(review.rows[0].impact?.vacation.find((row) => row.year === 2027)?.after).toMatchObject({
+			totalDays: 2.4,
+		});
+		expect(review.rows[1].impact?.vacation.find((row) => row.year === 2027)?.after).toMatchObject({
+			totalDays: 6,
+		});
 		expect(
 			await actions.commitEmploymentDateUploadAction({
 				csv: csv(),
