@@ -17,6 +17,10 @@ import {
 	MINIJOB_REVIEWS_QUERY_KEY,
 	minijobMonitorQueryKey,
 } from "@/components/settings/contracts/minijob-query-keys";
+import {
+	shortTermMonitorQueryKey,
+	shortTermReviewsQueryKey,
+} from "@/components/settings/contracts/short-term-query-keys";
 import { queryKeys } from "@/lib/query";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
@@ -150,11 +154,18 @@ vi.mock("@/components/settings/contracts/employee-contract-tab", () => ({
 vi.mock("@/components/settings/contracts/employee-minijob-monitor-card", () => ({
 	EmployeeMinijobMonitorCard: () => null,
 }));
+vi.mock("@/components/settings/contracts/short-term-monitor-card", () => ({
+	ShortTermMonitorCard: () => null,
+}));
 
+const policyCardProps = vi.hoisted(() => ({
+	last: null as null | { onAssigned?: () => void },
+}));
 vi.mock("@/components/settings/contracts/scoped-manager-policy-card", () => ({
-	ScopedManagerPolicyCard: ({ employeeId }: { employeeId: string }) => (
-		<section aria-label="Work Policy Assignment">{employeeId}</section>
-	),
+	ScopedManagerPolicyCard: (props: { employeeId: string; onAssigned?: () => void }) => {
+		policyCardProps.last = props;
+		return <section aria-label="Work Policy Assignment">{props.employeeId}</section>;
+	},
 }));
 vi.mock("@/components/settings/contracts/working-student-monitor-card", () => ({
 	WorkingStudentMonitorCard: ({ canManage }: { canManage: boolean }) => (
@@ -749,10 +760,19 @@ describe("employee detail Minijob monitor refresh (#1989)", () => {
 			["start date correction", () => dateCorrectionProps.last?.onSaved?.()],
 		];
 		const reviewsKey = [...MINIJOB_REVIEWS_QUERY_KEY, realEmployee.organizationId, false];
+		// The short-term monitor of next year and the Berufsmäßigkeit reviews (#1990) too.
+		const shortTermKey = shortTermMonitorQueryKey(
+			realEmployee.organizationId,
+			realEmployee.id,
+			2027,
+		);
+		const shortTermReviewsKey = shortTermReviewsQueryKey(realEmployee.organizationId, false);
 
 		for (const [name, mutate] of mutations) {
 			queryClient.setQueryData(monitorKey, { months: [] });
 			queryClient.setQueryData(reviewsKey, []);
+			queryClient.setQueryData(shortTermKey, { applies: true });
+			queryClient.setQueryData(shortTermReviewsKey, []);
 			await act(async () => {
 				await mutate();
 			});
@@ -761,9 +781,34 @@ describe("employee detail Minijob monitor refresh (#1989)", () => {
 					name,
 					queryClient.getQueryState(monitorKey)?.isInvalidated,
 					queryClient.getQueryState(reviewsKey)?.isInvalidated,
-				]).toEqual([name, true, true]),
+					queryClient.getQueryState(shortTermKey)?.isInvalidated,
+					queryClient.getQueryState(shortTermReviewsKey)?.isInvalidated,
+				]).toEqual([name, true, true, true, true]),
 			);
 		}
+	});
+
+	it("refreshes the short-term monitor after a scoped manager assigns a work policy", async () => {
+		policyCardProps.last = null;
+		const { queryClient } = renderDetail({ settingsAccess: "scopedManager" });
+		const tab = await screen.findByRole("tab", { name: "Work policy" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		await screen.findByRole("region", { name: "Work Policy Assignment" });
+		const shortTermKey = shortTermMonitorQueryKey(
+			realEmployee.organizationId,
+			realEmployee.id,
+			null,
+		);
+		queryClient.setQueryData(shortTermKey, { applies: true });
+
+		await act(async () => {
+			policyCardProps.last?.onAssigned?.();
+		});
+
+		await waitFor(() => expect(queryClient.getQueryState(shortTermKey)?.isInvalidated).toBe(true));
 	});
 });
 

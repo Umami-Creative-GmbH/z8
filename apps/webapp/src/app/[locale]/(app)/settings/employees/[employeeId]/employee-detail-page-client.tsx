@@ -21,6 +21,10 @@ import {
 } from "@/components/settings/contracts/minijob-query-keys";
 import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
 import { ShortTermMonitorCard } from "@/components/settings/contracts/short-term-monitor-card";
+import {
+	shortTermMonitorQueryKey,
+	shortTermReviewsQueryKey,
+} from "@/components/settings/contracts/short-term-query-keys";
 import { WorkingStudentMonitorCard } from "@/components/settings/contracts/working-student-monitor-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
@@ -250,17 +254,28 @@ export function EmployeeDetailPageClient({
 		initialSnapshot,
 	});
 	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
-	// Terms, history and wage feed the Minijob monitor (#1989): refresh it after each change.
-	// Terms, history, wage and employment-date changes move Minijob coverage and earnings: refresh
-	// the monitor and the exceedance reviews built from them.
-	const refreshMinijobMonitor = () => {
+	// Terms, history, wage and employment-date changes move Minijob (#1989) and short-term (#1990)
+	// coverage, limit choice and earnings: refresh both monitors and the reviews built from them.
+	// A work policy assigned to the employee alone changes the short-term limit choice too.
+	const refreshShortTermMonitor = () => {
+		const shortTermOrganizationId = employee?.organizationId ?? organizationId;
+		if (!shortTermOrganizationId) return;
+		void queryClient.invalidateQueries({
+			queryKey: shortTermMonitorQueryKey(shortTermOrganizationId, employeeId),
+		});
+		void queryClient.invalidateQueries({
+			queryKey: shortTermReviewsQueryKey(shortTermOrganizationId),
+		});
+	};
+	const refreshStatutoryMonitors = () => {
 		void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryPrefix(employeeId) });
 		void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
+		refreshShortTermMonitor();
 	};
-	const refreshingMinijob =
+	const refreshingMonitors =
 		<A, R>(mutate: (input: A) => Promise<R>) =>
 		(input: A) =>
-			mutate(input).finally(refreshMinijobMonitor);
+			mutate(input).finally(refreshStatutoryMonitors);
 	// The "Custom fields" section (#818), saved with the employee details.
 	const customFields = useCustomFieldDrafts({
 		entity: "employee",
@@ -409,7 +424,7 @@ export function EmployeeDetailPageClient({
 										employmentHistory={employeeData.employmentHistory}
 										onContractMutated={() => {
 											void employeeData.refetch();
-											refreshMinijobMonitor();
+											refreshStatutoryMonitors();
 										}}
 									/>
 									<EmploymentDateCorrectionCard
@@ -421,8 +436,8 @@ export function EmployeeDetailPageClient({
 												: null
 										}
 										onSaved={async () => {
-											// The start date moves Minijob coverage too.
-											refreshMinijobMonitor();
+											// The start date moves Minijob and short-term coverage too.
+											refreshStatutoryMonitors();
 											await Promise.all([
 												employeeData.refetch(),
 												queryClient.invalidateQueries({
@@ -437,9 +452,9 @@ export function EmployeeDetailPageClient({
 									<EmployeeEmploymentHistoryCard
 										history={employeeData.employmentHistory}
 										canManage={isOrgAdmin}
-										onCreate={refreshingMinijob(employeeData.createEmploymentHistory)}
-										onConfirm={refreshingMinijob(employeeData.confirmEmploymentHistory)}
-										onCancel={refreshingMinijob(employeeData.cancelEmploymentHistory)}
+										onCreate={refreshingMonitors(employeeData.createEmploymentHistory)}
+										onConfirm={refreshingMonitors(employeeData.confirmEmploymentHistory)}
+										onCancel={refreshingMonitors(employeeData.cancelEmploymentHistory)}
 										isCreating={employeeData.isCreatingEmploymentHistory}
 										isMutating={
 											employeeData.isConfirmingEmploymentHistory ||
@@ -451,7 +466,7 @@ export function EmployeeDetailPageClient({
 										changeWage={
 											employee.contractTypeToday === "hourly"
 												? {
-														onSubmit: refreshingMinijob(employeeData.changeWage),
+														onSubmit: refreshingMonitors(employeeData.changeWage),
 														isPending: employeeData.isChangingWage,
 													}
 												: undefined
@@ -464,7 +479,10 @@ export function EmployeeDetailPageClient({
 									employeeId={employeeId}
 									organizationTimezone={organizationTimezone}
 									workPolicies={workPolicies}
-									onAssigned={() => void employeeData.refetch()}
+									onAssigned={() => {
+										void employeeData.refetch();
+										refreshShortTermMonitor();
+									}}
 								/>
 							)}
 							<EmployeeMinijobMonitorCard

@@ -174,6 +174,27 @@ describe("ShortTermMonitorCard (#1990)", () => {
 		await waitFor(() => expect(container.innerHTML).toBe(""));
 		expect(screen.queryByText("Short-term employment")).toBeNull();
 	});
+
+	it("refetches when it mounts again, so changes made in other tabs show at once", async () => {
+		mocks.getShortTermMonitorAction.mockResolvedValue({ success: true, data: monitorOf(2026) });
+		// The app's 60 s stale time: switching tabs remounts the card within it, and a leaving date
+		// or terms change recorded meanwhile must not be hidden behind the cached figures.
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false, staleTime: 60_000 } },
+		});
+		const card = () => (
+			<QueryClientProvider client={client}>
+				<ShortTermMonitorCard organizationId="org-1" employeeId="emp-1" isOrgAdmin={false} />
+			</QueryClientProvider>
+		);
+		const { unmount } = render(card());
+		await waitFor(() => expect(mocks.getShortTermMonitorAction).toHaveBeenCalledTimes(1));
+		unmount();
+
+		render(card());
+
+		await waitFor(() => expect(mocks.getShortTermMonitorAction).toHaveBeenCalledTimes(2));
+	});
 });
 
 function notApplicable(year: number) {

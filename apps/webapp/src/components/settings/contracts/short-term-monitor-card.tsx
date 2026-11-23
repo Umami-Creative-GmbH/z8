@@ -567,6 +567,9 @@ export function ShortTermMonitorCard({
 			if (year === null) setCurrentYear(result.data.year);
 			return result.data;
 		},
+		// Terms, wages, leaving dates and work policies change in other tabs and cards: refetch
+		// whenever the card mounts instead of showing figures cached before them.
+		refetchOnMount: "always",
 		// While another year loads, keep this employee's card (and the focused year selector) on
 		// screen. Never another organization's or employee's data.
 		placeholderData: (previous, previousQuery) => {
@@ -596,6 +599,7 @@ export function ShortTermMonitorCard({
 			return result.data;
 		},
 		enabled: currentNotApplying && monitor !== undefined,
+		refetchOnMount: "always" as const,
 	});
 	const previous = useQuery(adjacentYear(-1));
 	const next = useQuery(adjacentYear(1));
