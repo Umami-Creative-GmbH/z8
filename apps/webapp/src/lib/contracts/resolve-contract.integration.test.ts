@@ -430,6 +430,61 @@ describe("unified read-only contract resolver & clock-out snapshot v2 (PostgreSQ
 		});
 	});
 
+	it("gives statutory monitors no profile, on-call terms or wage on a converted person's contractor days, though the employee terms never ended (#1997)", async () => {
+		const person = await seedUserAndEmployee({ userKey: "t1997-converted" });
+		const {
+			rows: [employeeStint],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance, ended_at, engagement_kind)
+			 VALUES ($1, $2, 'closed', '2026-01-01T00:00:00Z', 'recorded', '2026-06-10T00:00:00Z', 'employee')
+			 RETURNING id`,
+			[ORG_ID, person.employeeId],
+		);
+		await admin.query(
+			`INSERT INTO employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+			 VALUES ($1, $2, 'open', '2026-06-10T00:00:00Z', 'recorded', 'contractor')`,
+			[ORG_ID, person.employeeId],
+		);
+		await admin.query("UPDATE employee SET engagement_kind = 'contractor' WHERE id = $1", [
+			person.employeeId,
+		]);
+		// Minijob on call (§ 12 TzBfG), terms open-ended: nothing ended them at the conversion.
+		await admin.query(
+			`INSERT INTO employee_employment_history (
+				employee_id, organization_id, employment_period_id, valid_from, valid_from_date,
+				contract_type, hourly_rate, weekly_contract_minutes, employment_profile, schedule_source,
+				on_call_hours_kind, on_call_weekly_minutes, review_state, created_by, updated_at
+			) VALUES (
+				$1, $2, $3, '2026-01-01', '2026-01-01', 'hourly', '13.50', 600, 'minijob', 'on_call',
+				'exact', 600, 'confirmed', $4, now()
+			)`,
+			[person.employeeId, ORG_ID, employeeStint.id, ADMIN_USER_ID],
+		);
+
+		const batch = await loadEffectiveContractsBatch(db, {
+			organizationId: ORG_ID,
+			employeeIds: [person.employeeId],
+			dates: ["2026-06-05", "2026-06-15"],
+		});
+
+		// The control: an employee day carries the statutory profile the monitors key on.
+		expect(batch.get(person.employeeId)?.get("2026-06-05")).toMatchObject({
+			engagementKind: "employee",
+			employmentProfile: "minijob",
+			hourlyRate: 13.5,
+			onCallTerms: expect.objectContaining({ hoursKind: "exact" }),
+		});
+		expect(batch.get(person.employeeId)?.get("2026-06-15")).toMatchObject({
+			engagementKind: "contractor",
+			employmentHistoryId: null,
+			employmentProfile: null,
+			hourlyRate: null,
+			onCallTerms: null,
+		});
+	});
+
 	it("honors 0120 team-history non-inference (no backward extrapolation, between-0120-and-0132 foreign-org team isolation, multi-employee same-transaction moves)", async () => {
 		const orgTeam = await seedTeam("Home Team", ORG_ID);
 		const orgTeam2 = await seedTeam("Second Team", ORG_ID);
