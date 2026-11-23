@@ -262,6 +262,32 @@ describe("sector exception fingerprints", () => {
 		expect(overrun?.inputFingerprint).not.toBe(plannedFinding()?.inputFingerprint);
 	});
 
+	it("stay current while an open clock-in overruns its shift within one material step", () => {
+		// Clocked in at 17:00 for the 17:00–21:00 shift, still working past its end.
+		const running = (now: Instant) =>
+			nightOf(
+				findings({
+					work: [work("w", at("2026-03-03", "17:00"), null)],
+					shifts: [planned],
+					now,
+				}),
+			)?.inputFingerprint;
+		const acknowledged = running(at("2026-03-03", "21:20"));
+		expect(acknowledged).not.toBe(plannedFinding()?.inputFingerprint);
+		expect(running(at("2026-03-03", "21:21"))).toBe(acknowledged);
+		expect(running(at("2026-03-03", "21:29:59"))).toBe(acknowledged);
+		expect(
+			nightOf(
+				findings({
+					work: [work("w", at("2026-03-03", "17:00"), at("2026-03-03", "21:27"))],
+					shifts: [planned],
+					now: at("2026-03-04", "09:00"),
+				}),
+			)?.inputFingerprint,
+		).toBe(acknowledged);
+		expect(running(at("2026-03-03", "21:40"))).not.toBe(acknowledged);
+	});
+
 	describe("of work without a planned shift", () => {
 		const fingerprintOf = (
 			record: YouthWorkRecord,

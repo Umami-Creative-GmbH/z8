@@ -17,16 +17,20 @@ import {
 	type YouthWorkInterval,
 } from "./jarbschg-rules";
 
-/** The material step of flagged minutes a sector exception for unplanned work is given in. */
+/** The material step of flagged minutes a sector exception for work outside a shift is given in. */
 const SECTOR_EXCEPTION_STEP_MINUTES = 15;
+
+const toMaterialStep = (minutes: number) =>
+	Math.ceil(minutes / SECTOR_EXCEPTION_STEP_MINUTES) * SECTOR_EXCEPTION_STEP_MINUTES;
 
 /**
  * The input fingerprint of a sector-exception finding (night, Saturday, Sunday, holiday work): what
  * the exception decision depends on. For a planned shift that is the shift's exact times and how
- * much of the breach its work runs outside them, so the acknowledgement stays current while the
- * shift is worked as planned (or is still being worked within its bounds) and goes stale when
- * the shift moves or its work overruns it. Work without a planned shift is acknowledged per work
- * entry, by its start and the flagged minutes the exception covers, rounded up to a material step:
+ * much of the breach its work runs outside them, rounded up to a material step, so the
+ * acknowledgement stays current while the shift is worked as planned (or is still being worked
+ * within its bounds), and while an open clock-in overruns it within the acknowledged step; it goes
+ * stale when the shift moves or its work overruns it further. Work without a planned shift is
+ * acknowledged per work entry, by its start and the flagged minutes the exception covers, rounded up to a material step:
  * an acknowledgement given while the clock-in runs covers the work up to the end of that step, and
  * goes stale once the work runs on past it.
  */
@@ -44,7 +48,7 @@ export function sectorExceptionFingerprint(input: {
 			subjectKey: shift.ref,
 			start: shift.start,
 			end: shift.end,
-			outside: input.breach.outsidePlannedShift ?? 0,
+			outside: toMaterialStep(input.breach.outsidePlannedShift ?? 0),
 		});
 	}
 	const planned = !input.interval.recorded && !input.interval.inProgress;
@@ -66,9 +70,7 @@ export function sectorExceptionFingerprint(input: {
 		start: input.interval.start,
 		end: null,
 		outside: 0,
-		covered:
-			Math.ceil((input.breach.coveredMinutes ?? 0) / SECTOR_EXCEPTION_STEP_MINUTES) *
-			SECTOR_EXCEPTION_STEP_MINUTES,
+		covered: toMaterialStep(input.breach.coveredMinutes ?? 0),
 	});
 }
 
