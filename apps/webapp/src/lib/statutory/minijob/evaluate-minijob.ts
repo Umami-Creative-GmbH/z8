@@ -5,6 +5,10 @@
  * draft and published shifts that have not started yet × that day's wage, Staffing's proposed
  * shifts, and active external Minijob offsets; then judges the months (`minijob-months.ts`).
  *
+ * Work in progress counts too: an open clock-in up to now, plus the rest of the started shift it
+ * belongs to. A started shift nobody has clocked in for counts in full until its work closes;
+ * then the recorded work replaces it.
+ *
  * Work and shifts count on the organization-local day they start, as in schedule compliance.
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
@@ -23,7 +27,7 @@ import {
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
-import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
 import { loadStatutoryAcknowledgementStates } from "../acknowledgements";
 import type { StatutoryFinding } from "../finding";
 import type { StatutoryPreferences } from "../preferences";
@@ -58,7 +62,10 @@ export interface EvaluateMinijobInput {
 		StatutoryPreferences,
 		"warningThresholdPercent" | "criticalThresholdPercent"
 	>;
-	/** Shifts starting at or before this instant no longer count as planned. */
+	/**
+	 * Splits planned from worked time: open clock-ins count up to now, started shifts only for
+	 * their rest, and proposals that start at or before now not at all.
+	 */
 	readonly now: Instant;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
 	/** A persisted shift the proposal replaces; it is left out. */
@@ -170,15 +177,20 @@ export async function evaluateMinijobEarnings(
 			id: workPeriod.id,
 			employeeId: workPeriod.employeeId,
 			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
+			isActive: workPeriod.isActive,
 		})
 		.from(workPeriod)
 		.where(
 			and(
 				eq(workPeriod.organizationId, input.organizationId),
 				inArray(workPeriod.employeeId, employeeIds),
-				completedWorkPeriodCondition(),
-				isNotNull(workPeriod.durationMinutes),
+				or(
+					and(completedWorkPeriodCondition(), isNotNull(workPeriod.durationMinutes)),
+					// Open clock-ins: running work counts up to now.
+					and(eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)),
+				),
 				gte(workPeriod.startTime, dateFromInstant(rangeStart)),
 				lt(workPeriod.startTime, dateFromInstant(rangeEnd)),
 			),
@@ -242,59 +254,92 @@ export async function evaluateMinijobEarnings(
 		const contract = contracts.get(employeeId)?.get(item.date);
 		if (!contract || !isMinijobDay(contract)) return;
 		const key = `${employeeId}|${item.date.slice(0, 7)}`;
-		items.set(key, [
-			...(items.get(key) ?? []),
-			{ ...item, hourlyRateCents: rateCentsOf(contract) },
-		]);
+		const list = items.get(key);
+		const priced = { ...item, hourlyRateCents: rateCentsOf(contract) };
+		if (list) list.push(priced);
+		else items.set(key, [priced]);
 	};
+	const minutesBetween = (start: Instant, end: Instant) => start.until(end).total("minutes");
+
+	const workOf = new Map<string, { start: Instant; end: Instant | null }[]>();
 	for (const row of workRows) {
+		const start = instantFromDate(row.startTime);
+		const open = row.isActive;
+		const end = open
+			? null
+			: row.endTime
+				? instantFromDate(row.endTime)
+				: start.add({ minutes: row.durationMinutes ?? 0 });
+		const list = workOf.get(row.employeeId);
+		const work = { start, end };
+		if (list) list.push(work);
+		else workOf.set(row.employeeId, [work]);
 		addItem(row.employeeId, {
 			source: "work",
 			id: row.id,
-			date: plainDateAt(instantFromDate(row.startTime), timezone).toString(),
-			minutes: row.durationMinutes ?? 0,
+			date: plainDateAt(start, timezone).toString(),
+			// Whole minutes so far: with the rest of its shift rounded up, the sum stays put.
+			minutes: open
+				? Math.max(0, Math.floor(minutesBetween(start, input.now)))
+				: (row.durationMinutes ?? 0),
+			...(open ? { inProgress: true } : {}),
 		});
 	}
-	const planned = (
-		source: "shift" | "proposed",
-		id: string,
-		employeeId: string,
-		date: string,
-		startTime: string,
-		endTime: string,
-	) => {
-		const interval = shiftInterval({ date: parsePlainDate(date), startTime, endTime }, timezone);
-		if (compareInstants(interval.start, input.now) <= 0) return;
-		addItem(employeeId, {
-			source,
-			id,
-			date,
-			minutes: Math.round(interval.start.until(interval.end).total("minutes")),
-		});
-	};
+
 	for (const row of shiftRows) {
 		if (!row.employeeId) continue;
-		planned(
-			"shift",
-			row.id,
-			row.employeeId,
-			shiftCalendarDate(row.date, timezone).toString(),
-			row.startTime,
-			row.endTime,
+		const date = shiftCalendarDate(row.date, timezone);
+		const interval = shiftInterval(
+			{ date, startTime: row.startTime, endTime: row.endTime },
+			timezone,
 		);
+		const item = { source: "shift" as const, id: row.id, date: date.toString() };
+		if (compareInstants(interval.start, input.now) > 0) {
+			addItem(row.employeeId, {
+				...item,
+				minutes: Math.round(minutesBetween(interval.start, interval.end)),
+			});
+			continue;
+		}
+		// Over: what was worked is recorded work.
+		if (compareInstants(interval.end, input.now) <= 0) continue;
+		// In progress: the open clock-in counts up to now, the shift for its rest. Once its work
+		// has closed, the recorded work replaces it; until anyone clocks in, it counts in full.
+		const matched = (workOf.get(row.employeeId) ?? []).filter((work) =>
+			workMatchesShift(interval, work),
+		);
+		if (matched.some((work) => work.end === null)) {
+			addItem(row.employeeId, {
+				...item,
+				minutes: Math.ceil(minutesBetween(input.now, interval.end)),
+				inProgress: true,
+			});
+		} else if (matched.length === 0) {
+			addItem(row.employeeId, {
+				...item,
+				minutes: Math.round(minutesBetween(interval.start, interval.end)),
+			});
+		}
 	}
 	const inScope = new Set(employeeIds);
 	for (const proposal of input.proposedShifts ?? []) {
 		if (!inScope.has(proposal.employeeId)) continue;
 		if (proposal.date < rangeFrom || proposal.date >= rangeUntil) continue;
-		planned(
-			"proposed",
-			`${proposal.date}T${proposal.startTime}-${proposal.endTime}`,
-			proposal.employeeId,
-			proposal.date,
-			proposal.startTime,
-			proposal.endTime,
+		const interval = shiftInterval(
+			{
+				date: parsePlainDate(proposal.date),
+				startTime: proposal.startTime,
+				endTime: proposal.endTime,
+			},
+			timezone,
 		);
+		if (compareInstants(interval.start, input.now) <= 0) continue;
+		addItem(proposal.employeeId, {
+			source: "proposed",
+			id: `${proposal.date}T${proposal.startTime}-${proposal.endTime}`,
+			date: proposal.date,
+			minutes: Math.round(minutesBetween(interval.start, interval.end)),
+		});
 	}
 
 	// ─── Months ─────────────────────────────────────────────────────────────────────────────────

@@ -35,6 +35,12 @@ export interface MinijobEarningItem {
 	readonly minutes: number;
 	/** The confirmed hourly wage that day in cents, or null when the terms carry none. */
 	readonly hourlyRateCents: number | null;
+	/**
+	 * Its minutes run with the clock: an open work period so far, or the rest of a started shift.
+	 * The fingerprint records it without its minutes, so an acknowledgement does not go stale
+	 * minute by minute; it changes when the work period opens or closes.
+	 */
+	readonly inProgress?: boolean;
 }
 
 /** What the database layer knows about one employee's calendar month. */
@@ -193,7 +199,13 @@ export function computeMinijobMonths(
 			maxUnforeseeableMonths: month.facts.maxUnforeseeableMonths,
 			items: [...month.facts.items]
 				.sort(byText((item) => `${item.source}:${item.id}`))
-				.map((item) => [item.source, item.id, item.date, item.minutes, item.hourlyRateCents]),
+				.map((item) => [
+					item.source,
+					item.id,
+					item.date,
+					item.inProgress ? "in_progress" : item.minutes,
+					item.hourlyRateCents,
+				]),
 			externalOffsets: [...month.facts.externalOffsets]
 				.sort(byText((offset) => offset.id))
 				.map((offset) => [offset.id, offset.amountCents]),

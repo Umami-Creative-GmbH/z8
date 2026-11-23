@@ -202,6 +202,100 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		});
 	});
 
+	it("counts an open clock-in up to now plus the rest of its shift, with a fingerprint that does not move with now", async () => {
+		const { org, owner, worker } = await setup();
+		const unplanned = await fx.employee(org, "unplanned", { contractType: "hourly" });
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
+		await mj.terms(unplanned, owner, { from: "2026-01-01", hourlyRate: 20 });
+		// Now is 13:00 Berlin. The worker clocked in at 08:45 for a 09:00–17:00 shift: 4 h 15 min
+		// worked so far (85 €) and 4 h of the shift still ahead (80 €).
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-23",
+			startTime: "09:00",
+			endTime: "17:00",
+		});
+		await mj.openWork(org, worker, "2026-11-23", "08:45");
+		// Clocked in at 10:00 without a shift: 3 h so far (60 €).
+		await mj.openWork(org, unplanned, "2026-11-23", "10:00");
+
+		const month = (result: Awaited<ReturnType<typeof evaluate>>, employeeId: string) =>
+			result.employees.get(employeeId)?.find((m) => m.month === "2026-11");
+		const ids = [worker.employeeId, unplanned.employeeId];
+		const november = { from: "2026-11", until: "2026-12" };
+		const atOne = await evaluate(org, ids, november, "2026-11-23T12:00:00Z");
+		const atThree = await evaluate(org, ids, november, "2026-11-23T14:00:00Z");
+
+		expect(month(atOne, worker.employeeId)).toMatchObject({
+			earnedCents: 8_500,
+			plannedCents: 8_000,
+			totalCents: 16_500,
+		});
+		expect(month(atOne, unplanned.employeeId)).toMatchObject({
+			earnedCents: 6_000,
+			plannedCents: 0,
+		});
+		// Two hours later the split moves, the projected total and the fingerprint do not.
+		expect(month(atThree, worker.employeeId)).toMatchObject({
+			earnedCents: 12_500,
+			plannedCents: 4_000,
+			totalCents: 16_500,
+			fingerprint: month(atOne, worker.employeeId)?.fingerprint,
+		});
+		expect(month(atThree, unplanned.employeeId)?.fingerprint).toBe(
+			month(atOne, unplanned.employeeId)?.fingerprint,
+		);
+	});
+
+	it("counts a started shift in full until its work period closes", async () => {
+		const { org, owner, worker } = await setup();
+		const finished = await fx.employee(org, "finished", { contractType: "hourly" });
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
+		await mj.terms(finished, owner, { from: "2026-01-01", hourlyRate: 20 });
+		// Both shifts run 09:00–17:00 Berlin and now is 13:00. The worker has not clocked in yet:
+		// the whole shift (160 €) is still planned. The other one worked 09:00–11:00 and clocked
+		// out: their recorded 2 h (40 €) replace the shift.
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-23",
+			startTime: "09:00",
+			endTime: "17:00",
+		});
+		await mj.shift(org, finished, owner, {
+			date: "2026-11-23",
+			startTime: "09:00",
+			endTime: "17:00",
+		});
+		await mj.work(org, finished, "2026-11-23", 120, "09:00");
+
+		const result = await evaluate(org, [worker.employeeId, finished.employeeId], {
+			from: "2026-11",
+			until: "2026-12",
+		});
+		const month = (employeeId: string) =>
+			result.employees.get(employeeId)?.find((m) => m.month === "2026-11");
+
+		expect(month(worker.employeeId)).toMatchObject({ earnedCents: 0, plannedCents: 16_000 });
+		expect(month(finished.employeeId)).toMatchObject({ earnedCents: 4_000, plannedCents: 0 });
+	});
+
+	it("attributes work to the organization-local month it starts in", async () => {
+		const { org, owner, worker } = await setup();
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 15 });
+		// 01:30 Berlin on 1 April is 23:30 UTC on 31 March.
+		await mj.work(org, worker, "2026-04-01", 120, "01:30");
+
+		const { employees } = await evaluate(org, [worker.employeeId], {
+			from: "2026-03",
+			until: "2026-05",
+		});
+		const earned = Object.fromEntries(
+			(employees.get(worker.employeeId) ?? [])
+				.filter((m) => m.month >= "2026-03")
+				.map((m) => [m.month, m.earnedCents]),
+		);
+
+		expect(earned).toEqual({ "2026-03": 0, "2026-04": 3_000 });
+	});
+
 	it("reports nothing for employees outside the Minijob profile or the organization", async () => {
 		const { org, owner, worker } = await setup();
 		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 30, profile: "regular" });

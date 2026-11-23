@@ -73,6 +73,17 @@ describe("Minijob month judgement (#1989)", () => {
 		]);
 	});
 
+	it("lets an acknowledged exceedance reach exactly twice the cap, but not a cent more", () => {
+		const now = { capCents: 60_300, unforeseeableMultiplier: 2, maxUnforeseeableMonths: 2 };
+		const atDouble = month("2026-03", 120_600, now);
+		const aboveDouble = month("2026-04", 120_601, now);
+
+		expect(statuses([atDouble, aboveDouble], new Set(["2026-03", "2026-04"]))).toEqual([
+			["2026-03", "acknowledged"],
+			["2026-04", "over_double_cap"],
+		]);
+	});
+
 	it("does not judge months without a baseline", () => {
 		const [judged] = judgeMinijobMonths(
 			computeMinijobMonths("e1", [

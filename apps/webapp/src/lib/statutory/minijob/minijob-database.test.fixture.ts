@@ -123,6 +123,41 @@ export function minijobFixture(admin: Pool, fx: StatutoryFixture) {
 			return workPeriodId;
 		},
 
+		/** An open clock-in (active work period) since `time` organization-local on `date`. */
+		async openWork(
+			org: FixtureOrganization,
+			worker: FixtureEmployee,
+			date: string,
+			time: string,
+		): Promise<string> {
+			const start = Temporal.ZonedDateTime.from(`${date}T${time}[${org.timezone}]`);
+			const clockInId = randomUUID();
+			const workPeriodId = randomUUID();
+			await admin.query(
+				`INSERT INTO time_entry (
+					id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					timezone, timezone_source, hash, created_by, created_at
+				) VALUES ($1, $2, $3, 'clock_in', $4, $5, $6, 'backfill', $7, $8, $4)`,
+				[
+					clockInId,
+					worker.employeeId,
+					org.id,
+					new Date(start.epochMilliseconds),
+					start.offsetNanoseconds / 60_000_000_000,
+					org.timezone,
+					`t1989-${clockInId}`,
+					worker.userId,
+				],
+			);
+			await admin.query(
+				`INSERT INTO work_period (id, employee_id, organization_id, clock_in_id, start_time,
+					is_active, updated_at)
+				 VALUES ($1, $2, $3, $4, $5, true, $5)`,
+				[workPeriodId, worker.employeeId, org.id, clockInId, new Date(start.epochMilliseconds)],
+			);
+			return workPeriodId;
+		},
+
 		/**
 		 * `totalMinutes` of completed work in `month` (`YYYY-MM`), split into periods of at most
 		 * ten hours on consecutive days from the 2nd.
