@@ -630,7 +630,10 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 				shown,
 				Temporal.Instant.from("2026-12-01T15:05:00Z"),
 			);
-			expect(record.metadata.amountsCents).toMatchObject({ total: 78_000 });
+			expect(record.metadata).toMatchObject({
+				documentedTotalCents: 78_000,
+				amountsCents: { total: 67_600 },
+			});
 
 			// The forgotten entry brings the month back to the 780 € the admin documented.
 			await mj.work(s.org, s.worker, "2026-12-01", 480);
@@ -638,6 +641,22 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 				totalCents: 78_000,
 				...documented,
 			});
+		});
+
+		it("documents the shown total, not one that rose within a step before they submitted", async () => {
+			const s = await december();
+			// The admin is shown 676 € (the 1 December shift lapsed unworked).
+			const shown = await reviewedDecember(s, AFTER_FIRST_SHIFT);
+			expect(shown?.totalCents).toBe(67_600);
+
+			// Before they submit, 10 minutes are recorded for that shift: 678.17 €, within one step
+			// (15 min at 13 €/h = 3.25 €), same fingerprint, so the acknowledgement is accepted.
+			await mj.work(s.org, s.worker, "2026-12-01", 10);
+			const record = await acknowledgeShown(s, shown, AFTER_FIRST_SHIFT);
+
+			// It documents the 676 € shown: staleness is measured from what the admin saw.
+			expect(record.metadata).toMatchObject({ documentedTotalCents: 67_600 });
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toMatchObject({ ...documented });
 		});
 
 		it("keeps the acknowledgement current when a lapsed shift lowers the total", async () => {

@@ -330,10 +330,16 @@ export function computeMinijobMonths(
 	});
 }
 
-/** The month's total an acknowledgement documented (`metadata.amountsCents.total`), if any. */
+/**
+ * The month's total an acknowledgement documented, if any: the total the admin was shown
+ * (`metadata.documentedTotalCents`), else the evaluated total it recorded
+ * (`metadata.amountsCents.total`).
+ */
 export function acknowledgedTotalCentsOf(
 	metadata: Readonly<Record<string, unknown>>,
 ): number | null {
+	const documented = metadata.documentedTotalCents;
+	if (typeof documented === "number" && Number.isFinite(documented)) return documented;
 	const amounts = metadata.amountsCents;
 	if (typeof amounts !== "object" || amounts === null) return null;
 	const total = (amounts as Record<string, unknown>).total;
