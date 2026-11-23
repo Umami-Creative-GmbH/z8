@@ -1,3 +1,4 @@
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { complianceException, workPolicyViolation } from "@/db/schema";
@@ -61,7 +62,7 @@ export function deriveWorkforceComplianceSection(
 			updatedAt: snapshot.latestViolationAt ?? systemClock.nowInstant().toString(),
 			primaryLink: {
 				label: text("compliance.commandCenter.links.reviewComplianceExceptions"),
-				href: "/approvals/inbox?types=compliance_exception",
+				href: COMPLIANCE_EXCEPTION_INBOX_PATH,
 			},
 		},
 		recentCriticalEvents: [
@@ -99,7 +100,7 @@ export function deriveWorkforceComplianceSection(
 							occurredAt: snapshot.latestPendingExceptionAt ?? systemClock.nowInstant().toString(),
 							primaryLink: {
 								label: text("compliance.commandCenter.links.reviewComplianceExceptions"),
-								href: "/approvals/inbox?types=compliance_exception",
+								href: COMPLIANCE_EXCEPTION_INBOX_PATH,
 							},
 						},
 					]

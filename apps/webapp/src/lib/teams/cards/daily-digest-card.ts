@@ -4,6 +4,7 @@
  * Builds the daily summary card sent to managers each morning.
  */
 
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { DateTime } from "luxon";
 import { type BotTranslateFn, fmtFullDate } from "@/lib/bot-platform/i18n";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
@@ -380,7 +381,7 @@ export function buildDailyDigestCard(
 						{
 							type: "Action.OpenUrl",
 							title: t("teamsBot:digest.reviewComplianceExceptions", "Review exception requests"),
-							url: `${appUrl}/approvals/inbox?types=compliance_exception`,
+							url: `${appUrl}${COMPLIANCE_EXCEPTION_INBOX_PATH}`,
 						},
 					]
 				: []),

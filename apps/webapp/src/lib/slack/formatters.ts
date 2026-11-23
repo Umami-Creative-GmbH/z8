@@ -4,6 +4,7 @@
  * Converts shared bot data into Slack Block Kit JSON.
  */
 
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { DateTime } from "luxon";
 import {
 	type BotTranslateFn,
@@ -312,7 +313,7 @@ export function buildDailyDigestBlocks(
 								text: t("bot.digest.reviewComplianceExceptions", "Review exception requests"),
 								emoji: true,
 							},
-							url: `${appUrl}/approvals/inbox?types=compliance_exception`,
+							url: `${appUrl}${COMPLIANCE_EXCEPTION_INBOX_PATH}`,
 						},
 					]
 				: []),

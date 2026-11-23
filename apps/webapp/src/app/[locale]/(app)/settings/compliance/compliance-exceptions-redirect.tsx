@@ -1,3 +1,4 @@
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
 /**
@@ -6,5 +7,5 @@ import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
  * old URL with a 308 already; this keeps the route itself pointing at the inbox too.
  */
 export async function ComplianceExceptionsRedirect(): Promise<never> {
-	return redirectWithLocale("/approvals/inbox?types=compliance_exception");
+	return redirectWithLocale(COMPLIANCE_EXCEPTION_INBOX_PATH);
 }

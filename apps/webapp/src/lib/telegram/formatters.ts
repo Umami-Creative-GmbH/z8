@@ -5,6 +5,7 @@
  * and inline keyboard layouts.
  */
 
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { instantFromDate, parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
@@ -362,7 +363,7 @@ export function buildDailyDigestMessage(
 		const reviewText = t
 			? t("bot.digest.reviewComplianceExceptions", "Review exception requests")
 			: "Review exception requests";
-		const reviewUrl = `${appUrl}/approvals/inbox?types=compliance_exception`;
+		const reviewUrl = `${appUrl}${COMPLIANCE_EXCEPTION_INBOX_PATH}`;
 		lines.push(`[${escapeMarkdownV2(reviewText)}](${escapeMarkdownV2(reviewUrl)})`);
 		lines.push("");
 	}

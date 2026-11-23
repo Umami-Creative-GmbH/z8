@@ -4,6 +4,7 @@
  * Converts shared bot data into Discord embed objects and button components.
  */
 
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { DateTime } from "luxon";
 import {
 	type BotTranslateFn,
@@ -276,7 +277,7 @@ export function buildDailyDigestEmbed(
 	// Compliance
 	if (data.compliancePending && data.compliancePending > 0) {
 		// Where the recipient decides them (#1977).
-		const reviewLink = `[${t("bot.digest.reviewComplianceExceptions", "Review exception requests")}](${appUrl}/approvals/inbox?types=compliance_exception)`;
+		const reviewLink = `[${t("bot.digest.reviewComplianceExceptions", "Review exception requests")}](${appUrl}${COMPLIANCE_EXCEPTION_INBOX_PATH})`;
 		fields.push({
 			name: t("bot.digest.complianceTitle", "Compliance"),
 			value: `${t(

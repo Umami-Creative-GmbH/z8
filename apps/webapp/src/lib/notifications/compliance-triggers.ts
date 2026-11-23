@@ -9,6 +9,7 @@
  * labels; instants are shown in the organization's zone.
  */
 
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { db } from "@/db";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
@@ -198,7 +199,7 @@ export async function onComplianceExceptionRequested(
 				entityType: "compliance_exception",
 				entityId: params.exceptionId,
 				// Decided in the Approval inbox (#1977, Approvals ADR-0005).
-				actionUrl: "/approvals/inbox?types=compliance_exception",
+				actionUrl: COMPLIANCE_EXCEPTION_INBOX_PATH,
 				metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 			});
 		}

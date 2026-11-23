@@ -5,6 +5,7 @@
  * Uses color-coding to highlight severity levels.
  */
 
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
@@ -379,7 +380,7 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 						{
 							type: "Action.OpenUrl",
 							title: t("teamsBot:commands.compliance.reviewExceptions", "Review Exceptions"),
-							url: `${appUrl}/approvals/inbox?types=compliance_exception`,
+							url: `${appUrl}${COMPLIANCE_EXCEPTION_INBOX_PATH}`,
 						},
 					]
 				: []),
