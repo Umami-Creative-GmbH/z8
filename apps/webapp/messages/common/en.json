@@ -2718,6 +2718,25 @@
             "project": "The project the rate applies to; empty for all your work.",
             "summary": "The rates the organization bills to customers for your work."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Whether a day counts as at most one day, however long the work.",
+            "compensationBasis": "Whether you are paid by the hour (hourly) or by the day (daily).",
+            "currency": "The currency of the rate.",
+            "dayUnitRule": "How a day's work counts for a daily rate: any work as a full day (any_work_full_day), half or full days by a threshold (half_and_full_day), or in proportion to a standard day (prorated_by_standard_day). Empty for an hourly rate.",
+            "effectiveFrom": "The first day these terms apply (YYYY-MM-DD).",
+            "effectiveTo": "The first day these terms no longer apply (YYYY-MM-DD); empty while they apply.",
+            "employmentPeriodId": "The period these terms belong to (its id in employment_periods).",
+            "halfDayThresholdMinutes": "Up to this many minutes of work a day counts as a half day; more counts as a full day.",
+            "rate": "Your rate per hour or per day.",
+            "standardDayMinutes": "The minutes of a standard day a day's work is measured against.",
+            "summary": "Your hourly or daily rate as an External Contractor over time."
+          },
+          "contractorDetails": {
+            "companyName": "The company you contract through.",
+            "referenceCode": "The purchase order or cost-center reference your invoices are matched against.",
+            "summary": "Your contracting details as an External Contractor.",
+            "vatId": "Your VAT ID or tax reference."
+          },
           "costCenters": {
             "code": "The cost centre's code.",
             "costCenter": "The cost centre's name.",
@@ -2784,6 +2803,7 @@
             "contractType": "Your contract type.",
             "email": "The email address of your user account.",
             "endDate": "When your employment ended; empty while it continues.",
+            "engagementKind": "Whether you work for the organization as an employee (employee) or as an External Contractor (contractor) today.",
             "firstName": "Your first name in your employee record.",
             "gender": "Your gender.",
             "isActive": "Whether your employee record is active.",
@@ -2803,10 +2823,11 @@
           },
           "employmentPeriods": {
             "endedAt": "When the period ended; empty while it is open.",
+            "engagementKind": "Whether you worked in this period as an employee (employee) or as an External Contractor (contractor).",
             "startedAt": "When the period started.",
             "startProvenance": "Where the start comes from, for example a hire or a rehire.",
             "status": "Whether the period is open or closed.",
-            "summary": "Each period you were employed by the organization."
+            "summary": "Each period you worked for the organization, as an employee or as an External Contractor."
           },
           "employmentTerms": {
             "changeReason": "Why the terms were set or changed.",

@@ -2718,6 +2718,25 @@
             "project": "Das Projekt, für das der Satz gilt; leer für Ihre gesamte Arbeit.",
             "summary": "Die Sätze, die die Organisation Kunden für Ihre Arbeit in Rechnung stellt."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Ob ein Tag höchstens als ein Tag zählt, wie lange auch gearbeitet wurde.",
+            "compensationBasis": "Ob Sie nach Stunden (hourly) oder nach Tagen (daily) vergütet werden.",
+            "currency": "Die Währung des Satzes.",
+            "dayUnitRule": "Wie die Arbeit eines Tages bei einem Tagessatz zählt: jede Arbeit als ganzer Tag (any_work_full_day), halbe oder ganze Tage nach einer Schwelle (half_and_full_day) oder anteilig an einem Standardtag (prorated_by_standard_day). Leer bei einem Stundensatz.",
+            "effectiveFrom": "Der erste Tag, an dem diese Konditionen gelten (JJJJ-MM-TT).",
+            "effectiveTo": "Der erste Tag, an dem diese Konditionen nicht mehr gelten (JJJJ-MM-TT); leer, solange sie gelten.",
+            "employmentPeriodId": "Der Zeitraum, zu dem diese Konditionen gehören (seine ID in employment_periods).",
+            "halfDayThresholdMinutes": "Bis zu so vielen Minuten Arbeit zählt ein Tag als halber Tag; mehr zählt als ganzer Tag.",
+            "rate": "Ihr Satz pro Stunde oder pro Tag.",
+            "standardDayMinutes": "Die Minuten eines Standardtags, an denen die Arbeit eines Tages gemessen wird.",
+            "summary": "Ihr Stunden- oder Tagessatz als Externer Dienstleister im Zeitverlauf."
+          },
+          "contractorDetails": {
+            "companyName": "Das Unternehmen, über das Sie beauftragt werden.",
+            "referenceCode": "Die Bestell- oder Kostenstellenreferenz, mit der Ihre Rechnungen abgeglichen werden.",
+            "summary": "Ihre Vertragsangaben als Externer Dienstleister.",
+            "vatId": "Ihre USt-IdNr. oder Steuernummer."
+          },
           "costCenters": {
             "code": "Der Code der Kostenstelle.",
             "costCenter": "Der Name der Kostenstelle.",
@@ -2784,6 +2803,7 @@
             "contractType": "Ihre Vertragsart.",
             "email": "Die E-Mail-Adresse Ihres Benutzerkontos.",
             "endDate": "Wann Ihr Beschäftigungsverhältnis endete; leer, solange es fortbesteht.",
+            "engagementKind": "Ob Sie heute als Mitarbeiter (employee) oder als Externer Dienstleister (contractor) für die Organisation tätig sind.",
             "firstName": "Ihr Vorname in Ihrer Personalakte.",
             "gender": "Ihr Geschlecht.",
             "isActive": "Gibt an, ob Ihre Personalakte aktiv ist.",
@@ -2803,10 +2823,11 @@
           },
           "employmentPeriods": {
             "endedAt": "Wann der Zeitraum endete; leer, solange er offen ist.",
+            "engagementKind": "Ob Sie in diesem Zeitraum als Mitarbeiter (employee) oder als Externer Dienstleister (contractor) tätig waren.",
             "startedAt": "Wann der Zeitraum begann.",
             "startProvenance": "Ursprung des Beginns, zum Beispiel eine Einstellung oder Wiedereinstellung.",
             "status": "Ob der Zeitraum offen oder geschlossen ist.",
-            "summary": "Jeder Zeitraum, in dem Sie bei der Organisation angestellt waren."
+            "summary": "Jeder Zeitraum, in dem Sie für die Organisation tätig waren, angestellt oder als Externer Dienstleister."
           },
           "employmentTerms": {
             "changeReason": "Warum die Bedingungen festgelegt oder geändert wurden.",

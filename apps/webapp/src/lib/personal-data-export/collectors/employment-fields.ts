@@ -94,6 +94,10 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 					"personalDataExport.readme.fields.employment.employee.contractType",
 					"Your contract type.",
 				),
+				engagement_kind: t(
+					"personalDataExport.readme.fields.employment.employee.engagementKind",
+					"Whether you work for the organization as an employee (employee) or as an External Contractor (contractor) today.",
+				),
 				start_date: t(
 					"personalDataExport.readme.fields.employment.employee.startDate",
 					"When your employment started.",
@@ -115,6 +119,10 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 			),
 			fields: {
 				...common("id", "created_at", "created_by"),
+				engagement_kind: t(
+					"personalDataExport.readme.fields.employment.employmentPeriods.engagementKind",
+					"Whether you worked in this period as an employee (employee) or as an External Contractor (contractor).",
+				),
 				status: t(
 					"personalDataExport.readme.fields.employment.employmentPeriods.status",
 					"Whether the period is open or closed.",
@@ -260,6 +268,76 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 				review_state: t(
 					"personalDataExport.readme.fields.employment.employmentTerms.reviewState",
 					"Whether the terms were confirmed or still need a review.",
+				),
+			},
+		},
+		contractor_details: {
+			summary: t(
+				"personalDataExport.readme.fields.employment.contractorDetails.summary",
+				"Your contracting details as an External Contractor.",
+			),
+			fields: {
+				...common("created_at", "updated_at", "updated_by"),
+				company_name: t(
+					"personalDataExport.readme.fields.employment.contractorDetails.companyName",
+					"The company you contract through.",
+				),
+				vat_id: t(
+					"personalDataExport.readme.fields.employment.contractorDetails.vatId",
+					"Your VAT ID or tax reference.",
+				),
+				reference_code: t(
+					"personalDataExport.readme.fields.employment.contractorDetails.referenceCode",
+					"The purchase order or cost-center reference your invoices are matched against.",
+				),
+			},
+		},
+		contractor_compensation_terms: {
+			summary: t(
+				"personalDataExport.readme.fields.employment.contractorCompensationTerms.summary",
+				"Your hourly or daily rate as an External Contractor over time.",
+			),
+			fields: {
+				...common("id", "created_at", "created_by", "updated_at", "updated_by"),
+				employment_period_id: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.employmentPeriodId",
+					"The period these terms belong to (its id in employment_periods).",
+				),
+				compensation_basis: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.compensationBasis",
+					"Whether you are paid by the hour (hourly) or by the day (daily).",
+				),
+				rate: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.rate",
+					"Your rate per hour or per day.",
+				),
+				currency: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.currency",
+					"The currency of the rate.",
+				),
+				day_unit_rule: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.dayUnitRule",
+					"How a day's work counts for a daily rate: any work as a full day (any_work_full_day), half or full days by a threshold (half_and_full_day), or in proportion to a standard day (prorated_by_standard_day). Empty for an hourly rate.",
+				),
+				half_day_threshold_minutes: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.halfDayThresholdMinutes",
+					"Up to this many minutes of work a day counts as a half day; more counts as a full day.",
+				),
+				standard_day_minutes: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.standardDayMinutes",
+					"The minutes of a standard day a day's work is measured against.",
+				),
+				cap_at_one_day: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.capAtOneDay",
+					"Whether a day counts as at most one day, however long the work.",
+				),
+				effective_from: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.effectiveFrom",
+					"The first day these terms apply (YYYY-MM-DD).",
+				),
+				effective_to: t(
+					"personalDataExport.readme.fields.employment.contractorCompensationTerms.effectiveTo",
+					"The first day these terms no longer apply (YYYY-MM-DD); empty while they apply.",
 				),
 			},
 		},
