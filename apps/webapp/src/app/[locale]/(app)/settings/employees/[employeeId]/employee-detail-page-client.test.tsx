@@ -135,6 +135,9 @@ vi.mock("@/components/settings/contracts/scoped-manager-policy-card", () => ({
 		<section aria-label="Work Policy Assignment">{employeeId}</section>
 	),
 }));
+vi.mock("@/components/statutory/on-call/on-call-status-card", () => ({
+	OnCallStatusCard: () => null,
+}));
 vi.mock("@/components/settings/personal-data-export/employee-personal-data-export-card", () => ({
 	EmployeePersonalDataExportCard: ({ isOwnRecord }: { isOwnRecord: boolean }) => (
 		<section aria-label="Personal data export">{isOwnRecord ? "own record" : "colleague"}</section>

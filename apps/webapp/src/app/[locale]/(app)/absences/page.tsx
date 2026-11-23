@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { OnCallStatusCard } from "@/components/statutory/on-call/on-call-status-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
@@ -126,6 +127,8 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 					</AlertDescription>
 				</Alert>
 			)}
+			{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992). */}
+			<OnCallStatusCard employeeId={employee.id} />
 			<AbsencesViewContainer
 				key={`${employee.organizationId}:${employee.id}`}
 				absences={absences}

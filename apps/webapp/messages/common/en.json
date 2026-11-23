@@ -594,7 +594,81 @@
         "vehiclesTitle": "Organization vehicles"
       }
     },
-    "yes": "Yes"
+    "yes": "Yes",
+    "onCall": {
+      "finding": {
+        "shortNotice": "Called in with {days, plural, one {# full day} other {# full days}} notice; {required} are required",
+        "shortCall": "Shift of {duration} is shorter than the minimum call of {minimum}",
+        "shortWorkCall": "Worked {duration} on the day, less than the minimum call of {minimum}",
+        "overBand": "Week called for {used}, above the call-off band of {limit}",
+        "underBand": "Week called for {used}, below the call-off band of {limit}",
+        "other": "On-call rule at risk"
+      },
+      "reference": {
+        "excluded": {
+          "notEmployed": "Not employed",
+          "unpaidAbsence": "Unpaid absence",
+          "paidAbsence": "Leave or sickness",
+          "publicHoliday": "Public holiday"
+        },
+        "none": "—",
+        "periodThreeMonths": "Reference period (3 months): {from} – {until}",
+        "periodThirteenWeeks": "Reference period (13 weeks): {from} – {until}",
+        "numerator": "Worked time",
+        "denominator": "Counted days",
+        "denominatorValue": "{counted} of {total} days",
+        "workedDays": "Days worked",
+        "perDay": "Average per day",
+        "perWeek": "Average per week",
+        "perWorkedDay": "Average per day worked",
+        "excludedTitle": "Left out of the average",
+        "excludedPeriod": "{from} – {until}: {reason} ({days, plural, one {# day} other {# days}})",
+        "shortened": "Employment began during the reference period, so the shorter period counts.",
+        "title": "Reference hours for sick pay and holidays",
+        "threeMonths": "3 months",
+        "thirteenWeeks": "13 weeks",
+        "description": "For information only: payroll decides what is paid. Nothing here changes settled days or closed months.",
+        "noEvents": "No sick leave or public holiday on an on-call day in the last three months.",
+        "sickLeave": "Sick leave from {date}",
+        "publicHoliday": "Public holiday on {date}",
+        "dateRequired": "Choose a date.",
+        "eventDate": "Calculate for a day",
+        "calculate": "Calculate"
+      },
+      "hoursKind": {
+        "exact": "Exactly agreed weekly hours",
+        "minimum": "Minimum weekly hours (up to +25 %)",
+        "maximum": "Maximum weekly hours (down to −20 %)",
+        "unspecified": "No weekly hours agreed (20 h apply)"
+      },
+      "title": "On-call work (§ 12 TzBfG)",
+      "weekly": "{duration} per week",
+      "statutoryMinimumCall": "Statutory minimum call applies",
+      "minimumCall": "Minimum call {duration}",
+      "notToday": "Not on call today.",
+      "findingsTitle": "Checks of the last and next four weeks",
+      "noFindings": "No on-call rule is at risk.",
+      "agreementDocumented": "Agreement documented",
+      "agreementStale": "Shift changed since the agreement",
+      "reviews": {
+        "notOpen": "The shift no longer has a short-notice finding.",
+        "acknowledged": "Agreement documented",
+        "reasonRequired": "Describe how the employee agreed to the short notice.",
+        "reason": "Employee's voluntary agreement (§ 12 Abs. 3 TzBfG)",
+        "acknowledge": "Document agreement",
+        "documented": "Agreement documented: {reason}",
+        "stale": "The shift changed after the agreement was documented. Document it again if it still holds.",
+        "title": "On-call work (§ 12 TzBfG)",
+        "description": "Short-notice call-ins, calls below the minimum and weeks outside the call-off band in the last and next four weeks. Clocking is never blocked."
+      },
+      "payroll": {
+        "title": "On-call reference hours (§ 12 TzBfG)",
+        "description": "Average working time before each sick leave or public holiday of on-call employees in this period, to prepare continued pay. Nothing here changes settled days.",
+        "perDay": "{duration} per day",
+        "hide": "Hide breakdown",
+        "show": "Show breakdown"
+      }
+    }
   },
   "drivingLicence": {
     "applyingInterval": "Applying…",

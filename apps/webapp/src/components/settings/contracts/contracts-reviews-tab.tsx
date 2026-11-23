@@ -38,6 +38,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-operations";
 import { Link } from "@/navigation";
+import { OnCallReviewsSection } from "./on-call-reviews-section";
 import { todayIsoDateInTimezone } from "./contract-formatters";
 
 type ReviewFilterKind =
@@ -511,6 +512,7 @@ export function ContractsReviewsTab({
 					)}
 				</CardContent>
 			</Card>
+			<OnCallReviewsSection />
 		</div>
 	);
 }

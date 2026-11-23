@@ -228,6 +228,13 @@
         "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
         "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
         "apprenticeship": "Freistellung Auszubildende (BBiG)"
+      },
+      "onCall": {
+        "shortNotice": "Abruf: {days, plural, one {# voller Tag} other {# volle Tage}} Vorlauf, {required} erforderlich (§ 12 Abs. 3 TzBfG)",
+        "shortCall": "Abruf: Einsatz von {duration} unter dem Minimum von {minimum}",
+        "shortWorkCall": "Abruf: {duration} gearbeitet, unter dem Mindesteinsatz von {minimum}",
+        "overBand": "Abruf: Woche mit {used}, über dem Abrufkorridor von {limit}",
+        "underBand": "Abruf: Woche mit {used}, unter dem Abrufkorridor von {limit}"
       }
     }
   }

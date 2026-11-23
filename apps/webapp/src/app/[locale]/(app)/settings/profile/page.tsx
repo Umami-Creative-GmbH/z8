@@ -4,6 +4,7 @@ import { OwnSkillsCard } from "@/components/settings/own-skills-card";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { TimeFormatSettings } from "@/components/settings/time-format-settings";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
+import { OnCallStatusCard } from "@/components/statutory/on-call/on-call-status-card";
 import { WeekStartSettings } from "@/components/settings/week-start-settings";
 import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/db";
@@ -69,6 +70,9 @@ export default async function ProfilePage() {
 				{ownCustomFields.success ? <OwnCustomFieldsCard section={ownCustomFields.data} /> : null}
 
 				{ownSkills && ownSkills.skills.length > 0 ? <OwnSkillsCard ownSkills={ownSkills} /> : null}
+
+				{/* Own § 12 TzBfG on-call status and reference hours (#1992); nothing when never on call. */}
+				{ownEmployee ? <OnCallStatusCard employeeId={ownEmployee.id} /> : null}
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 				<WeekStartSettings

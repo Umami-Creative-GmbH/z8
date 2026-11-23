@@ -228,6 +228,13 @@
         "onCall": "On-call work (§ 12 TzBfG)",
         "youthProtection": "Youth protection (JArbSchG)",
         "apprenticeship": "Apprentice release (BBiG)"
+      },
+      "onCall": {
+        "shortNotice": "On-call: {days, plural, one {# full day} other {# full days}} notice, {required} required (§ 12 Abs. 3 TzBfG)",
+        "shortCall": "On-call: call of {duration} is below the minimum of {minimum}",
+        "shortWorkCall": "On-call: worked {duration}, below the minimum call of {minimum}",
+        "overBand": "On-call: week at {used}, above the call-off band of {limit}",
+        "underBand": "On-call: week at {used}, below the call-off band of {limit}"
       }
     }
   }

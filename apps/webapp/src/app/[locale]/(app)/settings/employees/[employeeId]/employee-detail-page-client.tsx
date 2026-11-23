@@ -21,6 +21,7 @@ import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/empl
 import { EmploymentLifecycleEvents } from "@/components/settings/employee-employment-history/lifecycle-events";
 import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
+import { OnCallStatusCard } from "@/components/statutory/on-call/on-call-status-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
 import { LeavingDatePanel } from "@/components/settings/employee-offboarding/leaving-date-panel";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
@@ -444,6 +445,8 @@ export function EmployeeDetailPageClient({
 									onAssigned={() => void employeeData.refetch()}
 								/>
 							)}
+							{/* § 12 TzBfG on-call (#1992): wage-free for both audiences, redacted server-side. */}
+							<OnCallStatusCard employeeId={employeeId} showErrors />
 						</TabsContent>
 
 						{/* Tab 3: Time & Balance */}

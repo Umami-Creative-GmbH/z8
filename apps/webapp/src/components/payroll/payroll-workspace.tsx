@@ -24,6 +24,7 @@ import { PayrollPeriodBar } from "./workspace/payroll-period-bar";
 import { PayrollSettlementFigures } from "./workspace/payroll-settlement-figures";
 import { PayrollSettlementTab } from "./workspace/payroll-settlement-tab";
 import { PayrollStatusStrip } from "./workspace/payroll-status-strip";
+import { OnCallReferencePayrollCard } from "./on-call-reference-payroll-card";
 import { PayrollWorkspaceTabs } from "./workspace/payroll-workspace-tabs";
 import {
 	basePeriodRequest,
@@ -312,12 +313,21 @@ function PayrollWorkspaceContent({
 							/>
 						),
 						absences: (
-							<PayrollAbsencesTab
-								filtersHaveNoMatches={filtersHaveNoMatches}
-								refreshedAt={summary.generatedAt}
-								request={request}
-								t={t}
-							/>
+							<>
+								<PayrollAbsencesTab
+									filtersHaveNoMatches={filtersHaveNoMatches}
+									refreshedAt={summary.generatedAt}
+									request={request}
+									t={t}
+								/>
+								{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992). */}
+								{isOrgAdmin ? (
+									<OnCallReferencePayrollCard
+										startDate={request.startDate}
+										endDate={request.endDate}
+									/>
+								) : null}
+							</>
 						),
 						settlement: (
 							<PayrollSettlementTab
