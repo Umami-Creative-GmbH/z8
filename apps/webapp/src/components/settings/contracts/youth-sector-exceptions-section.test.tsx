@@ -91,6 +91,38 @@ describe("YouthSectorExceptionsSection (#1993)", () => {
 		expect(await screen.findByText(label)).toBeTruthy();
 	});
 
+	it("shows a § 12 finding's minutes as its shift span, not as night minutes", async () => {
+		show("en", {
+			...finding,
+			findingId: "jarbschg_shift_span:e1:shift:s1",
+			findingKind: "jarbschg_shift_span",
+			legalReference: "§ 12 JArbSchG",
+			used: { unit: "minutes", value: 630 },
+		});
+
+		expect(await screen.findByText("630 min shift span")).toBeTruthy();
+		expect(screen.queryByText("630 min at night")).toBeNull();
+	});
+
+	it("keeps a night finding's minutes at night", async () => {
+		show("en", {
+			...finding,
+			findingId: "jarbschg_night_work:e1:shift:s1",
+			findingKind: "jarbschg_night_work",
+			legalReference: "§ 14 JArbSchG",
+			used: { unit: "minutes", value: 90 },
+		});
+
+		expect(await screen.findByText("90 min at night")).toBeTruthy();
+	});
+
+	it("has a German text for the shift span figure", () => {
+		const key = "settings.contracts.reviews.youth.shiftSpanMinutes";
+		expect(en[key]).toBe("{minutes} min shift span");
+		expect(de[key]).toBeTruthy();
+		expect(de[key]).not.toBe(en[key]);
+	});
+
 	it("words a refused acknowledgement in German, not with the server's English text", async () => {
 		mocks.acknowledgeYouthSectorExceptionAction.mockResolvedValue({
 			success: false,

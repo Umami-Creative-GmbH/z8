@@ -73,6 +73,15 @@ function kindLabel(kind: JarbschgSectorExceptionKind, t: Translate): string {
 	}
 }
 
+/** A finding's figure in minutes, worded by what the rule measures. */
+function usedMinutesLabel(kind: JarbschgSectorExceptionKind, minutes: number, t: Translate) {
+	return kind === "jarbschg_shift_span"
+		? t("settings.contracts.reviews.youth.shiftSpanMinutes", "{minutes} min shift span", {
+				minutes,
+			})
+		: t("settings.contracts.reviews.youth.nightMinutes", "{minutes} min at night", { minutes });
+}
+
 /**
  * Open JArbSchG night, Saturday, Sunday and holiday findings of employees under 18 (#1993). An
  * org admin records a statutory sector exception with a reason; it covers the shift as shown and
@@ -188,9 +197,7 @@ function YouthSectorExceptionItem({
 				</span>
 				{finding.used?.unit === "minutes" ? (
 					<span className="text-muted-foreground text-sm tabular-nums">
-						{t("settings.contracts.reviews.youth.nightMinutes", "{minutes} min at night", {
-							minutes: finding.used.value,
-						})}
+						{usedMinutesLabel(finding.findingKind, finding.used.value, t)}
 					</span>
 				) : null}
 				{finding.acknowledgementStatus === "stale" ? (

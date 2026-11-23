@@ -356,6 +356,7 @@
             "reasonRequired": "Explain which sector exception applies.",
             "subjectRequired": "This finding cannot be acknowledged. Reload the list and try again."
           },
+          "shiftSpanMinutes": "{minutes} min shift span",
           "stale": "Changed since last acknowledged",
           "title": "Youth protection: sector exceptions"
         }

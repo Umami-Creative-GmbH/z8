@@ -356,6 +356,7 @@
             "reasonRequired": "Erklären Sie, welche Branchenausnahme gilt.",
             "subjectRequired": "Dieser Befund kann nicht bestätigt werden. Laden Sie die Liste neu und versuchen Sie es erneut."
           },
+          "shiftSpanMinutes": "{minutes} Min. Schichtzeit",
           "stale": "Seit der letzten Bestätigung geändert",
           "title": "Jugendarbeitsschutz: Branchenausnahmen"
         }
