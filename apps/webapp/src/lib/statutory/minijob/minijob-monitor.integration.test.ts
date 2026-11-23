@@ -309,10 +309,13 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		const at0846 = await evaluate(org, ids, november, "2026-11-23T07:46:00Z");
 		const at0900 = await evaluate(org, ids, november, "2026-11-23T08:00:00Z");
 		const at1000 = await evaluate(org, ids, november, "2026-11-23T09:00:00Z");
+		// From 13:00 the clock-in also belongs to the second back-to-back shift.
+		const at1300 = await evaluate(org, ids, november, "2026-11-23T12:00:30Z");
+		const at1500 = await evaluate(org, ids, november, "2026-11-23T14:00:00Z");
 
 		for (const employeeId of ids) {
 			expect(month(at0840, employeeId)).toMatchObject({ earnedCents: 333, totalCents: 17_000 });
-			for (const later of [at0846, at0900, at1000]) {
+			for (const later of [at0846, at0900, at1000, at1300, at1500]) {
 				expect(month(later, employeeId)).toMatchObject({
 					totalCents: 17_000,
 					fingerprint: month(at0840, employeeId)?.fingerprint,

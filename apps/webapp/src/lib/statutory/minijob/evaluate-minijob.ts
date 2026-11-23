@@ -5,9 +5,11 @@
  * draft and published shifts that have not started yet × that day's wage, Staffing's proposed
  * shifts, and active external Minijob offsets; then judges the months (`minijob-months.ts`).
  *
- * Work in progress counts too: an open clock-in up to now, plus the rest of the started shift it
- * belongs to. A started shift nobody has clocked in for counts in full; once work has been
- * recorded for it, the recorded work plus whatever of the shift is still ahead (a break).
+ * Work in progress counts too: an open clock-in up to now, plus the rest of the shift it belongs
+ * to, from the clock-in to the shift end — also for a shift not begun yet that an early clock-in
+ * already runs for, so the projection does not move while the clock runs. A started shift nobody
+ * has clocked in for counts in full; once work has been recorded for it, the recorded work plus
+ * whatever of the shift is still ahead (a break).
  *
  * Shifts count on the organization-local day they start, as in schedule compliance; work for a
  * shift counts with the shift, other work on the day it starts. One clock-in over back-to-back
@@ -70,8 +72,9 @@ export interface EvaluateMinijobInput {
 		"warningThresholdPercent" | "criticalThresholdPercent"
 	>;
 	/**
-	 * Splits planned from worked time: open clock-ins count up to now, started shifts only for
-	 * their rest, and proposals that have ended by now not at all.
+	 * Splits planned from worked time: open clock-ins count up to now, shifts they run for (started,
+	 * or not begun after an early clock-in) only for their rest, and proposals that have ended by
+	 * now not at all.
 	 */
 	readonly now: Instant;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
