@@ -11,7 +11,7 @@ import {
 	addedStatutoryScheduleFindings,
 	evaluateStatutoryScheduleFindings,
 } from "../scheduling/evaluate";
-import { shortTermFixture } from "./testing/short-term-fixture";
+import { shortTermFixture } from "./__tests__/short-term-fixture";
 
 describe("short-term allowance in Scheduling and Staffing (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });

@@ -6,7 +6,7 @@
  */
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
-import { shortTermFixture } from "@/lib/statutory/short-term/testing/short-term-fixture";
+import { shortTermFixture } from "@/lib/statutory/short-term/__tests__/short-term-fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 

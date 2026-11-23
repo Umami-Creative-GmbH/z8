@@ -19,7 +19,7 @@ import {
 	acknowledgeShortTermBerufsmaessigkeit,
 	listShortTermBerufsmaessigkeitReviews,
 } from "./monitor";
-import { shortTermFixture } from "./testing/short-term-fixture";
+import { shortTermFixture } from "./__tests__/short-term-fixture";
 
 describe("short-term employment evaluator (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });

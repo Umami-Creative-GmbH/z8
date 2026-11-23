@@ -12,7 +12,7 @@ import {
 	earliestSickStarts,
 	listOnCallReferenceEventsBatch,
 } from "./reference-period";
-import { onCallFixture } from "./testing/on-call-fixture";
+import { onCallFixture } from "./__tests__/on-call-fixture";
 import { listOnCallPayrollReferenceRows } from "./views";
 
 vi.mock("@/lib/contracts/resolve-contract", async (importOriginal) => {

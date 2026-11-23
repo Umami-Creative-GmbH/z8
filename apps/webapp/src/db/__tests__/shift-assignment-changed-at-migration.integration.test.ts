@@ -10,7 +10,7 @@ import type { PoolClient } from "pg";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, describe, expect, it } from "vitest";
 import { fullNoticeDays, notificationDay } from "@/lib/statutory/on-call/notice";
-import { localInstant } from "@/lib/statutory/on-call/testing/on-call-fixture";
+import { localInstant } from "@/lib/statutory/on-call/__tests__/on-call-fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const SCHEMA = "t1992_migration";

@@ -9,7 +9,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { evaluateShortTermEmployment } from "./evaluate";
 import { loadShortTermInputs } from "./load-inputs";
-import { shortTermFixture } from "./testing/short-term-fixture";
+import { shortTermFixture } from "./__tests__/short-term-fixture";
 
 vi.mock("./load-inputs", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("./load-inputs")>();

@@ -5,7 +5,7 @@
  */
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { minijobFixture } from "@/lib/statutory/minijob/minijob-database.test.fixture";
+import { minijobFixture } from "@/lib/statutory/minijob/__tests__/minijob-database-fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 import type { StubCaller } from "@/test/organization-action";
 import { statutoryFixture } from "@/test/statutory-fixtures";

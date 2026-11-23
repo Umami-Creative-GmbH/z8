@@ -25,7 +25,7 @@ import { statutoryScheduleContributors } from "../scheduling/contributors";
 import { acknowledgeOnCallShortNotice } from "./acknowledge";
 import { onCallScheduleContributor } from "./contributor";
 import { evaluateOnCallFindings } from "./monitor";
-import { localInstant, onCallFixture } from "./testing/on-call-fixture";
+import { localInstant, onCallFixture } from "./__tests__/on-call-fixture";
 
 const shiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 const complianceLayer = ScheduleComplianceServiceLive.pipe(

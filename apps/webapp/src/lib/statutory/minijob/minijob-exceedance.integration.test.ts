@@ -12,7 +12,7 @@ import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
 import { evaluateStatutoryScheduleFindings } from "../scheduling/evaluate";
 import { acknowledgeMinijobExceedance } from "./acknowledge-minijob-exceedance";
 import { evaluateMinijobEarnings } from "./evaluate-minijob";
-import { minijobFixture } from "./minijob-database.test.fixture";
+import { minijobFixture } from "./__tests__/minijob-database-fixture";
 import { loadEmployeeMinijobMonitor } from "./minijob-monitor-view";
 import { addMonths } from "./minijob-months";
 import { loadMinijobExceedanceReviews } from "./minijob-reviews";

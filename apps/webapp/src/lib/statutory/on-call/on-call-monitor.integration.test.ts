@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { evaluateOnCallFindings } from "./monitor";
-import { localInstant, onCallFixture } from "./testing/on-call-fixture";
+import { localInstant, onCallFixture } from "./__tests__/on-call-fixture";
 import { loadOnCallEmployeeStatus } from "./views";
 
 describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {

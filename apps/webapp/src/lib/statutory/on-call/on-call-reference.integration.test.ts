@@ -12,7 +12,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { calculateOnCallReferencePeriod, listOnCallReferenceEvents } from "./reference-period";
 import { sickPayNoteOf } from "./sick-pay";
-import { onCallFixture } from "./testing/on-call-fixture";
+import { onCallFixture } from "./__tests__/on-call-fixture";
 import { listOnCallPayrollReferenceRows, loadOnCallEmployeeStatus } from "./views";
 
 describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {

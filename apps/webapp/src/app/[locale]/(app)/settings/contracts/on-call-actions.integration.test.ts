@@ -4,7 +4,7 @@
  */
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { localInstant, onCallFixture } from "@/lib/statutory/on-call/testing/on-call-fixture";
+import { localInstant, onCallFixture } from "@/lib/statutory/on-call/__tests__/on-call-fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 import type { StubCaller } from "@/test/organization-action";
 import { statutoryFixture } from "@/test/statutory-fixtures";

@@ -11,7 +11,7 @@ import { statutoryFixture } from "@/test/statutory-fixtures";
 import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
 import { acknowledgeMinijobExceedance } from "./acknowledge-minijob-exceedance";
 import { evaluateMinijobEarnings } from "./evaluate-minijob";
-import { minijobFixture } from "./minijob-database.test.fixture";
+import { minijobFixture } from "./__tests__/minijob-database-fixture";
 
 describe("Minijob earnings monitor (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 120_000, hookTimeout: 60_000 });

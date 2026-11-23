@@ -12,7 +12,7 @@ import {
 	addedStatutoryScheduleFindings,
 	evaluateStatutoryScheduleFindings,
 } from "../scheduling/evaluate";
-import { minijobFixture } from "./minijob-database.test.fixture";
+import { minijobFixture } from "./__tests__/minijob-database-fixture";
 import { minijobScheduleContributor } from "./minijob-schedule-contributor";
 
 const NOW = Temporal.Instant.from("2026-11-23T12:00:00Z");
