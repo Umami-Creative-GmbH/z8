@@ -35,6 +35,9 @@ describe("time KPI reads on disposable PostgreSQL", () => {
 		await admin.query("delete from work_policy where organization_id = any($1)", [
 			[org, foreignOrg],
 		]);
+		await admin.query("delete from employee_employment_history where organization_id = any($1)", [
+			[org, foreignOrg],
+		]);
 		await admin.query("delete from organization where id = any($1)", [[org, foreignOrg]]);
 		await admin.query('delete from "user" where id = $1', [user]);
 	}
@@ -177,6 +180,30 @@ describe("time KPI reads on disposable PostgreSQL", () => {
 			maxWeeklyMinutes: 2880,
 			alertBeforeLimitMinutes: 45,
 		});
+	});
+
+	it("shows no ArbZG limit alerts to an executive-exempt employee (#1993)", async () => {
+		await weekdayPolicy({
+			maxDailyMinutes: 600,
+			maxWeeklyMinutes: 2880,
+			alertBeforeLimitMinutes: 45,
+		});
+		await admin.query(
+			`insert into employee_employment_history
+			 (employee_id, organization_id, valid_from, valid_from_date, contract_type,
+			  weekly_contract_minutes, schedule_mode, employment_profile, arbzg_scope,
+			  review_state, created_by, updated_at)
+			 values ($1, $2, '2026-01-01T00:00:00Z', '2026-01-01', 'fixed', 2400, null, 'regular',
+			  'executive_exempt', 'confirmed', $3, now())`,
+			[employeeId, org, user],
+		);
+		await period("2026-10-05T06:00:00Z", "2026-10-05T14:00:00Z");
+
+		const { kpis, basis } = await readTimeKpis(scope, "Europe/Berlin", "monday", now);
+
+		// Required time still follows the work policy; only the ArbZG limits fall away.
+		expect(kpis.week.requiredMinutes).toBe(5 * 480);
+		expect(basis.limits).toBeNull();
 	});
 
 	it("has no required time without a work policy, and no limits without a regulation", async () => {
