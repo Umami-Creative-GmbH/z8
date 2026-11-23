@@ -7,10 +7,10 @@ import {
 	getApprovalTypeLabels,
 } from "@/app/[locale]/(app)/approvals/inbox/components/approval-type-labels";
 import { getOwnRequestNote } from "@/app/[locale]/(app)/approvals/inbox/components/own-request-note";
+import { useApprovalInboxSummaryText } from "@/components/approvals/use-approval-inbox-summary-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { resolveReviewText } from "@/lib/approvals/inbox/summary-text";
-import type { ApprovalInboxLocalizedText, ApprovalInboxType } from "@/lib/approvals/inbox/types";
+import type { ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import type {
@@ -175,13 +175,8 @@ export function PendingApprovalsWidget({
 	);
 	const typeLabels = getApprovalTypeLabels(t);
 	const itemTypeLabels = getApprovalItemTypeLabels(t);
-	const text = (value: string | ApprovalInboxLocalizedText) =>
-		// List summaries never name a per diem place (#1978): no travel expense catalog here.
-		resolveReviewText(
-			value,
-			(key, fallback, params) => (params ? t(key, fallback, params) : t(key, fallback)),
-			locale,
-		);
+	// List summaries never name a per diem place (#1978): no travel expense catalog here.
+	const text = useApprovalInboxSummaryText(locale);
 	const preview = data?.preview ?? [];
 	// A failed count leaves its listed rows out of the total: never state fewer than are shown.
 	const total = Math.max(data?.total ?? 0, preview.length);

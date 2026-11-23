@@ -7,6 +7,7 @@ import { startTransition, useEffect, useRef, useState, useTransition } from "rea
 import { toast } from "sonner";
 import { ApprovalReasonForm } from "@/app/[locale]/(app)/approvals/inbox/components/approval-reason-form";
 import { getApprovalTypeLabels } from "@/app/[locale]/(app)/approvals/inbox/components/approval-type-labels";
+import { useApprovalInboxSummaryText } from "@/components/approvals/use-approval-inbox-summary-text";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -18,8 +19,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import { resolveReviewText } from "@/lib/approvals/inbox/summary-text";
-import type { ApprovalInboxLocalizedText } from "@/lib/approvals/inbox/types";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { Link } from "@/navigation";
 import { useTodayDecisionReservation } from "./today-decision-reservations";
@@ -59,13 +58,8 @@ export function TodayApprovalsPanel({
 }: TodayApprovalsPanelProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const inboxText = (value: string | ApprovalInboxLocalizedText) =>
-		// List summaries never name a per diem place (#1978): no travel expense catalog on /today.
-		resolveReviewText(
-			value,
-			(key, fallback, params) => (params ? t(key, fallback, params) : t(key, fallback)),
-			locale,
-		);
+	// List summaries never name a per diem place (#1978): no travel expense catalog on /today.
+	const inboxText = useApprovalInboxSummaryText(locale);
 	const { refresh } = useRouter();
 	const { pendingApprovalId: actingApprovalId, reserve, release } = useTodayDecisionReservation();
 	const [isRefreshPending, startRefreshTransition] = useTransition();

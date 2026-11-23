@@ -2,10 +2,10 @@
 
 import { IconAlertTriangle, IconInbox, IconLoader2, IconUserShare } from "@tabler/icons-react";
 import type { useTranslate } from "@tolgee/react";
+import { useApprovalInboxSummaryText } from "@/components/approvals/use-approval-inbox-summary-text";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
-import { resolveReviewText } from "@/lib/approvals/inbox/summary-text";
 import type {
 	ApprovalInboxCoveringSection,
 	ApprovalInboxItem,
@@ -42,10 +42,9 @@ function ApprovalInboxWarnings({
 	t: Translate;
 	warnings: ApprovalInboxWarning[];
 }) {
+	const summaryText = useApprovalInboxSummaryText();
 	if (warnings.length === 0) return null;
 	const typeLabels: Record<string, string> = getApprovalTypeLabels(t);
-	const translate = (key: string, fallback: string, params?: Record<string, string | number>) =>
-		params ? t(key, fallback, params) : t(key, fallback);
 
 	return (
 		<div className="mb-4 space-y-2">
@@ -60,7 +59,7 @@ function ApprovalInboxWarnings({
 						<div className="font-medium">{typeLabels[warning.source] ?? warning.source}</div>
 						<div>
 							{warning.localized
-								? resolveReviewText(warning.localized, translate)
+								? summaryText(warning.localized)
 								: warning.message}
 						</div>
 					</div>
