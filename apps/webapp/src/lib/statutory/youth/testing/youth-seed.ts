@@ -219,7 +219,15 @@ export function youthSeed(admin: Pool) {
 		/** An organization-wide regulated work policy with a daily maximum. */
 		async regulatedPolicy(
 			org: FixtureOrganization,
-			input: { createdBy: string; maxDailyMinutes: number },
+			input: {
+				createdBy: string;
+				maxDailyMinutes: number;
+				/** A rest period the clock-in guardrail enforces. */
+				minRestPeriodMinutes?: number;
+				restPeriodEnforcement?: "warn" | "block";
+				/** One break rule: `minutes` of break after `after` minutes of work. */
+				breakRule?: { after: number; minutes: number };
+			},
 		): Promise<string> {
 			const id = randomUUID();
 			await admin.query(
@@ -236,11 +244,29 @@ export function youthSeed(admin: Pool) {
 				 values ($1, $2, 1, '1970-01-01', false, true, false, true, $3) returning id`,
 				[id, org.id, input.createdBy],
 			);
-			await admin.query(
-				`insert into work_policy_regulation (policy_id, policy_version_id, max_daily_minutes, updated_at)
-				 values ($1, $2, $3, now())`,
-				[id, version.id, input.maxDailyMinutes],
+			const {
+				rows: [regulation],
+			} = await admin.query<{ id: string }>(
+				`insert into work_policy_regulation
+				 (policy_id, policy_version_id, max_daily_minutes, min_rest_period_minutes,
+				  rest_period_enforcement, updated_at)
+				 values ($1, $2, $3, $4, $5, now()) returning id`,
+				[
+					id,
+					version.id,
+					input.maxDailyMinutes,
+					input.minRestPeriodMinutes ?? null,
+					input.restPeriodEnforcement ?? "warn",
+				],
 			);
+			if (input.breakRule) {
+				await admin.query(
+					`insert into work_policy_break_rule
+					 (regulation_id, policy_version_id, working_minutes_threshold, required_break_minutes, updated_at)
+					 values ($1, $2, $3, $4, now())`,
+					[regulation.id, version.id, input.breakRule.after, input.breakRule.minutes],
+				);
+			}
 			await admin.query(
 				`insert into work_policy_assignment
 				 (policy_id, organization_id, assignment_type, priority, created_by, updated_at)

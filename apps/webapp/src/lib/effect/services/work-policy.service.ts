@@ -267,6 +267,18 @@ export class WorkPolicyService extends Context.Service<
 		}) => Effect.Effect<EffectiveWorkPolicy | null, NotFoundError | DatabaseError>;
 
 		/**
+		 * The work policy as adult ArbZG rules apply it as of `at`: like `getEffectivePolicyAt`,
+		 * without its regulation (rest, breaks, limits, alerts) while the employee's effective
+		 * terms are `executive_exempt` (§ 18 Abs. 1 Nr. 1 ArbZG, #1993). JArbSchG youth limits are
+		 * judged separately and never depend on it.
+		 */
+		readonly getAdultArbzgPolicyAt: (input: {
+			employeeId: string;
+			organizationId?: string;
+			at: Instant;
+		}) => Effect.Effect<EffectiveWorkPolicy | null, NotFoundError | DatabaseError>;
+
+		/**
 		 * Check compliance for a working session against the policy in force at
 		 * `policyAt`. The result names that policy. Fails when the employee is not
 		 * in the organization.
@@ -413,6 +425,18 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 			getEffectivePolicyAt: (input) =>
 				effectivePolicyOf(input.employeeId, input.organizationId, dateFromInstant(input.at)),
+
+			getAdultArbzgPolicyAt: (input) =>
+				effectiveContractOf(input.employeeId, input.organizationId, dateFromInstant(input.at)).pipe(
+					Effect.map((contract) => {
+						const policy = contract?.workPolicy
+							? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
+							: null;
+						return policy && contract?.arbzgScope === "executive_exempt"
+							? { ...policy, regulation: null }
+							: policy;
+					}),
+				),
 
 			checkCompliance: (input) =>
 				Effect.gen(function* () {

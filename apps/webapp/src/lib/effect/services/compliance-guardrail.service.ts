@@ -217,6 +217,13 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 		const workPolicyService = yield* WorkPolicyService;
 
 		/**
+		 * The policy as adult ArbZG applies it now: without its regulation for executive-exempt
+		 * employees (#1993), so they are never held to the adult rest period, limits or alerts.
+		 */
+		const adultArbzgPolicyOf = (employeeId: string) =>
+			workPolicyService.getAdultArbzgPolicyAt({ employeeId, at: systemClock.nowInstant() });
+
+		/**
 		 * Get last clock-out time for an employee
 		 */
 		const getLastClockOut = (employeeId: string): Effect.Effect<Date | null, DatabaseError> =>
@@ -267,7 +274,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			timezone: string;
 		}): Effect.Effect<OvertimeStats, NotFoundError | DatabaseError> =>
 			Effect.gen(function* () {
-				const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
+				const policy = yield* adultArbzgPolicyOf(params.employeeId);
 
 				const timezone = parseTimeZone(params.timezone);
 				const todayKey = plainDateAt(systemClock.nowInstant(), timezone).toString();
@@ -334,7 +341,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			checkRestPeriod: (params) =>
 				Effect.gen(function* () {
 					// Get effective policy for this employee
-					const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
+					const policy = yield* adultArbzgPolicyOf(params.employeeId);
 
 					// If no policy or no rest period requirement, allow clock-in
 					if (!policy?.regulation?.minRestPeriodMinutes) {
@@ -439,7 +446,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 			getProactiveAlerts: (input) =>
 				Effect.gen(function* () {
-					const policy = yield* workPolicyService.getEffectivePolicy(input.employeeId);
+					const policy = yield* adultArbzgPolicyOf(input.employeeId);
 
 					if (!policy?.regulation) {
 						return [];
@@ -559,7 +566,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			getComplianceStatus: (params) =>
 				Effect.gen(function* () {
 					// Get policy for alerts
-					const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
+					const policy = yield* adultArbzgPolicyOf(params.employeeId);
 
 					const alerts: ComplianceAlert[] = [];
 

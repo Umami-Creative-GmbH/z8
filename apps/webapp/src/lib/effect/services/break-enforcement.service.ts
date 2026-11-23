@@ -178,7 +178,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			NotFoundError | DatabaseError
 		> =>
 			Effect.gen(function* () {
-				const policy = yield* workPolicyService.getEffectivePolicyAt({
+				// Executive-exempt employees owe no adult ArbZG break (#1993).
+				const policy = yield* workPolicyService.getAdultArbzgPolicyAt({
 					employeeId: params.employeeId,
 					organizationId: params.organizationId,
 					at: params.policyAt,

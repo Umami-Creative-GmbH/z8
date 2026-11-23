@@ -1,10 +1,15 @@
 /**
- * `arbzg_scope = 'executive_exempt'` (§ 18 Abs. 1 Nr. 1 ArbZG) in Scheduling (#1993): adult
+ * `arbzg_scope = 'executive_exempt'` (§ 18 Abs. 1 Nr. 1 ArbZG) (#1993). In Scheduling, adult
  * working-time findings (rest, daily maximum, overtime) are dropped on days the employee's
- * effective terms exempt them. JArbSchG statutory findings are never dropped.
+ * effective terms exempt them; JArbSchG statutory findings are never dropped. In Time Tracking,
+ * the automatic break adjustment owes exempt employees no adult break.
  */
-import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import {
+	loadEffectiveContractsBatch,
+	resolveEffectiveContractOnDay,
+} from "@/lib/contracts/resolve-contract";
+import {
+	type Instant,
 	type PlainDate,
 	parseInstant,
 	parsePlainDate,
@@ -12,6 +17,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { ComplianceFinding } from "@/lib/scheduling/compliance/types";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
 /** Organization-local days in `[from, until)` on which each employee is executive-exempt. */
 export async function loadExecutiveExemptDays(
@@ -52,6 +58,25 @@ export async function loadExecutiveExemptDays(
 		if (exempt.size > 0) result.set(employeeId, exempt);
 	}
 	return result;
+}
+
+/**
+ * Whether the employee's effective terms are `executive_exempt` on the organization-local day of
+ * `at`, as the work policy in force at `at` is resolved. Adult ArbZG rules (rest, breaks, limits)
+ * then do not apply; JArbSchG youth limits still do.
+ */
+export async function isExecutiveExemptAt(
+	db: Pick<DatabaseClient, "select">,
+	input: { readonly organizationId: string; readonly employeeId: string; readonly at: Instant },
+): Promise<boolean> {
+	const timezone = await loadOrganizationTimezone(db, input.organizationId);
+	const contract = await resolveEffectiveContractOnDay(db, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		date: plainDateAt(input.at, timezone),
+		at: input.at,
+	});
+	return contract?.arbzgScope === "executive_exempt";
 }
 
 /** The findings left once adult working-time findings of exempt employees are dropped. */
