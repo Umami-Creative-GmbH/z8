@@ -1,11 +1,44 @@
 import { describe, expect, it } from "vitest";
+import { jarbschgRules } from "@/lib/statutory/youth/jarbschg-rules";
+import deCatalog from "../../../../../messages/settings/workPolicies/de.json";
+import enCatalog from "../../../../../messages/settings/workPolicies/en.json";
 import {
 	buildCsvContent,
 	formatCsvLocalMinute,
 	formatViolationCsvDate,
 	formatViolationDate,
+	getViolationTypeLabel,
 	violationLocalDate,
+	violationTypeColors,
 } from "./helpers";
+
+function catalogText(catalog: unknown, key: string): unknown {
+	return key
+		.split(".")
+		.reduce<unknown>(
+			(node, part) =>
+				node && typeof node === "object" ? (node as Record<string, unknown>)[part] : undefined,
+			catalog,
+		);
+}
+
+describe("JArbSchG violation labels (#1993)", () => {
+	it.each(jarbschgRules)("labels %s in English and German and gives it a colour", (rule) => {
+		const keys: string[] = [];
+		const label = getViolationTypeLabel(rule, (key, fallback) => {
+			keys.push(key);
+			return fallback;
+		});
+		expect(label).not.toBe(rule);
+		expect(keys).toHaveLength(1);
+		const english = catalogText(enCatalog, keys[0]);
+		const german = catalogText(deCatalog, keys[0]);
+		expect(english).toBe(label);
+		expect(typeof german).toBe("string");
+		expect(german).not.toBe(english);
+		expect(violationTypeColors[rule]).toBeDefined();
+	});
+});
 
 describe("work policy compliance helpers", () => {
 	it("escapes quotes, commas, and line breaks in CSV cells", () => {

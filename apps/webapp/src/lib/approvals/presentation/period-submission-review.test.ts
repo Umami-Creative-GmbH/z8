@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { jarbschgRules } from "@/lib/statutory/youth/jarbschg-rules";
+import approvalsDe from "../../../../messages/approvals/de.json";
+import approvalsEn from "../../../../messages/approvals/en.json";
 import type { PeriodSubmissionSubmittedFacts } from "../evidence/period-submission-facts";
 import { isApprovalInboxDetailChange, localizedTextFallback } from "../inbox/localized-text";
 import type { ApprovalInboxDetailSection } from "../inbox/types";
@@ -179,6 +182,47 @@ describe("buildPeriodSubmissionReviewSections", () => {
 				],
 			},
 		]);
+	});
+});
+
+describe("JArbSchG violations in a period submission (#1993)", () => {
+	function catalogText(catalog: unknown, key: string): unknown {
+		return key
+			.split(".")
+			.reduce<unknown>(
+				(node, part) =>
+					node && typeof node === "object" ? (node as Record<string, unknown>)[part] : undefined,
+				catalog,
+			);
+	}
+
+	it.each(jarbschgRules)("names %s in English and German", (rule) => {
+		const sections = buildPeriodSubmissionReviewSections({
+			facts: { ...facts, violations: [{ date: "2026-03-02", type: rule }] },
+			employeeName: "Ada Lovelace",
+			submittedAt: "2026-03-08T12:00:00.000Z",
+		});
+		const section = sections.find(
+			(candidate) =>
+				candidate.type === "key_value" &&
+				localizedTextFallback(candidate.title) === "Compliance violations",
+		);
+		if (section?.type !== "key_value") throw new Error("expected the violations section");
+		const value = section.rows[0]?.value;
+		if (!value || typeof value === "string" || isApprovalInboxDetailChange(value)) {
+			throw new Error("expected a localized violation list");
+		}
+		const [name] = (value.params?.violations ?? []) as unknown[];
+		if (!name || typeof name !== "object" || !("key" in name) || !("fallback" in name)) {
+			throw new Error(`expected a localized name for ${rule}`);
+		}
+		const { key, fallback } = name as { key: string; fallback: string };
+		expect(fallback).not.toBe(rule);
+		const path = key.replace(/^approvals:/, "");
+		expect(catalogText(approvalsEn, path)).toBe(fallback);
+		const german = catalogText(approvalsDe, path);
+		expect(typeof german).toBe("string");
+		expect(german).not.toBe(fallback);
 	});
 });
 

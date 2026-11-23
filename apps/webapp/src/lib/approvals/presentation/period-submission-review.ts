@@ -157,6 +157,47 @@ const VIOLATION_TYPES: Record<string, ApprovalInboxLocalizedText> = {
 		key: "approvals:approvals.periodSubmission.violationType.overtimeMonthly",
 		fallback: "Monthly overtime threshold exceeded",
 	},
+	// JArbSchG youth protection (#1993).
+	jarbschg_daily_max: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgDailyMax",
+		fallback: "Youth daily maximum exceeded (JArbSchG)",
+	},
+	jarbschg_weekly_max: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgWeeklyMax",
+		fallback: "Youth weekly maximum exceeded (JArbSchG)",
+	},
+	jarbschg_days_per_week: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgDaysPerWeek",
+		fallback: "More than five working days a week for a minor (JArbSchG)",
+	},
+	jarbschg_rest_period: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgRestPeriod",
+		fallback: "Youth rest period too short (JArbSchG)",
+	},
+	jarbschg_uninterrupted: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgUninterrupted",
+		fallback: "Minor worked too long without a break (JArbSchG)",
+	},
+	jarbschg_break: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgBreak",
+		fallback: "Youth break missing (JArbSchG)",
+	},
+	jarbschg_night_work: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgNightWork",
+		fallback: "Night work by a minor (JArbSchG)",
+	},
+	jarbschg_saturday_work: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgSaturdayWork",
+		fallback: "Saturday work by a minor (JArbSchG)",
+	},
+	jarbschg_sunday_work: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgSundayWork",
+		fallback: "Sunday work by a minor (JArbSchG)",
+	},
+	jarbschg_holiday_work: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgHolidayWork",
+		fallback: "Public holiday work by a minor (JArbSchG)",
+	},
 };
 
 function groupedByDate<T>(entries: readonly T[], dateOf: (entry: T) => string): Map<string, T[]> {
