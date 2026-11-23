@@ -941,6 +941,46 @@ describe("external contractor engagement kind (#1995)", () => {
 			expect(rows).toEqual([]);
 		});
 
+		it("keeps a migration conflict on the kind of the stint its terms belong to after the person converts", async () => {
+			now = parseInstant("2026-03-02T10:00:00Z");
+			const person = await fixture.seedEmployee();
+			const { rows: terms } = await fixture.pool.query<{ id: string }>(
+				`insert into employee_employment_history (organization_id, employee_id, employment_period_id,
+				   valid_from, valid_from_date, weekly_contract_minutes, review_state, created_by, updated_at)
+				 select $1, $2, p.id, coalesce(p.started_at, '2026-01-01'),
+				   coalesce(p.started_at, '2026-01-01')::date, 2400, 'confirmed', $3, now()
+				 from employee_employment_period p where p.id = $4
+				 returning id`,
+				[fixture.organizationId, person.employeeId, fixture.ownerUserId, person.employmentPeriodId],
+			);
+			const { rows: conflicts } = await fixture.pool.query<{ id: string }>(
+				`insert into contract_migration_conflict (organization_id, employee_id, employment_history_id,
+				   conflict_kind, dedupe_key)
+				 values ($1, $2, $3, 'legacy_terms_overlap', $4) returning id`,
+				[fixture.organizationId, person.employeeId, terms[0]?.id, randomUUID()],
+			);
+			await offboardNow(person);
+
+			now = parseInstant("2026-04-01T09:00:00Z");
+			await commands().rehireEmployee(ownerActor(), {
+				...employeeTerms,
+				employeeId: person.employeeId,
+				requestId: randomUUID(),
+				previousEmploymentPeriodId: person.employmentPeriodId,
+				engagementKind: "contractor",
+				workPolicyId: null,
+			});
+
+			const queue = await listContractsReviewQueue(fixture.db, fixture.organizationId);
+
+			expect((await engagementOf(person.employeeId)).employee).toBe("contractor");
+			expect(
+				queue.migrationConflicts
+					.filter((conflict) => conflict.id === conflicts[0]?.id)
+					.map((conflict) => conflict.engagementKind),
+			).toEqual(["employee"]);
+		});
+
 		it("refuses converting in place even while a departure is only scheduled", async () => {
 			now = parseInstant("2026-03-02T10:00:00Z");
 			const contractor = await seedContractor();
