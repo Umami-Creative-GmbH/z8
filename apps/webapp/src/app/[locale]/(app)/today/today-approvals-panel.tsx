@@ -444,7 +444,10 @@ export function TodayApprovalsPanel({
 					finalFocus={() => {
 						const id = lastRejectedId.current;
 						const button = id
-							? listRef.current?.querySelector<HTMLElement>(`[data-reject-approval-id="${id}"]`)
+							? // A disabled button (stale or errored briefing) can't take focus: the list does.
+								listRef.current?.querySelector<HTMLElement>(
+									`[data-reject-approval-id="${id}"]:not(:disabled)`,
+								)
 							: null;
 						return button ?? listRef.current ?? true;
 					}}

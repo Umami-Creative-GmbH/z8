@@ -583,6 +583,28 @@ describe("TodayApprovalsPanel", () => {
 		).toBe("Overlaps the inventory week.");
 	});
 
+	it("keeps focus in the list when the panel closes on a stale briefing, whose Reject button is disabled", async () => {
+		const { rerender } = render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		rerender(<TodayApprovalsPanel items={[approvalItem()]} total={1} stale />);
+		fireEvent.click(
+			within(screen.getByRole("dialog", { name: "Reject request" })).getByRole("button", {
+				name: "Cancel",
+			}),
+		);
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
+		});
+		// A disabled button can't take focus: it goes into the list instead of falling to <body>.
+		await waitFor(() => {
+			const list = screen.getByRole("list", { name: "Pending approvals" });
+			expect(document.activeElement).not.toBe(document.body);
+			expect(list.contains(document.activeElement)).toBe(true);
+		});
+	});
+
 	it("starts a fresh, consistent reason when the same item is reopened while the panel is still closing", () => {
 		render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
 
