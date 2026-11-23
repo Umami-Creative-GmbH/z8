@@ -40,7 +40,7 @@ describe("errorLogSummary (#1975)", () => {
 		expect(JSON.stringify(errorLogSummary(failure))).not.toContain(REASON);
 	});
 
-	it.each(["at 08:30:00", "at clinic:10:30"])(
+	it.each(["at 08:30:00", "at clinic:10:30", "at node:10:30:00"])(
 		"keeps no time-like message line (%s) once the message changed",
 		(line) => {
 			const failure = new Error(`Failed query\nparams: org-1,Doctor\n${line}`);
@@ -89,9 +89,7 @@ describe("errorLogSummary (#1975)", () => {
 		const failure = new Error("Failed query");
 		failure.stack = ["Error: Failed query", ...frames.map((frame) => `    ${frame}`)].join("\n");
 
-		expect(errorLogSummary(failure).frames).toEqual(
-			frames.filter((frame) => frame !== "at async Promise.all (index 0)"),
-		);
+		expect(errorLogSummary(failure).frames).toEqual(frames);
 	});
 
 	it("keeps the frame of a real getter that threw, as V8 writes it", () => {
