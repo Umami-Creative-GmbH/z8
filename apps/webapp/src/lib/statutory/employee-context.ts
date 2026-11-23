@@ -212,12 +212,19 @@ export async function listEmployeeStatutoryOffsets(
 
 async function voidRow(
 	db: Writer,
-	table: typeof employeeStatutoryOffset | typeof employeeStudyPeriod | typeof employeeApprenticeRelease,
+	table:
+		| typeof employeeStatutoryOffset
+		| typeof employeeStudyPeriod
+		| typeof employeeApprenticeRelease,
 	input: WriteScope & { readonly id: string; readonly reason: string },
 ): Promise<void> {
 	const rows = await db
 		.update(table)
-		.set({ voidedAt: currentTimestamp(), voidedBy: input.actorUserId, voidReason: input.reason.trim() || null })
+		.set({
+			voidedAt: currentTimestamp(),
+			voidedBy: input.actorUserId,
+			voidReason: input.reason.trim() || null,
+		})
 		.where(
 			and(
 				eq(table.id, input.id),
@@ -228,7 +235,11 @@ async function voidRow(
 		)
 		.returning({ id: table.id });
 	if (rows.length === 0) {
-		throw new NotFoundError({ message: "Record not found", entityType: "statutory_context", entityId: input.id });
+		throw new NotFoundError({
+			message: "Record not found",
+			entityType: "statutory_context",
+			entityId: input.id,
+		});
 	}
 }
 

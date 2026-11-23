@@ -11,7 +11,9 @@ export async function loadEmployeeInOrganization(
 	const [row] = await db
 		.select({ id: employee.id })
 		.from(employee)
-		.where(and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)))
+		.where(
+			and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)),
+		)
 		.limit(1);
 	if (!row) {
 		throw new NotFoundError({

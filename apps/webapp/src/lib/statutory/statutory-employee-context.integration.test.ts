@@ -161,7 +161,10 @@ describe("per-employee statutory context (PostgreSQL)", () => {
 		await recordEmployeeStudyPeriod(db, { ...base, startsOn: "2026-04-15", endsOn: "2026-04-30" });
 
 		expect(
-			await listEmployeeStudyPeriods(db, { organizationId: orgA.id, employeeId: workerA.employeeId }),
+			await listEmployeeStudyPeriods(db, {
+				organizationId: orgA.id,
+				employeeId: workerA.employeeId,
+			}),
 		).toEqual([expect.objectContaining({ startsOn: "2026-04-15" })]);
 	});
 

@@ -7,14 +7,26 @@ import { and, eq, isNull } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { statutoryThreshold } from "@/db/schema";
+import {
+	STATUTORY_ON_CALL_MIN_DAILY_MINUTES,
+	STATUTORY_ON_CALL_WEEKLY_FALLBACK_MINUTES,
+} from "@/lib/contracts/contract-validation";
 import { loadStatutoryThresholds, resolveStatutoryThreshold } from "./thresholds";
 
 describe("statutory threshold lookup (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 	it("resolves the Minijob cap in force on each side of the October 2022 change", async () => {
-		const before = await resolveStatutoryThreshold(db, "de_minijob_monthly_limit_cents", "2022-09-30");
-		const after = await resolveStatutoryThreshold(db, "de_minijob_monthly_limit_cents", "2022-10-01");
+		const before = await resolveStatutoryThreshold(
+			db,
+			"de_minijob_monthly_limit_cents",
+			"2022-09-30",
+		);
+		const after = await resolveStatutoryThreshold(
+			db,
+			"de_minijob_monthly_limit_cents",
+			"2022-10-01",
+		);
 
 		expect(before).toMatchObject({ value: 45_000, unit: "cents", currency: "EUR" });
 		expect(after).toMatchObject({
@@ -50,7 +62,9 @@ describe("statutory threshold lookup (PostgreSQL)", () => {
 			db
 				.update(statutoryThreshold)
 				.set({ integerValue: 99_900 })
-				.where(and(eq(cap, "de_minijob_monthly_limit_cents"), isNull(statutoryThreshold.organizationId))),
+				.where(
+					and(eq(cap, "de_minijob_monthly_limit_cents"), isNull(statutoryThreshold.organizationId)),
+				),
 		).rejects.toThrow();
 		await expect(
 			db.insert(statutoryThreshold).values({
@@ -67,7 +81,20 @@ describe("statutory threshold lookup (PostgreSQL)", () => {
 		expect(
 			(await resolveStatutoryThreshold(db, "de_minijob_monthly_limit_cents", "2026-06-15"))?.value,
 		).toBe(60_300);
-		expect(await resolveStatutoryThreshold(db, "de_on_call_notice_full_days", "2026-06-15")).not.toBeNull();
+		expect(
+			await resolveStatutoryThreshold(db, "de_on_call_notice_full_days", "2026-06-15"),
+		).not.toBeNull();
+	});
+
+	it("agrees with the on-call fallbacks the Milestone 1 contract preview still hardcodes", async () => {
+		// The resolver's preview constants must not drift from the baselines monitors evaluate.
+		const on = "2026-06-15";
+		expect(
+			(await resolveStatutoryThreshold(db, "de_on_call_default_weekly_minutes", on))?.value,
+		).toBe(STATUTORY_ON_CALL_WEEKLY_FALLBACK_MINUTES);
+		expect((await resolveStatutoryThreshold(db, "de_on_call_min_call_minutes", on))?.value).toBe(
+			STATUTORY_ON_CALL_MIN_DAILY_MINUTES,
+		);
 	});
 
 	it("seeds every German statutory baseline the Milestone 2 monitors read", async () => {

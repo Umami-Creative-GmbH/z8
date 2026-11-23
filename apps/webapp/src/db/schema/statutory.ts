@@ -108,7 +108,10 @@ export const employeeStatutoryOffset = pgTable(
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
-		check("employee_statutory_offset_kind_check", textIn("offset_kind", employeeStatutoryOffsetKinds)),
+		check(
+			"employee_statutory_offset_kind_check",
+			textIn("offset_kind", employeeStatutoryOffsetKinds),
+		),
 		check(
 			"employee_statutory_offset_date_range_check",
 			sql`"valid_until_date" IS NULL OR "valid_until_date" > "valid_from_date"`,
@@ -125,7 +128,10 @@ export const employeeStudyPeriod = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		employeeId: uuid("employee_id").notNull(),
-		periodKind: text("period_kind").$type<EmployeeStudyPeriodKind>().default("lecture_free").notNull(),
+		periodKind: text("period_kind")
+			.$type<EmployeeStudyPeriodKind>()
+			.default("lecture_free")
+			.notNull(),
 		startsOn: date("starts_on", { mode: "string" }).notNull(),
 		endsOn: date("ends_on", { mode: "string" }).notNull(),
 		note: text("note"),
