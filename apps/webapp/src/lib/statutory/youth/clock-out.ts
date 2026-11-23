@@ -91,49 +91,89 @@ export async function recordJarbschgViolationsAfterClockOut(
 		if (finding.acknowledgement?.status === "current") continue;
 		if (!byRule.has(finding.kind)) byRule.set(finding.kind, finding);
 	}
-	if (byRule.size === 0) return [];
 
-	// Recorded violations are never re-evaluated: each rule is recorded once per local day.
+	// Each rule is recorded once per local day. The other rules only grow with more work, so their
+	// violations stand; the day's break total (§ 11 Abs. 1) is re-judged at every clock-out, because
+	// a clock-out that starts a break is judged before that break exists.
 	const dayRange = localDayRange(day.toString(), input.timezone);
 	const existing = await db
-		.select({ violationType: workPolicyViolation.violationType })
+		.select({
+			id: workPolicyViolation.id,
+			violationType: workPolicyViolation.violationType,
+			acknowledgedAt: workPolicyViolation.acknowledgedAt,
+		})
 		.from(workPolicyViolation)
 		.where(
 			and(
 				eq(workPolicyViolation.organizationId, input.organizationId),
 				eq(workPolicyViolation.employeeId, input.employeeId),
-				inArray(workPolicyViolation.violationType, [...byRule.keys()]),
+				inArray(workPolicyViolation.violationType, [
+					...new Set<JarbschgRule>([...byRule.keys(), "jarbschg_break"]),
+				]),
 				gte(workPolicyViolation.violationDate, dateFromInstant(dayRange.start)),
 				lt(workPolicyViolation.violationDate, dateFromInstant(dayRange.endExclusive)),
 			),
 		);
+	const breakFinding = byRule.get("jarbschg_break");
+	// An acknowledged break violation is kept as reviewed; an open one follows the day's work.
+	for (const row of existing) {
+		if (row.violationType !== "jarbschg_break" || row.acknowledgedAt) continue;
+		if (breakFinding) {
+			await db
+				.update(workPolicyViolation)
+				.set({ workPeriodId: input.workPeriodId, details: violationDetails(breakFinding) })
+				.where(
+					and(
+						eq(workPolicyViolation.id, row.id),
+						eq(workPolicyViolation.organizationId, input.organizationId),
+					),
+				);
+		} else {
+			await db
+				.delete(workPolicyViolation)
+				.where(
+					and(
+						eq(workPolicyViolation.id, row.id),
+						eq(workPolicyViolation.organizationId, input.organizationId),
+					),
+				);
+		}
+	}
 	for (const row of existing) byRule.delete(row.violationType as JarbschgRule);
 	if (byRule.size === 0) return [];
 
 	await db.insert(workPolicyViolation).values(
-		[...byRule.values()].map((finding) => {
-			const inDays = finding.summary.used?.unit === "days";
-			return {
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				policyId: null,
-				policyVersionId: null,
-				workPeriodId: input.workPeriodId,
-				violationDate: dateFromInstant(input.workStart),
-				violationType: finding.kind,
-				details: {
-					legalReference: finding.legalReference,
-					...(inDays
-						? { actualDays: finding.summary.used?.value, limitDays: finding.summary.limit?.value }
-						: {
-								actualMinutes: finding.summary.used?.value,
-								limitMinutes: finding.summary.limit?.value,
-							}),
-					warningShownAt: new Date().toISOString(),
-					userContinued: true,
-				},
-			};
-		}),
+		[...byRule.values()].map((finding) => ({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			policyId: null,
+			policyVersionId: null,
+			workPeriodId: input.workPeriodId,
+			violationDate: dateFromInstant(input.workStart),
+			violationType: finding.kind,
+			details: violationDetails(finding),
+		})),
 	);
 	return [...byRule.keys()];
+}
+
+function violationDetails(finding: {
+	readonly legalReference: string;
+	readonly summary: {
+		readonly used?: { readonly value: number; readonly unit: string } | null;
+		readonly limit?: { readonly value: number } | null;
+	};
+}) {
+	const inDays = finding.summary.used?.unit === "days";
+	return {
+		legalReference: finding.legalReference,
+		...(inDays
+			? { actualDays: finding.summary.used?.value, limitDays: finding.summary.limit?.value }
+			: {
+					actualMinutes: finding.summary.used?.value,
+					limitMinutes: finding.summary.limit?.value,
+				}),
+		warningShownAt: new Date().toISOString(),
+		userContinued: true,
+	};
 }

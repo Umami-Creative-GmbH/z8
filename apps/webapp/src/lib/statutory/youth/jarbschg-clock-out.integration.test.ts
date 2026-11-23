@@ -103,6 +103,36 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		]);
 	});
 
+	it("drops the day's break violation once later breaks satisfy § 11 (15 + 15 minutes over 6 h)", async () => {
+		const minor = await fx.employee(org, "split", { birthday: "2010-06-01" });
+		// 08:00–11:00, 15 min break, 11:15–13:45: 330 min worked with only 15 min of break so far.
+		await clockOut(minor, "2026-03-02", "08:00", 180);
+		await clockOut(minor, "2026-03-02", "11:15", 150);
+		// 14:00–14:30 after a second 15 min break: 360 min worked, 30 min of break.
+		await clockOut(minor, "2026-03-02", "14:00", 30);
+		expect(await types(minor)).toEqual([]);
+	});
+
+	it("drops the day's break violation once a second 30 min break follows 375 min of work", async () => {
+		const minor = await fx.employee(org, "second", { birthday: "2010-06-01" });
+		// 07:00–11:00, 30 min break, 11:30–13:45: 375 min worked, 30 min of break so far.
+		await clockOut(minor, "2026-03-02", "07:00", 240);
+		await clockOut(minor, "2026-03-02", "11:30", 135);
+		// 14:15–15:15 after a second 30 min break: 435 min worked, 60 min of break.
+		await clockOut(minor, "2026-03-02", "14:15", 60);
+		expect(await types(minor)).toEqual([]);
+	});
+
+	it("keeps the break violation of a day that really lacks the breaks", async () => {
+		const minor = await fx.employee(org, "short", { birthday: "2010-06-01" });
+		await clockOut(minor, "2026-03-02", "08:00", 180);
+		await clockOut(minor, "2026-03-02", "11:15", 150);
+		// Two more stretches after 15 min breaks each: 420 min worked needs 60 min, only 45 taken.
+		await clockOut(minor, "2026-03-02", "14:00", 30);
+		await clockOut(minor, "2026-03-02", "14:45", 60);
+		expect(await types(minor)).toEqual(["jarbschg_break"]);
+	});
+
 	it("counts an apprentice's school time toward the daily maximum", async () => {
 		const learner = await fx.employee(org, "learner", { birthday: "2010-06-01" });
 		await seed.terms(learner, {
