@@ -19,6 +19,7 @@ import {
 import { statutoryScheduleContributors } from "../scheduling/contributors";
 import { acknowledgeOnCallShortNotice } from "./acknowledge";
 import { onCallScheduleContributor } from "./contributor";
+import { evaluateOnCallFindings } from "./monitor";
 import { localInstant, onCallFixture } from "./testing/on-call-fixture";
 
 const shiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
@@ -31,6 +32,28 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 
 	beforeEach(fx.cleanup);
 	afterAll(fx.cleanup);
+
+	/** The fingerprint of the short-notice finding an org admin is shown for the shift's day. */
+	async function shownNoticeFingerprint(
+		org: { id: string; timezone: string },
+		employeeId: string,
+		shiftDate: string,
+		now: Temporal.Instant,
+	): Promise<string> {
+		const findings = await evaluateOnCallFindings(db, {
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: {
+				start: shiftDate,
+				endExclusive: Temporal.PlainDate.from(shiftDate).add({ days: 1 }).toString(),
+			},
+			employeeIds: [employeeId],
+			now,
+		});
+		const notice = findings.find((f) => f.kind === "on_call_short_notice");
+		if (!notice) throw new Error("no short-notice finding shown");
+		return notice.inputFingerprint;
+	}
 
 	it("is registered as a Scheduling contributor", () => {
 		expect(statutoryScheduleContributors).toContain(onCallScheduleContributor);
@@ -72,11 +95,13 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 			],
 		]);
 
+		const shown = await shownNoticeFingerprint(org, worker.employeeId, shiftDate, now);
 		await acknowledgeOnCallShortNotice(db, {
 			organizationId: org.id,
 			timezone: org.timezone,
 			actorUserId: hr.userId,
 			shiftId,
+			expectedFingerprint: shown,
 			reason: "Employee agreed by phone to cover the Saturday",
 			now,
 		});
@@ -126,6 +151,102 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		expect((await noticeStatus()).map(([, status]) => status)).toEqual(["stale"]);
 	});
 
+	it("refuses an agreement for figures the admin was not shown", async () => {
+		const org = await onCall.organization("a");
+		const hr = await fx.user("hr");
+		const worker = await fx.employee(org, "worker");
+		await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+		const now = Temporal.Instant.from("2026-03-04T12:00:00Z");
+		const shiftId = await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: "2026-03-07",
+			startTime: "09:00",
+			endTime: "13:00",
+			publishedAt: localInstant("2026-03-03", "10:00", org.timezone),
+		});
+		const shown = await shownNoticeFingerprint(org, worker.employeeId, "2026-03-07", now);
+		// The shift moves before the admin submits: the finding they saw is gone.
+		await admin.query(`UPDATE shift SET start_time = '10:00' WHERE id = $1`, [shiftId]);
+
+		await expect(
+			acknowledgeOnCallShortNotice(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				actorUserId: hr.userId,
+				shiftId,
+				expectedFingerprint: shown,
+				reason: "Agreed",
+				now,
+			}),
+		).rejects.toMatchObject({
+			_tag: "ValidationError",
+			refusal: "on_call_notice_finding_changed",
+		} satisfies Partial<ValidationError>);
+		const { rows } = await admin.query(
+			`SELECT 1 FROM contract_review_acknowledgement WHERE organization_id = $1`,
+			[org.id],
+		);
+		expect(rows).toEqual([]);
+	});
+
+	it("keeps the short-notice finding of a past shift whose end is corrected afterwards", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+		// Real dates: the planner's correction below runs on the real clock, after the shift.
+		const today = Temporal.Now.instant().toZonedDateTimeISO(org.timezone).toPlainDate();
+		const shiftDate = today.subtract({ days: 1 }).toString();
+		// Published two days before the shift: one full day of notice.
+		const shiftId = await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: shiftDate,
+			startTime: "09:00",
+			endTime: "13:00",
+			publishedAt: localInstant(today.subtract({ days: 3 }).toString(), "10:00", org.timezone),
+			assignmentChangedAt: localInstant(
+				today.subtract({ days: 3 }).toString(),
+				"10:00",
+				org.timezone,
+			),
+		});
+		const notice = async () =>
+			(
+				await evaluateStatutoryScheduleFindings(
+					db,
+					{
+						organizationId: org.id,
+						timezone: org.timezone,
+						window: { start: shiftDate, endExclusive: today.toString() },
+						employeeIds: [worker.employeeId],
+						now: Temporal.Now.instant(),
+					},
+					[onCallScheduleContributor],
+				)
+			)
+				.filter((f) => f.statutoryKind === "on_call_short_notice")
+				.map((f) => [f.subjectKey, f.summary.used?.value]);
+		expect(await notice()).toEqual([[`shift:${shiftId}`, 1]]);
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* ShiftService;
+				return yield* service.upsertShift({
+					id: shiftId,
+					organizationId: org.id,
+					employeeId: worker.employeeId,
+					subareaId: org.subareaId,
+					date: shiftStoredDate(shiftDate, org.timezone),
+					timezone: org.timezone,
+					startTime: "09:00",
+					endTime: "14:30",
+					createdBy: org.plannerUserId,
+				});
+			}).pipe(Effect.provide(shiftLayer)),
+		);
+
+		expect(await notice()).toEqual([[`shift:${shiftId}`, 1]]);
+	});
+
 	it("refuses to acknowledge a shift announced in time", async () => {
 		const org = await onCall.organization("a");
 		const hr = await fx.user("hr");
@@ -145,6 +266,7 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 				timezone: org.timezone,
 				actorUserId: hr.userId,
 				shiftId,
+				expectedFingerprint: "v1:anything",
 				reason: "Agreed",
 				now: Temporal.Instant.from("2026-03-04T12:00:00Z"),
 			}),

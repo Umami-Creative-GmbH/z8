@@ -323,6 +323,7 @@ function PayrollWorkspaceContent({
 								{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992). */}
 								{isOrgAdmin ? (
 									<OnCallReferencePayrollCard
+										organizationId={summary.organizationId}
 										startDate={request.startDate}
 										endDate={request.endDate}
 									/>

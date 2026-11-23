@@ -446,7 +446,11 @@ export function EmployeeDetailPageClient({
 								/>
 							)}
 							{/* § 12 TzBfG on-call (#1992): wage-free for both audiences, redacted server-side. */}
-							<OnCallStatusCard employeeId={employeeId} showErrors />
+							<OnCallStatusCard
+								organizationId={employee.organizationId}
+								employeeId={employeeId}
+								showErrors
+							/>
 						</TabsContent>
 
 						{/* Tab 3: Time & Balance */}

@@ -4,10 +4,16 @@
  * preparation list. Everything here is minutes and days only; findings are redacted for the
  * restricted audience before they leave the server.
  */
-import { and, asc, eq, inArray } from "drizzle-orm";
-import { employee, employeeEmploymentHistory } from "@/db/schema";
+import { and, asc, eq, gt, gte, inArray, isNull, lt, min, or } from "drizzle-orm";
+import { absenceCategory, absenceEntry, employee, employeeEmploymentHistory } from "@/db/schema";
 import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
-import { type Instant, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import {
+	comparePlainDates,
+	type Instant,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { attachAcknowledgementStates } from "../acknowledgements";
 import { loadEmployeeInOrganization } from "../employee-scope";
@@ -20,6 +26,7 @@ import {
 import { evaluateOnCallFindings, type OnCallFinding, type OnCallFindingKind } from "./monitor";
 import {
 	listOnCallReferenceEvents,
+	listOnCallReferenceEventsBatch,
 	type OnCallReferenceEvent,
 	type OnCallReferenceMethod,
 } from "./reference-period";
@@ -212,10 +219,17 @@ export interface OnCallPayrollReferenceRow extends OnCallReferenceEvent {
 	readonly employeeName: string;
 }
 
+export type OnCallPayrollRefusal = "on_call_payroll_range_too_long";
+
+/** The longest payroll range listed at once: a payroll period, never a year of history. */
+export const ON_CALL_PAYROLL_MAX_MONTHS = 3;
+
 /**
  * Sick-leave starts and public holidays of every on-call employee in a payroll period, each with
  * its reference hours, for Payroll Export / comparison preparation. Reads only: settled days and
- * closed months are never touched.
+ * closed months are never touched. Only employees with on-call terms overlapping the period (or
+ * the sick leave running into it) are read, in one batch; ranges longer than
+ * {@link ON_CALL_PAYROLL_MAX_MONTHS} months are refused.
  */
 export async function listOnCallPayrollReferenceRows(
 	db: Reader,
@@ -227,34 +241,93 @@ export async function listOnCallPayrollReferenceRows(
 		readonly method: OnCallReferenceMethod;
 	},
 ): Promise<OnCallPayrollReferenceRow[]> {
-	const until = parsePlainDate(input.endDate).add({ days: 1 }).toString();
-	const rows = await db
-		.select({ employeeId: employeeEmploymentHistory.employeeId })
+	const start = parsePlainDate(input.startDate);
+	const end = parsePlainDate(input.endDate);
+	if (comparePlainDates(end, start.add({ months: ON_CALL_PAYROLL_MAX_MONTHS })) >= 0) {
+		throw new ValidationError({
+			message: `List on-call reference hours for at most ${ON_CALL_PAYROLL_MAX_MONTHS} months at a time`,
+			field: "endDate",
+			refusal: "on_call_payroll_range_too_long" satisfies OnCallPayrollRefusal,
+		});
+	}
+	if (comparePlainDates(end, start) < 0) return [];
+	const until = end.add({ days: 1 }).toString();
+
+	// Sick leave running into the period is dated from its own start: terms must cover that day.
+	const sickSince = await db
+		.select({ employeeId: absenceEntry.employeeId, startDate: min(absenceEntry.startDate) })
+		.from(absenceEntry)
+		.innerJoin(
+			absenceCategory,
+			and(
+				eq(absenceCategory.id, absenceEntry.categoryId),
+				eq(absenceCategory.organizationId, input.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(absenceEntry.organizationId, input.organizationId),
+				eq(absenceEntry.status, "approved"),
+				eq(absenceCategory.type, "sick"),
+				eq(absenceCategory.requiresWorkTime, false),
+				lt(absenceEntry.startDate, input.startDate),
+				gte(absenceEntry.endDate, input.startDate),
+			),
+		)
+		.groupBy(absenceEntry.employeeId);
+	const firstEventOf = new Map(
+		sickSince.flatMap((row) => (row.startDate ? [[row.employeeId, row.startDate] as const] : [])),
+	);
+	const earliest = [...firstEventOf.values()].reduce((a, b) => (a < b ? a : b), input.startDate);
+	const terms = await db
+		.select({
+			employeeId: employeeEmploymentHistory.employeeId,
+			validFromDate: employeeEmploymentHistory.validFromDate,
+			validUntilDate: employeeEmploymentHistory.validUntilDate,
+		})
 		.from(employeeEmploymentHistory)
 		.where(
 			and(
 				eq(employeeEmploymentHistory.organizationId, input.organizationId),
 				eq(employeeEmploymentHistory.scheduleSource, "on_call"),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
+				lt(employeeEmploymentHistory.validFromDate, until),
+				or(
+					isNull(employeeEmploymentHistory.validUntilDate),
+					gt(employeeEmploymentHistory.validUntilDate, earliest),
+				),
 			),
 		);
-	const employeeIds = [...new Set(rows.map((row) => row.employeeId))].toSorted();
+	const employeeIds = [
+		...new Set(
+			terms
+				.filter((row) => {
+					const from = firstEventOf.get(row.employeeId) ?? input.startDate;
+					return row.validUntilDate === null || row.validUntilDate > from;
+				})
+				.map((row) => row.employeeId),
+		),
+	].toSorted();
+	if (employeeIds.length === 0) return [];
+
 	const names = await employeeNames(db, input.organizationId, employeeIds);
-	const result: OnCallPayrollReferenceRow[] = [];
-	for (const employeeId of employeeIds) {
-		const events = await listOnCallReferenceEvents(db, {
-			organizationId: input.organizationId,
-			employeeId,
-			from: input.startDate,
-			untilExclusive: until,
-			method: input.method,
-		});
-		for (const event of events) {
-			result.push({ ...event, employeeId, employeeName: names.get(employeeId) ?? employeeId });
-		}
-	}
-	return result.toSorted(
-		(a, b) =>
-			a.eventDate.localeCompare(b.eventDate) || a.employeeName.localeCompare(b.employeeName),
-	);
+	const events = await listOnCallReferenceEventsBatch(db, {
+		organizationId: input.organizationId,
+		employeeIds,
+		from: input.startDate,
+		untilExclusive: until,
+		method: input.method,
+	});
+	return [...events]
+		.flatMap(([employeeId, list]) =>
+			list.map((event) => ({
+				...event,
+				employeeId,
+				employeeName: names.get(employeeId) ?? employeeId,
+			})),
+		)
+		.toSorted(
+			(a, b) =>
+				a.eventDate.localeCompare(b.eventDate) || a.employeeName.localeCompare(b.employeeName),
+		);
 }

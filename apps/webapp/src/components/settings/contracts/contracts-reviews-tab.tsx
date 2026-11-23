@@ -512,7 +512,7 @@ export function ContractsReviewsTab({
 					)}
 				</CardContent>
 			</Card>
-			<OnCallReviewsSection />
+			<OnCallReviewsSection organizationId={organizationId} />
 		</div>
 	);
 }

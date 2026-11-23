@@ -653,6 +653,7 @@
       "agreementStale": "Shift changed since the agreement",
       "reviews": {
         "notOpen": "The shift no longer has a short-notice finding.",
+        "changed": "The shift changed since this list was loaded. Review it again before documenting the agreement.",
         "acknowledged": "Agreement documented",
         "reasonRequired": "Describe how the employee agreed to the short notice.",
         "reason": "Employee's voluntary agreement (§ 12 Abs. 3 TzBfG)",
@@ -666,6 +667,7 @@
         "title": "On-call reference hours (§ 12 TzBfG)",
         "description": "Average working time before each sick leave or public holiday of on-call employees in this period, to prepare continued pay. Nothing here changes settled days.",
         "perDay": "{duration} per day",
+        "rangeTooLong": "Reference hours are listed for at most three months at a time. Choose a shorter period.",
         "hide": "Hide breakdown",
         "show": "Show breakdown"
       }

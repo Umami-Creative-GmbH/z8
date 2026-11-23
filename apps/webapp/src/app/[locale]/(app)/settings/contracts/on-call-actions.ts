@@ -59,6 +59,8 @@ export const acknowledgeOnCallShortNoticeAction = organizationAction(
 		requires: "orgAdmin",
 		schema: z.strictObject({
 			shiftId: z.uuid(),
+			/** The finding's fingerprint as shown: a precondition, never recorded from the client. */
+			expectedFingerprint: z.string().min(1).max(200),
 			reason: z.string().trim().min(1).max(2000),
 			legalNote: z.string().trim().max(2000).optional(),
 		}),
@@ -70,6 +72,7 @@ export const acknowledgeOnCallShortNoticeAction = organizationAction(
 				timezone: await loadOrganizationTimezone(db, organizationId),
 				actorUserId: actor.userId,
 				shiftId: input.shiftId,
+				expectedFingerprint: input.expectedFingerprint,
 				reason: input.reason,
 				legalNote: input.legalNote ?? null,
 				now: systemClock.nowInstant(),

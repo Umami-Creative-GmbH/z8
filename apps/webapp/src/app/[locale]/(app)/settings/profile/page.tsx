@@ -72,7 +72,12 @@ export default async function ProfilePage() {
 				{ownSkills && ownSkills.skills.length > 0 ? <OwnSkillsCard ownSkills={ownSkills} /> : null}
 
 				{/* Own § 12 TzBfG on-call status and reference hours (#1992); nothing when never on call. */}
-				{ownEmployee ? <OnCallStatusCard employeeId={ownEmployee.id} /> : null}
+				{ownEmployee ? (
+					<OnCallStatusCard
+						organizationId={ownEmployee.organizationId}
+						employeeId={ownEmployee.id}
+					/>
+				) : null}
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 				<WeekStartSettings

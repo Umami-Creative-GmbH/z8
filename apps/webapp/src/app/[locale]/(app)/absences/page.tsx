@@ -128,7 +128,7 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 				</Alert>
 			)}
 			{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992). */}
-			<OnCallStatusCard employeeId={employee.id} />
+			<OnCallStatusCard organizationId={employee.organizationId} employeeId={employee.id} />
 			<AbsencesViewContainer
 				key={`${employee.organizationId}:${employee.id}`}
 				absences={absences}

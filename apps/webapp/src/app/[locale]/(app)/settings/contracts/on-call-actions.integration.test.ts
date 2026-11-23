@@ -97,8 +97,17 @@ describe("on-call actions (PostgreSQL)", () => {
 			finding: { subjectKey: `shift:${shiftId}`, acknowledgement: { status: "none" } },
 		});
 
+		expect(
+			await acknowledgeOnCallShortNoticeAction({
+				shiftId,
+				expectedFingerprint: "v1:not-what-was-shown",
+				reason: "Worker asked for the extra call",
+			}),
+		).toMatchObject({ success: false, code: "ValidationError" });
+
 		const acknowledged = await acknowledgeOnCallShortNoticeAction({
 			shiftId,
+			expectedFingerprint: notice?.finding.inputFingerprint ?? "",
 			reason: "Worker asked for the extra call",
 		});
 		expect(acknowledged.success).toBe(true);
@@ -119,7 +128,13 @@ describe("on-call actions (PostgreSQL)", () => {
 			success: false,
 			code: "AuthorizationError",
 		});
-		expect(await acknowledgeOnCallShortNoticeAction({ shiftId, reason: "x" })).toMatchObject({
+		expect(
+			await acknowledgeOnCallShortNoticeAction({
+				shiftId,
+				expectedFingerprint: "v1:x",
+				reason: "x",
+			}),
+		).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 		});
@@ -199,5 +214,56 @@ describe("on-call actions (PostgreSQL)", () => {
 				},
 			],
 		});
+	});
+
+	it("lists every on-call employee of the period in one pass, and nobody whose terms ended before it", async () => {
+		const { org, owner, worker, today, as } = await scenario();
+		const second = await fx.employee(org, "second");
+		await onCall.onCallTerms(org, second, { kind: "exact", weeklyMinutes: 600 });
+		await onCall.holiday(org, second, today.subtract({ days: 2 }).toString());
+		const former = await fx.employee(org, "former");
+		await onCall.onCallTerms(org, former, {
+			kind: "unspecified",
+			until: today.subtract({ days: 30 }).toString(),
+		});
+		await onCall.absence(org, former, {
+			type: "sick",
+			startDate: today.subtract({ days: 1 }).toString(),
+			endDate: today.subtract({ days: 1 }).toString(),
+		});
+		as(owner, "owner", null);
+
+		const rows = await listOnCallPayrollReferenceRowsAction({
+			startDate: today.subtract({ days: 3 }).toString(),
+			endDate: today.toString(),
+			method: "three_months",
+		});
+
+		expect(
+			rows.success ? rows.data.map((row) => [row.employeeId, row.kind, row.eventDate]) : rows,
+		).toEqual([
+			[second.employeeId, "public_holiday", today.subtract({ days: 2 }).toString()],
+			[worker.employeeId, "sick_leave", today.subtract({ days: 1 }).toString()],
+		]);
+	});
+
+	it("refuses a payroll range longer than three months", async () => {
+		const { owner, as } = await scenario();
+		as(owner, "owner", null);
+
+		expect(
+			await listOnCallPayrollReferenceRowsAction({
+				startDate: "2026-01-01",
+				endDate: "2026-04-01",
+				method: "three_months",
+			}),
+		).toMatchObject({ success: false, code: "ValidationError" });
+		expect(
+			await listOnCallPayrollReferenceRowsAction({
+				startDate: "2026-01-01",
+				endDate: "2026-03-31",
+				method: "three_months",
+			}),
+		).toMatchObject({ success: true });
 	});
 });

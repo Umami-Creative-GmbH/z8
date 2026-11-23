@@ -19,6 +19,7 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { OnCallReferenceMethod } from "@/lib/statutory/on-call/reference-period";
+import { onCallStatusQueryKey } from "./on-call-query-keys";
 import { OnCallReferenceBreakdownView } from "./on-call-reference-breakdown";
 import { formatOnCallMinutes, onCallFindingText, onCallHoursKindText } from "./on-call-text";
 
@@ -31,9 +32,12 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * server redacts findings below org admin; the card shows minutes and days only.
  */
 export function OnCallStatusCard({
+	organizationId,
 	employeeId,
 	showErrors = false,
 }: {
+	/** Part of the query key: cached on-call data never shows under another organization. */
+	readonly organizationId: string;
 	readonly employeeId: string;
 	/** Employee Detail shows a failed load; self-service pages stay quiet. */
 	readonly showErrors?: boolean;
@@ -42,7 +46,7 @@ export function OnCallStatusCard({
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const [method, setMethod] = useState<OnCallReferenceMethod>("three_months");
 	const status = useQuery({
-		queryKey: ["statutory", "on-call", "status", employeeId, method],
+		queryKey: onCallStatusQueryKey(organizationId, employeeId, method),
 		queryFn: async () => {
 			const result = await getEmployeeOnCallStatusAction({ employeeId, method });
 			if (!result.success) throw new Error(actionErrorMessage(t, result));

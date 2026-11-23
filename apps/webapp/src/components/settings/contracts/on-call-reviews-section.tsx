@@ -9,6 +9,10 @@ import {
 	acknowledgeOnCallShortNoticeAction,
 	listOnCallReviewItemsAction,
 } from "@/app/[locale]/(app)/settings/contracts/on-call-actions";
+import {
+	onCallQueryScope,
+	onCallReviewsQueryKey,
+} from "@/components/statutory/on-call/on-call-query-keys";
 import { onCallFindingText } from "@/components/statutory/on-call/on-call-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,9 +28,16 @@ import type { OnCallAcknowledgementRefusal } from "@/lib/statutory/on-call/ackno
 import type { OnCallReviewItem } from "@/lib/statutory/on-call/views";
 import { Link } from "@/navigation";
 
-const QUERY_KEY = ["contracts", "on-call-reviews"] as const;
-
-function AcknowledgeShortNoticeForm({ shiftId }: { readonly shiftId: string }) {
+function AcknowledgeShortNoticeForm({
+	organizationId,
+	shiftId,
+	fingerprint,
+}: {
+	readonly organizationId: string;
+	readonly shiftId: string;
+	/** The fingerprint of the finding shown: the server refuses if the shift changed since. */
+	readonly fingerprint: string;
+}) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const refusals: RefusalMessages<OnCallAcknowledgementRefusal> = {
@@ -34,18 +45,31 @@ function AcknowledgeShortNoticeForm({ shiftId }: { readonly shiftId: string }) {
 			"common.onCall.reviews.notOpen",
 			"The shift no longer has a short-notice finding.",
 		],
+		on_call_notice_finding_changed: [
+			"common.onCall.reviews.changed",
+			"The shift changed since this list was loaded. Review it again before documenting the agreement.",
+		],
 	};
 	const acknowledge = useMutation({
 		mutationFn: async (reason: string) => {
-			const result = await acknowledgeOnCallShortNoticeAction({ shiftId, reason });
+			const result = await acknowledgeOnCallShortNoticeAction({
+				shiftId,
+				expectedFingerprint: fingerprint,
+				reason,
+			});
 			if (!result.success) throw new Error(actionErrorMessage(t, result, refusals));
 			return result.data;
 		},
 		onSuccess: () => {
 			toast.success(t("common.onCall.reviews.acknowledged", "Agreement documented"));
-			void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+			// Reviews & Conflicts and every Employee Detail status show these findings.
+			void queryClient.invalidateQueries({ queryKey: onCallQueryScope(organizationId) });
 		},
-		onError: (error) => toast.error(error.message),
+		onError: (error) => {
+			toast.error(error.message);
+			// A changed or closed finding: show the current one.
+			void queryClient.invalidateQueries({ queryKey: onCallReviewsQueryKey(organizationId) });
+		},
 	});
 	const form = useForm({
 		defaultValues: { reason: "" },
@@ -98,7 +122,13 @@ function AcknowledgeShortNoticeForm({ shiftId }: { readonly shiftId: string }) {
 	);
 }
 
-function ReviewRow({ item }: { readonly item: OnCallReviewItem }) {
+function ReviewRow({
+	organizationId,
+	item,
+}: {
+	readonly organizationId: string;
+	readonly item: OnCallReviewItem;
+}) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const { finding } = item;
@@ -136,7 +166,11 @@ function ReviewRow({ item }: { readonly item: OnCallReviewItem }) {
 				</p>
 			) : null}
 			{finding.kind === "on_call_short_notice" && shiftId && status !== "current" ? (
-				<AcknowledgeShortNoticeForm shiftId={shiftId} />
+				<AcknowledgeShortNoticeForm
+					organizationId={organizationId}
+					shiftId={shiftId}
+					fingerprint={finding.inputFingerprint}
+				/>
 			) : null}
 		</li>
 	);
@@ -146,10 +180,10 @@ function ReviewRow({ item }: { readonly item: OnCallReviewItem }) {
  * § 12 TzBfG on-call findings of the last and next four weeks in Settings → Contracts → Reviews &
  * Conflicts (#1992), with short-notice agreements. Org admins only.
  */
-export function OnCallReviewsSection() {
+export function OnCallReviewsSection({ organizationId }: { readonly organizationId: string }) {
 	const { t } = useTranslate();
 	const items = useQuery({
-		queryKey: QUERY_KEY,
+		queryKey: onCallReviewsQueryKey(organizationId),
 		queryFn: async () => {
 			const result = await listOnCallReviewItemsAction({});
 			if (!result.success) throw new Error(actionErrorMessage(t, result));
@@ -181,7 +215,7 @@ export function OnCallReviewsSection() {
 				) : (
 					<ul className="space-y-2">
 						{items.data.map((item) => (
-							<ReviewRow key={item.finding.id} item={item} />
+							<ReviewRow key={item.finding.id} organizationId={organizationId} item={item} />
 						))}
 					</ul>
 				)}

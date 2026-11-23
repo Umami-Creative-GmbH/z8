@@ -10,7 +10,7 @@ import {
 } from "@/db/schema";
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	type DatabaseError,
@@ -27,7 +27,7 @@ import {
 	insertSkillOverride,
 	skillOverrideReasonRequiredError,
 } from "@/lib/scheduling/skill-override";
-import { isMaterialShiftAssignmentChange } from "@/lib/scheduling/shift-assignment-change";
+import { isNewShiftCallIn } from "@/lib/scheduling/shift-assignment-change";
 import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 import { DatabaseService } from "./database.service";
 
@@ -565,13 +565,18 @@ export const ShiftServiceLive = Layer.effect(
 											endTime: input.endTime,
 											notes: input.notes,
 											color: input.color,
-											// § 12 TzBfG notice runs from the last material change (#1992).
-											...(isMaterialShiftAssignmentChange(existing, {
-												employeeId,
-												date: input.date,
-												startTime: input.startTime,
-												endTime: input.endTime,
-											})
+											// § 12 TzBfG notice runs from the last material change before the
+											// shift starts; a later correction announces nothing (#1992).
+											...(isNewShiftCallIn(
+												existing,
+												{
+													employeeId,
+													date: input.date,
+													startTime: input.startTime,
+													endTime: input.endTime,
+												},
+												{ timezone: input.timezone, now: systemClock.nowInstant() },
+											)
 												? { assignmentChangedAt: new Date() }
 												: {}),
 										})

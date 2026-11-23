@@ -653,6 +653,7 @@
       "agreementStale": "Schicht seit der Zustimmung geändert",
       "reviews": {
         "notOpen": "Für die Schicht gibt es keinen Hinweis auf zu kurzen Vorlauf mehr.",
+        "changed": "Die Schicht hat sich geändert, seit diese Liste geladen wurde. Prüfe sie erneut, bevor du die Zustimmung dokumentierst.",
         "acknowledged": "Zustimmung dokumentiert",
         "reasonRequired": "Beschreibe, wie die Person dem kurzen Vorlauf zugestimmt hat.",
         "reason": "Freiwillige Zustimmung der Person (§ 12 Abs. 3 TzBfG)",
@@ -666,6 +667,7 @@
         "title": "Referenzstunden bei Arbeit auf Abruf (§ 12 TzBfG)",
         "description": "Durchschnittliche Arbeitszeit vor jeder Krankheit und jedem Feiertag von Beschäftigten auf Abruf in diesem Zeitraum, zur Vorbereitung der Entgeltfortzahlung. Abgerechnete Tage bleiben unverändert.",
         "perDay": "{duration} pro Tag",
+        "rangeTooLong": "Referenzstunden werden für höchstens drei Monate auf einmal aufgelistet. Wähle einen kürzeren Zeitraum.",
         "hide": "Aufschlüsselung ausblenden",
         "show": "Aufschlüsselung anzeigen"
       }

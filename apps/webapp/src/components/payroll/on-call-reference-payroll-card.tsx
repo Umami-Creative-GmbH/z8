@@ -11,8 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
-import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import {
+	actionErrorMessage,
+	type RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
 import type { OnCallReferenceMethod } from "@/lib/statutory/on-call/reference-period";
+import type { OnCallPayrollRefusal } from "@/lib/statutory/on-call/views";
+
+const payrollRefusals: RefusalMessages<OnCallPayrollRefusal> = {
+	on_call_payroll_range_too_long: [
+		"common.onCall.payroll.rangeTooLong",
+		"Reference hours are listed for at most three months at a time. Choose a shorter period.",
+	],
+};
 
 /**
  * Payroll preparation (#1992): every on-call employee's sick-leave start and public holiday in the
@@ -21,9 +32,12 @@ import type { OnCallReferenceMethod } from "@/lib/statutory/on-call/reference-pe
  * period has no such events.
  */
 export function OnCallReferencePayrollCard({
+	organizationId,
 	startDate,
 	endDate,
 }: {
+	/** Part of the query key: cached rows never show under another organization. */
+	readonly organizationId: string;
 	readonly startDate: string;
 	readonly endDate: string;
 }) {
@@ -32,10 +46,10 @@ export function OnCallReferencePayrollCard({
 	const [method, setMethod] = useState<OnCallReferenceMethod>("three_months");
 	const [openRow, setOpenRow] = useState<string | null>(null);
 	const rows = useQuery({
-		queryKey: ["payroll", "on-call-reference", startDate, endDate, method],
+		queryKey: ["payroll", "on-call-reference", organizationId, startDate, endDate, method],
 		queryFn: async () => {
 			const result = await listOnCallPayrollReferenceRowsAction({ startDate, endDate, method });
-			if (!result.success) throw new Error(actionErrorMessage(t, result));
+			if (!result.success) throw new Error(actionErrorMessage(t, result, payrollRefusals));
 			return result.data;
 		},
 	});

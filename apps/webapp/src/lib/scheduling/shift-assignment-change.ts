@@ -1,3 +1,7 @@
+import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
+import { shiftCalendarDate } from "./shift-date";
+import { shiftInterval } from "./shift-occasion";
+
 /**
  * A material assignment change is one an assigned employee must be told about again: a new
  * assignee, day, start or end. Notes, colour, template or subarea changes are not. The instant of
@@ -22,4 +26,26 @@ export function isMaterialShiftAssignmentChange(
 		before.startTime !== after.startTime ||
 		before.endTime !== after.endTime
 	);
+}
+
+/**
+ * Whether an edit is a new call-in whose notification instant is `now`: a material change to a
+ * shift that has not started yet. Correcting a shift once it has started (its recorded end, say)
+ * announces nothing, so the notification instant of the call stays as it was.
+ */
+export function isNewShiftCallIn(
+	before: ShiftAssignment | null | undefined,
+	after: ShiftAssignment,
+	input: { readonly timezone: string; readonly now: Instant },
+): boolean {
+	if (!isMaterialShiftAssignmentChange(before, after)) return false;
+	const { start } = shiftInterval(
+		{
+			date: shiftCalendarDate(after.date, input.timezone),
+			startTime: after.startTime,
+			endTime: after.endTime,
+		},
+		input.timezone,
+	);
+	return compareInstants(start, input.now) > 0;
 }
