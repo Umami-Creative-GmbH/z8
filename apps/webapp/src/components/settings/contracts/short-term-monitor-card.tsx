@@ -41,6 +41,7 @@ import type {
 } from "@/lib/statutory/short-term/monitor";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { shortTermMonitorQueryKey } from "./short-term-query-keys";
 import {
 	formatCents,
 	formatMonth,
@@ -143,11 +144,13 @@ function AllowanceSummary({ allowance, t }: { allowance: ShortTermAllowance; t: 
 }
 
 function VoidPriorEmploymentForm({
+	organizationId,
 	employeeId,
 	entry,
 	onDone,
 	t,
 }: {
+	organizationId: string;
 	employeeId: string;
 	entry: ShortTermPriorEmployment;
 	onDone: () => void;
@@ -165,7 +168,9 @@ function VoidPriorEmploymentForm({
 		},
 		onSuccess: () => {
 			toast.success(t("settings.contracts.shortTerm.prior.voided", "Entry voided"));
-			void queryClient.invalidateQueries({ queryKey: ["contracts", "short-term", employeeId] });
+			void queryClient.invalidateQueries({
+				queryKey: shortTermMonitorQueryKey(organizationId, employeeId),
+			});
 			onDone();
 		},
 		onError: (error) => toast.error(error.message),
@@ -230,10 +235,12 @@ interface PriorEmploymentFormValues {
 }
 
 function PriorEmploymentForm({
+	organizationId,
 	employeeId,
 	year,
 	t,
 }: {
+	organizationId: string;
 	employeeId: string;
 	year: number;
 	t: Translate;
@@ -253,7 +260,9 @@ function PriorEmploymentForm({
 		},
 		onSuccess: () => {
 			toast.success(t("settings.contracts.shortTerm.prior.recorded", "Prior employment recorded"));
-			void queryClient.invalidateQueries({ queryKey: ["contracts", "short-term", employeeId] });
+			void queryClient.invalidateQueries({
+				queryKey: shortTermMonitorQueryKey(organizationId, employeeId),
+			});
 			form.reset();
 		},
 		onError: (error) => toast.error(error.message),
@@ -417,7 +426,15 @@ function PriorEmploymentForm({
 	);
 }
 
-function PriorEmploymentSection({ monitor, t }: { monitor: ShortTermMonitor; t: Translate }) {
+function PriorEmploymentSection({
+	organizationId,
+	monitor,
+	t,
+}: {
+	organizationId: string;
+	monitor: ShortTermMonitor;
+	t: Translate;
+}) {
 	const [voiding, setVoiding] = useState<string | null>(null);
 	const entries = monitor.priorEmployment ?? [];
 	return (
@@ -460,6 +477,7 @@ function PriorEmploymentSection({ monitor, t }: { monitor: ShortTermMonitor; t: 
 							</div>
 							{voiding === entry.id && (
 								<VoidPriorEmploymentForm
+									organizationId={organizationId}
 									employeeId={monitor.employeeId}
 									entry={entry}
 									onDone={() => setVoiding(null)}
@@ -470,7 +488,12 @@ function PriorEmploymentSection({ monitor, t }: { monitor: ShortTermMonitor; t: 
 					))}
 				</ul>
 			)}
-			<PriorEmploymentForm employeeId={monitor.employeeId} year={monitor.year} t={t} />
+			<PriorEmploymentForm
+				organizationId={organizationId}
+				employeeId={monitor.employeeId}
+				year={monitor.year}
+				t={t}
+			/>
 		</section>
 	);
 }
@@ -524,9 +547,11 @@ function VerificationSection({ monitor, t }: { monitor: ShortTermMonitor; t: Tra
  * allowance; org admins also see earnings checks and keep the prior-employer entries.
  */
 export function ShortTermMonitorCard({
+	organizationId,
 	employeeId,
 	isOrgAdmin,
 }: {
+	organizationId: string;
 	employeeId: string;
 	isOrgAdmin: boolean;
 }) {
@@ -535,7 +560,7 @@ export function ShortTermMonitorCard({
 	const [year, setYear] = useState<number | null>(null);
 	const [currentYear, setCurrentYear] = useState<number | null>(null);
 	const query = useQuery({
-		queryKey: ["contracts", "short-term", employeeId, year],
+		queryKey: shortTermMonitorQueryKey(organizationId, employeeId, year),
 		queryFn: async () => {
 			const result = await getShortTermMonitorAction({ employeeId, year: year ?? undefined });
 			if (!result.success) throw new Error(actionErrorMessage(t, result));
@@ -613,7 +638,7 @@ export function ShortTermMonitorCard({
 				{isOrgAdmin && monitor.audience === "full" && (
 					<>
 						<VerificationSection monitor={monitor} t={t} />
-						<PriorEmploymentSection monitor={monitor} t={t} />
+						<PriorEmploymentSection organizationId={organizationId} monitor={monitor} t={t} />
 					</>
 				)}
 			</CardContent>

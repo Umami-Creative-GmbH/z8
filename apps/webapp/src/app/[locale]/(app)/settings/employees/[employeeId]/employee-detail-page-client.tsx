@@ -445,7 +445,11 @@ export function EmployeeDetailPageClient({
 									onAssigned={() => void employeeData.refetch()}
 								/>
 							)}
-							<ShortTermMonitorCard employeeId={employeeId} isOrgAdmin={isOrgAdmin} />
+							<ShortTermMonitorCard
+								organizationId={employee.organizationId}
+								employeeId={employeeId}
+								isOrgAdmin={isOrgAdmin}
+							/>
 						</TabsContent>
 
 						{/* Tab 3: Time & Balance */}
