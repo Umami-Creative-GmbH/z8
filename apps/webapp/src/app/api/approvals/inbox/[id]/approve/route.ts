@@ -30,6 +30,7 @@ import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/ma
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
+	canAccessApprovalInbox,
 	canOpenApprovalInbox,
 	ForbiddenError,
 	toHttpError,
@@ -155,6 +156,13 @@ export async function POST(
 				action: "approve",
 			});
 			return NextResponse.json({ success: true, result });
+		}
+
+		// Managing Compliance alone decides compliance exceptions, never an approval (#1977).
+		if (!canAccessApprovalInbox(ability, currentEmployee)) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
 		const request = await loadApprovalInboxDecisionTarget({

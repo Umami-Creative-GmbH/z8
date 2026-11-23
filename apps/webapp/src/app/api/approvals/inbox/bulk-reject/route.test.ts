@@ -162,6 +162,33 @@ describe("POST /api/approvals/inbox/bulk-reject", () => {
 		});
 	});
 
+	it("refuses an employee who only manages Compliance (#1977)", async () => {
+		mockState.getAbility.mockResolvedValue(
+			defineAbilityFor({
+				userId: "user-1",
+				isPlatformAdmin: false,
+				activeOrganizationId: "org-1",
+				orgMembership: { organizationId: "org-1", role: "admin", status: "active" },
+				employee: { id: "employee-1", organizationId: "org-1", role: "employee", teamId: null },
+				permissions: { orgWide: null, byTeamId: new Map() },
+				managedEmployeeIds: [],
+				customRoles: [],
+			} satisfies PrincipalContext),
+		);
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
+		});
+
+		const response = await POST(
+			createRequest({ approvalIds: ["approval-1"], reason: "Missing receipt" }),
+		);
+
+		expect(response.status).toBe(403);
+		expect(mockState.bulkRejectApprovalInboxItems).not.toHaveBeenCalled();
+	});
+
 	it("delegates bulk rejection to the DB-backed inbox decision service", async () => {
 		const response = await POST(
 			createRequest({ approvalIds: ["approval-1"], reason: "Missing receipt" }),

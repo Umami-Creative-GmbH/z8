@@ -17,7 +17,12 @@ import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { canOpenApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
+import {
+	canAccessApprovalInbox,
+	canOpenApprovalInbox,
+	ForbiddenError,
+	toHttpError,
+} from "@/lib/authorization";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -75,13 +80,16 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		const eligibleApprovalScopes = canManageApprovals
-			? []
-			: await getEligibleApprovalScopesForManager({
-					db,
-					managerEmployeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-				});
+		// Managing Compliance alone lists compliance exceptions, never approvals (#1977).
+		const approverAccess = canAccessApprovalInbox(ability, currentEmployee);
+		const eligibleApprovalScopes =
+			canManageApprovals || !approverAccess
+				? []
+				: await getEligibleApprovalScopesForManager({
+						db,
+						managerEmployeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
+					});
 		// Parse query parameters
 		const { searchParams } = new URL(request.url);
 
@@ -131,11 +139,14 @@ export async function GET(request: NextRequest) {
 			limit,
 			eligibleApprovalScopes,
 			// "Covering for" sections: absent approvers this employee covers for now (#1016).
-			covering: await loadInboxCovers(db, {
-				organizationId: currentEmployee.organizationId,
-				deputyEmployeeId: currentEmployee.id,
-				at: systemClock.nowInstant(),
-			}),
+			covering: approverAccess
+				? await loadInboxCovers(db, {
+						organizationId: currentEmployee.organizationId,
+						deputyEmployeeId: currentEmployee.id,
+						at: systemClock.nowInstant(),
+					})
+				: [],
+			...(approverAccess ? {} : { complianceExceptionsOnly: true }),
 			// ArbZG compliance exceptions this employee sees (#1977, ADR-0005).
 			complianceExceptionScope: await resolveComplianceExceptionInboxScope({
 				organizationId: currentEmployee.organizationId,

@@ -254,12 +254,21 @@ function capabilitiesOf(status: ApprovalInboxStatus): ApprovalInboxCapabilities 
 	};
 }
 
+/**
+ * A listed row's inbox status. Only listable rows get here (`statusCondition`): a persisted
+ * `expired` row is never listed or opened, so it needs no inbox status.
+ */
 function inboxStatusOf(status: string): ApprovalInboxStatus {
 	return status === "approved" || status === "used"
 		? "approved"
 		: status === "rejected"
 			? "rejected"
 			: "pending";
+}
+
+/** A row that is no longer pending, as a stale decision names it. */
+function closedStatusOf(status: string): "approved" | "rejected" | "expired" {
+	return status === "expired" ? "expired" : status === "rejected" ? "rejected" : "approved";
 }
 
 function exceptionTypeOf(value: unknown): ComplianceExceptionType {
@@ -558,7 +567,7 @@ export async function decideComplianceExceptionFromInbox(input: {
 		});
 	}
 	const validUntil = decodeApprovalDatabaseTimestamptz(target.validUntil);
-	if (target.status !== "pending") throw stale(inboxStatusOf(String(target.status)));
+	if (target.status !== "pending") throw stale(closedStatusOf(String(target.status)));
 	if (validUntil.getTime() <= now.getTime()) throw stale("expired");
 	const reason = input.reason?.trim();
 	if (input.action === "reject" && !reason) {

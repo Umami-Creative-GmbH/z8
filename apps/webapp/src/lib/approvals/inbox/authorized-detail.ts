@@ -11,7 +11,7 @@ import {
 	loadInboxCovers,
 } from "@/lib/approvals/deputy/deputy-decision-store";
 import { getAbility } from "@/lib/auth-helpers";
-import { canOpenApprovalInbox } from "@/lib/authorization";
+import { canAccessApprovalInbox, canOpenApprovalInbox } from "@/lib/authorization";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { resolveComplianceExceptionInboxScope } from "./compliance-exception-inbox";
 import { markDecidedEarlierStageDetail } from "./covering-marks";
@@ -70,6 +70,8 @@ export async function loadAuthorizedApprovalDetail(input: {
 		return { status: "forbidden" };
 	}
 	const canManageApprovals = ability.cannot("manage", "Approval") === false;
+	// Managing Compliance alone opens compliance exceptions, never an approval (#1977).
+	const approverAccess = canAccessApprovalInbox(ability, currentEmployee);
 
 	try {
 		if (!request) {
@@ -83,6 +85,16 @@ export async function loadAuthorizedApprovalDetail(input: {
 							employeeId: currentEmployee.id,
 							canManageCompliance: ability.cannot("manage", "Compliance") === false,
 						});
+			if (!approverAccess) {
+				if (!complianceExceptionScope) return { status: "not_found" };
+				const exception = await getApprovalInboxDetail({
+					approvalId: input.approvalId,
+					organizationId: currentEmployee.organizationId,
+					complianceExceptionsOnly: true,
+					complianceExceptionScope,
+				});
+				return { status: "found", detail: markOwnRequestDetail(exception, currentEmployee.id) };
+			}
 			const eligibleApprovalScopes = canManageApprovals
 				? []
 				: await getEligibleApprovalScopesForManager({
@@ -107,6 +119,7 @@ export async function loadAuthorizedApprovalDetail(input: {
 			return { status: "found", detail: markOwnRequestDetail(detail, currentEmployee.id) };
 		}
 		if (input.kind === "canonical") return { status: "not_found" };
+		if (!approverAccess) return { status: "forbidden" };
 
 		const isAssignedApprover = request.approverId === currentEmployee.id;
 		const isEligibleManager = isAssignedApprover

@@ -16,7 +16,7 @@ import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/ma
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
-	canOpenApprovalInbox,
+	canAccessApprovalInbox,
 	ForbiddenError,
 	toHttpError,
 } from "@/lib/authorization";
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		if (!canOpenApprovalInbox(ability, currentEmployee)) {
+		if (!canAccessApprovalInbox(ability, currentEmployee)) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });

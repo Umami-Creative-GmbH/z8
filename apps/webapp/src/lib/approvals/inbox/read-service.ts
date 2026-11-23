@@ -111,6 +111,11 @@ export interface ApprovalInboxListParams extends ApprovalQueryParams {
 	 * listed or counted. Resolve it with `resolveComplianceExceptionInboxScope`.
 	 */
 	complianceExceptionScope?: ComplianceExceptionInboxScope | null;
+	/**
+	 * The viewer opens the inbox only by managing Compliance, without approver access (#1977):
+	 * no approval source, canonical read or "Covering for" section, only compliance exceptions.
+	 */
+	complianceExceptionsOnly?: boolean;
 }
 
 interface GetApprovalInboxListFromSourcesInput {
@@ -277,7 +282,7 @@ const priorityRank: Record<UnifiedApprovalItem["priority"], number> = {
 };
 
 export async function getApprovalInboxListFromSources({
-	sources,
+	sources: approvalSources,
 	params,
 	now,
 	canonicalReads = [],
@@ -288,17 +293,22 @@ export async function getApprovalInboxListFromSources({
 	loadTriageEvidence = unknownApprovalInboxTriageEvidence,
 	complianceExceptionRead,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
+	// Managing Compliance alone is no approver right (#1977): no approvals, only exceptions.
+	const approverAccess = !params.complianceExceptionsOnly;
+	const sources = approverAccess ? approvalSources : [];
 	// Covered approvals are listed in their "Covering for" sections, not here.
-	const covers = coversByApprover(params.covering, params.approverId);
+	const covers = coversByApprover(approverAccess ? params.covering : undefined, params.approverId);
 	const effectiveNow = now ?? new Date();
 	const requestedTypeSet = params.types ? new Set(params.types) : null;
 	const selectedSources = sources.filter(
 		(source) => !requestedTypeSet || requestedTypeSet.has(source.type),
 	);
-	const reads = canonicalReadsWithOrdinaryStandIns(canonicalReads, {
-		load: loadCanonicalOrdinaryApprovals,
-		count: countCanonicalOrdinaryApprovals,
-	});
+	const reads = approverAccess
+		? canonicalReadsWithOrdinaryStandIns(canonicalReads, {
+				load: loadCanonicalOrdinaryApprovals,
+				count: countCanonicalOrdinaryApprovals,
+			})
+		: [];
 	// A read listed under a legacy source's type follows that source's selection.
 	const selectedReads = reads.filter(
 		(read) =>
@@ -924,12 +934,15 @@ export async function getApprovalInboxDetail({
 	triagePolicy,
 	loadTriageEvidence,
 	complianceExceptionScope,
+	complianceExceptionsOnly,
 	now,
 }: {
 	approvalId: string;
 	organizationId: string;
 	/** The compliance exceptions the viewer sees (#1977); none without one. */
 	complianceExceptionScope?: ComplianceExceptionInboxScope | null;
+	/** The viewer only manages Compliance (#1977): nothing but a compliance exception opens. */
+	complianceExceptionsOnly?: boolean;
 	now?: Date;
 	triagePolicy?: ApprovalTriagePolicy;
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
@@ -964,7 +977,7 @@ export async function getApprovalInboxDetail({
 			});
 			if (exception) return exception;
 		}
-		if (!approverId) {
+		if (!approverId || complianceExceptionsOnly) {
 			throw new ApprovalInboxBadRequestError("Approval not found");
 		}
 		const covers = coversByApprover(covering, approverId);
@@ -1008,6 +1021,9 @@ export async function getApprovalInboxDetail({
 			);
 			return item === approval.detail.item ? approval.detail : { ...approval.detail, item };
 		}
+		throw new ApprovalInboxBadRequestError("Approval not found");
+	}
+	if (complianceExceptionsOnly) {
 		throw new ApprovalInboxBadRequestError("Approval not found");
 	}
 	if (

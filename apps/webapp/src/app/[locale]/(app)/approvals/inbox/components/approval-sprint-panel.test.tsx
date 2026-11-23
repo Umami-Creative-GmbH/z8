@@ -88,6 +88,24 @@ describe("ApprovalSprintPanel", () => {
 		rejectMutation.mockReset();
 	});
 
+	it("names a compliance exception's type on its card (#1977)", () => {
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={[
+					{
+						...createApproval("exception-1", "Ada Lovelace", "ArbZG exception: Rest Period"),
+						type: "compliance_exception",
+					},
+				]}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("Compliance Exceptions")).toBeTruthy();
+	});
+
 	it("advances to the next approval after successful approval", async () => {
 		approveMutation.mockResolvedValue({ success: true });
 		const onActioned = vi.fn();

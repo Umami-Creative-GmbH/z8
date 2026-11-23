@@ -264,9 +264,18 @@ describe("GET /api/approvals/inbox", () => {
 			employeeId: "employee-1",
 			canManageCompliance: true,
 		});
+		// Managing Compliance is no approver right: only compliance exceptions are listed.
 		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
-			expect.objectContaining({ complianceExceptionScope: { kind: "organization" } }),
+			expect.objectContaining({
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				eligibleApprovalScopes: [],
+				includeAllApprovers: undefined,
+				covering: [],
+			}),
 		);
+		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+		expect(mockState.loadInboxCovers).not.toHaveBeenCalled();
 	});
 
 	it("allows a team-primary manager with no direct reports to reach scoped inbox eligibility", async () => {

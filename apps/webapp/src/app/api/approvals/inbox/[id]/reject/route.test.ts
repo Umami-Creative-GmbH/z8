@@ -236,6 +236,45 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			await expect(response.json()).resolves.toEqual({ error: "Rejection reason is required" });
 			expect(mockState.decideComplianceExceptionForActor).not.toHaveBeenCalled();
 		});
+
+		it("refuses an ordinary request to an employee who only manages Compliance", async () => {
+			mockState.getAbility.mockResolvedValue(
+				defineAbilityFor({
+					userId: "user-1",
+					isPlatformAdmin: false,
+					activeOrganizationId: "org-1",
+					orgMembership: { organizationId: "org-1", role: "admin", status: "active" },
+					employee: { id: "employee-1", organizationId: "org-1", role: "employee", teamId: null },
+					permissions: { orgWide: null, byTeamId: new Map() },
+					managedEmployeeIds: [],
+					customRoles: [],
+				} satisfies PrincipalContext),
+			);
+			mockState.findEmployee.mockResolvedValue({
+				id: "employee-1",
+				organizationId: "org-1",
+				role: "employee",
+			});
+			mockState.isComplianceExceptionInboxItem.mockResolvedValue(false);
+			// A leftover assignment: managing Compliance never makes them an approver.
+			mockState.findApprovalRequest.mockResolvedValue({
+				id: "approval-1",
+				targetType: "compatibility_request",
+				entityId: "entity-1",
+				entityType: "absence_entry",
+				approverId: "employee-1",
+				organizationId: "org-1",
+				status: "pending",
+			});
+
+			const response = await POST(createRequest({ reason: "Not needed" }), {
+				params: Promise.resolve({ id: "approval-1" }),
+			});
+
+			expect(response.status).toBe(403);
+			expect(mockState.rejectApprovalInboxItem).not.toHaveBeenCalled();
+			expect(mockState.coversCurrentApprover).not.toHaveBeenCalled();
+		});
 	});
 
 	it("allows an eligible fallback team manager to reject a request assigned to another manager", async () => {

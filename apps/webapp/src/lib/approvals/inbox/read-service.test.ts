@@ -4,6 +4,7 @@ import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
 import {
 	countsWithCoveringSections,
+	getApprovalInboxDetail,
 	getApprovalInboxListFromSources,
 } from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
@@ -1014,4 +1015,89 @@ it("does not omit mixed-kind rows sharing an identity suffix at a page boundary"
  const second = await getApprovalInboxListFromSources({ ...input, params: { ...input.params, cursor: first.nextCursor ?? undefined } });
  expect([first.items[0]?.type, second.items[0]?.type]).toEqual(["absence_entry", "travel_expense_claim"]);
  expect(second.hasMore).toBe(false);
+});
+
+describe("an employee who only manages Compliance (#1977)", () => {
+	const exception = {
+		...canonicalItem("exception-1", "2026-05-30T09:00:00.000Z", "high", "medium").item,
+		type: "compliance_exception" as const,
+	};
+
+	it("lists and counts only compliance exceptions, never an approver's sources", async () => {
+		const legacy = source("absence_entry", [item({ approverId: "employee-1" })]);
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [
+			canonicalItem("assignment-1", "2026-05-30T09:00:00.000Z", "normal", "low"),
+		]);
+		const countCanonicalOrdinaryApprovals = vi.fn(async () => 1);
+		const complianceExceptionRead = {
+			load: vi.fn(async () => Object.assign([exception], { totalCount: 1 })),
+			count: vi.fn(async () => 1),
+		};
+
+		const result = await getApprovalInboxListFromSources({
+			sources: [legacy],
+			params: {
+				approverId: "employee-1",
+				organizationId: "org-1",
+				status: "pending",
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				covering: [{ approverId: "absent-1", approverName: "Xenia" }],
+			},
+			loadCanonicalOrdinaryApprovals,
+			countCanonicalOrdinaryApprovals,
+			complianceExceptionRead,
+		});
+
+		expect(result.items.map(({ id }) => id)).toEqual(["exception-1"]);
+		expect(result.counts).toEqual({ compliance_exception: 1 });
+		expect(result.supportedTypes).toEqual(["compliance_exception"]);
+		expect(result.total).toBe(1);
+		expect(result.covering).toBeUndefined();
+		expect(legacy.handler.getApprovals).not.toHaveBeenCalled();
+		expect(legacy.handler.getCount).not.toHaveBeenCalled();
+		expect(loadCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+		expect(countCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+	});
+
+	it("never opens an approval request, even one assigned to them", async () => {
+		const findFirst = vi.fn(async () => ({
+			id: "approval-1",
+			entityType: "absence_entry",
+			approverId: "employee-1",
+			organizationId: "org-1",
+		}));
+
+		await expect(
+			getApprovalInboxDetail({
+				approvalId: "approval-1",
+				organizationId: "org-1",
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				database: { query: { approvalRequest: { findFirst } } } as never,
+			}),
+		).rejects.toThrow("Approval not found");
+	});
+
+	it("never opens a canonical assignment", async () => {
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [
+			canonicalItem("assignment-1", "2026-05-30T09:00:00.000Z", "normal", "low"),
+		]);
+
+		await expect(
+			getApprovalInboxDetail({
+				approvalId: "assignment-1",
+				organizationId: "org-1",
+				approverId: "employee-1",
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				database: {
+					query: { approvalRequest: { findFirst: vi.fn(async () => undefined) } },
+				} as never,
+				canonicalReads: [],
+				loadCanonicalOrdinaryApprovals,
+			}),
+		).rejects.toThrow("Approval not found");
+		expect(loadCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+	});
 });

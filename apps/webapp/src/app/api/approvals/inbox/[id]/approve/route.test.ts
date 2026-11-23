@@ -248,6 +248,28 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 			expect(response.status).toBe(status);
 			await expect(response.json()).resolves.toEqual({ error: error.message });
 		});
+
+		it("refuses an ordinary request to an employee who only manages Compliance", async () => {
+			mockState.isComplianceExceptionInboxItem.mockResolvedValue(false);
+			// A leftover assignment: managing Compliance never makes them an approver.
+			mockState.findApprovalRequest.mockResolvedValue({
+				id: "approval-1",
+				targetType: "compatibility_request",
+				entityId: "entity-1",
+				entityType: "absence_entry",
+				approverId: "employee-1",
+				organizationId: "org-1",
+				status: "pending",
+			});
+
+			const response = await POST(createRequest(), {
+				params: Promise.resolve({ id: "approval-1" }),
+			});
+
+			expect(response.status).toBe(403);
+			expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
+			expect(mockState.coversCurrentApprover).not.toHaveBeenCalled();
+		});
 	});
 
 	it("allows an eligible fallback team manager to approve a request assigned to another manager", async () => {

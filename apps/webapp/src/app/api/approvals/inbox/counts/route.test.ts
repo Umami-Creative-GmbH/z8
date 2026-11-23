@@ -230,9 +230,20 @@ describe("GET /api/approvals/inbox/counts", () => {
 			employeeId: "employee-1",
 			canManageCompliance: true,
 		});
-		expect(mockState.getApprovalInboxCounts).toHaveBeenCalledWith(
-			expect.objectContaining({ complianceExceptionScope: { kind: "organization" } }),
-		);
+		// Managing Compliance is no approver right: only compliance exceptions are counted.
+		expect(mockState.getApprovalInboxCounts).toHaveBeenCalledWith({
+			approverId: "employee-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 1,
+			eligibleApprovalScopes: [],
+			includeAllApprovers: undefined,
+			covering: [],
+			complianceExceptionsOnly: true,
+			complianceExceptionScope: { kind: "organization" },
+		});
+		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+		expect(mockState.loadInboxCovers).not.toHaveBeenCalled();
 	});
 
 	it("includes team-primary scopes for a manager with no direct reports", async () => {

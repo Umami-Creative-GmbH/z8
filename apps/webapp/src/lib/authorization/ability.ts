@@ -385,10 +385,11 @@ export function canAccessApprovalInbox(
 }
 
 /**
- * Who may open the Approval inbox: approvers (`canAccessApprovalInbox`) and, for the
- * organization's compliance exceptions (#1977, Approvals ADR-0005), whoever manages
- * Compliance. The inbox page, its API and the navigation share this decision; approver
- * selection (deputies, escalation) keeps `canAccessApprovalInbox`.
+ * Who may open the Approval inbox page and its navigation entry: approvers
+ * (`canAccessApprovalInbox`) and, for the organization's compliance exceptions (#1977,
+ * Approvals ADR-0005), whoever manages Compliance. It grants no approval: every ordinary
+ * source, decision and bulk action still requires `canAccessApprovalInbox`, and approver
+ * selection (deputies, escalation) keeps it too.
  */
 export function canOpenApprovalInbox(
 	ability: AppAbility,

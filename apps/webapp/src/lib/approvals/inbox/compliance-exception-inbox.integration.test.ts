@@ -7,6 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { ConflictError } from "@/lib/effect/errors";
 import {
 	type ClosedMonthDatabaseFixture,
 	createClosedMonthDatabaseFixture,
@@ -476,6 +477,65 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 			await expect(approve(expiredId)).rejects.toThrow("Request is already expired");
 			await expect(approve(approvedId)).rejects.toThrow("Request is already approved");
 			expect((await row(expiredId))?.status).toBe("pending");
+		});
+
+		it("refuses an exception already marked expired as expired, not pending", async () => {
+			const exceptionId = await exception({ employeeId: employee.employeeId, status: "expired" });
+			const notify = notifications();
+
+			const decision = decideComplianceExceptionFromInbox({
+				organizationId,
+				exceptionId,
+				actorEmployeeId: manager.employeeId,
+				scope: { kind: "organization" },
+				action: "reject",
+				reason: "Too late",
+				now: NOW,
+				notify,
+			});
+
+			await expect(decision).rejects.toBeInstanceOf(ConflictError);
+			await expect(decision).rejects.toThrow("Request is already expired");
+			expect(await row(exceptionId)).toMatchObject({
+				status: "expired",
+				approver_id: null,
+				rejection_reason: null,
+			});
+			expect(notify.rejected).not.toHaveBeenCalled();
+		});
+
+		it("lets exactly one of two concurrent decisions win, and notifies once", async () => {
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+			const notify = notifications();
+			const decide = (actorEmployeeId: string, action: "approve" | "reject") =>
+				decideComplianceExceptionFromInbox({
+					organizationId,
+					exceptionId,
+					actorEmployeeId,
+					scope: { kind: "organization" },
+					action,
+					...(action === "reject" ? { reason: "Cover is already planned" } : {}),
+					now: NOW,
+					notify,
+				});
+
+			const results = await Promise.allSettled([
+				decide(manager.employeeId, "approve"),
+				decide(outsider.employeeId, "reject"),
+			]);
+
+			const won = results.filter((result) => result.status === "fulfilled");
+			const lost = results.filter((result) => result.status === "rejected");
+			expect(won).toHaveLength(1);
+			expect(lost).toHaveLength(1);
+			expect(lost[0]?.reason).toBeInstanceOf(ConflictError);
+			const decided = await row(exceptionId);
+			const winner = won[0]?.value;
+			expect(decided?.status).toBe(winner?.status);
+			expect(decided?.approver_id).toBe(
+				winner?.status === "approved" ? manager.employeeId : outsider.employeeId,
+			);
+			expect(notify.approved.mock.calls.length + notify.rejected.mock.calls.length).toBe(1);
 		});
 	});
 
