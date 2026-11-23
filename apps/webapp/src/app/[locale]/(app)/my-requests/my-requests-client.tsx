@@ -329,7 +329,9 @@ function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Transl
 	if (item.details?.kind === "expense_report") {
 		const adjustment = expenseReportAdjustmentLabel(item.details, t);
 		const kind = expenseReportKindLabel(item.details, t);
-		const dates = formatStoredDateRange(item.subtitle, locale);
+		// A trip with only a start or end date arrives as one "YYYY-MM-DD".
+		const dates =
+			formatStoredDateRange(item.subtitle, locale) ?? formatStoredDate(item.subtitle, locale);
 		return [adjustment, kind, dates].filter(Boolean).join(" · ");
 	}
 
@@ -466,6 +468,15 @@ function formatStoredDateRange(value: string, locale: string) {
 	}
 
 	return getDateFormatter(locale).formatRange(start, end);
+}
+
+/** One stored calendar date ("YYYY-MM-DD"), formatted in the locale. */
+function formatStoredDate(value: string, locale: string) {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		return null;
+	}
+	const date = plainDateToUtcDate(value);
+	return date ? getDateFormatter(locale).format(date) : null;
 }
 
 function formatTravelExpenseSubtitle(value: string, locale: string) {

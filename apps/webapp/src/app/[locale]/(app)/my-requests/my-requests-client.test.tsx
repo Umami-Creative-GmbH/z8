@@ -972,6 +972,28 @@ describe("MyRequestsClient", () => {
 			expect(document.body.textContent).not.toMatch(/Travel expense report|without a trip/);
 		});
 
+		it("shows the one stored date of a trip report with only a start or end date", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						items: [
+							expenseReport({
+								id: "travel_expense_report:report-single-date",
+								sourceId: "report-single-date",
+								title: "Trade fair",
+								subtitle: "2026-11-06",
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const card = within(screen.getByRole("region", { name: "In review" }))
+				.getByRole("heading", { level: 3, name: "Trade fair" })
+				.closest("article") as HTMLElement;
+			expect(card.textContent).toMatch(/Trip report · 6\. Nov\. 2026/);
+		});
+
 		it("tells an adjustment report apart from the report it adjusts", () => {
 			render(
 				<MyRequestsClient
