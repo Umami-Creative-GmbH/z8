@@ -22,7 +22,8 @@
  *   employee's own week plans 5 or more work days a week on average over its schedule cycle, terms
  *   without one (published shifts, on call, weekly hours alone, a work policy only inherited from a
  *   team or organization default) show 5 or more counted days in the mean full week (a public
- *   holiday may cost one in four weeks a day), and no prior
+ *   holiday may cost one in four weeks a day; a week off and a week left short by an approved
+ *   absence are left out), and no prior
  *   employer recorded working days; otherwise the 70-working-day limit applies to every stint's
  *   working days. The 3-month limit is counted in calendar days: one stint in time months from its
  *   first day, several stints (prior employers' months included) added up to 90, a full calendar

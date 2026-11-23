@@ -585,6 +585,68 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			expect(evaluation?.allowance).toMatchObject({ limitKind: "months", used: 26, limit: 92 });
 		});
 
+		it("applies 3 months to a Monday–Friday roster with a week off inside the stint", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-06-01", scheduleSource: "published_shifts" });
+			// Monday–Friday from 1 June to 11 September, 13 – 17 July off.
+			const dates = datesOn("2026-06-01", "2026-09-11", [1, 2, 3, 4, 5]).filter(
+				(date) => date < "2026-07-13" || date > "2026-07-17",
+			);
+			for (const date of dates) await st.shift(org, worker, date, "09:00", "13:00", "published");
+
+			const [evaluation] = await evaluate(org, [worker.employeeId], {
+				now: Temporal.Instant.from("2026-05-31T12:00:00Z"),
+			});
+
+			// An empty week says nothing about the week: 1 June – 11 September is 103 calendar days
+			// against the 92 of 1 June – 31 August.
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 103,
+				limit: 92,
+				tier: "exceeded",
+			});
+		});
+
+		it("does not read a shorter week from a week short by an approved sickness", async () => {
+			const org = await fx.organization("a");
+			const sick = await fx.employee(org, "sick", { contractType: "hourly" });
+			const unexplained = await fx.employee(org, "unexplained", { contractType: "hourly" });
+			// Four weeks Monday–Friday from 1 June; Wednesday – Friday 10 – 12 June not worked.
+			const dates = datesOn("2026-06-01", "2026-06-26", [1, 2, 3, 4, 5]).filter(
+				(date) => date < "2026-06-10" || date > "2026-06-12",
+			);
+			for (const worker of [sick, unexplained]) {
+				await st.terms(worker, { from: "2026-06-01", weeklyMinutes: 1200 });
+				await workOn(org, worker, dates);
+			}
+			// Only one of them was off sick, approved.
+			await st.absence(sick, "2026-06-10", "2026-06-12");
+			// Pending absences and home office explain nothing.
+			await st.absence(unexplained, "2026-06-10", "2026-06-10", { status: "pending" });
+			await st.absence(unexplained, "2026-06-11", "2026-06-12", {
+				type: "home_office",
+				requiresWorkTime: true,
+			});
+
+			const evaluations = await evaluate(org, [sick.employeeId, unexplained.employeeId]);
+			const byEmployee = new Map(evaluations.map((e) => [e.employeeId, e]));
+
+			// 1 June – 26 June: 26 calendar days of the 92 that 1 June – 31 August holds.
+			expect(byEmployee.get(sick.employeeId)?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 26,
+				limit: 92,
+			});
+			// Weeks of 5, 2, 5 and 5 days without a reason: an irregular week.
+			expect(byEmployee.get(unexplained.employeeId)?.allowance).toMatchObject({
+				limitKind: "work_days",
+				used: 17,
+				limit: 70,
+			});
+		});
+
 		it("applies 70 working days to a weekly-hours helper who works two days a week", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });

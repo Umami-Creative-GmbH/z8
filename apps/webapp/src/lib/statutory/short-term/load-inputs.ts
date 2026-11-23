@@ -1,5 +1,7 @@
 import { and, eq, gt, gte, inArray, isNull, lt, ne, or, type SQL } from "drizzle-orm";
 import {
+	absenceCategory,
+	absenceEntry,
 	employeeEmploymentHistory,
 	employeeStatutoryOffset,
 	employmentTermAgreement,
@@ -143,6 +145,12 @@ export interface ShortTermEmployeeInputs {
 	 * the limit from it). Years without effective short-term terms are absent.
 	 */
 	readonly weekByYear: ReadonlyMap<number, ShortTermYearWeek>;
+	/**
+	 * Days (`YYYY-MM-DD`, sorted, distinct) of approved absences that need no recorded work (sickness,
+	 * leave; not home office), a week either side of the loaded range: a week they leave short says
+	 * nothing about the employee's week (`observedWorkDaysPerWeek`).
+	 */
+	readonly absenceDays: readonly string[];
 }
 
 export interface ShortTermInputs {
@@ -318,6 +326,14 @@ function agreedSpanOf(employment: ShortTermEmployment): DaySpan | null {
 /** `date` moved by `days` calendar days, `YYYY-MM-DD`. */
 function addDays(date: string, days: number): string {
 	return parsePlainDate(date).add({ days }).toString();
+}
+
+function minDate(a: string, b: string): string {
+	return a < b ? a : b;
+}
+
+function maxDate(a: string, b: string): string {
+	return a > b ? a : b;
 }
 
 /**
@@ -669,6 +685,50 @@ export async function loadShortTermInputs(
 			),
 		);
 
+	// Approved absences a week either side of each employee's range: full weeks of observed work
+	// reach up to six days past its first and last counted day.
+	const absenceRows = await db
+		.select({
+			employeeId: absenceEntry.employeeId,
+			startDate: absenceEntry.startDate,
+			endDate: absenceEntry.endDate,
+		})
+		.from(absenceEntry)
+		.innerJoin(
+			absenceCategory,
+			and(
+				eq(absenceCategory.id, absenceEntry.categoryId),
+				eq(absenceCategory.organizationId, input.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(absenceEntry.organizationId, input.organizationId),
+				eq(absenceEntry.status, "approved"),
+				eq(absenceCategory.requiresWorkTime, false),
+				perEmployeeRange(rangeByEmployee, (employeeIds, range) =>
+					and(
+						inArray(absenceEntry.employeeId, employeeIds),
+						lt(absenceEntry.startDate, addDays(range.until, 7)),
+						gte(absenceEntry.endDate, addDays(range.from, -7)),
+					),
+				),
+			),
+		);
+	const absenceDaysByEmployee = new Map<string, Set<string>>();
+	for (const row of absenceRows) {
+		const range = rangeByEmployee.get(row.employeeId);
+		if (!range) continue;
+		const first = maxDate(row.startDate, addDays(range.from, -7));
+		const last = minDate(row.endDate, addDays(range.until, 6));
+		let days = absenceDaysByEmployee.get(row.employeeId);
+		if (!days) {
+			days = new Set();
+			absenceDaysByEmployee.set(row.employeeId, days);
+		}
+		for (let day = first; day <= last; day = addDays(day, 1)) days.add(day);
+	}
+
 	// Running work and the rest of its shift meet on one minute grid, so their sum stays put
 	// whatever seconds the clock-in or the evaluation instant carry.
 	const nowOnGrid = minuteGrid(input.now);
@@ -956,6 +1016,7 @@ export async function loadShortTermInputs(
 				})),
 			employments: employmentsByEmployee.get(employeeId) ?? [],
 			weekByYear,
+			absenceDays: [...(absenceDaysByEmployee.get(employeeId) ?? [])].sort(),
 		});
 	}
 	return { employees, thresholds };

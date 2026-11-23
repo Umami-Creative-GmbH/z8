@@ -201,12 +201,15 @@ export function shortTermStints(input: {
  * of counted days per Monday–Sunday week whose Monday to Friday lie within one stint, like the
  * mean over a planned rota's cycle (`averageWorkDaysPerWeek`). Irregular weeks of 3 and 5 days
  * average 4. A week one day short may have lost that day to a public holiday: up to one in four
- * full weeks (at least one, never all of them) count that day. Partial first and last weeks say
- * nothing about the pattern. Null until one full week has been seen.
+ * full weeks (at least one, never all of them) count that day. Some weeks say nothing about the
+ * pattern and are left out: partial first and last weeks, a week without counted days inside a
+ * stint (a week off), and a week left short by an approved absence (`absenceDays`: a day of it
+ * absent and not worked). Null until one full week that says something has been seen.
  */
 export function observedWorkDaysPerWeek(
 	days: readonly string[],
 	employmentOf: ReadonlyMap<string, string>,
+	absenceDays: ReadonlySet<string> = new Set(),
 ): number | null {
 	const counted = new Set(days);
 	const perWeek: number[] = [];
@@ -221,9 +224,13 @@ export function observedWorkDaysPerWeek(
 			monday = monday.add({ weeks: 1 })
 		) {
 			let count = 0;
+			let absentUnworked = false;
 			for (let offset = 0; offset < 7; offset++) {
-				if (counted.has(monday.add({ days: offset }).toString())) count++;
+				const day = monday.add({ days: offset }).toString();
+				if (counted.has(day)) count++;
+				else if (absenceDays.has(day)) absentUnworked = true;
 			}
+			if (count === 0 || (absentUnworked && count < SHORT_TERM_FULL_WEEK_DAYS)) continue;
 			perWeek.push(count);
 		}
 	}
@@ -241,7 +248,8 @@ export function observedWorkDaysPerWeek(
 /**
  * The allowance the employee's own short-term terms call for: `months` only when every terms
  * version that sets the employee's own week plans 5 or more work days a week, and the days under
- * terms without one (inherited defaults included) show a full week of 5 or more days. Terms
+ * terms without one (inherited defaults included) show a full week of 5 or more days, weeks off
+ * and weeks left short by approved absences aside (`observedWorkDaysPerWeek`). Terms
  * without an own week that nobody worked under say nothing about the week and do not choose the
  * limit; with no week planned or observed at all, the year counts working days. Prior employers
  * may still switch the year to working days.
@@ -249,6 +257,7 @@ export function observedWorkDaysPerWeek(
 function ownLimitKindOf(
 	week: ShortTermYearWeek,
 	employmentOf: ReadonlyMap<string, string>,
+	absenceDays: ReadonlySet<string>,
 ): ShortTermLimitKind {
 	if (week.plannedWorkDaysPerWeek.some((perWeek) => perWeek < SHORT_TERM_FULL_WEEK_DAYS)) {
 		return "work_days";
@@ -256,7 +265,7 @@ function ownLimitKindOf(
 	if (week.unplannedDays.length === 0) {
 		return week.plannedWorkDaysPerWeek.length > 0 ? "months" : "work_days";
 	}
-	return (observedWorkDaysPerWeek(week.unplannedDays, employmentOf) ?? 0) >=
+	return (observedWorkDaysPerWeek(week.unplannedDays, employmentOf, absenceDays) ?? 0) >=
 		SHORT_TERM_FULL_WEEK_DAYS
 		? "months"
 		: "work_days";
@@ -424,7 +433,7 @@ export function judgeShortTermYear(input: {
 					day <= stint.lastDay,
 			),
 	);
-	const ownLimitKind = ownLimitKindOf(week, employmentOf);
+	const ownLimitKind = ownLimitKindOf(week, employmentOf, new Set(employee.absenceDays));
 	const firstDay = days[0] ?? null;
 	const lastDay = days.at(-1) ?? null;
 

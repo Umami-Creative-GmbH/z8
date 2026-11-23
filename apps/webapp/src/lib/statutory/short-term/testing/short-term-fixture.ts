@@ -348,6 +348,48 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 			return id;
 		},
 
+		/**
+		 * An absence from `startDate` to `endDate` (both inclusive, full days), approved unless
+		 * `status` says otherwise, in a new category of `type` (`requiresWorkTime` as home office has).
+		 */
+		async absence(
+			employee: FixtureEmployee,
+			startDate: string,
+			endDate: string,
+			options: {
+				type?: "sick" | "vacation" | "home_office";
+				status?: "approved" | "pending" | "rejected";
+				requiresWorkTime?: boolean;
+			} = {},
+		): Promise<void> {
+			const categoryId = randomUUID();
+			await admin.query(
+				`INSERT INTO absence_category (id, organization_id, type, name, requires_work_time, updated_at)
+				 VALUES ($1, $2, $3, $4, $5, now())`,
+				[
+					categoryId,
+					employee.organizationId,
+					options.type ?? "sick",
+					`Category ${categoryId.slice(0, 8)}`,
+					options.requiresWorkTime ?? false,
+				],
+			);
+			await admin.query(
+				`INSERT INTO absence_entry
+				 (id, employee_id, category_id, start_date, end_date, status, organization_id, updated_at)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, now())`,
+				[
+					randomUUID(),
+					employee.employeeId,
+					categoryId,
+					startDate,
+					endDate,
+					options.status ?? "approved",
+					employee.organizationId,
+				],
+			);
+		},
+
 		/** Prior-employer short-term days or months in `calendarYear`. */
 		async priorShortTerm(
 			employee: FixtureEmployee,

@@ -107,8 +107,10 @@ stint has one. Counts short-term days.
 Taken from the employee's own planned week: custom days or a work policy set on their terms or
 assigned to them. A week inherited from a team or organization default, weekly hours alone,
 published shifts and on-call terms are no agreed week; the limit then follows the mean full week
-observed in the short-term days worked or planned under them. Such terms with no short-term days
-say nothing about the week and do not choose the limit.
+observed in the short-term days worked or planned under them. A week off inside a stint, and a
+week left short by an approved absence (sickness, leave; not home office), are not observed
+weeks: they say nothing about the week. Such terms with no short-term days say nothing about the
+week and do not choose the limit.
 
 **Prior-employer offset**:
 Short-term working days or months another employer used in the same calendar year, recorded as
