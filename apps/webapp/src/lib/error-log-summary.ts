@@ -26,11 +26,11 @@ export interface ErrorLogSummary {
 const MAX_FRAMES = 20;
 
 /**
- * A V8 stack frame: `at [async] [fn ](location)` or `at location`, where the location ends in
- * `:line:col`, or is `<anonymous>` / `native`. Free text after "at " (a message line) is not one.
+ * A V8 stack frame: `at [async ][new ][fn ](location)` or `at location`, where the location ends
+ * in `:line:col`, or is `<anonymous>` / `native`. Free text after "at " (a message line) is not one.
  */
 const V8_FRAME =
-	/^at (?:async )?(?:\S+ (?:\[as \S+\] )?)?\(?(?:\S+:\d+:\d+|<anonymous>|native)\)?$/;
+	/^at (?:async )?(?:new )?(?:\S+ (?:\[as \S+\] )?)?\(?(?:\S+:\d+:\d+|<anonymous>|native)\)?$/;
 
 /**
  * The stack's real frames only. A frame-shaped line is kept only if it is shaped like a V8

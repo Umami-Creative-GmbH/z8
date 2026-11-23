@@ -52,6 +52,23 @@ describe("errorLogSummary (#1975)", () => {
 		expect(summary.frames).toEqual(["at run (file:///app/x.js:10:5)"]);
 	});
 
+	it("keeps constructor, async, method-alias and anonymous frames", () => {
+		const frames = [
+			"at new DrizzleQueryError (file:///app/node_modules/drizzle-orm/errors.js:12:5)",
+			"at async Promise.all (index 0)",
+			"at async run (file:///app/x.js:10:5)",
+			"at Object.handler [as reject] (file:///app/route.js:3:9)",
+			"at Array.map (<anonymous>)",
+			"at file:///app/x.js:1:1",
+		];
+		const failure = new Error("Failed query");
+		failure.stack = ["Error: Failed query", ...frames.map((frame) => `    ${frame}`)].join("\n");
+
+		expect(errorLogSummary(failure).frames).toEqual(
+			frames.filter((frame) => frame !== "at async Promise.all (index 0)"),
+		);
+	});
+
 	it("keeps a database failure's code, operation and the constraint, table and column it hit", () => {
 		const failure = databaseFailure("compliance_exception.insert", ["org-1", REASON]);
 		const postgres = (failure.cause as { cause: Record<string, unknown> }).cause;
