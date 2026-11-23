@@ -389,7 +389,9 @@ export async function loadStaffingRankingFacts(
 									: null,
 						}
 					: null,
-				arbzgScope: resolvedContract?.arbzgScope ?? "standard",
+				...(resolvedContract?.arbzgScope === "executive_exempt"
+					? { arbzgScope: "executive_exempt" as const }
+					: {}),
 			},
 		});
 	}
