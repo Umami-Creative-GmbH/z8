@@ -4,9 +4,18 @@ const mocks = vi.hoisted(() => ({
 	createNotification: vi.fn(),
 	createNotificationForManager: vi.fn(),
 	loadOrganizationTimezone: vi.fn(),
+	loggedErrors: [] as unknown[],
 }));
 
 vi.mock("@/db", () => ({ db: {} }));
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({
+		error: (...args: unknown[]) => mocks.loggedErrors.push(args),
+		warn: vi.fn(),
+		info: vi.fn(),
+		debug: vi.fn(),
+	}),
+}));
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 	loadOrganizationTimezone: mocks.loadOrganizationTimezone,
 }));
@@ -52,7 +61,55 @@ const EXCEPTION_TYPE_SELECT =
 describe("compliance notification triggers", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.loggedErrors = [];
 		mocks.loadOrganizationTimezone.mockResolvedValue("Europe/Berlin");
+	});
+
+	it.each([
+		[
+			"requested",
+			() =>
+				onComplianceExceptionRequested({
+					exceptionId: "exception-1",
+					employeeId: "employee-1",
+					employeeName: "Ada Lovelace",
+					organizationId: "org-1",
+					exceptionType: "rest_period",
+					reason: "Caring for my sick child",
+					managerId: "manager-1",
+				}),
+		],
+		[
+			"rejected",
+			() =>
+				onComplianceExceptionRejected({
+					exceptionId: "exception-1",
+					employeeUserId: "user-1",
+					organizationId: "org-1",
+					exceptionType: "rest_period",
+					approverName: "Grace Hopper",
+					reason: "Caring for my sick child",
+				} as Parameters<typeof onComplianceExceptionRejected>[0]),
+		],
+	])("never logs the reason text when a %s notification fails", async (_kind, trigger) => {
+		// A failed insert's error carries the notification message, and with it the reason.
+		const failure = Object.assign(
+			new Error('Failed query: insert … params: "Caring for my sick child"'),
+			{ params: ["Caring for my sick child"] },
+		);
+		mocks.createNotification.mockRejectedValue(failure);
+		mocks.createNotificationForManager.mockRejectedValue(failure);
+
+		await trigger();
+
+		expect(mocks.loggedErrors).toHaveLength(1);
+		const [fields] = mocks.loggedErrors[0] as [Record<string, unknown>];
+		// Inspect what pino would see, enumerable or not: message, params, cause, stack.
+		const seen = JSON.stringify(fields, (_key, value) =>
+			value instanceof Error ? { message: value.message, stack: value.stack, ...value } : value,
+		);
+		expect(seen).not.toContain("Caring for my sick child");
+		expect(seen).toContain("exception-1");
 	});
 
 	it("asks the manager about a requested exception with a translatable type label", async () => {

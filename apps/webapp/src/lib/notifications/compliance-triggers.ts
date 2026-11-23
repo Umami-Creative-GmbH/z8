@@ -12,6 +12,7 @@
 import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { db } from "@/db";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { errorLogSummary } from "@/lib/error-log-summary";
 import { createLogger } from "@/lib/logger";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { type NotificationCopy, translatedContent } from "./notification-copy";
@@ -23,6 +24,14 @@ import {
 import { createNotification, createNotificationForManager } from "./notification-service";
 
 const logger = createLogger("ComplianceNotificationTriggers");
+
+/**
+ * A reason is text a person wrote (possibly personal), and a failed notification insert carries
+ * it in its error too: log neither, only whether there was one and how long it was (#1975).
+ */
+function withoutReason<T extends { reason?: string }>({ reason, ...rest }: T) {
+	return { ...rest, reasonLength: reason?.length ?? 0 };
+}
 
 /** The English label of an exception type, for the stored English text. */
 const formatExceptionType = (type: string): string => {
@@ -205,7 +214,7 @@ export async function onComplianceExceptionRequested(
 		}
 	} catch (error) {
 		logger.error(
-			{ error, params },
+			{ error: errorLogSummary(error), params: withoutReason(params) },
 			"Failed to trigger compliance exception requested notification",
 		);
 	}
@@ -275,7 +284,10 @@ export async function onComplianceExceptionRejected(
 			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
-		logger.error({ error, params }, "Failed to trigger compliance exception rejected notification");
+		logger.error(
+			{ error: errorLogSummary(error), params: withoutReason(params) },
+			"Failed to trigger compliance exception rejected notification",
+		);
 	}
 }
 
