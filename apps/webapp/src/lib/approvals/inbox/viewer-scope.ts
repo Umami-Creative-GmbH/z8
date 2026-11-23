@@ -28,6 +28,11 @@ export async function resolveApprovalInboxViewerScope(input: {
 	ability: AppAbility;
 	employee: { id: string; organizationId: string; role: "admin" | "manager" | "employee" };
 	clock?: Clock;
+	/**
+	 * False for a caller that shows no "Covering for" sections (the manager briefing, #1980): its
+	 * deputy covers are not read. Defaults to true.
+	 */
+	includeCovering?: boolean;
 }): Promise<ApprovalInboxViewerScope | null> {
 	const { ability, employee } = input;
 	if (!canOpenApprovalInbox(ability, employee)) return null;
@@ -48,13 +53,14 @@ export async function resolveApprovalInboxViewerScope(input: {
 		includeAllApprovers: canManageApprovals || undefined,
 		eligibleApprovalScopes,
 		// "Covering for": absent approvers this employee covers for now (#1016).
-		covering: approverAccess
-			? await loadInboxCovers(db, {
-					organizationId: employee.organizationId,
-					deputyEmployeeId: employee.id,
-					at: (input.clock ?? systemClock).nowInstant(),
-				})
-			: [],
+		covering:
+			approverAccess && input.includeCovering !== false
+				? await loadInboxCovers(db, {
+						organizationId: employee.organizationId,
+						deputyEmployeeId: employee.id,
+						at: (input.clock ?? systemClock).nowInstant(),
+					})
+				: [],
 		...(approverAccess ? {} : { complianceExceptionsOnly: true }),
 		// ArbZG compliance exceptions this employee sees (ADR-0005), from the eligibility read
 		// above when there was one.

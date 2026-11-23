@@ -158,16 +158,9 @@ describe("getManagerDailyBriefingFromSources", () => {
 	});
 
 	it("lists every unified inbox type, period submissions and compliance exceptions included", async () => {
+		// In the inbox's own order: the high-priority exception before the normal period submission.
 		const sources = createSources({
 			getApprovals: vi.fn().mockResolvedValue([
-				createApproval({
-					id: "period-1",
-					type: "period_submission",
-					title: "Period submission",
-					detail: "April 2026",
-					requesterId: "emp-1",
-					requesterName: "Ada Lovelace",
-				}),
 				createApproval({
 					id: "exception-1",
 					type: "compliance_exception",
@@ -177,6 +170,14 @@ describe("getManagerDailyBriefingFromSources", () => {
 					requesterId: "emp-1",
 					requesterName: "Ada Lovelace",
 					capabilities: { canBulkApprove: false, singleDecisionOnly: true },
+				}),
+				createApproval({
+					id: "period-1",
+					type: "period_submission",
+					title: "Period submission",
+					detail: "April 2026",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
 				}),
 			]),
 		});
@@ -333,6 +334,31 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(briefing.summary.openApprovals).toBe(40);
 	});
 
+	it("keeps the inbox's own order (risk, priority, age), never re-sorting by title", async () => {
+		// The inbox put Zoe first (a high-risk staffing shortfall); a title sort would put Ada first.
+		const sources = createSources({
+			getApprovals: vi
+				.fn()
+				.mockResolvedValue([
+					createApproval({ id: "zoe", requesterId: "emp-1", requesterName: "Zoe Zander" }),
+					createApproval({ id: "ada", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+				]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.sections.approvals.items.map((item) => item.approvalId)).toEqual([
+			"zoe",
+			"ada",
+		]);
+	});
+
 	it("never counts fewer open approvals than it lists, even when a count read failed", async () => {
 		const shown = [
 			createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
@@ -461,7 +487,11 @@ describe("getManagerDailyBriefingFromSources", () => {
 		// The whole section failed: no count is known at all, so it is unavailable, not "0+".
 		expect(
 			await summaryFor(vi.fn().mockRejectedValue(new Error("approval query failed"))),
-		).toMatchObject({ openApprovals: 0, openApprovalsAtLeast: true, openApprovalsUnavailable: true });
+		).toMatchObject({
+			openApprovals: 0,
+			openApprovalsAtLeast: true,
+			openApprovalsUnavailable: true,
+		});
 		expect(
 			(
 				await summaryFor(

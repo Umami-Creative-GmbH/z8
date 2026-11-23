@@ -313,7 +313,8 @@ export async function getManagerDailyBriefingFromSources({
 	const approvals = {
 		...buildSection<BriefingApprovalActionItem>(
 			"approvals",
-			sortActionItems(approvalItems) as BriefingApprovalActionItem[],
+			// Already in the inbox's own order (risk, priority, age): re-sorting would lose it.
+			approvalItems,
 			approvalsResult,
 		),
 		...(unavailableApprovalTypes.length > 0 ? { unavailableTypes: unavailableApprovalTypes } : {}),
@@ -681,6 +682,8 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		const scope = await resolveApprovalInboxViewerScope({
 			ability: defineAbilityFor(principal),
 			employee: { id: viewer.id, organizationId, role: inboxViewerRole(viewer.role) },
+			// The briefing shows no "Covering for" sections, so it reads no deputy covers.
+			includeCovering: false,
 		});
 		if (!scope) {
 			return [];

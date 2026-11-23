@@ -53,4 +53,22 @@ describe("resolveApprovalInboxViewerScope", () => {
 			complianceExceptionScope: { kind: "managed", employeeIds: ["employee-1"] },
 		});
 	});
+
+	it("reads the viewer's Covering duties unless the caller shows no Covering sections (#1980)", async () => {
+		await resolveApprovalInboxViewerScope({
+			ability: managerAbility,
+			employee: { id: "manager-1", organizationId: "org-1", role: "manager" },
+		});
+		expect(state.loadInboxCovers).toHaveBeenCalledTimes(1);
+
+		state.loadInboxCovers.mockClear();
+		const scope = await resolveApprovalInboxViewerScope({
+			ability: managerAbility,
+			employee: { id: "manager-1", organizationId: "org-1", role: "manager" },
+			includeCovering: false,
+		});
+
+		expect(state.loadInboxCovers).not.toHaveBeenCalled();
+		expect(scope?.covering).toEqual([]);
+	});
 });
