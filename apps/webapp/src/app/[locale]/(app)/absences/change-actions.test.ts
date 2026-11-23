@@ -93,7 +93,7 @@ describe("absence change actions", () => {
 		vi.mocked(requestAbsenceChange).mockRejectedValueOnce(
 			new AbsenceChangeError(
 				"engagement_category",
-				"These dates span a change between employment and external contractor work.",
+				"These dates span a change between employment and External Contractor work.",
 				"absence_spans_engagement_change",
 			),
 		);

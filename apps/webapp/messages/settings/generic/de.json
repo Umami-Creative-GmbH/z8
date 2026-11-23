@@ -2119,7 +2119,7 @@
         "payrollSetup": {
           "fixEmployees": "Mitarbeiter überprüfen",
           "fixPayrollExport": "Einstellungen für Lohnexport öffnen",
-          "externalContractorsSkipped": "{count, plural, one {# externer Dienstleister wird bei Anstellungsbedingungen und Personalnummern übersprungen: Lohnexporte enthalten externe Dienstleister nie.} other {# externe Dienstleister werden bei Anstellungsbedingungen und Personalnummern übersprungen: Lohnexporte enthalten externe Dienstleister nie.}}",
+          "externalContractorsSkipped": "{count, plural, one {# Externer Dienstleister wird bei Anstellungsbedingungen und Personalnummern übersprungen: Lohnexporte enthalten Externe Dienstleister nie.} other {# Externe Dienstleister werden bei Anstellungsbedingungen und Personalnummern übersprungen: Lohnexporte enthalten Externe Dienstleister nie.}}",
           "inviteesSkipped": "{count, plural, one {# eingeladene Person wird bei Anstellungsbedingungen und Personalnummern übersprungen, bis sie beitritt.} other {# eingeladene Personen werden bei Anstellungsbedingungen und Personalnummern übersprungen, bis sie beitreten.}}",
           "missingEmploymentTerms": "{count, plural, other {Keine bestätigten Anstellungsbedingungen für heute: # Mitarbeiter} }",
           "noWageTypeMappings": "{count, plural, one {Keine aktiven Lohnartenzuordnungen, sodass Lohnexporte Stunden nicht klassifizieren können: # Mitglied} other {Keine aktiven Lohnartenzuordnungen, sodass Lohnexporte Stunden nicht klassifizieren können: # Mitglieder}}",
@@ -2225,7 +2225,7 @@
           "mappingsMissing": "Keine aktiven Lohnartenzuordnungen",
           "mappingsPresent": "{count, plural, one {# Exportziel, Lohnarten zugeordnet} other {# Exportziele, Lohnarten zugeordnet}}",
           "notExported": "Die Organisation hat kein aktives Lohnabrechnungs-Exportziel, daher gibt es keine Voraussetzungen für die Lohnabrechnung.",
-          "notNeededExternalContractor": "Nicht nötig: externer Dienstleister",
+          "notNeededExternalContractor": "Nicht nötig: Externer Dienstleister",
           "notYetInvited": "Noch nicht: Einladung noch ausstehend",
           "personnelIdentifier": "Personalnummer",
           "termsConfirmed": "Für heute bestätigt",
@@ -2261,7 +2261,7 @@
           "name": "Richtlinie",
           "none": "Heute keine gültige Arbeitsrichtlinie: Weder der Person noch ihrem Team oder der Organisation ist eine zugewiesen.",
           "noSchedule": "Kein Arbeitszeitplan",
-          "notApplicable": "Keine Arbeitsrichtlinie nötig: Die Person arbeitet als externer Dienstleister.",
+          "notApplicable": "Keine Arbeitsrichtlinie nötig: Die Person arbeitet als Externer Dienstleister.",
           "noWorkingDays": "Keine Arbeitstage",
           "title": "Arbeitsrichtlinie",
           "workingDays": "Arbeitstage"

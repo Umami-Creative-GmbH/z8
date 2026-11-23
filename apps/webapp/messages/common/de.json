@@ -624,16 +624,16 @@
     "company": "Firma",
     "contractor": "Dienstleister",
     "contractorNumber": "Dienstleisternummer",
-    "empty": "Keine abgeschlossene Arbeit als externer Dienstleister in diesem Zeitraum.",
+    "empty": "Keine abgeschlossene Arbeit als Externer Dienstleister in diesem Zeitraum.",
     "errors": {
       "failed": "Der Nachweis konnte nicht erstellt werden",
       "invalidPeriod": "Wählen Sie einen Zeitraum von höchstens einem Jahr, dessen erster Tag nicht nach dem letzten liegt.",
       "notAllowed": "Sie können nur Ihre eigenen Nachweise herunterladen.",
-      "notContractor": "Diese Person war in diesem Zeitraum nicht als externer Dienstleister tätig.",
+      "notContractor": "Diese Person war in diesem Zeitraum nicht als Externer Dienstleister tätig.",
       "notFound": "Diese Person wurde in Ihrer Organisation nicht gefunden."
     },
     "export": {
-      "adminDescription": "Laden Sie herunter, was dieser externe Dienstleister gearbeitet hat und was seine Sätze dafür ergeben, um seine Rechnung zu prüfen. Ein Prüfnachweis, keine Rechnung.",
+      "adminDescription": "Laden Sie herunter, was dieser Externe Dienstleister gearbeitet hat und was seine Sätze dafür ergeben, um seine Rechnung zu prüfen. Ein Prüfnachweis, keine Rechnung.",
       "csv": "CSV für Tabellen",
       "download": "Nachweis herunterladen",
       "downloaded": "Nachweis heruntergeladen",
@@ -669,7 +669,7 @@
       "proratedUncapped": "Anteilig nach einem {minutes}-Minuten-Tag, ohne Obergrenze"
     },
     "times": "Tage sind die lokalen Kalendertage des Dienstleisters; Uhrzeiten werden mit dem bei der Arbeit erfassten UTC-Versatz angezeigt.",
-    "title": "Zeit- und Honorarnachweis für externe Dienstleister",
+    "title": "Zeit- und Honorarnachweis für Externe Dienstleister",
     "totals": "Summen",
     "units": {
       "days": "Tage",

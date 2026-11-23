@@ -318,7 +318,7 @@ function WorkPolicySection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.implementationChecklist.rehearsal.workPolicy.notApplicable",
-						"No work policy applies: they work as an external contractor.",
+						"No work policy applies: they work as an External Contractor.",
 					)}
 				</p>
 			</Section>

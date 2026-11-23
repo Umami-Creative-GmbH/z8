@@ -292,7 +292,7 @@ export function ContractorCompensationCard({
 		<div className="min-w-0 space-y-1">
 			<div className="flex flex-wrap items-center gap-2 font-semibold">
 				<IconReceipt2 aria-hidden="true" className="size-5" />
-				{t("settings.contracts.contractors.title", "Contractor compensation")}
+				{t("settings.contracts.contractors.title", "External Contractor compensation")}
 			</div>
 			<p className="text-sm text-muted-foreground">
 				{t(

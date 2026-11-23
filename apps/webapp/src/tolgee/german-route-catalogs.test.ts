@@ -81,12 +81,16 @@ describe("German route catalogs", () => {
 		[
 			"/settings/employees",
 			"settings.employees.offboarding.contractorRehireHint",
-			"Ein externer Dienstleister erhält keinen Arbeitsvertrag, keine Arbeitszeitrichtlinie und keinen Urlaubsanspruch. Dienstleistersätze werden gesondert festgelegt.",
+			"Ein Externer Dienstleister erhält keinen Arbeitsvertrag, keine Arbeitszeitrichtlinie und keinen Urlaubsanspruch. Dienstleistersätze werden gesondert festgelegt.",
 		],
 		["/settings/employees", "organization.invite.engagement.label", "Einladen als"],
 		// Contractor compensation (#1998): the Employee Detail card and the Contracts tab.
-		["/settings/employees", "settings.contracts.contractors.title", "Dienstleistervergütung"],
-		["/settings/contracts", "settings.contracts.tabs.contractors", "Dienstleister"],
+		[
+			"/settings/employees",
+			"settings.contracts.contractors.title",
+			"Vergütung Externer Dienstleister",
+		],
+		["/settings/contracts", "settings.contracts.tabs.contractors", "Externe Dienstleister"],
 		[
 			"/settings/contracts",
 			"settings.contracts.contractors.rules.halfAndFullDay",

@@ -112,7 +112,7 @@ export function ContractsContractorsTab() {
 							<TableHeader>
 								<TableRow>
 									<TableHead>
-										{t("settings.contracts.contractors.columns.name", "Contractor")}
+										{t("settings.contracts.contractors.columns.name", "External Contractor")}
 									</TableHead>
 									<TableHead>
 										{t("settings.contracts.contractors.columns.rateToday", "Rate today")}
@@ -143,7 +143,7 @@ export function ContractsContractorsTab() {
 														<Badge variant="outline">
 															{t(
 																"settings.contracts.contractors.formerContractor",
-																"Former contractor",
+																"Former External Contractor",
 															)}
 														</Badge>
 													)}

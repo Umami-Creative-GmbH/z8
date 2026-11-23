@@ -194,7 +194,7 @@ describe("contractor statement CSV", () => {
 	it("is written in German for a German exporter", () => {
 		const csv = contractorStatementCsv(sampleStatement(), { t: catalogT("de") });
 		const table = rows(csv);
-		expect(table[0]).toEqual(["Zeit- und Honorarnachweis für externe Dienstleister"]);
+		expect(table[0]).toEqual(["Zeit- und Honorarnachweis für Externe Dienstleister"]);
 		expect(table[1][0]).toContain("Kein Rechnungs- oder Gutschriftsdokument");
 		expect(table.find((row) => row[0] === "Zeilenart")).toContain("Betrag");
 		expect(table.find((row) => row[0] === "Tag")).toContain(

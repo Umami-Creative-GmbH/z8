@@ -22,7 +22,7 @@ const ENGAGEMENT_REFUSALS = {
 	],
 	absence_spans_engagement_change: [
 		"common:engagement.absenceRefusals.spansEngagementChange",
-		"These dates span a change between employment and external contractor work. Record each part separately.",
+		"These dates span a change between employment and External Contractor work. Record each part separately.",
 	],
 } satisfies RefusalMessages<EngagementCategoryRefusal>;
 

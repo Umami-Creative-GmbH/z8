@@ -81,10 +81,10 @@ describe("contracts contractors tab", () => {
 		const cellOf = async (name: string) =>
 			within((await screen.findByText(name)).closest("td") as HTMLElement);
 		expect((await cellOf("Ada")).getByText("External Contractor")).toBeTruthy();
-		expect((await cellOf("Ada")).queryByText("Former contractor")).toBeNull();
-		expect((await cellOf("Ben")).getByText("Former contractor")).toBeTruthy();
+		expect((await cellOf("Ada")).queryByText("Former External Contractor")).toBeNull();
+		expect((await cellOf("Ben")).getByText("Former External Contractor")).toBeTruthy();
 		expect((await cellOf("Ben")).queryByText("External Contractor")).toBeNull();
-		expect((await cellOf("Cleo")).getByText("Former contractor")).toBeTruthy();
+		expect((await cellOf("Cleo")).getByText("Former External Contractor")).toBeTruthy();
 		expect(screen.getAllByText("No rate in effect")).toHaveLength(3);
 	});
 });

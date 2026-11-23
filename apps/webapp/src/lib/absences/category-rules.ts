@@ -90,7 +90,7 @@ export const ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES: Record<EngagementCategoryRefu
 		"An External Contractor can only record unavailability, not vacation or leave",
 	unavailability_is_for_contractors: "Only External Contractors record unavailability",
 	absence_spans_engagement_change:
-		"These dates span a change between employment and external contractor work. Record each part separately.",
+		"These dates span a change between employment and External Contractor work. Record each part separately.",
 };
 
 /** The rules every contractor unavailability category has; migration 0330 checks them too. */

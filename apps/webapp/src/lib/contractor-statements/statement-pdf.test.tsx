@@ -55,7 +55,7 @@ describe("contractor statement PDF", () => {
 				await renderContractorStatementPdf(sampleStatement(), { t: catalogT("de"), locale: "de" }),
 			),
 		);
-		expect(text).toContain("Zeit- und Honorarnachweis für externe Dienstleister");
+		expect(text).toContain("Zeit- und Honorarnachweis für Externe Dienstleister");
 		expect(text).toContain("Kein Rechnungs- oder Gutschriftsdokument");
 		expect(text).toContain("900,00 €");
 		expect(text).toContain("Halber Tag bis 240 Min., darüber voller Tag");

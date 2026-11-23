@@ -77,7 +77,7 @@
         "columns": {
           "actions": "Actions",
           "company": "Company",
-          "name": "Contractor",
+          "name": "External Contractor",
           "rateToday": "Rate today"
         },
         "companyName": "Company name",
@@ -90,7 +90,7 @@
         "detailsHeading": "Contracting details",
         "detailsSaved": "Contracting details saved",
         "earlierEngagement": "Earlier engagement",
-        "editFor":"Edit compensation of {name}",
+        "editFor": "Edit compensation of {name}",
         "effectiveFrom": "Applies from",
         "empty": "No rate yet. This contractor's work stays unpriced until a rate applies.",
         "endHelp": "From this date no rate applies until the next change; work stays unpriced meanwhile.",
@@ -112,7 +112,7 @@
           "rateTooLarge": "Enter a rate below one million.",
           "rateTooPrecise": "The rate has more decimals than the currency allows."
         },
-        "formerContractor": "Former contractor",
+        "formerContractor": "Former External Contractor",
         "halfDayThreshold": "Half-day threshold (minutes)",
         "hourlyRate": "Hourly rate",
         "inactive": "Inactive",
@@ -149,7 +149,7 @@
         "standardDay": "Standard day (minutes)",
         "tabIntro": "External Contractors are paid by hour or by day under their own terms, never through employee contracts or payroll. Rates are visible to organization admins only.",
         "termsHeading": "Rates",
-        "title": "Contractor compensation",
+        "title": "External Contractor compensation",
         "unchanged": "These terms already apply",
         "nothingEnded": "No rate applied on that date, so nothing changed",
         "vatId": "VAT ID"
@@ -454,7 +454,7 @@
       "tabs": {
         "bulk": "Bulk & CSV",
         "bulkDescription": "Run dry-run bulk contract updates, validate contract or leaving-date CSV imports, and monitor batch progress.",
-        "contractors": "Contractors",
+        "contractors": "External Contractors",
         "contractorsDescription": "Set External Contractors' effective-dated hourly or daily rates and their company, VAT ID and PO reference.",
         "defaults": "Defaults",
         "defaultsDescription": "Configure date-effective organization and primary-team default contracts with affected-employee previews.",

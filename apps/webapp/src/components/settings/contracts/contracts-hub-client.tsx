@@ -80,7 +80,7 @@ export function ContractsHubClient({
 				},
 				{
 					value: "contractors",
-					label: t("settings.contracts.tabs.contractors", "Contractors"),
+					label: t("settings.contracts.tabs.contractors", "External Contractors"),
 					description: t(
 						"settings.contracts.tabs.contractorsDescription",
 						"Set External Contractors' effective-dated hourly or daily rates and their company, VAT ID and PO reference.",
