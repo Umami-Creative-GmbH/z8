@@ -252,9 +252,12 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			// Two calls on Tuesday, 6 hours apart: 4 h worked that day, but each call is 2 h.
 			await onCall.work(org, worker, { date: "2026-03-10", startTime: "08:00", endTime: "10:00" });
 			await onCall.work(org, worker, { date: "2026-03-10", startTime: "16:00", endTime: "18:00" });
-			// Wednesday: one call of 3 h interrupted by a 30-minute break.
+			// Wednesday: unplanned work, 1.5 h, an hour off, 1.5 h: two calls of 90 minutes.
 			await onCall.work(org, worker, { date: "2026-03-11", startTime: "08:00", endTime: "09:30" });
-			await onCall.work(org, worker, { date: "2026-03-11", startTime: "10:00", endTime: "11:30" });
+			await onCall.work(org, worker, { date: "2026-03-11", startTime: "10:30", endTime: "12:00" });
+			// Friday: unplanned work periods that touch are one 3-hour call.
+			await onCall.work(org, worker, { date: "2026-03-13", startTime: "08:00", endTime: "09:30" });
+			await onCall.work(org, worker, { date: "2026-03-13", startTime: "09:30", endTime: "11:00" });
 			// Thursday: one planned call, worked with a long break inside the shift.
 			await onCall.shift(org, {
 				employeeId: worker.employeeId,
@@ -282,10 +285,12 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			).toEqual([
 				["work:2026-03-10T08:00", "2026-03-10", 120],
 				["work:2026-03-10T16:00", "2026-03-10", 120],
+				["work:2026-03-11T08:00", "2026-03-11", 90],
+				["work:2026-03-11T10:30", "2026-03-11", 90],
 			]);
 		});
 
-		it("joins planned shifts that are adjacent or a break apart into one call", async () => {
+		it("joins only touching or overlapping planned shifts into one call", async () => {
 			const org = await onCall.organization("a");
 			const worker = await fx.employee(org, "worker");
 			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
@@ -297,12 +302,12 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 					endTime,
 					publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
 				});
-			// Tuesday: 08–10 and 10–12 are one 4-hour call.
+			// Tuesday: 08–10 and 10–12 touch: one 4-hour call.
 			await shift("2026-03-10", "08:00", "10:00");
 			await shift("2026-03-10", "10:00", "12:00");
-			// Wednesday: 1.5 h, a 1-hour break, 1.5 h: one 3-hour call.
-			await shift("2026-03-11", "08:00", "09:30");
-			await shift("2026-03-11", "10:30", "12:00");
+			// Wednesday: 1.5 h, an hour off, 1.5 h: two calls, neither 3 consecutive hours.
+			const early = await shift("2026-03-11", "08:00", "09:30");
+			const late = await shift("2026-03-11", "10:30", "12:00");
 			// Thursday: two 2-hour calls 4 hours apart are two short calls.
 			const morning = await shift("2026-03-12", "08:00", "10:00");
 			const afternoon = await shift("2026-03-12", "14:00", "16:00");
@@ -322,6 +327,8 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 					.toSorted((a, b) => String(a).localeCompare(String(b))),
 			).toEqual(
 				[
+					[`shift:${early}`, 90],
+					[`shift:${late}`, 90],
 					[`shift:${morning}`, 120],
 					[`shift:${afternoon}`, 120],
 				].toSorted((a, b) => String(a).localeCompare(String(b))),
@@ -332,7 +339,14 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			const org = await onCall.organization("a");
 			const worker = await fx.employee(org, "worker");
 			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
-			// Started yesterday evening, back from a short break and still clocked in.
+			// Started yesterday evening on the planned call, back from a break and still clocked in.
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-10",
+				startTime: "20:00",
+				endTime: "02:00",
+				publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+			});
 			await onCall.work(org, worker, { date: "2026-03-10", startTime: "20:00", endTime: "21:30" });
 			await onCall.openWork(org, worker, { date: "2026-03-10", startTime: "22:00" });
 

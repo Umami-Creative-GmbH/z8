@@ -501,6 +501,45 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		expect(added.get(regular.employeeId)).toBeUndefined();
 	});
 
+	it("tells Staffing that keeping the shift's own assignee announces nothing new", async () => {
+		const org = await onCall.organization("a");
+		const assignee = await fx.employee(org, "assignee");
+		await onCall.onCallTerms(org, assignee, { kind: "unspecified" });
+		const other = await fx.employee(org, "other");
+		await onCall.onCallTerms(org, other, { kind: "unspecified" });
+		// Published for the assignee on Monday 2026-03-02, ten days before Thursday's shift.
+		const shiftId = await onCall.shift(org, {
+			employeeId: assignee.employeeId,
+			date: "2026-03-12",
+			startTime: "08:00",
+			endTime: "14:00",
+			publishedAt: Temporal.Instant.from("2026-03-02T09:00:00Z"),
+			assignmentChangedAt: Temporal.Instant.from("2026-03-02T09:00:00Z"),
+		});
+
+		// Staffing on Tuesday 2026-03-10, two days before the shift.
+		const added = await addedStatutoryScheduleFindings(
+			db,
+			{
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-12", endExclusive: "2026-03-13" },
+				employeeIds: [assignee.employeeId, other.employeeId],
+				now: Temporal.Instant.from("2026-03-10T12:00:00Z"),
+				proposedShift: { date: "2026-03-12", startTime: "08:00", endTime: "14:00" },
+				replacesShiftId: shiftId,
+			},
+			[onCallScheduleContributor],
+		);
+
+		const notices = (employeeId: string) =>
+			(added.get(employeeId) ?? [])
+				.filter((f) => f.statutoryKind === "on_call_short_notice")
+				.map((f) => f.summary.used?.value);
+		expect(notices(assignee.employeeId)).toEqual([]);
+		expect(notices(other.employeeId)).toEqual([1]);
+	});
+
 	it("tells Staffing that a call proposed on a holiday would take the week over its band", async () => {
 		const org = await onCall.organization("a");
 		const worker = await fx.employee(org, "oncall");

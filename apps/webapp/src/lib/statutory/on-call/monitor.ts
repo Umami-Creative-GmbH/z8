@@ -7,7 +7,7 @@
  *   an org admin documents as an `on_call_short_notice_agreement` acknowledgement.
  * - **Minimum call** (§ 12 Abs. 1 Satz 4): each call lasts at least the agreed daily minutes, or
  *   the statutory minimum (three hours) when none is agreed — for each planned call and each
- *   finished worked call (shifts or work periods joined only by breaks).
+ *   finished worked call (touching shifts or work periods, or work within one planned shift).
  * - **Weekly call-off band** (§ 12 Abs. 2): per compliance week (Monday–Sunday) the planned and
  *   worked minutes stay inside the band of the agreed weekly minutes: `minimum` from the agreement
  *   up to +25 %, `maximum` from −20 % up to the agreement, `exact` exactly the agreement,
@@ -26,6 +26,8 @@ import {
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { isNewShiftCallIn } from "@/lib/scheduling/shift-assignment-change";
+import { shiftStoredDate } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import {
 	classifyStatutoryUsage,
@@ -40,7 +42,6 @@ import type { StatutoryProposedShift } from "../scheduling/contributor";
 import {
 	daysOf,
 	loadOnCallFacts,
-	ON_CALL_MAX_BREAK_MINUTES,
 	type OnCallFacts,
 	type OnCallReader,
 	type OnCallShift,
@@ -188,8 +189,9 @@ function minimumCallMinutes(
 }
 
 /**
- * Planned shifts joined into calls (§ 12 Abs. 1 Satz 4 TzBfG), in start order: shifts that touch
- * or are at most a break ({@link ON_CALL_MAX_BREAK_MINUTES}) apart are one call, as worked calls.
+ * Planned shifts joined into calls (§ 12 Abs. 1 Satz 4 TzBfG), in start order. A call is at least
+ * three *consecutive* hours, so only shifts that touch or overlap are one call; shifts with time
+ * off between them are separate calls, however short the gap.
  */
 function plannedCalls(shifts: readonly OnCallShift[], timezone: string): PlannedCall[] {
 	const timed = shifts
@@ -198,16 +200,11 @@ function plannedCalls(shifts: readonly OnCallShift[], timezone: string): Planned
 	const calls: PlannedCall[] = [];
 	let current: { shifts: OnCallShift[]; minutes: number; end: Instant } | null = null;
 	for (const { shift, interval } of timed) {
-		if (
-			current &&
-			current.end.until(interval.start).total("minutes") <= ON_CALL_MAX_BREAK_MINUTES
-		) {
+		if (current && compareInstants(interval.start, current.end) <= 0) {
 			current.shifts.push(shift);
 			// Overlapping shifts count their shared time once.
 			if (compareInstants(interval.end, current.end) > 0) {
-				const from =
-					compareInstants(interval.start, current.end) > 0 ? interval.start : current.end;
-				current.minutes += Math.round(from.until(interval.end).total("minutes"));
+				current.minutes += Math.round(current.end.until(interval.end).total("minutes"));
 				current.end = interval.end;
 			}
 			continue;
@@ -222,7 +219,7 @@ function plannedCalls(shifts: readonly OnCallShift[], timezone: string): Planned
 interface PlannedCall {
 	/** In start order; at least one. */
 	readonly shifts: readonly OnCallShift[];
-	/** Planned minutes of the call, breaks between its shifts left out. */
+	/** Planned minutes of the call, time shared by overlapping shifts counted once. */
 	readonly minutes: number;
 }
 
@@ -526,6 +523,38 @@ function bandFindings(
 }
 
 /**
+ * A proposal for the persisted shift it replaces, offered to that shift's own assignee: keeping
+ * them is that shift, already announced. It keeps its status and publication, and its last
+ * announcement unless the proposal is a new call-in (moved before it starts), as saving it would.
+ * Any other employee is assigned the shift now, as a new call-in.
+ */
+function keptByAssignee(
+	replaced: OnCallShift | null,
+	proposal: OnCallShift,
+	timezone: string,
+	now: Instant,
+): OnCallShift {
+	if (!replaced || replaced.employeeId !== proposal.employeeId) return proposal;
+	const assignment = (shift: OnCallShift) => ({
+		employeeId: shift.employeeId,
+		date: shiftStoredDate(shift.date.toString(), timezone),
+		startTime: shift.startTime,
+		endTime: shift.endTime,
+	});
+	const newCallIn = isNewShiftCallIn(assignment(replaced), assignment(proposal), {
+		timezone,
+		now,
+	});
+	return {
+		...proposal,
+		id: replaced.id,
+		status: replaced.status,
+		publishedAt: replaced.publishedAt,
+		assignmentChangedAt: newCallIn ? null : replaced.assignmentChangedAt,
+	};
+}
+
+/**
  * The on-call findings of the window: notice and minimum-call findings for shifts and work on
  * its days, band findings for every compliance week touching it.
  */
@@ -559,7 +588,7 @@ export async function evaluateOnCallFindings(
 			.filter((s) => s.employeeId === employeeId)
 			.map((s): OnCallShift => {
 				const date = parsePlainDate(s.date);
-				return {
+				const shift: OnCallShift = {
 					id: null,
 					employeeId,
 					date,
@@ -573,6 +602,7 @@ export async function evaluateOnCallFindings(
 					publishedAt: null,
 					assignmentChangedAt: null,
 				};
+				return keptByAssignee(facts.replacedShift, shift, request.timezone, request.now);
 			});
 		const shifts = [...(facts.shiftsByEmployee.get(employeeId) ?? []), ...proposed];
 

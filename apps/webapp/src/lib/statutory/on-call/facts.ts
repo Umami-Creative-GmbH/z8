@@ -4,7 +4,7 @@
  * shifts (draft and published, or published only for readers who never see drafts), their work per organization-local day and per call (a running
  * clock-in counts up to now) and the on-call baselines. Read-only: `select` only.
  */
-import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { employeeEmploymentHistory, shift, workPeriod } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { ResolvedOnCallTerms } from "@/lib/contracts/types";
@@ -36,7 +36,7 @@ export const ON_CALL_THRESHOLD_KEYS = [
 
 /** A persisted or proposed shift of an on-call employee, read in the organization's zone. */
 export interface OnCallShift {
-	/** Null for a Staffing proposal. */
+	/** Null for a Staffing proposal, unless it keeps the replaced shift's own assignee. */
 	readonly id: string | null;
 	readonly employeeId: string;
 	readonly date: PlainDate;
@@ -49,8 +49,8 @@ export interface OnCallShift {
 }
 
 /**
- * One call as worked (§ 12 Abs. 1 Satz 4 TzBfG): one contiguous deployment, i.e. a work period or
- * work periods joined only by breaks.
+ * One call as worked (§ 12 Abs. 1 Satz 4 TzBfG): one contiguous deployment, i.e. a work period,
+ * work periods that touch, or work periods within one planned shift (a clocked-out break in it).
  */
 export interface OnCallWorkCall {
 	/** Organization-local day the call started. */
@@ -64,16 +64,22 @@ export interface OnCallWorkCall {
 }
 
 /**
- * The longest gap between two work periods that is still a break inside one call. A longer gap
- * starts a new call, unless both periods fall within the same planned shift.
+ * Work periods less than a minute apart touch: clocking out and straight back in (at different
+ * seconds) does not end the call. Any longer gap starts a new call (a call is at least three
+ * *consecutive* hours), unless both periods fall within the same planned shift.
  */
-export const ON_CALL_MAX_BREAK_MINUTES = 60;
+const ON_CALL_TOUCHING_GAP_MINUTES = 1;
 
 export interface OnCallFacts {
 	readonly thresholds: StatutoryThresholdTable;
 	/** Employees on call on at least one loaded day, with their terms per day (`YYYY-MM-DD`). */
 	readonly termsByEmployee: ReadonlyMap<string, ReadonlyMap<string, ResolvedOnCallTerms>>;
 	readonly shiftsByEmployee: ReadonlyMap<string, readonly OnCallShift[]>;
+	/**
+	 * The persisted shift `replacesShiftId` names, left out of `shiftsByEmployee` (null when not
+	 * asked for, unassigned or outside the loaded days): its assignee keeps its announcement.
+	 */
+	readonly replacedShift: OnCallShift | null;
 	/** Worked minutes per organization-local start day; a running clock-in counts up to now. */
 	readonly workMinutesByEmployee: ReadonlyMap<string, ReadonlyMap<string, number>>;
 	/** Worked calls in start order. */
@@ -139,6 +145,7 @@ export async function loadOnCallFacts(
 		thresholds,
 		termsByEmployee: new Map(),
 		shiftsByEmployee: new Map(),
+		replacedShift: null,
 		workMinutesByEmployee: new Map(),
 		workCallsByEmployee: new Map(),
 		workPiecesByEmployee: new Map(),
@@ -208,15 +215,15 @@ export async function loadOnCallFacts(
 				inArray(shift.employeeId, onCallIds),
 				gte(shift.date, bounds.start),
 				lt(shift.date, bounds.endExclusive),
-				input.replacesShiftId ? ne(shift.id, input.replacesShiftId) : undefined,
 				input.publishedShiftsOnly ? eq(shift.status, "published") : undefined,
 			),
 		);
 	const shiftsByEmployee = new Map<string, OnCallShift[]>();
+	let replacedShift: OnCallShift | null = null;
 	for (const row of shiftRows) {
 		if (!row.employeeId) continue;
 		const date = shiftCalendarDate(row.date, input.timezone);
-		push(shiftsByEmployee, row.employeeId, {
+		const loaded: OnCallShift = {
 			id: row.id,
 			employeeId: row.employeeId,
 			date,
@@ -229,7 +236,10 @@ export async function loadOnCallFacts(
 			status: row.status,
 			publishedAt: row.publishedAt ? instantFromDate(row.publishedAt) : null,
 			assignmentChangedAt: instantFromDate(row.assignmentChangedAt),
-		});
+		};
+		// The shift a proposal replaces is left out of the plan, but its announcement is kept.
+		if (row.id === input.replacesShiftId) replacedShift = loaded;
+		else push(shiftsByEmployee, row.employeeId, loaded);
 	}
 	for (const list of shiftsByEmployee.values()) {
 		list.sort(
@@ -315,6 +325,7 @@ export async function loadOnCallFacts(
 		thresholds,
 		termsByEmployee,
 		shiftsByEmployee,
+		replacedShift,
 		workMinutesByEmployee,
 		workCallsByEmployee,
 		workPiecesByEmployee: piecesByEmployee,
@@ -344,7 +355,10 @@ export function overlapMinutes(
 	return Math.round(minutes);
 }
 
-/** Joins an employee's work periods into calls: periods separated only by breaks are one call. */
+/**
+ * Joins an employee's work periods into calls: periods that touch or overlap are one call, and so
+ * are periods within the same planned shift, whatever break was clocked out between them.
+ */
 function workCalls(
 	pieces: readonly OnCallWorkPiece[],
 	shifts: readonly OnCallShift[],
@@ -376,7 +390,7 @@ function workCalls(
 		const pieceShifts = shiftsOf(piece);
 		const gapMinutes = current ? current.end.until(piece.start).total("minutes") : 0;
 		const sameShift = pieceShifts.some((interval) => currentShifts.has(interval));
-		if (current && (gapMinutes <= ON_CALL_MAX_BREAK_MINUTES || sameShift)) {
+		if (current && (gapMinutes < ON_CALL_TOUCHING_GAP_MINUTES || sameShift)) {
 			current.minutes += piece.minutes;
 			current.running ||= piece.running;
 			if (compareInstants(piece.end, current.end) > 0) current.end = piece.end;
