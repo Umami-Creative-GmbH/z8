@@ -82,6 +82,11 @@ export interface EmployeeEmployments {
 	isActive: boolean;
 	/** Only the employee stints: External Contractor periods are no employment for vacation. */
 	employments: EmploymentStint[];
+	/**
+	 * Whether they were an External Contractor at some point (#1996): then a year without an
+	 * employee day is outside vacation (`outsideVacationInYear`).
+	 */
+	wasContractor: boolean;
 }
 
 /**
@@ -180,6 +185,8 @@ export async function loadEmployeeEmployments(
 				{
 					isActive: row.isActive,
 					employments: onlyContractor ? [] : employmentsOf(row, employeePeriods),
+					wasContractor:
+						onlyContractor || employeePeriods.length < allPeriods.length,
 				},
 			];
 		}),
@@ -292,6 +299,7 @@ export async function loadProratedVacationAllowances(
 				policy,
 				customAnnualDays: overrides.get(employeeId)?.customAnnualDays ?? null,
 				employments: employee.employments,
+				wasContractor: employee.wasContractor,
 				year,
 			}),
 		);

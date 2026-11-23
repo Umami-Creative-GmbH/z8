@@ -17,6 +17,8 @@ import type {
 	CarryoverSummary,
 	ExpiryResult,
 } from "./vacation.service";
+import { outsideVacationInYear } from "./prorated-allowance";
+import { loadEmployeeEmployments } from "./prorated-allowance-store";
 import { loadVacationBalances } from "./vacation-balance-store";
 import { calculateCarryoverDays } from "./vacation-calculator";
 import { carryoverExpiryInstant } from "./vacation-carryover-terms";
@@ -97,6 +99,17 @@ export async function commitAnnualVacationCarryover(
 					)
 					.for("update");
 				if (!target) return;
+				// No carry-over leaves or enters a year outside vacation, such as one spent entirely
+				// as an External Contractor (#1996).
+				const employments = (
+					await loadEmployeeEmployments(tx, { organizationId, employeeIds: [person.id] })
+				).get(person.id);
+				if (
+					!employments ||
+					outsideVacationInYear(employments, fromYear) ||
+					outsideVacationInYear(employments, toYear)
+				)
+					return;
 				const prior = await tx.query.vacationCarryoverTransfer.findFirst({
 					where: and(
 						eq(vacationCarryoverTransfer.organizationId, organizationId),
@@ -144,7 +157,7 @@ export async function commitAnnualVacationCarryover(
 					timezone,
 					currentDate,
 				});
-				// Only ever an External Contractor in the source year: no vacation to carry (#1996).
+				// The balance store decides the source year the same way (#1996).
 				if (source.externalContractors.has(person.id)) return;
 				const configuration = source.configurations.get(person.id);
 				const balance = source.balances.get(person.id);

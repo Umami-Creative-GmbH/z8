@@ -1,5 +1,11 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { employee, employeeEmploymentPeriod, userSettings } from "@/db/schema";
+import {
+	absenceCategory,
+	absenceEntry,
+	employee,
+	employeeEmploymentPeriod,
+	userSettings,
+} from "@/db/schema";
 import {
 	type EmploymentPeriodSnapshot,
 	engagementKindOnDay,
@@ -9,6 +15,7 @@ import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { absenceEngagementRefusal, type EngagementCategoryRefusal } from "./category-rules";
 
 type Reader = Pick<DatabaseClient, "select">;
 
@@ -56,6 +63,48 @@ export async function loadEngagementKindsOnDays(
 		if (kinds.size > 1) break;
 	}
 	return kinds;
+}
+
+/**
+ * Whether a recorded absence's category still fits the stints its days fall in (#1996), for
+ * approving a pending request: a departure leaves pending requests in place, so the person may
+ * have become a contractor (or an employee) on those days since they asked. Null when it fits or
+ * the absence is not in the organization.
+ */
+export async function loadAbsenceEngagementRefusal(
+	db: Reader,
+	input: { organizationId: string; absenceId: string },
+): Promise<EngagementCategoryRefusal | null> {
+	const [absence] = await db
+		.select({
+			employeeId: absenceEntry.employeeId,
+			startDate: absenceEntry.startDate,
+			endDate: absenceEntry.endDate,
+			categoryType: absenceCategory.type,
+		})
+		.from(absenceEntry)
+		.innerJoin(
+			absenceCategory,
+			and(
+				eq(absenceCategory.id, absenceEntry.categoryId),
+				eq(absenceCategory.organizationId, absenceEntry.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(absenceEntry.organizationId, input.organizationId),
+				eq(absenceEntry.id, input.absenceId),
+			),
+		)
+		.limit(1);
+	if (!absence) return null;
+	const kinds = await loadEngagementKindsOnDays(db, {
+		organizationId: input.organizationId,
+		employeeId: absence.employeeId,
+		startDate: absence.startDate,
+		endDate: absence.endDate,
+	});
+	return absenceEngagementRefusal(kinds, absence.categoryType);
 }
 
 /**

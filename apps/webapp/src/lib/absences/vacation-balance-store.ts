@@ -9,7 +9,7 @@ import {
 	loadWorkingDaysForEmployees,
 	loadWorkingWeekPeriodsForEmployees,
 } from "./absence-days-resolver";
-import { FIRST_WORKING_WEEK_YEAR } from "./prorated-allowance";
+import { FIRST_WORKING_WEEK_YEAR, outsideVacationInYear } from "./prorated-allowance";
 import {
 	loadEmployeeEmployments,
 	loadEmployeeVacationOverrides,
@@ -59,8 +59,10 @@ export interface VacationBalances {
 	/** Each balance's adjustments by kind (#1105, #1106); same keys as `balances`. */
 	adjustments: Map<string, VacationAdjustmentSums>;
 	/**
-	 * Requested employees who were only ever External Contractors (#1996). They have no vacation:
-	 * no policy coverage, configuration or balance, so no coverage gap is reported for them.
+	 * Requested people outside vacation for the year (#1996, `outsideVacationInYear`): only ever
+	 * External Contractors, or External Contractors at some point without an employee day in the
+	 * year. They have no vacation that year: no policy coverage, configuration or balance, so no
+	 * coverage gap is reported for them, and no carry-over leaves or enters the year.
 	 */
 	externalContractors: Set<string>;
 }
@@ -114,14 +116,14 @@ export async function loadVacationBalances(
 				})
 			).map((row) => row.id)
 		: [];
-	// Someone who was only ever an External Contractor has no employment for vacation (#1996).
+	// An External Contractor has no vacation in a year without an employee day (#1996).
 	const externalContractors = new Set<string>();
 	if (organizationEmployeeIds.length > 0) {
 		for (const [employeeId, employments] of await loadEmployeeEmployments(database, {
 			organizationId,
 			employeeIds: organizationEmployeeIds,
 		})) {
-			if (employments.employments.length === 0) externalContractors.add(employeeId);
+			if (outsideVacationInYear(employments, year)) externalContractors.add(employeeId);
 		}
 	}
 	const employeeIds = organizationEmployeeIds.filter((id) => !externalContractors.has(id));

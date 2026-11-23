@@ -58,6 +58,7 @@ const { accrueVacationPeriods } = await import("@/lib/absences/vacation-accrual"
 const { loadVacationBalances } = await import("@/lib/absences/vacation-balance-store");
 const { calculateAnnualCarryover, getEnhancedVacationBalanceResult } =
 	await import("@/lib/absences/vacation.service");
+const { commitAnnualVacationCarryover } = await import("@/lib/absences/vacation-carryover");
 const { decidePeriodSubmission, submitPeriodSubmission } =
 	await import("@/lib/time-tracking/period-submissions/submission-service");
 const { requestAbsenceForEmployeeEffect } =
@@ -67,6 +68,7 @@ const { getAbsenceCategories, getVacationBalanceResult } =
 const { recordAbsenceForEmployee } = await import("@/app/[locale]/(app)/team/absences/actions");
 const { decideAbsenceChange, requestAbsenceChange } =
 	await import("@/lib/absences/change-request-service");
+const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
 const { getAbsencesForMonth } = await import("@/lib/calendar/absence-service");
 const { fetchAbsencesForExport } = await import("@/lib/payroll-export/data-fetcher");
 const { getDailyWorkRequirementsForEmployee } =
@@ -98,15 +100,61 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 		createdBy: string;
 		accrualType: "annual" | "monthly";
 		allowCarryover?: boolean;
+		prorate?: boolean;
+		startDate?: string;
 	}) {
 		await fixture.pool.query(
 			`insert into vacation_allowance
 			 (organization_id, name, start_date, is_company_default, default_annual_days,
 			  statutory_minimum_days, accrual_type, allow_carryover, prorate_in_start_and_exit_year,
 			  created_by, updated_at)
-			 values ($1, 'Company', '2026-01-01', true, '24', '0', $2, $3, true, $4, now())`,
-			[input.organizationId, input.accrualType, input.allowCarryover ?? false, input.createdBy],
+			 values ($1, 'Company', $5, true, '24', '0', $2, $3, $6, $4, now())`,
+			[
+				input.organizationId,
+				input.accrualType,
+				input.allowCarryover ?? false,
+				input.createdBy,
+				input.startDate ?? "2026-01-01",
+				input.prorate ?? true,
+			],
 		);
+	}
+
+	/**
+	 * A person converted between employment and contract work on `convertedAt`: an employee before
+	 * and a contractor after, or the other way round.
+	 */
+	async function convertedPerson(
+		organizationId: string,
+		input: { before: "employee" | "contractor"; since: string; convertedAt: string },
+	) {
+		const after = input.before === "employee" ? "contractor" : "employee";
+		const person = await fixture.seedEmployee({
+			organizationId,
+			engagementKind: input.before,
+			withPeriod: false,
+		});
+		await fixture.pool.query(
+			`insert into employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance, ended_at, engagement_kind)
+			 values ($1, $2, 'closed', $3, 'recorded', $4, $5),
+			        ($1, $2, 'open', $4, 'recorded', null, $6)`,
+			[organizationId, person.employeeId, input.since, input.convertedAt, input.before, after],
+		);
+		await fixture.pool.query("update employee set engagement_kind = $2 where id = $1", [
+			person.employeeId,
+			after,
+		]);
+		return person;
+	}
+
+	async function carryoverInto(employeeId: string, year: number) {
+		const { rows } = await fixture.pool.query<{ days: string | null }>(
+			`select custom_carryover_days::text as days from employee_vacation_allowance
+			 where employee_id = $1 and year = $2`,
+			[employeeId, year],
+		);
+		return rows;
 	}
 
 	describe("vacation", () => {
@@ -224,6 +272,123 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 				[org.contractor.employeeId],
 			);
 			expect(rows).toEqual([]);
+		});
+
+		describe("by year for someone converted between employment and contract work", () => {
+			it("gives a year spent entirely as a contractor no allowance to carry into employment", async () => {
+				const org = await organizationWithContractor();
+				// A policy that does not prorate: the full allowance for any year with employment.
+				await vacationPolicy({
+					organizationId: org.organizationId,
+					createdBy: org.ownerUserId,
+					accrualType: "annual",
+					allowCarryover: true,
+					prorate: false,
+				});
+				// A contractor all of 2026, an employee from 1 January 2027.
+				const person = await convertedPerson(org.organizationId, {
+					before: "contractor",
+					since: "2026-01-01T00:00:00Z",
+					convertedAt: "2027-01-01T00:00:00Z",
+				});
+				const balances = (year: number) =>
+					loadVacationBalances(db, {
+						organizationId: org.organizationId,
+						employeeIds: [person.employeeId, org.employee.employeeId],
+						year,
+						timezone: "UTC",
+					});
+
+				const contractYear = await balances(2026);
+				expect([...contractYear.externalContractors]).toEqual(
+					expect.arrayContaining([person.employeeId]),
+				);
+				expect(contractYear.balances.has(person.employeeId)).toBe(false);
+				expect(contractYear.balances.get(org.employee.employeeId)?.allowanceDays).toBe(24);
+				const employedYear = await balances(2027);
+				expect(employedYear.externalContractors.has(person.employeeId)).toBe(false);
+				expect(employedYear.balances.get(person.employeeId)?.allowanceDays).toBe(24);
+
+				const legacy = await calculateAnnualCarryover(org.organizationId, 2026, org.ownerUserId);
+				expect(legacy.results.map((row) => row.employeeId)).toContain(org.employee.employeeId);
+				expect(legacy.results.map((row) => row.employeeId)).not.toContain(person.employeeId);
+				const committed = await commitAnnualVacationCarryover(
+					org.organizationId,
+					2026,
+					org.ownerUserId,
+					"UTC",
+				);
+				expect(
+					[...committed.results, ...committed.errors].map((row) => row.employeeId),
+				).not.toContain(person.employeeId);
+				expect(await carryoverInto(person.employeeId, 2027)).toEqual([]);
+				expect((await balances(2027)).balances.get(person.employeeId)?.carryoverDays ?? 0).toBe(0);
+			});
+
+			it("gives a year spent entirely as a contractor after employment no vacation anywhere", async () => {
+				const org = await organizationWithContractor();
+				await vacationPolicy({
+					organizationId: org.organizationId,
+					createdBy: org.ownerUserId,
+					accrualType: "annual",
+					allowCarryover: true,
+					prorate: false,
+					startDate: "2025-01-01",
+				});
+				// An employee all of 2025, a contractor from 1 January 2026.
+				const person = await convertedPerson(org.organizationId, {
+					before: "employee",
+					since: "2025-01-01T00:00:00Z",
+					convertedAt: "2026-01-01T00:00:00Z",
+				});
+
+				const contractYear = await loadVacationBalances(db, {
+					organizationId: org.organizationId,
+					employeeIds: [person.employeeId],
+					year: 2026,
+					timezone: "UTC",
+				});
+				expect([...contractYear.externalContractors]).toEqual([person.employeeId]);
+				expect(contractYear.balances.size).toBe(0);
+				expect(contractYear.configurations.size).toBe(0);
+				// The Absences page and the dashboard say vacation does not apply.
+				const absencesPage = await getVacationBalanceResult(person.employeeId, 2026, "UTC");
+				expect(absencesPage).toEqual({
+					balance: null,
+					configuration: null,
+					externalContractor: true,
+				});
+				const dashboard = await getEnhancedVacationBalanceResult({
+					employeeId: person.employeeId,
+					organizationId: org.organizationId,
+					year: 2026,
+				});
+				expect(dashboard).toEqual({ balance: null, configuration: null, externalContractor: true });
+				// The employed year keeps its vacation.
+				const employedYear = await loadVacationBalances(db, {
+					organizationId: org.organizationId,
+					employeeIds: [person.employeeId],
+					year: 2025,
+					timezone: "UTC",
+				});
+				expect(employedYear.externalContractors.size).toBe(0);
+				expect(employedYear.balances.get(person.employeeId)?.allowanceDays).toBe(24);
+
+				// Nothing carries from the employed year into the contract year.
+				const legacy = await calculateAnnualCarryover(org.organizationId, 2025, org.ownerUserId);
+				expect(legacy.results.map((row) => row.employeeId)).toContain(org.employee.employeeId);
+				expect(legacy.results.map((row) => row.employeeId)).not.toContain(person.employeeId);
+				const committed = await commitAnnualVacationCarryover(
+					org.organizationId,
+					2025,
+					org.ownerUserId,
+					"UTC",
+				);
+				expect(
+					[...committed.results, ...committed.errors].map((row) => row.employeeId),
+				).not.toContain(person.employeeId);
+				expect(await carryoverInto(person.employeeId, 2026)).toEqual([]);
+			});
 		});
 	});
 
@@ -621,6 +786,20 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 				endPeriod: "full_day" as const,
 			});
 
+			/** Moves the conversion from employee to contractor to the start of `day` (UTC). */
+			async function convertOn(personId: string, day: string) {
+				const at = `${day}T00:00:00Z`;
+				// Keep the stints from overlapping at every step.
+				const earlier = day < "2026-07-01";
+				for (const step of earlier ? ["closed", "open"] : ["open", "closed"])
+					await fixture.pool.query(
+						step === "closed"
+							? "update employee_employment_period set ended_at = $2 where employee_id = $1 and status = 'closed'"
+							: "update employee_employment_period set started_at = $2 where employee_id = $1 and status = 'open'",
+						[personId, at],
+					);
+			}
+
 			it("takes a late employee absence for June and unavailability for July in self-service", async () => {
 				const org = await convertedOnFirstOfJuly();
 				const request = (categoryId: string, startDate: string, endDate: string) =>
@@ -828,20 +1007,6 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 					return { ...org, absenceId, change, approve, recorded };
 				}
 
-				/** Moves the conversion from employee to contractor to the start of `day` (UTC). */
-				async function convertOn(personId: string, day: string) {
-					const at = `${day}T00:00:00Z`;
-					// Keep the stints from overlapping at every step.
-					const earlier = day < "2026-07-01";
-					for (const step of earlier ? ["closed", "open"] : ["open", "closed"])
-						await fixture.pool.query(
-							step === "closed"
-								? "update employee_employment_period set ended_at = $2 where employee_id = $1 and status = 'closed'"
-								: "update employee_employment_period set started_at = $2 where employee_id = $1 and status = 'open'",
-							[personId, at],
-						);
-				}
-
 				it("refuses moving an employee absence onto contractor days or across the conversion", async () => {
 					const org = await recordedAbsence("personal", "2026-06-22", "2026-06-23");
 
@@ -906,6 +1071,119 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 					});
 				});
 			});
+
+			describe.each(["legacy", "canonical"] as const)(
+				"in pending absence requests (%s approvals)",
+				(mode) => {
+					/**
+					 * The converted person with a pending request a manager decides. The stints may change
+					 * while it waits: a departure does not withdraw pending requests.
+					 */
+					async function pendingRequest(
+						category: "personal" | "unavailability",
+						startDate: string,
+						endDate: string,
+					) {
+						const org = await convertedOnFirstOfJuly();
+						await fixture.pool.query(
+							`insert into approval_workflow_rollout
+							 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+							 values ($1, 'absence', $2, $3, now(), now())`,
+							[org.organizationId, mode, mode],
+						);
+						await fixture.pool.query(
+							"update absence_category set requires_approval = true where organization_id = $1",
+							[org.organizationId],
+						);
+						const manager = await fixture.seedEmployee({ organizationId: org.organizationId });
+						await fixture.pool.query("update employee set role = 'manager' where id = $1", [
+							manager.employeeId,
+						]);
+						await fixture.pool.query(
+							`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+							 values ($1, $2, $3, true, $4)`,
+							[randomUUID(), org.person.employeeId, manager.employeeId, org.ownerUserId],
+						);
+						await expect(
+							requestAbsenceForEmployeeEffect(
+								{ categoryId: org.category[category], ...range(startDate, endDate) },
+								{ id: org.person.employeeId, organizationId: org.organizationId },
+								org.person.userId,
+							),
+						).resolves.toMatchObject({ success: true });
+						const { rows } = await fixture.pool.query<{ id: string }>(
+							"select id from absence_entry where organization_id = $1 and employee_id = $2",
+							[org.organizationId, org.person.employeeId],
+						);
+						const absenceId = rows[0]?.id;
+						if (!absenceId) throw new Error("Requested absence missing");
+						const approve = async () => {
+							const requests = await fixture.pool.query<{ id: string }>(
+								"select id from approval_request where organization_id = $1 and entity_id = $2 and status = 'pending'",
+								[org.organizationId, absenceId],
+							);
+							session.userId = manager.userId;
+							session.organizationId = org.organizationId;
+							try {
+								return await approveAbsenceEffect(absenceId, {
+									approvalRequestId: requests.rows[0]?.id,
+								});
+							} finally {
+								session.userId = null;
+								session.organizationId = null;
+							}
+						};
+						const status = async () =>
+							(
+								await fixture.pool.query<{ status: string }>(
+									"select status from absence_entry where id = $1",
+									[absenceId],
+								)
+							).rows[0]?.status;
+						return { ...org, absenceId, approve, status };
+					}
+
+					it("refuses approving an employee absence whose days became contractor days", async () => {
+						const org = await pendingRequest("personal", "2026-06-25", "2026-06-26");
+						await convertOn(org.person.employeeId, "2026-06-24");
+
+						await expect(org.approve()).resolves.toMatchObject({
+							success: false,
+							refusal: "contractor_records_unavailability_only",
+						});
+						expect(await org.status()).toBe("pending");
+					});
+
+					it("refuses approving unavailability whose days became employee days", async () => {
+						const org = await pendingRequest("unavailability", "2026-07-08", "2026-07-08");
+						await convertOn(org.person.employeeId, "2026-07-10");
+
+						await expect(org.approve()).resolves.toMatchObject({
+							success: false,
+							refusal: "unavailability_is_for_contractors",
+						});
+						expect(await org.status()).toBe("pending");
+					});
+
+					it("refuses approving an absence the conversion now splits", async () => {
+						const org = await pendingRequest("personal", "2026-06-25", "2026-06-26");
+						await convertOn(org.person.employeeId, "2026-06-26");
+
+						await expect(org.approve()).resolves.toMatchObject({
+							success: false,
+							refusal: "absence_spans_engagement_change",
+						});
+						expect(await org.status()).toBe("pending");
+					});
+
+					it("approves an absence still within its stint", async () => {
+						const org = await pendingRequest("unavailability", "2026-07-08", "2026-07-08");
+
+						await expect(org.approve()).resolves.toMatchObject({ success: true });
+						expect(await org.status()).toBe("approved");
+					});
+				},
+			);
 
 			it("offers the categories of every stint, the server deciding each request by its dates", async () => {
 				const org = await convertedOnFirstOfJuly();
