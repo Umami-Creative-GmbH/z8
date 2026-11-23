@@ -15,6 +15,7 @@
 - [Public API](./apps/webapp/src/lib/public-api/CONTEXT.md): lets an organization's own systems read its data with an API key, limited to the key's scopes
 - [Personnel File](./apps/webapp/src/lib/personnel-file/CONTEXT.md): keeps each employee's documents and controls which of them the employee sees
 - [Scheduling](./apps/webapp/src/lib/scheduling/CONTEXT.md): plans shifts ahead of time and helps planners staff open shifts
+- [Statutory Compliance](./apps/webapp/src/lib/statutory/CONTEXT.md): monitors German statutory employment limits against recorded work and planned shifts, and keeps reasoned acknowledgements of the findings
 - [Scheduled Exports](./apps/webapp/src/lib/scheduled-exports/CONTEXT.md): runs payroll exports, data exports and audit reports on a schedule and delivers each file only to approved recipients
 - [Notifications](./apps/webapp/src/lib/notifications/CONTEXT.md): tells people that something happened, in the app and over every outbound channel, in their recipient language
 
@@ -49,3 +50,4 @@
 - **Personnel File → Scheduling**: a skill certificate names the employee skill it proves; Scheduling knows only that one is on file, and personnel file access decides who opens it; accepting a document request that renews a skill certificate links its replacement to the same employee skill
 - **Organization → Approvals, Payroll Exports**: a go-live check reads each go-live group member's effective work policy, asks Approvals for an approval route preview of who would decide their requests, and reuses payroll readiness's setup checks; going live never writes work records, requests or deliveries
 - **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them
+- **Statutory Compliance → Scheduling**: statutory monitors add wage-free findings to schedule compliance and staffing suggestions; a restricted audience never sees EUR amounts or wages
