@@ -218,6 +218,10 @@ export function ContractorCompensationCard({
 
 	const data = record.data;
 	if (data && data.activeEngagementKind !== "contractor" && data.history.length === 0) return null;
+	// On an employee's detail page whether the card applies is unknown until the
+	// record arrives, so it shows nothing meanwhile; a bare panel is opened for a
+	// known contractor and shows the loading state.
+	if (record.isPending && !bare) return null;
 
 	const isContractor = data?.activeEngagementKind === "contractor";
 	const refresh = (next: Partial<ContractorCompensationRecord>) => {
@@ -431,6 +435,9 @@ function ContractorTermsSection({
 					<ol className="space-y-4">
 						{record.history.map((terms) => {
 							const isInEffect = terms.id === inEffect?.id;
+							// Open terms of an ended engagement never price later work; say so.
+							const isEarlierEngagement =
+								terms.employmentPeriodId !== record.contractorEngagementId;
 							const summary = describeCompensation(t, locale, terms.compensation);
 							const from = formatDay(locale, terms.effectiveFrom);
 							return (
@@ -454,6 +461,14 @@ function ContractorTermsSection({
 											{isInEffect && (
 												<Badge variant="default">
 													{t("settings.contracts.contractors.inEffect", "In effect")}
+												</Badge>
+											)}
+											{isEarlierEngagement && (
+												<Badge variant="outline">
+													{t(
+														"settings.contracts.contractors.earlierEngagement",
+														"Earlier engagement",
+													)}
 												</Badge>
 											)}
 										</div>

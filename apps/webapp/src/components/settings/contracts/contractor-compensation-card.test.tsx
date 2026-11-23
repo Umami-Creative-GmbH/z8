@@ -161,6 +161,33 @@ describe("contractor compensation card", () => {
 		await waitFor(() => expect(container.textContent).toBe(""));
 	});
 
+	it("shows nothing while loading, so an employee's page never flashes the card", async () => {
+		actions.read.mockReturnValue(new Promise(() => undefined));
+		const { container } = renderCard();
+
+		await waitFor(() => expect(actions.read).toHaveBeenCalled());
+		expect(container.textContent).toBe("");
+	});
+
+	it("marks rates of an earlier engagement apart from the active engagement's", async () => {
+		const [open, closed] = record().history;
+		actions.read.mockResolvedValue({
+			success: true,
+			data: record({
+				history: [
+					{ ...open, id: "t3", effectiveFrom: "2026-09-01" },
+					{ ...open, employmentPeriodId: "p0", effectiveFrom: "2026-02-01" },
+					closed,
+				],
+				termsInEffectId: "t3",
+			}),
+		});
+		renderCard();
+
+		expect(await screen.findByText("From Sep 1, 2026")).toBeTruthy();
+		expect(screen.getAllByText("Earlier engagement")).toHaveLength(1);
+	});
+
 	it("keeps earlier contractor rates readable after the engagement ended", async () => {
 		actions.read.mockResolvedValue({
 			success: true,
