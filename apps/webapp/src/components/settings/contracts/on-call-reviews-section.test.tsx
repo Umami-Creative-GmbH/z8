@@ -127,4 +127,31 @@ describe("OnCallReviewsSection (#1992)", () => {
 			}),
 		);
 	});
+
+	it("offers no agreement for a draft call, which announces nothing yet", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const draft = shortNotice("Alice", "11111111-1111-4111-8111-111111111111", "v1:draft");
+		mocks.listOnCallReviewItemsAction.mockResolvedValue({
+			success: true,
+			data: [
+				{
+					...draft,
+					finding: { ...draft.finding, acknowledgementKind: null, acknowledgement: null },
+				},
+			],
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<OnCallReviewsSection organizationId="org-a" />
+			</QueryClientProvider>,
+		);
+
+		expect(
+			await screen.findByText(
+				"Not published yet. Publish the shift before documenting the employee's agreement.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByRole("textbox")).toBeNull();
+		expect(screen.queryByRole("button", { name: "Document agreement" })).toBeNull();
+	});
 });

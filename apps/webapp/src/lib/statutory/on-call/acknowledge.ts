@@ -5,7 +5,8 @@
  * fingerprint it showed as a precondition only, so nobody documents an agreement to a call they
  * never saw (a shift moved meanwhile is refused). Moving the shift to another day, reassigning it or
  * re-announcing it before it starts changes the fingerprint and makes the agreement stale; a time
- * correction after the shift started does not.
+ * correction after the shift started does not. Only a published shift takes an agreement: a draft
+ * announces no call yet, and its notice runs from its later publication.
  * Clocking is never blocked either way.
  */
 import { and, eq } from "drizzle-orm";
@@ -22,6 +23,7 @@ import {
 import { evaluateOnCallFindings } from "./monitor";
 
 export type OnCallAcknowledgementRefusal =
+	| "on_call_notice_shift_not_published"
 	| "on_call_notice_finding_not_open"
 	| "on_call_notice_finding_changed";
 
@@ -40,7 +42,7 @@ export async function acknowledgeOnCallShortNotice(
 	},
 ): Promise<StatutoryAcknowledgementRecord> {
 	const [row] = await db
-		.select({ employeeId: shift.employeeId, date: shift.date })
+		.select({ employeeId: shift.employeeId, date: shift.date, status: shift.status })
 		.from(shift)
 		.where(and(eq(shift.id, input.shiftId), eq(shift.organizationId, input.organizationId)))
 		.limit(1);
@@ -49,6 +51,14 @@ export async function acknowledgeOnCallShortNotice(
 			message: "Shift not found",
 			entityType: "shift",
 			entityId: input.shiftId,
+		});
+	}
+	if (row.status !== "published") {
+		// A draft announces no call yet: there is nothing the employee could have agreed to.
+		throw new ValidationError({
+			message: "Publish the shift before documenting the employee's agreement",
+			field: "shiftId",
+			refusal: "on_call_notice_shift_not_published" satisfies OnCallAcknowledgementRefusal,
 		});
 	}
 	const day = shiftCalendarDate(row.date, input.timezone);

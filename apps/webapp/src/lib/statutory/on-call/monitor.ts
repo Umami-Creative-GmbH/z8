@@ -176,7 +176,10 @@ function noticeFinding(
 			announcedBy: shift.assignmentChangedAt?.toString() ?? null,
 			requiredFullDays: required,
 		}),
-		acknowledgementKind: "on_call_short_notice_agreement",
+		// The employee can only agree to a call they were told of: a draft (or a proposal) announces
+		// nothing yet, and its notice would run from whenever it is published. It warns the planner
+		// but takes no agreement, so none goes stale as the days pass before publication.
+		acknowledgementKind: shift.status === "published" ? "on_call_short_notice_agreement" : null,
 	});
 }
 

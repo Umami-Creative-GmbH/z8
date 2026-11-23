@@ -653,6 +653,8 @@
       "agreementStale": "Shift changed since the agreement",
       "reviews": {
         "notOpen": "The shift no longer has a short-notice finding.",
+        "notPublished": "The shift is not published yet. Publish it before documenting the employee's agreement.",
+        "draft": "Not published yet. Publish the shift before documenting the employee's agreement.",
         "changed": "The shift changed since this list was loaded. Review it again before documenting the agreement.",
         "acknowledged": "Agreement documented",
         "reasonRequired": "Describe how the employee agreed to the short notice.",

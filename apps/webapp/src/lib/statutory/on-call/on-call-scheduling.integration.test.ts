@@ -206,6 +206,73 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		expect(rows).toEqual([]);
 	});
 
+	it("documents agreements to published calls only, which stay current from one day to the next", async () => {
+		const org = await onCall.organization("a");
+		const hr = await fx.user("hr");
+		const worker = await fx.employee(org, "worker");
+		await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+		// Monday 2026-03-02; the draft call is on Thursday 2026-03-05.
+		const monday = localInstant("2026-03-02", "12:00", org.timezone);
+		const tuesday = localInstant("2026-03-03", "12:00", org.timezone);
+		const shiftId = await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: "2026-03-05",
+			startTime: "09:00",
+			endTime: "13:00",
+			status: "draft",
+			publishedAt: null,
+			assignmentChangedAt: localInstant("2026-03-01", "10:00", org.timezone),
+		});
+		const request = (now: Temporal.Instant) => ({
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2026-03-05", endExclusive: "2026-03-06" },
+			employeeIds: [worker.employeeId],
+			now,
+		});
+		const noticeStatus = async (now: Temporal.Instant) =>
+			(await evaluateStatutoryScheduleFindings(db, request(now), [onCallScheduleContributor]))
+				.filter((f) => f.statutoryKind === "on_call_short_notice")
+				.map((f) => f.acknowledgementStatus);
+		const acknowledge = async (now: Temporal.Instant) =>
+			acknowledgeOnCallShortNotice(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				actorUserId: hr.userId,
+				shiftId,
+				expectedFingerprint: await shownNoticeFingerprint(
+					org,
+					worker.employeeId,
+					"2026-03-05",
+					now,
+				),
+				reason: "Employee agreed by phone",
+				now,
+			});
+
+		// A draft announces nothing yet: the planner is warned, but there is no call to agree to.
+		expect(await noticeStatus(monday)).toEqual([null]);
+		await expect(acknowledge(monday)).rejects.toMatchObject({
+			_tag: "ValidationError",
+			refusal: "on_call_notice_shift_not_published",
+		} satisfies Partial<ValidationError>);
+		const { rows } = await admin.query(
+			`SELECT 1 FROM contract_review_acknowledgement WHERE organization_id = $1`,
+			[org.id],
+		);
+		expect(rows).toEqual([]);
+
+		// Published on Monday: two full days' notice. The agreement documented Monday still holds
+		// Tuesday, with no change to the shift.
+		await admin.query(`UPDATE shift SET status = 'published', published_at = $2 WHERE id = $1`, [
+			shiftId,
+			new Date(monday.epochMilliseconds),
+		]);
+		await acknowledge(monday);
+		expect(await noticeStatus(monday)).toEqual(["current"]);
+		expect(await noticeStatus(tuesday)).toEqual(["current"]);
+	});
+
 	it("keeps the short-notice finding of a past shift whose end is corrected afterwards", async () => {
 		const org = await onCall.organization("a");
 		const worker = await fx.employee(org, "worker");

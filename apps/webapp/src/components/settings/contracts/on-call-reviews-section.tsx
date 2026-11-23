@@ -41,6 +41,10 @@ function AcknowledgeShortNoticeForm({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const refusals: RefusalMessages<OnCallAcknowledgementRefusal> = {
+		on_call_notice_shift_not_published: [
+			"common.onCall.reviews.notPublished",
+			"The shift is not published yet. Publish it before documenting the employee's agreement.",
+		],
 		on_call_notice_finding_not_open: [
 			"common.onCall.reviews.notOpen",
 			"The shift no longer has a short-notice finding.",
@@ -165,12 +169,24 @@ function ReviewRow({
 					)}
 				</p>
 			) : null}
-			{finding.kind === "on_call_short_notice" && shiftId && status !== "current" ? (
+			{finding.kind === "on_call_short_notice" &&
+			finding.acknowledgementKind &&
+			shiftId &&
+			status !== "current" ? (
 				<AcknowledgeShortNoticeForm
 					organizationId={organizationId}
 					shiftId={shiftId}
 					fingerprint={finding.inputFingerprint}
 				/>
+			) : null}
+			{finding.kind === "on_call_short_notice" && !finding.acknowledgementKind ? (
+				// A draft announces no call yet: there is no agreement to document until it is published.
+				<p className="mt-1 text-muted-foreground text-sm">
+					{t(
+						"common.onCall.reviews.draft",
+						"Not published yet. Publish the shift before documenting the employee's agreement.",
+					)}
+				</p>
 			) : null}
 		</li>
 	);
