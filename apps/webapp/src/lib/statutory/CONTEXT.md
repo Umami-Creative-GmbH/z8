@@ -70,11 +70,15 @@ _Avoid_: counting `child_sick` absence as sick leave
   judged when that draft is published. A breach is the same before and after only within its
   scope (`breachScopeOf`, `causedBlockingFindings`): a rest-period, daily, weekly or days-per-week
   breach its judged day (or week), whichever shift a reordered day moves it to; an apprentice
-  release conflict its release day; any other breach (night, weekend, holiday work, breaks) its
-  own shift on its local day. Within the scope a change is caused only when it goes past the
-  deepest breach the scope had. A breach carried to a day or week that had none is new there, at
-  any figures: moving a published 10 h Tuesday to Wednesday at 9 h is refused, shortening it to
-  9 h on Tuesday saves
+  release conflict its release day (for a night shift into a school morning, the next day), not
+  the day its shift starts; any other breach (night, weekend, holiday work, breaks) its own shift
+  on its local day. Within the scope a change is caused only when it goes deeper than every
+  breach the scope had (for a weekend or holiday breach counted in days: more work on that day).
+  A breach whose block an acknowledged sector exception lifted counts as one the scope had: the
+  edit makes the acknowledgement stale and the new state cannot be acknowledged before it is
+  saved, so easing it saves and extending it is refused. A breach carried to a day or week that
+  had none is new there, at any figures: moving a published 10 h Tuesday to Wednesday at 9 h is
+  refused, shortening it to 9 h on Tuesday saves
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
 
