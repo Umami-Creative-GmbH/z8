@@ -13,12 +13,15 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 
 export interface EnrichedContractMigrationConflict {
 	readonly id: string;
 	readonly employeeId: string;
 	readonly employeeName: string;
 	readonly employeeNumber: string | null;
+	/** Employee or External Contractor today (#1995): the queue badges and filters contractors. */
+	readonly engagementKind: EngagementKind;
 	readonly employmentHistoryId: string | null;
 	readonly workPolicyId: string | null;
 	readonly conflictKind: string;
@@ -34,6 +37,7 @@ export interface EnrichedRetrospectiveDepartureReview {
 	readonly employeeId: string;
 	readonly employeeName: string;
 	readonly employeeNumber: string | null;
+	readonly engagementKind: EngagementKind;
 	readonly departureId: string | null;
 	readonly lastWorkingDay: string | null;
 	readonly kind: "work_after_cutoff" | "payroll_reconciliation";
@@ -118,6 +122,7 @@ export async function listContractsReviewQueue(
 				firstName: user.firstName,
 				lastName: user.lastName,
 				employeeNumber: employee.employeeNumber,
+				engagementKind: employee.engagementKind,
 				userName: user.name,
 				email: user.email,
 			})
@@ -148,6 +153,7 @@ export async function listContractsReviewQueue(
 				firstName: user.firstName,
 				lastName: user.lastName,
 				employeeNumber: employee.employeeNumber,
+				engagementKind: employee.engagementKind,
 				userName: user.name,
 				email: user.email,
 			})
@@ -210,6 +216,7 @@ export async function listContractsReviewQueue(
 				employeeId: row.employeeId,
 			}),
 			employeeNumber: row.employeeNumber,
+			engagementKind: row.engagementKind,
 			employmentHistoryId: row.employmentHistoryId,
 			workPolicyId: row.workPolicyId,
 			conflictKind: row.conflictKind,
@@ -241,6 +248,7 @@ export async function listContractsReviewQueue(
 						employeeId: row.employeeId,
 					}),
 					employeeNumber: row.employeeNumber,
+					engagementKind: row.engagementKind,
 					departureId: row.departureId,
 					lastWorkingDay: row.lastWorkingDay ?? null,
 					kind: row.kind,

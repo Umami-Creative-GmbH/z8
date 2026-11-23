@@ -60,9 +60,8 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-const { getEmployeesByIdsAction, listEmployeesAction, listEmployeesForSelectAction } = await import(
-	"./employee-queries.actions"
-);
+const { getEmployeesByIdsAction, listEmployeesAction, listEmployeesForSelectAction } =
+	await import("./employee-queries.actions");
 
 /**
  * A cutoff well before the test runs, so the scheduled departure is due. 13:00
@@ -358,5 +357,78 @@ describe("employee pickers and directory on PostgreSQL (#1438)", () => {
 				expect(row).not.toHaveProperty("formerSince");
 			}
 		});
+	});
+});
+
+describe("All | Employees | External Contractors on PostgreSQL (#1995)", () => {
+	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
+	let fixture: LifecycleDatabaseFixture;
+	let contractor: SeededEmployee;
+	let contractorDraftId: string;
+
+	beforeAll(async () => {
+		fixture = await createLifecycleDatabaseFixture();
+		contractor = await fixture.seedEmployee({ engagementKind: "contractor" });
+		const invitationId = `t1995-invitation-${fixture.organizationId}`;
+		const email = `t1995-draft-${fixture.organizationId}@lifecycle.test`;
+		await fixture.pool.query(
+			`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id)
+			 values ($1, $2, $3, 'member', 'pending', now() + interval '7 days', $4)`,
+			[invitationId, fixture.organizationId, email, fixture.ownerUserId],
+		);
+		const { rows } = await fixture.pool.query<{ id: string }>(
+			`insert into employee_invitation_draft
+			   (invitation_id, organization_id, normalized_email, first_name, engagement_kind)
+			 values ($1, $2, $3, 'Invited', 'contractor') returning id`,
+			[invitationId, fixture.organizationId, email],
+		);
+		contractorDraftId = rows[0]?.id as string;
+		harness.userId = fixture.ownerUserId;
+		harness.organizationId = fixture.organizationId;
+	});
+
+	afterAll(async () => {
+		await fixture?.close();
+	});
+
+	async function directory(engagement?: "all" | "employee" | "contractor") {
+		const result = await listEmployeesAction({ limit: 100, status: "all", engagement });
+		if (!result.success) throw new Error(result.error);
+		return new Map(result.data.employees.map((row) => [row.id, row.engagementKind]));
+	}
+
+	it("lists everyone, each with their engagement kind, unless filtered", async () => {
+		const all = await directory();
+
+		expect(all.get(contractor.employeeId)).toBe("contractor");
+		expect(all.get(fixture.employeeId)).toBe("employee");
+		expect(all.get(contractorDraftId)).toBe("contractor");
+		expect(await directory("all")).toEqual(all);
+	});
+
+	it("keeps only External Contractors, including a prepared contractor invitation", async () => {
+		const contractors = await directory("contractor");
+
+		expect([...contractors.keys()].toSorted()).toEqual(
+			[contractor.employeeId, contractorDraftId].toSorted(),
+		);
+	});
+
+	it("keeps only employees", async () => {
+		const employees = await directory("employee");
+
+		expect(employees.has(contractor.employeeId)).toBe(false);
+		expect(employees.has(contractorDraftId)).toBe(false);
+		expect([...employees.values()].every((kind) => kind === "employee")).toBe(true);
+		expect(employees.has(fixture.ownerEmployeeId)).toBe(true);
+	});
+
+	it("filters the shared pickers and marks contractors in them", async () => {
+		const result = await listEmployeesForSelectAction({ limit: 100, engagement: "contractor" });
+		if (!result.success) throw new Error(result.error);
+
+		expect(result.data.employees.map((row) => [row.id, row.engagementKind])).toEqual([
+			[contractor.employeeId, "contractor"],
+		]);
 	});
 });

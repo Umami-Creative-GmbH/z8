@@ -1,10 +1,13 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useState } from "react";
 import { EmployeeSingleSelect } from "@/components/employee-select";
+import { EngagementFilterToggle } from "@/components/engagement/engagement-kind-ui";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReportEmployees } from "@/hooks/use-report-employees";
+import { type EngagementFilter, filterByEngagement } from "@/lib/engagement/engagement-filter";
 
 interface ReportEmployeeSelectorProps {
 	/** Current user's employee ID */
@@ -39,6 +42,9 @@ export function ReportEmployeeSelector({
 	const { t } = useTranslate();
 	const { employees, isLoading, isRefetching, error, canViewMultiple, refetch } =
 		useReportEmployees(currentEmployeeId);
+	// All | Employees | External Contractors (#1995), offered once the list holds a contractor.
+	const [engagement, setEngagement] = useState<EngagementFilter>("all");
+	const hasContractors = employees.some((employee) => employee.engagementKind === "contractor");
 
 	// Loading state
 	if (isLoading) {
@@ -75,16 +81,36 @@ export function ReportEmployeeSelector({
 	// A failed read is not the employee's one-person scope.
 	if (!canViewMultiple) return null;
 
+	// The selected person stays listed whatever the engagement filter, so the choice never vanishes.
+	const listed = filterByEngagement(employees, engagement).concat(
+		engagement === "all"
+			? []
+			: employees.filter(
+					(employee) =>
+						employee.id === selectedEmployeeId &&
+						(employee.engagementKind ?? "employee") !== engagement,
+				),
+	);
+
 	return (
-		<EmployeeSingleSelect
-			value={selectedEmployeeId}
-			onChange={onEmployeeChange}
-			employees={employees}
-			showFilters={false}
-			placeholder={t("reports.employeeSelector.placeholder", "Select employee...")}
-			disabled={disabled}
-			className="space-y-0"
-			label={t("reports.employeeSelector.label", "Employee")}
-		/>
+		<div className="space-y-2">
+			{hasContractors && (
+				<EngagementFilterToggle
+					value={engagement}
+					onValueChange={setEngagement}
+					disabled={disabled}
+				/>
+			)}
+			<EmployeeSingleSelect
+				value={selectedEmployeeId}
+				onChange={onEmployeeChange}
+				employees={listed}
+				showFilters={false}
+				placeholder={t("reports.employeeSelector.placeholder", "Select employee...")}
+				disabled={disabled}
+				className="space-y-0"
+				label={t("reports.employeeSelector.label", "Employee")}
+			/>
+		</div>
 	);
 }

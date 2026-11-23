@@ -21,7 +21,14 @@ interface StepFiltersProps {
 }
 
 export interface FilterOptions {
-	employees: Array<{ id: string; firstName: string; lastName: string; employeeNumber?: string }>;
+	employees: Array<{
+		id: string;
+		firstName: string;
+		lastName: string;
+		employeeNumber?: string;
+		/** External Contractors are badged in the picker (#1995). */
+		engagementKind?: "employee" | "contractor";
+	}>;
 	teams: Array<{ id: string; name: string }>;
 	projects: Array<{ id: string; name: string }>;
 }
@@ -75,6 +82,7 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 			firstName: emp.firstName,
 			lastName: emp.lastName,
 			employeeNumber: emp.employeeNumber,
+			engagementKind: emp.engagementKind,
 		}),
 	);
 

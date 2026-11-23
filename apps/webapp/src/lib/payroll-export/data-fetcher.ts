@@ -529,6 +529,8 @@ export async function getEmployeesForFilter(organizationId: string) {
 			firstName: user.firstName,
 			lastName: user.lastName,
 			employeeNumber: employee.employeeNumber,
+			// External Contractors are badged and filterable in the picker (#1995).
+			engagementKind: employee.engagementKind,
 		})
 		.from(employee)
 		.innerJoin(user, eq(employee.userId, user.id))

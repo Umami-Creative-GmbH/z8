@@ -16,6 +16,7 @@ import {
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
 import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
+import { EngagementFilterToggle } from "@/components/engagement/engagement-kind-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { type EngagementFilter, matchesEngagementFilter } from "@/lib/engagement/engagement-filter";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	type PayrollExportFormatId,
@@ -529,18 +531,32 @@ function FiltersSection({
 	onClearProjects: () => void;
 	t: Translate;
 }) {
-	const selectableEmployees = (options?.employees ?? []).map(
-		({ id, firstName, lastName, employeeNumber }) =>
+	// All | Employees | External Contractors (#1995): narrows the picker, never the chosen people.
+	const [engagement, setEngagement] = useState<EngagementFilter>("all");
+	const allEmployees = options?.employees ?? [];
+	const hasContractors = allEmployees.some((row) => row.engagementKind === "contractor");
+	const selectableEmployees = allEmployees
+		.filter(
+			(row) =>
+				matchesEngagementFilter(row.engagementKind, engagement) || employeeIds.includes(row.id),
+		)
+		.map(({ id, firstName, lastName, employeeNumber, engagementKind }) =>
 			toSelectableEmployee({
 				id,
 				firstName,
 				lastName,
 				employeeNumber,
+				engagementKind,
 			}),
-	);
+		);
 	return (
 		<div className="space-y-4">
-			<Label>{t("settings.payrollExport.export.filters", "Filters (Optional)")}</Label>
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<Label>{t("settings.payrollExport.export.filters", "Filters (Optional)")}</Label>
+				{hasContractors && (
+					<EngagementFilterToggle value={engagement} onValueChange={setEngagement} />
+				)}
+			</div>
 			<div className="grid gap-4 md:grid-cols-3">
 				<EmployeeMultiSelect
 					label={t("settings.payrollExport.export.employees", "Employees")}

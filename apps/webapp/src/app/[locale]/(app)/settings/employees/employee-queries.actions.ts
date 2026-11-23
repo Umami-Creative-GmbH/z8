@@ -10,6 +10,7 @@ import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
 import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
+import { engagementFilterCondition, engagementFilters } from "@/lib/engagement/engagement-filter";
 import {
 	loadCurrentContractTypes,
 	loadTermsInForceOn,
@@ -72,6 +73,7 @@ const employeeListParamsSchema = z
 			.enum(["current", "former", "draft", "all", "active", "inactive"])
 			.optional()
 			.catch(undefined),
+		engagement: z.enum(engagementFilters).optional(),
 		limit: z.number().int().min(1).max(1000).optional(),
 		offset: z.number().int().min(0).optional(),
 	})
@@ -84,6 +86,7 @@ const employeeSelectParamsSchema = z
 		status: z.enum(["current", "former", "all", "active", "inactive"]).optional().catch(undefined),
 		teamId: z.string().optional(),
 		excludeIds: z.array(z.string()).optional(),
+		engagement: z.enum(engagementFilters).optional(),
 		limit: z.number().int().min(1).max(1000).optional(),
 		offset: z.number().int().min(0).optional(),
 	})
@@ -164,7 +167,10 @@ function mapDraftRow(row: {
 function buildInvitationDraftFilters(
 	organizationId: string,
 	now: Date,
-	params: Pick<EmployeeFilterParams, "search" | "role" | "roles" | "status" | "teamId">,
+	params: Pick<
+		EmployeeFilterParams,
+		"search" | "role" | "roles" | "status" | "teamId" | "engagement"
+	>,
 ) {
 	// A pending invitation is someone about to join, never a former employee: drafts
 	// stay listed under Current (the default), Draft and All (#1438).
@@ -185,6 +191,12 @@ function buildInvitationDraftFilters(
 	if (params.teamId) {
 		conditions.push(eq(employeeInvitationDraft.teamId, params.teamId));
 	}
+
+	const engagement = engagementFilterCondition(
+		employeeInvitationDraft.engagementKind,
+		params.engagement ?? "all",
+	);
+	if (engagement) conditions.push(engagement);
 
 	const normalizedSearch = params.search?.trim();
 	if (normalizedSearch) {

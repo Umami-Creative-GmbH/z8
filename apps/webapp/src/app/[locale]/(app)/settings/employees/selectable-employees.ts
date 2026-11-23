@@ -3,6 +3,7 @@ import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { engagementFilterCondition } from "@/lib/engagement/engagement-filter";
 import {
 	formerSinceDate,
 	isFormerEmployee,
@@ -55,7 +56,7 @@ export function buildEmployeeFilters(
 	organizationId: string,
 	params: Pick<
 		EmployeeFilterParams,
-		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds" | "managerId"
+		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds" | "managerId" | "engagement"
 	> & {
 		/** Only these employees (a scoped manager's `managedScope()`); every one when omitted. */
 		onlyEmployeeIds?: ReadonlySet<string> | null;
@@ -82,6 +83,9 @@ export function buildEmployeeFilters(
 	if (params.teamId) {
 		conditions.push(eq(employee.teamId, params.teamId));
 	}
+
+	const engagement = engagementFilterCondition(employee.engagementKind, params.engagement ?? "all");
+	if (engagement) conditions.push(engagement);
 
 	if (params.managerId) {
 		conditions.push(
@@ -118,7 +122,7 @@ export function buildEmployeeFilters(
 export type SelectableEmployeeRow = {
 	employee: Pick<
 		typeof employee.$inferSelect,
-		"id" | "userId" | "pronouns" | "position" | "role" | "isActive" | "teamId"
+		"id" | "userId" | "pronouns" | "position" | "role" | "isActive" | "teamId" | "engagementKind"
 	> & { isFormer: boolean; formerSince: string | null };
 	user: Pick<
 		typeof user.$inferSelect,
@@ -142,6 +146,7 @@ export const selectableEmployeeColumns = {
 		isFormer: isFormerEmployee(),
 		formerSince: formerSinceDate(),
 		teamId: employee.teamId,
+		engagementKind: employee.engagementKind,
 	},
 	user: {
 		id: user.id,

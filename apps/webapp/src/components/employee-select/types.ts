@@ -24,6 +24,8 @@ export interface SelectableEmployee {
 	 */
 	formerSince?: string | null;
 	clockStatus?: "clocked-in" | "on-break" | "clocked-out" | "unknown";
+	/** An External Contractor is badged (#1995); absent reads as employee. */
+	engagementKind?: "employee" | "contractor";
 	teamId: string | null;
 	user: {
 		id: string;
