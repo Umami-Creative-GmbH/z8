@@ -751,6 +751,179 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			expect(await activeReleases(learner)).toEqual([]);
 		});
 
+		describe("gives back the school day a voided exam's pre-exam day replaced, whatever the order", () => {
+			/**
+			 * Friday 5 March 2027 a four-lesson school day; the exam on Monday 8 March makes Friday its
+			 * pre-exam day, replacing the school day; then a full block week, Monday 1 to Friday 5
+			 * March, replaces the pre-exam day.
+			 */
+			async function schoolDayUnderPreExamDayUnderBlock(who: FixtureEmployee) {
+				await recordApprenticeReleaseWithCredit(db, {
+					organizationId: org.id,
+					employeeId: who.employeeId,
+					actorUserId: owner.userId,
+					releaseKind: "vocational_school_day",
+					startsOn: "2027-03-05",
+					endsOn: "2027-03-05",
+					lessonCount: 4,
+				});
+				const [exam] = await recordExamWithPreExamDay(who, "2027-03-08");
+				await block(who, "2027-03-05", 1500);
+				return exam.id;
+			}
+			const voidRelease = (who: FixtureEmployee, releaseId: string) =>
+				voidApprenticeReleaseWithCredit(db, {
+					organizationId: org.id,
+					employeeId: who.employeeId,
+					actorUserId: owner.userId,
+					releaseId,
+					reason: "Cancelled",
+				});
+			const schoolFriday = {
+				release_kind: "vocational_school_day",
+				starts_on: "2027-03-05",
+				school_minutes: null,
+			};
+
+			it("when the exam is voided first, then the block", async () => {
+				const learner = await apprentice("examthenblock", "2005-05-05");
+				const examId = await schoolDayUnderPreExamDayUnderBlock(learner);
+				const blockId = await idOf(learner, "vocational_school_block_week");
+				await voidRelease(learner, examId);
+				expect(await activeReleases(learner)).toEqual([
+					{
+						release_kind: "vocational_school_block_week",
+						starts_on: "2027-03-01",
+						school_minutes: 1500,
+					},
+				]);
+				await voidRelease(learner, blockId);
+				expect(await activeReleases(learner)).toEqual([schoolFriday]);
+			});
+
+			it("when the block is voided first, then the exam", async () => {
+				const learner = await apprentice("blockthenexam", "2005-05-05");
+				const examId = await schoolDayUnderPreExamDayUnderBlock(learner);
+				await voidRelease(learner, await idOf(learner, "vocational_school_block_week"));
+				expect(await activeReleases(learner)).toEqual([
+					{ release_kind: "pre_exam_day", starts_on: "2027-03-05", school_minutes: null },
+					{ release_kind: "exam_day", starts_on: "2027-03-08", school_minutes: null },
+				]);
+				await voidRelease(learner, examId);
+				expect(await activeReleases(learner)).toEqual([schoolFriday]);
+			});
+		});
+
+		it("moves a multi-day exam's pre-exam day off a full block day when the first exam day is voided", async () => {
+			const learner = await apprentice("blockrun", "2005-05-05");
+			await block(learner, "2027-03-05", 1500);
+			// Monday 8 and Tuesday 9 March 2027: their pre-exam day, Friday, is a full block day.
+			const [monday] = await recordExamWithPreExamDay(learner, "2027-03-08");
+			await recordExamWithPreExamDay(learner, "2027-03-09");
+			expect(await activeReleases(learner)).toEqual([
+				{
+					release_kind: "vocational_school_block_week",
+					starts_on: "2027-03-01",
+					school_minutes: 1500,
+				},
+				{ release_kind: "exam_day", starts_on: "2027-03-08", school_minutes: null },
+				{ release_kind: "exam_day", starts_on: "2027-03-09", school_minutes: null },
+			]);
+
+			await voidApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseId: monday.id,
+				reason: "Recorded on the wrong day",
+			});
+			expect(await activeReleases(learner)).toEqual([
+				{
+					release_kind: "vocational_school_block_week",
+					starts_on: "2027-03-01",
+					school_minutes: 1500,
+				},
+				{ release_kind: "pre_exam_day", starts_on: "2027-03-08", school_minutes: null },
+				{ release_kind: "exam_day", starts_on: "2027-03-09", school_minutes: null },
+			]);
+
+			// The block voided later leaves Friday free: Monday stays the only pre-exam day.
+			await voidApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseId: await idOf(learner, "vocational_school_block_week"),
+				reason: "Block cancelled",
+			});
+			expect(await activeReleases(learner)).toEqual([
+				{ release_kind: "pre_exam_day", starts_on: "2027-03-08", school_minutes: null },
+				{ release_kind: "exam_day", starts_on: "2027-03-09", school_minutes: null },
+			]);
+		});
+
+		it("gives a multi-day exam its pre-exam day back when the block under it is voided first", async () => {
+			const learner = await apprentice("blockrunback", "2005-05-05");
+			await block(learner, "2027-03-05", 1500);
+			const [monday] = await recordExamWithPreExamDay(learner, "2027-03-08");
+			await recordExamWithPreExamDay(learner, "2027-03-09");
+
+			await voidApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseId: await idOf(learner, "vocational_school_block_week"),
+				reason: "Block cancelled",
+			});
+			expect(await activeReleases(learner)).toEqual([
+				{ release_kind: "pre_exam_day", starts_on: "2027-03-05", school_minutes: null },
+				{ release_kind: "exam_day", starts_on: "2027-03-08", school_minutes: null },
+				{ release_kind: "exam_day", starts_on: "2027-03-09", school_minutes: null },
+			]);
+
+			await voidApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseId: monday.id,
+				reason: "Recorded on the wrong day",
+			});
+			expect(await activeReleases(learner)).toEqual([
+				{ release_kind: "pre_exam_day", starts_on: "2027-03-08", school_minutes: null },
+				{ release_kind: "exam_day", starts_on: "2027-03-09", school_minutes: null },
+			]);
+		});
+
+		it("gives no pre-exam day to the rest of a multi-day exam recorded without one", async () => {
+			const learner = await apprentice("blockrunnone", "2005-05-05");
+			await block(learner, "2027-03-05", 1500);
+			const scope = {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+			};
+			for (const day of ["2027-03-08", "2027-03-09"]) {
+				await recordApprenticeReleaseWithCredit(db, {
+					...scope,
+					releaseKind: "exam_day",
+					startsOn: day,
+					endsOn: day,
+				});
+			}
+			await voidApprenticeReleaseWithCredit(db, {
+				...scope,
+				releaseId: (await recordedExam(learner, "2027-03-08")).id,
+				reason: "Recorded on the wrong day",
+			});
+			expect(await activeReleases(learner)).toEqual([
+				{
+					release_kind: "vocational_school_block_week",
+					starts_on: "2027-03-01",
+					school_minutes: 1500,
+				},
+				{ release_kind: "exam_day", starts_on: "2027-03-09", school_minutes: null },
+			]);
+		});
+
 		it("is still refused over an exam day", async () => {
 			const learner = await apprentice("blockexam", "2005-05-05");
 			await recordExamWithPreExamDay(learner, "2027-03-04");
@@ -779,6 +952,19 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 				[org.id, who.employeeId, date],
 			)
 		).rows;
+	}
+
+	/** The active exam on `date`. */
+	async function recordedExam(who: FixtureEmployee, date: string) {
+		const [exam] = (
+			await admin.query<{ id: string }>(
+				`select id from employee_apprentice_release
+				 where organization_id = $1 and employee_id = $2 and release_kind = 'exam_day'
+				   and starts_on = $3 and voided_at is null`,
+				[org.id, who.employeeId, date],
+			)
+		).rows;
+		return exam;
 	}
 
 	it("credits a pre-exam day once: a school day entered on it is refused, the week stays lawful", async () => {

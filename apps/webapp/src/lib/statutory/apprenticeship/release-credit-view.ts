@@ -141,8 +141,8 @@ export async function loadApprenticeReleaseCredits(
  * single-day school release or lies on top of a partly credited block day
  * (`makeRoomForPreExamDay`), an exam replaces a pre-exam day, and a block week is recorded over
  * pre-exam days. A block day the block credits only partly keeps its pre-exam day on top; a full
- * block day replaces it, as a pre-exam day recorded on a full block day is not recorded either,
- * and voiding the block gives the pre-exam day back. What a release replaces is linked to it
+ * block day replaces it, as an exam's pre-exam day falling on a full block day is recorded as
+ * replaced by the block, and voiding the block gives the pre-exam day back while its exam stands. What a release replaces is linked to it
  * (`superseded_by_release_id`) and restored when it is voided.
  *
  * With `includePreExamDay`, an exam day also releases the working day before it in full, unless
@@ -221,13 +221,6 @@ export async function recordApprenticeReleaseWithCredit(
 			"Release days can only be recorded while the employee's terms make them an apprentice",
 		);
 	}
-	// An exam may move a pre-exam day recorded on its date, so the days before it are read in any
-	// case. A public holiday is no working day.
-	const before =
-		input.releaseKind === "exam_day"
-			? await workingDaysBefore(db, { ...input, day: examDay })
-			: null;
-
 	const base = {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
@@ -247,8 +240,8 @@ export async function recordApprenticeReleaseWithCredit(
 		const preExamDaysUnderBlock: typeof onNewDays = [];
 		if (input.releaseKind === "pre_exam_day") {
 			const room = await makeRoomForPreExamDay(tx, { ...base, preExamDay: examDay });
-			if (!room) refuseDayAlreadyReleased();
-			replaced = room;
+			if (room?.kind !== "free") refuseDayAlreadyReleased();
+			replaced = [...room.replaced];
 		} else {
 			for (const record of onNewDays) {
 				// An exam day needs no pre-exam release of its own: a pre-exam day recorded on it moves
@@ -292,8 +285,9 @@ export async function recordApprenticeReleaseWithCredit(
 				preExamDays: preExamDaysUnderBlock,
 			});
 		}
-		if (before && (input.includePreExamDay || preExamDayMoved)) {
-			const preExamDay = await releasePreExamDayFor(tx, { ...base, ...before, exam: recorded });
+		// An exam may move a pre-exam day recorded on its date. A public holiday is no working day.
+		if (input.releaseKind === "exam_day" && (input.includePreExamDay || preExamDayMoved)) {
+			const preExamDay = await releasePreExamDayFor(tx, { ...base, exam: recorded });
 			if (!preExamDay) {
 				refuse(
 					"apprentice_release_no_preceding_working_day",
@@ -417,9 +411,11 @@ async function replacePreExamDaysOnFullBlockDays(
 
 /**
  * Inside the voiding transaction of a release: records again, with an audit note, each release it
- * replaced whose days are still free. A pre-exam day comes back only while its exam stands. What
- * the replaced release had replaced in turn is linked to its restored copy. Returns the earliest
- * day restored.
+ * replaced whose days are still free. A pre-exam day comes back only while its exam stands and the
+ * day is still that exam's pre-exam day; when it does not, what it had replaced in turn comes back
+ * in its place, so the outcome does not depend on the order in which releases are voided. What
+ * a restored release had replaced is linked to its restored copy. Returns the earliest day
+ * restored.
  */
 async function restoreReplaced(
 	tx: Writer,
@@ -449,8 +445,12 @@ async function restoreReplaced(
 		)
 		.orderBy(asc(employeeApprenticeRelease.startsOn));
 	let earliest: PlainDate | null = null;
+	const touch = (day: PlainDate | null) => {
+		if (day && (!earliest || Temporal.PlainDate.compare(day, earliest) < 0)) earliest = day;
+	};
 	for (const row of rows) {
-		if (row.examReleaseId && !(await isActiveRelease(tx, { ...scope, id: row.examReleaseId }))) {
+		if (row.examReleaseId && !(await isPreExamDayOf(tx, { ...scope, preExamDay: row }))) {
+			touch(await restoreReplaced(tx, { ...input, byReleaseId: row.id }));
 			continue;
 		}
 		const occupied = await listApprenticeReleases(tx, {
@@ -482,70 +482,108 @@ async function restoreReplaced(
 					eq(employeeApprenticeRelease.supersededByReleaseId, row.id),
 				),
 			);
-		const day = parsePlainDate(row.startsOn);
-		if (!earliest || Temporal.PlainDate.compare(day, earliest) < 0) earliest = day;
+		touch(parsePlainDate(row.startsOn));
 	}
 	return earliest;
 }
 
-async function isActiveRelease(
+/**
+ * Whether a pre-exam day release still belongs on its day: its exam stands and the day is that
+ * exam's pre-exam day now, the working day before its run of exam days.
+ */
+async function isPreExamDayOf(
 	db: Reader,
-	input: { readonly organizationId: string; readonly employeeId: string; readonly id: string },
+	input: {
+		readonly organizationId: string;
+		readonly employeeId: string;
+		readonly preExamDay: { readonly startsOn: string; readonly examReleaseId: string | null };
+	},
 ): Promise<boolean> {
-	const [row] = await db
-		.select({ id: employeeApprenticeRelease.id })
+	if (!input.preExamDay.examReleaseId) return true;
+	const [exam] = await db
+		.select({ startsOn: employeeApprenticeRelease.startsOn })
 		.from(employeeApprenticeRelease)
 		.where(
 			and(
-				eq(employeeApprenticeRelease.id, input.id),
+				eq(employeeApprenticeRelease.id, input.preExamDay.examReleaseId),
 				eq(employeeApprenticeRelease.organizationId, input.organizationId),
 				eq(employeeApprenticeRelease.employeeId, input.employeeId),
 				isNull(employeeApprenticeRelease.voidedAt),
 			),
 		);
-	return Boolean(row);
+	if (!exam) return false;
+	const run = await examRunBefore(db, { ...input, day: parsePlainDate(exam.startsOn) });
+	return run.preExamDay?.toString() === input.preExamDay.startsOn;
+}
+
+/**
+ * Where the run of exam days ending before `day` starts: the working day before it that is no exam
+ * day (`preExamDay`, null when the lookback holds none), and whether an earlier exam day lies
+ * between, skipping days off (`followsExamDay`).
+ */
+async function examRunBefore(
+	db: Reader,
+	input: { readonly organizationId: string; readonly employeeId: string; readonly day: PlainDate },
+): Promise<{
+	readonly preExamDay: PlainDate | null;
+	readonly followsExamDay: boolean;
+	readonly before: Awaited<ReturnType<typeof workingDaysBefore>>;
+}> {
+	const before = await workingDaysBefore(db, input);
+	const examDays = new Set(
+		(
+			await listApprenticeReleases(db, {
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				from: before.lookback[before.lookback.length - 1].toString(),
+				until: input.day.toString(),
+			})
+		)
+			.filter((record) => record.releaseKind === "exam_day")
+			.map((record) => record.startsOn),
+	);
+	const isExamDay = (day: PlainDate) => examDays.has(day.toString());
+	const preExamDay =
+		before.lookback.find((day) => !isExamDay(day) && before.isWorkingDay(day)) ?? null;
+	const nearest = before.lookback.find((day) => isExamDay(day) || before.isWorkingDay(day));
+	return { preExamDay, followsExamDay: nearest !== undefined && isExamDay(nearest), before };
 }
 
 /**
  * Releases the pre-exam day of an exam inside a transaction and links it to the exam: the working
  * day before the exam, skipping exam days, so a multi-day exam has one pre-exam day before its
  * first exam day. Returns that day, or null when the lookback holds no working day. A day already
- * released in full for good is left as it is.
+ * released in full for good is left as it is; on a full block day the pre-exam day is recorded as
+ * replaced by the block, as when the block is recorded after it, so voiding the block gives it
+ * back while its exam stands, and voiding the exam knows it had one.
  */
 async function releasePreExamDayFor(
 	tx: Writer,
-	input: ReleaseScope & {
-		readonly exam: { readonly id: string; readonly startsOn: string };
-		/** The days before the exam, nearest first. */
-		readonly lookback: readonly PlainDate[];
-		readonly isWorkingDay: (day: PlainDate) => boolean;
-	},
+	input: ReleaseScope & { readonly exam: { readonly id: string; readonly startsOn: string } },
 ): Promise<PlainDate | null> {
-	const earlier = await listApprenticeReleases(tx, {
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		from: (
-			input.lookback[input.lookback.length - 1] ?? parsePlainDate(input.exam.startsOn)
-		).toString(),
-		until: input.exam.startsOn,
+	const { preExamDay } = await examRunBefore(tx, {
+		...input,
+		day: parsePlainDate(input.exam.startsOn),
 	});
-	const examDays = new Set(
-		earlier.filter((record) => record.releaseKind === "exam_day").map((record) => record.startsOn),
-	);
-	const preExamDay = input.lookback.find(
-		(day) => !examDays.has(day.toString()) && input.isWorkingDay(day),
-	);
 	if (!preExamDay) return null;
-	const replaced = await makeRoomForPreExamDay(tx, { ...input, preExamDay });
-	if (replaced) {
-		const recorded = await recordApprenticeRelease(tx, {
+	const room = await makeRoomForPreExamDay(tx, { ...input, preExamDay });
+	if (!room) return preExamDay;
+	const recorded = await recordApprenticeRelease(tx, {
+		...input,
+		releaseKind: "pre_exam_day",
+		startsOn: preExamDay.toString(),
+		endsOn: preExamDay.toString(),
+		examReleaseId: input.exam.id,
+	});
+	if (room.kind === "free") {
+		await linkReplaced(tx, { ...input, releaseIds: room.replaced, byReleaseId: recorded.id });
+	} else {
+		await voidApprenticeRelease(tx, {
 			...input,
-			releaseKind: "pre_exam_day",
-			startsOn: preExamDay.toString(),
-			endsOn: preExamDay.toString(),
-			examReleaseId: input.exam.id,
+			releaseId: recorded.id,
+			reason: FULL_BLOCK_DAY_SUPERSEDES_REASON,
 		});
-		await linkReplaced(tx, { ...input, releaseIds: replaced, byReleaseId: recorded.id });
+		await linkReplaced(tx, { ...input, releaseIds: [recorded.id], byReleaseId: room.blockId });
 	}
 	return preExamDay;
 }
@@ -591,14 +629,23 @@ async function workingDaysBefore(
 }
 
 /**
+ * What a pre-exam day finds on its day: `free` with the releases voided to make room for it, to
+ * link to it (`linkReplaced`); `full_block` when a block releases the day in full already.
+ */
+type PreExamDayRoom =
+	| { readonly kind: "free"; readonly replaced: readonly string[] }
+	| { readonly kind: "full_block"; readonly blockId: string };
+
+/**
  * Whether the pre-exam day can be released in full, inside the recording transaction: null when
- * not, else the releases voided to make room for it, to link to it (`linkReplaced`). A day
- * already released in full for good (a full block week, an exam without its time, a pre-exam day)
- * is not recorded twice, and an exam is never voided. Any other single-day release on it (a
- * school day, whose full credit may move to a long school day recorded later in the week) is
- * voided with an audit reason, so the full pre-exam release takes its place without overlapping
- * it. A block week is never split or voided: a full block day stays as the block credits it, and
- * on a day the block credits only partly the pre-exam day is recorded on top of the block.
+ * not, `full_block` when a full block day already releases it, else the releases voided to make
+ * room for it. A day already released in full for good (a full block week, an exam without its
+ * time, a pre-exam day) is not recorded twice, and an exam is never voided. Any other single-day
+ * release on it (a school day, whose full credit may move to a long school day recorded later in
+ * the week) is voided with an audit reason, so the full pre-exam release takes its place without
+ * overlapping it. A block week is never split or voided: a full block day stays as the block
+ * credits it, and on a day the block credits only partly the pre-exam day is recorded on top of
+ * the block.
  */
 async function makeRoomForPreExamDay(
 	tx: Pick<DatabaseClient, "select" | "insert" | "update">,
@@ -608,7 +655,7 @@ async function makeRoomForPreExamDay(
 		readonly actorUserId: string;
 		readonly preExamDay: PlainDate;
 	},
-): Promise<string[] | null> {
+): Promise<PreExamDayRoom | null> {
 	const day = input.preExamDay.toString();
 	const monday = parsePlainDate(mondayOf(input.preExamDay));
 	// The whole week, so the week's full school day is attributed as everywhere else.
@@ -622,17 +669,19 @@ async function makeRoomForPreExamDay(
 			})
 		).get(input.employeeId) ?? [];
 	const onDay = apprenticeReleaseDays(records).filter((credited) => credited.date === day);
-	if (onDay.length === 0) return [];
+	if (onDay.length === 0) return { kind: "free", replaced: [] };
 	// A school day's full credit goes to the week's first long school day, so a school day
 	// recorded earlier in the week later takes it: only other full releases stay full for good.
-	if (
-		onDay.some(
-			(credited) =>
-				credited.releaseKind === "exam_day" ||
-				(credited.credit === "full_day" && credited.releaseKind !== "vocational_school_day"),
-		)
-	) {
-		return null;
+	const fullForGood = onDay.filter(
+		(credited) =>
+			credited.releaseKind === "exam_day" ||
+			(credited.credit === "full_day" && credited.releaseKind !== "vocational_school_day"),
+	);
+	if (fullForGood.length > 0) {
+		const [only] = fullForGood;
+		return fullForGood.length === 1 && only.releaseKind === "vocational_school_block_week"
+			? { kind: "full_block", blockId: only.releaseId }
+			: null;
 	}
 	// A block that credits the day only partly stays as it is: the pre-exam day is released in full
 	// on top of it, and each day is credited once, with its largest release.
@@ -648,7 +697,7 @@ async function makeRoomForPreExamDay(
 			reason: PRE_EXAM_DAY_SUPERSEDES_REASON,
 		});
 	}
-	return covering.map((record) => record.id);
+	return { kind: "free", replaced: covering.map((record) => record.id) };
 }
 
 /**
@@ -660,8 +709,10 @@ async function makeRoomForPreExamDay(
  * note, when its days are still free (`restoreReplaced`).
  *
  * Voiding an exam undoes what it caused: its pre-exam day is voided too, and what that pre-exam
- * day replaced comes back. When a later exam day of the same multi-day exam remains, it keeps a
- * pre-exam day: the working day before it, now that the voided exam day no longer is one.
+ * day replaced comes back; a pre-exam day a block replaced gives back what it replaced once the
+ * block is voided too, in either order. When the voided exam day began a multi-day exam recorded
+ * with a pre-exam day and a later exam day remains, that day keeps a pre-exam day: the working day
+ * before it, now that the voided exam day no longer is one.
  */
 export async function voidApprenticeReleaseWithCredit(
 	db: Pick<DatabaseClient, "select" | "insert" | "update" | "transaction">,
@@ -771,8 +822,13 @@ async function undoExamSideEffects(
 		);
 	}
 
-	// A later exam day of the same multi-day exam keeps a pre-exam day.
-	if (preExamDays.length > 0) {
+	// A later exam day of the same multi-day exam keeps a pre-exam day, when the voided exam day
+	// began the run and was recorded with one: active, or replaced by a full block day.
+	const hadPreExamDay = linked.some((row) => row.releaseKind === "pre_exam_day");
+	if (
+		hadPreExamDay &&
+		!(await examRunBefore(tx, { ...scope, day: input.examDay })).followsExamDay
+	) {
 		const [next] = (
 			await listApprenticeReleases(tx, {
 				organizationId: input.organizationId,
@@ -782,25 +838,13 @@ async function undoExamSideEffects(
 			})
 		).filter((record) => record.releaseKind === "exam_day");
 		if (next) {
-			const before = await workingDaysBefore(tx, {
+			const { preExamDay } = await examRunBefore(tx, {
 				...scope,
 				day: parsePlainDate(next.startsOn),
 			});
-			const run = await listApprenticeReleases(tx, {
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				from: before.lookback[before.lookback.length - 1].toString(),
-				until: next.startsOn,
-			});
-			const examDays = new Set(
-				run.filter((record) => record.releaseKind === "exam_day").map((record) => record.startsOn),
-			);
-			const preExamDay = before.lookback.find(
-				(day) => !examDays.has(day.toString()) && before.isWorkingDay(day),
-			);
 			// In the same run when only exam days and days off lie between the voided day and it.
 			if (preExamDay && Temporal.PlainDate.compare(preExamDay, input.examDay) <= 0) {
-				const released = await releasePreExamDayFor(tx, { ...scope, ...before, exam: next });
+				const released = await releasePreExamDayFor(tx, { ...scope, exam: next });
 				if (released) touch(released.toString());
 			}
 		}
