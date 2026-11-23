@@ -418,7 +418,9 @@ describe("TodayApprovalsPanel", () => {
 		await waitFor(() => {
 			expect(toastErrorMock).toHaveBeenCalledWith("Unable to reject request");
 		});
-		expect(screen.getAllByText("Vacation request").length).toBeGreaterThan(0);
+		// The row stays in the list: the open reject panel repeating the title doesn't count.
+		const list = screen.getByRole("list", { name: "Pending approvals", hidden: true });
+		expect(within(list).getByText("Vacation request")).toBeTruthy();
 	});
 
 	it("does not refresh when the approval response is not ok", async () => {
@@ -506,12 +508,28 @@ describe("TodayApprovalsPanel", () => {
 
 		const alert = screen.getByRole("alert");
 		expect(alert.textContent).toContain(
-			"Some approvals could not be loaded: Travel Expenses, Period Submissions.",
+			"Some approvals could not be loaded: Travel Expenses and Period Submissions.",
 		);
 		fireEvent.click(within(alert).getByRole("button", { name: "Retry approvals" }));
 		expect(onRetry).toHaveBeenCalledTimes(1);
 		expect(screen.getByText("3")).toBeTruthy();
 		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
+	});
+
+	it("joins the unavailable types as a list in the viewer's language", () => {
+		translations.set("approvals:approvals.types.travel_expense_claim", "Reisekosten");
+		translations.set("approvals:approvals.types.period_submission", "Periodenabgaben");
+		render(
+			<TodayApprovalsPanel
+				items={[]}
+				total={3}
+				unavailableTypes={["travel_expense_claim", "period_submission"]}
+			/>,
+		);
+
+		expect(screen.getByRole("alert").textContent).toContain(
+			"Some approvals could not be loaded: Reisekosten und Periodenabgaben.",
+		);
 	});
 
 	it("names the unavailable types in the viewer's language", () => {
@@ -536,6 +554,8 @@ describe("TodayApprovalsPanel", () => {
 	});
 
 	it("never claims no approvals wait while it counts some it does not list", () => {
+		// The shipped catalog names the header button "Open inbox"; this link has its own key.
+		translations.set("today.approvals.openInbox", "Open inbox");
 		render(<TodayApprovalsPanel items={[]} total={2} />);
 
 		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
@@ -616,7 +636,9 @@ describe("TodayApprovalsPanel", () => {
 
 		expect(screen.getByRole("link", { name: "Ada Lovelace: Periodenabgabe" })).toBeTruthy();
 		expect(screen.getByText("8,25 Stunden")).toBeTruthy();
-		expect(screen.getByText("Ada Lovelace - Eingereicht von Ada Lovelace")).toBeTruthy();
+		// The title already names the requester, so the row doesn't repeat the name.
+		expect(screen.getByText("Eingereicht von Ada Lovelace")).toBeTruthy();
+		expect(screen.queryByText(/Ada Lovelace - /)).toBeNull();
 		expect(screen.queryByText(/Period submission|8\.25 hours/)).toBeNull();
 		expect(
 			screen.getByRole("button", { name: "Ada Lovelace: Periodenabgabe ablehnen" }),

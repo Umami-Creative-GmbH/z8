@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -53,6 +54,7 @@ export function TodayApprovalsPanel({
 	stale,
 }: TodayApprovalsPanelProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const inboxText = useApprovalInboxText();
 	const { refresh } = useRouter();
 	const { pendingApprovalId: actingApprovalId, reserve, release } = useTodayDecisionReservation();
@@ -76,6 +78,10 @@ export function TodayApprovalsPanel({
 	const truncated = total > items.length;
 	const typeLabels: Record<string, string> = getApprovalTypeLabels(t);
 	const unavailableTypeNames = unavailableTypes.map((type) => typeLabels[type] ?? type);
+	// "A, B and C" in the viewer's language, not English punctuation.
+	const unavailableTypeList = new Intl.ListFormat(locale, { type: "conjunction" }).format(
+		unavailableTypeNames,
+	);
 	const isBusy = actingApprovalId !== null || isRefreshPending;
 	const decisionsOff = isBusy || Boolean(error) || stale;
 	// The panel's own rejection is on its way: neither Cancel nor Escape may drop it.
@@ -204,7 +210,7 @@ export function TodayApprovalsPanel({
 						message={t(
 							"today.approvals.partialFailure",
 							"Some approvals could not be loaded: {types}.",
-							{ types: unavailableTypeNames.join(", ") },
+							{ types: unavailableTypeList },
 						)}
 						onRetry={onRetry}
 					/>
@@ -238,7 +244,8 @@ export function TodayApprovalsPanel({
 									</Link>
 									<p className="break-words text-muted-foreground text-sm">{item.summary}</p>
 									<p className="break-words text-muted-foreground text-xs">
-										{item.requesterName} - {item.description}
+										{/* The title already names the requester. */}
+										{item.description}
 									</p>
 								</div>
 								{decided.has(item.approvalId) ? (
@@ -333,7 +340,7 @@ export function TodayApprovalsPanel({
 									)}
 								</span>
 								<Link href="/approvals/inbox" className="font-medium underline underline-offset-4">
-									{t("today.approvals.openInbox", "Open the inbox")}
+									{t("today.approvals.openInboxLink", "Open the inbox")}
 								</Link>
 							</>
 						)}
