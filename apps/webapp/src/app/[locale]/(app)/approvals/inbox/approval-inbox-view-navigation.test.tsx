@@ -14,7 +14,7 @@ import type {
 	ApprovalInboxItem,
 	ApprovalInboxListResult,
 } from "@/lib/approvals/inbox/types";
-import ApprovalInboxPage from "./page";
+import { ApprovalInboxView as ApprovalInboxPage } from "./approval-inbox-view";
 
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 

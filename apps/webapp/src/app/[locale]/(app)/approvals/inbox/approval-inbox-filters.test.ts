@@ -1,6 +1,6 @@
 import { type ComponentProps, createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { getInitialApprovalInboxFilters } from "./page";
+import { getInitialApprovalInboxFilters } from "./approval-inbox-filters";
 
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children, ...props }: ComponentProps<"a">) =>
