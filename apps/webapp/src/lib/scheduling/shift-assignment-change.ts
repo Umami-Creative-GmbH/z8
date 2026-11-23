@@ -29,8 +29,9 @@ export function isMaterialShiftAssignmentChange(
 }
 
 /**
- * Whether an edit is a new call-in whose notification instant is `now`: a material change to a
- * shift that has not started yet. Correcting a shift once it has started (its recorded end, say)
+ * Whether an edit is a new call-in whose notification instant is `now`: a new assignee at any
+ * time (the employee taking over learns of the call now), or a material change to a shift that
+ * has not started yet. Correcting the times of a shift once it has started (its recorded end, say)
  * announces nothing, so the notification instant of the call stays as it was.
  */
 export function isNewShiftCallIn(
@@ -39,6 +40,7 @@ export function isNewShiftCallIn(
 	input: { readonly timezone: string; readonly now: Instant },
 ): boolean {
 	if (!isMaterialShiftAssignmentChange(before, after)) return false;
+	if (before && before.employeeId !== after.employeeId) return true;
 	const { start } = shiftInterval(
 		{
 			date: shiftCalendarDate(after.date, input.timezone),

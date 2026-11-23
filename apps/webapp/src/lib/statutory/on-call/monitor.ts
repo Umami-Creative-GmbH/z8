@@ -154,16 +154,18 @@ function noticeFinding(
 			used: { unit: "days", value: fullDays },
 			limit: { unit: "days", value: required },
 		},
-		// The notification day, not the instant: an agreement documented today stays current until
-		// the shift is moved, reassigned or announced on another day.
+		// What the notice depends on: assignee, shift day, notification day and the last material
+		// change that announced the call. Not the shift's times: correcting a started shift's end
+		// announces nothing (its change stamp stays), so an agreement documented for it stays
+		// current. Moving it to another day, reassigning it or re-announcing it before it starts
+		// (which stamps a new change) makes the agreement stale.
 		inputFingerprint: statutoryInputFingerprint({
 			kind: "on_call_short_notice",
 			employeeId: base.employeeId,
 			subjectKey,
 			date: shift.date.toString(),
-			startTime: shift.startTime,
-			endTime: shift.endTime,
 			notifiedOn: notifiedOn.toString(),
+			announcedBy: shift.assignmentChangedAt?.toString() ?? null,
 			requiredFullDays: required,
 		}),
 		acknowledgementKind: "on_call_short_notice_agreement",

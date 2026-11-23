@@ -165,8 +165,12 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 			publishedAt: localInstant("2026-03-03", "10:00", org.timezone),
 		});
 		const shown = await shownNoticeFingerprint(org, worker.employeeId, "2026-03-07", now);
-		// The shift moves before the admin submits: the finding they saw is gone.
-		await admin.query(`UPDATE shift SET start_time = '10:00' WHERE id = $1`, [shiftId]);
+		// The shift moves before the admin submits (a new call-in, as `upsertShift` stamps it): the
+		// finding they saw is gone.
+		await admin.query(
+			`UPDATE shift SET start_time = '10:00', assignment_changed_at = $2 WHERE id = $1`,
+			[shiftId, new Date("2026-03-04T11:00:00Z")],
+		);
 
 		await expect(
 			acknowledgeOnCallShortNotice(db, {
@@ -245,6 +249,132 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		);
 
 		expect(await notice()).toEqual([[`shift:${shiftId}`, 1]]);
+	});
+
+	/** Runs `run` with the wall clock at `instant` (only `Date` is faked; timers stay real). */
+	async function at<T>(instant: Temporal.Instant, run: () => Promise<T>): Promise<T> {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		try {
+			vi.setSystemTime(new Date(instant.epochMilliseconds));
+			return await run();
+		} finally {
+			vi.useRealTimers();
+		}
+	}
+
+	function upsert(
+		org: { id: string; timezone: string; subareaId: string; plannerUserId: string },
+		input: { id: string; employeeId: string; date: string; startTime: string; endTime: string },
+	) {
+		return Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* ShiftService;
+				return yield* service.upsertShift({
+					id: input.id,
+					organizationId: org.id,
+					employeeId: input.employeeId,
+					subareaId: org.subareaId,
+					date: shiftStoredDate(input.date, org.timezone),
+					timezone: org.timezone,
+					startTime: input.startTime,
+					endTime: input.endTime,
+					createdBy: org.plannerUserId,
+				});
+			}).pipe(Effect.provide(shiftLayer)),
+		);
+	}
+
+	it("announces a started shift anew to the employee it is reassigned to", async () => {
+		const org = await onCall.organization("a");
+		const regular = await fx.employee(org, "regular");
+		await onCall.regularTerms(org, regular);
+		const onCallWorker = await fx.employee(org, "oncall");
+		await onCall.onCallTerms(org, onCallWorker, { kind: "unspecified" });
+		// Published well ahead to a regular employee, then handed over at 10:00 while it runs.
+		const shiftId = await onCall.shift(org, {
+			employeeId: regular.employeeId,
+			date: "2026-03-10",
+			startTime: "09:00",
+			endTime: "17:00",
+			publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+			assignmentChangedAt: localInstant("2026-03-01", "10:00", org.timezone),
+		});
+		const reassignedAt = localInstant("2026-03-10", "10:00", org.timezone);
+		await at(reassignedAt, () =>
+			upsert(org, {
+				id: shiftId,
+				employeeId: onCallWorker.employeeId,
+				date: "2026-03-10",
+				startTime: "09:00",
+				endTime: "17:00",
+			}),
+		);
+
+		const findings = await evaluateOnCallFindings(db, {
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2026-03-10", endExclusive: "2026-03-11" },
+			employeeIds: [onCallWorker.employeeId],
+			now: localInstant("2026-03-10", "10:05", org.timezone),
+		});
+		expect(
+			findings
+				.filter((f) => f.kind === "on_call_short_notice")
+				.map((f) => [f.subjectKey, f.summary.used?.value]),
+		).toEqual([[`shift:${shiftId}`, 0]]);
+	});
+
+	it("keeps a short-notice agreement current when the started shift's end is corrected", async () => {
+		const org = await onCall.organization("a");
+		const hr = await fx.user("hr");
+		const worker = await fx.employee(org, "worker");
+		await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+		// Announced two days ahead: one full day of notice.
+		const shiftId = await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: "2026-03-10",
+			startTime: "09:00",
+			endTime: "17:00",
+			publishedAt: localInstant("2026-03-08", "10:00", org.timezone),
+			assignmentChangedAt: localInstant("2026-03-08", "10:00", org.timezone),
+		});
+		const noon = localInstant("2026-03-10", "12:00", org.timezone);
+		await acknowledgeOnCallShortNotice(db, {
+			organizationId: org.id,
+			timezone: org.timezone,
+			actorUserId: hr.userId,
+			shiftId,
+			expectedFingerprint: await shownNoticeFingerprint(org, worker.employeeId, "2026-03-10", noon),
+			reason: "Employee agreed to cover",
+			now: noon,
+		});
+
+		await at(noon, () =>
+			upsert(org, {
+				id: shiftId,
+				employeeId: worker.employeeId,
+				date: "2026-03-10",
+				startTime: "09:00",
+				endTime: "18:00",
+			}),
+		);
+
+		const notice = (
+			await evaluateStatutoryScheduleFindings(
+				db,
+				{
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: { start: "2026-03-10", endExclusive: "2026-03-11" },
+					employeeIds: [worker.employeeId],
+					now: localInstant("2026-03-10", "12:05", org.timezone),
+				},
+				[onCallScheduleContributor],
+			)
+		).filter((f) => f.statutoryKind === "on_call_short_notice");
+		expect(notice.map((f) => [f.summary.used?.value, f.acknowledgementStatus])).toEqual([
+			[1, "current"],
+		]);
 	});
 
 	it("refuses to acknowledge a shift announced in time", async () => {

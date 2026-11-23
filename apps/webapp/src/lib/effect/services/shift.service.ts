@@ -565,8 +565,9 @@ export const ShiftServiceLive = Layer.effect(
 											endTime: input.endTime,
 											notes: input.notes,
 											color: input.color,
-											// § 12 TzBfG notice runs from the last material change before the
-											// shift starts; a later correction announces nothing (#1992).
+											// § 12 TzBfG notice runs from the last reassignment, or the last
+											// material change before the shift starts; a later time correction
+											// announces nothing (#1992).
 											...(isNewShiftCallIn(
 												existing,
 												{

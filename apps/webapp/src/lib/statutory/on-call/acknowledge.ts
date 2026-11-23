@@ -3,8 +3,9 @@
  * full days' notice (§ 12 Abs. 3 TzBfG). The finding is recomputed here, server-side, and its own
  * subject and input fingerprint are recorded: a client never supplies them. The client sends the
  * fingerprint it showed as a precondition only, so nobody documents an agreement to a call they
- * never saw (a shift moved meanwhile is refused). Moving, reassigning or
- * re-announcing the shift on another day changes the fingerprint and makes the agreement stale.
+ * never saw (a shift moved meanwhile is refused). Moving the shift to another day, reassigning it or
+ * re-announcing it before it starts changes the fingerprint and makes the agreement stale; a time
+ * correction after the shift started does not.
  * Clocking is never blocked either way.
  */
 import { and, eq } from "drizzle-orm";
