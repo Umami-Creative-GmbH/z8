@@ -1588,6 +1588,131 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 					expect((await shownAt("2026-05-20T12:00:00Z"))?.acknowledgement?.status).toBe("current");
 				});
 			});
+
+			describe("with a shift worked a few minutes off its plan", () => {
+				/**
+				 * 560 EUR worked in May and a 09:00–17:00 shift on 20 May (160 EUR), with any further
+				 * shifts, documented in Reviews & Conflicts on 19 May.
+				 */
+				async function documentedShift(furtherShifts: readonly [string, string, string][] = []) {
+					const { org, worker } = await earner("a", 7);
+					const owner = await fx.user("owner");
+					await st.shift(org, worker, "2026-05-20", "09:00", "17:00");
+					for (const [date, from, until] of furtherShifts) {
+						await st.shift(org, worker, date, from, until);
+					}
+					const shownAt = async (at: string) =>
+						(
+							await listShortTermBerufsmaessigkeitReviews(db, {
+								organizationId: org.id,
+								timezone: org.timezone,
+								now: Temporal.Instant.from(at),
+								includeResolved: true,
+							})
+						).find((review) => review.month === "2026-05")?.finding;
+					const documentedAt = "2026-05-19T10:00:00Z";
+					const shown = await shownAt(documentedAt);
+					await acknowledgeShortTermBerufsmaessigkeit(db, {
+						organizationId: org.id,
+						actorUserId: owner.userId,
+						employeeId: worker.employeeId,
+						timezone: org.timezone,
+						month: "2026-05",
+						reason: "Student, no other employment this year",
+						expectedFingerprint: shown?.inputFingerprint ?? "",
+						expectedTotalCents: shown?.adminDetail?.amountsCents?.total ?? 0,
+						now: Temporal.Instant.from(documentedAt),
+					});
+					const statusAt = async (at: string) => (await shownAt(at))?.acknowledgement?.status;
+					return { org, worker, shown, shownAt, statusAt };
+				}
+
+				it("stays current after a clock-in two minutes early", async () => {
+					const { org, worker, shown, statusAt } = await documentedShift();
+					expect(shown?.adminDetail?.amountsCents?.total).toBe(72_000);
+					const clockIn = await st.openWork(org, worker, "2026-05-20", "08:58");
+
+					// 08:59 and 12:00 in Berlin, then after clocking out on time.
+					expect(await statusAt("2026-05-20T06:59:00Z")).toBe("current");
+					expect(await statusAt("2026-05-20T10:00:00Z")).toBe("current");
+					await st.clockOut(org, clockIn, "2026-05-20", "17:00");
+					expect(await statusAt("2026-05-20T18:00:00Z")).toBe("current");
+				});
+
+				it("stays current after a clock-out three minutes late", async () => {
+					const { org, worker, statusAt } = await documentedShift();
+					await st.work(org, worker, "2026-05-20", "09:00", "17:03");
+
+					expect(await statusAt("2026-05-20T18:00:00Z")).toBe("current");
+				});
+
+				it("keeps the figures steady while a clock-in runs past the shift's end", async () => {
+					const { org, worker, shown, shownAt } = await documentedShift();
+					await st.openWork(org, worker, "2026-05-20", "09:00:42");
+
+					// 16:59, 17:00:30 and 17:10 in Berlin.
+					const seen = [];
+					for (const at of [
+						"2026-05-20T14:59:00Z",
+						"2026-05-20T15:00:30Z",
+						"2026-05-20T15:10:00Z",
+					]) {
+						const finding = await shownAt(at);
+						seen.push({
+							total: finding?.adminDetail?.amountsCents?.total,
+							fingerprint: finding?.inputFingerprint,
+							status: finding?.acknowledgement?.status,
+						});
+					}
+
+					// The shift as planned, then 10 minutes beyond it: within one material step.
+					expect(seen).toEqual([
+						{ total: 72_000, fingerprint: shown?.inputFingerprint, status: "current" },
+						{ total: 72_000, fingerprint: shown?.inputFingerprint, status: "current" },
+						{ total: 72_333, fingerprint: shown?.inputFingerprint, status: "current" },
+					]);
+				});
+
+				it("stays current through a clocked-out break", async () => {
+					const { org, worker, statusAt } = await documentedShift();
+					const morning = await st.openWork(org, worker, "2026-05-20", "09:00");
+					await st.clockOut(org, morning, "2026-05-20", "12:00");
+					// 12:15 in Berlin, during the break.
+					expect(await statusAt("2026-05-20T10:15:00Z")).toBe("current");
+
+					const afternoon = await st.openWork(org, worker, "2026-05-20", "12:30");
+					// 13:00 in Berlin, back at work.
+					expect(await statusAt("2026-05-20T11:00:00Z")).toBe("current");
+					await st.clockOut(org, afternoon, "2026-05-20", "17:00");
+					expect(await statusAt("2026-05-20T18:00:00Z")).toBe("current");
+				});
+
+				it("goes stale on a material overrun of a shift that is over", async () => {
+					const { org, worker, shown, shownAt } = await documentedShift();
+					await st.work(org, worker, "2026-05-20", "09:00", "17:30");
+
+					const after = await shownAt("2026-05-20T18:00:00Z");
+
+					expect(after?.inputFingerprint).not.toBe(shown?.inputFingerprint);
+					expect(after?.acknowledgement?.status).toBe("stale");
+				});
+
+				it("goes stale when overtime fills the gap of a shift missed after documentation", async () => {
+					const { org, worker, shown, shownAt } = await documentedShift([
+						["2026-05-21", "09:00", "13:00"],
+					]);
+					// 560 EUR + 160 EUR + 80 EUR.
+					expect(shown?.adminDetail?.amountsCents?.total).toBe(80_000);
+					// Four hours over the 20 May shift; the 21 May shift is missed.
+					await st.work(org, worker, "2026-05-20", "09:00", "21:00");
+
+					const after = await shownAt("2026-05-22T10:00:00Z");
+
+					// The same total, earned off the plan the admin documented.
+					expect(after?.adminDetail?.amountsCents?.total).toBe(80_000);
+					expect(after?.acknowledgement?.status).toBe("stale");
+				});
+			});
 		});
 
 		describe("work on New Year's Eve for a shift on 1 January", () => {

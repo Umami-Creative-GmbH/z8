@@ -73,6 +73,9 @@ export interface MinijobMonthFacts {
 	readonly externalOffsets: readonly { readonly id: string; readonly amountCents: number }[];
 }
 
+/** A month's paid time and its persisted shifts as planned, what `plannedBasisOf` hashes. */
+export type PlannedEarningsFacts = Pick<MinijobMonthFacts, "items" | "shifts">;
+
 export interface MinijobMonth {
 	readonly month: string;
 	readonly isMinijob: boolean;
@@ -178,7 +181,7 @@ function byText<T>(key: (value: T) => string) {
  * source `shift`: not begun, or running) is left out until it is over: its running clock-in is
  * projected to the shift's end, and that projection is no overrun anybody worked.
  */
-function overShiftOverrunMinutes(facts: MinijobMonthFacts): number {
+function overShiftOverrunMinutes(facts: PlannedEarningsFacts): number {
 	const parent = new Map<string, string>();
 	const root = (id: string): string => {
 		let current = id;
@@ -224,9 +227,10 @@ function overShiftOverrunMinutes(facts: MinijobMonthFacts): number {
  * unplanned work or a material overrun of a shift that is over changes it. Work short of a shift
  * does not: the earnings only fall. A running shift's projection stays out, so an early clock-in
  * followed by an early clock-out changes nothing; a rise while a shift runs shows in the month's
- * total, which the documented total catches (`minijobAcknowledgementStatus`).
+ * total, which the documented total catches (`minijobAcknowledgementStatus`). The short-term
+ * Berufsmäßigkeit verification rests on the same basis.
  */
-function plannedBasisOf(facts: MinijobMonthFacts) {
+export function plannedBasisOf(facts: PlannedEarningsFacts) {
 	const unplanned = facts.items.filter(
 		(item) => item.source !== "shift" && !(item.source === "work" && item.shiftIds?.length),
 	);

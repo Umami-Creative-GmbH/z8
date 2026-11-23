@@ -57,12 +57,11 @@ export interface ShortTermWorkItem {
 	 */
 	readonly minutes: number;
 	/**
-	 * For an open clock-in: the running shift it belongs to (whose rest is planned work), or
-	 * `unplanned` when it belongs to none. Null for completed work.
+	 * The shifts the work belongs to (`matchWorkToShifts`), open or completed, also once they have
+	 * ended: first the shift whose date it counts on, then the others of that month it spans (back
+	 * to back), which are judged together against their plan. Empty for work without a shift.
 	 */
-	readonly inProgress: { readonly shiftId: string } | "unplanned" | null;
-	/** Whether the work belongs to a shift (`matchWorkToShifts`), open or completed. */
-	readonly ofShift: boolean;
+	readonly shiftIds: readonly string[];
 	/** Confirmed hourly wage on that day in minor units; null for fixed terms or a missing wage. */
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
@@ -91,6 +90,16 @@ export interface ShortTermPlanItem {
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
 	readonly employmentPeriodId: string | null;
+}
+
+/** A persisted shift on a short-term day as planned, whether it is ahead, under way or over. */
+export interface ShortTermShift {
+	readonly shiftId: string;
+	readonly date: string;
+	/** Real length between its start and end instants in the organization's timezone. */
+	readonly minutes: number;
+	readonly hourlyRateCents: number | null;
+	readonly currency: string;
 }
 
 export interface ShortTermPriorOffset {
@@ -170,6 +179,11 @@ export interface ShortTermEmployeeInputs {
 	readonly employeeId: string;
 	readonly work: readonly ShortTermWorkItem[];
 	readonly planned: readonly ShortTermPlanItem[];
+	/**
+	 * Every persisted shift on a short-term day as planned: what a Berufsmäßigkeit verification
+	 * rests on, however far it has been worked.
+	 */
+	readonly shifts: readonly ShortTermShift[];
 	readonly priorOffsets: readonly ShortTermPriorOffset[];
 	/** The employee's short-term employments overlapping the requested years, by first day. */
 	readonly employments: readonly ShortTermEmployment[];
@@ -901,8 +915,7 @@ export async function loadShortTermInputs(
 	/** Recorded work dated by the shift it belongs to, split at shift starts (see the matching). */
 	type DatedWork = RecordedWork & {
 		readonly date: string;
-		readonly inProgress: ShortTermWorkItem["inProgress"];
-		readonly ofShift: boolean;
+		readonly shiftIds: readonly string[];
 	};
 	const workByEmployee = new Map<string, DatedWork[]>();
 	type PlannedShift = Pick<
@@ -910,6 +923,8 @@ export async function loadShortTermInputs(
 		"shiftId" | "date" | "startTime" | "endTime" | "minutes" | "inProgress"
 	>;
 	const plannedByEmployee = new Map<string, PlannedShift[]>();
+	type AsPlannedShift = Pick<ShortTermShift, "shiftId" | "date" | "minutes">;
+	const shiftsAsPlannedByEmployee = new Map<string, AsPlannedShift[]>();
 	for (const employeeId of candidates) {
 		const recorded = recordedByEmployee.get(employeeId) ?? [];
 		const shifts = shiftsByEmployee.get(employeeId) ?? [];
@@ -938,28 +953,46 @@ export async function loadShortTermInputs(
 
 		const dated: DatedWork[] = [];
 		for (const work of recorded) {
-			const running = runningShiftOf.get(work.id);
-			const inProgress: DatedWork["inProgress"] =
-				work.end !== null ? null : running ? { shiftId: running.id } : "unplanned";
 			const belongs = shiftsOfWork.get(work);
 			// A later shift the work has not reached yet (an open clock-in up to two hours before it)
-			// gets no part: its day counts through the shift itself.
+			// gets no part: its day counts through the shift itself. Work keeps belonging to its
+			// shifts after they end, an open clock-in too: past the end it is overrun of the shift.
 			const parts = belongs
 				? splitWorkAtShiftStarts(work, belongs, input.now, minuteGrid)
 						.filter((part, index) => index === 0 || part.minutes > 0)
-						.map((part) => ({ date: part.shift.date, minutes: part.minutes }))
-				: [{ date: plainDateAt(work.start, input.timezone).toString(), minutes: work.minutes }];
+						.map((part) => ({
+							date: part.shift.date,
+							minutes: part.minutes,
+							// Shifts of the same month that one clock-in spans are judged together.
+							shiftIds: [
+								part.shift.id,
+								...belongs
+									.filter(
+										(other) =>
+											other !== part.shift &&
+											other.date.slice(0, 7) === part.shift.date.slice(0, 7),
+									)
+									.map((other) => other.id),
+							],
+						}))
+				: [
+						{
+							date: plainDateAt(work.start, input.timezone).toString(),
+							minutes: work.minutes,
+							shiftIds: [],
+						},
+					];
 			for (const part of parts) {
-				if (inLoadedSpan(employeeId, part.date)) {
-					dated.push({ ...work, ...part, inProgress, ofShift: belongs !== undefined });
-				}
+				if (inLoadedSpan(employeeId, part.date)) dated.push({ ...work, ...part });
 			}
 		}
 		workByEmployee.set(employeeId, dated);
 
 		const planned: PlannedShift[] = [];
+		const asPlanned: AsPlannedShift[] = [];
 		for (const s of shifts) {
 			if (!inLoadedSpan(employeeId, s.date)) continue;
+			asPlanned.push({ shiftId: s.id, date: s.date, minutes: shiftMinutes(s.interval) });
 			// Over: what was worked is recorded work.
 			if (compareInstants(s.interval.end, input.now) <= 0) continue;
 			const item = { shiftId: s.id, date: s.date, startTime: s.startTime, endTime: s.endTime };
@@ -987,6 +1020,7 @@ export async function loadShortTermInputs(
 			});
 		}
 		plannedByEmployee.set(employeeId, planned);
+		shiftsAsPlannedByEmployee.set(employeeId, asPlanned);
 	}
 	const addPlanned = (employeeId: string, item: PlannedShift) => {
 		const list = plannedByEmployee.get(employeeId);
@@ -1067,8 +1101,7 @@ export async function loadShortTermInputs(
 				workPeriodId: item.id,
 				date: item.date,
 				minutes: item.minutes,
-				inProgress: item.inProgress,
-				ofShift: item.ofShift,
+				shiftIds: item.shiftIds,
 				hourlyRateCents: centsOf(contract.hourlyRate),
 				currency: contract.currency,
 				employmentPeriodId: contract.employmentPeriodId,
@@ -1083,6 +1116,16 @@ export async function loadShortTermInputs(
 				hourlyRateCents: centsOf(contract.hourlyRate),
 				currency: contract.currency,
 				employmentPeriodId: contract.employmentPeriodId,
+			});
+		}
+		const shiftsAsPlanned: ShortTermShift[] = [];
+		for (const item of shiftsAsPlannedByEmployee.get(employeeId) ?? []) {
+			const contract = shortTermOn(item.date);
+			if (!contract) continue;
+			shiftsAsPlanned.push({
+				...item,
+				hourlyRateCents: centsOf(contract.hourlyRate),
+				currency: contract.currency,
 			});
 		}
 
@@ -1134,6 +1177,7 @@ export async function loadShortTermInputs(
 			employeeId,
 			work,
 			planned,
+			shifts: shiftsAsPlanned,
 			priorOffsets: (offsetsByEmployee.get(employeeId) ?? [])
 				.filter((row) => row.countValue !== null)
 				.map((row) => ({
