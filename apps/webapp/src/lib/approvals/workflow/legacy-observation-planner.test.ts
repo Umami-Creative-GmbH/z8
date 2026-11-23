@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { isInstant, parseInstant } from "@/lib/datetime/temporal-core";
 import { deriveApprovalWorkflowId } from "./identity";
-import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
+import {
+	createLegacyApprovalObservationPlanner,
+	LEGACY_REJECTION_FALLBACK_REASON,
+} from "./legacy-observation-planner";
 import type {
 	ObservedLegacyTransition,
 	VerifiedLegacyApprovalState,
@@ -1490,6 +1493,34 @@ describe("legacy approval observation planner", () => {
 			"stage.cancelled",
 			"workflow.rejected",
 		]);
+	});
+
+	it("stores the fallback reason when a legacy chain rejection had none", async () => {
+		const planner = createLegacyApprovalObservationPlanner({
+			clock: { nowInstant: () => capturedAt },
+		});
+		const before = chainState({
+			status: "pending",
+			currentStageOrder: 2,
+			rowStatuses: ["approved", "pending", "cancelled"],
+			currentRequestStatus: "pending",
+			autoRows: [1],
+		});
+		const rejected = chainState({
+			status: "rejected",
+			currentStageOrder: 2,
+			rowStatuses: ["approved", "rejected", "cancelled"],
+			currentRequestStatus: "rejected",
+			autoRows: [1],
+		});
+		const after = { ...rejected, approvalRequest: null };
+
+		const plan = await planner.plan(transition(before, after, 1));
+
+		// Existing canonical rows already hold this value; readers recognise it by this constant.
+		expect(LEGACY_REJECTION_FALLBACK_REASON).toBe("Legacy request rejected");
+		expect(plan.snapshot.decisionReason).toBe(LEGACY_REJECTION_FALLBACK_REASON);
+		expect(plan.snapshot.stages[1]?.decisionReason).toBe(LEGACY_REJECTION_FALLBACK_REASON);
 	});
 
 	it("cancels a pending chain while preserving the prior request mapping", async () => {

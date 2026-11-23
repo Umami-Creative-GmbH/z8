@@ -30,7 +30,7 @@ export type ComplianceExceptionKind =
 	| "overtime_weekly"
 	| "overtime_monthly";
 
-/** What a compliance exception asked for; its window is shown in the organization's time zone. */
+/** What a compliance exception asked for; its window is shown in the viewer's time zone. */
 export interface ComplianceExceptionRequestDetails {
 	kind: "compliance_exception";
 	exceptionType: ComplianceExceptionKind;
@@ -95,6 +95,6 @@ export interface SelfServiceRequestResult {
 	items: SelfServiceRequestItem[];
 	counts: SelfServiceRequestCounts;
 	sourceErrors: SelfServiceRequestSourceError[];
-	/** The organization's time zone: request instants are read in it, as validity windows are. */
+	/** The viewer's own time zone: request instants are read in it, as validity windows are. */
 	timeZone: string;
 }

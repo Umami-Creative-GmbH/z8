@@ -26,6 +26,7 @@ import {
 	normalizeTimeCorrectionWorkflowPayload,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
+import { LEGACY_REJECTION_FALLBACK_REASON } from "@/lib/approvals/workflow/legacy-observation-planner";
 import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -34,7 +35,6 @@ import {
 	instantFromDate,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
-import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
 import { needsFix } from "./needs-fix";
 import type {
@@ -56,8 +56,8 @@ interface GetSelfServiceRequestsInput {
 	now?: Date;
 	/** The request sources to read; every source when omitted. */
 	sources?: readonly SelfServiceRequestSourceType[];
-	/** The organization's time zone when the caller has already read it; read here otherwise. */
-	timeZone?: string;
+	/** The zone the viewer reads request dates and compliance exception windows in. */
+	timeZone: string;
 }
 
 type SourceLoadResult =
@@ -170,7 +170,7 @@ interface ComplianceExceptionRow {
 const SOURCE_ERROR_MESSAGES: Record<SelfServiceRequestSourceType, string> = {
 	time_correction: "Time correction requests could not be loaded.",
 	absence: "Absence requests could not be loaded.",
-	travel_expense: "Earlier expense claims could not be loaded.",
+	travel_expense: "Earlier claims could not be loaded.",
 	travel_expense_report: "Expense reports could not be loaded.",
 	compliance_exception: "Compliance exceptions could not be loaded.",
 };
@@ -181,19 +181,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 export async function getSelfServiceRequests(
 	input: GetSelfServiceRequestsInput,
 ): Promise<SelfServiceRequestResult> {
-	// Read once: request dates and compliance exception windows are both shown in this zone.
-	const organizationTimeZone =
-		input.timeZone === undefined
-			? loadOrganizationTimezone(db, input.organizationId)
-			: Promise.resolve(input.timeZone);
-	// Without it, request dates read in UTC; only the exceptions, whose windows need it, fail.
-	const timeZone = organizationTimeZone.catch(() => "UTC");
 	const loaders: Record<SelfServiceRequestSourceType, () => Promise<SelfServiceRequestItem[]>> = {
 		time_correction: () => loadTimeCorrections(input),
 		absence: () => loadAbsences(input),
 		travel_expense: () => loadTravelExpenses(input),
 		travel_expense_report: () => loadExpenseReports(input),
-		compliance_exception: () => loadComplianceExceptions(input, organizationTimeZone),
+		compliance_exception: () => loadComplianceExceptions(input),
 	};
 	const sources = input.sources ?? (Object.keys(loaders) as SelfServiceRequestSourceType[]);
 	const sourceResults = await Promise.all(
@@ -205,7 +198,7 @@ export async function getSelfServiceRequests(
 	const counts = countItems(allItems, input.now ?? new Date());
 	const items = applyFilters(allItems, input.filters).sort(compareItems);
 
-	return { items, counts, sourceErrors, timeZone: await timeZone };
+	return { items, counts, sourceErrors, timeZone: input.timeZone };
 }
 
 async function loadSource(
@@ -495,9 +488,14 @@ function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {
 	}
 }
 
+/** A canonical workflow's reason as the employee reads it: the mirrored-rejection fallback is none. */
+function employeeFacingWorkflowReason(reason: string | null): string | null {
+	return reason === LEGACY_REJECTION_FALLBACK_REASON ? null : reason;
+}
+
 function mapCanonicalTimeCorrection(
 	row: CanonicalTimeCorrectionRow,
-	input: GetSelfServiceRequestsInput,
+	input: Pick<GetSelfServiceRequestsInput, "organizationId" | "employeeId">,
 ): SelfServiceRequestItem[] {
 	if (
 		row.organizationId !== input.organizationId ||
@@ -547,7 +545,7 @@ function mapCanonicalTimeCorrection(
 				resolvedAt: status === "cancelled" ? row.cancelledAt : row.completedAt,
 				title: display.title,
 				subtitle: display.subtitle,
-				decisionReason: row.decisionReason,
+				decisionReason: employeeFacingWorkflowReason(row.decisionReason),
 				availableActions: actionsFor(status, "time_correction"),
 				sourceHref: "/time-tracking",
 			},
@@ -1025,11 +1023,10 @@ async function loadReportRejectionReasons(organizationId: string, rows: ExpenseR
 /**
  * The employee's ArbZG compliance exceptions, view-only: they are requested and used from time
  * tracking. A used exception shows as the approval it was; an expired one passed its 24-hour
- * window undecided. The window is shown in the organization's time zone.
+ * window undecided. The window is shown in the viewer's time zone.
  */
 async function loadComplianceExceptions(
 	input: GetSelfServiceRequestsInput,
-	organizationTimeZone: Promise<string>,
 ): Promise<SelfServiceRequestItem[]> {
 	const rows = (
 		(await db.query.complianceException.findMany({
@@ -1044,7 +1041,6 @@ async function loadComplianceExceptions(
 		(row) => row.organizationId === input.organizationId && row.employeeId === input.employeeId,
 	);
 	if (rows.length === 0) return [];
-	const timeZone = await organizationTimeZone;
 	const now = instantFromDate(input.now ?? new Date());
 
 	return rows.map((row) => {
@@ -1070,7 +1066,7 @@ async function loadComplianceExceptions(
 				plannedDurationMinutes: row.plannedDurationMinutes,
 				validFrom: row.validFrom,
 				validUntil: row.validUntil,
-				timeZone,
+				timeZone: input.timeZone,
 			},
 		};
 	});

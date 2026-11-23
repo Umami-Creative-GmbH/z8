@@ -33,6 +33,13 @@ import { normalizeStableData } from "./stable-data";
 import { assertValidApprovalWorkflowSnapshot } from "./state-machine";
 import { APPROVAL_WORKFLOW_TYPES } from "./types";
 
+/**
+ * The decision reason stored on a mirrored rejection whose legacy request carried none. Stored
+ * rows already hold this exact value, so it must not change; readers that show reasons to
+ * employees treat it as no reason.
+ */
+export const LEGACY_REJECTION_FALLBACK_REASON = "Legacy request rejected";
+
 export type LegacyApprovalObservationPlannerErrorCode =
 	| "ambiguous_transition"
 	| "invalid_evidence"
@@ -869,7 +876,7 @@ function buildChainPlan(
 				decisionReason:
 					status === "rejected"
 						? (input.after.approvalRequest?.rejectionReason ??
-							"Legacy request rejected")
+							LEGACY_REJECTION_FALLBACK_REASON)
 						: status === "cancelled"
 							? terminalCancelled
 								? "Legacy chain cancelled"
@@ -911,7 +918,7 @@ function buildChainPlan(
 				? "Legacy chain cancelled"
 				: chain.status === "rejected"
 					? (input.after.approvalRequest?.rejectionReason ??
-						"Legacy request rejected")
+						LEGACY_REJECTION_FALLBACK_REASON)
 					: null,
 		stages,
 	};
@@ -1415,7 +1422,7 @@ function buildPlan(
 			status === "cancelled" && !approvedOwnerCancellation
 				? cancellationReason
 				: status === "rejected"
-					? (afterRequest?.rejectionReason ?? "Legacy request rejected")
+					? (afterRequest?.rejectionReason ?? LEGACY_REJECTION_FALLBACK_REASON)
 					: null,
 		legacyApprovalRequestId: request.id,
 		assignments: initialAutoApproved ? [] : [...formerHolders, assignment],
@@ -1448,7 +1455,7 @@ function buildPlan(
 			status === "cancelled"
 				? cancellationReason
 				: status === "rejected"
-					? (afterRequest?.rejectionReason ?? "Legacy request rejected")
+					? (afterRequest?.rejectionReason ?? LEGACY_REJECTION_FALLBACK_REASON)
 					: null,
 		stages: [stage],
 	};

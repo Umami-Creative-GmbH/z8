@@ -146,7 +146,14 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-import { getSelfServiceRequests } from "../get-self-service-requests";
+import { getSelfServiceRequests as loadSelfServiceRequests } from "../get-self-service-requests";
+
+/** The loader as a viewer in Europe/Berlin calls it, unless a test names the viewer's zone. */
+function getSelfServiceRequests(
+	input: Omit<Parameters<typeof loadSelfServiceRequests>[0], "timeZone"> & { timeZone?: string },
+) {
+	return loadSelfServiceRequests({ timeZone: "Europe/Berlin", ...input });
+}
 
 function timeCorrection(overrides: Record<string, unknown> = {}) {
 	return {
@@ -451,7 +458,6 @@ describe("getSelfServiceRequests", () => {
 		dbMocks.reportCycleClosures.mockResolvedValue([]);
 		dbMocks.reportAdjustments.mockResolvedValue([]);
 		dbMocks.complianceExceptions.mockResolvedValue([]);
-		dbMocks.organizationTimezone.mockResolvedValue("Europe/Berlin");
 		dbMocks.approvalRequests.mockResolvedValue([timeCorrection()]);
 		dbMocks.approvalWorkflows.mockResolvedValue([]);
 		dbMocks.approvalWorkflowRollouts.mockResolvedValue({
@@ -515,12 +521,53 @@ describe("getSelfServiceRequests", () => {
 		]);
 	});
 
+	it("shows no reason for a mirrored rejection that had none, but keeps a reviewer's own reason", async () => {
+		dbMocks.approvalRequests.mockResolvedValue([]);
+		dbMocks.approvalWorkflowRollouts.mockResolvedValue({
+			lifecycleMode: "complete",
+		});
+		const displaySnapshot = await realCanonicalDisplay();
+		const rejectedAt = new Date("2026-04-27T08:00:00.000Z");
+		dbMocks.approvalWorkflows.mockResolvedValue([
+			canonicalTimeCorrection({
+				displaySnapshot,
+				status: "rejected",
+				completedAt: rejectedAt,
+				// What the legacy observation planner stores when the legacy rejection had no reason.
+				decisionReason: "Legacy request rejected",
+			}),
+			canonicalTimeCorrection({
+				id: "10000000-0000-4000-8000-000000000040",
+				sourceId: "10000000-0000-4000-8000-000000000041",
+				displaySnapshot,
+				status: "rejected",
+				completedAt: rejectedAt,
+				decisionReason: "Overlaps an approved absence",
+			}),
+		]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-04-28T12:00:00.000Z"),
+		});
+
+		const reasons = result.items
+			.filter((item) => item.sourceType === "time_correction")
+			.map((item) => [item.id, item.decisionReason]);
+		expect(reasons).toEqual(
+			expect.arrayContaining([
+				["10000000-0000-4000-8000-000000000010", null],
+				["10000000-0000-4000-8000-000000000040", "Overlaps an approved absence"],
+			]),
+		);
+		expect(JSON.stringify(result)).not.toContain("Legacy");
+	});
+
 	it("maps complete-mode canonical lifecycle states without exposing private context", async () => {
 		dbMocks.approvalRequests.mockResolvedValue([]);
 		dbMocks.absenceEntries.mockResolvedValue([]);
 		dbMocks.travelExpenseClaims.mockResolvedValue([]);
-		// The organization's zone is public; the correction context's zone is not.
-		dbMocks.organizationTimezone.mockResolvedValue("UTC");
 		dbMocks.approvalWorkflowRollouts.mockResolvedValue({
 			lifecycleMode: "complete",
 		});
@@ -562,6 +609,8 @@ describe("getSelfServiceRequests", () => {
 			employeeId: "employee-1",
 			organizationId: "org-1",
 			now: new Date("2026-04-28T12:00:00.000Z"),
+			// The viewer's zone is theirs to see; the correction context's zone is not.
+			timeZone: "UTC",
 		});
 
 		expect(result.counts).toEqual({
@@ -2115,7 +2164,6 @@ describe("getSelfServiceRequests", () => {
 				{ left: "complianceException.organizationId", right: "org-1" },
 				{ left: "complianceException.employeeId", right: "employee-1" },
 			]);
-			expect(dbMocks.organizationTimezone).toHaveBeenCalledWith(expect.anything(), "org-1");
 		});
 
 		it("shows a pending exception whose window has passed as expired", async () => {
@@ -2167,22 +2215,7 @@ describe("getSelfServiceRequests", () => {
 			expect(result.items.map((item) => item.sourceId)).toEqual(["exception-expired"]);
 		});
 
-		it("gives the organization's time zone, read once for windows and request dates alike", async () => {
-			dbMocks.complianceExceptions.mockResolvedValue([exception()]);
-
-			const result = await getSelfServiceRequests({
-				employeeId: "employee-1",
-				organizationId: "org-1",
-				now: new Date("2026-04-28T12:00:00.000Z"),
-			});
-
-			expect(result.timeZone).toBe("Europe/Berlin");
-			expect(result.items[0]?.details).toMatchObject({ timeZone: "Europe/Berlin" });
-			expect(dbMocks.organizationTimezone).toHaveBeenCalledTimes(1);
-			expect(dbMocks.organizationTimezone).toHaveBeenCalledWith(expect.anything(), "org-1");
-		});
-
-		it("uses a time zone the caller already knows, without reading it again", async () => {
+		it("shows windows and request dates in the viewer's zone, not the organization's", async () => {
 			dbMocks.complianceExceptions.mockResolvedValue([exception()]);
 
 			const result = await getSelfServiceRequests({
@@ -2195,27 +2228,6 @@ describe("getSelfServiceRequests", () => {
 			expect(result.timeZone).toBe("America/New_York");
 			expect(result.items[0]?.details).toMatchObject({ timeZone: "America/New_York" });
 			expect(dbMocks.organizationTimezone).not.toHaveBeenCalled();
-		});
-
-		it("reads request dates in UTC when the time zone cannot be loaded, failing only exceptions", async () => {
-			dbMocks.organizationTimezone.mockRejectedValue(new Error("database unavailable"));
-			dbMocks.complianceExceptions.mockResolvedValue([exception()]);
-			dbMocks.absenceEntries.mockResolvedValue([absence()]);
-
-			const result = await getSelfServiceRequests({
-				employeeId: "employee-1",
-				organizationId: "org-1",
-				now: new Date("2026-04-28T12:00:00.000Z"),
-			});
-
-			expect(result.timeZone).toBe("UTC");
-			expect(result.items.map((item) => item.sourceType)).toEqual(["absence"]);
-			expect(result.sourceErrors).toEqual([
-				{
-					sourceType: "compliance_exception",
-					message: "Compliance exceptions could not be loaded.",
-				},
-			]);
 		});
 
 		it("reports a compliance exception source failure", async () => {
@@ -2261,7 +2273,7 @@ describe("getSelfServiceRequests", () => {
 		expect(result.sourceErrors).toEqual([
 			{
 				sourceType: "travel_expense",
-				message: "Earlier expense claims could not be loaded.",
+				message: "Earlier claims could not be loaded.",
 			},
 		]);
 	});

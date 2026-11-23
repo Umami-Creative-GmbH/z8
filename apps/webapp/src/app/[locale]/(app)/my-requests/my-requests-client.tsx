@@ -97,8 +97,8 @@ const sourceTypeLabelKeys: Record<SelfServiceRequestSourceType, { key: string; f
 			fallback: "Expense report",
 		},
 		travel_expense: {
-			key: "myRequests:myRequests.types.earlierExpenseClaim",
-			fallback: "Earlier expense claim",
+			key: "myRequests:myRequests.types.earlierClaim",
+			fallback: "Earlier claim",
 		},
 		compliance_exception: {
 			key: "myRequests:myRequests.types.complianceException",
@@ -207,7 +207,7 @@ function getTravelExpenseAmountFormatter(locale: string, currency: string) {
 
 /**
  * Medium dates in an explicit zone: "UTC" for stored calendar dates (held as UTC midnights), the
- * organization's zone for request instants, so they read on the same day as a validity window.
+ * viewer's own zone for request instants, so they read on the same day as a validity window.
  */
 function getDateFormatter(locale: string, timeZone = "UTC") {
 	const formatterKey = `${locale}:${timeZone}`;
@@ -262,7 +262,7 @@ function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Transla
 	if (sourceType === "travel_expense") {
 		return t(
 			"myRequests:myRequests.sourceError.earlierClaim",
-			"Earlier expense claims could not be loaded.",
+			"Earlier claims could not be loaded.",
 		);
 	}
 

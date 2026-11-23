@@ -265,12 +265,16 @@ async function seed() {
 	});
 }
 
+/** The viewer's own zone, unlike the organization's (Europe/Berlin): windows are read in it. */
+const VIEWER_TIME_ZONE = "America/New_York";
+
 async function requestsOf(employeeId: string, organizationId = ORG) {
 	const result = await getSelfServiceRequests({
 		employeeId,
 		organizationId,
 		now: NOW,
 		sources: ["travel_expense_report", "compliance_exception"],
+		timeZone: VIEWER_TIME_ZONE,
 	});
 	expect(result.sourceErrors).toEqual([]);
 	return result.items;
@@ -310,7 +314,7 @@ describe("My Requests expense reports and compliance exceptions (#1979)", () => 
 		});
 	});
 
-	it("names a standalone report by its own expense and gives the organization's zone", async () => {
+	it("names a standalone report by its own expense and gives the viewer's zone", async () => {
 		await admin.query(
 			`insert into travel_expense_report_item (organization_id, report_id, type, position, description, mileage_route)
 			 values ($1, $2, 'receipt', 0, 'Hotel Hamburg', null), ($1, $3, 'mileage', 0, null, 'Office – Customer')`,
@@ -322,10 +326,11 @@ describe("My Requests expense reports and compliance exceptions (#1979)", () => 
 			organizationId: ORG,
 			now: NOW,
 			sources: ["travel_expense_report"],
+			timeZone: VIEWER_TIME_ZONE,
 		});
 		const byId = new Map(result.items.map((item) => [item.sourceId, item]));
 
-		expect(result.timeZone).toBe("Europe/Berlin");
+		expect(result.timeZone).toBe(VIEWER_TIME_ZONE);
 		expect(byId.get(ids.submitted)).toMatchObject({
 			title: "Hotel Hamburg",
 			subtitle: "",
@@ -377,7 +382,7 @@ describe("My Requests expense reports and compliance exceptions (#1979)", () => 
 		});
 		expect(items.find((item) => item.sourceId === ids.exceptionRejected)).toMatchObject({
 			decisionReason: "Team is fully staffed",
-			details: { kind: "compliance_exception", timeZone: "Europe/Berlin" },
+			details: { kind: "compliance_exception", timeZone: VIEWER_TIME_ZONE },
 		});
 	});
 
@@ -466,6 +471,7 @@ describe("My Requests expense reports and compliance exceptions (#1979)", () => 
 			organizationId: ORG,
 			now: NOW,
 			sources: ["travel_expense_report", "compliance_exception"],
+			timeZone: VIEWER_TIME_ZONE,
 		});
 
 		// In review: the submitted report and the open exception. Fixes: the returned and the
