@@ -82,8 +82,8 @@ export function ApproveShiftRequestForm({
 				if (result.refusal === STATUTORY_PUBLICATION_BLOCKED) {
 					throw new Error(
 						t(
-							"scheduling:scheduling.scheduler.shiftUpdate.statutoryBlocked",
-							"This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
+							"scheduling:scheduling.shiftRequests.statutoryBlocked",
+							"Approving this request would break youth protection limits (JArbSchG) for the employee taking the shift. Reject the request or ask someone else to take the shift.",
 						),
 					);
 				}

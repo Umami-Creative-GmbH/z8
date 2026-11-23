@@ -158,6 +158,7 @@
       "rejectFailed": "Anfrage konnte nicht abgelehnt werden",
       "rejectReason": "Grund für die Ablehnung (optional)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Die Genehmigung dieser Anfrage würde für die Person, die die Schicht übernimmt, gegen den Jugendarbeitsschutz (JArbSchG) verstoßen. Lehnen Sie die Anfrage ab oder lassen Sie jemand anderen die Schicht übernehmen.",
       "swapSummary": "{requester} möchte diese Schicht an {target} übergeben",
       "swapWithoutTarget": "{requester} möchte diese Schicht abgeben, hat jedoch keinen Kollegen benannt",
       "title": "Schichtanfragen",

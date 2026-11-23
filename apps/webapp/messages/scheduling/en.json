@@ -158,6 +158,7 @@
       "rejectFailed": "Failed to reject the request",
       "rejectReason": "Reason for rejecting (optional)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Approving this request would break youth protection limits (JArbSchG) for the employee taking the shift. Reject the request or ask someone else to take the shift.",
       "swapSummary": "{requester} wants to hand this shift to {target}",
       "swapWithoutTarget": "{requester} wants to hand this shift on, but has not named a colleague",
       "title": "Shift requests",
