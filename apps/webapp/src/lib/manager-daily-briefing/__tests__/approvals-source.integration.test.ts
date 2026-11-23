@@ -37,9 +37,12 @@ vi.mock("@/lib/approvals/inbox/read-service", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/lib/approvals/inbox/read-service")>();
 	return {
 		...actual,
-		getApprovalInboxList: async (params: ApprovalInboxListParams) => {
+		getApprovalInboxList: async (
+			params: ApprovalInboxListParams,
+			options?: Parameters<typeof actual.getApprovalInboxList>[1],
+		) => {
 			inboxReads.push(params);
-			const result = await actual.getApprovalInboxList(params);
+			const result = await actual.getApprovalInboxList(params, options);
 			return { ...result, warnings: [...result.warnings, ...extraInboxWarnings.splice(0)] };
 		},
 	};

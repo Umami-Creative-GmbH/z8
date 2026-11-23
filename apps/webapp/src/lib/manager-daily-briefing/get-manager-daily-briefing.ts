@@ -662,12 +662,14 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 			{ getPrincipalContext },
 			{ defineAbilityFor },
 			{ resolveApprovalInboxViewerScope },
-			{ getApprovalInboxList, getApprovalInboxTotals },
+			{ getApprovalInboxTotals },
+			{ getApprovalInboxTopItems },
 		] = await Promise.all([
 			import("@/lib/auth-helpers"),
 			import("@/lib/authorization"),
 			import("@/lib/approvals/inbox/viewer-scope"),
 			import("@/lib/approvals/inbox/read-service"),
+			import("@/lib/approvals/inbox/top-items"),
 		]);
 		// The session's own inbox, as `/approvals/inbox` opens it: its active organization and its
 		// own employee there, or no approvals at all.
@@ -687,7 +689,9 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		// The inbox's own list, ordered by risk, priority and age, read for the briefing's employees
 		// alone, so others' requests never crowd theirs off the page. Its "Covering for" sections are
 		// not the briefing's, so they are not read. A caller showing only the total gets the same
-		// counts without a row or its triage evidence (#1980).
+		// counts without a row or its triage evidence (#1980). The list reads current evidence only
+		// for the items that can still reach the page, a few at a time, as the Dashboard does: the
+		// briefing renders on every visit and after every decision.
 		const params = {
 			...scope,
 			covering: undefined,
@@ -696,7 +700,7 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		};
 		const result = countsOnly
 			? { items: [], ...(await getApprovalInboxTotals(params)) }
-			: await getApprovalInboxList({ ...params, limit: BRIEFING_APPROVAL_LIMIT });
+			: await getApprovalInboxTopItems(params, { limit: BRIEFING_APPROVAL_LIMIT });
 		// Name each failed source, as the inbox tells its warnings apart (#1978), so the briefing
 		// never shows a total or a list that silently lacks its items. A failed count still lists
 		// its rows but leaves them out of the total; any other failure (or one of unknown kind)
