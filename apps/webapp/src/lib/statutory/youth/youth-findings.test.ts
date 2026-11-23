@@ -149,6 +149,45 @@ describe("youthIntervalsOf", () => {
 			}
 		});
 
+		it("keeps the planned 8 h day once the minor clocks back in after a 30 min break", () => {
+			// 08:00–12:00 worked, 30 min break, clocked in again at 12:30: the shift still owes 30 min
+			// of its 60 min break, so 4 h of work remain.
+			for (const clockIn of ["12:30", "12:30:42"]) {
+				const records = [
+					work("am", at("2026-03-02", "08:00"), at("2026-03-02", "12:00")),
+					work("pm", at("2026-03-02", clockIn), null),
+				];
+				for (const time of ["12:30:50", "12:31", "14:00:17", "16:59:59"]) {
+					const now = at("2026-03-02", time);
+					expect(mondayMinutes(records, now)).toBe(480);
+					expect(findings({ work: records, shifts: week, now })).toEqual([]);
+				}
+			}
+		});
+
+		it("keeps the figures and fingerprints of a long day steady after clocking back in", () => {
+			// 06:00–12:00 worked, back at 12:30:42: 6 h worked and 4 h of the shift still to come.
+			const records = [
+				work("am", at("2026-03-02", "06:00"), at("2026-03-02", "12:00")),
+				work("pm", at("2026-03-02", "12:30:42"), null),
+			];
+			const fingerprints = (now: Instant) =>
+				findings({ work: records, shifts: week, now }).map((finding) => [
+					finding.kind,
+					finding.summary.used,
+					finding.inputFingerprint,
+				]);
+			const first = fingerprints(at("2026-03-02", "12:31"));
+			expect(mondayMinutes(records, at("2026-03-02", "12:31"))).toBe(600);
+			expect(first.map(([kind]) => kind)).toEqual(
+				expect.arrayContaining(["jarbschg_daily_max", "jarbschg_weekly_max"]),
+			);
+			for (const time of ["12:31:30", "13:45:05", "16:59:59"]) {
+				expect(mondayMinutes(records, at("2026-03-02", time))).toBe(600);
+				expect(fingerprints(at("2026-03-02", time))).toEqual(first);
+			}
+		});
+
 		it("still flags a day the minor started two hours early", () => {
 			const early = [work("am", at("2026-03-02", "06:00"), at("2026-03-02", "12:00"))];
 			const now = at("2026-03-02", "12:15");

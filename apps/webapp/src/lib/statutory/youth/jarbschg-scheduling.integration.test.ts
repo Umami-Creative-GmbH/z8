@@ -668,6 +668,60 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			expect(youthKinds(atNoon)).toEqual([]);
 		});
 
+		it("keeps the day, the fingerprint and Friday publishable once clocked back in after lunch", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "backin", { birthday: "2011-01-01" });
+			// Monday to Thursday published 08:00–17:00, Friday's shift still a draft.
+			for (const date of ["2027-03-01", "2027-03-02", "2027-03-03", "2027-03-04"]) {
+				await seed.shift(org, minor, {
+					subareaId,
+					creatorUserId: owner.userId,
+					date,
+					startTime: "08:00",
+					endTime: "17:00",
+					status: "published",
+				});
+			}
+			const friday = await shift(minor, "2027-03-05", "08:00", "17:00");
+			// 08:00–12:00 worked, 30 min break, clocked in again at 12:30:42.
+			await seed.work(org, minor, "2027-03-01", "08:00", 240);
+			await seed.openWork(org, minor, "2027-03-01", "12:30:42");
+
+			const atMonday = async <T>(time: string, run: () => Promise<T>) => {
+				const clock = vi
+					.spyOn(Temporal.Now, "instant")
+					.mockReturnValue(localInstant("2027-03-01", time, org.timezone));
+				try {
+					return await run();
+				} finally {
+					clock.mockRestore();
+				}
+			};
+			const youthFindings = (result: Awaited<ReturnType<typeof evaluateWeek>>) =>
+				result.findings.filter(
+					(finding) =>
+						finding.type === "statutory" && finding.statutoryKind.startsWith("jarbschg_"),
+				);
+
+			const first = await atMonday("12:31", evaluateWeek);
+			expect(youthFindings(first)).toEqual([]);
+			for (const time of ["12:31:30", "14:00:17", "16:59:59"]) {
+				const later = await atMonday(time, evaluateWeek);
+				expect(youthFindings(later)).toEqual([]);
+				expect(later.fingerprint).toBe(first.fingerprint);
+			}
+
+			const published = await atMonday("14:00", async () => {
+				const handshake = await publishShifts(WEEK);
+				if (!handshake.success) throw new Error(`publish refused: ${handshake.error}`);
+				return handshake.data.published
+					? handshake
+					: publishShifts(WEEK, { evaluationFingerprint: handshake.data.evaluationFingerprint });
+			});
+			expect(published).toMatchObject({ success: true, data: { published: true, count: 1 } });
+			expect(await shiftStatus(friday)).toBe("published");
+		});
+
 		it("still flags a lunch break after a day started two hours early", async () => {
 			const minor = await fx.employee(org, "early", { birthday: "2011-01-01" });
 			await shift(minor, "2027-03-01", "08:00", "17:00");
