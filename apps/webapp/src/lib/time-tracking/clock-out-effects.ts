@@ -40,6 +40,14 @@ export type ClosedWork = {
 	durationMinutes: number;
 };
 
+type ClockOutComplianceInput = {
+	employeeId: string;
+	organizationId: string;
+	workPeriodId: string;
+	work: ClosedWork;
+	timezone: string;
+};
+
 /**
  * Checks one closed period against the employee's working-time rules and logs
  * its violations. Totals come from `readComplianceTotals`, never from the
@@ -52,14 +60,12 @@ export type ClosedWork = {
  * (#548). When the check runs does not matter.
  */
 export async function checkComplianceAfterClockOut(
-	input: {
-		employeeId: string;
-		organizationId: string;
-		workPeriodId: string;
-		work: ClosedWork;
-		timezone: string;
-	},
-	options: { throwOnError?: boolean } = {},
+	input: ClockOutComplianceInput,
+	options: {
+		throwOnError?: boolean;
+		/** False when the caller runs `recordYouthProtectionAfterClockOut` as its own step. */
+		youthProtection?: boolean;
+	} = {},
 ): Promise<ComplianceWarning[]> {
 	const { employeeId, organizationId, workPeriodId, work } = input;
 	let warnings: ComplianceWarning[] = [];
@@ -114,17 +120,18 @@ export async function checkComplianceAfterClockOut(
 		if (options.throwOnError) throw error;
 		logger.error({ error }, "Failed to check compliance after clock-out");
 	}
-	await recordYouthProtectionViolations(input, options);
+	if (options.youthProtection !== false) await recordYouthProtectionAfterClockOut(input, options);
 	return warnings;
 }
 
 /**
  * JArbSchG youth limits (#1993) apply to every employee under 18 on the work's day, whatever
- * their work policy or ArbZG scope, so they are checked beside the policy rules.
+ * their work policy or ArbZG scope, so they are checked beside the policy rules. Records each
+ * rule once per day, so a retry is safe.
  */
-async function recordYouthProtectionViolations(
-	input: Parameters<typeof checkComplianceAfterClockOut>[0],
-	options: { throwOnError?: boolean },
+export async function recordYouthProtectionAfterClockOut(
+	input: ClockOutComplianceInput,
+	options: { throwOnError?: boolean } = {},
 ): Promise<void> {
 	try {
 		await recordJarbschgViolationsAfterClockOut(db, {
@@ -139,6 +146,18 @@ async function recordYouthProtectionViolations(
 		logger.error({ error }, "Failed to check youth protection after clock-out");
 	}
 }
+
+/**
+ * The compliance steps of a durable automatic clock-out follow-up. Each throws so the outbox
+ * retries it, and each is its own progress step: the policy check logs its violations without
+ * dedupe, so a failing youth check must not make it run again.
+ */
+export const automaticClockOutComplianceEffects = {
+	checkCompliance: (input: ClockOutComplianceInput) =>
+		checkComplianceAfterClockOut(input, { throwOnError: true, youthProtection: false }),
+	recordYouthProtection: (input: ClockOutComplianceInput) =>
+		recordYouthProtectionAfterClockOut(input, { throwOnError: true }),
+};
 
 export async function reconcileImmediateSurcharges(input: {
 	organizationId: string;

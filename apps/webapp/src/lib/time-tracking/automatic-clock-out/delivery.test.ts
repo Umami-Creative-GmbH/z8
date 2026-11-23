@@ -8,6 +8,7 @@ describe("durable automatic follow-ups", () => {
 		const progress: Record<string, unknown> = {};
 		const effects = {
 			checkCompliance: vi.fn(async () => []),
+			recordYouthProtection: vi.fn(async () => {}),
 			enforceBreaks: vi.fn(async () => ({
 				wasAdjusted: false,
 				affectedWorkPeriodIds: [d.workPeriodId],
@@ -38,6 +39,7 @@ describe("durable automatic follow-ups", () => {
 		);
 		await runAutoClockOutFollowUps(closure, progress, context, effects);
 		expect(effects.checkCompliance).toHaveBeenCalledTimes(1);
+		expect(effects.recordYouthProtection).toHaveBeenCalledTimes(1);
 		expect(effects.enforceBreaks).toHaveBeenCalledTimes(1);
 		expect(effects.markBalanceDirty).toHaveBeenCalledTimes(2);
 		expect(effects.checkProjectBudget).toHaveBeenCalledTimes(1);
@@ -48,6 +50,7 @@ describe("durable automatic follow-ups", () => {
 		const d = decision();
 		const effects = {
 			checkCompliance: vi.fn(async () => []),
+			recordYouthProtection: vi.fn(async () => {}),
 			enforceBreaks: vi.fn(async () => ({
 				wasAdjusted: false,
 				affectedWorkPeriodIds: [d.workPeriodId],

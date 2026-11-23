@@ -8,7 +8,11 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
-import { checkComplianceAfterClockOut } from "@/lib/time-tracking/clock-out-effects";
+import { runAutoClockOutFollowUps } from "@/lib/time-tracking/automatic-clock-out/follow-ups";
+import {
+	automaticClockOutComplianceEffects,
+	checkComplianceAfterClockOut,
+} from "@/lib/time-tracking/clock-out-effects";
 import { integrationAdminPool } from "@/test/integration-database";
 import {
 	type FixtureEmployee,
@@ -357,6 +361,55 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		const late = await acknowledgedOpenWork("late");
 		await clockOutOpen(late.minor, late.open, 390);
 		expect(await types(late.minor)).toContain("jarbschg_night_work");
+	});
+
+	it("records adult and youth violations once when an automatic clock-out retries a failed youth check", async () => {
+		await seed.regulatedPolicy(org, { createdBy: owner.userId, maxDailyMinutes: 480 });
+		const minor = await fx.employee(org, "retried", { birthday: "2010-06-01" });
+		// Monday 08:00–18:00 without a break.
+		const work = await seed.work(org, minor, "2026-03-02", "08:00", 600);
+		const recordYouthProtection = vi
+			.fn(automaticClockOutComplianceEffects.recordYouthProtection)
+			.mockRejectedValueOnce(new Error("connection reset"));
+		const effects = {
+			...automaticClockOutComplianceEffects,
+			recordYouthProtection,
+			enforceBreaks: async () => ({ wasAdjusted: false, affectedWorkPeriodIds: [work.id] }),
+			reconcileSurcharges: async () => {},
+			markBalanceDirty: async () => {},
+			checkProjectBudget: async () => {},
+		};
+		const closure = {
+			...work,
+			organizationId: org.id,
+			employeeId: minor.employeeId,
+			actorUserId: owner.userId,
+			workPeriodId: work.id,
+			projectId: null,
+			surchargeSnapshot: null,
+			balanceRefreshCommitted: true,
+			timezone: org.timezone,
+		};
+		const progress: Record<string, unknown> = {};
+		const context = {
+			recordProgress: async (patch: Record<string, unknown>) => {
+				Object.assign(progress, patch);
+			},
+		};
+
+		await expect(runAutoClockOutFollowUps(closure, progress, context, effects)).rejects.toThrow(
+			"connection reset",
+		);
+		expect(await types(minor)).toEqual(["max_daily"]);
+		await runAutoClockOutFollowUps(closure, progress, context, effects);
+
+		expect(await types(minor)).toEqual([
+			"jarbschg_break",
+			"jarbschg_daily_max",
+			"jarbschg_uninterrupted",
+			"max_daily",
+		]);
+		expect(recordYouthProtection).toHaveBeenCalledTimes(2);
 	});
 
 	it("records youth violations but never blocks the clock-out, even with publish blocking on", async () => {
