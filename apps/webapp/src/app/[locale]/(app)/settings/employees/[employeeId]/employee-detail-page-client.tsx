@@ -14,6 +14,11 @@ import { ReactivationChecklistCard } from "@/components/organization/reactivatio
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeContractTab } from "@/components/settings/contracts/employee-contract-tab";
+import { EmployeeMinijobMonitorCard } from "@/components/settings/contracts/employee-minijob-monitor-card";
+import {
+	MINIJOB_REVIEWS_QUERY_KEY,
+	minijobMonitorQueryPrefix,
+} from "@/components/settings/contracts/minijob-query-keys";
 import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
 import { WorkingStudentMonitorCard } from "@/components/settings/contracts/working-student-monitor-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
@@ -245,6 +250,17 @@ export function EmployeeDetailPageClient({
 		initialSnapshot,
 	});
 	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
+	// Terms, history and wage feed the Minijob monitor (#1989): refresh it after each change.
+	// Terms, history, wage and employment-date changes move Minijob coverage and earnings: refresh
+	// the monitor and the exceedance reviews built from them.
+	const refreshMinijobMonitor = () => {
+		void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryPrefix(employeeId) });
+		void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
+	};
+	const refreshingMinijob =
+		<A, R>(mutate: (input: A) => Promise<R>) =>
+		(input: A) =>
+			mutate(input).finally(refreshMinijobMonitor);
 	// The "Custom fields" section (#818), saved with the employee details.
 	const customFields = useCustomFieldDrafts({
 		entity: "employee",
@@ -391,7 +407,10 @@ export function EmployeeDetailPageClient({
 										employeeId={employeeId}
 										workPolicies={workPolicies}
 										employmentHistory={employeeData.employmentHistory}
-										onContractMutated={() => void employeeData.refetch()}
+										onContractMutated={() => {
+											void employeeData.refetch();
+											refreshMinijobMonitor();
+										}}
 									/>
 									<EmploymentDateCorrectionCard
 										key={employeeId}
@@ -402,6 +421,8 @@ export function EmployeeDetailPageClient({
 												: null
 										}
 										onSaved={async () => {
+											// The start date moves Minijob coverage too.
+											refreshMinijobMonitor();
 											await Promise.all([
 												employeeData.refetch(),
 												queryClient.invalidateQueries({
@@ -416,9 +437,9 @@ export function EmployeeDetailPageClient({
 									<EmployeeEmploymentHistoryCard
 										history={employeeData.employmentHistory}
 										canManage={isOrgAdmin}
-										onCreate={employeeData.createEmploymentHistory}
-										onConfirm={employeeData.confirmEmploymentHistory}
-										onCancel={employeeData.cancelEmploymentHistory}
+										onCreate={refreshingMinijob(employeeData.createEmploymentHistory)}
+										onConfirm={refreshingMinijob(employeeData.confirmEmploymentHistory)}
+										onCancel={refreshingMinijob(employeeData.cancelEmploymentHistory)}
 										isCreating={employeeData.isCreatingEmploymentHistory}
 										isMutating={
 											employeeData.isConfirmingEmploymentHistory ||
@@ -430,7 +451,7 @@ export function EmployeeDetailPageClient({
 										changeWage={
 											employee.contractTypeToday === "hourly"
 												? {
-														onSubmit: employeeData.changeWage,
+														onSubmit: refreshingMinijob(employeeData.changeWage),
 														isPending: employeeData.isChangingWage,
 													}
 												: undefined
@@ -446,6 +467,11 @@ export function EmployeeDetailPageClient({
 									onAssigned={() => void employeeData.refetch()}
 								/>
 							)}
+							<EmployeeMinijobMonitorCard
+								employeeId={employeeId}
+								userId={currentUserId}
+								organizationId={employee.organizationId}
+							/>
 							<WorkingStudentMonitorCard
 								organizationId={employee.organizationId}
 								employeeId={employeeId}

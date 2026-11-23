@@ -1,6 +1,7 @@
 import type { useTranslate } from "@tolgee/react";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import type { StatutoryDomain } from "@/lib/statutory/threshold-catalog";
+import { minijobWarningText } from "./minijob-warning-text";
 import { workingStudentWarningText } from "./working-student-warning-text";
 import { youthProtectionWarningText } from "./youth-protection-warning-text";
 
@@ -36,11 +37,12 @@ export function statutoryDomainLabel(domain: StatutoryDomain, t: Translate): str
  * findings (Minijob) arrive with their tier only, so they read "approaching" or "exceeded".
  */
 export function statutoryWarningText(finding: StatutoryComplianceFinding, t: Translate): string {
-	const youthProtection = youthProtectionWarningText(finding, t);
-	if (youthProtection) return youthProtection;
-	const area = statutoryDomainLabel(finding.domain, t);
-	const specific = workingStudentWarningText(finding, t); // #1991
+	const specific =
+		minijobWarningText(finding, t) ?? // #1989
+		workingStudentWarningText(finding, t) ?? // #1991
+		youthProtectionWarningText(finding, t); // #1993
 	if (specific) return specific;
+	const area = statutoryDomainLabel(finding.domain, t);
 	if (finding.summary.usedPercent !== undefined) {
 		return t(
 			"scheduling:scheduling.statutory.warningPercent",

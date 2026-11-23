@@ -1702,6 +1702,11 @@ export async function loadEffectiveContractsBatch(
 		organizationId: string;
 		employeeIds: readonly string[];
 		dates: readonly (PlainDate | string)[];
+		/**
+		 * Resolve each listed employee only on its own dates (`YYYY-MM-DD`) instead of every date
+		 * in `dates`; employees missing from the map get every date.
+		 */
+		datesByEmployee?: ReadonlyMap<string, readonly string[]>;
 		timezoneOverride?: string;
 		employmentStartDateOverride?: string;
 		organizationTimezone?: string;
@@ -2405,7 +2410,9 @@ export async function loadEffectiveContractsBatch(
 			if (teamDefs) empScopedDefaults.push(...teamDefs);
 		}
 
-		for (const day of uniqueDates) {
+		const ownDates = input.datesByEmployee?.get(emp.id);
+		const days = ownDates ? [...new Set(ownDates)].map((date) => toPlainDate(date)) : uniqueDates;
+		for (const day of days) {
 			const resolved = resolveEffectiveContractPure({
 				date: day,
 				at: input.at,

@@ -39,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-operations";
 import { Link } from "@/navigation";
 import { todayIsoDateInTimezone } from "./contract-formatters";
+import { MinijobExceedanceReviews } from "./minijob-exceedance-reviews";
 import { WorkingStudentReviewsSection } from "./working-student-reviews-section";
 import { YouthSectorExceptionsSection } from "./youth-sector-exceptions-section";
 
@@ -513,6 +514,12 @@ export function ContractsReviewsTab({
 					)}
 				</CardContent>
 			</Card>
+			{filterKind === "all" && (
+				<MinijobExceedanceReviews
+					organizationId={organizationId}
+					includeAcknowledged={includeResolved}
+				/>
+			)}
 			<WorkingStudentReviewsSection
 				organizationId={organizationId}
 				includeResolved={includeResolved}

@@ -42,7 +42,10 @@ export interface StatutoryFindingAdminDetail {
 	readonly facts?: Readonly<Record<string, string | number | boolean | null>>;
 }
 
-/** Acknowledgement status attached by `attachAcknowledgementStates`. */
+/**
+ * Acknowledgement status attached by `attachAcknowledgementStates`, or by a contributor that judges
+ * it beyond the fingerprint (Minijob months); the seam keeps an attached one.
+ */
 export interface StatutoryFindingAcknowledgement {
 	readonly status: "none" | "current" | "stale";
 	readonly acknowledgedAt: Date | null;

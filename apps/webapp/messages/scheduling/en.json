@@ -248,6 +248,13 @@
         "releaseDayShift": "Apprentice release day: school, block-release or exam day",
         "workplaceReturn": "Under 18: no work on the week's full vocational school day"
       },
+      "minijob": {
+        "monthlyDocumented": "Minijob monthly limit exceeded (documented as unforeseeable)",
+        "monthlyExceeded": "Minijob monthly limit exceeded",
+        "monthlyApproaching": "Minijob monthly limit approaching",
+        "rollingExceeded": "Minijob 12-month earnings limit exceeded",
+        "rollingApproaching": "Minijob 12-month earnings limit approaching"
+      },
       "workingStudent": {
         "lectureWeek": "Working student >20 h in lecture week: {hours} h of weekday daytime work (limit {limit} h)",
         "ceiling": "Working student: {used} of {limit} weeks above 20 h in 12 months"
