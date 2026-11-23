@@ -703,7 +703,12 @@ describe("employee detail Minijob monitor refresh (#1989)", () => {
 			fireEvent.click(tab);
 		});
 		await screen.findByRole("region", { name: "Effective Contract" });
-		const monitorKey = minijobMonitorQueryKey(realEmployee.id);
+		// The monitor as the viewer (renderDetail's default owner) caches it.
+		const monitorKey = minijobMonitorQueryKey(
+			"owner-user",
+			realEmployee.organizationId,
+			realEmployee.id,
+		);
 		const history = employmentHistoryCardProps.last as {
 			onCreate: (input: unknown) => Promise<unknown>;
 			onConfirm: (id: string) => Promise<unknown>;

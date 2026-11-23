@@ -46,7 +46,11 @@ import {
 	MinijobTierBadge,
 	minijobExceedanceLabel,
 } from "./minijob-labels";
-import { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryKey } from "./minijob-query-keys";
+import {
+	MINIJOB_REVIEWS_QUERY_KEY,
+	minijobMonitorQueryKey,
+	minijobMonitorQueryPrefix,
+} from "./minijob-query-keys";
 
 // Minijob earnings monitor on Employee Detail (#1989). Org admins see EUR amounts and edit the
 // employee's external Minijob earnings; scoped managers see the warning tier of each month only.
@@ -78,7 +82,7 @@ const OFFSET_REFUSALS = {
 
 /** External earnings change the monitor and the exceedances in Reviews & Conflicts. */
 function refreshAfterOffsetChange(queryClient: QueryClient, employeeId: string) {
-	void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(employeeId) });
+	void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryPrefix(employeeId) });
 	void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
 }
 
@@ -583,16 +587,23 @@ function ExternalOffsets({
 
 export interface EmployeeMinijobMonitorCardProps {
 	readonly employeeId: string;
+	/** The viewer and their active organization: the cached figures are theirs alone. */
+	readonly userId: string;
+	readonly organizationId: string;
 }
 
 /**
  * Renders nothing unless the employee has Minijob terms in the shown months. The server decides
  * what the viewer may see: org admins get amounts, everyone else tiers only.
  */
-export function EmployeeMinijobMonitorCard({ employeeId }: EmployeeMinijobMonitorCardProps) {
+export function EmployeeMinijobMonitorCard({
+	employeeId,
+	userId,
+	organizationId,
+}: EmployeeMinijobMonitorCardProps) {
 	const { t } = useTranslate();
 	const query = useQuery({
-		queryKey: minijobMonitorQueryKey(employeeId),
+		queryKey: minijobMonitorQueryKey(userId, organizationId, employeeId),
 		queryFn: async () => {
 			const result = await getEmployeeMinijobMonitorAction({ employeeId });
 			if (!result.success) throw new Error(actionErrorMessage(t, result));

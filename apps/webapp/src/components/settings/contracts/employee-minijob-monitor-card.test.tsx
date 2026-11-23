@@ -34,21 +34,24 @@ vi.mock("@/app/[locale]/(app)/settings/employees/minijob-actions", () => ({
 }));
 
 const { EmployeeMinijobMonitorCard } = await import("./employee-minijob-monitor-card");
-const { MINIJOB_REVIEWS_QUERY_KEY } = await import("./minijob-query-keys");
+const { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryKey } = await import("./minijob-query-keys");
 
 const EMPLOYEE_ID = "00000000-0000-4000-8000-000000000001";
 
-function renderCard() {
+function renderCard(viewer = { userId: "user-1", organizationId: "org-1" }) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	return {
 		client,
 		...render(
 			<QueryClientProvider client={client}>
-				<EmployeeMinijobMonitorCard employeeId={EMPLOYEE_ID} />
+				<EmployeeMinijobMonitorCard employeeId={EMPLOYEE_ID} {...viewer} />
 			</QueryClientProvider>,
 		),
 	};
 }
+
+/** The monitor as another viewer (a scoped manager in the same organization) cached it. */
+const OTHER_VIEWER_KEY = () => minijobMonitorQueryKey("manager-1", "org-1", EMPLOYEE_ID);
 
 /** Reviews & Conflicts' cached exceedances, as that tab keys them. */
 const REVIEWS_KEY = [...MINIJOB_REVIEWS_QUERY_KEY, "org-1", false];
@@ -119,6 +122,27 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 		expect(screen.queryByText("Exceedance")).toBeNull();
 	});
 
+	it("caches the monitor per viewer and organization, since admins and scoped managers see different figures", async () => {
+		mocks.getEmployeeMinijobMonitorAction.mockResolvedValue({
+			success: true,
+			data: { audience: "restricted", applies: false, currentMonth: "2026-11", months: [] },
+		});
+
+		const { client } = renderCard({ userId: "admin-1", organizationId: "org-2" });
+
+		await waitFor(() =>
+			expect(
+				client.getQueryData(minijobMonitorQueryKey("admin-1", "org-2", EMPLOYEE_ID)),
+			).toMatchObject({ audience: "restricted" }),
+		);
+		expect(client.getQueryData(minijobMonitorQueryKey("admin-1", "org-1", EMPLOYEE_ID))).toBe(
+			undefined,
+		);
+		expect(client.getQueryData(minijobMonitorQueryKey("manager-1", "org-2", EMPLOYEE_ID))).toBe(
+			undefined,
+		);
+	});
+
 	it("renders nothing for employees without Minijob terms", async () => {
 		mocks.getEmployeeMinijobMonitorAction.mockResolvedValue({
 			success: true,
@@ -149,6 +173,7 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 
 		const { container, client } = renderCard();
 		client.setQueryData(REVIEWS_KEY, []);
+		client.setQueryData(OTHER_VIEWER_KEY(), { audience: "restricted" });
 		fireEvent.click(await screen.findByRole("button", { name: /Add earnings/ }));
 		const input = (name: string) =>
 			container.querySelector(`input[name="${name}"]`) as HTMLInputElement;
@@ -167,8 +192,10 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 				note: "Payslip",
 			}),
 		);
-		// The month's exceedance may appear or go away in Reviews & Conflicts.
+		// The month's exceedance may appear or go away in Reviews & Conflicts, and every viewer's
+		// monitor of the employee changes.
 		await waitFor(() => expect(client.getQueryState(REVIEWS_KEY)?.isInvalidated).toBe(true));
+		expect(client.getQueryState(OTHER_VIEWER_KEY())?.isInvalidated).toBe(true);
 	});
 
 	it("voids external Minijob earnings and refreshes Reviews & Conflicts", async () => {
@@ -197,6 +224,7 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 
 		const { client } = renderCard();
 		client.setQueryData(REVIEWS_KEY, []);
+		client.setQueryData(OTHER_VIEWER_KEY(), { audience: "restricted" });
 		fireEvent.click(await screen.findByRole("button", { name: /^Void$/ }));
 		fireEvent.change(screen.getByRole("textbox", { name: "Why void these earnings?" }), {
 			target: { value: "Typo" },
@@ -211,5 +239,6 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 			}),
 		);
 		await waitFor(() => expect(client.getQueryState(REVIEWS_KEY)?.isInvalidated).toBe(true));
+		expect(client.getQueryState(OTHER_VIEWER_KEY())?.isInvalidated).toBe(true);
 	});
 });

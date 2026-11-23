@@ -25,7 +25,7 @@ import type { MinijobExceedanceRefusal } from "@/lib/statutory/minijob/acknowled
 import type { MinijobExceedanceReview } from "@/lib/statutory/minijob/minijob-reviews";
 import { Link } from "@/navigation";
 import { formatEuroCents, formatMinijobMonth, minijobExceedanceLabel } from "./minijob-labels";
-import { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryKey } from "./minijob-query-keys";
+import { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryPrefix } from "./minijob-query-keys";
 
 // Minijob exceedance months in Settings → Contracts → Reviews & Conflicts (#1989, org admins).
 
@@ -79,7 +79,9 @@ function AcknowledgeForm({ review }: { review: MinijobExceedanceReview }) {
 				),
 			);
 			void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
-			void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(review.employeeId) });
+			void queryClient.invalidateQueries({
+				queryKey: minijobMonitorQueryPrefix(review.employeeId),
+			});
 		},
 		onError: (error) => {
 			toast.error(error.message);

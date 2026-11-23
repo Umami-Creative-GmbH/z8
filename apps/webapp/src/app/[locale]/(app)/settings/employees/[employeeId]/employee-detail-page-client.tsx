@@ -15,7 +15,7 @@ import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-p
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeContractTab } from "@/components/settings/contracts/employee-contract-tab";
 import { EmployeeMinijobMonitorCard } from "@/components/settings/contracts/employee-minijob-monitor-card";
-import { minijobMonitorQueryKey } from "@/components/settings/contracts/minijob-query-keys";
+import { minijobMonitorQueryPrefix } from "@/components/settings/contracts/minijob-query-keys";
 import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
@@ -247,7 +247,7 @@ export function EmployeeDetailPageClient({
 	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
 	// Terms, history and wage feed the Minijob monitor (#1989): refresh it after each change.
 	const refreshMinijobMonitor = () =>
-		void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(employeeId) });
+		void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryPrefix(employeeId) });
 	const refreshingMinijob =
 		<A, R>(mutate: (input: A) => Promise<R>) =>
 		(input: A) =>
@@ -456,7 +456,11 @@ export function EmployeeDetailPageClient({
 									onAssigned={() => void employeeData.refetch()}
 								/>
 							)}
-							<EmployeeMinijobMonitorCard employeeId={employeeId} />
+							<EmployeeMinijobMonitorCard
+								employeeId={employeeId}
+								userId={currentUserId}
+								organizationId={employee.organizationId}
+							/>
 						</TabsContent>
 
 						{/* Tab 3: Time & Balance */}
