@@ -98,7 +98,31 @@ function complianceText(finding: ComplianceFinding, t: Translate, locale: string
 				},
 			);
 		case "statutory":
-			return statutoryWarningText(finding, t);
+			return statutoryWarningText(finding, t, locale);
+	}
+}
+
+/** What a warning is about, unique within one suggestion: two warnings may read the same. */
+function warningKey(warning: StaffingWarning): string {
+	switch (warning.type) {
+		case "missingRequiredSkill":
+		case "expiredRequiredSkill":
+			return `${warning.type}:${warning.skillId}`;
+		case "pendingAbsence":
+			return `${warning.type}:${warning.categoryName}:${warning.startDate}:${warning.endDate}`;
+		case "compliance": {
+			const { finding } = warning;
+			switch (finding.type) {
+				case "statutory":
+					return `statutory:${finding.findingId}`;
+				case "restTime":
+					return `restTime:${finding.fromEndIso}:${finding.toStartIso}`;
+				case "maxHours":
+					return `maxHours:${finding.day}`;
+				case "overtime":
+					return `overtime:${finding.period}:${finding.periodKey}`;
+			}
+		}
 	}
 }
 
@@ -210,7 +234,7 @@ export function StaffingSuggestionsPanel({
 										{suggestion.warnings.map((warning) => {
 											const text = warningText(warning, t, locale);
 											return (
-												<li key={text} className="flex flex-wrap items-center gap-1">
+												<li key={warningKey(warning)} className="flex flex-wrap items-center gap-1">
 													<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />
 													<span>{text}</span>
 													{/* Only that one is on file: opening it takes personnel file access (#1144). */}

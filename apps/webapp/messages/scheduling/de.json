@@ -245,8 +245,8 @@
         "holidayProhibited": "Unter 18: {used} Min. verbotene Arbeit: keine Arbeit am 24. und 31. Dezember nach 14 Uhr, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai; keine Ausnahme erlaubt sie"
       },
       "apprenticeship": {
-        "releaseDayShift": "Freistellungstag für Auszubildende: Berufsschul-, Blockunterrichts- oder Prüfungstag",
-        "workplaceReturn": "Unter 18: keine Arbeit am vollen Berufsschultag der Woche"
+        "releaseDayShiftOn": "Freistellungstag für Auszubildende am {date}: Berufsschul-, Blockunterrichts- oder Prüfungstag",
+        "workplaceReturnOn": "Unter 18: keine Arbeit am {date}, dem vollen Berufsschultag der Woche"
       },
       "shortTerm": {
         "daysRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Arbeitstagen in diesem Jahr",

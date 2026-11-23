@@ -42,6 +42,8 @@ export function toStatutoryComplianceFinding(
 		legalReference: finding.legalReference,
 		// Planners and scoped managers read this: only the documented wage-free fields pass.
 		summary: restrictedSummary(finding),
+		// Apprentice release conflicts are dated by their release day (#1993).
+		...(finding.domain === "apprenticeship" ? { releaseDay: finding.periodStart } : {}),
 		acknowledgementStatus: finding.acknowledgementKind
 			? (finding.acknowledgement?.status ?? "none")
 			: null,

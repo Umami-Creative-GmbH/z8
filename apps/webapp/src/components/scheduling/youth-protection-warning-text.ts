@@ -1,7 +1,16 @@
 import type { useTranslate } from "@tolgee/react";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** The release day of an apprentice release conflict, as the reader's locale writes it. */
+function releaseDateText(finding: StatutoryComplianceFinding, locale: string): string {
+	return finding.releaseDay
+		? formatPlainDate(parsePlainDate(finding.releaseDay), locale, "dateMedium")
+		: "—";
+}
 
 /**
  * Planner text for JArbSchG youth-protection and BBiG apprentice-release findings (#1993), or
@@ -10,6 +19,7 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 export function youthProtectionWarningText(
 	finding: StatutoryComplianceFinding,
 	t: Translate,
+	locale: string,
 ): string | null {
 	const used = finding.summary.used?.value ?? 0;
 	const limit = finding.summary.limit?.value ?? 0;
@@ -77,15 +87,18 @@ export function youthProtectionWarningText(
 				"Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
 				{ used },
 			);
+		// A shift through two release days has a conflict on each: the line names its day.
 		case "bbig_release_day_shift":
 			return t(
-				"scheduling:scheduling.statutory.apprenticeship.releaseDayShift",
-				"Apprentice release day: school, block-release or exam day",
+				"scheduling:scheduling.statutory.apprenticeship.releaseDayShiftOn",
+				"Apprentice release day on {date}: school, block-release or exam day",
+				{ date: releaseDateText(finding, locale) },
 			);
 		case "jarbschg_school_day_workplace_return":
 			return t(
-				"scheduling:scheduling.statutory.apprenticeship.workplaceReturn",
-				"Under 18: no work on the week's full vocational school day",
+				"scheduling:scheduling.statutory.apprenticeship.workplaceReturnOn",
+				"Under 18: no work on {date}, the week's full vocational school day",
+				{ date: releaseDateText(finding, locale) },
 			);
 		default:
 			return null;

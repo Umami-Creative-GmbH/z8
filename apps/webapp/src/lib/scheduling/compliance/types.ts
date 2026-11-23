@@ -84,6 +84,11 @@ export interface StatutoryComplianceFinding {
 	subjectKey: string;
 	legalReference: string;
 	summary: StatutoryFindingSummary;
+	/**
+	 * The apprentice release day (`YYYY-MM-DD`) an apprentice release conflict is about (#1993): a
+	 * shift through two release days has a conflict on each. A date, never money.
+	 */
+	releaseDay?: string;
 	/** Null when the finding cannot be acknowledged. */
 	acknowledgementStatus: "none" | "current" | "stale" | null;
 	/** True when the organization blocks publishing this finding (JArbSchG hard limits). */

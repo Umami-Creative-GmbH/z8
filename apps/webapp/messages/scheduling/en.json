@@ -245,8 +245,8 @@
         "holidayProhibited": "Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it"
       },
       "apprenticeship": {
-        "releaseDayShift": "Apprentice release day: school, block-release or exam day",
-        "workplaceReturn": "Under 18: no work on the week's full vocational school day"
+        "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
+        "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
       },
       "shortTerm": {
         "daysRemaining": "Short-term employment: {remaining} of {limit} working days left this year",

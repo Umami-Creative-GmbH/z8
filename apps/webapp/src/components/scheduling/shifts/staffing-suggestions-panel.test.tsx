@@ -2,7 +2,7 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { StaffingSuggestion } from "@/lib/scheduling/staffing/types";
+import type { StaffingSuggestion, StaffingWarning } from "@/lib/scheduling/staffing/types";
 import { StaffingSuggestionsPanel } from "./staffing-suggestions-panel";
 
 vi.mock("@tolgee/react", () => ({
@@ -125,6 +125,44 @@ describe("StaffingSuggestionsPanel", () => {
 
 		const warning = screen.getByText("Forklift licence expired on Oct 15, 2026").closest("li");
 		expect(warning?.textContent).toContain("Certificate on file");
+	});
+
+	it("names the day of each apprentice release conflict, one line each", () => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+		const releaseConflict = (releaseDay: string): StaffingWarning => ({
+			type: "compliance",
+			findingType: "statutory",
+			finding: {
+				type: "statutory",
+				employeeId: "id-Anna Berg",
+				findingId: `bbig_release_day_shift:id-Anna Berg:proposed:night:${releaseDay}`,
+				statutoryKind: "bbig_release_day_shift",
+				domain: "apprenticeship",
+				severity: "warning",
+				subjectKey: "proposed:night",
+				legalReference: "§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
+				summary: { tier: "exceeded" },
+				releaseDay,
+				acknowledgementStatus: null,
+				blocksPublication: false,
+			},
+		});
+
+		renderPanel([
+			suggestion("Anna Berg", {
+				warnings: [releaseConflict("2027-03-01"), releaseConflict("2027-03-02")],
+			}),
+		]);
+
+		const lines = screen.getAllByText(/^Apprentice release day/);
+		expect(lines.map((line) => line.textContent)).toEqual([
+			"Apprentice release day on Mar 1, 2027: school, block-release or exam day",
+			"Apprentice release day on Mar 2, 2027: school, block-release or exam day",
+		]);
+		expect(consoleError.mock.calls.filter((args) => args.join(" ").includes("same key"))).toEqual(
+			[],
+		);
+		consoleError.mockRestore();
 	});
 
 	it("passes the picked employee on", () => {
