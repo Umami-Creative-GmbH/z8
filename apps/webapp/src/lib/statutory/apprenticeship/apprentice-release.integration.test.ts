@@ -479,6 +479,111 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		]);
 	});
 
+	it("releases a pre-exam day in full inside a block that is no full block week, and keeps the block", async () => {
+		const learner = await apprentice("partialblock", "2005-05-05");
+		const scope = {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+		};
+		// Monday 1 to Wednesday 3 March 2027: 15 h of school, no full block week.
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "vocational_school_block_week",
+			startsOn: "2027-03-01",
+			endsOn: "2027-03-03",
+			schoolMinutes: 900,
+		});
+		const [exam] = await recordExamWithPreExamDay(learner, "2027-03-04");
+
+		expect(await activeReleases(learner)).toEqual([
+			{
+				release_kind: "vocational_school_block_week",
+				starts_on: "2027-03-01",
+				school_minutes: 900,
+			},
+			{ release_kind: "pre_exam_day", starts_on: "2027-03-03", school_minutes: null },
+			{ release_kind: "exam_day", starts_on: "2027-03-04", school_minutes: null },
+		]);
+		// Wednesday counts the average working day, not the block's 5 h of school.
+		const credits = await loadYouthSchoolCredits(db, {
+			organizationId: org.id,
+			employeeIds: [learner.employeeId],
+			from: "2027-03-01",
+			until: "2027-03-08",
+		});
+		expect(
+			Math.max(
+				...(credits.get(learner.employeeId) ?? [])
+					.filter((credit) => credit.date === "2027-03-03")
+					.map((credit) => credit.minutes),
+			),
+		).toBe(480);
+		const required = await requirementsOf(learner);
+		const workday = required["2027-03-05"]?.requiredMinutes ?? 0;
+		expect(workday).toBeGreaterThan(300);
+		expect(required["2027-03-02"]?.requiredMinutes).toBe(workday - 300);
+		expect(required["2027-03-03"]?.requiredMinutes).toBe(0);
+		expect(Object.values(required).every((day) => day.requiredMinutes >= 0)).toBe(true);
+
+		// An afternoon shift on Wednesday conflicts with the release.
+		const subareaId = await seed.subarea(org, owner);
+		const [suggestion] = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* StaffingSuggestionService;
+				return yield* service.suggestForShift({
+					organizationId: org.id,
+					timezone: org.timezone,
+					candidates: [{ employeeId: learner.employeeId, displayName: "Learner", isActive: true }],
+					shift: { subareaId, date: "2027-03-03", startTime: "13:00", endTime: "17:00" },
+				});
+			}).pipe(Effect.provide(staffingLayer)),
+		);
+		expect(
+			(suggestion?.warnings ?? []).flatMap((warning) =>
+				warning.type === "compliance" && warning.finding.type === "statutory"
+					? [warning.finding.statutoryKind]
+					: [],
+			),
+		).toContain("bbig_release_day_shift");
+
+		// Voiding the exam voids its pre-exam day and leaves the block as it was.
+		await voidApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseId: exam.id,
+			reason: "Exam moved to June",
+		});
+		expect(await activeReleases(learner)).toEqual([
+			{
+				release_kind: "vocational_school_block_week",
+				starts_on: "2027-03-01",
+				school_minutes: 900,
+			},
+		]);
+		expect((await requirementsOf(learner))["2027-03-03"]?.requiredMinutes).toBe(workday - 300);
+	});
+
+	/** Records a written exam on `date` with its pre-exam day; returns the exam row. */
+	async function recordExamWithPreExamDay(who: FixtureEmployee, date: string) {
+		await recordApprenticeReleaseWithCredit(db, {
+			organizationId: org.id,
+			employeeId: who.employeeId,
+			actorUserId: owner.userId,
+			releaseKind: "exam_day",
+			startsOn: date,
+			endsOn: date,
+			includePreExamDay: true,
+		});
+		return (
+			await admin.query<{ id: string }>(
+				`select id from employee_apprentice_release
+				 where organization_id = $1 and employee_id = $2 and release_kind = 'exam_day'
+				   and starts_on = $3 and voided_at is null`,
+				[org.id, who.employeeId, date],
+			)
+		).rows;
+	}
+
 	it("credits a pre-exam day once: a school day entered on it is refused, the week stays lawful", async () => {
 		const minor = await apprentice("onceaday", "2011-01-01");
 		const scope = {

@@ -27,8 +27,13 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 				'statutory_threshold_system_no_overlap',
 				'employee_study_period_no_overlap',
 				'employee_apprentice_release_no_overlap',
+				'employee_apprentice_release_pre_exam_no_overlap',
 				'contract_review_ack_statutory_shape_check'
 			 ) ORDER BY conname`,
+		);
+		const releaseOverlap = await pool.query<{ definition: string }>(
+			`SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
+			 WHERE conname = 'employee_apprentice_release_no_overlap'`,
 		);
 		const triggers = await pool.query<{ tgname: string }>(
 			`SELECT tgname FROM pg_trigger
@@ -38,6 +43,7 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 		return {
 			baselines: Number(baselines.rows[0]?.count),
 			constraints: constraints.rows.map((row) => row.conname),
+			releaseOverlap: releaseOverlap.rows[0]?.definition,
 			triggers: triggers.rows.map((row) => row.tgname),
 		};
 	}
@@ -45,13 +51,31 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 	it("is safe to repeat on a migrated database", async () => {
 		const before = await snapshot();
 		expect(before.baselines).toBeGreaterThan(30);
-		expect(before.constraints).toHaveLength(4);
+		expect(before.constraints).toHaveLength(5);
+		expect(before.releaseOverlap).toContain("pre_exam_day");
 		expect(before.triggers).toHaveLength(2);
 
 		await installStatutoryFoundation(pool);
 		await installStatutoryFoundation(pool);
 
 		expect(await snapshot()).toEqual(before);
+	});
+
+	it("upgrades a pushed release overlap constraint that predates the pre-exam day exception", async () => {
+		await pool.query(`ALTER TABLE "employee_apprentice_release"
+			DROP CONSTRAINT "employee_apprentice_release_no_overlap",
+			DROP CONSTRAINT "employee_apprentice_release_pre_exam_no_overlap",
+			ADD CONSTRAINT "employee_apprentice_release_no_overlap" EXCLUDE USING gist (
+				"organization_id" WITH =, "employee_id" WITH =, daterange("starts_on", "ends_on", '[]') WITH &&
+			) WHERE ("voided_at" IS NULL)`);
+		const strict = await snapshot();
+		expect(strict.releaseOverlap).not.toContain("pre_exam_day");
+
+		await installStatutoryFoundation(pool);
+
+		const upgraded = await snapshot();
+		expect(upgraded.constraints).toHaveLength(5);
+		expect(upgraded.releaseOverlap).toContain("pre_exam_day");
 	});
 
 	it("declares in Drizzle every CHECK and foreign key the migration creates on statutory tables", async () => {

@@ -133,7 +133,8 @@ export async function loadApprenticeReleaseCredits(
  * Records a release for an apprentice. Every released day must fall under apprentice terms; a
  * school day needs its lesson count and a block week its school minutes. A day holds one
  * release: recording on a day already released is refused, except that a pre-exam day replaces a
- * single-day school release (`makeRoomForPreExamDay`) and an exam replaces a pre-exam day.
+ * single-day school release or lies on top of a partly credited block day
+ * (`makeRoomForPreExamDay`), and an exam replaces a pre-exam day.
  *
  * With `includePreExamDay`, an exam day also releases the working day before it in full, unless
  * that day is already released in full for good. Exam days are skipped: a multi-day exam has one
@@ -405,7 +406,8 @@ async function workingDaysBefore(
  * is not recorded twice, and an exam is never voided. Any other single-day release on it (a
  * school day, whose full credit may move to a long school day recorded later in the week) is
  * voided with an audit reason, so the full pre-exam release takes its place without overlapping
- * it. A block week is never split: a day inside a block stays as the block credits it.
+ * it. A block week is never split or voided: a full block day stays as the block credits it, and
+ * on a day the block credits only partly the pre-exam day is recorded on top of the block.
  */
 async function makeRoomForPreExamDay(
 	tx: Pick<DatabaseClient, "select" | "insert" | "update">,
@@ -443,8 +445,11 @@ async function makeRoomForPreExamDay(
 	) {
 		return false;
 	}
-	const covering = records.filter((record) => record.startsOn <= day && record.endsOn >= day);
-	if (covering.some((record) => record.startsOn !== record.endsOn)) return false;
+	// A block that credits the day only partly stays as it is: the pre-exam day is released in full
+	// on top of it, and each day is credited once, with its largest release.
+	const covering = records.filter(
+		(record) => record.startsOn <= day && record.endsOn >= day && record.startsOn === record.endsOn,
+	);
 	for (const record of covering) {
 		await voidApprenticeRelease(tx, {
 			organizationId: input.organizationId,
