@@ -11,7 +11,7 @@ import { organizationAction } from "@/lib/organization-action/organization-actio
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import { getTranslate } from "@/tolgee/server";
-import { type ContractorStatementRefusal, loadContractorStatement } from "./loader";
+import type { ContractorStatementRefusal } from "./loader";
 import { contractorStatementCsv, contractorStatementFilename } from "./statement-csv";
 
 /**
@@ -73,14 +73,16 @@ export const exportContractorStatement = organizationAction(
 			});
 
 			const service = yield* DatabaseService;
-			const result = yield* service.query("contractorStatement.load", () =>
-				loadContractorStatement(service.db, organizationId, {
+			// Loaded on use: pages that render the export button never load the pricing store.
+			const result = yield* service.query("contractorStatement.load", async () => {
+				const { loadContractorStatement } = await import("./loader");
+				return loadContractorStatement(service.db, organizationId, {
 					employeeId: input.employeeId,
 					fromDay: input.fromDay,
 					toDay: input.toDay,
 					generatedAt: systemClock.nowInstant(),
-				}),
-			);
+				});
+			});
 			if (!result.ok) return yield* Effect.fail(refusalError(result.reason));
 			const { statement } = result;
 

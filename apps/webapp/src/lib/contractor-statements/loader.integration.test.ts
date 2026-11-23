@@ -20,6 +20,7 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
+import { hasContractorEngagement } from "./engagement";
 import { loadContractorStatement } from "./loader";
 import { contractorStatementCsv } from "./statement-csv";
 import { renderContractorStatementPdf } from "./statement-pdf";
@@ -400,6 +401,17 @@ describe("contractor statements on PostgreSQL", () => {
 		expect(statement.totals).toEqual([
 			{ currency: "EUR", amount: "140.00", hours: "2.0000", days: "0.0000", workedMinutes: 120 },
 		]);
+	});
+
+	it("knows who ever had a contractor engagement, in this organization only", async () => {
+		const employee = await fixture.seedEmployee();
+		const { employeeId } = await contractor();
+		expect(await hasContractorEngagement(db, fixture.organizationId, employeeId)).toBe(true);
+		expect(await hasContractorEngagement(db, fixture.organizationId, employee.employeeId)).toBe(
+			false,
+		);
+		const otherOrganization = await fixture.createOrganization();
+		expect(await hasContractorEngagement(db, otherOrganization, employeeId)).toBe(false);
 	});
 
 	it("refuses people who were never contractors, other organizations' people and bad periods", async () => {

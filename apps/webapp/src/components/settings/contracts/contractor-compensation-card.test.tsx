@@ -23,6 +23,7 @@ vi.mock("@/app/[locale]/(app)/settings/contracts/contractor-compensation-actions
 	updateContractorDetails: actions.details,
 	listContractorCompensation: actions.list,
 }));
+vi.mock("@/lib/contractor-statements/actions", () => ({ exportContractorStatement: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { error: actions.error, success: actions.success } }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -34,9 +35,18 @@ vi.mock("@/hooks/use-display-context", () => ({
 	useDisplayContext: () => ({ locale: "en-US", timezone: "UTC", hour12: false }),
 }));
 vi.mock("@/components/ui/date-picker", () => ({
-	DatePicker: ({ value, onChange }: { value?: string; onChange: (value: string) => void }) => (
+	DatePicker: ({
+		value,
+		onChange,
+		"aria-label": label,
+	}: {
+		value?: string;
+		onChange: (value: string) => void;
+		"aria-label"?: string;
+	}) => (
 		<input
-			aria-label="date"
+			// The statement export's pickers name themselves (From, To).
+			aria-label={label ?? "date"}
 			value={value ?? ""}
 			onChange={(event) => onChange(event.target.value)}
 		/>
@@ -123,6 +133,17 @@ describe("contractor compensation card", () => {
 		expect(screen.getByText("€85.00 per hour")).toBeTruthy();
 		expect(screen.getByText("Jan 5, 2026 to May 31, 2026")).toBeTruthy();
 		expect(screen.getByDisplayValue("Freelance GmbH")).toBeTruthy();
+	});
+
+	it("offers the Time & Fee Statement export, also for a former contractor's earlier engagement", async () => {
+		actions.read.mockResolvedValue({
+			success: true,
+			data: record({ activeEngagementKind: "employee", contractorEngagementId: null }),
+		});
+		renderCard();
+
+		expect(await screen.findByText("Time & fee statement")).toBeTruthy();
+		expect(screen.getByRole("button", { name: /Download statement/ })).toBeTruthy();
 	});
 
 	it("marks no terms in effect when pricing applies none today, even an open one", async () => {

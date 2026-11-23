@@ -20,6 +20,7 @@ import {
 	setContractorTerms,
 	updateContractorDetails,
 } from "@/app/[locale]/(app)/settings/contracts/contractor-compensation-actions";
+import { ContractorStatementExport } from "@/components/contractor-statements/contractor-statement-export";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -273,6 +274,15 @@ export function ContractorCompensationCard({
 					onSaved={(details) => refresh({ details })}
 				/>
 			)}
+			{/* Contractor Time & Fee Statements (#2000), also of earlier engagements. */}
+			<section className="border-t pt-4">
+				<ContractorStatementExport
+					employeeId={employeeId}
+					audience="admin"
+					today={data.today}
+					bare
+				/>
+			</section>
 		</div>
 	);
 
