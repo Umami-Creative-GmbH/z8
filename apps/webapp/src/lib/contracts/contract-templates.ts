@@ -28,7 +28,7 @@ import {
 	validateWeeklyContractMinutes,
 } from "./contract-validation";
 import { resolveEffectiveContractOnDay } from "./resolve-contract";
-import type { CustomWorkDay, WorkModel } from "./types";
+import { type CustomWorkDay, storedBalanceMode, type WorkModel } from "./types";
 
 export interface ContractTemplateVersionFields {
 	readonly workPolicyId?: string | null;
@@ -828,7 +828,7 @@ export async function previewTemplateApplication(
 	const nextBalanceMode = pickOperational(
 		"balanceMode",
 		currentContract.balanceModeSource === "employee_override",
-		currentContract.balanceMode,
+		storedBalanceMode(currentContract.balanceMode),
 		v.balanceMode,
 	);
 
@@ -839,7 +839,7 @@ export async function previewTemplateApplication(
 				? null
 				: (v.defaultHourlyRate ?? currentContract.hourlyRate),
 		currency: v.defaultCurrency ?? currentContract.currency,
-		employmentProfile: v.defaultEmploymentProfile ?? currentContract.employmentProfile,
+		employmentProfile: v.defaultEmploymentProfile ?? currentContract.employmentProfile ?? "regular",
 		arbzgScope: v.defaultArbzgScope ?? currentContract.arbzgScope,
 		onCallHoursKind:
 			nextScheduleSource === "on_call"

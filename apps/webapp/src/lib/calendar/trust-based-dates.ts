@@ -36,7 +36,11 @@ export function collectTrustBasedBalanceDates(
 	const attached = trustBasedDatesByRequirements.get(requirements);
 	const merged = new Set<string>(attached ? [...attached] : []);
 	for (const [dateKey, req] of Object.entries(requirements)) {
-		if (req.contributesZeroBalanceDelta || req.balanceMode === "trust_based") {
+		if (
+			req.contributesZeroBalanceDelta ||
+			req.balanceMode === "trust_based" ||
+			req.balanceMode === "excluded"
+		) {
 			merged.add(dateKey);
 		}
 	}

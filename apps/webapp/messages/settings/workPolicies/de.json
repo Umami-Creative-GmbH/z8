@@ -31,6 +31,7 @@
         "standard": "Standard (ArbZG gilt)"
       },
       "balanceMode": {
+        "excluded": "Ausgenommen (Externer Dienstleister, kein Arbeitszeitsaldo)",
         "tracked": "Erfasster Saldo",
         "trustBased": "Vertrauensarbeitszeit"
       },
@@ -253,6 +254,7 @@
       "employmentProfile": {
         "apprentice": "Auszubildende/r",
         "minijob": "Minijob",
+        "none": "Keines (Externer Dienstleister)",
         "regular": "Reguläre Beschäftigung",
         "shortTerm": "Kurzfristige Beschäftigung",
         "workingStudent": "Werkstudent/in"

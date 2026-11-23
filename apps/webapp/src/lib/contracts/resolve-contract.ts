@@ -41,6 +41,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { termsCalendarDate } from "@/lib/employment-history/terms-in-force";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import type { ContractType } from "@/lib/validations/employee";
 import {
@@ -82,6 +83,8 @@ export interface EmploymentPeriodSnapshot {
 	readonly startProvenance: string;
 	readonly endedAt: Instant | null;
 	readonly createdAt: Instant;
+	/** The stint's engagement kind, fixed when the period was written (#1995). */
+	readonly engagementKind: EngagementKind;
 }
 
 export interface TeamHistoryInterval {
@@ -192,6 +195,11 @@ export interface PureResolveContractInput {
 	readonly at?: Instant;
 	readonly employeeId: string;
 	readonly employeeContractType: ContractType;
+	/**
+	 * `employee.engagement_kind`: the kind in force today. Read only for an employee
+	 * without any recorded employment period; otherwise the day's stint decides.
+	 */
+	readonly employeeEngagementKind?: EngagementKind;
 	readonly employeeCalendarTimezone: string;
 	readonly organizationTimezone: string;
 	/** Fallback current team from `employee.team_id` when no `employee_team_history` rows exist. */
@@ -1135,6 +1143,69 @@ function resolveScheduleForWeek(input: {
 }
 
 /**
+ * A day inside an External Contractor period (#1996): the person keeps their
+ * employment period and primary team (projects, approvals and period submissions
+ * still route through them) but inherits no default contract, work policy
+ * schedule, regulation or presence rule, accrues no required time and keeps no
+ * work balance, and has no employee statutory profile.
+ */
+function contractorEngagementOnDay(args: {
+	input: PureResolveContractInput;
+	dayStr: string;
+	dayOfWeek: DayOfWeek;
+	employmentPeriodId: string | null;
+	isEmployed: boolean;
+	primaryTeamId: string | null;
+}): EffectiveContractOnDay {
+	const { input } = args;
+	return {
+		date: args.dayStr,
+		dayOfWeek: args.dayOfWeek,
+		calendarTimezone: input.employeeCalendarTimezone,
+		employeeId: input.employeeId,
+		employmentPeriodId: args.employmentPeriodId,
+		isEmployedOnDay: args.isEmployed,
+		engagementKind: "contractor",
+		primaryTeamId: args.primaryTeamId,
+		employmentHistoryId: null,
+		contractDefaultId: null,
+		contractDefaultScope: null,
+
+		workPolicy: null,
+		workPolicySource: "default",
+		weeklyContractMinutes: null,
+		weeklyContractMinutesSource: "default",
+		scheduleMode: "policy",
+		scheduleModeSource: "default",
+		workModel: null,
+		workModelSource: "default",
+		presenceOverride: "inherit",
+		presenceOverrideSource: "default",
+		presenceStatus: "not_configured",
+		effectivePresence: null,
+		balanceMode: "excluded",
+		balanceModeSource: "default",
+		scheduleSource: "policy",
+		scheduleSourceSource: "default",
+
+		isWorkDay: false,
+		requiredMinutes: 0,
+		contributesZeroBalanceDelta: true,
+		latestClockIn: null,
+		weeklyScheduleDays: emptyWeekSchedule(),
+		mismatchWarning: null,
+
+		contractType: input.employeeContractType,
+		hourlyRate: null,
+		currency: "EUR",
+		employmentProfile: null,
+		arbzgScope: "standard",
+		onCallTerms: null,
+		migratedLegacyTerms: false,
+	};
+}
+
+/**
  * Pure, strictly read-only contract resolution for one employee on one calendar day.
  */
 export function resolveEffectiveContractPure(
@@ -1162,6 +1233,24 @@ export function resolveEffectiveContractPure(
 		teamIdOverride: input.teamIdOverride,
 		hasTeamIdOverride: input.hasTeamIdOverride,
 	});
+
+	// 2b. An External Contractor stint is exempt from every employee labor rule (#1996):
+	// no Org/Primary-Team default contract, no work policy, no work balance.
+	const engagementKind: EngagementKind =
+		period?.engagementKind ??
+		(input.employmentPeriods.length === 0
+			? (input.employeeEngagementKind ?? "employee")
+			: "employee");
+	if (engagementKind === "contractor") {
+		return contractorEngagementOnDay({
+			input,
+			dayStr,
+			dayOfWeek,
+			employmentPeriodId,
+			isEmployed,
+			primaryTeamId,
+		});
+	}
 
 	// 3. Confirmed employee terms for the active stint (never leak across closed employment periods)
 	const {
@@ -1541,6 +1630,7 @@ export function resolveEffectiveContractPure(
 		employeeId: input.employeeId,
 		employmentPeriodId,
 		isEmployedOnDay: isEmployed,
+		engagementKind,
 		primaryTeamId,
 		employmentHistoryId: employeeTerms?.id ?? null,
 		contractDefaultId: winningDefault?.id ?? null,
@@ -1597,6 +1687,7 @@ export async function loadEffectiveContractsBatch(
 		preloadedEmployees?: readonly {
 			id: string;
 			contractType: ContractType;
+			engagementKind: EngagementKind;
 			teamId: string | null;
 			userTimezone: string | null;
 		}[];
@@ -1639,6 +1730,7 @@ export async function loadEffectiveContractsBatch(
 				.select({
 					id: employee.id,
 					contractType: employee.contractType,
+					engagementKind: employee.engagementKind,
 					teamId: employee.teamId,
 					userTimezone: userSettings.timezone,
 				})
@@ -1662,6 +1754,7 @@ export async function loadEffectiveContractsBatch(
 					startProvenance: employeeEmploymentPeriod.startProvenance,
 					endedAt: employeeEmploymentPeriod.endedAt,
 					createdAt: employeeEmploymentPeriod.createdAt,
+					engagementKind: employeeEmploymentPeriod.engagementKind,
 				})
 				.from(employeeEmploymentPeriod)
 				.where(
@@ -2190,6 +2283,7 @@ export async function loadEffectiveContractsBatch(
 				startProvenance: p.startProvenance,
 				endedAt: p.endedAt ? instantFromDate(p.endedAt) : null,
 				createdAt: instantFromDate(p.createdAt),
+				engagementKind: p.engagementKind,
 			});
 			periodsByEmployee.set(p.employeeId, list);
 		}
@@ -2333,6 +2427,7 @@ export async function loadEffectiveContractsBatch(
 				at: input.at,
 				employeeId: emp.id,
 				employeeContractType: emp.contractType,
+				employeeEngagementKind: emp.engagementKind,
 				employeeCalendarTimezone: empCalendarTz,
 				organizationTimezone: orgTimezone,
 				currentTeamId: emp.teamId,

@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import {
 	absenceCategory,
 	absenceEntry,
+	employee,
 	employeeDeparture,
 	employeeEmploymentPeriod,
 	shift,
@@ -97,6 +98,7 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 					startProvenance: employeeEmploymentPeriod.startProvenance,
 					endedAt: employeeEmploymentPeriod.endedAt,
 					createdAt: employeeEmploymentPeriod.createdAt,
+					engagementKind: employeeEmploymentPeriod.engagementKind,
 					departureId: employeeDeparture.id,
 				})
 				.from(employeeEmploymentPeriod)
@@ -131,8 +133,21 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 				startProvenance: row.startProvenance,
 				endedAt: row.endedAt ? instantFromDate(row.endedAt) : null,
 				createdAt: instantFromDate(row.createdAt),
+				engagementKind: row.engagementKind,
 			});
 		}
+		// The kind in force today decides only for someone without any recorded period.
+		const engagementKindRows = yield* database.query("calendar.rangeEngagementKinds", () =>
+			database.db
+				.select({ id: employee.id, engagementKind: employee.engagementKind })
+				.from(employee)
+				.where(
+					and(eq(employee.organizationId, input.organizationId), inArray(employee.id, scopedIds)),
+				),
+		);
+		const engagementKindByEmployee = new Map(
+			engagementKindRows.map((row) => [row.id, row.engagementKind]),
+		);
 		for (const employeeId of scopedIds) {
 			const rows = periodsByEmployee.get(employeeId) ?? [];
 			const intervals = rows.map((period) => ({
@@ -158,6 +173,7 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 					preloadedEmployees: people.map((person) => ({
 						id: person.id,
 						contractType: person.contractType,
+						engagementKind: engagementKindByEmployee.get(person.id) ?? "employee",
 						teamId: person.teamId,
 						userTimezone: person.userSettings?.timezone ?? null,
 					})),

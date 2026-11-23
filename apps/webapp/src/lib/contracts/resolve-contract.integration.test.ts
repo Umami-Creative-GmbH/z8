@@ -357,6 +357,79 @@ describe("unified read-only contract resolver & clock-out snapshot v2 (PostgreSQ
 		expect(conflicts).toHaveLength(0);
 	});
 
+	it("resolves an External Contractor period without Org or Primary Team defaults and with balance excluded (#1996)", async () => {
+		const teamId = await seedTeam("Delivery");
+		await seedDefaultContract({
+			name: "Org default",
+			scope: "organization",
+			effectiveFromDate: "2026-01-01",
+			weeklyContractMinutes: 2400,
+			scheduleMode: "hours_only",
+			workModel: "onsite",
+			presenceOverride: "require_onsite",
+		});
+		const teamDefault = await seedDefaultContract({
+			name: "Team default",
+			scope: "team",
+			teamId,
+			effectiveFromDate: "2026-01-01",
+			weeklyContractMinutes: 2000,
+			scheduleMode: "hours_only",
+		});
+		const employeeRow = await seedUserAndEmployee({ userKey: "t1996-employee", teamId });
+		const contractor = await seedUserAndEmployee({ userKey: "t1996-contractor", teamId });
+		await admin.query(
+			`UPDATE employee_team_history SET effective_from = '2026-01-01T00:00:00Z'
+			 WHERE employee_id = ANY($1::uuid[])`,
+			[[employeeRow.employeeId, contractor.employeeId]],
+		);
+		await admin.query(
+			`INSERT INTO employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+			 VALUES ($1, $2, 'open', '2026-01-01T00:00:00Z', 'recorded', 'employee'),
+			        ($1, $3, 'open', '2026-01-01T00:00:00Z', 'recorded', 'contractor')`,
+			[ORG_ID, employeeRow.employeeId, contractor.employeeId],
+		);
+		await admin.query("UPDATE employee SET engagement_kind = 'contractor' WHERE id = $1", [
+			contractor.employeeId,
+		]);
+
+		const resolved = await resolveEffectiveContractOnDay(db, {
+			organizationId: ORG_ID,
+			employeeId: contractor.employeeId,
+			date: "2026-06-15",
+		});
+		expect(resolved).toMatchObject({
+			engagementKind: "contractor",
+			isEmployedOnDay: true,
+			primaryTeamId: teamId,
+			contractDefaultId: null,
+			contractDefaultScope: null,
+			workPolicy: null,
+			weeklyContractMinutes: null,
+			presenceStatus: "not_configured",
+			balanceMode: "excluded",
+			requiredMinutes: 0,
+			contributesZeroBalanceDelta: true,
+			employmentProfile: null,
+		});
+
+		const batch = await loadEffectiveContractsBatch(db, {
+			organizationId: ORG_ID,
+			employeeIds: [employeeRow.employeeId, contractor.employeeId],
+			dates: ["2026-06-15"],
+		});
+		expect(batch.get(contractor.employeeId)?.get("2026-06-15")).toEqual(resolved);
+		// The control: the employee of the same team inherits the Primary Team default.
+		expect(batch.get(employeeRow.employeeId)?.get("2026-06-15")).toMatchObject({
+			engagementKind: "employee",
+			contractDefaultId: teamDefault.defaultId,
+			balanceMode: "tracked",
+			requiredMinutes: 400,
+			employmentProfile: "regular",
+		});
+	});
+
 	it("honors 0120 team-history non-inference (no backward extrapolation, between-0120-and-0132 foreign-org team isolation, multi-employee same-transaction moves)", async () => {
 		const orgTeam = await seedTeam("Home Team", ORG_ID);
 		const orgTeam2 = await seedTeam("Second Team", ORG_ID);
