@@ -11,10 +11,12 @@ import {
 	useTodayDecisionReservation,
 } from "./today-decision-reservations";
 
-const { refreshMock, toastErrorMock, toastSuccessMock } = vi.hoisted(() => ({
+const { refreshMock, toastErrorMock, toastSuccessMock, translations } = vi.hoisted(() => ({
 	refreshMock: vi.fn(),
 	toastErrorMock: vi.fn(),
 	toastSuccessMock: vi.fn(),
+	// The viewer's catalog: a key found here is translated, any other falls back to English.
+	translations: new Map<string, string>(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refreshMock }) }));
@@ -33,17 +35,19 @@ vi.mock("sonner", () => ({ toast: { success: toastSuccessMock, error: toastError
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+		t: (key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
-				(text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
-				fallback,
+				(text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+				translations.get(key) ?? fallback,
 			),
 	}),
 }));
+vi.mock("next-intl", () => ({ useLocale: () => (translations.size > 0 ? "de" : "en") }));
 
 describe("TodayApprovalsPanel", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		translations.clear();
 		global.fetch = vi.fn().mockResolvedValue({
 			ok: true,
 			json: async () => ({ success: true }),
@@ -77,6 +81,41 @@ describe("TodayApprovalsPanel", () => {
 		await act(async () => complete({ ok: true, json: async () => ({ success: true }) }));
 		expect(toastSuccessMock).not.toHaveBeenCalled();
 		expect(refreshMock).not.toHaveBeenCalled();
+	});
+
+	it("closes the reject panel when its rejection settles after Activity retired the view", async () => {
+		let complete!: (value: unknown) => void;
+		vi.mocked(global.fetch).mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		const items = [approvalItem()];
+		const view = render(
+			<Activity mode="visible">
+				<TodayApprovalsPanel items={items} />
+			</Activity>,
+		);
+		const panel = startRejection();
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+		await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+		view.rerender(
+			<Activity mode="hidden">
+				<TodayApprovalsPanel items={items} />
+			</Activity>,
+		);
+		view.rerender(
+			<Activity mode="visible">
+				<TodayApprovalsPanel items={items} />
+			</Activity>,
+		);
+
+		// The server may well have accepted it: the stale result must not be confirmable again.
+		await act(async () => complete({ ok: true, json: async () => ({ success: true }) }));
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(global.fetch).toHaveBeenCalledTimes(1);
 	});
 
 	it("approves an item inline and refreshes the briefing", async () => {
@@ -215,9 +254,17 @@ describe("TodayApprovalsPanel", () => {
 
 		expect(screen.queryByRole("button", { name: /approve expense report/i })).toBeNull();
 		expect(
-			screen.getByRole("link", { name: "Review Expense report in inbox" }).getAttribute("href"),
+			screen.getByRole("link", { name: "Review in inbox: Expense report" }).getAttribute("href"),
 		).toBe("/approvals/inbox?types=travel_expense_report");
 		expect(screen.getByRole("button", { name: "Reject Expense report" })).toBeTruthy();
+	});
+
+	it("names the Review in inbox link starting with its visible text (WCAG 2.5.3)", () => {
+		render(<TodayApprovalsPanel items={[approvalItem({ requiresDetailReview: true })]} />);
+
+		const link = screen.getByRole("link", { name: /^Review in inbox/ });
+		expect(link.textContent).toBe("Review in inbox");
+		expect(link.getAttribute("aria-label")?.startsWith(link.textContent ?? "")).toBe(true);
 	});
 
 	it("sends a manager to the inbox for an item the inbox will not approve from the list", () => {
@@ -228,7 +275,7 @@ describe("TodayApprovalsPanel", () => {
 		);
 
 		expect(screen.queryByRole("button", { name: "Approve Blocked absence" })).toBeNull();
-		expect(screen.getByRole("link", { name: "Review Blocked absence in inbox" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Review in inbox: Blocked absence" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Reject Blocked absence" })).toBeTruthy();
 	});
 
@@ -250,7 +297,7 @@ describe("TodayApprovalsPanel", () => {
 		expect(screen.queryByRole("button", { name: "Approve Time correction" })).toBeNull();
 		expect(screen.queryByRole("button", { name: "Reject Time correction" })).toBeNull();
 		expect(
-			screen.getByRole("link", { name: "Review Time correction in inbox" }).getAttribute("href"),
+			screen.getByRole("link", { name: "Review in inbox: Time correction" }).getAttribute("href"),
 		).toBe("/approvals/inbox?types=time_entry");
 	});
 
@@ -413,6 +460,71 @@ describe("TodayApprovalsPanel", () => {
 		expect(screen.queryByRole("button", { name: /own vacation request/i })).toBeNull();
 		expect(screen.getByRole("button", { name: "Approve Vacation request" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Reject Vacation request" })).toBeTruthy();
+	});
+
+	it("counts every pending approval in its badge and links to the inbox for those it leaves out", () => {
+		const items = ["a", "b", "c"].map((id) =>
+			approvalItem({ id: `approval:${id}`, approvalId: id, title: `Request ${id}` }),
+		);
+		render(<TodayApprovalsPanel items={items} total={40} />);
+
+		expect(screen.getByText("40")).toBeTruthy();
+		expect(screen.getByText("Showing 3 of 40 pending approvals.")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "See all 40 in inbox" }).getAttribute("href")).toBe(
+			"/approvals/inbox",
+		);
+	});
+
+	it("claims no truncation when it lists every pending approval", () => {
+		render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		expect(screen.getByText("1")).toBeTruthy();
+		expect(screen.queryByText(/^Showing/)).toBeNull();
+		expect(screen.queryByRole("link", { name: /^See all/ })).toBeNull();
+	});
+
+	it("shows an item's summary in the viewer's language when the inbox localizes it", () => {
+		translations.set("approvals:approvals.periodSubmission.title", "Periodenabgabe");
+		translations.set("approvals:approvals.canonicalRequester", "Eingereicht von {name}");
+		translations.set("approvals:approvals.periodSubmission.hours", "{hours} Stunden");
+		translations.set("today.approvals.itemTitle", "{requester}: {title}");
+		translations.set("today.approvals.rejectLabel", "{title} ablehnen");
+		render(
+			<TodayApprovalsPanel
+				items={[
+					approvalItem({
+						approvalType: "period_submission",
+						title: "Ada Lovelace: Period submission",
+						description: "Requested by Ada Lovelace",
+						summary: "8.25 hours",
+						localized: {
+							title: {
+								key: "approvals:approvals.periodSubmission.title",
+								fallback: "Period submission",
+							},
+							subtitle: {
+								key: "approvals:approvals.canonicalRequester",
+								fallback: "Requested by {name}",
+								params: { name: "Ada Lovelace" },
+							},
+							detail: {
+								key: "approvals:approvals.periodSubmission.hours",
+								fallback: "{hours} hours",
+								params: { hours: "8,25" },
+							},
+						},
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.getByRole("link", { name: "Ada Lovelace: Periodenabgabe" })).toBeTruthy();
+		expect(screen.getByText("8,25 Stunden")).toBeTruthy();
+		expect(screen.getByText("Ada Lovelace - Eingereicht von Ada Lovelace")).toBeTruthy();
+		expect(screen.queryByText(/Period submission|8\.25 hours/)).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Ada Lovelace: Periodenabgabe ablehnen" }),
+		).toBeTruthy();
 	});
 
 	it("renders the empty state", () => {

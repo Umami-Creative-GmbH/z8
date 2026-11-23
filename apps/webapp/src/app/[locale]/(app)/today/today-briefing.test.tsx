@@ -35,4 +35,29 @@ describe("manager Today briefing", () => {
 		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Retry Attendance" })).toBeTruthy();
 	});
+
+	it("counts every pending approval in the approvals panel, as the summary does", () => {
+		const briefing = briefingFixture();
+		briefing.summary.openApprovals = 40;
+		briefing.sections.approvals.items = [
+			{
+				id: "approval:approval-1",
+				category: "approval",
+				severity: "warning",
+				title: "Ada Lovelace: Vacation request",
+				description: "Apr 28",
+				href: "/approvals/inbox?types=absence_entry",
+				approvalId: "approval-1",
+				approvalType: "absence_entry",
+				entityId: "absence-1",
+				requesterName: "Ada Lovelace",
+				summary: "Vacation on Apr 28",
+				canApprove: true,
+				canReject: true,
+			},
+		];
+		render(<TodayBriefing briefing={briefing} />);
+
+		expect(screen.getByText("Showing 1 of 40 pending approvals.")).toBeTruthy();
+	});
 });

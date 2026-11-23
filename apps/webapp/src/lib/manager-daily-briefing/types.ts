@@ -1,4 +1,4 @@
-import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
+import type { ApprovalInboxItem, ApprovalInboxSummary } from "@/lib/approvals/inbox/types";
 
 export type BriefingActionSeverity = "critical" | "high" | "warning" | "info";
 
@@ -43,6 +43,11 @@ export interface BriefingApprovalActionItem extends BriefingActionItem {
 	 * approve, the briefing sends the manager to the inbox instead (#1980).
 	 */
 	requiresDetailReview?: boolean;
+	/**
+	 * The inbox's localized forms of the summary (#687), translated for the viewer by the panel
+	 * in place of the English `title` (after the requester's name), `description` and `summary`.
+	 */
+	localized?: ApprovalInboxSummary["localized"];
 }
 
 export interface BriefingSummaryCounts {
@@ -162,5 +167,6 @@ export function approvalToBriefingItem(approval: BriefingApproval): BriefingAppr
 		canReject: approval.capabilities.canReject,
 		...(approval.capabilities.ownRequest ? { ownRequest: true } : {}),
 		...(approval.capabilities.requiresDetailReview ? { requiresDetailReview: true } : {}),
+		...(approval.summary.localized ? { localized: approval.summary.localized } : {}),
 	};
 }

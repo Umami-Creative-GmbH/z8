@@ -16,12 +16,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { Link } from "@/navigation";
 import { useTodayDecisionReservation } from "./today-decision-reservations";
 
 type TodayApprovalsPanelProps = {
 	items: BriefingApprovalActionItem[];
+	/** Every pending approval of the briefing's employees; `items` may show only the first. */
+	total?: number;
 	error?: string;
 	onRetry?: () => void;
 	onDecision?: () => void;
@@ -30,6 +33,8 @@ type TodayApprovalsPanelProps = {
 
 type ApprovalDecision = "approve" | "reject";
 
+type DecisionOutcome = "saved" | "failed" | "stale";
+
 type ApprovalDecisionResponse = {
 	success?: boolean;
 	error?: string;
@@ -37,12 +42,14 @@ type ApprovalDecisionResponse = {
 
 export function TodayApprovalsPanel({
 	items,
+	total: totalProp,
 	error,
 	onRetry,
 	onDecision,
 	stale,
 }: TodayApprovalsPanelProps) {
 	const { t } = useTranslate();
+	const inboxText = useApprovalInboxText();
 	const { refresh } = useRouter();
 	const { pendingApprovalId: actingApprovalId, reserve, release } = useTodayDecisionReservation();
 	const [isRefreshPending, startRefreshTransition] = useTransition();
@@ -60,34 +67,58 @@ export function TodayApprovalsPanel({
 	// The item whose rejection reason the manager is writing, and that reason.
 	const [rejecting, setRejecting] = useState<BriefingApprovalActionItem | null>(null);
 	const [rejectReason, setRejectReason] = useState("");
+	const total = Math.max(totalProp ?? items.length, items.length);
+	const truncated = items.length > 0 && total > items.length;
 	const isBusy = actingApprovalId !== null || isRefreshPending;
 	const decisionsOff = isBusy || Boolean(error) || stale;
 	// The panel's own rejection is on its way: neither Cancel nor Escape may drop it.
 	const rejectionPending = rejecting !== null && actingApprovalId === rejecting.approvalId;
 
-	/** Settles true only when the decision was saved for this view. */
+	/** The item's texts in the viewer's language where the inbox localizes them, else English. */
+	function itemTexts(item: BriefingApprovalActionItem) {
+		const { localized } = item;
+		if (!localized) {
+			return { title: item.title, description: item.description, summary: item.summary };
+		}
+		return {
+			title: t("today.approvals.itemTitle", "{requester}: {title}", {
+				requester: item.requesterName,
+				title: inboxText(localized.title),
+			}),
+			description: inboxText(localized.subtitle),
+			// No localized detail: it is text a person entered, shown as written.
+			summary: localized.detail ? inboxText(localized.detail) : item.summary,
+		};
+	}
+	// Rows, labels and the reject panel all show the viewer's texts.
+	const shownItems = items.map((item) => ({ ...item, ...itemTexts(item) }));
+
+	/**
+	 * Settles "saved" when the decision was saved for this view, "failed" when it was not sent or
+	 * refused, and "stale" when it settled after its view retired: its outcome is unknown here.
+	 */
 	function decideApproval(
 		item: BriefingApprovalActionItem,
 		decision: ApprovalDecision,
 		reason?: string,
-	): Promise<boolean> {
+	): Promise<DecisionOutcome> {
 		if (isBusy || error || stale || !active.current || decided.has(item.approvalId)) {
-			return Promise.resolve(false);
+			return Promise.resolve("failed");
 		}
 
 		const reservation = reserve(item.approvalId);
-		if (!reservation) return Promise.resolve(false);
+		if (!reservation) return Promise.resolve("failed");
 		const request = generation.current;
 		setDecisionError(null);
 
 		return postApprovalDecision(item.approvalId, decision, reason)
-			.then((result) => {
-				if (!active.current || request !== generation.current) return false;
+			.then((result): DecisionOutcome => {
+				if (!active.current || request !== generation.current) return "stale";
 				if (!result.success) {
 					const message = result.error || fallbackError(t, decision);
 					setDecisionError(message);
 					toast.error(message);
-					return false;
+					return "failed";
 				}
 
 				toast.success(
@@ -102,13 +133,13 @@ export function TodayApprovalsPanel({
 						refresh();
 					});
 				});
-				return true;
+				return "saved";
 			})
-			.catch(() => {
-				if (!active.current || request !== generation.current) return false;
+			.catch((): DecisionOutcome => {
+				if (!active.current || request !== generation.current) return "stale";
 				setDecisionError(fallbackError(t, decision));
 				toast.error(fallbackError(t, decision));
-				return false;
+				return "failed";
 			})
 			.finally(() => {
 				// Settlement releases the command even when its former view has retired.
@@ -132,8 +163,9 @@ export function TodayApprovalsPanel({
 	async function confirmRejection() {
 		const reason = rejectReason.trim();
 		if (!rejecting || !reason) return;
-		// A failed rejection keeps the panel and the manager's reason for another try.
-		if (await decideApproval(rejecting, "reject", reason)) closeRejectPanel();
+		// A failed rejection keeps the panel and the manager's reason for another try. One that
+		// settled after its view retired may have been saved, so it is never offered again.
+		if ((await decideApproval(rejecting, "reject", reason)) !== "failed") closeRejectPanel();
 	}
 
 	return (
@@ -149,8 +181,8 @@ export function TodayApprovalsPanel({
 						</CardDescription>
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
-						<Badge variant={items.length > 0 ? "default" : "secondary"}>
-							{error || stale ? t("today.briefing.unavailable", "Unavailable") : items.length}
+						<Badge variant={total > 0 ? "default" : "secondary"}>
+							{error || stale ? t("today.briefing.unavailable", "Unavailable") : total}
 						</Badge>
 						<Button asChild size="sm" variant="outline">
 							<Link href="/approvals/inbox">{t("today.approvals.openInbox", "Open inbox")}</Link>
@@ -175,7 +207,7 @@ export function TodayApprovalsPanel({
 						aria-label={t("today.approvals.pendingAriaLabel", "Pending approvals")}
 						className="space-y-3"
 					>
-						{items.map((item) => (
+						{shownItems.map((item) => (
 							<li
 								className="flex min-w-0 flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-start sm:justify-between"
 								key={item.id}
@@ -227,9 +259,10 @@ export function TodayApprovalsPanel({
 											// a decision it blocks), or not from the list at all.
 											<Button asChild size="sm">
 												<Link
+													// Starts with the visible text, so speech input finds it (WCAG 2.5.3).
 													aria-label={t(
-														"today.approvals.reviewInInboxLabel",
-														"Review {title} in inbox",
+														"today.approvals.reviewInInboxNamed",
+														"Review in inbox: {title}",
 														{ title: item.title },
 													)}
 													href={item.href}
@@ -255,7 +288,22 @@ export function TodayApprovalsPanel({
 							</li>
 						))}
 					</ul>
-				) : !error && !stale ? (
+				) : null}
+				{truncated && !error && !stale ? (
+					// The briefing lists the first page; the inbox holds the rest.
+					<p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+						<span>
+							{t("today.approvals.truncated", "Showing {shown} of {total} pending approvals.", {
+								shown: items.length,
+								total,
+							})}
+						</span>
+						<Link href="/approvals/inbox" className="font-medium underline underline-offset-4">
+							{t("today.approvals.seeAll", "See all {total} in inbox", { total })}
+						</Link>
+					</p>
+				) : null}
+				{items.length === 0 && !error && !stale ? (
 					<p className="rounded-lg border border-dashed bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
 						{t("today.approvals.empty", "No approvals are waiting.")}
 					</p>

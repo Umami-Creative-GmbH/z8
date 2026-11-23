@@ -67,6 +67,8 @@ describe("manager daily briefing approvals source", () => {
 		periodSubmissionId: "",
 		exceptionId: "",
 		unmanagedAbsenceId: "",
+		unmanagedPeriodSubmissionId: "",
+		unmanagedExceptionId: "",
 		foreignAbsenceId: "",
 	};
 
@@ -104,6 +106,21 @@ describe("manager daily briefing approvals source", () => {
 			managedEmployeeIds: [],
 			customRoles: [],
 		};
+	}
+
+	/** The signed-in admin's inbox scope, as `/approvals/inbox` resolves it. */
+	async function adminInboxScope() {
+		const [{ defineAbilityFor }, { resolveApprovalInboxViewerScope }] = await Promise.all([
+			import("@/lib/authorization"),
+			import("@/lib/approvals/inbox/viewer-scope"),
+		]);
+		if (!session.principal) throw new Error("not signed in");
+		const scope = await resolveApprovalInboxViewerScope({
+			ability: defineAbilityFor(session.principal),
+			employee: { id: admin.employeeId, organizationId, role: "admin" },
+		});
+		if (!scope) throw new Error("no inbox scope");
+		return { ...scope, covering: undefined };
 	}
 
 	/** Pending absences of `requesterEmployeeId` for the manager, submitted long before the rest. */
@@ -205,35 +222,29 @@ describe("manager daily briefing approvals source", () => {
 		);
 	}
 
-	/** A canonical-only period submission of the requester, routed to their manager. */
-	async function seedPeriodSubmission() {
-		await fixture.pool.query(
-			`insert into period_submission_cadence_change
-			 (id, organization_id, cadence, week_start_day, changed_at)
-			 values ($1, $2, 'weekly', 'monday', '2026-01-01T00:00:00Z')`,
-			[randomUUID(), organizationId],
-		);
+	/** A canonical-only period submission of `employee`, routed to their manager. */
+	async function seedPeriodSubmission(employee: Seeded) {
 		await fixture.work({
 			organizationId,
-			employeeId: requester.employeeId,
-			userId: requester.userId,
+			employeeId: employee.employeeId,
+			userId: employee.userId,
 			start: "2026-03-03T07:00:00Z",
 			end: "2026-03-03T15:15:00Z",
 		});
 		const submitted = await submitPeriodSubmission(
-			{ organizationId, userId: requester.userId, periodStartDate: "2026-03-02" },
+			{ organizationId, userId: employee.userId, periodStartDate: "2026-03-02" },
 			{ database: db, clock: { nowInstant: () => parseInstant("2026-03-08T12:00:00Z") } },
 		);
 		if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
 		const { rows } = await fixture.pool.query<{ id: string }>(
 			`select id from period_submission where organization_id = $1 and employee_id = $2`,
-			[organizationId, requester.employeeId],
+			[organizationId, employee.employeeId],
 		);
 		return rows[0]?.id ?? "";
 	}
 
-	/** A pending ArbZG exception of the requester, valid for the day around now. */
-	async function seedComplianceException() {
+	/** A pending ArbZG exception of `employee`, valid for the day around now. */
+	async function seedComplianceException(employee: Seeded) {
 		const id = randomUUID();
 		const now = systemClock.nowInstant();
 		await fixture.pool.query(
@@ -244,7 +255,7 @@ describe("manager daily briefing approvals source", () => {
 			[
 				id,
 				organizationId,
-				requester.employeeId,
+				employee.employeeId,
 				now.subtract({ hours: 1 }).toString(),
 				now.add({ hours: 23 }).toString(),
 				ownerUserId,
@@ -282,14 +293,29 @@ describe("manager daily briefing approvals source", () => {
 			approverId: manager.employeeId,
 		});
 		seeded.claimId = await seedSubmittedClaim();
-		seeded.periodSubmissionId = await seedPeriodSubmission();
-		seeded.exceptionId = await seedComplianceException();
+		await fixture.pool.query(
+			`insert into period_submission_cadence_change
+			 (id, organization_id, cadence, week_start_day, changed_at)
+			 values ($1, $2, 'weekly', 'monday', '2026-01-01T00:00:00Z')`,
+			[randomUUID(), organizationId],
+		);
+		seeded.periodSubmissionId = await seedPeriodSubmission(requester);
+		seeded.exceptionId = await seedComplianceException(requester);
 		// Assigned to the manager, but its requester is outside the briefing's employees.
 		seeded.unmanagedAbsenceId = await seedPendingAbsence({
 			organizationId,
 			requesterEmployeeId: unmanaged.employeeId,
 			approverId: manager.employeeId,
 		});
+		// Outside the briefing's employees too, yet in an admin's organization-wide inbox: the
+		// canonical and compliance reads must keep them out as well (#1980). The admin approves them.
+		await fixture.pool.query(
+			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+			 values ($1, $2, $3, true, $4)`,
+			[randomUUID(), unmanaged.employeeId, admin.employeeId, ownerUserId],
+		);
+		seeded.unmanagedPeriodSubmissionId = await seedPeriodSubmission(unmanaged);
+		seeded.unmanagedExceptionId = await seedComplianceException(unmanaged);
 		// Same approver id, other tenant: must never reach this organization's briefing.
 		seeded.foreignAbsenceId = await seedPendingAbsence({
 			organizationId: foreignOrganizationId,
@@ -348,6 +374,52 @@ describe("manager daily briefing approvals source", () => {
 			{ type: "period_submission", entityId: seeded.periodSubmissionId },
 			{ type: "travel_expense_claim", entityId: seeded.claimId },
 		]);
+		expect(approvals.totalCount).toBe(4);
+	});
+
+	it("keeps another employee's period submission and compliance exception out of an admin's briefing", async () => {
+		signIn(admin, { membership: "admin", role: "admin" });
+		const scope = await adminInboxScope();
+		// The admin's whole inbox holds them, so only the requester filter can keep them out.
+		const { getApprovalInboxList } = await import("@/lib/approvals/inbox/read-service");
+		const wholeInbox = await getApprovalInboxList({ ...scope, status: "pending", limit: 100 });
+		expect(wholeInbox.items.map((item) => item.entityId)).toEqual(
+			expect.arrayContaining([seeded.unmanagedPeriodSubmissionId, seeded.unmanagedExceptionId]),
+		);
+
+		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: admin.employeeId, role: "admin" },
+		});
+
+		const entityIds = approvals.map((approval) => approval.entityId);
+		expect(entityIds).not.toContain(seeded.unmanagedPeriodSubmissionId);
+		expect(entityIds).not.toContain(seeded.unmanagedExceptionId);
+		expect(approvals.totalCount).toBe(4);
+	});
+
+	it("lists and counts nothing in any inbox source for no requesters at all", async () => {
+		signIn(admin, { membership: "admin", role: "admin" });
+		const scope = await adminInboxScope();
+		const { getApprovalInboxCounts, getApprovalInboxList } =
+			await import("@/lib/approvals/inbox/read-service");
+		const params = { ...scope, requesterEmployeeIds: [], status: "pending" as const };
+
+		const list = await getApprovalInboxList({ ...params, limit: 100 });
+		const counts = await getApprovalInboxCounts(params);
+
+		expect(list.items).toEqual([]);
+		expect(list.total).toBe(0);
+		// Every source is counted, the canonical and compliance reads included, and each is zero.
+		expect(Object.keys(list.counts)).toEqual(
+			expect.arrayContaining(["absence_entry", "period_submission", "compliance_exception"]),
+		);
+		expect(Object.values(list.counts).every((count) => count === 0)).toBe(true);
+		expect(Object.keys(counts)).toEqual(
+			expect.arrayContaining(["absence_entry", "period_submission", "compliance_exception"]),
+		);
+		expect(Object.values(counts).every((count) => count === 0)).toBe(true);
 	});
 
 	it("lists nothing for a viewer the Approval inbox refuses", async () => {

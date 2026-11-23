@@ -200,6 +200,8 @@ export function TodayBriefing({
 				/>
 				<TodayApprovalsPanel
 					items={briefing.sections.approvals.items}
+					// Every pending approval, as the summary counts them; the list shows the first.
+					total={briefing.summary.openApprovals}
 					error={briefing.sections.approvals.error}
 					stale={Boolean(readError)}
 					onRetry={onRetry}

@@ -242,6 +242,47 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(byApprovalId.get("absence-1")?.requiresDetailReview).toBeUndefined();
 	});
 
+	it("carries the inbox item's localized summary texts for the panel to translate", async () => {
+		const localized = {
+			title: { key: "approvals:approvals.periodSubmission.title", fallback: "Period submission" },
+			subtitle: {
+				key: "approvals:approvals.canonicalRequester",
+				fallback: "Requested by {name}",
+				params: { name: "Ada Lovelace" },
+			},
+			detail: { key: "approvals:approvals.periodSubmission.hours", fallback: "{hours} hours" },
+		};
+		const localizedApproval = createApproval({
+			id: "period-1",
+			type: "period_submission",
+			requesterId: "emp-1",
+			requesterName: "Ada Lovelace",
+		});
+		localizedApproval.summary.localized = localized;
+		const sources = createSources({
+			getApprovals: vi
+				.fn()
+				.mockResolvedValue([
+					localizedApproval,
+					createApproval({ id: "absence-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+				]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		const byApprovalId = new Map(
+			briefing.sections.approvals.items.map((item) => [item.approvalId, item]),
+		);
+		expect(byApprovalId.get("period-1")?.localized).toEqual(localized);
+		expect(byApprovalId.get("absence-1")?.localized).toBeUndefined();
+	});
+
 	it("counts every pending approval of the briefing's employees, not only those it shows", async () => {
 		const shown = [
 			createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
