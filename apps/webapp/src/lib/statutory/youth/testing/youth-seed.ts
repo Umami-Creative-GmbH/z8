@@ -109,6 +109,43 @@ export function youthSeed(admin: Pool) {
 			return { id, start };
 		},
 
+		/** Clocks out an open clock-in `minutes` after it started. */
+		async closeWork(
+			org: FixtureOrganization,
+			who: FixtureEmployee,
+			open: { id: string; start: Instant },
+			minutes: number,
+		): Promise<{ id: string; start: Instant; end: Instant; durationMinutes: number }> {
+			const clockOutId = randomUUID();
+			const end = open.start.add({ minutes });
+			await withCanonicalRecords(admin, async (client) => {
+				await client.query(
+					`insert into time_entry
+					 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					  timezone, timezone_source, hash, created_by)
+					 values ($1,$2,$3,'clock_out',$4,$5,$6,'user_setting',$7,$8)`,
+					[
+						clockOutId,
+						who.employeeId,
+						org.id,
+						dateFromInstant(end),
+						end.toZonedDateTimeISO(org.timezone).offsetNanoseconds / 60_000_000_000,
+						org.timezone,
+						clockOutId,
+						who.userId,
+					],
+				);
+				await client.query(
+					`update work_period
+					 set clock_out_id = $1, end_time = $2, duration_minutes = $3, is_active = false,
+					     updated_at = now()
+					 where id = $4 and organization_id = $5`,
+					[clockOutId, dateFromInstant(end), minutes, open.id, org.id],
+				);
+			});
+			return { id: open.id, start: open.start, end, durationMinutes: minutes };
+		},
+
 		/** A one-day public holiday assigned to the whole organization. */
 		async publicHoliday(
 			org: FixtureOrganization,

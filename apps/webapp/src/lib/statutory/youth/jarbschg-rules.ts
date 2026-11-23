@@ -112,6 +112,12 @@ export interface JarbschgBreach {
 	 * not touch). Zero when the work stays within the shift.
 	 */
 	readonly outsidePlannedShift?: number;
+	/**
+	 * Night, Saturday, Sunday and holiday breaches: the minutes of the interval's work in the
+	 * flagged time (the night, or the flagged days; on 24 and 31 December after 14:00), which is
+	 * what a sector exception for it covers.
+	 */
+	readonly coveredMinutes?: number;
 }
 
 export interface JarbschgEvaluationInput {
@@ -224,6 +230,13 @@ function partsOutside(span: Span, bounds: Span): Span[] {
 		});
 	}
 	return parts;
+}
+
+/** Minutes, unrounded, of `span` inside `[from, to)`. */
+function overlapMinutes(span: Span, from: Instant, to: Instant): number {
+	const start = compareInstants(span.start, from) > 0 ? span.start : from;
+	const end = compareInstants(span.end, to) < 0 ? span.end : to;
+	return compareInstants(start, end) < 0 ? start.until(end).total({ unit: "minutes" }) : 0;
 }
 
 /** Minutes of `interval` inside the local night `[nightStart, nightEnd)` of any day it touches. */
@@ -475,6 +488,7 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 				actual: number,
 				unit: JarbschgBreach["unit"],
 				outside: number,
+				coveredMinutes: number,
 			) =>
 				found.push({
 					breach: {
@@ -485,6 +499,7 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 						limit: 0,
 						unit,
 						...(shift ? { outsidePlannedShift: outside } : {}),
+						coveredMinutes,
 					},
 					involves: [interval.dayKey],
 				});
@@ -497,24 +512,35 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 							0,
 						)
 					: 0;
-				sector("jarbschg_night_work", night, "minutes", outside);
+				sector("jarbschg_night_work", night, "minutes", outside, night);
 			}
 			// §§ 16–18: no work on Saturdays, Sundays or public holidays, overnight work included.
 			const touched = daysTouched(minorSpan, input.timezone);
 			const shiftDays = shift
 				? new Set(daysTouched(shift, input.timezone).map((day) => day.toString()))
 				: new Set<string>();
+			const startOfDay = (day: PlainDate) =>
+				day.toZonedDateTime({ timeZone: input.timezone }).toInstant();
 			const flagged = (matches: (day: PlainDate) => boolean) => {
 				const days = touched.filter(matches);
 				return {
 					any: days.length > 0,
 					outside: days.filter((day) => !shiftDays.has(day.toString())).length,
+					minutes: days.reduce(
+						(total, day) =>
+							total + overlapMinutes(minorSpan, startOfDay(day), startOfDay(day.add({ days: 1 }))),
+						0,
+					),
 				};
 			};
 			const saturday = flagged((day) => day.dayOfWeek === 6);
-			if (saturday.any) sector("jarbschg_saturday_work", 1, "days", saturday.outside);
+			if (saturday.any) {
+				sector("jarbschg_saturday_work", 1, "days", saturday.outside, Math.round(saturday.minutes));
+			}
 			const sunday = flagged((day) => day.dayOfWeek === 7);
-			if (sunday.any) sector("jarbschg_sunday_work", 1, "days", sunday.outside);
+			if (sunday.any) {
+				sector("jarbschg_sunday_work", 1, "days", sunday.outside, Math.round(sunday.minutes));
+			}
 			const holiday = flagged((day) => input.holidays.has(day.toString()));
 			// § 18 Abs. 1: on 24 and 31 December no work after 14:00.
 			const eves = touched.filter(
@@ -523,25 +549,29 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 					(day.day === 24 || day.day === 31) &&
 					!input.holidays.has(day.toString()),
 			);
+			const afterEveCutoffMinutes = (span: Span) =>
+				eves.map((day) =>
+					overlapMinutes(
+						span,
+						day.toZonedDateTime({ timeZone: input.timezone, plainTime: EVE_CUTOFF }).toInstant(),
+						startOfDay(day.add({ days: 1 })),
+					),
+				);
 			const afterEveCutoff = (span: Span) =>
-				eves.filter((day) => {
-					const cutoff = day
-						.toZonedDateTime({ timeZone: input.timezone, plainTime: EVE_CUTOFF })
-						.toInstant();
-					const midnight = day
-						.add({ days: 1 })
-						.toZonedDateTime({ timeZone: input.timezone })
-						.toInstant();
-					const from = compareInstants(span.start, cutoff) > 0 ? span.start : cutoff;
-					const to = compareInstants(span.end, midnight) < 0 ? span.end : midnight;
-					return compareInstants(from, to) < 0;
-				}).length;
+				afterEveCutoffMinutes(span).filter((minutes) => minutes > 0).length;
 			const eveDays = afterEveCutoff(minorSpan);
+			const eveMinutes = afterEveCutoffMinutes(minorSpan).reduce((total, m) => total + m, 0);
 			const eveOutside = shift
 				? partsOutside(minorSpan, shift).reduce((total, part) => total + afterEveCutoff(part), 0)
 				: 0;
 			if (holiday.any || eveDays > 0) {
-				sector("jarbschg_holiday_work", 1, "days", holiday.outside + eveOutside);
+				sector(
+					"jarbschg_holiday_work",
+					1,
+					"days",
+					holiday.outside + eveOutside,
+					Math.round(holiday.minutes + eveMinutes),
+				);
 			}
 		}
 	}

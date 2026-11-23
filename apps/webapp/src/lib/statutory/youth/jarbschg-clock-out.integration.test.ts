@@ -275,6 +275,64 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		expect(await types(minor)).toContain("jarbschg_night_work");
 	});
 
+	it("honours a night exception for unplanned work up to the acknowledged span, not beyond", async () => {
+		/** Clocked in at 17:00 without a shift; the exception is acknowledged at 20:50. */
+		async function acknowledgedOpenWork(key: string) {
+			const minor = await fx.employee(org, key, { birthday: "2010-06-01" });
+			const open = await seed.openWork(org, minor, "2026-03-03", "17:00");
+			const findings = await jarbschgScheduleContributor.evaluate({
+				db,
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-02", endExclusive: "2026-03-09" },
+				employeeIds: [minor.employeeId],
+				proposedShifts: [],
+				replacesShiftId: null,
+				preferences: DEFAULT_STATUTORY_PREFERENCES,
+				now: localInstant("2026-03-03", "20:50", org.timezone),
+			});
+			const night = findings.find((finding) => finding.kind === "jarbschg_night_work");
+			expect(night).toMatchObject({ subjectKey: `work:${open.id}` });
+			const subject = night ? statutoryAcknowledgementSubjectOf(night) : null;
+			if (!night || !subject) throw new Error("expected an acknowledgeable night finding");
+			await recordStatutoryAcknowledgement(db, {
+				...subject,
+				organizationId: org.id,
+				actorUserId: owner.userId,
+				inputFingerprint: night.inputFingerprint,
+				reason: "Hospitality: § 14 Abs. 2 Nr. 1 JArbSchG allows work until 22:00",
+			});
+			return { minor, open };
+		}
+		async function clockOutOpen(
+			who: FixtureEmployee,
+			open: { id: string; start: ReturnType<typeof localInstant> },
+			minutes: number,
+		) {
+			const work = await seed.closeWork(org, who, open, minutes);
+			await checkComplianceAfterClockOut(
+				{
+					organizationId: org.id,
+					employeeId: who.employeeId,
+					workPeriodId: work.id,
+					work,
+					timezone: org.timezone,
+				},
+				{ throwOnError: true },
+			);
+		}
+
+		// Clocked out at 21:00: within the acknowledged span.
+		const onTime = await acknowledgedOpenWork("ontime");
+		await clockOutOpen(onTime.minor, onTime.open, 240);
+		expect(await types(onTime.minor)).not.toContain("jarbschg_night_work");
+
+		// Clocked out at 23:30: the exception never covered two and a half more hours of night.
+		const late = await acknowledgedOpenWork("late");
+		await clockOutOpen(late.minor, late.open, 390);
+		expect(await types(late.minor)).toContain("jarbschg_night_work");
+	});
+
 	it("records youth violations but never blocks the clock-out, even with publish blocking on", async () => {
 		await seed.blockJarbschgPublish(org);
 		const minor = await fx.employee(org, "sunday", { birthday: "2010-06-01" });

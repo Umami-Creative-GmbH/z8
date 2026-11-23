@@ -17,18 +17,23 @@ import {
 	type YouthWorkInterval,
 } from "./jarbschg-rules";
 
+/** The material step of flagged minutes a sector exception for unplanned work is given in. */
+const SECTOR_EXCEPTION_STEP_MINUTES = 15;
+
 /**
  * The input fingerprint of a sector-exception finding (night, Saturday, Sunday, holiday work): what
  * the exception decision depends on. For a planned shift that is the shift's exact times and how
  * much of the breach its work runs outside them, so the acknowledgement stays current while the
  * shift is worked as planned (or is still being worked within its bounds) and goes stale when
  * the shift moves or its work overruns it. Work without a planned shift is acknowledged per work
- * entry, by its start.
+ * entry, by its start and the flagged minutes the exception covers, rounded up to a material step:
+ * an acknowledgement given while the clock-in runs covers the work up to the end of that step, and
+ * goes stale once the work runs on past it.
  */
 export function sectorExceptionFingerprint(input: {
 	readonly rule: JarbschgRule;
 	readonly employeeId: string;
-	readonly breach: Pick<JarbschgBreach, "outsidePlannedShift">;
+	readonly breach: Pick<JarbschgBreach, "outsidePlannedShift" | "coveredMinutes">;
 	readonly interval: YouthWorkInterval;
 }): string {
 	const shift = input.interval.plannedShift;
@@ -43,13 +48,27 @@ export function sectorExceptionFingerprint(input: {
 		});
 	}
 	const planned = !input.interval.recorded && !input.interval.inProgress;
+	if (planned) {
+		// A shift not yet worked: the same fingerprint as its work within its bounds.
+		return statutoryInputFingerprint({
+			rule: input.rule,
+			employeeId: input.employeeId,
+			subjectKey: input.interval.ref,
+			start: input.interval.start,
+			end: input.interval.end,
+			outside: 0,
+		});
+	}
 	return statutoryInputFingerprint({
 		rule: input.rule,
 		employeeId: input.employeeId,
 		subjectKey: input.interval.ref,
 		start: input.interval.start,
-		end: planned ? input.interval.end : null,
+		end: null,
 		outside: 0,
+		covered:
+			Math.ceil((input.breach.coveredMinutes ?? 0) / SECTOR_EXCEPTION_STEP_MINUTES) *
+			SECTOR_EXCEPTION_STEP_MINUTES,
 	});
 }
 

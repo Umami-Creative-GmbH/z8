@@ -191,6 +191,49 @@ describe("sector exception fingerprints", () => {
 		expect(overrun?.inputFingerprint).not.toBe(plannedFinding()?.inputFingerprint);
 	});
 
+	describe("of work without a planned shift", () => {
+		const fingerprintOf = (
+			record: YouthWorkRecord,
+			now: Instant,
+			kind: "jarbschg_night_work" | "jarbschg_saturday_work" = "jarbschg_night_work",
+		) =>
+			findings({ work: [record], now }).find((finding) => finding.kind === kind)?.inputFingerprint;
+		const started = at("2026-03-03", "17:00");
+		// Acknowledged while the clock-in runs at 20:50: 50 night minutes, the span up to 21:00.
+		const acknowledged = fingerprintOf(work("w", started, null), at("2026-03-03", "20:50"));
+
+		it("stay current while the clock-in runs within the acknowledged span and ends there", () => {
+			expect(acknowledged).toBeDefined();
+			expect(fingerprintOf(work("w", started, null), at("2026-03-03", "20:58"))).toBe(acknowledged);
+			expect(
+				fingerprintOf(work("w", started, at("2026-03-03", "21:00")), at("2026-03-04", "09:00")),
+			).toBe(acknowledged);
+		});
+
+		it("go stale when the work runs further into the night", () => {
+			expect(
+				fingerprintOf(work("w", started, at("2026-03-03", "23:30")), at("2026-03-04", "09:00")),
+			).not.toBe(acknowledged);
+			expect(fingerprintOf(work("w", started, null), at("2026-03-03", "21:20"))).not.toBe(
+				acknowledged,
+			);
+		});
+
+		it("go stale when Saturday work is extended", () => {
+			// Saturday 7 March 2026.
+			const saturday = (end: string) =>
+				fingerprintOf(
+					work("sat", at("2026-03-07", "10:00"), at("2026-03-07", end)),
+					at("2026-03-08", "09:00"),
+					"jarbschg_saturday_work",
+				);
+			expect(saturday("14:00")).toBeDefined();
+			// Within the same 15-minute step: the same work for the exception.
+			expect(saturday("13:50")).toBe(saturday("14:00"));
+			expect(saturday("18:00")).not.toBe(saturday("14:00"));
+		});
+	});
+
 	it("do not depend on the judged days when a shift's work spans midnight", () => {
 		// A night shift 22:00–02:00 clocked as two pieces, before and after midnight.
 		const night = shift("night", "2026-03-03", "22:00", "02:00");
