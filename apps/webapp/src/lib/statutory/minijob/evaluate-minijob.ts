@@ -286,6 +286,8 @@ export async function evaluateMinijobEarnings(
 
 	/** Work per shift id, for shifts under way. */
 	const workForShift = new Map<string, Work[]>();
+	/** The earliest shift each open clock-in belongs to. */
+	const firstShiftOfOpenWork = new Map<Work, string>();
 	for (const [employeeId, works] of workOf) {
 		const matches = matchWorkToShifts(shiftsOf.get(employeeId) ?? [], works, input.now);
 		for (const work of works) {
@@ -299,6 +301,7 @@ export async function evaluateMinijobEarnings(
 				});
 				continue;
 			}
+			if (work.end === null) firstShiftOfOpenWork.set(work, shifts[0].row.id);
 			for (const shift of shifts) {
 				const list = workForShift.get(shift.row.id);
 				if (list) list.push(work);
@@ -328,18 +331,30 @@ export async function evaluateMinijobEarnings(
 			const shiftMinutes = Math.round(minutesBetween(interval.start, interval.end));
 			priced(plannedShifts, employeeId, { id: row.id, date, minutes: shiftMinutes });
 			const item = { source: "shift" as const, id: row.id, date };
+			const matched = workForShift.get(row.id) ?? [];
+			const openWork = matched
+				.filter((work) => work.end === null)
+				.sort((a, b) => compareInstants(a.start, b.start))[0];
 			if (compareInstants(interval.start, input.now) > 0) {
-				addItem(employeeId, { ...item, minutes: shiftMinutes });
+				// Not begun. An early clock-in for it (its first shift) already runs: from there on
+				// as below, so the projection does not move while the clock runs up to the start.
+				// A later shift of a clock-in over back-to-back shifts still counts in full.
+				const early = openWork !== undefined && firstShiftOfOpenWork.get(openWork) === row.id;
+				addItem(employeeId, {
+					...item,
+					minutes: early
+						? Math.max(
+								0,
+								Math.round(minutesBetween(openWork.start, interval.end)) - openWork.minutes,
+							)
+						: shiftMinutes,
+				});
 				continue;
 			}
 			// Over: what was worked is recorded work.
 			if (compareInstants(interval.end, input.now) <= 0) continue;
 			// Running: recorded work counts as recorded, the rest of the shift as planned; until
 			// anyone clocks in, the shift counts in full.
-			const matched = workForShift.get(row.id) ?? [];
-			const openWork = matched
-				.filter((work) => work.end === null)
-				.sort((a, b) => compareInstants(a.start, b.start))[0];
 			if (openWork) {
 				// Clock-in to shift end on one minute grid: whole minutes worked so far plus the
 				// rest, so the projection does not move while the clock runs.

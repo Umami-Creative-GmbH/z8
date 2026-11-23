@@ -275,6 +275,52 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		);
 	});
 
+	it("keeps total and fingerprint steady for a clock-in before its shift starts", async () => {
+		const { org, owner, worker } = await setup();
+		const backToBack = await fx.employee(org, "back-to-back", { contractType: "hourly" });
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
+		await mj.terms(backToBack, owner, { from: "2026-01-01", hourlyRate: 20 });
+		// Both clocked in at 08:30 Berlin, 30 minutes early: 08:30–17:00 is 8 h 30 min (170 €)
+		// whether the clock is before the shift starts or inside it. The second one has
+		// back-to-back shifts 09:00–13:00 and 13:00–17:00: the later one still counts in full.
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-23",
+			startTime: "09:00",
+			endTime: "17:00",
+		});
+		await mj.shift(org, backToBack, owner, {
+			date: "2026-11-23",
+			startTime: "09:00",
+			endTime: "13:00",
+		});
+		await mj.shift(org, backToBack, owner, {
+			date: "2026-11-23",
+			startTime: "13:00",
+			endTime: "17:00",
+		});
+		await mj.openWork(org, worker, "2026-11-23", "08:30");
+		await mj.openWork(org, backToBack, "2026-11-23", "08:30");
+
+		const ids = [worker.employeeId, backToBack.employeeId];
+		const november = { from: "2026-11", until: "2026-12" };
+		const month = (result: Awaited<ReturnType<typeof evaluate>>, employeeId: string) =>
+			result.employees.get(employeeId)?.find((m) => m.month === "2026-11");
+		const at0840 = await evaluate(org, ids, november, "2026-11-23T07:40:00Z");
+		const at0846 = await evaluate(org, ids, november, "2026-11-23T07:46:00Z");
+		const at0900 = await evaluate(org, ids, november, "2026-11-23T08:00:00Z");
+		const at1000 = await evaluate(org, ids, november, "2026-11-23T09:00:00Z");
+
+		for (const employeeId of ids) {
+			expect(month(at0840, employeeId)).toMatchObject({ earnedCents: 333, totalCents: 17_000 });
+			for (const later of [at0846, at0900, at1000]) {
+				expect(month(later, employeeId)).toMatchObject({
+					totalCents: 17_000,
+					fingerprint: month(at0840, employeeId)?.fingerprint,
+				});
+			}
+		}
+	});
+
 	it("counts a started shift in full until work is recorded for it, then the work and the rest", async () => {
 		const { org, owner, worker } = await setup();
 		const finished = await fx.employee(org, "finished", { contractType: "hourly" });
