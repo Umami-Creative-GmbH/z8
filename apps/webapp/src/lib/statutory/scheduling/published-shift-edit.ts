@@ -14,7 +14,7 @@ import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
-import { deepensExceededLimit, evaluateStatutoryScheduleFindings } from "./evaluate";
+import { deepensBreachedLimit, evaluateStatutoryScheduleFindings } from "./evaluate";
 import { statutoryFindingChangeKey } from "./finding-key";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
@@ -69,12 +69,13 @@ export async function guardPublishedShiftEdit<T>(
 	);
 	const saved = await write();
 	// Only what the edit causes blocks it: a blocking finding absent before the save, or one it
-	// deepens past its limit. A breach the shift already had (e.g. published before the org turned
-	// the block on) does not lock its notes, colour or a shortening.
+	// deepens past its limit (a longer week, a shorter rest). A breach the shift already had (e.g.
+	// published before the org turned the block on) does not lock its notes, colour or an edit
+	// that eases it.
 	const caused = (await evaluateStatutoryScheduleFindings(db, request)).filter((finding) => {
 		if (!finding.blocksPublication) return false;
 		const prior = before.get(statutoryFindingChangeKey(finding));
-		return !prior || deepensExceededLimit(prior, finding);
+		return !prior || deepensBreachedLimit(prior, finding);
 	});
 	if (caused.length === 0) return saved;
 

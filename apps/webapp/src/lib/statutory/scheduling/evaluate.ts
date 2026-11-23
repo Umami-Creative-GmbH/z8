@@ -102,9 +102,10 @@ export async function evaluateStatutoryScheduleFindings(
  * block publication. Used by Staffing.
  *
  * It also counts as added when it keeps that state but the proposal deepens a limit already
- * exceeded: the visible summary has `used` and `limit` in the same unit, `used > limit`, and
- * `used` grows (e.g. a lecture week at 22 h → 30 h). Under-limit findings (an on-call under-band)
- * and earnings-derived findings (tier only) are unaffected.
+ * breached: the visible summary has `used` and `limit` in the same unit and `used` moves further
+ * past the limit — up past a ceiling (e.g. a lecture week at 22 h → 30 h), or down past a floor
+ * (`limitDirection: "floor"`, e.g. a youth rest period at 10.5 h → 10 h). Under-limit ceiling
+ * findings (an on-call under-band) and earnings-derived findings (tier only) are unaffected.
  *
  * The baseline run gets the proposals as `comparedProposedShifts` (never counted), so a
  * contributor can judge the same subjects in both runs.
@@ -139,21 +140,27 @@ export async function addedStatutoryScheduleFindings(
 	for (const finding of proposed) {
 		const projected = toStatutoryComplianceFinding(finding);
 		const before = baseline.get(statutoryFindingChangeKey(projected));
-		if (before && !deepensExceededLimit(before, projected)) continue;
+		if (before && !deepensBreachedLimit(before, projected)) continue;
 		added.set(finding.employeeId, [...(added.get(finding.employeeId) ?? []), projected]);
 	}
 	return added;
 }
 
-/** `after` is over its visible limit and uses more of it than `before`, in the same unit. */
-export function deepensExceededLimit(
-	before: StatutoryComplianceFinding,
-	after: StatutoryComplianceFinding,
+/**
+ * `after` is past its visible limit and further past it than `before`, in the same unit: above a
+ * ceiling and using more (a longer week), or below a floor (`limitDirection: "floor"`) and giving
+ * less (a shorter rest).
+ */
+export function deepensBreachedLimit(
+	before: Pick<StatutoryComplianceFinding, "summary">,
+	after: Pick<StatutoryComplianceFinding, "summary">,
 ): boolean {
 	const { used, limit } = after.summary;
 	const usedBefore = before.summary.used;
 	const limitBefore = before.summary.limit;
 	if (!used || !limit || !usedBefore || !limitBefore) return false;
 	if (new Set([used.unit, limit.unit, usedBefore.unit, limitBefore.unit]).size !== 1) return false;
-	return used.value > limit.value && used.value > usedBefore.value;
+	return after.summary.limitDirection === "floor"
+		? used.value < limit.value && used.value < usedBefore.value
+		: used.value > limit.value && used.value > usedBefore.value;
 }

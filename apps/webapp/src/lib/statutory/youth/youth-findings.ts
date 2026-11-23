@@ -13,6 +13,7 @@ import {
 	type JarbschgLimits,
 	type JarbschgRule,
 	jarbschgLegalReference,
+	jarbschgMinimumRules,
 	jarbschgSectorExceptionRules,
 	type YouthWorkInterval,
 } from "./jarbschg-rules";
@@ -101,6 +102,7 @@ export function jarbschgFindingOf(input: {
 			tier: "exceeded",
 			used: { unit, value: breach.actual },
 			limit: { unit, value: breach.limit },
+			...(jarbschgMinimumRules.has(breach.rule) ? { limitDirection: "floor" as const } : {}),
 		},
 		adminDetail: null,
 		inputFingerprint: sectorException

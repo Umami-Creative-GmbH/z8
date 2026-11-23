@@ -38,6 +38,15 @@ export const jarbschgSectorExceptionRules: ReadonlySet<JarbschgRule> = new Set([
 	"jarbschg_holiday_work",
 ]);
 
+/**
+ * Rules whose limit is a minimum the work must leave (§ 13 rest, § 11 breaks): their breach is
+ * the given amount falling short of the limit. Every other rule's limit is a maximum.
+ */
+export const jarbschgMinimumRules: ReadonlySet<JarbschgRule> = new Set([
+	"jarbschg_rest_period",
+	"jarbschg_break",
+]);
+
 export function isJarbschgRule(value: string): value is JarbschgRule {
 	return (jarbschgRules as readonly string[]).includes(value);
 }

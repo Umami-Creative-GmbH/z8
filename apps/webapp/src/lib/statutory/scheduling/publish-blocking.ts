@@ -2,8 +2,9 @@
  * What the JArbSchG publish block refuses a publication for (#1993). Publishing turns the range's
  * drafts into published shifts and changes nothing else, so, as for an edit of a published shift,
  * it is refused only for blocking findings on those drafts, or blocking findings on other shifts
- * that the drafts newly cause (absent without them). A blocked shift that is already published,
- * e.g. another employee's, does not stop the publication: publishing cannot change it.
+ * that the drafts newly cause (absent without them) or deepen past their limit. A blocked shift
+ * that is already published and that the drafts leave as it is, e.g. another employee's, does not
+ * stop the publication: publishing cannot change it.
  */
 import { and, eq, gte, lt } from "drizzle-orm";
 import { shift } from "@/db/schema";
@@ -14,7 +15,7 @@ import type {
 	StatutoryComplianceFinding,
 } from "@/lib/scheduling/compliance/types";
 import { shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
-import { evaluateStatutoryScheduleFindings } from "./evaluate";
+import { deepensBreachedLimit, evaluateStatutoryScheduleFindings } from "./evaluate";
 import { statutoryFindingChangeKey } from "./finding-key";
 import { publicationBlockingFindings } from "./publication-block";
 
@@ -64,7 +65,7 @@ export async function findingsBlockingPublication(
 	);
 	if (elsewhere.length === 0) return onDrafts;
 
-	const withoutDrafts = new Set(
+	const withoutDrafts = new Map(
 		(
 			await evaluateStatutoryScheduleFindings(db, {
 				organizationId: scope.organizationId,
@@ -74,10 +75,16 @@ export async function findingsBlockingPublication(
 				now: scope.now,
 				excludedShiftIds: drafts.map((draft) => draft.id),
 			})
-		).map(statutoryFindingChangeKey),
+		).map((finding) => [statutoryFindingChangeKey(finding), finding] as const),
 	);
+	// As for an edit of a published shift: the drafts cause a breach they bring about, or one
+	// they deepen past its limit (a longer week, a shorter rest). One they leave as it is does not
+	// block.
 	return [
 		...onDrafts,
-		...elsewhere.filter((finding) => !withoutDrafts.has(statutoryFindingChangeKey(finding))),
+		...elsewhere.filter((finding) => {
+			const prior = withoutDrafts.get(statutoryFindingChangeKey(finding));
+			return !prior || deepensBreachedLimit(prior, finding);
+		}),
 	];
 }

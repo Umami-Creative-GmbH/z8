@@ -30,7 +30,15 @@ export interface StatutoryFindingSummary {
 	readonly used?: StatutoryQuantity;
 	readonly limit?: StatutoryQuantity;
 	readonly remaining?: StatutoryQuantity;
+	/**
+	 * Whether `limit` is a ceiling (`used` must stay at or below it, the default) or a floor
+	 * (`used` must reach it, e.g. a minimum rest period or break). A breach deepens when `used`
+	 * moves further past the limit: up for a ceiling, down for a floor.
+	 */
+	readonly limitDirection?: StatutoryLimitDirection;
 }
+
+export type StatutoryLimitDirection = "ceiling" | "floor";
 
 /** Org-admin-only detail: EUR amounts (minor units), wages, external earnings, free-form facts. */
 export interface StatutoryFindingAdminDetail {

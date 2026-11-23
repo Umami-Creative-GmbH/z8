@@ -260,6 +260,74 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		expect(await shiftStatus(monday)).toBe("draft");
 	});
 
+	describe("publishing drafts next to a breach already published", () => {
+		const published = (who: FixtureEmployee, date: string, startTime: string, endTime: string) =>
+			seed.shift(org, who, {
+				subareaId,
+				creatorUserId: owner.userId,
+				date,
+				startTime,
+				endTime,
+				status: "published",
+			});
+		const publishThrough = async (range: typeof WEEK) => {
+			const handshake = await publishShifts(range);
+			if (!handshake.success || handshake.data.published) return handshake;
+			return publishShifts(range, { evaluationFingerprint: handshake.data.evaluationFingerprint });
+		};
+
+		async function publishedLongWeek() {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "long-week", { birthday: "2011-01-01" });
+			// Published before the block: Tuesday to Friday, 42 h in the week.
+			for (const date of ["2027-03-02", "2027-03-03", "2027-03-04"]) {
+				await published(minor, date, "07:00", "18:30");
+			}
+			const friday = await published(minor, "2027-03-05", "07:00", "18:30");
+			expect((await evaluateWeek()).findings).toContainEqual(
+				expect.objectContaining({
+					statutoryKind: "jarbschg_weekly_max",
+					subjectKey: `shift:${friday}`,
+					blocksPublication: true,
+				}),
+			);
+			return minor;
+		}
+
+		it("refuses a draft that deepens the published week past its 40 h", async () => {
+			const minor = await publishedLongWeek();
+			const monday = await shift(minor, "2027-03-01", "08:00", "12:00");
+			expect(await publishThrough(WEEK)).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect(await shiftStatus(monday)).toBe("draft");
+		});
+
+		it("publishes a draft that leaves the published breach as it is", async () => {
+			const minor = await publishedLongWeek();
+			const nextMonday = await shift(minor, "2027-03-08", "08:00", "12:00");
+			expect(
+				await publishThrough({ startDate: "2027-03-01", endDateExclusive: "2027-03-15" }),
+			).toMatchObject({ success: true, data: { published: true, count: 1 } });
+			expect(await shiftStatus(nextMonday)).toBe("published");
+		});
+
+		it("refuses a draft that shortens a rest period already too short", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "short-rest", { birthday: "2011-01-01" });
+			// Published before the block: 10.5 h of rest before Tuesday 06:00.
+			await published(minor, "2027-03-01", "12:00", "19:30");
+			await published(minor, "2027-03-02", "06:00", "10:00");
+			const late = await shift(minor, "2027-03-01", "19:35", "19:55");
+			expect(await publishThrough(WEEK)).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect(await shiftStatus(late)).toBe("draft");
+		});
+	});
+
 	it("keeps hard limits blocking: a sector exception cannot lift a too-long day", async () => {
 		await seed.blockJarbschgPublish(org);
 		const minor = await fx.employee(org, "long", { birthday: "2011-01-01" });
@@ -508,6 +576,65 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 				}),
 			).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
 			expect((await shiftRow(monday))?.start_time).toBe("08:00");
+		});
+
+		describe("a rest period already too short", () => {
+			let minor: FixtureEmployee;
+			let monday: string;
+			let tuesday: string;
+			const editMonday = (endTime: string) =>
+				upsertShift({
+					id: monday,
+					employeeId: minor.employeeId,
+					subareaId,
+					date: "2027-03-01",
+					startTime: "12:00",
+					endTime,
+				});
+
+			beforeEach(async () => {
+				await seed.blockJarbschgPublish(org);
+				minor = await fx.employee(org, "rest", { birthday: "2011-01-01" });
+				// Published before the block: 10.5 h of rest before Tuesday 06:00.
+				monday = await published(minor, "2027-03-01", "12:00", "19:30");
+				tuesday = await published(minor, "2027-03-02", "06:00", "10:00");
+				expect((await evaluateWeek()).findings).toContainEqual(
+					expect.objectContaining({
+						statutoryKind: "jarbschg_rest_period",
+						subjectKey: `shift:${tuesday}`,
+						summary: expect.objectContaining({ used: { unit: "minutes", value: 630 } }),
+						blocksPublication: true,
+					}),
+				);
+			});
+
+			it("refuses a Monday edit that shortens the rest before Tuesday's published shift", async () => {
+				expect(await editMonday("19:55")).toMatchObject({
+					success: false,
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				});
+				expect((await shiftRow(monday))?.end_time).toBe("19:30");
+			});
+
+			it("saves a Monday edit that lengthens the rest", async () => {
+				expect(await editMonday("19:00")).toMatchObject({ success: true });
+				expect((await shiftRow(monday))?.end_time).toBe("19:00");
+			});
+
+			it("refuses moving the breaching shift itself closer to the previous evening", async () => {
+				await admin.query("update shift set start_time = '06:30' where id = $1", [tuesday]);
+				expect(
+					await upsertShift({
+						id: tuesday,
+						employeeId: minor.employeeId,
+						subareaId,
+						date: "2027-03-02",
+						startTime: "06:15",
+						endTime: "10:00",
+					}),
+				).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
+				expect((await shiftRow(tuesday))?.start_time).toBe("06:30");
+			});
 		});
 
 		it("saves a published shift whose sector exception is current, and drafts as before", async () => {

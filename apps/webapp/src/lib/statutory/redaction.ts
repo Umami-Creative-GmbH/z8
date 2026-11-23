@@ -81,6 +81,9 @@ export function restrictedSummary(
 	if (limit) safe.limit = limit;
 	const remaining = safeQuantity(summary.remaining);
 	if (remaining) safe.remaining = remaining;
+	if (summary.limitDirection === "floor" || summary.limitDirection === "ceiling") {
+		safe.limitDirection = summary.limitDirection;
+	}
 	return safe;
 }
 
