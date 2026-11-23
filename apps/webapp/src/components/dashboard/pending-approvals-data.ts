@@ -8,9 +8,10 @@ import type { PendingApprovalsData } from "./dashboard-types";
 /**
  * The Pending Approvals widget's data from the inbox's most urgent items (#1978). A failed
  * source is told apart as the inbox tells it: a type whose count failed still lists its rows
- * but is missing from the totals, so it counts at least its rows in hand; one whose list, or
- * "Covering for" rows, failed is missing from the list too. A failure of unknown kind reads
- * as not loaded. A failed "Covering for" header count changes nothing here: no total uses it.
+ * but is missing from the totals; one whose list, or "Covering for" rows, failed is missing
+ * from the list too. Either way its pill is a lower bound (at least its rows in hand), never
+ * an exact count. A failure of unknown kind reads as not loaded. A failed "Covering for"
+ * header count changes nothing here: no total uses it.
  */
 export function pendingApprovalsData({
 	counts,
@@ -28,16 +29,26 @@ export function pendingApprovalsData({
 	}
 	const inTypeOrder = (failed: Set<string>): ApprovalInboxType[] =>
 		SUPPORTED_APPROVAL_INBOX_TYPES.filter((type) => failed.has(type));
+	// Any failure leaves a type's count uncertain. A failed count or Covering read misses rows,
+	// and the one warning kept per source can hide a failed count behind a graver failure.
+	const uncertain = (type: string) => notCounted.has(type) || notLoaded.has(type);
 	const typeCounts = SUPPORTED_APPROVAL_INBOX_TYPES.flatMap((type) => {
 		const counted = counts[type] ?? 0;
-		if (!notCounted.has(type)) return counted > 0 ? [{ type, count: counted }] : [];
-		// Its own count is missing: its rows in hand are the most that is known to wait.
+		if (!uncertain(type)) return counted > 0 ? [{ type, count: counted }] : [];
+		// Its count may be missing rows: what is known to wait is the more of the count and the
+		// rows in hand, never read as exact.
 		const atLeast = Math.max(counted, listed[type] ?? 0);
 		return atLeast > 0 ? [{ type, count: atLeast, atLeast: true as const }] : [];
 	});
+	const anyUncertain = notCounted.size > 0 || notLoaded.size > 0;
 	return {
 		// Never fewer than its types: a lower bound raises the total as it raises its pill.
-		total: notCounted.size > 0 ? typeCounts.reduce((sum, { count }) => sum + count, 0) : total,
+		total: anyUncertain
+			? Math.max(
+					total,
+					typeCounts.reduce((sum, { count }) => sum + count, 0),
+				)
+			: total,
 		coveringCount,
 		notLoadedTypes: inTypeOrder(notLoaded),
 		notCountedTypes: inTypeOrder(notCounted),

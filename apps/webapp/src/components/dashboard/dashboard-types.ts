@@ -142,7 +142,8 @@ export type DashboardWidgetData = {
 	"upcoming-time-off": UpcomingTimeOffData;
 	"managed-employees": ManagedEmployeesResult;
 	"team-overview": TeamOverviewStats;
-	"pending-approvals": PendingApprovalsData;
+	/** Null for a viewer who can't open the Approval inbox. */
+	"pending-approvals": PendingApprovalsData | null;
 	"recently-approved": RecentlyApprovedData;
 	"manager-today": ManagerTodaySummaryResult;
 	"quick-stats": QuickStats;

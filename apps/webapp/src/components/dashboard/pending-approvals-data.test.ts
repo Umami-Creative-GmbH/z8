@@ -66,6 +66,40 @@ describe("the Dashboard's pending approvals (#1978)", () => {
 		expect(data.notCountedTypes).toEqual(["absence_entry"]);
 	});
 
+	it("marks a type whose Covering rows failed as a lower bound, never as an exact count", () => {
+		// Its covered rows are missing from the count, so "Absences 3" would read as exact.
+		const data = pendingApprovalsData({
+			counts: { absence_entry: 3 } as ApprovalInboxTopItems["counts"],
+			total: 3,
+			coveringCount: 0,
+			listed: { absence_entry: 3 },
+			items: [],
+			warnings: [warning("absence_entry", "covering")],
+		});
+
+		expect(data.typeCounts).toEqual([{ type: "absence_entry", count: 3, atLeast: true }]);
+		expect(data.notLoadedTypes).toEqual(["absence_entry"]);
+	});
+
+	it("keeps a type's rows in hand when a graver Covering failure hides its own failed count", () => {
+		// The absence count and its covered read both failed; only the Covering warning is kept,
+		// so the count stands at 0 while 30 own absences were listed.
+		const data = pendingApprovalsData({
+			counts: { absence_entry: 0, time_entry: 2 } as ApprovalInboxTopItems["counts"],
+			total: 2,
+			coveringCount: 0,
+			listed: { absence_entry: 30, time_entry: 2 },
+			items: [],
+			warnings: [warning("absence_entry", "covering")],
+		});
+
+		expect(data.typeCounts).toEqual([
+			{ type: "absence_entry", count: 30, atLeast: true },
+			{ type: "time_entry", count: 2 },
+		]);
+		expect(data.total).toBe(32);
+	});
+
 	it("reports a failure of unknown kind as not loaded, the safe reading", () => {
 		const data = pendingApprovalsData(top([warning("travel_expense_claim")]));
 

@@ -132,9 +132,10 @@ export function localizedTimeApprovalSummary(input: {
 			input.kind === "unclassified"
 				? {
 						key: "approvals:approvals.timeApproval.unclassifiedWarning",
-						// UNCLASSIFIED_TIME_APPROVAL_WARNING, spelled out for key extraction.
+						// New user-facing copy, so it doesn't say "legacy" (#1975); the older English
+						// UNCLASSIFIED_TIME_APPROVAL_WARNING stays as stored for its existing readers.
 						fallback:
-							"This legacy time approval could not be classified. Reconcile it before making a decision.",
+							"This time approval could not be classified. Reconcile it before making a decision.",
 					}
 				: {
 						key: "approvals:approvals.timeApproval.summary",

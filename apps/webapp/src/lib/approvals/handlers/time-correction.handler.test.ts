@@ -734,6 +734,15 @@ describe("shared time-entry approval presentation", () => {
 		}
 		const manual = { metadata: { timeRequest: { kind: "manual_time_submission" } }, reason: null };
 
+		it("never calls an unclassified time approval 'legacy' in its localized summary", () => {
+			const review = buildTimeApprovalReview(period, { metadata: null, reason: null }, []);
+
+			expect(review.kind).toBe("unclassified");
+			expect(review.display.localized?.summary.fallback).toBe(
+				"This time approval could not be classified. Reconcile it before making a decision.",
+			);
+		});
+
 		it("renders the kind, duration and work day in German with German date formats", async () => {
 			const de = await translatorFor("de", {
 				"approvals:approvals.timeApproval.title.manualTimeSubmission": "Manuelle Zeiterfassung",
@@ -807,7 +816,7 @@ describe("shared time-entry approval presentation", () => {
 
 			expect(resolveReviewText(localized!.title, en, "en")).toBe("Unclassified Time Approval");
 			expect(resolveReviewText(localized!.summary, en, "en")).toBe(
-				"This legacy time approval could not be classified. Reconcile it before making a decision.",
+				"This time approval could not be classified. Reconcile it before making a decision.",
 			);
 		});
 	});
