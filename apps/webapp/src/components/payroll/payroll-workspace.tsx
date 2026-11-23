@@ -322,6 +322,7 @@ function PayrollWorkspaceContent({
 									organizationId={summary.organizationId}
 									startDate={request.startDate}
 									endDate={request.endDate}
+									employeeIds={request.employeeIds}
 								/>
 							</>
 						),

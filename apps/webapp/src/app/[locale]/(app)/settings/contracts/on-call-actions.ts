@@ -129,12 +129,12 @@ export const getOnCallReferencePeriodAction = organizationAction(
  * The employees whose payroll the actor prepares for a period starting `startDate`, as the payroll
  * workspace admits them: an org admin the organization, a holder of an active payroll access grant
  * the employees it covers, each plus covered employees who left on or after the period's first
- * day. Anyone else is refused.
+ * day. A workspace selection narrows it and never widens it. Anyone else is refused.
  */
 function payrollReferenceScope(
 	actor: OrganizationActor,
 	organizationId: string,
-	startDate: string,
+	period: { readonly startDate: string; readonly employeeIds?: readonly string[] },
 ) {
 	return Effect.gen(function* () {
 		const orgAdmin = meetsSettingsAccess(actor.settingsAccess, "orgAdmin");
@@ -156,7 +156,8 @@ function payrollReferenceScope(
 			resolvePeriodEmployeeIds(
 				organizationId,
 				{ employeeId, orgAdmin, userId: actor.userId },
-				startDate,
+				period.startDate,
+				{ employeeIds: period.employeeIds },
 			),
 		);
 	});
@@ -169,14 +170,26 @@ export const listOnCallPayrollReferenceRowsAction = organizationAction(
 		// holders), checked in the handler. The reference hours are wage-free.
 		requires: "member",
 		schema: z
-			.strictObject({ startDate: isoDate, endDate: isoDate, method: methodSchema })
+			.strictObject({
+				startDate: isoDate,
+				endDate: isoDate,
+				method: methodSchema,
+				/** The workspace's employee/team selection; left out: the whole payroll scope. */
+				employeeIds: z.array(z.uuid()).max(10_000).optional(),
+			})
 			.refine((input) => input.startDate <= input.endDate, { path: ["endDate"] }),
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const employeeIds = yield* payrollReferenceScope(actor, organizationId, input.startDate);
+			const employeeIds = yield* payrollReferenceScope(actor, organizationId, input);
 			return yield* storeStep("contracts.onCall.listPayrollReferenceRows", (db) =>
-				listOnCallPayrollReferenceRows(db, { organizationId, ...input, employeeIds }),
+				listOnCallPayrollReferenceRows(db, {
+					organizationId,
+					startDate: input.startDate,
+					endDate: input.endDate,
+					method: input.method,
+					employeeIds,
+				}),
 			);
 		}),
 );

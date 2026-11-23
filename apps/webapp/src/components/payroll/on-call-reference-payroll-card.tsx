@@ -15,6 +15,7 @@ import {
 	actionErrorMessage,
 	type RefusalMessages,
 } from "@/lib/organization-action/action-error-message";
+import { onCallPayrollRangeTooLong } from "@/lib/statutory/on-call/payroll-range";
 import type { OnCallReferenceMethod } from "@/lib/statutory/on-call/reference-period";
 import { type OnCallSickPayNote, sickPayNoteOf } from "@/lib/statutory/on-call/sick-pay";
 import type { OnCallPayrollRefusal } from "@/lib/statutory/on-call/views";
@@ -29,32 +30,71 @@ const payrollRefusals: RefusalMessages<OnCallPayrollRefusal> = {
 /**
  * Payroll preparation (#1992): every on-call employee's sick-leave start and public holiday in the
  * payroll period with its § 12 Abs. 4–5 TzBfG reference hours. Read-only figures for whoever
- * prepares the export; it never changes settled days or closed months. Renders nothing when the
- * period has no such events.
+ * prepares the export; it never changes settled days or closed months. Follows the workspace's
+ * employee/team selection. Renders nothing when the period has no such events or the selection
+ * matches nobody, and asks for a shorter period past the three-month limit.
  */
 export function OnCallReferencePayrollCard({
 	organizationId,
 	startDate,
 	endDate,
+	employeeIds,
 }: {
 	/** Part of the query key: cached rows never show under another organization. */
 	readonly organizationId: string;
 	readonly startDate: string;
 	readonly endDate: string;
+	/** The workspace's selected employees; left out: everyone in the reader's payroll access. */
+	readonly employeeIds?: readonly string[];
 }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const [method, setMethod] = useState<OnCallReferenceMethod>("three_months");
 	const [openRow, setOpenRow] = useState<string | null>(null);
+	const noneSelected = employeeIds?.length === 0;
+	const rangeTooLong = onCallPayrollRangeTooLong(startDate, endDate);
 	const rows = useQuery({
-		queryKey: ["payroll", "on-call-reference", organizationId, startDate, endDate, method],
+		queryKey: [
+			"payroll",
+			"on-call-reference",
+			organizationId,
+			startDate,
+			endDate,
+			method,
+			employeeIds ?? null,
+		],
 		queryFn: async () => {
-			const result = await listOnCallPayrollReferenceRowsAction({ startDate, endDate, method });
+			const result = await listOnCallPayrollReferenceRowsAction({
+				startDate,
+				endDate,
+				method,
+				...(employeeIds ? { employeeIds: [...employeeIds] } : {}),
+			});
 			if (!result.success) throw new Error(actionErrorMessage(t, result, payrollRefusals));
 			return result.data;
 		},
+		enabled: !noneSelected && !rangeTooLong,
 	});
 
+	if (noneSelected) return null;
+	if (rangeTooLong) {
+		return (
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<IconPhoneCall aria-hidden="true" className="size-5" />
+						{t("common.onCall.payroll.title", "On-call reference hours (§ 12 TzBfG)")}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"common.onCall.payroll.rangeTooLong",
+							"Reference hours are listed for at most three months at a time. Choose a shorter period.",
+						)}
+					</CardDescription>
+				</CardHeader>
+			</Card>
+		);
+	}
 	if (rows.isPending || (rows.isSuccess && rows.data.length === 0)) return null;
 	const day = (value: string) => formatPlainDate(parsePlainDate(value), locale, "dateMedium");
 	const sickPayText = (note: OnCallSickPayNote) => {

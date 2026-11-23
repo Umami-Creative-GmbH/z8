@@ -24,6 +24,7 @@ import {
 	type StatutoryAudience,
 } from "../redaction";
 import { evaluateOnCallFindings, type OnCallFinding, type OnCallFindingKind } from "./monitor";
+import { ON_CALL_PAYROLL_MAX_MONTHS, onCallPayrollRangeTooLong } from "./payroll-range";
 import {
 	earliestSickStarts,
 	listOnCallReferenceEvents,
@@ -227,9 +228,6 @@ export interface OnCallPayrollReferenceRow extends OnCallReferenceEvent {
 
 export type OnCallPayrollRefusal = "on_call_payroll_range_too_long";
 
-/** The longest payroll range listed at once: a payroll period, never a year of history. */
-export const ON_CALL_PAYROLL_MAX_MONTHS = 3;
-
 /**
  * Sick-leave starts and public holidays of every on-call employee in a payroll period, each with
  * its reference hours, for Payroll Export / comparison preparation. Reads only: settled days and
@@ -251,7 +249,7 @@ export async function listOnCallPayrollReferenceRows(
 ): Promise<OnCallPayrollReferenceRow[]> {
 	const start = parsePlainDate(input.startDate);
 	const end = parsePlainDate(input.endDate);
-	if (comparePlainDates(end, start.add({ months: ON_CALL_PAYROLL_MAX_MONTHS })) >= 0) {
+	if (onCallPayrollRangeTooLong(input.startDate, input.endDate)) {
 		throw new ValidationError({
 			message: `List on-call reference hours for at most ${ON_CALL_PAYROLL_MAX_MONTHS} months at a time`,
 			field: "endDate",

@@ -374,6 +374,46 @@ describe("on-call actions (PostgreSQL)", () => {
 		expect(listed(await listOnCallPayrollReferenceRowsAction(period))).toEqual(expected);
 	});
 
+	it("lists only the workspace's selected employees, within the reader's payroll access", async () => {
+		const { org, owner, worker, today, as } = await scenario();
+		const second = await fx.employee(org, "second");
+		await onCall.onCallTerms(org, second, { kind: "exact", weeklyMinutes: 600 });
+		await onCall.holiday(org, second, today.subtract({ days: 2 }).toString());
+		const officer = await fx.employee(org, "officer");
+		await fx.membership(org, officer, "member");
+		await grantCovering(org, officer, owner, [worker]);
+		const period = {
+			startDate: today.subtract({ days: 3 }).toString(),
+			endDate: today.toString(),
+			method: "three_months" as const,
+		};
+		const listed = (rows: Awaited<ReturnType<typeof listOnCallPayrollReferenceRowsAction>>) =>
+			rows.success ? rows.data.map((row) => [row.employeeId, row.kind, row.eventDate]) : rows;
+
+		as(owner, "owner", null);
+		expect(
+			listed(
+				await listOnCallPayrollReferenceRowsAction({ ...period, employeeIds: [second.employeeId] }),
+			),
+		).toEqual([[second.employeeId, "public_holiday", today.subtract({ days: 2 }).toString()]]);
+
+		// A selection never widens the grant: the uncovered employee stays out.
+		as(officer, "member", { id: officer.employeeId, role: "employee", former: false });
+		expect(
+			listed(
+				await listOnCallPayrollReferenceRowsAction({
+					...period,
+					employeeIds: [second.employeeId, worker.employeeId],
+				}),
+			),
+		).toEqual([[worker.employeeId, "sick_leave", today.subtract({ days: 1 }).toString()]]);
+		expect(
+			listed(
+				await listOnCallPayrollReferenceRowsAction({ ...period, employeeIds: [second.employeeId] }),
+			),
+		).toEqual([]);
+	});
+
 	it("refuses a payroll range longer than three months", async () => {
 		const { owner, as } = await scenario();
 		as(owner, "owner", null);
