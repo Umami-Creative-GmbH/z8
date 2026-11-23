@@ -893,6 +893,23 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			]);
 		});
 
+		it("keeps one pre-exam day under a full block day for a multi-day exam, its first exam day's", async () => {
+			const learner = await apprentice("blockrunone", "2005-05-05");
+			await block(learner, "2027-03-05", 1500);
+			const [monday] = await recordExamWithPreExamDay(learner, "2027-03-08");
+			await recordExamWithPreExamDay(learner, "2027-03-09");
+			// As on a free Friday: the second exam day of the run records no pre-exam day of its own,
+			// so voiding the block gives back the one that belongs to the run, whatever the row order.
+			const underBlock = await admin.query<{ starts_on: string; exam_release_id: string }>(
+				`select to_char(starts_on, 'YYYY-MM-DD') as starts_on, exam_release_id
+				 from employee_apprentice_release
+				 where organization_id = $1 and employee_id = $2 and release_kind = 'pre_exam_day'
+				   and superseded_by_release_id = $3`,
+				[org.id, learner.employeeId, await idOf(learner, "vocational_school_block_week")],
+			);
+			expect(underBlock.rows).toEqual([{ starts_on: "2027-03-05", exam_release_id: monday.id }]);
+		});
+
 		it("gives no pre-exam day to the rest of a multi-day exam recorded without one", async () => {
 			const learner = await apprentice("blockrunnone", "2005-05-05");
 			await block(learner, "2027-03-05", 1500);

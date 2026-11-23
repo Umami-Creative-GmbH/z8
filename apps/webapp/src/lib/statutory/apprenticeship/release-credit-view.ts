@@ -568,6 +568,14 @@ async function releasePreExamDayFor(
 	if (!preExamDay) return null;
 	const room = await makeRoomForPreExamDay(tx, { ...input, preExamDay });
 	if (!room) return preExamDay;
+	// A later exam day of a multi-day exam shares the run's pre-exam day: when the block already
+	// holds it for an earlier exam day, it is not recorded twice, as on a free day.
+	if (
+		room.kind === "full_block" &&
+		(await blockHoldsPreExamDay(tx, { ...input, preExamDay, blockId: room.blockId }))
+	) {
+		return preExamDay;
+	}
 	const recorded = await recordApprenticeRelease(tx, {
 		...input,
 		releaseKind: "pre_exam_day",
@@ -586,6 +594,41 @@ async function releasePreExamDayFor(
 		await linkReplaced(tx, { ...input, releaseIds: [recorded.id], byReleaseId: room.blockId });
 	}
 	return preExamDay;
+}
+
+/**
+ * Whether a full block day already holds the pre-exam day on `preExamDay` for an exam that stands
+ * and still has it as its pre-exam day: a pre-exam day the block replaced and gives back when voided.
+ */
+async function blockHoldsPreExamDay(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly employeeId: string;
+		readonly preExamDay: PlainDate;
+		readonly blockId: string;
+	},
+): Promise<boolean> {
+	const held = await db
+		.select({
+			startsOn: employeeApprenticeRelease.startsOn,
+			examReleaseId: employeeApprenticeRelease.examReleaseId,
+		})
+		.from(employeeApprenticeRelease)
+		.where(
+			and(
+				eq(employeeApprenticeRelease.organizationId, input.organizationId),
+				eq(employeeApprenticeRelease.employeeId, input.employeeId),
+				eq(employeeApprenticeRelease.supersededByReleaseId, input.blockId),
+				eq(employeeApprenticeRelease.releaseKind, "pre_exam_day"),
+				eq(employeeApprenticeRelease.startsOn, input.preExamDay.toString()),
+				isNotNull(employeeApprenticeRelease.examReleaseId),
+			),
+		);
+	for (const preExamDay of held) {
+		if (await isPreExamDayOf(db, { ...input, preExamDay })) return true;
+	}
+	return false;
 }
 
 /** The days before `day` a pre-exam day is looked for on, nearest first, and which are working days. */
