@@ -143,13 +143,16 @@ export async function loadShortTermMonitor(
 	};
 }
 
-export type ShortTermAcknowledgementRefusal = "short_term_no_verification_prompt";
+export type ShortTermAcknowledgementRefusal =
+	| "short_term_no_verification_prompt"
+	| "short_term_figures_changed";
 
 /**
  * Records an org admin's Berufsmäßigkeit verification for `month` (`YYYY-MM`). The month is
- * evaluated again here and its own fingerprint recorded, so the acknowledgement documents exactly
- * the earnings, work and shifts the admin saw; it goes stale when any of them change. The caller
- * authorizes (org admin) and never passes a fingerprint from the client.
+ * evaluated again here; `expectedFingerprint` is the fingerprint of the prompt the admin was
+ * looking at, and a mismatch is refused, so nobody acknowledges figures they never saw. The
+ * re-evaluated fingerprint is recorded; the acknowledgement goes stale when the month's work,
+ * shifts, wages or cap change. The caller authorizes (org admin).
  */
 export async function acknowledgeShortTermBerufsmaessigkeit(
 	db: Writer,
@@ -161,6 +164,8 @@ export async function acknowledgeShortTermBerufsmaessigkeit(
 		readonly month: string;
 		readonly reason: string;
 		readonly legalNote?: string | null;
+		/** The fingerprint of the prompt as shown to the admin. */
+		readonly expectedFingerprint: string;
 		readonly now: Instant;
 	},
 ): Promise<StatutoryAcknowledgementRecord> {
@@ -185,6 +190,13 @@ export async function acknowledgeShortTermBerufsmaessigkeit(
 			message: "This month's earnings do not exceed the Minijob limit",
 			field: "month",
 			refusal: "short_term_no_verification_prompt" satisfies ShortTermAcknowledgementRefusal,
+		});
+	}
+	if (finding.inputFingerprint !== input.expectedFingerprint) {
+		throw new ValidationError({
+			message: "This month's earnings changed since they were shown",
+			field: "month",
+			refusal: "short_term_figures_changed" satisfies ShortTermAcknowledgementRefusal,
 		});
 	}
 	return recordStatutoryAcknowledgement(db, {

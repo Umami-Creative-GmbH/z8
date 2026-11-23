@@ -18,6 +18,10 @@ export const SHORT_TERM_REFUSALS = {
 		"settings.contracts.shortTerm.refusal.noPrompt",
 		"This month's earnings no longer exceed the Minijob limit. Reload to see the current state.",
 	],
+	short_term_figures_changed: [
+		"settings.contracts.shortTerm.refusal.figuresChanged",
+		"This month's work, shifts or earnings changed since you opened it. Review the current figures and verify again.",
+	],
 	statutory_reason_required: [
 		"settings.contracts.shortTerm.refusal.reasonRequired",
 		"Explain how Berufsmäßigkeit was verified.",

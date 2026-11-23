@@ -590,6 +590,7 @@
         },
         "refusal": {
           "noPrompt": "This month's earnings no longer exceed the Minijob limit. Reload to see the current state.",
+          "figuresChanged": "This month's work, shifts or earnings changed since you opened it. Review the current figures and verify again.",
           "reasonRequired": "Explain how Berufsmäßigkeit was verified.",
           "subjectRequired": "This verification could not be recorded. Reload and try again.",
           "noteRequired": "Add a note or reason.",

@@ -24,7 +24,7 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { ShortTermBerufsmaessigkeitReview } from "@/lib/statutory/short-term/monitor";
 import { Link } from "@/navigation";
-import { shortTermReviewsQueryKey } from "./short-term-query-keys";
+import { shortTermMonitorQueryKey, shortTermReviewsQueryKey } from "./short-term-query-keys";
 import {
 	formatCents,
 	formatMonth,
@@ -44,6 +44,12 @@ function AcknowledgeForm({
 	t: Translate;
 }) {
 	const queryClient = useQueryClient();
+	const refresh = () => {
+		void queryClient.invalidateQueries({ queryKey: shortTermReviewsQueryKey(organizationId) });
+		void queryClient.invalidateQueries({
+			queryKey: shortTermMonitorQueryKey(organizationId, review.employeeId),
+		});
+	};
 	const mutation = useMutation({
 		mutationFn: async (value: { reason: string; legalNote: string }) => {
 			const result = await acknowledgeShortTermBerufsmaessigkeitAction({
@@ -51,6 +57,8 @@ function AcknowledgeForm({
 				month: review.month,
 				reason: value.reason,
 				legalNote: value.legalNote.trim() || null,
+				// The figures on screen: the server refuses if they have changed since.
+				expectedFingerprint: review.finding.inputFingerprint,
 			});
 			if (!result.success) throw new Error(actionErrorMessage(t, result, SHORT_TERM_REFUSALS));
 		},
@@ -58,12 +66,13 @@ function AcknowledgeForm({
 			toast.success(
 				t("settings.contracts.shortTerm.verification.recorded", "Verification recorded"),
 			);
-			void queryClient.invalidateQueries({ queryKey: shortTermReviewsQueryKey(organizationId) });
-			void queryClient.invalidateQueries({
-				queryKey: ["contracts", "short-term", review.employeeId],
-			});
+			refresh();
 		},
-		onError: (error) => toast.error(error.message),
+		onError: (error) => {
+			toast.error(error.message);
+			// Show the current figures, e.g. after they changed while the form was open.
+			refresh();
+		},
 	});
 	const form = useForm({
 		defaultValues: { reason: "", legalNote: "" },
