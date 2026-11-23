@@ -215,6 +215,25 @@ describe("causedBlockingFindings", () => {
 			).toEqual([]);
 		});
 
+		describe("of a night shift running into the release day", () => {
+			// The contributor dates a conflict by its release day: Wednesday's, for Tuesday 22:00–02:00.
+			const overnight = breach("bbig_release_day_shift", "night", "2027-03-03");
+
+			it("shares the release day's scope, not the day the shift starts on", () => {
+				// Tuesday's lessons conflict with a moved shift: a new conflict on Tuesday's release.
+				const tuesdayLessons = breach("bbig_release_day_shift", "moved", "2027-03-02");
+				expect(kinds(causedBlockingFindings([overnight], [overnight, tuesdayLessons]))).toEqual([
+					"bbig_release_day_shift",
+				]);
+			});
+
+			it("is not caused when a shift moves overnight into the release day it conflicted with", () => {
+				// Wednesday 08:00 moved to Tuesday 22:00: still Wednesday's release.
+				const before = [breach("bbig_release_day_shift", "x", "2027-03-03")];
+				expect(causedBlockingFindings(before, [overnight])).toEqual([]);
+			});
+		});
+
 		it("keeps another employee's release day apart", () => {
 			const before = [breach("bbig_release_day_shift", "x", "2027-03-02")];
 			const after = [
@@ -224,6 +243,43 @@ describe("causedBlockingFindings", () => {
 				}),
 			];
 			expect(kinds(causedBlockingFindings(before, after))).toEqual(["bbig_release_day_shift"]);
+		});
+	});
+
+	describe("a sector-exception breach (night, Saturday, Sunday, holiday work)", () => {
+		const oneDay = { tier: "exceeded" as const, used: days(1), limit: days(0) };
+		const saturday = (shiftId: string, coveredMinutes: number, overrides = {}) =>
+			breach("jarbschg_saturday_work", shiftId, "2027-03-06", oneDay, {
+				coveredMinutes,
+				...overrides,
+			});
+		/** Before the edit: blocking, but lifted by its current acknowledgement. */
+		const acknowledged = (coveredMinutes: number) =>
+			saturday("x", coveredMinutes, { blocksPublication: false, publicationBlockLifted: true });
+
+		it("counts an acknowledged breach as a prior: an edit that eases it is not caused", () => {
+			// 10:00–14:00 acknowledged, shortened to 10:00–13:00: the acknowledgement goes stale.
+			expect(causedBlockingFindings([acknowledged(240)], [saturday("x", 180)])).toEqual([]);
+		});
+
+		it("is caused when the edit covers more work than before, acknowledged or not", () => {
+			// 10:00–14:00 extended to 10:00–16:00: still one Saturday, two more hours of it.
+			expect(kinds(causedBlockingFindings([acknowledged(240)], [saturday("x", 360)]))).toEqual([
+				"jarbschg_saturday_work",
+			]);
+			expect(kinds(causedBlockingFindings([saturday("x", 240)], [saturday("x", 360)]))).toEqual([
+				"jarbschg_saturday_work",
+			]);
+		});
+
+		it("is caused for another employee: their breach has no prior", () => {
+			const reassigned = saturday("x", 240, {
+				id: "jarbschg_saturday_work:e2:shift:x",
+				employeeId: "e2",
+			});
+			expect(kinds(causedBlockingFindings([acknowledged(240)], [reassigned]))).toEqual([
+				"jarbschg_saturday_work",
+			]);
 		});
 	});
 

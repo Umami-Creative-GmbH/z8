@@ -8,7 +8,9 @@
  * release day, or its own shift on its day) does not refuse the save, also when a reordered day
  * moves it to another shift; carried to a day or week that had none, it is a new breach there
  * (`causedBlockingFindings`). A current sector exception lifts the block as at
- * publication. Drafts are judged when they are published.
+ * publication; the edit that makes it stale is judged as if the breach had blocked before (eased
+ * saves, deepened or carried elsewhere is refused), since the new state cannot be acknowledged
+ * before it is saved. Drafts are judged when they are published.
  */
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";

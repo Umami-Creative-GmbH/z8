@@ -31,4 +31,4 @@ export function statutoryPublicationRefusal(findings: readonly ComplianceFinding
 
 /** The refusal message of a published shift's edit that the publish block refuses. */
 export const STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE =
-	"Cannot save: this change to a published shift breaks youth protection limits (JArbSchG). Change the shift or acknowledge a statutory sector exception first.";
+	"Cannot save: this change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.";

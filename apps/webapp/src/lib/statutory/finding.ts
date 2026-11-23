@@ -100,6 +100,17 @@ export interface StatutoryFinding<Kind extends string = string> {
 	 * Clock-in and clock-out are never blocked.
 	 */
 	readonly blocksPublication?: boolean;
+	/**
+	 * Set by the scheduling seam when it lifted `blocksPublication` for a current acknowledgement:
+	 * the finding would block without it. The publish block's guards count it as a breach the
+	 * schedule already had, so an edit that eases it is not refused for making it stale.
+	 */
+	readonly publicationBlockLifted?: boolean;
+	/**
+	 * The minutes of work a sector-exception finding (night, Saturday, Sunday, holiday work) covers,
+	 * when `summary` counts something coarser (a day): more covered work is a deeper breach.
+	 */
+	readonly coveredMinutes?: number;
 }
 
 export function statutoryFindingId(kind: string, employeeId: string, subjectKey: string): string {

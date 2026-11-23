@@ -6,8 +6,10 @@
 import { Effect, Layer } from "effect";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { shift as shiftTable } from "@/db/schema";
+import { type Instant, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	ScheduleComplianceService,
@@ -40,6 +42,10 @@ import {
 import { recordApprenticeRelease } from "../employee-context";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { STATUTORY_PUBLICATION_BLOCKED } from "../scheduling/publication-block";
+import {
+	guardPublishedShiftEdit,
+	PublishedShiftEditBlocked,
+} from "../scheduling/published-shift-edit";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
 import { localInstant, youthSeed } from "./testing/youth-seed";
 
@@ -844,6 +850,114 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 
 				expect(await move(learner, tuesday, "2027-03-04", "10:00", "12:00")).toMatchObject(refused);
 			});
+
+			describe("a release conflict belongs to its release day, also for a night shift", () => {
+				/**
+				 * Moves a published shift as the guarded save does, in a transaction a refusal rolls
+				 * back; the kinds it refuses, if any.
+				 */
+				const refusedKinds = (
+					who: FixtureEmployee,
+					id: string,
+					move: { from: string; date: string; startTime: string; endTime: string },
+				) =>
+					db
+						.transaction((tx) =>
+							guardPublishedShiftEdit(
+								tx,
+								{
+									organizationId: org.id,
+									timezone: org.timezone,
+									shiftId: id,
+									published: true,
+									employeeId: who.employeeId,
+									date: parsePlainDate(move.date),
+									previousDate: parsePlainDate(move.from),
+									now: systemClock.nowInstant(),
+								},
+								() =>
+									tx
+										.update(shiftTable)
+										.set({
+											date: shiftDateBounds(move.date, org.timezone).start,
+											startTime: move.startTime,
+											endTime: move.endTime,
+										})
+										.where(and(eq(shiftTable.id, id), eq(shiftTable.organizationId, org.id))),
+							),
+						)
+						.then(
+							() => [] as string[],
+							(error: unknown) => {
+								if (!(error instanceof PublishedShiftEditBlocked)) throw error;
+								return error.blocking.map((finding) => finding.statutoryKind);
+							},
+						);
+
+				it("refuses moving a shift into Tuesday's lessons past a night shift into Wednesday's pre-exam day", async () => {
+					await seed.blockJarbschgPublish(org);
+					const learner = await apprentice("overnight-release");
+					await release(learner, {
+						releaseKind: "vocational_school_day",
+						startsOn: "2027-03-02",
+						endsOn: "2027-03-02",
+						lessonCount: 4,
+						schoolMinutes: 210,
+						schoolStartTime: "08:00",
+						schoolEndTime: "11:30",
+					});
+					await release(learner, {
+						releaseKind: "pre_exam_day",
+						startsOn: "2027-03-03",
+						endsOn: "2027-03-03",
+					});
+					// Published before the block: Tuesday 23:00 runs into Wednesday's pre-exam day.
+					const night = await published(learner, "2027-03-02", "23:00", "01:00");
+					const thursday = await published(learner, "2027-03-04", "14:00", "15:00");
+					await findingOn("bbig_release_day_shift", night);
+
+					// Into Tuesday's lessons: a conflict on Tuesday's release, which had none.
+					const move = {
+						from: "2027-03-04",
+						date: "2027-03-02",
+						startTime: "09:00",
+						endTime: "10:00",
+					};
+					expect(await refusedKinds(learner, thursday, move)).toEqual(["bbig_release_day_shift"]);
+					expect(
+						await upsertShift({
+							id: thursday,
+							employeeId: learner.employeeId,
+							subareaId,
+							...move,
+						}),
+					).toMatchObject(refused);
+				});
+
+				it("does not count moving a shift overnight into the release day it conflicted with as a new conflict", async () => {
+					await seed.blockJarbschgPublish(org);
+					const learner = await apprentice("same-release-day");
+					await release(learner, {
+						releaseKind: "pre_exam_day",
+						startsOn: "2027-03-03",
+						endsOn: "2027-03-03",
+					});
+					// Published before the block, on Wednesday's pre-exam day.
+					const wednesday = await published(learner, "2027-03-03", "08:00", "12:00");
+					await findingOn("bbig_release_day_shift", wednesday);
+
+					// Tuesday 22:00 to Wednesday 02:00: a minor's night work there is new, so the move is
+					// still refused, but not for the release conflict it keeps on Wednesday.
+					const refusedWith = await refusedKinds(learner, wednesday, {
+						from: "2027-03-03",
+						date: "2027-03-02",
+						startTime: "22:00",
+						endTime: "02:00",
+					});
+					expect(refusedWith).toContain("jarbschg_night_work");
+					expect(refusedWith).not.toContain("bbig_release_day_shift");
+				});
+			});
 		});
 
 		it("refuses lengthening a minor's published 24 December shift further past 14:00", async () => {
@@ -1038,6 +1152,62 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 					endTime: "01:00",
 				}),
 			).toMatchObject({ success: true });
+		});
+
+		describe("a published shift whose sector exception is acknowledged", () => {
+			let minor: FixtureEmployee;
+			let saturday: string;
+			const editSaturday = (startTime: string, endTime: string, employeeId = minor.employeeId) =>
+				upsertShift({
+					id: saturday,
+					employeeId,
+					subareaId,
+					date: "2027-03-06",
+					startTime,
+					endTime,
+				});
+
+			beforeEach(async () => {
+				await seed.blockJarbschgPublish(org);
+				minor = await fx.employee(org, "acknowledged", { birthday: "2010-06-01" });
+				saturday = await published(minor, "2027-03-06", "10:00", "14:00");
+				const acknowledged = await acknowledgeSectorExceptions(minor);
+				expect(acknowledged).toContainEqual(
+					expect.objectContaining({
+						kind: "jarbschg_saturday_work",
+						subjectKey: `shift:${saturday}`,
+					}),
+				);
+			});
+
+			it("saves an edit that eases it, though the exception then needs acknowledging again", async () => {
+				expect(await editSaturday("10:00", "13:00")).toMatchObject({ success: true });
+				expect((await shiftRow(saturday))?.end_time).toBe("13:00");
+				expect((await evaluateWeek()).findings).toContainEqual(
+					expect.objectContaining({
+						statutoryKind: "jarbschg_saturday_work",
+						subjectKey: `shift:${saturday}`,
+						acknowledgementStatus: "stale",
+					}),
+				);
+			});
+
+			it("refuses an edit that adds Saturday work the exception did not cover", async () => {
+				expect(await editSaturday("10:00", "16:00")).toMatchObject({
+					success: false,
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				});
+				expect((await shiftRow(saturday))?.end_time).toBe("14:00");
+			});
+
+			it("refuses reassigning it to another minor without an exception", async () => {
+				const other = await fx.employee(org, "other-minor", { birthday: "2010-06-01" });
+				expect(await editSaturday("10:00", "14:00", other.employeeId)).toMatchObject({
+					success: false,
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				});
+				expect((await shiftRow(saturday))?.employee_id).toBe(minor.employeeId);
+			});
 		});
 	});
 

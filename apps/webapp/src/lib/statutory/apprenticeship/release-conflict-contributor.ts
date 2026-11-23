@@ -40,8 +40,9 @@ const apprenticeReleaseFindingKinds: ReadonlySet<string> = new Set<ApprenticeRel
 ]);
 
 /**
- * What a release conflict is about: rule, employee and the day of the shift that conflicts
- * (`periodStart`), whichever shift it is. Null for other findings.
+ * What a release conflict is about: rule, employee and the release day it conflicts with
+ * (`periodStart`), whichever shift it is and whichever day that shift starts on. Null for other
+ * findings.
  */
 export function apprenticeReleaseScopeOf(
 	finding: Pick<StatutoryFinding, "kind" | "employeeId" | "periodStart">,
@@ -196,17 +197,21 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		// Its own day, and the next one when it runs past midnight into a school morning.
 		const lastDay = plainDateAt(work.end.subtract({ nanoseconds: 1 }), context.timezone);
 		const days = lastDay.equals(work.date) ? [work.date] : [work.date, lastDay];
-		let found: { release: ApprenticeReleaseDay; conflict: ReleaseConflict } | null = null;
+		let found: {
+			release: ApprenticeReleaseDay;
+			releaseDay: PlainDate;
+			conflict: ReleaseConflict;
+		} | null = null;
 		for (const day of days) {
 			const release = releaseOn.get(`${work.employeeId}:${day}`);
 			const conflict = release ? conflictOf(work, release, day, context.timezone) : null;
 			if (release && conflict) {
-				found = { release, conflict };
+				found = { release, releaseDay: day, conflict };
 				break;
 			}
 		}
 		if (!found) continue;
-		const { release, conflict } = found;
+		const { release, releaseDay, conflict } = found;
 		const minor = isMinorOn(birthdays.get(work.employeeId) ?? null, work.date);
 		const kind: ApprenticeReleaseFindingKind =
 			minor && release.releaseKind === "vocational_school_day" && conflict === "release_day"
@@ -221,8 +226,9 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 			kind,
 			severity: minor ? "critical" : "warning",
 			subjectKey,
-			periodStart: work.date.toString(),
-			periodEnd: work.date.add({ days: 1 }).toString(),
+			// The release day it conflicts with: for a night shift into a school morning, the next day.
+			periodStart: releaseDay.toString(),
+			periodEnd: releaseDay.add({ days: 1 }).toString(),
 			legalReference: !minor
 				? adultReference[conflict]
 				: conflict === "release_day"

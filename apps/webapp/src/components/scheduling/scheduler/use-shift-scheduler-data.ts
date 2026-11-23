@@ -144,7 +144,7 @@ export function useShiftSchedulerData({
 					throw new Error(
 						t(
 							"scheduling.scheduler.shiftUpdate.statutoryBlocked",
-							"This change to a published shift breaks youth protection limits (JArbSchG). Change the shift or acknowledge a statutory sector exception first.",
+							"This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
 						),
 					);
 				}

@@ -30,10 +30,15 @@ export function breachScopeOf(
 	);
 }
 
-/** Whether `prior` (before the change) is a blocking breach of the same scope and standing. */
+/**
+ * Whether `prior` (before the change) is a blocking breach of the same scope and standing. A
+ * breach whose block a current acknowledgement lifted (an acknowledged sector exception) counts as
+ * blocking: the change makes that acknowledgement stale, and the new state cannot be acknowledged
+ * before it is saved.
+ */
 function sameScope(prior: StatutoryFinding, finding: StatutoryFinding, scope: string): boolean {
 	return (
-		(prior.blocksPublication ?? false) &&
+		((prior.blocksPublication ?? false) || (prior.publicationBlockLifted ?? false)) &&
 		prior.severity === finding.severity &&
 		(prior.summary.tier ?? null) === (finding.summary.tier ?? null) &&
 		breachScopeOf(prior) === scope
@@ -41,11 +46,25 @@ function sameScope(prior: StatutoryFinding, finding: StatutoryFinding, scope: st
 }
 
 /**
+ * `after` goes deeper than `prior`: further past its visible limit (`deepensBreachedLimit`), or,
+ * for a sector-exception breach counted in days, over more work than before.
+ */
+function deepens(prior: StatutoryFinding, after: StatutoryFinding): boolean {
+	return (
+		deepensBreachedLimit(prior, after) ||
+		(prior.coveredMinutes !== undefined &&
+			after.coveredMinutes !== undefined &&
+			after.coveredMinutes > prior.coveredMinutes)
+	);
+}
+
+/**
  * The blocking findings of `after` that a change causes, against `before` (the same judgement
  * without the change): a breach in a scope (`breachScopeOf`) that had none, or one the change
- * takes past the deepest breach the scope had (a longer day or week, a shorter rest). A breach the
- * change leaves as it is, or eases, in its scope does not block it, also when it moves to another
- * shift of the same day; carried to another day or week, it is a new breach there.
+ * takes deeper than every breach the scope had (a longer day or week, a shorter rest, more
+ * Saturday work). A breach the change leaves as it is, or eases, in its scope does not block it,
+ * also when it moves to another shift of the same day or its sector exception goes stale; carried
+ * to another day or week, it is a new breach there.
  */
 export function causedBlockingFindings<F extends StatutoryFinding>(
 	before: readonly StatutoryFinding[],
@@ -55,11 +74,7 @@ export function causedBlockingFindings<F extends StatutoryFinding>(
 		if (!finding.blocksPublication) return false;
 		const scope = breachScopeOf(finding);
 		const priors = before.filter((prior) => sameScope(prior, finding, scope));
-		if (priors.length === 0) return true;
-		const deepest = priors.reduce((deepest, prior) =>
-			deepensBreachedLimit(deepest, prior) ? prior : deepest,
-		);
-		return deepensBreachedLimit(deepest, finding);
+		return priors.every((prior) => deepens(prior, finding));
 	});
 }
 

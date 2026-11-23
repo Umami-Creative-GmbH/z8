@@ -85,7 +85,7 @@
         "overlapDescription": "This shift overlaps with {count} other shift(s)",
         "overlapWarning": "Shift saved with overlap warning",
         "skillOverrideReasonRequired": "The employee lacks a required skill on this day. Open the shift to give a reason.",
-        "statutoryBlocked": "This change to a published shift breaks youth protection limits (JArbSchG). Change the shift or acknowledge a statutory sector exception first.",
+        "statutoryBlocked": "This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
         "updated": "Shift updated"
       },
       "supportFailed": "Templates or compliance information could not be refreshed. Check again before publishing.",

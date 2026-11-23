@@ -77,7 +77,7 @@ async function runContributors(
 	// A current acknowledgement (e.g. a JArbSchG sector exception) lifts the publication block.
 	return acknowledged.map((finding) =>
 		finding.blocksPublication && finding.acknowledgement?.status === "current"
-			? { ...finding, blocksPublication: false }
+			? { ...finding, blocksPublication: false, publicationBlockLifted: true }
 			: finding,
 	);
 }

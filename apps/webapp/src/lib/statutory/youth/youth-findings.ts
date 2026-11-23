@@ -122,6 +122,9 @@ export function jarbschgFindingOf(input: {
 					limit: breach.limit,
 				}),
 		acknowledgementKind: sectorException ? "jarbschg_sector_exception" : null,
+		...(sectorException && breach.coveredMinutes !== undefined
+			? { coveredMinutes: breach.coveredMinutes }
+			: {}),
 		// Recorded or running work cannot be unpublished; only planned shifts block publication.
 		blocksPublication: input.blockPublish && !interval.recorded && !interval.inProgress,
 	};
