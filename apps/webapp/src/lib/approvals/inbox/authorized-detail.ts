@@ -76,7 +76,16 @@ export async function loadAuthorizedApprovalDetail(input: {
 	try {
 		if (!request) {
 			if (input.kind === "compatibility") return { status: "not_found" };
-			// A compliance exception opens within the viewer's own scope (#1977, ADR-0005).
+			const readsEligibility = approverAccess && !canManageApprovals;
+			const eligibleApprovalScopes = readsEligibility
+				? await getEligibleApprovalScopesForManager({
+						db,
+						managerEmployeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
+					})
+				: [];
+			// A compliance exception opens within the viewer's own scope (#1977, ADR-0005), from
+			// the eligibility read above when there was one.
 			const complianceExceptionScope =
 				input.kind === "canonical"
 					? null
@@ -84,6 +93,7 @@ export async function loadAuthorizedApprovalDetail(input: {
 							organizationId: currentEmployee.organizationId,
 							employeeId: currentEmployee.id,
 							canManageCompliance: ability.cannot("manage", "Compliance") === false,
+							...(readsEligibility ? { eligibleApprovalScopes } : {}),
 						});
 			if (!approverAccess) {
 				if (!complianceExceptionScope) return { status: "not_found" };
@@ -95,13 +105,6 @@ export async function loadAuthorizedApprovalDetail(input: {
 				});
 				return { status: "found", detail: markOwnRequestDetail(exception, currentEmployee.id) };
 			}
-			const eligibleApprovalScopes = canManageApprovals
-				? []
-				: await getEligibleApprovalScopesForManager({
-						db,
-						managerEmployeeId: currentEmployee.id,
-						organizationId: currentEmployee.organizationId,
-					});
 			const detail = await getApprovalInboxDetail({
 				approvalId: input.approvalId,
 				organizationId: currentEmployee.organizationId,

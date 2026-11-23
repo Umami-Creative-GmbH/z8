@@ -8,7 +8,8 @@
 
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { complianceException, employeeManagers, workPolicyViolation } from "@/db/schema";
+import { complianceException, employee, workPolicyViolation } from "@/db/schema";
+import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { awaitingComplianceExceptionDecision } from "@/lib/compliance/pending-compliance-exception";
 import {
 	dateFromInstant,
@@ -157,32 +158,32 @@ export const TeamsComplianceServiceLive = Layer.effect(
 		const dbService = yield* DatabaseService;
 
 		/**
-		 * Get managed employee IDs with their names
+		 * The employees this manager is responsible for, with their names: those they are an
+		 * eligible manager of, as the Approval inbox the card links to scopes them (#1977), so a
+		 * team's primary manager also sees a member who has no active direct manager.
 		 */
 		const getManagedEmployeesWithNames = (
 			managerId: string,
 			organizationId: string,
 		): Effect.Effect<Map<string, string>, DatabaseError> =>
 			dbService.query("getManagedEmployeesWithNames", async () => {
-				const managed = await dbService.db.query.employeeManagers.findMany({
-					where: eq(employeeManagers.managerId, managerId),
-					with: {
-						employee: {
-							columns: { id: true, organizationId: true },
-							with: {
-								user: { columns: { name: true } },
-							},
-						},
-					},
+				const scopes = await getEligibleApprovalScopesForManager({
+					db: dbService.db,
+					managerEmployeeId: managerId,
+					organizationId,
+				});
+				const employeeIds = scopes.map((scope) => scope.requesterEmployeeId);
+				if (employeeIds.length === 0) return new Map<string, string>();
+				const managed = await dbService.db.query.employee.findMany({
+					where: and(
+						eq(employee.organizationId, organizationId),
+						inArray(employee.id, employeeIds),
+					),
+					columns: { id: true },
+					with: { user: { columns: { name: true } } },
 				});
 
-				const map = new Map<string, string>();
-				for (const m of managed) {
-					if (m.employee.organizationId === organizationId) {
-						map.set(m.employeeId, m.employee.user?.name || "Unknown");
-					}
-				}
-				return map;
+				return new Map(managed.map((m) => [m.id, m.user?.name || "Unknown"]));
 			});
 
 		return TeamsComplianceService.of({

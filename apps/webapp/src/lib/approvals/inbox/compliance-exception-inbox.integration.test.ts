@@ -6,8 +6,6 @@
  * Local contract: pnpm --filter webapp test:integration
  */
 import { randomUUID } from "node:crypto";
-import type { SQL } from "drizzle-orm";
-import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
@@ -708,30 +706,27 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 
 		it("refuses as not found when the manager's scope is revoked before the decision is written", async () => {
 			const exceptionId = await exception({ employeeId: employee.employeeId });
-			const dialect = new PgDialect();
-			// The manager link goes away after the exception was read in scope, before the write.
-			const revokingDatabase = {
-				async execute(statement: SQL) {
-					if (/^\s*update\b/i.test(dialect.sqlToQuery(statement).sql)) {
-						await fixture.pool.query(
-							"delete from employee_managers where employee_id = $1 and manager_id = $2",
-							[employee.employeeId, manager.employeeId],
-						);
-					}
-					return db.execute(statement);
-				},
-			};
+			const scope = await resolveComplianceExceptionInboxScope({
+				organizationId,
+				employeeId: manager.employeeId,
+				canManageCompliance: false,
+			});
+			expect(scope).toEqual({ kind: "managed", employeeIds: [employee.employeeId] });
+			// The manager link goes away after the scope was resolved, before the write.
+			await fixture.pool.query(
+				"delete from employee_managers where employee_id = $1 and manager_id = $2",
+				[employee.employeeId, manager.employeeId],
+			);
 			const notify = notifications();
 
 			const decision = decideComplianceExceptionFromInbox({
 				organizationId,
 				exceptionId,
 				actorEmployeeId: manager.employeeId,
-				scope: { kind: "managed", employeeIds: [employee.employeeId] },
+				scope: scope ?? { kind: "managed", employeeIds: [] },
 				action: "approve",
 				clock: AT_NOW,
 				notify,
-				database: revokingDatabase,
 			});
 
 			await expect(decision).rejects.toBeInstanceOf(NotFoundError);
@@ -807,6 +802,71 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 					rejectAs({ employeeId: notifiedManagerId ?? "" }, exceptionId),
 				).resolves.toMatchObject({ status: "rejected" });
 			}
+		});
+
+		async function statusOf(exceptionId: string) {
+			const { rows } = await fixture.pool.query<{ status: string; approver_id: string | null }>(
+				"select status, approver_id from compliance_exception where id = $1",
+				[exceptionId],
+			);
+			return rows[0];
+		}
+
+		it("sees and decides the exception of a member found only through a team membership", async () => {
+			const member = await fixture.employee({ organizationId });
+			await fixture.pool.query(
+				`insert into team_membership (id, organization_id, team_id, employee_id)
+				 values ($1, $2, $3, $4)`,
+				[randomUUID(), organizationId, teamId, member.employeeId],
+			);
+			const exceptionId = await exception({ employeeId: member.employeeId });
+
+			expect((await listFor(teamLead)).items.map((item) => item.id)).toEqual([exceptionId]);
+			await expect(rejectAs(teamLead, exceptionId)).resolves.toMatchObject({
+				status: "rejected",
+			});
+		});
+
+		it("sees and decides the exception of a member whose direct manager is inactive", async () => {
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+			await fixture.pool.query("update employee set is_active = false where id = $1", [
+				manager.employeeId,
+			]);
+
+			expect((await listFor(teamLead)).items.map((item) => item.id)).toEqual([exceptionId]);
+			await expect(rejectAs(teamLead, exceptionId)).resolves.toMatchObject({
+				status: "rejected",
+			});
+		});
+
+		it.each([
+			["downgraded", "role = 'employee'"],
+			["deactivated", "is_active = false"],
+		])("refuses a team manager %s between scope resolution and the write", async (_change, set) => {
+			const exceptionId = await exception({ employeeId: outsider.employeeId });
+			const scope = await resolveComplianceExceptionInboxScope({
+				organizationId,
+				employeeId: teamLead.employeeId,
+				canManageCompliance: false,
+			});
+			expect(scope).toEqual({ kind: "managed", employeeIds: [outsider.employeeId] });
+			await fixture.pool.query(`update employee set ${set} where id = $1`, [teamLead.employeeId]);
+			const notify = { approved: vi.fn(async () => {}), rejected: vi.fn(async () => {}) };
+
+			const decision = decideComplianceExceptionFromInbox({
+				organizationId,
+				exceptionId,
+				actorEmployeeId: teamLead.employeeId,
+				scope: scope ?? { kind: "managed", employeeIds: [] },
+				action: "reject",
+				reason: "Cover is already planned",
+				clock: AT_NOW,
+				notify,
+			});
+
+			await expect(decision).rejects.toBeInstanceOf(NotFoundError);
+			expect(await statusOf(exceptionId)).toEqual({ status: "pending", approver_id: null });
+			expect(notify.rejected).not.toHaveBeenCalled();
 		});
 	});
 

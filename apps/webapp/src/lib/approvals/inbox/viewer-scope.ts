@@ -34,18 +34,19 @@ export async function resolveApprovalInboxViewerScope(input: {
 	const canManageApprovals = ability.cannot("manage", "Approval") === false;
 	// Managing Compliance alone reads compliance exceptions, never approvals.
 	const approverAccess = canAccessApprovalInbox(ability, employee);
+	const readsEligibility = approverAccess && !canManageApprovals;
+	const eligibleApprovalScopes = readsEligibility
+		? await getEligibleApprovalScopesForManager({
+				db,
+				managerEmployeeId: employee.id,
+				organizationId: employee.organizationId,
+			})
+		: [];
 	return {
 		approverId: employee.id,
 		organizationId: employee.organizationId,
 		includeAllApprovers: canManageApprovals || undefined,
-		eligibleApprovalScopes:
-			canManageApprovals || !approverAccess
-				? []
-				: await getEligibleApprovalScopesForManager({
-						db,
-						managerEmployeeId: employee.id,
-						organizationId: employee.organizationId,
-					}),
+		eligibleApprovalScopes,
 		// "Covering for": absent approvers this employee covers for now (#1016).
 		covering: approverAccess
 			? await loadInboxCovers(db, {
@@ -55,11 +56,13 @@ export async function resolveApprovalInboxViewerScope(input: {
 				})
 			: [],
 		...(approverAccess ? {} : { complianceExceptionsOnly: true }),
-		// ArbZG compliance exceptions this employee sees (ADR-0005).
+		// ArbZG compliance exceptions this employee sees (ADR-0005), from the eligibility read
+		// above when there was one.
 		complianceExceptionScope: await resolveComplianceExceptionInboxScope({
 			organizationId: employee.organizationId,
 			employeeId: employee.id,
 			canManageCompliance: ability.cannot("manage", "Compliance") === false,
+			...(readsEligibility ? { eligibleApprovalScopes } : {}),
 		}),
 	};
 }

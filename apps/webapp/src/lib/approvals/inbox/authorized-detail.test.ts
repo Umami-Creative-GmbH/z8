@@ -127,6 +127,33 @@ describe("loadAuthorizedApprovalDetail", () => {
 		);
 	});
 
+	it("reads an approver-manager's eligibility once, for approvals and compliance exceptions (#1977)", async () => {
+		const eligibleApprovalScopes = [
+			{ requesterEmployeeId: "requester-1", eligibleApproverIds: ["employee-1"] },
+		];
+		state.getEligibleApprovalScopesForManager.mockResolvedValueOnce(
+			eligibleApprovalScopes as never,
+		);
+		state.findApprovalRequest.mockResolvedValue(undefined);
+
+		await loadAuthorizedApprovalDetail({
+			userId: "user-1",
+			organizationId: "org-1",
+			approvalId: "exception-1",
+		});
+
+		expect(state.getEligibleApprovalScopesForManager).toHaveBeenCalledTimes(1);
+		expect(state.resolveComplianceExceptionInboxScope).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			canManageCompliance: false,
+			eligibleApprovalScopes,
+		});
+		expect(state.getApprovalInboxDetail).toHaveBeenCalledWith(
+			expect.objectContaining({ eligibleApprovalScopes }),
+		);
+	});
+
 	describe("an employee who only manages Compliance (#1977)", () => {
 		beforeEach(() => {
 			state.getAbility.mockResolvedValue(

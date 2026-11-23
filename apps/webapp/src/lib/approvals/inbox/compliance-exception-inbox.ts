@@ -20,7 +20,10 @@ import {
 } from "@/lib/notifications/compliance-triggers";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
-import { getEligibleApprovalScopesForManager } from "../policies/manager-eligibility-db";
+import {
+	getEligibleApprovalScopesForManager,
+	getEligibleManagerIdsForRequester,
+} from "../policies/manager-eligibility-db";
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { periodSubmissionHours } from "../presentation/period-submission-review";
 import type { ApprovalTriageReason } from "../triage-assessment";
@@ -576,57 +579,44 @@ async function lostDecision(input: {
 	return notFound(input.exceptionId);
 }
 
+/** The database a decision writes through: its scope re-check and update run as one transaction. */
+export interface ComplianceExceptionDecisionDatabase extends CanonicalInboxReadDatabase {
+	transaction<T>(run: (tx: ComplianceExceptionDecisionTransaction) => Promise<T>): Promise<T>;
+}
+
+type ComplianceExceptionDecisionTransaction = CanonicalInboxReadDatabase &
+	Parameters<typeof getEligibleManagerIdsForRequester>[0]["db"];
+
 /**
- * The actor's scope again, at the decision's write: the scope was resolved before the write, and
- * a manager link or team may have changed since. Managing Compliance is the organization; a
- * manager must still be an eligible manager of the exception's employee, as
- * `resolveEligibleManagers` decides for a persisted source (policies/manager-eligibility.ts): an
- * active manager or admin of the organization, linked directly, or, while the employee has no
- * such direct manager, the primary manager of one of the employee's teams.
+ * The actor's scope again, inside the decision's transaction: the scope was resolved before the
+ * write, and a manager link, team or the actor's own role may have changed since. Managing
+ * Compliance is the organization; a manager must still be an eligible manager of the exception's
+ * employee, as the shared resolver decides for a persisted source (`existing_workflow`). The
+ * actor's employee row stays locked until the decision commits, so their role and activity
+ * cannot change under it.
  */
-function decisionScopeCondition(input: {
-	organizationId: string;
-	actorEmployeeId: string;
-	scope: ComplianceExceptionInboxScope;
-}): SQL {
-	if (input.scope.kind === "organization") return sql`true`;
-	const activeManager = (alias: string) =>
-		sql`${sql.raw(alias)}.organization_id = ${input.organizationId}
-			and ${sql.raw(alias)}.is_active and ${sql.raw(alias)}.role in ('manager', 'admin')`;
-	return sql`${scopeCondition(input.scope)} and exists (
-		select 1 from employee actor
-		where actor.id = ${input.actorEmployeeId}::uuid and ${activeManager("actor")}
-			and (
-				exists (
-					select 1 from employee_managers link
-					where link.employee_id = exception.employee_id and link.manager_id = actor.id
-				)
-				or (
-					not exists (
-						select 1 from employee_managers link
-						join employee direct_manager on direct_manager.id = link.manager_id
-						where link.employee_id = exception.employee_id and ${activeManager("direct_manager")}
-					)
-					and exists (
-						select 1 from team
-						join employee requester
-							on requester.id = exception.employee_id
-							and requester.organization_id = ${input.organizationId}
-						where team.organization_id = ${input.organizationId}
-							and team.primary_manager_id = actor.id
-							and (
-								team.id = requester.team_id
-								or exists (
-									select 1 from team_membership membership
-									where membership.organization_id = ${input.organizationId}
-										and membership.team_id = team.id
-										and membership.employee_id = requester.id
-								)
-							)
-					)
-				)
-			)
-	)`;
+async function actorStillDecides(
+	tx: ComplianceExceptionDecisionTransaction,
+	input: {
+		organizationId: string;
+		actorEmployeeId: string;
+		requesterEmployeeId: string;
+		scope: ComplianceExceptionInboxScope;
+	},
+): Promise<boolean> {
+	if (input.scope.kind === "organization") return true;
+	await tx.execute(sql`
+		select id from employee
+		where id = ${input.actorEmployeeId}::uuid and organization_id = ${input.organizationId}
+		for share
+	`);
+	const managerIds = await getEligibleManagerIdsForRequester({
+		db: tx,
+		requesterEmployeeId: input.requesterEmployeeId,
+		organizationId: input.organizationId,
+		requesterMode: "existing_workflow",
+	});
+	return managerIds.includes(input.actorEmployeeId);
 }
 
 /**
@@ -645,9 +635,9 @@ export async function decideComplianceExceptionFromInbox(input: {
 	/** Judges the validity window and stamps the decision; the system clock by default. */
 	clock?: Clock;
 	notify?: ComplianceExceptionDecisionNotifications;
-	database?: CanonicalInboxReadDatabase;
+	database?: ComplianceExceptionDecisionDatabase;
 }): Promise<ApprovalInboxDecisionSuccess> {
-	const database = readDatabase(input);
+	const database = input.database ?? (db as unknown as ComplianceExceptionDecisionDatabase);
 	const clock = input.clock ?? systemClock;
 	const now = clock.nowInstant();
 	if (!UUID_PATTERN.test(input.exceptionId)) throw notFound(input.exceptionId);
@@ -704,25 +694,41 @@ export async function decideComplianceExceptionFromInbox(input: {
 	// the checks above: the window can close in between.
 	const decidedAt = clock.nowInstant();
 	const at = dateFromInstant(decidedAt);
-	const decided = resultRows(
-		await database.execute(sql`
-			update compliance_exception exception
-			set status = ${input.action === "approve" ? "approved" : "rejected"},
-				approver_id = ${input.actorEmployeeId}::uuid,
-				${
-					input.action === "approve"
-						? sql`approved_at = ${at}::timestamptz`
-						: sql`rejected_at = ${at}::timestamptz, rejection_reason = ${reason}`
-				},
-				updated_at = ${at}::timestamptz
-			where exception.organization_id = ${input.organizationId}
-				and exception.id = ${input.exceptionId}::uuid
-				and exception.employee_id <> ${input.actorEmployeeId}::uuid
-				and ${awaitingComplianceExceptionDecision(decidedAt, exceptionAlias)}
-				and ${decisionScopeCondition(input)}
-			returning exception.id
-		`),
-	);
+	const decided = await database.transaction(async (tx) => {
+		// Locked first: a concurrent decision of the same exception waits for this one to commit.
+		await tx.execute(sql`
+			select id from compliance_exception
+			where organization_id = ${input.organizationId} and id = ${input.exceptionId}::uuid
+			for update
+		`);
+		const inScope = await actorStillDecides(tx, {
+			organizationId: input.organizationId,
+			actorEmployeeId: input.actorEmployeeId,
+			requesterEmployeeId: String(target.employeeId),
+			scope: input.scope,
+		});
+		if (!inScope) return [];
+		return resultRows(
+			await tx.execute(sql`
+				update compliance_exception exception
+				set status = ${input.action === "approve" ? "approved" : "rejected"},
+					approver_id = ${input.actorEmployeeId}::uuid,
+					${
+						input.action === "approve"
+							? sql`approved_at = ${at}::timestamptz`
+							: sql`rejected_at = ${at}::timestamptz, rejection_reason = ${reason}`
+					},
+					updated_at = ${at}::timestamptz
+				where exception.organization_id = ${input.organizationId}
+					and exception.id = ${input.exceptionId}::uuid
+					and exception.employee_id = ${String(target.employeeId)}::uuid
+					and exception.employee_id <> ${input.actorEmployeeId}::uuid
+					and ${awaitingComplianceExceptionDecision(decidedAt, exceptionAlias)}
+					and ${scopeCondition(input.scope)}
+				returning exception.id
+			`),
+		);
+	});
 	if (decided.length === 0) {
 		throw await lostDecision({
 			organizationId: input.organizationId,
@@ -865,13 +871,17 @@ export async function resolveComplianceExceptionInboxScope(input: {
 	organizationId: string;
 	employeeId: string;
 	canManageCompliance: boolean;
+	/** This employee's eligible manager scopes when the caller already read them; else read here. */
+	eligibleApprovalScopes?: readonly { requesterEmployeeId: string }[];
 }): Promise<ComplianceExceptionInboxScope | null> {
 	if (input.canManageCompliance) return { kind: "organization" };
-	const scopes = await getEligibleApprovalScopesForManager({
-		db,
-		managerEmployeeId: input.employeeId,
-		organizationId: input.organizationId,
-	});
+	const scopes =
+		input.eligibleApprovalScopes ??
+		(await getEligibleApprovalScopesForManager({
+			db,
+			managerEmployeeId: input.employeeId,
+			organizationId: input.organizationId,
+		}));
 	const employeeIds = scopes.map((scope) => scope.requesterEmployeeId);
 	return employeeIds.length > 0 ? { kind: "managed", employeeIds } : null;
 }

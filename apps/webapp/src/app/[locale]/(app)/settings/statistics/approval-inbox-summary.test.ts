@@ -83,11 +83,14 @@ describe("loadApprovalInboxSummary counts as the inbox badge does (#1977)", () =
 		const summary = await loadApprovalInboxSummary(viewer("manager"), "org-1");
 
 		expect(summary).toEqual({ status: "ok", value: { pending: 3, absenceRequests: 1 } });
+		// The eligibility the approvals were read with, not a second read (#1977).
 		expect(mockState.resolveComplianceExceptionInboxScope).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			employeeId: "employee-1",
 			canManageCompliance: false,
+			eligibleApprovalScopes: [],
 		});
+		expect(mockState.getEligibleApprovalScopesForManager).toHaveBeenCalledTimes(1);
 		expect(mockState.getApprovalInboxCounts).toHaveBeenCalledWith(
 			expect.objectContaining({
 				approverId: "employee-1",
