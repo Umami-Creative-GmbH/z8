@@ -59,7 +59,7 @@ export const ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES: Record<EngagementCategoryRefu
 	unavailability_is_for_contractors: "Only External Contractors record unavailability",
 };
 
-/** The rules every contractor unavailability category has; migration 0329 checks them too. */
+/** The rules every contractor unavailability category has; migration 0330 checks them too. */
 export const CONTRACTOR_UNAVAILABILITY_RULES = {
 	requiresWorkTime: false,
 	countsAgainstVacation: false,

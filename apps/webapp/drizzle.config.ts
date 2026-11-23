@@ -14,6 +14,7 @@ export default defineConfig({
 		// Outside the barrel so `db.query`'s relational type stays below TypeScript's
 		// instantiation depth limit (TS2589 in work-balance/adjustments/store.ts, #1995).
 		"./src/db/schema/contractor-profile.ts",
+		"./src/db/schema/contractor-compensation.ts",
 	],
 	dialect: "postgresql",
 	dbCredentials: {

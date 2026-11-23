@@ -3,12 +3,19 @@
 import { useTranslate } from "@tolgee/react";
 import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { ContractsBulkCsvTab } from "./contracts-bulk-csv-tab";
+import { ContractsContractorsTab } from "./contracts-contractors-tab";
 import { ContractsDefaultsTab } from "./contracts-defaults-tab";
 import { ContractsReviewsTab } from "./contracts-reviews-tab";
 import { ContractsTemplatesTab } from "./contracts-templates-tab";
 import { ContractsWorkPoliciesTab } from "./contracts-work-policies-tab";
 
-export type ContractsHubTab = "defaults" | "templates" | "work-policies" | "bulk" | "reviews";
+export type ContractsHubTab =
+	| "defaults"
+	| "templates"
+	| "work-policies"
+	| "contractors"
+	| "bulk"
+	| "reviews";
 
 export interface ContractsHubClientProps {
 	organizationId: string;
@@ -70,6 +77,15 @@ export function ContractsHubClient({
 							workPolicyVersioningEnabled={workPolicyVersioningEnabled}
 						/>
 					),
+				},
+				{
+					value: "contractors",
+					label: t("settings.contracts.tabs.contractors", "Contractors"),
+					description: t(
+						"settings.contracts.tabs.contractorsDescription",
+						"Set External Contractors' effective-dated hourly or daily rates and their company, VAT ID and PO reference.",
+					),
+					panel: <ContractsContractorsTab />,
 				},
 				{
 					value: "bulk",
