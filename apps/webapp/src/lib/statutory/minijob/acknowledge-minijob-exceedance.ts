@@ -98,6 +98,10 @@ export async function acknowledgeMinijobExceedance(
 			refusal: "minijob_exceedance_changed" satisfies MinijobExceedanceRefusal,
 		});
 	}
+	// The admin documented the total they were shown. If it has fallen since (a started shift has
+	// lapsed), keep the shown total: work added back up to it is what they already acknowledged.
+	const amountsCents = finding.adminDetail?.amountsCents ?? {};
+	const documentedTotal = Math.max(input.expectedTotalCents, amountsCents.total ?? 0);
 	return recordStatutoryAcknowledgement(db, {
 		...subject,
 		organizationId: input.organizationId,
@@ -107,10 +111,10 @@ export async function acknowledgeMinijobExceedance(
 		legalNote: input.legalNote,
 		metadata: {
 			// The total is what the acknowledgement documents: a later rise beyond it makes it stale.
-			amountsCents: finding.adminDetail?.amountsCents ?? {},
+			amountsCents: { ...amountsCents, total: documentedTotal },
 			evaluatedOn: plainDateAt(input.now, timezone).toString(),
 		},
 		// Documenting a risen total of an unchanged fingerprint records a new acknowledgement.
-		revision: `total:${finding.adminDetail?.amountsCents?.total ?? ""}`,
+		revision: `total:${documentedTotal}`,
 	});
 }

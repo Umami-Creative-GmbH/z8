@@ -618,6 +618,28 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 			});
 		});
 
+		it("documents the total the admin was shown when it fell before they submitted", async () => {
+			const s = await december();
+			// 15:50 Berlin on 1 December: the started shift still counts in full, 780 €.
+			const shown = await reviewedDecember(s, Temporal.Instant.from("2026-12-01T14:50:00Z"));
+			expect(shown?.totalCents).toBe(78_000);
+
+			// They submit at 16:05: the shift lapsed unworked, the server now counts 676 €.
+			const record = await acknowledgeShown(
+				s,
+				shown,
+				Temporal.Instant.from("2026-12-01T15:05:00Z"),
+			);
+			expect(record.metadata.amountsCents).toMatchObject({ total: 78_000 });
+
+			// The forgotten entry brings the month back to the 780 € the admin documented.
+			await mj.work(s.org, s.worker, "2026-12-01", 480);
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 78_000,
+				...documented,
+			});
+		});
+
 		it("keeps the acknowledgement current when a lapsed shift lowers the total", async () => {
 			const s = await december();
 			await acknowledgeDecember(s, NOW);
