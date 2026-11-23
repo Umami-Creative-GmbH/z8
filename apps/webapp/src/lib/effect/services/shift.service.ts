@@ -27,6 +27,7 @@ import {
 	insertSkillOverride,
 	skillOverrideReasonRequiredError,
 } from "@/lib/scheduling/skill-override";
+import { isMaterialShiftAssignmentChange } from "@/lib/scheduling/shift-assignment-change";
 import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 import { DatabaseService } from "./database.service";
 
@@ -564,6 +565,15 @@ export const ShiftServiceLive = Layer.effect(
 											endTime: input.endTime,
 											notes: input.notes,
 											color: input.color,
+											// § 12 TzBfG notice runs from the last material change (#1992).
+											...(isMaterialShiftAssignmentChange(existing, {
+												employeeId,
+												date: input.date,
+												startTime: input.startTime,
+												endTime: input.endTime,
+											})
+												? { assignmentChangedAt: new Date() }
+												: {}),
 										})
 										.where(
 											and(

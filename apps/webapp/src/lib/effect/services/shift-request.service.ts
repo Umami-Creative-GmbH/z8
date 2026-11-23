@@ -272,7 +272,8 @@ async function approvePendingRequest(
 					: eq(shift.employeeId, current.shift.employeeId);
 	const [updatedShift] = await tx
 		.update(shift)
-		.set({ employeeId: assignedEmployeeId })
+		// A new assignee is a material change: § 12 TzBfG notice restarts for them (#1992).
+		.set({ employeeId: assignedEmployeeId, assignmentChangedAt: new Date() })
 		.where(
 			and(
 				eq(shift.id, current.shiftId),
