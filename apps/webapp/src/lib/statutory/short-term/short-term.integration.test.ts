@@ -513,6 +513,55 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			]);
 		});
 
+		describe("verification fingerprint", () => {
+			async function verifiedAt(now: Temporal.Instant) {
+				const { org, worker } = await earner("a", 7);
+				const owner = await fx.user("owner");
+				// 560 EUR worked + 80 EUR planned on 20 May, 09:00–13:00.
+				await st.shift(org, worker, "2026-05-20", "09:00", "13:00");
+				const [finding] = (await evaluate(org, [worker.employeeId], { now }))[0]?.findings ?? [];
+				await recordStatutoryAcknowledgement(db, {
+					...(statutoryAcknowledgementSubjectOf(
+						finding as StatutoryFinding,
+					) as StatutoryAcknowledgementSubject),
+					organizationId: org.id,
+					actorUserId: owner.userId,
+					inputFingerprint: finding?.inputFingerprint ?? "",
+					reason: "Verified",
+				});
+				const stateAt = async (at: Temporal.Instant) => {
+					const [after] =
+						(await evaluate(org, [worker.employeeId], { now: at }))[0]?.findings ?? [];
+					const [attached] = await attachAcknowledgementStates(db, org.id, after ? [after] : []);
+					return attached?.acknowledgement?.status;
+				};
+				return { org, worker, stateAt };
+			}
+
+			it("stays current when a shift is worked as planned and past midnight", async () => {
+				const { org, worker, stateAt } = await verifiedAt(
+					Temporal.Instant.from("2026-05-20T05:00:00Z"),
+				);
+				await st.work(org, worker, "2026-05-20", "09:00", "13:00");
+
+				expect(await stateAt(Temporal.Instant.from("2026-05-20T12:00:00Z"))).toBe("current");
+				expect(await stateAt(Temporal.Instant.from("2026-05-20T22:30:00Z"))).toBe("current");
+
+				await st.shift(org, worker, "2026-05-27");
+				expect(await stateAt(Temporal.Instant.from("2026-05-20T22:30:00Z"))).toBe("stale");
+			});
+
+			it("stays current while the shift's clock-in is open", async () => {
+				const { org, worker, stateAt } = await verifiedAt(
+					Temporal.Instant.from("2026-05-20T05:00:00Z"),
+				);
+				await st.openWork(org, worker, "2026-05-20", "09:00");
+
+				expect(await stateAt(Temporal.Instant.from("2026-05-20T07:30:30Z"))).toBe("current");
+				expect(await stateAt(Temporal.Instant.from("2026-05-20T10:10:45Z"))).toBe("current");
+			});
+		});
+
 		it("keeps a second shift of a day with completed work while its clock-in is open", async () => {
 			const { org, worker } = await earner("a", 7);
 			// 15:00 in Berlin: the morning shift is worked, the afternoon one runs since 14:00.

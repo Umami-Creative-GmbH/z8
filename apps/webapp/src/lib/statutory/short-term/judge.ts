@@ -13,7 +13,13 @@ import {
 import { statutoryInputFingerprint } from "../fingerprint";
 import type { StatutoryPreferences } from "../preferences";
 import type { StatutoryThresholdTable } from "../thresholds";
-import type { ShortTermEmployeeInputs, ShortTermLimitKind, ShortTermYearWeek } from "./load-inputs";
+import type {
+	ShortTermEmployeeInputs,
+	ShortTermLimitKind,
+	ShortTermPlanItem,
+	ShortTermWorkItem,
+	ShortTermYearWeek,
+} from "./load-inputs";
 
 export const SHORT_TERM_LEGAL_REFERENCE = "§ 8 Abs. 1 Nr. 2 SGB IV";
 
@@ -338,6 +344,38 @@ export function judgeShortTermYear(input: {
 	return { employeeId: employee.employeeId, year, allowance, findings };
 }
 
+/**
+ * What a Berufsmäßigkeit verification depends on: each day's minutes at each wage, not whether
+ * they were planned or worked. A shift worked as planned, a running shift with its open clock-in
+ * (whole minutes so far plus the rest rounded up) and the date rolling past midnight keep it;
+ * added, removed, longer or shorter work and shifts, a new wage or cap change it. An open clock-in
+ * without a shift grows by the minute, so it counts by its identity until it closes.
+ */
+function berufsmaessigkeitFingerprint(input: {
+	readonly month: string;
+	readonly cap: number;
+	readonly work: readonly ShortTermWorkItem[];
+	readonly planned: readonly ShortTermPlanItem[];
+}): string {
+	const minutesByDay = new Map<string, number>();
+	const openWithoutShift: string[] = [];
+	for (const item of [...input.work, ...input.planned]) {
+		if ("workPeriodId" in item && item.inProgress === "unplanned") {
+			openWithoutShift.push(item.workPeriodId);
+			continue;
+		}
+		const key = `${item.date}|${item.hourlyRateCents ?? "unpriced"}|${item.currency}`;
+		minutesByDay.set(key, (minutesByDay.get(key) ?? 0) + item.minutes);
+	}
+	return statutoryInputFingerprint({
+		kind: "short_term_berufsmaessigkeit_check",
+		month: input.month,
+		cap: input.cap,
+		days: [...minutesByDay].sort(([a], [b]) => a.localeCompare(b)),
+		openWithoutShift: openWithoutShift.sort(),
+	});
+}
+
 /** Earnings of `minutes` at an hourly wage in minor units, rounded to the cent. */
 function earningsCents(minutes: number, hourlyRateCents: number): number {
 	return Math.round((minutes * hourlyRateCents) / 60);
@@ -417,26 +455,7 @@ function berufsmaessigkeitFindings(input: {
 				amountsCents: { earned, planned: plannedCents, total, cap },
 				facts: { unpricedMinutes },
 			},
-			inputFingerprint: statutoryInputFingerprint({
-				kind,
-				month,
-				cap,
-				work: work.map((item) => [
-					item.workPeriodId,
-					item.date,
-					item.minutes,
-					item.hourlyRateCents,
-					item.currency,
-				]),
-				planned: planned.map((item) => [
-					item.shiftId ?? "proposed",
-					item.date,
-					item.startTime,
-					item.endTime,
-					item.hourlyRateCents,
-					item.currency,
-				]),
-			}),
+			inputFingerprint: berufsmaessigkeitFingerprint({ month, cap, work, planned }),
 			acknowledgementKind: "short_term_berufsmaessigkeit_verified",
 		});
 	}
