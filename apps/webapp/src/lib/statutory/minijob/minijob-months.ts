@@ -383,9 +383,13 @@ export function acknowledgedTotalCentsOf(
  * lapse — and therefore cannot see work recorded later for a shift that lapsed or ran short, or
  * such work corrected upward to the shift's length. The total does: an acknowledgement matching
  * the fingerprint stays current only while the month's total is at most one material step
- * (`materialRiseCents`) above the total the admin acknowledged. As time passes the total can only
- * fall (shifts lapse; running work counts to its shift's end), so this does not tie staleness to
- * the clock. An acknowledgement without a documented total covers no figures and is stale.
+ * (`materialRiseCents`) above the total the admin acknowledged.
+ *
+ * This is also the only check on work in progress: open work outside any shift, or running past the
+ * end of a shift that is over, keeps the fingerprint steady (`plannedBasisOf`) while its minutes
+ * grow the total, so the acknowledgement goes stale here once that growth passes a step. Work for
+ * a running shift counts to the shift's end and does not grow the total; shifts that lapse only
+ * lower it. An acknowledgement without a documented total covers no figures and is stale.
  */
 export function minijobAcknowledgementStatus(
 	month: Pick<MinijobMonth, "totalCents" | "materialRiseCents">,
