@@ -284,6 +284,51 @@ describe("absence category form helpers", () => {
 		);
 	});
 
+	it("clears and locks the deduction rules for External Contractor unavailability (#1996)", async () => {
+		const { createAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
+		vi.mocked(createAbsenceCategory).mockReset();
+		vi.mocked(createAbsenceCategory).mockResolvedValue({ success: false, error: "stop" });
+		render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+		const deductions = [
+			"Counts Against Vacation Balance",
+			"Requires Work Time",
+			"Draws on Work Balance",
+		];
+
+		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Unavailable" } });
+		// A conflicting combination chosen first must not block the save afterwards.
+		fireEvent.click(screen.getByRole("checkbox", { name: "Draws on Work Balance" }));
+		fireEvent.click(screen.getByRole("checkbox", { name: "Counts Against Vacation Balance" }));
+		fireEvent.click(screen.getByLabelText("Type"));
+		fireEvent.click(
+			await screen.findByRole("option", { name: "External Contractor unavailability" }),
+		);
+
+		for (const name of deductions) {
+			const checkbox = screen.getByRole("checkbox", { name });
+			expect(checkbox.getAttribute("aria-checked")).toBe("false");
+			expect(checkbox.getAttribute("aria-disabled")).toBe("true");
+		}
+		fireEvent.click(screen.getByRole("button", { name: "Create Category" }));
+		await vi.waitFor(() =>
+			expect(createAbsenceCategory).toHaveBeenCalledWith(
+				expect.objectContaining({
+					type: "contractor_unavailability",
+					countsAgainstVacation: false,
+					requiresWorkTime: false,
+					drawsOnWorkBalance: false,
+				}),
+			),
+		);
+		expect(
+			screen.queryByText(
+				'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+			),
+		).toBeNull();
+	});
+
 	it("keeps Deputy required off for sick leave (#1011)", async () => {
 		const { updateAbsenceCategory } = await import(
 			"@/app/[locale]/(app)/settings/vacation/actions"

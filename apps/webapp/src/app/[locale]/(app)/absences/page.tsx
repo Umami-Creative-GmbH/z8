@@ -66,7 +66,7 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 
 	// Fetch all data in parallel
 	const [
-		{ balance: vacationBalance, configuration },
+		{ balance: vacationBalance, configuration, externalContractor },
 		{ absences, holidays },
 		categories,
 	] = await Promise.all([
@@ -87,7 +87,8 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 					</>
 				}
 			/>
-			{vacationBalance ? (
+			{/* Vacation does not apply to an External Contractor (#1996): no balance, no policy alert. */}
+			{externalContractor ? null : vacationBalance ? (
 				<VacationBalanceCard
 					balance={vacationBalance}
 					now={nowIso}

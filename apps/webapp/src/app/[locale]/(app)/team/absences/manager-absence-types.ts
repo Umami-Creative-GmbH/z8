@@ -6,6 +6,7 @@ import type {
 	SickDetail,
 	VacationBalanceConfiguration,
 } from "@/lib/absences/types";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
 
@@ -59,6 +60,8 @@ export interface ManagerAbsenceEmployeeRow {
 	position: string | null;
 	role: ManagerAbsenceRole;
 	teamName: string | null;
+	/** Decides which absence categories may be recorded for them (#1996); absent = employee. */
+	engagementKind?: EngagementKind;
 	vacationAllowance: number | null;
 	usedVacationDays: number | null;
 	previouslyTakenVacationDays?: number;

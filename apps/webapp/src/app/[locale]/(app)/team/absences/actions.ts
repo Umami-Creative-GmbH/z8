@@ -28,6 +28,10 @@ import {
 	getAbsenceDays,
 	loadWorkingDaysForEmployees,
 } from "@/lib/absences/absence-days-resolver";
+import {
+	ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES,
+	engagementCategoryRefusal,
+} from "@/lib/absences/category-rules";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import {
@@ -125,6 +129,7 @@ type ListedEmployee = Pick<
 	| "role"
 	| "organizationId"
 	| "isActive"
+	| "engagementKind"
 > & {
 	userName: string;
 	userEmail: string;
@@ -468,6 +473,20 @@ export async function recordAbsenceForEmployee(
 				success: false,
 				error: "Invalid absence category",
 				code: "NotFoundError",
+			};
+		}
+
+		// An External Contractor records only unavailability; an employee never does (#1996).
+		const engagementRefusal = engagementCategoryRefusal(
+			target.engagementKind,
+			category.type,
+		);
+		if (engagementRefusal) {
+			return {
+				success: false,
+				error: ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES[engagementRefusal],
+				code: "ValidationError",
+				refusal: engagementRefusal,
 			};
 		}
 
@@ -953,6 +972,7 @@ async function selectVisibleEmployees(
 		role: employee.role,
 		organizationId: employee.organizationId,
 		isActive: employee.isActive,
+		engagementKind: employee.engagementKind,
 		userName: user.name,
 		userEmail: user.email,
 		userImage: user.image,
@@ -1168,6 +1188,7 @@ async function addMetricsToRows(
 			position: row.position,
 			role: row.role,
 			teamName: row.teamName,
+			engagementKind: row.engagementKind,
 			...metrics,
 			absences: buildManagerAbsenceRowAbsences(
 				absencesByEmployeeId.get(row.id) ?? [],

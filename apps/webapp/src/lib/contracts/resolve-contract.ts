@@ -298,6 +298,40 @@ export function resolveEmploymentPeriodForDay(
 }
 
 /**
+ * The engagement kind of a day no employment period covers (#1996): the kind of the stint
+ * that ended last before the day, or, before the first stint, of the stint that starts
+ * first after it. Only callers that found no period on the day use this.
+ */
+function engagementKindOutsideEmployment(
+	periods: readonly EmploymentPeriodSnapshot[],
+	day: PlainDate,
+	employeeCalendarTimezone: string,
+): EngagementKind {
+	const dayStart = day.toZonedDateTime(employeeCalendarTimezone).toInstant();
+	let preceding: EmploymentPeriodSnapshot | null = null;
+	let following: EmploymentPeriodSnapshot | null = null;
+	for (const period of periods) {
+		if (period.endedAt !== null && compareInstants(period.endedAt, dayStart) <= 0) {
+			if (preceding?.endedAt == null || compareInstants(period.endedAt, preceding.endedAt) > 0) {
+				preceding = period;
+			}
+			continue;
+		}
+		const start =
+			period.startProvenance === "recorded" && period.startedAt ? period.startedAt : null;
+		if (start === null) continue;
+		if (
+			following === null ||
+			following.startedAt === null ||
+			compareInstants(start, following.startedAt) < 0
+		) {
+			following = period;
+		}
+	}
+	return (preceding ?? following)?.engagementKind ?? "employee";
+}
+
+/**
  * Resolves the employee's primary team at 00:00 of `day` in `employeeCalendarTimezone`,
  * strictly honoring migration 0120's non-inference invariant (zero backward extrapolation
  * before `employee_team_history.effective_from`, half-open `[effective_from, effective_to)`,
@@ -1236,11 +1270,17 @@ export function resolveEffectiveContractPure(
 
 	// 2b. An External Contractor stint is exempt from every employee labor rule (#1996):
 	// no Org/Primary-Team default contract, no work policy, no work balance.
+	// A day outside every stint (before the first, after the last, or in a gap) takes the
+	// kind of the nearest stint, so a contractor's non-employed days never inherit defaults.
 	const engagementKind: EngagementKind =
 		period?.engagementKind ??
 		(input.employmentPeriods.length === 0
 			? (input.employeeEngagementKind ?? "employee")
-			: "employee");
+			: engagementKindOutsideEmployment(
+					input.employmentPeriods,
+					day,
+					input.employeeCalendarTimezone,
+				));
 	if (engagementKind === "contractor") {
 		return contractorEngagementOnDay({
 			input,

@@ -28,6 +28,27 @@ vi.mock("@/lib/approvals/delivery/kick", async () =>
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
+const session = vi.hoisted(() => ({
+	userId: null as string | null,
+	organizationId: null as string | null,
+}));
+vi.mock("@/lib/auth", () => ({
+	auth: {
+		api: {
+			getSession: async () =>
+				session.userId && session.organizationId
+					? {
+							user: { id: session.userId, role: "user", email: `${session.userId}@example.test` },
+							session: {
+								id: `session-${session.userId}`,
+								userId: session.userId,
+								activeOrganizationId: session.organizationId,
+							},
+						}
+					: null,
+		},
+	},
+}));
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
 const { db } = await import("@/db");
@@ -35,12 +56,15 @@ const { createClosedMonthDatabaseFixture } =
 	await import("@/lib/time-tracking/closed-months/testing/closed-month-database.test.fixture");
 const { accrueVacationPeriods } = await import("@/lib/absences/vacation-accrual");
 const { loadVacationBalances } = await import("@/lib/absences/vacation-balance-store");
-const { calculateAnnualCarryover } = await import("@/lib/absences/vacation.service");
+const { calculateAnnualCarryover, getEnhancedVacationBalanceResult } =
+	await import("@/lib/absences/vacation.service");
 const { decidePeriodSubmission, submitPeriodSubmission } =
 	await import("@/lib/time-tracking/period-submissions/submission-service");
 const { requestAbsenceForEmployeeEffect } =
 	await import("@/app/[locale]/(app)/absences/request-absence-effect");
-const { getAbsenceCategories } = await import("@/app/[locale]/(app)/absences/queries");
+const { getAbsenceCategories, getVacationBalanceResult } =
+	await import("@/app/[locale]/(app)/absences/queries");
+const { recordAbsenceForEmployee } = await import("@/app/[locale]/(app)/team/absences/actions");
 const { getAbsencesForMonth } = await import("@/lib/calendar/absence-service");
 const { fetchAbsencesForExport } = await import("@/lib/payroll-export/data-fetcher");
 const { getDailyWorkRequirementsForEmployee } =
@@ -115,6 +139,28 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 				"delete from vacation_adjustment where employee_id = any($1::uuid[])",
 				[[org.employee.employeeId, org.contractor.employeeId]],
 			);
+		});
+
+		it("tells a contractor's own balance reads that vacation does not apply, not that a policy is missing", async () => {
+			const org = await organizationWithContractor();
+			await vacationPolicy({
+				organizationId: org.organizationId,
+				createdBy: org.ownerUserId,
+				accrualType: "annual",
+			});
+
+			const contractor = await getVacationBalanceResult(org.contractor.employeeId, 2026, "UTC");
+			const employee = await getVacationBalanceResult(org.employee.employeeId, 2026, "UTC");
+			expect(contractor).toEqual({ balance: null, configuration: null, externalContractor: true });
+			expect(employee).toMatchObject({ externalContractor: false });
+			expect(employee.balance).not.toBeNull();
+
+			const widget = await getEnhancedVacationBalanceResult({
+				employeeId: org.contractor.employeeId,
+				organizationId: org.organizationId,
+				year: 2026,
+			});
+			expect(widget).toEqual({ balance: null, configuration: null, externalContractor: true });
 		});
 
 		it("prorates a former contractor's allowance by their employee stint alone", async () => {
@@ -346,6 +392,142 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 				before.balances.get(org.employee.employeeId),
 			);
 			expect(after.balances.has(org.contractor.employeeId)).toBe(false);
+		});
+
+		it("lets a manager record only unavailability for a contractor, and never for an employee", async () => {
+			const org = await organizationWithContractor();
+			const category = await categories(org.organizationId);
+			session.userId = org.ownerUserId;
+			session.organizationId = org.organizationId;
+			const record = (employeeId: string, categoryId: string) =>
+				recordAbsenceForEmployee({
+					employeeId,
+					categoryId,
+					startDate: "2026-11-09",
+					startPeriod: "full_day",
+					endDate: "2026-11-10",
+					endPeriod: "full_day",
+				});
+
+			await expect(record(org.contractor.employeeId, category.vacation)).resolves.toMatchObject({
+				success: false,
+				refusal: "contractor_records_unavailability_only",
+			});
+			await expect(record(org.employee.employeeId, category.unavailability)).resolves.toMatchObject(
+				{
+					success: false,
+					refusal: "unavailability_is_for_contractors",
+				},
+			);
+			await expect(
+				record(org.contractor.employeeId, category.unavailability),
+			).resolves.toMatchObject({ success: true });
+
+			const { rows } = await fixture.pool.query<{ employee_id: string; category_id: string }>(
+				"select employee_id, category_id from absence_entry where organization_id = $1",
+				[org.organizationId],
+			);
+			expect(rows).toEqual([
+				{ employee_id: org.contractor.employeeId, category_id: category.unavailability },
+			]);
+		});
+
+		it("imports only unavailability for a contractor, and never for an employee", async () => {
+			const org = await organizationWithContractor();
+			await categories(org.organizationId);
+			const { importBatch, importBatchJob, importStagedRow } = await import("@/db/schema");
+			const { processImportReviewJob } = await import("@/lib/import-review/worker");
+			const batchId = randomUUID();
+			const jobId = randomUUID();
+			await db.insert(importBatch).values({
+				id: batchId,
+				organizationId: org.organizationId,
+				provider: "clockin",
+				status: "committing",
+				selectedScope: {},
+				dateRange: { startDate: "2026-11-01", endDate: "2026-11-30" },
+				startedBy: org.ownerUserId,
+			});
+			await db.insert(importBatchJob).values({
+				id: jobId,
+				batchId,
+				organizationId: org.organizationId,
+				kind: "commit",
+				entityType: "absence",
+				partitionKey: "absence",
+			});
+			const rows = [
+				{
+					source: "contractor-vacation",
+					employeeId: org.contractor.employeeId,
+					category: "Vacation",
+				},
+				{
+					source: "contractor-unmapped",
+					employeeId: org.contractor.employeeId,
+					category: undefined,
+				},
+				{
+					source: "employee-unavailable",
+					employeeId: org.employee.employeeId,
+					category: "Unavailable",
+				},
+				{
+					source: "contractor-unavailable",
+					employeeId: org.contractor.employeeId,
+					category: "Unavailable",
+				},
+			];
+			await db.insert(importStagedRow).values(
+				rows.map((row, index) => ({
+					batchId,
+					organizationId: org.organizationId,
+					entityType: "absence" as const,
+					providerSourceId: `absence:${row.source}`,
+					sourcePayloadHash: `hash-${row.source}`,
+					sourcePayload: { id: row.source },
+					normalizedPayload: {
+						employeeId: row.employeeId,
+						startsAt: `2026-11-${String(2 + index * 2).padStart(2, "0")}T00:00:00Z`,
+						endsAt: `2026-11-${String(2 + index * 2).padStart(2, "0")}T23:59:00Z`,
+						...(row.category ? { categoryName: row.category } : {}),
+					},
+					rowStatus: "accepted" as const,
+					issueSeverity: "none" as const,
+				})),
+			);
+
+			await processImportReviewJob({
+				data: {
+					type: "import-review-commit" as const,
+					batchId,
+					jobId,
+					organizationId: org.organizationId,
+					entityType: "absence" as const,
+					committedBy: org.ownerUserId,
+				},
+				attemptsMade: 0,
+				opts: { attempts: 1 },
+			} as Parameters<typeof processImportReviewJob>[0]).catch(() => undefined);
+
+			const { rows: staged } = await fixture.pool.query<{
+				provider_source_id: string;
+				row_status: string;
+			}>(
+				"select provider_source_id, row_status from import_staged_row where batch_id = $1 order by provider_source_id",
+				[batchId],
+			);
+			expect(staged).toEqual([
+				{ provider_source_id: "absence:contractor-unavailable", row_status: "committed" },
+				{ provider_source_id: "absence:contractor-unmapped", row_status: "blocked" },
+				{ provider_source_id: "absence:contractor-vacation", row_status: "blocked" },
+				{ provider_source_id: "absence:employee-unavailable", row_status: "blocked" },
+			]);
+			const { rows: written } = await fixture.pool.query<{ employee_id: string }>(
+				"select employee_id from absence_entry where organization_id = $1",
+				[org.organizationId],
+			);
+			expect(written).toEqual([{ employee_id: org.contractor.employeeId }]);
 		});
 
 		it("offers a contractor only unavailability, and an employee everything else", async () => {

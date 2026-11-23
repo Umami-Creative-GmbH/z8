@@ -89,7 +89,9 @@ export function loadVacationBalanceForEmployee(subject: {
 		const timezone = org?.timezone || "UTC";
 		const currentYear = calendarYearAt(systemClock.nowInstant(), timezone);
 
-		const { balance, configuration } = yield* dbService.query("getVacationBalance:balance", () =>
+		const { balance, configuration, externalContractor } = yield* dbService.query(
+			"getVacationBalance:balance",
+			() =>
 			getEnhancedVacationBalanceResult({
 				employeeId: subject.employee.id,
 				organizationId: subject.organizationId,
@@ -101,6 +103,7 @@ export function loadVacationBalanceForEmployee(subject: {
 		return {
 			year: currentYear,
 			configuration,
+			externalContractor,
 			balance: balance
 				? {
 						totalDays: balance.totalDays,
