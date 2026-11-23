@@ -63,7 +63,6 @@ export function daysOf(from: PlainDate, untilExclusive: PlainDate): PlainDate[] 
 	return days;
 }
 
-
 export function shiftMinutes(
 	input: { date: PlainDate; startTime: string; endTime: string },
 	timezone: string,
@@ -183,7 +182,10 @@ export async function loadOnCallFacts(
 			date,
 			startTime: row.startTime,
 			endTime: row.endTime,
-			minutes: shiftMinutes({ date, startTime: row.startTime, endTime: row.endTime }, input.timezone),
+			minutes: shiftMinutes(
+				{ date, startTime: row.startTime, endTime: row.endTime },
+				input.timezone,
+			),
 			status: row.status,
 			publishedAt: row.publishedAt ? instantFromDate(row.publishedAt) : null,
 			assignmentChangedAt: instantFromDate(row.assignmentChangedAt),
@@ -232,4 +234,3 @@ export async function loadOnCallFacts(
 
 	return { thresholds, termsByEmployee, shiftsByEmployee, workMinutesByEmployee };
 }
-

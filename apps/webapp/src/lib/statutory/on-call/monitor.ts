@@ -172,11 +172,7 @@ function minimumCallMinutes(
 	);
 }
 
-function shortCallFinding(
-	base: Base,
-	shift: OnCallShift,
-	minimum: number,
-): OnCallFinding | null {
+function shortCallFinding(base: Base, shift: OnCallShift, minimum: number): OnCallFinding | null {
 	if (shift.minutes >= minimum) return null;
 	const subjectKey = shiftSubject(shift);
 	return finding(base, {
@@ -332,8 +328,7 @@ function bandFindings(
 		const planned = input.shifts
 			.filter((shift) => shift.date.equals(day))
 			.reduce((sum, shift) => sum + shift.minutes, 0);
-		const minutes =
-			comparePlainDates(day, input.today) < 0 ? worked : Math.max(worked, planned);
+		const minutes = comparePlainDates(day, input.today) < 0 ? worked : Math.max(worked, planned);
 		return [day.toString(), minutes] as const;
 	});
 	const used = minutesByDay.reduce((sum, [, minutes]) => sum + minutes, 0);
@@ -448,7 +443,10 @@ export async function evaluateOnCallFindings(
 					date,
 					startTime: s.startTime,
 					endTime: s.endTime,
-					minutes: shiftMinutes({ date, startTime: s.startTime, endTime: s.endTime }, request.timezone),
+					minutes: shiftMinutes(
+						{ date, startTime: s.startTime, endTime: s.endTime },
+						request.timezone,
+					),
 					status: "draft",
 					publishedAt: null,
 					assignmentChangedAt: null,

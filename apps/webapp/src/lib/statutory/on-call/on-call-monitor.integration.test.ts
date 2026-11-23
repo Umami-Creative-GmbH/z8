@@ -19,7 +19,9 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 	beforeEach(fx.cleanup);
 	afterAll(fx.cleanup);
 
-	async function onCallWorker(kind: "unspecified" | "minimum" | "maximum" | "exact" = "unspecified") {
+	async function onCallWorker(
+		kind: "unspecified" | "minimum" | "maximum" | "exact" = "unspecified",
+	) {
 		const org = await onCall.organization("a");
 		const worker = await fx.employee(org, "worker", { contractType: "hourly" });
 		await onCall.onCallTerms(org, worker, { kind, weeklyMinutes: 600 });
@@ -188,7 +190,11 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			const statutory = await fx.employee(org, "statutory");
 			await onCall.onCallTerms(org, statutory, { kind: "unspecified" });
 			const agreed = await fx.employee(org, "agreed");
-			await onCall.onCallTerms(org, agreed, { kind: "exact", weeklyMinutes: 600, dailyMinutes: 240 });
+			await onCall.onCallTerms(org, agreed, {
+				kind: "exact",
+				weeklyMinutes: 600,
+				dailyMinutes: 240,
+			});
 			const shift = (who: { employeeId: string }, startTime: string, endTime: string) =>
 				onCall.shift(org, {
 					employeeId: who.employeeId,
@@ -201,8 +207,16 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			await shift(statutory, "13:00", "16:00");
 			const threeHours = await shift(agreed, "09:00", "12:00");
 			await shift(agreed, "13:00", "17:00");
-			await onCall.work(org, statutory, { date: "2026-03-10", startTime: "09:00", endTime: "11:00" });
-			await onCall.work(org, statutory, { date: "2026-03-11", startTime: "09:00", endTime: "12:00" });
+			await onCall.work(org, statutory, {
+				date: "2026-03-10",
+				startTime: "09:00",
+				endTime: "11:00",
+			});
+			await onCall.work(org, statutory, {
+				date: "2026-03-11",
+				startTime: "09:00",
+				endTime: "12:00",
+			});
 			await onCall.work(org, agreed, { date: "2026-03-10", startTime: "22:00", endTime: "01:00" });
 
 			const findings = await evaluateOnCallFindings(db, {

@@ -38,9 +38,7 @@ export interface OnCallTermsView {
 	readonly dailyMinutes: number | null;
 }
 
-export type OnCallFindingView =
-	| OnCallFinding
-	| RedactedStatutoryFinding<OnCallFindingKind>;
+export type OnCallFindingView = OnCallFinding | RedactedStatutoryFinding<OnCallFindingKind>;
 
 export interface OnCallReviewItem {
 	readonly employeeId: string;
@@ -57,7 +55,9 @@ async function employeeNames(
 	const rows = await db
 		.select({ id: employee.id, firstName: employee.firstName, lastName: employee.lastName })
 		.from(employee)
-		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])));
+		.where(
+			and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])),
+		);
 	return new Map(
 		rows.map((row) => [row.id, [row.firstName, row.lastName].filter(Boolean).join(" ") || row.id]),
 	);
@@ -252,6 +252,7 @@ export async function listOnCallPayrollReferenceRows(
 		}
 	}
 	return result.toSorted(
-		(a, b) => a.eventDate.localeCompare(b.eventDate) || a.employeeName.localeCompare(b.employeeName),
+		(a, b) =>
+			a.eventDate.localeCompare(b.eventDate) || a.employeeName.localeCompare(b.employeeName),
 	);
 }

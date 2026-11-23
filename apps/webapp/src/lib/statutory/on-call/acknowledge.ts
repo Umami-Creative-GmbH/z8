@@ -38,7 +38,11 @@ export async function acknowledgeOnCallShortNotice(
 		.where(and(eq(shift.id, input.shiftId), eq(shift.organizationId, input.organizationId)))
 		.limit(1);
 	if (!row?.employeeId) {
-		throw new NotFoundError({ message: "Shift not found", entityType: "shift", entityId: input.shiftId });
+		throw new NotFoundError({
+			message: "Shift not found",
+			entityType: "shift",
+			entityId: input.shiftId,
+		});
 	}
 	const day = shiftCalendarDate(row.date, input.timezone);
 	const findings = await evaluateOnCallFindings(db, {
@@ -50,7 +54,8 @@ export async function acknowledgeOnCallShortNotice(
 	});
 	const finding = findings.find(
 		(candidate) =>
-			candidate.kind === "on_call_short_notice" && candidate.subjectKey === `shift:${input.shiftId}`,
+			candidate.kind === "on_call_short_notice" &&
+			candidate.subjectKey === `shift:${input.shiftId}`,
 	);
 	const subject = finding ? statutoryAcknowledgementSubjectOf(finding) : null;
 	if (!finding || !subject) {

@@ -48,11 +48,23 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 		]) {
 			await onCall.work(org, worker, { date, startTime: "09:00", endTime: "13:00" });
 		}
-		await onCall.absence(org, worker, { type: "unpaid", startDate: "2026-05-04", endDate: "2026-05-08" });
+		await onCall.absence(org, worker, {
+			type: "unpaid",
+			startDate: "2026-05-04",
+			endDate: "2026-05-08",
+		});
 		await onCall.work(org, worker, { date: "2026-05-05", startTime: "09:00", endTime: "12:00" });
-		await onCall.absence(org, worker, { type: "vacation", startDate: "2026-05-18", endDate: "2026-05-19" });
+		await onCall.absence(org, worker, {
+			type: "vacation",
+			startDate: "2026-05-18",
+			endDate: "2026-05-19",
+		});
 		await onCall.holiday(org, worker, "2026-05-25");
-		await onCall.absence(org, worker, { type: "sick", startDate: "2026-06-10", endDate: "2026-06-12" });
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-06-10",
+			endDate: "2026-06-12",
+		});
 		// A rejected-to-be pending sick note is no event.
 		await onCall.absence(org, worker, {
 			type: "sick",

@@ -102,7 +102,10 @@ const UNPAID_ABSENCE_TYPES = new Set(["unpaid", "parental"]);
 
 interface ReferenceFacts {
 	readonly contracts: ReadonlyMap<string, EffectiveContractOnDay>;
-	readonly exclusionByDay: ReadonlyMap<string, Exclude<OnCallReferenceExclusionReason, "not_employed">>;
+	readonly exclusionByDay: ReadonlyMap<
+		string,
+		Exclude<OnCallReferenceExclusionReason, "not_employed">
+	>;
 	readonly workMinutesByDay: Readonly<Record<string, number>>;
 	readonly timezone: string;
 	readonly sickStarts: readonly string[];
@@ -168,7 +171,10 @@ async function loadReferenceFacts(
 		);
 
 	const exclusionByDay = new Map<string, Exclude<OnCallReferenceExclusionReason, "not_employed">>();
-	const exclude = (day: string, reason: Exclude<OnCallReferenceExclusionReason, "not_employed">) => {
+	const exclude = (
+		day: string,
+		reason: Exclude<OnCallReferenceExclusionReason, "not_employed">,
+	) => {
 		const current = exclusionByDay.get(day);
 		if (!current || RANK[reason] > RANK[current]) exclusionByDay.set(day, reason);
 	};
@@ -352,7 +358,9 @@ export async function listOnCallReferenceEvents(
 	});
 	const inRange = (day: string) => day >= input.from && day < input.untilExclusive;
 	const candidates: { kind: OnCallReferenceEventKind; eventDate: string }[] = [
-		...facts.sickStarts.filter(inRange).map((eventDate) => ({ kind: "sick_leave" as const, eventDate })),
+		...facts.sickStarts
+			.filter(inRange)
+			.map((eventDate) => ({ kind: "sick_leave" as const, eventDate })),
 		...[...facts.holidays]
 			.filter(inRange)
 			.map((eventDate) => ({ kind: "public_holiday" as const, eventDate })),

@@ -67,7 +67,11 @@ describe("on-call actions (PostgreSQL)", () => {
 			startDate: today.subtract({ days: 1 }).toString(),
 			endDate: today.subtract({ days: 1 }).toString(),
 		});
-		const as = (who: { userId: string }, membershipRole: string, employee: StubCaller["employee"]) => {
+		const as = (
+			who: { userId: string },
+			membershipRole: string,
+			employee: StubCaller["employee"],
+		) => {
 			harness.caller = {
 				userId: who.userId,
 				activeOrganizationId: org.id,
