@@ -8,7 +8,13 @@ process.env.PGOPTIONS = postgresOptions;
 
 export default defineConfig({
 	out: "./drizzle",
-	schema: ["./src/db/auth-schema.ts", "./src/db/schema/index.ts"],
+	schema: [
+		"./src/db/auth-schema.ts",
+		"./src/db/schema/index.ts",
+		// Outside the barrel so `db.query`'s relational type stays below TypeScript's
+		// instantiation depth limit (TS2589 in work-balance/adjustments/store.ts, #1995).
+		"./src/db/schema/contractor-profile.ts",
+	],
 	dialect: "postgresql",
 	dbCredentials: {
 		host: process.env.POSTGRES_HOST!,

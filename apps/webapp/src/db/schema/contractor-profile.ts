@@ -4,6 +4,13 @@ import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 import { currentTimestamp } from "./timestamp";
 
+/*
+ * Not re-exported from the schema barrel (`./index.ts`): one more table in the
+ * relational `db.query` type pushed `WorkBalanceDbClient` transactions past
+ * TypeScript's instantiation depth (TS2589). Import it from this module;
+ * drizzle.config.ts lists it for `db:push`.
+ */
+
 /**
  * Optional contracting details of an External Contractor (#1995, spec #1935),
  * organization-scoped and kept apart from the employee profile and custom

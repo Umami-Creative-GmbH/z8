@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { employeeContractorProfile } from "@/db/schema";
+import { employeeContractorProfile } from "@/db/schema/contractor-profile";
 
 type ProfileClient = Pick<typeof appDb, "insert" | "select">;
 
