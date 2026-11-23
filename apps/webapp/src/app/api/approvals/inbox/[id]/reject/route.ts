@@ -30,6 +30,7 @@ import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
 	canAccessApprovalInbox,
+	canManageCompliance,
 	canOpenApprovalInbox,
 	ForbiddenError,
 	toHttpError,
@@ -143,7 +144,7 @@ export async function POST(
 				organizationId: currentEmployee.organizationId,
 				exceptionId: id,
 				actorEmployeeId: currentEmployee.id,
-				canManageCompliance: ability.cannot("manage", "Compliance") === false,
+				canManageCompliance: canManageCompliance(ability),
 				action: "reject",
 				reason,
 			});

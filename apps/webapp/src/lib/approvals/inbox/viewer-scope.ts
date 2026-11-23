@@ -1,7 +1,12 @@
 import { db } from "@/db";
 import { loadInboxCovers } from "@/lib/approvals/deputy/deputy-decision-store";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
-import { type AppAbility, canAccessApprovalInbox, canOpenApprovalInbox } from "@/lib/authorization";
+import {
+	type AppAbility,
+	canAccessApprovalInbox,
+	canManageCompliance,
+	canOpenApprovalInbox,
+} from "@/lib/authorization";
 import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
 import { resolveComplianceExceptionInboxScope } from "./compliance-exception-inbox";
 import type { ApprovalInboxListParams } from "./read-service";
@@ -67,7 +72,7 @@ export async function resolveApprovalInboxViewerScope(input: {
 		complianceExceptionScope: await resolveComplianceExceptionInboxScope({
 			organizationId: employee.organizationId,
 			employeeId: employee.id,
-			canManageCompliance: ability.cannot("manage", "Compliance") === false,
+			canManageCompliance: canManageCompliance(ability),
 			...(readsEligibility ? { eligibleApprovalScopes } : {}),
 		}),
 	};

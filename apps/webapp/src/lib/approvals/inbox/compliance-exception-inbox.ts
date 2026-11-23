@@ -20,7 +20,11 @@ import {
 } from "@/lib/notifications/compliance-triggers";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
-import { canOpenApprovalInbox, defineAbilityFor } from "@/lib/authorization/ability";
+import {
+	canManageCompliance,
+	canOpenApprovalInbox,
+	defineAbilityFor,
+} from "@/lib/authorization/ability";
 import {
 	loadOrganizationSessionPrincipalContexts,
 	type PrincipalLoaderExecutor,
@@ -1004,7 +1008,7 @@ export function complianceExceptionInboxScopesFor(input: {
 			return resolveComplianceExceptionInboxScope({
 				organizationId: input.organizationId,
 				employeeId: recipient.employeeId,
-				canManageCompliance: ability.cannot("manage", "Compliance") === false,
+				canManageCompliance: canManageCompliance(ability),
 				eligibleApprovalScopes: eligibleApprovalScopesOf(eligibility, recipient.employeeId),
 			});
 		},

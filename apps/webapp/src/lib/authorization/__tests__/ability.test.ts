@@ -9,6 +9,7 @@ import type { ForcedSubject } from "@casl/ability";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
 	canAccessApprovalInbox,
+	canManageCompliance,
 	canOpenApprovalInbox,
 	createEmptyAbility,
 	defineAbilityFor,
@@ -531,6 +532,24 @@ describe("Approval Inbox opening (#1977)", () => {
 		expect(ability.can("manage", "Compliance")).toBe(true);
 		expect(canOpenApprovalInbox(ability, employee)).toBe(true);
 		expect(canOpenApprovalInbox(ability, foreign)).toBe(false);
+	});
+
+	it("says an org admin manages Compliance and a plain employee does not", () => {
+		const admin = defineAbilityFor(
+			createPrincipal({
+				orgMembership: { organizationId: ORG_1, role: "admin", status: "active" },
+				employee: { ...employee, teamId: TEAM_1 },
+			}),
+		);
+		const plain = defineAbilityFor(
+			createPrincipal({
+				orgMembership: { organizationId: ORG_1, role: "member", status: "active" },
+				employee: { ...employee, teamId: TEAM_1 },
+			}),
+		);
+
+		expect(canManageCompliance(admin)).toBe(true);
+		expect(canManageCompliance(plain)).toBe(false);
 	});
 });
 

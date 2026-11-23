@@ -17,6 +17,7 @@ import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
 	canAccessApprovalInbox,
+	canManageCompliance,
 	ForbiddenError,
 	toHttpError,
 } from "@/lib/authorization";
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
 			includeAllApprovers: canManageApprovals || undefined,
 			eligibleApprovalScopes,
 			// Which compliance exceptions the employee sees, to refuse them by name (#1977).
-			canManageCompliance: ability.cannot("manage", "Compliance") === false,
+			canManageCompliance: canManageCompliance(ability),
 			// Approvals of absent approvers this employee covers for (#1016).
 			coveredApproverIds: (
 				await loadInboxCovers(db, {

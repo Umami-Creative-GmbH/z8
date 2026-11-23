@@ -11,7 +11,11 @@ import {
 	loadInboxCovers,
 } from "@/lib/approvals/deputy/deputy-decision-store";
 import { getAbility } from "@/lib/auth-helpers";
-import { canAccessApprovalInbox, canOpenApprovalInbox } from "@/lib/authorization";
+import {
+	canAccessApprovalInbox,
+	canManageCompliance,
+	canOpenApprovalInbox,
+} from "@/lib/authorization";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { resolveComplianceExceptionInboxScope } from "./compliance-exception-inbox";
 import { markDecidedEarlierStageDetail } from "./covering-marks";
@@ -92,7 +96,7 @@ export async function loadAuthorizedApprovalDetail(input: {
 					: await resolveComplianceExceptionInboxScope({
 							organizationId: currentEmployee.organizationId,
 							employeeId: currentEmployee.id,
-							canManageCompliance: ability.cannot("manage", "Compliance") === false,
+							canManageCompliance: canManageCompliance(ability),
 							...(readsEligibility ? { eligibleApprovalScopes } : {}),
 						});
 			if (!approverAccess) {

@@ -397,8 +397,16 @@ export function canOpenApprovalInbox(
 ): boolean {
 	return (
 		canAccessApprovalInbox(ability, employee) ||
-		(hasEmployeePrincipal(ability, employee) && ability.cannot("manage", "Compliance") === false)
+		(hasEmployeePrincipal(ability, employee) && canManageCompliance(ability))
 	);
+}
+
+/**
+ * Whether the ability manages Compliance: it sees and decides every compliance exception of
+ * the organization, not only those of the employees it manages (#1977).
+ */
+export function canManageCompliance(ability: Pick<AppAbility, "cannot">): boolean {
+	return ability.cannot("manage", "Compliance") === false;
 }
 
 function hasEmployeePrincipal(
