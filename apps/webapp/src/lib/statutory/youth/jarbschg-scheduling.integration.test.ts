@@ -717,8 +717,25 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 				);
 			});
 
-			it("saves moving the breach to Wednesday when the move shortens it to 9 h", async () => {
-				expect(await moveToWednesday("07:00", "17:00")).toMatchObject({ success: true });
+			it("refuses moving the breach to Wednesday even at 9 h: Wednesday had none", async () => {
+				expect(await moveToWednesday("07:00", "17:00")).toMatchObject({
+					success: false,
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				});
+				expect((await shiftRow(tuesday))?.end_time).toBe("18:00");
+			});
+
+			it("saves shortening it to 9 h on Tuesday", async () => {
+				expect(
+					await upsertShift({
+						id: tuesday,
+						employeeId: minor.employeeId,
+						subareaId,
+						date: "2027-03-02",
+						startTime: "07:00",
+						endTime: "17:00",
+					}),
+				).toMatchObject({ success: true });
 				expect((await shiftRow(tuesday))?.end_time).toBe("17:00");
 			});
 
@@ -743,6 +760,89 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 					}),
 				).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
 				expect((await shiftRow(clean))?.start_time).toBe("09:00");
+			});
+		});
+
+		describe("a published breach carried to another day or week is a new breach there", () => {
+			const findingOn = async (kind: string, shiftId: string) =>
+				expect((await evaluateWeek()).findings).toContainEqual(
+					expect.objectContaining({
+						statutoryKind: kind,
+						subjectKey: `shift:${shiftId}`,
+						blocksPublication: true,
+					}),
+				);
+			const move = (
+				who: FixtureEmployee,
+				id: string,
+				date: string,
+				startTime: string,
+				endTime: string,
+			) => upsertShift({ id, employeeId: who.employeeId, subareaId, date, startTime, endTime });
+			const refused = { success: false, refusal: STATUTORY_PUBLICATION_BLOCKED };
+
+			it("refuses moving a sixth day into the next week, also five days long", async () => {
+				await seed.blockJarbschgPublish(org);
+				const minor = await fx.employee(org, "sixth-day", { birthday: "2011-01-01" });
+				// Published before the block: Monday to Saturday of week 1, Monday to Friday of week 2.
+				for (const date of ["2027-03-01", "2027-03-02", "2027-03-03", "2027-03-04", "2027-03-05"]) {
+					await published(minor, date, "09:00", "13:00");
+				}
+				const saturday = await published(minor, "2027-03-06", "09:00", "13:00");
+				for (const date of ["2027-03-08", "2027-03-09", "2027-03-10", "2027-03-11", "2027-03-12"]) {
+					await published(minor, date, "09:00", "13:00");
+				}
+				await findingOn("jarbschg_days_per_week", saturday);
+
+				expect(await move(minor, saturday, "2027-03-13", "09:00", "13:00")).toMatchObject(refused);
+			});
+
+			it("refuses moving the shift past 40 h into the next week at the same 40.5 h", async () => {
+				await seed.blockJarbschgPublish(org);
+				const minor = await fx.employee(org, "next-week", { birthday: "2011-01-01" });
+				// 07:00–16:00 is 8 h of work after the 60 min break; Friday 07:00–16:30 is 8.5 h.
+				for (const date of ["2027-03-01", "2027-03-02", "2027-03-03", "2027-03-04"]) {
+					await published(minor, date, "07:00", "16:00");
+				}
+				const friday = await published(minor, "2027-03-05", "07:00", "16:30");
+				for (const date of ["2027-03-08", "2027-03-09", "2027-03-10", "2027-03-11"]) {
+					await published(minor, date, "07:00", "16:00");
+				}
+				await findingOn("jarbschg_weekly_max", friday);
+
+				expect(await move(minor, friday, "2027-03-12", "07:00", "16:30")).toMatchObject(refused);
+			});
+
+			it("refuses moving a shift with an 11 h rest to Thursday after an equally late Wednesday", async () => {
+				await seed.blockJarbschgPublish(org);
+				const minor = await fx.employee(org, "rest-move", { birthday: "2011-01-01" });
+				// Published before the block: Monday until 19:00 leaves 11 h before Tuesday 06:00.
+				await published(minor, "2027-03-01", "12:00", "19:00");
+				const tuesday = await published(minor, "2027-03-02", "06:00", "10:00");
+				await published(minor, "2027-03-03", "12:00", "19:00");
+				await findingOn("jarbschg_rest_period", tuesday);
+
+				expect(await move(minor, tuesday, "2027-03-04", "06:00", "10:00")).toMatchObject(refused);
+				expect((await shiftRow(tuesday))?.start_time).toBe("06:00");
+			});
+
+			it("refuses moving a shift that conflicts with one exam onto another exam", async () => {
+				await seed.blockJarbschgPublish(org);
+				const learner = await apprentice("two-exams");
+				for (const date of ["2027-03-02", "2027-03-04"]) {
+					await release(learner, {
+						releaseKind: "exam_day",
+						startsOn: date,
+						endsOn: date,
+						examStartTime: "09:00",
+						schoolMinutes: 120,
+					});
+				}
+				// Published before the block, during Tuesday's exam.
+				const tuesday = await published(learner, "2027-03-02", "10:00", "12:00");
+				await findingOn("bbig_release_day_shift", tuesday);
+
+				expect(await move(learner, tuesday, "2027-03-04", "10:00", "12:00")).toMatchObject(refused);
 			});
 		});
 
