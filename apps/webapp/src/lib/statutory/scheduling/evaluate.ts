@@ -140,8 +140,9 @@ export async function evaluateStatutoryScheduleWindow(
  * It also counts as added when it keeps that state but the proposal deepens a limit already
  * breached: the visible summary has `used` and `limit` in the same unit and `used` moves further
  * past the limit — up past a ceiling (e.g. a lecture week at 22 h → 30 h), or down past a floor
- * (`limitDirection: "floor"`, e.g. a youth rest period at 10.5 h → 10 h). Under-limit ceiling
- * findings (an on-call under-band) and earnings-derived findings (tier only) are unaffected.
+ * (`limitDirection: "floor"`, e.g. a youth rest period at 10.5 h → 10 h, an on-call call shorter
+ * than its minimum). Under-limit ceiling findings (a warning tier) and earnings-derived findings
+ * (tier only) are unaffected.
  *
  * The baseline run gets the proposals as `comparedProposedShifts` (never counted), so a
  * contributor can judge the same subjects in both runs.

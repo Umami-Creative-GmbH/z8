@@ -91,7 +91,8 @@ planned shifts' span, make it stale.
   schedule compliance evaluation and Staffing suggestions through the contributor registry. Staffing
   shows a finding a proposal changes (severity, tier, acknowledgement, block) or deepens past its
   visible `limit` (same unit: `used` grows above a ceiling, or falls below a floor when the summary
-  says `limitDirection: "floor"`, e.g. a youth rest period). It judges each suggestion without and
+  says `limitDirection: "floor"`, e.g. a youth rest period or break, an on-call notice, call or
+  week below its minimum). It judges each suggestion without and
   with the proposal on one request-scoped `memoizedReader`, so the persisted data both runs read is
   loaded once. The planner's publish acknowledgement covers each finding's **breach depth**. The
   JArbSchG publish block refuses an edit or a publication by the same rule (a publication's two

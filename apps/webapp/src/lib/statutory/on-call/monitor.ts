@@ -162,6 +162,7 @@ function noticeFinding(
 		summary: {
 			used: { unit: "days", value: fullDays },
 			limit: { unit: "days", value: required },
+			limitDirection: "floor",
 		},
 		// What the notice depends on: assignee, shift day, notification day and the last material
 		// change that announced the call. Not the shift's times: correcting a started shift's end
@@ -245,6 +246,7 @@ function shortCallFinding(base: Base, call: PlannedCall, minimum: number): OnCal
 		summary: {
 			used: { unit: "minutes", value: minutes },
 			limit: { unit: "minutes", value: minimum },
+			limitDirection: "floor",
 		},
 		inputFingerprint: statutoryInputFingerprint({
 			kind: "on_call_short_call",
@@ -279,6 +281,7 @@ function shortWorkCallFinding(
 		summary: {
 			used: { unit: "minutes", value: call.minutes },
 			limit: { unit: "minutes", value: minimum },
+			limitDirection: "floor",
 		},
 		inputFingerprint: statutoryInputFingerprint({
 			kind: "on_call_short_work_call",
@@ -570,10 +573,13 @@ function bandFindings(
 				summary: {
 					used: { unit: "minutes", value: used },
 					limit: { unit: "minutes", value: band.lowerMinutes },
+					limitDirection: "floor",
 					remaining: { unit: "minutes", value: band.lowerMinutes - used },
 				},
 				inputFingerprint: fingerprint("on_call_weekly_under_band"),
 				acknowledgementKind: null,
+				// A floor: a running clock-in eases it by the minute, which is no change of the plan.
+				...(growing > 0 ? { stableDepth: { used: used - growing } } : {}),
 			}),
 		];
 	}

@@ -20,7 +20,9 @@ import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import {
 	addedStatutoryScheduleFindings,
+	deepensBreachedLimit,
 	evaluateStatutoryScheduleFindings,
+	evaluateStatutoryScheduleWindow,
 } from "../scheduling/evaluate";
 import { statutoryScheduleContributors } from "../scheduling/contributors";
 import { acknowledgeOnCallShortNotice } from "./acknowledge";
@@ -105,7 +107,11 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 			[
 				`shift:${shiftId}`,
 				"none",
-				{ used: { unit: "days", value: 2 }, limit: { unit: "days", value: 4 } },
+				{
+					used: { unit: "days", value: 2 },
+					limit: { unit: "days", value: 4 },
+					limitDirection: "floor",
+				},
 			],
 		]);
 
@@ -771,6 +777,106 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 			publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
 		});
 		expect(await fingerprintAt("10:00:10")).not.toBe(early);
+	});
+
+	describe("a minimum breached further makes the publish acknowledgement stale", () => {
+		/** The publish key of the employee's `kind` finding, as the publish fingerprint hashes it. */
+		async function publishKeyOf(
+			org: { id: string; timezone: string },
+			employeeId: string,
+			kind: string,
+			now: Temporal.Instant,
+		) {
+			const { findings, publishKeys } = await evaluateStatutoryScheduleWindow(
+				db,
+				{
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: { start: "2026-03-09", endExclusive: "2026-03-16" },
+					employeeIds: [employeeId],
+					now,
+				},
+				[onCallScheduleContributor],
+			);
+			const index = findings.findIndex((finding) => finding.statutoryKind === kind);
+			expect(index).toBeGreaterThanOrEqual(0);
+			return { finding: findings[index], key: publishKeys[index] };
+		}
+
+		it("a draft moved from 2 days' notice to none", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			const shiftId = await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-12",
+				startTime: "09:00",
+				endTime: "13:00",
+				status: "draft",
+				publishedAt: null,
+			});
+			const now = localInstant("2026-03-09", "12:00", org.timezone);
+			const before = await publishKeyOf(org, worker.employeeId, "on_call_short_notice", now);
+			expect(before.finding?.summary).toMatchObject({
+				used: { value: 2 },
+				limit: { value: 4 },
+				limitDirection: "floor",
+			});
+
+			await admin.query("update shift set date = $2 where id = $1", [
+				shiftId,
+				shiftStoredDate("2026-03-10", org.timezone),
+			]);
+			const after = await publishKeyOf(org, worker.employeeId, "on_call_short_notice", now);
+			expect(after.finding?.summary.used?.value).toBe(0);
+			expect(after.key).not.toBe(before.key);
+		});
+
+		it("a planned call shortened from 150 to 30 minutes", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			const shiftId = await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-12",
+				startTime: "10:00",
+				endTime: "12:30",
+				publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+			});
+			const now = localInstant("2026-03-02", "12:00", org.timezone);
+			const before = await publishKeyOf(org, worker.employeeId, "on_call_short_call", now);
+			expect(before.finding?.summary.used?.value).toBe(150);
+
+			await admin.query("update shift set end_time = '10:30' where id = $1", [shiftId]);
+			const after = await publishKeyOf(org, worker.employeeId, "on_call_short_call", now);
+			expect(after.finding?.summary.used?.value).toBe(30);
+			expect(after.key).not.toBe(before.key);
+			// Staffing judges a proposal by the same rule: the call is deeper below its minimum.
+			if (!before.finding || !after.finding) throw new Error("no short-call finding");
+			expect(deepensBreachedLimit(before.finding, after.finding)).toBe(true);
+		});
+
+		it("a worked call corrected from 150 to 30 minutes", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			await onCall.work(org, worker, { date: "2026-03-10", startTime: "10:00", endTime: "12:30" });
+			const now = localInstant("2026-03-11", "12:00", org.timezone);
+			const before = await publishKeyOf(org, worker.employeeId, "on_call_short_work_call", now);
+			expect(before.finding?.summary.used?.value).toBe(150);
+
+			await withCanonicalRecords(admin, (client) =>
+				client.query(
+					`update work_period set end_time = start_time + interval '30 minutes',
+					 duration_minutes = 30
+					 where organization_id = $1 and employee_id = $2`,
+					[org.id, worker.employeeId],
+				),
+			);
+			const after = await publishKeyOf(org, worker.employeeId, "on_call_short_work_call", now);
+			expect(after.finding?.summary.used?.value).toBe(30);
+			expect(after.key).not.toBe(before.key);
+		});
 	});
 
 	it("tells Staffing that an on-call candidate's short-notice, short call would add findings", async () => {
