@@ -240,7 +240,11 @@ const reject = () =>
 function rejectWithReason() {
 	fireEvent.click(reject());
 	const panel = screen.queryByRole("dialog", { name: "Reject request" });
-	if (!panel) return;
+	if (!panel) {
+		// No panel opened: that is only right for a disabled Reject, which sends nothing.
+		expect(reject().disabled).toBe(true);
+		return;
+	}
 	fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
 		target: { value: "Synthetic manager reason" },
 	});

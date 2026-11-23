@@ -76,6 +76,9 @@ export function TodayApprovalsPanel({
 	// The item whose rejection reason the manager is writing, and that reason.
 	const [rejecting, setRejecting] = useState<BriefingApprovalActionItem | null>(null);
 	const [rejectReason, setRejectReason] = useState("");
+	// Where focus goes when the reject panel closes.
+	const listRef = useRef<HTMLUListElement>(null);
+	const lastRejectedId = useRef<string | null>(null);
 	const total = Math.max(totalProp ?? items.length, items.length);
 	// A source failed: the total may miss its approvals, so it is only a lower bound (#1980).
 	const incomplete = unavailableTypes.length > 0 || uncountedTypes.length > 0;
@@ -203,6 +206,7 @@ export function TodayApprovalsPanel({
 
 	function openRejectPanel(item: BriefingApprovalActionItem) {
 		if (decisionsOff) return;
+		lastRejectedId.current = item.approvalId;
 		// The panel shows only this rejection's outcome.
 		setDecisionError(null);
 		setRejectReason("");
@@ -267,8 +271,10 @@ export function TodayApprovalsPanel({
 				) : null}
 				{items.length > 0 ? (
 					<ul
+						ref={listRef}
+						tabIndex={-1}
 						aria-label={t("today.approvals.pendingAriaLabel", "Pending approvals")}
-						className="space-y-3"
+						className="space-y-3 outline-none"
 					>
 						{shownItems.map((item) => (
 							<li
@@ -309,6 +315,7 @@ export function TodayApprovalsPanel({
 												aria-label={t("today.approvals.rejectLabel", "Reject {title}", {
 													title: item.title,
 												})}
+												data-reject-approval-id={item.approvalId}
 												disabled={decisionsOff}
 												onClick={() => openRejectPanel(item)}
 												size="sm"
@@ -414,7 +421,18 @@ export function TodayApprovalsPanel({
 					if (!open && !rejectionPending) closeRejectPanel();
 				}}
 			>
-				<ActionPanelContent size="compact">
+				<ActionPanelContent
+					size="compact"
+					// Back to the row's Reject button; once a saved decision has replaced it, to the list,
+					// so keyboard and screen-reader users keep their place.
+					finalFocus={() => {
+						const id = lastRejectedId.current;
+						const button = id
+							? listRef.current?.querySelector<HTMLElement>(`[data-reject-approval-id="${id}"]`)
+							: null;
+						return button ?? listRef.current ?? true;
+					}}
+				>
 					<ActionPanelHeader>
 						<ActionPanelTitle>
 							{t("today.approvals.rejectPanel.title", "Reject request")}
@@ -434,6 +452,26 @@ export function TodayApprovalsPanel({
 									<p className="break-words text-muted-foreground text-sm">{rejecting.summary}</p>
 								</div>
 								{decisionError ? <SectionError message={decisionError} /> : null}
+								{rejectingListed && !rejectingStillRejectable && !rejectionPending ? (
+									// A refresh changed what the item may do: say why Confirm is off.
+									<p
+										role="status"
+										className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground"
+									>
+										<span>
+											{t(
+												"today.approvals.rejectPanel.noLongerRejectable",
+												"This request can no longer be rejected here.",
+											)}
+										</span>
+										<Link
+											href="/approvals/inbox"
+											className="font-medium underline underline-offset-4"
+										>
+											{t("today.approvals.openInboxLink", "Open the inbox")}
+										</Link>
+									</p>
+								) : null}
 								<ApprovalReasonForm
 									key={rejecting.approvalId}
 									reason={rejectReason}

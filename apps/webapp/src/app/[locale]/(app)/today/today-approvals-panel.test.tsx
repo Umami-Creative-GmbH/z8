@@ -531,13 +531,39 @@ describe("TodayApprovalsPanel", () => {
 		// Another decision's refresh brings the item back, no longer rejectable from here.
 		rerender(<TodayApprovalsPanel items={[approvalItem({ canReject: false })]} total={1} />);
 
+		const stillOpen = screen.getByRole("dialog", { name: "Reject request" });
 		expect(
-			(
-				within(screen.getByRole("dialog", { name: "Reject request" })).getByRole("button", {
-					name: "Confirm Rejection",
-				}) as HTMLButtonElement
-			).disabled,
+			(within(stillOpen).getByRole("button", { name: "Confirm Rejection" }) as HTMLButtonElement)
+				.disabled,
 		).toBe(true);
+		// The panel says why, and where the request can be seen now.
+		expect(
+			within(stillOpen).getByText("This request can no longer be rejected here."),
+		).toBeTruthy();
+		expect(
+			within(stillOpen).getByRole("link", { name: "Open the inbox" }).getAttribute("href"),
+		).toBe("/approvals/inbox");
+	});
+
+	it("returns focus to the approvals list after a saved rejection removes its Reject button", async () => {
+		render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Overlaps the inventory week." },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
+		});
+		// Focus stays in the list the user was working in, not on <body> or the card's header link.
+		await waitFor(() => {
+			const list = screen.getByRole("list", { name: "Pending approvals" });
+			expect(document.activeElement).not.toBe(document.body);
+			expect(list.contains(document.activeElement)).toBe(true);
+		});
 	});
 
 	it("drops a refused rejection's error with its item, not into the card", async () => {
