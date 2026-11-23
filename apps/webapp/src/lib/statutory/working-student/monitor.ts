@@ -1,8 +1,11 @@
 /**
- * Read-only working-student monitor (#1991): loads completed work, planned shifts, lecture-free
- * periods and prior-employer weeks for the employees whose effective contract is
- * `working_student`, then judges them with `weeks.ts`. Batched for many employees (Staffing passes
- * up to ~1000 candidates); employees who never had working-student terms cost one query.
+ * Read-only working-student monitor (#1991): loads work (completed and in progress), planned
+ * shifts, lecture-free periods and prior-employer weeks for the employees whose effective contract
+ * is `working_student` in a judged week, then judges them with `weeks.ts`. All their work in the
+ * rolling window counts, whatever the profile it was done under (the 26-week ceiling counts every
+ * week above 20 h); which days are working-student days comes from the canonical contract
+ * resolution, once per employment-profile span. Batched for many employees (Staffing passes up to
+ * ~1000 candidates); employees who never had working-student terms cost one query.
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne } from "drizzle-orm";
 import {
@@ -12,7 +15,10 @@ import {
 	shift,
 	workPeriod,
 } from "@/db/schema";
-import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import {
+	type EmploymentProfileInterval,
+	loadEmploymentProfileIntervals,
+} from "@/lib/contracts/employment-profile-intervals";
 import {
 	compareInstants,
 	comparePlainDates,
@@ -50,7 +56,10 @@ export interface WorkingStudentMonitorRequest {
 	/** Organization-local days to judge, `[start, endExclusive)`; whole weeks touching them are judged. */
 	readonly window: { readonly start: string; readonly endExclusive: string };
 	readonly employeeIds: readonly string[];
-	/** Shifts starting before `now` are expected to show up as recorded work instead. */
+	/**
+	 * Recorded work counts up to `now` (a running clock-in up to `now` itself), planned shifts from
+	 * `now` on: a shift in progress counts with its remaining part, an ended one not at all.
+	 */
 	readonly now: Instant;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
 	readonly replacesShiftId?: string | null;
@@ -76,10 +85,33 @@ export function judgedWeeksOf(window: WorkingStudentMonitorRequest["window"]): {
 	};
 }
 
+function push<V>(groups: Map<string, V[]>, key: string, value: V): void {
+	const list = groups.get(key);
+	if (list) list.push(value);
+	else groups.set(key, [value]);
+}
+
 function groupBy<T>(rows: readonly T[], key: (row: T) => string): Map<string, T[]> {
 	const groups = new Map<string, T[]>();
-	for (const row of rows) groups.set(key(row), [...(groups.get(key(row)) ?? []), row]);
+	for (const row of rows) push(groups, key(row), row);
 	return groups;
+}
+
+const WORKING_STUDENT = "working_student";
+
+/** Whether `date` falls in a working-student span; spans are sorted and contiguous. */
+function inWorkingStudentSpan(spans: readonly EmploymentProfileInterval[], date: string): boolean {
+	let lo = 0;
+	let hi = spans.length - 1;
+	while (lo <= hi) {
+		const mid = (lo + hi) >> 1;
+		const span = spans[mid];
+		if (!span) return false;
+		if (date < span.from) hi = mid - 1;
+		else if (date >= span.untilExclusive) lo = mid + 1;
+		else return span.employmentProfile === WORKING_STUDENT;
+	}
+	return false;
 }
 
 /** Employees among `employeeIds` (all when null) who ever had confirmed working-student terms. */
@@ -123,39 +155,24 @@ export async function evaluateWorkingStudents(
 	const until = judged.toExclusive;
 	const { timezone } = request;
 
-	// Which weeks each candidate is a working student in, by the canonical contract resolver.
-	const dates: string[] = [];
-	for (let day = from; comparePlainDates(day, until) < 0; day = day.add({ days: 1 }))
-		dates.push(day.toString());
-	const contracts = await loadEffectiveContractsBatch(db, {
+	// Which days each candidate is a working student on, by the canonical contract resolution.
+	const profiles = await loadEmploymentProfileIntervals(db, {
 		organizationId: request.organizationId,
 		employeeIds: candidates,
-		dates,
-		timezoneOverride: timezone,
-		organizationTimezone: timezone,
+		from,
+		untilExclusive: until,
+		timezone,
 	});
-	const workingStudentWeeks = new Map<string, Set<string>>();
-	for (const [employeeId, byDate] of contracts) {
-		const mondays = new Set<string>();
-		for (const [date, contract] of byDate) {
-			if (contract.isEmployedOnDay && contract.employmentProfile === "working_student") {
-				mondays.add(mondayOf(parsePlainDate(date)).toString());
-			}
-		}
-		workingStudentWeeks.set(employeeId, mondays);
-	}
-	const inScope = candidates.filter((employeeId) => {
-		const mondays = workingStudentWeeks.get(employeeId);
-		if (!mondays) return false;
-		for (
-			let monday = judged.from;
-			comparePlainDates(monday, judged.toExclusive) < 0;
-			monday = monday.add({ weeks: 1 })
-		) {
-			if (mondays.has(monday.toString())) return true;
-		}
-		return false;
-	});
+	const judgedFrom = judged.from.toString();
+	const judgedUntil = judged.toExclusive.toString();
+	const inScope = candidates.filter((employeeId) =>
+		(profiles.get(employeeId) ?? []).some(
+			(span) =>
+				span.employmentProfile === WORKING_STUDENT &&
+				span.from < judgedUntil &&
+				span.untilExclusive > judgedFrom,
+		),
+	);
 	if (inScope.length === 0) return [];
 
 	const rangeStart = from.toZonedDateTime(timezone).toInstant();
@@ -180,6 +197,28 @@ export async function evaluateWorkingStudents(
 				gt(workPeriod.endTime, dateFromInstant(rangeStart)),
 			),
 		);
+	// Running clock-ins count up to `now`.
+	const openRows =
+		compareInstants(request.now, rangeStart) > 0
+			? await db
+					.select({
+						id: workPeriod.id,
+						employeeId: workPeriod.employeeId,
+						startTime: workPeriod.startTime,
+					})
+					.from(workPeriod)
+					.where(
+						and(
+							eq(workPeriod.organizationId, request.organizationId),
+							inArray(workPeriod.employeeId, inScope),
+							eq(workPeriod.isActive, true),
+							isNull(workPeriod.deletedAt),
+							isNull(workPeriod.endTime),
+							lt(workPeriod.startTime, dateFromInstant(request.now)),
+							lt(workPeriod.startTime, dateFromInstant(rangeEnd)),
+						),
+					)
+			: [];
 
 	// A shift starting the day before the range may run into it.
 	const shiftBounds = shiftDateRangeBounds(from.subtract({ days: 1 }), until, timezone);
@@ -248,7 +287,18 @@ export async function evaluateWorkingStudents(
 
 	const intervals = new Map<string, WorkingStudentWorkInterval[]>();
 	const add = (employeeId: string, interval: WorkingStudentWorkInterval) =>
-		intervals.set(employeeId, [...(intervals.get(employeeId) ?? []), interval]);
+		push(intervals, employeeId, interval);
+	for (const row of openRows) {
+		const start = instantFromDate(row.startTime);
+		add(row.employeeId, {
+			source: "work",
+			ref: row.id,
+			start,
+			end: request.now,
+			netMinutes: start.until(request.now).total("minutes"),
+			inProgress: { start: start.toString(), end: "open" },
+		});
+	}
 	for (const row of workRows) {
 		if (!row.endTime) continue;
 		const start = instantFromDate(row.startTime);
@@ -271,14 +321,19 @@ export async function evaluateWorkingStudents(
 			},
 			timezone,
 		);
-		// A shift that has started is judged by the work recorded for it.
-		if (compareInstants(interval.start, request.now) < 0) continue;
+		// The past of a shift is judged by the work recorded for it, its future by the plan.
+		if (compareInstants(interval.end, request.now) <= 0) continue;
+		const started = compareInstants(interval.start, request.now) < 0;
+		const start = started ? request.now : interval.start;
 		add(row.employeeId, {
 			source: "shift",
 			ref: row.id,
-			start: interval.start,
+			start,
 			end: interval.end,
-			netMinutes: interval.start.until(interval.end).total("minutes"),
+			netMinutes: start.until(interval.end).total("minutes"),
+			...(started
+				? { inProgress: { start: interval.start.toString(), end: interval.end.toString() } }
+				: {}),
 		});
 	}
 	for (const proposed of request.proposedShifts ?? []) {
@@ -302,7 +357,7 @@ export async function evaluateWorkingStudents(
 	const offsets = groupBy(offsetRows, (row) => row.employeeId);
 
 	return inScope.map((employeeId) => {
-		const mondays = workingStudentWeeks.get(employeeId) ?? new Set<string>();
+		const spans = profiles.get(employeeId) ?? [];
 		const lectureFreePeriods: WorkingStudentLectureFreePeriod[] = (study.get(employeeId) ?? []).map(
 			(row) => ({ id: row.id, startsOn: row.startsOn, endsOn: row.endsOn }),
 		);
@@ -323,7 +378,7 @@ export async function evaluateWorkingStudents(
 				intervals: intervals.get(employeeId) ?? [],
 				lectureFreePeriods,
 				priorOver20hWeeks,
-				isWorkingStudentWeek: (monday) => mondays.has(monday),
+				isWorkingStudentDay: (date) => inWorkingStudentSpan(spans, date),
 			},
 		});
 		return { employeeId, ...evaluation };

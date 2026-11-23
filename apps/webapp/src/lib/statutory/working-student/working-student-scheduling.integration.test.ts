@@ -16,7 +16,12 @@ import {
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { integrationAdminPool } from "@/test/integration-database";
-import { weekdays, workingStudentFixture } from "./working-student.test.fixture";
+import {
+	addWeeks,
+	weekdays,
+	weekendOver20h,
+	workingStudentFixture,
+} from "./working-student.test.fixture";
 
 vi.mock("@/lib/calendar/work-policy-requirements", async () => {
 	const { Effect } = await import("effect");
@@ -140,5 +145,108 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 		// The same 8 hours in the evening keep the lecture week permitted.
 		const evening = new Map((await suggest("18:00", "02:00")).map((s) => [s.displayName, s]));
 		expect(evening.get("Student")?.warnings).toEqual([]);
+	});
+
+	// Mon 2030-03-04 … Sun 2030-03-10 is ISO week 2030-W10; planned shifts there have not started.
+	const W10_2030 = "2030-03-04";
+
+	it("adds the 26-week ceiling finding to the schedule compliance evaluation", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 26 planned permitted weekend weeks above 20 h before W10, and a 27th in W10.
+		for (let index = -26; index <= 0; index++) {
+			await fx.shift(org, subareaId, student, weekendOver20h(addWeeks(W10_2030, index)));
+		}
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* ScheduleComplianceService;
+				return yield* service.evaluateScheduleWindow({
+					organizationId: org.id,
+					startDate: shiftDateBounds(W10_2030, TZ).start,
+					endDateExclusive: shiftDateBounds(addWeeks(W10_2030, 1), TZ).start,
+					timezone: TZ,
+				});
+			}).pipe(
+				Effect.provide(
+					ScheduleComplianceServiceLive.pipe(
+						Layer.provide(workPolicyLayer),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+
+		expect(result.findings.filter((finding) => finding.type === "statutory")).toEqual([
+			expect.objectContaining({
+				type: "statutory",
+				employeeId: student.employeeId,
+				findingId: `working_student_26_week_ceiling:${student.employeeId}:2030-W10`,
+				statutoryKind: "working_student_26_week_ceiling",
+				severity: "critical",
+				subjectKey: "2030-W10",
+				summary: expect.objectContaining({
+					tier: "exceeded",
+					used: { unit: "weeks", value: 27 },
+					limit: { unit: "weeks", value: 26 },
+				}),
+				blocksPublication: false,
+			}),
+		]);
+	});
+
+	it("warns Staffing when a proposed shift makes the 27th week above 20 h", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const regular = await fx.workingStudent(org, "regular", { profile: "regular" });
+		const subareaId = await fx.subarea(org, student);
+		for (const person of [student, regular]) {
+			for (let index = -26; index <= -1; index++) {
+				await fx.shift(org, subareaId, person, weekendOver20h(addWeeks(W10_2030, index)));
+			}
+		}
+
+		const suggestions = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* StaffingSuggestionService;
+				return yield* service.suggestForShift({
+					organizationId: org.id,
+					timezone: TZ,
+					candidates: [
+						{ employeeId: student.employeeId, displayName: "Student", isActive: true },
+						{ employeeId: regular.employeeId, displayName: "Regular", isActive: true },
+					],
+					// A 22-hour Saturday: permitted weekend work, but the week is above 20 h.
+					shift: { subareaId, date: "2030-03-09", startTime: "00:00", endTime: "22:00" },
+				});
+			}).pipe(
+				Effect.provide(
+					StaffingSuggestionServiceLive.pipe(
+						Layer.provide(workPolicyLayer),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+		const statutoryWarnings = (name: string) =>
+			suggestions
+				.find((s) => s.displayName === name)
+				?.warnings.filter(
+					(warning) => warning.type === "compliance" && warning.findingType === "statutory",
+				);
+		expect(statutoryWarnings("Student")).toEqual([
+			{
+				type: "compliance",
+				findingType: "statutory",
+				finding: expect.objectContaining({
+					statutoryKind: "working_student_26_week_ceiling",
+					severity: "critical",
+					subjectKey: "2030-W10",
+					summary: expect.objectContaining({ used: { unit: "weeks", value: 27 } }),
+				}),
+			},
+		]);
+		expect(statutoryWarnings("Regular")).toEqual([]);
 	});
 });

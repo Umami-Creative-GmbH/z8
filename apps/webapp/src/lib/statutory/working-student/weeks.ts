@@ -2,18 +2,25 @@
  * Working-student (§ 6 Abs. 1 Nr. 3 SGB V, *Werkstudentenprivileg*) week math (#1991). Pure: the
  * loader (`monitor.ts`) gathers the facts, this module judges them.
  *
- * Compliance weeks run Monday–Sunday in the organization's timezone. Every minute of work is
- * classified by where it falls in that zone:
+ * Compliance weeks run Monday–Sunday in the organization's timezone. Every minute of work on a day
+ * the employee is a working student is classified by where it falls in that zone:
  *
  * - **core**: a lecture-period weekday between 06:00 and 18:00, the time studies need;
  * - **lecture-free**: a day inside a recorded `employee_study_period` (semester break);
  * - **evening/weekend**: Saturday, Sunday, or a weekday before 06:00 or from 18:00.
  *
- * A week above the weekly limit (20 h) is an unexcused lecture-week breach when its core minutes
- * alone exceed the limit; when the excess falls on lecture-free days, evenings, nights or weekends
- * the week is permitted. Every week above the limit, permitted or not, counts toward the rolling
- * ceiling (26 weeks in the 52 weeks up to and including the judged week), together with recorded
- * prior-employer weeks, each of which ages out of the window on its own.
+ * Minutes on days under another employment profile (regular, short-term, …) are **other-profile**
+ * minutes: they never count toward the lecture-week rule, which binds only working-student days.
+ *
+ * A week is an unexcused lecture-week breach when its core minutes alone exceed the weekly limit
+ * (20 h); when the excess falls on lecture-free days, evenings, nights or weekends the week is
+ * permitted. The rolling ceiling (26 weeks in the 52 weeks up to and including the judged week)
+ * follows the GKV-Spitzenverband reading of § 6 Abs. 1 Nr. 3 SGB V: every week above 20 h in the
+ * last 12 months counts, whatever the profile it was worked under at this organization. The legal
+ * test is the week's total hours, so a week with a profile change counts when all its minutes
+ * together exceed the limit. Recorded prior-employer weeks count too, each aging out of the window
+ * on its own. Findings are raised only for weeks in which the employee is a working student on at
+ * least one day.
  *
  * The 06:00–18:00 daytime band is Z8's reading of the social-insurance carriers' "evening and night
  * hours" exception (GKV-Spitzenverband circular on employed students); the law names no hour, so it
@@ -59,6 +66,12 @@ export interface WorkingStudentWorkInterval {
 	readonly end: Instant;
 	/** Net minutes (breaks deducted); spread evenly over the elapsed interval. */
 	readonly netMinutes: number;
+	/**
+	 * For work in progress, whose bounds move with `now` (a running clock-in, the rest of a started
+	 * shift): the stable bounds that identify it in the input fingerprint, so an acknowledgement does
+	 * not go stale minute by minute. `end` is `"open"` for a running clock-in.
+	 */
+	readonly inProgress?: { readonly start: string; readonly end: string };
 }
 
 export interface WorkingStudentLectureFreePeriod {
@@ -80,24 +93,29 @@ export interface WorkingStudentEmployeeFacts {
 	readonly intervals: readonly WorkingStudentWorkInterval[];
 	readonly lectureFreePeriods: readonly WorkingStudentLectureFreePeriod[];
 	readonly priorOver20hWeeks: readonly WorkingStudentPriorWeeks[];
-	/** Whether the employee's effective contract is `working_student` in the week of `monday`. */
-	readonly isWorkingStudentWeek: (monday: string) => boolean;
+	/** Whether the employee's effective contract is employed `working_student` on `date`. */
+	readonly isWorkingStudentDay: (date: string) => boolean;
 }
 
 export interface WorkingStudentWeek {
 	readonly weekStart: string;
 	/** ISO week, e.g. `2026-W10`. */
 	readonly subjectKey: string;
+	/** The employee is a working student on at least one day of the week. */
 	readonly isWorkingStudentWeek: boolean;
 	/** Weekly limit in force on the Monday, or null when no baseline covers it. */
 	readonly limitMinutes: number | null;
+	/** Every own minute of the week, under any employment profile. */
 	readonly totalMinutes: number;
+	/** Working-student days only, as are `lectureFreeMinutes` and `eveningWeekendMinutes`. */
 	readonly coreMinutes: number;
 	/** Core minutes from completed work only. */
 	readonly completedCoreMinutes: number;
 	readonly lectureFreeMinutes: number;
 	readonly eveningWeekendMinutes: number;
-	/** Own work above the weekly limit in a working-student week. */
+	/** Minutes on days under another employment profile. */
+	readonly otherProfileMinutes: number;
+	/** Own work above the weekly limit, any profile: the week counts toward the ceiling. */
 	readonly overLimit: boolean;
 	/** Core minutes alone above the weekly limit: an unexcused lecture-week breach. */
 	readonly lectureBreach: boolean;
@@ -124,13 +142,14 @@ export function isoWeekKey(monday: PlainDate): string {
 	return `${monday.yearOfWeek}-W${String(week).padStart(2, "0")}`;
 }
 
-type Category = "core" | "lectureFree" | "eveningWeekend";
+type Category = "core" | "lectureFree" | "eveningWeekend" | "otherProfile";
 
 interface WeekAccumulator {
 	core: number;
 	completedCore: number;
 	lectureFree: number;
 	eveningWeekend: number;
+	otherProfile: number;
 	intervals: Map<string, WorkingStudentWorkInterval>;
 }
 
@@ -156,7 +175,7 @@ function accumulate(
 	weeks: Map<string, WeekAccumulator>,
 	interval: WorkingStudentWorkInterval,
 	timezone: string,
-	lectureFreePeriods: readonly WorkingStudentLectureFreePeriod[],
+	facts: Pick<WorkingStudentEmployeeFacts, "lectureFreePeriods" | "isWorkingStudentDay">,
 ): void {
 	const elapsed = (interval.end.epochMilliseconds - interval.start.epochMilliseconds) / 60_000;
 	if (elapsed <= 0 || interval.netMinutes <= 0) return;
@@ -182,14 +201,21 @@ function accumulate(
 		const daytime = overlapMinutes(interval.start, interval.end, daytimeStart, daytimeEnd);
 		if (night + daytime === 0) continue;
 
+		const workingStudent = facts.isWorkingStudentDay(day.toString());
 		const weekend = day.dayOfWeek >= 6;
-		const lectureFree = !weekend && isLectureFree(lectureFreePeriods, day);
-		const daytimeCategory: Category = weekend
-			? "eveningWeekend"
+		const lectureFree = !weekend && isLectureFree(facts.lectureFreePeriods, day);
+		const daytimeCategory: Category = !workingStudent
+			? "otherProfile"
+			: weekend
+				? "eveningWeekend"
+				: lectureFree
+					? "lectureFree"
+					: "core";
+		const nightCategory: Category = !workingStudent
+			? "otherProfile"
 			: lectureFree
 				? "lectureFree"
-				: "core";
-		const nightCategory: Category = lectureFree ? "lectureFree" : "eveningWeekend";
+				: "eveningWeekend";
 
 		const key = mondayOf(day).toString();
 		const week = weeks.get(key) ?? {
@@ -197,6 +223,7 @@ function accumulate(
 			completedCore: 0,
 			lectureFree: 0,
 			eveningWeekend: 0,
+			otherProfile: 0,
 			intervals: new Map(),
 		};
 		week.intervals.set(`${interval.source}:${interval.ref}`, interval);
@@ -245,8 +272,12 @@ export function evaluateWorkingStudentEmployee(input: {
 
 	const accumulators = new Map<string, WeekAccumulator>();
 	for (const interval of facts.intervals) {
-		accumulate(accumulators, interval, input.timezone, facts.lectureFreePeriods);
+		accumulate(accumulators, interval, input.timezone, facts);
 	}
+	const workingStudentDaysOf = (monday: PlainDate) =>
+		[0, 1, 2, 3, 4, 5, 6]
+			.map((offset) => monday.add({ days: offset }).toString())
+			.filter((day) => facts.isWorkingStudentDay(day));
 
 	const weeks: WorkingStudentWeek[] = [];
 	const counted: { monday: PlainDate; source: "own" | "prior" }[] = [];
@@ -262,14 +293,21 @@ export function evaluateWorkingStudentEmployee(input: {
 		const core = Math.round(acc?.core ?? 0);
 		const lectureFree = Math.round(acc?.lectureFree ?? 0);
 		const eveningWeekend = Math.round(acc?.eveningWeekend ?? 0);
+		const otherProfile = Math.round(acc?.otherProfile ?? 0);
 		const total = Math.round(
-			(acc?.core ?? 0) + (acc?.lectureFree ?? 0) + (acc?.eveningWeekend ?? 0),
+			(acc?.core ?? 0) +
+				(acc?.lectureFree ?? 0) +
+				(acc?.eveningWeekend ?? 0) +
+				(acc?.otherProfile ?? 0),
 		);
 		const limitMinutes = thresholds.valueOn(WEEKLY_LIMIT_KEY, weekStart);
 		const ceilingWeeks = thresholds.valueOn(CEILING_KEY, weekStart);
-		const isWorkingStudentWeek = facts.isWorkingStudentWeek(weekStart);
-		const overLimit = isWorkingStudentWeek && limitMinutes !== null && total > limitMinutes;
-		const lectureBreach = overLimit && limitMinutes !== null && core > limitMinutes;
+		const workingStudentDays = workingStudentDaysOf(monday);
+		const isWorkingStudentWeek = workingStudentDays.length > 0;
+		// The ceiling counts every week above 20 h, whatever the profile; the lecture-week rule
+		// binds only the working-student days.
+		const overLimit = limitMinutes !== null && total > limitMinutes;
+		const lectureBreach = isWorkingStudentWeek && limitMinutes !== null && core > limitMinutes;
 		const priorRuns = coveredByPriorWeeks(facts.priorOver20hWeeks, monday);
 
 		if (overLimit) counted.push({ monday, source: "own" });
@@ -287,6 +325,7 @@ export function evaluateWorkingStudentEmployee(input: {
 			completedCoreMinutes: Math.round(acc?.completedCore ?? 0),
 			lectureFreeMinutes: lectureFree,
 			eveningWeekendMinutes: eveningWeekend,
+			otherProfileMinutes: otherProfile,
 			overLimit,
 			lectureBreach,
 			priorOver20hWeek: priorRuns.length > 0,
@@ -300,13 +339,17 @@ export function evaluateWorkingStudentEmployee(input: {
 
 		const periodEnd = monday.add({ weeks: 1 }).toString();
 		const weekIntervals = [...(acc?.intervals.values() ?? [])]
-			.map((interval) => ({
-				source: interval.source,
-				ref: interval.ref,
-				start: interval.start.toString(),
-				end: interval.end.toString(),
-				netMinutes: interval.netMinutes,
-			}))
+			.map((interval) =>
+				interval.inProgress
+					? { source: interval.source, ref: interval.ref, ...interval.inProgress }
+					: {
+							source: interval.source,
+							ref: interval.ref,
+							start: interval.start.toString(),
+							end: interval.end.toString(),
+							netMinutes: interval.netMinutes,
+						},
+			)
 			.sort((a, b) =>
 				a.start === b.start ? (a.ref < b.ref ? -1 : 1) : a.start < b.start ? -1 : 1,
 			);
@@ -346,6 +389,7 @@ export function evaluateWorkingStudentEmployee(input: {
 						completedCoreMinutes: week.completedCoreMinutes,
 						lectureFreeMinutes: lectureFree,
 						eveningWeekendMinutes: eveningWeekend,
+						otherProfileMinutes: otherProfile,
 					},
 				},
 				inputFingerprint: statutoryInputFingerprint({
@@ -355,6 +399,7 @@ export function evaluateWorkingStudentEmployee(input: {
 					limitMinutes,
 					daytime: [WORKING_STUDENT_DAYTIME_START_MINUTE, WORKING_STUDENT_DAYTIME_END_MINUTE],
 					intervals: weekIntervals,
+					workingStudentDays,
 					lectureFreePeriods: facts.lectureFreePeriods
 						.filter((period) => period.startsOn < periodEnd && period.endsOn >= weekStart)
 						.map((period) => ({ ...period }))

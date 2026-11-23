@@ -46,7 +46,13 @@ function work(
 ): WorkingStudentWorkInterval {
 	const from = Temporal.PlainDateTime.from(`${date}T${start}`).toZonedDateTime(TZ).toInstant();
 	let to = Temporal.PlainDateTime.from(`${date}T${end}`).toZonedDateTime(TZ).toInstant();
-	if (Temporal.Instant.compare(to, from) <= 0) to = to.add({ hours: 24 });
+	if (Temporal.Instant.compare(to, from) <= 0) {
+		// The end wall time on the next calendar day, so DST nights keep their real length.
+		to = Temporal.PlainDateTime.from(`${date}T${end}`)
+			.add({ days: 1 })
+			.toZonedDateTime(TZ)
+			.toInstant();
+	}
 	return {
 		source,
 		ref: `r${++refs}`,
@@ -75,7 +81,7 @@ function facts(overrides: Partial<WorkingStudentEmployeeFacts>): WorkingStudentE
 		intervals: [],
 		lectureFreePeriods: [],
 		priorOver20hWeeks: [],
-		isWorkingStudentWeek: () => true,
+		isWorkingStudentDay: () => true,
 		...overrides,
 	};
 }
@@ -227,7 +233,7 @@ describe("working student 20-hour lecture-period rule", () => {
 		const { findings } = evaluate(
 			facts({
 				intervals: weekdays(W10, "09:00", "17:00"),
-				isWorkingStudentWeek: () => false,
+				isWorkingStudentDay: () => false,
 			}),
 			W10,
 			W11,
@@ -352,6 +358,139 @@ describe("working student rolling 26-week ceiling", () => {
 		expect(ceiling(result)).toMatchObject({
 			severity: "warning",
 			summary: { tier: "warning", usedPercent: 80, remaining: { unit: "weeks", value: 5 } },
+		});
+	});
+
+	it("counts >20 h weeks under another employment profile toward the ceiling", () => {
+		// 16 weeks at 40 h as a short-term employee, then 12 lecture-free weeks at 35 h as a working
+		// student: 28 weeks above 20 h in the last 12 months.
+		const weeks = mondays(Temporal.PlainDate.from(W10).subtract({ weeks: 27 }).toString(), 28);
+		const studentFrom = weeks[16] ?? "";
+		const intervals = [
+			...weeks.slice(0, 16).flatMap((monday) => weekdays(monday, "08:00", "16:00")),
+			...weeks.slice(16).flatMap((monday) => weekdays(monday, "08:00", "15:00")),
+		];
+		const result = evaluate(
+			facts({
+				intervals,
+				lectureFreePeriods: [{ id: "lf", startsOn: studentFrom, endsOn: "2026-03-08" }],
+				isWorkingStudentDay: (date) => date >= studentFrom,
+			}),
+			W10,
+			W11,
+		);
+
+		expect(result.weeks.at(-1)).toMatchObject({ rollingOver20hWeeks: 28, lectureBreach: false });
+		expect(ceiling(result)).toMatchObject({
+			severity: "critical",
+			summary: { tier: "exceeded", used: { unit: "weeks", value: 28 } },
+			adminDetail: { facts: { ownOver20hWeeks: 28, priorOver20hWeeks: 0 } },
+		});
+		expect(result.findings.filter((f) => f.kind === "working_student_lecture_week")).toEqual([]);
+	});
+});
+
+describe("working student weeks with a mid-week profile change", () => {
+	// Regular Monday–Wednesday, working student from Thursday 2026-03-05.
+	const studentFromThursday = (date: string) => date >= "2026-03-05";
+
+	it("judges only working-student days against the lecture-week limit", () => {
+		const { findings, weeks } = evaluate(
+			facts({
+				intervals: weekdays(W10, "08:00", "16:00"),
+				isWorkingStudentDay: studentFromThursday,
+			}),
+			W10,
+			W11,
+		);
+		expect(weeks.at(-1)).toMatchObject({
+			isWorkingStudentWeek: true,
+			totalMinutes: 2400,
+			coreMinutes: 960,
+			otherProfileMinutes: 1440,
+			overLimit: true,
+			lectureBreach: false,
+			rollingOver20hWeeks: 1,
+		});
+		expect(findings.filter((f) => f.kind === "working_student_lecture_week")).toEqual([]);
+	});
+
+	it("still flags the working-student days alone above the limit", () => {
+		const { findings, weeks } = evaluate(
+			facts({
+				intervals: weekdays(W10, "08:00", "16:00"),
+				// Working student Monday–Wednesday, regular from Thursday.
+				isWorkingStudentDay: (date) => date < "2026-03-05",
+			}),
+			W10,
+			W11,
+		);
+		expect(weeks.at(-1)).toMatchObject({ coreMinutes: 1440, otherProfileMinutes: 960 });
+		expect(findings.find((f) => f.kind === "working_student_lecture_week")).toMatchObject({
+			summary: { used: { unit: "minutes", value: 1440 } },
+		});
+	});
+
+	it("counts a mixed week toward the ceiling by its total weekly hours", () => {
+		const { weeks } = evaluate(
+			facts({
+				intervals: [
+					...weekdays(W10, "09:00", "14:00").slice(0, 3), // 15 h regular
+					...weekdays(W10, "09:00", "12:00").slice(3), // 6 h as a working student
+				],
+				isWorkingStudentDay: studentFromThursday,
+			}),
+			W10,
+			W11,
+		);
+		expect(weeks.at(-1)).toMatchObject({
+			totalMinutes: 1260,
+			coreMinutes: 360,
+			otherProfileMinutes: 900,
+			overLimit: true,
+			lectureBreach: false,
+			rollingOver20hWeeks: 1,
+		});
+	});
+});
+
+describe("working student week boundaries", () => {
+	it("splits a Sunday-to-Monday overnight interval between the two compliance weeks", () => {
+		const { weeks } = evaluate(
+			facts({ intervals: [work("2026-03-08", "22:00", "06:00")] }),
+			W10,
+			Temporal.PlainDate.from(W11).add({ weeks: 1 }).toString(),
+		);
+		const byStart = new Map(weeks.map((week) => [week.weekStart, week]));
+		expect(byStart.get(W10)).toMatchObject({ totalMinutes: 120, eveningWeekendMinutes: 120 });
+		expect(byStart.get(W11)).toMatchObject({ totalMinutes: 360, eveningWeekendMinutes: 360 });
+	});
+
+	it("counts the real length of night work across the Europe/Berlin DST changes", () => {
+		// Clocks go forward on Sunday 2026-03-29 and back on Sunday 2026-10-25.
+		const spring = evaluate(
+			facts({ intervals: [work("2026-03-28", "22:00", "06:00")] }),
+			"2026-03-23",
+			"2026-03-30",
+		);
+		expect(spring.weeks.at(-1)).toMatchObject({ totalMinutes: 420, eveningWeekendMinutes: 420 });
+
+		const autumn = evaluate(
+			facts({
+				intervals: [
+					...weekdays("2026-10-19", "09:00", "13:00"),
+					work("2026-10-24", "22:00", "06:00"),
+				],
+			}),
+			"2026-10-19",
+			"2026-10-26",
+		);
+		expect(autumn.weeks.at(-1)).toMatchObject({
+			totalMinutes: 1740,
+			coreMinutes: 1200,
+			eveningWeekendMinutes: 540,
+			overLimit: true,
+			lectureBreach: false,
 		});
 	});
 });

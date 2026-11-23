@@ -254,6 +254,129 @@ describe("working-student monitor (PostgreSQL)", () => {
 		expect(after?.weeks.at(-1)?.totalMinutes).toBe(720);
 	});
 
+	it("counts >20 h weeks worked under another profile toward the 26-week ceiling", async () => {
+		const org = await fx.organization("a");
+		// Short-term for 16 weeks, then a working student for 12: 28 weeks above 20 h.
+		const student = await fx.workingStudent(org, "student", {
+			from: "2025-01-06",
+			profile: "short_term",
+		});
+		await fx.terms(org, student, { from: addWeeks(W10, -11), profile: "working_student" });
+		await fx.work(
+			org,
+			student,
+			Array.from({ length: 28 }, (_, index) => weekendOver20h(addWeeks(W10, index - 27))),
+		);
+
+		const evaluations = await evaluate(org.id, [student.employeeId]);
+		const evaluation = evaluations[0];
+		expect(evaluation?.weeks.at(-1)).toMatchObject({ rollingOver20hWeeks: 28 });
+		expect(evaluation?.weeks.find((week) => week.weekStart === addWeeks(W10, -12))).toMatchObject({
+			isWorkingStudentWeek: false,
+			overLimit: true,
+		});
+		expect(findingsOf(evaluations, student.employeeId, "working_student_26_week_ceiling")).toEqual([
+			expect.objectContaining({
+				severity: "critical",
+				summary: expect.objectContaining({ used: { unit: "weeks", value: 28 } }),
+				adminDetail: { facts: expect.objectContaining({ ownOver20hWeeks: 28 }) },
+			}),
+		]);
+	});
+
+	it("judges only the working-student days of a week the profile changes in", async () => {
+		const org = await fx.organization("a");
+		// Regular until Wednesday, a working student from Thursday 2026-03-05.
+		const student = await fx.workingStudent(org, "student", { profile: "regular" });
+		await fx.terms(org, student, { from: "2026-03-05", profile: "working_student" });
+		await fx.work(org, student, weekdays(W10, "08:00", "16:00"));
+
+		const [evaluation] = await evaluate(org.id, [student.employeeId]);
+		expect(evaluation?.weeks.at(-1)).toMatchObject({
+			isWorkingStudentWeek: true,
+			totalMinutes: 2400,
+			coreMinutes: 960,
+			otherProfileMinutes: 1440,
+			overLimit: true,
+			lectureBreach: false,
+			rollingOver20hWeeks: 1,
+		});
+		expect(evaluation?.findings).toEqual([]);
+	});
+
+	it("counts a shift in progress: the running clock-in so far and the rest of the shift", async () => {
+		const org = await fx.organization("a");
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 16 h worked Monday and Tuesday; clocked in on Wednesday's 08:00–16:00 shift.
+		await fx.work(org, student, weekdays(W10, "08:00", "16:00").slice(0, 2));
+		await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "08:00", end: "16:00" });
+		await fx.openWork(org, student, { date: "2026-03-04", start: "08:00" });
+
+		const evaluations = await evaluate(org.id, [student.employeeId], {
+			now: Temporal.Instant.from("2026-03-04T11:00:00Z"), // 12:00 in Berlin
+			proposedShifts: [
+				{
+					employeeId: student.employeeId,
+					date: "2026-03-05",
+					startTime: "09:00",
+					endTime: "13:00",
+				},
+			],
+		});
+		expect(evaluations[0]?.weeks.at(-1)).toMatchObject({ totalMinutes: 1680, coreMinutes: 1680 });
+		expect(findingsOf(evaluations, student.employeeId, "working_student_lecture_week")).toEqual([
+			expect.objectContaining({
+				severity: "warning",
+				summary: expect.objectContaining({ used: { unit: "minutes", value: 1680 } }),
+			}),
+		]);
+	});
+
+	it("keeps the lecture-week fingerprint while a shift is in progress", async () => {
+		const org = await fx.organization("a");
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		await fx.work(org, student, weekdays(W10, "08:00", "16:00").slice(0, 2));
+		await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "08:00", end: "16:00" });
+		await fx.openWork(org, student, { date: "2026-03-04", start: "08:00" });
+
+		const fingerprintAt = async (now: string) => {
+			const evaluations = await evaluate(org.id, [student.employeeId], {
+				now: Temporal.Instant.from(now),
+			});
+			return findingsOf(evaluations, student.employeeId, "working_student_lecture_week")[0]
+				?.inputFingerprint;
+		};
+		const atNoon = await fingerprintAt("2026-03-04T11:00:00Z");
+		expect(atNoon).toBeDefined();
+		expect(await fingerprintAt("2026-03-04T13:30:00Z")).toBe(atNoon);
+	});
+
+	it("splits a Sunday-to-Monday overnight shift across compliance weeks and keeps DST nights real", async () => {
+		const org = await fx.organization("a");
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		await fx.shift(org, subareaId, student, { date: "2026-03-08", start: "22:00", end: "06:00" });
+		// Clocks go forward on Sunday 2026-03-29: the 22:00–06:00 night is 7 hours long.
+		await fx.shift(org, subareaId, student, { date: "2026-03-28", start: "22:00", end: "06:00" });
+		const now = Temporal.Instant.from("2026-03-01T00:00:00Z");
+
+		const [overnight] = await evaluate(org.id, [student.employeeId], {
+			now,
+			window: { start: W10, endExclusive: addWeeks(W10, 2) },
+		});
+		const byStart = new Map(overnight?.weeks.map((week) => [week.weekStart, week]));
+		expect(byStart.get(W10)).toMatchObject({ totalMinutes: 120, eveningWeekendMinutes: 120 });
+		expect(byStart.get(AFTER_W10)).toMatchObject({ totalMinutes: 360, eveningWeekendMinutes: 360 });
+
+		const [dst] = await evaluate(org.id, [student.employeeId], {
+			now,
+			window: { start: "2026-03-23", endExclusive: "2026-03-30" },
+		});
+		expect(dst?.weeks.at(-1)).toMatchObject({ weekStart: "2026-03-23", totalMinutes: 420 });
+	});
+
 	it("judges only working students of the organization, in weeks they are working students", async () => {
 		const org = await fx.organization("a");
 		const other = await fx.organization("b");

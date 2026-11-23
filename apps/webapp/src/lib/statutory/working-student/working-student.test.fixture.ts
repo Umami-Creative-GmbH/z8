@@ -43,7 +43,7 @@ export function workingStudentFixture(admin: Pool, prefix: string) {
 			key: string,
 			options: {
 				from?: string;
-				profile?: "working_student" | "regular" | "minijob";
+				profile?: "working_student" | "regular" | "minijob" | "short_term";
 			} = {},
 		): Promise<FixtureEmployee> {
 			const person = await fx.employee(org, key, { contractType: "hourly" });
@@ -63,6 +63,98 @@ export function workingStudentFixture(admin: Pool, prefix: string) {
 				],
 			);
 			return person;
+		},
+
+		/**
+		 * Further confirmed terms `[from, until)`; a later row supersedes earlier ones from its
+		 * `from`. `createdAt` orders rows that start on the same day.
+		 */
+		async terms(
+			org: FixtureOrganization,
+			person: FixtureEmployee,
+			options: {
+				from: string;
+				until?: string | null;
+				profile: "working_student" | "regular" | "minijob" | "short_term";
+				employmentPeriodId?: string | null;
+				createdAt?: string;
+			},
+		): Promise<void> {
+			await admin.query(
+				`insert into employee_employment_history
+				 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date,
+				  valid_until, valid_until_date, contract_type, hourly_rate, currency,
+				  employment_profile, review_state, created_by, created_at, updated_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, 'hourly', 14.00, 'EUR', $8, 'confirmed', $9,
+				  coalesce($10::timestamptz, now()), now())`,
+				[
+					person.employeeId,
+					org.id,
+					options.employmentPeriodId ?? null,
+					`${options.from}T00:00:00Z`,
+					options.from,
+					options.until ? `${options.until}T00:00:00Z` : null,
+					options.until ?? null,
+					options.profile,
+					person.userId,
+					options.createdAt ?? null,
+				],
+			);
+		},
+
+		/** An employment period `[startedAt, endedAt)`; open when `endedAt` is null. */
+		async employmentPeriod(
+			org: FixtureOrganization,
+			person: FixtureEmployee,
+			startedAt: string,
+			endedAt: string | null,
+		): Promise<string> {
+			const id = randomUUID();
+			await admin.query(
+				`insert into employee_employment_period
+				 (id, organization_id, employee_id, status, started_at, ended_at, start_provenance)
+				 values ($1, $2, $3, $4, $5, $6, 'recorded')`,
+				[id, org.id, person.employeeId, endedAt ? "closed" : "open", startedAt, endedAt],
+			);
+			return id;
+		},
+
+		/** A running clock-in (active work period without an end) from an organization-local time. */
+		async openWork(
+			org: FixtureOrganization,
+			person: FixtureEmployee,
+			spec: { readonly date: string; readonly start: string },
+		): Promise<string> {
+			const start = Temporal.PlainDateTime.from(`${spec.date}T${spec.start}`).toZonedDateTime(
+				org.timezone,
+			);
+			const clockInId = randomUUID();
+			const id = randomUUID();
+			await withCanonicalRecords(admin, async (client) => {
+				await client.query(
+					`insert into time_entry (
+						id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+						timezone, timezone_source, hash, created_by, created_at
+					 ) values ($1, $2, $3, 'clock_in', $4, $5, $6, 'backfill', $7, $8, $4)`,
+					[
+						clockInId,
+						person.employeeId,
+						org.id,
+						new Date(start.epochMilliseconds),
+						start.offsetNanoseconds / 60_000_000_000,
+						org.timezone,
+						`ws-${clockInId}`,
+						person.userId,
+					],
+				);
+				await client.query(
+					`insert into work_period (
+						id, employee_id, organization_id, clock_in_id, start_time, is_active, updated_at
+					 ) values ($1, $2, $3, $4, $5, true, $5)`,
+					[id, person.employeeId, org.id, clockInId, new Date(start.epochMilliseconds)],
+				);
+			});
+			return id;
 		},
 
 		/** Completed work periods, each with its clock-in entry and canonical record. */
