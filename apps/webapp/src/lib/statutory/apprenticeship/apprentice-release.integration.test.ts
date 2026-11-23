@@ -1048,8 +1048,8 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 				]),
 			),
 		).toEqual({
-			"adult during": ["bbig_release_day_shift", "warning", "§ 15 Abs. 1 Satz 1 BBiG", false],
-			"adult before": ["bbig_release_day_shift", "warning", "§ 15 Abs. 1 Satz 2 Nr. 1 BBiG", false],
+			"adult during": ["bbig_release_day_shift", "warning", "§ 15 Abs. 1 Satz 2 Nr. 1 BBiG", false],
+			"adult before": ["bbig_release_day_shift", "warning", "§ 15 Abs. 1 Satz 1 BBiG", false],
 			"minor during": ["bbig_release_day_shift", "critical", "§ 9 Abs. 1 Satz 1 JArbSchG", true],
 			"minor before": ["bbig_release_day_shift", "critical", "§ 9 Abs. 1 Nr. 1 JArbSchG", true],
 		});

@@ -57,16 +57,16 @@ const EARLY_LESSONS_BEFORE = Temporal.PlainTime.from("09:00");
  * What planned work conflicts with on a release day:
  * - `release_day`: a day released in full, or the exam itself on an exam day credited with its time;
  * - `lessons`: the lessons of a school day recorded with its lesson times (§ 9 Abs. 1 Satz 1
- *   JArbSchG, § 15 Abs. 1 Satz 1 BBiG);
+ *   JArbSchG, § 15 Abs. 1 Satz 2 Nr. 1 BBiG: release for the lessons);
  * - `before_early_lessons`: work before lessons that start before 09:00 (§ 9 Abs. 1 Nr. 1 JArbSchG,
- *   § 15 Abs. 1 Satz 2 Nr. 1 BBiG).
+ *   § 15 Abs. 1 Satz 1 BBiG).
  */
 type ReleaseConflict = "release_day" | "lessons" | "before_early_lessons";
 
 const adultReference: Record<ReleaseConflict, string> = {
 	release_day: "§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
-	lessons: "§ 15 Abs. 1 Satz 1 BBiG",
-	before_early_lessons: "§ 15 Abs. 1 Satz 2 Nr. 1 BBiG",
+	lessons: "§ 15 Abs. 1 Satz 2 Nr. 1 BBiG",
+	before_early_lessons: "§ 15 Abs. 1 Satz 1 BBiG",
 };
 
 const minorLessonReference: Record<Exclude<ReleaseConflict, "release_day">, string> = {
