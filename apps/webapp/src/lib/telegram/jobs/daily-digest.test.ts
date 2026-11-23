@@ -41,8 +41,10 @@ vi.mock("@/lib/notifications/recipient-display-context", () => ({
 }));
 vi.mock("@/lib/teams/jobs/daily-digest", () => ({
 	buildDigestDataForManager: buildDigestDataForManagerMock,
-	complianceExceptionInboxScopesFor: complianceExceptionInboxScopesForMock,
 	shouldSkipDigestForManager: shouldSkipDigestForManagerMock,
+}));
+vi.mock("@/lib/approvals/inbox/compliance-exception-inbox", () => ({
+	complianceExceptionInboxScopesFor: complianceExceptionInboxScopesForMock,
 }));
 vi.mock("../api", () => ({ sendMessage: sendMessageMock }));
 vi.mock("../bot-config", () => ({ getAllActiveBotConfigs: vi.fn() }));

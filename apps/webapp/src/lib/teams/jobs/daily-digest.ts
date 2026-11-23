@@ -24,6 +24,7 @@ import { env } from "@/env";
 import {
 	type ComplianceExceptionInboxScope,
 	complianceExceptionInboxScopesFor,
+	complianceExceptionScopeCondition,
 } from "@/lib/approvals/inbox/compliance-exception-inbox";
 import {
 	currentRosterDigestManager,
@@ -60,12 +61,6 @@ const deputyEmployee = alias(employee, "deputy_employee");
 const deputyUser = alias(user, "deputy_user");
 
 const logger = createLogger("TeamsDailyDigest");
-
-/**
- * Every digest run (Teams, Slack, Discord, Telegram) resolves its recipients' compliance exception
- * scopes through one of these per tenant, so the organization is read once per run (#1977).
- */
-export { complianceExceptionInboxScopesFor };
 
 /** Returns whether a manager should not receive a digest on their local day. */
 export async function shouldSkipDigestForManager(
@@ -310,8 +305,8 @@ async function countPendingComplianceExceptionsInScope(
 	organizationId: string,
 	nowInstant: Instant,
 ): Promise<number> {
-	if (!scope) return 0;
-	if (scope.kind === "managed" && scope.employeeIds.length === 0) return 0;
+	const inScope = complianceExceptionScopeCondition(scope);
+	if (inScope.kind === "none") return 0;
 	const [result] = await db
 		.select({ count: sql<number>`count(*)` })
 		.from(complianceException)
@@ -319,9 +314,7 @@ async function countPendingComplianceExceptionsInScope(
 			and(
 				eq(complianceException.organizationId, organizationId),
 				awaitingComplianceExceptionDecision(nowInstant),
-				scope.kind === "managed"
-					? inArray(complianceException.employeeId, [...scope.employeeIds])
-					: undefined,
+				inScope.kind === "condition" ? inScope.sql : undefined,
 			),
 		);
 	return Number(result?.count) || 0;

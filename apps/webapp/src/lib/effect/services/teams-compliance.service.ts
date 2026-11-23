@@ -6,10 +6,14 @@
  */
 /** oxlint-disable typescript/no-explicit-any -- it is what it is */
 
-import { and, desc, eq, gte, inArray, type SQL, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { complianceException, employee, workPolicyViolation } from "@/db/schema";
-import { complianceExceptionInboxScopesFor } from "@/lib/approvals/inbox/compliance-exception-inbox";
+import {
+	type ComplianceExceptionScopeCondition,
+	complianceExceptionInboxScopesFor,
+	complianceExceptionScopeCondition,
+} from "@/lib/approvals/inbox/compliance-exception-inbox";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { awaitingComplianceExceptionDecision } from "@/lib/compliance/pending-compliance-exception";
 import {
@@ -193,27 +197,23 @@ export const TeamsComplianceServiceLive = Layer.effect(
 			});
 
 		/**
-		 * The pending exceptions the recipient's Approval inbox lists (#1977), as a condition: every
-		 * one of the organization with `manage Compliance`, else those of their eligible-manager
-		 * scope; null when they see none.
+		 * The pending exceptions the recipient's Approval inbox lists (#1977): every one of the
+		 * organization with `manage Compliance`, else those of their eligible-manager scope.
 		 */
 		const pendingExceptionScope = (params: {
 			managerId: string;
 			userId: string;
 			organizationId: string;
-		}): Effect.Effect<SQL | undefined | null, DatabaseError> =>
-			dbService.query("getComplianceExceptionScope", async () => {
-				const scope = await complianceExceptionInboxScopesFor({
-					organizationId: params.organizationId,
-					userIds: [params.userId],
-					database: dbService.db,
-				}).of({ userId: params.userId, employeeId: params.managerId });
-				if (!scope) return null;
-				if (scope.kind === "organization") return undefined;
-				return scope.employeeIds.length > 0
-					? inArray(complianceException.employeeId, [...scope.employeeIds])
-					: null;
-			});
+		}): Effect.Effect<ComplianceExceptionScopeCondition, DatabaseError> =>
+			dbService.query("getComplianceExceptionScope", async () =>
+				complianceExceptionScopeCondition(
+					await complianceExceptionInboxScopesFor({
+						organizationId: params.organizationId,
+						userIds: [params.userId],
+						database: dbService.db,
+					}).of({ userId: params.userId, employeeId: params.managerId }),
+				),
+			);
 
 		/** The names of these employees of the organization. */
 		const employeeNames = (
@@ -326,14 +326,14 @@ export const TeamsComplianceServiceLive = Layer.effect(
 				Effect.gen(function* () {
 					const { organizationId } = params;
 					const inScope = yield* pendingExceptionScope(params);
-					if (inScope === null) return [];
+					if (inScope.kind === "none") return [];
 
 					// Get pending exceptions
 					const exceptions = yield* dbService.query("getPendingExceptions", async () => {
 						return await dbService.db.query.complianceException.findMany({
 							where: and(
 								eq(complianceException.organizationId, organizationId),
-								inScope,
+								inScope.kind === "condition" ? inScope.sql : undefined,
 								// A lapsed exception is expired, as in the Approval inbox the card links to (#1977).
 								awaitingComplianceExceptionDecision(systemClock.nowInstant()),
 							),
@@ -402,7 +402,7 @@ export const TeamsComplianceServiceLive = Layer.effect(
 				Effect.gen(function* () {
 					const { organizationId } = params;
 					const inScope = yield* pendingExceptionScope(params);
-					if (inScope === null) return 0;
+					if (inScope.kind === "none") return 0;
 
 					const result = yield* dbService.query("countPendingExceptions", async () => {
 						const [countResult] = await dbService.db
@@ -411,7 +411,7 @@ export const TeamsComplianceServiceLive = Layer.effect(
 							.where(
 								and(
 									eq(complianceException.organizationId, organizationId),
-									inScope,
+									inScope.kind === "condition" ? inScope.sql : undefined,
 									awaitingComplianceExceptionDecision(systemClock.nowInstant()),
 								),
 							);

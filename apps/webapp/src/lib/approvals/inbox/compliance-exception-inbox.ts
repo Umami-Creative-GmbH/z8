@@ -1,5 +1,5 @@
-import { type SQL, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { inArray, type SQL, sql } from "drizzle-orm";
+import { type AnyPgColumn, alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { complianceException } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
@@ -155,17 +155,44 @@ function readDatabase(input: {
 	return input.database ?? (db as unknown as CanonicalInboxReadDatabase);
 }
 
-function scopeCondition(scope: ComplianceExceptionInboxScope): SQL {
-	if (scope.kind === "organization") return sql`true`;
-	if (scope.employeeIds.length === 0) return sql`false`;
-	return sql`exception.employee_id in (${sql.join(
-		scope.employeeIds.map((id) => sql`${id}::uuid`),
-		sql`, `,
-	)})`;
+/**
+ * Which compliance exceptions a scope covers: none (no scope, or managing nobody), all of the
+ * organization's, or those matching a condition on the exception's employee.
+ */
+export type ComplianceExceptionScopeCondition =
+	| { kind: "none" }
+	| { kind: "all" }
+	| { kind: "condition"; sql: SQL };
+
+/**
+ * A recipient's compliance exception scope as a query condition, the one rule the adapter, the
+ * Teams compliance card and the chat digests share. `employeeId` is the column the condition
+ * reads: `compliance_exception.employee_id` unless the query aliases the table.
+ */
+export function complianceExceptionScopeCondition(
+	scope: ComplianceExceptionInboxScope | null,
+	employeeId: AnyPgColumn = complianceException.employeeId,
+): ComplianceExceptionScopeCondition {
+	if (!scope) return { kind: "none" };
+	if (scope.kind === "organization") return { kind: "all" };
+	if (scope.employeeIds.length === 0) return { kind: "none" };
+	return { kind: "condition", sql: inArray(employeeId, [...scope.employeeIds]) };
 }
 
 /** `compliance_exception` as the hand-written queries below alias it. */
 const exceptionAlias = alias(complianceException, "exception");
+
+function scopeCondition(scope: ComplianceExceptionInboxScope): SQL {
+	const condition = complianceExceptionScopeCondition(scope, exceptionAlias.employeeId);
+	switch (condition.kind) {
+		case "none":
+			return sql`false`;
+		case "all":
+			return sql`true`;
+		case "condition":
+			return condition.sql;
+	}
+}
 
 /**
  * An inbox status as rows: pending ones only while their validity window is open; `listable`
