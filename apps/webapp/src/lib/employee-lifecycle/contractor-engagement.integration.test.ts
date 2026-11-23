@@ -32,6 +32,7 @@ const { previewPastDeparture } = await import("./queries");
 const { deactivate } = await import("./deactivation/command");
 const { db } = await import("@/db");
 const { persistEmployeeInvitationDraft } = await import("@/lib/auth/employee-invitation-draft");
+const { listContractsReviewQueue } = await import("@/lib/contracts/contract-reviews");
 const { countBillableSeats, countBillableSeatsByType } =
 	await import("@/lib/effect/services/billing/billable-seat-count");
 const { createLifecycleDatabaseFixture } = await import("./testing/database.test.fixture");
@@ -1165,6 +1166,45 @@ describe("external contractor engagement kind (#1995)", () => {
 			// The same history for an employee still opens one.
 			expect(employeeEnd).toMatchObject({ payrollReconciliationReviewOpened: true });
 			expect(await reviewKinds(employeeEnd.departureId)).toContain("payroll_reconciliation");
+		});
+
+		it("keeps a review on the kind of the stint it is about after the person converts", async () => {
+			now = TODAY;
+			const person = await fixture.seedEmployee();
+			await seedSettledPayrollDay(person, "2026-08-22");
+			const end = await commands().recordPastDeparture(ownerActor(), {
+				employeeId: person.employeeId,
+				requestId: randomUUID(),
+				lastWorkingDay: "2026-08-15",
+				replacementEmployeeId: null,
+				acknowledgeUnassignedDuties: true,
+			});
+			await commands().rehireEmployee(ownerActor(), {
+				role: "employee",
+				teamId: null,
+				primaryManagerId: null,
+				weeklyContractMinutes: 2400,
+				contractType: "fixed",
+				workModel: "onsite",
+				hourlyRate: null,
+				currency: "EUR",
+				probationStartsOn: null,
+				probationEndsOn: null,
+				changeReason: null,
+				employeeId: person.employeeId,
+				requestId: randomUUID(),
+				previousEmploymentPeriodId: person.employmentPeriodId,
+				engagementKind: "contractor",
+				workPolicyId: null,
+			});
+
+			const queue = await listContractsReviewQueue(fixture.db, fixture.organizationId);
+
+			expect(
+				queue.departureReviews
+					.filter((review) => review.departureId === end.departureId)
+					.map((review) => ({ kind: review.kind, engagementKind: review.engagementKind })),
+			).toEqual([{ kind: "payroll_reconciliation", engagementKind: "employee" }]);
 		});
 
 		it("previews a contractor's retrospective end without the payroll reconciliation exception", async () => {

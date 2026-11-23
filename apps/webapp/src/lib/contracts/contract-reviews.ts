@@ -7,6 +7,7 @@ import {
 	employeeDeparture,
 	employeeDepartureReview,
 	employeeEmploymentHistory,
+	employeeEmploymentPeriod,
 } from "@/db/schema";
 import type { ContractMigrationConflictStatus } from "@/db/schema/contract-types";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -20,7 +21,11 @@ export interface EnrichedContractMigrationConflict {
 	readonly employeeId: string;
 	readonly employeeName: string;
 	readonly employeeNumber: string | null;
-	/** Employee or External Contractor today (#1995): the queue badges and filters contractors. */
+	/**
+	 * Employee or External Contractor on the stint the item is about (#1995), so a
+	 * later conversion never relabels it; the person's kind today when the item
+	 * names no stint. The queue badges and filters contractors by it.
+	 */
 	readonly engagementKind: EngagementKind;
 	readonly employmentHistoryId: string | null;
 	readonly workPolicyId: string | null;
@@ -106,6 +111,9 @@ export async function listContractsReviewQueue(
 		reviewConditions.push(eq(employeeDepartureReview.status, "open"));
 	}
 
+	// The kind of the stint an item is about, falling back to the person's kind today.
+	const stintEngagementKind = sql<EngagementKind>`coalesce(${employeeEmploymentPeriod.engagementKind}, ${employee.engagementKind})`;
+
 	const [conflictRows, reviewRows, legacyCountRows] = await Promise.all([
 		db
 			.select({
@@ -122,7 +130,7 @@ export async function listContractsReviewQueue(
 				firstName: user.firstName,
 				lastName: user.lastName,
 				employeeNumber: employee.employeeNumber,
-				engagementKind: employee.engagementKind,
+				engagementKind: stintEngagementKind,
 				userName: user.name,
 				email: user.email,
 			})
@@ -135,6 +143,20 @@ export async function listContractsReviewQueue(
 				),
 			)
 			.leftJoin(user, eq(user.id, employee.userId))
+			.leftJoin(
+				employeeEmploymentHistory,
+				and(
+					eq(employeeEmploymentHistory.id, contractMigrationConflict.employmentHistoryId),
+					eq(employeeEmploymentHistory.organizationId, contractMigrationConflict.organizationId),
+				),
+			)
+			.leftJoin(
+				employeeEmploymentPeriod,
+				and(
+					eq(employeeEmploymentPeriod.id, employeeEmploymentHistory.employmentPeriodId),
+					eq(employeeEmploymentPeriod.organizationId, contractMigrationConflict.organizationId),
+				),
+			)
 			.where(and(...conflictConditions))
 			.orderBy(desc(contractMigrationConflict.createdAt))
 			.limit(200),
@@ -153,7 +175,7 @@ export async function listContractsReviewQueue(
 				firstName: user.firstName,
 				lastName: user.lastName,
 				employeeNumber: employee.employeeNumber,
-				engagementKind: employee.engagementKind,
+				engagementKind: stintEngagementKind,
 				userName: user.name,
 				email: user.email,
 			})
@@ -171,6 +193,13 @@ export async function listContractsReviewQueue(
 				and(
 					eq(employeeDeparture.id, employeeDepartureReview.departureId),
 					eq(employeeDeparture.organizationId, employeeDepartureReview.organizationId),
+				),
+			)
+			.leftJoin(
+				employeeEmploymentPeriod,
+				and(
+					eq(employeeEmploymentPeriod.id, employeeDeparture.employmentPeriodId),
+					eq(employeeEmploymentPeriod.organizationId, employeeDepartureReview.organizationId),
 				),
 			)
 			.where(and(...reviewConditions))
