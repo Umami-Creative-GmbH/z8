@@ -468,6 +468,53 @@ describe("TodayApprovalsPanel", () => {
 		expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
 	});
 
+	it.each([
+		["saved", { success: true }],
+		["refused", { success: false, error: "Already decided" }],
+	])(
+		"keeps the reject panel open while its %s rejection is in flight, even if a refresh drops the item",
+		async (_outcome, body) => {
+			let complete!: (value: unknown) => void;
+			vi.mocked(global.fetch).mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						complete = resolve;
+					}),
+			);
+			const { rerender } = render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+			fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+			const panel = screen.getByRole("dialog", { name: "Reject request" });
+			fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+				target: { value: "Overlaps the inventory week." },
+			});
+			fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+			// The form submits asynchronously; wait until the rejection is actually on its way.
+			await waitFor(() => {
+				expect(
+					(within(panel).getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled,
+				).toBe(true);
+			});
+
+			// A refresh started elsewhere drops the item while its rejection is on its way.
+			rerender(<TodayApprovalsPanel items={[]} total={0} />);
+
+			// Neither the refresh nor Cancel may drop a rejection that is on its way.
+			const stillOpen = screen.getByRole("dialog", { name: "Reject request" });
+			expect(
+				(within(stillOpen).getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled,
+			).toBe(true);
+
+			await act(async () => complete({ ok: true, json: async () => body }));
+
+			// Once it settles, the dropped item's panel closes and leaves no error on the card.
+			await waitFor(() => {
+				expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
+			});
+			expect(screen.queryByText("Already decided")).toBeNull();
+		},
+	);
+
 	it("drops a refused rejection's error with its item, not into the card", async () => {
 		global.fetch = vi.fn().mockResolvedValue({
 			ok: true,
