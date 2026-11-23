@@ -5,18 +5,19 @@
  * shift's day before and after the edit, and is refused when it newly blocks publication of the
  * edited shift or of another published shift of the same employee, or deepens such a block past
  * its limit. A blocking finding the shift already had and the edit leaves no worse, also on the
- * day it moves to, does not refuse the save. A current sector exception lifts the block as at
+ * day it moves to, does not refuse the save; nor does a rest-period or daily or weekly maximum
+ * breach that a reordered day moves to another shift without deepening it
+ * (`causedBlockingFindings`). A current sector exception lifts the block as at
  * publication. Drafts are judged when they are published.
  */
-import { and, eq, inArray } from "drizzle-orm";
-import { shift } from "@/db/schema";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
+import type { StatutoryFinding } from "../finding";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
+import { causedBlockingFindings, publishedShiftSubjects } from "./caused-blocking";
 import { statutoryBlockingScheduleContributors } from "./contributors";
-import { deepensBreachedLimit, evaluateStatutoryScheduleFindings } from "./evaluate";
-import { statutoryFindingChangeKey } from "./finding-key";
+import { evaluateStatutoryFindings, toStatutoryComplianceFinding } from "./evaluate";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
 
@@ -43,8 +44,6 @@ export class PublishedShiftEditBlocked extends Error {
 	}
 }
 
-const SHIFT_SUBJECT = /^shift:([0-9a-f-]{36})$/i;
-
 /**
  * Runs `write` (which saves the shift) and refuses the save by throwing `PublishedShiftEditBlocked`
  * when it breaks the publish block. Call it inside the save's transaction with that transaction.
@@ -66,10 +65,10 @@ export async function guardPublishedShiftEdit<T>(
 	// Only monitors that can block publication: the save holds the shift row locked. One day after
 	// another: `db` is the save's transaction (one connection).
 	const evaluate = async () => {
-		const findings: StatutoryComplianceFinding[] = [];
+		const findings: StatutoryFinding[] = [];
 		for (const day of days) {
 			findings.push(
-				...(await evaluateStatutoryScheduleFindings(
+				...(await evaluateStatutoryFindings(
 					db,
 					{
 						organizationId: edit.organizationId,
@@ -84,49 +83,26 @@ export async function guardPublishedShiftEdit<T>(
 		}
 		return findings;
 	};
-	const before = new Map(
-		(await evaluate()).map((finding) => [statutoryFindingChangeKey(finding), finding] as const),
-	);
+	const before = await evaluate();
 	const saved = await write();
 	// Only what the edit causes blocks it: a blocking finding absent before the save, or one it
 	// deepens past its limit (a longer week, a shorter rest). A breach the shift already had (e.g.
 	// published before the org turned the block on) does not lock its notes, colour or an edit
-	// that eases it.
-	const after = new Map(
-		(await evaluate()).map((finding) => [statutoryFindingChangeKey(finding), finding] as const),
-	);
-	const caused = [...after.values()].filter((finding) => {
-		if (!finding.blocksPublication) return false;
-		const prior = before.get(statutoryFindingChangeKey(finding));
-		return !prior || deepensBreachedLimit(prior, finding);
-	});
+	// that eases it, also when the edit reorders the day and the breach moves to another shift.
+	const caused = causedBlockingFindings(before, await evaluate());
 	if (caused.length === 0) return saved;
 
 	const edited = `shift:${edit.shiftId}`;
-	const others = caused.filter((finding) => finding.subjectKey !== edited);
-	const otherIds = others.flatMap((finding) => {
-		const match = SHIFT_SUBJECT.exec(finding.subjectKey);
-		return match ? [match[1]] : [];
-	});
-	const published = new Set(
-		otherIds.length === 0
-			? []
-			: (
-					await db
-						.select({ id: shift.id })
-						.from(shift)
-						.where(
-							and(
-								eq(shift.organizationId, edit.organizationId),
-								inArray(shift.id, otherIds),
-								eq(shift.status, "published"),
-							),
-						)
-				).map((row) => `shift:${row.id}`),
+	const published = await publishedShiftSubjects(
+		db,
+		edit.organizationId,
+		caused.flatMap((finding) => (finding.subjectKey === edited ? [] : [finding.subjectKey])),
 	);
 	const blocking = caused.filter(
 		(finding) => finding.subjectKey === edited || published.has(finding.subjectKey),
 	);
-	if (blocking.length > 0) throw new PublishedShiftEditBlocked(blocking);
+	if (blocking.length > 0) {
+		throw new PublishedShiftEditBlocked(blocking.map(toStatutoryComplianceFinding));
+	}
 	return saved;
 }

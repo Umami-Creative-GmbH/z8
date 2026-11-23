@@ -127,6 +127,33 @@ export function jarbschgFindingOf(input: {
 	};
 }
 
+/**
+ * Rules attributed by position rather than to the work they are about: the rest period to the
+ * day's first piece of work, the daily and weekly maximum to the work past the running cap, the
+ * sixth working day to that day's work. An edit that reorders the day moves such a breach to
+ * another shift, so it is identified by what it judges: the day, or the compliance week.
+ */
+const positionalScope: Partial<Record<JarbschgRule, "day" | "week">> = {
+	jarbschg_rest_period: "day",
+	jarbschg_daily_max: "day",
+	jarbschg_weekly_max: "week",
+	jarbschg_days_per_week: "week",
+};
+
+/**
+ * What a position-attributed youth breach is about: rule, employee and judged day or week (from
+ * the finding's `periodStart`). Null for findings about their own work.
+ */
+export function youthBreachScopeOf(
+	finding: Pick<StatutoryFinding, "kind" | "employeeId" | "periodStart">,
+): string | null {
+	const scope = positionalScope[finding.kind as JarbschgRule];
+	if (!scope) return null;
+	const day = parsePlainDate(finding.periodStart);
+	const judged = scope === "day" ? day : day.subtract({ days: day.dayOfWeek - 1 });
+	return JSON.stringify([finding.kind, finding.employeeId, scope, judged.toString()]);
+}
+
 /** Every local day: sector-exception totals cover all the work given, not only the judged days. */
 const EVERY_DAY = { start: "0001-01-01", endExclusive: "9999-12-31" } as const;
 

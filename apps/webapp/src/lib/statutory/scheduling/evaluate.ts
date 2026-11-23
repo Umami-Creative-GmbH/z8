@@ -83,6 +83,20 @@ async function runContributors(
 }
 
 /**
+ * The statutory findings themselves for the judged window (with the period each judges), the
+ * publication block lifted by a current acknowledgement. Without contributors or employees it does
+ * no database work. The publish block's guards compare these before and after a change.
+ */
+export async function evaluateStatutoryFindings(
+	db: Reader,
+	request: StatutoryScheduleRequest,
+	contributors: readonly StatutoryScheduleContributor[] = statutoryScheduleContributors,
+): Promise<StatutoryFinding[]> {
+	if (contributors.length === 0 || request.employeeIds.length === 0) return [];
+	return runContributors(db, request, contributors);
+}
+
+/**
  * Statutory findings for the judged window, projected for Scheduling (publish evaluation,
  * compliance banner). Without contributors or employees it does no database work.
  */
@@ -91,8 +105,9 @@ export async function evaluateStatutoryScheduleFindings(
 	request: StatutoryScheduleRequest,
 	contributors: readonly StatutoryScheduleContributor[] = statutoryScheduleContributors,
 ): Promise<StatutoryComplianceFinding[]> {
-	if (contributors.length === 0 || request.employeeIds.length === 0) return [];
-	return (await runContributors(db, request, contributors)).map(toStatutoryComplianceFinding);
+	return (await evaluateStatutoryFindings(db, request, contributors)).map(
+		toStatutoryComplianceFinding,
+	);
 }
 
 /**

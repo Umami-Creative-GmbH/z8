@@ -382,6 +382,64 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		});
 	});
 
+	describe("drafts outside the published range", () => {
+		const publishThrough = async (range: typeof WEEK) => {
+			const handshake = await publishShifts(range);
+			if (!handshake.success || handshake.data.published) return handshake;
+			return publishShifts(range, { evaluationFingerprint: handshake.data.evaluationFingerprint });
+		};
+
+		it("publishes Tuesday although the rest breach it leaves lies on Wednesday's draft", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "next-draft", { birthday: "2011-01-01" });
+			// Tuesday until 19:30 leaves 10.5 h of rest before Wednesday 06:00, a draft not published.
+			const tuesday = await shift(minor, "2027-03-02", "15:30", "19:30");
+			const wednesday = await shift(minor, "2027-03-03", "06:00", "10:00");
+
+			expect(
+				await publishThrough({ startDate: "2027-03-01", endDateExclusive: "2027-03-03" }),
+			).toMatchObject({ success: true, data: { published: true, count: 1 } });
+			expect(await shiftStatus(tuesday)).toBe("published");
+			expect(await shiftStatus(wednesday)).toBe("draft");
+		});
+
+		async function longWeek(friday: "draft" | "published") {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, `straddle-${friday}`, { birthday: "2011-01-01" });
+			// 07:00–16:00 is 8 h of work after the 60 min break; Friday 07:00–16:30 is 8.5 h: 40.5 h.
+			const inRange: string[] = [];
+			for (const date of ["2027-03-01", "2027-03-02", "2027-03-03"]) {
+				inRange.push(await shift(minor, date, "07:00", "16:00"));
+			}
+			await shift(minor, "2027-03-04", "07:00", "16:00");
+			await seed.shift(org, minor, {
+				subareaId,
+				creatorUserId: owner.userId,
+				date: "2027-03-05",
+				startTime: "07:00",
+				endTime: "16:30",
+				status: friday,
+			});
+			return inRange;
+		}
+
+		it("publishes Monday to Wednesday although Friday's draft goes past 40 h", async () => {
+			const inRange = await longWeek("draft");
+			expect(
+				await publishThrough({ startDate: "2027-03-01", endDateExclusive: "2027-03-04" }),
+			).toMatchObject({ success: true, data: { published: true, count: 3 } });
+			for (const id of inRange) expect(await shiftStatus(id)).toBe("published");
+		});
+
+		it("refuses Monday to Wednesday when they push a published Friday past 40 h", async () => {
+			const inRange = await longWeek("published");
+			expect(
+				await publishThrough({ startDate: "2027-03-01", endDateExclusive: "2027-03-04" }),
+			).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
+			for (const id of inRange) expect(await shiftStatus(id)).toBe("draft");
+		});
+	});
+
 	it("keeps hard limits blocking: a sector exception cannot lift a too-long day", async () => {
 		await seed.blockJarbschgPublish(org);
 		const minor = await fx.employee(org, "long", { birthday: "2011-01-01" });
@@ -769,6 +827,84 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 					}),
 				).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
 				expect((await shiftRow(tuesday))?.start_time).toBe("06:30");
+			});
+		});
+
+		describe("a breach that moves to another published shift of the day", () => {
+			let minor: FixtureEmployee;
+			const edit = (id: string, date: string, startTime: string, endTime: string) =>
+				upsertShift({ id, employeeId: minor.employeeId, subareaId, date, startTime, endTime });
+
+			describe("the rest before the day's first shift", () => {
+				let early: string;
+
+				beforeEach(async () => {
+					await seed.blockJarbschgPublish(org);
+					minor = await fx.employee(org, "first-shift", { birthday: "2011-01-01" });
+					// Published before the block: Monday until 19:00 leaves 11 h before Tuesday 06:00.
+					await published(minor, "2027-03-01", "12:00", "19:00");
+					early = await published(minor, "2027-03-02", "06:00", "06:30");
+					const later = await published(minor, "2027-03-02", "06:45", "11:00");
+					expect((await evaluateWeek()).findings).toContainEqual(
+						expect.objectContaining({
+							statutoryKind: "jarbschg_rest_period",
+							subjectKey: `shift:${early}`,
+							summary: expect.objectContaining({ used: { unit: "minutes", value: 660 } }),
+							blocksPublication: true,
+						}),
+					);
+					expect(later).toBeTruthy();
+				});
+
+				it("saves moving the first shift to the afternoon: the next one rests 11.75 h", async () => {
+					expect(await edit(early, "2027-03-02", "13:00", "13:30")).toMatchObject({
+						success: true,
+					});
+					expect((await shiftRow(early))?.start_time).toBe("13:00");
+				});
+
+				it("refuses moving it to Monday evening: the next one rests only 10.75 h", async () => {
+					expect(await edit(early, "2027-03-01", "19:30", "20:00")).toMatchObject({
+						success: false,
+						refusal: STATUTORY_PUBLICATION_BLOCKED,
+					});
+					expect((await shiftRow(early))?.start_time).toBe("06:00");
+				});
+			});
+
+			describe("the daily maximum past the running cap", () => {
+				let morning: string;
+
+				beforeEach(async () => {
+					await seed.blockJarbschgPublish(org);
+					minor = await fx.employee(org, "reordered", { birthday: "2011-01-01" });
+					// Published before the block: 4 h, then 10:00–15:30 is 5 h after the 30 min break.
+					morning = await published(minor, "2027-03-02", "06:00", "10:00");
+					const afternoon = await published(minor, "2027-03-02", "10:00", "15:30");
+					expect((await evaluateWeek()).findings).toContainEqual(
+						expect.objectContaining({
+							statutoryKind: "jarbschg_daily_max",
+							subjectKey: `shift:${afternoon}`,
+							summary: expect.objectContaining({ used: { unit: "minutes", value: 540 } }),
+							blocksPublication: true,
+						}),
+					);
+				});
+
+				it("saves moving the morning shift after the other at the same 9 h", async () => {
+					expect(await edit(morning, "2027-03-02", "16:00", "20:00")).toMatchObject({
+						success: true,
+					});
+					expect((await shiftRow(morning))?.start_time).toBe("16:00");
+				});
+
+				it("refuses moving it after the other when that makes the day longer", async () => {
+					expect(await edit(morning, "2027-03-02", "15:30", "20:00")).toMatchObject({
+						success: false,
+						refusal: STATUTORY_PUBLICATION_BLOCKED,
+					});
+					expect((await shiftRow(morning))?.start_time).toBe("06:00");
+				});
 			});
 		});
 
