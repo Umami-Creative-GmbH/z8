@@ -1,12 +1,15 @@
 "use server";
 
-import { Effect } from "effect";
 import { z } from "zod";
+import {
+	ContractorCompensationRefused,
+	type ContractorDetailsRefusal,
+	type ContractorTermsRefusal,
+} from "@/lib/contractor-compensation/refusal";
 import {
 	type ContractorCompensationOverviewRow,
 	type ContractorCompensationRecord,
 	type ContractorTermsChange,
-	type ContractorTermsRefusal,
 	type ContractorTermsView,
 	changeContractorTerms,
 	listContractorCompensationOverview,
@@ -14,17 +17,18 @@ import {
 	saveContractorDetails,
 } from "@/lib/contractor-compensation/store";
 import { compensationBases, dayUnitRuleKinds } from "@/lib/contractor-compensation/terms";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { NotFoundError } from "@/lib/effect/errors";
 import type { ContractorProfileDetails } from "@/lib/engagement/contractor-profile";
 import { createLogger } from "@/lib/logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
 
 /**
  * Contractor compensation (#1998): an External Contractor's effective-dated
  * hourly or daily terms and their company, VAT ID and PO reference. Org admins
  * only: scoped managers and members are refused before any read, so contractor
- * rates and fees never reach them.
+ * rates and fees never reach them. Refusals carry only their code
+ * (`ContractorCompensationRefused`); the client words them.
  */
 
 const logger = createLogger("ContractorCompensationActions");
@@ -45,34 +49,10 @@ const compensationSchema = z.strictObject({
 const employeeNotFound = () =>
 	new NotFoundError({ message: "The contractor was not found", entityType: "employee" });
 
-const REFUSAL_MESSAGES: Record<
-	Exclude<ContractorTermsRefusal, "employee_not_found">,
-	[string, string]
-> = {
-	invalid_date: ["Enter a valid date", "effectiveFrom"],
-	not_contractor: [
-		"Only an active External Contractor engagement has contractor terms",
-		"employeeId",
-	],
-	before_engagement: ["Terms cannot start before the engagement started", "effectiveFrom"],
-	invalid_basis: ["Choose hourly or daily", "basis"],
-	invalid_currency: ["Enter an ISO 4217 currency code, such as EUR", "currency"],
-	invalid_rate: ["Enter a rate", "rateAmount"],
-	rate_not_positive: ["Enter a positive rate", "rateAmount"],
-	rate_too_large: ["Enter a rate below one million", "rateAmount"],
-	rate_too_precise: ["The rate has more decimals than the currency allows", "rateAmount"],
-	invalid_day_unit_rule: ["Choose how worked days are counted", "dayUnitRule"],
-	invalid_half_day_threshold: [
-		"Enter a half-day threshold from 1 to 1440 minutes",
-		"halfDayThresholdMinutes",
-	],
-	invalid_standard_day: ["Enter a standard day from 1 to 1440 minutes", "standardDayMinutes"],
-};
-
-function refusalError(reason: ContractorTermsRefusal) {
-	if (reason === "employee_not_found") return employeeNotFound();
-	const [message, field] = REFUSAL_MESSAGES[reason];
-	return new ValidationError({ message, field, refusal: reason });
+/** Throws a store's refusal for `storeStep`: not found keeps its own tagged error. */
+function refuse(reason: ContractorTermsRefusal | ContractorDetailsRefusal): never {
+	if (reason === "employee_not_found") throw employeeNotFound();
+	throw new ContractorCompensationRefused(reason);
 }
 
 const changeTerms = (
@@ -80,30 +60,31 @@ const changeTerms = (
 	context: { organizationId: string; actorUserId: string; employeeId: string },
 	change: ContractorTermsChange,
 ) =>
-	Effect.gen(function* () {
-		const service = yield* DatabaseService;
-		const outcome = yield* service.query(`contractorCompensation.${name}`, () =>
-			changeContractorTerms(service.db, { ...context, change }),
-		);
-		if (!outcome.ok) return yield* Effect.fail(refusalError(outcome.reason));
-		logger.info(
-			{
-				organizationId: context.organizationId,
-				employeeId: context.employeeId,
+	storeStep(
+		`contractorCompensation.${name}`,
+		async (db) => {
+			const outcome = await changeContractorTerms(db, { ...context, change });
+			if (!outcome.ok) refuse(outcome.reason);
+			logger.info(
+				{
+					organizationId: context.organizationId,
+					employeeId: context.employeeId,
+					changed: outcome.changed,
+				},
+				"Contractor terms changed",
+			);
+			return {
 				changed: outcome.changed,
-			},
-			"Contractor terms changed",
-		);
-		return {
-			changed: outcome.changed,
-			history: outcome.history,
-			termsInEffectId: outcome.termsInEffectId,
-		} satisfies {
-			changed: boolean;
-			history: ContractorTermsView[];
-			termsInEffectId: string | null;
-		};
-	});
+				history: outcome.history,
+				termsInEffectId: outcome.termsInEffectId,
+			} satisfies {
+				changed: boolean;
+				history: ContractorTermsView[];
+				termsInEffectId: string | null;
+			};
+		},
+		{ refusal: ContractorCompensationRefused },
+	);
 
 /** One contractor's terms history, active engagement and contracting details. */
 export const getContractorCompensation = organizationAction(
@@ -113,13 +94,13 @@ export const getContractorCompensation = organizationAction(
 		schema: z.strictObject({ employeeId: employeeIdSchema }),
 	},
 	({ organizationId, input }) =>
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			const record: ContractorCompensationRecord | null = yield* service.query(
-				"contractorCompensation.read",
-				() => loadContractorCompensation(service.db, organizationId, input.employeeId),
+		storeStep("contractorCompensation.read", async (db) => {
+			const record: ContractorCompensationRecord | null = await loadContractorCompensation(
+				db,
+				organizationId,
+				input.employeeId,
 			);
-			if (!record) return yield* Effect.fail(employeeNotFound());
+			if (!record) throw employeeNotFound();
 			return record;
 		}),
 );
@@ -173,32 +154,28 @@ export const updateContractorDetails = organizationAction(
 		}),
 	},
 	({ actor, organizationId, input }) =>
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			const { employeeId, ...details } = input;
-			const outcome = yield* service.query("contractorCompensation.updateDetails", () =>
-				saveContractorDetails(service.db, {
+		storeStep(
+			"contractorCompensation.updateDetails",
+			async (db) => {
+				const { employeeId, ...details } = input;
+				const outcome = await saveContractorDetails(db, {
 					organizationId,
 					actorUserId: actor.userId,
 					employeeId,
 					details,
-				}),
-			);
-			if (!outcome.ok) return yield* Effect.fail(refusalError(outcome.reason));
-			return outcome.details satisfies ContractorProfileDetails;
-		}),
+				});
+				if (!outcome.ok) refuse(outcome.reason);
+				return outcome.details satisfies ContractorProfileDetails;
+			},
+			{ refusal: ContractorCompensationRefused },
+		),
 );
 
 /** Every External Contractor with the terms in force today, for Settings → Contracts. */
 export const listContractorCompensation = organizationAction(
 	{ name: "contractorCompensation.list", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
-		Effect.gen(function* () {
-			const service = yield* DatabaseService;
-			const rows: ContractorCompensationOverviewRow[] = yield* service.query(
-				"contractorCompensation.list",
-				() => listContractorCompensationOverview(service.db, organizationId),
-			);
-			return rows;
-		}),
+		storeStep("contractorCompensation.list", (db): Promise<ContractorCompensationOverviewRow[]> =>
+			listContractorCompensationOverview(db, organizationId),
+		),
 );

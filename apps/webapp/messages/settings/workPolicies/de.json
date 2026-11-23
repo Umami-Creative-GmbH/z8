@@ -134,12 +134,6 @@
           "proratedByStandardDay": "Anteilig nach Standardtag",
           "proratedByStandardDayHint": "Gearbeitete Minuten geteilt durch den Standardtag, wahlweise höchstens 1,0 Tag."
         },
-        "ruleSummary": {
-          "anyWorkFullDay": "Jeder Tag mit Arbeit zählt als ganzer Tag",
-          "halfAndFullDay": "Halber Tag bis {minutes} Min., darüber ganzer Tag",
-          "proratedCapped": "Anteilig nach einem {minutes}-Minuten-Tag, höchstens ein Tag",
-          "proratedUncapped": "Anteilig nach einem {minutes}-Minuten-Tag, ohne Obergrenze"
-        },
         "saved": "Dienstleisterkonditionen gespeichert",
         "saveDetails": "Daten speichern",
         "saveEnd": "Satz beenden",

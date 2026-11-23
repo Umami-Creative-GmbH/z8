@@ -134,12 +134,6 @@
           "proratedByStandardDay": "Prorated by a standard day",
           "proratedByStandardDayHint": "Worked minutes divided by the standard day, optionally at most 1.0 day."
         },
-        "ruleSummary": {
-          "anyWorkFullDay": "Any day with work counts as a full day",
-          "halfAndFullDay": "Half day up to {minutes} min, full day above",
-          "proratedCapped": "Prorated by a {minutes}-minute day, at most one day",
-          "proratedUncapped": "Prorated by a {minutes}-minute day, without a cap"
-        },
         "saved": "Contractor terms saved",
         "saveDetails": "Save details",
         "saveEnd": "End rate",

@@ -29,11 +29,9 @@ import {
 import { useDisplayContext } from "@/hooks/use-display-context";
 import type { ContractorCompensationOverviewRow } from "@/lib/contractor-compensation/store";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import {
-	CONTRACTOR_COMPENSATION_REFUSALS,
-	ContractorCompensationCard,
-	describeCompensation,
-} from "./contractor-compensation-card";
+import { ContractorCompensationCard } from "./contractor-compensation-card";
+import { CONTRACTOR_COMPENSATION_REFUSALS } from "./contractor-compensation-refusals";
+import { describeCompensation } from "./contractor-terms-summary";
 
 const OVERVIEW_QUERY_KEY = ["contractor-compensation", "overview"] as const;
 

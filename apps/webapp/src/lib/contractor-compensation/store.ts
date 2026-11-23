@@ -32,13 +32,13 @@ import { type ContractorTermsPeriod, termsInForceOn } from "./pricing";
 import {
 	type ContractorCompensation,
 	type ContractorCompensationInput,
-	type ContractorCompensationRefusal,
 	type ContractorCompensationView,
 	fromStoredCompensation,
 	parseContractorCompensation,
 	sameCompensation,
 	toStoredCompensation,
 } from "./terms";
+import type { ContractorDetailsRefusal, ContractorTermsRefusal } from "./refusal";
 
 /**
  * Contractor compensation terms (#1998): writer and readers. The pricing
@@ -64,14 +64,7 @@ export type ContractorTermsChange =
 	| { kind: "set"; effectiveFrom: string; compensation: ContractorCompensationInput }
 	| { kind: "end"; effectiveFrom: string };
 
-export type ContractorTermsRefusal =
-	| ContractorCompensationRefusal
-	| "invalid_date"
-	| "employee_not_found"
-	/** The employee's active engagement is not an External Contractor engagement (or there is none). */
-	| "not_contractor"
-	/** Terms cannot start before the contractor's engagement started. */
-	| "before_engagement";
+export type { ContractorDetailsRefusal, ContractorTermsRefusal } from "./refusal";
 
 export type ContractorTermsOutcome =
 	| {
@@ -497,8 +490,6 @@ async function loadActiveEngagementKinds(
 	}
 	return kinds;
 }
-
-export type ContractorDetailsRefusal = "employee_not_found" | "not_contractor";
 
 /**
  * Saves a contractor's company name, VAT ID and PO/cost-center reference and
