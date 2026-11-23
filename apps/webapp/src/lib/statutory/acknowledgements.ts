@@ -46,13 +46,33 @@ export type StatutoryAcknowledgementState =
 	  };
 
 export interface StatutoryAcknowledgementStates {
-	get(subject: StatutoryAcknowledgementSubject): StatutoryAcknowledgementState;
+	/**
+	 * The state of one evaluated subject. The fingerprint is part of the lookup: two findings may
+	 * share a kind and subject key (e.g. two JArbSchG rules on one shift) yet evaluate different
+	 * inputs, and each is current only against its own fingerprint.
+	 */
+	get(
+		subject: StatutoryAcknowledgementSubject & { readonly inputFingerprint: string },
+	): StatutoryAcknowledgementState;
 }
 
-export type StatutoryAcknowledgementRefusal = "statutory_reason_required";
+export type StatutoryAcknowledgementRefusal =
+	| "statutory_reason_required"
+	| "statutory_subject_required";
 
 function subjectMapKey(subject: StatutoryAcknowledgementSubject): string {
 	return JSON.stringify([subject.employeeId, subject.kind, subject.subjectKey]);
+}
+
+function evaluatedSubjectMapKey(
+	subject: StatutoryAcknowledgementSubject & { readonly inputFingerprint: string },
+): string {
+	return JSON.stringify([
+		subject.employeeId,
+		subject.kind,
+		subject.subjectKey,
+		subject.inputFingerprint,
+	]);
 }
 
 function toRecord(row: ContractReviewAcknowledgement): StatutoryAcknowledgementRecord {
@@ -95,6 +115,14 @@ export async function recordStatutoryAcknowledgement(
 			message: "Explain why the finding is acknowledged",
 			field: "reason",
 			refusal: "statutory_reason_required" satisfies StatutoryAcknowledgementRefusal,
+		});
+	}
+	// Rows are immutable, so a caller bug must not persist an acknowledgement of nothing.
+	if (!input.subjectKey.trim() || !input.inputFingerprint.trim()) {
+		throw new ValidationError({
+			message: "An acknowledgement needs the evaluated subject and input fingerprint",
+			field: input.subjectKey.trim() ? "inputFingerprint" : "subjectKey",
+			refusal: "statutory_subject_required" satisfies StatutoryAcknowledgementRefusal,
 		});
 	}
 	await loadEmployeeInOrganization(db, input);
@@ -207,11 +235,10 @@ export async function loadStatutoryAcknowledgementStates(
 			bySubject.set(key, [...(bySubject.get(key) ?? []), record]);
 		}
 		for (const subject of input.subjects) {
-			const key = subjectMapKey(subject);
-			const records = bySubject.get(key) ?? [];
+			const records = bySubject.get(subjectMapKey(subject)) ?? [];
 			const match = records.find((record) => record.inputFingerprint === subject.inputFingerprint);
 			states.set(
-				key,
+				evaluatedSubjectMapKey(subject),
 				match
 					? { status: "current", latest: match }
 					: records[0]
@@ -221,7 +248,8 @@ export async function loadStatutoryAcknowledgementStates(
 		}
 	}
 	return {
-		get: (subject) => states.get(subjectMapKey(subject)) ?? { status: "none", latest: null },
+		get: (subject) =>
+			states.get(evaluatedSubjectMapKey(subject)) ?? { status: "none", latest: null },
 	};
 }
 
@@ -253,6 +281,7 @@ export async function attachAcknowledgementStates<F extends StatutoryFinding>(
 			employeeId: finding.employeeId,
 			kind: finding.acknowledgementKind,
 			subjectKey: finding.subjectKey,
+			inputFingerprint: finding.inputFingerprint,
 		});
 		const acknowledgement: StatutoryFindingAcknowledgement = {
 			status: state.status,

@@ -45,11 +45,13 @@ const SAFE_UNITS: ReadonlySet<StatutoryQuantity["unit"]> = new Set([
 ]);
 
 function safeQuantity(quantity: StatutoryQuantity | undefined): StatutoryQuantity | undefined {
-	return quantity && SAFE_UNITS.has(quantity.unit) ? quantity : undefined;
+	return quantity && SAFE_UNITS.has(quantity.unit)
+		? { unit: quantity.unit, value: quantity.value }
+		: undefined;
 }
 
 /** Keeps only the documented wage-free summary fields, even if a monitor misplaced data. */
-function safeSummary(summary: StatutoryFindingSummary): StatutoryFindingSummary {
+export function safeSummary(summary: StatutoryFindingSummary): StatutoryFindingSummary {
 	const safe: {
 		-readonly [K in keyof StatutoryFindingSummary]: StatutoryFindingSummary[K];
 	} = {};

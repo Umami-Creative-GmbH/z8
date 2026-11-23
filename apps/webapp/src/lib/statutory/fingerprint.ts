@@ -7,7 +7,8 @@ import { createHash } from "node:crypto";
  *
  * Canonical form: JSON with object keys sorted, arrays in the given order (sort them yourself
  * when order carries no meaning), Temporal values as their `toString()`. `undefined`, non-finite
- * numbers, functions and native `Date` are refused so a fingerprint never silently drops data.
+ * numbers, functions, native `Date` and other non-plain objects (`Set`, `Map`…) are refused so a
+ * fingerprint never silently drops data.
  */
 export function statutoryInputFingerprint(input: unknown): string {
 	const canonical = canonicalJson(input, "$");
@@ -38,6 +39,11 @@ function canonicalJson(value: unknown, path: string): string {
 	const tag = (value as { [Symbol.toStringTag]?: unknown })[Symbol.toStringTag];
 	if (typeof tag === "string" && tag.startsWith("Temporal.")) {
 		return JSON.stringify(String(value));
+	}
+	const prototype = Object.getPrototypeOf(value);
+	if (prototype !== Object.prototype && prototype !== null) {
+		// Set, Map, RegExp, class instances…: Object.entries() would silently drop their contents.
+		throw new TypeError(`${path} is not a plain object, array or Temporal value`);
 	}
 	const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
 		a < b ? -1 : a > b ? 1 : 0,

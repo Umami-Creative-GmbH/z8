@@ -34,4 +34,15 @@ describe("statutoryInputFingerprint", () => {
 			TypeError,
 		);
 	});
+
+	it("refuses collections and other non-plain objects that would serialize as {}", () => {
+		expect(() => statutoryInputFingerprint({ days: new Set(["2026-03-01"]) })).toThrow(TypeError);
+		expect(() => statutoryInputFingerprint({ byDay: new Map([["2026-03-01", 240]]) })).toThrow(
+			TypeError,
+		);
+		expect(() => statutoryInputFingerprint({ pattern: /x/ })).toThrow(TypeError);
+		expect(statutoryInputFingerprint({ nested: Object.create(null) })).toBe(
+			statutoryInputFingerprint({ nested: {} }),
+		);
+	});
 });

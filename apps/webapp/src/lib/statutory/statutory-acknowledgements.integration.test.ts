@@ -62,7 +62,7 @@ describe("statutory acknowledgements (PostgreSQL)", () => {
 			organizationId: org.id,
 			subjects: [{ ...subject, inputFingerprint: marchInputs([240, 300]) }],
 		});
-		expect(unchanged.get(subject)).toMatchObject({
+		expect(unchanged.get({ ...subject, inputFingerprint: marchInputs([240, 300]) })).toMatchObject({
 			status: "current",
 			latest: {
 				acknowledgedBy: admin.userId,
@@ -76,7 +76,9 @@ describe("statutory acknowledgements (PostgreSQL)", () => {
 			organizationId: org.id,
 			subjects: [{ ...subject, inputFingerprint: marchInputs([240, 300, 180]) }],
 		});
-		expect(changed.get(subject)).toMatchObject({
+		expect(
+			changed.get({ ...subject, inputFingerprint: marchInputs([240, 300, 180]) }),
+		).toMatchObject({
 			status: "stale",
 			latest: { inputFingerprint: acknowledged },
 		});
@@ -85,7 +87,9 @@ describe("statutory acknowledgements (PostgreSQL)", () => {
 			organizationId: org.id,
 			subjects: [{ ...subject, subjectKey: "2026-04", inputFingerprint: acknowledged }],
 		});
-		expect(other.get({ ...subject, subjectKey: "2026-04" })).toEqual({
+		expect(
+			other.get({ ...subject, subjectKey: "2026-04", inputFingerprint: acknowledged }),
+		).toEqual({
 			status: "none",
 			latest: null,
 		});
@@ -114,7 +118,7 @@ describe("statutory acknowledgements (PostgreSQL)", () => {
 			organizationId: org.id,
 			subjects: [{ ...subject, inputFingerprint: marchInputs([240, 60]) }],
 		});
-		expect(states.get(subject)).toMatchObject({
+		expect(states.get({ ...subject, inputFingerprint: marchInputs([240, 60]) })).toMatchObject({
 			status: "current",
 			latest: { reason: "Re-acknowledged after extra shift" },
 		});
@@ -178,6 +182,54 @@ describe("statutory acknowledgements (PostgreSQL)", () => {
 			organizationId: foreignOrg.id,
 			subjects: [{ ...subject, inputFingerprint: fingerprint }],
 		});
-		expect(foreign.get(subject)?.status).toBe("none");
+		expect(foreign.get({ ...subject, inputFingerprint: fingerprint })?.status).toBe("none");
+	});
+
+	it("judges findings that share a kind and subject against their own fingerprints", async () => {
+		const { org, admin, worker } = await setup();
+		const shift = {
+			employeeId: worker.employeeId,
+			kind: "jarbschg_sector_exception" as const,
+			subjectKey: "shift:night-and-sunday",
+		};
+		const night = statutoryInputFingerprint({ rule: "night", start: "2026-03-08T21:00" });
+		const sunday = statutoryInputFingerprint({ rule: "sunday", day: "2026-03-08" });
+		await recordStatutoryAcknowledgement(db, {
+			organizationId: org.id,
+			actorUserId: admin.userId,
+			...shift,
+			inputFingerprint: night,
+			reason: "Hospitality sector exception for late service",
+		});
+
+		const states = await loadStatutoryAcknowledgementStates(db, {
+			organizationId: org.id,
+			subjects: [
+				{ ...shift, inputFingerprint: night },
+				{ ...shift, inputFingerprint: sunday },
+			],
+		});
+
+		expect(states.get({ ...shift, inputFingerprint: night }).status).toBe("current");
+		expect(states.get({ ...shift, inputFingerprint: sunday }).status).toBe("stale");
+	});
+
+	it("refuses an acknowledgement without an evaluated subject or fingerprint", async () => {
+		const { org, admin, subject } = await setup();
+		const base = {
+			organizationId: org.id,
+			actorUserId: admin.userId,
+			...subject,
+			inputFingerprint: marchInputs([240]),
+			reason: "Documented",
+		};
+
+		await expect(
+			recordStatutoryAcknowledgement(db, { ...base, subjectKey: " " }),
+		).rejects.toMatchObject({ refusal: "statutory_subject_required", field: "subjectKey" });
+		await expect(
+			recordStatutoryAcknowledgement(db, { ...base, inputFingerprint: "" }),
+		).rejects.toMatchObject({ refusal: "statutory_subject_required", field: "inputFingerprint" });
+		expect(await listStatutoryAcknowledgements(db, { organizationId: org.id })).toEqual([]);
 	});
 });

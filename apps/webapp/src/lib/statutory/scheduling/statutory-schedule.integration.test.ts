@@ -154,6 +154,91 @@ describe("statutory scheduling seam (PostgreSQL)", () => {
 		});
 	});
 
+	/** A monitor whose finding keeps its id and severity but moves from 96 % to over the cap. */
+	function capContributor(): StatutoryScheduleContributor {
+		return {
+			domain: "minijob",
+			async evaluate(context) {
+				return context.employeeIds.map((employeeId): StatutoryFinding => {
+					const over = context.proposedShifts.some((s) => s.employeeId === employeeId);
+					return {
+						id: statutoryFindingId("minijob_monthly_cap", employeeId, "2026-03"),
+						organizationId: context.organizationId,
+						employeeId,
+						domain: "minijob",
+						kind: "minijob_monthly_cap",
+						severity: "critical",
+						subjectKey: "2026-03",
+						periodStart: "2026-03-01",
+						periodEnd: "2026-04-01",
+						legalReference: "§ 8 Abs. 1 Nr. 1 SGB IV",
+						summary: { tier: over ? "exceeded" : "critical", usedPercent: over ? 112 : 96 },
+						adminDetail: null,
+						inputFingerprint: `v1:${over}`,
+						acknowledgementKind: null,
+					};
+				});
+			},
+		};
+	}
+
+	it("reports a finding the proposal pushes from the critical tier over the cap", async () => {
+		const org = await fx.organization("a");
+		const worker = await fx.employee(org, "worker");
+
+		const added = await addedStatutoryScheduleFindings(
+			db,
+			{
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-02", endExclusive: "2026-03-05" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from("2026-02-27T09:00:00Z"),
+				proposedShift: { date: "2026-03-03", startTime: "09:00", endTime: "17:00" },
+				replacesShiftId: null,
+			},
+			[capContributor()],
+		);
+
+		expect(added.get(worker.employeeId)?.map((f) => f.summary.tier)).toEqual(["exceeded"]);
+	});
+
+	it("passes only the wage-free summary fields to Scheduling", async () => {
+		const org = await fx.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const leaky: StatutoryScheduleContributor = {
+			domain: "minijob",
+			async evaluate(context) {
+				return (await capContributor().evaluate(context)).map((finding) => ({
+					...finding,
+					summary: {
+						...finding.summary,
+						used: { unit: "minutes", value: 600, wageCents: 1_500 },
+						earningsCents: 58_000,
+					} as unknown as StatutoryFinding["summary"],
+				}));
+			},
+		};
+
+		const [finding] = await evaluateStatutoryScheduleFindings(
+			db,
+			{
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-02", endExclusive: "2026-03-09" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from("2026-02-27T09:00:00Z"),
+			},
+			[leaky],
+		);
+
+		expect(finding?.summary).toEqual({
+			tier: "critical",
+			usedPercent: 96,
+			used: { unit: "minutes", value: 600 },
+		});
+	});
+
 	it("does no work without contributors", async () => {
 		const org = await fx.organization("a");
 		expect(

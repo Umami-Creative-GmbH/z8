@@ -4,12 +4,14 @@ import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/typ
 import { attachAcknowledgementStates } from "../acknowledgements";
 import type { StatutoryFinding } from "../finding";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
+import { safeSummary } from "../redaction";
 import type {
 	StatutoryProposedShift,
 	StatutoryScheduleContext,
 	StatutoryScheduleContributor,
 } from "./contributor";
 import { statutoryScheduleContributors } from "./contributors";
+import { statutoryFindingChangeKey } from "./finding-key";
 
 type Reader = Pick<DatabaseClient, "select">;
 
@@ -36,7 +38,8 @@ export function toStatutoryComplianceFinding(
 		severity: finding.severity,
 		subjectKey: finding.subjectKey,
 		legalReference: finding.legalReference,
-		summary: finding.summary,
+		// Planners and scoped managers read this: only the documented wage-free fields pass.
+		summary: safeSummary(finding.summary),
 		acknowledgementStatus: finding.acknowledgementKind
 			? (finding.acknowledgement?.status ?? "none")
 			: null,
@@ -84,7 +87,9 @@ export async function evaluateStatutoryScheduleFindings(
 
 /**
  * The statutory findings each candidate would get if `proposedShift` were assigned to them,
- * minus those they already have (same finding at the same severity). Used by Staffing.
+ * minus those they already have unchanged. A finding counts as added when the proposal raises
+ * its severity or tier (e.g. 96 % → over the cap), invalidates its acknowledgement, or makes it
+ * block publication. Used by Staffing.
  */
 export async function addedStatutoryScheduleFindings(
 	db: Reader,
@@ -96,7 +101,8 @@ export async function addedStatutoryScheduleFindings(
 	const added = new Map<string, StatutoryComplianceFinding[]>();
 	if (contributors.length === 0 || request.employeeIds.length === 0) return added;
 
-	const key = (finding: StatutoryFinding) => `${finding.id}|${finding.severity}`;
+	const key = (finding: StatutoryFinding) =>
+		statutoryFindingChangeKey(toStatutoryComplianceFinding(finding));
 	const baseline = new Set((await runContributors(db, request, contributors)).map(key));
 	const proposed = await runContributors(
 		db,
