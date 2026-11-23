@@ -23,6 +23,35 @@ describe("errorLogSummary (#1975)", () => {
 		expect(JSON.stringify(errorLogSummary(failure))).not.toContain(REASON);
 	});
 
+	it("keeps no message line when the message changed after the stack was taken", () => {
+		const failure = new Error(`Failed query\nparams: x\n    at ${REASON}`);
+		void failure.stack;
+		failure.message = "Failed query";
+
+		expect(JSON.stringify(errorLogSummary(failure))).not.toContain(REASON);
+	});
+
+	it("keeps no message line when toString leaves the message out of the header", () => {
+		class NamedOnly extends Error {
+			override toString() {
+				return this.name;
+			}
+		}
+		const failure = new NamedOnly(`Failed query\n    at the hospital with ${REASON}`);
+
+		expect(JSON.stringify(errorLogSummary(failure))).not.toContain(REASON);
+	});
+
+	it("keeps no line from an overridden stack that is not a real frame", () => {
+		const failure = new Error("Failed query");
+		failure.stack = `Error: Failed query\n    at ${REASON}\n    at run (file:///app/x.js:10:5)`;
+
+		const summary = errorLogSummary(failure);
+
+		expect(JSON.stringify(summary)).not.toContain(REASON);
+		expect(summary.frames).toEqual(["at run (file:///app/x.js:10:5)"]);
+	});
+
 	it("keeps a database failure's code, operation and the constraint, table and column it hit", () => {
 		const failure = databaseFailure("compliance_exception.insert", ["org-1", REASON]);
 		const postgres = (failure.cause as { cause: Record<string, unknown> }).cause;

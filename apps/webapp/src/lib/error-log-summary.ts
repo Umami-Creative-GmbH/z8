@@ -26,19 +26,25 @@ export interface ErrorLogSummary {
 const MAX_FRAMES = 20;
 
 /**
- * The stack's `at …` frames only. The header (`Name: message`, possibly many lines) is cut off by
- * its exact text first, so a message line that merely looks like a frame never comes along.
+ * A V8 stack frame: `at [async] [fn ](location)` or `at location`, where the location ends in
+ * `:line:col`, or is `<anonymous>` / `native`. Free text after "at " (a message line) is not one.
+ */
+const V8_FRAME =
+	/^at (?:async )?(?:\S+ (?:\[as \S+\] )?)?\(?(?:\S+:\d+:\d+|<anonymous>|native)\)?$/;
+
+/**
+ * The stack's real frames only. A frame-shaped line is kept only if it is shaped like a V8
+ * frame and is not part of the current message, so neither a message changed after the stack
+ * was taken, nor a `toString` or `.stack` override, can bring message text along.
  */
 function stackFrames(error: Error): string[] | undefined {
 	const stack = error.stack;
 	if (typeof stack !== "string") return undefined;
-	const header = String(error);
-	if (!stack.startsWith(header)) return undefined;
+	const message = typeof error.message === "string" ? error.message : "";
 	const frames = stack
-		.slice(header.length)
 		.split("\n")
 		.map((line) => line.trim())
-		.filter((line) => line.startsWith("at "))
+		.filter((line) => V8_FRAME.test(line) && !message.includes(line))
 		.slice(0, MAX_FRAMES);
 	return frames.length > 0 ? frames : undefined;
 }
