@@ -1537,6 +1537,45 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 					expect((await shownAt("2026-05-20T08:10:00Z"))?.acknowledgement?.status).toBe("current");
 				});
 
+				it("accepts at 10:16 the figures shown at 10:14", async () => {
+					const { shownAt, acknowledgeAt } = await unplannedClockIn();
+					// 10:14 in Berlin: 640 EUR + 2 h 14 min at 20 EUR.
+					const shown = await shownAt("2026-05-20T08:14:00Z");
+					expect(shown?.adminDetail?.amountsCents?.total).toBe(68_467);
+
+					const record = await acknowledgeAt("2026-05-20T08:16:00Z", shown);
+
+					expect(record.metadata).toMatchObject({ documentedTotalCents: 68_467 });
+				});
+
+				it("stays current across quarter hours until its total grows more than a step", async () => {
+					const { shownAt, acknowledgeAt } = await unplannedClockIn();
+					const shown = await shownAt("2026-05-20T08:14:00Z");
+					await acknowledgeAt("2026-05-20T08:14:00Z", shown);
+					const stateAt = async (at: string) => {
+						const finding = await shownAt(at);
+						return {
+							sameFingerprint: finding?.inputFingerprint === shown?.inputFingerprint,
+							status: finding?.acknowledgement?.status,
+						};
+					};
+
+					// 10:15 and 10:29 in Berlin: within 15 minutes' pay (5 EUR) of the documented total.
+					expect(await stateAt("2026-05-20T08:15:00Z")).toEqual({
+						sameFingerprint: true,
+						status: "current",
+					});
+					expect(await stateAt("2026-05-20T08:29:00Z")).toEqual({
+						sameFingerprint: true,
+						status: "current",
+					});
+					// 10:44: 10 EUR above it. The fingerprint still matches; the documented total does not.
+					expect(await stateAt("2026-05-20T08:44:00Z")).toEqual({
+						sameFingerprint: true,
+						status: "stale",
+					});
+				});
+
 				it("refuses a total that rose by more than 15 minutes' pay since it was shown", async () => {
 					const { shownAt, acknowledgeAt } = await unplannedClockIn();
 					const shown = await shownAt("2026-05-20T08:00:00Z");
@@ -1572,7 +1611,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 					expect(seen[3]?.total).toBe(68_467);
 				});
 
-				it("stays current when the clock-in closes within the step", async () => {
+				it("goes stale when the clock-in closes, its minutes final", async () => {
 					const { org, shownAt, acknowledgeAt } = await unplannedClockIn();
 					const shown = await shownAt("2026-05-20T08:00:00Z");
 					await acknowledgeAt("2026-05-20T08:00:00Z", shown);
@@ -1585,7 +1624,12 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 
 					await st.clockOut(org, period?.id ?? "", "2026-05-20", "10:05");
 
-					expect((await shownAt("2026-05-20T12:00:00Z"))?.acknowledgement?.status).toBe("current");
+					// Open work outside any shift is documented by its id; the clock-out that fixes its
+					// minutes is a change to the work (accepted: the work is final then).
+					const after = await shownAt("2026-05-20T12:00:00Z");
+					expect(after?.adminDetail?.amountsCents?.total).toBe(68_167);
+					expect(after?.inputFingerprint).not.toBe(shown?.inputFingerprint);
+					expect(after?.acknowledgement?.status).toBe("stale");
 				});
 			});
 
@@ -1687,6 +1731,27 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 					expect(await statusAt("2026-05-20T18:00:00Z")).toBe("current");
 				});
 
+				it("keeps the fingerprint of a clock-in past the shift's end until the clock-out", async () => {
+					const { org, worker, shown, shownAt } = await documentedShift();
+					const clockIn = await st.openWork(org, worker, "2026-05-20", "09:00");
+
+					// 17:14, 17:16 and 17:44 in Berlin: the shift is over, its clock-in still open.
+					expect((await shownAt("2026-05-20T15:14:00Z"))?.acknowledgement?.status).toBe("current");
+					for (const at of [
+						"2026-05-20T15:14:00Z",
+						"2026-05-20T15:16:00Z",
+						"2026-05-20T15:44:00Z",
+					]) {
+						expect((await shownAt(at))?.inputFingerprint).toBe(shown?.inputFingerprint);
+					}
+
+					// Out at 17:40: 40 minutes over the shift, a material overrun.
+					await st.clockOut(org, clockIn, "2026-05-20", "17:40");
+					const after = await shownAt("2026-05-20T18:00:00Z");
+					expect(after?.inputFingerprint).not.toBe(shown?.inputFingerprint);
+					expect(after?.acknowledgement?.status).toBe("stale");
+				});
+
 				it("goes stale on a material overrun of a shift that is over", async () => {
 					const { org, worker, shown, shownAt } = await documentedShift();
 					await st.work(org, worker, "2026-05-20", "09:00", "17:30");
@@ -1711,6 +1776,144 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 					// The same total, earned off the plan the admin documented.
 					expect(after?.adminDetail?.amountsCents?.total).toBe(80_000);
 					expect(after?.acknowledgement?.status).toBe("stale");
+				});
+			});
+
+			describe("with one clock-in over back-to-back shifts", () => {
+				/** 560 EUR worked in May, and the shifts on 20 May. */
+				async function shifts(planned: readonly [string, string][], key = "a") {
+					const { org, worker } = await earner(key, 7);
+					const owner = await fx.user(`owner-${key}`);
+					for (const [from, until] of planned)
+						await st.shift(org, worker, "2026-05-20", from, until);
+					const shownAt = async (at: string, month = "2026-05") =>
+						(
+							await listShortTermBerufsmaessigkeitReviews(db, {
+								organizationId: org.id,
+								timezone: org.timezone,
+								now: Temporal.Instant.from(at),
+								includeResolved: true,
+							})
+						).find((review) => review.month === month)?.finding;
+					/** Documents May as shown at `at`; returns what was shown. */
+					const documentAt = async (at: string) => {
+						const shown = await shownAt(at);
+						await acknowledgeShortTermBerufsmaessigkeit(db, {
+							organizationId: org.id,
+							actorUserId: owner.userId,
+							employeeId: worker.employeeId,
+							timezone: org.timezone,
+							month: "2026-05",
+							reason: "Student, no other employment this year",
+							expectedFingerprint: shown?.inputFingerprint ?? "",
+							expectedTotalCents: shown?.adminDetail?.amountsCents?.total ?? 0,
+							now: Temporal.Instant.from(at),
+						});
+						return shown;
+					};
+					const stateAt = async (at: string, shown: StatutoryFinding | undefined) => {
+						const finding = await shownAt(at);
+						return {
+							sameFingerprint: finding?.inputFingerprint === shown?.inputFingerprint,
+							status: finding?.acknowledgement?.status,
+						};
+					};
+					return { org, worker, documentAt, stateAt };
+				}
+
+				it.each([
+					// 8 minutes over each shift: 16 together, a material step.
+					{
+						clockIn: "08:52",
+						clockOut: "17:08",
+						after: { sameFingerprint: false, status: "stale" },
+					},
+					// 5 minutes over each: 10 together.
+					{
+						clockIn: "08:55",
+						clockOut: "17:05",
+						after: { sameFingerprint: true, status: "current" },
+					},
+				])(
+					"documented while the second runs, judges $clockIn–$clockOut on the combined overrun once both are over",
+					async ({ clockIn, clockOut, after }) => {
+						const { org, worker, documentAt, stateAt } = await shifts([
+							["09:00", "13:00"],
+							["13:00", "17:00"],
+						]);
+						const work = await st.openWork(org, worker, "2026-05-20", clockIn);
+						// 14:00 in Berlin: the first shift is over, the second runs.
+						const shown = await documentAt("2026-05-20T12:00:00Z");
+
+						// 16:59 and 17:10 in Berlin, still clocked in.
+						for (const at of ["2026-05-20T14:59:00Z", "2026-05-20T15:10:00Z"]) {
+							expect(await stateAt(at, shown)).toEqual({
+								sameFingerprint: true,
+								status: "current",
+							});
+						}
+
+						await st.clockOut(org, work, "2026-05-20", clockOut);
+						expect(await stateAt("2026-05-20T18:00:00Z", shown)).toEqual(after);
+					},
+				);
+
+				it("nets a shortfall against an overrun only within one back-to-back group", async () => {
+					// 20 minutes short of the first shift, 20 minutes over the second.
+					const separate = await shifts([
+						["09:00", "12:00"],
+						["13:00", "17:00"],
+					]);
+					const separateShown = await separate.documentAt("2026-05-19T10:00:00Z");
+					await st.work(separate.org, separate.worker, "2026-05-20", "09:00", "11:40");
+					await st.work(separate.org, separate.worker, "2026-05-20", "13:00", "17:20");
+
+					const group = await shifts(
+						[
+							["09:00", "13:00"],
+							["13:00", "17:00"],
+						],
+						"b",
+					);
+					const groupShown = await group.documentAt("2026-05-19T10:00:00Z");
+					await st.work(group.org, group.worker, "2026-05-20", "09:20", "17:20");
+
+					expect(await separate.stateAt("2026-05-20T18:00:00Z", separateShown)).toEqual({
+						sameFingerprint: false,
+						status: "stale",
+					});
+					expect(await group.stateAt("2026-05-20T18:00:00Z", groupShown)).toEqual({
+						sameFingerprint: true,
+						status: "current",
+					});
+				});
+
+				it("judges each month only against its own shifts", async () => {
+					const { org, worker } = await earner("a", 7);
+					// June: 640 EUR worked from the 2nd.
+					for (let day = 2; day <= 9; day++) await st.work(org, worker, `2026-06-0${day}`);
+					await st.shift(org, worker, "2026-05-31", "22:00", "06:00");
+					await st.shift(org, worker, "2026-06-01", "06:00", "10:00");
+					const fingerprintsAt = async (at: string) => {
+						const [evaluation] = await evaluate(org, [worker.employeeId], {
+							now: Temporal.Instant.from(at),
+						});
+						const of = (month: string) =>
+							evaluation?.findings.find(
+								(f) => f.kind === "short_term_berufsmaessigkeit_check" && f.subjectKey === month,
+							)?.inputFingerprint;
+						return { may: of("2026-05"), june: of("2026-06") };
+					};
+					// 30 May: both shifts ahead.
+					const planned = await fingerprintsAt("2026-05-30T10:00:00Z");
+					expect(planned).toEqual({ may: expect.any(String), june: expect.any(String) });
+
+					// 21:40 on 31 May to 09:40 on 1 June: 20 minutes over the May shift, 20 short of June's.
+					await st.work(org, worker, "2026-05-31", "21:40", "09:40");
+					const worked = await fingerprintsAt("2026-06-10T10:00:00Z");
+
+					expect(worked.may).not.toBe(planned.may);
+					expect(worked.june).toBe(planned.june);
 				});
 			});
 		});
