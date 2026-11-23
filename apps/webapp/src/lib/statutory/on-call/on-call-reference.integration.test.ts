@@ -24,8 +24,9 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 	afterAll(fx.cleanup);
 
 	/**
-	 * Hired 2026-04-01 (Berlin), on call throughout. 4 h worked on ten days; 3 h worked during
-	 * unpaid leave (05-04 … 05-08); vacation 05-18 … 05-19; public holiday 05-25; sick from 06-10.
+	 * Hired 2026-04-01 (Berlin), on call throughout. 4 h worked on ten days; 3 h worked on 05-05
+	 * during unpaid leave (05-04 … 05-08), which counts: no work was lost that day; vacation
+	 * 05-18 … 05-19; public holiday 05-25; sick from 06-10.
 	 */
 	async function seededWorker() {
 		const org = await onCall.organization("a");
@@ -78,7 +79,7 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 		return { org, worker };
 	}
 
-	it("averages the 3 months before sick leave, leaving out pre-hire days and every absence", async () => {
+	it("averages the 3 months before sick leave, leaving out pre-hire days and unworked absence", async () => {
 		const { org, worker } = await seededWorker();
 
 		const breakdown = await calculateOnCallReferencePeriod(db, {
@@ -95,20 +96,64 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			referenceStart: "2026-03-10",
 			referenceEndExclusive: "2026-06-10",
 			calendarDays: 92,
-			denominatorDays: 62,
-			workedDays: 10,
-			numeratorMinutes: 2400,
-			averageMinutesPerDay: 39,
-			averageMinutesPerWeek: 271,
-			averageMinutesPerWorkedDay: 240,
+			denominatorDays: 63,
+			workedDays: 11,
+			numeratorMinutes: 2580,
+			averageMinutesPerDay: 41,
+			averageMinutesPerWeek: 287,
+			averageMinutesPerWorkedDay: 235,
 			onCallOnEventDate: true,
 			employmentShortened: true,
 		});
 		expect(breakdown.excludedPeriods).toEqual([
 			{ from: "2026-03-10", untilExclusive: "2026-04-01", reason: "not_employed", days: 22 },
-			{ from: "2026-05-04", untilExclusive: "2026-05-09", reason: "unpaid_absence", days: 5 },
+			{ from: "2026-05-04", untilExclusive: "2026-05-05", reason: "unpaid_absence", days: 1 },
+			{ from: "2026-05-06", untilExclusive: "2026-05-09", reason: "unpaid_absence", days: 3 },
 			{ from: "2026-05-18", untilExclusive: "2026-05-20", reason: "paid_absence", days: 2 },
 			{ from: "2026-05-25", untilExclusive: "2026-05-26", reason: "public_holiday", days: 1 },
+		]);
+	});
+
+	it("counts a worked public holiday and a worked half-day of vacation: only lost work is left out", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const periodId = await onCall.employmentPeriod(org, worker, "2026-03-31T22:00:00Z");
+		await onCall.onCallTerms(org, worker, {
+			kind: "unspecified",
+			from: "2026-04-01",
+			employmentPeriodId: periodId,
+		});
+		// Easter Monday, worked 4 h.
+		await onCall.holiday(org, worker, "2026-04-06");
+		await onCall.work(org, worker, { date: "2026-04-06", startTime: "09:00", endTime: "13:00" });
+		// A half-day of vacation, worked 2 h in the morning.
+		await onCall.absence(org, worker, {
+			type: "vacation",
+			startDate: "2026-04-08",
+			endDate: "2026-04-08",
+		});
+		await onCall.work(org, worker, { date: "2026-04-08", startTime: "09:00", endTime: "11:00" });
+		// A holiday that was not worked is still left out.
+		await onCall.holiday(org, worker, "2026-04-10");
+
+		const breakdown = await calculateOnCallReferencePeriod(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			eventDate: "2026-04-15",
+			method: "three_months",
+		});
+
+		// Employed 04-01 … 04-14 (14 days), the unworked holiday left out: 13 days, 360 minutes.
+		expect(breakdown).toMatchObject({
+			denominatorDays: 13,
+			workedDays: 2,
+			numeratorMinutes: 360,
+			averageMinutesPerDay: 28,
+			averageMinutesPerWorkedDay: 180,
+		});
+		expect(breakdown.excludedPeriods).toEqual([
+			{ from: "2026-01-15", untilExclusive: "2026-04-01", reason: "not_employed", days: 76 },
+			{ from: "2026-04-10", untilExclusive: "2026-04-11", reason: "public_holiday", days: 1 },
 		]);
 	});
 
@@ -126,9 +171,9 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			referenceStart: "2026-03-11",
 			referenceEndExclusive: "2026-06-10",
 			calendarDays: 91,
-			denominatorDays: 62,
-			numeratorMinutes: 2400,
-			averageMinutesPerDay: 39,
+			denominatorDays: 63,
+			numeratorMinutes: 2580,
+			averageMinutesPerDay: 41,
 		});
 		expect(breakdown.excludedPeriods[0]).toEqual({
 			from: "2026-03-11",
@@ -153,7 +198,7 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			["sick_leave", "2026-06-10"],
 			["public_holiday", "2026-06-15"],
 		]);
-		expect(events[0]?.breakdown.averageMinutesPerDay).toBe(39);
+		expect(events[0]?.breakdown.averageMinutesPerDay).toBe(41);
 		// The holiday's own reference period contains the three sick days.
 		expect(events[1]?.breakdown.excludedPeriods).toContainEqual({
 			from: "2026-06-10",
@@ -276,7 +321,7 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 				eventDate: "2026-06-10",
 				method: "three_months",
 			});
-			expect(breakdown.numeratorMinutes).toBe(2400);
+			expect(breakdown.numeratorMinutes).toBe(2580);
 			await client.query("COMMIT");
 		} finally {
 			client.release();

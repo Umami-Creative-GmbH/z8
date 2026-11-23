@@ -12,6 +12,9 @@
  * - days with other approved absence that releases work (`paid_absence`: vacation, sickness…),
  * - assigned public holidays (`public_holiday`).
  *
+ * Only lost work is left out: an absence or holiday day with completed work (a worked holiday, a
+ * half-day of vacation) counts like any other day, as in the on-call monitor's weekly band.
+ *
  * The numerator is the completed work of the remaining days, allocated to employee-local days by
  * the payroll allocation rule. It only reads: it never writes work balances, settled payroll days
  * or closed months, so payroll can quote it without changing what was paid.
@@ -277,9 +280,13 @@ function computeBreakdown(
 		const employed = facts.contracts.get(key)?.isEmployedOnDay ?? false;
 		if (employed) firstEmployedSeen = true;
 		else if (!firstEmployedSeen) employmentShortened = true;
-		const reason: OnCallReferenceExclusionReason | null = employed
-			? (facts.exclusionByDay.get(key) ?? null)
-			: "not_employed";
+		const minutes = facts.workMinutesByDay[key] ?? 0;
+		// Only lost work is left out: a holiday or absence day that was worked anyway counts.
+		const reason: OnCallReferenceExclusionReason | null = !employed
+			? "not_employed"
+			: minutes > 0
+				? null
+				: (facts.exclusionByDay.get(key) ?? null);
 		if (reason) {
 			const previous = excludedPeriods.at(-1);
 			if (previous && previous.reason === reason && previous.untilExclusive === key) {
@@ -299,7 +306,6 @@ function computeBreakdown(
 			continue;
 		}
 		denominatorDays += 1;
-		const minutes = facts.workMinutesByDay[key] ?? 0;
 		numeratorMinutes += minutes;
 		if (minutes > 0) workedDays += 1;
 	}
