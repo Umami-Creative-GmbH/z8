@@ -101,7 +101,7 @@ export async function getVacationBalanceResult(
 ) {
 	const currentEmployee = await getCurrentEmployeeAction();
 	if (!currentEmployee || currentEmployee.id !== employeeId) {
-		return { balance: null, configuration: null };
+		return { balance: null, configuration: null, externalContractor: false };
 	}
 	return getVacationBalanceResultAction(employeeId, year, timezone);
 }

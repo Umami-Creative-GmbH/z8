@@ -6,11 +6,22 @@ import type { db } from "@/db";
 import { invoicedWork, project, timeEntry, workPeriod } from "@/db/schema";
 import { workDayOf } from "@/lib/billable-time/applicable-rate";
 import { listBillableRatesForWork } from "@/lib/billable-time/billable-rates";
+import {
+	type ContractorCosts,
+	contractorCostsFrom,
+	NO_CONTRACTOR_COSTS,
+} from "@/lib/billable-time/contractor-cost";
 import { listCostRatesForWork } from "@/lib/billable-time/cost-rates";
 import { parsePlainDay } from "@/lib/billable-time/input";
 import { rateFromStored } from "@/lib/billable-time/money";
 import { activeProjectCustomerIdSql } from "@/lib/billable-time/project-customer";
 import type { ReportedWork, ReportRates } from "@/lib/billable-time/report-figures";
+import { priceContractorWork } from "@/lib/contractor-compensation/pricing";
+import {
+	loadContractorEngagements,
+	loadContractorWork,
+} from "@/lib/contractor-compensation/pricing-loader";
+import { listContractorTermsForPricing } from "@/lib/contractor-compensation/store";
 import { dateFromInstant, instantFromDate, type PlainDate } from "@/lib/datetime/temporal-core";
 import { unresolvedWorkPeriodReviewSql } from "@/lib/time-tracking/unresolved-work-period-review";
 import { completedWorkPeriodCondition } from "./completed-work";
@@ -159,15 +170,47 @@ export async function loadReportedProjectWork(
 }
 
 /**
+ * External Contractors' cost from their terms (#1999): the contractor pricing
+ * engine prices every local day of the range once, from all of the people's
+ * completed work that day (any project, billable or not), and the report reads
+ * each work period's allocated part. Only people with a contractor engagement
+ * in the window are priced. Queries run one after another, like the rest of
+ * the report (`reader` may be a transaction).
+ */
+async function loadContractorCosts(
+	reader: Reader,
+	organizationId: string,
+	range: { employeeIds: readonly string[]; fromDay: PlainDate; toDay: PlainDate },
+	billableCurrency: string,
+): Promise<ContractorCosts> {
+	const engagements = await loadContractorEngagements(reader, organizationId, range);
+	if (engagements.length === 0) return NO_CONTRACTOR_COSTS;
+	const scope = { ...range, employeeIds: [...new Set(engagements.map((row) => row.employeeId))] };
+	const work = await loadContractorWork(reader, organizationId, scope);
+	const terms = await listContractorTermsForPricing(reader, organizationId, scope);
+	return contractorCostsFrom(
+		priceContractorWork({
+			work,
+			engagements,
+			terms,
+			range: { fromDay: range.fromDay, toDay: range.toDay },
+		}),
+		billableCurrency,
+	);
+}
+
+/**
  * The billable and cost rate periods that can apply to the given work, read
- * now (Billable Time ADR 0001). Cost rates are only read when the caller may
- * see them.
+ * now (Billable Time ADR 0001). Cost rates, and External Contractors' cost
+ * from their terms (#1999), are only read when the caller may see cost.
+ * Contractor terms are priced only in `billableCurrency`; without one, there is
+ * no contractor cost.
  */
 export async function loadReportRates(
 	reader: Reader,
 	organizationId: string,
 	work: readonly ReportedWork[],
-	options: { includeCost: boolean },
+	options: { includeCost: boolean; billableCurrency?: string },
 ): Promise<ReportRates> {
 	if (work.length === 0) return { billable: [], cost: [] };
 	let fromDay = reportedWorkDay(work[0]);
@@ -189,8 +232,15 @@ export async function loadReportRates(
 		fromDay,
 		toDay,
 	});
-	const cost = options.includeCost
-		? await listCostRatesForWork(reader, organizationId, { employeeIds, fromDay, toDay })
-		: [];
-	return { billable, cost };
+	if (!options.includeCost) return { billable, cost: [] };
+	const cost = await listCostRatesForWork(reader, organizationId, { employeeIds, fromDay, toDay });
+	const contractor = options.billableCurrency
+		? await loadContractorCosts(
+				reader,
+				organizationId,
+				{ employeeIds, fromDay, toDay },
+				options.billableCurrency,
+			)
+		: NO_CONTRACTOR_COSTS;
+	return { billable, cost, contractor };
 }

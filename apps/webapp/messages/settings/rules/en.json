@@ -36,6 +36,7 @@
         "activeHelp": "Active categories are available for new absence requests.",
         "color": "Color",
         "colorHelp": "Calendar marker",
+        "contractorUnavailabilityRules": "External Contractor unavailability is a calendar marker only: it never uses vacation, work time or the work balance.",
         "countsAgainstVacation": "Counts Against Vacation Balance",
         "countsAgainstVacationHelp": "Deduct approved days from the employee vacation allowance.",
         "deputyRequired": "Deputy required",

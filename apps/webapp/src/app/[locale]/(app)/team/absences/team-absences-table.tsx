@@ -186,7 +186,13 @@ function TeamAbsencesTableContent({
 					}
 				}}
 				employee={
-					selectedEmployee ? { id: selectedEmployee.id, name: selectedEmployee.name } : null
+					selectedEmployee
+						? {
+								id: selectedEmployee.id,
+								name: selectedEmployee.name,
+								engagementKind: selectedEmployee.engagementKind,
+							}
+						: null
 				}
 				categories={categories}
 				sickNotesEnabled={sickNotesEnabled}
