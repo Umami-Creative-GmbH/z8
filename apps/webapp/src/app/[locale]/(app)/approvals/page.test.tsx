@@ -71,6 +71,7 @@ describe("/approvals", () => {
 		const fallback = renderToStaticMarkup(page.props.fallback as ReactElement);
 
 		expect(fallback).toContain('aria-busy="true"');
+		expect(fallback).toContain('aria-label="Loading…"');
 		expect(fallback).not.toContain("Loading approval inbox");
 		expect(fallback).not.toContain("approval-table-loading");
 	});

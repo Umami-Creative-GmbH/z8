@@ -138,6 +138,13 @@ describe("/approvals/inbox server guard", () => {
 		expect(await gateOutcome()).toEqual({ redirectedTo: "/" });
 	});
 
+	it("redirects when an employee is found but no ability can be built", async () => {
+		signedInAs("manager");
+		auth.ability = null;
+
+		expect(await gateOutcome()).toEqual({ redirectedTo: "/" });
+	});
+
 	it("shows the missing-employee state without an employee profile in the active organization", async () => {
 		signedInAs("manager");
 		auth.context = { ...(auth.context as AuthContext), employee: null };
@@ -171,7 +178,8 @@ describe("/approvals/inbox page entry", () => {
 
 		render(ApprovalInboxPage());
 
-		expect(screen.getByRole("status")).toBeTruthy();
+		// Screen readers hear a neutral loading label that names no page.
+		expect(screen.getByRole("status", { name: "Loading…" })).toBeTruthy();
 		expect(screen.queryByLabelText("Loading approval inbox")).toBeNull();
 		expect(screen.queryByTestId("approval-table-loading")).toBeNull();
 		expect(screen.queryByText("Approval inbox shell")).toBeNull();
