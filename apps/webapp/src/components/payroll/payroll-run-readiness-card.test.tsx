@@ -119,8 +119,8 @@ describe("PayrollRunReadinessList", () => {
 		);
 	});
 
-	it("names a legacy claim and a trip", () => {
-		render(
+	it("names an earlier claim and a trip, never as legacy", () => {
+		const { container } = render(
 			<PayrollRunReadinessList
 				entries={[
 					entry(
@@ -143,7 +143,8 @@ describe("PayrollRunReadinessList", () => {
 		);
 
 		expect(screen.getByText("Earlier receipt claim")).toBeTruthy();
-		expect(screen.getByText(/never paid through payroll/i)).toBeTruthy();
+		expect(screen.getByText("Earlier claims are never paid through payroll.")).toBeTruthy();
 		expect(screen.getByText("Customer workshop")).toBeTruthy();
+		expect(container.textContent).not.toMatch(/legacy/i);
 	});
 });

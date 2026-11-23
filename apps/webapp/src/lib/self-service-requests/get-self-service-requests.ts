@@ -1096,9 +1096,13 @@ function mapExpenseReportStatus(status: ExpenseReportRow["status"]): SelfService
 	return status === "submitted" || status === "draft" ? "pending" : status;
 }
 
-/** The trip's stored calendar dates ("YYYY-MM-DD to YYYY-MM-DD"); empty without them or for a standalone report. */
+/**
+ * The trip's stored calendar dates ("YYYY-MM-DD to YYYY-MM-DD"), or the one it has, as
+ * `formatPlainDateRange` shows them; empty without either or for a standalone report.
+ */
 function expenseReportSubtitle(row: ExpenseReportRow): string {
-	return row.tripStartDate && row.tripEndDate ? `${row.tripStartDate} to ${row.tripEndDate}` : "";
+	if (row.tripStartDate && row.tripEndDate) return `${row.tripStartDate} to ${row.tripEndDate}`;
+	return row.tripStartDate ?? row.tripEndDate ?? "";
 }
 
 /** The (only) expense of each standalone report, which names it: its type, description or route. */

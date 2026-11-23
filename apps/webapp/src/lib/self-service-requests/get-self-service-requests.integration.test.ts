@@ -36,6 +36,11 @@ const ids = {
 	exceptionColleague: "e1979200-0000-4000-8000-000000000005",
 	exceptionForeign: "e1979200-0000-4000-8000-000000000006",
 	exceptionExpired: "e1979200-0000-4000-8000-000000000007",
+	trip: "e1979100-0000-4000-8000-00000000000b",
+	tripOneDay: "e1979100-0000-4000-8000-00000000000c",
+	unlistedOriginal: "e1979100-0000-4000-8000-00000000000d",
+	adjustmentOfUnlisted: "e1979100-0000-4000-8000-00000000000e",
+	adjustmentOfColleagues: "e1979100-0000-4000-8000-00000000000f",
 } as const;
 
 async function cleanup() {
@@ -50,6 +55,8 @@ async function report(
 		submissionCount?: number;
 		employeeId?: string;
 		organizationId?: string;
+		/** A trip report with this purpose and these stored travel days; standalone without it. */
+		trip?: { purpose: string; start: string | null; end: string | null };
 	},
 ) {
 	const organizationId = input.organizationId ?? ORG;
@@ -57,17 +64,33 @@ async function report(
 	const decided = submitted && input.status !== "submitted";
 	await admin.query(
 		`insert into travel_expense_report (id, organization_id, employee_id, kind, status, reimbursement_currency,
-		   submission_count, submitted_at, decided_at, created_by)
-		 values ($1, $2, $3, 'standalone', $4, 'EUR', $5, $6, $7, 't1979-requester')`,
+		   submission_count, submitted_at, decided_at, created_by, trip_purpose, trip_start_date, trip_end_date,
+		   trip_time_zone)
+		 values ($1, $2, $3, $4, $5, 'EUR', $6, $7, $8, 't1979-requester', $9, $10, $11, $12)`,
 		[
 			id,
 			organizationId,
 			input.employeeId ?? ids.requester,
+			input.trip ? "trip" : "standalone",
 			input.status,
 			input.submissionCount ?? (submitted ? 1 : 0),
 			submitted ? "2026-11-10T09:00:00Z" : null,
 			decided ? "2026-11-12T09:00:00Z" : null,
+			input.trip?.purpose ?? null,
+			input.trip?.start ?? null,
+			input.trip?.end ?? null,
+			input.trip ? "Europe/Berlin" : null,
 		],
+	);
+}
+
+/** Marks `reportId` as an adjustment (#615) of `originalReportId`, filed by the requester. */
+async function adjustment(reportId: string, originalReportId: string) {
+	await admin.query(
+		`insert into travel_expense_report_adjustment (organization_id, report_id, original_report_id,
+		   source_report_id, source_revision_id, reason, idempotency_key, created_by_employee_id, created_by_user_id)
+		 values ($1, $2, $3, $3, gen_random_uuid(), 'Hotel was cheaper', $4, $5, 't1979-requester')`,
+		[ORG, reportId, originalReportId, `t1979-${reportId}`, ids.requester],
 	);
 }
 
@@ -318,6 +341,26 @@ describe("My Requests expense reports and compliance exceptions (#1979)", () => 
 		});
 	});
 
+	it("names a trip report by its purpose with its travel days, or the one day it has", async () => {
+		await report(ids.trip, {
+			status: "submitted",
+			trip: { purpose: "Customer workshop", start: "2026-11-02", end: "2026-11-04" },
+		});
+		await report(ids.tripOneDay, {
+			status: "submitted",
+			trip: { purpose: "Trade fair", start: "2026-11-06", end: null },
+		});
+
+		const byId = new Map((await requestsOf(ids.requester)).map((item) => [item.sourceId, item]));
+
+		expect(byId.get(ids.trip)).toMatchObject({
+			title: "Customer workshop",
+			subtitle: "2026-11-02 to 2026-11-04",
+			details: { kind: "expense_report", reportKind: "trip", itemType: null },
+		});
+		expect(byId.get(ids.tripOneDay)).toMatchObject({ title: "Trade fair", subtitle: "2026-11-06" });
+	});
+
 	it("shows a pending exception past its window as expired and keeps decided ones", async () => {
 		const items = await requestsOf(ids.requester);
 		const statuses = Object.fromEntries(
@@ -371,6 +414,68 @@ describe("My Requests expense reports and compliance exceptions (#1979)", () => 
 				kind: "expense_report",
 				adjustmentOf: { reportId: ids.approved, title: "Hotel Hamburg" },
 			},
+		});
+	});
+
+	it("names an adjusted report that is not listed by reading it by id", async () => {
+		// The original went back to draft, so it is not among the listed reports.
+		await report(ids.unlistedOriginal, { status: "draft" });
+		await report(ids.adjustmentOfUnlisted, { status: "submitted" });
+		await admin.query(
+			`insert into travel_expense_report_item (organization_id, report_id, type, position, description)
+			 values ($1, $2, 'receipt', 0, 'Train to Berlin'), ($1, $3, 'receipt', 0, 'Train to Berlin')`,
+			[ORG, ids.unlistedOriginal, ids.adjustmentOfUnlisted],
+		);
+		await adjustment(ids.adjustmentOfUnlisted, ids.unlistedOriginal);
+
+		const items = await requestsOf(ids.requester);
+
+		expect(items.map((item) => item.sourceId)).not.toContain(ids.unlistedOriginal);
+		expect(items.find((item) => item.sourceId === ids.adjustmentOfUnlisted)?.details).toEqual({
+			kind: "expense_report",
+			reportKind: "standalone",
+			itemType: "receipt",
+			adjustmentOf: { reportId: ids.unlistedOriginal, title: "Train to Berlin" },
+		});
+	});
+
+	it("never names another employee's report that an adjustment points at", async () => {
+		await admin.query(
+			`insert into travel_expense_report_item (organization_id, report_id, type, position, description)
+			 values ($1, $2, 'receipt', 0, 'Colleague hotel')`,
+			[ORG, ids.colleagues],
+		);
+		await report(ids.adjustmentOfColleagues, {
+			status: "submitted",
+			trip: { purpose: "Customer workshop", start: "2026-11-02", end: "2026-11-02" },
+		});
+		await adjustment(ids.adjustmentOfColleagues, ids.colleagues);
+
+		const items = await requestsOf(ids.requester);
+		const item = items.find((candidate) => candidate.sourceId === ids.adjustmentOfColleagues);
+
+		expect(item?.details).toMatchObject({
+			adjustmentOf: { reportId: ids.colleagues, title: null },
+		});
+		expect(JSON.stringify(items)).not.toContain("Colleague hotel");
+	});
+
+	it("counts what is in review, needs a fix, was decided in the last 30 days, and in total", async () => {
+		const result = await getSelfServiceRequests({
+			employeeId: ids.requester,
+			organizationId: ORG,
+			now: NOW,
+			sources: ["travel_expense_report", "compliance_exception"],
+		});
+
+		// In review: the submitted report and the open exception. Fixes: the returned and the
+		// reopened report. Decided: both rejected reports, the rejected and the used exception;
+		// the expired exception is none of these.
+		expect(result.counts).toEqual({
+			pending: 2,
+			requiredFixes: 2,
+			recentDecisions: 4,
+			total: 9,
 		});
 	});
 
