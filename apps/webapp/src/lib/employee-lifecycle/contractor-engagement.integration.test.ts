@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import type { InvitationEngagement } from "@/lib/auth/employee-invitation-draft";
 import { todayInOrganization } from "@/lib/personnel-file/organization-day";
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
@@ -633,6 +634,48 @@ describe("external contractor engagement kind (#1995)", () => {
 				planned_end_date: null,
 				project_ids: [],
 			});
+		});
+
+		it("credits a replaced draft to the admin whose invitation replaced it, so joining acts as them", async () => {
+			const email = `${randomUUID()}@draft.test`;
+			const firstAdmin = await fixture.seedEmployee();
+			async function inviteBy(updatedBy: string, engagement: InvitationEngagement) {
+				const invitationId = randomUUID();
+				await fixture.pool.query(
+					`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id)
+					 values ($1, $2, $3, 'member', 'pending', now() + interval '7 days', $4)`,
+					[invitationId, fixture.organizationId, email, updatedBy],
+				);
+				await persistEmployeeInvitationDraft(db, {
+					organizationId: fixture.organizationId,
+					normalizedEmail: email,
+					invitationId,
+					canCreateOrganizations: false,
+					targetTeamId: null,
+					initialRole: "employee",
+					updatedBy,
+					engagement,
+				});
+			}
+
+			await inviteBy(firstAdmin.userId, { kind: "employee", contractor: null });
+			await inviteBy(fixture.ownerUserId, {
+				kind: "contractor",
+				contractor: {
+					companyName: null,
+					vatId: null,
+					referenceCode: null,
+					projectIds: [],
+					plannedEndDate: "2099-06-30",
+				},
+			});
+
+			const { rows } = await fixture.pool.query(
+				`select engagement_kind, updated_by from employee_invitation_draft
+				 where organization_id = $1 and normalized_email = $2`,
+				[fixture.organizationId, email],
+			);
+			expect(rows).toEqual([{ engagement_kind: "contractor", updated_by: fixture.ownerUserId }]);
 		});
 
 		it("schedules the planned engagement end as a departure once the contractor joined", async () => {

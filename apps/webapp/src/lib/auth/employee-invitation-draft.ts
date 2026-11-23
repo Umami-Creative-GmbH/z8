@@ -64,7 +64,12 @@ export async function attachInvitationToEmployeeDraft(
 		engagement?: InvitationEngagement;
 	},
 ) {
-	const engagementValues = input.engagement ? engagementDraftValues(input.engagement) : {};
+	// Joining acts as `updatedBy` when it applies the engagement (contractor profile,
+	// projects, planned end), so whoever sets the engagement becomes the draft's
+	// preparer; a resend that carries none leaves both untouched.
+	const engagementValues = input.engagement
+		? { ...engagementDraftValues(input.engagement), updatedBy: input.updatedBy }
+		: {};
 	const drafts = await dbClient
 		.insert(employeeInvitationDraft)
 		.values({

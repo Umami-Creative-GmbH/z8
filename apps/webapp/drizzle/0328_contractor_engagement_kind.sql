@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS "employee_contractor_profile" (
 --> statement-breakpoint
 DO $$ BEGIN
 	ALTER TABLE "employee_contractor_profile"
-		ADD CONSTRAINT "employeeContractorProfile_organization_fk"
+		ADD CONSTRAINT "employee_contractor_profile_organization_id_organization_id_fk"
 		FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade;
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
@@ -227,7 +227,7 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
 	ALTER TABLE "employee_contractor_profile"
-		ADD CONSTRAINT "employeeContractorProfile_updated_by_fk"
+		ADD CONSTRAINT "employee_contractor_profile_updated_by_user_id_fk"
 		FOREIGN KEY ("updated_by") REFERENCES "public"."user"("id") ON DELETE set null;
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
