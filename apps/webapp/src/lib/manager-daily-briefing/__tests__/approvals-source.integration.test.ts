@@ -557,9 +557,10 @@ describe("manager daily briefing approvals source", () => {
 
 			expect(approvals.uncountedTypes).toEqual(["absence_entry"]);
 			expect(approvals.unavailableTypes).toBeUndefined();
-			// Its row still lists; only the total misses it.
+			// Its row still lists, and the total counts at least the rows it read for the type
+			// whose count failed: all 4, never fewer than are in hand.
 			expect(summarize(approvals).map(({ entityId }) => entityId)).toContain(seeded.absenceId);
-			expect(approvals.totalCount).toBe(3);
+			expect(approvals.totalCount).toBe(4);
 		} finally {
 			failedCount.mockRestore();
 		}
