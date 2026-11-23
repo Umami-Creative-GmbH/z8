@@ -19,6 +19,7 @@ import type {
 	TravelExpenseReportKind,
 } from "@/db/schema/travel-expense";
 import { readApprovalAuthoritySnapshot } from "@/lib/approvals/authority";
+import { TRAVEL_EXPENSE_REPORT_SOURCE_TYPE } from "@/lib/approvals/evidence/travel-expense-report-store";
 import { parseRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
 import {
 	normalizeTimeCorrectionOriginalWorkMetadata,
@@ -175,8 +176,6 @@ const SOURCE_ERROR_MESSAGES: Record<SelfServiceRequestSourceType, string> = {
 };
 
 const SOURCE_QUERY_LIMIT = 100;
-/** `approval_request.entity_type` of a report's submissions (TRAVEL_EXPENSE_REPORT_SOURCE_TYPE). */
-const TRAVEL_EXPENSE_REPORT_SOURCE_TYPE = "travel_expense_report";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function getSelfServiceRequests(

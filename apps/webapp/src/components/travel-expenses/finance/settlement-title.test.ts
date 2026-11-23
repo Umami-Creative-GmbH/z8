@@ -15,7 +15,8 @@ function flattenCatalog(value: unknown, prefix = ""): Record<string, string> {
 function shippedEnglish() {
 	const messages = flattenCatalog(englishTravelExpenses);
 	return ((key: string, fallback: string, params?: Record<string, unknown>) =>
-		(messages[key.replace(/^travelExpenses\./, "")] ?? fallback).replace(
+		// The catalog's own top-level key is already `travelExpenses`, so keys match as written.
+		(messages[key] ?? fallback).replace(
 			/\{(\w+)\}/g,
 			(match, name: string) => (params && name in params ? String(params[name]) : match),
 		)) as Parameters<typeof settlementTitle>[0];

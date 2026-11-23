@@ -39,7 +39,8 @@ import englishTravelExpenses from "../../../messages/travelExpenses/en.json";
 import { ExpenseHistory } from "./expense-history";
 
 function flattenCatalog(value: unknown, prefix = ""): Record<string, string> {
-	if (typeof value === "string") return { [`travelExpenses.${prefix}`]: value };
+	// The catalog's own top-level key is already `travelExpenses`.
+	if (typeof value === "string") return { [prefix]: value };
 	return Object.entries(value as Record<string, unknown>).reduce<Record<string, string>>(
 		(messages, [key, child]) =>
 			Object.assign(messages, flattenCatalog(child, prefix ? `${prefix}.${key}` : key)),
