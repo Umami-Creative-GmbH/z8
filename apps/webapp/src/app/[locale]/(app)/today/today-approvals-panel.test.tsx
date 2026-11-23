@@ -462,6 +462,35 @@ describe("TodayApprovalsPanel", () => {
 			expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
 		});
 		expect(screen.queryByRole("button", { name: "Confirm Rejection" })).toBeNull();
+
+		// When a later refresh lists it again, the dropped rejection doesn't reopen by itself.
+		rerender(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+		expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
+	});
+
+	it("drops a refused rejection's error with its item, not into the card", async () => {
+		global.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ success: false, error: "Already decided" }),
+		}) as unknown as typeof fetch;
+		const { rerender } = render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Overlaps the inventory week." },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+		await waitFor(() => {
+			expect(within(panel).getByText("Already decided")).toBeTruthy();
+		});
+
+		rerender(<TodayApprovalsPanel items={[]} total={0} />);
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
+		});
+		expect(screen.queryByText("Already decided")).toBeNull();
 	});
 
 	it("does not refresh when the approval response is not ok", async () => {

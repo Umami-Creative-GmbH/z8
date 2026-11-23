@@ -91,6 +91,14 @@ export function TodayApprovalsPanel({
 	const rejectingListed =
 		rejecting !== null && items.some((item) => item.approvalId === rejecting.approvalId);
 	const rejectPanelOpen = rejecting !== null && (rejectingListed || rejectionPending);
+	// Once the item is gone, the dropped rejection ends with it, so it can't reopen by itself
+	// if a later refresh lists the item again, or leave its error behind on the card.
+	// Adjusted during render (React's "state from props" pattern), not in an effect.
+	if (rejecting !== null && !rejectPanelOpen) {
+		setRejecting(null);
+		setRejectReason("");
+		setDecisionError(null);
+	}
 
 	/** The item's texts in the viewer's language where the inbox localizes them, else English. */
 	function itemTexts(item: BriefingApprovalActionItem) {
