@@ -317,6 +317,45 @@ describe("causedBlockingFindings", () => {
 			});
 		});
 
+		describe("of a night shift through two release days", () => {
+			/**
+			 * The contributor gives a shift one conflict per release day, dated that day and covering
+			 * only its work there: Monday's whole day, Tuesday's time before lessons from 07:30.
+			 */
+			const nightOn = (day: string, from: string, to: string) => {
+				const start = Temporal.Instant.from(from);
+				const end = Temporal.Instant.from(to);
+				return breach("bbig_release_day_shift", "night", day, undefined, {
+					id: `bbig_release_day_shift:e1:shift:night:${day}`,
+					coveredMinutes: start.until(end).total("minutes"),
+					coveredSpan: { start: start.toString(), end: end.toString() },
+				});
+			};
+			const night = (mondayFrom: string, tuesdayTo: string) => [
+				nightOn("2027-03-01", `2027-03-01T${mondayFrom}:00Z`, "2027-03-02T00:00:00Z"),
+				nightOn("2027-03-02", "2027-03-02T00:00:00Z", `2027-03-02T${tuesdayTo}:00Z`),
+			];
+			// Monday 23:00 to Tuesday 07:00: 60 minutes of Monday, 420 of Tuesday.
+			const published = night("23:00", "07:00");
+
+			it("is caused on the release day an edit moves work into, at the same total", () => {
+				// Monday 23:45 to Tuesday 07:45: 15 + 465, still 480 minutes.
+				const caused = causedBlockingFindings(published, night("23:45", "07:45"));
+				expect(caused.map((finding) => finding.periodStart)).toEqual(["2027-03-02"]);
+			});
+
+			it("is caused on Monday when an edit moves work from Tuesday into Monday", () => {
+				// Monday 22:00 to Tuesday 06:00: 120 + 360.
+				const caused = causedBlockingFindings(published, night("22:00", "06:00"));
+				expect(caused.map((finding) => finding.periodStart)).toEqual(["2027-03-01"]);
+			});
+
+			it("is not caused when an edit shortens the shift on either side", () => {
+				expect(causedBlockingFindings(published, night("23:30", "07:00"))).toEqual([]);
+				expect(causedBlockingFindings(published, night("23:00", "06:30"))).toEqual([]);
+			});
+		});
+
 		it("keeps another employee's release day apart", () => {
 			const before = [breach("bbig_release_day_shift", "x", "2027-03-02")];
 			const after = [

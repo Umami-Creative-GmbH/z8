@@ -1430,25 +1430,42 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			preferences: { ...DEFAULT_STATUTORY_PREFERENCES, blockJarbschgShiftPublish: true },
 			now: localInstant("2027-02-20", "12:00", org.timezone),
 		});
-		const coverage = (id: string) => {
-			const finding = findings.find((candidate) => candidate.subjectKey === `shift:${id}`);
-			return [finding?.periodStart, finding?.coveredMinutes, finding?.coveredSpan];
-		};
+		/** The shift's conflicts, one per release day: its day, id, minutes and span there. */
+		const coverage = (id: string) =>
+			findings
+				.filter((candidate) => candidate.subjectKey === `shift:${id}`)
+				.map((finding) => [
+					finding.periodStart,
+					finding.id,
+					finding.coveredMinutes,
+					finding.coveredSpan,
+				]);
+		const span = (from: [string, string], to: [string, string]) => ({
+			start: localInstant(from[0], from[1], org.timezone).toString(),
+			end: localInstant(to[0], to[1], org.timezone).toString(),
+		});
 		expect(coverage(schoolDay)).toEqual([
-			"2027-03-01",
-			480,
-			{
-				start: localInstant("2027-03-01", "06:00", org.timezone).toString(),
-				end: localInstant("2027-03-01", "14:00", org.timezone).toString(),
-			},
+			[
+				"2027-03-01",
+				`bbig_release_day_shift:${learner.employeeId}:shift:${schoolDay}:2027-03-01`,
+				480,
+				span(["2027-03-01", "06:00"], ["2027-03-01", "14:00"]),
+			],
 		]);
+		// Each block day is judged by the work on it: Monday's two hours, Tuesday's six.
 		expect(coverage(blockNight)).toEqual([
-			"2027-03-08",
-			480,
-			{
-				start: localInstant("2027-03-08", "22:00", org.timezone).toString(),
-				end: localInstant("2027-03-09", "06:00", org.timezone).toString(),
-			},
+			[
+				"2027-03-08",
+				`bbig_release_day_shift:${learner.employeeId}:shift:${blockNight}:2027-03-08`,
+				120,
+				span(["2027-03-08", "22:00"], ["2027-03-09", "00:00"]),
+			],
+			[
+				"2027-03-09",
+				`bbig_release_day_shift:${learner.employeeId}:shift:${blockNight}:2027-03-09`,
+				360,
+				span(["2027-03-09", "00:00"], ["2027-03-09", "06:00"]),
+			],
 		]);
 	});
 

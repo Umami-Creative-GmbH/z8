@@ -44,7 +44,8 @@ const apprenticeReleaseFindingKinds: ReadonlySet<string> = new Set<ApprenticeRel
  * (`periodStart`), whichever shift it is, whichever day that shift starts on, and whichever rule
  * the conflict cites. The rule follows from where the shift lies on the day (before early lessons,
  * or after the lessons began), so an edit that shortens a shift may change it; the day's conflicts
- * are judged together by the release time they cover. Null for other findings.
+ * are judged together by the release time they cover. A shift through two release days has a
+ * conflict in each day's scope, covering its work on that day. Null for other findings.
  */
 export function apprenticeReleaseScopeOf(
 	finding: Pick<StatutoryFinding, "kind" | "employeeId" | "periodStart">,
@@ -191,32 +192,77 @@ function coveredPartOf(
 }
 
 /**
- * The planned work inside the release time of every release day it conflicts with, and its
- * minutes: how deep the conflict is. An edit or a move that puts more work there deepens the
- * release day's conflict (`causedBlockingFindings`). A night shift across two release days covers
- * both; the release times of different days never overlap, so nothing is counted twice. One span
- * when the parts join (a night through two days released in full), else the minutes alone.
+ * The planned work inside the release time of `day`, and its minutes: how deep the conflict with
+ * that release day is. An edit or a move that puts more work there deepens the release day's
+ * conflict (`causedBlockingFindings`).
  */
 function coverageOf(
-	parts: readonly { readonly start: Instant; readonly end: Instant }[],
+	work: PlannedWork,
+	release: ApprenticeReleaseDay,
+	day: PlainDate,
+	timezone: string,
 ): Pick<StatutoryFinding, "coveredMinutes" | "coveredSpan"> {
-	if (parts.length === 0) return {};
-	const coveredMinutes = parts.reduce(
-		(total, part) => total + Math.round(part.start.until(part.end).total("minutes")),
-		0,
-	);
-	const joined = parts.every(
-		(part, index) => index === 0 || part.start.equals(parts[index - 1].end),
-	);
-	return joined
-		? {
-				coveredMinutes,
-				coveredSpan: {
-					start: parts[0].start.toString(),
-					end: parts[parts.length - 1].end.toString(),
-				},
-			}
-		: { coveredMinutes };
+	const part = coveredPartOf(work, release, day, timezone);
+	if (!part) return {};
+	return {
+		coveredMinutes: Math.round(part.start.until(part.end).total("minutes")),
+		coveredSpan: { start: part.start.toString(), end: part.end.toString() },
+	};
+}
+
+/**
+ * The conflict of `work` with the release on `releaseDay`: dated that day (for a night shift into
+ * a school morning, the next day), citing the rule that day's release time sets, and as deep as
+ * the work on that day alone. Its id names the release day, so a shift through two release days
+ * has two conflicts, each judged, acknowledged and compared on its own day.
+ */
+function releaseConflictFinding(
+	context: StatutoryScheduleContext,
+	work: PlannedWork,
+	release: ApprenticeReleaseDay,
+	releaseDay: PlainDate,
+	conflict: ReleaseConflict,
+	{ minor }: { readonly minor: boolean },
+): StatutoryFinding<ApprenticeReleaseFindingKind> {
+	const kind: ApprenticeReleaseFindingKind =
+		minor && release.releaseKind === "vocational_school_day" && conflict === "release_day"
+			? "jarbschg_school_day_workplace_return"
+			: "bbig_release_day_shift";
+	const subjectKey = work.ref;
+	return {
+		id: `${statutoryFindingId(kind, work.employeeId, subjectKey)}:${releaseDay}`,
+		organizationId: context.organizationId,
+		employeeId: work.employeeId,
+		domain: "apprenticeship",
+		kind,
+		severity: minor ? "critical" : "warning",
+		subjectKey,
+		periodStart: releaseDay.toString(),
+		periodEnd: releaseDay.add({ days: 1 }).toString(),
+		legalReference: !minor
+			? adultReference[conflict]
+			: conflict === "release_day"
+				? minorReleaseReference[release.releaseKind]
+				: minorLessonReference[conflict],
+		summary: { tier: "exceeded" },
+		...coverageOf(work, release, releaseDay, context.timezone),
+		adminDetail: null,
+		inputFingerprint: statutoryInputFingerprint({
+			kind,
+			employeeId: work.employeeId,
+			subjectKey,
+			releaseDay: releaseDay.toString(),
+			start: work.start,
+			end: work.end,
+			releaseId: release.releaseId,
+			releaseKind: release.releaseKind,
+			credit: release.credit,
+			conflict,
+			minor,
+		}),
+		acknowledgementKind: null,
+		blocksPublication: minor && context.preferences.blockJarbschgShiftPublish,
+	};
 }
 
 async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFinding[]> {
@@ -275,64 +321,18 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		// Its own day, and the next one when it runs past midnight into a school morning.
 		const lastDay = plainDateAt(work.end.subtract({ nanoseconds: 1 }), context.timezone);
 		const days = lastDay.equals(work.date) ? [work.date] : [work.date, lastDay];
-		// The first release day it conflicts with dates and cites the conflict; the work it covers
-		// on every conflicting release day is its depth.
-		let found: {
-			release: ApprenticeReleaseDay;
-			releaseDay: PlainDate;
-			conflict: ReleaseConflict;
-		} | null = null;
-		const covered: { start: Instant; end: Instant }[] = [];
-		for (const day of days) {
-			const release = releaseOn.get(`${work.employeeId}:${day}`);
-			const conflict = release ? conflictOf(work, release, day, context.timezone) : null;
+		// One conflict per release day it conflicts with, judged and dated on that day: a night
+		// shift through two release days is a conflict on each, as deep as its work there.
+		for (const releaseDay of days) {
+			const release = releaseOn.get(`${work.employeeId}:${releaseDay}`);
+			const conflict = release ? conflictOf(work, release, releaseDay, context.timezone) : null;
 			if (!release || !conflict) continue;
-			found ??= { release, releaseDay: day, conflict };
-			const part = coveredPartOf(work, release, day, context.timezone);
-			if (part) covered.push(part);
+			findings.push(
+				releaseConflictFinding(context, work, release, releaseDay, conflict, {
+					minor: isMinorOn(birthdays.get(work.employeeId) ?? null, releaseDay),
+				}),
+			);
 		}
-		if (!found) continue;
-		const { release, releaseDay, conflict } = found;
-		const minor = isMinorOn(birthdays.get(work.employeeId) ?? null, work.date);
-		const kind: ApprenticeReleaseFindingKind =
-			minor && release.releaseKind === "vocational_school_day" && conflict === "release_day"
-				? "jarbschg_school_day_workplace_return"
-				: "bbig_release_day_shift";
-		const subjectKey = work.ref;
-		findings.push({
-			id: statutoryFindingId(kind, work.employeeId, subjectKey),
-			organizationId: context.organizationId,
-			employeeId: work.employeeId,
-			domain: "apprenticeship",
-			kind,
-			severity: minor ? "critical" : "warning",
-			subjectKey,
-			// The release day it conflicts with: for a night shift into a school morning, the next day.
-			periodStart: releaseDay.toString(),
-			periodEnd: releaseDay.add({ days: 1 }).toString(),
-			legalReference: !minor
-				? adultReference[conflict]
-				: conflict === "release_day"
-					? minorReleaseReference[release.releaseKind]
-					: minorLessonReference[conflict],
-			summary: { tier: "exceeded" },
-			...coverageOf(covered),
-			adminDetail: null,
-			inputFingerprint: statutoryInputFingerprint({
-				kind,
-				employeeId: work.employeeId,
-				subjectKey,
-				start: work.start,
-				end: work.end,
-				releaseId: release.releaseId,
-				releaseKind: release.releaseKind,
-				credit: release.credit,
-				conflict,
-				minor,
-			}),
-			acknowledgementKind: null,
-			blocksPublication: minor && context.preferences.blockJarbschgShiftPublish,
-		});
 	}
 	return findings;
 }

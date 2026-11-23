@@ -39,6 +39,7 @@ import {
 	recordStatutoryAcknowledgement,
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
+import { apprenticeReleaseScheduleContributor } from "../apprenticeship/release-conflict-contributor";
 import { recordApprenticeRelease } from "../employee-context";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { STATUTORY_PUBLICATION_BLOCKED } from "../scheduling/publication-block";
@@ -1007,6 +1008,141 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 						);
 						expect(await edit("06:00")).toMatchObject(refused);
 						expect((await shiftRow(tuesday))?.start_time).toBe("10:00");
+					});
+				});
+
+				describe("a night shift through two release days is judged on each of them", () => {
+					let learner: FixtureEmployee;
+					let night: string;
+					const edit = (startTime: string, endTime: string) =>
+						upsertShift({
+							id: night,
+							employeeId: learner.employeeId,
+							subareaId,
+							date: "2027-03-01",
+							startTime,
+							endTime,
+						});
+
+					beforeEach(async () => {
+						await seed.blockJarbschgPublish(org);
+						learner = await apprentice("two-release-days");
+						// Monday: a pre-exam day, released in full. Tuesday: four lessons, 07:30–11:30.
+						await release(learner, {
+							releaseKind: "pre_exam_day",
+							startsOn: "2027-03-01",
+							endsOn: "2027-03-01",
+						});
+						await release(learner, {
+							releaseKind: "vocational_school_day",
+							startsOn: "2027-03-02",
+							endsOn: "2027-03-02",
+							lessonCount: 4,
+							schoolMinutes: 240,
+							schoolStartTime: "07:30",
+							schoolEndTime: "11:30",
+						});
+						// Published before the block: Monday 23:00 to Tuesday 07:00.
+						night = await published(learner, "2027-03-01", "23:00", "07:00");
+					});
+
+					it("gives the shift one conflict per release day, each with its own coverage", async () => {
+						const conflicts = (await evaluateWeek()).findings.filter(
+							(finding) =>
+								finding.type === "statutory" &&
+								finding.statutoryKind === "bbig_release_day_shift" &&
+								finding.subjectKey === `shift:${night}`,
+						);
+						expect(
+							conflicts
+								.map((finding) =>
+									finding.type === "statutory"
+										? [finding.findingId, finding.legalReference, finding.blocksPublication]
+										: [],
+								)
+								.sort((left, right) => String(left[0]).localeCompare(String(right[0]))),
+						).toEqual([
+							[
+								`bbig_release_day_shift:${learner.employeeId}:shift:${night}:2027-03-01`,
+								"§ 10 Abs. 1 Nr. 2 JArbSchG",
+								true,
+							],
+							[
+								`bbig_release_day_shift:${learner.employeeId}:shift:${night}:2027-03-02`,
+								"§ 9 Abs. 1 Nr. 1 JArbSchG",
+								true,
+							],
+						]);
+
+						const own = await apprenticeReleaseScheduleContributor.evaluate({
+							db,
+							organizationId: org.id,
+							timezone: org.timezone,
+							window: { start: WEEK.startDate, endExclusive: WEEK.endDateExclusive },
+							employeeIds: [learner.employeeId],
+							proposedShifts: [],
+							replacesShiftId: null,
+							preferences: await loadOrganizationStatutoryPreferences(db, org.id),
+							now: systemClock.nowInstant(),
+						});
+						// Monday's last hour, Tuesday's seven hours before the lessons.
+						expect(own.map((finding) => [finding.periodStart, finding.coveredMinutes])).toEqual([
+							["2027-03-01", 60],
+							["2027-03-02", 420],
+						]);
+					});
+
+					it("refuses moving work from Monday into Tuesday's lessons at the same total", async () => {
+						// Monday 23:45 to Tuesday 07:45: 15 minutes into the lessons.
+						const blocking = await db
+							.transaction((tx) =>
+								guardPublishedShiftEdit(
+									tx,
+									{
+										organizationId: org.id,
+										timezone: org.timezone,
+										shiftId: night,
+										published: true,
+										employeeId: learner.employeeId,
+										date: parsePlainDate("2027-03-01"),
+										previousDate: parsePlainDate("2027-03-01"),
+										now: systemClock.nowInstant(),
+									},
+									() =>
+										tx
+											.update(shiftTable)
+											.set({ startTime: "23:45", endTime: "07:45" })
+											.where(and(eq(shiftTable.id, night), eq(shiftTable.organizationId, org.id))),
+								),
+							)
+							.then(
+								() => [],
+								(error: unknown) => {
+									if (!(error instanceof PublishedShiftEditBlocked)) throw error;
+									return error.blocking.map((finding) => [
+										finding.findingId,
+										finding.legalReference,
+									]);
+								},
+							);
+						expect(blocking).toEqual([
+							[
+								`bbig_release_day_shift:${learner.employeeId}:shift:${night}:2027-03-02`,
+								"§ 9 Abs. 1 Satz 1 JArbSchG",
+							],
+						]);
+						expect(await edit("23:45", "07:45")).toMatchObject(refused);
+						expect((await shiftRow(night))?.start_time).toBe("23:00");
+					});
+
+					it("saves shortening the shift on Monday's side", async () => {
+						expect(await edit("23:30", "07:00")).toMatchObject({ success: true });
+						expect((await shiftRow(night))?.start_time).toBe("23:30");
+					});
+
+					it("saves shortening the shift on Tuesday's side", async () => {
+						expect(await edit("23:00", "06:30")).toMatchObject({ success: true });
+						expect((await shiftRow(night))?.end_time).toBe("06:30");
 					});
 				});
 			});
