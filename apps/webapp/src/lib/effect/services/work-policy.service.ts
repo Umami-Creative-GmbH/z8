@@ -267,6 +267,18 @@ export class WorkPolicyService extends Context.Service<
 		}) => Effect.Effect<EffectiveWorkPolicy | null, NotFoundError | DatabaseError>;
 
 		/**
+		 * The work policy as adult ArbZG rules apply it as of `at`: like `getEffectivePolicyAt`,
+		 * without its regulation (rest, breaks, limits, alerts) while the employee's effective
+		 * terms are `executive_exempt` (§ 18 Abs. 1 Nr. 1 ArbZG, #1993). JArbSchG youth limits are
+		 * judged separately and never depend on it.
+		 */
+		readonly getAdultArbzgPolicyAt: (input: {
+			employeeId: string;
+			organizationId?: string;
+			at: Instant;
+		}) => Effect.Effect<EffectiveWorkPolicy | null, NotFoundError | DatabaseError>;
+
+		/**
 		 * Check compliance for a working session against the policy in force at
 		 * `policyAt`. The result names that policy. Fails when the employee is not
 		 * in the organization.
@@ -361,8 +373,12 @@ export const WorkPolicyServiceLive = Layer.effect(
 				});
 			});
 
-		/** The employee's policy as of `at`; fails when the employee is not found. */
-		const effectivePolicyOf = (employeeId: string, organizationId: string | undefined, at: Date) =>
+		/** The employee's effective contract as of `at`; fails when the employee is not found. */
+		const effectiveContractOf = (
+			employeeId: string,
+			organizationId: string | undefined,
+			at: Date,
+		) =>
 			Effect.gen(function* () {
 				const emp = yield* findEmployeeForPolicy(
 					"getEmployeeForPolicy",
@@ -384,17 +400,24 @@ export const WorkPolicyServiceLive = Layer.effect(
 				return yield* dbService.query("resolveEffectivePolicyForEmployee", async () => {
 					const orgTimezone = await loadOrganizationTimezone(dbService.db, targetOrgId);
 					const day = plainDateAt(atInstant, orgTimezone);
-					const contract = await resolveEffectiveContractOnDay(dbService.db, {
+					return resolveEffectiveContractOnDay(dbService.db, {
 						organizationId: targetOrgId,
 						employeeId: emp.id,
 						date: day,
 						at: atInstant,
 					});
-					return contract?.workPolicy
-						? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
-						: null;
 				});
 			});
+
+		/** The employee's policy as of `at`; fails when the employee is not found. */
+		const effectivePolicyOf = (employeeId: string, organizationId: string | undefined, at: Date) =>
+			effectiveContractOf(employeeId, organizationId, at).pipe(
+				Effect.map((contract) =>
+					contract?.workPolicy
+						? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
+						: null,
+				),
+			);
 
 		return WorkPolicyService.of({
 			getEffectivePolicy: (employeeId, organizationId) =>
@@ -403,16 +426,33 @@ export const WorkPolicyServiceLive = Layer.effect(
 			getEffectivePolicyAt: (input) =>
 				effectivePolicyOf(input.employeeId, input.organizationId, dateFromInstant(input.at)),
 
+			getAdultArbzgPolicyAt: (input) =>
+				effectiveContractOf(input.employeeId, input.organizationId, dateFromInstant(input.at)).pipe(
+					Effect.map((contract) => {
+						const policy = contract?.workPolicy
+							? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
+							: null;
+						return policy && contract?.arbzgScope === "executive_exempt"
+							? { ...policy, regulation: null }
+							: policy;
+					}),
+				),
+
 			checkCompliance: (input) =>
 				Effect.gen(function* () {
 					// An employee outside the organization fails rather than passing unchecked.
-					const policy = yield* effectivePolicyOf(
+					const contract = yield* effectiveContractOf(
 						input.employeeId,
 						input.organizationId,
 						dateFromInstant(input.policyAt),
 					);
+					const policy = contract?.workPolicy
+						? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
+						: null;
 
-					if (!policy?.regulation) {
+					// Executive employees (§ 18 Abs. 1 Nr. 1 ArbZG) are outside adult working-time
+					// rules. JArbSchG youth limits are checked separately and still apply (#1993).
+					if (!policy?.regulation || contract?.arbzgScope === "executive_exempt") {
 						return {
 							isCompliant: true,
 							warnings: [],

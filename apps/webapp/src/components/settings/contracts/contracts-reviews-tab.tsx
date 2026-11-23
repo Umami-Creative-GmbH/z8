@@ -43,6 +43,7 @@ import { MinijobExceedanceReviews } from "./minijob-exceedance-reviews";
 import { OnCallReviewsSection } from "./on-call-reviews-section";
 import { ShortTermBerufsmaessigkeitReviews } from "./short-term-berufsmaessigkeit-reviews";
 import { WorkingStudentReviewsSection } from "./working-student-reviews-section";
+import { YouthSectorExceptionsSection } from "./youth-sector-exceptions-section";
 
 type ReviewFilterKind =
 	| "all"
@@ -530,6 +531,7 @@ export function ContractsReviewsTab({
 				organizationId={organizationId}
 				includeResolved={includeResolved}
 			/>
+			<YouthSectorExceptionsSection organizationId={organizationId} />
 		</div>
 	);
 }

@@ -75,7 +75,8 @@
       "open": "Offene Schicht",
       "publish": {
         "failed": "Veröffentlichung der Schichten fehlgeschlagen",
-        "published": "{count} Schicht(en) veröffentlicht"
+        "published": "{count} Schicht(en) veröffentlicht",
+        "statutoryBlocked": "Einige Schichten verstoßen gegen den Jugendarbeitsschutz (JArbSchG). Ändern Sie die Schichten oder bestätigen Sie eine gesetzliche Branchenausnahme, bevor Sie veröffentlichen."
       },
       "retry": "Erneut versuchen",
       "shiftList": "Schichtliste",
@@ -84,6 +85,7 @@
         "overlapDescription": "Diese Schicht überschneidet sich mit {count} anderen Schicht(en)",
         "overlapWarning": "Schicht mit Überschneidungswarnung gespeichert",
         "skillOverrideReasonRequired": "Dem Mitarbeiter fehlt an diesem Tag eine erforderliche Qualifikation. Öffnen Sie die Schicht, um einen Grund anzugeben.",
+        "statutoryBlocked": "Diese Änderung einer veröffentlichten Schicht verstößt über das bereits Veröffentlichte hinaus gegen den Jugendarbeitsschutz (JArbSchG). Ändern Sie die Schicht so, dass sie keine Grenze neu oder stärker überschreitet. Eine Branchenausnahme kann nur für eine gespeicherte Schicht bestätigt werden: Legen Sie die Schicht dafür als Entwurf an, bestätigen Sie die Ausnahme und veröffentlichen Sie sie dann.",
         "updated": "Schicht aktualisiert"
       },
       "supportFailed": "Vorlagen oder Compliance-Informationen konnten nicht aktualisiert werden. Vor dem Veröffentlichen erneut prüfen.",
@@ -156,6 +158,7 @@
       "rejectFailed": "Anfrage konnte nicht abgelehnt werden",
       "rejectReason": "Grund für die Ablehnung (optional)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Die Genehmigung dieser Anfrage würde für die Person, die die Schicht übernimmt, gegen den Jugendarbeitsschutz (JArbSchG) verstoßen. Lehnen Sie die Anfrage ab oder lassen Sie jemand anderen die Schicht übernehmen.",
       "swapSummary": "{requester} möchte diese Schicht an {target} übergeben",
       "swapWithoutTarget": "{requester} möchte diese Schicht abgeben, hat jedoch keinen Kollegen benannt",
       "title": "Schichtanfragen",
@@ -228,6 +231,25 @@
         "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
         "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
         "apprenticeship": "Freistellung Auszubildende (BBiG)"
+      },
+      "jarbschg": {
+        "dailyMaxOn": "Unter 18: {used} Min. Arbeit am {date} überschreiten die Jugendgrenze von {limit} Min.",
+        "weeklyMaxWeekOf": "Unter 18: {used} Min. Arbeit in der Woche ab {date} überschreiten die Jugendgrenze von {limit} Min.",
+        "daysPerWeek": "Unter 18: {used} Arbeitstage in dieser Woche, höchstens {limit} erlaubt",
+        "restPeriod": "Unter 18: nur {used} Min. Ruhezeit vor dieser Schicht, {limit} Min. erforderlich",
+        "break": "Unter 18: {used} Min. Pause genommen, {limit} Min. erforderlich",
+        "uninterrupted": "Unter 18: {used} Min. ohne Pause gearbeitet, höchstens {limit} Min. erlaubt",
+        "nightWork": "Unter 18: {used} Min. Nachtarbeit zwischen 20:00 und 06:00 Uhr",
+        "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
+        "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
+        "holidayWork": "Unter 18: Arbeit an Feiertagen braucht eine gesetzliche Branchenausnahme",
+        "holidayProhibited": "Unter 18: {used} Min. verbotene Arbeit: keine Arbeit am 24. und 31. Dezember nach 14 Uhr, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai; keine Ausnahme erlaubt sie",
+        "shiftSpanOn": "Unter 18: Die Schichtzeit am {date} beträgt {used} Min. vom Beginn der ersten bis zum Ende der letzten Arbeit; erlaubt sind höchstens {limit} Min. (11 Std. im Gaststättengewerbe, in der Landwirtschaft, Tierhaltung und auf Bau- und Montagestellen)"
+      },
+      "apprenticeship": {
+        "releaseDayShiftOn": "Freistellungstag für Auszubildende am {date}: Berufsschul-, Blockunterrichts- oder Prüfungstag",
+        "blockWeekTrainingWeek": "Blockunterrichtswoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildungsveranstaltungen erlaubt; überschritten am {date}",
+        "workplaceReturnOn": "Unter 18: keine Arbeit am {date}, dem vollen Berufsschultag der Woche"
       },
       "shortTerm": {
         "daysRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Arbeitstagen in diesem Jahr",

@@ -75,7 +75,8 @@
       "open": "Open Shift",
       "publish": {
         "failed": "Failed to publish shifts",
-        "published": "Published {count} shift(s)"
+        "published": "Published {count} shift(s)",
+        "statutoryBlocked": "Some shifts break youth protection limits (JArbSchG). Change the shifts or acknowledge a statutory sector exception before publishing."
       },
       "retry": "Retry",
       "shiftList": "Shift list",
@@ -84,6 +85,7 @@
         "overlapDescription": "This shift overlaps with {count} other shift(s)",
         "overlapWarning": "Shift saved with overlap warning",
         "skillOverrideReasonRequired": "The employee lacks a required skill on this day. Open the shift to give a reason.",
+        "statutoryBlocked": "This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
         "updated": "Shift updated"
       },
       "supportFailed": "Templates or compliance information could not be refreshed. Check again before publishing.",
@@ -156,6 +158,7 @@
       "rejectFailed": "Failed to reject the request",
       "rejectReason": "Reason for rejecting (optional)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Approving this request would break youth protection limits (JArbSchG) for the employee taking the shift. Reject the request or ask someone else to take the shift.",
       "swapSummary": "{requester} wants to hand this shift to {target}",
       "swapWithoutTarget": "{requester} wants to hand this shift on, but has not named a colleague",
       "title": "Shift requests",
@@ -228,6 +231,25 @@
         "onCall": "On-call work (§ 12 TzBfG)",
         "youthProtection": "Youth protection (JArbSchG)",
         "apprenticeship": "Apprentice release (BBiG)"
+      },
+      "jarbschg": {
+        "dailyMaxOn": "Under 18: {used} min of work on {date} exceeds the {limit} min youth limit",
+        "weeklyMaxWeekOf": "Under 18: {used} min of work in the week of {date} exceeds the {limit} min youth limit",
+        "daysPerWeek": "Under 18: {used} working days this week, at most {limit} allowed",
+        "restPeriod": "Under 18: only {used} min of rest before this shift, {limit} min required",
+        "break": "Under 18: {used} min of breaks taken, {limit} min required",
+        "uninterrupted": "Under 18: {used} min worked without a break, at most {limit} min allowed",
+        "nightWork": "Under 18: {used} min of night work between 20:00 and 06:00",
+        "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
+        "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
+        "holidayWork": "Under 18: work on a public holiday needs a statutory sector exception",
+        "holidayProhibited": "Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+        "shiftSpanOn": "Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)"
+      },
+      "apprenticeship": {
+        "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
+        "blockWeekTrainingWeek": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
+        "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
       },
       "shortTerm": {
         "daysRemaining": "Short-term employment: {remaining} of {limit} working days left this year",

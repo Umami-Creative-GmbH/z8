@@ -24,6 +24,7 @@ export interface StatutoryScheduleRequest {
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
 	readonly comparedProposedShifts?: readonly StatutoryProposedShift[];
 	readonly replacesShiftId?: string | null;
+	readonly excludedShiftIds?: readonly string[];
 }
 
 /** The wage-free Scheduling projection of a statutory finding. */
@@ -41,6 +42,9 @@ export function toStatutoryComplianceFinding(
 		legalReference: finding.legalReference,
 		// Planners and scoped managers read this: only the documented wage-free fields pass.
 		summary: restrictedSummary(finding),
+		// Apprentice release conflicts are dated by their release day (#1993).
+		...(finding.domain === "apprenticeship" ? { releaseDay: finding.periodStart } : {}),
+		...(finding.domain === "youth_protection" ? { day: finding.periodStart } : {}),
 		acknowledgementStatus: finding.acknowledgementKind
 			? (finding.acknowledgement?.status ?? "none")
 			: null,
@@ -63,6 +67,7 @@ async function runContributors(
 		proposedShifts: request.proposedShifts ?? [],
 		comparedProposedShifts: request.comparedProposedShifts,
 		replacesShiftId: request.replacesShiftId ?? null,
+		excludedShiftIds: request.excludedShiftIds,
 		preferences,
 		now: request.now,
 	};
@@ -75,9 +80,23 @@ async function runContributors(
 	// A current acknowledgement (e.g. a JArbSchG sector exception) lifts the publication block.
 	return acknowledged.map((finding) =>
 		finding.blocksPublication && finding.acknowledgement?.status === "current"
-			? { ...finding, blocksPublication: false }
+			? { ...finding, blocksPublication: false, publicationBlockLifted: true }
 			: finding,
 	);
+}
+
+/**
+ * The statutory findings themselves for the judged window (with the period each judges), the
+ * publication block lifted by a current acknowledgement. Without contributors or employees it does
+ * no database work. The publish block's guards compare these before and after a change.
+ */
+export async function evaluateStatutoryFindings(
+	db: Reader,
+	request: StatutoryScheduleRequest,
+	contributors: readonly StatutoryScheduleContributor[] = statutoryScheduleContributors,
+): Promise<StatutoryFinding[]> {
+	if (contributors.length === 0 || request.employeeIds.length === 0) return [];
+	return runContributors(db, request, contributors);
 }
 
 /**
@@ -89,8 +108,9 @@ export async function evaluateStatutoryScheduleFindings(
 	request: StatutoryScheduleRequest,
 	contributors: readonly StatutoryScheduleContributor[] = statutoryScheduleContributors,
 ): Promise<StatutoryComplianceFinding[]> {
-	if (contributors.length === 0 || request.employeeIds.length === 0) return [];
-	return (await runContributors(db, request, contributors)).map(toStatutoryComplianceFinding);
+	return (await evaluateStatutoryFindings(db, request, contributors)).map(
+		toStatutoryComplianceFinding,
+	);
 }
 
 /**
@@ -100,9 +120,10 @@ export async function evaluateStatutoryScheduleFindings(
  * block publication. Used by Staffing.
  *
  * It also counts as added when it keeps that state but the proposal deepens a limit already
- * exceeded: the visible summary has `used` and `limit` in the same unit, `used > limit`, and
- * `used` grows (e.g. a lecture week at 22 h → 30 h). Under-limit findings (an on-call under-band)
- * and earnings-derived findings (tier only) are unaffected.
+ * breached: the visible summary has `used` and `limit` in the same unit and `used` moves further
+ * past the limit — up past a ceiling (e.g. a lecture week at 22 h → 30 h), or down past a floor
+ * (`limitDirection: "floor"`, e.g. a youth rest period at 10.5 h → 10 h). Under-limit ceiling
+ * findings (an on-call under-band) and earnings-derived findings (tier only) are unaffected.
  *
  * The baseline run gets the proposals as `comparedProposedShifts` (never counted), so a
  * contributor can judge the same subjects in both runs.
@@ -137,21 +158,27 @@ export async function addedStatutoryScheduleFindings(
 	for (const finding of proposed) {
 		const projected = toStatutoryComplianceFinding(finding);
 		const before = baseline.get(statutoryFindingChangeKey(projected));
-		if (before && !deepensExceededLimit(before, projected)) continue;
+		if (before && !deepensBreachedLimit(before, projected)) continue;
 		added.set(finding.employeeId, [...(added.get(finding.employeeId) ?? []), projected]);
 	}
 	return added;
 }
 
-/** `after` is over its visible limit and uses more of it than `before`, in the same unit. */
-function deepensExceededLimit(
-	before: StatutoryComplianceFinding,
-	after: StatutoryComplianceFinding,
+/**
+ * `after` is past its visible limit and further past it than `before`, in the same unit: above a
+ * ceiling and using more (a longer week), or below a floor (`limitDirection: "floor"`) and giving
+ * less (a shorter rest).
+ */
+export function deepensBreachedLimit(
+	before: Pick<StatutoryComplianceFinding, "summary">,
+	after: Pick<StatutoryComplianceFinding, "summary">,
 ): boolean {
 	const { used, limit } = after.summary;
 	const usedBefore = before.summary.used;
 	const limitBefore = before.summary.limit;
 	if (!used || !limit || !usedBefore || !limitBefore) return false;
 	if (new Set([used.unit, limit.unit, usedBefore.unit, limitBefore.unit]).size !== 1) return false;
-	return used.value > limit.value && used.value > usedBefore.value;
+	return after.summary.limitDirection === "floor"
+		? used.value < limit.value && used.value < usedBefore.value
+		: used.value > limit.value && used.value > usedBefore.value;
 }

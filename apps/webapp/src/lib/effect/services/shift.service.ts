@@ -10,7 +10,7 @@ import {
 } from "@/db/schema";
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { instantFromDate, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	type DatabaseError,
@@ -29,6 +29,20 @@ import {
 } from "@/lib/scheduling/skill-override";
 import { isNewShiftCallIn } from "@/lib/scheduling/shift-assignment-change";
 import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
+import {
+	STATUTORY_PUBLICATION_BLOCKED,
+	STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+	statutoryPublicationRefusal,
+} from "@/lib/statutory/scheduling/publication-block";
+import {
+	findingsBlockingDraftPublication,
+	lockPublicationDrafts,
+	type PublicationScope,
+} from "@/lib/statutory/scheduling/publish-blocking";
+import {
+	guardPublishedShiftEdit,
+	PublishedShiftEditBlocked,
+} from "@/lib/statutory/scheduling/published-shift-edit";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -147,14 +161,9 @@ export class ShiftService extends Context.Service<
 		readonly updateTemplate: (
 			id: string,
 			input: UpdateTemplateInput,
-		) => Effect.Effect<
-			ShiftTemplate,
-			NotFoundError | ValidationError | DatabaseError
-		>;
+		) => Effect.Effect<ShiftTemplate, NotFoundError | ValidationError | DatabaseError>;
 
-		readonly deleteTemplate: (
-			id: string,
-		) => Effect.Effect<void, NotFoundError | DatabaseError>;
+		readonly deleteTemplate: (id: string) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
 		readonly getTemplates: (
 			organizationId: string,
@@ -171,27 +180,25 @@ export class ShiftService extends Context.Service<
 		readonly deleteShift: (
 			id: string,
 			actorScope: DeleteShiftActorScope,
-		) => Effect.Effect<
-			void,
-			NotFoundError | AuthorizationError | DatabaseError
-		>;
+		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
 
-		readonly getShifts: (
-			query: ShiftQuery,
-		) => Effect.Effect<ShiftWithRelations[], DatabaseError>;
+		readonly getShifts: (query: ShiftQuery) => Effect.Effect<ShiftWithRelations[], DatabaseError>;
 
-		readonly getShiftById: (
-			id: string,
-		) => Effect.Effect<ShiftWithRelations | null, DatabaseError>;
+		readonly getShiftById: (id: string) => Effect.Effect<ShiftWithRelations | null, DatabaseError>;
 
 		// Publishing workflow
+		/**
+		 * Publishes the range's drafts. They are judged by the JArbSchG publish block in the same
+		 * transaction, as `statutory` describes the range (organization-local days of `dateRange`).
+		 */
 		readonly publishShifts: (
 			organizationId: string,
 			dateRange: DateRange,
 			publishedBy: string,
+			statutory: Omit<PublicationScope, "organizationId">,
 		) => Effect.Effect<
 			{ count: number; affectedEmployeeIds: string[] },
-			AuthorizationError | DatabaseError
+			AuthorizationError | ValidationError | DatabaseError
 		>;
 
 		// Analytics
@@ -213,10 +220,7 @@ export const ShiftServiceLive = Layer.effect(
 			createTemplate: (input) =>
 				Effect.gen(function* () {
 					// Validate time format
-					if (
-						!isValidTimeFormat(input.startTime) ||
-						!isValidTimeFormat(input.endTime)
-					) {
+					if (!isValidTimeFormat(input.startTime) || !isValidTimeFormat(input.endTime)) {
 						yield* Effect.fail(
 							new ValidationError({
 								message: "Invalid time format. Use HH:mm format.",
@@ -353,10 +357,7 @@ export const ShiftServiceLive = Layer.effect(
 			upsertShift: (input) =>
 				Effect.gen(function* () {
 					// Validate time format
-					if (
-						!isValidTimeFormat(input.startTime) ||
-						!isValidTimeFormat(input.endTime)
-					) {
+					if (!isValidTimeFormat(input.startTime) || !isValidTimeFormat(input.endTime)) {
 						yield* Effect.fail(
 							new ValidationError({
 								message: "Invalid time format. Use HH:mm format.",
@@ -371,10 +372,7 @@ export const ShiftServiceLive = Layer.effect(
 							with: { location: { columns: { organizationId: true } } },
 						});
 					});
-					if (
-						!subareaRecord ||
-						subareaRecord.location.organizationId !== input.organizationId
-					) {
+					if (!subareaRecord || subareaRecord.location.organizationId !== input.organizationId) {
 						yield* Effect.fail(
 							new ValidationError({
 								message: "Subarea is outside the active organization",
@@ -441,9 +439,7 @@ export const ShiftServiceLive = Layer.effect(
 								.toString();
 							const dayRange = localDayRange(dateKey, input.timezone);
 							const dayStart = new Date(dayRange.start.epochMilliseconds);
-							const dayEndExclusive = new Date(
-								dayRange.endExclusive.epochMilliseconds,
-							);
+							const dayEndExclusive = new Date(dayRange.endExclusive.epochMilliseconds);
 
 							const existingShifts = await dbService.db.query.shift.findMany({
 								where: and(
@@ -456,12 +452,7 @@ export const ShiftServiceLive = Layer.effect(
 
 							// Check for time overlaps
 							return existingShifts.flatMap((s) =>
-								timesOverlap(
-									input.startTime,
-									input.endTime,
-									s.startTime,
-									s.endTime,
-								)
+								timesOverlap(input.startTime, input.endTime, s.startTime, s.endTime)
 									? [
 											{
 												id: s.id,
@@ -478,55 +469,52 @@ export const ShiftServiceLive = Layer.effect(
 					// The skill check, any skill override and the write share one transaction, so the
 					// check runs at commit time and the override commits with the assignment (#893).
 					const outcome = yield* dbService.query("saveShift", () =>
-						dbService.db.transaction(async (tx) => {
-							const existing = input.id
-								? await tx
-										.select()
-										.from(shift)
-										.where(
-											and(
-												eq(shift.id, input.id),
-												eq(shift.organizationId, input.organizationId),
-											),
-										)
-										.for("update")
-										.then((rows) => rows[0])
-								: undefined;
-							if (input.id && !existing) return { kind: "not_found" } as const;
+						dbService.db
+							.transaction(async (tx) => {
+								const existing = input.id
+									? await tx
+											.select()
+											.from(shift)
+											.where(
+												and(eq(shift.id, input.id), eq(shift.organizationId, input.organizationId)),
+											)
+											.for("update")
+											.then((rows) => rows[0])
+									: undefined;
+								if (input.id && !existing) return { kind: "not_found" } as const;
 
-							// Fields left out keep their stored value.
-							const employeeId =
-								input.employeeId === undefined
-									? (existing?.employeeId ?? null)
-									: input.employeeId;
-							const templateId =
-								input.templateId === undefined
-									? (existing?.templateId ?? null)
-									: input.templateId;
+								// Fields left out keep their stored value.
+								const employeeId =
+									input.employeeId === undefined
+										? (existing?.employeeId ?? null)
+										: input.employeeId;
+								const templateId =
+									input.templateId === undefined
+										? (existing?.templateId ?? null)
+										: input.templateId;
 
-							// A former employee is never newly assigned (#1438). Editing a shift
-							// that keeps its assignee, such as a past one, still saves.
-							if (employeeId && employeeId !== existing?.employeeId) {
-								const former = await findEmployeesNotOnCurrentRoster(tx, {
-									organizationId: input.organizationId,
-									employeeIds: [employeeId],
-								});
-								if (former.length > 0) return { kind: "former_employee", former } as const;
-							}
+								// A former employee is never newly assigned (#1438). Editing a shift
+								// that keeps its assignee, such as a past one, still saves.
+								if (employeeId && employeeId !== existing?.employeeId) {
+									const former = await findEmployeesNotOnCurrentRoster(tx, {
+										organizationId: input.organizationId,
+										employeeIds: [employeeId],
+									});
+									if (former.length > 0) return { kind: "former_employee", former } as const;
+								}
 
-							let skillWarning: SkillWarning | undefined;
-							let override:
-								| { context: AssignmentContext; missingSkillIds: string[]; reason: string }
-								| undefined;
-							if (employeeId) {
-								const context: AssignmentContext = {
-									employeeId,
-									shiftDate: input.date,
-									subareaId: input.subareaId,
-									templateId,
-								};
-								const previous: AssignmentContext | null =
-									existing?.employeeId
+								let skillWarning: SkillWarning | undefined;
+								let override:
+									| { context: AssignmentContext; missingSkillIds: string[]; reason: string }
+									| undefined;
+								if (employeeId) {
+									const context: AssignmentContext = {
+										employeeId,
+										shiftDate: input.date,
+										subareaId: input.subareaId,
+										templateId,
+									};
+									const previous: AssignmentContext | null = existing?.employeeId
 										? {
 												employeeId: existing.employeeId,
 												shiftDate: existing.date,
@@ -534,91 +522,113 @@ export const ShiftServiceLive = Layer.effect(
 												templateId: existing.templateId,
 											}
 										: null;
-								const { validation, decision } = await decideSkillOverride(tx, {
-									organizationId: input.organizationId,
-									organizationTimezone: input.timezone,
-									shiftId: existing?.id ?? null,
-									context,
-									previous,
-									reason: input.skillOverrideReason,
-								});
-								if (decision.kind === "reason_required") {
-									return { kind: "reason_required", decision } as const;
+									const { validation, decision } = await decideSkillOverride(tx, {
+										organizationId: input.organizationId,
+										organizationTimezone: input.timezone,
+										shiftId: existing?.id ?? null,
+										context,
+										previous,
+										reason: input.skillOverrideReason,
+									});
+									if (decision.kind === "reason_required") {
+										return { kind: "reason_required", decision } as const;
+									}
+									if (decision.kind === "record") {
+										override = { context, ...decision };
+									}
+									if (validation.missingSkills.length > 0 || validation.expiredSkills.length > 0) {
+										skillWarning = { employeeId, ...validation };
+									}
 								}
-								if (decision.kind === "record") {
-									override = { context, ...decision };
-								}
-								if (validation.missingSkills.length > 0 || validation.expiredSkills.length > 0) {
-									skillWarning = { employeeId, ...validation };
-								}
-							}
 
-							const [saved] = existing
-								? await tx
-										.update(shift)
-										.set({
-											employeeId,
-											templateId,
-											subareaId: input.subareaId,
-											date: input.date,
-											startTime: input.startTime,
-											endTime: input.endTime,
-											notes: input.notes,
-											color: input.color,
-											// § 12 TzBfG notice runs from the last reassignment, or the last
-											// material change before the shift starts; a later time correction
-											// announces nothing (#1992).
-											...(isNewShiftCallIn(
-												existing,
-												{
-													employeeId,
-													date: input.date,
-													startTime: input.startTime,
-													endTime: input.endTime,
-												},
-												{ timezone: input.timezone, now: systemClock.nowInstant() },
-											)
-												? { assignmentChangedAt: new Date() }
-												: {}),
-										})
-										.where(
-											and(
-												eq(shift.id, existing.id),
-												eq(shift.organizationId, input.organizationId),
-											),
+								const [saved] = existing
+									? // A published shift stays published: its edit passes the publish block (#1993).
+										await guardPublishedShiftEdit<(typeof shift.$inferSelect)[]>(
+											tx,
+											{
+												organizationId: input.organizationId,
+												timezone: input.timezone,
+												shiftId: existing.id,
+												published: existing.status === "published",
+												employeeId,
+												date: plainDateAt(instantFromDate(input.date), input.timezone),
+												previousDate: plainDateAt(instantFromDate(existing.date), input.timezone),
+												now: systemClock.nowInstant(),
+											},
+											() =>
+												tx
+													.update(shift)
+													.set({
+														employeeId,
+														templateId,
+														subareaId: input.subareaId,
+														date: input.date,
+														startTime: input.startTime,
+														endTime: input.endTime,
+														notes: input.notes,
+														color: input.color,
+														// § 12 TzBfG notice runs from the last reassignment, or the last
+														// material change before the shift starts; a later time correction
+														// announces nothing (#1992).
+														...(isNewShiftCallIn(
+															existing,
+															{
+																employeeId,
+																date: input.date,
+																startTime: input.startTime,
+																endTime: input.endTime,
+															},
+															{ timezone: input.timezone, now: systemClock.nowInstant() },
+														)
+															? { assignmentChangedAt: new Date() }
+															: {}),
+													})
+													.where(
+														and(
+															eq(shift.id, existing.id),
+															eq(shift.organizationId, input.organizationId),
+														),
+													)
+													.returning(),
 										)
-										.returning()
-								: await tx
-										.insert(shift)
-										.values({
-											organizationId: input.organizationId,
-											employeeId,
-											templateId,
-											subareaId: input.subareaId,
-											date: input.date,
-											startTime: input.startTime,
-											endTime: input.endTime,
-											notes: input.notes,
-											color: input.color,
-											status: "draft",
-											createdBy: input.createdBy,
-											updatedAt: new Date(),
-										})
-										.returning();
+									: await tx
+											.insert(shift)
+											.values({
+												organizationId: input.organizationId,
+												employeeId,
+												templateId,
+												subareaId: input.subareaId,
+												date: input.date,
+												startTime: input.startTime,
+												endTime: input.endTime,
+												notes: input.notes,
+												color: input.color,
+												status: "draft",
+												createdBy: input.createdBy,
+												updatedAt: new Date(),
+											})
+											.returning();
 
-							if (override) {
-								await insertSkillOverride(tx, {
-									organizationId: input.organizationId,
-									shiftId: saved.id,
-									context: override.context,
-									missingSkillIds: override.missingSkillIds,
-									reason: override.reason,
-									overriddenBy: input.createdBy,
-								});
-							}
+								if (override) {
+									await insertSkillOverride(tx, {
+										organizationId: input.organizationId,
+										shiftId: saved.id,
+										context: override.context,
+										missingSkillIds: override.missingSkillIds,
+										reason: override.reason,
+										overriddenBy: input.createdBy,
+									});
+								}
 
-							return { kind: "saved", shift: saved, skillWarning } as const;
-						}),
+								return { kind: "saved", shift: saved, skillWarning } as const;
+							})
+							.catch((error: unknown) => {
+								// The publish block refused the edit; the transaction rolled back.
+								if (error instanceof PublishedShiftEditBlocked) {
+									return { kind: "statutory_blocked" } as const;
+								}
+								throw error;
+							}),
 					);
 
 					if (outcome.kind === "not_found") {
@@ -633,6 +643,15 @@ export const ShiftServiceLive = Layer.effect(
 					if (outcome.kind === "reason_required") {
 						return yield* Effect.fail(
 							skillOverrideReasonRequiredError(outcome.decision.missingSkillIds),
+						);
+					}
+					if (outcome.kind === "statutory_blocked") {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+								field: "shift",
+								refusal: STATUTORY_PUBLICATION_BLOCKED,
+							}),
 						);
 					}
 					if (outcome.kind === "former_employee") {
@@ -681,10 +700,7 @@ export const ShiftServiceLive = Layer.effect(
 						);
 					}
 
-					if (
-						actingEmployee.role !== "manager" &&
-						actingEmployee.role !== "admin"
-					) {
+					if (actingEmployee.role !== "manager" && actingEmployee.role !== "admin") {
 						yield* Effect.fail(
 							new AuthorizationError({
 								message: "Only managers and admins can delete shifts",
@@ -697,17 +713,11 @@ export const ShiftServiceLive = Layer.effect(
 
 					const existing = yield* dbService.query("getShiftById", async () => {
 						return await dbService.db.query.shift.findFirst({
-							where: and(
-								eq(shift.id, id),
-								eq(shift.organizationId, actorScope.organizationId),
-							),
+							where: and(eq(shift.id, id), eq(shift.organizationId, actorScope.organizationId)),
 						});
 					});
 
-					if (
-						!existing ||
-						existing.organizationId !== actorScope.organizationId
-					) {
+					if (!existing || existing.organizationId !== actorScope.organizationId) {
 						return yield* Effect.fail(
 							new NotFoundError({
 								message: "Shift not found",
@@ -755,9 +765,7 @@ export const ShiftServiceLive = Layer.effect(
 			getShifts: (query) =>
 				Effect.gen(function* () {
 					const shifts = yield* dbService.query("getShifts", async () => {
-						const conditions = [
-							eq(shift.organizationId, query.organizationId),
-						];
+						const conditions = [eq(shift.organizationId, query.organizationId)];
 
 						if (query.startDate) {
 							conditions.push(gte(shift.date, query.startDate));
@@ -856,55 +864,58 @@ export const ShiftServiceLive = Layer.effect(
 					return result as ShiftWithRelations | null;
 				}),
 
-			publishShifts: (organizationId, dateRange, publishedBy) =>
+			publishShifts: (organizationId, dateRange, publishedBy, statutory) =>
 				Effect.gen(function* () {
-					// Get all draft shifts in the date range
-					const draftShifts = yield* dbService.query("getDraftShifts", async () => {
-						return await dbService.db.query.shift.findMany({
-							where: and(
-								eq(shift.organizationId, organizationId),
-								eq(shift.status, "draft"),
-								gte(shift.date, dateRange.start),
-								lt(shift.date, dateRange.endExclusive),
-							),
-						});
-					});
-
-					if (draftShifts.length === 0) {
-						return { count: 0, affectedEmployeeIds: [] };
-					}
-
-					// Collect unique employee IDs (excluding open shifts)
-					const affectedEmployeeIds = [
-						...new Set(
-							draftShifts
-								.filter((s) => s.employeeId !== null)
-								.map((s) => s.employeeId as string),
-						),
-					];
-
-					// Update all draft shifts to published
-					yield* dbService.query("publishShifts", async () => {
-						const shiftIds = draftShifts.map((s) => s.id);
-						await dbService.db
-							.update(shift)
-							.set({
-								status: "published",
-								publishedAt: new Date(),
-								publishedBy,
-							})
-							.where(
-								and(
-									eq(shift.organizationId, organizationId),
-									inArray(shift.id, shiftIds),
-								),
+					// The publish block (#1993) judges the drafts it publishes in the publication's
+					// transaction, with those drafts locked: a draft saved or edited after the check
+					// is never published unchecked.
+					const outcome = yield* dbService.query("publishShifts", () =>
+						dbService.db.transaction(async (tx) => {
+							const drafts = await lockPublicationDrafts(tx, organizationId, dateRange);
+							if (drafts.length === 0) {
+								return { kind: "published", count: 0, affectedEmployeeIds: [] } as const;
+							}
+							const blocking = await findingsBlockingDraftPublication(
+								tx,
+								{ organizationId, ...statutory },
+								drafts,
 							);
-					});
+							const refusal = statutoryPublicationRefusal(blocking);
+							if (refusal) return { kind: "statutory_blocked", refusal } as const;
 
-					return {
-						count: draftShifts.length,
-						affectedEmployeeIds,
-					};
+							await tx
+								.update(shift)
+								.set({ status: "published", publishedAt: new Date(), publishedBy })
+								.where(
+									and(
+										eq(shift.organizationId, organizationId),
+										inArray(
+											shift.id,
+											drafts.map((draft) => draft.id),
+										),
+									),
+								);
+							return {
+								kind: "published",
+								count: drafts.length,
+								// Open shifts have no assignee.
+								affectedEmployeeIds: [
+									...new Set(drafts.flatMap((draft) => draft.employeeId ?? [])),
+								],
+							} as const;
+						}),
+					);
+
+					if (outcome.kind === "statutory_blocked") {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: outcome.refusal,
+								field: "shifts",
+								refusal: STATUTORY_PUBLICATION_BLOCKED,
+							}),
+						);
+					}
+					return { count: outcome.count, affectedEmployeeIds: [...outcome.affectedEmployeeIds] };
 				}),
 
 			getIncompleteDays: (organizationId, dateRange, timezone) =>
@@ -948,12 +959,7 @@ function isValidTimeFormat(time: string): boolean {
 	return regex.test(time);
 }
 
-function timesOverlap(
-	start1: string,
-	end1: string,
-	start2: string,
-	end2: string,
-): boolean {
+function timesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
 	// Convert HH:mm to minutes for comparison
 	const toMinutes = (time: string) => {
 		const [hours, minutes] = time.split(":").map(Number);

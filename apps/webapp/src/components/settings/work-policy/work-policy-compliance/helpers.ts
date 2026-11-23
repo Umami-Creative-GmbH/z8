@@ -18,7 +18,11 @@ export function violationLocalDate(violationDate: Date, timezone: string): Plain
 
 /** The organization-local violation day, formatted in the UI locale. */
 export function formatViolationDate(violationDate: Date, display: ViolationDisplayContext): string {
-	return formatPlainDate(violationLocalDate(violationDate, display.timezone), display.locale, "dateMedium");
+	return formatPlainDate(
+		violationLocalDate(violationDate, display.timezone),
+		display.locale,
+		"dateMedium",
+	);
 }
 
 /** The organization-local violation day as ISO `YYYY-MM-DD` for exports. */
@@ -54,6 +58,19 @@ export const violationTypeColors: Record<string, "destructive" | "secondary" | "
 	max_uninterrupted: "secondary",
 	break_required: "outline",
 	schedule_deviation: "outline",
+	// JArbSchG youth protection (#1993): hard limits, then work a sector exception may allow.
+	jarbschg_daily_max: "destructive",
+	jarbschg_weekly_max: "destructive",
+	jarbschg_days_per_week: "destructive",
+	jarbschg_rest_period: "destructive",
+	jarbschg_uninterrupted: "secondary",
+	jarbschg_break: "outline",
+	jarbschg_night_work: "secondary",
+	jarbschg_saturday_work: "secondary",
+	jarbschg_sunday_work: "secondary",
+	jarbschg_holiday_work: "secondary",
+	jarbschg_holiday_prohibited: "destructive",
+	jarbschg_shift_span: "destructive",
 };
 
 export function formatEmployeeName(employeeRecord: EmployeeRecord, fallback: string) {
@@ -79,6 +96,48 @@ export function getViolationTypeLabel(type: string, t: Translate): string {
 			return t("settings.workPolicies.violationType.breakRequired", "Required Break Missing");
 		case "schedule_deviation":
 			return t("settings.workPolicies.violationType.scheduleDeviation", "Schedule Deviation");
+		case "jarbschg_daily_max":
+			return t("settings.workPolicies.violationType.jarbschgDailyMax", "Youth Max Daily Exceeded");
+		case "jarbschg_weekly_max":
+			return t(
+				"settings.workPolicies.violationType.jarbschgWeeklyMax",
+				"Youth Max Weekly Exceeded",
+			);
+		case "jarbschg_days_per_week":
+			return t(
+				"settings.workPolicies.violationType.jarbschgDaysPerWeek",
+				"Youth Working Days Exceeded",
+			);
+		case "jarbschg_rest_period":
+			return t(
+				"settings.workPolicies.violationType.jarbschgRestPeriod",
+				"Youth Rest Period Too Short",
+			);
+		case "jarbschg_uninterrupted":
+			return t(
+				"settings.workPolicies.violationType.jarbschgUninterrupted",
+				"Youth Max Continuous Exceeded",
+			);
+		case "jarbschg_break":
+			return t("settings.workPolicies.violationType.jarbschgBreak", "Youth Required Break Missing");
+		case "jarbschg_night_work":
+			return t("settings.workPolicies.violationType.jarbschgNightWork", "Youth Night Work");
+		case "jarbschg_saturday_work":
+			return t("settings.workPolicies.violationType.jarbschgSaturdayWork", "Youth Saturday Work");
+		case "jarbschg_sunday_work":
+			return t("settings.workPolicies.violationType.jarbschgSundayWork", "Youth Sunday Work");
+		case "jarbschg_holiday_work":
+			return t("settings.workPolicies.violationType.jarbschgHolidayWork", "Youth Holiday Work");
+		case "jarbschg_holiday_prohibited":
+			return t(
+				"settings.workPolicies.violationType.jarbschgHolidayProhibited",
+				"Youth Work on a Prohibited Holiday",
+			);
+		case "jarbschg_shift_span":
+			return t(
+				"settings.workPolicies.violationType.jarbschgShiftSpan",
+				"Youth Shift Span Exceeded",
+			);
 		default:
 			return type;
 	}

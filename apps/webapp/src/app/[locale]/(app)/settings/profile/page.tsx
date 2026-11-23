@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { OwnCustomFieldsCard } from "@/components/settings/custom-fields/own-custom-fields-card";
+import { ApprenticeReleaseCard } from "@/components/settings/employees/apprentice-release-card";
 import { OwnSkillsCard } from "@/components/settings/own-skills-card";
 import { OwnWorkingStudentCard } from "@/components/settings/own-working-student-card";
 import { ProfileForm } from "@/components/settings/profile-form";
@@ -90,6 +91,10 @@ export default async function ProfilePage() {
 				) : null}
 
 				{ownWorkingStudent ? <OwnWorkingStudentCard status={ownWorkingStudent} /> : null}
+
+				{ownEmployee ? (
+					<ApprenticeReleaseCard view="self" organizationId={ownEmployee.organizationId} />
+				) : null}
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 				<WeekStartSettings

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -34,6 +34,14 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: async () => null } },
+}));
+const session = vi.hoisted(() => ({ current: null as unknown }));
+vi.mock("@/lib/auth/request-session", () => ({
+	getRequestSession: async () => session.current,
+}));
+vi.mock("@/lib/organization-mfa/organization-access", async (original) => ({
+	...(await original<typeof import("@/lib/organization-mfa/organization-access")>()),
+	canAccessOrganization: async () => true,
 }));
 vi.mock("@/lib/events", () => ({ publishEventAsync: channels.event }));
 vi.mock("@/lib/notifications/push-service", () => ({
@@ -297,6 +305,63 @@ describe("break-due reminders for live work on PostgreSQL", () => {
 
 		await run("2026-04-28T11:45:00Z");
 		expect(await reminders(person)).toEqual(["break_due_reminder"]);
+	});
+
+	/** Confirmed terms that put the employee outside adult ArbZG rules (§ 18 Abs. 1 Nr. 1, #1993). */
+	async function executiveExempt(org: Org, person: SeededEmployee) {
+		await fixture.pool.query(
+			`insert into employee_employment_history
+			 (employee_id, organization_id, valid_from, valid_from_date, contract_type,
+			  weekly_contract_minutes, schedule_mode, employment_profile, arbzg_scope,
+			  review_state, created_by, updated_at)
+			 values ($1, $2, '2020-01-01T00:00:00Z', '2020-01-01', 'fixed', 2400, 'hours_only',
+			  'regular', 'executive_exempt', 'confirmed', $3, now())`,
+			[person.employeeId, org.organizationId, org.creatorUserId],
+		);
+	}
+
+	it("sends no ArbZG break reminder to an executive-exempt adult", async () => {
+		const org = await organization({
+			policy: {
+				maxUninterruptedMinutes: 360,
+				breakRules: [{ thresholdMinutes: 360, requiredBreakMinutes: 30 }],
+			},
+		});
+		const standard = await employee(org);
+		const exempt = await employee(org);
+		await executiveExempt(org, exempt);
+		for (const person of [standard, exempt]) await clockIn(org, person, "2026-04-28T06:00:00Z");
+
+		await run("2026-04-28T11:45:00Z");
+		expect(await reminders(standard)).toEqual(["break_due_reminder"]);
+		expect(await reminders(exempt)).toEqual([]);
+	});
+
+	it("shows no break due on the time-tracking page to an executive-exempt adult", async () => {
+		const { getBreakReminderStatus } = await import("@/app/[locale]/(app)/time-tracking/actions");
+		const org = await organization({ policy: { maxUninterruptedMinutes: 360 } });
+		const standard = await employee(org);
+		const exempt = await employee(org);
+		await executiveExempt(org, exempt);
+		// Live work for 5 h 50 min: the 6 h uninterrupted limit is 10 minutes away.
+		const started = systemClock.nowInstant().subtract({ minutes: 350 }).toString();
+		for (const person of [standard, exempt]) await clockIn(org, person, started);
+
+		const statusOf = async (person: SeededEmployee) => {
+			session.current = {
+				user: { id: person.userId },
+				session: { activeOrganizationId: org.organizationId },
+			};
+			const result = await getBreakReminderStatus();
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		};
+		expect(await statusOf(standard)).toMatchObject({ needsBreakSoon: true, maxUninterrupted: 360 });
+		expect(await statusOf(exempt)).toMatchObject({
+			needsBreakSoon: false,
+			maxUninterrupted: null,
+			breakRequirement: null,
+		});
 	});
 
 	it("sends nothing when switched off, for an excluded role, or under a policy without break rules", async () => {

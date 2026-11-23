@@ -332,7 +332,34 @@
         "queueDescription": "Beheben Sie Abweichungen bei der Vertragsmigration, Prüfungen von Arbeitszeiten nach dem Stichtag und abgeschlossene Entgeltabgleiche.",
         "queueTitle": "Warteschlange für Prüfungen & Konflikte",
         "resolveFailed": "Prüfungselement konnte nicht gelöst werden.",
-        "showResolved": "Gelöste anzeigen"
+        "showResolved": "Gelöste anzeigen",
+        "youth": {
+          "acknowledge": "Branchenausnahme erfassen…",
+          "acknowledged": "Branchenausnahme erfasst",
+          "confirm": "Branchenausnahme erfassen",
+          "description": "Beschäftigte unter 18 dürfen nachts, am Wochenende oder an Feiertagen nur im Rahmen einer gesetzlichen Branchenausnahme arbeiten (§§ 14, 16–18 JArbSchG). Halten Sie fest, warum sie gilt; sie deckt die Schicht so ab, wie sie hier angezeigt wird.",
+          "kind": {
+            "holiday": "Arbeit an einem Feiertag",
+            "night": "Nachtarbeit (20:00–06:00)",
+            "saturday": "Arbeit am Samstag",
+            "shiftSpan": "Schichtzeit von 10 bis 11 Stunden (§ 12)",
+            "sunday": "Arbeit am Sonntag"
+          },
+          "legalNote": "Rechtsgrundlage (optional), z. B. § 14 Abs. 2 Nr. 1 JArbSchG",
+          "loadFailed": "Jugendschutz-Hinweise konnten nicht geladen werden.",
+          "nightMinutes": "{minutes} Min. nachts",
+          "reason": "Warum gilt eine Branchenausnahme?",
+          "reasonRequired": "Erklären Sie, welche Branchenausnahme gilt.",
+          "refusal": {
+            "changed": "Die Schicht hat sich geändert, seit diese Liste geladen wurde. Prüfen Sie sie erneut, bevor Sie die Ausnahme erfassen.",
+            "notFound": "Dieser Befund ist nicht mehr offen. Die Liste zeigt die aktuellen Befunde.",
+            "reasonRequired": "Erklären Sie, welche Branchenausnahme gilt.",
+            "subjectRequired": "Dieser Befund kann nicht bestätigt werden. Laden Sie die Liste neu und versuchen Sie es erneut."
+          },
+          "shiftSpanMinutes": "{minutes} Min. Schichtzeit",
+          "stale": "Seit der letzten Bestätigung geändert",
+          "title": "Jugendarbeitsschutz: Branchenausnahmen"
+        }
       },
       "scheduleMode": {
         "customDays": "Benutzerdefinierte Arbeitstage",
@@ -1077,6 +1104,18 @@
       "violationsLoadError": "Verstöße konnten nicht geladen werden",
       "violationType": {
         "breakRequired": "Erforderliche Pause fehlt",
+        "jarbschgBreak": "Jugendliche: Ruhepause fehlt",
+        "jarbschgDailyMax": "Jugendliche: Tagesmaximum überschritten",
+        "jarbschgDaysPerWeek": "Jugendliche: zu viele Arbeitstage",
+        "jarbschgHolidayProhibited": "Jugendliche: Arbeit an einem verbotenen Feiertag",
+        "jarbschgHolidayWork": "Jugendliche: Feiertagsarbeit",
+        "jarbschgNightWork": "Jugendliche: Nachtarbeit",
+        "jarbschgRestPeriod": "Jugendliche: Freizeit zu kurz",
+        "jarbschgSaturdayWork": "Jugendliche: Samstagsarbeit",
+        "jarbschgShiftSpan": "Jugendliche: Schichtzeit überschritten",
+        "jarbschgSundayWork": "Jugendliche: Sonntagsarbeit",
+        "jarbschgUninterrupted": "Jugendliche: zu lange ohne Pause",
+        "jarbschgWeeklyMax": "Jugendliche: Wochenmaximum überschritten",
         "maxDaily": "Tagesmaximum überschritten",
         "maxUninterrupted": "Ununterbrochenes Maximum überschritten",
         "maxWeekly": "Wochenmaximum überschritten",

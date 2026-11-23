@@ -364,13 +364,33 @@ BEGIN
 				daterange("starts_on", "ends_on", '[]') WITH &&
 			) WHERE ("voided_at" IS NULL);
 	END IF;
-	IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'employee_apprentice_release_no_overlap') THEN
+	-- A day holds one release, except that a pre-exam day is released in full on top of a block that
+	-- credits it only partly (#1993): pre-exam days are kept apart from every release but blocks.
+	-- Replaces an earlier definition without that exception, so re-applying upgrades pushed tables.
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint
+		WHERE conname = 'employee_apprentice_release_no_overlap'
+			AND pg_get_constraintdef(oid) LIKE '%pre_exam_day%'
+	) THEN
+		ALTER TABLE "employee_apprentice_release"
+			DROP CONSTRAINT IF EXISTS "employee_apprentice_release_no_overlap";
 		ALTER TABLE "employee_apprentice_release"
 			ADD CONSTRAINT "employee_apprentice_release_no_overlap"
 			EXCLUDE USING gist (
 				"organization_id" WITH =,
 				"employee_id" WITH =,
 				daterange("starts_on", "ends_on", '[]') WITH &&
-			) WHERE ("voided_at" IS NULL);
+			) WHERE ("voided_at" IS NULL AND "release_kind" <> 'pre_exam_day');
+	END IF;
+	IF NOT EXISTS (
+		SELECT 1 FROM pg_constraint WHERE conname = 'employee_apprentice_release_pre_exam_no_overlap'
+	) THEN
+		ALTER TABLE "employee_apprentice_release"
+			ADD CONSTRAINT "employee_apprentice_release_pre_exam_no_overlap"
+			EXCLUDE USING gist (
+				"organization_id" WITH =,
+				"employee_id" WITH =,
+				daterange("starts_on", "ends_on", '[]') WITH &&
+			) WHERE ("voided_at" IS NULL AND "release_kind" <> 'vocational_school_block_week');
 	END IF;
 END $$;

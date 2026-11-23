@@ -62,6 +62,11 @@ export type TimeRegulationViolationDetails = {
 	// Exception handling
 	exceptionId?: string; // If an approved exception was used
 	exceptionApprovedBy?: string; // Who approved the exception
+
+	// JArbSchG youth protection (#1993)
+	legalReference?: string; // e.g. "§ 14 JArbSchG"
+	actualDays?: number; // Working days in the week, or 1 for a Saturday/Sunday/holiday worked
+	limitDays?: number;
 };
 
 // Type for work period auto-adjustment reason (break enforcement)

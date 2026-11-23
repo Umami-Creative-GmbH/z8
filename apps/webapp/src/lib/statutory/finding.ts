@@ -30,7 +30,15 @@ export interface StatutoryFindingSummary {
 	readonly used?: StatutoryQuantity;
 	readonly limit?: StatutoryQuantity;
 	readonly remaining?: StatutoryQuantity;
+	/**
+	 * Whether `limit` is a ceiling (`used` must stay at or below it, the default) or a floor
+	 * (`used` must reach it, e.g. a minimum rest period or break). A breach deepens when `used`
+	 * moves further past the limit: up for a ceiling, down for a floor.
+	 */
+	readonly limitDirection?: StatutoryLimitDirection;
 }
+
+export type StatutoryLimitDirection = "ceiling" | "floor";
 
 /** Org-admin-only detail: EUR amounts (minor units), wages, external earnings, free-form facts. */
 export interface StatutoryFindingAdminDetail {
@@ -92,6 +100,23 @@ export interface StatutoryFinding<Kind extends string = string> {
 	 * Clock-in and clock-out are never blocked.
 	 */
 	readonly blocksPublication?: boolean;
+	/**
+	 * Set by the scheduling seam when it lifted `blocksPublication` for a current acknowledgement:
+	 * the finding would block without it. The publish block's guards count it as a breach the
+	 * schedule already had, so an edit that eases it is not refused for making it stale.
+	 */
+	readonly publicationBlockLifted?: boolean;
+	/**
+	 * The minutes of work a sector-exception finding (night, Saturday, Sunday, holiday work) covers,
+	 * when `summary` counts something coarser (a day): more covered work is a deeper breach.
+	 */
+	readonly coveredMinutes?: number;
+	/**
+	 * Where that covered work lies, as ISO instants, when other findings of its scope may cover the
+	 * same time (an apprentice release conflict: overlapping shifts in one exam): the scope's
+	 * covered minutes count it once. Dropped for restricted audiences.
+	 */
+	readonly coveredSpan?: { readonly start: string; readonly end: string };
 }
 
 export function statutoryFindingId(kind: string, employeeId: string, subjectKey: string): string {

@@ -1,7 +1,9 @@
+import { apprenticeReleaseScheduleContributor } from "../apprenticeship/release-conflict-contributor";
 import { minijobScheduleContributor } from "../minijob/minijob-schedule-contributor";
 import { onCallScheduleContributor } from "../on-call/contributor";
 import { shortTermScheduleContributor } from "../short-term/contributor";
 import { workingStudentScheduleContributor } from "../working-student/contributor";
+import { jarbschgScheduleContributor } from "../youth/jarbschg-contributor";
 import type { StatutoryScheduleContributor } from "./contributor";
 
 /**
@@ -19,4 +21,18 @@ export const statutoryScheduleContributors: readonly StatutoryScheduleContributo
 	// #1992 § 12 TzBfG on-call
 	onCallScheduleContributor,
 	// #1993 JArbSchG / BBiG
+	jarbschgScheduleContributor,
+	apprenticeReleaseScheduleContributor,
+];
+
+/**
+ * The registered monitors whose findings may set `blocksPublication`. The publish block's guards
+ * evaluate only these: an edit of a published shift runs inside the save transaction with the
+ * shift row locked, and a publication judges the drafts it publishes inside the publish
+ * transaction with those drafts locked (after an early check outside it, before the planner
+ * acknowledges warnings). A monitor that starts blocking publication is added here too.
+ */
+export const statutoryBlockingScheduleContributors: readonly StatutoryScheduleContributor[] = [
+	jarbschgScheduleContributor,
+	apprenticeReleaseScheduleContributor,
 ];

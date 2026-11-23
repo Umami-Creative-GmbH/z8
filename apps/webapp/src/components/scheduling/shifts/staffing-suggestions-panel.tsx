@@ -98,7 +98,31 @@ function complianceText(finding: ComplianceFinding, t: Translate, locale: string
 				},
 			);
 		case "statutory":
-			return statutoryWarningText(finding, t);
+			return statutoryWarningText(finding, t, locale);
+	}
+}
+
+/** What a warning is about, unique within one suggestion: two warnings may read the same. */
+function warningKey(warning: StaffingWarning): string {
+	switch (warning.type) {
+		case "missingRequiredSkill":
+		case "expiredRequiredSkill":
+			return `${warning.type}:${warning.skillId}`;
+		case "pendingAbsence":
+			return `${warning.type}:${warning.categoryName}:${warning.startDate}:${warning.endDate}`;
+		case "compliance": {
+			const { finding } = warning;
+			switch (finding.type) {
+				case "statutory":
+					return `statutory:${finding.findingId}`;
+				case "restTime":
+					return `restTime:${finding.fromEndIso}:${finding.toStartIso}`;
+				case "maxHours":
+					return `maxHours:${finding.day}`;
+				case "overtime":
+					return `overtime:${finding.period}:${finding.periodKey}`;
+			}
+		}
 	}
 }
 
@@ -128,6 +152,24 @@ function warningText(warning: StaffingWarning, t: Translate, locale: string): st
 				{ category: warning.categoryName },
 			);
 	}
+}
+
+/**
+ * One line per distinct text, keyed by its first warning. Statutory maximums sit on every shift
+ * past the cap, so a proposal can bring several findings that read the same (one per week); the
+ * findings themselves stay as they are.
+ */
+function warningLines(
+	warnings: readonly StaffingWarning[],
+	t: Translate,
+	locale: string,
+): { key: string; text: string; warning: StaffingWarning }[] {
+	const lines = new Map<string, { key: string; text: string; warning: StaffingWarning }>();
+	for (const warning of warnings) {
+		const text = warningText(warning, t, locale);
+		if (!lines.has(text)) lines.set(text, { key: warningKey(warning), text, warning });
+	}
+	return [...lines.values()];
 }
 
 function noteText(note: StaffingNote, t: Translate): string {
@@ -207,10 +249,9 @@ export function StaffingSuggestionsPanel({
 								</p>
 								{suggestion.warnings.length > 0 && (
 									<ul className="flex flex-col gap-y-0.5 text-xs text-amber-700 dark:text-amber-400">
-										{suggestion.warnings.map((warning) => {
-											const text = warningText(warning, t, locale);
+										{warningLines(suggestion.warnings, t, locale).map(({ key, text, warning }) => {
 											return (
-												<li key={text} className="flex flex-wrap items-center gap-1">
+												<li key={key} className="flex flex-wrap items-center gap-1">
 													<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />
 													<span>{text}</span>
 													{/* Only that one is on file: opening it takes personnel file access (#1144). */}

@@ -7,6 +7,7 @@ import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/action
 import type { ShiftMetadata } from "@/app/[locale]/(app)/scheduling/types";
 import { queryKeys } from "@/lib/query/keys";
 import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
+import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
 import type { ShiftDialogFormValues } from "./use-shift-dialog-form";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -99,6 +100,14 @@ export function useShiftUpsertMutation({
 			if (!result.success) {
 				if (result.refusal === SKILL_OVERRIDE_REASON_REQUIRED) {
 					throw new SkillOverrideReasonRequired(assignmentContextOf(values));
+				}
+				if (result.refusal === STATUTORY_PUBLICATION_BLOCKED) {
+					throw new Error(
+						t(
+							"scheduling:scheduling.scheduler.shiftUpdate.statutoryBlocked",
+							"This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
+						),
+					);
 				}
 				throw new Error(result.error);
 			}

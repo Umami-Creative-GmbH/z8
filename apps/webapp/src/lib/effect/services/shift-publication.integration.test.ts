@@ -1,5 +1,6 @@
 import { Effect, Layer } from "effect";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import {
 	createShiftDatabaseFixture,
 	type ShiftDatabaseFixture,
@@ -12,6 +13,12 @@ const layer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 const range = {
 	start: new Date("2026-10-08T22:00:00Z"),
 	endExclusive: new Date("2026-10-09T22:00:00Z"),
+};
+/** The publish block's view of `range`: 9 October in Berlin (no minors here, so nothing blocks). */
+const statutory = {
+	timezone: "Europe/Berlin",
+	window: { start: "2026-10-09", endExclusive: "2026-10-10" },
+	now: systemClock.nowInstant(),
 };
 
 describe("shift publication against PostgreSQL", () => {
@@ -67,7 +74,12 @@ describe("shift publication against PostgreSQL", () => {
 		const observed = await Effect.runPromise(
 			Effect.gen(function* () {
 				const service = yield* ShiftService;
-				const result = yield* service.publishShifts(org.organizationId, range, org.creator.userId);
+				const result = yield* service.publishShifts(
+					org.organizationId,
+					range,
+					org.creator.userId,
+					statutory,
+				);
 				return {
 					result,
 					own: yield* service.getShifts({ organizationId: org.organizationId }),
@@ -108,12 +120,18 @@ describe("shift publication against PostgreSQL", () => {
 		const observed = await Effect.runPromise(
 			Effect.gen(function* () {
 				const service = yield* ShiftService;
-				const first = yield* service.publishShifts(org.organizationId, range, org.creator.userId);
+				const first = yield* service.publishShifts(
+					org.organizationId,
+					range,
+					org.creator.userId,
+					statutory,
+				);
 				const beforeRepeat = yield* service.getShiftById(id);
 				const repeated = yield* service.publishShifts(
 					org.organizationId,
 					range,
 					org.creator.userId,
+					statutory,
 				);
 				const afterRepeat = yield* service.getShiftById(id);
 				return { first, repeated, beforeRepeat, afterRepeat };
@@ -136,7 +154,12 @@ describe("shift publication against PostgreSQL", () => {
 		const observed = await Effect.runPromise(
 			Effect.gen(function* () {
 				const service = yield* ShiftService;
-				const result = yield* service.publishShifts(org.organizationId, range, org.creator.userId);
+				const result = yield* service.publishShifts(
+					org.organizationId,
+					range,
+					org.creator.userId,
+					statutory,
+				);
 				return { result, shifts: yield* service.getShifts({ organizationId: org.organizationId }) };
 			}).pipe(Effect.provide(layer)),
 		);

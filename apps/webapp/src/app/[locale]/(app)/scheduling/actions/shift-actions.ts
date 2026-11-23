@@ -3,7 +3,7 @@
 import { Effect } from "effect";
 import { db } from "@/db";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
-import { AuthorizationError } from "@/lib/effect/errors";
+import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { CoverageService } from "@/lib/effect/services/coverage.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -23,6 +23,11 @@ import {
 	resolveScheduleWallTime,
 } from "@/lib/scheduling/schedule-local-input";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
+import {
+	STATUTORY_PUBLICATION_BLOCKED,
+	statutoryPublicationRefusal,
+} from "@/lib/statutory/scheduling/publication-block";
+import { findingsBlockingPublication } from "@/lib/statutory/scheduling/publish-blocking";
 import {
 	loadUpcomingShifts,
 	UPCOMING_SHIFTS_LIMIT,
@@ -295,6 +300,31 @@ export async function publishShifts(
 			organizationId: currentEmployee.organizationId,
 			session,
 		});
+		const statutoryScope = {
+			timezone,
+			window: { start: dateRange.startDate, endExclusive: dateRange.endDateExclusive },
+			now: systemClock.nowInstant(),
+		};
+		// Only what this publication causes blocks it: findings on its drafts, or new ones they cause.
+		// Refused here before the planner is asked to acknowledge warnings; the publication judges
+		// the drafts it publishes again, in its transaction.
+		const blocking = yield* dbService.query("statutoryPublicationBlocking", () =>
+			findingsBlockingPublication(
+				dbService.db,
+				{ organizationId: currentEmployee.organizationId, ...statutoryScope },
+				evaluation.findings,
+			),
+		);
+		const statutoryRefusal = statutoryPublicationRefusal(blocking);
+		if (statutoryRefusal) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: statutoryRefusal,
+					field: "shifts",
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				}),
+			);
+		}
 		const publishDecision = buildPublishDecision({
 			count: 0,
 			compliance: {
@@ -312,6 +342,7 @@ export async function publishShifts(
 			currentEmployee.organizationId,
 			serviceDateRange,
 			session.user.id,
+			statutoryScope,
 		);
 
 		if (evaluation.summary.totalFindings > 0) {

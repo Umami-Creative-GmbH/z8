@@ -13,6 +13,7 @@ import {
 import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
 import { queryKeys } from "@/lib/query/keys";
 import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
+import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
 import { filterShiftsForEmployee, shiftToEvent } from "./shift-scheduler-utils";
 
 interface UseShiftSchedulerDataOptions {
@@ -136,6 +137,14 @@ export function useShiftSchedulerData({
 						t(
 							"scheduling.scheduler.shiftUpdate.skillOverrideReasonRequired",
 							"The employee lacks a required skill on this day. Open the shift to give a reason.",
+						),
+					);
+				}
+				if (result.refusal === STATUTORY_PUBLICATION_BLOCKED) {
+					throw new Error(
+						t(
+							"scheduling.scheduler.shiftUpdate.statutoryBlocked",
+							"This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
 						),
 					);
 				}

@@ -42,6 +42,11 @@ export interface StatutoryScheduleContext {
 	readonly comparedProposedShifts?: readonly StatutoryProposedShift[];
 	/** A persisted shift the proposal replaces (the shift being edited); leave it out. */
 	readonly replacesShiftId: string | null;
+	/**
+	 * Persisted shifts to leave out: the drafts a publication would publish, to tell which
+	 * publication-blocking findings they cause (#1993). Only monitors that block publication need it.
+	 */
+	readonly excludedShiftIds?: readonly string[];
 	readonly preferences: StatutoryPreferences;
 	/** Evaluation instant, e.g. the notification time for the § 12 TzBfG notice check. */
 	readonly now: Instant;

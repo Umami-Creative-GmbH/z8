@@ -9,6 +9,7 @@ import {
 	integer,
 	pgTable,
 	text,
+	time,
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -227,13 +228,55 @@ export const employeeApprenticeRelease = pgTable(
 		endsOn: date("ends_on", { mode: "string" }).notNull(),
 		/** School lessons on a vocational-school day (> 5 lessons credits a full day). */
 		lessonCount: integer("lesson_count"),
-		/** Planned school minutes of a block-release week (>= 25 h across >= 5 days). */
+		/**
+		 * Planned school minutes per week of a block-release record (>= 25 h across >= 5 days), or
+		 * an exam's participation time including breaks.
+		 */
 		schoolMinutes: integer("school_minutes"),
+		/** When an exam starts (local wall time); with it, the exam day credits only its time. */
+		examStartTime: time("exam_start_time"),
+		/**
+		 * When a short school day's lessons start and end (local wall time): shifts during them, and
+		 * before lessons starting before 09:00, conflict with the release (§ 9 Abs. 1 JArbSchG,
+		 * § 15 Abs. 1 BBiG). Its `school_minutes` hold the school time between them.
+		 */
+		schoolStartTime: time("school_start_time"),
+		schoolEndTime: time("school_end_time"),
+		/** On a pre-exam day: the exam it was released for. Voiding the exam voids it. */
+		examReleaseId: uuid("exam_release_id"),
+		/**
+		 * On a release voided to make room for another (a school day for a pre-exam day, a pre-exam
+		 * day for a full block day): that release. Voiding it restores this one, when its days are
+		 * still free.
+		 */
+		supersededByReleaseId: uuid("superseded_by_release_id"),
 		note: text("note"),
 		...auditColumns,
 	},
 	(table) => [
 		...contextForeignKeys("employee_apprentice_release", table),
+		foreignKey({
+			name: "employee_apprentice_release_exam_release_fk",
+			columns: [table.examReleaseId],
+			foreignColumns: [table.id],
+		}),
+		check(
+			"employee_apprentice_release_exam_link_check",
+			sql`"exam_release_id" IS NULL OR "release_kind" <> 'exam_day'`,
+		),
+		foreignKey({
+			name: "employee_apprentice_release_superseded_by_fk",
+			columns: [table.supersededByReleaseId],
+			foreignColumns: [table.id],
+		}),
+		check(
+			"employee_apprentice_release_superseded_check",
+			sql`"superseded_by_release_id" IS NULL OR "voided_at" IS NOT NULL`,
+		),
+		check(
+			"employee_apprentice_release_school_time_check",
+			sql`("school_start_time" IS NULL AND "school_end_time" IS NULL) OR ("release_kind" = 'vocational_school_day' AND "school_start_time" IS NOT NULL AND "school_end_time" IS NOT NULL AND "school_end_time" > "school_start_time" AND "school_minutes" IS NOT NULL)`,
+		),
 		check("employee_apprentice_release_kind_check", textIn("release_kind", apprenticeReleaseKinds)),
 		check("employee_apprentice_release_date_range_check", sql`"ends_on" >= "starts_on"`),
 		check(
@@ -243,6 +286,10 @@ export const employeeApprenticeRelease = pgTable(
 		check(
 			"employee_apprentice_release_amounts_check",
 			sql`("lesson_count" IS NULL OR "lesson_count" BETWEEN 0 AND 20) AND ("school_minutes" IS NULL OR "school_minutes" BETWEEN 0 AND 10080)`,
+		),
+		check(
+			"employee_apprentice_release_exam_time_check",
+			sql`"exam_start_time" IS NULL OR ("release_kind" = 'exam_day' AND "school_minutes" IS NOT NULL)`,
 		),
 		check("employee_apprentice_release_void_check", voidCheckSql),
 	],

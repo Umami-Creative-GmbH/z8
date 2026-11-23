@@ -55,6 +55,25 @@ illness is a § 12 Abs. 4 TzBfG sick-leave event and gets § 3 EFZG continued pa
 weeks); child-sick days around it neither start nor extend it.
 _Avoid_: counting `child_sick` absence as sick leave
 
+**Block-week training allowance**:
+In a full block-release week (at least 25 hours of lessons on at least five days), additional
+in-company training events of up to two hours a week are allowed (§ 9 Abs. 1 Nr. 3 JArbSchG,
+§ 15 Abs. 1 Satz 2 Nr. 3 BBiG). Up to 120 minutes of planned work on the week's block days,
+earliest first and work that overlapping shifts share counted once, are no release conflict;
+for a minor they also stay outside the § 8 JArbSchG day and week totals, which the block week
+already fills with its credited 40 hours. Only the work past them conflicts, on the block day it
+falls on.
+
+**Shift span** (*Schichtzeit*, § 12 JArbSchG):
+A minor's working time plus breaks on a local day, from the start of the first work to the end of
+the last, planned and recorded work alike. At most 10 hours; 11 hours in hospitality,
+agriculture, animal husbandry and on construction and assembly sites, which an org admin
+documents by acknowledging the span as a sector exception. A span over 11 hours cannot be
+acknowledged. `executive_exempt` does not change it. The acknowledgement documents the day's
+planned shifts and stays current while the day is worked roughly as planned (clocked in a few
+minutes early, out a few minutes late); other shifts, or a span 15 minutes or more past the
+planned shifts' span, make it stale.
+
 ## Relationships
 
 - **Contracts → Statutory Compliance**: a monitor applies to an employee through the effective
@@ -62,7 +81,40 @@ _Avoid_: counting `child_sick` absence as sick leave
 - **Statutory Compliance → Scheduling**: monitors contribute wage-free `statutory` findings to the
   schedule compliance evaluation and Staffing suggestions through the contributor registry. Staffing
   shows a finding a proposal changes (severity, tier, acknowledgement, block) or deepens past its
-  visible `limit` (`used` grows above it, same unit)
+  visible `limit` (same unit: `used` grows above a ceiling, or falls below a floor when the summary
+  says `limitDirection: "floor"`, e.g. a youth rest period). The JArbSchG publish block refuses an
+  edit or a publication by the same rule, running only the monitors that can block publication
+  (`statutoryBlockingScheduleContributors`). It counts only breaches on what goes live (the
+  edited shift, the range's drafts, published shifts); a breach on a draft outside the range is
+  judged when that draft is published. A breach is the same before and after only within its
+  scope (`breachScopeOf`, `causedBlockingFindings`): a rest-period, daily, shift-span, weekly or
+  days-per-week breach its judged day (or week), whichever shift a reordered day moves it to;
+  work past a block week's training allowance its compliance week, whichever block day it falls
+  on (its summary holds the week's work on its block days as `used`, the 120 minutes as `limit`:
+  more work in the week is caused, moving work between its block days is not); an apprentice
+  release conflict its release day (for a night shift into a school morning, the next day), not
+  the day its shift starts nor the rule it cites (a minor's shift before early lessons on a full
+  school day cites § 9 Abs. 1 Nr. 1, shortened past the lessons' start § 9 Abs. 1 Nr. 2: still the
+  same day's conflict); any other breach (night, weekend, holiday work, breaks) its own shift
+  on its local day. Within the scope a change is caused only when it goes deeper than every
+  breach the scope had (for a weekend or holiday breach counted in days: more work on that day).
+  A release conflict is as deep as the planned work inside the conflicting release time (the
+  exam, the lessons and the time before lessons starting before 09:00, or the whole day released
+  in full; `coveredMinutes`) on its release day; on a block day only the work past the week's
+  training allowance, the allowed training is not covered. A shift that conflicts with two release days (a
+  night shift through two block days) has a conflict on each, dated that day, covering only its
+  work there and citing that day's rule, so moving work from one release day into the other is a
+  deeper conflict on the second. A release day is judged by the total of all its conflicts, work
+  that overlapping shifts share counted once: more of it, on the edited shift or on one moved in,
+  is caused; the same or less is not. A shift published across the first 15 minutes of an exam
+  may be shortened, not lengthened, and no other shift may be moved into the exam
+  beside it. Sector exceptions are judged the same way, though their scope holds one shift:
+  the work of all its pieces (worked before a lunch break and the rest still planned) counts.
+  A breach whose block an acknowledged sector exception lifted counts as one the scope had: the
+  edit makes the acknowledgement stale and the new state cannot be acknowledged before it is
+  saved, so easing it saves and extending it is refused. A breach carried to a day or week that
+  had none is new there, at any figures: moving a published 10 h Tuesday to Wednesday at 9 h is
+  refused, shortening it to 9 h on Tuesday saves
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
 
