@@ -1,8 +1,8 @@
 /**
  * Everything the § 12 TzBfG on-call monitor reads, loaded once per evaluation and batched across
  * employees: who is on call on which day (confirmed terms through the contract resolver), their
- * shifts (draft and published), their completed work per organization-local day and the on-call
- * baselines. Read-only: `select` only.
+ * shifts (draft and published), their work per organization-local day and per call (a running
+ * clock-in counts up to now) and the on-call baselines. Read-only: `select` only.
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
 import { employeeEmploymentHistory, shift, workPeriod } from "@/db/schema";
@@ -46,13 +46,36 @@ export interface OnCallShift {
 	readonly assignmentChangedAt: Instant | null;
 }
 
+/**
+ * One call as worked (§ 12 Abs. 1 Satz 4 TzBfG): one contiguous deployment, i.e. a work period or
+ * work periods joined only by breaks.
+ */
+export interface OnCallWorkCall {
+	/** Organization-local day the call started. */
+	readonly day: PlainDate;
+	/** Organization-local wall time the call started, `HH:MM`. */
+	readonly startTime: string;
+	/** Worked minutes; a running clock-in counts up to now. */
+	readonly minutes: number;
+	/** True while the call has a running clock-in: it is not over and cannot be judged yet. */
+	readonly inProgress: boolean;
+}
+
+/**
+ * The longest gap between two work periods that is still a break inside one call. A longer gap
+ * starts a new call, unless both periods fall within the same planned shift.
+ */
+export const ON_CALL_MAX_BREAK_MINUTES = 60;
+
 export interface OnCallFacts {
 	readonly thresholds: StatutoryThresholdTable;
 	/** Employees on call on at least one loaded day, with their terms per day (`YYYY-MM-DD`). */
 	readonly termsByEmployee: ReadonlyMap<string, ReadonlyMap<string, ResolvedOnCallTerms>>;
 	readonly shiftsByEmployee: ReadonlyMap<string, readonly OnCallShift[]>;
-	/** Completed work minutes per organization-local start day. */
+	/** Worked minutes per organization-local start day; a running clock-in counts up to now. */
 	readonly workMinutesByEmployee: ReadonlyMap<string, ReadonlyMap<string, number>>;
+	/** Worked calls in start order. */
+	readonly workCallsByEmployee: ReadonlyMap<string, readonly OnCallWorkCall[]>;
 }
 
 export function daysOf(from: PlainDate, untilExclusive: PlainDate): PlainDate[] {
@@ -90,6 +113,8 @@ export async function loadOnCallFacts(
 		readonly untilExclusive: PlainDate;
 		readonly employeeIds: readonly string[] | null;
 		readonly replacesShiftId: string | null;
+		/** A running clock-in counts up to this instant. */
+		readonly now: Instant;
 	},
 ): Promise<OnCallFacts> {
 	const from = input.from.toString();
@@ -104,6 +129,7 @@ export async function loadOnCallFacts(
 		termsByEmployee: new Map(),
 		shiftsByEmployee: new Map(),
 		workMinutesByEmployee: new Map(),
+		workCallsByEmployee: new Map(),
 	};
 	if (input.employeeIds?.length === 0) return empty;
 
@@ -206,31 +232,108 @@ export async function loadOnCallFacts(
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
+			isActive: workPeriod.isActive,
 		})
 		.from(workPeriod)
 		.where(
 			and(
 				eq(workPeriod.organizationId, input.organizationId),
 				inArray(workPeriod.employeeId, onCallIds),
-				completedWorkPeriodCondition(),
-				isNotNull(workPeriod.endTime),
+				// Completed work, and a running clock-in: work in progress must not vanish.
+				or(
+					and(completedWorkPeriodCondition(), isNotNull(workPeriod.endTime)),
+					and(eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)),
+				),
 				gte(workPeriod.startTime, bounds.start),
 				lt(workPeriod.startTime, bounds.endExclusive),
 			),
 		);
-	const workMinutesByEmployee = new Map<string, Map<string, number>>();
+	const piecesByEmployee = new Map<string, WorkPiece[]>();
 	for (const row of workRows) {
-		if (!row.endTime) continue;
 		const start = instantFromDate(row.startTime);
-		const end = instantFromDate(row.endTime);
+		const running = row.isActive || !row.endTime;
+		const end = !row.isActive && row.endTime ? instantFromDate(row.endTime) : input.now;
 		if (compareInstants(end, start) < 0) continue;
-		// A call is judged on its organization-local start day, as Scheduling buckets work.
-		const day = plainDateAt(start, input.timezone).toString();
-		const minutes = row.durationMinutes ?? Math.round(start.until(end).total("minutes"));
-		const byDay = workMinutesByEmployee.get(row.employeeId) ?? new Map<string, number>();
-		byDay.set(day, (byDay.get(day) ?? 0) + minutes);
-		workMinutesByEmployee.set(row.employeeId, byDay);
+		const minutes = running
+			? Math.floor(start.until(end).total("minutes"))
+			: (row.durationMinutes ?? Math.round(start.until(end).total("minutes")));
+		push(piecesByEmployee, row.employeeId, { start, end, minutes, running });
 	}
 
-	return { thresholds, termsByEmployee, shiftsByEmployee, workMinutesByEmployee };
+	const workMinutesByEmployee = new Map<string, Map<string, number>>();
+	const workCallsByEmployee = new Map<string, OnCallWorkCall[]>();
+	for (const [employeeId, pieces] of piecesByEmployee) {
+		const byDay = new Map<string, number>();
+		for (const piece of pieces) {
+			// Work counts on its organization-local start day, as Scheduling buckets work.
+			const day = plainDateAt(piece.start, input.timezone).toString();
+			byDay.set(day, (byDay.get(day) ?? 0) + piece.minutes);
+		}
+		workMinutesByEmployee.set(employeeId, byDay);
+		workCallsByEmployee.set(
+			employeeId,
+			workCalls(pieces, shiftsByEmployee.get(employeeId) ?? [], input.timezone),
+		);
+	}
+
+	return {
+		thresholds,
+		termsByEmployee,
+		shiftsByEmployee,
+		workMinutesByEmployee,
+		workCallsByEmployee,
+	};
+}
+
+interface WorkPiece {
+	readonly start: Instant;
+	readonly end: Instant;
+	readonly minutes: number;
+	readonly running: boolean;
+}
+
+/** Joins an employee's work periods into calls: periods separated only by breaks are one call. */
+function workCalls(
+	pieces: readonly WorkPiece[],
+	shifts: readonly OnCallShift[],
+	timezone: string,
+): OnCallWorkCall[] {
+	const shiftIntervals = shifts.map((s) => shiftInterval(s, timezone));
+	const shiftsOf = (piece: WorkPiece) =>
+		shiftIntervals.filter(
+			(interval) =>
+				compareInstants(piece.start, interval.end) < 0 &&
+				compareInstants(piece.end, interval.start) > 0,
+		);
+	const sorted = pieces.toSorted((a, b) => compareInstants(a.start, b.start));
+	const calls: OnCallWorkCall[] = [];
+	let current: { first: WorkPiece; end: Instant; minutes: number; running: boolean } | null = null;
+	let currentShifts = new Set<(typeof shiftIntervals)[number]>();
+	const close = () => {
+		if (!current) return;
+		const local = current.first.start.toZonedDateTimeISO(timezone);
+		calls.push({
+			day: local.toPlainDate(),
+			startTime: local.toPlainTime().toString({ smallestUnit: "minute" }),
+			minutes: current.minutes,
+			inProgress: current.running,
+		});
+	};
+	for (const piece of sorted) {
+		const pieceShifts = shiftsOf(piece);
+		const gapMinutes = current ? current.end.until(piece.start).total("minutes") : 0;
+		const sameShift = pieceShifts.some((interval) => currentShifts.has(interval));
+		if (current && (gapMinutes <= ON_CALL_MAX_BREAK_MINUTES || sameShift)) {
+			current.minutes += piece.minutes;
+			current.running ||= piece.running;
+			if (compareInstants(piece.end, current.end) > 0) current.end = piece.end;
+			for (const interval of pieceShifts) currentShifts.add(interval);
+			continue;
+		}
+		close();
+		current = { first: piece, end: piece.end, minutes: piece.minutes, running: piece.running };
+		currentShifts = new Set(pieceShifts);
+	}
+	close();
+	return calls;
 }

@@ -599,7 +599,8 @@
       "finding": {
         "shortNotice": "Mit {days, plural, one {# vollen Tag} other {# vollen Tagen}} Vorlauf abgerufen; {required} sind erforderlich",
         "shortCall": "Schicht von {duration} ist kürzer als der Mindesteinsatz von {minimum}",
-        "shortWorkCall": "{duration} am Tag gearbeitet, weniger als der Mindesteinsatz von {minimum}",
+        "shortWorkCall": "Einsatz von {duration} gearbeitet, weniger als der Mindesteinsatz von {minimum}",
+        "nearBand": "Woche mit {used} abgerufen, nahe an der Grenze des Abrufkorridors von {limit}",
         "overBand": "Woche mit {used} abgerufen, über dem Abrufkorridor von {limit}",
         "underBand": "Woche mit {used} abgerufen, unter dem Abrufkorridor von {limit}",
         "other": "Regel der Arbeit auf Abruf gefährdet"

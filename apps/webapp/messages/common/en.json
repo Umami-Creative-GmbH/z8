@@ -599,7 +599,8 @@
       "finding": {
         "shortNotice": "Called in with {days, plural, one {# full day} other {# full days}} notice; {required} are required",
         "shortCall": "Shift of {duration} is shorter than the minimum call of {minimum}",
-        "shortWorkCall": "Worked {duration} on the day, less than the minimum call of {minimum}",
+        "shortWorkCall": "Worked a call of {duration}, less than the minimum call of {minimum}",
+        "nearBand": "Week called for {used}, approaching the call-off band's limit of {limit}",
         "overBand": "Week called for {used}, above the call-off band of {limit}",
         "underBand": "Week called for {used}, below the call-off band of {limit}",
         "other": "On-call rule at risk"

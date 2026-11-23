@@ -6,11 +6,13 @@
  *   the shift day. A shorter notice is only fine with the employee's voluntary agreement, which
  *   an org admin documents as an `on_call_short_notice_agreement` acknowledgement.
  * - **Minimum call** (§ 12 Abs. 1 Satz 4): each call lasts at least the agreed daily minutes, or
- *   the statutory minimum (three hours) when none is agreed — for shifts and for completed work.
+ *   the statutory minimum (three hours) when none is agreed — for shifts and for each finished
+ *   worked call (work periods joined only by breaks).
  * - **Weekly call-off band** (§ 12 Abs. 2): per compliance week (Monday–Sunday) the planned and
- *   worked minutes stay inside the band of the agreed weekly minutes: `minimum` at most +25 %,
- *   `maximum` at least −20 %, `exact` exactly the agreement, `unspecified` exactly the statutory
- *   default (20 h, § 12 Abs. 1 Satz 3).
+ *   worked minutes stay inside the band of the agreed weekly minutes: `minimum` from the agreement
+ *   up to +25 %, `maximum` from −20 % up to the agreement, `exact` exactly the agreement,
+ *   `unspecified` exactly the statutory default (20 h, § 12 Abs. 1 Satz 3). A running clock-in
+ *   counts up to now.
  *
  * Every limit comes from `statutory_threshold` for the day judged. Findings carry minutes and
  * days only, never wages. Read-only; it never blocks anything.
@@ -26,7 +28,7 @@ import {
 	classifyStatutoryUsage,
 	type StatutoryFinding,
 	type StatutorySeverity,
-	severityOfUsageTier,
+	type StatutoryUsageTier,
 	statutoryFindingId,
 } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
@@ -38,6 +40,7 @@ import {
 	type OnCallFacts,
 	type OnCallReader,
 	type OnCallShift,
+	type OnCallWorkCall,
 	shiftMinutes,
 } from "./facts";
 import { fullNoticeDays, notificationDay, shiftNotificationInstant } from "./notice";
@@ -201,28 +204,27 @@ function shortCallFinding(base: Base, shift: OnCallShift, minimum: number): OnCa
 
 function shortWorkCallFinding(
 	base: Base,
-	day: PlainDate,
-	minutes: number,
+	call: OnCallWorkCall,
 	minimum: number,
 ): OnCallFinding | null {
-	if (minutes <= 0 || minutes >= minimum) return null;
-	const subjectKey = `work:${day}`;
+	if (call.minutes <= 0 || call.minutes >= minimum) return null;
+	const subjectKey = `work:${call.day}T${call.startTime}`;
 	return finding(base, {
 		kind: "on_call_short_work_call",
 		severity: "warning",
 		subjectKey,
-		periodStart: day.toString(),
-		periodEnd: day.add({ days: 1 }).toString(),
+		periodStart: call.day.toString(),
+		periodEnd: call.day.add({ days: 1 }).toString(),
 		legalReference: MINIMUM_CALL_REFERENCE,
 		summary: {
-			used: { unit: "minutes", value: minutes },
+			used: { unit: "minutes", value: call.minutes },
 			limit: { unit: "minutes", value: minimum },
 		},
 		inputFingerprint: statutoryInputFingerprint({
 			kind: "on_call_short_work_call",
 			employeeId: base.employeeId,
 			subjectKey,
-			workedMinutes: minutes,
+			workedMinutes: call.minutes,
 			minimumMinutes: minimum,
 		}),
 		acknowledgementKind: null,
@@ -234,10 +236,10 @@ export interface OnCallWeeklyBand {
 	readonly hoursKind: "exact" | "minimum" | "maximum" | "unspecified";
 	/** Agreed (or statutory default) weekly minutes for a full week. */
 	readonly agreedWeeklyMinutes: number;
-	/** Fewest minutes the week may be called; null when the agreement sets no floor. */
-	readonly lowerMinutes: number | null;
-	/** Most minutes the week may be called; null when the agreement sets no ceiling. */
-	readonly upperMinutes: number | null;
+	/** Fewest minutes the week may be called. */
+	readonly lowerMinutes: number;
+	/** Most minutes the week may be called. */
+	readonly upperMinutes: number;
 }
 
 /**
@@ -278,23 +280,25 @@ export function onCallWeeklyBand(
 			};
 		}
 		case "minimum": {
+			// The agreed minimum is owed; at most +25 % more may be called.
 			const plus = facts.thresholds.valueOn("de_on_call_min_band_plus_pct", date);
 			if (terms.weeklyMinutes === null || plus === null) return null;
 			return {
 				hoursKind: "minimum",
 				agreedWeeklyMinutes: terms.weeklyMinutes,
-				lowerMinutes: null,
+				lowerMinutes: scale(terms.weeklyMinutes),
 				upperMinutes: scale((terms.weeklyMinutes * (100 + plus)) / 100),
 			};
 		}
 		case "maximum": {
+			// The agreed maximum is the ceiling; at least −20 % of it must be called.
 			const minus = facts.thresholds.valueOn("de_on_call_max_band_minus_pct", date);
 			if (terms.weeklyMinutes === null || minus === null) return null;
 			return {
 				hoursKind: "maximum",
 				agreedWeeklyMinutes: terms.weeklyMinutes,
 				lowerMinutes: scale((terms.weeklyMinutes * (100 - minus)) / 100),
-				upperMinutes: null,
+				upperMinutes: scale(terms.weeklyMinutes),
 			};
 		}
 	}
@@ -351,39 +355,43 @@ function bandFindings(
 		periodEnd: input.monday.add({ days: 7 }).toString(),
 	};
 
-	if (band.upperMinutes !== null) {
-		// A minimum agreement may be called up to +25 %: warn as the week approaches it.
-		const approaching = band.hoursKind === "minimum";
-		const usage = classifyStatutoryUsage({ used, limit: band.upperMinutes }, input.preferences);
-		const tier = approaching ? usage.tier : used > band.upperMinutes ? "exceeded" : "ok";
-		const severity: StatutorySeverity | null =
-			tier === "exceeded"
-				? band.hoursKind === "minimum"
-					? "critical"
-					: "warning"
-				: severityOfUsageTier(tier);
-		if (severity) {
-			return [
-				finding(base, {
-					kind: "on_call_weekly_over_band",
-					severity,
-					subjectKey,
-					...period,
-					legalReference,
-					summary: {
-						tier,
-						usedPercent: usage.usedPercent,
-						used: { unit: "minutes", value: used },
-						limit: { unit: "minutes", value: band.upperMinutes },
-						remaining: { unit: "minutes", value: Math.max(0, band.upperMinutes - used) },
-					},
-					inputFingerprint: fingerprint("on_call_weekly_over_band"),
-					acknowledgementKind: null,
-				}),
-			];
-		}
+	// The organization's tiers apply to the headroom a minimum agreement leaves above the agreed
+	// minutes: calling exactly the agreement is fine, and reaching the +25 % ceiling only warns.
+	// Every other band has no headroom; only a week above its ceiling is reported.
+	const headroom = band.upperMinutes - band.lowerMinutes;
+	const tier: StatutoryUsageTier =
+		used > band.upperMinutes
+			? "exceeded"
+			: band.hoursKind === "minimum" && headroom > 0 && used > band.lowerMinutes
+				? classifyStatutoryUsage(
+						{ used: used - band.lowerMinutes, limit: headroom },
+						input.preferences,
+					).tier
+				: "ok";
+	if (tier !== "ok") {
+		const severity: StatutorySeverity =
+			tier === "exceeded" ? (band.hoursKind === "minimum" ? "critical" : "warning") : "warning";
+		return [
+			finding(base, {
+				kind: "on_call_weekly_over_band",
+				severity,
+				subjectKey,
+				...period,
+				legalReference,
+				summary: {
+					tier,
+					usedPercent: classifyStatutoryUsage({ used, limit: band.upperMinutes }, input.preferences)
+						.usedPercent,
+					used: { unit: "minutes", value: used },
+					limit: { unit: "minutes", value: band.upperMinutes },
+					remaining: { unit: "minutes", value: Math.max(0, band.upperMinutes - used) },
+				},
+				inputFingerprint: fingerprint("on_call_weekly_over_band"),
+				acknowledgementKind: null,
+			}),
+		];
 	}
-	if (band.lowerMinutes !== null && used < band.lowerMinutes) {
+	if (used < band.lowerMinutes) {
 		return [
 			finding(base, {
 				kind: "on_call_weekly_under_band",
@@ -426,6 +434,7 @@ export async function evaluateOnCallFindings(
 		untilExclusive: weeksEnd,
 		employeeIds: request.employeeIds ?? null,
 		replacesShiftId: request.replacesShiftId ?? null,
+		now: request.now,
 	});
 	const preferences = request.preferences ?? DEFAULT_STATUTORY_PREFERENCES;
 	const today = plainDateAt(request.now, request.timezone);
@@ -465,15 +474,14 @@ export async function evaluateOnCallFindings(
 			if (short) findings.push(short);
 		}
 
-		const work = facts.workMinutesByEmployee.get(employeeId);
-		for (const day of daysOf(windowStart, windowEnd)) {
-			// Only a finished day's work is a complete call.
-			if (comparePlainDates(day, today) >= 0) break;
-			const dayTerms = terms.get(day.toString());
-			const minutes = work?.get(day.toString()) ?? 0;
-			if (!dayTerms || minutes === 0) continue;
-			const minimum = minimumCallMinutes(facts, dayTerms, day);
-			const short = minimum === null ? null : shortWorkCallFinding(base, day, minutes, minimum);
+		for (const call of facts.workCallsByEmployee.get(employeeId) ?? []) {
+			// Only a finished call is judged: none still clocked in, none that may yet resume today.
+			if (call.inProgress || !inWindow(call.day, windowStart, windowEnd)) continue;
+			if (comparePlainDates(call.day, today) >= 0) continue;
+			const dayTerms = terms.get(call.day.toString());
+			if (!dayTerms) continue;
+			const minimum = minimumCallMinutes(facts, dayTerms, call.day);
+			const short = minimum === null ? null : shortWorkCallFinding(base, call, minimum);
 			if (short) findings.push(short);
 		}
 

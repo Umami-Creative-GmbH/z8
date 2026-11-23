@@ -40,13 +40,24 @@ export function onCallFindingText(
 		case "on_call_short_work_call":
 			return t(
 				"common.onCall.finding.shortWorkCall",
-				"Worked {duration} on the day, less than the minimum call of {minimum}",
+				"Worked a call of {duration}, less than the minimum call of {minimum}",
 				{
 					duration: formatOnCallMinutes(value(summary, "used")),
 					minimum: formatOnCallMinutes(value(summary, "limit")),
 				},
 			);
 		case "on_call_weekly_over_band":
+			// Below the ceiling the week is lawful and only approaching the band's limit.
+			if (summary.tier && summary.tier !== "exceeded") {
+				return t(
+					"common.onCall.finding.nearBand",
+					"Week called for {used}, approaching the call-off band's limit of {limit}",
+					{
+						used: formatOnCallMinutes(value(summary, "used")),
+						limit: formatOnCallMinutes(value(summary, "limit")),
+					},
+				);
+			}
 			return t(
 				"common.onCall.finding.overBand",
 				"Week called for {used}, above the call-off band of {limit}",

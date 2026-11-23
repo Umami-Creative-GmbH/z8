@@ -207,6 +207,40 @@ export function onCallFixture(admin: Pool, fx: StatutoryFixture) {
 			);
 		},
 
+		/** A running clock-in (`is_active`, no end yet) from an organization-local wall time. */
+		async openWork(
+			org: OnCallOrganization,
+			who: FixtureEmployee,
+			input: { date: string; startTime: string },
+		): Promise<void> {
+			const start = localInstant(input.date, input.startTime, org.timezone);
+			const offsetMinutes =
+				start.toZonedDateTimeISO(org.timezone).offsetNanoseconds / 60_000_000_000;
+			const clockInId = randomUUID();
+			await admin.query(
+				`INSERT INTO time_entry (
+					id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					timezone, timezone_source, hash, created_by, created_at
+				 ) VALUES ($1, $2, $3, 'clock_in', $4, $5, $6, 'backfill', $7, $8, $4)`,
+				[
+					clockInId,
+					who.employeeId,
+					org.id,
+					asDate(start),
+					offsetMinutes,
+					org.timezone,
+					`t1992-${clockInId}`,
+					who.userId,
+				],
+			);
+			await admin.query(
+				`INSERT INTO work_period (
+					id, employee_id, organization_id, clock_in_id, start_time, is_active, updated_at
+				 ) VALUES ($1, $2, $3, $4, $5, true, $5)`,
+				[randomUUID(), who.employeeId, org.id, clockInId, asDate(start)],
+			);
+		},
+
 		/** An approved absence of a new category of `type`. */
 		async absence(
 			org: OnCallOrganization,

@@ -233,14 +233,73 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			expect(short).toEqual(
 				[
 					[statutory.employeeId, `shift:${twoHours59}`, 179, 180],
-					[statutory.employeeId, "work:2026-03-10", 120, 180],
+					[statutory.employeeId, "work:2026-03-10T09:00", 120, 180],
 					[agreed.employeeId, `shift:${threeHours}`, 180, 240],
-					[agreed.employeeId, "work:2026-03-10", 180, 240],
+					[agreed.employeeId, "work:2026-03-10T22:00", 180, 240],
 				].toSorted((a, b) => String(a).localeCompare(String(b))),
 			);
 			expect(findings.find((f) => f.kind === "on_call_short_call")?.legalReference).toBe(
 				"§ 12 Abs. 1 Satz 4 TzBfG",
 			);
+		});
+
+		it("judges each call separately: two short calls on one day are two violations", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			// Two calls on Tuesday, 6 hours apart: 4 h worked that day, but each call is 2 h.
+			await onCall.work(org, worker, { date: "2026-03-10", startTime: "08:00", endTime: "10:00" });
+			await onCall.work(org, worker, { date: "2026-03-10", startTime: "16:00", endTime: "18:00" });
+			// Wednesday: one call of 3 h interrupted by a 30-minute break.
+			await onCall.work(org, worker, { date: "2026-03-11", startTime: "08:00", endTime: "09:30" });
+			await onCall.work(org, worker, { date: "2026-03-11", startTime: "10:00", endTime: "11:30" });
+			// Thursday: one planned call, worked with a long break inside the shift.
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-12",
+				startTime: "08:00",
+				endTime: "17:00",
+				publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+			});
+			await onCall.work(org, worker, { date: "2026-03-12", startTime: "08:00", endTime: "10:00" });
+			await onCall.work(org, worker, { date: "2026-03-12", startTime: "12:00", endTime: "13:30" });
+
+			const findings = await evaluateOnCallFindings(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-09", endExclusive: "2026-03-16" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from("2026-03-14T12:00:00Z"),
+			});
+
+			expect(
+				findings
+					.filter((f) => f.kind === "on_call_short_work_call")
+					.map((f) => [f.subjectKey, f.periodStart, f.summary.used?.value])
+					.toSorted((a, b) => String(a).localeCompare(String(b))),
+			).toEqual([
+				["work:2026-03-10T08:00", "2026-03-10", 120],
+				["work:2026-03-10T16:00", "2026-03-10", 120],
+			]);
+		});
+
+		it("does not judge a call that is still running", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			// Started yesterday evening, back from a short break and still clocked in.
+			await onCall.work(org, worker, { date: "2026-03-10", startTime: "20:00", endTime: "21:30" });
+			await onCall.openWork(org, worker, { date: "2026-03-10", startTime: "22:00" });
+
+			const findings = await evaluateOnCallFindings(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-09", endExclusive: "2026-03-16" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from("2026-03-11T00:30:00Z"),
+			});
+
+			expect(findings.filter((f) => f.kind === "on_call_short_work_call")).toEqual([]);
 		});
 	});
 
@@ -281,10 +340,28 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 				}));
 		}
 
-		it("minimum: passes up to +25 % and flags above it", async () => {
-			// 10 h agreed → at most 12.5 h (750 min).
+		it("minimum: the band is the agreed minutes up to +25 %", async () => {
+			// 10 h agreed → at least 10 h, at most 12.5 h (750 min).
+			expect(await workerWorking("minimum", 600, [5, 5])).toEqual([]);
+			await fx.cleanup();
+			// 30 of the 150 headroom minutes used: below the 80 % warning tier.
+			expect(await workerWorking("minimum", 600, [5, 5.5])).toEqual([]);
+			await fx.cleanup();
+			// 120 of 150 headroom minutes: approaching the ceiling.
+			expect(await workerWorking("minimum", 600, [4, 4, 4])).toEqual([
+				{
+					kind: "on_call_weekly_over_band",
+					severity: "warning",
+					subjectKey: "2026-W11",
+					tier: "warning",
+					used: 720,
+					limit: 750,
+				},
+			]);
+			await fx.cleanup();
+			// Exactly at the ceiling is lawful: approaching, never critical.
 			expect(await workerWorking("minimum", 600, [4, 4, 4.5])).toEqual([
-				expect.objectContaining({ tier: "critical", used: 750, limit: 750, severity: "critical" }),
+				expect.objectContaining({ tier: "critical", used: 750, limit: 750, severity: "warning" }),
 			]);
 			await fx.cleanup();
 			expect(await workerWorking("minimum", 600, [4, 4, 4.5, 3])).toEqual([
@@ -298,12 +375,24 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 				},
 			]);
 			await fx.cleanup();
-			expect(await workerWorking("minimum", 600, [3, 3, 3])).toEqual([]);
+			// A finished week called for 4 h falls short of the agreed 10 h minimum.
+			expect(await workerWorking("minimum", 600, [4])).toEqual([
+				{
+					kind: "on_call_weekly_under_band",
+					severity: "warning",
+					subjectKey: "2026-W11",
+					tier: undefined,
+					used: 240,
+					limit: 600,
+				},
+			]);
 		});
 
-		it("maximum: passes down to −20 % and flags below it", async () => {
-			// 10 h agreed → at least 8 h (480 min).
+		it("maximum: the band is the agreed minutes down to −20 %", async () => {
+			// 10 h agreed → at least 8 h (480 min), at most 10 h.
 			expect(await workerWorking("maximum", 600, [4, 4])).toEqual([]);
+			await fx.cleanup();
+			expect(await workerWorking("maximum", 600, [5, 5])).toEqual([]);
 			await fx.cleanup();
 			expect(await workerWorking("maximum", 600, [4, 3.5])).toEqual([
 				{
@@ -316,8 +405,17 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 				},
 			]);
 			await fx.cleanup();
-			// Above the maximum is no § 12 Abs. 2 breach.
-			expect(await workerWorking("maximum", 600, [6, 6])).toEqual([]);
+			// 14 h against a 10 h maximum is above the band.
+			expect(await workerWorking("maximum", 600, [7, 7])).toEqual([
+				{
+					kind: "on_call_weekly_over_band",
+					severity: "warning",
+					subjectKey: "2026-W11",
+					tier: "exceeded",
+					used: 840,
+					limit: 600,
+				},
+			]);
 		});
 
 		it("exact: flags any variance from the agreed minutes", async () => {
@@ -377,6 +475,29 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 				publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
 			});
 			expect(await evaluate()).toEqual([]);
+		});
+
+		it("counts a running clock-in up to now", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "maximum", weeklyMinutes: 600 });
+			await onCall.work(org, worker, { date: "2026-03-09", startTime: "08:00", endTime: "12:00" });
+			// Clocked in since Thursday 08:00 and never clocked out: 32 hours by Friday 16:00.
+			await onCall.openWork(org, worker, { date: "2026-03-12", startTime: "08:00" });
+
+			const band = (
+				await evaluateOnCallFindings(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: WEEK,
+					employeeIds: [worker.employeeId],
+					now: Temporal.Instant.from("2026-03-13T15:00:00Z"),
+				})
+			).filter((f) => f.kind.startsWith("on_call_weekly"));
+
+			expect(band.map((f) => [f.kind, f.summary.used?.value])).toEqual([
+				["on_call_weekly_over_band", 240 + 32 * 60],
+			]);
 		});
 	});
 });

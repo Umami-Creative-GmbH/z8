@@ -34,10 +34,18 @@ export function onCallWarningText(
 		case "on_call_short_work_call":
 			return t(
 				"scheduling:scheduling.statutory.onCall.shortWorkCall",
-				"On-call: worked {duration}, below the minimum call of {minimum}",
+				"On-call: worked a call of {duration}, below the minimum call of {minimum}",
 				{ duration: hours(used), minimum: hours(limit) },
 			);
 		case "on_call_weekly_over_band":
+			// Below the ceiling the week is lawful and only approaching the band's limit.
+			if (finding.summary.tier && finding.summary.tier !== "exceeded") {
+				return t(
+					"scheduling:scheduling.statutory.onCall.nearBand",
+					"On-call: week at {used}, approaching the call-off band's limit of {limit}",
+					{ used: hours(used), limit: hours(limit) },
+				);
+			}
 			return t(
 				"scheduling:scheduling.statutory.onCall.overBand",
 				"On-call: week at {used}, above the call-off band of {limit}",
