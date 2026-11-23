@@ -28,7 +28,8 @@ wage-free summary and admin-only detail.
 What a finding judges, written as its subject key: `2026-03`, `2026-W10`, `2026`, `shift:<id>`.
 
 **Input fingerprint**:
-A deterministic hash of everything a finding was evaluated from.
+A deterministic hash of everything a finding's decision depends on — not of how far a plan has
+been worked, so a shift worked as planned leaves it unchanged.
 
 **Statutory acknowledgement**:
 An org admin's immutable, reasoned record that a finding was reviewed, tied to its input
