@@ -19,6 +19,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import {
 	loadConfirmedTermsSpans,
 	loadCurrentContractTypes,
@@ -29,7 +30,7 @@ import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calcu
 import { sumWorkMinutesWithinTracking } from "@/lib/work-balance/tracked-work";
 import { completedWorkPeriodCondition } from "./completed-work";
 import { formatDateRangeLabel } from "./date-ranges";
-import { calculateHourlyEarningsFromTerms } from "./hourly-earnings";
+import { calculateHourlyEarningsFromTerms, employeeWorkOnly } from "./hourly-earnings";
 import { type ReportDateRange, resolveReportDateRange } from "./report-date-range";
 import type {
 	AbsenceSummary,
@@ -592,20 +593,26 @@ async function calculateHourlyEarnings(
 		},
 	});
 
+	const employeeTime = await loadEmployeeTime(db, organizationId, [employeeId]);
+
 	return calculateHourlyEarningsFromTerms({
 		spans,
-		workPeriods: workPeriods.flatMap((period) =>
-			period.endTime && period.durationMinutes !== null
-				? [
-						{
-							start: instantFromDate(period.startTime),
-							end: instantFromDate(period.endTime),
-							durationMinutes: period.durationMinutes,
-							clockInOffsetMinutes: period.clockInOffsetMinutes,
-							clockOutOffsetMinutes: period.clockOutOffsetMinutes ?? period.clockInOffsetMinutes,
-						},
-					]
-				: [],
+		// Only work done as an employee earns a wage (#1997).
+		workPeriods: employeeWorkOnly(
+			workPeriods.flatMap((period) =>
+				period.endTime && period.durationMinutes !== null
+					? [
+							{
+								start: instantFromDate(period.startTime),
+								end: instantFromDate(period.endTime),
+								durationMinutes: period.durationMinutes,
+								clockInOffsetMinutes: period.clockInOffsetMinutes,
+								clockOutOffsetMinutes: period.clockOutOffsetMinutes ?? period.clockInOffsetMinutes,
+							},
+						]
+					: [],
+			),
+			employeeTime.stintsOf(employeeId),
 		),
 		range: reportRange,
 	});

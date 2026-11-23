@@ -504,4 +504,73 @@ describe("employee report on PostgreSQL", () => {
 
 		await expect(report()).rejects.toMatchObject({ code: "missing_rate" });
 	});
+
+	describe("External Contractor stints (#1997)", () => {
+		/** Stints split at `at`: `before` until then, the other kind from then on. */
+		async function converted(before: "employee" | "contractor", at: string) {
+			const after = before === "employee" ? "contractor" : "employee";
+			await admin.query(
+				`insert into employee_employment_period
+				   (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+				 values ($1, $2, 'closed', '2026-01-01T00:00:00Z', $3, 'recorded', $4),
+				        ($1, $2, 'open', $3, null, 'recorded', $5)`,
+				[ids.organization, ids.employee, at, before, after],
+			);
+			await admin.query("update employee set engagement_kind = $2 where id = $1", [
+				ids.employee,
+				after,
+			]);
+		}
+
+		async function marchWork() {
+			// 4 hours on the 10th, 3 hours on the 20th, 2 hours around noon UTC on the 15th.
+			await workPeriod({
+				start: "2026-03-10T08:00:00Z",
+				end: "2026-03-10T12:00:00Z",
+				minutes: 240,
+			});
+			await workPeriod({
+				start: "2026-03-15T11:00:00Z",
+				end: "2026-03-15T13:00:00Z",
+				minutes: 120,
+			});
+			await workPeriod({
+				start: "2026-03-20T08:00:00Z",
+				end: "2026-03-20T11:00:00Z",
+				minutes: 180,
+			});
+		}
+
+		it("pays an employee's hourly work in full (control)", async () => {
+			await terms({ from: "2026-01-01" });
+			await marchWork();
+
+			expect((await report()).hourlyEarnings).toMatchObject({
+				totalHours: 9,
+				totalEarnings: 180,
+			});
+		});
+
+		it("never pays work done after becoming an External Contractor under terms still in force", async () => {
+			await terms({ from: "2026-01-01" });
+			await marchWork();
+			await converted("employee", "2026-03-15T12:00:00Z");
+
+			const result = await report();
+
+			// 4 hours on the 10th and the hour before noon on the 15th.
+			expect(result.hourlyEarnings).toMatchObject({ totalHours: 5, totalEarnings: 100 });
+			// The time report itself still shows all of the person's work.
+			expect(result.workHours.totalMinutes).toBe(540);
+		});
+
+		it("pays a person hired after contracting only from the hiring instant", async () => {
+			await terms({ from: "2026-01-01" });
+			await marchWork();
+			await converted("contractor", "2026-03-15T12:00:00Z");
+
+			// The hour after noon on the 15th and 3 hours on the 20th.
+			expect((await report()).hourlyEarnings).toMatchObject({ totalHours: 4, totalEarnings: 80 });
+		});
+	});
 });

@@ -10,6 +10,7 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import type { TermsSpan } from "@/lib/employment-history/terms-in-force";
+import { type EngagementStints, employeeTimeWithin } from "@/lib/engagement/employee-time";
 import {
 	type WageTermsRow,
 	type WageWorkPeriod,
@@ -46,6 +47,31 @@ function roundHours(minutes: number): number {
 
 function roundCurrency(value: number): number {
 	return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+/**
+ * The parts of the work done as an employee (#1997): an External Contractor stint earns no wage,
+ * even under employment terms still in force. Work across a conversion instant keeps the share of
+ * its recorded minutes its employee part's elapsed time has, like a split at a window edge.
+ */
+export function employeeWorkOnly<T extends WageWorkPeriod>(
+	workPeriods: readonly T[],
+	stints: EngagementStints,
+): T[] {
+	return workPeriods.flatMap((work) => {
+		const elapsed = elapsedMilliseconds(work.start, work.end);
+		return employeeTimeWithin(stints, { start: work.start, endExclusive: work.end }).map(
+			(part) => ({
+				...work,
+				start: part.start,
+				end: part.endExclusive,
+				durationMinutes:
+					elapsed > 0
+						? (work.durationMinutes * elapsedMilliseconds(part.start, part.endExclusive)) / elapsed
+						: work.durationMinutes,
+			}),
+		);
+	});
 }
 
 /**
