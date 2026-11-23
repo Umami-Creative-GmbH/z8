@@ -228,6 +228,10 @@
         "onCall": "On-call work (§ 12 TzBfG)",
         "youthProtection": "Youth protection (JArbSchG)",
         "apprenticeship": "Apprentice release (BBiG)"
+      },
+      "workingStudent": {
+        "lectureWeek": "Working student >20 h in lecture week: {hours} h of weekday daytime work (limit {limit} h)",
+        "ceiling": "Working student: {used} of {limit} weeks above 20 h in 12 months"
       }
     }
   }

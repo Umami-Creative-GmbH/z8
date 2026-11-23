@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { OwnCustomFieldsCard } from "@/components/settings/custom-fields/own-custom-fields-card";
 import { OwnSkillsCard } from "@/components/settings/own-skills-card";
+import { OwnWorkingStudentCard } from "@/components/settings/own-working-student-card";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { TimeFormatSettings } from "@/components/settings/time-format-settings";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
@@ -11,6 +12,7 @@ import { userSettings } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { loadOwnSkills } from "@/lib/scheduling/own-skills";
+import { loadOwnWorkingStudentStatus } from "@/lib/statutory/working-student/views";
 import { getTranslate } from "@/tolgee/server";
 import { getOwnCustomFieldValues } from "../custom-fields/value-actions";
 import {
@@ -34,7 +36,7 @@ export default async function ProfilePage() {
 			getOwnCustomFieldValues(),
 		]);
 	const ownEmployee = authContext.employee;
-	const [settings, ownSkills] = await Promise.all([
+	const [settings, ownSkills, ownWorkingStudent] = await Promise.all([
 		db.query.userSettings.findFirst({
 			where: eq(userSettings.userId, authContext.user.id),
 			columns: { helpImproveProduct: true },
@@ -42,6 +44,14 @@ export default async function ProfilePage() {
 		// Skill expiry reminders link the employee here (#1143).
 		ownEmployee
 			? loadOwnSkills(db, {
+					organizationId: ownEmployee.organizationId,
+					employeeId: ownEmployee.id,
+					now: systemClock.nowInstant(),
+				})
+			: null,
+		// #1991: only the signed-in employee's own, non-sensitive status.
+		ownEmployee
+			? loadOwnWorkingStudentStatus(db, {
 					organizationId: ownEmployee.organizationId,
 					employeeId: ownEmployee.id,
 					now: systemClock.nowInstant(),
@@ -69,6 +79,8 @@ export default async function ProfilePage() {
 				{ownCustomFields.success ? <OwnCustomFieldsCard section={ownCustomFields.data} /> : null}
 
 				{ownSkills && ownSkills.skills.length > 0 ? <OwnSkillsCard ownSkills={ownSkills} /> : null}
+
+				{ownWorkingStudent ? <OwnWorkingStudentCard status={ownWorkingStudent} /> : null}
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 				<WeekStartSettings
