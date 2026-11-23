@@ -61,6 +61,8 @@ export interface WorkingStudentWeekView {
 	readonly coreMinutes: number;
 	readonly lectureFreeMinutes: number;
 	readonly eveningWeekendMinutes: number;
+	/** Minutes on days under another employment profile; part of `totalMinutes`. */
+	readonly otherProfileMinutes: number;
 	readonly overLimit: boolean;
 	readonly lectureBreach: boolean;
 	readonly rollingOver20hWeeks: number;
@@ -119,6 +121,7 @@ function weekView(week: WorkingStudentWeek): WorkingStudentWeekView {
 		coreMinutes: week.coreMinutes,
 		lectureFreeMinutes: week.lectureFreeMinutes,
 		eveningWeekendMinutes: week.eveningWeekendMinutes,
+		otherProfileMinutes: week.otherProfileMinutes,
 		overLimit: week.overLimit,
 		lectureBreach: week.lectureBreach,
 		rollingOver20hWeeks: week.rollingOver20hWeeks,

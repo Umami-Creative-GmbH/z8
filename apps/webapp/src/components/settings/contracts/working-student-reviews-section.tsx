@@ -27,6 +27,10 @@ import type {
 } from "@/lib/statutory/working-student/views";
 import { Link } from "@/navigation";
 import { AcknowledgementBadge, workingStudentFindingText } from "./working-student-monitor-card";
+import {
+	invalidateWorkingStudentFindings,
+	workingStudentQueryKeys,
+} from "./working-student-queries";
 
 const ACKNOWLEDGE_REFUSALS = {
 	statutory_reason_required: [
@@ -47,9 +51,13 @@ const ACKNOWLEDGE_REFUSALS = {
 	],
 } satisfies RefusalMessages<StatutoryAcknowledgementRefusal | WorkingStudentAcknowledgementRefusal>;
 
-const QUERY_KEY = ["contracts", "working-student-reviews"] as const;
-
-function AcknowledgeForm({ item }: { item: WorkingStudentReviewItem }) {
+function AcknowledgeForm({
+	organizationId,
+	item,
+}: {
+	organizationId: string;
+	item: WorkingStudentReviewItem;
+}) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
@@ -67,10 +75,7 @@ function AcknowledgeForm({ item }: { item: WorkingStudentReviewItem }) {
 			toast.success(
 				t("settings.contracts.workingStudent.reviews.acknowledged", "Week acknowledged"),
 			);
-			void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-			void queryClient.invalidateQueries({
-				queryKey: ["working-student-monitor", item.finding.employeeId],
-			});
+			void invalidateWorkingStudentFindings(queryClient, organizationId, item.finding.employeeId);
 		},
 		onError: (error) => toast.error(error.message),
 	});
@@ -164,12 +169,18 @@ function AcknowledgeForm({ item }: { item: WorkingStudentReviewItem }) {
  * Working-student findings in Settings → Contracts → Reviews & Conflicts (#1991). Org admins
  * acknowledge a week with a reason; the acknowledgement goes stale when the week's work changes.
  */
-export function WorkingStudentReviewsSection({ includeResolved }: { includeResolved: boolean }) {
+export function WorkingStudentReviewsSection({
+	organizationId,
+	includeResolved,
+}: {
+	organizationId: string;
+	includeResolved: boolean;
+}) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	const query = useQuery({
-		queryKey: QUERY_KEY,
+		queryKey: workingStudentQueryKeys.reviews(organizationId),
 		queryFn: async () => {
 			const result = await listWorkingStudentReviewsAction();
 			if (!result.success) throw new Error(actionErrorMessage(t, result));
@@ -231,7 +242,7 @@ export function WorkingStudentReviewsSection({ includeResolved }: { includeResol
 										{item.finding.acknowledgement.reason}
 									</p>
 								) : (
-									<AcknowledgeForm item={item} />
+									<AcknowledgeForm organizationId={organizationId} item={item} />
 								)}
 							</li>
 						))}

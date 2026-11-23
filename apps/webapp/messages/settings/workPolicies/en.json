@@ -599,10 +599,11 @@
           "core": "Lecture daytime",
           "lectureFree": "Lecture-free",
           "eveningWeekend": "Evening/weekend",
+          "otherProfile": "Other profile",
           "status": "Status"
         },
         "title": "Working student (§ 6 SGB V)",
-        "description": "In lecture periods, weekday daytime work (06:00–18:00) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months. Warnings never block clocking.",
+        "description": "In lecture periods, weekday daytime work (06:00–18:00) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
         "loadFailed": "Could not load the working-student monitor.",
         "reviews": {
           "acknowledged": "Week acknowledged",

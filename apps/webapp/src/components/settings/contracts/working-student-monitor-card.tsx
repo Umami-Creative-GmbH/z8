@@ -46,6 +46,10 @@ import type {
 	WorkingStudentMonitorView,
 	WorkingStudentWeekView,
 } from "@/lib/statutory/working-student/views";
+import {
+	invalidateWorkingStudentFindings,
+	workingStudentQueryKeys,
+} from "./working-student-queries";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -158,6 +162,7 @@ function weekStatus(week: WorkingStudentWeekView, t: Translate) {
 }
 
 function useMonitorMutation<Input>(
+	organizationId: string,
 	employeeId: string,
 	run: (
 		input: Input,
@@ -173,7 +178,7 @@ function useMonitorMutation<Input>(
 		},
 		onSuccess: () => {
 			toast.success(successMessage);
-			void queryClient.invalidateQueries({ queryKey: ["working-student-monitor", employeeId] });
+			void invalidateWorkingStudentFindings(queryClient, organizationId, employeeId);
 		},
 		onError: (error) => toast.error(error.message),
 	});
@@ -261,9 +266,16 @@ function VoidControl({
 	);
 }
 
-function LectureFreeForm({ employeeId }: { employeeId: string }) {
+function LectureFreeForm({
+	organizationId,
+	employeeId,
+}: {
+	organizationId: string;
+	employeeId: string;
+}) {
 	const { t } = useTranslate();
 	const mutation = useMonitorMutation(
+		organizationId,
 		employeeId,
 		recordWorkingStudentLectureFreePeriodAction,
 		t("settings.contracts.workingStudent.lectureFree.saved", "Lecture-free period recorded"),
@@ -367,9 +379,16 @@ function LectureFreeForm({ employeeId }: { employeeId: string }) {
 	);
 }
 
-function PriorWeeksForm({ employeeId }: { employeeId: string }) {
+function PriorWeeksForm({
+	organizationId,
+	employeeId,
+}: {
+	organizationId: string;
+	employeeId: string;
+}) {
 	const { t } = useTranslate();
 	const mutation = useMonitorMutation(
+		organizationId,
 		employeeId,
 		recordWorkingStudentPriorWeeksAction,
 		t("settings.contracts.workingStudent.prior.saved", "Prior-employer weeks recorded"),
@@ -539,11 +558,13 @@ function PriorWeeksForm({ employeeId }: { employeeId: string }) {
 
 function MonitorContent({
 	view,
+	organizationId,
 	employeeId,
 	canManage,
 	locale,
 }: {
 	view: WorkingStudentMonitorView;
+	organizationId: string;
 	employeeId: string;
 	canManage: boolean;
 	locale: string;
@@ -551,11 +572,13 @@ function MonitorContent({
 	const { t } = useTranslate();
 	const formatDate = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
 	const voidPeriod = useMonitorMutation(
+		organizationId,
 		employeeId,
 		voidWorkingStudentLectureFreePeriodAction,
 		t("settings.contracts.workingStudent.voided", "Entry voided"),
 	);
 	const voidPrior = useMonitorMutation(
+		organizationId,
 		employeeId,
 		voidWorkingStudentPriorWeeksAction,
 		t("settings.contracts.workingStudent.voided", "Entry voided"),
@@ -563,6 +586,8 @@ function MonitorContent({
 	const openFindings = view.findings.filter(
 		(finding) => finding.acknowledgement?.status !== "current",
 	);
+	// Weeks with a profile change carry minutes worked under another profile.
+	const showOtherProfile = view.weeks.some((week) => week.otherProfileMinutes > 0);
 
 	return (
 		<div className="space-y-6">
@@ -635,6 +660,11 @@ function MonitorContent({
 								<TableHead className="text-right">
 									{t("settings.contracts.workingStudent.column.eveningWeekend", "Evening/weekend")}
 								</TableHead>
+								{showOtherProfile && (
+									<TableHead className="text-right">
+										{t("settings.contracts.workingStudent.column.otherProfile", "Other profile")}
+									</TableHead>
+								)}
 								<TableHead>
 									{t("settings.contracts.workingStudent.column.status", "Status")}
 								</TableHead>
@@ -659,6 +689,11 @@ function MonitorContent({
 									<TableCell className="text-right tabular-nums">
 										{hours(week.eveningWeekendMinutes, locale)} h
 									</TableCell>
+									{showOtherProfile && (
+										<TableCell className="text-right tabular-nums">
+											{hours(week.otherProfileMinutes, locale)} h
+										</TableCell>
+									)}
 									<TableCell>{weekStatus(week, t)}</TableCell>
 								</TableRow>
 							))}
@@ -707,7 +742,7 @@ function MonitorContent({
 						))}
 					</ul>
 				)}
-				{canManage && <LectureFreeForm employeeId={employeeId} />}
+				{canManage && <LectureFreeForm organizationId={organizationId} employeeId={employeeId} />}
 			</section>
 
 			{canManage && view.priorWeeks && (
@@ -752,7 +787,7 @@ function MonitorContent({
 							))}
 						</ul>
 					)}
-					<PriorWeeksForm employeeId={employeeId} />
+					<PriorWeeksForm organizationId={organizationId} employeeId={employeeId} />
 				</section>
 			)}
 		</div>
@@ -766,9 +801,11 @@ function MonitorContent({
  * weeks; scoped managers read the wage-free view.
  */
 export function WorkingStudentMonitorCard({
+	organizationId,
 	employeeId,
 	canManage,
 }: {
+	organizationId: string;
 	employeeId: string;
 	canManage: boolean;
 }) {
@@ -776,7 +813,7 @@ export function WorkingStudentMonitorCard({
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	const query = useQuery({
-		queryKey: ["working-student-monitor", employeeId],
+		queryKey: workingStudentQueryKeys.monitor(organizationId, employeeId),
 		queryFn: async () => {
 			const result = await getWorkingStudentMonitorAction({ employeeId });
 			if (!result.success) throw new Error(actionErrorMessage(t, result));
@@ -797,7 +834,7 @@ export function WorkingStudentMonitorCard({
 				<CardDescription>
 					{t(
 						"settings.contracts.workingStudent.description",
-						"In lecture periods, weekday daytime work (06:00–18:00) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months. Warnings never block clocking.",
+						"In lecture periods, weekday daytime work (06:00–18:00) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
 					)}
 				</CardDescription>
 			</CardHeader>
@@ -815,6 +852,7 @@ export function WorkingStudentMonitorCard({
 				) : (
 					<MonitorContent
 						view={query.data}
+						organizationId={organizationId}
 						employeeId={employeeId}
 						canManage={canManage}
 						locale={locale}

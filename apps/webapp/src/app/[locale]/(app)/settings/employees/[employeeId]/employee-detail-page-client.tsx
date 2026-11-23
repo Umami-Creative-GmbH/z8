@@ -445,7 +445,11 @@ export function EmployeeDetailPageClient({
 									onAssigned={() => void employeeData.refetch()}
 								/>
 							)}
-							<WorkingStudentMonitorCard employeeId={employeeId} canManage={isOrgAdmin} />
+							<WorkingStudentMonitorCard
+								organizationId={employee.organizationId}
+								employeeId={employeeId}
+								canManage={isOrgAdmin}
+							/>
 						</TabsContent>
 
 						{/* Tab 3: Time & Balance */}

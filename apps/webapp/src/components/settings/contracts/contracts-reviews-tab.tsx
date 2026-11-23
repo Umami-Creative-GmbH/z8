@@ -512,7 +512,10 @@ export function ContractsReviewsTab({
 					)}
 				</CardContent>
 			</Card>
-			<WorkingStudentReviewsSection includeResolved={includeResolved} />
+			<WorkingStudentReviewsSection
+				organizationId={organizationId}
+				includeResolved={includeResolved}
+			/>
 		</div>
 	);
 }

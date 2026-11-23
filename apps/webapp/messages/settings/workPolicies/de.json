@@ -599,10 +599,11 @@
           "core": "Vorlesungszeit tagsüber",
           "lectureFree": "Vorlesungsfrei",
           "eveningWeekend": "Abend/Wochenende",
+          "otherProfile": "Anderes Profil",
           "status": "Status"
         },
         "title": "Werkstudierende (§ 6 SGB V)",
-        "description": "In der Vorlesungszeit darf die Arbeit werktags tagsüber (06:00–18:00) 20 Stunden pro Woche nicht übersteigen; Arbeit abends, nachts, am Wochenende und in vorlesungsfreien Zeiten ist zulässig. Jede Woche über 20 Stunden zählt auf 26 Wochen in 12 Monaten. Warnungen blockieren nie das Stempeln.",
+        "description": "In der Vorlesungszeit darf die Arbeit werktags tagsüber (06:00–18:00) 20 Stunden pro Woche nicht übersteigen; Arbeit abends, nachts, am Wochenende und in vorlesungsfreien Zeiten ist zulässig. Jede Woche über 20 Stunden zählt auf 26 Wochen in 12 Monaten, auch Wochen unter einem anderen Beschäftigungsprofil. Warnungen blockieren nie das Stempeln.",
         "loadFailed": "Die Überwachung für Werkstudierende konnte nicht geladen werden.",
         "reviews": {
           "acknowledged": "Woche bestätigt",
