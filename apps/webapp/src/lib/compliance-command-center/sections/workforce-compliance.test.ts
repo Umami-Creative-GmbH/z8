@@ -53,6 +53,15 @@ const { deriveWorkforceComplianceSection, getWorkforceComplianceSection } = awai
 	"./workforce-compliance"
 );
 
+const REVIEW_EXCEPTIONS = {
+	label: { key: "compliance.commandCenter.links.reviewComplianceExceptions" },
+	href: "/approvals/inbox?types=compliance_exception",
+};
+const REVIEW_VIOLATIONS = {
+	label: { key: "compliance.commandCenter.links.reviewPolicyViolations" },
+	href: "/settings/work-policies?tab=work&view=compliance",
+};
+
 describe("deriveWorkforceComplianceSection", () => {
 	it("marks the section critical when rest-period or max-hours violations exist", () => {
 		const result = deriveWorkforceComplianceSection({
@@ -61,6 +70,7 @@ describe("deriveWorkforceComplianceSection", () => {
 			overtimeViolations: 2,
 			pendingExceptions: 0,
 			latestViolationAt: DateTime.utc().minus({ hours: 2 }).toISO(),
+			latestPendingExceptionAt: null,
 		});
 
 		expect(result.card.status).toBe("critical");
@@ -77,6 +87,7 @@ describe("deriveWorkforceComplianceSection", () => {
 			overtimeViolations: 3,
 			pendingExceptions: 1,
 			latestViolationAt: DateTime.utc().minus({ days: 1 }).toISO(),
+			latestPendingExceptionAt: null,
 		});
 
 		expect(result.card.status).toBe("warning");
@@ -88,15 +99,67 @@ describe("deriveWorkforceComplianceSection", () => {
 			generalPolicyViolations: 0,
 			overtimeViolations: 0,
 			pendingExceptions: 2,
-			latestViolationAt: DateTime.utc().minus({ hours: 2 }).toISO(),
+			latestViolationAt: "2026-04-11T10:00:00.000Z",
+			latestPendingExceptionAt: "2026-04-11T08:00:00.000Z",
 		});
 
-		const review = {
-			label: { key: "compliance.commandCenter.links.reviewComplianceExceptions" },
-			href: "/approvals/inbox?types=compliance_exception",
-		};
-		expect(result.card.primaryLink).toEqual(review);
-		expect(result.recentCriticalEvents.map((event) => event.primaryLink)).toEqual([review]);
+		expect(result.card.primaryLink).toEqual(REVIEW_EXCEPTIONS);
+		expect(result.recentCriticalEvents.map((event) => event.primaryLink)).toEqual([
+			REVIEW_VIOLATIONS,
+			REVIEW_EXCEPTIONS,
+		]);
+	});
+
+	it("sends the violations event to the work-policy violations, not the exceptions (#1977)", () => {
+		const result = deriveWorkforceComplianceSection({
+			restPeriodViolations: 1,
+			generalPolicyViolations: 2,
+			overtimeViolations: 3,
+			pendingExceptions: 0,
+			latestViolationAt: "2026-04-11T10:00:00.000Z",
+			latestPendingExceptionAt: null,
+		});
+
+		expect(result.recentCriticalEvents).toEqual([
+			{
+				id: "workforce-violations",
+				sectionKey: "workforceCompliance",
+				severity: "critical",
+				title: { key: "compliance.commandCenter.events.workforceFindings.title" },
+				description: {
+					key: "compliance.commandCenter.events.workforceFindings.description",
+					params: { restPeriodViolations: 1, generalPolicyViolations: 2, overtimeViolations: 3 },
+				},
+				occurredAt: "2026-04-11T10:00:00.000Z",
+				primaryLink: REVIEW_VIOLATIONS,
+			},
+		]);
+	});
+
+	it("raises pending exceptions as their own event, linked to the Approval inbox (#1977)", () => {
+		const result = deriveWorkforceComplianceSection({
+			restPeriodViolations: 0,
+			generalPolicyViolations: 0,
+			overtimeViolations: 0,
+			pendingExceptions: 2,
+			latestViolationAt: null,
+			latestPendingExceptionAt: "2026-04-11T08:00:00.000Z",
+		});
+
+		expect(result.recentCriticalEvents).toEqual([
+			{
+				id: "workforce-pending-exceptions",
+				sectionKey: "workforceCompliance",
+				severity: "warning",
+				title: { key: "compliance.commandCenter.events.pendingExceptions.title" },
+				description: {
+					key: "compliance.commandCenter.events.pendingExceptions.description",
+					params: { count: 2 },
+				},
+				occurredAt: "2026-04-11T08:00:00.000Z",
+				primaryLink: REVIEW_EXCEPTIONS,
+			},
+		]);
 	});
 });
 
@@ -140,12 +203,30 @@ describe("getWorkforceComplianceSection", () => {
 			expect.objectContaining({
 				and: expect.arrayContaining([
 					{ eq: ["complianceException.organizationId", "org-1"] },
-					{ eq: ["complianceException.status", "pending"] },
+					{
+						and: [
+							{ eq: ["complianceException.status", "pending"] },
+							{ gt: ["complianceException.validUntil", expect.any(Date)] },
+						],
+					},
 					expect.objectContaining({
 						gte: ["complianceException.createdAt", expect.any(Date)],
 					}),
 				]),
 			}),
 		);
+	});
+
+	it("dates the pending-exceptions event by the latest pending request (#1977)", async () => {
+		mockState.violationGroupBy.mockResolvedValue([]);
+		mockState.exceptionWhere.mockResolvedValue([
+			{ count: 1, latestPendingExceptionAt: new Date("2026-04-11T08:00:00.000Z") },
+		]);
+
+		const result = await getWorkforceComplianceSection("org-1");
+
+		expect(result.recentCriticalEvents.map((event) => event.occurredAt)).toEqual([
+			"2026-04-11T08:00:00.000Z",
+		]);
 	});
 });

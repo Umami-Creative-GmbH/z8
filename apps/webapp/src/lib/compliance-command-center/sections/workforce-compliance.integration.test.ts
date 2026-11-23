@@ -44,7 +44,8 @@ describe("workforce compliance section on PostgreSQL", () => {
 				],
 			);
 		};
-		await exception({ createdAt: now.subtract({ hours: 2 }), validUntil: now.add({ hours: 22 }) });
+		const openCreatedAt = now.subtract({ hours: 2 });
+		await exception({ createdAt: openCreatedAt, validUntil: now.add({ hours: 22 }) });
 		await exception({
 			createdAt: now.subtract({ hours: 48 }),
 			validUntil: now.subtract({ hours: 24 }),
@@ -56,5 +57,16 @@ describe("workforce compliance section on PostgreSQL", () => {
 			key: "compliance.commandCenter.facts.workforce.pendingExceptions",
 			params: { count: 1 },
 		});
+		// Its own event, dated by the open request and linked to the Approval inbox.
+		expect(section.recentCriticalEvents).toEqual([
+			expect.objectContaining({
+				id: "workforce-pending-exceptions",
+				occurredAt: dateFromInstant(openCreatedAt).toISOString(),
+				primaryLink: {
+					label: { key: "compliance.commandCenter.links.reviewComplianceExceptions" },
+					href: "/approvals/inbox?types=compliance_exception",
+				},
+			}),
+		]);
 	});
 });

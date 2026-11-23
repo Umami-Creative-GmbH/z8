@@ -27,6 +27,7 @@ import {
 } from "@/lib/bot-platform/current-roster-team";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
+import { awaitingComplianceExceptionDecision } from "@/lib/compliance/pending-compliance-exception";
 import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
 	dateFromInstant,
@@ -448,7 +449,8 @@ export async function buildDigestDataForManager(
 				.where(
 					and(
 						eq(complianceException.organizationId, organizationId),
-						eq(complianceException.status, "pending"),
+						// Not a lapsed one: the Approval inbox lists it as expired (#1977).
+						awaitingComplianceExceptionDecision(nowInstant),
 						inArray(complianceException.employeeId, managedEmployeeIds),
 					),
 				),

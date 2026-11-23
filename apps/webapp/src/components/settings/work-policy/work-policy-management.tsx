@@ -35,9 +35,16 @@ export function WorkPolicyManagement({
 }: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	// Go-live fix links open the assignments tab with `?view=assignments`.
-	const initialTab = useSearchParams().get("view") === "assignments" ? "assignments" : "policies";
 	const canManagePolicies = meetsSettingsAccess(settingsAccess, "orgAdmin");
+	// Go-live fix links open the assignments tab with `?view=assignments`, and the compliance
+	// command center's violations event opens the compliance tab with `?view=compliance` (#1977).
+	const view = useSearchParams().get("view");
+	const initialTab =
+		view === "assignments"
+			? "assignments"
+			: view === "compliance" && canManagePolicies
+				? "compliance"
+				: "policies";
 	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> =
 		canManagePolicies ? (["organization", "team", "employee"] as const) : (["employee"] as const);
 

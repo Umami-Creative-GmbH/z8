@@ -6,9 +6,10 @@
  */
 /** oxlint-disable typescript/no-explicit-any -- it is what it is */
 
-import { and, desc, eq, gt, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { complianceException, employeeManagers, workPolicyViolation } from "@/db/schema";
+import { awaitingComplianceExceptionDecision } from "@/lib/compliance/pending-compliance-exception";
 import {
 	dateFromInstant,
 	instantFromDate,
@@ -291,9 +292,8 @@ export const TeamsComplianceServiceLive = Layer.effect(
 							where: and(
 								eq(complianceException.organizationId, organizationId),
 								inArray(complianceException.employeeId, managedEmployeeIds),
-								eq(complianceException.status, "pending"),
 								// A lapsed exception is expired, as in the Approval inbox the card links to (#1977).
-								gt(complianceException.validUntil, dateFromInstant(systemClock.nowInstant())),
+								awaitingComplianceExceptionDecision(systemClock.nowInstant()),
 							),
 							orderBy: [desc(complianceException.createdAt)],
 							limit: 20,
@@ -371,8 +371,7 @@ export const TeamsComplianceServiceLive = Layer.effect(
 								and(
 									eq(complianceException.organizationId, organizationId),
 									inArray(complianceException.employeeId, managedEmployeeIds),
-									eq(complianceException.status, "pending"),
-									gt(complianceException.validUntil, dateFromInstant(systemClock.nowInstant())),
+									awaitingComplianceExceptionDecision(systemClock.nowInstant()),
 								),
 							);
 						return Number(countResult?.count) || 0;

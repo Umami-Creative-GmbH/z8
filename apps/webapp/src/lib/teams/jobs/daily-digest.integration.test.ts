@@ -3,6 +3,7 @@
  * organization's calendar day. It used to compare `DATE(shift.date)`, the UTC
  * date, with today and tomorrow.
  */
+import { randomUUID } from "node:crypto";
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -84,4 +85,45 @@ describe("daily digest shifts", () => {
 			});
 		},
 	);
+
+	it("counts only pending compliance exceptions whose validity window is still open (#1977)", async () => {
+		const org = await fixture.organization("UTC");
+		const manager = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const report = await fixture.seedEmployee({ organizationId: org.organizationId });
+		await fixture.pool.query(
+			`insert into employee_managers (employee_id, manager_id, is_primary, assigned_by)
+			 values ($1, $2, true, $3)`,
+			[report.employeeId, manager.employeeId, org.creator.userId],
+		);
+		const now = Temporal.Instant.from(NOON.UTC);
+		const exception = async (validFrom: Temporal.Instant) => {
+			await fixture.pool.query(
+				`insert into compliance_exception
+				 (id, organization_id, employee_id, exception_type, status, reason, valid_from, valid_until,
+				  created_at, created_by, updated_at)
+				 values ($1, $2, $3, 'overtime_daily', 'pending', 'Inventory', $4, $5, $4, $6, $4)`,
+				[
+					randomUUID(),
+					org.organizationId,
+					report.employeeId,
+					validFrom.toString(),
+					validFrom.add({ hours: 24 }).toString(),
+					org.creator.userId,
+				],
+			);
+		};
+		await exception(now.subtract({ hours: 2 }));
+		// Lapsed an hour ago: the Approval inbox lists it as expired, not pending.
+		await exception(now.subtract({ hours: 25 }));
+
+		const digest = await buildDigestDataForManager(
+			manager.employeeId,
+			org.organizationId,
+			"UTC",
+			"en",
+			now,
+		);
+
+		expect(digest.compliancePending).toBe(1);
+	});
 });
