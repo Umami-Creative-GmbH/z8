@@ -369,6 +369,8 @@ export async function getManagerDailyBriefingFromSources({
 			uncountedApprovalTypes.length > 0
 				? { openApprovalsAtLeast: true as const }
 				: {}),
+			// The whole section failed: no count is known, so it is unavailable rather than "0+".
+			...(approvals.error ? { openApprovalsUnavailable: true as const } : {}),
 		},
 		needsAction: sectionItems.needsAction,
 		sections,

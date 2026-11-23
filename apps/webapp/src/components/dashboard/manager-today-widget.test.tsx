@@ -405,6 +405,31 @@ describe("ManagerTodayWidget", () => {
 		expect(screen.queryByText("No manager action is flagged right now.")).toBeNull();
 	});
 
+	it("shows open approvals as unavailable, not '0+', when the approvals could not be read at all (#1980)", async () => {
+		readMock.mockResolvedValue({
+			role: "manager",
+			summary: {
+				criticalIssues: 0,
+				openApprovals: 0,
+				openApprovalsAtLeast: true,
+				openApprovalsUnavailable: true,
+				attendanceExceptions: 0,
+				absencesToday: 0,
+				coverageRisks: 0,
+				overtimeWarnings: 0,
+				payrollIssues: 0,
+			},
+		});
+
+		renderManagerTodayWidget();
+
+		const metrics = await screen.findByTestId("manager-today-metrics");
+		const approvals = within(metrics).getByText("Approvals").closest("a");
+		expect(approvals?.textContent).toContain("—");
+		expect(approvals?.textContent).not.toContain("0+");
+		expect(screen.queryByText("No manager action is flagged right now.")).toBeNull();
+	});
+
 	it("does not render for employees", async () => {
 		context.role = "employee";
 		readMock.mockResolvedValue({ role: "employee", summary: null });

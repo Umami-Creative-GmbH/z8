@@ -94,6 +94,8 @@ export interface ManagerDailyBriefing {
 		 * `openApprovals` is a lower bound, never a count to call all clear on.
 		 */
 		openApprovalsAtLeast?: true;
+		/** The approvals could not be read at all: no count is known, not even a lower bound. */
+		openApprovalsUnavailable?: true;
 	};
 	needsAction: BriefingActionItem[];
 	sections: {

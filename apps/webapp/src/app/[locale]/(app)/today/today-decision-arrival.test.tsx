@@ -501,7 +501,13 @@ describe("independent decision settlement priority", () => {
 			rejectWithReason();
 			await waitFor(() => expect(postCalls).toHaveLength(2));
 			await screen.findByText("Synthetic current refusal");
-			expect(reject().disabled).toBe(false);
+			// The refused rejection keeps its panel open: the manager retries through its Confirm,
+			// which is reachable and enabled (the row behind the modal panel is inert).
+			const panel = screen.getByRole("dialog", { name: "Reject request" });
+			expect(
+				(within(panel).getByRole("button", { name: "Confirm Rejection" }) as HTMLButtonElement)
+					.disabled,
+			).toBe(false);
 		},
 	);
 });

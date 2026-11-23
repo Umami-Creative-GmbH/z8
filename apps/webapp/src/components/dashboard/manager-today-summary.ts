@@ -8,6 +8,8 @@ export type ManagerTodayBriefingSummary = {
 	 * reads every failure as a lower bound: the two can differ for a list-only failure.
 	 */
 	openApprovalsAtLeast?: true;
+	/** The approvals could not be read at all: shown as unavailable, not "0+". */
+	openApprovalsUnavailable?: true;
 	attendanceExceptions: number;
 	absencesToday: number;
 	coverageRisks: number;
@@ -20,6 +22,8 @@ export type ManagerTodayMetricCounts = {
 	approvals: number;
 	/** `approvals` is a lower bound, shown as "N+" as `/today` shows it. */
 	approvalsAtLeast?: true;
+	/** No approvals count is known at all; shown as unavailable, as `/today` shows it. */
+	approvalsUnavailable?: true;
 	clockIns: number;
 	risks: number;
 	allClear: boolean;
@@ -38,6 +42,7 @@ export function mapManagerTodaySummary(
 	return {
 		...counts,
 		...(summary.openApprovalsAtLeast ? { approvalsAtLeast: true as const } : {}),
+		...(summary.openApprovalsUnavailable ? { approvalsUnavailable: true as const } : {}),
 		// Approvals that failed to load may still wait: never all clear on a lower bound.
 		allClear: !summary.openApprovalsAtLeast && Object.values(counts).every((count) => count === 0),
 	};

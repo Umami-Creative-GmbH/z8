@@ -73,14 +73,17 @@ export function ManagerTodayWidget({
 		{
 			label: t("dashboard.manager-today.metric-approvals", "Approvals"),
 			value: metrics.approvals,
-			// An approval type failed to load or count: at least this many wait (#1980).
-			...(metrics.approvalsAtLeast
-				? {
-						display: t("dashboard.manager-today.metric-at-least", "{count}+", {
-							count: metrics.approvals,
-						}),
-					}
-				: {}),
+			// No count known at all: unavailable. An approval type failed to load or count: at least
+			// this many wait (#1980).
+			...(metrics.approvalsUnavailable
+				? { display: t("dashboard.manager-today.metric-unavailable", "—") }
+				: metrics.approvalsAtLeast
+					? {
+							display: t("dashboard.manager-today.metric-at-least", "{count}+", {
+								count: metrics.approvals,
+							}),
+						}
+					: {}),
 		},
 		{
 			label: t("dashboard.manager-today.metric-clock-ins", "Clock-ins"),

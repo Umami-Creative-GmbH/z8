@@ -423,6 +423,8 @@ export function TodayApprovalsPanel({
 			>
 				<ActionPanelContent
 					size="compact"
+					// Like Cancel, the close button can't drop a rejection that is on its way.
+					showCloseButton={!rejectionPending}
 					// Back to the row's Reject button; once a saved decision has replaced it, to the list,
 					// so keyboard and screen-reader users keep their place.
 					finalFocus={() => {

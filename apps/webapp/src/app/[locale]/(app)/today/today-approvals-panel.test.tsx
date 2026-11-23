@@ -499,11 +499,12 @@ describe("TodayApprovalsPanel", () => {
 			// A refresh started elsewhere drops the item while its rejection is on its way.
 			rerender(<TodayApprovalsPanel items={[]} total={0} />);
 
-			// Neither the refresh nor Cancel may drop a rejection that is on its way.
+			// Neither the refresh, Cancel nor the close button may drop a rejection that is on its way.
 			const stillOpen = screen.getByRole("dialog", { name: "Reject request" });
 			expect(
 				(within(stillOpen).getByRole("button", { name: "Cancel" }) as HTMLButtonElement).disabled,
 			).toBe(true);
+			expect(within(stillOpen).queryByRole("button", { name: "Close" })).toBeNull();
 
 			await act(async () => complete({ ok: true, json: async () => body }));
 

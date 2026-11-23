@@ -458,9 +458,21 @@ describe("getManagerDailyBriefingFromSources", () => {
 					),
 			),
 		).toMatchObject({ openApprovals: 2, openApprovalsAtLeast: true });
+		// The whole section failed: no count is known at all, so it is unavailable, not "0+".
 		expect(
 			await summaryFor(vi.fn().mockRejectedValue(new Error("approval query failed"))),
-		).toMatchObject({ openApprovals: 0, openApprovalsAtLeast: true });
+		).toMatchObject({ openApprovals: 0, openApprovalsAtLeast: true, openApprovalsUnavailable: true });
+		expect(
+			(
+				await summaryFor(
+					vi
+						.fn()
+						.mockResolvedValue(
+							Object.assign([], { totalCount: 2, uncountedTypes: ["absence_entry"] }),
+						),
+				)
+			).openApprovalsUnavailable,
+		).toBeUndefined();
 		expect(
 			(await summaryFor(vi.fn().mockResolvedValue(Object.assign([], { totalCount: 2 }))))
 				.openApprovalsAtLeast,
