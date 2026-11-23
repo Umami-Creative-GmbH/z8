@@ -13,7 +13,8 @@
  * - A block-release week of at least 25 hours on at least five days credits the full working
  *   week (§ 15 Abs. 2 Nr. 3); a shorter block spreads its school time over its days. A block
  *   record may span several weeks: it is credited per compliance week (Monday to Sunday), on its
- *   school days (Monday to Friday) only, and its school minutes are the school time per week.
+ *   school days (Monday to Friday) only, and its school minutes are the school time per week; a
+ *   partial first or last week credits the share of that time its school days make of five.
  * - An exam frees and credits its participation time including breaks (§ 15 Abs. 2 Nr. 4 BBiG,
  *   § 10 Abs. 1 Nr. 1 JArbSchG); an exam recorded without its time releases the whole day. The
  *   working day immediately before the written final exam is released in full (§ 15 Abs. 2
@@ -30,6 +31,8 @@ export const LESSON_MINUTES = 45;
 /** § 15 Abs. 2 Nr. 3 BBiG: at least 25 hours on at least five days. */
 export const FULL_BLOCK_WEEK_MIN_MINUTES = 25 * 60;
 export const FULL_BLOCK_WEEK_MIN_DAYS = 5;
+/** A block record is credited on its school days, Monday to Friday. */
+export const SCHOOL_DAYS_PER_WEEK = 5;
 
 export interface ApprenticeReleaseRecord {
 	readonly id: string;
@@ -54,6 +57,42 @@ export interface ApprenticeReleaseDay {
 	readonly minutes: number | null;
 	/** An exam credited with its time: when it starts, local wall time. */
 	readonly examStartTime?: string;
+	/**
+	 * The employee's average working day and week under their effective terms on this day, which
+	 * a full release day or block week is credited with as working time (§ 15 Abs. 2 BBiG, §§ 9
+	 * Abs. 2, 10 Abs. 2 JArbSchG). Absent or null when the terms give no working time.
+	 */
+	readonly averageWorkingTime?: AverageWorkingTime | null;
+}
+
+/** Average working time from the weekly schedule of effective terms. */
+export interface AverageWorkingTime {
+	readonly dailyMinutes: number;
+	readonly weeklyMinutes: number;
+}
+
+/**
+ * The average working day and week of a weekly schedule: its working days' minutes, else the
+ * weekly contract minutes over five days; null when neither gives any working time.
+ */
+export function averageWorkingTimeOf(terms: {
+	readonly weeklyScheduleDays: readonly {
+		readonly isWorkDay: boolean;
+		readonly minutesPerDay: number;
+	}[];
+	readonly weeklyContractMinutes: number | null;
+}): AverageWorkingTime | null {
+	const workDays = terms.weeklyScheduleDays.filter(
+		(day) => day.isWorkDay && day.minutesPerDay > 0,
+	);
+	const scheduled = workDays.reduce((total, day) => total + day.minutesPerDay, 0);
+	if (scheduled > 0) {
+		return { dailyMinutes: Math.round(scheduled / workDays.length), weeklyMinutes: scheduled };
+	}
+	const weekly = terms.weeklyContractMinutes ?? 0;
+	return weekly > 0
+		? { dailyMinutes: Math.round(weekly / SCHOOL_DAYS_PER_WEEK), weeklyMinutes: weekly }
+		: null;
 }
 
 function eachDay(startsOn: string, endsOn: string): PlainDate[] {
@@ -129,12 +168,20 @@ export function apprenticeReleaseDays(
 					if (week) week.push(day);
 					else schoolWeeks.set(mondayOf(day), [day]);
 				}
+				// The school minutes are per week. A record within one week holds that week's school
+				// time; a partial first or last week of a longer block holds its share of the weekly
+				// time, by its school days out of five.
+				const multiWeek = schoolWeeks.size > 1;
 				for (const weekDays of schoolWeeks.values()) {
 					const full =
 						weekDays.length >= FULL_BLOCK_WEEK_MIN_DAYS &&
 						(release.schoolMinutes === null ||
 							release.schoolMinutes >= FULL_BLOCK_WEEK_MIN_MINUTES);
-					const perDay = full ? null : Math.round((release.schoolMinutes ?? 0) / weekDays.length);
+					const weekMinutes = multiWeek
+						? ((release.schoolMinutes ?? 0) * Math.min(weekDays.length, SCHOOL_DAYS_PER_WEEK)) /
+							SCHOOL_DAYS_PER_WEEK
+						: (release.schoolMinutes ?? 0);
+					const perDay = full ? null : Math.round(weekMinutes / weekDays.length);
 					for (const day of weekDays) {
 						days.push({
 							...base,

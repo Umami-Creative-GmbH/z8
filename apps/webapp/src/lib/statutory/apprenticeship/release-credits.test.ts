@@ -97,6 +97,41 @@ describe("apprenticeReleaseDays", () => {
 		);
 	});
 
+	it("credits a partial last week of a multi-week block with its share of the weekly school time", () => {
+		// Mon 2 – Wed 18 Mar 2026, 25 h a week: two full weeks, then Monday to Wednesday.
+		const days = apprenticeReleaseDays([
+			release({
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2026-03-02",
+				endsOn: "2026-03-18",
+				schoolMinutes: 1500,
+			}),
+		]);
+		const lastWeek = days.filter((day) => day.date >= "2026-03-16");
+		// 3 of 5 school days: 3/5 × 1500 = 900 school minutes, 300 a day.
+		expect(lastWeek.map((day) => [day.date, day.credit, day.minutes])).toEqual([
+			["2026-03-16", "school_minutes", 300],
+			["2026-03-17", "school_minutes", 300],
+			["2026-03-18", "school_minutes", 300],
+		]);
+		expect(days.filter((day) => day.date < "2026-03-16").every((day) => day.credit === "full_day")).toBe(
+			true,
+		);
+	});
+
+	it("credits a partial first week of a multi-week block with its share too", () => {
+		// Thu 5 – Fri 13 Mar 2026, 20 h a week: Thursday and Friday, then a whole week.
+		const days = apprenticeReleaseDays([
+			release({
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2026-03-05",
+				endsOn: "2026-03-13",
+				schoolMinutes: 1200,
+			}),
+		]);
+		expect(days.map((day) => day.minutes)).toEqual([240, 240, 240, 240, 240, 240, 240]);
+	});
+
 	it("does not credit a Wednesday-to-Sunday block as a full week", () => {
 		const days = apprenticeReleaseDays([
 			release({

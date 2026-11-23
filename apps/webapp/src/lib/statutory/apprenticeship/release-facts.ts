@@ -11,6 +11,7 @@ import {
 	type ApprenticeReleaseDay,
 	type ApprenticeReleaseRecord,
 	apprenticeReleaseDays,
+	averageWorkingTimeOf,
 } from "./release-credits";
 
 type Reader = Pick<DatabaseClient, "select">;
@@ -87,7 +88,8 @@ export async function loadApprenticeReleaseDays(
 	}
 	if (inRange.size === 0) return inRange;
 
-	// A release credits only while the employee's effective terms make them an apprentice.
+	// A release credits only while the employee's effective terms make them an apprentice, and a
+	// full release with the average working time those terms give on its day.
 	const contracts = await loadEffectiveContractsBatch(db, {
 		organizationId: input.organizationId,
 		employeeIds: [...inRange.keys()],
@@ -96,9 +98,12 @@ export async function loadApprenticeReleaseDays(
 	const result = new Map<string, ApprenticeReleaseDay[]>();
 	for (const [employeeId, days] of inRange) {
 		const byDate = contracts.get(employeeId);
-		const apprenticeDays = days.filter(
-			(day) => byDate?.get(day.date)?.employmentProfile === "apprentice",
-		);
+		const apprenticeDays: ApprenticeReleaseDay[] = [];
+		for (const day of days) {
+			const terms = byDate?.get(day.date);
+			if (terms?.employmentProfile !== "apprentice") continue;
+			apprenticeDays.push({ ...day, averageWorkingTime: averageWorkingTimeOf(terms) });
+		}
 		if (apprenticeDays.length > 0) result.set(employeeId, apprenticeDays);
 	}
 	return result;

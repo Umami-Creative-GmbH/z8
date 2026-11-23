@@ -3,26 +3,27 @@
  * school and exams count toward the daily and weekly limits and make their days working days
  * (§ 9 Abs. 2, § 10 Abs. 2, § 15 JArbSchG):
  *
- * - the week's full school day (more than five lessons) counts 8 h;
- * - a full block-release week counts 40 h in each school week, spread over its weekdays;
- * - an exam counts its participation time including breaks, 8 h when recorded without its time;
- * - the working day before the written final exam counts 8 h;
+ * - the week's full school day (more than five lessons) counts the average working day;
+ * - a full block-release week counts the average working week, spread over its five weekdays;
+ * - an exam counts its participation time including breaks, the average working day when it is
+ *   recorded without its time;
+ * - the working day before the written final exam counts the average working day;
  * - other school days count their school time including breaks.
  *
- * Work Balance credits releases separately (`release-credits.ts`); this only feeds the youth rules.
+ * The averages come from the employee's effective terms on each day (`averageWorkingTimeOf`);
+ * 8 h a day and 40 h a week only when the terms give no working time. Work Balance credits the
+ * same release days (`release-credits.ts`): a full release day frees the day's required time,
+ * school time lowers it by the same minutes counted here.
  */
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
-import {
-	type ApprenticeReleaseDay,
-	FULL_BLOCK_WEEK_MIN_DAYS,
-} from "../apprenticeship/release-credits";
+import { type ApprenticeReleaseDay, SCHOOL_DAYS_PER_WEEK } from "../apprenticeship/release-credits";
 import { loadApprenticeReleaseDays } from "../apprenticeship/release-facts";
 import type { YouthCreditedTime } from "./jarbschg-rules";
 
-/** § 9 Abs. 2 Nr. 1, § 10 Abs. 2 JArbSchG. */
-const CREDITED_DAY_MINUTES = 8 * 60;
-/** § 9 Abs. 2 Nr. 2 JArbSchG. */
-const CREDITED_BLOCK_WEEK_MINUTES = 40 * 60;
+/** The average working day when the terms give none: the § 8 Abs. 1 JArbSchG day. */
+const FALLBACK_DAY_MINUTES = 8 * 60;
+/** The average working week when the terms give none: the § 8 Abs. 1 JArbSchG week. */
+const FALLBACK_WEEK_MINUTES = 40 * 60;
 
 /**
  * The working time credited on each release day; each day on its own, so any part of a release
@@ -36,8 +37,10 @@ export function youthSchoolCreditsOf(days: readonly ApprenticeReleaseDay[]): You
 			day.credit === "school_minutes"
 				? (day.minutes ?? 0)
 				: day.releaseKind === "vocational_school_block_week"
-					? Math.round(CREDITED_BLOCK_WEEK_MINUTES / FULL_BLOCK_WEEK_MIN_DAYS)
-					: CREDITED_DAY_MINUTES,
+					? Math.round(
+							(day.averageWorkingTime?.weeklyMinutes ?? FALLBACK_WEEK_MINUTES) / SCHOOL_DAYS_PER_WEEK,
+						)
+					: (day.averageWorkingTime?.dailyMinutes ?? FALLBACK_DAY_MINUTES),
 	}));
 }
 
