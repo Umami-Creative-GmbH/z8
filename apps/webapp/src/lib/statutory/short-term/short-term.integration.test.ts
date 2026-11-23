@@ -1206,6 +1206,115 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			});
 		});
 
+		describe("work after midnight for a night shift on 31 December", () => {
+			const JANUARY_NOW = Temporal.Instant.from("2027-01-20T12:00:00Z");
+
+			/** Eight 4-hour December days at 20 EUR: 640 EUR against the 603 EUR cap of 2026. */
+			async function decemberEarner() {
+				const org = await fx.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				await st.terms(worker, { from: "2026-12-01", hourlyRate: 20 });
+				for (const day of [1, 2, 3, 4, 7, 8, 9, 10]) {
+					await st.work(org, worker, `2026-12-${String(day).padStart(2, "0")}`);
+				}
+				return { org, worker };
+			}
+
+			function decemberPrompt(evaluations: Awaited<ReturnType<typeof evaluate>>) {
+				const finding = evaluations
+					.flatMap((e) => e.findings)
+					.find(
+						(f) => f.kind === "short_term_berufsmaessigkeit_check" && f.subjectKey === "2026-12",
+					);
+				return {
+					amounts: finding?.adminDetail?.amountsCents,
+					fingerprint: finding?.inputFingerprint,
+				};
+			}
+
+			it("gives December the same figures whether or not the next year is evaluated", async () => {
+				const { org, worker } = await decemberEarner();
+				await st.shift(org, worker, "2026-12-31", "22:00", "04:00");
+				await st.work(org, worker, "2026-12-31", "22:00", "23:30");
+				// Back from a break after midnight.
+				await st.work(org, worker, "2027-01-01", "00:30", "04:00");
+
+				const alone = decemberPrompt(
+					await evaluate(org, [worker.employeeId], { years: [2026], now: JANUARY_NOW }),
+				);
+				const withNext = decemberPrompt(
+					await evaluate(org, [worker.employeeId], { years: [2026, 2027], now: JANUARY_NOW }),
+				);
+
+				// 640 EUR + 1.5 + 3.5 hours of the night shift at 20 EUR.
+				expect(alone.amounts).toMatchObject({ earned: 74_000, total: 74_000 });
+				expect(alone.fingerprint).toEqual(expect.any(String));
+				expect(withNext).toEqual(alone);
+			});
+
+			it("counts 31 December for a late clock-in after midnight", async () => {
+				const { org, worker } = await decemberEarner();
+				await st.shift(org, worker, "2026-12-31", "23:00", "05:00");
+				await st.work(org, worker, "2027-01-01", "00:05", "05:00");
+
+				const [evaluation] = await evaluate(org, [worker.employeeId], {
+					years: [2026],
+					now: JANUARY_NOW,
+				});
+
+				expect(evaluation?.allowance).toMatchObject({ used: 9, lastDay: "2026-12-31" });
+			});
+
+			it("prices a still open clock-in after midnight the same in both runs", async () => {
+				const { org, worker } = await decemberEarner();
+				// 02:00 in Berlin on 1 January: back from a break since 00:30, the shift runs until 04:00.
+				const now = Temporal.Instant.from("2027-01-01T01:00:00Z");
+				await st.shift(org, worker, "2026-12-31", "22:00", "04:00");
+				await st.work(org, worker, "2026-12-31", "22:00", "23:30");
+				await st.openWork(org, worker, "2027-01-01", "00:30");
+
+				const alone = decemberPrompt(
+					await evaluate(org, [worker.employeeId], { years: [2026], now }),
+				);
+				const withNext = decemberPrompt(
+					await evaluate(org, [worker.employeeId], { years: [2026, 2027], now }),
+				);
+
+				// 640 EUR + 1.5 hours + 1.5 hours so far, and 2 hours for the rest.
+				expect(alone.amounts).toMatchObject({ earned: 70_000, planned: 4_000, total: 74_000 });
+				expect(withNext).toEqual(alone);
+			});
+
+			it("acknowledges the prompt shown in Reviews & Conflicts", async () => {
+				const { org, worker } = await decemberEarner();
+				const owner = await fx.user("owner");
+				await st.shift(org, worker, "2026-12-31", "22:00", "04:00");
+				await st.work(org, worker, "2026-12-31", "22:00", "23:30");
+				await st.work(org, worker, "2027-01-01", "00:30", "04:00");
+
+				const reviews = await listShortTermBerufsmaessigkeitReviews(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					now: JANUARY_NOW,
+				});
+				const shown = reviews.find((review) => review.month === "2026-12");
+				expect(shown).toBeDefined();
+
+				await expect(
+					acknowledgeShortTermBerufsmaessigkeit(db, {
+						organizationId: org.id,
+						actorUserId: owner.userId,
+						employeeId: worker.employeeId,
+						timezone: org.timezone,
+						month: "2026-12",
+						reason: "Student, no other employment this year",
+						expectedFingerprint: shown?.finding.inputFingerprint ?? "",
+						now: JANUARY_NOW,
+					}),
+				).resolves.toMatchObject({ inputFingerprint: shown?.finding.inputFingerprint });
+			});
+		});
+
 		it("keeps a second shift of a day with completed work while its clock-in is open", async () => {
 			const { org, worker } = await earner("a", 7);
 			// 15:00 in Berlin: the morning shift is worked, the afternoon one runs since 14:00.

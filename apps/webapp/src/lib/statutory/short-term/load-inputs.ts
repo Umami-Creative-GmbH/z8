@@ -574,7 +574,9 @@ export async function loadShortTermInputs(
 	// Work belonging to a shift counts on the shift's date, so work from the day before an
 	// employee's range is read too: a shift on its first day may have work from the evening before
 	// (a clock-in at 23:50, or one running across midnight for shifts on both days; a work period
-	// lasts at most 24 hours). Work dated outside the range is dropped below.
+	// lasts at most 24 hours). Likewise work from the day after it: a shift on its last day lasts
+	// at most 24 hours, and work after midnight (back from a break, or a late clock-in) still
+	// belongs to it. Work dated outside the range is dropped below.
 	const workRange = perEmployeeRange(rangeByEmployee, (employeeIds, range) =>
 		and(
 			inArray(workPeriod.employeeId, employeeIds),
@@ -586,7 +588,10 @@ export async function loadShortTermInputs(
 					}),
 				),
 			),
-			lt(workPeriod.startTime, dateFromInstant(localDayRange(range.until, input.timezone).start)),
+			lt(
+				workPeriod.startTime,
+				dateFromInstant(localDayRange(addDays(range.until, 1), input.timezone).start),
+			),
 		),
 	);
 	const workRows = await db
@@ -611,15 +616,15 @@ export async function loadShortTermInputs(
 			),
 		);
 
-	// Shifts a day further out than the work: work from the evening before the range can belong
-	// to a shift of the day before (one clock-in over shifts on both days is split at the later
-	// shift's start), and work on the range's last evening to a shift of the day after it.
+	// Shifts a day further out than the work on both sides: work from the evening before the range
+	// can belong to a shift of the day before (one clock-in over shifts on both days is split at the
+	// later shift's start), and work on the day after the range to a shift of the day after that.
 	const shiftConditions = [
 		eq(shift.organizationId, input.organizationId),
 		perEmployeeRange(rangeByEmployee, (employeeIds, range) => {
 			const bounds = shiftDateRangeBounds(
 				addDays(range.from, -2),
-				addDays(range.until, 1),
+				addDays(range.until, 2),
 				input.timezone,
 			);
 			return and(
