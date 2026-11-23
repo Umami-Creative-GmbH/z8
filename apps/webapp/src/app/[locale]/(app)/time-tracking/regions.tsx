@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
+import { ContractorStatementExport } from "@/components/contractor-statements/contractor-statement-export";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockDayTotal } from "@/components/time-tracking/clock-day-total";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
@@ -27,6 +28,7 @@ import { getPresenceStatus } from "./actions";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
 import {
+	readContractorStatementRegion,
 	readDrivingRegion,
 	readHistoryRegion,
 	readPeriodsRegion,
@@ -217,6 +219,34 @@ export async function PeriodsRegion({
 	);
 }
 
+/**
+ * An External Contractor's own Time & Fee Statement (#2000): shown only to people with a
+ * contractor engagement, and nothing when that cannot be read; never a reason to fail the page.
+ */
+export async function ContractorStatementRegion({
+	context,
+}: {
+	context: EmployeeRenderContext;
+}): Promise<ReactNode> {
+	let data: Awaited<ReturnType<typeof readContractorStatementRegion>>;
+	try {
+		data = await readContractorStatementRegion(context);
+	} catch (error) {
+		unstable_rethrow(error);
+		return null;
+	}
+	if (!data) return null;
+	return (
+		<div>
+			<ContractorStatementExport
+				employeeId={context.employee.id}
+				audience="self"
+				today={data.today}
+			/>
+		</div>
+	);
+}
+
 export async function HistoryRegion({
 	context,
 	searchParams,
@@ -365,6 +395,9 @@ export async function TimeTrackingPageContent({
 					</Suspense>
 					<Suspense fallback={<PeriodsLoading />}>
 						<PeriodsRegion context={context} />
+					</Suspense>
+					<Suspense fallback={null}>
+						<ContractorStatementRegion context={context} />
 					</Suspense>
 				</div>
 				<aside className="min-w-0 space-y-6">

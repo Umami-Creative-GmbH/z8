@@ -596,6 +596,89 @@
     },
     "yes": "Ja"
   },
+  "contractorStatement": {
+    "awaitingApprovalNotice": "Für manche Arbeit steht die Genehmigung einer Änderung noch aus; sie ist so enthalten, wie sie derzeit erfasst ist.",
+    "basis": {
+      "daily": "Tagessatz",
+      "hourly": "Stundensatz"
+    },
+    "byProject": "Nach Projekt",
+    "columns": {
+      "amount": "Betrag",
+      "awaitingApproval": "Genehmigung ausstehend",
+      "basis": "Vergütung",
+      "currency": "Währung",
+      "date": "Datum",
+      "dayUnitRule": "Tagesregel",
+      "end": "Ende",
+      "project": "Projekt",
+      "rate": "Satz",
+      "rowType": "Zeilenart",
+      "start": "Beginn",
+      "task": "Aufgabe",
+      "unit": "Einheit",
+      "units": "Einheiten",
+      "workedMinutes": "Gearbeitete Minuten"
+    },
+    "company": "Firma",
+    "contractor": "Dienstleister",
+    "contractorNumber": "Dienstleisternummer",
+    "empty": "Keine abgeschlossene Arbeit als externer Dienstleister in diesem Zeitraum.",
+    "errors": {
+      "failed": "Der Nachweis konnte nicht erstellt werden",
+      "invalidPeriod": "Wählen Sie einen Zeitraum von höchstens einem Jahr, dessen erster Tag nicht nach dem letzten liegt.",
+      "notAllowed": "Sie können nur Ihre eigenen Nachweise herunterladen.",
+      "notContractor": "Diese Person war in diesem Zeitraum nicht als externer Dienstleister tätig.",
+      "notFound": "Diese Person wurde in Ihrer Organisation nicht gefunden."
+    },
+    "export": {
+      "adminDescription": "Laden Sie herunter, was dieser externe Dienstleister gearbeitet hat und was seine Sätze dafür ergeben, um seine Rechnung zu prüfen. Ein Prüfnachweis, keine Rechnung.",
+      "csv": "CSV für Tabellen",
+      "download": "Nachweis herunterladen",
+      "downloaded": "Nachweis heruntergeladen",
+      "format": "Format",
+      "from": "Von",
+      "fromRequired": "Wählen Sie den ersten Tag",
+      "pdf": "PDF",
+      "selfDescription": "Laden Sie Ihre erfasste Arbeit und den Preis nach Ihren vereinbarten Sätzen herunter, um Ihre Rechnung zu erstellen oder zu prüfen. Ein Prüfnachweis, keine Rechnung.",
+      "title": "Zeit- und Honorarnachweis",
+      "to": "Bis",
+      "toBeforeFrom": "Der letzte Tag darf nicht vor dem ersten liegen",
+      "toRequired": "Wählen Sie den letzten Tag"
+    },
+    "generated": "Erstellt (UTC)",
+    "no": "Nein",
+    "noProject": "Kein Projekt",
+    "noRate": "Kein Satz vereinbart",
+    "notice": "Nur zur Prüfung. Kein Rechnungs- oder Gutschriftsdokument: Z8 stellt keine Rechnungen aus. Der Nachweis listet die in Z8 erfasste Arbeit und ihren Preis nach den vereinbarten Sätzen, damit eine Rechnung daran geprüft werden kann.",
+    "organization": "Organisation",
+    "page": "Seite",
+    "period": "Zeitraum",
+    "referenceCode": "Bestell- oder Kostenstellenreferenz",
+    "rows": {
+      "day": "Tag",
+      "total": "Summe",
+      "unpriced": "Ohne Satz",
+      "work": "Arbeit"
+    },
+    "rules": {
+      "anyWorkFullDay": "Jeder Tag mit Arbeit zählt als voller Tag",
+      "halfAndFullDay": "Halber Tag bis {minutes} Min., darüber voller Tag",
+      "proratedCapped": "Anteilig nach einem {minutes}-Minuten-Tag, höchstens ein Tag",
+      "proratedUncapped": "Anteilig nach einem {minutes}-Minuten-Tag, ohne Obergrenze"
+    },
+    "times": "Tage sind die lokalen Kalendertage des Dienstleisters; Uhrzeiten werden mit dem bei der Arbeit erfassten UTC-Versatz angezeigt.",
+    "title": "Zeit- und Honorarnachweis für externe Dienstleister",
+    "totals": "Summen",
+    "units": {
+      "days": "Tage",
+      "hours": "Stunden"
+    },
+    "unpricedNotice": "Für manche Arbeit galt an ihrem Tag kein vereinbarter Satz. Sie ist ohne Betrag aufgeführt und nicht in den Summen enthalten.",
+    "vatId": "USt-IdNr.",
+    "workedHours": "Gearbeitete Stunden",
+    "yes": "Ja"
+  },
   "drivingLicence": {
     "applyingInterval": "Wird angewendet…",
     "applyInterval": "Intervalländerung anwenden",

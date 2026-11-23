@@ -596,6 +596,89 @@
     },
     "yes": "Yes"
   },
+  "contractorStatement": {
+    "awaitingApprovalNotice": "Some work still awaits approval of a change; it is included as currently recorded.",
+    "basis": {
+      "daily": "Day rate",
+      "hourly": "Hourly rate"
+    },
+    "byProject": "By project",
+    "columns": {
+      "amount": "Amount",
+      "awaitingApproval": "Awaiting approval",
+      "basis": "Paid by",
+      "currency": "Currency",
+      "date": "Date",
+      "dayUnitRule": "Day-unit rule",
+      "end": "End",
+      "project": "Project",
+      "rate": "Rate",
+      "rowType": "Row type",
+      "start": "Start",
+      "task": "Task",
+      "unit": "Unit",
+      "units": "Units",
+      "workedMinutes": "Worked minutes"
+    },
+    "company": "Company",
+    "contractor": "Contractor",
+    "contractorNumber": "Contractor number",
+    "empty": "No completed work as External Contractor in this period.",
+    "errors": {
+      "failed": "The statement could not be created",
+      "invalidPeriod": "Choose a period of at most one year whose first day is not after its last.",
+      "notAllowed": "You can download only your own statements.",
+      "notContractor": "This person had no External Contractor engagement in this period.",
+      "notFound": "This person was not found in your organization."
+    },
+    "export": {
+      "adminDescription": "Download what this External Contractor worked and what their rates price it at, to check their invoice. A verification statement, not an invoice.",
+      "csv": "CSV for spreadsheets",
+      "download": "Download statement",
+      "downloaded": "Statement downloaded",
+      "format": "Format",
+      "from": "From",
+      "fromRequired": "Choose the first day",
+      "pdf": "PDF",
+      "selfDescription": "Download your recorded work and what your agreed rates price it at, to prepare or check your invoice. A verification statement, not an invoice.",
+      "title": "Time & fee statement",
+      "to": "To",
+      "toBeforeFrom": "The last day cannot be before the first day",
+      "toRequired": "Choose the last day"
+    },
+    "generated": "Generated (UTC)",
+    "no": "No",
+    "noProject": "No project",
+    "noRate": "No rate applies",
+    "notice": "Verification statement only. Not an invoice or self-billing credit note (Gutschrift): Z8 never issues invoices. It lists the work recorded in Z8 and what the contractor's agreed rates price it at, so an invoice can be checked against it.",
+    "organization": "Organization",
+    "page": "Page",
+    "period": "Period",
+    "referenceCode": "PO or cost-center reference",
+    "rows": {
+      "day": "Day",
+      "total": "Total",
+      "unpriced": "Unpriced",
+      "work": "Work"
+    },
+    "rules": {
+      "anyWorkFullDay": "Any day with work counts as a full day",
+      "halfAndFullDay": "Half day up to {minutes} min, full day above",
+      "proratedCapped": "Prorated by a {minutes}-minute day, at most one day",
+      "proratedUncapped": "Prorated by a {minutes}-minute day, without a cap"
+    },
+    "times": "Days are the contractor's local calendar days; times are shown at the UTC offset recorded with the work.",
+    "title": "Contractor Time & Fee Verification Statement",
+    "totals": "Totals",
+    "units": {
+      "days": "Days",
+      "hours": "Hours"
+    },
+    "unpricedNotice": "Some work had no agreed rate on its day. It is listed without an amount and is not in the totals.",
+    "vatId": "VAT ID",
+    "workedHours": "Worked hours",
+    "yes": "Yes"
+  },
   "drivingLicence": {
     "applyingInterval": "Applying…",
     "applyInterval": "Apply interval change",
