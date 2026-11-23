@@ -786,6 +786,47 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 				endTime: string,
 			) => upsertShift({ id, employeeId: who.employeeId, subareaId, date, startTime, endTime });
 			const refused = { success: false, refusal: STATUTORY_PUBLICATION_BLOCKED };
+			/**
+			 * Moves a published shift as the guarded save does, in a transaction a refusal rolls back;
+			 * the kinds it refuses, if any.
+			 */
+			const refusedKinds = (
+				who: FixtureEmployee,
+				id: string,
+				move: { from: string; date: string; startTime: string; endTime: string },
+			) =>
+				db
+					.transaction((tx) =>
+						guardPublishedShiftEdit(
+							tx,
+							{
+								organizationId: org.id,
+								timezone: org.timezone,
+								shiftId: id,
+								published: true,
+								employeeId: who.employeeId,
+								date: parsePlainDate(move.date),
+								previousDate: parsePlainDate(move.from),
+								now: systemClock.nowInstant(),
+							},
+							() =>
+								tx
+									.update(shiftTable)
+									.set({
+										date: shiftDateBounds(move.date, org.timezone).start,
+										startTime: move.startTime,
+										endTime: move.endTime,
+									})
+									.where(and(eq(shiftTable.id, id), eq(shiftTable.organizationId, org.id))),
+						),
+					)
+					.then(
+						() => [] as string[],
+						(error: unknown) => {
+							if (!(error instanceof PublishedShiftEditBlocked)) throw error;
+							return error.blocking.map((finding) => finding.statutoryKind);
+						},
+					);
 
 			it("refuses moving a sixth day into the next week, also five days long", async () => {
 				await seed.blockJarbschgPublish(org);
@@ -852,48 +893,6 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			});
 
 			describe("a release conflict belongs to its release day, also for a night shift", () => {
-				/**
-				 * Moves a published shift as the guarded save does, in a transaction a refusal rolls
-				 * back; the kinds it refuses, if any.
-				 */
-				const refusedKinds = (
-					who: FixtureEmployee,
-					id: string,
-					move: { from: string; date: string; startTime: string; endTime: string },
-				) =>
-					db
-						.transaction((tx) =>
-							guardPublishedShiftEdit(
-								tx,
-								{
-									organizationId: org.id,
-									timezone: org.timezone,
-									shiftId: id,
-									published: true,
-									employeeId: who.employeeId,
-									date: parsePlainDate(move.date),
-									previousDate: parsePlainDate(move.from),
-									now: systemClock.nowInstant(),
-								},
-								() =>
-									tx
-										.update(shiftTable)
-										.set({
-											date: shiftDateBounds(move.date, org.timezone).start,
-											startTime: move.startTime,
-											endTime: move.endTime,
-										})
-										.where(and(eq(shiftTable.id, id), eq(shiftTable.organizationId, org.id))),
-							),
-						)
-						.then(
-							() => [] as string[],
-							(error: unknown) => {
-								if (!(error instanceof PublishedShiftEditBlocked)) throw error;
-								return error.blocking.map((finding) => finding.statutoryKind);
-							},
-						);
-
 				it("refuses moving a shift into Tuesday's lessons past a night shift into Wednesday's pre-exam day", async () => {
 					await seed.blockJarbschgPublish(org);
 					const learner = await apprentice("overnight-release");
@@ -956,6 +955,90 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 					});
 					expect(refusedWith).toContain("jarbschg_night_work");
 					expect(refusedWith).not.toContain("bbig_release_day_shift");
+				});
+			});
+
+			describe("a release conflict deepens with more planned work inside the release time", () => {
+				// Recorded after the shifts were published: Tuesday's exam, 09:00–11:00.
+				let learner: FixtureEmployee;
+				const edit = (id: string, date: string, startTime: string, endTime: string) =>
+					upsertShift({ id, employeeId: learner.employeeId, subareaId, date, startTime, endTime });
+
+				beforeEach(async () => {
+					await seed.blockJarbschgPublish(org);
+					learner = await apprentice("exam-depth");
+					await release(learner, {
+						releaseKind: "exam_day",
+						startsOn: "2027-03-02",
+						endsOn: "2027-03-02",
+						examStartTime: "09:00",
+						schoolMinutes: 120,
+					});
+				});
+
+				describe("a published shift overlapping the exam's first 15 minutes", () => {
+					let early: string;
+
+					beforeEach(async () => {
+						early = await published(learner, "2027-03-02", "07:00", "09:15");
+						await findingOn("bbig_release_day_shift", early);
+					});
+
+					it("refuses lengthening it across the exam", async () => {
+						const lengthen = {
+							from: "2027-03-02",
+							date: "2027-03-02",
+							startTime: "07:00",
+							endTime: "15:00",
+						};
+						expect(await refusedKinds(learner, early, lengthen)).toContain(
+							"bbig_release_day_shift",
+						);
+						expect(await edit(early, "2027-03-02", "07:00", "15:00")).toMatchObject(refused);
+						expect((await shiftRow(early))?.end_time).toBe("09:15");
+					});
+
+					it("saves shortening it to 5 minutes of the exam", async () => {
+						expect(await edit(early, "2027-03-02", "07:00", "09:05")).toMatchObject({
+							success: true,
+						});
+						expect((await shiftRow(early))?.end_time).toBe("09:05");
+					});
+
+					it("refuses moving another published shift into the exam", async () => {
+						const thursday = await published(learner, "2027-03-04", "10:00", "12:00");
+						const move = {
+							from: "2027-03-04",
+							date: "2027-03-02",
+							startTime: "10:00",
+							endTime: "12:00",
+						};
+						expect(await refusedKinds(learner, thursday, move)).toContain("bbig_release_day_shift");
+						expect(await edit(thursday, "2027-03-02", "10:00", "12:00")).toMatchObject(refused);
+						expect((await shiftRow(thursday))?.start_time).toBe("10:00");
+					});
+				});
+
+				describe("a published shift covering the whole exam", () => {
+					let thursday: string;
+
+					beforeEach(async () => {
+						const covering = await published(learner, "2027-03-02", "08:00", "11:30");
+						await findingOn("bbig_release_day_shift", covering);
+						thursday = await published(learner, "2027-03-04", "10:00", "10:30");
+					});
+
+					it("saves moving another shift onto the exam day after the exam", async () => {
+						expect(await edit(thursday, "2027-03-02", "12:00", "12:30")).toMatchObject({
+							success: true,
+						});
+					});
+
+					it("saves moving another shift into exam time the first already covers", async () => {
+						expect(await edit(thursday, "2027-03-02", "10:00", "10:30")).toMatchObject({
+							success: true,
+						});
+					});
 				});
 			});
 		});

@@ -93,6 +93,9 @@ export function redactStatutoryFinding<F extends StatutoryFinding>(
 ): F | RedactedStatutoryFinding<F["kind"]> {
 	if (audience === "full") return finding;
 	const { acknowledgement, ...rest } = finding;
+	// The covered span pins down exam or lesson times from the employee's statutory context.
+	const withoutSpan: { coveredSpan?: unknown } = rest;
+	delete withoutSpan.coveredSpan;
 	return {
 		...rest,
 		summary: restrictedSummary(finding),

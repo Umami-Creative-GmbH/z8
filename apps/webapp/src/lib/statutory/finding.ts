@@ -111,6 +111,12 @@ export interface StatutoryFinding<Kind extends string = string> {
 	 * when `summary` counts something coarser (a day): more covered work is a deeper breach.
 	 */
 	readonly coveredMinutes?: number;
+	/**
+	 * Where that covered work lies, as ISO instants, when other findings of its scope may cover the
+	 * same time (an apprentice release conflict: overlapping shifts in one exam): the scope's
+	 * covered minutes count it once. Dropped for restricted audiences.
+	 */
+	readonly coveredSpan?: { readonly start: string; readonly end: string };
 }
 
 export function statutoryFindingId(kind: string, employeeId: string, subjectKey: string): string {

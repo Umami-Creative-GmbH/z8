@@ -3,6 +3,7 @@
  * caused (#1993). Shared so both judge a change the same way.
  */
 import { and, eq, inArray } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { shift } from "@/db/schema";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { apprenticeReleaseScopeOf } from "../apprenticeship/release-conflict-contributor";
@@ -45,26 +46,51 @@ function sameScope(prior: StatutoryFinding, finding: StatutoryFinding, scope: st
 	);
 }
 
+const MILLISECONDS_PER_MINUTE = 60_000;
+
 /**
- * `after` goes deeper than `prior`: further past its visible limit (`deepensBreachedLimit`), or,
- * for a sector-exception breach counted in days, over more work than before.
+ * The minutes of work `findings` cover (`coveredMinutes`): work at the same time on several
+ * findings (`coveredSpan`, overlapping shifts) counted once.
  */
-function deepens(prior: StatutoryFinding, after: StatutoryFinding): boolean {
-	return (
-		deepensBreachedLimit(prior, after) ||
-		(prior.coveredMinutes !== undefined &&
-			after.coveredMinutes !== undefined &&
-			after.coveredMinutes > prior.coveredMinutes)
-	);
+function coveredTotal(findings: readonly StatutoryFinding[]): number {
+	const spans: { start: number; end: number }[] = [];
+	let unplaced = 0;
+	for (const finding of findings) {
+		if (finding.coveredSpan) {
+			spans.push({
+				start: Temporal.Instant.from(finding.coveredSpan.start).epochMilliseconds,
+				end: Temporal.Instant.from(finding.coveredSpan.end).epochMilliseconds,
+			});
+		} else {
+			unplaced += finding.coveredMinutes ?? 0;
+		}
+	}
+	spans.sort((a, b) => a.start - b.start);
+	let covered = 0;
+	let reach = Number.NEGATIVE_INFINITY;
+	for (const span of spans) {
+		const from = Math.max(span.start, reach);
+		if (span.end > from) covered += span.end - from;
+		reach = Math.max(reach, span.end);
+	}
+	return unplaced + covered / MILLISECONDS_PER_MINUTE;
 }
+
+const sameCoverage = (prior: StatutoryFinding, after: StatutoryFinding) =>
+	prior.coveredMinutes === after.coveredMinutes &&
+	prior.coveredSpan?.start === after.coveredSpan?.start &&
+	prior.coveredSpan?.end === after.coveredSpan?.end;
 
 /**
  * The blocking findings of `after` that a change causes, against `before` (the same judgement
  * without the change): a breach in a scope (`breachScopeOf`) that had none, or one the change
- * takes deeper than every breach the scope had (a longer day or week, a shorter rest, more
- * Saturday work). A breach the change leaves as it is, or eases, in its scope does not block it,
- * also when it moves to another shift of the same day or its sector exception goes stale; carried
- * to another day or week, it is a new breach there.
+ * takes deeper than every breach the scope had (a longer day or week, a shorter rest). Where
+ * breaches count the work they cover (`coveredMinutes`: sector exceptions, apprentice release
+ * conflicts), the scope is judged by its total covered work: more of it (more Saturday work, more
+ * work during the exam or the lessons, also on another shift) is caused, on each finding whose
+ * coverage the change made. A breach the change leaves as it is, or eases, in its scope does not
+ * block it, also when it moves to another shift of the same day or its sector exception goes
+ * stale; carried to another day or week, it is a new breach there.
  */
 export function causedBlockingFindings<F extends StatutoryFinding>(
 	before: readonly StatutoryFinding[],
@@ -74,7 +100,13 @@ export function causedBlockingFindings<F extends StatutoryFinding>(
 		if (!finding.blocksPublication) return false;
 		const scope = breachScopeOf(finding);
 		const priors = before.filter((prior) => sameScope(prior, finding, scope));
-		return priors.every((prior) => deepens(prior, finding));
+		if (priors.every((prior) => deepensBreachedLimit(prior, finding))) return true;
+		if (finding.coveredMinutes === undefined) return false;
+		const peers = after.filter((peer) => sameScope(peer, finding, scope));
+		return (
+			coveredTotal(peers) > coveredTotal(priors) &&
+			!priors.some((prior) => prior.id === finding.id && sameCoverage(prior, finding))
+		);
 	});
 }
 

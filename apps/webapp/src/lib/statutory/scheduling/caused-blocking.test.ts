@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import type { StatutoryFinding, StatutoryFindingSummary } from "../finding";
 import { youthBreachScopeOf } from "../youth/youth-findings";
@@ -205,14 +206,68 @@ describe("causedBlockingFindings", () => {
 			expect(kinds(causedBlockingFindings(before, after))).toEqual(["bbig_release_day_shift"]);
 		});
 
-		it("is not caused on a release day that already had one", () => {
-			const before = [breach("bbig_release_day_shift", "x", "2027-03-02")];
-			expect(
-				causedBlockingFindings(before, [breach("bbig_release_day_shift", "x", "2027-03-02")]),
-			).toEqual([]);
-			expect(
-				causedBlockingFindings(before, [breach("bbig_release_day_shift", "y", "2027-03-02")]),
-			).toEqual([]);
+		describe("on a release day that already had one", () => {
+			/**
+			 * A conflict of `shiftId` on Tuesday's release covering its planned work from `from` to
+			 * `to` (UTC wall times) inside the release time.
+			 */
+			const covering = (shiftId: string, from: string, to: string) => {
+				const start = Temporal.Instant.from(`2027-03-02T${from}:00Z`);
+				const end = Temporal.Instant.from(`2027-03-02T${to}:00Z`);
+				return breach("bbig_release_day_shift", shiftId, "2027-03-02", undefined, {
+					coveredMinutes: start.until(end).total("minutes"),
+					coveredSpan: { start: start.toString(), end: end.toString() },
+				});
+			};
+
+			it("is not caused when the same work conflicts, on the same or another shift", () => {
+				const before = [covering("x", "09:00", "09:15")];
+				expect(causedBlockingFindings(before, [covering("x", "09:00", "09:15")])).toEqual([]);
+				expect(causedBlockingFindings(before, [covering("y", "09:00", "09:15")])).toEqual([]);
+			});
+
+			it("is caused when the shift covers more of the release time", () => {
+				// 07:00–09:15 lengthened to 07:00–15:00 across a 09:00–11:00 exam.
+				const before = [covering("a", "09:00", "09:15")];
+				const after = [covering("a", "09:00", "11:00")];
+				expect(kinds(causedBlockingFindings(before, after))).toEqual(["bbig_release_day_shift"]);
+			});
+
+			it("is not caused when the shift covers less of it", () => {
+				const before = [covering("a", "09:00", "09:15")];
+				expect(causedBlockingFindings(before, [covering("a", "09:00", "09:05")])).toEqual([]);
+			});
+
+			it("is caused for a second shift that adds release time, not for the first", () => {
+				const before = [covering("a", "09:00", "09:15")];
+				const after = [covering("a", "09:00", "09:15"), covering("b", "10:00", "11:00")];
+				expect(causedBlockingFindings(before, after).map((finding) => finding.subjectKey)).toEqual([
+					"shift:b",
+				]);
+			});
+
+			it("judges the day's total: a second shift cannot slip in under a larger first one", () => {
+				// Finding by finding, B's 30 minutes would look no deeper than A's 60.
+				const before = [covering("a", "09:00", "10:00")];
+				const after = [covering("a", "09:00", "10:00"), covering("b", "10:30", "11:00")];
+				expect(causedBlockingFindings(before, after).map((finding) => finding.subjectKey)).toEqual([
+					"shift:b",
+				]);
+			});
+
+			it("counts work that overlapping shifts both cover once", () => {
+				const before = [covering("a", "09:00", "11:00")];
+				const after = [covering("a", "09:00", "11:00"), covering("b", "10:00", "10:30")];
+				expect(causedBlockingFindings(before, after)).toEqual([]);
+			});
+
+			it("is caused when a shift moves off work another shift covers onto uncovered time", () => {
+				const before = [covering("a", "09:00", "10:00"), covering("b", "09:00", "10:00")];
+				const after = [covering("a", "09:00", "10:00"), covering("b", "10:00", "11:00")];
+				expect(causedBlockingFindings(before, after).map((finding) => finding.subjectKey)).toEqual([
+					"shift:b",
+				]);
+			});
 		});
 
 		describe("of a night shift running into the release day", () => {

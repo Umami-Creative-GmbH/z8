@@ -141,6 +141,60 @@ function conflictOf(
 	return beforeEarlyLessons(release.schoolTime) ? "before_early_lessons" : null;
 }
 
+/**
+ * The release time on `day` that planned work conflicts with, resolved in `timezone`: the whole day
+ * when released in full, else the exam, or the lessons together with the time before them when they
+ * start before 09:00. Null when nothing of the day can be compared with work.
+ */
+function releaseTimeOf(
+	release: ApprenticeReleaseDay,
+	day: PlainDate,
+	timezone: string,
+): { readonly start: Instant; readonly end: Instant } | null {
+	const startOfDay = day.toZonedDateTime({ timeZone: timezone }).toInstant();
+	if (release.credit === "full_day") {
+		return {
+			start: startOfDay,
+			end: day.add({ days: 1 }).toZonedDateTime({ timeZone: timezone }).toInstant(),
+		};
+	}
+	if (release.examStartTime && release.minutes !== null) {
+		const start = instantOn(day, release.examStartTime, timezone);
+		return { start, end: start.add({ minutes: release.minutes }) };
+	}
+	if (!release.schoolTime) return null;
+	const early =
+		Temporal.PlainTime.compare(
+			Temporal.PlainTime.from(release.schoolTime.start),
+			EARLY_LESSONS_BEFORE,
+		) < 0;
+	return {
+		start: early ? startOfDay : instantOn(day, release.schoolTime.start, timezone),
+		end: instantOn(day, release.schoolTime.end, timezone),
+	};
+}
+
+/**
+ * The planned work inside the release time, and its minutes: how deep the conflict is. An edit or
+ * a move that puts more work there deepens the release day's conflict (`causedBlockingFindings`).
+ */
+function coverageOf(
+	work: PlannedWork,
+	release: ApprenticeReleaseDay,
+	day: PlainDate,
+	timezone: string,
+): Pick<StatutoryFinding, "coveredMinutes" | "coveredSpan"> {
+	const time = releaseTimeOf(release, day, timezone);
+	if (!time) return {};
+	const start = compareInstants(work.start, time.start) > 0 ? work.start : time.start;
+	const end = compareInstants(work.end, time.end) < 0 ? work.end : time.end;
+	if (compareInstants(start, end) >= 0) return {};
+	return {
+		coveredMinutes: Math.round(start.until(end).total("minutes")),
+		coveredSpan: { start: start.toString(), end: end.toString() },
+	};
+}
+
 async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFinding[]> {
 	const releaseDays = await loadApprenticeReleaseDays(context.db, {
 		organizationId: context.organizationId,
@@ -235,6 +289,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 					? minorReleaseReference[release.releaseKind]
 					: minorLessonReference[conflict],
 			summary: { tier: "exceeded" },
+			...coverageOf(work, release, releaseDay, context.timezone),
 			adminDetail: null,
 			inputFingerprint: statutoryInputFingerprint({
 				kind,
