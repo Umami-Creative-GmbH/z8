@@ -7,12 +7,21 @@ import { db } from "@/db";
 import * as resolveContract from "@/lib/contracts/resolve-contract";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
-import { calculateOnCallReferencePeriod, listOnCallReferenceEventsBatch } from "./reference-period";
+import {
+	calculateOnCallReferencePeriod,
+	earliestSickStarts,
+	listOnCallReferenceEventsBatch,
+} from "./reference-period";
 import { onCallFixture } from "./testing/on-call-fixture";
+import { listOnCallPayrollReferenceRows } from "./views";
 
 vi.mock("@/lib/contracts/resolve-contract", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/contracts/resolve-contract")>();
 	return { ...original, loadEffectiveContractsBatch: vi.fn(original.loadEffectiveContractsBatch) };
+});
+vi.mock("./reference-period", async (importOriginal) => {
+	const original = await importOriginal<typeof import("./reference-period")>();
+	return { ...original, earliestSickStarts: vi.fn(original.earliestSickStarts) };
 });
 
 describe("§ 12 TzBfG reference periods in a batch (PostgreSQL)", () => {
@@ -79,5 +88,48 @@ describe("§ 12 TzBfG reference periods in a batch (PostgreSQL)", () => {
 			.filter(([, input]) => input.employeeIds.includes(colleague.employeeId))
 			.map(([, input]) => input.dates[0]?.toString());
 		expect(colleagueFirstDays).toEqual(["2026-03-01"]);
+	});
+
+	it("walks back through sick leave of on-call employees only when listing a payroll period", async () => {
+		const org = await onCall.organization("a");
+		const onCallWorker = await fx.employee(org, "on-call");
+		const regular = await fx.employee(org, "regular");
+		const periodId = await onCall.employmentPeriod(org, onCallWorker, "2024-12-31T23:00:00Z");
+		await onCall.onCallTerms(org, onCallWorker, {
+			kind: "unspecified",
+			employmentPeriodId: periodId,
+		});
+		await onCall.regularTerms(org, regular);
+		// Both ill in back-to-back leave running into the period.
+		for (const who of [onCallWorker, regular]) {
+			await onCall.absence(org, who, {
+				type: "sick",
+				startDate: "2026-05-25",
+				endDate: "2026-05-31",
+			});
+			await onCall.absence(org, who, {
+				type: "sick",
+				startDate: "2026-06-01",
+				endDate: "2026-06-05",
+			});
+		}
+		const walks = vi.mocked(earliestSickStarts);
+		walks.mockClear();
+
+		const rows = await listOnCallPayrollReferenceRows(db, {
+			organizationId: org.id,
+			startDate: "2026-06-01",
+			endDate: "2026-06-30",
+			method: "three_months",
+		});
+
+		expect(rows.map((row) => [row.employeeId, row.kind, row.eventDate])).toEqual([
+			[onCallWorker.employeeId, "sick_leave", "2026-05-25"],
+		]);
+		const walked = walks.mock.calls.map(([, input]) => input.employeeIds);
+		expect(walked.length).toBeGreaterThan(0);
+		for (const employeeIds of walked) {
+			expect(employeeIds).toEqual([onCallWorker.employeeId]);
+		}
 	});
 });

@@ -4,7 +4,7 @@
  * preparation list. Everything here is minutes and days only; findings are redacted for the
  * restricted audience before they leave the server.
  */
-import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq, inArray, lt } from "drizzle-orm";
 import { employee, employeeEmploymentHistory } from "@/db/schema";
 import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
@@ -259,20 +259,11 @@ export async function listOnCallPayrollReferenceRows(
 	if (comparePlainDates(end, start) < 0) return [];
 	const until = end.add({ days: 1 }).toString();
 
-	// An illness running into the period is dated from its own (first leave's) start: terms must
-	// cover that day.
-	const firstEventOf = await earliestSickStarts(db, {
-		organizationId: input.organizationId,
-		employeeIds: null,
-		from: input.startDate,
-		// Leave starting on the first day may continue an illness from before the period.
-		untilExclusive: start.add({ days: 1 }).toString(),
-	});
-	const earliest = [...firstEventOf.values()].reduce((a, b) => (a < b ? a : b), input.startDate);
+	// Confirmed on-call terms starting before the period ends. Their end is checked below, against
+	// each employee's own first event, so only these employees' sick leave is walked back.
 	const terms = await db
 		.select({
 			employeeId: employeeEmploymentHistory.employeeId,
-			validFromDate: employeeEmploymentHistory.validFromDate,
 			validUntilDate: employeeEmploymentHistory.validUntilDate,
 		})
 		.from(employeeEmploymentHistory)
@@ -282,12 +273,18 @@ export async function listOnCallPayrollReferenceRows(
 				eq(employeeEmploymentHistory.scheduleSource, "on_call"),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				lt(employeeEmploymentHistory.validFromDate, until),
-				or(
-					isNull(employeeEmploymentHistory.validUntilDate),
-					gt(employeeEmploymentHistory.validUntilDate, earliest),
-				),
 			),
 		);
+	if (terms.length === 0) return [];
+	// An illness running into the period is dated from its own (first leave's) start: terms must
+	// cover that day.
+	const firstEventOf = await earliestSickStarts(db, {
+		organizationId: input.organizationId,
+		employeeIds: [...new Set(terms.map((row) => row.employeeId))],
+		from: input.startDate,
+		// Leave starting on the first day may continue an illness from before the period.
+		untilExclusive: start.add({ days: 1 }).toString(),
+	});
 	const employeeIds = [
 		...new Set(
 			terms
