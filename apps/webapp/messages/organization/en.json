@@ -226,7 +226,11 @@
         "plannedEndDateNotFuture": "The planned engagement end must be after today.",
         "projects": "Projects",
         "referenceCode": "PO or cost center",
-        "vatId": "VAT ID"
+        "vatId": "VAT ID",
+        "compensation": {
+          "label": "Set the rate now",
+          "description": "Applies from the start of their engagement once they join. Only organization admins see it; you can also set it later."
+        }
       },
       "description": "Send an invitation to join {organizationName}",
       "emailLabel": "Email Address",
@@ -257,7 +261,10 @@
       "submit": "Send Invitation",
       "success": "Invitation sent successfully",
       "targetTeam": "Target team",
-      "title": "Invite Member"
+      "title": "Invite Member",
+      "errors": {
+        "projectNotFound": "A chosen project no longer belongs to this organization. Choose the projects again."
+      }
     },
     "joinOrCreate": "Join or create one",
     "language": {

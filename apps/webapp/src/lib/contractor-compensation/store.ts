@@ -192,6 +192,20 @@ async function loadActivePeriod(
 	return row ?? null;
 }
 
+/**
+ * Creates the employee's first employment period if it is still missing:
+ * employees created after migration 0071 (a contractor who just joined) get
+ * it lazily, as `resolveCurrentEmploymentPeriod` does before reading it.
+ */
+async function backfillEmploymentPeriod(
+	tx: Transaction,
+	input: { organizationId: string; employeeId: string },
+) {
+	await tx.execute(
+		sql`SELECT employee_employment_period_backfill_legacy(${input.organizationId}, ${input.employeeId}::uuid)`,
+	);
+}
+
 async function employeeInOrganization(
 	reader: Reader,
 	organizationId: string,
@@ -203,6 +217,111 @@ async function employeeInOrganization(
 		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
 		.limit(1);
 	return row !== undefined;
+}
+
+/** One audited change of one engagement's terms series (Billable Time's planner and lock). */
+function writeTermsChange(
+	tx: Transaction,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		employeeId: string;
+		employmentPeriodId: string;
+	},
+	change:
+		| { kind: "end"; from: PlainDate }
+		| { kind: "set"; from: PlainDate; value: ContractorCompensation },
+) {
+	return writeRatePeriodChange(tx, {
+		seriesKey: [
+			"contractor_terms",
+			input.organizationId,
+			input.employeeId,
+			input.employmentPeriodId,
+		].join(":"),
+		store: termsStore(tx, input),
+		change,
+		equals: sameCompensation,
+		audit: {
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			entityType: "contractor_compensation_terms",
+			actions: {
+				set: AuditAction.CONTRACTOR_TERMS_SET,
+				end: AuditAction.CONTRACTOR_TERMS_ENDED,
+			},
+			employeeId: input.employeeId,
+			target: { employeeId: input.employeeId, employmentPeriodId: input.employmentPeriodId },
+			describe: toStoredCompensation,
+		},
+	});
+}
+
+export type FirstContractorTermsRefusal =
+	| ContractorTermsRefusal
+	/** The engagement already has terms; the first terms never replace them. */
+	| "terms_exist";
+
+/**
+ * Writes the first compensation terms of a contractor's active External
+ * Contractor engagement from its start (#1935): an invitation's terms, applied
+ * once the contractor joined. They start on the engagement's earliest terms day
+ * (`earliestTermsDay`, the bound `changeContractorTerms` refuses before), so
+ * every contractor-local day of the engagement is priced; without a recorded
+ * start, on the organization's today. Refused when the engagement already has
+ * terms. The caller names the admin who prepared them as the actor.
+ */
+export async function setFirstContractorTerms(
+	database: typeof db,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		employeeId: string;
+		compensation: ContractorCompensationInput;
+		now?: Instant;
+	},
+): Promise<
+	| { ok: true; employmentPeriodId: string; effectiveFrom: string }
+	| { ok: false; reason: FirstContractorTermsRefusal }
+> {
+	const parsed = parseContractorCompensation(input.compensation);
+	if (!parsed.ok) return { ok: false, reason: parsed.reason };
+	return database.transaction(async (tx) => {
+		if (!(await employeeInOrganization(tx, input.organizationId, input.employeeId))) {
+			return { ok: false, reason: "employee_not_found" } as const;
+		}
+		await backfillEmploymentPeriod(tx, input);
+		const period = await loadActivePeriod(tx, input.organizationId, input.employeeId);
+		if (!period || period.engagementKind !== "contractor") {
+			return { ok: false, reason: "not_contractor" } as const;
+		}
+		const [existing] = await tx
+			.select({ id: contractorCompensationTerms.id })
+			.from(contractorCompensationTerms)
+			.where(
+				and(
+					eq(contractorCompensationTerms.organizationId, input.organizationId),
+					eq(contractorCompensationTerms.employeeId, input.employeeId),
+					eq(contractorCompensationTerms.employmentPeriodId, period.id),
+				),
+			)
+			.limit(1);
+		if (existing) return { ok: false, reason: "terms_exist" } as const;
+		const from =
+			earliestTermsDay(period.startedAt) ??
+			(
+				await loadOrganizationDay(tx, {
+					organizationId: input.organizationId,
+					now: input.now ?? systemClock.nowInstant(),
+				})
+			).today;
+		await writeTermsChange(
+			tx,
+			{ ...input, employmentPeriodId: period.id },
+			{ kind: "set", from, value: parsed.compensation },
+		);
+		return { ok: true, employmentPeriodId: period.id, effectiveFrom: from.toString() } as const;
+	});
 }
 
 /**
@@ -234,6 +353,7 @@ export async function changeContractorTerms(
 		if (!(await employeeInOrganization(tx, input.organizationId, input.employeeId))) {
 			return { ok: false, reason: "employee_not_found" };
 		}
+		await backfillEmploymentPeriod(tx, input);
 		const period = await loadActivePeriod(tx, input.organizationId, input.employeeId);
 		if (!period || period.engagementKind !== "contractor") {
 			return { ok: false, reason: "not_contractor" };
@@ -247,25 +367,11 @@ export async function changeContractorTerms(
 			return { ok: false, reason: "before_engagement" };
 		}
 
-		const applied = await writeRatePeriodChange(tx, {
-			seriesKey: ["contractor_terms", input.organizationId, input.employeeId, period.id].join(":"),
-			store: termsStore(tx, { ...input, employmentPeriodId: period.id }),
-			change:
-				compensation === null ? { kind: "end", from } : { kind: "set", from, value: compensation },
-			equals: sameCompensation,
-			audit: {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				entityType: "contractor_compensation_terms",
-				actions: {
-					set: AuditAction.CONTRACTOR_TERMS_SET,
-					end: AuditAction.CONTRACTOR_TERMS_ENDED,
-				},
-				employeeId: input.employeeId,
-				target: { employeeId: input.employeeId, employmentPeriodId: period.id },
-				describe: toStoredCompensation,
-			},
-		});
+		const applied = await writeTermsChange(
+			tx,
+			{ ...input, employmentPeriodId: period.id },
+			compensation === null ? { kind: "end", from } : { kind: "set", from, value: compensation },
+		);
 
 		const [history, inEffect] = await Promise.all([
 			listContractorTermsHistory(tx, input.organizationId, input.employeeId),

@@ -320,11 +320,82 @@ describe("InviteMemberDialog target team form", () => {
 						referenceCode: "PO-4711",
 						projectIds: ["6f1c1e9e-8a5c-4e0e-9a51-0c6f1f7c2b11"],
 						plannedEndDate: "2027-06-30",
+						compensation: null,
 					},
 				}),
 			),
 		);
 	});
+
+	it("invites an External Contractor with the engagement's first rate (#1935)", async () => {
+		sendInvitationMock.mockResolvedValue({ success: true });
+		renderDialog();
+
+		fireEvent.click(screen.getByRole("option", { name: /External Contractor/ }));
+		expect(screen.queryByLabelText("Daily rate")).toBeNull();
+		fireEvent.click(screen.getByRole("checkbox", { name: "Set the rate now" }));
+		fireEvent.change(screen.getByLabelText("Daily rate"), { target: { value: "650" } });
+		fireEvent.click(screen.getByRole("option", { name: "Half and full days" }));
+		submitInvitation();
+
+		await waitFor(() =>
+			expect(sendInvitationMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					engagementKind: "contractor",
+					contractor: expect.objectContaining({
+						compensation: {
+							basis: "daily",
+							rateAmount: "650",
+							currency: "EUR",
+							dayUnitRule: "half_and_full_day",
+							halfDayThresholdMinutes: 240,
+							standardDayMinutes: null,
+							capAtOneDay: null,
+						},
+					}),
+				}),
+			),
+		);
+	});
+
+	it("words an invalid rate on its field before inviting (#1935)", async () => {
+		renderDialog();
+
+		fireEvent.click(screen.getByRole("option", { name: /External Contractor/ }));
+		fireEvent.click(screen.getByRole("checkbox", { name: "Set the rate now" }));
+		fireEvent.click(screen.getByRole("option", { name: "Hour" }));
+		fireEvent.change(screen.getByLabelText("Hourly rate"), { target: { value: "85.505" } });
+		submitInvitation();
+
+		expect(
+			await screen.findByText("The rate has more decimals than the currency allows."),
+		).toBeTruthy();
+		expect(sendInvitationMock).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[
+			"project_not_found",
+			"A chosen project no longer belongs to this organization. Choose the projects again.",
+		],
+		["planned_end_not_future", "The planned engagement end must be after today."],
+		["rate_too_precise", "The rate has more decimals than the currency allows."],
+	])(
+		"words the %s refusal in the viewer's language, never the server's text",
+		async (refusal, text) => {
+			sendInvitationMock.mockResolvedValue({
+				success: false,
+				error: "Server diagnostic",
+				code: "ValidationError",
+				refusal,
+			});
+			renderDialog();
+
+			submitInvitation();
+
+			await waitFor(() => expect(toastErrorMock).toHaveBeenCalledWith(text));
+		},
+	);
 
 	it("offers only planned engagement ends after the organization's today (#1995)", async () => {
 		renderDialog();

@@ -37,6 +37,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	compensationInputOf,
+	defaultCompensationValues,
+} from "@/components/settings/contracts/contractor-terms-form";
 import { useSession } from "@/lib/auth-client";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
@@ -46,6 +50,13 @@ import {
 } from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
 import { useRouter } from "@/navigation";
+import { InvitationCompensationFields } from "./invitation-compensation-fields";
+import { invitationErrorMessage } from "./invitation-refusals";
+import type {
+	InviteMemberFormApi,
+	InviteMemberFormValues,
+	InviteMemberSubmitMeta,
+} from "./invite-member-form";
 
 interface InviteMemberDialogProps {
 	organizationId: string;
@@ -59,7 +70,7 @@ interface InviteMemberDialogProps {
 }
 
 type InvitationActivation = { arrival: object };
-const defaultSubmitMeta: { activation: InvitationActivation | null } = { activation: null };
+const defaultSubmitMeta: InviteMemberSubmitMeta = { activation: null };
 
 function useInvitationLifetime(identity: string | null) {
 	const arrival = useRef<object | null>(null);
@@ -187,25 +198,25 @@ export function InviteMemberDialog({
 
 	const { inviteMutation, kioskOnlyMutation } = useMemberMutations(organizationId, lifetime);
 
-	const form = useForm({
+	const form: InviteMemberFormApi = useForm({
 		defaultValues: {
 			email: "",
-			role: "member" as "owner" | "admin" | "member",
+			role: "member",
 			canCreateOrganizations: false,
 			targetTeamId: "none",
-			// Kiosk-only employees (#857): no email, no sign-in, clock only at kiosks.
 			kioskOnly: false,
 			firstName: "",
 			lastName: "",
-			locationIds: [] as string[],
-			// An External Contractor skips employee-only setup (#1995).
-			engagementKind: "employee" as EngagementKind,
+			locationIds: [],
+			engagementKind: "employee",
 			contractorCompanyName: "",
 			contractorVatId: "",
 			contractorReferenceCode: "",
-			contractorProjectIds: [] as string[],
+			contractorProjectIds: [],
 			plannedEndDate: "",
-		},
+			contractorCompensationEnabled: false,
+			contractorCompensation: defaultCompensationValues(),
+		} satisfies InviteMemberFormValues as InviteMemberFormValues,
 		onSubmitMeta: defaultSubmitMeta,
 		onSubmit: async ({ value, meta }) => {
 			const activation = meta.activation;
@@ -257,6 +268,9 @@ export function InviteMemberDialog({
 										referenceCode: value.contractorReferenceCode,
 										projectIds: value.contractorProjectIds,
 										plannedEndDate: value.plannedEndDate || null,
+										compensation: value.contractorCompensationEnabled
+											? compensationInputOf(value.contractorCompensation)
+											: null,
 									},
 								}
 							: {}),
@@ -277,7 +291,7 @@ export function InviteMemberDialog({
 				onOpenChange(false);
 				refresh();
 			} else {
-				toast.error(result.error || t("organization.invite.error", "Failed to send invitation"));
+				toast.error(invitationErrorMessage(t, result));
 			}
 		},
 	});
@@ -721,6 +735,7 @@ export function InviteMemberDialog({
 												</fieldset>
 											)}
 										</form.Field>
+										<InvitationCompensationFields form={form} />
 									</fieldset>
 								) : null
 							}

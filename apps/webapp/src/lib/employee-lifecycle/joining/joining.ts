@@ -32,8 +32,13 @@ import {
 	writeDraftFirstTerms,
 	writeWithDraftPersonnelNumber,
 } from "./invitation-draft";
+import {
+	applyInvitationContractorTerms,
+	type InvitationContractorTerms,
+} from "./invitation-contractor-terms";
 import { type PlannedEngagementEnd, schedulePlannedEngagementEnd } from "./planned-engagement-end";
 
+export type { InvitationContractorTerms } from "./invitation-contractor-terms";
 export type { JoiningTransaction } from "./invitation-draft";
 export type { PlannedEngagementEnd } from "./planned-engagement-end";
 
@@ -120,6 +125,8 @@ export type AfterJoining = {
 	rehireNotice: RehireNotice | null;
 	/** A contractor invitation's planned engagement end, scheduled as a departure (#1995). */
 	plannedEngagementEnd: PlannedEngagementEnd | null;
+	/** A contractor invitation's first compensation terms, written from the engagement's start (#1935). */
+	contractorTerms: InvitationContractorTerms | null;
 	/** A repair of an older membership passes `seatSignal: false`: no seat changed now. */
 	run(options?: { seatSignal?: boolean }): Promise<void>;
 };
@@ -211,6 +218,7 @@ export async function joinOrganization(
 				}
 			: null;
 	const plannedEngagementEnd = plannedEngagementEndOf(outcome, draft, input);
+	const contractorTerms = invitationContractorTermsOf(outcome, draft, input);
 	return {
 		outcome,
 		afterCommit: {
@@ -218,11 +226,14 @@ export async function joinOrganization(
 			draftCleanup,
 			rehireNotice,
 			plannedEngagementEnd,
+			contractorTerms,
 			async run(options = {}) {
 				// The global `db` on purpose: this runs after the caller's transaction
 				// committed, and is shared with callers that are not Effect code.
 				audit.forwardCommitted();
-				// Before the draft clean-up, whose id is the departure's request id.
+				// The engagement's first terms, then its planned end, both before the draft
+				// clean-up, whose id is the departure's request id.
+				if (contractorTerms) await applyInvitationContractorTerms(contractorTerms);
 				if (plannedEngagementEnd) await schedulePlannedEngagementEnd(plannedEngagementEnd);
 				if (draftCleanup) await consumeInvitationDrafts(db, draftCleanup);
 				if (rehireNotice) await sendRehireNotice(rehireNotice);
@@ -402,6 +413,31 @@ async function settleArrivingEmployee(
 	}
 	if (isAdminMembership) await grantOrganizationWideTeamPermissions(tx, settled);
 	return settled;
+}
+
+/**
+ * The first compensation terms of a contractor invitation (#1935), written once
+ * the joining committed by the admin who prepared the invitation
+ * (`applyInvitationContractorTerms`). Only when the contractor draft applied:
+ * the person joined or came back as an External Contractor.
+ */
+function invitationContractorTermsOf(
+	outcome: JoiningOutcome,
+	draft: InvitationDraft | null,
+	input: JoiningInput,
+): InvitationContractorTerms | null {
+	if (outcome.kind !== "joined" && outcome.kind !== "reactivated") return null;
+	if (outcome.employee.engagementKind !== "contractor") return null;
+	if (draft?.engagementKind !== "contractor" || !draft.contractorCompensation) return null;
+	return {
+		organizationId: input.organizationId,
+		employeeId: outcome.employee.id,
+		userId: input.userId,
+		compensation: draft.contractorCompensation,
+		draftId: draft.id,
+		invitationId: draft.invitationId,
+		actorUserId: draft.updatedBy ?? input.actorUserId ?? null,
+	};
 }
 
 /**

@@ -12,3 +12,14 @@ export const dayUnitRuleKinds = [
 	"prorated_by_standard_day",
 ] as const;
 export type DayUnitRuleKind = (typeof dayUnitRuleKinds)[number];
+
+/** Terms as the database stores them (`contractor_compensation_terms` columns), wire-safe. */
+export interface StoredContractorCompensation {
+	compensationBasis: CompensationBasis;
+	rateAmount: string;
+	currency: string;
+	dayUnitRule: DayUnitRuleKind | null;
+	halfDayThresholdMinutes: number | null;
+	standardDayMinutes: number | null;
+	capAtOneDay: boolean | null;
+}

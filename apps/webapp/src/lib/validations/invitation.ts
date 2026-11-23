@@ -1,6 +1,8 @@
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
+import { contractorCompensationInputSchema } from "@/lib/contractor-compensation/input-schema";
+import type { ContractorCompensationRefusal } from "@/lib/contractor-compensation/terms";
 import { engagementKinds } from "@/lib/engagement/engagement-kind";
 
 /** Trimmed optional text; empty becomes null. */
@@ -14,8 +16,10 @@ const optionalText = (max: number, message: string) =>
 
 /**
  * What an External Contractor invitation prepares (#1995): optional
- * contracting details, projects to assign and a planned engagement end, an
- * org-local calendar date that becomes a scheduled departure once they joined.
+ * contracting details, projects to assign, a planned engagement end (an
+ * org-local calendar date that becomes a scheduled departure once they
+ * joined) and the engagement's first compensation terms (#1935), written from
+ * the engagement's start when they join.
  */
 export const contractorInvitationSchema = z.object({
 	companyName: optionalText(200, "Company name cannot exceed 200 characters"),
@@ -26,11 +30,20 @@ export const contractorInvitationSchema = z.object({
 		.max(50)
 		.default([]),
 	plannedEndDate: z.iso.date({ message: "Invalid planned end date" }).nullish().default(null),
+	compensation: contractorCompensationInputSchema.nullish().default(null),
 });
 
 export type ContractorInvitation = z.infer<typeof contractorInvitationSchema>;
 
-export const PLANNED_END_NOT_FUTURE_MESSAGE = "The planned engagement end must be after today";
+/**
+ * Why the invitation's engagement setup was refused (#1995, #1935): the
+ * client words each code (`INVITATION_REFUSALS`); the compensation terms
+ * refuse with the parser's codes.
+ */
+export type InvitationEngagementRefusal =
+	| "project_not_found"
+	| "planned_end_not_future"
+	| ContractorCompensationRefusal;
 
 /**
  * A planned engagement end is a later day than the organization's today

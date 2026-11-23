@@ -4,7 +4,7 @@ import {
 	normalizeDecimalInput,
 	parseUnits,
 } from "@/lib/money/exact-decimal";
-import type { CompensationBasis, DayUnitRuleKind } from "./kinds";
+import type { CompensationBasis, DayUnitRuleKind, StoredContractorCompensation } from "./kinds";
 
 /**
  * Contractor compensation terms (#1998, spec #1935): what an External
@@ -20,6 +20,7 @@ export {
 	compensationBases,
 	type DayUnitRuleKind,
 	dayUnitRuleKinds,
+	type StoredContractorCompensation,
 } from "./kinds";
 
 /** How a local calendar day's completed work becomes billed days. */
@@ -164,17 +165,6 @@ export function formatContractorRate(
 	return formatUnits(compensation.rateMinor, currencyMinorUnitDigits(compensation.currency));
 }
 
-/** The terms as the database stores them (`contractor_compensation_terms` columns). */
-export interface StoredContractorCompensation {
-	compensationBasis: CompensationBasis;
-	rateAmount: string;
-	currency: string;
-	dayUnitRule: DayUnitRuleKind | null;
-	halfDayThresholdMinutes: number | null;
-	standardDayMinutes: number | null;
-	capAtOneDay: boolean | null;
-}
-
 export function toStoredCompensation(
 	compensation: ContractorCompensation,
 ): StoredContractorCompensation {
@@ -191,9 +181,11 @@ export function toStoredCompensation(
 	};
 }
 
-/** Reads stored terms. Throws on a row the table's checks would have refused. */
-export function fromStoredCompensation(row: StoredContractorCompensation): ContractorCompensation {
-	const parsed = parseContractorCompensation({
+/** Stored terms as entered terms, e.g. an invitation draft's terms for the writer. */
+export function compensationInputOfStored(
+	row: StoredContractorCompensation,
+): ContractorCompensationInput {
+	return {
 		basis: row.compensationBasis,
 		rateAmount: row.rateAmount,
 		currency: row.currency,
@@ -201,7 +193,12 @@ export function fromStoredCompensation(row: StoredContractorCompensation): Contr
 		halfDayThresholdMinutes: row.halfDayThresholdMinutes,
 		standardDayMinutes: row.standardDayMinutes,
 		capAtOneDay: row.capAtOneDay,
-	});
+	};
+}
+
+/** Reads stored terms. Throws on a row the table's checks would have refused. */
+export function fromStoredCompensation(row: StoredContractorCompensation): ContractorCompensation {
+	const parsed = parseContractorCompensation(compensationInputOfStored(row));
 	if (!parsed.ok) throw new RangeError(`Stored contractor terms are invalid: ${parsed.reason}`);
 	return parsed.compensation;
 }

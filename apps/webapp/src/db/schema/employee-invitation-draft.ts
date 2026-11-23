@@ -5,12 +5,14 @@ import {
 	date,
 	decimal,
 	index,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { StoredContractorCompensation } from "@/lib/contractor-compensation/kinds";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { currentTimestamp } from "./timestamp";
 import { invitation, organization, user } from "../auth-schema";
@@ -56,6 +58,12 @@ export const employeeInvitationDraft = pgTable(
 			.array()
 			.default(sql`'{}'::uuid[]`)
 			.notNull(),
+		/**
+		 * Optional first compensation terms of the contractor engagement (#1935),
+		 * parsed when the invitation was sent; joining writes them from the new
+		 * engagement's start, acting as `updatedBy`.
+		 */
+		contractorCompensation: jsonb("contractor_compensation").$type<StoredContractorCompensation>(),
 		updatedBy: text("updated_by").references(() => user.id),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -78,6 +86,10 @@ export const employeeInvitationDraft = pgTable(
 		check(
 			"employeeInvitationDraft_engagement_kind_check",
 			sql`${table.engagementKind} IN ('employee', 'contractor')`,
+		),
+		check(
+			"employeeInvitationDraft_contractor_compensation_check",
+			sql`${table.contractorCompensation} IS NULL OR (${table.engagementKind} = 'contractor' AND jsonb_typeof(${table.contractorCompensation}) = 'object')`,
 		),
 	],
 );

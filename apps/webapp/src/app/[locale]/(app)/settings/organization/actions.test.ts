@@ -352,10 +352,64 @@ describe("sendInvitation", () => {
 						referenceCode: "PO-4711",
 						projectIds: [PROJECT_ID],
 						plannedEndDate: "2027-06-30",
+						compensation: null,
 					},
 				},
 			}),
 		);
+	});
+
+	it("stores a contractor invitation's first compensation terms as the terms table does (#1935)", async () => {
+		const result = await sendInvitation({
+			email: "grace@hopper.example",
+			role: "member",
+			engagementKind: "contractor",
+			contractor: {
+				compensation: {
+					basis: "daily",
+					rateAmount: "650,5",
+					currency: "eur",
+					dayUnitRule: "half_and_full_day",
+					halfDayThresholdMinutes: 300,
+				},
+			},
+		});
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mocks.persistDraft).toHaveBeenCalledWith(
+			mocks.db,
+			expect.objectContaining({
+				engagement: {
+					kind: "contractor",
+					contractor: expect.objectContaining({
+						compensation: {
+							compensationBasis: "daily",
+							rateAmount: "650.50",
+							currency: "EUR",
+							dayUnitRule: "half_and_full_day",
+							halfDayThresholdMinutes: 300,
+							standardDayMinutes: null,
+							capAtOneDay: null,
+						},
+					}),
+				},
+			}),
+		);
+	});
+
+	it("refuses invalid first compensation terms with the parser's code before inviting (#1935)", async () => {
+		expect(
+			await sendInvitation({
+				email: "grace@hopper.example",
+				role: "member",
+				engagementKind: "contractor",
+				contractor: {
+					compensation: { basis: "hourly", rateAmount: "85.505", currency: "EUR" },
+				},
+			}),
+		).toMatchObject({ success: false, code: "ValidationError", refusal: "rate_too_precise" });
+		expect(api.createInvitation).not.toHaveBeenCalled();
+		expect(mocks.persistDraft).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -382,7 +436,7 @@ describe("sendInvitation", () => {
 			).toMatchObject({
 				success: false,
 				code: "ValidationError",
-				error: "The planned engagement end must be after today",
+				refusal: "planned_end_not_future",
 			});
 			expect(api.createInvitation).not.toHaveBeenCalled();
 			expect(mocks.persistDraft).not.toHaveBeenCalled();
@@ -404,7 +458,7 @@ describe("sendInvitation", () => {
 		).toMatchObject({
 			success: false,
 			code: "ValidationError",
-			error: "Project not found in this organization",
+			refusal: "project_not_found",
 		});
 		expect(api.createInvitation).not.toHaveBeenCalled();
 	});

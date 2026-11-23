@@ -18,6 +18,11 @@ import {
 	persistEmployeeInvitationDraft,
 	syncInvitationTargetTeam,
 } from "@/lib/auth/employee-invitation-draft";
+import {
+	type ContractorCompensationInput,
+	parseContractorCompensation,
+	toStoredCompensation,
+} from "@/lib/contractor-compensation/terms";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -32,9 +37,9 @@ import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
 	contractorInvitationSchema,
+	type InvitationEngagementRefusal,
 	invitationSchema,
 	isPlannedEndAfterOrganizationToday,
-	PLANNED_END_NOT_FUTURE_MESSAGE,
 	refineInvitationEngagement,
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
@@ -122,6 +127,7 @@ function validateInvitationProjects(organizationId: string, projectIds: readonly
 					message: "Project not found in this organization",
 					field: "contractor.projectIds",
 					value: unknown,
+					refusal: "project_not_found" satisfies InvitationEngagementRefusal,
 				}),
 			);
 		}
@@ -150,13 +156,34 @@ function validatePlannedEndDate(
 		if (!isPlannedEndAfterOrganizationToday(plannedEndDate, today)) {
 			return yield* Effect.fail(
 				new ValidationError({
-					message: PLANNED_END_NOT_FUTURE_MESSAGE,
+					message: "The planned engagement end must be after today",
 					field: "contractor.plannedEndDate",
 					value: plannedEndDate,
+					refusal: "planned_end_not_future" satisfies InvitationEngagementRefusal,
 				}),
 			);
 		}
 	});
+}
+
+/**
+ * The invitation's first contractor terms (#1935), parsed now so a refusal
+ * reaches the admin who invites, and stored as the terms table stores them.
+ * Refused with the parser's code; the message is a diagnostic only.
+ */
+function validateInvitationCompensation(
+	compensation: ContractorCompensationInput | null | undefined,
+) {
+	if (!compensation) return Effect.succeed(null);
+	const parsed = parseContractorCompensation(compensation);
+	if (parsed.ok) return Effect.succeed(toStoredCompensation(parsed.compensation));
+	return Effect.fail(
+		new ValidationError({
+			message: `Invitation compensation refused: ${parsed.reason}`,
+			field: "contractor.compensation",
+			refusal: parsed.reason satisfies InvitationEngagementRefusal,
+		}),
+	);
 }
 
 /**
@@ -170,6 +197,11 @@ export const sendInvitation = organizationAction(
 		return Effect.gen(function* () {
 			const now = systemClock.nowInstant();
 			const dbService = yield* DatabaseService;
+			const contractor =
+				input.engagementKind === "contractor"
+					? (input.contractor ?? contractorInvitationSchema.parse({}))
+					: null;
+			const compensation = yield* validateInvitationCompensation(contractor?.compensation);
 			const draftFields = {
 				organizationId,
 				normalizedEmail: input.email,
@@ -180,10 +212,7 @@ export const sendInvitation = organizationAction(
 				// An employee or an External Contractor with what joining prepares for them (#1995).
 				engagement: {
 					kind: input.engagementKind,
-					contractor:
-						input.engagementKind === "contractor"
-							? (input.contractor ?? contractorInvitationSchema.parse({}))
-							: null,
+					contractor: contractor ? { ...contractor, compensation } : null,
 				},
 			} as const;
 

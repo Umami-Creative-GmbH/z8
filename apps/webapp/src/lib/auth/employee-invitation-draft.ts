@@ -9,6 +9,7 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import type { StoredContractorCompensation } from "@/lib/contractor-compensation/kinds";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import type { ContractorInvitation } from "@/lib/validations/invitation";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
@@ -22,19 +23,24 @@ export function normalizeInvitationEmail(email: string): string {
 
 /**
  * Whom a new invitation brings in (#1995): an employee, or an External
- * Contractor with the contracting details, projects and planned end that
- * joining applies. A resend carries none and keeps the draft's.
+ * Contractor with the contracting details, projects, planned end and first
+ * compensation terms (#1935, parsed and stored as the terms table stores them)
+ * that joining applies. A resend carries none and keeps the draft's.
  */
 export type InvitationEngagement = {
 	kind: EngagementKind;
-	contractor: ContractorInvitation | null;
+	contractor:
+		| (Omit<ContractorInvitation, "compensation"> & {
+				compensation: StoredContractorCompensation | null;
+		  })
+		| null;
 };
 
 /**
  * The draft columns an invitation's engagement writes. A draft an invitation of
  * the other kind replaces keeps nothing of its old kind: a contractor invitation
  * clears the employee-only terms (contract type, wage), an employee invitation
- * the contracting details, projects and planned end.
+ * the contracting details, projects, planned end and compensation terms.
  */
 function engagementDraftValues(engagement: InvitationEngagement) {
 	const contractor = engagement.kind === "contractor" ? engagement.contractor : null;
@@ -48,6 +54,7 @@ function engagementDraftValues(engagement: InvitationEngagement) {
 		contractorReferenceCode: contractor?.referenceCode ?? null,
 		plannedEndDate: contractor?.plannedEndDate ?? null,
 		projectIds: contractor?.projectIds ?? [],
+		contractorCompensation: contractor?.compensation ?? null,
 	};
 }
 

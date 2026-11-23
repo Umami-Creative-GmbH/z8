@@ -1985,6 +1985,10 @@
         "message": "Bleiben Sie gesund – trinken Sie etwas Wasser",
         "snooze": "Heute pausieren",
         "title": "Zeit, etwas zu trinken!"
+      },
+      "invitationContractorTermsNeedReview": {
+        "title": "Der Satz eines Externen Dienstleisters muss geprüft werden",
+        "message": "Der Satz aus der Einladung von {name} konnte beim Beitritt nicht übernommen werden. Legen Sie ihn in der Vergütung Externer Dienstleister fest; bis dahin bleibt die Arbeit unbepreist."
       }
     },
     "countFailed": "Anzahl ungelesener Elemente nicht verfügbar",

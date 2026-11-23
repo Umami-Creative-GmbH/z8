@@ -16,7 +16,7 @@ import {
 	loadContractorCompensation,
 	saveContractorDetails,
 } from "@/lib/contractor-compensation/store";
-import { compensationBases, dayUnitRuleKinds } from "@/lib/contractor-compensation/terms";
+import { contractorCompensationInputSchema } from "@/lib/contractor-compensation/input-schema";
 import { NotFoundError } from "@/lib/effect/errors";
 import type { ContractorProfileDetails } from "@/lib/engagement/contractor-profile";
 import { createLogger } from "@/lib/logger";
@@ -35,16 +35,6 @@ const logger = createLogger("ContractorCompensationActions");
 
 const employeeIdSchema = z.uuid({ message: "Choose a contractor" });
 const dateSchema = z.string().max(32);
-
-const compensationSchema = z.strictObject({
-	basis: z.enum(compensationBases),
-	rateAmount: z.string().max(32),
-	currency: z.string().max(8),
-	dayUnitRule: z.enum(dayUnitRuleKinds).nullable().optional(),
-	halfDayThresholdMinutes: z.number().int().nullable().optional(),
-	standardDayMinutes: z.number().int().nullable().optional(),
-	capAtOneDay: z.boolean().nullable().optional(),
-});
 
 const employeeNotFound = () =>
 	new NotFoundError({ message: "The contractor was not found", entityType: "employee" });
@@ -113,7 +103,7 @@ export const setContractorTerms = organizationAction(
 		schema: z.strictObject({
 			employeeId: employeeIdSchema,
 			effectiveFrom: dateSchema,
-			compensation: compensationSchema,
+			compensation: contractorCompensationInputSchema,
 		}),
 	},
 	({ actor, organizationId, input }) =>

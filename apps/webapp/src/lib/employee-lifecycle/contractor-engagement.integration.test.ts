@@ -257,6 +257,8 @@ describe("external contractor engagement kind (#1995)", () => {
 			plannedEndDate: string | null;
 			/** The admin who prepared the invitation; the owner unless named, nobody when null. */
 			preparedBy?: string | null;
+			/** The invitation's first compensation terms, as `sendInvitation` stores them (#1935). */
+			compensation?: Record<string, unknown> | null;
 		}) {
 			const userId = randomUUID();
 			const memberId = randomUUID();
@@ -281,9 +283,10 @@ describe("external contractor engagement kind (#1995)", () => {
 				`insert into employee_invitation_draft
 				   (invitation_id, organization_id, normalized_email, team_id, role, first_name,
 				    contract_type, current_hourly_rate, engagement_kind, contractor_company_name,
-				    contractor_vat_id, contractor_reference_code, planned_end_date, project_ids, updated_by)
+				    contractor_vat_id, contractor_reference_code, planned_end_date, project_ids, updated_by,
+				    contractor_compensation)
 				 values ($1, $2, $3, $4, 'employee', 'Grace', 'hourly', '95.00', 'contractor',
-				         'Hopper Consulting GmbH', 'DE123456789', 'PO-4711', $5, $6::uuid[], $7)`,
+				         'Hopper Consulting GmbH', 'DE123456789', 'PO-4711', $5, $6::uuid[], $7, $8::jsonb)`,
 				[
 					invitationId,
 					fixture.organizationId,
@@ -292,6 +295,7 @@ describe("external contractor engagement kind (#1995)", () => {
 					draft.plannedEndDate,
 					draft.projectIds,
 					draft.preparedBy === undefined ? fixture.ownerUserId : draft.preparedBy,
+					draft.compensation ? JSON.stringify(draft.compensation) : null,
 				],
 			);
 			return { userId, memberId, invitationId };
@@ -814,6 +818,149 @@ describe("external contractor engagement kind (#1995)", () => {
 				type: "employee_offboarding_review",
 			});
 			expect(followUp.notices.map((notice) => notice.user_id)).not.toContain(formerAdmin.userId);
+		});
+
+		const dailyRate = {
+			compensationBasis: "daily",
+			rateAmount: "650.00",
+			currency: "EUR",
+			dayUnitRule: "half_and_full_day",
+			halfDayThresholdMinutes: 300,
+			standardDayMinutes: null,
+			capAtOneDay: null,
+		};
+
+		async function termsFollowUp(employeeId: string) {
+			const { rows: terms } = await fixture.pool.query(
+				`select t.compensation_basis, t.rate_amount::text, t.currency, t.day_unit_rule,
+				   t.half_day_threshold_minutes, t.effective_from::text, t.effective_to::text,
+				   t.created_by, p.engagement_kind, p.status
+				 from contractor_compensation_terms t
+				 join employee_employment_period p on p.id = t.employment_period_id
+				 where t.organization_id = $1 and t.employee_id = $2`,
+				[fixture.organizationId, employeeId],
+			);
+			const { rows: audits } = await fixture.pool.query<{
+				action: string;
+				metadata: string | null;
+			}>(
+				`select action, metadata from audit_log where organization_id = $1 and employee_id = $2
+				 and action in ('employee.invitation_contractor_terms_not_applied',
+				                'employee.contractor_terms_set')
+				 order by timestamp`,
+				[fixture.organizationId, employeeId],
+			);
+			const { rows: notices } = await fixture.pool.query<{ user_id: string; message: string }>(
+				`select user_id, message from notification
+				 where organization_id = $1 and entity_type = 'employee' and entity_id = $2`,
+				[fixture.organizationId, employeeId],
+			);
+			return {
+				terms,
+				audits: audits.map((audit) => ({
+					action: audit.action,
+					metadata: audit.metadata ? JSON.parse(audit.metadata) : null,
+				})),
+				notices,
+			};
+		}
+
+		it("writes the invitation's rate as the new engagement's first terms from its start, as the admin who prepared it (#1935)", async () => {
+			const joiner = await acceptedContractorInvitation({
+				teamId: null,
+				projectIds: [],
+				plannedEndDate: null,
+				compensation: dailyRate,
+			});
+
+			const employeeId = await joinAndSettle(joiner);
+
+			const { rows: periods } = await fixture.pool.query<{ started_at: Date | null }>(
+				`select started_at from employee_employment_period
+				 where organization_id = $1 and employee_id = $2 and status = 'open'`,
+				[fixture.organizationId, employeeId],
+			);
+			const { rows: organization } = await fixture.pool.query<{ timezone: string | null }>(
+				"select timezone from organization where id = $1",
+				[fixture.organizationId],
+			);
+			// The engagement's earliest terms day: its start at UTC−14:00, or today without one.
+			const startedAt = periods[0]?.started_at;
+			const effectiveFrom = startedAt
+				? parseInstant(startedAt.toISOString())
+						.toZonedDateTimeISO("-14:00")
+						.toPlainDate()
+						.toString()
+				: todayInOrganization(systemClock.nowInstant(), organization[0]?.timezone).toString();
+			const followUp = await termsFollowUp(employeeId);
+			expect(followUp.terms).toEqual([
+				{
+					compensation_basis: "daily",
+					rate_amount: "650.000",
+					currency: "EUR",
+					day_unit_rule: "half_and_full_day",
+					half_day_threshold_minutes: 300,
+					effective_from: effectiveFrom,
+					effective_to: null,
+					created_by: fixture.ownerUserId,
+					engagement_kind: "contractor",
+					status: "open",
+				},
+			]);
+			expect(followUp.audits.map((audit) => audit.action)).toEqual([
+				"employee.contractor_terms_set",
+			]);
+			expect(followUp.notices).toEqual([]);
+
+			// Run again (a replayed step) with other terms: the first terms are never replaced.
+			const { applyInvitationContractorTerms } =
+				await import("./joining/invitation-contractor-terms");
+			await applyInvitationContractorTerms({
+				organizationId: fixture.organizationId,
+				employeeId,
+				userId: joiner.userId,
+				compensation: { ...dailyRate, rateAmount: "999.00" },
+				draftId: randomUUID(),
+				invitationId: joiner.invitationId,
+				actorUserId: fixture.ownerUserId,
+			});
+			const replayed = await termsFollowUp(employeeId);
+			expect(replayed.terms).toEqual(followUp.terms);
+			expect(replayed.audits.at(-1)).toEqual({
+				action: "employee.invitation_contractor_terms_not_applied",
+				metadata: expect.objectContaining({ reason: "refused", refusal: "terms_exist" }),
+			});
+			expect(replayed.notices).toContainEqual(
+				expect.objectContaining({ user_id: fixture.ownerUserId }),
+			);
+		});
+
+		it("never drops the invitation's rate silently when nobody can be named to set it (#1935)", async () => {
+			const joiner = await acceptedContractorInvitation({
+				teamId: null,
+				projectIds: [],
+				plannedEndDate: null,
+				preparedBy: null,
+				compensation: dailyRate,
+			});
+
+			const employeeId = await joinAndSettle(joiner);
+
+			const followUp = await termsFollowUp(employeeId);
+			expect(followUp.terms).toEqual([]);
+			expect(followUp.audits).toEqual([
+				{
+					action: "employee.invitation_contractor_terms_not_applied",
+					metadata: expect.objectContaining({
+						reason: "no_admin_actor",
+						actorKind: "system",
+						compensation: dailyRate,
+					}),
+				},
+			]);
+			expect(followUp.notices).toContainEqual(
+				expect.objectContaining({ user_id: fixture.ownerUserId }),
+			);
 		});
 
 		it("records a planned end nobody prepared as a system finding, not as the contractor's own action", async () => {

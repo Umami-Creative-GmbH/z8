@@ -226,7 +226,11 @@
         "plannedEndDateNotFuture": "Das geplante Auftragsende muss nach dem heutigen Tag liegen.",
         "projects": "Projekte",
         "referenceCode": "Bestellnummer oder Kostenstelle",
-        "vatId": "USt-IdNr."
+        "vatId": "USt-IdNr.",
+        "compensation": {
+          "label": "Satz jetzt festlegen",
+          "description": "Gilt nach dem Beitritt ab Beginn des Auftrags. Nur Organisationsadministratoren sehen ihn; Sie können ihn auch später festlegen."
+        }
       },
       "description": "Einladung zum Beitritt zu {organizationName} senden",
       "emailLabel": "E-Mail-Adresse",
@@ -257,7 +261,10 @@
       "submit": "Einladung senden",
       "success": "Einladung erfolgreich gesendet",
       "targetTeam": "Ziel-Team",
-      "title": "Mitglied einladen"
+      "title": "Mitglied einladen",
+      "errors": {
+        "projectNotFound": "Ein gewähltes Projekt gehört nicht mehr zu dieser Organisation. Wählen Sie die Projekte erneut."
+      }
     },
     "joinOrCreate": "Beitreten oder erstellen",
     "language": {
