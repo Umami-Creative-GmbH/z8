@@ -1,6 +1,9 @@
 import { type SQL, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
+import { complianceException } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { awaitingComplianceExceptionDecision } from "@/lib/compliance/pending-compliance-exception";
 import {
 	type Clock,
 	compareInstants,
@@ -145,17 +148,20 @@ function scopeCondition(scope: ComplianceExceptionInboxScope): SQL {
 	)})`;
 }
 
+/** `compliance_exception` as the hand-written queries below alias it. */
+const exceptionAlias = alias(complianceException, "exception");
+
 /**
  * An inbox status as rows: pending ones only while their validity window is open; `listable`
  * is any of the three, for opening one exception.
  */
-function statusCondition(status: ApprovalInboxStatus | "listable", at: Date): SQL {
+function statusCondition(status: ApprovalInboxStatus | "listable", now: Instant): SQL {
 	switch (status) {
 		case "listable":
-			return sql`(${statusCondition("pending", at)} or ${statusCondition("approved", at)}
-				or ${statusCondition("rejected", at)})`;
+			return sql`(${statusCondition("pending", now)} or ${statusCondition("approved", now)}
+				or ${statusCondition("rejected", now)})`;
 		case "pending":
-			return sql`exception.status = 'pending' and exception.valid_until > ${at}::timestamptz`;
+			return awaitingComplianceExceptionDecision(now, exceptionAlias);
 		case "approved":
 			return sql`exception.status in ('approved', 'used')`;
 		case "rejected":
@@ -190,6 +196,13 @@ function filterConditions(filters: CanonicalInboxListFilters | undefined, at: Da
 	return conditions.length > 0 ? sql`and ${sql.join(conditions, sql` and `)}` : sql``;
 }
 
+/**
+ * `created_at` at the millisecond an item and its cursor carry. The database stamps it to the
+ * microsecond, so comparing or ordering the raw column would put the cursor's own row after the
+ * cursor and stall paging.
+ */
+const CREATED_AT_AS_LISTED = sql`date_trunc('milliseconds', exception.created_at)`;
+
 /** The rows after the cursor: all of them, those later in the band, or none. */
 function cursorCondition(cursor: ComplianceExceptionInboxLoadInput["cursor"]): SQL {
 	if (!cursor) return sql``;
@@ -199,8 +212,8 @@ function cursorCondition(cursor: ComplianceExceptionInboxLoadInput["cursor"]): S
 	if (band < 0) return sql``;
 	if (band > 0) return sql`and false`;
 	const createdAt = dateFromInstant(parseInstant(cursor.createdAt));
-	return sql`and (exception.created_at > ${createdAt}
-		or (exception.created_at = ${createdAt} and exception.id > ${cursor.id}::uuid))`;
+	return sql`and (${CREATED_AT_AS_LISTED} > ${createdAt}
+		or (${CREATED_AT_AS_LISTED} = ${createdAt} and exception.id > ${cursor.id}::uuid))`;
 }
 
 function candidateQuery(
@@ -237,11 +250,11 @@ function candidateQuery(
 		left join "user" approver_user on approver_user.id = approver.user_id
 		where exception.organization_id = ${input.organizationId}
 			and ${scopeCondition(input.scope)}
-			and ${statusCondition(input.status, at)}
+			and ${statusCondition(input.status, now)}
 			${input.exceptionId ? sql`and exception.id = ${input.exceptionId}::uuid` : sql``}
 			${filterConditions(input.filters, at)}
 			${countOnly ? sql`` : cursorCondition(input.cursor)}
-		${countOnly ? sql`` : sql`order by exception.created_at, exception.id limit ${limit}`}
+		${countOnly ? sql`` : sql`order by ${CREATED_AT_AS_LISTED}, exception.id limit ${limit}`}
 	`;
 }
 
@@ -618,8 +631,7 @@ export async function decideComplianceExceptionFromInbox(input: {
 			where organization_id = ${input.organizationId}
 				and id = ${input.exceptionId}::uuid
 				and employee_id <> ${input.actorEmployeeId}::uuid
-				and status = 'pending'
-				and valid_until > ${at}::timestamptz
+				and ${awaitingComplianceExceptionDecision(now)}
 			returning id
 		`),
 	);

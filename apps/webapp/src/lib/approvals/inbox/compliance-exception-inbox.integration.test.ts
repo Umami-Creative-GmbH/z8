@@ -1081,5 +1081,99 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 			expect(whole.items.map((item) => item.id)).toEqual(expect.arrayContaining(exceptionIds));
 			expect(paged).toEqual(whole.items.map((item) => item.id));
 		});
+
+		/**
+		 * An exception as the app files it: `created_at` from the database's `now()`, finer than
+		 * the millisecond a cursor carries. Each insert is its own transaction, so its own instant.
+		 */
+		async function exceptionFiledNow(employeeId: string): Promise<string> {
+			const id = randomUUID();
+			await fixture.pool.query(
+				`insert into compliance_exception
+				 (id, organization_id, employee_id, exception_type, status, reason,
+				  valid_from, valid_until, created_by, updated_at)
+				 values ($1, $2, $3, 'overtime_daily', 'pending', 'Inventory count runs late',
+				  '2026-03-10T08:00:00Z', '2026-03-11T08:00:00Z', $4, now())`,
+				[id, organizationId, employeeId, ownerUserId],
+			);
+			return id;
+		}
+
+		/** Every page at `limit`, following the cursor until the list says there is no more. */
+		async function everyPage(limit: number, sources: ApprovalInboxSource[] = []) {
+			const pages: { ids: string[]; hasMore: boolean }[] = [];
+			let cursor: string | undefined;
+			for (let page = 0; page < 20; page++) {
+				const list = await listWith({ limit, ...(cursor ? { cursor } : {}) }, sources);
+				pages.push({ ids: list.items.map((item) => item.id), hasMore: list.hasMore });
+				if (!list.hasMore) break;
+				cursor = list.nextCursor ?? undefined;
+			}
+			return pages;
+		}
+
+		it("reaches every exception filed at the database clock exactly once, page after page", async () => {
+			const filed: string[] = [];
+			for (let index = 0; index < 7; index++) {
+				filed.push(await exceptionFiledNow(employee.employeeId));
+			}
+
+			const pages = await everyPage(2);
+
+			expect(pages.map((page) => page.ids.length)).toEqual([2, 2, 2, 1]);
+			expect(pages.map((page) => page.hasMore)).toEqual([true, true, true, false]);
+			const paged = pages.flatMap((page) => page.ids);
+			expect(paged).toHaveLength(7);
+			expect([...paged].sort()).toEqual([...filed].sort());
+		});
+
+		it("reaches every exception filed at the database clock exactly once among other types", async () => {
+			// Two other items first, so the exceptions fill the later pages on their own.
+			const absences: UnifiedApprovalItem[] = [0, 1].map((minutesEarlier) => ({
+				id: randomUUID(),
+				approvalType: "absence_entry",
+				entityId: randomUUID(),
+				typeName: "Absence Request",
+				requester: {
+					id: employee.employeeId,
+					userId: employee.userId,
+					name: "Avery Employee",
+					email: "avery@example.com",
+					image: null,
+					teamId: null,
+				},
+				approverId: manager.employeeId,
+				organizationId,
+				status: "pending",
+				createdAt: new Date(Date.now() - (minutesEarlier + 1) * 60_000),
+				resolvedAt: null,
+				priority: "high",
+				sla: { deadline: null, status: "on_time", hoursRemaining: null },
+				display: { title: "Vacation", subtitle: "Mar 12", summary: "1 day off" },
+			}));
+			const filed: string[] = [];
+			for (let index = 0; index < 7; index++) {
+				filed.push(await exceptionFiledNow(outsider.employeeId));
+			}
+			const absenceSource: ApprovalInboxSource = {
+				type: "absence_entry",
+				displayName: "Absence",
+				supportsBulkApprove: true,
+				handler: {
+					getApprovals: () => Effect.succeed(absences),
+					getCount: () => Effect.succeed(absences.length),
+				} as never,
+			};
+
+			const pages = await everyPage(3, [absenceSource]);
+
+			expect(pages.map((page) => page.ids.length)).toEqual([3, 3, 3]);
+			expect(pages.map((page) => page.hasMore)).toEqual([true, true, false]);
+			const paged = pages.flatMap((page) => page.ids);
+			expect(paged).toHaveLength(9);
+			expect([...paged].sort()).toEqual(
+				[...filed, ...absences.map((absence) => absence.id)].sort(),
+			);
+		});
 	});
 });
