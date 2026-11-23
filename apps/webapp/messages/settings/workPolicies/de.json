@@ -596,6 +596,7 @@
           "invalidMonth": "Wähle einen Kalendermonat.",
           "notExceeded": "Der Verdienst des Monats liegt wieder innerhalb der Grenze; es gibt nichts zu dokumentieren.",
           "notAcknowledgeable": "Dieser Monat kann nicht als unvorhersehbare Überschreitung gelten: Er liegt über dem Doppelten der Grenze oder ist die dritte Überschreitung innerhalb von 12 Monaten.",
+          "changed": "Der Verdienst des Monats hat sich geändert, seit du diese Liste geöffnet hast. Prüfe die aktuellen Beträge und dokumentiere sie erneut.",
           "subjectRequired": "Der Monat konnte nicht ausgewertet werden. Lade die Seite neu und versuche es erneut."
         },
         "tier": {

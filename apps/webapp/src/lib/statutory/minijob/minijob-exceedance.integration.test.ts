@@ -12,6 +12,7 @@ import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
 import { acknowledgeMinijobExceedance } from "./acknowledge-minijob-exceedance";
 import { evaluateMinijobEarnings } from "./evaluate-minijob";
 import { minijobFixture } from "./minijob-database.test.fixture";
+import { addMonths } from "./minijob-months";
 
 const NOW = Temporal.Instant.from("2026-11-23T12:00:00Z");
 
@@ -52,20 +53,50 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 			.map((f) => [f.subjectKey, f.severity, f.adminDetail?.facts?.exceedanceStatus]);
 	}
 
-	function acknowledge(
-		{ org, owner, worker }: Setup,
+	/** The fingerprint an org admin is shown for the month. */
+	async function shownFingerprint({ org, worker }: Setup, month: string) {
+		const { employees } = await evaluateMinijobEarnings(db, {
+			organizationId: org.id,
+			timezone: org.timezone,
+			employeeIds: [worker.employeeId],
+			months: { from: month, until: addMonths(month, 1) },
+			preferences: DEFAULT_STATUTORY_PREFERENCES,
+			now: NOW,
+		});
+		return employees.get(worker.employeeId)?.find((m) => m.month === month)?.fingerprint ?? "";
+	}
+
+	async function acknowledge(
+		s: Setup,
 		month: string,
 		reason = "Covered a sick colleague",
+		expectedFingerprint?: string,
 	) {
 		return acknowledgeMinijobExceedance(db, {
-			organizationId: org.id,
-			actorUserId: owner.userId,
-			employeeId: worker.employeeId,
+			organizationId: s.org.id,
+			actorUserId: s.owner.userId,
+			employeeId: s.worker.employeeId,
 			month,
 			reason,
+			expectedFingerprint: expectedFingerprint ?? (await shownFingerprint(s, month)),
 			now: NOW,
 		});
 	}
+
+	it("refuses to acknowledge figures that changed since they were shown", async () => {
+		const s = await setup();
+		await mj.monthWork(s.org, s.worker, "2026-01", 4200);
+		const shown = await shownFingerprint(s, "2026-01");
+
+		await mj.work(s.org, s.worker, "2026-01-28", 60);
+
+		await expect(acknowledge(s, "2026-01", "Sick cover", shown)).rejects.toMatchObject({
+			refusal: "minijob_exceedance_changed",
+		});
+		expect(await monthly(s, "2026-01", "2026-02")).toEqual([
+			["2026-01", "critical", "unacknowledged"],
+		]);
+	});
 
 	it("lets two acknowledged exceedances pass and makes the third critical", async () => {
 		const s = await setup();

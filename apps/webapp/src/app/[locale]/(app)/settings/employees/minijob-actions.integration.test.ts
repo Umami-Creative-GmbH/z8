@@ -188,7 +188,7 @@ describe("Minijob monitor actions (PostgreSQL)", () => {
 	});
 
 	it("lists open exceedances in Reviews & Conflicts until an org admin acknowledges them", async () => {
-		const { worker, asOwner, asManager } = await setup();
+		const { org, worker, asOwner, asManager } = await setup();
 
 		harness.caller = asManager;
 		expect(
@@ -200,6 +200,7 @@ describe("Minijob monitor actions (PostgreSQL)", () => {
 				month: currentMonth,
 				reason: "Sick cover",
 				legalNote: null,
+				expectedFingerprint: "guessed",
 			}),
 		).toMatchObject({ success: false, code: "AuthorizationError" });
 
@@ -223,12 +224,33 @@ describe("Minijob monitor actions (PostgreSQL)", () => {
 			],
 		});
 
+		if (!open.success) throw new Error(open.error);
+		const [shown] = open.data;
+		expect(shown.inputFingerprint).toEqual(expect.any(String));
+		const acknowledgement = {
+			employeeId: worker.employeeId,
+			month: currentMonth,
+			reason: "Covered a colleague's unplanned sick leave",
+			legalNote: "§ 8 Abs. 1b SGB IV",
+		};
+
+		// Figures the admin never saw cannot be documented.
+		await mj.work(org, worker, `${currentMonth}-01`, 30, "06:00");
 		expect(
 			await reviewActions.acknowledgeMinijobExceedanceAction({
-				employeeId: worker.employeeId,
-				month: currentMonth,
-				reason: "Covered a colleague's unplanned sick leave",
-				legalNote: "§ 8 Abs. 1b SGB IV",
+				...acknowledgement,
+				expectedFingerprint: shown.inputFingerprint,
+			}),
+		).toMatchObject({ success: false, refusal: "minijob_exceedance_changed" });
+
+		const reloaded = await reviewActions.listMinijobExceedanceReviewsAction({
+			includeAcknowledged: false,
+		});
+		if (!reloaded.success) throw new Error(reloaded.error);
+		expect(
+			await reviewActions.acknowledgeMinijobExceedanceAction({
+				...acknowledgement,
+				expectedFingerprint: reloaded.data[0].inputFingerprint,
 			}),
 		).toMatchObject({ success: true });
 

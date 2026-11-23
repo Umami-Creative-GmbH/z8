@@ -35,11 +35,14 @@ export const acknowledgeMinijobExceedanceAction = organizationAction(
 			month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 			reason: z.string().trim().min(1, "Explain why the exceedance was unforeseeable").max(2000),
 			legalNote: z.string().trim().max(500).nullable(),
+			/** The month's fingerprint as listed: a precondition, never what is recorded. */
+			expectedFingerprint: z.string().min(1).max(200),
 		}),
 	},
 	({ actor, organizationId, input }) =>
 		storeStep("contracts.acknowledgeMinijobExceedance", async (db) => {
-			// The month is evaluated again server-side: the fingerprint never comes from the client.
+			// The month is evaluated again server-side and recorded with the server's fingerprint,
+			// only when it still is the one the admin was shown.
 			const record = await acknowledgeMinijobExceedance(db, {
 				organizationId,
 				actorUserId: actor.userId,
@@ -47,6 +50,7 @@ export const acknowledgeMinijobExceedanceAction = organizationAction(
 				month: input.month,
 				reason: input.reason,
 				legalNote: input.legalNote,
+				expectedFingerprint: input.expectedFingerprint,
 				now: systemClock.nowInstant(),
 			});
 			return { id: record.id, acknowledgedAt: record.acknowledgedAt };

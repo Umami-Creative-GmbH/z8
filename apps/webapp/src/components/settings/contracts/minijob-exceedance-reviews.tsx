@@ -42,6 +42,10 @@ const ACKNOWLEDGE_REFUSALS = {
 		"settings.contracts.minijob.refusal.notAcknowledgeable",
 		"This month cannot count as an unforeseeable exceedance: it is above twice the limit or the third exceedance within 12 months.",
 	],
+	minijob_exceedance_changed: [
+		"settings.contracts.minijob.refusal.changed",
+		"The month's earnings changed since you opened this list. Review the updated figures and document them again.",
+	],
 	statutory_reason_required: [
 		"settings.contracts.minijob.refusal.reasonRequired",
 		"Explain why the exceedance was unforeseeable.",
@@ -62,6 +66,7 @@ function AcknowledgeForm({ review }: { review: MinijobExceedanceReview }) {
 				month: review.month,
 				reason: value.reason,
 				legalNote: value.legalNote.trim() || null,
+				expectedFingerprint: review.inputFingerprint,
 			});
 			if (!result.success) throw new Error(actionErrorMessage(t, result, ACKNOWLEDGE_REFUSALS));
 			return result.data;
@@ -76,7 +81,11 @@ function AcknowledgeForm({ review }: { review: MinijobExceedanceReview }) {
 			void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
 			void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(review.employeeId) });
 		},
-		onError: (error) => toast.error(error.message),
+		onError: (error) => {
+			toast.error(error.message);
+			// The figures may have changed: show the current ones.
+			void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
+		},
 	});
 	const form = useForm({
 		defaultValues: { reason: "", legalNote: "" },

@@ -5,7 +5,7 @@
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
-import { employee, employeeEmploymentHistory } from "@/db/schema";
+import { employee } from "@/db/schema";
 import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -13,7 +13,13 @@ import { attachAcknowledgementStates } from "../acknowledgements";
 import type { StatutorySeverity } from "../finding";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { evaluateMinijobEarnings } from "./evaluate-minijob";
-import { addMonths, MINIJOB_MONTHLY_FINDING, type MinijobExceedanceStatus } from "./minijob-months";
+import {
+	addMonths,
+	firstDayOf,
+	MINIJOB_MONTHLY_FINDING,
+	type MinijobExceedanceStatus,
+} from "./minijob-months";
+import { loadMinijobCandidates } from "./minijob-terms";
 
 export interface MinijobExceedanceReview {
 	/** `StatutoryFinding.id`. */
@@ -30,6 +36,8 @@ export interface MinijobExceedanceReview {
 	readonly externalCents: number;
 	readonly plannedCents: number;
 	readonly priorExceedanceMonths: readonly string[];
+	/** What these figures are: sent back as the acknowledgement's precondition. Org admins only. */
+	readonly inputFingerprint: string;
 	readonly acknowledgement: {
 		readonly status: "none" | "current" | "stale";
 		readonly acknowledgedAt: Date | null;
@@ -58,26 +66,23 @@ export async function loadMinijobExceedanceReviews(
 		readonly includeAcknowledged?: boolean;
 	},
 ): Promise<MinijobExceedanceReview[]> {
-	const candidates = await db
-		.select({ employeeId: employeeEmploymentHistory.employeeId })
-		.from(employeeEmploymentHistory)
-		.where(
-			and(
-				eq(employeeEmploymentHistory.organizationId, input.organizationId),
-				eq(employeeEmploymentHistory.reviewState, "confirmed"),
-				eq(employeeEmploymentHistory.employmentProfile, "minijob"),
-			),
-		);
-	if (candidates.length === 0) return [];
-
 	const timezone = await loadOrganizationTimezone(db, input.organizationId);
-	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
 	const currentMonth = plainDateAt(input.now, timezone).toString().slice(0, 7);
+	const months = { from: addMonths(currentMonth, -11), until: addMonths(currentMonth, 2) };
+	// Findings only exist for months on Minijob terms: long-departed Minijobbers are not evaluated.
+	const employeeIds = await loadMinijobCandidates(db, {
+		organizationId: input.organizationId,
+		from: firstDayOf(months.from),
+		until: firstDayOf(months.until),
+	});
+	if (employeeIds.length === 0) return [];
+
+	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
 	const { findings } = await evaluateMinijobEarnings(db, {
 		organizationId: input.organizationId,
 		timezone,
-		employeeIds: [...new Set(candidates.map((row) => row.employeeId))],
-		months: { from: addMonths(currentMonth, -11), until: addMonths(currentMonth, 2) },
+		employeeIds,
+		months,
 		preferences,
 		now: input.now,
 	});
@@ -129,6 +134,7 @@ export async function loadMinijobExceedanceReviews(
 				externalCents: amounts.external ?? 0,
 				plannedCents: amounts.planned ?? 0,
 				priorExceedanceMonths: prior ? prior.split(",") : [],
+				inputFingerprint: finding.inputFingerprint,
 				acknowledgement: {
 					status: finding.acknowledgement?.status ?? "none",
 					acknowledgedAt: finding.acknowledgement?.acknowledgedAt ?? null,

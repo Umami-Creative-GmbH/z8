@@ -1,8 +1,9 @@
 /**
  * Documents an occasional unforeseeable Minijob exceedance (§ 8 Abs. 1b SGB IV, #1989). The
  * month is evaluated again here, so the acknowledgement always carries the server's own input
- * fingerprint; a month above twice its cap, or a third exceedance month within 12 months, cannot
- * be acknowledged. Callers authorize org admins first.
+ * fingerprint, and only when it is the one the admin was shown; a month above twice its cap, or a
+ * third exceedance month within 12 months, cannot be acknowledged. Callers authorize org admins
+ * first.
  */
 import { type Instant, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
@@ -21,7 +22,9 @@ import { addMonths, MINIJOB_MONTHLY_FINDING } from "./minijob-months";
 export type MinijobExceedanceRefusal =
 	| "minijob_invalid_month"
 	| "minijob_not_exceeded"
-	| "minijob_exceedance_not_acknowledgeable";
+	| "minijob_exceedance_not_acknowledgeable"
+	/** The month's figures changed since the admin saw them. */
+	| "minijob_exceedance_changed";
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -35,6 +38,8 @@ export async function acknowledgeMinijobExceedance(
 		readonly month: string;
 		readonly reason: string;
 		readonly legalNote?: string | null;
+		/** The month's fingerprint as the admin was shown it: nobody documents unseen figures. */
+		readonly expectedFingerprint: string;
 		readonly now: Instant;
 	},
 ): Promise<StatutoryAcknowledgementRecord> {
@@ -73,6 +78,13 @@ export async function acknowledgeMinijobExceedance(
 				"This month cannot count as an unforeseeable exceedance: it is above twice the limit or the third exceedance within 12 months",
 			field: "month",
 			refusal: "minijob_exceedance_not_acknowledgeable" satisfies MinijobExceedanceRefusal,
+		});
+	}
+	if (finding.inputFingerprint !== input.expectedFingerprint) {
+		throw new ValidationError({
+			message: "The month's earnings changed since they were shown. Review them again",
+			field: "month",
+			refusal: "minijob_exceedance_changed" satisfies MinijobExceedanceRefusal,
 		});
 	}
 	return recordStatutoryAcknowledgement(db, {

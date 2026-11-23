@@ -596,6 +596,7 @@
           "invalidMonth": "Choose a calendar month.",
           "notExceeded": "The month's earnings are within the limit again; nothing to document.",
           "notAcknowledgeable": "This month cannot count as an unforeseeable exceedance: it is above twice the limit or the third exceedance within 12 months.",
+          "changed": "The month's earnings changed since you opened this list. Review the updated figures and document them again.",
           "subjectRequired": "The month could not be evaluated. Reload and try again."
         },
         "tier": {
