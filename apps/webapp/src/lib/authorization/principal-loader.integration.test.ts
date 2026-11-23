@@ -84,11 +84,17 @@ describe("organization principal loader on PostgreSQL", () => {
 		type Person = {
 			name: string;
 			userId: string;
-			employee: { id: string; organizationId: string; role: "admin" | "manager" | "employee" };
+			/** Null for a user with no employee row in the organization. */
+			employee: {
+				id: string;
+				organizationId: string;
+				role: "admin" | "manager" | "employee";
+			} | null;
 			/** What their inbox gate and compliance access are, from the role model. */
 			opensInbox: boolean;
 			managesCompliance: boolean;
 		};
+		type Employed = Person & { employee: NonNullable<Person["employee"]> };
 		let people: Person[];
 		let platformAdminUserId: string;
 
@@ -96,7 +102,7 @@ describe("organization principal loader on PostgreSQL", () => {
 			name: string,
 			expected: Pick<Person, "opensInbox" | "managesCompliance">,
 			input: Parameters<LifecycleDatabaseFixture["seedEmployee"]>[0] = {},
-		): Promise<Person> {
+		): Promise<Employed> {
 			const seeded = await fixture.seedEmployee(input);
 			return {
 				name,
@@ -111,7 +117,7 @@ describe("organization principal loader on PostgreSQL", () => {
 		}
 
 		async function customRole(
-			holder: Person,
+			holder: Employed,
 			input: { organizationId: string; isActive: boolean },
 		) {
 			const roleId = randomUUID();
@@ -193,6 +199,20 @@ describe("organization principal loader on PostgreSQL", () => {
 			await fixture.pool.query(`update "user" set role = 'admin' where id = $1`, [
 				platformAdminUserId,
 			]);
+			// An approved admin who was never employed here keeps the admin role, but opens no
+			// inbox: the inbox needs an employee.
+			const neverEmployed: Person = await person(
+				"an admin who was never an employee",
+				{ opensInbox: false, managesCompliance: true },
+				{ role: "admin", withPeriod: false },
+			);
+			await fixture.pool.query(`delete from employee where id = $1`, [neverEmployed.employee?.id]);
+			neverEmployed.employee = null;
+			const outsider: Person = await person("a member of another organization only", no, {
+				role: "admin",
+				organizationId: await fixture.createOrganization(),
+			});
+			outsider.employee = null;
 			people = [
 				plain,
 				lead,
@@ -203,6 +223,8 @@ describe("organization principal loader on PostgreSQL", () => {
 				unapproved,
 				departed,
 				platformAdmin,
+				neverEmployed,
+				outsider,
 			];
 		});
 
@@ -254,7 +276,7 @@ describe("organization principal loader on PostgreSQL", () => {
 				if (!principal) throw new Error(`no principal for ${p.name}`);
 				const together = defineAbilityFor(principal);
 				const decisions = (ability: AppAbility) => ({
-					opensInbox: canOpenApprovalInbox(ability, p.employee),
+					opensInbox: p.employee !== null && canOpenApprovalInbox(ability, p.employee),
 					managesCompliance: ability.can("manage", "Compliance"),
 				});
 
@@ -279,7 +301,7 @@ describe("organization principal loader on PostgreSQL", () => {
 						platformAdminPrincipalContext(platformAdminUserId, fixture.organizationId),
 					);
 					const ability = defineAbilityFor(principal as PrincipalContext);
-					expect(canOpenApprovalInbox(ability, p.employee)).toBe(true);
+					expect(p.employee && canOpenApprovalInbox(ability, p.employee)).toBe(true);
 					expect(ability.can("manage", "Compliance")).toBe(true);
 				} else {
 					expect(ordered(principal), p.name).toEqual(ordered(await singly(p.userId)));
