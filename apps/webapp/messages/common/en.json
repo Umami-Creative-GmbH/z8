@@ -668,6 +668,8 @@
         "description": "Average working time before each sick leave or public holiday of on-call employees in this period, to prepare continued pay. Nothing here changes settled days.",
         "perDay": "{duration} per day",
         "rangeTooLong": "Reference hours are listed for at most three months at a time. Choose a shorter period.",
+        "paidSickDays": "Sick pay for {days, plural, one {# day} other {# days}} in this period",
+        "holidaysPaidSeparately": "Public holidays during the illness are paid as their own rows, not as sick days: {dates}",
         "hide": "Hide breakdown",
         "show": "Show breakdown"
       }

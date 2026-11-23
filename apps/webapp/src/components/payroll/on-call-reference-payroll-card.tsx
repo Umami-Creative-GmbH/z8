@@ -134,6 +134,24 @@ export function OnCallReferencePayrollCard({
 												: t("common.onCall.payroll.show", "Show breakdown")}
 										</Button>
 									</div>
+									{row.paidSickDays ? (
+										<p className="text-muted-foreground mt-1 text-sm">
+											{t(
+												"common.onCall.payroll.paidSickDays",
+												"Sick pay for {days, plural, one {# day} other {# days}} in this period",
+												{ days: row.paidSickDays.days },
+											)}
+											{row.paidSickDays.holidaysPaidSeparately.length > 0
+												? ` · ${t(
+														"common.onCall.payroll.holidaysPaidSeparately",
+														"Public holidays during the illness are paid as their own rows, not as sick days: {dates}",
+														{
+															dates: row.paidSickDays.holidaysPaidSeparately.map(day).join(", "),
+														},
+													)}`
+												: null}
+										</p>
+									) : null}
 									{open ? (
 										<div className="mt-3">
 											<OnCallReferenceBreakdownView breakdown={row.breakdown} />
