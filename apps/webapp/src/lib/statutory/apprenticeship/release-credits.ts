@@ -33,6 +33,11 @@ export const FULL_BLOCK_WEEK_MIN_MINUTES = 25 * 60;
 export const FULL_BLOCK_WEEK_MIN_DAYS = 5;
 /** A block record is credited on its school days, Monday to Friday. */
 export const SCHOOL_DAYS_PER_WEEK = 5;
+/**
+ * § 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG: in a full block-release week,
+ * additional in-company training events of up to two hours a week are allowed.
+ */
+export const BLOCK_WEEK_TRAINING_ALLOWANCE_MINUTES = 120;
 
 export interface ApprenticeReleaseRecord {
 	readonly id: string;

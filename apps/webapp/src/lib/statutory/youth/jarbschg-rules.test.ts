@@ -482,6 +482,71 @@ describe("evaluateJarbschg", () => {
 		it("credited time alone is never a breach", () => {
 			expect(evaluate([], { credits: [school("2026-03-03", 480)] })).toEqual([]);
 		});
+
+		describe("in-company training in a block-release week (§ 9 Abs. 1 Nr. 3 JArbSchG)", () => {
+			const blockWeek = ["2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06"].map(
+				(day): YouthCreditedTime => ({ ...school(day, 480), blockReleaseWeek: true }),
+			);
+
+			it("keeps up to 2 h of work on the block days out of the 8 h day and 40 h week", () => {
+				expect(evaluate([shift("2026-03-04", "15:00", "16:30")], { credits: blockWeek })).toEqual(
+					[],
+				);
+			});
+
+			it("counts the work past 2 h a week toward the day and week", () => {
+				const breaches = evaluate(
+					[shift("2026-03-02", "15:00", "16:00"), shift("2026-03-04", "15:00", "16:30")],
+					{ credits: blockWeek },
+				);
+				expect(
+					breaches.map((breach) => [breach.rule, breach.day, breach.actual, breach.limit]),
+				).toEqual([
+					["jarbschg_daily_max", "2026-03-04", 510, 480],
+					["jarbschg_weekly_max", "2026-03-04", 2430, 2400],
+				]);
+			});
+
+			it("never extends the allowance to a Saturday after the block", () => {
+				const breaches = evaluate([shift("2026-03-07", "10:00", "11:00")], { credits: blockWeek });
+				expect(rules(breaches)).toContain("jarbschg_weekly_max");
+			});
+		});
+	});
+
+	describe("shift span (§ 12 JArbSchG)", () => {
+		it("flags a day whose first work to last work spans more than 10 h", () => {
+			const late = shift("2026-03-03", "15:00", "19:00");
+			const breaches = evaluate([shift("2026-03-03", "07:00", "11:00"), late]);
+			expect(
+				breaches.map((breach) => [
+					breach.rule,
+					breach.ref,
+					breach.day,
+					breach.actual,
+					breach.limit,
+				]),
+			).toEqual([["jarbschg_shift_span", late.ref, "2026-03-03", 720, 600]]);
+		});
+
+		it("accepts exactly 10 h, and judges recorded work like planned work", () => {
+			expect(
+				evaluate([work("2026-03-03", "07:00", "11:00"), shift("2026-03-03", "13:00", "17:00")]),
+			).toEqual([]);
+			expect(
+				rules(
+					evaluate([work("2026-03-03", "07:00", "11:00"), work("2026-03-03", "14:00", "17:30")]),
+				),
+			).toEqual(["jarbschg_shift_span"]);
+		});
+
+		it("does not judge an adult's day", () => {
+			expect(
+				evaluate([shift("2026-03-03", "07:00", "11:00"), shift("2026-03-03", "15:00", "19:00")], {
+					minorUntil: "2026-03-01",
+				}),
+			).toEqual([]);
+		});
 	});
 
 	it("stops judging night and weekend work at midnight before the 18th birthday", () => {

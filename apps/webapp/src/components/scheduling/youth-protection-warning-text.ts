@@ -104,8 +104,22 @@ export function youthProtectionWarningText(
 				"Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
 				{ used },
 			);
+		case "jarbschg_shift_span":
+			return t(
+				"scheduling:scheduling.statutory.jarbschg.shiftSpanOn",
+				"Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",
+				{ used, limit, date: findingDayText(finding, locale) },
+			);
 		// A shift through two release days has a conflict on each: the line names its day.
 		case "bbig_release_day_shift":
+			// Work past a full block week's 2 h of in-company training: the week's work and the limit.
+			if (finding.summary.limit) {
+				return t(
+					"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingOn",
+					"Block-release week: {used} min of work on its school days by {date}, beyond the {limit} min of in-company training allowed a week",
+					{ used, limit, date: releaseDateText(finding, locale) },
+				);
+			}
 			return t(
 				"scheduling:scheduling.statutory.apprenticeship.releaseDayShiftOn",
 				"Apprentice release day on {date}: school, block-release or exam day",

@@ -35,6 +35,20 @@ describe("youthSchoolCreditsOf (§§ 9 Abs. 2, 10 Abs. 2 JArbSchG)", () => {
 		]);
 	});
 
+	it("marks the school days of a full block-release week, where 2 h of training a week are allowed", () => {
+		expect(
+			youthSchoolCreditsOf([
+				day("2027-03-08", "a", "vocational_school_block_week"),
+				day("2027-03-15", "b", "vocational_school_block_week", 180),
+				day("2027-03-16", "c", "pre_exam_day"),
+			]).map((credit) => [credit.date, credit.blockReleaseWeek ?? false]),
+		).toEqual([
+			["2027-03-08", true],
+			["2027-03-15", false],
+			["2027-03-16", false],
+		]);
+	});
+
 	it("counts a day at most once: a full release absorbs a school day on the same date", () => {
 		expect(
 			youthSchoolCreditsOf([

@@ -53,8 +53,8 @@ const finding: OpenYouthSectorException = {
 	inputFingerprint: "v1:shown",
 };
 
-function show(locale = "de") {
-	mocks.listYouthSectorExceptionsAction.mockResolvedValue({ success: true, data: [finding] });
+function show(locale = "de", shown: OpenYouthSectorException = finding) {
+	mocks.listYouthSectorExceptionsAction.mockResolvedValue({ success: true, data: [shown] });
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	return render(
 		<TolgeeProvider tolgee={createTestTolgee(locale, locale === "de" ? de : {})}>
@@ -74,6 +74,21 @@ describe("YouthSectorExceptionsSection (#1993)", () => {
 
 		expect(await screen.findByText("7. März 2027")).toBeTruthy();
 		expect(screen.queryByText("2027-03-07")).toBeNull();
+	});
+
+	it("names a § 12 shift span of up to 11 h as a sector exception, in German", async () => {
+		show("de", {
+			...finding,
+			findingId: "jarbschg_shift_span:e1:shift:s1",
+			findingKind: "jarbschg_shift_span",
+			legalReference: "§ 12 JArbSchG",
+			used: { unit: "minutes", value: 630 },
+		});
+
+		const label = de["settings.contracts.reviews.youth.kind.shiftSpan"];
+		expect(label).toBeTruthy();
+		expect(label).not.toBe(en["settings.contracts.reviews.youth.kind.shiftSpan"]);
+		expect(await screen.findByText(label)).toBeTruthy();
 	});
 
 	it("words a refused acknowledgement in German, not with the server's English text", async () => {

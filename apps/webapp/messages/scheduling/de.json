@@ -243,10 +243,12 @@
         "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
         "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
         "holidayWork": "Unter 18: Arbeit an Feiertagen braucht eine gesetzliche Branchenausnahme",
-        "holidayProhibited": "Unter 18: {used} Min. verbotene Arbeit: keine Arbeit am 24. und 31. Dezember nach 14 Uhr, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai; keine Ausnahme erlaubt sie"
+        "holidayProhibited": "Unter 18: {used} Min. verbotene Arbeit: keine Arbeit am 24. und 31. Dezember nach 14 Uhr, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai; keine Ausnahme erlaubt sie",
+        "shiftSpanOn": "Unter 18: Die Schichtzeit am {date} beträgt {used} Min. vom Beginn der ersten bis zum Ende der letzten Arbeit; erlaubt sind höchstens {limit} Min. (11 Std. im Gaststättengewerbe, in der Landwirtschaft, Tierhaltung und auf Bau- und Montagestellen)"
       },
       "apprenticeship": {
         "releaseDayShiftOn": "Freistellungstag für Auszubildende am {date}: Berufsschul-, Blockunterrichts- oder Prüfungstag",
+        "blockWeekTrainingOn": "Blockunterrichtswoche: {used} Min. Arbeit an ihren Schultagen bis {date}, mehr als die erlaubten {limit} Min. betrieblicher Ausbildungsveranstaltungen pro Woche",
         "workplaceReturnOn": "Unter 18: keine Arbeit am {date}, dem vollen Berufsschultag der Woche"
       },
       "shortTerm": {

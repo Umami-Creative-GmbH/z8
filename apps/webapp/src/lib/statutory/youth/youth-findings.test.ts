@@ -112,7 +112,7 @@ describe("youthIntervalsOf", () => {
 			work: [work("am", at("2026-03-02", "08:00"), at("2026-03-02", "12:00"))],
 			shifts: [
 				shift("am", "2026-03-02", "08:00", "12:00"),
-				shift("pm", "2026-03-02", "15:00", "20:00"),
+				shift("pm", "2026-03-02", "13:00", "18:00"),
 			],
 			now: at("2026-03-02", "13:00"),
 		});
@@ -122,7 +122,7 @@ describe("youthIntervalsOf", () => {
 			work: [work("am", at("2026-03-02", "08:00"), at("2026-03-02", "12:00"))],
 			shifts: [
 				shift("am", "2026-03-02", "08:00", "12:00"),
-				shift("pm", "2026-03-02", "14:00", "20:00"),
+				shift("pm", "2026-03-02", "12:00", "18:00"),
 			],
 			now: at("2026-03-02", "13:00"),
 		});
@@ -442,5 +442,35 @@ describe("sector exception fingerprints", () => {
 		expect(fingerprint("03:30", tuesday)).not.toBe(planned?.inputFingerprint);
 		expect(fingerprint("03:30", tuesday)).toBe(fingerprint("03:30", wednesday));
 		expect(fingerprint("03:30", week)).toBe(fingerprint("03:30", wednesday));
+	});
+});
+
+describe("the § 12 JArbSchG shift span", () => {
+	const spanOf = (pmEnd: string) =>
+		findings({
+			shifts: [
+				shift("am", "2026-03-03", "07:00", "11:00"),
+				shift("pm", "2026-03-03", "15:00", pmEnd),
+			],
+			now: at("2026-03-01", "12:00"),
+		}).find((finding) => finding.kind === "jarbschg_shift_span");
+
+	it("is judged by its day, whichever shift ends it, and cites § 12", () => {
+		const span = spanOf("19:00");
+		expect(span).toMatchObject({
+			subjectKey: "shift:pm",
+			periodStart: "2026-03-03",
+			legalReference: "§ 12 JArbSchG",
+			summary: { used: { unit: "minutes", value: 720 }, limit: { unit: "minutes", value: 600 } },
+			blocksPublication: true,
+		});
+		const earlier = { ...(span as NonNullable<typeof span>), subjectKey: "shift:am", id: "other" };
+		expect(causedBlockingFindings([earlier], [span as NonNullable<typeof span>])).toEqual([]);
+	});
+
+	it("may be acknowledged as a sector exception up to 11 h, never beyond", () => {
+		expect(spanOf("17:30")?.acknowledgementKind).toBe("jarbschg_sector_exception");
+		expect(spanOf("18:00")?.acknowledgementKind).toBe("jarbschg_sector_exception");
+		expect(spanOf("18:15")?.acknowledgementKind).toBeNull();
 	});
 });

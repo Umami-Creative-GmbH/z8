@@ -371,6 +371,7 @@
         "jarbschgNightWork": "Night work by a minor (JArbSchG)",
         "jarbschgRestPeriod": "Youth rest period too short (JArbSchG)",
         "jarbschgSaturdayWork": "Saturday work by a minor (JArbSchG)",
+        "jarbschgShiftSpan": "Youth shift span exceeded (JArbSchG)",
         "jarbschgSundayWork": "Sunday work by a minor (JArbSchG)",
         "jarbschgUninterrupted": "Minor worked too long without a break (JArbSchG)",
         "jarbschgWeeklyMax": "Youth weekly maximum exceeded (JArbSchG)",

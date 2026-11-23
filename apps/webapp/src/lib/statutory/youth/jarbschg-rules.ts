@@ -8,6 +8,7 @@
  */
 import { Temporal } from "temporal-polyfill";
 import { compareInstants, type Instant, type PlainDate } from "@/lib/datetime/temporal-core";
+import { BLOCK_WEEK_TRAINING_ALLOWANCE_MINUTES } from "../apprenticeship/release-credits";
 
 export const jarbschgRules = [
 	"jarbschg_daily_max",
@@ -21,8 +22,21 @@ export const jarbschgRules = [
 	"jarbschg_sunday_work",
 	"jarbschg_holiday_work",
 	"jarbschg_holiday_prohibited",
+	"jarbschg_shift_span",
 ] as const;
 export type JarbschgRule = (typeof jarbschgRules)[number];
+
+/**
+ * § 12 JArbSchG: a minor's shift span (*Schichtzeit*: working time plus breaks, from the start of
+ * the day's first work to the end of its last) is at most 10 hours.
+ */
+export const JARBSCHG_MAX_SHIFT_SPAN_MINUTES = 600;
+/**
+ * § 12 JArbSchG: 11 hours in hospitality, agriculture, animal husbandry and on construction and
+ * assembly sites. Like the §§ 14, 16–18 sector exceptions, an org admin acknowledges that the
+ * sector applies (`jarbschg_sector_exception`); a longer span has no exception.
+ */
+export const JARBSCHG_SECTOR_MAX_SHIFT_SPAN_MINUTES = 660;
 
 /**
  * Rules a statutory sector exception may lift (§§ 14 Abs. 2–7, 16 Abs. 2, 17 Abs. 2, 18 Abs. 2
@@ -64,6 +78,7 @@ export const jarbschgLegalReference: Record<JarbschgRule, string> = {
 	jarbschg_sunday_work: "§ 17 JArbSchG",
 	jarbschg_holiday_work: "§ 18 JArbSchG",
 	jarbschg_holiday_prohibited: "§ 18 Abs. 1, 2 JArbSchG",
+	jarbschg_shift_span: "§ 12 JArbSchG",
 };
 
 export interface JarbschgLimits {
@@ -199,6 +214,12 @@ export interface YouthCreditedTime {
 	/** Local day, `YYYY-MM-DD`. */
 	readonly date: string;
 	readonly minutes: number;
+	/**
+	 * A school day of a full block-release week: up to two hours a week of work on such days are
+	 * the additional in-company training § 9 Abs. 1 Nr. 3 JArbSchG allows beside the 40 h the week
+	 * is credited with, so they stay out of the § 8 day and week totals.
+	 */
+	readonly blockReleaseWeek?: boolean;
 }
 
 /**
@@ -376,9 +397,28 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 		if (credit.minutes <= 0) continue;
 		creditOn.set(credit.date, Math.max(creditOn.get(credit.date) ?? 0, credit.minutes));
 	}
+	// § 9 Abs. 1 Nr. 3: up to 2 h a week of work on the school days of a full block-release week,
+	// earliest first, are the allowed in-company training and stay out of the § 8 totals.
+	const blockReleaseDays = new Set(
+		(input.credits ?? []).flatMap((credit) => (credit.blockReleaseWeek ? [credit.date] : [])),
+	);
+	const trainingMinutes = new Map<string, number>();
+	if (blockReleaseDays.size > 0) {
+		const allowanceLeft = new Map<string, number>();
+		for (const interval of located) {
+			if (!blockReleaseDays.has(interval.dayKey)) continue;
+			const left = allowanceLeft.get(interval.weekKey) ?? BLOCK_WEEK_TRAINING_ALLOWANCE_MINUTES;
+			const training = Math.min(interval.workMinutes, left);
+			allowanceLeft.set(interval.weekKey, left - training);
+			if (training > 0) trainingMinutes.set(interval.ref, training);
+		}
+	}
+	/** Working minutes toward the § 8 day and week: the allowed block-week training left out. */
+	const countedMinutes = (interval: LocatedInterval) =>
+		interval.workMinutes - (trainingMinutes.get(interval.ref) ?? 0);
 	const dayMinutes = (dayKey: string) =>
 		(creditOn.get(dayKey) ?? 0) +
-		(byDay.get(dayKey) ?? []).reduce((total, interval) => total + interval.workMinutes, 0);
+		(byDay.get(dayKey) ?? []).reduce((total, interval) => total + countedMinutes(interval), 0);
 
 	for (const weekIntervals of groupBy(located, (interval) => interval.weekKey).values()) {
 		const monday = mondayOf(weekIntervals[0].day);
@@ -392,7 +432,7 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 			0,
 		);
 		const weekTotal =
-			weekCredit + weekIntervals.reduce((total, interval) => total + interval.workMinutes, 0);
+			weekCredit + weekIntervals.reduce((total, interval) => total + countedMinutes(interval), 0);
 		const workDays = new Set(weekIntervals.map((interval) => interval.dayKey));
 		const workedDays = weekDays.filter((dayKey) => workDays.has(dayKey) || creditOn.has(dayKey));
 
@@ -415,7 +455,7 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 			// School time comes first: the work on top of it breaks the limit.
 			let running = creditOn.get(dayKey) ?? 0;
 			for (const interval of dayIntervals) {
-				running += interval.workMinutes;
+				running += countedMinutes(interval);
 				if (running > limit) {
 					breach("jarbschg_daily_max", interval, total, limit, "minutes", involves);
 				}
@@ -427,7 +467,7 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 		let running = weekCredit;
 		const daysSoFar: string[] = [...creditedDays];
 		for (const interval of weekIntervals) {
-			running += interval.workMinutes;
+			running += countedMinutes(interval);
 			if (!daysSoFar.includes(interval.dayKey)) daysSoFar.push(interval.dayKey);
 			const limits = youthLimits(interval);
 			if (limits && running > limits.maxWeeklyMinutes) {
@@ -481,6 +521,16 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 			}
 		}
 		if (!limits) continue;
+
+		// § 12: the shift span, from the day's first work to the end of its last, breaks included.
+		// Attributed to the work that ends last, as the work that stretches the span.
+		const last = dayIntervals.reduce((latest, interval) =>
+			compareInstants(interval.end, latest.end) > 0 ? interval : latest,
+		);
+		const span = minutesBetween(first.start, last.end);
+		if (span > JARBSCHG_MAX_SHIFT_SPAN_MINUTES) {
+			breach("jarbschg_shift_span", last, span, JARBSCHG_MAX_SHIFT_SPAN_MINUTES);
+		}
 
 		// § 11: breaks and uninterrupted work, judged on recorded work only.
 		const recorded = dayIntervals.filter((interval) => interval.recorded);

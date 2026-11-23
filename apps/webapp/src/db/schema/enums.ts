@@ -422,6 +422,7 @@ export const timeRegulationViolationTypeEnum = pgEnum(
 		"jarbschg_sunday_work",
 		"jarbschg_holiday_work",
 		"jarbschg_holiday_prohibited",
+		"jarbschg_shift_span",
 	],
 );
 

@@ -5,6 +5,7 @@
  *
  * - the week's full school day (more than five lessons) counts the average working day;
  * - a full block-release week counts the average working week, spread over its five weekdays;
+ *   up to 2 h a week of in-company training on them stay outside it (§ 9 Abs. 1 Nr. 3);
  * - an exam counts its participation time including breaks, the average working day when it is
  *   recorded without its time;
  * - the working day before the written final exam counts the average working day;
@@ -45,7 +46,14 @@ export function youthSchoolCreditsOf(days: readonly ApprenticeReleaseDay[]): You
 					: (day.averageWorkingTime?.dailyMinutes ?? FALLBACK_DAY_MINUTES);
 		const earlier = byDate.get(day.date);
 		if (!earlier || minutes > earlier.minutes) {
-			byDate.set(day.date, { ref: `release:${day.releaseId}`, date: day.date, minutes });
+			const blockReleaseWeek =
+				day.credit === "full_day" && day.releaseKind === "vocational_school_block_week";
+			byDate.set(day.date, {
+				ref: `release:${day.releaseId}`,
+				date: day.date,
+				minutes,
+				...(blockReleaseWeek ? { blockReleaseWeek } : {}),
+			});
 		}
 	}
 	return [...byDate.values()];

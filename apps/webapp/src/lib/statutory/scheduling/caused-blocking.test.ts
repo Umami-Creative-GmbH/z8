@@ -420,3 +420,33 @@ describe("causedBlockingFindings", () => {
 		expect(causedBlockingFindings([], after)).toEqual([]);
 	});
 });
+
+describe("work past a block week's training allowance (§ 9 Abs. 1 Nr. 3 JArbSchG)", () => {
+	/** Work on a block day past the allowance: the week's block-day work as `used`. */
+	const training = (shiftId: string, releaseDay: string, weekMinutes: number, excess: number) =>
+		breach(
+			"bbig_release_day_shift",
+			shiftId,
+			releaseDay,
+			{ tier: "exceeded", used: minutes(weekMinutes), limit: minutes(120) },
+			{ id: `bbig_release_day_shift:e1:shift:${shiftId}:${releaseDay}`, coveredMinutes: excess },
+		);
+
+	it("does not count moving the excess to another block day of the week as caused", () => {
+		const before = [training("thu", "2027-03-04", 180, 60)];
+		const after = [training("tue", "2027-03-02", 180, 60)];
+		expect(causedBlockingFindings(before, after)).toEqual([]);
+	});
+
+	it("counts more work on the week's block days as caused, on whichever day it falls", () => {
+		const before = [training("thu", "2027-03-04", 180, 60)];
+		const after = [training("thu", "2027-03-04", 210, 90)];
+		expect(kinds(causedBlockingFindings(before, after))).toEqual(["bbig_release_day_shift"]);
+	});
+
+	it("counts excess in a week that had none as caused", () => {
+		const before = [training("thu", "2027-03-04", 180, 60)];
+		const after = [training("mon", "2027-03-08", 180, 60)];
+		expect(kinds(causedBlockingFindings(before, after))).toEqual(["bbig_release_day_shift"]);
+	});
+});

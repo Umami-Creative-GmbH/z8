@@ -243,10 +243,12 @@
         "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
         "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
         "holidayWork": "Under 18: work on a public holiday needs a statutory sector exception",
-        "holidayProhibited": "Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it"
+        "holidayProhibited": "Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+        "shiftSpanOn": "Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)"
       },
       "apprenticeship": {
         "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
+        "blockWeekTrainingOn": "Block-release week: {used} min of work on its school days by {date}, beyond the {limit} min of in-company training allowed a week",
         "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
       },
       "shortTerm": {

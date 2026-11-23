@@ -6,7 +6,9 @@
  * conflict for every apprentice, and prohibited for one under 18 (§§ 9, 10 JArbSchG): with the
  * organization's `blockJarbschgShiftPublish` on, that shift blocks publication. On the week's full
  * school day (more than five lessons) an apprentice under 18 may not return to the workplace
- * afterwards (§ 9 Abs. 1 Nr. 2 JArbSchG); after a shorter school day they may.
+ * afterwards (§ 9 Abs. 1 Nr. 2 JArbSchG); after a shorter school day they may. In a full
+ * block-release week, up to 2 h a week of in-company training are allowed (§ 9 Abs. 1 Nr. 3
+ * JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG): only the work on its block days past them conflicts.
  */
 import { Temporal } from "temporal-polyfill";
 import type { ApprenticeReleaseKind } from "@/db/schema";
@@ -27,7 +29,10 @@ import { isMinorOn } from "../youth/age";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { proposedShiftSubjectKey } from "../youth/jarbschg-contributor";
 import { loadEmployeeBirthdays, loadYouthShifts } from "../youth/youth-facts";
-import type { ApprenticeReleaseDay } from "./release-credits";
+import {
+	type ApprenticeReleaseDay,
+	BLOCK_WEEK_TRAINING_ALLOWANCE_MINUTES,
+} from "./release-credits";
 import { loadApprenticeReleaseDays } from "./release-facts";
 
 export type ApprenticeReleaseFindingKind =
@@ -48,9 +53,20 @@ const apprenticeReleaseFindingKinds: ReadonlySet<string> = new Set<ApprenticeRel
  * conflict in each day's scope, covering its work on that day. Null for other findings.
  */
 export function apprenticeReleaseScopeOf(
-	finding: Pick<StatutoryFinding, "kind" | "employeeId" | "periodStart">,
+	finding: Pick<StatutoryFinding, "kind" | "employeeId" | "periodStart"> & {
+		readonly summary?: StatutoryFinding["summary"];
+	},
 ): string | null {
 	if (!apprenticeReleaseFindingKinds.has(finding.kind)) return null;
+	// Work past a block week's training allowance: what is past it depends on the whole week.
+	if (finding.summary?.limit) {
+		const day = parsePlainDate(finding.periodStart);
+		return JSON.stringify([
+			"apprentice_block_week_training",
+			finding.employeeId,
+			day.subtract({ days: day.dayOfWeek - 1 }).toString(),
+		]);
+	}
 	return JSON.stringify(["apprentice_release", finding.employeeId, finding.periodStart]);
 }
 
@@ -191,23 +207,61 @@ function coveredPartOf(
 	return compareInstants(start, end) < 0 ? { start, end } : null;
 }
 
+type Span = { readonly start: Instant; readonly end: Instant };
+
 /**
- * The planned work inside the release time of `day`, and its minutes: how deep the conflict with
- * that release day is. An edit or a move that puts more work there deepens the release day's
- * conflict (`causedBlockingFindings`).
+ * A span as a finding's depth: its minutes, and where it lies so work that overlapping shifts
+ * share is counted once (`causedBlockingFindings`).
  */
-function coverageOf(
-	work: PlannedWork,
-	release: ApprenticeReleaseDay,
-	day: PlainDate,
-	timezone: string,
+function coverageOfSpan(
+	part: Span | null,
 ): Pick<StatutoryFinding, "coveredMinutes" | "coveredSpan"> {
-	const part = coveredPartOf(work, release, day, timezone);
 	if (!part) return {};
 	return {
 		coveredMinutes: Math.round(part.start.until(part.end).total("minutes")),
 		coveredSpan: { start: part.start.toString(), end: part.end.toString() },
 	};
+}
+
+/** A full block-week school day: in-company training of up to 2 h a week is allowed on it. */
+const isFullBlockWeekDay = (release: ApprenticeReleaseDay) =>
+	release.releaseKind === "vocational_school_block_week" && release.credit === "full_day";
+
+/** Minutes of the union of `spans` (overlapping spans counted once). */
+function unionMinutes(spans: readonly Span[]): number {
+	return mergeSpans(spans).reduce(
+		(total, span) => total + span.start.until(span.end).total("minutes"),
+		0,
+	);
+}
+
+function mergeSpans(spans: readonly Span[]): Span[] {
+	const sorted = [...spans].sort((left, right) => compareInstants(left.start, right.start));
+	const merged: { start: Instant; end: Instant }[] = [];
+	for (const span of sorted) {
+		const last = merged[merged.length - 1];
+		if (last && compareInstants(span.start, last.end) <= 0) {
+			if (compareInstants(span.end, last.end) > 0) last.end = span.end;
+		} else {
+			merged.push({ start: span.start, end: span.end });
+		}
+	}
+	return merged;
+}
+
+/**
+ * When a week's planned work on full block days has used the training allowance: the instant at
+ * which the union of `spans`, earliest first, reaches `allowanceMinutes`. Null while it stays
+ * within it.
+ */
+function allowanceUsedAt(spans: readonly Span[], allowanceMinutes: number): Instant | null {
+	let left = allowanceMinutes;
+	for (const span of mergeSpans(spans)) {
+		const minutes = span.start.until(span.end).total("minutes");
+		if (minutes > left) return span.start.add({ nanoseconds: Math.round(left * 60e9) });
+		left -= minutes;
+	}
+	return null;
 }
 
 /**
@@ -222,7 +276,17 @@ function releaseConflictFinding(
 	release: ApprenticeReleaseDay,
 	releaseDay: PlainDate,
 	conflict: ReleaseConflict,
-	{ minor }: { readonly minor: boolean },
+	{
+		minor,
+		training,
+	}: {
+		readonly minor: boolean;
+		/**
+		 * Work on a full block day past the week's training allowance: the part of this work past
+		 * it, and the week's planned work on its block days (counted once).
+		 */
+		readonly training?: { readonly excess: Span; readonly weekMinutes: number };
+	},
 ): StatutoryFinding<ApprenticeReleaseFindingKind> {
 	const kind: ApprenticeReleaseFindingKind =
 		minor && release.releaseKind === "vocational_school_day" && conflict === "release_day"
@@ -244,8 +308,17 @@ function releaseConflictFinding(
 			: conflict === "release_day"
 				? minorReleaseReference[release.releaseKind]
 				: minorLessonReference[conflict],
-		summary: { tier: "exceeded" },
-		...coverageOf(work, release, releaseDay, context.timezone),
+		summary: training
+			? {
+					tier: "exceeded",
+					used: { unit: "minutes", value: training.weekMinutes },
+					limit: { unit: "minutes", value: BLOCK_WEEK_TRAINING_ALLOWANCE_MINUTES },
+				}
+			: { tier: "exceeded" },
+		// Only the work past the allowance is covered: the allowed training is no conflict.
+		...coverageOfSpan(
+			training ? training.excess : coveredPartOf(work, release, releaseDay, context.timezone),
+		),
 		adminDetail: null,
 		inputFingerprint: statutoryInputFingerprint({
 			kind,
@@ -259,19 +332,30 @@ function releaseConflictFinding(
 			credit: release.credit,
 			conflict,
 			minor,
+			trainingExcess: training
+				? [training.excess.start.toString(), training.excess.end.toString(), training.weekMinutes]
+				: null,
 		}),
 		acknowledgementKind: null,
 		blocksPublication: minor && context.preferences.blockJarbschgShiftPublish,
 	};
 }
 
+const mondayOf = (day: PlainDate) => day.subtract({ days: day.dayOfWeek - 1 });
+
 async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFinding[]> {
+	const windowStart = parsePlainDate(context.window.start);
+	const windowEnd = parsePlainDate(context.window.endExclusive);
+	// Whole compliance weeks: a block week's training allowance is the week's. The Sunday before
+	// too, for a night shift into Monday's block day, and the week after, for a night shift from the
+	// window into a school morning or the next week's block.
+	const weeksStart = mondayOf(windowStart);
+	const weeksEnd = mondayOf(windowEnd.subtract({ days: 1 })).add({ days: 7 });
 	const releaseDays = await loadApprenticeReleaseDays(context.db, {
 		organizationId: context.organizationId,
 		employeeIds: context.employeeIds,
-		from: context.window.start,
-		// The day after the window too: a night shift may run into a school morning.
-		until: parsePlainDate(context.window.endExclusive).add({ days: 1 }).toString(),
+		from: weeksStart.toString(),
+		until: weeksEnd.add({ days: 8 }).toString(),
 	});
 	if (releaseDays.size === 0) return [];
 
@@ -293,8 +377,8 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		organizationId: context.organizationId,
 		organizationTimezone: context.timezone,
 		employeeIds,
-		from: context.window.start,
-		until: context.window.endExclusive,
+		from: weeksStart.subtract({ days: 1 }).toString(),
+		until: weeksEnd.add({ days: 7 }).toString(),
 		excludeShiftId: context.replacesShiftId,
 		excludeShiftIds: context.excludedShiftIds,
 	});
@@ -316,7 +400,18 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 			}),
 	];
 
-	const findings: StatutoryFinding<ApprenticeReleaseFindingKind>[] = [];
+	const inWindow = (day: PlainDate) =>
+		Temporal.PlainDate.compare(day, windowStart) >= 0 &&
+		Temporal.PlainDate.compare(day, windowEnd) < 0;
+	/** Each conflict of planned work with a release day, the work's own day in the window. */
+	const conflicts: {
+		readonly work: PlannedWork;
+		readonly release: ApprenticeReleaseDay;
+		readonly releaseDay: PlainDate;
+		readonly conflict: ReleaseConflict;
+		/** Planned work loaded for the week's training allowance only. */
+		readonly outsideWindow: boolean;
+	}[] = [];
 	for (const work of planned) {
 		// Its own day, and the next one when it runs past midnight into a school morning.
 		const lastDay = plainDateAt(work.end.subtract({ nanoseconds: 1 }), context.timezone);
@@ -327,12 +422,67 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 			const release = releaseOn.get(`${work.employeeId}:${releaseDay}`);
 			const conflict = release ? conflictOf(work, release, releaseDay, context.timezone) : null;
 			if (!release || !conflict) continue;
-			findings.push(
-				releaseConflictFinding(context, work, release, releaseDay, conflict, {
-					minor: isMinorOn(birthdays.get(work.employeeId) ?? null, releaseDay),
-				}),
-			);
+			const proposed = !work.ref.startsWith("shift:");
+			conflicts.push({
+				work,
+				release,
+				releaseDay,
+				conflict,
+				outsideWindow: !proposed && !inWindow(work.date),
+			});
 		}
+	}
+
+	// § 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG: up to 2 h a week of planned work on
+	// full block days, earliest first and overlapping shifts counted once, are allowed in-company
+	// training. Only work past them conflicts, judged on the whole week whichever days are judged.
+	const blockWork = new Map<string, { readonly part: Span }[]>();
+	const weekKeyOf = (employeeId: string, releaseDay: PlainDate) =>
+		`${employeeId}:${mondayOf(releaseDay)}`;
+	for (const entry of conflicts) {
+		if (!isFullBlockWeekDay(entry.release)) continue;
+		const part = coveredPartOf(entry.work, entry.release, entry.releaseDay, context.timezone);
+		if (!part) continue;
+		const key = weekKeyOf(entry.work.employeeId, entry.releaseDay);
+		const week = blockWork.get(key);
+		if (week) week.push({ part });
+		else blockWork.set(key, [{ part }]);
+	}
+	const allowance = new Map<string, { readonly usedAt: Instant; readonly weekMinutes: number }>();
+	for (const [key, week] of blockWork) {
+		const spans = week.map((entry) => entry.part);
+		const usedAt = allowanceUsedAt(spans, BLOCK_WEEK_TRAINING_ALLOWANCE_MINUTES);
+		if (usedAt) allowance.set(key, { usedAt, weekMinutes: Math.round(unionMinutes(spans)) });
+	}
+
+	const findings: StatutoryFinding<ApprenticeReleaseFindingKind>[] = [];
+	for (const { work, release, releaseDay, conflict, outsideWindow } of conflicts) {
+		const minor = isMinorOn(birthdays.get(work.employeeId) ?? null, releaseDay);
+		if (!isFullBlockWeekDay(release)) {
+			if (outsideWindow) continue;
+			findings.push(
+				releaseConflictFinding(context, work, release, releaseDay, conflict, { minor }),
+			);
+			continue;
+		}
+		// Reported whenever the block day's week touches the window: work earlier in the week
+		// moves what is past the allowance onto later days.
+		const monday = mondayOf(releaseDay);
+		const weekTouchesWindow =
+			Temporal.PlainDate.compare(monday, windowEnd) < 0 &&
+			Temporal.PlainDate.compare(monday.add({ days: 7 }), windowStart) > 0;
+		if (outsideWindow && !weekTouchesWindow) continue;
+		const week = allowance.get(weekKeyOf(work.employeeId, releaseDay));
+		const part = coveredPartOf(work, release, releaseDay, context.timezone);
+		if (!week || !part) continue;
+		const start = compareInstants(part.start, week.usedAt) > 0 ? part.start : week.usedAt;
+		if (compareInstants(start, part.end) >= 0) continue;
+		findings.push(
+			releaseConflictFinding(context, work, release, releaseDay, conflict, {
+				minor,
+				training: { excess: { start, end: part.end }, weekMinutes: week.weekMinutes },
+			}),
+		);
 	}
 	return findings;
 }

@@ -903,8 +903,8 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 						endsOn: "2027-03-02",
 						lessonCount: 4,
 						schoolMinutes: 210,
-						schoolStartTime: "08:00",
-						schoolEndTime: "11:30",
+						schoolStartTime: "14:00",
+						schoolEndTime: "17:30",
 					});
 					await release(learner, {
 						releaseKind: "pre_exam_day",
@@ -920,8 +920,8 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 					const move = {
 						from: "2027-03-04",
 						date: "2027-03-02",
-						startTime: "09:00",
-						endTime: "10:00",
+						startTime: "15:00",
+						endTime: "16:00",
 					};
 					expect(await refusedKinds(learner, thursday, move)).toEqual(["bbig_release_day_shift"]);
 					expect(
@@ -1663,6 +1663,134 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		);
 	});
 
+	describe("in-company training in a full block week (§ 9 Abs. 1 Nr. 3 JArbSchG)", () => {
+		const publishThrough = async (range: typeof WEEK) => {
+			const handshake = await publishShifts(range);
+			if (!handshake.success || handshake.data.published) return handshake;
+			return publishShifts(range, { evaluationFingerprint: handshake.data.evaluationFingerprint });
+		};
+		/** A 17-year-old apprentice in a 30 h block week, Monday 1 to Friday 5 March 2027. */
+		async function blockWeekLearner() {
+			await seed.blockJarbschgPublish(org);
+			const learner = await fx.employee(org, "training", { birthday: "2009-06-01" });
+			await seed.terms(learner, {
+				from: "2026-01-01",
+				createdBy: owner.userId,
+				employmentProfile: "apprentice",
+			});
+			await release(learner, {
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-01",
+				endsOn: "2027-03-05",
+				schoolMinutes: 1800,
+			});
+			return learner;
+		}
+
+		it("publishes a 1 h 30 min training on Wednesday afternoon", async () => {
+			const learner = await blockWeekLearner();
+			const wednesday = await shift(learner, "2027-03-03", "15:00", "16:30");
+			expect(await publishThrough(WEEK)).toMatchObject({
+				success: true,
+				data: { published: true, count: 1 },
+			});
+			expect(await shiftStatus(wednesday)).toBe("published");
+		});
+
+		it("refuses 2 h 30 min in the week, naming the 30 min past the allowance", async () => {
+			const learner = await blockWeekLearner();
+			await shift(learner, "2027-03-01", "15:00", "16:00");
+			const wednesday = await shift(learner, "2027-03-03", "15:00", "16:30");
+			expect((await evaluateWeek()).findings).toContainEqual(
+				expect.objectContaining({
+					statutoryKind: "bbig_release_day_shift",
+					subjectKey: `shift:${wednesday}`,
+					summary: {
+						tier: "exceeded",
+						used: { unit: "minutes", value: 150 },
+						limit: { unit: "minutes", value: 120 },
+					},
+					blocksPublication: true,
+				}),
+			);
+			expect(await publishThrough(WEEK)).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect(await shiftStatus(wednesday)).toBe("draft");
+		});
+
+		it("publishes two 1 h shifts on different block days and refuses a third", async () => {
+			const learner = await blockWeekLearner();
+			await shift(learner, "2027-03-01", "15:00", "16:00");
+			await shift(learner, "2027-03-02", "15:00", "16:00");
+			expect(await publishThrough(WEEK)).toMatchObject({
+				success: true,
+				data: { published: true, count: 2 },
+			});
+			const thursday = await shift(learner, "2027-03-04", "15:00", "16:00");
+			expect(await publishThrough(WEEK)).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect(await shiftStatus(thursday)).toBe("draft");
+		});
+	});
+
+	describe("the § 12 shift span", () => {
+		it("flags a 16-year-old's day spanning 12 h, and refuses publishing it", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "split", { birthday: "2010-06-01" });
+			await shift(minor, "2027-03-02", "07:00", "11:00");
+			const evening = await shift(minor, "2027-03-02", "15:00", "19:00");
+			const statutory = (await evaluateWeek()).findings.filter(
+				(finding) => finding.type === "statutory",
+			);
+			expect(statutory).toEqual([
+				expect.objectContaining({
+					statutoryKind: "jarbschg_shift_span",
+					subjectKey: `shift:${evening}`,
+					legalReference: "§ 12 JArbSchG",
+					day: "2027-03-02",
+					summary: {
+						tier: "exceeded",
+						used: { unit: "minutes", value: 720 },
+						limit: { unit: "minutes", value: 600 },
+					},
+					acknowledgementStatus: null,
+					blocksPublication: true,
+				}),
+			]);
+			expect(await publishShifts(WEEK)).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect(await shiftStatus(evening)).toBe("draft");
+		});
+
+		it("publishes a 10 h 30 min span once hospitality's 11 h is acknowledged", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "hospitality", { birthday: "2010-06-01" });
+			await shift(minor, "2027-03-02", "08:00", "12:00");
+			const evening = await shift(minor, "2027-03-02", "15:00", "18:30");
+			expect(await publishShifts(WEEK)).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			const acknowledged = await acknowledgeSectorExceptions(minor);
+			expect(acknowledged.map((finding) => finding.kind)).toEqual(["jarbschg_shift_span"]);
+			const handshake = await publishShifts(WEEK);
+			if (!handshake.success) throw new Error(`publish refused: ${handshake.error}`);
+			const published = handshake.data.published
+				? handshake
+				: await publishShifts(WEEK, {
+						evaluationFingerprint: handshake.data.evaluationFingerprint,
+					});
+			expect(published).toMatchObject({ success: true, data: { published: true, count: 2 } });
+			expect(await shiftStatus(evening)).toBe("published");
+		});
+	});
+
 	describe("Staffing sees what a proposal breaks on neighbouring days", () => {
 		const staffingLayer = StaffingSuggestionServiceLive.pipe(
 			Layer.provide(
@@ -1715,6 +1843,17 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			// A Monday morning proposal leaves the rest as it is.
 			expect(await youthWarnings(minor, "2027-03-01", "08:00", "09:00")).not.toContain(
 				"jarbschg_rest_period",
+			);
+		});
+
+		it("warns about the 12 h shift span an evening proposal makes of a morning shift's day", async () => {
+			const minor = await fx.employee(org, "span", { birthday: "2010-06-01" });
+			await shift(minor, "2027-03-02", "07:00", "11:00");
+			expect(await youthWarnings(minor, "2027-03-02", "15:00", "19:00")).toContain(
+				"jarbschg_shift_span",
+			);
+			expect(await youthWarnings(minor, "2027-03-02", "13:00", "17:00")).not.toContain(
+				"jarbschg_shift_span",
 			);
 		});
 
@@ -1909,6 +2048,6 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 				.map((finding) => (finding.type === "statutory" ? finding.statutoryKind : finding.type));
 		expect(of(standard)).toEqual(["maxHours"]);
 		expect(of(executive)).toEqual([]);
-		expect(of(minorExecutive)).toEqual(["jarbschg_daily_max"]);
+		expect(of(minorExecutive)).toEqual(["jarbschg_daily_max", "jarbschg_shift_span"]);
 	});
 });

@@ -371,6 +371,7 @@
         "jarbschgNightWork": "Nachtarbeit von Jugendlichen (JArbSchG)",
         "jarbschgRestPeriod": "Freizeit für Jugendliche zu kurz (JArbSchG)",
         "jarbschgSaturdayWork": "Samstagsarbeit von Jugendlichen (JArbSchG)",
+        "jarbschgShiftSpan": "Schichtzeit für Jugendliche überschritten (JArbSchG)",
         "jarbschgSundayWork": "Sonntagsarbeit von Jugendlichen (JArbSchG)",
         "jarbschgUninterrupted": "Jugendliche zu lange ohne Pause beschäftigt (JArbSchG)",
         "jarbschgWeeklyMax": "Wöchentliche Höchstarbeitszeit für Jugendliche überschritten (JArbSchG)",

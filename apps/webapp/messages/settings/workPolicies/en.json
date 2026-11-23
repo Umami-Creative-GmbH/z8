@@ -342,6 +342,7 @@
             "holiday": "Public holiday work",
             "night": "Night work (20:00–06:00)",
             "saturday": "Saturday work",
+            "shiftSpan": "Shift span of 10 to 11 hours (§ 12)",
             "sunday": "Sunday work"
           },
           "legalNote": "Legal basis (optional), e.g. § 14 Abs. 2 Nr. 1 JArbSchG",
@@ -1110,6 +1111,7 @@
         "jarbschgNightWork": "Youth Night Work",
         "jarbschgRestPeriod": "Youth Rest Period Too Short",
         "jarbschgSaturdayWork": "Youth Saturday Work",
+        "jarbschgShiftSpan": "Youth Shift Span Exceeded",
         "jarbschgSundayWork": "Youth Sunday Work",
         "jarbschgUninterrupted": "Youth Max Continuous Exceeded",
         "jarbschgWeeklyMax": "Youth Max Weekly Exceeded",

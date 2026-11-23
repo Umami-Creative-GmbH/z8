@@ -342,6 +342,7 @@
             "holiday": "Arbeit an einem Feiertag",
             "night": "Nachtarbeit (20:00–06:00)",
             "saturday": "Arbeit am Samstag",
+            "shiftSpan": "Schichtzeit von 10 bis 11 Stunden (§ 12)",
             "sunday": "Arbeit am Sonntag"
           },
           "legalNote": "Rechtsgrundlage (optional), z. B. § 14 Abs. 2 Nr. 1 JArbSchG",
@@ -1110,6 +1111,7 @@
         "jarbschgNightWork": "Jugendliche: Nachtarbeit",
         "jarbschgRestPeriod": "Jugendliche: Freizeit zu kurz",
         "jarbschgSaturdayWork": "Jugendliche: Samstagsarbeit",
+        "jarbschgShiftSpan": "Jugendliche: Schichtzeit überschritten",
         "jarbschgSundayWork": "Jugendliche: Sonntagsarbeit",
         "jarbschgUninterrupted": "Jugendliche: zu lange ohne Pause",
         "jarbschgWeeklyMax": "Jugendliche: Wochenmaximum überschritten",

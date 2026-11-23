@@ -12,6 +12,7 @@ import {
 	type JarbschgEvaluationInput,
 	type JarbschgLimits,
 	type JarbschgRule,
+	JARBSCHG_SECTOR_MAX_SHIFT_SPAN_MINUTES,
 	jarbschgLegalReference,
 	jarbschgMinimumRules,
 	jarbschgSectorExceptionRules,
@@ -84,8 +85,14 @@ export function jarbschgFindingOf(input: {
 }): StatutoryFinding<JarbschgRule> {
 	const { breach, interval } = input;
 	const sectorException = jarbschgSectorExceptionRules.has(breach.rule);
+	// § 12: a span of up to 11 h is lawful in the sectors the law names; the admin acknowledges that
+	// the sector applies, as for the other sector exceptions. Judged by the day's span alone.
+	const sectorShiftSpan =
+		breach.rule === "jarbschg_shift_span" &&
+		breach.actual <= JARBSCHG_SECTOR_MAX_SHIFT_SPAN_MINUTES;
 	// Work is covered by the sector exception acknowledged for its planned shift.
-	const subjectKey = sectorException ? (interval.plannedShift?.ref ?? breach.ref) : breach.ref;
+	const subjectKey =
+		sectorException || sectorShiftSpan ? (interval.plannedShift?.ref ?? breach.ref) : breach.ref;
 	const unit = breach.unit;
 	return {
 		id: statutoryFindingId(breach.rule, input.employeeId, subjectKey),
@@ -112,16 +119,25 @@ export function jarbschgFindingOf(input: {
 					breach,
 					interval,
 				})
-			: statutoryInputFingerprint({
-					rule: breach.rule,
-					employeeId: input.employeeId,
-					subjectKey: breach.ref,
-					start: interval.start,
-					end: interval.end,
-					actual: breach.actual,
-					limit: breach.limit,
-				}),
-		acknowledgementKind: sectorException ? "jarbschg_sector_exception" : null,
+			: sectorShiftSpan
+				? // The day's span: unchanged while the day is worked as planned.
+					statutoryInputFingerprint({
+						rule: breach.rule,
+						employeeId: input.employeeId,
+						subjectKey,
+						day: breach.day,
+						actual: breach.actual,
+					})
+				: statutoryInputFingerprint({
+						rule: breach.rule,
+						employeeId: input.employeeId,
+						subjectKey: breach.ref,
+						start: interval.start,
+						end: interval.end,
+						actual: breach.actual,
+						limit: breach.limit,
+					}),
+		acknowledgementKind: sectorException || sectorShiftSpan ? "jarbschg_sector_exception" : null,
 		...(sectorException && breach.coveredMinutes !== undefined
 			? { coveredMinutes: breach.coveredMinutes }
 			: {}),
@@ -141,6 +157,7 @@ const positionalScope: Partial<Record<JarbschgRule, "day" | "week">> = {
 	jarbschg_daily_max: "day",
 	jarbschg_weekly_max: "week",
 	jarbschg_days_per_week: "week",
+	jarbschg_shift_span: "day",
 };
 
 /**

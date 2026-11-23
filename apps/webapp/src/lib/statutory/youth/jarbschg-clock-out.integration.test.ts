@@ -133,6 +133,26 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 			return { ...row[0], details: JSON.parse(row[0]?.details ?? "{}") };
 		};
 
+		it("records the § 12 shift span once and refreshes it only when it gets longer", async () => {
+			const minor = await fx.employee(org, "span", { birthday: "2010-06-01" });
+			await clockOut(minor, "2026-03-03", "07:00", 240); // 07:00–11:00.
+			await clockOut(minor, "2026-03-03", "15:00", 240); // 15:00–19:00: a 12 h span.
+			expect(await recorded(minor, "jarbschg_shift_span")).toMatchObject({
+				details: { actualMinutes: 720, limitMinutes: 600, legalReference: "§ 12 JArbSchG" },
+			});
+			const { work } = await clockOut(minor, "2026-03-03", "19:10", 20); // Until 19:30.
+			expect(await recorded(minor, "jarbschg_shift_span")).toMatchObject({
+				work_period_id: work.id,
+				details: { actualMinutes: 750, limitMinutes: 600 },
+			});
+			// Short work inside the span leaves the recorded figures as they are.
+			await clockOut(minor, "2026-03-03", "12:00", 15);
+			expect(await recorded(minor, "jarbschg_shift_span")).toMatchObject({
+				work_period_id: work.id,
+				details: { actualMinutes: 750 },
+			});
+		});
+
 		it("refreshes the day's holiday work to everything worked after 14:00 on 24 December", async () => {
 			const minor = await fx.employee(org, "eve-split", { birthday: "2010-06-01" });
 			await clockOut(minor, "2025-12-24", "13:00", 120); // 13:00–15:00: 60 min after 14:00.

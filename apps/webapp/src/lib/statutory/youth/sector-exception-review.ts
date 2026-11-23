@@ -1,6 +1,7 @@
 /**
  * Statutory sector exceptions for JArbSchG findings (#1993), org admins only: the open night,
- * Saturday, Sunday and holiday findings of employees under 18 around today, and the action that
+ * Saturday, Sunday and holiday findings, and shift spans of up to 11 h (§ 12), of employees
+ * under 18 around today, and the action that
  * acknowledges one. The admin acknowledges what they were shown: the action re-evaluates the
  * finding and refuses when its fingerprint no longer matches. #1994 folds this list into the
  * unified Reviews inbox.
@@ -22,7 +23,7 @@ import type { StatutoryFinding, StatutoryQuantity } from "../finding";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { isMinorOn } from "./age";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
-import { type JarbschgRule, jarbschgSectorExceptionRules } from "./jarbschg-rules";
+import type { JarbschgRule } from "./jarbschg-rules";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
 
@@ -36,6 +37,8 @@ export const jarbschgSectorExceptionKinds = [
 	"jarbschg_saturday_work",
 	"jarbschg_sunday_work",
 	"jarbschg_holiday_work",
+	// A shift span of up to 11 h (§ 12 JArbSchG); a longer one cannot be acknowledged.
+	"jarbschg_shift_span",
 ] as const satisfies readonly JarbschgRule[];
 export type JarbschgSectorExceptionKind = (typeof jarbschgSectorExceptionKinds)[number];
 
@@ -60,7 +63,7 @@ export type YouthSectorExceptionRefusal =
 	| "statutory_finding_changed";
 
 const isSectorExceptionKind = (kind: string): kind is JarbschgSectorExceptionKind =>
-	jarbschgSectorExceptionRules.has(kind as JarbschgRule);
+	(jarbschgSectorExceptionKinds as readonly string[]).includes(kind);
 
 function nameOf(row: {
 	firstName: string | null;

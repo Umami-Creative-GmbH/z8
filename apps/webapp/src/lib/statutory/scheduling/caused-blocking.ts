@@ -18,12 +18,13 @@ type Reader = Pick<DatabaseClient, "select">;
  * - a breach the rules attribute by position (rest period, daily and weekly maximum, days per
  *   week): its judged day or compliance week, whichever shift carries it;
  * - an apprentice release conflict: its release day, whichever shift conflicts and whichever rule
- *   it cites;
+ *   it cites; work past a block week's training allowance: its compliance week;
  * - any other breach is about its own work (night, weekend, holiday work, breaks): that finding on
  *   its local day.
  */
 export function breachScopeOf(
-	finding: Pick<StatutoryFinding, "id" | "kind" | "employeeId" | "periodStart">,
+	finding: Pick<StatutoryFinding, "id" | "kind" | "employeeId" | "periodStart"> &
+		Partial<Pick<StatutoryFinding, "summary">>,
 ): string {
 	return (
 		youthBreachScopeOf(finding) ??

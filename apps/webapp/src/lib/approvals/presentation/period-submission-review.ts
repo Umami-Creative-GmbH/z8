@@ -203,6 +203,10 @@ const VIOLATION_TYPES: Record<string, ApprovalInboxLocalizedText> = {
 		fallback:
 			"Work by a minor after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May (JArbSchG)",
 	},
+	jarbschg_shift_span: {
+		key: "approvals:approvals.periodSubmission.violationType.jarbschgShiftSpan",
+		fallback: "Youth shift span exceeded (JArbSchG)",
+	},
 };
 
 function groupedByDate<T>(entries: readonly T[], dateOf: (entry: T) => string): Map<string, T[]> {

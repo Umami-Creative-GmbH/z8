@@ -97,13 +97,13 @@ describe("youth sector exception actions (PostgreSQL)", () => {
 		await seed.blockJarbschgPublish(org);
 		const tuesday = nextTuesday().toString();
 		const shiftId = await lateShift(tuesday);
-		// A hard limit does not qualify: an 11 h day on Wednesday.
+		// A hard limit does not qualify: an 11.5 h day on Wednesday, its span past the 11 h a sector allows.
 		await seed.shift(org, minor, {
 			subareaId,
 			creatorUserId: owner.userId,
 			date: nextTuesday().add({ days: 1 }).toString(),
 			startTime: "07:00",
-			endTime: "18:00",
+			endTime: "18:30",
 		});
 
 		const open = await openExceptions();
@@ -137,6 +137,46 @@ describe("youth sector exception actions (PostgreSQL)", () => {
 		expect(stillBlocking).toContain("jarbschg_daily_max");
 	});
 
+	it("lists a shift span of up to 11 h and lifts its block once the sector is acknowledged", async () => {
+		await seed.blockJarbschgPublish(org);
+		const tuesday = nextTuesday().toString();
+		await seed.shift(org, minor, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: tuesday,
+			startTime: "08:00",
+			endTime: "12:00",
+		});
+		const evening = await seed.shift(org, minor, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: tuesday,
+			startTime: "15:00",
+			endTime: "18:30",
+		});
+		const open = await openExceptions();
+		expect(open).toEqual([
+			expect.objectContaining({
+				findingKind: "jarbschg_shift_span",
+				subjectKey: `shift:${evening}`,
+				legalReference: "§ 12 JArbSchG",
+				used: { unit: "minutes", value: 630 },
+			}),
+		]);
+		const [span] = open;
+		expect(
+			await acknowledgeYouthSectorExceptionAction({
+				employeeId: span.employeeId,
+				findingKind: span.findingKind,
+				subjectKey: span.subjectKey,
+				periodStart: span.periodStart,
+				expectedFingerprint: span.inputFingerprint,
+				reason: "Hospitality: § 12 JArbSchG allows an 11 h shift span",
+			}),
+		).toMatchObject({ success: true });
+		expect(await openExceptions()).toEqual([]);
+		expect(await publishBlocks(tuesday)).toEqual([]);
+	});
 	it("refuses an acknowledgement of figures that changed since the admin saw them", async () => {
 		const tuesday = nextTuesday().toString();
 		const shiftId = await lateShift(tuesday);

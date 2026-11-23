@@ -65,6 +65,11 @@ function kindLabel(kind: JarbschgSectorExceptionKind, t: Translate): string {
 			return t("settings.contracts.reviews.youth.kind.sunday", "Sunday work");
 		case "jarbschg_holiday_work":
 			return t("settings.contracts.reviews.youth.kind.holiday", "Public holiday work");
+		case "jarbschg_shift_span":
+			return t(
+				"settings.contracts.reviews.youth.kind.shiftSpan",
+				"Shift span of 10 to 11 hours (§ 12)",
+			);
 	}
 }
 

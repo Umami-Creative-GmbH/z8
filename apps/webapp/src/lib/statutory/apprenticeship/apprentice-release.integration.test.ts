@@ -1140,12 +1140,13 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		for (const who of [adult, minor]) {
 			await recordReleases(who);
 			for (const [date, release] of Object.entries(days)) {
+				// Three hours: past the 2 h of in-company training a block week allows.
 				const id = await seed.shift(org, who, {
 					subareaId,
 					creatorUserId: owner.userId,
 					date,
 					startTime: "13:00",
-					endTime: "15:00",
+					endTime: "16:00",
 				});
 				releaseOfShift.set(`shift:${id}`, `${who === minor ? "minor" : "adult"} ${release}`);
 			}
@@ -1416,6 +1417,8 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			});
 		// From before the lessons through the full school day: the whole of it, counted once.
 		const schoolDay = await shiftOf("2027-03-01", "06:00", "14:00");
+		// Monday morning: the block week's 2 h of in-company training.
+		const training = await shiftOf("2027-03-08", "08:00", "10:00");
 		// Monday night into Tuesday, both block days.
 		const blockNight = await shiftOf("2027-03-08", "22:00", "06:00");
 
@@ -1452,6 +1455,7 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 				span(["2027-03-01", "06:00"], ["2027-03-01", "14:00"]),
 			],
 		]);
+		expect(coverage(training)).toEqual([]);
 		// Each block day is judged by the work on it: Monday's two hours, Tuesday's six.
 		expect(coverage(blockNight)).toEqual([
 			[
@@ -1467,6 +1471,140 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 				span(["2027-03-09", "00:00"], ["2027-03-09", "06:00"]),
 			],
 		]);
+	});
+
+	describe("in-company training in a full block week (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG)", () => {
+		let subareaId = "";
+		beforeEach(async () => {
+			subareaId = await seed.subarea(org, owner);
+		});
+
+		/** A 30 h block week, Monday 8 to Friday 12 March 2027, and the learner's shifts in it. */
+		async function blockWeekWith(
+			birthday: string,
+			shifts: readonly (readonly [string, string, string])[],
+		) {
+			const learner = await apprentice(`train${shifts.length}${birthday.slice(0, 4)}`, birthday);
+			await recordApprenticeReleaseWithCredit(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				actorUserId: owner.userId,
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-08",
+				endsOn: "2027-03-12",
+				schoolMinutes: 1800,
+			});
+			const ids: string[] = [];
+			for (const [date, startTime, endTime] of shifts) {
+				ids.push(
+					await seed.shift(org, learner, {
+						subareaId,
+						creatorUserId: owner.userId,
+						date,
+						startTime,
+						endTime,
+					}),
+				);
+			}
+			return { learner, ids };
+		}
+		const conflicts = (
+			learner: FixtureEmployee,
+			window = { start: "2027-03-08", endExclusive: "2027-03-15" },
+		) =>
+			apprenticeReleaseScheduleContributor.evaluate({
+				db,
+				organizationId: org.id,
+				timezone: org.timezone,
+				window,
+				employeeIds: [learner.employeeId],
+				proposedShifts: [],
+				replacesShiftId: null,
+				preferences: { ...DEFAULT_STATUTORY_PREFERENCES, blockJarbschgShiftPublish: true },
+				now: localInstant("2027-02-20", "12:00", org.timezone),
+			});
+
+		it("allows a 17-year-old 1 h 30 min of training on Wednesday", async () => {
+			const { learner } = await blockWeekWith("2009-06-01", [["2027-03-10", "15:00", "16:30"]]);
+			expect(await conflicts(learner)).toEqual([]);
+		});
+
+		it("flags only the work past 2 h in the week, as deep as that excess", async () => {
+			const { learner, ids } = await blockWeekWith("2009-06-01", [
+				["2027-03-08", "15:00", "16:00"],
+				["2027-03-10", "15:00", "16:30"],
+			]);
+			const findings = await conflicts(learner);
+			expect(
+				findings.map((finding) => [
+					finding.subjectKey,
+					finding.periodStart,
+					finding.legalReference,
+					finding.coveredMinutes,
+					finding.coveredSpan,
+					finding.summary,
+					finding.blocksPublication,
+				]),
+			).toEqual([
+				[
+					`shift:${ids[1]}`,
+					"2027-03-10",
+					"§ 9 Abs. 1 Nr. 3 JArbSchG",
+					30,
+					{
+						start: localInstant("2027-03-10", "16:00", org.timezone).toString(),
+						end: localInstant("2027-03-10", "16:30", org.timezone).toString(),
+					},
+					{
+						tier: "exceeded",
+						used: { unit: "minutes", value: 150 },
+						limit: { unit: "minutes", value: 120 },
+					},
+					true,
+				],
+			]);
+			// Judging Monday alone still finds the week's excess on Wednesday.
+			expect(
+				(await conflicts(learner, { start: "2027-03-08", endExclusive: "2027-03-09" })).map(
+					(finding) => [finding.subjectKey, finding.coveredMinutes],
+				),
+			).toEqual([[`shift:${ids[1]}`, 30]]);
+		});
+
+		it("lets two 1 h shifts on different block days pass and flags a third", async () => {
+			const two = await blockWeekWith("2009-06-01", [
+				["2027-03-08", "15:00", "16:00"],
+				["2027-03-09", "15:00", "16:00"],
+			]);
+			expect(await conflicts(two.learner)).toEqual([]);
+			const three = await blockWeekWith("2009-06-02", [
+				["2027-03-08", "15:00", "16:00"],
+				["2027-03-09", "15:00", "16:00"],
+				["2027-03-11", "15:00", "16:00"],
+			]);
+			expect(
+				(await conflicts(three.learner)).map((finding) => [
+					finding.subjectKey,
+					finding.coveredMinutes,
+				]),
+			).toEqual([[`shift:${three.ids[2]}`, 60]]);
+		});
+
+		it("counts overlapping shifts once toward the allowance", async () => {
+			const { learner } = await blockWeekWith("2009-06-01", [
+				["2027-03-10", "15:00", "16:30"],
+				["2027-03-10", "15:30", "16:45"],
+			]);
+			expect(await conflicts(learner)).toEqual([]);
+		});
+
+		it("gives an adult apprentice no warning within the allowance", async () => {
+			const { learner } = await blockWeekWith("2005-05-05", [
+				["2027-03-08", "15:00", "16:00"],
+				["2027-03-12", "15:00", "16:00"],
+			]);
+			expect(await conflicts(learner)).toEqual([]);
+		});
 	});
 
 	it("does not credit releases of an employee who is not an apprentice", async () => {
