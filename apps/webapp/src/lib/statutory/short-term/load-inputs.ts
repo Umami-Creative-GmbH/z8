@@ -98,11 +98,30 @@ export interface ShortTermYearWeek {
 	readonly unplannedDays: readonly string[];
 }
 
+/**
+ * One short-term employment: confirmed short-term terms of one employment period that follow each
+ * other without a gap (a new wage or week does not end the employment), as in force after
+ * supersession by later confirmed terms.
+ */
+export interface ShortTermEmployment {
+	/** First day, `YYYY-MM-DD`. */
+	readonly from: string;
+	/** Day after the last, `YYYY-MM-DD`; null while the terms run on. */
+	readonly until: string | null;
+	/**
+	 * Whether its terms were agreed with a fixed end: then the employment runs from its first day
+	 * through its pauses. Open-ended framework terms only last while the employee works.
+	 */
+	readonly fixedTerm: boolean;
+}
+
 export interface ShortTermEmployeeInputs {
 	readonly employeeId: string;
 	readonly work: readonly ShortTermWorkItem[];
 	readonly planned: readonly ShortTermPlanItem[];
 	readonly priorOffsets: readonly ShortTermPriorOffset[];
+	/** The employee's short-term employments overlapping the requested years, by first day. */
+	readonly employments: readonly ShortTermEmployment[];
 	/**
 	 * Per year with effective short-term terms, the week those terms call for (`judge.ts` chooses
 	 * the limit from it). Years without effective short-term terms are absent.
@@ -229,6 +248,58 @@ function termSampleDates(
 	return samples;
 }
 
+interface TermsRow {
+	readonly id: string;
+	readonly employmentPeriodId: string | null;
+	readonly employmentProfile: string | null;
+	readonly validFromDate: string;
+	readonly validUntilDate: string | null;
+	readonly createdAt: Date;
+}
+
+/**
+ * An employee's short-term employments from their confirmed terms rows (any profile). As in the
+ * contract resolver, within one employment period a later row cuts the end of the row before
+ * it; short-term rows that then meet form one employment.
+ */
+export function shortTermEmployments(rows: readonly TermsRow[]): ShortTermEmployment[] {
+	const employments: ShortTermEmployment[] = [];
+	for (const group of groupBy(rows, (row) => row.employmentPeriodId ?? "").values()) {
+		const ordered = [...group]
+			.filter((row) => row.validUntilDate === null || row.validFromDate < row.validUntilDate)
+			.sort(
+				(a, b) =>
+					a.validFromDate.localeCompare(b.validFromDate) ||
+					a.createdAt.getTime() - b.createdAt.getTime() ||
+					a.id.localeCompare(b.id),
+			);
+		let current: { from: string; until: string | null; fixedTerm: boolean } | null = null;
+		for (const [index, row] of ordered.entries()) {
+			const next = ordered[index + 1];
+			const until =
+				next && (row.validUntilDate === null || next.validFromDate < row.validUntilDate)
+					? next.validFromDate
+					: row.validUntilDate;
+			if (until !== null && row.validFromDate >= until) continue;
+			if (row.employmentProfile !== "short_term") {
+				if (current) employments.push(current);
+				current = null;
+				continue;
+			}
+			const fixedTerm = row.validUntilDate !== null;
+			if (current && current.until === row.validFromDate) {
+				current.until = until;
+				current.fixedTerm = fixedTerm;
+			} else {
+				if (current) employments.push(current);
+				current = { from: row.validFromDate, until, fixedTerm };
+			}
+		}
+		if (current) employments.push(current);
+	}
+	return employments.sort((a, b) => a.from.localeCompare(b.from));
+}
+
 /**
  * Loads everything the short-term monitor judges, batched for all employees: confirmed terms
  * (via the contract resolver), completed work, planned shifts, prior-employer offsets and the
@@ -258,12 +329,17 @@ export async function loadShortTermInputs(
 		until,
 	});
 
-	// Cheap pre-filter: only employees with confirmed short-term terms in the years matter.
-	const termRows = await db
+	// Confirmed terms of every profile in the years: later terms cut short-term ones. Cheap
+	// pre-filter: only employees with confirmed short-term terms in the years matter.
+	const confirmedTermRows = await db
 		.select({
+			id: employeeEmploymentHistory.id,
 			employeeId: employeeEmploymentHistory.employeeId,
+			employmentPeriodId: employeeEmploymentHistory.employmentPeriodId,
+			employmentProfile: employeeEmploymentHistory.employmentProfile,
 			validFromDate: employeeEmploymentHistory.validFromDate,
 			validUntilDate: employeeEmploymentHistory.validUntilDate,
+			createdAt: employeeEmploymentHistory.createdAt,
 		})
 		.from(employeeEmploymentHistory)
 		.where(
@@ -271,7 +347,6 @@ export async function loadShortTermInputs(
 				eq(employeeEmploymentHistory.organizationId, input.organizationId),
 				inArray(employeeEmploymentHistory.employeeId, [...new Set(input.employeeIds)]),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
-				eq(employeeEmploymentHistory.employmentProfile, "short_term"),
 				lt(employeeEmploymentHistory.validFromDate, until),
 				or(
 					isNull(employeeEmploymentHistory.validUntilDate),
@@ -279,6 +354,7 @@ export async function loadShortTermInputs(
 				),
 			),
 		);
+	const termRows = confirmedTermRows.filter((row) => row.employmentProfile === "short_term");
 	let candidates = [...new Set(termRows.map((row) => row.employeeId))];
 	if (candidates.length === 0) return { employees: [], thresholds };
 
@@ -496,6 +572,7 @@ export async function loadShortTermInputs(
 	}
 
 	const termRowsByEmployee = groupBy(termRows, (row) => row.employeeId);
+	const confirmedTermRowsByEmployee = groupBy(confirmedTermRows, (row) => row.employeeId);
 	const samplesByEmployee = new Map(
 		candidates.map((employeeId) => [
 			employeeId,
@@ -604,6 +681,7 @@ export async function loadShortTermInputs(
 					year: yearOf(row.validFromDate),
 					count: row.countValue ?? 0,
 				})),
+			employments: shortTermEmployments(confirmedTermRowsByEmployee.get(employeeId) ?? []),
 			weekByYear,
 		});
 	}

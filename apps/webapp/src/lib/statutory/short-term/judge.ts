@@ -15,6 +15,7 @@ import type { StatutoryPreferences } from "../preferences";
 import type { StatutoryThresholdTable } from "../thresholds";
 import type {
 	ShortTermEmployeeInputs,
+	ShortTermEmployment,
 	ShortTermLimitKind,
 	ShortTermPlanItem,
 	ShortTermWorkItem,
@@ -56,8 +57,9 @@ export interface ShortTermYearEvaluation {
 }
 
 /**
- * Counted days at most this many calendar days apart belong to one stint: weekends, public
- * holidays and a week's leave do not end an employment, a longer pause does.
+ * Under open-ended framework terms, counted days at most this many calendar days apart belong to
+ * one stint: weekends, public holidays and a week's leave do not end an assignment, a longer
+ * pause does.
  */
 export const SHORT_TERM_STINT_GAP_DAYS = 14;
 
@@ -74,35 +76,91 @@ const SHORT_TERM_FULL_WEEK_DAYS = 5;
 /** At most one in this many full weeks may lack a day to a public holiday. */
 const SHORT_TERM_WEEKS_PER_HOLIDAY_WEEK = 4;
 
-/** A run of counted short-term days, `YYYY-MM-DD` inclusive. */
+/** A run of short-term calendar days, `YYYY-MM-DD` inclusive. */
 export interface ShortTermStint {
 	readonly firstDay: string;
 	readonly lastDay: string;
 }
 
 /**
- * Splits the year's counted days (sorted, distinct) into stints: a new stint starts after a pause
- * of more than `SHORT_TERM_STINT_GAP_DAYS` or with a new employment period.
+ * Splits counted days (sorted, distinct) into runs of observed work: a new run starts after a
+ * pause of more than `SHORT_TERM_STINT_GAP_DAYS` or with a new employment (`employmentOf`).
  */
-export function shortTermStints(
+function observedRuns(
 	days: readonly string[],
-	employmentPeriodOf: ReadonlyMap<string, string | null>,
+	employmentOf: ReadonlyMap<string, string>,
 ): ShortTermStint[] {
-	const stints: { firstDay: string; lastDay: string }[] = [];
+	const runs: { firstDay: string; lastDay: string }[] = [];
 	for (const day of days) {
-		const current = stints.at(-1);
+		const current = runs.at(-1);
 		if (
 			current &&
 			parsePlainDate(current.lastDay).until(parsePlainDate(day)).days <=
 				SHORT_TERM_STINT_GAP_DAYS &&
-			employmentPeriodOf.get(current.lastDay) === employmentPeriodOf.get(day)
+			employmentOf.get(current.lastDay) === employmentOf.get(day)
 		) {
 			current.lastDay = day;
 		} else {
-			stints.push({ firstDay: day, lastDay: day });
+			runs.push({ firstDay: day, lastDay: day });
 		}
 	}
-	return stints;
+	return runs;
+}
+
+/**
+ * Which employment each counted day belongs to: the short-term employment covering it, else (should
+ * the terms rows not cover it) its employment period. Days of one employment share a key.
+ */
+function employmentKeys(
+	days: readonly string[],
+	employments: readonly ShortTermEmployment[],
+	employmentPeriodOf: ReadonlyMap<string, string | null>,
+): Map<string, string> {
+	return new Map(
+		days.map((day) => {
+			const index = employments.findIndex(
+				(employment) =>
+					employment.from <= day && (employment.until === null || day < employment.until),
+			);
+			return [
+				day,
+				index >= 0 ? `employment:${index}` : `period:${employmentPeriodOf.get(day) ?? ""}`,
+			];
+		}),
+	);
+}
+
+/**
+ * The year's stints. One fixed-term employment is one stint from its first day (or January 1) to
+ * its last counted day, pauses included: the Geringfügigkeits-Richtlinien count one continuing
+ * employment in full. Under open-ended framework terms, each run of observed work is a stint
+ * (`observedRuns`), so the pauses between assignments do not count.
+ */
+export function shortTermStints(input: {
+	readonly year: number;
+	readonly days: readonly string[];
+	readonly employments: readonly ShortTermEmployment[];
+	readonly employmentOf: ReadonlyMap<string, string>;
+}): ShortTermStint[] {
+	const yearStart = `${input.year}-01-01`;
+	const fixed = new Map<string, ShortTermStint>();
+	const observed: string[] = [];
+	for (const day of input.days) {
+		const key = input.employmentOf.get(day) ?? "";
+		const employment = key.startsWith("employment:")
+			? input.employments[Number(key.slice("employment:".length))]
+			: undefined;
+		if (!employment?.fixedTerm) {
+			observed.push(day);
+			continue;
+		}
+		const firstDay =
+			fixed.get(key)?.firstDay ?? (employment.from > yearStart ? employment.from : yearStart);
+		fixed.set(key, { firstDay, lastDay: day });
+	}
+	return [...fixed.values(), ...observedRuns(observed, input.employmentOf)].sort((a, b) =>
+		a.firstDay.localeCompare(b.firstDay),
+	);
 }
 
 /**
@@ -115,11 +173,11 @@ export function shortTermStints(
  */
 export function observedWorkDaysPerWeek(
 	days: readonly string[],
-	employmentPeriodOf: ReadonlyMap<string, string | null>,
+	employmentOf: ReadonlyMap<string, string>,
 ): number | null {
 	const counted = new Set(days);
 	const perWeek: number[] = [];
-	for (const stint of shortTermStints(days, employmentPeriodOf)) {
+	for (const stint of observedRuns(days, employmentOf)) {
 		const first = parsePlainDate(stint.firstDay);
 		const last = parsePlainDate(stint.lastDay);
 		let monday = first.subtract({ days: first.dayOfWeek - 1 });
@@ -155,13 +213,13 @@ export function observedWorkDaysPerWeek(
  */
 function ownLimitKindOf(
 	week: ShortTermYearWeek,
-	employmentPeriodOf: ReadonlyMap<string, string | null>,
+	employmentOf: ReadonlyMap<string, string>,
 ): ShortTermLimitKind {
 	if (week.plannedWorkDaysPerWeek.some((perWeek) => perWeek < SHORT_TERM_FULL_WEEK_DAYS)) {
 		return "work_days";
 	}
 	if (!week.unplannedTerms) return "months";
-	return (observedWorkDaysPerWeek(week.unplannedDays, employmentPeriodOf) ?? 0) >=
+	return (observedWorkDaysPerWeek(week.unplannedDays, employmentOf) ?? 0) >=
 		SHORT_TERM_FULL_WEEK_DAYS
 		? "months"
 		: "work_days";
@@ -215,7 +273,8 @@ interface AllowanceCount {
  * - **3 months** when every stint follows a continuous week of 5 or more work days, counted in
  *   calendar days. One stint alone is measured in time months (*Zeitmonate*) from its first day:
  *   15 June – 14 September is 3 months (92 days), and 15 June – 15 August uses 62 of them, not a
- *   started third month. Several stints (also a prior employer's) are added: a full calendar month
+ *   started third month. A fixed-term employment is one stint, its pauses included (see
+ *   `shortTermStints`). Several stints (also a prior employer's) are added: a full calendar month
  *   counts as 30 days, a part month with its actual days, against 90 calendar days. The pauses
  *   between stints never count.
  * - **70 working days** as soon as one stint has a shorter or irregular week, and also when such
@@ -271,9 +330,13 @@ export function judgeShortTermYear(input: {
 	const inYear = (date: string) => date.startsWith(`${year}-`);
 	const counted = [...employee.work, ...employee.planned].filter((item) => inYear(item.date));
 	const days = [...new Set(counted.map((item) => item.date))].sort();
-	const employmentPeriodOf = new Map(counted.map((item) => [item.date, item.employmentPeriodId]));
-	const stints = shortTermStints(days, employmentPeriodOf);
-	const ownLimitKind = ownLimitKindOf(week, employmentPeriodOf);
+	const employmentOf = employmentKeys(
+		days,
+		employee.employments,
+		new Map(counted.map((item) => [item.date, item.employmentPeriodId])),
+	);
+	const stints = shortTermStints({ year, days, employments: employee.employments, employmentOf });
+	const ownLimitKind = ownLimitKindOf(week, employmentOf);
 	const firstDay = days[0] ?? null;
 	const lastDay = days.at(-1) ?? null;
 
