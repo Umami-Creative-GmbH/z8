@@ -2049,6 +2049,44 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			expect(deeper.fingerprint).not.toBe(first.fingerprint);
 		});
 
+		it("makes the publish fingerprint of a planned shift span stale when it deepens, though a running clock-in carries the span", async () => {
+			const minor = await fx.employee(org, "span", { birthday: "2010-06-01" });
+			// Monday 06:30–10:00 and 16:30–17:30 planned and worked: an 11 h span. Back at 17:40:42
+			// without a shift, so the running clock-in ends the day's span while it runs.
+			await shift(minor, "2027-03-01", "06:30", "10:00");
+			await shift(minor, "2027-03-01", "16:30", "17:30");
+			await seed.work(org, minor, "2027-03-01", "06:30", 210);
+			await seed.work(org, minor, "2027-03-01", "16:30", 60);
+			await seed.openWork(org, minor, "2027-03-01", "17:40:42");
+			const atMonday = async (time: string) => {
+				const clock = vi
+					.spyOn(Temporal.Now, "instant")
+					.mockReturnValue(localInstant("2027-03-01", time, org.timezone));
+				try {
+					return await evaluateWeek();
+				} finally {
+					clock.mockRestore();
+				}
+			};
+			const spans = (result: Awaited<ReturnType<typeof evaluateWeek>>) =>
+				result.findings.flatMap((finding) =>
+					finding.type === "statutory" && finding.statutoryKind === "jarbschg_shift_span"
+						? [`${finding.severity}:${finding.summary.tier}`]
+						: [],
+				);
+
+			const first = await atMonday("17:50:10");
+			expect(spans(first)).toEqual(["critical:exceeded"]);
+			// The running clock-in alone leaves it as it is.
+			expect((await atMonday("17:58:10")).fingerprint).toBe(first.fingerprint);
+
+			// Half an hour worked from 06:00 is recorded: the span without the clock-in grows to 11.5 h.
+			await seed.work(org, minor, "2027-03-01", "06:00", 30);
+			const deeper = await atMonday("17:50:10");
+			expect(spans(deeper)).toEqual(spans(first));
+			expect(deeper.fingerprint).not.toBe(first.fingerprint);
+		});
+
 		it("still flags a lunch break after a day started two hours early", async () => {
 			const minor = await fx.employee(org, "early", { birthday: "2011-01-01" });
 			await shift(minor, "2027-03-01", "08:00", "17:00");

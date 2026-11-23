@@ -31,7 +31,7 @@ import {
 	loadYouthWork,
 } from "./youth-facts";
 import { loadYouthSchoolCredits } from "./school-credits";
-import { youthFindingsOf } from "./youth-findings";
+import { youthBreachScopeOf, youthFindingsOf } from "./youth-findings";
 import { plannedYouthInterval, type YouthShiftRecord, youthIntervalsOf } from "./youth-intervals";
 
 const mondayOf = (day: PlainDate) => day.subtract({ days: day.dayOfWeek - 1 });
@@ -147,17 +147,36 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	return findings;
 }
 
+/** The deeper of two findings of one rule: further above a ceiling, or further below a floor. */
+function deeper(left: StatutoryFinding, right: StatutoryFinding): StatutoryFinding {
+	const l = left.summary.used?.value ?? Number.NEGATIVE_INFINITY;
+	const r = right.summary.used?.value ?? Number.NEGATIVE_INFINITY;
+	if (left.summary.limitDirection === "floor") return r < l ? right : left;
+	return r > l ? right : left;
+}
+
 /**
  * Each finding with the depth it has without the growth of running clock-ins (`stableDepth`),
  * read from the same findings judged on that view: null where only the running work breaks it.
+ * A breach the rules attribute by position (rest period, shift span, daily and weekly maximum, days
+ * per week) moves to another subject when the running work is left out (from the clock-in to the
+ * day's last shift), so it is matched by what it judges (`youthBreachScopeOf`); any other by id.
  */
 function withStableDepth(
 	findings: readonly StatutoryFinding[],
 	withoutGrowth: readonly StatutoryFinding[],
 ): StatutoryFinding[] {
-	const stable = new Map(withoutGrowth.map((finding) => [finding.id, finding]));
+	const byId = new Map(withoutGrowth.map((finding) => [finding.id, finding]));
+	const byScope = new Map<string, StatutoryFinding>();
+	for (const finding of withoutGrowth) {
+		const scope = youthBreachScopeOf(finding);
+		if (!scope) continue;
+		const known = byScope.get(scope);
+		byScope.set(scope, known ? deeper(known, finding) : finding);
+	}
 	return findings.map((finding) => {
-		const without = stable.get(finding.id);
+		const scope = youthBreachScopeOf(finding);
+		const without = scope ? (byId.get(finding.id) ?? byScope.get(scope)) : byId.get(finding.id);
 		return {
 			...finding,
 			stableDepth: {
