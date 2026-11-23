@@ -70,8 +70,6 @@ export async function loadContractorStatement(
 	const [person] = await reader
 		.select({
 			id: employee.id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
 			employeeNumber: employee.employeeNumber,
 			userName: user.name,
 			organizationName: organization.name,
@@ -106,7 +104,6 @@ export async function loadContractorStatement(
 		...new Set(pricing.days.flatMap((day) => day.shares.map((share) => share.workId))),
 	];
 	const work = await loadWorkDetails(reader, organizationId, workIds);
-	const name = [person.firstName, person.lastName].filter(Boolean).join(" ").trim();
 
 	return {
 		ok: true,
@@ -114,7 +111,8 @@ export async function loadContractorStatement(
 			organizationName: person.organizationName,
 			contractor: {
 				id: person.id,
-				name: name || person.userName?.trim() || person.employeeNumber || person.id,
+				// The user's name is the canonical display name (derived-user-name.ts).
+				name: person.userName?.trim() || person.employeeNumber || person.id,
 				employeeNumber: person.employeeNumber,
 				companyName: profile?.companyName ?? null,
 				vatId: profile?.vatId ?? null,

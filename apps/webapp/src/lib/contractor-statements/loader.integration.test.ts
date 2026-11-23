@@ -48,11 +48,11 @@ describe("contractor statements on PostgreSQL", () => {
 		number = `C-${personnelNumber++}`,
 	) {
 		const seeded = await fixture.seedEmployee({ organizationId, engagementKind: "contractor" });
-		const [firstName, lastName] = name.split(" ");
-		await fixture.pool.query(
-			`update employee set first_name = $2, last_name = $3, employee_number = $4 where id = $1`,
-			[seeded.employeeId, firstName, lastName, number],
-		);
+		await fixture.pool.query(`update "user" set name = $2 where id = $1`, [seeded.userId, name]);
+		await fixture.pool.query(`update employee set employee_number = $2 where id = $1`, [
+			seeded.employeeId,
+			number,
+		]);
 		return seeded;
 	}
 
