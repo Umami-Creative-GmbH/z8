@@ -5,7 +5,7 @@ import {
 	classifyPayrollRunCandidates,
 	exportIsPayrollRun,
 } from "@/lib/travel-expenses/payroll-run";
-import { fetchOvertimePayoutsForExport, resolvePayrollRunEmployeeIds } from "./data-fetcher";
+import { fetchOvertimePayoutsForExport, resolvePayrollRunExpenseEmployeeIds } from "./data-fetcher";
 import { overtimePayoutCodeFormat } from "./formatters/overtime-payouts";
 import type { PayrollExportFilters } from "./types";
 
@@ -43,7 +43,8 @@ export async function employeesWithPayoutsOrExpenseLines(input: {
 			organizationId: input.organizationId,
 			format: input.formatId,
 			period: logicalPeriod(input.filters),
-			employeeIds: await resolvePayrollRunEmployeeIds(input.organizationId, input.filters),
+			// Reports go by their own days (#1997): with or without employee time in the period.
+			employeeIds: await resolvePayrollRunExpenseEmployeeIds(input.organizationId, input.filters),
 		});
 		for (const candidate of candidates) {
 			if (candidate.classification.outcome === "include") {

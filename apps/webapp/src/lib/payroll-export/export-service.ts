@@ -59,6 +59,7 @@ import {
 	getPayrollExportConfig,
 	getWageTypeMappings,
 	resolvePayrollRunEmployeeIds,
+	resolvePayrollRunExpenseEmployeeIds,
 } from "./data-fetcher";
 import { isExpensePayrollFormat } from "./expense-wage-type.types";
 import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
@@ -577,8 +578,9 @@ export async function processExportJob(
 			}
 
 			// A payroll run (#852): the inclusions commit with the finished job, or not at all,
-			// so a failed export never holds reports and earlier runs keep theirs.
-			const employeeIds = await resolvePayrollRunEmployeeIds(job.organizationId, filters);
+			// so a failed export never holds reports and earlier runs keep theirs. Its reports go
+			// by their own days (#1997), so it classifies everyone the export selects.
+			const employeeIds = await resolvePayrollRunExpenseEmployeeIds(job.organizationId, filters);
 			let skipped: PayrollRunSkipped[] = [];
 			const exported = await db.transaction(async (tx) => {
 				const inclusion = await includeReportsInPayrollRun(tx, {
@@ -961,7 +963,8 @@ async function freezeLegacyPersonnelIdentifier(input: {
 	const values = await readPersonnelIdentifierValues(db, {
 		organizationId: input.organizationId,
 		customFieldId: input.customFieldId,
-		employeeIds: scope,
+		// A payroll run may carry expense lines of someone without employee time (#1997).
+		employeeIds: [...new Set([...scope, ...input.employeesWithOtherRows])],
 		asOf: parsePlainDate(endDate),
 	});
 	const missing = employeesWithoutIdentifier(

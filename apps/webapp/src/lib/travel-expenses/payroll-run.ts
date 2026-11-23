@@ -110,12 +110,14 @@ export async function exportIsPayrollRun(
  * Every report and legacy claim awaiting reimbursement in a run's scope, each
  * with what a run of `format` does with it: awaiting reimbursement, approved
  * on or before the period's last day (in the organization's zone), and of an
- * employee of `employeeIds` with employee time in the period. A report whose
- * days are not all employee time (#1997) is classified `skip`, so a converted
- * person's External Contractor reports are never carried and stay free for a
- * bank transfer. Approved adjustment reports have no account of
- * their own and are not candidates. The export includes exactly the candidates
- * it classifies `include`; payroll readiness (#854) lists exactly the others.
+ * employee of `employeeIds`. A report goes by its own days, not the period's
+ * (#1997): whether or not its employee has employee time in the period, a
+ * report whose days are all employee time can be carried, and any other is
+ * classified `skip`, so External Contractor reports are never carried, stay
+ * free for a bank transfer and are announced as left out. Approved adjustment
+ * reports have no account of their own and are not candidates. The export
+ * includes exactly the candidates it classifies `include`; payroll readiness
+ * (#854) lists exactly the others.
  *
  * With `lock`, the reports' rows are locked first, in a fixed order: the lock
  * every settlement write takes.
@@ -131,11 +133,7 @@ export async function classifyPayrollRunCandidates(
 	options: { lock?: boolean } = {},
 ): Promise<PayrollRunCandidate[]> {
 	const { organizationId, period } = input;
-	if (input.employeeIds.length === 0) return [];
-	// Only people with employee time in the period, and of their reports only those whose days
-	// are all employee time (#1997).
-	const scope = await loadPayrollScope(database, organizationId, input.employeeIds, period);
-	const employeeIds = [...scope.employeeIds];
+	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return [];
 	const reportQuery = database
 		.select({ row: travelExpenseReport })
@@ -178,6 +176,14 @@ export async function classifyPayrollRunCandidates(
 			isAwaitingReimbursement(account),
 	);
 	if (awaiting.length === 0) return [];
+	// A report goes by its own days (#1997), so its employee need not have employee time in
+	// the period: `scope.employeeIds` is not a filter here.
+	const scope = await loadPayrollScope(
+		database,
+		organizationId,
+		[...new Set(awaiting.map((account) => account.employeeId))],
+		period,
+	);
 
 	const awaitingReports = awaiting.filter((account) => account.source.type === "report");
 	const revisions = await latestApprovedRevisions(database, {

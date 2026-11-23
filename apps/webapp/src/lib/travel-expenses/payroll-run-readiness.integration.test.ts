@@ -109,6 +109,10 @@ const { POST: processReceipt } =
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { systemClock } = await import("@/lib/datetime/temporal-core");
+const { PayrollIdentifierMissingError } = await import("@/lib/payroll-export/personnel-identifier");
+const { PayrollWorkCollectionBlockedError } =
+	await import("@/lib/payroll-collection/payroll-work-collection-blocked-error");
+const { getPayrollWorkspaceSummary } = await import("@/lib/payroll-workspace/summary");
 
 const ORG = "t854-org";
 const FOREIGN_ORG = "t854-foreign";
@@ -493,6 +497,67 @@ async function exportPayroll(period: Period, employeeIds?: string[]) {
 	return jobId;
 }
 
+/** The file a payroll export of the period writes. */
+async function exportedFile(period: Period) {
+	const { jobId } = await createExportJob({
+		organizationId: ORG,
+		formatId: "datev_lohn",
+		requestedById: ids.finance,
+		filters: {
+			dateRange: { start: parsePlainDate(period.startDate), end: parsePlainDate(period.endDate) },
+		},
+	});
+	const { result } = await processExportJob({ jobId, organizationId: ORG });
+	return { jobId, content: String(result?.content ?? "") };
+}
+
+const PAYROLL_ID_FIELD = "f8540000-0000-4000-8000-000000000001";
+
+/** DATEV writes the "Payroll ID" employee custom field as Personalnummer (#821). */
+async function identifyByPayrollId() {
+	await admin.query(
+		`insert into custom_field_definition
+		 (id, organization_id, entity, name, type, tracked, visibility, edit_level, position)
+		 values ($1, $2, 'employee', 'Payroll ID', 'text', false, 'admin', 'admin', 0)`,
+		[PAYROLL_ID_FIELD, ORG],
+	);
+	await admin.query(
+		`update payroll_export_config set config = config || $2::jsonb
+		 where organization_id = $1 and format_id = 'datev_lohn'`,
+		[
+			ORG,
+			JSON.stringify({
+				personnelNumberType: "customField",
+				personnelNumberCustomFieldId: PAYROLL_ID_FIELD,
+			}),
+		],
+	);
+}
+
+async function payrollId(employeeId: string, value: string) {
+	await admin.query(
+		`insert into custom_field_value (organization_id, definition_id, employee_id, text_value, tracked)
+		 values ($1, $2, $3, $4, false)`,
+		[ORG, PAYROLL_ID_FIELD, employeeId, value],
+	);
+}
+
+async function missingIdentifierBlockers(period: Period) {
+	const summary = await getPayrollWorkspaceSummary({
+		organizationId: ORG,
+		allowedEmployeeIds: [ids.requester, ids.colleague],
+		period: {
+			start: parsePlainDate(period.startDate),
+			end: parsePlainDate(period.endDate),
+			label: "Period",
+		},
+		generatedBy: { id: ids.finance, name: "finance" },
+	});
+	return summary.blockers
+		.filter((blocker) => blocker.type === "missing_identifier")
+		.map(({ employeeId, employeeName }) => ({ employeeId, employeeName }));
+}
+
 async function includedIn(jobId: string) {
 	const { rows } = await admin.query<{ report_id: string }>(
 		"select report_id::text from travel_expense_payroll_run_inclusion where payroll_export_job_id = $1 and state = 'included'",
@@ -684,6 +749,76 @@ describe("payroll readiness for payroll runs (#854)", () => {
 			});
 			const run = await exportPayroll(current);
 			expect(await includedIn(run)).toEqual([]);
+		});
+
+		// Employee until day -25, External Contractor since: the current period has no employee time.
+		const contractorSince = () => berlinInstant(day(-25));
+		/** The run of the employee days, exported before the trip of those days was approved. */
+		const employeePeriod: Period = { startDate: day(-40), endDate: day(-26) };
+
+		it("carries an employee trip approved after the person became an External Contractor into the next run", async () => {
+			await convertRequester("employee", "contractor", contractorSince());
+			expect(await includedIn(await exportPayroll(employeePeriod))).toEqual([]);
+			const employeeTrip = await approvedTrip("100.00", day(-30), day(-28));
+			const contractorTrip = await approvedTrip("40.00", day(-4), day(-2));
+
+			// Readiness lists only what the run leaves out, read directly and through the workspace.
+			expect((await listed(current)).map(({ source, skip }) => ({ id: source.id, skip }))).toEqual([
+				{ id: contractorTrip, skip: { reason: "external_contractor_days" } },
+			]);
+			signIn("finance");
+			const workspace = await payrollActions.getPayrollRunReadinessAction({
+				...current,
+				label: "Current",
+				formatId: "datev_lohn",
+			});
+			expect(workspace).toMatchObject({ success: true, data: { applies: true } });
+			if (!workspace.success || !workspace.data.applies) throw new Error("readiness");
+			expect(workspace.data.entries.map(({ source, skip }) => ({ id: source.id, skip }))).toEqual([
+				{ id: contractorTrip, skip: { reason: "external_contractor_days" } },
+			]);
+
+			// The file carries the money line alone: the person has no employee time to report.
+			const { jobId, content } = await exportedFile(current);
+			expect(await includedIn(jobId)).toEqual([employeeTrip]);
+			expect(content).toContain(`"P-REQ";"9100";100.00;"${current.endDate}"`);
+			expect(content).not.toContain("40.00");
+			// The External Contractor trip is never held: it stays free for a bank transfer.
+			await reimburse(contractorTrip, "40.00", "40.00");
+		});
+
+		it("asks for the personnel identifier of a person the run carries expense lines for alone", async () => {
+			await identifyByPayrollId();
+			await convertRequester("employee", "contractor", contractorSince());
+			const employeeTrip = await approvedTrip("100.00", day(-30), day(-28));
+
+			// The workspace, the export without and with scoped collection all ask for it. The
+			// workspace lists no row for them, so the blocker names them itself.
+			const missing = [{ employeeId: ids.requester, employeeName: "requester" }];
+			expect(await missingIdentifierBlockers(current)).toEqual(missing);
+			const legacy = await exportedFile(current).catch((error: unknown) => error);
+			expect(legacy).toBeInstanceOf(PayrollIdentifierMissingError);
+			expect((legacy as InstanceType<typeof PayrollIdentifierMissingError>).employeeIds).toEqual([
+				ids.requester,
+			]);
+			await admin.query(
+				"insert into payroll_work_collection_control (organization_id, mode) values ($1, 'active')",
+				[ORG],
+			);
+			expect(await missingIdentifierBlockers(current)).toEqual(missing);
+			const scoped = await exportedFile(current).catch((error: unknown) => error);
+			expect(scoped).toBeInstanceOf(PayrollWorkCollectionBlockedError);
+			expect(
+				(scoped as InstanceType<typeof PayrollWorkCollectionBlockedError>).blockers.map(
+					(blocker) => [blocker.kind, blocker.employeeId],
+				),
+			).toEqual([["missing_identifier", ids.requester]]);
+
+			await payrollId(ids.requester, "LG-REQ");
+			expect(await missingIdentifierBlockers(current)).toEqual([]);
+			const { jobId, content } = await exportedFile(current);
+			expect(await includedIn(jobId)).toEqual([employeeTrip]);
+			expect(content).toContain(`"LG-REQ";"9100";100.00;"${current.endDate}"`);
 		});
 	});
 

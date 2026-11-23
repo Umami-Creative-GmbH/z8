@@ -770,14 +770,9 @@ function serializeFilters(filters: PayrollExportFilters) {
 }
 
 /**
- * The employees whose expense amounts a payroll run carries (#852): the
- * export's employee set, so a payroll access holder's run covers only their
- * payroll scope. An explicitly empty selection covers nobody.
- *
- * A person with no employee time in the period is left out (#1997). Of the
- * others, the run takes only reports whose days are all employee time:
- * `classifyPayrollRunCandidates` skips a converted person's External
- * Contractor reports and any report across the conversion.
+ * The employees whose work, absences and payouts an export carries: its payroll scope, so a
+ * payroll access holder's export covers only their payroll scope. An explicitly empty selection
+ * covers nobody. A person with no employee time in the period is left out (#1997).
  */
 export async function resolvePayrollRunEmployeeIds(
 	organizationId: string,
@@ -789,31 +784,54 @@ export async function resolvePayrollRunEmployeeIds(
 }
 
 /**
- * The payroll scope of an export: the explicit selection, else the organization (optionally by
- * team), less anyone without employee time on the export's dates (#1997). An External Contractor
- * is never part of an employee payroll run, even when selected by name.
+ * The employees whose reports awaiting reimbursement a payroll run of the export classifies
+ * (#852): everyone the export selects, with or without employee time in the period. A report goes
+ * by its own days (#1997), not by the period: a converted person's report of their employee days
+ * is carried even by a run of a period they spent as an External Contractor (its file then has
+ * their money lines alone), and an External Contractor's report is left out of every run, which
+ * says so. An explicitly empty selection covers nobody.
+ */
+export async function resolvePayrollRunExpenseEmployeeIds(
+	organizationId: string,
+	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "query"> = db,
+): Promise<string[]> {
+	if (hasEmptyEmployeeScope(filters)) return [];
+	return resolveExportCandidates(organizationId, filters, reader);
+}
+
+/**
+ * The payroll scope of an export: its candidates less anyone without employee time on the
+ * export's dates (#1997). An External Contractor is never part of an employee payroll export,
+ * even when selected by name.
  */
 async function resolveExportScope(
 	organizationId: string,
 	filters: PayrollExportFilters,
 	reader: Pick<typeof db, "query" | "select"> = db,
 ): Promise<PayrollScope> {
-	const candidates =
-		filters.employeeIds && filters.employeeIds.length > 0
-			? filters.employeeIds
-			: (
-					await reader.query.employee.findMany({
-						where:
-							filters.teamIds && filters.teamIds.length > 0
-								? and(
-										eq(employee.organizationId, organizationId),
-										inArray(employee.teamId, filters.teamIds),
-									)
-								: eq(employee.organizationId, organizationId),
-						columns: { id: true },
-					})
-				).map((row) => row.id);
+	const candidates = await resolveExportCandidates(organizationId, filters, reader);
 	return loadPayrollScope(reader, organizationId, candidates, getLogicalDateRange(filters));
+}
+
+/** The explicit selection, else the organization's employees (optionally by team). */
+async function resolveExportCandidates(
+	organizationId: string,
+	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "query">,
+): Promise<string[]> {
+	if (filters.employeeIds && filters.employeeIds.length > 0) return [...filters.employeeIds];
+	const rows = await reader.query.employee.findMany({
+		where:
+			filters.teamIds && filters.teamIds.length > 0
+				? and(
+						eq(employee.organizationId, organizationId),
+						inArray(employee.teamId, filters.teamIds),
+					)
+				: eq(employee.organizationId, organizationId),
+		columns: { id: true },
+	});
+	return rows.map((row) => row.id);
 }
 
 function hasEmptyEmployeeScope(filters: PayrollExportFilters) {

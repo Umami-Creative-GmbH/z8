@@ -57,6 +57,7 @@ import {
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
 	assessPayrollWorkCollection,
+	identifierEmployeesWithOtherRows,
 	type PayrollCollectionRequest,
 	type PayrollCollectionSnapshot,
 	type PayrollCollectionWorkRecord,
@@ -167,6 +168,7 @@ export async function readPayrollWorkCollectionFromSnapshot(
 		startDate: filters.startDate,
 		endDate: filters.endDate,
 		employeeIds,
+		selectedEmployeeIds: candidates,
 		teamIds: filters.teamIds ?? null,
 		projectIds: filters.projectIds ?? null,
 		personnelIdentifier: options.personnelIdentifier ?? null,
@@ -256,6 +258,17 @@ async function readPayrollCollectionSnapshot(
 	const { organizationId, employeeIds } = request;
 	const range = calendarDateEnvelope(request.startDate, request.endDate);
 	const diagnosticsScope = { employeeIds, range };
+	// The identifier as of the period's last day, in this snapshot (#821): of the scope and of
+	// anyone selected the export carries other rows for (#1997).
+	const readPersonnelIdentifiers = () =>
+		request.personnelIdentifier
+			? readPersonnelIdentifierValues(reader, {
+					organizationId,
+					customFieldId: request.personnelIdentifier.customFieldId,
+					employeeIds: [...new Set([...employeeIds, ...identifierEmployeesWithOtherRows(request)])],
+					asOf: parsePlainDate(request.endDate),
+				})
+			: Promise.resolve(undefined);
 	if (employeeIds.length === 0) {
 		return {
 			employees: [],
@@ -265,7 +278,7 @@ async function readPayrollCollectionSnapshot(
 				findings: [],
 			},
 			departureRepairs: [],
-			personnelIdentifiers: {},
+			personnelIdentifiers: (await readPersonnelIdentifiers()) ?? {},
 		};
 	}
 
@@ -289,15 +302,7 @@ async function readPayrollCollectionSnapshot(
 			.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 			.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, chunk))),
 	);
-	// The identifier as of the period's last day, in this snapshot (#821).
-	const personnelIdentifiers = request.personnelIdentifier
-		? await readPersonnelIdentifierValues(reader, {
-				organizationId,
-				customFieldId: request.personnelIdentifier.customFieldId,
-				employeeIds,
-				asOf: parsePlainDate(request.endDate),
-			})
-		: undefined;
+	const personnelIdentifiers = await readPersonnelIdentifiers();
 
 	// Every record that can touch an employee-local window, in any approval state:
 	// open work, reversed endpoints and everything overlapping the widest envelope.

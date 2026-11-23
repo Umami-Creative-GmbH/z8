@@ -58,6 +58,12 @@ export interface PayrollCollectionRequest {
 	startDate: string;
 	endDate: string;
 	employeeIds: readonly string[];
+	/**
+	 * Everyone the filters select, before `employeeIds` drops those without employee time in the
+	 * period (#1997); defaults to `employeeIds`. A payroll run's reports go by their own days, so
+	 * it may carry expense lines of a selected person outside `employeeIds`.
+	 */
+	selectedEmployeeIds?: readonly string[];
 	/** The filters the employee scope was resolved from, kept as scope evidence. */
 	teamIds: readonly string[] | null;
 	projectIds: readonly string[] | null;
@@ -65,7 +71,8 @@ export interface PayrollCollectionRequest {
 	 * The employee custom field the export configuration names as personnel
 	 * identifier or match key (#821); absent or null when it names none.
 	 * `employeesWithOtherRows`: employees the export also carries absences or
-	 * expense lines for; they need a value like employees with work.
+	 * expense lines for; they need a value like employees with work. Only selected
+	 * ones count (`selectedEmployeeIds`).
 	 */
 	personnelIdentifier?: {
 		customFieldId: string;
@@ -377,11 +384,12 @@ export function assessPayrollWorkCollection(
 		});
 	}
 
+	const otherRows = identifierEmployeesWithOtherRows(request);
 	const personnelIdentifier = request.personnelIdentifier
 		? freezePersonnelIdentifier(
 				request.personnelIdentifier.customFieldId,
 				request.endDate,
-				scope,
+				[...new Set([...scope, ...otherRows])],
 				snapshot.personnelIdentifiers ?? {},
 			)
 		: null;
@@ -391,12 +399,7 @@ export function assessPayrollWorkCollection(
 			...missingPersonnelIdentifierBlockers({
 				customFieldId: personnelIdentifier.customFieldId,
 				values: personnelIdentifier.values,
-				employeeIds: [
-					...work.map((line) => line.employeeId),
-					...(request.personnelIdentifier?.employeesWithOtherRows ?? []).filter((id) =>
-						scoped.has(id),
-					),
-				],
+				employeeIds: [...work.map((line) => line.employeeId), ...otherRows],
 			}),
 		);
 	}
@@ -458,7 +461,20 @@ export function missingPersonnelIdentifierBlockers(input: {
 		}));
 }
 
-/** The scoped employees' identifier values, read as of the period's last day. */
+/**
+ * The selected employees the export carries absences or expense lines for (#821): they need an
+ * identifier value. Outside the scope only a payroll run's expense lines reach them (#1997).
+ */
+export function identifierEmployeesWithOtherRows(request: PayrollCollectionRequest): string[] {
+	const selected = new Set([...request.employeeIds, ...(request.selectedEmployeeIds ?? [])]);
+	return [
+		...new Set(
+			(request.personnelIdentifier?.employeesWithOtherRows ?? []).filter((id) => selected.has(id)),
+		),
+	];
+}
+
+/** The identifier values of the scoped employees and those with other rows, as of the period's last day. */
 function freezePersonnelIdentifier(
 	customFieldId: string,
 	asOf: string,

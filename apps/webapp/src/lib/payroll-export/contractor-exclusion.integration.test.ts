@@ -567,7 +567,7 @@ describe("External Contractor periods never reach employee payroll (#1997)", () 
 		});
 	});
 
-	it("lists no External Contractor's expenses in payroll-run readiness", async () => {
+	it("lists an External Contractor's expenses in payroll-run readiness only as left out of the run", async () => {
 		await admin.query(
 			`insert into travel_expense_settings (organization_id, reimbursement_channel, reimbursement_currency)
 			 values ($1, 'payroll_run', 'EUR')`,
@@ -584,7 +584,18 @@ describe("External Contractor periods never reach employee payroll (#1997)", () 
 
 		expect(readiness.success).toBe(true);
 		if (!readiness.success || !readiness.data.applies) throw new Error("Expected readiness");
-		expect(readiness.data.entries.map((entry) => entry.employeeId)).toEqual([ids.worker]);
+		// Both are paid by bank transfer: a run never carries a legacy claim, nor an External
+		// Contractor's expenses (#1997), and says so for each.
+		expect(
+			readiness.data.entries
+				.map((entry) => ({ employeeId: entry.employeeId, reason: entry.skip.reason }))
+				.toSorted((left, right) => left.employeeId.localeCompare(right.employeeId)),
+		).toEqual(
+			[
+				{ employeeId: ids.worker, reason: "legacy_claim" },
+				{ employeeId: ids.contractor, reason: "legacy_claim" },
+			].toSorted((left, right) => left.employeeId.localeCompare(right.employeeId)),
+		);
 	});
 
 	it("is not blocked by a departure clock repair of a timer that ran in a contractor stint", async () => {

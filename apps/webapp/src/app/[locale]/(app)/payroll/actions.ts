@@ -1280,31 +1280,30 @@ export async function discardScopedPayrollRunAction(
 /**
  * Payroll readiness for payroll runs (#854): the expense reports and legacy
  * claims awaiting reimbursement that an export of this period, format and
- * employee selection would not carry, limited to the employees that export
- * covers: the reader's payroll scope with employee time in the period (#1997).
- * An External Contractor's expenses are never a payroll matter.
+ * employee selection would not carry, limited to the employees whose reports
+ * that run classifies: the reader's payroll scope, with or without employee
+ * time in the period, since a report goes by its own days (#1997). An External
+ * Contractor's reports are listed as left out, to be paid by bank transfer.
  */
 export async function getPayrollRunReadinessAction(
 	request: PayrollWorkspaceRequest & { formatId: string },
 ): Promise<ServerActionResult<PayrollRunReadiness>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		// The export's employees: covered employees who left included, a selection outside the
-		// reader's scope refused, then only those with employee time in the period.
+		// The run's employees: covered employees who left included, a selection outside the
+		// reader's scope refused.
 		const { actor, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
 			t,
 			request,
 			undefined,
 			{ includeDeparted: true },
 		);
-		const dates = { startDate: period.start.toString(), endDate: period.end.toString() };
-		const payrollScope = await loadPayrollScope(db, actor.organizationId, scopedEmployeeIds, dates);
 		return getPayrollRunReadiness(db, {
 			organizationId: actor.organizationId,
 			formatId,
 			// Validated as exact ISO dates: the period's logical dates.
-			period: dates,
-			employeeIds: payrollScope.employeeIds,
+			period: { startDate: period.start.toString(), endDate: period.end.toString() },
+			employeeIds: scopedEmployeeIds,
 		});
 	});
 }

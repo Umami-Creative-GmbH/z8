@@ -444,29 +444,38 @@ export async function loadPayrollPeriodSources(input: {
 
 	// Payroll reads employee time only (#1997): an External Contractor has no row, work,
 	// absence or blocker here, and a converted person only those of their employee stint.
-	const payrollScope = await loadPayrollScope(
-		db,
-		input.organizationId,
-		Array.from(new Set(input.allowedEmployeeIds)).toSorted(),
-		{ startDate: period.start, endDate: period.end },
-	);
+	const selectedEmployeeIds = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
+	const payrollScope = await loadPayrollScope(db, input.organizationId, selectedEmployeeIds, {
+		startDate: period.start,
+		endDate: period.end,
+	});
 	const { employeeTime } = payrollScope;
 	const allowedEmployeeIds = [...payrollScope.employeeIds];
+	// A payroll run's reports go by their own days (#1997): it may carry expense lines of a
+	// selected person without employee time in the period (a converted person's report of their
+	// employee days), who then needs an identifier too, though the read lists no row for them.
+	const identifierBlockers = (employeesWithRows: Iterable<string>) =>
+		getMissingIdentifierBlockers({
+			organizationId: input.organizationId,
+			allowedEmployeeIds: selectedEmployeeIds,
+			employeesListed: allowedEmployeeIds,
+			period,
+			employeesWithRows,
+		});
 	if (allowedEmployeeIds.length === 0) {
 		return {
 			period,
 			organizationTimezone,
 			payrollScope,
-			sources: { organizationName, employees: [], work: [], absences: [], blockers: [] },
+			sources: {
+				organizationName,
+				employees: [],
+				work: [],
+				absences: [],
+				blockers: selectedEmployeeIds.length > 0 ? await identifierBlockers([]) : [],
+			},
 		};
 	}
-	const identifierBlockers = (employeesWithRows: Iterable<string>) =>
-		getMissingIdentifierBlockers({
-			organizationId: input.organizationId,
-			allowedEmployeeIds,
-			period,
-			employeesWithRows,
-		});
 	const approvedAbsenceEmployees = (absences: readonly PayrollPeriodAbsenceSource[]) =>
 		absences.flatMap((row) => (row.approvalState === "approved" ? [row.employeeId] : []));
 
@@ -554,10 +563,16 @@ export async function loadPayrollPeriodSources(input: {
  * absences or (for a payroll run of that format) expense lines in the period and
  * no value as of its last day. An export of that format would be refused for
  * them, so they can't be dismissed. Same rule as scoped collection.
+ *
+ * A payroll run's reports go by their own days (#1997), so a run may carry expense lines of
+ * someone the period read does not list (no employee time in the period); their blocker names
+ * them itself.
  */
 async function getMissingIdentifierBlockers(input: {
 	organizationId: string;
 	allowedEmployeeIds: readonly string[];
+	/** The employees the period read lists by name. */
+	employeesListed: readonly string[];
 	period: PayrollPeriod;
 	employeesWithRows: Iterable<string>;
 }): Promise<PayrollBlocker[]> {
@@ -614,9 +629,29 @@ async function getMissingIdentifierBlockers(input: {
 				return missingPersonnelIdentifierBlockers({ customFieldId, values, employeeIds: inScope });
 			}),
 	);
-	return payrollBlockersFromCollection({
+	const blockers = payrollBlockersFromCollection({
 		blockers: blockersByField.flat(),
 		employeeTimezones: {},
+	});
+	const listed = new Set(input.employeesListed);
+	const unlisted = [
+		...new Set(blockers.flatMap((row) => (listed.has(row.employeeId) ? [] : [row.employeeId]))),
+	];
+	if (unlisted.length === 0) return blockers;
+	const people = await db
+		.select({ id: employee.id, userName: user.name, employeeNumber: employee.employeeNumber })
+		.from(employee)
+		.innerJoin(user, eq(employee.userId, user.id))
+		.where(and(eq(employee.organizationId, input.organizationId), inArray(employee.id, unlisted)));
+	const names = new Map(
+		people.map((row) => [
+			row.id,
+			formatEmployeeDisplayName(row.userName, row.employeeNumber, row.id),
+		]),
+	);
+	return blockers.map((row) => {
+		const employeeName = names.get(row.employeeId);
+		return employeeName ? { ...row, employeeName } : row;
 	});
 }
 
