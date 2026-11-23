@@ -281,6 +281,54 @@ describe("statistics reads", () => {
 		});
 	});
 
+	describe("incomplete setup", () => {
+		it("needs no work policy for an external contractor, but still a primary team", async () => {
+			const organizationId = await fixture.createOrganization();
+			const createTeam = async (name: string) => {
+				const { rows } = await fixture.pool.query<{ id: string }>(
+					"insert into team (organization_id, name, updated_at) values ($1, $2, now()) returning id",
+					[organizationId, name],
+				);
+				return rows[0]?.id ?? "";
+			};
+			const ops = await createTeam("Ops");
+			const { rows } = await fixture.pool.query<{ id: string }>(
+				`insert into work_policy (organization_id, name, created_by, updated_at)
+				 values ($1, 'Office hours', $2, now()) returning id`,
+				[organizationId, fixture.ownerUserId],
+			);
+			const policyId = rows[0]?.id ?? "";
+			await fixture.pool.query(
+				`insert into work_policy_version (policy_id, organization_id, version_number, effective_from_date, schedule_enabled, regulation_enabled, presence_enabled, is_legacy_baseline, created_by)
+				 values ($1, $2, 1, '1970-01-01', true, false, false, true, $3)`,
+				[policyId, organizationId, fixture.ownerUserId],
+			);
+			await fixture.pool.query(
+				`insert into work_policy_assignment
+				 (policy_id, organization_id, assignment_type, team_id, priority, created_by, updated_at)
+				 values ($1, $2, 'organization', null, 0, $3, now())`,
+				[policyId, organizationId, fixture.ownerUserId],
+			);
+			const seed = async (teamId: string | null, engagementKind: "employee" | "contractor") => {
+				const seeded = await fixture.seedEmployee({ organizationId, engagementKind });
+				await fixture.pool.query(
+					"update employee set team_id = $2, created_at = '2026-01-01T00:00:00Z' where id = $1",
+					[seeded.employeeId, teamId],
+				);
+			};
+			// Complete: the organization's policy covers the employee; none applies to the contractor.
+			await seed(ops, "employee");
+			await seed(ops, "contractor");
+			// Incomplete: no primary team, whatever their engagement.
+			await seed(null, "employee");
+			await seed(null, "contractor");
+
+			await expect(
+				run(countIncompleteSetup({ organizationWide: true, organizationId }, NOW)),
+			).resolves.toBe(2);
+		});
+	});
+
 	describe("users signed in", () => {
 		it("counts distinct users with an unexpired session in this organization", async () => {
 			const twice = await fixture.seedEmployee();

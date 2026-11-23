@@ -317,6 +317,7 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 			draftId: randomUUID(),
 			email: "new@example.test",
 			teamId: null,
+			engagementKind: "employee",
 			displayName: "New Hire",
 		};
 		const group: GoLiveGroup = { ...roster, members: [...roster.members, invitee] };

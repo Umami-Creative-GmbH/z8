@@ -57,7 +57,9 @@ export type GoLiveRehearsalWorkPolicy =
 				workingDays: WeekdayName[];
 			} | null;
 	  }
-	| { status: "none"; fix: GoLiveFixLink | null };
+	| { status: "none"; fix: GoLiveFixLink | null }
+	/** No work policy applies: an External Contractor, or a contractor invitee (#1996). */
+	| { status: "not_applicable" };
 
 export interface GoLiveRehearsalStage {
 	sequence: number;

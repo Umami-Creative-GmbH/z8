@@ -2258,6 +2258,7 @@
           "name": "Richtlinie",
           "none": "Heute keine gültige Arbeitsrichtlinie: Weder der Person noch ihrem Team oder der Organisation ist eine zugewiesen.",
           "noSchedule": "Kein Arbeitszeitplan",
+          "notApplicable": "Keine Arbeitsrichtlinie nötig: Die Person arbeitet als externer Dienstleister.",
           "noWorkingDays": "Keine Arbeitstage",
           "title": "Arbeitsrichtlinie",
           "workingDays": "Arbeitstage"
