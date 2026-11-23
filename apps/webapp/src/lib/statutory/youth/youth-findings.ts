@@ -171,6 +171,13 @@ export function youthFindingsOf(input: {
 	/** Apprentice school and exam time credited as working time. */
 	readonly credits?: JarbschgEvaluationInput["credits"];
 	readonly blockPublish: boolean;
+	/**
+	 * The minutes a sector-exception finding reports as used. `whole_subject` (default): every
+	 * piece of its shift's work, whichever day, as its fingerprint does. `judged_days`: only the
+	 * pieces starting on a judged day, so the clock-out records each local day's own night once
+	 * (the fingerprint, and so the acknowledgement state, still covers the whole shift).
+	 */
+	readonly sectorMinutes?: "whole_subject" | "judged_days";
 }): StatutoryFinding<JarbschgRule>[] {
 	const byRef = new Map(input.intervals.map((interval) => [interval.ref, interval]));
 	const evaluate = (
@@ -214,16 +221,29 @@ export function youthFindingsOf(input: {
 		sectorTotals.set(finding.id, total);
 	}
 
+	const judgedBreaches = evaluate(input.judged, input.report);
+	const sectorIdOf = (breach: JarbschgBreach) =>
+		statutoryFindingId(breach.rule, input.employeeId, subjectKeyOf(breach));
+	/** A sector finding's minutes in the judged breaches alone (`sectorMinutes: "judged_days"`). */
+	const judgedNight = new Map<string, number>();
+	if (input.sectorMinutes === "judged_days") {
+		for (const breach of judgedBreaches) {
+			if (!jarbschgSectorExceptionRules.has(breach.rule) || breach.unit !== "minutes") continue;
+			const id = sectorIdOf(breach);
+			judgedNight.set(id, (judgedNight.get(id) ?? 0) + breach.actual);
+		}
+	}
+
 	const findings = new Map<string, StatutoryFinding<JarbschgRule>>();
-	for (const breach of evaluate(input.judged, input.report)) {
-		const total = sectorTotals.get(
-			statutoryFindingId(breach.rule, input.employeeId, subjectKeyOf(breach)),
-		);
+	for (const breach of judgedBreaches) {
+		const id = sectorIdOf(breach);
+		const total = sectorTotals.get(id);
 		const finding = findingOf(
 			total
 				? {
 						...breach,
-						actual: breach.unit === "minutes" ? total.night : breach.actual,
+						actual:
+							breach.unit === "minutes" ? (judgedNight.get(id) ?? total.night) : breach.actual,
 						outsidePlannedShift: total.outside,
 					}
 				: breach,

@@ -319,6 +319,39 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		expect(await types(minor)).toEqual(["jarbschg_night_work"]);
 	});
 
+	it("records each day's own night minutes of a night shift clocked across midnight", async () => {
+		const minor = await fx.employee(org, "split-night", { birthday: "2010-06-01" });
+		const subareaId = await seed.subarea(org, owner);
+		await seed.shift(org, minor, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: "2026-03-03",
+			startTime: "22:00",
+			endTime: "06:00",
+		});
+
+		const { work: tuesday } = await clockOut(minor, "2026-03-03", "22:00", 150); // Until 00:30.
+		const { work: wednesday } = await clockOut(minor, "2026-03-04", "00:45", 135); // Until 03:00.
+
+		const night = (await seed.violations(minor))
+			.filter((row) => row.violation_type === "jarbschg_night_work")
+			.map((row) => ({ workPeriodId: row.work_period_id, details: JSON.parse(row.details) }));
+		// A piece of work belongs to the local day it starts on, as for the daily rules.
+		expect(night).toHaveLength(2);
+		expect(night).toEqual(
+			expect.arrayContaining([
+				{
+					workPeriodId: tuesday.id,
+					details: expect.objectContaining({ actualMinutes: 150 }),
+				},
+				{
+					workPeriodId: wednesday.id,
+					details: expect.objectContaining({ actualMinutes: 135 }),
+				},
+			]),
+		);
+	});
+
 	it("records night work that overruns an acknowledged shift", async () => {
 		const minor = await fx.employee(org, "overrun", { birthday: "2010-06-01" });
 		const subareaId = await seed.subarea(org, owner);

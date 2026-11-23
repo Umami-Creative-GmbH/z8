@@ -86,6 +86,9 @@ export async function recordJarbschgViolationsAfterClockOut(
 			holidays: holidays.get(input.employeeId) ?? new Set(),
 			credits: credits.get(input.employeeId),
 			blockPublish: false,
+			// The day's own night minutes: a night shift clocked across midnight records each piece
+			// on the local day it starts on, once.
+			sectorMinutes: "judged_days",
 		}),
 	);
 	// The day's figure of each rule: night and prohibited holiday minutes are found per piece of
