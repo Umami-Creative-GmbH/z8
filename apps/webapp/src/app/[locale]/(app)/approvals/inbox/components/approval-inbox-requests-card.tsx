@@ -12,7 +12,10 @@ import type {
 	ApprovalInboxWarning,
 } from "@/lib/approvals/inbox/types";
 import type { ApprovalInboxFilters } from "@/lib/query/use-approval-inbox";
-import { type ApprovalInboxFastLaneGroupView, isDecidableByViewer } from "../approval-inbox-items";
+import {
+	type ApprovalInboxFastLaneGroupView,
+	isSelectableForBulkDecision,
+} from "../approval-inbox-items";
 import { ApprovalFastLanes } from "./approval-fast-lanes";
 import { ApprovalInboxTable } from "./approval-inbox-table";
 import { ApprovalInboxToolbar } from "./approval-inbox-toolbar";
@@ -158,7 +161,7 @@ export function ApprovalInboxRequestsCard({
 	covering?: ApprovalInboxCoveringSection[];
 }) {
 	const ownItems = items.filter((item) => !item.coveringFor);
-	const selectableCount = ownItems.filter(isDecidableByViewer).length;
+	const selectableCount = ownItems.filter(isSelectableForBulkDecision).length;
 	const table: ApprovalInboxTableBinding = {
 		selectedIds,
 		onSelectItem,

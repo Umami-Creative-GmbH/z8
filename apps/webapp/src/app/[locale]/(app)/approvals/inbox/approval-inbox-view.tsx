@@ -26,6 +26,7 @@ import {
 	getErrorMessage,
 	groupFastLaneItems,
 	isDecidableByViewer,
+	isSelectableForBulkDecision,
 	sortSprintItems,
 } from "./approval-inbox-items";
 import { approvalInboxUiReducer, createApprovalInboxUiState } from "./approval-inbox-state";
@@ -325,7 +326,7 @@ function ApprovalInboxContent({ initialFilters }: { initialFilters: ApprovalInbo
 			ids: checked
 				? new Set(
 						items
-							.filter((item) => !item.coveringFor && isDecidableByViewer(item))
+							.filter((item) => !item.coveringFor && isSelectableForBulkDecision(item))
 							.map((item) => item.id),
 					)
 				: new Set(),

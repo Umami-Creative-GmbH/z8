@@ -59,6 +59,11 @@ export function isDecidableByViewer(item: ApprovalInboxItem): boolean {
 	return item.capabilities.ownRequest !== true && item.capabilities.decidedEarlierStage !== true;
 }
 
+/** An item a bulk decision may take: decidable, and not one decided singly only (#1977). */
+export function isSelectableForBulkDecision(item: ApprovalInboxItem): boolean {
+	return isDecidableByViewer(item) && item.capabilities.singleDecisionOnly !== true;
+}
+
 export function sortSprintItems(items: ApprovalInboxItem[]): ApprovalInboxItem[] {
 	return items.toSorted((first, second) => {
 		const riskDifference = RISK_RANK[second.triage.riskLevel] - RISK_RANK[first.triage.riskLevel];

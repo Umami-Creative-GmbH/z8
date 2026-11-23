@@ -17,5 +17,9 @@ export function getApprovalTypeLabels(
 			"Expense Reports"
 		),
 		period_submission: t("approvals:approvals.types.period_submission", "Period Submissions"),
+		compliance_exception: t(
+			"approvals:approvals.types.compliance_exception",
+			"Compliance Exceptions",
+		),
 	};
 }
