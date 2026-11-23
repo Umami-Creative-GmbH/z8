@@ -35,8 +35,8 @@ export function TravelExpenseDateRange({
 		<span>
 			{range ??
 				t(
-					"travelExpenses.detail.unknownDates",
-					"Trip date context not recorded (legacy claim)",
+					"travelExpenses.detail.unknownEarlierClaimDates",
+					"Trip date context not recorded (earlier claim)",
 				)}
 		</span>
 	);

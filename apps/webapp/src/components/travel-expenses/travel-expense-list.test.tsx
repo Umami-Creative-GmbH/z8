@@ -33,7 +33,7 @@ describe("employee travel claim history", () => {
 			/>,
 		);
 		expect(
-			screen.getByText("Trip date context not recorded (legacy claim)"),
+			screen.getByText("Trip date context not recorded (earlier claim)"),
 		).toBeTruthy();
 		expect(screen.queryByText(/Mar 28/)).toBeNull();
 	});
