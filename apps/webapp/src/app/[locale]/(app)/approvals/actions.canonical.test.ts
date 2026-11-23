@@ -1,19 +1,4 @@
-import { readFileSync } from "node:fs";
-import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-import type {
-	ApprovalDecisionAction as DomainApprovalDecisionAction,
-	ApprovalType as DomainApprovalType,
-	BulkDecisionFailure as DomainBulkDecisionFailure,
-	BulkDecisionResult as DomainBulkDecisionResult,
-	BulkDecisionSuccess as DomainBulkDecisionSuccess,
-} from "@/lib/approvals/domain/types";
-import type {
-	ApprovalDecisionAction as ActionApprovalDecisionAction,
-	ApprovalType as ActionApprovalType,
-	BulkDecisionFailure as ActionBulkDecisionFailure,
-	BulkDecisionResult as ActionBulkDecisionResult,
-	BulkDecisionSuccess as ActionBulkDecisionSuccess,
-} from "./actions";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/env", () => ({
 	env: {
@@ -52,65 +37,25 @@ describe("approvals actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
-	it.each([
-		null,
-		{ userId: "viewer", organizationId: "another-org", role: "manager" },
-		{ userId: "another-viewer", organizationId: "org-a", role: "manager" },
-		{ userId: "viewer", organizationId: "org-a", role: "employee" },
-	])(
-		"refuses a stale scoped queue read before returning records",
-		async (employee) => {
-			vi.mocked(getCurrentEmployee).mockResolvedValue(employee as never);
-			await expect(
-				actions.getPendingApprovals("en", {
-					userId: "viewer",
-					organizationId: "org-a",
-				}),
-			).rejects.toThrow("Approval scope changed");
-		},
-	);
+	it("returns the active organization's current employee for shared callers", async () => {
+		const employee = { id: "employee-1", organizationId: "org-a", role: "employee" };
+		vi.mocked(getCurrentEmployee).mockResolvedValue(employee as never);
+
+		await expect(actions.getCurrentEmployee()).resolves.toBe(employee);
+	});
 
 	it("no longer exports a separate canonical work sync of time corrections (#1227)", () => {
 		expect(actions).not.toHaveProperty("syncCanonicalWorkCorrection");
 	});
 
-	it("re-exports the richer approval contract types", () => {
-		const result: ActionBulkDecisionResult = {
-			succeeded: [
-				{
-					id: "approval-1",
-					approvalType: "travel_expense_claim",
-					status: "approved",
-				},
-			],
-			failed: [
-				{
-					id: "approval-2",
-					code: "validation_failed",
-					message: "Missing required data.",
-				},
-			],
-		};
-
-		expect(result.succeeded[0]?.approvalType).toBe("travel_expense_claim");
-		expect(result.failed[0]?.code).toBe("validation_failed");
-
-		expectTypeOf<ActionApprovalType>().toEqualTypeOf<DomainApprovalType>();
-		expectTypeOf<ActionApprovalDecisionAction>().toEqualTypeOf<DomainApprovalDecisionAction>();
-		expectTypeOf<ActionBulkDecisionSuccess>().toEqualTypeOf<DomainBulkDecisionSuccess>();
-		expectTypeOf<ActionBulkDecisionFailure>().toEqualTypeOf<DomainBulkDecisionFailure>();
-		expectTypeOf<ActionBulkDecisionResult>().toEqualTypeOf<DomainBulkDecisionResult>();
-	});
-
-	it("resolves the current recipient profile inside the active organization before formatting rows", () => {
-		const source = readFileSync(
-			"src/app/[locale]/(app)/approvals/actions.ts",
-			"utf8",
-		);
-
-		expect(source).toMatch(
-			/getEffectiveTimezone\(\s*currentEmployee.userId,\s*currentEmployee.organizationId,?\s*\)/,
-		);
-		expect(source).toContain("getUserTimeFormat(currentEmployee.userId)");
+	it("no longer exposes the retired legacy queue reads and decisions (#1976)", () => {
+		for (const retired of [
+			"approveAbsence",
+			"rejectAbsence",
+			"getPendingApprovals",
+			"getPendingApprovalCounts",
+		]) {
+			expect(actions).not.toHaveProperty(retired);
+		}
 	});
 });

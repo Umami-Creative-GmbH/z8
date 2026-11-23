@@ -1,80 +1,12 @@
 "use server";
 
-import {
-	approveAbsenceEffect as approveAbsenceAction,
-	rejectAbsenceEffect as rejectAbsenceAction,
-} from "@/lib/approvals/server/absence-approvals";
-import {
-	getCurrentEmployee as getCurrentEmployeeAction,
-	getPendingApprovalCounts as getPendingApprovalCountsAction,
-	getPendingApprovals as getPendingApprovalsAction,
-} from "@/lib/approvals/server/queries";
-import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
-import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
+import { getCurrentEmployee as getCurrentEmployeeAction } from "@/lib/approvals/server/queries";
 
-export type {
-	ApprovalDecisionAction,
-	ApprovalType,
-	BulkDecisionFailure,
-	BulkDecisionResult,
-	BulkDecisionSuccess,
-} from "@/lib/approvals/domain/types";
-export type {
-	ApprovalWithAbsence,
-	ApprovalWithTimeCorrection,
-} from "@/lib/approvals/server/types";
-
-export async function approveAbsence(
-	...args: Parameters<typeof approveAbsenceAction>
-) {
-	return approveAbsenceAction(...args);
-}
-
-export async function rejectAbsence(
-	...args: Parameters<typeof rejectAbsenceAction>
-) {
-	return rejectAbsenceAction(...args);
-}
-
-export async function getPendingApprovalCounts() {
-	return getPendingApprovalCountsAction();
-}
-
-export async function getPendingApprovals(
-	locale = "en",
-	scope?: { userId: string; organizationId: string },
-) {
-	const currentEmployee = await getCurrentEmployeeAction();
-	if (
-		scope &&
-		(!currentEmployee ||
-			currentEmployee.userId !== scope.userId ||
-			currentEmployee.organizationId !== scope.organizationId ||
-			!["manager", "admin"].includes(currentEmployee.role))
-	) {
-		throw new Error("Approval scope changed. Refresh to continue.");
-	}
-	if (!currentEmployee) return getPendingApprovalsAction();
-
-	const [result, timezone, timeFormat] = await Promise.all([
-		getPendingApprovalsAction(),
-		getEffectiveTimezone(
-			currentEmployee.userId,
-			currentEmployee.organizationId,
-		),
-		getUserTimeFormat(currentEmployee.userId),
-	]);
-	const displayContext = { locale, timezone, timeFormat } as const;
-
-	return {
-		...result,
-		timeCorrectionApprovals: result.timeCorrectionApprovals.map((approval) => ({
-			...approval,
-			displayContext,
-		})),
-	};
-}
-
+/**
+ * The active organization's current employee. Shared by the employee select,
+ * profile settings and employee queries; the legacy approvals workspace that
+ * also lived here was retired for the Approval inbox (#1976).
+ */
 export async function getCurrentEmployee() {
 	return getCurrentEmployeeAction();
 }
