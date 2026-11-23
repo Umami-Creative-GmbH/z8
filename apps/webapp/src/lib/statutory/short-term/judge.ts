@@ -640,9 +640,15 @@ export function judgeShortTermYear(input: {
 				limit,
 				days: workingDays,
 				stints: stints.map((stint) => [stint.firstDay, stint.lastDay]),
-				// A fixed term's agreed week counts before any day is worked or planned.
+				// A fixed term's agreed week counts before any day is worked or planned, and which
+				// weekdays it plans decides which counted days come on top: a new week moves `used`
+				// although the counted days and the agreed total stay put.
 				...(agreedWorkingDays.length > 0 && {
-					agreedWorkingDays: agreedWorkingDays.map(({ stint, agreed }) => [stint.firstDay, agreed]),
+					agreedWorkingDays: agreedWorkingDays.map(({ stint, agreed, used }) => [
+						stint.firstDay,
+						agreed,
+						used,
+					]),
 				}),
 				priorDays: prior.days,
 				priorMonths: prior.months,
