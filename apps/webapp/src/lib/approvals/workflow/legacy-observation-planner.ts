@@ -40,6 +40,21 @@ import { APPROVAL_WORKFLOW_TYPES } from "./types";
  */
 export const LEGACY_REJECTION_FALLBACK_REASON = "Legacy request rejected";
 
+/** Decision reasons the planner writes on cancelled mirrored workflows. Stored rows hold them; never change. */
+export const LEGACY_CHAIN_CANCELLED_REASON = "Legacy chain cancelled";
+export const LEGACY_OWNER_CANCELLED_REASON = "Legacy approved request cancelled by owner";
+export const LEGACY_REQUESTER_CANCELLED_REASON = "Legacy pending request cancelled by requester";
+export const LEGACY_REQUEST_DISAPPEARED_REASON = "Legacy pending request disappeared";
+
+/** Every workflow decision reason the planner writes itself, rather than copying a person's words. */
+export const LEGACY_OBSERVATION_SYSTEM_REASONS: ReadonlySet<string> = new Set([
+	LEGACY_REJECTION_FALLBACK_REASON,
+	LEGACY_CHAIN_CANCELLED_REASON,
+	LEGACY_OWNER_CANCELLED_REASON,
+	LEGACY_REQUESTER_CANCELLED_REASON,
+	LEGACY_REQUEST_DISAPPEARED_REASON,
+]);
+
 export type LegacyApprovalObservationPlannerErrorCode =
 	| "ambiguous_transition"
 	| "invalid_evidence"
@@ -879,7 +894,7 @@ function buildChainPlan(
 							LEGACY_REJECTION_FALLBACK_REASON)
 						: status === "cancelled"
 							? terminalCancelled
-								? "Legacy chain cancelled"
+								? LEGACY_CHAIN_CANCELLED_REASON
 								: "Cleared after legacy rejection"
 							: null,
 				legacyApprovalRequestId,
@@ -915,7 +930,7 @@ function buildChainPlan(
 		cancelledAt: chain.status === "cancelled" ? chain.completedAt : null,
 		decisionReason:
 			chain.status === "cancelled"
-				? "Legacy chain cancelled"
+				? LEGACY_CHAIN_CANCELLED_REASON
 				: chain.status === "rejected"
 					? (input.after.approvalRequest?.rejectionReason ??
 						LEGACY_REJECTION_FALLBACK_REASON)
@@ -1309,10 +1324,10 @@ function buildPlan(
 	const pendingSince =
 		lineage.pendingSince ?? beforeRequest?.updatedAt ?? request.updatedAt;
 	const cancellationReason = approvedOwnerCancellation
-		? "Legacy approved request cancelled by owner"
+		? LEGACY_OWNER_CANCELLED_REASON
 		: requesterCancellation
-			? "Legacy pending request cancelled by requester"
-			: "Legacy pending request disappeared";
+			? LEGACY_REQUESTER_CANCELLED_REASON
+			: LEGACY_REQUEST_DISAPPEARED_REASON;
 	const version =
 		input.expectedVersion === null ? 1 : input.expectedVersion + 1;
 	const workflowId = deriveApprovalWorkflowId({

@@ -26,7 +26,7 @@ import {
 	normalizeTimeCorrectionWorkflowPayload,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
-import { LEGACY_REJECTION_FALLBACK_REASON } from "@/lib/approvals/workflow/legacy-observation-planner";
+import { LEGACY_OBSERVATION_SYSTEM_REASONS } from "@/lib/approvals/workflow/legacy-observation-planner";
 import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -488,9 +488,12 @@ function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {
 	}
 }
 
-/** A canonical workflow's reason as the employee reads it: the mirrored-rejection fallback is none. */
+/**
+ * A canonical workflow's reason as the employee reads it: the reasons the legacy mirror wrote
+ * itself (a rejection or cancellation fallback, not a person's words) are none.
+ */
 function employeeFacingWorkflowReason(reason: string | null): string | null {
-	return reason === LEGACY_REJECTION_FALLBACK_REASON ? null : reason;
+	return reason !== null && LEGACY_OBSERVATION_SYSTEM_REASONS.has(reason) ? null : reason;
 }
 
 function mapCanonicalTimeCorrection(

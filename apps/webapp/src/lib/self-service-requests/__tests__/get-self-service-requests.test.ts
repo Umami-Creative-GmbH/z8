@@ -564,6 +564,35 @@ describe("getSelfServiceRequests", () => {
 		expect(JSON.stringify(result)).not.toContain("Legacy");
 	});
 
+	it("shows no reason for a mirrored cancellation, whose reason the legacy mirror wrote itself", async () => {
+		dbMocks.approvalRequests.mockResolvedValue([]);
+		dbMocks.approvalWorkflowRollouts.mockResolvedValue({
+			lifecycleMode: "complete",
+		});
+		const displaySnapshot = await realCanonicalDisplay();
+		const cancelledAt = new Date("2026-04-27T08:00:00.000Z");
+		dbMocks.approvalWorkflows.mockResolvedValue([
+			canonicalTimeCorrection({
+				displaySnapshot,
+				status: "cancelled",
+				cancelledAt,
+				completedAt: cancelledAt,
+				// What the legacy observation planner stores when a requester cancelled a pending request.
+				decisionReason: "Legacy pending request cancelled by requester",
+			}),
+		]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			now: new Date("2026-04-28T12:00:00.000Z"),
+		});
+
+		const cancelled = result.items.find((item) => item.sourceType === "time_correction");
+		expect(cancelled).toMatchObject({ status: "cancelled", decisionReason: null });
+		expect(JSON.stringify(result)).not.toContain("Legacy");
+	});
+
 	it("maps complete-mode canonical lifecycle states without exposing private context", async () => {
 		dbMocks.approvalRequests.mockResolvedValue([]);
 		dbMocks.absenceEntries.mockResolvedValue([]);
