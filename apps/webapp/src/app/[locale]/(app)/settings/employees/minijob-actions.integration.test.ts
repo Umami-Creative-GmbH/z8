@@ -112,9 +112,16 @@ describe("Minijob monitor actions (PostgreSQL)", () => {
 			isMinijob: true,
 			tier: "exceeded",
 			rollingTier: expect.any(String),
+			documented: false,
 		});
 		for (const month of result.data.months) {
-			expect(Object.keys(month).sort()).toEqual(["isMinijob", "month", "rollingTier", "tier"]);
+			expect(Object.keys(month).sort()).toEqual([
+				"documented",
+				"isMinijob",
+				"month",
+				"rollingTier",
+				"tier",
+			]);
 		}
 	});
 

@@ -122,6 +122,43 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 		expect(screen.queryByText("Exceedance")).toBeNull();
 	});
 
+	it("shows scoped managers a documented exceedance as documented, not as over the limit", async () => {
+		mocks.getEmployeeMinijobMonitorAction.mockResolvedValue({
+			success: true,
+			data: {
+				audience: "restricted",
+				applies: true,
+				currentMonth: "2026-11",
+				months: [
+					{
+						month: "2026-11",
+						isMinijob: true,
+						tier: "exceeded",
+						rollingTier: "ok",
+						documented: false,
+					},
+					{
+						month: "2026-10",
+						isMinijob: true,
+						tier: "exceeded",
+						rollingTier: "ok",
+						documented: true,
+					},
+				],
+			},
+		});
+
+		const { container } = renderCard();
+
+		const rows = await screen.findAllByRole("row");
+		const november = rows.find((row) => row.textContent?.includes("November 2026"));
+		const october = rows.find((row) => row.textContent?.includes("October 2026"));
+		expect(november?.textContent).toContain("Over limit");
+		expect(october?.textContent).toContain("Exceeded (documented as unforeseeable)");
+		expect(october?.textContent).not.toContain("Over limit");
+		expect(container.textContent).not.toMatch(/€|EUR|%/);
+	});
+
 	it("caches the monitor per viewer and organization, since admins and scoped managers see different figures", async () => {
 		mocks.getEmployeeMinijobMonitorAction.mockResolvedValue({
 			success: true,

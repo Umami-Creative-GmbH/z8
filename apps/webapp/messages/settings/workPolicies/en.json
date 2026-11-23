@@ -603,7 +603,8 @@
           "ok": "Within limit",
           "warning": "Approaching limit",
           "critical": "Close to limit",
-          "exceeded": "Over limit"
+          "exceeded": "Over limit",
+          "exceededDocumented": "Exceeded (documented as unforeseeable)"
         },
         "exceedance": {
           "acknowledged": "Documented as unforeseeable",

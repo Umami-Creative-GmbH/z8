@@ -129,7 +129,7 @@ function MonthsTable({
 								</TableCell>
 								<TableCell>
 									<div className="flex flex-col gap-1">
-										<MinijobTierBadge tier={month.tier} t={t} />
+										<MinijobTierBadge tier={month.tier} documented={month.documented} t={t} />
 										{detail && detail.capCents !== null && (
 											<span className="text-muted-foreground text-xs tabular-nums">
 												{t("settings.contracts.minijob.amountOfCap", "{amount} of {cap}", {

@@ -33,6 +33,11 @@ export interface MinijobMonthStatus {
 	readonly tier: StatutoryUsageTier | null;
 	/** Tier of the rolling 12 months ending with this month. */
 	readonly rollingTier: StatutoryUsageTier | null;
+	/**
+	 * The month's exceedance is documented as unforeseeable: a current acknowledgement while the
+	 * month still qualifies. Wage-free, so scoped managers see what Scheduling tells them too.
+	 */
+	readonly documented: boolean;
 }
 
 /** Org-admin detail of a month: EUR amounts in cents and the exceedance judgement. */
@@ -91,6 +96,7 @@ function statusOf(month: JudgedMinijobMonth): MinijobMonthStatus {
 		isMinijob: month.isMinijob,
 		tier: month.usage?.tier ?? null,
 		rollingTier: month.rolling?.tier ?? null,
+		documented: month.exceedance?.status === "acknowledged",
 	};
 }
 

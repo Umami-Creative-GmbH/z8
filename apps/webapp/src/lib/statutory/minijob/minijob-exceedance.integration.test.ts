@@ -130,6 +130,31 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 		]);
 	});
 
+	it("tells scoped managers on Employee Detail which exceeded months are documented, wage-free", async () => {
+		const s = await setup();
+		await mj.monthWork(s.org, s.worker, "2026-01", 4200);
+		await mj.monthWork(s.org, s.worker, "2026-03", 4200);
+		await acknowledge(s, "2026-01");
+
+		const view = await loadEmployeeMinijobMonitor(db, {
+			organizationId: s.org.id,
+			employeeId: s.worker.employeeId,
+			audience: "restricted",
+			now: NOW,
+		});
+
+		const month = (key: string) => view.months.find((m) => m.month === key);
+		expect(month("2026-01")).toEqual({
+			month: "2026-01",
+			isMinijob: true,
+			tier: "exceeded",
+			rollingTier: expect.any(String),
+			documented: true,
+		});
+		expect(month("2026-03")).toMatchObject({ tier: "exceeded", documented: false });
+		expect(month("2026-02")).toMatchObject({ documented: false });
+	});
+
 	it("leaves the excess of acknowledged months out of the rolling 12 months", async () => {
 		const s = await setup();
 		await mj.monthWork(s.org, s.worker, "2026-01", 4200);

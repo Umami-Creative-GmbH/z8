@@ -35,9 +35,28 @@ function tierLabel(tier: StatutoryUsageTier, t: Translate): string {
 	}
 }
 
-export function MinijobTierBadge({ tier, t }: { tier: StatutoryUsageTier | null; t: Translate }) {
+export function MinijobTierBadge({
+	tier,
+	documented = false,
+	t,
+}: {
+	tier: StatutoryUsageTier | null;
+	/** An exceeded month documented as unforeseeable: within the law, so not shown as a breach. */
+	documented?: boolean;
+	t: Translate;
+}) {
 	if (tier === null) {
 		return <span className="text-muted-foreground">—</span>;
+	}
+	if (tier === "exceeded" && documented) {
+		return (
+			<Badge variant="outline">
+				{t(
+					"settings.contracts.minijob.tier.exceededDocumented",
+					"Exceeded (documented as unforeseeable)",
+				)}
+			</Badge>
+		);
 	}
 	const variant =
 		tier === "exceeded" ? "destructive" : tier === "ok" ? "secondary" : ("outline" as const);

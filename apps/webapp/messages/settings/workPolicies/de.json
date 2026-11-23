@@ -603,7 +603,8 @@
           "ok": "Innerhalb der Grenze",
           "warning": "Grenze rückt näher",
           "critical": "Knapp an der Grenze",
-          "exceeded": "Über der Grenze"
+          "exceeded": "Über der Grenze",
+          "exceededDocumented": "Überschritten (als unvorhersehbar dokumentiert)"
         },
         "exceedance": {
           "acknowledged": "Als unvorhersehbar dokumentiert",
