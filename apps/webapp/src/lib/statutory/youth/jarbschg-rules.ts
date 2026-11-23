@@ -279,6 +279,18 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 			involves,
 		});
 
+	/** The part of work starting on a minor's day that lies before their 18th birthday. */
+	const minorPartOf = (span: Span): Span => {
+		for (const day of daysTouched(span, input.timezone).slice(1)) {
+			if (input.isMinorOn(day)) continue;
+			const adultFrom = day.toZonedDateTime({ timeZone: input.timezone }).toInstant();
+			return compareInstants(adultFrom, span.end) < 0
+				? { start: span.start, end: adultFrom }
+				: span;
+		}
+		return span;
+	};
+
 	const byDay = groupBy(located, (interval) => interval.dayKey);
 	const dayMinutes = (dayKey: string) =>
 		(byDay.get(dayKey) ?? []).reduce((total, interval) => total + interval.workMinutes, 0);
@@ -419,6 +431,8 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 
 		for (const interval of dayIntervals) {
 			const shift = interval.plannedShift;
+			// Overnight work into the 18th birthday is a minor's work only until midnight.
+			const minorSpan = minorPartOf(interval);
 			const sector = (
 				rule: JarbschgRule,
 				actual: number,
@@ -438,10 +452,10 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 					involves: [interval.dayKey],
 				});
 			// § 14: no work between 20:00 and 06:00.
-			const night = nightOverlapMinutes(interval, input.timezone, limits);
+			const night = nightOverlapMinutes(minorSpan, input.timezone, limits);
 			if (night > 0) {
 				const outside = shift
-					? partsOutside(interval, shift).reduce(
+					? partsOutside(minorSpan, shift).reduce(
 							(total, part) => total + nightOverlapMinutes(part, input.timezone, limits),
 							0,
 						)
@@ -449,7 +463,7 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 				sector("jarbschg_night_work", night, "minutes", outside);
 			}
 			// §§ 16–18: no work on Saturdays, Sundays or public holidays, overnight work included.
-			const touched = daysTouched(interval, input.timezone);
+			const touched = daysTouched(minorSpan, input.timezone);
 			const shiftDays = shift
 				? new Set(daysTouched(shift, input.timezone).map((day) => day.toString()))
 				: new Set<string>();

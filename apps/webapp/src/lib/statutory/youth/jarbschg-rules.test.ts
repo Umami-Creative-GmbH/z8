@@ -358,4 +358,25 @@ describe("evaluateJarbschg", () => {
 			["jarbschg_night_work", "2026-03-04"],
 		]);
 	});
+
+	it("stops judging night and weekend work at midnight before the 18th birthday", () => {
+		// Saturday 18:00 → Sunday 02:00; Sunday is the 18th birthday.
+		const breaches = evaluate([shift("2026-03-07", "18:00", "02:00")], {
+			minorUntil: "2026-03-08",
+		});
+		expect(breaches.map((breach) => [breach.rule, breach.actual])).toEqual([
+			["jarbschg_night_work", 240],
+			["jarbschg_saturday_work", 1],
+		]);
+	});
+
+	it("does not flag a holiday that falls on the 18th birthday after overnight work", () => {
+		const breaches = evaluate([shift("2026-03-04", "18:00", "02:00")], {
+			minorUntil: "2026-03-05",
+			holidays: ["2026-03-05"],
+		});
+		expect(breaches.map((breach) => [breach.rule, breach.actual])).toEqual([
+			["jarbschg_night_work", 240],
+		]);
+	});
 });
