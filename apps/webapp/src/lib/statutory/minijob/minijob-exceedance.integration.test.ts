@@ -9,10 +9,14 @@ import { db } from "@/db";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
+import { evaluateStatutoryScheduleFindings } from "../scheduling/evaluate";
 import { acknowledgeMinijobExceedance } from "./acknowledge-minijob-exceedance";
 import { evaluateMinijobEarnings } from "./evaluate-minijob";
 import { minijobFixture } from "./minijob-database.test.fixture";
+import { loadEmployeeMinijobMonitor } from "./minijob-monitor-view";
 import { addMonths } from "./minijob-months";
+import { loadMinijobExceedanceReviews } from "./minijob-reviews";
+import { minijobScheduleContributor } from "./minijob-schedule-contributor";
 
 const NOW = Temporal.Instant.from("2026-11-23T12:00:00Z");
 
@@ -245,6 +249,138 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 			endTime: "10:00",
 		});
 		expect(await december("2026-12-07T20:00:00Z")).toEqual([["2026-12", "critical", "stale"]]);
+	});
+
+	it.each([
+		{
+			note: "one clock-in over back-to-back shifts across the month end",
+			// 31 Jan 18:00 → 1 Feb 06:00: six hours belong to January, six to February.
+			async record(s: Setup) {
+				await mj.shift(s.org, s.worker, s.owner, {
+					date: "2026-01-31",
+					startTime: "18:00",
+					endTime: "00:00",
+				});
+				await mj.shift(s.org, s.worker, s.owner, {
+					date: "2026-02-01",
+					startTime: "00:00",
+					endTime: "06:00",
+				});
+				await mj.work(s.org, s.worker, "2026-01-31", 720, "18:00");
+			},
+			// 70 h + 6 h at 10 €.
+			januaryCents: 76_000,
+		},
+		{
+			note: "a night shift with a clocked-out break across midnight",
+			// Clocked out at 00:30 for a break, back from 01:00 to 06:00: all of it is January's shift.
+			async record(s: Setup) {
+				await mj.shift(s.org, s.worker, s.owner, {
+					date: "2026-01-31",
+					startTime: "22:00",
+					endTime: "06:00",
+				});
+				await mj.work(s.org, s.worker, "2026-01-31", 150, "22:00");
+				await mj.work(s.org, s.worker, "2026-02-01", 300, "01:00");
+			},
+			// 70 h + 7.5 h at 10 €.
+			januaryCents: 77_500,
+		},
+	])("gives every caller the same January for $note", async ({ record, januaryCents }) => {
+		const s = await setup();
+		const now = Temporal.Instant.from("2026-02-10T12:00:00Z");
+		await mj.monthWork(s.org, s.worker, "2026-01", 4200);
+		await record(s);
+		const january = (reviews: Awaited<ReturnType<typeof loadMinijobExceedanceReviews>>) =>
+			reviews.find((review) => review.month === "2026-01");
+		const monitorJanuary = async () => {
+			const view = await loadEmployeeMinijobMonitor(db, {
+				organizationId: s.org.id,
+				employeeId: s.worker.employeeId,
+				audience: "full",
+				now,
+			});
+			return view.audience === "full"
+				? view.months.find((month) => month.month === "2026-01")
+				: undefined;
+		};
+		const scheduling = (window: { start: string; endExclusive: string }) =>
+			evaluateStatutoryScheduleFindings(
+				db,
+				{
+					organizationId: s.org.id,
+					timezone: s.org.timezone,
+					window,
+					employeeIds: [s.worker.employeeId],
+					now,
+				},
+				[minijobScheduleContributor],
+			);
+
+		// Reviews & Conflicts (through March) and Employee Detail (through February).
+		const shown = january(
+			await loadMinijobExceedanceReviews(db, { organizationId: s.org.id, now }),
+		);
+		expect(shown?.totalCents).toBe(januaryCents);
+		expect((await monitorJanuary())?.totalCents).toBe(januaryCents);
+
+		// The acknowledgement re-evaluates January alone and finds what Reviews showed.
+		const acknowledged = await acknowledgeMinijobExceedance(db, {
+			organizationId: s.org.id,
+			actorUserId: s.owner.userId,
+			employeeId: s.worker.employeeId,
+			month: "2026-01",
+			reason: "Covered a sick colleague",
+			expectedFingerprint: shown?.inputFingerprint ?? "",
+			now,
+		});
+		expect(acknowledged.inputFingerprint).toBe(shown?.inputFingerprint);
+		expect(acknowledged.metadata.amountsCents).toMatchObject({ total: januaryCents });
+
+		// Each caller's range: the acknowledgement and a Scheduling week ending in January (until
+		// February), a Scheduling week into February (until March), Employee Detail and Reviews
+		// (until April).
+		for (const until of ["2026-02", "2026-03", "2026-04"]) {
+			const { employees } = await evaluateMinijobEarnings(db, {
+				organizationId: s.org.id,
+				timezone: s.org.timezone,
+				employeeIds: [s.worker.employeeId],
+				months: { from: "2026-01", until },
+				preferences: DEFAULT_STATUTORY_PREFERENCES,
+				now,
+			});
+			const month = employees.get(s.worker.employeeId)?.find((m) => m.month === "2026-01");
+			expect({ until, total: month?.totalCents, fingerprint: month?.fingerprint }).toEqual({
+				until,
+				total: januaryCents,
+				fingerprint: shown?.inputFingerprint,
+			});
+		}
+
+		const after = january(
+			await loadMinijobExceedanceReviews(db, {
+				organizationId: s.org.id,
+				now,
+				includeAcknowledged: true,
+			}),
+		);
+		expect(after).toMatchObject({
+			totalCents: januaryCents,
+			acknowledgement: { status: "current" },
+		});
+		expect((await monitorJanuary())?.exceedance?.status).toBe("acknowledged");
+		// Scheduling weeks ending in January and running into February.
+		for (const window of [
+			{ start: "2026-01-26", endExclusive: "2026-02-01" },
+			{ start: "2026-01-29", endExclusive: "2026-02-04" },
+		]) {
+			expect(
+				(await scheduling(window)).filter(
+					(finding) =>
+						finding.subjectKey === "2026-01" && finding.statutoryKind === "minijob_monthly_cap",
+				),
+			).toEqual([expect.objectContaining({ acknowledgementStatus: "current", severity: "info" })]);
+		}
 	});
 
 	it.each([

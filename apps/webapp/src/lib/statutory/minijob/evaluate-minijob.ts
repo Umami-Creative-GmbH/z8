@@ -90,6 +90,15 @@ export interface MinijobEvaluation {
 /** A judged month needs exceedances up to 11 months before each of the 12 months it sums. */
 const LOAD_LOOKBACK_MONTHS = 2 * MINIJOB_LOOKBACK_MONTHS;
 
+/**
+ * Shifts and work are loaded this many days beyond both ends of the range, for matching only: a
+ * shift lasts at most a day (25 hours over a DST change) and work belongs to it from two hours
+ * before its start. Work and shifts just outside the range then still split and match the months
+ * inside it exactly as they would for a wider range, so every caller sees the same figures and
+ * fingerprint for a month wherever its range ends.
+ */
+const MATCH_MARGIN_DAYS = 2;
+
 function rateCentsOf(contract: EffectiveContractOnDay): number | null {
 	return contract.hourlyRate === null ? null : Math.round(contract.hourlyRate * 100);
 }
@@ -125,8 +134,10 @@ export async function evaluateMinijobEarnings(
 	});
 	const { contractOn } = terms;
 
-	const rangeStart = localDayRange(rangeFrom, timezone).start;
-	const rangeEnd = localDayRange(rangeUntil, timezone).start;
+	const matchFrom = parsePlainDate(rangeFrom).subtract({ days: MATCH_MARGIN_DAYS }).toString();
+	const matchUntil = parsePlainDate(rangeUntil).add({ days: MATCH_MARGIN_DAYS }).toString();
+	const matchStart = localDayRange(matchFrom, timezone).start;
+	const matchEnd = localDayRange(matchUntil, timezone).start;
 	const workRows = await db
 		.select({
 			id: workPeriod.id,
@@ -146,12 +157,12 @@ export async function evaluateMinijobEarnings(
 					// Open clock-ins: running work counts up to now.
 					and(eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)),
 				),
-				gte(workPeriod.startTime, dateFromInstant(rangeStart)),
-				lt(workPeriod.startTime, dateFromInstant(rangeEnd)),
+				gte(workPeriod.startTime, dateFromInstant(matchStart)),
+				lt(workPeriod.startTime, dateFromInstant(matchEnd)),
 			),
 		);
 
-	const shiftBounds = shiftDateRangeBounds(rangeFrom, rangeUntil, timezone);
+	const shiftBounds = shiftDateRangeBounds(matchFrom, matchUntil, timezone);
 	const shiftConditions = [
 		eq(shift.organizationId, input.organizationId),
 		inArray(shift.employeeId, employeeIds),
@@ -206,12 +217,16 @@ export async function evaluateMinijobEarnings(
 	// ─── Earning items per employee and month ───────────────────────────────────────────────────
 	const items = new Map<string, MinijobEarningItem[]>();
 	const plannedShifts = new Map<string, MinijobPlannedShift[]>();
-	/** Appends to the employee's month of `date`, on Minijob days only, priced at that day's wage. */
+	/**
+	 * Appends to the employee's month of `date`, on Minijob days only, priced at that day's wage.
+	 * Days outside the range were loaded for matching only and count nowhere.
+	 */
 	const priced = <T extends { date: string }>(
 		into: Map<string, (T & { hourlyRateCents: number | null })[]>,
 		employeeId: string,
 		entry: T,
 	): void => {
+		if (entry.date < rangeFrom || entry.date >= rangeUntil) return;
 		const contract = contractOn(employeeId, entry.date);
 		if (!contract || !isMinijobDay(contract)) return;
 		const key = `${employeeId}|${entry.date.slice(0, 7)}`;
