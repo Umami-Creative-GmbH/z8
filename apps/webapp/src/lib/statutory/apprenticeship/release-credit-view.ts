@@ -3,18 +3,30 @@
  * employee's own profile. Wage-free: release credits are minutes and days only, so org admins,
  * the employee's managers and the employee see the same view.
  */
-import type { ApprenticeReleaseKind } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
+import { type ApprenticeReleaseKind, employeeApprenticeRelease } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
-import { listApprenticeReleases, recordApprenticeRelease } from "../employee-context";
+import { createLogger } from "@/lib/logger";
+import {
+	markEmployeeWorkBalanceDirty,
+	refreshEmployeeWorkBalanceFromPeriods,
+} from "@/lib/work-balance/service";
+import {
+	listApprenticeReleases,
+	recordApprenticeRelease,
+	voidApprenticeRelease,
+} from "../employee-context";
 import { isMinorOn } from "../youth/age";
 import { loadEmployeeBirthdays, loadHolidayDateKeys } from "../youth/youth-facts";
 import { apprenticeReleaseDays } from "./release-credits";
 import { loadApprenticeReleaseRecords } from "./release-facts";
 
 type Reader = Pick<DatabaseClient, "select">;
+
+const logger = createLogger("ApprenticeRelease");
 
 export interface ApprenticeReleaseCreditView {
 	readonly id: string;
@@ -204,6 +216,8 @@ export async function recordApprenticeReleaseWithCredit(
 		actorUserId: input.actorUserId,
 		note: input.note,
 	};
+	// The release changes the required time of its days and the week's full school day attribution.
+	const dirtyFromDate = mondayOf(preExamDay ?? examDay);
 	await db.transaction(async (tx) => {
 		// A pre-exam day that is already released (e.g. a school day) is not recorded twice.
 		const alreadyReleased =
@@ -232,5 +246,69 @@ export async function recordApprenticeReleaseWithCredit(
 			lessonCount: input.lessonCount ?? null,
 			schoolMinutes: input.schoolMinutes ?? null,
 		});
+		await markEmployeeWorkBalanceDirty(
+			{ organizationId: input.organizationId, employeeId: input.employeeId, dirtyFromDate },
+			tx,
+		);
 	});
+	await refreshWorkBalanceAfterCommit({ ...input, dirtyFromDate });
+}
+
+/**
+ * Voids a release and marks the employee's stored work balance for recomputation from the
+ * release's week, so it no longer credits the release however far back it lies.
+ */
+export async function voidApprenticeReleaseWithCredit(
+	db: Pick<DatabaseClient, "select" | "insert" | "update" | "transaction">,
+	input: {
+		readonly organizationId: string;
+		readonly employeeId: string;
+		readonly actorUserId: string;
+		readonly releaseId: string;
+		readonly reason: string;
+	},
+): Promise<void> {
+	const [release] = await db
+		.select({ startsOn: employeeApprenticeRelease.startsOn })
+		.from(employeeApprenticeRelease)
+		.where(
+			and(
+				eq(employeeApprenticeRelease.id, input.releaseId),
+				eq(employeeApprenticeRelease.organizationId, input.organizationId),
+				eq(employeeApprenticeRelease.employeeId, input.employeeId),
+			),
+		);
+	const dirtyFromDate = release ? mondayOf(parsePlainDate(release.startsOn)) : null;
+	await db.transaction(async (tx) => {
+		await voidApprenticeRelease(tx, input);
+		if (dirtyFromDate) {
+			await markEmployeeWorkBalanceDirty(
+				{ organizationId: input.organizationId, employeeId: input.employeeId, dirtyFromDate },
+				tx,
+			);
+		}
+	});
+	if (dirtyFromDate) await refreshWorkBalanceAfterCommit({ ...input, dirtyFromDate });
+}
+
+const mondayOf = (day: PlainDate) => day.subtract({ days: day.dayOfWeek - 1 }).toString();
+
+/** Recomputes the stored balance now; the balance worker retries a failed refresh. */
+async function refreshWorkBalanceAfterCommit(input: {
+	readonly organizationId: string;
+	readonly employeeId: string;
+	readonly dirtyFromDate: string;
+}): Promise<void> {
+	try {
+		await refreshEmployeeWorkBalanceFromPeriods({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			dirtyFromDate: input.dirtyFromDate,
+		});
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: input.organizationId, employeeId: input.employeeId },
+			"Work balance refresh after an apprentice release change failed; the balance worker retries it",
+		);
+	}
 }

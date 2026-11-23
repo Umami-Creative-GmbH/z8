@@ -11,11 +11,11 @@ import {
 } from "@/lib/organization-action/organization-action";
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { storeStep } from "@/lib/organization-action/store-step";
-import { voidApprenticeRelease } from "@/lib/statutory/employee-context";
 import {
 	type ApprenticeReleaseCredits,
 	loadApprenticeReleaseCredits,
 	recordApprenticeReleaseWithCredit,
+	voidApprenticeReleaseWithCredit,
 } from "@/lib/statutory/apprenticeship/release-credit-view";
 import { loadEmployeeInOrganization } from "@/lib/statutory/employee-scope";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -109,7 +109,7 @@ export const voidApprenticeReleaseAction = organizationAction(
 	{ name: "apprenticeRelease.void", requires: "orgAdmin", schema: voidSchema },
 	({ actor, organizationId, input }) =>
 		storeStep("apprenticeRelease.void", (db) =>
-			voidApprenticeRelease(db, {
+			voidApprenticeReleaseWithCredit(db, {
 				organizationId,
 				employeeId: input.employeeId,
 				actorUserId: actor.userId,

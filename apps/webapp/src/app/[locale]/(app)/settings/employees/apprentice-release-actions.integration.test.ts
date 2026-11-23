@@ -3,6 +3,7 @@
  * for apprentices only, an exam day can release the working day before it, the employee's
  * managers read the credits of employees they manage, and the employee reads their own.
  */
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StubCaller } from "@/test/organization-action";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -188,6 +189,47 @@ describe("apprentice release actions (PostgreSQL)", () => {
 				endsOn: "2027-03-02",
 			}),
 		).toMatchObject({ success: false, refusal: "apprentice_release_lessons_required" });
+	});
+
+	it("refreshes the stored work balance when a release is recorded or voided, also months back", async () => {
+		const { getEmployeeWorkBalance, refreshEmployeeWorkBalanceFromPeriods } = await import(
+			"@/lib/work-balance/service"
+		);
+		await admin.query("update employee set start_date = $2 where id = $1", [
+			learner.employeeId,
+			new Date("2026-01-01T00:00:00Z"),
+		]);
+		const scope = { organizationId: org.id, employeeId: learner.employeeId };
+		await refreshEmployeeWorkBalanceFromPeriods({ ...scope, forceFullRebuild: true });
+		const before = await getEmployeeWorkBalance(scope);
+		expect(before).not.toBeNull();
+
+		// A Tuesday about three months back: outside the work balance's recomputed hot window.
+		const back = Temporal.Now.plainDateISO(org.timezone).subtract({ days: 91 });
+		const tuesday = back.subtract({ days: (back.dayOfWeek + 5) % 7 }).toString();
+		expect(
+			await recordApprenticeReleaseAction({
+				employeeId: learner.employeeId,
+				releaseKind: "vocational_school_day",
+				startsOn: tuesday,
+				endsOn: tuesday,
+				lessonCount: 6,
+			}),
+		).toMatchObject({ success: true });
+		const credited = await getEmployeeWorkBalance(scope);
+		// The full school day releases the day's 8 h requirement.
+		expect(credited?.requiredMinutes).toBe((before?.requiredMinutes ?? 0) - 480);
+
+		const listed = await getApprenticeReleaseCreditsAction({ employeeId: learner.employeeId });
+		const releaseId = listed.success ? listed.data.releases[0]?.id : undefined;
+		expect(
+			await voidApprenticeReleaseAction({
+				employeeId: learner.employeeId,
+				releaseId: releaseId ?? "",
+				reason: "Recorded by mistake",
+			}),
+		).toMatchObject({ success: true });
+		expect((await getEmployeeWorkBalance(scope))?.requiredMinutes).toBe(before?.requiredMinutes);
 	});
 
 	it("lets only org admins record and void, managers read whom they manage, employees read their own", async () => {
