@@ -16,6 +16,7 @@ import {
 	shiftRequest,
 } from "@/db/schema";
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
+import { instantFromDate, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import {
 	findEmployeesNotOnCurrentRoster,
@@ -34,6 +35,14 @@ import {
 	insertSkillOverride,
 	skillOverrideReasonRequiredError,
 } from "@/lib/scheduling/skill-override";
+import {
+	STATUTORY_PUBLICATION_BLOCKED,
+	STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+} from "@/lib/statutory/scheduling/publication-block";
+import {
+	guardPublishedShiftEdit,
+	PublishedShiftEditBlocked,
+} from "@/lib/statutory/scheduling/published-shift-edit";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { DatabaseService } from "./database.service";
 
@@ -249,9 +258,10 @@ async function approvePendingRequest(
 		subareaId: current.shift.subareaId,
 		templateId: current.shift.templateId,
 	};
+	const organizationTimezone = await loadOrganizationTimezone(tx, organizationId);
 	const { decision } = await decideSkillOverride(tx, {
 		organizationId,
-		organizationTimezone: await loadOrganizationTimezone(tx, organizationId),
+		organizationTimezone,
 		shiftId: current.shiftId,
 		context,
 		// The request always assigns someone new to the shift.
@@ -270,18 +280,43 @@ async function approvePendingRequest(
 				: current.shift.employeeId === null
 					? isNull(shift.employeeId)
 					: eq(shift.employeeId, current.shift.employeeId);
-	const [updatedShift] = await tx
-		.update(shift)
-		.set({ employeeId: assignedEmployeeId })
-		.where(
-			and(
-				eq(shift.id, current.shiftId),
-				eq(shift.organizationId, organizationId),
-				eq(shift.status, "published"),
-				expectedAssignment,
-			),
-		)
-		.returning({ id: shift.id });
+	// The shift stays published under its new assignee: the publish block applies (#1993).
+	const [updatedShift] = await guardPublishedShiftEdit(
+		tx,
+		{
+			organizationId,
+			timezone: organizationTimezone,
+			shiftId: current.shiftId,
+			published: true,
+			employeeId: assignedEmployeeId,
+			date: plainDateAt(instantFromDate(current.shift.date), organizationTimezone),
+			now: systemClock.nowInstant(),
+		},
+		() =>
+			tx
+				.update(shift)
+				.set({ employeeId: assignedEmployeeId })
+				.where(
+					and(
+						eq(shift.id, current.shiftId),
+						eq(shift.organizationId, organizationId),
+						eq(shift.status, "published"),
+						expectedAssignment,
+					),
+				)
+				.returning({ id: shift.id }),
+	).catch((error: unknown) => {
+		if (error instanceof PublishedShiftEditBlocked) {
+			abort(
+				new ValidationError({
+					message: STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+					field: "shift",
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				}),
+			);
+		}
+		throw error;
+	});
 	if (!updatedShift) abort(staleRequest());
 
 	// shiftId is locked and was verified against organizationId above; shift_request gets

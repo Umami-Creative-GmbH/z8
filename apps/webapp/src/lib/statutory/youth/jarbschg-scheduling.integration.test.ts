@@ -13,6 +13,10 @@ import {
 	ScheduleComplianceServiceLive,
 } from "@/lib/effect/services/schedule-compliance.service";
 import {
+	ShiftRequestService,
+	ShiftRequestServiceLive,
+} from "@/lib/effect/services/shift-request.service";
+import {
 	StaffingSuggestionService,
 	StaffingSuggestionServiceLive,
 } from "@/lib/effect/services/staffing-suggestion.service";
@@ -270,6 +274,43 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 				}),
 			).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
 			expect((await shiftRow(id))?.employee_id).toBe(adult.employeeId);
+		});
+
+		it("refuses approving a pickup that gives a published Saturday evening shift to a 16-year-old", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "pickup", { birthday: "2010-06-01" });
+			const id = await published(owner, "2027-03-06", "18:00", "23:00");
+			await admin.query("update shift set employee_id = null where id = $1", [id]);
+			const requests = (
+				run: (service: ShiftRequestService["Service"]) => Effect.Effect<unknown, unknown>,
+			) =>
+				Effect.runPromise(
+					Effect.gen(function* () {
+						return yield* run(yield* ShiftRequestService);
+					}).pipe(
+						Effect.provide(ShiftRequestServiceLive.pipe(Layer.provide(DatabaseServiceLive))),
+						Effect.result,
+					),
+				);
+			const requested = await requests((service) =>
+				service.requestPickup(org.id, { shiftId: id, requesterId: minor.employeeId }),
+			);
+			if (requested._tag !== "Success") throw new Error(JSON.stringify(requested));
+			const requestId = (requested.success as { id: string }).id;
+
+			try {
+				const approved = await requests((service) =>
+					service.approveRequest(org.id, requestId, owner.employeeId),
+				);
+				expect(approved).toMatchObject({
+					_tag: "Failure",
+					failure: { _tag: "ValidationError", refusal: STATUTORY_PUBLICATION_BLOCKED },
+				});
+				expect((await shiftRow(id))?.employee_id).toBeNull();
+			} finally {
+				// The fixture cleanup does not know shift requests.
+				await admin.query("delete from shift_request where shift_id = $1", [id]);
+			}
 		});
 
 		it("saves a published shift whose sector exception is current, and drafts as before", async () => {

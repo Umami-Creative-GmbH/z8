@@ -18,6 +18,11 @@ vi.mock("@/lib/scheduling/skill-override", async (importOriginal) => ({
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 	loadOrganizationTimezone: async () => "UTC",
 }));
+// The JArbSchG publish block on approval runs against PostgreSQL (jarbschg-scheduling suite).
+vi.mock("@/lib/statutory/scheduling/published-shift-edit", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/statutory/scheduling/published-shift-edit")>()),
+	guardPublishedShiftEdit: (_db: unknown, _edit: unknown, write: () => Promise<unknown>) => write(),
+}));
 // The current-roster guard (#1438) reads the staged employees: inactive ones
 // and those of another organization than org-1 are former.
 const rosterHarness = vi.hoisted(() => ({
@@ -54,6 +59,7 @@ type ShiftRow = {
 	organizationId: string;
 	employeeId: string | null;
 	status: "draft" | "published";
+	date: Date;
 };
 
 type RequestRow = {
@@ -159,18 +165,21 @@ const baseState = (): HarnessState => ({
 			organizationId: "org-1",
 			employeeId: "employee-requester",
 			status: "published",
+			date: new Date("2027-03-02T00:00:00.000Z"),
 		},
 		{
 			id: "shift-open",
 			organizationId: "org-1",
 			employeeId: null,
 			status: "published",
+			date: new Date("2027-03-02T00:00:00.000Z"),
 		},
 		{
 			id: "shift-other-org",
 			organizationId: "org-2",
 			employeeId: null,
 			status: "published",
+			date: new Date("2027-03-02T00:00:00.000Z"),
 		},
 	],
 	requests: [],
