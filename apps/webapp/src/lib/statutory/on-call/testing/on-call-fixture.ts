@@ -221,8 +221,8 @@ export function onCallFixture(admin: Pool, fx: StatutoryFixture) {
 			const categoryId = randomUUID();
 			await admin.query(
 				`INSERT INTO absence_category (id, organization_id, type, name, requires_work_time, updated_at)
-				 VALUES ($1, $2, $3, $3, $4, now())`,
-				[categoryId, org.id, input.type, input.type === "home_office"],
+				 VALUES ($1, $2, $3, $4, $5, now())`,
+				[categoryId, org.id, input.type, input.type, input.type === "home_office"],
 			);
 			await admin.query(
 				`INSERT INTO absence_entry (employee_id, organization_id, category_id, start_date, end_date, status, updated_at)
