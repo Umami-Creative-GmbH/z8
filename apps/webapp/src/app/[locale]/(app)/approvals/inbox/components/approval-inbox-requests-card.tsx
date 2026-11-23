@@ -57,11 +57,7 @@ function ApprovalInboxWarnings({
 					<div>
 						{/* An approval type by its name, in the viewer's language (#1978). */}
 						<div className="font-medium">{typeLabels[warning.source] ?? warning.source}</div>
-						<div>
-							{warning.localized
-								? summaryText(warning.localized)
-								: warning.message}
-						</div>
+						<div>{warning.localized ? summaryText(warning.localized) : warning.message}</div>
 					</div>
 				</div>
 			))}

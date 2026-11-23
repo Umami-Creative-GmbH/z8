@@ -103,9 +103,8 @@ async function processBotDigest(bot: DigestBot): Promise<number> {
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
 	const { buildDigestDataForManager } = await import("@/lib/teams/jobs/daily-digest");
-	const { complianceExceptionInboxScopesFor } = await import(
-		"@/lib/approvals/inbox/compliance-exception-inbox"
-	);
+	const { complianceExceptionInboxScopesFor } =
+		await import("@/lib/approvals/inbox/compliance-exception-inbox");
 	const complianceScopes = complianceExceptionInboxScopesFor({
 		organizationId: bot.organizationId,
 		userIds: conversations.map((conv) => conv.userId),
