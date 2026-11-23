@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { databaseFailure, serializedLog } from "@/test/log-redaction";
 
 const mocks = vi.hoisted(() => ({
 	createNotification: vi.fn(),
@@ -91,12 +92,11 @@ describe("compliance notification triggers", () => {
 					reason: "Caring for my sick child",
 				} as Parameters<typeof onComplianceExceptionRejected>[0]),
 		],
-	])("never logs the reason text when a %s notification fails", async (_kind, trigger) => {
-		// A failed insert's error carries the notification message, and with it the reason.
-		const failure = Object.assign(
-			new Error('Failed query: insert … params: "Caring for my sick child"'),
-			{ params: ["Caring for my sick child"] },
-		);
+	])("never logs the reason text when a %s trigger fails", async (_kind, trigger) => {
+		// The trigger's own catch: any failure it sees (a lookup, or a rejected notification
+		// write) as a real database failure whose cause chain binds the reason. The notification
+		// service logs its own insert failures itself; that shared logging is outside #1975.
+		const failure = databaseFailure("notification.insert", ["org-1", "Caring for my sick child"]);
 		mocks.createNotification.mockRejectedValue(failure);
 		mocks.createNotificationForManager.mockRejectedValue(failure);
 
@@ -104,10 +104,8 @@ describe("compliance notification triggers", () => {
 
 		expect(mocks.loggedErrors).toHaveLength(1);
 		const [fields] = mocks.loggedErrors[0] as [Record<string, unknown>];
-		// Inspect what pino would see, enumerable or not: message, params, cause, stack.
-		const seen = JSON.stringify(fields, (_key, value) =>
-			value instanceof Error ? { message: value.message, stack: value.stack, ...value } : value,
-		);
+		// As pino writes it: its serializers follow message, stack and the cause chain.
+		const seen = await serializedLog(fields);
 		expect(seen).not.toContain("Caring for my sick child");
 		expect(seen).toContain("exception-1");
 	});

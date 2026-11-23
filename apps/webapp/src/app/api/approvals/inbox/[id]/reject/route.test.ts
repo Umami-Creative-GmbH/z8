@@ -272,7 +272,8 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			expect(response.status).toBe(500);
 			expect(mockState.logger.error).toHaveBeenCalledWith(
 				{
-					err: { name: "Error", code: "ECONNRESET" },
+					// Where it was thrown stays in the log; the message never does.
+					err: { name: "Error", code: "ECONNRESET", frames: expect.any(Array) },
 					errorCode: "ECONNRESET",
 					action: "reject",
 					approvalId: "exception-1",
@@ -926,7 +927,12 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		expect(response.status).toBe(500);
 		expect(mockState.logger.error).toHaveBeenCalledWith(
 			{
-				err: { name: "Error", errorTag: "ApprovalTransitionEngineError", code: "invariant" },
+				err: {
+					name: "Error",
+					errorTag: "ApprovalTransitionEngineError",
+					code: "invariant",
+					frames: expect.any(Array),
+				},
 				action: "reject",
 				approvalId: "approval-1",
 				decisionStage: "decision",

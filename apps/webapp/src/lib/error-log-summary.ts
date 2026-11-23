@@ -1,6 +1,7 @@
 /**
  * An error as a log may name it when the failure may carry user-written text: its name, tag,
- * code and operation, never a message, stack, cause or bound params.
+ * code, operation, the database identifiers it hit and its stack frames, never a message,
+ * cause or bound params.
  *
  * Log this instead of the raw error wherever a failed query bound free text (a reason, a note):
  * drizzle-orm's `DrizzleQueryError` writes every param into its message and an enumerable
@@ -14,6 +15,32 @@ export interface ErrorLogSummary {
 	code?: string;
 	/** The failed `DatabaseService.query`'s name. */
 	operation?: string;
+	/** The constraint, table and column PostgreSQL names for the failure, along the cause chain. */
+	constraint?: string;
+	table?: string;
+	column?: string;
+	/** Where it was thrown: the stack's frames, without its header (the message). */
+	frames?: string[];
+}
+
+const MAX_FRAMES = 20;
+
+/**
+ * The stack's `at …` frames only. The header (`Name: message`, possibly many lines) is cut off by
+ * its exact text first, so a message line that merely looks like a frame never comes along.
+ */
+function stackFrames(error: Error): string[] | undefined {
+	const stack = error.stack;
+	if (typeof stack !== "string") return undefined;
+	const header = String(error);
+	if (!stack.startsWith(header)) return undefined;
+	const frames = stack
+		.slice(header.length)
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line.startsWith("at "))
+		.slice(0, MAX_FRAMES);
+	return frames.length > 0 ? frames : undefined;
 }
 
 const MAX_CAUSE_DEPTH = 8;
@@ -38,6 +65,7 @@ function errorName(error: Error): string {
 export function errorLogSummary(error: unknown): ErrorLogSummary {
 	const summary: ErrorLogSummary = {
 		name: error instanceof Error ? errorName(error) : typeof error,
+		...(error instanceof Error ? { frames: stackFrames(error) } : {}),
 	};
 	const seen = new Set<unknown>();
 	let current: unknown = error;
@@ -46,6 +74,9 @@ export function errorLogSummary(error: unknown): ErrorLogSummary {
 		summary.errorTag ??= identifier(property(current, "_tag"));
 		summary.code ??= identifier(property(current, "code"));
 		summary.operation ??= identifier(property(current, "operation"));
+		summary.constraint ??= identifier(property(current, "constraint"));
+		summary.table ??= identifier(property(current, "table"));
+		summary.column ??= identifier(property(current, "column"));
 		current = property(current, "cause");
 	}
 	return Object.fromEntries(
