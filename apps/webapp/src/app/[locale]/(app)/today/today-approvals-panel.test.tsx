@@ -583,6 +583,25 @@ describe("TodayApprovalsPanel", () => {
 		).toBe("Overlaps the inventory week.");
 	});
 
+	it("starts a fresh, consistent reason when the same item is reopened while the panel is still closing", () => {
+		render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Old reason" },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Cancel" }));
+		// Reopened before the slide-out ends, while the sheet is still mounted.
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i, hidden: true }));
+
+		const reopened = screen.getByRole("dialog", { name: "Reject request" });
+		// The field and Confirm agree: an empty reason, so Confirm is off until one is written.
+		expect(
+			(within(reopened).getByLabelText("Reason for rejection") as HTMLTextAreaElement).value,
+		).toBe("");
+	});
+
 	it("returns focus to the approvals list after a saved rejection removes its Reject button", async () => {
 		render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
 

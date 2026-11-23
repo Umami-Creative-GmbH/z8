@@ -85,6 +85,8 @@ export function TodayApprovalsPanel({
 	// What the panel shows: the last item it was opened for, kept while the sheet slides out so
 	// it never empties before it leaves. Opening the panel replaces it, and resets the reason.
 	const [panelItem, setPanelItem] = useState<BriefingApprovalActionItem | null>(null);
+	// Each opening gets a fresh reason form, even for the same item reopened while closing.
+	const [panelOpening, setPanelOpening] = useState(0);
 	const [rejectReason, setRejectReason] = useState("");
 	// Where focus goes when the reject panel closes.
 	const listRef = useRef<HTMLUListElement>(null);
@@ -221,6 +223,7 @@ export function TodayApprovalsPanel({
 		setRejectReason("");
 		setRejecting(item);
 		setPanelItem(item);
+		setPanelOpening((opening) => opening + 1);
 	}
 
 	function closeRejectPanel() {
@@ -495,7 +498,7 @@ export function TodayApprovalsPanel({
 									</p>
 								) : null}
 								<ApprovalReasonForm
-									key={panelItem.approvalId}
+									key={`${panelItem.approvalId}:${panelOpening}`}
 									reason={rejectReason}
 									onReasonChange={setRejectReason}
 									onCancel={closeRejectPanel}
