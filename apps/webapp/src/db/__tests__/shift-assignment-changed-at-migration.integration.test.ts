@@ -7,7 +7,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { PoolClient } from "pg";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, describe, expect, it } from "vitest";
+import { fullNoticeDays, notificationDay } from "@/lib/statutory/on-call/notice";
+import { localInstant } from "@/lib/statutory/on-call/testing/on-call-fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const SCHEMA = "t1992_migration";
@@ -25,7 +28,12 @@ type Shift = [
 	createdAt: string,
 	publishedAt: string | null,
 	updatedAt: string,
+	/** The shift day's organization-local midnight, as `shift.date` stores it (UTC). */
+	date?: string,
 ];
+
+/** Shifts of the cases that do not care about the shift day lie well after every change. */
+const LATER_DAY = "2026-03-01 23:00";
 
 async function withScratchShifts<T>(
 	shifts: Shift[],
@@ -38,13 +46,14 @@ async function withScratchShifts<T>(
 		await client.query(`set search_path to ${SCHEMA}, public`);
 		await client.query(`
 			create table shift (
-				id uuid primary key, status text not null, published_at timestamp,
-				created_at timestamp default now() not null, updated_at timestamp not null);
+				id uuid primary key, status text not null, date timestamp not null,
+				published_at timestamp, created_at timestamp default now() not null,
+				updated_at timestamp not null);
 		`);
-		for (const [n, status, createdAt, publishedAt, updatedAt] of shifts) {
+		for (const [n, status, createdAt, publishedAt, updatedAt, date = LATER_DAY] of shifts) {
 			await client.query(
-				"insert into shift (id, status, created_at, published_at, updated_at) values ($1, $2, $3, $4, $5)",
-				[id(n), status, createdAt, publishedAt, updatedAt],
+				"insert into shift (id, status, date, created_at, published_at, updated_at) values ($1, $2, $3, $4, $5, $6)",
+				[id(n), status, date, createdAt, publishedAt, updatedAt],
 			);
 		}
 		return await run(client);
@@ -96,6 +105,40 @@ describe("0333 shift assignment_changed_at backfill", () => {
 		);
 	});
 
+	it("keeps the short-notice finding of a shift edited after it ran", async () => {
+		const timezone = "Europe/Berlin";
+		// Published Wednesday 2026-01-07 for Thursday 2026-01-08 09:00–13:00 (Berlin), edited Friday
+		// (a note, an end-time correction). `date` holds Thursday's Berlin midnight in UTC.
+		await withScratchShifts(
+			[
+				[
+					1,
+					"published",
+					"2026-01-05 08:00",
+					"2026-01-07 09:00",
+					"2026-01-09 10:00",
+					"2026-01-07 23:00",
+				],
+			],
+			async (client) => {
+				await migrate(client);
+				const { rows } = await client.query<{ changed: Date }>(
+					"select assignment_changed_at at time zone 'UTC' as changed from shift",
+				);
+				expect(rows).toHaveLength(1);
+				const stamp = Temporal.Instant.fromEpochMilliseconds(rows[0]?.changed.getTime() ?? 0);
+				const shiftEnd = localInstant("2026-01-08", "13:00", timezone);
+				// Announced before the shift ended, so the monitor still judges it, and no later than
+				// the shift day: 0 full days of notice.
+				expect(Temporal.Instant.compare(stamp, shiftEnd)).toBeLessThan(0);
+				const notifiedOn = notificationDay(stamp, timezone);
+				expect(Math.max(0, fullNoticeDays(notifiedOn, Temporal.PlainDate.from("2026-01-08")))).toBe(
+					0,
+				);
+			},
+		);
+	});
+
 	it("is idempotent and keeps a recorded assignment change", async () => {
 		await withScratchShifts(
 			[[1, "published", "2026-01-01 08:00", "2026-01-05 09:00", "2026-01-10 10:00"]],
@@ -108,8 +151,8 @@ describe("0333 shift assignment_changed_at backfill", () => {
 				expect(await changedAt(client)).toEqual({ [id(1)]: "2026-02-01 07:00" });
 
 				await client.query(
-					`insert into shift (id, status, updated_at) values ($1, 'draft', now())`,
-					[id(2)],
+					`insert into shift (id, status, date, updated_at) values ($1, 'draft', $2, now())`,
+					[id(2), LATER_DAY],
 				);
 				const { rows } = await client.query<{ fresh: boolean }>(
 					"select assignment_changed_at is not null as fresh from shift where id = $1",
