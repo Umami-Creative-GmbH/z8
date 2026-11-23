@@ -1,3 +1,5 @@
+import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
+
 export type BriefingActionSeverity = "critical" | "high" | "warning" | "info";
 
 export type BriefingActionCategory =
@@ -32,6 +34,11 @@ export interface BriefingApprovalActionItem extends BriefingActionItem {
 	summary: string;
 	/** The viewer requested it, so someone else decides it (#686, #697). */
 	ownRequest?: boolean;
+	/**
+	 * Approval needs acceptances only the inbox's detail view collects (#604): no one-click
+	 * approve, the briefing sends the manager to the inbox instead (#1980).
+	 */
+	requiresDetailReview?: boolean;
 }
 
 export interface BriefingSummaryCounts {
@@ -124,42 +131,27 @@ export interface BriefingCoverageRule {
 	minimumStaffCount: number;
 }
 
-export interface BriefingApproval {
-	id: string;
-	approvalType: string;
-	entityId: string;
-	typeName: string;
-	requester: {
-		id: string;
-		name: string;
-	};
-	priority: "urgent" | "high" | "normal" | "low";
-	display: {
-		summary: string;
-	};
-}
+/**
+ * A pending approval of the viewer's unified Approval inbox (#1980): every inbox type, with the
+ * capabilities the inbox gives it.
+ */
+export type BriefingApproval = ApprovalInboxItem;
 
-export function approvalToBriefingItem(
-	approval: BriefingApproval,
-	viewerEmployeeId: string,
-): BriefingApprovalActionItem {
+export function approvalToBriefingItem(approval: BriefingApproval): BriefingApprovalActionItem {
+	const { priority } = approval.triage;
 	return {
 		id: `approval:${approval.id}`,
 		category: "approval",
-		severity:
-			approval.priority === "urgent"
-				? "critical"
-				: approval.priority === "high"
-					? "high"
-					: "warning",
-		title: `${approval.requester.name} needs ${approval.typeName} approval`,
-		description: approval.display.summary,
-		href: "/approvals/inbox",
+		severity: priority === "urgent" ? "critical" : priority === "high" ? "high" : "warning",
+		title: `${approval.requester.name}: ${approval.summary.title}`,
+		description: approval.summary.subtitle,
+		href: `/approvals/inbox?types=${approval.type}`,
 		approvalId: approval.id,
-		approvalType: approval.approvalType,
+		approvalType: approval.type,
 		entityId: approval.entityId,
 		requesterName: approval.requester.name,
-		summary: approval.display.summary,
-		...(approval.requester.id === viewerEmployeeId ? { ownRequest: true } : {}),
+		summary: approval.summary.detail,
+		...(approval.capabilities.ownRequest ? { ownRequest: true } : {}),
+		...(approval.capabilities.requiresDetailReview ? { requiresDetailReview: true } : {}),
 	};
 }

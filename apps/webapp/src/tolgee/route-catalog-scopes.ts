@@ -52,6 +52,8 @@ const DEPENDENCIES: Record<string, Namespace[]> = {
 	"/approvals": ["bot", "calendar", "travelExpenses"],
 	// settings/generic: the close-month panel (#762).
 	"/payroll": ["settings/generic"],
+	// approvals: the inbox's rejection-reason form in the briefing's reject panel (#1980).
+	"/today": ["approvals"],
 	"/platform-admin": ["settings/generic"],
 	"/settings/approval-policies": ["settings/people"],
 	"/settings/employees": ["organization"],

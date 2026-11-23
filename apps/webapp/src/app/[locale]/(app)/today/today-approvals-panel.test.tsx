@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { Activity } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
@@ -14,8 +14,14 @@ const { refreshMock, toastErrorMock, toastSuccessMock } = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refreshMock }) }));
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
-		<a href={href}>{children}</a>
+	Link: ({
+		children,
+		href,
+		...props
+	}: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
 	),
 }));
 vi.mock("sonner", () => ({ toast: { success: toastSuccessMock, error: toastErrorMock } }));
@@ -82,20 +88,131 @@ describe("TodayApprovalsPanel", () => {
 		expect(refreshMock).toHaveBeenCalledTimes(1);
 	});
 
-	it("rejects an item inline and refreshes the briefing", async () => {
+	it("asks for a rejection reason in an action panel before sending anything", () => {
 		render(<TodayApprovalsPanel items={[approvalItem()]} />);
 
 		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		expect(within(panel).getByText("Vacation request")).toBeTruthy();
+		expect(within(panel).getByLabelText("Reason for rejection")).toBeTruthy();
+		expect(global.fetch).not.toHaveBeenCalled();
+	});
+
+	it("refuses a blank or whitespace-only rejection reason", async () => {
+		render(<TodayApprovalsPanel items={[approvalItem()]} />);
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		const confirm = within(panel).getByRole("button", { name: "Confirm Rejection" });
+
+		expect(confirm.hasAttribute("disabled")).toBe(true);
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "   " },
+		});
+
+		expect(await within(panel).findByText("A reason is required")).toBeTruthy();
+		expect(confirm.hasAttribute("disabled")).toBe(true);
+		fireEvent.submit(confirm.closest("form") as HTMLFormElement);
+		await act(async () => {});
+		expect(global.fetch).not.toHaveBeenCalled();
+	});
+
+	it("rejects with the manager's trimmed reason, closes the panel and refreshes the briefing", async () => {
+		render(<TodayApprovalsPanel items={[approvalItem()]} />);
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "  Overlaps the inventory week.  " },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
 
 		await waitFor(() =>
 			expect(global.fetch).toHaveBeenCalledWith("/api/approvals/inbox/approval-1/reject", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ reason: "Rejected from manager daily briefing." }),
+				body: JSON.stringify({ reason: "Overlaps the inventory week." }),
 			}),
 		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 		expect(toastSuccessMock).toHaveBeenCalledWith("Request rejected");
 		expect(refreshMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps the panel and the manager's reason when the rejection fails", async () => {
+		global.fetch = vi.fn().mockResolvedValue({
+			ok: false,
+			json: async () => ({ success: false, error: "Already decided" }),
+		}) as unknown as typeof fetch;
+		render(<TodayApprovalsPanel items={[approvalItem()]} />);
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Overlaps the inventory week." },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+
+		await waitFor(() => expect(toastErrorMock).toHaveBeenCalledWith("Already decided"));
+		const stillOpen = screen.getByRole("dialog", { name: "Reject request" });
+		expect(
+			(within(stillOpen).getByLabelText("Reason for rejection") as HTMLTextAreaElement).value,
+		).toBe("Overlaps the inventory week.");
+		expect(refreshMock).not.toHaveBeenCalled();
+	});
+
+	it("holds every other decision while a rejection is pending", async () => {
+		let complete!: (value: unknown) => void;
+		vi.mocked(global.fetch).mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		render(
+			<TodayApprovalsPanel
+				items={[
+					approvalItem(),
+					approvalItem({ id: "approval:approval-2", approvalId: "approval-2", title: "Sick day" }),
+				]}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Overlaps the inventory week." },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+		await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+
+		expect(
+			screen
+				.getByRole("button", { name: "Approve Sick day", hidden: true })
+				.hasAttribute("disabled"),
+		).toBe(true);
+
+		await act(async () => complete({ ok: true, json: async () => ({ success: true }) }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	});
+
+	it("sends a manager to the inbox instead of approving an item that needs detail review", () => {
+		render(
+			<TodayApprovalsPanel
+				items={[
+					approvalItem({
+						title: "Expense report",
+						href: "/approvals/inbox?types=travel_expense_report",
+						requiresDetailReview: true,
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.queryByRole("button", { name: /approve expense report/i })).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "Review Expense report in inbox" }).getAttribute("href"),
+		).toBe("/approvals/inbox?types=travel_expense_report");
+		expect(screen.getByRole("button", { name: "Reject Expense report" })).toBeTruthy();
 	});
 
 	it("keeps the row visible when approval fails", async () => {
@@ -120,11 +237,16 @@ describe("TodayApprovalsPanel", () => {
 		render(<TodayApprovalsPanel items={[approvalItem()]} />);
 
 		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Overlaps the inventory week." },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
 
 		await waitFor(() => {
 			expect(toastErrorMock).toHaveBeenCalledWith("Unable to reject request");
 		});
-		expect(screen.getByText("Vacation request")).toBeTruthy();
+		expect(screen.getAllByText("Vacation request").length).toBeGreaterThan(0);
 	});
 
 	it("does not refresh when the approval response is not ok", async () => {

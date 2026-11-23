@@ -4,6 +4,15 @@ import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ApprovalReasonForm } from "@/app/[locale]/(app)/approvals/inbox/components/approval-reason-form";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelDescription,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
@@ -25,8 +34,6 @@ type ApprovalDecisionResponse = {
 	success?: boolean;
 	error?: string;
 };
-
-const REJECT_REASON = "Rejected from manager daily briefing.";
 
 export function TodayApprovalsPanel({
 	items,
@@ -50,26 +57,35 @@ export function TodayApprovalsPanel({
 			active.current = false;
 		};
 	}, []);
+	// The item whose rejection reason the manager is writing, and that reason.
+	const [rejecting, setRejecting] = useState<BriefingApprovalActionItem | null>(null);
+	const [rejectReason, setRejectReason] = useState("");
 	const isBusy = actingApprovalId !== null || isRefreshPending;
+	const decisionsOff = isBusy || Boolean(error) || stale;
 
-	function decideApproval(item: BriefingApprovalActionItem, decision: ApprovalDecision) {
+	/** Settles true only when the decision was saved for this view. */
+	function decideApproval(
+		item: BriefingApprovalActionItem,
+		decision: ApprovalDecision,
+		reason?: string,
+	): Promise<boolean> {
 		if (isBusy || error || stale || !active.current || decided.has(item.approvalId)) {
-			return;
+			return Promise.resolve(false);
 		}
 
 		const reservation = reserve(item.approvalId);
-		if (!reservation) return;
+		if (!reservation) return Promise.resolve(false);
 		const request = generation.current;
 		setDecisionError(null);
 
-		postApprovalDecision(item.approvalId, decision)
+		return postApprovalDecision(item.approvalId, decision, reason)
 			.then((result) => {
-				if (!active.current || request !== generation.current) return;
+				if (!active.current || request !== generation.current) return false;
 				if (!result.success) {
 					const message = result.error || fallbackError(t, decision);
 					setDecisionError(message);
 					toast.error(message);
-					return;
+					return false;
 				}
 
 				toast.success(
@@ -84,16 +100,36 @@ export function TodayApprovalsPanel({
 						refresh();
 					});
 				});
+				return true;
 			})
 			.catch(() => {
-				if (!active.current || request !== generation.current) return;
+				if (!active.current || request !== generation.current) return false;
 				setDecisionError(fallbackError(t, decision));
 				toast.error(fallbackError(t, decision));
+				return false;
 			})
 			.finally(() => {
 				// Settlement releases the command even when its former view has retired.
 				release(reservation);
 			});
+	}
+
+	function openRejectPanel(item: BriefingApprovalActionItem) {
+		if (decisionsOff) return;
+		setRejectReason("");
+		setRejecting(item);
+	}
+
+	function closeRejectPanel() {
+		setRejecting(null);
+		setRejectReason("");
+	}
+
+	async function confirmRejection() {
+		const reason = rejectReason.trim();
+		if (!rejecting || !reason) return;
+		// A failed rejection keeps the panel and the manager's reason for another try.
+		if (await decideApproval(rejecting, "reject", reason)) closeRejectPanel();
 	}
 
 	return (
@@ -171,25 +207,41 @@ export function TodayApprovalsPanel({
 											aria-label={t("today.approvals.rejectLabel", "Reject {title}", {
 												title: item.title,
 											})}
-											disabled={isBusy || Boolean(error) || stale}
-											onClick={() => decideApproval(item, "reject")}
+											disabled={decisionsOff}
+											onClick={() => openRejectPanel(item)}
 											size="sm"
 											type="button"
 											variant="outline"
 										>
 											{t("today.approvals.reject", "Reject")}
 										</Button>
-										<Button
-											aria-label={t("today.approvals.approveLabel", "Approve {title}", {
-												title: item.title,
-											})}
-											disabled={isBusy || Boolean(error) || stale}
-											onClick={() => decideApproval(item, "approve")}
-											size="sm"
-											type="button"
-										>
-											{t("today.approvals.approve", "Approve")}
-										</Button>
+										{item.requiresDetailReview ? (
+											// Its approval needs acceptances only the inbox's detail view collects.
+											<Button asChild size="sm">
+												<Link
+													aria-label={t(
+														"today.approvals.reviewInInboxLabel",
+														"Review {title} in inbox",
+														{ title: item.title },
+													)}
+													href={item.href}
+												>
+													{t("today.approvals.reviewInInbox", "Review in inbox")}
+												</Link>
+											</Button>
+										) : (
+											<Button
+												aria-label={t("today.approvals.approveLabel", "Approve {title}", {
+													title: item.title,
+												})}
+												disabled={decisionsOff}
+												onClick={() => void decideApproval(item, "approve")}
+												size="sm"
+												type="button"
+											>
+												{t("today.approvals.approve", "Approve")}
+											</Button>
+										)}
 									</div>
 								)}
 							</li>
@@ -201,6 +253,45 @@ export function TodayApprovalsPanel({
 					</p>
 				) : null}
 			</CardContent>
+			<ActionPanel
+				open={rejecting !== null}
+				onOpenChange={(open) => {
+					if (!open && actingApprovalId === null) closeRejectPanel();
+				}}
+			>
+				<ActionPanelContent size="compact">
+					<ActionPanelHeader>
+						<ActionPanelTitle>
+							{t("today.approvals.rejectPanel.title", "Reject request")}
+						</ActionPanelTitle>
+						<ActionPanelDescription>
+							{t(
+								"today.approvals.rejectPanel.description",
+								"The requester sees this reason with the rejection.",
+							)}
+						</ActionPanelDescription>
+					</ActionPanelHeader>
+					<ActionPanelBody className="space-y-4">
+						{rejecting ? (
+							<>
+								<div className="min-w-0 space-y-1 rounded-lg border bg-muted/20 p-3">
+									<p className="break-words font-medium text-sm">{rejecting.title}</p>
+									<p className="break-words text-muted-foreground text-sm">{rejecting.summary}</p>
+								</div>
+								<ApprovalReasonForm
+									key={rejecting.approvalId}
+									reason={rejectReason}
+									onReasonChange={setRejectReason}
+									onCancel={closeRejectPanel}
+									onConfirm={confirmRejection}
+									canReject={!error && !stale && !decided.has(rejecting.approvalId)}
+									isPending={actingApprovalId === rejecting.approvalId}
+								/>
+							</>
+						) : null}
+					</ActionPanelBody>
+				</ActionPanelContent>
+			</ActionPanel>
 		</Card>
 	);
 }
@@ -208,13 +299,14 @@ export function TodayApprovalsPanel({
 async function postApprovalDecision(
 	approvalId: string,
 	decision: ApprovalDecision,
+	reason?: string,
 ): Promise<ApprovalDecisionResponse> {
 	const response = await fetch(`/api/approvals/inbox/${approvalId}/${decision}`, {
 		method: "POST",
 		...(decision === "reject"
 			? {
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ reason: REJECT_REASON }),
+					body: JSON.stringify({ reason }),
 				}
 			: {}),
 	});

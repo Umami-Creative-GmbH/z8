@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { Activity, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TodayArrival } from "@/app/[locale]/(app)/today/today-types";
@@ -19,6 +19,7 @@ import {
 	getManagerDailyBriefingFromSources,
 	type ManagerDailyBriefingSources,
 } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
+import { briefingInboxApproval } from "@/lib/manager-daily-briefing/testing/briefing-approval.test-fixture";
 
 const h = vi.hoisted(() => ({
 	read: vi.fn(),
@@ -61,7 +62,7 @@ const context: OrganizationDisplayContext = {
 	organizationSettings: null,
 	updatedAt: Date.now(),
 };
-const title = (id: string) => `${id} needs Leave approval`;
+const title = (id: string) => `${id}: Leave`;
 const detail = (id: string) => `${id} synthetic private reason`;
 let client: QueryClient;
 let next: TodayArrival;
@@ -118,20 +119,20 @@ async function arrival(
 				kind: "approvals",
 				ids: input.employeeIds,
 				org: input.organizationId,
-				approver: input.approverId,
+				approver: input.viewer.id,
 				failed: failed.includes("approvals"),
 			});
 			fail("approvals");
 			// Deliberately oversupply: canonical builder must filter approvals.
-			return ["retired-report", "current-report", "added-report"].map((id) => ({
-				id: `approval-${id}`,
-				entityId: `entity-${id}`,
-				approvalType: "absence",
-				typeName: "Leave",
-				requester: { id, name: id },
-				priority: "normal" as const,
-				display: { summary: detail(id) },
-			}));
+			return ["retired-report", "current-report", "added-report"].map((id) =>
+				briefingInboxApproval({
+					id: `approval-${id}`,
+					entityId: `entity-${id}`,
+					title: "Leave",
+					requester: { id, name: id },
+					detail: detail(id),
+				}),
+			);
 		},
 		getOvertimeWarnings: async () => {
 			fail("overtime");
@@ -224,10 +225,27 @@ async function refresh(value: TodayArrival) {
 		JSON.stringify([scope.userId, scope.organizationId, "review-manager", "manager", null]),
 	);
 }
+// `hidden`: a reject panel left open after a refusal makes the list inert behind it.
 const approve = () =>
-	screen.getByRole("button", { name: `Approve ${title("current-report")}` }) as HTMLButtonElement;
+	screen.getByRole("button", {
+		name: `Approve ${title("current-report")}`,
+		hidden: true,
+	}) as HTMLButtonElement;
 const reject = () =>
-	screen.getByRole("button", { name: `Reject ${title("current-report")}` }) as HTMLButtonElement;
+	screen.getByRole("button", {
+		name: `Reject ${title("current-report")}`,
+		hidden: true,
+	}) as HTMLButtonElement;
+/** Reject asks for a reason first (#1980); a disabled Reject opens no panel and sends nothing. */
+function rejectWithReason() {
+	fireEvent.click(reject());
+	const panel = screen.queryByRole("dialog", { name: "Reject request" });
+	if (!panel) return;
+	fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+		target: { value: "Synthetic manager reason" },
+	});
+	fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+}
 beforeEach(() => {
 	vi.clearAllMocks();
 	sourceCalls = [];
@@ -362,7 +380,7 @@ describe("independent decision settlement priority", () => {
 		mount(await arrival(["current-report"]));
 		fireEvent.click(approve());
 		fireEvent.click(approve());
-		fireEvent.click(reject());
+		rejectWithReason();
 		expect(postCalls).toHaveLength(1);
 		expect(approve().disabled).toBe(true);
 		await act(async () =>
@@ -372,7 +390,7 @@ describe("independent decision settlement priority", () => {
 		expect(screen.getByRole("alert").textContent).toContain("Synthetic current refusal");
 		expect(h.router.refresh).not.toHaveBeenCalled();
 		expect(h.read).not.toHaveBeenCalled();
-		fireEvent.click(reject());
+		rejectWithReason();
 		await waitFor(() => expect(postCalls).toHaveLength(2));
 	});
 	it("control: current successful decision refreshes through both existing owners", async () => {
@@ -417,7 +435,7 @@ describe("independent decision settlement priority", () => {
 		view.activity("visible");
 		await waitFor(() => expect(approve()).toBeTruthy());
 		const returnedDisabled = approve().disabled;
-		fireEvent.click(reject());
+		rejectWithReason();
 		const observation = {
 			firstPostSettled: postSettled,
 			returnedApproveDisabled: returnedDisabled,
@@ -458,7 +476,7 @@ describe("independent decision settlement priority", () => {
 				view.activity("visible");
 			}
 			await waitFor(() => expect(approve().disabled).toBe(true));
-			fireEvent.click(reject());
+			rejectWithReason();
 			expect(postCalls).toHaveLength(1);
 			await act(async () => {
 				if (outcome === "rejection") post.reject(Error("Synthetic retired transport"));
@@ -476,7 +494,7 @@ describe("independent decision settlement priority", () => {
 			expect(h.toast.success).not.toHaveBeenCalled();
 			expect(h.toast.error).not.toHaveBeenCalled();
 			expect(h.router.refresh).not.toHaveBeenCalled();
-			fireEvent.click(reject());
+			rejectWithReason();
 			await waitFor(() => expect(postCalls).toHaveLength(2));
 			await screen.findByText("Synthetic current refusal");
 			expect(reject().disabled).toBe(false);

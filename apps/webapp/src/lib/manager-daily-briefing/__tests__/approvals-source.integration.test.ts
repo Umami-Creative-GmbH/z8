@@ -1,67 +1,108 @@
 /**
- * PostgreSQL contract (#663): the manager daily briefing lists the manager's
- * real pending approvals of every registered type, scoped to the requested
- * organization. It used to run the approval query without `DatabaseService`,
- * so every handler died and the briefing silently showed none.
+ * PostgreSQL contract: the manager daily briefing lists the viewer's pending approvals as their
+ * unified Approval inbox does (#1980), every inbox type included (#663 legacy kinds, canonical
+ * period submissions, ArbZG compliance exceptions), kept to the briefing's employees and the
+ * requested organization.
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { db } from "@/db";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
+import { type AppAbility, defineAbilityFor } from "@/lib/authorization/ability";
+import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
-	createLifecycleDatabaseFixture,
-	type LifecycleDatabaseFixture,
-	type SeededEmployee,
-} from "@/lib/employee-lifecycle/testing/database.test.fixture";
+	type ClosedMonthDatabaseFixture,
+	createClosedMonthDatabaseFixture,
+} from "@/lib/time-tracking/closed-months/testing/closed-month-database.test.fixture";
+import { submitPeriodSubmission } from "@/lib/time-tracking/period-submissions/submission-service";
 import { managerDailyBriefingDatabaseSources } from "../get-manager-daily-briefing";
 import type { BriefingApproval } from "../types";
 
+// The request's session principal; the briefing resolves the viewer's inbox scope from it.
+const session = vi.hoisted(() => ({ ability: null as AppAbility | null }));
+vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/auth-helpers")>()),
+	getAbility: async () => session.ability,
+}));
+
 const SUBMITTED_AT = new Date("2026-10-01T08:00:00Z");
+
+type Seeded = { employeeId: string; userId: string };
 
 function summarize(approvals: BriefingApproval[]) {
 	return approvals
-		.map(({ approvalType, entityId, requester }) => ({
-			approvalType,
-			entityId,
-			requesterId: requester.id,
-		}))
-		.sort((a, b) => a.approvalType.localeCompare(b.approvalType));
+		.map(({ type, entityId, requester }) => ({ type, entityId, requesterId: requester.id }))
+		.sort((a, b) => a.type.localeCompare(b.type));
 }
 
 describe("manager daily briefing approvals source", () => {
 	// The first call imports every approval handler.
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
-	let fixture: LifecycleDatabaseFixture;
-	let manager: SeededEmployee;
-	let requester: SeededEmployee;
-	let foreignRequester: SeededEmployee;
+	let fixture: ClosedMonthDatabaseFixture;
+	let organizationId: string;
+	let ownerUserId: string;
+	let manager: Seeded;
+	let admin: Seeded;
+	let requester: Seeded;
+	let unmanaged: Seeded;
 	let foreignOrganizationId: string;
+	let foreignRequester: Seeded;
 	const seeded = {
 		absenceId: "",
 		claimId: "",
+		periodSubmissionId: "",
+		exceptionId: "",
+		unmanagedAbsenceId: "",
 		foreignAbsenceId: "",
 	};
 
-	async function seedPendingAbsence(organizationId: string, requesterEmployeeId: string) {
+	function signIn(
+		viewer: Seeded,
+		access: { membership: "admin" | "member"; role: "admin" | "manager" | "employee" },
+		organization = organizationId,
+	) {
+		session.ability = defineAbilityFor({
+			userId: viewer.userId,
+			isPlatformAdmin: false,
+			activeOrganizationId: organization,
+			orgMembership: { organizationId: organization, role: access.membership, status: "active" },
+			employee: {
+				id: viewer.employeeId,
+				organizationId: organization,
+				role: access.role,
+				teamId: null,
+			},
+			permissions: { orgWide: null, byTeamId: new Map() },
+			managedEmployeeIds: [],
+			customRoles: [],
+		});
+	}
+
+	async function seedPendingAbsence(input: {
+		organizationId: string;
+		requesterEmployeeId: string;
+		approverId: string;
+	}) {
 		const categoryId = randomUUID();
 		const absenceId = randomUUID();
 		await fixture.pool.query(
 			`insert into absence_category (id, organization_id, type, name, requires_work_time,
 				requires_approval, counts_against_vacation, is_active, created_at, updated_at)
 			 values ($1, $2, 'vacation', 'Vacation', false, true, true, true, $3, $3)`,
-			[categoryId, organizationId, SUBMITTED_AT],
+			[categoryId, input.organizationId, SUBMITTED_AT],
 		);
 		await fixture.pool.query(
 			`insert into absence_entry (id, employee_id, category_id, start_date, end_date, status,
 				organization_id, created_at, updated_at)
 			 values ($1, $2, $3, '2026-10-12', '2026-10-12', 'pending', $4, $5, $5)`,
-			[absenceId, requesterEmployeeId, categoryId, organizationId, SUBMITTED_AT],
+			[absenceId, input.requesterEmployeeId, categoryId, input.organizationId, SUBMITTED_AT],
 		);
-		await seedPendingRequest(organizationId, "absence_entry", absenceId, requesterEmployeeId);
+		await seedPendingRequest({ ...input, entityType: "absence_entry", entityId: absenceId });
 		return absenceId;
 	}
 
-	async function seedSubmittedClaim(organizationId: string, requesterEmployeeId: string) {
+	async function seedSubmittedClaim() {
 		const claimId = randomUUID();
 		await fixture.pool.query(
 			`insert into travel_expense_claim (id, organization_id, employee_id, approver_id, type, status,
@@ -72,97 +113,198 @@ describe("manager daily briefing approvals source", () => {
 			[
 				claimId,
 				organizationId,
-				requesterEmployeeId,
+				requester.employeeId,
 				manager.employeeId,
 				SUBMITTED_AT,
 				requester.userId,
 			],
 		);
-		await seedPendingRequest(organizationId, "travel_expense_claim", claimId, requesterEmployeeId);
+		await seedPendingRequest({
+			organizationId,
+			requesterEmployeeId: requester.employeeId,
+			approverId: manager.employeeId,
+			entityType: "travel_expense_claim",
+			entityId: claimId,
+		});
 		return claimId;
 	}
 
-	async function seedPendingRequest(
-		organizationId: string,
-		entityType: ApprovalType,
-		entityId: string,
-		requesterEmployeeId: string,
-	) {
+	async function seedPendingRequest(input: {
+		organizationId: string;
+		requesterEmployeeId: string;
+		approverId: string;
+		entityType: ApprovalType;
+		entityId: string;
+	}) {
 		await fixture.pool.query(
 			`insert into approval_request (id, organization_id, entity_type, entity_id, requested_by,
 				approver_id, status, created_at, updated_at)
 			 values ($1, $2, $3, $4, $5, $6, 'pending', $7, $7)`,
 			[
 				randomUUID(),
-				organizationId,
-				entityType,
-				entityId,
-				requesterEmployeeId,
-				manager.employeeId,
+				input.organizationId,
+				input.entityType,
+				input.entityId,
+				input.requesterEmployeeId,
+				input.approverId,
 				SUBMITTED_AT,
 			],
 		);
 	}
 
-	beforeAll(async () => {
-		fixture = await createLifecycleDatabaseFixture();
-		manager = await fixture.seedEmployee();
-		requester = await fixture.seedEmployee();
+	/** A canonical-only period submission of the requester, routed to their manager. */
+	async function seedPeriodSubmission() {
 		await fixture.pool.query(
-			`update employee set role = 'manager' where organization_id = $1 and id = $2`,
-			[fixture.organizationId, manager.employeeId],
+			`insert into period_submission_cadence_change
+			 (id, organization_id, cadence, week_start_day, changed_at)
+			 values ($1, $2, 'weekly', 'monday', '2026-01-01T00:00:00Z')`,
+			[randomUUID(), organizationId],
 		);
-		foreignOrganizationId = await fixture.createOrganization();
-		foreignRequester = await fixture.seedEmployee({ organizationId: foreignOrganizationId });
+		await fixture.work({
+			organizationId,
+			employeeId: requester.employeeId,
+			userId: requester.userId,
+			start: "2026-03-03T07:00:00Z",
+			end: "2026-03-03T15:15:00Z",
+		});
+		const submitted = await submitPeriodSubmission(
+			{ organizationId, userId: requester.userId, periodStartDate: "2026-03-02" },
+			{ database: db, clock: { nowInstant: () => parseInstant("2026-03-08T12:00:00Z") } },
+		);
+		if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+		const { rows } = await fixture.pool.query<{ id: string }>(
+			`select id from period_submission where organization_id = $1 and employee_id = $2`,
+			[organizationId, requester.employeeId],
+		);
+		return rows[0]?.id ?? "";
+	}
 
-		seeded.absenceId = await seedPendingAbsence(fixture.organizationId, requester.employeeId);
-		seeded.claimId = await seedSubmittedClaim(fixture.organizationId, requester.employeeId);
-		// Same approver id, other tenant: must never reach this organization's briefing.
-		seeded.foreignAbsenceId = await seedPendingAbsence(
-			foreignOrganizationId,
-			foreignRequester.employeeId,
+	/** A pending ArbZG exception of the requester, valid for the day around now. */
+	async function seedComplianceException() {
+		const id = randomUUID();
+		const now = systemClock.nowInstant();
+		await fixture.pool.query(
+			`insert into compliance_exception
+			 (id, organization_id, employee_id, exception_type, status, reason, planned_duration_minutes,
+			  valid_from, valid_until, created_at, created_by, updated_at)
+			 values ($1, $2, $3, 'rest_period', 'pending', 'Customer go-live', 90, $4, $5, $4, $6, $4)`,
+			[
+				id,
+				organizationId,
+				requester.employeeId,
+				now.subtract({ hours: 1 }).toString(),
+				now.add({ hours: 23 }).toString(),
+				ownerUserId,
+			],
 		);
+		return id;
+	}
+
+	beforeAll(async () => {
+		fixture = await createClosedMonthDatabaseFixture();
+		const organization = await fixture.organization("Europe/Berlin");
+		organizationId = organization.organizationId;
+		ownerUserId = organization.ownerUserId;
+		manager = await fixture.employee({ organizationId });
+		admin = await fixture.employee({ organizationId });
+		requester = await fixture.employee({ organizationId });
+		unmanaged = await fixture.employee({ organizationId });
+		await fixture.pool.query(`update employee set role = 'manager' where id = $1`, [
+			manager.employeeId,
+		]);
+		await fixture.pool.query(`update employee set role = 'admin' where id = $1`, [
+			admin.employeeId,
+		]);
+		await fixture.pool.query(
+			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+			 values ($1, $2, $3, true, $4)`,
+			[randomUUID(), requester.employeeId, manager.employeeId, ownerUserId],
+		);
+		foreignOrganizationId = (await fixture.organization("Europe/Berlin")).organizationId;
+		foreignRequester = await fixture.employee({ organizationId: foreignOrganizationId });
+
+		seeded.absenceId = await seedPendingAbsence({
+			organizationId,
+			requesterEmployeeId: requester.employeeId,
+			approverId: manager.employeeId,
+		});
+		seeded.claimId = await seedSubmittedClaim();
+		seeded.periodSubmissionId = await seedPeriodSubmission();
+		seeded.exceptionId = await seedComplianceException();
+		// Assigned to the manager, but its requester is outside the briefing's employees.
+		seeded.unmanagedAbsenceId = await seedPendingAbsence({
+			organizationId,
+			requesterEmployeeId: unmanaged.employeeId,
+			approverId: manager.employeeId,
+		});
+		// Same approver id, other tenant: must never reach this organization's briefing.
+		seeded.foreignAbsenceId = await seedPendingAbsence({
+			organizationId: foreignOrganizationId,
+			requesterEmployeeId: foreignRequester.employeeId,
+			approverId: manager.employeeId,
+		});
 	});
 
 	afterAll(async () => {
+		session.ability = null;
 		await fixture?.close();
 	});
 
-	it("lists pending approvals of several types for the manager's organization only", async () => {
+	it("lists the manager's unified inbox for the briefing's employees: every type, this organization only", async () => {
+		signIn(manager, { membership: "member", role: "manager" });
+
 		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
-			organizationId: fixture.organizationId,
-			approverId: manager.employeeId,
+			organizationId,
 			employeeIds: [requester.employeeId, foreignRequester.employeeId],
+			viewer: { id: manager.employeeId, role: "manager" },
 		});
 
 		expect(summarize(approvals)).toEqual([
+			{ type: "absence_entry", entityId: seeded.absenceId, requesterId: requester.employeeId },
 			{
-				approvalType: "absence_entry",
-				entityId: seeded.absenceId,
+				type: "compliance_exception",
+				entityId: seeded.exceptionId,
 				requesterId: requester.employeeId,
 			},
 			{
-				approvalType: "travel_expense_claim",
-				entityId: seeded.claimId,
+				type: "period_submission",
+				entityId: seeded.periodSubmissionId,
 				requesterId: requester.employeeId,
 			},
+			{ type: "travel_expense_claim", entityId: seeded.claimId, requesterId: requester.employeeId },
+		]);
+		// A compliance exception keeps the inbox's deliberate single review.
+		expect(approvals.find((approval) => approval.type === "compliance_exception")).toMatchObject({
+			capabilities: { canBulkApprove: false, singleDecisionOnly: true, requiresRejectReason: true },
+		});
+	});
+
+	it("reads an admin's organization-wide inbox, kept to the briefing's employees", async () => {
+		signIn(admin, { membership: "admin", role: "admin" });
+
+		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: admin.employeeId, role: "admin" },
+		});
+
+		expect(summarize(approvals).map(({ type, entityId }) => ({ type, entityId }))).toEqual([
+			{ type: "absence_entry", entityId: seeded.absenceId },
+			{ type: "compliance_exception", entityId: seeded.exceptionId },
+			{ type: "period_submission", entityId: seeded.periodSubmissionId },
+			{ type: "travel_expense_claim", entityId: seeded.claimId },
 		]);
 	});
 
-	it("scopes org-wide briefings to the requested organization", async () => {
+	it("lists nothing for a viewer the Approval inbox refuses", async () => {
+		signIn(unmanaged, { membership: "member", role: "employee" });
+
 		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
-			organizationId: foreignOrganizationId,
-			approverId: fixture.ownerEmployeeId,
-			employeeIds: [requester.employeeId, foreignRequester.employeeId],
-			includeAllApprovers: true,
+			organizationId,
+			employeeIds: [requester.employeeId, unmanaged.employeeId],
+			viewer: { id: unmanaged.employeeId, role: "employee" },
 		});
 
-		expect(summarize(approvals)).toEqual([
-			{
-				approvalType: "absence_entry",
-				entityId: seeded.foreignAbsenceId,
-				requesterId: foreignRequester.employeeId,
-			},
-		]);
+		expect(approvals).toEqual([]);
 	});
 });
