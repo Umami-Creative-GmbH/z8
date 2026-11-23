@@ -308,6 +308,33 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		});
 	});
 
+	it("prices each day at the terms in force and covers only months with Minijob days", async () => {
+		const { org, owner, worker } = await setup();
+		// 10 € until 15 March, 20 € from 16 March, a regular job from 15 April.
+		await mj.terms(worker, owner, { from: "2026-01-01", until: "2026-03-16", hourlyRate: 10 });
+		await mj.terms(worker, owner, { from: "2026-03-16", until: "2026-04-15", hourlyRate: 20 });
+		await mj.terms(worker, owner, { from: "2026-04-15", hourlyRate: 30, profile: "regular" });
+		for (const date of ["2026-03-15", "2026-03-16", "2026-04-14", "2026-04-15", "2026-05-04"]) {
+			await mj.work(org, worker, date, 60);
+		}
+
+		const { employees } = await evaluate(org, [worker.employeeId], {
+			from: "2026-03",
+			until: "2026-06",
+		});
+		const months = (employees.get(worker.employeeId) ?? [])
+			.filter((m) => m.month >= "2026-02")
+			.map((m) => [m.month, m.isMinijob, m.earnedCents, m.plannedCents]);
+
+		expect(months).toEqual([
+			["2026-02", true, 0, 0],
+			["2026-03", true, 3_000, 0],
+			// 14 April at 20 €; from the 15th the work is a regular job's.
+			["2026-04", true, 2_000, 0],
+			["2026-05", false, 0, 0],
+		]);
+	});
+
 	it("attributes work to the organization-local month it starts in", async () => {
 		const { org, owner, worker } = await setup();
 		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 15 });

@@ -12,8 +12,7 @@
  * Work and shifts count on the organization-local day they start, as in schedule compliance.
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
-import { employeeEmploymentHistory, employeeStatutoryOffset, shift, workPeriod } from "@/db/schema";
-import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import { employeeStatutoryOffset, shift, workPeriod } from "@/db/schema";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
@@ -53,6 +52,7 @@ import {
 	minijobFindingsOf,
 	monthsBetween,
 } from "./minijob-months";
+import { isMinijobDay, loadMinijobCandidates, loadMinijobTerms } from "./minijob-terms";
 
 type Reader = Pick<DatabaseClient, "select">;
 
@@ -90,56 +90,6 @@ export interface MinijobEvaluation {
 /** A judged month needs exceedances up to 11 months before each of the 12 months it sums. */
 const LOAD_LOOKBACK_MONTHS = 2 * MINIJOB_LOOKBACK_MONTHS;
 
-/** Stored terms dates may stand for a calendar date a day away from their UTC date. */
-const TERMS_MARGIN_DAYS = 2;
-
-function daysBetween(from: string, until: string): string[] {
-	const days: string[] = [];
-	const end = parsePlainDate(until);
-	for (let day = parsePlainDate(from); day.until(end).days > 0; day = day.add({ days: 1 })) {
-		days.push(day.toString());
-	}
-	return days;
-}
-
-function utcDate(day: string): Date {
-	return new Date(`${day}T00:00:00.000Z`);
-}
-
-/** Employees with confirmed Minijob terms near the range: everyone else is out of scope. */
-async function minijobCandidates(
-	db: Reader,
-	input: { organizationId: string; employeeIds: readonly string[]; from: string; until: string },
-): Promise<string[]> {
-	const rows = await db
-		.select({ employeeId: employeeEmploymentHistory.employeeId })
-		.from(employeeEmploymentHistory)
-		.where(
-			and(
-				eq(employeeEmploymentHistory.organizationId, input.organizationId),
-				inArray(employeeEmploymentHistory.employeeId, [...input.employeeIds]),
-				eq(employeeEmploymentHistory.reviewState, "confirmed"),
-				eq(employeeEmploymentHistory.employmentProfile, "minijob"),
-				lt(
-					employeeEmploymentHistory.validFrom,
-					utcDate(parsePlainDate(input.until).add({ days: TERMS_MARGIN_DAYS }).toString()),
-				),
-				or(
-					isNull(employeeEmploymentHistory.validUntil),
-					gt(
-						employeeEmploymentHistory.validUntil,
-						utcDate(parsePlainDate(input.from).subtract({ days: TERMS_MARGIN_DAYS }).toString()),
-					),
-				),
-			),
-		);
-	return [...new Set(rows.map((row) => row.employeeId))];
-}
-
-function isMinijobDay(contract: EffectiveContractOnDay | undefined): boolean {
-	return contract?.employmentProfile === "minijob" && contract.isEmployedOnDay;
-}
-
 /**
  * Whether work belongs to a shift: it matches the shift (`workMatchesShift`) or overlaps it — an
  * open clock-in up to now. One clock-in over back-to-back shifts belongs to each of them, so
@@ -173,7 +123,7 @@ export async function evaluateMinijobEarnings(
 	const { timezone } = input;
 
 	// Only employees that belong to this organization: the candidate query is organization-scoped.
-	const employeeIds = await minijobCandidates(db, {
+	const employeeIds = await loadMinijobCandidates(db, {
 		organizationId: input.organizationId,
 		employeeIds: input.employeeIds,
 		from: rangeFrom,
@@ -181,15 +131,14 @@ export async function evaluateMinijobEarnings(
 	});
 	if (employeeIds.length === 0) return { findings: [], employees: new Map() };
 
-	const days = daysBetween(rangeFrom, rangeUntil);
-	const contracts = await loadEffectiveContractsBatch(db, {
+	const terms = await loadMinijobTerms(db, {
 		organizationId: input.organizationId,
 		employeeIds,
-		dates: days,
-		timezoneOverride: timezone,
-		organizationTimezone: timezone,
+		timezone,
+		fromMonth: firstMonth,
+		untilMonth: input.months.until,
 	});
-	const contractOn = (employeeId: string, date: string) => contracts.get(employeeId)?.get(date);
+	const { contractOn } = terms;
 
 	const rangeStart = localDayRange(rangeFrom, timezone).start;
 	const rangeEnd = localDayRange(rangeUntil, timezone).start;
@@ -388,13 +337,11 @@ export async function evaluateMinijobEarnings(
 	const allMonths = monthsBetween(firstMonth, input.months.until);
 	const computed = new Map(
 		employeeIds.map((employeeId) => {
-			const days = contracts.get(employeeId);
 			const facts = allMonths.map((month): MinijobMonthFacts => {
 				const first = firstDayOf(month);
-				const monthDays = daysBetween(first, firstDayOf(addMonths(month, 1)));
 				return {
 					month,
-					isMinijob: monthDays.some((day) => isMinijobDay(days?.get(day))),
+					isMinijob: terms.isMinijobMonth(employeeId, month),
 					capCents: thresholds.valueOn("de_minijob_monthly_limit_cents", first),
 					unforeseeableMultiplier: thresholds.valueOn("de_minijob_unforeseeable_multiplier", first),
 					maxUnforeseeableMonths: thresholds.valueOn(
