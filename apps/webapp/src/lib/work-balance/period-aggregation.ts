@@ -1,18 +1,19 @@
 import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { collectTrustBasedBalanceDates } from "@/lib/calendar/trust-based-dates";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { EngagementStints } from "@/lib/engagement/employee-time";
 import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
-import { allocateEmployeeMinutes } from "@/lib/payroll-allocation/employee-minutes";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import type { WorkBalanceDbClient } from "./db-client";
 import { getYearPeriodForDate } from "./periods";
-import { sumTrackedWorkMinutes, sumTrackedWorkMinutesExcludingDates } from "./tracked-work";
+import {
+	sumTrackedWorkMinutes,
+	sumTrackedWorkMinutesExcludingDates,
+	sumUntrackedEmployeeWorkMinutes,
+} from "./tracked-work";
 
 export type EmployeeWorkBalancePeriodType = "month" | "year";
 
@@ -150,43 +151,12 @@ export async function computeEmployeePeriodBalance(input: {
 				: await sumTrackedWorkMinutes(dbClient, windowInput, stints);
 	} else if (hasContractorStint(stints)) {
 		// Without tracking, work counts whole on its start day, as below; only its employee time.
-		const rows = await dbClient
-			.select({
-				startTime: workPeriod.startTime,
-				endTime: workPeriod.endTime,
-				durationMinutes: workPeriod.durationMinutes,
-			})
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.employeeId, input.employeeId),
-					eq(workPeriod.organizationId, input.organizationId),
-					isNotNull(workPeriod.endTime),
-					isNotNull(workPeriod.durationMinutes),
-					gte(workPeriod.startTime, startDate),
-					lte(workPeriod.startTime, endDate),
-				),
-			);
-		actualMinutes = rows.reduce((total, row) => {
-			const dayKey = DateTime.fromJSDate(row.startTime, { zone: "utc" })
-				.setZone(timezone)
-				.toISODate();
-			if (!row.endTime || (dayKey && employeeDayExclusions.has(dayKey))) return total;
-			const startAt = instantFromDate(row.startTime);
-			const endAt = instantFromDate(row.endTime);
-			if (Temporal.Instant.compare(endAt, startAt) <= 0) return total;
-			const allocation = allocateEmployeeMinutes(
-				{ startAt, endAt, storedMinutes: row.durationMinutes },
-				{ start: startAt, endExclusive: endAt },
-				stints,
-			);
-			if (allocation.status === "blocked") {
-				throw new Error(
-					"Recorded work crossing an engagement change needs interval reconciliation.",
-				);
-			}
-			return allocation.status === "allocated" ? total + allocation.minutes : total;
-		}, 0);
+		actualMinutes = await sumUntrackedEmployeeWorkMinutes(
+			dbClient,
+			{ ...input, startDate, endDate, timezone },
+			employeeDayExclusions,
+			stints,
+		);
 	} else if (trustBasedDates.size > 0) {
 		const rows = await dbClient
 			.select({

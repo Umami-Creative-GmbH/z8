@@ -1,4 +1,4 @@
-import { and, eq, gt, isNotNull, lt } from "drizzle-orm";
+import { and, eq, gt, gte, isNotNull, lt, lte } from "drizzle-orm";
 import { workPeriod } from "@/db/schema";
 import {
 	compareInstants,
@@ -66,6 +66,60 @@ export async function sumTrackedWorkMinutesExcludingDates(
 		if (!excludedDates.has(dateKey)) {
 			total += minutes;
 		}
+	}
+	return total;
+}
+
+/**
+ * Work balance without a tracking start, for someone who ever was an External Contractor
+ * (#1935): like the legacy reading, each completed work period counts whole on the
+ * employee-local day it started (work starting in `[startDate, endDate]`), skipping
+ * `excludedDates`; but only its employee time, cut at a conversion instant as payroll cuts it.
+ */
+export async function sumUntrackedEmployeeWorkMinutes(
+	client: Pick<WorkBalanceDbClient, "select">,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		startDate: Date;
+		endDate: Date;
+		timezone: string;
+	},
+	excludedDates: ReadonlySet<string>,
+	stints: EngagementStints,
+): Promise<number> {
+	const rows = await client
+		.select({
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			durationMinutes: workPeriod.durationMinutes,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.employeeId, input.employeeId),
+				eq(workPeriod.organizationId, input.organizationId),
+				isNotNull(workPeriod.endTime),
+				isNotNull(workPeriod.durationMinutes),
+				gte(workPeriod.startTime, input.startDate),
+				lte(workPeriod.startTime, input.endDate),
+			),
+		);
+	let total = 0;
+	for (const row of rows) {
+		if (!row.endTime) continue;
+		const startAt = instantFromDate(row.startTime);
+		const endAt = instantFromDate(row.endTime);
+		if (excludedDates.has(plainDateAt(startAt, input.timezone).toString())) continue;
+		if (compareInstants(endAt, startAt) <= 0) continue;
+		const allocation = allocateEmployeeMinutes(
+			{ startAt, endAt, storedMinutes: row.durationMinutes },
+			{ start: startAt, endExclusive: endAt },
+			stints,
+		);
+		if (allocation.status === "blocked")
+			throw new Error("Recorded work crossing an engagement change needs interval reconciliation.");
+		if (allocation.status === "allocated") total += allocation.minutes;
 	}
 	return total;
 }
