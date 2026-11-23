@@ -121,7 +121,7 @@ export const DEFAULT_PROJECT_REPORT_EXPORT_LABELS: ProjectReportExportLabels = {
 		"Revenue uses the rates in effect when the report was generated. Unpriced work has no rate and adds no revenue.",
 	snapshotRatesNote: "Revenue uses the rates in effect when this snapshot was taken.",
 	costUnknownNote:
-		"Cost unknown: some of the work has no cost rate or contractor rate, so its cost and margin are not shown.",
+		"Cost unknown: some of the work has no usable cost rate or contractor rate, so its cost and margin are not shown.",
 	invoicedHours: "Invoiced hours",
 	invoicedRevenue: "Invoiced revenue",
 	uninvoicedHours: "Un-invoiced hours",
