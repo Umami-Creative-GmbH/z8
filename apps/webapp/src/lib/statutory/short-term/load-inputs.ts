@@ -14,7 +14,11 @@ import {
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
-import { type ShiftInterval, shiftInterval } from "@/lib/scheduling/shift-occasion";
+import {
+	type ShiftInterval,
+	shiftInterval,
+	workMatchesShift,
+} from "@/lib/scheduling/shift-occasion";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadStatutoryThresholds, type StatutoryThresholdTable } from "../thresholds";
 
@@ -29,11 +33,17 @@ export const SHORT_TERM_THRESHOLD_KEYS = [
 	"de_minijob_monthly_limit_cents",
 ] as const;
 
-/** Completed work on a short-term day, bucketed on its start day. */
+/** Completed work or an open clock-in on a short-term day, bucketed on its start day. */
 export interface ShortTermWorkItem {
 	readonly workPeriodId: string;
 	readonly date: string;
+	/** Recorded minutes; for an open clock-in, whole minutes up to the evaluation instant. */
 	readonly minutes: number;
+	/**
+	 * For an open clock-in: the running shift it belongs to (whose rest is planned work), or
+	 * `unplanned` when it belongs to none. Null for completed work.
+	 */
+	readonly inProgress: { readonly shiftId: string } | "unplanned" | null;
 	/** Confirmed hourly wage on that day in minor units; null for fixed terms or a missing wage. */
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
@@ -41,17 +51,24 @@ export interface ShortTermWorkItem {
 	readonly employmentPeriodId: string | null;
 }
 
-/** A planned shift (persisted from today on, or proposed by Staffing) on a short-term day. */
+/**
+ * Planned work on a short-term day: a persisted shift that has not ended (a running one until its
+ * work is recorded), or Staffing's proposed shift.
+ */
 export interface ShortTermPlanItem {
 	/** Null for Staffing's proposed shift. */
 	readonly shiftId: string | null;
 	readonly date: string;
 	readonly startTime: string;
 	readonly endTime: string;
-	/** Real length between the start and end instants in the organization's timezone. */
+	/**
+	 * Real length between the start and end instants in the organization's timezone; for a running
+	 * shift with an open clock-in, only its rest (whole minutes, rounded up) from the evaluation
+	 * instant.
+	 */
 	readonly minutes: number;
-	/** Whether the shift had started at the evaluation instant. */
-	readonly started: boolean;
+	/** Whether only the rest of a running shift counts, its open clock-in the time so far. */
+	readonly inProgress: boolean;
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
 	readonly employmentPeriodId: string | null;
@@ -202,7 +219,7 @@ export async function loadShortTermInputs(
 		readonly timezone: string;
 		readonly employeeIds: readonly string[];
 		readonly years: readonly number[];
-		/** Shifts from this instant's organization-local day on are planned work. */
+		/** Shifts that have not ended by this instant are planned work; open clock-ins run to it. */
 		readonly now: Instant;
 		readonly scopeDates?: readonly string[];
 		readonly proposedShifts: readonly StatutoryProposedShift[];
@@ -211,7 +228,6 @@ export async function loadShortTermInputs(
 ): Promise<ShortTermInputs> {
 	const firstYear = Math.min(...input.years);
 	const lastYear = Math.max(...input.years);
-	const today = plainDateAt(input.now, input.timezone).toString();
 	const from = `${firstYear}-01-01`;
 	const until = `${lastYear + 1}-01-01`;
 	const thresholds = await loadStatutoryThresholds(db, {
@@ -272,13 +288,18 @@ export async function loadShortTermInputs(
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
+			isActive: workPeriod.isActive,
 		})
 		.from(workPeriod)
 		.where(
 			and(
 				eq(workPeriod.organizationId, input.organizationId),
 				inArray(workPeriod.employeeId, candidates),
-				completedWorkPeriodCondition(),
+				or(
+					completedWorkPeriodCondition(),
+					// Open clock-ins: running work counts up to now.
+					and(eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)),
+				),
 				gte(workPeriod.startTime, yearStart),
 				lt(workPeriod.startTime, yearEnd),
 			),
@@ -327,58 +348,109 @@ export async function loadShortTermInputs(
 		);
 
 	const inYears = (date: string) => yearOf(date) >= firstYear && yearOf(date) <= lastYear;
-	const workByEmployee = new Map<string, { id: string; date: string; minutes: number }[]>();
+	type BucketedWork = Pick<ShortTermWorkItem, "date" | "minutes"> & {
+		readonly id: string;
+		readonly start: Instant;
+		/** Null while the clock-in is open. */
+		readonly end: Instant | null;
+	};
+	const workByEmployee = new Map<string, BucketedWork[]>();
 	for (const row of workRows) {
 		const start = instantFromDate(row.startTime);
-		const minutes =
-			row.durationMinutes ??
-			(row.endTime ? Math.round((row.endTime.getTime() - row.startTime.getTime()) / 60_000) : 0);
-		const list = workByEmployee.get(row.employeeId) ?? [];
-		list.push({ id: row.id, date: plainDateAt(start, input.timezone).toString(), minutes });
-		workByEmployee.set(row.employeeId, list);
+		const open = row.isActive && row.endTime === null;
+		const end = open
+			? null
+			: row.endTime
+				? instantFromDate(row.endTime)
+				: start.add({ minutes: row.durationMinutes ?? 0 });
+		const item: BucketedWork = {
+			id: row.id,
+			date: plainDateAt(start, input.timezone).toString(),
+			start,
+			end,
+			// Whole minutes so far: with the rest of its shift rounded up, the sum stays put.
+			minutes: end
+				? (row.durationMinutes ?? Math.round(start.until(end).total("minutes")))
+				: Math.max(0, Math.floor(start.until(input.now).total("minutes"))),
+		};
+		const list = workByEmployee.get(row.employeeId);
+		if (list) list.push(item);
+		else workByEmployee.set(row.employeeId, [item]);
 	}
 	type PlannedShift = Pick<
 		ShortTermPlanItem,
-		"shiftId" | "date" | "startTime" | "endTime" | "minutes" | "started"
+		"shiftId" | "date" | "startTime" | "endTime" | "minutes" | "inProgress"
 	>;
 	const plannedByEmployee = new Map<string, PlannedShift[]>();
-	const addPlanned = (
-		employeeId: string,
-		item: Pick<ShortTermPlanItem, "shiftId" | "date" | "startTime" | "endTime">,
-	) => {
-		if (!inYears(item.date)) return;
-		const interval = shiftInterval(
-			{ date: parsePlainDate(item.date), startTime: item.startTime, endTime: item.endTime },
-			input.timezone,
-		);
-		const planned = {
-			...item,
-			minutes: shiftMinutes(interval),
-			started: compareInstants(interval.start, input.now) <= 0,
-		};
+	/** Open clock-in → the running shift whose rest is counted with it. */
+	const runningShiftOf = new Map<string, string>();
+	const addPlanned = (employeeId: string, item: PlannedShift) => {
 		const list = plannedByEmployee.get(employeeId);
-		if (list) list.push(planned);
-		else plannedByEmployee.set(employeeId, [planned]);
+		if (list) list.push(item);
+		else plannedByEmployee.set(employeeId, [item]);
 	};
 	for (const row of shiftRows) {
 		if (!row.employeeId) continue;
-		const date = shiftCalendarDate(row.date, input.timezone).toString();
-		// Past shifts are not planned work any more: completed work speaks for those days.
-		if (date < today) continue;
-		addPlanned(row.employeeId, {
+		const date = shiftCalendarDate(row.date, input.timezone);
+		if (!inYears(date.toString())) continue;
+		const interval = shiftInterval(
+			{ date, startTime: row.startTime, endTime: row.endTime },
+			input.timezone,
+		);
+		const item = {
 			shiftId: row.id,
-			date,
+			date: date.toString(),
 			startTime: row.startTime,
 			endTime: row.endTime,
-		});
+		};
+		if (compareInstants(interval.start, input.now) > 0) {
+			addPlanned(row.employeeId, { ...item, minutes: shiftMinutes(interval), inProgress: false });
+			continue;
+		}
+		// Over: what was worked is recorded work.
+		if (compareInstants(interval.end, input.now) <= 0) continue;
+		// Running: its open clock-in counts up to now and the shift for its rest. Once that work
+		// has closed, the recorded work replaces it; until anyone clocks in, it counts in full.
+		const matched = (workByEmployee.get(row.employeeId) ?? []).filter((work) =>
+			workMatchesShift(interval, work),
+		);
+		const open = matched.filter((work) => work.end === null);
+		if (open.length > 0) {
+			for (const work of open) {
+				if (!runningShiftOf.has(work.id)) runningShiftOf.set(work.id, row.id);
+			}
+			addPlanned(row.employeeId, {
+				...item,
+				minutes: Math.ceil(input.now.until(interval.end).total("minutes")),
+				inProgress: true,
+			});
+		} else if (matched.length === 0) {
+			addPlanned(row.employeeId, { ...item, minutes: shiftMinutes(interval), inProgress: false });
+		}
 	}
+	const inProgressOf = (work: BucketedWork): ShortTermWorkItem["inProgress"] => {
+		if (work.end) return null;
+		const shiftId = runningShiftOf.get(work.id);
+		return shiftId ? { shiftId } : "unplanned";
+	};
+	const inScope = new Set(candidates);
 	for (const proposed of input.proposedShifts) {
-		if (!candidates.includes(proposed.employeeId)) continue;
+		if (!inScope.has(proposed.employeeId) || !inYears(proposed.date)) continue;
+		const interval = shiftInterval(
+			{
+				date: parsePlainDate(proposed.date),
+				startTime: proposed.startTime,
+				endTime: proposed.endTime,
+			},
+			input.timezone,
+		);
 		addPlanned(proposed.employeeId, {
 			shiftId: null,
 			date: proposed.date,
 			startTime: proposed.startTime,
 			endTime: proposed.endTime,
+			minutes: shiftMinutes(interval),
+			inProgress: false,
 		});
 	}
 
@@ -430,6 +502,7 @@ export async function loadShortTermInputs(
 				workPeriodId: item.id,
 				date: item.date,
 				minutes: item.minutes,
+				inProgress: inProgressOf(item),
 				hourlyRateCents: centsOf(contract.hourlyRate),
 				currency: contract.currency,
 				employmentPeriodId: contract.employmentPeriodId,

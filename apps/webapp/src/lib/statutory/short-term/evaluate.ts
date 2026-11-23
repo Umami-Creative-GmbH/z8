@@ -7,19 +7,23 @@
  * verification in every month whose earnings exceed the Minijob cap (`../CONTEXT.md` has the terms).
  *
  * Counting rules:
- * - A working day is an organization-local calendar day with completed work (bucketed on its start
- *   day, so a night shift is one day) or, from today on, a planned shift (draft or published) or
- *   Staffing's proposed shift; only days under short-term terms count, each once.
+ * - A working day is an organization-local calendar day with completed work or an open clock-in
+ *   (bucketed on its start day, so a night shift is one day), a shift (draft or published) that
+ *   has not ended, or Staffing's proposed shift; only days under short-term terms count, each once.
+ * - A running shift counts in full until someone clocks in for it; with an open clock-in matched
+ *   to it (`workMatchesShift`), the clock-in counts up to now and the shift for its rest; once
+ *   its work is closed, or the shift has ended, recorded work replaces it.
  * - A stint is a run of counted days no more than 14 days apart within one employment period.
  * - The 3-month limit applies when every short-term terms version of the year plans 5 or more work
- *   days a week on average over its schedule cycle, and no prior employer recorded working days;
- *   otherwise the 70-working-day limit applies to every stint's working days. The 3-month limit is
- *   counted in calendar days: one stint in time months from its first day, several stints (prior
- *   employers' months included) added up to 90, a full calendar month as 30 (`judge.ts`).
- * - Monthly earnings = completed work × the confirmed hourly wage of its day, plus planned shifts ×
- *   the wage of their day, priced by their real length in the organization's timezone. A shift that
- *   has started on a day with completed work is represented by that work. Above the Minijob cap of
- *   the month they prompt for a Berufsmäßigkeit verification; Z8 never decides social-security
+ *   days a week on average over its schedule cycle, terms without a planned week (published shifts,
+ *   on call, weekly hours alone) show 5 or more counted days in the median full week, and no prior
+ *   employer recorded working days; otherwise the 70-working-day limit applies to every stint's
+ *   working days. The 3-month limit is counted in calendar days: one stint in time months from its
+ *   first day, several stints (prior employers' months included) added up to 90, a full calendar
+ *   month as 30 (`judge.ts`).
+ * - Monthly earnings = work × the confirmed hourly wage of its day, plus planned shifts × the wage
+ *   of their day, priced by their real length in the organization's timezone. Above the Minijob cap
+ *   of the month they prompt for a Berufsmäßigkeit verification; Z8 never decides social-security
  *   status.
  */
 import type { Instant } from "@/lib/datetime/temporal-core";
@@ -34,7 +38,7 @@ export interface ShortTermEvaluationRequest {
 	readonly timezone: string;
 	readonly employeeIds: readonly string[];
 	readonly years: readonly number[];
-	/** Shifts on or after this instant's local day are planned work; earlier ones are not. */
+	/** Shifts that have not ended by this instant are planned work; open clock-ins run to it. */
 	readonly now: Instant;
 	/** Only judge employees whose terms are short-term on one of these days (`YYYY-MM-DD`). */
 	readonly scopeDates?: readonly string[];

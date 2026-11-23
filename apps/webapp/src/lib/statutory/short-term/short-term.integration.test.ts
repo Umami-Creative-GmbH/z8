@@ -513,6 +513,49 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			]);
 		});
 
+		it("keeps a second shift of a day with completed work while its clock-in is open", async () => {
+			const { org, worker } = await earner("a", 7);
+			// 15:00 in Berlin: the morning shift is worked, the afternoon one runs since 14:00.
+			const now = Temporal.Instant.from("2026-05-20T13:00:00Z");
+			await st.shift(org, worker, "2026-05-20", "08:00", "10:00");
+			await st.work(org, worker, "2026-05-20", "08:00", "10:00");
+			await st.shift(org, worker, "2026-05-20", "14:00", "18:00");
+			await st.openWork(org, worker, "2026-05-20", "14:00");
+
+			const [evaluation] = await evaluate(org, [worker.employeeId], { now });
+
+			// 560 EUR before + 40 EUR this morning + 20 EUR so far, and 60 EUR for the rest.
+			expect(evaluation?.findings).toEqual([
+				expect.objectContaining({
+					kind: "short_term_berufsmaessigkeit_check",
+					adminDetail: expect.objectContaining({
+						amountsCents: { earned: 62_000, planned: 6_000, total: 68_000, cap: 60_300 },
+					}),
+				}),
+			]);
+		});
+
+		it("keeps a night shift that is still running after midnight", async () => {
+			const { org, worker } = await earner("a", 7);
+			// 03:00 in Berlin on 20 May: the night shift of 19 May runs until 06:00.
+			const now = Temporal.Instant.from("2026-05-20T01:00:00Z");
+			await st.shift(org, worker, "2026-05-19", "22:00", "06:00");
+			await st.openWork(org, worker, "2026-05-19", "22:00");
+
+			const [evaluation] = await evaluate(org, [worker.employeeId], { now });
+
+			// 560 EUR before + 100 EUR worked since 22:00 + 60 EUR for the last three hours.
+			expect(evaluation?.allowance).toMatchObject({ used: 8, lastDay: "2026-05-19" });
+			expect(evaluation?.findings).toEqual([
+				expect.objectContaining({
+					kind: "short_term_berufsmaessigkeit_check",
+					adminDetail: expect.objectContaining({
+						amountsCents: { earned: 66_000, planned: 6_000, total: 72_000, cap: 60_300 },
+					}),
+				}),
+			]);
+		});
+
 		it("prices a planned shift across the end of summer time by its real length", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });

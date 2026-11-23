@@ -344,9 +344,9 @@ function earningsCents(minutes: number, hourlyRateCents: number): number {
 }
 
 /**
- * One prompt per month of `year` whose short-term earnings (completed work plus planned shifts)
- * exceed that month's Minijob cap. A shift that has started on a day with completed work is
- * represented by that work; shifts still ahead count, even later the same day. Earning more than a Minijob is not
+ * One prompt per month of `year` whose short-term earnings (completed work, open clock-ins up to
+ * now, and planned shifts, running ones for their rest) exceed that month's Minijob cap (see
+ * `load-inputs.ts` for how work is matched to its shift). Earning more than a Minijob is not
  * itself a breach: the employer must verify the employment is not *berufsmäßig*. Z8 never decides
  * that; an org admin documents the verification as a `short_term_berufsmaessigkeit_verified`
  * acknowledgement, which goes stale when the month's work, shifts, wages or cap change.
@@ -359,7 +359,6 @@ function berufsmaessigkeitFindings(input: {
 	readonly preferences: StatutoryPreferences;
 }): StatutoryFinding[] {
 	const { employee, year, thresholds, preferences } = input;
-	const workedDays = new Set(employee.work.map((item) => item.date));
 	const months = new Set(
 		[...employee.work, ...employee.planned]
 			.filter((item) => item.date.startsWith(`${year}-`))
@@ -374,7 +373,7 @@ function berufsmaessigkeitFindings(input: {
 			.filter((item) => item.date.startsWith(month))
 			.sort((a, b) => a.workPeriodId.localeCompare(b.workPeriodId));
 		const planned = employee.planned
-			.filter((item) => item.date.startsWith(month) && !(item.started && workedDays.has(item.date)))
+			.filter((item) => item.date.startsWith(month))
 			.sort(
 				(a, b) =>
 					a.date.localeCompare(b.date) ||

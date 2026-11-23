@@ -141,6 +141,43 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 			return policy.id;
 		},
 
+		/** An open clock-in (active work period) from an organization-local wall time on `date`. */
+		async openWork(
+			org: FixtureOrganization,
+			employee: FixtureEmployee,
+			date: string,
+			startTime: string,
+		): Promise<string> {
+			const start = Temporal.ZonedDateTime.from(`${date}T${startTime}[${org.timezone}]`);
+			const clockInId = randomUUID();
+			const workPeriodId = randomUUID();
+			await admin.query(
+				`INSERT INTO time_entry (
+					id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					timezone, timezone_source, hash, created_by, created_at
+				 ) VALUES ($1, $2, $3, 'clock_in', $4, $5, $6, 'backfill', $7, $8, $4)`,
+				[
+					clockInId,
+					employee.employeeId,
+					org.id,
+					new Date(start.epochMilliseconds),
+					start.offsetNanoseconds / 60_000_000_000,
+					org.timezone,
+					`t1990-${clockInId}`,
+					employee.userId,
+				],
+			);
+			await withCanonicalRecords(admin, (client) =>
+				client.query(
+					`INSERT INTO work_period (
+						id, employee_id, organization_id, clock_in_id, start_time, is_active, updated_at
+					 ) VALUES ($1, $2, $3, $4, $5, true, $5)`,
+					[workPeriodId, employee.employeeId, org.id, clockInId, new Date(start.epochMilliseconds)],
+				),
+			);
+			return workPeriodId;
+		},
+
 		/** A completed work period between two organization-local wall times starting on `date`. */
 		async work(
 			org: FixtureOrganization,
