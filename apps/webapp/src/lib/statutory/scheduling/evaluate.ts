@@ -69,7 +69,13 @@ async function runContributors(
 	for (const contributor of contributors) {
 		findings.push(...(await contributor.evaluate(context)));
 	}
-	return attachAcknowledgementStates(db, request.organizationId, findings);
+	const acknowledged = await attachAcknowledgementStates(db, request.organizationId, findings);
+	// A current acknowledgement (e.g. a JArbSchG sector exception) lifts the publication block.
+	return acknowledged.map((finding) =>
+		finding.blocksPublication && finding.acknowledgement?.status === "current"
+			? { ...finding, blocksPublication: false }
+			: finding,
+	);
 }
 
 /**

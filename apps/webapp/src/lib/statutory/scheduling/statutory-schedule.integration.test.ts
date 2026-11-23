@@ -276,6 +276,61 @@ describe("statutory scheduling seam (PostgreSQL)", () => {
 		});
 	});
 
+	it("lifts a publication block once its acknowledgement is current, and only then", async () => {
+		const org = await fx.organization("a");
+		const admin = await fx.user("admin");
+		const youth = await fx.employee(org, "youth");
+		const nightWork = (fingerprint: string): StatutoryScheduleContributor => ({
+			domain: "youth_protection",
+			async evaluate(context) {
+				return context.employeeIds.map((employeeId): StatutoryFinding => ({
+					id: statutoryFindingId("jarbschg_night_work", employeeId, "shift:s1"),
+					organizationId: context.organizationId,
+					employeeId,
+					domain: "youth_protection",
+					kind: "jarbschg_night_work",
+					severity: "critical",
+					subjectKey: "shift:s1",
+					periodStart: "2026-03-04",
+					periodEnd: "2026-03-05",
+					legalReference: "§ 14 Abs. 1 JArbSchG",
+					summary: {},
+					adminDetail: null,
+					inputFingerprint: fingerprint,
+					acknowledgementKind: "jarbschg_sector_exception",
+					blocksPublication: true,
+				}));
+			},
+		});
+		const request = {
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2026-03-02", endExclusive: "2026-03-09" },
+			employeeIds: [youth.employeeId],
+			now: Temporal.Instant.from("2026-02-27T09:00:00Z"),
+		};
+		const blocks = async (fingerprint: string) =>
+			(await evaluateStatutoryScheduleFindings(db, request, [nightWork(fingerprint)])).map((f) => [
+				f.acknowledgementStatus,
+				f.blocksPublication,
+			]);
+
+		expect(await blocks("v1:21-23")).toEqual([["none", true]]);
+		await recordStatutoryAcknowledgement(db, {
+			organizationId: org.id,
+			actorUserId: admin.userId,
+			employeeId: youth.employeeId,
+			kind: "jarbschg_sector_exception",
+			findingKind: "jarbschg_night_work",
+			subjectKey: "shift:s1",
+			inputFingerprint: "v1:21-23",
+			reason: "Hospitality sector exception (§ 14 Abs. 2 JArbSchG)",
+		});
+		expect(await blocks("v1:21-23")).toEqual([["current", false]]);
+		// The shift moved later: the exception no longer covers it.
+		expect(await blocks("v1:22-24")).toEqual([["stale", true]]);
+	});
+
 	it("does no work without contributors", async () => {
 		const org = await fx.organization("a");
 		expect(

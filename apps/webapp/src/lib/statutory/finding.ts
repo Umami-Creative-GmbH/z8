@@ -83,7 +83,9 @@ export interface StatutoryFinding<Kind extends string = string> {
 	readonly acknowledgement?: StatutoryFindingAcknowledgement;
 	/**
 	 * True when this finding must stop shift publication (JArbSchG hard limits while the
-	 * organization's `blockJarbschgShiftPublish` is on and no sector exception is acknowledged).
+	 * organization's `blockJarbschgShiftPublish` is on). Contributors report the raw hard-limit
+	 * block; the scheduling seam lifts it once the finding's acknowledgement is `current` (e.g. an
+	 * acknowledged sector exception), so contributors never query acknowledgements themselves.
 	 * Clock-in and clock-out are never blocked.
 	 */
 	readonly blocksPublication?: boolean;

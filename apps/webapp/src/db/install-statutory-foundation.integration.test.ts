@@ -2,8 +2,15 @@
  * #1988: `db:push` re-applies migration 0329 for what schema push cannot create (baseline seed,
  * guard triggers, exclusion constraints). Re-applying it to a migrated database changes nothing.
  */
+import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
+import {
+	employeeApprenticeRelease,
+	employeeStatutoryOffset,
+	employeeStudyPeriod,
+	organizationStatutoryPreference,
+} from "./schema/statutory";
 import { installStatutoryFoundation } from "./install-statutory-foundation";
 
 describe("installStatutoryFoundation (PostgreSQL)", () => {
@@ -45,5 +52,32 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 		await installStatutoryFoundation(pool);
 
 		expect(await snapshot()).toEqual(before);
+	});
+
+	it("declares in Drizzle every CHECK and foreign key the migration creates on statutory tables", async () => {
+		// `drizzle-kit push` builds these tables from Drizzle, and re-applying 0329 then skips its
+		// CREATE TABLE blocks: a constraint only in SQL would silently be missing on pushed databases.
+		for (const table of [
+			organizationStatutoryPreference,
+			employeeStatutoryOffset,
+			employeeStudyPeriod,
+			employeeApprenticeRelease,
+		]) {
+			const config = getTableConfig(table);
+			const { rows } = await pool.query<{ conname: string }>(
+				`SELECT conname FROM pg_constraint
+				 WHERE conrelid = to_regclass($1) AND contype IN ('c', 'f')
+				 ORDER BY conname`,
+				[`public.${config.name}`],
+			);
+			const declared = [
+				...config.checks.map((check) => check.name),
+				...config.foreignKeys.map((foreignKey) => foreignKey.getName()),
+			].sort();
+			expect({ table: config.name, constraints: declared }).toEqual({
+				table: config.name,
+				constraints: rows.map((row) => row.conname),
+			});
+		}
 	});
 });
