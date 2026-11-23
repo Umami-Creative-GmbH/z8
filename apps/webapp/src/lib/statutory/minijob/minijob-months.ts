@@ -212,8 +212,8 @@ function shiftOverrunMinutes(facts: MinijobMonthFacts): number {
 
 /**
  * What an acknowledgement of the month's earnings rests on, independent of how far the plan has
- * been worked: the shifts as planned, proposals, work outside any shift, and how far work for
- * each shift runs beyond it in material steps. A shift worked as planned — before, during and
+ * been worked: the shifts as planned, proposals, work outside any shift (in material steps), and
+ * how far work for each shift runs beyond it in material steps. A shift worked as planned — before, during and
  * after the clock-in — leaves it unchanged; an added, removed or moved shift, unplanned work or
  * a material overrun of any shift changes it. Work short of a shift does not: the earnings only
  * fall.
@@ -226,15 +226,18 @@ function plannedBasisOf(facts: MinijobMonthFacts) {
 		shifts: [...facts.shifts]
 			.sort(byText((shift) => shift.id))
 			.map((shift) => [shift.id, shift.date, shift.minutes, shift.hourlyRateCents]),
-		unplanned: unplanned
-			.sort(byText((item) => `${item.source}:${item.id}`))
-			.map((item) => [
-				item.source,
-				item.id,
-				item.date,
-				item.inProgress ? "in_progress" : item.minutes,
-				item.hourlyRateCents,
-			]),
+		unplanned: unplanned.sort(byText((item) => `${item.source}:${item.id}`)).map((item) => [
+			item.source,
+			item.id,
+			item.date,
+			// Work outside any shift counts in material steps, open or closed: a running
+			// clock-in stays steady minute by minute and through its clock-out, but hours of
+			// further work make the acknowledgement stale.
+			item.source === "work"
+				? Math.floor(item.minutes / MINIJOB_MATERIAL_OVERRUN_MINUTES)
+				: item.minutes,
+			item.hourlyRateCents,
+		]),
 		overrunSteps: Math.floor(shiftOverrunMinutes(facts) / MINIJOB_MATERIAL_OVERRUN_MINUTES),
 	};
 }

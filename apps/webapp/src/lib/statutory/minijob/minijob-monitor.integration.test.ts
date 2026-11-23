@@ -224,6 +224,7 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		const ids = [worker.employeeId, unplanned.employeeId];
 		const november = { from: "2026-11", until: "2026-12" };
 		const atOne = await evaluate(org, ids, november, "2026-11-23T12:00:00Z");
+		const atOneFive = await evaluate(org, ids, november, "2026-11-23T12:05:00Z");
 		const atThree = await evaluate(org, ids, november, "2026-11-23T14:00:00Z");
 
 		expect(month(atOne, worker.employeeId)).toMatchObject({
@@ -242,7 +243,11 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 			totalCents: 16_500,
 			fingerprint: month(atOne, worker.employeeId)?.fingerprint,
 		});
-		expect(month(atThree, unplanned.employeeId)?.fingerprint).toBe(
+		// Work outside any shift grows for real: steady over minutes, stale after two more hours.
+		expect(month(atOneFive, unplanned.employeeId)?.fingerprint).toBe(
+			month(atOne, unplanned.employeeId)?.fingerprint,
+		);
+		expect(month(atThree, unplanned.employeeId)?.fingerprint).not.toBe(
 			month(atOne, unplanned.employeeId)?.fingerprint,
 		);
 	});

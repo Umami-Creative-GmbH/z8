@@ -171,6 +171,24 @@ describe("Minijob month judgement (#1989)", () => {
 			expect(judged?.fingerprint).toBe(acknowledged?.fingerprint);
 		});
 
+		it("goes stale when open work outside any shift grows materially, not minute by minute", () => {
+			const unplanned = (minutes: number, inProgress: boolean) => ({
+				source: "work" as const,
+				id: "w-open",
+				date: "2026-12-09",
+				minutes,
+				hourlyRateCents: 1000,
+				...(inProgress ? { inProgress: true } : {}),
+			});
+			const acknowledged = fingerprintOf([...planned(0), unplanned(60, true)]);
+
+			// A few more minutes, and the clock-out at the same time, change nothing material.
+			expect(fingerprintOf([...planned(0), unplanned(70, true)])).toBe(acknowledged);
+			expect(fingerprintOf([...planned(0), unplanned(70, false)])).toBe(acknowledged);
+			// 25 more hours on the same open clock-in is new work the admin never saw.
+			expect(fingerprintOf([...planned(0), unplanned(60 + 25 * 60, true)])).not.toBe(acknowledged);
+		});
+
 		it("nets one clock-in over back-to-back shifts against both", () => {
 			const acknowledged = fingerprintOf(planned(0));
 
