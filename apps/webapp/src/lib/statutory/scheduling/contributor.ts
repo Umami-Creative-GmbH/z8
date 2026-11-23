@@ -34,6 +34,12 @@ export interface StatutoryScheduleContext {
 	 * whatever lookback they need (months, rolling 12 months…), batched for all `employeeIds`.
 	 */
 	readonly proposedShifts: readonly StatutoryProposedShift[];
+	/**
+	 * Staffing's baseline run only: the proposals it will be compared with. Never counted; a
+	 * contributor may use them to pick the same subjects in both runs (e.g. which later weeks to
+	 * judge), so a finding the proposal leaves unchanged is not reported as added.
+	 */
+	readonly comparedProposedShifts?: readonly StatutoryProposedShift[];
 	/** A persisted shift the proposal replaces (the shift being edited); leave it out. */
 	readonly replacesShiftId: string | null;
 	readonly preferences: StatutoryPreferences;

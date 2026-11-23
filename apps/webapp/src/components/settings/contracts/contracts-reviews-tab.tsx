@@ -40,6 +40,7 @@ import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-opera
 import { Link } from "@/navigation";
 import { OnCallReviewsSection } from "./on-call-reviews-section";
 import { todayIsoDateInTimezone } from "./contract-formatters";
+import { WorkingStudentReviewsSection } from "./working-student-reviews-section";
 
 type ReviewFilterKind =
 	| "all"
@@ -513,6 +514,10 @@ export function ContractsReviewsTab({
 				</CardContent>
 			</Card>
 			<OnCallReviewsSection organizationId={organizationId} />
+			<WorkingStudentReviewsSection
+				organizationId={organizationId}
+				includeResolved={includeResolved}
+			/>
 		</div>
 	);
 }

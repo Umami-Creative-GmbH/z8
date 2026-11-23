@@ -478,6 +478,117 @@ function selectConfirmedTermsForPeriodOnDay(input: {
 	return { terms: null, inEndedTermsGap, effectivePolicyEvaluationDate: null };
 }
 
+/**
+ * The employment profile `resolveEffectiveContractPure` resolves on `day`, or null when the
+ * employee is not employed that day. Depends only on employment periods and confirmed terms.
+ */
+export function resolveEmploymentProfileOnDay(input: {
+	readonly day: PlainDate;
+	readonly employmentPeriods: readonly EmploymentPeriodSnapshot[];
+	readonly confirmedTerms: readonly EmploymentHistorySnapshot[];
+	readonly employeeCalendarTimezone: string;
+	readonly organizationTimezone: string;
+}): EffectiveContractOnDay["employmentProfile"] | null {
+	const { period, isEmployed } = resolveEmploymentPeriodForDay(
+		input.employmentPeriods,
+		input.day,
+		input.employeeCalendarTimezone,
+	);
+	if (!isEmployed) return null;
+	const { terms } = selectConfirmedTermsForPeriodOnDay({
+		confirmedTerms: input.confirmedTerms,
+		period,
+		day: input.day,
+		employeeCalendarTimezone: input.employeeCalendarTimezone,
+		organizationTimezone: input.organizationTimezone,
+	});
+	return terms?.employmentProfile ?? "regular";
+}
+
+/**
+ * Every day on which `resolveEmploymentProfileOnDay` can change: terms boundaries, and the local
+ * days an employment period starts or ends on (and the day after, since a period touching a day
+ * covers it). Between two consecutive change days the profile is constant. Unsorted, with repeats.
+ */
+export function employmentProfileChangeDays(input: {
+	readonly employmentPeriods: readonly EmploymentPeriodSnapshot[];
+	readonly confirmedTerms: readonly EmploymentHistorySnapshot[];
+	readonly employeeCalendarTimezone: string;
+	readonly organizationTimezone: string;
+}): PlainDate[] {
+	const days: PlainDate[] = [];
+	for (const row of input.confirmedTerms) {
+		const bounds = termsDateBounds(row, input.organizationTimezone);
+		days.push(bounds.from);
+		if (bounds.until) days.push(bounds.until);
+	}
+	for (const period of input.employmentPeriods) {
+		for (const instant of [period.startedAt, period.endedAt]) {
+			if (!instant) continue;
+			for (const zone of [input.employeeCalendarTimezone, input.organizationTimezone]) {
+				const day = plainDateAt(instant, zone);
+				days.push(day, day.add({ days: 1 }));
+			}
+		}
+	}
+	return days;
+}
+
+export function employmentPeriodSnapshotOf(row: {
+	readonly id: string;
+	readonly employeeId: string;
+	readonly status: EmploymentPeriodSnapshot["status"];
+	readonly startedAt: Date | null;
+	readonly startProvenance: EmploymentPeriodSnapshot["startProvenance"];
+	readonly endedAt: Date | null;
+	readonly createdAt: Date;
+}): EmploymentPeriodSnapshot {
+	return {
+		id: row.id,
+		employeeId: row.employeeId,
+		status: row.status,
+		startedAt: row.startedAt ? instantFromDate(row.startedAt) : null,
+		startProvenance: row.startProvenance,
+		endedAt: row.endedAt ? instantFromDate(row.endedAt) : null,
+		createdAt: instantFromDate(row.createdAt),
+	};
+}
+
+export function employmentHistorySnapshotOf(
+	row: typeof employeeEmploymentHistory.$inferSelect,
+	createdAtIso: string,
+	customDays: EmploymentHistorySnapshot["customDays"],
+): EmploymentHistorySnapshot {
+	return {
+		id: row.id,
+		employeeId: row.employeeId,
+		employmentPeriodId: row.employmentPeriodId,
+		validFrom: row.validFrom,
+		validUntil: row.validUntil,
+		validFromDate: row.validFromDate,
+		validUntilDate: row.validUntilDate,
+		contractType: row.contractType,
+		weeklyContractMinutes: row.weeklyContractMinutes ?? null,
+		workModel: row.workModel ?? null,
+		workPolicyId: row.workPolicyId,
+		scheduleMode: row.scheduleMode,
+		presenceOverride: row.presenceOverride,
+		balanceMode: row.balanceMode,
+		scheduleSource: row.scheduleSource,
+		employmentProfile: row.employmentProfile,
+		arbzgScope: row.arbzgScope,
+		onCallHoursKind: row.onCallHoursKind,
+		onCallWeeklyMinutes: row.onCallWeeklyMinutes,
+		onCallDailyMinutes: row.onCallDailyMinutes,
+		migratedLegacyTerms: row.migratedLegacyTerms,
+		hourlyRate: row.hourlyRate,
+		currency: row.currency,
+		createdAt: row.createdAt,
+		createdAtIso,
+		customDays,
+	};
+}
+
 function selectContractDefaultOnDay(
 	defaults: readonly ContractDefaultSnapshot[],
 	scope: "organization" | "team",
@@ -2182,15 +2293,7 @@ export async function loadEffectiveContractsBatch(
 	} else {
 		for (const p of periodRows ?? []) {
 			const list = periodsByEmployee.get(p.employeeId) ?? [];
-			list.push({
-				id: p.id,
-				employeeId: p.employeeId,
-				status: p.status,
-				startedAt: p.startedAt ? instantFromDate(p.startedAt) : null,
-				startProvenance: p.startProvenance,
-				endedAt: p.endedAt ? instantFromDate(p.endedAt) : null,
-				createdAt: instantFromDate(p.createdAt),
-			});
+			list.push(employmentPeriodSnapshotOf(p));
 			periodsByEmployee.set(p.employeeId, list);
 		}
 	}
@@ -2232,34 +2335,9 @@ export async function loadEffectiveContractsBatch(
 	const termsByEmployee = new Map<string, EmploymentHistorySnapshot[]>();
 	for (const { row, createdAtIso } of termsRows) {
 		const list = termsByEmployee.get(row.employeeId) ?? [];
-		list.push({
-			id: row.id,
-			employeeId: row.employeeId,
-			employmentPeriodId: row.employmentPeriodId,
-			validFrom: row.validFrom,
-			validUntil: row.validUntil,
-			validFromDate: row.validFromDate,
-			validUntilDate: row.validUntilDate,
-			contractType: row.contractType,
-			weeklyContractMinutes: row.weeklyContractMinutes ?? null,
-			workModel: row.workModel ?? null,
-			workPolicyId: row.workPolicyId,
-			scheduleMode: row.scheduleMode,
-			presenceOverride: row.presenceOverride,
-			balanceMode: row.balanceMode,
-			scheduleSource: row.scheduleSource,
-			employmentProfile: row.employmentProfile,
-			arbzgScope: row.arbzgScope,
-			onCallHoursKind: row.onCallHoursKind,
-			onCallWeeklyMinutes: row.onCallWeeklyMinutes,
-			onCallDailyMinutes: row.onCallDailyMinutes,
-			migratedLegacyTerms: row.migratedLegacyTerms,
-			hourlyRate: row.hourlyRate,
-			currency: row.currency,
-			createdAt: row.createdAt,
-			createdAtIso,
-			customDays: historyDaysByHistoryId.get(row.id) ?? [],
-		});
+		list.push(
+			employmentHistorySnapshotOf(row, createdAtIso, historyDaysByHistoryId.get(row.id) ?? []),
+		);
 		termsByEmployee.set(row.employeeId, list);
 	}
 

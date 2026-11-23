@@ -236,6 +236,10 @@
         "nearBand": "On-call: week at {used}, approaching the call-off band's limit of {limit}",
         "overBand": "On-call: week at {used}, above the call-off band of {limit}",
         "underBand": "On-call: week at {used}, below the call-off band of {limit}"
+      },
+      "workingStudent": {
+        "lectureWeek": "Working student >20 h in lecture week: {hours} h of weekday daytime work (limit {limit} h)",
+        "ceiling": "Working student: {used} of {limit} weeks above 20 h in 12 months"
       }
     }
   }
