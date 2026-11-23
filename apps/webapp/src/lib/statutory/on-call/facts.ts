@@ -262,13 +262,24 @@ export async function loadOnCallFacts(
 	const piecesByEmployee = new Map<string, OnCallWorkPiece[]>();
 	for (const row of workRows) {
 		const start = instantFromDate(row.startTime);
-		const running = row.isActive || !row.endTime;
-		const end = !row.isActive && row.endTime ? instantFromDate(row.endTime) : input.now;
+		if (row.isActive || !row.endTime) {
+			if (compareInstants(input.now, start) < 0) continue;
+			// Whole minutes since the clock-in, and the piece ends on that grid (at most a minute
+			// before now): the rest of its shift is measured from there, so worked plus still planned
+			// stays constant within the minute for a clock-in at seconds.
+			const minutes = Math.floor(start.until(input.now).total("minutes"));
+			push(piecesByEmployee, row.employeeId, {
+				start,
+				end: start.add({ minutes }),
+				minutes,
+				running: true,
+			});
+			continue;
+		}
+		const end = instantFromDate(row.endTime);
 		if (compareInstants(end, start) < 0) continue;
-		const minutes = running
-			? Math.floor(start.until(end).total("minutes"))
-			: (row.durationMinutes ?? Math.round(start.until(end).total("minutes")));
-		push(piecesByEmployee, row.employeeId, { start, end, minutes, running });
+		const minutes = row.durationMinutes ?? Math.round(start.until(end).total("minutes"));
+		push(piecesByEmployee, row.employeeId, { start, end, minutes, running: false });
 	}
 
 	const workMinutesByEmployee = new Map<string, Map<string, number>>();
@@ -308,7 +319,7 @@ export async function loadOnCallFacts(
 	};
 }
 
-/** One work period; a running clock-in ends now. */
+/** One work period; a running clock-in ends at its last whole minute up to now. */
 export interface OnCallWorkPiece {
 	readonly start: Instant;
 	readonly end: Instant;

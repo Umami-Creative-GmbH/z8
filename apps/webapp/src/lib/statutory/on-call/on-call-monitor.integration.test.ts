@@ -673,5 +673,140 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 				["on_call_weekly_over_band", 240 + 32 * 60],
 			]);
 		});
+
+		/** Band findings of week 2026-W11 for an exact 600-minute worker, judged at `now`. */
+		async function exactWeek(
+			now: (timezone: string) => Temporal.Instant,
+			seed: (
+				org: Awaited<ReturnType<typeof onCall.organization>>,
+				worker: Awaited<ReturnType<typeof fx.employee>>,
+			) => Promise<void>,
+		) {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, { kind: "exact", weeklyMinutes: 600 });
+			await seed(org, worker);
+			return async (at = now(org.timezone)) =>
+				(
+					await evaluateOnCallFindings(db, {
+						organizationId: org.id,
+						timezone: org.timezone,
+						window: WEEK,
+						employeeIds: [worker.employeeId],
+						now: at,
+					})
+				)
+					.filter((f) => f.kind.startsWith("on_call_weekly"))
+					.map((f) => [f.kind, f.severity, f.summary.used?.value]);
+		}
+
+		it("does not count today's shift that ended unworked as still planned", async () => {
+			const band = await exactWeek(
+				(timezone) => localInstant("2026-03-10", "20:00", timezone),
+				async (org, worker) => {
+					await onCall.work(org, worker, {
+						date: "2026-03-09",
+						startTime: "08:00",
+						endTime: "12:00",
+					});
+					// A no-show on Tuesday's 08:00–16:00 shift.
+					await onCall.shift(org, {
+						employeeId: worker.employeeId,
+						date: "2026-03-10",
+						startTime: "08:00",
+						endTime: "16:00",
+						publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+					});
+				},
+			);
+
+			expect(await band()).toEqual([["on_call_weekly_under_band", "info", 240]]);
+		});
+
+		it("keeps counting the rest of a running shift during a clocked-out break", async () => {
+			const band = await exactWeek(
+				(timezone) => localInstant("2026-03-10", "10:30", timezone),
+				async (org, worker) => {
+					await onCall.work(org, worker, {
+						date: "2026-03-09",
+						startTime: "08:00",
+						endTime: "12:30",
+					});
+					await onCall.shift(org, {
+						employeeId: worker.employeeId,
+						date: "2026-03-10",
+						startTime: "08:00",
+						endTime: "14:00",
+						publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+					});
+					// Worked 08:00–10:00, on a break since: 270 + 120 + the 210 minutes still to come.
+					await onCall.work(org, worker, {
+						date: "2026-03-10",
+						startTime: "08:00",
+						endTime: "10:00",
+					});
+				},
+			);
+
+			expect(await band()).toEqual([]);
+		});
+
+		it("counts a running call with a clock-in at seconds steadily within the minute", async () => {
+			const band = await exactWeek(
+				(timezone) => localInstant("2026-03-10", "11:00:10", timezone),
+				async (org, worker) => {
+					await onCall.work(org, worker, {
+						date: "2026-03-09",
+						startTime: "08:00",
+						endTime: "12:00",
+					});
+					await onCall.shift(org, {
+						employeeId: worker.employeeId,
+						date: "2026-03-10",
+						startTime: "08:00",
+						endTime: "14:00",
+						publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+					});
+					// Clocked in at seconds, just before the shift: 360 minutes in all at any second.
+					await onCall.openWork(org, worker, { date: "2026-03-10", startTime: "07:59:42" });
+				},
+			);
+
+			for (const second of ["11:00:10", "11:00:35", "11:00:50"]) {
+				expect(await band(localInstant("2026-03-10", second, "Europe/Berlin"))).toEqual([]);
+			}
+		});
+
+		it("judges a week whose terms change mid-week by each day's terms", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker");
+			await onCall.onCallTerms(org, worker, {
+				kind: "exact",
+				weeklyMinutes: 600,
+				until: "2026-03-12",
+			});
+			await onCall.onCallTerms(org, worker, {
+				kind: "exact",
+				weeklyMinutes: 1200,
+				from: "2026-03-12",
+			});
+			await onCall.work(org, worker, { date: "2026-03-09", startTime: "08:00", endTime: "16:00" });
+			await onCall.work(org, worker, { date: "2026-03-10", startTime: "08:00", endTime: "15:00" });
+
+			const band = (
+				await evaluateOnCallFindings(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: WEEK,
+					employeeIds: [worker.employeeId],
+					now: AFTER_WEEK,
+				})
+			).filter((f) => f.kind.startsWith("on_call_weekly"));
+
+			// Mon–Wed 600 × 3/7 + Thu–Sun 1200 × 4/7 = 257.1 + 685.7 ≈ 943 minutes.
+			expect(band.map((f) => [f.kind, f.summary.used?.value, f.summary.limit?.value])).toEqual([
+				["on_call_weekly_under_band", 900, 943],
+			]);
+		});
 	});
 });

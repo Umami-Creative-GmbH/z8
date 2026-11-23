@@ -294,22 +294,45 @@ export interface OnCallWeeklyBand {
 	readonly upperMinutes: number;
 }
 
+interface OnCallBandTerms {
+	readonly hoursKind: OnCallWeeklyBand["hoursKind"];
+	readonly weeklyMinutes: number | null;
+}
+
 /**
- * The § 12 Abs. 2 TzBfG band for `terms` on `day`, scaled by `onCallDays / 7` for weeks the
- * employee is on call only partly (joined, left or changed terms mid-week). Null when a baseline
- * the band needs is missing.
+ * The § 12 Abs. 2 TzBfG band of a week judged on `days` (callable days; fewer than seven when the
+ * employee joined, left or was released mid-week): each day contributes a seventh of the band of
+ * its own terms, so a mid-week change of terms is judged with each part's terms. The kind and
+ * agreed minutes reported are those of the last day. Null when there is no day, or a baseline a
+ * day's band needs is missing.
  */
 export function onCallWeeklyBand(
 	facts: Pick<OnCallFacts, "thresholds">,
-	terms: {
-		readonly hoursKind: OnCallWeeklyBand["hoursKind"];
-		readonly weeklyMinutes: number | null;
-	},
+	termsOn: (day: PlainDate) => OnCallBandTerms | undefined,
+	days: readonly PlainDate[],
+): OnCallWeeklyBand | null {
+	let lower = 0;
+	let upper = 0;
+	let last: OnCallWeeklyBand | null = null;
+	for (const day of days) {
+		const terms = termsOn(day);
+		const band = terms ? fullWeekBand(facts, terms, day) : null;
+		if (!band) return null;
+		lower += band.lowerMinutes / 7;
+		upper += band.upperMinutes / 7;
+		last = band;
+	}
+	if (!last) return null;
+	return { ...last, lowerMinutes: Math.round(lower), upperMinutes: Math.round(upper) };
+}
+
+/** The band of a full week of `terms` as of `day`, unrounded. */
+function fullWeekBand(
+	facts: Pick<OnCallFacts, "thresholds">,
+	terms: OnCallBandTerms,
 	day: PlainDate,
-	onCallDays = 7,
 ): OnCallWeeklyBand | null {
 	const date = day.toString();
-	const scale = (minutes: number) => Math.round((minutes * onCallDays) / 7);
 	switch (terms.hoursKind) {
 		case "unspecified": {
 			const deemed = facts.thresholds.valueOn("de_on_call_default_weekly_minutes", date);
@@ -317,18 +340,17 @@ export function onCallWeeklyBand(
 			return {
 				hoursKind: "unspecified",
 				agreedWeeklyMinutes: deemed,
-				lowerMinutes: scale(deemed),
-				upperMinutes: scale(deemed),
+				lowerMinutes: deemed,
+				upperMinutes: deemed,
 			};
 		}
 		case "exact": {
 			if (terms.weeklyMinutes === null) return null;
-			const agreed = scale(terms.weeklyMinutes);
 			return {
 				hoursKind: "exact",
 				agreedWeeklyMinutes: terms.weeklyMinutes,
-				lowerMinutes: agreed,
-				upperMinutes: agreed,
+				lowerMinutes: terms.weeklyMinutes,
+				upperMinutes: terms.weeklyMinutes,
 			};
 		}
 		case "minimum": {
@@ -338,8 +360,8 @@ export function onCallWeeklyBand(
 			return {
 				hoursKind: "minimum",
 				agreedWeeklyMinutes: terms.weeklyMinutes,
-				lowerMinutes: scale(terms.weeklyMinutes),
-				upperMinutes: scale((terms.weeklyMinutes * (100 + plus)) / 100),
+				lowerMinutes: terms.weeklyMinutes,
+				upperMinutes: (terms.weeklyMinutes * (100 + plus)) / 100,
 			};
 		}
 		case "maximum": {
@@ -349,8 +371,8 @@ export function onCallWeeklyBand(
 			return {
 				hoursKind: "maximum",
 				agreedWeeklyMinutes: terms.weeklyMinutes,
-				lowerMinutes: scale((terms.weeklyMinutes * (100 - minus)) / 100),
-				upperMinutes: scale(terms.weeklyMinutes),
+				lowerMinutes: (terms.weeklyMinutes * (100 - minus)) / 100,
+				upperMinutes: terms.weeklyMinutes,
 			};
 		}
 	}
@@ -363,6 +385,7 @@ function bandFindings(
 		readonly facts: OnCallFacts;
 		readonly shifts: readonly OnCallShift[];
 		readonly today: PlainDate;
+		readonly now: Instant;
 		readonly timezone: string;
 		readonly preferences: StatutoryPreferences;
 	},
@@ -374,20 +397,36 @@ function bandFindings(
 	const work = input.facts.workMinutesByEmployee.get(base.employeeId);
 	const pieces = input.facts.workPiecesByEmployee.get(base.employeeId) ?? [];
 	const released = input.facts.releasedDaysByEmployee.get(base.employeeId);
-	// Past days count what was worked. Today and later add what is still planned: each shift's
-	// minutes not yet worked inside it (an unplanned call adds to a later shift; a call running on
-	// its shift counts once).
+	const running = pieces.filter((piece) => piece.running);
+	// Past days count what was worked. Today and later add what is still planned: the part of each
+	// shift after now that is not worked (an unplanned call adds to a later shift; a call running on
+	// its shift counts once; an unworked past part, as in a no-show or a break, is not planned any
+	// more). A running clock-in on the shift ends on its whole-minute grid, so the rest of the
+	// shift is measured from there and the total stays constant within the minute.
+	const stillPlannedIn = (shift: OnCallShift) => {
+		const interval = shiftInterval(shift, input.timezone);
+		const runningOnShift = running.filter(
+			(piece) => compareInstants(piece.start, interval.end) < 0,
+		);
+		const cut = runningOnShift.length
+			? runningOnShift
+					.map((piece) => piece.end)
+					.reduce((a, b) => (compareInstants(a, b) >= 0 ? a : b))
+			: input.now;
+		const from = compareInstants(cut, interval.start) > 0 ? cut : interval.start;
+		if (compareInstants(from, interval.end) >= 0) return 0;
+		const rest = { start: from, end: interval.end };
+		return Math.max(
+			0,
+			Math.round(from.until(interval.end).total("minutes")) - overlapMinutes(pieces, rest),
+		);
+	};
 	const minutesOn = (day: PlainDate) => {
 		const worked = work?.get(day.toString()) ?? 0;
 		if (comparePlainDates(day, input.today) < 0) return worked;
 		const stillPlanned = input.shifts
 			.filter((shift) => shift.date.equals(day))
-			.reduce(
-				(sum, shift) =>
-					sum +
-					Math.max(0, shift.minutes - overlapMinutes(pieces, shiftInterval(shift, input.timezone))),
-				0,
-			);
+			.reduce((sum, shift) => sum + stillPlannedIn(shift), 0);
 		return worked + stillPlanned;
 	};
 	// § 12 Abs. 4–5 TzBfG: approved absence and public holidays are paid by the reference period,
@@ -397,11 +436,7 @@ function bandFindings(
 		released?.has(day.toString()) === true && (work?.get(day.toString()) ?? 0) === 0;
 	const releasedDays = onCallDays.filter(isReleased).map((day) => day.toString());
 	const callableDays = onCallDays.filter((day) => !isReleased(day));
-	const lastCallableDay = callableDays.at(-1);
-	if (!lastCallableDay) return [];
-	const lastTerms = terms.get(lastCallableDay.toString());
-	if (!lastTerms) return [];
-	const band = onCallWeeklyBand(input.facts, lastTerms, lastCallableDay, callableDays.length);
+	const band = onCallWeeklyBand(input.facts, (day) => terms.get(day.toString()), callableDays);
 	if (!band) return [];
 	const minutesByDay = callableDays.map((day) => [day.toString(), minutesOn(day)] as const);
 	const used = minutesByDay.reduce((sum, [, minutes]) => sum + minutes, 0);
@@ -572,6 +607,7 @@ export async function evaluateOnCallFindings(
 					facts,
 					shifts,
 					today,
+					now: request.now,
 					timezone: request.timezone,
 					preferences,
 				}),
