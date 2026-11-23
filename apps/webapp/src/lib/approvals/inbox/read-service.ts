@@ -54,6 +54,12 @@ import type {
 } from "./canonical-inbox-read";
 import { CANONICAL_INBOX_READS, ordinaryWorkPeriodInboxRead } from "./canonical-inbox-reads";
 import {
+	type ComplianceExceptionInboxRead,
+	type ComplianceExceptionInboxScope,
+	complianceExceptionInboxRead,
+	loadComplianceExceptionInboxDetail,
+} from "./compliance-exception-inbox";
+import {
 	coversByApprover,
 	markCoveringFor,
 	markDecidedEarlierStage,
@@ -100,9 +106,16 @@ export interface ApprovalInboxListParams extends ApprovalQueryParams {
 	types?: ApprovalInboxType[];
 	/** Absent approvers the viewer covers for right now, with their names (#1016). */
 	covering?: ApprovalInboxCover[];
+	/**
+	 * The compliance exceptions the viewer sees (#1977, ADR-0005); without one, none are
+	 * listed or counted. Resolve it with `resolveComplianceExceptionInboxScope`.
+	 */
+	complianceExceptionScope?: ComplianceExceptionInboxScope | null;
 }
 
 interface GetApprovalInboxListFromSourcesInput {
+	/** The compliance exception adapter (#1977); none unless given. */
+	complianceExceptionRead?: ComplianceExceptionInboxRead;
 	triagePolicy?: ApprovalTriagePolicy;
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
 	sources: ApprovalInboxSource[];
@@ -273,6 +286,7 @@ export async function getApprovalInboxListFromSources({
 	loadDeputyDecidedEarlierStages: loadDecidedEarlier = async () => new Set<string>(),
 	triagePolicy = DEFAULT_APPROVAL_TRIAGE_POLICY,
 	loadTriageEvidence = unknownApprovalInboxTriageEvidence,
+	complianceExceptionRead,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
 	// Covered approvals are listed in their "Covering for" sections, not here.
 	const covers = coversByApprover(params.covering, params.approverId);
@@ -393,6 +407,20 @@ export async function getApprovalInboxListFromSources({
 		);
 	}
 
+	if (complianceExceptionRead) {
+		const compliance = await loadComplianceExceptionInboxRows({
+			read: complianceExceptionRead,
+			params,
+			listed: !requestedTypeSet || requestedTypeSet.has("compliance_exception"),
+			filters: canonicalFilters,
+			cursor: cursor ?? undefined,
+			limit,
+			now: effectiveNow,
+		});
+		counts.compliance_exception = compliance.total;
+		items.push(...compliance.items);
+	}
+
 	const sortedItems = items
 		.map((item) => markOwnRequest(item, params.approverId))
 		.sort(compareInboxItems);
@@ -432,9 +460,49 @@ export async function getApprovalInboxListFromSources({
 		hasMore,
 		total: Object.values(counts).reduce((total, count) => total + count, 0),
 		counts,
-		supportedTypes: [...new Set([...sources, ...reads].map((source) => source.type))],
+		supportedTypes: [
+			...new Set([
+				...[...sources, ...reads].map((source) => source.type),
+				...(complianceExceptionRead ? (["compliance_exception"] as const) : []),
+			]),
+		],
 		warnings,
 	};
+}
+
+/**
+ * The viewer's compliance exceptions (#1977): a page of the selected status when the type is
+ * listed, and the pending count. Without a scope the viewer sees none.
+ */
+async function loadComplianceExceptionInboxRows(input: {
+	read: ComplianceExceptionInboxRead;
+	params: ApprovalInboxListParams;
+	listed: boolean;
+	filters: OrdinaryCanonicalListFilters | undefined;
+	cursor: ApprovalInboxCursor | undefined;
+	limit: number;
+	now: Date;
+}): Promise<{ items: ApprovalInboxItem[]; total: number }> {
+	const scope = input.params.complianceExceptionScope;
+	if (!scope) return { items: [], total: 0 };
+	const base = {
+		organizationId: input.params.organizationId,
+		scope,
+		filters: input.filters,
+		now: input.now,
+	};
+	const [items, total] = await Promise.all([
+		input.listed
+			? input.read.load({
+					...base,
+					status: input.params.status ?? "pending",
+					cursor: input.cursor,
+					limit: input.limit + 1,
+				})
+			: Promise.resolve([]),
+		input.read.count(base),
+	]);
+	return { items, total };
 }
 
 /** The most rows one "Covering for" section lists at once. */
@@ -642,6 +710,7 @@ export async function getApprovalInboxList(
 		}),
 		loadTriageEvidence: loadCurrentApprovalTriageEvidence,
 		loadDeputyDecidedEarlierStages: (input) => loadDeputyDecidedEarlierStages(db, input),
+		complianceExceptionRead: complianceExceptionInboxRead,
 	});
 }
 
@@ -854,9 +923,14 @@ export async function getApprovalInboxDetail({
 	loadCanonicalOrdinaryApprovals,
 	triagePolicy,
 	loadTriageEvidence,
+	complianceExceptionScope,
+	now,
 }: {
 	approvalId: string;
 	organizationId: string;
+	/** The compliance exceptions the viewer sees (#1977); none without one. */
+	complianceExceptionScope?: ComplianceExceptionInboxScope | null;
+	now?: Date;
 	triagePolicy?: ApprovalTriagePolicy;
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
 	approverId?: string;
@@ -880,6 +954,16 @@ export async function getApprovalInboxDetail({
 	});
 
 	if (!request) {
+		// A compliance exception is opened by its adapter, within the viewer's scope (#1977).
+		if (complianceExceptionScope) {
+			const exception = await loadComplianceExceptionInboxDetail({
+				organizationId,
+				scope: complianceExceptionScope,
+				exceptionId: approvalId,
+				now,
+			});
+			if (exception) return exception;
+		}
 		if (!approverId) {
 			throw new ApprovalInboxBadRequestError("Approval not found");
 		}

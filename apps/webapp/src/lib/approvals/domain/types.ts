@@ -137,7 +137,9 @@ export type ApprovalType =
 	| "travel_expense_claim"
 	| "travel_expense_report"
 	/** Canonical-only (#1059): no legacy handler. */
-	| "period_submission";
+	| "period_submission"
+	/** Adapter-backed (#1977, ADR-0005): no legacy handler, no approval request. */
+	| "compliance_exception";
 
 export type ApprovalDecisionAction = "approve" | "reject";
 

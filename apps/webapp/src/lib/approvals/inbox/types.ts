@@ -19,6 +19,8 @@ export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"travel_expense_report",
 	// Canonical-only (#1059): no legacy source, listed by its canonical read.
 	"period_submission",
+	// Adapter-backed (#1977, ADR-0005): listed from `compliance_exception` rows.
+	"compliance_exception",
 ] as const;
 
 export type ApprovalInboxType = (typeof SUPPORTED_APPROVAL_INBOX_TYPES)[number];
@@ -86,6 +88,11 @@ export interface ApprovalInboxCapabilities {
 	requiresDetailReview?: boolean;
 	/** The viewer requested this; someone else decides it, so every decision is off (#686). */
 	ownRequest?: boolean;
+	/**
+	 * Decided one at a time only (#1977, ADR-0005): never selected for a bulk approval or
+	 * rejection; the list, the detail and Approval Sprint decide it singly.
+	 */
+	singleDecisionOnly?: boolean;
 	/**
 	 * The viewer covers for this item's approver but already decided an
 	 * earlier stage of it (four-eyes, #1016); every decision is off.

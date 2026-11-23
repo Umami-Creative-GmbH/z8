@@ -27,6 +27,7 @@ import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal"
 import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import type { CanonicalInboxRead } from "./canonical-inbox-read";
 import { CANONICAL_INBOX_READS } from "./canonical-inbox-reads";
+import { findComplianceExceptionIds } from "./compliance-exception-inbox";
 import { createFastLaneDecisionGuard } from "./fast-lane-decision-guard";
 import {
 	decideInboxTimeApproval,
@@ -731,7 +732,7 @@ export async function bulkApproveApprovalInboxItems({
 		coveredApproverIds,
 	});
 
-	return withMissingApprovalFailures(approvalIds, requests, result);
+	return withMissingApprovalFailures(approvalIds, requests, result, organizationId);
 }
 
 export async function bulkRejectApprovalInboxItems({
@@ -765,7 +766,7 @@ export async function bulkRejectApprovalInboxItems({
 		coveredApproverIds,
 	});
 
-	return withMissingApprovalFailures(approvalIds, requests, result);
+	return withMissingApprovalFailures(approvalIds, requests, result, organizationId);
 }
 
 async function loadCurrentFastLaneDecisionItem({
@@ -793,27 +794,41 @@ async function loadCurrentFastLaneDecisionItem({
 	return fastLaneDecisionItemOf(detail);
 }
 
-function withMissingApprovalFailures(
+async function withMissingApprovalFailures(
 	approvalIds: string[],
 	requests: PersistedApprovalRequestForDecision[],
 	result: ApprovalInboxBulkDecisionResult,
-): ApprovalInboxBulkDecisionResult {
+	organizationId: string,
+): Promise<ApprovalInboxBulkDecisionResult> {
 	const foundIds = new Set(requests.map((request) => request.id));
 	const requestedOrder = new Map(
 		approvalIds.map((approvalId, index) => [approvalId, index]),
 	);
 	const failed = [...result.failed];
+	// Compliance exceptions are never bulk-decided (#1977, ADR-0005): each gets its own review.
+	const complianceExceptionIds = await findComplianceExceptionIds({
+		organizationId,
+		ids: approvalIds.filter((approvalId) => !foundIds.has(approvalId)),
+	});
 
 	for (const approvalId of approvalIds) {
 		if (foundIds.has(approvalId)) {
 			continue;
 		}
 
-		failed.push({
-			id: approvalId,
-			code: "not_found",
-			message: "Approval not found",
-		});
+		failed.push(
+			complianceExceptionIds.has(approvalId)
+				? {
+						id: approvalId,
+						code: "unsupported",
+						message: "Compliance exceptions are decided one at a time",
+					}
+				: {
+						id: approvalId,
+						code: "not_found",
+						message: "Approval not found",
+					},
+		);
 	}
 
 	failed.sort((first, second) => {
