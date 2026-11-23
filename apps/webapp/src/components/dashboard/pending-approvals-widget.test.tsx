@@ -201,18 +201,46 @@ describe("Pending Approvals widget (#1978)", () => {
 		).getAllByRole("listitem");
 		expect(rows).toHaveLength(2);
 		expect(within(rows[0]).getByText("Ada Lovelace")).toBeTruthy();
-		expect(within(rows[0]).getByText("Compliance Exceptions")).toBeTruthy();
+		expect(within(rows[0]).getByText("Compliance exception")).toBeTruthy();
 		expect(within(rows[0]).getByText("Daily overtime")).toBeTruthy();
 		expect(within(rows[0]).getByText("Inventory count runs late")).toBeTruthy();
 		expect(within(rows[0]).queryByText(/Covering for/)).toBeNull();
 		expect(within(rows[1]).getByText("Katherine Johnson")).toBeTruthy();
-		expect(within(rows[1]).getByText("Absence Requests")).toBeTruthy();
+		expect(within(rows[1]).getByText("Absence request")).toBeTruthy();
 		expect(within(rows[1]).getByText("Starts Dec 7, 2026")).toBeTruthy();
 		expect(within(rows[1]).getByText("Covering for Clara Colleague")).toBeTruthy();
 		expect(screen.getByRole("link", { name: /Review All Approvals/ }).getAttribute("href")).toBe(
 			"/approvals/inbox",
 		);
 	});
+
+	it.each([
+		["time_entry", "Time entry"],
+		["travel_expense_claim", "Travel expense claim"],
+		["travel_expense_report", "Expense report"],
+		["absence_change_request", "Absence change request"],
+		["period_submission", "Period submission"],
+	] as const)(
+		"badges one %s preview row in the singular, as the pill keeps the plural",
+		(type, label) => {
+			widget(
+				delivered({
+					...pending,
+					typeCounts: [{ type, count: 3 }],
+					preview: [{ ...pending.preview[0], type }],
+				}),
+			);
+
+			const [row] = within(
+				screen.getByRole("list", { name: "Most urgent pending approvals" }),
+			).getAllByRole("listitem");
+			expect(within(row).getByText(label)).toBeTruthy();
+			expect(
+				within(screen.getByRole("list", { name: "Pending approvals by type" })).getByRole("link")
+					.textContent,
+			).not.toContain(label);
+		},
+	);
 
 	it.each([
 		[
@@ -231,11 +259,37 @@ describe("Pending Approvals widget (#1978)", () => {
 		widget(delivered({ ...pending, unavailableTypes: ["travel_expense_claim", "time_entry"] }));
 
 		expect(screen.getByRole("alert").textContent).toBe(
-			"Some approvals could not be loaded (Travel Expenses, Time Corrections). Totals may be incomplete.",
+			"Some approvals could not be loaded (Travel Expenses and Time Corrections). Totals may be incomplete.",
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Retry Pending Approvals" }));
 		expect(fetch).toHaveBeenCalled();
 		expect(screen.getByText("7 pending approvals")).toBeTruthy();
+	});
+
+	it("lists the approval types that could not be loaded as the viewer's language does", () => {
+		renderWithoutTranslations(
+			<TolgeeProvider
+				tolgee={createTestTolgee("de", {
+					"dashboard.pending-approvals.partially-unavailable":
+						"Einige Genehmigungen konnten nicht geladen werden ({types}).",
+					"approvals:approvals.types.travel_expense_claim": "Reisekosten",
+					"approvals:approvals.types.time_entry": "Zeitkorrekturen",
+				})}
+			>
+				<QueryClientProvider client={new QueryClient()}>
+					<PendingApprovalsWidget
+						initialSnapshot={delivered({
+							...pending,
+							unavailableTypes: ["travel_expense_claim", "time_entry"],
+						})}
+					/>
+				</QueryClientProvider>
+			</TolgeeProvider>,
+		);
+
+		expect(screen.getByRole("alert").textContent).toBe(
+			"Einige Genehmigungen konnten nicht geladen werden (Reisekosten und Zeitkorrekturen).",
+		);
 	});
 
 	it("does not claim nothing is pending when an approval type failed to load", () => {

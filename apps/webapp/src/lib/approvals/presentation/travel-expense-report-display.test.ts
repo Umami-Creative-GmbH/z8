@@ -100,9 +100,8 @@ describe("travelExpenseReportDisplay", () => {
 		expect(localized).toBeDefined();
 		if (!localized) return;
 		expect(resolveReviewText(localized.title, de, "de")).toBe("Spesenabrechnung");
-		expect(resolveReviewText(localized.subtitle, de, "de")).toBe(
-			"Eingereichte Angaben nicht verfügbar",
-		);
+		// Said once: the sprint card shows subtitle and detail together.
+		expect(resolveReviewText(localized.subtitle, de, "de")).toBe("");
 		expect(resolveReviewText(localized.summary, de, "de")).toBe(
 			"Eingereichte Angaben nicht verfügbar",
 		);

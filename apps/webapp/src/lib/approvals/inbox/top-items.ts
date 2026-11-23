@@ -46,9 +46,11 @@ const itemKey = (type: string, id: string) => `${type}:${id}`;
  * kind's risk needs no evidence. The rows themselves are read as the inbox reads them, one
  * query per source as the badge does, so the counts stay the badge's.
  *
- * Candidates are the rows the inbox itself can list: every legacy-source item; the first 101
- * rows of each canonical read and of the compliance exceptions, in their pre-evidence order
- * (the inbox's own page cap); and each "Covering for" section's first 100 rows, also chosen
+ * Candidates are the rows the inbox itself can list: every legacy-source item; every row of
+ * the evidence-aware canonical reads (absences, absence changes, time corrections), read with
+ * `limit all` as the inbox reads them; the first 101 rows of each other canonical read and of
+ * the compliance exceptions, in their pre-evidence order (the inbox's own page cap); and each
+ * "Covering for" section's first 100 rows, also chosen
  * in pre-evidence order. A covered item past its section's 100 rows is never previewed, just
  * as the inbox doesn't list it, and neither the total nor `coveringCount` counts it.
  *
@@ -78,8 +80,8 @@ export async function getApprovalInboxTopItems(
 	// Evidence-aware items, by item: read without evidence first, evaluated below if needed.
 	const deferred = new Map<string, ApprovalInboxTriageTarget>();
 	const list = await (options.readList ?? getApprovalInboxList)(
-		// No page limit, so no unevaluated order cuts off a legacy item; canonical and
-		// compliance reads still return at most their first 101 rows.
+		// No page limit, so no unevaluated order cuts off a legacy item; evidence-aware canonical
+		// reads return every row, other canonical and compliance reads at most their first 101.
 		{ ...params, status: "pending", limit: Number.MAX_SAFE_INTEGER },
 		{
 			now,

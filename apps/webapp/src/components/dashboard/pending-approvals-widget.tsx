@@ -2,7 +2,10 @@
 
 import { IconAlertCircle, IconArrowRight, IconClock, IconUserShare } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { getApprovalTypeLabels } from "@/app/[locale]/(app)/approvals/inbox/components/approval-type-labels";
+import {
+	getApprovalItemTypeLabels,
+	getApprovalTypeLabels,
+} from "@/app/[locale]/(app)/approvals/inbox/components/approval-type-labels";
 import { getOwnRequestNote } from "@/app/[locale]/(app)/approvals/inbox/components/own-request-note";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -156,6 +159,7 @@ export function PendingApprovalsWidget({
 		initialSnapshot,
 	);
 	const typeLabels = getApprovalTypeLabels(t);
+	const itemTypeLabels = getApprovalItemTypeLabels(t);
 	const text = (value: string | ApprovalInboxLocalizedText) =>
 		// List summaries never name a per diem place (#1978): no travel expense catalog here.
 		resolveReviewText(
@@ -188,7 +192,11 @@ export function PendingApprovalsWidget({
 							message={t(
 								"dashboard.pending-approvals.partially-unavailable",
 								"Some approvals could not be loaded ({types}). Totals may be incomplete.",
-								{ types: unavailableTypes.map((type) => typeLabels[type]).join(", ") },
+								{
+									types: new Intl.ListFormat(locale, { type: "conjunction" }).format(
+										unavailableTypes.map((type) => typeLabels[type]),
+									),
+								},
 							)}
 							retry={refetch}
 							refreshing={refreshing}
@@ -218,7 +226,7 @@ export function PendingApprovalsWidget({
 									<PreviewRow
 										key={`${item.type}:${item.id}`}
 										item={item}
-										typeLabel={typeLabels[item.type]}
+										typeLabel={itemTypeLabels[item.type]}
 										text={text}
 									/>
 								))}
