@@ -125,8 +125,8 @@ export interface ShortTermEmployment {
 	/**
 	 * The agreed last day (`YYYY-MM-DD`, inclusive) when its employment period's current
 	 * employment agreement is fixed-term: then the employment runs from its first day through its
-	 * pauses, up to that day. Null for an open-ended framework agreement, which only lasts while
-	 * the employee works.
+	 * pauses, up to that day, across the year end too. Null for an open-ended framework
+	 * agreement, which only lasts while the employee works.
 	 */
 	readonly fixedTermEndsOn: string | null;
 }
@@ -290,6 +290,44 @@ function currentFixedTermEnds(
 	return ends;
 }
 
+/** Days `[from, until)`, `YYYY-MM-DD`. */
+interface DaySpan {
+	readonly from: string;
+	readonly until: string;
+}
+
+/**
+ * Per employee, the agreed span of each fixed-term employment period overlapping `window`: from
+ * the first link's start to the day after the current link's agreed end. Its terms, work and
+ * shifts there are loaded although they lie outside the requested years.
+ */
+function agreedSpans(
+	rows: readonly {
+		employeeId: string;
+		employmentPeriodId: string;
+		startsOn: string;
+	}[],
+	fixedTermEndsOnByPeriod: ReadonlyMap<string, string>,
+	window: DaySpan,
+): Map<string, DaySpan[]> {
+	const starts = new Map<string, { employeeId: string; startsOn: string }>();
+	for (const row of rows) {
+		const known = starts.get(row.employmentPeriodId);
+		if (!known || row.startsOn < known.startsOn) starts.set(row.employmentPeriodId, row);
+	}
+	const spans = new Map<string, DaySpan[]>();
+	for (const [periodId, { employeeId, startsOn }] of starts) {
+		const endsOn = fixedTermEndsOnByPeriod.get(periodId);
+		if (!endsOn) continue;
+		const span = { from: startsOn, until: parsePlainDate(endsOn).add({ days: 1 }).toString() };
+		if (span.from >= window.until || span.until <= window.from || span.from >= span.until) continue;
+		const list = spans.get(employeeId);
+		if (list) list.push(span);
+		else spans.set(employeeId, [span]);
+	}
+	return spans;
+}
+
 interface TermsRow {
 	readonly id: string;
 	readonly employmentPeriodId: string | null;
@@ -372,6 +410,7 @@ export async function loadShortTermInputs(
 	const lastYear = Math.max(...input.years);
 	const from = `${firstYear}-01-01`;
 	const until = `${lastYear + 1}-01-01`;
+	const inYears = (date: string) => yearOf(date) >= firstYear && yearOf(date) <= lastYear;
 	const thresholds = await loadStatutoryThresholds(db, {
 		keys: SHORT_TERM_THRESHOLD_KEYS,
 		from,
@@ -426,14 +465,87 @@ export async function loadShortTermInputs(
 		if (candidates.length === 0) return { employees: [], thresholds };
 	}
 
-	// Work and shifts just outside the years too: work belonging to a shift counts on the shift's
-	// date (a clock-in at 23:50 on 31 December for a shift on 1 January counts in the new year).
+	// The current link of each employment period's agreement chain says whether it is fixed-term.
+	const candidateSet = new Set(candidates);
+	const periodIds = [
+		...new Set(
+			confirmedTermRows
+				.filter((row) => candidateSet.has(row.employeeId))
+				.flatMap((row) => (row.employmentPeriodId ? [row.employmentPeriodId] : [])),
+		),
+	];
+	const agreementRows =
+		periodIds.length === 0
+			? []
+			: await db
+					.select({
+						employeeId: employmentTermAgreement.employeeId,
+						employmentPeriodId: employmentTermAgreement.employmentPeriodId,
+						sequenceNumber: employmentTermAgreement.sequenceNumber,
+						kind: employmentTermAgreement.kind,
+						startsOn: employmentTermAgreement.startsOn,
+						endsOn: employmentTermAgreement.endsOn,
+					})
+					.from(employmentTermAgreement)
+					.where(
+						and(
+							eq(employmentTermAgreement.organizationId, input.organizationId),
+							inArray(employmentTermAgreement.employeeId, candidates),
+							inArray(employmentTermAgreement.employmentPeriodId, periodIds),
+						),
+					);
+	const fixedTermEndsOnByPeriod = currentFixedTermEnds(agreementRows);
+
+	// A fixed-term employment across the year end is judged on its whole agreed length, so its
+	// terms, work and shifts in the neighbouring years are loaded too (`agreedSpans`).
+	const spansByEmployee = agreedSpans(agreementRows, fixedTermEndsOnByPeriod, { from, until });
+	let loadFrom = from;
+	let loadUntil = until;
+	for (const spans of spansByEmployee.values()) {
+		for (const span of spans) {
+			if (span.from < loadFrom) loadFrom = span.from;
+			if (span.until > loadUntil) loadUntil = span.until;
+		}
+	}
+	const inLoadedSpan = (employeeId: string, date: string) =>
+		inYears(date) ||
+		(spansByEmployee.get(employeeId) ?? []).some((span) => span.from <= date && date < span.until);
+	const allTermRows =
+		loadFrom === from && loadUntil === until
+			? confirmedTermRows
+			: await db
+					.select({
+						id: employeeEmploymentHistory.id,
+						employeeId: employeeEmploymentHistory.employeeId,
+						employmentPeriodId: employeeEmploymentHistory.employmentPeriodId,
+						employmentProfile: employeeEmploymentHistory.employmentProfile,
+						validFromDate: employeeEmploymentHistory.validFromDate,
+						validUntilDate: employeeEmploymentHistory.validUntilDate,
+						createdAt: employeeEmploymentHistory.createdAt,
+					})
+					.from(employeeEmploymentHistory)
+					.where(
+						and(
+							eq(employeeEmploymentHistory.organizationId, input.organizationId),
+							inArray(employeeEmploymentHistory.employeeId, candidates),
+							eq(employeeEmploymentHistory.reviewState, "confirmed"),
+							lt(employeeEmploymentHistory.validFromDate, loadUntil),
+							or(
+								isNull(employeeEmploymentHistory.validUntilDate),
+								gt(employeeEmploymentHistory.validUntilDate, loadFrom),
+							),
+						),
+					);
+
+	// Work and shifts just outside the loaded days too: work belonging to a shift counts on the
+	// shift's date (a clock-in at 23:50 on 31 December for a shift on 1 January counts in the new
+	// year).
 	const yearStart = dateFromInstant(
-		localDayRange(from, input.timezone).start.subtract({
+		localDayRange(loadFrom, input.timezone).start.subtract({
 			minutes: SHIFT_WORK_ASSOCIATION_LEAD_MINUTES,
 		}),
 	);
-	const yearEnd = dateFromInstant(localDayRange(until, input.timezone).start);
+	const yearEnd = dateFromInstant(localDayRange(loadUntil, input.timezone).start);
 	const workRows = await db
 		.select({
 			id: workPeriod.id,
@@ -459,8 +571,8 @@ export async function loadShortTermInputs(
 		);
 
 	const shiftBounds = shiftDateRangeBounds(
-		parsePlainDate(from).subtract({ days: 1 }).toString(),
-		parsePlainDate(until).add({ days: 1 }).toString(),
+		parsePlainDate(loadFrom).subtract({ days: 1 }).toString(),
+		parsePlainDate(loadUntil).add({ days: 1 }).toString(),
 		input.timezone,
 	);
 	const shiftConditions = [
@@ -504,36 +616,6 @@ export async function loadShortTermInputs(
 			),
 		);
 
-	// The current link of each employment period's agreement chain says whether it is fixed-term.
-	const candidateSet = new Set(candidates);
-	const periodIds = [
-		...new Set(
-			confirmedTermRows
-				.filter((row) => candidateSet.has(row.employeeId))
-				.flatMap((row) => (row.employmentPeriodId ? [row.employmentPeriodId] : [])),
-		),
-	];
-	const agreementRows =
-		periodIds.length === 0
-			? []
-			: await db
-					.select({
-						employmentPeriodId: employmentTermAgreement.employmentPeriodId,
-						sequenceNumber: employmentTermAgreement.sequenceNumber,
-						kind: employmentTermAgreement.kind,
-						endsOn: employmentTermAgreement.endsOn,
-					})
-					.from(employmentTermAgreement)
-					.where(
-						and(
-							eq(employmentTermAgreement.organizationId, input.organizationId),
-							inArray(employmentTermAgreement.employeeId, candidates),
-							inArray(employmentTermAgreement.employmentPeriodId, periodIds),
-						),
-					);
-	const fixedTermEndsOnByPeriod = currentFixedTermEnds(agreementRows);
-
-	const inYears = (date: string) => yearOf(date) >= firstYear && yearOf(date) <= lastYear;
 	// Running work and the rest of its shift meet on one minute grid, so their sum stays put
 	// whatever seconds the clock-in or the evaluation instant carry.
 	const nowOnGrid = minuteGrid(input.now);
@@ -649,14 +731,14 @@ export async function loadShortTermInputs(
 						.map((part) => ({ date: part.shift.date, minutes: part.minutes }))
 				: [{ date: plainDateAt(work.start, input.timezone).toString(), minutes: work.minutes }];
 			for (const part of parts) {
-				if (inYears(part.date)) dated.push({ ...work, ...part, inProgress });
+				if (inLoadedSpan(employeeId, part.date)) dated.push({ ...work, ...part, inProgress });
 			}
 		}
 		workByEmployee.set(employeeId, dated);
 
 		const planned: PlannedShift[] = [];
 		for (const s of shifts) {
-			if (!inYears(s.date)) continue;
+			if (!inLoadedSpan(employeeId, s.date)) continue;
 			// Over: what was worked is recorded work.
 			if (compareInstants(s.interval.end, input.now) <= 0) continue;
 			const item = { shiftId: s.id, date: s.date, startTime: s.startTime, endTime: s.endTime };
@@ -692,7 +774,9 @@ export async function loadShortTermInputs(
 	};
 	const inScope = new Set(candidates);
 	for (const proposed of input.proposedShifts) {
-		if (!inScope.has(proposed.employeeId) || !inYears(proposed.date)) continue;
+		if (!inScope.has(proposed.employeeId) || !inLoadedSpan(proposed.employeeId, proposed.date)) {
+			continue;
+		}
 		const interval = shiftInterval(
 			{
 				date: parsePlainDate(proposed.date),
@@ -712,7 +796,7 @@ export async function loadShortTermInputs(
 	}
 
 	const termRowsByEmployee = groupBy(termRows, (row) => row.employeeId);
-	const confirmedTermRowsByEmployee = groupBy(confirmedTermRows, (row) => row.employeeId);
+	const confirmedTermRowsByEmployee = groupBy(allTermRows, (row) => row.employeeId);
 	const samplesByEmployee = new Map(
 		candidates.map((employeeId) => [
 			employeeId,

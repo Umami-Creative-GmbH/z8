@@ -286,7 +286,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				});
 			});
 
-			it("stays one employment across a wage change and counts from its first day", async () => {
+			it("stays one employment across a wage change and counts its agreed length", async () => {
 				const org = await fx.organization("a");
 				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
 				const policy = await st.weekdayPolicy(org);
@@ -298,8 +298,36 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 
 				const [evaluation] = await evaluate(org, [worker.employeeId]);
 
-				// 1 June – 10 August: 71 of the 92 days from 1 June.
-				expect(evaluation?.allowance).toMatchObject({ used: 71, limit: 92, remaining: 21 });
+				// 1 June – 31 August is agreed: all 92 days from 1 June, though work stopped on 10 August.
+				expect(evaluation?.allowance).toMatchObject({ used: 92, limit: 92, remaining: 0 });
+			});
+
+			it("is exceeded by an agreed term over 3 months before its shifts are planned", async () => {
+				const org = await fx.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				await st.terms(worker, { from: "2026-06-01", workPolicyId: await st.weekdayPolicy(org) });
+				await st.fixedTermAgreement(worker, "2026-06-01", "2026-09-30");
+				await workOn(org, worker, ["2026-06-01", "2026-06-05", "2026-06-09"]);
+				for (const date of ["2026-06-15", "2026-06-26", "2026-07-06", "2026-07-15"]) {
+					await st.shift(org, worker, date);
+				}
+
+				const [evaluation] = await evaluate(org, [worker.employeeId], {
+					now: Temporal.Instant.from("2026-06-10T12:00:00Z"),
+				});
+
+				// 1 June – 30 September is agreed: 122 calendar days against 1 June – 31 August's 92.
+				expect(evaluation?.allowance).toMatchObject({
+					limitKind: "months",
+					used: 122,
+					limit: 92,
+					tier: "exceeded",
+				});
+				expect(evaluation?.findings[0]?.adminDetail?.facts).toMatchObject({
+					reason: "agreed_fixed_term_exceeds_limit",
+					agreedFirstDay: "2026-06-01",
+					agreedLastDay: "2026-09-30",
+				});
 			});
 
 			it("ends the employment on the agreed last day", async () => {
@@ -313,8 +341,9 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 
 				const [evaluation] = await evaluate(org, [worker.employeeId]);
 
-				// 1 – 29 June (29 days) and 3 – 10 August (8 days) against 90, not July between.
-				expect(evaluation?.allowance).toMatchObject({ used: 37, limit: 90 });
+				// All of June as agreed (a full month: 30 days) and 3 – 10 August (8 days) against 90,
+				// not July between.
+				expect(evaluation?.allowance).toMatchObject({ used: 38, limit: 90 });
 			});
 
 			it("ends an employment where later regular terms take over", async () => {
@@ -332,6 +361,88 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				// June and August are separate short-term employments: two full calendar months of
 				// 30 days each against 90, July not counted.
 				expect(evaluation?.allowance).toMatchObject({ used: 60, limit: 90, remaining: 30 });
+			});
+		});
+
+		describe("a fixed-term employment across the year end is judged on its whole agreed length", () => {
+			it("is exceeded in both years by a term from 1 November to 28 February", async () => {
+				const org = await fx.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				const policy = await st.weekdayPolicy(org);
+				await st.terms(worker, { from: "2026-11-01", workPolicyId: policy });
+				// A wage change: the terms row from 1 November ends before 2027.
+				await st.terms(worker, { from: "2026-12-15", workPolicyId: policy, hourlyRate: 16 });
+				await st.fixedTermAgreement(worker, "2026-11-01", "2027-02-28");
+				await workOn(org, worker, ["2026-11-02", "2026-11-13"]);
+
+				const both = await evaluate(org, [worker.employeeId], { years: [2026, 2027] });
+				const [onlyNextYear] = await evaluate(org, [worker.employeeId], { years: [2027] });
+
+				// 1 November – 28 February is 120 calendar days; 3 months from 1 November are 92.
+				const exceeded = { limitKind: "months", used: 120, limit: 92, tier: "exceeded" };
+				expect(both.map((e) => [e.year, e.allowance])).toEqual([
+					[2026, expect.objectContaining(exceeded)],
+					[2027, expect.objectContaining(exceeded)],
+				]);
+				expect(onlyNextYear?.allowance).toMatchObject(exceeded);
+			});
+
+			it("judges a term within 3 months once over its whole length in either year", async () => {
+				const org = await fx.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				await st.terms(worker, { from: "2026-12-01", workPolicyId: await st.weekdayPolicy(org) });
+				await st.fixedTermAgreement(worker, "2026-12-01", "2027-02-15");
+				await workOn(org, worker, ["2026-12-01", "2026-12-04"]);
+
+				const both = await evaluate(org, [worker.employeeId], { years: [2026, 2027] });
+				const [onlyNextYear] = await evaluate(org, [worker.employeeId], { years: [2027] });
+
+				// 1 December – 15 February: 77 of the 90 days from 1 December to 28 February.
+				const whole = { limitKind: "months", used: 77, limit: 90, remaining: 13 };
+				expect(both.map((e) => [e.year, e.allowance])).toEqual([
+					[2026, expect.objectContaining(whole)],
+					[2027, expect.objectContaining(whole)],
+				]);
+				expect(onlyNextYear?.allowance).toMatchObject(whole);
+			});
+
+			it("counts the other year's working days of the term against 70", async () => {
+				const org = await fx.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				const threeDays = await st.workPolicy(org, [["monday", "tuesday", "wednesday"]]);
+				await st.terms(worker, { from: "2026-12-01", workPolicyId: threeDays });
+				await st.fixedTermAgreement(worker, "2026-12-01", "2027-01-31");
+				await workOn(org, worker, ["2026-12-01", "2026-12-02", "2026-12-07"]);
+				for (const date of ["2027-01-04", "2027-01-05"]) await st.shift(org, worker, date);
+
+				const [thisYear] = await evaluate(org, [worker.employeeId], { years: [2026] });
+				const [nextYear] = await evaluate(org, [worker.employeeId], { years: [2027] });
+
+				expect(thisYear?.allowance).toMatchObject({ limitKind: "work_days", used: 5 });
+				expect(nextYear?.allowance).toMatchObject({ limitKind: "work_days", used: 5 });
+			});
+
+			it("still resets on January 1 between separate employments", async () => {
+				const org = await fx.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				const policy = await st.weekdayPolicy(org);
+				await st.terms(worker, { from: "2026-06-01", workPolicyId: policy });
+				await st.fixedTermAgreement(worker, "2026-06-01", "2026-08-15");
+				await st.terms(worker, { from: "2026-08-16", profile: "regular" });
+				await st.terms(worker, { from: "2027-06-01", workPolicyId: policy });
+				await workOn(org, worker, ["2026-06-01", "2026-08-14"]);
+				await workOn(org, worker, ["2027-06-01", "2027-06-07", "2027-06-12"]);
+
+				const evaluations = await evaluate(org, [worker.employeeId], {
+					years: [2026, 2027],
+					now: Temporal.Instant.from("2027-12-31T12:00:00Z"),
+				});
+
+				// 1 June – 15 August 2026 as agreed; in 2027 only 1 – 12 June.
+				expect(evaluations.map((e) => [e.year, e.allowance?.used, e.allowance?.limit])).toEqual([
+					[2026, 76, 92],
+					[2027, 12, 92],
+				]);
 			});
 		});
 

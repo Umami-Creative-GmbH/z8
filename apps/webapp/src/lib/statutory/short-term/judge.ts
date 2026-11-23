@@ -1,6 +1,7 @@
 /**
  * Pure judgement of one employee's short-term calendar year (#1990). Inputs come from
- * `loadShortTermInputs`; nothing here reads the database.
+ * `loadShortTermInputs`; nothing here reads the database. A fixed-term employment is judged on its
+ * whole agreed length, across the year end (`shortTermStints`).
  */
 import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
@@ -34,7 +35,10 @@ export interface ShortTermAllowance {
 	readonly limitKind: ShortTermLimitKind;
 	/** Used days or months: own short-term work and plans plus prior employers. */
 	readonly used: number;
-	/** Days (or months) from Z8's own completed work and planned shifts. */
+	/**
+	 * Days from Z8's own short-term employments: agreed fixed-term lengths, completed work and
+	 * planned shifts.
+	 */
 	readonly ownUsed: number;
 	/** Days (or months) recorded for prior employers in this calendar year. */
 	readonly priorEmployerUsed: number;
@@ -80,6 +84,11 @@ const SHORT_TERM_WEEKS_PER_HOLIDAY_WEEK = 4;
 export interface ShortTermStint {
 	readonly firstDay: string;
 	readonly lastDay: string;
+	/**
+	 * The `employmentKeys` key of the fixed-term employment this stint is the agreed length of;
+	 * null for a run of observed work.
+	 */
+	readonly agreedEmployment: string | null;
 }
 
 /**
@@ -90,7 +99,7 @@ function observedRuns(
 	days: readonly string[],
 	employmentOf: ReadonlyMap<string, string>,
 ): ShortTermStint[] {
-	const runs: { firstDay: string; lastDay: string }[] = [];
+	const runs: { firstDay: string; lastDay: string; agreedEmployment: null }[] = [];
 	for (const day of days) {
 		const current = runs.at(-1);
 		if (
@@ -101,7 +110,7 @@ function observedRuns(
 		) {
 			current.lastDay = day;
 		} else {
-			runs.push({ firstDay: day, lastDay: day });
+			runs.push({ firstDay: day, lastDay: day, agreedEmployment: null });
 		}
 	}
 	return runs;
@@ -131,35 +140,58 @@ function employmentKeys(
 }
 
 /**
- * The year's stints. One fixed-term employment is one stint from its first day (or January 1) to
- * its last counted day up to its agreed end, pauses included: the Geringfügigkeits-Richtlinien
- * count one continuing employment in full. Under open-ended framework terms, and after an agreed
- * end, each run of observed work is a stint (`observedRuns`), so the pauses between assignments
- * do not count.
+ * The agreed length of each fixed-term employment that overlaps `year`: from its first day to its
+ * agreed last day, or to the day before later terms take over if that is earlier. Not clipped at
+ * January 1 or December 31, and there as soon as it is agreed, before any shift is planned.
+ */
+function agreedStints(
+	year: number,
+	employments: readonly ShortTermEmployment[],
+): Map<string, ShortTermStint> {
+	const yearStart = `${year}-01-01`;
+	const yearEnd = `${year}-12-31`;
+	const stints = new Map<string, ShortTermStint>();
+	for (const [index, employment] of employments.entries()) {
+		if (!employment.fixedTermEndsOn) continue;
+		const lastBeforeLaterTerms =
+			employment.until === null
+				? null
+				: parsePlainDate(employment.until).subtract({ days: 1 }).toString();
+		const lastDay =
+			lastBeforeLaterTerms !== null && lastBeforeLaterTerms < employment.fixedTermEndsOn
+				? lastBeforeLaterTerms
+				: employment.fixedTermEndsOn;
+		if (lastDay < employment.from || lastDay < yearStart || employment.from > yearEnd) continue;
+		const key = `employment:${index}`;
+		stints.set(key, { firstDay: employment.from, lastDay, agreedEmployment: key });
+	}
+	return stints;
+}
+
+/**
+ * The year's stints. A fixed-term employment overlapping the year is one stint over its whole
+ * agreed length (`agreedStints`), pauses, days before January 1 and days after December 31
+ * included: § 8 Abs. 1 Nr. 2 SGB IV judges an employment limited in advance by contract on its
+ * agreed length, and the Geringfügigkeits-Richtlinien apply that to an employment across the year
+ * end too. Under open-ended framework terms, and after an agreed end, each run of observed work in
+ * the year is a stint (`observedRuns`), so the pauses between assignments do not count.
+ *
+ * #1990 says the allowance resets on January 1. That holds for adding up separate employments
+ * within a calendar year, not for one continuing fixed-term employment: the law wins here.
  */
 export function shortTermStints(input: {
 	readonly year: number;
+	/** The year's counted days, sorted and distinct. */
 	readonly days: readonly string[];
 	readonly employments: readonly ShortTermEmployment[];
 	readonly employmentOf: ReadonlyMap<string, string>;
 }): ShortTermStint[] {
-	const yearStart = `${input.year}-01-01`;
-	const fixed = new Map<string, ShortTermStint>();
-	const observed: string[] = [];
-	for (const day of input.days) {
-		const key = input.employmentOf.get(day) ?? "";
-		const employment = key.startsWith("employment:")
-			? input.employments[Number(key.slice("employment:".length))]
-			: undefined;
-		if (!employment?.fixedTermEndsOn || day > employment.fixedTermEndsOn) {
-			observed.push(day);
-			continue;
-		}
-		const firstDay =
-			fixed.get(key)?.firstDay ?? (employment.from > yearStart ? employment.from : yearStart);
-		fixed.set(key, { firstDay, lastDay: day });
-	}
-	return [...fixed.values(), ...observedRuns(observed, input.employmentOf)].sort((a, b) =>
+	const agreed = agreedStints(input.year, input.employments);
+	const observed = input.days.filter((day) => {
+		const stint = agreed.get(input.employmentOf.get(day) ?? "");
+		return !stint || day > stint.lastDay;
+	});
+	return [...agreed.values(), ...observedRuns(observed, input.employmentOf)].sort((a, b) =>
 		a.firstDay.localeCompare(b.firstDay),
 	);
 }
@@ -284,6 +316,8 @@ interface AllowanceCount {
 	readonly limit: number;
 	readonly ownUsed: number;
 	readonly priorEmployerUsed: number;
+	/** Under the 3-month limit: an agreed fixed term longer than 3 time months on its own. */
+	readonly agreedTermOverLimit: ShortTermStint | null;
 }
 
 /**
@@ -293,18 +327,21 @@ interface AllowanceCount {
  *   calendar days. One stint alone is measured in time months (*Zeitmonate*) from its first day
  *   (`timeMonthsDays`): 15 June – 14 September is 3 months (92 days), 31 January – 30 April
  *   is 90 days, and 15 June – 15 August uses 62 of them, not a
- *   started third month. A fixed-term employment is one stint, its pauses included (see
- *   `shortTermStints`). Several stints (also a prior employer's) are added: a full calendar month
- *   counts as 30 days, a part month with its actual days, against 90 calendar days. The pauses
- *   between stints never count.
+ *   started third month. A fixed-term employment is one stint over its whole agreed length, its
+ *   pauses and the other calendar year included (see `shortTermStints`): agreed for longer than
+ *   3 time months, it is exceeded as soon as it is agreed, and is reported against its own limit
+ *   if the added-up stints are not exceeded too. Several stints (also a prior employer's) are
+ *   added: a full calendar month counts as 30 days, a part month with its actual days, against
+ *   90 calendar days. The pauses between stints never count.
  * - **70 working days** as soon as one stint has a shorter or irregular week, and also when such
- *   stints meet ≥ 5-day stints: then every stint counts with its working days. Prior employers'
- *   working days count as recorded; a prior employer's months, whose working days are not
- *   recorded, count as 70 / 3 working days each (the ratio of the two limits), rounded up.
+ *   stints meet ≥ 5-day stints: then every stint counts with its working days (`workingDays`:
+ *   a fixed-term employment's in the other calendar year too). Prior employers' working days count
+ *   as recorded; a prior employer's months, whose working days are not recorded, count as 70 / 3
+ *   working days each (the ratio of the two limits), rounded up.
  */
 function countAllowance(input: {
 	readonly ownLimitKind: ShortTermLimitKind;
-	readonly days: readonly string[];
+	readonly workingDays: readonly string[];
 	readonly stints: readonly ShortTermStint[];
 	readonly prior: PriorEmployerTotals;
 	readonly dayLimit: number;
@@ -315,25 +352,42 @@ function countAllowance(input: {
 		return {
 			limitKind: "work_days",
 			limit: dayLimit,
-			ownUsed: input.days.length,
+			ownUsed: input.workingDays.length,
 			priorEmployerUsed: prior.days + Math.ceil((prior.months * dayLimit) / monthLimit),
+			agreedTermOverLimit: null,
 		};
 	}
+	const ownLimit = (stint: ShortTermStint) =>
+		timeMonthsDays(parsePlainDate(stint.firstDay), monthLimit);
+	const agreedTermOverLimit =
+		stints.find(
+			(stint) => stint.agreedEmployment !== null && calendarDays(stint) > ownLimit(stint),
+		) ?? null;
 	const [only] = stints;
 	if (stints.length === 1 && only && prior.months === 0) {
 		return {
 			limitKind: "months",
-			limit: timeMonthsDays(parsePlainDate(only.firstDay), monthLimit),
+			limit: ownLimit(only),
 			ownUsed: calendarDays(only),
 			priorEmployerUsed: 0,
+			agreedTermOverLimit,
 		};
 	}
-	return {
-		limitKind: "months",
-		limit: monthLimit * SHORT_TERM_DAYS_PER_FULL_MONTH,
-		ownUsed: stints.reduce((sum, stint) => sum + combinedCalendarDays(stint), 0),
-		priorEmployerUsed: prior.months * SHORT_TERM_DAYS_PER_FULL_MONTH,
-	};
+	const limit = monthLimit * SHORT_TERM_DAYS_PER_FULL_MONTH;
+	const ownUsed = stints.reduce((sum, stint) => sum + combinedCalendarDays(stint), 0);
+	const priorEmployerUsed = prior.months * SHORT_TERM_DAYS_PER_FULL_MONTH;
+	if (agreedTermOverLimit && ownUsed + priorEmployerUsed <= limit) {
+		// Full months counted as 30 days can bring the added-up stints under 90 although the agreed
+		// term alone runs past its 3 time months: that term is not short-term on its own.
+		return {
+			limitKind: "months",
+			limit: ownLimit(agreedTermOverLimit),
+			ownUsed: calendarDays(agreedTermOverLimit),
+			priorEmployerUsed: 0,
+			agreedTermOverLimit,
+		};
+	}
+	return { limitKind: "months", limit, ownUsed, priorEmployerUsed, agreedTermOverLimit };
 }
 
 export function judgeShortTermYear(input: {
@@ -347,14 +401,29 @@ export function judgeShortTermYear(input: {
 	const week = employee.weekByYear.get(year);
 	if (!week) return null;
 	const inYear = (date: string) => date.startsWith(`${year}-`);
-	const counted = [...employee.work, ...employee.planned].filter((item) => inYear(item.date));
-	const days = [...new Set(counted.map((item) => item.date))].sort();
+	// Counted days of every loaded year: a fixed-term employment across the year end counts its
+	// days in the other year too.
+	const counted = [...employee.work, ...employee.planned];
+	const allDays = [...new Set(counted.map((item) => item.date))].sort();
+	const days = allDays.filter(inYear);
 	const employmentOf = employmentKeys(
-		days,
+		allDays,
 		employee.employments,
 		new Map(counted.map((item) => [item.date, item.employmentPeriodId])),
 	);
 	const stints = shortTermStints({ year, days, employments: employee.employments, employmentOf });
+	const agreed = stints.filter((stint) => stint.agreedEmployment !== null);
+	// The year's days, and the other years' days of a fixed-term employment overlapping it.
+	const workingDays = allDays.filter(
+		(day) =>
+			inYear(day) ||
+			agreed.some(
+				(stint) =>
+					employmentOf.get(day) === stint.agreedEmployment &&
+					stint.firstDay <= day &&
+					day <= stint.lastDay,
+			),
+	);
 	const ownLimitKind = ownLimitKindOf(week, employmentOf);
 	const firstDay = days[0] ?? null;
 	const lastDay = days.at(-1) ?? null;
@@ -367,9 +436,9 @@ export function judgeShortTermYear(input: {
 		return { employeeId: employee.employeeId, year, allowance: null, findings: [] };
 	}
 	const prior = priorEmployerTotals(employee, year);
-	const { limitKind, limit, ownUsed, priorEmployerUsed } = countAllowance({
+	const { limitKind, limit, ownUsed, priorEmployerUsed, agreedTermOverLimit } = countAllowance({
 		ownLimitKind,
-		days,
+		workingDays,
 		stints,
 		prior,
 		dayLimit,
@@ -426,13 +495,18 @@ export function judgeShortTermYear(input: {
 					stints: stints.length,
 					firstDay,
 					lastDay,
+					...(agreedTermOverLimit && {
+						reason: "agreed_fixed_term_exceeds_limit",
+						agreedFirstDay: agreedTermOverLimit.firstDay,
+						agreedLastDay: agreedTermOverLimit.lastDay,
+					}),
 				},
 			},
 			inputFingerprint: statutoryInputFingerprint({
 				kind,
 				year,
 				limit,
-				days,
+				days: workingDays,
 				stints: stints.map((stint) => [stint.firstDay, stint.lastDay]),
 				priorDays: prior.days,
 				priorMonths: prior.months,

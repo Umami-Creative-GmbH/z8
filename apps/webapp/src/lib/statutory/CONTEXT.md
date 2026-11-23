@@ -65,15 +65,25 @@ force after later confirmed terms supersede them. A new wage or week does not en
 or a gap do. Terms that end only because later terms supersede them mark where the short-term
 terms stop; they do not make the employment fixed-term. **Fixed-term** when its employment
 period's current employment agreement (the last link of its `employment_term_agreement` chain) is
-fixed-term; it then ends on the agreement's last day, or on the last short-term day if that is
+fixed-term; it then ends on the agreement's last day, or where later terms take over if that is
 earlier. Else an open-ended **framework agreement**.
 
+**Agreed length**:
+A fixed-term employment is judged on its whole agreed length, from its first day to its agreed
+end: § 8 Abs. 1 Nr. 2 SGB IV asks whether the employment is limited *in advance by contract*, and
+the Geringfügigkeits-Richtlinien apply that to an employment across the year end too. So the
+agreed length counts as soon as it is agreed, before any shift is planned, and in every calendar
+year it touches: a fixed term from 1 November to 28 February is over 3 months in both years.
+Under the 70-working-day limit its short-term days in the other calendar year count as well.
+The ticket's "reset on January 1" applies to adding up separate employments within a calendar
+year, not to one continuing fixed-term employment.
+
 **Stint**:
-The part of the year that counts towards the limit. A fixed-term employment is one stint from its
-first day (or January 1) to its last short-term day up to the agreed end, pauses included: one
-continuing employment counts in full. Under a framework agreement, and for short-term days after an
-agreed end, a run of short-term days no more than 14 calendar days apart is a stint, and a longer
-pause starts a new one. Separate employments are separate stints.
+The part of the employment that counts towards the limit. A fixed-term employment is one stint
+over its whole agreed length, pauses included (see **Agreed length**). Under a framework
+agreement, and for short-term days after an agreed end, a run of the year's short-term days no
+more than 14 calendar days apart is a stint, and a longer pause starts a new one. Separate
+employments are separate stints, and only those of the calendar year are added up.
 _Avoid_: contract, assignment
 
 **3-month limit**:
@@ -82,7 +92,9 @@ stint alone is measured in **time months** (*Zeitmonate*) from its first day (§
 188 Abs. 2 and 3 BGB): the period ends on the day before the day with the start's number in the
 third following month, or on that month's last day if it has no such day. 15 June – 14 September
 is 3 months, 31 January – 30 April too (90 days), and a fixed-term employment from 1 June to
-31 August uses all 92 days even with July off. Several stints, prior employers' included, are added up against **90 calendar days**, a full
+31 August uses all 92 days even with July off. A fixed term agreed for longer than 3 time months
+is exceeded from the day it is agreed (reason `agreed_fixed_term_exceeds_limit` in the finding's
+admin detail). Several stints, prior employers' included, are added up against **90 calendar days**, a full
 calendar month counting as 30; the time between stints never counts.
 
 **70-working-day limit**:
@@ -93,7 +105,8 @@ stint has one. Counts short-term days.
 Taken from the employee's own planned week: custom days or a work policy set on their terms or
 assigned to them. A week inherited from a team or organization default, weekly hours alone,
 published shifts and on-call terms are no agreed week; the limit then follows the mean full week
-observed in the counted days.
+observed in the short-term days worked or planned under them. Such terms with no short-term days
+say nothing about the week and do not choose the limit.
 
 **Prior-employer offset**:
 Short-term working days or months another employer used in the same calendar year, recorded as

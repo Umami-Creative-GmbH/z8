@@ -14,7 +14,10 @@
  *   to it (`workMatchesShift`), the clock-in counts up to now and the shift for its rest, both on
  *   one minute grid; during a clocked-out break the rest counts from the end of its recorded
  *   work. Once the shift has ended, recorded work replaces it.
- * - A stint is a run of counted days no more than 14 days apart within one employment period.
+ * - A fixed-term employment is one stint over its whole agreed length, across the year end and
+ *   before any shift is planned (§ 8 Abs. 1 Nr. 2 SGB IV: limited in advance by contract); its
+ *   terms, work and shifts in the neighbouring years are loaded for that. Otherwise a stint is a
+ *   run of the year's counted days no more than 14 days apart within one employment period.
  * - The 3-month limit applies when every short-term terms version of the year that sets the
  *   employee's own week plans 5 or more work days a week on average over its schedule cycle, terms
  *   without one (published shifts, on call, weekly hours alone, a work policy only inherited from a
