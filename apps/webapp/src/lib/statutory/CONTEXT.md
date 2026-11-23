@@ -78,8 +78,10 @@ _Avoid_: counting `child_sick` absence as sick leave
   breach the scope had (for a weekend or holiday breach counted in days: more work on that day).
   A release conflict is as deep as the planned work inside the conflicting release time (the
   exam, the lessons and the time before lessons starting before 09:00, or the whole day released
-  in full; `coveredMinutes`), on every release day its shift conflicts with (a night shift
-  through two block days covers both). Its release day is judged by the total of all its conflicts, work
+  in full; `coveredMinutes`) on its release day. A shift that conflicts with two release days (a
+  night shift through two block days) has a conflict on each, dated that day, covering only its
+  work there and citing that day's rule, so moving work from one release day into the other is a
+  deeper conflict on the second. A release day is judged by the total of all its conflicts, work
   that overlapping shifts share counted once: more of it, on the edited shift or on one moved in,
   is caused; the same or less is not. A shift published across the first 15 minutes of an exam
   may be shortened, not lengthened, and no other shift may be moved into the exam
