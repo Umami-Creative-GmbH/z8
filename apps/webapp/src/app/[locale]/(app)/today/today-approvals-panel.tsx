@@ -199,7 +199,7 @@ export function TodayApprovalsPanel({
 			</CardHeader>
 			<CardContent className="space-y-3">
 				{error ? <SectionError message={error} onRetry={onRetry} /> : null}
-				{!error && unavailableTypeNames.length > 0 ? (
+				{!error && !stale && unavailableTypeNames.length > 0 ? (
 					<SectionError
 						message={t(
 							"today.approvals.partialFailure",
@@ -309,18 +309,41 @@ export function TodayApprovalsPanel({
 				{truncated && !error && !stale ? (
 					// The briefing lists the first page; the inbox holds the rest.
 					<p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-						<span>
-							{t("today.approvals.truncated", "Showing {shown} of {total} pending approvals.", {
-								shown: items.length,
-								total,
-							})}
-						</span>
-						<Link href="/approvals/inbox" className="font-medium underline underline-offset-4">
-							{t("today.approvals.openInboxForRest", "Open the inbox to see the rest")}
-						</Link>
+						{items.length > 0 ? (
+							<>
+								<span>
+									{t(
+										"today.approvals.truncated",
+										"Showing {shown} of {total, plural, one {# pending approval} other {# pending approvals}}.",
+										{ shown: items.length, total },
+									)}
+								</span>
+								<Link href="/approvals/inbox" className="font-medium underline underline-offset-4">
+									{t("today.approvals.openInboxForRest", "Open the inbox to see the rest")}
+								</Link>
+							</>
+						) : (
+							// Nothing could be listed here, so don't say "Showing 0 of N".
+							<>
+								<span>
+									{t(
+										"today.approvals.waitingInInbox",
+										"{total, plural, one {# pending approval is} other {# pending approvals are}} waiting in the inbox.",
+										{ total },
+									)}
+								</span>
+								<Link href="/approvals/inbox" className="font-medium underline underline-offset-4">
+									{t("today.approvals.openInbox", "Open the inbox")}
+								</Link>
+							</>
+						)}
 					</p>
 				) : null}
-				{items.length === 0 && total === 0 && !error && !stale ? (
+				{items.length === 0 &&
+				total === 0 &&
+				unavailableTypeNames.length === 0 &&
+				!error &&
+				!stale ? (
 					<p className="rounded-lg border border-dashed bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
 						{t("today.approvals.empty", "No approvals are waiting.")}
 					</p>

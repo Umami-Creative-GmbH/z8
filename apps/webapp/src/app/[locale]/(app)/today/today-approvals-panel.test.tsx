@@ -37,7 +37,15 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
-				(text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+				(text, [name, value]) =>
+					text
+						// A minimal ICU plural: `{name, plural, one {…} other {…}}`, `#` is the value.
+						.replace(
+							new RegExp(`\\{${name}, plural, one \\{([^}]*)\\} other \\{([^}]*)\\}\\}`, "g"),
+							(_match, one: string, other: string) =>
+								(Number(value) === 1 ? one : other).replaceAll("#", String(value)),
+						)
+						.replaceAll(`{${name}}`, String(value)),
 				translations.get(key) ?? fallback,
 			),
 	}),
@@ -531,10 +539,44 @@ describe("TodayApprovalsPanel", () => {
 		render(<TodayApprovalsPanel items={[]} total={2} />);
 
 		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
-		expect(screen.getByText("Showing 0 of 2 pending approvals.")).toBeTruthy();
-		expect(
-			screen.getByRole("link", { name: "Open the inbox to see the rest" }).getAttribute("href"),
-		).toBe("/approvals/inbox");
+		// Nothing is listed, so it doesn't say "Showing 0 of 2".
+		expect(screen.queryByText(/^Showing/)).toBeNull();
+		expect(screen.getByText("2 pending approvals are waiting in the inbox.")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Open the inbox" }).getAttribute("href")).toBe(
+			"/approvals/inbox",
+		);
+	});
+
+	it("uses the singular for one pending approval it does not list", () => {
+		render(<TodayApprovalsPanel items={[]} total={1} />);
+
+		expect(screen.getByText("1 pending approval is waiting in the inbox.")).toBeTruthy();
+	});
+
+	it("never claims no approvals wait while an approval type could not be loaded", () => {
+		// Both the list and the count of the only pending type failed, so the total is 0.
+		render(
+			<TodayApprovalsPanel items={[]} total={0} unavailableTypes={["travel_expense_claim"]} />,
+		);
+
+		expect(screen.getByRole("alert").textContent).toContain(
+			"Some approvals could not be loaded: Travel Expenses.",
+		);
+		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
+	});
+
+	it("leaves the partial-failure alert to the fresh briefing while this one is stale", () => {
+		render(
+			<TodayApprovalsPanel
+				items={[approvalItem()]}
+				total={3}
+				unavailableTypes={["travel_expense_claim"]}
+				stale
+			/>,
+		);
+
+		expect(screen.queryByText(/Some approvals could not be loaded/)).toBeNull();
+		expect(screen.queryByRole("button", { name: "Retry approvals" })).toBeNull();
 	});
 
 	it("shows an item's summary in the viewer's language when the inbox localizes it", () => {

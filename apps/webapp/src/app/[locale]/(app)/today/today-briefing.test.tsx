@@ -15,7 +15,15 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
-				(text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
+				(text, [key, value]) =>
+					text
+						// A minimal ICU plural: `{key, plural, one {…} other {…}}`, `#` is the value.
+						.replace(
+							new RegExp(`\\{${key}, plural, one \\{([^}]*)\\} other \\{([^}]*)\\}\\}`, "g"),
+							(_match, one: string, other: string) =>
+								(Number(value) === 1 ? one : other).replaceAll("#", String(value)),
+						)
+						.replaceAll(`{${key}}`, String(value)),
 				fallback,
 			),
 	}),
