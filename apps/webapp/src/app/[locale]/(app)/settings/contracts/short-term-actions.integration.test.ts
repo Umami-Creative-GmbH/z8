@@ -239,7 +239,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 			if (!result.success) throw new Error(result.error);
 			return result.data.map((review) => [review.employeeName, review.month]);
 		};
-		expect(await open()).toEqual([["worker Test", JANUARY]]);
+		expect(await open()).toEqual([["worker", JANUARY]]);
 
 		expect(
 			await acknowledgeShortTermBerufsmaessigkeitAction({
@@ -257,7 +257,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 		});
 
 		await st.work(org, worker, `${JANUARY}-20`);
-		expect(await open()).toEqual([["worker Test", JANUARY]]);
+		expect(await open()).toEqual([["worker", JANUARY]]);
 	});
 
 	it("keeps another organization's admin away from the employee's monitor and records", async () => {

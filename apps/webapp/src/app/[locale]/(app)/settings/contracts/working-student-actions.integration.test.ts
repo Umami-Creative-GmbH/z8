@@ -220,7 +220,8 @@ describe("working-student actions (PostgreSQL)", () => {
 		if (!listed.success) throw new Error(listed.error);
 		const item = listed.data.find((i) => i.finding.kind === "working_student_lecture_week");
 		expect(item).toMatchObject({
-			employeeName: "student Test",
+			// The user's name, not the deprecated employee columns ("student Test").
+			employeeName: "student",
 			finding: { periodStart: week, severity: "critical", acknowledgement: { status: "none" } },
 		});
 
