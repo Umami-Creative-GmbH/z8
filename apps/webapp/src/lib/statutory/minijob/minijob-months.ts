@@ -37,11 +37,27 @@ export interface MinijobEarningItem {
 	readonly hourlyRateCents: number | null;
 	/**
 	 * Its minutes run with the clock: an open work period so far, or the rest of a started shift.
-	 * The fingerprint records it without its minutes, so an acknowledgement does not go stale
-	 * minute by minute; it changes when the work period opens or closes.
+	 * The fingerprint records unplanned open work without its minutes, so an acknowledgement does
+	 * not go stale minute by minute; it changes when the work period closes.
 	 */
 	readonly inProgress?: boolean;
+	/** Work that belongs to a shift: the shift, not the work, stands for it in the fingerprint. */
+	readonly forShift?: boolean;
 }
+
+/** A persisted shift of the month as planned, whether it is ahead, under way or over. */
+export interface MinijobPlannedShift {
+	readonly id: string;
+	readonly date: string;
+	readonly minutes: number;
+	readonly hourlyRateCents: number | null;
+}
+
+/**
+ * Work beyond its shifts below this many minutes does not change what an acknowledgement covers:
+ * clocking in or out a few minutes off the plan is not a material change of the month's earnings.
+ */
+export const MINIJOB_MATERIAL_OVERRUN_MINUTES = 15;
 
 /** What the database layer knows about one employee's calendar month. */
 export interface MinijobMonthFacts {
@@ -55,6 +71,8 @@ export interface MinijobMonthFacts {
 	readonly maxUnforeseeableMonths: number | null;
 	/** Items on Minijob days only. */
 	readonly items: readonly MinijobEarningItem[];
+	/** Every persisted shift starting on a Minijob day of the month, as planned. */
+	readonly shifts: readonly MinijobPlannedShift[];
 	readonly externalOffsets: readonly { readonly id: string; readonly amountCents: number }[];
 }
 
@@ -146,6 +164,41 @@ function byText<T>(key: (value: T) => string) {
 }
 
 /**
+ * What an acknowledgement of the month's earnings rests on, independent of how far the plan has
+ * been worked: the shifts as planned, proposals, work outside any shift, and how far work for
+ * the shifts runs beyond them in material steps. A shift worked as planned — before, during and
+ * after the clock-in — leaves it unchanged; an added, removed or moved shift, unplanned work or
+ * a material overrun changes it. Work short of the plan does not: the earnings only fall.
+ */
+function plannedBasisOf(facts: MinijobMonthFacts) {
+	let shiftWorkMinutes = 0;
+	const unplanned: MinijobEarningItem[] = [];
+	for (const item of facts.items) {
+		if (item.source === "shift" || (item.source === "work" && item.forShift)) {
+			shiftWorkMinutes += item.minutes;
+		} else unplanned.push(item);
+	}
+	const plannedMinutes = facts.shifts.reduce((sum, shift) => sum + shift.minutes, 0);
+	return {
+		shifts: [...facts.shifts]
+			.sort(byText((shift) => shift.id))
+			.map((shift) => [shift.id, shift.date, shift.minutes, shift.hourlyRateCents]),
+		unplanned: unplanned
+			.sort(byText((item) => `${item.source}:${item.id}`))
+			.map((item) => [
+				item.source,
+				item.id,
+				item.date,
+				item.inProgress ? "in_progress" : item.minutes,
+				item.hourlyRateCents,
+			]),
+		overrunSteps: Math.floor(
+			Math.max(0, shiftWorkMinutes - plannedMinutes) / MINIJOB_MATERIAL_OVERRUN_MINUTES,
+		),
+	};
+}
+
+/**
  * Totals and exceedances of consecutive months, oldest first. `employeeId` only enters the
  * fingerprints, so an acknowledgement can never be replayed onto another employee.
  */
@@ -197,15 +250,7 @@ export function computeMinijobMonths(
 			capCents: month.facts.capCents,
 			unforeseeableMultiplier: month.facts.unforeseeableMultiplier,
 			maxUnforeseeableMonths: month.facts.maxUnforeseeableMonths,
-			items: [...month.facts.items]
-				.sort(byText((item) => `${item.source}:${item.id}`))
-				.map((item) => [
-					item.source,
-					item.id,
-					item.date,
-					item.inProgress ? "in_progress" : item.minutes,
-					item.hourlyRateCents,
-				]),
+			...plannedBasisOf(month.facts),
 			externalOffsets: [...month.facts.externalOffsets]
 				.sort(byText((offset) => offset.id))
 				.map((offset) => [offset.id, offset.amountCents]),

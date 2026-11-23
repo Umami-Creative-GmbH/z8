@@ -158,6 +158,19 @@ export function minijobFixture(admin: Pool, fx: StatutoryFixture) {
 			return workPeriodId;
 		},
 
+		/** Clocks out an open work period `minutes` after it started. */
+		async closeWork(workPeriodId: string, minutes: number): Promise<void> {
+			await withCanonicalRecords(admin, (client) =>
+				client.query(
+					`UPDATE work_period
+					 SET end_time = start_time + make_interval(mins => $2::int), duration_minutes = $2,
+						is_active = false, updated_at = now()
+					 WHERE id = $1`,
+					[workPeriodId, minutes],
+				),
+			);
+		},
+
 		/**
 		 * `totalMinutes` of completed work in `month` (`YYYY-MM`), split into periods of at most
 		 * ten hours on consecutive days from the 2nd.

@@ -27,7 +27,11 @@ import {
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
-import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
+import {
+	type ShiftInterval,
+	shiftInterval,
+	workMatchesShift,
+} from "@/lib/scheduling/shift-occasion";
 import { loadStatutoryAcknowledgementStates } from "../acknowledgements";
 import type { StatutoryFinding } from "../finding";
 import type { StatutoryPreferences } from "../preferences";
@@ -45,6 +49,7 @@ import {
 	type MinijobEarningItem,
 	type MinijobFindingKind,
 	type MinijobMonthFacts,
+	type MinijobPlannedShift,
 	minijobFindingsOf,
 	monthsBetween,
 } from "./minijob-months";
@@ -135,6 +140,21 @@ function isMinijobDay(contract: EffectiveContractOnDay | undefined): boolean {
 	return contract?.employmentProfile === "minijob" && contract.isEmployedOnDay;
 }
 
+/**
+ * Whether work belongs to a shift: it matches the shift (`workMatchesShift`) or overlaps it — an
+ * open clock-in up to now. One clock-in over back-to-back shifts belongs to each of them, so
+ * none of them is counted on top of it.
+ */
+function workBelongsToShift(
+	shift: ShiftInterval,
+	work: { start: Instant; end: Instant | null },
+	now: Instant,
+): boolean {
+	if (workMatchesShift(shift, work)) return true;
+	const workEnd = work.end ?? now;
+	return compareInstants(work.start, shift.end) < 0 && compareInstants(workEnd, shift.start) > 0;
+}
+
 function rateCentsOf(contract: EffectiveContractOnDay): number | null {
 	return contract.hourlyRate === null ? null : Math.round(contract.hourlyRate * 100);
 }
@@ -169,6 +189,7 @@ export async function evaluateMinijobEarnings(
 		timezoneOverride: timezone,
 		organizationTimezone: timezone,
 	});
+	const contractOn = (employeeId: string, date: string) => contracts.get(employeeId)?.get(date);
 
 	const rangeStart = localDayRange(rangeFrom, timezone).start;
 	const rangeEnd = localDayRange(rangeUntil, timezone).start;
@@ -250,16 +271,41 @@ export async function evaluateMinijobEarnings(
 
 	// ─── Earning items per employee and month ───────────────────────────────────────────────────
 	const items = new Map<string, MinijobEarningItem[]>();
-	const addItem = (employeeId: string, item: Omit<MinijobEarningItem, "hourlyRateCents">): void => {
-		const contract = contracts.get(employeeId)?.get(item.date);
+	const plannedShifts = new Map<string, MinijobPlannedShift[]>();
+	/** Appends to the employee's month of `date`, on Minijob days only, priced at that day's wage. */
+	const priced = <T extends { date: string }>(
+		into: Map<string, (T & { hourlyRateCents: number | null })[]>,
+		employeeId: string,
+		entry: T,
+	): void => {
+		const contract = contractOn(employeeId, entry.date);
 		if (!contract || !isMinijobDay(contract)) return;
-		const key = `${employeeId}|${item.date.slice(0, 7)}`;
-		const list = items.get(key);
-		const priced = { ...item, hourlyRateCents: rateCentsOf(contract) };
-		if (list) list.push(priced);
-		else items.set(key, [priced]);
+		const key = `${employeeId}|${entry.date.slice(0, 7)}`;
+		const value = { ...entry, hourlyRateCents: rateCentsOf(contract) };
+		const list = into.get(key);
+		if (list) list.push(value);
+		else into.set(key, [value]);
 	};
+	const addItem = (employeeId: string, item: Omit<MinijobEarningItem, "hourlyRateCents">) =>
+		priced(items, employeeId, item);
 	const minutesBetween = (start: Instant, end: Instant) => start.until(end).total("minutes");
+
+	const shiftsOf = new Map<
+		string,
+		{ row: (typeof shiftRows)[number]; date: string; interval: ShiftInterval }[]
+	>();
+	for (const row of shiftRows) {
+		if (!row.employeeId) continue;
+		const date = shiftCalendarDate(row.date, timezone);
+		const interval = shiftInterval(
+			{ date, startTime: row.startTime, endTime: row.endTime },
+			timezone,
+		);
+		const entry = { row, date: date.toString(), interval };
+		const list = shiftsOf.get(row.employeeId);
+		if (list) list.push(entry);
+		else shiftsOf.set(row.employeeId, [entry]);
+	}
 
 	const workOf = new Map<string, { start: Instant; end: Instant | null }[]>();
 	for (const row of workRows) {
@@ -274,6 +320,9 @@ export async function evaluateMinijobEarnings(
 		const work = { start, end };
 		if (list) list.push(work);
 		else workOf.set(row.employeeId, [work]);
+		const forShift = (shiftsOf.get(row.employeeId) ?? []).some((shift) =>
+			workBelongsToShift(shift.interval, work, input.now),
+		);
 		addItem(row.employeeId, {
 			source: "work",
 			id: row.id,
@@ -283,42 +332,35 @@ export async function evaluateMinijobEarnings(
 				? Math.max(0, Math.floor(minutesBetween(start, input.now)))
 				: (row.durationMinutes ?? 0),
 			...(open ? { inProgress: true } : {}),
+			...(forShift ? { forShift: true } : {}),
 		});
 	}
 
-	for (const row of shiftRows) {
-		if (!row.employeeId) continue;
-		const date = shiftCalendarDate(row.date, timezone);
-		const interval = shiftInterval(
-			{ date, startTime: row.startTime, endTime: row.endTime },
-			timezone,
-		);
-		const item = { source: "shift" as const, id: row.id, date: date.toString() };
-		if (compareInstants(interval.start, input.now) > 0) {
-			addItem(row.employeeId, {
-				...item,
-				minutes: Math.round(minutesBetween(interval.start, interval.end)),
-			});
-			continue;
-		}
-		// Over: what was worked is recorded work.
-		if (compareInstants(interval.end, input.now) <= 0) continue;
-		// In progress: the open clock-in counts up to now, the shift for its rest. Once its work
-		// has closed, the recorded work replaces it; until anyone clocks in, it counts in full.
-		const matched = (workOf.get(row.employeeId) ?? []).filter((work) =>
-			workMatchesShift(interval, work),
-		);
-		if (matched.some((work) => work.end === null)) {
-			addItem(row.employeeId, {
-				...item,
-				minutes: Math.ceil(minutesBetween(input.now, interval.end)),
-				inProgress: true,
-			});
-		} else if (matched.length === 0) {
-			addItem(row.employeeId, {
-				...item,
-				minutes: Math.round(minutesBetween(interval.start, interval.end)),
-			});
+	for (const [employeeId, shifts] of shiftsOf) {
+		for (const { row, date, interval } of shifts) {
+			const shiftMinutes = Math.round(minutesBetween(interval.start, interval.end));
+			priced(plannedShifts, employeeId, { id: row.id, date, minutes: shiftMinutes });
+			const item = { source: "shift" as const, id: row.id, date };
+			if (compareInstants(interval.start, input.now) > 0) {
+				addItem(employeeId, { ...item, minutes: shiftMinutes });
+				continue;
+			}
+			// Over: what was worked is recorded work.
+			if (compareInstants(interval.end, input.now) <= 0) continue;
+			// In progress: the open clock-in counts up to now, the shift for its rest. Once its work
+			// has closed, the recorded work replaces it; until anyone clocks in, it counts in full.
+			const matched = (workOf.get(employeeId) ?? []).filter((work) =>
+				workBelongsToShift(interval, work, input.now),
+			);
+			if (matched.some((work) => work.end === null)) {
+				addItem(employeeId, {
+					...item,
+					minutes: Math.ceil(minutesBetween(input.now, interval.end)),
+					inProgress: true,
+				});
+			} else if (matched.length === 0) {
+				addItem(employeeId, { ...item, minutes: shiftMinutes });
+			}
 		}
 	}
 	const inScope = new Set(employeeIds);
@@ -360,6 +402,7 @@ export async function evaluateMinijobEarnings(
 						first,
 					),
 					items: items.get(`${employeeId}|${month}`) ?? [],
+					shifts: plannedShifts.get(`${employeeId}|${month}`) ?? [],
 					externalOffsets: offsetRows
 						.filter(
 							(offset) =>

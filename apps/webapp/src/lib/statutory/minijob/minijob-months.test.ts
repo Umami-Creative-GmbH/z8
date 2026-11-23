@@ -32,6 +32,7 @@ function month(
 						},
 					]
 				: [],
+		shifts: [],
 		externalOffsets: [],
 	};
 }

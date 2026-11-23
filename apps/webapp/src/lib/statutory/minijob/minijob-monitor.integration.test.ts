@@ -277,6 +277,37 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		expect(month(finished.employeeId)).toMatchObject({ earnedCents: 4_000, plannedCents: 0 });
 	});
 
+	it("counts one clock-in over back-to-back shifts once", async () => {
+		const { org, owner, worker } = await setup();
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
+		// Shifts 09:00–13:00 and 13:00–17:00 Berlin, one clock-in at 09:00, now 15:00: 6 h worked
+		// so far (120 €) and the 2 h left of the second shift (40 €) — 8 h, not 10 h.
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-23",
+			startTime: "09:00",
+			endTime: "13:00",
+		});
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-23",
+			startTime: "13:00",
+			endTime: "17:00",
+		});
+		await mj.openWork(org, worker, "2026-11-23", "09:00");
+
+		const { employees } = await evaluate(
+			org,
+			[worker.employeeId],
+			{ from: "2026-11", until: "2026-12" },
+			"2026-11-23T14:00:00Z",
+		);
+
+		expect(employees.get(worker.employeeId)?.find((m) => m.month === "2026-11")).toMatchObject({
+			earnedCents: 12_000,
+			plannedCents: 4_000,
+			totalCents: 16_000,
+		});
+	});
+
 	it("attributes work to the organization-local month it starts in", async () => {
 		const { org, owner, worker } = await setup();
 		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 15 });

@@ -38,14 +38,14 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 	}
 	type Setup = Awaited<ReturnType<typeof setup>>;
 
-	async function monthly({ org, worker }: Setup, from: string, until: string) {
+	async function monthly({ org, worker }: Setup, from: string, until: string, now = NOW) {
 		const { findings } = await evaluateMinijobEarnings(db, {
 			organizationId: org.id,
 			timezone: org.timezone,
 			employeeIds: [worker.employeeId],
 			months: { from, until },
 			preferences: DEFAULT_STATUTORY_PREFERENCES,
-			now: NOW,
+			now,
 		});
 		return findings
 			.filter((f) => f.kind === "minijob_monthly_cap" && f.summary.tier === "exceeded")
@@ -183,5 +183,56 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 		});
 
 		expect(await monthly(s, "2026-12", "2027-01")).toEqual([["2026-12", "critical", "stale"]]);
+	});
+
+	it("keeps an acknowledgement current while a planned shift is worked as planned", async () => {
+		const s = await setup();
+		const days = ["2026-12-01", "2026-12-02", "2026-12-03", "2026-12-04", "2026-12-07"];
+		for (const date of [...days, "2026-12-08", "2026-12-09"]) {
+			await mj.shift(s.org, s.worker, s.owner, { date, startTime: "08:00", endTime: "18:00" });
+		}
+		// 70 planned hours, 700 €: documented before the month starts.
+		await acknowledge(s, "2026-12", "Christmas cover agreed after a resignation");
+		const december = (now: string) => monthly(s, "2026-12", "2027-01", Temporal.Instant.from(now));
+
+		// 1 December, 10:00 Berlin: clocked in on time for the first shift.
+		const work = await mj.openWork(s.org, s.worker, "2026-12-01", "08:00");
+		expect(await december("2026-12-01T09:00:00Z")).toEqual([["2026-12", "info", "acknowledged"]]);
+
+		// 19:00 Berlin: clocked out on time.
+		await mj.closeWork(work, 600);
+		expect(await december("2026-12-01T18:00:00Z")).toEqual([["2026-12", "info", "acknowledged"]]);
+
+		// The rest of the week is worked exactly as planned too.
+		for (const date of days.slice(1)) await mj.work(s.org, s.worker, date, 600);
+		expect(await december("2026-12-07T20:00:00Z")).toEqual([["2026-12", "info", "acknowledged"]]);
+
+		// Another shift is new work: the acknowledgement no longer covers the month.
+		await mj.shift(s.org, s.worker, s.owner, {
+			date: "2026-12-10",
+			startTime: "08:00",
+			endTime: "10:00",
+		});
+		expect(await december("2026-12-07T20:00:00Z")).toEqual([["2026-12", "critical", "stale"]]);
+	});
+
+	it.each([
+		{ worked: 610, status: ["2026-12", "info", "acknowledged"], note: "a few minutes over" },
+		{ worked: 720, status: ["2026-12", "critical", "stale"], note: "two hours over" },
+	])("judges a shift worked $note against the acknowledgement", async ({ worked, status }) => {
+		const s = await setup();
+		for (const date of ["2026-12-01", "2026-12-02", "2026-12-03", "2026-12-04", "2026-12-07"]) {
+			await mj.shift(s.org, s.worker, s.owner, { date, startTime: "08:00", endTime: "18:00" });
+		}
+		for (const date of ["2026-12-08", "2026-12-09"]) {
+			await mj.shift(s.org, s.worker, s.owner, { date, startTime: "08:00", endTime: "18:00" });
+		}
+		await acknowledge(s, "2026-12");
+
+		await mj.work(s.org, s.worker, "2026-12-01", worked);
+
+		expect(
+			await monthly(s, "2026-12", "2027-01", Temporal.Instant.from("2026-12-01T20:00:00Z")),
+		).toEqual([status]);
 	});
 });
