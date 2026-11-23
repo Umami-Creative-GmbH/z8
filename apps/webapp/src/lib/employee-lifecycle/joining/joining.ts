@@ -383,11 +383,24 @@ async function settleArrivingEmployee(
 		});
 	}
 	// Employment terms are employee-only; an External Contractor gets its contracting
-	// details and projects instead (#1995).
-	if (draft && settled.engagementKind === "employee") {
+	// details and projects instead (#1995). Neither is written when the draft's kind
+	// is not the arriving employee's: a returning employee keeps its open period's
+	// kind, and the kind never changes in place.
+	if (draft && draft.engagementKind !== settled.engagementKind) {
+		await recordDraftNotApplied(tx, audit, {
+			organizationId,
+			actorUserId: input.actorUserId ?? userId,
+			employeeId: settled.id,
+			draft,
+			reason: "engagement_kind_differs",
+			details: {
+				draftEngagementKind: draft.engagementKind,
+				employeeEngagementKind: settled.engagementKind,
+			},
+		});
+	} else if (draft && settled.engagementKind === "employee") {
 		await writeDraftFirstTerms(tx, { organizationId, userId, employeeId: settled.id, draft });
-	}
-	if (draft && settled.engagementKind === "contractor" && draft.engagementKind === "contractor") {
+	} else if (draft && settled.engagementKind === "contractor") {
 		await applyContractorDraft(tx, {
 			organizationId,
 			employeeId: settled.id,
@@ -500,7 +513,7 @@ async function joinAsReturningEmployee(
 	const isExisting = and(eq(employee.id, existing.id), eq(employee.organizationId, organizationId));
 	const draftPersonnelNumber = normalizePersonnelNumber(draft?.employeeNumber);
 	const returnValues = {
-		...draftReactivationValues(draft),
+		...draftReactivationValues(draft, existing),
 		...(!draft && isAdminMembership ? { role: "admin" as const } : {}),
 	};
 	const {

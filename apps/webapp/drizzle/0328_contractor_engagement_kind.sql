@@ -52,11 +52,12 @@ CREATE TRIGGER "employee_employment_period_engagement_kind_immutable_trigger"
 	BEFORE UPDATE OF "engagement_kind" ON "employee_employment_period"
 	FOR EACH ROW EXECUTE FUNCTION "employee_employment_period_engagement_kind_immutable"();
 --> statement-breakpoint
--- The employee's engagement kind follows its periods: it may change only once
--- no open period (nor a legacy period that a reactivation would reopen) has a
--- different kind, and only for an employee with a period at all (one without is
--- still on its first, not yet backfilled stint). A rehire inserts the new open
--- period first, then updates the employee to match.
+-- The employee's engagement kind follows its periods: it may change only to the
+-- kind of an active period (open, or a legacy period that a reactivation would
+-- reopen), and only once no active period has a different kind. An employee
+-- without a period (its first stint not yet backfilled) or with only closed
+-- periods cannot change it. A rehire inserts the new open period first, then
+-- updates the employee to match.
 CREATE OR REPLACE FUNCTION "employee_engagement_kind_follows_period"()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -67,7 +68,10 @@ BEGIN
 	END IF;
 	IF NOT EXISTS (
 		SELECT 1 FROM public."employee_employment_period" AS p
-		WHERE p."organization_id" = NEW.organization_id AND p."employee_id" = NEW.id
+		WHERE p."organization_id" = NEW.organization_id
+			AND p."employee_id" = NEW.id
+			AND (p."status" = 'open' OR (p."status" = 'legacy_unknown' AND p."ended_at" IS NULL))
+			AND p."engagement_kind" = NEW.engagement_kind
 	) OR EXISTS (
 		SELECT 1 FROM public."employee_employment_period" AS p
 		WHERE p."organization_id" = NEW.organization_id

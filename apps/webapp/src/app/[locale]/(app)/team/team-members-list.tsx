@@ -30,6 +30,10 @@ import { useTranslate } from "@tolgee/react";
 import { useMemo, useState, useTransition } from "react";
 import { EmployeeActivityText } from "@/components/employee-activity-text";
 import {
+	EngagementFilterToggle,
+	ExternalContractorBadge,
+} from "@/components/engagement/engagement-kind-ui";
+import {
 	FormerEmployeeBadge,
 	ShowFormerEmployeesSwitch,
 } from "@/components/former-employees/former-employee-ui";
@@ -49,6 +53,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { BalanceAdjustmentHistoryDialog } from "@/components/work-balance/balance-adjustment-history-button";
+import { type EngagementFilter, matchesEngagementFilter } from "@/lib/engagement/engagement-filter";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
@@ -148,6 +153,8 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 	const [formerPending, startFormerTransition] = useTransition();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+	// All | Employees | External Contractors (#1995).
+	const [engagement, setEngagement] = useState<EngagementFilter>("all");
 	const youLabel = t("team.member.you", "You");
 	const noBalanceLabel = t("team.balance.noBalance", "No balance");
 	const workBalanceLabel = t("workBalance.label", "All-time balance");
@@ -170,6 +177,7 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 	});
 
 	const filteredEmployees = employeesWithPresence.filter((emp) => {
+		if (!matchesEngagementFilter(emp.engagementKind, engagement)) return false;
 		const search = searchQuery.toLowerCase();
 		const name = emp.user.name?.toLowerCase() || "";
 		const email = emp.user.email?.toLowerCase() || "";
@@ -190,6 +198,8 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 				onSearchQueryChange={setSearchQuery}
 				viewMode={viewMode}
 				onViewModeChange={setViewMode}
+				engagement={engagement}
+				onEngagementChange={setEngagement}
 				searchPlaceholder={t(
 					"team.search.placeholder",
 					"Search by name, email, position, or team...",
@@ -242,7 +252,10 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 					})}
 					title={t("team.noResults.title", "No results found")}
 					clearLabel={t("team.noResults.action", "Clear search")}
-					onClear={() => setSearchQuery("")}
+					onClear={() => {
+						setSearchQuery("");
+						setEngagement("all");
+					}}
 				/>
 			)}
 		</div>
@@ -277,6 +290,8 @@ function TeamMembersToolbar({
 	onSearchQueryChange,
 	viewMode,
 	onViewModeChange,
+	engagement,
+	onEngagementChange,
 	searchPlaceholder,
 	searchLabel,
 	cardsLabel,
@@ -289,6 +304,8 @@ function TeamMembersToolbar({
 	onSearchQueryChange: (value: string) => void;
 	viewMode: "cards" | "table";
 	onViewModeChange: (value: "cards" | "table") => void;
+	engagement: EngagementFilter;
+	onEngagementChange: (value: EngagementFilter) => void;
 	searchPlaceholder: string;
 	searchLabel: string;
 	cardsLabel: string;
@@ -316,6 +333,11 @@ function TeamMembersToolbar({
 				checked={showFormer}
 				disabled={showFormerPending}
 				onCheckedChange={onShowFormerChange}
+			/>
+			<EngagementFilterToggle
+				className="shrink-0"
+				value={engagement}
+				onValueChange={onEngagementChange}
 			/>
 			<ToggleGroup
 				type="single"
@@ -407,6 +429,10 @@ function TeamMemberCards({
 										{employee.team.name}
 									</Badge>
 								)}
+								<ExternalContractorBadge
+									engagementKind={employee.engagementKind}
+									className="font-normal"
+								/>
 								<TimeBalanceBadge
 									employee={employee}
 									noBalanceLabel={noBalanceLabel}
@@ -472,6 +498,7 @@ function TeamMembersTable({
 									<IconUserCheck className="size-4 text-primary" title={primaryManagerLabel} />
 								)}
 								<YouBadge show={row.original.isCurrentUser} label={youLabel} />
+								<ExternalContractorBadge engagementKind={row.original.engagementKind} />
 							</div>
 							<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
 							<EmployeeActivityText

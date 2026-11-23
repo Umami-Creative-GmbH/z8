@@ -64,8 +64,17 @@ a planned engagement end. Joining then creates the employee with that engagement
   invitation, with the draft's id as the request id (best effort; a failure is logged).
 
 A reactivation never applies the draft's engagement kind: the open period's kind cannot change in
-place. Converting contractor ↔ employee is a departure followed by a rehire that names the new
-period's kind ([Employee Offboarding](employee-offboarding.md#rehire)).
+place. When the draft's kind differs from the returning employee's (a contractor invitation for a
+switched-off employee, or the reverse), the person comes back as what their open period is, with
+the draft's personal values and team but neither its employment terms nor its contracting details,
+projects or planned end; the audit entry `employee.invitation_draft_not_applied` (reason
+`engagement_kind_differs`, with both kinds) records it. Converting contractor ↔ employee is a
+departure followed by a rehire that names the new period's kind
+([Employee Offboarding](employee-offboarding.md#rehire)).
+
+A new invitation that replaces a draft of the other kind clears the old kind's fields: a contractor
+invitation resets the contract type to `fixed` and drops the wage, an employee invitation drops the
+contracting details, projects and planned end.
 
 ## After-commit step
 

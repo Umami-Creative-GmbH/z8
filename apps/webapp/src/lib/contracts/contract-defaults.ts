@@ -34,6 +34,7 @@ import { instantFromDate, parsePlainDate, plainDateAt } from "@/lib/datetime/tem
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
 	type ContractWriteTx,
@@ -123,6 +124,8 @@ export interface ContractDefaultAffectedEmployee {
 	readonly employeeId: string;
 	readonly firstName: string | null;
 	readonly lastName: string | null;
+	/** External Contractors are badged in the preview (#1995). */
+	readonly engagementKind: EngagementKind;
 	readonly primaryTeamId: string | null;
 	readonly status: "inheriting" | "diverged" | "unchanged";
 	readonly changes: readonly ContractDefaultFieldDiff[];
@@ -978,6 +981,7 @@ export async function previewContractDefaultChange(
 			teamId: employee.teamId,
 			userId: employee.userId,
 			contractType: employee.contractType,
+			engagementKind: employee.engagementKind,
 			userTimezone: userSettings.timezone,
 		})
 		.from(employee)
@@ -1607,6 +1611,7 @@ export async function previewContractDefaultChange(
 				employeeId: emp.id,
 				firstName: emp.firstName,
 				lastName: emp.lastName,
+				engagementKind: emp.engagementKind,
 				primaryTeamId: afterContract.primaryTeamId,
 				status: "inheriting",
 				changes,
@@ -1618,6 +1623,7 @@ export async function previewContractDefaultChange(
 				employeeId: emp.id,
 				firstName: emp.firstName,
 				lastName: emp.lastName,
+				engagementKind: emp.engagementKind,
 				primaryTeamId: afterContract.primaryTeamId,
 				status: "diverged",
 				changes: [],
@@ -1629,6 +1635,7 @@ export async function previewContractDefaultChange(
 				employeeId: emp.id,
 				firstName: emp.firstName,
 				lastName: emp.lastName,
+				engagementKind: emp.engagementKind,
 				primaryTeamId: afterContract.primaryTeamId,
 				status: "unchanged",
 				changes: [],

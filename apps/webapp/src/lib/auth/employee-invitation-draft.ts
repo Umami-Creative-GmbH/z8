@@ -30,11 +30,19 @@ export type InvitationEngagement = {
 	contractor: ContractorInvitation | null;
 };
 
-/** The draft columns an invitation's engagement writes. */
+/**
+ * The draft columns an invitation's engagement writes. A draft an invitation of
+ * the other kind replaces keeps nothing of its old kind: a contractor invitation
+ * clears the employee-only terms (contract type, wage), an employee invitation
+ * the contracting details, projects and planned end.
+ */
 function engagementDraftValues(engagement: InvitationEngagement) {
 	const contractor = engagement.kind === "contractor" ? engagement.contractor : null;
 	return {
 		engagementKind: engagement.kind,
+		...(engagement.kind === "contractor"
+			? { contractType: "fixed" as const, currentHourlyRate: null }
+			: {}),
 		contractorCompanyName: contractor?.companyName ?? null,
 		contractorVatId: contractor?.vatId ?? null,
 		contractorReferenceCode: contractor?.referenceCode ?? null,

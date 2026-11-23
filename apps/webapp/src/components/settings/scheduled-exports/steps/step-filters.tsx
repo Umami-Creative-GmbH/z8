@@ -2,7 +2,9 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useState } from "react";
 import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
+import { EngagementFilterToggle } from "@/components/engagement/engagement-kind-ui";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -11,6 +13,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { type EngagementFilter, matchesEngagementFilter } from "@/lib/engagement/engagement-filter";
 import type { DateRangeStrategy } from "@/lib/scheduled-exports/domain/types";
 import { type FilterItem, FilterSelector } from "../filter-selector";
 import type { ScheduledExportForm } from "../scheduled-export-dialog";
@@ -35,6 +38,7 @@ export interface FilterOptions {
 
 export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 	const { t } = useTranslate();
+	const [engagement, setEngagement] = useState<EngagementFilter>("all");
 
 	const DATE_RANGE_STRATEGIES: {
 		value: DateRangeStrategy;
@@ -75,16 +79,24 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 		},
 	];
 
-	// Convert filter options for selectors
-	const selectableEmployees = (filterOptions?.employees || []).map((emp) =>
-		toSelectableEmployee({
-			id: emp.id,
-			firstName: emp.firstName,
-			lastName: emp.lastName,
-			employeeNumber: emp.employeeNumber,
-			engagementKind: emp.engagementKind,
-		}),
-	);
+	// All | Employees | External Contractors (#1995): narrows the picker, never the chosen people.
+	const allEmployees = filterOptions?.employees || [];
+	const hasContractors = allEmployees.some((emp) => emp.engagementKind === "contractor");
+	const selectableEmployeesFor = (chosenIds: readonly string[]) =>
+		allEmployees
+			.filter(
+				(emp) =>
+					matchesEngagementFilter(emp.engagementKind, engagement) || chosenIds.includes(emp.id),
+			)
+			.map((emp) =>
+				toSelectableEmployee({
+					id: emp.id,
+					firstName: emp.firstName,
+					lastName: emp.lastName,
+					employeeNumber: emp.employeeNumber,
+					engagementKind: emp.engagementKind,
+				}),
+			);
 
 	const teamItems: FilterItem[] = (filterOptions?.teams || []).map((team) => ({
 		id: team.id,
@@ -134,9 +146,14 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 			</form.Field>
 
 			<div className="space-y-2">
-				<Label>
-					{t("settings.scheduledExports.filters.filtersOptional", "Filters (Optional)")}
-				</Label>
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<Label>
+						{t("settings.scheduledExports.filters.filtersOptional", "Filters (Optional)")}
+					</Label>
+					{hasContractors && (
+						<EngagementFilterToggle value={engagement} onValueChange={setEngagement} />
+					)}
+				</div>
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"settings.scheduledExports.filters.filtersHint",
@@ -173,7 +190,7 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 										"settings.scheduledExports.filters.selectEmployees",
 										"Select employees to filter",
 									)}
-									employees={selectableEmployees}
+									employees={selectableEmployeesFor(employeeIds)}
 									value={employeeIds}
 									onChange={(ids) => updateFilter("employeeIds", ids)}
 								/>

@@ -16,6 +16,7 @@ import {
 	submitBulkContractActionAction,
 } from "@/app/[locale]/(app)/settings/contracts/bulk-actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
+import { ExternalContractorBadge } from "@/components/engagement/engagement-kind-ui";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1105,7 +1106,10 @@ export function ContractsBulkCsvTab({
 											<tr key={row.rowNumber}>
 												<td className="px-2.5 py-1.5 tabular-nums">{row.rowNumber}</td>
 												<td className="px-2.5 py-1.5">
-													{row.employeeName ?? row.employeeIdentifier}
+													<span className="flex flex-wrap items-center gap-1.5">
+														{row.employeeName ?? row.employeeIdentifier}
+														<ExternalContractorBadge engagementKind={row.engagementKind} />
+													</span>
 												</td>
 												<td className="px-2.5 py-1.5">
 													<Badge

@@ -201,6 +201,24 @@ describe("external contractor engagement kind (#1995)", () => {
 			expect(isEngagementKindChangeRefusal(closedRefusal)).toBe(true);
 		});
 
+		it("refuses switching a former employee whose periods are all closed", async () => {
+			const person = await fixture.seedEmployee();
+			await fixture.pool.query(
+				`update employee_employment_period set status = 'closed', ended_at = '2026-02-01T00:00:00Z'
+				 where id = $1`,
+				[person.employmentPeriodId],
+			);
+
+			const refusal = await refusalOf(
+				fixture.pool.query(`update employee set engagement_kind = 'contractor' where id = $1`, [
+					person.employeeId,
+				]),
+			);
+
+			expect(isEngagementKindChangeRefusal(refusal)).toBe(true);
+			expect((await engagementOf(person.employeeId)).employee).toBe("employee");
+		});
+
 		it("keeps an unrelated employee update working for a contractor", async () => {
 			const contractor = await seedContractor();
 			await fixture.pool.query(
@@ -401,6 +419,147 @@ describe("external contractor engagement kind (#1995)", () => {
 					assigned: true,
 				},
 			]);
+		});
+
+		it("brings a deactivated employee back as an employee, applying neither the contractor draft nor its stale employee terms", async () => {
+			const projectId = await seedProject();
+			const person = await fixture.seedEmployee({ isActive: false });
+			const email = `${person.userId}@lifecycle.test`;
+			const invitationId = randomUUID();
+			await fixture.pool.query(
+				`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id)
+				 values ($1, $2, $3, 'member', 'accepted', now() + interval '7 days', $4)`,
+				[invitationId, fixture.organizationId, email, fixture.ownerUserId],
+			);
+			// A contractor invitation over an older hourly draft: its wage is still on the row.
+			const { rows: drafts } = await fixture.pool.query<{ id: string }>(
+				`insert into employee_invitation_draft
+				   (invitation_id, organization_id, normalized_email, role, contract_type,
+				    current_hourly_rate, engagement_kind, contractor_company_name, planned_end_date,
+				    project_ids, updated_by)
+				 values ($1, $2, $3, 'employee', 'hourly', '95.00', 'contractor', 'Hopper Consulting GmbH',
+				         '2099-06-30', $4::uuid[], $5)
+				 returning id`,
+				[invitationId, fixture.organizationId, email, [projectId], fixture.ownerUserId],
+			);
+
+			const joining = await fixture.db.transaction((tx) =>
+				joinOrganization(tx, {
+					organizationId: fixture.organizationId,
+					userId: person.userId,
+					membership: { id: person.memberId, role: "member" },
+					invitation: { id: invitationId },
+				}),
+			);
+			await joining.afterCommit.run();
+
+			expect(joining.outcome).toMatchObject({
+				kind: "reactivated",
+				employee: { engagementKind: "employee", contractType: "fixed" },
+			});
+			const { rows } = await fixture.pool.query(
+				`select
+				   (select count(*)::int from employee_employment_history h where h.employee_id = e.id) as terms,
+				   (select count(*)::int from employee_contractor_profile p where p.employee_id = e.id) as profiles,
+				   (select count(*)::int from project_assignment a where a.employee_id = e.id) as projects,
+				   (select count(*)::int from employee_departure d where d.employee_id = e.id) as departures
+				 from employee e where e.id = $1`,
+				[person.employeeId],
+			);
+			expect(rows[0]).toEqual({ terms: 0, profiles: 0, projects: 0, departures: 0 });
+			// The open employee period stays; converting needs an ended period and a rehire.
+			expect(await engagementOf(person.employeeId)).toEqual({
+				employee: "employee",
+				periods: [{ id: person.employmentPeriodId, status: "open", engagement_kind: "employee" }],
+			});
+			const { rows: audits } = await fixture.pool.query<{ metadata: string }>(
+				`select metadata from audit_log where organization_id = $1 and entity_id = $2
+				 and action = 'employee.invitation_draft_not_applied'`,
+				[fixture.organizationId, drafts[0]?.id],
+			);
+			expect(audits.map((audit) => JSON.parse(audit.metadata))).toEqual([
+				expect.objectContaining({
+					reason: "engagement_kind_differs",
+					draftEngagementKind: "contractor",
+					employeeEngagementKind: "employee",
+				}),
+			]);
+		});
+
+		it("clears a draft's employee-only terms when a contractor invitation replaces it, and its contracting details when an employee invitation does", async () => {
+			const projectId = await seedProject();
+			const email = `${randomUUID()}@draft.test`;
+			async function invite() {
+				const invitationId = randomUUID();
+				await fixture.pool.query(
+					`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id)
+					 values ($1, $2, $3, 'member', 'pending', now() + interval '7 days', $4)`,
+					[invitationId, fixture.organizationId, email, fixture.ownerUserId],
+				);
+				return {
+					organizationId: fixture.organizationId,
+					normalizedEmail: email,
+					invitationId,
+					canCreateOrganizations: false,
+					targetTeamId: null,
+					initialRole: "employee" as const,
+					updatedBy: fixture.ownerUserId,
+				};
+			}
+			async function draftTerms() {
+				const { rows } = await fixture.pool.query(
+					`select engagement_kind, contract_type, current_hourly_rate, contractor_company_name,
+					   planned_end_date::text, project_ids::text[]
+					 from employee_invitation_draft where organization_id = $1 and normalized_email = $2`,
+					[fixture.organizationId, email],
+				);
+				return rows[0];
+			}
+
+			await persistEmployeeInvitationDraft(db, {
+				...(await invite()),
+				engagement: { kind: "employee", contractor: null },
+			});
+			await fixture.pool.query(
+				`update employee_invitation_draft set contract_type = 'hourly', current_hourly_rate = '95.00'
+				 where organization_id = $1 and normalized_email = $2`,
+				[fixture.organizationId, email],
+			);
+			await persistEmployeeInvitationDraft(db, {
+				...(await invite()),
+				engagement: {
+					kind: "contractor",
+					contractor: {
+						companyName: "Hopper Consulting GmbH",
+						vatId: null,
+						referenceCode: null,
+						projectIds: [projectId],
+						plannedEndDate: "2099-06-30",
+					},
+				},
+			});
+			const asContractor = await draftTerms();
+			await persistEmployeeInvitationDraft(db, {
+				...(await invite()),
+				engagement: { kind: "employee", contractor: null },
+			});
+
+			expect(asContractor).toEqual({
+				engagement_kind: "contractor",
+				contract_type: "fixed",
+				current_hourly_rate: null,
+				contractor_company_name: "Hopper Consulting GmbH",
+				planned_end_date: "2099-06-30",
+				project_ids: [projectId],
+			});
+			expect(await draftTerms()).toEqual({
+				engagement_kind: "employee",
+				contract_type: "fixed",
+				current_hourly_rate: null,
+				contractor_company_name: null,
+				planned_end_date: null,
+				project_ids: [],
+			});
 		});
 
 		it("schedules the planned engagement end as a departure once the contractor joined", async () => {

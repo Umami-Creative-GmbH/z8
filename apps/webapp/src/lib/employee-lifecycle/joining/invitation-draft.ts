@@ -11,6 +11,7 @@ import {
 	normalizeContractorProfileDetails,
 	saveContractorProfile,
 } from "@/lib/engagement/contractor-profile";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
 import {
@@ -105,10 +106,16 @@ export function draftCreationValues(draft: InvitationDraft | null) {
 /**
  * Like `draftCreationValues`, for a reactivated employee: only what the draft
  * sets. Never the engagement kind: a reactivation continues the open period,
- * whose kind cannot change in place (#1995).
+ * whose kind cannot change in place (#1995). The contract type is employee-only:
+ * written only when both the draft and the returning employee are employees.
  */
-export function draftReactivationValues(draft: InvitationDraft | null) {
+export function draftReactivationValues(
+	draft: InvitationDraft | null,
+	returning: { engagementKind: EngagementKind },
+) {
 	if (!draft) return {};
+	const appliesEmployeeTerms =
+		draft.engagementKind === "employee" && returning.engagementKind === "employee";
 	return {
 		...(draft.role != null ? { role: draft.role } : {}),
 		...(draft.firstName != null ? { firstName: draft.firstName } : {}),
@@ -119,7 +126,9 @@ export function draftReactivationValues(draft: InvitationDraft | null) {
 		...(draft.position != null ? { position: draft.position } : {}),
 		...(draft.startDate != null ? { startDate: draft.startDate } : {}),
 		...(draft.endDate != null ? { endDate: draft.endDate } : {}),
-		...(draft.contractType != null ? { contractType: draft.contractType } : {}),
+		...(appliesEmployeeTerms && draft.contractType != null
+			? { contractType: draft.contractType }
+			: {}),
 	};
 }
 
@@ -226,8 +235,15 @@ export function recordDroppedPersonnelNumber(
 /**
  * Why joining applied nothing of the draft: a former employee who stays off the
  * current roster (spec #1664 decision 4), or an employee already on it (decision 5).
+ * Or, for `engagement_kind_differs`, nothing of the draft's engagement: a
+ * returning employee whose open period has the other engagement kind (#1995)
+ * comes back as what that period is, without the draft's employee terms or
+ * contracting setup; converting takes an effective departure and a rehire.
  */
-export type DraftNotAppliedReason = "former_employee_needs_rehire" | "employee_already_current";
+export type DraftNotAppliedReason =
+	| "former_employee_needs_rehire"
+	| "employee_already_current"
+	| "engagement_kind_differs";
 
 /**
  * An employee joining writes nothing of the draft for gets an entry saying so;
@@ -242,6 +258,8 @@ export function recordDraftNotApplied(
 		employeeId: string;
 		draft: InvitationDraft;
 		reason: DraftNotAppliedReason;
+		/** Extra context of the entry, such as both engagement kinds. */
+		details?: Record<string, string>;
 	},
 ) {
 	return audit.record(tx, {
@@ -255,6 +273,7 @@ export function recordDraftNotApplied(
 			reason: input.reason,
 			invitationId: input.draft.invitationId,
 			draftId: input.draft.id,
+			...input.details,
 		},
 	});
 }

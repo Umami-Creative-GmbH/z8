@@ -22,6 +22,7 @@ import {
 } from "@/app/[locale]/(app)/settings/contracts/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { getWorkPolicies } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { ExternalContractorBadge } from "@/components/engagement/engagement-kind-ui";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -736,9 +737,10 @@ export function ContractsDefaultsTab({
 													key={emp.employeeId}
 													className="flex flex-wrap items-center justify-between gap-2 rounded border bg-background px-2.5 py-1.5"
 												>
-													<span className="font-medium">
+													<span className="flex items-center gap-1.5 font-medium">
 														{[emp.firstName, emp.lastName].filter(Boolean).join(" ") ||
 															emp.employeeId}
+														<ExternalContractorBadge engagementKind={emp.engagementKind} />
 													</span>
 													<span className="text-muted-foreground">
 														{emp.changes
@@ -765,9 +767,10 @@ export function ContractsDefaultsTab({
 													key={emp.employeeId}
 													className="flex flex-wrap items-center justify-between gap-2 rounded border bg-background px-2.5 py-1.5"
 												>
-													<span>
+													<span className="flex items-center gap-1.5">
 														{[emp.firstName, emp.lastName].filter(Boolean).join(" ") ||
 															emp.employeeId}
+														<ExternalContractorBadge engagementKind={emp.engagementKind} />
 													</span>
 													<span className="text-muted-foreground">
 														{emp.preservedDivergenceFields

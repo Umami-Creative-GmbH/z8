@@ -158,6 +158,7 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 		startedAt?: string;
 		isActive?: boolean;
 		memberStatus?: "approved" | "pending";
+		engagementKind?: "employee" | "contractor";
 	}) {
 		const userId = `t1928-bulk-${opts.key}`;
 		const email = `${userId}@example.test`;
@@ -185,8 +186,8 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 		} = await admin.query<{ id: string }>(
 			`INSERT INTO employee (
 				user_id, organization_id, team_id, first_name, last_name, employee_number,
-				role, contract_type, is_active, updated_at
-			) VALUES ($1, $2, $3, $4, 'Tester', $5, $6, $7, $8, $9)
+				role, contract_type, is_active, updated_at, engagement_kind
+			) VALUES ($1, $2, $3, $4, 'Tester', $5, $6, $7, $8, $9, $10)
 			RETURNING id`,
 			[
 				userId,
@@ -198,6 +199,7 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 				opts.contractType ?? "fixed",
 				active,
 				now,
+				opts.engagementKind ?? "employee",
 			],
 		);
 		let employmentPeriodId: string | null = null;
@@ -206,10 +208,15 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 				rows: [period],
 			} = await admin.query<{ id: string }>(
 				`INSERT INTO employee_employment_period (
-					organization_id, employee_id, status, started_at, start_provenance
-				) VALUES ($1, $2, 'open', $3::timestamptz, 'recorded')
+					organization_id, employee_id, status, started_at, start_provenance, engagement_kind
+				) VALUES ($1, $2, 'open', $3::timestamptz, 'recorded', $4)
 				RETURNING id`,
-				[ORG_ID, emp.id, opts.startedAt ?? "2026-01-01T00:00:00Z"],
+				[
+					ORG_ID,
+					emp.id,
+					opts.startedAt ?? "2026-01-01T00:00:00Z",
+					opts.engagementKind ?? "employee",
+				],
 			);
 			employmentPeriodId = period.id;
 		}
@@ -907,6 +914,40 @@ describe("durable bulk contracts, crash recovery & CSV imports (PostgreSQL, #192
 		expect(c2?.onCallTerms?.weeklyMinutes).toBe(960);
 		expect(c3?.scheduleMode).toBe("custom_days");
 		expect(c3?.employmentProfile).toBe("apprentice");
+	});
+
+	it("previews a contractor's retrospective leaving date over settled payroll without the payroll reconciliation warning (#1995)", async () => {
+		const fixedNow = parseInstant("2026-06-15T10:00:00Z");
+		const contractor = await seedEmployee({
+			key: "ld-contractor",
+			employeeNumber: "LD-C01",
+			engagementKind: "contractor",
+		});
+		const employee = await seedEmployee({ key: "ld-employee", employeeNumber: "LD-E01" });
+		for (const { employeeId } of [contractor, employee]) {
+			await admin.query(
+				`INSERT INTO payroll_settled_day (
+					id, organization_id, employee_id, date, timezone, credited_minutes,
+					method, settled_at, settled_by
+				) VALUES ($1, $2, $3, '2026-05-20', 'Europe/Berlin', 480, 'manual', now(), $4)`,
+				[randomUUID(), ORG_ID, employeeId, ADMIN_USER_ID],
+			);
+		}
+
+		const preview = await previewCsvLeavingDateImport(db, {
+			organizationId: ORG_ID,
+			actorUserId: ADMIN_USER_ID,
+			csvText: "employee_number,last_working_day\nLD-C01,2026-05-15\nLD-E01,2026-05-15",
+			now: fixedNow,
+		});
+
+		expect(preview.rows.map((row) => row.action)).toEqual([
+			"record_past_departure",
+			"record_past_departure",
+		]);
+		expect(preview.rows[0]?.warnings.join(" ")).not.toMatch(/payroll_reconciliation/i);
+		// The same history for an employee still warns.
+		expect(preview.rows[1]?.warnings.join(" ")).toMatch(/payroll_reconciliation/i);
 	});
 
 	it("validates and commits CSV leaving-date imports across future, immediate, retrospective (with closed month & settled payroll review), past-date correction, and historical backfill, and is crash-idempotent", async () => {

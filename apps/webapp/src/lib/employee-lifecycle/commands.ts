@@ -37,6 +37,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { synchronizeEquipmentDeparture } from "@/lib/organization/equipment/lifecycle";
 import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -1422,8 +1423,11 @@ async function recordHistoricalDepartureDate(
 			"departure_date_not_in_past",
 		);
 
-		const employeeState = await tx.execute<{ is_active: boolean }>(sql`
-			SELECT e.is_active
+		const employeeState = await tx.execute<{
+			is_active: boolean;
+			engagement_kind: EngagementKind;
+		}>(sql`
+			SELECT e.is_active, e.engagement_kind
 			FROM employee e
 			WHERE e.organization_id = ${actor.organizationId}
 				AND e.id = ${target.id}::uuid
@@ -1502,6 +1506,8 @@ async function recordHistoricalDepartureDate(
 					startedAt: null,
 					endedAt: cutoffDate,
 					startProvenance: "unknown",
+					// The stint the legacy backfill would record: the employee's kind (#1995).
+					engagementKind: row.engagement_kind,
 					createdAt: nowDate,
 					createdBy: actor.userId,
 				})
