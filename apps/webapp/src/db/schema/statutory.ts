@@ -16,8 +16,10 @@ import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 
 // German statutory foundation (#1988, spec #1934). Migration: 0329_statutory_foundation.sql.
-// Constraint and foreign-key names match the migration so `drizzle-kit push` keeps them. The
-// overlap exclusion constraints on study periods and apprentice releases live in SQL only.
+// Constraint and foreign-key names match the migration so `drizzle-kit push` keeps them. What
+// lives in SQL only (baseline seed, guard triggers, `btree_gist`, the overlap exclusions on
+// `statutory_threshold`, study periods and apprentice releases) is re-applied after push by
+// `pnpm run db:install-statutory-foundation`, which `db:push` runs.
 
 export const employeeStatutoryOffsetKinds = [
 	"external_minijob_monthly_earnings",

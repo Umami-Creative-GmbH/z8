@@ -249,6 +249,32 @@ describe("statutory acknowledgements (PostgreSQL)", () => {
 		expect(await listStatutoryAcknowledgements(db, { organizationId: org.id })).toEqual([]);
 	});
 
+	it("never ties a statutory acknowledgement to a history row or agreement", async () => {
+		// Cancelling terms deletes history rows; a cascade must not remove the audit trail.
+		const { org, admin, worker, subject } = await setup();
+		for (const link of [
+			{ employmentHistoryId: crypto.randomUUID() },
+			{ agreementId: crypto.randomUUID() },
+		]) {
+			await expect(
+				db.insert(contractReviewAcknowledgement).values({
+					organizationId: org.id,
+					employeeId: worker.employeeId,
+					reviewKind: subject.kind,
+					findingKind: subject.findingKind,
+					subjectKey: subject.subjectKey,
+					inputFingerprint: marchInputs([240]),
+					dedupeKey: `linked-${Object.keys(link)[0]}`,
+					acknowledgedBy: admin.userId,
+					note: "Linked",
+					...link,
+				}),
+			).rejects.toMatchObject({
+				cause: expect.objectContaining({ constraint: "contract_review_ack_statutory_shape_check" }),
+			});
+		}
+	});
+
 	it("keeps acknowledgements inside their organization", async () => {
 		const { org, admin, subject } = await setup();
 		const foreignOrg = await fx.organization("b");

@@ -9,7 +9,9 @@
  * findings may share an acknowledgement kind and subject key (night and Sunday work on one shift
  * are both `jarbschg_sector_exception` on `shift:<id>`), and each is acknowledged on its own.
  *
- * Rows are immutable (a database trigger refuses updates and direct deletes). Recording the same
+ * Rows are immutable (a database trigger refuses updates and direct deletes) and belong to the
+ * employee, never to an employment history row or agreement, so cancelling terms cannot cascade
+ * into the audit trail; only deleting the employee or organization removes them. Recording the same
  * fingerprint twice is idempotent; a changed fingerprint is recorded as a new row, so the history
  * stays complete. An acknowledgement is `current` when any row of the subject matches the
  * fingerprint of the latest evaluation, `stale` when the subject has rows but none matches, and
@@ -38,7 +40,6 @@ export interface StatutoryAcknowledgementRecord extends StatutoryAcknowledgement
 	readonly acknowledgedAt: Date;
 	readonly reason: string;
 	readonly legalNote: string | null;
-	readonly employmentHistoryId: string | null;
 	readonly metadata: Record<string, unknown>;
 }
 
@@ -92,7 +93,6 @@ function toRecord(row: ContractReviewAcknowledgement): StatutoryAcknowledgementR
 		acknowledgedAt: row.acknowledgedAt,
 		reason: row.note ?? "",
 		legalNote: row.legalNote,
-		employmentHistoryId: row.employmentHistoryId,
 		metadata: row.metadata,
 	};
 }
@@ -111,7 +111,6 @@ export async function recordStatutoryAcknowledgement(
 		readonly inputFingerprint: string;
 		readonly reason: string;
 		readonly legalNote?: string | null;
-		readonly employmentHistoryId?: string | null;
 		/** Admin-only context worth keeping (e.g. evaluated amounts); never shown to scoped managers. */
 		readonly metadata?: Record<string, unknown>;
 	},
@@ -153,7 +152,6 @@ export async function recordStatutoryAcknowledgement(
 		.values({
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
-			employmentHistoryId: input.employmentHistoryId ?? null,
 			reviewKind: input.kind,
 			dedupeKey,
 			acknowledgedBy: input.actorUserId,

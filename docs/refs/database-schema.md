@@ -44,3 +44,13 @@ phase run -- pnpm --dir apps/webapp run db:install-departure-access
 The repair is transactional and safe to repeat. It installs both access functions
 without changing tenant rows or the migration ledger. It does not apply other
 custom SQL migrations; production deployments must still use the migration runner.
+
+`db:push` then re-applies the idempotent statutory foundation migration `0329`: the
+platform-managed German baselines in `statutory_threshold`, the triggers that keep
+those baselines read-only and statutory acknowledgements immutable, `btree_gist`,
+and the overlap exclusion constraints. Push alone leaves the statutory monitors with
+no baselines. To repair a database already pushed:
+
+```bash
+phase run -- pnpm --dir apps/webapp run db:install-statutory-foundation
+```

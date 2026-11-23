@@ -125,7 +125,7 @@ export const contractReviewAcknowledgement = pgTable(
 			.where(sql`"input_fingerprint" IS NOT NULL`),
 		check(
 			"contract_review_ack_statutory_shape_check",
-			sql`("subject_key" IS NULL) = ("input_fingerprint" IS NULL) AND ("finding_kind" IS NULL) = ("input_fingerprint" IS NULL) AND ("input_fingerprint" IS NULL OR ("note" IS NOT NULL AND length(btrim("note")) > 0 AND length(btrim("subject_key")) > 0 AND length(btrim("finding_kind")) > 0 AND length(btrim("input_fingerprint")) > 0))`,
+			sql`("subject_key" IS NULL) = ("input_fingerprint" IS NULL) AND ("finding_kind" IS NULL) = ("input_fingerprint" IS NULL) AND ("input_fingerprint" IS NULL OR ("note" IS NOT NULL AND length(btrim("note")) > 0 AND length(btrim("subject_key")) > 0 AND length(btrim("finding_kind")) > 0 AND length(btrim("input_fingerprint")) > 0 AND "employment_history_id" IS NULL AND "agreement_id" IS NULL))`,
 		),
 		foreignKey({
 			name: "contract_review_ack_employee_fk",

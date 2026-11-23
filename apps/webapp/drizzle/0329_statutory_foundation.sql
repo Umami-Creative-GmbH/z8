@@ -134,6 +134,9 @@ BEGIN
 						AND length(btrim("subject_key")) > 0
 						AND length(btrim("finding_kind")) > 0
 						AND length(btrim("input_fingerprint")) > 0
+						-- Not tied to a history row or agreement, whose deletion would cascade.
+						AND "employment_history_id" IS NULL
+						AND "agreement_id" IS NULL
 					)
 				)
 			);
@@ -147,8 +150,9 @@ CREATE INDEX IF NOT EXISTS "contractReviewAck_statutory_subject_idx"
 	WHERE "input_fingerprint" IS NOT NULL;
 --> statement-breakpoint
 -- Statutory acknowledgements are audit records: never updated, never turned into one by an update
--- (which could backdate it), and never deleted directly. Deletes cascading from the employee,
--- organization, agreement or employment history (nested trigger depth) stay allowed.
+-- (which could backdate it), and never deleted directly. Deletes cascading from the employee or
+-- organization (nested trigger depth) stay allowed; the shape check keeps statutory rows off
+-- employment history and agreements, so cancelling terms cannot cascade into them.
 CREATE OR REPLACE FUNCTION "z8_guard_statutory_acknowledgement"()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -298,13 +302,7 @@ CREATE TABLE IF NOT EXISTS "employee_study_period" (
 		CHECK (
 			("voided_at" IS NULL) = ("voided_by" IS NULL)
 			AND ("voided_at" IS NULL OR length(btrim(coalesce("void_reason", ''))) > 0)
-		),
-	CONSTRAINT "employee_study_period_no_overlap"
-		EXCLUDE USING gist (
-			"organization_id" WITH =,
-			"employee_id" WITH =,
-			daterange("starts_on", "ends_on", '[]') WITH &&
-		) WHERE ("voided_at" IS NULL)
+		)
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "employee_apprentice_release" (
@@ -350,11 +348,29 @@ CREATE TABLE IF NOT EXISTS "employee_apprentice_release" (
 		CHECK (
 			("voided_at" IS NULL) = ("voided_by" IS NULL)
 			AND ("voided_at" IS NULL OR length(btrim(coalesce("void_reason", ''))) > 0)
-		),
-	CONSTRAINT "employee_apprentice_release_no_overlap"
-		EXCLUDE USING gist (
-			"organization_id" WITH =,
-			"employee_id" WITH =,
-			daterange("starts_on", "ends_on", '[]') WITH &&
-		) WHERE ("voided_at" IS NULL)
+		)
 );
+--> statement-breakpoint
+-- Added outside CREATE TABLE so `db:install-statutory-foundation` can add them to tables that
+-- `drizzle-kit push` created (push does not know exclusion constraints).
+DO $$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'employee_study_period_no_overlap') THEN
+		ALTER TABLE "employee_study_period"
+			ADD CONSTRAINT "employee_study_period_no_overlap"
+			EXCLUDE USING gist (
+				"organization_id" WITH =,
+				"employee_id" WITH =,
+				daterange("starts_on", "ends_on", '[]') WITH &&
+			) WHERE ("voided_at" IS NULL);
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'employee_apprentice_release_no_overlap') THEN
+		ALTER TABLE "employee_apprentice_release"
+			ADD CONSTRAINT "employee_apprentice_release_no_overlap"
+			EXCLUDE USING gist (
+				"organization_id" WITH =,
+				"employee_id" WITH =,
+				daterange("starts_on", "ends_on", '[]') WITH &&
+			) WHERE ("voided_at" IS NULL);
+	END IF;
+END $$;
