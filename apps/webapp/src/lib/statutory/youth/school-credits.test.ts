@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ApprenticeReleaseDay } from "../apprenticeship/release-credits";
+import { type ApprenticeReleaseDay, apprenticeReleaseDays } from "../apprenticeship/release-credits";
 import { youthSchoolCreditsOf } from "./school-credits";
 
 const day = (
@@ -34,6 +34,29 @@ describe("youthSchoolCreditsOf (§§ 9 Abs. 2, 10 Abs. 2 JArbSchG)", () => {
 		expect(youthSchoolCreditsOf([day("2027-03-04", "a", "vocational_school_day", 180)])).toEqual([
 			{ ref: "release:a", date: "2027-03-04", minutes: 180 },
 		]);
+	});
+
+	it("counts 40 h in each week of a two-week block, whatever range is read", () => {
+		const block = apprenticeReleaseDays([
+			{
+				id: "w",
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-01",
+				endsOn: "2027-03-12",
+				lessonCount: null,
+				schoolMinutes: 1500,
+			},
+		]);
+		const all = youthSchoolCreditsOf(block);
+		const weekTotal = (monday: string, sunday: string) =>
+			all
+				.filter((credit) => credit.date >= monday && credit.date <= sunday)
+				.reduce((total, credit) => total + credit.minutes, 0);
+		expect(weekTotal("2027-03-01", "2027-03-07")).toBe(2400);
+		expect(weekTotal("2027-03-08", "2027-03-14")).toBe(2400);
+		// Reading only part of the block (as a clock-out does) credits each day the same.
+		const firstWeek = youthSchoolCreditsOf(block.filter((day) => day.date < "2027-03-08"));
+		expect(firstWeek).toEqual(all.filter((credit) => credit.date < "2027-03-08"));
 	});
 
 	it("counts a full block week as 40 h over its days", () => {

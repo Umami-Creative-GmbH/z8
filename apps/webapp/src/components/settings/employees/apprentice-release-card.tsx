@@ -409,8 +409,8 @@ function RecordReleaseForm({
 										<div className="space-y-1.5">
 											<Label htmlFor="apprentice-release-hours">
 												{t(
-													"settings.apprenticeRelease.fields.schoolHours",
-													"School hours in the block",
+													"settings.apprenticeRelease.fields.schoolHoursPerWeek",
+													"School hours per week (clock hours)",
 												)}
 											</Label>
 											<Input

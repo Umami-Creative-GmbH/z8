@@ -24,6 +24,7 @@ import {
 	statutoryFixture,
 } from "@/test/statutory-fixtures";
 import { recordApprenticeRelease } from "../employee-context";
+import { loadYouthSchoolCredits } from "../youth/school-credits";
 import { youthSeed } from "../youth/testing/youth-seed";
 
 const staffingLayer = StaffingSuggestionServiceLive.pipe(
@@ -170,6 +171,42 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			expect(ranged[date]?.requiredMinutes).toBe(single[date]?.requiredMinutes);
 		}
 		expect(ranged["2027-03-02"]?.requiredMinutes).toBe(0);
+	});
+
+	it("credits a two-week block per school week, whatever range clock-out or Scheduling reads", async () => {
+		const learner = await apprentice("twoweeks", "2011-01-01");
+		await recordApprenticeRelease(db, {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+			releaseKind: "vocational_school_block_week",
+			startsOn: "2027-03-01",
+			endsOn: "2027-03-12",
+			schoolMinutes: 1500,
+		});
+		const creditsOver = async (from: string, until: string) =>
+			new Map(
+				(
+					(
+						await loadYouthSchoolCredits(db, {
+							organizationId: org.id,
+							employeeIds: [learner.employeeId],
+							from,
+							until,
+						})
+					).get(learner.employeeId) ?? []
+				).map((credit) => [credit.date, credit.minutes]),
+			);
+		// A clock-out on Wednesday 3 March reads its week (Sunday before to the Tuesday after).
+		const clockOut = await creditsOver("2027-02-28", "2027-03-09");
+		const window = await creditsOver("2027-03-01", "2027-03-15");
+		for (const date of ["2027-03-01", "2027-03-03", "2027-03-05", "2027-03-08"]) {
+			expect(clockOut.get(date)).toBe(480);
+			expect(window.get(date)).toBe(480);
+		}
+		expect(window.has("2027-03-06")).toBe(false);
+		expect(window.has("2027-03-07")).toBe(false);
+		expect([...window.values()].reduce((total, minutes) => total + minutes, 0)).toBe(4800);
 	});
 
 	it("does not credit releases of an employee who is not an apprentice", async () => {

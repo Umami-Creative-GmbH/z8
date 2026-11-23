@@ -4325,7 +4325,7 @@
         "kind": "Release",
         "date": "Date",
         "endsOn": "Last day",
-        "schoolHours": "School hours in the block",
+        "schoolHoursPerWeek": "School hours per week (clock hours)",
         "lessons": "Lessons (45 min each)",
         "includePreExamDay": "Also release the working day before the written final exam",
         "note": "Note (optional)"

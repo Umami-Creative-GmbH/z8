@@ -4325,7 +4325,7 @@
         "kind": "Freistellung",
         "date": "Datum",
         "endsOn": "Letzter Tag",
-        "schoolHours": "Unterrichtsstunden im Block (Zeitstunden)",
+        "schoolHoursPerWeek": "Unterrichtszeit je Woche (Zeitstunden)",
         "lessons": "Unterrichtsstunden (je 45 Min.)",
         "includePreExamDay": "Auch den Arbeitstag vor der schriftlichen Abschlussprüfung freistellen",
         "note": "Notiz (optional)"

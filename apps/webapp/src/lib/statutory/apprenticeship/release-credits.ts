@@ -11,7 +11,9 @@
  *   credit their school time including breaks (§ 15 Abs. 3 Nr. 1), lessons × 45 min when the
  *   school time is not recorded.
  * - A block-release week of at least 25 hours on at least five days credits the full working
- *   week (§ 15 Abs. 2 Nr. 3); a shorter block spreads its school time over its days.
+ *   week (§ 15 Abs. 2 Nr. 3); a shorter block spreads its school time over its days. A block
+ *   record may span several weeks: it is credited per compliance week (Monday to Sunday), on its
+ *   school days (Monday to Friday) only, and its school minutes are the school time per week.
  * - The exam day and the working day immediately before the written final exam are released in
  *   full (§ 15 Abs. 2 Nr. 4–5 BBiG, § 10 JArbSchG).
  */
@@ -98,20 +100,29 @@ export function apprenticeReleaseDays(
 				break;
 			}
 			case "vocational_school_block_week": {
-				const blockDays = eachDay(release.startsOn, release.endsOn);
-				const full =
-					blockDays.length >= FULL_BLOCK_WEEK_MIN_DAYS &&
-					(release.schoolMinutes === null || release.schoolMinutes >= FULL_BLOCK_WEEK_MIN_MINUTES);
-				const perDay = full
-					? null
-					: Math.round((release.schoolMinutes ?? 0) / Math.max(1, blockDays.length));
-				for (const day of blockDays) {
-					days.push({
-						...base,
-						date: day.toString(),
-						credit: full ? "full_day" : "school_minutes",
-						minutes: perDay,
-					});
+				// Credited per school week: a record spanning several weeks is split at Mondays, and
+				// only its school days (Monday to Friday) are credited.
+				const schoolWeeks = new Map<string, PlainDate[]>();
+				for (const day of eachDay(release.startsOn, release.endsOn)) {
+					if (day.dayOfWeek > 5) continue;
+					const week = schoolWeeks.get(mondayOf(day));
+					if (week) week.push(day);
+					else schoolWeeks.set(mondayOf(day), [day]);
+				}
+				for (const weekDays of schoolWeeks.values()) {
+					const full =
+						weekDays.length >= FULL_BLOCK_WEEK_MIN_DAYS &&
+						(release.schoolMinutes === null ||
+							release.schoolMinutes >= FULL_BLOCK_WEEK_MIN_MINUTES);
+					const perDay = full ? null : Math.round((release.schoolMinutes ?? 0) / weekDays.length);
+					for (const day of weekDays) {
+						days.push({
+							...base,
+							date: day.toString(),
+							credit: full ? "full_day" : "school_minutes",
+							minutes: perDay,
+						});
+					}
 				}
 				break;
 			}
