@@ -14,6 +14,7 @@ import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
+import { statutoryBlockingScheduleContributors } from "./contributors";
 import { deepensBreachedLimit, evaluateStatutoryScheduleFindings } from "./evaluate";
 import { statutoryFindingChangeKey } from "./finding-key";
 
@@ -62,17 +63,18 @@ export async function guardPublishedShiftEdit<T>(
 		employeeIds: [edit.employeeId],
 		now: edit.now,
 	};
+	// Only monitors that can block publication: the save holds the shift row locked.
+	const evaluate = () =>
+		evaluateStatutoryScheduleFindings(db, request, statutoryBlockingScheduleContributors);
 	const before = new Map(
-		(await evaluateStatutoryScheduleFindings(db, request)).map(
-			(finding) => [statutoryFindingChangeKey(finding), finding] as const,
-		),
+		(await evaluate()).map((finding) => [statutoryFindingChangeKey(finding), finding] as const),
 	);
 	const saved = await write();
 	// Only what the edit causes blocks it: a blocking finding absent before the save, or one it
 	// deepens past its limit (a longer week, a shorter rest). A breach the shift already had (e.g.
 	// published before the org turned the block on) does not lock its notes, colour or an edit
 	// that eases it.
-	const caused = (await evaluateStatutoryScheduleFindings(db, request)).filter((finding) => {
+	const caused = (await evaluate()).filter((finding) => {
 		if (!finding.blocksPublication) return false;
 		const prior = before.get(statutoryFindingChangeKey(finding));
 		return !prior || deepensBreachedLimit(prior, finding);

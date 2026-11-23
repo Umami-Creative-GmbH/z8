@@ -24,3 +24,14 @@ export const statutoryScheduleContributors: readonly StatutoryScheduleContributo
 	jarbschgScheduleContributor,
 	apprenticeReleaseScheduleContributor,
 ];
+
+/**
+ * The registered monitors whose findings may set `blocksPublication`. The publish block's guards
+ * (an edit of a published shift, the findings a publication causes) run inside the save
+ * transaction with the shift row locked, so they evaluate only these. A monitor that starts
+ * blocking publication is added here too.
+ */
+export const statutoryBlockingScheduleContributors: readonly StatutoryScheduleContributor[] = [
+	jarbschgScheduleContributor,
+	apprenticeReleaseScheduleContributor,
+];

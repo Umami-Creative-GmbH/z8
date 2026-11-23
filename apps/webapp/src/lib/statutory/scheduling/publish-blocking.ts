@@ -15,6 +15,7 @@ import type {
 	StatutoryComplianceFinding,
 } from "@/lib/scheduling/compliance/types";
 import { shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
+import { statutoryBlockingScheduleContributors } from "./contributors";
 import { deepensBreachedLimit, evaluateStatutoryScheduleFindings } from "./evaluate";
 import { statutoryFindingChangeKey } from "./finding-key";
 import { publicationBlockingFindings } from "./publication-block";
@@ -67,14 +68,19 @@ export async function findingsBlockingPublication(
 
 	const withoutDrafts = new Map(
 		(
-			await evaluateStatutoryScheduleFindings(db, {
-				organizationId: scope.organizationId,
-				timezone: scope.timezone,
-				window: scope.window,
-				employeeIds: [...new Set(elsewhere.map((finding) => finding.employeeId))],
-				now: scope.now,
-				excludedShiftIds: drafts.map((draft) => draft.id),
-			})
+			await evaluateStatutoryScheduleFindings(
+				db,
+				{
+					organizationId: scope.organizationId,
+					timezone: scope.timezone,
+					window: scope.window,
+					employeeIds: [...new Set(elsewhere.map((finding) => finding.employeeId))],
+					now: scope.now,
+					excludedShiftIds: drafts.map((draft) => draft.id),
+				},
+				// Only monitors that can block publication: the publication runs in its transaction.
+				statutoryBlockingScheduleContributors,
+			)
 		).map((finding) => [statutoryFindingChangeKey(finding), finding] as const),
 	);
 	// As for an edit of a published shift: the drafts cause a breach they bring about, or one

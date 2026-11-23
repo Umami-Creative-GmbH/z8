@@ -64,7 +64,8 @@ _Avoid_: counting `child_sick` absence as sick leave
   shows a finding a proposal changes (severity, tier, acknowledgement, block) or deepens past its
   visible `limit` (same unit: `used` grows above a ceiling, or falls below a floor when the summary
   says `limitDirection: "floor"`, e.g. a youth rest period). The JArbSchG publish block refuses an
-  edit or a publication by the same rule
+  edit or a publication by the same rule, running only the monitors that can block publication
+  (`statutoryBlockingScheduleContributors`)
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
 
