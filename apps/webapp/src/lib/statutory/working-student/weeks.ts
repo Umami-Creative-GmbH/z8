@@ -138,6 +138,7 @@ export function isoWeekKey(monday: PlainDate): string {
 
 type Category = "core" | "lectureFree" | "eveningWeekend" | "otherProfile";
 
+/** Milliseconds per category. */
 interface WeekAccumulator {
 	core: number;
 	completedCore: number;
@@ -168,22 +169,27 @@ function lectureFreeWeekdaysOf(
 		.map((day) => day.toString());
 }
 
-function overlapMinutes(start: Instant, end: Instant, from: Instant, until: Instant): number {
+function overlapMilliseconds(start: Instant, end: Instant, from: Instant, until: Instant): number {
 	const lo = Math.max(start.epochMilliseconds, from.epochMilliseconds);
 	const hi = Math.min(end.epochMilliseconds, until.epochMilliseconds);
-	return hi > lo ? (hi - lo) / 60_000 : 0;
+	return hi > lo ? hi - lo : 0;
 }
 
-/** Adds an interval's net minutes, by local day and category, to the weeks they fall in. */
+/**
+ * Adds an interval's net milliseconds, by local day and category, to the weeks they fall in.
+ * Intervals without deducted breaks add whole milliseconds, so a running clock-in plus the rest of
+ * its shift sums exactly to the same total wherever `now` splits them (no float drift at x.5 min).
+ */
 function accumulate(
 	weeks: Map<string, WeekAccumulator>,
 	interval: WorkingStudentWorkInterval,
 	timezone: string,
 	facts: Pick<WorkingStudentEmployeeFacts, "lectureFreePeriods" | "isWorkingStudentDay">,
 ): void {
-	const elapsed = (interval.end.epochMilliseconds - interval.start.epochMilliseconds) / 60_000;
-	if (elapsed <= 0 || interval.netMinutes <= 0) return;
-	const ratio = interval.netMinutes / elapsed;
+	const elapsed = interval.end.epochMilliseconds - interval.start.epochMilliseconds;
+	const net = interval.netMinutes * 60_000;
+	if (elapsed <= 0 || net <= 0) return;
+	const ratio = Math.abs(net - elapsed) < 1 ? 1 : net / elapsed;
 	const at = (day: PlainDate, minute: number) =>
 		day
 			.toPlainDateTime({ hour: Math.floor(minute / 60), minute: minute % 60 })
@@ -200,9 +206,9 @@ function accumulate(
 		const daytimeStart = at(day, WORKING_STUDENT_DAYTIME_START_MINUTE);
 		const daytimeEnd = at(day, WORKING_STUDENT_DAYTIME_END_MINUTE);
 		const night =
-			overlapMinutes(interval.start, interval.end, dayStart, daytimeStart) +
-			overlapMinutes(interval.start, interval.end, daytimeEnd, nextDay);
-		const daytime = overlapMinutes(interval.start, interval.end, daytimeStart, daytimeEnd);
+			overlapMilliseconds(interval.start, interval.end, dayStart, daytimeStart) +
+			overlapMilliseconds(interval.start, interval.end, daytimeEnd, nextDay);
+		const daytime = overlapMilliseconds(interval.start, interval.end, daytimeStart, daytimeEnd);
 		if (night + daytime === 0) continue;
 
 		const workingStudent = facts.isWorkingStudentDay(day.toString());
@@ -292,11 +298,12 @@ export function evaluateWorkingStudentEmployee(input: {
 	) {
 		const weekStart = monday.toString();
 		const acc = accumulators.get(weekStart);
-		const core = Math.round(acc?.core ?? 0);
-		const lectureFree = Math.round(acc?.lectureFree ?? 0);
-		const eveningWeekend = Math.round(acc?.eveningWeekend ?? 0);
-		const otherProfile = Math.round(acc?.otherProfile ?? 0);
-		const total = Math.round(
+		const minutes = (milliseconds: number) => Math.round(milliseconds / 60_000);
+		const core = minutes(acc?.core ?? 0);
+		const lectureFree = minutes(acc?.lectureFree ?? 0);
+		const eveningWeekend = minutes(acc?.eveningWeekend ?? 0);
+		const otherProfile = minutes(acc?.otherProfile ?? 0);
+		const total = minutes(
 			(acc?.core ?? 0) +
 				(acc?.lectureFree ?? 0) +
 				(acc?.eveningWeekend ?? 0) +
@@ -324,7 +331,7 @@ export function evaluateWorkingStudentEmployee(input: {
 			limitMinutes,
 			totalMinutes: total,
 			coreMinutes: core,
-			completedCoreMinutes: Math.round(acc?.completedCore ?? 0),
+			completedCoreMinutes: minutes(acc?.completedCore ?? 0),
 			lectureFreeMinutes: lectureFree,
 			eveningWeekendMinutes: eveningWeekend,
 			otherProfileMinutes: otherProfile,

@@ -335,6 +335,87 @@ describe("working-student monitor (PostgreSQL)", () => {
 				summary: expect.objectContaining({ used: { unit: "minutes", value: 1680 } }),
 			}),
 		]);
+
+		// A proposed shift that has already started counts only its rest, one that has ended not at all.
+		const covering = await fx.workingStudent(org, "covering");
+		const proposalsAt = (now: string, proposals: [string, string, string][]) =>
+			evaluate(org.id, [covering.employeeId], {
+				now: Temporal.Instant.from(now),
+				proposedShifts: proposals.map(([date, startTime, endTime]) => ({
+					employeeId: covering.employeeId,
+					date,
+					startTime,
+					endTime,
+				})),
+			});
+		// 13:00 in Berlin on Wednesday: 4 h of the 09:00–17:00 shift are left; Tuesday's is over.
+		const wednesday13 = "2026-03-04T12:00:00Z";
+		const [started] = await proposalsAt(wednesday13, [
+			["2026-03-04", "09:00", "17:00"],
+			["2026-03-03", "09:00", "17:00"],
+		]);
+		expect(started?.weeks.at(-1)).toMatchObject({ totalMinutes: 240, coreMinutes: 240 });
+
+		// Already clocked in on that shift since 09:00: the clock-in so far plus the rest, once.
+		await fx.openWork(org, covering, { date: "2026-03-04", start: "09:00" });
+		const [clockedIn] = await proposalsAt(wednesday13, [["2026-03-04", "09:00", "17:00"]]);
+		expect(clockedIn?.weeks.at(-1)).toMatchObject({ totalMinutes: 480, coreMinutes: 480 });
+	});
+
+	it("keeps a running shift's total and fingerprint steady through a clock-in with seconds", async () => {
+		const org = await fx.organization("a");
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 16 h worked Monday and Tuesday; Wednesday's 09:00–17:00 shift clocked in at 09:00:42.
+		await fx.work(org, student, weekdays(W10, "08:00", "16:00").slice(0, 2));
+		await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "09:00", end: "17:00" });
+		await fx.openWork(org, student, { date: "2026-03-04", start: "09:00:42" });
+
+		const at = async (now: string) => {
+			const evaluations = await evaluate(org.id, [student.employeeId], {
+				now: Temporal.Instant.from(now),
+			});
+			return {
+				coreMinutes: evaluations[0]?.weeks.at(-1)?.coreMinutes,
+				fingerprint: findingsOf(evaluations, student.employeeId, "working_student_lecture_week")[0]
+					?.inputFingerprint,
+			};
+		};
+		// 960 + 479.3 minutes, on either side of the clock-in's 42-second mark.
+		const before = await at("2026-03-04T12:00:30Z");
+		expect(before.coreMinutes).toBe(1439);
+		expect(before.fingerprint).toMatch(/^v1:/);
+		for (const now of [
+			"2026-03-04T12:00:41.999Z",
+			"2026-03-04T12:00:42Z",
+			"2026-03-04T12:00:50Z",
+			"2026-03-04T13:17:13.5Z",
+		]) {
+			expect(await at(now), now).toEqual(before);
+		}
+	});
+
+	it("keeps counting the rest of a running shift through a clocked-out break", async () => {
+		const org = await fx.organization("a");
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// Wednesday's 08:00–18:00 shift: worked 08:00–12:00, on a break 12:00–12:30.
+		await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "08:00", end: "18:00" });
+		const morning = await fx.openWork(org, student, { date: "2026-03-04", start: "08:00" });
+		await fx.clockOut(org, morning, { date: "2026-03-04", end: "12:00" });
+
+		const totalAt = async (now: string) =>
+			(
+				await evaluate(org.id, [student.employeeId], { now: Temporal.Instant.from(now) })
+			)[0]?.weeks.at(-1)?.totalMinutes;
+		// 12:15 in Berlin: 4 h worked plus 5 h 45 of the shift still to come.
+		expect(await totalAt("2026-03-04T11:15:00Z")).toBe(585);
+
+		await fx.openWork(org, student, { date: "2026-03-04", start: "12:30" });
+		// 13:00: 4 h worked, 30 min since the break, 5 h of the shift still to come.
+		expect(await totalAt("2026-03-04T12:00:00Z")).toBe(570);
+		// Once the shift is over, only the recorded work is left (the afternoon is still running).
+		expect(await totalAt("2026-03-04T17:00:00Z")).toBe(240 + 330);
 	});
 
 	it("keeps the lecture-week fingerprint through a shift worked as planned, and only then", async () => {

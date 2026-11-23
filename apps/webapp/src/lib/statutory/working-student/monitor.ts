@@ -57,8 +57,8 @@ export interface WorkingStudentMonitorRequest {
 	readonly window: { readonly start: string; readonly endExclusive: string };
 	readonly employeeIds: readonly string[];
 	/**
-	 * Recorded work counts up to `now` (a running clock-in up to `now` itself), planned shifts from
-	 * `now` on: a shift in progress counts with its remaining part, an ended one not at all.
+	 * Recorded work counts up to `now` (a running clock-in up to `now` itself), planned and proposed
+	 * shifts from `now` on: a shift in progress counts with its remaining part, an ended one not at all.
 	 */
 	readonly now: Instant;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
@@ -288,6 +288,26 @@ export async function evaluateWorkingStudents(
 	const intervals = new Map<string, WorkingStudentWorkInterval[]>();
 	const add = (employeeId: string, interval: WorkingStudentWorkInterval) =>
 		push(intervals, employeeId, interval);
+	/**
+	 * A planned or proposed shift counts from `now` on: its past is judged by the work recorded for
+	 * it (a running clock-in counts up to `now`, so nothing is counted twice), its future by the plan.
+	 */
+	const addPlanned = (
+		employeeId: string,
+		source: "shift" | "proposed",
+		ref: string,
+		interval: { readonly start: Instant; readonly end: Instant },
+	) => {
+		if (compareInstants(interval.end, request.now) <= 0) return;
+		const start = compareInstants(interval.start, request.now) < 0 ? request.now : interval.start;
+		add(employeeId, {
+			source,
+			ref,
+			start,
+			end: interval.end,
+			netMinutes: start.until(interval.end).total("minutes"),
+		});
+	};
 	for (const row of openRows) {
 		const start = instantFromDate(row.startTime);
 		add(row.employeeId, {
@@ -320,17 +340,7 @@ export async function evaluateWorkingStudents(
 			},
 			timezone,
 		);
-		// The past of a shift is judged by the work recorded for it, its future by the plan.
-		if (compareInstants(interval.end, request.now) <= 0) continue;
-		const started = compareInstants(interval.start, request.now) < 0;
-		const start = started ? request.now : interval.start;
-		add(row.employeeId, {
-			source: "shift",
-			ref: row.id,
-			start,
-			end: interval.end,
-			netMinutes: start.until(interval.end).total("minutes"),
-		});
+		addPlanned(row.employeeId, "shift", row.id, interval);
 	}
 	for (const proposed of request.proposedShifts ?? []) {
 		const interval = shiftInterval(
@@ -341,13 +351,8 @@ export async function evaluateWorkingStudents(
 			},
 			timezone,
 		);
-		add(proposed.employeeId, {
-			source: "proposed",
-			ref: `${proposed.date}T${proposed.startTime}-${proposed.endTime}`,
-			start: interval.start,
-			end: interval.end,
-			netMinutes: interval.start.until(interval.end).total("minutes"),
-		});
+		const ref = `${proposed.date}T${proposed.startTime}-${proposed.endTime}`;
+		addPlanned(proposed.employeeId, "proposed", ref, interval);
 	}
 	const study = groupBy(studyRows, (row) => row.employeeId);
 	const offsets = groupBy(offsetRows, (row) => row.employeeId);

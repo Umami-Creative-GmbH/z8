@@ -269,6 +269,45 @@ describe("working student 20-hour lecture-period rule", () => {
 			}
 		});
 
+		it("keeps the core minutes of a half-minute clock-in steady wherever `now` splits it", () => {
+			// Friday clocked in at 09:00:30 on a 09:00–16:00 shift: 419.5 minutes, wherever `now` is.
+			const clockIn = Temporal.ZonedDateTime.from("2026-03-06T09:00:30[Europe/Berlin]").toInstant();
+			const shiftEnd = Temporal.ZonedDateTime.from("2026-03-06T16:00[Europe/Berlin]").toInstant();
+			const [mon, tue, thu] = worked.filter((i) => i !== undefined);
+			const coreAt = (now: Temporal.Instant) =>
+				evaluate(
+					facts({
+						intervals: [
+							mon,
+							tue,
+							thu,
+							{
+								source: "work",
+								ref: "open",
+								start: clockIn,
+								end: now,
+								netMinutes: clockIn.until(now).total("minutes"),
+							},
+							{
+								source: "shift",
+								ref: "rest",
+								start: now,
+								end: shiftEnd,
+								netMinutes: now.until(shiftEnd).total("minutes"),
+							},
+						].filter((i) => i !== undefined),
+					}),
+					W10,
+					W11,
+				).weeks.at(-1)?.coreMinutes;
+			const cores = new Set<number | undefined>();
+			for (let ms = 1; ms < 419.5 * 60_000; ms += 60_013) {
+				cores.add(coreAt(clockIn.add({ milliseconds: ms })));
+			}
+			// 3 × 420 + 419.5, rounded half up.
+			expect([...cores]).toEqual([1680]);
+		});
+
 		it("ignores weekend work and a re-recorded identical lecture-free period", () => {
 			expect(original).toMatch(/^v1:/);
 			expect(
