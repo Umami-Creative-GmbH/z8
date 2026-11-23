@@ -178,6 +178,27 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 			return workPeriodId;
 		},
 
+		/** Clocks out an open clock-in (`openWork`) at an organization-local wall time on `date`. */
+		async clockOut(
+			org: FixtureOrganization,
+			workPeriodId: string,
+			date: string,
+			endTime: string,
+		): Promise<void> {
+			const end = Temporal.ZonedDateTime.from(`${date}T${endTime}[${org.timezone}]`);
+			await withCanonicalRecords(admin, (client) =>
+				client.query(
+					`UPDATE work_period
+					 SET end_time = $2::timestamptz,
+						 duration_minutes = floor(extract(epoch from ($2::timestamptz - start_time)) / 60),
+						 is_active = false,
+						 updated_at = $2::timestamptz
+					 WHERE id = $1`,
+					[workPeriodId, new Date(end.epochMilliseconds)],
+				),
+			);
+		},
+
 		/** A completed work period between two organization-local wall times starting on `date`. */
 		async work(
 			org: FixtureOrganization,

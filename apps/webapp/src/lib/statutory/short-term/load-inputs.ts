@@ -37,7 +37,10 @@ export const SHORT_TERM_THRESHOLD_KEYS = [
 export interface ShortTermWorkItem {
 	readonly workPeriodId: string;
 	readonly date: string;
-	/** Recorded minutes; for an open clock-in, whole minutes up to the evaluation instant. */
+	/**
+	 * Recorded minutes; for an open clock-in, whole minutes from the clock-in's minute to the
+	 * evaluation instant's minute.
+	 */
 	readonly minutes: number;
 	/**
 	 * For an open clock-in: the running shift it belongs to (whose rest is planned work), or
@@ -52,8 +55,8 @@ export interface ShortTermWorkItem {
 }
 
 /**
- * Planned work on a short-term day: a persisted shift that has not ended (a running one until its
- * work is recorded), or Staffing's proposed shift.
+ * Planned work on a short-term day: a persisted shift that has not ended (a running one for what
+ * its recorded work has not covered yet), or Staffing's proposed shift.
  */
 export interface ShortTermPlanItem {
 	/** Null for Staffing's proposed shift. */
@@ -62,12 +65,12 @@ export interface ShortTermPlanItem {
 	readonly startTime: string;
 	readonly endTime: string;
 	/**
-	 * Real length between the start and end instants in the organization's timezone; for a running
-	 * shift with an open clock-in, only its rest (whole minutes, rounded up) from the evaluation
-	 * instant.
+	 * Real length between the start and end instants in the organization's timezone. For a running
+	 * shift with recorded work, only its rest: from the evaluation instant's minute while a
+	 * clock-in is open, else from the minute its recorded work ended (a clocked-out break).
 	 */
 	readonly minutes: number;
-	/** Whether only the rest of a running shift counts, its open clock-in the time so far. */
+	/** Whether only the rest of a running shift counts, its recorded work the time so far. */
 	readonly inProgress: boolean;
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
@@ -158,6 +161,11 @@ export function averageWorkDaysPerWeek(contract: EffectiveContractOnDay): number
 	}
 	const workDays = contract.weeklyScheduleDays.filter((day) => day.isWorkDay).length;
 	return workDays > 0 ? workDays : null;
+}
+
+/** The start of `instant`'s minute: open work and the rest of its shift meet on this grid. */
+function minuteGrid(instant: Instant): Instant {
+	return instant.round({ smallestUnit: "minute", roundingMode: "floor" });
 }
 
 function groupBy<T>(rows: readonly T[], keyOf: (row: T) => string): Map<string, T[]> {
@@ -348,6 +356,9 @@ export async function loadShortTermInputs(
 		);
 
 	const inYears = (date: string) => yearOf(date) >= firstYear && yearOf(date) <= lastYear;
+	// Running work and the rest of its shift meet on one minute grid, so their sum stays put
+	// whatever seconds the clock-in or the evaluation instant carry.
+	const nowOnGrid = minuteGrid(input.now);
 	type BucketedWork = Pick<ShortTermWorkItem, "date" | "minutes"> & {
 		readonly id: string;
 		readonly start: Instant;
@@ -368,10 +379,11 @@ export async function loadShortTermInputs(
 			date: plainDateAt(start, input.timezone).toString(),
 			start,
 			end,
-			// Whole minutes so far: with the rest of its shift rounded up, the sum stays put.
+			// Whole grid minutes so far: with the rest of its shift from the same grid minute, the
+			// sum stays put.
 			minutes: end
 				? (row.durationMinutes ?? Math.round(start.until(end).total("minutes")))
-				: Math.max(0, Math.floor(start.until(input.now).total("minutes"))),
+				: Math.max(0, minuteGrid(start).until(nowOnGrid).total("minutes")),
 		};
 		const list = workByEmployee.get(row.employeeId);
 		if (list) list.push(item);
@@ -409,24 +421,33 @@ export async function loadShortTermInputs(
 		}
 		// Over: what was worked is recorded work.
 		if (compareInstants(interval.end, input.now) <= 0) continue;
-		// Running: its open clock-in counts up to now and the shift for its rest. Once that work
-		// has closed, the recorded work replaces it; until anyone clocks in, it counts in full.
+		// Running: until anyone clocks in, it counts in full. An open clock-in counts up to now and
+		// the shift for its rest from now. During a clocked-out break, the rest counts from the end
+		// of the work recorded for it, so nothing moves until the shift ends or work resumes.
 		const matched = (workByEmployee.get(row.employeeId) ?? []).filter((work) =>
 			workMatchesShift(interval, work),
 		);
-		const open = matched.filter((work) => work.end === null);
-		if (open.length > 0) {
-			for (const work of open) {
-				if (!runningShiftOf.has(work.id)) runningShiftOf.set(work.id, row.id);
-			}
-			addPlanned(row.employeeId, {
-				...item,
-				minutes: Math.ceil(input.now.until(interval.end).total("minutes")),
-				inProgress: true,
-			});
-		} else if (matched.length === 0) {
+		if (matched.length === 0) {
 			addPlanned(row.employeeId, { ...item, minutes: shiftMinutes(interval), inProgress: false });
+			continue;
 		}
+		let open = false;
+		let lastEnd = interval.start;
+		for (const work of matched) {
+			if (work.end === null) {
+				open = true;
+				if (!runningShiftOf.has(work.id)) runningShiftOf.set(work.id, row.id);
+			} else if (compareInstants(work.end, lastEnd) > 0) {
+				lastEnd = work.end;
+			}
+		}
+		const restFrom = open ? nowOnGrid : minuteGrid(lastEnd);
+		const restStart = compareInstants(restFrom, interval.start) > 0 ? restFrom : interval.start;
+		addPlanned(row.employeeId, {
+			...item,
+			minutes: Math.max(0, restStart.until(interval.end).total("minutes")),
+			inProgress: true,
+		});
 	}
 	const inProgressOf = (work: BucketedWork): ShortTermWorkItem["inProgress"] => {
 		if (work.end) return null;

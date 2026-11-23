@@ -68,6 +68,12 @@ export const SHORT_TERM_STINT_GAP_DAYS = 14;
  */
 export const SHORT_TERM_DAYS_PER_FULL_MONTH = 30;
 
+/** Work days a week from which the 3-month limit applies. */
+const SHORT_TERM_FULL_WEEK_DAYS = 5;
+
+/** At most one in this many full weeks may lack a day to a public holiday. */
+const SHORT_TERM_WEEKS_PER_HOLIDAY_WEEK = 4;
+
 /** A run of counted short-term days, `YYYY-MM-DD` inclusive. */
 export interface ShortTermStint {
 	readonly firstDay: string;
@@ -100,10 +106,12 @@ export function shortTermStints(
 }
 
 /**
- * Work days per week read from counted days, for terms that plan no real week: the median number
- * of counted days per Monday–Sunday week whose Monday to Friday lie within one stint (the upper
- * median, so a public holiday in one of two weeks does not break a five-day pattern). Partial
- * first and last weeks say nothing about the pattern. Null until one full week has been seen.
+ * Work days per week read from counted days, for terms that plan no real week: the mean number
+ * of counted days per Monday–Sunday week whose Monday to Friday lie within one stint, like the
+ * mean over a planned rota's cycle (`averageWorkDaysPerWeek`). Irregular weeks of 3 and 5 days
+ * average 4. A week one day short may have lost that day to a public holiday: up to one in four
+ * full weeks (at least one, never all of them) count that day. Partial first and last weeks say
+ * nothing about the pattern. Null until one full week has been seen.
  */
 export function observedWorkDaysPerWeek(
 	days: readonly string[],
@@ -129,8 +137,14 @@ export function observedWorkDaysPerWeek(
 		}
 	}
 	if (perWeek.length === 0) return null;
-	perWeek.sort((a, b) => a - b);
-	return perWeek[Math.floor(perWeek.length / 2)] ?? null;
+	const oneDayShort = perWeek.filter((count) => count === SHORT_TERM_FULL_WEEK_DAYS - 1).length;
+	const holidayWeeks = Math.min(
+		oneDayShort,
+		Math.max(1, Math.floor(perWeek.length / SHORT_TERM_WEEKS_PER_HOLIDAY_WEEK)),
+		perWeek.length - 1,
+	);
+	const workDays = perWeek.reduce((sum, count) => sum + count, 0) + holidayWeeks;
+	return workDays / perWeek.length;
 }
 
 /**
@@ -142,9 +156,12 @@ function ownLimitKindOf(
 	week: ShortTermYearWeek,
 	employmentPeriodOf: ReadonlyMap<string, string | null>,
 ): ShortTermLimitKind {
-	if (week.plannedWorkDaysPerWeek.some((perWeek) => perWeek < 5)) return "work_days";
+	if (week.plannedWorkDaysPerWeek.some((perWeek) => perWeek < SHORT_TERM_FULL_WEEK_DAYS)) {
+		return "work_days";
+	}
 	if (!week.unplannedTerms) return "months";
-	return (observedWorkDaysPerWeek(week.unplannedDays, employmentPeriodOf) ?? 0) >= 5
+	return (observedWorkDaysPerWeek(week.unplannedDays, employmentPeriodOf) ?? 0) >=
+		SHORT_TERM_FULL_WEEK_DAYS
 		? "months"
 		: "work_days";
 }
@@ -347,7 +364,8 @@ export function judgeShortTermYear(input: {
 /**
  * What a Berufsmäßigkeit verification depends on: each day's minutes at each wage, not whether
  * they were planned or worked. A shift worked as planned, a running shift with its open clock-in
- * (whole minutes so far plus the rest rounded up) and the date rolling past midnight keep it;
+ * (minutes so far plus the rest, on one minute grid), a clocked-out break within a running shift
+ * and the date rolling past midnight keep it;
  * added, removed, longer or shorter work and shifts, a new wage or cap change it. An open clock-in
  * without a shift grows by the minute, so it counts by its identity until it closes.
  */
@@ -374,11 +392,6 @@ function berufsmaessigkeitFingerprint(input: {
 		days: [...minutesByDay].sort(([a], [b]) => a.localeCompare(b)),
 		openWithoutShift: openWithoutShift.sort(),
 	});
-}
-
-/** Earnings of `minutes` at an hourly wage in minor units, rounded to the cent. */
-function earningsCents(minutes: number, hourlyRateCents: number): number {
-	return Math.round((minutes * hourlyRateCents) / 60);
 }
 
 /**
@@ -418,18 +431,22 @@ function berufsmaessigkeitFindings(input: {
 					a.startTime.localeCompare(b.startTime) ||
 					(a.shiftId ?? "").localeCompare(b.shiftId ?? ""),
 			);
-		let earned = 0;
-		let plannedCents = 0;
+		// Cent-minutes (minutes × hourly cents), rounded once per sum: the total of running work and
+		// the rest of its shift must not move by a cent as minutes pass from one to the other.
+		let earnedCentMinutes = 0;
+		let plannedCentMinutes = 0;
 		let unpricedMinutes = 0;
 		for (const item of work) {
 			if (item.hourlyRateCents === null) unpricedMinutes += item.minutes;
-			else earned += earningsCents(item.minutes, item.hourlyRateCents);
+			else earnedCentMinutes += item.minutes * item.hourlyRateCents;
 		}
 		for (const item of planned) {
 			if (item.hourlyRateCents === null) unpricedMinutes += item.minutes;
-			else plannedCents += earningsCents(item.minutes, item.hourlyRateCents);
+			else plannedCentMinutes += item.minutes * item.hourlyRateCents;
 		}
-		const total = earned + plannedCents;
+		const earned = Math.round(earnedCentMinutes / 60);
+		const total = Math.round((earnedCentMinutes + plannedCentMinutes) / 60);
+		const plannedCents = total - earned;
 		if (total <= cap) continue;
 
 		const { tier, usedPercent } = classifyStatutoryUsage({ used: total, limit: cap }, preferences);

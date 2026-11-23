@@ -274,6 +274,58 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			});
 		});
 
+		it("applies 70 working days to irregular weeks of three and five days", async () => {
+			const org = await fx.organization("a");
+			const alternating = await fx.employee(org, "alternating", { contractType: "hourly" });
+			const paired = await fx.employee(org, "paired", { contractType: "hourly" });
+			for (const worker of [alternating, paired]) {
+				await st.terms(worker, { from: "2026-06-01", weeklyMinutes: 960 });
+			}
+			// Mon–Wed, then Mon–Fri.
+			await workOn(org, alternating, [
+				...datesOn("2026-06-01", "2026-06-03", [1, 2, 3]),
+				...datesOn("2026-06-08", "2026-06-12", [1, 2, 3, 4, 5]),
+			]);
+			// Two weeks of Mon–Wed, then two of Mon–Fri.
+			await workOn(org, paired, [
+				...datesOn("2026-06-01", "2026-06-10", [1, 2, 3]),
+				...datesOn("2026-06-15", "2026-06-26", [1, 2, 3, 4, 5]),
+			]);
+
+			const evaluations = await evaluate(org, [alternating.employeeId, paired.employeeId]);
+			const byEmployee = new Map(evaluations.map((e) => [e.employeeId, e]));
+
+			expect(byEmployee.get(alternating.employeeId)?.allowance).toMatchObject({
+				limitKind: "work_days",
+				used: 8,
+				limit: 70,
+			});
+			expect(byEmployee.get(paired.employeeId)?.allowance).toMatchObject({
+				limitKind: "work_days",
+				used: 16,
+				limit: 70,
+			});
+		});
+
+		it("applies 3 months to a Monday–Friday roster with a public-holiday week", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-06-01", weeklyMinutes: 1200 });
+			// Four weeks Mon–Fri from 1 June; Thursday 4 June (Corpus Christi) off.
+			await workOn(
+				org,
+				worker,
+				datesOn("2026-06-01", "2026-06-26", [1, 2, 3, 4, 5]).filter(
+					(date) => date !== "2026-06-04",
+				),
+			);
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			// 1 June – 26 June: 26 calendar days of the 92 that 1 June – 31 August holds.
+			expect(evaluation?.allowance).toMatchObject({ limitKind: "months", used: 26, limit: 92 });
+		});
+
 		it("applies 70 working days to a weekly-hours helper who works two days a week", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
@@ -414,10 +466,10 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 
 	describe("Berufsmäßigkeit verification", () => {
 		/** Seven or eight 4-hour days at 20 EUR: 560 or 640 EUR against the 603 EUR cap of 2026. */
-		async function earner(key: string, days: number) {
+		async function earner(key: string, days: number, hourlyRate = 20) {
 			const org = await fx.organization(key);
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, { from: "2026-01-01", hourlyRate: 20 });
+			await st.terms(worker, { from: "2026-01-01", hourlyRate });
 			for (let day = 1; day <= days; day++) {
 				await st.work(org, worker, `2026-05-${String(day).padStart(2, "0")}`);
 			}
@@ -559,6 +611,89 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 
 				expect(await stateAt(Temporal.Instant.from("2026-05-20T07:30:30Z"))).toBe("current");
 				expect(await stateAt(Temporal.Instant.from("2026-05-20T10:10:45Z"))).toBe("current");
+			});
+
+			/** The month's prompt total and fingerprint at each instant, in order. */
+			async function promptsAt(
+				org: { id: string; timezone: string },
+				employeeId: string,
+				instants: readonly string[],
+			) {
+				const seen: { total: unknown; fingerprint: string | undefined }[] = [];
+				for (const at of instants) {
+					const [finding] =
+						(
+							await evaluate(org, [employeeId], { now: Temporal.Instant.from(at) })
+						)[0]?.findings.filter((f) => f.kind === "short_term_berufsmaessigkeit_check") ?? [];
+					seen.push({
+						total: finding?.adminDetail?.amountsCents?.total,
+						fingerprint: finding?.inputFingerprint,
+					});
+				}
+				return seen;
+			}
+
+			it("keeps total and fingerprint while a clock-in with seconds is open", async () => {
+				// 20.10 EUR an hour: half a cent a minute, so rounding shows up on odd minutes.
+				const { org, worker } = await earner("a", 7, 20.1);
+				await st.shift(org, worker, "2026-05-20", "09:00", "13:00");
+				await st.openWork(org, worker, "2026-05-20", "09:00:42");
+
+				const seen = await promptsAt(org, worker.employeeId, [
+					// 10:15:30 and 10:15:50 in Berlin, either side of the clock-in's 42 seconds.
+					"2026-05-20T08:15:30Z",
+					"2026-05-20T08:15:50Z",
+					"2026-05-20T08:16:30Z",
+					"2026-05-20T08:17:41Z",
+					"2026-05-20T09:47:55Z",
+					"2026-05-20T10:59:59Z",
+				]);
+
+				// 28 hours before + the shift from 09:00 to 13:00: 32 hours at 20.10 EUR.
+				expect(seen[0]?.total).toBe(64_320);
+				expect(seen[0]?.fingerprint).toEqual(expect.any(String));
+				for (const later of seen) expect(later).toEqual(seen[0]);
+			});
+
+			it("keeps counting the rest of the shift during a clocked-out break", async () => {
+				const { org, worker } = await earner("a", 7);
+				await st.shift(org, worker, "2026-05-20", "08:00", "18:00");
+				const morning = await st.openWork(org, worker, "2026-05-20", "08:00");
+				const [beforeBreak] = await promptsAt(org, worker.employeeId, ["2026-05-20T09:59:30Z"]);
+				// 560 EUR before + the 10-hour shift at 20 EUR.
+				expect(beforeBreak?.total).toBe(76_000);
+
+				await st.clockOut(org, morning, "2026-05-20", "12:00");
+				const duringBreak = await promptsAt(org, worker.employeeId, [
+					"2026-05-20T10:00:30Z",
+					"2026-05-20T10:15:00Z",
+					"2026-05-20T10:29:59Z",
+				]);
+				for (const during of duringBreak) expect(during).toEqual(beforeBreak);
+
+				// Back at 12:30: the unworked half hour drops out, and the total stays put again.
+				await st.openWork(org, worker, "2026-05-20", "12:30");
+				const afterBreak = await promptsAt(org, worker.employeeId, [
+					"2026-05-20T10:30:30Z",
+					"2026-05-20T13:00:00Z",
+				]);
+				expect(afterBreak[0]?.total).toBe(75_000);
+				expect(afterBreak[1]).toEqual(afterBreak[0]);
+			});
+
+			it("drops the rest of a shift left early once the shift has ended", async () => {
+				const { org, worker } = await earner("a", 7);
+				await st.shift(org, worker, "2026-05-20", "08:00", "18:00");
+				await st.work(org, worker, "2026-05-20", "08:00", "12:00");
+
+				const [during, after] = await promptsAt(org, worker.employeeId, [
+					"2026-05-20T12:00:00Z",
+					"2026-05-20T16:00:01Z",
+				]);
+
+				// 14:00 in Berlin: the rest until 18:00 still counts; after 18:00 only the 4 hours worked.
+				expect(during?.total).toBe(76_000);
+				expect(after?.total).toBe(64_000);
 			});
 		});
 

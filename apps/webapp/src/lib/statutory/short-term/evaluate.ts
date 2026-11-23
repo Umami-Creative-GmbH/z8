@@ -11,18 +11,21 @@
  *   (bucketed on its start day, so a night shift is one day), a shift (draft or published) that
  *   has not ended, or Staffing's proposed shift; only days under short-term terms count, each once.
  * - A running shift counts in full until someone clocks in for it; with an open clock-in matched
- *   to it (`workMatchesShift`), the clock-in counts up to now and the shift for its rest; once
- *   its work is closed, or the shift has ended, recorded work replaces it.
+ *   to it (`workMatchesShift`), the clock-in counts up to now and the shift for its rest, both on
+ *   one minute grid; during a clocked-out break the rest counts from the end of its recorded
+ *   work. Once the shift has ended, recorded work replaces it.
  * - A stint is a run of counted days no more than 14 days apart within one employment period.
  * - The 3-month limit applies when every short-term terms version of the year plans 5 or more work
  *   days a week on average over its schedule cycle, terms without a planned week (published shifts,
- *   on call, weekly hours alone) show 5 or more counted days in the median full week, and no prior
+ *   on call, weekly hours alone) show 5 or more counted days in the mean full week (a public
+ *   holiday may cost one in four weeks a day), and no prior
  *   employer recorded working days; otherwise the 70-working-day limit applies to every stint's
  *   working days. The 3-month limit is counted in calendar days: one stint in time months from its
  *   first day, several stints (prior employers' months included) added up to 90, a full calendar
  *   month as 30 (`judge.ts`).
  * - Monthly earnings = work × the confirmed hourly wage of its day, plus planned shifts × the wage
- *   of their day, priced by their real length in the organization's timezone. Above the Minijob cap
+ *   of their day, priced by their real length in the organization's timezone and rounded to the
+ *   cent once per sum. Above the Minijob cap
  *   of the month they prompt for a Berufsmäßigkeit verification; Z8 never decides social-security
  *   status.
  */
