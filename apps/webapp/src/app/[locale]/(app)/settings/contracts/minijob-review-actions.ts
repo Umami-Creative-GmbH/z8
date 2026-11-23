@@ -1,0 +1,54 @@
+"use server";
+
+import { z } from "zod";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import { organizationAction } from "@/lib/organization-action/organization-action";
+import { storeStep } from "@/lib/organization-action/store-step";
+import { acknowledgeMinijobExceedance } from "@/lib/statutory/minijob/acknowledge-minijob-exceedance";
+import { loadMinijobExceedanceReviews } from "@/lib/statutory/minijob/minijob-reviews";
+
+// Minijob exceedance months in Settings → Contracts → Reviews & Conflicts (#1989). Org admins
+// only: the queue shows EUR earnings against the cap.
+
+export const listMinijobExceedanceReviewsAction = organizationAction(
+	{
+		name: "contracts.listMinijobExceedanceReviews",
+		requires: "orgAdmin",
+		schema: z.strictObject({ includeAcknowledged: z.boolean() }),
+	},
+	({ organizationId, input }) =>
+		storeStep("contracts.listMinijobExceedanceReviews", (db) =>
+			loadMinijobExceedanceReviews(db, {
+				organizationId,
+				now: systemClock.nowInstant(),
+				includeAcknowledged: input.includeAcknowledged,
+			}),
+		),
+);
+
+export const acknowledgeMinijobExceedanceAction = organizationAction(
+	{
+		name: "contracts.acknowledgeMinijobExceedance",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			employeeId: z.uuid(),
+			month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+			reason: z.string().trim().min(1, "Explain why the exceedance was unforeseeable").max(2000),
+			legalNote: z.string().trim().max(500).nullable(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		storeStep("contracts.acknowledgeMinijobExceedance", async (db) => {
+			// The month is evaluated again server-side: the fingerprint never comes from the client.
+			const record = await acknowledgeMinijobExceedance(db, {
+				organizationId,
+				actorUserId: actor.userId,
+				employeeId: input.employeeId,
+				month: input.month,
+				reason: input.reason,
+				legalNote: input.legalNote,
+				now: systemClock.nowInstant(),
+			});
+			return { id: record.id, acknowledgedAt: record.acknowledgedAt };
+		}),
+);

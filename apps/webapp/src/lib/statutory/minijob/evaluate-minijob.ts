@@ -100,7 +100,7 @@ async function minijobCandidates(
 	input: { organizationId: string; employeeIds: readonly string[]; from: string; until: string },
 ): Promise<string[]> {
 	const rows = await db
-		.selectDistinct({ employeeId: employeeEmploymentHistory.employeeId })
+		.select({ employeeId: employeeEmploymentHistory.employeeId })
 		.from(employeeEmploymentHistory)
 		.where(
 			and(
@@ -121,7 +121,7 @@ async function minijobCandidates(
 				),
 			),
 		);
-	return rows.map((row) => row.employeeId);
+	return [...new Set(rows.map((row) => row.employeeId))];
 }
 
 function isMinijobDay(contract: EffectiveContractOnDay | undefined): boolean {
