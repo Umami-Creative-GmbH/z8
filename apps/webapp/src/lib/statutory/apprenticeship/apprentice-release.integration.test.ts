@@ -308,7 +308,9 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		const afternoon = await suggest("2027-03-24", "13:00", "17:00");
 		expect(statutoryWarnings(afternoon, "Minor")).toEqual([]);
 		const overlapping = await suggest("2027-03-24", "10:00", "12:00");
-		expect(statutoryWarnings(overlapping, "Minor")).toEqual([["bbig_release_day_shift", "critical"]]);
+		expect(statutoryWarnings(overlapping, "Minor")).toEqual([
+			["bbig_release_day_shift", "critical"],
+		]);
 
 		// Thursday's school day is only partly credited: returning to work afterwards is lawful.
 		const partialSchoolDay = await suggest("2027-03-04");

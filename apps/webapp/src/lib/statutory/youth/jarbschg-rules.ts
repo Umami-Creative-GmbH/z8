@@ -528,7 +528,10 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 					const cutoff = day
 						.toZonedDateTime({ timeZone: input.timezone, plainTime: EVE_CUTOFF })
 						.toInstant();
-					const midnight = day.add({ days: 1 }).toZonedDateTime({ timeZone: input.timezone }).toInstant();
+					const midnight = day
+						.add({ days: 1 })
+						.toZonedDateTime({ timeZone: input.timezone })
+						.toInstant();
 					const from = compareInstants(span.start, cutoff) > 0 ? span.start : cutoff;
 					const to = compareInstants(span.end, midnight) < 0 ? span.end : midnight;
 					return compareInstants(from, to) < 0;

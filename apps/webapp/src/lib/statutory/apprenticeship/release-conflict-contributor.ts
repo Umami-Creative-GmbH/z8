@@ -43,7 +43,10 @@ interface PlannedWork {
 function overlapsExam(work: PlannedWork, release: ApprenticeReleaseDay, timezone: string): boolean {
 	if (!release.examStartTime || release.minutes === null) return false;
 	const start = work.date
-		.toZonedDateTime({ timeZone: timezone, plainTime: Temporal.PlainTime.from(release.examStartTime) })
+		.toZonedDateTime({
+			timeZone: timezone,
+			plainTime: Temporal.PlainTime.from(release.examStartTime),
+		})
 		.toInstant();
 	const end = start.add({ minutes: release.minutes });
 	return compareInstants(work.start, end) < 0 && compareInstants(start, work.end) < 0;

@@ -149,7 +149,9 @@ export async function recordApprenticeReleaseWithCredit(
 	},
 ): Promise<void> {
 	const exam =
-		input.releaseKind === "exam_day" ? await examTimeOf(db, input) : { startTime: null, minutes: null };
+		input.releaseKind === "exam_day"
+			? await examTimeOf(db, input)
+			: { startTime: null, minutes: null };
 	if (input.releaseKind === "vocational_school_day" && input.lessonCount == null) {
 		refuse("apprentice_release_lessons_required", "Enter the number of lessons", "lessonCount");
 	}
@@ -255,7 +257,8 @@ export async function recordApprenticeReleaseWithCredit(
 			startsOn: input.startsOn,
 			endsOn: input.endsOn,
 			lessonCount: input.lessonCount ?? null,
-			schoolMinutes: input.releaseKind === "exam_day" ? exam.minutes : (input.schoolMinutes ?? null),
+			schoolMinutes:
+				input.releaseKind === "exam_day" ? exam.minutes : (input.schoolMinutes ?? null),
 			examStartTime: exam.startTime,
 		});
 		await markEmployeeWorkBalanceDirty(
@@ -335,13 +338,22 @@ async function examTimeOf(
 	try {
 		day = parsePlainDate(input.startsOn);
 	} catch {
-		throw new ValidationError({ message: "Dates must use YYYY-MM-DD", refusal: "statutory_invalid_range" });
+		throw new ValidationError({
+			message: "Dates must use YYYY-MM-DD",
+			refusal: "statutory_invalid_range",
+		});
 	}
 	const at = (time: string) =>
-		day.toZonedDateTime({ timeZone: timezone, plainTime: Temporal.PlainTime.from(time) }).toInstant();
+		day
+			.toZonedDateTime({ timeZone: timezone, plainTime: Temporal.PlainTime.from(time) })
+			.toInstant();
 	const minutes = Math.round(at(startTime).until(at(endTime)).total({ unit: "minutes" }));
 	if (minutes <= 0) {
-		refuse("apprentice_release_exam_time_invalid", "The exam must end after it starts", "examEndTime");
+		refuse(
+			"apprentice_release_exam_time_invalid",
+			"The exam must end after it starts",
+			"examEndTime",
+		);
 	}
 	return { startTime, minutes };
 }

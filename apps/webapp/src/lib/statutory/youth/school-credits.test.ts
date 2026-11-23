@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { type ApprenticeReleaseDay, apprenticeReleaseDays } from "../apprenticeship/release-credits";
+import {
+	type ApprenticeReleaseDay,
+	apprenticeReleaseDays,
+} from "../apprenticeship/release-credits";
 import { youthSchoolCreditsOf } from "./school-credits";
 
 const day = (

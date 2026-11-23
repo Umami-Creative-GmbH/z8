@@ -38,7 +38,11 @@ export async function findingsBlockingPublication(
 	const blocking = publicationBlockingFindings(findings);
 	if (blocking.length === 0) return [];
 
-	const bounds = shiftDateRangeBounds(scope.window.start, scope.window.endExclusive, scope.timezone);
+	const bounds = shiftDateRangeBounds(
+		scope.window.start,
+		scope.window.endExclusive,
+		scope.timezone,
+	);
 	const drafts = await db
 		.select({ id: shift.id, employeeId: shift.employeeId })
 		.from(shift)

@@ -192,9 +192,8 @@ describe("apprentice release actions (PostgreSQL)", () => {
 	});
 
 	it("refreshes the stored work balance when a release is recorded or voided, also months back", async () => {
-		const { getEmployeeWorkBalance, refreshEmployeeWorkBalanceFromPeriods } = await import(
-			"@/lib/work-balance/service"
-		);
+		const { getEmployeeWorkBalance, refreshEmployeeWorkBalanceFromPeriods } =
+			await import("@/lib/work-balance/service");
 		await admin.query("update employee set start_date = $2 where id = $1", [
 			learner.employeeId,
 			new Date("2026-01-01T00:00:00Z"),

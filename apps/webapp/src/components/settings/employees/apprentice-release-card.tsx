@@ -67,10 +67,14 @@ function kindLabel(kind: ApprenticeReleaseKind, t: Translate): string {
 
 function creditText(release: ApprenticeReleaseCreditView, t: Translate): string {
 	if (release.examStartTime !== null) {
-		return t("settings.apprenticeRelease.credit.exam", "Exam from {start}: {minutes} min credited", {
-			start: release.examStartTime,
-			minutes: release.creditedMinutes,
-		});
+		return t(
+			"settings.apprenticeRelease.credit.exam",
+			"Exam from {start}: {minutes} min credited",
+			{
+				start: release.examStartTime,
+				minutes: release.creditedMinutes,
+			},
+		);
 	}
 	if (release.creditedMinutes === 0) {
 		return t(
