@@ -385,7 +385,7 @@ function eventsOf(
  * has scoped to the organization, on days they are on call, each with its reference-period
  * breakdown. Sick leave that began before `from` and runs into the range is listed too, dated
  * (and its reference period counted) from its own first day, so a payroll period covers it.
- * One batched load covers every employee and event.
+ * One batched load per distinct first event: every employee is loaded from their own one.
  */
 export async function listOnCallReferenceEventsBatch(
 	db: OnCallReferenceReader,
@@ -402,20 +402,22 @@ export async function listOnCallReferenceEventsBatch(
 	const until = parsePlainDate(input.untilExclusive);
 	if (input.employeeIds.length === 0 || comparePlainDates(from, until) >= 0) return result;
 	const sickSince = await earliestSickStarts(db, input);
-	// The earliest event of any employee sets the loaded range; days are judged per employee.
-	let firstEvent = from;
-	for (const start of sickSince.values()) {
-		const day = parsePlainDate(start);
-		if (comparePlainDates(day, firstEvent) < 0) firstEvent = day;
-	}
-	const facts = await loadReferenceFactsBatch(db, {
-		organizationId: input.organizationId,
-		employeeIds: input.employeeIds,
-		from: referenceStartOf(firstEvent, input.method),
-		untilExclusive: until,
+	// Each employee's own first event sets their loaded range, so one long-running sick leave
+	// does not widen everyone's load. Employees sharing a first event share one batched load.
+	const byFirstEvent = Map.groupBy(input.employeeIds, (employeeId) => {
+		const start = sickSince.get(employeeId);
+		return start && start < input.from ? start : input.from;
 	});
-	for (const [employeeId, own] of facts) {
-		result.set(employeeId, eventsOf(own, { ...input, employeeId }));
+	for (const [firstEvent, employeeIds] of byFirstEvent) {
+		const facts = await loadReferenceFactsBatch(db, {
+			organizationId: input.organizationId,
+			employeeIds,
+			from: referenceStartOf(parsePlainDate(firstEvent), input.method),
+			untilExclusive: until,
+		});
+		for (const [employeeId, own] of facts) {
+			result.set(employeeId, eventsOf(own, { ...input, employeeId }));
+		}
 	}
 	return result;
 }
