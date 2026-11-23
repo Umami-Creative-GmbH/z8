@@ -1,6 +1,7 @@
 import type { useTranslate } from "@tolgee/react";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import type { StatutoryDomain } from "@/lib/statutory/threshold-catalog";
+import { shortTermWarningText } from "./short-term-warning-text";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -34,6 +35,8 @@ export function statutoryDomainLabel(domain: StatutoryDomain, t: Translate): str
  * findings (Minijob) arrive with their tier only, so they read "approaching" or "exceeded".
  */
 export function statutoryWarningText(finding: StatutoryComplianceFinding, t: Translate): string {
+	const shortTerm = shortTermWarningText(finding, t); // #1990
+	if (shortTerm) return shortTerm;
 	const area = statutoryDomainLabel(finding.domain, t);
 	if (finding.summary.usedPercent !== undefined) {
 		return t(

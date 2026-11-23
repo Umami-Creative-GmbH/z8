@@ -228,6 +228,12 @@
         "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
         "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
         "apprenticeship": "Freistellung Auszubildende (BBiG)"
+      },
+      "shortTerm": {
+        "daysRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Arbeitstagen in diesem Jahr",
+        "daysExceeded": "Tagesgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Arbeitstagen in diesem Jahr",
+        "monthsRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Monaten in diesem Jahr",
+        "monthsExceeded": "Monatsgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Monaten in diesem Jahr"
       }
     }
   }
