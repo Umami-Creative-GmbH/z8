@@ -2261,7 +2261,7 @@ describe("getSelfServiceRequests", () => {
 		expect(result.sourceErrors).toEqual([
 			{
 				sourceType: "travel_expense",
-				message: "Travel expense requests could not be loaded.",
+				message: "Earlier expense claims could not be loaded.",
 			},
 		]);
 	});

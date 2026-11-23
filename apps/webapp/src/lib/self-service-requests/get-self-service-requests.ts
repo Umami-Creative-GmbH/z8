@@ -170,7 +170,7 @@ interface ComplianceExceptionRow {
 const SOURCE_ERROR_MESSAGES: Record<SelfServiceRequestSourceType, string> = {
 	time_correction: "Time correction requests could not be loaded.",
 	absence: "Absence requests could not be loaded.",
-	travel_expense: "Travel expense requests could not be loaded.",
+	travel_expense: "Earlier expense claims could not be loaded.",
 	travel_expense_report: "Expense reports could not be loaded.",
 	compliance_exception: "Compliance exceptions could not be loaded.",
 };

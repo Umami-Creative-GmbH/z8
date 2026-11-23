@@ -289,14 +289,16 @@ describe("MyRequestsClient", () => {
 		const recentlyDecided = screen.getByRole("region", {
 			name: "Recently decided",
 		});
-		expect(within(recentlyDecided).getByText("Travel expense claim")).toBeTruthy();
+		expect(within(recentlyDecided).getByText("Earlier claim")).toBeTruthy();
 		// The rejection to fix is a recent decision too, but is shown once, under "Needs attention".
 		expect(within(recentlyDecided).queryByText("Vacation")).toBeNull();
 
 		const allRequests = screen.getByRole("region", { name: "All requests" });
 		expect(within(allRequests).getByText("Vacation")).toBeTruthy();
 		expect(within(allRequests).getByText("Time correction request")).toBeTruthy();
-		expect(within(allRequests).getByText("Travel expense claim")).toBeTruthy();
+		expect(within(allRequests).getByText("Earlier claim")).toBeTruthy();
+		// An earlier claim is never named like the travel expense report that replaced it.
+		expect(document.body.textContent).not.toMatch(/Travel expense claim/);
 	});
 
 	it("keeps a rejection without a fix out of the attention list, matching the fix count", () => {
@@ -427,7 +429,7 @@ describe("MyRequestsClient", () => {
 					sourceErrors: [
 						{
 							sourceType: "travel_expense",
-							message: "Travel expense requests could not be loaded.",
+							message: "Earlier expense claims could not be loaded.",
 						},
 					],
 				})}
@@ -435,7 +437,8 @@ describe("MyRequestsClient", () => {
 		);
 
 		expect(screen.getByText("Some requests could not be loaded.")).toBeTruthy();
-		expect(screen.getByText("Travel expense requests could not be loaded.")).toBeTruthy();
+		// Says which list failed, so the employee knows their expense reports did load.
+		expect(screen.getByText("Earlier expense claims could not be loaded.")).toBeTruthy();
 	});
 
 	it("distinguishes empty and filtered-empty states", () => {

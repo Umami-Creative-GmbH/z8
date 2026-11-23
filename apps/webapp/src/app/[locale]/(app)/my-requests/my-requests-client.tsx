@@ -261,8 +261,8 @@ function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Transla
 
 	if (sourceType === "travel_expense") {
 		return t(
-			"myRequests:myRequests.sourceError.travelExpense",
-			"Travel expense requests could not be loaded.",
+			"myRequests:myRequests.sourceError.earlierClaim",
+			"Earlier expense claims could not be loaded.",
 		);
 	}
 
@@ -289,7 +289,7 @@ function requestTitle(item: SelfServiceRequestItem, t: Translate) {
 	}
 
 	if (item.sourceType === "travel_expense") {
-		return t("myRequests:myRequests.requests.travelExpense.title", "Travel expense claim");
+		return t("myRequests:myRequests.requests.earlierClaim.title", "Earlier claim");
 	}
 
 	if (item.details?.kind === "expense_report") {
