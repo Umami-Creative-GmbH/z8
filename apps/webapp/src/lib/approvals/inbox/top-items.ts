@@ -18,11 +18,18 @@ import type { ApprovalInboxItem, ApprovalInboxListResult } from "./types";
 export interface ApprovalInboxTopItems {
 	/** Pending approvals per type, "Covering for" rows included: the inbox badge's counts. */
 	counts: ApprovalInboxListResult["counts"];
+	/** The badge's total: the sum of `counts`. */
 	total: number;
-	/** The rows of the viewer's "Covering for" sections. */
+	/**
+	 * What waits in the viewer's "Covering for" sections: each section's full count, as its
+	 * header shows it. Beyond a section's first 100 rows the badge, and so `counts` and
+	 * `total`, count only the rows the section lists, so this can then exceed their covered share.
+	 */
 	coveringCount: number;
 	/** The first `limit` pending items, own and covered, in the inbox's order. */
 	items: ApprovalInboxItem[];
+	/** Sources whose list or count failed: their items or counts are missing above. */
+	warnings: ApprovalInboxListResult["warnings"];
 }
 
 const itemKey = (type: string, id: string) => `${type}:${id}`;
@@ -36,9 +43,17 @@ const itemKey = (type: string, id: string) => `${type}:${id}`;
  * item, so it is read only for the items that could still reach the first `limit`: evidence
  * never lowers an item below "high" before it is read, so an item is evaluated, best case
  * first, until the `limit` items already known outrank the next one's best case. Every other
- * kind's risk needs no evidence. The rows themselves are still read in full, one query per
- * source as the badge does, so the counts stay the badge's. In the rare "Covering for" section
- * over its 100-row page, the rows it lists follow pre-evidence order.
+ * kind's risk needs no evidence. The rows themselves are read as the inbox reads them, one
+ * query per source as the badge does, so the counts stay the badge's.
+ *
+ * Candidates are the rows the inbox itself can list: every legacy-source item; the first 101
+ * rows of each canonical read and of the compliance exceptions, in their pre-evidence order
+ * (the inbox's own page cap); and each "Covering for" section's first 100 rows, also chosen
+ * in pre-evidence order. A covered item past its section's 100 rows is never previewed, just
+ * as the inbox doesn't list it; `coveringCount` still counts it.
+ *
+ * The viewer's own pending requests count and appear as the badge has them (#1978): an
+ * org-wide viewer's own request is listed read-only, marked `capabilities.ownRequest`.
  */
 export async function getApprovalInboxTopItems(
 	params: Omit<ApprovalInboxListParams, "limit" | "cursor">,
@@ -63,7 +78,8 @@ export async function getApprovalInboxTopItems(
 	// Evidence-aware items, by item: read without evidence first, evaluated below if needed.
 	const deferred = new Map<string, ApprovalInboxTriageTarget>();
 	const list = await (options.readList ?? getApprovalInboxList)(
-		// Every own item, so no unevaluated order cuts one off.
+		// No page limit, so no unevaluated order cuts off a legacy item; canonical and
+		// compliance reads still return at most their first 101 rows.
 		{ ...params, status: "pending", limit: Number.MAX_SAFE_INTEGER },
 		{
 			now,
@@ -104,7 +120,8 @@ export async function getApprovalInboxTopItems(
 	return {
 		counts,
 		total: Object.values(counts).reduce<number>((total, count) => total + (count ?? 0), 0),
-		coveringCount: (list.covering ?? []).reduce((total, section) => total + section.rows.length, 0),
+		coveringCount: (list.covering ?? []).reduce((total, section) => total + section.count, 0),
 		items: top,
+		warnings: list.warnings,
 	};
 }

@@ -138,13 +138,15 @@ export async function loadPendingApprovalsForSubject(
 	const scope = await resolveApprovalInboxViewerScope({ ability, employee: subject.employee });
 	if (!scope) return null;
 	// One inbox read; triage evidence only for the items that can reach the preview.
-	const { counts, total, coveringCount, items } = await getApprovalInboxTopItems(
+	const { counts, total, coveringCount, items, warnings } = await getApprovalInboxTopItems(
 		{ ...scope, status: "pending" },
 		{ limit: PENDING_APPROVALS_PREVIEW_LIMIT },
 	);
+	const failed = new Set(warnings.map((warning) => warning.source));
 	return {
 		total,
 		coveringCount,
+		unavailableTypes: SUPPORTED_APPROVAL_INBOX_TYPES.filter((type) => failed.has(type)),
 		typeCounts: SUPPORTED_APPROVAL_INBOX_TYPES.flatMap((type) =>
 			(counts[type] ?? 0) > 0 ? [{ type, count: counts[type] }] : [],
 		),
@@ -155,6 +157,8 @@ export async function loadPendingApprovalsForSubject(
 			title: item.summary.localized?.title ?? item.summary.title,
 			detail: item.summary.localized?.detail ?? item.summary.detail,
 			coveringForName: item.coveringFor?.approverName ?? null,
+			// Like the badge, the count includes an org-wide viewer's own pending request.
+			ownRequest: item.capabilities.ownRequest === true,
 		})),
 	};
 }

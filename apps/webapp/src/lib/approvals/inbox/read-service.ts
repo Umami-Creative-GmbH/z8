@@ -364,6 +364,13 @@ export async function getApprovalInboxListFromSources({
 	);
 	for (const { source, countExit } of countResults) {
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
+		// A failed count is a gap in the totals, never a silent zero (#1978).
+		if (Exit.isFailure(countExit)) {
+			warnings.push({
+				source: source.type,
+				message: `${source.displayName} approvals could not be counted.`,
+			});
+		}
 	}
 
 	const pending = (params.status ?? "pending") === "pending";

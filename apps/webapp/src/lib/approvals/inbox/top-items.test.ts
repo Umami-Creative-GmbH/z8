@@ -4,8 +4,8 @@ import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import { DEFAULT_APPROVAL_TRIAGE_POLICY } from "../triage-policy-config";
 import {
 	type ApprovalInboxListParams,
+	compareInboxItems,
 	getApprovalInboxListFromSources,
-	itemsWithCoveringSections,
 } from "./read-service";
 import type { ApprovalInboxSource } from "./source-adapters";
 import { getApprovalInboxTopItems } from "./top-items";
@@ -13,10 +13,13 @@ import type {
 	ApprovalInboxTriageEvidenceResult,
 	ApprovalInboxTriageTarget,
 } from "./triage-evidence";
+import type { ApprovalInboxItem, ApprovalInboxType } from "./types";
 
 const NOW = new Date("2026-06-10T12:00:00.000Z");
+const VIEWER = "manager-1";
+const ABSENT = "absent-1";
 const params: ApprovalInboxListParams = {
-	approverId: "manager-1",
+	approverId: VIEWER,
 	organizationId: "org-1",
 	status: "pending",
 };
@@ -26,6 +29,7 @@ function approval(
 	approvalType: UnifiedApprovalItem["approvalType"],
 	createdAt: string,
 	priority: UnifiedApprovalItem["priority"] = "normal",
+	{ approverId = VIEWER, requesterId = "employee-1" } = {},
 ): UnifiedApprovalItem {
 	return {
 		id,
@@ -33,14 +37,14 @@ function approval(
 		entityId: `entity-${id}`,
 		typeName: approvalType,
 		requester: {
-			id: "employee-1",
-			userId: "user-1",
+			id: requesterId,
+			userId: `user-${requesterId}`,
 			name: "Avery Employee",
 			email: "avery@example.com",
 			image: null,
 			teamId: null,
 		},
-		approverId: "manager-1",
+		approverId,
 		organizationId: "org-1",
 		status: "pending",
 		createdAt: new Date(createdAt),
@@ -51,7 +55,14 @@ function approval(
 	};
 }
 
-function source(type: ApprovalInboxSource["type"], items: UnifiedApprovalItem[]) {
+/** A legacy source: an approver's own assignments, or every one for an org-wide viewer. */
+function source(
+	type: ApprovalInboxSource["type"],
+	items: UnifiedApprovalItem[],
+	fails: { list?: boolean; count?: boolean } = {},
+) {
+	const assigned = (approverId: string, all?: boolean) =>
+		items.filter((item) => all || item.approverId === approverId);
 	return {
 		type,
 		displayName: type,
@@ -60,10 +71,91 @@ function source(type: ApprovalInboxSource["type"], items: UnifiedApprovalItem[])
 			type,
 			displayName: type,
 			supportsBulkApprove: true,
-			getApprovals: vi.fn(() => Effect.succeed(items)),
-			getCount: vi.fn(() => Effect.succeed(items.length)),
+			getApprovals: vi.fn((query: ApprovalInboxListParams) =>
+				fails.list
+					? Effect.fail(new Error("unavailable"))
+					: Effect.succeed(assigned(query.approverId, query.includeAllApprovers)),
+			),
+			getCount: vi.fn(
+				(approverId: string, _org: string, options?: { includeAllApprovers?: boolean }) =>
+					fails.count
+						? Effect.fail(new Error("unavailable"))
+						: Effect.succeed(assigned(approverId, options?.includeAllApprovers).length),
+			),
 		} as never,
 	} satisfies ApprovalInboxSource;
+}
+
+type CanonicalRow = { id: string; createdAt: string; approverId?: string };
+
+/** A canonical read of one workflow kind; evidence-aware kinds are re-evaluated by the inbox. */
+function canonicalRead(
+	type: ApprovalInboxType,
+	workflowKind: "absence_change" | "period_submission",
+	rows: CanonicalRow[],
+) {
+	const assigned = (approverId: string) =>
+		rows.filter((row) => (row.approverId ?? VIEWER) === approverId);
+	return {
+		type,
+		workflowTypes: [workflowKind],
+		load: async (input: { approverId: string }) =>
+			assigned(input.approverId).map((row) => ({
+				item: inboxItem(row.id, type, row.createdAt, "normal", "medium"),
+				decisionTarget: {
+					workflowKind,
+					approverId: row.approverId ?? VIEWER,
+					requesterEmployeeId: "employee-1",
+				},
+			})),
+		count: async (input: { approverId: string }) => assigned(input.approverId).length,
+	} as never;
+}
+
+function inboxItem(
+	id: string,
+	type: ApprovalInboxType,
+	createdAt: string,
+	priority: ApprovalInboxItem["triage"]["priority"],
+	riskLevel: ApprovalInboxItem["triage"]["riskLevel"],
+): ApprovalInboxItem {
+	return {
+		id,
+		type,
+		entityId: `entity-${id}`,
+		status: "pending",
+		requester: {
+			id: "employee-1",
+			name: "Avery Employee",
+			email: "avery@example.com",
+			image: null,
+			teamId: null,
+		},
+		summary: { title: id, subtitle: "", detail: "", badge: null },
+		timing: { createdAt, resolvedAt: null, slaDeadline: null, ageDays: 0 },
+		triage: {
+			priority,
+			riskLevel,
+			riskReasons: ["needs_review"],
+			fastLaneGroup: null,
+			isPayrollRelevant: false,
+			explanation: "Needs review.",
+		},
+		capabilities: {
+			canApprove: true,
+			canReject: true,
+			canBulkApprove: false,
+			requiresRejectReason: true,
+		},
+	};
+}
+
+/** The compliance exceptions an organization-wide viewer sees (#1977). */
+function complianceRead(items: ApprovalInboxItem[]) {
+	return {
+		load: vi.fn(async () => Object.assign([...items], { totalCount: items.length })),
+		count: vi.fn(async () => items.length),
+	};
 }
 
 /** A minute apart, oldest first, and recent enough that none is stale at NOW. */
@@ -102,31 +194,38 @@ function evidenceLoader(shortfalls: ReadonlySet<string>) {
 	);
 }
 
-async function topFive(sources: ApprovalInboxSource[], shortfalls: ReadonlySet<string>) {
+type Inbox = Omit<Parameters<typeof getApprovalInboxListFromSources>[0], "params"> & {
+	params?: Partial<ApprovalInboxListParams>;
+};
+
+async function topFive(inbox: Inbox, shortfalls: ReadonlySet<string>) {
 	const loadTriageEvidence = evidenceLoader(shortfalls);
-	const { total, items } = await getApprovalInboxTopItems(params, {
+	const viewer = { ...params, ...inbox.params };
+	const top = await getApprovalInboxTopItems(viewer, {
 		limit: 5,
 		now: NOW,
 		triagePolicy: DEFAULT_APPROVAL_TRIAGE_POLICY,
 		loadTriageEvidence,
 		readList: (listParams, overrides) =>
-			getApprovalInboxListFromSources({ sources, params: listParams, ...overrides }),
+			getApprovalInboxListFromSources({ ...inbox, params: listParams, ...overrides }),
 	});
-	// The inbox's own first page, every candidate evaluated: the order to match.
-	const inbox = await getApprovalInboxListFromSources({
-		sources,
-		params: { ...params, limit: 5 },
+	// Brute force: every pending item, own and covered, read with its current evidence.
+	const all = await getApprovalInboxListFromSources({
+		...inbox,
+		params: { ...viewer, limit: Number.MAX_SAFE_INTEGER },
 		now: NOW,
 		triagePolicy: DEFAULT_APPROVAL_TRIAGE_POLICY,
 		loadTriageEvidence: evidenceLoader(shortfalls),
 	});
+	const everyItem = [...all.items, ...(all.covering ?? []).flatMap((section) => section.rows)];
 	return {
-		total,
-		top: items.map((item) => item.id),
-		inbox: itemsWithCoveringSections(inbox)
+		...top,
+		top: top.items.map((item) => item.id),
+		bruteForce: everyItem
+			.sort(compareInboxItems)
 			.slice(0, 5)
 			.map((item) => item.id),
-		evaluated: loadTriageEvidence.mock.calls.map(([target]) => target.context.requestId),
+		evaluated: loadTriageEvidence.mock.calls.map(([target]) => target.context.requestId).sort(),
 	};
 }
 
@@ -141,42 +240,174 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 			approval(`a${index}`, "absence_entry", absenceAt(index)),
 		);
 		const result = await topFive(
-			[source("travel_expense_claim", claims), source("absence_entry", absences)],
+			{ sources: [source("travel_expense_claim", claims), source("absence_entry", absences)] },
 			new Set(absences.map((item) => item.id)),
 		);
 
 		expect(result.top).toEqual(["c1", "c2", "c3", "c4", "c5"]);
-		expect(result.top).toEqual(result.inbox);
+		expect(result.top).toEqual(result.bruteForce);
 		expect(result.evaluated).toEqual([]);
 		expect(result.total).toBe(25);
 	});
 
-	it("evaluates only the absences whose best case could still reach the top five, in inbox order", async () => {
+	it("evaluates only the absences whose best case could still reach the top five", async () => {
 		// The oldest six absences have a staffing shortfall; a newer urgent one is clear.
 		const absences = Array.from({ length: 20 }, (_, index) =>
 			approval(`a${index}`, "absence_entry", absenceAt(index), index === 19 ? "urgent" : "normal"),
 		);
 		const result = await topFive(
-			[source("absence_entry", absences)],
+			{ sources: [source("absence_entry", absences)] },
 			new Set(["a0", "a1", "a2", "a3", "a4", "a5"]),
 		);
 
 		expect(result.top).toEqual(["a0", "a1", "a2", "a3", "a4"]);
-		expect(result.top).toEqual(result.inbox);
-		// The urgent one is checked first; once five high-risk absences lead, no newer
-		// normal one can pass them.
-		expect(result.evaluated).toContain("a19");
-		expect(result.evaluated.length).toBeLessThanOrEqual(10);
-		expect(result.evaluated).not.toContain("a18");
+		expect(result.top).toEqual(result.bruteForce);
+		// The urgent one and the four oldest first; it turns out low, so the next five. Then
+		// five high-risk absences lead and no newer normal one can pass them: a9–a18 never load.
+		expect(result.evaluated).toEqual(
+			["a19", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"].sort(),
+		);
 	});
 
 	it("keeps the inbox order when current evidence lowers the oldest and raises newer ones", async () => {
 		const absences = Array.from({ length: 12 }, (_, index) =>
 			approval(`a${index}`, "absence_entry", absenceAt(index)),
 		);
-		const result = await topFive([source("absence_entry", absences)], new Set(["a9", "a11"]));
+		const result = await topFive(
+			{ sources: [source("absence_entry", absences)] },
+			new Set(["a9", "a11"]),
+		);
 
 		expect(result.top).toEqual(["a9", "a11", "a0", "a1", "a2"]);
-		expect(result.top).toEqual(result.inbox);
+		expect(result.top).toEqual(result.bruteForce);
+	});
+
+	describe("across legacy sources, canonical reads, compliance exceptions and Covering", () => {
+		const covering = [{ approverId: ABSENT, approverName: "Xenia" }];
+		const inbox = (): Inbox => ({
+			params: { covering, complianceExceptionScope: { kind: "organization" } },
+			sources: [
+				source("absence_entry", [
+					...Array.from({ length: 6 }, (_, index) =>
+						approval(`a${index}`, "absence_entry", absenceAt(index)),
+					),
+					approval("x0", "absence_entry", absenceAt(6), "normal", { approverId: ABSENT }),
+					approval("x1", "absence_entry", absenceAt(7), "normal", { approverId: ABSENT }),
+				]),
+				source("travel_expense_claim", [
+					approval("t0", "travel_expense_claim", "2026-06-10T11:00:00.000Z"),
+				]),
+			],
+			canonicalReads: [
+				canonicalRead("absence_change_request", "absence_change", [
+					{ id: "c0", createdAt: absenceAt(10) },
+					{ id: "c1", createdAt: absenceAt(11) },
+					{ id: "cx0", createdAt: absenceAt(12), approverId: ABSENT },
+				]),
+				canonicalRead("period_submission", "period_submission", [
+					{ id: "p0", createdAt: "2026-06-10T09:00:00.000Z" },
+				]),
+			],
+			complianceExceptionRead: complianceRead([
+				inboxItem("e0", "compliance_exception", "2026-06-09T12:00:00.000Z", "high", "medium"),
+			]) as never,
+		});
+
+		it("previews the same five as evaluating every item, covered ones tagged", async () => {
+			const result = await topFive(inbox(), new Set(["a3", "a5", "x0", "c1", "cx0"]));
+
+			// High risk outranks the high-priority compliance exception; then age.
+			expect(result.top).toEqual(["a3", "a5", "x0", "c1", "cx0"]);
+			expect(result.top).toEqual(result.bruteForce);
+			expect(result.items.map((item) => item.coveringFor?.approverName ?? null)).toEqual([
+				null,
+				null,
+				"Xenia",
+				null,
+				"Xenia",
+			]);
+			// Own: six absences, a claim, two absence changes, a period submission and an
+			// exception; covered: two absences and an absence change.
+			expect(result.counts).toMatchObject({
+				absence_entry: 8,
+				travel_expense_claim: 1,
+				absence_change_request: 3,
+				period_submission: 1,
+				compliance_exception: 1,
+			});
+			expect(result.total).toBe(14);
+			expect(result.coveringCount).toBe(3);
+			expect(result.warnings).toEqual([]);
+		});
+
+		it("lets the compliance exception and period submission lead when no evidence is high", async () => {
+			const result = await topFive(inbox(), new Set());
+
+			expect(result.top).toEqual(result.bruteForce);
+			expect(result.top.slice(0, 2)).toEqual(["e0", "p0"]);
+		});
+	});
+
+	it("reports a source whose list or count failed instead of silently dropping it", async () => {
+		const result = await topFive(
+			{
+				sources: [
+					source("absence_entry", [approval("a0", "absence_entry", absenceAt(0))]),
+					source("travel_expense_claim", [approval("t0", "travel_expense_claim", absenceAt(1))], {
+						list: true,
+					}),
+					source("travel_expense_report", [approval("r0", "travel_expense_report", absenceAt(2))], {
+						count: true,
+					}),
+				],
+			},
+			new Set(),
+		);
+
+		expect(result.warnings.map((warning) => warning.source).sort()).toEqual([
+			"travel_expense_claim",
+			"travel_expense_report",
+		]);
+		expect(result.top).not.toContain("t0");
+	});
+
+	it("counts a Covering section's full total, beyond the 100 rows it lists", async () => {
+		const covered = Array.from({ length: 105 }, (_, index) =>
+			approval(`x${index}`, "absence_entry", absenceAt(index % 60), "normal", {
+				approverId: ABSENT,
+			}),
+		);
+		const result = await topFive(
+			{
+				params: { covering: [{ approverId: ABSENT, approverName: "Xenia" }] },
+				sources: [
+					source("absence_entry", [approval("a0", "absence_entry", absenceAt(0)), ...covered]),
+				],
+			},
+			new Set(),
+		);
+
+		// The section header's count; the badge (and so the total) counts the rows listed.
+		expect(result.coveringCount).toBe(105);
+		expect(result.total).toBe(101);
+	});
+
+	it("counts and previews the viewer's own pending request as the badge does, marked as theirs", async () => {
+		// An org-wide viewer sees every assignment, their own request included (read-only).
+		const own = approval("own", "absence_entry", "2026-06-01T08:00:00.000Z", "normal", {
+			approverId: "manager-2",
+			requesterId: VIEWER,
+		});
+		const result = await topFive(
+			{
+				params: { includeAllApprovers: true },
+				sources: [source("absence_entry", [own, approval("other", "absence_entry", absenceAt(0))])],
+			},
+			new Set(),
+		);
+
+		expect(result.total).toBe(2);
+		expect(result.top).toEqual(["own", "other"]);
+		expect(result.items[0]?.capabilities).toMatchObject({ ownRequest: true, canApprove: false });
 	});
 });

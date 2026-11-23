@@ -3,6 +3,7 @@
 import { IconAlertCircle, IconArrowRight, IconClock, IconUserShare } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { getApprovalTypeLabels } from "@/app/[locale]/(app)/approvals/inbox/components/approval-type-labels";
+import { getOwnRequestNote } from "@/app/[locale]/(app)/approvals/inbox/components/own-request-note";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { resolveReviewText } from "@/lib/approvals/inbox/summary-text";
@@ -127,6 +128,9 @@ function PreviewRow({
 					</>
 				) : null}
 			</p>
+			{item.ownRequest ? (
+				<p className="mt-1 text-xs font-medium text-muted-foreground">{getOwnRequestNote(t)}</p>
+			) : null}
 			{item.coveringForName ? (
 				<p className="mt-1 inline-flex items-center gap-1 text-xs text-primary">
 					<IconUserShare className="size-3.5" aria-hidden="true" />
@@ -160,11 +164,13 @@ export function PendingApprovalsWidget({
 			locale,
 		);
 	const total = data?.total ?? 0;
+	const unavailableTypes = data?.unavailableTypes ?? [];
+	const title = t("dashboard.pending-approvals.title", "Pending Approvals");
 
 	return (
 		<DashboardWidget id="pending-approvals">
 			<WidgetCard
-				title={t("dashboard.pending-approvals.title", "Pending Approvals")}
+				title={title}
 				description={t(
 					"dashboard.pending-approvals.description",
 					"Requests awaiting your decision",
@@ -175,14 +181,27 @@ export function PendingApprovalsWidget({
 				onRefresh={refetch}
 			>
 				<div className="space-y-4">
+					{!error && unavailableTypes.length > 0 ? (
+						// A source failed: what loaded still shows, but its numbers may be short (#1978).
+						<WidgetReadError
+							title={title}
+							message={t(
+								"dashboard.pending-approvals.partially-unavailable",
+								"Some approvals could not be loaded ({types}). Totals may be incomplete.",
+								{ types: unavailableTypes.map((type) => typeLabels[type]).join(", ") },
+							)}
+							retry={refetch}
+							refreshing={refreshing}
+						/>
+					) : null}
 					{error ? (
 						<WidgetReadError
-							title={t("dashboard.pending-approvals.title", "Pending Approvals")}
+							title={title}
 							message={error}
 							retry={refetch}
 							refreshing={refreshing}
 						/>
-					) : !data || total === 0 ? (
+					) : total === 0 && unavailableTypes.length > 0 ? null : !data || total === 0 ? (
 						<p role="status">{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
 					) : (
 						<>

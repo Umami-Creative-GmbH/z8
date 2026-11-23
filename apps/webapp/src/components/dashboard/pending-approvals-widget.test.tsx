@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render-with-translations";
@@ -51,6 +51,7 @@ const pending: PendingApprovalsData = {
 		{ type: "travel_expense_report", count: 2 },
 		{ type: "compliance_exception", count: 1 },
 	],
+	unavailableTypes: [],
 	preview: [
 		{
 			id: "exception-a",
@@ -59,6 +60,7 @@ const pending: PendingApprovalsData = {
 			title: { key: "approvals:approvals.test.exceptionTitle", fallback: "Daily overtime" },
 			detail: "Inventory count runs late",
 			coveringForName: null,
+			ownRequest: false,
 		},
 		{
 			id: "absence-a",
@@ -71,6 +73,7 @@ const pending: PendingApprovalsData = {
 				params: { start: { kind: "plain_date", date: "2026-12-07" } },
 			},
 			coveringForName: "Clara Colleague",
+			ownRequest: false,
 		},
 	],
 };
@@ -146,6 +149,7 @@ describe("Pending Approvals widget (#1978)", () => {
 					title: "Vacation",
 					detail: "",
 					coveringForName: null,
+					ownRequest: false,
 				})),
 			}),
 		);
@@ -200,13 +204,65 @@ describe("Pending Approvals widget (#1978)", () => {
 	});
 
 	it.each([
-		["nothing pending", { total: 0, coveringCount: 0, typeCounts: [], preview: [] }],
+		[
+			"nothing pending",
+			{ total: 0, coveringCount: 0, typeCounts: [], preview: [], unavailableTypes: [] },
+		],
 		["no Approval inbox", null],
 	] as const)("shows the empty state for %s", (_case, data) => {
 		widget(delivered(data));
 
 		expect(screen.getByRole("status").textContent).toBe("No pending approvals");
 		expect(screen.queryByRole("link", { name: /Review All Approvals/ })).toBeNull();
+	});
+
+	it("says which approval types could not be loaded and offers a retry, keeping what loaded", () => {
+		widget(delivered({ ...pending, unavailableTypes: ["travel_expense_claim", "time_entry"] }));
+
+		expect(screen.getByRole("alert").textContent).toBe(
+			"Some approvals could not be loaded (Travel Expenses, Time Corrections). Totals may be incomplete.",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Retry Pending Approvals" }));
+		expect(fetch).toHaveBeenCalled();
+		expect(screen.getByText("7 pending approvals")).toBeTruthy();
+	});
+
+	it("does not claim nothing is pending when an approval type failed to load", () => {
+		widget(
+			delivered({
+				total: 0,
+				coveringCount: 0,
+				typeCounts: [],
+				preview: [],
+				unavailableTypes: ["absence_entry"],
+			}),
+		);
+
+		expect(screen.getByRole("alert").textContent).toContain("Absence Requests");
+		expect(screen.queryByText("No pending approvals")).toBeNull();
+	});
+
+	it("shows no partial-failure notice when every type loaded", () => {
+		widget(delivered(pending));
+
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
+
+	it("marks the viewer's own request, which another approver decides", () => {
+		widget(
+			delivered({
+				...pending,
+				preview: [{ ...pending.preview[0], ownRequest: true }, pending.preview[1]],
+			}),
+		);
+
+		const rows = within(
+			screen.getByRole("list", { name: "Most urgent pending approvals" }),
+		).getAllByRole("listitem");
+		expect(
+			within(rows[0]).getByText("Your own request: another approver decides it."),
+		).toBeTruthy();
+		expect(within(rows[1]).queryByText(/Your own request/)).toBeNull();
 	});
 
 	it("shows the retryable widget error when the read failed", () => {

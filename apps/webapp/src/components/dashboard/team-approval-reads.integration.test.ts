@@ -51,7 +51,7 @@ const { readDashboardWidget } = await import("./dashboard-reads");
 const { getRecentlyApprovedRequests } = await import("./actions");
 const { getAbility } = await import("@/lib/auth-helpers");
 const { resolveApprovalInboxViewerScope } = await import("@/lib/approvals/inbox/viewer-scope");
-const { getApprovalInboxCounts, getApprovalInboxList, itemsWithCoveringSections } =
+const { compareInboxItems, getApprovalInboxCounts, getApprovalInboxList } =
 	await import("@/lib/approvals/inbox/read-service");
 
 describe("authorized Dashboard approval delivery", () => {
@@ -455,6 +455,7 @@ describe("authorized Dashboard approval delivery", () => {
 						// The employee's reason is shown as written.
 						detail: "Inventory count runs late",
 						coveringForName: null,
+						ownRequest: false,
 					},
 				]);
 			} finally {
@@ -571,7 +572,13 @@ describe("authorized Dashboard approval delivery", () => {
 					return { widget: snapshot.result.data, scope };
 				}
 				const badge = await getApprovalInboxCounts({ ...scope, status: "pending", limit: 1 });
-				const page = await getApprovalInboxList({ ...scope, status: "pending", limit: 5 });
+				// Brute force: every pending item the inbox lists, own and in "Covering for"
+				// sections, each read with its current triage evidence.
+				const everything = await getApprovalInboxList({
+					...scope,
+					status: "pending",
+					limit: Number.MAX_SAFE_INTEGER,
+				});
 				const widget = snapshot.result.data;
 				// Parity: the badge's total and per-type counts, the inbox's first five in its order.
 				expect(widget.total).toBe(
@@ -583,10 +590,12 @@ describe("authorized Dashboard approval delivery", () => {
 					Object.fromEntries(Object.entries(badge).filter(([, count]) => (count ?? 0) > 0)),
 				);
 				expect(widget.preview.map((row) => row.id)).toEqual(
-					itemsWithCoveringSections(page)
+					[...everything.items, ...(everything.covering ?? []).flatMap((section) => section.rows)]
+						.sort(compareInboxItems)
 						.slice(0, 5)
 						.map((item) => item.id),
 				);
+				expect(widget.unavailableTypes).toEqual([]);
 				return { widget, scope };
 			}
 
@@ -624,6 +633,34 @@ describe("authorized Dashboard approval delivery", () => {
 						{ type: "compliance_exception", count: 1 },
 					]),
 				);
+			});
+
+			it("counts an org admin's own pending request as their badge does and marks it as theirs", async () => {
+				const admin = await fixture.seedEmployee({ role: "admin" });
+				// The oldest request of the organization, waiting for another approver.
+				const ownId = await seedRequest(
+					fixture.organizationId,
+					admin.employeeId,
+					katherineId,
+					"pending",
+					"2026-09-15T12:00:00Z",
+				);
+				try {
+					const { widget } = await readBoth({
+						userId: admin.userId,
+						employeeId: admin.employeeId,
+						role: "admin",
+					});
+
+					expect(widget?.typeCounts).toEqual(
+						expect.arrayContaining([{ type: "absence_entry", count: 8 }]),
+					);
+					const own = widget?.preview.find((row) => row.id === ownId);
+					expect(own).toMatchObject({ ownRequest: true });
+					expect(widget?.preview.filter((row) => row.ownRequest)).toHaveLength(1);
+				} finally {
+					await fixture.pool.query(`delete from approval_request where id = $1`, [ownId]);
+				}
 			});
 
 			it("shows a viewer who only manages Compliance the exceptions and no ordinary approval", async () => {

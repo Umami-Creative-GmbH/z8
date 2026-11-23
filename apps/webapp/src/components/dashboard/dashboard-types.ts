@@ -56,14 +56,21 @@ export type PendingApprovalPreviewItem = {
 	detail: string | ApprovalInboxLocalizedText;
 	/** The absent approver this waits for when it is covered work, else null. */
 	coveringForName: string | null;
+	/** The viewer's own request, listed read-only: another approver decides it. */
+	ownRequest: boolean;
 };
 
 /** What waits in the viewer's Approval inbox, counted as its badge counts it (#1978). */
 export type PendingApprovalsData = {
-	/** Every pending approval, covered ones included. */
+	/** Every pending approval, covered ones included: the inbox badge's total. */
 	total: number;
-	/** Of the total, those waiting in "Covering for" sections. */
+	/**
+	 * What waits in "Covering for" sections, each section's full count as its header shows
+	 * it. Within a section's first 100 rows this is the covered share of the total.
+	 */
 	coveringCount: number;
+	/** Approval types whose list or count could not be read: the numbers may miss them. */
+	unavailableTypes: ApprovalInboxType[];
 	/** The types with pending approvals, in inbox type order. */
 	typeCounts: { type: ApprovalInboxType; count: number }[];
 	/** The five most urgent pending approvals, in inbox order. */
