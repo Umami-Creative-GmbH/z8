@@ -115,7 +115,7 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 		employment_periods: {
 			summary: t(
 				"personalDataExport.readme.fields.employment.employmentPeriods.summary",
-				"Each period you were employed by the organization.",
+				"Each period you worked for the organization, as an employee or as an External Contractor.",
 			),
 			fields: {
 				...common("id", "created_at", "created_by"),
