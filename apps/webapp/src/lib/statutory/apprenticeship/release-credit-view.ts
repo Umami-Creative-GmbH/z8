@@ -127,8 +127,9 @@ export async function loadApprenticeReleaseCredits(
 /**
  * Records a release for an apprentice. Every released day must fall under apprentice terms; a
  * school day needs its lesson count and a block week its school minutes. With
- * `includePreExamDay`, an exam day also releases the working day immediately before it, unless
- * that day is already released.
+ * `includePreExamDay`, an exam day also releases the working day immediately before it in full,
+ * unless that day is already released in full; a partly credited single-day release on it is
+ * replaced (`makeRoomForPreExamDay`).
  */
 export async function recordApprenticeReleaseWithCredit(
 	db: Pick<DatabaseClient, "select" | "insert" | "update" | "transaction">,
@@ -232,18 +233,10 @@ export async function recordApprenticeReleaseWithCredit(
 	// The release changes the required time of its days and the week's full school day attribution.
 	const dirtyFromDate = mondayOf(preExamDay ?? examDay);
 	await db.transaction(async (tx) => {
-		// A pre-exam day that is already released (e.g. a school day) is not recorded twice.
-		const alreadyReleased =
-			preExamDay &&
-			(
-				await loadApprenticeReleaseRecords(tx, {
-					organizationId: input.organizationId,
-					employeeIds: [input.employeeId],
-					from: preExamDay.toString(),
-					until: preExamDay.add({ days: 1 }).toString(),
-				})
-			).has(input.employeeId);
-		if (preExamDay && !alreadyReleased) {
+		const releasePreExamDay = preExamDay
+			? await makeRoomForPreExamDay(tx, { ...base, preExamDay })
+			: false;
+		if (preExamDay && releasePreExamDay) {
 			await recordApprenticeRelease(tx, {
 				...base,
 				releaseKind: "pre_exam_day",
@@ -267,6 +260,55 @@ export async function recordApprenticeReleaseWithCredit(
 		);
 	});
 	await refreshWorkBalanceAfterCommit({ ...input, dirtyFromDate });
+}
+
+/** Audit reason of a partly credited release that a pre-exam day release replaces. */
+export const PRE_EXAM_DAY_SUPERSEDES_REASON =
+	"Superseded by the pre-exam day release in full (§ 15 Abs. 2 Nr. 5 BBiG, § 10 Abs. 1 Nr. 2 JArbSchG)";
+
+/**
+ * Whether the pre-exam day can be released in full, inside the recording transaction. A day
+ * already released in full (e.g. the week's full school day) is not recorded twice. A day that is
+ * only partly credited (a short school day, a timed exam) is upgraded: its single-day release is
+ * voided with an audit reason, so the full pre-exam release takes its place without overlapping
+ * it. A block week is never split: a day inside a block stays as the block credits it.
+ */
+async function makeRoomForPreExamDay(
+	tx: Pick<DatabaseClient, "select" | "insert" | "update">,
+	input: {
+		readonly organizationId: string;
+		readonly employeeId: string;
+		readonly actorUserId: string;
+		readonly preExamDay: PlainDate;
+	},
+): Promise<boolean> {
+	const day = input.preExamDay.toString();
+	const monday = parsePlainDate(mondayOf(input.preExamDay));
+	// The whole week, so the week's full school day is attributed as everywhere else.
+	const records =
+		(
+			await loadApprenticeReleaseRecords(tx, {
+				organizationId: input.organizationId,
+				employeeIds: [input.employeeId],
+				from: monday.toString(),
+				until: monday.add({ days: 7 }).toString(),
+			})
+		).get(input.employeeId) ?? [];
+	const onDay = apprenticeReleaseDays(records).filter((credited) => credited.date === day);
+	if (onDay.length === 0) return true;
+	if (onDay.some((credited) => credited.credit === "full_day")) return false;
+	const covering = records.filter((record) => record.startsOn <= day && record.endsOn >= day);
+	if (covering.some((record) => record.startsOn !== record.endsOn)) return false;
+	for (const record of covering) {
+		await voidApprenticeRelease(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			actorUserId: input.actorUserId,
+			releaseId: record.id,
+			reason: PRE_EXAM_DAY_SUPERSEDES_REASON,
+		});
+	}
+	return true;
 }
 
 /**

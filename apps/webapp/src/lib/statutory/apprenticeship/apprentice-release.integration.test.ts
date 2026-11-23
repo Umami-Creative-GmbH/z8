@@ -24,9 +24,11 @@ import {
 	statutoryFixture,
 } from "@/test/statutory-fixtures";
 import { recordApprenticeRelease } from "../employee-context";
+import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
 import { recordApprenticeReleaseWithCredit } from "./release-credit-view";
+import { jarbschgScheduleContributor } from "../youth/jarbschg-contributor";
 import { loadYouthSchoolCredits } from "../youth/school-credits";
-import { youthSeed } from "../youth/testing/youth-seed";
+import { localInstant, youthSeed } from "../youth/testing/youth-seed";
 
 const staffingLayer = StaffingSuggestionServiceLive.pipe(
 	Layer.provide(
@@ -208,6 +210,162 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		expect(window.has("2027-03-06")).toBe(false);
 		expect(window.has("2027-03-07")).toBe(false);
 		expect([...window.values()].reduce((total, minutes) => total + minutes, 0)).toBe(4800);
+	});
+
+	it("credits a full school day with the minor's average working day (35 h week)", async () => {
+		const subareaId = await seed.subarea(org, owner);
+		const scheduleWeek = async (key: string, weeklyContractMinutes: number) => {
+			const minor = await fx.employee(org, key, { birthday: "2011-01-01" });
+			await seed.terms(minor, {
+				from: "2026-01-01",
+				createdBy: owner.userId,
+				employmentProfile: "apprentice",
+				weeklyContractMinutes,
+			});
+			// Monday 1 March 2027: the week's full school day.
+			await recordApprenticeRelease(db, {
+				organizationId: org.id,
+				employeeId: minor.employeeId,
+				actorUserId: owner.userId,
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-01",
+				endsOn: "2027-03-01",
+				lessonCount: 6,
+			});
+			// Tuesday to Friday 08:00–17:15: 8 h 15 min of work after the 60 min youth break.
+			for (const date of ["2027-03-02", "2027-03-03", "2027-03-04", "2027-03-05"]) {
+				await seed.shift(org, minor, {
+					subareaId,
+					creatorUserId: owner.userId,
+					date,
+					startTime: "08:00",
+					endTime: "17:15",
+				});
+			}
+			const credits = await loadYouthSchoolCredits(db, {
+				organizationId: org.id,
+				employeeIds: [minor.employeeId],
+				from: "2027-03-01",
+				until: "2027-03-08",
+			});
+			const findings = await jarbschgScheduleContributor.evaluate({
+				db,
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2027-03-01", endExclusive: "2027-03-08" },
+				employeeIds: [minor.employeeId],
+				proposedShifts: [],
+				replacesShiftId: null,
+				preferences: DEFAULT_STATUTORY_PREFERENCES,
+				now: localInstant("2027-02-20", "12:00", org.timezone),
+			});
+			return {
+				monday: credits.get(minor.employeeId)?.find((credit) => credit.date === "2027-03-01"),
+				kinds: findings.map((finding) => finding.kind),
+			};
+		};
+
+		// 7 h + 4 × 8 h 15 min = 40 h, and Monday is a shortened day for the 8.5 h allowance.
+		const parttime = await scheduleWeek("parttime", 2100);
+		expect(parttime.monday?.minutes).toBe(420);
+		expect(parttime.kinds).toEqual([]);
+
+		// A 40 h minor's school day counts 8 h: the same week is too long.
+		const fulltime = await scheduleWeek("fulltime", 2400);
+		expect(fulltime.monday?.minutes).toBe(480);
+		expect(fulltime.kinds).toContain("jarbschg_weekly_max");
+	});
+
+	it("upgrades a partly credited school day before an exam to a full release day", async () => {
+		const learner = await apprentice("preexam", "2005-05-05");
+		const scope = {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+		};
+		// Wednesday 3 March 2027: four lessons, only partly credited.
+		const partial = await recordApprenticeRelease(db, {
+			...scope,
+			releaseKind: "vocational_school_day",
+			startsOn: "2027-03-03",
+			endsOn: "2027-03-03",
+			lessonCount: 4,
+		});
+		// The written final exam on Thursday releases the working day before it in full.
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "exam_day",
+			startsOn: "2027-03-04",
+			endsOn: "2027-03-04",
+			includePreExamDay: true,
+		});
+
+		const required = await requirementsOf(learner);
+		expect(required["2027-03-03"]?.requiredMinutes).toBe(0);
+		expect(required["2027-03-04"]?.requiredMinutes).toBe(0);
+		expect(
+			await getAbsenceDays(db, {
+				organizationId: org.id,
+				employeeId: learner.employeeId,
+				absence: {
+					startDate: "2027-03-03",
+					startPeriod: "full_day",
+					endDate: "2027-03-03",
+					endPeriod: "full_day",
+				},
+			}),
+		).toBe(0);
+
+		// The partial school day is voided with a reason; the pre-exam day replaces it.
+		const { rows } = await admin.query<{
+			id: string;
+			release_kind: string;
+			voided_at: Date | null;
+			void_reason: string | null;
+		}>(
+			`select id, release_kind, voided_at, void_reason from employee_apprentice_release
+			 where organization_id = $1 and employee_id = $2 and starts_on = '2027-03-03'
+			 order by created_at`,
+			[org.id, learner.employeeId],
+		);
+		expect(rows).toEqual([
+			expect.objectContaining({
+				id: partial.id,
+				release_kind: "vocational_school_day",
+				voided_at: expect.any(Date),
+				void_reason: expect.stringContaining("pre-exam"),
+			}),
+			expect.objectContaining({ release_kind: "pre_exam_day", voided_at: null }),
+		]);
+	});
+
+	it("keeps a pre-exam day that is already released in full", async () => {
+		const learner = await apprentice("fullbefore", "2005-05-05");
+		const scope = {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+		};
+		await recordApprenticeRelease(db, {
+			...scope,
+			releaseKind: "vocational_school_day",
+			startsOn: "2027-03-03",
+			endsOn: "2027-03-03",
+			lessonCount: 6,
+		});
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "exam_day",
+			startsOn: "2027-03-04",
+			endsOn: "2027-03-04",
+			includePreExamDay: true,
+		});
+		const { rows } = await admin.query<{ release_kind: string; voided_at: Date | null }>(
+			`select release_kind, voided_at from employee_apprentice_release
+			 where organization_id = $1 and employee_id = $2 and starts_on = '2027-03-03'`,
+			[org.id, learner.employeeId],
+		);
+		expect(rows).toEqual([{ release_kind: "vocational_school_day", voided_at: null }]);
 	});
 
 	it("does not credit releases of an employee who is not an apprentice", async () => {
