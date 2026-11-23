@@ -295,7 +295,8 @@ export function computeMinijobMonths(
 			externalOffsets: [...month.facts.externalOffsets]
 				.sort(byText((offset) => offset.id))
 				.map((offset) => [offset.id, offset.amountCents]),
-			priorExceedanceMonths,
+			// Earlier exceedance months stay out: they change as other months' plans lapse, and the
+			// allowance is judged from them on every run, whatever the acknowledgement.
 		});
 		return {
 			month: month.facts.month,

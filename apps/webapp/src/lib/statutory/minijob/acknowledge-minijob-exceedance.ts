@@ -5,7 +5,7 @@
  * third exceedance month within 12 months, cannot be acknowledged. Callers authorize org admins
  * first.
  */
-import { type Instant, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -99,16 +99,4 @@ export async function acknowledgeMinijobExceedance(
 			evaluatedOn: plainDateAt(input.now, timezone).toString(),
 		},
 	});
-}
-
-/** The organization-local current month, `YYYY-MM`. */
-export function currentMonthAt(now: Instant, timezone: string): string {
-	return plainDateAt(now, timezone).toString().slice(0, 7);
-}
-
-/** Validates a `YYYY-MM` month string. */
-export function isMinijobMonth(value: string): boolean {
-	if (!MONTH_PATTERN.test(value)) return false;
-	parsePlainDate(`${value}-01`);
-	return true;
 }

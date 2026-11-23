@@ -74,6 +74,20 @@ describe("Minijob month judgement (#1989)", () => {
 		]);
 	});
 
+	it("keeps a later month's fingerprint when an earlier exceedance falls back under the cap", () => {
+		const now = { capCents: 60_300, unforeseeableMultiplier: 2, maxUnforeseeableMonths: 2 };
+		const february = (januaryCents: number) =>
+			computeMinijobMonths("e1", [
+				month("2026-01", januaryCents, now),
+				month("2026-02", 70_000, now),
+			]).find((m) => m.month === "2026-02");
+
+		// January's missed shifts lapse and it drops to 600 €: February's own plan is unchanged.
+		expect(february(60_000)?.fingerprint).toBe(february(70_000)?.fingerprint);
+		expect(february(60_000)?.priorExceedanceMonths).toEqual([]);
+		expect(february(70_000)?.priorExceedanceMonths).toEqual(["2026-01"]);
+	});
+
 	it("lets an acknowledged exceedance reach exactly twice the cap, but not a cent more", () => {
 		const now = { capCents: 60_300, unforeseeableMultiplier: 2, maxUnforeseeableMonths: 2 };
 		const atDouble = month("2026-03", 120_600, now);

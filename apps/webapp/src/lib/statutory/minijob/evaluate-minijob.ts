@@ -342,9 +342,10 @@ export async function evaluateMinijobEarnings(
 				const span = Math.round(minutesBetween(openWork.start, interval.end));
 				addItem(employeeId, { ...item, minutes: Math.max(0, span - openWork.minutes) });
 			} else if (matched.length > 0) {
-				// Clocked out within the shift (a break), or set-up work before it: the shift from
-				// the end of that work, or its start if later, is still planned. Measured from the
-				// recorded work, not from now, so it stays put while nobody is clocked in.
+				// Clocked out within the shift (a break), or work begun early that ended inside it:
+				// the shift from the end of that work, or its start if later, is still planned.
+				// Measured from the recorded work, not from now, so it stays put while nobody is
+				// clocked in. (Work that ends before the shift starts matches no shift at all.)
 				const lastEnd = matched.reduce<Instant>(
 					(latest, work) => (work.end && compareInstants(work.end, latest) > 0 ? work.end : latest),
 					interval.start,
