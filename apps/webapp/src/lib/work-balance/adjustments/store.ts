@@ -565,7 +565,9 @@ async function inLedgerTransaction<T>(
 	write: (tx: WorkBalanceDbClient) => Promise<T>,
 ): Promise<T> {
 	try {
-		return await database.transaction(write);
+		// The explicit type argument spares TypeScript inferring T through the database's
+		// relational types, which can exceed its instantiation depth (TS2589).
+		return await database.transaction<T>(write);
 	} catch (error) {
 		throw asMonthClosedRefusal(error);
 	}
