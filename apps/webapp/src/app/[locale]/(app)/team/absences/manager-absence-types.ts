@@ -60,8 +60,11 @@ export interface ManagerAbsenceEmployeeRow {
 	position: string | null;
 	role: ManagerAbsenceRole;
 	teamName: string | null;
-	/** Decides which absence categories may be recorded for them (#1996); absent = employee. */
-	engagementKind?: EngagementKind;
+	/**
+	 * The kinds of their stints (#1996): the record dialog offers the categories any of them
+	 * allows; the server decides each absence by the stints its dates fall in. Absent = employee.
+	 */
+	engagementKinds?: EngagementKind[];
 	vacationAllowance: number | null;
 	usedVacationDays: number | null;
 	previouslyTakenVacationDays?: number;

@@ -32,6 +32,7 @@ import type {
 import { dateFromInstant, type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { termsCalendarDate } from "@/lib/employment-history/terms-in-force";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -399,6 +400,33 @@ async function loadPolicySnapshotsByIds(
 	return map;
 }
 
+/** Someone whose work policy is resolved: an employee, or a draft invitee by their draft team. */
+export interface WorkPolicySubject {
+	id: string;
+	teamId: string | null;
+	/**
+	 * A draft invitee's engagement kind (#1996). An employee's comes from the stint in force
+	 * on the day, never from the caller.
+	 */
+	engagementKind?: EngagementKind;
+}
+
+/**
+ * Who needs a work policy and which one they have (#1996). An External Contractor's stint has
+ * no work policy: their null policy is not a setup gap, and assigning one would not change it.
+ */
+export interface WorkPolicyCoverage {
+	/** Each subject's effective work policy; null when none resolves (or none applies). */
+	policies: Map<string, EffectiveWorkPolicy | null>;
+	/** Subjects no work policy applies to: a contractor's stint today, or a contractor invitee. */
+	notApplicable: Set<string>;
+}
+
+/** Whether a subject lacks the work policy they need: the setup gap go-live and statistics count. */
+export function needsWorkPolicy(coverage: WorkPolicyCoverage, subjectId: string): boolean {
+	return !coverage.notApplicable.has(subjectId) && !coverage.policies.get(subjectId);
+}
+
 /**
  * Many employees' (and draft invitees') effective work policies as of `at`, resolved
  * version-scoped via `work_policy_version` (confirmed terms override -> employee assignment
@@ -410,12 +438,30 @@ export async function loadEffectiveWorkPolicies(
 	db: DatabaseClient,
 	input: {
 		organizationId: string;
-		employees: readonly { id: string; teamId: string | null }[];
+		employees: readonly WorkPolicySubject[];
 		at: Instant;
 	},
 ): Promise<Map<string, EffectiveWorkPolicy | null>> {
+	return (await loadWorkPolicyCoverage(db, input)).policies;
+}
+
+/**
+ * `loadEffectiveWorkPolicies` plus who no work policy applies to (#1996): an employee whose
+ * stint in force on their local day is an External Contractor's, or a contractor invitee.
+ * Setup checks count only the others as missing a policy (`needsWorkPolicy`).
+ */
+export async function loadWorkPolicyCoverage(
+	db: DatabaseClient,
+	input: {
+		organizationId: string;
+		employees: readonly WorkPolicySubject[];
+		at: Instant;
+	},
+): Promise<WorkPolicyCoverage> {
 	const resolved = new Map<string, EffectiveWorkPolicy | null>();
-	if (input.employees.length === 0) return resolved;
+	const notApplicable = new Set<string>();
+	const coverage = { policies: resolved, notApplicable };
+	if (input.employees.length === 0) return coverage;
 
 	const at = dateFromInstant(input.at);
 	const orgTimezone = await loadOrganizationTimezone(db, input.organizationId);
@@ -463,19 +509,24 @@ export async function loadEffectiveWorkPolicies(
 		if (perDate) {
 			const empDayStr = dayStrByEmployeeId.get(person.id) ?? orgDay.toString();
 			const contract = perDate.get(empDayStr);
+			if (contract?.engagementKind === "contractor") notApplicable.add(person.id);
 			resolved.set(
 				person.id,
 				contract?.workPolicy
 					? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
 					: null,
 			);
+		} else if (person.engagementKind === "contractor") {
+			// A contractor invitee joins into a contractor stint: no work policy applies.
+			resolved.set(person.id, null);
+			notApplicable.add(person.id);
 		} else {
 			syntheticTargets.push(person);
 		}
 	}
 
 	if (syntheticTargets.length === 0) {
-		return resolved;
+		return coverage;
 	}
 	const dayStr = orgDay.toString();
 
@@ -724,7 +775,7 @@ export async function loadEffectiveWorkPolicies(
 		);
 	}
 
-	return resolved;
+	return coverage;
 }
 
 /** The `assignedVia` label the single-employee resolver gives each level. */

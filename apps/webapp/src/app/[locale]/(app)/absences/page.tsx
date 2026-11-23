@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
+import { loadEngagementKindsOfStints } from "@/lib/absences/absence-engagement";
 import { parseAbsencesUrlState } from "@/lib/absences/absences-url";
 import { hasZeroWorkingDaysSchedule } from "@/lib/absences/types";
 import {
@@ -72,8 +73,16 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 	] = await Promise.all([
 		getVacationBalanceResult(employee.id, calendarYear, timezone),
 		readAbsenceCalendarYear(employee.id, recordYear),
-		// An External Contractor records only unavailability (#1996).
-		getAbsenceCategories(employee.organizationId, { engagementKind: employee.engagementKind }),
+		// An External Contractor records only unavailability (#1996): the categories of every
+		// stint they had are offered; the request is decided by the stints its dates fall in.
+		loadEngagementKindsOfStints(db, {
+			organizationId: employee.organizationId,
+			employeeIds: [employee.id],
+		}).then((kinds) =>
+			getAbsenceCategories(employee.organizationId, {
+				engagementKinds: kinds.get(employee.id) ?? [employee.engagementKind],
+			}),
+		),
 	]);
 
 	return (

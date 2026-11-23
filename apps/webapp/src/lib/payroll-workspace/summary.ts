@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, ne, or } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
 import {
@@ -14,6 +14,7 @@ import {
 	timeRecordAbsence,
 	userSettings,
 } from "@/db/schema";
+import { CONTRACTOR_UNAVAILABILITY_TYPE } from "@/lib/absences/category-rules";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -742,6 +743,7 @@ async function getWorkRows(
 
 /**
  * Approved and pending absences overlapping the period, on their employee-local dates.
+ * An External Contractor's unavailability is never a payroll absence (#1996).
  *
  * Canonical absence instants encode the employee's local wall clock as if it were UTC
  * (a full day is UTC midnight to midnight, a half day starts or ends at UTC noon, a timed
@@ -791,6 +793,9 @@ async function getAbsenceRows(
 				eq(timeRecord.recordKind, "absence"),
 				inArray(timeRecord.approvalState, ["approved", "pending"]),
 				inArray(timeRecord.employeeId, allowedEmployeeIds),
+				// Filtered here once for every payroll view: the Days grid, the Overview tab and
+				// PDF, identifier blockers and carried days (#1996).
+				ne(absenceCategory.type, CONTRACTOR_UNAVAILABILITY_TYPE),
 				absenceOverlapsPeriod(period),
 			),
 		);
@@ -881,6 +886,13 @@ async function getBlockers(
 						eq(timeRecordAbsence.organizationId, organizationId),
 					),
 				)
+				.innerJoin(
+					absenceCategory,
+					and(
+						eq(timeRecordAbsence.absenceCategoryId, absenceCategory.id),
+						eq(absenceCategory.organizationId, organizationId),
+					),
+				)
 				.leftJoin(
 					absenceEntry,
 					and(
@@ -894,6 +906,8 @@ async function getBlockers(
 						eq(timeRecord.recordKind, "absence"),
 						eq(timeRecord.approvalState, "pending"),
 						inArray(timeRecord.employeeId, allowedEmployeeIds),
+						// A pending contractor unavailability never blocks payroll (#1996).
+						ne(absenceCategory.type, CONTRACTOR_UNAVAILABILITY_TYPE),
 						// Absence instants encode wall clocks as UTC, compared on the period's dates.
 						absenceOverlapsPeriod(toPayrollPeriod({ ...period, label: "" })),
 					),

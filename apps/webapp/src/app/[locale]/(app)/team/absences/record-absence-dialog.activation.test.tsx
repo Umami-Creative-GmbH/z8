@@ -235,7 +235,7 @@ it("offers a contractor only unavailability, and an employee every other categor
 		...row,
 		id: "review-contractor",
 		name: "Review Contractor",
-		engagementKind: "contractor" as const,
+		engagementKinds: ["contractor" as const],
 	};
 	const user = userEvent.setup();
 	render(

@@ -11,6 +11,7 @@ import {
 	deputyRefusalText,
 	deputyRequiredText,
 } from "@/components/absences/deputy-picker";
+import { engagementRefusalText } from "@/components/absences/engagement-refusal";
 import { HistoricalVacationReconciliationPanel } from "@/components/absences/historical-vacation-reconciliation-panel";
 import {
 	failedSickNoteNames,
@@ -39,7 +40,7 @@ import {
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
-import { engagementCategoryRefusal } from "@/lib/absences/category-rules";
+import { categoryOfferedFor } from "@/lib/absences/category-rules";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
 import type { AbsenceDurationKind, SickDetail } from "@/lib/absences/types";
 import type { ReconciliationProof } from "@/lib/absences/vacation-reconciliation-types";
@@ -66,8 +67,11 @@ type AbsenceCategoryOption = {
 type RecordAbsenceDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	employee: { id: string; name: string; engagementKind?: EngagementKind } | null;
-	/** The organization's categories; the dialog offers those the employee's kind allows. */
+	employee: { id: string; name: string; engagementKinds?: EngagementKind[] } | null;
+	/**
+	 * The organization's categories; the dialog offers those any of the employee's stints allows
+	 * and the server decides by the stints the chosen dates fall in (#1996).
+	 */
 	categories: AbsenceCategoryOption[];
 	/** Personnel files are on: the recorder may add the sick note (#984). */
 	sickNotesEnabled?: boolean;
@@ -192,7 +196,7 @@ function useRecordAbsenceDialogForm({
 				return;
 			}
 
-			toast.error(result.error ?? failureMessage);
+			toast.error(engagementRefusalText(t, result.refusal) ?? result.error ?? failureMessage);
 		},
 	});
 	useLayoutEffect(() => {
@@ -260,9 +264,8 @@ export function RecordAbsenceDialog({
 }: RecordAbsenceDialogProps) {
 	const { t } = useTranslate();
 	// An External Contractor records only unavailability; an employee never does (#1996).
-	const categories = organizationCategories.filter(
-		(category) =>
-			engagementCategoryRefusal(employee?.engagementKind ?? "employee", category.type) === null,
+	const categories = organizationCategories.filter((category) =>
+		categoryOfferedFor(employee?.engagementKinds ?? [], category.type),
 	);
 	const {
 		isRecording,

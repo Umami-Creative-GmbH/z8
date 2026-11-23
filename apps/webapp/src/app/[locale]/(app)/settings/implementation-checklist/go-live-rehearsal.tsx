@@ -312,6 +312,19 @@ function WorkPolicySection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 	const policy = rehearsal.workPolicy;
 	const title = t("settings.implementationChecklist.rehearsal.workPolicy.title", "Work policy");
 
+	if (policy.status === "not_applicable") {
+		return (
+			<Section title={title}>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.implementationChecklist.rehearsal.workPolicy.notApplicable",
+						"No work policy applies: they work as an external contractor.",
+					)}
+				</p>
+			</Section>
+		);
+	}
+
 	if (policy.status === "none") {
 		return (
 			<Section title={title}>

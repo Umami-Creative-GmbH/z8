@@ -29,8 +29,12 @@ import {
 	loadWorkingDaysForEmployees,
 } from "@/lib/absences/absence-days-resolver";
 import {
+	loadEngagementKindsOfStints,
+	loadEngagementKindsOnDays,
+} from "@/lib/absences/absence-engagement";
+import {
+	absenceEngagementRefusal,
 	ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES,
-	engagementCategoryRefusal,
 } from "@/lib/absences/category-rules";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
@@ -477,8 +481,14 @@ export async function recordAbsenceForEmployee(
 		}
 
 		// An External Contractor records only unavailability; an employee never does (#1996).
-		const engagementRefusal = engagementCategoryRefusal(
-			target.engagementKind,
+		// Decided by the stints the absence's days fall in, not by the kind today.
+		const engagementRefusal = absenceEngagementRefusal(
+			await loadEngagementKindsOnDays(db, {
+				organizationId: actor.organizationId,
+				employeeId: target.id,
+				startDate: normalizedInput.startDate,
+				endDate: normalizedInput.endDate,
+			}),
 			category.type,
 		);
 		if (engagementRefusal) {
@@ -1136,7 +1146,7 @@ async function addMetricsToRows(
 	const employeeIds = rows.map((row) => row.id);
 	const yearStart = `${year}-01-01`;
 	const yearEnd = `${year}-12-31`;
-	const [{ balances, configurations }, absences, workingDaysByEmployeeId] =
+	const [{ balances, configurations }, absences, workingDaysByEmployeeId, kindsOfStints] =
 		await Promise.all([
 			// The same vacation balances as every other page (#1111).
 			loadVacationBalances(db, {
@@ -1160,6 +1170,7 @@ async function addMetricsToRows(
 				startDate: yearStart,
 				endDate: yearEnd,
 			}),
+			loadEngagementKindsOfStints(db, { organizationId, employeeIds }),
 		]);
 
 	const absencesByEmployeeId = new Map<string, AbsenceWithCategory[]>();
@@ -1188,7 +1199,7 @@ async function addMetricsToRows(
 			position: row.position,
 			role: row.role,
 			teamName: row.teamName,
-			engagementKind: row.engagementKind,
+			engagementKinds: kindsOfStints.get(row.id) ?? [row.engagementKind],
 			...metrics,
 			absences: buildManagerAbsenceRowAbsences(
 				absencesByEmployeeId.get(row.id) ?? [],

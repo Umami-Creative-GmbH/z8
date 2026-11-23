@@ -1,4 +1,5 @@
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import type { ImplementationChecklistItemId } from "../definition";
 
 /**
@@ -57,6 +58,8 @@ export type GoLiveMember =
 			draftId: string;
 			email: string;
 			teamId: string | null;
+			/** The invitation draft's engagement kind: a contractor invitee needs no work policy. */
+			engagementKind: EngagementKind;
 			displayName: string;
 	  };
 

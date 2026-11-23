@@ -14,9 +14,10 @@ import {
 	timeEntry,
 	workCategory,
 } from "@/db/schema";
+import { loadEngagementKindsOnDays } from "@/lib/absences/absence-engagement";
 import {
+	absenceEngagementRefusal,
 	ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES,
-	engagementCategoryRefusal,
 } from "@/lib/absences/category-rules";
 import {
 	assertHistoricalVacationNotOverlapping,
@@ -25,7 +26,6 @@ import {
 import type { PlannedReconciledAbsence } from "@/lib/absences/vacation-reconciliation";
 import { withVacationReconciliation } from "@/lib/absences/vacation-reconciliation";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import {
 	type ClockingStore,
 	createDatabaseClockingStore,
@@ -287,7 +287,7 @@ async function assertEmployeeInOrganization(
 	database: CommitDb,
 	employeeId: string,
 	organizationId: string,
-): Promise<{ engagementKind: EngagementKind }> {
+): Promise<void> {
 	const found = await database.query.employee.findFirst({
 		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 	});
@@ -295,7 +295,6 @@ async function assertEmployeeInOrganization(
 	if (!found) {
 		throw new Error(`Employee ${employeeId} does not belong to organization ${organizationId}`);
 	}
-	return { engagementKind: found.engagementKind };
 }
 
 async function getChainHead(
@@ -504,11 +503,7 @@ async function commitAbsence(
 	reviewed?: PlannedReconciledAbsence,
 ): Promise<CommitRowOutcome> {
 	const payload = row.normalizedPayload as unknown as AbsencePayload;
-	const absent = await assertEmployeeInOrganization(
-		database,
-		payload.employeeId,
-		job.organizationId,
-	);
+	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
 	const startDate =
 		reviewed?.absence.startDate ??
 		parseUtcInstant(payload.startsAt, "startsAt")
@@ -529,13 +524,22 @@ async function commitAbsence(
 					),
 				})
 			: null);
-	// An External Contractor gets only unavailability, an employee never (#1996). An unmapped
-	// category is written as the custom "Imported absence" category below.
+	// An External Contractor gets only unavailability, an employee never (#1996), decided by the
+	// stints the absence's days fall in. An unmapped category is written as the custom
+	// "Imported absence" category below.
 	const categoryName = payload.categoryName?.trim() || "Imported absence";
 	const categoryType: string = knownCategory
 		? knownCategory.type
 		: await importedCategoryType(database, job.organizationId, categoryName);
-	const engagementRefusal = engagementCategoryRefusal(absent.engagementKind, categoryType);
+	const engagementRefusal = absenceEngagementRefusal(
+		await loadEngagementKindsOnDays(database, {
+			organizationId: job.organizationId,
+			employeeId: payload.employeeId,
+			startDate,
+			endDate,
+		}),
+		categoryType,
+	);
 	if (engagementRefusal) {
 		return blockRow(
 			database,

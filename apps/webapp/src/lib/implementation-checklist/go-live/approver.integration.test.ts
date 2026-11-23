@@ -547,6 +547,7 @@ describe("approver go-live check (PostgreSQL)", () => {
 			draftId,
 			email: `${draftId}@invite.test`,
 			teamId,
+			engagementKind: "employee",
 			displayName: draftId,
 		});
 		const members = [

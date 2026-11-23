@@ -2258,6 +2258,7 @@
           "name": "Policy",
           "none": "No effective work policy today: none is assigned to them, their team or the organization.",
           "noSchedule": "No schedule",
+          "notApplicable": "No work policy applies: they work as an external contractor.",
           "noWorkingDays": "No working days",
           "title": "Work policy",
           "workingDays": "Working days"
