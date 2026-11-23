@@ -18,7 +18,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import { useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
+import { resolveReviewText } from "@/lib/approvals/inbox/summary-text";
+import type { ApprovalInboxLocalizedText } from "@/lib/approvals/inbox/types";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { Link } from "@/navigation";
 import { useTodayDecisionReservation } from "./today-decision-reservations";
@@ -58,7 +59,13 @@ export function TodayApprovalsPanel({
 }: TodayApprovalsPanelProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const inboxText = useApprovalInboxText();
+	const inboxText = (value: string | ApprovalInboxLocalizedText) =>
+		// List summaries never name a per diem place (#1978): no travel expense catalog on /today.
+		resolveReviewText(
+			value,
+			(key, fallback, params) => (params ? t(key, fallback, params) : t(key, fallback)),
+			locale,
+		);
 	const { refresh } = useRouter();
 	const { pendingApprovalId: actingApprovalId, reserve, release } = useTodayDecisionReservation();
 	const [isRefreshPending, startRefreshTransition] = useTransition();
