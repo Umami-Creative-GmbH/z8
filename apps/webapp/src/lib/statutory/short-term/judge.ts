@@ -149,8 +149,9 @@ export function observedWorkDaysPerWeek(
 
 /**
  * The allowance the employee's own short-term terms call for: `months` only when every terms
- * version plans 5 or more work days a week, and the days under terms without a planned week
- * show a full week of 5 or more days. Prior employers may still switch the year to working days.
+ * version that sets the employee's own week plans 5 or more work days a week, and the days under
+ * terms without one (inherited defaults included) show a full week of 5 or more days. Prior
+ * employers may still switch the year to working days.
  */
 function ownLimitKindOf(
 	week: ShortTermYearWeek,

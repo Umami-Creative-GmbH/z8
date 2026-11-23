@@ -15,9 +15,10 @@
  *   one minute grid; during a clocked-out break the rest counts from the end of its recorded
  *   work. Once the shift has ended, recorded work replaces it.
  * - A stint is a run of counted days no more than 14 days apart within one employment period.
- * - The 3-month limit applies when every short-term terms version of the year plans 5 or more work
- *   days a week on average over its schedule cycle, terms without a planned week (published shifts,
- *   on call, weekly hours alone) show 5 or more counted days in the mean full week (a public
+ * - The 3-month limit applies when every short-term terms version of the year that sets the
+ *   employee's own week plans 5 or more work days a week on average over its schedule cycle, terms
+ *   without one (published shifts, on call, weekly hours alone, a work policy only inherited from a
+ *   team or organization default) show 5 or more counted days in the mean full week (a public
  *   holiday may cost one in four weeks a day), and no prior
  *   employer recorded working days; otherwise the 70-working-day limit applies to every stint's
  *   working days. The 3-month limit is counted in calendar days: one stint in time months from its

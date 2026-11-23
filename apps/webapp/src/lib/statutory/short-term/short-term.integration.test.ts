@@ -342,6 +342,41 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				tier: "ok",
 			});
 		});
+
+		it("reads the week from the work, not from a work policy the employee only inherits", async () => {
+			const org = await fx.organization("a");
+			const weekdays = await st.weekdayPolicy(org);
+			await st.assignPolicy(org, weekdays);
+			const saturdayHelper = await fx.employee(org, "saturday", { contractType: "hourly" });
+			const weekdayWorker = await fx.employee(org, "weekday", { contractType: "hourly" });
+			await st.assignPolicy(org, weekdays, weekdayWorker);
+			for (const worker of [saturdayHelper, weekdayWorker]) {
+				await st.terms(worker, { from: "2026-06-01" });
+			}
+			// 16 Saturdays from 6 June to 19 September under the organization's Monday–Friday policy.
+			await workOn(org, saturdayHelper, datesOn("2026-06-06", "2026-09-19", [6]));
+			// Two weeks Monday–Friday under the Monday–Friday policy assigned to the employee.
+			await workOn(org, weekdayWorker, datesOn("2026-06-01", "2026-06-12", [1, 2, 3, 4, 5]));
+
+			const evaluations = await evaluate(org, [
+				saturdayHelper.employeeId,
+				weekdayWorker.employeeId,
+			]);
+			const byEmployee = new Map(evaluations.map((e) => [e.employeeId, e]));
+
+			expect(byEmployee.get(saturdayHelper.employeeId)?.allowance).toMatchObject({
+				limitKind: "work_days",
+				used: 16,
+				limit: 70,
+				tier: "ok",
+			});
+			// 1 – 12 June: 12 calendar days of the 92 that 1 June – 31 August holds.
+			expect(byEmployee.get(weekdayWorker.employeeId)?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 12,
+				limit: 92,
+			});
+		});
 	});
 
 	describe("stints counted in different units", () => {
@@ -694,6 +729,41 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				// 14:00 in Berlin: the rest until 18:00 still counts; after 18:00 only the 4 hours worked.
 				expect(during?.total).toBe(76_000);
 				expect(after?.total).toBe(64_000);
+			});
+
+			it("stays current when a clock-in with seconds is clocked out", async () => {
+				const { org, worker } = await earner("a", 7);
+				const owner = await fx.user("owner");
+				await st.shift(org, worker, "2026-05-20", "09:00", "17:00");
+				const clockIn = await st.openWork(org, worker, "2026-05-20", "09:00:50");
+				// 12:30:20 in Berlin, during the shift.
+				const during = Temporal.Instant.from("2026-05-20T10:30:20Z");
+				const [finding] =
+					(await evaluate(org, [worker.employeeId], { now: during }))[0]?.findings ?? [];
+				// 560 EUR before + the 8-hour shift at 20 EUR.
+				expect(finding?.adminDetail?.amountsCents?.total).toBe(72_000);
+				await recordStatutoryAcknowledgement(db, {
+					...(statutoryAcknowledgementSubjectOf(
+						finding as StatutoryFinding,
+					) as StatutoryAcknowledgementSubject),
+					organizationId: org.id,
+					actorUserId: owner.userId,
+					inputFingerprint: finding?.inputFingerprint ?? "",
+					reason: "Verified",
+				});
+
+				// Out at 17:00:10: 7 hours 59 minutes 20 seconds of recorded work, the shift worked.
+				await st.clockOut(org, clockIn, "2026-05-20", "17:00:10");
+				const [after] =
+					(
+						await evaluate(org, [worker.employeeId], {
+							now: Temporal.Instant.from("2026-05-20T15:30:00Z"),
+						})
+					)[0]?.findings ?? [];
+				const [attached] = await attachAcknowledgementStates(db, org.id, after ? [after] : []);
+
+				expect(after?.adminDetail?.amountsCents?.total).toBe(72_000);
+				expect(attached?.acknowledgement?.status).toBe("current");
 			});
 		});
 

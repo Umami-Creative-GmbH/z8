@@ -1,7 +1,7 @@
 import { and, eq, gt, gte, inArray, isNull, lt, ne, or } from "drizzle-orm";
 import { employeeEmploymentHistory, employeeStatutoryOffset, shift, workPeriod } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
-import type { EffectiveContractOnDay } from "@/lib/contracts/types";
+import type { ContractFieldSource, EffectiveContractOnDay } from "@/lib/contracts/types";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	compareInstants,
@@ -38,8 +38,8 @@ export interface ShortTermWorkItem {
 	readonly workPeriodId: string;
 	readonly date: string;
 	/**
-	 * Recorded minutes; for an open clock-in, whole minutes from the clock-in's minute to the
-	 * evaluation instant's minute.
+	 * Whole minutes from the clock-in's minute to the clock-out's minute, or to the evaluation
+	 * instant's minute while the clock-in is open: one grid, so clocking out never moves them.
 	 */
 	readonly minutes: number;
 	/**
@@ -89,8 +89,9 @@ export interface ShortTermYearWeek {
 	/** Average work days per week of each short-term terms version that plans real week days. */
 	readonly plannedWorkDaysPerWeek: readonly number[];
 	/**
-	 * Whether some short-term terms of the year plan no real week: a schedule from published
-	 * shifts or on-call terms, or weekly hours alone (which the resolver spreads Monday–Friday).
+	 * Whether some short-term terms of the year plan no real week of the employee's own: a schedule
+	 * from published shifts or on-call terms, a week only inherited from a team or organization
+	 * default, or weekly hours alone (which the resolver spreads Monday–Friday).
 	 */
 	readonly unplannedTerms: boolean;
 	/** Counted days (`YYYY-MM-DD`, sorted, distinct) under such terms: their week is read from them. */
@@ -119,16 +120,29 @@ export function shiftMinutes(interval: ShiftInterval): number {
 	return interval.start.until(interval.end).total("minutes");
 }
 
+/** Whether a resolved field was set for the employee rather than inherited from a default. */
+function setForEmployee(source: ContractFieldSource): boolean {
+	return source === "employee_term" || source === "employee_override";
+}
+
 /**
- * Whether the terms plan real week days: custom days on the terms or an active work-policy
- * schedule. Weekly hours alone are not a week: the resolver spreads them Monday–Friday.
+ * Whether the employee's own terms plan real week days: custom days on their terms or an active
+ * schedule of a work policy assigned to them. A week inherited from a team or organization
+ * default is not their agreed week (a Saturday helper under a Monday–Friday default works one
+ * day), and weekly hours alone are not a week: the resolver spreads them Monday–Friday.
  */
 function plansRealWeek(contract: EffectiveContractOnDay): boolean {
 	if (contract.scheduleSource !== "policy") return false;
 	if (contract.scheduleMode === "custom_days") {
-		return contract.weeklyScheduleDays.some((day) => day.isWorkDay);
+		return (
+			setForEmployee(contract.scheduleModeSource) &&
+			contract.weeklyScheduleDays.some((day) => day.isWorkDay)
+		);
 	}
-	return Boolean(contract.workPolicy?.scheduleEnabled && contract.workPolicy.schedule);
+	return (
+		setForEmployee(contract.workPolicySource) &&
+		Boolean(contract.workPolicy?.scheduleEnabled && contract.workPolicy.schedule)
+	);
 }
 
 /**
@@ -379,11 +393,17 @@ export async function loadShortTermInputs(
 			date: plainDateAt(start, input.timezone).toString(),
 			start,
 			end,
-			// Whole grid minutes so far: with the rest of its shift from the same grid minute, the
-			// sum stays put.
-			minutes: end
-				? (row.durationMinutes ?? Math.round(start.until(end).total("minutes")))
-				: Math.max(0, minuteGrid(start).until(nowOnGrid).total("minutes")),
+			// Whole grid minutes, so far while open: with the rest of its shift from the same grid
+			// minute, the sum stays put, and clocking out keeps the minutes counted while it ran
+			// (the stored duration rounds the exact length, which moves a clock-in with seconds).
+			minutes: Math.max(
+				0,
+				end
+					? row.endTime
+						? minuteGrid(start).until(minuteGrid(end)).total("minutes")
+						: (row.durationMinutes ?? 0)
+					: minuteGrid(start).until(nowOnGrid).total("minutes"),
+			),
 		};
 		const list = workByEmployee.get(row.employeeId);
 		if (list) list.push(item);

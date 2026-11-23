@@ -141,6 +141,28 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 			return policy.id;
 		},
 
+		/**
+		 * Assigns a work policy from `workPolicy()` to the whole organization (inherited by every
+		 * employee without their own policy) or, with `employee`, to that employee alone (as a
+		 * manager would, so terms without a policy do not release it).
+		 */
+		async assignPolicy(
+			org: FixtureOrganization,
+			policyId: string,
+			employee?: FixtureEmployee,
+		): Promise<void> {
+			const { userId } = await creator();
+			await admin.query(
+				`INSERT INTO work_policy_assignment
+				 (policy_id, organization_id, assignment_type, employee_id, priority, source_kind,
+				  is_active, created_by, updated_at)
+				 VALUES ($1, $2, $3, $4, $5, $6, true, $7, now())`,
+				employee
+					? [policyId, org.id, "employee", employee.employeeId, 2, "manager_assignment", userId]
+					: [policyId, org.id, "organization", null, 0, "legacy", userId],
+			);
+		},
+
 		/** An open clock-in (active work period) from an organization-local wall time on `date`. */
 		async openWork(
 			org: FixtureOrganization,
@@ -178,7 +200,10 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 			return workPeriodId;
 		},
 
-		/** Clocks out an open clock-in (`openWork`) at an organization-local wall time on `date`. */
+		/**
+		 * Clocks out an open clock-in (`openWork`) at an organization-local wall time on `date`,
+		 * storing the duration rounded to the nearest minute as clock-out does.
+		 */
 		async clockOut(
 			org: FixtureOrganization,
 			workPeriodId: string,
@@ -190,7 +215,7 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 				client.query(
 					`UPDATE work_period
 					 SET end_time = $2::timestamptz,
-						 duration_minutes = floor(extract(epoch from ($2::timestamptz - start_time)) / 60),
+						 duration_minutes = floor(extract(epoch from ($2::timestamptz - start_time)) / 60 + 0.5),
 						 is_active = false,
 						 updated_at = $2::timestamptz
 					 WHERE id = $1`,
