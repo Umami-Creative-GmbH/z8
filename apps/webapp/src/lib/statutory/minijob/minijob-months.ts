@@ -36,12 +36,6 @@ export interface MinijobEarningItem {
 	/** The confirmed hourly wage that day in cents, or null when the terms carry none. */
 	readonly hourlyRateCents: number | null;
 	/**
-	 * Its minutes run with the clock: an open work period so far, or the rest of a started shift.
-	 * The fingerprint records unplanned open work without its minutes, so an acknowledgement does
-	 * not go stale minute by minute; it changes when the work period closes.
-	 */
-	readonly inProgress?: boolean;
-	/**
 	 * Work that belongs to shifts: their ids (several for one clock-in over back-to-back shifts).
 	 * The shifts, not the work, stand for it in the fingerprint.
 	 */

@@ -285,7 +285,6 @@ export async function evaluateMinijobEarnings(
 	for (const [employeeId, works] of workOf) {
 		const matches = matchWorkToShifts(shiftsOf.get(employeeId) ?? [], works, input.now);
 		for (const work of works) {
-			const inProgress = work.end === null ? { inProgress: true } : {};
 			const shifts = matches.get(work);
 			if (!shifts) {
 				addItem(employeeId, {
@@ -293,7 +292,6 @@ export async function evaluateMinijobEarnings(
 					id: work.id,
 					date: plainDateAt(work.start, timezone).toString(),
 					minutes: work.minutes,
-					...inProgress,
 				});
 				continue;
 			}
@@ -315,7 +313,6 @@ export async function evaluateMinijobEarnings(
 					id: work.id,
 					date: part.shift.date,
 					minutes: part.minutes,
-					...inProgress,
 					shiftIds: [part.shift.row.id, ...sameMonth.map((other) => other.row.id)],
 				});
 			}
@@ -343,17 +340,18 @@ export async function evaluateMinijobEarnings(
 				// Clock-in to shift end on one minute grid: whole minutes worked so far plus the
 				// rest, so the projection does not move while the clock runs.
 				const span = Math.round(minutesBetween(openWork.start, interval.end));
-				addItem(employeeId, {
-					...item,
-					minutes: Math.max(0, span - openWork.minutes),
-					inProgress: true,
-				});
+				addItem(employeeId, { ...item, minutes: Math.max(0, span - openWork.minutes) });
 			} else if (matched.length > 0) {
-				// Clocked out within the shift (a break): what is left of the shift is still planned.
+				// Clocked out within the shift (a break), or set-up work before it: the shift from
+				// the end of that work, or its start if later, is still planned. Measured from the
+				// recorded work, not from now, so it stays put while nobody is clocked in.
+				const lastEnd = matched.reduce<Instant>(
+					(latest, work) => (work.end && compareInstants(work.end, latest) > 0 ? work.end : latest),
+					interval.start,
+				);
 				addItem(employeeId, {
 					...item,
-					minutes: Math.ceil(minutesBetween(input.now, interval.end)),
-					inProgress: true,
+					minutes: Math.max(0, Math.round(minutesBetween(lastEnd, interval.end))),
 				});
 			} else {
 				addItem(employeeId, { ...item, minutes: shiftMinutes });

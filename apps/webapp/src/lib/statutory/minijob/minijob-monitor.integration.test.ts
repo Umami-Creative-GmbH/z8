@@ -259,8 +259,9 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		await mj.terms(finished, owner, { from: "2026-01-01", hourlyRate: 20 });
 		// Both shifts run 09:00–17:00 Berlin and now is 13:00. The worker has not clocked in yet:
 		// the whole shift (160 €) is still planned. The other one worked 09:00–11:00 and clocked
-		// out: their recorded 2 h (40 €) replace the past of the shift; the 4 h still ahead (80 €)
-		// stay planned until the shift ends, as for a break.
+		// out: their recorded 2 h (40 €) replace the past of the shift; the shift from the end of
+		// that work, 6 h (120 €), stays planned until the shift ends, as for a break, whatever the
+		// time now.
 		await mj.shift(org, worker, owner, {
 			date: "2026-11-23",
 			startTime: "09:00",
@@ -281,7 +282,7 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 			result.employees.get(employeeId)?.find((m) => m.month === "2026-11");
 
 		expect(month(worker.employeeId)).toMatchObject({ earnedCents: 0, plannedCents: 16_000 });
-		expect(month(finished.employeeId)).toMatchObject({ earnedCents: 4_000, plannedCents: 8_000 });
+		expect(month(finished.employeeId)).toMatchObject({ earnedCents: 4_000, plannedCents: 12_000 });
 	});
 
 	it("counts one clock-in over back-to-back shifts once", async () => {
@@ -319,7 +320,7 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		const { org, owner, worker } = await setup();
 		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
 		// Shift 08:00–18:00 Berlin, worked 08:00–12:00, on a break at 12:15: 4 h worked (80 €) and
-		// the 5 h 45 min still ahead (115 €).
+		// the shift from the end of that work still ahead, 6 h (120 €), whatever the time now.
 		await mj.shift(org, worker, owner, {
 			date: "2026-11-23",
 			startTime: "08:00",
@@ -336,9 +337,51 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 
 		expect(employees.get(worker.employeeId)?.find((m) => m.month === "2026-11")).toMatchObject({
 			earnedCents: 8_000,
-			plannedCents: 11_500,
-			totalCents: 19_500,
+			plannedCents: 12_000,
+			totalCents: 20_000,
 		});
+	});
+
+	it("keeps total and fingerprint of a running shift steady while nobody is clocked in", async () => {
+		const { org, owner, worker } = await setup();
+		const setUp = await fx.employee(org, "set-up", { contractType: "hourly" });
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 20 });
+		await mj.terms(setUp, owner, { from: "2026-01-01", hourlyRate: 20 });
+		// Shift 08:00–16:00 Berlin, clocked in early at 07:30 and out at 12:00 for a break: the
+		// projected 30-minute overrun must not shrink with the clock.
+		await mj.shift(org, worker, owner, {
+			date: "2026-11-23",
+			startTime: "08:00",
+			endTime: "16:00",
+		});
+		await mj.work(org, worker, "2026-11-23", 270, "07:30");
+		// Set-up work 07:00–07:30 before an 08:00–16:00 shift: the shift still counts in full.
+		await mj.shift(org, setUp, owner, { date: "2026-11-23", startTime: "08:00", endTime: "16:00" });
+		await mj.work(org, setUp, "2026-11-23", 30, "07:00");
+
+		const ids = [worker.employeeId, setUp.employeeId];
+		const november = { from: "2026-11", until: "2026-12" };
+		const month = (result: Awaited<ReturnType<typeof evaluate>>, employeeId: string) =>
+			result.employees.get(employeeId)?.find((m) => m.month === "2026-11");
+		// 12:00, 12:01 and 12:16 Berlin.
+		const runs = await Promise.all(
+			["11:00:00", "11:01:00", "11:16:00"].map((t) =>
+				evaluate(org, ids, november, `2026-11-23T${t}Z`),
+			),
+		);
+
+		for (const run of runs) {
+			// 4 h 30 min worked plus 4 h still ahead of the shift: 170 €.
+			expect(month(run, worker.employeeId)).toMatchObject({
+				totalCents: 17_000,
+				fingerprint: month(runs[0], worker.employeeId)?.fingerprint,
+			});
+			// 30 min of set-up plus the full 8 h shift: 170 €.
+			expect(month(run, setUp.employeeId)).toMatchObject({
+				totalCents: 17_000,
+				fingerprint: month(runs[0], setUp.employeeId)?.fingerprint,
+			});
+		}
 	});
 
 	it("keeps the projected total of a clock-in with seconds steady within the minute", async () => {
