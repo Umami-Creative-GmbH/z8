@@ -40,7 +40,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type EngagementFilter, matchesEngagementFilter } from "@/lib/engagement/engagement-filter";
+import {
+	type EngagementFilter,
+	engagementPickerRows,
+	hasExternalContractors,
+} from "@/lib/engagement/engagement-filter";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	type PayrollExportFormatId,
@@ -536,13 +540,9 @@ function FiltersSection({
 	// themselves (#1997), even for a picked External Contractor, so this is no export scope.
 	const [engagement, setEngagement] = useState<EngagementFilter>("all");
 	const allEmployees = options?.employees ?? [];
-	const hasContractors = allEmployees.some((row) => row.engagementKind === "contractor");
-	const selectableEmployees = allEmployees
-		.filter(
-			(row) =>
-				matchesEngagementFilter(row.engagementKind, engagement) || employeeIds.includes(row.id),
-		)
-		.map(({ id, firstName, lastName, employeeNumber, engagementKind }) =>
+	const hasContractors = hasExternalContractors(allEmployees);
+	const selectableEmployees = engagementPickerRows(allEmployees, engagement, employeeIds).map(
+		({ id, firstName, lastName, employeeNumber, engagementKind }) =>
 			toSelectableEmployee({
 				id,
 				firstName,
@@ -550,7 +550,7 @@ function FiltersSection({
 				employeeNumber,
 				engagementKind,
 			}),
-		);
+	);
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center justify-between gap-2">

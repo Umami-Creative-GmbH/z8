@@ -4,7 +4,9 @@ import { employee } from "@/db/schema";
 import {
 	engagementFilterCondition,
 	engagementFilterSchema,
+	engagementPickerRows,
 	filterByEngagement,
+	hasExternalContractors,
 } from "./engagement-filter";
 
 const rows = [
@@ -26,6 +28,20 @@ describe("All | Employees | External Contractors filter (#1995)", () => {
 		["contractor", ["b"]],
 	] as const)("keeps %s rows", (filter, expected) => {
 		expect(filterByEngagement(rows, filter).map((row) => row.id)).toEqual(expected);
+	});
+
+	it("narrows a people picker but keeps the chosen rows listed, in their order", () => {
+		expect(engagementPickerRows(rows, "contractor", ["a"]).map((row) => row.id)).toEqual([
+			"a",
+			"b",
+		]);
+		expect(engagementPickerRows(rows, "employee", []).map((row) => row.id)).toEqual(["a", "c"]);
+		expect(engagementPickerRows(rows, "all", []).map((row) => row.id)).toEqual(["a", "b", "c"]);
+	});
+
+	it("offers the filter only once a picker lists an External Contractor", () => {
+		expect(hasExternalContractors(rows)).toBe(true);
+		expect(hasExternalContractors(rows.filter((row) => row.id !== "b"))).toBe(false);
 	});
 
 	it("adds no SQL condition for all, and compares the column otherwise", () => {

@@ -29,6 +29,28 @@ export function filterByEngagement<T extends { engagementKind?: EngagementKind |
 		: rows.filter((row) => matchesEngagementFilter(row.engagementKind, filter));
 }
 
+type PickerRow = { id: string; engagementKind?: EngagementKind | null };
+
+/** A people picker offers the engagement filter only once its rows hold an External Contractor. */
+export function hasExternalContractors(rows: readonly PickerRow[]): boolean {
+	return rows.some((row) => row.engagementKind === "contractor");
+}
+
+/**
+ * The rows a people picker lists under an engagement filter, in their order.
+ * The filter narrows the picker, never the choice: rows already chosen stay
+ * listed whatever the filter, so a chosen person never vanishes.
+ */
+export function engagementPickerRows<T extends PickerRow>(
+	rows: readonly T[],
+	filter: EngagementFilter,
+	chosenIds: readonly string[],
+): T[] {
+	return rows.filter(
+		(row) => matchesEngagementFilter(row.engagementKind, filter) || chosenIds.includes(row.id),
+	);
+}
+
 /** The SQL condition of a filter on an `engagement_kind` column; none for `all`. */
 export function engagementFilterCondition(
 	column: AnyColumn,

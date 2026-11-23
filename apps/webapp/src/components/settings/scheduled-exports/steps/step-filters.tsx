@@ -13,7 +13,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { type EngagementFilter, matchesEngagementFilter } from "@/lib/engagement/engagement-filter";
+import {
+	type EngagementFilter,
+	engagementPickerRows,
+	hasExternalContractors,
+} from "@/lib/engagement/engagement-filter";
 import type { DateRangeStrategy } from "@/lib/scheduled-exports/domain/types";
 import { type FilterItem, FilterSelector } from "../filter-selector";
 import type { ScheduledExportForm } from "../scheduled-export-dialog";
@@ -83,22 +87,17 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 	// nor what the export includes, and says so. Payroll exports leave contractor time out by
 	// themselves (#1997), even for a picked External Contractor, so this is no export scope.
 	const allEmployees = filterOptions?.employees || [];
-	const hasContractors = allEmployees.some((emp) => emp.engagementKind === "contractor");
+	const hasContractors = hasExternalContractors(allEmployees);
 	const selectableEmployeesFor = (chosenIds: readonly string[]) =>
-		allEmployees
-			.filter(
-				(emp) =>
-					matchesEngagementFilter(emp.engagementKind, engagement) || chosenIds.includes(emp.id),
-			)
-			.map((emp) =>
-				toSelectableEmployee({
-					id: emp.id,
-					firstName: emp.firstName,
-					lastName: emp.lastName,
-					employeeNumber: emp.employeeNumber,
-					engagementKind: emp.engagementKind,
-				}),
-			);
+		engagementPickerRows(allEmployees, engagement, chosenIds).map((emp) =>
+			toSelectableEmployee({
+				id: emp.id,
+				firstName: emp.firstName,
+				lastName: emp.lastName,
+				employeeNumber: emp.employeeNumber,
+				engagementKind: emp.engagementKind,
+			}),
+		);
 
 	const teamItems: FilterItem[] = (filterOptions?.teams || []).map((team) => ({
 		id: team.id,

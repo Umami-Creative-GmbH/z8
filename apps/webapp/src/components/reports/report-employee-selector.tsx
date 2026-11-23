@@ -7,7 +7,11 @@ import { EngagementFilterToggle } from "@/components/engagement/engagement-kind-
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReportEmployees } from "@/hooks/use-report-employees";
-import { type EngagementFilter, filterByEngagement } from "@/lib/engagement/engagement-filter";
+import {
+	type EngagementFilter,
+	engagementPickerRows,
+	hasExternalContractors,
+} from "@/lib/engagement/engagement-filter";
 
 interface ReportEmployeeSelectorProps {
 	/** Current user's employee ID */
@@ -44,7 +48,7 @@ export function ReportEmployeeSelector({
 		useReportEmployees(currentEmployeeId);
 	// All | Employees | External Contractors (#1995), offered once the list holds a contractor.
 	const [engagement, setEngagement] = useState<EngagementFilter>("all");
-	const hasContractors = employees.some((employee) => employee.engagementKind === "contractor");
+	const hasContractors = hasExternalContractors(employees);
 
 	// Loading state
 	if (isLoading) {
@@ -82,14 +86,10 @@ export function ReportEmployeeSelector({
 	if (!canViewMultiple) return null;
 
 	// The selected person stays listed whatever the engagement filter, so the choice never vanishes.
-	const listed = filterByEngagement(employees, engagement).concat(
-		engagement === "all"
-			? []
-			: employees.filter(
-					(employee) =>
-						employee.id === selectedEmployeeId &&
-						(employee.engagementKind ?? "employee") !== engagement,
-				),
+	const listed = engagementPickerRows(
+		employees,
+		engagement,
+		selectedEmployeeId ? [selectedEmployeeId] : [],
 	);
 
 	return (

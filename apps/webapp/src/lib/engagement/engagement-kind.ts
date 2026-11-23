@@ -11,10 +11,6 @@ export function isEngagementKind(value: unknown): value is EngagementKind {
 	return typeof value === "string" && (engagementKinds as readonly string[]).includes(value);
 }
 
-export function isContractor(kind: EngagementKind | null | undefined): boolean {
-	return kind === "contractor";
-}
-
 /** The constraint name migration 0328's triggers raise an in-place change under. */
 export const ENGAGEMENT_KIND_IMMUTABLE_CONSTRAINT = "employee_engagement_kind_immutable";
 
