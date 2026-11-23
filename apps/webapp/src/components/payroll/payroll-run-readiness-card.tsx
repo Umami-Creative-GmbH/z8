@@ -124,8 +124,8 @@ function reasonText(t: Translate, locale: string, skip: PayrollRunSkip): string 
 			);
 		case "legacy_claim":
 			return t(
-				"payroll.runReadiness.reason.legacyClaim",
-				"Legacy claims are never paid through payroll.",
+				"payroll.runReadiness.reason.earlierClaim",
+				"Earlier claims are never paid through payroll.",
 			);
 		case "unmapped_wage_type":
 			return t(

@@ -19,6 +19,7 @@ import {
 	getManagerDailyBriefingFromSources,
 	type ManagerDailyBriefingSources,
 } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
+import { briefingInboxApproval } from "@/lib/manager-daily-briefing/testing/briefing-approval.test-fixture";
 
 const h = vi.hoisted(() => ({
 	employee: vi.fn(),
@@ -88,15 +89,15 @@ async function build({ currentEmployee }: { currentEmployee: ReturnType<typeof e
 		},
 		getApprovals: async (input) => {
 			h.sources.push({ kind: "approvals", ...input });
-			return ["managed-report", "outside-report"].map((id) => ({
-				id: `approval-${id}`,
-				approvalType: "absence",
-				entityId: `leave-${id}`,
-				typeName: "Leave",
-				requester: { id, name: id },
-				priority: "normal",
-				display: { summary: `${id} private reason` },
-			}));
+			return ["managed-report", "outside-report"].map((id) =>
+				briefingInboxApproval({
+					id: `approval-${id}`,
+					entityId: `leave-${id}`,
+					title: "Leave",
+					requester: { id, name: id },
+					detail: `${id} private reason`,
+				}),
+			);
 		},
 		getPublishedShifts: async () => [],
 		getOpenTimeRecords: async () => [],
@@ -194,8 +195,8 @@ describe("Today producer provenance", () => {
 			kind: "approvals",
 			organizationId: "provenance-org",
 			employeeIds: ["managed-report", "outside-report"],
-			approverId: "provenance-employee",
-			includeAllApprovers: true,
+			// The admin's own Approval inbox scope grants the organization-wide read (#1980).
+			viewer: { id: "provenance-employee", role: "admin" },
 		});
 	});
 	it("control: missing employee and ordinary employee read are refused before sources", async () => {
@@ -267,9 +268,7 @@ describe("Today producer provenance", () => {
 		await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("unavailable"));
 		expect(screen.queryByText("managed-report private reason")).toBeNull();
 		expect(screen.queryByText("outside-report private reason")).toBeNull();
-		expect(
-			screen.queryByRole("button", { name: "Approve outside-report needs Leave approval" }),
-		).toBeNull();
+		expect(screen.queryByRole("button", { name: "Approve outside-report: Leave" })).toBeNull();
 		const contextReadsBeforeRetry = vi.mocked(fetch).mock.calls.length;
 		await act(async () => {
 			fireEvent.click(screen.getByRole("button", { name: "Retry" }));

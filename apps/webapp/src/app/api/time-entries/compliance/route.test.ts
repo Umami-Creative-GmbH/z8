@@ -40,9 +40,6 @@ vi.mock("@/lib/effect/services/compliance-guardrail.service", async (importOrigi
 			requestException: unexpected,
 			hasValidException: unexpected,
 			markExceptionAsUsed: unexpected,
-			approveException: unexpected,
-			rejectException: unexpected,
-			getPendingExceptions: unexpected,
 			expireOldExceptions: unexpected,
 		}),
 	};

@@ -387,7 +387,7 @@ describe("finance queue (#612, #753)", () => {
 		await screen.findByText("€89.90 outstanding");
 		expect(screen.getByText("Awaiting reimbursement")).toBeTruthy();
 		fireEvent.click(screen.getByRole("radio", { name: "Reimbursed" }));
-		const link = await screen.findByRole("link", { name: /Legacy mileage claim/ });
+		const link = await screen.findByRole("link", { name: /Earlier mileage claim/ });
 		expect(link.getAttribute("href")).toBe("/travel-expenses/claim-1");
 		expect(mocks.getQueue).toHaveBeenLastCalledWith(view({ status: "reimbursed" }));
 		expect(window.location.search).toBe("?status=reimbursed");
@@ -399,7 +399,7 @@ describe("finance queue (#612, #753)", () => {
 		window.history.replaceState(null, "", `?status=all&employee=${robin}&currency=CHF&page=2`);
 		mocks.getQueue.mockResolvedValue(page([claim], { page: 2 }));
 		mount();
-		await screen.findByRole("link", { name: /Legacy mileage claim/ });
+		await screen.findByRole("link", { name: /Earlier mileage claim/ });
 		expect(mocks.getQueue).toHaveBeenCalledWith(
 			view({ status: "all", employeeId: robin, currency: "CHF", page: 2 }),
 		);
@@ -444,7 +444,7 @@ describe("finance queue (#612, #753)", () => {
 			true,
 		);
 		fireEvent.click(within(pages).getByRole("button", { name: "Next" }));
-		await screen.findByRole("link", { name: /Legacy mileage claim/ });
+		await screen.findByRole("link", { name: /Earlier mileage claim/ });
 		expect(window.location.search).toBe("?page=2");
 		const second = screen.getByRole("navigation", { name: "Finance queue pages" });
 		expect(within(second).getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(
@@ -562,7 +562,7 @@ describe("bulk mark as reimbursed (#754)", () => {
 		await screen.findByText("€89.90 outstanding");
 		// A reimbursed expense cannot be selected.
 		expect(
-			screen.queryByRole("checkbox", { name: /Select Robin · Legacy mileage claim/ }),
+			screen.queryByRole("checkbox", { name: /Select Robin · Earlier mileage claim/ }),
 		).toBeNull();
 		const action = screen.getByRole("button", { name: "Mark as reimbursed" });
 		expect(action.hasAttribute("disabled")).toBe(true);

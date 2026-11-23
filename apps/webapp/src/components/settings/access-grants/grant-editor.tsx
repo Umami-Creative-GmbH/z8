@@ -6,7 +6,10 @@ import {
 	EmployeeMultiSelect,
 	type SelectableEmployee,
 } from "@/components/employee-select";
-import { toSelectableEmployee as buildSelectableEmployee } from "@/components/employee-select/to-selectable-employee";
+import {
+	type SelectableEmployeeSource,
+	toSelectableEmployee as buildSelectableEmployee,
+} from "@/components/employee-select/to-selectable-employee";
 import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import {
 	AlertDialog,
@@ -29,7 +32,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
  * form, its copy (passed in already translated) and its extra fields.
  */
 
-export interface GrantPersonOption {
+/**
+ * A grant person. Pass the picker fields too (`userId`, `image`, `position`,
+ * `role`, `team`, …) so rows show the same avatar and details as every other
+ * employee picker; without `userId` the avatar falls back to a generated one.
+ */
+export interface GrantPersonOption extends SelectableEmployeeSource {
 	id: string;
 	name: string;
 	email: string;

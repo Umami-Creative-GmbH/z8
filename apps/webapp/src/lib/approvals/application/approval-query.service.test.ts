@@ -369,6 +369,7 @@ describe("ApprovalQueryService", () => {
 			travel_expense_claim: 0,
 			travel_expense_report: 0,
 			period_submission: 0,
+			compliance_exception: 0,
 		});
 	});
 

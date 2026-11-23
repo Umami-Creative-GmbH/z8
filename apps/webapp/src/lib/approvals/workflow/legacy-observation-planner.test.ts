@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { isInstant, parseInstant } from "@/lib/datetime/temporal-core";
 import { deriveApprovalWorkflowId } from "./identity";
-import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
+import {
+	createLegacyApprovalObservationPlanner,
+	LEGACY_CHAIN_CANCELLED_REASON,
+	LEGACY_OBSERVATION_SYSTEM_REASONS,
+	LEGACY_OWNER_CANCELLED_REASON,
+	LEGACY_REJECTION_FALLBACK_REASON,
+	LEGACY_REQUEST_DISAPPEARED_REASON,
+	LEGACY_REQUESTER_CANCELLED_REASON,
+} from "./legacy-observation-planner";
 import type {
 	ObservedLegacyTransition,
 	VerifiedLegacyApprovalState,
@@ -1489,6 +1497,50 @@ describe("legacy approval observation planner", () => {
 			"stage.rejected",
 			"stage.cancelled",
 			"workflow.rejected",
+		]);
+	});
+
+	it("stores the fallback reason when a legacy chain rejection had none", async () => {
+		const planner = createLegacyApprovalObservationPlanner({
+			clock: { nowInstant: () => capturedAt },
+		});
+		const before = chainState({
+			status: "pending",
+			currentStageOrder: 2,
+			rowStatuses: ["approved", "pending", "cancelled"],
+			currentRequestStatus: "pending",
+			autoRows: [1],
+		});
+		const rejected = chainState({
+			status: "rejected",
+			currentStageOrder: 2,
+			rowStatuses: ["approved", "rejected", "cancelled"],
+			currentRequestStatus: "rejected",
+			autoRows: [1],
+		});
+		const after = { ...rejected, approvalRequest: null };
+
+		const plan = await planner.plan(transition(before, after, 1));
+
+		// Existing canonical rows already hold this value; readers recognise it by this constant.
+		expect(LEGACY_REJECTION_FALLBACK_REASON).toBe("Legacy request rejected");
+		expect(plan.snapshot.decisionReason).toBe(LEGACY_REJECTION_FALLBACK_REASON);
+		expect(plan.snapshot.stages[1]?.decisionReason).toBe(LEGACY_REJECTION_FALLBACK_REASON);
+	});
+
+	it("pins every stored system reason, which readers recognise and hide from employees", () => {
+		// Canonical rows already hold these exact strings; changing one would expose it again.
+		expect(LEGACY_REJECTION_FALLBACK_REASON).toBe("Legacy request rejected");
+		expect(LEGACY_CHAIN_CANCELLED_REASON).toBe("Legacy chain cancelled");
+		expect(LEGACY_OWNER_CANCELLED_REASON).toBe("Legacy approved request cancelled by owner");
+		expect(LEGACY_REQUESTER_CANCELLED_REASON).toBe("Legacy pending request cancelled by requester");
+		expect(LEGACY_REQUEST_DISAPPEARED_REASON).toBe("Legacy pending request disappeared");
+		expect([...LEGACY_OBSERVATION_SYSTEM_REASONS].sort()).toEqual([
+			"Legacy approved request cancelled by owner",
+			"Legacy chain cancelled",
+			"Legacy pending request cancelled by requester",
+			"Legacy pending request disappeared",
+			"Legacy request rejected",
 		]);
 	});
 

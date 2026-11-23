@@ -238,6 +238,22 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 			"personalDataExport.readme.fields.drivingLicence.assigned_by",
 			"The name of the person who first saved your own intended-driver assignment.",
 		),
+		declared_class_code: t(
+			"personalDataExport.readme.fields.drivingLicence.declared_class_code",
+			"A licence class you declared you hold. It grants no driving authorization.",
+		),
+		declared_class_expiry_date: t(
+			"personalDataExport.readme.fields.drivingLicence.declared_class_expiry_date",
+			"The class's own expiry date you entered (C and D classes); empty if you entered none.",
+		),
+		declared_document_expires_on: t(
+			"personalDataExport.readme.fields.drivingLicence.declared_document_expires_on",
+			"Your licence card's expiry date as you entered it; empty if you entered none.",
+		),
+		declared_at: t(
+			"personalDataExport.readme.fields.drivingLicence.declared_at",
+			"When you last saved your declared classes, as a UTC instant.",
+		),
 		updated_at: t(
 			"personalDataExport.readme.fields.drivingLicence.updated_at",
 			"When your own intended-driver assignment was last changed, as a UTC instant.",
@@ -346,6 +362,13 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 			summary: t(
 				"personalDataExport.readme.fields.drivingLicence.checks.summary",
 				"Driving licence original check records, with the exact declaration and inspection confirmations.",
+			),
+			fields,
+		},
+		declared_classes: {
+			summary: t(
+				"personalDataExport.readme.fields.drivingLicence.declaredClasses.summary",
+				"The licence classes you declared yourself and have not had checked yet. A check replaces them; they are deleted when you are no longer an intended driver.",
 			),
 			fields,
 		},

@@ -11,11 +11,11 @@ export function isEngagementKind(value: unknown): value is EngagementKind {
 	return typeof value === "string" && (engagementKinds as readonly string[]).includes(value);
 }
 
-/** The constraint name migration 0328's triggers raise an in-place change under. */
+/** The constraint name migration 0329's triggers raise an in-place change under. */
 export const ENGAGEMENT_KIND_IMMUTABLE_CONSTRAINT = "employee_engagement_kind_immutable";
 
 /**
- * PostgreSQL refused changing an engagement kind in place (migration 0328): a
+ * PostgreSQL refused changing an engagement kind in place (migration 0329): a
  * period's kind never changes, and the employee's only once no active period
  * has another kind. Follows Drizzle's `cause` chain to the driver error.
  */

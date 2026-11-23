@@ -11,6 +11,7 @@ import type {
 	SelfServiceRequestFilters,
 	SelfServiceRequestResult,
 } from "@/lib/self-service-requests/types";
+import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -34,10 +35,17 @@ export async function getMyRequests(
 	}
 
 	try {
+		// The employee's own zone, as /time-tracking shows their day: the user's, else the
+		// organization's, else UTC. Without it, the requests still load and read in UTC.
+		const timeZone = await getEffectiveTimezone(
+			authContext.user.id,
+			authContext.employee.organizationId,
+		).catch(() => "UTC");
 		const data = await getSelfServiceRequests({
 			employeeId: authContext.employee.id,
 			organizationId: authContext.employee.organizationId,
 			filters,
+			timeZone,
 		});
 
 		return { success: true, data };

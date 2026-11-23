@@ -19,6 +19,7 @@ import {
 	getManagerDailyBriefingFromSources,
 	type ManagerDailyBriefingSources,
 } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
+import { briefingInboxApproval } from "@/lib/manager-daily-briefing/testing/briefing-approval.test-fixture";
 
 const h = vi.hoisted(() => ({
 	read: vi.fn(),
@@ -59,8 +60,8 @@ const identity: OrganizationDisplayContext = {
 	organizationSettings: null,
 	updatedAt: Date.now(),
 };
-const retiredTitle = "Retired report needs Leave approval";
-const currentTitle = "Current report needs Leave approval";
+const retiredTitle = "Retired report: Leave";
+const currentTitle = "Current report: Leave";
 const retiredSecret = "Retired report private leave details";
 let client: QueryClient;
 let accepted: TodayArrival;
@@ -101,24 +102,20 @@ async function snapshot(
 			if (failed) throw Error("synthetic approvals outage");
 			// Return both so the ACTUAL builder must enforce the new population.
 			return [
-				{
+				briefingInboxApproval({
 					id: "retired-approval",
 					entityId: "retired-leave",
-					approvalType: "absence",
-					typeName: "Leave",
+					title: "Leave",
 					requester: { id: "report-retired", name: "Retired report" },
-					priority: "normal",
-					display: { summary: retiredSecret },
-				},
-				{
+					detail: retiredSecret,
+				}),
+				briefingInboxApproval({
 					id: "current-approval",
 					entityId: "current-leave",
-					approvalType: "absence",
-					typeName: "Leave",
+					title: "Leave",
 					requester: { id: "report-current", name: "Current report" },
-					priority: "normal",
-					display: { summary: "Current report leave details" },
-				},
+					detail: "Current report leave details",
+				}),
 			];
 		},
 	};

@@ -5,6 +5,15 @@ const actionState = vi.hoisted(() => ({
 	authContext: null as unknown,
 	cancelTimeCorrection: vi.fn(),
 	revalidatePath: vi.fn(),
+	getSelfServiceRequests: vi.fn(),
+	getEffectiveTimezone: vi.fn(),
+}));
+
+vi.mock("@/lib/self-service-requests/get-self-service-requests", () => ({
+	getSelfServiceRequests: actionState.getSelfServiceRequests,
+}));
+vi.mock("@/lib/timezone/effective-timezone", () => ({
+	getEffectiveTimezone: actionState.getEffectiveTimezone,
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
@@ -18,7 +27,7 @@ vi.mock("next/cache", async (importOriginal) => ({
 	revalidatePath: actionState.revalidatePath,
 }));
 
-const { cancelMyTimeCorrectionRequest } = await import("./actions");
+const { cancelMyTimeCorrectionRequest, getMyRequests } = await import("./actions");
 
 describe("my requests action boundaries", () => {
 	beforeEach(() => {
@@ -85,6 +94,35 @@ describe("my requests action boundaries", () => {
 			error: "Request could not be cancelled.",
 		});
 		expect(actionState.cancelTimeCorrection).not.toHaveBeenCalled();
+	});
+
+	it("loads requests in the viewing employee's own time zone, as /time-tracking shows their day", async () => {
+		actionState.getEffectiveTimezone.mockResolvedValue("America/New_York");
+		actionState.getSelfServiceRequests.mockResolvedValue({ items: [] });
+
+		await expect(getMyRequests({ status: "pending" })).resolves.toMatchObject({ success: true });
+
+		// User zone first, then the organization's, then UTC.
+		expect(actionState.getEffectiveTimezone).toHaveBeenCalledWith(
+			"user-requester",
+			"10000000-0000-4000-8000-000000000001",
+		);
+		expect(actionState.getSelfServiceRequests).toHaveBeenCalledWith({
+			employeeId: "10000000-0000-4000-8000-000000000002",
+			organizationId: "10000000-0000-4000-8000-000000000001",
+			filters: { status: "pending" },
+			timeZone: "America/New_York",
+		});
+	});
+
+	it("still loads requests, in UTC, when the time zone cannot be read", async () => {
+		actionState.getEffectiveTimezone.mockRejectedValue(new Error("database unavailable"));
+		actionState.getSelfServiceRequests.mockResolvedValue({ items: [] });
+
+		await expect(getMyRequests()).resolves.toMatchObject({ success: true });
+		expect(actionState.getSelfServiceRequests).toHaveBeenCalledWith(
+			expect.objectContaining({ timeZone: "UTC" }),
+		);
 	});
 
 	it("returns a stable generic error without exposing domain details", async () => {

@@ -11,8 +11,13 @@ import {
 	loadInboxCovers,
 } from "@/lib/approvals/deputy/deputy-decision-store";
 import { getAbility } from "@/lib/auth-helpers";
-import { canAccessApprovalInbox } from "@/lib/authorization";
+import {
+	canAccessApprovalInbox,
+	canManageCompliance,
+	canOpenApprovalInbox,
+} from "@/lib/authorization";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { resolveComplianceExceptionInboxScope } from "./compliance-exception-inbox";
 import { markDecidedEarlierStageDetail } from "./covering-marks";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import { markOwnRequestDetail } from "./own-request";
@@ -65,21 +70,45 @@ export async function loadAuthorizedApprovalDetail(input: {
 
 	// Check CASL permissions and approval scope after org ownership is verified.
 	const ability = await getAbility();
-	if (!ability || !canAccessApprovalInbox(ability, currentEmployee)) {
+	if (!ability || !canOpenApprovalInbox(ability, currentEmployee)) {
 		return { status: "forbidden" };
 	}
 	const canManageApprovals = ability.cannot("manage", "Approval") === false;
+	// Managing Compliance alone opens compliance exceptions, never an approval (#1977).
+	const approverAccess = canAccessApprovalInbox(ability, currentEmployee);
 
 	try {
 		if (!request) {
 			if (input.kind === "compatibility") return { status: "not_found" };
-			const eligibleApprovalScopes = canManageApprovals
-				? []
-				: await getEligibleApprovalScopesForManager({
+			const readsEligibility = approverAccess && !canManageApprovals;
+			const eligibleApprovalScopes = readsEligibility
+				? await getEligibleApprovalScopesForManager({
 						db,
 						managerEmployeeId: currentEmployee.id,
 						organizationId: currentEmployee.organizationId,
-					});
+					})
+				: [];
+			// A compliance exception opens within the viewer's own scope (#1977, ADR-0005), from
+			// the eligibility read above when there was one.
+			const complianceExceptionScope =
+				input.kind === "canonical"
+					? null
+					: await resolveComplianceExceptionInboxScope({
+							organizationId: currentEmployee.organizationId,
+							employeeId: currentEmployee.id,
+							canManageCompliance: canManageCompliance(ability),
+							...(readsEligibility ? { eligibleApprovalScopes } : {}),
+						});
+			if (!approverAccess) {
+				if (!complianceExceptionScope) return { status: "not_found" };
+				const exception = await getApprovalInboxDetail({
+					approvalId: input.approvalId,
+					organizationId: currentEmployee.organizationId,
+					complianceExceptionsOnly: true,
+					complianceExceptionScope,
+				});
+				return { status: "found", detail: markOwnRequestDetail(exception, currentEmployee.id) };
+			}
 			const detail = await getApprovalInboxDetail({
 				approvalId: input.approvalId,
 				organizationId: currentEmployee.organizationId,
@@ -92,10 +121,13 @@ export async function loadAuthorizedApprovalDetail(input: {
 					deputyEmployeeId: currentEmployee.id,
 					at: systemClock.nowInstant(),
 				}),
+				...(complianceExceptionScope ? { complianceExceptionScope } : {}),
 			});
 			return { status: "found", detail: markOwnRequestDetail(detail, currentEmployee.id) };
 		}
 		if (input.kind === "canonical") return { status: "not_found" };
+		// Managing Compliance alone opens no approval: one is answered as an unknown id is.
+		if (!approverAccess) return { status: "not_found" };
 
 		const isAssignedApprover = request.approverId === currentEmployee.id;
 		const isEligibleManager = isAssignedApprover

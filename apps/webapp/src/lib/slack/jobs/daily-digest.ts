@@ -103,6 +103,12 @@ async function processBotDigest(bot: DigestBot): Promise<number> {
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
 	const { buildDigestDataForManager } = await import("@/lib/teams/jobs/daily-digest");
+	const { complianceExceptionInboxScopesFor } =
+		await import("@/lib/approvals/inbox/compliance-exception-inbox");
+	const complianceScopes = complianceExceptionInboxScopesFor({
+		organizationId: bot.organizationId,
+		userIds: conversations.map((conv) => conv.userId),
+	});
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
@@ -131,6 +137,7 @@ async function processBotDigest(bot: DigestBot): Promise<number> {
 					bot.organizationId,
 					temporal.effectiveTimezone,
 					temporal.locale,
+					await complianceScopes.of({ userId: conv.userId, employeeId: emp.id }),
 				);
 
 				// Build Block Kit message

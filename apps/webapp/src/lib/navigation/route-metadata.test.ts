@@ -170,9 +170,14 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(true);
 	});
 	it("retains independent approvals page headings", () => {
-		expect(appPageOwnsHeading("/de/approvals")).toBe(true);
+		// `/approvals` only redirects to the Approval inbox (#1976).
+		expect(appPageOwnsHeading("/de/approvals")).toBe(false);
 		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);
+	});
+	it("keeps Works Council's heading while /settings/compliance only redirects (#1977)", () => {
+		expect(appPageOwnsHeading("/de/settings/compliance")).toBe(false);
+		expect(appPageOwnsHeading("/de/settings/compliance/works-council")).toBe(true);
 	});
 	it("adopts only the deputy history record, preserving other approval headings", () => {
 		expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);

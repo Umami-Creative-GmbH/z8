@@ -1,3 +1,4 @@
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { getAccessControlsSection } from "./sections/access-controls";
 import { getAuditEvidenceSection } from "./sections/audit-evidence";
@@ -45,8 +46,8 @@ export async function getComplianceCommandCenterData(
 			unavailableSection(
 				"workforceCompliance",
 				{
-					label: text("compliance.commandCenter.links.openComplianceSettings"),
-					href: "/settings/compliance",
+					label: text("compliance.commandCenter.links.reviewComplianceExceptions"),
+					href: COMPLIANCE_EXCEPTION_INBOX_PATH,
 				},
 				text("compliance.commandCenter.facts.unavailable.workforceCompliance"),
 			),

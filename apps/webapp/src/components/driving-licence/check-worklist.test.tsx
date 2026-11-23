@@ -38,6 +38,8 @@ vi.mock("@/lib/organization/driving-licence/check-actions", () => ({
 			enrolled: true,
 			status: remote.status,
 			authorizedClasses: [],
+			declared: null,
+			declaredUnchecked: [],
 			classes: [],
 			checks: [],
 			events: [],

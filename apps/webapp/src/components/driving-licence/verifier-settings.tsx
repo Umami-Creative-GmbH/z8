@@ -13,6 +13,14 @@ import {
 	RevokeGrantDialog,
 	toSelectableEmployee,
 } from "@/components/settings/access-grants/grant-editor";
+import {
+	ActionPanel,
+	ActionPanelBody,
+	ActionPanelContent,
+	ActionPanelFooter,
+	ActionPanelHeader,
+	ActionPanelTitle,
+} from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -283,126 +291,147 @@ function VerifierEditor({
 					confirm: t("common.revoke", "Revoke"),
 				}}
 			/>
-			{open && (
-				<form
-					className="space-y-5 rounded-lg border p-4"
-					onSubmit={(event) => {
-						event.preventDefault();
-						void form.handleSubmit();
-					}}
-				>
-					<h3 className="font-medium">
-						{t("settings.drivingLicence.verifiers.editor", "Verifier scope")}
-					</h3>
-					<form.Field name="verifierEmployeeId">
-						{(field) => (
-							<EmployeeSingleSelect
-								label={t(
-									"settings.drivingLicence.verifiers.person",
-									"Verifier",
-								)}
-								placeholder={t(
-									"settings.drivingLicence.verifiers.select",
-									"Select an employee",
-								)}
-								value={field.state.value || null}
-								onChange={(value) => field.handleChange(value ?? "")}
-								employees={options}
-								disabled={submitting || !!editing}
-							/>
-						)}
-					</form.Field>
-					<GrantScopeFields
-						scope={values.scope}
-						onScopeChange={(scope) => {
-							form.setFieldValue("scope", scope);
-							if (scope === "all") {
-								form.setFieldValue("teamIds", []);
-								form.setFieldValue("employeeIds", []);
-							}
+			<ActionPanel
+				open={open}
+				onOpenChange={(next) => {
+					if (!next && submitting) return;
+					setOpen(next);
+				}}
+			>
+				<ActionPanelContent size="compact">
+					<form
+						className="flex min-h-0 flex-1 flex-col"
+						onSubmit={(event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							void form.handleSubmit();
 						}}
-						teamIds={values.teamIds}
-						onTeamIdsChange={(ids) => form.setFieldValue("teamIds", ids)}
-						employeeIds={values.employeeIds}
-						onEmployeeIdsChange={(ids) =>
-							form.setFieldValue("employeeIds", ids)
-						}
-						teams={data.teams}
-						employeeOptions={scopeOptions}
-						disabled={submitting}
-						testIdPrefix="driving-verifier-team"
-						copy={{
-							scope: t(
-								"settings.drivingLicence.verifiers.scope",
-								"Responsibility",
-							),
-							allScope: t(
-								"settings.drivingLicence.verifiers.all",
-								"All employees in this organization",
-							),
-							specificScope: t(
-								"settings.drivingLicence.verifiers.specific",
-								"Selected teams and employees",
-							),
-							allScopeDescription: t(
-								"settings.drivingLicence.verifiers.allDescription",
-								"Responsibility follows current organization membership. Verifiers can never verify themselves.",
-							),
-							specificScopeDescription: t(
-								"settings.drivingLicence.verifiers.specificDescription",
-								"Includes named employees and current members of selected teams. Team changes take effect immediately.",
-							),
-							teams: t("common.teams", "Teams"),
-							noTeams: t(
-								"settings.drivingLicence.verifiers.noTeams",
-								"No teams available",
-							),
-							employees: t("common.employees", "Employees"),
-							selectEmployees: t(
-								"settings.drivingLicence.verifiers.selectEmployees",
-								"Select employees",
-							),
-							departedNotice: null,
-						}}
-					/>
-					<form.Field name="until">
-						{(field) => (
-							<VerifierUntilField
-								value={field.state.value ?? null}
-								onChange={(value) => field.handleChange(value || null)}
-								onBlur={field.handleBlur}
-								min={today}
+					>
+						<ActionPanelHeader>
+							<ActionPanelTitle>
+								{editing
+									? t(
+											"settings.drivingLicence.verifiers.editTitle",
+											"Edit verifier responsibility",
+										)
+									: t(
+											"settings.drivingLicence.verifiers.add",
+											"Grant verifier responsibility",
+										)}
+							</ActionPanelTitle>
+						</ActionPanelHeader>
+						<ActionPanelBody className="space-y-5">
+							<form.Field name="verifierEmployeeId">
+								{(field) => (
+									<EmployeeSingleSelect
+										label={t(
+											"settings.drivingLicence.verifiers.person",
+											"Verifier",
+										)}
+										placeholder={t(
+											"settings.drivingLicence.verifiers.select",
+											"Select an employee",
+										)}
+										value={field.state.value || null}
+										onChange={(value) => field.handleChange(value ?? "")}
+										employees={options}
+										disabled={submitting || !!editing}
+									/>
+								)}
+							</form.Field>
+							<GrantScopeFields
+								scope={values.scope}
+								onScopeChange={(scope) => {
+									form.setFieldValue("scope", scope);
+									if (scope === "all") {
+										form.setFieldValue("teamIds", []);
+										form.setFieldValue("employeeIds", []);
+									}
+								}}
+								teamIds={values.teamIds}
+								onTeamIdsChange={(ids) => form.setFieldValue("teamIds", ids)}
+								employeeIds={values.employeeIds}
+								onEmployeeIdsChange={(ids) =>
+									form.setFieldValue("employeeIds", ids)
+								}
+								teams={data.teams}
+								employeeOptions={scopeOptions}
 								disabled={submitting}
-								timezone={data.timezone}
+								testIdPrefix="driving-verifier-team"
+								copy={{
+									scope: t(
+										"settings.drivingLicence.verifiers.scope",
+										"Responsibility",
+									),
+									allScope: t(
+										"settings.drivingLicence.verifiers.all",
+										"All employees in this organization",
+									),
+									specificScope: t(
+										"settings.drivingLicence.verifiers.specific",
+										"Selected teams and employees",
+									),
+									allScopeDescription: t(
+										"settings.drivingLicence.verifiers.allDescription",
+										"Responsibility follows current organization membership. Verifiers can never verify themselves.",
+									),
+									specificScopeDescription: t(
+										"settings.drivingLicence.verifiers.specificDescription",
+										"Includes named employees and current members of selected teams. Team changes take effect immediately.",
+									),
+									teams: t("common.teams", "Teams"),
+									noTeams: t(
+										"settings.drivingLicence.verifiers.noTeams",
+										"No teams available",
+									),
+									employees: t("common.employees", "Employees"),
+									selectEmployees: t(
+										"settings.drivingLicence.verifiers.selectEmployees",
+										"Select employees",
+									),
+									departedNotice: null,
+								}}
 							/>
-						)}
-					</form.Field>
-					<div className="flex gap-2">
-						<Button
-							type="submit"
-							disabled={
-								submitting ||
-								!values.verifierEmployeeId ||
-								(values.scope === "specific" &&
-									!values.teamIds.length &&
-									!values.employeeIds.length)
-							}
-						>
-							{submitting
-								? t("common.saving", "Saving…")
-								: t("common.save", "Save")}
-						</Button>
-						<Button
-							type="button"
-							variant="outline"
-							disabled={submitting}
-							onClick={() => setOpen(false)}
-						>
-							{t("common.cancel", "Cancel")}
-						</Button>
-					</div>
-				</form>
-			)}
+							<form.Field name="until">
+								{(field) => (
+									<VerifierUntilField
+										value={field.state.value ?? null}
+										onChange={(value) => field.handleChange(value || null)}
+										onBlur={field.handleBlur}
+										min={today}
+										disabled={submitting}
+										timezone={data.timezone}
+									/>
+								)}
+							</form.Field>
+						</ActionPanelBody>
+						<ActionPanelFooter>
+							<Button
+								type="button"
+								variant="outline"
+								disabled={submitting}
+								onClick={() => setOpen(false)}
+							>
+								{t("common.cancel", "Cancel")}
+							</Button>
+							<Button
+								type="submit"
+								disabled={
+									submitting ||
+									!values.verifierEmployeeId ||
+									(values.scope === "specific" &&
+										!values.teamIds.length &&
+										!values.employeeIds.length)
+								}
+							>
+								{submitting
+									? t("common.saving", "Saving…")
+									: t("common.save", "Save")}
+							</Button>
+						</ActionPanelFooter>
+					</form>
+				</ActionPanelContent>
+			</ActionPanel>
 			<RevokedGrantHistory grants={data.grants.filter((g) => g.revokedAt)} nameOf={nameOf} />
 		</div>
 	);

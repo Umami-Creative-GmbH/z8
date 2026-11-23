@@ -26,11 +26,16 @@ import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalActionOptions,
 	ApprovalDetail,
+	ApprovalDisplayMetadata,
 	ApprovalQueryParams,
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
 } from "../domain/types";
 import type { ApprovalInboxTimeComparison } from "../inbox/types";
+import {
+	localizedTimeApprovalSummary,
+	UNCLASSIFIED_TIME_APPROVAL_WARNING,
+} from "../presentation/time-approval-summary-text";
 import {
 	addVehicleLabelsForOrganization,
 	categoryIdsFromTimeCorrectionMetadata,
@@ -303,9 +308,6 @@ function correctionMetadataFromRequest(request: { metadata?: unknown }) {
 		: undefined;
 }
 
-const UNCLASSIFIED_TIME_APPROVAL_WARNING =
-	"This legacy time approval could not be classified. Reconcile it before making a decision.";
-
 function displayMetadataForKind(
 	period: WorkPeriodWithRelations,
 	kind: TimeApprovalKind,
@@ -319,6 +321,14 @@ function displayMetadataForKind(
 		subtitle: `${date} - ${startTime} to ${endTime}`,
 		summary: `${duration} on ${date}`,
 	};
+	// The same texts for the viewer's language (#1978).
+	const localized = localizedTimeApprovalSummary({
+		kind,
+		clockIn: period.clockIn,
+		startTime,
+		endTime: period.clockOut ? endTime : null,
+		durationMinutes: period.durationMinutes,
+	}) satisfies NonNullable<ApprovalDisplayMetadata["localized"]>;
 	const ordinaryStage = stage ? { stage } : {};
 
 	switch (kind) {
@@ -326,6 +336,7 @@ function displayMetadataForKind(
 			return {
 				...common,
 				...ordinaryStage,
+				localized,
 				title: "Manual Time Submission",
 				badge: { label: "Manual", color: null },
 				icon: "clock-plus",
@@ -334,6 +345,7 @@ function displayMetadataForKind(
 			return {
 				...common,
 				...ordinaryStage,
+				localized,
 				title: "Clock-out Approval",
 				badge: { label: "Clock-out", color: null },
 				icon: "clock-check",
@@ -341,6 +353,7 @@ function displayMetadataForKind(
 		case "unclassified":
 			return {
 				...common,
+				localized,
 				summary: UNCLASSIFIED_TIME_APPROVAL_WARNING,
 				title: "Unclassified Time Approval",
 				badge: { label: "Needs reconciliation", color: null },
@@ -349,6 +362,7 @@ function displayMetadataForKind(
 		default:
 			return {
 				...common,
+				localized,
 				title: "Time Correction",
 				badge: { label: "Correction", color: null },
 				icon: "clock-edit",

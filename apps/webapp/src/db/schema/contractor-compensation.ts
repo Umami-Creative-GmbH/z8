@@ -31,7 +31,7 @@ import { currentTimestamp } from "./timestamp";
  * cost rates; org admins only.
  *
  * Periods are half-open date ranges `[effective_from, effective_to)` of the
- * contractor's local calendar days. Migration 0329 adds what Drizzle cannot
+ * contractor's local calendar days. Migration 0330 adds what Drizzle cannot
  * express: the non-overlap EXCLUDE constraint per employment period and the
  * trigger that admits contractor periods only.
  */

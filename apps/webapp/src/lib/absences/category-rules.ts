@@ -90,7 +90,7 @@ export const ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES: Record<EngagementCategoryRefu
 		"These dates span a change between employment and External Contractor work. Record each part separately.",
 };
 
-/** The rules every contractor unavailability category has; migration 0330 checks them too. */
+/** The rules every contractor unavailability category has; migration 0331 checks them too. */
 export const CONTRACTOR_UNAVAILABILITY_RULES = {
 	requiresWorkTime: false,
 	countsAgainstVacation: false,

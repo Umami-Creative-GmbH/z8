@@ -115,7 +115,7 @@ export const employeeEmploymentPeriod = pgTable(
 		legacyDiagnostic: text("legacy_diagnostic"),
 		/**
 		 * Employee or External Contractor for this stint (#1995). Never changes once
-		 * written (migration 0328); converting ends the period and starts a new one.
+		 * written (migration 0329); converting ends the period and starts a new one.
 		 */
 		engagementKind: text("engagement_kind").$type<EngagementKind>().default("employee").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

@@ -16,6 +16,7 @@ import { resolveDrivingLicenceAccess } from "./access";
 import { NO_LONGER_INTENDED } from "./check-types";
 import { currentDrivingEmployment } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import { pruneDeclaredLicenceClasses } from "./declared-classes-store";
 import { listDrivingLicenceIntendedDriverIds } from "./intended-drivers";
 import { DRIVING_LICENCE_VERIFIER_SETTINGS_PATH, drivingLicenceCheckPath } from "./paths";
 import {
@@ -139,6 +140,9 @@ export async function reconcileDrivingLicenceTasks(
 	now: Instant,
 	suppliedOccasions?: DrivingLicenceReminderOccasion[],
 ) {
+	// The catch-all for declared classes of employees no longer intended drivers (#2003), for
+	// changes that reach intended-driver status without the driving licence write paths.
+	await pruneDeclaredLicenceClasses(tx, organizationId);
 	const [policy] = await tx
 		.select()
 		.from(drivingLicencePolicy)

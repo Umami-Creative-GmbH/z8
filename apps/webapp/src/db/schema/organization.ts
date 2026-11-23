@@ -167,7 +167,7 @@ export const employee = pgTable(
 
 		// Employee or External Contractor, in force today (#1995). Every employment period
 		// records the kind of its stint; a trigger refuses changing it in place on an
-		// active period (migration 0328).
+		// active period (migration 0329).
 		engagementKind: text("engagement_kind").$type<EngagementKind>().default("employee").notNull(),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),

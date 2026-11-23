@@ -26,7 +26,9 @@ import {
 	DrivingStatusLabel,
 } from "./check-evidence";
 import { DrivingDeadlineDate } from "./deadline-date";
+import { DeclaredLicenceClasses } from "./declared-classes";
 import { DrivingLicenceHistoryPanel } from "./history-panel";
+import { LicenceClassIcon, LicenceClassLabel } from "./licence-class-visuals";
 import { ReportDrivingImpediment } from "./report-impediment";
 
 /** Each class with its state, valid-through date (in its saved zone) and restrictions. */
@@ -93,8 +95,8 @@ export function DrivingLicenceStatusSummary({
 						<TableBody>
 							{record.classes.map((entry) => (
 								<TableRow key={entry.code}>
-									<TableCell className="font-medium" translate="no">
-										{entry.code}
+									<TableCell>
+										<LicenceClassLabel code={entry.code} />
 									</TableCell>
 									<TableCell>
 										<DrivingClassStatusLabel status={entry.status} />
@@ -129,6 +131,7 @@ export function DrivingLicenceStatusSummary({
 					<ul className="space-y-1 text-sm text-muted-foreground">
 						{explained.map((entry) => (
 							<li key={entry.code}>
+								<LicenceClassIcon code={entry.code} size="sm" className="mr-1.5 align-text-bottom" />
 								<strong className="text-foreground" translate="no">
 									{entry.code}
 								</strong>
@@ -181,7 +184,16 @@ export function MyDrivingLicence({
 				</p>
 			) : null}
 			<div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-				<DrivingLicenceStatusSummary record={record} />
+				<div className="min-w-0 space-y-6">
+					<DrivingLicenceStatusSummary record={record} />
+					{intendedDriver ? (
+						<DeclaredLicenceClasses
+							declared={record.declared}
+							declaredUnchecked={record.declaredUnchecked}
+							authorizedClasses={record.authorizedClasses}
+						/>
+					) : null}
+				</div>
 				{intendedDriver ? <ReportDrivingImpediment /> : null}
 			</div>
 			<DrivingLicenceCheckEvidence record={record} />

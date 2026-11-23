@@ -199,19 +199,36 @@ export async function isEligibleManagerForApprovalRequest(input: {
 	);
 }
 
-export async function getEligibleApprovalScopesForManager(input: {
-	db: ApprovalEligibilityDb;
-	managerEmployeeId: string;
+/** Everything manager eligibility reads of one organization, to resolve any manager's scopes from. */
+export interface OrganizationApprovalEligibility {
 	organizationId: string;
-}) {
-	const employees = await input.db.query.employee.findMany({
+	employees: EligibleManagerEmployee[];
+	managerLinks: EligibleManagerLink[];
+	memberships: EligibleTeamMembership[];
+	teams: EligibleTeam[];
+}
+
+/**
+ * Reads the organization's employees, manager links and teams once, so a caller resolving many
+ * managers' scopes (a digest run) does not read the whole organization for each of them.
+ */
+export async function loadOrganizationApprovalEligibility(input: {
+	db: ApprovalEligibilityDb;
+	organizationId: string;
+}): Promise<OrganizationApprovalEligibility> {
+	const employees = (await input.db.query.employee.findMany({
 		where: eq(employee.organizationId, input.organizationId),
-	});
-	const typedEmployees = employees as EligibleManagerEmployee[];
-	const requesterIds = typedEmployees.map((requester) => requester.id);
+	})) as EligibleManagerEmployee[];
+	const requesterIds = employees.map((requester) => requester.id);
 
 	if (requesterIds.length === 0) {
-		return [];
+		return {
+			organizationId: input.organizationId,
+			employees,
+			managerLinks: [],
+			memberships: [],
+			teams: [],
+		};
 	}
 
 	const managerLinks = await input.db.query.employeeManagers.findMany({
@@ -222,20 +239,34 @@ export async function getEligibleApprovalScopesForManager(input: {
 		organizationId: input.organizationId,
 	});
 
-	return typedEmployees.flatMap((requester: { id: string }) => {
+	return {
+		organizationId: input.organizationId,
+		employees,
+		managerLinks: managerLinks as EligibleManagerLink[],
+		memberships,
+		teams,
+	};
+}
+
+/** The requesters this manager is an eligible manager of, from the organization's eligibility. */
+export function eligibleApprovalScopesOf(
+	eligibility: OrganizationApprovalEligibility,
+	managerEmployeeId: string,
+) {
+	return eligibility.employees.flatMap((requester: { id: string }) => {
 		// Scopes filter already persisted requests, including those of
 		// requesters who have since departed.
 		const eligibleManagerIds = getEligibleManagerIds({
-			organizationId: input.organizationId,
+			organizationId: eligibility.organizationId,
 			requesterEmployeeId: requester.id,
 			requesterMode: "existing_workflow",
-			employees: typedEmployees,
-			managerLinks: managerLinks as EligibleManagerLink[],
-			teamMemberships: memberships,
-			teams,
+			employees: eligibility.employees,
+			managerLinks: eligibility.managerLinks,
+			teamMemberships: eligibility.memberships,
+			teams: eligibility.teams,
 		});
 
-		return eligibleManagerIds.includes(input.managerEmployeeId)
+		return eligibleManagerIds.includes(managerEmployeeId)
 			? [
 					{
 						requesterEmployeeId: requester.id,
@@ -244,4 +275,15 @@ export async function getEligibleApprovalScopesForManager(input: {
 				]
 			: [];
 	});
+}
+
+export async function getEligibleApprovalScopesForManager(input: {
+	db: ApprovalEligibilityDb;
+	managerEmployeeId: string;
+	organizationId: string;
+}) {
+	return eligibleApprovalScopesOf(
+		await loadOrganizationApprovalEligibility(input),
+		input.managerEmployeeId,
+	);
 }
