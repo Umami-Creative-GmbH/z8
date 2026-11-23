@@ -168,13 +168,15 @@ export async function loadOnCallEmployeeStatus(
 		date: today,
 		timezoneOverride: input.timezone,
 	});
-	const terms = contract?.onCallTerms
-		? {
-				hoursKind: contract.onCallTerms.hoursKind,
-				weeklyMinutes: contract.onCallTerms.weeklyMinutes,
-				dailyMinutes: contract.onCallTerms.dailyMinutes,
-			}
-		: null;
+	// Terms that outlive the employment are no on-call status: as the monitor, require employment.
+	const terms =
+		contract?.isEmployedOnDay && contract.onCallTerms
+			? {
+					hoursKind: contract.onCallTerms.hoursKind,
+					weeklyMinutes: contract.onCallTerms.weeklyMinutes,
+					dailyMinutes: contract.onCallTerms.dailyMinutes,
+				}
+			: null;
 	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
 	const findings = await attachAcknowledgementStates(
 		db,

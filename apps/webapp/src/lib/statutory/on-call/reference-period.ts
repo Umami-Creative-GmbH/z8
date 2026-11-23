@@ -16,7 +16,7 @@
  * the payroll allocation rule. It only reads: it never writes work balances, settled payroll days
  * or closed months, so payroll can quote it without changing what was paid.
  */
-import { and, eq, gt, gte, inArray, isNotNull, lt, lte } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNotNull, lt, lte, min } from "drizzle-orm";
 import { absenceCategory, absenceEntry, workPeriod } from "@/db/schema";
 import {
 	getAssignedHolidayDateKeys,
@@ -108,8 +108,49 @@ interface ReferenceFacts {
 	>;
 	readonly workMinutesByDay: Readonly<Record<string, number>>;
 	readonly timezone: string;
-	readonly sickStarts: readonly string[];
+	/** Approved sick leave touching the loaded days, `endDate` inclusive. */
+	readonly sickLeaves: readonly { readonly startDate: string; readonly endDate: string }[];
 	readonly holidays: ReadonlySet<string>;
+}
+
+/** § 12 Abs. 4–5 TzBfG apply only on days the employee is employed and on call. */
+function onCallOn(facts: ReferenceFacts, day: string): boolean {
+	const contract = facts.contracts.get(day);
+	return Boolean(contract?.isEmployedOnDay && contract.onCallTerms);
+}
+
+/** The first day of approved sick leave that is still running on `from` or starts before `until`. */
+async function earliestSickStart(
+	db: OnCallReferenceReader,
+	input: {
+		readonly organizationId: string;
+		readonly employeeId: string;
+		readonly from: string;
+		readonly untilExclusive: string;
+	},
+): Promise<string | null> {
+	const [row] = await db
+		.select({ startDate: min(absenceEntry.startDate) })
+		.from(absenceEntry)
+		.innerJoin(
+			absenceCategory,
+			and(
+				eq(absenceCategory.id, absenceEntry.categoryId),
+				eq(absenceCategory.organizationId, input.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(absenceEntry.organizationId, input.organizationId),
+				eq(absenceEntry.employeeId, input.employeeId),
+				eq(absenceEntry.status, "approved"),
+				eq(absenceCategory.type, "sick"),
+				eq(absenceCategory.requiresWorkTime, false),
+				lt(absenceEntry.startDate, input.untilExclusive),
+				gte(absenceEntry.endDate, input.from),
+			),
+		);
+	return row?.startDate ?? null;
 }
 
 const RANK: Record<OnCallReferenceExclusionReason, number> = {
@@ -178,12 +219,14 @@ async function loadReferenceFacts(
 		const current = exclusionByDay.get(day);
 		if (!current || RANK[reason] > RANK[current]) exclusionByDay.set(day, reason);
 	};
-	const sickStarts: string[] = [];
+	const sickLeaves: { startDate: string; endDate: string }[] = [];
 	for (const absence of absences) {
 		// Home office and other categories that require work are work, not absence.
 		if (absence.requiresWorkTime) continue;
 		const reason = UNPAID_ABSENCE_TYPES.has(absence.type) ? "unpaid_absence" : "paid_absence";
-		if (absence.type === "sick" && absence.startDate >= from) sickStarts.push(absence.startDate);
+		if (absence.type === "sick") {
+			sickLeaves.push({ startDate: absence.startDate, endDate: absence.endDate });
+		}
 		for (
 			let day = parsePlainDate(absence.startDate > from ? absence.startDate : from);
 			day.toString() <= absence.endDate && day.toString() <= last;
@@ -237,7 +280,7 @@ async function loadReferenceFacts(
 		exclusionByDay,
 		workMinutesByDay: minutesByDate,
 		timezone,
-		sickStarts: [...new Set(sickStarts)].toSorted(),
+		sickLeaves,
 		holidays: holidaysInRange,
 	};
 }
@@ -309,7 +352,7 @@ function computeBreakdown(
 		averageMinutesPerWorkedDay: average(numeratorMinutes, workedDays),
 		excludedPeriods,
 		employmentShortened: employmentShortened && firstEmployedSeen,
-		onCallOnEventDate: Boolean(facts.contracts.get(input.eventDate.toString())?.onCallTerms),
+		onCallOnEventDate: onCallOn(facts, input.eventDate.toString()),
 	};
 }
 
@@ -334,8 +377,10 @@ export async function calculateOnCallReferencePeriod(
 }
 
 /**
- * The on-call employee's sick-leave starts (approved) and public holidays in `[from, untilExclusive)`
- * on days they are on call, each with its reference-period breakdown. One load covers all events.
+ * The on-call employee's approved sick leave and public holidays in `[from, untilExclusive)` on
+ * days they are on call, each with its reference-period breakdown. One load covers all events.
+ * Sick leave that began before `from` and runs into the range is listed too, dated (and its
+ * reference period counted) from its own first day, so a payroll period covers it.
  */
 export async function listOnCallReferenceEvents(
 	db: OnCallReferenceReader,
@@ -350,23 +395,31 @@ export async function listOnCallReferenceEvents(
 	const from = parsePlainDate(input.from);
 	const until = parsePlainDate(input.untilExclusive);
 	if (comparePlainDates(from, until) >= 0) return [];
+	const sickSince = await earliestSickStart(db, input);
+	const firstEvent =
+		sickSince && comparePlainDates(parsePlainDate(sickSince), from) < 0
+			? parsePlainDate(sickSince)
+			: from;
 	const facts = await loadReferenceFacts(db, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
-		from: referenceStartOf(from, input.method),
+		from: referenceStartOf(firstEvent, input.method),
 		untilExclusive: until,
 	});
 	const inRange = (day: string) => day >= input.from && day < input.untilExclusive;
+	const sickStarts = new Set(
+		facts.sickLeaves
+			.filter((leave) => leave.startDate < input.untilExclusive && leave.endDate >= input.from)
+			.map((leave) => leave.startDate),
+	);
 	const candidates: { kind: OnCallReferenceEventKind; eventDate: string }[] = [
-		...facts.sickStarts
-			.filter(inRange)
-			.map((eventDate) => ({ kind: "sick_leave" as const, eventDate })),
+		...[...sickStarts].map((eventDate) => ({ kind: "sick_leave" as const, eventDate })),
 		...[...facts.holidays]
 			.filter(inRange)
 			.map((eventDate) => ({ kind: "public_holiday" as const, eventDate })),
 	];
 	return candidates
-		.filter((event) => Boolean(facts.contracts.get(event.eventDate)?.onCallTerms))
+		.filter((event) => onCallOn(facts, event.eventDate))
 		.toSorted((a, b) => a.eventDate.localeCompare(b.eventDate) || a.kind.localeCompare(b.kind))
 		.map((event) => ({
 			...event,

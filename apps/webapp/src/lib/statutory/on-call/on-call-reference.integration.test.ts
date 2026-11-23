@@ -3,6 +3,7 @@
  * PostgreSQL. Expected values are worked out by hand from the seeded calendar below.
  */
 import { drizzle } from "drizzle-orm/node-postgres";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
@@ -11,6 +12,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { calculateOnCallReferencePeriod, listOnCallReferenceEvents } from "./reference-period";
 import { onCallFixture } from "./testing/on-call-fixture";
+import { loadOnCallEmployeeStatus } from "./views";
 
 describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -159,6 +161,97 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			reason: "paid_absence",
 			days: 3,
 		});
+	});
+
+	it("lists sick leave that started before the period and runs into it, from its own start", async () => {
+		const { org, worker } = await seededWorker();
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-05-29",
+			endDate: "2026-06-01",
+		});
+		// Over before the period began: not one of the period's events.
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-04-20",
+			endDate: "2026-04-22",
+		});
+
+		const events = await listOnCallReferenceEvents(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			from: "2026-06-01",
+			untilExclusive: "2026-07-01",
+			method: "three_months",
+		});
+
+		expect(events.map((event) => [event.kind, event.eventDate])).toEqual([
+			["sick_leave", "2026-05-29"],
+			["sick_leave", "2026-06-10"],
+			["public_holiday", "2026-06-15"],
+		]);
+		const fromMay = await calculateOnCallReferencePeriod(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			eventDate: "2026-05-29",
+			method: "three_months",
+		});
+		expect(events[0]?.breakdown).toEqual(fromMay);
+		expect(fromMay.referenceStart).toBe("2026-02-28");
+	});
+
+	it("lists no event for days after the employment ended, though the on-call terms run on", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const periodId = await onCall.employmentPeriod(
+			org,
+			worker,
+			"2026-03-31T22:00:00Z",
+			"2026-06-12T22:00:00Z",
+		);
+		await onCall.onCallTerms(org, worker, {
+			kind: "unspecified",
+			from: "2026-04-01",
+			employmentPeriodId: periodId,
+		});
+		await onCall.work(org, worker, { date: "2026-06-02", startTime: "09:00", endTime: "13:00" });
+		await onCall.holiday(org, worker, "2026-06-04");
+		await onCall.holiday(org, worker, "2026-06-15");
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-06-16",
+			endDate: "2026-06-17",
+		});
+
+		const events = await listOnCallReferenceEvents(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			from: "2026-06-01",
+			untilExclusive: "2026-07-01",
+			method: "three_months",
+		});
+		const afterLeaving = await calculateOnCallReferencePeriod(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			eventDate: "2026-06-15",
+			method: "three_months",
+		});
+
+		expect(events.map((event) => [event.kind, event.eventDate])).toEqual([
+			["public_holiday", "2026-06-04"],
+		]);
+		expect(afterLeaving.onCallOnEventDate).toBe(false);
+
+		const status = await loadOnCallEmployeeStatus(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			timezone: org.timezone,
+			now: Temporal.Instant.from("2026-06-20T10:00:00Z"),
+			audience: "full",
+			method: "three_months",
+		});
+		expect(status).toMatchObject({ hasOnCallTerms: true, terms: null });
+		expect(status.referenceEvents.map((event) => event.eventDate)).toEqual(["2026-06-04"]);
 	});
 
 	it("never writes: it runs inside a READ ONLY transaction and leaves settled days untouched", async () => {
