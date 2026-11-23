@@ -398,11 +398,13 @@ function bandFindings(
 	const pieces = input.facts.workPiecesByEmployee.get(base.employeeId) ?? [];
 	const released = input.facts.releasedDaysByEmployee.get(base.employeeId);
 	const running = pieces.filter((piece) => piece.running);
-	// Past days count what was worked. Today and later add what is still planned: the part of each
-	// shift after now that is not worked (an unplanned call adds to a later shift; a call running on
-	// its shift counts once; an unworked past part, as in a no-show or a break, is not planned any
-	// more). A running clock-in on the shift ends on its whole-minute grid, so the rest of the
-	// shift is measured from there and the total stays constant within the minute.
+	// Each day counts what was worked plus what is still planned: the part of each of its shifts
+	// after now that is not worked (an unplanned call adds to a later shift; a call running on its
+	// shift counts once; an unworked past part, as in a no-show or a break, is not planned any
+	// more). A shift that has ended adds nothing; one still running adds its rest whatever day it
+	// started, such as last night's shift past midnight. A running clock-in on the shift ends on its
+	// whole-minute grid, so the rest of the shift is measured from there and the total stays
+	// constant within the minute.
 	const stillPlannedIn = (shift: OnCallShift) => {
 		const interval = shiftInterval(shift, input.timezone);
 		const runningOnShift = running.filter(
@@ -423,7 +425,6 @@ function bandFindings(
 	};
 	const minutesOn = (day: PlainDate) => {
 		const worked = work?.get(day.toString()) ?? 0;
-		if (comparePlainDates(day, input.today) < 0) return worked;
 		const stillPlanned = input.shifts
 			.filter((shift) => shift.date.equals(day))
 			.reduce((sum, shift) => sum + stillPlannedIn(shift), 0);

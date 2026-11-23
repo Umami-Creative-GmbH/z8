@@ -777,6 +777,49 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			}
 		});
 
+		it("keeps the rest of yesterday's overnight shift still running past midnight", async () => {
+			const seedOvernight =
+				(clockIn: string | null) =>
+				async (
+					org: Awaited<ReturnType<typeof onCall.organization>>,
+					worker: Awaited<ReturnType<typeof fx.employee>>,
+				) => {
+					await onCall.work(org, worker, {
+						date: "2026-03-09",
+						startTime: "08:00",
+						endTime: "10:00",
+					});
+					// Tuesday's 22:00–06:00 night shift, judged at Wednesday 02:00: 120 + 480 = 600.
+					await onCall.shift(org, {
+						employeeId: worker.employeeId,
+						date: "2026-03-10",
+						startTime: "22:00",
+						endTime: "06:00",
+						publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+					});
+					if (clockIn) {
+						await onCall.openWork(org, worker, { date: "2026-03-10", startTime: clockIn });
+					}
+				};
+
+			// Clocked in at seconds: worked up to now plus the rest of the shift, steady in the minute.
+			const clockedIn = await exactWeek(
+				(timezone) => localInstant("2026-03-11", "02:00:10", timezone),
+				seedOvernight("21:59:42"),
+			);
+			for (const second of ["02:00:10", "02:00:35", "02:00:50"]) {
+				expect(await clockedIn(localInstant("2026-03-11", second, "Europe/Berlin"))).toEqual([]);
+			}
+			await fx.cleanup();
+
+			// Not clocked in yet: the rest of the shift after now is still planned (120 + 240).
+			const late = await exactWeek(
+				(timezone) => localInstant("2026-03-11", "02:00", timezone),
+				seedOvernight(null),
+			);
+			expect(await late()).toEqual([["on_call_weekly_under_band", "info", 360]]);
+		});
+
 		it("judges a week whose terms change mid-week by each day's terms", async () => {
 			const org = await onCall.organization("a");
 			const worker = await fx.employee(org, "worker");
