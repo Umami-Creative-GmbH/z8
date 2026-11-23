@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query";
 import { DrivingStatusLabel } from "./check-evidence";
+import { LicenceClassChip, LicenceClassIcon } from "./licence-class-visuals";
 import {
 	loadDrivingAuthorizationStatus,
 	loadOperationalDrivingEmployees,
@@ -91,7 +92,8 @@ export function DrivingAuthorizationAdvisory({
 			{!query.isFetching && data?.classes.length ? (
 				<ul className="space-y-1">
 					{data.classes.map((entry) => (
-						<li key={entry.code} className="flex flex-wrap gap-x-2">
+						<li key={entry.code} className="flex flex-wrap items-center gap-x-2">
+							<LicenceClassIcon code={entry.code} size="sm" className="text-muted-foreground" />
 							<strong translate="no">{entry.code}</strong>
 							<span>
 								{entry.status === "active"
@@ -108,6 +110,23 @@ export function DrivingAuthorizationAdvisory({
 						</li>
 					))}
 				</ul>
+			) : null}
+			{!query.isFetching && data?.declaredClasses?.length ? (
+				<div className="space-y-1.5 border-t border-dashed pt-2">
+					<p className="text-xs font-medium text-muted-foreground">
+						{t(
+							"drivingLicence.operational.declared",
+							"Declared, not checked yet. Not an authorization to drive.",
+						)}
+					</p>
+					<ul className="flex flex-wrap gap-1.5">
+						{data.declaredClasses.map((code) => (
+							<li key={code}>
+								<LicenceClassChip code={code} />
+							</li>
+						))}
+					</ul>
+				</div>
 			) : null}
 			<p className="text-xs text-muted-foreground">
 				{t(

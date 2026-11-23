@@ -11,6 +11,7 @@ import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { NO_LONGER_INTENDED } from "./check-types";
+import { pruneDeclaredLicenceClasses } from "./declared-classes-store";
 import type { DrivingLicenceEnding, DrivingLicenceTeamChangeImpact } from "./intended-driver-rules";
 import { intendedDriverCondition } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
@@ -314,6 +315,8 @@ export async function runDrivingLicenceIntendedDriverWrite<Tx extends DrivingLic
 			actorUserId: scope.actorUserId,
 			now,
 		});
+	// Declared classes exist only for intended drivers (#2003).
+	if (change) await pruneDeclaredLicenceClasses(tx, scope.organizationId, scope.employeeIds);
 	return result;
 }
 
