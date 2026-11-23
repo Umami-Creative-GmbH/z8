@@ -147,6 +147,61 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 		expect((await evaluate("2026-03-04T11:07:55Z")).fingerprint).toBe(first.fingerprint);
 	});
 
+	it("keeps the publish fingerprint steady while a clock-in runs past the end of its shift", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 16 h worked Monday and Tuesday; Wednesday 09:00–15:00 planned and clocked in at 09:00:42.
+		await fx.work(org, student, weekdays("2026-03-02", "08:00", "16:00").slice(0, 2));
+		await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "09:00", end: "15:00" });
+		await fx.openWork(org, student, { date: "2026-03-04", start: "09:00:42" });
+
+		const evaluate = async (now: string) => {
+			const clock = vi.spyOn(Temporal.Now, "instant").mockReturnValue(Temporal.Instant.from(now));
+			try {
+				return await Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* ScheduleComplianceService;
+						return yield* service.evaluateScheduleWindow({
+							organizationId: org.id,
+							startDate: shiftDateBounds("2026-03-02", TZ).start,
+							endDateExclusive: shiftDateBounds("2026-03-09", TZ).start,
+							timezone: TZ,
+						});
+					}).pipe(
+						Effect.provide(
+							ScheduleComplianceServiceLive.pipe(
+								Layer.provide(workPolicyLayer),
+								Layer.provide(DatabaseServiceLive),
+							),
+						),
+					),
+				);
+			} finally {
+				clock.mockRestore();
+			}
+		};
+		const usedOf = (result: Awaited<ReturnType<typeof evaluate>>) =>
+			result.findings.flatMap((finding) =>
+				finding.type === "statutory" && finding.statutoryKind === "working_student_lecture_week"
+					? [finding.summary.used?.value]
+					: [],
+			);
+
+		// Berlin is UTC+1 in March: 14:59:10, 15:00:10 and 15:30:10 on Wednesday, still clocked in.
+		const before = await evaluate("2026-03-04T13:59:10Z");
+		const atEnd = await evaluate("2026-03-04T14:00:10Z");
+		const past = await evaluate("2026-03-04T14:30:10Z");
+
+		expect([usedOf(before), usedOf(atEnd), usedOf(past)]).toEqual([
+			[960 + 360],
+			[960 + 360],
+			[960 + 390],
+		]);
+		expect(atEnd.fingerprint).toBe(before.fingerprint);
+		expect(past.fingerprint).toBe(before.fingerprint);
+	});
+
 	it("makes the publish acknowledgement stale when a lecture-week breach deepens", async () => {
 		const org = await fx.organization("a", TZ);
 		const student = await fx.workingStudent(org, "student");
