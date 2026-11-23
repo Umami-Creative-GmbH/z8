@@ -156,10 +156,22 @@ function dayPricing(day: ContractorDay): StatementDayPricing | null {
 export function buildContractorStatement(input: ContractorStatementInput): ContractorStatement {
 	const projects = new Map<
 		string,
-		{ projectName: string | null; currency: string; workedMs: number; amountMinor: bigint }
+		{ projectName: string | null; currency: string; workedMinutes: number; amountMinor: bigint }
 	>();
 	const unpriced = { workedMinutes: 0, days: 0 };
 	let awaitingApprovalLines = 0;
+	// Shares are exact milliseconds that may fall between whole minutes. Each line
+	// takes the difference of the rounded running sum (per currency, and for
+	// unpriced work), so its lines, days, projects and total always add up.
+	const runningMs = new Map<string, number>();
+	const minutesTotals = new Map<string, number>();
+	const lineMinutes = (bucket: string, ms: number) => {
+		const before = runningMs.get(bucket) ?? 0;
+		runningMs.set(bucket, before + ms);
+		const added = minutes(before + ms) - minutes(before);
+		minutesTotals.set(bucket, (minutesTotals.get(bucket) ?? 0) + added);
+		return added;
+	};
 
 	const days = input.pricing.days
 		.filter((entry) => entry.employeeId === input.contractor.id)
@@ -168,11 +180,12 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 			const allocations =
 				entry.pricing.kind === "priced" ? entry.pricing.allocations : ([] as const);
 			const currency = entry.pricing.kind === "priced" ? entry.pricing.compensation.currency : null;
-			if (!pricing) {
-				unpriced.workedMinutes += minutes(entry.workedMs);
-				unpriced.days += 1;
-			}
+			const bucket = currency ?? "\u0000unpriced";
+			if (!pricing) unpriced.days += 1;
+			let dayMinutes = 0;
 			const lines = entry.shares.map((share, index): StatementLine => {
+				const workedMinutes = lineMinutes(bucket, share.durationMs);
+				dayMinutes += workedMinutes;
 				const details = input.work.get(share.workId);
 				// The loader details every work period; UTC only if one were missing.
 				const offset = details?.startOffsetMinutes ?? 0;
@@ -184,10 +197,10 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 					const total = projects.get(key) ?? {
 						projectName,
 						currency,
-						workedMs: 0,
+						workedMinutes: 0,
 						amountMinor: BigInt(0),
 					};
-					total.workedMs += share.durationMs;
+					total.workedMinutes += workedMinutes;
 					total.amountMinor += allocation.amountMinor;
 					projects.set(key, total);
 				}
@@ -195,16 +208,17 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 					workId: share.workId,
 					start: localDateTime(share.start, offset),
 					end: localDateTime(share.end, offset),
-					workedMinutes: minutes(share.durationMs),
+					workedMinutes,
 					projectName: details?.projectName ?? null,
 					taskName: details?.taskName ?? null,
 					awaitingApproval: details?.awaitingApproval ?? false,
 					amount: currency && allocation ? money(allocation.amountMinor, currency) : null,
 				};
 			});
+			if (!pricing) unpriced.workedMinutes += dayMinutes;
 			return {
 				date: entry.date.toString(),
-				workedMinutes: minutes(entry.workedMs),
+				workedMinutes: dayMinutes,
 				pricing,
 				lines,
 			};
@@ -223,7 +237,7 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 				amount: money(total.amountMinor, total.currency),
 				hours: unitsToDecimal(total.hourUnits, STATEMENT_UNIT_SCALE),
 				days: unitsToDecimal(total.dayUnits, STATEMENT_UNIT_SCALE),
-				workedMinutes: minutes(total.pricedMs),
+				workedMinutes: minutesTotals.get(total.currency) ?? 0,
 			})),
 		projects: [...projects.values()]
 			.sort(
@@ -234,7 +248,7 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 			.map((total) => ({
 				projectName: total.projectName,
 				currency: total.currency,
-				workedMinutes: minutes(total.workedMs),
+				workedMinutes: total.workedMinutes,
 				amount: money(total.amountMinor, total.currency),
 			})),
 		unpriced,

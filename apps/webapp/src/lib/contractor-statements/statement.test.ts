@@ -70,6 +70,40 @@ function details(entries: Record<string, Partial<StatementWorkDetails>>) {
 }
 
 describe("contractor statement", () => {
+	it("rounds worked minutes so lines, days, projects and the total always add up", () => {
+		// Crosses local midnight (+01:00) half a minute each side: two 30-second shares.
+		const items = [work("w1", "2026-03-01T22:59:30Z", "2026-03-01T23:00:30Z")];
+		const pricing = priceContractorWork({
+			work: items,
+			engagements: [{ id: ENGAGEMENT, employeeId: CONTRACTOR, startedAt: null, endedAt: null }],
+			terms: [
+				terms("t1", "2026-03-01", null, {
+					basis: "hourly",
+					currency: "EUR",
+					rateMinor: BigInt(6_000),
+				}),
+			],
+			range: { fromDay: day("2026-03-01"), toDay: day("2026-03-31") },
+		});
+
+		const statement = buildContractorStatement({
+			...header,
+			period: { fromDay: day("2026-03-01"), toDay: day("2026-03-31") },
+			pricing,
+			work: details({ w1: { projectName: "Website" } }),
+		});
+
+		const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+		expect(statement.days).toHaveLength(2);
+		for (const entry of statement.days) {
+			expect(sum(entry.lines.map((line) => line.workedMinutes))).toBe(entry.workedMinutes);
+		}
+		expect(statement.totals).toHaveLength(1);
+		expect(statement.totals[0]?.workedMinutes).toBe(1);
+		expect(sum(statement.days.map((entry) => entry.workedMinutes))).toBe(1);
+		expect(statement.projects.map((project) => project.workedMinutes)).toEqual([1]);
+	});
+
 	it("itemizes an hourly contractor's work by local day and project across a rate change", () => {
 		const items = [
 			work("w1", "2026-03-02T08:00:00Z", "2026-03-02T11:00:00Z"),
