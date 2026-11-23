@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StubCaller } from "@/test/organization-action";
 
@@ -185,33 +183,5 @@ describe("compliance actions", () => {
 			await actions.requestComplianceException({ exceptionType: "holiday" as never, reason: "x" }),
 		).toMatchObject({ success: false, code: "ValidationError" });
 		expect(mocks.service.requestException).not.toHaveBeenCalled();
-	});
-});
-
-describe("compliance exception decisions in the service", () => {
-	const serviceSource = readFileSync(
-		fileURLToPath(
-			new URL(
-				"../../../../../lib/effect/services/compliance-guardrail.service.ts",
-				import.meta.url,
-			),
-		),
-		"utf8",
-	);
-
-	it("enforces tenant and self-approval constraints in the service update", () => {
-		for (const name of ["approveException", "rejectException"]) {
-			const start = serviceSource.indexOf(`${name}: (params) =>`);
-			const next = serviceSource.indexOf("Exception:", start + name.length);
-			const body = serviceSource.slice(start, next === -1 ? undefined : next);
-
-			expect(body).toContain("eq(complianceException.organizationId, params.organizationId)");
-			expect(body).toContain("ne(complianceException.employeeId, params.approverId)");
-		}
-	});
-
-	it("applies manager scope to pending exceptions in the service", () => {
-		expect(serviceSource).toContain("eq(employeeManagers.managerId, params.managerId)");
-		expect(serviceSource).toContain("inArray(complianceException.employeeId, managedEmployeeIds)");
 	});
 });

@@ -6,8 +6,16 @@
  * Local contract: pnpm --filter webapp test:integration
  */
 import { randomUUID } from "node:crypto";
+import { Effect } from "effect";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError } from "@/lib/effect/errors";
+import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import { type Clock, parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import {
 	type ClosedMonthDatabaseFixture,
 	createClosedMonthDatabaseFixture,
@@ -15,12 +23,18 @@ import {
 import {
 	complianceExceptionInboxRead,
 	decideComplianceExceptionFromInbox,
+	findComplianceExceptionDecisionTarget,
 	resolveComplianceExceptionInboxScope,
 } from "./compliance-exception-inbox";
 import { bulkApproveApprovalInboxItems, bulkRejectApprovalInboxItems } from "./decision-service";
 import { getApprovalInboxDetail, getApprovalInboxListFromSources } from "./read-service";
+import type { ApprovalInboxSource } from "./source-adapters";
+
+type ComplianceScope = Parameters<typeof decideComplianceExceptionFromInbox>[0]["scope"];
 
 const NOW = new Date("2026-03-10T12:00:00Z");
+/** The decisions' clock: the same instant as `NOW`. */
+const AT_NOW: Clock = { nowInstant: () => parseInstant("2026-03-10T12:00:00Z") };
 
 describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 	let fixture: ClosedMonthDatabaseFixture;
@@ -362,7 +376,7 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 					actorEmployeeId: manager.employeeId,
 					scope: { kind: "managed", employeeIds: [employee.employeeId] },
 					action: "approve",
-					now: NOW,
+					clock: AT_NOW,
 					notify,
 				}),
 			).resolves.toEqual({ id: exceptionId, type: "compliance_exception", status: "approved" });
@@ -401,7 +415,7 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 					scope: { kind: "organization" },
 					action: "reject",
 					reason,
-					now: NOW,
+					clock: AT_NOW,
 					notify,
 				});
 
@@ -422,6 +436,59 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 			);
 		});
 
+		it("checks scope, self-decision and staleness before a blank rejection reason", async () => {
+			const unmanagedId = await exception({ employeeId: outsider.employeeId });
+			const ownId = await exception({ employeeId: manager.employeeId });
+			const expiredId = await exception({
+				employeeId: employee.employeeId,
+				createdAt: "2026-03-08T08:00:00Z",
+				validUntil: "2026-03-09T08:00:00Z",
+			});
+			const pendingId = await exception({ employeeId: employee.employeeId });
+			const rejectBlank = (exceptionId: string, scope: ComplianceScope) =>
+				decideComplianceExceptionFromInbox({
+					organizationId,
+					exceptionId,
+					actorEmployeeId: manager.employeeId,
+					scope,
+					action: "reject",
+					reason: " ",
+					clock: AT_NOW,
+					notify: notifications(),
+				});
+			const managed: ComplianceScope = { kind: "managed", employeeIds: [employee.employeeId] };
+
+			await expect(rejectBlank(unmanagedId, managed)).rejects.toBeInstanceOf(NotFoundError);
+			await expect(rejectBlank(ownId, { kind: "organization" })).rejects.toBeInstanceOf(
+				AuthorizationError,
+			);
+			await expect(rejectBlank(expiredId, managed)).rejects.toBeInstanceOf(ConflictError);
+			await expect(rejectBlank(pendingId, managed)).rejects.toBeInstanceOf(ValidationError);
+		});
+
+		it("names the organization's exception as a decision target, whatever its status", async () => {
+			const pendingId = await exception({ employeeId: employee.employeeId });
+			const expiredId = await exception({ employeeId: employee.employeeId, status: "expired" });
+			const other = await fixture.organization("Europe/Berlin");
+			const foreign = await fixture.employee({ organizationId: other.organizationId });
+			const foreignId = await exception({
+				employeeId: foreign.employeeId,
+				organizationId: other.organizationId,
+			});
+			const target = (id: string) => findComplianceExceptionDecisionTarget({ organizationId, id });
+
+			await expect(target(pendingId)).resolves.toEqual({
+				entityType: "compliance_exception",
+				targetType: "compliance_exception",
+				status: "pending",
+				workflowKind: null,
+			});
+			await expect(target(expiredId)).resolves.toMatchObject({ status: "expired" });
+			await expect(target(foreignId)).resolves.toBeNull();
+			await expect(target(randomUUID())).resolves.toBeNull();
+			await expect(target("approval-1")).resolves.toBeNull();
+		});
+
 		it("refuses the requester's own exception even with manage Compliance", async () => {
 			const exceptionId = await exception({ employeeId: manager.employeeId });
 
@@ -432,7 +499,7 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 					actorEmployeeId: manager.employeeId,
 					scope: { kind: "organization" },
 					action: "approve",
-					now: NOW,
+					clock: AT_NOW,
 					notify: notifications(),
 				}),
 			).rejects.toThrow("You cannot decide your own compliance exception");
@@ -449,7 +516,7 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 					actorEmployeeId: manager.employeeId,
 					scope: { kind: "managed", employeeIds: [employee.employeeId] },
 					action: "approve",
-					now: NOW,
+					clock: AT_NOW,
 					notify: notifications(),
 				}),
 			).rejects.toThrow("Approval not found");
@@ -470,7 +537,7 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 					actorEmployeeId: manager.employeeId,
 					scope: { kind: "organization" },
 					action: "approve",
-					now: NOW,
+					clock: AT_NOW,
 					notify: notifications(),
 				});
 
@@ -490,7 +557,7 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 				scope: { kind: "organization" },
 				action: "reject",
 				reason: "Too late",
-				now: NOW,
+				clock: AT_NOW,
 				notify,
 			});
 
@@ -515,7 +582,7 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 					scope: { kind: "organization" },
 					action,
 					...(action === "reject" ? { reason: "Cover is already planned" } : {}),
-					now: NOW,
+					clock: AT_NOW,
 					notify,
 				});
 
@@ -572,23 +639,60 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 	});
 
 	it("never puts a compliance exception in a Covering section", async () => {
-		await exception({ employeeId: employee.employeeId });
+		const exceptionId = await exception({ employeeId: employee.employeeId });
+		// The manager's own pending absence approval, which their deputy does cover.
+		const absence: UnifiedApprovalItem = {
+			id: randomUUID(),
+			approvalType: "absence_entry",
+			entityId: randomUUID(),
+			typeName: "Absence Request",
+			requester: {
+				id: employee.employeeId,
+				userId: employee.userId,
+				name: "Avery Employee",
+				email: "avery@example.com",
+				image: null,
+				teamId: null,
+			},
+			approverId: manager.employeeId,
+			organizationId,
+			status: "pending",
+			createdAt: new Date("2026-03-10T09:00:00Z"),
+			resolvedAt: null,
+			priority: "normal",
+			sla: { deadline: null, status: "on_time", hoursRemaining: null },
+			display: { title: "Vacation", subtitle: "Mar 12", summary: "1 day off" },
+		};
+		const absences: ApprovalInboxSource = {
+			type: "absence_entry",
+			displayName: "Absence",
+			supportsBulkApprove: true,
+			handler: {
+				getApprovals: (params: { approverId: string }) =>
+					Effect.succeed(params.approverId === manager.employeeId ? [absence] : []),
+				getCount: (approverId: string) => Effect.succeed(approverId === manager.employeeId ? 1 : 0),
+			} as never,
+		};
 
+		// The deputy manages Compliance: their own scope holds the manager's employee's exception,
+		// which a Covering section must still never pick up.
 		const deputy = await getApprovalInboxListFromSources({
-			sources: [],
+			sources: [absences],
 			params: {
 				approverId: outsider.employeeId,
 				organizationId,
 				covering: [{ approverId: manager.employeeId, approverName: "Manager" }],
-				complianceExceptionScope: null,
+				complianceExceptionScope: { kind: "organization" },
 			},
 			complianceExceptionRead: complianceExceptionInboxRead,
 			now: NOW,
 		});
 
-		expect(deputy.items).toEqual([]);
-		expect(deputy.covering).toEqual([
-			expect.objectContaining({ approverId: manager.employeeId, count: 0, rows: [] }),
-		]);
+		const [section] = deputy.covering ?? [];
+		expect(section).toMatchObject({ approverId: manager.employeeId, count: 1 });
+		expect(section?.rows.map((row) => [row.type, row.id])).toEqual([["absence_entry", absence.id]]);
+		const own = deputy.items.find((item) => item.id === exceptionId);
+		expect(own).toMatchObject({ type: "compliance_exception" });
+		expect(own?.coveringFor).toBeUndefined();
 	});
 });

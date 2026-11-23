@@ -499,7 +499,7 @@ async function loadComplianceExceptionInboxRows(input: {
 		organizationId: input.params.organizationId,
 		scope,
 		filters: input.filters,
-		now: input.now,
+		now: instantFromDate(input.now),
 	};
 	const [items, total] = await Promise.all([
 		input.listed
@@ -973,7 +973,7 @@ export async function getApprovalInboxDetail({
 				organizationId,
 				scope: complianceExceptionScope,
 				exceptionId: approvalId,
-				now,
+				...(now ? { now: instantFromDate(now) } : {}),
 			});
 			if (exception) return exception;
 		}

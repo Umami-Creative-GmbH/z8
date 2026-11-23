@@ -29,7 +29,6 @@ import type {
 } from "@/lib/approvals/inbox/types";
 
 import { ApprovalTriageReasons } from "./approval-triage-reasons";
-import { getApprovalTypeLabels } from "./approval-type-labels";
 
 interface ApprovalSprintCardProps {
 	item: ApprovalInboxItem;
@@ -293,8 +292,11 @@ function getTypeLabel(
 			);
 		case "travel_expense_report":
 			return t("approvals:sprint.types.travelExpenseReport", "Expense report");
-		default:
-			// Every other type as the inbox names it, e.g. compliance exceptions (#1977).
-			return getApprovalTypeLabels(t)[type];
+		case "absence_change_request":
+			return t("approvals:sprint.types.absenceChangeRequest", "Absence change request");
+		case "period_submission":
+			return t("approvals:sprint.types.periodSubmission", "Period submission");
+		case "compliance_exception":
+			return t("approvals:sprint.types.complianceException", "Compliance exception");
 	}
 }

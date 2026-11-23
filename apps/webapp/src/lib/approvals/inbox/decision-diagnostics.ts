@@ -1,3 +1,4 @@
+import type { ComplianceExceptionDecisionTarget } from "./compliance-exception-inbox";
 import type { PersistedApprovalRequestForDecision } from "./decision-service";
 
 export type ApprovalDecisionDiagnosticStage =
@@ -9,10 +10,13 @@ export type ApprovalDecisionDiagnosticStage =
 	| "target_authorization"
 	| "decision";
 
-type ApprovalDecisionDiagnosticTarget = Pick<
-	PersistedApprovalRequestForDecision,
-	"entityType" | "status" | "targetType" | "workflowKind"
->;
+/** The decided request as a failure log names it: an approval or a compliance exception (#1977). */
+export type ApprovalDecisionDiagnosticTarget =
+	| Pick<
+			PersistedApprovalRequestForDecision,
+			"entityType" | "status" | "targetType" | "workflowKind"
+	  >
+	| ComplianceExceptionDecisionTarget;
 
 function errorProperty(error: unknown, property: "_tag" | "code") {
 	if (!error || typeof error !== "object" || !(property in error)) return null;

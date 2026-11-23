@@ -12,17 +12,17 @@ import { employee } from "@/db/schema";
 import { coversCurrentApprover } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
 	decideComplianceExceptionForActor,
-	isComplianceExceptionInboxItem,
+	findComplianceExceptionDecisionTarget,
 } from "@/lib/approvals/inbox/compliance-exception-inbox";
 import {
 	type ApprovalDecisionDiagnosticStage,
+	type ApprovalDecisionDiagnosticTarget,
 	buildApprovalDecisionFailureLog,
 } from "@/lib/approvals/inbox/decision-diagnostics";
 import {
 	approveApprovalInboxItem,
 	canAttemptApprovalInboxDecisionTarget,
 	loadApprovalInboxDecisionTarget,
-	type PersistedApprovalRequestForDecision,
 } from "@/lib/approvals/inbox/decision-service";
 import { readReceiptExceptionAcceptanceBody } from "@/lib/approvals/inbox/receipt-exception-acceptance-body";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
@@ -86,7 +86,7 @@ export async function POST(
 ) {
 	let approvalId: string | null = null;
 	let decisionStage: ApprovalDecisionDiagnosticStage = "route";
-	let decisionTarget: PersistedApprovalRequestForDecision | null = null;
+	let decisionTarget: ApprovalDecisionDiagnosticTarget | null = null;
 	try {
 		const { id } = await params;
 		approvalId = id;
@@ -141,12 +141,12 @@ export async function POST(
 
 		// A compliance exception is decided by its own adapter (#1977, ADR-0005).
 		decisionStage = "target_lookup";
-		if (
-			await isComplianceExceptionInboxItem({
-				organizationId: currentEmployee.organizationId,
-				id,
-			})
-		) {
+		const complianceException = await findComplianceExceptionDecisionTarget({
+			organizationId: currentEmployee.organizationId,
+			id,
+		});
+		if (complianceException) {
+			decisionTarget = complianceException;
 			decisionStage = "decision";
 			const result = await decideComplianceExceptionForActor({
 				organizationId: currentEmployee.organizationId,
@@ -155,6 +155,15 @@ export async function POST(
 				canManageCompliance: ability.cannot("manage", "Compliance") === false,
 				action: "approve",
 			});
+			logger.info(
+				{
+					approvalId: id,
+					entityType: "compliance_exception",
+					entityId: id,
+					approverId: currentEmployee.id,
+				},
+				"Compliance exception approved via unified inbox",
+			);
 			return NextResponse.json({ success: true, result });
 		}
 

@@ -9,19 +9,11 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import { loadInboxCovers } from "@/lib/approvals/deputy/deputy-decision-store";
-import { resolveComplianceExceptionInboxScope } from "@/lib/approvals/inbox/compliance-exception-inbox";
 import { getApprovalInboxCounts } from "@/lib/approvals/inbox/read-service";
-import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
+import { resolveApprovalInboxViewerScope } from "@/lib/approvals/inbox/viewer-scope";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import {
-	canAccessApprovalInbox,
-	canOpenApprovalInbox,
-	ForbiddenError,
-	toHttpError,
-} from "@/lib/authorization";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -64,47 +56,15 @@ export async function GET() {
 			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 		}
 
-		const canManageApprovals = ability.cannot("manage", "Approval") === false;
-		if (!canOpenApprovalInbox(ability, currentEmployee)) {
+		// The inbox's own viewer scope, so the badge counts what the inbox lists (#1977).
+		const scope = await resolveApprovalInboxViewerScope({ ability, employee: currentEmployee });
+		if (!scope) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Managing Compliance alone counts compliance exceptions, never approvals (#1977).
-		const approverAccess = canAccessApprovalInbox(ability, currentEmployee);
-		const eligibleApprovalScopes =
-			canManageApprovals || !approverAccess
-				? []
-				: await getEligibleApprovalScopesForManager({
-						db,
-						managerEmployeeId: currentEmployee.id,
-						organizationId: currentEmployee.organizationId,
-					});
-
-		const counts = await getApprovalInboxCounts({
-			approverId: currentEmployee.id,
-			includeAllApprovers: canManageApprovals || undefined,
-			organizationId: currentEmployee.organizationId,
-			status: "pending",
-			limit: 1,
-			eligibleApprovalScopes,
-			// Counts include the approvals of absent approvers this employee covers for (#1016).
-			covering: approverAccess
-				? await loadInboxCovers(db, {
-						organizationId: currentEmployee.organizationId,
-						deputyEmployeeId: currentEmployee.id,
-						at: systemClock.nowInstant(),
-					})
-				: [],
-			...(approverAccess ? {} : { complianceExceptionsOnly: true }),
-			// Pending ArbZG compliance exceptions this employee sees (#1977, ADR-0005).
-			complianceExceptionScope: await resolveComplianceExceptionInboxScope({
-				organizationId: currentEmployee.organizationId,
-				employeeId: currentEmployee.id,
-				canManageCompliance: ability.cannot("manage", "Compliance") === false,
-			}),
-		});
+		const counts = await getApprovalInboxCounts({ ...scope, status: "pending", limit: 1 });
 
 		return NextResponse.json(counts);
 	} catch (error) {

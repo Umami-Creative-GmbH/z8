@@ -1,6 +1,15 @@
 import { type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import {
+	type Clock,
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	parseInstant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import {
 	onComplianceExceptionApproved,
@@ -56,7 +65,8 @@ export interface ComplianceExceptionInboxCountInput {
 	organizationId: string;
 	scope: ComplianceExceptionInboxScope;
 	filters?: CanonicalInboxListFilters;
-	now?: Date;
+	/** The instant validity windows are judged at; the system clock's by default. */
+	now?: Instant;
 	database?: CanonicalInboxReadDatabase;
 }
 
@@ -138,13 +148,13 @@ function scopeCondition(scope: ComplianceExceptionInboxScope): SQL {
  * An inbox status as rows: pending ones only while their validity window is open; `listable`
  * is any of the three, for opening one exception.
  */
-function statusCondition(status: ApprovalInboxStatus | "listable", now: Date): SQL {
+function statusCondition(status: ApprovalInboxStatus | "listable", at: Date): SQL {
 	switch (status) {
 		case "listable":
-			return sql`(${statusCondition("pending", now)} or ${statusCondition("approved", now)}
-				or ${statusCondition("rejected", now)})`;
+			return sql`(${statusCondition("pending", at)} or ${statusCondition("approved", at)}
+				or ${statusCondition("rejected", at)})`;
 		case "pending":
-			return sql`exception.status = 'pending' and exception.valid_until > ${now}::timestamptz`;
+			return sql`exception.status = 'pending' and exception.valid_until > ${at}::timestamptz`;
 		case "approved":
 			return sql`exception.status in ('approved', 'used')`;
 		case "rejected":
@@ -152,14 +162,15 @@ function statusCondition(status: ApprovalInboxStatus | "listable", now: Date): S
 	}
 }
 
-function filterConditions(filters: CanonicalInboxListFilters | undefined, now: Date): SQL {
+/** `at` is the judging instant as a query parameter: the database boundary. */
+function filterConditions(filters: CanonicalInboxListFilters | undefined, at: Date): SQL {
 	if (!filters) return sql``;
 	const conditions: SQL[] = [];
 	if (filters.teamId) conditions.push(sql`requester.team_id = ${filters.teamId}::uuid`);
 	if (filters.priority && filters.priority !== PRIORITY) conditions.push(sql`false`);
 	if (filters.minAgeDays) {
 		conditions.push(
-			sql`exception.created_at <= ${now}::timestamptz - ${filters.minAgeDays} * interval '1 day'`,
+			sql`exception.created_at <= ${at}::timestamptz - ${filters.minAgeDays} * interval '1 day'`,
 		);
 	}
 	if (filters.dateRange) {
@@ -186,7 +197,7 @@ function cursorCondition(cursor: ComplianceExceptionInboxLoadInput["cursor"]): S
 		PRIORITY_RANK[cursor.priority] - PRIORITY_RANK[PRIORITY];
 	if (band < 0) return sql``;
 	if (band > 0) return sql`and false`;
-	const createdAt = new Date(cursor.createdAt);
+	const createdAt = dateFromInstant(parseInstant(cursor.createdAt));
 	return sql`and (exception.created_at > ${createdAt}
 		or (exception.created_at = ${createdAt} and exception.id > ${cursor.id}::uuid))`;
 }
@@ -195,9 +206,10 @@ function candidateQuery(
 	input: Omit<ComplianceExceptionInboxLoadInput, "status"> & {
 		status: ApprovalInboxStatus | "listable";
 	},
-	now: Date,
+	now: Instant,
 	countOnly: boolean,
 ): SQL {
+	const at = dateFromInstant(now);
 	const selection = countOnly
 		? sql`count(*)::integer as "totalCount"`
 		: sql`
@@ -224,9 +236,9 @@ function candidateQuery(
 		left join "user" approver_user on approver_user.id = approver.user_id
 		where exception.organization_id = ${input.organizationId}
 			and ${scopeCondition(input.scope)}
-			and ${statusCondition(input.status, now)}
+			and ${statusCondition(input.status, at)}
 			${input.exceptionId ? sql`and exception.id = ${input.exceptionId}::uuid` : sql``}
-			${filterConditions(input.filters, now)}
+			${filterConditions(input.filters, at)}
 			${countOnly ? sql`` : cursorCondition(input.cursor)}
 		${countOnly ? sql`` : sql`order by exception.created_at, exception.id limit ${limit}`}
 	`;
@@ -277,7 +289,7 @@ function exceptionTypeOf(value: unknown): ComplianceExceptionType {
 		: "overtime_daily";
 }
 
-function toItem(row: Record<string, unknown>, now: Date): ApprovalInboxItem {
+function toItem(row: Record<string, unknown>, now: Instant): ApprovalInboxItem {
 	const createdAt = decodeApprovalDatabaseTimestamptz(row.createdAt);
 	const validFrom = decodeApprovalDatabaseTimestamptz(row.validFrom);
 	const validUntil = decodeApprovalDatabaseTimestamptz(row.validUntil);
@@ -329,7 +341,7 @@ function toItem(row: Record<string, unknown>, now: Date): ApprovalInboxItem {
 			createdAt: createdAt.toISOString(),
 			resolvedAt: resolved ? decodeApprovalDatabaseTimestamptz(resolved).toISOString() : null,
 			slaDeadline: status === "pending" ? validUntil.toISOString() : null,
-			ageDays: getAgeDays({ createdAt, now }),
+			ageDays: getAgeDays({ createdAt, now: dateFromInstant(now) }),
 		},
 		triage: triageOf(),
 		capabilities: capabilitiesOf(status),
@@ -339,7 +351,7 @@ function toItem(row: Record<string, unknown>, now: Date): ApprovalInboxItem {
 export async function loadComplianceExceptionInboxItems(
 	input: ComplianceExceptionInboxLoadInput,
 ): Promise<ComplianceExceptionInboxBatch> {
-	const now = input.now ?? new Date();
+	const now = input.now ?? systemClock.nowInstant();
 	const rows = resultRows(await readDatabase(input).execute(candidateQuery(input, now, false)));
 	return Object.assign(
 		rows.map((row) => toItem(row, now)),
@@ -384,7 +396,7 @@ const DETAIL_TEXT = {
 	rejected: { key: "approvals:approvals.complianceException.rejected", fallback: "Rejected" },
 } satisfies Record<string, ApprovalInboxLocalizedText>;
 
-function toDetail(row: Record<string, unknown>, now: Date): ApprovalInboxDetailResult {
+function toDetail(row: Record<string, unknown>, now: Instant): ApprovalInboxDetailResult {
 	const item = toItem(row, now);
 	const planned =
 		typeof row.plannedDurationMinutes === "number" ? row.plannedDurationMinutes : null;
@@ -467,11 +479,11 @@ export async function loadComplianceExceptionInboxDetail(input: {
 	organizationId: string;
 	scope: ComplianceExceptionInboxScope;
 	exceptionId: string;
-	now?: Date;
+	now?: Instant;
 	database?: CanonicalInboxReadDatabase;
 }): Promise<ApprovalInboxDetailResult | null> {
 	if (!UUID_PATTERN.test(input.exceptionId)) return null;
-	const now = input.now ?? new Date();
+	const now = input.now ?? systemClock.nowInstant();
 	const rows = resultRows(
 		await readDatabase(input).execute(candidateQuery({ ...input, status: "listable" }, now, false)),
 	);
@@ -485,7 +497,7 @@ export async function countPendingComplianceExceptions(
 ): Promise<number> {
 	const rows = resultRows(
 		await readDatabase(input).execute(
-			candidateQuery({ ...input, status: "pending" }, input.now ?? new Date(), true),
+			candidateQuery({ ...input, status: "pending" }, input.now ?? systemClock.nowInstant(), true),
 		),
 	);
 	return typeof rows[0]?.totalCount === "number" ? rows[0].totalCount : 0;
@@ -529,12 +541,14 @@ export async function decideComplianceExceptionFromInbox(input: {
 	scope: ComplianceExceptionInboxScope;
 	action: "approve" | "reject";
 	reason?: string;
-	now?: Date;
+	/** Judges the validity window and stamps the decision; the system clock by default. */
+	clock?: Clock;
 	notify?: ComplianceExceptionDecisionNotifications;
 	database?: CanonicalInboxReadDatabase;
 }): Promise<ApprovalInboxDecisionSuccess> {
 	const database = readDatabase(input);
-	const now = input.now ?? new Date();
+	const now = (input.clock ?? systemClock).nowInstant();
+	const at = dateFromInstant(now);
 	if (!UUID_PATTERN.test(input.exceptionId)) throw notFound(input.exceptionId);
 	const [target] = resultRows(
 		await database.execute(sql`
@@ -568,7 +582,7 @@ export async function decideComplianceExceptionFromInbox(input: {
 	}
 	const validUntil = decodeApprovalDatabaseTimestamptz(target.validUntil);
 	if (target.status !== "pending") throw stale(closedStatusOf(String(target.status)));
-	if (validUntil.getTime() <= now.getTime()) throw stale("expired");
+	if (compareInstants(instantFromDate(validUntil), now) <= 0) throw stale("expired");
 	const reason = input.reason?.trim();
 	if (input.action === "reject" && !reason) {
 		throw new ValidationError({ message: "Rejection reason is required", field: "reason" });
@@ -592,15 +606,15 @@ export async function decideComplianceExceptionFromInbox(input: {
 				approver_id = ${input.actorEmployeeId}::uuid,
 				${
 					input.action === "approve"
-						? sql`approved_at = ${now}::timestamptz`
-						: sql`rejected_at = ${now}::timestamptz, rejection_reason = ${reason}`
+						? sql`approved_at = ${at}::timestamptz`
+						: sql`rejected_at = ${at}::timestamptz, rejection_reason = ${reason}`
 				},
-				updated_at = ${now}::timestamptz
+				updated_at = ${at}::timestamptz
 			where organization_id = ${input.organizationId}
 				and id = ${input.exceptionId}::uuid
 				and employee_id <> ${input.actorEmployeeId}::uuid
 				and status = 'pending'
-				and valid_until > ${now}::timestamptz
+				and valid_until > ${at}::timestamptz
 			returning id
 		`),
 	);
@@ -637,12 +651,38 @@ function userNameOf(row: Record<string, unknown>) {
 	};
 }
 
-/** Whether an inbox item id names one of the organization's compliance exceptions. */
-export async function isComplianceExceptionInboxItem(input: {
+/** A compliance exception as an inbox route's decision logs name it. */
+export interface ComplianceExceptionDecisionTarget {
+	entityType: "compliance_exception";
+	targetType: "compliance_exception";
+	status: string;
+	workflowKind: null;
+}
+
+/**
+ * The organization's compliance exception this inbox item id names, whatever its status, or
+ * null for any other id. It says nothing about who may see or decide it.
+ */
+export async function findComplianceExceptionDecisionTarget(input: {
 	organizationId: string;
 	id: string;
-}): Promise<boolean> {
-	return (await findComplianceExceptionIds({ ...input, ids: [input.id] })).has(input.id);
+	database?: CanonicalInboxReadDatabase;
+}): Promise<ComplianceExceptionDecisionTarget | null> {
+	if (!UUID_PATTERN.test(input.id)) return null;
+	const [row] = resultRows(
+		await readDatabase(input).execute(sql`
+			select status from compliance_exception
+			where organization_id = ${input.organizationId} and id = ${input.id}::uuid
+		`),
+	);
+	return row
+		? {
+				entityType: "compliance_exception",
+				targetType: "compliance_exception",
+				status: String(row.status),
+				workflowKind: null,
+			}
+		: null;
 }
 
 /**

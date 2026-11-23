@@ -23,7 +23,7 @@ const mockState = vi.hoisted(() => ({
 	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 	approveApprovalInboxItem: vi.fn(),
 	coversCurrentApprover: vi.fn(async () => false),
-	isComplianceExceptionInboxItem: vi.fn(async () => false),
+	findComplianceExceptionDecisionTarget: vi.fn(async (): Promise<unknown> => null),
 	decideComplianceExceptionForActor: vi.fn(),
 	logger: {
 		info: vi.fn(),
@@ -32,7 +32,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/approvals/inbox/compliance-exception-inbox", () => ({
-	isComplianceExceptionInboxItem: mockState.isComplianceExceptionInboxItem,
+	findComplianceExceptionDecisionTarget: mockState.findComplianceExceptionDecisionTarget,
 	decideComplianceExceptionForActor: mockState.decideComplianceExceptionForActor,
 }));
 
@@ -117,6 +117,13 @@ vi.mock("@/lib/logger", () => ({
 
 const { POST } = await import("./route");
 
+const pendingException = {
+	entityType: "compliance_exception",
+	targetType: "compliance_exception",
+	status: "pending",
+	workflowKind: null,
+};
+
 function createRequest(): NextRequest {
 	return {
 		headers: new Headers(),
@@ -149,6 +156,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(false);
+		mockState.coversCurrentApprover.mockResolvedValue(false);
 		mockState.headers.mockResolvedValue(new Headers());
 		mockState.getSession.mockResolvedValue({
 			user: { id: "user-1" },
@@ -176,7 +184,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 			type: "absence_entry",
 			status: "approved",
 		});
-		mockState.isComplianceExceptionInboxItem.mockResolvedValue(false);
+		mockState.findComplianceExceptionDecisionTarget.mockResolvedValue(null);
 	});
 
 	describe("compliance exceptions (#1977)", () => {
@@ -200,7 +208,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 				organizationId: "org-1",
 				role: "employee",
 			});
-			mockState.isComplianceExceptionInboxItem.mockResolvedValue(true);
+			mockState.findComplianceExceptionDecisionTarget.mockResolvedValue(pendingException);
 		});
 
 		it("approves through the compliance exception adapter, never an approval request", async () => {
@@ -219,7 +227,7 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 				success: true,
 				result: { id: "exception-1", type: "compliance_exception", status: "approved" },
 			});
-			expect(mockState.isComplianceExceptionInboxItem).toHaveBeenCalledWith({
+			expect(mockState.findComplianceExceptionDecisionTarget).toHaveBeenCalledWith({
 				organizationId: "org-1",
 				id: "exception-1",
 			});
@@ -249,8 +257,84 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 			await expect(response.json()).resolves.toEqual({ error: error.message });
 		});
 
+		it("logs the approval with the approver and the exception", async () => {
+			mockState.decideComplianceExceptionForActor.mockResolvedValue({
+				id: "exception-1",
+				type: "compliance_exception",
+				status: "approved",
+			});
+
+			await POST(createRequest(), { params: Promise.resolve({ id: "exception-1" }) });
+
+			expect(mockState.logger.info).toHaveBeenCalledWith(
+				{
+					approvalId: "exception-1",
+					entityType: "compliance_exception",
+					entityId: "exception-1",
+					approverId: "employee-1",
+				},
+				"Compliance exception approved via unified inbox",
+			);
+		});
+
+		it("logs a failed decision with its compliance exception target", async () => {
+			const error = new Error("connection reset");
+			mockState.decideComplianceExceptionForActor.mockRejectedValue(error);
+
+			const response = await POST(createRequest(), {
+				params: Promise.resolve({ id: "exception-1" }),
+			});
+
+			expect(response.status).toBe(500);
+			expect(mockState.logger.error).toHaveBeenCalledWith(
+				{
+					err: error,
+					action: "approve",
+					approvalId: "exception-1",
+					decisionStage: "decision",
+					entityType: "compliance_exception",
+					targetType: "compliance_exception",
+					requestStatus: "pending",
+				},
+				"Failed to approve",
+			);
+		});
+
+		it("never lets a deputy covering for the exception's manager approve it", async () => {
+			mockState.getAbility.mockResolvedValue(createManagerAbility());
+			mockState.findEmployee.mockResolvedValue({
+				id: "employee-1",
+				organizationId: "org-1",
+				role: "manager",
+			});
+			mockState.coversCurrentApprover.mockResolvedValue(true);
+			mockState.decideComplianceExceptionForActor.mockRejectedValue(
+				new NotFoundError({
+					message: "Approval not found",
+					entityType: "compliance_exception",
+					entityId: "exception-1",
+				}),
+			);
+
+			const response = await POST(createRequest(), {
+				params: Promise.resolve({ id: "exception-1" }),
+			});
+
+			expect(response.status).toBe(404);
+			// The exception's own scope decides; a cover grants nothing here.
+			expect(mockState.coversCurrentApprover).not.toHaveBeenCalled();
+			expect(mockState.decideComplianceExceptionForActor).toHaveBeenCalledWith({
+				organizationId: "org-1",
+				exceptionId: "exception-1",
+				actorEmployeeId: "employee-1",
+				canManageCompliance: false,
+				action: "approve",
+			});
+			expect(mockState.approveApprovalInboxItem).not.toHaveBeenCalled();
+		});
+
 		it("refuses an ordinary request to an employee who only manages Compliance", async () => {
-			mockState.isComplianceExceptionInboxItem.mockResolvedValue(false);
+			mockState.findComplianceExceptionDecisionTarget.mockResolvedValue(null);
 			// A leftover assignment: managing Compliance never makes them an approver.
 			mockState.findApprovalRequest.mockResolvedValue({
 				id: "approval-1",

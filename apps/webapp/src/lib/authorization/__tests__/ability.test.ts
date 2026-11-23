@@ -519,8 +519,18 @@ describe("Approval Inbox opening (#1977)", () => {
 	});
 
 	it("needs the employee principal even with manage Compliance", () => {
-		const ability = createEmptyAbility();
-		expect(canOpenApprovalInbox(ability, employee)).toBe(false);
+		const ability = defineAbilityFor(
+			createPrincipal({
+				orgMembership: { organizationId: ORG_1, role: "admin", status: "active" },
+				employee: { ...employee, teamId: TEAM_1 },
+			}),
+		);
+		// The same employee id in another organization is not this principal.
+		const foreign = { ...employee, organizationId: ORG_2 };
+
+		expect(ability.can("manage", "Compliance")).toBe(true);
+		expect(canOpenApprovalInbox(ability, employee)).toBe(true);
+		expect(canOpenApprovalInbox(ability, foreign)).toBe(false);
 	});
 });
 

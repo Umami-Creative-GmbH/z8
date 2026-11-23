@@ -12,16 +12,16 @@ import { employee } from "@/db/schema";
 import { coversCurrentApprover } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
 	decideComplianceExceptionForActor,
-	isComplianceExceptionInboxItem,
+	findComplianceExceptionDecisionTarget,
 } from "@/lib/approvals/inbox/compliance-exception-inbox";
 import {
 	type ApprovalDecisionDiagnosticStage,
+	type ApprovalDecisionDiagnosticTarget,
 	buildApprovalDecisionFailureLog,
 } from "@/lib/approvals/inbox/decision-diagnostics";
 import {
 	canAttemptApprovalInboxDecisionTarget,
 	loadApprovalInboxDecisionTarget,
-	type PersistedApprovalRequestForDecision,
 	rejectApprovalInboxItem,
 } from "@/lib/approvals/inbox/decision-service";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
@@ -74,7 +74,7 @@ export async function POST(
 ) {
 	let approvalId: string | null = null;
 	let decisionStage: ApprovalDecisionDiagnosticStage = "route";
-	let decisionTarget: PersistedApprovalRequestForDecision | null = null;
+	let decisionTarget: ApprovalDecisionDiagnosticTarget | null = null;
 	try {
 		const { id } = await params;
 		approvalId = id;
@@ -128,20 +128,16 @@ export async function POST(
 
 		// A compliance exception is decided by its own adapter (#1977, ADR-0005).
 		decisionStage = "target_lookup";
-		if (
-			await isComplianceExceptionInboxItem({
-				organizationId: currentEmployee.organizationId,
-				id,
-			})
-		) {
+		const complianceException = await findComplianceExceptionDecisionTarget({
+			organizationId: currentEmployee.organizationId,
+			id,
+		});
+		if (complianceException) {
+			decisionTarget = complianceException;
 			const body = await request.json().catch(() => ({}));
 			const reason = typeof body.reason === "string" ? body.reason : "";
-			if (!reason.trim()) {
-				return NextResponse.json(
-					{ error: "Rejection reason is required" },
-					{ status: 400 },
-				);
-			}
+			// The adapter checks scope, self-decision and staleness before the reason, so a
+			// blank reason never tells which ids are compliance exceptions.
 			decisionStage = "decision";
 			const result = await decideComplianceExceptionForActor({
 				organizationId: currentEmployee.organizationId,
@@ -151,6 +147,16 @@ export async function POST(
 				action: "reject",
 				reason,
 			});
+			logger.info(
+				{
+					approvalId: id,
+					entityType: "compliance_exception",
+					entityId: id,
+					approverId: currentEmployee.id,
+					reason,
+				},
+				"Compliance exception rejected via unified inbox",
+			);
 			return NextResponse.json({ success: true, result });
 		}
 

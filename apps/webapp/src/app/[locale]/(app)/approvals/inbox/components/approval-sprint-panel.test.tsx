@@ -88,22 +88,21 @@ describe("ApprovalSprintPanel", () => {
 		rejectMutation.mockReset();
 	});
 
-	it("names a compliance exception's type on its card (#1977)", () => {
+	it.each([
+		["compliance_exception", "Compliance exception"],
+		["period_submission", "Period submission"],
+		["absence_change_request", "Absence change request"],
+	] as const)("names one %s on its card in the singular (#1977)", (type, label) => {
 		render(
 			<ApprovalSprintPanel
 				open={true}
-				items={[
-					{
-						...createApproval("exception-1", "Ada Lovelace", "ArbZG exception: Rest Period"),
-						type: "compliance_exception",
-					},
-				]}
+				items={[{ ...createApproval("item-1", "Ada Lovelace", "Pending item"), type }]}
 				onOpenChange={vi.fn()}
 				onActioned={vi.fn()}
 			/>,
 		);
 
-		expect(screen.getByText("Compliance Exceptions")).toBeTruthy();
+		expect(screen.getByText(label)).toBeTruthy();
 	});
 
 	it("advances to the next approval after successful approval", async () => {
