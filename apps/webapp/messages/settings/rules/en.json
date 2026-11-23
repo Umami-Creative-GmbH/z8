@@ -16,6 +16,10 @@
       "createCategoryButton": "Create Category",
       "deactivate": "Deactivate",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Calendar note that an External Contractor is unavailable; not vacation or leave",
+          "name": "Unavailable (External Contractor)"
+        },
         "timeOffInLieu": {
           "description": "Time off taken against the work balance",
           "name": "Time off in lieu"
@@ -59,6 +63,7 @@
         "translations": "Translations",
         "translationsHelp": "Optional localized labels for employees using another app language.",
         "type": "Type",
+        "typeContractorUnavailability": "External Contractor unavailability",
         "typeHelp": "Groups reports and downstream absence workflows.",
         "typePlaceholder": "Select category type",
         "typeTimeOffInLieu": "Time Off in Lieu"

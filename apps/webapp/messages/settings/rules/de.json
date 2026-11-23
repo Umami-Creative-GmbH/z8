@@ -16,6 +16,10 @@
       "createCategoryButton": "Kategorie erstellen",
       "deactivate": "Deaktivieren",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Kalenderhinweis, dass ein Externer Dienstleister nicht verfügbar ist; kein Urlaub und keine Abwesenheit",
+          "name": "Nicht verfügbar (Externer Dienstleister)"
+        },
         "timeOffInLieu": {
           "description": "Vom Arbeitszeitsaldo abgezogene Abwesenheit",
           "name": "Freizeitausgleich"
@@ -59,6 +63,7 @@
         "translations": "Übersetzungen",
         "translationsHelp": "Optionale lokalisierte Bezeichnungen für Mitarbeiter, die eine andere App-Sprache verwenden.",
         "type": "Typ",
+        "typeContractorUnavailability": "Nichtverfügbarkeit Externer Dienstleister",
         "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheits-Workflows.",
         "typePlaceholder": "Kategorietyp auswählen",
         "typeTimeOffInLieu": "Freizeitausgleich"

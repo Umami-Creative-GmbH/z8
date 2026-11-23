@@ -134,7 +134,11 @@ function layOutAbsences(
 	sources: readonly PayrollPeriodAbsenceSource[],
 	period: { startDate: string; endDate: string },
 ): (PayrollPeriodAbsence & { marks: AbsenceMark[] })[] {
-	return sources
+	// An External Contractor's unavailability is never a payroll absence (#1996).
+	const payrollSources = sources.filter(
+		(source) => source.categoryType !== "contractor_unavailability",
+	);
+	return payrollSources
 		.map((source) => {
 			const marks = buildPayrollAbsenceDetails([source], {
 				start: period.startDate,

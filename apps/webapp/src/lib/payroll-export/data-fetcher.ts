@@ -2,7 +2,7 @@
  * Data fetcher for payroll export
  * Fetches work periods, absences, and configuration from database
  */
-import { and, asc, eq, gt, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNotNull, isNull, lte, ne, or } from "drizzle-orm";
 import {
 	absenceCategory,
 	db,
@@ -312,7 +312,11 @@ export async function fetchAbsencesForExport(
 
 	logger.info({ count: absences.length }, "Fetched absences for payroll export");
 
-	return absences.map((a) => {
+	// An External Contractor's unavailability is a calendar marker, never a payroll absence (#1996).
+	const payrollAbsences = absences.filter(
+		(a) => a.absence?.absenceCategory?.type !== "contractor_unavailability",
+	);
+	return payrollAbsences.map((a) => {
 		// Wall clock encoded as UTC; an exclusive next-midnight end (canonical backfill of
 		// legacy entries) belongs to the day before.
 		const { startDate, endDate } = absenceRecordDates({
@@ -509,6 +513,8 @@ export async function getAbsenceCategories(organizationId: string) {
 		where: and(
 			eq(absenceCategory.organizationId, organizationId),
 			eq(absenceCategory.isActive, true),
+			// An External Contractor's unavailability is never a payroll absence (#1996).
+			ne(absenceCategory.type, "contractor_unavailability"),
 		),
 		columns: {
 			id: true,

@@ -72,7 +72,8 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 	] = await Promise.all([
 		getVacationBalanceResult(employee.id, calendarYear, timezone),
 		readAbsenceCalendarYear(employee.id, recordYear),
-		getAbsenceCategories(employee.organizationId),
+		// An External Contractor records only unavailability (#1996).
+		getAbsenceCategories(employee.organizationId, { engagementKind: employee.engagementKind }),
 	]);
 
 	return (
