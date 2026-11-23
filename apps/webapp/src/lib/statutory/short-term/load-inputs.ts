@@ -568,11 +568,12 @@ export async function loadShortTermInputs(
 			const inProgress: DatedWork["inProgress"] =
 				work.end !== null ? null : running ? { shiftId: running.id } : "unplanned";
 			const belongs = shiftsOfWork.get(work);
+			// A later shift the work has not reached yet (an open clock-in up to two hours before it)
+			// gets no part: its day counts through the shift itself.
 			const parts = belongs
-				? splitWorkAtShiftStarts(work, belongs, input.now, minuteGrid).map((part) => ({
-						date: part.shift.date,
-						minutes: part.minutes,
-					}))
+				? splitWorkAtShiftStarts(work, belongs, input.now, minuteGrid)
+						.filter((part, index) => index === 0 || part.minutes > 0)
+						.map((part) => ({ date: part.shift.date, minutes: part.minutes }))
 				: [{ date: plainDateAt(work.start, input.timezone).toString(), minutes: work.minutes }];
 			for (const part of parts) {
 				if (inYears(part.date)) dated.push({ ...work, ...part, inProgress });
