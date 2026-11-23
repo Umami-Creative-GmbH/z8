@@ -337,6 +337,48 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		).toEqual([[`shift:${shiftId}`, 0]]);
 	});
 
+	it.each([
+		["while it runs", "10:00", 1],
+		["after it ended", "15:00", 0],
+	])(
+		"judges a shift reassigned %s on its own day as a call-in accordingly",
+		async (_when, reassignedAtTime, expected) => {
+			const org = await onCall.organization("a");
+			const regular = await fx.employee(org, "regular");
+			await onCall.regularTerms(org, regular);
+			const onCallWorker = await fx.employee(org, "oncall");
+			await onCall.onCallTerms(org, onCallWorker, { kind: "unspecified" });
+			// Tuesday 08:00–11:00, published well ahead to a regular employee.
+			const shiftId = await onCall.shift(org, {
+				employeeId: regular.employeeId,
+				date: "2026-03-10",
+				startTime: "08:00",
+				endTime: "11:00",
+				publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+				assignmentChangedAt: localInstant("2026-03-01", "10:00", org.timezone),
+			});
+			// A correction after the shift is over records who worked it; it calls nobody in.
+			await at(localInstant("2026-03-10", reassignedAtTime, org.timezone), () =>
+				upsert(org, {
+					id: shiftId,
+					employeeId: onCallWorker.employeeId,
+					date: "2026-03-10",
+					startTime: "08:00",
+					endTime: "11:00",
+				}),
+			);
+
+			const findings = await evaluateOnCallFindings(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-10", endExclusive: "2026-03-11" },
+				employeeIds: [onCallWorker.employeeId],
+				now: localInstant("2026-03-10", "16:00", org.timezone),
+			});
+			expect(findings.filter((f) => f.kind === "on_call_short_notice")).toHaveLength(expected);
+		},
+	);
+
 	it("keeps a short-notice agreement current when the started shift's end is corrected", async () => {
 		const org = await onCall.organization("a");
 		const hr = await fx.user("hr");

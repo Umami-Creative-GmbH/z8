@@ -32,7 +32,9 @@ export function isMaterialShiftAssignmentChange(
  * Whether an edit is a new call-in whose notification instant is `now`: a new assignee at any
  * time (the employee taking over learns of the call now), or a material change to a shift that
  * has not started yet. Correcting the times of a shift once it has started (its recorded end, say)
- * announces nothing, so the notification instant of the call stays as it was.
+ * announces nothing, so the notification instant of the call stays as it was. A new assignee
+ * stamped after the shift has ended is a record of who worked it, not a call-in: the on-call
+ * monitor judges notice only for an announcement made before the shift's end.
  */
 export function isNewShiftCallIn(
 	before: ShiftAssignment | null | undefined,

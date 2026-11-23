@@ -143,9 +143,11 @@ function noticeFinding(
 		},
 		now,
 	);
+	// Work recorded or planned after the fact is not a call-in: a shift assigned once it has ended
+	// (a correction of who worked it) calls nobody in, whether on its own day or later. One assigned
+	// while it runs still is.
+	if (compareInstants(notifiedAt, shiftInterval(shift, timezone).end) >= 0) return null;
 	const notifiedOn = notificationDay(notifiedAt, timezone);
-	// Work recorded or planned after the fact is not a call-in.
-	if (comparePlainDates(notifiedOn, shift.date) > 0) return null;
 	const fullDays = Math.max(0, fullNoticeDays(notifiedOn, shift.date));
 	if (fullDays >= required) return null;
 	const subjectKey = shiftSubject(shift);
