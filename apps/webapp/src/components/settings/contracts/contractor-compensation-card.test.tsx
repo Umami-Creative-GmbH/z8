@@ -62,6 +62,7 @@ function record(
 		employeeId,
 		activeEngagementKind: "contractor",
 		contractorEngagementId: "p1",
+		hadContractorEngagement: true,
 		earliestTermsDate: "2026-01-05",
 		today: "2026-11-23",
 		history: [
@@ -171,10 +172,35 @@ describe("contractor compensation card", () => {
 		await waitFor(() => expect(screen.queryByText("In effect")).toBeNull());
 	});
 
-	it("renders nothing for an employee without contractor terms", async () => {
+	it("offers the statement of a former contractor who never had terms", async () => {
+		// Their work is unpriced, but still worth a statement.
 		actions.read.mockResolvedValue({
 			success: true,
-			data: record({ activeEngagementKind: "employee", history: [], details: null }),
+			data: record({
+				activeEngagementKind: "employee",
+				contractorEngagementId: null,
+				history: [],
+				termsInEffectId: null,
+				details: null,
+			}),
+		});
+		renderCard();
+
+		expect(await screen.findByText("Time & fee statement")).toBeTruthy();
+		expect(screen.getByRole("button", { name: /Download statement/ })).toBeTruthy();
+	});
+
+	it("renders nothing for an employee who was never a contractor", async () => {
+		actions.read.mockResolvedValue({
+			success: true,
+			data: record({
+				activeEngagementKind: "employee",
+				contractorEngagementId: null,
+				hadContractorEngagement: false,
+				history: [],
+				termsInEffectId: null,
+				details: null,
+			}),
 		});
 		const { container } = renderCard();
 

@@ -9,7 +9,9 @@ import {
 	loadContractorEngagements,
 	priceContractorDays,
 } from "@/lib/contractor-compensation/pricing-loader";
+import type { ContractorEngagement } from "@/lib/contractor-compensation/pricing";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	buildContractorStatement,
@@ -81,8 +83,11 @@ export async function loadContractorStatement(
 	if (!person) return { ok: false, reason: "employee_not_found" };
 
 	const range = { employeeIds: [person.id], ...period };
+	// The loader's window is a wide pre-filter; decide on the exact instants.
 	const engagements = await loadContractorEngagements(reader, organizationId, range);
-	if (engagements.length === 0) return { ok: false, reason: "not_contractor" };
+	if (!engagements.some((engagement) => engagementMeetsPeriod(engagement, period))) {
+		return { ok: false, reason: "not_contractor" };
+	}
 
 	// One query at a time: the reader may be a transaction's single connection.
 	const pricing = await priceContractorDays(reader, organizationId, range);
@@ -124,6 +129,29 @@ export async function loadContractorStatement(
 			work,
 		}),
 	};
+}
+
+/** The furthest captured offsets Z8 accepts (±14:00), as the terms store bounds them. */
+const EASTERNMOST_OFFSET = offsetMinutesToTimeZoneId(840);
+const WESTERNMOST_OFFSET = offsetMinutesToTimeZoneId(-840);
+
+/**
+ * Whether work inside the engagement can fall on a day of the period. The
+ * engine counts work on the contractor's local day at their captured offset,
+ * so the period's days span from its first day's start at the easternmost
+ * offset to its last day's end at the westernmost: an edge day in another
+ * time zone than the organization's is never refused.
+ */
+function engagementMeetsPeriod(
+	engagement: ContractorEngagement,
+	period: { fromDay: PlainDate; toDay: PlainDate },
+): boolean {
+	const start = period.fromDay.toZonedDateTime(EASTERNMOST_OFFSET).toInstant();
+	const end = period.toDay.add({ days: 1 }).toZonedDateTime(WESTERNMOST_OFFSET).toInstant();
+	return (
+		(engagement.startedAt === null || Temporal.Instant.compare(engagement.startedAt, end) < 0) &&
+		(engagement.endedAt === null || Temporal.Instant.compare(engagement.endedAt, start) > 0)
+	);
 }
 
 async function loadWorkDetails(

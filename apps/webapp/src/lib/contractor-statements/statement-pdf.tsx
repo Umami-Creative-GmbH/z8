@@ -10,7 +10,12 @@ import {
 	statementLabels,
 	unitLabel,
 } from "./labels";
-import type { ContractorStatement, StatementDay, StatementLine } from "./statement";
+import {
+	type ContractorStatement,
+	STATEMENT_UNIT_SCALE,
+	type StatementDay,
+	type StatementLine,
+} from "./statement";
 
 /**
  * The Contractor Time & Fee Statement as PDF (#2000): the same statement as
@@ -43,10 +48,11 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 		fontFamily: "Helvetica-Bold",
 	},
-	details: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
-	detail: { width: "50%", flexDirection: "row", marginBottom: 2 },
-	detailLabel: { width: 120, color: muted },
-	detailValue: { flex: 1 },
+	details: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8, marginRight: -16 },
+	// A gutter between the columns; long names, companies and references wrap in their cell.
+	detail: { width: "50%", flexDirection: "row", marginBottom: 3, paddingRight: 16 },
+	detailLabel: { width: 132, flexShrink: 0, paddingRight: 8, color: muted },
+	detailValue: { flex: 1, minWidth: 0 },
 	note: { color: muted, fontSize: 7.5, marginBottom: 10 },
 	heading: { fontSize: 11, fontFamily: "Helvetica-Bold", marginTop: 12, marginBottom: 5 },
 	tableHeader: {
@@ -74,15 +80,17 @@ const styles = StyleSheet.create({
 		fontFamily: "Helvetica-Bold",
 	},
 	colDate: { width: 78 },
-	colTime: { width: 62 },
+	colTime: { width: 112, paddingRight: 6 },
 	colWork: { flex: 1, paddingRight: 6 },
 	colWorked: { width: 52, textAlign: "right" },
-	colUnits: { width: 62, textAlign: "right" },
+	colUnits: { width: 72, textAlign: "right" },
 	colAmount: { width: 68, textAlign: "right" },
 	subtle: { color: muted, fontFamily: "Helvetica" },
 	footer: {
 		position: "absolute",
-		bottom: 22,
+		// A fixed top (A4 is 841.89 pt high): react-pdf drops a bottom-anchored
+		// footer from pages the content flows over.
+		top: 812,
 		left: 36,
 		right: 36,
 		fontSize: 7,
@@ -103,13 +111,19 @@ function formatter(locale: string, labels: StatementLabels): Format {
 	return {
 		date: (iso) => formatPlainDate(Temporal.PlainDate.from(iso), locale, "dateMedium"),
 		money: (amount, currency) => formatBillableAmount(locale, amount, currency),
-		units: (units, unit) => `${formatBillableHours(locale, units, 2)} ${unitLabel(labels, unit)}`,
+		// The statement's own scale (as in the CSV), so days and totals add up as printed.
+		units: (units, unit) =>
+			`${formatBillableHours(locale, units, STATEMENT_UNIT_SCALE)} ${unitLabel(labels, unit)}`,
 		hours: (minutes) => `${formatBillableHours(locale, minutes / 60, 2)} h`,
 	};
 }
 
-/** "09:00–12:00" from the line's local start and end. */
-const timeRange = (line: StatementLine) => `${line.start.slice(11, 16)}–${line.end.slice(11, 16)}`;
+/**
+ * "09:00–12:00 UTC+01:00": the line's local start and end with the offset the
+ * work recorded (both are at the start's offset, see `statement.ts`).
+ */
+const timeRange = (line: StatementLine) =>
+	`${line.start.slice(11, 16)}–${line.end.slice(11, 16)} UTC${line.start.slice(16)}`;
 
 function Detail({ label, value }: { label: string; value: string | null }) {
 	if (!value) return null;
@@ -141,9 +155,11 @@ function DayRows({
 				.filter(Boolean)
 				.join(" · ")
 		: labels.noRate;
+	// A day may span pages (many work lines); only a single row never breaks, and
+	// the day's header row keeps at least its first line with it.
 	return (
-		<View wrap={false}>
-			<View style={styles.dayRow}>
+		<View>
+			<View style={styles.dayRow} wrap={false} minPresenceAhead={14}>
 				<Text style={styles.colDate}>{format.date(day.date)}</Text>
 				<Text style={[styles.colTime, styles.subtle]} />
 				<Text style={[styles.colWork, styles.subtle]}>{terms}</Text>
@@ -156,7 +172,7 @@ function DayRows({
 				</Text>
 			</View>
 			{day.lines.map((line) => (
-				<View key={`${line.workId}-${line.start}`} style={styles.lineRow}>
+				<View key={`${line.workId}-${line.start}`} style={styles.lineRow} wrap={false}>
 					<Text style={styles.colDate} />
 					<Text style={styles.colTime}>{timeRange(line)}</Text>
 					<Text style={styles.colWork}>
@@ -219,7 +235,7 @@ export async function renderContractorStatementPdf(
 					<View>
 						<View style={styles.tableHeader} fixed>
 							<Text style={styles.colDate}>{labels.date}</Text>
-							<Text style={styles.colTime}>{labels.start}</Text>
+							<Text style={styles.colTime}>{labels.time}</Text>
 							<Text style={styles.colWork}>
 								{labels.project} / {labels.task}
 							</Text>
@@ -240,10 +256,12 @@ export async function renderContractorStatementPdf(
 				)}
 
 				{statement.totals.length > 0 && (
-					<View wrap={false}>
-						<Text style={styles.heading}>{labels.totals}</Text>
+					<View>
+						<Text style={styles.heading} minPresenceAhead={24}>
+							{labels.totals}
+						</Text>
 						{statement.totals.map((total) => (
-							<View key={total.currency} style={styles.totalRow}>
+							<View key={total.currency} style={styles.totalRow} wrap={false}>
 								<Text style={styles.colDate}>{labels.rowTotal}</Text>
 								<Text style={styles.colTime}>{total.currency}</Text>
 								<Text style={[styles.colWork, styles.subtle]}>
@@ -263,10 +281,16 @@ export async function renderContractorStatementPdf(
 				)}
 
 				{statement.projects.length > 0 && (
-					<View wrap={false}>
-						<Text style={styles.heading}>{labels.byProject}</Text>
+					<View>
+						<Text style={styles.heading} minPresenceAhead={24}>
+							{labels.byProject}
+						</Text>
 						{statement.projects.map((project) => (
-							<View key={`${project.projectName ?? ""}-${project.currency}`} style={styles.lineRow}>
+							<View
+								key={`${project.projectName ?? ""}-${project.currency}`}
+								style={styles.lineRow}
+								wrap={false}
+							>
 								<Text style={styles.colWork}>{project.projectName ?? labels.noProject}</Text>
 								<Text style={styles.colWorked}>{format.hours(project.workedMinutes)}</Text>
 								<Text style={styles.colAmount}>

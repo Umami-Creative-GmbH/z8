@@ -168,6 +168,29 @@ describe("contractor statement CSV", () => {
 		]);
 	});
 
+	it("writes number-like project and task names as text, never as numbers", () => {
+		const base = sampleStatement();
+		const day = base.days[0];
+		const csv = contractorStatementCsv(
+			sampleStatement({
+				days: [
+					{
+						...day,
+						lines: [{ ...day.lines[0], projectName: "0042", taskName: "-1.50" }],
+					},
+				],
+			}),
+			{ t: catalogT("en") },
+		);
+		const workRow = csv.split("\r\n").find((line) => line.startsWith('"Work"'));
+		expect(workRow).toContain(',"0042",');
+		// A leading minus is also formula-neutralized.
+		expect(workRow).toContain(`,"'-1.50",`);
+		// Figures stay numbers.
+		expect(workRow).toMatch(/,180,/);
+		expect(workRow).toMatch(/,400\.00$/);
+	});
+
 	it("is written in German for a German exporter", () => {
 		const csv = contractorStatementCsv(sampleStatement(), { t: catalogT("de") });
 		const table = rows(csv);

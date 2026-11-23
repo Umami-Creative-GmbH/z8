@@ -188,8 +188,8 @@ export interface ContractorCompensationCardProps {
 /**
  * An External Contractor's compensation (#1998): effective-dated hourly or
  * daily terms and the contracting company, VAT ID and PO reference. Org admins
- * only; the actions refuse everyone else. Renders nothing for an employee
- * without contractor terms on record.
+ * only; the actions refuse everyone else. Renders nothing for someone who
+ * never had a contractor engagement.
  */
 export function ContractorCompensationCard({
 	employeeId,
@@ -218,7 +218,9 @@ export function ContractorCompensationCard({
 	});
 
 	const data = record.data;
-	if (data && data.activeEngagementKind !== "contractor" && data.history.length === 0) return null;
+	// Anyone who was ever a contractor keeps the card: earlier terms and, even
+	// without any, the statement of their (then unpriced) contractor work.
+	if (data && !data.hadContractorEngagement) return null;
 	// On an employee's detail page whether the card applies is unknown until the
 	// record arrives, so it shows nothing meanwhile; a bare panel is opened for a
 	// known contractor and shows the loading state.

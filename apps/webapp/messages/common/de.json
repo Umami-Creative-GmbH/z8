@@ -616,6 +616,7 @@
       "rowType": "Zeilenart",
       "start": "Beginn",
       "task": "Aufgabe",
+      "time": "Uhrzeit (lokal)",
       "unit": "Einheit",
       "units": "Einheiten",
       "workedMinutes": "Gearbeitete Minuten"

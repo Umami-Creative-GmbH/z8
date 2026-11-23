@@ -20,12 +20,15 @@ import type { ContractorStatement } from "./statement";
  * Pure and client-safe.
  */
 
-const NUMBER = /^-?\d+(?:\.\d+)?$/;
+const FIGURE = /^-?\d+(?:\.\d+)?$/;
 
-/** A number written unquoted; anything else as text. */
-function cell(value: string | number | null | undefined): string {
+/** A text cell, always quoted (and formula-safe), even when it looks like a number: "0042". */
+const cell = (value: string | null | undefined): string => csvText(value ?? "");
+
+/** One of the statement's own figures (minutes, rate, units, amount), unquoted. */
+function figure(value: string | number | null | undefined): string {
 	if (typeof value === "number") return String(value);
-	if (value && NUMBER.test(value)) return value;
+	if (value && FIGURE.test(value)) return value;
 	return csvText(value ?? "");
 }
 
@@ -80,15 +83,15 @@ export function contractorStatementCsv(
 			cell(""),
 			cell(""),
 			cell(""),
-			cell(day.workedMinutes),
+			figure(day.workedMinutes),
 			cell(""),
 			cell(pricing ? basisLabel(labels, pricing.basis) : labels.noRate),
 			cell(pricing?.dayUnitRule ? dayUnitRuleLabel(t, pricing.dayUnitRule) : ""),
-			cell(pricing?.rate),
+			figure(pricing?.rate),
 			cell(pricing?.currency),
-			cell(pricing?.units),
+			figure(pricing?.units),
 			cell(pricing ? unitLabel(labels, pricing.unit) : ""),
-			cell(pricing?.amount),
+			figure(pricing?.amount),
 		]);
 		for (const line of day.lines) {
 			rows.push([
@@ -98,7 +101,7 @@ export function contractorStatementCsv(
 				cell(line.end),
 				cell(line.projectName),
 				cell(line.taskName),
-				cell(line.workedMinutes),
+				figure(line.workedMinutes),
 				cell(line.awaitingApproval ? labels.yes : labels.no),
 				cell(""),
 				cell(""),
@@ -106,7 +109,7 @@ export function contractorStatementCsv(
 				cell(pricing?.currency),
 				cell(""),
 				cell(""),
-				cell(line.amount),
+				figure(line.amount),
 			]);
 		}
 	}
@@ -122,22 +125,22 @@ export function contractorStatementCsv(
 			cell(""),
 			cell(""),
 			cell(""),
-			cell(total.workedMinutes),
+			figure(total.workedMinutes),
 			cell(""),
 			cell(""),
 			cell(""),
 			cell(""),
 			cell(total.currency),
-			cell(single ? (hasHours ? total.hours : total.days) : ""),
+			figure(single ? (hasHours ? total.hours : total.days) : ""),
 			cell(single ? (hasHours ? labels.hours : labels.days) : ""),
-			cell(total.amount),
+			figure(total.amount),
 		]);
 	}
 	if (statement.unpriced.days > 0) {
 		rows.push([
 			cell(labels.rowUnpriced),
 			...Array.from({ length: 5 }, () => cell("")),
-			cell(statement.unpriced.workedMinutes),
+			figure(statement.unpriced.workedMinutes),
 			...Array.from({ length: 8 }, () => cell("")),
 		]);
 	}

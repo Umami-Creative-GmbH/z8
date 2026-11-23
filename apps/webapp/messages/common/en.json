@@ -616,6 +616,7 @@
       "rowType": "Row type",
       "start": "Start",
       "task": "Task",
+      "time": "Time (local)",
       "unit": "Unit",
       "units": "Units",
       "workedMinutes": "Worked minutes"

@@ -23,6 +23,7 @@ import {
 	normalizeContractorProfileDetails,
 	saveContractorProfile,
 } from "@/lib/engagement/contractor-profile";
+import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
@@ -559,6 +560,11 @@ export interface ContractorCompensationRecord {
 	 */
 	contractorEngagementId: string | null;
 	/**
+	 * The person ever had an External Contractor engagement here, active or
+	 * ended, with or without terms: their work has a Time & Fee Statement.
+	 */
+	hadContractorEngagement: boolean;
+	/**
 	 * The first day terms of the active contractor engagement may start on: its
 	 * start's earliest local day at any captured offset, so up to a day before
 	 * its first day in the organization's calendar; null when unknown.
@@ -583,17 +589,29 @@ export async function loadContractorCompensation(
 	now: Instant = systemClock.nowInstant(),
 ): Promise<ContractorCompensationRecord | null> {
 	if (!(await employeeInOrganization(reader, organizationId, employeeId))) return null;
-	const [{ today }, period, history, details] = await Promise.all([
+	const [{ today }, period, history, details, [anyContractorPeriod]] = await Promise.all([
 		loadOrganizationDay(reader, { organizationId, now }),
 		loadActivePeriod(reader, organizationId, employeeId),
 		listContractorTermsHistory(reader, organizationId, employeeId),
 		loadContractorProfile(reader, { organizationId, employeeId }),
+		reader
+			.select({ id: employeeEmploymentPeriod.id })
+			.from(employeeEmploymentPeriod)
+			.where(
+				and(
+					eq(employeeEmploymentPeriod.organizationId, organizationId),
+					eq(employeeEmploymentPeriod.employeeId, employeeId),
+					eq(employeeEmploymentPeriod.engagementKind, "contractor"),
+				),
+			)
+			.limit(1),
 	]);
 	const inEffect = await termsInEffectOn(reader, organizationId, [employeeId], today);
 	return {
 		employeeId,
 		activeEngagementKind: period?.engagementKind ?? null,
 		contractorEngagementId: period?.engagementKind === "contractor" ? period.id : null,
+		hadContractorEngagement: anyContractorPeriod !== undefined || history.length > 0,
 		earliestTermsDate:
 			period?.engagementKind === "contractor"
 				? (earliestTermsDay(period.startedAt)?.toString() ?? null)
@@ -609,6 +627,7 @@ export async function loadContractorCompensation(
 export interface ContractorCompensationOverviewRow {
 	employeeId: string;
 	name: string;
+	/** On the current roster today; false for a former person (deactivated or departed). */
 	isActive: boolean;
 	/**
 	 * The kind of the person's active engagement; null without one. Anyone
@@ -638,7 +657,8 @@ export async function listContractorCompensationOverview(
 	const people = await reader
 		.select({
 			id: employee.id,
-			isActive: employee.isActive,
+			// The current-roster rule (#1438): a due departure is former too.
+			isFormer: isFormerEmployee(employee, now),
 			firstName: user.firstName,
 			lastName: user.lastName,
 			name: user.name,
@@ -666,7 +686,7 @@ export async function listContractorCompensationOverview(
 		.map((person, index) => ({
 			employeeId: person.id,
 			name: buildAuthUserDisplayName(person) || person.id,
-			isActive: person.isActive,
+			isActive: !person.isFormer,
 			engagementKind: kinds.get(person.id) ?? null,
 			termsToday: todayByEmployee.get(person.id) ?? null,
 			details: profiles[index] ?? null,

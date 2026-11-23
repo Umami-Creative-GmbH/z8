@@ -414,6 +414,32 @@ describe("contractor statements on PostgreSQL", () => {
 		expect(await hasContractorEngagement(db, otherOrganization, employeeId)).toBe(false);
 	});
 
+	it("refuses a period outside the engagement, but not a contractor-local edge day of it", async () => {
+		const { employeeId } = await contractor("Edge Days");
+		// Engaged from 1 Sep 01:00 Berlin until 11 Oct 00:00 Berlin.
+		await fixture.pool.query(
+			`update employee_employment_period
+			 set started_at = '2026-08-31T23:00:00Z', start_provenance = 'recorded',
+			     status = 'closed', ended_at = '2026-10-10T22:00:00Z'
+			 where employee_id = $1`,
+			[employeeId],
+		);
+		const load = (fromDay: string, toDay: string) =>
+			loadContractorStatement(db, fixture.organizationId, {
+				employeeId,
+				fromDay,
+				toDay,
+				generatedAt,
+			});
+
+		// Days on which no work inside the engagement can fall, at any offset.
+		expect(await load("2026-10-12", "2026-10-31")).toEqual({ ok: false, reason: "not_contractor" });
+		expect(await load("2026-08-01", "2026-08-30")).toEqual({ ok: false, reason: "not_contractor" });
+		// 11 Oct in Tokyo and 31 Aug in New York still lie inside it.
+		expect((await load("2026-10-11", "2026-10-31")).ok).toBe(true);
+		expect((await load("2026-08-01", "2026-08-31")).ok).toBe(true);
+	});
+
 	it("refuses people who were never contractors, other organizations' people and bad periods", async () => {
 		const employee = await fixture.seedEmployee();
 		const load = (employeeId: string, fromDay = "2026-03-01", toDay = "2026-03-31") =>

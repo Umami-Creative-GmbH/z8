@@ -34,6 +34,7 @@ export function statementLabels(t: StatementTranslate) {
 		date: t("common:contractorStatement.columns.date", "Date"),
 		start: t("common:contractorStatement.columns.start", "Start"),
 		end: t("common:contractorStatement.columns.end", "End"),
+		time: t("common:contractorStatement.columns.time", "Time (local)"),
 		project: t("common:contractorStatement.columns.project", "Project"),
 		task: t("common:contractorStatement.columns.task", "Task"),
 		workedMinutes: t("common:contractorStatement.columns.workedMinutes", "Worked minutes"),

@@ -496,6 +496,41 @@ describe("contractor compensation terms on PostgreSQL", () => {
 			});
 		});
 
+		it("records a contractor engagement in the past, also without any terms", async () => {
+			const former = await fixture.seedEmployee({ engagementKind: "contractor" });
+			await endPeriod(former.employmentPeriodId, "2026-03-15T23:00:00Z");
+			await addPeriod(former.employeeId, "employee", "2026-04-01T00:00:00Z");
+			await fixture.pool.query(`update employee set engagement_kind = 'employee' where id = $1`, [
+				former.employeeId,
+			]);
+			const employeeOnly = await fixture.seedEmployee();
+
+			const recordOf = (employeeId: string) =>
+				loadContractorCompensation(db, fixture.organizationId, employeeId, may);
+			expect(await recordOf(former.employeeId)).toMatchObject({
+				activeEngagementKind: "employee",
+				hadContractorEngagement: true,
+				history: [],
+			});
+			expect(await recordOf(employeeOnly.employeeId)).toMatchObject({
+				hadContractorEngagement: false,
+			});
+		});
+
+		it("marks a contractor who is no longer on the roster as inactive", async () => {
+			const current = await contractorWithOpenTerms();
+			const deactivated = await contractorWithOpenTerms();
+			await fixture.pool.query(`update employee set is_active = false where id = $1`, [
+				deactivated.employeeId,
+			]);
+
+			const rows = await listContractorCompensationOverview(db, fixture.organizationId, may);
+			const activeOf = (employeeId: string) =>
+				rows.find((row) => row.employeeId === employeeId)?.isActive;
+			expect(activeOf(current.employeeId)).toBe(true);
+			expect(activeOf(deactivated.employeeId)).toBe(false);
+		});
+
 		it("reports the terms in force after a change", async () => {
 			const own = await fixture.seedEmployee({ engagementKind: "contractor" });
 			const outcome = await changeContractorTerms(db, {
