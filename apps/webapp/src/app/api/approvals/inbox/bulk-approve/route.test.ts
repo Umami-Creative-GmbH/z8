@@ -215,6 +215,7 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 			organizationId: "org-1",
 			includeAllApprovers: true,
 			eligibleApprovalScopes: [],
+			canManageCompliance: true,
 		});
 	});
 
@@ -245,6 +246,7 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 			organizationId: "org-1",
 			includeAllApprovers: undefined,
 			eligibleApprovalScopes,
+			canManageCompliance: false,
 		});
 	});
 

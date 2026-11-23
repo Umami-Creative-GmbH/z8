@@ -52,7 +52,8 @@ export interface ApprovalInboxSummary {
 	localized?: {
 		title: ApprovalInboxLocalizedText;
 		subtitle: ApprovalInboxLocalizedText;
-		detail: ApprovalInboxLocalizedText;
+		/** None when `detail` is text a person entered, shown as written (#1977). */
+		detail?: ApprovalInboxLocalizedText;
 	};
 }
 

@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gt, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { complianceException, workPolicyViolation } from "@/db/schema";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
@@ -85,9 +85,9 @@ export function deriveWorkforceComplianceSection(
 export async function getWorkforceComplianceSection(
 	organizationId: string,
 ): Promise<ComplianceSectionResult> {
+	const now = systemClock.nowInstant();
 	const sevenDaysAgo = dateFromInstant(
-		systemClock
-			.nowInstant()
+		now
 			.toZonedDateTimeISO("UTC")
 			.subtract({ days: WORKFORCE_COMPLIANCE_LOOKBACK_DAYS })
 			.toInstant(),
@@ -116,6 +116,8 @@ export async function getWorkforceComplianceSection(
 					eq(complianceException.organizationId, organizationId),
 					gte(complianceException.createdAt, sevenDaysAgo),
 					eq(complianceException.status, "pending"),
+					// A lapsed exception is expired, as in the Approval inbox this links to (#1977).
+					gt(complianceException.validUntil, dateFromInstant(now)),
 				),
 			),
 	]);

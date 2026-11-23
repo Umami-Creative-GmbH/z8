@@ -152,9 +152,21 @@ describe("loadAuthorizedApprovalDetail", () => {
 					organizationId: "org-1",
 					approvalId: "approval-1",
 				}),
-			).resolves.toEqual({ status: "forbidden" });
+			).resolves.toEqual({ status: "not_found" });
 			expect(state.getApprovalInboxDetail).not.toHaveBeenCalled();
 			expect(state.loadDeputyDetailAccess).not.toHaveBeenCalled();
+		});
+
+		it("answers an existing approval request exactly as an unknown id", async () => {
+			const open = (approvalId: string) =>
+				loadAuthorizedApprovalDetail({ userId: "user-1", organizationId: "org-1", approvalId });
+			const existing = await open("approval-1");
+			state.findApprovalRequest.mockResolvedValue(null);
+			state.getApprovalInboxDetail.mockRejectedValue(
+				new ApprovalInboxBadRequestError("Approval not found"),
+			);
+
+			await expect(open("unknown-1")).resolves.toEqual(existing);
 		});
 
 		it("never opens a canonical assignment", async () => {

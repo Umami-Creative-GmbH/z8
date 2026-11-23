@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { Effect } from "effect";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import { type AppAbility, defineAbilityFor } from "@/lib/authorization/ability";
 import { type Clock, parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
@@ -22,13 +23,29 @@ import {
 } from "@/lib/time-tracking/closed-months/testing/closed-month-database.test.fixture";
 import {
 	complianceExceptionInboxRead,
+	decideComplianceExceptionForActor,
 	decideComplianceExceptionFromInbox,
 	findComplianceExceptionDecisionTarget,
 	resolveComplianceExceptionInboxScope,
 } from "./compliance-exception-inbox";
 import { bulkApproveApprovalInboxItems, bulkRejectApprovalInboxItems } from "./decision-service";
-import { getApprovalInboxDetail, getApprovalInboxListFromSources } from "./read-service";
+import {
+	type ApprovalInboxListParams,
+	getApprovalInboxDetail,
+	getApprovalInboxListFromSources,
+} from "./read-service";
 import type { ApprovalInboxSource } from "./source-adapters";
+import { resolveApprovalInboxViewerScope } from "./viewer-scope";
+
+// The route seam notifies through the real triggers; record them instead of delivering.
+const triggers = vi.hoisted(() => ({
+	approved: vi.fn(async () => {}),
+	rejected: vi.fn(async () => {}),
+}));
+vi.mock("@/lib/notifications/compliance-triggers", () => ({
+	onComplianceExceptionApproved: triggers.approved,
+	onComplianceExceptionRejected: triggers.rejected,
+}));
 
 type ComplianceScope = Parameters<typeof decideComplianceExceptionFromInbox>[0]["scope"];
 
@@ -638,6 +655,41 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 		expect(rows).toEqual([{ status: "pending" }]);
 	});
 
+	it("answers a bulk decision of an exception outside the actor's scope as an unknown id", async () => {
+		const unmanagedId = await exception({ employeeId: outsider.employeeId });
+		const unknownId = randomUUID();
+		const bulk = {
+			approvalIds: [unmanagedId, unknownId],
+			actorEmployeeId: manager.employeeId,
+			organizationId,
+			includeAllApprovers: true as const,
+		};
+		const notFound = (id: string) => ({ id, code: "not_found", message: "Approval not found" });
+
+		await expect(bulkApproveApprovalInboxItems(bulk)).resolves.toEqual({
+			succeeded: [],
+			failed: [notFound(unmanagedId), notFound(unknownId)],
+		});
+		await expect(bulkRejectApprovalInboxItems({ ...bulk, reason: "No" })).resolves.toEqual({
+			succeeded: [],
+			failed: [notFound(unmanagedId), notFound(unknownId)],
+		});
+		// Managing Compliance widens the scope to the organization: one at a time again.
+		await expect(
+			bulkApproveApprovalInboxItems({ ...bulk, canManageCompliance: true }),
+		).resolves.toEqual({
+			succeeded: [],
+			failed: [
+				{
+					id: unmanagedId,
+					code: "unsupported",
+					message: "Compliance exceptions are decided one at a time",
+				},
+				notFound(unknownId),
+			],
+		});
+	});
+
 	it("never puts a compliance exception in a Covering section", async () => {
 		const exceptionId = await exception({ employeeId: employee.employeeId });
 		// The manager's own pending absence approval, which their deputy does cover.
@@ -694,5 +746,340 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 		const own = deputy.items.find((item) => item.id === exceptionId);
 		expect(own).toMatchObject({ type: "compliance_exception" });
 		expect(own?.coveringFor).toBeUndefined();
+	});
+
+	function abilityFor(
+		viewer: { employeeId: string; userId: string },
+		access: { membership: "admin" | "member"; role: "manager" | "employee" },
+	): AppAbility {
+		return defineAbilityFor({
+			userId: viewer.userId,
+			isPlatformAdmin: false,
+			activeOrganizationId: organizationId,
+			orgMembership: { organizationId, role: access.membership, status: "active" },
+			employee: { id: viewer.employeeId, organizationId, role: access.role, teamId: null },
+			permissions: { orgWide: null, byTeamId: new Map() },
+			managedEmployeeIds: [],
+			customRoles: [],
+		});
+	}
+
+	function viewerScopeOf(
+		viewer: { employeeId: string; userId: string },
+		access: { membership: "admin" | "member"; role: "manager" | "employee" },
+	) {
+		return resolveApprovalInboxViewerScope({
+			ability: abilityFor(viewer, access),
+			employee: { id: viewer.employeeId, organizationId, role: access.role },
+			clock: AT_NOW,
+		});
+	}
+
+	/** The outsider covers for the manager, who is absent around `NOW` (#1016). */
+	async function outsiderCoversForManager() {
+		await fixture.pool.query("update employee set role = 'manager' where id = $1", [
+			outsider.employeeId,
+		]);
+		await fixture.pool.query(
+			`insert into approval_setting (organization_id, deputy_decisions_enabled) values ($1, true)
+			 on conflict (organization_id) do update set deputy_decisions_enabled = true`,
+			[organizationId],
+		);
+		const absenceId = await fixture.absence({
+			organizationId,
+			employeeId: manager.employeeId,
+			startDate: "2026-03-09",
+			endDate: "2026-03-11",
+		});
+		await fixture.pool.query("update absence_entry set deputy_employee_id = $2 where id = $1", [
+			absenceId,
+			outsider.employeeId,
+		]);
+	}
+
+	describe("the viewer's inbox scope", () => {
+		it("limits a manager's compliance exceptions to the employees they manage", async () => {
+			const scope = await viewerScopeOf(manager, { membership: "member", role: "manager" });
+
+			expect(scope?.complianceExceptionScope).toEqual({
+				kind: "managed",
+				employeeIds: [employee.employeeId],
+			});
+			expect(scope?.complianceExceptionsOnly).toBeUndefined();
+		});
+
+		it("gives managing Compliance alone every exception of the organization and no approvals", async () => {
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+
+			const scope = await viewerScopeOf(outsider, { membership: "admin", role: "employee" });
+
+			expect(scope).toMatchObject({
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				eligibleApprovalScopes: [],
+				covering: [],
+			});
+			if (!scope) throw new Error("expected an inbox scope");
+			const list = await getApprovalInboxListFromSources({
+				sources: [],
+				params: scope,
+				complianceExceptionRead: complianceExceptionInboxRead,
+				now: NOW,
+			});
+			expect(list.items.map((item) => item.id)).toEqual([exceptionId]);
+		});
+
+		it("opens no inbox to an employee who neither approves nor manages Compliance", async () => {
+			await expect(
+				viewerScopeOf(employee, { membership: "member", role: "employee" }),
+			).resolves.toBeNull();
+		});
+
+		it("shows a covering deputy none of the absent manager's compliance exceptions", async () => {
+			await outsiderCoversForManager();
+			await exception({ employeeId: employee.employeeId });
+
+			const scope = await viewerScopeOf(outsider, { membership: "member", role: "manager" });
+
+			expect(scope?.covering).toEqual([
+				expect.objectContaining({ approverId: manager.employeeId }),
+			]);
+			expect(scope?.complianceExceptionScope).toBeNull();
+			if (!scope) throw new Error("expected an inbox scope");
+			const list = await getApprovalInboxListFromSources({
+				sources: [],
+				params: scope,
+				complianceExceptionRead: complianceExceptionInboxRead,
+				now: NOW,
+			});
+			expect(list.items).toEqual([]);
+			expect(list.counts.compliance_exception).toBe(0);
+			expect(list.supportedTypes).not.toContain("compliance_exception");
+			expect((list.covering ?? []).flatMap((section) => section.rows)).toEqual([]);
+		});
+	});
+
+	describe("deciding at the inbox route seam", () => {
+		beforeEach(() => {
+			triggers.approved.mockClear();
+			triggers.rejected.mockClear();
+		});
+
+		const rejectAs = (
+			actor: { employeeId: string },
+			exceptionId: string,
+			options: { canManageCompliance?: boolean; clock?: Clock } = {},
+		) =>
+			decideComplianceExceptionForActor({
+				organizationId,
+				exceptionId,
+				actorEmployeeId: actor.employeeId,
+				canManageCompliance: options.canManageCompliance ?? false,
+				action: "reject",
+				reason: "Cover is already planned",
+				clock: options.clock ?? AT_NOW,
+			});
+
+		/** What a refused decision tells its caller. */
+		async function refusalOf(decision: Promise<unknown>) {
+			const error = await decision.then(
+				() => null,
+				(cause: unknown) => cause,
+			);
+			return error instanceof Error
+				? { tag: (error as { _tag?: string })._tag, message: error.message }
+				: error;
+		}
+
+		async function statusOf(exceptionId: string) {
+			const { rows } = await fixture.pool.query<{ status: string }>(
+				"select status from compliance_exception where id = $1",
+				[exceptionId],
+			);
+			return rows[0]?.status;
+		}
+
+		it("refuses an actor who sees no exceptions as not found", async () => {
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+
+			await expect(rejectAs(outsider, exceptionId)).rejects.toBeInstanceOf(NotFoundError);
+			expect(await statusOf(exceptionId)).toBe("pending");
+		});
+
+		it("lets manage Compliance decide any exception of the organization and notifies", async () => {
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+
+			await expect(rejectAs(outsider, exceptionId, { canManageCompliance: true })).resolves.toEqual(
+				{ id: exceptionId, type: "compliance_exception", status: "rejected" },
+			);
+			expect(triggers.rejected).toHaveBeenCalledWith(
+				expect.objectContaining({ exceptionId, reason: "Cover is already planned" }),
+			);
+		});
+
+		it("limits a manager to the exceptions of the employees they manage", async () => {
+			const managedId = await exception({ employeeId: employee.employeeId });
+			const unmanagedId = await exception({ employeeId: outsider.employeeId });
+
+			await expect(rejectAs(manager, unmanagedId)).rejects.toBeInstanceOf(NotFoundError);
+			expect(await statusOf(unmanagedId)).toBe("pending");
+			await expect(rejectAs(manager, managedId)).resolves.toMatchObject({ status: "rejected" });
+		});
+
+		it("answers an exception outside the actor's scope exactly as an unknown id", async () => {
+			const unmanagedId = await exception({ employeeId: outsider.employeeId });
+
+			const outOfScope = await refusalOf(rejectAs(manager, unmanagedId));
+			const unknown = await refusalOf(rejectAs(manager, randomUUID()));
+
+			expect(outOfScope).toEqual(unknown);
+			expect(outOfScope).toEqual({ tag: "NotFoundError", message: "Approval not found" });
+		});
+
+		it("refuses a covering deputy the absent manager's exceptions", async () => {
+			await outsiderCoversForManager();
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+
+			await expect(rejectAs(outsider, exceptionId)).rejects.toBeInstanceOf(NotFoundError);
+			expect(await statusOf(exceptionId)).toBe("pending");
+		});
+
+		it("judges the validity window by the clock it is given", async () => {
+			// Valid 2026-03-10T08:00Z – 2026-03-11T08:00Z, long before the system clock.
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+			const atExpiry: Clock = { nowInstant: () => parseInstant("2026-03-11T08:00:00Z") };
+
+			await expect(rejectAs(manager, exceptionId, { clock: atExpiry })).rejects.toThrow(
+				"Request is already expired",
+			);
+			await expect(rejectAs(manager, exceptionId)).resolves.toMatchObject({ status: "rejected" });
+		});
+	});
+
+	describe("list filters and paging", () => {
+		const everyException: ComplianceScope = { kind: "organization" };
+
+		function listWith(
+			params: Partial<ApprovalInboxListParams>,
+			sources: ApprovalInboxSource[] = [],
+		) {
+			return getApprovalInboxListFromSources({
+				sources,
+				params: {
+					approverId: manager.employeeId,
+					organizationId,
+					complianceExceptionScope: everyException,
+					...params,
+				},
+				complianceExceptionRead: complianceExceptionInboxRead,
+				now: NOW,
+			});
+		}
+
+		it("filters exceptions by search, team, submission date, age and priority", async () => {
+			const teamId = await fixture.team(organizationId);
+			await fixture.setEmployeeTeam(employee.employeeId, teamId);
+			await fixture.pool.query(`update "user" set name = 'Quinn Searchable' where id = $1`, [
+				employee.userId,
+			]);
+			const recentId = await exception({
+				employeeId: employee.employeeId,
+				createdAt: "2026-03-10T08:00:00Z",
+				reason: "Inventory count runs late",
+			});
+			const olderId = await exception({
+				employeeId: outsider.employeeId,
+				createdAt: "2026-03-06T08:00:00Z",
+				validUntil: "2026-03-12T08:00:00Z",
+				reason: "Audit preparation",
+			});
+			const idsWith = async (params: Partial<ApprovalInboxListParams>) => {
+				const list = await listWith(params);
+				return {
+					ids: list.items.map((item) => item.id),
+					count: list.counts.compliance_exception,
+				};
+			};
+
+			await expect(idsWith({ search: "searchable" })).resolves.toEqual({
+				ids: [recentId],
+				count: 1,
+			});
+			await expect(idsWith({ search: "AUDIT" })).resolves.toEqual({ ids: [olderId], count: 1 });
+			await expect(idsWith({ teamId })).resolves.toEqual({ ids: [recentId], count: 1 });
+			await expect(
+				idsWith({
+					dateRange: {
+						from: new Date("2026-03-05T00:00:00Z"),
+						to: new Date("2026-03-07T00:00:00Z"),
+					},
+				}),
+			).resolves.toEqual({ ids: [olderId], count: 1 });
+			await expect(idsWith({ minAgeDays: 2 })).resolves.toEqual({ ids: [olderId], count: 1 });
+			await expect(idsWith({ priority: "high" })).resolves.toEqual({
+				ids: [olderId, recentId],
+				count: 2,
+			});
+			await expect(idsWith({ priority: "normal" })).resolves.toEqual({ ids: [], count: 0 });
+		});
+
+		it("pages exceptions and other inbox types together under one cursor", async () => {
+			const exceptionIds = [
+				await exception({ employeeId: employee.employeeId, createdAt: "2026-03-10T08:00:00Z" }),
+				await exception({ employeeId: employee.employeeId, createdAt: "2026-03-10T09:00:00Z" }),
+				await exception({ employeeId: outsider.employeeId, createdAt: "2026-03-10T10:00:00Z" }),
+			];
+			const absenceAt = (createdAt: string, priority: UnifiedApprovalItem["priority"]) =>
+				({
+					id: randomUUID(),
+					approvalType: "absence_entry",
+					entityId: randomUUID(),
+					typeName: "Absence Request",
+					requester: {
+						id: employee.employeeId,
+						userId: employee.userId,
+						name: "Avery Employee",
+						email: "avery@example.com",
+						image: null,
+						teamId: null,
+					},
+					approverId: manager.employeeId,
+					organizationId,
+					status: "pending",
+					createdAt: new Date(createdAt),
+					resolvedAt: null,
+					priority,
+					sla: { deadline: null, status: "on_time", hoursRemaining: null },
+					display: { title: "Vacation", subtitle: "Mar 12", summary: "1 day off" },
+				}) satisfies UnifiedApprovalItem;
+			const absences = [
+				absenceAt("2026-03-10T08:30:00Z", "high"),
+				absenceAt("2026-03-10T09:30:00Z", "normal"),
+				absenceAt("2026-03-10T07:00:00Z", "urgent"),
+			];
+			const absenceSource: ApprovalInboxSource = {
+				type: "absence_entry",
+				displayName: "Absence",
+				supportsBulkApprove: true,
+				handler: {
+					getApprovals: () => Effect.succeed(absences),
+					getCount: () => Effect.succeed(absences.length),
+				} as never,
+			};
+
+			const whole = await listWith({}, [absenceSource]);
+			const paged: string[] = [];
+			let cursor: string | undefined;
+			for (let page = 0; page < 10; page++) {
+				const list = await listWith({ limit: 2, ...(cursor ? { cursor } : {}) }, [absenceSource]);
+				paged.push(...list.items.map((item) => item.id));
+				if (!list.hasMore) break;
+				cursor = list.nextCursor ?? undefined;
+			}
+
+			expect(whole.items).toHaveLength(6);
+			expect(whole.items.map((item) => item.id)).toEqual(expect.arrayContaining(exceptionIds));
+			expect(paged).toEqual(whole.items.map((item) => item.id));
+		});
 	});
 });

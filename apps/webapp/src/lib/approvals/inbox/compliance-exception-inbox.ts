@@ -18,6 +18,7 @@ import {
 import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { periodSubmissionHours } from "../presentation/period-submission-review";
+import type { ApprovalTriageReason } from "../triage-assessment";
 import { resultRows } from "./canonical-inbox-query";
 import type {
 	CanonicalInboxListFilters,
@@ -244,15 +245,23 @@ function candidateQuery(
 	`;
 }
 
+/** The triage reason every exception carries, in the reader's language like any other item's. */
+const NEEDS_REVIEW_REASON = {
+	code: "needs_review",
+	riskLevel: RISK_LEVEL,
+	text: { key: "approvals:triage.reasons.needs_review", fallback: "Needs manual review." },
+} as const satisfies ApprovalTriageReason;
+
 function triageOf(): ApprovalInboxTriage {
 	return {
 		priority: PRIORITY,
 		riskLevel: RISK_LEVEL,
-		riskReasons: ["needs_review"],
+		riskReasons: [NEEDS_REVIEW_REASON.code],
+		reasons: [NEEDS_REVIEW_REASON],
 		// Every statutory waiver gets its own deliberate review (ADR-0005).
 		fastLaneGroup: null,
 		isPayrollRelevant: false,
-		explanation: "Needs manual review.",
+		explanation: NEEDS_REVIEW_REASON.text.fallback,
 	};
 }
 
@@ -330,11 +339,7 @@ function toItem(row: Record<string, unknown>, now: Instant): ApprovalInboxItem {
 					params: { exceptionType: EXCEPTION_TYPE_TEXT[exceptionType] },
 				},
 				subtitle: validity,
-				detail: {
-					key: "approvals:approvals.complianceException.summaryReason",
-					fallback: "{reason}",
-					params: { reason },
-				},
+				// The detail is the employee's reason, shown as written: no localized form.
 			},
 		},
 		timing: {
@@ -696,6 +701,8 @@ export async function decideComplianceExceptionForActor(input: {
 	canManageCompliance: boolean;
 	action: "approve" | "reject";
 	reason?: string;
+	/** Judges the validity window and stamps the decision; the system clock by default. */
+	clock?: Clock;
 }): Promise<ApprovalInboxDecisionSuccess> {
 	const scope = await resolveComplianceExceptionInboxScope({
 		organizationId: input.organizationId,
@@ -710,22 +717,28 @@ export async function decideComplianceExceptionForActor(input: {
 		scope,
 		action: input.action,
 		...(input.reason !== undefined ? { reason: input.reason } : {}),
+		...(input.clock ? { clock: input.clock } : {}),
 	});
 }
 
-/** Which of these ids are compliance exceptions of the organization, whatever their status. */
+/**
+ * Which of these ids are compliance exceptions of the organization within the scope, whatever
+ * their status. One outside the scope is left out, as an unknown id is.
+ */
 export async function findComplianceExceptionIds(input: {
 	organizationId: string;
 	ids: readonly string[];
+	scope: ComplianceExceptionInboxScope;
 	database?: CanonicalInboxReadDatabase;
 }): Promise<Set<string>> {
 	const ids = input.ids.filter((id) => UUID_PATTERN.test(id));
 	if (ids.length === 0) return new Set();
 	const rows = resultRows(
 		await readDatabase(input).execute(sql`
-			select id from compliance_exception
-			where organization_id = ${input.organizationId}
-				and id in (${sql.join(
+			select exception.id from compliance_exception exception
+			where exception.organization_id = ${input.organizationId}
+				and ${scopeCondition(input.scope)}
+				and exception.id in (${sql.join(
 					ids.map((id) => sql`${id}::uuid`),
 					sql`, `,
 				)})

@@ -27,7 +27,10 @@ import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal"
 import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import type { CanonicalInboxRead } from "./canonical-inbox-read";
 import { CANONICAL_INBOX_READS } from "./canonical-inbox-reads";
-import { findComplianceExceptionIds } from "./compliance-exception-inbox";
+import {
+	findComplianceExceptionIds,
+	resolveComplianceExceptionInboxScope,
+} from "./compliance-exception-inbox";
 import { createFastLaneDecisionGuard } from "./fast-lane-decision-guard";
 import {
 	decideInboxTimeApproval,
@@ -68,6 +71,13 @@ type DecisionVisibilityInput = {
 	 * again inside the decision transaction.
 	 */
 	coveredApproverIds?: string[];
+};
+/**
+ * The actor manages Compliance (#1977): every compliance exception of the organization is
+ * theirs to see, else only those of the employees they manage.
+ */
+type ComplianceExceptionVisibilityInput = {
+	canManageCompliance?: boolean;
 };
 type BulkDecisionOutcome =
 	| { status: "succeeded"; success: ApprovalInboxDecisionSuccess }
@@ -712,12 +722,14 @@ export async function bulkApproveApprovalInboxItems({
 	eligibleApprovalScopes,
 	coveredApproverIds,
 	fastLane,
+	canManageCompliance,
 }: {
 	approvalIds: string[];
 	actorEmployeeId: string;
 	organizationId: string;
 	fastLane?: ApprovalFastLaneReview;
-} & DecisionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
+} & DecisionVisibilityInput &
+	ComplianceExceptionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
 	const requests = await loadApprovalInboxDecisionTargets({
 		approvalIds,
 		organizationId,
@@ -732,7 +744,11 @@ export async function bulkApproveApprovalInboxItems({
 		coveredApproverIds,
 	});
 
-	return withMissingApprovalFailures(approvalIds, requests, result, organizationId);
+	return withMissingApprovalFailures(approvalIds, requests, result, {
+		organizationId,
+		actorEmployeeId,
+		canManageCompliance,
+	});
 }
 
 export async function bulkRejectApprovalInboxItems({
@@ -744,13 +760,15 @@ export async function bulkRejectApprovalInboxItems({
 	eligibleApprovalScopes,
 	coveredApproverIds,
 	fastLane,
+	canManageCompliance,
 }: {
 	approvalIds: string[];
 	actorEmployeeId: string;
 	organizationId: string;
 	reason: string;
 	fastLane?: ApprovalFastLaneReview;
-} & DecisionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
+} & DecisionVisibilityInput &
+	ComplianceExceptionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
 	const requests = await loadApprovalInboxDecisionTargets({
 		approvalIds,
 		organizationId,
@@ -766,7 +784,11 @@ export async function bulkRejectApprovalInboxItems({
 		coveredApproverIds,
 	});
 
-	return withMissingApprovalFailures(approvalIds, requests, result, organizationId);
+	return withMissingApprovalFailures(approvalIds, requests, result, {
+		organizationId,
+		actorEmployeeId,
+		canManageCompliance,
+	});
 }
 
 async function loadCurrentFastLaneDecisionItem({
@@ -798,7 +820,7 @@ async function withMissingApprovalFailures(
 	approvalIds: string[],
 	requests: PersistedApprovalRequestForDecision[],
 	result: ApprovalInboxBulkDecisionResult,
-	organizationId: string,
+	actor: { organizationId: string; actorEmployeeId: string } & ComplianceExceptionVisibilityInput,
 ): Promise<ApprovalInboxBulkDecisionResult> {
 	const foundIds = new Set(requests.map((request) => request.id));
 	const requestedOrder = new Map(
@@ -806,10 +828,23 @@ async function withMissingApprovalFailures(
 	);
 	const failed = [...result.failed];
 	// Compliance exceptions are never bulk-decided (#1977, ADR-0005): each gets its own review.
-	const complianceExceptionIds = await findComplianceExceptionIds({
-		organizationId,
-		ids: approvalIds.filter((approvalId) => !foundIds.has(approvalId)),
-	});
+	// Only those the actor sees say so; any other id is not found, as an unknown one is.
+	const missingIds = approvalIds.filter((approvalId) => !foundIds.has(approvalId));
+	const complianceExceptionScope =
+		missingIds.length > 0
+			? await resolveComplianceExceptionInboxScope({
+					organizationId: actor.organizationId,
+					employeeId: actor.actorEmployeeId,
+					canManageCompliance: actor.canManageCompliance === true,
+				})
+			: null;
+	const complianceExceptionIds = complianceExceptionScope
+		? await findComplianceExceptionIds({
+				organizationId: actor.organizationId,
+				ids: missingIds,
+				scope: complianceExceptionScope,
+			})
+		: new Set<string>();
 
 	for (const approvalId of approvalIds) {
 		if (foundIds.has(approvalId)) {

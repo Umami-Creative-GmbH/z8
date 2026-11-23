@@ -119,7 +119,8 @@ export async function loadAuthorizedApprovalDetail(input: {
 			return { status: "found", detail: markOwnRequestDetail(detail, currentEmployee.id) };
 		}
 		if (input.kind === "canonical") return { status: "not_found" };
-		if (!approverAccess) return { status: "forbidden" };
+		// Managing Compliance alone opens no approval: one is answered as an unknown id is.
+		if (!approverAccess) return { status: "not_found" };
 
 		const isAssignedApprover = request.approverId === currentEmployee.id;
 		const isEligibleManager = isAssignedApprover

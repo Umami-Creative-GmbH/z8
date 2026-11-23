@@ -124,6 +124,8 @@ export async function POST(request: NextRequest) {
 			organizationId: currentEmployee.organizationId,
 			includeAllApprovers: canManageApprovals || undefined,
 			eligibleApprovalScopes,
+			// Which compliance exceptions the employee sees, to refuse them by name (#1977).
+			canManageCompliance: ability.cannot("manage", "Compliance") === false,
 			// Approvals of absent approvers this employee covers for (#1016).
 			coveredApproverIds: (
 				await loadInboxCovers(db, {

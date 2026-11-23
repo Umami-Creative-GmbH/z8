@@ -83,7 +83,7 @@ export interface NavigationCapabilities {
 	analytics?: boolean;
 	/** Project reports visibility (projectsEnabled and project-report viewer access). */
 	projectReports?: boolean;
-	/** Approval inbox visibility: the same `canAccessApprovalInbox` decision as the route guard (#1976). */
+	/** Approval inbox visibility: the same `canOpenApprovalInbox` decision as the route guard (#1976, #1977). */
 	approvalInbox?: boolean;
 	platformAdmin: boolean;
 }

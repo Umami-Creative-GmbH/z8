@@ -203,6 +203,7 @@ describe("POST /api/approvals/inbox/bulk-reject", () => {
 			reason: "Missing receipt",
 			includeAllApprovers: true,
 			eligibleApprovalScopes: [],
+			canManageCompliance: true,
 		});
 	});
 
@@ -231,6 +232,7 @@ describe("POST /api/approvals/inbox/bulk-reject", () => {
 			reason: "Missing receipt",
 			includeAllApprovers: undefined,
 			eligibleApprovalScopes,
+			canManageCompliance: false,
 		});
 	});
 

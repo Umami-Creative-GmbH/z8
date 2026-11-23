@@ -24,6 +24,7 @@ const mockState = vi.hoisted(() => {
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+	gt: vi.fn((left: unknown, right: unknown) => ({ gt: [left, right] })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
 	sql: vi.fn((strings: TemplateStringsArray) => strings.join("?")),
 }));
@@ -39,6 +40,7 @@ vi.mock("@/db/schema", () => ({
 		createdAt: "complianceException.createdAt",
 		organizationId: "complianceException.organizationId",
 		status: "complianceException.status",
+		validUntil: "complianceException.validUntil",
 	},
 	workPolicyViolation: {
 		organizationId: "workPolicyViolation.organizationId",

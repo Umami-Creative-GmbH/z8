@@ -473,7 +473,10 @@ export async function getApprovalInboxListFromSources({
 		supportedTypes: [
 			...new Set([
 				...[...sources, ...reads].map((source) => source.type),
-				...(complianceExceptionRead ? (["compliance_exception"] as const) : []),
+				// Only a viewer who sees compliance exceptions gets their type filter (#1977).
+				...(complianceExceptionRead && params.complianceExceptionScope
+					? (["compliance_exception"] as const)
+					: []),
 			]),
 		],
 		warnings,
