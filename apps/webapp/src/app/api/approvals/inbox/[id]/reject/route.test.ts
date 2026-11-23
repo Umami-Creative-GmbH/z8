@@ -22,10 +22,17 @@ const mockState = vi.hoisted(() => ({
 	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 	rejectApprovalInboxItem: vi.fn(),
 	coversCurrentApprover: vi.fn(async () => false),
+	isComplianceExceptionInboxItem: vi.fn(async () => false),
+	decideComplianceExceptionForActor: vi.fn(),
 	logger: {
 		info: vi.fn(),
 		error: vi.fn(),
 	},
+}));
+
+vi.mock("@/lib/approvals/inbox/compliance-exception-inbox", () => ({
+	isComplianceExceptionInboxItem: mockState.isComplianceExceptionInboxItem,
+	decideComplianceExceptionForActor: mockState.decideComplianceExceptionForActor,
 }));
 
 vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
@@ -175,6 +182,59 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			id: "approval-1",
 			type: "absence_entry",
 			status: "rejected",
+		});
+		mockState.isComplianceExceptionInboxItem.mockResolvedValue(false);
+	});
+
+	describe("compliance exceptions (#1977)", () => {
+		beforeEach(() => {
+			mockState.getAbility.mockResolvedValue(
+				defineAbilityFor({
+					userId: "user-1",
+					isPlatformAdmin: false,
+					activeOrganizationId: "org-1",
+					orgMembership: { organizationId: "org-1", role: "member", status: "active" },
+					employee: { id: "employee-1", organizationId: "org-1", role: "manager", teamId: null },
+					permissions: { orgWide: null, byTeamId: new Map() },
+					managedEmployeeIds: ["employee-2"],
+					customRoles: [],
+				} satisfies PrincipalContext),
+			);
+			mockState.isComplianceExceptionInboxItem.mockResolvedValue(true);
+		});
+
+		it("rejects through the compliance exception adapter with the manager's reason", async () => {
+			mockState.decideComplianceExceptionForActor.mockResolvedValue({
+				id: "exception-1",
+				type: "compliance_exception",
+				status: "rejected",
+			});
+
+			const response = await POST(createRequest({ reason: "Cover is planned" }), {
+				params: Promise.resolve({ id: "exception-1" }),
+			});
+
+			expect(response.status).toBe(200);
+			expect(mockState.decideComplianceExceptionForActor).toHaveBeenCalledWith({
+				organizationId: "org-1",
+				exceptionId: "exception-1",
+				actorEmployeeId: "employee-1",
+				canManageCompliance: false,
+				action: "reject",
+				reason: "Cover is planned",
+			});
+			expect(mockState.findApprovalRequest).not.toHaveBeenCalled();
+			expect(mockState.rejectApprovalInboxItem).not.toHaveBeenCalled();
+		});
+
+		it("refuses a blank reason before deciding", async () => {
+			const response = await POST(createRequest({ reason: "  " }), {
+				params: Promise.resolve({ id: "exception-1" }),
+			});
+
+			expect(response.status).toBe(400);
+			await expect(response.json()).resolves.toEqual({ error: "Rejection reason is required" });
+			expect(mockState.decideComplianceExceptionForActor).not.toHaveBeenCalled();
 		});
 	});
 

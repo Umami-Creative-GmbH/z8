@@ -11,8 +11,9 @@ import {
 	loadInboxCovers,
 } from "@/lib/approvals/deputy/deputy-decision-store";
 import { getAbility } from "@/lib/auth-helpers";
-import { canAccessApprovalInbox } from "@/lib/authorization";
+import { canOpenApprovalInbox } from "@/lib/authorization";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { resolveComplianceExceptionInboxScope } from "./compliance-exception-inbox";
 import { markDecidedEarlierStageDetail } from "./covering-marks";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import { markOwnRequestDetail } from "./own-request";
@@ -65,7 +66,7 @@ export async function loadAuthorizedApprovalDetail(input: {
 
 	// Check CASL permissions and approval scope after org ownership is verified.
 	const ability = await getAbility();
-	if (!ability || !canAccessApprovalInbox(ability, currentEmployee)) {
+	if (!ability || !canOpenApprovalInbox(ability, currentEmployee)) {
 		return { status: "forbidden" };
 	}
 	const canManageApprovals = ability.cannot("manage", "Approval") === false;
@@ -73,6 +74,15 @@ export async function loadAuthorizedApprovalDetail(input: {
 	try {
 		if (!request) {
 			if (input.kind === "compatibility") return { status: "not_found" };
+			// A compliance exception opens within the viewer's own scope (#1977, ADR-0005).
+			const complianceExceptionScope =
+				input.kind === "canonical"
+					? null
+					: await resolveComplianceExceptionInboxScope({
+							organizationId: currentEmployee.organizationId,
+							employeeId: currentEmployee.id,
+							canManageCompliance: ability.cannot("manage", "Compliance") === false,
+						});
 			const eligibleApprovalScopes = canManageApprovals
 				? []
 				: await getEligibleApprovalScopesForManager({
@@ -92,6 +102,7 @@ export async function loadAuthorizedApprovalDetail(input: {
 					deputyEmployeeId: currentEmployee.id,
 					at: systemClock.nowInstant(),
 				}),
+				...(complianceExceptionScope ? { complianceExceptionScope } : {}),
 			});
 			return { status: "found", detail: markOwnRequestDetail(detail, currentEmployee.id) };
 		}

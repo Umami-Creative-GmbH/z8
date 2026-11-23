@@ -11,6 +11,10 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { coversCurrentApprover } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
+	decideComplianceExceptionForActor,
+	isComplianceExceptionInboxItem,
+} from "@/lib/approvals/inbox/compliance-exception-inbox";
+import {
 	type ApprovalDecisionDiagnosticStage,
 	buildApprovalDecisionFailureLog,
 } from "@/lib/approvals/inbox/decision-diagnostics";
@@ -25,7 +29,7 @@ import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/ma
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
-	canAccessApprovalInbox,
+	canOpenApprovalInbox,
 	ForbiddenError,
 	toHttpError,
 } from "@/lib/authorization";
@@ -115,13 +119,40 @@ export async function POST(
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
-		if (!canAccessApprovalInbox(ability, currentEmployee)) {
+		if (!canOpenApprovalInbox(ability, currentEmployee)) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
+		// A compliance exception is decided by its own adapter (#1977, ADR-0005).
 		decisionStage = "target_lookup";
+		if (
+			await isComplianceExceptionInboxItem({
+				organizationId: currentEmployee.organizationId,
+				id,
+			})
+		) {
+			const body = await request.json().catch(() => ({}));
+			const reason = typeof body.reason === "string" ? body.reason : "";
+			if (!reason.trim()) {
+				return NextResponse.json(
+					{ error: "Rejection reason is required" },
+					{ status: 400 },
+				);
+			}
+			decisionStage = "decision";
+			const result = await decideComplianceExceptionForActor({
+				organizationId: currentEmployee.organizationId,
+				exceptionId: id,
+				actorEmployeeId: currentEmployee.id,
+				canManageCompliance: ability.cannot("manage", "Compliance") === false,
+				action: "reject",
+				reason,
+			});
+			return NextResponse.json({ success: true, result });
+		}
+
 		const approvalReq = await loadApprovalInboxDecisionTarget({
 			approvalId: id,
 			organizationId: currentEmployee.organizationId,

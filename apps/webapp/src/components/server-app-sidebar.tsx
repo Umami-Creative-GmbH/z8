@@ -8,7 +8,7 @@ import {
 	getRenderSettingsAccess,
 	getRenderUserOrganizations as getUserOrganizations,
 } from "@/lib/auth/render-context";
-import { canAccessApprovalInbox } from "@/lib/authorization";
+import { canOpenApprovalInbox } from "@/lib/authorization";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { readDrivingLicenceVisibilityForIdentity } from "@/lib/organization/driving-licence/visibility";
@@ -272,7 +272,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		capability(
 			activeEmployee
 				? getRenderAbility().then(
-						(ability) => !!ability && canAccessApprovalInbox(ability, activeEmployee),
+						(ability) => !!ability && canOpenApprovalInbox(ability, activeEmployee),
 					)
 				: false,
 			false,

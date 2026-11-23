@@ -11,6 +11,10 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { coversCurrentApprover } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
+	decideComplianceExceptionForActor,
+	isComplianceExceptionInboxItem,
+} from "@/lib/approvals/inbox/compliance-exception-inbox";
+import {
 	type ApprovalDecisionDiagnosticStage,
 	buildApprovalDecisionFailureLog,
 } from "@/lib/approvals/inbox/decision-diagnostics";
@@ -26,7 +30,7 @@ import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/ma
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
-	canAccessApprovalInbox,
+	canOpenApprovalInbox,
 	ForbiddenError,
 	toHttpError,
 } from "@/lib/authorization";
@@ -128,13 +132,31 @@ export async function POST(
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
-		if (!canAccessApprovalInbox(ability, currentEmployee)) {
+		if (!canOpenApprovalInbox(ability, currentEmployee)) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
+		// A compliance exception is decided by its own adapter (#1977, ADR-0005).
 		decisionStage = "target_lookup";
+		if (
+			await isComplianceExceptionInboxItem({
+				organizationId: currentEmployee.organizationId,
+				id,
+			})
+		) {
+			decisionStage = "decision";
+			const result = await decideComplianceExceptionForActor({
+				organizationId: currentEmployee.organizationId,
+				exceptionId: id,
+				actorEmployeeId: currentEmployee.id,
+				canManageCompliance: ability.cannot("manage", "Compliance") === false,
+				action: "approve",
+			});
+			return NextResponse.json({ success: true, result });
+		}
+
 		const request = await loadApprovalInboxDecisionTarget({
 			approvalId: id,
 			organizationId: currentEmployee.organizationId,

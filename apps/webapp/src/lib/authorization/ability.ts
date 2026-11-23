@@ -375,7 +375,36 @@ export function canAccessApprovalInbox(
 	ability: AppAbility,
 	employee: Pick<EmployeeInfo, "id" | "organizationId" | "role">,
 ): boolean {
-	const hasEmployeePrincipal =
+	return (
+		hasEmployeePrincipal(ability, employee) &&
+		(employee.role === "manager" ||
+			employee.role === "admin" ||
+			ability.cannot("approve", "Approval") === false ||
+			ability.cannot("manage", "Approval") === false)
+	);
+}
+
+/**
+ * Who may open the Approval inbox: approvers (`canAccessApprovalInbox`) and, for the
+ * organization's compliance exceptions (#1977, Approvals ADR-0005), whoever manages
+ * Compliance. The inbox page, its API and the navigation share this decision; approver
+ * selection (deputies, escalation) keeps `canAccessApprovalInbox`.
+ */
+export function canOpenApprovalInbox(
+	ability: AppAbility,
+	employee: Pick<EmployeeInfo, "id" | "organizationId" | "role">,
+): boolean {
+	return (
+		canAccessApprovalInbox(ability, employee) ||
+		(hasEmployeePrincipal(ability, employee) && ability.cannot("manage", "Compliance") === false)
+	);
+}
+
+function hasEmployeePrincipal(
+	ability: AppAbility,
+	employee: Pick<EmployeeInfo, "id" | "organizationId">,
+): boolean {
+	return (
 		ability.cannot(
 			"read",
 			asAppSubject("Employee", {
@@ -383,14 +412,7 @@ export function canAccessApprovalInbox(
 				employeeId: employee.id,
 				organizationId: employee.organizationId,
 			}),
-		) === false;
-
-	return (
-		hasEmployeePrincipal &&
-		(employee.role === "manager" ||
-			employee.role === "admin" ||
-			ability.cannot("approve", "Approval") === false ||
-			ability.cannot("manage", "Approval") === false)
+		) === false
 	);
 }
 

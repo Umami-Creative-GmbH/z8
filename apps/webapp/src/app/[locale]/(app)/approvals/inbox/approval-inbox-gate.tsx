@@ -1,13 +1,13 @@
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { PageHeader } from "@/components/ui/page-header";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
-import { canAccessApprovalInbox } from "@/lib/authorization";
+import { canOpenApprovalInbox } from "@/lib/authorization";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 import { ApprovalInboxView } from "./approval-inbox-view";
 
 /**
- * Server guard for `/approvals/inbox` (#1976): the same `canAccessApprovalInbox`
+ * Server guard for `/approvals/inbox` (#1976): the same `canOpenApprovalInbox`
  * check as the inbox API, for the active organization's employee. Everyone else
  * leaves before the inbox shell renders.
  */
@@ -24,7 +24,7 @@ export async function ApprovalInboxGate() {
 			</div>
 		);
 	}
-	if (!ability || !canAccessApprovalInbox(ability, currentEmployee)) {
+	if (!ability || !canOpenApprovalInbox(ability, currentEmployee)) {
 		return redirectWithLocale("/");
 	}
 

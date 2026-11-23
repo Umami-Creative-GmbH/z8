@@ -11,6 +11,11 @@ const state = vi.hoisted(() => ({
 	getApprovalInboxDetail: vi.fn(),
 	loadDeputyDetailAccess: vi.fn(async (): Promise<unknown> => null),
 	loadInboxCovers: vi.fn(async (): Promise<unknown[]> => []),
+	resolveComplianceExceptionInboxScope: vi.fn(async (): Promise<unknown> => null),
+}));
+
+vi.mock("./compliance-exception-inbox", () => ({
+	resolveComplianceExceptionInboxScope: state.resolveComplianceExceptionInboxScope,
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({ getAbility: state.getAbility }));
@@ -82,6 +87,44 @@ describe("loadAuthorizedApprovalDetail", () => {
 			organizationId: "org-1",
 		});
 		state.getApprovalInboxDetail.mockResolvedValue(detail);
+		state.resolveComplianceExceptionInboxScope.mockResolvedValue(null);
+	});
+
+	it("opens a compliance exception to an employee who manages Compliance (#1977)", async () => {
+		state.getAbility.mockResolvedValue(
+			defineAbilityFor({
+				userId: "user-1",
+				isPlatformAdmin: false,
+				activeOrganizationId: "org-1",
+				orgMembership: { organizationId: "org-1", role: "admin", status: "active" },
+				employee: { id: "employee-1", organizationId: "org-1", role: "employee", teamId: null },
+				permissions: { orgWide: null, byTeamId: new Map() },
+				managedEmployeeIds: [],
+				customRoles: [],
+			}),
+		);
+		state.findEmployee.mockResolvedValue({ ...manager, role: "employee" });
+		state.findApprovalRequest.mockResolvedValue(undefined);
+		state.resolveComplianceExceptionInboxScope.mockResolvedValue({ kind: "organization" });
+
+		await expect(
+			loadAuthorizedApprovalDetail({
+				userId: "user-1",
+				organizationId: "org-1",
+				approvalId: "exception-1",
+			}),
+		).resolves.toEqual({ status: "found", detail });
+		expect(state.resolveComplianceExceptionInboxScope).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			canManageCompliance: true,
+		});
+		expect(state.getApprovalInboxDetail).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalId: "exception-1",
+				complianceExceptionScope: { kind: "organization" },
+			}),
+		);
 	});
 
 	it("loads a compatibility request for its assigned approver", async () => {

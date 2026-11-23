@@ -10,11 +10,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { loadInboxCovers } from "@/lib/approvals/deputy/deputy-decision-store";
+import { resolveComplianceExceptionInboxScope } from "@/lib/approvals/inbox/compliance-exception-inbox";
 import { getApprovalInboxCounts } from "@/lib/approvals/inbox/read-service";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { canAccessApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
+import { canOpenApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 
@@ -59,7 +60,7 @@ export async function GET() {
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
-		if (!canAccessApprovalInbox(ability, currentEmployee)) {
+		if (!canOpenApprovalInbox(ability, currentEmployee)) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
@@ -85,6 +86,12 @@ export async function GET() {
 				organizationId: currentEmployee.organizationId,
 				deputyEmployeeId: currentEmployee.id,
 				at: systemClock.nowInstant(),
+			}),
+			// Pending ArbZG compliance exceptions this employee sees (#1977, ADR-0005).
+			complianceExceptionScope: await resolveComplianceExceptionInboxScope({
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				canManageCompliance: ability.cannot("manage", "Compliance") === false,
 			}),
 		});
 

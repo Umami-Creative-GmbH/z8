@@ -125,6 +125,23 @@ describe("/approvals/inbox server guard", () => {
 		expect(screen.getByRole("heading", { name: "Approval inbox shell" })).toBeTruthy();
 	});
 
+	it("loads the Approval inbox for a custom-role compliance manager without approver rights (#1977)", async () => {
+		signedInAs("employee", [
+			{
+				roleId: "role-2",
+				roleName: "Compliance officer",
+				baseTier: "employee",
+				permissions: [{ action: "manage", subject: "Compliance" }],
+			},
+		]);
+
+		const outcome = await gateOutcome();
+
+		expect(outcome).not.toHaveProperty("redirectedTo");
+		render(outcome.rendered);
+		expect(screen.getByRole("heading", { name: "Approval inbox shell" })).toBeTruthy();
+	});
+
 	it("redirects an employee without approval access home before the inbox renders", async () => {
 		signedInAs("employee");
 
