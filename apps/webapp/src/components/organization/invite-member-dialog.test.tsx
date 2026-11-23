@@ -76,12 +76,51 @@ vi.mock("@/components/ui/action-panel", () => ({
 	ActionPanelTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
 
-vi.mock("@/components/ui/select", () => ({
-	Select: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-	SelectContent: ({ children }: { children: ReactNode }) => <>{children}</>,
-	SelectItem: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-	SelectTrigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-	SelectValue: () => null,
+vi.mock("@/app/[locale]/(app)/settings/projects/actions", () => ({
+	getProjects: async () => ({
+		success: true,
+		data: [
+			{ id: "6f1c1e9e-8a5c-4e0e-9a51-0c6f1f7c2b11", name: "Client rollout", isActive: true },
+			{ id: "7a2d2f0f-9b6d-4f1f-8b62-1d7f2f8d3c22", name: "Archived pilot", isActive: false },
+		],
+	}),
+}));
+
+vi.mock("@/components/ui/select", async () => {
+	const { createContext, useContext } = await import("react");
+	const Choose = createContext<(value: string) => void>(() => {});
+	return {
+		Select: ({
+			children,
+			onValueChange,
+		}: {
+			children: ReactNode;
+			onValueChange?: (value: string) => void;
+		}) => <Choose.Provider value={onValueChange ?? (() => {})}>{children}</Choose.Provider>,
+		SelectContent: ({ children }: { children: ReactNode }) => <>{children}</>,
+		SelectItem: ({ children, value }: { children: ReactNode; value: string }) => {
+			const choose = useContext(Choose);
+			return (
+				<button type="button" role="option" aria-selected={false} onClick={() => choose(value)}>
+					{children}
+				</button>
+			);
+		},
+		SelectTrigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+		SelectValue: () => null,
+	};
+});
+
+vi.mock("@/components/ui/date-picker", () => ({
+	DatePicker: ({
+		id,
+		value,
+		onChange,
+	}: {
+		id: string;
+		value?: string | null;
+		onChange: (value: string) => void;
+	}) => <input id={id} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />,
 }));
 
 const source = () =>
@@ -223,6 +262,58 @@ describe("InviteMemberDialog target team form", () => {
 			expect(toastErrorMock).toHaveBeenCalledWith("You are not allowed to do this."),
 		);
 		expect(onOpenChange).not.toHaveBeenCalled();
+	});
+
+	it("invites an employee unless the admin chooses otherwise (#1995)", async () => {
+		sendInvitationMock.mockResolvedValue({ success: true });
+		renderDialog();
+
+		expect(screen.queryByLabelText("Contracting company")).toBeNull();
+		submitInvitation();
+
+		await waitFor(() =>
+			expect(sendInvitationMock).toHaveBeenCalledWith({
+				email: "new@example.com",
+				role: "member",
+				canCreateOrganizations: false,
+				targetTeamId: null,
+				engagementKind: "employee",
+			}),
+		);
+	});
+
+	it("invites an External Contractor with contracting details, projects and a planned end (#1995)", async () => {
+		sendInvitationMock.mockResolvedValue({ success: true });
+		renderDialog();
+
+		fireEvent.click(screen.getByRole("option", { name: /External Contractor/ }));
+		fireEvent.change(screen.getByLabelText("Contracting company"), {
+			target: { value: "Hopper Consulting GmbH" },
+		});
+		fireEvent.change(screen.getByLabelText("VAT ID"), { target: { value: "DE123456789" } });
+		fireEvent.change(screen.getByLabelText("PO or cost center"), { target: { value: "PO-4711" } });
+		fireEvent.change(screen.getByLabelText("Planned engagement end"), {
+			target: { value: "2027-06-30" },
+		});
+		// Only active projects are offered.
+		expect(screen.queryByRole("checkbox", { name: "Archived pilot" })).toBeNull();
+		fireEvent.click(await screen.findByRole("checkbox", { name: "Client rollout" }));
+		submitInvitation();
+
+		await waitFor(() =>
+			expect(sendInvitationMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					engagementKind: "contractor",
+					contractor: {
+						companyName: "Hopper Consulting GmbH",
+						vatId: "DE123456789",
+						referenceCode: "PO-4711",
+						projectIds: ["6f1c1e9e-8a5c-4e0e-9a51-0c6f1f7c2b11"],
+						plannedEndDate: "2027-06-30",
+					},
+				}),
+			),
+		);
 	});
 
 	it("renders an accessible target team select below role", () => {

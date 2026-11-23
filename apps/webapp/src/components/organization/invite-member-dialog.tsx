@@ -12,6 +12,7 @@ import {
 	getKioskOnlyEmployeeLocationsAction,
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organization/actions";
+import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { KIOSK_PIN_REFUSALS } from "@/components/settings/kiosk/kiosk-pin-refusals";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,6 +37,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useSession } from "@/lib/auth-client";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	meetsSettingsAccess,
@@ -162,6 +165,17 @@ export function InviteMemberDialog({
 		enabled: open && available,
 	});
 	const kioskLocations = locationsResult?.success ? locationsResult.data : [];
+	// Projects an External Contractor invitation can assign (#1995).
+	const { data: projectsResult } = useQuery({
+		queryKey: ["contractorInvitationProjects", organizationId],
+		queryFn: () => getProjects(),
+		enabled: open && available,
+	});
+	const projects = projectsResult?.success
+		? projectsResult.data
+				.filter((project) => project.isActive)
+				.map((project) => ({ id: project.id, name: project.name }))
+		: [];
 
 	const { inviteMutation, kioskOnlyMutation } = useMemberMutations(organizationId, lifetime);
 
@@ -176,6 +190,13 @@ export function InviteMemberDialog({
 			firstName: "",
 			lastName: "",
 			locationIds: [] as string[],
+			// An External Contractor skips employee-only setup (#1995).
+			engagementKind: "employee" as EngagementKind,
+			contractorCompanyName: "",
+			contractorVatId: "",
+			contractorReferenceCode: "",
+			contractorProjectIds: [] as string[],
+			plannedEndDate: "",
 		},
 		onSubmitMeta: defaultSubmitMeta,
 		onSubmit: async ({ value, meta }) => {
@@ -219,6 +240,18 @@ export function InviteMemberDialog({
 						role: value.role,
 						canCreateOrganizations: value.canCreateOrganizations,
 						targetTeamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+						engagementKind: value.engagementKind,
+						...(value.engagementKind === "contractor"
+							? {
+									contractor: {
+										companyName: value.contractorCompanyName,
+										vatId: value.contractorVatId,
+										referenceCode: value.contractorReferenceCode,
+										projectIds: value.contractorProjectIds,
+										plannedEndDate: value.plannedEndDate || null,
+									},
+								}
+							: {}),
 					},
 				})
 				.catch(() => {
@@ -476,6 +509,191 @@ export function InviteMemberDialog({
 										</form.Field>
 									</>
 								)
+							}
+						</form.Subscribe>
+
+						<form.Subscribe selector={(state) => state.values.kioskOnly}>
+							{(kioskOnly) =>
+								kioskOnly ? null : (
+									<form.Field name="engagementKind">
+										{(field) => (
+											<div className="space-y-2">
+												<Label htmlFor="engagementKind">
+													{t("organization.invite.engagement.label", "Invite as")}
+												</Label>
+												<Select
+													value={field.state.value}
+													onValueChange={(value: EngagementKind) => field.handleChange(value)}
+												>
+													<SelectTrigger id="engagementKind">
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="employee">
+															<div className="flex flex-col items-start">
+																<span className="font-medium">
+																	{t("organization.invite.engagement.employee", "Employee")}
+																</span>
+																<span className="text-xs text-muted-foreground">
+																	{t(
+																		"organization.invite.engagement.employeeDescription",
+																		"Employment terms, work policy and vacation allowance apply",
+																	)}
+																</span>
+															</div>
+														</SelectItem>
+														<SelectItem value="contractor">
+															<div className="flex flex-col items-start">
+																<span className="font-medium">
+																	{t("common:engagement.externalContractor", "External Contractor")}
+																</span>
+																<span className="text-xs text-muted-foreground">
+																	{t(
+																		"organization.invite.engagement.contractorDescription",
+																		"Tracks time on projects; no employment terms, work policy or vacation",
+																	)}
+																</span>
+															</div>
+														</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+										)}
+									</form.Field>
+								)
+							}
+						</form.Subscribe>
+
+						<form.Subscribe
+							selector={(state) =>
+								!state.values.kioskOnly && state.values.engagementKind === "contractor"
+							}
+						>
+							{(contractor) =>
+								contractor ? (
+									<fieldset className="space-y-4 rounded-md border p-4">
+										<legend className="px-1 text-sm font-medium">
+											{t("organization.invite.contractor.legend", "Contractor details (optional)")}
+										</legend>
+										<form.Field name="contractorCompanyName">
+											{(field) => (
+												<div className="space-y-2">
+													<Label htmlFor="contractorCompanyName">
+														{t("organization.invite.contractor.companyName", "Contracting company")}
+													</Label>
+													<Input
+														id="contractorCompanyName"
+														autoComplete="organization"
+														maxLength={200}
+														value={field.state.value}
+														onChange={(e) => field.handleChange(e.target.value)}
+													/>
+												</div>
+											)}
+										</form.Field>
+										<div className="grid gap-4 sm:grid-cols-2">
+											<form.Field name="contractorVatId">
+												{(field) => (
+													<div className="space-y-2">
+														<Label htmlFor="contractorVatId">
+															{t("organization.invite.contractor.vatId", "VAT ID")}
+														</Label>
+														<Input
+															id="contractorVatId"
+															autoComplete="off"
+															maxLength={50}
+															value={field.state.value}
+															onChange={(e) => field.handleChange(e.target.value)}
+														/>
+													</div>
+												)}
+											</form.Field>
+											<form.Field name="contractorReferenceCode">
+												{(field) => (
+													<div className="space-y-2">
+														<Label htmlFor="contractorReferenceCode">
+															{t(
+																"organization.invite.contractor.referenceCode",
+																"PO or cost center",
+															)}
+														</Label>
+														<Input
+															id="contractorReferenceCode"
+															autoComplete="off"
+															maxLength={100}
+															value={field.state.value}
+															onChange={(e) => field.handleChange(e.target.value)}
+														/>
+													</div>
+												)}
+											</form.Field>
+										</div>
+										<form.Field name="plannedEndDate">
+											{(field) => (
+												<div className="space-y-2">
+													<Label htmlFor="plannedEndDate">
+														{t(
+															"organization.invite.contractor.plannedEndDate",
+															"Planned engagement end",
+														)}
+													</Label>
+													<DatePicker
+														id="plannedEndDate"
+														value={field.state.value || null}
+														onChange={field.handleChange}
+													/>
+													<p className="text-xs text-muted-foreground">
+														{t(
+															"organization.invite.contractor.plannedEndDateDescription",
+															"The last working day. Once they join, it becomes a scheduled leaving date that ends their access and seat.",
+														)}
+													</p>
+												</div>
+											)}
+										</form.Field>
+										<form.Field name="contractorProjectIds">
+											{(field) => (
+												<fieldset className="space-y-2">
+													<legend className="text-sm font-medium leading-none">
+														{t("organization.invite.contractor.projects", "Projects")}
+													</legend>
+													{projects.length === 0 ? (
+														<p className="text-sm text-muted-foreground">
+															{t(
+																"organization.invite.contractor.noProjects",
+																"No active projects yet. You can assign projects later.",
+															)}
+														</p>
+													) : (
+														projects.map((option) => {
+															const id = `contractorProject-${option.id}`;
+															return (
+																<div key={option.id} className="flex items-center gap-x-2">
+																	<Checkbox
+																		id={id}
+																		checked={field.state.value.includes(option.id)}
+																		onCheckedChange={(checked) =>
+																			field.handleChange(
+																				checked === true
+																					? [...field.state.value, option.id]
+																					: field.state.value.filter(
+																							(projectId) => projectId !== option.id,
+																						),
+																			)
+																		}
+																	/>
+																	<label htmlFor={id} className="text-sm leading-none">
+																		{option.name}
+																	</label>
+																</div>
+															);
+														})
+													)}
+												</fieldset>
+											)}
+										</form.Field>
+									</fieldset>
+								) : null
 							}
 						</form.Subscribe>
 

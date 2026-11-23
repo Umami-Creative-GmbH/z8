@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { engagementKinds } from "@/lib/engagement/engagement-kind";
 import { contractTypeSchema } from "./employee";
 import { hourlyWageSchema, wageForContract, workModelSchema } from "./employment-history";
 
@@ -79,7 +80,10 @@ export const rehireEmployeeSchema = z
 		role: z.enum(["admin", "manager", "employee"]),
 		teamId: z.uuid().nullable(),
 		primaryManagerId: z.uuid().nullable(),
-		workPolicyId: z.uuid(),
+		// The new period's engagement kind (#1995): converting contractor <-> employee happens here.
+		engagementKind: z.enum(engagementKinds).default("employee"),
+		// Employee-only, like the contract terms below; an External Contractor needs none.
+		workPolicyId: z.uuid().nullable(),
 		weeklyContractMinutes: z.number().int().min(0).max(10080),
 		contractType: contractTypeSchema,
 		workModel: workModelSchema,
@@ -89,10 +93,20 @@ export const rehireEmployeeSchema = z
 		probationEndsOn: z.iso.date().nullable(),
 		changeReason: z.string().max(1000).nullable(),
 	})
-	.refine((data) => data.contractType !== "hourly" || data.hourlyRate !== null, {
-		message: "Hourly rate is required for hourly contracts",
-		path: ["hourlyRate"],
+	.refine((data) => data.engagementKind === "contractor" || data.workPolicyId !== null, {
+		message: "A work policy is required to rehire an employee",
+		path: ["workPolicyId"],
 	})
+	.refine(
+		(data) =>
+			data.engagementKind === "contractor" ||
+			data.contractType !== "hourly" ||
+			data.hourlyRate !== null,
+		{
+			message: "Hourly rate is required for hourly contracts",
+			path: ["hourlyRate"],
+		},
+	)
 	.refine(
 		(data) =>
 			!data.probationStartsOn ||

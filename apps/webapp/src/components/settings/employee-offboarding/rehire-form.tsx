@@ -27,6 +27,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { useRequestIdentity } from "@/lib/query/use-employee-offboarding";
 import type { RehireEmployeeInput } from "@/lib/validations/employee-offboarding";
@@ -38,6 +39,8 @@ const NONE = "__none__";
 export type RehireOption = { id: string; name: string };
 
 export type RehireFormValues = {
+	/** Employee or External Contractor for the new period (#1995). */
+	engagementKind: EngagementKind;
 	role: RehireEmployeeInput["role"];
 	teamId: string;
 	primaryManagerId: string;
@@ -65,6 +68,7 @@ export type RehireFormProps = {
 };
 
 const DEFAULT_VALUES: RehireFormValues = {
+	engagementKind: "employee",
 	role: "employee",
 	teamId: NONE,
 	primaryManagerId: NONE,
@@ -92,7 +96,6 @@ function toContractMinutes(hours: string): number {
  */
 export function RehireForm(props: RehireFormProps) {
 	const { t } = useTranslate();
-	const terms = useEmploymentTermLabels();
 	const requestIdentity = useRequestIdentity();
 	const errorRef = useRef<HTMLDivElement>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
@@ -101,20 +104,23 @@ export function RehireForm(props: RehireFormProps) {
 		defaultValues: DEFAULT_VALUES,
 		onSubmit: async ({ value }) => {
 			setSubmitError(null);
+			// An External Contractor's period gets no employee terms or work policy (#1995).
+			const employeeTerms = value.engagementKind === "employee";
 			const intent = {
 				employeeId: props.employeeId,
 				previousEmploymentPeriodId: props.previousEmploymentPeriodId,
+				engagementKind: value.engagementKind,
 				role: value.role,
 				teamId: value.teamId === NONE ? null : value.teamId,
 				primaryManagerId: value.primaryManagerId === NONE ? null : value.primaryManagerId,
-				workPolicyId: value.workPolicyId,
-				weeklyContractMinutes: toContractMinutes(value.weeklyHours),
-				contractType: value.contractType,
+				workPolicyId: employeeTerms ? value.workPolicyId : null,
+				weeklyContractMinutes: employeeTerms ? toContractMinutes(value.weeklyHours) : 0,
+				contractType: employeeTerms ? value.contractType : DEFAULT_VALUES.contractType,
 				workModel: value.workModel,
-				hourlyRate: hourlyWageFromForm(value.contractType, value.hourlyRate),
-				currency: value.currency.trim().toUpperCase(),
-				probationStartsOn: value.probationStartsOn || null,
-				probationEndsOn: value.probationEndsOn || null,
+				hourlyRate: employeeTerms ? hourlyWageFromForm(value.contractType, value.hourlyRate) : null,
+				currency: employeeTerms ? value.currency.trim().toUpperCase() : DEFAULT_VALUES.currency,
+				probationStartsOn: employeeTerms ? value.probationStartsOn || null : null,
+				probationEndsOn: employeeTerms ? value.probationEndsOn || null : null,
 				changeReason: value.changeReason.trim() || null,
 			};
 			const result = await props.rehire({
@@ -173,6 +179,34 @@ export function RehireForm(props: RehireFormProps) {
 				)}
 			</p>
 
+			<form.Field name="engagementKind">
+				{(field) => (
+					<TermSelectField
+						label={t("settings.employees.offboarding.engagementKind", "Engagement")}
+						field={field}
+					>
+						<SelectItem value="employee">
+							{t("settings.employees.offboarding.engagement.employee", "Employee")}
+						</SelectItem>
+						<SelectItem value="contractor">
+							{t("common:engagement.externalContractor", "External Contractor")}
+						</SelectItem>
+					</TermSelectField>
+				)}
+			</form.Field>
+			<form.Subscribe selector={(state) => state.values.engagementKind}>
+				{(engagementKind) =>
+					engagementKind === "contractor" ? (
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.employees.offboarding.contractorRehireHint",
+								"An External Contractor gets no employment terms, work policy or vacation allowance. Contractor rates are set separately.",
+							)}
+						</p>
+					) : null
+				}
+			</form.Subscribe>
+
 			<div className="grid gap-4 md:grid-cols-2">
 				<RehireAssignmentFields
 					form={form}
@@ -180,106 +214,11 @@ export function RehireForm(props: RehireFormProps) {
 					managers={props.managers}
 					workPolicies={props.workPolicies}
 				/>
-				<form.Field
-					name="weeklyHours"
-					validators={{
-						onSubmit: ({ value }) => {
-							const minutes = toContractMinutes(value);
-							return Number.isFinite(minutes) && minutes >= 0 && minutes <= 10080
-								? undefined
-								: t(
-										"settings.employees.offboarding.weeklyHoursInvalid",
-										"Enter weekly hours between 0 and 168.",
-									);
-						},
-					}}
-				>
-					{(field) => <TermDecimalField field={field} label={terms.weeklyHours} required />}
-				</form.Field>
-				<form.Field name="contractType">
-					{(field) => (
-						<TermSelectField label={terms.contractType} field={field}>
-							<ContractTypeOptions />
-						</TermSelectField>
-					)}
-				</form.Field>
-				<form.Field name="workModel">
-					{(field) => (
-						<TermSelectField label={terms.workModel} field={field}>
-							<WorkModelOptions />
-						</TermSelectField>
-					)}
-				</form.Field>
-				<form.Subscribe selector={(state) => state.values.contractType}>
-					{(contractType) =>
-						contractType === "hourly" ? (
-							<form.Field
-								name="hourlyRate"
-								validators={{
-									onSubmit: ({ value }) =>
-										Number(value.replace(",", ".")) > 0
-											? undefined
-											: t(
-													"settings.employees.offboarding.hourlyRateRequired",
-													"Hourly contracts need a positive hourly rate.",
-												),
-								}}
-							>
-								{(field) => <TermDecimalField field={field} label={terms.hourlyRate} required />}
-							</form.Field>
-						) : null
+				<form.Subscribe selector={(state) => state.values.engagementKind}>
+					{(engagementKind) =>
+						engagementKind === "employee" ? <RehireEmployeeTermFields form={form} /> : null
 					}
 				</form.Subscribe>
-				<form.Field
-					name="currency"
-					validators={{
-						onSubmit: ({ value }) =>
-							/^[A-Za-z]{3}$/.test(value.trim())
-								? undefined
-								: t(
-										"settings.employees.offboarding.currencyInvalid",
-										"Enter a three-letter currency code.",
-									),
-					}}
-				>
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={fieldHasError(field)} required>
-								{t("settings.employees.offboarding.currency", "Currency")}
-							</TFormLabel>
-							<TFormControl hasError={fieldHasError(field)}>
-								<Input
-									name="currency"
-									maxLength={3}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
-									autoComplete="off"
-								/>
-							</TFormControl>
-							<TFormMessage field={field} />
-						</TFormItem>
-					)}
-				</form.Field>
-				<form.Field name="probationStartsOn">
-					{(field) => <TermDateField field={field} label={terms.probationStart} />}
-				</form.Field>
-				<form.Field
-					name="probationEndsOn"
-					validators={{
-						onSubmit: ({ value, fieldApi }) => {
-							const start = fieldApi.form.getFieldValue("probationStartsOn");
-							return value && start && value <= start
-								? t(
-										"settings.employees.offboarding.probationOrder",
-										"Probation end must be after probation start.",
-									)
-								: undefined;
-						},
-					}}
-				>
-					{(field) => <TermDateField field={field} label={terms.probationEnd} />}
-				</form.Field>
 			</div>
 
 			<form.Field name="changeReason">
@@ -320,6 +259,116 @@ export function RehireForm(props: RehireFormProps) {
 				</form.Subscribe>
 			</div>
 		</form>
+	);
+}
+
+/** The employee-only terms of a new employee period: hours, contract, wage, probation. */
+function RehireEmployeeTermFields({ form }: { form: RehireFormApi }) {
+	const { t } = useTranslate();
+	const terms = useEmploymentTermLabels();
+	return (
+		<>
+			<form.Field
+				name="weeklyHours"
+				validators={{
+					onSubmit: ({ value }) => {
+						const minutes = toContractMinutes(value);
+						return Number.isFinite(minutes) && minutes >= 0 && minutes <= 10080
+							? undefined
+							: t(
+									"settings.employees.offboarding.weeklyHoursInvalid",
+									"Enter weekly hours between 0 and 168.",
+								);
+					},
+				}}
+			>
+				{(field) => <TermDecimalField field={field} label={terms.weeklyHours} required />}
+			</form.Field>
+			<form.Field name="contractType">
+				{(field) => (
+					<TermSelectField label={terms.contractType} field={field}>
+						<ContractTypeOptions />
+					</TermSelectField>
+				)}
+			</form.Field>
+			<form.Field name="workModel">
+				{(field) => (
+					<TermSelectField label={terms.workModel} field={field}>
+						<WorkModelOptions />
+					</TermSelectField>
+				)}
+			</form.Field>
+			<form.Subscribe selector={(state) => state.values.contractType}>
+				{(contractType) =>
+					contractType === "hourly" ? (
+						<form.Field
+							name="hourlyRate"
+							validators={{
+								onSubmit: ({ value }) =>
+									Number(value.replace(",", ".")) > 0
+										? undefined
+										: t(
+												"settings.employees.offboarding.hourlyRateRequired",
+												"Hourly contracts need a positive hourly rate.",
+											),
+							}}
+						>
+							{(field) => <TermDecimalField field={field} label={terms.hourlyRate} required />}
+						</form.Field>
+					) : null
+				}
+			</form.Subscribe>
+			<form.Field
+				name="currency"
+				validators={{
+					onSubmit: ({ value }) =>
+						/^[A-Za-z]{3}$/.test(value.trim())
+							? undefined
+							: t(
+									"settings.employees.offboarding.currencyInvalid",
+									"Enter a three-letter currency code.",
+								),
+				}}
+			>
+				{(field) => (
+					<TFormItem>
+						<TFormLabel hasError={fieldHasError(field)} required>
+							{t("settings.employees.offboarding.currency", "Currency")}
+						</TFormLabel>
+						<TFormControl hasError={fieldHasError(field)}>
+							<Input
+								name="currency"
+								maxLength={3}
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								autoComplete="off"
+							/>
+						</TFormControl>
+						<TFormMessage field={field} />
+					</TFormItem>
+				)}
+			</form.Field>
+			<form.Field name="probationStartsOn">
+				{(field) => <TermDateField field={field} label={terms.probationStart} />}
+			</form.Field>
+			<form.Field
+				name="probationEndsOn"
+				validators={{
+					onSubmit: ({ value, fieldApi }) => {
+						const start = fieldApi.form.getFieldValue("probationStartsOn");
+						return value && start && value <= start
+							? t(
+									"settings.employees.offboarding.probationOrder",
+									"Probation end must be after probation start.",
+								)
+							: undefined;
+					},
+				}}
+			>
+				{(field) => <TermDateField field={field} label={terms.probationEnd} />}
+			</form.Field>
+		</>
 	);
 }
 
@@ -414,27 +463,34 @@ function RehireAssignmentFields({
 					</TFormItem>
 				)}
 			</form.Field>
-			<form.Field
-				name="workPolicyId"
-				validators={{
-					onSubmit: ({ value }) =>
-						value
-							? undefined
-							: t("settings.employees.offboarding.fieldRequired", "{label} is required.", {
-									label: terms.workPolicy,
-								}),
-				}}
-			>
-				{(field) => (
-					<TermSelectField label={terms.workPolicy} field={field} required>
-						{workPolicies.map((policy) => (
-							<SelectItem key={policy.id} value={policy.id}>
-								{policy.name}
-							</SelectItem>
-						))}
-					</TermSelectField>
-				)}
-			</form.Field>
+			{/* A work policy is employee-only (#1995). */}
+			<form.Subscribe selector={(state) => state.values.engagementKind}>
+				{(engagementKind) =>
+					engagementKind === "employee" ? (
+						<form.Field
+							name="workPolicyId"
+							validators={{
+								onSubmit: ({ value }) =>
+									value
+										? undefined
+										: t("settings.employees.offboarding.fieldRequired", "{label} is required.", {
+												label: terms.workPolicy,
+											}),
+							}}
+						>
+							{(field) => (
+								<TermSelectField label={terms.workPolicy} field={field} required>
+									{workPolicies.map((policy) => (
+										<SelectItem key={policy.id} value={policy.id}>
+											{policy.name}
+										</SelectItem>
+									))}
+								</TermSelectField>
+							)}
+						</form.Field>
+					) : null
+				}
+			</form.Subscribe>
 		</>
 	);
 }

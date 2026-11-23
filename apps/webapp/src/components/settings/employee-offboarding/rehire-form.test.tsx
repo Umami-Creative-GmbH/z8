@@ -129,6 +129,7 @@ describe("RehireForm", () => {
 			employeeId,
 			previousEmploymentPeriodId: periodId,
 			requestId: expect.any(String),
+			engagementKind: "employee",
 			role: "manager",
 			teamId: "team-1",
 			primaryManagerId: "manager-1",
@@ -142,6 +143,29 @@ describe("RehireForm", () => {
 			probationEndsOn: null,
 			changeReason: null,
 		});
+	});
+
+	it("engages an External Contractor on the new period without employee terms (#1995)", async () => {
+		const user = userEvent.setup();
+		const props = renderForm();
+
+		await user.click(screen.getByRole("option", { name: "External Contractor" }));
+
+		expect(await screen.findByText(/gets no employment terms, work policy/)).toBeTruthy();
+		expect(screen.queryByRole("option", { name: "Standard week" })).toBeNull();
+		expect(screen.queryByRole("textbox", { name: /Weekly Hours/ })).toBeNull();
+		await user.click(screen.getByRole("button", { name: "Confirm rehire" }));
+
+		await waitFor(() => expect(props.onCompleted).toHaveBeenCalled());
+		expect(props.rehire).toHaveBeenCalledWith(
+			expect.objectContaining({
+				engagementKind: "contractor",
+				workPolicyId: null,
+				weeklyContractMinutes: 0,
+				hourlyRate: null,
+				probationStartsOn: null,
+			}),
+		);
 	});
 
 	it("keeps entries after a server refusal and focuses its message", async () => {
