@@ -224,16 +224,53 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			expect(evaluation?.allowance).toMatchObject({ limitKind: "work_days", used: 1, limit: 70 });
 		});
 
+		it.each([
+			// 31 January – 30 April: April has no 31st, so the period ends on its last day.
+			["2026-01-31", 90],
+			// 31 March – 30 June.
+			["2026-03-31", 92],
+			// 31 August – 30 November.
+			["2026-08-31", 92],
+			// 10 February – 9 May.
+			["2026-02-10", 89],
+		])("measures 3 time months from a stint starting on %s as %i days", async (start, days) => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await st.terms(worker, { from: "2026-01-01", workPolicyId: await st.weekdayPolicy(org) });
+			await st.work(org, worker, start);
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			expect(evaluation?.allowance).toMatchObject({ limitKind: "months", used: 1, limit: days });
+		});
+
+		it("counts only the stints worked under framework terms that regular terms later replace", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			// Open-ended framework terms, no agreed end; regular terms take over from 1 July.
+			await st.terms(worker, { from: "2026-01-01", workPolicyId: await st.weekdayPolicy(org) });
+			await workOn(org, worker, ["2026-03-02", "2026-03-06", "2026-03-13"]);
+			await workOn(org, worker, ["2026-05-04", "2026-05-08", "2026-05-15"]);
+			await st.terms(worker, { from: "2026-07-01", profile: "regular" });
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			// Two stints of 12 days each; the months before, between and after them do not count.
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 24,
+				limit: 90,
+				remaining: 66,
+			});
+		});
+
 		describe("one fixed-term employment counts its whole length, pauses included", () => {
 			it("uses up 3 months with June and August worked and July off", async () => {
 				const org = await fx.organization("a");
 				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-				// One Monday–Friday contract from 1 June to 31 August.
-				await st.terms(worker, {
-					from: "2026-06-01",
-					until: "2026-09-01",
-					workPolicyId: await st.weekdayPolicy(org),
-				});
+				// One Monday–Friday contract, agreed from 1 June to 31 August.
+				await st.terms(worker, { from: "2026-06-01", workPolicyId: await st.weekdayPolicy(org) });
+				await st.fixedTermAgreement(worker, "2026-06-01", "2026-08-31");
 				await workOn(org, worker, ["2026-06-01", "2026-06-12", "2026-06-22", "2026-06-30"]);
 				await workOn(org, worker, ["2026-08-01", "2026-08-12", "2026-08-24", "2026-08-31"]);
 
@@ -253,13 +290,9 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				const org = await fx.organization("a");
 				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
 				const policy = await st.weekdayPolicy(org);
-				await st.terms(worker, { from: "2026-06-01", until: "2026-07-15", workPolicyId: policy });
-				await st.terms(worker, {
-					from: "2026-07-15",
-					until: "2026-09-01",
-					workPolicyId: policy,
-					hourlyRate: 16,
-				});
+				await st.terms(worker, { from: "2026-06-01", workPolicyId: policy });
+				await st.terms(worker, { from: "2026-07-15", workPolicyId: policy, hourlyRate: 16 });
+				await st.fixedTermAgreement(worker, "2026-06-01", "2026-08-31");
 				// First worked 8 June, then nothing from 19 June to 31 July.
 				await workOn(org, worker, ["2026-06-08", "2026-06-18", "2026-08-03", "2026-08-10"]);
 
@@ -269,44 +302,44 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				expect(evaluation?.allowance).toMatchObject({ used: 71, limit: 92, remaining: 21 });
 			});
 
-			it("adds separate fixed-term employments, not the time between them", async () => {
+			it("ends the employment on the agreed last day", async () => {
 				const org = await fx.organization("a");
 				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-				const policy = await st.weekdayPolicy(org);
-				await st.terms(worker, { from: "2026-03-01", until: "2026-04-01", workPolicyId: policy });
-				await st.terms(worker, { from: "2026-08-01", until: "2026-09-01", workPolicyId: policy });
-				await workOn(org, worker, ["2026-03-02", "2026-03-31", "2026-08-03", "2026-08-31"]);
+				await st.terms(worker, { from: "2026-06-01", workPolicyId: await st.weekdayPolicy(org) });
+				await st.fixedTermAgreement(worker, "2026-06-01", "2026-06-30");
+				await workOn(org, worker, ["2026-06-01", "2026-06-15", "2026-06-29"]);
+				// Work after the agreed end is not part of the fixed-term employment.
+				await workOn(org, worker, ["2026-08-03", "2026-08-10"]);
 
 				const [evaluation] = await evaluate(org, [worker.employeeId]);
 
-				// Two full calendar months of 30 days each against 90.
-				expect(evaluation?.allowance).toMatchObject({ used: 60, limit: 90, remaining: 30 });
+				// 1 – 29 June (29 days) and 3 – 10 August (8 days) against 90, not July between.
+				expect(evaluation?.allowance).toMatchObject({ used: 37, limit: 90 });
 			});
 
 			it("ends an employment where later regular terms take over", async () => {
 				const org = await fx.organization("a");
 				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
 				const policy = await st.weekdayPolicy(org);
-				await st.terms(worker, { from: "2026-06-01", until: "2026-09-01", workPolicyId: policy });
-				await st.terms(worker, { from: "2026-07-01", until: "2026-08-01", profile: "regular" });
-				await st.terms(worker, { from: "2026-08-01", until: "2026-09-01", workPolicyId: policy });
+				await st.terms(worker, { from: "2026-06-01", workPolicyId: policy });
+				await st.terms(worker, { from: "2026-07-01", profile: "regular" });
+				await st.terms(worker, { from: "2026-08-01", workPolicyId: policy });
+				await st.fixedTermAgreement(worker, "2026-06-01", "2026-08-31");
 				await workOn(org, worker, ["2026-06-01", "2026-06-30", "2026-08-01", "2026-08-31"]);
 
 				const [evaluation] = await evaluate(org, [worker.employeeId]);
 
-				// June and August are separate short-term employments: 30 + 30 days, July not counted.
-				expect(evaluation?.allowance).toMatchObject({ used: 60, limit: 90 });
+				// June and August are separate short-term employments: two full calendar months of
+				// 30 days each against 90, July not counted.
+				expect(evaluation?.allowance).toMatchObject({ used: 60, limit: 90, remaining: 30 });
 			});
 		});
 
 		it("takes the limit from the year's short-term terms when today is outside them", async () => {
 			const org = await fx.organization("a");
 			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
-			await st.terms(worker, {
-				from: "2026-06-01",
-				until: "2026-09-01",
-				workPolicyId: await st.weekdayPolicy(org),
-			});
+			await st.terms(worker, { from: "2026-06-01", workPolicyId: await st.weekdayPolicy(org) });
+			await st.terms(worker, { from: "2026-09-01", profile: "regular" });
 
 			const [evaluation] = await evaluate(org, [worker.employeeId]);
 
@@ -1002,7 +1035,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		const org = await fx.organization("a");
 		const changed = await fx.employee(org, "changed", { contractType: "hourly" });
 		const regular = await fx.employee(org, "regular", { contractType: "hourly" });
-		await st.terms(changed, { from: "2026-01-01", until: "2026-03-01", profile: "regular" });
+		await st.terms(changed, { from: "2026-01-01", profile: "regular" });
 		await st.terms(changed, { from: "2026-03-01" });
 		await st.terms(regular, { from: "2026-01-01", profile: "regular" });
 		await st.work(org, changed, "2026-02-27");

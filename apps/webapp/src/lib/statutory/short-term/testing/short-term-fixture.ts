@@ -1,10 +1,15 @@
 /**
  * Seeding for the short-term employment PostgreSQL suites (#1990), on top of `statutoryFixture`.
- * Raw SQL on purpose: seeding must not depend on the code under test.
+ * Raw SQL on purpose: seeding must not depend on the code under test. Terms and employment
+ * agreements go through the production writers instead, so their rows look as in production (a
+ * terms row only ends where later terms supersede it; a fixed end lives on the agreement).
  */
 import { randomUUID } from "node:crypto";
 import type { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
+import { db } from "@/db";
+import { commitContractChange } from "@/lib/contracts/commit-contract-change";
+import { createInitialEmploymentAgreement } from "@/lib/contracts/fixed-term-agreements";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import type { FixtureEmployee, FixtureOrganization, FixtureUser } from "@/test/statutory-fixtures";
 
@@ -38,47 +43,61 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 		},
 
 		/**
-		 * Confirmed employee terms from `from` (inclusive) to `until` (exclusive). Only a work policy
-		 * plans real week days: `weeklyMinutes` alone (which the resolver spreads Monday–Friday) and
-		 * `scheduleSource: "published_shifts"` leave the week to the shifts and work actually done.
+		 * Confirmed employee terms from `from`, committed as a contract change: they run until later
+		 * terms of the employment period take over (production terms have no end of their own).
+		 * Only a work policy plans real week days: `weeklyMinutes` alone (which the resolver spreads
+		 * Monday–Friday) and `scheduleSource: "published_shifts"` leave the week to the shifts and
+		 * work actually done.
 		 */
 		async terms(
 			employee: FixtureEmployee,
 			options: {
 				from: string;
-				until?: string;
 				profile?: "short_term" | "regular" | "minijob";
 				hourlyRate?: number | null;
 				weeklyMinutes?: number | null;
 				/** A work policy from `workPolicy()` whose schedule plans the work days. */
 				workPolicyId?: string;
-				scheduleSource?: "policy" | "published_shifts" | "on_call";
+				scheduleSource?: "policy" | "published_shifts";
 			},
 		): Promise<void> {
 			const { userId } = await creator();
 			const hourly = options.hourlyRate !== null;
-			await admin.query(
-				`INSERT INTO employee_employment_history
-				 (employee_id, organization_id, valid_from, valid_until, valid_from_date, valid_until_date,
-				  contract_type, weekly_contract_minutes, employment_profile, hourly_rate, currency,
-				  review_state, created_by, updated_at, work_policy_id, schedule_source)
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'EUR', 'confirmed', $11, now(), $12, $13)`,
-				[
-					employee.employeeId,
-					employee.organizationId,
-					`${options.from}T00:00:00Z`,
-					options.until ? `${options.until}T00:00:00Z` : null,
-					options.from,
-					options.until ?? null,
-					hourly ? "hourly" : "fixed",
-					options.weeklyMinutes ?? null,
-					options.profile ?? "short_term",
-					hourly ? (options.hourlyRate ?? 15) : null,
-					userId,
-					options.workPolicyId ?? null,
-					options.scheduleSource ?? null,
-				],
-			);
+			await commitContractChange(db, {
+				organizationId: employee.organizationId,
+				employeeId: employee.employeeId,
+				actorUserId: userId,
+				validFromDate: options.from,
+				reviewState: "confirmed",
+				contractType: hourly ? "hourly" : "fixed",
+				hourlyRate: hourly ? (options.hourlyRate ?? 15) : null,
+				currency: "EUR",
+				employmentProfile: options.profile ?? "short_term",
+				weeklyContractMinutes: options.weeklyMinutes ?? null,
+				workPolicyId: options.workPolicyId ?? null,
+				scheduleSource: options.scheduleSource ?? null,
+			});
+		},
+
+		/**
+		 * The employment period's agreement: fixed-term from `startsOn` to `endsOn` (both
+		 * inclusive), as Settings → Contracts records it.
+		 */
+		async fixedTermAgreement(
+			employee: FixtureEmployee,
+			startsOn: string,
+			endsOn: string,
+		): Promise<void> {
+			const { userId } = await creator();
+			await createInitialEmploymentAgreement(db, {
+				organizationId: employee.organizationId,
+				employeeId: employee.employeeId,
+				actorUserId: userId,
+				kind: "fixed_term",
+				startsOn,
+				endsOn,
+				reason: "Seasonal work",
+			});
 		},
 
 		/** A work policy planning Monday to Friday every week (the 3-month limit). */

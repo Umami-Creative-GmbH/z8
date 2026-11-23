@@ -62,21 +62,27 @@ shift's day); other work on its clock-in's day.
 **Short-term employment**:
 Confirmed short-term terms of one employment period that follow each other without a gap, as in
 force after later confirmed terms supersede them. A new wage or week does not end it; other terms
-or a gap do. **Fixed-term** when its terms were agreed with an end date, else an open-ended
-**framework agreement**.
+or a gap do. Terms that end only because later terms supersede them mark where the short-term
+terms stop; they do not make the employment fixed-term. **Fixed-term** when its employment
+period's current employment agreement (the last link of its `employment_term_agreement` chain) is
+fixed-term; it then ends on the agreement's last day, or on the last short-term day if that is
+earlier. Else an open-ended **framework agreement**.
 
 **Stint**:
 The part of the year that counts towards the limit. A fixed-term employment is one stint from its
-first day (or January 1) to its last short-term day, pauses included: one continuing employment
-counts in full. Under a framework agreement, a run of short-term days no more than 14 calendar days
-apart is a stint, and a longer pause starts a new one. Separate employments are separate stints.
+first day (or January 1) to its last short-term day up to the agreed end, pauses included: one
+continuing employment counts in full. Under a framework agreement, and for short-term days after an
+agreed end, a run of short-term days no more than 14 calendar days apart is a stint, and a longer
+pause starts a new one. Separate employments are separate stints.
 _Avoid_: contract, assignment
 
 **3-month limit**:
 Applies when the employee works a continuous week of 5 or more days. Counted in calendar days. One
-stint alone is measured in **time months** (*Zeitmonate*) from its first day: 15 June – 14 September
-is 3 months, and a fixed-term employment from 1 June to 31 August uses all 92 days even with July
-off. Several stints, prior employers' included, are added up against **90 calendar days**, a full
+stint alone is measured in **time months** (*Zeitmonate*) from its first day (§§ 187 Abs. 2,
+188 Abs. 2 and 3 BGB): the period ends on the day before the day with the start's number in the
+third following month, or on that month's last day if it has no such day. 15 June – 14 September
+is 3 months, 31 January – 30 April too (90 days), and a fixed-term employment from 1 June to
+31 August uses all 92 days even with July off. Several stints, prior employers' included, are added up against **90 calendar days**, a full
 calendar month counting as 30; the time between stints never counts.
 
 **70-working-day limit**:

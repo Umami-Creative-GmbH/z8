@@ -1,5 +1,11 @@
 import { and, eq, gt, gte, inArray, isNull, lt, ne, or } from "drizzle-orm";
-import { employeeEmploymentHistory, employeeStatutoryOffset, shift, workPeriod } from "@/db/schema";
+import {
+	employeeEmploymentHistory,
+	employeeStatutoryOffset,
+	employmentTermAgreement,
+	shift,
+	workPeriod,
+} from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { ContractFieldSource, EffectiveContractOnDay } from "@/lib/contracts/types";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
@@ -111,13 +117,18 @@ export interface ShortTermYearWeek {
 export interface ShortTermEmployment {
 	/** First day, `YYYY-MM-DD`. */
 	readonly from: string;
-	/** Day after the last, `YYYY-MM-DD`; null while the terms run on. */
+	/**
+	 * Day after the last day of its short-term terms, `YYYY-MM-DD`: where later terms take over.
+	 * Null while the terms run on. Says nothing about a fixed term.
+	 */
 	readonly until: string | null;
 	/**
-	 * Whether its terms were agreed with a fixed end: then the employment runs from its first day
-	 * through its pauses. Open-ended framework terms only last while the employee works.
+	 * The agreed last day (`YYYY-MM-DD`, inclusive) when its employment period's current
+	 * employment agreement is fixed-term: then the employment runs from its first day through its
+	 * pauses, up to that day. Null for an open-ended framework agreement, which only lasts while
+	 * the employee works.
 	 */
-	readonly fixedTerm: boolean;
+	readonly fixedTermEndsOn: string | null;
 }
 
 export interface ShortTermEmployeeInputs {
@@ -253,6 +264,32 @@ function termSampleDates(
 	return samples;
 }
 
+/**
+ * Per employment period, the agreed last day of its current employment agreement (the highest
+ * link of its chain; an extension supersedes the link before it) when that one is fixed-term.
+ */
+function currentFixedTermEnds(
+	rows: readonly {
+		employmentPeriodId: string;
+		sequenceNumber: number;
+		kind: string;
+		endsOn: string | null;
+	}[],
+): Map<string, string> {
+	const current = new Map<string, (typeof rows)[number]>();
+	for (const row of rows) {
+		const known = current.get(row.employmentPeriodId);
+		if (!known || row.sequenceNumber > known.sequenceNumber) {
+			current.set(row.employmentPeriodId, row);
+		}
+	}
+	const ends = new Map<string, string>();
+	for (const [periodId, row] of current) {
+		if (row.kind === "fixed_term" && row.endsOn) ends.set(periodId, row.endsOn);
+	}
+	return ends;
+}
+
 interface TermsRow {
 	readonly id: string;
 	readonly employmentPeriodId: string | null;
@@ -265,11 +302,17 @@ interface TermsRow {
 /**
  * An employee's short-term employments from their confirmed terms rows (any profile). As in the
  * contract resolver, within one employment period a later row cuts the end of the row before
- * it; short-term rows that then meet form one employment.
+ * it; short-term rows that then meet form one employment. A terms row's end only marks where
+ * later terms take over: whether the employment is fixed-term, and until when, comes from its
+ * employment period's current agreement (`fixedTermEndsOnByPeriod`).
  */
-export function shortTermEmployments(rows: readonly TermsRow[]): ShortTermEmployment[] {
+export function shortTermEmployments(
+	rows: readonly TermsRow[],
+	fixedTermEndsOnByPeriod: ReadonlyMap<string, string>,
+): ShortTermEmployment[] {
 	const employments: ShortTermEmployment[] = [];
-	for (const group of groupBy(rows, (row) => row.employmentPeriodId ?? "").values()) {
+	for (const [periodId, group] of groupBy(rows, (row) => row.employmentPeriodId ?? "")) {
+		const fixedTermEndsOn = fixedTermEndsOnByPeriod.get(periodId) ?? null;
 		const ordered = [...group]
 			.filter((row) => row.validUntilDate === null || row.validFromDate < row.validUntilDate)
 			.sort(
@@ -278,7 +321,11 @@ export function shortTermEmployments(rows: readonly TermsRow[]): ShortTermEmploy
 					a.createdAt.getTime() - b.createdAt.getTime() ||
 					a.id.localeCompare(b.id),
 			);
-		let current: { from: string; until: string | null; fixedTerm: boolean } | null = null;
+		let current: { from: string; until: string | null } | null = null;
+		const close = () => {
+			if (current) employments.push({ ...current, fixedTermEndsOn });
+			current = null;
+		};
 		for (const [index, row] of ordered.entries()) {
 			const next = ordered[index + 1];
 			const until =
@@ -287,20 +334,17 @@ export function shortTermEmployments(rows: readonly TermsRow[]): ShortTermEmploy
 					: row.validUntilDate;
 			if (until !== null && row.validFromDate >= until) continue;
 			if (row.employmentProfile !== "short_term") {
-				if (current) employments.push(current);
-				current = null;
+				close();
 				continue;
 			}
-			const fixedTerm = row.validUntilDate !== null;
 			if (current && current.until === row.validFromDate) {
 				current.until = until;
-				current.fixedTerm = fixedTerm;
 			} else {
-				if (current) employments.push(current);
-				current = { from: row.validFromDate, until, fixedTerm };
+				close();
+				current = { from: row.validFromDate, until };
 			}
 		}
-		if (current) employments.push(current);
+		close();
 	}
 	return employments.sort((a, b) => a.from.localeCompare(b.from));
 }
@@ -459,6 +503,35 @@ export async function loadShortTermInputs(
 				lt(employeeStatutoryOffset.validFromDate, until),
 			),
 		);
+
+	// The current link of each employment period's agreement chain says whether it is fixed-term.
+	const candidateSet = new Set(candidates);
+	const periodIds = [
+		...new Set(
+			confirmedTermRows
+				.filter((row) => candidateSet.has(row.employeeId))
+				.flatMap((row) => (row.employmentPeriodId ? [row.employmentPeriodId] : [])),
+		),
+	];
+	const agreementRows =
+		periodIds.length === 0
+			? []
+			: await db
+					.select({
+						employmentPeriodId: employmentTermAgreement.employmentPeriodId,
+						sequenceNumber: employmentTermAgreement.sequenceNumber,
+						kind: employmentTermAgreement.kind,
+						endsOn: employmentTermAgreement.endsOn,
+					})
+					.from(employmentTermAgreement)
+					.where(
+						and(
+							eq(employmentTermAgreement.organizationId, input.organizationId),
+							inArray(employmentTermAgreement.employeeId, candidates),
+							inArray(employmentTermAgreement.employmentPeriodId, periodIds),
+						),
+					);
+	const fixedTermEndsOnByPeriod = currentFixedTermEnds(agreementRows);
 
 	const inYears = (date: string) => yearOf(date) >= firstYear && yearOf(date) <= lastYear;
 	// Running work and the rest of its shift meet on one minute grid, so their sum stays put
@@ -748,7 +821,10 @@ export async function loadShortTermInputs(
 					year: yearOf(row.validFromDate),
 					count: row.countValue ?? 0,
 				})),
-			employments: shortTermEmployments(confirmedTermRowsByEmployee.get(employeeId) ?? []),
+			employments: shortTermEmployments(
+				confirmedTermRowsByEmployee.get(employeeId) ?? [],
+				fixedTermEndsOnByPeriod,
+			),
 			weekByYear,
 		});
 	}

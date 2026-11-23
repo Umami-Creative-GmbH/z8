@@ -154,7 +154,7 @@ describe("short-term allowance in Scheduling and Staffing (PostgreSQL)", () => {
 	it("skips employees who are not short-term in the judged window", async () => {
 		const org = await fx.organization("a");
 		const former = await fx.employee(org, "former", { contractType: "hourly" });
-		await st.terms(former, { from: "2026-01-01", until: "2026-05-01" });
+		await st.terms(former, { from: "2026-01-01" });
 		await st.terms(former, { from: "2026-05-01", profile: "regular" });
 		await workDays(org, former, 69);
 

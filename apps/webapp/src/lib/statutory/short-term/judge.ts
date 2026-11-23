@@ -2,7 +2,7 @@
  * Pure judgement of one employee's short-term calendar year (#1990). Inputs come from
  * `loadShortTermInputs`; nothing here reads the database.
  */
-import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	classifyStatutoryUsage,
 	type StatutoryFinding,
@@ -132,9 +132,10 @@ function employmentKeys(
 
 /**
  * The year's stints. One fixed-term employment is one stint from its first day (or January 1) to
- * its last counted day, pauses included: the Geringfügigkeits-Richtlinien count one continuing
- * employment in full. Under open-ended framework terms, each run of observed work is a stint
- * (`observedRuns`), so the pauses between assignments do not count.
+ * its last counted day up to its agreed end, pauses included: the Geringfügigkeits-Richtlinien
+ * count one continuing employment in full. Under open-ended framework terms, and after an agreed
+ * end, each run of observed work is a stint (`observedRuns`), so the pauses between assignments
+ * do not count.
  */
 export function shortTermStints(input: {
 	readonly year: number;
@@ -150,7 +151,7 @@ export function shortTermStints(input: {
 		const employment = key.startsWith("employment:")
 			? input.employments[Number(key.slice("employment:".length))]
 			: undefined;
-		if (!employment?.fixedTerm) {
+		if (!employment?.fixedTermEndsOn || day > employment.fixedTermEndsOn) {
 			observed.push(day);
 			continue;
 		}
@@ -225,6 +226,20 @@ function ownLimitKindOf(
 		: "work_days";
 }
 
+/**
+ * Calendar days of `months` time months from `start` (§§ 187 Abs. 2, 188 Abs. 2 and 3 BGB): the
+ * period ends on the day before the day with the start's number in the `months`-th following
+ * month, or on that month's last day when it has no such day. 31 January – 30 April is 90 days.
+ */
+function timeMonthsDays(start: PlainDate, months: number): number {
+	const month = start.with({ day: 1 }).add({ months });
+	const end =
+		start.day <= month.daysInMonth
+			? month.with({ day: start.day }).subtract({ days: 1 })
+			: month.with({ day: month.daysInMonth });
+	return start.until(end).days + 1;
+}
+
 function calendarDays(stint: ShortTermStint): number {
 	return parsePlainDate(stint.firstDay).until(parsePlainDate(stint.lastDay)).days + 1;
 }
@@ -271,8 +286,9 @@ interface AllowanceCount {
  * The year's allowance under § 8 Abs. 1 Nr. 2 SGB IV and the Geringfügigkeits-Richtlinien:
  *
  * - **3 months** when every stint follows a continuous week of 5 or more work days, counted in
- *   calendar days. One stint alone is measured in time months (*Zeitmonate*) from its first day:
- *   15 June – 14 September is 3 months (92 days), and 15 June – 15 August uses 62 of them, not a
+ *   calendar days. One stint alone is measured in time months (*Zeitmonate*) from its first day
+ *   (`timeMonthsDays`): 15 June – 14 September is 3 months (92 days), 31 January – 30 April
+ *   is 90 days, and 15 June – 15 August uses 62 of them, not a
  *   started third month. A fixed-term employment is one stint, its pauses included (see
  *   `shortTermStints`). Several stints (also a prior employer's) are added: a full calendar month
  *   counts as 30 days, a part month with its actual days, against 90 calendar days. The pauses
@@ -301,10 +317,9 @@ function countAllowance(input: {
 	}
 	const [only] = stints;
 	if (stints.length === 1 && only && prior.months === 0) {
-		const start = parsePlainDate(only.firstDay);
 		return {
 			limitKind: "months",
-			limit: start.until(start.add({ months: monthLimit })).days,
+			limit: timeMonthsDays(parsePlainDate(only.firstDay), monthLimit),
 			ownUsed: calendarDays(only),
 			priorEmployerUsed: 0,
 		};
