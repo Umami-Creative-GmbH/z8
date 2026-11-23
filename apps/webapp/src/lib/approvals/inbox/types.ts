@@ -54,6 +54,8 @@ export interface ApprovalInboxSummary {
 		subtitle: ApprovalInboxLocalizedText;
 		/** None when `detail` is text a person entered, shown as written (#1977). */
 		detail?: ApprovalInboxLocalizedText;
+		/** The badge's label, when it names a kind rather than data such as a category (#1978). */
+		badge?: ApprovalInboxLocalizedText;
 	};
 }
 
@@ -249,7 +251,17 @@ export interface ApprovalInboxDetailResult {
 export interface ApprovalInboxWarning {
 	source: string;
 	message: string;
+	/** The message in the viewer's language (#1978); `source` then names an approval type. */
+	localized?: ApprovalInboxLocalizedText;
+	/**
+	 * The gravest of what failed (#1978): its list ("list"), its rows of a "Covering for"
+	 * section ("covering"), only its count ("count"; its rows still list), or only a
+	 * "Covering for" section's header count ("covering_count"; no total or row misses it).
+	 */
+	failure?: ApprovalInboxSourceFailure;
 }
+
+export type ApprovalInboxSourceFailure = "list" | "count" | "covering" | "covering_count";
 
 export interface ApprovalInboxListResult {
 	items: ApprovalInboxItem[];

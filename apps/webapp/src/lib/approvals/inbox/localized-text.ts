@@ -1,113 +1,18 @@
-import { parseInstant } from "@/lib/datetime/temporal-core";
-import { parseTimeZone } from "@/lib/timezone/validation";
-import {
-	formatCountry,
-	formatMoney,
-	formatPlainDate,
-	formatPlainDateRange,
-	formatRecordedInstant,
-	formatSignedMoney,
-} from "@/lib/travel-expenses/format";
-import { signedAmount } from "@/lib/travel-expenses/money";
 import { perDiemLocationName } from "@/lib/travel-expenses/per-diem-location-name";
+import { type LocalizedTextTranslate, resolveReviewText } from "./summary-text";
 import type {
 	ApprovalInboxDetailChange,
 	ApprovalInboxLocalizedText,
-	ApprovalInboxTextParam,
 	ApprovalInboxValue,
 } from "./types";
 
-/** A Tolgee-style translate function: key, English default, interpolation values. */
-export type LocalizedTextTranslate = (
-	key: string,
-	fallback: string,
-	params?: Record<string, string | number>,
-) => string;
-
-type ZonedInstantValue = Extract<ApprovalInboxValue, { kind: "zoned_instant" }>;
-
-/** The instant's wall-clock time in its zone, or null for an unreadable instant or zone. */
-function zonedDateTimeOf(value: ZonedInstantValue) {
-	try {
-		return parseInstant(value.at).toZonedDateTimeISO(parseTimeZone(value.timeZone));
-	} catch {
-		return null;
-	}
-}
-
-/** An instant in its named zone, labelled with that zone: never the viewer's zone (#1977). */
-function formatZonedInstant(locale: string, value: ZonedInstantValue): string {
-	const zoned = zonedDateTimeOf(value);
-	if (!zoned) return value.at;
-	return `${zoned.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} ${zoned.timeZoneId}`;
-}
-
-/** A typed value in the viewer's locale, as the report pages show it (#687). */
-export function formatApprovalInboxValue(locale: string, value: ApprovalInboxValue): string {
-	switch (value.kind) {
-		case "plain_date":
-			return formatPlainDate(locale, value.date);
-		case "plain_date_range":
-			return value.start === value.end
-				? formatPlainDate(locale, value.start)
-				: (formatPlainDateRange(locale, value.start, value.end) ?? "");
-		case "instant":
-			return formatRecordedInstant(locale, value.at);
-		case "zoned_instant":
-			return formatZonedInstant(locale, value);
-		case "money":
-			return value.signed
-				? formatSignedMoney(locale, value.amount, value.currency)
-				: formatMoney(locale, value.amount, value.currency);
-		case "country":
-			return formatCountry(locale, value.code);
-	}
-}
-
-/** A typed value as stored: ISO dates, the decimal with its currency code, the country code. */
-function canonicalValue(value: ApprovalInboxValue): string {
-	switch (value.kind) {
-		case "plain_date":
-			return value.date;
-		case "plain_date_range":
-			return value.start === value.end ? value.start : `${value.start} – ${value.end}`;
-		case "instant":
-			return value.at;
-		case "zoned_instant":
-			return zonedDateTimeOf(value)?.toString({ smallestUnit: "minute" }) ?? value.at;
-		case "money":
-			return `${value.signed ? signedAmount(value.amount) : value.amount} ${value.currency}`;
-		case "country":
-			return value.code;
-	}
-}
-
-function isValue(
-	value: ApprovalInboxLocalizedText | ApprovalInboxValue,
-): value is ApprovalInboxValue {
-	return "kind" in value;
-}
+export { formatApprovalInboxValue, type LocalizedTextTranslate } from "./summary-text";
 
 /** Whether a detail row's value is an original/requested change rather than a text. */
 export function isApprovalInboxDetailChange(
 	value: string | ApprovalInboxLocalizedText | ApprovalInboxValue | ApprovalInboxDetailChange,
 ): value is ApprovalInboxDetailChange {
 	return typeof value !== "string" && "kind" in value && value.kind === "change";
-}
-
-function resolveParam(
-	param: ApprovalInboxTextParam,
-	translate: LocalizedTextTranslate,
-	locale: string | undefined,
-): string | number {
-	if (Array.isArray(param)) {
-		return param.map((entry) => resolveLocalizedText(entry, translate, locale)).join("; ");
-	}
-	if (typeof param !== "object") return param;
-	if ("perDiemLocation" in param) {
-		return perDiemLocationName(param.perDiemLocation, locale ?? "en", translate);
-	}
-	return resolveLocalizedText(param, translate, locale);
 }
 
 /**
@@ -122,16 +27,9 @@ export function resolveLocalizedText(
 	translate: LocalizedTextTranslate,
 	locale?: string,
 ): string {
-	if (typeof value === "string") return value;
-	if (isValue(value)) {
-		return locale ? formatApprovalInboxValue(locale, value) : canonicalValue(value);
-	}
-	if (!value.params) return translate(value.key, value.fallback);
-	const params: Record<string, string | number> = {};
-	for (const [name, param] of Object.entries(value.params)) {
-		params[name] = resolveParam(param, translate, locale);
-	}
-	return translate(value.key, value.fallback, params);
+	return resolveReviewText(value, translate, locale, (location) =>
+		perDiemLocationName(location, locale ?? "en", translate),
+	);
 }
 
 /** The English default of a review text, interpolated, with canonical values (tests, logs). */

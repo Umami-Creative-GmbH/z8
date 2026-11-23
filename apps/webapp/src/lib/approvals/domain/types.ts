@@ -183,6 +183,8 @@ export interface ApprovalDisplayMetadata {
 		title: ApprovalInboxLocalizedText;
 		subtitle: ApprovalInboxLocalizedText;
 		summary: ApprovalInboxLocalizedText;
+		/** The badge's label, when it names a kind rather than data such as a category (#1978). */
+		badge?: ApprovalInboxLocalizedText;
 	};
 }
 

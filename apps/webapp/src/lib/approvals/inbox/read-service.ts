@@ -81,6 +81,7 @@ import {
 	getSupportedInboxSources,
 	isSupportedInboxType,
 } from "./source-adapters";
+import { isGraverSourceFailure } from "./source-failure";
 import {
 	type ApprovalInboxTriageEvidenceLoader,
 	loadCurrentApprovalTriageEvidence,
@@ -97,6 +98,7 @@ import type {
 	ApprovalInboxListResult,
 	ApprovalInboxLocalizedText,
 	ApprovalInboxRiskLevel,
+	ApprovalInboxSourceFailure,
 	ApprovalInboxStatus,
 	ApprovalInboxTimeComparison,
 	ApprovalInboxType,
@@ -124,6 +126,12 @@ interface GetApprovalInboxListFromSourcesInput {
 	complianceExceptionRead?: ComplianceExceptionInboxRead;
 	triagePolicy?: ApprovalTriagePolicy;
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
+	/**
+	 * Every row of each "Covering for" section, in order, instead of its first
+	 * `COVERING_SECTION_LIMIT` (#1978): for a caller that reads evidence itself and must cut
+	 * each section after it, as the inbox does. A section's `hasMore` and `count` are unchanged.
+	 */
+	uncutCoveringSections?: boolean;
 	sources: ApprovalInboxSource[];
 	params: ApprovalInboxListParams;
 	now?: Date;
@@ -282,6 +290,62 @@ const priorityRank: Record<UnifiedApprovalItem["priority"], number> = {
 	low: 3,
 };
 
+const SOURCE_FAILURE_WARNINGS: Record<
+	ApprovalInboxSourceFailure,
+	{ message: (displayName: string) => string; localized: ApprovalInboxLocalizedText }
+> = {
+	list: {
+		message: (displayName) => `${displayName} approvals could not be loaded.`,
+		localized: {
+			key: "approvals:approvals.inboxWarning.notLoaded",
+			fallback: "These approvals could not be loaded. Lists and totals may be incomplete.",
+		},
+	},
+	count: {
+		message: (displayName) => `${displayName} approvals could not be counted.`,
+		localized: {
+			key: "approvals:approvals.inboxWarning.notCounted",
+			fallback: "These approvals could not be counted. Totals may be incomplete.",
+		},
+	},
+	covering: {
+		message: (displayName) =>
+			`${displayName} approvals of a "Covering for" section could not be loaded.`,
+		localized: {
+			key: "approvals:approvals.inboxWarning.coveringNotLoaded",
+			fallback:
+				'These approvals could not be loaded for a "Covering for" section. Totals may be incomplete.',
+		},
+	},
+	// Only a section header's count: every row lists, and no total misses one.
+	covering_count: {
+		message: (displayName) =>
+			`${displayName} approvals of a "Covering for" section could not be counted.`,
+		localized: {
+			key: "approvals:approvals.inboxWarning.coveringNotCounted",
+			fallback:
+				'These approvals could not be counted for a "Covering for" section. Its count may be incomplete.',
+		},
+	},
+};
+
+/**
+ * Records that a source failed, as one warning per source (#1978): a gap in the list or the
+ * totals, never a silent zero. A source's gravest failure names it, whichever came first.
+ */
+function warnSourceFailed(
+	warnings: ApprovalInboxWarning[],
+	source: Pick<ApprovalInboxSource, "type" | "displayName">,
+	failure: ApprovalInboxSourceFailure,
+): void {
+	const index = warnings.findIndex((warning) => warning.source === source.type);
+	if (index !== -1 && !isGraverSourceFailure(failure, warnings[index].failure)) return;
+	const { message, localized } = SOURCE_FAILURE_WARNINGS[failure];
+	const warning = { source: source.type, message: message(source.displayName), localized, failure };
+	if (index === -1) warnings.push(warning);
+	else warnings[index] = warning;
+}
+
 export async function getApprovalInboxListFromSources({
 	sources: approvalSources,
 	params,
@@ -292,6 +356,7 @@ export async function getApprovalInboxListFromSources({
 	loadDeputyDecidedEarlierStages: loadDecidedEarlier = async () => new Set<string>(),
 	triagePolicy = DEFAULT_APPROVAL_TRIAGE_POLICY,
 	loadTriageEvidence = unknownApprovalInboxTriageEvidence,
+	uncutCoveringSections = false,
 	complianceExceptionRead,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
 	// Managing Compliance alone is no approver right (#1977): no approvals, only exceptions.
@@ -331,10 +396,7 @@ export async function getApprovalInboxListFromSources({
 	);
 	for (const { source, approvalsExit } of approvalResults) {
 		if (Exit.isFailure(approvalsExit)) {
-			warnings.push({
-				source: source.type,
-				message: `${source.displayName} approvals could not be loaded.`,
-			});
+			warnSourceFailed(warnings, source, "list");
 		} else {
 			items.push(
 				...(await Promise.all(
@@ -365,6 +427,7 @@ export async function getApprovalInboxListFromSources({
 	);
 	for (const { source, countExit } of countResults) {
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
+		if (Exit.isFailure(countExit)) warnSourceFailed(warnings, source, "count");
 	}
 
 	const pending = (params.status ?? "pending") === "pending";
@@ -453,6 +516,9 @@ export async function getApprovalInboxListFromSources({
 					now: effectiveNow,
 					triagePolicy,
 					loadTriageEvidence,
+					uncut: uncutCoveringSections,
+					onSourceFailed: (source) => warnSourceFailed(warnings, source, "covering"),
+					onSourceCountFailed: (source) => warnSourceFailed(warnings, source, "covering_count"),
 				})
 			: undefined;
 
@@ -521,7 +587,7 @@ async function loadComplianceExceptionInboxRows(input: {
 }
 
 /** The most rows one "Covering for" section lists at once. */
-const COVERING_SECTION_LIMIT = 100;
+export const COVERING_SECTION_LIMIT = 100;
 
 /**
  * Each "Covering for" section's own rows (#1016): the absent approver's
@@ -542,6 +608,12 @@ async function loadCoveringSections(input: {
 	now: Date;
 	triagePolicy: ApprovalTriagePolicy;
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
+	/** Every row, not the first `COVERING_SECTION_LIMIT` (#1978). */
+	uncut?: boolean;
+	/** A source whose covered list failed: the sections may miss its approvals. */
+	onSourceFailed: (source: ApprovalInboxSource) => void;
+	/** A source whose covered count failed: a section's header count may miss its approvals. */
+	onSourceCountFailed: (source: ApprovalInboxSource) => void;
 }): Promise<ApprovalInboxCoveringSection[]> {
 	const { params } = input;
 	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
@@ -565,6 +637,7 @@ async function loadCoveringSections(input: {
 				Promise.all(
 					deputySources.map(async (source) => {
 						const exit = await runtime.runPromiseExit(source.handler.getApprovals(sectionParams));
+						if (Exit.isFailure(exit)) input.onSourceFailed(source);
 						return Exit.isSuccess(exit)
 							? await Promise.all(
 									exit.value
@@ -629,7 +702,7 @@ async function loadCoveringSections(input: {
 			const sorted = rows
 				.map((row) => (decidedEarlier.has(row.id) ? markDecidedEarlierStage(row) : row))
 				.sort(compareInboxItems);
-			const shown = sorted.slice(0, COVERING_SECTION_LIMIT);
+			const shown = input.uncut ? sorted : sorted.slice(0, COVERING_SECTION_LIMIT);
 			const hasMore = truncated || sorted.length > COVERING_SECTION_LIMIT;
 			const count = hasMore
 				? ((
@@ -639,6 +712,7 @@ async function loadCoveringSections(input: {
 							sources: deputySources,
 							canonicalReads: deputyReads,
 							now: input.now,
+							onSourceFailed: input.onSourceCountFailed,
 						})
 					)[0]?.count ?? shown.length)
 				: shown.length;
@@ -657,6 +731,8 @@ async function countCoveringSections(input: {
 	sources: ApprovalInboxSource[];
 	canonicalReads: readonly InboxCanonicalRead[];
 	now: Date;
+	/** A source whose count failed: the total misses its approvals. */
+	onSourceFailed?: (source: ApprovalInboxSource) => void;
 }): Promise<Array<ApprovalInboxCover & { count: number }>> {
 	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
 	const deputyReads = input.canonicalReads.filter((read) => isDeputyDecisionEntityType(read.type));
@@ -668,6 +744,7 @@ async function countCoveringSections(input: {
 						const exit = await runtime.runPromiseExit(
 							source.handler.getCount(cover.approverId, input.organizationId, {}),
 						);
+						if (Exit.isFailure(exit)) input.onSourceFailed?.(source);
 						return Exit.isSuccess(exit) ? exit.value : 0;
 					}),
 				),
@@ -713,17 +790,28 @@ export async function countCoveredApproverPending(input: {
 	return section?.count ?? 0;
 }
 
+/** What a caller may hold fixed for one read: its clock, triage policy and evidence (#1978). */
+export type ApprovalInboxListReadOptions = Pick<
+	GetApprovalInboxListFromSourcesInput,
+	"now" | "triagePolicy" | "loadTriageEvidence" | "uncutCoveringSections"
+>;
+
 export async function getApprovalInboxList(
 	params: ApprovalInboxListParams,
+	options: ApprovalInboxListReadOptions = {},
 ): Promise<ApprovalInboxListResult> {
 	return getApprovalInboxListFromSources({
 		sources: getSupportedInboxSources(),
 		params,
 		canonicalReads: CANONICAL_INBOX_READS,
-		triagePolicy: await getEffectiveApprovalTriagePolicy({
-			organizationId: params.organizationId,
-		}),
-		loadTriageEvidence: loadCurrentApprovalTriageEvidence,
+		now: options.now,
+		triagePolicy:
+			options.triagePolicy ??
+			(await getEffectiveApprovalTriagePolicy({
+				organizationId: params.organizationId,
+			})),
+		loadTriageEvidence: options.loadTriageEvidence ?? loadCurrentApprovalTriageEvidence,
+		uncutCoveringSections: options.uncutCoveringSections,
 		loadDeputyDecidedEarlierStages: (input) => loadDeputyDecidedEarlierStages(db, input),
 		complianceExceptionRead: complianceExceptionInboxRead,
 	});
@@ -770,6 +858,18 @@ export function countsWithCoveringSections(
 		counts[row.type] = (counts[row.type] ?? 0) + 1;
 	}
 	return counts;
+}
+
+/**
+ * The viewer's own items and their "Covering for" sections' rows as one list (#1978), in
+ * the inbox's order: risk, priority, then age. The rows the counts above add up.
+ */
+export function itemsWithCoveringSections(
+	result: Pick<ApprovalInboxListResult, "items" | "covering">,
+): ApprovalInboxItem[] {
+	return [...result.items, ...(result.covering ?? []).flatMap((section) => section.rows)].sort(
+		compareInboxItems,
+	);
 }
 
 export async function getApprovalInboxDetailFromRequest({
@@ -1146,6 +1246,9 @@ async function toInboxItem(
 							title: approval.display.localized.title,
 							subtitle: approval.display.localized.subtitle,
 							detail: approval.display.localized.summary,
+							...(approval.display.localized.badge
+								? { badge: approval.display.localized.badge }
+								: {}),
 						},
 					}
 				: {}),
@@ -1491,7 +1594,8 @@ function formatCorrectionTime(value: Date | null) {
 	return value ? getInstantLocalMinuteFields(instantFromDate(value), "UTC").time : "missing";
 }
 
-function compareInboxItems(left: ApprovalInboxItem, right: ApprovalInboxItem): number {
+/** The inbox's order: risk, priority, then age. */
+export function compareInboxItems(left: ApprovalInboxItem, right: ApprovalInboxItem): number {
 	return (
 		riskRank[left.triage.riskLevel] - riskRank[right.triage.riskLevel] ||
 		priorityRank[left.triage.priority] - priorityRank[right.triage.priority] ||

@@ -939,4 +939,79 @@ describe("ApprovalInboxPage", () => {
 			screen.getAllByText("Some approvals could not be loaded."),
 		).toHaveLength(1);
 	});
+
+	it("warns once per failed approval type, by its name, in the viewer's language (#1978)", () => {
+		const german: Record<string, string> = {
+			"approvals:approvals.types.travel_expense_claim": "Reisekosten",
+			"approvals:approvals.inboxWarning.notLoaded": "Konnten nicht geladen werden.",
+			"approvals:approvals.inboxWarning.notCounted": "Konnten nicht gezählt werden.",
+		};
+		translateMock.mockImplementation(
+			(key: string, defaultValue?: string) => german[key] ?? defaultValue ?? key,
+		);
+		const failed = (failure: "notLoaded" | "notCounted") => ({
+			source: "travel_expense_claim",
+			message: "Travel Expense approvals could not be loaded.",
+			localized: {
+				key: `approvals:approvals.inboxWarning.${failure}`,
+				fallback: "English",
+			},
+		});
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					// A later page can fail differently for the same source.
+					makeApprovalInboxPage(undefined, { warnings: [failed("notLoaded")] }),
+					makeApprovalInboxPage(undefined, { warnings: [failed("notCounted")] }),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getAllByText("Reisekosten")).toHaveLength(1);
+		expect(screen.getByText("Konnten nicht geladen werden.")).toBeTruthy();
+		expect(screen.queryByText("Konnten nicht gezählt werden.")).toBeNull();
+		expect(screen.queryByText("travel_expense_claim")).toBeNull();
+		expect(screen.queryByText(/could not be/)).toBeNull();
+	});
+
+	it("keeps a source's gravest warning across pages, not its first (#1978)", () => {
+		const failed = (failure: "count" | "list", key: "notCounted" | "notLoaded") => ({
+			source: "travel_expense_claim",
+			message: `Travel Expense approvals: ${failure}`,
+			localized: { key: `approvals:approvals.inboxWarning.${key}`, fallback: `Failed ${key}.` },
+			failure,
+		});
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					// The first page only missed the count; a later page missed the rows themselves.
+					makeApprovalInboxPage(undefined, { warnings: [failed("count", "notCounted")] }),
+					makeApprovalInboxPage(undefined, { warnings: [failed("list", "notLoaded")] }),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getByText("Failed notLoaded.")).toBeTruthy();
+		expect(screen.queryByText("Failed notCounted.")).toBeNull();
+	});
 });
