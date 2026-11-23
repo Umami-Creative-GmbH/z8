@@ -71,7 +71,7 @@ export interface EvaluateMinijobInput {
 	>;
 	/**
 	 * Splits planned from worked time: open clock-ins count up to now, started shifts only for
-	 * their rest, and proposals that start at or before now not at all.
+	 * their rest, and proposals that have ended by now not at all.
 	 */
 	readonly now: Instant;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
@@ -373,7 +373,9 @@ export async function evaluateMinijobEarnings(
 			},
 			timezone,
 		);
-		if (compareInstants(interval.start, input.now) <= 0) continue;
+		// A proposal nobody works yet counts in full until it ends, like a started shift nobody has
+		// clocked in for: a same-day cover still warns.
+		if (compareInstants(interval.end, input.now) <= 0) continue;
 		addItem(proposal.employeeId, {
 			source: "proposed",
 			id: `${proposal.date}T${proposal.startTime}-${proposal.endTime}`,

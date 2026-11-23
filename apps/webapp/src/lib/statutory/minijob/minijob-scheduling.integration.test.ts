@@ -129,6 +129,42 @@ describe("Minijob warnings in Scheduling and Staffing (PostgreSQL)", () => {
 		expect(Object.keys(added.get(worker.employeeId)?.[0] ?? {}).sort()).toEqual(PROJECTED_KEYS);
 	});
 
+	it("counts a same-day cover Staffing proposes after it has started, in full", async () => {
+		const org = await fx.organization("a");
+		const owner = await fx.user("owner");
+		await fx.membership(org, owner, "owner");
+		const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+		// 13 € an hour: 40 h of June shifts ahead earn 520 € of the 556 € cap of 2025.
+		await mj.terms(worker, owner, { from: "2025-01-01", hourlyRate: 13 });
+		for (const date of ["2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06"]) {
+			await mj.shift(org, worker, owner, { date, startTime: "08:00", endTime: "18:00" });
+		}
+
+		// 08:10 on the day: the 08:00–18:00 cover has started, but nobody works it yet.
+		const added = await addedStatutoryScheduleFindings(
+			db,
+			{
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2025-06-02", endExclusive: "2025-06-03" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.ZonedDateTime.from("2025-06-02T08:10[Europe/Berlin]").toInstant(),
+				proposedShift: { date: "2025-06-02", startTime: "08:00", endTime: "18:00" },
+				replacesShiftId: null,
+			},
+			[minijobScheduleContributor],
+		);
+
+		// 50 h → 650 €: over the cap.
+		expect(added.get(worker.employeeId)).toEqual([
+			expect.objectContaining({
+				statutoryKind: "minijob_monthly_cap",
+				severity: "critical",
+				summary: { tier: "exceeded" },
+			}),
+		]);
+	});
+
 	it("leaves out the shift Staffing proposes to replace", async () => {
 		const { org, owner, worker } = await setup();
 		const replaced = await mj.shift(org, worker, owner, {
