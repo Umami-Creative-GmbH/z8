@@ -1,7 +1,10 @@
 import { readFileSync } from "node:fs";
+import { FormatIcu } from "@tolgee/format-icu";
+import { TolgeeCore } from "@tolgee/react";
 import { Effect, Exit } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { resolveReviewText } from "../inbox/summary-text";
 import type { ApprovalDbService } from "../server/types";
 
 const decisionMocks = vi.hoisted(() => ({
@@ -718,6 +721,104 @@ describe("shared time-entry approval presentation", () => {
 		);
 
 		expect(review.display.subtitle).toBe("May 22, 2026 - 16:00 to 13:00");
+	});
+
+	describe("its list summary in the viewer's language (#1978)", () => {
+		async function translatorFor(language: string, translations: Record<string, string> = {}) {
+			const tolgee = TolgeeCore()
+				.use(FormatIcu())
+				.init({ language, staticData: { [language]: translations } });
+			await tolgee.run();
+			return (key: string, fallback: string, params?: Record<string, string | number>) =>
+				tolgee.t(key, fallback, params);
+		}
+		const manual = { metadata: { timeRequest: { kind: "manual_time_submission" } }, reason: null };
+
+		it("never calls an unclassified time approval 'legacy' in its localized summary", () => {
+			const review = buildTimeApprovalReview(period, { metadata: null, reason: null }, []);
+
+			expect(review.kind).toBe("unclassified");
+			expect(review.display.localized?.summary.fallback).toBe(
+				"This time approval could not be classified. Reconcile it before making a decision.",
+			);
+		});
+
+		it("renders the kind, duration and work day in German with German date formats", async () => {
+			const de = await translatorFor("de", {
+				"approvals:approvals.timeApproval.title.manualTimeSubmission": "Manuelle Zeiterfassung",
+				"approvals:approvals.timeApproval.summary": "{duration} am {date}",
+				"approvals:approvals.timeApproval.durationHoursMinutes": "{hours} Std. {minutes} Min.",
+				"approvals:approvals.timeApproval.subtitle": "{date}, {start}–{end}",
+			});
+			const { localized } = buildTimeApprovalReview(
+				{ ...period, durationMinutes: 270 },
+				manual,
+				[],
+			).display;
+
+			expect(localized).toBeDefined();
+			if (!localized) return;
+			expect(resolveReviewText(localized.title, de, "de")).toBe("Manuelle Zeiterfassung");
+			expect(resolveReviewText(localized.summary, de, "de")).toBe("4 Std. 30 Min. am 22.05.2026");
+			// Each endpoint at the offset captured with it, never the viewer's zone.
+			expect(resolveReviewText(localized.subtitle, de, "de")).toBe("22.05.2026, 16:00–13:00");
+		});
+
+		it("dates the work on its captured local day, not the UTC day", async () => {
+			const en = await translatorFor("en");
+			const lateShift = {
+				...period,
+				durationMinutes: 60,
+				clockIn: { ...period.clockIn, timestamp: new Date("2026-05-22T22:30:00.000Z") },
+				clockOut: null,
+			};
+			const { localized } = buildTimeApprovalReview(lateShift, manual, []).display;
+
+			expect(resolveReviewText(localized!.summary, en, "en")).toBe("1h on May 23, 2026");
+			expect(resolveReviewText(localized!.subtitle, en, "en")).toBe(
+				"May 23, 2026 - 00:30 to ongoing",
+			);
+		});
+
+		it.each([
+			[null, "In progress on May 22, 2026"],
+			[45, "45m on May 22, 2026"],
+			[240, "4h on May 22, 2026"],
+		] as const)("keeps the English summary for %s minutes", async (minutes, english) => {
+			const en = await translatorFor("en");
+			const { display } = buildTimeApprovalReview(
+				{ ...period, durationMinutes: minutes },
+				manual,
+				[],
+			);
+
+			expect(resolveReviewText(display.localized!.summary, en, "en")).toBe(english);
+			expect(display.summary).toBe(english);
+		});
+
+		it("names its badge in the viewer's language", async () => {
+			const de = await translatorFor("de", {
+				"approvals:approvals.timeApproval.badge.manual": "Manuell",
+			});
+			const { display } = buildTimeApprovalReview(period, manual, []);
+
+			expect(display.badge?.label).toBe("Manual");
+			expect(resolveReviewText(display.localized!.badge!, de, "de")).toBe("Manuell");
+		});
+
+		it("localizes the unclassified warning and title", async () => {
+			const en = await translatorFor("en");
+			const { localized } = buildTimeApprovalReview(
+				period,
+				{ metadata: null, reason: "Please review" },
+				[],
+			).display;
+
+			expect(resolveReviewText(localized!.title, en, "en")).toBe("Unclassified Time Approval");
+			expect(resolveReviewText(localized!.summary, en, "en")).toBe(
+				"This time approval could not be classified. Reconcile it before making a decision.",
+			);
+		});
 	});
 
 	it("keeps unclassified legacy rows visible with a non-actionable warning", () => {

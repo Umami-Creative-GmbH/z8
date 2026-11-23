@@ -88,6 +88,23 @@ describe("ApprovalSprintPanel", () => {
 		rejectMutation.mockReset();
 	});
 
+	it.each([
+		["compliance_exception", "Compliance exception"],
+		["period_submission", "Period submission"],
+		["absence_change_request", "Absence change request"],
+	] as const)("names one %s on its card in the singular (#1977)", (type, label) => {
+		render(
+			<ApprovalSprintPanel
+				open={true}
+				items={[{ ...createApproval("item-1", "Ada Lovelace", "Pending item"), type }]}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText(label)).toBeTruthy();
+	});
+
 	it("advances to the next approval after successful approval", async () => {
 		approveMutation.mockResolvedValue({ success: true });
 		const onActioned = vi.fn();

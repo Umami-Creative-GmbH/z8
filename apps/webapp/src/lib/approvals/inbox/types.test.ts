@@ -13,6 +13,7 @@ describe("approval inbox contract types", () => {
 			"travel_expense_claim",
 			"travel_expense_report",
 			"period_submission",
+			"compliance_exception",
 		]);
 		expect(SUPPORTED_APPROVAL_INBOX_TYPES).not.toContain("shift_request");
 	});

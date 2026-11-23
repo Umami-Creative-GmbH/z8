@@ -1,12 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { databaseFailure, serializedLog } from "@/test/log-redaction";
 
 const mocks = vi.hoisted(() => ({
 	createNotification: vi.fn(),
 	createNotificationForManager: vi.fn(),
 	loadOrganizationTimezone: vi.fn(),
+	loggedErrors: [] as unknown[],
 }));
 
 vi.mock("@/db", () => ({ db: {} }));
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({
+		error: (...args: unknown[]) => mocks.loggedErrors.push(args),
+		warn: vi.fn(),
+		info: vi.fn(),
+		debug: vi.fn(),
+	}),
+}));
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 	loadOrganizationTimezone: mocks.loadOrganizationTimezone,
 }));
@@ -52,7 +62,52 @@ const EXCEPTION_TYPE_SELECT =
 describe("compliance notification triggers", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.loggedErrors = [];
 		mocks.loadOrganizationTimezone.mockResolvedValue("Europe/Berlin");
+	});
+
+	it.each([
+		[
+			"requested",
+			() =>
+				onComplianceExceptionRequested({
+					exceptionId: "exception-1",
+					employeeId: "employee-1",
+					employeeName: "Ada Lovelace",
+					organizationId: "org-1",
+					exceptionType: "rest_period",
+					reason: "Caring for my sick child",
+					managerId: "manager-1",
+				}),
+		],
+		[
+			"rejected",
+			() =>
+				onComplianceExceptionRejected({
+					exceptionId: "exception-1",
+					employeeUserId: "user-1",
+					organizationId: "org-1",
+					exceptionType: "rest_period",
+					approverName: "Grace Hopper",
+					reason: "Caring for my sick child",
+				} as Parameters<typeof onComplianceExceptionRejected>[0]),
+		],
+	])("never logs the reason text when a %s trigger fails", async (_kind, trigger) => {
+		// The trigger's own catch: any failure it sees (a lookup, or a rejected notification
+		// write) as a real database failure whose cause chain binds the reason. The notification
+		// service logs its own insert failures itself; that shared logging is outside #1975.
+		const failure = databaseFailure("notification.insert", ["org-1", "Caring for my sick child"]);
+		mocks.createNotification.mockRejectedValue(failure);
+		mocks.createNotificationForManager.mockRejectedValue(failure);
+
+		await trigger();
+
+		expect(mocks.loggedErrors).toHaveLength(1);
+		const [fields] = mocks.loggedErrors[0] as [Record<string, unknown>];
+		// As pino writes it: its serializers follow message, stack and the cause chain.
+		const seen = await serializedLog(fields);
+		expect(seen).not.toContain("Caring for my sick child");
+		expect(seen).toContain("exception-1");
 	});
 
 	it("asks the manager about a requested exception with a translatable type label", async () => {
@@ -71,6 +126,8 @@ describe("compliance notification triggers", () => {
 			managerId: "manager-1",
 			title: "Compliance exception requested",
 			message: 'Ada Lovelace requested a weekly overtime exception: "Release week"',
+			// Reviewed in the Approval inbox (#1977), not the retired /settings/compliance queue.
+			actionUrl: "/approvals/inbox?types=compliance_exception",
 		});
 		expect(notification.metadata.i18n).toEqual({
 			titleKey: "common:notifications.content.complianceExceptionRequested.title",

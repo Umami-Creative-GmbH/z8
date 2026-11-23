@@ -33,7 +33,6 @@ interface ExceptionRequestDialogProps {
 	onOpenChange: (open: boolean) => void;
 	defaultExceptionType?: string;
 	employeeId?: string;
-	organizationId?: string;
 	onSuccess?: () => void;
 }
 
@@ -96,7 +95,6 @@ function ExceptionRequestDialogContent({
 	onOpenChange,
 	defaultExceptionType,
 	employeeId = "current",
-	organizationId,
 	onSuccess,
 }: ExceptionRequestDialogProps) {
 	const { t } = useTranslate();
@@ -180,11 +178,8 @@ function ExceptionRequestDialogContent({
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.compliance.exceptions.my(employeeId, false),
 					});
-					if (organizationId) {
-						void queryClient.invalidateQueries({
-							queryKey: queryKeys.compliance.pendingExceptions(organizationId),
-						});
-					}
+					// The request now waits in the Approval inbox: its list and counts (#1977).
+					void queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
 					formApi.reset();
 					onOpenChange(false);
 					onSuccess?.();

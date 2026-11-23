@@ -5,6 +5,7 @@
  * Uses color-coding to highlight severity levels.
  */
 
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
@@ -21,6 +22,8 @@ export interface ComplianceCardInput {
 	appUrl: string;
 	locale: string;
 	t?: BotTranslateFn;
+	/** Whether the recipient can open the work-policy compliance view: org admins only. */
+	canOpenViolationsView: boolean;
 }
 
 // ============================================
@@ -367,18 +370,26 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 		type: "AdaptiveCard",
 		version: "1.4",
 		body,
+		// Each button opens a page its recipient can open (#1977). Pending compliance exceptions
+		// are decided in the Approval inbox (Approvals ADR-0005), never the retired
+		// `/settings/compliance` queue; the violations open in the work-policy compliance view,
+		// as the command center's do, for org admins only: no page lists a manager's violations.
 		actions: [
-			{
-				type: "Action.OpenUrl",
-				title: t("teamsBot:commands.compliance.viewDashboard", "View Compliance Dashboard"),
-				url: `${appUrl}/settings/compliance`,
-			},
 			...(summary.pendingExceptions.length > 0
 				? [
 						{
 							type: "Action.OpenUrl",
 							title: t("teamsBot:commands.compliance.reviewExceptions", "Review Exceptions"),
-							url: `${appUrl}/approvals/inbox`,
+							url: `${appUrl}${COMPLIANCE_EXCEPTION_INBOX_PATH}`,
+						},
+					]
+				: []),
+			...(summary.alerts.length > 0 && input.canOpenViolationsView
+				? [
+						{
+							type: "Action.OpenUrl",
+							title: t("teamsBot:commands.compliance.viewDashboard", "View Compliance Dashboard"),
+							url: `${appUrl}/settings/work-policies?tab=work&view=compliance`,
 						},
 					]
 				: []),
@@ -389,7 +400,9 @@ export function buildComplianceCard(input: ComplianceCardInput): Record<string, 
 /**
  * Build text-only compliance summary (fallback for non-card clients)
  */
-export function buildComplianceText(input: ComplianceCardInput): string {
+export function buildComplianceText(
+	input: Omit<ComplianceCardInput, "canOpenViolationsView">,
+): string {
 	const { summary, daysBack } = input;
 	const t = input.t ?? ((_key, defaultValue) => defaultValue);
 

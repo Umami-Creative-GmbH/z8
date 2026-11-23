@@ -38,6 +38,10 @@ const AUTH_SET = new Set(AUTH_ROUTES);
 // thirds of `common` (~125 KB of en JSON), which every auth page would inline otherwise.
 const AUTH_OMITTED_COMMON_SUBTREES = ["drivingLicence", "notifications", "personalDataExport"];
 const DEPENDENCIES: Record<string, Namespace[]> = {
+	// The Pending Approvals widget shows inbox type labels and list summaries (#1978). Those
+	// are server-built `approvals:` texts across every adapter, so the widget can't name a
+	// few keys to copy into `dashboard`; only detail sections name per diem places.
+	"/": ["approvals"],
 	"/sign-in": ["setup"],
 	"/setup": ["auth"],
 	"/init": ["organization"],
@@ -52,6 +56,8 @@ const DEPENDENCIES: Record<string, Namespace[]> = {
 	"/approvals": ["bot", "calendar", "travelExpenses"],
 	// settings/generic: the close-month panel (#762).
 	"/payroll": ["settings/generic"],
+	// approvals: the inbox's rejection-reason form in the briefing's reject panel (#1980).
+	"/today": ["approvals"],
 	"/platform-admin": ["settings/generic"],
 	"/settings/approval-policies": ["settings/people"],
 	"/settings/employees": ["organization"],

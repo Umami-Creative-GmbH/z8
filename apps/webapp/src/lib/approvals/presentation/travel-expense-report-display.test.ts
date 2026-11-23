@@ -1,6 +1,9 @@
+import { FormatIcu } from "@tolgee/format-icu";
+import { TolgeeCore } from "@tolgee/react";
 import { describe, expect, it } from "vitest";
 import type { TravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
 import { localizedTextFallback } from "../inbox/localized-text";
+import { resolveReviewText } from "../inbox/summary-text";
 import { travelExpenseReportDisplay } from "./travel-expense-report-display";
 
 const item = (description: string, expenseDate: string) => ({ description, expenseDate });
@@ -68,11 +71,39 @@ describe("travelExpenseReportDisplay", () => {
 	});
 
 	it("says so when the submitted facts are unavailable", () => {
-		expect(travelExpenseReportDisplay(null)).toEqual({
+		expect(travelExpenseReportDisplay(null)).toMatchObject({
 			title: "Expense report",
 			subtitle: "Submitted facts unavailable",
 			summary: "",
 			icon: "receipt",
 		});
+	});
+
+	it("says so in the viewer's language, in the list row's detail (#1978)", async () => {
+		const tolgee = TolgeeCore()
+			.use(FormatIcu())
+			.init({
+				language: "de",
+				staticData: {
+					de: {
+						"approvals:approvals.reportSummary.title": "Spesenabrechnung",
+						"approvals:approvals.reportSummary.factsUnavailable":
+							"Eingereichte Angaben nicht verfügbar",
+					},
+				},
+			});
+		await tolgee.run();
+		const de = (key: string, fallback: string, params?: Record<string, string | number>) =>
+			tolgee.t(key, fallback, params);
+		const { localized } = travelExpenseReportDisplay(null);
+
+		expect(localized).toBeDefined();
+		if (!localized) return;
+		expect(resolveReviewText(localized.title, de, "de")).toBe("Spesenabrechnung");
+		// Said once: the sprint card shows subtitle and detail together.
+		expect(resolveReviewText(localized.subtitle, de, "de")).toBe("");
+		expect(resolveReviewText(localized.summary, de, "de")).toBe(
+			"Eingereichte Angaben nicht verfügbar",
+		);
 	});
 });

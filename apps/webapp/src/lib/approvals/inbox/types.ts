@@ -19,6 +19,8 @@ export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"travel_expense_report",
 	// Canonical-only (#1059): no legacy source, listed by its canonical read.
 	"period_submission",
+	// Adapter-backed (#1977, ADR-0005): listed from `compliance_exception` rows.
+	"compliance_exception",
 ] as const;
 
 export type ApprovalInboxType = (typeof SUPPORTED_APPROVAL_INBOX_TYPES)[number];
@@ -50,7 +52,10 @@ export interface ApprovalInboxSummary {
 	localized?: {
 		title: ApprovalInboxLocalizedText;
 		subtitle: ApprovalInboxLocalizedText;
-		detail: ApprovalInboxLocalizedText;
+		/** None when `detail` is text a person entered, shown as written (#1977). */
+		detail?: ApprovalInboxLocalizedText;
+		/** The badge's label, when it names a kind rather than data such as a category (#1978). */
+		badge?: ApprovalInboxLocalizedText;
 	};
 }
 
@@ -87,6 +92,11 @@ export interface ApprovalInboxCapabilities {
 	/** The viewer requested this; someone else decides it, so every decision is off (#686). */
 	ownRequest?: boolean;
 	/**
+	 * Decided one at a time only (#1977, ADR-0005): never selected for a bulk approval or
+	 * rejection; the list, the detail and Approval Sprint decide it singly.
+	 */
+	singleDecisionOnly?: boolean;
+	/**
 	 * The viewer covers for this item's approver but already decided an
 	 * earlier stage of it (four-eyes, #1016); every decision is off.
 	 */
@@ -118,12 +128,14 @@ export interface ApprovalInboxItem {
 /**
  * A typed value the viewer formats in their own locale (#687), like the report
  * pages: calendar days exactly as entered (never shifted by a zone), a recorded
- * UTC instant (shown in UTC), a frozen decimal amount with its currency, an
- * ISO 3166 country code.
+ * UTC instant (shown in UTC), an instant shown in a named zone with that
+ * zone's label (never the viewer's zone), a frozen decimal amount with its
+ * currency, an ISO 3166 country code.
  */
 export type ApprovalInboxValue =
 	| { kind: "plain_date"; date: string }
 	| { kind: "instant"; at: string }
+	| { kind: "zoned_instant"; at: string; timeZone: string }
 	| { kind: "plain_date_range"; start: string; end: string }
 	| { kind: "money"; amount: string; currency: string; signed?: true }
 	| { kind: "country"; code: string };
@@ -239,7 +251,17 @@ export interface ApprovalInboxDetailResult {
 export interface ApprovalInboxWarning {
 	source: string;
 	message: string;
+	/** The message in the viewer's language (#1978); `source` then names an approval type. */
+	localized?: ApprovalInboxLocalizedText;
+	/**
+	 * The gravest of what failed (#1978): its list ("list"), its rows of a "Covering for"
+	 * section ("covering"), only its count ("count"; its rows still list), or only a
+	 * "Covering for" section's header count ("covering_count"; no total or row misses it).
+	 */
+	failure?: ApprovalInboxSourceFailure;
 }
+
+export type ApprovalInboxSourceFailure = "list" | "count" | "covering" | "covering_count";
 
 export interface ApprovalInboxListResult {
 	items: ApprovalInboxItem[];

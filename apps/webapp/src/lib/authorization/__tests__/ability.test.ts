@@ -9,6 +9,8 @@ import type { ForcedSubject } from "@casl/ability";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
 	canAccessApprovalInbox,
+	canManageCompliance,
+	canOpenApprovalInbox,
 	createEmptyAbility,
 	defineAbilityFor,
 	type PrincipalContext,
@@ -483,6 +485,71 @@ describe("Approval Inbox Coarse Access", () => {
 				role: "manager",
 			}),
 		).toBe(true);
+	});
+});
+
+describe("Approval Inbox opening (#1977)", () => {
+	const employee = { id: EMPLOYEE_1, organizationId: ORG_1, role: "employee" as const };
+
+	it("opens the inbox to an employee who manages Compliance without approving anything", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				orgMembership: { organizationId: ORG_1, role: "admin", status: "active" },
+				employee: { ...employee, teamId: TEAM_1 },
+			}),
+		);
+
+		expect(canAccessApprovalInbox(ability, employee)).toBe(false);
+		expect(canOpenApprovalInbox(ability, employee)).toBe(true);
+	});
+
+	it("keeps it closed to a plain employee and follows approver access otherwise", () => {
+		const plain = defineAbilityFor(
+			createPrincipal({
+				orgMembership: { organizationId: ORG_1, role: "member", status: "active" },
+				employee: { ...employee, teamId: TEAM_1 },
+			}),
+		);
+		expect(canOpenApprovalInbox(plain, employee)).toBe(false);
+
+		const manager = { ...employee, role: "manager" as const };
+		const managerAbility = defineAbilityFor(
+			createPrincipal({ employee: { ...manager, teamId: TEAM_1 }, managedEmployeeIds: [] }),
+		);
+		expect(canOpenApprovalInbox(managerAbility, manager)).toBe(true);
+	});
+
+	it("needs the employee principal even with manage Compliance", () => {
+		const ability = defineAbilityFor(
+			createPrincipal({
+				orgMembership: { organizationId: ORG_1, role: "admin", status: "active" },
+				employee: { ...employee, teamId: TEAM_1 },
+			}),
+		);
+		// The same employee id in another organization is not this principal.
+		const foreign = { ...employee, organizationId: ORG_2 };
+
+		expect(ability.can("manage", "Compliance")).toBe(true);
+		expect(canOpenApprovalInbox(ability, employee)).toBe(true);
+		expect(canOpenApprovalInbox(ability, foreign)).toBe(false);
+	});
+
+	it("says an org admin manages Compliance and a plain employee does not", () => {
+		const admin = defineAbilityFor(
+			createPrincipal({
+				orgMembership: { organizationId: ORG_1, role: "admin", status: "active" },
+				employee: { ...employee, teamId: TEAM_1 },
+			}),
+		);
+		const plain = defineAbilityFor(
+			createPrincipal({
+				orgMembership: { organizationId: ORG_1, role: "member", status: "active" },
+				employee: { ...employee, teamId: TEAM_1 },
+			}),
+		);
+
+		expect(canManageCompliance(admin)).toBe(true);
+		expect(canManageCompliance(plain)).toBe(false);
 	});
 });
 

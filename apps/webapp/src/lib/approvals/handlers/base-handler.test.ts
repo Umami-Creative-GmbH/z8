@@ -1,3 +1,5 @@
+import { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { Context, Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -377,6 +379,26 @@ describe("fetchApprovals", () => {
 			});
 			expect(conditions[3]).toEqual({ eq: [expect.anything(), "deputy-1"] });
 		}
+	});
+
+	it("binds any number of requesters as one uuid array parameter (#1980)", () => {
+		const ids = Array.from({ length: 70_000 }, (_, index) => `employee-${index}`);
+		const conditions = buildBaseConditions("absence_entry", {
+			approverId: "admin-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 20,
+			includeAllApprovers: true,
+			requesterEmployeeIds: ids,
+		});
+
+		const dialect = new PgDialect();
+		const rendered = conditions
+			.filter((condition) => condition instanceof SQL)
+			.map((condition) => dialect.sqlToQuery(condition as SQL))
+			.find((query) => query.sql.startsWith(`"approval_request"."requested_by"`));
+		expect(rendered?.sql).toBe(`"approval_request"."requested_by" = any($1::uuid[])`);
+		expect(rendered?.params).toEqual([ids]);
 	});
 
 	it("can include approvals assigned to other approvers for admin briefings", () => {

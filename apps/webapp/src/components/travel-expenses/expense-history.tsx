@@ -234,8 +234,8 @@ function ClaimRowContent({ row }: { row: LegacyClaimHistoryRow }) {
 				<p className="text-sm text-muted-foreground">
 					{dates ??
 						t(
-							"travelExpenses.detail.unknownDates",
-							"Trip date context not recorded (legacy claim)",
+							"travelExpenses.detail.unknownEarlierClaimDates",
+							"Trip date context not recorded (earlier claim)",
 						)}
 				</p>
 				{row.canContinue && (

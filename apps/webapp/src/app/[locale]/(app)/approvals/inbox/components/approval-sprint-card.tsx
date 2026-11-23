@@ -29,6 +29,7 @@ import type {
 } from "@/lib/approvals/inbox/types";
 
 import { ApprovalTriageReasons } from "./approval-triage-reasons";
+import { getApprovalItemTypeLabels } from "./approval-type-labels";
 
 interface ApprovalSprintCardProps {
 	item: ApprovalInboxItem;
@@ -95,7 +96,7 @@ export function ApprovalSprintCard({
 			<CardContent className="space-y-5">
 				<div className="rounded-lg border bg-muted/30 p-4">
 					<div className="text-muted-foreground text-xs uppercase tracking-wide">
-						{getTypeLabel(t, item.type)}
+						{getApprovalItemTypeLabels(t)[item.type]}
 					</div>
 					<p className="mt-2 break-words text-sm leading-6">
 						{text(summaryField(item.summary, "detail"))}
@@ -273,24 +274,5 @@ function getRiskReasonLabel(
 			return t("approvals:sprint.riskReasons.needsReview", "Needs review");
 		default:
 			return reason;
-	}
-}
-
-function getTypeLabel(
-	t: ReturnType<typeof useTranslate>["t"],
-	type: ApprovalInboxItem["type"],
-) {
-	switch (type) {
-		case "absence_entry":
-			return t("approvals:sprint.types.absenceEntry", "Absence request");
-		case "time_entry":
-			return t("approvals:sprint.types.timeEntry", "Time entry");
-		case "travel_expense_claim":
-			return t(
-				"approvals:sprint.types.travelExpenseClaim",
-				"Travel expense claim",
-			);
-		case "travel_expense_report":
-			return t("approvals:sprint.types.travelExpenseReport", "Expense report");
 	}
 }

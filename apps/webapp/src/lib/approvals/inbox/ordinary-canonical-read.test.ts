@@ -1,5 +1,8 @@
+import { FormatIcu } from "@tolgee/format-icu";
+import { TolgeeCore } from "@tolgee/react";
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
+import { resolveReviewText } from "./summary-text";
 import {
 	countOrdinaryCanonicalApprovals,
 	loadOrdinaryCanonicalApprovals,
@@ -1080,5 +1083,90 @@ describe("ordinary canonical inbox reads", () => {
 		expect(select([row()], { search: ids.workflow })).toEqual([]);
 		expect(select([row()], { search: "avery" })).toHaveLength(1);
 		expect(select([row()], { search: "manager review" })).toHaveLength(1);
+	});
+});
+
+describe("an ordinary canonical row's summary in the viewer's language (#1978)", () => {
+	async function translatorFor(language: string, translations: Record<string, string> = {}) {
+		const tolgee = TolgeeCore()
+			.use(FormatIcu())
+			.init({ language, staticData: { [language]: translations } });
+		await tolgee.run();
+		return (key: string, fallback: string, params?: Record<string, string | number>) =>
+			tolgee.t(key, fallback, params);
+	}
+	const german = {
+		"approvals:approvals.timeApproval.title.manualTimeSubmission": "Manuelle Zeiterfassung",
+		"approvals:approvals.timeApproval.title.policyClockOut": "Ausstempel-Freigabe",
+		"approvals:approvals.timeApproval.summary": "{duration} am {date}",
+		"approvals:approvals.timeApproval.durationHours": "{hours} Std.",
+		"approvals:approvals.timeApproval.durationHoursMinutes": "{hours} Std. {minutes} Min.",
+		"approvals:approvals.timeApproval.subtitle": "{date}, {start}–{end}",
+		"approvals:approvals.timeApproval.badge.manual": "Manuell",
+		"approvals:approvals.timeApproval.badge.clockOut": "Ausstempeln",
+	};
+
+	/** The base row started before midnight UTC but after it at its captured offset (+02:00). */
+	function lateStartRow(): OrdinaryCanonicalReadRow {
+		const base = row();
+		const start = new Date("2026-07-19T22:30:00Z");
+		return row({
+			projection: {
+				...base.projection,
+				displayPayload: {
+					kind: "manual_time_submission",
+					startTime: "2026-07-19T22:30:00Z",
+					endTime: "2026-07-20T14:00:00Z",
+					durationMinutes: 930,
+				},
+			},
+			period: {
+				...base.period,
+				startTime: start,
+				durationMinutes: 930,
+				clockIn: { ...base.period.clockIn!, timestamp: start },
+			},
+			canonicalRecord: { ...base.canonicalRecord!, startAt: start, durationMinutes: 930 },
+		});
+	}
+
+	it.each([
+		["a manual time submission", row, "Manuelle Zeiterfassung", "Manuell"],
+		["a policy clock-out", policyRow, "Ausstempel-Freigabe", "Ausstempeln"],
+	] as const)(
+		"renders %s's title, duration, date and badge in German",
+		async (_name, make, title, badge) => {
+			const de = await translatorFor("de", german);
+			const [approval] = select([make()]);
+			const localized = approval?.item.summary.localized;
+
+			expect(localized).toBeDefined();
+			if (!localized?.detail || !localized.badge) throw new Error("no localized summary");
+			expect(resolveReviewText(localized.title, de, "de")).toBe(title);
+			expect(resolveReviewText(localized.detail, de, "de")).toBe("8 Std. am 20.07.2026");
+			expect(resolveReviewText(localized.subtitle, de, "de")).toBe("20.07.2026, 08:00–16:00");
+			expect(resolveReviewText(localized.badge, de, "de")).toBe(badge);
+		},
+	);
+
+	it("keeps the English fallbacks equal to the English summary", async () => {
+		const en = await translatorFor("en");
+		const [approval] = select([row()]);
+		const { summary } = approval!.item;
+
+		expect(resolveReviewText(summary.localized!.title, en, "en")).toBe(summary.title);
+		expect(resolveReviewText(summary.localized!.detail!, en, "en")).toBe(summary.detail);
+		expect(resolveReviewText(summary.localized!.subtitle, en, "en")).toBe(summary.subtitle);
+		expect(resolveReviewText(summary.localized!.badge!, en, "en")).toBe(summary.badge?.label);
+	});
+
+	it("dates the work on its captured local day, not the UTC day", async () => {
+		const de = await translatorFor("de", german);
+		const [approval] = select([lateStartRow()]);
+
+		expect(approval).toBeDefined();
+		expect(resolveReviewText(approval!.item.summary.localized!.detail!, de, "de")).toBe(
+			"15 Std. 30 Min. am 20.07.2026",
+		);
 	});
 });

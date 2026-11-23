@@ -1,3 +1,5 @@
+import { errorLogSummary } from "@/lib/error-log-summary";
+import type { ComplianceExceptionDecisionTarget } from "./compliance-exception-inbox";
 import type { PersistedApprovalRequestForDecision } from "./decision-service";
 
 export type ApprovalDecisionDiagnosticStage =
@@ -9,10 +11,13 @@ export type ApprovalDecisionDiagnosticStage =
 	| "target_authorization"
 	| "decision";
 
-type ApprovalDecisionDiagnosticTarget = Pick<
-	PersistedApprovalRequestForDecision,
-	"entityType" | "status" | "targetType" | "workflowKind"
->;
+/** The decided request as a failure log names it: an approval or a compliance exception (#1977). */
+export type ApprovalDecisionDiagnosticTarget =
+	| Pick<
+			PersistedApprovalRequestForDecision,
+			"entityType" | "status" | "targetType" | "workflowKind"
+	  >
+	| ComplianceExceptionDecisionTarget;
 
 function errorProperty(error: unknown, property: "_tag" | "code") {
 	if (!error || typeof error !== "object" || !(property in error)) return null;
@@ -43,7 +48,9 @@ export function buildApprovalDecisionFailureLog(input: {
 	const errorTag = errorProperty(input.error, "_tag");
 	const errorCode = errorProperty(input.error, "code");
 	return {
-		err: normalizedError(input.error),
+		// A failed rejection's query bound the reviewer's reason, which its error repeats in its
+		// message and params: a rejection logs only the error's summary.
+		err: input.action === "reject" ? errorLogSummary(input.error) : normalizedError(input.error),
 		action: input.action,
 		...(input.approvalId ? { approvalId: input.approvalId } : {}),
 		decisionStage: input.decisionStage,

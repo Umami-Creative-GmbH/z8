@@ -137,7 +137,9 @@ export type ApprovalType =
 	| "travel_expense_claim"
 	| "travel_expense_report"
 	/** Canonical-only (#1059): no legacy handler. */
-	| "period_submission";
+	| "period_submission"
+	/** Adapter-backed (#1977, ADR-0005): no legacy handler, no approval request. */
+	| "compliance_exception";
 
 export type ApprovalDecisionAction = "approve" | "reject";
 
@@ -181,6 +183,8 @@ export interface ApprovalDisplayMetadata {
 		title: ApprovalInboxLocalizedText;
 		subtitle: ApprovalInboxLocalizedText;
 		summary: ApprovalInboxLocalizedText;
+		/** The badge's label, when it names a kind rather than data such as a category (#1978). */
+		badge?: ApprovalInboxLocalizedText;
 	};
 }
 
@@ -352,7 +356,10 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 		organizationId: string,
 		visibility?: Pick<
 			ApprovalQueryParams,
-			"eligibleApprovalScopes" | "includeAllApprovers" | "coveredApproverIds"
+			| "eligibleApprovalScopes"
+			| "includeAllApprovers"
+			| "coveredApproverIds"
+			| "requesterEmployeeIds"
 		>,
 	) => Effect.Effect<number, AnyAppError, ApprovalHandlerServices>;
 

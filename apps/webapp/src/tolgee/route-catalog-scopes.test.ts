@@ -192,6 +192,10 @@ describe("route catalog wiring", () => {
 			expect.arrayContaining(["calendar", "settings/people"]),
 		);
 	});
+	it("keeps travel expense copy off the dashboard: its approval summaries never name per diem places (#1978)", () => {
+		expect(getRouteCatalogScope("/")?.namespaces).toContain("approvals");
+		expect(getRouteCatalogScope("/")?.namespaces).not.toContain("travelExpenses");
+	});
 	it("uses segment boundaries and longest-prefix settings scopes", () => {
 		expect(getRouteCatalogScope("/settings/import")?.namespaces).toContain("settings/integrations");
 		expect(getRouteCatalogScope("/settings/vacation/employees/123")?.namespaces).toContain(

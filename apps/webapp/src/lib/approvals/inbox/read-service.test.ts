@@ -4,6 +4,7 @@ import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
 import {
 	countsWithCoveringSections,
+	getApprovalInboxDetail,
 	getApprovalInboxListFromSources,
 } from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
@@ -297,8 +298,258 @@ describe("getApprovalInboxListFromSources", () => {
 			{
 				source: "time_entry",
 				message: "Time Correction approvals could not be loaded.",
+				localized: {
+					key: "approvals:approvals.inboxWarning.notLoaded",
+					fallback: "These approvals could not be loaded. Lists and totals may be incomplete.",
+				},
+				failure: "list",
 			},
 		]);
+	});
+
+	describe("counting alone, for a pending total (#1980)", () => {
+		it("counts every source as the list does, without its list read or triage evidence", async () => {
+			const absences = source("absence_entry", [
+				item({ id: "absence-1" }),
+				item({ id: "absence-2" }),
+			]);
+			const loadCanonicalOrdinaryApprovals = vi.fn(async () => []);
+			const countCanonicalOrdinaryApprovals = vi.fn(async () => 3);
+			const loadTriageEvidence = vi.fn();
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [absences],
+				params: {
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+				},
+				loadCanonicalOrdinaryApprovals,
+				countCanonicalOrdinaryApprovals,
+				loadTriageEvidence,
+				countsOnly: true,
+			});
+
+			expect(result.items).toEqual([]);
+			expect(result.counts).toMatchObject({ absence_entry: 2, time_entry: 3 });
+			expect(result.total).toBe(5);
+			expect(result.warnings).toEqual([]);
+			expect(absences.handler.getApprovals).not.toHaveBeenCalled();
+			expect(loadCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+			expect(loadTriageEvidence).not.toHaveBeenCalled();
+		});
+
+		it("names a source whose count failed, as the list does", async () => {
+			const travel = source("travel_expense_claim", []);
+			(
+				travel.handler as unknown as { getCount: ReturnType<typeof vi.fn> }
+			).getCount.mockImplementation(() => Effect.die(new Error("count")));
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [travel, source("absence_entry", [item({ id: "absence-1" })])],
+				params: { approverId: "manager-1", organizationId: "org-1", status: "pending" },
+				countsOnly: true,
+			});
+
+			expect(result.total).toBe(1);
+			expect(result.warnings).toEqual([
+				expect.objectContaining({ source: "travel_expense_claim", failure: "count" }),
+			]);
+		});
+	});
+
+	describe("failed sources (#1978)", () => {
+		function failingSource(
+			type: ApprovalInboxSource["type"],
+			fail: { list?: boolean; count?: boolean },
+		): ApprovalInboxSource {
+			const failing = source(type, []);
+			const handler = failing.handler as unknown as {
+				getApprovals: ReturnType<typeof vi.fn>;
+				getCount: ReturnType<typeof vi.fn>;
+			};
+			if (fail.list) handler.getApprovals.mockImplementation(() => Effect.die(new Error("list")));
+			if (fail.count) handler.getCount.mockImplementation(() => Effect.die(new Error("count")));
+			return failing;
+		}
+		const params = {
+			approverId: "manager-1",
+			organizationId: "org-1",
+			status: "pending" as const,
+			limit: 20,
+		};
+
+		it("warns once, in the viewer's language, when a source's count fails", async () => {
+			const result = await getApprovalInboxListFromSources({
+				sources: [failingSource("travel_expense_claim", { count: true })],
+				params,
+			});
+
+			expect(result.warnings).toEqual([
+				{
+					source: "travel_expense_claim",
+					message: "travel_expense_claim approvals could not be counted.",
+					localized: {
+						key: "approvals:approvals.inboxWarning.notCounted",
+						fallback: "These approvals could not be counted. Totals may be incomplete.",
+					},
+					failure: "count",
+				},
+			]);
+		});
+
+		it("warns once for a source whose list and count both fail", async () => {
+			const result = await getApprovalInboxListFromSources({
+				sources: [failingSource("travel_expense_claim", { list: true, count: true })],
+				params,
+			});
+
+			expect(result.warnings).toHaveLength(1);
+			expect(result.warnings[0]).toMatchObject({
+				source: "travel_expense_claim",
+				localized: { key: "approvals:approvals.inboxWarning.notLoaded" },
+				failure: "list",
+			});
+		});
+
+		it("warns when a Covering for section's approvals could not be loaded", async () => {
+			const covered = failingSource("absence_entry", {});
+			const handler = covered.handler as unknown as { getApprovals: ReturnType<typeof vi.fn> };
+			handler.getApprovals.mockImplementation((query: { approverId: string }) =>
+				query.approverId === "absent-1"
+					? Effect.die(new Error("covered list"))
+					: Effect.succeed([]),
+			);
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [covered],
+				params: { ...params, covering: [{ approverId: "absent-1", approverName: "Xenia" }] },
+			});
+
+			expect(result.warnings).toEqual([
+				expect.objectContaining({
+					source: "absence_entry",
+					localized: expect.objectContaining({
+						key: "approvals:approvals.inboxWarning.coveringNotLoaded",
+					}),
+					failure: "covering",
+				}),
+			]);
+		});
+
+		it("warns when a Covering for section's total could not be counted", async () => {
+			// More than the section lists, so it asks for the covered approver's whole total.
+			const rows = Array.from({ length: 101 }, (_, index) =>
+				item({ id: `covered-${index}`, approverId: "absent-1" }),
+			);
+			const covered = source("absence_entry", []);
+			const handler = covered.handler as unknown as {
+				getApprovals: ReturnType<typeof vi.fn>;
+				getCount: ReturnType<typeof vi.fn>;
+			};
+			handler.getApprovals.mockImplementation((query: { approverId: string }) =>
+				Effect.succeed(query.approverId === "absent-1" ? rows : []),
+			);
+			handler.getCount.mockImplementation((approverId: string) =>
+				approverId === "absent-1" ? Effect.die(new Error("covered count")) : Effect.succeed(0),
+			);
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [covered],
+				params: { ...params, covering: [{ approverId: "absent-1", approverName: "Xenia" }] },
+			});
+
+			expect(result.covering?.[0]?.hasMore).toBe(true);
+			// Every row loaded: only the section's header count misses some, not the list or totals.
+			expect(result.covering?.[0]?.rows).toHaveLength(100);
+			expect(result.warnings).toEqual([
+				{
+					source: "absence_entry",
+					message: 'absence_entry approvals of a "Covering for" section could not be counted.',
+					localized: {
+						key: "approvals:approvals.inboxWarning.coveringNotCounted",
+						fallback:
+							'These approvals could not be counted for a "Covering for" section. Its count may be incomplete.',
+					},
+					failure: "covering_count",
+				},
+			]);
+		});
+
+		it("warns of a failed own count rather than a failed Covering count when both fail", async () => {
+			const rows = Array.from({ length: 101 }, (_, index) =>
+				item({ id: `covered-${index}`, approverId: "absent-1" }),
+			);
+			const covered = source("absence_entry", []);
+			const handler = covered.handler as unknown as {
+				getApprovals: ReturnType<typeof vi.fn>;
+				getCount: ReturnType<typeof vi.fn>;
+			};
+			handler.getApprovals.mockImplementation((query: { approverId: string }) =>
+				Effect.succeed(query.approverId === "absent-1" ? rows : []),
+			);
+			handler.getCount.mockImplementation(() => Effect.die(new Error("count")));
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [covered],
+				params: { ...params, covering: [{ approverId: "absent-1", approverName: "Xenia" }] },
+			});
+
+			// The viewer's totals miss approvals, a graver gap than one section header's count.
+			expect(result.warnings).toEqual([
+				expect.objectContaining({ source: "absence_entry", failure: "count" }),
+			]);
+		});
+
+		/** A source whose own list or count fails, and whose covered list fails too. */
+		function failingWithCovering(fail: { list?: boolean; count?: boolean }) {
+			const covered = failingSource("absence_entry", {});
+			const handler = covered.handler as unknown as {
+				getApprovals: ReturnType<typeof vi.fn>;
+				getCount: ReturnType<typeof vi.fn>;
+			};
+			handler.getApprovals.mockImplementation((query: { approverId: string }) =>
+				query.approverId === "absent-1" || fail.list
+					? Effect.die(new Error("list"))
+					: Effect.succeed([]),
+			);
+			if (fail.count) handler.getCount.mockImplementation(() => Effect.die(new Error("count")));
+			return covered;
+		}
+
+		it("warns of missing Covering rows rather than a failed count when both fail", async () => {
+			const result = await getApprovalInboxListFromSources({
+				sources: [failingWithCovering({ count: true })],
+				params: { ...params, covering: [{ approverId: "absent-1", approverName: "Xenia" }] },
+			});
+
+			// Rows are missing from the list, not only from the totals: the graver failure names it.
+			expect(result.warnings).toEqual([
+				expect.objectContaining({
+					source: "absence_entry",
+					message: 'absence_entry approvals of a "Covering for" section could not be loaded.',
+					localized: expect.objectContaining({
+						key: "approvals:approvals.inboxWarning.coveringNotLoaded",
+					}),
+					failure: "covering",
+				}),
+			]);
+		});
+
+		it("warns of a failed list rather than missing Covering rows when both fail", async () => {
+			const result = await getApprovalInboxListFromSources({
+				sources: [failingWithCovering({ list: true, count: true })],
+				params: { ...params, covering: [{ approverId: "absent-1", approverName: "Xenia" }] },
+			});
+
+			expect(result.warnings).toEqual([
+				expect.objectContaining({
+					source: "absence_entry",
+					localized: expect.objectContaining({ key: "approvals:approvals.inboxWarning.notLoaded" }),
+					failure: "list",
+				}),
+			]);
+		});
 	});
 
 	it("provides database services required by registered approval handlers", async () => {
@@ -1014,4 +1265,133 @@ it("does not omit mixed-kind rows sharing an identity suffix at a page boundary"
  const second = await getApprovalInboxListFromSources({ ...input, params: { ...input.params, cursor: first.nextCursor ?? undefined } });
  expect([first.items[0]?.type, second.items[0]?.type]).toEqual(["absence_entry", "travel_expense_claim"]);
  expect(second.hasMore).toBe(false);
+});
+
+describe("an employee who only manages Compliance (#1977)", () => {
+	const exception = {
+		...canonicalItem("exception-1", "2026-05-30T09:00:00.000Z", "high", "medium").item,
+		type: "compliance_exception" as const,
+	};
+
+	it("lists and counts only compliance exceptions, never an approver's sources", async () => {
+		const legacy = source("absence_entry", [item({ approverId: "employee-1" })]);
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [
+			canonicalItem("assignment-1", "2026-05-30T09:00:00.000Z", "normal", "low"),
+		]);
+		const countCanonicalOrdinaryApprovals = vi.fn(async () => 1);
+		const complianceExceptionRead = {
+			load: vi.fn(async () => Object.assign([exception], { totalCount: 1 })),
+			count: vi.fn(async () => 1),
+		};
+
+		const result = await getApprovalInboxListFromSources({
+			sources: [legacy],
+			params: {
+				approverId: "employee-1",
+				organizationId: "org-1",
+				status: "pending",
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				covering: [{ approverId: "absent-1", approverName: "Xenia" }],
+			},
+			loadCanonicalOrdinaryApprovals,
+			countCanonicalOrdinaryApprovals,
+			complianceExceptionRead,
+		});
+
+		expect(result.items.map(({ id }) => id)).toEqual(["exception-1"]);
+		expect(result.counts).toEqual({ compliance_exception: 1 });
+		expect(result.supportedTypes).toEqual(["compliance_exception"]);
+		expect(result.total).toBe(1);
+		expect(result.covering).toBeUndefined();
+		expect(legacy.handler.getApprovals).not.toHaveBeenCalled();
+		expect(legacy.handler.getCount).not.toHaveBeenCalled();
+		expect(loadCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+		expect(countCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+	});
+
+	it("never opens an approval request, even one assigned to them", async () => {
+		const findFirst = vi.fn(async () => ({
+			id: "approval-1",
+			entityType: "absence_entry",
+			approverId: "employee-1",
+			organizationId: "org-1",
+		}));
+
+		await expect(
+			getApprovalInboxDetail({
+				approvalId: "approval-1",
+				organizationId: "org-1",
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				database: { query: { approvalRequest: { findFirst } } } as never,
+			}),
+		).rejects.toThrow("Approval not found");
+	});
+
+	it("never opens a canonical assignment", async () => {
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [
+			canonicalItem("assignment-1", "2026-05-30T09:00:00.000Z", "normal", "low"),
+		]);
+
+		await expect(
+			getApprovalInboxDetail({
+				approvalId: "assignment-1",
+				organizationId: "org-1",
+				approverId: "employee-1",
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				database: {
+					query: { approvalRequest: { findFirst: vi.fn(async () => undefined) } },
+				} as never,
+				canonicalReads: [],
+				loadCanonicalOrdinaryApprovals,
+			}),
+		).rejects.toThrow("Approval not found");
+		expect(loadCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+	});
+
+	it("opens a compliance exception from the database it is given", async () => {
+		const exceptionId = "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f";
+		const execute = vi.fn(async () => ({
+			rows: [
+				{
+					id: exceptionId,
+					employeeId: "employee-2",
+					exceptionType: "rest_period",
+					status: "pending",
+					reason: "Night shift handover",
+					plannedDurationMinutes: 90,
+					validFrom: "2026-03-10T08:00:00Z",
+					validUntil: "2026-03-11T08:00:00Z",
+					createdAt: "2026-03-10T08:00:00Z",
+					approvedAt: null,
+					rejectedAt: null,
+					rejectionReason: null,
+					teamId: null,
+					userName: "Avery Employee",
+					userEmail: "avery@example.com",
+					userImage: null,
+					approverName: null,
+					organizationTimeZone: "Europe/Berlin",
+					totalCount: 1,
+				},
+			],
+		}));
+
+		const detail = await getApprovalInboxDetail({
+			approvalId: exceptionId,
+			organizationId: "org-1",
+			complianceExceptionsOnly: true,
+			complianceExceptionScope: { kind: "organization" },
+			database: {
+				query: { approvalRequest: { findFirst: vi.fn(async () => undefined) } },
+				execute,
+			} as never,
+			now: new Date("2026-03-10T12:00:00Z"),
+		});
+
+		expect(execute).toHaveBeenCalledTimes(1);
+		expect(detail.item).toMatchObject({ id: exceptionId, type: "compliance_exception" });
+	});
 });

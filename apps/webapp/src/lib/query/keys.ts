@@ -863,11 +863,7 @@ export const queryKeys = {
 			// Employee's own exceptions
 			my: (employeeId: string, includeExpired?: boolean) =>
 				["compliance", "exceptions", "my", employeeId, includeExpired] as const,
-			// Pending exceptions for manager/admin
-			pending: (orgId: string) => ["compliance", "exceptions", "pending", orgId] as const,
 		},
-		// Pending exceptions count (for badge)
-		pendingExceptions: (orgId: string) => ["compliance", "pending-exceptions", orgId] as const,
 	},
 
 	// Coverage Targets (minimum staffing requirements)

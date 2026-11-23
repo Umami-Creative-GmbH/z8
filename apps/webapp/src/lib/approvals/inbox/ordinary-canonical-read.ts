@@ -17,6 +17,7 @@ import {
 } from "../approval-database-row";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import { parseOrdinaryWorkPeriodWorkflowPayload } from "../domain-adapters/work-period-contract";
+import { localizedTimeApprovalSummary } from "../presentation/time-approval-summary-text";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import {
 	type CanonicalInboxCursor,
@@ -551,6 +552,13 @@ function toApproval(
 		preset: "time",
 	});
 	const duration = formatDuration(period.durationMinutes ?? 0);
+	const localized = localizedTimeApprovalSummary({
+		kind: validated.kind,
+		clockIn,
+		startTime: start,
+		endTime: end,
+		durationMinutes: period.durationMinutes ?? 0,
+	});
 	const priority = canonicalInboxPriority(workflow.submittedAt, now ?? new Date());
 	const triage = buildInboxTriage({
 		type: "time_entry",
@@ -587,6 +595,13 @@ function toApproval(
 				color: null,
 			},
 			stage: validated.stage,
+			// The same texts in the viewer's language, dated at the captured offset (#1978).
+			localized: {
+				title: localized.title,
+				subtitle: localized.subtitle,
+				detail: localized.summary,
+				badge: localized.badge,
+			},
 		},
 		timing: {
 			createdAt: workflow.submittedAt.toISOString(),

@@ -14,7 +14,7 @@ import type {
 	ApprovalInboxItem,
 	ApprovalInboxListResult,
 } from "@/lib/approvals/inbox/types";
-import ApprovalInboxPage from "./page";
+import { ApprovalInboxView as ApprovalInboxPage } from "./approval-inbox-view";
 
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 
@@ -88,6 +88,66 @@ function request(
 		},
 	};
 }
+
+it("opens the compliance exception queue from ?types=compliance_exception, one decision at a time (#1977)", async () => {
+	navigation.query = "types=compliance_exception";
+	const exception: ApprovalInboxItem = {
+		...request("exception", "compliance_exception", "Overtime Employee"),
+		capabilities: {
+			canApprove: true,
+			canReject: true,
+			canBulkApprove: false,
+			requiresRejectReason: true,
+			singleDecisionOnly: true,
+		},
+	};
+	const requestedUrls: URL[] = [];
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (input: string) => {
+			const url = new URL(input, "http://localhost");
+			requestedUrls.push(url);
+			const result: ApprovalInboxListResult = {
+				items: [exception],
+				total: 1,
+				counts: {
+					absence_entry: 0,
+					absence_change_request: 0,
+					time_entry: 0,
+					travel_expense_claim: 0,
+					travel_expense_report: 0,
+					period_submission: 0,
+					compliance_exception: 1,
+				},
+				supportedTypes: ["absence_entry", "time_entry", "compliance_exception"],
+				warnings: [],
+				hasMore: false,
+				nextCursor: null,
+			};
+			return new Response(JSON.stringify(result));
+		}),
+	);
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	render(
+		<QueryClientProvider client={client}>
+			<ApprovalInboxPage />
+		</QueryClientProvider>,
+	);
+
+	await screen.findByText("Overtime Employee");
+	expect(
+		requestedUrls.some((url) => url.searchParams.get("types") === "compliance_exception"),
+	).toBe(true);
+	fireEvent.click(screen.getByRole("checkbox", { name: "Select all" }));
+	expect(screen.queryByRole("button", { name: /Approve Selected/ })).toBeNull();
+	fireEvent.click(screen.getByRole("button", { name: /Type/ }));
+	expect(
+		(
+			await screen.findByRole("menuitemcheckbox", { name: "Compliance Exceptions" })
+		).getAttribute("aria-checked"),
+	).toBe("true");
+	client.clear();
+});
 
 it("applies a filtered client arrival after an earlier unfiltered visit to both controls and requests", async () => {
 	const requests = [

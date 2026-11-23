@@ -31,9 +31,14 @@ const mockState = vi.hoisted(() => ({
 	getEligibleApprovalScopesForManager: vi.fn(async () => []),
 	getApprovalInboxList: vi.fn(),
 	loadInboxCovers: vi.fn(async (): Promise<unknown[]> => []),
+	resolveComplianceExceptionInboxScope: vi.fn(async (): Promise<unknown> => null),
 	logger: {
 		error: vi.fn(),
 	},
+}));
+
+vi.mock("@/lib/approvals/inbox/compliance-exception-inbox", () => ({
+	resolveComplianceExceptionInboxScope: mockState.resolveComplianceExceptionInboxScope,
 }));
 
 vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
@@ -154,6 +159,7 @@ describe("GET /api/approvals/inbox", () => {
 			role: "manager",
 		});
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
+		mockState.resolveComplianceExceptionInboxScope.mockResolvedValue(null);
 		mockState.accessibleByDrizzle.mockReturnValue({ type: "sql", source: "approval-access" });
 		mockState.getApprovalInboxList.mockResolvedValue({
 			items: [],
@@ -226,6 +232,50 @@ describe("GET /api/approvals/inbox", () => {
 
 		expect(response.status).toBe(403);
 		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
+	});
+
+	it("opens the compliance exception queue to an employee who manages Compliance (#1977)", async () => {
+		mockState.getAbility.mockResolvedValue(
+			defineAbilityFor({
+				userId: "user-1",
+				isPlatformAdmin: false,
+				activeOrganizationId: "org-1",
+				orgMembership: { organizationId: "org-1", role: "admin", status: "active" },
+				employee: { id: "employee-1", organizationId: "org-1", role: "employee", teamId: null },
+				permissions: { orgWide: null, byTeamId: new Map() },
+				managedEmployeeIds: [],
+				customRoles: [],
+			} satisfies PrincipalContext),
+		);
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
+		});
+		mockState.resolveComplianceExceptionInboxScope.mockResolvedValue({ kind: "organization" });
+
+		const response = await GET(
+			createRequest("https://app.example.com/api/approvals/inbox?types=compliance_exception"),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.resolveComplianceExceptionInboxScope).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			canManageCompliance: true,
+		});
+		// Managing Compliance is no approver right: only compliance exceptions are listed.
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
+			expect.objectContaining({
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+				eligibleApprovalScopes: [],
+				includeAllApprovers: undefined,
+				covering: [],
+			}),
+		);
+		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+		expect(mockState.loadInboxCovers).not.toHaveBeenCalled();
 	});
 
 	it("allows a team-primary manager with no direct reports to reach scoped inbox eligibility", async () => {
@@ -315,6 +365,7 @@ describe("GET /api/approvals/inbox", () => {
 			limit: 15,
 			eligibleApprovalScopes: [],
 			covering: [],
+			complianceExceptionScope: null,
 		});
 	});
 

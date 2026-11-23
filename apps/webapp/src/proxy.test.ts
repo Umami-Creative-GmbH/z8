@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 
 vi.mock("next-intl/middleware", () => ({
 	default: vi.fn(() => () => NextResponse.next()),
@@ -254,6 +255,68 @@ describe("legacy settings 308 redirects (#1963)", () => {
 			expect(orgLocation.searchParams.get("from")).toBe("email");
 			expect(orgLocation.searchParams.get("highlight")).toBe("1");
 			expect(orgLocation.searchParams.get("tab")).toBeNull();
+		} finally {
+			platform.configured = false;
+		}
+	});
+
+	it("redirects the retired /approvals workspace to the Approval inbox with 308, keeping the query (#1976)", async () => {
+		platform.configured = true;
+		try {
+			const response = await proxy(
+				new NextRequest(
+					"https://app.example.com/de/approvals?types=absence_entry&types=time_entry&q=x",
+				),
+			);
+			expect(response.status).toBe(308);
+			const location = new URL(response.headers.get("location") ?? "");
+			expect(location.pathname).toBe("/de/approvals/inbox");
+			expect(location.searchParams.getAll("types")).toEqual(["absence_entry", "time_entry"]);
+			expect(location.searchParams.get("q")).toBe("x");
+			expect(location.searchParams.get("tab")).toBeNull();
+
+			const bare = await proxy(new NextRequest("https://app.example.com/approvals/"));
+			expect(bare.status).toBe(308);
+			expect(new URL(bare.headers.get("location") ?? "").pathname).toBe("/en/approvals/inbox");
+
+			const inbox = await proxy(new NextRequest("https://app.example.com/de/approvals/inbox"));
+			expect(inbox.status).not.toBe(308);
+		} finally {
+			platform.configured = false;
+		}
+	});
+
+	it("redirects the retired /settings/compliance queue to the inbox's compliance exceptions with 308 (#1977)", async () => {
+		platform.configured = true;
+		try {
+			const response = await proxy(
+				new NextRequest(
+					"https://app.example.com/de/settings/compliance?types=absence_entry&ref=mail",
+				),
+			);
+			expect(response.status).toBe(308);
+			const location = new URL(response.headers.get("location") ?? "");
+			expect(location.pathname).toBe("/de/approvals/inbox");
+			expect(location.searchParams.getAll("types")).toEqual(["compliance_exception"]);
+			expect(location.searchParams.get("ref")).toBe("mail");
+
+			const bare = await proxy(new NextRequest("https://app.example.com/settings/compliance/"));
+			expect(bare.status).toBe(308);
+			expect(bare.headers.get("location")).toBe(
+				"https://app.example.com/en/approvals/inbox?types=compliance_exception",
+			);
+			// The same inbox view every compliance notification and card links to.
+			expect(bare.headers.get("location")).toBe(
+				`https://app.example.com/en${COMPLIANCE_EXCEPTION_INBOX_PATH}`,
+			);
+
+			const worksCouncil = await proxy(
+				new NextRequest("https://app.example.com/de/settings/compliance/works-council", {
+					headers: { cookie: "better-auth.session_token=session" },
+				}),
+			);
+			expect(worksCouncil.status).not.toBe(308);
+			expect(worksCouncil.headers.get("location")).toBeNull();
 		} finally {
 			platform.configured = false;
 		}

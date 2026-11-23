@@ -6,6 +6,7 @@ import {
 	IconCalendarOff,
 	IconClockEdit,
 	IconReceipt,
+	IconShieldCheck,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import {
@@ -21,6 +22,7 @@ import type {
 } from "@/lib/approvals/inbox/types";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
+import { isSelectableForBulkDecision } from "../approval-inbox-items";
 import { ApprovalTriageReasons } from "./approval-triage-reasons";
 import { getApprovalTypeLabels } from "./approval-type-labels";
 import { getDecidedEarlierStageNote } from "./covering-notes";
@@ -45,6 +47,7 @@ const TYPE_ICONS: Record<
 	travel_expense_claim: IconReceipt,
 	travel_expense_report: IconReceipt,
 	period_submission: IconCalendarCheck,
+	compliance_exception: IconShieldCheck,
 };
 
 const RISK_BADGE_VARIANTS: Record<
@@ -140,7 +143,7 @@ export function ApprovalInboxTable({
 											onSelectItem(item.id, !!checked)
 										}
 										onClick={(event) => event.stopPropagation()}
-										disabled={isOwnRequest || decidedEarlierStage}
+										disabled={!isSelectableForBulkDecision(item)}
 										aria-label={ariaLabel}
 									/>
 								</div>

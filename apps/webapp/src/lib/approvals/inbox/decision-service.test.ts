@@ -65,7 +65,8 @@ vi.mock("@/db", () => ({
 			},
 			workPeriod: { findFirst: workPeriodFindFirstMock },
 			timeEntry: { findMany: timeEntryFindManyMock },
-			employee: { findFirst: employeeFindFirstMock },
+			// The compliance exception scope resolves eligible managers from these: none here.
+			employee: { findFirst: employeeFindFirstMock, findMany: vi.fn(async () => []) },
 		},
 	},
 }));
