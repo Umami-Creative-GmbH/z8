@@ -26,7 +26,8 @@ function dayBefore(date: string): string {
 export function sickPayNoteOf(paid: OnCallPaidSickDays): OnCallSickPayNote {
 	const span = paid.continuedPay;
 	if (span === null) return { kind: "not_owed" };
-	if (span.untilExclusive <= paid.from) return { kind: "exhausted", lastDay: dayBefore(span.untilExclusive) };
+	if (span.untilExclusive <= paid.from)
+		return { kind: "exhausted", lastDay: dayBefore(span.untilExclusive) };
 	if (span.from >= paid.untilExclusive) return { kind: "waiting", claimArises: span.from };
 	const limited = span.from > paid.from || span.untilExclusive < paid.untilExclusive;
 	return {

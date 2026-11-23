@@ -192,7 +192,8 @@ const EFZG_CONTINUED_PAY_DAYS = 42;
  * its own. Payroll has to apply that 6/12-month rule itself.
  */
 function continuedPayOf(facts: ReferenceFacts, leave: SickLeave): OnCallDaySpan | null {
-	const employed = (day: PlainDate) => facts.contracts.get(day.toString())?.isEmployedOnDay ?? false;
+	const employed = (day: PlainDate) =>
+		facts.contracts.get(day.toString())?.isEmployedOnDay ?? false;
 	const illnessEnd = parsePlainDate(leave.endDate);
 	// The first employed day of the illness among the loaded days (they cover its start).
 	let first = parsePlainDate(leave.startDate);
@@ -501,9 +502,7 @@ function eventsOf(
 	const unpaidIllnessDay = (day: string) =>
 		illnesses.some(
 			(illness) =>
-				day >= illness.startDate &&
-				day <= illness.endDate &&
-				!within(illness.continuedPay, day),
+				day >= illness.startDate && day <= illness.endDate && !within(illness.continuedPay, day),
 		);
 	// A holiday is paid only where work was lost (as the band and the denominator see it). During
 	// approved unpaid or parental leave no work is lost to it, so there is no holiday pay. A holiday
