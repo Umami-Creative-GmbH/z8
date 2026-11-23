@@ -1,0 +1,235 @@
+/**
+ * Everything the § 12 TzBfG on-call monitor reads, loaded once per evaluation and batched across
+ * employees: who is on call on which day (confirmed terms through the contract resolver), their
+ * shifts (draft and published), their completed work per organization-local day and the on-call
+ * baselines. Read-only: `select` only.
+ */
+import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
+import { employeeEmploymentHistory, shift, workPeriod } from "@/db/schema";
+import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import type { ResolvedOnCallTerms } from "@/lib/contracts/types";
+import {
+	compareInstants,
+	comparePlainDates,
+	type Instant,
+	instantFromDate,
+	type PlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
+import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
+import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import { loadStatutoryThresholds, type StatutoryThresholdTable } from "../thresholds";
+
+export type OnCallReader = Pick<DatabaseClient, "select">;
+
+export const ON_CALL_THRESHOLD_KEYS = [
+	"de_on_call_notice_full_days",
+	"de_on_call_min_call_minutes",
+	"de_on_call_default_weekly_minutes",
+	"de_on_call_min_band_plus_pct",
+	"de_on_call_max_band_minus_pct",
+] as const;
+
+/** A persisted or proposed shift of an on-call employee, read in the organization's zone. */
+export interface OnCallShift {
+	/** Null for a Staffing proposal. */
+	readonly id: string | null;
+	readonly employeeId: string;
+	readonly date: PlainDate;
+	readonly startTime: string;
+	readonly endTime: string;
+	readonly minutes: number;
+	readonly status: "draft" | "published";
+	readonly publishedAt: Instant | null;
+	readonly assignmentChangedAt: Instant | null;
+}
+
+export interface OnCallFacts {
+	readonly thresholds: StatutoryThresholdTable;
+	/** Employees on call on at least one loaded day, with their terms per day (`YYYY-MM-DD`). */
+	readonly termsByEmployee: ReadonlyMap<string, ReadonlyMap<string, ResolvedOnCallTerms>>;
+	readonly shiftsByEmployee: ReadonlyMap<string, readonly OnCallShift[]>;
+	/** Completed work minutes per organization-local start day. */
+	readonly workMinutesByEmployee: ReadonlyMap<string, ReadonlyMap<string, number>>;
+}
+
+export function daysOf(from: PlainDate, untilExclusive: PlainDate): PlainDate[] {
+	const days: PlainDate[] = [];
+	for (let day = from; comparePlainDates(day, untilExclusive) < 0; day = day.add({ days: 1 })) {
+		days.push(day);
+	}
+	return days;
+}
+
+
+export function shiftMinutes(
+	input: { date: PlainDate; startTime: string; endTime: string },
+	timezone: string,
+): number {
+	const interval = shiftInterval(input, timezone);
+	return Math.round(interval.start.until(interval.end).total("minutes"));
+}
+
+function push<K, V>(map: Map<K, V[]>, key: K, value: V) {
+	const list = map.get(key);
+	if (list) list.push(value);
+	else map.set(key, [value]);
+}
+
+/**
+ * Loads the on-call facts of `[from, untilExclusive)`. `employeeIds` narrows the employees (null:
+ * every employee of the organization with confirmed on-call terms in the range).
+ */
+export async function loadOnCallFacts(
+	db: OnCallReader,
+	input: {
+		readonly organizationId: string;
+		readonly timezone: string;
+		readonly from: PlainDate;
+		readonly untilExclusive: PlainDate;
+		readonly employeeIds: readonly string[] | null;
+		readonly replacesShiftId: string | null;
+	},
+): Promise<OnCallFacts> {
+	const from = input.from.toString();
+	const until = input.untilExclusive.toString();
+	const thresholds = await loadStatutoryThresholds(db, {
+		keys: ON_CALL_THRESHOLD_KEYS,
+		from,
+		until,
+	});
+	const empty: OnCallFacts = {
+		thresholds,
+		termsByEmployee: new Map(),
+		shiftsByEmployee: new Map(),
+		workMinutesByEmployee: new Map(),
+	};
+	if (input.employeeIds?.length === 0) return empty;
+
+	// Narrow to employees with confirmed on-call terms overlapping the range before resolving days.
+	const candidates = await db
+		.select({ employeeId: employeeEmploymentHistory.employeeId })
+		.from(employeeEmploymentHistory)
+		.where(
+			and(
+				eq(employeeEmploymentHistory.organizationId, input.organizationId),
+				eq(employeeEmploymentHistory.scheduleSource, "on_call"),
+				eq(employeeEmploymentHistory.reviewState, "confirmed"),
+				lt(employeeEmploymentHistory.validFromDate, until),
+				or(
+					isNull(employeeEmploymentHistory.validUntilDate),
+					gt(employeeEmploymentHistory.validUntilDate, from),
+				),
+				input.employeeIds
+					? inArray(employeeEmploymentHistory.employeeId, [...input.employeeIds])
+					: undefined,
+			),
+		);
+	const candidateIds = [...new Set(candidates.map((row) => row.employeeId))].toSorted();
+	if (candidateIds.length === 0) return empty;
+
+	const days = daysOf(input.from, input.untilExclusive);
+	const contracts = await loadEffectiveContractsBatch(db, {
+		organizationId: input.organizationId,
+		employeeIds: candidateIds,
+		dates: days,
+		// On-call weeks and days are the organization's calendar, as in Scheduling.
+		timezoneOverride: input.timezone,
+		organizationTimezone: input.timezone,
+	});
+	const termsByEmployee = new Map<string, Map<string, ResolvedOnCallTerms>>();
+	for (const [employeeId, byDay] of contracts) {
+		for (const [day, contract] of byDay) {
+			if (!contract.isEmployedOnDay || !contract.onCallTerms) continue;
+			const terms = termsByEmployee.get(employeeId) ?? new Map<string, ResolvedOnCallTerms>();
+			terms.set(day, contract.onCallTerms);
+			termsByEmployee.set(employeeId, terms);
+		}
+	}
+	const onCallIds = [...termsByEmployee.keys()].toSorted();
+	if (onCallIds.length === 0) return empty;
+
+	const bounds = shiftDateRangeBounds(input.from, input.untilExclusive, input.timezone);
+	const shiftRows = await db
+		.select({
+			id: shift.id,
+			employeeId: shift.employeeId,
+			date: shift.date,
+			startTime: shift.startTime,
+			endTime: shift.endTime,
+			status: shift.status,
+			publishedAt: shift.publishedAt,
+			assignmentChangedAt: shift.assignmentChangedAt,
+		})
+		.from(shift)
+		.where(
+			and(
+				eq(shift.organizationId, input.organizationId),
+				inArray(shift.employeeId, onCallIds),
+				gte(shift.date, bounds.start),
+				lt(shift.date, bounds.endExclusive),
+				input.replacesShiftId ? ne(shift.id, input.replacesShiftId) : undefined,
+			),
+		);
+	const shiftsByEmployee = new Map<string, OnCallShift[]>();
+	for (const row of shiftRows) {
+		if (!row.employeeId) continue;
+		const date = shiftCalendarDate(row.date, input.timezone);
+		push(shiftsByEmployee, row.employeeId, {
+			id: row.id,
+			employeeId: row.employeeId,
+			date,
+			startTime: row.startTime,
+			endTime: row.endTime,
+			minutes: shiftMinutes({ date, startTime: row.startTime, endTime: row.endTime }, input.timezone),
+			status: row.status,
+			publishedAt: row.publishedAt ? instantFromDate(row.publishedAt) : null,
+			assignmentChangedAt: instantFromDate(row.assignmentChangedAt),
+		});
+	}
+	for (const list of shiftsByEmployee.values()) {
+		list.sort(
+			(a, b) =>
+				comparePlainDates(a.date, b.date) ||
+				a.startTime.localeCompare(b.startTime) ||
+				(a.id ?? "").localeCompare(b.id ?? ""),
+		);
+	}
+
+	const workRows = await db
+		.select({
+			employeeId: workPeriod.employeeId,
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			durationMinutes: workPeriod.durationMinutes,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, input.organizationId),
+				inArray(workPeriod.employeeId, onCallIds),
+				completedWorkPeriodCondition(),
+				isNotNull(workPeriod.endTime),
+				gte(workPeriod.startTime, bounds.start),
+				lt(workPeriod.startTime, bounds.endExclusive),
+			),
+		);
+	const workMinutesByEmployee = new Map<string, Map<string, number>>();
+	for (const row of workRows) {
+		if (!row.endTime) continue;
+		const start = instantFromDate(row.startTime);
+		const end = instantFromDate(row.endTime);
+		if (compareInstants(end, start) < 0) continue;
+		// A call is judged on its organization-local start day, as Scheduling buckets work.
+		const day = plainDateAt(start, input.timezone).toString();
+		const minutes = row.durationMinutes ?? Math.round(start.until(end).total("minutes"));
+		const byDay = workMinutesByEmployee.get(row.employeeId) ?? new Map<string, number>();
+		byDay.set(day, (byDay.get(day) ?? 0) + minutes);
+		workMinutesByEmployee.set(row.employeeId, byDay);
+	}
+
+	return { thresholds, termsByEmployee, shiftsByEmployee, workMinutesByEmployee };
+}
+

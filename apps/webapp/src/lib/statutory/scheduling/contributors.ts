@@ -1,3 +1,4 @@
+import { onCallScheduleContributor } from "../on-call/contributor";
 import type { StatutoryScheduleContributor } from "./contributor";
 
 /**
@@ -10,5 +11,6 @@ export const statutoryScheduleContributors: readonly StatutoryScheduleContributo
 	// #1990 Short-term employment
 	// #1991 Working student
 	// #1992 § 12 TzBfG on-call
+	onCallScheduleContributor,
 	// #1993 JArbSchG / BBiG
 ];
