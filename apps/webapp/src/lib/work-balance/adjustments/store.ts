@@ -565,7 +565,9 @@ async function inLedgerTransaction<T>(
 	write: (tx: WorkBalanceDbClient) => Promise<T>,
 ): Promise<T> {
 	try {
-		return await database.transaction(write);
+		// An explicit result type keeps TypeScript from inferring through the full schema type
+		// (TS2589 "excessively deep" once the combined schema grew).
+		return await database.transaction<T>(write);
 	} catch (error) {
 		throw asMonthClosedRefusal(error);
 	}
