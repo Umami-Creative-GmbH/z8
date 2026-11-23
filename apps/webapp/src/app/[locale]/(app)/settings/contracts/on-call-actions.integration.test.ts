@@ -297,6 +297,83 @@ describe("on-call actions (PostgreSQL)", () => {
 		]);
 	});
 
+	/** An effective departure whose last working day is `lastWorkingDay` (Europe/Berlin, winter). */
+	async function leftOn(
+		org: { id: string },
+		who: { employeeId: string },
+		lastWorkingDay: string,
+		recordedBy: { userId: string },
+	) {
+		const cutoff = `${lastWorkingDay}T23:00:00Z`;
+		await admin.query("UPDATE employee SET is_active = false WHERE id = $1", [who.employeeId]);
+		const { rows } = await admin.query<{ id: string }>(
+			`INSERT INTO employee_employment_period
+			   (organization_id, employee_id, status, started_at, ended_at, start_provenance)
+			 VALUES ($1, $2, 'closed', '2025-01-01T00:00:00Z', $3, 'recorded') RETURNING id`,
+			[org.id, who.employeeId, cutoff],
+		);
+		await admin.query(
+			`INSERT INTO employee_departure
+			   (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+			    cutoff_at, created_by, request_id, request_fingerprint, revision, status, effective_at)
+			 VALUES ($1, $2, $3, 'scheduled', $4, 'Europe/Berlin', $5, $6, gen_random_uuid(),
+			         'test', 1, 'effective', $5)`,
+			[org.id, who.employeeId, rows[0].id, lastWorkingDay, cutoff, recordedBy.userId],
+		);
+	}
+
+	async function grantCovering(
+		org: { id: string },
+		officer: { employeeId: string },
+		owner: { userId: string },
+		covered: readonly { employeeId: string }[],
+	) {
+		const grantId = crypto.randomUUID();
+		await admin.query(
+			`INSERT INTO payroll_access_grant
+			 (id, organization_id, payroll_employee_id, scope, is_active, created_by, updated_at)
+			 VALUES ($1, $2, $3, 'specific', true, $4, now())`,
+			[grantId, org.id, officer.employeeId, owner.userId],
+		);
+		for (const who of covered) {
+			await admin.query(
+				`INSERT INTO payroll_access_employee (organization_id, grant_id, employee_id, created_by)
+				 VALUES ($1, $2, $3, $4)`,
+				[org.id, grantId, who.employeeId, owner.userId],
+			);
+		}
+		return grantId;
+	}
+
+	it("lists an on-call employee who left during the period to a grant holder covering them, as to an org admin", async () => {
+		const { org, owner, worker, as } = await scenario();
+		const leaver = await fx.employee(org, "leaver");
+		await onCall.onCallTerms(org, leaver, { kind: "unspecified" });
+		await onCall.absence(org, leaver, {
+			type: "sick",
+			startDate: "2026-03-03",
+			endDate: "2026-03-10",
+		});
+		await leftOn(org, leaver, "2026-03-15", owner);
+		const officer = await fx.employee(org, "officer");
+		await fx.membership(org, officer, "member");
+		await grantCovering(org, officer, owner, [worker, leaver]);
+		const period = {
+			startDate: "2026-03-01",
+			endDate: "2026-03-31",
+			method: "three_months" as const,
+		};
+		const listed = (rows: Awaited<ReturnType<typeof listOnCallPayrollReferenceRowsAction>>) =>
+			rows.success ? rows.data.map((row) => [row.employeeId, row.kind, row.eventDate]) : rows;
+		const expected = [[leaver.employeeId, "sick_leave", "2026-03-03"]];
+
+		as(owner, "owner", null);
+		expect(listed(await listOnCallPayrollReferenceRowsAction(period))).toEqual(expected);
+
+		as(officer, "member", { id: officer.employeeId, role: "employee", former: false });
+		expect(listed(await listOnCallPayrollReferenceRowsAction(period))).toEqual(expected);
+	});
+
 	it("refuses a payroll range longer than three months", async () => {
 		const { owner, as } = await scenario();
 		as(owner, "owner", null);

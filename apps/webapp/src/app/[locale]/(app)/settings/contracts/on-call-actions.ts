@@ -8,10 +8,8 @@ import type { OrganizationActor } from "@/lib/organization-action/organization-a
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
 import { storeStep } from "@/lib/organization-action/store-step";
-import {
-	getActivePayrollAccessGrantScope,
-	resolvePayrollAccessibleEmployeeIds,
-} from "@/lib/payroll-access/permissions";
+import { getActivePayrollAccessGrantScope } from "@/lib/payroll-access/permissions";
+import { resolvePeriodEmployeeIds } from "@/lib/payroll-period/read-period";
 import { acknowledgeOnCallShortNotice } from "@/lib/statutory/on-call/acknowledge";
 import {
 	calculateOnCallReferencePeriod,
@@ -128,27 +126,38 @@ export const getOnCallReferencePeriodAction = organizationAction(
 );
 
 /**
- * The employees whose payroll the actor prepares, as the payroll workspace admits them: an org
- * admin the whole organization (null), a holder of an active payroll access grant the employees
- * it covers. Anyone else is refused.
+ * The employees whose payroll the actor prepares for a period starting `startDate`, as the payroll
+ * workspace admits them: an org admin the organization, a holder of an active payroll access grant
+ * the employees it covers, each plus covered employees who left on or after the period's first
+ * day. Anyone else is refused.
  */
-function payrollReferenceScope(actor: OrganizationActor, organizationId: string) {
+function payrollReferenceScope(
+	actor: OrganizationActor,
+	organizationId: string,
+	startDate: string,
+) {
 	return Effect.gen(function* () {
-		if (meetsSettingsAccess(actor.settingsAccess, "orgAdmin")) return null;
-		const holder = { organizationId, payrollEmployeeId: actor.employee?.id ?? "" };
-		const grantScope = holder.payrollEmployeeId
-			? yield* storeStep("contracts.onCall.payrollReferenceGrant", (db) =>
-					getActivePayrollAccessGrantScope(holder, db),
-				)
-			: null;
-		yield* refuseUnless(grantScope !== null, {
-			userId: actor.userId,
-			message: "Payroll access is required to list on-call reference hours",
-			resource: "payroll_workspace",
-			action: "read",
-		});
-		return yield* storeStep("contracts.onCall.payrollReferenceScope", (db) =>
-			resolvePayrollAccessibleEmployeeIds(holder, db),
+		const orgAdmin = meetsSettingsAccess(actor.settingsAccess, "orgAdmin");
+		const employeeId = actor.employee?.id ?? null;
+		if (!orgAdmin) {
+			const grantScope = employeeId
+				? yield* storeStep("contracts.onCall.payrollReferenceGrant", (db) =>
+						getActivePayrollAccessGrantScope({ organizationId, payrollEmployeeId: employeeId }, db),
+					)
+				: null;
+			yield* refuseUnless(grantScope !== null, {
+				userId: actor.userId,
+				message: "Payroll access is required to list on-call reference hours",
+				resource: "payroll_workspace",
+				action: "read",
+			});
+		}
+		return yield* storeStep("contracts.onCall.payrollReferenceScope", () =>
+			resolvePeriodEmployeeIds(
+				organizationId,
+				{ employeeId, orgAdmin, userId: actor.userId },
+				startDate,
+			),
 		);
 	});
 }
@@ -165,7 +174,7 @@ export const listOnCallPayrollReferenceRowsAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
-			const employeeIds = yield* payrollReferenceScope(actor, organizationId);
+			const employeeIds = yield* payrollReferenceScope(actor, organizationId, input.startDate);
 			return yield* storeStep("contracts.onCall.listPayrollReferenceRows", (db) =>
 				listOnCallPayrollReferenceRows(db, { organizationId, ...input, employeeIds }),
 			);
