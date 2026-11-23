@@ -368,10 +368,12 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			});
 		const shiftRow = async (id: string) =>
 			(
-				await admin.query<{ employee_id: string; start_time: string; notes: string | null }>(
-					"select employee_id, start_time, notes from shift where id = $1",
-					[id],
-				)
+				await admin.query<{
+					employee_id: string;
+					start_time: string;
+					end_time: string;
+					notes: string | null;
+				}>("select employee_id, start_time, end_time, notes from shift where id = $1", [id])
 			).rows[0];
 
 		it("refuses moving a published shift to Saturday night for a minor", async () => {
@@ -449,6 +451,63 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 				// The fixture cleanup does not know shift requests.
 				await admin.query("delete from shift_request where shift_id = $1", [id]);
 			}
+		});
+
+		it("lets a planner edit a published shift already in breach unless the edit deepens it", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "weekly", { birthday: "2010-06-01" });
+			// 08:00–17:00 is 8 h of work after the 60 min break.
+			const monday = await published(minor, "2027-03-01", "08:00", "17:00");
+			await published(minor, "2027-03-02", "08:00", "17:00");
+			await published(minor, "2027-03-03", "08:00", "17:00");
+			await shift(minor, "2027-03-04", "07:00", "18:00"); // A 10 h draft: 42 h in the week.
+			const friday = await published(minor, "2027-03-05", "08:00", "17:00");
+			expect((await evaluateWeek()).findings).toContainEqual(
+				expect.objectContaining({
+					statutoryKind: "jarbschg_weekly_max",
+					subjectKey: `shift:${friday}`,
+					blocksPublication: true,
+				}),
+			);
+			const editFriday = (startTime: string, endTime: string, extra: object = {}) =>
+				upsertShift({
+					id: friday,
+					employeeId: minor.employeeId,
+					subareaId,
+					date: "2027-03-05",
+					startTime,
+					endTime,
+					...extra,
+				});
+
+			expect(
+				await editFriday("08:00", "17:00", { notes: "Stocktake", color: "#ff8800" }),
+			).toMatchObject({ success: true });
+			expect((await shiftRow(friday))?.notes).toBe("Stocktake");
+
+			// One hour shorter: 41 h, still over 40 h but no deeper.
+			expect(await editFriday("08:00", "16:00")).toMatchObject({ success: true });
+			expect((await shiftRow(friday))?.end_time).toBe("16:00");
+
+			// Back to 8 h: 42 h deepens the breach.
+			expect(await editFriday("08:00", "17:00")).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect((await shiftRow(friday))?.end_time).toBe("16:00");
+
+			// A clean published Monday edited into a 10 h day is a new breach.
+			expect(
+				await upsertShift({
+					id: monday,
+					employeeId: minor.employeeId,
+					subareaId,
+					date: "2027-03-01",
+					startTime: "07:00",
+					endTime: "18:00",
+				}),
+			).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
+			expect((await shiftRow(monday))?.start_time).toBe("08:00");
 		});
 
 		it("saves a published shift whose sector exception is current, and drafts as before", async () => {

@@ -146,7 +146,7 @@ export async function addedStatutoryScheduleFindings(
 }
 
 /** `after` is over its visible limit and uses more of it than `before`, in the same unit. */
-function deepensExceededLimit(
+export function deepensExceededLimit(
 	before: StatutoryComplianceFinding,
 	after: StatutoryComplianceFinding,
 ): boolean {

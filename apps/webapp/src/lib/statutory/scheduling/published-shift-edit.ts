@@ -2,8 +2,10 @@
  * The publish block on edits of published shifts (#1993). Saving a published shift keeps it
  * published, so a new date, time or assignee would go live without the publish gate. While the
  * organization blocks JArbSchG shift publication, the save runs the same statutory check for the
- * shift's day and is refused when a finding blocks publication of the edited shift, or newly
- * blocks another published shift of the same employee. A current sector exception lifts the
+ * shift's day and is refused when it newly blocks publication of the edited shift or of another
+ * published shift of the same employee, or deepens such a block past its limit. A blocking
+ * finding the shift already had and the edit leaves no worse does not refuse the save. A current
+ * sector exception lifts the
  * block as at publication. Drafts are judged when they are published.
  */
 import { and, eq, inArray } from "drizzle-orm";
@@ -12,7 +14,7 @@ import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
-import { evaluateStatutoryScheduleFindings } from "./evaluate";
+import { deepensExceededLimit, evaluateStatutoryScheduleFindings } from "./evaluate";
 import { statutoryFindingChangeKey } from "./finding-key";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
@@ -60,19 +62,24 @@ export async function guardPublishedShiftEdit<T>(
 		employeeIds: [edit.employeeId],
 		now: edit.now,
 	};
-	const before = new Set(
-		(await evaluateStatutoryScheduleFindings(db, request)).map(statutoryFindingChangeKey),
+	const before = new Map(
+		(await evaluateStatutoryScheduleFindings(db, request)).map(
+			(finding) => [statutoryFindingChangeKey(finding), finding] as const,
+		),
 	);
 	const saved = await write();
-	const after = (await evaluateStatutoryScheduleFindings(db, request)).filter(
-		(finding) => finding.blocksPublication,
-	);
-	if (after.length === 0) return saved;
+	// Only what the edit causes blocks it: a blocking finding absent before the save, or one it
+	// deepens past its limit. A breach the shift already had (e.g. published before the org turned
+	// the block on) does not lock its notes, colour or a shortening.
+	const caused = (await evaluateStatutoryScheduleFindings(db, request)).filter((finding) => {
+		if (!finding.blocksPublication) return false;
+		const prior = before.get(statutoryFindingChangeKey(finding));
+		return !prior || deepensExceededLimit(prior, finding);
+	});
+	if (caused.length === 0) return saved;
 
 	const edited = `shift:${edit.shiftId}`;
-	const others = after.filter(
-		(finding) => finding.subjectKey !== edited && !before.has(statutoryFindingChangeKey(finding)),
-	);
+	const others = caused.filter((finding) => finding.subjectKey !== edited);
 	const otherIds = others.flatMap((finding) => {
 		const match = SHIFT_SUBJECT.exec(finding.subjectKey);
 		return match ? [match[1]] : [];
@@ -93,10 +100,8 @@ export async function guardPublishedShiftEdit<T>(
 						)
 				).map((row) => `shift:${row.id}`),
 	);
-	const blocking = after.filter(
-		(finding) =>
-			finding.subjectKey === edited ||
-			(others.includes(finding) && published.has(finding.subjectKey)),
+	const blocking = caused.filter(
+		(finding) => finding.subjectKey === edited || published.has(finding.subjectKey),
 	);
 	if (blocking.length > 0) throw new PublishedShiftEditBlocked(blocking);
 	return saved;
