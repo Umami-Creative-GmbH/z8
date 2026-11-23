@@ -209,6 +209,18 @@ describe("Minijob month judgement (#1989)", () => {
 			expect(statusAfter(running, [worked(["s1"], "2026-12-01", 600), ...planned(1)])).toBe(
 				"current",
 			);
+			// Worked to the shift's end after all: 30 minutes over the plan, once the shift is over.
+			expect(statusAfter(running, [worked(["s1"], "2026-12-01", 630), ...planned(1)])).toBe(
+				"stale",
+			);
+		});
+
+		it("goes stale on an overrun that fills the gap of a shift missed after documentation", () => {
+			// Documented before any work. Then 1 December passes unworked and the 10 h shift of
+			// 2 December runs 20 h: the same total, but 10 h of work nobody documented.
+			expect(statusAfter(planned(0), [worked(["s2"], "2026-12-02", 1200), ...planned(2)])).toBe(
+				"stale",
+			);
 		});
 
 		it("can keep an acknowledgement current while the month crosses twice the cap", () => {
