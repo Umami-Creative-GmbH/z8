@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -97,4 +97,46 @@ describe("ShortTermMonitorCard (#1990)", () => {
 		expect(selector.textContent).toContain("2025");
 		expect(await screen.findByRole("status", { name: "Loading…" })).toBeTruthy();
 	});
+
+	it("stays on screen to open last year when only last year applies", async () => {
+		mocks.getShortTermMonitorAction.mockImplementation(({ year }: { year?: number }) =>
+			Promise.resolve({
+				success: true,
+				data: year === 2026 ? monitorOf(2026) : notApplicable(2027),
+			}),
+		);
+		renderCard();
+		const selector = await screen.findByRole("combobox", { name: "Calendar year" });
+		expect(screen.getByText("Not employed short-term in 2027.")).toBeTruthy();
+
+		fireEvent.click(selector);
+		fireEvent.click(await screen.findByRole("option", { name: "2026" }));
+
+		expect(mocks.getShortTermMonitorAction).toHaveBeenLastCalledWith({
+			employeeId: "emp-1",
+			year: 2026,
+		});
+		expect(selector.textContent).toContain("2026");
+		await waitFor(() => expect(screen.queryByText(/Not employed short-term/)).toBeNull());
+	});
+
+	it("shows nothing when neither this year nor last year applies", async () => {
+		mocks.getShortTermMonitorAction.mockImplementation(({ year }: { year?: number }) =>
+			Promise.resolve({ success: true, data: notApplicable(year ?? 2027) }),
+		);
+		const { container } = renderCard();
+
+		await waitFor(() =>
+			expect(mocks.getShortTermMonitorAction).toHaveBeenCalledWith({
+				employeeId: "emp-1",
+				year: 2026,
+			}),
+		);
+		await waitFor(() => expect(container.innerHTML).toBe(""));
+		expect(screen.queryByText("Short-term employment")).toBeNull();
+	});
 });
+
+function notApplicable(year: number) {
+	return { ...monitorOf(year), applies: false, allowance: null };
+}

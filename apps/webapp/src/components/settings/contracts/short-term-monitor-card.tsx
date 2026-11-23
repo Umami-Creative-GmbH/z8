@@ -578,8 +578,23 @@ export function ShortTermMonitorCard({
 	});
 	const monitor = query.data;
 	const loadingYear = query.isPlaceholderData;
-	// Nothing to show for employees who are not short-term this year.
-	if (!monitor || (year === null && !loadingYear && !monitor.applies)) return null;
+	// Not short-term this year: the card stays to open last year if that year applies.
+	const currentNotApplying = year === null && !loadingYear && monitor?.applies === false;
+	const previousYear = monitor ? monitor.year - 1 : null;
+	const previous = useQuery({
+		queryKey: shortTermMonitorQueryKey(organizationId, employeeId, previousYear),
+		queryFn: async () => {
+			const result = await getShortTermMonitorAction({
+				employeeId,
+				year: previousYear ?? undefined,
+			});
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
+			return result.data;
+		},
+		enabled: currentNotApplying && previousYear !== null,
+	});
+	// Nothing to show for employees who are short-term neither this year nor last year.
+	if (!monitor || (currentNotApplying && previous.data?.applies !== true)) return null;
 	const thisYear = currentYear ?? monitor.year;
 	const shownYear = year ?? thisYear;
 
