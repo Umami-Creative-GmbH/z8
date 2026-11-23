@@ -382,9 +382,9 @@ describe("working-student monitor (PostgreSQL)", () => {
 					?.inputFingerprint,
 			};
 		};
-		// 960 + 479.3 minutes, on either side of the clock-in's 42-second mark.
+		// 960 + 480 minutes (from the clock-in's minute), on either side of its 42-second mark.
 		const before = await at("2026-03-04T12:00:30Z");
-		expect(before.coreMinutes).toBe(1439);
+		expect(before.coreMinutes).toBe(1440);
 		expect(before.fingerprint).toMatch(/^v1:/);
 		for (const now of [
 			"2026-03-04T12:00:41.999Z",
@@ -500,9 +500,9 @@ describe("working-student monitor (PostgreSQL)", () => {
 			await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "09:00", end: "17:00" });
 			await fx.openWork(org, student, { date: "2026-03-04", start: "08:45:42" });
 
-			// 960 + 494.3 minutes, before the shift starts and while it runs.
+			// 960 + 495 minutes (from 08:45), before the shift starts and while it runs.
 			const first = await lectureWeekAt(org.id, student.employeeId, "2026-03-04T07:50:10Z");
-			expect(first).toMatchObject({ coreMinutes: 1454, used: 1454 });
+			expect(first).toMatchObject({ coreMinutes: 1455, used: 1455 });
 			for (const now of [
 				"2026-03-04T07:50:50Z",
 				"2026-03-04T07:51:20Z",
@@ -518,6 +518,48 @@ describe("working-student monitor (PostgreSQL)", () => {
 			});
 		});
 
+		it("keeps an acknowledgement current when a planned shift is clocked in seconds after the minute", async () => {
+			const org = await fx.organization("a");
+			const admin = await fx.user("admin");
+			const student = await fx.workingStudent(org, "student");
+			const subareaId = await fx.subarea(org, student);
+			// 16 h worked Monday and Tuesday; Wednesday's 08:00–16:00 shift planned.
+			await fx.work(org, student, weekdays(W10, "08:00", "16:00").slice(0, 2));
+			await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "08:00", end: "16:00" });
+
+			// Berlin is UTC+1 in March: seen and acknowledged at 07:50 and 07:51, before the shift.
+			const planned = await lectureWeekAt(org.id, student.employeeId, "2026-03-04T06:50:00Z");
+			expect(planned).toMatchObject({ coreMinutes: 1440, used: 1440 });
+			await acknowledgeWorkingStudentFinding(db, {
+				organizationId: org.id,
+				actorUserId: admin.userId,
+				employeeId: student.employeeId,
+				findingKind: "working_student_lecture_week",
+				weekStart: W10,
+				expectedInputFingerprint: planned.fingerprint ?? "",
+				reason: "Exam period ends this week",
+				now: Temporal.Instant.from("2026-03-04T06:51:00Z"),
+			});
+
+			// Clocked in at 08:00:42 on that shift: worked as planned.
+			await fx.openWork(org, student, { date: "2026-03-04", start: "08:00:42" });
+			const now = "2026-03-04T09:13:42.5Z";
+			expect(await lectureWeekAt(org.id, student.employeeId, now)).toEqual(planned);
+			const card = await loadWorkingStudentMonitor(db, {
+				organizationId: org.id,
+				employeeId: student.employeeId,
+				now: Temporal.Instant.from(now),
+				audience: "full",
+			});
+			const finding = card.findings.find(
+				(candidate) =>
+					candidate.kind === "working_student_lecture_week" && candidate.periodStart === W10,
+			);
+			expect(finding && "acknowledgement" in finding && finding.acknowledgement).toMatchObject({
+				status: "current",
+			});
+		});
+
 		it("lets a clock-in without a shift grow the figures but not the fingerprint", async () => {
 			const org = await fx.organization("a");
 			const student = await fx.workingStudent(org, "student");
@@ -525,16 +567,16 @@ describe("working-student monitor (PostgreSQL)", () => {
 			await fx.work(org, student, weekdays(W10, "08:00", "18:00").slice(0, 2));
 			await fx.openWork(org, student, { date: "2026-03-04", start: "09:00:42" });
 
-			// 11:00:05 in Berlin: 1200 + 119.3 minutes.
+			// 11:00:05 in Berlin: 1200 + 120 minutes (09:00 to 11:00 on the minute grid).
 			const first = await lectureWeekAt(org.id, student.employeeId, "2026-03-04T10:00:05Z");
-			expect(first).toMatchObject({ coreMinutes: 1319, used: 1319 });
+			expect(first).toMatchObject({ coreMinutes: 1320, used: 1320 });
 			// Steady within the minute, whatever the clock-in's seconds.
 			expect(await lectureWeekAt(org.id, student.employeeId, "2026-03-04T10:00:55Z")).toEqual(
 				first,
 			);
 			// Later the clock-in has grown the figures, not the fingerprint.
 			const later = await lectureWeekAt(org.id, student.employeeId, "2026-03-04T10:30:05Z");
-			expect(later).toEqual({ coreMinutes: 1349, used: 1349, fingerprint: first.fingerprint });
+			expect(later).toEqual({ coreMinutes: 1350, used: 1350, fingerprint: first.fingerprint });
 
 			await acknowledgementStaysCurrent(org, student.employeeId, {
 				seenAt: "2026-03-04T10:00:05Z",

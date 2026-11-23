@@ -141,10 +141,11 @@ interface PlannedShift {
  * One employee's work in progress and planned work, figured so a day going as planned leaves the
  * totals (and the fingerprints made of them) as they are from one minute to the next:
  *
+ * - a running clock-in counts on the whole-minute grid, from the minute it was made in, so its
+ *   seconds never tip the rounded totals;
  * - a running clock-in that belongs to a shift that has not ended (it matches the shift, or runs
  *   into it) counts from the clock-in to that shift's end, and stands in for the shift;
- * - a running clock-in that belongs to no such shift counts up to `now` on the whole-minute grid,
- *   so it grows once a minute whatever the seconds of the clock-in;
+ * - a running clock-in that belongs to no such shift counts up to `now`, so it grows once a minute;
  * - every other shift that has not ended counts in full, even one that started without a
  *   clock-in, less the part completed work matched to it already covers (a clocked-out break
  *   keeps the rest of the shift until the shift ends).
@@ -158,6 +159,8 @@ function inProgressContributions(input: {
 	const contributions: WorkingStudentWorkInterval[] = [];
 	const covered = new Set<PlannedShift>();
 	for (const clockIn of input.open) {
+		// Counted from the clock-in's whole minute: 08:00:42 on an 08:00 shift is the shift as planned.
+		const start = clockIn.start.round({ smallestUnit: "minute", roundingMode: "floor" });
 		let end: Instant | null = null;
 		for (const planned of input.planned) {
 			const belongs =
@@ -170,13 +173,13 @@ function inProgressContributions(input: {
 		}
 		const runningUntil = end ? "shift_end" : "now";
 		end ??= input.now.round({ smallestUnit: "minute", roundingMode: "floor" });
-		if (compareInstants(end, clockIn.start) <= 0) continue;
+		if (compareInstants(end, start) <= 0) continue;
 		contributions.push({
 			source: "work",
 			ref: clockIn.ref,
-			start: clockIn.start,
+			start,
 			end,
-			netMinutes: clockIn.start.until(end).total("minutes"),
+			netMinutes: start.until(end).total("minutes"),
 			runningUntil,
 		});
 	}
