@@ -101,7 +101,7 @@ export interface OnCallPaidSickDays {
 	readonly from: string;
 	readonly untilExclusive: string;
 	readonly days: number;
-	readonly holidaysPaidSeparately: readonly string[];
+	readonly holidaysPaidAsHolidays: readonly string[];
 }
 
 export interface OnCallReferenceEvent {
@@ -486,14 +486,14 @@ function paidSickDaysOf(
 	const from = leave.startDate > range.from ? leave.startDate : range.from;
 	const leaveEnd = dayAfter(leave.endDate);
 	const untilExclusive = leaveEnd < range.untilExclusive ? leaveEnd : range.untilExclusive;
-	const holidaysPaidSeparately: string[] = [];
+	const holidaysPaidAsHolidays: string[] = [];
 	let days = 0;
 	for (const day of daysOf(parsePlainDate(from), parsePlainDate(untilExclusive))) {
 		const key = day.toString();
-		if (paidHolidays.has(key)) holidaysPaidSeparately.push(key);
+		if (paidHolidays.has(key)) holidaysPaidAsHolidays.push(key);
 		else if (onCallOn(facts, key)) days += 1;
 	}
-	return { from, untilExclusive, days, holidaysPaidSeparately };
+	return { from, untilExclusive, days, holidaysPaidAsHolidays };
 }
 
 /**

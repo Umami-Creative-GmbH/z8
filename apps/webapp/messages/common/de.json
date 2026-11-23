@@ -669,7 +669,7 @@
         "perDay": "{duration} pro Tag",
         "rangeTooLong": "Referenzstunden werden für höchstens drei Monate auf einmal aufgelistet. Wähle einen kürzeren Zeitraum.",
         "paidSickDays": "Entgeltfortzahlung im Krankheitsfall für {days, plural, one {# Tag} other {# Tage}} in diesem Zeitraum",
-        "holidaysPaidSeparately": "Feiertage während der Krankheit werden in eigenen Zeilen bezahlt, nicht als Krankheitstage: {dates}",
+        "holidaysPaidAsHolidays": "Feiertage während der Krankheit werden in eigenen Zeilen bezahlt, nicht als Krankheitstage: {dates}",
         "hide": "Aufschlüsselung ausblenden",
         "show": "Aufschlüsselung anzeigen"
       }

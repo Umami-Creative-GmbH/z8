@@ -254,7 +254,7 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			from: "2026-04-13",
 			untilExclusive: "2026-04-23",
 			days: 9,
-			holidaysPaidSeparately: ["2026-04-15"],
+			holidaysPaidAsHolidays: ["2026-04-15"],
 		});
 		expect(holiday?.paidSickDays).toBeUndefined();
 		expect(holiday?.breakdown).toMatchObject({

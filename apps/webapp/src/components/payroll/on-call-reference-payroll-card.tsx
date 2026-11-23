@@ -141,12 +141,12 @@ export function OnCallReferencePayrollCard({
 												"Sick pay for {days, plural, one {# day} other {# days}} in this period",
 												{ days: row.paidSickDays.days },
 											)}
-											{row.paidSickDays.holidaysPaidSeparately.length > 0
+											{row.paidSickDays.holidaysPaidAsHolidays.length > 0
 												? ` · ${t(
-														"common.onCall.payroll.holidaysPaidSeparately",
+														"common.onCall.payroll.holidaysPaidAsHolidays",
 														"Public holidays during the illness are paid as their own rows, not as sick days: {dates}",
 														{
-															dates: row.paidSickDays.holidaysPaidSeparately.map(day).join(", "),
+															dates: row.paidSickDays.holidaysPaidAsHolidays.map(day).join(", "),
 														},
 													)}`
 												: null}

@@ -669,7 +669,7 @@
         "perDay": "{duration} per day",
         "rangeTooLong": "Reference hours are listed for at most three months at a time. Choose a shorter period.",
         "paidSickDays": "Sick pay for {days, plural, one {# day} other {# days}} in this period",
-        "holidaysPaidSeparately": "Public holidays during the illness are paid as their own rows, not as sick days: {dates}",
+        "holidaysPaidAsHolidays": "Public holidays during the illness are paid as their own rows, not as sick days: {dates}",
         "hide": "Hide breakdown",
         "show": "Show breakdown"
       }
