@@ -188,13 +188,14 @@ describe("apprentice release actions (PostgreSQL)", () => {
 	});
 
 	it("records the exam when the working day before it is already released", async () => {
-		// Tuesday 11 May 2027 ends a block-release week, which is never split; the exam is on Wednesday.
+		// Friday 7 May 2027 ends a full block-release week, which releases it in full and is never
+		// split; the exam is on Monday.
 		expect(
 			await recordApprenticeReleaseAction({
 				employeeId: learner.employeeId,
 				releaseKind: "vocational_school_block_week",
 				startsOn: "2027-05-03",
-				endsOn: "2027-05-11",
+				endsOn: "2027-05-07",
 				schoolMinutes: 1500,
 			}),
 		).toMatchObject({ success: true });
@@ -202,8 +203,8 @@ describe("apprentice release actions (PostgreSQL)", () => {
 			await recordApprenticeReleaseAction({
 				employeeId: learner.employeeId,
 				releaseKind: "exam_day",
-				startsOn: "2027-05-12",
-				endsOn: "2027-05-12",
+				startsOn: "2027-05-10",
+				endsOn: "2027-05-10",
 				includePreExamDay: true,
 			}),
 		).toMatchObject({ success: true });
@@ -211,7 +212,7 @@ describe("apprentice release actions (PostgreSQL)", () => {
 		const result = await getApprenticeReleaseCreditsAction({ employeeId: learner.employeeId });
 		if (!result.success) throw new Error(result.error);
 		expect(result.data.releases.map((release) => [release.releaseKind, release.startsOn])).toEqual([
-			["exam_day", "2027-05-12"],
+			["exam_day", "2027-05-10"],
 			["vocational_school_block_week", "2027-05-03"],
 		]);
 	});
