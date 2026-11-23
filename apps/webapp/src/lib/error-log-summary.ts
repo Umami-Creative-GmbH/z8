@@ -25,12 +25,23 @@ export interface ErrorLogSummary {
 
 const MAX_FRAMES = 20;
 
+/** A code location: a script file, a `node:` module or an eval'd `<anonymous>`, at `:line:col`. */
+const LOCATION = String.raw`(?:\S+\.[cm]?[jt]sx?|node:[\w./-]+|<anonymous>):\d+:\d+`;
 /**
- * A V8 stack frame: `at [async ][new ][fn ](location)` or `at location`, where the location ends
- * in `:line:col`, or is `<anonymous>` / `native`. Free text after "at " (a message line) is not one.
+ * `[async ][new ][Type.][get |set ]name[ [as alias]]`, e.g. `Object.get broken [as broken]`;
+ * names with spaces (computed keys) are not kept.
  */
-const V8_FRAME =
-	/^at (?:async )?(?:new )?(?:\S+ (?:\[as \S+\] )?)?\(?(?:\S+:\d+:\d+|<anonymous>|native)\)?$/;
+const CALLEE = String.raw`(?:async )?(?:new )?(?:(?:\S+\.)?(?:get|set) )?\S+(?: \[as \S+\])?`;
+/** Where a call ran: a location, `<anonymous>`, `native`, or an eval with where it was made. */
+const CALL_SITE = String.raw`${LOCATION}|<anonymous>|native|eval at \S+ \(${LOCATION}\), ${LOCATION}`;
+
+/**
+ * A V8 stack frame: `at callee (site)` or `at [async ]location`. Free text after "at ", even a
+ * time like `08:30:00`, is not one: its location must name code, not just end in `:n:n`.
+ */
+const V8_FRAME = new RegExp(
+	String.raw`^at (?:${CALLEE} \((?:${CALL_SITE})\)|(?:async )?${LOCATION})$`,
+);
 
 /**
  * The stack's real frames only. A frame-shaped line is kept only if it is shaped like a V8
