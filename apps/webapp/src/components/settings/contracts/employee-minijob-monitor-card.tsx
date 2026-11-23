@@ -2,7 +2,7 @@
 
 import { IconCurrencyEuro, IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ import {
 	MinijobTierBadge,
 	minijobExceedanceLabel,
 } from "./minijob-labels";
+import { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryKey } from "./minijob-query-keys";
 
 // Minijob earnings monitor on Employee Detail (#1989). Org admins see EUR amounts and edit the
 // employee's external Minijob earnings; scoped managers see the warning tier of each month only.
@@ -75,8 +76,11 @@ const OFFSET_REFUSALS = {
 	],
 } satisfies RefusalMessages<EmployeeContextRefusal>;
 
-export const minijobMonitorQueryKey = (employeeId: string) =>
-	["employees", "minijob-monitor", employeeId] as const;
+/** External earnings change the monitor and the exceedances in Reviews & Conflicts. */
+function refreshAfterOffsetChange(queryClient: QueryClient, employeeId: string) {
+	void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(employeeId) });
+	void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
+}
 
 function MonthsTable({
 	view,
@@ -209,7 +213,7 @@ function AddOffsetForm({ employeeId, onDone }: { employeeId: string; onDone: () 
 			toast.success(
 				t("settings.contracts.minijob.offsets.saved", "External Minijob earnings saved"),
 			);
-			void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(employeeId) });
+			refreshAfterOffsetChange(queryClient, employeeId);
 			onDone();
 		},
 		onError: (error) => toast.error(error.message),
@@ -433,7 +437,7 @@ function VoidOffsetForm({
 			toast.success(
 				t("settings.contracts.minijob.offsets.voided", "External Minijob earnings voided"),
 			);
-			void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(employeeId) });
+			refreshAfterOffsetChange(queryClient, employeeId);
 			onDone();
 		},
 		onError: (error) => toast.error(error.message),

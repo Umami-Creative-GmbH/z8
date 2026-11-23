@@ -15,6 +15,7 @@ import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-p
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeContractTab } from "@/components/settings/contracts/employee-contract-tab";
 import { EmployeeMinijobMonitorCard } from "@/components/settings/contracts/employee-minijob-monitor-card";
+import { minijobMonitorQueryKey } from "@/components/settings/contracts/minijob-query-keys";
 import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
@@ -244,6 +245,13 @@ export function EmployeeDetailPageClient({
 		initialSnapshot,
 	});
 	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
+	// Terms, history and wage feed the Minijob monitor (#1989): refresh it after each change.
+	const refreshMinijobMonitor = () =>
+		void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(employeeId) });
+	const refreshingMinijob =
+		<A, R>(mutate: (input: A) => Promise<R>) =>
+		(input: A) =>
+			mutate(input).finally(refreshMinijobMonitor);
 	// The "Custom fields" section (#818), saved with the employee details.
 	const customFields = useCustomFieldDrafts({
 		entity: "employee",
@@ -390,7 +398,10 @@ export function EmployeeDetailPageClient({
 										employeeId={employeeId}
 										workPolicies={workPolicies}
 										employmentHistory={employeeData.employmentHistory}
-										onContractMutated={() => void employeeData.refetch()}
+										onContractMutated={() => {
+											void employeeData.refetch();
+											refreshMinijobMonitor();
+										}}
 									/>
 									<EmploymentDateCorrectionCard
 										key={employeeId}
@@ -415,9 +426,9 @@ export function EmployeeDetailPageClient({
 									<EmployeeEmploymentHistoryCard
 										history={employeeData.employmentHistory}
 										canManage={isOrgAdmin}
-										onCreate={employeeData.createEmploymentHistory}
-										onConfirm={employeeData.confirmEmploymentHistory}
-										onCancel={employeeData.cancelEmploymentHistory}
+										onCreate={refreshingMinijob(employeeData.createEmploymentHistory)}
+										onConfirm={refreshingMinijob(employeeData.confirmEmploymentHistory)}
+										onCancel={refreshingMinijob(employeeData.cancelEmploymentHistory)}
 										isCreating={employeeData.isCreatingEmploymentHistory}
 										isMutating={
 											employeeData.isConfirmingEmploymentHistory ||
@@ -429,7 +440,7 @@ export function EmployeeDetailPageClient({
 										changeWage={
 											employee.contractTypeToday === "hourly"
 												? {
-														onSubmit: employeeData.changeWage,
+														onSubmit: refreshingMinijob(employeeData.changeWage),
 														isPending: employeeData.isChangingWage,
 													}
 												: undefined

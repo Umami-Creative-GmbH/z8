@@ -25,6 +25,7 @@ import type { MinijobExceedanceRefusal } from "@/lib/statutory/minijob/acknowled
 import type { MinijobExceedanceReview } from "@/lib/statutory/minijob/minijob-reviews";
 import { Link } from "@/navigation";
 import { formatEuroCents, formatMinijobMonth, minijobExceedanceLabel } from "./minijob-labels";
+import { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryKey } from "./minijob-query-keys";
 
 // Minijob exceedance months in Settings → Contracts → Reviews & Conflicts (#1989, org admins).
 
@@ -51,8 +52,6 @@ const ACKNOWLEDGE_REFUSALS = {
 	],
 } satisfies RefusalMessages<MinijobExceedanceRefusal | StatutoryAcknowledgementRefusal>;
 
-export const MINIJOB_REVIEWS_QUERY_KEY = ["contracts", "minijob-exceedances"] as const;
-
 function AcknowledgeForm({ review }: { review: MinijobExceedanceReview }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -75,9 +74,7 @@ function AcknowledgeForm({ review }: { review: MinijobExceedanceReview }) {
 				),
 			);
 			void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
-			void queryClient.invalidateQueries({
-				queryKey: ["employees", "minijob-monitor", review.employeeId],
-			});
+			void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryKey(review.employeeId) });
 		},
 		onError: (error) => toast.error(error.message),
 	});

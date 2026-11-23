@@ -34,17 +34,24 @@ vi.mock("@/app/[locale]/(app)/settings/employees/minijob-actions", () => ({
 }));
 
 const { EmployeeMinijobMonitorCard } = await import("./employee-minijob-monitor-card");
+const { MINIJOB_REVIEWS_QUERY_KEY } = await import("./minijob-query-keys");
 
 const EMPLOYEE_ID = "00000000-0000-4000-8000-000000000001";
 
 function renderCard() {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	return render(
-		<QueryClientProvider client={client}>
-			<EmployeeMinijobMonitorCard employeeId={EMPLOYEE_ID} />
-		</QueryClientProvider>,
-	);
+	return {
+		client,
+		...render(
+			<QueryClientProvider client={client}>
+				<EmployeeMinijobMonitorCard employeeId={EMPLOYEE_ID} />
+			</QueryClientProvider>,
+		),
+	};
 }
+
+/** Reviews & Conflicts' cached exceedances, as that tab keys them. */
+const REVIEWS_KEY = [...MINIJOB_REVIEWS_QUERY_KEY, "org-1", false];
 
 const fullMonth = {
 	month: "2026-11",
@@ -140,7 +147,8 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 			data: { id: "o1" },
 		});
 
-		const { container } = renderCard();
+		const { container, client } = renderCard();
+		client.setQueryData(REVIEWS_KEY, []);
 		fireEvent.click(await screen.findByRole("button", { name: /Add earnings/ }));
 		const input = (name: string) =>
 			container.querySelector(`input[name="${name}"]`) as HTMLInputElement;
@@ -159,5 +167,49 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 				note: "Payslip",
 			}),
 		);
+		// The month's exceedance may appear or go away in Reviews & Conflicts.
+		await waitFor(() => expect(client.getQueryState(REVIEWS_KEY)?.isInvalidated).toBe(true));
+	});
+
+	it("voids external Minijob earnings and refreshes Reviews & Conflicts", async () => {
+		mocks.getEmployeeMinijobMonitorAction.mockResolvedValue({
+			success: true,
+			data: {
+				audience: "full",
+				applies: true,
+				currentMonth: "2026-11",
+				months: [fullMonth],
+				externalOffsets: [
+					{
+						id: "o1",
+						fromMonth: "2026-10",
+						lastMonth: null,
+						amountCents: 12_050,
+						currency: "EUR",
+						sourceEmployer: null,
+						note: "Payslip",
+						createdAt: new Date("2026-10-01T00:00:00Z"),
+					},
+				],
+			},
+		});
+		mocks.voidMinijobExternalOffsetAction.mockResolvedValue({ success: true, data: { id: "o1" } });
+
+		const { client } = renderCard();
+		client.setQueryData(REVIEWS_KEY, []);
+		fireEvent.click(await screen.findByRole("button", { name: /^Void$/ }));
+		fireEvent.change(screen.getByRole("textbox", { name: "Why void these earnings?" }), {
+			target: { value: "Typo" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: /^Void$/ }));
+
+		await waitFor(() =>
+			expect(mocks.voidMinijobExternalOffsetAction).toHaveBeenCalledWith({
+				employeeId: EMPLOYEE_ID,
+				offsetId: "o1",
+				reason: "Typo",
+			}),
+		);
+		await waitFor(() => expect(client.getQueryState(REVIEWS_KEY)?.isInvalidated).toBe(true));
 	});
 });
