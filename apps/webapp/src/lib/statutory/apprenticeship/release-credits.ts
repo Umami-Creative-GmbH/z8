@@ -60,7 +60,10 @@ export interface ApprenticeReleaseDay {
 	readonly minutes: number | null;
 	/** An exam credited with its time: when it starts, local wall time. */
 	readonly examStartTime?: string;
-	/** A school day recorded with its lesson times: when they start and end, local wall time. */
+	/**
+	 * A school day recorded with its lesson times, whether released in full or partly credited: when
+	 * they start and end, local wall time.
+	 */
 	readonly schoolTime?: { readonly start: string; readonly end: string };
 	/**
 	 * The employee's average working day and week under their effective terms on this day, which
@@ -154,7 +157,13 @@ export function apprenticeReleaseDays(
 						: undefined;
 				if (isLongSchoolDay(release) && !weeksWithFullSchoolDay.has(week)) {
 					weeksWithFullSchoolDay.add(week);
-					days.push({ ...base, date: release.startsOn, credit: "full_day", minutes: null });
+					days.push({
+						...base,
+						date: release.startsOn,
+						credit: "full_day",
+						minutes: null,
+						...(schoolTime ? { schoolTime } : {}),
+					});
 				} else {
 					days.push({
 						...base,

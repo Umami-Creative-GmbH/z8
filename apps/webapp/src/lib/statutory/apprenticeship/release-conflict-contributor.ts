@@ -1,7 +1,7 @@
 /**
- * Apprentice school and exam release conflicts in Scheduling and Staffing (#1993). A shift on a
- * day released in full (credited school day, block-release week, pre-exam day, or an exam day
- * recorded without its time), during an exam recorded with its time, during a short school day's
+ * Apprentice school and exam release conflicts in Scheduling and Staffing (#1993). A shift with
+ * work on a day released in full (credited school day, block-release week, pre-exam day, or an exam
+ * day recorded without its time), also a night shift starting the day before, during an exam recorded with its time, during a short school day's
  * lessons recorded with their times, or before such lessons starting before 09:00, is a
  * conflict for every apprentice, and prohibited for one under 18 (§§ 9, 10 JArbSchG): with the
  * organization's `blockJarbschgShiftPublish` on, that shift blocks publication. On the week's full
@@ -82,11 +82,15 @@ const instantOn = (day: PlainDate, time: string, timezone: string) =>
 	day.toZonedDateTime({ timeZone: timezone, plainTime: Temporal.PlainTime.from(time) }).toInstant();
 
 /**
- * How planned work conflicts with the release on `day`, resolved in `timezone`, or null. A partly
- * credited school or exam day leaves the rest of the day to work, for minors too; for them the
- * youth rules count its credited time toward the day's limit (`youth/school-credits.ts`). Only work
- * during the exam or the lessons, or before lessons starting before 09:00, conflicts. A school day
- * recorded without its lesson times cannot be compared with work, as before they were recorded.
+ * How planned work conflicts with the release on `day`, resolved in `timezone`, or null.
+ *
+ * A day released in full conflicts with any work that falls on it, also a night shift that started
+ * the day before; on a full school day recorded with its lesson times, work before lessons starting
+ * before 09:00 is cited as such. A partly credited school or exam day leaves the rest of the day to
+ * work, for minors too; for them the youth rules count its credited time toward the day's limit
+ * (`youth/school-credits.ts`). Only work during the exam or the lessons, or before lessons starting
+ * before 09:00, conflicts. A short school day recorded without its lesson times cannot be compared
+ * with work, as before they were recorded.
  */
 function conflictOf(
 	work: PlannedWork,
@@ -94,7 +98,20 @@ function conflictOf(
 	day: PlainDate,
 	timezone: string,
 ): ReleaseConflict | null {
-	if (release.credit === "full_day") return day.equals(work.date) ? "release_day" : null;
+	const startOfDay = day.toZonedDateTime({ timeZone: timezone }).toInstant();
+	const beforeEarlyLessons = (schoolTime: { readonly start: string }) => {
+		const early =
+			Temporal.PlainTime.compare(Temporal.PlainTime.from(schoolTime.start), EARLY_LESSONS_BEFORE) <
+			0;
+		return early && overlaps(work, startOfDay, instantOn(day, schoolTime.start, timezone));
+	};
+	if (release.credit === "full_day") {
+		if (release.schoolTime && beforeEarlyLessons(release.schoolTime)) {
+			return "before_early_lessons";
+		}
+		const endOfDay = day.add({ days: 1 }).toZonedDateTime({ timeZone: timezone }).toInstant();
+		return overlaps(work, startOfDay, endOfDay) ? "release_day" : null;
+	}
 	if (release.examStartTime && release.minutes !== null) {
 		const start = instantOn(day, release.examStartTime, timezone);
 		return overlaps(work, start, start.add({ minutes: release.minutes })) ? "release_day" : null;
@@ -104,13 +121,7 @@ function conflictOf(
 	if (overlaps(work, lessonsStart, instantOn(day, release.schoolTime.end, timezone))) {
 		return "lessons";
 	}
-	const early =
-		Temporal.PlainTime.compare(
-			Temporal.PlainTime.from(release.schoolTime.start),
-			EARLY_LESSONS_BEFORE,
-		) < 0;
-	const startOfDay = day.toZonedDateTime({ timeZone: timezone }).toInstant();
-	return early && overlaps(work, startOfDay, lessonsStart) ? "before_early_lessons" : null;
+	return beforeEarlyLessons(release.schoolTime) ? "before_early_lessons" : null;
 }
 
 async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFinding[]> {

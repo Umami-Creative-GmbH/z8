@@ -1055,6 +1055,145 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		});
 	});
 
+	it("flags night shifts running into a day released in full, whichever day they start on", async () => {
+		const adult = await apprentice("adultnight", "2005-05-05");
+		const minor = await apprentice("minornight", "2011-01-01");
+		const subareaId = await seed.subarea(org, owner);
+		// Each night shift starts on a day without a release and ends at 06:00 on the release day.
+		const cases = [
+			// Tue 2 Mar 2027: six lessons from 07:45, the week's full school day.
+			{ case: "full school day", shiftOn: "2027-03-01", school: ["07:45", "13:00"] },
+			// Tue 9 Mar: six lessons, no times recorded.
+			{ case: "untimed school day", shiftOn: "2027-03-08", school: null },
+			// Mon 15 to Fri 19 Mar: a full block week.
+			{ case: "block day", shiftOn: "2027-03-14" },
+			// Wed 24 Mar: a pre-exam day.
+			{ case: "pre-exam day", shiftOn: "2027-03-23" },
+			// Wed 31 Mar: an exam recorded without its time.
+			{ case: "exam day", shiftOn: "2027-03-30" },
+		] as const;
+		const caseOfShift = new Map<string, string>();
+		for (const who of [adult, minor]) {
+			const scope = {
+				organizationId: org.id,
+				employeeId: who.employeeId,
+				actorUserId: owner.userId,
+			};
+			for (const day of ["2027-03-02", "2027-03-09"]) {
+				const timed = day === "2027-03-02";
+				await recordApprenticeReleaseWithCredit(db, {
+					...scope,
+					releaseKind: "vocational_school_day",
+					startsOn: day,
+					endsOn: day,
+					lessonCount: 6,
+					schoolStartTime: timed ? "07:45" : null,
+					schoolEndTime: timed ? "13:00" : null,
+				});
+			}
+			await recordApprenticeReleaseWithCredit(db, {
+				...scope,
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-15",
+				endsOn: "2027-03-19",
+				schoolMinutes: 1500,
+			});
+			await recordApprenticeReleaseWithCredit(db, {
+				...scope,
+				releaseKind: "pre_exam_day",
+				startsOn: "2027-03-24",
+				endsOn: "2027-03-24",
+			});
+			await recordApprenticeReleaseWithCredit(db, {
+				...scope,
+				releaseKind: "exam_day",
+				startsOn: "2027-03-31",
+				endsOn: "2027-03-31",
+			});
+			for (const night of cases) {
+				const id = await seed.shift(org, who, {
+					subareaId,
+					creatorUserId: owner.userId,
+					date: night.shiftOn,
+					startTime: "22:00",
+					endTime: "06:00",
+				});
+				caseOfShift.set(`shift:${id}`, `${who === minor ? "minor" : "adult"} ${night.case}`);
+			}
+		}
+
+		const findings = await apprenticeReleaseScheduleContributor.evaluate({
+			db,
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2027-03-01", endExclusive: "2027-04-05" },
+			employeeIds: [adult.employeeId, minor.employeeId],
+			proposedShifts: [],
+			replacesShiftId: null,
+			preferences: { ...DEFAULT_STATUTORY_PREFERENCES, blockJarbschgShiftPublish: true },
+			now: localInstant("2027-02-20", "12:00", org.timezone),
+		});
+		expect(
+			Object.fromEntries(
+				findings.map((finding) => [
+					caseOfShift.get(finding.subjectKey),
+					[finding.kind, finding.severity, finding.legalReference, finding.blocksPublication],
+				]),
+			),
+		).toEqual({
+			"adult full school day": [
+				"bbig_release_day_shift",
+				"warning",
+				"§ 15 Abs. 1 Satz 1 BBiG",
+				false,
+			],
+			"adult untimed school day": [
+				"bbig_release_day_shift",
+				"warning",
+				"§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
+				false,
+			],
+			"adult block day": [
+				"bbig_release_day_shift",
+				"warning",
+				"§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
+				false,
+			],
+			"adult pre-exam day": [
+				"bbig_release_day_shift",
+				"warning",
+				"§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
+				false,
+			],
+			"adult exam day": [
+				"bbig_release_day_shift",
+				"warning",
+				"§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
+				false,
+			],
+			"minor full school day": [
+				"bbig_release_day_shift",
+				"critical",
+				"§ 9 Abs. 1 Nr. 1 JArbSchG",
+				true,
+			],
+			"minor untimed school day": [
+				"jarbschg_school_day_workplace_return",
+				"critical",
+				"§ 9 Abs. 1 Nr. 2 JArbSchG",
+				true,
+			],
+			"minor block day": ["bbig_release_day_shift", "critical", "§ 9 Abs. 1 Nr. 3 JArbSchG", true],
+			"minor pre-exam day": [
+				"bbig_release_day_shift",
+				"critical",
+				"§ 10 Abs. 1 Nr. 2 JArbSchG",
+				true,
+			],
+			"minor exam day": ["bbig_release_day_shift", "critical", "§ 10 Abs. 1 Nr. 1 JArbSchG", true],
+		});
+	});
+
 	it("does not credit releases of an employee who is not an apprentice", async () => {
 		const regular = await apprentice("regular", "2005-05-05", "regular");
 		await recordReleases(regular);
