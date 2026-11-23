@@ -578,23 +578,34 @@ export function ShortTermMonitorCard({
 	});
 	const monitor = query.data;
 	const loadingYear = query.isPlaceholderData;
-	// Not short-term this year: the card stays to open last year if that year applies.
+	// Not short-term this year: the card stays to open last year or next year if one applies (a
+	// fixed term agreed for next year counts as soon as it is agreed).
 	const currentNotApplying = year === null && !loadingYear && monitor?.applies === false;
-	const previousYear = monitor ? monitor.year - 1 : null;
-	const previous = useQuery({
-		queryKey: shortTermMonitorQueryKey(organizationId, employeeId, previousYear),
+	const adjacentYear = (offset: number) => ({
+		queryKey: shortTermMonitorQueryKey(
+			organizationId,
+			employeeId,
+			monitor ? monitor.year + offset : null,
+		),
 		queryFn: async () => {
 			const result = await getShortTermMonitorAction({
 				employeeId,
-				year: previousYear ?? undefined,
+				year: monitor ? monitor.year + offset : undefined,
 			});
 			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
-		enabled: currentNotApplying && previousYear !== null,
+		enabled: currentNotApplying && monitor !== undefined,
 	});
-	// Nothing to show for employees who are short-term neither this year nor last year.
-	if (!monitor || (currentNotApplying && previous.data?.applies !== true)) return null;
+	const previous = useQuery(adjacentYear(-1));
+	const next = useQuery(adjacentYear(1));
+	// Nothing to show for employees who are short-term neither this year, last year nor next year.
+	if (
+		!monitor ||
+		(currentNotApplying && previous.data?.applies !== true && next.data?.applies !== true)
+	) {
+		return null;
+	}
 	const thisYear = currentYear ?? monitor.year;
 	const shownYear = year ?? thisYear;
 
@@ -628,7 +639,7 @@ export function ShortTermMonitorCard({
 							<SelectValue>{String(shownYear)}</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
-							{[thisYear, thisYear - 1].map((option) => (
+							{[thisYear + 1, thisYear, thisYear - 1].map((option) => (
 								<SelectItem key={option} value={String(option)}>
 									{option}
 								</SelectItem>

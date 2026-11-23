@@ -120,18 +120,57 @@ describe("ShortTermMonitorCard (#1990)", () => {
 		await waitFor(() => expect(screen.queryByText(/Not employed short-term/)).toBeNull());
 	});
 
-	it("shows nothing when neither this year nor last year applies", async () => {
+	it("stays on screen to open next year when only a fixed term agreed for next year applies", async () => {
+		// December 2026: a fixed term from 1 January to 31 May 2027 is agreed, and already exceeded.
+		const nextYear = {
+			...monitorOf(2027),
+			allowance: {
+				...monitorOf(2027).allowance,
+				limitKind: "months",
+				used: 151,
+				ownUsed: 151,
+				limit: 90,
+				remaining: 0,
+				tier: "exceeded",
+				usedPercent: 168,
+				firstDay: null,
+				lastDay: null,
+			},
+		};
+		mocks.getShortTermMonitorAction.mockImplementation(({ year }: { year?: number }) =>
+			Promise.resolve({
+				success: true,
+				data: year === 2027 ? nextYear : notApplicable(year ?? 2026),
+			}),
+		);
+		renderCard();
+		const selector = await screen.findByRole("combobox", { name: "Calendar year" });
+		expect(screen.getByText("Not employed short-term in 2026.")).toBeTruthy();
+
+		fireEvent.click(selector);
+		fireEvent.click(await screen.findByRole("option", { name: "2027" }));
+
+		expect(selector.textContent).toContain("2027");
+		expect(await screen.findByText("Limit exceeded")).toBeTruthy();
+		expect(screen.getByText("151")).toBeTruthy();
+	});
+
+	it("shows nothing when neither this year, last year nor next year applies", async () => {
 		mocks.getShortTermMonitorAction.mockImplementation(({ year }: { year?: number }) =>
 			Promise.resolve({ success: true, data: notApplicable(year ?? 2027) }),
 		);
 		const { container } = renderCard();
 
-		await waitFor(() =>
+		await waitFor(() => {
 			expect(mocks.getShortTermMonitorAction).toHaveBeenCalledWith({
 				employeeId: "emp-1",
 				year: 2026,
-			}),
-		);
+			});
+			expect(mocks.getShortTermMonitorAction).toHaveBeenCalledWith({
+				employeeId: "emp-1",
+				year: 2028,
+			});
+		});
 		await waitFor(() => expect(container.innerHTML).toBe(""));
 		expect(screen.queryByText("Short-term employment")).toBeNull();
 	});
