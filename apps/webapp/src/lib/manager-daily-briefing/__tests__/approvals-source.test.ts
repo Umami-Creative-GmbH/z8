@@ -25,6 +25,7 @@ const fixture = vi.hoisted(() => ({
 	inFlight: 0,
 	mostInFlight: 0,
 	loaded: [] as string[],
+	scopeInputs: [] as unknown[],
 }));
 
 vi.mock("@/lib/approvals/init", () => ({}));
@@ -37,10 +38,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 }));
 vi.mock("@/lib/authorization", () => ({ defineAbilityFor: () => ({}) }));
 vi.mock("@/lib/approvals/inbox/viewer-scope", () => ({
-	resolveApprovalInboxViewerScope: async () => ({
-		approverId: "manager-1",
-		organizationId: "org-1",
-	}),
+	resolveApprovalInboxViewerScope: async (input: unknown) => {
+		fixture.scopeInputs.push(input);
+		return { approverId: "manager-1", organizationId: "org-1" };
+	},
 }));
 vi.mock("@/lib/approvals/triage-policy", async () => {
 	const { DEFAULT_APPROVAL_TRIAGE_POLICY: policy } =
@@ -176,6 +177,16 @@ describe("the briefing's approvals with bounded triage evidence (#1980)", () => 
 		fixture.inFlight = 0;
 		fixture.mostInFlight = 0;
 		fixture.loaded = [];
+		fixture.scopeInputs = [];
+	});
+
+	it("asks the inbox scope for no deputy covers: the briefing shows no Covering sections", async () => {
+		fixture.approvals = [];
+		fixture.shortfalls = new Set();
+
+		await readBriefingApprovals();
+
+		expect(fixture.scopeInputs).toEqual([expect.objectContaining({ includeCovering: false })]);
 	});
 
 	it("reads evidence only for the absences that can reach its 25, a few at a time", async () => {
