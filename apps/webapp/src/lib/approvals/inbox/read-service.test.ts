@@ -409,14 +409,44 @@ describe("getApprovalInboxListFromSources", () => {
 			});
 
 			expect(result.covering?.[0]?.hasMore).toBe(true);
+			// Every row loaded: only the section's header count misses some, not the list or totals.
+			expect(result.covering?.[0]?.rows).toHaveLength(100);
 			expect(result.warnings).toEqual([
-				expect.objectContaining({
+				{
 					source: "absence_entry",
-					localized: expect.objectContaining({
-						key: "approvals:approvals.inboxWarning.coveringNotLoaded",
-					}),
-					failure: "covering",
-				}),
+					message: 'absence_entry approvals of a "Covering for" section could not be counted.',
+					localized: {
+						key: "approvals:approvals.inboxWarning.coveringNotCounted",
+						fallback:
+							'These approvals could not be counted for a "Covering for" section. Its count may be incomplete.',
+					},
+					failure: "covering_count",
+				},
+			]);
+		});
+
+		it("warns of a failed own count rather than a failed Covering count when both fail", async () => {
+			const rows = Array.from({ length: 101 }, (_, index) =>
+				item({ id: `covered-${index}`, approverId: "absent-1" }),
+			);
+			const covered = source("absence_entry", []);
+			const handler = covered.handler as unknown as {
+				getApprovals: ReturnType<typeof vi.fn>;
+				getCount: ReturnType<typeof vi.fn>;
+			};
+			handler.getApprovals.mockImplementation((query: { approverId: string }) =>
+				Effect.succeed(query.approverId === "absent-1" ? rows : []),
+			);
+			handler.getCount.mockImplementation(() => Effect.die(new Error("count")));
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [covered],
+				params: { ...params, covering: [{ approverId: "absent-1", approverName: "Xenia" }] },
+			});
+
+			// The viewer's totals miss approvals, a graver gap than one section header's count.
+			expect(result.warnings).toEqual([
+				expect.objectContaining({ source: "absence_entry", failure: "count" }),
 			]);
 		});
 

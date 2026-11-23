@@ -378,6 +378,28 @@ describe("Pending Approvals widget (#1978)", () => {
 		);
 	});
 
+	it("marks the pill of a type whose count failed as a lower bound", () => {
+		widget(
+			delivered({
+				...pending,
+				total: 35,
+				typeCounts: [
+					{ type: "absence_entry", count: 32, atLeast: true },
+					{ type: "travel_expense_report", count: 3 },
+				],
+				notCountedTypes: ["absence_entry"],
+			}),
+		);
+
+		const pills = within(
+			screen.getByRole("list", { name: "Pending approvals by type" }),
+		).getAllByRole("link");
+		expect(pills.map((pill) => pill.textContent?.replace(/\s+/g, " ").trim())).toEqual([
+			"Absence Requests 32+",
+			"Expense Reports 3",
+		]);
+	});
+
 	it("never states a total below the rows it previews when a count failed", () => {
 		widget(
 			delivered({

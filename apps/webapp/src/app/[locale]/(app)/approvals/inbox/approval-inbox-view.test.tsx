@@ -983,4 +983,35 @@ describe("ApprovalInboxPage", () => {
 		expect(screen.queryByText("travel_expense_claim")).toBeNull();
 		expect(screen.queryByText(/could not be/)).toBeNull();
 	});
+
+	it("keeps a source's gravest warning across pages, not its first (#1978)", () => {
+		const failed = (failure: "count" | "list", key: "notCounted" | "notLoaded") => ({
+			source: "travel_expense_claim",
+			message: `Travel Expense approvals: ${failure}`,
+			localized: { key: `approvals:approvals.inboxWarning.${key}`, fallback: `Failed ${key}.` },
+			failure,
+		});
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					// The first page only missed the count; a later page missed the rows themselves.
+					makeApprovalInboxPage(undefined, { warnings: [failed("count", "notCounted")] }),
+					makeApprovalInboxPage(undefined, { warnings: [failed("list", "notLoaded")] }),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getByText("Failed notLoaded.")).toBeTruthy();
+		expect(screen.queryByText("Failed notCounted.")).toBeNull();
+	});
 });

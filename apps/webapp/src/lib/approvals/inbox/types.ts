@@ -255,12 +255,13 @@ export interface ApprovalInboxWarning {
 	localized?: ApprovalInboxLocalizedText;
 	/**
 	 * The gravest of what failed (#1978): its list ("list"), its rows of a "Covering for"
-	 * section ("covering"), or only its count ("count"; its rows still list).
+	 * section ("covering"), only its count ("count"; its rows still list), or only a
+	 * "Covering for" section's header count ("covering_count"; no total or row misses it).
 	 */
 	failure?: ApprovalInboxSourceFailure;
 }
 
-export type ApprovalInboxSourceFailure = "list" | "count" | "covering";
+export type ApprovalInboxSourceFailure = "list" | "count" | "covering" | "covering_count";
 
 export interface ApprovalInboxListResult {
 	items: ApprovalInboxItem[];

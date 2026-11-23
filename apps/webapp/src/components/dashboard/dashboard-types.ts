@@ -70,8 +70,11 @@ export type PendingApprovalsData = {
 	notLoadedTypes: ApprovalInboxType[];
 	/** Approval types whose count alone could not be read: their rows list, the totals miss them. */
 	notCountedTypes: ApprovalInboxType[];
-	/** The types with pending approvals, in inbox type order. */
-	typeCounts: { type: ApprovalInboxType; count: number }[];
+	/**
+	 * The types with pending approvals, in inbox type order. A type whose count failed counts
+	 * its rows in hand, marked `atLeast`: more may wait.
+	 */
+	typeCounts: { type: ApprovalInboxType; count: number; atLeast?: true }[];
 	/** The five most urgent pending approvals, in inbox order. */
 	preview: PendingApprovalPreviewItem[];
 };

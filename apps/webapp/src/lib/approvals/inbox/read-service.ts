@@ -81,6 +81,7 @@ import {
 	getSupportedInboxSources,
 	isSupportedInboxType,
 } from "./source-adapters";
+import { isGraverSourceFailure } from "./source-failure";
 import {
 	type ApprovalInboxTriageEvidenceLoader,
 	loadCurrentApprovalTriageEvidence,
@@ -316,16 +317,16 @@ const SOURCE_FAILURE_WARNINGS: Record<
 				'These approvals could not be loaded for a "Covering for" section. Totals may be incomplete.',
 		},
 	},
-};
-
-/**
- * How grave a failure is, gravest first: rows missing from the list, rows missing from a
- * "Covering for" section, then rows missing only from the totals.
- */
-const SOURCE_FAILURE_SEVERITY: Record<ApprovalInboxSourceFailure, number> = {
-	list: 0,
-	covering: 1,
-	count: 2,
+	// Only a section header's count: every row lists, and no total misses one.
+	covering_count: {
+		message: (displayName) =>
+			`${displayName} approvals of a "Covering for" section could not be counted.`,
+		localized: {
+			key: "approvals:approvals.inboxWarning.coveringNotCounted",
+			fallback:
+				'These approvals could not be counted for a "Covering for" section. Its count may be incomplete.',
+		},
+	},
 };
 
 /**
@@ -338,8 +339,7 @@ function warnSourceFailed(
 	failure: ApprovalInboxSourceFailure,
 ): void {
 	const index = warnings.findIndex((warning) => warning.source === source.type);
-	const known = warnings[index]?.failure;
-	if (known && SOURCE_FAILURE_SEVERITY[known] <= SOURCE_FAILURE_SEVERITY[failure]) return;
+	if (index !== -1 && !isGraverSourceFailure(failure, warnings[index].failure)) return;
 	const { message, localized } = SOURCE_FAILURE_WARNINGS[failure];
 	const warning = { source: source.type, message: message(source.displayName), localized, failure };
 	if (index === -1) warnings.push(warning);
@@ -517,6 +517,7 @@ export async function getApprovalInboxListFromSources({
 					loadTriageEvidence,
 					uncut: uncutCoveringSections,
 					onSourceFailed: (source) => warnSourceFailed(warnings, source, "covering"),
+					onSourceCountFailed: (source) => warnSourceFailed(warnings, source, "covering_count"),
 				})
 			: undefined;
 
@@ -608,8 +609,10 @@ async function loadCoveringSections(input: {
 	loadTriageEvidence?: ApprovalInboxTriageEvidenceLoader;
 	/** Every row, not the first `COVERING_SECTION_LIMIT` (#1978). */
 	uncut?: boolean;
-	/** A source whose covered list or count failed: the sections may miss its approvals. */
+	/** A source whose covered list failed: the sections may miss its approvals. */
 	onSourceFailed: (source: ApprovalInboxSource) => void;
+	/** A source whose covered count failed: a section's header count may miss its approvals. */
+	onSourceCountFailed: (source: ApprovalInboxSource) => void;
 }): Promise<ApprovalInboxCoveringSection[]> {
 	const { params } = input;
 	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
@@ -708,7 +711,7 @@ async function loadCoveringSections(input: {
 							sources: deputySources,
 							canonicalReads: deputyReads,
 							now: input.now,
-							onSourceFailed: input.onSourceFailed,
+							onSourceFailed: input.onSourceCountFailed,
 						})
 					)[0]?.count ?? shown.length)
 				: shown.length;

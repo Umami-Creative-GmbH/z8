@@ -96,14 +96,19 @@ function TypePills({
 			aria-label={t("dashboard.pending-approvals.by-type", "Pending approvals by type")}
 			className="flex flex-wrap gap-2"
 		>
-			{typeCounts.map(({ type, count }) => (
+			{typeCounts.map(({ type, count, atLeast }) => (
 				<li key={type}>
 					<Link
 						href={`/approvals/inbox?types=${type}`}
 						className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					>
 						<span>{labels[type]}</span>{" "}
-						<span className="rounded-full bg-muted px-1.5 font-semibold tabular-nums">{count}</span>
+						<span className="rounded-full bg-muted px-1.5 font-semibold tabular-nums">
+							{/* Its count failed: the rows in hand, and more may wait (#1978). */}
+							{atLeast
+								? t("dashboard.pending-approvals.type-count-at-least", "{count}+", { count })
+								: count}
+						</span>
 					</Link>
 				</li>
 			))}

@@ -15,7 +15,7 @@ import {
 	loadCurrentApprovalTriageEvidence,
 	resolveApprovalInboxTriage,
 } from "./triage-evidence";
-import type { ApprovalInboxItem, ApprovalInboxListResult } from "./types";
+import type { ApprovalInboxItem, ApprovalInboxListResult, ApprovalInboxType } from "./types";
 
 export interface ApprovalInboxTopItems {
 	/** Pending approvals per type, "Covering for" rows included: the inbox badge's counts. */
@@ -28,6 +28,11 @@ export interface ApprovalInboxTopItems {
 	 * than this counts, as the badge does.
 	 */
 	coveringCount: number;
+	/**
+	 * The rows read per type, own and the covered ones counted above: never more than wait, so
+	 * a lower bound for a type whose count failed (#1978).
+	 */
+	listed: Partial<Record<ApprovalInboxType, number>>;
 	/** The first `limit` pending items, own and covered, in the inbox's order. */
 	items: ApprovalInboxItem[];
 	/** Sources whose list or count failed: their items or counts are missing above. */
@@ -122,22 +127,31 @@ export async function getApprovalInboxTopItems(
 			};
 		});
 	// A section past its first rows is cut after its evidence, as the inbox cuts it, so the
-	// counts and the preview keep exactly the rows the inbox's section lists. Rare: only an
-	// absent approver with more than COVERING_SECTION_LIMIT pending reads all of theirs here.
-	const list = {
+	// counts keep exactly the rows the inbox's section lists. Only the counts per type need the
+	// cut: a covered row in the first `limit` overall is among its section's first rows anyway.
+	const sections = await mapConcurrently(uncut.covering ?? [], 1, async (section) => {
+		if (section.rows.length <= COVERING_SECTION_LIMIT) return { counted: section, listed: section };
+		// One type: whichever rows the cut keeps, it keeps that many of that type. No count
+		// changes, so no evidence is read for the cut; the preview reads what it needs.
+		if (new Set(section.rows.map((row) => row.type)).size === 1) {
+			return {
+				counted: { ...section, rows: section.rows.slice(0, COVERING_SECTION_LIMIT) },
+				listed: section,
+			};
+		}
+		// Mixed types: evidence decides which type the cut drops. Rare: only an absent approver
+		// with more than COVERING_SECTION_LIMIT pending of several kinds reads them all here.
+		const cut = {
+			...section,
+			rows: (await evaluate(section.rows)).sort(compareInboxItems).slice(0, COVERING_SECTION_LIMIT),
+		};
+		return { counted: cut, listed: cut };
+	});
+	const list = { ...uncut, covering: sections.map(({ counted }) => counted) };
+	const candidates = itemsWithCoveringSections({
 		...uncut,
-		covering: await mapConcurrently(uncut.covering ?? [], 1, async (section) =>
-			section.rows.length > COVERING_SECTION_LIMIT
-				? {
-						...section,
-						rows: (await evaluate(section.rows))
-							.sort(compareInboxItems)
-							.slice(0, COVERING_SECTION_LIMIT),
-					}
-				: section,
-		),
-	};
-	const candidates = itemsWithCoveringSections(list);
+		covering: sections.map(({ listed }) => listed),
+	});
 	const pending = candidates
 		.flatMap((item) => {
 			if (!deferred.has(itemKey(item.type, item.id))) return [];
@@ -169,10 +183,15 @@ export async function getApprovalInboxTopItems(
 		top = [...top, ...evaluated].sort(compareInboxItems).slice(0, limit);
 	}
 	const counts = countsWithCoveringSections(list);
+	const listed: ApprovalInboxTopItems["listed"] = {};
+	for (const item of itemsWithCoveringSections(list)) {
+		listed[item.type] = (listed[item.type] ?? 0) + 1;
+	}
 	return {
 		counts,
 		total: Object.values(counts).reduce<number>((total, count) => total + (count ?? 0), 0),
 		coveringCount: list.covering.reduce((total, section) => total + section.rows.length, 0),
+		listed,
 		items: top,
 		warnings: list.warnings,
 	};

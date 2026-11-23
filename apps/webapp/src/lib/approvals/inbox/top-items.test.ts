@@ -413,6 +413,8 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 		expect(result.top).not.toContain("t0");
 		// A count failure still lists its rows, only the totals miss them.
 		expect(result.top).toContain("r0");
+		// The rows in hand per type: a lower bound for the type whose count failed.
+		expect(result.listed).toEqual({ absence_entry: 1, travel_expense_report: 1 });
 	});
 
 	it("counts covered work as the total does: the rows a Covering section lists (#1978)", async () => {
@@ -463,6 +465,63 @@ describe("the inbox's most urgent items with bounded triage evidence (#1978)", (
 		expect(result.top).toEqual(result.bruteForce);
 		expect(result.coveringCount).toBe(100);
 		expect(result.total).toBe(100);
+	});
+
+	it("reads no evidence to cut a large Covering section of one type, only what the preview needs (#1978)", async () => {
+		// 150 covered absences, the five oldest with a staffing shortfall (high risk). Whichever
+		// 100 the section keeps, it keeps 100 absences: the cut changes no count.
+		const covered = Array.from({ length: 150 }, (_, index) =>
+			approval(
+				`x${index}`,
+				"absence_entry",
+				new Date(NOW.getTime() - (150 - index) * 60_000).toISOString(),
+				"normal",
+				{ approverId: ABSENT },
+			),
+		);
+		const result = await topFive(
+			{
+				params: { covering: [{ approverId: ABSENT, approverName: "Xenia" }] },
+				sources: [source("absence_entry", covered)],
+			},
+			new Set(["x0", "x1", "x2", "x3", "x4"]),
+		);
+
+		expect(result.top).toEqual(["x0", "x1", "x2", "x3", "x4"]);
+		expect(result.top).toEqual(result.bruteForce);
+		expect(result.counts).toMatchObject({ absence_entry: 100 });
+		expect(result.total).toBe(100);
+		expect(result.coveringCount).toBe(100);
+		// The five oldest turn out high, and no newer absence's best case can pass them.
+		expect(result.evaluated).toEqual(["x0", "x1", "x2", "x3", "x4"]);
+	});
+
+	it("counts the types a mixed Covering section keeps after current evidence (#1978)", async () => {
+		// 101 covered rows: 100 absences with a staffing shortfall (high risk), then the newest,
+		// an expense report. Evidence decides which type the section's cut drops: the report.
+		const absences = Array.from({ length: 100 }, (_, index) =>
+			approval(
+				`x${index}`,
+				"absence_entry",
+				new Date(NOW.getTime() - (200 - index) * 60_000).toISOString(),
+				"normal",
+				{ approverId: ABSENT },
+			),
+		);
+		const report = approval("r0", "travel_expense_report", NOW.toISOString(), "normal", {
+			approverId: ABSENT,
+		});
+		const result = await topFive(
+			{
+				params: { covering: [{ approverId: ABSENT, approverName: "Xenia" }] },
+				sources: [source("absence_entry", absences), source("travel_expense_report", [report])],
+			},
+			new Set(absences.map((item) => item.id)),
+		);
+
+		expect(result.top).toEqual(result.bruteForce);
+		expect(result.counts).toMatchObject({ absence_entry: 100, travel_expense_report: 0 });
+		expect(result.coveringCount).toBe(100);
 	});
 
 	it("counts and previews the viewer's own pending request as the badge does, marked as theirs", async () => {

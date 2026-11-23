@@ -1,3 +1,4 @@
+import { isGraverSourceFailure } from "@/lib/approvals/inbox/source-failure";
 import type {
 	ApprovalInboxFastLaneGroup,
 	ApprovalInboxItem,
@@ -15,22 +16,21 @@ const RISK_RANK: Record<ApprovalInboxItem["triage"]["riskLevel"], number> = {
 	high: 3,
 };
 
-/** One warning per source (#1978): its first, even when later pages failed differently. */
+/**
+ * One warning per source (#1978): its gravest across pages, as the server keeps it within a
+ * page, in the order the sources first failed.
+ */
 export function dedupeWarnings(warnings: ApprovalInboxWarning[]): ApprovalInboxWarning[] {
-	const seen = new Set<string>();
-	const uniqueWarnings: ApprovalInboxWarning[] = [];
+	const bySource = new Map<string, ApprovalInboxWarning>();
 
 	for (const warning of warnings) {
-		const key = warning.source;
-		if (seen.has(key)) {
-			continue;
+		const known = bySource.get(warning.source);
+		if (!known || isGraverSourceFailure(warning.failure, known.failure)) {
+			bySource.set(warning.source, warning);
 		}
-
-		seen.add(key);
-		uniqueWarnings.push(warning);
 	}
 
-	return uniqueWarnings;
+	return [...bySource.values()];
 }
 
 export function groupFastLaneItems(items: ApprovalInboxItem[]): ApprovalInboxFastLaneGroupView[] {
