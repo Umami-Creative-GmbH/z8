@@ -142,6 +142,51 @@ describe("apprentice release actions (PostgreSQL)", () => {
 		);
 	});
 
+	it("credits a short school day with its school time including breaks", async () => {
+		// Four lessons from 08:00 to 11:30: 210 minutes of school time, not 4 × 45 = 180.
+		expect(
+			await recordApprenticeReleaseAction({
+				employeeId: learner.employeeId,
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-02",
+				endsOn: "2027-03-02",
+				lessonCount: 4,
+				schoolStartTime: "08:00",
+				schoolEndTime: "11:30",
+			}),
+		).toMatchObject({ success: true });
+		// Without its times a school day still counts its lessons.
+		expect(
+			await recordApprenticeReleaseAction({
+				employeeId: learner.employeeId,
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-03",
+				endsOn: "2027-03-03",
+				lessonCount: 4,
+			}),
+		).toMatchObject({ success: true });
+		expect(
+			await recordApprenticeReleaseAction({
+				employeeId: learner.employeeId,
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-04",
+				endsOn: "2027-03-04",
+				lessonCount: 4,
+				schoolStartTime: "11:30",
+				schoolEndTime: "08:00",
+			}),
+		).toMatchObject({ success: false, refusal: "apprentice_release_school_time_invalid" });
+
+		const result = await getApprenticeReleaseCreditsAction({ employeeId: learner.employeeId });
+		if (!result.success) throw new Error(result.error);
+		expect(
+			result.data.releases.map((release) => [release.startsOn, release.creditedMinutes]),
+		).toEqual([
+			["2027-03-03", 180],
+			["2027-03-02", 210],
+		]);
+	});
+
 	it("records the exam when the working day before it is already released", async () => {
 		// Tuesday 11 May 2027 ends a block-release week, which is never split; the exam is on Wednesday.
 		expect(

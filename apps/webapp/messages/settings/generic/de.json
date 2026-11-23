@@ -4340,6 +4340,9 @@
         "examStartTime": "Prüfungsbeginn",
         "examEndTime": "Prüfungsende (inklusive Pausen)",
         "examTimeHint": "Die Prüfung stellt nur für ihre Dauer frei und wird nur mit ihr angerechnet. Beide Felder leer lassen, um den ganzen Tag freizustellen.",
+        "schoolStartTime": "Unterrichtsbeginn",
+        "schoolEndTime": "Unterrichtsende (inklusive Pausen)",
+        "schoolTimeHint": "Ein kurzer Berufsschultag wird mit seiner Unterrichtszeit einschließlich der Pausen angerechnet. Beide Felder leer lassen, um 45 Minuten je Unterrichtsstunde anzurechnen.",
         "note": "Notiz (optional)"
       }
     }

@@ -66,6 +66,7 @@ export type ApprenticeReleaseRefusal =
 	| "apprentice_release_school_minutes_required"
 	| "apprentice_release_no_preceding_working_day"
 	| "apprentice_release_exam_time_invalid"
+	| "apprentice_release_school_time_invalid"
 	| "apprentice_release_day_already_released";
 
 function refuse(refusal: ApprenticeReleaseRefusal, message: string, field?: string): never {
@@ -153,6 +154,12 @@ export async function recordApprenticeReleaseWithCredit(
 		/** When the exam starts and ends, local `HH:MM`: the exam day then credits only that time. */
 		readonly examStartTime?: string | null;
 		readonly examEndTime?: string | null;
+		/**
+		 * When a school day's school starts and ends, local `HH:MM`: it then credits that school time
+		 * including breaks instead of its lessons × 45 minutes.
+		 */
+		readonly schoolStartTime?: string | null;
+		readonly schoolEndTime?: string | null;
 		readonly note?: string | null;
 		readonly includePreExamDay?: boolean;
 	},
@@ -161,6 +168,12 @@ export async function recordApprenticeReleaseWithCredit(
 		input.releaseKind === "exam_day"
 			? await examTimeOf(db, input)
 			: { startTime: null, minutes: null };
+	const schoolMinutes =
+		input.releaseKind === "exam_day"
+			? exam.minutes
+			: input.releaseKind === "vocational_school_day"
+				? ((await schoolTimeOf(db, input)) ?? input.schoolMinutes ?? null)
+				: (input.schoolMinutes ?? null);
 	if (input.releaseKind === "vocational_school_day" && input.lessonCount == null) {
 		refuse("apprentice_release_lessons_required", "Enter the number of lessons", "lessonCount");
 	}
@@ -273,8 +286,7 @@ export async function recordApprenticeReleaseWithCredit(
 			startsOn: input.startsOn,
 			endsOn: input.endsOn,
 			lessonCount: input.lessonCount ?? null,
-			schoolMinutes:
-				input.releaseKind === "exam_day" ? exam.minutes : (input.schoolMinutes ?? null),
+			schoolMinutes,
 			examStartTime: exam.startTime,
 		});
 		if (input.releaseKind === "exam_day" && (input.includePreExamDay || preExamDayMoved)) {
@@ -432,7 +444,7 @@ const WALL_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
  * An exam's start and participation time including breaks, from its local start and end on the
  * exam day in the organization's zone. Both or neither: without them the whole day is released.
  */
-async function examTimeOf(
+function examTimeOf(
 	db: Reader,
 	input: {
 		readonly organizationId: string;
@@ -441,14 +453,64 @@ async function examTimeOf(
 		readonly examEndTime?: string | null;
 	},
 ): Promise<{ readonly startTime: string | null; readonly minutes: number | null }> {
-	const startTime = input.examStartTime || null;
-	const endTime = input.examEndTime || null;
+	return wallTimeSpanOf(db, {
+		organizationId: input.organizationId,
+		startsOn: input.startsOn,
+		startTime: input.examStartTime,
+		endTime: input.examEndTime,
+		refusal: "apprentice_release_exam_time_invalid",
+		what: "exam",
+		fields: ["examStartTime", "examEndTime"],
+	});
+}
+
+/**
+ * A school day's school time including breaks (§ 9 Abs. 2 Nr. 3 JArbSchG, § 15 Abs. 2 Nr. 1
+ * BBiG), from its local start and end in the organization's zone. Both or neither: without them
+ * the school day counts its lessons of 45 minutes.
+ */
+async function schoolTimeOf(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly startsOn: string;
+		readonly schoolStartTime?: string | null;
+		readonly schoolEndTime?: string | null;
+	},
+): Promise<number | null> {
+	const span = await wallTimeSpanOf(db, {
+		organizationId: input.organizationId,
+		startsOn: input.startsOn,
+		startTime: input.schoolStartTime,
+		endTime: input.schoolEndTime,
+		refusal: "apprentice_release_school_time_invalid",
+		what: "school",
+		fields: ["schoolStartTime", "schoolEndTime"],
+	});
+	return span.minutes;
+}
+
+/** The minutes between two local wall times on a day in the organization's zone, both or neither. */
+async function wallTimeSpanOf(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly startsOn: string;
+		readonly startTime?: string | null;
+		readonly endTime?: string | null;
+		readonly refusal: ApprenticeReleaseRefusal;
+		readonly what: "exam" | "school";
+		readonly fields: readonly [string, string];
+	},
+): Promise<{ readonly startTime: string | null; readonly minutes: number | null }> {
+	const startTime = input.startTime || null;
+	const endTime = input.endTime || null;
 	if (!startTime && !endTime) return { startTime: null, minutes: null };
 	if (!startTime || !endTime || !WALL_TIME.test(startTime) || !WALL_TIME.test(endTime)) {
 		refuse(
-			"apprentice_release_exam_time_invalid",
-			"Enter when the exam starts and ends, or neither",
-			"examStartTime",
+			input.refusal,
+			`Enter when the ${input.what} starts and ends, or neither`,
+			input.fields[0],
 		);
 	}
 	const timezone = await loadOrganizationTimezone(db, input.organizationId);
@@ -467,11 +529,7 @@ async function examTimeOf(
 			.toInstant();
 	const minutes = Math.round(at(startTime).until(at(endTime)).total({ unit: "minutes" }));
 	if (minutes <= 0) {
-		refuse(
-			"apprentice_release_exam_time_invalid",
-			"The exam must end after it starts",
-			"examEndTime",
-		);
+		refuse(input.refusal, `The ${input.what} must end after it starts`, input.fields[1]);
 	}
 	return { startTime, minutes };
 }

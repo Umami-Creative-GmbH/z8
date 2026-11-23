@@ -299,6 +299,8 @@ function RecordReleaseForm({
 			schoolHours: string;
 			examStartTime: string;
 			examEndTime: string;
+			schoolStartTime: string;
+			schoolEndTime: string;
 			note: string;
 			includePreExamDay: boolean;
 		}) => {
@@ -315,6 +317,8 @@ function RecordReleaseForm({
 					blockWeek && value.schoolHours !== "" ? Math.round(Number(value.schoolHours) * 60) : null,
 				examStartTime: examDay && value.examStartTime !== "" ? value.examStartTime : null,
 				examEndTime: examDay && value.examEndTime !== "" ? value.examEndTime : null,
+				schoolStartTime: schoolDay && value.schoolStartTime !== "" ? value.schoolStartTime : null,
+				schoolEndTime: schoolDay && value.schoolEndTime !== "" ? value.schoolEndTime : null,
 				note: value.note.trim() || null,
 				includePreExamDay: examDay && value.includePreExamDay,
 			});
@@ -336,6 +340,8 @@ function RecordReleaseForm({
 			schoolHours: "",
 			examStartTime: "",
 			examEndTime: "",
+			schoolStartTime: "",
+			schoolEndTime: "",
 			note: "",
 			includePreExamDay: true,
 		},
@@ -445,24 +451,70 @@ function RecordReleaseForm({
 							</>
 						) : null}
 						{kind === "vocational_school_day" ? (
-							<form.Field name="lessonCount">
-								{(field) => (
-									<div className="space-y-1.5">
-										<Label htmlFor="apprentice-release-lessons">
-											{t("settings.apprenticeRelease.fields.lessons", "Lessons (45 min each)")}
-										</Label>
-										<Input
-											id="apprentice-release-lessons"
-											type="number"
-											min={0}
-											max={20}
-											required
-											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
-										/>
-									</div>
-								)}
-							</form.Field>
+							<>
+								<form.Field name="lessonCount">
+									{(field) => (
+										<div className="space-y-1.5">
+											<Label htmlFor="apprentice-release-lessons">
+												{t("settings.apprenticeRelease.fields.lessons", "Lessons (45 min each)")}
+											</Label>
+											<Input
+												id="apprentice-release-lessons"
+												type="number"
+												min={0}
+												max={20}
+												required
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+											/>
+										</div>
+									)}
+								</form.Field>
+								<form.Field name="schoolStartTime">
+									{(field) => (
+										<div className="space-y-1.5">
+											<Label htmlFor="apprentice-release-school-start">
+												{t("settings.apprenticeRelease.fields.schoolStartTime", "School starts")}
+											</Label>
+											<Input
+												id="apprentice-release-school-start"
+												type="time"
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+												aria-describedby="apprentice-release-school-hint"
+											/>
+										</div>
+									)}
+								</form.Field>
+								<form.Field name="schoolEndTime">
+									{(field) => (
+										<div className="space-y-1.5">
+											<Label htmlFor="apprentice-release-school-end">
+												{t(
+													"settings.apprenticeRelease.fields.schoolEndTime",
+													"School ends (including breaks)",
+												)}
+											</Label>
+											<Input
+												id="apprentice-release-school-end"
+												type="time"
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+												aria-describedby="apprentice-release-school-hint"
+											/>
+										</div>
+									)}
+								</form.Field>
+								<p
+									id="apprentice-release-school-hint"
+									className="text-muted-foreground text-xs sm:col-span-2"
+								>
+									{t(
+										"settings.apprenticeRelease.fields.schoolTimeHint",
+										"A short school day credits its school time including breaks. Leave both empty to credit 45 minutes per lesson.",
+									)}
+								</p>
+							</>
 						) : null}
 						{kind === "exam_day" ? (
 							<>

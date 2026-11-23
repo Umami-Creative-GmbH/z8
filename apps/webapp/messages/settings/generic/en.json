@@ -4340,6 +4340,9 @@
         "examStartTime": "Exam starts",
         "examEndTime": "Exam ends (including breaks)",
         "examTimeHint": "The exam frees and credits its time only. Leave both empty to release the whole day.",
+        "schoolStartTime": "School starts",
+        "schoolEndTime": "School ends (including breaks)",
+        "schoolTimeHint": "A short school day credits its school time including breaks. Leave both empty to credit 45 minutes per lesson.",
         "note": "Note (optional)"
       }
     }

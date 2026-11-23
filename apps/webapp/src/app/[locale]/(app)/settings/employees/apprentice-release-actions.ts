@@ -37,6 +37,8 @@ const recordSchema = z.strictObject({
 	schoolMinutes: z.number().int().min(0).max(10_080).nullable().optional(),
 	examStartTime: wallTime.nullable().optional(),
 	examEndTime: wallTime.nullable().optional(),
+	schoolStartTime: wallTime.nullable().optional(),
+	schoolEndTime: wallTime.nullable().optional(),
 	note: z.string().max(500).nullable().optional(),
 	includePreExamDay: z.boolean().optional(),
 });
