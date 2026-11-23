@@ -1,18 +1,10 @@
 import { and, eq, inArray } from "drizzle-orm";
-import {
-	absenceCategory,
-	absenceEntry,
-	employee,
-	employeeEmploymentPeriod,
-	userSettings,
-} from "@/db/schema";
-import {
-	type EmploymentPeriodSnapshot,
-	engagementKindOnDay,
-} from "@/lib/contracts/resolve-contract";
-import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { absenceCategory, absenceEntry, employee, userSettings } from "@/db/schema";
+import { engagementKindOnDay } from "@/lib/contracts/resolve-contract";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
+import { loadEmploymentPeriodSnapshots } from "@/lib/engagement/engagement-stints";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { absenceEngagementRefusal, type EngagementCategoryRefusal } from "./category-rules";
@@ -40,7 +32,7 @@ export async function loadEngagementKindsOnDays(
 		)
 		.limit(1);
 	if (!person) return new Set();
-	const periods = await loadPeriods(db, input.organizationId, [input.employeeId]);
+	const periods = await loadEmploymentPeriodSnapshots(db, input.organizationId, [input.employeeId]);
 	const organizationTimezone = await loadOrganizationTimezone(db, input.organizationId);
 	const employeeCalendarTimezone = resolveEffectiveTimezone(person.timezone, organizationTimezone);
 
@@ -123,7 +115,7 @@ export async function loadEngagementKindsOfStints(
 		.select({ id: employee.id, engagementKind: employee.engagementKind })
 		.from(employee)
 		.where(and(eq(employee.organizationId, input.organizationId), inArray(employee.id, ids)));
-	const periods = await loadPeriods(db, input.organizationId, ids);
+	const periods = await loadEmploymentPeriodSnapshots(db, input.organizationId, ids);
 	const kindsByEmployee = Map.groupBy(periods, (period) => period.employeeId);
 	for (const person of people) {
 		const stints = kindsByEmployee.get(person.id) ?? [];
@@ -135,35 +127,4 @@ export async function loadEngagementKindsOfStints(
 		);
 	}
 	return result;
-}
-
-async function loadPeriods(
-	db: Reader,
-	organizationId: string,
-	employeeIds: readonly string[],
-): Promise<EmploymentPeriodSnapshot[]> {
-	const rows = await db
-		.select({
-			id: employeeEmploymentPeriod.id,
-			employeeId: employeeEmploymentPeriod.employeeId,
-			status: employeeEmploymentPeriod.status,
-			startedAt: employeeEmploymentPeriod.startedAt,
-			startProvenance: employeeEmploymentPeriod.startProvenance,
-			endedAt: employeeEmploymentPeriod.endedAt,
-			createdAt: employeeEmploymentPeriod.createdAt,
-			engagementKind: employeeEmploymentPeriod.engagementKind,
-		})
-		.from(employeeEmploymentPeriod)
-		.where(
-			and(
-				eq(employeeEmploymentPeriod.organizationId, organizationId),
-				inArray(employeeEmploymentPeriod.employeeId, [...employeeIds]),
-			),
-		);
-	return rows.map((row) => ({
-		...row,
-		startedAt: row.startedAt ? instantFromDate(row.startedAt) : null,
-		endedAt: row.endedAt ? instantFromDate(row.endedAt) : null,
-		createdAt: instantFromDate(row.createdAt),
-	}));
 }
