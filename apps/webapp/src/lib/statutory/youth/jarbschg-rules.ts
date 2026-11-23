@@ -68,6 +68,9 @@ export interface JarbschgLimits {
 	readonly nightEndMinuteOfDay: number;
 }
 
+/** § 18 Abs. 1 JArbSchG: on 24 and 31 December minors may not work after 14:00. */
+const EVE_CUTOFF = Temporal.PlainTime.from("14:00");
+
 /** The work thresholds named by the break baselines `de_jarbschg_break_after_270/360_minutes`. */
 const FIRST_BREAK_AFTER_MINUTES = 270;
 const SECOND_BREAK_AFTER_MINUTES = 360;
@@ -513,7 +516,30 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 			const sunday = flagged((day) => day.dayOfWeek === 7);
 			if (sunday.any) sector("jarbschg_sunday_work", 1, "days", sunday.outside);
 			const holiday = flagged((day) => input.holidays.has(day.toString()));
-			if (holiday.any) sector("jarbschg_holiday_work", 1, "days", holiday.outside);
+			// § 18 Abs. 1: on 24 and 31 December no work after 14:00.
+			const eves = touched.filter(
+				(day) =>
+					day.month === 12 &&
+					(day.day === 24 || day.day === 31) &&
+					!input.holidays.has(day.toString()),
+			);
+			const afterEveCutoff = (span: Span) =>
+				eves.filter((day) => {
+					const cutoff = day
+						.toZonedDateTime({ timeZone: input.timezone, plainTime: EVE_CUTOFF })
+						.toInstant();
+					const midnight = day.add({ days: 1 }).toZonedDateTime({ timeZone: input.timezone }).toInstant();
+					const from = compareInstants(span.start, cutoff) > 0 ? span.start : cutoff;
+					const to = compareInstants(span.end, midnight) < 0 ? span.end : midnight;
+					return compareInstants(from, to) < 0;
+				}).length;
+			const eveDays = afterEveCutoff(minorSpan);
+			const eveOutside = shift
+				? partsOutside(minorSpan, shift).reduce((total, part) => total + afterEveCutoff(part), 0)
+				: 0;
+			if (holiday.any || eveDays > 0) {
+				sector("jarbschg_holiday_work", 1, "days", holiday.outside + eveOutside);
+			}
 		}
 	}
 

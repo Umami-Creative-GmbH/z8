@@ -207,6 +207,20 @@ describe("evaluateJarbschg", () => {
 		).toEqual(["jarbschg_holiday_work"]);
 	});
 
+	it("flags work on 24 and 31 December after 14:00 as holiday work (§ 18 Abs. 1)", () => {
+		const december = { judged: { start: "2026-12-21", endExclusive: "2027-01-04" } };
+		// Thursday 24 December: the morning is lawful, the afternoon is not.
+		expect(rules(evaluate([shift("2026-12-24", "09:00", "13:30")], december))).toEqual([]);
+		expect(rules(evaluate([shift("2026-12-24", "12:00", "16:00")], december))).toEqual([
+			"jarbschg_holiday_work",
+		]);
+		expect(rules(evaluate([work("2026-12-31", "13:00", "15:00")], december))).toEqual([
+			"jarbschg_holiday_work",
+		]);
+		// Any other day's afternoon is a working day like any other.
+		expect(rules(evaluate([shift("2026-12-23", "12:00", "16:00")], december))).toEqual([]);
+	});
+
 	it("judges breaks and uninterrupted work only on recorded work", () => {
 		// 6.5 h worked with a 20 min break: 60 min are due after more than 6 h.
 		const breaches = evaluate([

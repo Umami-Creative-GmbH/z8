@@ -69,7 +69,7 @@ export function youthProtectionWarningText(
 		case "jarbschg_holiday_work":
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.holidayWork",
-				"Under 18: public holiday work needs a statutory sector exception",
+				"Under 18: work on a public holiday, or after 14:00 on 24 or 31 December, needs a statutory sector exception",
 			);
 		case "bbig_release_day_shift":
 			return t(
