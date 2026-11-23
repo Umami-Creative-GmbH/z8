@@ -24,6 +24,7 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { ShortTermBerufsmaessigkeitReview } from "@/lib/statutory/short-term/monitor";
 import { Link } from "@/navigation";
+import { shortTermReviewsQueryKey } from "./short-term-query-keys";
 import {
 	formatCents,
 	formatMonth,
@@ -33,12 +34,12 @@ import {
 	VerificationStatusBadge,
 } from "./short-term-shared";
 
-export const SHORT_TERM_REVIEWS_QUERY_KEY = ["contracts", "short-term-berufsmaessigkeit"] as const;
-
 function AcknowledgeForm({
+	organizationId,
 	review,
 	t,
 }: {
+	organizationId: string;
 	review: ShortTermBerufsmaessigkeitReview;
 	t: Translate;
 }) {
@@ -57,7 +58,7 @@ function AcknowledgeForm({
 			toast.success(
 				t("settings.contracts.shortTerm.verification.recorded", "Verification recorded"),
 			);
-			void queryClient.invalidateQueries({ queryKey: SHORT_TERM_REVIEWS_QUERY_KEY });
+			void queryClient.invalidateQueries({ queryKey: shortTermReviewsQueryKey(organizationId) });
 			void queryClient.invalidateQueries({
 				queryKey: ["contracts", "short-term", review.employeeId],
 			});
@@ -148,7 +149,15 @@ function AcknowledgeForm({
 	);
 }
 
-function ReviewItem({ review, t }: { review: ShortTermBerufsmaessigkeitReview; t: Translate }) {
+function ReviewItem({
+	organizationId,
+	review,
+	t,
+}: {
+	organizationId: string;
+	review: ShortTermBerufsmaessigkeitReview;
+	t: Translate;
+}) {
 	const locale = useFormattingLocale();
 	const detail = review.finding.adminDetail;
 	const currency = detail?.currency ?? "EUR";
@@ -192,7 +201,7 @@ function ReviewItem({ review, t }: { review: ShortTermBerufsmaessigkeitReview; t
 				</p>
 			)}
 			{review.finding.acknowledgement?.status !== "current" && (
-				<AcknowledgeForm review={review} t={t} />
+				<AcknowledgeForm organizationId={organizationId} review={review} t={t} />
 			)}
 		</li>
 	);
@@ -204,13 +213,15 @@ function ReviewItem({ review, t }: { review: ShortTermBerufsmaessigkeitReview; t
  * documented verification; Z8 never decides social-security status itself.
  */
 export function ShortTermBerufsmaessigkeitReviews({
+	organizationId,
 	includeResolved,
 }: {
+	organizationId: string;
 	includeResolved: boolean;
 }) {
 	const { t } = useTranslate();
 	const query = useQuery({
-		queryKey: [...SHORT_TERM_REVIEWS_QUERY_KEY, includeResolved],
+		queryKey: shortTermReviewsQueryKey(organizationId, includeResolved),
 		queryFn: async () => {
 			const result = await listShortTermBerufsmaessigkeitReviewsAction({ includeResolved });
 			if (!result.success) throw new Error(actionErrorMessage(t, result));
@@ -256,7 +267,12 @@ export function ShortTermBerufsmaessigkeitReviews({
 				) : (
 					<ul className="space-y-3">
 						{reviews.map((review) => (
-							<ReviewItem key={review.finding.id} review={review} t={t} />
+							<ReviewItem
+								key={review.finding.id}
+								organizationId={organizationId}
+								review={review}
+								t={t}
+							/>
 						))}
 					</ul>
 				)}
