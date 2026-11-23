@@ -38,6 +38,7 @@ import {
 	type PayrollWorkspaceExportFormatId,
 	payrollWorkspaceExportFormatIds,
 } from "@/lib/payroll-export/format-registry";
+import { employeesWithPayoutsOrExpenseLines } from "@/lib/payroll-export/payout-and-expense-employees";
 import {
 	type ConfirmExportPreview,
 	type ConfirmExportResult,
@@ -753,7 +754,10 @@ export async function startScopedPayrollExportAction(
 > {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		const { actor, period, employeeIds } = await resolvePayrollExportScope(t, request);
+		const { actor, period, accessEmployeeIds, employeeIds } = await resolvePayrollExportScope(
+			t,
+			request,
+		);
 		if (!actor.employeeId) {
 			throw new ValidationError({
 				message: t(
@@ -763,7 +767,28 @@ export async function startScopedPayrollExportAction(
 				field: "formatId",
 			});
 		}
-		if (employeeIds.length === 0) {
+
+		// The whole access scope, as a settings or scheduled export selects people: the export
+		// narrows work, absences and payouts to employee time itself, while a payroll run
+		// classifies everyone's reports by their own days (#1997), as readiness and the
+		// identifier check do.
+		const filters: PayrollExportFilters = {
+			dateRange: {
+				start: period.start,
+				end: period.end,
+			},
+			employeeIds: accessEmployeeIds,
+		};
+
+		// Nobody with employee time is still an export when the run carries someone's reports.
+		if (
+			employeeIds.length === 0 &&
+			(await employeesWithPayoutsOrExpenseLines({
+				organizationId: actor.organizationId,
+				formatId,
+				filters,
+			}).then((carried) => carried.size === 0))
+		) {
 			throw new ValidationError({
 				message: t(
 					"payroll.export.nobodyEmployedInPeriod",
@@ -783,14 +808,6 @@ export async function startScopedPayrollExportAction(
 				field: "formatId",
 			});
 		}
-
-		const filters: PayrollExportFilters = {
-			dateRange: {
-				start: period.start,
-				end: period.end,
-			},
-			employeeIds,
-		};
 
 		// Only an organization administrator executes eligible historical repairs (#322),
 		// as for the repair route; other payroll users collect without repair.
@@ -1084,7 +1101,8 @@ async function isExportJobInPayrollActorScope(
  * The employees a payroll workspace export covers (#1001, #1957): org-wide for org
  * admins, active payroll access grant scope for delegated officers, plus covered
  * employees who left on or after the period's first day. An employee selection narrows
- * both.
+ * both. `accessEmployeeIds` is that scope; `employeeIds` only its people with employee time
+ * in the period (#1997), whose work, absences and payouts the file carries.
  */
 async function resolvePayrollExportScope(
 	t: PayrollTranslate,
@@ -1092,6 +1110,7 @@ async function resolvePayrollExportScope(
 ): Promise<{
 	actor: PayrollWorkspaceActor;
 	period: { start: PlainDate; end: PlainDate; label: string };
+	accessEmployeeIds: string[];
 	employeeIds: string[];
 }> {
 	const actor = await requirePayrollWorkspaceActor(t);
@@ -1113,7 +1132,12 @@ async function resolvePayrollExportScope(
 		startDate: period.start.toString(),
 		endDate: period.end.toString(),
 	});
-	return { actor, period, employeeIds: [...payrollScope.employeeIds] };
+	return {
+		actor,
+		period,
+		accessEmployeeIds: scoped,
+		employeeIds: [...payrollScope.employeeIds],
+	};
 }
 
 /** Active employees in the actor's payroll scope (org-wide for org admins, grant-scoped otherwise). */

@@ -558,6 +558,52 @@ async function missingIdentifierBlockers(period: Period) {
 		.map(({ employeeId, employeeName }) => ({ employeeId, employeeName }));
 }
 
+/** A payroll file export of the period as `name` starts it from /payroll. */
+async function workspaceExport(name: Person, period: Period) {
+	signIn(name);
+	return payrollActions.startScopedPayrollExportAction({
+		...period,
+		label: "Period",
+		formatId: "datev_lohn",
+	});
+}
+
+/** The people the /payroll workspace asks `name` for a personnel identifier. */
+async function workspaceIdentifierBlockers(name: Person, period: Period) {
+	signIn(name);
+	const summary = await payrollActions.getPayrollWorkspaceSummaryAction({
+		...period,
+		label: "Period",
+	});
+	if (!summary.success) throw new Error(summary.error);
+	return summary.data.blockers
+		.filter((blocker) => blocker.type === "missing_identifier")
+		.map(({ employeeId }) => employeeId);
+}
+
+/** The reports /payroll readiness lists as left out of the run, read by `name`. */
+async function workspaceReadiness(name: Person, period: Period) {
+	signIn(name);
+	const result = await payrollActions.getPayrollRunReadinessAction({
+		...period,
+		label: "Period",
+		formatId: "datev_lohn",
+	});
+	if (!result.success || !result.data.applies) throw new Error("readiness");
+	return result.data.entries.map(({ source, skip }) => ({ id: source.id, skip }));
+}
+
+/** Who was told a report needs a bank transfer after all (#855). */
+async function leftOutNotices(reportId: string) {
+	const { rows } = await admin.query<{ user_id: string }>(
+		`select user_id from notification
+		 where organization_id = $1 and type = 'travel_expense_ready_for_reimbursement' and entity_id = $2
+		 order by user_id`,
+		[ORG, reportId],
+	);
+	return rows.map((row) => row.user_id);
+}
+
 async function includedIn(jobId: string) {
 	const { rows } = await admin.query<{ report_id: string }>(
 		"select report_id::text from travel_expense_payroll_run_inclusion where payroll_export_job_id = $1 and state = 'included'",
@@ -819,6 +865,55 @@ describe("payroll readiness for payroll runs (#854)", () => {
 			const { jobId, content } = await exportedFile(current);
 			expect(await includedIn(jobId)).toEqual([employeeTrip]);
 			expect(content).toContain(`"LG-REQ";"9100";100.00;"${current.endDate}"`);
+		});
+
+		it("carries it through the /payroll export exactly as its readiness and identifier check say", async () => {
+			await identifyByPayrollId();
+			await convertRequester("employee", "contractor", contractorSince());
+			const employeeTrip = await approvedTrip("100.00", day(-30), day(-28));
+			const contractorTrip = await approvedTrip("40.00", day(-4), day(-2));
+
+			expect(await workspaceReadiness("finance", current)).toEqual([
+				{ id: contractorTrip, skip: { reason: "external_contractor_days" } },
+			]);
+			// The workspace asks for the identifier of the person the run carries a line for,
+			// and the export refuses without it.
+			expect(await workspaceIdentifierBlockers("finance", current)).toEqual([ids.requester]);
+			expect(await workspaceExport("finance", current)).toMatchObject({ success: false });
+			expect(await leftOutNotices(contractorTrip)).toEqual([]);
+
+			await payrollId(ids.requester, "LG-REQ");
+			expect(await workspaceIdentifierBlockers("finance", current)).toEqual([]);
+			const exported = await workspaceExport("finance", current);
+			if (!exported.success) throw new Error(exported.error);
+			expect(await includedIn(exported.data.jobId)).toEqual([employeeTrip]);
+			expect(exported.data.fileContent).toContain(`"LG-REQ";"9100";100.00;"${current.endDate}"`);
+			expect(exported.data.fileContent).not.toContain("40.00");
+			// The External Contractor trip is announced as left out, never held.
+			expect(await leftOutNotices(contractorTrip)).toEqual(["t854-officer"]);
+			await reimburse(contractorTrip, "40.00", "40.00");
+		});
+
+		it("exports a payroll access grant of only that person when the run carries their reports", async () => {
+			// The clerk's payroll scope is the requester alone, without employee time this period.
+			await convertRequester("employee", "contractor", contractorSince());
+			const contractorTrip = await approvedTrip("40.00", day(-4), day(-2));
+
+			// Nothing the run would carry: refused, as for any period without employee time.
+			expect(await workspaceExport("clerk", current)).toMatchObject({
+				success: false,
+				error: "No one in your payroll access was employed in this period.",
+			});
+
+			const employeeTrip = await approvedTrip("100.00", day(-30), day(-28));
+			expect(await workspaceReadiness("clerk", current)).toEqual([
+				{ id: contractorTrip, skip: { reason: "external_contractor_days" } },
+			]);
+			const exported = await workspaceExport("clerk", current);
+			if (!exported.success) throw new Error(exported.error);
+			expect(await includedIn(exported.data.jobId)).toEqual([employeeTrip]);
+			expect(exported.data.fileContent).toContain(`"P-REQ";"9100";100.00;"${current.endDate}"`);
+			expect(await leftOutNotices(contractorTrip)).toEqual(["t854-officer"]);
 		});
 	});
 
