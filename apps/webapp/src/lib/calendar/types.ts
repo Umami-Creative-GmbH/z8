@@ -19,7 +19,7 @@ export interface DailyWorkRequirement {
 	requiredMinutes: number;
 	policyId: string;
 	policyName: string;
-	balanceMode?: "tracked" | "trust_based";
+	balanceMode?: "tracked" | "trust_based" | "excluded";
 	contributesZeroBalanceDelta?: boolean;
 }
 
@@ -67,6 +67,8 @@ export interface AbsenceEvent extends CalendarEvent {
 	type: "absence";
 	metadata: {
 		categoryName: string;
+		/** An External Contractor's unavailability: a calendar marker only (#1996). */
+		isContractorUnavailability?: boolean;
 		status: "pending" | "approved" | "rejected";
 		employeeName: string;
 		/** Who covers while the employee is away (#1012); null when none is named. */

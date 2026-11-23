@@ -19,6 +19,10 @@ import {
 } from "@/lib/absences/absence-days";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
+import {
+	ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES,
+	engagementCategoryRefusal,
+} from "@/lib/absences/category-rules";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
@@ -39,6 +43,7 @@ import {
 	type VacationOverrideSummary,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { findYearsExceedingBalance } from "@/lib/absences/vacation-year-balance-store";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
 import {
@@ -119,6 +124,11 @@ export interface RequestAbsenceEmployeeContext {
 	id: string;
 	organizationId: string;
 	teamId?: string | null;
+	/**
+	 * The requester's `employee.engagement_kind` (#1996): an External Contractor records only
+	 * unavailability. The requesting-employee lookup loads it with the employee row.
+	 */
+	engagementKind?: EngagementKind;
 }
 
 interface AbsenceSubmissionApprovalLifecycle {
@@ -1136,6 +1146,21 @@ function requestAbsenceWithResolverEffect(
 					requestData.categoryId,
 					currentEmployee.organizationId,
 				);
+
+				// An External Contractor records only unavailability; an employee never does (#1996).
+				const engagementRefusal = engagementCategoryRefusal(
+					currentEmployee.engagementKind ?? "employee",
+					category.type,
+				);
+				if (engagementRefusal) {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES[engagementRefusal],
+							field: "categoryId",
+							refusal: engagementRefusal,
+						}),
+					);
+				}
 
 				const sickDetailError = validateAbsenceSickDetail({
 					categoryType: category.type,

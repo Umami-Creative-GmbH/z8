@@ -144,6 +144,8 @@ export async function commitAnnualVacationCarryover(
 					timezone,
 					currentDate,
 				});
+				// Only ever an External Contractor in the source year: no vacation to carry (#1996).
+				if (source.externalContractors.has(person.id)) return;
 				const configuration = source.configurations.get(person.id);
 				const balance = source.balances.get(person.id);
 				if (!balance)

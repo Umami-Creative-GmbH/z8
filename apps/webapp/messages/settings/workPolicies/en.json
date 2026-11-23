@@ -31,6 +31,7 @@
         "standard": "Standard (ArbZG applies)"
       },
       "balanceMode": {
+        "excluded": "Excluded (External Contractor, no work balance)",
         "tracked": "Tracked balance",
         "trustBased": "Trust-based working time"
       },
@@ -338,6 +339,7 @@
       "employmentProfile": {
         "apprentice": "Apprentice",
         "minijob": "Minijob",
+        "none": "None (External Contractor)",
         "regular": "Regular employment",
         "shortTerm": "Short-term employment",
         "workingStudent": "Working student"

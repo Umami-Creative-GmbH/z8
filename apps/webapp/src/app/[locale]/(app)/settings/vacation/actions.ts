@@ -19,7 +19,11 @@ import {
 	vacationAllowance,
 } from "@/db/schema";
 import type { LocaleTranslationMap } from "@/db/schema/absence";
-import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
+import {
+	CONTRACTOR_UNAVAILABILITY_RULES,
+	findAbsenceCategoryRuleConflict,
+	isContractorUnavailabilityType,
+} from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
 import type { VacationBalance, VacationBalanceConfiguration } from "@/lib/absences/types";
 import {
@@ -54,7 +58,8 @@ export type AbsenceCategoryType =
 	| "parental"
 	| "bereavement"
 	| "custom"
-	| "time_off_in_lieu";
+	| "time_off_in_lieu"
+	| "contractor_unavailability";
 
 const absenceCategoryTypeSchema = z.enum([
 	"home_office",
@@ -66,6 +71,7 @@ const absenceCategoryTypeSchema = z.enum([
 	"bereavement",
 	"custom",
 	"time_off_in_lieu",
+	"contractor_unavailability",
 ]);
 
 const translationMapSchema = z.record(z.string(), z.string()).nullish();
@@ -168,6 +174,8 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 		nameTranslations: normalizeTranslationMap(data.nameTranslations),
 		descriptionTranslations: normalizeTranslationMap(data.descriptionTranslations),
 		drawsOnWorkBalance: data.drawsOnWorkBalance ?? false,
+		// An External Contractor's unavailability never deducts anything (#1996).
+		...(isContractorUnavailabilityType(data.type) ? CONTRACTOR_UNAVAILABILITY_RULES : {}),
 		color: normalizeOptionalText(data.color),
 		// Sick leave never requires a deputy (#1011).
 		...(data.deputyRequired !== undefined || data.type === "sick"
@@ -532,27 +540,29 @@ export const getEmployeesWithAllowances = organizationAction(
 					? records
 					: records.filter((employeeRecord) => scope.employeeIds.has(employeeRecord.id));
 				// The same server-side balance as the employee's Absences page (#1111).
-				const { balances, adjustments, configurations, policies } = await loadVacationBalances(
-					dbService.db,
-					{
+				const { balances, adjustments, configurations, policies, externalContractors } =
+					await loadVacationBalances(dbService.db, {
 						organizationId,
 						employeeIds: visible.map((employeeRecord) => employeeRecord.id),
 						year,
 						timezone: await loadOrganizationTimezone(dbService.db, organizationId),
-					},
-				);
-				return visible.map((employeeRecord) => {
+					});
+				// Someone who was only an External Contractor that year has no vacation (#1996).
+				return visible.flatMap((employeeRecord) => {
+					if (externalContractors.has(employeeRecord.id)) return [];
 					const policy = policies.get(employeeRecord.id);
-					return {
-						...employeeRecord,
-						vacationBalance: balances.get(employeeRecord.id) ?? null,
-						vacationConfiguration: configurations.get(employeeRecord.id) ?? null,
-						vacationPolicy: policy
-							? { name: policy.name, defaultAnnualDays: policy.defaultAnnualDays }
-							: null,
-						// The balance's manual and accrual adjustments for the year (#1105, #1106).
-						vacationAdjustments: adjustments.get(employeeRecord.id) ?? null,
-					};
+					return [
+						{
+							...employeeRecord,
+							vacationBalance: balances.get(employeeRecord.id) ?? null,
+							vacationConfiguration: configurations.get(employeeRecord.id) ?? null,
+							vacationPolicy: policy
+								? { name: policy.name, defaultAnnualDays: policy.defaultAnnualDays }
+								: null,
+							// The balance's manual and accrual adjustments for the year (#1105, #1106).
+							vacationAdjustments: adjustments.get(employeeRecord.id) ?? null,
+						},
+					];
 				});
 			});
 		}),

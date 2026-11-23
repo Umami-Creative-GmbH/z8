@@ -28,6 +28,8 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 	"custom",
 	// Built-in category drawing on the work balance (#1000)
 	"time_off_in_lieu",
+	// An External Contractor's calendar unavailability: never vacation, sick leave or payroll (#1996)
+	"contractor_unavailability",
 ]);
 export const approvalStatusEnum = pgEnum("approval_status", [
 	"pending",

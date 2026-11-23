@@ -352,6 +352,131 @@ describe("contracts pure helpers & resolver", () => {
 		).toBe("period-1");
 	});
 
+	it("resolves a day inside an external contractor period with no employee rules, while the earlier employee stint keeps them", () => {
+		const policy = detailedPolicy();
+		const orgDefault = {
+			id: "org-default",
+			scope: "organization" as const,
+			teamId: null,
+			templateVersionId: "tpl-org",
+			effectiveFromDate: "2026-01-01",
+			effectiveUntilDate: null,
+			createdAt: new Date("2026-01-01T00:00:00Z"),
+			workPolicyId: policy.id,
+			weeklyContractMinutes: 2400,
+			scheduleMode: "policy" as const,
+			workModel: "onsite" as const,
+			presenceOverride: "require_onsite" as const,
+			balanceMode: "tracked" as const,
+			scheduleSource: "policy" as const,
+			customDays: [],
+		};
+		const input = baseInput({
+			employeeEngagementKind: "contractor",
+			teamHistory: [
+				{
+					id: "th-1",
+					employeeId: "emp-1",
+					teamId: "team-a",
+					effectiveFrom: parseInstant("2025-01-01T00:00:00Z"),
+					effectiveTo: null,
+				},
+			],
+			employmentPeriods: [
+				{
+					id: "employee-stint",
+					employeeId: "emp-1",
+					status: "closed",
+					startedAt: parseInstant("2025-01-01T00:00:00Z"),
+					startProvenance: "recorded",
+					endedAt: parseInstant("2026-06-01T00:00:00Z"),
+					createdAt: parseInstant("2025-01-01T00:00:00Z"),
+					engagementKind: "employee",
+				},
+				{
+					id: "contractor-stint",
+					employeeId: "emp-1",
+					status: "open",
+					startedAt: parseInstant("2026-06-01T00:00:00Z"),
+					startProvenance: "recorded",
+					endedAt: null,
+					createdAt: parseInstant("2026-06-01T00:00:00Z"),
+					engagementKind: "contractor",
+				},
+			],
+			contractDefaults: [
+				orgDefault,
+				{ ...orgDefault, id: "team-default", scope: "team", teamId: "team-a" },
+			],
+			policyAssignments: [
+				{
+					id: "org-assignment",
+					policyId: policy.id,
+					assignmentType: "organization",
+					teamId: null,
+					employeeId: null,
+					priority: 0,
+					effectiveFrom: null,
+					effectiveUntil: null,
+					effectiveFromDate: "2025-01-01",
+					effectiveUntilDate: null,
+					createdAt: new Date("2025-01-01T00:00:00Z"),
+				},
+			],
+			policiesById: new Map([[policy.id, policy]]),
+		});
+
+		const contractorDay = resolveEffectiveContractPure(input);
+		expect(contractorDay).toMatchObject({
+			engagementKind: "contractor",
+			employmentPeriodId: "contractor-stint",
+			isEmployedOnDay: true,
+			primaryTeamId: "team-a",
+			contractDefaultId: null,
+			contractDefaultScope: null,
+			workPolicy: null,
+			weeklyContractMinutes: null,
+			presenceStatus: "not_configured",
+			effectivePresence: null,
+			balanceMode: "excluded",
+			isWorkDay: false,
+			requiredMinutes: 0,
+			contributesZeroBalanceDelta: true,
+			latestClockIn: null,
+			mismatchWarning: null,
+			employmentProfile: null,
+			onCallTerms: null,
+		});
+		expect(contractorDay.weeklyScheduleDays.every((day) => day.minutesPerDay === 0)).toBe(true);
+
+		const employeeDay = resolveEffectiveContractPure({
+			...input,
+			date: parsePlainDate("2026-05-25"),
+		});
+		expect(employeeDay).toMatchObject({
+			engagementKind: "employee",
+			employmentPeriodId: "employee-stint",
+			contractDefaultId: "team-default",
+			balanceMode: "tracked",
+			requiredMinutes: 540,
+			employmentProfile: "regular",
+		});
+		expect(employeeDay.workPolicy?.policyId).toBe(policy.id);
+	});
+
+	it("falls back to the employee's engagement kind for a contractor without recorded periods", () => {
+		const resolved = resolveEffectiveContractPure(
+			baseInput({ employeeEngagementKind: "contractor" }),
+		);
+		expect(resolved).toMatchObject({
+			engagementKind: "contractor",
+			isEmployedOnDay: true,
+			balanceMode: "excluded",
+			requiredMinutes: 0,
+		});
+		expect(resolveEffectiveContractPure(baseInput()).engagementKind).toBe("employee");
+	});
+
 	it("does not fall back to currentTeamId when teamHistory is empty (A1-11)", () => {
 		expect(
 			resolvePrimaryTeamAtDayStart({

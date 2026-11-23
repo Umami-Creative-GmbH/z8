@@ -4,6 +4,7 @@ import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceCategory, absenceEntry, employee } from "@/db/schema";
 import { getAbsenceDaysByAbsenceId } from "@/lib/absences/absence-days-resolver";
+import { engagementCategoryRefusal } from "@/lib/absences/category-rules";
 import {
 	type DeputyDisplay,
 	loadDeputyDisplays,
@@ -18,6 +19,7 @@ import type {
 } from "@/lib/absences/types";
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { holidayCalendarDate } from "@/lib/holidays/recurrence";
 import { mapAbsenceWithCategory } from "./mappers";
 
@@ -161,7 +163,14 @@ export async function getHolidays(
 	});
 }
 
-export async function getAbsenceCategories(organizationId: string): Promise<
+/**
+ * The organization's active absence categories. With `engagementKind`, only those that kind may
+ * record (#1996): an External Contractor sees only unavailability, an employee never does.
+ */
+export async function getAbsenceCategories(
+	organizationId: string,
+	options: { engagementKind?: EngagementKind } = {},
+): Promise<
 	Array<{
 		id: string;
 		name: string;
@@ -180,7 +189,11 @@ export async function getAbsenceCategories(organizationId: string): Promise<
 		),
 	});
 
-	return categories.map((c) => ({
+	const { engagementKind } = options;
+	const allowed = engagementKind
+		? categories.filter((c) => engagementCategoryRefusal(engagementKind, c.type) === null)
+		: categories;
+	return allowed.map((c) => ({
 		id: c.id,
 		name: c.name,
 		type: c.type,

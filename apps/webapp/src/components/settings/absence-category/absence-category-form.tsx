@@ -106,6 +106,11 @@ const absenceCategoryTypeOptions: Array<{
 		labelKey: "settings.absenceCategories.form.typeTimeOffInLieu",
 		fallback: "Time Off in Lieu",
 	},
+	{
+		value: "contractor_unavailability",
+		labelKey: "settings.absenceCategories.form.typeContractorUnavailability",
+		fallback: "External Contractor unavailability",
+	},
 ];
 
 /**

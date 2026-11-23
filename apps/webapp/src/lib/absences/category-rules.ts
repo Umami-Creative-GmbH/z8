@@ -23,6 +23,50 @@ export function findAbsenceCategoryRuleConflict(
 }
 
 /**
+ * The category type an External Contractor records unavailability with (#1996): a calendar
+ * marker only. It is never vacation, sick leave, time off in lieu or a payroll absence.
+ */
+export const CONTRACTOR_UNAVAILABILITY_TYPE = "contractor_unavailability";
+
+export function isContractorUnavailabilityType(type: string | null | undefined): boolean {
+	return type === CONTRACTOR_UNAVAILABILITY_TYPE;
+}
+
+/** Why someone may not record an absence of a category, by their engagement kind (#1996). */
+export type EngagementCategoryRefusal =
+	| "contractor_records_unavailability_only"
+	| "unavailability_is_for_contractors";
+
+/**
+ * An External Contractor records only unavailability, never vacation, sick leave or any other
+ * employee absence; an employee never records contractor unavailability.
+ */
+export function engagementCategoryRefusal(
+	engagementKind: "employee" | "contractor",
+	categoryType: string,
+): EngagementCategoryRefusal | null {
+	const unavailability = isContractorUnavailabilityType(categoryType);
+	if (engagementKind === "contractor") {
+		return unavailability ? null : "contractor_records_unavailability_only";
+	}
+	return unavailability ? "unavailability_is_for_contractors" : null;
+}
+
+/** The server's English refusal messages; the request form only offers allowed categories. */
+export const ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES: Record<EngagementCategoryRefusal, string> = {
+	contractor_records_unavailability_only:
+		"An External Contractor can only record unavailability, not vacation or leave",
+	unavailability_is_for_contractors: "Only External Contractors record unavailability",
+};
+
+/** The rules every contractor unavailability category has; migration 0330 checks them too. */
+export const CONTRACTOR_UNAVAILABILITY_RULES = {
+	requiresWorkTime: false,
+	countsAgainstVacation: false,
+	drawsOnWorkBalance: false,
+} as const satisfies AbsenceCategoryRules;
+
+/**
  * Whether an approved absence of the category releases its days' required time. A category
  * that requires work time keeps the day a working day; one that draws on the work balance
  * (time off in lieu) keeps the required time, so the work balance falls by it.

@@ -7,6 +7,7 @@ const DEFAULT_COLORS: Record<string, string> = {
 	bereavement: "#1f2937", // dark gray
 	home_office: "#10b981", // emerald
 	time_off_in_lieu: "#14b8a6", // teal
+	contractor_unavailability: "#94a3b8", // slate: an External Contractor's unavailability (#1996)
 	custom: "#06b6d4", // cyan
 };
 

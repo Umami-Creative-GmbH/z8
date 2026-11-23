@@ -2311,6 +2311,13 @@
       "when": 1813161600000,
       "tag": "0329_contractor_compensation_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 330,
+      "version": "7",
+      "when": 1813248000000,
+      "tag": "0330_contractor_unavailability",
+      "breakpoints": true
     }
   ]
 }

@@ -1033,6 +1033,7 @@ export async function previewContractDefaultChange(
 					startProvenance: employeeEmploymentPeriod.startProvenance,
 					endedAt: employeeEmploymentPeriod.endedAt,
 					createdAt: employeeEmploymentPeriod.createdAt,
+					engagementKind: employeeEmploymentPeriod.engagementKind,
 				})
 				.from(employeeEmploymentPeriod)
 				.where(
@@ -1504,6 +1505,7 @@ export async function previewContractDefaultChange(
 			startProvenance: p.startProvenance,
 			endedAt: p.endedAt ? instantFromDate(p.endedAt) : null,
 			createdAt: instantFromDate(p.createdAt),
+			engagementKind: p.engagementKind,
 		});
 		periodsByEmployee.set(p.employeeId, list);
 	}
@@ -1570,6 +1572,7 @@ export async function previewContractDefaultChange(
 			date: targetDate,
 			employeeId: emp.id,
 			employeeContractType: emp.contractType,
+			employeeEngagementKind: emp.engagementKind,
 			employeeCalendarTimezone,
 			organizationTimezone: orgTimezone,
 			employmentPeriods: periodsByEmployee.get(emp.id) ?? [],

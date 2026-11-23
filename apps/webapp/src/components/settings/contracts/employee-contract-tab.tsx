@@ -179,7 +179,10 @@ function buildPrefilledValues(
 			effective?.presenceOverrideSource === "employee_override"
 				? effective.presenceOverride
 				: "inherit",
-		balanceMode: effective?.balanceModeSource === "employee_override" ? effective.balanceMode : "",
+		balanceMode:
+			effective?.balanceModeSource === "employee_override" && effective.balanceMode !== "excluded"
+				? effective.balanceMode
+				: "",
 		scheduleSource:
 			effective?.scheduleSourceSource === "employee_override" ? effective.scheduleSource : "",
 		contractType: effective?.contractType ?? "fixed",

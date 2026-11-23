@@ -80,6 +80,7 @@ export async function loadEmployeeVacationOverrides(
 /** An employee's employments (`employmentStintsFromRecords`). */
 export interface EmployeeEmployments {
 	isActive: boolean;
+	/** Only the employee stints: External Contractor periods are no employment for vacation. */
 	employments: EmploymentStint[];
 }
 
@@ -87,6 +88,9 @@ export interface EmployeeEmployments {
  * The employments of the organization's employees, from their employment periods and pending or
  * effective departures. Without `employeeIds`, of every employee of the organization, active or
  * not. Read-only: it never backfills employment periods.
+ *
+ * External Contractor periods accrue no vacation (#1996): they are left out, so a contractor who
+ * was never an employee has no employment at all, never one from `employee.startDate`.
  */
 export async function loadEmployeeEmployments(
 	database: AbsenceDaysDatabase,
@@ -111,6 +115,7 @@ export async function loadEmployeeEmployments(
 			isActive: employee.isActive,
 			startDate: employee.startDate,
 			endDate: employee.endDate,
+			engagementKind: employee.engagementKind,
 		})
 		.from(employee)
 		.where(
@@ -126,6 +131,7 @@ export async function loadEmployeeEmployments(
 			startedAt: employeeEmploymentPeriod.startedAt,
 			endedAt: employeeEmploymentPeriod.endedAt,
 			startProvenance: employeeEmploymentPeriod.startProvenance,
+			engagementKind: employeeEmploymentPeriod.engagementKind,
 		})
 		.from(employeeEmploymentPeriod)
 		.where(
@@ -160,35 +166,47 @@ export async function loadEmployeeEmployments(
 		(departure) => departure.employeeId,
 	);
 	return new Map(
-		employees.map((row) => [
-			row.id,
-			{
-				isActive: row.isActive,
-				employments: employmentStintsFromRecords({
-					employeeStartDate: input.employeeEmploymentStartDateOverrides?.has(
-						row.id,
-					)
-						? dateFromInstant(
-								parsePlainDate(
-									input.employeeEmploymentStartDateOverrides.get(row.id) ?? "",
-								)
-									.toZonedDateTime("UTC")
-									.toInstant(),
-							)
-						: row.startDate,
-					employeeEndDate: row.endDate,
-					periods: projectEmploymentPeriodStart(
-						periodsByEmployee.get(row.id) ?? [],
-						input.employeeEmploymentStartDateOverrides?.get(row.id),
-						timezone,
-					),
-					departures: (departuresByEmployee.get(row.id) ??
-						[]) satisfies DepartureRecord[],
-					timezone,
-				}),
-			},
-		]),
+		employees.map((row) => {
+			const allPeriods = periodsByEmployee.get(row.id) ?? [];
+			const employeePeriods = allPeriods.filter(
+				(period) => period.engagementKind !== "contractor",
+			);
+			const onlyContractor =
+				allPeriods.length > 0
+					? employeePeriods.length === 0
+					: row.engagementKind === "contractor";
+			return [
+				row.id,
+				{
+					isActive: row.isActive,
+					employments: onlyContractor ? [] : employmentsOf(row, employeePeriods),
+				},
+			];
+		}),
 	);
+
+	function employmentsOf(
+		row: (typeof employees)[number],
+		employeePeriods: typeof periods,
+	): EmploymentStint[] {
+		return employmentStintsFromRecords({
+			employeeStartDate: input.employeeEmploymentStartDateOverrides?.has(row.id)
+				? dateFromInstant(
+						parsePlainDate(input.employeeEmploymentStartDateOverrides.get(row.id) ?? "")
+							.toZonedDateTime("UTC")
+							.toInstant(),
+					)
+				: row.startDate,
+			employeeEndDate: row.endDate,
+			periods: projectEmploymentPeriodStart(
+				employeePeriods,
+				input.employeeEmploymentStartDateOverrides?.get(row.id),
+				timezone,
+			),
+			departures: (departuresByEmployee.get(row.id) ?? []) satisfies DepartureRecord[],
+			timezone,
+		});
+	}
 }
 
 /**
