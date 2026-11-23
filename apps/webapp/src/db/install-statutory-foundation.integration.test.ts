@@ -1,7 +1,9 @@
 /**
  * #1988: `db:push` re-applies migration 0329 for what schema push cannot create (baseline seed,
  * guard triggers, exclusion constraints). Re-applying it to a migrated database changes nothing.
+ * #1993: migration 0334 re-applies over a pushed or migrated database without error.
  */
+import { readFile } from "node:fs/promises";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -76,6 +78,70 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 		const upgraded = await snapshot();
 		expect(upgraded.constraints).toHaveLength(5);
 		expect(upgraded.releaseOverlap).toContain("pre_exam_day");
+	});
+
+	describe("migration 0334 (#1993)", () => {
+		const RELEASE_CONSTRAINTS = [
+			"employee_apprentice_release_exam_link_check",
+			"employee_apprentice_release_exam_release_fk",
+			"employee_apprentice_release_exam_time_check",
+			"employee_apprentice_release_school_time_check",
+			"employee_apprentice_release_superseded_by_fk",
+			"employee_apprentice_release_superseded_check",
+		];
+
+		async function apply0334() {
+			const migration = await readFile(
+				new URL("../../drizzle/0334_jarbschg_violation_types.sql", import.meta.url),
+				"utf8",
+			);
+			const client = await pool.connect();
+			try {
+				await client.query("BEGIN");
+				await client.query("SET LOCAL search_path TO public");
+				await client.query(migration);
+				await client.query("COMMIT");
+			} catch (error) {
+				await client.query("ROLLBACK");
+				throw error;
+			} finally {
+				client.release();
+			}
+		}
+
+		async function releaseConstraints() {
+			const { rows } = await pool.query<{ conname: string; definition: string }>(
+				`SELECT conname, pg_get_constraintdef(oid) AS definition FROM pg_constraint
+				 WHERE conname = ANY($1::text[]) ORDER BY conname`,
+				[RELEASE_CONSTRAINTS],
+			);
+			return rows;
+		}
+
+		it("re-applies over a database that already has its constraints, twice", async () => {
+			// The migrated test database has them, as does one `drizzle-kit push` built.
+			const before = await releaseConstraints();
+			expect(before.map((row) => row.conname)).toEqual(RELEASE_CONSTRAINTS);
+
+			await apply0334();
+			await apply0334();
+
+			expect(await releaseConstraints()).toEqual(before);
+			expect((await snapshot()).releaseOverlap).toContain("pre_exam_day");
+		});
+
+		it("creates the constraints a database is missing", async () => {
+			const before = await releaseConstraints();
+			await pool.query(
+				`ALTER TABLE "employee_apprentice_release"
+				 ${RELEASE_CONSTRAINTS.map((name) => `DROP CONSTRAINT "${name}"`).join(", ")}`,
+			);
+			expect(await releaseConstraints()).toEqual([]);
+
+			await apply0334();
+
+			expect(await releaseConstraints()).toEqual(before);
+		});
 	});
 
 	it("declares in Drizzle every CHECK and foreign key the migration creates on statutory tables", async () => {
