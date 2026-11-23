@@ -111,6 +111,54 @@ describe("Pending Approvals widget (#1978)", () => {
 		expect(screen.queryByText(/you cover for/)).toBeNull();
 	});
 
+	it("uses the singular for a single covered approval", () => {
+		widget(delivered({ ...pending, coveringCount: 1 }));
+
+		expect(screen.getByText("Includes 1 approval you cover for")).toBeTruthy();
+	});
+
+	it.each([
+		[5, "Requires immediate attention"],
+		[4, "Awaiting your approval"],
+	] as const)("with %i pending approvals, says: %s", (total, copy) => {
+		widget(delivered({ ...pending, total }));
+
+		expect(screen.getByText(copy)).toBeTruthy();
+		expect(
+			screen.queryByText(
+				copy === "Awaiting your approval"
+					? "Requires immediate attention"
+					: "Awaiting your approval",
+			),
+		).toBeNull();
+	});
+
+	it("lists a full preview of five approvals in the delivered order", () => {
+		const names = ["Ada", "Grace", "Hedy", "Katherine", "Margaret"];
+		widget(
+			delivered({
+				...pending,
+				total: 9,
+				preview: names.map((name, index) => ({
+					id: `absence-${index}`,
+					type: "absence_entry",
+					requesterName: name,
+					title: "Vacation",
+					detail: "",
+					coveringForName: null,
+				})),
+			}),
+		);
+
+		const rows = within(
+			screen.getByRole("list", { name: "Most urgent pending approvals" }),
+		).getAllByRole("listitem");
+		expect(rows).toHaveLength(5);
+		rows.forEach((row, index) => {
+			expect(within(row).getByText(names[index])).toBeTruthy();
+		});
+	});
+
 	it("links a pill for each type with pending approvals to the inbox filtered to that type", () => {
 		widget(delivered(pending));
 

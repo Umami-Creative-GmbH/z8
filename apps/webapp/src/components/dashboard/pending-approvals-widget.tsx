@@ -5,7 +5,7 @@ import { useTolgee, useTranslate } from "@tolgee/react";
 import { getApprovalTypeLabels } from "@/app/[locale]/(app)/approvals/inbox/components/approval-type-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { resolveLocalizedText } from "@/lib/approvals/inbox/localized-text";
+import { resolveReviewText } from "@/lib/approvals/inbox/summary-text";
 import type { ApprovalInboxLocalizedText, ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
@@ -153,7 +153,8 @@ export function PendingApprovalsWidget({
 	);
 	const typeLabels = getApprovalTypeLabels(t);
 	const text = (value: string | ApprovalInboxLocalizedText) =>
-		resolveLocalizedText(
+		// List summaries never name a per diem place (#1978): no travel expense catalog here.
+		resolveReviewText(
 			value,
 			(key, fallback, params) => (params ? t(key, fallback, params) : t(key, fallback)),
 			locale,

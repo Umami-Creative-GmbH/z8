@@ -3,11 +3,7 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { approvalRequest, employee as employeeTable, team } from "@/db/schema";
-import {
-	countsWithCoveringSections,
-	getApprovalInboxList,
-	itemsWithCoveringSections,
-} from "@/lib/approvals/inbox/read-service";
+import { getApprovalInboxTopItems } from "@/lib/approvals/inbox/top-items";
 import { SUPPORTED_APPROVAL_INBOX_TYPES } from "@/lib/approvals/inbox/types";
 import { resolveApprovalInboxViewerScope } from "@/lib/approvals/inbox/viewer-scope";
 import { getAbility } from "@/lib/auth-helpers";
@@ -141,31 +137,25 @@ export async function loadPendingApprovalsForSubject(
 	if (!ability) throw new Error("Approval inbox access required");
 	const scope = await resolveApprovalInboxViewerScope({ ability, employee: subject.employee });
 	if (!scope) return null;
-	const result = await getApprovalInboxList({
-		...scope,
-		status: "pending",
-		limit: PENDING_APPROVALS_PREVIEW_LIMIT,
-	});
-	const counts = countsWithCoveringSections(result);
+	// One inbox read; triage evidence only for the items that can reach the preview.
+	const { counts, total, coveringCount, items } = await getApprovalInboxTopItems(
+		{ ...scope, status: "pending" },
+		{ limit: PENDING_APPROVALS_PREVIEW_LIMIT },
+	);
 	return {
-		total: Object.values(counts).reduce<number>((total, count) => total + (count ?? 0), 0),
-		coveringCount: (result.covering ?? []).reduce(
-			(total, section) => total + section.rows.length,
-			0,
-		),
+		total,
+		coveringCount,
 		typeCounts: SUPPORTED_APPROVAL_INBOX_TYPES.flatMap((type) =>
 			(counts[type] ?? 0) > 0 ? [{ type, count: counts[type] }] : [],
 		),
-		preview: itemsWithCoveringSections(result)
-			.slice(0, PENDING_APPROVALS_PREVIEW_LIMIT)
-			.map((item) => ({
-				id: item.id,
-				type: item.type,
-				requesterName: item.requester.name,
-				title: item.summary.localized?.title ?? item.summary.title,
-				detail: item.summary.localized?.detail ?? item.summary.detail,
-				coveringForName: item.coveringFor?.approverName ?? null,
-			})),
+		preview: items.map((item) => ({
+			id: item.id,
+			type: item.type,
+			requesterName: item.requester.name,
+			title: item.summary.localized?.title ?? item.summary.title,
+			detail: item.summary.localized?.detail ?? item.summary.detail,
+			coveringForName: item.coveringFor?.approverName ?? null,
+		})),
 	};
 }
 

@@ -712,17 +712,27 @@ export async function countCoveredApproverPending(input: {
 	return section?.count ?? 0;
 }
 
+/** What a caller may hold fixed for one read: its clock, triage policy and evidence (#1978). */
+export type ApprovalInboxListReadOptions = Pick<
+	GetApprovalInboxListFromSourcesInput,
+	"now" | "triagePolicy" | "loadTriageEvidence"
+>;
+
 export async function getApprovalInboxList(
 	params: ApprovalInboxListParams,
+	options: ApprovalInboxListReadOptions = {},
 ): Promise<ApprovalInboxListResult> {
 	return getApprovalInboxListFromSources({
 		sources: getSupportedInboxSources(),
 		params,
 		canonicalReads: CANONICAL_INBOX_READS,
-		triagePolicy: await getEffectiveApprovalTriagePolicy({
-			organizationId: params.organizationId,
-		}),
-		loadTriageEvidence: loadCurrentApprovalTriageEvidence,
+		now: options.now,
+		triagePolicy:
+			options.triagePolicy ??
+			(await getEffectiveApprovalTriagePolicy({
+				organizationId: params.organizationId,
+			})),
+		loadTriageEvidence: options.loadTriageEvidence ?? loadCurrentApprovalTriageEvidence,
 		loadDeputyDecidedEarlierStages: (input) => loadDeputyDecidedEarlierStages(db, input),
 		complianceExceptionRead: complianceExceptionInboxRead,
 	});
@@ -1501,7 +1511,8 @@ function formatCorrectionTime(value: Date | null) {
 	return value ? getInstantLocalMinuteFields(instantFromDate(value), "UTC").time : "missing";
 }
 
-function compareInboxItems(left: ApprovalInboxItem, right: ApprovalInboxItem): number {
+/** The inbox's order: risk, priority, then age. */
+export function compareInboxItems(left: ApprovalInboxItem, right: ApprovalInboxItem): number {
 	return (
 		riskRank[left.triage.riskLevel] - riskRank[right.triage.riskLevel] ||
 		priorityRank[left.triage.priority] - priorityRank[right.triage.priority] ||

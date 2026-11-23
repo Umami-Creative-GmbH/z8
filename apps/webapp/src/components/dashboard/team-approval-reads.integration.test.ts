@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { db } from "@/db";
+import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
-	createLifecycleDatabaseFixture,
-	type LifecycleDatabaseFixture,
-} from "@/lib/employee-lifecycle/testing/database.test.fixture";
+	type ClosedMonthDatabaseFixture,
+	createClosedMonthDatabaseFixture,
+} from "@/lib/time-tracking/closed-months/testing/closed-month-database.test.fixture";
+import { submitPeriodSubmission } from "@/lib/time-tracking/period-submissions/submission-service";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -47,10 +49,15 @@ import type { ServerWidgetId } from "./dashboard-types";
 
 const { readDashboardWidget } = await import("./dashboard-reads");
 const { getRecentlyApprovedRequests } = await import("./actions");
+const { getAbility } = await import("@/lib/auth-helpers");
+const { resolveApprovalInboxViewerScope } = await import("@/lib/approvals/inbox/viewer-scope");
+const { getApprovalInboxCounts, getApprovalInboxList, itemsWithCoveringSections } =
+	await import("@/lib/approvals/inbox/read-service");
 
 describe("authorized Dashboard approval delivery", () => {
 	vi.setConfig({ testTimeout: 180_000, hookTimeout: 180_000 });
-	let fixture: LifecycleDatabaseFixture;
+	// A lifecycle fixture that can also record work for a period submission.
+	let fixture: ClosedMonthDatabaseFixture;
 	let requester: string;
 	let managerId: string;
 	let managerUserId: string;
@@ -64,7 +71,7 @@ describe("authorized Dashboard approval delivery", () => {
 	const absenceIds: string[] = [];
 	const categoryIds: string[] = [];
 	beforeAll(async () => {
-		fixture = await createLifecycleDatabaseFixture();
+		fixture = await createClosedMonthDatabaseFixture();
 		const manager = await fixture.seedEmployee();
 		managerId = manager.employeeId;
 		managerUserId = manager.userId;
@@ -235,6 +242,7 @@ describe("authorized Dashboard approval delivery", () => {
 	describe("pending approvals from the unified Approval inbox (#1978)", () => {
 		let colleagueId: string;
 		let adaId: string;
+		let adaUserId: string;
 		let katherineId: string;
 		let exceptionId: string;
 		let coveredId: string;
@@ -257,7 +265,7 @@ describe("authorized Dashboard approval delivery", () => {
 			const organizationId = fixture.organizationId;
 			colleagueId = (await named("Clara Colleague", "manager")).employeeId;
 			katherineId = (await named("Katherine Johnson")).employeeId;
-			adaId = (await named("Ada Lovelace")).employeeId;
+			({ employeeId: adaId, userId: adaUserId } = await named("Ada Lovelace"));
 			// The manager manages Ada, so they see her ArbZG compliance exceptions.
 			await fixture.pool.query(
 				`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by) values ($1,$2,$3,true,$4)`,
@@ -470,6 +478,187 @@ describe("authorized Dashboard approval delivery", () => {
 				},
 			});
 			expect(snapshot.result).toEqual({ success: true, data: null });
+		});
+
+		describe("the same work as each viewer's Approval inbox", () => {
+			let reportRequestId: string;
+			let periodAssignmentId: string;
+
+			type Viewer = { userId: string; employeeId: string; role: "admin" | "manager" | "employee" };
+
+			/** An employee whose only approval rights come from a custom role on the employee tier. */
+			async function customRoleViewer(name: string, permission: [string, string]) {
+				const seeded = await named(name);
+				const roleId = randomUUID();
+				await fixture.pool.query(
+					`insert into custom_role (id,organization_id,name,base_tier,created_by,updated_at) values ($1,$2,$3,'employee',$4,now())`,
+					[roleId, fixture.organizationId, `${name} ${roleId.slice(0, 8)}`, fixture.ownerUserId],
+				);
+				await fixture.pool.query(
+					`insert into custom_role_permission (custom_role_id,action,subject) values ($1,$2,$3)`,
+					[roleId, ...permission],
+				);
+				await fixture.pool.query(
+					`insert into employee_custom_role (employee_id,custom_role_id,assigned_by) values ($1,$2,$3)`,
+					[seeded.employeeId, roleId, fixture.ownerUserId],
+				);
+				return { ...seeded, role: "employee" as const };
+			}
+
+			beforeAll(async () => {
+				const organizationId = fixture.organizationId;
+				// An expense report waiting for the manager; its facts were never frozen.
+				const reportId = randomUUID();
+				await fixture.pool.query(
+					`insert into travel_expense_report (id, organization_id, employee_id, kind, status, reimbursement_currency, submission_count, submitted_at, created_by)
+					 values ($1,$2,$3,'standalone','submitted','EUR',1,'2026-11-02T09:00:00Z',$4)`,
+					[reportId, organizationId, adaId, adaUserId],
+				);
+				reportRequestId = randomUUID();
+				allRequestIds.push(reportRequestId);
+				await fixture.pool.query(
+					`insert into approval_request (id,organization_id,entity_type,entity_id,requested_by,approver_id,status,created_at,updated_at) values ($1,$2,'travel_expense_report',$3,$4,$5,'pending','2026-11-02T09:00:00Z',now())`,
+					[reportRequestId, organizationId, reportId, adaId, managerId],
+				);
+				// Ada submits a week of work; her manager decides it (#1059).
+				await fixture.pool.query(
+					`update organization set timezone = 'Europe/Berlin' where id = $1`,
+					[organizationId],
+				);
+				await fixture.submissionCadence({
+					organizationId,
+					cadence: "weekly",
+					changedAt: "2026-01-01T00:00:00Z",
+					changedBy: fixture.ownerUserId,
+				});
+				await fixture.work({
+					organizationId,
+					employeeId: adaId,
+					userId: adaUserId,
+					start: "2026-03-03T07:00:00Z",
+					end: "2026-03-03T15:15:00Z",
+				});
+				const submitted = await submitPeriodSubmission(
+					{ organizationId, userId: adaUserId, periodStartDate: "2026-03-02" },
+					{ database: db, clock: { nowInstant: () => parseInstant("2026-03-08T12:00:00Z") } },
+				);
+				if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+				const { rows } = await fixture.pool.query<{ id: string }>(
+					"select id from approval_stage_assignment where organization_id = $1 and workflow_id = $2",
+					[organizationId, submitted.workflowId],
+				);
+				periodAssignmentId = rows[0]?.id ?? "";
+			});
+
+			/** The widget's data and the viewer's inbox badge and first page, read as them. */
+			async function readBoth(viewer: Viewer) {
+				harness.userId = viewer.userId;
+				const employee = {
+					id: viewer.employeeId,
+					organizationId: fixture.organizationId,
+					role: viewer.role,
+				};
+				const snapshot = await readDashboardWidget("pending-approvals", {
+					userId: viewer.userId,
+					organizationId: fixture.organizationId,
+					employee,
+				});
+				if (!snapshot.result.success) throw new Error(snapshot.result.error);
+				const ability = await getAbility();
+				if (!ability) throw new Error("no ability");
+				const scope = await resolveApprovalInboxViewerScope({ ability, employee });
+				if (!scope || !snapshot.result.data) {
+					return { widget: snapshot.result.data, scope };
+				}
+				const badge = await getApprovalInboxCounts({ ...scope, status: "pending", limit: 1 });
+				const page = await getApprovalInboxList({ ...scope, status: "pending", limit: 5 });
+				const widget = snapshot.result.data;
+				// Parity: the badge's total and per-type counts, the inbox's first five in its order.
+				expect(widget.total).toBe(
+					Object.values(badge).reduce<number>((sum, count) => sum + (count ?? 0), 0),
+				);
+				expect(
+					Object.fromEntries(widget.typeCounts.map(({ type, count }) => [type, count])),
+				).toEqual(
+					Object.fromEntries(Object.entries(badge).filter(([, count]) => (count ?? 0) > 0)),
+				);
+				expect(widget.preview.map((row) => row.id)).toEqual(
+					itemsWithCoveringSections(page)
+						.slice(0, 5)
+						.map((item) => item.id),
+				);
+				return { widget, scope };
+			}
+
+			it("matches the manager's inbox with an expense report and a period submission waiting", async () => {
+				const { widget } = await readBoth({
+					userId: managerUserId,
+					employeeId: managerId,
+					role: "manager",
+				});
+
+				expect(widget?.typeCounts).toEqual(
+					expect.arrayContaining([
+						{ type: "travel_expense_report", count: 1 },
+						{ type: "period_submission", count: 1 },
+					]),
+				);
+				expect(widget?.coveringCount).toBe(1);
+			});
+
+			it("matches an org admin's inbox: every pending approval of the organization", async () => {
+				const admin = await fixture.seedEmployee({ role: "admin" });
+				const { widget } = await readBoth({
+					userId: admin.userId,
+					employeeId: admin.employeeId,
+					role: "admin",
+				});
+
+				// Approvals assigned to anyone, so nothing is filed under "Covering for".
+				expect(widget?.coveringCount).toBe(0);
+				expect(widget?.typeCounts).toEqual(
+					expect.arrayContaining([
+						{ type: "absence_entry", count: 7 },
+						{ type: "travel_expense_report", count: 1 },
+						{ type: "period_submission", count: 1 },
+						{ type: "compliance_exception", count: 1 },
+					]),
+				);
+			});
+
+			it("shows a viewer who only manages Compliance the exceptions and no ordinary approval", async () => {
+				const officer = await customRoleViewer("Grace Officer", ["manage", "Compliance"]);
+				const { widget, scope } = await readBoth(officer);
+
+				expect(scope?.complianceExceptionsOnly).toBe(true);
+				expect(widget).toMatchObject({
+					total: 1,
+					coveringCount: 0,
+					typeCounts: [{ type: "compliance_exception", count: 1 }],
+				});
+				expect(widget?.preview.map((row) => row.id)).toEqual([exceptionId]);
+			});
+
+			it("shows a custom-role approver on the employee tier the approvals assigned to them", async () => {
+				const approver = await customRoleViewer("Hedy Approver", ["approve", "Approval"]);
+				const assignedId = await seedRequest(
+					fixture.organizationId,
+					katherineId,
+					approver.employeeId,
+					"pending",
+					"2026-10-15T12:00:00Z",
+				);
+				const { widget } = await readBoth(approver);
+
+				expect(widget).toMatchObject({
+					total: 1,
+					coveringCount: 0,
+					typeCounts: [{ type: "absence_entry", count: 1 }],
+				});
+				expect(widget?.preview.map((row) => row.id)).toEqual([assignedId]);
+				expect(widget?.preview.map((row) => row.id)).not.toContain(reportRequestId);
+				expect(widget?.preview.map((row) => row.id)).not.toContain(periodAssignmentId);
+			});
 		});
 	});
 });
