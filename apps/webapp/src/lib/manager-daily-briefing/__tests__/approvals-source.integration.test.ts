@@ -562,6 +562,65 @@ describe("manager daily briefing approvals source", () => {
 		}
 	});
 
+	it("counts the briefing's employees' approvals as the list totals them, without listing one (#1980)", async () => {
+		signIn(manager, { membership: "member", role: "manager" });
+		await import("@/lib/approvals/init");
+		const { getApprovalHandler } = await import("@/lib/approvals/domain/registry");
+		const absences = getApprovalHandler("absence_entry");
+		if (!absences) throw new Error("no absence handler");
+		const listed = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: manager.employeeId, role: "manager" },
+		});
+		inboxReads.length = 0;
+		const absenceList = vi.spyOn(absences, "getApprovals");
+		try {
+			const counted = await managerDailyBriefingDatabaseSources.getApprovals({
+				organizationId,
+				employeeIds: [requester.employeeId],
+				viewer: { id: manager.employeeId, role: "manager" },
+				countsOnly: true,
+			});
+
+			expect(counted).toHaveLength(0);
+			expect(counted.totalCount).toBe(listed.totalCount);
+			expect(counted.totalCount).toBe(4);
+			expect(counted.unavailableTypes).toBeUndefined();
+			expect(counted.uncountedTypes).toBeUndefined();
+			// No list read, so no row and none of its triage evidence.
+			expect(inboxReads).toEqual([]);
+			expect(absenceList).not.toHaveBeenCalled();
+		} finally {
+			absenceList.mockRestore();
+		}
+	});
+
+	it("names a type whose count failed as not counted when it only counts", async () => {
+		signIn(manager, { membership: "member", role: "manager" });
+		await import("@/lib/approvals/init");
+		const { getApprovalHandler } = await import("@/lib/approvals/domain/registry");
+		const absences = getApprovalHandler("absence_entry");
+		if (!absences) throw new Error("no absence handler");
+		const failedCount = vi
+			.spyOn(absences, "getCount")
+			.mockReturnValue(Effect.fail(new Error("count read failed")) as never);
+		try {
+			const counted = await managerDailyBriefingDatabaseSources.getApprovals({
+				organizationId,
+				employeeIds: [requester.employeeId],
+				viewer: { id: manager.employeeId, role: "manager" },
+				countsOnly: true,
+			});
+
+			expect(counted.uncountedTypes).toEqual(["absence_entry"]);
+			expect(counted.unavailableTypes).toBeUndefined();
+			expect(counted.totalCount).toBe(3);
+		} finally {
+			failedCount.mockRestore();
+		}
+	});
+
 	it("reads no Covering for sections it would discard", async () => {
 		signIn(manager, { membership: "member", role: "manager" });
 		inboxReads.length = 0;

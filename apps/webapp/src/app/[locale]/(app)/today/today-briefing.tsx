@@ -22,6 +22,7 @@ import type {
 	BriefingActionItem,
 	BriefingActionSeverity,
 	BriefingSection,
+	BriefingSummaryCounts,
 	ManagerDailyBriefing,
 } from "@/lib/manager-daily-briefing/types";
 import { Link } from "@/navigation";
@@ -59,7 +60,7 @@ type EmptyStateProps = {
 };
 
 const summaryCards: Array<{
-	key: keyof ManagerDailyBriefing["summary"];
+	key: keyof BriefingSummaryCounts;
 	titleKey: string;
 	fallbackTitle: string;
 	descriptionKey: string;

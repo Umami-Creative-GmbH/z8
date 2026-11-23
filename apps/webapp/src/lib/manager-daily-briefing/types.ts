@@ -87,7 +87,13 @@ export interface ManagerDailyBriefing {
 	date: string;
 	/** The standalone operational check failed; never infer all-clear from its empty fallback. */
 	needsActionError?: string;
-	summary: BriefingSummaryCounts;
+	summary: BriefingSummaryCounts & {
+		/**
+		 * An approval type could not be listed or counted, or the approvals failed to load (#1980):
+		 * `openApprovals` is a lower bound, never a count to call all clear on.
+		 */
+		openApprovalsAtLeast?: true;
+	};
 	needsAction: BriefingActionItem[];
 	sections: {
 		approvals: BriefingSection<BriefingApprovalActionItem> & {

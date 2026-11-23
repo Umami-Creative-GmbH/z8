@@ -113,6 +113,28 @@ describe("mapManagerTodaySummary", () => {
 			}).allClear,
 		).toBe(true);
 	});
+
+	it("keeps a lower bound of open approvals and never calls it all clear (#1980)", () => {
+		expect(
+			mapManagerTodaySummary({
+				criticalIssues: 0,
+				openApprovals: 0,
+				openApprovalsAtLeast: true,
+				attendanceExceptions: 0,
+				absencesToday: 0,
+				coverageRisks: 0,
+				overtimeWarnings: 0,
+				payrollIssues: 0,
+			}),
+		).toEqual({
+			critical: 0,
+			approvals: 0,
+			approvalsAtLeast: true,
+			clockIns: 0,
+			risks: 0,
+			allClear: false,
+		});
+	});
 });
 
 describe("ManagerTodayWidget", () => {
@@ -358,6 +380,29 @@ describe("ManagerTodayWidget", () => {
 		expect(
 			await screen.findByText("No manager action is flagged right now."),
 		).toBeTruthy();
+	});
+
+	it("shows open approvals as a lower bound, never all clear, when an approval type failed (#1980)", async () => {
+		readMock.mockResolvedValue({
+			role: "manager",
+			summary: {
+				criticalIssues: 0,
+				openApprovals: 0,
+				openApprovalsAtLeast: true,
+				attendanceExceptions: 0,
+				absencesToday: 0,
+				coverageRisks: 0,
+				overtimeWarnings: 0,
+				payrollIssues: 0,
+			},
+		});
+
+		renderManagerTodayWidget();
+
+		const metrics = await screen.findByTestId("manager-today-metrics");
+		const approvals = within(metrics).getByText("Approvals").closest("a");
+		expect(approvals?.textContent).toContain("0+");
+		expect(screen.queryByText("No manager action is flagged right now.")).toBeNull();
 	});
 
 	it("does not render for employees", async () => {

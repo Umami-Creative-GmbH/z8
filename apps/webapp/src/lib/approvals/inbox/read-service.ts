@@ -132,6 +132,12 @@ interface GetApprovalInboxListFromSourcesInput {
 	 * each section after it, as the inbox does. A section's `hasMore` and `count` are unchanged.
 	 */
 	uncutCoveringSections?: boolean;
+	/**
+	 * The counts, total and count warnings alone (#1980): no row is listed, so no triage
+	 * evidence is read and no "Covering for" section is built. For a caller that shows only
+	 * the pending total.
+	 */
+	countsOnly?: boolean;
 	sources: ApprovalInboxSource[];
 	params: ApprovalInboxListParams;
 	now?: Date;
@@ -357,18 +363,24 @@ export async function getApprovalInboxListFromSources({
 	triagePolicy = DEFAULT_APPROVAL_TRIAGE_POLICY,
 	loadTriageEvidence = unknownApprovalInboxTriageEvidence,
 	uncutCoveringSections = false,
+	countsOnly = false,
 	complianceExceptionRead,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
 	// Managing Compliance alone is no approver right (#1977): no approvals, only exceptions.
 	const approverAccess = !params.complianceExceptionsOnly;
 	const sources = approverAccess ? approvalSources : [];
 	// Covered approvals are listed in their "Covering for" sections, not here.
-	const covers = coversByApprover(approverAccess ? params.covering : undefined, params.approverId);
+	const covers = coversByApprover(
+		approverAccess && !countsOnly ? params.covering : undefined,
+		params.approverId,
+	);
 	const effectiveNow = now ?? new Date();
 	const requestedTypeSet = params.types ? new Set(params.types) : null;
 	const selectedSources = sources.filter(
 		(source) => !requestedTypeSet || requestedTypeSet.has(source.type),
 	);
+	// Counting alone lists no source's rows (#1980).
+	const listedSources = countsOnly ? [] : selectedSources;
 	const reads = approverAccess
 		? canonicalReadsWithOrdinaryStandIns(canonicalReads, {
 				load: loadCanonicalOrdinaryApprovals,
@@ -389,7 +401,7 @@ export async function getApprovalInboxListFromSources({
 	) as ApprovalInboxListResult["counts"];
 
 	const approvalResults = await Promise.all(
-		selectedSources.map(async (source) => ({
+		listedSources.map(async (source) => ({
 			source,
 			approvalsExit: await runtime.runPromiseExit(source.handler.getApprovals(params)),
 		})),
@@ -438,7 +450,7 @@ export async function getApprovalInboxListFromSources({
 	// Canonical reads hold only pending assignments; each is counted under its type.
 	const canonicalResults = await Promise.all(
 		reads.map(async (read) => {
-			const listed = pending && selectedReadSet.has(read);
+			const listed = !countsOnly && pending && selectedReadSet.has(read);
 			const approvals: CanonicalInboxApprovalBatch = listed
 				? await read.load({
 						approverId: params.approverId,
@@ -486,7 +498,7 @@ export async function getApprovalInboxListFromSources({
 		const compliance = await loadComplianceExceptionInboxRows({
 			read: complianceExceptionRead,
 			params,
-			listed: !requestedTypeSet || requestedTypeSet.has("compliance_exception"),
+			listed: !countsOnly && (!requestedTypeSet || requestedTypeSet.has("compliance_exception")),
 			filters: canonicalFilters,
 			cursor: cursor ?? undefined,
 			limit,
@@ -815,6 +827,27 @@ export async function getApprovalInboxList(
 		loadDeputyDecidedEarlierStages: (input) => loadDeputyDecidedEarlierStages(db, input),
 		complianceExceptionRead: complianceExceptionInboxRead,
 	});
+}
+
+/**
+ * The viewer's pending counts and total exactly as `getApprovalInboxList` counts them, with the
+ * sources whose count failed among its warnings (#1980), but no rows: no list read, no triage
+ * policy or evidence, no "Covering for" section. For a caller that shows only the total.
+ */
+export async function getApprovalInboxTotals(
+	params: Omit<ApprovalInboxListParams, "limit" | "cursor">,
+	options: Pick<ApprovalInboxListReadOptions, "now"> = {},
+): Promise<Pick<ApprovalInboxListResult, "counts" | "total" | "warnings">> {
+	const { counts, total, warnings } = await getApprovalInboxListFromSources({
+		sources: getSupportedInboxSources(),
+		// No page is read; the list's params still name one.
+		params: { ...params, limit: 1 },
+		canonicalReads: CANONICAL_INBOX_READS,
+		now: options.now,
+		countsOnly: true,
+		complianceExceptionRead: complianceExceptionInboxRead,
+	});
+	return { counts, total, warnings };
 }
 
 function normalizeCanonicalFilters(

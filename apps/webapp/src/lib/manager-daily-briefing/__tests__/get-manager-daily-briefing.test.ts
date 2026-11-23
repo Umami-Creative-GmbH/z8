@@ -375,6 +375,69 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(briefing.sections.approvals.uncountedTypes).toEqual(["absence_entry"]);
 	});
 
+	it("asks only for the approval counts when the caller shows no approval (#1980)", async () => {
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue(Object.assign([], { totalCount: 7 })),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+			approvals: "counts",
+		});
+
+		expect(sources.getApprovals).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeIds: ["emp-1"],
+			viewer: { id: "manager-1", role: "manager" },
+			countsOnly: true,
+		});
+		expect(briefing.summary.openApprovals).toBe(7);
+		expect(briefing.summary.openApprovalsAtLeast).toBeUndefined();
+	});
+
+	it("marks the open approvals a lower bound when an approval type was not listed, not counted, or the section failed", async () => {
+		async function summaryFor(getApprovals: ReturnType<typeof vi.fn>) {
+			const briefing = await getManagerDailyBriefingFromSources({
+				organizationId: "org-1",
+				currentEmployee: { id: "manager-1", role: "manager" },
+				now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+				timezone: "Europe/Berlin",
+				sources: createSources({ getApprovals }),
+			});
+			return briefing.summary;
+		}
+
+		expect(
+			await summaryFor(
+				vi
+					.fn()
+					.mockResolvedValue(
+						Object.assign([], { totalCount: 3, unavailableTypes: ["travel_expense_claim"] }),
+					),
+			),
+		).toMatchObject({ openApprovals: 3, openApprovalsAtLeast: true });
+		expect(
+			await summaryFor(
+				vi
+					.fn()
+					.mockResolvedValue(
+						Object.assign([], { totalCount: 2, uncountedTypes: ["absence_entry"] }),
+					),
+			),
+		).toMatchObject({ openApprovals: 2, openApprovalsAtLeast: true });
+		expect(
+			await summaryFor(vi.fn().mockRejectedValue(new Error("approval query failed"))),
+		).toMatchObject({ openApprovals: 0, openApprovalsAtLeast: true });
+		expect(
+			(await summaryFor(vi.fn().mockResolvedValue(Object.assign([], { totalCount: 2 }))))
+				.openApprovalsAtLeast,
+		).toBeUndefined();
+	});
+
 	it("names no unavailable approval types when the inbox listed every one", async () => {
 		const briefing = await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",

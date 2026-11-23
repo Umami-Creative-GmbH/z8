@@ -307,6 +307,57 @@ describe("getApprovalInboxListFromSources", () => {
 		]);
 	});
 
+	describe("counting alone, for a pending total (#1980)", () => {
+		it("counts every source as the list does, without reading a row or its triage evidence", async () => {
+			const absences = source("absence_entry", [
+				item({ id: "absence-1" }),
+				item({ id: "absence-2" }),
+			]);
+			const loadCanonicalOrdinaryApprovals = vi.fn(async () => []);
+			const countCanonicalOrdinaryApprovals = vi.fn(async () => 3);
+			const loadTriageEvidence = vi.fn();
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [absences],
+				params: {
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+				},
+				loadCanonicalOrdinaryApprovals,
+				countCanonicalOrdinaryApprovals,
+				loadTriageEvidence,
+				countsOnly: true,
+			});
+
+			expect(result.items).toEqual([]);
+			expect(result.counts).toMatchObject({ absence_entry: 2, time_entry: 3 });
+			expect(result.total).toBe(5);
+			expect(result.warnings).toEqual([]);
+			expect(absences.handler.getApprovals).not.toHaveBeenCalled();
+			expect(loadCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
+			expect(loadTriageEvidence).not.toHaveBeenCalled();
+		});
+
+		it("names a source whose count failed, as the list does", async () => {
+			const travel = source("travel_expense_claim", []);
+			(
+				travel.handler as unknown as { getCount: ReturnType<typeof vi.fn> }
+			).getCount.mockImplementation(() => Effect.die(new Error("count")));
+
+			const result = await getApprovalInboxListFromSources({
+				sources: [travel, source("absence_entry", [item({ id: "absence-1" })])],
+				params: { approverId: "manager-1", organizationId: "org-1", status: "pending" },
+				countsOnly: true,
+			});
+
+			expect(result.total).toBe(1);
+			expect(result.warnings).toEqual([
+				expect.objectContaining({ source: "travel_expense_claim", failure: "count" }),
+			]);
+		});
+	});
+
 	describe("failed sources (#1978)", () => {
 		function failingSource(
 			type: ApprovalInboxSource["type"],

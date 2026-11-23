@@ -72,7 +72,11 @@ export type ManagerDailyBriefingSources = {
 	 * requested by the scoped employees: the first page, with every match counted.
 	 */
 	getApprovals(
-		input: SourceScope & { viewer: Pick<CurrentEmployee, "id" | "role"> },
+		input: SourceScope & {
+			viewer: Pick<CurrentEmployee, "id" | "role">;
+			/** Only `totalCount` and its failed types, no approval: the inbox counts alone. */
+			countsOnly?: true;
+		},
 	): Promise<BriefingApprovalBatch>;
 	getOvertimeWarnings(input: SourceScope): Promise<BriefingActionItem[]>;
 	getPayrollIssues(input: SourceScope): Promise<BriefingActionItem[]>;
@@ -86,11 +90,19 @@ type GetManagerDailyBriefingFromSourcesInput = {
 	now: Instant;
 	timezone: string;
 	sources: ManagerDailyBriefingSources;
+	approvals?: BriefingApprovalsRead;
 };
+
+/**
+ * How the briefing reads its approvals: `list`, the page `/today` shows, or `counts`, only the
+ * open total and whether it is a lower bound, for a caller that shows no approval (#1980).
+ */
+export type BriefingApprovalsRead = "list" | "counts";
 
 type GetManagerDailyBriefingInput = {
 	currentEmployee: CurrentEmployee & { organizationId: string };
 	now?: Instant;
+	approvals?: BriefingApprovalsRead;
 };
 
 const WEEKDAY_NAMES: Record<number, string> = {
@@ -205,6 +217,7 @@ export async function getManagerDailyBriefingFromSources({
 	now,
 	timezone,
 	sources,
+	approvals: approvalsRead = "list",
 }: GetManagerDailyBriefingFromSourcesInput): Promise<ManagerDailyBriefing> {
 	const businessNow = now.toZonedDateTimeISO(timezone);
 	const today = businessNow.toPlainDate();
@@ -249,6 +262,7 @@ export async function getManagerDailyBriefingFromSources({
 		sources.getApprovals({
 			...sourceScope,
 			viewer: { id: currentEmployee.id, role: currentEmployee.role },
+			...(approvalsRead === "counts" ? { countsOnly: true as const } : {}),
 		}),
 		sources.getOvertimeWarnings(sourceScope),
 		sources.getPayrollIssues(sourceScope),
@@ -349,6 +363,12 @@ export async function getManagerDailyBriefingFromSources({
 			// Every pending approval of the briefing's employees, not only the page it shows.
 			// Never fewer than it lists: a failed count read comes back as 0.
 			openApprovals: Math.max(approvalBatch.totalCount ?? 0, approvalItems.length),
+			// A failed approval source leaves it a lower bound, as `/today` shows it (#1980).
+			...(approvals.error ||
+			unavailableApprovalTypes.length > 0 ||
+			uncountedApprovalTypes.length > 0
+				? { openApprovalsAtLeast: true as const }
+				: {}),
 		},
 		needsAction: sectionItems.needsAction,
 		sections,
@@ -358,6 +378,7 @@ export async function getManagerDailyBriefingFromSources({
 export async function getManagerDailyBriefing({
 	currentEmployee,
 	now = systemClock.nowInstant(),
+	approvals,
 }: GetManagerDailyBriefingInput): Promise<ManagerDailyBriefing> {
 	const [{ db, organization }, { resolveEffectiveTimezone }] = await Promise.all([
 		import("@/db"),
@@ -374,6 +395,7 @@ export async function getManagerDailyBriefing({
 		now,
 		timezone: resolveEffectiveTimezone(undefined, persistedOrganization?.timezone),
 		sources: managerDailyBriefingDatabaseSources,
+		approvals,
 	});
 }
 
@@ -627,7 +649,7 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		return rows;
 	},
 
-	async getApprovals({ organizationId, employeeIds, viewer }) {
+	async getApprovals({ organizationId, employeeIds, viewer, countsOnly }) {
 		if (employeeIds.length === 0) {
 			return [];
 		}
@@ -637,7 +659,7 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 			{ getPrincipalContext },
 			{ defineAbilityFor },
 			{ resolveApprovalInboxViewerScope },
-			{ getApprovalInboxList },
+			{ getApprovalInboxList, getApprovalInboxTotals },
 		] = await Promise.all([
 			import("@/lib/auth-helpers"),
 			import("@/lib/authorization"),
@@ -661,14 +683,17 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 
 		// The inbox's own list, ordered by risk, priority and age, read for the briefing's employees
 		// alone, so others' requests never crowd theirs off the page. Its "Covering for" sections are
-		// not the briefing's, so they are not read.
-		const result = await getApprovalInboxList({
+		// not the briefing's, so they are not read. A caller showing only the total gets the same
+		// counts without a row or its triage evidence (#1980).
+		const params = {
 			...scope,
 			covering: undefined,
 			requesterEmployeeIds: employeeIds,
-			status: "pending",
-			limit: BRIEFING_APPROVAL_LIMIT,
-		});
+			status: "pending" as const,
+		};
+		const result = countsOnly
+			? { items: [], ...(await getApprovalInboxTotals(params)) }
+			: await getApprovalInboxList({ ...params, limit: BRIEFING_APPROVAL_LIMIT });
 		// Name each failed source, as the inbox tells its warnings apart (#1978), so the briefing
 		// never shows a total or a list that silently lacks its items. A failed count still lists
 		// its rows but leaves them out of the total; any other failure (or one of unknown kind)
