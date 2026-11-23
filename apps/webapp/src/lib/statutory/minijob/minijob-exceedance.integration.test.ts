@@ -669,4 +669,113 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 			});
 		});
 	});
+
+	describe("work in progress", () => {
+		/** 700 € worked in December (2–8 December) and a clock-in at 08:00 on 20 December. */
+		async function clockedIn(shift?: { startTime: string; endTime: string }) {
+			const s = await setup();
+			await mj.monthWork(s.org, s.worker, "2026-12", 4200);
+			if (shift) await mj.shift(s.org, s.worker, s.owner, { date: "2026-12-20", ...shift });
+			const work = await mj.openWork(s.org, s.worker, "2026-12-20", "08:00");
+			return { ...s, work };
+		}
+
+		/** December in Reviews & Conflicts at `at`. */
+		async function reviewedAt(s: Setup, at: string) {
+			const reviews = await loadMinijobExceedanceReviews(db, {
+				organizationId: s.org.id,
+				now: Temporal.Instant.from(at),
+				includeAcknowledged: true,
+			});
+			return reviews.find((review) => review.month === "2026-12");
+		}
+
+		function acknowledgeAt(s: Setup, shown: Awaited<ReturnType<typeof reviewedAt>>, at: string) {
+			return acknowledgeMinijobExceedance(db, {
+				organizationId: s.org.id,
+				actorUserId: s.owner.userId,
+				employeeId: s.worker.employeeId,
+				month: "2026-12",
+				reason: "Christmas cover agreed after a resignation",
+				expectedFingerprint: shown?.inputFingerprint ?? "",
+				expectedTotalCents: shown?.totalCents ?? 0,
+				now: Temporal.Instant.from(at),
+			});
+		}
+
+		/** Whether December keeps the fingerprint `shown` had at `at`, and its acknowledgement state. */
+		async function stateAt(s: Setup, shown: Awaited<ReturnType<typeof reviewedAt>>, at: string) {
+			const review = await reviewedAt(s, at);
+			return {
+				sameFingerprint: review?.inputFingerprint === shown?.inputFingerprint,
+				acknowledgement: review?.acknowledgement.status,
+			};
+		}
+
+		it("accepts at 10:16 the figures of a clock-in without a shift shown at 10:14", async () => {
+			const s = await clockedIn();
+			// 10:14 in Berlin: 700 € + 2 h 14 min at 10 €.
+			const shown = await reviewedAt(s, "2026-12-20T09:14:00Z");
+			expect(shown?.totalCents).toBe(72_233);
+
+			const record = await acknowledgeAt(s, shown, "2026-12-20T09:16:00Z");
+
+			expect(record.metadata).toMatchObject({ documentedTotalCents: 72_233 });
+		});
+
+		it("keeps an acknowledgement of a clock-in without a shift current across quarter hours, until its total grows a step", async () => {
+			const s = await clockedIn();
+			const shown = await reviewedAt(s, "2026-12-20T09:14:00Z");
+			await acknowledgeAt(s, shown, "2026-12-20T09:14:00Z");
+
+			// 10:15 and 10:29 in Berlin: within 15 minutes' pay (2.50 €) of the documented total.
+			for (const at of ["2026-12-20T09:15:00Z", "2026-12-20T09:29:00Z"]) {
+				expect(await stateAt(s, shown, at)).toEqual({
+					sameFingerprint: true,
+					acknowledgement: "current",
+				});
+			}
+			// 10:44: 5 € above it. The fingerprint still matches; the documented total does not.
+			expect(await stateAt(s, shown, "2026-12-20T09:44:00Z")).toEqual({
+				sameFingerprint: true,
+				acknowledgement: "stale",
+			});
+		});
+
+		it("keeps the fingerprint of a clock-in past its shift's end until the clock-out", async () => {
+			const s = await clockedIn({ startTime: "08:00", endTime: "18:00" });
+			// 12:00 in Berlin, during the shift.
+			const shown = await reviewedAt(s, "2026-12-20T11:00:00Z");
+			await acknowledgeAt(s, shown, "2026-12-20T11:00:00Z");
+
+			// 18:14, 18:16 and 18:44 in Berlin: the shift is over, its clock-in still open.
+			expect(await stateAt(s, shown, "2026-12-20T17:14:00Z")).toEqual({
+				sameFingerprint: true,
+				acknowledgement: "current",
+			});
+			for (const at of ["2026-12-20T17:16:00Z", "2026-12-20T17:44:00Z"]) {
+				expect((await stateAt(s, shown, at)).sameFingerprint).toBe(true);
+			}
+
+			// Clocked out at 18:40: 40 minutes over the shift, a material overrun.
+			await mj.closeWork(s.work, 640);
+			expect(await stateAt(s, shown, "2026-12-21T12:00:00Z")).toEqual({
+				sameFingerprint: false,
+				acknowledgement: "stale",
+			});
+		});
+
+		it("keeps the acknowledgement when a clock-in past its shift's end closes a few minutes over", async () => {
+			const s = await clockedIn({ startTime: "08:00", endTime: "18:00" });
+			const shown = await reviewedAt(s, "2026-12-20T11:00:00Z");
+			await acknowledgeAt(s, shown, "2026-12-20T11:00:00Z");
+
+			await mj.closeWork(s.work, 610);
+
+			expect(await stateAt(s, shown, "2026-12-21T12:00:00Z")).toEqual({
+				sameFingerprint: true,
+				acknowledgement: "current",
+			});
+		});
+	});
 });

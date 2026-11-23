@@ -787,13 +787,15 @@ export function judgeShortTermYear(input: {
 /**
  * What a Berufsmäßigkeit verification depends on, on the Minijob monitor's basis
  * (`plannedBasisOf`), independent of how far the plan has been worked: the month's shifts as
- * planned, Staffing's proposals, work outside any shift and the overrun beyond shifts that are
- * over (each in material steps of 15 minutes), the wages, currencies and cap. A shift worked as
- * planned or a few minutes off it (an early clock-in, a late clock-out, a clock-in still open past
- * the shift's end, a clocked-out break) and the date rolling past midnight keep it; an added,
- * removed or changed shift, unplanned work or a material overrun change it. A rise within a step
- * shows in the total, which the documented total of an acknowledgement catches
- * (`attachBerufsmaessigkeitStates` in `monitor.ts`).
+ * planned, Staffing's proposals, closed work outside any shift and the overrun of closed work
+ * beyond shifts that are over (each in material steps of 15 minutes), open work outside any shift
+ * by its id alone, the wages, currencies and cap. Work in progress never enters it by its minutes:
+ * a running clock-in, also one past its shift's end, keeps it until the clock-out. A shift worked
+ * as planned or a few minutes off it (an early clock-in, a late clock-out, a clocked-out break)
+ * and the date rolling past midnight keep it; an added, removed or changed shift, unplanned work
+ * or a material overrun change it. A rise while work is open, or within a step, shows in the
+ * total, which the documented total of an acknowledgement catches (`attachBerufsmaessigkeitStates`
+ * in `monitor.ts`).
  */
 function berufsmaessigkeitFingerprint(input: {
 	readonly month: string;
@@ -810,6 +812,7 @@ function berufsmaessigkeitFingerprint(input: {
 			minutes: item.minutes,
 			hourlyRateCents: item.hourlyRateCents,
 			shiftIds: item.shiftIds,
+			...(item.open ? { open: true } : {}),
 		})),
 		...input.planned.map((item) => ({
 			// A persisted shift with any of its plan still ahead; a proposal has no id of its own.

@@ -153,7 +153,10 @@ When a month's short-term earnings exceed the Minijob monthly limit, the employe
 the employment is not *berufsmäßig* (not the person's livelihood). Z8 prompts and an org admin
 documents the verification as an acknowledgement; Z8 never decides social-security status. The
 acknowledgement documents the month's total as the admin was shown it, and goes stale when the
-month's shifts, wages or cap change, work outside shifts or beyond shifts that are over grows by
-a material step of 15 minutes, or its total rises more than 15 minutes' pay (at the month's
-highest wage) above the documented one, as for Minijob exceedances. A shift worked a few minutes
-off its plan (early in, late out, a break, a clock-in still open at its end) keeps it.
+month's shifts, wages or cap change, closed work outside shifts or beyond shifts that are over
+grows by a material step of 15 minutes, or its total rises more than 15 minutes' pay (at the
+month's highest wage) above the documented one, as for Minijob exceedances. Work in progress never
+enters the fingerprint by its minutes: an open clock-in outside any shift counts by its id, and a
+shift whose clock-in is still open past its end is not over yet. Its growth shows in the total;
+the clock-out that fixes its minutes may make the acknowledgement stale. A shift worked a few
+minutes off its plan (early in, late out, a break) keeps it.

@@ -62,6 +62,11 @@ export interface ShortTermWorkItem {
 	 * to back), which are judged together against their plan. Empty for work without a shift.
 	 */
 	readonly shiftIds: readonly string[];
+	/**
+	 * Set while the clock-in is open. Only the Berufsmäßigkeit fingerprint reads it: work in
+	 * progress never enters it by its minutes (`plannedBasisOf`).
+	 */
+	readonly open?: true;
 	/** Confirmed hourly wage on that day in minor units; null for fixed terms or a missing wage. */
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
@@ -1102,6 +1107,7 @@ export async function loadShortTermInputs(
 				date: item.date,
 				minutes: item.minutes,
 				shiftIds: item.shiftIds,
+				...(item.end === null ? { open: true as const } : {}),
 				hourlyRateCents: centsOf(contract.hourlyRate),
 				currency: contract.currency,
 				employmentPeriodId: contract.employmentPeriodId,

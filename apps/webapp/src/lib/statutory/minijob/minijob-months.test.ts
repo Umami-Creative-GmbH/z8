@@ -247,21 +247,82 @@ describe("Minijob month judgement (#1989)", () => {
 			expect(judged?.fingerprint).toBe(acknowledged?.fingerprint);
 		});
 
-		it("goes stale when open work outside any shift grows materially, not minute by minute", () => {
-			// The same work period, open or closed: only its minutes so far change.
+		it("goes stale when closed work outside any shift grows materially, not minute by minute", () => {
 			const unplanned = (minutes: number) => ({
 				source: "work" as const,
-				id: "w-open",
+				id: "w-closed",
 				date: "2026-12-09",
 				minutes,
 				hourlyRateCents: 1000,
 			});
 			const acknowledged = fingerprintOf([...planned(0), unplanned(60)]);
 
-			// A few more minutes, or the clock-out at that point, change nothing material.
+			// A few minutes more, corrected later, change nothing material.
 			expect(fingerprintOf([...planned(0), unplanned(70)])).toBe(acknowledged);
-			// 25 more hours on the same clock-in is new work the admin never saw.
+			// 25 more hours on the same work period is new work the admin never saw.
 			expect(fingerprintOf([...planned(0), unplanned(60 + 25 * 60)])).not.toBe(acknowledged);
+		});
+
+		describe("open work outside any shift", () => {
+			/** A clock-in from 08:00 on 9 December without a shift, open for `minutes`. */
+			const running = (minutes: number) => ({
+				source: "work" as const,
+				id: "w-open",
+				date: "2026-12-09",
+				minutes,
+				hourlyRateCents: 1000,
+				open: true as const,
+			});
+
+			it("keeps its fingerprint across quarter hours while it runs", () => {
+				// Shown at 10:14 (step 8), submitted at 10:16 (step 9).
+				const shown = fingerprintOf([...planned(0), running(134)]);
+
+				expect(fingerprintOf([...planned(0), running(136)])).toBe(shown);
+				expect(fingerprintOf([...planned(0), running(25 * 60)])).toBe(shown);
+			});
+
+			it("stays current a quarter hour on, and goes stale by its total once it grows a step", () => {
+				const shown = [...planned(0), running(134)];
+
+				// 10:15 and 10:44: within one step (2.50 €) of the documented total.
+				expect(statusAfter(shown, [...planned(0), running(135)])).toBe("current");
+				expect(statusAfter(shown, [...planned(0), running(149)])).toBe("current");
+				expect(statusAfter(shown, [...planned(0), running(150)])).toBe("stale");
+			});
+		});
+
+		describe("a clock-in running past its shift's end", () => {
+			const open = (minutes: number) => ({ ...worked(["s1"], "2026-12-01", minutes), open: true });
+
+			it("keeps the fingerprint steady until the clock-out, then judges the overrun", () => {
+				const acknowledged = fingerprintOf(planned(0));
+
+				// The 10 h shift of 1 December is over; its clock-in still runs, 10 h 14 min and on.
+				expect(fingerprintOf([open(614), ...planned(1)])).toBe(acknowledged);
+				expect(fingerprintOf([open(616), ...planned(1)])).toBe(acknowledged);
+				expect(fingerprintOf([open(700), ...planned(1)])).toBe(acknowledged);
+				// Clocked out a few minutes over the plan: not material.
+				expect(fingerprintOf([worked(["s1"], "2026-12-01", 610), ...planned(1)])).toBe(
+					acknowledged,
+				);
+				// Clocked out 40 minutes over the plan: a material overrun.
+				expect(statusAfter(planned(0), [worked(["s1"], "2026-12-01", 640), ...planned(1)])).toBe(
+					"stale",
+				);
+			});
+
+			it("keeps a back-to-back group open while either part of its clock-in is open", () => {
+				const acknowledged = fingerprintOf(planned(0));
+
+				expect(
+					fingerprintOf([
+						{ ...worked(["s1", "s2"], "2026-12-01", 600), open: true },
+						{ ...worked(["s2", "s1"], "2026-12-02", 700), open: true },
+						...planned(2),
+					]),
+				).toBe(acknowledged);
+			});
 		});
 
 		it("nets one clock-in over back-to-back shifts against both", () => {
