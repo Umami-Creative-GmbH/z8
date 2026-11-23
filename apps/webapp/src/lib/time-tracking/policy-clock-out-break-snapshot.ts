@@ -451,6 +451,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			with employee_base as (
 				select employee.id,
 					employee.organization_id as "organizationId",
+					employee.engagement_kind as "engagementKind",
 					user_settings.timezone as "userTimezone",
 					organization.timezone as "organizationTimezone",
 					coalesce(
@@ -485,6 +486,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			), employee_evidence as (
 				select employee_row.id,
 					employee_row."organizationId",
+					employee_row."engagementKind",
 					team_row."teamId",
 					employee_row."userTimezone",
 					employee_row."organizationTimezone",
@@ -495,6 +497,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				left join team_evidence team_row on true
 			), period_evidence as (
 				select period.id as "employmentPeriodId",
+					period.engagement_kind as "periodEngagementKind",
 					period.start_provenance as "periodStartProvenance",
 					case
 						when period.start_provenance = 'recorded' and period.started_at is not null
@@ -550,6 +553,8 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				join work_policy_assignment assignment
 					on assignment.organization_id = employee_row."organizationId"
 				where assignment.organization_id = ${input.organizationId}
+					-- An External Contractor period has no work policy, so no break is owed (#1996).
+					and coalesce(period."periodEngagementKind", employee_row."engagementKind") <> 'contractor'
 					and (
 						assignment.is_active = true
 						or (
