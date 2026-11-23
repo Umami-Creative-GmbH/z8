@@ -1,7 +1,7 @@
 /**
  * #1988: `db:push` re-applies migration 0329 for what schema push cannot create (baseline seed,
  * guard triggers, exclusion constraints). Re-applying it to a migrated database changes nothing.
- * #1993: migration 0334 re-applies over a pushed or migrated database without error.
+ * #1993: migration 0331 re-applies over a pushed or migrated database without error.
  */
 import { readFile } from "node:fs/promises";
 import { getTableConfig } from "drizzle-orm/pg-core";
@@ -80,7 +80,7 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 		expect(upgraded.releaseOverlap).toContain("pre_exam_day");
 	});
 
-	describe("migration 0334 (#1993)", () => {
+	describe("migration 0331 (#1993)", () => {
 		const RELEASE_CONSTRAINTS = [
 			"employee_apprentice_release_exam_link_check",
 			"employee_apprentice_release_exam_release_fk",
@@ -90,9 +90,9 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 			"employee_apprentice_release_superseded_check",
 		];
 
-		async function apply0334() {
+		async function apply0331() {
 			const migration = await readFile(
-				new URL("../../drizzle/0334_jarbschg_violation_types.sql", import.meta.url),
+				new URL("../../drizzle/0331_jarbschg_violation_types.sql", import.meta.url),
 				"utf8",
 			);
 			const client = await pool.connect();
@@ -123,8 +123,8 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 			const before = await releaseConstraints();
 			expect(before.map((row) => row.conname)).toEqual(RELEASE_CONSTRAINTS);
 
-			await apply0334();
-			await apply0334();
+			await apply0331();
+			await apply0331();
 
 			expect(await releaseConstraints()).toEqual(before);
 			expect((await snapshot()).releaseOverlap).toContain("pre_exam_day");
@@ -138,7 +138,7 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 			);
 			expect(await releaseConstraints()).toEqual([]);
 
-			await apply0334();
+			await apply0331();
 
 			expect(await releaseConstraints()).toEqual(before);
 		});
