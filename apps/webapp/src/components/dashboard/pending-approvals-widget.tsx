@@ -10,7 +10,7 @@ import { getOwnRequestNote } from "@/app/[locale]/(app)/approvals/inbox/componen
 import { useApprovalInboxSummaryText } from "@/components/approvals/use-approval-inbox-summary-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ApprovalInboxType } from "@/lib/approvals/inbox/types";
+import type { ApprovalInboxLocalizedText, ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import type {
