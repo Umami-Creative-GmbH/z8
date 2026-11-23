@@ -73,6 +73,11 @@
     "portalOpenFailed": "Hapja e portalit të faturimit dështoi",
     "priceSeatMonth": "€{price}/vend/muaj",
     "priceSeatMonthYearly": "€{price}/vend/muaj (faturuar çdo vit)",
+    "recovery": {
+      "billingAndSubscription": "Faturimi & Abonimi",
+      "navigationLabel": "Navigimi i rikuperimit të faturimit",
+      "suspensionNotice": "Njoftim për pezullim"
+    },
     "seatBilledAnnually": "€{price}/vend faturuar çdo vit",
     "seatLines": {
       "full": "Vende të plota",

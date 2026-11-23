@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Richtlinienzuweisung konnte nicht aktualisiert werden"
           },
           "fallsBackToDefaultPolicy": "Fällt auf die Team- oder Organisationsstandardrichtlinie zurück",
-          "manageAllowances": "Urlaubsansprüche der Mitarbeiter verwalten",
           "managers": "Manager",
           "overrideEffectivePolicy": "Den zugewiesenen Richtlinienanspruch ({days} Tage) für diesen Mitarbeiter überschreiben",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Mitarbeiterzuweisung",
         "sourceOrganization": "Organisationszuweisung",
         "sourceTeam": "Teamzuweisung",
-        "teamDescription": "Legen Sie eine datierte Richtlinie für ein Team fest. Mitarbeiterzuweisungen haben Vorrang.",
-        "title": "Verlauf"
+        "teamDescription": "Legen Sie eine datierte Richtlinie für ein Team fest. Mitarbeiterzuweisungen haben Vorrang."
       },
       "next": "Weiter",
       "noDefaultPolicy": "Keine Unternehmensstandardrichtlinie",

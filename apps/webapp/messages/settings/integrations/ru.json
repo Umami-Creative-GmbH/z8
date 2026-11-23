@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID приложения",
+      "botToken": "Токен бота",
+      "botTokenHelp": "Хранится в зашифрованном виде в Vault и используется для проверки и работы вашего бота.",
+      "commandsRegistrationFailed": "Бот Discord подключен, но слэш-команды не удалось зарегистрировать автоматически. Проверьте права бота, затем отключите и снова подключите бота, чтобы повторить попытку.",
+      "connect": "Подключить бота Discord",
+      "connectDescription": "Введите учетные данные вашего приложения Discord из Discord Developer Portal.",
+      "connected": "Бот Discord успешно подключен",
+      "connectError": "Не удалось подключить бота Discord",
+      "copied": "Скопировано",
+      "copy": "Копировать",
+      "copyInteractionUrl": "Копировать Interaction Endpoint URL",
+      "copyInteractionUrlFailed": "Не удалось скопировать Interaction Endpoint URL. Выделите его и скопируйте вручную.",
+      "disconnect": "Отключить",
+      "disconnectConfirm": {
+        "description": "Это приведет к удалению сохраненного токена бота и отключению уведомлений Discord и слэш-команд для вашей организации.",
+        "title": "Отключить бота Discord?"
+      },
+      "disconnected": "Бот Discord отключен",
+      "disconnectError": "Не удалось отключить бота Discord",
+      "errors": {
+        "applicationIdMismatch": "ID приложения не соответствует указанному токену бота.",
+        "invalidBotToken": "Недействительный токен бота. Проверьте учетные данные бота Discord и повторите попытку.",
+        "publicKeyMismatch": "Открытый ключ не соответствует приложению Discord."
+      },
+      "interactionEndpointHelp": "Вставьте этот URL в поле Interactions Endpoint URL вашего приложения на портале Discord Developer Portal.",
+      "interactionEndpointUrl": "Interaction Endpoint URL",
+      "interactionUrlCopied": "Interaction Endpoint URL скопирован",
+      "publicKey": "Открытый ключ",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "ID приложения должен содержать только цифры.",
+        "applicationIdRequired": "ID приложения обязателен для заполнения.",
+        "botTokenRequired": "Токен бота обязателен для заполнения.",
+        "publicKeyInvalid": "Открытый ключ должен представлять собой 64-значную шестнадцатеричную строку.",
+        "publicKeyRequired": "Открытый ключ обязателен для заполнения."
+      }
     },
     "slack": {
       "title": "Slack"

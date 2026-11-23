@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Bu ekip için kısa bir açıklama",
         "fallbackManagerHelp": "Bir ekip üyesinin doğrudan yöneticisi olmadığında onaylar için kullanılır.",
         "fallbackManagerLabel": "Yedek Yönetici",
-        "fallbackManagerPlaceholder": "Bir yedek yönetici seçin",
         "nameLabel": "Ekip Adı",
         "namePlaceholder": "Mühendislik, Satış, Pazarlama...",
         "noFallbackManager": "Yedek yönetici yok",

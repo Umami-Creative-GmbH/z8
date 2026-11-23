@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Përditësimi i caktimit të politikës dështoi"
           },
           "fallsBackToDefaultPolicy": "Kthehet te politika e paracaktuar e ekipit ose e organizatës",
-          "manageAllowances": "menaxhoni ditët e lejes vjetore të punonjësve",
           "managers": "Menaxherët",
           "overrideEffectivePolicy": "Mbishkruaj lejen e përcaktuar nga rregullorja ({days} ditë) për këtë punonjës",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Caktimi i punonjësit",
         "sourceOrganization": "Caktimi i organizatës",
         "sourceTeam": "Caktimi i ekipit",
-        "teamDescription": "Caktoni një politikë me datë për një ekip. Përcaktimet e punonjësve kanë përparësi.",
-        "title": "Historiku"
+        "teamDescription": "Caktoni një politikë me datë për një ekip. Përcaktimet e punonjësve kanë përparësi."
       },
       "next": "Tjetra",
       "noDefaultPolicy": "Nuk ka politikë të paracaktuar të kompanisë",

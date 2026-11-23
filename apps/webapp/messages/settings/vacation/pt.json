@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Falha ao atualizar atribuição de política"
           },
           "fallsBackToDefaultPolicy": "Retorna à política padrão da equipe ou da organização",
-          "manageAllowances": "gerenciar licenças de férias dos funcionários",
           "managers": "Gerentes",
           "overrideEffectivePolicy": "Substituir o limite da política atribuída ({days} dias) para este colaborador",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Atribuição de funcionário",
         "sourceOrganization": "Atribuição de organização",
         "sourceTeam": "Atribuição de equipe",
-        "teamDescription": "Defina uma política com data para uma equipe. As atribuições de funcionários têm precedência.",
-        "title": "Histórico"
+        "teamDescription": "Defina uma política com data para uma equipe. As atribuições de funcionários têm precedência."
       },
       "next": "Próximo",
       "noDefaultPolicy": "Nenhuma política padrão da empresa",

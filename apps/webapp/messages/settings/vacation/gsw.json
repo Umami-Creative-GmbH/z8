@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Richtlinie-Zuewisig het nöd chönne aktualisiert werde"
           },
           "fallsBackToDefaultPolicy": "Fallt uf d'Team- oder Organisations-Standardrichtlinie zrugg",
-          "manageAllowances": "Ferie-Guthabe vo Aagstellte verwalte",
           "managers": "Manager",
           "overrideEffectivePolicy": "Di zuegwiseni Richtlinie-Aasprach ({days} Täg) für de Mitarbeiter überschriibe",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Mitarbeiter-Zuewysig",
         "sourceOrganization": "Organisations-Zuewysig",
         "sourceTeam": "Team-Zuewysig",
-        "teamDescription": "Leg e datierti Richtlinie für es Team fescht. Zueordnige vo Mitarbeitende händ Vorrang.",
-        "title": "Verlauf"
+        "teamDescription": "Leg e datierti Richtlinie für es Team fescht. Zueordnige vo Mitarbeitende händ Vorrang."
       },
       "next": "Weiter",
       "noDefaultPolicy": "Keine Standard-Unternehmensrichtlinie",

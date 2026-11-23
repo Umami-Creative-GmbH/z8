@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Une brève description de cette équipe",
         "fallbackManagerHelp": "Utilisé pour les approbations lorsqu'un membre de l'équipe n'a pas de responsable direct.",
         "fallbackManagerLabel": "Responsable de secours",
-        "fallbackManagerPlaceholder": "Sélectionner un responsable de secours",
         "nameLabel": "Nom de l'équipe",
         "namePlaceholder": "Ingénierie, Ventes, Marketing...",
         "noFallbackManager": "Aucun responsable de secours",

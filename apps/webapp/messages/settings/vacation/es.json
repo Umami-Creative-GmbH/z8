@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Error al actualizar la asignación de política"
           },
           "fallsBackToDefaultPolicy": "Vuelve a la política predeterminada del equipo o de la organización",
-          "manageAllowances": "gestionar asignaciones de vacaciones de los empleados",
           "managers": "Gerentes",
           "overrideEffectivePolicy": "Sobrescribir la asignación de la política ({days} días) para este empleado",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Asignación de empleado",
         "sourceOrganization": "Asignación de organización",
         "sourceTeam": "Asignación de equipo",
-        "teamDescription": "Establece una política con fecha para un equipo. Las asignaciones de empleados tienen prioridad.",
-        "title": "Historial"
+        "teamDescription": "Establece una política con fecha para un equipo. Las asignaciones de empleados tienen prioridad."
       },
       "next": "Siguiente",
       "noDefaultPolicy": "No hay política predeterminada de la empresa",

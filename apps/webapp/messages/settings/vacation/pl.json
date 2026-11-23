@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Nie udało się zaktualizować przypisania polityki"
           },
           "fallsBackToDefaultPolicy": "Przywraca domyślną politykę zespołu lub organizacji",
-          "manageAllowances": "zarządzaj wymiarami urlopów pracowników",
           "managers": "Menedżerowie",
           "overrideEffectivePolicy": "Zastąp limit z przypisanych zasad ({days} dni) dla tego pracownika",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Przypisanie do pracownika",
         "sourceOrganization": "Przypisanie do organizacji",
         "sourceTeam": "Przypisanie do zespołu",
-        "teamDescription": "Ustaw zasadę z określoną datą dla zespołu. Przypisania pracowników mają pierwszeństwo.",
-        "title": "Historia"
+        "teamDescription": "Ustaw zasadę z określoną datą dla zespołu. Przypisania pracowników mają pierwszeństwo."
       },
       "next": "Dalej",
       "noDefaultPolicy": "Brak domyślnej polityki firmy",

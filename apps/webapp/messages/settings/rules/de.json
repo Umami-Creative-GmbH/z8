@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Optionale Beschreibung für dieses Kategorienset",
       "setName": "Name",
       "setNamePlaceholder": "z. B. Reisekategorien",
+      "setNameRequired": "Name des Kategoriensets ist erforderlich",
       "setNameTaken": "Ein Kategorieset mit diesem Namen existiert bereits.",
       "setUpdated": "Kategorienset wurde aktualisiert",
       "setUpdateFailed": "Kategorienset konnte nicht aktualisiert werden",

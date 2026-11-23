@@ -441,7 +441,9 @@
       "description": "Se og administrer alle brukere på plattformen",
       "filters": {
         "allUsers": "Alle brukere",
-        "banned": "Utestengt"
+        "banned": "Utestengt",
+        "clearOrganization": "Tøm organisasjonsfilter",
+        "organization": "Organisasjon: {name}"
       },
       "pagination": {
         "showing": "Viser {from} til {to} av {total} brukere"

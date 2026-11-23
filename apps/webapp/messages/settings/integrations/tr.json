@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "Uygulama Kimliği",
+      "botToken": "Bot Belirteci",
+      "botTokenHelp": "Vault'ta şifreli olarak saklanır; botunuzu doğrulamak ve çalıştırmak için kullanılır.",
+      "commandsRegistrationFailed": "Discord botu bağlandı ancak eğik çizgi (slash) komutları otomatik olarak kaydedilemedi. Bot izinlerinizi doğrulayın, ardından botun bağlantısını kesip tekrar bağlayarak yeniden deneyin.",
+      "connect": "Discord Botunu Bağla",
+      "connectDescription": "Discord Geliştirici Portalı'ndaki Discord uygulamanızın kimlik bilgilerini girin.",
+      "connected": "Discord botu başarıyla bağlandı",
+      "connectError": "Discord botu bağlanamadı",
+      "copied": "Kopyalandı",
+      "copy": "Kopyala",
+      "copyInteractionUrl": "Etkileşim Uç Noktası URL'sini Kopyala",
+      "copyInteractionUrlFailed": "Etkileşim Uç Noktası URL'si kopyalanamadı. URL'yi seçip manuel olarak kopyalayın.",
+      "disconnect": "Bağlantıyı Kes",
+      "disconnectConfirm": {
+        "description": "Bu işlem saklanan bot belirtecini kaldırır ve kuruluşunuz için Discord bildirimlerini ve eğik çizgi (slash) komutlarını devre dışı bırakır.",
+        "title": "Discord Botunun Bağlantısı Kesilsin mi?"
+      },
+      "disconnected": "Discord botunun bağlantısı kesildi",
+      "disconnectError": "Discord botunun bağlantısı kesilemedi",
+      "errors": {
+        "applicationIdMismatch": "Uygulama Kimliği, sağlanan bot belirteciyle eşleşmiyor.",
+        "invalidBotToken": "Geçersiz bot belirteci. Discord botu kimlik bilgilerinizi kontrol edip tekrar deneyin.",
+        "publicKeyMismatch": "Genel anahtar Discord uygulamasıyla eşleşmiyor."
+      },
+      "interactionEndpointHelp": "Bu URL'yi Discord Geliştirici Portalı uygulamanızdaki Interactions Endpoint URL alanına yapıştırın.",
+      "interactionEndpointUrl": "Etkileşim Uç Noktası URL'si",
+      "interactionUrlCopied": "Etkileşim Uç Noktası URL'si kopyalandı",
+      "publicKey": "Genel Anahtar",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "Uygulama Kimliği yalnızca rakamlardan oluşmalıdır.",
+        "applicationIdRequired": "Uygulama Kimliği gereklidir.",
+        "botTokenRequired": "Bot belirteci gereklidir.",
+        "publicKeyInvalid": "Genel anahtar 64 karakterli onaltılık (hexadecimal) bir dize olmalıdır.",
+        "publicKeyRequired": "Genel anahtar gereklidir."
+      }
     },
     "slack": {
       "title": "Slack"

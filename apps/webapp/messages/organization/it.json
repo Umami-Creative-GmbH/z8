@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Una breve descrizione di questo team",
         "fallbackManagerHelp": "Utilizzato per le approvazioni quando un membro del team non ha un manager diretto.",
         "fallbackManagerLabel": "Manager di riserva",
-        "fallbackManagerPlaceholder": "Seleziona un manager di riserva",
         "nameLabel": "Nome del team",
         "namePlaceholder": "Ingegneria, Vendite, Marketing...",
         "noFallbackManager": "Nessun manager di riserva",

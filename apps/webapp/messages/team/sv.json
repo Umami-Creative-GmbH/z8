@@ -159,7 +159,6 @@
       "scopeFailed": "Den aktuella köromfattningen kunde inte läsas in.",
       "scopeLoading": "Läser in aktuell köromfattning…",
       "scopeManaged": "Anställda du leder",
-      "title": "Körningsuppgifter saknas",
       "truncated": "Visar de {count} senaste arbetspassen. Filtrera efter team eller medarbetare för att se resten.",
       "updating": "Uppdaterar körningsuppgifter…"
     },

@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Politika ataması güncellenemedi"
           },
           "fallsBackToDefaultPolicy": "Ekip veya kuruluş varsayılan politikasına geri döner",
-          "manageAllowances": "çalışan izin haklarını yönet",
           "managers": "Yöneticiler",
           "overrideEffectivePolicy": "Bu çalışan için atanan politika hakkını ({days} gün) geçersiz kıl",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Çalışan ataması",
         "sourceOrganization": "Kuruluş ataması",
         "sourceTeam": "Ekip ataması",
-        "teamDescription": "Bir ekip için tarihli bir politika belirleyin. Çalışan atamaları önceliklidir.",
-        "title": "Geçmiş"
+        "teamDescription": "Bir ekip için tarihli bir politika belirleyin. Çalışan atamaları önceliklidir."
       },
       "next": "İleri",
       "noDefaultPolicy": "Şirket Varsayılan Politikası Yok",

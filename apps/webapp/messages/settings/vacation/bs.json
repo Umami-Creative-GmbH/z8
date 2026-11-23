@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Ažuriranje dodjele pravila nije uspjelo"
           },
           "fallsBackToDefaultPolicy": "Vraća se na zadano pravilo tima ili organizacije",
-          "manageAllowances": "upravljajte danima godišnjeg odmora zaposlenika",
           "managers": "Menadžeri",
           "overrideEffectivePolicy": "Preinači dodijeljenu kvotu iz pravila ({days} dana) za ovog uposlenika",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Dodjeljivanje zaposleniku",
         "sourceOrganization": "Dodjeljivanje organizaciji",
         "sourceTeam": "Dodjeljivanje timu",
-        "teamDescription": "Postavite vremenski određenu politiku za tim. Dodjele zaposlenicima imaju prednost.",
-        "title": "Historija"
+        "teamDescription": "Postavite vremenski određenu politiku za tim. Dodjele zaposlenicima imaju prednost."
       },
       "next": "Dalje",
       "noDefaultPolicy": "Nema zadanog pravila kompanije",

@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Description facultative pour cet ensemble de catégories",
       "setName": "Nom",
       "setNamePlaceholder": "ex. : Catégories de voyage",
+      "setNameRequired": "Le nom de l'ensemble de catégories est requis",
       "setNameTaken": "Un ensemble de catégories portant ce nom existe déjà.",
       "setUpdated": "Ensemble de catégories mis à jour",
       "setUpdateFailed": "Échec de la mise à jour de l'ensemble de catégories",

@@ -73,6 +73,11 @@
     "portalOpenFailed": "Αποτυχία ανοίγματος της πύλης χρέωσης",
     "priceSeatMonth": "€{price}/θέση/μήνα",
     "priceSeatMonthYearly": "€{price}/θέση/μήνα (ετήσια χρέωση)",
+    "recovery": {
+      "billingAndSubscription": "Χρέωση & Συνδρομή",
+      "navigationLabel": "Πλοήγηση ανάκτησης χρέωσης",
+      "suspensionNotice": "Ειδοποίηση αναστολής"
+    },
     "seatBilledAnnually": "€{price}/θέση με ετήσια χρέωση",
     "seatLines": {
       "full": "Πλήρεις θέσεις",

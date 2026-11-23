@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "Aawendigs-ID",
+      "botToken": "Bot-Token",
+      "botTokenHelp": "Verschlüsslet im Vault gspicheret und bruucht, zum din Bot z'validiere und z'betriibe.",
+      "commandsRegistrationFailed": "Discord-Bot isch verbunde, aber Slash-Befehl händ nöd automatisch chönne registriert werde. Überprüef dini Bot-Berächtigunge, trenn de Bot und verbind en nomol zum's nomol probiere.",
+      "connect": "Discord-Bot verbinde",
+      "connectDescription": "Gib d'Aameldedate vo dinere Discord-Aawendig im Discord Developer Portal ii.",
+      "connected": "Discord-Bot erfolchriich verbunde",
+      "connectError": "Discord-Bot hät nöd chönne verbunde werde",
+      "copied": "Kopiert",
+      "copy": "Kopiere",
+      "copyInteractionUrl": "Interaction Endpoint URL kopiere",
+      "copyInteractionUrlFailed": "D'Interaction Endpoint URL hät nöd chönne kopiert werde. Wähl si us und kopier si manuell.",
+      "disconnect": "Trenne",
+      "disconnectConfirm": {
+        "description": "Das entfernt de gspichereti Bot-Token und deaktiviert Discord-Benachrichtigunge und Slash-Befehl für dini Organisation.",
+        "title": "Discord-Bot trenne?"
+      },
+      "disconnected": "Discord-Bot trennt",
+      "disconnectError": "Discord-Bot hät nöd chönne trennt werde",
+      "errors": {
+        "applicationIdMismatch": "Aawendigs-ID stimmt nöd mit em aagneene Bot-Token überii.",
+        "invalidBotToken": "Ungültige Bot-Token. Überprüef dini Discord-Bot-Aameldedate und probier's nomol.",
+        "publicKeyMismatch": "Public Key stimmt nöd mit de Discord-Aawendig überii."
+      },
+      "interactionEndpointHelp": "Füeg die URL is Fäld «Interactions Endpoint URL» i dinere Discord Developer Portal-Aawendig ii.",
+      "interactionEndpointUrl": "Interaction Endpoint URL",
+      "interactionUrlCopied": "Interaction Endpoint URL kopiert",
+      "publicKey": "Public Key",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "Aawendigs-ID dörf nur Ziffere enthalte.",
+        "applicationIdRequired": "Aawendigs-ID isch erforderlich.",
+        "botTokenRequired": "Bot-Token isch erforderlich.",
+        "publicKeyInvalid": "Public Key muess e 64-Zeiche langi Hexadezimal-Zeichechetti sii.",
+        "publicKeyRequired": "Public Key isch erforderlich."
+      }
     },
     "slack": {
       "title": "Slack"

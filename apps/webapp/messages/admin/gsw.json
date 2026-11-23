@@ -441,7 +441,9 @@
       "description": "Alli Benutzer uf de Plattform aaluege und verwalte",
       "filters": {
         "allUsers": "Alli Benutzer",
-        "banned": "Gesperrt"
+        "banned": "Gesperrt",
+        "clearOrganization": "Organisationsfilter zruggsetze",
+        "organization": "Organisation: {name}"
       },
       "pagination": {
         "showing": "Zeige {from} bis {to} vo {total} Benutzer"

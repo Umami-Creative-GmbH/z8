@@ -334,10 +334,12 @@
           "unknownCustomer": "Nieznany klient",
           "unknownProject": "Nieznany projekt"
         },
+        "configureSettings": "Ustawienia czasu podlegającego rozliczeniu",
         "confirmed": "Wersja robocza faktury została utworzona",
         "csv": {
           "download": "Pobierz plik CSV uzgodnienia"
         },
+        "description": "Twórz wersje robocze faktur na podstawie pracy podlegającej rozliczeniu, sprawdzaj stan narzędzia, pobieraj ewidencje czasu pracy i rozwiązuj zmiany po wystawieniu faktury.",
         "detail": {
           "checking": "Sprawdzanie wersji roboczej w narzędziu…",
           "gone": "W narzędziu księgowym nie ma już tej wersji roboczej. Jeśli została usunięta celowo, anuluj blokadę przekazania, aby można było ponownie przekazać tę pracę.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Księgowość",
         "costRates": "Stawki kosztów",
-        "currency": "Waluta rozliczeniowa",
         "handOff": "Przekazanie",
         "label": "Ustawienia rozliczanego czasu",
         "rates": "Stawki rozliczeniowe"
@@ -637,6 +638,7 @@
         "teams": "Zespoły"
       },
       "scopeLabel": "Zamknij dla",
+      "selectEmployees": "Wybierz pracowników",
       "teamNotFound": "Ten zespół już nie istnieje.",
       "title": "Zamknięte miesiące",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Szukaj pracowników…",
         "selected": "Wybrane zespoły i pracownicy",
         "selectedHelp": "Obejmuje członków wybranych zespołów oraz wybranych pracowników.",
+        "selectEmployees": "Wybierz pracowników",
         "teams": "Zespoły",
         "title": "Opiekunowie sprzętu"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Ten element zostanie zablokowany przed ponownym wydaniem do momentu wyraźnego odblokowania. Dowody pieczy i przyjęcia pozostają bez zmian.",
         "unchanged": "Ten stan dostępności jest już zarejestrowany. Załaduj ponownie sprzęt, aby przejrzeć jego historię."
       },
-      "reload": "Odśwież konfigurację",
       "retention": {
         "activity": "Ostatnia aktywność",
         "badgeDue": "Oczekuje na wyczyszczenie",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Konto",
       "data": "Dane",
-      "integrations": "Integracje",
-      "notifications": "Powiadomienia",
+      "integrationsChannels": "Integracje i kanały",
       "organization": "Organizacja"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Wnioski o nieobecność nie wymagają zatwierdzenia, ponieważ żadna kategoria nieobecności tego nie wymaga.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik nie wymaga zatwierdzenia, ponieważ nie ma zastosowania żadna zasada zmian.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników nie wymaga zatwierdzenia, ponieważ nie ma zastosowania żadna zasada zmian.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik jest własną osobą zatwierdzającą.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników jest własną osobą zatwierdzającą.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik jest jedyną osobą, która może je rozpatrzyć, więc jego własne wnioski oczekują na jego zatwierdzenie.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników to jedyne osoby, które mogą je rozpatrzyć, więc ich własne wnioski oczekują na ich zatwierdzenie.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik nie wymaga zatwierdzenia, ponieważ właściciele i administratorzy rejestrują własną pracę bezpośrednio.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników nie wymaga zatwierdzenia, ponieważ właściciele i administratorzy rejestrują własną pracę bezpośrednio.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: właściciel zatwierdza własne raporty, ponieważ nikt inny nie może tego zrobić.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik nie wymaga zatwierdzenia, ponieważ jego zasada zmian działa w trybie zaufania.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników nie wymaga zatwierdzenia, ponieważ ich zasada zmian działa w trybie zaufania.}}",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Żadna kategoria nieobecności nie wymaga zatwierdzenia.",
             "noChangePolicy": "Nie obowiązują ich żadne zasady wprowadzania zmian.",
             "ownApprover": "Sami są dla siebie osobą zatwierdzającą, więc ich wnioski są realizowane natychmiast.",
-            "ownDecider": "Są jedynym menedżerem lub administratorem, który może decydować o wnioskach dotyczących zmian, dlatego ich własne wnioski oczekują, dopóki sami ich nie zatwierdzą.",
             "ownerAdmin": "Właściciele i administratorzy rejestrują swoją pracę bezpośrednio.",
             "ownerSelfApproval": "Jako właściciel zatwierdzają własne raporty, ponieważ nikt inny nie może tego zrobić.",
             "trustMode": "Ich zasady wprowadzania zmian działają w trybie zaufania."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "Krótki opis tego zespołu",
           "fallbackManagerHelp": "Używane do zatwierdzeń, gdy członek zespołu nie ma bezpośredniego przełożonego.",
           "fallbackManagerLabel": "Zapasowy przełożony",
-          "fallbackManagerPlaceholder": "Wybierz zapasowego przełożonego",
           "nameLabel": "Nazwa zespołu",
           "namePlaceholder": "Inżynieria, Sprzedaż, Marketing...",
+          "nameRequired": "Nazwa zespołu jest wymagana",
           "noFallbackManager": "Brak menedżera zapasowego",
           "submit": "Utwórz zespół",
           "title": "Utwórz zespół"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Przeglądaj i unieważniaj wszystkie linki udostępniające raport projektu lub klienta",
       "pageDescription": "Linki pokazujące statyczną migawkę raportu projektu lub klienta osobom spoza Z8. Unieważnienie linku natychmiast go dezaktywuje i usuwa jego migawkę.",
+      "projectsDisabledNotice": {
+        "description": "Moduł Projekty jest obecnie wyłączony dla tej organizacji, dlatego nie można tworzyć nowych linków do udostępniania raportów. W tym miejscu możesz nadal przeglądać i cofać istniejące linki.",
+        "title": "Moduł Projekty jest wyłączony"
+      },
       "title": "Linki udostępniania raportów"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Wystąpił nieoczekiwany błąd"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Aktywne sesje",
-        "activeSessionsDescription": "Bieżące sesje bazy danych",
-        "approvalRequests": "Wnioski o zatwierdzenie",
-        "approvedAbsences": "Zatwierdzone nieobecności",
+      "allClear": "Wszystko w porządku: nic nie wymaga teraz Twojej uwagi.",
+      "groupLoadError": "Nie udało się załadować tych danych. Odśwież stronę, aby spróbować ponownie.",
+      "kpi": {
+        "absenceDays": "Dni nieobecności",
+        "clockedIn": "Aktualnie w pracy",
+        "clockedInCaption": "Pracownicy z aktywną sesją pracy",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Zakończone okresy pracy",
+        "daysUnit": "dni",
         "employees": "Pracownicy",
-        "employeesDescription": "{active} aktywnych, {inactive} nieaktywnych",
-        "pendingAbsences": "Oczekujące nieobecności",
-        "pendingCount": "{count} oczekujących",
-        "rejectedAbsences": "Odrzucone nieobecności",
+        "employeesCaption": "+{joined} dołączyło, −{left} odeszło w tym miesiącu",
+        "failed": "Nie udało się załadować",
+        "hoursUnit": "godz.",
+        "hoursWorked": "Przepracowane godziny",
+        "incompleteSetup": "Niekompletna konfiguracja",
+        "incompleteSetupCaption": "Pracownicy bez głównego zespołu lub bez zasad pracy",
+        "incompleteSetupManagerCaption": "Pracownicy bez zasad pracy",
+        "manualEntryShare": "Udział wpisów ręcznych",
+        "manualEntryShareCaption": "{manual} godz. z {total} godz. zarejestrowano jako wpisy ręczne",
+        "manualEntryShareNone": "Brak ukończonej pracy w tym miesiącu",
+        "openInbox": "Otwórz skrzynkę odbiorczą",
+        "openPayrollReadiness": "Przejrzyj w gotowości do listy płac",
+        "openViolations": "Otwarte naruszenia zasad",
+        "openViolationsCaption": "Jeszcze niepotwierdzone w tym miesiącu",
+        "openWorkPolicies": "Przejrzyj w zasadach pracy",
+        "pendingApprovals": "Oczekujące zatwierdzenia",
+        "pendingApprovalsCaption": "{count, plural, =0 {Brak wniosków o nieobecność} one {W tym # wniosek o nieobecność} other {W tym # wniosków o nieobecność}}",
+        "staleLiveWork": "Nieaktualna aktywna praca",
+        "staleLiveWorkCaption": "Pracownicy zarejestrowani w pracy od ponad 24 godzin",
         "teams": "Zespoły",
-        "thisMonth": "W tym miesiącu",
-        "timeEntries": "Wpisy czasu",
-        "totalAbsences": "Łączna liczba nieobecności",
-        "totalTimeEntries": "Łączna liczba wpisów czasu",
-        "vsLastMonth": "w porównaniu z poprzednim miesiącem"
+        "trackingCoverage": "Pokrycie rejestracji czasu",
+        "trackingCoverageCaption": "{tracked} z {expected} pracowników z wymaganym czasem zarejestrowało pracę",
+        "trackingCoverageNone": "Nikt nie ma jeszcze wymaganego czasu w tym miesiącu",
+        "trackingCoverageProgress": "Pracownicy, którzy zarejestrowali pracę w tym miesiącu",
+        "usersSignedIn": "Zalogowani użytkownicy",
+        "usersSignedInCaption": "Unikalni użytkownicy z niewygasłą sesją",
+        "vsComparison": "{change} vs. {days}"
       },
-      "description": "Wyświetl statystyki i metryki dotyczące Twojej instancji",
       "lastUpdated": "Ostatnia aktualizacja",
       "loadError": "Nie udało się załadować statystyk",
       "loadErrorRetry": "Odśwież stronę, aby spróbować ponownie.",
-      "managerDescription": "Przeglądaj analitykę w trybie tylko do odczytu dla zarządzanych przez Ciebie zespołów.",
+      "scope": {
+        "organization": "Cała organizacja",
+        "teams": "{count, plural, =0 {Brak zespołów, którymi zarządzasz} one {# zespół, którym zarządzasz} other {# zespołów, którymi zarządzasz}}"
+      },
       "sections": {
-        "absenceBreakdown": "Podział nieobecności",
-        "activityMetrics": "Metryki aktywności",
-        "coreCounts": "Podstawowe liczby",
-        "managedScope": "Zakres zarządzanego zespołu",
-        "systemHealth": "Stan systemu"
+        "adoption": "Śledzenie wdrożenia",
+        "attention": "Wymaga uwagi",
+        "thisMonth": "W tym miesiącu",
+        "workforce": "Kadry i konfiguracja"
       },
       "title": "Statystyki"
     },

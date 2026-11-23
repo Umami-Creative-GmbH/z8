@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Valgfri beskrivelse for dette kategorisettet",
       "setName": "Navn",
       "setNamePlaceholder": "f.eks. Reisekategorier",
+      "setNameRequired": "Navn på kategorisett er obligatorisk",
       "setNameTaken": "Det finnes allerede et kategorisett med dette navnet.",
       "setUpdated": "Kategorisett oppdatert",
       "setUpdateFailed": "Kunne ikke oppdatere kategorisett",

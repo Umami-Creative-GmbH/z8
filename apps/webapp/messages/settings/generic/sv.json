@@ -334,10 +334,12 @@
           "unknownCustomer": "Okänd kund",
           "unknownProject": "Okänt projekt"
         },
+        "configureSettings": "Inställningar för debiterbar tid",
         "confirmed": "Fakturautkastet har skapats",
         "csv": {
           "download": "Ladda ner avstämnings-CSV"
         },
+        "description": "Skapa fakturautkast från debiterbart arbete, kontrollera verktygsstatus, ladda ned tidrapporter och hantera ändringar efter fakturering.",
         "detail": {
           "checking": "Kontrollerar utkastet i verktyget…",
           "gone": "Bokföringsverktyget har inte längre detta utkast. Om det togs bort med avsikt kan du frigöra överföringen så att arbetet kan överföras igen.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Bokföring",
         "costRates": "Kostnadssatser",
-        "currency": "Fakturerbar valuta",
         "handOff": "Överlämning",
         "label": "Inställningar för debiterbar tid",
         "rates": "Debiteringssatser"
@@ -637,6 +638,7 @@
         "teams": "Team"
       },
       "scopeLabel": "Stäng för",
+      "selectEmployees": "Välj medarbetare",
       "teamNotFound": "Det här teamet finns inte längre.",
       "title": "Stängda månader",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Sök anställda…",
         "selected": "Valda team och anställda",
         "selectedHelp": "Omfattar medlemmar i de valda teamen och de valda anställda.",
+        "selectEmployees": "Välj medarbetare",
         "teams": "Team",
         "title": "Utrustningsansvariga"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Denna artikel spärras från ny utlämning tills den uttryckligen har godkänts. Vårdnad och mottagningsbevis förblir oförändrade.",
         "unchanged": "Detta tillgänglighetstillstånd är redan registrerat. Läs in utrustningen på nytt för att granska dess historik."
       },
-      "reload": "Läs in konfigurationen på nytt",
       "retention": {
         "activity": "Senaste aktivitet",
         "badgeDue": "Väntar på rensning",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Konto",
       "data": "Data",
-      "integrations": "Integrationer",
-      "notifications": "Aviseringar",
+      "integrationsChannels": "Integrationer & kanaler",
       "organization": "Organisation"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Frånvaroansökningar behöver inget godkännande eftersom ingen frånvarokategori kräver det.",
           "skipNoChangePolicy": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare behöver inget godkännande, eftersom ingen ändringspolicy gäller.} }",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare är sin egen godkännare.} other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare är sina egna godkännare.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare är den enda som kan besluta om dem, så dennes egna förfrågningar väntar på dennes eget godkännande.} other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare är de enda som kan besluta om dem, så deras egna förfrågningar väntar på deras eget godkännande.}}",
           "skipOwnerAdmin": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare behöver inget godkännande, eftersom ägare och administratörer registrerar sitt eget arbete direkt.} }",
           "skipOwnerSelfApproval": "{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: ägaren godkänner sina egna rapporter, eftersom ingen annan kan göra det.",
           "skipTrustMode": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare behöver inget godkännande, eftersom deras ändringspolicy är i tillitsläge.} }",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Ingen frånvarokategori kräver godkännande.",
             "noChangePolicy": "Ingen ändringspolicy gäller för dem.",
             "ownApprover": "De är sin egen godkännare, så deras förfrågningar slutförs direkt.",
-            "ownDecider": "De är den enda chef eller administratör som kan besluta om skiftförfrågningar, så deras förblir väntande tills de godkänner dem.",
             "ownerAdmin": "Ägare och administratörer registrerar sitt eget arbete direkt.",
             "ownerSelfApproval": "Som ägare godkänner de sina egna rapporter, eftersom ingen annan kan det.",
             "trustMode": "Deras ändringspolicy är i förtroendeläge."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "En kort beskrivning av detta team",
           "fallbackManagerHelp": "Används för godkännanden när en teammedlem saknar en direkt chef.",
           "fallbackManagerLabel": "Reservchef",
-          "fallbackManagerPlaceholder": "Välj en reservchef",
           "nameLabel": "Teamnamn",
           "namePlaceholder": "Teknik, Försäljning, Marknadsföring...",
+          "nameRequired": "Teamnamn är obligatoriskt",
           "noFallbackManager": "Ingen reservchef",
           "submit": "Skapa team",
           "title": "Skapa team"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Se och återkalla alla länkar som delar en projekt- eller kundrapport",
       "pageDescription": "Länkar som visar en låst ögonblicksbild av en projekt- eller kundrapport för någon utanför Z8. Att återkalla en länk gör att den genast slutar fungera och raderar dess ögonblicksbild.",
+      "projectsDisabledNotice": {
+        "description": "Projekt är för närvarande inaktiverat för denna organisation, så inga nya delningslänkar för rapporter kan skapas. Du kan fortfarande granska och återkalla befintliga länkar här.",
+        "title": "Projekt är inaktiverat"
+      },
       "title": "Delningslänkar för rapporter"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Ett oväntat fel uppstod"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Aktiva sessioner",
-        "activeSessionsDescription": "Aktuella databassessioner",
-        "approvalRequests": "Godkännandeförfrågningar",
-        "approvedAbsences": "Godkänd frånvaro",
-        "employees": "Anställda",
-        "employeesDescription": "{active} aktiva, {inactive} inaktiva",
-        "pendingAbsences": "Väntande frånvaro",
-        "pendingCount": "{count} väntande",
-        "rejectedAbsences": "Avvisad frånvaro",
+      "allClear": "Allt är klart: inget kräver din uppmärksamhet just nu.",
+      "groupLoadError": "Kunde inte läsa in dessa siffror. Ladda om sidan för att försöka igen.",
+      "kpi": {
+        "absenceDays": "Frånvarodagar",
+        "clockedIn": "Instämplade nu",
+        "clockedInCaption": "Medarbetare med pågående arbete",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Slutförda arbetsperioder",
+        "daysUnit": "dagar",
+        "employees": "Medarbetare",
+        "employeesCaption": "+{joined} tillkom, −{left} lämnade denna månad",
+        "failed": "Kunde inte läsa in",
+        "hoursUnit": "h",
+        "hoursWorked": "Arbetade timmar",
+        "incompleteSetup": "Ofullständig konfiguration",
+        "incompleteSetupCaption": "Medarbetare utan primärt team eller utan arbetspolicy",
+        "incompleteSetupManagerCaption": "Medarbetare utan arbetspolicy",
+        "manualEntryShare": "Andel manuella registreringar",
+        "manualEntryShareCaption": "{manual} h av {total} h registrerades som manuella poster",
+        "manualEntryShareNone": "Inget slutfört arbete denna månad ännu",
+        "openInbox": "Öppna inkorg",
+        "openPayrollReadiness": "Granska i löneberedskap",
+        "openViolations": "Öppna policyöverträdelser",
+        "openViolationsCaption": "Ännu inte bekräftade denna månad",
+        "openWorkPolicies": "Granska i arbetspolicyer",
+        "pendingApprovals": "Väntande godkännanden",
+        "pendingApprovalsCaption": "{count, plural, =0 {Inga frånvaroansökningar} one {Inklusive # frånvaroansökan} other {Inklusive # frånvaroansökningar}}",
+        "staleLiveWork": "Inaktuellt pågående arbete",
+        "staleLiveWorkCaption": "Medarbetare som varit instämplade i mer än 24 timmar",
         "teams": "Team",
-        "thisMonth": "Denna månad",
-        "timeEntries": "Tidsregistreringar",
-        "totalAbsences": "Total frånvaro",
-        "totalTimeEntries": "Totalt antal tidsregistreringar",
-        "vsLastMonth": "jämfört med förra månaden"
+        "trackingCoverage": "Tidrapporteringstäckning",
+        "trackingCoverageCaption": "{tracked} av {expected} medarbetare med obligatorisk tid har registrerat arbete",
+        "trackingCoverageNone": "Ingen har obligatorisk tid denna månad ännu",
+        "trackingCoverageProgress": "Medarbetare som registrerat arbete denna månad",
+        "usersSignedIn": "Inloggade användare",
+        "usersSignedInCaption": "Unika användare med en aktiv session",
+        "vsComparison": "{change} mot {days}"
       },
-      "description": "Visa statistik och mätvärden för din instans",
       "lastUpdated": "Senast uppdaterad",
       "loadError": "Det gick inte att läsa in statistik",
       "loadErrorRetry": "Ladda om sidan för att försöka igen.",
-      "managerDescription": "Granska skrivskyddad analys för de team du hanterar.",
+      "scope": {
+        "organization": "Hela organisationen",
+        "teams": "{count, plural, =0 {Inga team du hanterar} other {# team du hanterar} }"
+      },
       "sections": {
-        "absenceBreakdown": "Frånvarofördelning",
-        "activityMetrics": "Aktivitetsmätvärden",
-        "coreCounts": "Kärnantal",
-        "managedScope": "Omfattning för hanterade team",
-        "systemHealth": "Systemhälsa"
+        "adoption": "Användningsuppföljning",
+        "attention": "Kräver åtgärd",
+        "thisMonth": "Denna månad",
+        "workforce": "Personal och konfigurering"
       },
       "title": "Statistik"
     },

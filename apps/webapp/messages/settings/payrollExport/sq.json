@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Konfiguroni lidhësit e eksportit të listëpagesave dhe përputhjen e llojeve të pagave",
+      "connectorsTitle": "Lidhësit e listëpagesave dhe llojet e pagave",
       "datev": {
         "beraternummer": "Numri i konsulentit",
         "beraternummerTooltip": "Numri juaj i konsulentit në DATEV (1-7 shifra)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Konfigurimi u ruajt",
         "title": "Të dhënat kryesore të DATEV"
       },
-      "description": "Eksportoni periudhat e punës në sistemet e pagave si DATEV ose Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday dhe API-ja e SuccessFactors nuk mbartin rimbursime shpenzimesh.",
         "codeLabel": "{line}, lloji i pagës {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Gama e datave",
         "description": "Eksportoni periudhat e punës dhe mungesat në formatin DATEV Lohn & Gehalt",
         "employees": "Punonjësit",
-        "employeesSelected": "{count} të përzgjedhur",
         "endDate": "Data e përfundimit",
         "error": "Eksportimi dështoi",
         "exportButtonDatev": "Eksporto në DATEV",
@@ -100,10 +100,13 @@
         "download": "Shkarko eksportin",
         "downloadError": "Marrja e URL-së së shkarkimit dështoi",
         "employees": "punonjës",
+        "includesSettledDays": "Ditët e llogaritura të përfshira",
+        "loadError": "Historiku i eksporteve nuk mund të ngarkohej.",
         "noExports": "Ende nuk ka eksporte",
         "noExportsHint": "Nisni një eksport të listëpagesave në skedën Eksporto. Eksportet e përfunduara shfaqen këtu për shkarkim.",
         "payrollRun": "{count, plural, one {Ekzekutimi i listëpagesës: # raport shpenzimesh} other {Ekzekutimi i listëpagesës: # raporte shpenzimesh}}",
         "periods": "periudha",
+        "settledDaysLeftOut": "{count, plural, one {# ditë e llogaritur e lënë jashtë} other {# ditë të llogaritura të lëna jashtë}}",
         "status": {
           "completed": "Përfunduar",
           "failed": "Dështuar",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Kategoria e punës"
       },
+      "openPayrollWorkspace": "Ekzekutoni eksportet në Listëpagesa",
       "personio": {
         "clientId": "ID-ja e klientit",
         "clientIdHelp": "Ndihmë për ID-në e klientit",
@@ -242,6 +246,9 @@
         "saveSuccess": "Konfigurimi u ruajt",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Destinacionet e listëpagesave"
+      },
       "specialCategory": {
         "overtime": "Orët shtesë"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Eksporto",
-        "history": "Historiku",
         "lexware": "Lexware",
         "mappings": "Llojet e pagave",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Eksportimi i listëpagesave",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "E konfiguruar",
+        "statusNeedsCredentials": "Kërkon kredenciale",
+        "statusNotConfigured": "E pakonfiguruar",
+        "successfactorsSubtitle": "API & CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Koha e skadimit të API-së (ms)",
         "batchSize": "Madhësia e grupit",
@@ -367,12 +382,12 @@
         "warning": "Paralajmërim"
       },
       "description": "Kontrolloni nëse një periudhë e listëpagesës është gati përpara se të eksportoni të dhënat e orarit, mungesave dhe listëpagesës.",
+      "loadError": "Kontrollet e gatishmërisë së listëpagesave të organizatës nuk mund të ngarkoheshin.",
       "openPayrollExport": "Hap eksportin e listëpagesës",
       "period": {
         "currentMonth": "Muaji aktual",
         "navLabel": "Periudha e listëpagesës",
         "previousMonth": "Muaji i kaluar",
-        "scope": "Periudha e listëpagesës: {period} (UTC)",
         "showMonth": "Shfaq {month}"
       },
       "status": {

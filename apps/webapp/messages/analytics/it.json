@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "visualizza analisi",
       "restrictedDescription": "L'analisi è disponibile solo per amministratori e manager.",
       "restrictedTitle": "Accesso limitato"
     },
     "common": {
       "days": "Giorni",
       "employee": "Dipendente",
-      "employees": "Dipendenti",
       "hours": "Ore",
       "loadingOrganizationSettings": "Caricamento impostazioni organizzazione prima di abilitare i preset.",
       "noDataAvailable": "Nessun dato disponibile",
@@ -17,17 +15,16 @@
       "overtimeHours": "Ore di straordinario",
       "team": "Team",
       "totalHours": "Ore totali",
-      "unavailable": "Non disponibile",
       "undertime": "Ore mancanti",
       "undertimeHours": "Ore di sottotempo"
     },
     "layout": {
       "description": "Approfondimenti completi sulle prestazioni del team, sulle ore di lavoro e sui modelli di assenza",
       "tabs": {
+        "absencesAndVacation": "Assenze e ferie",
         "overtimeBurnDown": "Riduzione straordinari",
         "overview": "Panoramica",
         "teamPerformance": "Prestazioni del team",
-        "vacationTrends": "Tendenze ferie",
         "workHours": "Ore di lavoro"
       },
       "title": "Analisi"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Impossibile caricare alcuni dati analitici. I valori caricati in precedenza, se mostrati, potrebbero non essere aggiornati."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Delle richieste decise approvate",
-          "title": "Tasso di approvazione",
-          "unavailableDescription": "Impossibile caricare le analisi delle approvazioni"
-        },
-        "avgWorkHours": {
-          "description": "Per dipendente nel periodo selezionato",
-          "title": "Ore lavorative medie"
-        },
-        "totalAbsenceDays": {
-          "description": "Giorni totali nel periodo selezionato",
-          "title": "Giorni totali di assenza"
-        },
-        "totalEmployees": {
-          "description": "Dipendenti attivi nell'organizzazione",
-          "title": "Dipendenti totali"
-        }
-      },
       "loadingLabel": "Caricamento dati analitici",
-      "refreshing": "Aggiornamento dei dati analitici…",
-      "workHoursByTeam": {
-        "description": "Ore lavorative totali registrate per team",
-        "title": "Ore lavorative per team"
-      }
+      "refreshing": "Aggiornamento dei dati analitici…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Media per dipendente",

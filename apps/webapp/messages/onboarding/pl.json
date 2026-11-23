@@ -152,7 +152,6 @@
       "vacationPolicy": "Urlop",
       "welcome": "Witamy",
       "wellness": "Dobrostan",
-      "workSchedule": "Harmonogram",
       "workTemplates": "Szablony"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Skonfiguruj przypomnienia o piciu wody, aby zachować zdrowie podczas dnia pracy. Będziesz otrzymywać delikatne powiadomienia o piciu wody, gdy będziesz w pracy.",
       "success": "Przypomnienie o piciu wody włączone!",
       "title": "Zadbaj o nawodnienie"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Nie udało się sprawdzić dostępu do harmonogramu pracy. Przechodzenie do kolejnego dostępnego kroku.",
-      "checkingAccess": "Sprawdzanie dostępu do harmonogramu pracy",
-      "classification": "Klasyfikacja pracy",
-      "classificationDesc": "Jak chcesz śledzić swoje godziny pracy.",
-      "continue": "Kontynuuj",
-      "daily": "Dziennie",
-      "error": "Nie udało się ustawić harmonogramu pracy",
-      "hoursPerWeek": "Godziny tygodniowo",
-      "hoursPerWeekDesc": "Typowy pełny etat to 40 godzin tygodniowo.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Zasady pracy możesz przejrzeć w ustawieniach po zakończeniu wdrożenia.",
-      "monthly": "Miesięcznie",
-      "policyContext": "Kontynuowanie powoduje zapisanie postępów wdrożenia. Zasady pracy w organizacji pozostają w mocy; wprowadzone tutaj godziny i klasyfikacja nie zostaną zapisane w zasadach pracy.",
-      "previousAttempt": "Poprzednie żądanie jest wciąż przetwarzane. Spróbuj ponownie, aby kontynuować.",
-      "progressSaved": "Postęp wdrożenia został zapisany.",
-      "scheduleTitle": "Harmonogram pracy",
-      "selectClassification": "Wybierz klasyfikację",
-      "setupContext": "Przejrzyj tygodniowy wymiar godzin oraz sposób łącznego rejestrowania czasu pracy.",
-      "skip": "Pomiń na razie",
-      "skipError": "Nie udało się pominąć konfiguracji harmonogramu pracy",
-      "subtitle": "Zdefiniuj swoje godziny pracy, aby ułatwić śledzenie czasu i dokładne zarządzanie nieobecnościami.",
-      "title": "Ustaw swój harmonogram pracy",
-      "validation": {
-        "hoursNegative": "Liczba godzin nie może być ujemna",
-        "hoursTooMany": "Tydzień ma maksymalnie 168 godzin"
-      },
-      "weekly": "Tygodniowo"
     },
     "workTemplates": {
       "cardDesc": "Utwórz domyślny harmonogram pracy. Możesz dodać więcej szablonów później w ustawieniach.",

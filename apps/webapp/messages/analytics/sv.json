@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "visa analys",
       "restrictedDescription": "Analys är endast tillgänglig för administratörer och chefer.",
       "restrictedTitle": "Begränsad åtkomst"
     },
     "common": {
       "days": "Dagar",
       "employee": "Anställd",
-      "employees": "Anställda",
       "hours": "Timmar",
       "loadingOrganizationSettings": "Läser in organisationsinställningar innan förinställningar aktiveras.",
       "noDataAvailable": "Inga data tillgängliga",
@@ -17,17 +15,16 @@
       "overtimeHours": "Övertidstimmar",
       "team": "Team",
       "totalHours": "Totalt antal timmar",
-      "unavailable": "Ej tillgänglig",
       "undertime": "Undertid",
       "undertimeHours": "Undertidstimmar"
     },
     "layout": {
       "description": "Omfattande insikter om teamprestationer, arbetstimmar och frånvaromönster",
       "tabs": {
+        "absencesAndVacation": "Frånvaro & semester",
         "overtimeBurnDown": "Övertidsavveckling",
         "overview": "Översikt",
         "teamPerformance": "Teamresultat",
-        "vacationTrends": "Semestertrender",
         "workHours": "Arbetstid"
       },
       "title": "Analys"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Viss analysdata kunde inte läsas in. Tidigare inlästa värden, om de visas, kan vara inaktuella."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Av beslutade förfrågningar godkända",
-          "title": "Godkännandegrad",
-          "unavailableDescription": "Godkännandeanalys kunde inte läsas in"
-        },
-        "avgWorkHours": {
-          "description": "Per anställd under vald period",
-          "title": "Genomsnittliga arbetstimmar"
-        },
-        "totalAbsenceDays": {
-          "description": "Totalt antal dagar under vald period",
-          "title": "Totalt antal frånvarodagar"
-        },
-        "totalEmployees": {
-          "description": "Aktiva anställda i organisationen",
-          "title": "Totalt antal anställda"
-        }
-      },
       "loadingLabel": "Läser in analysdata",
-      "refreshing": "Uppdaterar analysdata…",
-      "workHoursByTeam": {
-        "description": "Totalt antal loggade arbetstimmar per team",
-        "title": "Arbetstimmar per team"
-      }
+      "refreshing": "Uppdaterar analysdata…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Genomsnitt per anställd",

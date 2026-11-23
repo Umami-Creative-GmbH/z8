@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "просмотреть аналитику",
       "restrictedDescription": "Аналитика доступна только администраторам и менеджерам.",
       "restrictedTitle": "Доступ ограничен"
     },
     "common": {
       "days": "Дни",
       "employee": "Сотрудник",
-      "employees": "Сотрудники",
       "hours": "Часы",
       "loadingOrganizationSettings": "Загрузка настроек организации перед включением предустановок.",
       "noDataAvailable": "Нет данных",
@@ -17,17 +15,16 @@
       "overtimeHours": "Сверхурочные часы",
       "team": "Команда",
       "totalHours": "Всего часов",
-      "unavailable": "Недоступно",
       "undertime": "Недоработка",
       "undertimeHours": "Часы недоработки"
     },
     "layout": {
       "description": "Подробная аналитика эффективности команд, рабочих часов и структуры отсутствий",
       "tabs": {
+        "absencesAndVacation": "Отсутствия и отпуск",
         "overtimeBurnDown": "Снижение сверхурочных",
         "overview": "Обзор",
         "teamPerformance": "Эффективность команды",
-        "vacationTrends": "Тенденции отпусков",
         "workHours": "Рабочие часы"
       },
       "title": "Аналитика"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Некоторые аналитические данные не удалось загрузить. Отображаемые ранее данные могут быть устаревшими."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Одобрено из рассмотренных запросов",
-          "title": "Процент одобрения",
-          "unavailableDescription": "Не удалось загрузить аналитику согласований"
-        },
-        "avgWorkHours": {
-          "description": "На сотрудника за выбранный период",
-          "title": "Ср. рабочие часы"
-        },
-        "totalAbsenceDays": {
-          "description": "Всего дней за выбранный период",
-          "title": "Всего дней отсутствия"
-        },
-        "totalEmployees": {
-          "description": "Активные сотрудники в организации",
-          "title": "Всего сотрудников"
-        }
-      },
       "loadingLabel": "Загрузка аналитических данных",
-      "refreshing": "Обновление аналитики…",
-      "workHoursByTeam": {
-        "description": "Всего учтенных рабочих часов по командам",
-        "title": "Рабочие часы по командам"
-      }
+      "refreshing": "Обновление аналитики…"
     },
     "teamPerformance": {
       "avgPerEmployee": "В среднем на сотрудника",

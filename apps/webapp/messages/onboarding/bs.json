@@ -152,7 +152,6 @@
       "vacationPolicy": "Godišnji odmor",
       "welcome": "Dobrodošli",
       "wellness": "Wellness",
-      "workSchedule": "Raspored",
       "workTemplates": "Šabloni"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Postavite podsjetnike za vodu kako biste ostali zdravi tokom radnog dana. Primat ćete blaga obavještenja da pijete vodu dok ste prijavljeni na radu.",
       "success": "Podsjetnik za vodu je omogućen!",
       "title": "Ostanite hidrirani"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Pristup radnom rasporedu nije mogao biti provjeren. Nastavlja se na sljedeći dostupni korak.",
-      "checkingAccess": "Provjera pristupa radnom rasporedu",
-      "classification": "Klasifikacija rada",
-      "classificationDesc": "Kako želite pratiti svoje radno vrijeme.",
-      "continue": "Nastavi",
-      "daily": "Dnevno",
-      "error": "Postavljanje radnog rasporeda nije uspjelo",
-      "hoursPerWeek": "Sati sedmično",
-      "hoursPerWeekDesc": "Uobičajeno puno radno vrijeme je 40 sati sedmično.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Pravila rada možete ponovo pregledati u postavkama nakon početnog postavljanja.",
-      "monthly": "Mjesečno",
-      "policyContext": "Nastavkom se čuva vaš napredak početnog postavljanja. Pravila rada organizacije ostaju na snazi; sati i klasifikacija uneseni ovdje ne čuvaju se u pravilo rada.",
-      "previousAttempt": "Prethodni zahtjev se još uvijek završava. Pokušajte ponovo za nastavak.",
-      "progressSaved": "Napredak početnog postavljanja je sačuvan.",
-      "scheduleTitle": "Raspored rada",
-      "selectClassification": "Odaberite klasifikaciju",
-      "setupContext": "Pregledajte sedmične sate i kako se radni sati prate zajedno.",
-      "skip": "Preskoči za sada",
-      "skipError": "Neuspjelo preskakanje podešavanja rasporeda rada",
-      "subtitle": "Definišite svoje radno vrijeme kako biste tačno pratili vrijeme i upravljali odsustvima.",
-      "title": "Postavite svoj raspored rada",
-      "validation": {
-        "hoursNegative": "Broj sati ne može biti negativan",
-        "hoursTooMany": "Sedmica može imati najviše 168 sati"
-      },
-      "weekly": "Sedmično"
     },
     "workTemplates": {
       "cardDesc": "Kreirajte zadani raspored rada. Možete dodati više šablona kasnije u postavkama.",

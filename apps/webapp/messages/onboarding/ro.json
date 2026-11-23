@@ -152,7 +152,6 @@
       "vacationPolicy": "Concediu",
       "welcome": "Bun venit",
       "wellness": "Wellness",
-      "workSchedule": "Program",
       "workTemplates": "Șabloane"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Configurează mementouri pentru apă pentru a te menține sănătos în timpul zilei de lucru. Vei primi notificări discrete pentru a bea apă cât timp ești pontat.",
       "success": "Mementoul pentru apă a fost activat!",
       "title": "Rămâi hidratat"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Accesul la programul de lucru nu a putut fi verificat. Se continuă cu următorul pas disponibil.",
-      "checkingAccess": "Se verifică accesul la programul de lucru",
-      "classification": "Clasificarea activității",
-      "classificationDesc": "Modul în care dorești să îți înregistrezi orele de lucru.",
-      "continue": "Continuă",
-      "daily": "Zilnic",
-      "error": "Nu s-a putut stabili programul de lucru",
-      "hoursPerWeek": "Ore pe săptămână",
-      "hoursPerWeekDesc": "Un program normal cu normă întreagă este de 40 de ore pe săptămână.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Puteți reveni la politicile de lucru în setări după integrare.",
-      "monthly": "Lunar",
-      "policyContext": "Continuarea salvează progresul integrării. Politicile de lucru ale organizației rămân în vigoare; orele și clasificarea introduse aici nu sunt salvate într-o politică de lucru.",
-      "previousAttempt": "O solicitare anterioară este încă în curs de finalizare. Reîncercați pentru a continua.",
-      "progressSaved": "Progresul integrării a fost salvat.",
-      "scheduleTitle": "Program de lucru",
-      "selectClassification": "Selectați clasificarea",
-      "setupContext": "Examinați orele săptămânale și modul în care sunt monitorizate orele de lucru.",
-      "skip": "Omiteți deocamdată",
-      "skipError": "Nu s-a putut omite configurarea programului de lucru",
-      "subtitle": "Definiți-vă orele de lucru pentru a urmări timpul și a gestiona absențele cu precizie.",
-      "title": "Setați-vă programul de lucru",
-      "validation": {
-        "hoursNegative": "Numărul de ore nu poate fi negativ",
-        "hoursTooMany": "O săptămână are cel mult 168 de ore"
-      },
-      "weekly": "Săptămânal"
     },
     "workTemplates": {
       "cardDesc": "Creați un program de lucru implicit. Puteți adăuga mai multe șabloane ulterior în setări.",

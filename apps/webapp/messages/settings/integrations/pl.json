@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "Identyfikator aplikacji (Application ID)",
+      "botToken": "Token bota",
+      "botTokenHelp": "Przechowywany w postaci zaszyfrowanej w usłudze Vault i używany do weryfikacji oraz obsługi bota.",
+      "commandsRegistrationFailed": "Bot Discord został połączony, ale polecenia z ukośnikiem nie mogły zostać automatycznie zarejestrowane. Sprawdź uprawnienia bota, a następnie odłącz go i połącz ponownie, aby spróbować jeszcze raz.",
+      "connect": "Połącz bota Discord",
+      "connectDescription": "Wprowadź dane uwierzytelniające aplikacji Discord z portalu Discord Developer Portal.",
+      "connected": "Pomyślnie połączono bota Discord",
+      "connectError": "Nie udało się połączyć bota Discord",
+      "copied": "Skopiowano",
+      "copy": "Kopiuj",
+      "copyInteractionUrl": "Kopiuj adres URL punktu końcowego interakcji",
+      "copyInteractionUrlFailed": "Nie udało się skopiować adresu URL punktu końcowego interakcji. Zaznacz go i skopiuj ręcznie.",
+      "disconnect": "Odłącz",
+      "disconnectConfirm": {
+        "description": "Spowoduje to usunięcie zapisanego tokena bota oraz wyłączenie powiadomień Discord i poleceń z ukośnikiem dla Twojej organizacji.",
+        "title": "Odłączyć bota Discord?"
+      },
+      "disconnected": "Bot Discord został odłączony",
+      "disconnectError": "Nie udało się odłączyć bota Discord",
+      "errors": {
+        "applicationIdMismatch": "Identyfikator aplikacji nie pasuje do podanego tokena bota.",
+        "invalidBotToken": "Nieprawidłowy token bota. Sprawdź dane uwierzytelniające bota Discord i spróbuj ponownie.",
+        "publicKeyMismatch": "Klucz publiczny nie pasuje do aplikacji Discord."
+      },
+      "interactionEndpointHelp": "Wklej ten adres URL w polu Interactions Endpoint URL w swojej aplikacji w Discord Developer Portal.",
+      "interactionEndpointUrl": "Adres URL punktu końcowego interakcji",
+      "interactionUrlCopied": "Skopiowano adres URL punktu końcowego interakcji",
+      "publicKey": "Klucz publiczny",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "Identyfikator aplikacji może zawierać wyłącznie cyfry.",
+        "applicationIdRequired": "Identyfikator aplikacji jest wymagany.",
+        "botTokenRequired": "Token bota jest wymagany.",
+        "publicKeyInvalid": "Klucz publiczny musi być 64-znakowym ciągiem szesnastkowym.",
+        "publicKeyRequired": "Klucz publiczny jest wymagany."
+      }
     },
     "slack": {
       "title": "Slack"

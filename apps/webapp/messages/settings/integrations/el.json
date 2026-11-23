@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID εφαρμογής",
+      "botToken": "Token bot",
+      "botTokenHelp": "Αποθηκεύεται κρυπτογραφημένο στο Vault και χρησιμοποιείται για την επαλήθευση και τη λειτουργία του bot σας.",
+      "commandsRegistrationFailed": "Το bot Discord συνδέθηκε, αλλά δεν ήταν δυνατή η αυτόματη καταχώριση των εντολών καθέτου. Ελέγξτε τα δικαιώματα του bot σας, έπειτα αποσυνδέστε και συνδέστε ξανά το bot για να προσπαθήσετε εκ νέου.",
+      "connect": "Σύνδεση bot Discord",
+      "connectDescription": "Εισαγάγετε τα διαπιστευτήρια από την εφαρμογή Discord σας στο Discord Developer Portal.",
+      "connected": "Το bot Discord συνδέθηκε επιτυχώς",
+      "connectError": "Αποτυχία σύνδεσης του bot Discord",
+      "copied": "Αντιγράφηκε",
+      "copy": "Αντιγραφή",
+      "copyInteractionUrl": "Αντιγραφή URL τελικού σημείου αλληλεπίδρασης",
+      "copyInteractionUrlFailed": "Δεν ήταν δυνατή η αντιγραφή του URL τελικού σημείου αλληλεπίδρασης. Επιλέξτε το και αντιγράψτε το μη αυτόματα.",
+      "disconnect": "Αποσύνδεση",
+      "disconnectConfirm": {
+        "description": "Αυτό θα καταργήσει το αποθηκευμένο token του bot και θα απενεργοποιήσει τις ειδοποιήσεις Discord και τις εντολές καθέτου για τον οργανισμό σας.",
+        "title": "Αποσύνδεση του bot Discord;"
+      },
+      "disconnected": "Το bot Discord αποσυνδέθηκε",
+      "disconnectError": "Αποτυχία αποσύνδεσης του bot Discord",
+      "errors": {
+        "applicationIdMismatch": "Το ID εφαρμογής δεν αντιστοιχεί στο παρεχόμενο token του bot.",
+        "invalidBotToken": "Μη έγκυρο token bot. Ελέγξτε τα διαπιστευτήρια του bot Discord και δοκιμάστε ξανά.",
+        "publicKeyMismatch": "Το δημόσιο κλειδί δεν αντιστοιχεί στην εφαρμογή Discord."
+      },
+      "interactionEndpointHelp": "Επικολλήστε αυτό το URL στο πεδίο Interactions Endpoint URL στην εφαρμογή σας στο Discord Developer Portal.",
+      "interactionEndpointUrl": "URL τελικού σημείου αλληλεπίδρασης",
+      "interactionUrlCopied": "Το URL τελικού σημείου αλληλεπίδρασης αντιγράφηκε",
+      "publicKey": "Δημόσιο κλειδί",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "Το ID εφαρμογής πρέπει να περιέχει μόνο ψηφία.",
+        "applicationIdRequired": "Το ID εφαρμογής είναι υποχρεωτικό.",
+        "botTokenRequired": "Το token του bot είναι υποχρεωτικό.",
+        "publicKeyInvalid": "Το δημόσιο κλειδί πρέπει να είναι μια δεκαεξαδική συμβολοσειρά 64 χαρακτήρων.",
+        "publicKeyRequired": "Το δημόσιο κλειδί είναι υποχρεωτικό."
+      }
     },
     "slack": {
       "title": "Slack"

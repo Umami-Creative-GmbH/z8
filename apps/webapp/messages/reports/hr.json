@@ -440,6 +440,11 @@
       "workDays": "{count} radnih dana",
       "workedFromHome": "{hours} h odrađeno od kuće"
     },
+    "tabs": {
+      "projects": "Projekti",
+      "timeAndAbsences": "Vrijeme i odsutnosti",
+      "vehicles": "Vozila"
+    },
     "title": "Izvješća o zaposlenicima",
     "toast": {
       "failedGenerate": "Generiranje izvještaja nije uspjelo",

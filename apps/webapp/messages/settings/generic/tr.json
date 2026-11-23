@@ -334,10 +334,12 @@
           "unknownCustomer": "Bilinmeyen müşteri",
           "unknownProject": "Bilinmeyen proje"
         },
+        "configureSettings": "Faturalandırılabilir Süre ayarları",
         "confirmed": "Fatura taslağı oluşturuldu",
         "csv": {
           "download": "Mutabakat CSV dosyasını indir"
         },
+        "description": "Faturalandırılabilir çalışmalardan fatura taslakları oluşturun, araç durumunu kontrol edin, zaman çizelgelerini indirin ve faturalandırma sonrası değişiklikleri çözüme kavuşturun.",
         "detail": {
           "checking": "Taslak araçta kontrol ediliyor…",
           "gone": "Muhasebe aracında artık bu taslak bulunmuyor. Kasıtlı olarak silindiyse, çalışmanın tekrar aktarılabilmesi için aktarımı serbest bırakın.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Muhasebe",
         "costRates": "Maliyet ücretleri",
-        "currency": "Faturalandırılabilir para birimi",
         "handOff": "Devir",
         "label": "Faturalandırılabilir Zaman ayarları",
         "rates": "Faturalandırılabilir ücretler"
@@ -637,6 +638,7 @@
         "teams": "Ekipler"
       },
       "scopeLabel": "Şunun için kapat",
+      "selectEmployees": "Çalışanları seçin",
       "teamNotFound": "Bu ekip artık mevcut değil.",
       "title": "Kapatılan aylar",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Çalışanlarda ara…",
         "selected": "Seçilen ekipler ve çalışanlar",
         "selectedHelp": "Seçilen ekiplerin üyelerini ve seçilen çalışanları kapsar.",
+        "selectEmployees": "Çalışanları seçin",
         "teams": "Ekipler",
         "title": "Ekipman sorumluları"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Bu öge açıkça onaylanana kadar yeni çıkışlara karşı engellenecektir. Zimmet ve teslim alma kanıtları değişmeden kalır.",
         "unchanged": "Bu kullanılabilirlik durumu zaten kayıtlı. Geçmişini incelemek için ekipmanı yeniden yükleyin."
       },
-      "reload": "Yapılandırmayı yeniden yükle",
       "retention": {
         "activity": "En son etkinlik",
         "badgeDue": "Temizleme bekleniyor",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Hesap",
       "data": "Veri",
-      "integrations": "Entegrasyonlar",
-      "notifications": "Bildirimler",
+      "integrationsChannels": "Entegrasyonlar ve Kanallar",
       "organization": "Kuruluş"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Hiçbir izin kategorisi gerektirmediği için izin talepleri onay gerektirmez.",
           "skipNoChangePolicy": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Herhangi bir değişiklik ilkesi geçerli olmadığından # çalışan için onay gerekmez.} }",
           "skipOwnApprover": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: # çalışan kendi onaylayıcısıdır.} }",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Bunları karara bağlayabilecek tek kişi # çalışan olduğundan kendi talepleri kendi onayını bekler.} other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Bunları karara bağlayabilecek tek kişi # çalışan olduğundan kendi talepleri kendi onaylarını bekler.}}",
           "skipOwnerAdmin": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Şirket sahipleri ve yöneticiler kendi çalışmalarını doğrudan kaydettiğinden # çalışan için onay gerekmez.} }",
           "skipOwnerSelfApproval": "{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Başka kimse onaylayamadığı için şirket sahibi kendi raporlarını onaylar.",
           "skipTrustMode": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Değişiklik ilkeleri güven modunda olduğu için # çalışan onay gerektirmez.} }",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Hiçbir devamsızlık kategorisi onay gerektirmez.",
             "noChangePolicy": "Onlar için geçerli bir değişiklik politikası yok.",
             "ownApprover": "Kendilerinin onaylayıcısı oldukları için talepleri anında tamamlanır.",
-            "ownDecider": "Vardiya taleplerini karara bağlayabilecek tek yönetici veya admin oldukları için, kendi talepleri kendileri onaylayana kadar beklemede kalır.",
             "ownerAdmin": "Sahipler ve yöneticiler kendi çalışmalarını doğrudan kaydeder.",
             "ownerSelfApproval": "Kuruluş sahibi olarak, başka hiç kimse onaylayamadığı için kendi raporlarını kendileri onaylar.",
             "trustMode": "Değişiklik politikaları güven modunda."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "Bu ekibin kısa bir açıklaması",
           "fallbackManagerHelp": "Bir ekip üyesinin doğrudan yöneticisi olmadığında onaylar için kullanılır.",
           "fallbackManagerLabel": "Yedek Yönetici",
-          "fallbackManagerPlaceholder": "Bir yedek yönetici seçin",
           "nameLabel": "Takım Adı",
           "namePlaceholder": "Mühendislik, Satış, Pazarlama...",
+          "nameRequired": "Ekip adı gereklidir",
           "noFallbackManager": "Yedek yönetici yok",
           "submit": "Takım Oluştur",
           "title": "Takım Oluştur"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Bir proje veya müşteri raporu paylaşan tüm bağlantıları görün ve iptal edin",
       "pageDescription": "Z8 dışındaki birine bir proje veya müşteri raporunun sabitlenmiş anlık görüntüsünü gösteren bağlantılar. Bir bağlantıyı iptal etmek, çalışmasını anında durdurur ve anlık görüntüsünü siler.",
+      "projectsDisabledNotice": {
+        "description": "Projeler şu anda bu kuruluş için kapalı olduğundan yeni rapor paylaşım bağlantıları oluşturulamaz. Mevcut bağlantıları buradan incelemeye ve iptal etmeye devam edebilirsiniz.",
+        "title": "Projeler kapalı"
+      },
       "title": "Rapor Paylaşım Bağlantıları"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Beklenmedik bir hata oluştu"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Aktif Oturumlar",
-        "activeSessionsDescription": "Mevcut veritabanı oturumları",
-        "approvalRequests": "Onay İstekleri",
-        "approvedAbsences": "Onaylanmış İzinler",
+      "allClear": "Her şey yolunda: Şu anda ilgilenmeniz gereken bir şey yok.",
+      "groupLoadError": "Bu veriler yüklenemedi. Tekrar denemek için sayfayı yeniden yükleyin.",
+      "kpi": {
+        "absenceDays": "İzin günleri",
+        "clockedIn": "Şu anda mesaide",
+        "clockedInCaption": "Aktif çalışması olan çalışanlar",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Tamamlanan çalışma dönemleri",
+        "daysUnit": "gün",
         "employees": "Çalışanlar",
-        "employeesDescription": "{active} aktif, {inactive} pasif",
-        "pendingAbsences": "Bekleyen İzinler",
-        "pendingCount": "{count} bekleyen",
-        "rejectedAbsences": "Reddedilen İzinler",
+        "employeesCaption": "Bu ay +{joined} katıldı, −{left} ayrıldı",
+        "failed": "Yüklenemedi",
+        "hoursUnit": "sa",
+        "hoursWorked": "Çalışılan saat",
+        "incompleteSetup": "Eksik kurulum",
+        "incompleteSetupCaption": "Birincil ekibi veya çalışma politikası olmayan çalışanlar",
+        "incompleteSetupManagerCaption": "Çalışma politikası olmayan çalışanlar",
+        "manualEntryShare": "Manuel giriş oranı",
+        "manualEntryShareCaption": "{total} saatin {manual} saati manuel giriş olarak kaydedildi",
+        "manualEntryShareNone": "Bu ay henüz tamamlanmış bir çalışma yok",
+        "openInbox": "Gelen kutusunu aç",
+        "openPayrollReadiness": "Bordro hazırlığında inceleyin",
+        "openViolations": "Açık politika ihlalleri",
+        "openViolationsCaption": "Bu ay henüz onaylanmadı",
+        "openWorkPolicies": "Çalışma politikalarında inceleyin",
+        "pendingApprovals": "Bekleyen onaylar",
+        "pendingApprovalsCaption": "{count, plural, =0 {İzin talebi yok} other {# izin talebi dahil} }",
+        "staleLiveWork": "Askıda kalan canlı çalışma",
+        "staleLiveWorkCaption": "24 saatten uzun süredir mesaide olan çalışanlar",
         "teams": "Ekipler",
-        "thisMonth": "Bu Ay",
-        "timeEntries": "Zaman kayıtları",
-        "totalAbsences": "Toplam İzinler",
-        "totalTimeEntries": "Toplam Zaman Kaydı",
-        "vsLastMonth": "geçen aya göre"
+        "trackingCoverage": "Takip kapsamı",
+        "trackingCoverageCaption": "Gerekli süresi olan {expected} çalışandan {tracked} kişi çalışma kaydetti",
+        "trackingCoverageNone": "Bu ay henüz kimse için gerekli süre bulunmuyor",
+        "trackingCoverageProgress": "Bu ay çalışma kaydeden çalışanlar",
+        "usersSignedIn": "Oturum açan kullanıcılar",
+        "usersSignedInCaption": "Süresi dolmamış oturumu olan tekil kullanıcılar",
+        "vsComparison": "{change} ile {days} karşılaştırması"
       },
-      "description": "Örneğinizle ilgili istatistikleri ve metrikleri görüntüleyin",
       "lastUpdated": "Son güncelleme",
       "loadError": "İstatistikler yüklenemedi",
       "loadErrorRetry": "Tekrar denemek için sayfayı yeniden yükleyin.",
-      "managerDescription": "Yönettiğiniz ekipler için salt okunur analizleri inceleyin.",
+      "scope": {
+        "organization": "Tüm kuruluş",
+        "teams": "{count, plural, =0 {Yönettiğiniz ekip yok} other {Yönettiğiniz # ekip} }"
+      },
       "sections": {
-        "absenceBreakdown": "İzin Dağılımı",
-        "activityMetrics": "Aktivite Metrikleri",
-        "coreCounts": "Temel Sayımlar",
-        "managedScope": "Yönetilen Ekip Kapsamı",
-        "systemHealth": "Sistem Sağlığı"
+        "adoption": "Benimseme takibi",
+        "attention": "İlgilenilmesi gerekiyor",
+        "thisMonth": "Bu ay",
+        "workforce": "İş gücü ve kurulum"
       },
       "title": "İstatistikler"
     },

@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Konfigurišite konektore za izvoz obračuna plata i mapiranja vrsta plata",
+      "connectorsTitle": "Konektori za obračun plata i vrste plata",
       "datev": {
         "beraternummer": "Broj konsultanta",
         "beraternummerTooltip": "Vaš DATEV broj konsultanta (1-7 cifara)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Konfiguracija je sačuvana",
         "title": "DATEV matični podaci"
       },
-      "description": "Izvezite periode rada u sisteme za obračun plata kao što su DATEV ili Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday i SuccessFactors API ne prenose nadoknade troškova.",
         "codeLabel": "{line}, {format} vrsta plate",
@@ -58,7 +59,6 @@
         "dateRange": "Raspon datuma",
         "description": "Izvezite periode rada i odsustva u format DATEV Lohn & Gehalt",
         "employees": "Zaposlenici",
-        "employeesSelected": "{count} odabrano",
         "endDate": "Datum završetka",
         "error": "Izvoz nije uspio",
         "exportButtonDatev": "Izvezi u DATEV",
@@ -100,10 +100,13 @@
         "download": "Preuzmi izvoz",
         "downloadError": "Nije uspjelo dobavljanje URL-a za preuzimanje",
         "employees": "zaposlenici",
+        "includesSettledDays": "Uključeni obračunati dani",
+        "loadError": "Historija izvoza se nije mogla učitati.",
         "noExports": "Još nema izvoza",
         "noExportsHint": "Pokrenite izvoz obračuna plata na kartici Izvoz. Završeni izvozi će se pojaviti ovdje za preuzimanje.",
         "payrollRun": "{count, plural, one {Obračun plata: # izvještaj o troškovima} other {Obračun plata: # izvještaja o troškovima}}",
         "periods": "periodi",
+        "settledDaysLeftOut": "{count, plural, one {# obračunati dan je izostavljen} few {# obračunata dana su izostavljena} other {# obračunatih dana je izostavljeno}}",
         "status": {
           "completed": "Završeno",
           "failed": "Neuspjelo",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Kategorija rada"
       },
+      "openPayrollWorkspace": "Pokrenite izvoze u Obračunu plata",
       "personio": {
         "clientId": "ID klijenta",
         "clientIdHelp": "Pomoć za ID klijenta",
@@ -242,6 +246,9 @@
         "saveSuccess": "Konfiguracija sačuvana",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Odredišta za obračun plata"
+      },
       "specialCategory": {
         "overtime": "Prekovremeni rad"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Izvoz",
-        "history": "Historija",
         "lexware": "Lexware",
         "mappings": "Vrste plata",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Izvoz obračuna plata",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Konfigurisano",
+        "statusNeedsCredentials": "Potrebni akreditivi",
+        "statusNotConfigured": "Nije konfigurisano",
+        "successfactorsSubtitle": "API i CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Vremensko ograničenje API-ja (ms)",
         "batchSize": "Veličina serije",
@@ -367,12 +382,12 @@
         "warning": "Upozorenje"
       },
       "description": "Provjerite je li obračunski period spreman prije izvoza podataka o radnom vremenu, odsustvima i platama.",
+      "loadError": "Provjere spremnosti organizacije za obračun plata nisu se mogle učitati.",
       "openPayrollExport": "Otvorite izvoz obračuna plata",
       "period": {
         "currentMonth": "Tekući mjesec",
         "navLabel": "Obračunski period",
         "previousMonth": "Prethodni mjesec",
-        "scope": "Obračunski period: {period} (UTC)",
         "showMonth": "Prikaži {month}"
       },
       "status": {

@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Μια σύντομη περιγραφή αυτής της ομάδας",
         "fallbackManagerHelp": "Χρησιμοποιείται για εγκρίσεις όταν ένα μέλος της ομάδας δεν έχει άμεσο προϊστάμενο.",
         "fallbackManagerLabel": "Εφεδρικός Διαχειριστής",
-        "fallbackManagerPlaceholder": "Επιλέξτε έναν εφεδρικό διαχειριστή",
         "nameLabel": "Όνομα Ομάδας",
         "namePlaceholder": "Μηχανικοί, Πωλήσεις, Μάρκετινγκ...",
         "noFallbackManager": "Κανένας εφεδρικός διαχειριστής",

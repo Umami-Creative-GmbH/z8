@@ -105,7 +105,6 @@
     },
     "deputy": {
       "away": "Uzakta {dates}",
-      "awayOption": "{name} · Uzakta {dates}",
       "awayWarning": "{name} bu tarihlerde uzakta. Yine de kendisini seçebilirsiniz.",
       "changeAction": "Vekili değiştir",
       "changed": "Vekil kaydedildi",

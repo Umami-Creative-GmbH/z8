@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Краткое описание этой команды",
         "fallbackManagerHelp": "Используется для согласований, если у участника команды нет прямого руководителя.",
         "fallbackManagerLabel": "Резервный руководитель",
-        "fallbackManagerPlaceholder": "Выберите резервного руководителя",
         "nameLabel": "Название команды",
         "namePlaceholder": "Разработка, продажи, маркетинг...",
         "noFallbackManager": "Нет резервного руководителя",

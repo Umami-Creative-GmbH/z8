@@ -73,6 +73,11 @@
     "portalOpenFailed": "Fehler beim Öffnen des Abrechnungsportals",
     "priceSeatMonth": "€{price}/Sitzplatz/Monat",
     "priceSeatMonthYearly": "€{price}/Sitzplatz/Monat (jährlich abgerechnet)",
+    "recovery": {
+      "billingAndSubscription": "Abrechnung & Abonnement",
+      "navigationLabel": "Navigation zur Abrechnungswiederherstellung",
+      "suspensionNotice": "Sperrhinweis"
+    },
     "seatBilledAnnually": "€{price}/Sitzplatz jährlich abgerechnet",
     "seatLines": {
       "full": "Vollzugriff-Plätze",

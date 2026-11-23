@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "zobacz analitykę",
       "restrictedDescription": "Analityka jest dostępna tylko dla administratorów i menedżerów.",
       "restrictedTitle": "Dostęp ograniczony"
     },
     "common": {
       "days": "Dni",
       "employee": "Pracownik",
-      "employees": "Pracownicy",
       "hours": "Godziny",
       "loadingOrganizationSettings": "Ładowanie ustawień organizacji przed włączeniem ustawień wstępnych.",
       "noDataAvailable": "Brak dostępnych danych",
@@ -17,17 +15,16 @@
       "overtimeHours": "Godziny nadliczbowe",
       "team": "Zespół",
       "totalHours": "Suma godzin",
-      "unavailable": "Niedostępne",
       "undertime": "Niedoczas",
       "undertimeHours": "Godziny niedoczasu"
     },
     "layout": {
       "description": "Kompleksowy wgląd w wydajność zespołu, godziny pracy i wzorce absencji",
       "tabs": {
+        "absencesAndVacation": "Nieobecności i urlopy",
         "overtimeBurnDown": "Redukcja nadgodzin",
         "overview": "Przegląd",
         "teamPerformance": "Wydajność zespołu",
-        "vacationTrends": "Trendy urlopowe",
         "workHours": "Godziny pracy"
       },
       "title": "Analityka"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Nie udało się załadować części danych analitycznych. Poprzednio załadowane wartości, jeśli są wyświetlane, mogą być nieaktualne."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Z rozpatrzonych wniosków zatwierdzone",
-          "title": "Wskaźnik zatwierdzeń",
-          "unavailableDescription": "Nie udało się załadować analityki zatwierdzeń"
-        },
-        "avgWorkHours": {
-          "description": "Na pracownika w wybranym okresie",
-          "title": "Śr. godziny pracy"
-        },
-        "totalAbsenceDays": {
-          "description": "Łączna liczba dni w wybranym okresie",
-          "title": "Łączna liczba dni nieobecności"
-        },
-        "totalEmployees": {
-          "description": "Aktywni pracownicy w organizacji",
-          "title": "Łączna liczba pracowników"
-        }
-      },
       "loadingLabel": "Ładowanie danych analitycznych",
-      "refreshing": "Odświeżanie analityki…",
-      "workHoursByTeam": {
-        "description": "Łączna liczba godzin pracy zarejestrowanych na zespół",
-        "title": "Godziny pracy według zespołu"
-      }
+      "refreshing": "Odświeżanie analityki…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Średnia na pracownika",

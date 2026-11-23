@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Neobavezni opis za ovaj skup kategorija",
       "setName": "Naziv",
       "setNamePlaceholder": "npr. Kategorije putovanja",
+      "setNameRequired": "Naziv skupa kategorija je obavezan",
       "setNameTaken": "Skup kategorija s ovim nazivom već postoji.",
       "setUpdated": "Skup kategorija je ažuriran",
       "setUpdateFailed": "Ažuriranje skupa kategorija nije uspjelo",

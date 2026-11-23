@@ -206,29 +206,29 @@
     "discord": {
       "applicationId": "Anwendungs-ID",
       "botToken": "Bot-Token",
-      "botTokenHelp": "Wird verschlüsselt im Vault gespeichert und zum Validieren und Betreiben Ihres Bots verwendet.",
-      "commandsRegistrationFailed": "Discord-Bot verbunden, aber Slash-Befehle konnten nicht automatisch registriert werden. Prüfen Sie Ihre Bot-Berechtigungen und trennen und verbinden Sie den Bot anschließend erneut, um es noch einmal zu versuchen.",
+      "botTokenHelp": "Verschlüsselt in Vault gespeichert und verwendet, um Ihren Bot zu validieren und zu betreiben.",
+      "commandsRegistrationFailed": "Discord-Bot verbunden, Slash-Befehle konnten jedoch nicht automatisch registriert werden. Überprüfen Sie Ihre Bot-Berechtigungen und trennen Sie die Verbindung und stellen Sie sie erneut her, um es noch einmal zu versuchen.",
       "connect": "Discord-Bot verbinden",
-      "connectDescription": "Geben Sie die Zugangsdaten Ihrer Discord-Anwendung aus dem Discord Developer Portal ein.",
+      "connectDescription": "Geben Sie die Anmeldedaten Ihrer Discord-Anwendung aus dem Discord Developer Portal ein.",
       "connected": "Discord-Bot erfolgreich verbunden",
-      "connectError": "Verbindung zum Discord-Bot fehlgeschlagen",
+      "connectError": "Verbindung mit Discord-Bot fehlgeschlagen",
       "copied": "Kopiert",
       "copy": "Kopieren",
       "copyInteractionUrl": "Interaktions-Endpunkt-URL kopieren",
-      "copyInteractionUrlFailed": "Die Interaktions-Endpunkt-URL konnte nicht kopiert werden. Markieren Sie sie und kopieren Sie sie manuell.",
+      "copyInteractionUrlFailed": "Die Interaktions-Endpunkt-URL konnte nicht kopiert werden. Wählen Sie sie aus und kopieren Sie sie manuell.",
       "disconnect": "Trennen",
       "disconnectConfirm": {
-        "description": "Dadurch wird das gespeicherte Bot-Token entfernt und Discord-Benachrichtigungen sowie Slash-Befehle für Ihre Organisation werden deaktiviert.",
+        "description": "Dadurch wird das gespeicherte Bot-Token entfernt und Discord-Benachrichtigungen sowie Slash-Befehle werden für Ihre Organisation deaktiviert.",
         "title": "Discord-Bot trennen?"
       },
       "disconnected": "Discord-Bot getrennt",
       "disconnectError": "Trennen des Discord-Bots fehlgeschlagen",
       "errors": {
         "applicationIdMismatch": "Die Anwendungs-ID stimmt nicht mit dem angegebenen Bot-Token überein.",
-        "invalidBotToken": "Ungültiges Bot-Token. Prüfen Sie Ihre Discord-Bot-Zugangsdaten und versuchen Sie es erneut.",
+        "invalidBotToken": "Ungültiges Bot-Token. Überprüfen Sie die Anmeldedaten Ihres Discord-Bots und versuchen Sie es erneut.",
         "publicKeyMismatch": "Der öffentliche Schlüssel stimmt nicht mit der Discord-Anwendung überein."
       },
-      "interactionEndpointHelp": "Fügen Sie diese URL im Discord Developer Portal in das Feld „Interactions Endpoint URL“ Ihrer Anwendung ein.",
+      "interactionEndpointHelp": "Fügen Sie diese URL in das Feld „Interactions Endpoint URL“ in Ihrer Anwendung im Discord Developer Portal ein.",
       "interactionEndpointUrl": "Interaktions-Endpunkt-URL",
       "interactionUrlCopied": "Interaktions-Endpunkt-URL kopiert",
       "publicKey": "Öffentlicher Schlüssel",
@@ -237,7 +237,7 @@
         "applicationIdInvalid": "Die Anwendungs-ID darf nur Ziffern enthalten.",
         "applicationIdRequired": "Anwendungs-ID ist erforderlich.",
         "botTokenRequired": "Bot-Token ist erforderlich.",
-        "publicKeyInvalid": "Der öffentliche Schlüssel muss eine 64-stellige hexadezimale Zeichenfolge sein.",
+        "publicKeyInvalid": "Der öffentliche Schlüssel muss eine 64-stellige Hexadezimal-Zeichenfolge sein.",
         "publicKeyRequired": "Öffentlicher Schlüssel ist erforderlich."
       }
     },

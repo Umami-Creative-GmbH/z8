@@ -73,6 +73,11 @@
     "portalOpenFailed": "Otvaranje portala za naplatu nije uspjelo",
     "priceSeatMonth": "€{price}/mjestu/mj.",
     "priceSeatMonthYearly": "€{price}/mjestu/mj. (naplaćuje se godišnje)",
+    "recovery": {
+      "billingAndSubscription": "Naplata i pretplata",
+      "navigationLabel": "Navigacija za oporavak naplate",
+      "suspensionNotice": "Obavijest o suspenziji"
+    },
     "seatBilledAnnually": "€{price}/mjestu naplaćuje se godišnje",
     "seatLines": {
       "full": "Puna mjesta",

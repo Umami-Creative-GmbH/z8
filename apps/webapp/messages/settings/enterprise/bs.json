@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Ponovno generisanje tokena nije uspjelo",
         "regenerateTokenSuccess": "Novi verifikacijski token je generisan",
         "regenerating": "Ponovno generisanje…",
+        "registration": "Registracija",
+        "registrationHelp": "Dozvolite novim osobama da kreiraju račun ovdje. Kada je isključeno, samo se osobe s pozivnicom mogu registrovati.",
+        "routingInstruction": "Za poddomenu, dodajte CNAME zapis koji usmjerava {domain} na {target}. Za apex domenu, dodajte A zapis koji usmjerava na IP adresu Z8 load balancera. Isključite CDN proxy za ovaj zapis.",
         "saveConfiguration": "Sačuvaj konfiguraciju",
         "secretKey": "Tajni ključ",
         "secretKeyPlaceholder": "Unesite tajni ključ",
         "secretKeyRequired": "Obavezno prilikom postavljanja ključa stranice",
+        "signInMethods": "Metode prijave",
         "siteKey": "Ključ stranice",
         "socialProviders": "Društveni pružaoci",
         "socialProvidersHelp": "Omogući opcije prijave putem društvenih mreža za ovu domenu",
         "sso": "Jedinstvena prijava (SSO)",
+        "ssoButtonIcon": "Ikona SSO dugmeta",
+        "ssoButtonLabel": "Oznaka SSO dugmeta (opcionalno)",
         "ssoHelp": "Dozvoli poslovnu prijavu zasnovanu na OIDC-u",
+        "ssoIconBadge": "ID kartica",
+        "ssoIconFingerprint": "Otisak prsta",
+        "ssoIconKey": "Ključ",
+        "ssoIconLock": "Katanac",
+        "ssoIconShield": "Štit",
+        "ssoUnavailableHelp": "Prvo postavite i verifikujte SSO pružaoca usluga pod stavkom Podešavanje identiteta.",
         "status": {
           "pending": "Verifikacija na čekanju",
           "verified": "Verifikovano"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Omogućite ili onemogućite ovog provajdera",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Sačuvaj politiku pristupa"
-          },
-          "defaultRoleTemplate": "Zadani predložak uloge",
-          "description": "Postavite domenu, pozivnice i primjenu SSO-a nakon što probni test prođe.",
           "noDefaultTemplate": "Nema zadanog predloška",
           "placeholder": {
             "roleTemplate": "Odaberite predložak uloge"
           },
           "requireSso": "Zahtijevaj SSO",
-          "requireSsoHelp": "Zaposlenici moraju koristiti poslovni IdP.",
           "restrictDomain": "Ograniči na verificiranu domenu",
-          "restrictDomainHelp": "Blokiraj račune izvan odabrane domene.",
-          "restrictInvites": "Ograniči pozivnice",
-          "restrictInvitesHelp": "Dozvoli samo pozivnice usklađene s politikom pristupa.",
-          "title": "Politika pristupa"
-        },
-        "badge": {
-          "now": "Sada",
-          "queued": "Na čekanju",
-          "ready": "Spremno"
+          "restrictInvites": "Ograniči pozivnice"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Provjeri status domene"
-          },
-          "description": "Provjerite granicu zakupca prije primjene SSO-a za zaposlenike.",
-          "help": "DNS verifikacija koristi postojeće radnje za verifikaciju SSO domene. Završite tu verifikaciju prije aktiviranja primjene.",
-          "notSelected": "Nije odabrano",
           "selected": "Odabrana domena",
           "status": {
-            "pending": "Na čekanju",
             "verified": "Verificirano"
-          },
-          "title": "Domena"
+          }
         },
-        "hero": {
-          "title": "Kontrolna lista operativnih komandi"
-        },
-        "progress": "{completed} od {total} koraka završeno",
         "provider": {
-          "action": {
-            "save": "Sačuvaj provajdera"
-          },
-          "description": "Odaberite unaprijed definisani profil pružaoca identiteta, protokol, ID provajdera i email domenu.",
           "error": {
             "domainRequired": "Domena je obavezna",
             "providerIdRequired": "ID pružaoca je obavezan"
           },
           "label": {
-            "domain": "Domena e-pošte",
-            "preset": "Predložak pružaoca",
-            "protocol": "Protokol",
             "providerId": "ID pružaoca"
           },
           "placeholder": {
             "domain": "npr. example.com…",
-            "protocol": "Odaberite protokol",
-            "provider": "Odaberite pružaoca",
             "providerId": "npr. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Koristite Okta Workforce Identity za SAML ili OIDC jednostruku prijavu."
             }
-          },
-          "title": "Pružalac"
-        },
-        "rail": {
-          "title": "Traka spremnosti"
+          }
         },
         "review": {
           "action": {
             "activate": "Aktivirajte poslovni identitet"
           },
-          "activationSummary": "Sažetak aktivacije",
-          "description": "Pregledajte zaštitne provjere aktivacije prije omogućavanja kontrola poslovnog identiteta.",
           "lockoutWarning": "Upozorenje o zaključavanju trenutnog administratora",
-          "lockoutWarningHelp": "Potvrdite da se vaš trenutni administratorski račun može prijaviti putem konfigurisanog pružaoca prije aktivacije. Primjena može blokirati rezervnu prijavu lozinkom za odabranu domenu.",
-          "missingRequirement": "{item} je obavezno prije aktivacije",
-          "prerequisitesComplete": "Preduvjeti za pružaoca, verificiranu domenu i SSO test su ispunjeni.",
-          "requirement": {
-            "domain": "Verificirana domena",
-            "provider": "Pružalac",
-            "ssoTest": "SSO test"
-          },
-          "title": "Pregledaj i aktiviraj"
+          "lockoutWarningHelp": "Potvrdite da se vaš trenutni administratorski račun može prijaviti putem konfigurisanog pružaoca prije aktivacije. Primjena može blokirati rezervnu prijavu lozinkom za odabranu domenu."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "rotiranje",
             "verified": "verificirano"
           },
-          "title": "SCIM dodjeljivanje",
           "toast": {
             "createError": "Nije moguće kreirati SCIM vezu.",
             "reconcileError": "Nije moguće uskladiti SCIM kreiranje.",
@@ -510,14 +472,9 @@
           },
           "verification": "Verifikacija",
           "verification.awaiting": "Čeka se korištenje od strane pružaoca usluge",
-          "verification.observed": "Uočeno",
-          "wizardDescription": "Konfigurišite upravljano dodjeljivanje korisnika bez promjene aktivacije za preduzeće."
+          "verification.observed": "Uočeno"
         },
         "sso": {
-          "action": {
-            "register": "Registrujte SSO pružaoca"
-          },
-          "description": "Registrujte vanjski IdP koristeći OIDC vjerodajnice klijenta ili SAML metapodatke.",
           "error": {
             "saveProviderFirst": "Sačuvajte pružaoca i domenu prije registracije SSO-a"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Zalijepite XML metapodataka IdP-a…"
-          },
-          "saml": {
-            "acsPath": "ACS putanja relativna u odnosu na pretraživač: {path}",
-            "acsUrl": "Konfigurišite svoj IdP s ovim URL-om servisa potrošača tvrdnji (ACS): {path}"
-          },
-          "title": "SSO konfiguracija"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Zabilježi neuspjeh",
-            "recordPass": "Zabilježi uspjeh"
-          },
           "defaultFailure": "Aktivni SSO test nije uspio",
-          "description": "Zabilježite rezultat aktivnog vanjskog SSO testa prije primjene.",
           "error": {
             "saveProviderFirst": "Sačuvajte pružaoca prije bilježenja testa"
           },
-          "label": {
-            "email": "E-pošta testnog korisnika",
-            "failureNote": "Napomena o neuspjehu"
-          },
           "status": {
-            "failed": "Neuspjelo",
-            "notRun": "Nije pokrenuto",
-            "passed": "Uspješno"
-          },
-          "title": "Testni korisnik"
+            "notRun": "Nije pokrenuto"
+          }
         },
         "status": {
-          "activated": "Aktivirano",
-          "draft": "Nacrt"
-        },
-        "step": {
-          "accessPolicy": "Politika pristupa",
-          "accessPolicy.description": "Postavite pravila primjene",
-          "domain": "Domena",
-          "domain.description": "Potvrdite granicu zakupca",
-          "provider": "Pružalac",
-          "provider.description": "Odaberite izvor identiteta",
-          "review": "Pregledajte i aktivirajte",
-          "review.description": "Zaštita aktivacije",
-          "scim": "SCIM dodjeljivanje",
-          "scim.description": "Povežite i upravljajte svojom SCIM vezom za dodjeljivanje",
-          "sso": "SSO konfiguracija",
-          "sso.description": "Registrujte OIDC ili SAML",
-          "ssoTest": "Testni korisnik",
-          "ssoTest.description": "Zabilježite rezultat prijave uživo"
+          "activated": "Aktivirano"
         },
         "toast": {
           "accessPolicyFailed": "Spremanje politike pristupa nije uspjelo",
@@ -589,7 +512,6 @@
           "activated": "Postavke poslovnog identiteta su aktivirane",
           "activateFailed": "Aktivacija postavki nije uspjela",
           "domainStatusFailed": "Osvježavanje statusa domene nije uspjelo",
-          "domainStatusRefreshed": "Status domene je osvježen",
           "providerSaved": "Pružalac identiteta je spremljen",
           "providerSaveFailed": "Spremanje pružaoca nije uspjelo",
           "ssoRegistered": "SSO pružalac je registrovan",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "SSO test označen kao neuspješan",
           "ssoTestPassed": "SSO test označen kao uspješan",
           "ssoTestRecordFailed": "Zapisivanje SSO testa nije uspjelo"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Odlučite koliko se striktno primjenjuje poslovna prijava. Ništa se ne mijenja za zaposlenike dok ne aktivirate podešavanje u posljednjem koraku.",
+            "domainsLink": "Otvori domene",
+            "legend": "Uključite pravila koja su vam potrebna. Sva pravila su neobavezna.",
+            "nav": "Pravila pristupa",
+            "requireSsoDomains": "Za ovo je također potrebno dodati i verifikovati {domain} pod stavkom Domene.",
+            "requireSsoHelp": "Korisnici s adresom e-pošte @{domain} moraju se prijaviti putem {provider} umjesto lozinkom.",
+            "restrictDomainHelp": "Pozivne kodove mogu iskoristiti samo osobe s adresom e-pošte @{domain}.",
+            "restrictInvitesHelp": "Pozivnice se mogu slati samo na adrese e-pošte @{domain}.",
+            "save": "Sačuvajte i nastavite",
+            "title": "Odaberite pravila pristupa"
+          },
+          "action": {
+            "back": "Nazad",
+            "next": "Sljedeće: {step}",
+            "skip": "Preskoči na {step}"
+          },
+          "activeNotice": "Poslovna prijava je aktivna za {domain}. Ispod možete pregledati svaki korak.",
+          "description": "Omogućite zaposlenicima prijavu na Z8 putem poslovnog računa vašeg pružaoca identiteta. Vaš napredak se čuva nakon svakog koraka, tako da možete prekinuti i vratiti se u bilo kojem trenutku.",
+          "domain": {
+            "continue": "Nastavite na testnu prijavu",
+            "copyName": "Kopiraj naziv",
+            "copyValue": "Kopiraj vrijednost",
+            "create": "Kreirajte DNS zapis",
+            "createHelp": "Z8 generiše jedinstvenu vrijednost koju trebate objaviti. Ako ste je već kreirali pod SSO pružaoci usluga, možete preskočiti na posljednji korak.",
+            "description": "Dodajte jedan DNS zapis kako biste dokazali da vaša kompanija kontroliše ovu domenu. Samo verifikovane domene mogu koristiti poslovnu prijavu.",
+            "fallbackName": "vaša domena",
+            "fullNameHint": "Ako vaš DNS pružalac traži puni naziv, upotrijebite {fullName}.",
+            "nav": "Verifikujte domenu",
+            "needsConnection": "Prvo povežite svog pružaoca identiteta. Z8 kreira DNS zapis za tu vezu.",
+            "notVerified": "Još nije verifikovano",
+            "publishHelp": "Prijavite se kod svog DNS pružaoca usluga, kao što su Cloudflare, GoDaddy ili IONOS, i dodajte novi TXT zapis tačno onako kako je prikazano. Ako neko drugi upravlja vašom domenom, pošaljite im ove vrijednosti.",
+            "recordName": "Naziv (također se naziva host)",
+            "recordType": "Tip",
+            "recordValue": "Vrijednost (također se naziva sadržaj)",
+            "stepCreate": "Kreirajte DNS zapis",
+            "stepPublish": "Dodajte ga tamo gdje se upravlja vašom domenom",
+            "stepVerify": "Dozvolite Z8-u da provjeri zapis",
+            "title": "Potvrdite vlasništvo nad domenom {domain}",
+            "toast": {
+              "notFound": "Z8 još uvijek nije mogao pronaći DNS zapis. Provjerite naziv i vrijednost, a zatim pokušajte ponovo za nekoliko minuta.",
+              "verified": "Domena je verifikovana"
+            },
+            "verifiedHelp": "Z8 je pronašao vaš DNS zapis. Možete ga ostaviti postavljenog.",
+            "verify": "Verifikujte domenu",
+            "verifyHelp": "Novi zapisi se obično pojave za nekoliko minuta, ali to može potrajati i do 48 sati. Možete napustiti ovu stranicu i provjeriti ponovo kasnije."
+          },
+          "nav": {
+            "label": "Koraci podešavanja"
+          },
+          "prerequisite": {
+            "action": "Idite na {step}",
+            "title": "Prvo preostaje još jedan korak"
+          },
+          "progress": "Završeno {completed} od {total} obaveznih koraka",
+          "progressLabel": "Napredak podešavanja",
+          "provider": {
+            "changeWarning": "Ovaj pružalac usluga je već povezan. Promjena ID-a pružaoca usluga ili domene e-pošte znači da ćete se morati ponovo povezati i verifikovati.",
+            "description": "Navedite Z8-u koju uslugu vaša kompanija koristi za poslovne račune i koju domenu e-pošte imaju vaši zaposlenici.",
+            "domainHelp": "Zaposlenici čija adresa e-pošte završava ovom domenom prijavljivat će se putem vašeg pružaoca usluga.",
+            "domainInvalid": "Unesite samo dio nakon znaka @, na primjer example.com.",
+            "domainLabel": "Domena poslovne e-pošte",
+            "genericName": "vaš pružalac identiteta",
+            "nav": "Pružalac identiteta",
+            "oidc": "OpenID Connect (preporučeno)",
+            "oidcHelp": "Brže se postavlja i podržava ga većina pružalaca. Odaberite ovo ako niste sigurni.",
+            "prepAdmin": "Administratorski pristup vašem pružaocu identiteta, kao što su Okta ili Microsoft Entra ID",
+            "prepDns": "Pristup DNS postavkama vaše domene radi dodavanja jednog TXT zapisa",
+            "prepIntro": "Podešavanje traje oko 15 minuta. Pripremite sljedeće:",
+            "prepTester": "Poslovni račun kolege ili testni račun za isprobavanje prijave",
+            "prepTitle": "Prije nego što počnete",
+            "presetLegend": "Kojeg pružaoca identiteta koristi vaša kompanija?",
+            "protocolLegend": "Kako bi se Z8 trebao povezati?",
+            "providerIdHelp": "Kratki naziv za ovu vezu koji se koristi u linkovima za prijavu. Mala slova, brojevi i crtice, na primjer acme-okta.",
+            "providerIdInvalid": "Koristite samo mala slova, brojeve i crtice, bez crtice na početku ili kraju.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Koristite ovo ako vaš IT tim zahtijeva SAML. Zalijepit ćete XML datoteku metapodataka.",
+            "save": "Sačuvaj i nastavi",
+            "singleProtocol": "{provider} se povezuje putem OpenID Connecta (OIDC).",
+            "title": "Odaberite svog pružaoca identiteta"
+          },
+          "review": {
+            "blocked": "Završite korake označene sa „Za uraditi” da biste aktivirali. Povezivanje, verifikacija domene i uspješan test prijave su obavezni.",
+            "checklist": "Kontrolna lista",
+            "description": "Provjerite svoje postavke, a zatim uključite poslovnu prijavu.",
+            "nav": "Aktiviraj",
+            "noRules": "Nema uključenih pravila",
+            "notSet": "Nije postavljeno",
+            "open": "Otvori korak",
+            "provider": "Pružalac identiteta",
+            "ready": "Sve što je potrebno je završeno. Možete aktivirati sada.",
+            "reapply": "Već je aktivno. Ponovo aktivirajte nakon promjene pravila pristupa da biste ih primijenili.",
+            "rules": "Pravila pristupa",
+            "scim": "Sinhronizacija korisnika (SCIM)",
+            "scimOff": "Nije podešeno",
+            "scimOn": "Povezano",
+            "summary": "Vaše postavke",
+            "test": "Test prijave",
+            "title": "Pregledajte i aktivirajte"
+          },
+          "scim": {
+            "description": "Dozvolite da {provider} kreira, ažurira i deaktivira Z8 račune umjesto vas pomoću SCIM-a. Ovo možete preskočiti i postaviti kasnije.",
+            "nav": "Sinhronizuj korisnike",
+            "roleHelp": "Odaberite predložak uloge prije kreiranja veze. Novi računi počinju s ovom ulogom.",
+            "roleLabel": "Uloga za osobe koje kreira vaš pružalac",
+            "skipHelp": "Preskočite ovaj korak ako vaš pružalac ne podržava SCIM ili više volite sami dodavati osobe u Z8. Zaposlenici se i dalje mogu prijavljivati putem poslovne prijave.",
+            "title": "Automatski sinhronizuj korisnike"
+          },
+          "sso": {
+            "acsLabel": "ACS URL",
+            "clientIdHelp": "Naziva se i ID aplikacije.",
+            "clientIdRequired": "Unesite ID klijenta.",
+            "clientSecretHelp": "Pohranjeno na siguran način i više se nikada ne prikazuje.",
+            "clientSecretRequired": "Unesite tajnu klijenta.",
+            "connected": "Povezano kao {providerId}",
+            "connectedHelp": "Da biste promijenili detalje veze, uklonite ovog pružaoca pod SSO pružaoci i ponovo ga povežite ovdje.",
+            "continue": "Nastavite na verifikaciju domene",
+            "copyAcs": "Kopiraj ACS URL",
+            "description": "Kreirajte aplikaciju za Z8 u {provider}, a zatim ovdje zalijepite detalje koje dobijete.",
+            "issuerHelp": "Web adresa koja identificira vašeg pružaoca usluga. Navedena je u postavkama aplikacije i počinje sa https://.",
+            "issuerRequired": "Unesite URL izdavaoca od svog pružaoca usluga.",
+            "manageLink": "Otvori SSO pružaoce usluga",
+            "metadataRequired": "Zalijepite XML metapodatke od svog pružaoca usluga.",
+            "nav": "Poveži",
+            "needsProvider": "Prvo odaberite svog pružaoca identiteta i domenu e-pošte kako bi Z8 mogao pripremiti detalje za povezivanje.",
+            "partOne": "Kreirajte aplikaciju za Z8 u {provider}",
+            "partTwo": "Zalijepite detalje iz {provider}",
+            "samlIntro": "Kreirajte SAML aplikaciju u {provider} i unesite ovu adresu kao njen assertion consumer service (ACS) ili URL za odgovor. Zatim preuzmite XML metapodatke aplikacije.",
+            "save": "Poveži pružaoca usluga",
+            "title": "Povežite {provider} sa Z8"
+          },
+          "ssoTest": {
+            "description": "Prije nego što bilo šta uključite, potvrdite da se uposlenik zaista može prijaviti putem {provider}.",
+            "domainFirst": "{domain} još nije verifikovana. Prijava putem vašeg pružaoca usluga možda neće raditi dok se to ne završi.",
+            "emailHelp": "Idealno bi bilo račun kolege, a ne vaš administratorski račun.",
+            "emailLabel": "E-pošta korištena za testiranje",
+            "failed": "Posljednji test nije uspio",
+            "failedHelp": "Uobičajeni uzroci: URL povratnog poziva se ne podudara u potpunosti, tajni ključ klijenta je pogrešan ili je istekao, ili testni korisnik nije dodijeljen aplikaciji u {provider}.",
+            "goToDomain": "Verifikuj domenu",
+            "howPrivate": "Otvorite prozor preglednika u privatnom ili anonimnom načinu rada. Držite ovaj prozor otvorenim kako biste ostali prijavljeni kao administrator ako nešto pođe po zlu.",
+            "howRecord": "Vratite se ovdje i zabilježite je li uspjelo.",
+            "howSignIn": "Idite na Z8 stranicu za prijavu i prijavite se poslovnom adresom e-pošte koja završava sa @{domain}.",
+            "howTitle": "Kako testirati",
+            "nav": "Testiraj prijavu",
+            "needsConnection": "Povežite svog pružaoca identiteta prije testiranja prijave.",
+            "noteLabel": "Šta je pošlo po zlu? (samo ako nije uspjelo)",
+            "notePlaceholder": "Na primjer, poruka o grešci koju ste vidjeli…",
+            "passed": "Prijava je uspjela za {email}",
+            "recordFail": "Prijava nije uspjela",
+            "recordPass": "Prijava je uspjela",
+            "recordTitle": "Zabilježi rezultat",
+            "selfReported": "Z8 ne može pratiti ovaj test, pa se rezultat sprema onako kako ga prijavite. Spremanje pružaoca usluga i verifikacija DNS-a ne dokazuju da prijava radi.",
+            "title": "Testirajte prijavu sa stvarnim računom"
+          },
+          "status": {
+            "done": "Završeno",
+            "inProgress": "U toku",
+            "notActive": "Još nije aktivno",
+            "optional": "Opcionalno",
+            "toDo": "Za uraditi"
+          },
+          "stepOf": "Korak {current} od {total}",
+          "title": "Podesite prijavu za preduzeća"
         }
       },
       "keepExistingSecretHelp": "Ostavite prazno da zadržite postojeći tajni ključ",
@@ -648,6 +735,9 @@
         "addError": "Dodavanje SSO pružaoca nije uspjelo",
         "addSuccess": "SSO pružalac je uspješno dodan",
         "addTitle": "Dodaj SSO pružaoca",
+        "copyError": "Kopiranje u međuspremnik nije uspjelo",
+        "copyIssuerUrl": "Kopiraj URL izdavaoca",
+        "copyProviderId": "Kopiraj ID pružaoca usluga",
         "deleteConfirm": "Izbriši provajdera",
         "deleteDialogDescription": "Jeste li sigurni da želite izbrisati ovog SSO pružaoca? Korisnici se više neće moći prijaviti koristeći ovog pružaoca identiteta.",
         "deleteDialogTitleNamed": "Izbrisati SSO provajdera {provider}?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "Izbriši SSO pružaoca {provider}",
         "deleteSuccess": "SSO pružalac je izbrisan",
         "description": "Dodajte OIDC pružaoce identiteta da omogućite SSO za svoju organizaciju.",
+        "dns": {
+          "copyFqdn": "Kopiraj potpuno kvalifikovano ime",
+          "copyHost": "Kopiraj naziv zapisa",
+          "copyValue": "Kopiraj TXT token",
+          "description": "Kreirajte zapis kod svog DNS pružaoca za {domain}, a zatim odaberite Verifikuj. Može potrajati nekoliko minuta dok se promjene na DNS-u ne prošire.",
+          "fqdnHint": "Ako vaš DNS pružalac očekuje potpuno kvalifikovano ime, upotrijebite:",
+          "noToken": "Generišite TXT token da biste vidjeli DNS zapis koji dokazuje da ste vlasnik ove domene.",
+          "title": "Dodajte ovaj TXT zapis u svoj DNS",
+          "type": "Tip"
+        },
         "domainInvalid": "Molimo unesite važeću domenu (npr. example.com)",
         "domainVerified": "Domena je verificirana",
         "emailDomain": "Domena e-pošte",
@@ -673,7 +773,6 @@
           "copyCallback": "Kopiraj callback URL",
           "copyFailed": "Pristup međuspremniku nije uspio. Označite i ručno kopirajte tekst.",
           "domainPending": "Domena nije verifikovana",
-          "domainStatus": "Verifikacija domene",
           "domainVerified": "Domena je verifikovana",
           "entra": {
             "clientHelp": "Kopirajte Application (client) ID iz pregleda (Overview), a ne Object ID.",
@@ -743,7 +842,6 @@
           },
           "manual": "Drugi provajder / ručni OIDC",
           "manualAvailable": "Koristite drugog provajdera? Odaberite ručnu OIDC konfiguraciju na panelu za podešavanje.",
-          "manualTestHelp": "Ovo je rezultat prijave koji prijavljuje administrator, a ne automatski provjereni test veze. Isprobajte prijavu sa željenim korisnikom u zasebnoj sesiji preglednika, ostavite ovu administratorsku sesiju otvorenom, a zatim ovdje zabilježite uspjeh ili neuspjeh. Spremanje provajdera i verifikacija DNS-a ne dokazuju da prijava radi.",
           "openSetup": "Otvorite vođeno podešavanje",
           "provider": "Provajder identiteta",
           "required": "Ovo polje je obavezno.",
@@ -755,10 +853,10 @@
         "providerId": "ID pružaoca",
         "providerIdHelp": "Jedinstveni identifikator za ovog pružaoca (mala slova, bez razmaka)",
         "providerIdInvalid": "ID pružaoca mora sadržavati samo mala slova, brojeve i crtice",
+        "regenerateToken": "Ponovo generišite TXT token",
         "title": "Pružaoci identiteta",
         "tokenError": "Generisanje tokena za verifikaciju domene nije uspjelo",
         "tokenGenerated": "Token za verifikaciju je generisan",
-        "txtToken": "TXT token:",
         "validUrlRequired": "Unesite važeći URL",
         "verify": "Verifikuj",
         "verifyError": "Verifikacija domene nije uspjela. Provjerite svoj DNS TXT zapis i pokušajte ponovo."

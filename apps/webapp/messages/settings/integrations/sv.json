@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "Applikations-ID",
+      "botToken": "Bot-token",
+      "botTokenHelp": "Lagras krypterat i Vault och används för att validera och driva din bot.",
+      "commandsRegistrationFailed": "Discord-boten anslöts, men snedstreckskommandon kunde inte registreras automatiskt. Kontrollera botens behörigheter, koppla sedan från och anslut boten igen för att försöka på nytt.",
+      "connect": "Anslut Discord-bot",
+      "connectDescription": "Ange autentiseringsuppgifterna från din Discord-applikation i Discord Developer Portal.",
+      "connected": "Discord-boten har anslutits",
+      "connectError": "Det gick inte att ansluta Discord-bot",
+      "copied": "Kopierat",
+      "copy": "Kopiera",
+      "copyInteractionUrl": "Kopiera URL för interaktionsslutpunkt",
+      "copyInteractionUrlFailed": "Det gick inte att kopiera URL:en för interaktionsslutpunkten. Markera den och kopiera manuellt.",
+      "disconnect": "Koppla från",
+      "disconnectConfirm": {
+        "description": "Detta tar bort den lagrade bot-tokenen och inaktiverar Discord-aviseringar och snedstreckskommandon för din organisation.",
+        "title": "Koppla från Discord-bot?"
+      },
+      "disconnected": "Discord-boten har kopplats från",
+      "disconnectError": "Det gick inte att koppla från Discord-bot",
+      "errors": {
+        "applicationIdMismatch": "Applikations-ID:t matchar inte angiven bot-token.",
+        "invalidBotToken": "Ogiltig bot-token. Kontrollera autentiseringsuppgifterna för din Discord-bot och försök igen.",
+        "publicKeyMismatch": "Den publika nyckeln matchar inte Discord-applikationen."
+      },
+      "interactionEndpointHelp": "Klistra in denna URL i fältet Interactions Endpoint URL i din applikation i Discord Developer Portal.",
+      "interactionEndpointUrl": "URL för interaktionsslutpunkt",
+      "interactionUrlCopied": "URL för interaktionsslutpunkt kopierad",
+      "publicKey": "Publik nyckel",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "Applikations-ID får endast innehålla siffror.",
+        "applicationIdRequired": "Applikations-ID är obligatoriskt.",
+        "botTokenRequired": "Bot-token är obligatorisk.",
+        "publicKeyInvalid": "Den publika nyckeln måste vara en hexadecimal sträng med 64 tecken.",
+        "publicKeyRequired": "Publik nyckel är obligatorisk."
+      }
     },
     "slack": {
       "title": "Slack"

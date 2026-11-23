@@ -159,7 +159,6 @@
       "scopeFailed": "Nie udało się załadować bieżącego zakresu prowadzenia pojazdów.",
       "scopeLoading": "Ładowanie bieżącego zakresu prowadzenia pojazdów…",
       "scopeManaged": "Pracownicy, którymi zarządzasz",
-      "title": "Brak szczegółów dotyczących jazdy",
       "truncated": "Wyświetlanie najnowszych {count} okresów pracy. Przefiltruj według zespołu lub pracownika, aby zobaczyć pozostałe.",
       "updating": "Aktualizowanie danych o prowadzeniu pojazdów…"
     },

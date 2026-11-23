@@ -159,7 +159,6 @@
       "scopeFailed": "Mevcut sürüş kapsamı yüklenemedi.",
       "scopeLoading": "Mevcut sürüş kapsamı yükleniyor…",
       "scopeManaged": "Yönettiğiniz çalışanlar",
-      "title": "Sürüş ayrıntıları eksik",
       "truncated": "En yeni {count} çalışma dönemi gösteriliyor. Kalanları görmek için ekibe veya çalışana göre filtreleyin.",
       "updating": "Sürüş ayrıntıları güncelleniyor…"
     },

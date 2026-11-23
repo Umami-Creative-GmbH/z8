@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Kratak opis ovog tima",
         "fallbackManagerHelp": "Koristi se za odobrenja kada član tima nema izravnog voditelja.",
         "fallbackManagerLabel": "Zamjenski voditelj",
-        "fallbackManagerPlaceholder": "Odaberite zamjenskog voditelja",
         "nameLabel": "Naziv tima",
         "namePlaceholder": "Razvoj, Prodaja, Marketing...",
         "noFallbackManager": "Nema zamjenskog voditelja",

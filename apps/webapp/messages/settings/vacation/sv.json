@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Kunde inte uppdatera policytilldelning"
           },
           "fallsBackToDefaultPolicy": "Faller tillbaka på teamets eller organisationens standardpolicy",
-          "manageAllowances": "hantera medarbetares semesterkvoter",
           "managers": "Chefer",
           "overrideEffectivePolicy": "Åsidosätt det tilldelade policysaldot ({days} dagar) för denna medarbetare",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Medarbetartilldelning",
         "sourceOrganization": "Organisationstilldelning",
         "sourceTeam": "Teamtilldelning",
-        "teamDescription": "Ange en daterad policy för ett team. Medarbetartilldelningar har företräde.",
-        "title": "Historik"
+        "teamDescription": "Ange en daterad policy för ett team. Medarbetartilldelningar har företräde."
       },
       "next": "Nästa",
       "noDefaultPolicy": "Ingen standardpolicy för företaget",

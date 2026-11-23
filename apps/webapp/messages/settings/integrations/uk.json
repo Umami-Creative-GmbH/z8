@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID програми",
+      "botToken": "Токен бота",
+      "botTokenHelp": "Зберігається в зашифрованому вигляді у Vault і використовується для перевірки та роботи вашого бота.",
+      "commandsRegistrationFailed": "Бот Discord підключений, але слеш-команди не вдалося зареєструвати автоматично. Перевірте дозволи бота, потім відключіть і підключіть бота знову, щоб повторити спробу.",
+      "connect": "Підключити бота Discord",
+      "connectDescription": "Введіть облікові дані вашої програми Discord із Discord Developer Portal.",
+      "connected": "Бот Discord успішно підключено",
+      "connectError": "Не вдалося підключити бота Discord",
+      "copied": "Скопійовано",
+      "copy": "Копіювати",
+      "copyInteractionUrl": "Копіювати Interaction Endpoint URL",
+      "copyInteractionUrlFailed": "Не вдалося скопіювати Interaction Endpoint URL. Виділіть його та скопіюйте вручну.",
+      "disconnect": "Відключити",
+      "disconnectConfirm": {
+        "description": "Це видалить збережений токен бота та вимкне сповіщення Discord і слеш-команди для вашої організації.",
+        "title": "Відключити бота Discord?"
+      },
+      "disconnected": "Бот Discord відключено",
+      "disconnectError": "Не вдалося відключити бота Discord",
+      "errors": {
+        "applicationIdMismatch": "ID програми не збігається з наданим токеном бота.",
+        "invalidBotToken": "Недійсний токен бота. Перевірте облікові дані вашого бота Discord і спробуйте знову.",
+        "publicKeyMismatch": "Публічний ключ не відповідає програмі Discord."
+      },
+      "interactionEndpointHelp": "Вставте цю URL-адресу в поле Interactions Endpoint URL вашої програми на Discord Developer Portal.",
+      "interactionEndpointUrl": "Interaction Endpoint URL",
+      "interactionUrlCopied": "Interaction Endpoint URL скопійовано",
+      "publicKey": "Публічний ключ",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "ID програми має містити лише цифри.",
+        "applicationIdRequired": "ID програми є обов'язковим.",
+        "botTokenRequired": "Токен бота є обов'язковим.",
+        "publicKeyInvalid": "Публічний ключ має бути 64-символьним шістнадцятковим рядком.",
+        "publicKeyRequired": "Публічний ключ є обов'язковим."
+      }
     },
     "slack": {
       "title": "Slack"

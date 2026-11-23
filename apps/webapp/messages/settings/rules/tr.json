@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Bu kategori kümesi için isteğe bağlı açıklama",
       "setName": "Ad",
       "setNamePlaceholder": "ör. Seyahat Kategorileri",
+      "setNameRequired": "Kategori kümesi adı zorunludur",
       "setNameTaken": "Bu ada sahip bir kategori kümesi zaten var.",
       "setUpdated": "Kategori kümesi güncellendi",
       "setUpdateFailed": "Kategori kümesi güncellenemedi",

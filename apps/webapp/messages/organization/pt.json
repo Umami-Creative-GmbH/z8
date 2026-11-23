@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Uma breve descrição desta equipe",
         "fallbackManagerHelp": "Usado para aprovações quando um membro da equipe não tem um gerente direto.",
         "fallbackManagerLabel": "Gerente de contingência",
-        "fallbackManagerPlaceholder": "Selecione um gerente de contingência",
         "nameLabel": "Nome da equipe",
         "namePlaceholder": "Engenharia, Vendas, Marketing...",
         "noFallbackManager": "Nenhum gerente de contingência",

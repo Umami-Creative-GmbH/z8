@@ -152,7 +152,6 @@
       "vacationPolicy": "İzin",
       "welcome": "Hoş geldiniz",
       "wellness": "Sağlıklı Yaşam",
-      "workSchedule": "Program",
       "workTemplates": "Şablonlar"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "İş gününüz boyunca sağlıklı kalmak için su hatırlatıcılarını ayarlayın. İş başındayken su içmeniz için nazik bildirimler alacaksınız.",
       "success": "Su hatırlatıcısı etkinleştirildi!",
       "title": "Susuz Kalmayın"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Çalışma programı erişimi kontrol edilemedi. Bir sonraki uygun adıma devam ediliyor.",
-      "checkingAccess": "Çalışma programı erişimi kontrol ediliyor",
-      "classification": "Çalışma Sınıflandırması",
-      "classificationDesc": "Çalışma saatlerinizi nasıl takip etmek istediğiniz.",
-      "continue": "Devam et",
-      "daily": "Günlük",
-      "error": "Çalışma programı ayarlanamadı",
-      "hoursPerWeek": "Haftalık Saat",
-      "hoursPerWeekDesc": "Tipik tam zamanlı çalışma haftada 40 saattir.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "İlk katılım sonrasında ayarlar bölümünden çalışma politikalarını tekrar inceleyebilirsiniz.",
-      "monthly": "Aylık",
-      "policyContext": "Devam etmek katılım ilerlemenizi kaydeder. Kuruluş çalışma politikaları yürürlükte kalır; buraya girilen saatler ve sınıflandırma bir çalışma politikasına kaydedilmez.",
-      "previousAttempt": "Önceki bir istek hâlâ tamamlanıyor. Devam etmek için tekrar deneyin.",
-      "progressSaved": "Katılım ilerlemesi kaydedildi.",
-      "scheduleTitle": "Çalışma Programı",
-      "selectClassification": "Sınıflandırmayı seçin",
-      "setupContext": "Haftalık saatleri ve çalışma saatlerinin birlikte nasıl takip edildiğini inceleyin.",
-      "skip": "Şimdilik atla",
-      "skipError": "Çalışma programı kurulumu atlanamadı",
-      "subtitle": "Zamanı takip etmeye ve devamsızlıkları doğru bir şekilde yönetmeye yardımcı olması için çalışma saatlerinizi tanımlayın.",
-      "title": "Çalışma programınızı ayarlayın",
-      "validation": {
-        "hoursNegative": "Saat negatif olamaz",
-        "hoursTooMany": "Bir hafta en fazla 168 saat olabilir"
-      },
-      "weekly": "Haftalık"
     },
     "workTemplates": {
       "cardDesc": "Varsayılan bir çalışma programı oluşturun. Daha sonra ayarlardan daha fazla şablon ekleyebilirsiniz.",

@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Configurați conectorii de export pentru salarizare și asocierile tipurilor de salariu",
+      "connectorsTitle": "Conectori de salarizare și tipuri de salariu",
       "datev": {
         "beraternummer": "Număr consultant",
         "beraternummerTooltip": "Numărul dvs. de consultant DATEV (1-7 cifre)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Configurare salvată",
         "title": "Date de bază DATEV"
       },
-      "description": "Exportă perioadele de lucru către sisteme de salarizare precum DATEV sau Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday și API-ul SuccessFactors nu includ rambursări de cheltuieli.",
         "codeLabel": "{line}, tip de salariu {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Interval de date",
         "description": "Exportă perioadele de lucru și absențele în formatul DATEV Lohn & Gehalt",
         "employees": "Angajați",
-        "employeesSelected": "{count} selectați",
         "endDate": "Dată de sfârșit",
         "error": "Export eșuat",
         "exportButtonDatev": "Exportă în DATEV",
@@ -100,10 +100,13 @@
         "download": "Descarcă exportul",
         "downloadError": "Nu s-a putut obține adresa URL de descărcare",
         "employees": "angajați",
+        "includesSettledDays": "Zile decontate incluse",
+        "loadError": "Istoricul exporturilor nu a putut fi încărcat.",
         "noExports": "Niciun export încă",
         "noExportsHint": "Porniți un export de salarizare din fila Export. Exporturile finalizate apar aici pentru descărcare.",
         "payrollRun": "{count, plural, one {Rulare de salarii: # decont de cheltuieli} other {Rulare de salarii: # deconturi de cheltuieli}}",
         "periods": "perioade",
+        "settledDaysLeftOut": "{count, plural, one {# zi decontată omisă} other {# zile decontate omise}}",
         "status": {
           "completed": "Finalizat",
           "failed": "Eșuat",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Categorie de muncă"
       },
+      "openPayrollWorkspace": "Rulați exporturile în Salarizare",
       "personio": {
         "clientId": "ID client",
         "clientIdHelp": "Ajutor ID client",
@@ -242,6 +246,9 @@
         "saveSuccess": "Configurație salvată",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Destinații de salarizare"
+      },
       "specialCategory": {
         "overtime": "Ore suplimentare"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Export",
-        "history": "Istoric",
         "lexware": "Lexware",
         "mappings": "Tipuri de remunerație",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Export salarii",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Configurat",
+        "statusNeedsCredentials": "Necesită date de autentificare",
+        "statusNotConfigured": "Neconfigurat",
+        "successfactorsSubtitle": "API și CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Timeout API (ms)",
         "batchSize": "Dimensiune lot",
@@ -367,12 +382,12 @@
         "warning": "Avertisment"
       },
       "description": "Verificați dacă o perioadă de salarizare este pregătită înainte de a exporta datele de pontaj, absențe și salarizare.",
+      "loadError": "Verificările de pregătire pentru salarizare ale organizației nu au putut fi încărcate.",
       "openPayrollExport": "Deschide exportul de salarii",
       "period": {
         "currentMonth": "Luna curentă",
         "navLabel": "Perioadă de salarizare",
         "previousMonth": "Luna anterioară",
-        "scope": "Perioadă de salarizare: {period} (UTC)",
         "showMonth": "Afișează {month}"
       },
       "status": {

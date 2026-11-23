@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Failed to regenerate token",
         "regenerateTokenSuccess": "New verification token generated",
         "regenerating": "Regenerating…",
+        "registration": "Registration",
+        "registrationHelp": "Allow new people to create an account here. When off, only people with an invitation can sign up.",
+        "routingInstruction": "For a subdomain, add a CNAME record pointing {domain} to {target}. For an apex domain, add an A record pointing to the Z8 load balancer IP. Turn off CDN proxying for this record.",
         "saveConfiguration": "Save Configuration",
         "secretKey": "Secret Key",
         "secretKeyPlaceholder": "Enter secret key",
         "secretKeyRequired": "Required when setting a site key",
+        "signInMethods": "Sign-in methods",
         "siteKey": "Site Key",
         "socialProviders": "Social Providers",
         "socialProvidersHelp": "Enable social login options for this domain",
         "sso": "Single Sign-On (SSO)",
+        "ssoButtonIcon": "SSO button icon",
+        "ssoButtonLabel": "SSO button label (optional)",
         "ssoHelp": "Allow OIDC-based enterprise sign-in",
+        "ssoIconBadge": "ID badge",
+        "ssoIconFingerprint": "Fingerprint",
+        "ssoIconKey": "Key",
+        "ssoIconLock": "Lock",
+        "ssoIconShield": "Shield",
+        "ssoUnavailableHelp": "Set up and verify an SSO provider under Identity setup first.",
         "status": {
           "pending": "Pending Verification",
           "verified": "Verified"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Enable or disable this provider",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Save access policy"
-          },
-          "defaultRoleTemplate": "Default role template",
-          "description": "Set domain, invite, and SSO enforcement after the pilot test passes.",
           "noDefaultTemplate": "No default template",
           "placeholder": {
             "roleTemplate": "Select role template"
           },
           "requireSso": "Require SSO",
-          "requireSsoHelp": "Employees must use the enterprise IdP.",
           "restrictDomain": "Restrict to verified domain",
-          "restrictDomainHelp": "Block accounts outside the selected domain.",
-          "restrictInvites": "Restrict invites",
-          "restrictInvitesHelp": "Only allow invitations aligned with access policy.",
-          "title": "Access Policy"
-        },
-        "badge": {
-          "now": "Now",
-          "queued": "Queued",
-          "ready": "Ready"
+          "restrictInvites": "Restrict invites"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Check domain status"
-          },
-          "description": "Validate the tenant boundary before enforcing SSO for employees.",
-          "help": "DNS verification uses the existing SSO domain verification actions. Complete that verification before activating enforcement.",
-          "notSelected": "Not selected",
           "selected": "Selected domain",
           "status": {
-            "pending": "Pending",
             "verified": "Verified"
-          },
-          "title": "Domain"
+          }
         },
-        "hero": {
-          "title": "Operational command checklist"
-        },
-        "progress": "{completed} of {total} steps complete",
         "provider": {
-          "action": {
-            "save": "Save provider"
-          },
-          "description": "Choose the identity provider preset, protocol, provider ID, and email domain.",
           "error": {
             "domainRequired": "Domain is required",
             "providerIdRequired": "Provider ID is required"
           },
           "label": {
-            "domain": "Email domain",
-            "preset": "Provider preset",
-            "protocol": "Protocol",
             "providerId": "Provider ID"
           },
           "placeholder": {
             "domain": "e.g. example.com…",
-            "protocol": "Select protocol",
-            "provider": "Select provider",
             "providerId": "e.g. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Use Okta Workforce Identity for SAML or OIDC single sign-on."
             }
-          },
-          "title": "Provider"
-        },
-        "rail": {
-          "title": "Readiness rail"
+          }
         },
         "review": {
           "action": {
             "activate": "Activate enterprise identity"
           },
-          "activationSummary": "Activation summary",
-          "description": "Review guarded activation checks before enabling enterprise identity controls.",
           "lockoutWarning": "Current-admin lockout warning",
-          "lockoutWarningHelp": "Confirm your current admin account can sign in through the configured provider before activation. Enforcement may block password fallback for the selected domain.",
-          "missingRequirement": "{item} is required before activation",
-          "prerequisitesComplete": "Provider, verified domain, and SSO test prerequisites are complete.",
-          "requirement": {
-            "domain": "Verified domain",
-            "provider": "Provider",
-            "ssoTest": "SSO test"
-          },
-          "title": "Review & Activate"
+          "lockoutWarningHelp": "Confirm your current admin account can sign in through the configured provider before activation. Enforcement may block password fallback for the selected domain."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "rotating",
             "verified": "verified"
           },
-          "title": "SCIM Provisioning",
           "toast": {
             "createError": "Unable to create the SCIM connection.",
             "reconcileError": "Unable to reconcile SCIM creation.",
@@ -510,14 +472,9 @@
           },
           "verification": "Verification",
           "verification.awaiting": "Awaiting provider use",
-          "verification.observed": "Observed",
-          "wizardDescription": "Configure managed user provisioning without changing enterprise activation."
+          "verification.observed": "Observed"
         },
         "sso": {
-          "action": {
-            "register": "Register SSO provider"
-          },
-          "description": "Register the external IdP using OIDC client credentials or SAML metadata.",
           "error": {
             "saveProviderFirst": "Save provider and domain before registering SSO"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Paste IdP metadata XML…"
-          },
-          "saml": {
-            "acsPath": "Browser-relative ACS path: {path}",
-            "acsUrl": "Configure your IdP with this assertion consumer service (ACS) URL: {path}"
-          },
-          "title": "SSO Configuration"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Record fail",
-            "recordPass": "Record pass"
-          },
           "defaultFailure": "Live SSO test failed",
-          "description": "Record the result of a live external SSO test before enforcement.",
           "error": {
             "saveProviderFirst": "Save provider before recording a test"
           },
-          "label": {
-            "email": "Test user email",
-            "failureNote": "Failure note"
-          },
           "status": {
-            "failed": "Failed",
-            "notRun": "Not run",
-            "passed": "Passed"
-          },
-          "title": "Test User"
+            "notRun": "Not run"
+          }
         },
         "status": {
-          "activated": "Activated",
-          "draft": "Draft"
-        },
-        "step": {
-          "accessPolicy": "Access Policy",
-          "accessPolicy.description": "Set enforcement rules",
-          "domain": "Domain",
-          "domain.description": "Confirm tenant boundary",
-          "provider": "Provider",
-          "provider.description": "Pick the identity source",
-          "review": "Review & Activate",
-          "review.description": "Guard activation",
-          "scim": "SCIM Provisioning",
-          "scim.description": "Connect and manage your SCIM provisioning connection",
-          "sso": "SSO Configuration",
-          "sso.description": "Register OIDC or SAML",
-          "ssoTest": "Test User",
-          "ssoTest.description": "Record live sign-in result"
+          "activated": "Activated"
         },
         "toast": {
           "accessPolicyFailed": "Failed to save access policy",
@@ -589,7 +512,6 @@
           "activated": "Enterprise identity setup activated",
           "activateFailed": "Failed to activate setup",
           "domainStatusFailed": "Failed to refresh domain status",
-          "domainStatusRefreshed": "Domain status refreshed",
           "providerSaved": "Identity provider saved",
           "providerSaveFailed": "Failed to save provider",
           "ssoRegistered": "SSO provider registered",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "SSO test marked failed",
           "ssoTestPassed": "SSO test marked passed",
           "ssoTestRecordFailed": "Failed to record SSO test"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Decide how strictly enterprise sign-in is enforced. Nothing changes for employees until you activate the setup in the last step.",
+            "domainsLink": "Open Domains",
+            "legend": "Turn on the rules you need. All are optional.",
+            "nav": "Access rules",
+            "requireSsoDomains": "This also needs {domain} added and verified under Domains.",
+            "requireSsoHelp": "People with an @{domain} email must sign in through {provider} instead of using a password.",
+            "restrictDomainHelp": "Invite codes can only be redeemed by people with an @{domain} email address.",
+            "restrictInvitesHelp": "Invitations can only be sent to @{domain} email addresses.",
+            "save": "Save and continue",
+            "title": "Choose access rules"
+          },
+          "action": {
+            "back": "Back",
+            "next": "Next: {step}",
+            "skip": "Skip to {step}"
+          },
+          "activeNotice": "Enterprise sign-in is active for {domain}. You can review each step below.",
+          "description": "Let employees sign in to Z8 with their work account from your company's identity provider. Your progress is saved after each step, so you can stop and come back at any time.",
+          "domain": {
+            "continue": "Continue to test sign-in",
+            "copyName": "Copy name",
+            "copyValue": "Copy value",
+            "create": "Create DNS record",
+            "createHelp": "Z8 generates a unique value for you to publish. If you already created one under SSO Providers, you can skip to the last step.",
+            "description": "Add one DNS record to prove that your company controls this domain. Only verified domains can use enterprise sign-in.",
+            "fallbackName": "your domain",
+            "fullNameHint": "If your DNS provider asks for the full name, use {fullName}.",
+            "nav": "Verify domain",
+            "needsConnection": "Connect your identity provider first. Z8 creates the DNS record for that connection.",
+            "notVerified": "Not verified yet",
+            "publishHelp": "Sign in to your DNS provider, such as Cloudflare, GoDaddy or IONOS, and add a new TXT record exactly as shown. If someone else manages your domain, send them these values.",
+            "recordName": "Name (also called host)",
+            "recordType": "Type",
+            "recordValue": "Value (also called content)",
+            "stepCreate": "Create the DNS record",
+            "stepPublish": "Add it where your domain is managed",
+            "stepVerify": "Let Z8 check the record",
+            "title": "Verify that you own {domain}",
+            "toast": {
+              "notFound": "Z8 couldn't find the DNS record yet. Check the name and value, then try again in a few minutes.",
+              "verified": "Domain verified"
+            },
+            "verifiedHelp": "Z8 found your DNS record. You can leave it in place.",
+            "verify": "Verify domain",
+            "verifyHelp": "New records usually appear within a few minutes, but can take up to 48 hours. You can leave this page and check again later."
+          },
+          "nav": {
+            "label": "Setup steps"
+          },
+          "prerequisite": {
+            "action": "Go to {step}",
+            "title": "One step to go first"
+          },
+          "progress": "{completed} of {total} required steps done",
+          "progressLabel": "Setup progress",
+          "provider": {
+            "changeWarning": "This provider is already connected. Changing the provider ID or email domain means you will need to connect and verify again.",
+            "description": "Tell Z8 which service your company uses for work accounts and which email domain your employees have.",
+            "domainHelp": "Employees whose email address ends in this domain will sign in through your provider.",
+            "domainInvalid": "Enter only the part after the @, for example example.com.",
+            "domainLabel": "Work email domain",
+            "genericName": "your identity provider",
+            "nav": "Identity provider",
+            "oidc": "OpenID Connect (recommended)",
+            "oidcHelp": "Quicker to set up and supported by most providers. Choose this if you're not sure.",
+            "prepAdmin": "Administrator access to your identity provider, such as Okta or Microsoft Entra ID",
+            "prepDns": "Access to your domain's DNS settings, to add one TXT record",
+            "prepIntro": "Setup takes about 15 minutes. Have these ready:",
+            "prepTester": "A colleague's work account, or a test account, to try signing in",
+            "prepTitle": "Before you begin",
+            "presetLegend": "Which identity provider does your company use?",
+            "protocolLegend": "How should Z8 connect?",
+            "providerIdHelp": "A short name for this connection, used in sign-in links. Lowercase letters, numbers and hyphens, for example acme-okta.",
+            "providerIdInvalid": "Use only lowercase letters, numbers and hyphens, without a hyphen at the start or end.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Use this if your IT team requires SAML. You'll paste an XML metadata file.",
+            "save": "Save and continue",
+            "singleProtocol": "{provider} connects with OpenID Connect (OIDC).",
+            "title": "Choose your identity provider"
+          },
+          "review": {
+            "blocked": "Finish the steps marked “To do” to activate. Connecting, verifying the domain and a successful sign-in test are required.",
+            "checklist": "Checklist",
+            "description": "Check your setup, then turn enterprise sign-in on.",
+            "nav": "Activate",
+            "noRules": "No rules turned on",
+            "notSet": "Not set",
+            "open": "Open step",
+            "provider": "Identity provider",
+            "ready": "Everything required is done. You can activate now.",
+            "reapply": "Already active. Activate again after changing access rules to apply them.",
+            "rules": "Access rules",
+            "scim": "User sync (SCIM)",
+            "scimOff": "Not set up",
+            "scimOn": "Connected",
+            "summary": "Your settings",
+            "test": "Sign-in test",
+            "title": "Review and activate"
+          },
+          "scim": {
+            "description": "Let {provider} create, update and deactivate Z8 accounts for you using SCIM. You can skip this and set it up later.",
+            "nav": "Sync users",
+            "roleHelp": "Choose a role template before creating the connection. New accounts start with this role.",
+            "roleLabel": "Role for people created by your provider",
+            "skipHelp": "Skip this step if your provider doesn't support SCIM or you prefer to add people to Z8 yourself. Employees can still sign in with enterprise sign-in.",
+            "title": "Sync users automatically"
+          },
+          "sso": {
+            "acsLabel": "ACS URL",
+            "clientIdHelp": "Also called application ID.",
+            "clientIdRequired": "Enter the client ID.",
+            "clientSecretHelp": "Stored securely and never shown again.",
+            "clientSecretRequired": "Enter the client secret.",
+            "connected": "Connected as {providerId}",
+            "connectedHelp": "To change the connection details, remove this provider under SSO Providers and connect it again here.",
+            "continue": "Continue to domain verification",
+            "copyAcs": "Copy ACS URL",
+            "description": "Create an app for Z8 in {provider}, then paste the details it gives you here.",
+            "issuerHelp": "The web address that identifies your provider. It's listed in the app's settings and starts with https://.",
+            "issuerRequired": "Enter the issuer URL from your provider.",
+            "manageLink": "Open SSO Providers",
+            "metadataRequired": "Paste the metadata XML from your provider.",
+            "nav": "Connect",
+            "needsProvider": "Choose your identity provider and email domain first, so Z8 can prepare the connection details.",
+            "partOne": "Create an app for Z8 in {provider}",
+            "partTwo": "Paste the details from {provider}",
+            "samlIntro": "Create a SAML app in {provider} and enter this address as its assertion consumer service (ACS) or reply URL. Then download the app's metadata XML.",
+            "save": "Connect provider",
+            "title": "Connect {provider} to Z8"
+          },
+          "ssoTest": {
+            "description": "Before you turn anything on, confirm that an employee can actually sign in through {provider}.",
+            "domainFirst": "{domain} isn't verified yet. Sign-in through your provider may not work until it is.",
+            "emailHelp": "Ideally a colleague's account rather than your own administrator account.",
+            "emailLabel": "Email used for the test",
+            "failed": "The last test failed",
+            "failedHelp": "Common causes: the callback URL doesn't match exactly, the client secret is wrong or expired, or the test user isn't assigned to the app in {provider}.",
+            "goToDomain": "Verify domain",
+            "howPrivate": "Open a private or incognito browser window. Keep this window open, so you stay signed in as administrator if something goes wrong.",
+            "howRecord": "Come back here and record whether it worked.",
+            "howSignIn": "Go to the Z8 sign-in page and sign in with a work email address ending in @{domain}.",
+            "howTitle": "How to test",
+            "nav": "Test sign-in",
+            "needsConnection": "Connect your identity provider before testing sign-in.",
+            "noteLabel": "What went wrong? (only if it failed)",
+            "notePlaceholder": "For example, the error message you saw…",
+            "passed": "Sign-in worked for {email}",
+            "recordFail": "Sign-in failed",
+            "recordPass": "Sign-in worked",
+            "recordTitle": "Record the result",
+            "selfReported": "Z8 can't observe this test, so the result is saved as you report it. Saving the provider and verifying DNS don't prove that sign-in works.",
+            "title": "Test sign-in with a real account"
+          },
+          "status": {
+            "done": "Done",
+            "inProgress": "In progress",
+            "notActive": "Not active yet",
+            "optional": "Optional",
+            "toDo": "To do"
+          },
+          "stepOf": "Step {current} of {total}",
+          "title": "Set up enterprise sign-in"
         }
       },
       "keepExistingSecretHelp": "Leave blank to keep the existing secret",
@@ -648,6 +735,9 @@
         "addError": "Failed to add SSO provider",
         "addSuccess": "SSO provider added successfully",
         "addTitle": "Add SSO Provider",
+        "copyError": "Could not copy to clipboard",
+        "copyIssuerUrl": "Copy issuer URL",
+        "copyProviderId": "Copy provider ID",
         "deleteConfirm": "Delete provider",
         "deleteDialogDescription": "Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.",
         "deleteDialogTitleNamed": "Delete SSO provider {provider}?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "Delete SSO provider {provider}",
         "deleteSuccess": "SSO provider deleted",
         "description": "Add OIDC identity providers to enable SSO for your organization.",
+        "dns": {
+          "copyFqdn": "Copy fully qualified name",
+          "copyHost": "Copy record name",
+          "copyValue": "Copy TXT token",
+          "description": "Create the record at your DNS provider for {domain}, then select Verify. DNS changes can take a few minutes to propagate.",
+          "fqdnHint": "If your DNS provider expects the fully qualified name, use:",
+          "noToken": "Generate a TXT token to see the DNS record that proves you own this domain.",
+          "title": "Add this TXT record to your DNS",
+          "type": "Type"
+        },
         "domainInvalid": "Please enter a valid domain (e.g., example.com)",
         "domainVerified": "Domain verified",
         "emailDomain": "Email Domain",
@@ -673,7 +773,6 @@
           "copyCallback": "Copy callback URL",
           "copyFailed": "Clipboard access failed. Select and copy the text manually.",
           "domainPending": "Domain not verified",
-          "domainStatus": "Domain verification",
           "domainVerified": "Domain verified",
           "entra": {
             "clientHelp": "Copy Application (client) ID from Overview, not Object ID.",
@@ -743,7 +842,6 @@
           },
           "manual": "Other provider / manual OIDC",
           "manualAvailable": "Using another provider? Choose manual OIDC configuration in the setup panel.",
-          "manualTestHelp": "This is an administrator-reported sign-in result, not an automatically verified connection test. Pilot sign-in with an intended user in a separate browser session, keep this administrator session open, then record the observed pass or failure here. Saving the provider and verifying DNS do not prove sign-in works.",
           "openSetup": "Open Guided setup",
           "provider": "Identity provider",
           "required": "This field is required.",
@@ -755,10 +853,10 @@
         "providerId": "Provider ID",
         "providerIdHelp": "A unique identifier for this provider (lowercase, no spaces)",
         "providerIdInvalid": "Provider ID must contain only lowercase letters, numbers, and hyphens",
+        "regenerateToken": "Regenerate TXT token",
         "title": "Identity Providers",
         "tokenError": "Failed to generate domain verification token",
         "tokenGenerated": "Verification token generated",
-        "txtToken": "TXT token:",
         "validUrlRequired": "Please enter a valid URL",
         "verify": "Verify",
         "verifyError": "Domain verification failed. Check your DNS TXT record and retry."

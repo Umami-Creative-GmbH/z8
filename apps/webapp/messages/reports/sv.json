@@ -440,6 +440,11 @@
       "workDays": "{count} arbetsdagar",
       "workedFromHome": "{hours} h arbetade hemifrån"
     },
+    "tabs": {
+      "projects": "Projekt",
+      "timeAndAbsences": "Tid & frånvaro",
+      "vehicles": "Fordon"
+    },
     "title": "Medarbetarrapporter",
     "toast": {
       "failedGenerate": "Det gick inte att generera rapporten",

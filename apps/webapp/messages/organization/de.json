@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Eine kurze Beschreibung dieses Teams",
         "fallbackManagerHelp": "Wird für Genehmigungen verwendet, wenn ein Teammitglied keinen direkten Vorgesetzten hat.",
         "fallbackManagerLabel": "Ersatz-Vorgesetzter",
-        "fallbackManagerPlaceholder": "Ersatz-Vorgesetzten auswählen",
         "nameLabel": "Teamname",
         "namePlaceholder": "Engineering, Vertrieb, Marketing...",
         "noFallbackManager": "Kein Ersatz-Vorgesetzter",

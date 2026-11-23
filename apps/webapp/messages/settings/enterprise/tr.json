@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Belirteç yeniden oluşturulamadı",
         "regenerateTokenSuccess": "Yeni doğrulama belirteci oluşturuldu",
         "regenerating": "Yeniden oluşturuluyor…",
+        "registration": "Kayıt",
+        "registrationHelp": "Yeni kişilerin burada hesap oluşturmasına izin verin. Kapalı olduğunda yalnızca daveti olan kişiler kaydolabilir.",
+        "routingInstruction": "Bir alt alan adı için, {domain} alanını {target} hedefine yönlendiren bir CNAME kaydı ekleyin. Bir apex alan adı için, Z8 yük dengeleyici IP adresine yönlendiren bir A kaydı ekleyin. Bu kayıt için CDN proxy özelliğini kapatın.",
         "saveConfiguration": "Yapılandırmayı Kaydet",
         "secretKey": "Gizli Anahtar",
         "secretKeyPlaceholder": "Gizli anahtarı girin",
         "secretKeyRequired": "Site anahtarı ayarlanırken gereklidir",
+        "signInMethods": "Giriş yöntemleri",
         "siteKey": "Site Anahtarı",
         "socialProviders": "Sosyal Sağlayıcılar",
         "socialProvidersHelp": "Bu etki alanı için sosyal giriş seçeneklerini etkinleştir",
         "sso": "Tek Oturum Açma (SSO)",
+        "ssoButtonIcon": "SSO düğmesi simgesi",
+        "ssoButtonLabel": "SSO düğmesi etiketi (isteğe bağlı)",
         "ssoHelp": "OIDC tabanlı kurumsal girişe izin ver",
+        "ssoIconBadge": "Kimlik kartı",
+        "ssoIconFingerprint": "Parmak izi",
+        "ssoIconKey": "Anahtar",
+        "ssoIconLock": "Kilit",
+        "ssoIconShield": "Kalkan",
+        "ssoUnavailableHelp": "Önce Kimlik kurulumu altından bir SSO sağlayıcısı kurun ve doğrulayın.",
         "status": {
           "pending": "Doğrulama Bekleniyor",
           "verified": "Doğrulandı"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Bu sağlayıcıyı etkinleştir veya devre dışı bırak",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Erişim politikasını kaydet"
-          },
-          "defaultRoleTemplate": "Varsayılan rol şablonu",
-          "description": "Pilot test başarıyla tamamlandıktan sonra alan adını, davetiyeyi ve SSO zorunluluğunu ayarlayın.",
           "noDefaultTemplate": "Varsayılan şablon yok",
           "placeholder": {
             "roleTemplate": "Rol şablonu seçin"
           },
           "requireSso": "SSO zorunlu tut",
-          "requireSsoHelp": "Çalışanlar kurumsal IdP kullanmalıdır.",
           "restrictDomain": "Doğrulanmış alan adıyla kısıtla",
-          "restrictDomainHelp": "Seçilen alan adı dışındaki hesapları engelleyin.",
-          "restrictInvites": "Davetiyeleri kısıtla",
-          "restrictInvitesHelp": "Yalnızca erişim politikasıyla uyumlu davetiyelere izin ver.",
-          "title": "Erişim Politikası"
-        },
-        "badge": {
-          "now": "Şimdi",
-          "queued": "Sırada",
-          "ready": "Hazır"
+          "restrictInvites": "Davetiyeleri kısıtla"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Alan adı durumunu kontrol et"
-          },
-          "description": "Çalışanlar için SSO zorunlu tutulmadan önce kiracı sınırını doğrulayın.",
-          "help": "DNS doğrulaması, mevcut SSO alan adı doğrulama işlemlerini kullanır. Zorunluluğu etkinleştirmeden önce bu doğrulamayı tamamlayın.",
-          "notSelected": "Seçilmedi",
           "selected": "Seçilen alan adı",
           "status": {
-            "pending": "Beklemede",
             "verified": "Doğrulandı"
-          },
-          "title": "Alan adı"
+          }
         },
-        "hero": {
-          "title": "Operasyonel komut kontrol listesi"
-        },
-        "progress": "{total} adımdan {completed} tanesi tamamlandı",
         "provider": {
-          "action": {
-            "save": "Sağlayıcıyı kaydet"
-          },
-          "description": "Kimlik sağlayıcı ön ayarını, protokolü, sağlayıcı kimliğini ve e-posta alan adını seçin.",
           "error": {
             "domainRequired": "Alan adı gereklidir",
             "providerIdRequired": "Sağlayıcı kimliği gereklidir"
           },
           "label": {
-            "domain": "E-posta alan adı",
-            "preset": "Sağlayıcı ön ayarı",
-            "protocol": "Protokol",
             "providerId": "Sağlayıcı kimliği"
           },
           "placeholder": {
             "domain": "ör. example.com…",
-            "protocol": "Protokol seçin",
-            "provider": "Sağlayıcı seçin",
             "providerId": "ör. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "SAML veya OIDC tek oturum açma için Okta Workforce Identity kullanın."
             }
-          },
-          "title": "Sağlayıcı"
-        },
-        "rail": {
-          "title": "Hazırlık durumu"
+          }
         },
         "review": {
           "action": {
             "activate": "Kurumsal kimliği etkinleştir"
           },
-          "activationSummary": "Etkinleştirme özeti",
-          "description": "Kurumsal kimlik kontrollerini etkinleştirmeden önce korumalı etkinleştirme kontrollerini gözden geçirin.",
           "lockoutWarning": "Mevcut yönetici kilitlenme uyarısı",
-          "lockoutWarningHelp": "Etkinleştirmeden önce mevcut yönetici hesabınızın yapılandırılmış sağlayıcı aracılığıyla oturum açabildiğini doğrulayın. Zorunluluk, seçilen alan adı için parola ile girişi engelleyebilir.",
-          "missingRequirement": "Etkinleştirme öncesinde {item} gereklidir",
-          "prerequisitesComplete": "Sağlayıcı, doğrulanmış alan adı ve SSO test ön koşulları tamamlandı.",
-          "requirement": {
-            "domain": "Doğrulanmış alan adı",
-            "provider": "Sağlayıcı",
-            "ssoTest": "SSO testi"
-          },
-          "title": "Gözden Geçir ve Etkinleştir"
+          "lockoutWarningHelp": "Etkinleştirmeden önce mevcut yönetici hesabınızın yapılandırılmış sağlayıcı aracılığıyla oturum açabildiğini doğrulayın. Zorunluluk, seçilen alan adı için parola ile girişi engelleyebilir."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "döndürülüyor",
             "verified": "doğrulandı"
           },
-          "title": "SCIM Sağlama",
           "toast": {
             "createError": "SCIM bağlantısı oluşturulamadı.",
             "reconcileError": "SCIM oluşturma işlemi uzlaştırılamadı.",
@@ -510,14 +472,9 @@
           },
           "verification": "Doğrulama",
           "verification.awaiting": "Sağlayıcı kullanımı bekleniyor",
-          "verification.observed": "Gözlemlendi",
-          "wizardDescription": "Kurumsal etkinleştirmeyi değiştirmeden yönetilen kullanıcı sağlamayı yapılandırın."
+          "verification.observed": "Gözlemlendi"
         },
         "sso": {
-          "action": {
-            "register": "SSO sağlayıcısını kaydet"
-          },
-          "description": "OIDC istemci kimlik bilgileri veya SAML meta verilerini kullanarak harici IdP'yi kaydedin.",
           "error": {
             "saveProviderFirst": "SSO'yu kaydetmeden önce sağlayıcıyı ve etki alanını kaydedin"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "IdP meta veri XML'ini yapıştırın…"
-          },
-          "saml": {
-            "acsPath": "Tarayıcıya göreli ACS yolu: {path}",
-            "acsUrl": "Kimlik sağlayıcınızı (IdP) bu onay tüketici hizmeti (ACS) URL'si ile yapılandırın: {path}"
-          },
-          "title": "SSO Yapılandırması"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Kayıt başarısız",
-            "recordPass": "Kayıt başarılı"
-          },
           "defaultFailure": "Canlı SSO testi başarısız oldu",
-          "description": "Uygulamadan önce canlı bir harici SSO testinin sonucunu kaydedin.",
           "error": {
             "saveProviderFirst": "Testi kaydetmeden önce sağlayıcıyı kaydedin"
           },
-          "label": {
-            "email": "Test kullanıcısı e-postası",
-            "failureNote": "Hata notu"
-          },
           "status": {
-            "failed": "Başarısız",
-            "notRun": "Çalıştırılmadı",
-            "passed": "Başarılı"
-          },
-          "title": "Test Kullanıcısı"
+            "notRun": "Çalıştırılmadı"
+          }
         },
         "status": {
-          "activated": "Etkinleştirildi",
-          "draft": "Taslak"
-        },
-        "step": {
-          "accessPolicy": "Erişim İlkesi",
-          "accessPolicy.description": "Uygulama kurallarını ayarla",
-          "domain": "Etki alanı",
-          "domain.description": "Kiracı sınırını onayla",
-          "provider": "Sağlayıcı",
-          "provider.description": "Kimlik kaynağını seçin",
-          "review": "Gözden Geçir ve Etkinleştir",
-          "review.description": "Korumayı etkinleştir",
-          "scim": "SCIM Sağlama",
-          "scim.description": "SCIM sağlama bağlantınızı bağlayın ve yönetin",
-          "sso": "SSO Yapılandırması",
-          "sso.description": "OIDC veya SAML Kaydet",
-          "ssoTest": "Test Kullanıcısı",
-          "ssoTest.description": "Canlı oturum açma sonucunu kaydet"
+          "activated": "Etkinleştirildi"
         },
         "toast": {
           "accessPolicyFailed": "Erişim ilkesi kaydedilemedi",
@@ -589,7 +512,6 @@
           "activated": "Kurumsal kimlik kurulumu etkinleştirildi",
           "activateFailed": "Kurulum etkinleştirilemedi",
           "domainStatusFailed": "Etki alanı durumu yenilenemedi",
-          "domainStatusRefreshed": "Etki alanı durumu yenilendi",
           "providerSaved": "Kimlik sağlayıcı kaydedildi",
           "providerSaveFailed": "Sağlayıcı kaydedilemedi",
           "ssoRegistered": "SSO sağlayıcısı kaydedildi",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "SSO testi başarısız olarak işaretlendi",
           "ssoTestPassed": "SSO testi başarılı olarak işaretlendi",
           "ssoTestRecordFailed": "SSO testi kaydedilemedi"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Kurumsal oturum açmanın ne kadar katı şekilde uygulanacağına karar verin. Son adımda kurulumu etkinleştirene kadar çalışanlar için hiçbir şey değişmez.",
+            "domainsLink": "Alan Adlarını Aç",
+            "legend": "İhtiyacınız olan kuralları açın. Tümü isteğe bağlıdır.",
+            "nav": "Erişim kuralları",
+            "requireSsoDomains": "Bunun için ayrıca {domain} alan adının Alan Adları altına eklenmesi ve doğrulanması gerekir.",
+            "requireSsoHelp": "@{domain} e-postasına sahip kişiler şifre kullanmak yerine {provider} üzerinden oturum açmalıdır.",
+            "restrictDomainHelp": "Davet kodları yalnızca @{domain} e-posta adresine sahip kişiler tarafından kullanılabilir.",
+            "restrictInvitesHelp": "Davetler yalnızca @{domain} e-posta adreslerine gönderilebilir.",
+            "save": "Kaydet ve devam et",
+            "title": "Erişim kurallarını seçin"
+          },
+          "action": {
+            "back": "Geri",
+            "next": "Sonraki: {step}",
+            "skip": "{step} adımına atla"
+          },
+          "activeNotice": "{domain} için kurumsal oturum açma etkin. Aşağıdaki her adımı inceleyebilirsiniz.",
+          "description": "Çalışanların şirketinizin kimlik sağlayıcısındaki iş hesaplarıyla Z8'de oturum açmasına izin verin. İlerlemeniz her adımdan sonra kaydedilir, böylece istediğiniz zaman durup geri dönebilirsiniz.",
+          "domain": {
+            "continue": "Oturum açmayı test etmeye devam et",
+            "copyName": "Adı kopyala",
+            "copyValue": "Değeri kopyala",
+            "create": "DNS kaydı oluştur",
+            "createHelp": "Z8, yayınlamanız için benzersiz bir değer oluşturur. SSO Sağlayıcıları altında zaten bir tane oluşturduysanız son adıma atlayabilirsiniz.",
+            "description": "Şirketinizin bu alan adını kontrol ettiğini kanıtlamak için bir DNS kaydı ekleyin. Yalnızca doğrulanmış alan adları kurumsal oturum açmayı kullanabilir.",
+            "fallbackName": "alan adınız",
+            "fullNameHint": "DNS sağlayıcınız tam adı isterse {fullName} değerini kullanın.",
+            "nav": "Alan adını doğrula",
+            "needsConnection": "Önce kimlik sağlayıcınızı bağlayın. Z8, bu bağlantı için DNS kaydını oluşturur.",
+            "notVerified": "Henüz doğrulanmadı",
+            "publishHelp": "Cloudflare, GoDaddy veya IONOS gibi DNS sağlayıcınızda oturum açın ve tam olarak gösterildiği gibi yeni bir TXT kaydı ekleyin. Alan adınızı başka biri yönetiyorsa bu değerleri onlara gönderin.",
+            "recordName": "Ad (ana bilgisayar olarak da adlandırılır)",
+            "recordType": "Tür",
+            "recordValue": "Değer (içerik olarak da adlandırılır)",
+            "stepCreate": "DNS kaydını oluşturun",
+            "stepPublish": "Alan adınızın yönetildiği yere ekleyin",
+            "stepVerify": "Z8'in kaydı kontrol etmesini sağlayın",
+            "title": "{domain} alan adının sahibi olduğunuzu doğrulayın",
+            "toast": {
+              "notFound": "Z8 henüz DNS kaydını bulamadı. Adı ve değeri kontrol edin, ardından birkaç dakika sonra tekrar deneyin.",
+              "verified": "Alan adı doğrulandı"
+            },
+            "verifiedHelp": "Z8 DNS kaydınızı buldu. Olduğu gibi bırakabilirsiniz.",
+            "verify": "Alan adını doğrula",
+            "verifyHelp": "Yeni kayıtlar genellikle birkaç dakika içinde görünür, ancak 48 saate kadar sürebilir. Bu sayfadan ayrılıp daha sonra tekrar kontrol edebilirsiniz."
+          },
+          "nav": {
+            "label": "Kurulum adımları"
+          },
+          "prerequisite": {
+            "action": "{step} adımına git",
+            "title": "Önce tamamlanması gereken bir adım var"
+          },
+          "progress": "Gerekli {total} adımdan {completed} tanesi tamamlandı",
+          "progressLabel": "Kurulum ilerlemesi",
+          "provider": {
+            "changeWarning": "Bu sağlayıcı zaten bağlı. Sağlayıcı kimliğini veya e-posta alan adını değiştirmek, yeniden bağlanmanız ve doğrulamanız gerekeceği anlamına gelir.",
+            "description": "Z8'e şirketinizin iş hesapları için hangi hizmeti kullandığını ve çalışanlarınızın hangi e-posta alan adına sahip olduğunu bildirin.",
+            "domainHelp": "E-posta adresi bu alan adıyla biten çalışanlar, sağlayıcınız üzerinden oturum açacaktır.",
+            "domainInvalid": "Yalnızca @ işaretinden sonraki kısmı girin; örneğin example.com.",
+            "domainLabel": "İş e-postası alan adı",
+            "genericName": "kimlik sağlayıcınız",
+            "nav": "Kimlik sağlayıcı",
+            "oidc": "OpenID Connect (önerilen)",
+            "oidcHelp": "Kurulumu daha hızlıdır ve çoğu sağlayıcı tarafından desteklenir. Emin değilseniz bunu seçin.",
+            "prepAdmin": "Okta veya Microsoft Entra ID gibi kimlik sağlayıcınıza yönetici erişimi",
+            "prepDns": "Bir TXT kaydı eklemek için alan adınızın DNS ayarlarına erişim",
+            "prepIntro": "Kurulum yaklaşık 15 dakika sürer. Şunları hazır bulundurun:",
+            "prepTester": "Giriş yapmayı denemek için bir iş arkadaşınızın iş hesabı veya bir test hesabı",
+            "prepTitle": "Başlamadan önce",
+            "presetLegend": "Şirketiniz hangi kimlik sağlayıcıyı kullanıyor?",
+            "protocolLegend": "Z8 nasıl bağlanmalı?",
+            "providerIdHelp": "Giriş bağlantılarında kullanılan bu bağlantı için kısa bir ad. Küçük harfler, sayılar ve tire işaretleri; örneğin acme-okta.",
+            "providerIdInvalid": "Yalnızca küçük harfler, sayılar ve tire işaretleri kullanın; başında veya sonunda tire olmamalıdır.",
+            "saml": "SAML 2.0",
+            "samlHelp": "BT ekibiniz SAML gerektiriyorsa bunu kullanın. Bir XML meta veri dosyası yapıştıracaksınız.",
+            "save": "Kaydet ve devam et",
+            "singleProtocol": "{provider}, OpenID Connect (OIDC) ile bağlanır.",
+            "title": "Kimlik sağlayıcınızı seçin"
+          },
+          "review": {
+            "blocked": "Etkinleştirmek için “Yapılacak” olarak işaretlenen adımları tamamlayın. Bağlantı kurma, alan adını doğrulama ve başarılı bir giriş testi gereklidir.",
+            "checklist": "Kontrol listesi",
+            "description": "Kurulumunuzu kontrol edin, ardından kurumsal girişi açın.",
+            "nav": "Etkinleştir",
+            "noRules": "Hiçbir kural açık değil",
+            "notSet": "Ayarlanmadı",
+            "open": "Adımı aç",
+            "provider": "Kimlik sağlayıcı",
+            "ready": "Gerekli her şey tamamlandı. Artık etkinleştirebilirsiniz.",
+            "reapply": "Zaten etkin. Erişim kurallarını değiştirdikten sonra uygulamak için tekrar etkinleştirin.",
+            "rules": "Erişim kuralları",
+            "scim": "Kullanıcı senkronizasyonu (SCIM)",
+            "scimOff": "Kurulmadı",
+            "scimOn": "Bağlandı",
+            "summary": "Ayarlarınız",
+            "test": "Giriş testi",
+            "title": "İncele ve etkinleştir"
+          },
+          "scim": {
+            "description": "SCIM kullanarak {provider} sağlayıcısının sizin adınıza Z8 hesapları oluşturmasına, güncellemesine ve devre dışı bırakmasına izin verin. Bu adımı atlayabilir ve daha sonra kurabilirsiniz.",
+            "nav": "Kullanıcıları senkronize et",
+            "roleHelp": "Bağlantıyı oluşturmadan önce bir rol şablonu seçin. Yeni hesaplar bu rolle başlar.",
+            "roleLabel": "Sağlayıcınız tarafından oluşturulan kişiler için rol",
+            "skipHelp": "Sağlayıcınız SCIM desteklemiyorsa veya Z8'e kişileri kendiniz eklemeyi tercih ediyorsanız bu adımı atlayın. Çalışanlar yine de kurumsal giriş ile giriş yapabilir.",
+            "title": "Kullanıcıları otomatik olarak senkronize et"
+          },
+          "sso": {
+            "acsLabel": "ACS URL'si",
+            "clientIdHelp": "Uygulama kimliği olarak da bilinir.",
+            "clientIdRequired": "İstemci kimliğini girin.",
+            "clientSecretHelp": "Güvenli bir şekilde saklanır ve bir daha asla gösterilmez.",
+            "clientSecretRequired": "İstemci gizli anahtarını girin.",
+            "connected": "{providerId} olarak bağlandı",
+            "connectedHelp": "Bağlantı ayrıntılarını değiştirmek için bu sağlayıcıyı SSO Sağlayıcıları altından kaldırın ve burada tekrar bağlayın.",
+            "continue": "Alan adı doğrulamasına devam et",
+            "copyAcs": "ACS URL'sini kopyala",
+            "description": "{provider} üzerinde Z8 için bir uygulama oluşturun, ardından size verilen ayrıntıları buraya yapıştırın.",
+            "issuerHelp": "Sağlayıcınızı tanımlayan web adresi. Uygulamanın ayarlarında listelenir ve https:// ile başlar.",
+            "issuerRequired": "Sağlayıcınızın veren URL'sini girin.",
+            "manageLink": "SSO Sağlayıcılarını Aç",
+            "metadataRequired": "Sağlayıcınızdan aldığınız meta veri XML'ini yapıştırın.",
+            "nav": "Bağlan",
+            "needsProvider": "Z8'in bağlantı ayrıntılarını hazırlayabilmesi için önce kimlik sağlayıcınızı ve e-posta alan adınızı seçin.",
+            "partOne": "{provider} üzerinde Z8 için bir uygulama oluşturun",
+            "partTwo": "{provider} üzerinden alınan ayrıntıları yapıştırın",
+            "samlIntro": "{provider} üzerinde bir SAML uygulaması oluşturun ve bu adresi assertion consumer service (ACS) veya yanıt URL'si olarak girin. Ardından uygulamanın meta veri XML'ini indirin.",
+            "save": "Sağlayıcıyı bağla",
+            "title": "{provider} sağlayıcısını Z8'e bağlayın"
+          },
+          "ssoTest": {
+            "description": "Herhangi bir özelliği etkinleştirmeden önce, bir çalışanın {provider} üzerinden gerçekten giriş yapabildiğini doğrulayın.",
+            "domainFirst": "{domain} henüz doğrulanmadı. Doğrulanana kadar sağlayıcınız üzerinden giriş çalışmayabilir.",
+            "emailHelp": "Kendi yönetici hesabınız yerine tercihen bir iş arkadaşınızın hesabı.",
+            "emailLabel": "Test için kullanılan e-posta",
+            "failed": "Son test başarısız oldu",
+            "failedHelp": "Sık karşılaşılan nedenler: geri çağırma (callback) URL'sinin tam olarak eşleşmemesi, istemci sırrının (client secret) yanlış veya süresinin dolmuş olması ya da test kullanıcısının {provider} üzerindeki uygulamaya atanmamış olması.",
+            "goToDomain": "Alan adını doğrula",
+            "howPrivate": "Gizli veya özel bir tarayıcı penceresi açın. Bir sorun çıkması durumunda yönetici olarak oturumunuzun açık kalması için bu pencereyi açık tutun.",
+            "howRecord": "Buraya geri dönün ve çalışıp çalışmadığını kaydedin.",
+            "howSignIn": "Z8 giriş sayfasına gidin ve @{domain} ile biten bir iş e-posta adresiyle giriş yapın.",
+            "howTitle": "Nasıl test edilir",
+            "nav": "Girişi test et",
+            "needsConnection": "Girişi test etmeden önce kimlik sağlayıcınızı bağlayın.",
+            "noteLabel": "Ne ters gitti? (yalnızca başarısız olduysa)",
+            "notePlaceholder": "Örneğin gördüğünüz hata mesajı…",
+            "passed": "Giriş {email} için başarılı oldu",
+            "recordFail": "Giriş başarısız oldu",
+            "recordPass": "Giriş başarılı oldu",
+            "recordTitle": "Sonucu kaydet",
+            "selfReported": "Z8 bu testi gözlemleyemez; bu nedenle sonuç sizin bildirdiğiniz şekilde kaydedilir. Sağlayıcıyı kaydetmek ve DNS'i doğrulamak, girişin çalıştığını kanıtlamaz.",
+            "title": "Gerçek bir hesapla girişi test edin"
+          },
+          "status": {
+            "done": "Tamamlandı",
+            "inProgress": "Devam ediyor",
+            "notActive": "Henüz etkin değil",
+            "optional": "İsteğe bağlı",
+            "toDo": "Yapılacak"
+          },
+          "stepOf": "Adım {current} / {total}",
+          "title": "Kurumsal girişi ayarlayın"
         }
       },
       "keepExistingSecretHelp": "Mevcut gizli anahtarı korumak için boş bırakın",
@@ -648,6 +735,9 @@
         "addError": "SSO sağlayıcısı eklenemedi",
         "addSuccess": "SSO sağlayıcısı başarıyla eklendi",
         "addTitle": "SSO Sağlayıcısı Ekle",
+        "copyError": "Panoya kopyalanamadı",
+        "copyIssuerUrl": "Veren URL'sini kopyala",
+        "copyProviderId": "Sağlayıcı kimliğini kopyala",
         "deleteConfirm": "Sağlayıcıyı sil",
         "deleteDialogDescription": "Bu SSO sağlayıcısını silmek istediğinizden emin misiniz? Kullanıcılar artık bu kimlik sağlayıcısını kullanarak giriş yapamayacak.",
         "deleteDialogTitleNamed": "{provider} SSO sağlayıcısı silinsin mi?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "SSO sağlayıcısı {provider} silinsin mi?",
         "deleteSuccess": "SSO sağlayıcısı silindi",
         "description": "Kuruluşunuz için SSO'yu etkinleştirmek üzere OIDC kimlik sağlayıcıları ekleyin.",
+        "dns": {
+          "copyFqdn": "Tam nitelikli adı kopyala",
+          "copyHost": "Kayıt adını kopyala",
+          "copyValue": "TXT belirtecini kopyala",
+          "description": "{domain} için DNS sağlayıcınızda kaydı oluşturun, ardından Doğrula'yı seçin. DNS değişikliklerinin yayılması birkaç dakika sürebilir.",
+          "fqdnHint": "DNS sağlayıcınız tam nitelikli adı bekliyorsa şunu kullanın:",
+          "noToken": "Bu alan adına sahip olduğunuzu kanıtlayan DNS kaydını görmek için bir TXT belirteci oluşturun.",
+          "title": "Bu TXT kaydını DNS'inize ekleyin",
+          "type": "Tür"
+        },
         "domainInvalid": "Lütfen geçerli bir alan adı girin (ör. example.com)",
         "domainVerified": "Alan adı doğrulandı",
         "emailDomain": "E-posta Alan Adı",
@@ -673,7 +773,6 @@
           "copyCallback": "Geri çağırma URL'sini kopyala",
           "copyFailed": "Panoya erişilemedi. Metni manuel olarak seçip kopyalayın.",
           "domainPending": "Alan adı doğrulanmadı",
-          "domainStatus": "Alan adı doğrulaması",
           "domainVerified": "Alan adı doğrulandı",
           "entra": {
             "clientHelp": "Genel Bakış'tan Nesne Kimliği'ni değil, Uygulama (istemci) kimliğini kopyalayın.",
@@ -743,7 +842,6 @@
           },
           "manual": "Diğer sağlayıcı / manuel OIDC",
           "manualAvailable": "Başka bir sağlayıcı mı kullanıyorsunuz? Kurulum panelinde manuel OIDC yapılandırmasını seçin.",
-          "manualTestHelp": "Bu, otomatik olarak doğrulanmış bir bağlantı testi değil, yönetici tarafından bildirilen bir oturum açma sonucudur. Ayrı bir tarayıcı oturumunda hedeflenen bir kullanıcıyla pilot oturum açma işlemi gerçekleştirin, bu yönetici oturumunu açık tutun ve ardından gözlemlenen başarıyı veya başarısızlığı buraya kaydedin. Sağlayıcıyı kaydetmek ve DNS'i doğrulamak oturum açmanın çalıştığını kanıtlamaz.",
           "openSetup": "Kılavuzlu kurulumu aç",
           "provider": "Kimlik sağlayıcı",
           "required": "Bu alan zorunludur.",
@@ -755,10 +853,10 @@
         "providerId": "Sağlayıcı Kimliği",
         "providerIdHelp": "Bu sağlayıcı için benzersiz bir tanımlayıcı (küçük harf, boşluksuz)",
         "providerIdInvalid": "Sağlayıcı Kimliği yalnızca küçük harfler, rakamlar ve kısa çizgiler içermelidir",
+        "regenerateToken": "TXT belirtecini yeniden oluştur",
         "title": "Kimlik Sağlayıcıları",
         "tokenError": "Alan adı doğrulama belirteci oluşturulamadı",
         "tokenGenerated": "Doğrulama belirteci oluşturuldu",
-        "txtToken": "TXT belirteci:",
         "validUrlRequired": "Lütfen geçerli bir URL girin",
         "verify": "Doğrula",
         "verifyError": "Alan adı doğrulaması başarısız oldu. DNS TXT kaydınızı kontrol edin ve tekrar deneyin."

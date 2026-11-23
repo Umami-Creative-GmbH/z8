@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Descripción opcional para este conjunto de categorías",
       "setName": "Nombre",
       "setNamePlaceholder": "p. ej., Categorías de viaje",
+      "setNameRequired": "El nombre del conjunto de categorías es obligatorio",
       "setNameTaken": "Ya existe un conjunto de categorías con este nombre.",
       "setUpdated": "Conjunto de categorías actualizado",
       "setUpdateFailed": "Error al actualizar el conjunto de categorías",

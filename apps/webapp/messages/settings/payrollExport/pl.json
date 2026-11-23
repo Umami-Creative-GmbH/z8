@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Skonfiguruj łączniki eksportu listy płac i mapowanie składników wynagrodzenia",
+      "connectorsTitle": "Łączniki listy płac i składniki wynagrodzenia",
       "datev": {
         "beraternummer": "Numer konsultanta",
         "beraternummerTooltip": "Twój numer konsultanta DATEV (1-7 cyfr)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Konfiguracja zapisana",
         "title": "Dane podstawowe DATEV"
       },
-      "description": "Eksportuj okresy pracy do systemów płacowych, takich jak DATEV lub Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday i API SuccessFactors nie obsługują zwrotów wydatków.",
         "codeLabel": "{line}, składnik wynagrodzenia: {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Zakres dat",
         "description": "Eksportuj okresy pracy i nieobecności do formatu DATEV Lohn & Gehalt",
         "employees": "Pracownicy",
-        "employeesSelected": "Wybrano {count}",
         "endDate": "Data końcowa",
         "error": "Eksport nie powiódł się",
         "exportButtonDatev": "Eksportuj do DATEV",
@@ -100,10 +100,13 @@
         "download": "Pobierz eksport",
         "downloadError": "Nie udało się pobrać adresu URL do pobrania",
         "employees": "pracownicy",
+        "includesSettledDays": "Uwzględniono rozliczone dni",
+        "loadError": "Nie udało się załadować historii eksportu.",
         "noExports": "Brak eksportów",
         "noExportsHint": "Rozpocznij eksport listy płac na karcie Eksport. Ukończone eksporty pojawią się tutaj do pobrania.",
         "payrollRun": "{count, plural, one {Przebieg listy płac: # raport z wydatków} other {Przebieg listy płac: # raportów z wydatków}}",
         "periods": "okresy",
+        "settledDaysLeftOut": "{count, plural, one {# rozliczony dzień pominięty} few {# rozliczone dni pominięte} many {# rozliczonych dni pominiętych} other {# rozliczonego dnia pominięte}}",
         "status": {
           "completed": "Ukończono",
           "failed": "Niepowodzenie",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Kategoria pracy"
       },
+      "openPayrollWorkspace": "Uruchamiaj eksporty w module Płace",
       "personio": {
         "clientId": "Identyfikator klienta (Client ID)",
         "clientIdHelp": "Pomoc dotycząca identyfikatora klienta",
@@ -242,6 +246,9 @@
         "saveSuccess": "Konfiguracja zapisana",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Systemy docelowe listy płac"
+      },
       "specialCategory": {
         "overtime": "Nadgodziny"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Eksport",
-        "history": "Historia",
         "lexware": "Lexware",
         "mappings": "Rodzaje wynagrodzeń",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Eksport płac",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Skonfigurowano",
+        "statusNeedsCredentials": "Wymaga danych uwierzytelniających",
+        "statusNotConfigured": "Nieskonfigurowano",
+        "successfactorsSubtitle": "API i CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Limit czasu API (ms)",
         "batchSize": "Rozmiar partii",
@@ -367,12 +382,12 @@
         "warning": "Ostrzeżenie"
       },
       "description": "Sprawdź, czy okres płacowy jest gotowy przed wyeksportowaniem danych o czasie pracy, nieobecnościach i płacach.",
+      "loadError": "Nie udało się załadować weryfikacji gotowości płacowej organizacji.",
       "openPayrollExport": "Otwórz eksport listy płac",
       "period": {
         "currentMonth": "Bieżący miesiąc",
         "navLabel": "Okres rozliczeniowy",
         "previousMonth": "Poprzedni miesiąc",
-        "scope": "Okres rozliczeniowy: {period} (UTC)",
         "showMonth": "Pokaż {month}"
       },
       "status": {

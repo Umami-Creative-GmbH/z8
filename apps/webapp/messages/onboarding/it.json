@@ -152,7 +152,6 @@
       "vacationPolicy": "Ferie",
       "welcome": "Benvenuto",
       "wellness": "Benessere",
-      "workSchedule": "Orario",
       "workTemplates": "Modelli"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Imposta promemoria per l'acqua per rimanere in salute durante la giornata lavorativa. Riceverai notifiche gentili per bere acqua mentre sei timbrato.",
       "success": "Promemoria acqua abilitato!",
       "title": "Rimani idratato"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Impossibile verificare l'accesso all'orario di lavoro. Procedo al passaggio successivo disponibile.",
-      "checkingAccess": "Verifica dell'accesso all'orario di lavoro",
-      "classification": "Classificazione Lavoro",
-      "classificationDesc": "Come vuoi tracciare le tue ore di lavoro.",
-      "continue": "Continua",
-      "daily": "Giornaliero",
-      "error": "Impossibile impostare orario di lavoro",
-      "hoursPerWeek": "Ore per Settimana",
-      "hoursPerWeekDesc": "Il tempo pieno tipico è di 40 ore a settimana.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Puoi rivedere le politiche lavorative nelle impostazioni dopo l'onboarding.",
-      "monthly": "Mensile",
-      "policyContext": "Continuando salvi i progressi dell'onboarding. Le politiche lavorative dell'organizzazione restano in vigore; le ore e la classificazione inserite qui non vengono salvate in una politica lavorativa.",
-      "previousAttempt": "Una richiesta precedente è ancora in corso di completamento. Riprova per continuare.",
-      "progressSaved": "Progressi dell'onboarding salvati.",
-      "scheduleTitle": "Orario di Lavoro",
-      "selectClassification": "Seleziona la classificazione",
-      "setupContext": "Esamina le ore settimanali e il modo in cui vengono rilevate le ore di lavoro.",
-      "skip": "Salta per ora",
-      "skipError": "Impossibile saltare la configurazione dell'orario di lavoro",
-      "subtitle": "Definisci i tuoi orari di lavoro per aiutare a tracciare il tempo e gestire le assenze con precisione.",
-      "title": "Imposta il tuo orario di lavoro",
-      "validation": {
-        "hoursNegative": "Le ore non possono essere negative",
-        "hoursTooMany": "Una settimana ha al massimo 168 ore"
-      },
-      "weekly": "Settimanale"
     },
     "workTemplates": {
       "cardDesc": "Crea un orario di lavoro predefinito. Puoi aggiungere altri modelli in seguito nelle impostazioni.",

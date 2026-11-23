@@ -441,7 +441,9 @@
       "description": "Shikoni dhe menaxhoni të gjithë përdoruesit në platformë",
       "filters": {
         "allUsers": "Të gjithë përdoruesit",
-        "banned": "Bllokuar"
+        "banned": "Bllokuar",
+        "clearOrganization": "Pastro filtrin e organizatës",
+        "organization": "Organizata: {name}"
       },
       "pagination": {
         "showing": "Duke shfaqur {from} deri në {to} nga {total} përdorues"

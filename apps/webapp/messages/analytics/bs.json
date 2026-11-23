@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "pregledaj analitiku",
       "restrictedDescription": "Analitika je dostupna samo administratorima i menadžerima.",
       "restrictedTitle": "Pristup je ograničen"
     },
     "common": {
       "days": "Dani",
       "employee": "Zaposlenik",
-      "employees": "Zaposlenici",
       "hours": "Sati",
       "loadingOrganizationSettings": "Učitavanje postavki organizacije prije omogućavanja zadanih postavki.",
       "noDataAvailable": "Nema dostupnih podataka",
@@ -17,17 +15,16 @@
       "overtimeHours": "Prekovremeni sati",
       "team": "Tim",
       "totalHours": "Ukupno sati",
-      "unavailable": "Nedostupno",
       "undertime": "Manjak sati",
       "undertimeHours": "Sati manjka"
     },
     "layout": {
       "description": "Sveobuhvatan uvid u učinak tima, radne sate i obrasce odsustva",
       "tabs": {
+        "absencesAndVacation": "Odsustva i godišnji odmor",
         "overtimeBurnDown": "Smanjenje prekovremenih sati",
         "overview": "Pregled",
         "teamPerformance": "Učinak tima",
-        "vacationTrends": "Trendovi godišnjih odmora",
         "workHours": "Radni sati"
       },
       "title": "Analitika"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Neki analitički podaci nisu mogli biti učitani. Prethodno učitane vrijednosti, ako su prikazane, mogu biti zastarjele."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Odobrenih od riješenih zahtjeva",
-          "title": "Stopa odobravanja",
-          "unavailableDescription": "Nije uspjelo učitavanje analitike odobravanja"
-        },
-        "avgWorkHours": {
-          "description": "Po zaposleniku u odabranom periodu",
-          "title": "Prosj. radni sati"
-        },
-        "totalAbsenceDays": {
-          "description": "Ukupno dana u odabranom periodu",
-          "title": "Ukupno dana odsustva"
-        },
-        "totalEmployees": {
-          "description": "Aktivni zaposlenici u organizaciji",
-          "title": "Ukupno zaposlenika"
-        }
-      },
       "loadingLabel": "Učitavanje analitičkih podataka",
-      "refreshing": "Osvježavanje analitike…",
-      "workHoursByTeam": {
-        "description": "Ukupno evidentirani radni sati po timu",
-        "title": "Radni sati po timu"
-      }
+      "refreshing": "Osvježavanje analitike…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Prosjek po zaposleniku",

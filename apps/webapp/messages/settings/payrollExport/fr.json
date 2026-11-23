@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Configurer les connecteurs d'export de paie et les mappages des types de salaire",
+      "connectorsTitle": "Connecteurs de paie et types de salaire",
       "datev": {
         "beraternummer": "Beraternummer",
         "beraternummerTooltip": "Votre numéro de consultant DATEV (1 à 7 chiffres)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Configuration enregistrée",
         "title": "Données de base DATEV"
       },
-      "description": "Exporter les périodes de travail vers des systèmes de paie comme DATEV ou Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday et l'API SuccessFactors ne prennent pas en charge les remboursements de frais.",
         "codeLabel": "{line}, rubrique de paie {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Plage de dates",
         "description": "Exporter les périodes de travail et les absences au format DATEV Lohn & Gehalt",
         "employees": "Employés",
-        "employeesSelected": "{count} sélectionné(s)",
         "endDate": "Date de fin",
         "error": "Échec de l'export",
         "exportButtonDatev": "Exporter vers DATEV",
@@ -100,10 +100,13 @@
         "download": "Télécharger l'exportation",
         "downloadError": "Échec de l'obtention de l'URL de téléchargement",
         "employees": "employés",
+        "includesSettledDays": "Jours soldés inclus",
+        "loadError": "L'historique des exports n'a pas pu être chargé.",
         "noExports": "Aucune exportation pour le moment",
         "noExportsHint": "Lancez un export de paie dans l'onglet Exporter. Les exports terminés apparaissent ici pour téléchargement.",
         "payrollRun": "{count, plural, one {Cycle de paie : # note de frais} other {Cycle de paie : # notes de frais}}",
         "periods": "périodes",
+        "settledDaysLeftOut": "{count, plural, one {# jour soldé exclu} other {# jours soldés exclus}}",
         "status": {
           "completed": "Terminé",
           "failed": "Échoué",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Catégorie de travail"
       },
+      "openPayrollWorkspace": "Lancer les exports dans Paie",
       "personio": {
         "clientId": "ID client",
         "clientIdHelp": "Aide pour l'ID client",
@@ -242,6 +246,9 @@
         "saveSuccess": "Configuration enregistrée",
         "title": "Sage Lohn"
       },
+      "sections": {
+        "targets": "Destinations de paie"
+      },
       "specialCategory": {
         "overtime": "Heures supplémentaires"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Exporter",
-        "history": "Historique",
         "lexware": "Lexware",
         "mappings": "Types de salaire",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Export de paie",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "API Personio",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Configuré",
+        "statusNeedsCredentials": "Identifiants requis",
+        "statusNotConfigured": "Non configuré",
+        "successfactorsSubtitle": "API et CSV",
+        "workdaySubtitle": "API Workday"
+      },
       "workday": {
         "apiTimeoutMs": "Délai d'expiration de l'API (ms)",
         "batchSize": "Taille du lot",
@@ -367,12 +382,12 @@
         "warning": "Avertissement"
       },
       "description": "Vérifiez si une période de paie est prête avant d'exporter les données de temps, d'absence et de paie.",
+      "loadError": "Les vérifications de préparation de la paie de l'organisation n'ont pas pu être chargées.",
       "openPayrollExport": "Ouvrir l'exportation de la paie",
       "period": {
         "currentMonth": "Mois en cours",
         "navLabel": "Période de paie",
         "previousMonth": "Mois précédent",
-        "scope": "Période de paie : {period} (UTC)",
         "showMonth": "Afficher {month}"
       },
       "status": {

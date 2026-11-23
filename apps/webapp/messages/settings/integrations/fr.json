@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID de l'application",
+      "botToken": "Jeton de bot",
+      "botTokenHelp": "Stocké sous forme chiffrée dans Vault et utilisé pour valider et faire fonctionner votre bot.",
+      "commandsRegistrationFailed": "Bot Discord connecté, mais les commandes slash n'ont pas pu être enregistrées automatiquement. Vérifiez les autorisations de votre bot, puis déconnectez-le et reconnectez-le pour réessayer.",
+      "connect": "Connecter le bot Discord",
+      "connectDescription": "Saisissez les identifiants de votre application Discord provenant du portail des développeurs Discord.",
+      "connected": "Bot Discord connecté avec succès",
+      "connectError": "Échec de la connexion du bot Discord",
+      "copied": "Copié",
+      "copy": "Copier",
+      "copyInteractionUrl": "Copier l'URL du point de terminaison des interactions",
+      "copyInteractionUrlFailed": "L'URL du point de terminaison des interactions n'a pas pu être copiée. Sélectionnez-la et copiez-la manuellement.",
+      "disconnect": "Déconnecter",
+      "disconnectConfirm": {
+        "description": "Cela supprimera le jeton de bot enregistré et désactivera les notifications Discord ainsi que les commandes slash pour votre organisation.",
+        "title": "Déconnecter le bot Discord ?"
+      },
+      "disconnected": "Bot Discord déconnecté",
+      "disconnectError": "Échec de la déconnexion du bot Discord",
+      "errors": {
+        "applicationIdMismatch": "L'ID de l'application ne correspond pas au jeton de bot fourni.",
+        "invalidBotToken": "Jeton de bot non valide. Vérifiez les identifiants de votre bot Discord et réessayez.",
+        "publicKeyMismatch": "La clé publique ne correspond pas à l'application Discord."
+      },
+      "interactionEndpointHelp": "Collez cette URL dans le champ Interactions Endpoint URL de votre application sur le portail des développeurs Discord.",
+      "interactionEndpointUrl": "URL du point de terminaison des interactions",
+      "interactionUrlCopied": "URL du point de terminaison des interactions copiée",
+      "publicKey": "Clé publique",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "L'ID de l'application ne doit contenir que des chiffres.",
+        "applicationIdRequired": "L'ID de l'application est requis.",
+        "botTokenRequired": "Le jeton de bot est requis.",
+        "publicKeyInvalid": "La clé publique doit être une chaîne hexadécimale de 64 caractères.",
+        "publicKeyRequired": "La clé publique est requise."
+      }
     },
     "slack": {
       "title": "Slack"

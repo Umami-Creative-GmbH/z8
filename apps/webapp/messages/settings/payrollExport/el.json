@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Διαμόρφωση συνδέσμων εξαγωγής μισθοδοσίας και αντιστοιχίσεων τύπων αποδοχών",
+      "connectorsTitle": "Σύνδεσμοι μισθοδοσίας & Τύποι αποδοχών",
       "datev": {
         "beraternummer": "Αριθμός συμβούλου",
         "beraternummerTooltip": "Ο αριθμός συμβούλου DATEV (1-7 ψηφία)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Οι ρυθμίσεις αποθηκεύτηκαν",
         "title": "Κύρια δεδομένα DATEV"
       },
-      "description": "Εξαγωγή περιόδων εργασίας σε συστήματα μισθοδοσίας όπως το DATEV ή το Personio",
       "expenseMappings": {
         "apiConnectors": "Το Personio, το Workday και το API του SuccessFactors δεν περιλαμβάνουν επιστροφές εξόδων.",
         "codeLabel": "{line}, τύπος αποδοχών {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Εύρος ημερομηνιών",
         "description": "Εξαγωγή περιόδων εργασίας και απουσιών σε μορφή DATEV Lohn & Gehalt",
         "employees": "Εργαζόμενοι",
-        "employeesSelected": "{count} επιλεγμένα",
         "endDate": "Ημερομηνία λήξης",
         "error": "Η εξαγωγή απέτυχε",
         "exportButtonDatev": "Εξαγωγή σε DATEV",
@@ -100,10 +100,13 @@
         "download": "Λήψη εξαγωγής",
         "downloadError": "Αποτυχία λήψης της διεύθυνσης URL λήψης",
         "employees": "εργαζόμενοι",
+        "includesSettledDays": "Περιλαμβάνονται εκκαθαρισμένες ημέρες",
+        "loadError": "Δεν ήταν δυνατή η φόρτωση του ιστορικού εξαγωγών.",
         "noExports": "Δεν υπάρχουν ακόμη εξαγωγές",
         "noExportsHint": "Ξεκινήστε μια εξαγωγή μισθοδοσίας στην καρτέλα Εξαγωγή. Οι ολοκληρωμένες εξαγωγές εμφανίζονται εδώ για λήψη.",
         "payrollRun": "{count, plural, one {Εκτέλεση μισθοδοσίας: # αναφορά εξόδων} other {Εκτέλεση μισθοδοσίας: # αναφορές εξόδων}}",
         "periods": "περίοδοι",
+        "settledDaysLeftOut": "{count, plural, one {# εκκαθαρισμένη ημέρα παραλείφθηκε} other {# εκκαθαρισμένες ημέρες παραλείφθηκαν}}",
         "status": {
           "completed": "Ολοκληρώθηκε",
           "failed": "Απέτυχε",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Κατηγορία εργασίας"
       },
+      "openPayrollWorkspace": "Εκτέλεση εξαγωγών στη Μισθοδοσία",
       "personio": {
         "clientId": "Αναγνωριστικό πελάτη (Client ID)",
         "clientIdHelp": "Βοήθεια για το αναγνωριστικό πελάτη",
@@ -242,6 +246,9 @@
         "saveSuccess": "Οι ρυθμίσεις αποθηκεύτηκαν",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Προορισμοί μισθοδοσίας"
+      },
       "specialCategory": {
         "overtime": "Υπερωρίες"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Εξαγωγή",
-        "history": "Ιστορικό",
         "lexware": "Lexware",
         "mappings": "Τύποι μισθών",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Εξαγωγή μισθοδοσίας",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Διαμορφώθηκε",
+        "statusNeedsCredentials": "Απαιτούνται διαπιστευτήρια",
+        "statusNotConfigured": "Δεν έχει διαμορφωθεί",
+        "successfactorsSubtitle": "API & CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Χρονικό όριο API (ms)",
         "batchSize": "Μέγεθος παρτίδας",
@@ -367,12 +382,12 @@
         "warning": "Προειδοποίηση"
       },
       "description": "Ελέγξτε αν μια περίοδος μισθοδοσίας είναι έτοιμη πριν από την εξαγωγή δεδομένων χρόνου, απουσιών και μισθοδοσίας.",
+      "loadError": "Δεν ήταν δυνατή η φόρτωση των ελέγχων ετοιμότητας μισθοδοσίας του οργανισμού.",
       "openPayrollExport": "Άνοιγμα εξαγωγής μισθοδοσίας",
       "period": {
         "currentMonth": "Τρέχων μήνας",
         "navLabel": "Περίοδος μισθοδοσίας",
         "previousMonth": "Προηγούμενος μήνας",
-        "scope": "Περίοδος μισθοδοσίας: {period} (UTC)",
         "showMonth": "Εμφάνιση {month}"
       },
       "status": {

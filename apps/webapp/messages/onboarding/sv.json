@@ -152,7 +152,6 @@
       "vacationPolicy": "Semester",
       "welcome": "Välkommen",
       "wellness": "Friskvård",
-      "workSchedule": "Schema",
       "workTemplates": "Mallar"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Ställ in vattenpåminnelser för att hålla dig hälsosam under arbetsdagen. Du får vänliga aviseringar om att dricka vatten när du är instämplad.",
       "success": "Vattenpåminnelse aktiverad!",
       "title": "Håll vätskebalansen"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Åtkomst till arbetsschemat kunde inte kontrolleras. Fortsätter till nästa tillgängliga steg.",
-      "checkingAccess": "Kontrollerar åtkomst till arbetsschema",
-      "classification": "Arbetsklassificering",
-      "classificationDesc": "Hur du vill registrera dina arbetstimmar.",
-      "continue": "Fortsätt",
-      "daily": "Dagligen",
-      "error": "Kunde inte ställa in arbetsschema",
-      "hoursPerWeek": "Timmar per vecka",
-      "hoursPerWeekDesc": "Vanlig heltid är 40 timmar per vecka.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Du kan återvända till arbetspolicyer i inställningarna efter onboarding.",
-      "monthly": "Månadsvis",
-      "policyContext": "Om du fortsätter sparas dina framsteg i onboardingen. Organisationens arbetspolicyer fortsätter att gälla; de timmar och den klassificering som anges här sparas inte i en arbetspolicy.",
-      "previousAttempt": "En tidigare förfrågan slutförs fortfarande. Försök igen för att fortsätta.",
-      "progressSaved": "Framsteg i onboardingen har sparats.",
-      "scheduleTitle": "Arbetsschema",
-      "selectClassification": "Välj klassificering",
-      "setupContext": "Granska veckoarbetstid och hur arbetstimmar registreras tillsammans.",
-      "skip": "Hoppa över så länge",
-      "skipError": "Det gick inte att hoppa över inställning av arbetsschema",
-      "subtitle": "Definiera dina arbetstider för att underlätta tidrapportering och hantera frånvaro korrekt.",
-      "title": "Ange ditt arbetsschema",
-      "validation": {
-        "hoursNegative": "Timmar kan inte vara negativa",
-        "hoursTooMany": "En vecka har som mest 168 timmar"
-      },
-      "weekly": "Veckovis"
     },
     "workTemplates": {
       "cardDesc": "Skapa ett standardarbetsschema. Du kan lägga till fler mallar senare i inställningarna.",

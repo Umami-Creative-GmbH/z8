@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "En kort beskrivning av detta team",
         "fallbackManagerHelp": "Används för godkännanden när en teammedlem inte har någon direkt chef.",
         "fallbackManagerLabel": "Reservchef",
-        "fallbackManagerPlaceholder": "Välj en reservchef",
         "nameLabel": "Teamnamn",
         "namePlaceholder": "Teknik, Försäljning, Marknadsföring...",
         "noFallbackManager": "Ingen reservchef",

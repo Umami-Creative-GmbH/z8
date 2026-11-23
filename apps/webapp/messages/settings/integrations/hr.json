@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID aplikacije",
+      "botToken": "Token bota",
+      "botTokenHelp": "Pohranjeno šifrirano u Vaultu i koristi se za provjeru i rad vašeg bota.",
+      "commandsRegistrationFailed": "Discord bot je povezan, ali naredbe s kosom crtom nisu se mogle automatski registrirati. Provjerite dopuštenja za bota, a zatim ga odspojite i ponovno povežite za novi pokušaj.",
+      "connect": "Poveži Discord bota",
+      "connectDescription": "Unesite vjerodajnice svoje Discord aplikacije s portala Discord Developer Portal.",
+      "connected": "Discord bot uspješno je povezan",
+      "connectError": "Povezivanje Discord bota nije uspjelo",
+      "copied": "Kopirano",
+      "copy": "Kopiraj",
+      "copyInteractionUrl": "Kopiraj URL krajnje točke interakcije",
+      "copyInteractionUrlFailed": "URL krajnje točke interakcije nije se mogao kopirati. Označite ga i kopirajte ručno.",
+      "disconnect": "Odspoji",
+      "disconnectConfirm": {
+        "description": "Ovim će se ukloniti spremljeni token bota te onemogućiti Discord obavijesti i naredbe s kosom crtom za vašu organizaciju.",
+        "title": "Odspojiti Discord bota?"
+      },
+      "disconnected": "Discord bot je odspojen",
+      "disconnectError": "Odspajanje Discord bota nije uspjelo",
+      "errors": {
+        "applicationIdMismatch": "ID aplikacije ne podudara se s navedenim tokenom bota.",
+        "invalidBotToken": "Nevažeći token bota. Provjerite vjerodajnice Discord bota i pokušajte ponovno.",
+        "publicKeyMismatch": "Javni ključ ne podudara se s Discord aplikacijom."
+      },
+      "interactionEndpointHelp": "Zalijepite ovaj URL u polje Interactions Endpoint URL u svojoj aplikaciji na portalu Discord Developer Portal.",
+      "interactionEndpointUrl": "URL krajnje točke interakcije",
+      "interactionUrlCopied": "URL krajnje točke interakcije kopiran",
+      "publicKey": "Javni ključ",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "ID aplikacije smije sadržavati samo znamenke.",
+        "applicationIdRequired": "ID aplikacije je obavezan.",
+        "botTokenRequired": "Token bota je obavezan.",
+        "publicKeyInvalid": "Javni ključ mora biti heksadecimalni niz od 64 znaka.",
+        "publicKeyRequired": "Javni ključ je obavezan."
+      }
     },
     "slack": {
       "title": "Slack"

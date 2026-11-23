@@ -334,10 +334,12 @@
           "unknownCustomer": "Klient i panjohur",
           "unknownProject": "Projekt i panjohur"
         },
+        "configureSettings": "Cilësimet e kohës së faturueshme",
         "confirmed": "Drafti i faturës u krijua",
         "csv": {
           "download": "Shkarko CSV-në e rakordimit"
         },
+        "description": "Krijoni drafte faturash nga puna e faturueshme, kontrolloni statusin e veglave, shkarkoni fletët e orarit dhe zgjidhni ndryshimet pas faturimit.",
         "detail": {
           "checking": "Po kontrollohet drafti në mjet…",
           "gone": "Mjeti i kontabilitetit nuk e ka më këtë draft. Nëse është fshirë me qëllim, lironi dorëzimin në mënyrë që puna e tij të mund të dorëzohet përsëri.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Kontabiliteti",
         "costRates": "Tarifat e kostos",
-        "currency": "Monedha e faturueshme",
         "handOff": "Dorëzimi",
         "label": "Cilësimet e kohës së faturueshme",
         "rates": "Tarifat e faturueshme"
@@ -637,6 +638,7 @@
         "teams": "Ekipet"
       },
       "scopeLabel": "Mbyll për",
+      "selectEmployees": "Zgjidhni punonjësit",
       "teamNotFound": "Ky ekip nuk ekziston më.",
       "title": "Muajt e mbyllur",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Kërko punonjës…",
         "selected": "Ekipet dhe punonjësit e përzgjedhur",
         "selectedHelp": "Mbulon anëtarët e ekipeve të përzgjedhura dhe punonjësit e përzgjedhur.",
+        "selectEmployees": "Zgjidhni punonjësit",
         "teams": "Ekipet",
         "title": "Përgjegjësit e pajisjeve"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Ky artikull do të bllokohet nga lëshimet e reja derisa të miratohet shprehimisht. Mbikëqyrja dhe provat e pranimit mbeten të pandryshuara.",
         "unchanged": "Kjo gjendje disponueshmërie është regjistruar tashmë. Ringarko pajisjen për të shqyrtuar historikun e saj."
       },
-      "reload": "Ringarko konfigurimin",
       "retention": {
         "activity": "Aktiviteti më i fundit",
         "badgeDue": "Në pritje të pastrimit",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Llogaria",
       "data": "Të dhënat",
-      "integrations": "Integrimet",
-      "notifications": "Njoftimet",
+      "integrationsChannels": "Integrimet dhe kanalet",
       "organization": "Organizata"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Kërkesat për mungesë nuk kanë nevojë për miratim, sepse asnjë kategori mungese nuk e kërkon atë.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk ka nevojë për miratim, sepse nuk zbatohet asnjë politikë ndryshimi.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk kanë nevojë për miratim, sepse nuk zbatohet asnjë politikë ndryshimi.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës është miratuesi i vetvetes.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës janë miratuesit e vetvetes.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës është i vetmi që mund të vendosë për to, kështu që kërkesat e tij presin miratimin e tij.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës janë të vetmit që mund të vendosin për to, kështu që kërkesat e tyre presin miratimin e tyre.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk ka nevojë për miratim, sepse pronarët dhe administratorët e regjistrojnë punën e tyre drejtpërdrejt.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk kanë nevojë për miratim, sepse pronarët dhe administratorët e regjistrojnë punën e tyre drejtpërdrejt.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: pronari i miraton vetë raportet e tij, sepse askush tjetër nuk mundet.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk ka nevojë për miratim, sepse politika e tij e ndryshimit është në modalitet besimi.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk kanë nevojë për miratim, sepse politika e tyre e ndryshimit është në modalitet besimi.}}",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Asnjë kategori mungese nuk kërkon miratim.",
             "noChangePolicy": "Për ta nuk zbatohet asnjë politikë ndryshimi.",
             "ownApprover": "Ata janë miratuesi i vetvetes, kështu që kërkesat e tyre përfundojnë menjëherë.",
-            "ownDecider": "Ata janë i vetmi menaxher ose administrator që mund të vendosë për kërkesat e turneve, ndaj të tyret mbeten në pritje derisa t'i miratojnë vetë.",
             "ownerAdmin": "Pronarët dhe administratorët e regjistrojnë punën e tyre drejtpërdrejt.",
             "ownerSelfApproval": "Si pronar, ata i miratojnë vetë raportet e tyre, pasi askush tjetër nuk mundet.",
             "trustMode": "Politika e tyre e ndryshimit është në modalitet besimi."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "Një përshkrim i shkurtër i këtij ekipi",
           "fallbackManagerHelp": "Përdoret për miratime kur një anëtar i ekipit nuk ka një menaxher të drejtpërdrejtë.",
           "fallbackManagerLabel": "Menaxher Rezervë",
-          "fallbackManagerPlaceholder": "Zgjidhni një menaxher rezervë",
           "nameLabel": "Emri i Ekipit",
           "namePlaceholder": "Inxhinieri, Shitje, Marketing...",
+          "nameRequired": "Emri i ekipit është i detyrueshëm",
           "noFallbackManager": "Nuk ka menaxher rezervë",
           "submit": "Krijo Ekip",
           "title": "Krijo Ekip"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Shikoni dhe revokoni çdo lidhje që ndan një raport projekti ose klienti",
       "pageDescription": "Lidhje që i shfaqin një pamje të ngrirë të një raporti projekti ose klienti dikujt jashtë Z8. Revokimi i një lidhjeje e ndalon atë menjëherë dhe e fshin pamjen e saj.",
+      "projectsDisabledNotice": {
+        "description": "Projektet aktualisht janë të çaktivizuara për këtë organizatë, kështu që nuk mund të krijohen lidhje të reja për ndarjen e raporteve. Ju ende mund të shqyrtoni dhe të revokoni lidhjet ekzistuese këtu.",
+        "title": "Projektet janë të çaktivizuara"
+      },
       "title": "Lidhjet e ndarjes së raporteve"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Ndodhi një gabim i papritur"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Sesionet Aktive",
-        "activeSessionsDescription": "Sesionet aktuale të bazës së të dhënave",
-        "approvalRequests": "Kërkesat për Miratim",
-        "approvedAbsences": "Mungesat e Miratuara",
+      "allClear": "Gjithçka në rregull: asgjë nuk kërkon vëmendjen tuaj tani.",
+      "groupLoadError": "Këto shifra nuk mund të ngarkoheshin. Ringarkoni faqen për të provuar përsëri.",
+      "kpi": {
+        "absenceDays": "Ditët e mungesës",
+        "clockedIn": "Të regjistruar në punë tani",
+        "clockedInCaption": "Punonjësit me punë aktive",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Periudhat e përfunduara të punës",
+        "daysUnit": "ditë",
         "employees": "Punonjësit",
-        "employeesDescription": "{active} aktivë, {inactive} joaktivë",
-        "pendingAbsences": "Mungesa në pritje",
-        "pendingCount": "{count} në pritje",
-        "rejectedAbsences": "Mungesa të refuzuara",
+        "employeesCaption": "+{joined} u bashkuan, −{left} u larguan këtë muaj",
+        "failed": "Nuk mund të ngarkohej",
+        "hoursUnit": "h",
+        "hoursWorked": "Orë të punuara",
+        "incompleteSetup": "Konfigurim jo i plotë",
+        "incompleteSetupCaption": "Punonjës pa ekip parësor ose pa politikë pune",
+        "incompleteSetupManagerCaption": "Punonjës pa politikë pune",
+        "manualEntryShare": "Pjesa e regjistrimeve manuale",
+        "manualEntryShareCaption": "{manual} h nga {total} h të regjistruara si hyrje manuale",
+        "manualEntryShareNone": "Ende nuk ka punë të përfunduar këtë muaj",
+        "openInbox": "Hap kutinë hyrëse",
+        "openPayrollReadiness": "Shqyrto te gatishmëria e listëpagesës",
+        "openViolations": "Shkelje të hapura të politikës",
+        "openViolationsCaption": "Ende të pakonfirmuara këtë muaj",
+        "openWorkPolicies": "Shqyrto te politikat e punës",
+        "pendingApprovals": "Miratime në pritje",
+        "pendingApprovalsCaption": "{count, plural, =0 {Nuk ka kërkesa për mungesë} one {Përfshirë # kërkesë për mungesë} other {Përfshirë # kërkesa për mungesë}}",
+        "staleLiveWork": "Punë aktive e mbetur hapur",
+        "staleLiveWorkCaption": "Punonjës të regjistruar në punë për më shumë se 24 orë",
         "teams": "Ekipet",
-        "thisMonth": "Këtë muaj",
-        "timeEntries": "Regjistrimet e kohës",
-        "totalAbsences": "Totali i mungesave",
-        "totalTimeEntries": "Totali i regjistrimeve të kohës",
-        "vsLastMonth": "krahasuar me muajin e kaluar"
+        "trackingCoverage": "Mbulimi i gjurmimit",
+        "trackingCoverageCaption": "{tracked} nga {expected} punonjës me kohë të kërkuar kanë regjistruar punë",
+        "trackingCoverageNone": "Askush nuk ka kohë të kërkuar ende këtë muaj",
+        "trackingCoverageProgress": "Punonjësit që regjistruan punë këtë muaj",
+        "usersSignedIn": "Përdorues të kyçur",
+        "usersSignedInCaption": "Përdorues unikë me një sesion të paskaduar",
+        "vsComparison": "{change} kundrejt {days}"
       },
-      "description": "Shikoni statistikat dhe metrikat për instancën tuaj",
       "lastUpdated": "Përditësuar së fundmi",
       "loadError": "Ngarkimi i statistikave dështoi",
       "loadErrorRetry": "Ringarkoni faqen për të provuar përsëri.",
-      "managerDescription": "Shqyrtoni analizat vetëm për lexim për ekipet që menaxhoni.",
+      "scope": {
+        "organization": "E gjithë organizata",
+        "teams": "{count, plural, =0 {Nuk ka ekipe që menaxhoni} one {# ekip që menaxhoni} other {# ekipe që menaxhoni}}"
+      },
       "sections": {
-        "absenceBreakdown": "Ndarja e mungesave",
-        "activityMetrics": "Metrikat e aktivitetit",
-        "coreCounts": "Numërimet kryesore",
-        "managedScope": "Fusha e ekipit të menaxhuar",
-        "systemHealth": "Gjendja e sistemit"
+        "adoption": "Ndjekja e adoptimit",
+        "attention": "Kërkon vëmendje",
+        "thisMonth": "Këtë muaj",
+        "workforce": "Fuqia punëtore dhe konfigurimi"
       },
       "title": "Statistika"
     },

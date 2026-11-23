@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "A brief description of this team",
         "fallbackManagerHelp": "Used for approvals when a team member has no direct manager.",
         "fallbackManagerLabel": "Fallback Manager",
-        "fallbackManagerPlaceholder": "Select a fallback manager",
         "nameLabel": "Team Name",
         "namePlaceholder": "Engineering, Sales, Marketing...",
         "noFallbackManager": "No fallback manager",

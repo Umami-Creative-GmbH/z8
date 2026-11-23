@@ -440,6 +440,11 @@
       "workDays": "{count} εργάσιμες ημέρες",
       "workedFromHome": "{hours} ώρες εργασίας από το σπίτι"
     },
+    "tabs": {
+      "projects": "Έργα",
+      "timeAndAbsences": "Χρόνος & Απουσίες",
+      "vehicles": "Οχήματα"
+    },
     "title": "Αναφορές εργαζομένων",
     "toast": {
       "failedGenerate": "Αποτυχία δημιουργίας αναφοράς",

@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Kunne ikke generere token på nytt",
         "regenerateTokenSuccess": "Nytt verifiseringstoken generert",
         "regenerating": "Genererer på nytt…",
+        "registration": "Registrering",
+        "registrationHelp": "Tillat nye personer å opprette en konto her. Når dette er slått av, kan bare personer med en invitasjon registrere seg.",
+        "routingInstruction": "For et underdomene legger du til en CNAME-oppføring som peker {domain} til {target}. For et rotdomene legger du til en A-oppføring som peker til IP-adressen for Z8-lastbalanserer. Slå av CDN-proxy for denne oppføringen.",
         "saveConfiguration": "Lagre konfigurasjon",
         "secretKey": "Hemmelig nøkkel",
         "secretKeyPlaceholder": "Angi hemmelig nøkkel",
         "secretKeyRequired": "Påkrevd når du angir en nettstedsnøkkel",
+        "signInMethods": "Innloggingsmetoder",
         "siteKey": "Nettstedsnøkkel",
         "socialProviders": "Sosiale tilbydere",
         "socialProvidersHelp": "Aktiver alternativer for sosial pålogging for dette domenet",
         "sso": "Single Sign-On (SSO)",
+        "ssoButtonIcon": "Ikon for SSO-knapp",
+        "ssoButtonLabel": "Knappetekst for SSO (valgfritt)",
         "ssoHelp": "Tillat OIDC-basert bedriftspålogging",
+        "ssoIconBadge": "Adgangskort",
+        "ssoIconFingerprint": "Fingeravtrykk",
+        "ssoIconKey": "Nøkkel",
+        "ssoIconLock": "Lås",
+        "ssoIconShield": "Skjold",
+        "ssoUnavailableHelp": "Konfigurer og bekreft en SSO-leverandør under Identitetsoppsett først.",
         "status": {
           "pending": "Venter på verifisering",
           "verified": "Verifisert"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Aktiver eller deaktiver denne leverandøren",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Lagre tilgangspolicy"
-          },
-          "defaultRoleTemplate": "Standard rollemal",
-          "description": "Angi håndheving av domene, invitasjoner og SSO etter at pilottesten er bestått.",
           "noDefaultTemplate": "Ingen standardmal",
           "placeholder": {
             "roleTemplate": "Velg rollemal"
           },
           "requireSso": "Krev SSO",
-          "requireSsoHelp": "Ansatte må bruke bedriftens IdP.",
           "restrictDomain": "Begrens til bekreftet domene",
-          "restrictDomainHelp": "Blokker kontoer utenfor det valgte domenet.",
-          "restrictInvites": "Begrens invitasjoner",
-          "restrictInvitesHelp": "Tillat kun invitasjoner i samsvar med tilgangspolicyen.",
-          "title": "Tilgangspolicy"
-        },
-        "badge": {
-          "now": "Nå",
-          "queued": "I kø",
-          "ready": "Klar"
+          "restrictInvites": "Begrens invitasjoner"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Sjekk domenestatus"
-          },
-          "description": "Valider leietakergrensen før du håndhever SSO for ansatte.",
-          "help": "DNS-verifisering bruker de eksisterende handlingene for SSO-domeneverifisering. Fullfør denne verifiseringen før du aktiverer håndheving.",
-          "notSelected": "Ikke valgt",
           "selected": "Valgt domene",
           "status": {
-            "pending": "Venter",
             "verified": "Verifisert"
-          },
-          "title": "Domene"
+          }
         },
-        "hero": {
-          "title": "Sjekkliste for operasjonelle kommandoer"
-        },
-        "progress": "{completed} av {total} trinn fullført",
         "provider": {
-          "action": {
-            "save": "Lagre leverandør"
-          },
-          "description": "Velg forhåndsinnstilling for identitetsleverandør, protokoll, leverandør-ID og e-postdomene.",
           "error": {
             "domainRequired": "Domene er påkrevd",
             "providerIdRequired": "Leverandør-ID er påkrevd"
           },
           "label": {
-            "domain": "E-postdomene",
-            "preset": "Forhåndsinnstilling for leverandør",
-            "protocol": "Protokoll",
             "providerId": "Leverandør-ID"
           },
           "placeholder": {
             "domain": "f.eks. example.com…",
-            "protocol": "Velg protokoll",
-            "provider": "Velg leverandør",
             "providerId": "f.eks. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Bruk Okta Workforce Identity for SAML- eller OIDC-enkel pålogging."
             }
-          },
-          "title": "Leverandør"
-        },
-        "rail": {
-          "title": "Klargjøringspanel"
+          }
         },
         "review": {
           "action": {
             "activate": "Aktiver virksomhetsidentitet"
           },
-          "activationSummary": "Aktiveringssammendrag",
-          "description": "Gå gjennom kontrollerte aktiveringssjekker før du aktiverer styring av virksomhetsidentitet.",
           "lockoutWarning": "Advarsel om utestenging av gjeldende administrator",
-          "lockoutWarningHelp": "Bekreft at den gjeldende administratorkontoen din kan logge på via den konfigurerte leverandøren før aktivering. Håndheving kan blokkere reserveløsning med passord for det valgte domenet.",
-          "missingRequirement": "{item} er påkrevd før aktivering",
-          "prerequisitesComplete": "Forutsetninger for leverandør, bekreftet domene og SSO-test er fullført.",
-          "requirement": {
-            "domain": "Bekreftet domene",
-            "provider": "Leverandør",
-            "ssoTest": "SSO-test"
-          },
-          "title": "Gå gjennom og aktiver"
+          "lockoutWarningHelp": "Bekreft at den gjeldende administratorkontoen din kan logge på via den konfigurerte leverandøren før aktivering. Håndheving kan blokkere reserveløsning med passord for det valgte domenet."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "roterer",
             "verified": "bekreftet"
           },
-          "title": "SCIM-klargjøring",
           "toast": {
             "createError": "Kunne ikke opprette SCIM-tilkoblingen.",
             "reconcileError": "Kunne ikke avstemme SCIM-opprettelse.",
@@ -510,14 +472,9 @@
           },
           "verification": "Verifisering",
           "verification.awaiting": "Venter på leverandørbruk",
-          "verification.observed": "Observert",
-          "wizardDescription": "Konfigurer administrert brukerprovisjonering uten å endre bedriftsaktiveringen."
+          "verification.observed": "Observert"
         },
         "sso": {
-          "action": {
-            "register": "Registrer SSO-leverandør"
-          },
-          "description": "Registrer den eksterne IdP-en ved hjelp av OIDC-klientlegitimasjon eller SAML-metadata.",
           "error": {
             "saveProviderFirst": "Lagre leverandør og domene før du registrerer SSO"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Lim inn IdP-metadata-XML…"
-          },
-          "saml": {
-            "acsPath": "Nettleserrelatert ACS-bane: {path}",
-            "acsUrl": "Konfigurer din IdP med denne ACS-URL-en (Assertion Consumer Service): {path}"
-          },
-          "title": "SSO-konfigurasjon"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Registrer mislykket",
-            "recordPass": "Registrer bestått"
-          },
           "defaultFailure": "Live SSO-test mislyktes",
-          "description": "Registrer resultatet av en ekstern live-SSO-test før håndheving.",
           "error": {
             "saveProviderFirst": "Lagre leverandør før du registrerer en test"
           },
-          "label": {
-            "email": "E-postadresse for testbruker",
-            "failureNote": "Feilnotat"
-          },
           "status": {
-            "failed": "Mislyktes",
-            "notRun": "Ikke kjørt",
-            "passed": "Bestått"
-          },
-          "title": "Testbruker"
+            "notRun": "Ikke kjørt"
+          }
         },
         "status": {
-          "activated": "Aktivert",
-          "draft": "Utkast"
-        },
-        "step": {
-          "accessPolicy": "Tilgangspolicy",
-          "accessPolicy.description": "Angi håndhevingsregler",
-          "domain": "Domene",
-          "domain.description": "Bekreft leietakergrense",
-          "provider": "Leverandør",
-          "provider.description": "Velg identitetskilde",
-          "review": "Se gjennom og aktiver",
-          "review.description": "Sikre aktivering",
-          "scim": "SCIM-provisjonering",
-          "scim.description": "Koble til og administrer SCIM-klargjøringstilkoblingen",
-          "sso": "SSO-konfigurasjon",
-          "sso.description": "Registrer OIDC eller SAML",
-          "ssoTest": "Testbruker",
-          "ssoTest.description": "Registrer resultat for direkte pålogging"
+          "activated": "Aktivert"
         },
         "toast": {
           "accessPolicyFailed": "Kunne ikke lagre tilgangsretningslinje",
@@ -589,7 +512,6 @@
           "activated": "Enterprise-identitetsoppsett aktivert",
           "activateFailed": "Kunne ikke aktivere oppsett",
           "domainStatusFailed": "Kunne ikke oppdatere domenestatus",
-          "domainStatusRefreshed": "Domenestatus oppdatert",
           "providerSaved": "Identitetstilbyder lagret",
           "providerSaveFailed": "Kunne ikke lagre tilbyder",
           "ssoRegistered": "SSO-tilbyder registrert",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "SSO-test merket som mislykket",
           "ssoTestPassed": "SSO-test merket som bestått",
           "ssoTestRecordFailed": "Kunne ikke registrere SSO-test"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Bestem hvor strengt bedriftspålogging skal håndheves. Ingenting endres for ansatte før du aktiverer oppsettet i det siste trinnet.",
+            "domainsLink": "Åpne domener",
+            "legend": "Slå på reglene du trenger. Alle er valgfrie.",
+            "nav": "Tilgangsregler",
+            "requireSsoDomains": "Dette krever også at {domain} legges til og bekreftes under Domener.",
+            "requireSsoHelp": "Personer med en @{domain}-e-postadresse må logge på via {provider} i stedet for å bruke passord.",
+            "restrictDomainHelp": "Invitasjonskoder kan bare løses inn av personer med en @{domain}-e-postadresse.",
+            "restrictInvitesHelp": "Invitasjoner kan bare sendes til @{domain}-e-postadresser.",
+            "save": "Lagre og fortsett",
+            "title": "Velg tilgangsregler"
+          },
+          "action": {
+            "back": "Tilbake",
+            "next": "Neste: {step}",
+            "skip": "Hopp til {step}"
+          },
+          "activeNotice": "Bedriftspålogging er aktiv for {domain}. Du kan gå gjennom hvert trinn nedenfor.",
+          "description": "La ansatte logge på Z8 med jobbkontoen sin fra bedriftens identitetsleverandør. Fremdriften din lagres etter hvert trinn, så du kan stoppe og komme tilbake når som helst.",
+          "domain": {
+            "continue": "Fortsett for å teste pålogging",
+            "copyName": "Kopier navn",
+            "copyValue": "Kopier verdi",
+            "create": "Opprett DNS-oppføring",
+            "createHelp": "Z8 genererer en unik verdi du må publisere. Hvis du allerede har opprettet en under SSO-leverandører, kan du hoppe til det siste trinnet.",
+            "description": "Legg til én DNS-oppføring for å bevise at bedriften din kontrollerer dette domenet. Bare bekreftede domener kan bruke bedriftspålogging.",
+            "fallbackName": "domenet ditt",
+            "fullNameHint": "Hvis DNS-leverandøren din ber om det fullstendige navnet, bruker du {fullName}.",
+            "nav": "Bekreft domene",
+            "needsConnection": "Koble til identitetsleverandøren din først. Z8 oppretter DNS-oppføringen for den tilkoblingen.",
+            "notVerified": "Ikke bekreftet ennå",
+            "publishHelp": "Logg på DNS-leverandøren din, for eksempel Cloudflare, GoDaddy eller IONOS, og legg til en ny TXT-oppføring nøyaktig slik den vises. Hvis noen andre administrerer domenet ditt, sender du disse verdiene til dem.",
+            "recordName": "Navn (også kalt vert)",
+            "recordType": "Type",
+            "recordValue": "Verdi (også kalt innhold)",
+            "stepCreate": "Opprett DNS-oppføringen",
+            "stepPublish": "Legg den til der domenet ditt administreres",
+            "stepVerify": "La Z8 sjekke oppføringen",
+            "title": "Bekreft at du eier {domain}",
+            "toast": {
+              "notFound": "Z8 fant ikke DNS-oppføringen ennå. Sjekk navnet og verdien, og prøv igjen om noen minutter.",
+              "verified": "Domene bekreftet"
+            },
+            "verifiedHelp": "Z8 fant DNS-oppføringen din. Du kan la den bli stående.",
+            "verify": "Bekreft domene",
+            "verifyHelp": "Nye oppføringer vises vanligvis innen noen få minutter, men det kan ta opptil 48 timer. Du kan forlate denne siden og sjekke igjen senere."
+          },
+          "nav": {
+            "label": "Oppsettstrinn"
+          },
+          "prerequisite": {
+            "action": "Gå til {step}",
+            "title": "Ett trinn gjenstår først"
+          },
+          "progress": "{completed} av {total} obligatoriske trinn fullført",
+          "progressLabel": "Fremdrift for oppsett",
+          "provider": {
+            "changeWarning": "Denne leverandøren er allerede tilkoblet. Hvis du endrer leverandør-ID eller e-postdomene, må du koble til og bekrefte på nytt.",
+            "description": "Fortell Z8 hvilken tjeneste bedriften din bruker for jobbkontoer, og hvilket e-postdomene de ansatte har.",
+            "domainHelp": "Ansatte med en e-postadresse som slutter på dette domenet, vil logge på via din leverandør.",
+            "domainInvalid": "Angi bare delen etter @, for eksempel example.com.",
+            "domainLabel": "Domene for jobb-e-post",
+            "genericName": "identitetsleverandøren din",
+            "nav": "Identitetsleverandør",
+            "oidc": "OpenID Connect (anbefalt)",
+            "oidcHelp": "Raskere å konfigurere og støttes av de fleste leverandører. Velg dette hvis du er usikker.",
+            "prepAdmin": "Administratoradgang til identitetsleverandøren din, for eksempel Okta eller Microsoft Entra ID",
+            "prepDns": "Tilgang til domenets DNS-innstillinger for å legge til én TXT-oppføring",
+            "prepIntro": "Konfigureringen tar omtrent 15 minutter. Ha dette klart:",
+            "prepTester": "En kollegas jobbkonto, eller en testkonto, for å prøve å logge på",
+            "prepTitle": "Før du begynner",
+            "presetLegend": "Hvilken identitetsleverandør bruker bedriften din?",
+            "protocolLegend": "Hvordan skal Z8 koble til?",
+            "providerIdHelp": "Et kort navn for denne tilkoblingen som brukes i påloggingslenker. Små bokstaver, tall og bindestreker, for eksempel acme-okta.",
+            "providerIdInvalid": "Bruk bare små bokstaver, tall og bindestreker, uten bindestrek på starten eller slutten.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Bruk dette hvis IT-avdelingen din krever SAML. Du må lime inn en XML-metadatafil.",
+            "save": "Lagre og fortsett",
+            "singleProtocol": "{provider} kobler til med OpenID Connect (OIDC).",
+            "title": "Velg identitetsleverandør"
+          },
+          "review": {
+            "blocked": "Fullfør trinnene merket «Gjøremål» for å aktivere. Tilkobling, domenebekreftelse og en vellykket påloggingstest er påkrevd.",
+            "checklist": "Sjekkliste",
+            "description": "Kontroller oppsettet, og slå deretter på enterprise-pålogging.",
+            "nav": "Aktiver",
+            "noRules": "Ingen regler er slått på",
+            "notSet": "Ikke angitt",
+            "open": "Åpne trinn",
+            "provider": "Identitetsleverandør",
+            "ready": "Alt som kreves er fullført. Du kan aktivere nå.",
+            "reapply": "Allerede aktiv. Aktiver på nytt etter at du har endret tilgangsregler for å ta dem i bruk.",
+            "rules": "Tilgangsregler",
+            "scim": "Brukersynkronisering (SCIM)",
+            "scimOff": "Ikke konfigurert",
+            "scimOn": "Tilkoblet",
+            "summary": "Innstillingene dine",
+            "test": "Påloggingstest",
+            "title": "Gjennomgå og aktiver"
+          },
+          "scim": {
+            "description": "La {provider} opprette, oppdatere og deaktivere Z8-kontoer for deg ved hjelp av SCIM. Du kan hoppe over dette og konfigurere det senere.",
+            "nav": "Synkroniser brukere",
+            "roleHelp": "Velg en rollemal før du oppretter tilkoblingen. Nye kontoer starter med denne rollen.",
+            "roleLabel": "Rolle for personer opprettet av leverandøren din",
+            "skipHelp": "Hopp over dette trinnet hvis leverandøren din ikke støtter SCIM, eller hvis du foretrekker å legge til personer i Z8 selv. Ansatte kan fortsatt logge på med enterprise-pålogging.",
+            "title": "Synkroniser brukere automatisk"
+          },
+          "sso": {
+            "acsLabel": "ACS-URL",
+            "clientIdHelp": "Kalles også applikasjons-ID.",
+            "clientIdRequired": "Angi klient-ID-en.",
+            "clientSecretHelp": "Lagres sikkert og vises aldri igjen.",
+            "clientSecretRequired": "Angi klienthemmeligheten (client secret).",
+            "connected": "Tilkoblet som {providerId}",
+            "connectedHelp": "Hvis du vil endre tilkoblingsdetaljene, fjerner du denne leverandøren under SSO-leverandører og kobler den til på nytt her.",
+            "continue": "Fortsett til domeneverifisering",
+            "copyAcs": "Kopier ACS-URL",
+            "description": "Opprett en app for Z8 i {provider}, og lim deretter inn detaljene du får derfra her.",
+            "issuerHelp": "Nettadressen som identifiserer leverandøren din. Den er oppført i appens innstillinger og starter med https://.",
+            "issuerRequired": "Angi utsteder-URL fra leverandøren din.",
+            "manageLink": "Åpne SSO-leverandører",
+            "metadataRequired": "Lim inn metadata-XML fra leverandøren din.",
+            "nav": "Koble til",
+            "needsProvider": "Velg identitetsleverandør og e-postdomene først, slik at Z8 kan klargjøre tilkoblingsdetaljene.",
+            "partOne": "Opprett en app for Z8 i {provider}",
+            "partTwo": "Lim inn detaljene fra {provider}",
+            "samlIntro": "Opprett en SAML-app i {provider} og oppgi denne adressen som Assertion Consumer Service- (ACS) eller svar-URL. Last deretter ned appens metadata-XML.",
+            "save": "Koble til leverandør",
+            "title": "Koble {provider} til Z8"
+          },
+          "ssoTest": {
+            "description": "Før du aktiverer noe, må du bekrefte at en ansatt faktisk kan logge på via {provider}.",
+            "domainFirst": "{domain} er ikke verifisert ennå. Pålogging via leverandøren din fungerer kanskje ikke før dette er gjort.",
+            "emailHelp": "Helst kontoen til en kollega i stedet for din egen administratorkonto.",
+            "emailLabel": "E-postadresse brukt til testen",
+            "failed": "Den forrige testen mislyktes",
+            "failedHelp": "Vanlige årsaker: Tilbakekallings-URL-en stemmer ikke helt overens, klienthemmeligheten er feil eller utløpt, eller testbrukeren er ikke tilordnet appen i {provider}.",
+            "goToDomain": "Verifiser domene",
+            "howPrivate": "Åpne et privat vindu eller et inkognitovindu i nettleseren. Hold dette vinduet åpent, slik at du forblir pålogget som administrator hvis noe går galt.",
+            "howRecord": "Gå tilbake hit og noter om det fungerte.",
+            "howSignIn": "Gå til påloggingssiden for Z8 og logg på med en jobb-e-postadresse som slutter på @{domain}.",
+            "howTitle": "Slik tester du",
+            "nav": "Test pålogging",
+            "needsConnection": "Koble til identitetsleverandøren din før du tester pålogging.",
+            "noteLabel": "Hva gikk galt? (bare hvis det mislyktes)",
+            "notePlaceholder": "For eksempel feilmeldingen du fikk …",
+            "passed": "Pålogging fungerte for {email}",
+            "recordFail": "Pålogging mislyktes",
+            "recordPass": "Pålogging fungerte",
+            "recordTitle": "Registrer resultatet",
+            "selfReported": "Z8 kan ikke observere denne testen, så resultatet lagres slik du rapporterer det. Å lagre leverandøren og verifisere DNS beviser ikke at pålogging fungerer.",
+            "title": "Test pålogging med en ekte konto"
+          },
+          "status": {
+            "done": "Ferdig",
+            "inProgress": "Pågår",
+            "notActive": "Ikke aktiv ennå",
+            "optional": "Valgfritt",
+            "toDo": "Gjenstår"
+          },
+          "stepOf": "Trinn {current} av {total}",
+          "title": "Konfigurer virksomhetspålogging"
         }
       },
       "keepExistingSecretHelp": "La stå tomt for å beholde den eksisterende hemmeligheten",
@@ -648,6 +735,9 @@
         "addError": "Kunne ikke legge til SSO-tilbyder",
         "addSuccess": "SSO-tilbyder ble lagt til",
         "addTitle": "Legg til SSO-tilbyder",
+        "copyError": "Kunne ikke kopiere til utklippstavlen",
+        "copyIssuerUrl": "Kopier utsteder-URL",
+        "copyProviderId": "Kopier leverandør-ID",
         "deleteConfirm": "Slett leverandør",
         "deleteDialogDescription": "Er du sikker på at du vil slette denne SSO-tilbyderen? Brukere vil ikke lenger kunne logge på med denne identitetstilbyderen.",
         "deleteDialogTitleNamed": "Slette SSO-leverandøren {provider}?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "Slett SSO-leverandør {provider}",
         "deleteSuccess": "SSO-tilbyder slettet",
         "description": "Legg til OIDC-identitetstilbydere for å aktivere SSO for organisasjonen din.",
+        "dns": {
+          "copyFqdn": "Kopier fullt kvalifisert navn",
+          "copyHost": "Kopier oppføringsnavn",
+          "copyValue": "Kopier TXT-token",
+          "description": "Opprett oppføringen hos DNS-leverandøren din for {domain}, og velg deretter Verifiser. Det kan ta noen minutter før DNS-endringene trer i kraft.",
+          "fqdnHint": "Hvis DNS-leverandøren din forventer det fullt kvalifiserte navnet, bruker du:",
+          "noToken": "Generer et TXT-token for å se DNS-oppføringen som beviser at du eier dette domenet.",
+          "title": "Legg til denne TXT-oppføringen i DNS-en din",
+          "type": "Type"
+        },
         "domainInvalid": "Vennligst oppgi et gyldig domene (f.eks. example.com)",
         "domainVerified": "Domene verifisert",
         "emailDomain": "E-postdomene",
@@ -673,7 +773,6 @@
           "copyCallback": "Kopier tilbakekallings-URL",
           "copyFailed": "Fikk ikke tilgang til utklippstavlen. Merk og kopier teksten manuelt.",
           "domainPending": "Domenet er ikke verifisert",
-          "domainStatus": "Domeneverifisering",
           "domainVerified": "Domene verifisert",
           "entra": {
             "clientHelp": "Kopier Program-ID (klient) fra Oversikt, ikke Objekt-ID.",
@@ -743,7 +842,6 @@
           },
           "manual": "Annen leverandør / manuell OIDC",
           "manualAvailable": "Bruker du en annen leverandør? Velg manuell OIDC-konfigurasjon i oppsettspanelet.",
-          "manualTestHelp": "Dette er et påloggingsresultat rapportert av administrator, ikke en automatisk verifisert tilkoblingstest. Pilottest pålogging med en tiltenkt bruker i en separat nettleserøkt, hold denne administratorøkten åpen, og noter deretter om testen var vellykket eller mislyktes her. Å lagre leverandøren og verifisere DNS beviser ikke at pålogging fungerer.",
           "openSetup": "Åpne veiledet oppsett",
           "provider": "Identitetsleverandør",
           "required": "Dette feltet er obligatorisk.",
@@ -755,10 +853,10 @@
         "providerId": "Leverandør-ID",
         "providerIdHelp": "En unik identifikator for denne leverandøren (små bokstaver, ingen mellomrom)",
         "providerIdInvalid": "Leverandør-ID kan bare inneholde små bokstaver, tall og bindestreker",
+        "regenerateToken": "Generer TXT-token på nytt",
         "title": "Identitetsleverandører",
         "tokenError": "Kunne ikke generere token for domenebekreftelse",
         "tokenGenerated": "Bekreftelsestoken generert",
-        "txtToken": "TXT-token:",
         "validUrlRequired": "Vennligst oppgi en gyldig URL",
         "verify": "Bekreft",
         "verifyError": "Domenebekreftelse mislyktes. Sjekk DNS TXT-oppføringen din og prøv igjen."

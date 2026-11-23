@@ -441,7 +441,9 @@
       "description": "Voir et gérer tous les utilisateurs de la plateforme",
       "filters": {
         "allUsers": "Tous les utilisateurs",
-        "banned": "Banni"
+        "banned": "Banni",
+        "clearOrganization": "Effacer le filtre d'organisation",
+        "organization": "Organisation : {name}"
       },
       "pagination": {
         "showing": "Affichage de {from} à {to} sur {total} utilisateurs"

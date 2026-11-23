@@ -73,6 +73,11 @@
     "portalOpenFailed": "Impossibile aprire il portale di fatturazione",
     "priceSeatMonth": "€{price}/posto/mese",
     "priceSeatMonthYearly": "€{price}/posto/mese (fatturato annualmente)",
+    "recovery": {
+      "billingAndSubscription": "Fatturazione e abbonamento",
+      "navigationLabel": "Navigazione recupero fatturazione",
+      "suspensionNotice": "Avviso di sospensione"
+    },
     "seatBilledAnnually": "€{price}/posto fatturato annualmente",
     "seatLines": {
       "full": "Postazioni complete",

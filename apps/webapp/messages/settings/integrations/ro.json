@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID aplicație",
+      "botToken": "Token bot",
+      "botTokenHelp": "Stocat criptat în Vault și utilizat pentru a valida și opera botul dvs.",
+      "commandsRegistrationFailed": "Botul Discord este conectat, dar comenzile slash nu au putut fi înregistrate automat. Verificați permisiunile botului, apoi deconectați și conectați din nou botul pentru a reîncerca.",
+      "connect": "Conectare bot Discord",
+      "connectDescription": "Introduceți datele de autentificare din aplicația dvs. Discord din Discord Developer Portal.",
+      "connected": "Botul Discord a fost conectat cu succes",
+      "connectError": "Conectarea botului Discord a eșuat",
+      "copied": "Copiat",
+      "copy": "Copiază",
+      "copyInteractionUrl": "Copiază URL-ul Interaction Endpoint",
+      "copyInteractionUrlFailed": "URL-ul Interaction Endpoint nu a putut fi copiat. Selectați-l și copiați-l manual.",
+      "disconnect": "Deconectează",
+      "disconnectConfirm": {
+        "description": "Această acțiune va elimina tokenul stocat al botului și va dezactiva notificările Discord și comenzile slash pentru organizația dvs.",
+        "title": "Deconectați botul Discord?"
+      },
+      "disconnected": "Botul Discord a fost deconectat",
+      "disconnectError": "Deconectarea botului Discord a eșuat",
+      "errors": {
+        "applicationIdMismatch": "ID-ul aplicației nu se potrivește cu tokenul de bot furnizat.",
+        "invalidBotToken": "Token de bot nevalid. Verificați datele de autentificare ale botului Discord și încercați din nou.",
+        "publicKeyMismatch": "Cheia publică nu se potrivește cu aplicația Discord."
+      },
+      "interactionEndpointHelp": "Lipiți acest URL în câmpul Interactions Endpoint URL din aplicația dvs. din Discord Developer Portal.",
+      "interactionEndpointUrl": "URL Interaction Endpoint",
+      "interactionUrlCopied": "URL-ul Interaction Endpoint a fost copiat",
+      "publicKey": "Cheie publică",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "ID-ul aplicației trebuie să conțină doar cifre.",
+        "applicationIdRequired": "ID-ul aplicației este obligatoriu.",
+        "botTokenRequired": "Tokenul botului este obligatoriu.",
+        "publicKeyInvalid": "Cheia publică trebuie să fie un șir hexazecimal de 64 de caractere.",
+        "publicKeyRequired": "Cheia publică este obligatorie."
+      }
     },
     "slack": {
       "title": "Slack"

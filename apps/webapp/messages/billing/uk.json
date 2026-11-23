@@ -73,6 +73,11 @@
     "portalOpenFailed": "Не вдалося відкрити платіжний портал",
     "priceSeatMonth": "€{price}/місце/міс.",
     "priceSeatMonthYearly": "€{price}/місце/міс. (оплата за рік)",
+    "recovery": {
+      "billingAndSubscription": "Оплата та підписка",
+      "navigationLabel": "Навігація відновлення оплати",
+      "suspensionNotice": "Повідомлення про призупинення"
+    },
     "seatBilledAnnually": "€{price}/місце при оплаті за рік",
     "seatLines": {
       "full": "Повні місця",

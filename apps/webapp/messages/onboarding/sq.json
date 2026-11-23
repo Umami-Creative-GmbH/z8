@@ -152,7 +152,6 @@
       "vacationPolicy": "Pushimet",
       "welcome": "Mirë se vini",
       "wellness": "Mirëqenia",
-      "workSchedule": "Orari",
       "workTemplates": "Shabllonet"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Konfiguroni kujtuesit e ujit për të ruajtur shëndetin gjatë ditës së punës. Do të merrni njoftime të lehta për të pirë ujë gjatë orarit të punës.",
       "success": "Kujtuesi i ujit u aktivizua!",
       "title": "Qëndroni të hidratuar"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Qasja në orarin e punës nuk mund të kontrollohej. Po vazhdohet në hapin tjetër të disponueshëm.",
-      "checkingAccess": "Po kontrollohet qasja në orarin e punës",
-      "classification": "Klasifikimi i punës",
-      "classificationDesc": "Mënyra se si dëshironi të gjurmoni orët tuaja të punës.",
-      "continue": "Vazhdo",
-      "daily": "Ditore",
-      "error": "Caktimi i orarit të punës dështoi",
-      "hoursPerWeek": "Orë në javë",
-      "hoursPerWeekDesc": "Orari tipik me kohë të plotë është 40 orë në javë.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Mund t'i rishikoni politikat e punës te cilësimet pas regjistrimit fillestar.",
-      "monthly": "Mujore",
-      "policyContext": "Vazhdimi ruan ecurinë tuaj të regjistrimit. Politikat e punës të organizatës mbeten në fuqi; orët dhe klasifikimi i futur këtu nuk ruhen në një politikë pune.",
-      "previousAttempt": "Një kërkesë e mëparshme është ende duke përfunduar. Provoni përsëri për të vazhduar.",
-      "progressSaved": "Ecuria e regjistrimit fillestar u ruajt.",
-      "scheduleTitle": "Orari i punës",
-      "selectClassification": "Zgjidhni klasifikimin",
-      "setupContext": "Rishikoni orët javore dhe mënyrën se si gjurmohen orët e punës së bashku.",
-      "skip": "Kaloje për momentin",
-      "skipError": "Kapërcimi i konfigurimit të orarit të punës dështoi",
-      "subtitle": "Përcaktoni orët tuaja të punës për të ndihmuar në gjurmimin e saktë të kohës dhe menaxhimin e mungesave.",
-      "title": "Caktoni orarin tuaj të punës",
-      "validation": {
-        "hoursNegative": "Orët nuk mund të jenë negative",
-        "hoursTooMany": "Një javë ka më së shumti 168 orë"
-      },
-      "weekly": "Javore"
     },
     "workTemplates": {
       "cardDesc": "Krijoni një orar të paracaktuar pune. Mund të shtoni më shumë shabllone më vonë te cilësimet.",

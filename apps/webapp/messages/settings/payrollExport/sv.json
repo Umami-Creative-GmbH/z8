@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Konfigurera kopplingar för löneexport och mappningar av lönearter",
+      "connectorsTitle": "Lönekopplingar och lönearter",
       "datev": {
         "beraternummer": "Konsultnummer",
         "beraternummerTooltip": "Ditt DATEV-konsultnummer (1–7 siffror)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Konfiguration sparad",
         "title": "DATEV-stamdata"
       },
-      "description": "Exportera arbetsperioder till lönesystem som DATEV eller Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday och SuccessFactors-API:et hanterar inte utläggsersättningar.",
         "codeLabel": "{line}, löneart för {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Datumintervall",
         "description": "Exportera arbetsperioder och frånvaro till DATEV Lohn & Gehalt-format",
         "employees": "Anställda",
-        "employeesSelected": "{count} valda",
         "endDate": "Slutdatum",
         "error": "Exporten misslyckades",
         "exportButtonDatev": "Exportera till DATEV",
@@ -100,10 +100,13 @@
         "download": "Ladda ned export",
         "downloadError": "Kunde inte hämta nedladdnings-URL",
         "employees": "anställda",
+        "includesSettledDays": "Avräknade dagar inkluderade",
+        "loadError": "Exporthistoriken kunde inte läsas in.",
         "noExports": "Inga exporter ännu",
         "noExportsHint": "Starta en löneexport på fliken Exportera. Slutförda exporter visas här för nedladdning.",
         "payrollRun": "{count, plural, one {Lönekörning: # utläggsrapport} other {Lönekörning: # utläggsrapporter}}",
         "periods": "perioder",
+        "settledDaysLeftOut": "{count, plural, one {# avräknad dag utelämnad} other {# avräknade dagar utelämnade}}",
         "status": {
           "completed": "Slutförd",
           "failed": "Misslyckades",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Arbetskategori"
       },
+      "openPayrollWorkspace": "Kör exporter i Lön",
       "personio": {
         "clientId": "Klient-ID",
         "clientIdHelp": "Hjälp för klient-ID",
@@ -242,6 +246,9 @@
         "saveSuccess": "Konfigurationen har sparats",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Exportmål för lön"
+      },
       "specialCategory": {
         "overtime": "Övertid"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Exportera",
-        "history": "Historik",
         "lexware": "Lexware",
         "mappings": "Lönearter",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Löneexport",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Konfigurerad",
+        "statusNeedsCredentials": "Kräver autentiseringsuppgifter",
+        "statusNotConfigured": "Inte konfigurerad",
+        "successfactorsSubtitle": "API och CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Tidsgräns för API (ms)",
         "batchSize": "Batchstorlek",
@@ -367,12 +382,12 @@
         "warning": "Varning"
       },
       "description": "Kontrollera om en löneperiod är redo innan du exporterar tids-, frånvaro- och lönedata.",
+      "loadError": "Organisationens beredskapskontroller för lön kunde inte läsas in.",
       "openPayrollExport": "Öppna löneexport",
       "period": {
         "currentMonth": "Innevarande månad",
         "navLabel": "Löneperiod",
         "previousMonth": "Föregående månad",
-        "scope": "Löneperiod: {period} (UTC)",
         "showMonth": "Visa {month}"
       },
       "status": {

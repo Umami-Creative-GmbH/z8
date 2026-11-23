@@ -159,7 +159,6 @@
       "scopeFailed": "Der aktuelle Fahrbereich konnte nicht geladen werden.",
       "scopeLoading": "Aktueller Fahrbereich wird geladen…",
       "scopeManaged": "Von Ihnen verwaltete Mitarbeitende",
-      "title": "Fahrtdetails fehlen",
       "truncated": "Die neuesten {count} Arbeitszeiträume werden angezeigt. Filtern Sie nach Team oder Mitarbeiter, um den Rest zu sehen.",
       "updating": "Fahrdetails werden aktualisiert…"
     },

@@ -334,10 +334,12 @@
           "unknownCustomer": "Nepoznati klijent",
           "unknownProject": "Nepoznati projekt"
         },
+        "configureSettings": "Postavke naplativog vremena",
         "confirmed": "Skica računa je stvorena",
         "csv": {
           "download": "Preuzmi CSV za usklađivanje"
         },
+        "description": "Izradite nacrte računa iz naplativog rada, provjerite status alata, preuzmite evidencije radnog vremena i riješite promjene nastale nakon izdavanja računa.",
         "detail": {
           "checking": "Provjera skice u alatu…",
           "gone": "Računovodstveni alat više nema ovu skicu. Ako je namjerno izbrisana, oslobodite predaju kako bi se rad mogao ponovno predati.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Računovodstvo",
         "costRates": "Troškovne tarife",
-        "currency": "Valuta naplate",
         "handOff": "Prijenos",
         "label": "Postavke naplativog vremena",
         "rates": "Naplative tarife"
@@ -637,6 +638,7 @@
         "teams": "Timovi"
       },
       "scopeLabel": "Zatvori za",
+      "selectEmployees": "Odaberite zaposlenike",
       "teamNotFound": "Ovaj tim više ne postoji.",
       "title": "Zatvoreni mjeseci",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Pretraži zaposlenike…",
         "selected": "Odabrani timovi i zaposlenici",
         "selectedHelp": "Obuhvaća članove odabranih timova i odabrane zaposlenike.",
+        "selectEmployees": "Odaberite zaposlenike",
         "teams": "Timovi",
         "title": "Službenici za opremu"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Ova će stavka biti blokirana za novo izdavanje dok se izričito ne odobri. Podaci o zaduženju i potvrdi o primitku ostaju nepromijenjeni.",
         "unchanged": "Ovo stanje dostupnosti već je zabilježeno. Ponovno učitajte opremu kako biste pregledali njezinu povijest."
       },
-      "reload": "Ponovno učitaj postavke",
       "retention": {
         "activity": "Najnovija aktivnost",
         "badgeDue": "Čeka čišćenje",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Račun",
       "data": "Podaci",
-      "integrations": "Integracije",
-      "notifications": "Obavijesti",
+      "integrationsChannels": "Integracije i kanali",
       "organization": "Organizacija"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Zahtjevi za odsutnost ne zahtijevaju odobrenje jer ga ne traži nijedna kategorija odsutnosti.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik ne treba odobrenje jer se ne primjenjuje nijedno pravilo promjene.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika ne treba odobrenje jer se ne primjenjuje nijedno pravilo promjene.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik sam je svoj odobravatelj.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika sami su svoji odobravatelji.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik jedini može odlučivati o njima pa njegovi vlastiti zahtjevi čekaju na njegovo odobrenje.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika jedini mogu odlučivati o njima pa njihovi vlastiti zahtjevi čekaju na njihovo odobrenje.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik ne treba odobrenje jer vlasnici i administratori izravno bilježe vlastiti rad.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika ne treba odobrenje jer vlasnici i administratori izravno bilježe vlastiti rad.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: vlasnik sam odobrava svoja izvješća jer nitko drugi to ne može.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik ne treba odobrenje jer je njegovo pravilo promjene u načinu povjerenja.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika ne treba odobrenje jer je njihovo pravilo promjene u načinu povjerenja.}}",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Nijedna kategorija odsutnosti ne zahtijeva odobrenje.",
             "noChangePolicy": "Na njih se ne primjenjuju pravila izmjena.",
             "ownApprover": "Sami su svoj odobravatelj, stoga se njihovi zahtjevi odmah dovršavaju.",
-            "ownDecider": "Oni su jedini voditelj ili administrator koji može odlučivati o zahtjevima za smjene, stoga njihovi ostaju na čekanju dok ih sami ne odobre.",
             "ownerAdmin": "Vlasnici i administratori izravno bilježe svoj rad.",
             "ownerSelfApproval": "Kao vlasnik, sami odobravaju svoja izvješća jer to nitko drugi ne može.",
             "trustMode": "Njihova pravila izmjena su u načinu povjerenja."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "Kratak opis ovog tima",
           "fallbackManagerHelp": "Koristi se za odobrenja kada član tima nema izravnog voditelja.",
           "fallbackManagerLabel": "Zamjenski voditelj",
-          "fallbackManagerPlaceholder": "Odaberite zamjenskog voditelja",
           "nameLabel": "Naziv tima",
           "namePlaceholder": "Inženjering, Prodaja, Marketing...",
+          "nameRequired": "Naziv tima je obavezan",
           "noFallbackManager": "Nema zamjenskog voditelja",
           "submit": "Stvori tim",
           "title": "Stvori tim"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Pregledajte i opozovite svaku poveznicu koja dijeli izvješće o projektu ili klijentu",
       "pageDescription": "Poveznice koje prikazuju zamrznutu snimku stanja izvješća o projektu ili klijentu nekome izvan Z8. Opozivom poveznice ona odmah prestaje raditi i njezina se snimka briše.",
+      "projectsDisabledNotice": {
+        "description": "Projekti su trenutno isključeni za ovu organizaciju, pa se ne mogu stvoriti nove poveznice za dijeljenje izvješća. Ovdje i dalje možete pregledati i opozvati postojeće poveznice.",
+        "title": "Projekti su isključeni"
+      },
       "title": "Poveznice za dijeljenje izvješća"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Došlo je do neočekivane pogreške"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Aktivne sesije",
-        "activeSessionsDescription": "Trenutne sesije baze podataka",
-        "approvalRequests": "Zahtjevi za odobrenje",
-        "approvedAbsences": "Odobrene odsutnosti",
+      "allClear": "Sve je u redu: ništa trenutno ne zahtijeva vašu pažnju.",
+      "groupLoadError": "Učitavanje ovih podataka nije uspjelo. Ponovno učitajte stranicu za novi pokušaj.",
+      "kpi": {
+        "absenceDays": "Dani odsutnosti",
+        "clockedIn": "Trenutno prijavljeni",
+        "clockedInCaption": "Zaposlenici s aktivnim radom",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Završena radna razdoblja",
+        "daysUnit": "dani",
         "employees": "Zaposlenici",
-        "employeesDescription": "{active} aktivno, {inactive} neaktivno",
-        "pendingAbsences": "Odsutnosti na čekanju",
-        "pendingCount": "{count} na čekanju",
-        "rejectedAbsences": "Odbijene odsutnosti",
+        "employeesCaption": "+{joined} se pridružilo, −{left} otišlo ovog mjeseca",
+        "failed": "Učitavanje nije uspjelo",
+        "hoursUnit": "h",
+        "hoursWorked": "Odrađeni sati",
+        "incompleteSetup": "Nepotpuno postavljanje",
+        "incompleteSetupCaption": "Zaposlenici bez primarnog tima ili pravila o radu",
+        "incompleteSetupManagerCaption": "Zaposlenici bez pravila o radu",
+        "manualEntryShare": "Udio ručnih unosa",
+        "manualEntryShareCaption": "{manual} h od {total} h zabilježeno kao ručni unosi",
+        "manualEntryShareNone": "Još nema završenog rada ovog mjeseca",
+        "openInbox": "Otvorite pristiglu poštu",
+        "openPayrollReadiness": "Pregledajte u spremnosti za obračun plaća",
+        "openViolations": "Otvorena kršenja pravila",
+        "openViolationsCaption": "Još nije potvrđeno ovog mjeseca",
+        "openWorkPolicies": "Pregledajte u pravilima o radu",
+        "pendingApprovals": "Odobrenja na čekanju",
+        "pendingApprovalsCaption": "{count, plural, =0 {Nema zahtjeva za odsutnost} one {Uključujući # zahtjev za odsutnost} other {Uključujući # zahtjeva za odsutnost} }",
+        "staleLiveWork": "Zastarjeli aktivni rad",
+        "staleLiveWorkCaption": "Zaposlenici prijavljeni dulje od 24 sata",
         "teams": "Timovi",
-        "thisMonth": "Ovaj mjesec",
-        "timeEntries": "Unosi radnog vremena",
-        "totalAbsences": "Ukupno odsutnosti",
-        "totalTimeEntries": "Ukupno unosa radnog vremena",
-        "vsLastMonth": "u odnosu na prošli mjesec"
+        "trackingCoverage": "Pokrivenost praćenjem",
+        "trackingCoverageCaption": "{tracked} od {expected} zaposlenika s obaveznim radnim vremenom zabilježilo je rad",
+        "trackingCoverageNone": "Nitko još nema obavezno radno vrijeme ovog mjeseca",
+        "trackingCoverageProgress": "Zaposlenici koji su zabilježili rad ovog mjeseca",
+        "usersSignedIn": "Prijavljeni korisnici",
+        "usersSignedInCaption": "Pojedinačni korisnici s neisteklom sesijom",
+        "vsComparison": "{change} u odnosu na {days}"
       },
-      "description": "Pregledajte statistiku i metriku za svoju instancu",
       "lastUpdated": "Zadnje ažurirano",
       "loadError": "Učitavanje statistike nije uspjelo",
       "loadErrorRetry": "Ponovno učitajte stranicu i pokušajte ponovno.",
-      "managerDescription": "Pregledajte analitiku samo za čitanje za timove kojima upravljate.",
+      "scope": {
+        "organization": "Cijela organizacija",
+        "teams": "{count, plural, =0 {Nema timova kojima upravljate} one {# tim kojim upravljate} few {# tima kojima upravljate} other {# timova kojima upravljate}}"
+      },
       "sections": {
-        "absenceBreakdown": "Analiza odsutnosti",
-        "activityMetrics": "Metrika aktivnosti",
-        "coreCounts": "Ključne brojke",
-        "managedScope": "Opseg upravljanih timova",
-        "systemHealth": "Stanje sustava"
+        "adoption": "Praćenje usvajanja",
+        "attention": "Zahtijeva pažnju",
+        "thisMonth": "Ovaj mjesec",
+        "workforce": "Radna snaga i postavljanje"
       },
       "title": "Statistika"
     },

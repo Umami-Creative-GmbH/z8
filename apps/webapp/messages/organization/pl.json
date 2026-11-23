@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Krótki opis tego zespołu",
         "fallbackManagerHelp": "Używane do zatwierdzeń, gdy członek zespołu nie ma bezpośredniego przełożonego.",
         "fallbackManagerLabel": "Zapasowy menedżer",
-        "fallbackManagerPlaceholder": "Wybierz zapasowego menedżera",
         "nameLabel": "Nazwa zespołu",
         "namePlaceholder": "Inżynieria, Sprzedaż, Marketing...",
         "noFallbackManager": "Brak zapasowego menedżera",

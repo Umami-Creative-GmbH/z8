@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "analitiği görüntüle",
       "restrictedDescription": "Analitik yalnızca yöneticiler ve müdürler tarafından kullanılabilir.",
       "restrictedTitle": "Erişim Kısıtlandı"
     },
     "common": {
       "days": "Günler",
       "employee": "Çalışan",
-      "employees": "Çalışanlar",
       "hours": "Saatler",
       "loadingOrganizationSettings": "Hazır ayarları etkinleştirmeden önce organizasyon ayarları yükleniyor.",
       "noDataAvailable": "Veri bulunmuyor",
@@ -17,17 +15,16 @@
       "overtimeHours": "Fazla Mesai Saatleri",
       "team": "Ekip",
       "totalHours": "Toplam Saat",
-      "unavailable": "Müsait değil",
       "undertime": "Eksik mesai",
       "undertimeHours": "Eksik Mesai Saatleri"
     },
     "layout": {
       "description": "Ekip performansı, çalışma saatleri ve devamsızlık modellerine dair kapsamlı içgörüler",
       "tabs": {
+        "absencesAndVacation": "Devamsızlık ve İzin",
         "overtimeBurnDown": "Fazla Mesai Eritme",
         "overview": "Genel Bakış",
         "teamPerformance": "Ekip Performansı",
-        "vacationTrends": "İzin Eğilimleri",
         "workHours": "Çalışma Saatleri"
       },
       "title": "Analitik"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Bazı analizler yüklenemedi. Gösteriliyorsa daha önce yüklenen değerler güncel olmayabilir."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Karar verilen taleplerin onaylanan kısmı",
-          "title": "Onay Oranı",
-          "unavailableDescription": "Onay analitiği yüklenemedi"
-        },
-        "avgWorkHours": {
-          "description": "Seçilen dönemde çalışan başına",
-          "title": "Ortalama Çalışma Saati"
-        },
-        "totalAbsenceDays": {
-          "description": "Seçilen dönemdeki toplam gün sayısı",
-          "title": "Toplam Devamsızlık Günü"
-        },
-        "totalEmployees": {
-          "description": "Organizasyondaki aktif çalışanlar",
-          "title": "Toplam Çalışan Sayısı"
-        }
-      },
       "loadingLabel": "Analitik verileri yükleniyor",
-      "refreshing": "Analizler yenileniyor…",
-      "workHoursByTeam": {
-        "description": "Ekip başına kaydedilen toplam çalışma saati",
-        "title": "Ekibe Göre Çalışma Saatleri"
-      }
+      "refreshing": "Analizler yenileniyor…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Çalışan başına ortalama",

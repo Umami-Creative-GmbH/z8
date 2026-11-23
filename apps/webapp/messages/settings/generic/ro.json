@@ -334,10 +334,12 @@
           "unknownCustomer": "Client necunoscut",
           "unknownProject": "Proiect necunoscut"
         },
+        "configureSettings": "Setări timp facturabil",
         "confirmed": "Ciorna de factură a fost creată",
         "csv": {
           "download": "Descarcă fișierul CSV de reconciliere"
         },
+        "description": "Creați ciorne de factură din activitatea facturabilă, verificați starea instrumentului, descărcați foi de pontaj și gestionați modificările ulterioare facturării.",
         "detail": {
           "checking": "Se verifică ciorna în instrument…",
           "gone": "Instrumentul de contabilitate nu mai are această ciornă. Dacă a fost ștearsă intenționat, deblocați transferul pentru ca activitatea să poată fi transferată din nou.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Contabilitate",
         "costRates": "Tarife de cost",
-        "currency": "Monedă facturabilă",
         "handOff": "Transfer",
         "label": "Setări timp facturabil",
         "rates": "Tarife facturabile"
@@ -637,6 +638,7 @@
         "teams": "Echipe"
       },
       "scopeLabel": "Închide pentru",
+      "selectEmployees": "Selectați angajații",
       "teamNotFound": "Această echipă nu mai există.",
       "title": "Luni închise",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Caută angajați…",
         "selected": "Echipe și angajați selectați",
         "selectedHelp": "Acoperă membrii echipelor selectate și angajații selectați.",
+        "selectEmployees": "Selectați angajații",
         "teams": "Echipe",
         "title": "Responsabili de echipamente"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Acest articol va fi blocat pentru noi alocări până la aprobarea explicită. Custodia și dovezile de recepție rămân neschimbate.",
         "unchanged": "Această stare de disponibilitate este deja înregistrată. Reîncărcați echipamentul pentru a-i consulta istoricul."
       },
-      "reload": "Reîncarcă configurarea",
       "retention": {
         "activity": "Ultima activitate",
         "badgeDue": "În așteptarea curățării",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Cont",
       "data": "Date",
-      "integrations": "Integrări",
-      "notifications": "Notificări",
+      "integrationsChannels": "Integrări și canale",
       "organization": "Organizație"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Cererile de absență nu necesită aprobare, deoarece nicio categorie de absență nu o solicită.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat nu are nevoie de aprobare, deoarece nu se aplică nicio politică de modificare.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați nu au nevoie de aprobare, deoarece nu se aplică nicio politică de modificare.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat este propriul aprobator.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați sunt propriii aprobatori.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat este singurul care le poate soluționa, așadar propriile cereri așteaptă propria aprobare.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați sunt singurii care le pot soluționa, așadar propriile cereri așteaptă propria aprobare.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat nu are nevoie de aprobare, deoarece proprietarii și administratorii își înregistrează direct propria activitate.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați nu au nevoie de aprobare, deoarece proprietarii și administratorii își înregistrează direct propria activitate.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: proprietarul își aprobă propriile rapoarte, deoarece nimeni altcineva nu o poate face.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat nu are nevoie de aprobare, deoarece politica sa de modificare este în modul bazat pe încredere.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați nu au nevoie de aprobare, deoarece politica lor de modificare este în modul bazat pe încredere.}}",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Nicio categorie de absență nu necesită aprobare.",
             "noChangePolicy": "Nu li se aplică nicio politică de modificare.",
             "ownApprover": "Sunt propriul lor aprobator, așadar cererile lor se finalizează pe loc.",
-            "ownDecider": "Sunt singurul manager sau administrator care poate decide asupra cererilor de tură, așadar ale lor rămân în așteptare până când le aprobă.",
             "ownerAdmin": "Proprietarii și administratorii își înregistrează direct propria activitate.",
             "ownerSelfApproval": "În calitate de proprietar, își aprobă propriile rapoarte, deoarece nimeni altcineva nu o poate face.",
             "trustMode": "Politica lor de modificare este în modul de încredere."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "O scurtă descriere a acestei echipe",
           "fallbackManagerHelp": "Utilizat pentru aprobări atunci când un membru al echipei nu are un manager direct.",
           "fallbackManagerLabel": "Manager de rezervă",
-          "fallbackManagerPlaceholder": "Selectați un manager de rezervă",
           "nameLabel": "Nume echipă",
           "namePlaceholder": "Inginerie, Vânzări, Marketing...",
+          "nameRequired": "Numele echipei este obligatoriu",
           "noFallbackManager": "Fără manager de rezervă",
           "submit": "Creează echipă",
           "title": "Creează echipă"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Vedeți și revocați toate linkurile prin care se partajează un raport de proiect sau de client",
       "pageDescription": "Linkuri care afișează o captură statică a unui raport de proiect sau de client către o persoană din afara Z8. Revocarea unui link îl oprește imediat și îi șterge captura.",
+      "projectsDisabledNotice": {
+        "description": "Modulul Proiecte este dezactivat în prezent pentru această organizație, astfel că nu pot fi create linkuri noi de partajare a rapoartelor. Puteți verifica și revoca linkurile existente de aici.",
+        "title": "Modulul Proiecte este dezactivat"
+      },
       "title": "Linkuri de partajare a rapoartelor"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "A apărut o eroare neașteptată"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Sesiuni active",
-        "activeSessionsDescription": "Sesiuni curente din baza de date",
-        "approvalRequests": "Cereri de aprobare",
-        "approvedAbsences": "Absențe aprobate",
+      "allClear": "Totul este în regulă: nimic nu necesită atenția dvs. în acest moment.",
+      "groupLoadError": "Nu s-au putut încărca aceste cifre. Reîncărcați pagina pentru a încerca din nou.",
+      "kpi": {
+        "absenceDays": "Zile de absență",
+        "clockedIn": "Pontați în prezent",
+        "clockedInCaption": "Angajați cu activitate în desfășurare",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Perioade de lucru finalizate",
+        "daysUnit": "zile",
         "employees": "Angajați",
-        "employeesDescription": "{active} activi, {inactive} inactivi",
-        "pendingAbsences": "Absențe în așteptare",
-        "pendingCount": "{count} în așteptare",
-        "rejectedAbsences": "Absențe respinse",
+        "employeesCaption": "+{joined} s-au alăturat, −{left} au plecat luna aceasta",
+        "failed": "Nu s-a putut încărca",
+        "hoursUnit": "h",
+        "hoursWorked": "Ore lucrate",
+        "incompleteSetup": "Configurare incompletă",
+        "incompleteSetupCaption": "Angajați fără echipă principală sau fără politică de lucru",
+        "incompleteSetupManagerCaption": "Angajați fără politică de lucru",
+        "manualEntryShare": "Pondere intrări manuale",
+        "manualEntryShareCaption": "{manual} h din {total} h înregistrate ca intrări manuale",
+        "manualEntryShareNone": "Nicio activitate finalizată încă în această lună",
+        "openInbox": "Deschideți mesajele primite",
+        "openPayrollReadiness": "Verificați în pregătirea salarizării",
+        "openViolations": "Încălcări active ale politicilor",
+        "openViolationsCaption": "Neconfirmate încă în această lună",
+        "openWorkPolicies": "Verificați în politicile de lucru",
+        "pendingApprovals": "Aprobări în așteptare",
+        "pendingApprovalsCaption": "{count, plural, =0 {Nicio cerere de absență} one {Inclusiv # cerere de absență} other {Inclusiv # cereri de absență}}",
+        "staleLiveWork": "Activitate în timp real prelungită",
+        "staleLiveWorkCaption": "Angajați pontați de mai mult de 24 de ore",
         "teams": "Echipe",
-        "thisMonth": "Luna aceasta",
-        "timeEntries": "Înregistrări de timp",
-        "totalAbsences": "Total absențe",
-        "totalTimeEntries": "Total înregistrări de timp",
-        "vsLastMonth": "față de luna trecută"
+        "trackingCoverage": "Acoperire pontaj",
+        "trackingCoverageCaption": "{tracked} din {expected} angajați cu timp obligatoriu au înregistrat activitate",
+        "trackingCoverageNone": "Nimeni nu are timp obligatoriu încă în această lună",
+        "trackingCoverageProgress": "Angajați care au înregistrat activitate luna aceasta",
+        "usersSignedIn": "Utilizatori conectați",
+        "usersSignedInCaption": "Utilizatori unici cu o sesiune activă",
+        "vsComparison": "{change} vs. {days}"
       },
-      "description": "Vizualizați statistici și indicatori despre instanța dvs.",
       "lastUpdated": "Ultima actualizare",
       "loadError": "Încărcarea statisticilor a eșuat",
       "loadErrorRetry": "Reîncărcați pagina pentru a încerca din nou.",
-      "managerDescription": "Consultați statisticile doar în citire pentru echipele pe care le gestionați.",
+      "scope": {
+        "organization": "Întreaga organizație",
+        "teams": "{count, plural, =0 {Nicio echipă pe care o gestionați} one {# echipă pe care o gestionați} other {# echipe pe care le gestionați}}"
+      },
       "sections": {
-        "absenceBreakdown": "Defalcare absențe",
-        "activityMetrics": "Indicatori de activitate",
-        "coreCounts": "Totaluri principale",
-        "managedScope": "Sfera echipelor gestionate",
-        "systemHealth": "Starea sistemului"
+        "adoption": "Urmărire adoptare",
+        "attention": "Necesită atenție",
+        "thisMonth": "Luna aceasta",
+        "workforce": "Forță de muncă și configurare"
       },
       "title": "Statistici"
     },

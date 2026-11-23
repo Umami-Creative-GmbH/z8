@@ -440,6 +440,11 @@
       "workDays": "{count} Arbetsdäg",
       "workedFromHome": "{hours}h im Homeoffice gschaffet"
     },
+    "tabs": {
+      "projects": "Projekt",
+      "timeAndAbsences": "Ziit & Absänze",
+      "vehicles": "Fahrzüüg"
+    },
     "title": "Mitarbeiter-Bricht",
     "toast": {
       "failedGenerate": "Bericht hät nöd chöne erstellt werde",

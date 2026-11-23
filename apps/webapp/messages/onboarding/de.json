@@ -152,7 +152,6 @@
       "vacationPolicy": "Urlaub",
       "welcome": "Willkommen",
       "wellness": "Wohlbefinden",
-      "workSchedule": "Arbeitsplan",
       "workTemplates": "Vorlagen"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Richten Sie Wassererinnerungen ein, um während Ihres Arbeitstages gesund zu bleiben. Sie erhalten sanfte Benachrichtigungen, Wasser zu trinken, während Sie eingestempelt sind.",
       "success": "Wassererinnerung aktiviert!",
       "title": "Hydriert bleiben"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Der Zugriff auf den Arbeitszeitplan konnte nicht geprüft werden. Es wird mit dem nächsten verfügbaren Schritt fortgefahren.",
-      "checkingAccess": "Zugriff auf Arbeitszeitplan wird geprüft",
-      "classification": "Arbeitsklassifizierung",
-      "classificationDesc": "Wie Sie Ihre Arbeitsstunden erfassen möchten.",
-      "continue": "Weiter",
-      "daily": "Täglich",
-      "error": "Arbeitszeit konnte nicht festgelegt werden",
-      "hoursPerWeek": "Stunden pro Woche",
-      "hoursPerWeekDesc": "Typische Vollzeit beträgt 40 Stunden pro Woche.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Sie können Arbeitsrichtlinien nach dem Onboarding in den Einstellungen erneut aufrufen.",
-      "monthly": "Monatlich",
-      "policyContext": "Durch Fortfahren wird Ihr Onboarding-Fortschritt gespeichert. Die Arbeitsrichtlinien der Organisation bleiben in Kraft; die hier eingegebenen Stunden und Klassifizierungen werden nicht in einer Arbeitsrichtlinie gespeichert.",
-      "previousAttempt": "Eine vorherige Anfrage wird noch abgeschlossen. Versuchen Sie es erneut, um fortzufahren.",
-      "progressSaved": "Onboarding-Fortschritt gespeichert.",
-      "scheduleTitle": "Arbeitszeit",
-      "selectClassification": "Klassifizierung auswählen",
-      "setupContext": "Überprüfen Sie die Wochenstunden und wie Arbeitszeiten gemeinsam erfasst werden.",
-      "skip": "Vorerst überspringen",
-      "skipError": "Überspringen der Arbeitszeiteinrichtung fehlgeschlagen",
-      "subtitle": "Definieren Sie Ihre Arbeitszeiten, um Zeit und Abwesenheiten genau zu erfassen.",
-      "title": "Arbeitszeit festlegen",
-      "validation": {
-        "hoursNegative": "Stunden dürfen nicht negativ sein",
-        "hoursTooMany": "Eine Woche hat höchstens 168 Stunden"
-      },
-      "weekly": "Wöchentlich"
     },
     "workTemplates": {
       "cardDesc": "Erstellen Sie einen Standardarbeitszeitplan. Sie können später weitere Vorlagen in den Einstellungen hinzufügen.",
