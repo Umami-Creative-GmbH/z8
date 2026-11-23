@@ -153,5 +153,7 @@ When a month's short-term earnings exceed the Minijob monthly limit, the employe
 the employment is not *berufsmäßig* (not the person's livelihood). Z8 prompts and an org admin
 documents the verification as an acknowledgement; Z8 never decides social-security status. The
 acknowledgement documents the month's total as the admin was shown it, and goes stale when the
-month's work, shifts, wages or cap change, or its total rises more than 15 minutes' pay (at the
-month's highest wage) above the documented one, as for Minijob exceedances.
+month's shifts, wages or cap change, work outside shifts or beyond shifts that are over grows by
+a material step of 15 minutes, or its total rises more than 15 minutes' pay (at the month's
+highest wage) above the documented one, as for Minijob exceedances. A shift worked a few minutes
+off its plan (early in, late out, a break, a clock-in still open at its end) keeps it.
