@@ -90,7 +90,13 @@ export interface ManagerDailyBriefing {
 	summary: BriefingSummaryCounts;
 	needsAction: BriefingActionItem[];
 	sections: {
-		approvals: BriefingSection<BriefingApprovalActionItem>;
+		approvals: BriefingSection<BriefingApprovalActionItem> & {
+			/**
+			 * The approval types the inbox counted but could not list: their items are missing, so
+			 * the panel names them instead of claiming nothing waits.
+			 */
+			unavailableTypes?: string[];
+		};
 		attendance: BriefingSection;
 		absences: BriefingSection;
 		coverage: BriefingSection;
@@ -146,8 +152,14 @@ export interface BriefingCoverageRule {
  */
 export type BriefingApproval = ApprovalInboxItem;
 
-/** A page of approvals; `totalCount` is every match before the page, when known. */
-export type BriefingApprovalBatch = BriefingApproval[] & { totalCount?: number };
+/**
+ * A page of approvals; `totalCount` is every match before the page, when known, and
+ * `unavailableTypes` the types whose items could not be listed.
+ */
+export type BriefingApprovalBatch = BriefingApproval[] & {
+	totalCount?: number;
+	unavailableTypes?: string[];
+};
 
 export function approvalToBriefingItem(approval: BriefingApproval): BriefingApprovalActionItem {
 	const { priority } = approval.triage;

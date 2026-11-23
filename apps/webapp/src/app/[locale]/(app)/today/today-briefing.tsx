@@ -203,6 +203,7 @@ export function TodayBriefing({
 					// Every pending approval, as the summary counts them; the list shows the first.
 					total={briefing.summary.openApprovals}
 					error={briefing.sections.approvals.error}
+					unavailableTypes={briefing.sections.approvals.unavailableTypes}
 					stale={Boolean(readError)}
 					onRetry={onRetry}
 					onDecision={onDecision}

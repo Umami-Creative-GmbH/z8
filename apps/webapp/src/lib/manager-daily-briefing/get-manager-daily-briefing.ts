@@ -293,11 +293,15 @@ export async function getManagerDailyBriefingFromSources({
 				})
 			: [];
 
-	const approvals = buildSection<BriefingApprovalActionItem>(
-		"approvals",
-		sortActionItems(approvalItems) as BriefingApprovalActionItem[],
-		approvalsResult,
-	);
+	const unavailableApprovalTypes = approvalBatch.unavailableTypes ?? [];
+	const approvals = {
+		...buildSection<BriefingApprovalActionItem>(
+			"approvals",
+			sortActionItems(approvalItems) as BriefingApprovalActionItem[],
+			approvalsResult,
+		),
+		...(unavailableApprovalTypes.length > 0 ? { unavailableTypes: unavailableApprovalTypes } : {}),
+	};
 	const attendance = buildSection(
 		"attendance",
 		attendanceItems,
@@ -662,7 +666,13 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 			status: "pending",
 			limit: BRIEFING_APPROVAL_LIMIT,
 		});
-		return Object.assign(result.items, { totalCount: result.total });
+		// A source whose list read failed still counts in the total: name it, so the briefing never
+		// shows its count beside a list that silently lacks its items.
+		const unavailableTypes = [...new Set(result.warnings.map((warning) => warning.source))];
+		return Object.assign(result.items, {
+			totalCount: result.total,
+			...(unavailableTypes.length > 0 ? { unavailableTypes } : {}),
+		});
 	},
 
 	async getOvertimeWarnings() {

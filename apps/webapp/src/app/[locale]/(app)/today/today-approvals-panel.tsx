@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ApprovalReasonForm } from "@/app/[locale]/(app)/approvals/inbox/components/approval-reason-form";
+import { getApprovalTypeLabels } from "@/app/[locale]/(app)/approvals/inbox/components/approval-type-labels";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -26,6 +27,8 @@ type TodayApprovalsPanelProps = {
 	/** Every pending approval of the briefing's employees; `items` may show only the first. */
 	total?: number;
 	error?: string;
+	/** Approval types counted in `total` whose items could not be listed. */
+	unavailableTypes?: string[];
 	onRetry?: () => void;
 	onDecision?: () => void;
 	stale?: boolean;
@@ -44,6 +47,7 @@ export function TodayApprovalsPanel({
 	items,
 	total: totalProp,
 	error,
+	unavailableTypes = [],
 	onRetry,
 	onDecision,
 	stale,
@@ -68,7 +72,10 @@ export function TodayApprovalsPanel({
 	const [rejecting, setRejecting] = useState<BriefingApprovalActionItem | null>(null);
 	const [rejectReason, setRejectReason] = useState("");
 	const total = Math.max(totalProp ?? items.length, items.length);
-	const truncated = items.length > 0 && total > items.length;
+	// Counted approvals it does not list, never shown as an empty queue.
+	const truncated = total > items.length;
+	const typeLabels: Record<string, string> = getApprovalTypeLabels(t);
+	const unavailableTypeNames = unavailableTypes.map((type) => typeLabels[type] ?? type);
 	const isBusy = actingApprovalId !== null || isRefreshPending;
 	const decisionsOff = isBusy || Boolean(error) || stale;
 	// The panel's own rejection is on its way: neither Cancel nor Escape may drop it.
@@ -192,6 +199,16 @@ export function TodayApprovalsPanel({
 			</CardHeader>
 			<CardContent className="space-y-3">
 				{error ? <SectionError message={error} onRetry={onRetry} /> : null}
+				{!error && unavailableTypeNames.length > 0 ? (
+					<SectionError
+						message={t(
+							"today.approvals.partialFailure",
+							"Some approvals could not be loaded: {types}.",
+							{ types: unavailableTypeNames.join(", ") },
+						)}
+						onRetry={onRetry}
+					/>
+				) : null}
 				{/* While the reject panel is open, it shows the decision's outcome itself. */}
 				{decisionError && !rejecting ? <SectionError message={decisionError} /> : null}
 				{error && items.length > 0 ? (
@@ -299,11 +316,11 @@ export function TodayApprovalsPanel({
 							})}
 						</span>
 						<Link href="/approvals/inbox" className="font-medium underline underline-offset-4">
-							{t("today.approvals.seeAll", "See all {total} in inbox", { total })}
+							{t("today.approvals.openInboxForRest", "Open the inbox to see the rest")}
 						</Link>
 					</p>
 				) : null}
-				{items.length === 0 && !error && !stale ? (
+				{items.length === 0 && total === 0 && !error && !stale ? (
 					<p className="rounded-lg border border-dashed bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
 						{t("today.approvals.empty", "No approvals are waiting.")}
 					</p>

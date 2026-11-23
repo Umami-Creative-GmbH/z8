@@ -304,6 +304,40 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(briefing.summary.openApprovals).toBe(40);
 	});
 
+	it("names the approval types the inbox could not list, so the count never meets a silent empty list", async () => {
+		const sources = createSources({
+			getApprovals: vi
+				.fn()
+				.mockResolvedValue(
+					Object.assign([], { totalCount: 3, unavailableTypes: ["travel_expense_claim"] }),
+				),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.summary.openApprovals).toBe(3);
+		expect(briefing.sections.approvals.items).toEqual([]);
+		expect(briefing.sections.approvals.unavailableTypes).toEqual(["travel_expense_claim"]);
+	});
+
+	it("names no unavailable approval types when the inbox listed every one", async () => {
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources: createSources(),
+		});
+
+		expect(briefing.sections.approvals.unavailableTypes).toBeUndefined();
+	});
+
 	it("carries the inbox item's approve and reject capabilities", async () => {
 		const sources = createSources({
 			getApprovals: vi.fn().mockResolvedValue([

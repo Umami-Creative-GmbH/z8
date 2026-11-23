@@ -1,4 +1,4 @@
-import { type SQL, sql } from "drizzle-orm";
+import { type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { ApprovalInboxPriority, ApprovalInboxRiskLevel } from "./types";
 
@@ -143,13 +143,16 @@ export function canonicalInboxFilters(
 		: sql``;
 }
 
-/** The requester column is one of these employees; never true for none. */
-export function requesterEmployeeIdCondition(column: SQL, employeeIds: readonly string[]): SQL {
+/**
+ * The uuid requester column is one of these employees; never true for none. The ids are one
+ * array parameter, so an organization-wide list stays clear of PostgreSQL's bind limit.
+ */
+export function requesterEmployeeIdCondition(
+	column: SQLWrapper,
+	employeeIds: readonly string[],
+): SQL {
 	if (employeeIds.length === 0) return sql`false`;
-	return sql`${column} in (${sql.join(
-		employeeIds.map((id) => sql`${id}::uuid`),
-		sql`, `,
-	)})`;
+	return sql`${column} = any(${sql.param([...employeeIds])}::uuid[])`;
 }
 
 /** One assignment or several, as `and ...`, or nothing. */

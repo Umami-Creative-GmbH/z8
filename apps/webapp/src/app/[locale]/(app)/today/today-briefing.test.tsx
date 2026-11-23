@@ -60,4 +60,15 @@ describe("manager Today briefing", () => {
 
 		expect(screen.getByText("Showing 1 of 40 pending approvals.")).toBeTruthy();
 	});
+
+	it("names the approval types the briefing could not list in the approvals panel", () => {
+		const briefing = briefingFixture();
+		briefing.summary.openApprovals = 3;
+		briefing.sections.approvals.items = [];
+		briefing.sections.approvals.unavailableTypes = ["travel_expense_claim"];
+		render(<TodayBriefing briefing={briefing} />);
+
+		expect(screen.getByText(/Some approvals could not be loaded: Travel Expenses\./)).toBeTruthy();
+		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
+	});
 });

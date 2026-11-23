@@ -29,6 +29,7 @@ import type {
 	ApprovalType,
 	UnifiedApprovalItem,
 } from "../domain/types";
+import { requesterEmployeeIdCondition } from "../inbox/canonical-inbox-query";
 
 /**
  * Configuration for building approval request queries
@@ -117,9 +118,7 @@ export function buildBaseConditions(
 	// Only these requesters' approvals, before any page is cut (#1980); none for an empty list.
 	if (params.requesterEmployeeIds) {
 		conditions.push(
-			params.requesterEmployeeIds.length > 0
-				? inArray(approvalRequest.requestedBy, params.requesterEmployeeIds)
-				: sql`false`,
+			requesterEmployeeIdCondition(approvalRequest.requestedBy, params.requesterEmployeeIds),
 		);
 	}
 

@@ -27,13 +27,16 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 }));
 // The inbox reads the briefing asks for, as it asks for them.
 const inboxReads = vi.hoisted(() => [] as ApprovalInboxListParams[]);
+// Warnings the next inbox read reports besides its own, as when a source's list read fails.
+const extraInboxWarnings = vi.hoisted(() => [] as Array<{ source: string; message: string }>);
 vi.mock("@/lib/approvals/inbox/read-service", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/lib/approvals/inbox/read-service")>();
 	return {
 		...actual,
 		getApprovalInboxList: async (params: ApprovalInboxListParams) => {
 			inboxReads.push(params);
-			return actual.getApprovalInboxList(params);
+			const result = await actual.getApprovalInboxList(params);
+			return { ...result, warnings: [...result.warnings, ...extraInboxWarnings.splice(0)] };
 		},
 	};
 });
@@ -474,6 +477,52 @@ describe("manager daily briefing approvals source", () => {
 			viewer: { id: admin.employeeId, role: "admin" },
 		});
 		expect(someoneElses).toEqual([]);
+	});
+
+	it("reads an organization-wide briefing past PostgreSQL's bind limit: one parameter for every employee", async () => {
+		signIn(admin, { membership: "admin", role: "admin" });
+		// More ids than PostgreSQL's 65,535 bind parameters, the real requester among them.
+		const employeeIds = Array.from({ length: 70_000 }, () => randomUUID());
+		employeeIds.splice(35_000, 0, requester.employeeId);
+
+		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds,
+			viewer: { id: admin.employeeId, role: "admin" },
+		});
+
+		// Every source listed and counted: none failed on its query.
+		expect(approvals.unavailableTypes).toBeUndefined();
+		expect(summarize(approvals).map(({ type, entityId }) => ({ type, entityId }))).toEqual([
+			{ type: "absence_entry", entityId: seeded.absenceId },
+			{ type: "compliance_exception", entityId: seeded.exceptionId },
+			{ type: "period_submission", entityId: seeded.periodSubmissionId },
+			{ type: "travel_expense_claim", entityId: seeded.claimId },
+		]);
+		expect(approvals.totalCount).toBe(4);
+	});
+
+	it("names the types the inbox could not list, once each, and none when it listed every one", async () => {
+		signIn(manager, { membership: "member", role: "manager" });
+		const complete = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: manager.employeeId, role: "manager" },
+		});
+		expect(complete.unavailableTypes).toBeUndefined();
+
+		extraInboxWarnings.push(
+			{ source: "travel_expense_claim", message: "Travel Expenses approvals could not be loaded." },
+			{ source: "travel_expense_claim", message: "Travel Expenses approvals could not be loaded." },
+		);
+		const partial = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: manager.employeeId, role: "manager" },
+		});
+
+		expect(partial.unavailableTypes).toEqual(["travel_expense_claim"]);
+		expect(partial.totalCount).toBe(complete.totalCount);
 	});
 
 	it("reads no Covering for sections it would discard", async () => {

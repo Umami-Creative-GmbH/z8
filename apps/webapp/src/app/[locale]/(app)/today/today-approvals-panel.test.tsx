@@ -470,9 +470,11 @@ describe("TodayApprovalsPanel", () => {
 
 		expect(screen.getByText("40")).toBeTruthy();
 		expect(screen.getByText("Showing 3 of 40 pending approvals.")).toBeTruthy();
-		expect(screen.getByRole("link", { name: "See all 40 in inbox" }).getAttribute("href")).toBe(
-			"/approvals/inbox",
-		);
+		// The inbox shows the viewer's whole queue, so the link promises no count of its own.
+		expect(
+			screen.getByRole("link", { name: "Open the inbox to see the rest" }).getAttribute("href"),
+		).toBe("/approvals/inbox");
+		expect(screen.queryByText(/See all/)).toBeNull();
 	});
 
 	it("claims no truncation when it lists every pending approval", () => {
@@ -480,7 +482,59 @@ describe("TodayApprovalsPanel", () => {
 
 		expect(screen.getByText("1")).toBeTruthy();
 		expect(screen.queryByText(/^Showing/)).toBeNull();
-		expect(screen.queryByRole("link", { name: /^See all/ })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Open the inbox to see the rest" })).toBeNull();
+	});
+
+	it("names the approval types it could not list, with a retry, instead of claiming none wait", () => {
+		const onRetry = vi.fn();
+		render(
+			<TodayApprovalsPanel
+				items={[]}
+				total={3}
+				unavailableTypes={["travel_expense_claim", "period_submission"]}
+				onRetry={onRetry}
+			/>,
+		);
+
+		const alert = screen.getByRole("alert");
+		expect(alert.textContent).toContain(
+			"Some approvals could not be loaded: Travel Expenses, Period Submissions.",
+		);
+		fireEvent.click(within(alert).getByRole("button", { name: "Retry approvals" }));
+		expect(onRetry).toHaveBeenCalledTimes(1);
+		expect(screen.getByText("3")).toBeTruthy();
+		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
+	});
+
+	it("names the unavailable types in the viewer's language", () => {
+		translations.set("approvals:approvals.types.travel_expense_claim", "Reisekosten");
+		translations.set(
+			"today.approvals.partialFailure",
+			"Einige Freigaben konnten nicht geladen werden: {types}.",
+		);
+		render(
+			<TodayApprovalsPanel
+				items={[approvalItem()]}
+				total={4}
+				unavailableTypes={["travel_expense_claim"]}
+			/>,
+		);
+
+		expect(screen.getByRole("alert").textContent).toContain(
+			"Einige Freigaben konnten nicht geladen werden: Reisekosten.",
+		);
+		// The rows it could list stay decidable.
+		expect(screen.getByRole("button", { name: "Approve Vacation request" })).toBeTruthy();
+	});
+
+	it("never claims no approvals wait while it counts some it does not list", () => {
+		render(<TodayApprovalsPanel items={[]} total={2} />);
+
+		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
+		expect(screen.getByText("Showing 0 of 2 pending approvals.")).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Open the inbox to see the rest" }).getAttribute("href"),
+		).toBe("/approvals/inbox");
 	});
 
 	it("shows an item's summary in the viewer's language when the inbox localizes it", () => {
