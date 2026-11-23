@@ -1492,6 +1492,102 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 				expect(after?.adminDetail?.amountsCents?.total).toBe(72_000);
 				expect(attached?.acknowledgement?.status).toBe("current");
 			});
+
+			describe("with an open clock-in without a shift", () => {
+				/** 640 EUR worked in May, and a clock-in without a shift on 20 May. */
+				async function unplannedClockIn(clockIn = "08:00") {
+					const { org, worker } = await earner("a", 8);
+					const owner = await fx.user("owner");
+					await st.openWork(org, worker, "2026-05-20", clockIn);
+					/** The May prompt in Reviews & Conflicts at `at`. */
+					const shownAt = async (at: string) =>
+						(
+							await listShortTermBerufsmaessigkeitReviews(db, {
+								organizationId: org.id,
+								timezone: org.timezone,
+								now: Temporal.Instant.from(at),
+								includeResolved: true,
+							})
+						).find((review) => review.month === "2026-05")?.finding;
+					const acknowledgeAt = (at: string, shown: StatutoryFinding | undefined) =>
+						acknowledgeShortTermBerufsmaessigkeit(db, {
+							organizationId: org.id,
+							actorUserId: owner.userId,
+							employeeId: worker.employeeId,
+							timezone: org.timezone,
+							month: "2026-05",
+							reason: "Student, no other employment this year",
+							expectedFingerprint: shown?.inputFingerprint ?? "",
+							expectedTotalCents: shown?.adminDetail?.amountsCents?.total ?? 0,
+							now: Temporal.Instant.from(at),
+						});
+					return { org, worker, shownAt, acknowledgeAt };
+				}
+
+				it("documents the total the admin was shown", async () => {
+					const { shownAt, acknowledgeAt } = await unplannedClockIn();
+					// 10:00 in Berlin: 640 EUR + 2 hours at 20 EUR.
+					const shown = await shownAt("2026-05-20T08:00:00Z");
+					expect(shown?.adminDetail?.amountsCents?.total).toBe(68_000);
+
+					// Submitted at 10:10, with 3.33 EUR more on the clock.
+					const record = await acknowledgeAt("2026-05-20T08:10:00Z", shown);
+
+					expect(record.metadata).toMatchObject({ documentedTotalCents: 68_000 });
+					expect((await shownAt("2026-05-20T08:10:00Z"))?.acknowledgement?.status).toBe("current");
+				});
+
+				it("refuses a total that rose by more than 15 minutes' pay since it was shown", async () => {
+					const { shownAt, acknowledgeAt } = await unplannedClockIn();
+					const shown = await shownAt("2026-05-20T08:00:00Z");
+
+					await expect(acknowledgeAt("2026-05-20T08:30:00Z", shown)).rejects.toMatchObject({
+						refusal: "short_term_figures_changed",
+					});
+				});
+
+				it("goes stale once the clock-in runs more than 15 minutes' pay past the documented total", async () => {
+					const { shownAt, acknowledgeAt } = await unplannedClockIn();
+					await acknowledgeAt("2026-05-20T08:00:00Z", await shownAt("2026-05-20T08:00:00Z"));
+
+					expect((await shownAt("2026-05-20T08:14:00Z"))?.acknowledgement?.status).toBe("current");
+					expect((await shownAt("2026-05-20T08:16:00Z"))?.acknowledgement?.status).toBe("stale");
+				});
+
+				it("keeps the fingerprint steady minute by minute and the total within each minute", async () => {
+					const { org, worker } = await unplannedClockIn("08:00:42");
+
+					const seen = await promptsAt(org, worker.employeeId, [
+						// 10:00:50, 10:00:59, 10:07:20 and 10:14:41 in Berlin.
+						"2026-05-20T08:00:50Z",
+						"2026-05-20T08:00:59Z",
+						"2026-05-20T08:07:20Z",
+						"2026-05-20T08:14:41Z",
+					]);
+
+					// 640 EUR + 08:00 to 10:00 on the minute grid.
+					expect(seen[0]?.total).toBe(68_000);
+					expect(seen[1]).toEqual(seen[0]);
+					expect(seen.map((s) => s.fingerprint)).toEqual(Array(4).fill(seen[0]?.fingerprint));
+					expect(seen[3]?.total).toBe(68_467);
+				});
+
+				it("stays current when the clock-in closes within the step", async () => {
+					const { org, shownAt, acknowledgeAt } = await unplannedClockIn();
+					const shown = await shownAt("2026-05-20T08:00:00Z");
+					await acknowledgeAt("2026-05-20T08:00:00Z", shown);
+					const [period] = (
+						await admin.query<{ id: string }>(
+							"SELECT id FROM work_period WHERE organization_id = $1 AND is_active",
+							[org.id],
+						)
+					).rows;
+
+					await st.clockOut(org, period?.id ?? "", "2026-05-20", "10:05");
+
+					expect((await shownAt("2026-05-20T12:00:00Z"))?.acknowledgement?.status).toBe("current");
+				});
+			});
 		});
 
 		describe("work on New Year's Eve for a shift on 1 January", () => {
@@ -1580,6 +1676,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 						month: "2027-01",
 						reason: "Student, no other employment this year",
 						expectedFingerprint: shown?.finding.inputFingerprint ?? "",
+						expectedTotalCents: shown?.finding.adminDetail?.amountsCents?.total ?? 0,
 						now: JANUARY_NOW,
 					}),
 				).resolves.toMatchObject({ inputFingerprint: shown?.finding.inputFingerprint });
@@ -1689,6 +1786,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 						month: "2026-12",
 						reason: "Student, no other employment this year",
 						expectedFingerprint: shown?.finding.inputFingerprint ?? "",
+						expectedTotalCents: shown?.finding.adminDetail?.amountsCents?.total ?? 0,
 						now: JANUARY_NOW,
 					}),
 				).resolves.toMatchObject({ inputFingerprint: shown?.finding.inputFingerprint });
@@ -1728,6 +1826,7 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 					month: "2027-01",
 					reason: "Student, no other employment next year",
 					expectedFingerprint: shown?.finding.inputFingerprint ?? "",
+					expectedTotalCents: shown?.finding.adminDetail?.amountsCents?.total ?? 0,
 					now,
 				}),
 			).resolves.toMatchObject({ subjectKey: "2027-01" });

@@ -120,6 +120,8 @@ export const acknowledgeShortTermBerufsmaessigkeitAction = organizationAction(
 			legalNote: z.string().max(1000).nullable().optional(),
 			/** The prompt's fingerprint as the admin saw it: changed figures are refused. */
 			expectedFingerprint: z.string().min(1).max(200),
+			/** The month's total in EUR cents as the admin saw it: what the verification documents. */
+			expectedTotalCents: z.number().int().nonnegative().max(100_000_000),
 		}),
 	},
 	({ actor, organizationId, input }) =>
@@ -133,6 +135,7 @@ export const acknowledgeShortTermBerufsmaessigkeitAction = organizationAction(
 				reason: input.reason,
 				legalNote: input.legalNote ?? null,
 				expectedFingerprint: input.expectedFingerprint,
+				expectedTotalCents: input.expectedTotalCents,
 				now: systemClock.nowInstant(),
 			});
 			return { id: record.id, acknowledgedAt: record.acknowledgedAt };

@@ -12,6 +12,7 @@ import {
 	statutoryFindingId,
 } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
+import { MINIJOB_MATERIAL_OVERRUN_MINUTES } from "../minijob/minijob-months";
 import type { StatutoryPreferences } from "../preferences";
 import type { StatutoryThresholdTable } from "../thresholds";
 import type {
@@ -783,8 +784,12 @@ export function judgeShortTermYear(input: {
  * they were planned or worked. A shift worked as planned, a running shift with its open clock-in
  * (minutes so far plus the rest, on one minute grid), a clocked-out break within a running shift
  * and the date rolling past midnight keep it;
- * added, removed, longer or shorter work and shifts, a new wage or cap change it. An open clock-in
- * without a shift grows by the minute, so it counts by its identity until it closes.
+ * added, removed, longer or shorter work and shifts, a new wage or cap change it. Work without a
+ * shift (and an open clock-in past its shift's end) grows by the minute while it runs, so it counts
+ * in material steps of 15 minutes, open or closed, as the Minijob monitor does: steady minute by
+ * minute and through its clock-out, changed by material further work. A rise within a step shows in
+ * the total, which the documented total of an acknowledgement catches
+ * (`attachBerufsmaessigkeitStates` in `monitor.ts`).
  */
 function berufsmaessigkeitFingerprint(input: {
 	readonly month: string;
@@ -793,10 +798,16 @@ function berufsmaessigkeitFingerprint(input: {
 	readonly planned: readonly ShortTermPlanItem[];
 }): string {
 	const minutesByDay = new Map<string, number>();
-	const openWithoutShift: string[] = [];
+	const unplanned: [string, string, number, number | null, string][] = [];
 	for (const item of [...input.work, ...input.planned]) {
-		if ("workPeriodId" in item && item.inProgress === "unplanned") {
-			openWithoutShift.push(item.workPeriodId);
+		if ("workPeriodId" in item && (!item.ofShift || item.inProgress === "unplanned")) {
+			unplanned.push([
+				item.workPeriodId,
+				item.date,
+				Math.floor(item.minutes / MINIJOB_MATERIAL_OVERRUN_MINUTES),
+				item.hourlyRateCents,
+				item.currency,
+			]);
 			continue;
 		}
 		const key = `${item.date}|${item.hourlyRateCents ?? "unpriced"}|${item.currency}`;
@@ -807,7 +818,9 @@ function berufsmaessigkeitFingerprint(input: {
 		month: input.month,
 		cap: input.cap,
 		days: [...minutesByDay].sort(([a], [b]) => a.localeCompare(b)),
-		openWithoutShift: openWithoutShift.sort(),
+		unplanned: unplanned.sort(
+			([a, dayA], [b, dayB]) => a.localeCompare(b) || dayA.localeCompare(dayB),
+		),
 	});
 }
 
@@ -865,6 +878,13 @@ function berufsmaessigkeitFindings(input: {
 		const total = Math.round((earnedCentMinutes + plannedCentMinutes) / 60);
 		const plannedCents = total - earned;
 		if (total <= cap) continue;
+		// One material step: 15 minutes of pay at the month's highest wage (unrounded cents), the
+		// most the total may differ from the one an acknowledgement documents.
+		const highestRateCents = [...work, ...planned].reduce(
+			(highest, item) => Math.max(highest, item.hourlyRateCents ?? 0),
+			0,
+		);
+		const materialRiseCents = (highestRateCents * MINIJOB_MATERIAL_OVERRUN_MINUTES) / 60;
 
 		const { tier, usedPercent } = classifyStatutoryUsage({ used: total, limit: cap }, preferences);
 		const kind = "short_term_berufsmaessigkeit_check";
@@ -887,7 +907,7 @@ function berufsmaessigkeitFindings(input: {
 			adminDetail: {
 				currency,
 				amountsCents: { earned, planned: plannedCents, total, cap },
-				facts: { unpricedMinutes },
+				facts: { unpricedMinutes, materialRiseCents },
 			},
 			inputFingerprint: berufsmaessigkeitFingerprint({ month, cap, work, planned }),
 			acknowledgementKind: "short_term_berufsmaessigkeit_verified",

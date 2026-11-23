@@ -11,12 +11,18 @@ import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	attachAcknowledgementStates,
+	loadStatutoryAcknowledgementStates,
 	recordStatutoryAcknowledgement,
 	type StatutoryAcknowledgementRecord,
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
 import { loadEmployeeInOrganization } from "../employee-scope";
 import type { StatutoryFinding } from "../finding";
+import {
+	acknowledgedTotalCentsOf,
+	minijobAcknowledgementStatus,
+	minijobTotalCoveredBy,
+} from "../minijob/minijob-months";
 import {
 	type RedactedStatutoryFinding,
 	redactStatutoryFinding,
@@ -57,6 +63,61 @@ export interface ShortTermMonitor {
 
 type Writer = Pick<DatabaseClient, "select" | "insert">;
 
+/**
+ * A prompt's month total and one material step of it (15 minutes' pay at the month's highest
+ * wage), in cents, from its admin detail.
+ */
+function promptTotalOf(finding: StatutoryFinding) {
+	const step = finding.adminDetail?.facts?.materialRiseCents;
+	return {
+		totalCents: finding.adminDetail?.amountsCents?.total ?? 0,
+		materialRiseCents: typeof step === "number" ? step : 0,
+	};
+}
+
+/**
+ * Attaches each Berufsmäßigkeit prompt's acknowledgement state, by fingerprint and documented
+ * total as for Minijob months (`minijobAcknowledgementStatus`): an acknowledgement matching the
+ * fingerprint stays current only while the month's total is at most one material step above the
+ * total it documented, so a clock-in without a shift that keeps running makes it stale.
+ */
+async function attachBerufsmaessigkeitStates(
+	db: ShortTermReader,
+	organizationId: string,
+	findings: readonly StatutoryFinding[],
+): Promise<StatutoryFinding[]> {
+	const subjectOf = (finding: StatutoryFinding) =>
+		finding.kind === BERUFSMAESSIGKEIT_FINDING_KIND
+			? statutoryAcknowledgementSubjectOf(finding)
+			: null;
+	const states = await loadStatutoryAcknowledgementStates(db, {
+		organizationId,
+		subjects: findings.flatMap((finding) => {
+			const subject = subjectOf(finding);
+			return subject ? [{ ...subject, inputFingerprint: finding.inputFingerprint }] : [];
+		}),
+	});
+	return findings.map((finding) => {
+		const subject = subjectOf(finding);
+		if (!subject) return finding;
+		const state = states.get(subject);
+		return {
+			...finding,
+			acknowledgement: {
+				status: minijobAcknowledgementStatus(promptTotalOf(finding), {
+					status: state.status,
+					acknowledgedTotalCents: state.latest
+						? acknowledgedTotalCentsOf(state.latest.metadata)
+						: null,
+				}),
+				acknowledgedAt: state.latest?.acknowledgedAt ?? null,
+				acknowledgedBy: state.latest?.acknowledgedBy ?? null,
+				reason: state.latest?.reason ?? null,
+			},
+		};
+	});
+}
+
 async function evaluateYearWithAcknowledgements(
 	db: ShortTermReader,
 	input: {
@@ -71,7 +132,11 @@ async function evaluateYearWithAcknowledgements(
 	const findings = await attachAcknowledgementStates(
 		db,
 		input.organizationId,
-		evaluations.flatMap((evaluation) => evaluation.findings),
+		await attachBerufsmaessigkeitStates(
+			db,
+			input.organizationId,
+			evaluations.flatMap((evaluation) => evaluation.findings),
+		),
 	);
 	return { evaluations, findings };
 }
@@ -149,10 +214,12 @@ export type ShortTermAcknowledgementRefusal =
 
 /**
  * Records an org admin's Berufsmäßigkeit verification for `month` (`YYYY-MM`). The month is
- * evaluated again here; `expectedFingerprint` is the fingerprint of the prompt the admin was
- * looking at, and a mismatch is refused, so nobody acknowledges figures they never saw. The
- * re-evaluated fingerprint is recorded; the acknowledgement goes stale when the month's work,
- * shifts, wages or cap change. The caller authorizes (org admin).
+ * evaluated again here; `expectedFingerprint` and `expectedTotalCents` are the fingerprint and
+ * total of the prompt the admin was looking at. A different fingerprint, or a total now more than
+ * one material step above the shown one, is refused, so nobody acknowledges figures they never
+ * saw. The re-evaluated fingerprint and exactly the shown total are recorded; the acknowledgement
+ * goes stale when the month's work, shifts, wages or cap change, or its total rises more than a
+ * step above the documented one. The caller authorizes (org admin).
  */
 export async function acknowledgeShortTermBerufsmaessigkeit(
 	db: Writer,
@@ -166,6 +233,8 @@ export async function acknowledgeShortTermBerufsmaessigkeit(
 		readonly legalNote?: string | null;
 		/** The fingerprint of the prompt as shown to the admin. */
 		readonly expectedFingerprint: string;
+		/** The month's total in cents as shown to the admin. */
+		readonly expectedTotalCents: number;
 		readonly now: Instant;
 	},
 ): Promise<StatutoryAcknowledgementRecord> {
@@ -192,7 +261,10 @@ export async function acknowledgeShortTermBerufsmaessigkeit(
 			refusal: "short_term_no_verification_prompt" satisfies ShortTermAcknowledgementRefusal,
 		});
 	}
-	if (finding.inputFingerprint !== input.expectedFingerprint) {
+	if (
+		finding.inputFingerprint !== input.expectedFingerprint ||
+		!minijobTotalCoveredBy(promptTotalOf(finding), input.expectedTotalCents)
+	) {
 		throw new ValidationError({
 			message: "This month's earnings changed since they were shown",
 			field: "month",
@@ -206,8 +278,14 @@ export async function acknowledgeShortTermBerufsmaessigkeit(
 		inputFingerprint: finding.inputFingerprint,
 		reason: input.reason,
 		legalNote: input.legalNote ?? null,
-		// The amounts the admin verified, for the audit trail (org admins only).
-		metadata: { amountsCents: finding.adminDetail?.amountsCents ?? {} },
+		metadata: {
+			// What the admin verified (org admins only): a later rise beyond it makes it stale.
+			documentedTotalCents: input.expectedTotalCents,
+			// The evaluated breakdown as it is now, for the audit trail.
+			amountsCents: finding.adminDetail?.amountsCents ?? {},
+		},
+		// Documenting a risen total of an unchanged fingerprint records a new acknowledgement.
+		revision: `total:${input.expectedTotalCents}`,
 	});
 }
 

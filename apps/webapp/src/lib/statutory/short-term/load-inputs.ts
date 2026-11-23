@@ -61,6 +61,8 @@ export interface ShortTermWorkItem {
 	 * `unplanned` when it belongs to none. Null for completed work.
 	 */
 	readonly inProgress: { readonly shiftId: string } | "unplanned" | null;
+	/** Whether the work belongs to a shift (`matchWorkToShifts`), open or completed. */
+	readonly ofShift: boolean;
 	/** Confirmed hourly wage on that day in minor units; null for fixed terms or a missing wage. */
 	readonly hourlyRateCents: number | null;
 	readonly currency: string;
@@ -900,6 +902,7 @@ export async function loadShortTermInputs(
 	type DatedWork = RecordedWork & {
 		readonly date: string;
 		readonly inProgress: ShortTermWorkItem["inProgress"];
+		readonly ofShift: boolean;
 	};
 	const workByEmployee = new Map<string, DatedWork[]>();
 	type PlannedShift = Pick<
@@ -947,7 +950,9 @@ export async function loadShortTermInputs(
 						.map((part) => ({ date: part.shift.date, minutes: part.minutes }))
 				: [{ date: plainDateAt(work.start, input.timezone).toString(), minutes: work.minutes }];
 			for (const part of parts) {
-				if (inLoadedSpan(employeeId, part.date)) dated.push({ ...work, ...part, inProgress });
+				if (inLoadedSpan(employeeId, part.date)) {
+					dated.push({ ...work, ...part, inProgress, ofShift: belongs !== undefined });
+				}
 			}
 		}
 		workByEmployee.set(employeeId, dated);
@@ -1063,6 +1068,7 @@ export async function loadShortTermInputs(
 				date: item.date,
 				minutes: item.minutes,
 				inProgress: item.inProgress,
+				ofShift: item.ofShift,
 				hourlyRateCents: centsOf(contract.hourlyRate),
 				currency: contract.currency,
 				employmentPeriodId: contract.employmentPeriodId,

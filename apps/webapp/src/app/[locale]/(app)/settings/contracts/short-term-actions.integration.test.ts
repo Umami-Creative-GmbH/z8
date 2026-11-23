@@ -88,13 +88,19 @@ describe("short-term employment actions (PostgreSQL)", () => {
 	}
 
 	/** The fingerprint of January's prompt as the Reviews inbox shows it to the org admin. */
-	async function shownFingerprint(): Promise<string> {
+	/** The January prompt's fingerprint and total as Reviews & Conflicts shows them. */
+	async function shownPrompt(): Promise<{
+		expectedFingerprint: string;
+		expectedTotalCents: number;
+	}> {
 		const result = await listShortTermBerufsmaessigkeitReviewsAction({ includeResolved: true });
 		if (!result.success) throw new Error(result.error);
-		const fingerprint = result.data.find((review) => review.month === JANUARY)?.finding
-			.inputFingerprint;
-		if (!fingerprint) throw new Error("No January prompt shown");
-		return fingerprint;
+		const finding = result.data.find((review) => review.month === JANUARY)?.finding;
+		if (!finding) throw new Error("No January prompt shown");
+		return {
+			expectedFingerprint: finding.inputFingerprint,
+			expectedTotalCents: finding.adminDetail?.amountsCents?.total ?? 0,
+		};
 	}
 
 	function signInAsManager(org: { id: string }, manager: { userId: string; employeeId: string }) {
@@ -186,6 +192,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 				month: JANUARY,
 				reason: "Verified",
 				expectedFingerprint: "v1:anything",
+				expectedTotalCents: 0,
 			}),
 		).toMatchObject({ success: false, code: "AuthorizationError" });
 	});
@@ -239,7 +246,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 				employeeId: worker.employeeId,
 				month: JANUARY,
 				reason: "Student; no other employment this year (questionnaire on file)",
-				expectedFingerprint: await shownFingerprint(),
+				...(await shownPrompt()),
 			}),
 		).toMatchObject({ success: true });
 		expect(await open()).toEqual([]);
@@ -288,6 +295,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 				month: JANUARY,
 				reason: "Verified",
 				expectedFingerprint: "v1:anything",
+				expectedTotalCents: 0,
 			}),
 		];
 		const reviews = await listShortTermBerufsmaessigkeitReviewsAction({ includeResolved: true });
@@ -321,6 +329,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 				month: `${YEAR}-02`,
 				reason: "Verified",
 				expectedFingerprint: "v1:anything",
+				expectedTotalCents: 0,
 			}),
 		).toMatchObject({ success: false, refusal: "short_term_no_verification_prompt" });
 	});
@@ -328,7 +337,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 	it("refuses to acknowledge figures that changed since the admin saw them", async () => {
 		const { org, owner, worker } = await seed();
 		signInAsOwner(org, owner);
-		const seen = await shownFingerprint();
+		const seen = await shownPrompt();
 		// More work is recorded while the admin reads the old figures.
 		await st.work(org, worker, `${JANUARY}-20`);
 
@@ -337,7 +346,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 				employeeId: worker.employeeId,
 				month: JANUARY,
 				reason: "Verified",
-				expectedFingerprint: seen,
+				...seen,
 			}),
 		).toMatchObject({ success: false, refusal: "short_term_figures_changed" });
 		const resolved = await listShortTermBerufsmaessigkeitReviewsAction({ includeResolved: true });
@@ -351,7 +360,7 @@ describe("short-term employment actions (PostgreSQL)", () => {
 				employeeId: worker.employeeId,
 				month: JANUARY,
 				reason: "Verified",
-				expectedFingerprint: await shownFingerprint(),
+				...(await shownPrompt()),
 			}),
 		).toMatchObject({ success: true });
 	});

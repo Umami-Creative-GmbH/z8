@@ -59,6 +59,7 @@ function AcknowledgeForm({
 				legalNote: value.legalNote.trim() || null,
 				// The figures on screen: the server refuses if they have changed since.
 				expectedFingerprint: review.finding.inputFingerprint,
+				expectedTotalCents: review.finding.adminDetail?.amountsCents?.total ?? 0,
 			});
 			if (!result.success) throw new Error(actionErrorMessage(t, result, SHORT_TERM_REFUSALS));
 		},

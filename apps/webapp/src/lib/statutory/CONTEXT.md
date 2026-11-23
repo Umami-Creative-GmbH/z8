@@ -138,4 +138,7 @@ months count as 30 calendar days each (or 70 / 3 working days each under that li
 **Berufsmäßigkeit verification**:
 When a month's short-term earnings exceed the Minijob monthly limit, the employer must verify that
 the employment is not *berufsmäßig* (not the person's livelihood). Z8 prompts and an org admin
-documents the verification as an acknowledgement; Z8 never decides social-security status.
+documents the verification as an acknowledgement; Z8 never decides social-security status. The
+acknowledgement documents the month's total as the admin was shown it, and goes stale when the
+month's work, shifts, wages or cap change, or its total rises more than 15 minutes' pay (at the
+month's highest wage) above the documented one, as for Minijob exceedances.
