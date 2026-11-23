@@ -5,6 +5,7 @@ import {
 	drivingLicenceCheck,
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
+import { drivingLicenceDeclaredClasses } from "@/db/schema/driving-licence-declared-classes";
 import { drivingLicenceSupplement } from "@/db/schema/driving-licence-history";
 import { drivingImpedimentReport } from "@/db/schema/driving-licence-impediments";
 import { drivingLicenceIntendedDriverAssignment } from "@/db/schema/driving-licence-intended-drivers";
@@ -47,6 +48,7 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 			tasks,
 			completedTasks,
 			deliveries,
+			declared,
 		] = await Promise.all([
 			database
 				.select()
@@ -219,6 +221,15 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 					),
 				)
 				.orderBy(asc(drivingLicenceReminderDelivery.createdAt)),
+			database
+				.select()
+				.from(drivingLicenceDeclaredClasses)
+				.where(
+					and(
+						eq(drivingLicenceDeclaredClasses.organizationId, organizationId),
+						eq(drivingLicenceDeclaredClasses.employeeId, employeeId),
+					),
+				),
 		]);
 		const versions = new Set(checks.map((c) => c.policyVersion));
 		for (const event of events)
@@ -376,6 +387,23 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 						interval_months: c.intervalMonths,
 						deadline_timezone: c.deadlineTimezone,
 					})),
+				),
+				tablePart(
+					"declared_classes",
+					[
+						"declared_class_code",
+						"declared_class_expiry_date",
+						"declared_document_expires_on",
+						"declared_at",
+					],
+					declared.flatMap((d) =>
+						d.classes.map((entry) => ({
+							declared_class_code: entry.code,
+							declared_class_expiry_date: entry.expiryDate,
+							declared_document_expires_on: d.documentExpiresOn,
+							declared_at: instantText(d.updatedAt),
+						})),
+					),
 				),
 				tablePart(
 					"checked_classes",

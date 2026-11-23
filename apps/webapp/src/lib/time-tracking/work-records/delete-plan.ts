@@ -4,7 +4,6 @@
  * keep. Pure, no I/O, no server-only imports.
  */
 import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
-import type { ToleratedDrift } from "./amend-change";
 import type { WorkRecordRefusal } from "./change";
 import { agreeingPair, plannedPairsRefusal } from "./pair-agreement";
 import { type PlannedHalf, plannedHalf, type WorkRecordPair } from "./plan";
@@ -18,9 +17,9 @@ export type DeletionPlan = {
 
 export function planDeletion(
 	pair: WorkRecordPair,
-	markers: { clockInAt: Instant; clockOutAt: Instant; toleratedDrift?: readonly ToleratedDrift[] },
+	markers: { clockInAt: Instant; clockOutAt: Instant },
 ): DeletionPlan | WorkRecordRefusal {
-	const locked = agreeingPair(pair, markers.toleratedDrift);
+	const locked = agreeingPair(pair);
 	if ("kind" in locked) return locked;
 	const { period, canonical } = locked;
 	if (compareInstants(markers.clockInAt, markers.clockOutAt) !== 0) {

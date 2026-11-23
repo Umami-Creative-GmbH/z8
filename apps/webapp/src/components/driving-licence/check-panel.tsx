@@ -122,9 +122,12 @@ export function DrivingLicenceCheckPanel({
 					) : null}
 					{canVerify && intendedDriver ? (
 						<OriginalDrivingCheckForm
-							key={employeeId}
+							// A changed statement (or one a check just replaced) starts the form afresh.
+							key={`${employeeId}:${current.declaredUnchecked.join(",")}:${current.declared?.updatedAt ?? ""}`}
 							employeeId={employeeId}
 							name={name}
+							declared={current.declared}
+							declaredUnchecked={current.declaredUnchecked}
 							onCompleted={refresh}
 						/>
 					) : null}

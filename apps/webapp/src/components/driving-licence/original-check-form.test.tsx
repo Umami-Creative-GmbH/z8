@@ -45,6 +45,8 @@ vi.mock("@/lib/organization/driving-licence/check-actions", () => ({
 				status: remote.completed ? "active" : "not_yet_checked",
 				enrolled: true,
 				authorizedClasses: remote.completed ? ["B"] : [],
+				declared: null,
+				declaredUnchecked: [],
 				classes: [],
 				timezone: "Europe/Berlin",
 			},
@@ -56,6 +58,8 @@ vi.mock("@/lib/organization/driving-licence/check-actions", () => ({
 			enrolled: true,
 			status: remote.completed ? "active" : "not_yet_checked",
 			authorizedClasses: remote.completed ? ["B"] : [],
+			declared: null,
+			declaredUnchecked: [],
 			timezone: "Europe/Berlin",
 			classes: remote.completed
 				? [
@@ -133,7 +137,7 @@ it("lets a scoped verifier record explicit original/employee attestations and th
 	});
 	// Inspected classes, the declaration and the confirmations are design-system
 	// checkboxes (#1429), not native inputs.
-	const classB = screen.getByRole("checkbox", { name: "B" });
+	const classB = screen.getByRole("checkbox", { name: "B Car" });
 	expect(classB.tagName).not.toBe("INPUT");
 	await user.click(classB);
 	await user.click(screen.getByRole("combobox", { name: "Result" }));
