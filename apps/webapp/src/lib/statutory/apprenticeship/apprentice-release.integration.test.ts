@@ -340,6 +340,61 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		]);
 	});
 
+	/** The employee's active releases, oldest day first. */
+	const activeReleases = async (who: FixtureEmployee) =>
+		(
+			await admin.query<{
+				release_kind: string;
+				starts_on: string;
+				school_minutes: number | null;
+			}>(
+				`select release_kind, to_char(starts_on, 'YYYY-MM-DD') as starts_on, school_minutes
+				 from employee_apprentice_release
+				 where organization_id = $1 and employee_id = $2 and voided_at is null
+				 order by starts_on`,
+				[org.id, who.employeeId],
+			)
+		).rows;
+
+	const timedExam = (who: FixtureEmployee, date: string) =>
+		recordApprenticeReleaseWithCredit(db, {
+			organizationId: org.id,
+			employeeId: who.employeeId,
+			actorUserId: owner.userId,
+			releaseKind: "exam_day",
+			startsOn: date,
+			endsOn: date,
+			examStartTime: "09:00",
+			examEndTime: "13:00",
+			includePreExamDay: true,
+		});
+
+	it("releases one pre-exam day before a two-day exam and keeps both exam days", async () => {
+		const learner = await apprentice("twoday", "2005-05-05");
+		// Wednesday 3 and Thursday 4 March 2027, recorded day by day.
+		await timedExam(learner, "2027-03-03");
+		await timedExam(learner, "2027-03-04");
+
+		expect(await activeReleases(learner)).toEqual([
+			{ release_kind: "pre_exam_day", starts_on: "2027-03-02", school_minutes: null },
+			{ release_kind: "exam_day", starts_on: "2027-03-03", school_minutes: 240 },
+			{ release_kind: "exam_day", starts_on: "2027-03-04", school_minutes: 240 },
+		]);
+	});
+
+	it("moves the pre-exam day before an exam day recorded on it", async () => {
+		const learner = await apprentice("twodayback", "2005-05-05");
+		// Thursday first: Wednesday becomes its pre-exam day, until Wednesday is an exam day too.
+		await timedExam(learner, "2027-03-04");
+		await timedExam(learner, "2027-03-03");
+
+		expect(await activeReleases(learner)).toEqual([
+			{ release_kind: "pre_exam_day", starts_on: "2027-03-02", school_minutes: null },
+			{ release_kind: "exam_day", starts_on: "2027-03-03", school_minutes: 240 },
+			{ release_kind: "exam_day", starts_on: "2027-03-04", school_minutes: 240 },
+		]);
+	});
+
 	it("keeps the pre-exam day released in full when a later school day takes the week's full credit", async () => {
 		const learner = await apprentice("fullbefore", "2005-05-05");
 		const scope = {

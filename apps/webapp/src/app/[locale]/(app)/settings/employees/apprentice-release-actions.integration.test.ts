@@ -143,14 +143,14 @@ describe("apprentice release actions (PostgreSQL)", () => {
 	});
 
 	it("records the exam when the working day before it is already released", async () => {
-		// Tuesday 11 May 2027 is already a full school day; the exam is on Wednesday.
+		// Tuesday 11 May 2027 ends a block-release week, which is never split; the exam is on Wednesday.
 		expect(
 			await recordApprenticeReleaseAction({
 				employeeId: learner.employeeId,
-				releaseKind: "vocational_school_day",
-				startsOn: "2027-05-11",
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-05-03",
 				endsOn: "2027-05-11",
-				lessonCount: 6,
+				schoolMinutes: 1500,
 			}),
 		).toMatchObject({ success: true });
 		expect(
@@ -167,7 +167,7 @@ describe("apprentice release actions (PostgreSQL)", () => {
 		if (!result.success) throw new Error(result.error);
 		expect(result.data.releases.map((release) => [release.releaseKind, release.startsOn])).toEqual([
 			["exam_day", "2027-05-12"],
-			["vocational_school_day", "2027-05-11"],
+			["vocational_school_block_week", "2027-05-03"],
 		]);
 	});
 

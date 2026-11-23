@@ -30,6 +30,9 @@ type Reader = Pick<DatabaseClient, "select">;
 
 const logger = createLogger("ApprenticeRelease");
 
+/** How many days before an exam its pre-exam day is looked for, across a multi-day exam. */
+const PRE_EXAM_LOOKBACK_DAYS = 14;
+
 export interface ApprenticeReleaseCreditView {
 	readonly id: string;
 	readonly releaseKind: ApprenticeReleaseKind;
@@ -62,7 +65,8 @@ export type ApprenticeReleaseRefusal =
 	| "apprentice_release_lessons_required"
 	| "apprentice_release_school_minutes_required"
 	| "apprentice_release_no_preceding_working_day"
-	| "apprentice_release_exam_time_invalid";
+	| "apprentice_release_exam_time_invalid"
+	| "apprentice_release_day_already_released";
 
 function refuse(refusal: ApprenticeReleaseRefusal, message: string, field?: string): never {
 	throw new ValidationError({ message, refusal, field });
@@ -126,10 +130,14 @@ export async function loadApprenticeReleaseCredits(
 
 /**
  * Records a release for an apprentice. Every released day must fall under apprentice terms; a
- * school day needs its lesson count and a block week its school minutes. With
- * `includePreExamDay`, an exam day also releases the working day immediately before it in full,
- * unless that day is already released in full for good; a single-day school or timed exam
- * release on it is replaced (`makeRoomForPreExamDay`).
+ * school day needs its lesson count and a block week its school minutes. A day holds one
+ * release: recording on a day already released is refused, except that a pre-exam day replaces a
+ * single-day school release (`makeRoomForPreExamDay`) and an exam replaces a pre-exam day.
+ *
+ * With `includePreExamDay`, an exam day also releases the working day before it in full, unless
+ * that day is already released in full for good. Exam days are skipped: a multi-day exam has one
+ * pre-exam day, the working day before its first exam day, and an exam is never voided for it.
+ * An exam recorded on a pre-exam day moves that pre-exam day before itself.
  */
 export async function recordApprenticeReleaseWithCredit(
 	db: Pick<DatabaseClient, "select" | "insert" | "update" | "transaction">,
@@ -173,9 +181,12 @@ export async function recordApprenticeReleaseWithCredit(
 		});
 	}
 	const examDay = parsePlainDate(input.startsOn);
+	// An exam may move a pre-exam day recorded on its date, so its lookback is read in any case.
 	const lookback =
-		input.releaseKind === "exam_day" && input.includePreExamDay
-			? Array.from({ length: 7 }, (_, index) => examDay.subtract({ days: index + 1 }))
+		input.releaseKind === "exam_day"
+			? Array.from({ length: PRE_EXAM_LOOKBACK_DAYS }, (_, index) =>
+					examDay.subtract({ days: index + 1 }),
+				)
 			: [];
 	const contracts = (
 		await loadEffectiveContractsBatch(db, {
@@ -209,20 +220,14 @@ export async function recordApprenticeReleaseWithCredit(
 					})
 				).get(input.employeeId) ?? new Set<string>())
 			: new Set<string>();
-	const preExamDay = lookback.find((day) => {
+	const isWorkingDay = (day: PlainDate) => {
 		const contract = contracts.get(day.toString());
-		return (
+		return Boolean(
 			contract?.isWorkDay &&
 			contract.employmentProfile === "apprentice" &&
-			!holidays.has(day.toString())
+			!holidays.has(day.toString()),
 		);
-	});
-	if (input.includePreExamDay && input.releaseKind === "exam_day" && !preExamDay) {
-		refuse(
-			"apprentice_release_no_preceding_working_day",
-			"No working day in the week before the exam to release",
-		);
-	}
+	};
 
 	const base = {
 		organizationId: input.organizationId,
@@ -230,19 +235,37 @@ export async function recordApprenticeReleaseWithCredit(
 		actorUserId: input.actorUserId,
 		note: input.note,
 	};
-	// The release changes the required time of its days and the week's full school day attribution.
-	const dirtyFromDate = mondayOf(preExamDay ?? examDay);
-	await db.transaction(async (tx) => {
-		const releasePreExamDay = preExamDay
-			? await makeRoomForPreExamDay(tx, { ...base, preExamDay })
-			: false;
-		if (preExamDay && releasePreExamDay) {
-			await recordApprenticeRelease(tx, {
-				...base,
-				releaseKind: "pre_exam_day",
-				startsOn: preExamDay.toString(),
-				endsOn: preExamDay.toString(),
-			});
+	const firstTouched = await db.transaction(async (tx) => {
+		const records = await listApprenticeReleases(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			from: (lookback[lookback.length - 1] ?? examDay).toString(),
+			until: parsePlainDate(input.endsOn).add({ days: 1 }).toString(),
+		});
+		const onNewDays = records.filter(
+			(record) => record.startsOn <= input.endsOn && record.endsOn >= input.startsOn,
+		);
+		let touched = examDay;
+		let preExamDayMoved = false;
+		if (input.releaseKind === "pre_exam_day") {
+			if (!(await makeRoomForPreExamDay(tx, { ...base, preExamDay: examDay }))) {
+				refuseDayAlreadyReleased();
+			}
+		} else {
+			for (const record of onNewDays) {
+				// An exam day needs no pre-exam release of its own: a pre-exam day recorded on it moves
+				// to the working day before the exam.
+				if (input.releaseKind === "exam_day" && record.releaseKind === "pre_exam_day") {
+					await voidApprenticeRelease(tx, {
+						...base,
+						releaseId: record.id,
+						reason: EXAM_ON_PRE_EXAM_DAY_REASON,
+					});
+					preExamDayMoved = true;
+					continue;
+				}
+				refuseDayAlreadyReleased();
+			}
 		}
 		await recordApprenticeRelease(tx, {
 			...base,
@@ -254,25 +277,67 @@ export async function recordApprenticeReleaseWithCredit(
 				input.releaseKind === "exam_day" ? exam.minutes : (input.schoolMinutes ?? null),
 			examStartTime: exam.startTime,
 		});
+		if (input.releaseKind === "exam_day" && (input.includePreExamDay || preExamDayMoved)) {
+			// A multi-day exam has one pre-exam day: the working day before its first exam day.
+			const examDays = new Set(
+				records
+					.filter((record) => record.releaseKind === "exam_day")
+					.map((record) => record.startsOn),
+			);
+			const preExamDay = lookback.find((day) => !examDays.has(day.toString()) && isWorkingDay(day));
+			if (!preExamDay) {
+				refuse(
+					"apprentice_release_no_preceding_working_day",
+					"No working day in the week before the exam to release",
+				);
+			}
+			touched = preExamDay;
+			if (await makeRoomForPreExamDay(tx, { ...base, preExamDay })) {
+				await recordApprenticeRelease(tx, {
+					...base,
+					releaseKind: "pre_exam_day",
+					startsOn: preExamDay.toString(),
+					endsOn: preExamDay.toString(),
+				});
+			}
+		}
+		// The release changes the required time of its days and the week's full school day attribution.
 		await markEmployeeWorkBalanceDirty(
-			{ organizationId: input.organizationId, employeeId: input.employeeId, dirtyFromDate },
+			{
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				dirtyFromDate: mondayOf(touched),
+			},
 			tx,
 		);
+		return touched;
 	});
-	await refreshWorkBalanceAfterCommit({ ...input, dirtyFromDate });
+	await refreshWorkBalanceAfterCommit({ ...input, dirtyFromDate: mondayOf(firstTouched) });
+}
+
+function refuseDayAlreadyReleased(): never {
+	refuse(
+		"apprentice_release_day_already_released",
+		"This day is already released. Remove the release recorded on it first",
+		"startsOn",
+	);
 }
 
 /** Audit reason of a partly credited release that a pre-exam day release replaces. */
 export const PRE_EXAM_DAY_SUPERSEDES_REASON =
 	"Superseded by the pre-exam day release in full (§ 15 Abs. 2 Nr. 5 BBiG, § 10 Abs. 1 Nr. 2 JArbSchG)";
 
+/** Audit reason of a pre-exam day release voided because the day is itself an exam day. */
+export const EXAM_ON_PRE_EXAM_DAY_REASON =
+	"The day is itself an exam day; the pre-exam day moves to the working day before the exam";
+
 /**
  * Whether the pre-exam day can be released in full, inside the recording transaction. A day
  * already released in full for good (a full block week, an exam without its time, a pre-exam day)
- * is not recorded twice. Any other single-day release on it (a school day, whose full credit may
- * move to a long school day recorded later in the week, or a timed exam) is voided with an audit
- * reason, so the full pre-exam release takes its place without overlapping it. A block week is
- * never split: a day inside a block stays as the block credits it.
+ * is not recorded twice, and an exam is never voided. Any other single-day release on it (a
+ * school day, whose full credit may move to a long school day recorded later in the week) is
+ * voided with an audit reason, so the full pre-exam release takes its place without overlapping
+ * it. A block week is never split: a day inside a block stays as the block credits it.
  */
 async function makeRoomForPreExamDay(
 	tx: Pick<DatabaseClient, "select" | "insert" | "update">,
@@ -302,7 +367,8 @@ async function makeRoomForPreExamDay(
 	if (
 		onDay.some(
 			(credited) =>
-				credited.credit === "full_day" && credited.releaseKind !== "vocational_school_day",
+				credited.releaseKind === "exam_day" ||
+				(credited.credit === "full_day" && credited.releaseKind !== "vocational_school_day"),
 		)
 	) {
 		return false;
