@@ -96,6 +96,11 @@ export async function evaluateStatutoryScheduleFindings(
  * minus those they already have unchanged. A finding counts as added when the proposal raises
  * its severity or tier (e.g. 96 % → over the cap), invalidates its acknowledgement, or makes it
  * block publication. Used by Staffing.
+ *
+ * It also counts as added when it keeps that state but the proposal deepens a limit already
+ * exceeded: the visible summary has `used` and `limit` in the same unit, `used > limit`, and
+ * `used` grows (e.g. a lecture week at 22 h → 30 h). Under-limit findings (an on-call under-band)
+ * and earnings-derived findings (tier only) are unaffected.
  */
 export async function addedStatutoryScheduleFindings(
 	db: Reader,
@@ -107,9 +112,12 @@ export async function addedStatutoryScheduleFindings(
 	const added = new Map<string, StatutoryComplianceFinding[]>();
 	if (contributors.length === 0 || request.employeeIds.length === 0) return added;
 
-	const key = (finding: StatutoryFinding) =>
-		statutoryFindingChangeKey(toStatutoryComplianceFinding(finding));
-	const baseline = new Set((await runContributors(db, request, contributors)).map(key));
+	const baseline = new Map(
+		(await runContributors(db, request, contributors)).map((finding) => {
+			const projected = toStatutoryComplianceFinding(finding);
+			return [statutoryFindingChangeKey(projected), projected] as const;
+		}),
+	);
 	const proposed = await runContributors(
 		db,
 		{
@@ -122,11 +130,23 @@ export async function addedStatutoryScheduleFindings(
 		contributors,
 	);
 	for (const finding of proposed) {
-		if (baseline.has(key(finding))) continue;
-		added.set(finding.employeeId, [
-			...(added.get(finding.employeeId) ?? []),
-			toStatutoryComplianceFinding(finding),
-		]);
+		const projected = toStatutoryComplianceFinding(finding);
+		const before = baseline.get(statutoryFindingChangeKey(projected));
+		if (before && !deepensExceededLimit(before, projected)) continue;
+		added.set(finding.employeeId, [...(added.get(finding.employeeId) ?? []), projected]);
 	}
 	return added;
+}
+
+/** `after` is over its visible limit and uses more of it than `before`, in the same unit. */
+function deepensExceededLimit(
+	before: StatutoryComplianceFinding,
+	after: StatutoryComplianceFinding,
+): boolean {
+	const { used, limit } = after.summary;
+	const usedBefore = before.summary.used;
+	const limitBefore = before.summary.limit;
+	if (!used || !limit || !usedBefore || !limitBefore) return false;
+	if (new Set([used.unit, limit.unit, usedBefore.unit, limitBefore.unit]).size !== 1) return false;
+	return used.value > limit.value && used.value > usedBefore.value;
 }

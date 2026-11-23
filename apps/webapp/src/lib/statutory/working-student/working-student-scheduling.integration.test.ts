@@ -147,6 +147,55 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 		expect(evening.get("Student")?.warnings).toEqual([]);
 	});
 
+	it("warns Staffing when a proposed daytime shift deepens a lecture week already over 20 h", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// Already 22 h of lecture-week daytime by plan: Mon 8 h, Tue 8 h, Wed 6 h.
+		await fx.shift(org, subareaId, student, { date: "2030-03-04", start: "09:00", end: "17:00" });
+		await fx.shift(org, subareaId, student, { date: "2030-03-05", start: "09:00", end: "17:00" });
+		await fx.shift(org, subareaId, student, { date: "2030-03-06", start: "09:00", end: "15:00" });
+
+		const suggestions = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* StaffingSuggestionService;
+				return yield* service.suggestForShift({
+					organizationId: org.id,
+					timezone: TZ,
+					candidates: [{ employeeId: student.employeeId, displayName: "Student", isActive: true }],
+					shift: { subareaId, date: "2030-03-07", startTime: "09:00", endTime: "17:00" },
+				});
+			}).pipe(
+				Effect.provide(
+					StaffingSuggestionServiceLive.pipe(
+						Layer.provide(workPolicyLayer),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+
+		expect(
+			suggestions[0]?.warnings.filter(
+				(warning) => warning.type === "compliance" && warning.findingType === "statutory",
+			),
+		).toEqual([
+			{
+				type: "compliance",
+				findingType: "statutory",
+				finding: expect.objectContaining({
+					statutoryKind: "working_student_lecture_week",
+					severity: "warning",
+					subjectKey: "2030-W10",
+					summary: expect.objectContaining({
+						used: { unit: "minutes", value: 1800 },
+						limit: { unit: "minutes", value: 1200 },
+					}),
+				}),
+			},
+		]);
+	});
+
 	// Mon 2030-03-04 … Sun 2030-03-10 is ISO week 2030-W10; planned shifts there have not started.
 	const W10_2030 = "2030-03-04";
 
