@@ -131,16 +131,29 @@ export const payrollSetupGoLiveCheck: GoLiveCheck = {
 		}
 
 		const inviteeCount = group.members.length - employees.length;
-		const notes: GoLiveMessage[] = inviteeCount
-			? [
-					{
-						key: "settings.implementationChecklist.goLive.payrollSetup.inviteesSkipped",
-						fallback:
-							"{count, plural, one {# invited person is} other {# invited people are}} skipped for employment terms and personnel identifiers until they join.",
-						params: { count: inviteeCount },
-					},
-				]
-			: [];
+		const contractorCount = setup.externalContractors.size;
+		const notes: GoLiveMessage[] = [
+			...(contractorCount
+				? [
+						{
+							key: "settings.implementationChecklist.goLive.payrollSetup.externalContractorsSkipped",
+							fallback:
+								"{count, plural, one {# External Contractor is skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.} other {# External Contractors are skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.}}",
+							params: { count: contractorCount },
+						},
+					]
+				: []),
+			...(inviteeCount
+				? [
+						{
+							key: "settings.implementationChecklist.goLive.payrollSetup.inviteesSkipped",
+							fallback:
+								"{count, plural, one {# invited person is} other {# invited people are}} skipped for employment terms and personnel identifiers until they join.",
+							params: { count: inviteeCount },
+						},
+					]
+				: []),
+		];
 
 		return {
 			outcome: failures.length ? "failed" : "passed",

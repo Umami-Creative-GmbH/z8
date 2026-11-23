@@ -2118,6 +2118,7 @@
         "payrollSetup": {
           "fixEmployees": "Review employees",
           "fixPayrollExport": "Open payroll export settings",
+          "externalContractorsSkipped": "{count, plural, one {# External Contractor is skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.} other {# External Contractors are skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.}}",
           "inviteesSkipped": "{count, plural, one {# invited person is skipped for employment terms and personnel identifiers until they join.} other {# invited people are skipped for employment terms and personnel identifiers until they join.}}",
           "missingEmploymentTerms": "{count, plural, one {No confirmed employment terms covering today: # employee} other {No confirmed employment terms covering today: # employees}}",
           "noWageTypeMappings": "{count, plural, one {No active wage-type mappings, so payroll exports can't classify hours: # member} other {No active wage-type mappings, so payroll exports can't classify hours: # members}}",
@@ -2223,6 +2224,7 @@
           "mappingsMissing": "No active wage-type mappings",
           "mappingsPresent": "{count, plural, one {# export target, wage types mapped} other {# export targets, wage types mapped}}",
           "notExported": "The organization has no active payroll export target, so there are no payroll prerequisites.",
+          "notNeededExternalContractor": "Not needed: External Contractor",
           "notYetInvited": "Not yet: they're still invited",
           "personnelIdentifier": "Personnel number",
           "termsConfirmed": "Confirmed for today",

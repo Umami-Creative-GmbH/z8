@@ -635,6 +635,11 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 		"settings.implementationChecklist.rehearsal.payroll.notYetInvited",
 		"Not yet: they're still invited",
 	);
+	// An External Contractor has no employee payroll (#1997): nothing to set up for them.
+	const notNeeded = t(
+		"settings.implementationChecklist.rehearsal.payroll.notNeededExternalContractor",
+		"Not needed: External Contractor",
+	);
 	const identifier = prerequisites.personnelIdentifier;
 	const needsEmployeesFix =
 		prerequisites.employmentTerms === "missing" || identifier.status === "shared";
@@ -664,6 +669,8 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 									"settings.implementationChecklist.rehearsal.payroll.unavailable",
 									"Couldn't be checked",
 								)
+							) : identifier.status === "external-contractor" ? (
+								notNeeded
 							) : (
 								invited
 							),
@@ -687,6 +694,8 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 										"No confirmed terms covering today",
 									)}
 								</Problem>
+							) : prerequisites.employmentTerms === "external-contractor" ? (
+								notNeeded
 							) : (
 								invited
 							),
