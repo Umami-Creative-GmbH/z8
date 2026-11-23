@@ -4345,6 +4345,20 @@
         "schoolEndTime": "Unterrichtsende (inklusive Pausen)",
         "schoolTimeHint": "Ein kurzer Berufsschultag wird mit seiner Unterrichtszeit einschließlich der Pausen angerechnet. Beide Felder leer lassen, um 45 Minuten je Unterrichtsstunde anzurechnen.",
         "note": "Notiz (optional)"
+      },
+      "refusal": {
+        "notApprentice": "Freistellungstage können nur erfasst werden, solange die Vertragsbedingungen die Person als Auszubildende ausweisen.",
+        "lessonsRequired": "Geben Sie die Zahl der Unterrichtsstunden ein.",
+        "schoolMinutesRequired": "Geben Sie die geplante Unterrichtszeit der Blockwoche ein.",
+        "noPrecedingWorkingDay": "In der Woche vor der Prüfung gibt es keinen Arbeitstag, der freigestellt werden kann.",
+        "examTimeInvalid": "Geben Sie Beginn und Ende der Prüfung an oder keines von beiden. Das Ende muss nach dem Beginn liegen.",
+        "schoolTimeInvalid": "Geben Sie Beginn und Ende des Unterrichts an oder keines von beiden. Das Ende muss nach dem Beginn liegen.",
+        "dayAlreadyReleased": "Dieser Tag ist bereits freigestellt. Entfernen Sie zuerst die dort erfasste Freistellung.",
+        "overlap": "Diese Freistellung überschneidet sich mit einer bereits erfassten Freistellung.",
+        "invalidRange": "Prüfen Sie die Daten: Der letzte Tag darf nicht vor dem ersten liegen.",
+        "invalidValue": "Prüfen Sie die Unterrichtsstunden und die Unterrichtszeit.",
+        "reasonRequired": "Begründen Sie, warum der Freistellungstag entfernt wird.",
+        "singleDay": "Nur eine Blockunterrichtswoche umfasst mehrere Tage."
       }
     }
   }

@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -34,12 +34,81 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { ApprenticeReleaseKind } from "@/db/schema";
+import { parsePlainDate, parsePlainTimeMinute } from "@/lib/datetime/temporal-core";
+import { formatPlainDateRange } from "@/lib/datetime/temporal-format";
+import {
+	actionErrorMessage,
+	type RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
 import type {
 	ApprenticeReleaseCreditView,
 	ApprenticeReleaseCredits,
+	ApprenticeReleaseRefusal,
 } from "@/lib/statutory/apprenticeship/release-credit-view";
+import type { EmployeeContextRefusal } from "@/lib/statutory/employee-context";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** Every refusal recording or removing a release day can return, as admins read it. */
+export const apprenticeReleaseRefusals = {
+	apprentice_release_not_apprentice: [
+		"settings.apprenticeRelease.refusal.notApprentice",
+		"Release days can only be recorded while the employee's terms make them an apprentice.",
+	],
+	apprentice_release_lessons_required: [
+		"settings.apprenticeRelease.refusal.lessonsRequired",
+		"Enter the number of lessons.",
+	],
+	apprentice_release_school_minutes_required: [
+		"settings.apprenticeRelease.refusal.schoolMinutesRequired",
+		"Enter the planned school hours of the block week.",
+	],
+	apprentice_release_no_preceding_working_day: [
+		"settings.apprenticeRelease.refusal.noPrecedingWorkingDay",
+		"There is no working day in the week before the exam to release.",
+	],
+	apprentice_release_exam_time_invalid: [
+		"settings.apprenticeRelease.refusal.examTimeInvalid",
+		"Enter when the exam starts and ends, or neither. It must end after it starts.",
+	],
+	apprentice_release_school_time_invalid: [
+		"settings.apprenticeRelease.refusal.schoolTimeInvalid",
+		"Enter when school starts and ends, or neither. It must end after it starts.",
+	],
+	apprentice_release_day_already_released: [
+		"settings.apprenticeRelease.refusal.dayAlreadyReleased",
+		"This day is already released. Remove the release recorded on it first.",
+	],
+	statutory_period_overlap: [
+		"settings.apprenticeRelease.refusal.overlap",
+		"This release overlaps a release already recorded.",
+	],
+	statutory_invalid_range: [
+		"settings.apprenticeRelease.refusal.invalidRange",
+		"Check the dates: the last day must not be before the first.",
+	],
+	statutory_invalid_value: [
+		"settings.apprenticeRelease.refusal.invalidValue",
+		"Check the lessons and school hours.",
+	],
+	statutory_note_required: [
+		"settings.apprenticeRelease.refusal.reasonRequired",
+		"Explain why the release day is removed.",
+	],
+	statutory_release_single_day: [
+		"settings.apprenticeRelease.refusal.singleDay",
+		"Only a block-release week spans several days.",
+	],
+} as const satisfies RefusalMessages<ApprenticeReleaseRefusal | EmployeeContextRefusal>;
+
+/** A recorded `HH:MM` wall time as the reader's locale writes it. */
+function wallTimeText(value: string, locale: string): string {
+	try {
+		return parsePlainTimeMinute(value).toLocaleString(locale, { timeStyle: "short" });
+	} catch {
+		return value;
+	}
+}
 
 export type ApprenticeReleaseCardProps = { readonly organizationId: string } & (
 	| { readonly view: "employee"; readonly employeeId: string; readonly canManage: boolean }
@@ -65,13 +134,13 @@ function kindLabel(kind: ApprenticeReleaseKind, t: Translate): string {
 	}
 }
 
-function creditText(release: ApprenticeReleaseCreditView, t: Translate): string {
+function creditText(release: ApprenticeReleaseCreditView, t: Translate, locale: string): string {
 	if (release.examStartTime !== null) {
 		return t(
 			"settings.apprenticeRelease.credit.exam",
 			"Exam from {start}: {minutes} min credited",
 			{
-				start: release.examStartTime,
+				start: wallTimeText(release.examStartTime, locale),
 				minutes: release.creditedMinutes,
 			},
 		);
@@ -85,8 +154,8 @@ function creditText(release: ApprenticeReleaseCreditView, t: Translate): string 
 			"settings.apprenticeRelease.credit.schoolTime",
 			"School {start}–{end}: {minutes} min credited",
 			{
-				start: release.schoolStartTime,
-				end: release.schoolEndTime,
+				start: wallTimeText(release.schoolStartTime, locale),
+				end: wallTimeText(release.schoolEndTime, locale),
 				minutes: release.creditedMinutes,
 			},
 		);
@@ -104,6 +173,7 @@ function creditText(release: ApprenticeReleaseCreditView, t: Translate): string 
 }
 
 function useCredits(props: ApprenticeReleaseCardProps) {
+	const { t } = useTranslate();
 	const employeeId = props.view === "employee" ? props.employeeId : "self";
 	return useQuery({
 		queryKey: releaseQueryKey(props.organizationId, employeeId),
@@ -112,7 +182,7 @@ function useCredits(props: ApprenticeReleaseCardProps) {
 				props.view === "employee"
 					? await getApprenticeReleaseCreditsAction({ employeeId: props.employeeId })
 					: await getOwnApprenticeReleaseCreditsAction();
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 	});
@@ -125,6 +195,7 @@ function useCredits(props: ApprenticeReleaseCardProps) {
  */
 export function ApprenticeReleaseCard(props: ApprenticeReleaseCardProps) {
 	const { t } = useTranslate();
+	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const credits = useCredits(props);
 	const canManage = props.view === "employee" && props.canManage;
 	const data = credits.data;
@@ -163,12 +234,15 @@ export function ApprenticeReleaseCard(props: ApprenticeReleaseCardProps) {
 										/>
 										<span className="font-medium">{kindLabel(release.releaseKind, t)}</span>
 										<span className="text-muted-foreground text-sm tabular-nums">
-											{release.startsOn === release.endsOn
-												? release.startsOn
-												: `${release.startsOn} – ${release.endsOn}`}
+											{formatPlainDateRange(
+												parsePlainDate(release.startsOn),
+												parsePlainDate(release.endsOn),
+												locale,
+												"dateMedium",
+											)}
 										</span>
 									</div>
-									<p className="text-sm">{creditText(release, t)}</p>
+									<p className="text-sm">{creditText(release, t, locale)}</p>
 									{release.lessonCount !== null ? (
 										<p className="text-muted-foreground text-xs">
 											{t("settings.apprenticeRelease.lessons", "{count} lessons", {
@@ -233,7 +307,9 @@ function VoidReleaseForm({
 	const mutation = useMutation({
 		mutationFn: async (reason: string) => {
 			const result = await voidApprenticeReleaseAction({ employeeId, releaseId, reason });
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				throw new Error(actionErrorMessage(t, result, apprenticeReleaseRefusals));
+			}
 		},
 		onSuccess: () => {
 			toast.success(t("settings.apprenticeRelease.voided", "Release day removed"));
@@ -245,7 +321,8 @@ function VoidReleaseForm({
 	const form = useForm({
 		defaultValues: { reason: "" },
 		onSubmit: async ({ value }) => {
-			await mutation.mutateAsync(value.reason);
+			// A refusal is shown by onError; the form stays open to correct it.
+			await mutation.mutateAsync(value.reason).catch(() => undefined);
 		},
 	});
 
@@ -337,7 +414,9 @@ function RecordReleaseForm({
 				note: value.note.trim() || null,
 				includePreExamDay: examDay && value.includePreExamDay,
 			});
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				throw new Error(actionErrorMessage(t, result, apprenticeReleaseRefusals));
+			}
 		},
 		onSuccess: () => {
 			toast.success(t("settings.apprenticeRelease.recorded", "Release day recorded"));
@@ -361,7 +440,8 @@ function RecordReleaseForm({
 			includePreExamDay: true,
 		},
 		onSubmit: async ({ value }) => {
-			await mutation.mutateAsync(value);
+			// A refusal is shown by onError; the form keeps what was entered.
+			await mutation.mutateAsync(value).catch(() => undefined);
 		},
 	});
 
