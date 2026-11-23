@@ -108,7 +108,12 @@ describe("contractor pricing on PostgreSQL", () => {
 		});
 	}
 
-	async function price(employeeId: string, fromDay: string, toDay: string, organizationId?: string) {
+	async function price(
+		employeeId: string,
+		fromDay: string,
+		toDay: string,
+		organizationId?: string,
+	) {
 		const result = await priceContractorDays(db, organizationId ?? fixture.organizationId, {
 			employeeIds: [employeeId],
 			fromDay: day(fromDay),
@@ -183,16 +188,26 @@ describe("contractor pricing on PostgreSQL", () => {
 				standardDayMinutes: 480,
 				capAtOneDay,
 			});
-			await completedWork({ employeeId, start: "2026-03-02T09:00:00Z", end: "2026-03-02T15:00:00Z" });
-			await completedWork({ employeeId, start: "2026-03-03T08:00:00Z", end: "2026-03-03T16:00:00Z" });
-			await completedWork({ employeeId, start: "2026-03-04T07:00:00Z", end: "2026-03-04T17:00:00Z" });
+			await completedWork({
+				employeeId,
+				start: "2026-03-02T09:00:00Z",
+				end: "2026-03-02T15:00:00Z",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-03-03T08:00:00Z",
+				end: "2026-03-03T16:00:00Z",
+			});
+			await completedWork({
+				employeeId,
+				start: "2026-03-04T07:00:00Z",
+				end: "2026-03-04T17:00:00Z",
+			});
 		}
 
-		expect((await price(capped, "2026-03-01", "2026-03-31")).days.map((entry) => entry.units)).toEqual([
-			"0.7500",
-			"1.0000",
-			"1.0000",
-		]);
+		expect(
+			(await price(capped, "2026-03-01", "2026-03-31")).days.map((entry) => entry.units),
+		).toEqual(["0.7500", "1.0000", "1.0000"]);
 		expect(await price(uncapped, "2026-03-01", "2026-03-31")).toMatchObject({
 			days: [{ units: "0.7500" }, { units: "1.0000" }, { units: "1.2500", amount: 100_000 }],
 			totals: [{ amount: 240_000, days: "3.00" }],
@@ -201,9 +216,22 @@ describe("contractor pricing on PostgreSQL", () => {
 
 	it("prices hourly work before and after a mid-period rate change", async () => {
 		const employeeId = await contractor();
-		await setTerms(employeeId, "2026-03-01", { basis: "hourly", rateAmount: "90", currency: "EUR" });
-		await setTerms(employeeId, "2026-03-16", { basis: "hourly", rateAmount: "100", currency: "EUR" });
-		await completedWork({ employeeId, start: "2026-03-13T09:00:00Z", end: "2026-03-13T17:30:00Z", minutes: 480 });
+		await setTerms(employeeId, "2026-03-01", {
+			basis: "hourly",
+			rateAmount: "90",
+			currency: "EUR",
+		});
+		await setTerms(employeeId, "2026-03-16", {
+			basis: "hourly",
+			rateAmount: "100",
+			currency: "EUR",
+		});
+		await completedWork({
+			employeeId,
+			start: "2026-03-13T09:00:00Z",
+			end: "2026-03-13T17:30:00Z",
+			minutes: 480,
+		});
 		await completedWork({ employeeId, start: "2026-03-16T09:00:00Z", end: "2026-03-16T17:00:00Z" });
 
 		expect(await price(employeeId, "2026-03-01", "2026-03-31")).toEqual({
@@ -255,14 +283,18 @@ describe("contractor pricing on PostgreSQL", () => {
 			{ date: "2026-06-07", minutes: 120, units: "0.5000", amount: 30_000 },
 		]);
 		// The range edge cuts work at local midnight, not at the UTC day.
-		expect((await price(employeeId, "2026-06-02", "2026-06-06")).days.map((entry) => entry.date)).toEqual(
-			["2026-06-02", "2026-06-06"],
-		);
+		expect(
+			(await price(employeeId, "2026-06-02", "2026-06-06")).days.map((entry) => entry.date),
+		).toEqual(["2026-06-02", "2026-06-06"]);
 	});
 
 	it("leaves work without terms unpriced and ignores live work", async () => {
 		const employeeId = await contractor();
-		await setTerms(employeeId, "2026-03-10", { basis: "hourly", rateAmount: "90", currency: "EUR" });
+		await setTerms(employeeId, "2026-03-10", {
+			basis: "hourly",
+			rateAmount: "90",
+			currency: "EUR",
+		});
 		await completedWork({ employeeId, start: "2026-03-09T09:00:00Z", end: "2026-03-09T10:00:00Z" });
 		await completedWork({
 			employeeId,
@@ -278,7 +310,11 @@ describe("contractor pricing on PostgreSQL", () => {
 
 	it("stops pricing at the end of the engagement even when its terms were left open", async () => {
 		const employeeId = await contractor();
-		await setTerms(employeeId, "2026-03-01", { basis: "hourly", rateAmount: "90", currency: "EUR" });
+		await setTerms(employeeId, "2026-03-01", {
+			basis: "hourly",
+			rateAmount: "90",
+			currency: "EUR",
+		});
 		await fixture.pool.query(
 			`update employee_employment_period set status = 'closed', ended_at = '2026-03-15T23:00:00Z'
 			 where employee_id = $1`,
@@ -288,7 +324,10 @@ describe("contractor pricing on PostgreSQL", () => {
 		await completedWork({ employeeId, start: "2026-03-17T09:00:00Z", end: "2026-03-17T10:00:00Z" });
 
 		expect(
-			(await price(employeeId, "2026-03-01", "2026-03-31")).days.map((entry) => [entry.date, entry.amount]),
+			(await price(employeeId, "2026-03-01", "2026-03-31")).days.map((entry) => [
+				entry.date,
+				entry.amount,
+			]),
 		).toEqual([
 			["2026-03-15", 9_000],
 			["2026-03-17", null],
@@ -298,7 +337,12 @@ describe("contractor pricing on PostgreSQL", () => {
 	it("never prices another organization's contractor", async () => {
 		const otherOrganization = await fixture.createOrganization();
 		const foreign = await contractor(otherOrganization);
-		await setTerms(foreign, "2026-03-01", { basis: "hourly", rateAmount: "90", currency: "EUR" }, otherOrganization);
+		await setTerms(
+			foreign,
+			"2026-03-01",
+			{ basis: "hourly", rateAmount: "90", currency: "EUR" },
+			otherOrganization,
+		);
 		await completedWork({
 			employeeId: foreign,
 			organizationId: otherOrganization,

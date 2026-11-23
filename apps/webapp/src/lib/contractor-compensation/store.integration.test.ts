@@ -96,9 +96,7 @@ describe("contractor compensation terms on PostgreSQL", () => {
 			await rawInsert(own, { effective_from: "2030-02-01" });
 
 			expect(
-				await refusal(
-					rawInsert(own, { effective_from: "2030-01-15", effective_to: "2030-01-20" }),
-				),
+				await refusal(rawInsert(own, { effective_from: "2030-01-15", effective_to: "2030-01-20" })),
 			).toEqual({ code: "23P01", constraint: "contractorCompensationTerms_no_overlap" });
 		});
 
@@ -223,8 +221,22 @@ describe("contractor compensation terms on PostgreSQL", () => {
 			});
 
 			expect(renegotiated.ok && renegotiated.history.map(viewSummary)).toEqual([
-				{ from: "2026-04-01", to: null, basis: "daily", rate: "650.00", rule: "half_and_full_day", threshold: 240 },
-				{ from: "2026-02-01", to: "2026-04-01", basis: "hourly", rate: "90.00", rule: null, threshold: null },
+				{
+					from: "2026-04-01",
+					to: null,
+					basis: "daily",
+					rate: "650.00",
+					rule: "half_and_full_day",
+					threshold: 240,
+				},
+				{
+					from: "2026-02-01",
+					to: "2026-04-01",
+					basis: "hourly",
+					rate: "90.00",
+					rule: null,
+					threshold: null,
+				},
 			]);
 		});
 
@@ -251,7 +263,14 @@ describe("contractor compensation terms on PostgreSQL", () => {
 				change: { kind: "end", effectiveFrom: "2026-05-01" },
 			});
 			expect(ended.ok && ended.history.map(viewSummary)).toEqual([
-				{ from: "2026-02-01", to: "2026-05-01", basis: "hourly", rate: "90.00", rule: null, threshold: null },
+				{
+					from: "2026-02-01",
+					to: "2026-05-01",
+					basis: "hourly",
+					rate: "90.00",
+					rule: null,
+					threshold: null,
+				},
 			]);
 
 			const { rows } = await fixture.pool.query<{ action: string }>(
@@ -341,9 +360,18 @@ describe("contractor compensation terms on PostgreSQL", () => {
 				await listContractorTermsHistory(db, fixture.organizationId, foreign.employeeId),
 			).toEqual([]);
 			expect(
-				(await listContractorTermsHistory(db, otherOrganization, foreign.employeeId)).map(viewSummary),
+				(await listContractorTermsHistory(db, otherOrganization, foreign.employeeId)).map(
+					viewSummary,
+				),
 			).toEqual([
-				{ from: "2026-02-01", to: null, basis: "hourly", rate: "120.00", rule: null, threshold: null },
+				{
+					from: "2026-02-01",
+					to: null,
+					basis: "hourly",
+					rate: "120.00",
+					rule: null,
+					threshold: null,
+				},
 			]);
 		});
 

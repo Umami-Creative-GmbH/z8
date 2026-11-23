@@ -32,12 +32,15 @@ function work(input: {
 		startedAt,
 		endedAt,
 		startOffsetMinutes: input.offset ?? 0,
-		durationMinutes:
-			input.minutes ?? Number(endedAt.since(startedAt).total({ unit: "minutes" })),
+		durationMinutes: input.minutes ?? Number(endedAt.since(startedAt).total({ unit: "minutes" })),
 	};
 }
 
-function daily(rateMinor: number, dayUnitRule: DayUnitRule, currency = "EUR"): ContractorCompensation {
+function daily(
+	rateMinor: number,
+	dayUnitRule: DayUnitRule,
+	currency = "EUR",
+): ContractorCompensation {
 	return { basis: "daily", currency, rateMinor: BigInt(rateMinor), dayUnitRule };
 }
 

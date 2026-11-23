@@ -137,7 +137,11 @@ function gcd(left: bigint, right: bigint): bigint {
 	return a === ZERO ? ONE : a;
 }
 
-function units(unit: ContractorUnits["unit"], numerator: bigint, denominator: bigint): ContractorUnits {
+function units(
+	unit: ContractorUnits["unit"],
+	numerator: bigint,
+	denominator: bigint,
+): ContractorUnits {
 	const divisor = gcd(numerator, denominator);
 	return { unit, numerator: numerator / divisor, denominator: denominator / divisor };
 }
@@ -284,9 +288,7 @@ function sharesByDay(item: ContractorWork): { date: PlainDate; share: Contractor
 }
 
 function inRange(date: PlainDate, range: { fromDay: PlainDate; toDay: PlainDate } | undefined) {
-	return (
-		!range || (compareDates(range.fromDay, date) <= 0 && compareDates(date, range.toDay) <= 0)
-	);
+	return !range || (compareDates(range.fromDay, date) <= 0 && compareDates(date, range.toDay) <= 0);
 }
 
 /**
@@ -299,7 +301,10 @@ export function priceContractorWork(input: {
 	terms: readonly ContractorTermsPeriod[];
 	range?: { fromDay: PlainDate; toDay: PlainDate };
 }): ContractorPricing {
-	const byDay = new Map<string, { employeeId: string; date: PlainDate; shares: ContractorWorkShare[] }>();
+	const byDay = new Map<
+		string,
+		{ employeeId: string; date: PlainDate; shares: ContractorWorkShare[] }
+	>();
 	for (const item of input.work) {
 		for (const { date, share } of sharesByDay(item)) {
 			if (!inRange(date, input.range)) continue;

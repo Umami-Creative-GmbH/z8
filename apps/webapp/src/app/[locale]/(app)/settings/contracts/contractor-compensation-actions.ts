@@ -45,9 +45,15 @@ const compensationSchema = z.strictObject({
 const employeeNotFound = () =>
 	new NotFoundError({ message: "The contractor was not found", entityType: "employee" });
 
-const REFUSAL_MESSAGES: Record<Exclude<ContractorTermsRefusal, "employee_not_found">, [string, string]> = {
+const REFUSAL_MESSAGES: Record<
+	Exclude<ContractorTermsRefusal, "employee_not_found">,
+	[string, string]
+> = {
 	invalid_date: ["Enter a valid date", "effectiveFrom"],
-	not_contractor: ["Only an active External Contractor engagement has contractor terms", "employeeId"],
+	not_contractor: [
+		"Only an active External Contractor engagement has contractor terms",
+		"employeeId",
+	],
 	before_engagement: ["Terms cannot start before the engagement started", "effectiveFrom"],
 	invalid_basis: ["Choose hourly or daily", "basis"],
 	invalid_currency: ["Enter an ISO 4217 currency code, such as EUR", "currency"],
@@ -81,7 +87,11 @@ const changeTerms = (
 		);
 		if (!outcome.ok) return yield* Effect.fail(refusalError(outcome.reason));
 		logger.info(
-			{ organizationId: context.organizationId, employeeId: context.employeeId, changed: outcome.changed },
+			{
+				organizationId: context.organizationId,
+				employeeId: context.employeeId,
+				changed: outcome.changed,
+			},
 			"Contractor terms changed",
 		);
 		return { changed: outcome.changed, history: outcome.history } satisfies {

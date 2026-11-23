@@ -43,7 +43,10 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useDisplayContext } from "@/hooks/use-display-context";
-import type { ContractorCompensationRecord, ContractorTermsView } from "@/lib/contractor-compensation/store";
+import type {
+	ContractorCompensationRecord,
+	ContractorTermsView,
+} from "@/lib/contractor-compensation/store";
 import {
 	type CompensationBasis,
 	type ContractorCompensationRefusal,
@@ -250,14 +253,20 @@ export function ContractorCompensationCard({
 
 	const body = record.isPending ? (
 		<div className="flex items-center justify-center p-4" role="status">
-			<IconLoader2 aria-hidden="true" className="size-6 text-muted-foreground motion-safe:animate-spin" />
+			<IconLoader2
+				aria-hidden="true"
+				className="size-6 text-muted-foreground motion-safe:animate-spin"
+			/>
 			<span className="sr-only">{t("common.loading", "Loading")}</span>
 		</div>
 	) : record.isError || !data ? (
 		<div className="flex flex-wrap items-center justify-between gap-3">
 			<p className="text-sm text-destructive" role="alert">
 				{record.error?.message ??
-					t("settings.contracts.contractors.loadError", "Contractor compensation could not be loaded")}
+					t(
+						"settings.contracts.contractors.loadError",
+						"Contractor compensation could not be loaded",
+					)}
 			</p>
 			<Button
 				type="button"
@@ -408,13 +417,11 @@ function ContractorTermsSection({
 													? Number(value.halfDayThresholdMinutes)
 													: null,
 											standardDayMinutes:
-												value.basis === "daily" &&
-												value.dayUnitRule === "prorated_by_standard_day"
+												value.basis === "daily" && value.dayUnitRule === "prorated_by_standard_day"
 													? Number(value.standardDayMinutes)
 													: null,
 											capAtOneDay:
-												value.basis === "daily" &&
-												value.dayUnitRule === "prorated_by_standard_day"
+												value.basis === "daily" && value.dayUnitRule === "prorated_by_standard_day"
 													? value.capAtOneDay
 													: null,
 										},
@@ -451,7 +458,9 @@ function ContractorTermsSection({
 									</div>
 									<div className="ml-4 min-w-0 flex-1 space-y-1">
 										<div className="flex flex-wrap items-center gap-2">
-											<span className={cn("font-medium tabular-nums", isInEffect && "text-primary")}>
+											<span
+												className={cn("font-medium tabular-nums", isInEffect && "text-primary")}
+											>
 												{summary.rate}
 											</span>
 											{isInEffect && (
@@ -460,7 +469,9 @@ function ContractorTermsSection({
 												</Badge>
 											)}
 										</div>
-										{summary.rule && <p className="text-sm text-muted-foreground">{summary.rule}</p>}
+										{summary.rule && (
+											<p className="text-sm text-muted-foreground">{summary.rule}</p>
+										)}
 										<div className="flex items-center gap-2 text-xs text-muted-foreground">
 											<IconCalendar aria-hidden="true" className="size-3" />
 											<span className="tabular-nums">
@@ -494,30 +505,35 @@ interface TermsFormValues {
 	capAtOneDay: boolean;
 }
 
-const DAY_UNIT_RULE_OPTIONS: { value: DayUnitRuleKind; labelKey: string; label: string; hintKey: string; hint: string }[] =
-	[
-		{
-			value: "any_work_full_day",
-			labelKey: "settings.contracts.contractors.rules.anyWorkFullDay",
-			label: "Any work is a full day",
-			hintKey: "settings.contracts.contractors.rules.anyWorkFullDayHint",
-			hint: "A local day with any completed work counts as 1.0 day.",
-		},
-		{
-			value: "half_and_full_day",
-			labelKey: "settings.contracts.contractors.rules.halfAndFullDay",
-			label: "Half and full days",
-			hintKey: "settings.contracts.contractors.rules.halfAndFullDayHint",
-			hint: "Up to and including the threshold counts as 0.5 day, more as 1.0 day.",
-		},
-		{
-			value: "prorated_by_standard_day",
-			labelKey: "settings.contracts.contractors.rules.proratedByStandardDay",
-			label: "Prorated by a standard day",
-			hintKey: "settings.contracts.contractors.rules.proratedByStandardDayHint",
-			hint: "Worked minutes divided by the standard day, optionally at most 1.0 day.",
-		},
-	];
+const DAY_UNIT_RULE_OPTIONS: {
+	value: DayUnitRuleKind;
+	labelKey: string;
+	label: string;
+	hintKey: string;
+	hint: string;
+}[] = [
+	{
+		value: "any_work_full_day",
+		labelKey: "settings.contracts.contractors.rules.anyWorkFullDay",
+		label: "Any work is a full day",
+		hintKey: "settings.contracts.contractors.rules.anyWorkFullDayHint",
+		hint: "A local day with any completed work counts as 1.0 day.",
+	},
+	{
+		value: "half_and_full_day",
+		labelKey: "settings.contracts.contractors.rules.halfAndFullDay",
+		label: "Half and full days",
+		hintKey: "settings.contracts.contractors.rules.halfAndFullDayHint",
+		hint: "Up to and including the threshold counts as 0.5 day, more as 1.0 day.",
+	},
+	{
+		value: "prorated_by_standard_day",
+		labelKey: "settings.contracts.contractors.rules.proratedByStandardDay",
+		label: "Prorated by a standard day",
+		hintKey: "settings.contracts.contractors.rules.proratedByStandardDayHint",
+		hint: "Worked minutes divided by the standard day, optionally at most 1.0 day.",
+	},
+];
 
 function ContractorTermsForm({
 	mode,
@@ -600,7 +616,10 @@ function ContractorTermsForm({
 				validators={{
 					onSubmit: ({ value }) => {
 						if (!value) {
-							return t("settings.contracts.contractors.dateRequired", "Choose the first day it applies");
+							return t(
+								"settings.contracts.contractors.dateRequired",
+								"Choose the first day it applies",
+							);
 						}
 						if (record.engagementStartDate && value < record.engagementStartDate) {
 							return t(
@@ -641,7 +660,9 @@ function ContractorTermsForm({
 									<TFormLabel>{t("settings.contracts.contractors.basis", "Paid by")}</TFormLabel>
 									<Select
 										value={field.state.value}
-										onValueChange={(value) => value && field.handleChange(value as CompensationBasis)}
+										onValueChange={(value) =>
+											value && field.handleChange(value as CompensationBasis)
+										}
 									>
 										<TFormControl>
 											<SelectTrigger>
@@ -813,7 +834,10 @@ function ContractorTermsForm({
 															/>
 														</TFormControl>
 														<TFormLabel>
-															{t("settings.contracts.contractors.capAtOneDay", "At most one day per day")}
+															{t(
+																"settings.contracts.contractors.capAtOneDay",
+																"At most one day per day",
+															)}
 														</TFormLabel>
 													</TFormItem>
 												)}
@@ -937,7 +961,10 @@ function ContractorDetailsForm({
 	] as const;
 
 	return (
-		<section className="space-y-3 border-t pt-4" aria-labelledby={`contractor-details-${employeeId}`}>
+		<section
+			className="space-y-3 border-t pt-4"
+			aria-labelledby={`contractor-details-${employeeId}`}
+		>
 			<div className="space-y-1">
 				<h3
 					id={`contractor-details-${employeeId}`}
@@ -986,7 +1013,10 @@ function ContractorDetailsForm({
 						<div className="flex justify-end">
 							<Button type="submit" variant="outline" disabled={isSubmitting || !isDirty}>
 								{isSubmitting && (
-									<IconLoader2 aria-hidden="true" className="mr-2 size-4 motion-safe:animate-spin" />
+									<IconLoader2
+										aria-hidden="true"
+										className="mr-2 size-4 motion-safe:animate-spin"
+									/>
 								)}
 								{t("settings.contracts.contractors.saveDetails", "Save details")}
 							</Button>

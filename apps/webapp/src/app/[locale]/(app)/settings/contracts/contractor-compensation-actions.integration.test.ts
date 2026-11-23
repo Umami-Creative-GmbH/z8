@@ -143,7 +143,10 @@ describe("contractor compensation actions on PostgreSQL", () => {
 			},
 		});
 
-		const ended = await endContractorTerms({ employeeId: contractorId, effectiveFrom: "2026-06-01" });
+		const ended = await endContractorTerms({
+			employeeId: contractorId,
+			effectiveFrom: "2026-06-01",
+		});
 		expect(ended).toMatchObject({
 			success: true,
 			data: { history: [{ effectiveFrom: "2026-02-01", effectiveTo: "2026-06-01" }] },

@@ -95,7 +95,9 @@ function isMinutes(value: unknown): value is number {
 	);
 }
 
-function parseDayUnitRule(input: ContractorCompensationInput): DayUnitRule | ContractorCompensationRefusal {
+function parseDayUnitRule(
+	input: ContractorCompensationInput,
+): DayUnitRule | ContractorCompensationRefusal {
 	switch (input.dayUnitRule) {
 		case "any_work_full_day":
 			return { kind: "any_work_full_day" };
@@ -154,7 +156,9 @@ export function parseContractorCompensation(
 }
 
 /** The rate as a decimal string with the currency's minor-unit digits: 65050 EUR is "650.50". */
-export function formatContractorRate(compensation: Pick<ContractorCompensation, "currency" | "rateMinor">): string {
+export function formatContractorRate(
+	compensation: Pick<ContractorCompensation, "currency" | "rateMinor">,
+): string {
 	return formatUnits(compensation.rateMinor, currencyMinorUnitDigits(compensation.currency));
 }
 
@@ -169,14 +173,17 @@ export interface StoredContractorCompensation {
 	capAtOneDay: boolean | null;
 }
 
-export function toStoredCompensation(compensation: ContractorCompensation): StoredContractorCompensation {
+export function toStoredCompensation(
+	compensation: ContractorCompensation,
+): StoredContractorCompensation {
 	const rule = compensation.basis === "daily" ? compensation.dayUnitRule : null;
 	return {
 		compensationBasis: compensation.basis,
 		rateAmount: formatContractorRate(compensation),
 		currency: compensation.currency,
 		dayUnitRule: rule?.kind ?? null,
-		halfDayThresholdMinutes: rule?.kind === "half_and_full_day" ? rule.halfDayThresholdMinutes : null,
+		halfDayThresholdMinutes:
+			rule?.kind === "half_and_full_day" ? rule.halfDayThresholdMinutes : null,
 		standardDayMinutes: rule?.kind === "prorated_by_standard_day" ? rule.standardDayMinutes : null,
 		capAtOneDay: rule?.kind === "prorated_by_standard_day" ? rule.capAtOneDay : null,
 	};
@@ -200,7 +207,10 @@ export function fromStoredCompensation(row: StoredContractorCompensation): Contr
 /** Wire-safe terms for the editor and the history (the rate as a decimal string). */
 export type ContractorCompensationView = StoredContractorCompensation;
 
-export function sameCompensation(left: ContractorCompensation, right: ContractorCompensation): boolean {
+export function sameCompensation(
+	left: ContractorCompensation,
+	right: ContractorCompensation,
+): boolean {
 	const a = toStoredCompensation(left);
 	const b = toStoredCompensation(right);
 	return (

@@ -35,13 +35,19 @@ vi.mock("@/hooks/use-display-context", () => ({
 }));
 vi.mock("@/components/ui/date-picker", () => ({
 	DatePicker: ({ value, onChange }: { value?: string; onChange: (value: string) => void }) => (
-		<input aria-label="date" value={value ?? ""} onChange={(event) => onChange(event.target.value)} />
+		<input
+			aria-label="date"
+			value={value ?? ""}
+			onChange={(event) => onChange(event.target.value)}
+		/>
 	),
 }));
 
 const employeeId = "95000000-0000-4000-8000-000000000001";
 
-function record(overrides: Partial<ContractorCompensationRecord> = {}): ContractorCompensationRecord {
+function record(
+	overrides: Partial<ContractorCompensationRecord> = {},
+): ContractorCompensationRecord {
 	return {
 		employeeId,
 		activeEngagementKind: "contractor",
@@ -213,7 +219,9 @@ describe("contractor compensation card", () => {
 		await user.click(screen.getByRole("button", { name: "End rate" }));
 
 		await waitFor(() =>
-			expect(actions.error).toHaveBeenCalledWith("Terms cannot start before the engagement started."),
+			expect(actions.error).toHaveBeenCalledWith(
+				"Terms cannot start before the engagement started.",
+			),
 		);
 	});
 

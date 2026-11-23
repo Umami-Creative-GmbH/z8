@@ -140,7 +140,11 @@ function termsStore(
 		async updateValue(id, value) {
 			await tx
 				.update(contractorCompensationTerms)
-				.set({ ...toStoredCompensation(value), updatedAt: sql`now()`, updatedBy: input.actorUserId })
+				.set({
+					...toStoredCompensation(value),
+					updatedAt: sql`now()`,
+					updatedBy: input.actorUserId,
+				})
 				.where(inSeries(id));
 		},
 		async insert(from, to, value) {
@@ -243,7 +247,8 @@ export async function changeContractorTerms(
 		const applied = await writeRatePeriodChange(tx, {
 			seriesKey: ["contractor_terms", input.organizationId, input.employeeId, period.id].join(":"),
 			store: termsStore(tx, { ...input, employmentPeriodId: period.id }),
-			change: compensation === null ? { kind: "end", from } : { kind: "set", from, value: compensation },
+			change:
+				compensation === null ? { kind: "end", from } : { kind: "set", from, value: compensation },
 			equals: sameCompensation,
 			audit: {
 				organizationId: input.organizationId,
@@ -380,16 +385,21 @@ export async function saveContractorDetails(
 		employeeId: string;
 		details: Partial<Record<keyof ContractorProfileDetails, string | null>>;
 	},
-): Promise<{ ok: true; details: ContractorProfileDetails } | { ok: false; reason: ContractorDetailsRefusal }> {
+): Promise<
+	{ ok: true; details: ContractorProfileDetails } | { ok: false; reason: ContractorDetailsRefusal }
+> {
 	const details = normalizeContractorProfileDetails(input.details);
 	return database.transaction(async (tx) => {
 		const [row] = await tx
 			.select({ engagementKind: employee.engagementKind })
 			.from(employee)
-			.where(and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)))
+			.where(
+				and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+			)
 			.for("update");
 		if (!row) return { ok: false, reason: "employee_not_found" } as const;
-		if (row.engagementKind !== "contractor") return { ok: false, reason: "not_contractor" } as const;
+		if (row.engagementKind !== "contractor")
+			return { ok: false, reason: "not_contractor" } as const;
 
 		const previous = await loadContractorProfile(tx, input);
 		await saveContractorProfile(tx, {
@@ -472,7 +482,7 @@ export async function listContractorCompensationOverview(
 ): Promise<ContractorCompensationOverviewRow[]> {
 	const { today } = await loadOrganizationDay(reader, { organizationId, now });
 	const withTerms = reader
-		.selectDistinct({ employeeId: contractorCompensationTerms.employeeId })
+		.select({ employeeId: contractorCompensationTerms.employeeId })
 		.from(contractorCompensationTerms)
 		.where(eq(contractorCompensationTerms.organizationId, organizationId));
 	const [people, terms] = await Promise.all([
@@ -509,7 +519,9 @@ export async function listContractorCompensationOverview(
 			.orderBy(desc(contractorCompensationTerms.effectiveFrom)),
 	]);
 	const profiles = await Promise.all(
-		people.map((person) => loadContractorProfile(reader, { organizationId, employeeId: person.id })),
+		people.map((person) =>
+			loadContractorProfile(reader, { organizationId, employeeId: person.id }),
+		),
 	);
 	const todayByEmployee = new Map<string, ContractorTermsView>();
 	for (const row of terms) {

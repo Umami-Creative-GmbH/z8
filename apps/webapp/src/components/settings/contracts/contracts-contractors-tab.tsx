@@ -110,7 +110,9 @@ export function ContractsContractorsTab() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>{t("settings.contracts.contractors.columns.name", "Contractor")}</TableHead>
+									<TableHead>
+										{t("settings.contracts.contractors.columns.name", "Contractor")}
+									</TableHead>
 									<TableHead>
 										{t("settings.contracts.contractors.columns.rateToday", "Rate today")}
 									</TableHead>
@@ -189,7 +191,10 @@ export function ContractsContractorsTab() {
 					<ActionPanelHeader>
 						<ActionPanelTitle>{editing?.name}</ActionPanelTitle>
 						<ActionPanelDescription>
-							{t("settings.contracts.contractors.panelDescription", "Rates and contracting details")}
+							{t(
+								"settings.contracts.contractors.panelDescription",
+								"Rates and contracting details",
+							)}
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody>
