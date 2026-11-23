@@ -21,7 +21,12 @@ import {
 import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
 import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
-import { compareInstants, instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	type Instant,
+	instantFromDate,
+	parseInstant,
+} from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
 import { needsFix } from "./needs-fix";
@@ -815,7 +820,13 @@ async function loadExpenseReports(
 	});
 }
 
-/** The reviewer's note on each returned report's current (returned) submission cycle. */
+/** Closures that send a report back to its employee with a reviewer's note. */
+const NOTED_CLOSURE_KINDS = ["returned", "reopened"] as const;
+
+/**
+ * The reviewer's note on each returned report's current submission cycle: a reviewer returned
+ * it, or an approver reopened its approval for correction (both leave the report "returned").
+ */
 async function loadReturnNotes(organizationId: string, rows: ExpenseReportRow[]) {
 	const returned = rows.filter((row) => row.status === "returned");
 	const notes = new Map<string, string>();
@@ -823,7 +834,7 @@ async function loadReturnNotes(organizationId: string, rows: ExpenseReportRow[])
 	const closures = await db.query.travelExpenseReportCycleClosure.findMany({
 		where: and(
 			eq(travelExpenseReportCycleClosure.organizationId, organizationId),
-			eq(travelExpenseReportCycleClosure.kind, "returned"),
+			inArray(travelExpenseReportCycleClosure.kind, [...NOTED_CLOSURE_KINDS]),
 			inArray(
 				travelExpenseReportCycleClosure.reportId,
 				returned.map((row) => row.id),
@@ -835,7 +846,7 @@ async function loadReturnNotes(organizationId: string, rows: ExpenseReportRow[])
 			(candidate) =>
 				candidate.organizationId === organizationId &&
 				candidate.reportId === row.id &&
-				candidate.kind === "returned" &&
+				(NOTED_CLOSURE_KINDS as readonly string[]).includes(candidate.kind) &&
 				candidate.submissionCycle === row.submissionCount,
 		);
 		if (closure?.note) notes.set(row.id, closure.note);
@@ -843,40 +854,60 @@ async function loadReturnNotes(organizationId: string, rows: ExpenseReportRow[])
 	return notes;
 }
 
-/** The reason of the rejected approval request behind each rejected report. */
+/**
+ * The reason of the final rejection behind each rejected report. Returning a cycle also marks its
+ * approval request rejected, with the return note as its reason; those requests are named by the
+ * cycle's closure and skipped, so a final rejection without a reason shows none.
+ */
 async function loadReportRejectionReasons(organizationId: string, rows: ExpenseReportRow[]) {
 	const rejected = rows.filter((row) => row.status === "rejected");
 	const reasons = new Map<string, string>();
 	if (rejected.length === 0) return reasons;
-	const requests = (await db.query.approvalRequest.findMany({
-		where: and(
-			eq(approvalRequest.organizationId, organizationId),
-			eq(approvalRequest.entityType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
-			eq(approvalRequest.status, "rejected"),
-			inArray(
-				approvalRequest.entityId,
-				rejected.map((row) => row.id),
+	const reportIds = rejected.map((row) => row.id);
+	const [requests, closures] = await Promise.all([
+		db.query.approvalRequest.findMany({
+			where: and(
+				eq(approvalRequest.organizationId, organizationId),
+				eq(approvalRequest.entityType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
+				eq(approvalRequest.status, "rejected"),
+				inArray(approvalRequest.entityId, reportIds),
 			),
-		),
-		orderBy: [desc(approvalRequest.createdAt)],
-	})) as Array<{
-		organizationId: string;
-		entityType: string;
-		entityId: string;
-		status: string;
-		rejectionReason: string | null;
-	}>;
+			orderBy: [desc(approvalRequest.createdAt)],
+		}) as Promise<
+			Array<{
+				id: string;
+				organizationId: string;
+				entityType: string;
+				entityId: string;
+				status: string;
+				rejectionReason: string | null;
+			}>
+		>,
+		db.query.travelExpenseReportCycleClosure.findMany({
+			where: and(
+				eq(travelExpenseReportCycleClosure.organizationId, organizationId),
+				inArray(travelExpenseReportCycleClosure.reportId, reportIds),
+			),
+		}),
+	]);
+	const closedRequestIds = new Set(
+		closures
+			.filter((closure) => closure.organizationId === organizationId)
+			.map((closure) => closure.approvalRequestId),
+	);
+	const decided = new Set<string>();
 	for (const request of requests) {
 		if (
 			request.organizationId !== organizationId ||
 			request.entityType !== TRAVEL_EXPENSE_REPORT_SOURCE_TYPE ||
 			request.status !== "rejected" ||
-			!request.rejectionReason ||
-			reasons.has(request.entityId)
+			closedRequestIds.has(request.id) ||
+			decided.has(request.entityId)
 		) {
 			continue;
 		}
-		reasons.set(request.entityId, request.rejectionReason);
+		decided.add(request.entityId);
+		if (request.rejectionReason) reasons.set(request.entityId, request.rejectionReason);
 	}
 	return reasons;
 }
@@ -903,9 +934,10 @@ async function loadComplianceExceptions(
 	);
 	if (rows.length === 0) return [];
 	const timeZone = await loadOrganizationTimezone(db, input.organizationId);
+	const now = instantFromDate(input.now ?? new Date());
 
 	return rows.map((row) => {
-		const status: SelfServiceRequestStatus = row.status === "used" ? "approved" : row.status;
+		const status = complianceExceptionStatus(row, now);
 		return {
 			id: `compliance_exception:${row.id}`,
 			sourceType: "compliance_exception",
@@ -931,6 +963,21 @@ async function loadComplianceExceptions(
 			},
 		};
 	});
+}
+
+/**
+ * A used exception was approved first. A pending one whose window has passed can no longer be
+ * decided: it reads as expired even before anything persists that status.
+ */
+function complianceExceptionStatus(
+	row: ComplianceExceptionRow,
+	now: Instant,
+): SelfServiceRequestStatus {
+	if (row.status === "used") return "approved";
+	if (row.status === "pending" && compareInstants(instantFromDate(row.validUntil), now) <= 0) {
+		return "expired";
+	}
+	return row.status;
 }
 
 function mapExpenseReportStatus(status: ExpenseReportRow["status"]): SelfServiceRequestStatus {

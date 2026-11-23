@@ -154,10 +154,7 @@ function timeCorrection(overrides: Record<string, unknown> = {}) {
 	};
 }
 
-function requesterCancellationMarker(input: {
-	cancelledAt: Date;
-	chainInstanceId: string | null;
-}) {
+function requesterCancellationMarker(input: { cancelledAt: Date; chainInstanceId: string | null }) {
 	return buildRequesterCancellationMarker({
 		organizationId: "org-1",
 		requesterEmployeeId: "employee-1",
@@ -251,9 +248,7 @@ async function realCanonicalDisplay() {
 	} as never);
 }
 
-async function realOrdinaryDisplay(
-	kind: "manual_time_submission" | "policy_clock_out",
-) {
+async function realOrdinaryDisplay(kind: "manual_time_submission" | "policy_clock_out") {
 	const adapter = createOrdinaryWorkPeriodApprovalAdapter(kind, {
 		finalizeTerminal: vi.fn(),
 	});
@@ -466,9 +461,7 @@ describe("getSelfServiceRequests", () => {
 			lifecycleMode: "complete",
 		});
 		const displaySnapshot = await realCanonicalDisplay();
-		dbMocks.approvalWorkflows.mockResolvedValue([
-			canonicalTimeCorrection({ displaySnapshot }),
-		]);
+		dbMocks.approvalWorkflows.mockResolvedValue([canonicalTimeCorrection({ displaySnapshot })]);
 
 		const result = await getSelfServiceRequests({
 			employeeId: "employee-1",
@@ -476,9 +469,7 @@ describe("getSelfServiceRequests", () => {
 			now: new Date("2026-04-28T12:00:00.000Z"),
 		});
 
-		expect(
-			result.items.find((item) => item.sourceType === "time_correction"),
-		).toEqual({
+		expect(result.items.find((item) => item.sourceType === "time_correction")).toEqual({
 			id: "10000000-0000-4000-8000-000000000010",
 			sourceType: "time_correction",
 			sourceId: "10000000-0000-4000-8000-000000000011",
@@ -558,15 +549,18 @@ describe("getSelfServiceRequests", () => {
 			recentDecisions: 1,
 			total: 3,
 		});
-		expect(
-			result.items.find((item) => item.status === "pending")?.availableActions,
-		).toEqual(["cancel", "view"]);
-		expect(
-			result.items.find((item) => item.status === "approved"),
-		).toMatchObject({ resolvedAt: approvedAt, availableActions: ["view"] });
-		expect(
-			result.items.find((item) => item.status === "cancelled"),
-		).toMatchObject({ resolvedAt: cancelledAt, availableActions: ["view"] });
+		expect(result.items.find((item) => item.status === "pending")?.availableActions).toEqual([
+			"cancel",
+			"view",
+		]);
+		expect(result.items.find((item) => item.status === "approved")).toMatchObject({
+			resolvedAt: approvedAt,
+			availableActions: ["view"],
+		});
+		expect(result.items.find((item) => item.status === "cancelled")).toMatchObject({
+			resolvedAt: cancelledAt,
+			availableActions: ["view"],
+		});
 		const serialized = JSON.stringify(result);
 		for (const privateValue of [
 			"must-never-leak",
@@ -586,18 +580,14 @@ describe("getSelfServiceRequests", () => {
 			...(await realCanonicalDisplay()),
 			searchText: "independent safe display index",
 		};
-		dbMocks.approvalWorkflows.mockResolvedValue([
-			canonicalTimeCorrection({ displaySnapshot }),
-		]);
+		dbMocks.approvalWorkflows.mockResolvedValue([canonicalTimeCorrection({ displaySnapshot })]);
 
 		const result = await getSelfServiceRequests({
 			employeeId: "employee-1",
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.find((item) => item.sourceType === "time_correction"),
-		).toMatchObject({
+		expect(result.items.find((item) => item.sourceType === "time_correction")).toMatchObject({
 			title: "Time correction",
 			subtitle: "edit · Clock in",
 		});
@@ -662,9 +652,7 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.filter((item) => item.sourceType === "time_correction"),
-		).toEqual([]);
+		expect(result.items.filter((item) => item.sourceType === "time_correction")).toEqual([]);
 		expect(JSON.stringify(result)).not.toContain("private-projection");
 		expect(JSON.stringify(result)).not.toContain("inherited-private");
 	});
@@ -694,9 +682,7 @@ describe("getSelfServiceRequests", () => {
 			employeeId: "employee-1",
 			organizationId: "org-1",
 		});
-		const timeItems = result.items.filter(
-			(item) => item.sourceType === "time_correction",
-		);
+		const timeItems = result.items.filter((item) => item.sourceType === "time_correction");
 
 		expect(timeItems).toEqual([
 			expect.objectContaining({ id: "approval-time-1", sourceId: "period-1" }),
@@ -730,9 +716,7 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.filter((item) => item.sourceType === "time_correction"),
-		).toEqual([]);
+		expect(result.items.filter((item) => item.sourceType === "time_correction")).toEqual([]);
 	});
 
 	it("fails closed when canonical display data contradicts correction evidence", async () => {
@@ -758,9 +742,7 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.filter((item) => item.sourceType === "time_correction"),
-		).toEqual([]);
+		expect(result.items.filter((item) => item.sourceType === "time_correction")).toEqual([]);
 	});
 
 	it("maps an exact requester-cancelled legacy tombstone to cancelled", async () => {
@@ -794,9 +776,7 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 			now: new Date("2026-04-28T12:00:00.000Z"),
 		});
-		const item = result.items.find(
-			(candidate) => candidate.sourceType === "time_correction",
-		);
+		const item = result.items.find((candidate) => candidate.sourceType === "time_correction");
 
 		expect(item).toMatchObject({
 			status: "cancelled",
@@ -839,9 +819,7 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.find((item) => item.sourceType === "time_correction"),
-		).toMatchObject({
+		expect(result.items.find((item) => item.sourceType === "time_correction")).toMatchObject({
 			status: "cancelled",
 			resolvedAt: cancelledAt,
 			availableActions: ["view"],
@@ -886,9 +864,10 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.find((item) => item.sourceType === "time_correction"),
-		).toMatchObject({ status: "rejected", availableActions: ["view"] });
+		expect(result.items.find((item) => item.sourceType === "time_correction")).toMatchObject({
+			status: "rejected",
+			availableActions: ["view"],
+		});
 		expect(result.counts.requiredFixes).toBe(0);
 	});
 
@@ -914,10 +893,7 @@ describe("getSelfServiceRequests", () => {
 		[
 			"inherited field",
 			(marker: Record<string, unknown>) =>
-				Object.assign(
-					Object.create({ privateNote: "secret-inherited" }),
-					marker,
-				),
+				Object.assign(Object.create({ privateNote: "secret-inherited" }), marker),
 		],
 	] as const)("fails closed for a cancellation marker with an %s", async (_label, mutate) => {
 		const cancelledAt = new Date("2026-04-26T09:00:00.000Z");
@@ -951,9 +927,10 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.find((item) => item.sourceType === "time_correction"),
-		).toMatchObject({ status: "rejected", availableActions: ["view"] });
+		expect(result.items.find((item) => item.sourceType === "time_correction")).toMatchObject({
+			status: "rejected",
+			availableActions: ["view"],
+		});
 		expect(result.counts.requiredFixes).toBe(0);
 		expect(JSON.stringify(result)).not.toContain("secret-");
 	});
@@ -990,9 +967,10 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.find((item) => item.sourceType === "time_correction"),
-		).toMatchObject({ status: "rejected", availableActions: ["view"] });
+		expect(result.items.find((item) => item.sourceType === "time_correction")).toMatchObject({
+			status: "rejected",
+			availableActions: ["view"],
+		});
 		expect(result.counts).toMatchObject({ pending: 0, requiredFixes: 0 });
 		expect(JSON.stringify(result)).not.toContain("secret-pending");
 	});
@@ -1032,9 +1010,7 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.find((item) => item.sourceType === "time_correction"),
-		).toMatchObject({
+		expect(result.items.find((item) => item.sourceType === "time_correction")).toMatchObject({
 			status: "rejected",
 			decisionReason: "Rejected by manager",
 			availableActions: ["view"],
@@ -1061,9 +1037,7 @@ describe("getSelfServiceRequests", () => {
 			total: 3,
 		});
 		expect(result.sourceErrors).toEqual([]);
-		expect(
-			result.items.find((item) => item.sourceType === "time_correction"),
-		).toMatchObject({
+		expect(result.items.find((item) => item.sourceType === "time_correction")).toMatchObject({
 			id: "approval-time-1",
 			sourceId: "period-1",
 			availableActions: ["cancel", "view"],
@@ -1074,16 +1048,12 @@ describe("getSelfServiceRequests", () => {
 			{ left: "approvalRequest.requestedBy", right: "employee-1" },
 			{ left: "approvalRequest.entityType", right: "time_entry" },
 		]);
-		expect(dbMocks.approvalRequests).toHaveBeenCalledWith(
-			expect.objectContaining({ limit: 100 }),
-		);
+		expect(dbMocks.approvalRequests).toHaveBeenCalledWith(expect.objectContaining({ limit: 100 }));
 		expectWhereConditions(dbMocks.absenceEntries, [
 			{ left: "absenceEntry.organizationId", right: "org-1" },
 			{ left: "absenceEntry.employeeId", right: "employee-1" },
 		]);
-		expect(dbMocks.absenceEntries).toHaveBeenCalledWith(
-			expect.objectContaining({ limit: 100 }),
-		);
+		expect(dbMocks.absenceEntries).toHaveBeenCalledWith(expect.objectContaining({ limit: 100 }));
 		expectWhereConditions(dbMocks.travelExpenseClaims, [
 			{ left: "travelExpenseClaim.organizationId", right: "org-1" },
 			{ left: "travelExpenseClaim.employeeId", right: "employee-1" },
@@ -1116,9 +1086,7 @@ describe("getSelfServiceRequests", () => {
 			now: new Date("2026-04-28T12:00:00.000Z"),
 		});
 
-		expect(
-			result.items.filter((item) => item.sourceType === "time_correction"),
-		).toEqual([
+		expect(result.items.filter((item) => item.sourceType === "time_correction")).toEqual([
 			expect.objectContaining({ id: "approval-time-1", sourceId: "period-1" }),
 		]);
 	});
@@ -1190,95 +1158,82 @@ describe("getSelfServiceRequests", () => {
 		});
 
 		expect(
-			result.items
-				.filter((item) => item.sourceType === "time_correction")
-				.map((item) => item.id),
+			result.items.filter((item) => item.sourceType === "time_correction").map((item) => item.id),
 		).toEqual(["older-correction-1", "older-correction-2"]);
 		expect(dbMocks.approvalRequests).toHaveBeenCalledTimes(2);
-		expect(dbMocks.approvalRequests.mock.calls.map(([query]) => query)).toEqual(
-			[
-				expect.objectContaining({ limit: 100, offset: 0 }),
-				expect.objectContaining({ limit: 100, offset: 100 }),
-			],
-		);
+		expect(dbMocks.approvalRequests.mock.calls.map(([query]) => query)).toEqual([
+			expect.objectContaining({ limit: 100, offset: 0 }),
+			expect.objectContaining({ limit: 100, offset: 100 }),
+		]);
 		expect(dbMocks.workPeriods).toHaveBeenCalledTimes(2);
 		expect(dbMocks.timeEntries).toHaveBeenCalledTimes(2);
 	});
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-		"canonical",
-		"complete",
-	] as const)("excludes ordinary compatibility and canonical requester rows in %s mode", async (lifecycleMode) => {
-		const manualDisplay = await realOrdinaryDisplay("manual_time_submission");
-		const policyDisplay = await realOrdinaryDisplay("policy_clock_out");
-		dbMocks.approvalWorkflowRollouts.mockResolvedValue({ lifecycleMode });
-		dbMocks.absenceEntries.mockResolvedValue([]);
-		dbMocks.travelExpenseClaims.mockResolvedValue([]);
-		dbMocks.approvalRequests.mockResolvedValue([
-			timeCorrection({
-				id: `${lifecycleMode}-manual-compatibility`,
-				metadata: {
-					timeRequest: { kind: "manual_time_submission" },
-					stage: { id: "private-stage-id", sequence: 1 },
-					workflow: { id: "private-workflow-id", organizationId: "org-1" },
-				},
-			}),
-			timeCorrection({
-				id: `${lifecycleMode}-policy-compatibility`,
-				metadata: {
-					timeRequest: { kind: "policy_clock_out" },
-					stage: { id: "private-stage-id", sequence: 1 },
-					workflow: { id: "private-workflow-id", organizationId: "org-1" },
-				},
-			}),
-		]);
-		dbMocks.approvalWorkflows.mockResolvedValue([
-			canonicalTimeCorrection({
-				id: `${lifecycleMode}-manual-workflow`,
-				workflowType: "manual_time_submission",
-				contextSnapshot: {
-					timeRequest: { kind: "manual_time_submission" },
-				},
-				displaySnapshot: manualDisplay,
-				requesterProjection: {
-					organizationId: "org-1",
-					requesterEmployeeId: "employee-1",
-					...manualDisplay,
-				},
-			}),
-			canonicalTimeCorrection({
-				id: `${lifecycleMode}-policy-workflow`,
-				workflowType: "policy_clock_out",
-				contextSnapshot: {
-					timeRequest: { kind: "policy_clock_out" },
-				},
-				displaySnapshot: policyDisplay,
-				requesterProjection: {
-					organizationId: "org-1",
-					requesterEmployeeId: "employee-1",
-					...policyDisplay,
-				},
-			}),
-		]);
+	it.each(["legacy", "shadow", "ready", "canonical", "complete"] as const)(
+		"excludes ordinary compatibility and canonical requester rows in %s mode",
+		async (lifecycleMode) => {
+			const manualDisplay = await realOrdinaryDisplay("manual_time_submission");
+			const policyDisplay = await realOrdinaryDisplay("policy_clock_out");
+			dbMocks.approvalWorkflowRollouts.mockResolvedValue({ lifecycleMode });
+			dbMocks.absenceEntries.mockResolvedValue([]);
+			dbMocks.travelExpenseClaims.mockResolvedValue([]);
+			dbMocks.approvalRequests.mockResolvedValue([
+				timeCorrection({
+					id: `${lifecycleMode}-manual-compatibility`,
+					metadata: {
+						timeRequest: { kind: "manual_time_submission" },
+						stage: { id: "private-stage-id", sequence: 1 },
+						workflow: { id: "private-workflow-id", organizationId: "org-1" },
+					},
+				}),
+				timeCorrection({
+					id: `${lifecycleMode}-policy-compatibility`,
+					metadata: {
+						timeRequest: { kind: "policy_clock_out" },
+						stage: { id: "private-stage-id", sequence: 1 },
+						workflow: { id: "private-workflow-id", organizationId: "org-1" },
+					},
+				}),
+			]);
+			dbMocks.approvalWorkflows.mockResolvedValue([
+				canonicalTimeCorrection({
+					id: `${lifecycleMode}-manual-workflow`,
+					workflowType: "manual_time_submission",
+					contextSnapshot: {
+						timeRequest: { kind: "manual_time_submission" },
+					},
+					displaySnapshot: manualDisplay,
+					requesterProjection: {
+						organizationId: "org-1",
+						requesterEmployeeId: "employee-1",
+						...manualDisplay,
+					},
+				}),
+				canonicalTimeCorrection({
+					id: `${lifecycleMode}-policy-workflow`,
+					workflowType: "policy_clock_out",
+					contextSnapshot: {
+						timeRequest: { kind: "policy_clock_out" },
+					},
+					displaySnapshot: policyDisplay,
+					requesterProjection: {
+						organizationId: "org-1",
+						requesterEmployeeId: "employee-1",
+						...policyDisplay,
+					},
+				}),
+			]);
 
-		const result = await getSelfServiceRequests({
-			employeeId: "employee-1",
-			organizationId: "org-1",
-		});
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+			});
 
-		expect(
-			result.items.filter((item) => item.sourceType === "time_correction"),
-		).toEqual([]);
-		expect(result.items.flatMap((item) => item.availableActions)).not.toContain(
-			"cancel",
-		);
-		expect(JSON.stringify(result)).not.toMatch(
-			/private-stage-id|private-workflow-id/,
-		);
-	});
+			expect(result.items.filter((item) => item.sourceType === "time_correction")).toEqual([]);
+			expect(result.items.flatMap((item) => item.availableActions)).not.toContain("cancel");
+			expect(JSON.stringify(result)).not.toMatch(/private-stage-id|private-workflow-id/);
+		},
+	);
 
 	it("keeps owned correction IDs and excludes foreign correction IDs", async () => {
 		dbMocks.absenceEntries.mockResolvedValue([]);
@@ -1312,9 +1267,9 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.filter((item) => item.sourceType === "time_correction"),
-		).toEqual([expect.objectContaining({ id: "approval-time-1" })]);
+		expect(result.items.filter((item) => item.sourceType === "time_correction")).toEqual([
+			expect.objectContaining({ id: "approval-time-1" }),
+		]);
 	});
 
 	it("does not list a correction that names a clock-out entry for an open period", async () => {
@@ -1431,9 +1386,9 @@ describe("getSelfServiceRequests", () => {
 			organizationId: "org-1",
 		});
 
-		expect(
-			result.items.filter((item) => item.sourceType === "time_correction"),
-		).toEqual([expect.objectContaining({ id: "approval-time-1" })]);
+		expect(result.items.filter((item) => item.sourceType === "time_correction")).toEqual([
+			expect.objectContaining({ id: "approval-time-1" }),
+		]);
 		expect(JSON.stringify(result)).not.toMatch(
 			/swapped-correction|same-endpoint-correction|missing-correction|foreign-correction/,
 		);
@@ -1450,19 +1405,16 @@ describe("getSelfServiceRequests", () => {
 			employeeId: "employee-1",
 			organizationId: "org-1",
 		});
-		const timeItems = result.items.filter(
-			(item) => item.sourceType === "time_correction",
-		);
+		const timeItems = result.items.filter((item) => item.sourceType === "time_correction");
 
-		expect(
-			timeItems.find((item) => item.id === "approval-time-1")?.availableActions,
-		).toEqual(["cancel", "view"]);
-		expect(
-			timeItems.find((item) => item.id === "approved-1")?.availableActions,
-		).toEqual(["view"]);
-		expect(
-			timeItems.find((item) => item.id === "rejected-1")?.availableActions,
-		).not.toContain("cancel");
+		expect(timeItems.find((item) => item.id === "approval-time-1")?.availableActions).toEqual([
+			"cancel",
+			"view",
+		]);
+		expect(timeItems.find((item) => item.id === "approved-1")?.availableActions).toEqual(["view"]);
+		expect(timeItems.find((item) => item.id === "rejected-1")?.availableActions).not.toContain(
+			"cancel",
+		);
 	});
 
 	it("excludes draft travel expenses from result items and counts", async () => {
@@ -1507,13 +1459,10 @@ describe("getSelfServiceRequests", () => {
 			now: new Date("2026-04-28T12:00:00.000Z"),
 		});
 
-		expect(
-			result.items.find((item) => item.sourceId === "absence-1")?.resolvedAt,
-		).toEqual(updatedAt);
-		expect(
-			result.items.find((item) => item.sourceId === "pending-absence")
-				?.resolvedAt,
-		).toBeNull();
+		expect(result.items.find((item) => item.sourceId === "absence-1")?.resolvedAt).toEqual(
+			updatedAt,
+		);
+		expect(result.items.find((item) => item.sourceId === "pending-absence")?.resolvedAt).toBeNull();
 	});
 
 	it("filters by status, source type, and search text", async () => {
@@ -1571,7 +1520,12 @@ describe("getSelfServiceRequests", () => {
 				],
 			});
 			dbMocks.travelExpenseReports.mockResolvedValue([
-				expenseReport({ id: "report-draft", status: "draft", submittedAt: null, submissionCount: 0 }),
+				expenseReport({
+					id: "report-draft",
+					status: "draft",
+					submittedAt: null,
+					submissionCount: 0,
+				}),
 				expenseReport({ id: "report-submitted" }),
 				expenseReport({
 					id: "report-returned",
@@ -1663,6 +1617,98 @@ describe("getSelfServiceRequests", () => {
 			]);
 		});
 
+		it("shows the reopen reason on a report reopened from approved", async () => {
+			dbMocks.travelExpenseReports.mockResolvedValue([
+				expenseReport({
+					id: "report-reopened",
+					status: "returned",
+					decidedAt: new Date("2026-04-25T08:00:00.000Z"),
+				}),
+			]);
+			dbMocks.reportCycleClosures.mockResolvedValue([
+				{
+					organizationId: "org-1",
+					reportId: "report-reopened",
+					submissionCycle: 1,
+					kind: "reopened",
+					note: "The hotel invoice shows the wrong dates",
+					approvalRequestId: "request-reopened",
+				},
+			]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				sources: ["travel_expense_report"],
+			});
+
+			expect(result.items).toEqual([
+				expect.objectContaining({
+					sourceId: "report-reopened",
+					status: "returned",
+					decisionReason: "The hotel invoice shows the wrong dates",
+					availableActions: ["fix", "view"],
+				}),
+			]);
+		});
+
+		it("never shows an earlier cycle's return note as the reason of a final rejection", async () => {
+			approvalRequestsByEntityType({
+				travel_expense_report: [
+					{
+						id: "request-final",
+						organizationId: "org-1",
+						entityType: "travel_expense_report",
+						entityId: "report-rejected",
+						status: "rejected",
+						rejectionReason: null,
+						createdAt: new Date("2026-04-26T08:00:00.000Z"),
+					},
+					{
+						id: "request-returned",
+						organizationId: "org-1",
+						entityType: "travel_expense_report",
+						entityId: "report-rejected",
+						status: "rejected",
+						rejectionReason: "Add the hotel receipt",
+						createdAt: new Date("2026-04-23T08:00:00.000Z"),
+					},
+				],
+			});
+			dbMocks.travelExpenseReports.mockResolvedValue([
+				expenseReport({
+					id: "report-rejected",
+					status: "rejected",
+					submissionCount: 2,
+					decidedAt: new Date("2026-04-27T08:00:00.000Z"),
+				}),
+			]);
+			dbMocks.reportCycleClosures.mockResolvedValue([
+				{
+					organizationId: "org-1",
+					reportId: "report-rejected",
+					submissionCycle: 1,
+					kind: "returned",
+					note: "Add the hotel receipt",
+					approvalRequestId: "request-returned",
+				},
+			]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				sources: ["travel_expense_report"],
+			});
+
+			expect(result.items).toEqual([
+				expect.objectContaining({
+					sourceId: "report-rejected",
+					status: "rejected",
+					decisionReason: null,
+				}),
+			]);
+		});
+
 		it("files returned reports under the returned status filter", async () => {
 			dbMocks.travelExpenseReports.mockResolvedValue([
 				expenseReport({ id: "report-submitted" }),
@@ -1690,9 +1736,9 @@ describe("getSelfServiceRequests", () => {
 				organizationId: "org-1",
 			});
 
-			expect(
-				result.items.find((item) => item.sourceType === "travel_expense")?.sourceHref,
-			).toBe("/travel-expenses/claim-1");
+			expect(result.items.find((item) => item.sourceType === "travel_expense")?.sourceHref).toBe(
+				"/travel-expenses/claim-1",
+			);
 		});
 
 		it("reports an expense report source failure without losing other requests", async () => {
@@ -1723,8 +1769,8 @@ describe("getSelfServiceRequests", () => {
 				status: "pending",
 				reason: "Release night",
 				plannedDurationMinutes: 90,
-				validFrom: new Date("2026-04-27T06:00:00.000Z"),
-				validUntil: new Date("2026-04-28T06:00:00.000Z"),
+				validFrom: new Date("2026-04-28T06:00:00.000Z"),
+				validUntil: new Date("2026-04-29T06:00:00.000Z"),
 				approvedAt: null,
 				rejectedAt: null,
 				rejectionReason: null,
@@ -1787,8 +1833,8 @@ describe("getSelfServiceRequests", () => {
 					kind: "compliance_exception",
 					exceptionType: "overtime_daily",
 					plannedDurationMinutes: 90,
-					validFrom: new Date("2026-04-27T06:00:00.000Z"),
-					validUntil: new Date("2026-04-28T06:00:00.000Z"),
+					validFrom: new Date("2026-04-28T06:00:00.000Z"),
+					validUntil: new Date("2026-04-29T06:00:00.000Z"),
 					timeZone: "Europe/Berlin",
 				},
 			});
@@ -1826,6 +1872,39 @@ describe("getSelfServiceRequests", () => {
 			expect(dbMocks.organizationTimezone).toHaveBeenCalledWith(expect.anything(), "org-1");
 		});
 
+		it("shows a pending exception whose window has passed as expired", async () => {
+			dbMocks.complianceExceptions.mockResolvedValue([
+				exception({ id: "exception-open", validUntil: new Date("2026-04-28T12:00:00.001Z") }),
+				exception({ id: "exception-lapsed", validUntil: new Date("2026-04-28T12:00:00.000Z") }),
+				exception({
+					id: "exception-approved-lapsed",
+					status: "approved",
+					approvedAt: new Date("2026-04-27T07:00:00.000Z"),
+					validUntil: new Date("2026-04-28T06:00:00.000Z"),
+				}),
+			]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				now: new Date("2026-04-28T12:00:00.000Z"),
+			});
+
+			expect(result.items.find((item) => item.sourceId === "exception-open")?.status).toBe(
+				"pending",
+			);
+			expect(result.items.find((item) => item.sourceId === "exception-lapsed")).toMatchObject({
+				status: "expired",
+				resolvedAt: null,
+				availableActions: ["view"],
+			});
+			// A decided exception keeps its decision after its window.
+			expect(
+				result.items.find((item) => item.sourceId === "exception-approved-lapsed")?.status,
+			).toBe("approved");
+			expect(result.counts.pending).toBe(1);
+		});
+
 		it("files expired exceptions under the expired status filter", async () => {
 			dbMocks.complianceExceptions.mockResolvedValue([
 				exception(),
@@ -1835,6 +1914,7 @@ describe("getSelfServiceRequests", () => {
 			const result = await getSelfServiceRequests({
 				employeeId: "employee-1",
 				organizationId: "org-1",
+				now: new Date("2026-04-28T12:00:00.000Z"),
 				filters: { status: "expired", sourceType: "compliance_exception" },
 			});
 
@@ -1872,9 +1952,7 @@ describe("getSelfServiceRequests", () => {
 	});
 
 	it("returns partial data with a source error when one adapter fails", async () => {
-		dbMocks.travelExpenseClaims.mockRejectedValue(
-			new Error("database unavailable"),
-		);
+		dbMocks.travelExpenseClaims.mockRejectedValue(new Error("database unavailable"));
 
 		const result = await getSelfServiceRequests({
 			employeeId: "employee-1",
@@ -1882,10 +1960,7 @@ describe("getSelfServiceRequests", () => {
 			now: new Date("2026-04-28T12:00:00.000Z"),
 		});
 
-		expect(result.items.map((item) => item.sourceType)).toEqual([
-			"absence",
-			"time_correction",
-		]);
+		expect(result.items.map((item) => item.sourceType)).toEqual(["absence", "time_correction"]);
 		expect(result.sourceErrors).toEqual([
 			{
 				sourceType: "travel_expense",
