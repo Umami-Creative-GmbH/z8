@@ -11,7 +11,7 @@ import type {
 	StatutoryScheduleContributor,
 } from "./contributor";
 import { statutoryScheduleContributors } from "./contributors";
-import { statutoryFindingChangeKey, statutoryPublishKey } from "./finding-key";
+import { isPastVisibleLimit, statutoryFindingChangeKey, statutoryPublishKey } from "./finding-key";
 import { memoizedReader } from "./read-memo";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
@@ -198,7 +198,8 @@ export function deepensBreachedLimit(
 	const limitBefore = before.summary.limit;
 	if (!used || !limit || !usedBefore || !limitBefore) return false;
 	if (new Set([used.unit, limit.unit, usedBefore.unit, limitBefore.unit]).size !== 1) return false;
+	if (!isPastVisibleLimit(after.summary)) return false;
 	return after.summary.limitDirection === "floor"
-		? used.value < limit.value && used.value < usedBefore.value
-		: used.value > limit.value && used.value > usedBefore.value;
+		? used.value < usedBefore.value
+		: used.value > usedBefore.value;
 }

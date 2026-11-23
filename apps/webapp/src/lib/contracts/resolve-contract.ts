@@ -348,7 +348,10 @@ export function resolvePrimaryTeamAtDayStart(input: {
 }
 
 function termsDateBounds(
-	row: EmploymentHistorySnapshot,
+	row: Pick<
+		EmploymentHistorySnapshot,
+		"validFrom" | "validUntil" | "validFromDate" | "validUntilDate"
+	>,
 	organizationTimezone: string,
 ): { from: PlainDate; until: PlainDate | null } {
 	const from = row.validFromDate
@@ -508,11 +511,15 @@ export function resolveEmploymentProfileOnDay(input: {
 /**
  * Every day on which `resolveEmploymentProfileOnDay` can change: terms boundaries, and the local
  * days an employment period starts or ends on (and the day after, since a period touching a day
- * covers it). Between two consecutive change days the profile is constant. Unsorted, with repeats.
+ * covers it). Between two consecutive change days the profile is constant, and so are the terms
+ * row in force and its wage. Unsorted, with repeats.
  */
 export function employmentProfileChangeDays(input: {
-	readonly employmentPeriods: readonly EmploymentPeriodSnapshot[];
-	readonly confirmedTerms: readonly EmploymentHistorySnapshot[];
+	readonly employmentPeriods: readonly Pick<EmploymentPeriodSnapshot, "startedAt" | "endedAt">[];
+	readonly confirmedTerms: readonly Pick<
+		EmploymentHistorySnapshot,
+		"validFrom" | "validUntil" | "validFromDate" | "validUntilDate"
+	>[];
 	readonly employeeCalendarTimezone: string;
 	readonly organizationTimezone: string;
 }): PlainDate[] {

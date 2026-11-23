@@ -38,6 +38,15 @@ current acknowledgement documents a finding only while the finding still qualifi
 never softens one that has turned critical.
 _Avoid_: dismissal, resolution
 
+**Breach depth**:
+How far a finding goes past its visible limit: `used` and `limit` in the same unit once past it
+(above a ceiling, below a floor), and the work it covers (`coveredMinutes`). Only what restricted
+readers see counts: an earnings-derived finding has its tier alone. A running clock-in counts
+without the minutes it grows by (`stableDepth`, server-only); within its shift it counts to the
+shift's end. The planner's publish acknowledgement goes stale when a finding's severity, tier,
+acknowledgement, publication block or breach depth changes, not while the clock runs.
+_Avoid_: input fingerprint (that one documents an org admin's acknowledgement)
+
 **Restricted audience**:
 Everyone below org admin (scoped managers, planners, the employee). Sees summaries only, never EUR
 amounts, wages, external earnings or EUR baselines.
@@ -82,8 +91,12 @@ planned shifts' span, make it stale.
   schedule compliance evaluation and Staffing suggestions through the contributor registry. Staffing
   shows a finding a proposal changes (severity, tier, acknowledgement, block) or deepens past its
   visible `limit` (same unit: `used` grows above a ceiling, or falls below a floor when the summary
-  says `limitDirection: "floor"`, e.g. a youth rest period). The JArbSchG publish block refuses an
-  edit or a publication by the same rule, running only the monitors that can block publication
+  says `limitDirection: "floor"`, e.g. a youth rest period). It judges each suggestion without and
+  with the proposal on one request-scoped `memoizedReader`, so the persisted data both runs read is
+  loaded once. The planner's publish acknowledgement covers each finding's **breach depth**. The
+  JArbSchG publish block refuses an edit or a publication by the same rule (a publication's two
+  runs share one `memoizedReader`; an edit's do not, as the save lies between them), running only
+  the monitors that can block publication
   (`statutoryBlockingScheduleContributors`). It counts only breaches on what goes live (the
   edited shift, the range's drafts, published shifts); a breach on a draft outside the range is
   judged when that draft is published. A breach is the same before and after only within its

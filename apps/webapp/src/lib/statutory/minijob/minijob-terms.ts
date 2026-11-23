@@ -1,15 +1,19 @@
 /**
  * Who is on Minijob terms, and on what terms each day (#1989). Effective terms come from the
- * unified contract resolver, but only where they can change: on the first of every month and
- * around each employee's own confirmed terms row and employment period boundaries. Between two
+ * unified contract resolver, but only where they can change: on the first of every month and on
+ * each employee's own change days (`employmentProfileChangeDays`: confirmed terms and employment
+ * period boundaries, as the resolver reads them). Between two
  * such dates of an employee the resolver's profile, wage and employment status stay the same, so
  * each day takes the terms resolved on the employee's latest sample date at or before it.
  */
 import { and, eq, gt, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
 import { employeeEmploymentHistory, employeeEmploymentPeriod } from "@/db/schema";
-import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import {
+	employmentProfileChangeDays,
+	loadEffectiveContractsBatch,
+} from "@/lib/contracts/resolve-contract";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
-import { instantFromDate, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { firstDayOf, monthsBetween } from "./minijob-months";
 
@@ -17,9 +21,6 @@ type Reader = Pick<DatabaseClient, "select">;
 
 /** Stored terms dates may stand for a calendar date a day away from their UTC date. */
 const TERMS_MARGIN_DAYS = 2;
-
-/** Sample a boundary the day before, on and after it: stored dates and instants may differ. */
-const BOUNDARY_MARGIN_DAYS = 1;
 
 function utcDate(day: string): Date {
 	return new Date(`${day}T00:00:00.000Z`);
@@ -138,33 +139,31 @@ export async function loadMinijobTerms(
 			),
 		);
 
-	// Each employee is resolved on the month starts plus its own boundaries inside the range,
-	// so the cost grows with each employee's own changes, not with everyone's.
+	// Each employee is resolved on the month starts plus the days inside the range on which the
+	// resolver's answer can change for them (`employmentProfileChangeDays`), so the cost grows
+	// with each employee's own changes, not with everyone's.
 	const monthStarts = months.map(firstDayOf);
-	const samplesOf = new Map(employeeIds.map((id) => [id, new Set(monthStarts)]));
-	const addBoundary = (employeeId: string, date: string | null) => {
-		const samples = samplesOf.get(employeeId);
-		if (!date || !samples) return;
-		const day = parsePlainDate(date);
-		for (let offset = -BOUNDARY_MARGIN_DAYS; offset <= BOUNDARY_MARGIN_DAYS; offset++) {
-			const sample = day.add({ days: offset }).toString();
-			if (sample >= rangeFrom && sample < rangeUntil) samples.add(sample);
-		}
-	};
-	const localDate = (value: Date | null) =>
-		value ? plainDateAt(instantFromDate(value), timezone).toString() : null;
-	for (const row of termsRows) {
-		addBoundary(row.employeeId, row.validFromDate);
-		addBoundary(row.employeeId, row.validUntilDate);
-		addBoundary(row.employeeId, localDate(row.validFrom));
-		addBoundary(row.employeeId, localDate(row.validUntil));
-	}
-	for (const row of periodRows) {
-		addBoundary(row.employeeId, localDate(row.startedAt));
-		addBoundary(row.employeeId, localDate(row.endedAt));
-	}
+	const instantOf = (value: Date | null) => (value ? instantFromDate(value) : null);
+	const termsOf = Map.groupBy(termsRows, (row) => row.employeeId);
+	const periodsOf = Map.groupBy(periodRows, (row) => row.employeeId);
 	const sampleDatesOf = new Map(
-		[...samplesOf].map(([employeeId, samples]) => [employeeId, [...samples].sort()]),
+		employeeIds.map((employeeId) => {
+			const samples = new Set(monthStarts);
+			const changeDays = employmentProfileChangeDays({
+				confirmedTerms: termsOf.get(employeeId) ?? [],
+				employmentPeriods: (periodsOf.get(employeeId) ?? []).map((row) => ({
+					startedAt: instantOf(row.startedAt),
+					endedAt: instantOf(row.endedAt),
+				})),
+				employeeCalendarTimezone: timezone,
+				organizationTimezone: timezone,
+			});
+			for (const day of changeDays) {
+				const sample = day.toString();
+				if (sample >= rangeFrom && sample < rangeUntil) samples.add(sample);
+			}
+			return [employeeId, [...samples].sort()] as const;
+		}),
 	);
 
 	const contracts = await loadEffectiveContractsBatch(db, {
