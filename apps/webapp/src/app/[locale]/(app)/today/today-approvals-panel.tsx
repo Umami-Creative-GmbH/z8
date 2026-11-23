@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import type { ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { Link } from "@/navigation";
 import { useTodayDecisionReservation } from "./today-decision-reservations";
@@ -29,9 +30,9 @@ type TodayApprovalsPanelProps = {
 	total?: number;
 	error?: string;
 	/** Approval types whose items could not be listed. */
-	unavailableTypes?: string[];
+	unavailableTypes?: ApprovalInboxType[];
 	/** Approval types whose items listed but whose count failed: `total` misses them. */
-	uncountedTypes?: string[];
+	uncountedTypes?: ApprovalInboxType[];
 	onRetry?: () => void;
 	onDecision?: () => void;
 	stale?: boolean;
@@ -92,7 +93,7 @@ export function TodayApprovalsPanel({
 	const truncated = total > items.length;
 	const typeLabels: Record<string, string> = getApprovalTypeLabels(t);
 	// "A, B and C" in the viewer's language, not English punctuation.
-	const typeList = (types: string[]) =>
+	const typeList = (types: ApprovalInboxType[]) =>
 		new Intl.ListFormat(locale, { type: "conjunction" }).format(
 			types.map((type) => typeLabels[type] ?? type),
 		);

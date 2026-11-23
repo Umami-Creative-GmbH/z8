@@ -1,4 +1,5 @@
 import { and, eq, exists, gte, inArray, lt, lte } from "drizzle-orm";
+import type { ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import type { PrincipalContext } from "@/lib/authorization";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
@@ -708,11 +709,14 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		// never shows a total or a list that silently lacks its items. A failed count still lists
 		// its rows but leaves them out of the total; any other failure (or one of unknown kind)
 		// lacks rows. A "Covering for" header count is no total of the briefing's.
-		const unavailable = new Set<string>();
-		const uncounted = new Set<string>();
+		const unavailable = new Set<ApprovalInboxType>();
+		const uncounted = new Set<ApprovalInboxType>();
 		for (const warning of result.warnings) {
 			if (warning.failure === "covering_count") continue;
-			(warning.failure === "count" ? uncounted : unavailable).add(warning.source);
+			// The read service names each failed source by its approval type.
+			(warning.failure === "count" ? uncounted : unavailable).add(
+				warning.source as ApprovalInboxType,
+			);
 		}
 		const unavailableTypes = [...unavailable];
 		const uncountedTypes = [...uncounted].filter((type) => !unavailable.has(type));

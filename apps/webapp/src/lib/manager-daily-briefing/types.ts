@@ -1,4 +1,8 @@
-import type { ApprovalInboxItem, ApprovalInboxSummary } from "@/lib/approvals/inbox/types";
+import type {
+	ApprovalInboxItem,
+	ApprovalInboxSummary,
+	ApprovalInboxType,
+} from "@/lib/approvals/inbox/types";
 
 export type BriefingActionSeverity = "critical" | "high" | "warning" | "info";
 
@@ -104,12 +108,12 @@ export interface ManagerDailyBriefing {
 			 * The approval types the inbox counted but could not list: their items are missing, so
 			 * the panel names them instead of claiming nothing waits.
 			 */
-			unavailableTypes?: string[];
+			unavailableTypes?: ApprovalInboxType[];
 			/**
 			 * The approval types the inbox listed but could not count (#1980): the total misses
 			 * them, so the panel shows it as a lower bound instead of a complete list.
 			 */
-			uncountedTypes?: string[];
+			uncountedTypes?: ApprovalInboxType[];
 		};
 		attendance: BriefingSection;
 		absences: BriefingSection;
@@ -173,8 +177,8 @@ export type BriefingApproval = ApprovalInboxItem;
  */
 export type BriefingApprovalBatch = BriefingApproval[] & {
 	totalCount?: number;
-	unavailableTypes?: string[];
-	uncountedTypes?: string[];
+	unavailableTypes?: ApprovalInboxType[];
+	uncountedTypes?: ApprovalInboxType[];
 };
 
 export function approvalToBriefingItem(approval: BriefingApproval): BriefingApprovalActionItem {
