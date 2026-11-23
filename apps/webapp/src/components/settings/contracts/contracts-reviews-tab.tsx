@@ -38,6 +38,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-operations";
 import { Link } from "@/navigation";
+import { ShortTermBerufsmaessigkeitReviews } from "./short-term-berufsmaessigkeit-reviews";
 import { todayIsoDateInTimezone } from "./contract-formatters";
 
 type ReviewFilterKind =
@@ -511,6 +512,7 @@ export function ContractsReviewsTab({
 					)}
 				</CardContent>
 			</Card>
+			<ShortTermBerufsmaessigkeitReviews includeResolved={includeResolved} />
 		</div>
 	);
 }
