@@ -125,6 +125,44 @@ describe("per-employee statutory context (PostgreSQL)", () => {
 		}
 	});
 
+	it("records external Minijob earnings for whole calendar months only", async () => {
+		const { orgA, adminA, workerA } = await twoOrganizations();
+		const base = {
+			organizationId: orgA.id,
+			actorUserId: adminA.userId,
+			employeeId: workerA.employeeId,
+			offsetKind: "external_minijob_monthly_earnings" as const,
+			amountCents: 15_000,
+			note: "Second Minijob",
+		};
+
+		for (const dates of [
+			{ validFromDate: "2026-03-15", validUntilDate: null },
+			{ validFromDate: "2026-03-01", validUntilDate: "2026-05-02" },
+		]) {
+			await expect(recordEmployeeStatutoryOffset(db, { ...base, ...dates })).rejects.toMatchObject({
+				refusal: "statutory_invalid_range",
+			});
+		}
+		await expect(
+			db.insert(employeeStatutoryOffset).values({
+				organizationId: orgA.id,
+				employeeId: workerA.employeeId,
+				offsetKind: "external_minijob_monthly_earnings",
+				validFromDate: "2026-03-15",
+				amountCents: 15_000,
+				currency: "EUR",
+				note: "Direct write",
+				createdBy: adminA.userId,
+			}),
+		).rejects.toThrow();
+		await recordEmployeeStatutoryOffset(db, {
+			...base,
+			validFromDate: "2026-03-01",
+			validUntilDate: "2026-05-01",
+		});
+	});
+
 	it("refuses offsets without a count or end date and voids without a reason in the database", async () => {
 		const { orgA, adminA, workerA } = await twoOrganizations();
 		const row = {

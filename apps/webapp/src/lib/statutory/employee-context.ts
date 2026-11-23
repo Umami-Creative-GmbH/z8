@@ -104,7 +104,10 @@ export type RecordEmployeeStatutoryOffsetInput = WriteScope & {
 	readonly sourceEmployer?: string | null;
 } & (
 		| {
-				/** External Minijob earnings per month while valid (`validUntilDate` exclusive). */
+				/**
+				 * External Minijob earnings for every calendar month in `[validFromDate, validUntilDate)`.
+				 * Both dates are the first of a month, so a month counts in full or not at all.
+				 */
 				readonly offsetKind: "external_minijob_monthly_earnings";
 				readonly validFromDate: string;
 				readonly validUntilDate: string | null;
@@ -143,6 +146,14 @@ export async function recordEmployeeStatutoryOffset(
 	switch (input.offsetKind) {
 		case "external_minijob_monthly_earnings":
 			checkRange(input.validFromDate, input.validUntilDate, false);
+			for (const [field, value] of [
+				["validFromDate", input.validFromDate],
+				["validUntilDate", input.validUntilDate],
+			] as const) {
+				if (value !== null && parsePlainDate(value).day !== 1) {
+					refuse("statutory_invalid_range", "Monthly earnings start and end on the 1st", field);
+				}
+			}
 			if (!Number.isInteger(input.amountCents) || input.amountCents < 0) {
 				refuse("statutory_invalid_value", "Earnings must be a non-negative amount", "amountCents");
 			}

@@ -241,8 +241,11 @@ CREATE TABLE IF NOT EXISTS "employee_statutory_offset" (
 		CHECK (coalesce(
 			CASE "offset_kind"
 				WHEN 'external_minijob_monthly_earnings' THEN
+					-- Whole calendar months: a month counts in full or not at all.
 					"amount_cents" IS NOT NULL AND "amount_cents" >= 0
 					AND "currency" IS NOT NULL AND "count_value" IS NULL
+					AND extract(day FROM "valid_from_date") = 1
+					AND ("valid_until_date" IS NULL OR extract(day FROM "valid_until_date") = 1)
 				WHEN 'prior_short_term_work_days' THEN
 					"count_value" BETWEEN 0 AND 366 AND "amount_cents" IS NULL
 					AND date_trunc('year', "valid_from_date")::date = "valid_from_date"

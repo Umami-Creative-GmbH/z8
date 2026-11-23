@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	type AnyPgColumn,
 	boolean,
 	check,
 	date,
@@ -15,7 +16,8 @@ import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 
 // German statutory foundation (#1988, spec #1934). Migration: 0329_statutory_foundation.sql.
-// The overlap exclusion constraints on study periods and apprentice releases live in SQL only.
+// Constraint and foreign-key names match the migration so `drizzle-kit push` keeps them. The
+// overlap exclusion constraints on study periods and apprentice releases live in SQL only.
 
 export const employeeStatutoryOffsetKinds = [
 	"external_minijob_monthly_earnings",
@@ -40,21 +42,32 @@ function textIn(column: string, values: readonly string[]) {
 	return sql.raw(`"${column}" IN (${values.map((value) => `'${value}'`).join(", ")})`);
 }
 
+/** A voided record needs who voided it and why. */
+const voidCheckSql = sql`("voided_at" IS NULL) = ("voided_by" IS NULL) AND ("voided_at" IS NULL OR length(btrim(coalesce("void_reason", ''))) > 0)`;
+
 /** Org-admin statutory warning tiers and the optional JArbSchG shift-publish block. No row = defaults. */
 export const organizationStatutoryPreference = pgTable(
 	"organization_statutory_preference",
 	{
-		organizationId: text("organization_id")
-			.primaryKey()
-			.references(() => organization.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id").primaryKey(),
 		warningThresholdPercent: integer("warning_threshold_percent").default(80).notNull(),
 		criticalThresholdPercent: integer("critical_threshold_percent").default(95).notNull(),
 		blockJarbschgShiftPublish: boolean("block_jarbschg_shift_publish").default(false).notNull(),
-		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+		updatedBy: text("updated_by"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	},
-	() => [
+	(table) => [
+		foreignKey({
+			name: "organization_statutory_preference_organization_fk",
+			columns: [table.organizationId],
+			foreignColumns: [organization.id],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "organization_statutory_preference_updated_by_fk",
+			columns: [table.updatedBy],
+			foreignColumns: [user.id],
+		}).onDelete("set null"),
 		check(
 			"organization_statutory_preference_percent_check",
 			sql`"warning_threshold_percent" BETWEEN 1 AND 100 AND "critical_threshold_percent" BETWEEN 1 AND 100 AND "warning_threshold_percent" < "critical_threshold_percent"`,
@@ -62,15 +75,59 @@ export const organizationStatutoryPreference = pgTable(
 	],
 );
 
-const voidColumns = {
+const contextColumns = {
+	id: uuid("id").defaultRandom().primaryKey(),
+	organizationId: text("organization_id").notNull(),
+	employeeId: uuid("employee_id").notNull(),
+};
+
+const auditColumns = {
+	createdBy: text("created_by").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	voidedAt: timestamp("voided_at", { withTimezone: true }),
-	voidedBy: text("voided_by").references(() => user.id),
+	voidedBy: text("voided_by"),
 	voidReason: text("void_reason"),
 };
 
+/** The four foreign keys every per-employee statutory context table has, named as in SQL. */
+function contextForeignKeys(
+	prefix: string,
+	table: {
+		organizationId: AnyPgColumn;
+		employeeId: AnyPgColumn;
+		createdBy: AnyPgColumn;
+		voidedBy: AnyPgColumn;
+	},
+) {
+	return [
+		foreignKey({
+			name: `${prefix}_organization_fk`,
+			columns: [table.organizationId],
+			foreignColumns: [organization.id],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: `${prefix}_employee_fk`,
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: `${prefix}_created_by_fk`,
+			columns: [table.createdBy],
+			foreignColumns: [user.id],
+		}),
+		foreignKey({
+			name: `${prefix}_voided_by_fk`,
+			columns: [table.voidedBy],
+			foreignColumns: [user.id],
+		}),
+	];
+}
+
 /**
  * External / prior-employment statutory offsets. `valid_until_date` is exclusive.
- * - `external_minijob_monthly_earnings`: `amount_cents` + `currency` per month while valid.
+ * - `external_minijob_monthly_earnings`: `amount_cents` + `currency` for every calendar month in
+ *   `[valid_from_date, valid_until_date)`; both dates are the first of a month, so a month either
+ *   counts in full or not at all.
  * - `prior_short_term_*`: `count_value` for exactly one calendar year (Jan 1 .. next Jan 1).
  * - `prior_working_student_over_20h_weeks`: `count_value` consecutive Monday–Sunday weeks above
  *   20 h, starting on the Monday `valid_from_date` (`valid_until_date` = start + 7 × count), so a
@@ -79,11 +136,7 @@ const voidColumns = {
 export const employeeStatutoryOffset = pgTable(
 	"employee_statutory_offset",
 	{
-		id: uuid("id").defaultRandom().primaryKey(),
-		organizationId: text("organization_id")
-			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").notNull(),
+		...contextColumns,
 		offsetKind: text("offset_kind").$type<EmployeeStatutoryOffsetKind>().notNull(),
 		validFromDate: date("valid_from_date", { mode: "string" }).notNull(),
 		validUntilDate: date("valid_until_date", { mode: "string" }),
@@ -92,11 +145,7 @@ export const employeeStatutoryOffset = pgTable(
 		countValue: integer("count_value"),
 		sourceEmployer: text("source_employer"),
 		note: text("note").notNull(),
-		createdBy: text("created_by")
-			.notNull()
-			.references(() => user.id),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-		...voidColumns,
+		...auditColumns,
 	},
 	(table) => [
 		index("employeeStatutoryOffset_lookup_idx").on(
@@ -105,11 +154,7 @@ export const employeeStatutoryOffset = pgTable(
 			table.offsetKind,
 			table.validFromDate,
 		),
-		foreignKey({
-			name: "employee_statutory_offset_employee_fk",
-			columns: [table.employeeId, table.organizationId],
-			foreignColumns: [employee.id, employee.organizationId],
-		}).onDelete("cascade"),
+		...contextForeignKeys("employee_statutory_offset", table),
 		check(
 			"employee_statutory_offset_kind_check",
 			textIn("offset_kind", employeeStatutoryOffsetKinds),
@@ -118,6 +163,33 @@ export const employeeStatutoryOffset = pgTable(
 			"employee_statutory_offset_date_range_check",
 			sql`"valid_until_date" IS NULL OR "valid_until_date" > "valid_from_date"`,
 		),
+		check("employee_statutory_offset_note_check", sql`length(btrim("note")) > 0`),
+		check("employee_statutory_offset_void_check", voidCheckSql),
+		// coalesce: a CHECK that evaluates to NULL passes, so a missing count or end date must fail.
+		check(
+			"employee_statutory_offset_value_check",
+			sql`coalesce(CASE "offset_kind"
+				WHEN 'external_minijob_monthly_earnings' THEN
+					"amount_cents" IS NOT NULL AND "amount_cents" >= 0
+					AND "currency" IS NOT NULL AND "count_value" IS NULL
+					AND extract(day FROM "valid_from_date") = 1
+					AND ("valid_until_date" IS NULL OR extract(day FROM "valid_until_date") = 1)
+				WHEN 'prior_short_term_work_days' THEN
+					"count_value" BETWEEN 0 AND 366 AND "amount_cents" IS NULL
+					AND date_trunc('year', "valid_from_date")::date = "valid_from_date"
+					AND "valid_until_date" = ("valid_from_date" + interval '1 year')::date
+				WHEN 'prior_short_term_months' THEN
+					"count_value" BETWEEN 0 AND 12 AND "amount_cents" IS NULL
+					AND date_trunc('year', "valid_from_date")::date = "valid_from_date"
+					AND "valid_until_date" = ("valid_from_date" + interval '1 year')::date
+				WHEN 'prior_working_student_over_20h_weeks' THEN
+					"count_value" BETWEEN 1 AND 53 AND "amount_cents" IS NULL
+					AND "valid_until_date" IS NOT NULL
+					AND extract(isodow FROM "valid_from_date") = 1
+					AND "valid_until_date" - "valid_from_date" = 7 * "count_value"
+				ELSE false
+			END, false)`,
+		),
 	],
 );
 
@@ -125,11 +197,7 @@ export const employeeStatutoryOffset = pgTable(
 export const employeeStudyPeriod = pgTable(
 	"employee_study_period",
 	{
-		id: uuid("id").defaultRandom().primaryKey(),
-		organizationId: text("organization_id")
-			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").notNull(),
+		...contextColumns,
 		periodKind: text("period_kind")
 			.$type<EmployeeStudyPeriodKind>()
 			.default("lecture_free")
@@ -137,20 +205,13 @@ export const employeeStudyPeriod = pgTable(
 		startsOn: date("starts_on", { mode: "string" }).notNull(),
 		endsOn: date("ends_on", { mode: "string" }).notNull(),
 		note: text("note"),
-		createdBy: text("created_by")
-			.notNull()
-			.references(() => user.id),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-		...voidColumns,
+		...auditColumns,
 	},
 	(table) => [
-		foreignKey({
-			name: "employee_study_period_employee_fk",
-			columns: [table.employeeId, table.organizationId],
-			foreignColumns: [employee.id, employee.organizationId],
-		}).onDelete("cascade"),
+		...contextForeignKeys("employee_study_period", table),
 		check("employee_study_period_kind_check", textIn("period_kind", employeeStudyPeriodKinds)),
 		check("employee_study_period_date_range_check", sql`"ends_on" >= "starts_on"`),
+		check("employee_study_period_void_check", voidCheckSql),
 	],
 );
 
@@ -158,11 +219,7 @@ export const employeeStudyPeriod = pgTable(
 export const employeeApprenticeRelease = pgTable(
 	"employee_apprentice_release",
 	{
-		id: uuid("id").defaultRandom().primaryKey(),
-		organizationId: text("organization_id")
-			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").notNull(),
+		...contextColumns,
 		releaseKind: text("release_kind").$type<ApprenticeReleaseKind>().notNull(),
 		startsOn: date("starts_on", { mode: "string" }).notNull(),
 		endsOn: date("ends_on", { mode: "string" }).notNull(),
@@ -171,20 +228,21 @@ export const employeeApprenticeRelease = pgTable(
 		/** Planned school minutes of a block-release week (>= 25 h across >= 5 days). */
 		schoolMinutes: integer("school_minutes"),
 		note: text("note"),
-		createdBy: text("created_by")
-			.notNull()
-			.references(() => user.id),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-		...voidColumns,
+		...auditColumns,
 	},
 	(table) => [
-		foreignKey({
-			name: "employee_apprentice_release_employee_fk",
-			columns: [table.employeeId, table.organizationId],
-			foreignColumns: [employee.id, employee.organizationId],
-		}).onDelete("cascade"),
+		...contextForeignKeys("employee_apprentice_release", table),
 		check("employee_apprentice_release_kind_check", textIn("release_kind", apprenticeReleaseKinds)),
 		check("employee_apprentice_release_date_range_check", sql`"ends_on" >= "starts_on"`),
+		check(
+			"employee_apprentice_release_single_day_check",
+			sql`"release_kind" = 'vocational_school_block_week' OR "ends_on" = "starts_on"`,
+		),
+		check(
+			"employee_apprentice_release_amounts_check",
+			sql`("lesson_count" IS NULL OR "lesson_count" BETWEEN 0 AND 20) AND ("school_minutes" IS NULL OR "school_minutes" BETWEEN 0 AND 10080)`,
+		),
+		check("employee_apprentice_release_void_check", voidCheckSql),
 	],
 );
 
