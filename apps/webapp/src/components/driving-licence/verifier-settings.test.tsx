@@ -118,6 +118,9 @@ afterEach(() => {
 	vi.clearAllMocks();
 	vi.restoreAllMocks();
 });
+async function waitForPanelToClose() {
+	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+}
 function renderWithClient(children: ReactNode) {
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -139,8 +142,14 @@ it("lets an administrator edit verifier scope and confirm revocation", async () 
 	);
 	expect(await screen.findByText("Anna Verifier")).toBeTruthy();
 	await user.click(screen.getByRole("button", { name: "Edit" }));
+	// The editor opens as a side panel, not as a form inserted into the page.
+	const panel = await screen.findByRole("dialog", {
+		name: "Edit verifier responsibility",
+	});
 	await user.click(
-		screen.getByRole("radio", { name: "All employees in this organization" }),
+		within(panel).getByRole("radio", {
+			name: "All employees in this organization",
+		}),
 	);
 	expect(
 		screen
@@ -158,6 +167,7 @@ it("lets an administrator edit verifier scope and confirm revocation", async () 
 			}),
 		),
 	);
+	await waitForPanelToClose();
 	await user.click(screen.getByRole("button", { name: "Revoke", exact: true }));
 	expect(await screen.findByRole("alertdialog")).toBeTruthy();
 	expect(remote.revoke).not.toHaveBeenCalled();
@@ -173,6 +183,24 @@ it("lets an administrator edit verifier scope and confirm revocation", async () 
 	expect(
 		await screen.findByText("No verifier responsibilities assigned"),
 	).toBeTruthy();
+	client.clear();
+});
+
+it("opens a new grant in a side panel and closes it on cancel", async () => {
+	const user = userEvent.setup();
+	const client = renderWithClient(<VerifierSettings />);
+	expect(await screen.findByText("Anna Verifier")).toBeTruthy();
+	expect(screen.queryByRole("dialog")).toBeNull();
+	await user.click(
+		screen.getByRole("button", { name: "Grant verifier responsibility" }),
+	);
+	const panel = await screen.findByRole("dialog", {
+		name: "Grant verifier responsibility",
+	});
+	expect(within(panel).getByText("Verifier")).toBeTruthy();
+	await user.click(within(panel).getByRole("button", { name: "Cancel" }));
+	await waitForPanelToClose();
+	expect(remote.save).not.toHaveBeenCalled();
 	client.clear();
 });
 
@@ -203,6 +231,7 @@ it("lets an administrator change and clear a grant's until date, never before to
 		employeeIds: [],
 		until: "2026-12-15",
 	});
+	await waitForPanelToClose();
 	await user.click(screen.getByRole("button", { name: "Edit" }));
 	fireEvent.change(screen.getByLabelText("Until (optional)"), {
 		target: { value: "" },
