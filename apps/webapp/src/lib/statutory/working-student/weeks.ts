@@ -122,7 +122,7 @@ export interface WorkingStudentWeek {
 }
 
 export interface WorkingStudentEvaluation {
-	/** Every week from the rolling window's start up to the last judged week, oldest first. */
+	/** Every week from the rolling window's start up to the last judged week, oldest first (ceiling-only weeks included). */
 	readonly weeks: readonly WorkingStudentWeek[];
 	readonly findings: readonly WorkingStudentFinding[];
 }
@@ -260,12 +260,18 @@ function severityOf(tier: "ok" | "warning" | "critical" | "exceeded"): Statutory
 
 /**
  * Judges one employee's compliance weeks from `judgedWeeks.from` (a Monday) up to
- * `judgedWeeks.toExclusive` (a Monday), using every week of the rolling window before them.
+ * `judgedWeeks.toExclusive` (a Monday), using every week of the rolling window before them. With
+ * `ceilingToExclusive` (a later Monday) the weeks after them are judged for the 26-week ceiling
+ * only: a judged week crossing 20 h raises the rolling count of later weeks too.
  */
 export function evaluateWorkingStudentEmployee(input: {
 	readonly organizationId: string;
 	readonly timezone: string;
-	readonly judgedWeeks: { readonly from: string; readonly toExclusive: string };
+	readonly judgedWeeks: {
+		readonly from: string;
+		readonly toExclusive: string;
+		readonly ceilingToExclusive?: string;
+	};
 	readonly thresholds: StatutoryThresholdTable;
 	readonly preferences: Pick<
 		StatutoryPreferences,
@@ -276,6 +282,11 @@ export function evaluateWorkingStudentEmployee(input: {
 	const { facts, thresholds } = input;
 	const judgedFrom = mondayOf(parsePlainDate(input.judgedWeeks.from));
 	const judgedUntil = parsePlainDate(input.judgedWeeks.toExclusive);
+	const ceilingUntil = input.judgedWeeks.ceilingToExclusive
+		? parsePlainDate(input.judgedWeeks.ceilingToExclusive)
+		: judgedUntil;
+	const evaluatedUntil =
+		comparePlainDates(ceilingUntil, judgedUntil) > 0 ? ceilingUntil : judgedUntil;
 	const evaluatedFrom = judgedFrom.subtract({ weeks: WORKING_STUDENT_ROLLING_WEEKS - 1 });
 
 	const accumulators = new Map<string, WeekAccumulator>();
@@ -293,7 +304,7 @@ export function evaluateWorkingStudentEmployee(input: {
 
 	for (
 		let monday = evaluatedFrom;
-		comparePlainDates(monday, judgedUntil) < 0;
+		comparePlainDates(monday, evaluatedUntil) < 0;
 		monday = monday.add({ weeks: 1 })
 	) {
 		const weekStart = monday.toString();
@@ -357,7 +368,8 @@ export function evaluateWorkingStudentEmployee(input: {
 			acknowledgementKind: "working_student_over_20h_week" as const,
 		};
 
-		if (lectureBreach && limitMinutes !== null) {
+		const ceilingOnly = comparePlainDates(monday, judgedUntil) >= 0;
+		if (lectureBreach && limitMinutes !== null && !ceilingOnly) {
 			const legalReference =
 				thresholds.rowOn(WEEKLY_LIMIT_KEY, weekStart)?.legalReference ??
 				WORKING_STUDENT_LEGAL_REFERENCE;

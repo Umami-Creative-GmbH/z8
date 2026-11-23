@@ -27,6 +27,7 @@ import {
 	instantFromDate,
 	type PlainDate,
 	parsePlainDate,
+	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
@@ -64,6 +65,12 @@ export interface WorkingStudentMonitorRequest {
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
 	readonly replacesShiftId?: string | null;
 	readonly preferences?: StatutoryPreferences;
+	/**
+	 * Also judge later weeks for the 26-week ceiling: every week up to 51 weeks after the judged
+	 * ones (or the last planned work) whose rolling window includes a judged week. Scheduling and
+	 * Staffing set it, so a week newly above 20 h shows the later week it makes the 27th.
+	 */
+	readonly judgeCeilingForward?: boolean;
 }
 
 export interface WorkingStudentEmployeeEvaluation extends WorkingStudentEvaluation {
@@ -152,7 +159,10 @@ export async function evaluateWorkingStudents(
 
 	const judged = judgedWeeksOf(request.window);
 	const from = judged.from.subtract({ weeks: WORKING_STUDENT_ROLLING_WEEKS - 1 });
-	const until = judged.toExclusive;
+	// The last judged week stays in the rolling window of the 51 weeks after it.
+	const until = request.judgeCeilingForward
+		? judged.toExclusive.add({ weeks: WORKING_STUDENT_ROLLING_WEEKS - 1 })
+		: judged.toExclusive;
 	const { timezone } = request;
 
 	// Which days each candidate is a working student on, by the canonical contract resolution.
@@ -164,12 +174,12 @@ export async function evaluateWorkingStudents(
 		timezone,
 	});
 	const judgedFrom = judged.from.toString();
-	const judgedUntil = judged.toExclusive.toString();
+	const scopeUntil = until.toString();
 	const inScope = candidates.filter((employeeId) =>
 		(profiles.get(employeeId) ?? []).some(
 			(span) =>
 				span.employmentProfile === WORKING_STUDENT &&
-				span.from < judgedUntil &&
+				span.from < scopeUntil &&
 				span.untilExclusive > judgedFrom,
 		),
 	);
@@ -220,25 +230,33 @@ export async function evaluateWorkingStudents(
 					)
 			: [];
 
-	// A shift starting the day before the range may run into it.
-	const shiftBounds = shiftDateRangeBounds(from.subtract({ days: 1 }), until, timezone);
-	const shiftConditions = [
-		eq(shift.organizationId, request.organizationId),
-		inArray(shift.employeeId, inScope),
-		gte(shift.date, shiftBounds.start),
-		lt(shift.date, shiftBounds.endExclusive),
-	];
-	if (request.replacesShiftId) shiftConditions.push(ne(shift.id, request.replacesShiftId));
-	const shiftRows = await db
-		.select({
-			id: shift.id,
-			employeeId: shift.employeeId,
-			date: shift.date,
-			startTime: shift.startTime,
-			endTime: shift.endTime,
-		})
-		.from(shift)
-		.where(and(...shiftConditions));
+	// Only shifts still running at `now` count, and a shift ends within a day of its date: one
+	// starting the day before the range (or before today) may still run into it.
+	const yesterday = plainDateAt(request.now, timezone).subtract({ days: 1 });
+	const dayBeforeRange = from.subtract({ days: 1 });
+	const shiftsFrom = comparePlainDates(yesterday, dayBeforeRange) > 0 ? yesterday : dayBeforeRange;
+	const loadShifts = async () => {
+		const shiftBounds = shiftDateRangeBounds(shiftsFrom, until, timezone);
+		const shiftConditions = [
+			eq(shift.organizationId, request.organizationId),
+			inArray(shift.employeeId, inScope),
+			gte(shift.date, shiftBounds.start),
+			lt(shift.date, shiftBounds.endExclusive),
+		];
+		if (request.replacesShiftId) shiftConditions.push(ne(shift.id, request.replacesShiftId));
+		return db
+			.select({
+				id: shift.id,
+				employeeId: shift.employeeId,
+				date: shift.date,
+				startTime: shift.startTime,
+				endTime: shift.endTime,
+			})
+			.from(shift)
+			.where(and(...shiftConditions));
+	};
+	// Once the whole range is over, no shift in it can still count.
+	const shiftRows = comparePlainDates(shiftsFrom, until) < 0 ? await loadShifts() : [];
 
 	const studyRows = await db
 		.select({
@@ -356,6 +374,16 @@ export async function evaluateWorkingStudents(
 	}
 	const study = groupBy(studyRows, (row) => row.employeeId);
 	const offsets = groupBy(offsetRows, (row) => row.employeeId);
+	/** The forward range for the ceiling, ending after the last week with work: no work, no finding. */
+	const ceilingUntil = (own: readonly WorkingStudentWorkInterval[]): string | undefined => {
+		if (!request.judgeCeilingForward) return undefined;
+		let last = judged.toExclusive;
+		for (const interval of own) {
+			const next = mondayOf(plainDateAt(interval.end, timezone)).add({ weeks: 1 });
+			if (comparePlainDates(next, last) > 0) last = next;
+		}
+		return (comparePlainDates(last, until) < 0 ? last : until).toString();
+	};
 
 	return inScope.map((employeeId) => {
 		const spans = profiles.get(employeeId) ?? [];
@@ -371,7 +399,11 @@ export async function evaluateWorkingStudents(
 		const evaluation = evaluateWorkingStudentEmployee({
 			organizationId: request.organizationId,
 			timezone,
-			judgedWeeks: { from: judged.from.toString(), toExclusive: judged.toExclusive.toString() },
+			judgedWeeks: {
+				from: judged.from.toString(),
+				toExclusive: judged.toExclusive.toString(),
+				ceilingToExclusive: ceilingUntil(intervals.get(employeeId) ?? []),
+			},
 			thresholds,
 			preferences,
 			facts: {

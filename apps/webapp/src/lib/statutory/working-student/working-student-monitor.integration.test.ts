@@ -495,6 +495,24 @@ describe("working-student monitor (PostgreSQL)", () => {
 		expect(dst?.weeks.at(-1)).toMatchObject({ weekStart: "2026-03-23", totalMinutes: 420 });
 	});
 
+	it("counts the rest of a night shift that started the day before now, and no ended shift", async () => {
+		const org = await fx.organization("a");
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// Sunday's night shift ended Monday 06:00; Monday's runs until Tuesday 06:00.
+		await fx.shift(org, subareaId, student, { date: "2026-03-01", start: "22:00", end: "06:00" });
+		await fx.shift(org, subareaId, student, { date: "2026-03-02", start: "22:00", end: "06:00" });
+
+		const [evaluation] = await evaluate(org.id, [student.employeeId], {
+			now: Temporal.Instant.from("2026-03-03T01:00:00Z"), // Tuesday 02:00 in Berlin
+		});
+		expect(evaluation?.weeks.at(-1)).toMatchObject({
+			weekStart: W10,
+			totalMinutes: 240,
+			eveningWeekendMinutes: 240,
+		});
+	});
+
 	it("judges only working students of the organization, in weeks they are working students", async () => {
 		const org = await fx.organization("a");
 		const other = await fx.organization("b");

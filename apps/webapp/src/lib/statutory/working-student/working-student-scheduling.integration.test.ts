@@ -298,4 +298,53 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 		]);
 		expect(statutoryWarnings("Regular")).toEqual([]);
 	});
+
+	it("warns Staffing when a proposed >20 h week makes a later planned week the 27th", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 25 planned >20 h weeks before W10, and one five weeks later (2030-W15): 26 so far.
+		for (let index = -25; index <= -1; index++) {
+			await fx.shift(org, subareaId, student, weekendOver20h(addWeeks(W10_2030, index)));
+		}
+		await fx.shift(org, subareaId, student, weekendOver20h(addWeeks(W10_2030, 5)));
+
+		const suggestions = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* StaffingSuggestionService;
+				return yield* service.suggestForShift({
+					organizationId: org.id,
+					timezone: TZ,
+					candidates: [{ employeeId: student.employeeId, displayName: "Student", isActive: true }],
+					// A 22-hour Saturday in W10: that week becomes the 26th, so W15 becomes the 27th.
+					shift: { subareaId, date: "2030-03-09", startTime: "00:00", endTime: "22:00" },
+				});
+			}).pipe(
+				Effect.provide(
+					StaffingSuggestionServiceLive.pipe(
+						Layer.provide(workPolicyLayer),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+
+		const ceiling = suggestions[0]?.warnings.flatMap((warning) =>
+			warning.type === "compliance" && warning.findingType === "statutory" ? [warning.finding] : [],
+		);
+		expect(ceiling).toEqual([
+			expect.objectContaining({
+				statutoryKind: "working_student_26_week_ceiling",
+				severity: "warning",
+				subjectKey: "2030-W10",
+				summary: expect.objectContaining({ used: { unit: "weeks", value: 26 } }),
+			}),
+			expect.objectContaining({
+				statutoryKind: "working_student_26_week_ceiling",
+				severity: "critical",
+				subjectKey: "2030-W15",
+				summary: expect.objectContaining({ used: { unit: "weeks", value: 27 } }),
+			}),
+		]);
+	});
 });
