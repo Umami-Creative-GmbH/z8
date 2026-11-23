@@ -117,11 +117,12 @@ function expenseReport(overrides: Partial<RequestItem> = {}): RequestItem {
 		status: "pending",
 		submittedAt: new Date("2026-04-23T08:00:00.000Z"),
 		resolvedAt: null,
-		title: "travel_expense_report",
-		subtitle: "Customer workshop · 2026-04-20 to 2026-04-22",
+		title: "Customer workshop",
+		subtitle: "2026-04-20 to 2026-04-22",
 		decisionReason: null,
 		availableActions: ["view"],
 		sourceHref: "/travel-expenses/reports/report-1",
+		details: { kind: "expense_report", reportKind: "trip", itemType: null },
 		...overrides,
 	};
 }
@@ -157,6 +158,7 @@ function createResult(overrides: Partial<SelfServiceRequestResult> = {}): SelfSe
 	return {
 		counts: { pending: 1, requiredFixes: 1, recentDecisions: 2, total: 3 },
 		sourceErrors: [],
+		timeZone: "UTC",
 		items: [
 			{
 				id: "absence-1",
@@ -336,6 +338,36 @@ describe("MyRequestsClient", () => {
 		expect(vacationCard).not.toBeNull();
 		expect(within(vacationCard as HTMLElement).getByText("Submitted: 18. Apr. 2026")).toBeTruthy();
 		expect(within(vacationCard as HTMLElement).getByText("Decision: 22. Apr. 2026")).toBeTruthy();
+	});
+
+	it("reads submission and decision instants in the organization's zone, like a validity window", () => {
+		const [rejected] = createResult().items;
+		render(
+			<MyRequestsClient
+				initialResult={createResult({
+					timeZone: "Europe/Berlin",
+					items: [
+						{
+							...rejected,
+							// Late evening in UTC is already the next day in Berlin.
+							submittedAt: new Date("2026-04-18T22:30:00.000Z"),
+							resolvedAt: new Date("2026-04-22T23:00:00.000Z"),
+						},
+					],
+				})}
+			/>,
+		);
+
+		const card = within(screen.getByRole("region", { name: "Needs attention" }))
+			.getByText("Vacation")
+			.closest("article") as HTMLElement;
+		expect(within(card).getByText("Submitted: 19. Apr. 2026")).toBeTruthy();
+		expect(within(card).getByText("Decision: 23. Apr. 2026")).toBeTruthy();
+		const row = within(screen.getByRole("region", { name: "All requests" }))
+			.getByText("Vacation")
+			.closest("tr") as HTMLElement;
+		expect(within(row).getByText("19. Apr. 2026")).toBeTruthy();
+		expect(within(row).getByText("23. Apr. 2026")).toBeTruthy();
 	});
 
 	it("applies filters consistently to grouped sections and all-request history", () => {
@@ -715,7 +747,7 @@ describe("MyRequestsClient", () => {
 								decisionReason: "Add the hotel receipt",
 								availableActions: ["fix", "view"],
 								sourceHref: "/travel-expenses/reports/report-returned",
-								subtitle: "Returned trip · 2026-04-20 to 2026-04-22",
+								title: "Returned trip",
 							}),
 							expenseReport({
 								id: "travel_expense_report:report-rejected",
@@ -724,9 +756,9 @@ describe("MyRequestsClient", () => {
 								resolvedAt: new Date("2026-04-27T08:00:00.000Z"),
 								decisionReason: "Not a business trip",
 								sourceHref: "/travel-expenses/reports/report-rejected",
-								subtitle: "Rejected trip · 2026-04-20 to 2026-04-22",
+								title: "Rejected trip",
 							}),
-							expenseReport({ subtitle: "Submitted trip · 2026-04-20 to 2026-04-22" }),
+							expenseReport({ title: "Submitted trip" }),
 						],
 					})}
 				/>,
@@ -901,6 +933,43 @@ describe("MyRequestsClient", () => {
 					name: "Fix",
 				}),
 			).toBeTruthy();
+		});
+
+		it("names expense reports as the rest of the app does, under the Expense report type", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						items: [
+							expenseReport(),
+							expenseReport({
+								id: "travel_expense_report:report-receipt",
+								sourceId: "report-receipt",
+								title: "Hotel Hamburg",
+								subtitle: "",
+								details: { kind: "expense_report", reportKind: "standalone", itemType: "receipt" },
+							}),
+							expenseReport({
+								id: "travel_expense_report:report-mileage",
+								sourceId: "report-mileage",
+								title: "",
+								subtitle: "",
+								details: { kind: "expense_report", reportKind: "standalone", itemType: "mileage" },
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const inReview = screen.getByRole("region", { name: "In review" });
+			const card = (name: string) =>
+				within(inReview).getByRole("heading", { level: 3, name }).closest("article") as HTMLElement;
+			expect(card("Customer workshop").textContent).toMatch(/Trip report · 20\.–22\. Apr\. 2026/);
+			expect(within(card("Hotel Hamburg")).getByText("Standalone receipt")).toBeTruthy();
+			expect(within(card("Untitled mileage")).getByText("Standalone mileage")).toBeTruthy();
+			for (const name of ["Customer workshop", "Hotel Hamburg", "Untitled mileage"]) {
+				expect(within(card(name)).getByText("Expense report")).toBeTruthy();
+			}
+			expect(document.body.textContent).not.toMatch(/Travel expense report|without a trip/);
 		});
 
 		it("never calls a request legacy, with the shipped English copy", () => {

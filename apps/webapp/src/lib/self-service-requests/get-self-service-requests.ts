@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
@@ -10,8 +10,13 @@ import {
 	travelExpenseDecisionLog,
 	travelExpenseReport,
 	travelExpenseReportCycleClosure,
+	travelExpenseReportItem,
 	workPeriod,
 } from "@/db/schema";
+import type {
+	TravelExpenseReportItemType,
+	TravelExpenseReportKind,
+} from "@/db/schema/travel-expense";
 import { readApprovalAuthoritySnapshot } from "@/lib/approvals/authority";
 import { parseRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
 import {
@@ -124,6 +129,7 @@ interface ExpenseReportRow {
 	id: string;
 	organizationId: string;
 	employeeId: string;
+	kind: TravelExpenseReportKind;
 	status: "draft" | "submitted" | "returned" | "approved" | "rejected";
 	tripPurpose: string | null;
 	tripStartDate: string | null;
@@ -132,6 +138,14 @@ interface ExpenseReportRow {
 	submittedAt: Date | null;
 	decidedAt: Date | null;
 	createdAt: Date;
+}
+
+interface StandaloneExpenseRow {
+	organizationId: string;
+	reportId: string;
+	type: TravelExpenseReportItemType;
+	description: string | null;
+	mileageRoute: string | null;
 }
 
 interface ComplianceExceptionRow {
@@ -165,12 +179,16 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 export async function getSelfServiceRequests(
 	input: GetSelfServiceRequestsInput,
 ): Promise<SelfServiceRequestResult> {
+	// Read once: request dates and compliance exception windows are both shown in this zone.
+	const organizationTimeZone = loadOrganizationTimezone(db, input.organizationId);
+	// Without it, request dates read in UTC; only the exceptions, whose windows need it, fail.
+	const timeZone = organizationTimeZone.catch(() => "UTC");
 	const loaders: Record<SelfServiceRequestSourceType, () => Promise<SelfServiceRequestItem[]>> = {
 		time_correction: () => loadTimeCorrections(input),
 		absence: () => loadAbsences(input),
 		travel_expense: () => loadTravelExpenses(input),
 		travel_expense_report: () => loadExpenseReports(input),
-		compliance_exception: () => loadComplianceExceptions(input),
+		compliance_exception: () => loadComplianceExceptions(input, organizationTimeZone),
 	};
 	const sources = input.sources ?? (Object.keys(loaders) as SelfServiceRequestSourceType[]);
 	const sourceResults = await Promise.all(
@@ -182,7 +200,7 @@ export async function getSelfServiceRequests(
 	const counts = countItems(allItems, input.now ?? new Date());
 	const items = applyFilters(allItems, input.filters).sort(compareItems);
 
-	return { items, counts, sourceErrors };
+	return { items, counts, sourceErrors, timeZone: await timeZone };
 }
 
 async function loadSource(
@@ -759,7 +777,8 @@ async function loadTravelExpenses(
 				title: "travel_expense",
 				subtitle: travelExpenseSubtitle(row),
 				decisionReason: latestDecisionLog?.reason ?? latestDecisionLog?.comment ?? null,
-				availableActions: actionsFor(status),
+				// An earlier claim is read-only once decided: a rejection is final, never a fix.
+				availableActions: ["view"],
 				sourceHref: `/travel-expenses/${row.id}`,
 			},
 		];
@@ -790,13 +809,15 @@ async function loadExpenseReports(
 			row.organizationId === input.organizationId &&
 			row.employeeId === input.employeeId,
 	);
-	const [returnNotes, rejectionReasons] = await Promise.all([
+	const [returnNotes, rejectionReasons, standaloneExpenses] = await Promise.all([
 		loadReturnNotes(input.organizationId, rows),
 		loadReportRejectionReasons(input.organizationId, rows),
+		loadStandaloneExpenses(input.organizationId, rows),
 	]);
 
 	return rows.map((row) => {
 		const status = mapExpenseReportStatus(row.status);
+		const expense = standaloneExpenses.get(row.id);
 		return {
 			id: `travel_expense_report:${row.id}`,
 			sourceType: "travel_expense_report",
@@ -806,8 +827,16 @@ async function loadExpenseReports(
 			status,
 			submittedAt: row.submittedAt ?? row.createdAt,
 			resolvedAt: row.decidedAt,
-			title: "travel_expense_report",
+			title:
+				(row.kind === "trip"
+					? row.tripPurpose?.trim()
+					: expense?.description?.trim() || expense?.mileageRoute?.trim()) || "",
 			subtitle: expenseReportSubtitle(row),
+			details: {
+				kind: "expense_report",
+				reportKind: row.kind,
+				itemType: row.kind === "standalone" ? (expense?.type ?? null) : null,
+			},
 			decisionReason:
 				status === "returned"
 					? (returnNotes.get(row.id) ?? null)
@@ -919,6 +948,7 @@ async function loadReportRejectionReasons(organizationId: string, rows: ExpenseR
  */
 async function loadComplianceExceptions(
 	input: GetSelfServiceRequestsInput,
+	organizationTimeZone: Promise<string>,
 ): Promise<SelfServiceRequestItem[]> {
 	const rows = (
 		(await db.query.complianceException.findMany({
@@ -933,7 +963,7 @@ async function loadComplianceExceptions(
 		(row) => row.organizationId === input.organizationId && row.employeeId === input.employeeId,
 	);
 	if (rows.length === 0) return [];
-	const timeZone = await loadOrganizationTimezone(db, input.organizationId);
+	const timeZone = await organizationTimeZone;
 	const now = instantFromDate(input.now ?? new Date());
 
 	return rows.map((row) => {
@@ -984,11 +1014,39 @@ function mapExpenseReportStatus(status: ExpenseReportRow["status"]): SelfService
 	return status === "submitted" || status === "draft" ? "pending" : status;
 }
 
-/** The trip's purpose and stored calendar dates ("YYYY-MM-DD to YYYY-MM-DD"); empty for a standalone report. */
+/** The trip's stored calendar dates ("YYYY-MM-DD to YYYY-MM-DD"); empty without them or for a standalone report. */
 function expenseReportSubtitle(row: ExpenseReportRow): string {
-	const dates =
-		row.tripStartDate && row.tripEndDate ? `${row.tripStartDate} to ${row.tripEndDate}` : null;
-	return [row.tripPurpose?.trim() || null, dates].filter(Boolean).join(" · ");
+	return row.tripStartDate && row.tripEndDate ? `${row.tripStartDate} to ${row.tripEndDate}` : "";
+}
+
+/** The (only) expense of each standalone report, which names it: its type, description or route. */
+async function loadStandaloneExpenses(organizationId: string, rows: ExpenseReportRow[]) {
+	const standalone = rows.filter((row) => row.kind === "standalone");
+	const expenses = new Map<string, StandaloneExpenseRow>();
+	if (standalone.length === 0) return expenses;
+	const items = (await db.query.travelExpenseReportItem.findMany({
+		columns: {
+			organizationId: true,
+			reportId: true,
+			position: true,
+			type: true,
+			description: true,
+			mileageRoute: true,
+		},
+		where: and(
+			eq(travelExpenseReportItem.organizationId, organizationId),
+			inArray(
+				travelExpenseReportItem.reportId,
+				standalone.map((row) => row.id),
+			),
+		),
+		orderBy: [asc(travelExpenseReportItem.position)],
+	})) as StandaloneExpenseRow[];
+	for (const item of items) {
+		if (item.organizationId !== organizationId || expenses.has(item.reportId)) continue;
+		expenses.set(item.reportId, item);
+	}
+	return expenses;
 }
 
 function absenceResolvedAt(row: AbsenceRow): Date | null {

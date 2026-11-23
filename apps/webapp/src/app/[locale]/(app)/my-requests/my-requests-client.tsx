@@ -53,6 +53,7 @@ import { needsFix } from "@/lib/self-service-requests/needs-fix";
 import type {
 	ComplianceExceptionKind,
 	ComplianceExceptionRequestDetails,
+	ExpenseReportRequestDetails,
 	SelfServiceRequestCounts,
 	SelfServiceRequestItem,
 	SelfServiceRequestResult,
@@ -204,9 +205,13 @@ function getTravelExpenseAmountFormatter(locale: string, currency: string) {
 	return formatter;
 }
 
-/** Medium dates, read in UTC: request instants and stored calendar dates format the same everywhere. */
-function getDateFormatter(locale: string) {
-	const cachedFormatter = dateFormatters.get(locale);
+/**
+ * Medium dates in an explicit zone: "UTC" for stored calendar dates (held as UTC midnights), the
+ * organization's zone for request instants, so they read on the same day as a validity window.
+ */
+function getDateFormatter(locale: string, timeZone = "UTC") {
+	const formatterKey = `${locale}:${timeZone}`;
+	const cachedFormatter = dateFormatters.get(formatterKey);
 	if (cachedFormatter) {
 		return cachedFormatter;
 	}
@@ -215,9 +220,9 @@ function getDateFormatter(locale: string) {
 		year: "numeric",
 		month: "short",
 		day: "numeric",
-		timeZone: "UTC",
+		timeZone,
 	});
-	dateFormatters.set(locale, formatter);
+	dateFormatters.set(formatterKey, formatter);
 	return formatter;
 }
 
@@ -287,8 +292,8 @@ function requestTitle(item: SelfServiceRequestItem, t: Translate) {
 		return t("myRequests:myRequests.requests.travelExpense.title", "Travel expense claim");
 	}
 
-	if (item.sourceType === "travel_expense_report") {
-		return t("myRequests:myRequests.requests.expenseReport.title", "Travel expense report");
+	if (item.details?.kind === "expense_report") {
+		return expenseReportName(item.title, item.details, t);
 	}
 
 	if (item.details?.kind === "compliance_exception") {
@@ -321,8 +326,10 @@ function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Transl
 		return formatTravelExpenseSubtitle(item.subtitle, locale);
 	}
 
-	if (item.sourceType === "travel_expense_report") {
-		return formatExpenseReportSubtitle(item.subtitle, locale, t);
+	if (item.details?.kind === "expense_report") {
+		const kind = expenseReportKindLabel(item.details, t);
+		const dates = formatStoredDateRange(item.subtitle, locale);
+		return dates ? `${kind} · ${dates}` : kind;
 	}
 
 	if (item.details?.kind === "compliance_exception") {
@@ -332,16 +339,37 @@ function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Transl
 	return item.subtitle;
 }
 
-/** A report's "purpose · YYYY-MM-DD to YYYY-MM-DD", its trip dates formatted as one locale range. */
-function formatExpenseReportSubtitle(value: string, locale: string, t: Translate) {
-	if (value.trim() === "") {
-		return t("myRequests:myRequests.requests.expenseReport.standalone", "Expenses without a trip");
+/**
+ * A report's name, as `reportName` in `components/travel-expenses/report-name.ts` gives it: the
+ * trip purpose or the standalone expense's description or route, else an "Untitled …" fallback.
+ * Its copy lives in this page's namespace, which is the one loaded here.
+ */
+function expenseReportName(title: string, details: ExpenseReportRequestDetails, t: Translate) {
+	if (title.trim()) return title;
+	if (details.reportKind === "trip") {
+		return t("myRequests:myRequests.requests.expenseReport.untitledTrip", "Untitled trip");
 	}
+	if (details.itemType === "mileage") {
+		return t("myRequests:myRequests.requests.expenseReport.untitledMileage", "Untitled mileage");
+	}
+	return t("myRequests:myRequests.requests.expenseReport.untitledReceipt", "Untitled receipt");
+}
 
-	return value
-		.split(" · ")
-		.map((part) => formatStoredDateRange(part, locale) ?? part)
-		.join(" · ");
+/** A report's kind, as `reportKindLabel` gives it: trip report, standalone receipt or mileage. */
+function expenseReportKindLabel(details: ExpenseReportRequestDetails, t: Translate) {
+	if (details.reportKind === "trip") {
+		return t("myRequests:myRequests.requests.expenseReport.kind.trip", "Trip report");
+	}
+	if (details.itemType === "mileage") {
+		return t(
+			"myRequests:myRequests.requests.expenseReport.kind.standaloneMileage",
+			"Standalone mileage",
+		);
+	}
+	return t(
+		"myRequests:myRequests.requests.expenseReport.kind.standaloneReceipt",
+		"Standalone receipt",
+	);
 }
 
 function formatPlannedDuration(minutes: number, t: Translate) {
@@ -434,8 +462,9 @@ function formatTravelExpenseSubtitle(value: string, locale: string) {
 	return prefix ? `${prefix}${separator}${formattedAmount}` : formattedAmount;
 }
 
-function formatDate(date: Date, locale: string) {
-	return getDateFormatter(locale).format(date);
+/** A request instant's date in the organization's zone. */
+function formatDate(date: Date, locale: string, timeZone: string) {
+	return getDateFormatter(locale, timeZone).format(date);
 }
 
 function isRecentlyDecided(item: SelfServiceRequestItem, now: Date) {
@@ -681,12 +710,14 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 									"Returned or rejected requests that need a correction before resubmission.",
 								)}
 								items={groupedItems.needsAttention}
+								timeZone={initialResult.timeZone}
 								preferFix
 								tone="attention"
 							/>
 							<RequestSection
 								title={t("myRequests:myRequests.inReview.title", "In review")}
 								items={groupedItems.inReview}
+								timeZone={initialResult.timeZone}
 								focusTargets
 							/>
 							<RequestSection
@@ -696,9 +727,10 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 									"Approved and rejected decisions from the last 30 days.",
 								)}
 								items={groupedItems.recentlyDecided}
+								timeZone={initialResult.timeZone}
 								allowCancel={false}
 							/>
-							<RequestHistory items={groupedItems.all} />
+							<RequestHistory items={groupedItems.all} timeZone={initialResult.timeZone} />
 						</>
 					)}
 				</>
@@ -910,6 +942,7 @@ function RequestSection({
 	title,
 	description,
 	items,
+	timeZone,
 	allowCancel = true,
 	preferFix = false,
 	tone = "default",
@@ -918,6 +951,8 @@ function RequestSection({
 	title: string;
 	description?: string;
 	items: SelfServiceRequestItem[];
+	/** The organization's zone, in which request instants are read. */
+	timeZone: string;
 	allowCancel?: boolean;
 	preferFix?: boolean;
 	tone?: "default" | "attention";
@@ -949,6 +984,7 @@ function RequestSection({
 					<RequestCard
 						key={item.id}
 						item={item}
+						timeZone={timeZone}
 						allowCancel={allowCancel}
 						preferFix={preferFix}
 						targetId={focusTargets ? myRequestFocusTargetId(item.id) : undefined}
@@ -970,11 +1006,13 @@ function RequestTypeIcon({ sourceType }: { sourceType: SelfServiceRequestSourceT
 
 function RequestCard({
 	item,
+	timeZone,
 	allowCancel = true,
 	preferFix = false,
 	targetId,
 }: {
 	item: SelfServiceRequestItem;
+	timeZone: string;
 	allowCancel?: boolean;
 	preferFix?: boolean;
 	targetId?: string;
@@ -1007,12 +1045,12 @@ function RequestCard({
 							<span>{sourceTypeLabel(item.sourceType, t)}</span>
 							<span>
 								{t("myRequests:myRequests.card.submitted", "Submitted")}:{" "}
-								{formatDate(item.submittedAt, locale)}
+								{formatDate(item.submittedAt, locale, timeZone)}
 							</span>
 							{item.resolvedAt ? (
 								<span>
 									{t("myRequests:myRequests.card.decision", "Decision")}:{" "}
-									{formatDate(item.resolvedAt, locale)}
+									{formatDate(item.resolvedAt, locale, timeZone)}
 								</span>
 							) : null}
 						</div>
@@ -1050,7 +1088,13 @@ function RequestCard({
 }
 
 /** Every loaded request once, as an aligned record table; it opens records but never cancels them. */
-function RequestHistory({ items }: { items: SelfServiceRequestItem[] }) {
+function RequestHistory({
+	items,
+	timeZone,
+}: {
+	items: SelfServiceRequestItem[];
+	timeZone: string;
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const titleId = useId();
@@ -1080,7 +1124,7 @@ function RequestHistory({ items }: { items: SelfServiceRequestItem[] }) {
 					</TableHeader>
 					<TableBody>
 						{items.map((item) => (
-							<RequestHistoryRow key={item.id} item={item} locale={locale} />
+							<RequestHistoryRow key={item.id} item={item} locale={locale} timeZone={timeZone} />
 						))}
 					</TableBody>
 				</Table>
@@ -1089,7 +1133,15 @@ function RequestHistory({ items }: { items: SelfServiceRequestItem[] }) {
 	);
 }
 
-function RequestHistoryRow({ item, locale }: { item: SelfServiceRequestItem; locale: string }) {
+function RequestHistoryRow({
+	item,
+	locale,
+	timeZone,
+}: {
+	item: SelfServiceRequestItem;
+	locale: string;
+	timeZone: string;
+}) {
 	const { t } = useTranslate();
 	const titleId = useId();
 	const primaryAction = getPrimaryRequestAction(item, false);
@@ -1108,9 +1160,11 @@ function RequestHistoryRow({ item, locale }: { item: SelfServiceRequestItem; loc
 			<TableCell>
 				<StatusBadge status={item.status} />
 			</TableCell>
-			<TableCell className="tabular-nums">{formatDate(item.submittedAt, locale)}</TableCell>
+			<TableCell className="tabular-nums">
+				{formatDate(item.submittedAt, locale, timeZone)}
+			</TableCell>
 			<TableCell className="text-muted-foreground tabular-nums">
-				{item.resolvedAt ? formatDate(item.resolvedAt, locale) : "—"}
+				{item.resolvedAt ? formatDate(item.resolvedAt, locale, timeZone) : "—"}
 			</TableCell>
 			<TableCell className="pr-4 sm:text-right md:pr-5">
 				{primaryAction ? (

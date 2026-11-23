@@ -6,7 +6,7 @@ import { reportName } from "../report-name";
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 /**
- * How finance lists name a report or legacy claim awaiting reimbursement: the
+ * How finance lists name a report or earlier claim awaiting reimbursement: the
  * report's name (or an "Untitled …" fallback) and its dates, if any. Needs the
  * `travelExpenses` namespace.
  */
@@ -28,7 +28,7 @@ export function settlementTitle(
 			};
 		case "legacy_claim":
 			return {
-				name: t("travelExpenses.finance.legacyClaim", "Legacy {type} claim", {
+				name: t("travelExpenses.finance.earlierClaim", "Earlier {type} claim", {
 					type: title.claimType.replace("_", " "),
 				}),
 				dates: formatPlainDateRange(locale, title.startDate, title.endDate),

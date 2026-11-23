@@ -16,7 +16,16 @@ const mocks = vi.hoisted(() => ({
 	getSelfServiceRequests: vi.fn(),
 	loggerWarn: vi.fn(),
 	loggerError: vi.fn(),
+	normalizeWorkdayTimeline: vi.fn(),
 }));
+
+// The real normalizer, observed: it also hides non-pending requests, so the requests handed to it
+// show what the data loader itself lets through.
+vi.mock("./workday-timeline-normalize", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("./workday-timeline-normalize")>();
+	mocks.normalizeWorkdayTimeline.mockImplementation(actual.normalizeWorkdayTimeline);
+	return { ...actual, normalizeWorkdayTimeline: mocks.normalizeWorkdayTimeline };
+});
 
 vi.mock("@/db", () => ({
 	db: {
@@ -161,6 +170,55 @@ describe("getWorkdayTimelineData", () => {
 				"pending-request:current-day-subtitle",
 			]);
 		}
+	});
+
+	it("shows only pending day requests, never expense reports, compliance exceptions, returned or expired ones (#1979)", async () => {
+		const sameDay = { submittedAt: new Date("2026-05-03T08:00:00.000Z"), subtitle: "" };
+		mocks.getSelfServiceRequests.mockResolvedValue({
+			items: [
+				createRequest({ ...sameDay, id: "absence-pending", sourceType: "absence" }),
+				createRequest({
+					...sameDay,
+					id: "report-pending",
+					sourceType: "travel_expense_report",
+				}),
+				createRequest({
+					...sameDay,
+					id: "exception-pending",
+					sourceType: "compliance_exception",
+				}),
+				createRequest({
+					...sameDay,
+					id: "claim-returned",
+					sourceType: "travel_expense",
+					status: "returned",
+				}),
+				createRequest({
+					...sameDay,
+					id: "absence-expired",
+					sourceType: "absence",
+					status: "expired",
+				}),
+			],
+			counts: { pending: 3, requiredFixes: 0, recentDecisions: 0, total: 5 },
+			sourceErrors: [],
+		});
+
+		const result = await getWorkdayTimelineData({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			timezone: "UTC",
+			dateParam: "2026-05-03",
+		});
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.items.map((item) => item.id)).toEqual(["pending-request:absence-pending"]);
+		}
+		const [{ pendingRequests }] = mocks.normalizeWorkdayTimeline.mock.lastCall ?? [{}];
+		expect(pendingRequests.map((request: { id: string }) => request.id)).toEqual([
+			"absence-pending",
+		]);
 	});
 
 	it("excludes time corrections submitted on the selected day when their work period does not overlap", async () => {

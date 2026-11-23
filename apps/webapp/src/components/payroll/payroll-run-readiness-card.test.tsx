@@ -142,7 +142,7 @@ describe("PayrollRunReadinessList", () => {
 			/>,
 		);
 
-		expect(screen.getByText("Legacy receipt claim")).toBeTruthy();
+		expect(screen.getByText("Earlier receipt claim")).toBeTruthy();
 		expect(screen.getByText(/never paid through payroll/i)).toBeTruthy();
 		expect(screen.getByText("Customer workshop")).toBeTruthy();
 	});

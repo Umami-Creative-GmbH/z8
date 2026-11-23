@@ -13,6 +13,7 @@ const dbMocks = vi.hoisted(() => ({
 	absenceEntries: vi.fn(),
 	travelExpenseClaims: vi.fn(),
 	travelExpenseReports: vi.fn(),
+	reportItems: vi.fn(),
 	reportCycleClosures: vi.fn(),
 	complianceExceptions: vi.fn(),
 	organizationTimezone: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => ({ type: "and", conditions })),
+	asc: vi.fn((column: unknown) => ({ direction: "asc", column })),
 	desc: vi.fn((column: unknown) => ({ direction: "desc", column })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ op: "eq", left, right })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ op: "gte", left, right })),
@@ -50,6 +52,7 @@ vi.mock("@/db", () => ({
 			absenceEntry: { findMany: dbMocks.absenceEntries },
 			travelExpenseClaim: { findMany: dbMocks.travelExpenseClaims },
 			travelExpenseReport: { findMany: dbMocks.travelExpenseReports },
+			travelExpenseReportItem: { findMany: dbMocks.reportItems },
 			travelExpenseReportCycleClosure: { findMany: dbMocks.reportCycleClosures },
 			complianceException: { findMany: dbMocks.complianceExceptions },
 		},
@@ -118,6 +121,11 @@ vi.mock("@/db/schema", () => ({
 		employeeId: "travelExpenseReport.employeeId",
 		organizationId: "travelExpenseReport.organizationId",
 		status: "travelExpenseReport.status",
+	},
+	travelExpenseReportItem: {
+		organizationId: "travelExpenseReportItem.organizationId",
+		reportId: "travelExpenseReportItem.reportId",
+		position: "travelExpenseReportItem.position",
 	},
 	travelExpenseReportCycleClosure: {
 		organizationId: "travelExpenseReportCycleClosure.organizationId",
@@ -426,10 +434,12 @@ describe("getSelfServiceRequests", () => {
 		dbMocks.absenceEntries.mockReset();
 		dbMocks.travelExpenseClaims.mockReset();
 		dbMocks.travelExpenseReports.mockReset();
+		dbMocks.reportItems.mockReset();
 		dbMocks.reportCycleClosures.mockReset();
 		dbMocks.complianceExceptions.mockReset();
 		dbMocks.organizationTimezone.mockReset();
 		dbMocks.travelExpenseReports.mockResolvedValue([]);
+		dbMocks.reportItems.mockResolvedValue([]);
 		dbMocks.reportCycleClosures.mockResolvedValue([]);
 		dbMocks.complianceExceptions.mockResolvedValue([]);
 		dbMocks.organizationTimezone.mockResolvedValue("Europe/Berlin");
@@ -500,6 +510,8 @@ describe("getSelfServiceRequests", () => {
 		dbMocks.approvalRequests.mockResolvedValue([]);
 		dbMocks.absenceEntries.mockResolvedValue([]);
 		dbMocks.travelExpenseClaims.mockResolvedValue([]);
+		// The organization's zone is public; the correction context's zone is not.
+		dbMocks.organizationTimezone.mockResolvedValue("UTC");
 		dbMocks.approvalWorkflowRollouts.mockResolvedValue({
 			lifecycleMode: "complete",
 		});
@@ -1584,7 +1596,8 @@ describe("getSelfServiceRequests", () => {
 				resolvedAt: null,
 				availableActions: ["view"],
 				sourceHref: "/travel-expenses/reports/report-submitted",
-				subtitle: "Customer workshop · 2026-04-20 to 2026-04-22",
+				title: "Customer workshop",
+				subtitle: "2026-04-20 to 2026-04-22",
 			});
 			expect(reports.find((item) => item.sourceId === "report-returned")).toMatchObject({
 				status: "returned",
@@ -1614,6 +1627,77 @@ describe("getSelfServiceRequests", () => {
 				{ left: "travelExpenseReport.organizationId", right: "org-1" },
 				{ left: "travelExpenseReport.employeeId", right: "employee-1" },
 				{ left: "travelExpenseReport.status", right: "draft", op: "ne" },
+			]);
+		});
+
+		it("names each report as the rest of the app does: trip purpose, or its expense's description or route", async () => {
+			dbMocks.travelExpenseReports.mockResolvedValue([
+				expenseReport({ id: "report-trip" }),
+				...["report-receipt", "report-mileage", "report-empty"].map((id) =>
+					expenseReport({
+						id,
+						kind: "standalone",
+						tripPurpose: null,
+						tripStartDate: null,
+						tripEndDate: null,
+					}),
+				),
+			]);
+			dbMocks.reportItems.mockResolvedValue([
+				{
+					organizationId: "org-1",
+					reportId: "report-receipt",
+					position: 0,
+					type: "receipt",
+					description: "Hotel Hamburg",
+					mileageRoute: null,
+				},
+				{
+					organizationId: "org-1",
+					reportId: "report-mileage",
+					position: 0,
+					type: "mileage",
+					description: null,
+					mileageRoute: "Office – Customer",
+				},
+				// Another organization's item never names a report.
+				{
+					organizationId: "org-2",
+					reportId: "report-empty",
+					position: 0,
+					type: "receipt",
+					description: "Foreign",
+					mileageRoute: null,
+				},
+			]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				sources: ["travel_expense_report"],
+			});
+			const bySource = new Map(result.items.map((item) => [item.sourceId, item]));
+
+			expect(bySource.get("report-trip")).toMatchObject({
+				title: "Customer workshop",
+				subtitle: "2026-04-20 to 2026-04-22",
+				details: { kind: "expense_report", reportKind: "trip", itemType: null },
+			});
+			expect(bySource.get("report-receipt")).toMatchObject({
+				title: "Hotel Hamburg",
+				subtitle: "",
+				details: { kind: "expense_report", reportKind: "standalone", itemType: "receipt" },
+			});
+			expect(bySource.get("report-mileage")).toMatchObject({
+				title: "Office – Customer",
+				details: { kind: "expense_report", reportKind: "standalone", itemType: "mileage" },
+			});
+			expect(bySource.get("report-empty")).toMatchObject({
+				title: "",
+				details: { kind: "expense_report", reportKind: "standalone", itemType: null },
+			});
+			expectWhereConditions(dbMocks.reportItems, [
+				{ left: "travelExpenseReportItem.organizationId", right: "org-1" },
 			]);
 		});
 
@@ -1739,6 +1823,42 @@ describe("getSelfServiceRequests", () => {
 			expect(result.items.find((item) => item.sourceType === "travel_expense")?.sourceHref).toBe(
 				"/travel-expenses/claim-1",
 			);
+		});
+
+		it("treats a rejected earlier claim as a final decision to view, never a fix", async () => {
+			dbMocks.travelExpenseClaims.mockResolvedValue([
+				travelExpense({
+					id: "claim-rejected",
+					status: "rejected",
+					decidedAt: new Date("2026-04-27T08:00:00.000Z"),
+					decisionLogs: [
+						{ reason: "Missing receipt", comment: null, createdAt: new Date("2026-04-27") },
+					],
+				}),
+			]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				now: new Date("2026-04-28T12:00:00.000Z"),
+				sources: ["travel_expense"],
+			});
+
+			expect(result.items).toEqual([
+				expect.objectContaining({
+					sourceId: "claim-rejected",
+					status: "rejected",
+					decisionReason: "Missing receipt",
+					availableActions: ["view"],
+					sourceHref: "/travel-expenses/claim-rejected",
+				}),
+			]);
+			expect(result.counts).toEqual({
+				pending: 0,
+				requiredFixes: 0,
+				recentDecisions: 1,
+				total: 1,
+			});
 		});
 
 		it("reports an expense report source failure without losing other requests", async () => {
@@ -1919,6 +2039,42 @@ describe("getSelfServiceRequests", () => {
 			});
 
 			expect(result.items.map((item) => item.sourceId)).toEqual(["exception-expired"]);
+		});
+
+		it("gives the organization's time zone, read once for windows and request dates alike", async () => {
+			dbMocks.complianceExceptions.mockResolvedValue([exception()]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				now: new Date("2026-04-28T12:00:00.000Z"),
+			});
+
+			expect(result.timeZone).toBe("Europe/Berlin");
+			expect(result.items[0]?.details).toMatchObject({ timeZone: "Europe/Berlin" });
+			expect(dbMocks.organizationTimezone).toHaveBeenCalledTimes(1);
+			expect(dbMocks.organizationTimezone).toHaveBeenCalledWith(expect.anything(), "org-1");
+		});
+
+		it("reads request dates in UTC when the time zone cannot be loaded, failing only exceptions", async () => {
+			dbMocks.organizationTimezone.mockRejectedValue(new Error("database unavailable"));
+			dbMocks.complianceExceptions.mockResolvedValue([exception()]);
+			dbMocks.absenceEntries.mockResolvedValue([absence()]);
+
+			const result = await getSelfServiceRequests({
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				now: new Date("2026-04-28T12:00:00.000Z"),
+			});
+
+			expect(result.timeZone).toBe("UTC");
+			expect(result.items.map((item) => item.sourceType)).toEqual(["absence"]);
+			expect(result.sourceErrors).toEqual([
+				{
+					sourceType: "compliance_exception",
+					message: "Compliance exceptions could not be loaded.",
+				},
+			]);
 		});
 
 		it("reports a compliance exception source failure", async () => {

@@ -284,6 +284,37 @@ describe("My Requests expense reports and compliance exceptions (#1979)", () => 
 		});
 	});
 
+	it("names a standalone report by its own expense and gives the organization's zone", async () => {
+		await admin.query(
+			`insert into travel_expense_report_item (organization_id, report_id, type, position, description, mileage_route)
+			 values ($1, $2, 'receipt', 0, 'Hotel Hamburg', null), ($1, $3, 'mileage', 0, null, 'Office – Customer')`,
+			[ORG, ids.submitted, ids.returned],
+		);
+
+		const result = await getSelfServiceRequests({
+			employeeId: ids.requester,
+			organizationId: ORG,
+			now: NOW,
+			sources: ["travel_expense_report"],
+		});
+		const byId = new Map(result.items.map((item) => [item.sourceId, item]));
+
+		expect(result.timeZone).toBe("Europe/Berlin");
+		expect(byId.get(ids.submitted)).toMatchObject({
+			title: "Hotel Hamburg",
+			subtitle: "",
+			details: { kind: "expense_report", reportKind: "standalone", itemType: "receipt" },
+		});
+		expect(byId.get(ids.returned)).toMatchObject({
+			title: "Office – Customer",
+			details: { kind: "expense_report", reportKind: "standalone", itemType: "mileage" },
+		});
+		expect(byId.get(ids.rejected)).toMatchObject({
+			title: "",
+			details: { kind: "expense_report", reportKind: "standalone", itemType: null },
+		});
+	});
+
 	it("shows a pending exception past its window as expired and keeps decided ones", async () => {
 		const items = await requestsOf(ids.requester);
 		const statuses = Object.fromEntries(

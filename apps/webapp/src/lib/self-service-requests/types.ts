@@ -1,3 +1,8 @@
+import type {
+	TravelExpenseReportItemType,
+	TravelExpenseReportKind,
+} from "@/db/schema/travel-expense";
+
 export type SelfServiceRequestSourceType =
 	| "time_correction"
 	| "absence"
@@ -35,6 +40,17 @@ export interface ComplianceExceptionRequestDetails {
 	timeZone: string;
 }
 
+/**
+ * What names an expense report, as the rest of the app does (`reportName`, `reportKindLabel`): the
+ * item's title is the trip purpose or the standalone expense's description or route ("" if none).
+ */
+export interface ExpenseReportRequestDetails {
+	kind: "expense_report";
+	reportKind: TravelExpenseReportKind;
+	/** A standalone report's (only) expense type; null for a trip or before an expense exists. */
+	itemType: TravelExpenseReportItemType | null;
+}
+
 export interface SelfServiceRequestItem {
 	id: string;
 	sourceType: SelfServiceRequestSourceType;
@@ -49,7 +65,7 @@ export interface SelfServiceRequestItem {
 	decisionReason: string | null;
 	availableActions: SelfServiceRequestAction[];
 	sourceHref: string;
-	details?: ComplianceExceptionRequestDetails;
+	details?: ComplianceExceptionRequestDetails | ExpenseReportRequestDetails;
 }
 
 export interface SelfServiceRequestCounts {
@@ -74,4 +90,6 @@ export interface SelfServiceRequestResult {
 	items: SelfServiceRequestItem[];
 	counts: SelfServiceRequestCounts;
 	sourceErrors: SelfServiceRequestSourceError[];
+	/** The organization's time zone: request instants are read in it, as validity windows are. */
+	timeZone: string;
 }
