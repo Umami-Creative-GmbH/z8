@@ -236,6 +236,14 @@
         "rollingExceeded": "Minijob 12-month earnings limit exceeded",
         "rollingApproaching": "Minijob 12-month earnings limit approaching"
       },
+      "onCall": {
+        "shortNotice": "On-call: {days, plural, one {# full day} other {# full days}} notice, {required} required (§ 12 Abs. 3 TzBfG)",
+        "shortCall": "On-call: call of {duration} is below the minimum of {minimum}",
+        "shortWorkCall": "On-call: worked a call of {duration}, below the minimum call of {minimum}",
+        "nearBand": "On-call: week at {used}, approaching the call-off band's limit of {limit}",
+        "overBand": "On-call: week at {used}, above the call-off band of {limit}",
+        "underBand": "On-call: week at {used}, below the call-off band of {limit}"
+      },
       "workingStudent": {
         "lectureWeek": "Working student >20 h in lecture week: {hours} h of weekday daytime work (limit {limit} h)",
         "ceiling": "Working student: {used} of {limit} weeks above 20 h in 12 months"

@@ -13,7 +13,7 @@ import type {
 import { statutoryScheduleContributors } from "./contributors";
 import { statutoryFindingChangeKey } from "./finding-key";
 
-type Reader = Pick<DatabaseClient, "select">;
+type Reader = Pick<DatabaseClient, "select" | "query">;
 
 export interface StatutoryScheduleRequest {
 	readonly organizationId: string;

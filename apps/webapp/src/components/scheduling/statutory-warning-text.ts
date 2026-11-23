@@ -2,6 +2,7 @@ import type { useTranslate } from "@tolgee/react";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import type { StatutoryDomain } from "@/lib/statutory/threshold-catalog";
 import { minijobWarningText } from "./minijob-warning-text";
+import { onCallWarningText } from "./on-call-warning-text";
 import { workingStudentWarningText } from "./working-student-warning-text";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -38,7 +39,8 @@ export function statutoryDomainLabel(domain: StatutoryDomain, t: Translate): str
 export function statutoryWarningText(finding: StatutoryComplianceFinding, t: Translate): string {
 	const specific =
 		minijobWarningText(finding, t) ?? // #1989
-		workingStudentWarningText(finding, t); // #1991
+		workingStudentWarningText(finding, t) ?? // #1991
+		onCallWarningText(finding, t); // #1992
 	if (specific) return specific;
 	const area = statutoryDomainLabel(finding.domain, t);
 	if (finding.summary.usedPercent !== undefined) {
