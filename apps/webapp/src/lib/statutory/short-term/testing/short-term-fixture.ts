@@ -9,7 +9,10 @@ import type { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { commitContractChange } from "@/lib/contracts/commit-contract-change";
-import { createInitialEmploymentAgreement } from "@/lib/contracts/fixed-term-agreements";
+import {
+	createInitialEmploymentAgreement,
+	recordFixedTermExtension,
+} from "@/lib/contracts/fixed-term-agreements";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import type { FixtureEmployee, FixtureOrganization, FixtureUser } from "@/test/statutory-fixtures";
 
@@ -97,6 +100,28 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 				startsOn,
 				endsOn,
 				reason: "Seasonal work",
+			});
+		},
+
+		/**
+		 * The next link of the employment period's agreement chain: fixed-term from `startsOn` to
+		 * `endsOn` (both inclusive), as an extension in Settings → Contracts records it.
+		 */
+		async fixedTermExtension(
+			employee: FixtureEmployee,
+			startsOn: string,
+			endsOn: string,
+		): Promise<void> {
+			const { userId } = await creator();
+			await recordFixedTermExtension(db, {
+				organizationId: employee.organizationId,
+				employeeId: employee.employeeId,
+				actorUserId: userId,
+				kind: "fixed_term",
+				startsOn,
+				endsOn,
+				reason: "Seasonal work",
+				departureSyncAction: "leave_unchanged",
 			});
 		},
 

@@ -15,6 +15,10 @@ import {
 } from "../acknowledgements";
 import type { StatutoryFinding } from "../finding";
 import { evaluateShortTermEmployment } from "./evaluate";
+import {
+	acknowledgeShortTermBerufsmaessigkeit,
+	listShortTermBerufsmaessigkeitReviews,
+} from "./monitor";
 import { shortTermFixture } from "./testing/short-term-fixture";
 
 describe("short-term employment evaluator (PostgreSQL)", () => {
@@ -420,6 +424,42 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 
 				expect(thisYear?.allowance).toMatchObject({ limitKind: "work_days", used: 5 });
 				expect(nextYear?.allowance).toMatchObject({ limitKind: "work_days", used: 5 });
+			});
+
+			it("judges only the short-term fixed term after a long fixed-term regular one", async () => {
+				const org = await fx.organization("a");
+				const longServing = await fx.employee(org, "long", { contractType: "hourly" });
+				const seasonal = await fx.employee(org, "seasonal", { contractType: "hourly" });
+				const policy = await st.weekdayPolicy(org);
+				// Three years of fixed-term regular work, then a short-term fixed term in the same
+				// employment period.
+				await st.terms(longServing, { from: "2023-06-01", profile: "regular" });
+				await st.fixedTermAgreement(longServing, "2023-06-01", "2026-05-31");
+				await workOn(org, longServing, ["2024-03-04", "2025-11-03", "2026-05-29"]);
+				await st.terms(longServing, { from: "2026-06-01", workPolicyId: policy });
+				await st.fixedTermExtension(longServing, "2026-06-01", "2026-08-15");
+				await workOn(org, longServing, ["2026-06-01", "2026-06-05"]);
+				// Evaluated together with someone whose short-term fixed term crosses the year end.
+				await st.terms(seasonal, { from: "2026-11-01", workPolicyId: policy });
+				await st.fixedTermAgreement(seasonal, "2026-11-01", "2027-01-15");
+				await workOn(org, seasonal, ["2026-11-02", "2026-11-06"]);
+
+				const evaluations = await evaluate(org, [longServing.employeeId, seasonal.employeeId]);
+				const byEmployee = new Map(evaluations.map((e) => [e.employeeId, e.allowance]));
+
+				// 1 June – 15 August: 76 of the 92 days from 1 June; regular days never count.
+				expect(byEmployee.get(longServing.employeeId)).toMatchObject({
+					limitKind: "months",
+					used: 76,
+					limit: 92,
+					firstDay: "2026-06-01",
+				});
+				// 1 November – 15 January: 76 of the 92 days from 1 November.
+				expect(byEmployee.get(seasonal.employeeId)).toMatchObject({
+					limitKind: "months",
+					used: 76,
+					limit: 92,
+				});
 			});
 
 			it("still resets on January 1 between separate employments", async () => {
@@ -1071,6 +1111,98 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 
 				expect(after?.adminDetail?.amountsCents?.total).toBe(72_000);
 				expect(attached?.acknowledgement?.status).toBe("current");
+			});
+		});
+
+		describe("work on New Year's Eve for a shift on 1 January", () => {
+			const JANUARY_NOW = Temporal.Instant.from("2027-01-20T12:00:00Z");
+
+			/** Eight 4-hour January days at 20 EUR: 640 EUR against the 633 EUR cap of 2027. */
+			async function januaryEarner() {
+				const org = await fx.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				await st.terms(worker, { from: "2026-12-01", hourlyRate: 20 });
+				for (let day = 4; day <= 11; day++) {
+					await st.work(org, worker, `2027-01-${String(day).padStart(2, "0")}`);
+				}
+				return { org, worker };
+			}
+
+			function januaryPrompt(evaluations: Awaited<ReturnType<typeof evaluate>>) {
+				const finding = evaluations
+					.flatMap((e) => e.findings)
+					.find(
+						(f) => f.kind === "short_term_berufsmaessigkeit_check" && f.subjectKey === "2027-01",
+					);
+				return {
+					amounts: finding?.adminDetail?.amountsCents,
+					fingerprint: finding?.inputFingerprint,
+				};
+			}
+
+			it("gives January the same figures whether or not the previous year is evaluated", async () => {
+				const { org, worker } = await januaryEarner();
+				await st.shift(org, worker, "2026-12-31", "18:00", "00:00");
+				await st.shift(org, worker, "2027-01-01", "00:00", "06:00");
+				await st.work(org, worker, "2026-12-31", "18:00", "06:00");
+
+				const alone = januaryPrompt(
+					await evaluate(org, [worker.employeeId], { years: [2027], now: JANUARY_NOW }),
+				);
+				const withPrevious = januaryPrompt(
+					await evaluate(org, [worker.employeeId], { years: [2026, 2027], now: JANUARY_NOW }),
+				);
+
+				// 640 EUR + the 6 hours after midnight at 20 EUR.
+				expect(alone.amounts).toMatchObject({ earned: 76_000, total: 76_000 });
+				expect(alone.fingerprint).toEqual(expect.any(String));
+				expect(withPrevious).toEqual(alone);
+			});
+
+			it("keeps a clock-in 3 hours before a midnight shift on 1 January in January", async () => {
+				const { org, worker } = await januaryEarner();
+				await st.shift(org, worker, "2027-01-01", "00:00", "06:00");
+				await st.work(org, worker, "2026-12-31", "21:00", "06:00");
+
+				const [evaluation] = await evaluate(org, [worker.employeeId], {
+					years: [2027],
+					now: JANUARY_NOW,
+				});
+
+				// 640 EUR + 21:00–06:00 at 20 EUR, all on the shift's day.
+				expect(januaryPrompt([evaluation].filter((e) => e !== undefined)).amounts).toMatchObject({
+					earned: 82_000,
+				});
+				expect(evaluation?.allowance).toMatchObject({ firstDay: "2027-01-01" });
+			});
+
+			it("acknowledges the prompt shown in Reviews & Conflicts", async () => {
+				const { org, worker } = await januaryEarner();
+				const owner = await fx.user("owner");
+				await st.shift(org, worker, "2026-12-31", "18:00", "00:00");
+				await st.shift(org, worker, "2027-01-01", "00:00", "06:00");
+				await st.work(org, worker, "2026-12-31", "18:00", "06:00");
+
+				const reviews = await listShortTermBerufsmaessigkeitReviews(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					now: JANUARY_NOW,
+				});
+				const shown = reviews.find((review) => review.month === "2027-01");
+				expect(shown).toBeDefined();
+
+				await expect(
+					acknowledgeShortTermBerufsmaessigkeit(db, {
+						organizationId: org.id,
+						actorUserId: owner.userId,
+						employeeId: worker.employeeId,
+						timezone: org.timezone,
+						month: "2027-01",
+						reason: "Student, no other employment this year",
+						expectedFingerprint: shown?.finding.inputFingerprint ?? "",
+						now: JANUARY_NOW,
+					}),
+				).resolves.toMatchObject({ inputFingerprint: shown?.finding.inputFingerprint });
 			});
 		});
 
