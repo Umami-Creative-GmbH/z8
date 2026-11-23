@@ -157,27 +157,58 @@ describe("Minijob month judgement (#1989)", () => {
 			expect(fingerprintOf([worked(["s1"], "2026-12-01", 610), ...planned(1)])).toBe(acknowledged);
 		});
 
-		it("goes stale on extra work although an earlier shift was missed", () => {
-			// The 1 December shift was never worked: the admin acknowledged the 700 € left.
-			const acknowledged = fingerprintOf(planned(1));
+		/** The acknowledgement state of `later` after the admin documented `acknowledged`. */
+		const statusAfter = (
+			acknowledged: MinijobMonthFacts["items"],
+			later: MinijobMonthFacts["items"],
+		) => {
+			const compute = (items: MinijobMonthFacts["items"]) =>
+				computeMinijobMonths("e1", [
+					{
+						month: "2026-12",
+						isMinijob: true,
+						...baseline,
+						items,
+						shifts,
+						externalOffsets: [],
+					},
+				])[0];
+			const [before, after] = [compute(acknowledged), compute(later)];
+			return minijobAcknowledgementStatus(after, {
+				status: after.fingerprint === before.fingerprint ? "current" : "stale",
+				acknowledgedTotalCents: before.totalCents,
+			});
+		};
 
+		it("goes stale on extra work although an earlier shift was missed", () => {
+			// The 1 December shift was never worked: the admin acknowledged the 700 € left. Then
 			// 18 h on the 10 h shift of 2 December: 780 €.
-			expect(fingerprintOf([worked(["s2"], "2026-12-02", 1080), ...planned(2)])).not.toBe(
-				acknowledged,
+			expect(statusAfter(planned(1), [worked(["s2"], "2026-12-02", 1080), ...planned(2)])).toBe(
+				"stale",
 			);
 		});
 
 		it("goes stale on an overrun after a short shift", () => {
-			const acknowledged = fingerprintOf([worked(["s1"], "2026-12-01", 300), ...planned(1)]);
-
 			// 1 December was cut to 5 h; 2 December ran 5 h over.
 			expect(
-				fingerprintOf([
-					worked(["s1"], "2026-12-01", 300),
-					worked(["s2"], "2026-12-02", 900),
-					...planned(2),
-				]),
-			).not.toBe(acknowledged);
+				statusAfter(
+					[worked(["s1"], "2026-12-01", 300), ...planned(1)],
+					[worked(["s1"], "2026-12-01", 300), worked(["s2"], "2026-12-02", 900), ...planned(2)],
+				),
+			).toBe("stale");
+		});
+
+		it("stays current when an early clock-in ends early and the shift is over", () => {
+			// Documented while a clock-in 30 min before the 1 December shift ran: projected to the
+			// shift's end, 10 h 30 min. The worker then left 30 min early: 10 h, as planned.
+			const running = [
+				worked(["s1"], "2026-12-01", 60),
+				{ source: "shift" as const, ...shifts[0], minutes: 570 },
+				...planned(1),
+			];
+			expect(statusAfter(running, [worked(["s1"], "2026-12-01", 600), ...planned(1)])).toBe(
+				"current",
+			);
 		});
 
 		it("can keep an acknowledgement current while the month crosses twice the cap", () => {

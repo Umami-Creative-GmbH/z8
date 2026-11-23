@@ -171,52 +171,14 @@ function byText<T>(key: (value: T) => string) {
 }
 
 /**
- * Minutes worked beyond the shifts, shift by shift: a missed or short shift is no slack for
- * extra work on another. Shifts of the month that one clock-in spans (back to back) are judged
- * together; the evaluator splits such a clock-in at the shift starts, so a part in another month
- * counts against that month's shifts.
- */
-function shiftOverrunMinutes(facts: MinijobMonthFacts): number {
-	const parent = new Map<string, string>();
-	const root = (id: string): string => {
-		let current = id;
-		for (let next = parent.get(current); next && next !== current; next = parent.get(current)) {
-			current = next;
-		}
-		return current;
-	};
-	for (const item of facts.items) {
-		const [first, ...rest] = item.shiftIds ?? [];
-		if (!first) continue;
-		for (const id of rest) {
-			const [a, b] = [root(first), root(id)];
-			if (a !== b) parent.set(b, a);
-		}
-	}
-	const worked = new Map<string, number>();
-	const add = (into: Map<string, number>, id: string, minutes: number) => {
-		const key = root(id);
-		into.set(key, (into.get(key) ?? 0) + minutes);
-	};
-	for (const item of facts.items) {
-		if (item.source === "shift") add(worked, item.id, item.minutes);
-		else if (item.source === "work" && item.shiftIds?.[0])
-			add(worked, item.shiftIds[0], item.minutes);
-	}
-	const planned = new Map<string, number>();
-	for (const shift of facts.shifts) add(planned, shift.id, shift.minutes);
-	let overrun = 0;
-	for (const [key, minutes] of worked) overrun += Math.max(0, minutes - (planned.get(key) ?? 0));
-	return overrun;
-}
-
-/**
  * What an acknowledgement of the month's earnings rests on, independent of how far the plan has
- * been worked: the shifts as planned, proposals, work outside any shift (in material steps), and
- * how far work for each shift runs beyond it in material steps. A shift worked as planned — before, during and
- * after the clock-in — leaves it unchanged; an added, removed or moved shift, unplanned work or
- * a material overrun of any shift changes it. Work short of a shift does not: the earnings only
- * fall.
+ * been worked: the shifts as planned, proposals, and work outside any shift (in material steps).
+ * A shift worked as planned — before, during and after the clock-in — leaves it unchanged; an
+ * added, removed or moved shift or unplanned work changes it. How far work for a shift runs over
+ * or short of it stays out: a running clock-in is projected to its shift's end, so an early
+ * clock-in followed by an early clock-out would change it although the earnings fell. A real
+ * overrun raises the month's total, which the documented total catches
+ * (`minijobAcknowledgementStatus`).
  */
 function plannedBasisOf(facts: MinijobMonthFacts) {
 	const unplanned = facts.items.filter(
@@ -238,7 +200,6 @@ function plannedBasisOf(facts: MinijobMonthFacts) {
 				: item.minutes,
 			item.hourlyRateCents,
 		]),
-		overrunSteps: Math.floor(shiftOverrunMinutes(facts) / MINIJOB_MATERIAL_OVERRUN_MINUTES),
 	};
 }
 
