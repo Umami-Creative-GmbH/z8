@@ -4,7 +4,8 @@
  * work policy; from the 18th birthday on, adult rules apply alone.
  *
  * The work judged is recorded work, open clock-ins and the planned shifts (draft and published)
- * not yet worked, plus Staffing's proposal (`youthIntervalsOf`). Each broken rule is its own
+ * not yet worked, plus Staffing's proposal (`youthIntervalsOf`), with an apprentice's school and
+ * exam time credited as working time (`school-credits.ts`). Each broken rule is its own
  * finding kind on the shift (or recorded work) it is attributed to; breaches on neighbouring days
  * that work on a judged day helps cause (rest before the next day, weekly totals later in the
  * week) are reported too, so a proposal sees everything it breaks. Night, Saturday, Sunday and
@@ -28,6 +29,7 @@ import {
 	loadYouthShifts,
 	loadYouthWork,
 } from "./youth-facts";
+import { loadYouthSchoolCredits } from "./school-credits";
 import { youthFindingsOf } from "./youth-findings";
 import { plannedYouthInterval, type YouthShiftRecord, youthIntervalsOf } from "./youth-intervals";
 
@@ -85,6 +87,11 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		employeeIds: minors,
 		...range,
 	});
+	const credits = await loadYouthSchoolCredits(context.db, {
+		organizationId: context.organizationId,
+		employeeIds: minors,
+		...range,
+	});
 	const shiftsOf = new Map<string, YouthShiftRecord[]>();
 	for (const shift of shifts) {
 		const own = shiftsOf.get(shift.employeeId);
@@ -127,6 +134,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 				report: "touching_judged_days",
 				limitsOn,
 				holidays: holidays.get(employeeId) ?? new Set(),
+				credits: credits.get(employeeId),
 				blockPublish: context.preferences.blockJarbschgShiftPublish,
 			}),
 		);

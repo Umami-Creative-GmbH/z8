@@ -22,6 +22,7 @@ import {
 	loadYouthShifts,
 	loadYouthWork,
 } from "./youth-facts";
+import { loadYouthSchoolCredits } from "./school-credits";
 import { youthFindingsOf } from "./youth-findings";
 import { completedYouthInterval, withPlannedShifts } from "./youth-intervals";
 
@@ -62,6 +63,7 @@ export async function recordJarbschgViolationsAfterClockOut(
 	const shifts = await loadYouthShifts(db, { ...scope, organizationTimezone, ...range });
 	const holidays = await loadHolidayDateKeys(db, { ...scope, ...range });
 	const limitsOn = await loadJarbschgLimits(db, range);
+	const credits = await loadYouthSchoolCredits(db, { ...scope, ...range });
 
 	const findings = await attachAcknowledgementStates(
 		db,
@@ -80,6 +82,7 @@ export async function recordJarbschgViolationsAfterClockOut(
 			judged: { start: day.toString(), endExclusive: day.add({ days: 1 }).toString() },
 			limitsOn,
 			holidays: holidays.get(input.employeeId) ?? new Set(),
+			credits: credits.get(input.employeeId),
 			blockPublish: false,
 		}),
 	);

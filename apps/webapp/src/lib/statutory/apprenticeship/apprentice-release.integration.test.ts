@@ -238,7 +238,11 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 
 		const examDay = await suggest("2027-03-17");
 		expect(statutoryWarnings(examDay, "Adult")).toEqual([["bbig_release_day_shift", "warning"]]);
-		expect(statutoryWarnings(examDay, "Minor")).toEqual([["bbig_release_day_shift", "critical"]]);
+		// The exam day counts 8 h of working time for an under-18 (§ 10 Abs. 2 JArbSchG).
+		expect(statutoryWarnings(examDay, "Minor")).toEqual([
+			["jarbschg_daily_max", "critical"],
+			["bbig_release_day_shift", "critical"],
+		]);
 		expect(statutoryWarnings(examDay, "Colleague")).toEqual([]);
 
 		// Tuesday is the week's full school day (> 5 lessons): an under-18 may not return to work
@@ -248,6 +252,7 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			["bbig_release_day_shift", "warning"],
 		]);
 		expect(statutoryWarnings(fullSchoolDay, "Minor")).toEqual([
+			["jarbschg_daily_max", "critical"],
 			["jarbschg_school_day_workplace_return", "critical"],
 		]);
 

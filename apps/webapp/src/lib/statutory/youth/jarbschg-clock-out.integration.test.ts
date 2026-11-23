@@ -19,6 +19,7 @@ import {
 	recordStatutoryAcknowledgement,
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
+import { recordApprenticeRelease } from "../employee-context";
 import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
 import { localInstant, youthSeed } from "./testing/youth-seed";
@@ -100,6 +101,34 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 			"jarbschg_night_work",
 			"jarbschg_uninterrupted",
 		]);
+	});
+
+	it("counts an apprentice's school time toward the daily maximum", async () => {
+		const learner = await fx.employee(org, "learner", { birthday: "2010-06-01" });
+		await seed.terms(learner, {
+			from: "2026-01-01",
+			createdBy: owner.userId,
+			employmentProfile: "apprentice",
+		});
+		// Tuesday: four lessons (3 h of school time), then 8 h of work with breaks.
+		await recordApprenticeRelease(db, {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+			releaseKind: "vocational_school_day",
+			startsOn: "2026-03-03",
+			endsOn: "2026-03-03",
+			lessonCount: 4,
+		});
+		await seed.work(org, learner, "2026-03-03", "10:00", 120);
+		await seed.work(org, learner, "2026-03-03", "12:30", 120);
+		await seed.work(org, learner, "2026-03-03", "15:00", 120);
+		await clockOut(learner, "2026-03-03", "17:30", 120);
+
+		const daily = (await seed.violations(learner)).find(
+			(row) => row.violation_type === "jarbschg_daily_max",
+		);
+		expect(JSON.parse(daily?.details ?? "{}")).toMatchObject({ actualMinutes: 660 });
 	});
 
 	it("switches to adult rules on the exact 18th birthday", async () => {

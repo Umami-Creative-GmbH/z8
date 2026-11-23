@@ -31,6 +31,7 @@ import {
 	recordStatutoryAcknowledgement,
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
+import { recordApprenticeRelease } from "../employee-context";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { STATUTORY_PUBLICATION_BLOCKED } from "../scheduling/publication-block";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
@@ -315,6 +316,54 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		expect(await shiftStatus(late)).toBe("draft");
 	});
 
+	async function apprentice(key: string) {
+		const who = await fx.employee(org, key, { birthday: "2011-01-01" });
+		await seed.terms(who, {
+			from: "2026-01-01",
+			createdBy: owner.userId,
+			employmentProfile: "apprentice",
+		});
+		return who;
+	}
+
+	const release = (
+		who: FixtureEmployee,
+		input: Omit<
+			Parameters<typeof recordApprenticeRelease>[1],
+			"organizationId" | "employeeId" | "actorUserId"
+		>,
+	) =>
+		recordApprenticeRelease(db, {
+			organizationId: org.id,
+			employeeId: who.employeeId,
+			actorUserId: owner.userId,
+			...input,
+		});
+
+	it("counts a full school day as an 8 h working day toward the week and the five-day week", async () => {
+		const learner = await apprentice("schoolday");
+		await release(learner, {
+			releaseKind: "vocational_school_day",
+			startsOn: "2027-03-02",
+			endsOn: "2027-03-02",
+			lessonCount: 6,
+		});
+		let saturday = "";
+		for (const date of ["2027-03-01", "2027-03-03", "2027-03-04", "2027-03-05", "2027-03-06"]) {
+			saturday = await shift(learner, date, "08:00", "17:00"); // 8 h of work each.
+		}
+
+		const { findings } = await evaluateWeek();
+		const onSaturday = findings.flatMap((finding) =>
+			finding.type === "statutory" && finding.subjectKey === `shift:${saturday}`
+				? [finding.statutoryKind]
+				: [],
+		);
+		expect(onSaturday).toEqual(
+			expect.arrayContaining(["jarbschg_weekly_max", "jarbschg_days_per_week"]),
+		);
+	});
+
 	describe("Staffing sees what a proposal breaks on neighbouring days", () => {
 		const staffingLayer = StaffingSuggestionServiceLive.pipe(
 			Layer.provide(
@@ -352,6 +401,19 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			await shift(minor, "2027-03-02", "06:00", "12:00");
 			expect(await youthWarnings(minor, "2027-03-01", "14:00", "20:00")).toContain(
 				"jarbschg_rest_period",
+			);
+		});
+
+		it("counts a block-release week as 40 h: an extra Saturday shift breaks the week", async () => {
+			const learner = await apprentice("blockweek");
+			await release(learner, {
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-01",
+				endsOn: "2027-03-05",
+				schoolMinutes: 1800,
+			});
+			expect(await youthWarnings(learner, "2027-03-06", "10:00", "12:00")).toContain(
+				"jarbschg_weekly_max",
 			);
 		});
 

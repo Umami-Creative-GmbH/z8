@@ -85,7 +85,8 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	for (const work of planned) {
 		const release = releaseOn.get(`${work.employeeId}:${work.date}`);
 		if (!release) continue;
-		// A partly credited school day leaves the rest of the day to work, for minors too.
+		// A partly credited school day leaves the rest of the day to work, for minors too; for them
+		// the youth rules count its school time toward the day's limit (`youth/school-credits.ts`).
 		if (release.credit !== "full_day") continue;
 		const minor = isMinorOn(birthdays.get(work.employeeId) ?? null, work.date);
 		const kind: ApprenticeReleaseFindingKind =

@@ -5,6 +5,7 @@ import {
 	evaluateJarbschg,
 	type JarbschgLimits,
 	plannedShiftWorkMinutes,
+	type YouthCreditedTime,
 	type YouthWorkInterval,
 } from "./jarbschg-rules";
 
@@ -68,12 +69,14 @@ function evaluate(
 		report?: "judged_days" | "touching_judged_days";
 		minorUntil?: string;
 		holidays?: string[];
+		credits?: YouthCreditedTime[];
 	} = {},
 ) {
 	const adultFrom = options.minorUntil ? parsePlainDate(options.minorUntil) : null;
 	return evaluateJarbschg({
 		timezone: ZONE,
 		intervals,
+		credits: options.credits,
 		judged: options.judged ?? { start: "2026-03-02", endExclusive: "2026-03-09" },
 		report: options.report,
 		isMinorOn: (day: PlainDate) =>
@@ -357,6 +360,48 @@ describe("evaluateJarbschg", () => {
 		expect(breaches.map((breach) => [breach.rule, breach.day])).toEqual([
 			["jarbschg_night_work", "2026-03-04"],
 		]);
+	});
+
+	describe("school and exam time counts as working time (§§ 9 Abs. 2, 10 Abs. 2)", () => {
+		const school = (date: string, minutes: number): YouthCreditedTime => ({
+			ref: `release:${date}`,
+			date,
+			minutes,
+		});
+
+		it("a full school day counts 8 h and a working day: five 8 h shifts break the week", () => {
+			const shifts = ["2026-03-02", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07"].map(
+				(day) => shift(day, "08:00", "17:00"),
+			);
+			const breaches = evaluate(shifts, { credits: [school("2026-03-03", 480)] });
+			expect(breaches.filter((breach) => breach.day === "2026-03-07").map((b) => b.rule)).toEqual(
+				expect.arrayContaining(["jarbschg_weekly_max", "jarbschg_days_per_week"]),
+			);
+			expect(breaches).toContainEqual(
+				expect.objectContaining({ rule: "jarbschg_weekly_max", actual: 2880, limit: 2400 }),
+			);
+		});
+
+		it("four lessons (3 h) and an 8 h shift on the same day break the daily maximum", () => {
+			const breaches = evaluate([shift("2026-03-03", "08:00", "17:00")], {
+				credits: [school("2026-03-03", 180)],
+			});
+			expect(breaches).toEqual([
+				expect.objectContaining({ rule: "jarbschg_daily_max", day: "2026-03-03", actual: 660 }),
+			]);
+		});
+
+		it("a block week counts 40 h: any extra shift breaks the week", () => {
+			const block = ["2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06"].map(
+				(day) => school(day, 480),
+			);
+			const breaches = evaluate([shift("2026-03-04", "17:00", "19:00")], { credits: block });
+			expect(rules(breaches)).toContain("jarbschg_weekly_max");
+		});
+
+		it("credited time alone is never a breach", () => {
+			expect(evaluate([], { credits: [school("2026-03-03", 480)] })).toEqual([]);
+		});
 	});
 
 	it("stops judging night and weekend work at midnight before the 18th birthday", () => {

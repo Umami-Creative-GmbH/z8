@@ -118,6 +118,8 @@ export function youthFindingsOf(input: {
 	readonly report?: JarbschgEvaluationInput["report"];
 	readonly limitsOn: (day: PlainDate) => JarbschgLimits | null;
 	readonly holidays: ReadonlySet<string>;
+	/** Apprentice school and exam time credited as working time. */
+	readonly credits?: JarbschgEvaluationInput["credits"];
 	readonly blockPublish: boolean;
 }): StatutoryFinding<JarbschgRule>[] {
 	const byRef = new Map(input.intervals.map((interval) => [interval.ref, interval]));
@@ -133,6 +135,7 @@ export function youthFindingsOf(input: {
 			isMinorOn: (day) => isMinorOn(input.birthday, day),
 			limitsOn: input.limitsOn,
 			holidays: input.holidays,
+			credits: input.credits,
 		});
 	const findingOf = (breach: JarbschgBreach) => {
 		const interval = byRef.get(breach.ref);

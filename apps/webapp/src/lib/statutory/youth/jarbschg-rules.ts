@@ -128,6 +128,20 @@ export interface JarbschgEvaluationInput {
 	readonly limitsOn: (day: PlainDate) => JarbschgLimits | null;
 	/** Local public holiday dates, `YYYY-MM-DD`. */
 	readonly holidays: ReadonlySet<string>;
+	/**
+	 * School and exam time credited as working time (§§ 9 Abs. 2, 10 Abs. 2 JArbSchG). It counts
+	 * toward the day and week and makes its day a working day; breaches are attributed to work.
+	 */
+	readonly credits?: readonly YouthCreditedTime[];
+}
+
+/** Working time credited on a local day without recorded or planned work. */
+export interface YouthCreditedTime {
+	/** What is credited, e.g. `release:<id>`. */
+	readonly ref: string;
+	/** Local day, `YYYY-MM-DD`. */
+	readonly date: string;
+	readonly minutes: number;
 }
 
 /**
@@ -292,17 +306,35 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 	};
 
 	const byDay = groupBy(located, (interval) => interval.dayKey);
+	/** Credited school and exam minutes per local day. */
+	const creditOn = new Map<string, number>();
+	for (const credit of input.credits ?? []) {
+		if (credit.minutes <= 0) continue;
+		creditOn.set(credit.date, (creditOn.get(credit.date) ?? 0) + credit.minutes);
+	}
 	const dayMinutes = (dayKey: string) =>
+		(creditOn.get(dayKey) ?? 0) +
 		(byDay.get(dayKey) ?? []).reduce((total, interval) => total + interval.workMinutes, 0);
 
 	for (const weekIntervals of groupBy(located, (interval) => interval.weekKey).values()) {
 		const monday = mondayOf(weekIntervals[0].day);
-		const weekTotal = weekIntervals.reduce((total, interval) => total + interval.workMinutes, 0);
-		const workedDays = [...new Set(weekIntervals.map((interval) => interval.dayKey))];
+		const weekDays = Array.from({ length: 7 }, (_, offset) =>
+			monday.add({ days: offset }).toString(),
+		);
+		// Credited days are working days (§ 15) whose time counts toward the day and week (§ 8).
+		const creditedDays = weekDays.filter((dayKey) => creditOn.has(dayKey));
+		const weekCredit = creditedDays.reduce(
+			(total, dayKey) => total + (creditOn.get(dayKey) ?? 0),
+			0,
+		);
+		const weekTotal =
+			weekCredit + weekIntervals.reduce((total, interval) => total + interval.workMinutes, 0);
+		const workDays = new Set(weekIntervals.map((interval) => interval.dayKey));
+		const workedDays = weekDays.filter((dayKey) => workDays.has(dayKey) || creditOn.has(dayKey));
 
 		// § 8 Abs. 1 / 2a: 8 h a day; 8.5 h only when other working days (Mon–Fri) of the week are
 		// shortened below 8 h so that the week stays within 40 h.
-		for (const dayKey of workedDays) {
+		for (const dayKey of workDays) {
 			const dayIntervals = byDay.get(dayKey) ?? [];
 			const limits = youthLimits(dayIntervals[0]);
 			if (!limits) continue;
@@ -316,7 +348,8 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 			if (total <= limit) continue;
 			// Within the 8.5 h allowance the verdict depends on the rest of the week.
 			const involves = total <= limits.maxDailyCompensatoryMinutes ? workedDays : [dayKey];
-			let running = 0;
+			// School time comes first: the work on top of it breaks the limit.
+			let running = creditOn.get(dayKey) ?? 0;
 			for (const interval of dayIntervals) {
 				running += interval.workMinutes;
 				if (running > limit) {
@@ -326,11 +359,12 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 		}
 
 		// § 8 Abs. 1: 40 h a week; every piece of work beyond the cap is attributed.
-		let running = 0;
-		const daysSoFar: string[] = [];
+		// Credited school time is fixed, so it counts first and the work on top of it breaks the cap.
+		let running = weekCredit;
+		const daysSoFar: string[] = [...creditedDays];
 		for (const interval of weekIntervals) {
 			running += interval.workMinutes;
-			if (daysSoFar[daysSoFar.length - 1] !== interval.dayKey) daysSoFar.push(interval.dayKey);
+			if (!daysSoFar.includes(interval.dayKey)) daysSoFar.push(interval.dayKey);
 			const limits = youthLimits(interval);
 			if (limits && running > limits.maxWeeklyMinutes) {
 				breach(
