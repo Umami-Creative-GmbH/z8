@@ -86,7 +86,8 @@ const { DatabaseService, makeDatabaseService } =
 	await import("@/lib/effect/services/database.service");
 type LifecycleDatabaseFixture =
 	import("@/lib/employee-lifecycle/testing/database.test.fixture").LifecycleDatabaseFixture;
-type SeededEmployee = import("@/lib/employee-lifecycle/testing/database.test.fixture").SeededEmployee;
+type SeededEmployee =
+	import("@/lib/employee-lifecycle/testing/database.test.fixture").SeededEmployee;
 
 const CONTRACTOR_DAYS = { from: "2026-03-01", to: "2026-03-31" } as const;
 const EMPLOYEE_DAYS = { from: "2026-04-01", to: "2026-04-30" } as const;
@@ -359,7 +360,9 @@ describe("an External Contractor hired as an employee, across every module (#200
 
 			expect(report.success).toBe(true);
 			if (!report.success) return;
-			const row = report.data.employeeBreakdown.find((entry) => entry.employeeId === kim.employeeId);
+			const row = report.data.employeeBreakdown.find(
+				(entry) => entry.employeeId === kim.employeeId,
+			);
 			// Revenue 14 h × 100.00; cost two days × 600.00.
 			expect(row?.billable).toMatchObject({
 				access: "full",
@@ -413,7 +416,11 @@ describe("an External Contractor hired as an employee, across every module (#200
 			});
 
 			expect(
-				rows.map((row) => [row.employeeId, row.startTime.toInstant().toString(), row.durationMinutes]),
+				rows.map((row) => [
+					row.employeeId,
+					row.startTime.toInstant().toString(),
+					row.durationMinutes,
+				]),
 			).toEqual([
 				[kim.employeeId, "2026-04-13T08:00:00Z", 600],
 				[kim.employeeId, "2026-04-14T08:00:00Z", 480],
@@ -449,11 +456,17 @@ describe("an External Contractor hired as an employee, across every module (#200
 		});
 
 		it("costs Billable Time margin at the explicit cost rate", async () => {
-			const report = await getProjectDetailedReport(websiteId, EMPLOYEE_DAYS.from, EMPLOYEE_DAYS.to);
+			const report = await getProjectDetailedReport(
+				websiteId,
+				EMPLOYEE_DAYS.from,
+				EMPLOYEE_DAYS.to,
+			);
 
 			expect(report.success).toBe(true);
 			if (!report.success) return;
-			const row = report.data.employeeBreakdown.find((entry) => entry.employeeId === kim.employeeId);
+			const row = report.data.employeeBreakdown.find(
+				(entry) => entry.employeeId === kim.employeeId,
+			);
 			// Revenue 18 h × 100.00; cost 18 h × 40.00.
 			expect(row?.billable).toMatchObject({
 				access: "full",
