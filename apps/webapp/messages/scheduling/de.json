@@ -75,7 +75,8 @@
       "open": "Offene Schicht",
       "publish": {
         "failed": "Veröffentlichung der Schichten fehlgeschlagen",
-        "published": "{count} Schicht(en) veröffentlicht"
+        "published": "{count} Schicht(en) veröffentlicht",
+        "statutoryBlocked": "Einige Schichten verstoßen gegen den Jugendarbeitsschutz (JArbSchG). Ändern Sie die Schichten oder bestätigen Sie eine gesetzliche Branchenausnahme, bevor Sie veröffentlichen."
       },
       "retry": "Erneut versuchen",
       "shiftList": "Schichtliste",
@@ -84,6 +85,7 @@
         "overlapDescription": "Diese Schicht überschneidet sich mit {count} anderen Schicht(en)",
         "overlapWarning": "Schicht mit Überschneidungswarnung gespeichert",
         "skillOverrideReasonRequired": "Dem Mitarbeiter fehlt an diesem Tag eine erforderliche Qualifikation. Öffnen Sie die Schicht, um einen Grund anzugeben.",
+        "statutoryBlocked": "Diese Änderung einer veröffentlichten Schicht verstößt gegen den Jugendarbeitsschutz (JArbSchG). Ändern Sie die Schicht oder bestätigen Sie zuerst eine gesetzliche Branchenausnahme.",
         "updated": "Schicht aktualisiert"
       },
       "supportFailed": "Vorlagen oder Compliance-Informationen konnten nicht aktualisiert werden. Vor dem Veröffentlichen erneut prüfen.",

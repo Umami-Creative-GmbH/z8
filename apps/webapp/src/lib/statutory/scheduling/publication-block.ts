@@ -28,3 +28,7 @@ export function statutoryPublicationRefusal(findings: readonly ComplianceFinding
 	const employees = new Set(blocking.map((finding) => finding.employeeId)).size;
 	return `Cannot publish: ${blocking.length} shift finding(s) for ${employees} employee(s) break youth protection limits (JArbSchG). Change the shifts or acknowledge a statutory sector exception before publishing.`;
 }
+
+/** The refusal message of a published shift's edit that the publish block refuses. */
+export const STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE =
+	"Cannot save: this change to a published shift breaks youth protection limits (JArbSchG). Change the shift or acknowledge a statutory sector exception first.";

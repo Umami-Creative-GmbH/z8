@@ -75,7 +75,8 @@
       "open": "Open Shift",
       "publish": {
         "failed": "Failed to publish shifts",
-        "published": "Published {count} shift(s)"
+        "published": "Published {count} shift(s)",
+        "statutoryBlocked": "Some shifts break youth protection limits (JArbSchG). Change the shifts or acknowledge a statutory sector exception before publishing."
       },
       "retry": "Retry",
       "shiftList": "Shift list",
@@ -84,6 +85,7 @@
         "overlapDescription": "This shift overlaps with {count} other shift(s)",
         "overlapWarning": "Shift saved with overlap warning",
         "skillOverrideReasonRequired": "The employee lacks a required skill on this day. Open the shift to give a reason.",
+        "statutoryBlocked": "This change to a published shift breaks youth protection limits (JArbSchG). Change the shift or acknowledge a statutory sector exception first.",
         "updated": "Shift updated"
       },
       "supportFailed": "Templates or compliance information could not be refreshed. Check again before publishing.",

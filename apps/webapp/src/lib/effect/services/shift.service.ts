@@ -10,7 +10,7 @@ import {
 } from "@/db/schema";
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	type DatabaseError,
@@ -28,6 +28,14 @@ import {
 	skillOverrideReasonRequiredError,
 } from "@/lib/scheduling/skill-override";
 import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
+import {
+	STATUTORY_PUBLICATION_BLOCKED,
+	STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+} from "@/lib/statutory/scheduling/publication-block";
+import {
+	guardPublishedShiftEdit,
+	PublishedShiftEditBlocked,
+} from "@/lib/statutory/scheduling/published-shift-edit";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -553,25 +561,39 @@ export const ShiftServiceLive = Layer.effect(
 							}
 
 							const [saved] = existing
-								? await tx
-										.update(shift)
-										.set({
+								? // A published shift stays published: its edit passes the publish block (#1993).
+									await guardPublishedShiftEdit(
+										tx,
+										{
+											organizationId: input.organizationId,
+											timezone: input.timezone,
+											shiftId: existing.id,
+											published: existing.status === "published",
 											employeeId,
-											templateId,
-											subareaId: input.subareaId,
-											date: input.date,
-											startTime: input.startTime,
-											endTime: input.endTime,
-											notes: input.notes,
-											color: input.color,
-										})
-										.where(
-											and(
-												eq(shift.id, existing.id),
-												eq(shift.organizationId, input.organizationId),
-											),
-										)
-										.returning()
+											date: plainDateAt(instantFromDate(input.date), input.timezone),
+											now: systemClock.nowInstant(),
+										},
+										() =>
+											tx
+												.update(shift)
+												.set({
+													employeeId,
+													templateId,
+													subareaId: input.subareaId,
+													date: input.date,
+													startTime: input.startTime,
+													endTime: input.endTime,
+													notes: input.notes,
+													color: input.color,
+												})
+												.where(
+													and(
+														eq(shift.id, existing.id),
+														eq(shift.organizationId, input.organizationId),
+													),
+												)
+												.returning(),
+									)
 								: await tx
 										.insert(shift)
 										.values({
@@ -602,6 +624,13 @@ export const ShiftServiceLive = Layer.effect(
 							}
 
 							return { kind: "saved", shift: saved, skillWarning } as const;
+						})
+						.catch((error: unknown) => {
+							// The publish block refused the edit; the transaction rolled back.
+							if (error instanceof PublishedShiftEditBlocked) {
+								return { kind: "statutory_blocked" } as const;
+							}
+							throw error;
 						}),
 					);
 
@@ -617,6 +646,15 @@ export const ShiftServiceLive = Layer.effect(
 					if (outcome.kind === "reason_required") {
 						return yield* Effect.fail(
 							skillOverrideReasonRequiredError(outcome.decision.missingSkillIds),
+						);
+					}
+					if (outcome.kind === "statutory_blocked") {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+								field: "shift",
+								refusal: STATUTORY_PUBLICATION_BLOCKED,
+							}),
 						);
 					}
 					if (outcome.kind === "former_employee") {

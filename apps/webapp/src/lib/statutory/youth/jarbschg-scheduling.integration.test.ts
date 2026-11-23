@@ -32,6 +32,7 @@ import {
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
+import { STATUTORY_PUBLICATION_BLOCKED } from "../scheduling/publication-block";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
 import { localInstant, youthSeed } from "./testing/youth-seed";
 
@@ -60,7 +61,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	);
 });
 
-const { publishShifts } = await import("@/app/[locale]/(app)/scheduling/actions/shift-actions");
+const { publishShifts, upsertShift } =
+	await import("@/app/[locale]/(app)/scheduling/actions/shift-actions");
 
 const WEEK = { startDate: "2027-03-01", endDateExclusive: "2027-03-08" };
 
@@ -209,6 +211,97 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		await shift(minor, "2027-03-02", "07:00", "18:00");
 		await acknowledgeSectorExceptions(minor);
 		expect(await publishShifts(WEEK)).toMatchObject({ success: false, code: "ValidationError" });
+	});
+
+	describe("editing a published shift runs the publish block", () => {
+		const published = (who: FixtureEmployee, date: string, startTime: string, endTime: string) =>
+			seed.shift(org, who, {
+				subareaId,
+				creatorUserId: owner.userId,
+				date,
+				startTime,
+				endTime,
+				status: "published",
+			});
+		const shiftRow = async (id: string) =>
+			(
+				await admin.query<{ employee_id: string; start_time: string; notes: string | null }>(
+					"select employee_id, start_time, notes from shift where id = $1",
+					[id],
+				)
+			).rows[0];
+
+		it("refuses moving a published shift to Saturday night for a minor", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "moved", { birthday: "2011-01-01" });
+			const id = await published(minor, "2027-03-02", "10:00", "14:00");
+
+			const refused = await upsertShift({
+				id,
+				employeeId: minor.employeeId,
+				subareaId,
+				date: "2027-03-06",
+				startTime: "21:00",
+				endTime: "01:00",
+			});
+			expect(refused).toMatchObject({
+				success: false,
+				code: "ValidationError",
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect((await shiftRow(id))?.start_time).toBe("10:00");
+		});
+
+		it("refuses reassigning a published shift to a 16-year-old it puts in breach", async () => {
+			await seed.blockJarbschgPublish(org);
+			const adult = await fx.employee(org, "adult", { birthday: "1990-01-01" });
+			const minor = await fx.employee(org, "sixteen", { birthday: "2010-06-01" });
+			const id = await published(adult, "2027-03-02", "07:00", "18:00");
+
+			expect(
+				await upsertShift({
+					id,
+					employeeId: minor.employeeId,
+					subareaId,
+					date: "2027-03-02",
+					startTime: "07:00",
+					endTime: "18:00",
+				}),
+			).toMatchObject({ success: false, refusal: STATUTORY_PUBLICATION_BLOCKED });
+			expect((await shiftRow(id))?.employee_id).toBe(adult.employeeId);
+		});
+
+		it("saves a published shift whose sector exception is current, and drafts as before", async () => {
+			await seed.blockJarbschgPublish(org);
+			const minor = await fx.employee(org, "weekend", { birthday: "2011-01-01" });
+			const saturday = await published(minor, "2027-03-06", "10:00", "14:00");
+			await acknowledgeSectorExceptions(minor);
+
+			expect(
+				await upsertShift({
+					id: saturday,
+					employeeId: minor.employeeId,
+					subareaId,
+					date: "2027-03-06",
+					startTime: "10:00",
+					endTime: "14:00",
+					notes: "Inventory",
+				}),
+			).toMatchObject({ success: true });
+			expect((await shiftRow(saturday))?.notes).toBe("Inventory");
+
+			const draft = await shift(minor, "2027-03-02", "10:00", "14:00");
+			expect(
+				await upsertShift({
+					id: draft,
+					employeeId: minor.employeeId,
+					subareaId,
+					date: "2027-03-07",
+					startTime: "21:00",
+					endTime: "01:00",
+				}),
+			).toMatchObject({ success: true });
+		});
 	});
 
 	it("only asks for acknowledgement when the organization does not block youth findings", async () => {
