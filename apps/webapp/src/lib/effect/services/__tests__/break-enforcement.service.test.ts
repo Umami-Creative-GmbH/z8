@@ -70,9 +70,7 @@ const mockDb = {
 	query: {
 		workPeriod: {
 			findFirst: vi.fn(() => Promise.resolve(mockQueryResults.workPeriod)),
-			findMany: vi.fn(() =>
-				Promise.resolve(mockQueryResults.workPeriods || []),
-			),
+			findMany: vi.fn(() => Promise.resolve(mockQueryResults.workPeriods || [])),
 		},
 		employee: {
 			findFirst: vi.fn(() => Promise.resolve(mockQueryResults.employee)),
@@ -82,18 +80,14 @@ const mockDb = {
 		from: vi.fn(() => ({
 			where: vi.fn(() => ({
 				orderBy: vi.fn(() => ({
-					limit: vi.fn(() =>
-						Promise.resolve(mockQueryResults.previousEntry || []),
-					),
+					limit: vi.fn(() => Promise.resolve(mockQueryResults.previousEntry || [])),
 				})),
 			})),
 		})),
 	})),
 	insert: vi.fn(() => ({
 		values: vi.fn(() => ({
-			returning: vi.fn(() =>
-				Promise.resolve([{ id: "new-entry-123", hash: "hash-123" }]),
-			),
+			returning: vi.fn(() => Promise.resolve([{ id: "new-entry-123", hash: "hash-123" }])),
 		})),
 	})),
 	update: vi.fn(() => ({
@@ -121,6 +115,7 @@ vi.mock("@/db/schema", () => ({
 		startTime: "start_time",
 	},
 	employee: { id: "employee", organizationId: "organization_id" },
+	employeeEmploymentHistory: {},
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -158,7 +153,7 @@ vi.mock("@/lib/time-tracking/timezone-utils", () => ({
 
 // Mock work policy service
 const mockWorkPolicyService = {
-	getEffectivePolicyAt: vi.fn(),
+	getAdultArbzgPolicyAt: vi.fn(),
 	checkCompliance: vi.fn(),
 	calculateBreakRequirements: vi.fn(),
 	logViolation: vi.fn(),
@@ -170,18 +165,14 @@ describe("Break Enforcement Service", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockQueryResults = {};
-		mockWorkPolicyService.getEffectivePolicyAt.mockReset();
+		mockWorkPolicyService.getAdultArbzgPolicyAt.mockReset();
 	});
 
 	describe("calculateBreakDeficit", () => {
 		test("should return zero deficit when no regulation exists", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(null),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(null));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -199,7 +190,7 @@ describe("Break Enforcement Service", () => {
 			expect(result.deficit).toBe(0);
 			expect(result.applicableRule).toBeNull();
 			expect(result.regulationId).toBeNull();
-			expect(mockWorkPolicyService.getEffectivePolicyAt).toHaveBeenCalledWith({
+			expect(mockWorkPolicyService.getAdultArbzgPolicyAt).toHaveBeenCalledWith({
 				employeeId: "emp-123",
 				organizationId: "org-123",
 				at: workEnd,
@@ -207,13 +198,9 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should return zero deficit when work duration is below threshold", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(mockPolicy),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(mockPolicy));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -234,13 +221,9 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should calculate correct deficit for 6+ hour shift with no breaks", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(mockPolicy),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(mockPolicy));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -263,13 +246,9 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should calculate correct deficit for 9+ hour shift", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(mockPolicy),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(mockPolicy));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			// Note: condition is > (strictly greater), so 541 minutes triggers 540 rule
 			const result = await Effect.runPromise(
@@ -293,13 +272,9 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should subtract breaks already taken from deficit", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(mockPolicy),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(mockPolicy));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			// Note: condition is > (strictly greater), so 541 minutes triggers 540 rule
 			const result = await Effect.runPromise(
@@ -319,13 +294,9 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should return zero deficit when sufficient breaks already taken", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(mockPolicy),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(mockPolicy));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -344,13 +315,9 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should include maxUninterruptedMinutes in result", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(mockPolicy),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(mockPolicy));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -382,13 +349,11 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: 360, // 6 hours
 			};
 
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(
 				Effect.succeed({ ...mockPolicy, regulation }),
 			);
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			// Using 541 to trigger the 540-minute rule (needs to be > threshold)
 			const result = await Effect.runPromise(
@@ -415,13 +380,11 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: 480, // 8 hours - higher than threshold
 			};
 
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(
 				Effect.succeed({ ...mockPolicy, regulation }),
 			);
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -465,13 +428,11 @@ describe("Break Enforcement Service", () => {
 				],
 			};
 
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(
 				Effect.succeed({ ...mockPolicy, regulation: multiRuleRegulation }),
 			);
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			// Test 7 hour shift - should apply 6 hour rule
 			const result1 = await Effect.runPromise(
@@ -527,13 +488,11 @@ describe("Break Enforcement Service", () => {
 				breakRules: [],
 			};
 
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(
 				Effect.succeed({ ...mockPolicy, regulation: noBreakRulesRegulation }),
 			);
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -558,16 +517,14 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: null,
 			};
 
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(
 				Effect.succeed({
 					...mockPolicy,
 					regulation: noMaxUninterruptedRegulation,
 				}),
 			);
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			// Using 541 to trigger the 540-minute rule (needs to be > threshold)
 			const result = await Effect.runPromise(
@@ -588,13 +545,9 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should handle zero session duration", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(mockPolicy),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(mockPolicy));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -613,13 +566,9 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should handle very long shifts (16+ hours)", async () => {
-			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
-				Effect.succeed(mockPolicy),
-			);
+			mockWorkPolicyService.getAdultArbzgPolicyAt.mockReturnValue(Effect.succeed(mockPolicy));
 
-			const { calculateBreakDeficitForTesting } = await import(
-				"../break-enforcement.service"
-			);
+			const { calculateBreakDeficitForTesting } = await import("../break-enforcement.service");
 
 			const result = await Effect.runPromise(
 				calculateBreakDeficitForTesting(
@@ -669,12 +618,10 @@ describe("break enforcement failures", () => {
 		const { DatabaseError } = await import("@/lib/effect/errors");
 		const { DatabaseServiceLive } = await import("../database.service");
 		const { WorkPolicyService } = await import("../work-policy.service");
-		const { BreakEnforcementService, BreakEnforcementServiceLive } = await import(
-			"../break-enforcement.service"
-		);
-		const { runAutomaticBreakAdjustment } = await import(
-			"@/lib/time-tracking/automatic-break-adjustment"
-		);
+		const { BreakEnforcementService, BreakEnforcementServiceLive } =
+			await import("../break-enforcement.service");
+		const { runAutomaticBreakAdjustment } =
+			await import("@/lib/time-tracking/automatic-break-adjustment");
 		const cause = new Error('relation "work_period" violates constraint wp_private_check');
 		vi.mocked(runAutomaticBreakAdjustment).mockRejectedValueOnce(cause);
 
@@ -708,37 +655,30 @@ describe("break enforcement failures", () => {
 
 describe("Break Enforcement Result Types", () => {
 	test("targets only the original period when no split was inserted", async () => {
-		const breakEnforcementModule = (await import(
-			"../break-enforcement.service"
-		)) as Record<string, unknown>;
-		const resolveAffectedWorkPeriodIds =
-			breakEnforcementModule.resolveAffectedWorkPeriodIds as
-				| ((
-						originalWorkPeriodId: string,
-						insertedWorkPeriodId?: string,
-				  ) => string[])
-				| undefined;
+		const breakEnforcementModule = (await import("../break-enforcement.service")) as Record<
+			string,
+			unknown
+		>;
+		const resolveAffectedWorkPeriodIds = breakEnforcementModule.resolveAffectedWorkPeriodIds as
+			| ((originalWorkPeriodId: string, insertedWorkPeriodId?: string) => string[])
+			| undefined;
 
-		expect(resolveAffectedWorkPeriodIds?.("period-original")).toEqual([
-			"period-original",
-		]);
+		expect(resolveAffectedWorkPeriodIds?.("period-original")).toEqual(["period-original"]);
 	});
 
 	test("targets the original and inserted periods after a split", async () => {
-		const breakEnforcementModule = (await import(
-			"../break-enforcement.service"
-		)) as Record<string, unknown>;
-		const resolveAffectedWorkPeriodIds =
-			breakEnforcementModule.resolveAffectedWorkPeriodIds as
-				| ((
-						originalWorkPeriodId: string,
-						insertedWorkPeriodId?: string,
-				  ) => string[])
-				| undefined;
+		const breakEnforcementModule = (await import("../break-enforcement.service")) as Record<
+			string,
+			unknown
+		>;
+		const resolveAffectedWorkPeriodIds = breakEnforcementModule.resolveAffectedWorkPeriodIds as
+			| ((originalWorkPeriodId: string, insertedWorkPeriodId?: string) => string[])
+			| undefined;
 
-		expect(
-			resolveAffectedWorkPeriodIds?.("period-original", "period-inserted"),
-		).toEqual(["period-original", "period-inserted"]);
+		expect(resolveAffectedWorkPeriodIds?.("period-original", "period-inserted")).toEqual([
+			"period-original",
+			"period-inserted",
+		]);
 	});
 
 	test("maps the adjustment owner's outcomes to the adapter result (#305)", async () => {
