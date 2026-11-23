@@ -1,8 +1,39 @@
-export type SelfServiceRequestSourceType = "time_correction" | "absence" | "travel_expense";
+export type SelfServiceRequestSourceType =
+	| "time_correction"
+	| "absence"
+	| "travel_expense"
+	| "travel_expense_report"
+	| "compliance_exception";
 
-export type SelfServiceRequestStatus = "pending" | "approved" | "rejected" | "cancelled";
+/**
+ * `returned`: an expense report a reviewer sent back for changes, waiting for the employee.
+ * `expired`: a compliance exception whose 24-hour validity window passed undecided.
+ */
+export type SelfServiceRequestStatus =
+	| "pending"
+	| "returned"
+	| "approved"
+	| "rejected"
+	| "expired"
+	| "cancelled";
 
 export type SelfServiceRequestAction = "view" | "fix" | "cancel";
+
+export type ComplianceExceptionKind =
+	| "rest_period"
+	| "overtime_daily"
+	| "overtime_weekly"
+	| "overtime_monthly";
+
+/** What a compliance exception asked for; its window is shown in the organization's time zone. */
+export interface ComplianceExceptionRequestDetails {
+	kind: "compliance_exception";
+	exceptionType: ComplianceExceptionKind;
+	plannedDurationMinutes: number | null;
+	validFrom: Date;
+	validUntil: Date;
+	timeZone: string;
+}
 
 export interface SelfServiceRequestItem {
 	id: string;
@@ -18,6 +49,7 @@ export interface SelfServiceRequestItem {
 	decisionReason: string | null;
 	availableActions: SelfServiceRequestAction[];
 	sourceHref: string;
+	details?: ComplianceExceptionRequestDetails;
 }
 
 export interface SelfServiceRequestCounts {

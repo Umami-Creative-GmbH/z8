@@ -2,13 +2,17 @@
 
 import {
 	IconAlertTriangle,
+	IconArrowBackUp,
 	IconBan,
 	IconCalendarEvent,
 	IconCheck,
 	IconClock,
 	IconClockEdit,
+	IconFileDescription,
+	IconHourglassEmpty,
 	IconReceipt,
 	IconSearch,
+	IconShieldCheck,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -45,7 +49,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
+import { needsFix } from "@/lib/self-service-requests/needs-fix";
 import type {
+	ComplianceExceptionKind,
+	ComplianceExceptionRequestDetails,
 	SelfServiceRequestCounts,
 	SelfServiceRequestItem,
 	SelfServiceRequestResult,
@@ -68,7 +75,11 @@ interface MyRequestsClientProps {
 
 type StatusFilter = SelfServiceRequestStatus | "all";
 type SourceTypeFilter = SelfServiceRequestSourceType | "all";
-type Translate = (key: string, fallback: string) => string;
+type Translate = (
+	key: string,
+	fallback: string,
+	params?: Record<string, string | number>,
+) => string;
 
 const sourceTypeLabelKeys: Record<SelfServiceRequestSourceType, { key: string; fallback: string }> =
 	{
@@ -80,23 +91,82 @@ const sourceTypeLabelKeys: Record<SelfServiceRequestSourceType, { key: string; f
 			key: "myRequests:myRequests.types.timeCorrection",
 			fallback: "Time correction",
 		},
+		travel_expense_report: {
+			key: "myRequests:myRequests.types.expenseReport",
+			fallback: "Expense report",
+		},
 		travel_expense: {
-			key: "myRequests:myRequests.types.travelExpense",
-			fallback: "Travel expense",
+			key: "myRequests:myRequests.types.earlierExpenseClaim",
+			fallback: "Earlier expense claim",
+		},
+		compliance_exception: {
+			key: "myRequests:myRequests.types.complianceException",
+			fallback: "Compliance exception",
 		},
 	};
+
+/** The type filter's options, in the order they are offered. */
+const SOURCE_TYPE_OPTIONS: SelfServiceRequestSourceType[] = [
+	"absence",
+	"time_correction",
+	"travel_expense_report",
+	"travel_expense",
+	"compliance_exception",
+];
+
+/** The status filter's options, in the order they are offered. */
+const STATUS_OPTIONS: SelfServiceRequestStatus[] = [
+	"pending",
+	"returned",
+	"approved",
+	"rejected",
+	"expired",
+	"cancelled",
+];
 
 type TablerIcon = typeof IconClock;
 
 const sourceTypeIcons: Record<SelfServiceRequestSourceType, TablerIcon> = {
 	absence: IconCalendarEvent,
 	time_correction: IconClockEdit,
+	travel_expense_report: IconFileDescription,
 	travel_expense: IconReceipt,
+	compliance_exception: IconShieldCheck,
+};
+
+const complianceExceptionTitleKeys: Record<
+	ComplianceExceptionKind,
+	{ key: string; fallback: string }
+> = {
+	rest_period: {
+		key: "myRequests:myRequests.requests.complianceException.restPeriod",
+		fallback: "Rest period exception",
+	},
+	overtime_daily: {
+		key: "myRequests:myRequests.requests.complianceException.overtimeDaily",
+		fallback: "Daily overtime exception",
+	},
+	overtime_weekly: {
+		key: "myRequests:myRequests.requests.complianceException.overtimeWeekly",
+		fallback: "Weekly overtime exception",
+	},
+	overtime_monthly: {
+		key: "myRequests:myRequests.requests.complianceException.overtimeMonthly",
+		fallback: "Monthly overtime exception",
+	},
 };
 
 /** Pending requests are called "In review" everywhere on this page: summary, filter, badge, section. */
 const statusLabelKeys: Record<SelfServiceRequestStatus, { key: string; fallback: string }> = {
 	pending: { key: "myRequests:myRequests.status.inReview", fallback: "In review" },
+	returned: {
+		key: "myRequests:myRequests.status.returned",
+		fallback: "Returned",
+	},
+	expired: {
+		key: "myRequests:myRequests.status.expired",
+		fallback: "Expired",
+	},
 	approved: {
 		key: "myRequests:myRequests.status.approved",
 		fallback: "Approved",
@@ -114,6 +184,7 @@ const statusLabelKeys: Record<SelfServiceRequestStatus, { key: string; fallback:
 const RECENT_DECISION_HOURS = 30 * 24;
 const travelExpenseAmountFormatters = new Map<string, Intl.NumberFormat>();
 const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 
 const selectClassName =
 	"h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
@@ -150,6 +221,23 @@ function getDateFormatter(locale: string) {
 	return formatter;
 }
 
+/** Medium dates with short times in an explicit zone: a compliance exception's validity window. */
+function getDateTimeFormatter(locale: string, timeZone: string) {
+	const formatterKey = `${locale}:${timeZone}`;
+	const cachedFormatter = dateTimeFormatters.get(formatterKey);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat(locale, {
+		dateStyle: "medium",
+		timeStyle: "short",
+		timeZone,
+	});
+	dateTimeFormatters.set(formatterKey, formatter);
+	return formatter;
+}
+
 function sourceTypeLabel(sourceType: SelfServiceRequestSourceType, t: Translate) {
 	return t(sourceTypeLabelKeys[sourceType].key, sourceTypeLabelKeys[sourceType].fallback);
 }
@@ -173,6 +261,20 @@ function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Transla
 		);
 	}
 
+	if (sourceType === "travel_expense_report") {
+		return t(
+			"myRequests:myRequests.sourceError.expenseReport",
+			"Expense reports could not be loaded.",
+		);
+	}
+
+	if (sourceType === "compliance_exception") {
+		return t(
+			"myRequests:myRequests.sourceError.complianceException",
+			"Compliance exceptions could not be loaded.",
+		);
+	}
+
 	return t("myRequests:myRequests.sourceError.absence", "Absence requests could not be loaded.");
 }
 
@@ -183,6 +285,16 @@ function requestTitle(item: SelfServiceRequestItem, t: Translate) {
 
 	if (item.sourceType === "travel_expense") {
 		return t("myRequests:myRequests.requests.travelExpense.title", "Travel expense claim");
+	}
+
+	if (item.sourceType === "travel_expense_report") {
+		return t("myRequests:myRequests.requests.expenseReport.title", "Travel expense report");
+	}
+
+	if (item.details?.kind === "compliance_exception") {
+		const label = complianceExceptionTitleKeys[item.details.exceptionType];
+		if (label) return t(label.key, label.fallback);
+		return t("myRequests:myRequests.requests.complianceException.title", "Compliance exception");
 	}
 
 	if (item.title === "absence") {
@@ -209,7 +321,76 @@ function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Transl
 		return formatTravelExpenseSubtitle(item.subtitle, locale);
 	}
 
+	if (item.sourceType === "travel_expense_report") {
+		return formatExpenseReportSubtitle(item.subtitle, locale, t);
+	}
+
+	if (item.details?.kind === "compliance_exception") {
+		return formatComplianceExceptionSubtitle(item.details, locale, t);
+	}
+
 	return item.subtitle;
+}
+
+/** A report's "purpose · YYYY-MM-DD to YYYY-MM-DD", its trip dates formatted as one locale range. */
+function formatExpenseReportSubtitle(value: string, locale: string, t: Translate) {
+	if (value.trim() === "") {
+		return t("myRequests:myRequests.requests.expenseReport.standalone", "Expenses without a trip");
+	}
+
+	return value
+		.split(" · ")
+		.map((part) => formatStoredDateRange(part, locale) ?? part)
+		.join(" · ");
+}
+
+function formatPlannedDuration(minutes: number, t: Translate) {
+	const hours = Math.floor(minutes / 60);
+	const rest = minutes % 60;
+	if (hours > 0 && rest > 0) {
+		return t(
+			"myRequests:myRequests.requests.complianceException.durationHoursMinutes",
+			"{hours} h {minutes} min",
+			{ hours, minutes: rest },
+		);
+	}
+
+	if (hours > 0) {
+		return t("myRequests:myRequests.requests.complianceException.durationHours", "{hours} h", {
+			hours,
+		});
+	}
+
+	return t("myRequests:myRequests.requests.complianceException.durationMinutes", "{minutes} min", {
+		minutes: rest,
+	});
+}
+
+/** The planned duration and the 24-hour validity window, read in the organization's time zone. */
+function formatComplianceExceptionSubtitle(
+	details: ComplianceExceptionRequestDetails,
+	locale: string,
+	t: Translate,
+) {
+	const window = getDateTimeFormatter(locale, details.timeZone).formatRange(
+		details.validFrom,
+		details.validUntil,
+	);
+	const validity = t(
+		"myRequests:myRequests.requests.complianceException.validity",
+		"Valid: {window} ({timeZone})",
+		{ window, timeZone: details.timeZone },
+	);
+	if (details.plannedDurationMinutes === null || details.plannedDurationMinutes <= 0) {
+		return validity;
+	}
+
+	const planned = t(
+		"myRequests:myRequests.requests.complianceException.planned",
+		"Planned: {duration}",
+		{ duration: formatPlannedDuration(details.plannedDurationMinutes, t) },
+	);
+	return `${planned} · ${validity}`;
 }
 
 function plainDateToUtcDate(value: string) {
@@ -257,11 +438,6 @@ function formatDate(date: Date, locale: string) {
 	return getDateFormatter(locale).format(date);
 }
 
-/** A rejection the employee can correct and resubmit: the summary's "Required fixes". */
-function needsFix(item: SelfServiceRequestItem) {
-	return item.status === "rejected" && item.availableActions.includes("fix");
-}
-
 function isRecentlyDecided(item: SelfServiceRequestItem, now: Date) {
 	if ((item.status !== "approved" && item.status !== "rejected") || item.resolvedAt === null) {
 		return false;
@@ -280,7 +456,8 @@ function isRecentlyDecided(item: SelfServiceRequestItem, now: Date) {
 
 /**
  * Each request appears once in the working sections (fix, review, recent decision) and once in the
- * history. A rejection that needs a fix is shown under "Needs attention", not again as a decision.
+ * history. A rejection that needs a fix is shown under "Needs attention", not again as a decision;
+ * so is a returned expense report. Expired compliance exceptions appear in the history only.
  */
 function groupRequestItems(items: SelfServiceRequestItem[], now: Date) {
 	return {
@@ -411,8 +588,8 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 			<PageHeader
 				title={t("myRequests:myRequests.title", "My Requests")}
 				scope={t(
-					"myRequests:myRequests.scope",
-					"Your absence, time-correction and legacy expense requests in the active organization",
+					"myRequests:myRequests.scopeAllRequests",
+					"Your absence, time-correction, compliance exception and expense requests in the active organization",
 				)}
 			/>
 
@@ -500,8 +677,8 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 							<RequestSection
 								title={t("myRequests:myRequests.needsAttention.title", "Needs attention")}
 								description={t(
-									"myRequests:myRequests.needsAttention.description",
-									"Rejected requests that may require a correction before resubmission.",
+									"myRequests:myRequests.needsAttention.fixDescription",
+									"Returned or rejected requests that need a correction before resubmission.",
 								)}
 								items={groupedItems.needsAttention}
 								preferFix
@@ -648,10 +825,11 @@ function RequestFilters({ filters }: { filters: ReturnType<typeof useMyRequestsF
 						<option value="all">
 							{t("myRequests:myRequests.filters.allStatuses", "All statuses")}
 						</option>
-						<option value="pending">{statusLabel("pending", t)}</option>
-						<option value="approved">{statusLabel("approved", t)}</option>
-						<option value="rejected">{statusLabel("rejected", t)}</option>
-						<option value="cancelled">{statusLabel("cancelled", t)}</option>
+						{STATUS_OPTIONS.map((status) => (
+							<option key={status} value={status}>
+								{statusLabel(status, t)}
+							</option>
+						))}
 					</select>
 				</label>
 				<label className="grid gap-1.5 font-medium text-sm">
@@ -664,9 +842,11 @@ function RequestFilters({ filters }: { filters: ReturnType<typeof useMyRequestsF
 						<option value="all">
 							{t("myRequests:myRequests.filters.allTypes", "All types")}
 						</option>
-						<option value="absence">{sourceTypeLabel("absence", t)}</option>
-						<option value="time_correction">{sourceTypeLabel("time_correction", t)}</option>
-						<option value="travel_expense">{sourceTypeLabel("travel_expense", t)}</option>
+						{SOURCE_TYPE_OPTIONS.map((sourceType) => (
+							<option key={sourceType} value={sourceType}>
+								{sourceTypeLabel(sourceType, t)}
+							</option>
+						))}
 					</select>
 				</label>
 				{isFiltered ? (
@@ -840,11 +1020,16 @@ function RequestCard({
 							<p
 								className={cn(
 									"mt-2 break-words rounded-md border-l-2 bg-muted/50 px-3 py-2 text-sm",
-									item.status === "rejected" ? "border-destructive" : "border-border",
+									item.status === "rejected" || item.status === "returned"
+										? "border-destructive"
+										: "border-border",
 								)}
 							>
 								<span className="font-medium">
-									{t("myRequests:myRequests.reasonLabel", "Reason")}:
+									{item.status === "returned"
+										? t("myRequests:myRequests.returnNoteLabel", "Reviewer's note")
+										: t("myRequests:myRequests.reasonLabel", "Reason")}
+									:
 								</span>{" "}
 								{item.decisionReason}
 							</p>
@@ -953,9 +1138,18 @@ const statusBadgeStyles: Record<SelfServiceRequestStatus, { className: string; I
 			"border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
 		Icon: IconCheck,
 	},
+	returned: {
+		className:
+			"border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200",
+		Icon: IconArrowBackUp,
+	},
 	rejected: {
 		className: "border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/20",
 		Icon: IconX,
+	},
+	expired: {
+		className: "text-muted-foreground",
+		Icon: IconHourglassEmpty,
 	},
 	cancelled: {
 		className: "text-muted-foreground",

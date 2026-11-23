@@ -87,6 +87,8 @@ describe("getWorkdayTimelineData", () => {
 			employeeId: "employee-1",
 			organizationId: "org-1",
 			filters: { status: "pending" },
+			// Expense reports and compliance exceptions are not tied to a working day (#1979).
+			sources: ["time_correction", "absence", "travel_expense"],
 		});
 	});
 
