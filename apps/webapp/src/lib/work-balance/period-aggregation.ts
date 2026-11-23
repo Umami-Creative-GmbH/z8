@@ -1,9 +1,14 @@
 import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { collectTrustBasedBalanceDates } from "@/lib/calendar/trust-based-dates";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import type { EngagementStints } from "@/lib/engagement/employee-time";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
+import { allocateEmployeeMinutes } from "@/lib/payroll-allocation/employee-minutes";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import type { WorkBalanceDbClient } from "./db-client";
 import { getYearPeriodForDate } from "./periods";
@@ -113,6 +118,19 @@ export async function computeEmployeePeriodBalance(input: {
 	// preserving prior accrued balance across tracked <-> trust_based transitions.
 	const trustBasedDates = collectTrustBasedBalanceDates(requirements);
 
+	// Only employee time is actual time (#1935), cut at the conversion instant as payroll cuts
+	// it (`allocateEmployeeMinutes`): an External Contractor's work never enters the balance,
+	// and on a conversion day the employee part of the day still does. So only trust-based
+	// employee days drop out whole; a contractor day has no requirement and its contractor work
+	// is no employee time. Required time stays the resolver's: a day follows the stint in force
+	// at its end (`resolveEmploymentPeriodForDay`), so a contractor -> employee day requires the
+	// employee's day, an employee -> contractor day nothing.
+	const employeeTime = await loadEmployeeTime(dbClient, input.organizationId, [input.employeeId]);
+	const stints = employeeTime.stintsOf(input.employeeId);
+	const employeeDayExclusions = new Set(
+		[...trustBasedDates].filter((date) => employeeTime.isEmployeeDay(input.employeeId, date)),
+	);
+
 	let actualMinutes: number;
 	if (tracking) {
 		const windowInput = {
@@ -122,9 +140,53 @@ export async function computeEmployeePeriodBalance(input: {
 			timezone,
 		};
 		actualMinutes =
-			trustBasedDates.size > 0
-				? await sumTrackedWorkMinutesExcludingDates(dbClient, windowInput, trustBasedDates)
-				: await sumTrackedWorkMinutes(dbClient, windowInput);
+			employeeDayExclusions.size > 0
+				? await sumTrackedWorkMinutesExcludingDates(
+						dbClient,
+						windowInput,
+						employeeDayExclusions,
+						stints,
+					)
+				: await sumTrackedWorkMinutes(dbClient, windowInput, stints);
+	} else if (hasContractorStint(stints)) {
+		// Without tracking, work counts whole on its start day, as below; only its employee time.
+		const rows = await dbClient
+			.select({
+				startTime: workPeriod.startTime,
+				endTime: workPeriod.endTime,
+				durationMinutes: workPeriod.durationMinutes,
+			})
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.employeeId, input.employeeId),
+					eq(workPeriod.organizationId, input.organizationId),
+					isNotNull(workPeriod.endTime),
+					isNotNull(workPeriod.durationMinutes),
+					gte(workPeriod.startTime, startDate),
+					lte(workPeriod.startTime, endDate),
+				),
+			);
+		actualMinutes = rows.reduce((total, row) => {
+			const dayKey = DateTime.fromJSDate(row.startTime, { zone: "utc" })
+				.setZone(timezone)
+				.toISODate();
+			if (!row.endTime || (dayKey && employeeDayExclusions.has(dayKey))) return total;
+			const startAt = instantFromDate(row.startTime);
+			const endAt = instantFromDate(row.endTime);
+			if (Temporal.Instant.compare(endAt, startAt) <= 0) return total;
+			const allocation = allocateEmployeeMinutes(
+				{ startAt, endAt, storedMinutes: row.durationMinutes },
+				{ start: startAt, endExclusive: endAt },
+				stints,
+			);
+			if (allocation.status === "blocked") {
+				throw new Error(
+					"Recorded work crossing an engagement change needs interval reconciliation.",
+				);
+			}
+			return allocation.status === "allocated" ? total + allocation.minutes : total;
+		}, 0);
 	} else if (trustBasedDates.size > 0) {
 		const rows = await dbClient
 			.select({
@@ -184,6 +246,13 @@ export async function computeEmployeePeriodBalance(input: {
 		computedAt: input.now ?? new Date(),
 		isClosed: input.isClosed,
 	});
+}
+
+/** Whether any of the person's time was an External Contractor's (a stint, or the kind today). */
+function hasContractorStint(stints: EngagementStints): boolean {
+	return stints.periods.length > 0
+		? stints.periods.some((period) => period.engagementKind === "contractor")
+		: stints.employeeEngagementKind === "contractor";
 }
 
 export async function upsertEmployeeWorkBalancePeriod(

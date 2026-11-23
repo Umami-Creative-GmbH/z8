@@ -7,6 +7,8 @@ import {
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import type { EngagementStints } from "@/lib/engagement/employee-time";
+import { allocateEmployeeMinutes } from "@/lib/payroll-allocation/employee-minutes";
 import {
 	allocateProtectedMinutes,
 	employeePayrollWindow,
@@ -15,7 +17,11 @@ import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import type { WorkBalanceDbClient } from "./db-client";
 
-/** Use the payroll interval allocation rule; keep the original work and captures intact. */
+/**
+ * Use the payroll interval allocation rule; keep the original work and captures intact.
+ * With `stints`, only the employee's employee time is counted (`allocateEmployeeMinutes`,
+ * #1935): External Contractor time never enters the work balance, also on a conversion day.
+ */
 export async function sumTrackedWorkMinutes(
 	client: Pick<WorkBalanceDbClient, "select">,
 	input: {
@@ -25,16 +31,18 @@ export async function sumTrackedWorkMinutes(
 		throughDate: string;
 		timezone: string;
 	},
+	stints?: EngagementStints,
 ): Promise<number> {
 	if (input.startDate > input.throughDate) return 0;
 	const window = employeePayrollWindow(input.startDate, input.throughDate, input.timezone);
 	const periods = await loadTrackedWorkPeriods(client, input, window);
-	return allocateTrackedWorkMinutes(periods, window);
+	return allocateTrackedWorkMinutes(periods, window, stints);
 }
 
 /**
  * Sums tracked work minutes across `[startDate, throughDate]` while excluding any calendar
  * date in `excludedDates` (such as `trust_based` balance days, which emit exact 0 delta).
+ * With `stints`, only employee time is counted, as in `sumTrackedWorkMinutes`.
  */
 export async function sumTrackedWorkMinutesExcludingDates(
 	client: Pick<WorkBalanceDbClient, "select">,
@@ -46,12 +54,13 @@ export async function sumTrackedWorkMinutesExcludingDates(
 		timezone: string;
 	},
 	excludedDates: ReadonlySet<string>,
+	stints?: EngagementStints,
 ): Promise<number> {
 	if (input.startDate > input.throughDate) return 0;
-	if (excludedDates.size === 0) return sumTrackedWorkMinutes(client, input);
+	if (excludedDates.size === 0) return sumTrackedWorkMinutes(client, input, stints);
 	const window = employeePayrollWindow(input.startDate, input.throughDate, input.timezone);
 	const periods = await loadTrackedWorkPeriods(client, input, window);
-	const { minutesByDate } = allocateTrackedDailyWorkMinutes(periods, input);
+	const { minutesByDate } = allocateTrackedDailyWorkMinutes(periods, input, stints);
 	let total = 0;
 	for (const [dateKey, minutes] of Object.entries(minutesByDate)) {
 		if (!excludedDates.has(dateKey)) {
@@ -116,6 +125,7 @@ export async function readTrackedDailyWorkMinutes(
 export function allocateTrackedDailyWorkMinutes(
 	periods: readonly TrackedWorkPeriod[],
 	input: { startDate: string; throughDate: string; timezone: string },
+	stints?: EngagementStints,
 ): { timezone: string; minutesByDate: Record<string, number> } {
 	const { startDate, throughDate, timezone } = input;
 	const minutesByDate: Record<string, number> = {};
@@ -139,7 +149,7 @@ export function allocateTrackedDailyWorkMinutes(
 			continue;
 		if (compareInstants(end, start) < 0) {
 			// Retain the allocator's reconciliation failure for invalid history.
-			allocateTrackedWorkMinutes([period], window);
+			allocateTrackedWorkMinutes([period], window, stints);
 			continue;
 		}
 		const periodStartDate = plainDateAt(start, timezone).toString();
@@ -154,7 +164,7 @@ export function allocateTrackedDailyWorkMinutes(
 			day = day.add({ days: 1 })
 		) {
 			const date = day.toString();
-			minutesByDate[date] += allocateTrackedWorkMinutes([period], dayWindows[date]);
+			minutesByDate[date] += allocateTrackedWorkMinutes([period], dayWindows[date], stints);
 		}
 	}
 	return { timezone: timezone, minutesByDate };
@@ -195,18 +205,19 @@ function loadTrackedWorkPeriods(
 export function allocateTrackedWorkMinutes(
 	periods: readonly TrackedWorkPeriod[],
 	window: TrackingWindow,
+	stints?: EngagementStints,
 ): number {
 	let total = 0;
 	for (const period of periods) {
 		if (!period.endTime) continue;
-		const allocation = allocateProtectedMinutes(
-			{
-				startAt: instantFromDate(period.startTime),
-				endAt: instantFromDate(period.endTime),
-				storedMinutes: period.durationMinutes,
-			},
-			window,
-		);
+		const segment = {
+			startAt: instantFromDate(period.startTime),
+			endAt: instantFromDate(period.endTime),
+			storedMinutes: period.durationMinutes,
+		};
+		const allocation = stints
+			? allocateEmployeeMinutes(segment, window, stints)
+			: allocateProtectedMinutes(segment, window);
 		if (allocation.status === "blocked")
 			throw new Error(
 				"Recorded work crossing the tracking boundary needs interval reconciliation.",
