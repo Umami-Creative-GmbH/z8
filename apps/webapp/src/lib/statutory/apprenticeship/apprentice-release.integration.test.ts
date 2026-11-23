@@ -26,7 +26,10 @@ import {
 import { recordApprenticeRelease } from "../employee-context";
 import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
 import { apprenticeReleaseScheduleContributor } from "./release-conflict-contributor";
-import { recordApprenticeReleaseWithCredit } from "./release-credit-view";
+import {
+	recordApprenticeReleaseWithCredit,
+	voidApprenticeReleaseWithCredit,
+} from "./release-credit-view";
 import { jarbschgScheduleContributor } from "../youth/jarbschg-contributor";
 import { loadYouthSchoolCredits } from "../youth/school-credits";
 import { localInstant, youthSeed } from "../youth/testing/youth-seed";
@@ -391,6 +394,87 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		expect(await activeReleases(learner)).toEqual([
 			{ release_kind: "pre_exam_day", starts_on: "2027-03-02", school_minutes: null },
 			{ release_kind: "exam_day", starts_on: "2027-03-03", school_minutes: 240 },
+			{ release_kind: "exam_day", starts_on: "2027-03-04", school_minutes: 240 },
+		]);
+	});
+
+	it("voids an exam's pre-exam day with it and restores the school day it replaced", async () => {
+		const learner = await apprentice("voidexam", "2005-05-05");
+		const scope = {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+		};
+		await recordApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseKind: "vocational_school_day",
+			startsOn: "2027-03-03",
+			endsOn: "2027-03-03",
+			lessonCount: 4,
+			note: "Berufsschule",
+		});
+		await timedExam(learner, "2027-03-04");
+		const [exam] = (
+			await admin.query<{ id: string }>(
+				`select id from employee_apprentice_release
+				 where organization_id = $1 and employee_id = $2 and release_kind = 'exam_day'`,
+				[org.id, learner.employeeId],
+			)
+		).rows;
+
+		await voidApprenticeReleaseWithCredit(db, {
+			...scope,
+			releaseId: exam.id,
+			reason: "Exam moved to June",
+		});
+
+		const { rows } = await admin.query<{
+			release_kind: string;
+			starts_on: string;
+			lesson_count: number | null;
+			note: string | null;
+		}>(
+			`select release_kind, to_char(starts_on, 'YYYY-MM-DD') as starts_on, lesson_count, note
+			 from employee_apprentice_release
+			 where organization_id = $1 and employee_id = $2 and voided_at is null`,
+			[org.id, learner.employeeId],
+		);
+		expect(rows).toEqual([
+			{
+				release_kind: "vocational_school_day",
+				starts_on: "2027-03-03",
+				lesson_count: 4,
+				note: expect.stringMatching(/^Berufsschule\n.*restored.*2027-03-04/is),
+			},
+		]);
+		const required = await requirementsOf(learner);
+		expect(required["2027-03-03"]?.requiredMinutes).toBe(
+			(required["2027-03-01"]?.requiredMinutes ?? 0) - 4 * 45,
+		);
+	});
+
+	it("moves the pre-exam day of a multi-day exam when its first exam day is voided", async () => {
+		const learner = await apprentice("voidfirst", "2005-05-05");
+		await timedExam(learner, "2027-03-03");
+		await timedExam(learner, "2027-03-04");
+		const [wednesday] = (
+			await admin.query<{ id: string }>(
+				`select id from employee_apprentice_release
+				 where organization_id = $1 and employee_id = $2 and starts_on = '2027-03-03'`,
+				[org.id, learner.employeeId],
+			)
+		).rows;
+
+		await voidApprenticeReleaseWithCredit(db, {
+			organizationId: org.id,
+			employeeId: learner.employeeId,
+			actorUserId: owner.userId,
+			releaseId: wednesday.id,
+			reason: "Recorded on the wrong day",
+		});
+
+		expect(await activeReleases(learner)).toEqual([
+			{ release_kind: "pre_exam_day", starts_on: "2027-03-03", school_minutes: null },
 			{ release_kind: "exam_day", starts_on: "2027-03-04", school_minutes: 240 },
 		]);
 	});

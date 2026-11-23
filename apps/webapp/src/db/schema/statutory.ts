@@ -235,11 +235,25 @@ export const employeeApprenticeRelease = pgTable(
 		schoolMinutes: integer("school_minutes"),
 		/** When an exam starts (local wall time); with it, the exam day credits only its time. */
 		examStartTime: time("exam_start_time"),
+		/**
+		 * On a pre-exam day: the exam it was released for. On a release voided to make room for that
+		 * pre-exam day: the same exam. Voiding the exam voids the one and restores the other.
+		 */
+		examReleaseId: uuid("exam_release_id"),
 		note: text("note"),
 		...auditColumns,
 	},
 	(table) => [
 		...contextForeignKeys("employee_apprentice_release", table),
+		foreignKey({
+			name: "employee_apprentice_release_exam_release_fk",
+			columns: [table.examReleaseId],
+			foreignColumns: [table.id],
+		}),
+		check(
+			"employee_apprentice_release_exam_link_check",
+			sql`"exam_release_id" IS NULL OR "release_kind" <> 'exam_day'`,
+		),
 		check("employee_apprentice_release_kind_check", textIn("release_kind", apprenticeReleaseKinds)),
 		check("employee_apprentice_release_date_range_check", sql`"ends_on" >= "starts_on"`),
 		check(

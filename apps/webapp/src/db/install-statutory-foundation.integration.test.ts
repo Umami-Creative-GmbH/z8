@@ -80,4 +80,28 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 			});
 		}
 	});
+
+	it("declares in Drizzle every column the migrations add to statutory tables", async () => {
+		for (const table of [
+			organizationStatutoryPreference,
+			employeeStatutoryOffset,
+			employeeStudyPeriod,
+			employeeApprenticeRelease,
+		]) {
+			const config = getTableConfig(table);
+			const { rows } = await pool.query<{ column_name: string }>(
+				`SELECT column_name FROM information_schema.columns
+				 WHERE table_schema = 'public' AND table_name = $1
+				 ORDER BY column_name`,
+				[config.name],
+			);
+			expect({
+				table: config.name,
+				columns: config.columns.map((column) => column.name).sort(),
+			}).toEqual({ table: config.name, columns: rows.map((row) => row.column_name) });
+		}
+		expect(
+			getTableConfig(employeeApprenticeRelease).columns.map((column) => column.name),
+		).toContain("exam_release_id");
+	});
 });
