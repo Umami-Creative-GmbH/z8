@@ -1,3 +1,4 @@
+import { minijobScheduleContributor } from "../minijob/minijob-schedule-contributor";
 import type { StatutoryScheduleContributor } from "./contributor";
 
 /**
@@ -7,6 +8,7 @@ import type { StatutoryScheduleContributor } from "./contributor";
  */
 export const statutoryScheduleContributors: readonly StatutoryScheduleContributor[] = [
 	// #1989 Minijob
+	minijobScheduleContributor,
 	// #1990 Short-term employment
 	// #1991 Working student
 	// #1992 § 12 TzBfG on-call
