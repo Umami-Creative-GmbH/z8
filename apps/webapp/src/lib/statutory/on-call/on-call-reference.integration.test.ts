@@ -11,6 +11,7 @@ import * as schema from "@/db/schema";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { calculateOnCallReferencePeriod, listOnCallReferenceEvents } from "./reference-period";
+import { sickPayNoteOf } from "./sick-pay";
 import { onCallFixture } from "./testing/on-call-fixture";
 import { listOnCallPayrollReferenceRows, loadOnCallEmployeeStatus } from "./views";
 
@@ -400,6 +401,74 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			["sick_leave", "2026-03-10"],
 		]);
 		expect(march[0]?.paidSickDays).toMatchObject({ days: 2 });
+	});
+
+	it("tells payroll the claim is still to come when a follow-up certificate continues the illness past the period", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const colleague = await fx.employee(org, "colleague");
+		// Both hired 2026-03-09: the claim arises on 2026-04-06 (§ 3 Abs. 3 EFZG).
+		for (const employee of [worker, colleague]) {
+			const periodId = await onCall.employmentPeriod(org, employee, "2026-03-08T23:00:00Z");
+			await onCall.onCallTerms(org, employee, {
+				kind: "unspecified",
+				from: "2026-03-09",
+				employmentPeriodId: periodId,
+			});
+		}
+		// Sick 03-20 … 03-31, then a follow-up certificate 04-01 … 04-20: one illness, reaching the
+		// claim.
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-03-20",
+			endDate: "2026-03-31",
+		});
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-04-01",
+			endDate: "2026-04-20",
+		});
+		// The colleague's illness genuinely ends inside the first four weeks; a later one after a gap
+		// does not continue it.
+		await onCall.absence(org, colleague, {
+			type: "sick",
+			startDate: "2026-03-20",
+			endDate: "2026-03-31",
+		});
+		await onCall.absence(org, colleague, {
+			type: "sick",
+			startDate: "2026-04-02",
+			endDate: "2026-04-20",
+		});
+		const notes = async (startDate: string, endDate: string) =>
+			new Map(
+				(
+					await listOnCallPayrollReferenceRows(db, {
+						organizationId: org.id,
+						startDate,
+						endDate,
+						method: "three_months",
+					})
+				).flatMap((row) =>
+					row.kind === "sick_leave" && row.paidSickDays
+						? [[`${row.employeeId} ${row.eventDate}`, sickPayNoteOf(row.paidSickDays)] as const]
+						: [],
+				),
+			);
+
+		const march = await notes("2026-03-01", "2026-03-31");
+		expect(march.get(`${worker.employeeId} 2026-03-20`)).toEqual({
+			kind: "waiting",
+			claimArises: "2026-04-06",
+		});
+		expect(march.get(`${colleague.employeeId} 2026-03-20`)).toEqual({ kind: "not_owed" });
+
+		const april = await notes("2026-04-01", "2026-04-30");
+		expect(april.get(`${worker.employeeId} 2026-03-20`)).toEqual({
+			kind: "paid",
+			days: 15,
+			limitedTo: { from: "2026-04-06", lastDay: "2026-04-20" },
+		});
 	});
 
 	it("lists no holiday during parental or unpaid leave: no work is lost to it", async () => {

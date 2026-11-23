@@ -4,7 +4,7 @@
  * holiday reader. Shared by the weekly call-off band (a released day cannot be called) and the
  * § 12 Abs. 4–5 TzBfG reference period (released days leave its average). Read-only.
  */
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { absenceCategory, absenceEntry } from "@/db/schema";
 import {
 	getAssignedHolidayDateKeys,
@@ -30,7 +30,9 @@ export interface OnCallReleasedDays {
 	/** Release reason per released day (`YYYY-MM-DD`) of the range. */
 	readonly reasonByDay: ReadonlyMap<string, OnCallReleaseReason>;
 	/**
-	 * The employee's own approved sick leave touching the range, `endDate` inclusive (not clipped).
+	 * The employee's own approved sick leave touching the range, `endDate` inclusive (not clipped),
+	 * and the follow-up leave after the range that continues an illness running on its last day
+	 * (up to {@link FOLLOW_UP_LOOKAHEAD_DAYS} days on), so the illness's real end is known.
 	 * Child-sick days are not their illness and are not listed.
 	 */
 	readonly sickLeaves: readonly { readonly startDate: string; readonly endDate: string }[];
@@ -39,6 +41,47 @@ export interface OnCallReleasedDays {
 }
 
 const NONE: OnCallReleasedDays = { reasonByDay: new Map(), sickLeaves: [], holidays: new Set() };
+
+/**
+ * How far past the range follow-up sick leave is read. The § 3 Abs. 3 EFZG claim arises at most
+ * four weeks after an illness's first day, so an illness continued this far reaches it: whether it
+ * goes on longer does not change whether continued pay is owed, nor any day of the range.
+ */
+export const FOLLOW_UP_LOOKAHEAD_DAYS = 28;
+
+/** The employee's own illness, not a child's sickness (§ 45 SGB V). */
+function isOwnSickLeave(absence: {
+	readonly type: string;
+	readonly sickDetail: string | null;
+	readonly requiresWorkTime: boolean;
+}): boolean {
+	return (
+		absence.type === "sick" && !absence.requiresWorkTime && absence.sickDetail !== "child_sick"
+	);
+}
+
+/**
+ * The follow-up leave (`after` the range, in start order) that continues an illness reaching
+ * `last`: each starts on or before the day after the illness's end so far.
+ */
+function followUpsOf(
+	inRange: readonly { readonly endDate: string }[],
+	after: readonly { readonly startDate: string; readonly endDate: string }[],
+	last: string,
+): { startDate: string; endDate: string }[] {
+	let reach = inRange.reduce<string | null>(
+		(latest, leave) => (latest === null || leave.endDate > latest ? leave.endDate : latest),
+		null,
+	);
+	if (reach === null || reach < last) return [];
+	const followUps: { startDate: string; endDate: string }[] = [];
+	for (const leave of after.toSorted((a, b) => a.startDate.localeCompare(b.startDate))) {
+		if (leave.startDate > parsePlainDate(reach).add({ days: 1 }).toString()) break;
+		followUps.push({ startDate: leave.startDate, endDate: leave.endDate });
+		if (leave.endDate > reach) reach = leave.endDate;
+	}
+	return followUps;
+}
 
 /**
  * Released days of `employeeIds` in `[from, untilExclusive)`. A half-day absence releases the whole
@@ -59,6 +102,7 @@ export async function loadOnCallReleasedDays(
 	const until = input.untilExclusive.toString();
 	const last = input.untilExclusive.subtract({ days: 1 }).toString();
 	if (from > last) return result;
+	const lookaheadLast = input.untilExclusive.add({ days: FOLLOW_UP_LOOKAHEAD_DAYS - 1 }).toString();
 
 	const absences = await db
 		.select({
@@ -82,7 +126,11 @@ export async function loadOnCallReleasedDays(
 				eq(absenceEntry.organizationId, input.organizationId),
 				inArray(absenceEntry.employeeId, [...input.employeeIds]),
 				eq(absenceEntry.status, "approved"),
-				lte(absenceEntry.startDate, last),
+				// Sick leave also some way past the range: a follow-up may continue an illness.
+				or(
+					lte(absenceEntry.startDate, last),
+					and(eq(absenceCategory.type, "sick"), lte(absenceEntry.startDate, lookaheadLast)),
+				),
 				gte(absenceEntry.endDate, from),
 			),
 		);
@@ -117,7 +165,10 @@ export async function loadOnCallReleasedDays(
 		};
 		const sickLeaves: { startDate: string; endDate: string }[] = [];
 		const childSickDays: string[] = [];
-		for (const absence of absencesByEmployee.get(employeeId) ?? []) {
+		const own = absencesByEmployee.get(employeeId) ?? [];
+		for (const absence of own) {
+			// Leave after the range is read only for follow-ups, below.
+			if (absence.startDate > last) continue;
 			// Home office and other categories that require work are work, not absence.
 			if (absence.requiresWorkTime) continue;
 			// A child's sickness (§ 45 SGB V) releases the employee without pay: Kinderkrankengeld
@@ -133,6 +184,13 @@ export async function loadOnCallReleasedDays(
 			}
 			for (const day of daysOfAbsence(absence)) release(day, reason);
 		}
+		sickLeaves.push(
+			...followUpsOf(
+				sickLeaves,
+				own.filter((absence) => absence.startDate > last && isOwnSickLeave(absence)),
+				last,
+			),
+		);
 		// Only where nothing else released the day: the employee's own illness or leave on the same
 		// day keeps its own reason (and pay).
 		for (const day of childSickDays) {
