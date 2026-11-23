@@ -361,8 +361,12 @@ export const WorkPolicyServiceLive = Layer.effect(
 				});
 			});
 
-		/** The employee's policy as of `at`; fails when the employee is not found. */
-		const effectivePolicyOf = (employeeId: string, organizationId: string | undefined, at: Date) =>
+		/** The employee's effective contract as of `at`; fails when the employee is not found. */
+		const effectiveContractOf = (
+			employeeId: string,
+			organizationId: string | undefined,
+			at: Date,
+		) =>
 			Effect.gen(function* () {
 				const emp = yield* findEmployeeForPolicy(
 					"getEmployeeForPolicy",
@@ -384,17 +388,24 @@ export const WorkPolicyServiceLive = Layer.effect(
 				return yield* dbService.query("resolveEffectivePolicyForEmployee", async () => {
 					const orgTimezone = await loadOrganizationTimezone(dbService.db, targetOrgId);
 					const day = plainDateAt(atInstant, orgTimezone);
-					const contract = await resolveEffectiveContractOnDay(dbService.db, {
+					return resolveEffectiveContractOnDay(dbService.db, {
 						organizationId: targetOrgId,
 						employeeId: emp.id,
 						date: day,
 						at: atInstant,
 					});
-					return contract?.workPolicy
-						? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
-						: null;
 				});
 			});
+
+		/** The employee's policy as of `at`; fails when the employee is not found. */
+		const effectivePolicyOf = (employeeId: string, organizationId: string | undefined, at: Date) =>
+			effectiveContractOf(employeeId, organizationId, at).pipe(
+				Effect.map((contract) =>
+					contract?.workPolicy
+						? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
+						: null,
+				),
+			);
 
 		return WorkPolicyService.of({
 			getEffectivePolicy: (employeeId, organizationId) =>
@@ -406,13 +417,18 @@ export const WorkPolicyServiceLive = Layer.effect(
 			checkCompliance: (input) =>
 				Effect.gen(function* () {
 					// An employee outside the organization fails rather than passing unchecked.
-					const policy = yield* effectivePolicyOf(
+					const contract = yield* effectiveContractOf(
 						input.employeeId,
 						input.organizationId,
 						dateFromInstant(input.policyAt),
 					);
+					const policy = contract?.workPolicy
+						? resolvedPolicyVersionToEffectiveWorkPolicy(contract.workPolicy)
+						: null;
 
-					if (!policy?.regulation) {
+					// Executive employees (§ 18 Abs. 1 Nr. 1 ArbZG) are outside adult working-time
+					// rules. JArbSchG youth limits are checked separately and still apply (#1993).
+					if (!policy?.regulation || contract?.arbzgScope === "executive_exempt") {
 						return {
 							isCompliant: true,
 							warnings: [],

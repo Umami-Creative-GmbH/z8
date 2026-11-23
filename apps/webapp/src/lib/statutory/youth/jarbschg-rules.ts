@@ -86,6 +86,12 @@ export interface YouthWorkInterval {
 	readonly workMinutes: number;
 	/** Recorded work; only recorded work is judged for breaks and uninterrupted stretches. */
 	readonly recorded: boolean;
+	/** For recorded work: the planned shift it belongs to, whose sector exception covers it. */
+	readonly plannedShift?: {
+		readonly ref: string;
+		readonly start: Instant;
+		readonly end: Instant;
+	};
 }
 
 export interface JarbschgBreach {

@@ -8,6 +8,9 @@ vi.mock("../compliance-totals", () => ({
 	},
 }));
 vi.mock("@/lib/logger", () => ({ createLogger: () => ({ error: vi.fn() }) }));
+vi.mock("@/lib/statutory/youth/clock-out", () => ({
+	recordJarbschgViolationsAfterClockOut: async () => [],
+}));
 it("propagates compliance failures for durable callers and preserves human best effort", async () => {
 	const input = {
 		organizationId: "org",

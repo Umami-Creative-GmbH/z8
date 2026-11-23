@@ -2311,6 +2311,13 @@
       "when": 1813161600000,
       "tag": "0329_statutory_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 334,
+      "version": "7",
+      "when": 1813593600000,
+      "tag": "0334_jarbschg_violation_types",
+      "breakpoints": true
     }
   ]
 }

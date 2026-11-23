@@ -21,6 +21,7 @@ import {
 	WorkPolicyService,
 } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
+import { recordJarbschgViolationsAfterClockOut } from "@/lib/statutory/youth/clock-out";
 import {
 	checkProjectBudgetWarnings,
 	getProjectTotalHours,
@@ -61,6 +62,7 @@ export async function checkComplianceAfterClockOut(
 	options: { throwOnError?: boolean } = {},
 ): Promise<ComplianceWarning[]> {
 	const { employeeId, organizationId, workPeriodId, work } = input;
+	let warnings: ComplianceWarning[] = [];
 	try {
 		const totals = await readComplianceTotals({
 			organizationId,
@@ -107,11 +109,34 @@ export async function checkComplianceAfterClockOut(
 			return result.warnings;
 		});
 
-		return await runtime.runPromise(complianceEffect);
+		warnings = await runtime.runPromise(complianceEffect);
 	} catch (error) {
 		if (options.throwOnError) throw error;
 		logger.error({ error }, "Failed to check compliance after clock-out");
-		return [];
+	}
+	await recordYouthProtectionViolations(input, options);
+	return warnings;
+}
+
+/**
+ * JArbSchG youth limits (#1993) apply to every employee under 18 on the work's day, whatever
+ * their work policy or ArbZG scope, so they are checked beside the policy rules.
+ */
+async function recordYouthProtectionViolations(
+	input: Parameters<typeof checkComplianceAfterClockOut>[0],
+	options: { throwOnError?: boolean },
+): Promise<void> {
+	try {
+		await recordJarbschgViolationsAfterClockOut(db, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			workPeriodId: input.workPeriodId,
+			workStart: input.work.start,
+			timezone: input.timezone,
+		});
+	} catch (error) {
+		if (options.throwOnError) throw error;
+		logger.error({ error }, "Failed to check youth protection after clock-out");
 	}
 }
 

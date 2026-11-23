@@ -1,3 +1,5 @@
+import { apprenticeReleaseScheduleContributor } from "../apprenticeship/release-conflict-contributor";
+import { jarbschgScheduleContributor } from "../youth/jarbschg-contributor";
 import type { StatutoryScheduleContributor } from "./contributor";
 
 /**
@@ -11,4 +13,6 @@ export const statutoryScheduleContributors: readonly StatutoryScheduleContributo
 	// #1991 Working student
 	// #1992 § 12 TzBfG on-call
 	// #1993 JArbSchG / BBiG
+	jarbschgScheduleContributor,
+	apprenticeReleaseScheduleContributor,
 ];
