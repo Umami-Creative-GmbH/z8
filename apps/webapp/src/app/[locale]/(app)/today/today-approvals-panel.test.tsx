@@ -602,6 +602,10 @@ describe("TodayApprovalsPanel", () => {
 			expect(document.activeElement).not.toBe(document.body);
 			expect(list.contains(document.activeElement)).toBe(true);
 		});
+		// When the list itself takes focus, it shows a visible focus ring (WCAG 2.4.7).
+		expect(screen.getByRole("list", { name: "Pending approvals" }).className).toContain(
+			"focus-visible:ring-2",
+		);
 	});
 
 	it("drops a refused rejection's error with its item, not into the card", async () => {

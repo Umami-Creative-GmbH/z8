@@ -277,7 +277,8 @@ export function TodayApprovalsPanel({
 						ref={listRef}
 						tabIndex={-1}
 						aria-label={t("today.approvals.pendingAriaLabel", "Pending approvals")}
-						className="space-y-3 outline-none"
+						// A focus target after a saved rejection: shows where focus went (WCAG 2.4.7).
+						className="space-y-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 					>
 						{shownItems.map((item) => (
 							<li
