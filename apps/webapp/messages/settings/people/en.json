@@ -409,6 +409,7 @@
         "clearSearch": "Clear search",
         "clockReview": "Needs review: offboarding clock-out",
         "confirmRehire": "Confirm rehire",
+        "contractorRehireHint": "An External Contractor gets no employment terms, work policy or vacation allowance. Contractor rates are set separately.",
         "correctTime": "Correct time",
         "currency": "Currency",
         "currencyInvalid": "Enter a three-letter currency code.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Access ended at {cutoff} ({timezone}).",
         "employmentGap": "Not employed {startDate} – {endDate}",
         "employmentStint": "Employment {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Employee"
+        },
+        "engagementKind": "Engagement",
         "errors": {
           "actorNotAuthorized": "Only organization owners and admins can manage employee departures.",
           "departureAlreadyEffective": "This departure has already taken effect. Rehire the employee to restore access.",

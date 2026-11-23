@@ -22,6 +22,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"appSearch",
 		"common",
 		"employeeSelect",
+		// The External Contractor badge and filter of the shared pickers and rosters (#1995).
+		"engagement",
 		"errors",
 		"formerEmployees",
 		"header",

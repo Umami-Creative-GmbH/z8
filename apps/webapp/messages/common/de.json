@@ -1018,6 +1018,15 @@
     "totalEmployees": "{count} Mitarbeiter",
     "tryDifferentSearch": "Versuchen Sie, Ihre Suche oder Filter anzupassen"
   },
+  "engagement": {
+    "externalContractor": "Externer Dienstleister",
+    "filter": {
+      "all": "Alle",
+      "contractors": "Externe Dienstleister",
+      "employees": "Mitarbeiter",
+      "label": "Beschäftigungsart"
+    }
+  },
   "errors": {
     "failedToLoad": "Daten konnten nicht geladen werden",
     "noEmployee": {

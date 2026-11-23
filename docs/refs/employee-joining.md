@@ -51,6 +51,22 @@ The role rule: a new employee takes the draft's role when there is a draft, othe
 or admin membership, otherwise employee. A reactivated employee takes the draft's values when there is a
 draft, otherwise admin for an owner or admin membership, otherwise keeps the old role.
 
+## External Contractors
+
+An invitation can bring in an **External Contractor** (#1995, spec #1935): the draft carries
+`engagement_kind = 'contractor'`, optional company, VAT ID and PO/cost-center reference, projects and
+a planned engagement end. Joining then creates the employee with that engagement kind and
+
+- writes no employment terms (the draft's contract type and wage are employee-only and ignored),
+- writes the contracting details to `employee_contractor_profile` and assigns the draft's projects
+  that belong to the organization (`applyContractorDraft`),
+- schedules the planned end as a canonical departure after commit, by the admin who prepared the
+  invitation, with the draft's id as the request id (best effort; a failure is logged).
+
+A reactivation never applies the draft's engagement kind: the open period's kind cannot change in
+place. Converting contractor ↔ employee is a departure followed by a rehire that names the new
+period's kind ([Employee Offboarding](employee-offboarding.md#rehire)).
+
 ## After-commit step
 
 `afterCommit.run()` runs once the caller's transaction committed:

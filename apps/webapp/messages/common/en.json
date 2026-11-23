@@ -1018,6 +1018,15 @@
     "totalEmployees": "{count} employees",
     "tryDifferentSearch": "Try adjusting your search or filters"
   },
+  "engagement": {
+    "externalContractor": "External Contractor",
+    "filter": {
+      "all": "All",
+      "contractors": "External Contractors",
+      "employees": "Employees",
+      "label": "Engagement"
+    }
+  },
   "errors": {
     "failedToLoad": "Failed to load data",
     "noEmployee": {
