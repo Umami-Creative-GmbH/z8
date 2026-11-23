@@ -10,6 +10,7 @@ import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/tempo
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { DrivingLicenceActor } from "./context";
 import { assertDrivingLicenceControlOn } from "./control-state";
+import { pruneDeclaredLicenceClasses } from "./declared-classes-store";
 import type {
 	DrivingLicenceEndingPreview,
 	IntendedDriverAdminData,
@@ -263,6 +264,8 @@ async function saveAssignmentChange(
 				actorUserId: actor.userId,
 				now,
 			});
+		// Declared classes exist only for intended drivers (#2003).
+		if (change) await pruneDeclaredLicenceClasses(tx, actor.organizationId);
 		return { assignmentId };
 	});
 }

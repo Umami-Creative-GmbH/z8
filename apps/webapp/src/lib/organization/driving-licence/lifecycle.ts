@@ -6,6 +6,7 @@ import {
 	drivingAuthorizationEvent,
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
+import { drivingLicenceDeclaredClasses } from "@/db/schema/driving-licence-declared-classes";
 import { drivingLicenceTask } from "@/db/schema/driving-licence-tasks";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import { AuditAction } from "@/lib/audit-logger";
@@ -207,6 +208,15 @@ export async function endDrivingLicenceEmployment(
 				eq(drivingLicenceTask.employeeId, identity.employeeId),
 				period(drivingLicenceTask.employmentPeriodId),
 				eq(drivingLicenceTask.state, "pending"),
+			),
+		);
+	// The employee's own statement of their classes goes with the employment (#2003).
+	await tx
+		.delete(drivingLicenceDeclaredClasses)
+		.where(
+			and(
+				eq(drivingLicenceDeclaredClasses.organizationId, identity.organizationId),
+				eq(drivingLicenceDeclaredClasses.employeeId, identity.employeeId),
 			),
 		);
 	await finishDrivingLicenceRetentionChange(tx, identity.organizationId, cutoff, activeBefore);

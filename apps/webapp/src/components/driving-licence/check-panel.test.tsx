@@ -62,6 +62,8 @@ const record: DrivingLicenceEmployeeRecord = {
 	enrolled: true,
 	status: "not_yet_checked",
 	authorizedClasses: [],
+	declared: null,
+	declaredUnchecked: [],
 	timezone: "Europe/Berlin",
 	uncertainEmailCount: 0,
 	personWideReason: null,
@@ -88,7 +90,7 @@ it("keeps the original-check draft and announces refusal at the task", async () 
 	fireEvent.change(screen.getByLabelText("Document issue date"), {
 		target: { value: "2020-01-01" },
 	});
-	fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
+	fireEvent.click(screen.getByRole("checkbox", { name: "B Car" }));
 	fireEvent.change(screen.getByLabelText("Necessary driving restrictions"), {
 		target: { value: "Corrective lenses" },
 	});
@@ -193,7 +195,7 @@ it("prevents duplicate pending original checks while retaining the current draft
 	const button = await screen.findByRole("button", {
 		name: "Record original check",
 	});
-	fireEvent.click(screen.getByRole("checkbox", { name: "B" }));
+	fireEvent.click(screen.getByRole("checkbox", { name: "B Car" }));
 	const form = button.closest("form");
 	if (!form) throw new Error("Original check form missing");
 	fireEvent.submit(form);
@@ -211,6 +213,6 @@ it("prevents duplicate pending original checks while retaining the current draft
 	finish({ success: false, error: "Try again" });
 	await screen.findByRole("alert");
 	expect(
-		screen.getByRole("checkbox", { name: "B" }).getAttribute("aria-checked"),
+		screen.getByRole("checkbox", { name: "B Car" }).getAttribute("aria-checked"),
 	).toBe("true");
 });

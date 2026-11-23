@@ -60,6 +60,7 @@ import { queryKeys } from "@/lib/query";
 import { Link } from "@/navigation";
 import { useDrivingStatusLabels } from "./check-evidence";
 import { DrivingDeadlineDate } from "./deadline-date";
+import { LicenceClassIcon } from "./licence-class-visuals";
 
 const SEARCH_DELAY_MS = 300;
 type StatusFilter = DrivingLicenceWorklistStatus | "all";
@@ -455,12 +456,34 @@ function WorklistTable({
 					<TableRow key={person.employeeId}>
 						<TableCell className="font-medium">{person.name}</TableCell>
 						<TableCell>
-							<Badge variant={STATUS_BADGE[person.status]}>
-								{statusLabels[person.status].short}
-							</Badge>
+							<div className="flex flex-wrap items-center gap-1.5">
+								<Badge variant={STATUS_BADGE[person.status]}>
+									{statusLabels[person.status].short}
+								</Badge>
+								{person.declaredUnchecked.length ? (
+									<Badge variant="outline" className="border-dashed text-muted-foreground">
+										{person.declaredUnchecked.map((code) => (
+											<LicenceClassIcon key={code} code={code} size="sm" />
+										))}
+										{t("drivingLicence.checks.declared", "Declared {classes}", {
+											classes: person.declaredUnchecked.join(", "),
+										})}
+									</Badge>
+								) : null}
+							</div>
 						</TableCell>
 						<TableCell>
-							{person.nextDeadline ? (
+							{person.nextDeadline && person.declaredUnchecked.length ? (
+								<span className="flex flex-col">
+									{t("drivingLicence.checks.declaredDue", "Check declared classes")}
+									<span className="text-xs text-muted-foreground">
+										<DrivingDeadlineDate
+											validThrough={person.nextDeadline.validThrough}
+											timezone={person.nextDeadline.timezone}
+										/>
+									</span>
+								</span>
+							) : person.nextDeadline ? (
 								<DrivingDeadlineDate
 									validThrough={person.nextDeadline.validThrough}
 									timezone={person.nextDeadline.timezone}

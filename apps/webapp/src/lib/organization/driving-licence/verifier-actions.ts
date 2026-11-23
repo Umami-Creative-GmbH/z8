@@ -56,6 +56,14 @@ export interface DrivingLicenceVerifierAdminData {
 			name: string;
 			email: string;
 			isFormer: boolean;
+			/** The rest is what the shared employee picker shows on each row. */
+			userId: string;
+			firstName: string | null;
+			lastName: string | null;
+			image: string | null;
+			position: string | null;
+			role: "admin" | "manager" | "employee";
+			team: { id: string; name: string } | null;
 		} & FormerSinceField
 	>;
 	teams: Array<{ id: string; name: string }>;
@@ -108,9 +116,22 @@ export async function getDrivingLicenceVerifierAdminDataAction(): Promise<
 				email: user.email,
 				isFormer: isFormerEmployee(employee),
 				formerSince: formerSinceDate(employee),
+				userId: employee.userId,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				image: user.image,
+				position: employee.position,
+				role: employee.role,
+				teamId: team.id,
+				teamName: team.name,
 			})
 			.from(employee)
 			.innerJoin(user, eq(user.id, employee.userId))
+			// Only this organization's teams label a row.
+			.leftJoin(
+				team,
+				and(eq(team.id, employee.teamId), eq(team.organizationId, actor.organizationId)),
+			)
 			.where(
 				and(
 					eq(employee.organizationId, actor.organizationId),
@@ -124,8 +145,9 @@ export async function getDrivingLicenceVerifierAdminDataAction(): Promise<
 		return {
 			success: true,
 			data: {
-				employees: employees.map(({ formerSince, ...row }) => ({
+				employees: employees.map(({ formerSince, teamId, teamName, ...row }) => ({
 					...row,
+					team: teamId && teamName ? { id: teamId, name: teamName } : null,
 					...formerSinceField(row.isFormer, formerSince),
 				})),
 				teams,

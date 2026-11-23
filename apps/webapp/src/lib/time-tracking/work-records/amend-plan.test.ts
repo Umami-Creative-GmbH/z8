@@ -106,7 +106,7 @@ describe("planChange: amend the approval state (#1227)", () => {
 	});
 });
 
-describe("planChange: amend over tolerated drift (#1227, removed by #1229)", () => {
+describe("planChange: an amend that repairs tolerated drift", () => {
 	function drifted(): WorkRecordPair {
 		const pair = pendingPair();
 		return {

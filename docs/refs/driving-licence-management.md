@@ -10,7 +10,9 @@ confirmed on 2026-10-20.
 are implemented. Where they conflict with an older section, the 2026-10-20
 sections apply. On 2026-11-22 (#1937) the personal view and the verifier and
 planning views became separate pages, and checks were confirmed to be
-independent of the organization's vehicles.
+independent of the organization's vehicles. On 2026-11-23 (#2003) intended
+drivers can declare their own licence classes; see
+[Declared classes](#declared-classes).
 
 ## Purpose and boundaries (Q1–Q3)
 
@@ -288,6 +290,37 @@ authorization by itself.
 Enrollments that existed before this change became employee-level *Required*
 assignments, so nobody's status changed.
 
+## Declared classes
+
+Confirmed on 2026-11-23 (#2003). An intended driver can state which licence
+classes they hold, so the organization knows who can drive what before the
+first check, and later when they pass a new class.
+
+- **Who:** intended drivers only, for their own record. Their driving for work
+  is the purpose; Z8 collects no licence data from employees who don't drive
+  for work.
+- **What:** the classes, the licence card's expiry date and, for C and D
+  classes, the class's own expiry date. Each date is optional. No restriction
+  codes (they can reveal health data; a verifier records restrictions only as
+  far as the work needs), no licence number and no photo.
+- **Effect:** none on authorization. My driving licence shows the classes as
+  declared and not checked yet. The status, deadlines, suspensions and the
+  Planning status come only from checks. A class that is already authorized
+  can't be declared again.
+- **Checks:** the verifier's check page lists the declared classes and
+  preselects them, with the dates the employee entered; the verifier compares
+  them with the original and corrects what differs. A recorded check replaces
+  the declared classes it inspected, whatever their result. The rest stay
+  declared.
+- **Verifiers:** each save that adds a class nobody has checked yet sends the
+  responsible verifiers an in-app notice linking to the check. In the Checks
+  table the employee is flagged with the declared classes and counts as due
+  now.
+- **Planning:** shows declared classes in their own muted list, labelled as no
+  authorization to drive.
+- **Removal:** the employee can remove their statement. It is deleted when they
+  are no longer an intended driver and when their employment ends.
+
 ## Screens and navigation
 
 Confirmed on 2026-10-20; split into a personal and a team page on 2026-11-22 (#1937).
@@ -304,7 +337,9 @@ Confirmed on 2026-10-20; split into a personal and a team page on 2026-11-22 (#1
   adds no item: administrators work under *Settings → Driving licence*.
 
 **`/driving-licence`, My driving licence**: the status of each class and its
-valid-through date, then the evidence, the history and *Unable to drive?*
+valid-through date, the employee's [declared classes](#declared-classes), then
+the evidence, the history and *Unable to drive?* Every licence class is shown
+with a vehicle icon and a plain name (for example *CE · Truck with trailer*).
 
 **`/team/driving-licence`, Driving licences.** You see only the tabs for the
 roles you hold:

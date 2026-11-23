@@ -1,8 +1,11 @@
 "use client";
+import { IconUserCheck } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -32,6 +35,8 @@ import {
 	type DrivingCheckClass,
 	LICENCE_CLASSES,
 } from "@/lib/organization/driving-licence/check-types";
+import type { DrivingLicenceDeclaredClasses } from "@/lib/organization/driving-licence/declared-classes-store";
+import { LicenceClassIcon, useLicenceClassNames } from "./licence-class-visuals";
 
 const DEFAULT_CLASSES: DrivingCheckClass[] = LICENCE_CLASSES.map((code) => ({
 	code,
@@ -48,26 +53,40 @@ type FailureScope = "classes" | "document" | "person";
 export function OriginalDrivingCheckForm({
 	employeeId,
 	name,
+	declared = null,
+	declaredUnchecked = [],
 	onCompleted,
 }: {
 	employeeId: string;
 	name: string;
+	/** The employee's own statement (#2003): preselects the classes to inspect. */
+	declared?: DrivingLicenceDeclaredClasses | null;
+	declaredUnchecked?: readonly string[];
 	onCompleted: () => Promise<void>;
 }) {
 	const { t } = useTranslate();
+	const { className: nameOf } = useLicenceClassNames();
 	const [error, setError] = useState("");
 	const [commandId, setCommandId] = useState(() => crypto.randomUUID());
+	const declaredCodes = new Set(declaredUnchecked);
+	const declaredExpiry = new Map(
+		declared?.classes.map((entry) => [entry.code, entry.expiryDate]) ?? [],
+	);
 	const form = useForm({
 		defaultValues: {
 			documentIssuedOn: "",
-			documentExpiresOn: "",
+			documentExpiresOn: declared?.documentExpiresOn ?? "",
 			originalInspected: false,
 			identityConfirmed: false,
 			employeeDeclaration: false,
 			verifierConfirmed: false,
 			failureScope: "classes" as FailureScope,
-			selected: [] as string[],
-			classes: DEFAULT_CLASSES,
+			selected: LICENCE_CLASSES.filter((code) => declaredCodes.has(code)) as string[],
+			classes: DEFAULT_CLASSES.map((row) =>
+				declaredCodes.has(row.code)
+					? { ...row, expiryDate: declaredExpiry.get(row.code) ?? null }
+					: row,
+			),
 		},
 		onSubmit: async ({ value }) => {
 			setError("");
@@ -135,6 +154,29 @@ export function OriginalDrivingCheckForm({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
+				{declaredCodes.size ? (
+					<Alert className="mb-6">
+						<IconUserCheck aria-hidden="true" />
+						<AlertTitle>
+							{t(
+								"drivingLicence.check.declaredTitle",
+								"{name} declared {classes}",
+								{
+									name,
+									classes: [...declaredCodes]
+										.map((code) => `${code} (${nameOf(code)})`)
+										.join(", "),
+								},
+							)}
+						</AlertTitle>
+						<AlertDescription>
+							{t(
+								"drivingLicence.check.declaredHelp",
+								"These classes and any dates the employee entered are preselected. Compare them with the original licence and correct anything that differs.",
+							)}
+						</AlertDescription>
+					</Alert>
+				) : null}
 				<form
 					className="space-y-6"
 					onSubmit={(event) => {
@@ -194,6 +236,7 @@ export function OriginalDrivingCheckForm({
 													<InspectionClassRow
 														key={inspected.code}
 														inspected={inspected}
+														declared={declaredCodes.has(inspected.code)}
 														chosen={selectedCodes.has(inspected.code)}
 														onSelect={(chosen) =>
 															selected.handleChange(
@@ -414,15 +457,18 @@ function FailureScopeSelect({
 function InspectionClassRow({
 	inspected,
 	chosen,
+	declared,
 	onSelect,
 	onChange,
 }: {
 	inspected: DrivingCheckClass;
 	chosen: boolean;
+	declared: boolean;
 	onSelect: (chosen: boolean) => void;
 	onChange: (values: Partial<DrivingCheckClass>) => void;
 }) {
 	const { t } = useTranslate();
+	const { className: nameOf } = useLicenceClassNames();
 	const id = useId();
 	const results: { value: CheckResult; label: string }[] = [
 		{
@@ -452,9 +498,23 @@ function InspectionClassRow({
 					checked={chosen}
 					onCheckedChange={(checked) => onSelect(checked === true)}
 				/>
-				<Label htmlFor={`${id}-class`} className="font-medium" translate="no">
-					{inspected.code}
+				<Label htmlFor={`${id}-class`} className="flex min-w-0 flex-1 items-center gap-2">
+					<LicenceClassIcon
+						code={inspected.code}
+						className={chosen ? "text-primary" : "text-muted-foreground"}
+					/>
+					<span className="font-medium" translate="no">
+						{inspected.code}
+					</span>{" "}
+					<span className="truncate text-xs font-normal text-muted-foreground">
+						{nameOf(inspected.code)}
+					</span>
 				</Label>
+				{declared ? (
+					<Badge variant="outline" className="border-dashed">
+						{t("drivingLicence.check.declaredBadge", "Declared")}
+					</Badge>
+				) : null}
 			</div>
 			{chosen && (
 				<div className="mt-3 grid gap-3 sm:grid-cols-3">

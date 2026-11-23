@@ -214,6 +214,10 @@ _Avoid_: driving licence verification, licence module
 An employee the organization requires to hold a checked driving licence because they may drive for work, whether in an organization vehicle, a rented one or their own. It does not depend on which vehicles the organization has. The organization decides this for everyone, for teams or for single employees, and can exclude someone from a broader decision.
 _Avoid_: enrolled employee, participant, assigned driver, vehicle user
 
+**Declared classes**:
+An intended driver's own statement of the licence classes they hold, with the expiry dates printed on their licence. It grants no driving authorization: it tells planners who can drive what and prepares the verifier's check, which replaces it for every class it inspects. It goes away when the employee is no longer an intended driver or leaves.
+_Avoid_: self-certified licence, self-declared authorization
+
 **Driving licence check**:
 An authorized verifier's recorded personal inspection of an employee's original driving licence for explicitly identified classes. It establishes what was checked at that time.
 _Avoid_: licence upload, licence photo, self-certification

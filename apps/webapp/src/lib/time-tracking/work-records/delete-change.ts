@@ -10,7 +10,7 @@
  * canonical work record of a deleted work period.
  */
 import type { Instant } from "@/lib/datetime/temporal-core";
-import type { AdoptedEndpoint, ToleratedDrift } from "./amend-change";
+import type { AdoptedEndpoint } from "./amend-change";
 import type { WorkRecordExpected } from "./change";
 
 export type DeleteWorkRecord = {
@@ -31,7 +31,6 @@ export type DeleteWorkRecord = {
 		/** The legacy approval request that decided it, if any. */
 		approvalRequestId: string | null;
 	};
-	toleratedDrift?: readonly ToleratedDrift[];
 	/** The user deleting the work; null for a job or the system. */
 	actorUserId: string | null;
 };

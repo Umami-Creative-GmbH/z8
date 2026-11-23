@@ -14,7 +14,7 @@ import {
 import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 
-// German statutory foundation (#1988, spec #1934). Migration: 0328_statutory_foundation.sql.
+// German statutory foundation (#1988, spec #1934). Migration: 0329_statutory_foundation.sql.
 // The overlap exclusion constraints on study periods and apprentice releases live in SQL only.
 
 export const employeeStatutoryOffsetKinds = [
