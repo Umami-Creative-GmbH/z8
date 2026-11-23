@@ -128,6 +128,32 @@ export function withPlannedShifts(
 	});
 }
 
+const earlier = (left: Instant, right: Instant) =>
+	compareInstants(left, right) <= 0 ? left : right;
+
+/**
+ * The work still planned in a shift from `restStart` to its end, after completed work ended
+ * early. The break the whole shift owes comes off the remaining time, less any break already
+ * taken within the shift before `restStart`, so a minor clocked out for lunch keeps the shift's
+ * planned work steady throughout the break.
+ */
+function restOfShiftMinutes(
+	shift: { readonly start: Instant; readonly end: Instant },
+	restStart: Instant,
+	pieces: readonly { readonly start: Instant; readonly end: Instant }[],
+	limits: JarbschgLimits | null,
+): number {
+	const owedBreak =
+		minutesBetween(shift.start, shift.end) - plannedYouthInterval("", shift, limits).workMinutes;
+	const workedBefore = pieces.reduce(
+		(total, piece) =>
+			total + minutesBetween(later(piece.start, shift.start), earlier(piece.end, restStart)),
+		0,
+	);
+	const breakTaken = Math.max(0, minutesBetween(shift.start, restStart) - workedBefore);
+	return Math.max(0, minutesBetween(restStart, shift.end) - Math.max(0, owedBreak - breakTaken));
+}
+
 /** One employee's work to judge, as of `now`. */
 export function youthIntervalsOf(input: {
 	readonly work: readonly YouthWorkRecord[];
@@ -138,16 +164,24 @@ export function youthIntervalsOf(input: {
 }): YouthWorkInterval[] {
 	const intervals: YouthWorkInterval[] = [];
 	const limitsAt = (instant: Instant) => input.limitsOn(plainDateAt(instant, input.timezone));
-	/** Per shift id: whether open work belongs to it, and where its completed work ended last. */
-	const worked = new Map<string, { open: boolean; lastEnd: Instant | null }>();
+	/** Per shift id: whether open work belongs to it, and its completed work. */
+	const worked = new Map<
+		string,
+		{ open: boolean; lastEnd: Instant | null; pieces: { start: Instant; end: Instant }[] }
+	>();
 
 	for (const record of input.work) {
 		const shift = belongingShift(input.shifts, record);
 		const plannedShift = shift ? plannedShiftOf(`shift:${shift.id}`, shift) : undefined;
-		const state = shift ? (worked.get(shift.id) ?? { open: false, lastEnd: null }) : null;
+		const state = shift
+			? (worked.get(shift.id) ?? { open: false, lastEnd: null, pieces: [] })
+			: null;
 		if (record.end) {
 			intervals.push({ ...completedYouthInterval({ ...record, end: record.end }), plannedShift });
-			if (state) state.lastEnd = state.lastEnd ? later(state.lastEnd, record.end) : record.end;
+			if (state) {
+				state.lastEnd = state.lastEnd ? later(state.lastEnd, record.end) : record.end;
+				state.pieces.push({ start: record.start, end: record.end });
+			}
 		} else {
 			const end = later(shift ? later(input.now, shift.end) : input.now, record.start);
 			intervals.push({
@@ -178,7 +212,11 @@ export function youthIntervalsOf(input: {
 		const restStart = later(input.now, state.lastEnd ?? shift.start);
 		if (compareInstants(restStart, shift.end) < 0) {
 			intervals.push({
-				...plannedYouthInterval(ref, { start: restStart, end: shift.end }, limits),
+				ref,
+				start: restStart,
+				end: shift.end,
+				workMinutes: restOfShiftMinutes(shift, restStart, state.pieces, limits),
+				recorded: false,
 				plannedShift: plannedShiftOf(ref, shift),
 			});
 		}

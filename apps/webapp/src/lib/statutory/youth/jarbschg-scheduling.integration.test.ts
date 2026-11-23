@@ -4,6 +4,7 @@
  * acknowledged sector exception, and `executive_exempt` adults without adult ArbZG findings.
  */
 import { Effect, Layer } from "effect";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
@@ -540,6 +541,56 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			const findings = await evaluateAt(minor, localInstant("2027-03-01", "12:30", org.timezone));
 			expect(findings).toContainEqual(
 				expect.objectContaining({ kind: "jarbschg_daily_max", subjectKey: `shift:${afternoon}` }),
+			);
+		});
+
+		it("keeps the planned day and the publish fingerprint through a lunch break", async () => {
+			const minor = await fx.employee(org, "lunch", { birthday: "2011-01-01" });
+			// Monday to Friday 08:00–17:00: 8 h of work and the 60 min break each day.
+			for (const date of ["2027-03-01", "2027-03-02", "2027-03-03", "2027-03-04", "2027-03-05"]) {
+				await shift(minor, date, "08:00", "17:00");
+			}
+			// Clocked out at 12:00 for lunch on Monday.
+			await seed.work(org, minor, "2027-03-01", "08:00", 240);
+
+			const evaluateWeekAt = async (time: string) => {
+				// The service judges at the system clock.
+				const clock = vi
+					.spyOn(Temporal.Now, "instant")
+					.mockReturnValue(localInstant("2027-03-01", time, org.timezone));
+				try {
+					return await evaluateWeek();
+				} finally {
+					clock.mockRestore();
+				}
+			};
+			const youthKinds = (result: Awaited<ReturnType<typeof evaluateWeek>>) =>
+				result.findings.flatMap((finding) =>
+					finding.type === "statutory" && finding.statutoryKind.startsWith("jarbschg_")
+						? [finding.statutoryKind]
+						: [],
+				);
+
+			const atNoon = await evaluateWeekAt("12:00");
+			for (const time of ["12:15", "12:29"]) {
+				const later = await evaluateWeekAt(time);
+				expect(youthKinds(later)).toEqual([]);
+				expect(later.fingerprint).toBe(atNoon.fingerprint);
+			}
+			expect(youthKinds(atNoon)).toEqual([]);
+		});
+
+		it("still flags a lunch break after a day started two hours early", async () => {
+			const minor = await fx.employee(org, "early", { birthday: "2011-01-01" });
+			await shift(minor, "2027-03-01", "08:00", "17:00");
+			// 6 h worked by 12:00, and 4 h of the shift still to come after the break.
+			await seed.work(org, minor, "2027-03-01", "06:00", 360);
+			const findings = await evaluateAt(minor, localInstant("2027-03-01", "12:15", org.timezone));
+			expect(findings).toContainEqual(
+				expect.objectContaining({
+					kind: "jarbschg_daily_max",
+					summary: expect.objectContaining({ used: { unit: "minutes", value: 600 } }),
+				}),
 			);
 		});
 

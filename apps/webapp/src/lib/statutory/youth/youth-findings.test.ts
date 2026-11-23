@@ -127,6 +127,38 @@ describe("youthIntervalsOf", () => {
 		});
 		expect(doubled.map((finding) => finding.kind)).toEqual(["jarbschg_daily_max"]);
 	});
+
+	describe("a shift the minor clocked out of for lunch", () => {
+		// Monday to Friday 08:00–17:00: 8 h of work and the 60 min break (§ 11 JArbSchG) each day.
+		const week = ["2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06"].map(
+			(date) => shift(date, date, "08:00", "17:00"),
+		);
+		const mondayMinutes = (records: YouthWorkRecord[], now: Instant) =>
+			youthIntervalsOf({ work: records, shifts: week, now, timezone: ZONE, limitsOn: () => LIMITS })
+				.filter(
+					(interval) => Temporal.Instant.compare(interval.start, at("2026-03-03", "00:00")) < 0,
+				)
+				.reduce((total, interval) => total + interval.workMinutes, 0);
+
+		it("keeps the planned 8 h day, without findings, throughout the break", () => {
+			const morning = [work("am", at("2026-03-02", "08:00"), at("2026-03-02", "12:00"))];
+			for (const time of ["12:00", "12:15", "12:29"]) {
+				const now = at("2026-03-02", time);
+				expect(mondayMinutes(morning, now)).toBe(480);
+				expect(findings({ work: morning, shifts: week, now })).toEqual([]);
+			}
+		});
+
+		it("still flags a day the minor started two hours early", () => {
+			const early = [work("am", at("2026-03-02", "06:00"), at("2026-03-02", "12:00"))];
+			const now = at("2026-03-02", "12:15");
+			// 6 h worked, and the 4 h of the shift still to come after the break.
+			expect(mondayMinutes(early, now)).toBe(600);
+			expect(findings({ work: early, shifts: week, now }).map((finding) => finding.kind)).toEqual(
+				expect.arrayContaining(["jarbschg_daily_max", "jarbschg_weekly_max"]),
+			);
+		});
+	});
 });
 
 describe("sector exception fingerprints", () => {
