@@ -113,12 +113,12 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			}).pipe(Effect.provide(complianceLayer)),
 		);
 
-	async function acknowledgeSectorExceptions(who: FixtureEmployee) {
+	async function acknowledgeSectorExceptions(who: FixtureEmployee, week = WEEK) {
 		const findings = await jarbschgScheduleContributor.evaluate({
 			db,
 			organizationId: org.id,
 			timezone: org.timezone,
-			window: { start: WEEK.startDate, endExclusive: WEEK.endDateExclusive },
+			window: { start: week.startDate, endExclusive: week.endDateExclusive },
 			employeeIds: [who.employeeId],
 			proposedShifts: [],
 			replacesShiftId: null,
@@ -266,6 +266,94 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		await shift(minor, "2027-03-02", "07:00", "18:00");
 		await acknowledgeSectorExceptions(minor);
 		expect(await publishShifts(WEEK)).toMatchObject({ success: false, code: "ValidationError" });
+	});
+
+	describe("public holidays (§ 18 JArbSchG)", () => {
+		const evaluateRange = (week: typeof WEEK) =>
+			Effect.runPromise(
+				Effect.gen(function* () {
+					const service = yield* ScheduleComplianceService;
+					return yield* service.evaluateScheduleWindow({
+						organizationId: org.id,
+						startDate: shiftDateBounds(week.startDate, org.timezone).start,
+						endDateExclusive: shiftDateBounds(week.endDateExclusive, org.timezone).start,
+						timezone: org.timezone,
+					});
+				}).pipe(Effect.provide(complianceLayer)),
+			);
+
+		it.each([
+			{
+				name: "25 December",
+				date: "2026-12-25",
+				times: ["09:00", "13:00"],
+				holiday: true,
+				week: { startDate: "2026-12-21", endDateExclusive: "2026-12-28" },
+			},
+			{
+				name: "24 December after 14:00",
+				date: "2026-12-24",
+				times: ["11:00", "15:00"],
+				holiday: false,
+				week: { startDate: "2026-12-21", endDateExclusive: "2026-12-28" },
+			},
+			{
+				name: "1 May",
+				date: "2027-05-01",
+				times: ["09:00", "13:00"],
+				holiday: true,
+				week: { startDate: "2027-04-26", endDateExclusive: "2027-05-03" },
+			},
+		])("never lets a minor's shift on $name be acknowledged or published", async (scenario) => {
+			await seed.blockJarbschgPublish(org);
+			if (scenario.holiday) await seed.publicHoliday(org, owner, scenario.date);
+			const minor = await fx.employee(org, "holiday", { birthday: "2011-01-01" });
+			const id = await shift(minor, scenario.date, scenario.times[0], scenario.times[1]);
+
+			expect((await evaluateRange(scenario.week)).findings).toContainEqual(
+				expect.objectContaining({
+					statutoryKind: "jarbschg_holiday_prohibited",
+					subjectKey: `shift:${id}`,
+					legalReference: "§ 18 Abs. 1, 2 JArbSchG",
+					blocksPublication: true,
+				}),
+			);
+			const findings = await acknowledgeSectorExceptions(minor, scenario.week);
+			const prohibited = findings.find((finding) => finding.kind === "jarbschg_holiday_prohibited");
+			expect(prohibited).toBeDefined();
+			expect(statutoryAcknowledgementSubjectOf(prohibited as (typeof findings)[number])).toBeNull();
+
+			expect(await publishShifts(scenario.week)).toMatchObject({
+				success: false,
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			});
+			expect(await shiftStatus(id)).toBe("draft");
+		});
+
+		it("keeps an ordinary public holiday acknowledgeable as a sector exception", async () => {
+			await seed.blockJarbschgPublish(org);
+			const week = { startDate: "2027-03-29", endDateExclusive: "2027-04-05" };
+			await seed.publicHoliday(org, owner, "2027-03-29"); // Easter Monday.
+			const minor = await fx.employee(org, "easter", { birthday: "2011-01-01" });
+			const id = await shift(minor, "2027-03-29", "09:00", "13:00");
+			expect((await evaluateRange(week)).findings).toContainEqual(
+				expect.objectContaining({
+					statutoryKind: "jarbschg_holiday_work",
+					blocksPublication: true,
+				}),
+			);
+
+			await acknowledgeSectorExceptions(minor, week);
+			const handshake = await publishShifts(week);
+			if (!handshake.success) throw new Error(`publish refused: ${handshake.error}`);
+			const published = handshake.data.published
+				? handshake
+				: await publishShifts(week, {
+						evaluationFingerprint: handshake.data.evaluationFingerprint,
+					});
+			expect(published).toMatchObject({ success: true, data: { published: true, count: 1 } });
+			expect(await shiftStatus(id)).toBe("published");
+		});
 	});
 
 	describe("editing a published shift runs the publish block", () => {

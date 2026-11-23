@@ -241,7 +241,8 @@
         "nightWork": "Unter 18: {used} Min. Nachtarbeit zwischen 20:00 und 06:00 Uhr",
         "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
         "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
-        "holidayWork": "Unter 18: Arbeit an Feiertagen oder am 24. bzw. 31. Dezember nach 14 Uhr braucht eine gesetzliche Branchenausnahme"
+        "holidayWork": "Unter 18: Arbeit an Feiertagen braucht eine gesetzliche Branchenausnahme",
+        "holidayProhibited": "Unter 18: keine Arbeit am 24. und 31. Dezember nach 14 Uhr, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai; keine Ausnahme erlaubt sie"
       },
       "apprenticeship": {
         "releaseDayShift": "Freistellungstag für Auszubildende: Berufsschul-, Blockunterrichts- oder Prüfungstag",

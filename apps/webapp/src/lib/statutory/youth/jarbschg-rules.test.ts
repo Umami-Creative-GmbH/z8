@@ -207,18 +207,63 @@ describe("evaluateJarbschg", () => {
 		).toEqual(["jarbschg_holiday_work"]);
 	});
 
-	it("flags work on 24 and 31 December after 14:00 as holiday work (§ 18 Abs. 1)", () => {
+	it("flags work on 24 and 31 December after 14:00 as prohibited holiday work (§ 18 Abs. 1)", () => {
 		const december = { judged: { start: "2026-12-21", endExclusive: "2027-01-04" } };
-		// Thursday 24 December: the morning is lawful, the afternoon is not.
+		// Thursday 24 December: the morning is lawful, the afternoon is not, and no exception lifts it.
 		expect(rules(evaluate([shift("2026-12-24", "09:00", "13:30")], december))).toEqual([]);
 		expect(rules(evaluate([shift("2026-12-24", "12:00", "16:00")], december))).toEqual([
-			"jarbschg_holiday_work",
+			"jarbschg_holiday_prohibited",
 		]);
 		expect(rules(evaluate([work("2026-12-31", "13:00", "15:00")], december))).toEqual([
-			"jarbschg_holiday_work",
+			"jarbschg_holiday_prohibited",
 		]);
 		// Any other day's afternoon is a working day like any other.
 		expect(rules(evaluate([shift("2026-12-23", "12:00", "16:00")], december))).toEqual([]);
+	});
+
+	it("flags work on 25 December, 1 January, Easter Sunday and 1 May as prohibited (§ 18 Abs. 2)", () => {
+		const judged = (day: string) => ({
+			judged: { start: day, endExclusive: parsePlainDate(day).add({ days: 1 }).toString() },
+		});
+		// Friday 25 December and Friday 1 January, also when the holiday calendar lists them.
+		expect(
+			rules(
+				evaluate([shift("2026-12-25", "09:00", "13:00")], {
+					...judged("2026-12-25"),
+					holidays: ["2026-12-25"],
+				}),
+			),
+		).toEqual(["jarbschg_holiday_prohibited"]);
+		expect(rules(evaluate([shift("2027-01-01", "09:00", "13:00")], judged("2027-01-01")))).toEqual([
+			"jarbschg_holiday_prohibited",
+		]);
+		// Saturday 1 May 2027.
+		expect(
+			rules(
+				evaluate([shift("2027-05-01", "09:00", "13:00")], {
+					...judged("2027-05-01"),
+					holidays: ["2027-05-01"],
+				}),
+			),
+		).toEqual(["jarbschg_saturday_work", "jarbschg_holiday_prohibited"]);
+		// Easter Sunday is computed: 28 March 2027 and 16 April 2028, listed by the calendar or not.
+		expect(rules(evaluate([shift("2027-03-28", "09:00", "13:00")], judged("2027-03-28")))).toEqual([
+			"jarbschg_sunday_work",
+			"jarbschg_holiday_prohibited",
+		]);
+		expect(rules(evaluate([shift("2028-04-16", "09:00", "13:00")], judged("2028-04-16")))).toEqual([
+			"jarbschg_sunday_work",
+			"jarbschg_holiday_prohibited",
+		]);
+		// Easter Monday is an ordinary statutory holiday.
+		expect(
+			rules(
+				evaluate([shift("2027-03-29", "09:00", "13:00")], {
+					...judged("2027-03-29"),
+					holidays: ["2027-03-29"],
+				}),
+			),
+		).toEqual(["jarbschg_holiday_work"]);
 	});
 
 	it("judges breaks and uninterrupted work only on recorded work", () => {

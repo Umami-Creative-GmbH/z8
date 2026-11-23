@@ -421,6 +421,7 @@ export const timeRegulationViolationTypeEnum = pgEnum(
 		"jarbschg_saturday_work",
 		"jarbschg_sunday_work",
 		"jarbschg_holiday_work",
+		"jarbschg_holiday_prohibited",
 	],
 );
 

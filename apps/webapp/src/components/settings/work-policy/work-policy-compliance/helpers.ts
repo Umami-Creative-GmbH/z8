@@ -69,6 +69,7 @@ export const violationTypeColors: Record<string, "destructive" | "secondary" | "
 	jarbschg_saturday_work: "secondary",
 	jarbschg_sunday_work: "secondary",
 	jarbschg_holiday_work: "secondary",
+	jarbschg_holiday_prohibited: "destructive",
 };
 
 export function formatEmployeeName(employeeRecord: EmployeeRecord, fallback: string) {
@@ -126,6 +127,11 @@ export function getViolationTypeLabel(type: string, t: Translate): string {
 			return t("settings.workPolicies.violationType.jarbschgSundayWork", "Youth Sunday Work");
 		case "jarbschg_holiday_work":
 			return t("settings.workPolicies.violationType.jarbschgHolidayWork", "Youth Holiday Work");
+		case "jarbschg_holiday_prohibited":
+			return t(
+				"settings.workPolicies.violationType.jarbschgHolidayProhibited",
+				"Youth Work on a Prohibited Holiday",
+			);
 		default:
 			return type;
 	}

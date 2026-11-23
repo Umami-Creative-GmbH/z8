@@ -9,9 +9,10 @@
  * finding kind on the shift (or recorded work) it is attributed to; breaches on neighbouring days
  * that work on a judged day helps cause (rest before the next day, weekly totals later in the
  * week) are reported too, so a proposal sees everything it breaks. Night, Saturday, Sunday and
- * holiday findings can be acknowledged as a statutory sector exception; with the organization's
- * `blockJarbschgShiftPublish` on, every finding on a planned shift blocks publication until it is
- * resolved or, for those four, acknowledged.
+ * ordinary holiday findings can be acknowledged as a statutory sector exception; work on 24 and
+ * 31 December after 14:00, 25 December, 1 January, Easter Sunday or 1 May never can. With the
+ * organization's `blockJarbschgShiftPublish` on, every finding on a planned shift blocks
+ * publication until it is resolved or, for those four, acknowledged.
  */
 import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";

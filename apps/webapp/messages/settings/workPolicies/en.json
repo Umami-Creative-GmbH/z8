@@ -948,6 +948,7 @@
         "jarbschgBreak": "Youth Required Break Missing",
         "jarbschgDailyMax": "Youth Max Daily Exceeded",
         "jarbschgDaysPerWeek": "Youth Working Days Exceeded",
+        "jarbschgHolidayProhibited": "Youth Work on a Prohibited Holiday",
         "jarbschgHolidayWork": "Youth Holiday Work",
         "jarbschgNightWork": "Youth Night Work",
         "jarbschgRestPeriod": "Youth Rest Period Too Short",

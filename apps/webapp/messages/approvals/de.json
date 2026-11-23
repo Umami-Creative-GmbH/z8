@@ -366,6 +366,7 @@
         "jarbschgBreak": "Ruhepause für Jugendliche fehlt (JArbSchG)",
         "jarbschgDailyMax": "Tägliche Höchstarbeitszeit für Jugendliche überschritten (JArbSchG)",
         "jarbschgDaysPerWeek": "Mehr als fünf Arbeitstage pro Woche für Jugendliche (JArbSchG)",
+        "jarbschgHolidayProhibited": "Arbeit von Jugendlichen am 24. oder 31. Dezember nach 14 Uhr, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai (JArbSchG)",
         "jarbschgHolidayWork": "Feiertagsarbeit von Jugendlichen (JArbSchG)",
         "jarbschgNightWork": "Nachtarbeit von Jugendlichen (JArbSchG)",
         "jarbschgRestPeriod": "Freizeit für Jugendliche zu kurz (JArbSchG)",

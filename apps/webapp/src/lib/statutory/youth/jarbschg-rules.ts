@@ -20,12 +20,16 @@ export const jarbschgRules = [
 	"jarbschg_saturday_work",
 	"jarbschg_sunday_work",
 	"jarbschg_holiday_work",
+	"jarbschg_holiday_prohibited",
 ] as const;
 export type JarbschgRule = (typeof jarbschgRules)[number];
 
 /**
  * Rules a statutory sector exception may lift (§§ 14 Abs. 2–7, 16 Abs. 2, 17 Abs. 2, 18 Abs. 2
- * JArbSchG): night, Saturday, Sunday and holiday work. The others are hard limits.
+ * JArbSchG): night, Saturday, Sunday and ordinary holiday work. The others are hard limits,
+ * among them `jarbschg_holiday_prohibited`: work on 24 and 31 December after 14:00 (§ 18 Abs. 1,
+ * which has no exception) and on 25 December, 1 January, Easter Sunday and 1 May (excluded from
+ * the § 18 Abs. 2 exception).
  */
 export const jarbschgSectorExceptionRules: ReadonlySet<JarbschgRule> = new Set([
 	"jarbschg_night_work",
@@ -50,6 +54,7 @@ export const jarbschgLegalReference: Record<JarbschgRule, string> = {
 	jarbschg_saturday_work: "§ 16 JArbSchG",
 	jarbschg_sunday_work: "§ 17 JArbSchG",
 	jarbschg_holiday_work: "§ 18 JArbSchG",
+	jarbschg_holiday_prohibited: "§ 18 Abs. 1, 2 JArbSchG",
 };
 
 export interface JarbschgLimits {
@@ -70,6 +75,40 @@ export interface JarbschgLimits {
 
 /** § 18 Abs. 1 JArbSchG: on 24 and 31 December minors may not work after 14:00. */
 const EVE_CUTOFF = Temporal.PlainTime.from("14:00");
+
+/**
+ * Easter Sunday of a Gregorian year, by the Anonymous Gregorian (Meeus/Jones/Butcher) algorithm.
+ * Computed rather than read from the holiday calendar: § 18 Abs. 2 JArbSchG names the first
+ * Easter holiday whether or not the employee's state lists it as a statutory holiday.
+ */
+export function easterSundayOf(year: number): PlainDate {
+	const a = year % 19;
+	const b = Math.floor(year / 100);
+	const c = year % 100;
+	const d = Math.floor(b / 4);
+	const e = b % 4;
+	const f = Math.floor((b + 8) / 25);
+	const g = Math.floor((b - f + 1) / 3);
+	const h = (19 * a + b - d - g + 15) % 30;
+	const i = Math.floor(c / 4);
+	const k = c % 4;
+	const l = (32 + 2 * e + 2 * i - h - k) % 7;
+	const m = Math.floor((a + 11 * h + 22 * l) / 451);
+	const month = Math.floor((h + l - 7 * m + 114) / 31);
+	const day = ((h + l - 7 * m + 114) % 31) + 1;
+	return Temporal.PlainDate.from({ year, month, day });
+}
+
+/**
+ * The days § 18 Abs. 2 JArbSchG excludes from any holiday exception: 25 December, 1 January,
+ * Easter Sunday and 1 May. They are judged from the date alone, not the holiday calendar.
+ */
+export function isProhibitedHoliday(day: PlainDate): boolean {
+	if (day.month === 12 && day.day === 25) return true;
+	if (day.month === 1 && day.day === 1) return true;
+	if (day.month === 5 && day.day === 1) return true;
+	return Temporal.PlainDate.compare(day, easterSundayOf(day.year)) === 0;
+}
 
 /** The work thresholds named by the break baselines `de_jarbschg_break_after_270/360_minutes`. */
 const FIRST_BREAK_AFTER_MINUTES = 270;
@@ -541,37 +580,28 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 			if (sunday.any) {
 				sector("jarbschg_sunday_work", 1, "days", sunday.outside, Math.round(sunday.minutes));
 			}
-			const holiday = flagged((day) => input.holidays.has(day.toString()));
-			// § 18 Abs. 1: on 24 and 31 December no work after 14:00.
-			const eves = touched.filter(
+			// § 18 Abs. 1, 2: an ordinary public holiday may be lifted by a sector exception.
+			const holiday = flagged(
+				(day) => input.holidays.has(day.toString()) && !isProhibitedHoliday(day),
+			);
+			if (holiday.any) {
+				sector("jarbschg_holiday_work", 1, "days", holiday.outside, Math.round(holiday.minutes));
+			}
+			// § 18 Abs. 1: on 24 and 31 December no work after 14:00; § 18 Abs. 2: never on 25
+			// December, 1 January, Easter Sunday or 1 May. No exception lifts either.
+			const prohibitedDays = touched.filter(isProhibitedHoliday).length;
+			const afterEveCutoff = touched.filter(
 				(day) =>
 					day.month === 12 &&
 					(day.day === 24 || day.day === 31) &&
-					!input.holidays.has(day.toString()),
-			);
-			const afterEveCutoffMinutes = (span: Span) =>
-				eves.map((day) =>
 					overlapMinutes(
-						span,
+						minorSpan,
 						day.toZonedDateTime({ timeZone: input.timezone, plainTime: EVE_CUTOFF }).toInstant(),
 						startOfDay(day.add({ days: 1 })),
-					),
-				);
-			const afterEveCutoff = (span: Span) =>
-				afterEveCutoffMinutes(span).filter((minutes) => minutes > 0).length;
-			const eveDays = afterEveCutoff(minorSpan);
-			const eveMinutes = afterEveCutoffMinutes(minorSpan).reduce((total, m) => total + m, 0);
-			const eveOutside = shift
-				? partsOutside(minorSpan, shift).reduce((total, part) => total + afterEveCutoff(part), 0)
-				: 0;
-			if (holiday.any || eveDays > 0) {
-				sector(
-					"jarbschg_holiday_work",
-					1,
-					"days",
-					holiday.outside + eveOutside,
-					Math.round(holiday.minutes + eveMinutes),
-				);
+					) > 0,
+			).length;
+			if (prohibitedDays + afterEveCutoff > 0) {
+				breach("jarbschg_holiday_prohibited", interval, prohibitedDays + afterEveCutoff, 0, "days");
 			}
 		}
 	}

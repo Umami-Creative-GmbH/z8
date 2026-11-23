@@ -241,7 +241,8 @@
         "nightWork": "Under 18: {used} min of night work between 20:00 and 06:00",
         "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
         "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
-        "holidayWork": "Under 18: work on a public holiday, or after 14:00 on 24 or 31 December, needs a statutory sector exception"
+        "holidayWork": "Under 18: work on a public holiday needs a statutory sector exception",
+        "holidayProhibited": "Under 18: no work after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it"
       },
       "apprenticeship": {
         "releaseDayShift": "Apprentice release day: school, block-release or exam day",

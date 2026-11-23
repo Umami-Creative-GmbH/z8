@@ -103,6 +103,32 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		]);
 	});
 
+	it.each([
+		{ name: "25 December", date: "2025-12-25", time: "09:00", holiday: true },
+		{ name: "24 December after 14:00", date: "2025-12-24", time: "12:00", holiday: false },
+		{ name: "1 May", date: "2026-05-01", time: "09:00", holiday: true },
+	])(
+		"records work on $name as prohibited holiday work, not as a sector exception",
+		async (scenario) => {
+			if (scenario.holiday) await seed.publicHoliday(org, owner, scenario.date);
+			const minor = await fx.employee(org, "holiday", { birthday: "2010-06-01" });
+			await clockOut(minor, scenario.date, scenario.time, 240);
+
+			const recorded = await seed.violations(minor);
+			expect(recorded.map((row) => row.violation_type)).toEqual(["jarbschg_holiday_prohibited"]);
+			expect(JSON.parse(recorded[0]?.details ?? "{}")).toMatchObject({
+				legalReference: "§ 18 Abs. 1, 2 JArbSchG",
+			});
+		},
+	);
+
+	it("records an ordinary public holiday as holiday work", async () => {
+		await seed.publicHoliday(org, owner, "2026-04-06"); // Easter Monday.
+		const minor = await fx.employee(org, "easter", { birthday: "2010-06-01" });
+		await clockOut(minor, "2026-04-06", "09:00", 240);
+		expect(await types(minor)).toEqual(["jarbschg_holiday_work"]);
+	});
+
 	it("drops the day's break violation once later breaks satisfy § 11 (15 + 15 minutes over 6 h)", async () => {
 		const minor = await fx.employee(org, "split", { birthday: "2010-06-01" });
 		// 08:00–11:00, 15 min break, 11:15–13:45: 330 min worked with only 15 min of break so far.
