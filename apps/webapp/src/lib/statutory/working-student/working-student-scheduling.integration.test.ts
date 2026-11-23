@@ -381,4 +381,51 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 			}),
 		]);
 	});
+
+	it("does not warn Staffing about later ceiling weeks a proposed >20 h week leaves at their tier", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 20 planned >20 h weeks before W10, and W11–W14: 21 to 24 of 26 weeks, all at warning tier.
+		for (const index of [...Array.from({ length: 20 }, (_, i) => i - 20), 1, 2, 3, 4]) {
+			await fx.shift(org, subareaId, student, weekendOver20h(addWeeks(W10_2030, index)));
+		}
+
+		const suggestions = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* StaffingSuggestionService;
+				return yield* service.suggestForShift({
+					organizationId: org.id,
+					timezone: TZ,
+					candidates: [{ employeeId: student.employeeId, displayName: "Student", isActive: true }],
+					// A 22-hour Saturday pushes W10 above 20 h: every later week counts one more.
+					shift: { subareaId, date: "2030-03-09", startTime: "00:00", endTime: "22:00" },
+				});
+			}).pipe(
+				Effect.provide(
+					StaffingSuggestionServiceLive.pipe(
+						Layer.provide(workPolicyLayer),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+
+		const ceiling = suggestions[0]?.warnings.flatMap((warning) =>
+			warning.type === "compliance" && warning.findingType === "statutory" ? [warning.finding] : [],
+		);
+		// W10 is new; W14 moves from 24 to 25 of 26 weeks, the critical tier; W11–W13 stay warnings.
+		expect(ceiling).toEqual([
+			expect.objectContaining({
+				statutoryKind: "working_student_26_week_ceiling",
+				subjectKey: "2030-W10",
+				summary: expect.objectContaining({ tier: "warning", used: { unit: "weeks", value: 21 } }),
+			}),
+			expect.objectContaining({
+				statutoryKind: "working_student_26_week_ceiling",
+				subjectKey: "2030-W14",
+				summary: expect.objectContaining({ tier: "critical", used: { unit: "weeks", value: 25 } }),
+			}),
+		]);
+	});
 });

@@ -22,6 +22,7 @@ export interface StatutoryScheduleRequest {
 	readonly employeeIds: readonly string[];
 	readonly now: Instant;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
+	readonly comparedProposedShifts?: readonly StatutoryProposedShift[];
 	readonly replacesShiftId?: string | null;
 }
 
@@ -60,6 +61,7 @@ async function runContributors(
 		window: request.window,
 		employeeIds: request.employeeIds,
 		proposedShifts: request.proposedShifts ?? [],
+		comparedProposedShifts: request.comparedProposedShifts,
 		replacesShiftId: request.replacesShiftId ?? null,
 		preferences,
 		now: request.now,
@@ -101,6 +103,9 @@ export async function evaluateStatutoryScheduleFindings(
  * exceeded: the visible summary has `used` and `limit` in the same unit, `used > limit`, and
  * `used` grows (e.g. a lecture week at 22 h → 30 h). Under-limit findings (an on-call under-band)
  * and earnings-derived findings (tier only) are unaffected.
+ *
+ * The baseline run gets the proposals as `comparedProposedShifts` (never counted), so a
+ * contributor can judge the same subjects in both runs.
  */
 export async function addedStatutoryScheduleFindings(
 	db: Reader,
@@ -112,23 +117,23 @@ export async function addedStatutoryScheduleFindings(
 	const added = new Map<string, StatutoryComplianceFinding[]>();
 	if (contributors.length === 0 || request.employeeIds.length === 0) return added;
 
+	const proposedShifts = request.employeeIds.map((employeeId) => ({
+		employeeId,
+		...request.proposedShift,
+	}));
 	const baseline = new Map(
-		(await runContributors(db, request, contributors)).map((finding) => {
+		(
+			await runContributors(
+				db,
+				{ ...request, comparedProposedShifts: proposedShifts },
+				contributors,
+			)
+		).map((finding) => {
 			const projected = toStatutoryComplianceFinding(finding);
 			return [statutoryFindingChangeKey(projected), projected] as const;
 		}),
 	);
-	const proposed = await runContributors(
-		db,
-		{
-			...request,
-			proposedShifts: request.employeeIds.map((employeeId) => ({
-				employeeId,
-				...request.proposedShift,
-			})),
-		},
-		contributors,
-	);
+	const proposed = await runContributors(db, { ...request, proposedShifts }, contributors);
 	for (const finding of proposed) {
 		const projected = toStatutoryComplianceFinding(finding);
 		const before = baseline.get(statutoryFindingChangeKey(projected));

@@ -279,6 +279,7 @@ function severityOf(tier: "ok" | "warning" | "critical" | "exceeded"): Statutory
  * `ceilingToExclusive` (a later Monday) the weeks after them are judged for the 26-week ceiling
  * only, and only when a judged week is itself above 20 h: it raises the rolling count of later
  * weeks too. Without such a week the later weeks are not the judged window's findings.
+ * `ceilingForwardOpen` decides that instead, when the caller has judged it on other facts.
  */
 export function evaluateWorkingStudentEmployee(input: {
 	readonly organizationId: string;
@@ -287,6 +288,8 @@ export function evaluateWorkingStudentEmployee(input: {
 		readonly from: string;
 		readonly toExclusive: string;
 		readonly ceilingToExclusive?: string;
+		/** Whether to judge the weeks after them, in place of "a judged week is above 20 h". */
+		readonly ceilingForwardOpen?: boolean;
 	};
 	readonly thresholds: StatutoryThresholdTable;
 	readonly preferences: Pick<
@@ -375,7 +378,8 @@ export function evaluateWorkingStudentEmployee(input: {
 		const ceilingOnly = comparePlainDates(monday, judgedUntil) >= 0;
 		if (judged && !ceilingOnly && overLimit) judgedWeekOverLimit = true;
 		// A later week is only the judged window's business when a judged week raises its count.
-		if (!judged || !isWorkingStudentWeek || (ceilingOnly && !judgedWeekOverLimit)) continue;
+		const forwardOpen = input.judgedWeeks.ceilingForwardOpen ?? judgedWeekOverLimit;
+		if (!judged || !isWorkingStudentWeek || (ceilingOnly && !forwardOpen)) continue;
 
 		const periodEnd = monday.add({ weeks: 1 }).toString();
 		const base = {

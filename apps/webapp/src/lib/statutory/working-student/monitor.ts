@@ -73,6 +73,12 @@ export interface WorkingStudentMonitorRequest {
 	 * shows the later week it makes the 27th.
 	 */
 	readonly judgeCeilingForward?: boolean;
+	/**
+	 * Staffing's baseline run: the proposals it is compared with. Not counted; with
+	 * `judgeCeilingForward` they decide whether later weeks are judged, as in the run that counts
+	 * them, so both runs report the same later weeks.
+	 */
+	readonly ceilingForwardProposals?: readonly StatutoryProposedShift[];
 }
 
 export interface WorkingStudentEmployeeEvaluation extends WorkingStudentEvaluation {
@@ -374,15 +380,9 @@ export async function evaluateWorkingStudents(
 	const preferences =
 		request.preferences ?? (await loadOrganizationStatutoryPreferences(db, request.organizationId));
 
-	const intervals = new Map<string, WorkingStudentWorkInterval[]>();
-	const add = (employeeId: string, interval: WorkingStudentWorkInterval) =>
-		push(intervals, employeeId, interval);
-
 	// Shifts (persisted and proposed) that have not ended; an ended one is judged by its work.
-	const plannedByEmployee = new Map<string, PlannedShift[]>();
-	const addPlanned = (employeeId: string, planned: PlannedShift) => {
-		if (compareInstants(planned.end, request.now) > 0) push(plannedByEmployee, employeeId, planned);
-	};
+	const notEnded = (planned: PlannedShift) => compareInstants(planned.end, request.now) > 0;
+	const persistedShifts = new Map<string, PlannedShift[]>();
 	for (const row of shiftRows) {
 		if (!row.employeeId) continue;
 		const interval = shiftInterval(
@@ -393,81 +393,80 @@ export async function evaluateWorkingStudents(
 			},
 			timezone,
 		);
-		addPlanned(row.employeeId, { source: "shift", ref: row.id, ...interval });
+		const planned: PlannedShift = { source: "shift", ref: row.id, ...interval };
+		if (notEnded(planned)) push(persistedShifts, row.employeeId, planned);
 	}
-	for (const proposed of request.proposedShifts ?? []) {
-		const interval = shiftInterval(
-			{
-				date: parsePlainDate(proposed.date),
-				startTime: proposed.startTime,
-				endTime: proposed.endTime,
-			},
-			timezone,
-		);
-		const ref = `${proposed.date}T${proposed.startTime}-${proposed.endTime}`;
-		addPlanned(proposed.employeeId, { source: "proposed", ref, ...interval });
-	}
+	const proposedShiftsOf = (proposals: readonly StatutoryProposedShift[]) => {
+		const byEmployee = new Map<string, PlannedShift[]>();
+		for (const proposed of proposals) {
+			const interval = shiftInterval(
+				{
+					date: parsePlainDate(proposed.date),
+					startTime: proposed.startTime,
+					endTime: proposed.endTime,
+				},
+				timezone,
+			);
+			const ref = `${proposed.date}T${proposed.startTime}-${proposed.endTime}`;
+			const planned: PlannedShift = { source: "proposed", ref, ...interval };
+			if (notEnded(planned)) push(byEmployee, proposed.employeeId, planned);
+		}
+		return byEmployee;
+	};
 
+	const completedWork = new Map<string, WorkingStudentWorkInterval[]>();
+	// Only recent work can belong to a shift that has not ended (a shift lasts less than a day).
+	const recentFrom = request.now.subtract({ hours: 48 });
+	const recentWork = new Map<string, { start: Instant; end: Instant }[]>();
 	for (const row of workRows) {
 		if (!row.endTime) continue;
 		const start = instantFromDate(row.startTime);
 		const end = instantFromDate(row.endTime);
-		add(row.employeeId, {
+		push(completedWork, row.employeeId, {
 			source: "work",
 			ref: row.id,
 			start,
 			end,
 			netMinutes: row.durationMinutes ?? start.until(end).total("minutes"),
 		});
+		if (compareInstants(end, recentFrom) > 0) push(recentWork, row.employeeId, { start, end });
 	}
-	// Only recent work can belong to a shift that has not ended (a shift lasts less than a day).
-	const recentFrom = request.now.subtract({ hours: 48 });
-	const closedByEmployee = groupBy(
-		workRows.filter(
-			(row) =>
-				row.endTime && compareInstants(instantFromDate(row.endTime), recentFrom) > 0,
-		),
-		(row) => row.employeeId,
-	);
 	const openByEmployee = groupBy(openRows, (row) => row.employeeId);
-	for (const [employeeId, planned] of plannedByEmployee) {
-		for (const contribution of inProgressContributions({
+	/** An employee's completed work, work in progress and planned work, with `proposed` shifts. */
+	const intervalsOf = (
+		employeeId: string,
+		proposed: ReadonlyMap<string, readonly PlannedShift[]>,
+	): WorkingStudentWorkInterval[] => [
+		...(completedWork.get(employeeId) ?? []),
+		...inProgressContributions({
 			now: request.now,
-			planned,
+			planned: [...(persistedShifts.get(employeeId) ?? []), ...(proposed.get(employeeId) ?? [])],
 			open: (openByEmployee.get(employeeId) ?? []).map((row) => ({
 				ref: row.id,
 				start: instantFromDate(row.startTime),
 			})),
-			closed: (closedByEmployee.get(employeeId) ?? []).flatMap((row) =>
-				row.endTime
-					? [{ start: instantFromDate(row.startTime), end: instantFromDate(row.endTime) }]
-					: [],
-			),
-		})) {
-			add(employeeId, contribution);
-		}
-		openByEmployee.delete(employeeId);
-	}
-	// Employees without a running or upcoming shift: every clock-in grows with the clock.
-	for (const [employeeId, rows] of openByEmployee) {
-		for (const contribution of inProgressContributions({
-			now: request.now,
-			planned: [],
-			open: rows.map((row) => ({ ref: row.id, start: instantFromDate(row.startTime) })),
-			closed: [],
-		})) {
-			add(employeeId, contribution);
-		}
-	}
+			closed: recentWork.get(employeeId) ?? [],
+		}),
+	];
+	const counted = proposedShiftsOf(request.proposedShifts ?? []);
+	const compared =
+		request.judgeCeilingForward && request.ceilingForwardProposals
+			? proposedShiftsOf(request.ceilingForwardProposals)
+			: null;
+
 	const study = groupBy(studyRows, (row) => row.employeeId);
 	const offsets = groupBy(offsetRows, (row) => row.employeeId);
 	/** The forward range for the ceiling, ending after the last week with work: no work, no finding. */
-	const ceilingUntil = (own: readonly WorkingStudentWorkInterval[]): string | undefined => {
+	const ceilingUntil = (
+		...lists: readonly (readonly WorkingStudentWorkInterval[])[]
+	): string | undefined => {
 		if (!request.judgeCeilingForward) return undefined;
 		let last = judged.toExclusive;
-		for (const interval of own) {
-			const next = mondayOf(plainDateAt(interval.end, timezone)).add({ weeks: 1 });
-			if (comparePlainDates(next, last) > 0) last = next;
+		for (const own of lists) {
+			for (const interval of own) {
+				const next = mondayOf(plainDateAt(interval.end, timezone)).add({ weeks: 1 });
+				if (comparePlainDates(next, last) > 0) last = next;
+			}
 		}
 		return (comparePlainDates(last, until) < 0 ? last : until).toString();
 	};
@@ -483,24 +482,49 @@ export async function evaluateWorkingStudents(
 					? [{ id: row.id, from: row.validFromDate, until: row.validUntilDate }]
 					: [],
 		);
-		const evaluation = evaluateWorkingStudentEmployee({
-			organizationId: request.organizationId,
-			timezone,
-			judgedWeeks: {
-				from: judged.from.toString(),
-				toExclusive: judged.toExclusive.toString(),
-				ceilingToExclusive: ceilingUntil(intervals.get(employeeId) ?? []),
-			},
-			thresholds,
-			preferences,
-			facts: {
-				employeeId,
-				intervals: intervals.get(employeeId) ?? [],
-				lectureFreePeriods,
-				priorOver20hWeeks,
-				isWorkingStudentDay: (date) => inWorkingStudentSpan(spans, date),
-			},
-		});
+		const intervals = intervalsOf(employeeId, counted);
+		const facts = {
+			employeeId,
+			intervals,
+			lectureFreePeriods,
+			priorOver20hWeeks,
+			isWorkingStudentDay: (date: string) => inWorkingStudentSpan(spans, date),
+		};
+		const judgedWeeks = {
+			from: judged.from.toString(),
+			toExclusive: judged.toExclusive.toString(),
+		};
+		const evaluate = (
+			weeks: Parameters<typeof evaluateWorkingStudentEmployee>[0]["judgedWeeks"],
+			own: readonly WorkingStudentWorkInterval[],
+		) =>
+			evaluateWorkingStudentEmployee({
+				organizationId: request.organizationId,
+				timezone,
+				judgedWeeks: weeks,
+				thresholds,
+				preferences,
+				facts: { ...facts, intervals: own },
+			});
+
+		if (!compared) {
+			const ceilingToExclusive = ceilingUntil(intervals);
+			return { employeeId, ...evaluate({ ...judgedWeeks, ceilingToExclusive }, intervals) };
+		}
+		// Staffing's baseline: judge the later weeks the run with the proposal judges, so a later
+		// week the proposal leaves at its tier is not reported as added.
+		const withProposal = intervalsOf(employeeId, compared);
+		const ceilingForwardOpen = evaluate(judgedWeeks, withProposal).weeks.some(
+			(week) =>
+				week.overLimit &&
+				week.weekStart >= judgedWeeks.from &&
+				week.weekStart < judgedWeeks.toExclusive,
+		);
+		const ceilingToExclusive = ceilingUntil(intervals, withProposal);
+		const evaluation = evaluate(
+			{ ...judgedWeeks, ceilingToExclusive, ceilingForwardOpen },
+			intervals,
+		);
 		return { employeeId, ...evaluation };
 	});
 }

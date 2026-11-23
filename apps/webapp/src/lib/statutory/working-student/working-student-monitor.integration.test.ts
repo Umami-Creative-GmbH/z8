@@ -529,7 +529,9 @@ describe("working-student monitor (PostgreSQL)", () => {
 			const first = await lectureWeekAt(org.id, student.employeeId, "2026-03-04T10:00:05Z");
 			expect(first).toMatchObject({ coreMinutes: 1319, used: 1319 });
 			// Steady within the minute, whatever the clock-in's seconds.
-			expect(await lectureWeekAt(org.id, student.employeeId, "2026-03-04T10:00:55Z")).toEqual(first);
+			expect(await lectureWeekAt(org.id, student.employeeId, "2026-03-04T10:00:55Z")).toEqual(
+				first,
+			);
 			// Later the clock-in has grown the figures, not the fingerprint.
 			const later = await lectureWeekAt(org.id, student.employeeId, "2026-03-04T10:30:05Z");
 			expect(later).toEqual({ coreMinutes: 1349, used: 1349, fingerprint: first.fingerprint });

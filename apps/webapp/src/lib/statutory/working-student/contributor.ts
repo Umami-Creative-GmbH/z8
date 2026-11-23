@@ -18,6 +18,7 @@ export const workingStudentScheduleContributor: StatutoryScheduleContributor = {
 			replacesShiftId: context.replacesShiftId,
 			preferences: context.preferences,
 			judgeCeilingForward: true,
+			ceilingForwardProposals: context.comparedProposedShifts,
 		});
 		return evaluations.flatMap((evaluation) => evaluation.findings);
 	},
