@@ -38,8 +38,13 @@
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadOrganizationStatutoryPreferences, type StatutoryPreferences } from "../preferences";
+import type { StatutoryThresholdTable } from "../thresholds";
 import { judgeShortTermYear, type ShortTermYearEvaluation, shortTermLinkedYears } from "./judge";
-import { loadShortTermInputs, type ShortTermReader } from "./load-inputs";
+import {
+	loadShortTermInputs,
+	type ShortTermEmployeeInputs,
+	type ShortTermReader,
+} from "./load-inputs";
 
 export interface ShortTermEvaluationRequest {
 	readonly organizationId: string;
@@ -65,11 +70,11 @@ export async function evaluateShortTermEmployment(
 	request: ShortTermEvaluationRequest,
 ): Promise<ShortTermYearEvaluation[]> {
 	if (request.employeeIds.length === 0 || request.years.length === 0) return [];
-	const load = (years: readonly number[]) =>
+	const load = (employeeIds: readonly string[], years: readonly number[]) =>
 		loadShortTermInputs(db, {
 			organizationId: request.organizationId,
 			timezone: request.timezone,
-			employeeIds: request.employeeIds,
+			employeeIds,
 			years,
 			now: request.now,
 			scopeDates: request.scopeDates,
@@ -78,33 +83,63 @@ export async function evaluateShortTermEmployment(
 		});
 	// A fixed-term employment across the year end has one limit in every year it touches, so the
 	// weeks of those years are loaded too (`shortTermLinkedYears`); only the requested ones are
-	// judged. Reloaded until no employment reaches further: rarely more than once.
-	let loadedYears = [...new Set(request.years)];
-	let inputs = await load(loadedYears);
-	for (;;) {
-		const linked = new Set(loadedYears);
-		for (const employee of inputs.employees) {
-			for (const year of shortTermLinkedYears(loadedYears, employee.employments)) linked.add(year);
+	// judged. Everyone is loaded once on the requested years; only employees whose fixed terms
+	// reach further are loaded again, on their own linked years, until none reaches further
+	// (rarely more than once). The judgement reads nothing of other employees, so an employee
+	// loaded alone or with others is judged alike.
+	const loaded = new Map<string, Loaded>();
+	let pending = new Map([[yearsKey(request.years), sortedYears(request.years)]]);
+	let employeesOf = new Map([[yearsKey(request.years), [...new Set(request.employeeIds)]]]);
+	while (pending.size > 0) {
+		const next = new Map<string, number[]>();
+		const nextEmployees = new Map<string, string[]>();
+		for (const [key, years] of pending) {
+			const inputs = await load(employeesOf.get(key) ?? [], years);
+			for (const employee of inputs.employees) {
+				const linked = sortedYears(shortTermLinkedYears(years, employee.employments));
+				if (linked.length === years.length) {
+					loaded.set(employee.employeeId, { employee, thresholds: inputs.thresholds });
+					continue;
+				}
+				const linkedKey = yearsKey(linked);
+				next.set(linkedKey, linked);
+				const group = nextEmployees.get(linkedKey);
+				if (group) group.push(employee.employeeId);
+				else nextEmployees.set(linkedKey, [employee.employeeId]);
+			}
 		}
-		if (linked.size === loadedYears.length) break;
-		loadedYears = [...linked].sort((a, b) => a - b);
-		inputs = await load(loadedYears);
+		pending = next;
+		employeesOf = nextEmployees;
 	}
-	if (inputs.employees.length === 0) return [];
+	if (loaded.size === 0) return [];
 	const preferences =
 		request.preferences ?? (await loadOrganizationStatutoryPreferences(db, request.organizationId));
-	return inputs.employees.flatMap((employee) =>
-		[...request.years]
-			.sort((a, b) => a - b)
-			.flatMap((year) => {
-				const evaluation = judgeShortTermYear({
-					organizationId: request.organizationId,
-					employee,
-					year,
-					thresholds: inputs.thresholds,
-					preferences,
-				});
-				return evaluation ? [evaluation] : [];
-			}),
-	);
+	const judgedYears = sortedYears(request.years);
+	return [...new Set(request.employeeIds)].flatMap((employeeId) => {
+		const entry = loaded.get(employeeId);
+		if (!entry) return [];
+		return judgedYears.flatMap((year) => {
+			const evaluation = judgeShortTermYear({
+				organizationId: request.organizationId,
+				employee: entry.employee,
+				year,
+				thresholds: entry.thresholds,
+				preferences,
+			});
+			return evaluation ? [evaluation] : [];
+		});
+	});
+}
+
+interface Loaded {
+	readonly employee: ShortTermEmployeeInputs;
+	readonly thresholds: StatutoryThresholdTable;
+}
+
+function sortedYears(years: Iterable<number>): number[] {
+	return [...new Set(years)].sort((a, b) => a - b);
+}
+
+function yearsKey(years: Iterable<number>): string {
+	return sortedYears(years).join(",");
 }
