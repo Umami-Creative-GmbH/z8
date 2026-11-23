@@ -345,7 +345,8 @@ export async function getManagerDailyBriefingFromSources({
 		summary: {
 			...buildSummaryCounts(sectionItems),
 			// Every pending approval of the briefing's employees, not only the page it shows.
-			openApprovals: approvalBatch.totalCount ?? approvalItems.length,
+			// Never fewer than it lists: a failed count read comes back as 0.
+			openApprovals: Math.max(approvalBatch.totalCount ?? 0, approvalItems.length),
 		},
 		needsAction: sectionItems.needsAction,
 		sections,

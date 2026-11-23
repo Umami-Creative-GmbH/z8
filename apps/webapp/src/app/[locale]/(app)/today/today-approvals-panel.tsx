@@ -86,6 +86,11 @@ export function TodayApprovalsPanel({
 	const decisionsOff = isBusy || Boolean(error) || stale;
 	// The panel's own rejection is on its way: neither Cancel nor Escape may drop it.
 	const rejectionPending = rejecting !== null && actingApprovalId === rejecting.approvalId;
+	// A refresh can drop the item the panel was opened for; then the panel is gone too,
+	// unless its rejection is already on its way.
+	const rejectingListed =
+		rejecting !== null && items.some((item) => item.approvalId === rejecting.approvalId);
+	const rejectPanelOpen = rejecting !== null && (rejectingListed || rejectionPending);
 
 	/** The item's texts in the viewer's language where the inbox localizes them, else English. */
 	function itemTexts(item: BriefingApprovalActionItem) {
@@ -171,6 +176,8 @@ export function TodayApprovalsPanel({
 	function closeRejectPanel() {
 		setRejecting(null);
 		setRejectReason("");
+		// The error belonged to this rejection and was shown in its panel; dismissing it ends it.
+		setDecisionError(null);
 	}
 
 	async function confirmRejection() {
@@ -216,7 +223,7 @@ export function TodayApprovalsPanel({
 					/>
 				) : null}
 				{/* While the reject panel is open, it shows the decision's outcome itself. */}
-				{decisionError && !rejecting ? <SectionError message={decisionError} /> : null}
+				{decisionError && !rejectPanelOpen ? <SectionError message={decisionError} /> : null}
 				{error && items.length > 0 ? (
 					<p role="status" className="text-sm text-muted-foreground">
 						{t(
@@ -357,7 +364,7 @@ export function TodayApprovalsPanel({
 				) : null}
 			</CardContent>
 			<ActionPanel
-				open={rejecting !== null}
+				open={rejectPanelOpen}
 				onOpenChange={(open) => {
 					// Escape and the backdrop close it exactly when Cancel does.
 					if (!open && !rejectionPending) closeRejectPanel();
@@ -390,7 +397,7 @@ export function TodayApprovalsPanel({
 									onCancel={closeRejectPanel}
 									onConfirm={confirmRejection}
 									// Off while any decision or refresh is under way, so confirming never does nothing.
-									canReject={!decisionsOff && !decided.has(rejecting.approvalId)}
+									canReject={rejectingListed && !decisionsOff && !decided.has(rejecting.approvalId)}
 									isPending={rejectionPending}
 								/>
 							</>

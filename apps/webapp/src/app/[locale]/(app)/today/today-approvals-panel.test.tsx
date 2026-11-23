@@ -423,6 +423,47 @@ describe("TodayApprovalsPanel", () => {
 		expect(within(list).getByText("Vacation request")).toBeTruthy();
 	});
 
+	it("leaves a refused rejection's error with the panel it was shown in once cancelled", async () => {
+		global.fetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ success: false, error: "Already decided" }),
+		}) as unknown as typeof fetch;
+		render(<TodayApprovalsPanel items={[approvalItem()]} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Overlaps the inventory week." },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+		await waitFor(() => {
+			expect(within(panel).getByText("Already decided")).toBeTruthy();
+		});
+
+		fireEvent.click(within(panel).getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
+		});
+		// Dismissing the attempt doesn't announce its error a second time in the card.
+		expect(screen.queryByText("Already decided")).toBeNull();
+	});
+
+	it("closes the reject panel when a refresh drops the item it was opened for", async () => {
+		const { rerender } = render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		expect(screen.getByRole("dialog", { name: "Reject request" })).toBeTruthy();
+
+		// The refreshed briefing no longer lists the request, e.g. the employee left the team.
+		rerender(<TodayApprovalsPanel items={[]} total={0} />);
+
+		await waitFor(() => {
+			expect(screen.queryByRole("dialog", { name: "Reject request" })).toBeNull();
+		});
+		expect(screen.queryByRole("button", { name: "Confirm Rejection" })).toBeNull();
+	});
+
 	it("does not refresh when the approval response is not ok", async () => {
 		global.fetch = vi.fn().mockResolvedValue({
 			ok: false,

@@ -304,6 +304,28 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(briefing.summary.openApprovals).toBe(40);
 	});
 
+	it("never counts fewer open approvals than it lists, even when a count read failed", async () => {
+		const shown = [
+			createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			createApproval({ id: "approval-2", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			createApproval({ id: "approval-3", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+		];
+		// The list read succeeded but the failed count read came back as 0.
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue(Object.assign(shown, { totalCount: 0 })),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.summary.openApprovals).toBe(3);
+	});
+
 	it("names the approval types the inbox could not list, so the count never meets a silent empty list", async () => {
 		const sources = createSources({
 			getApprovals: vi
