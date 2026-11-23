@@ -36,7 +36,8 @@ const { createLifecycleDatabaseFixture } =
 	await import("@/lib/employee-lifecycle/testing/database.test.fixture");
 const { createDepartureCommands } = await import("@/lib/employee-lifecycle/commands");
 const { computeEmployeePeriodBalance } = await import("@/lib/work-balance/period-aggregation");
-const { computeEmployeeWorkBalance } = await import("@/lib/work-balance/service");
+const { getEmployeeWorkBalance, refreshEmployeeWorkBalanceFromPeriods } =
+	await import("@/lib/work-balance/service");
 const { getMonthPeriodsBetween } = await import("@/lib/work-balance/periods");
 const { createVersionedWorkPolicy } = await import("@/lib/work-policy/versioned-policy-writer");
 type LifecycleDatabaseFixture =
@@ -256,21 +257,23 @@ describe("Work Balance on a same-day conversion (#1935)", () => {
 		},
 	);
 
-	// An organization without a tracking start keeps the total from all of the person's days
-	// (`computeEmployeeWorkBalance`); it must read them as the month and year rows do.
+	// The total an organization without a tracking start stores is what the balance refresh
+	// writes to `employee_work_balance`; it must read the conversion day as the month rows do.
 	it.each([
 		["contractor -> employee", () => toEmployee, 180],
 		["employee -> contractor", () => toContractor, 240],
 		["trust-based employee -> contractor", () => trustToContractor, 0],
 	])(
-		"keeps the total balance of a %s day equal to its period rows (no tracking start)",
+		"stores a total balance for a %s day that equals its period rows (no tracking start)",
 		async (_case, person, actualMinutes) => {
-			const total = await computeEmployeeWorkBalance({
-				employeeId: person().employeeId,
-				organizationId: fixture.organizationId,
+			const scope = { employeeId: person().employeeId, organizationId: fixture.organizationId };
+			await refreshEmployeeWorkBalanceFromPeriods({
+				...scope,
+				forceFullRebuild: true,
 				now: new Date("2026-05-07T08:00:00Z"),
 			});
-			if (!total) throw new Error("no total balance");
+			const total = await getEmployeeWorkBalance(scope);
+			if (!total) throw new Error("no stored total balance");
 			expect(total.computedThroughDate).toBe(CONVERSION_DAY);
 
 			const rows = [];
