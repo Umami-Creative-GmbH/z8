@@ -8,6 +8,7 @@ import { Children, isValidElement, type ReactElement, type ReactNode, Suspense }
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { ContractorStatementExport } from "@/components/contractor-statements/contractor-statement-export";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
 import { DrivingDetailsMissingNotice } from "@/components/time-tracking/driving-details-missing-notice";
 import { PeriodBlockerFocus } from "@/components/time-tracking/period-blocker-focus";
@@ -19,6 +20,7 @@ import { getTranslate } from "@/tolgee/server";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
 import {
+	readContractorStatementRegion,
 	readDrivingRegion,
 	readHistoryRegion,
 	readPeriodsRegion,
@@ -33,6 +35,7 @@ import {
 } from "./region-fallbacks";
 import {
 	ClockRegion,
+	ContractorStatementRegion,
 	DrivingRegion,
 	HistoryRegion,
 	PeriodBlockerFocusRegion,
@@ -70,10 +73,14 @@ vi.mock("next-intl/server", () => ({ getLocale: vi.fn(async () => "de") }));
 vi.mock("./render-context", () => ({ getTimeTrackingRenderContext: vi.fn() }));
 vi.mock("./read-queries", () => ({ readActiveWorkPeriod: vi.fn() }));
 vi.mock("./region-data", () => ({
+	readContractorStatementRegion: vi.fn(),
 	readDrivingRegion: vi.fn(),
 	readHistoryRegion: vi.fn(),
 	readPeriodsRegion: vi.fn(),
 	readSummaryRegion: vi.fn(),
+}));
+vi.mock("@/components/contractor-statements/contractor-statement-export", () => ({
+	ContractorStatementExport: () => null,
 }));
 vi.mock("@/components/time-tracking/period-submissions-card", () => ({
 	PeriodSubmissionsCard: () => null,
@@ -190,6 +197,22 @@ describe("driving details missing notice (#1127)", () => {
 	});
 });
 
+describe("contractor statement region", () => {
+	it("offers an External Contractor their own statement", async () => {
+		vi.mocked(readContractorStatementRegion).mockResolvedValue({ today: "2026-10-02" });
+		const card = leaf(await ContractorStatementRegion({ context }));
+		expect(card.type).toBe(ContractorStatementExport);
+		expect(card.props).toEqual({ employeeId: "employee-1", audience: "self", today: "2026-10-02" });
+	});
+
+	it("shows nothing to people who were never contractors, or when it cannot be read", async () => {
+		vi.mocked(readContractorStatementRegion).mockResolvedValue(null);
+		expect(await ContractorStatementRegion({ context })).toBeNull();
+		vi.mocked(readContractorStatementRegion).mockRejectedValue(new Error("down"));
+		expect(await ContractorStatementRegion({ context })).toBeNull();
+	});
+});
+
 describe("independent time tracking region components", () => {
 	it("clock resolves while secondary regions and search params are pending", async () => {
 		const identity = Promise.withResolvers<EmployeeRenderContext>();
@@ -261,11 +284,12 @@ describe("independent time tracking region components", () => {
 			TimelineRegion,
 			HistoryRegion,
 			PeriodsRegion,
+			ContractorStatementRegion,
 			WorkdayContextRegion,
 			WorkplacePolicyRegion,
 		]);
 		expect(boundaries.map((boundary) => boundary.props.children.props.context)).toEqual(
-			Array(8).fill(context),
+			Array(9).fill(context),
 		);
 		expect(
 			boundaries

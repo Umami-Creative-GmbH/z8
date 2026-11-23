@@ -85,6 +85,9 @@ const ids = {
 	overriddenDaily: id("17"),
 	unpriced: id("18"),
 	foreign: id("19"),
+	tokyo: id("20"),
+	usd: id("21"),
+	lateStart: id("22"),
 	customer: id("c1"),
 	foreignCustomer: id("c2"),
 	website: id("a1"),
@@ -101,8 +104,17 @@ const contractors = [
 	ids.overriddenDaily,
 	ids.unpriced,
 ] as const;
+/** Contractors a single test seeds with its own engagement. */
+const ownSetupContractors = [ids.tokyo, ids.usd, ids.lateStart] as const;
 const userOf = (employeeId: string) => `t1999-user-${employeeId.slice(-4)}`;
-const everyEmployee = [ids.owner, ids.pm, ids.teamManager, ...contractors, ids.foreign];
+const everyEmployee = [
+	ids.owner,
+	ids.pm,
+	ids.teamManager,
+	...contractors,
+	...ownSetupContractors,
+	ids.foreign,
+];
 const fromDay = "2026-03-01";
 const toDay = "2026-03-31";
 
@@ -139,6 +151,9 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 		end: string;
 		billable?: boolean;
 		organizationId?: string;
+		/** The clock entries' captured offset and zone; UTC by default. */
+		offsetMinutes?: number;
+		timezone?: string;
 	}) {
 		const organizationId = options.organizationId ?? ORG;
 		const minutes = (new Date(options.end).getTime() - new Date(options.start).getTime()) / 60_000;
@@ -151,8 +166,17 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 			await admin.query(
 				`insert into time_entry
 				 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone, timezone_source, hash, created_by)
-				 values ($1::uuid, $2, $3, $4, $5, 0, 'Etc/UTC', 'user_setting', $1::uuid::text, $6)`,
-				[entryId, options.employeeId, organizationId, type, timestamp, userOf(ids.owner)],
+				 values ($1::uuid, $2, $3, $4, $5, $7, $8, 'user_setting', $1::uuid::text, $6)`,
+				[
+					entryId,
+					options.employeeId,
+					organizationId,
+					type,
+					timestamp,
+					userOf(ids.owner),
+					options.offsetMinutes ?? 0,
+					options.timezone ?? "Etc/UTC",
+				],
 			);
 		}
 		await withCanonicalRecords(admin, (client) =>
@@ -176,19 +200,19 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 		);
 	}
 
-	async function contractor(employeeId: string, organizationId = ORG) {
+	async function contractor(employeeId: string, startedAt = "2026-01-01T00:00:00Z") {
 		await admin.query(
 			`insert into employee (id, user_id, organization_id, role, engagement_kind, updated_at)
 			 values ($1, $2, $3, 'employee', 'contractor', now())`,
-			[employeeId, userOf(employeeId), organizationId],
+			[employeeId, userOf(employeeId), ORG],
 		);
 		const {
 			rows: [period],
 		} = await admin.query<{ id: string }>(
 			`insert into employee_employment_period
 			 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
-			 values ($1, $2, 'open', '2026-01-01T00:00:00Z', 'recorded', 'contractor') returning id`,
-			[organizationId, employeeId],
+			 values ($1, $2, 'open', $3, 'recorded', 'contractor') returning id`,
+			[ORG, employeeId, startedAt],
 		);
 		return period.id;
 	}
@@ -251,7 +275,11 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 			`insert into member (id, organization_id, user_id, role, status, created_at)
 			 select 'm-' || user_id, $1, user_id, case when user_id = $2 then 'owner' else 'member' end, 'approved', now()
 			 from unnest($3::text[]) as user_id`,
-			[ORG, userOf(ids.owner), [ids.owner, ids.pm, ids.teamManager, ...contractors].map(userOf)],
+			[
+				ORG,
+				userOf(ids.owner),
+				[ids.owner, ids.pm, ids.teamManager, ...contractors, ...ownSetupContractors].map(userOf),
+			],
 		);
 		await admin.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at)
@@ -543,6 +571,73 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 
 		expect(support[ids.unpriced]).toEqual({ revenue: "80.00", cost: null, margin: null });
 		expect(supportTotals).toMatchObject({ cost: null, margin: null, costUnknownWorkCount: 1 });
+	});
+
+	it("shares a contractor-local day fee with night work that started before the report's first day", async () => {
+		// Neither the organization's zone nor UTC decides the day: the contractor works at +09:00.
+		await admin.query("update organization set timezone = 'America/New_York' where id = $1", [ORG]);
+		const periodId = await contractor(ids.tokyo);
+		await terms(ids.tokyo, periodId, {
+			basis: "daily",
+			rate: "480",
+			rule: "any_work_full_day",
+			from: "2026-02-01",
+		});
+		const tokyo = { employeeId: ids.tokyo, offsetMinutes: 540, timezone: "Asia/Tokyo" };
+		// 28 Feb 23:00 – 1 Mar 03:00 Tokyo: starts before the report, 3 h of it on 1 March.
+		await work({
+			...tokyo,
+			projectId: ids.website,
+			start: "2026-02-28T14:00:00Z",
+			end: "2026-02-28T18:00:00Z",
+		});
+		// 1 Mar 09:00 – 10:00 Tokyo, in the report.
+		await work({
+			...tokyo,
+			projectId: ids.website,
+			start: "2026-03-01T00:00:00Z",
+			end: "2026-03-01T01:00:00Z",
+		});
+		actAs(ids.owner);
+		const website = await costsByEmployee(ids.website);
+
+		// One fee of 480.00 for 1 March over 3 h + 1 h: the reported hour carries 120.00.
+		expect(website[ids.tokyo]).toEqual({ revenue: "100.00", cost: "120.00", margin: "-20.00" });
+	});
+
+	it("keeps margin unknown for contractor terms in another currency than the billable one", async () => {
+		const periodId = await contractor(ids.usd);
+		await terms(ids.usd, periodId, { basis: "hourly", rate: "90", currency: "USD" });
+		await work({
+			employeeId: ids.usd,
+			projectId: ids.website,
+			start: "2026-03-09T09:00:00Z",
+			end: "2026-03-09T11:00:00Z",
+		});
+		actAs(ids.owner);
+		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
+		const website = await costsByEmployee(ids.website);
+
+		expect(website[ids.usd]).toEqual({ revenue: "200.00", cost: null, margin: null });
+		expect(report.summary.billable).toMatchObject({ cost: null, costUnknownWorkCount: 1 });
+	});
+
+	it("keeps margin unknown for work that started before the contractor engagement", async () => {
+		const periodId = await contractor(ids.lateStart, "2026-03-05T12:00:00Z");
+		await terms(ids.lateStart, periodId, { basis: "hourly", rate: "90", from: "2026-03-04" });
+		// 10:00 – 14:00 UTC: only the two hours from noon are contractor work.
+		await work({
+			employeeId: ids.lateStart,
+			projectId: ids.website,
+			start: "2026-03-05T10:00:00Z",
+			end: "2026-03-05T14:00:00Z",
+		});
+		actAs(ids.owner);
+		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
+		const website = await costsByEmployee(ids.website);
+
+		expect(website[ids.lateStart]).toEqual({ revenue: "400.00", cost: null, margin: null });
+		expect(report.summary.billable).toMatchObject({ cost: null, costUnknownWorkCount: 1 });
 	});
 
 	it("rolls a known project cost up from the contractors' allocated fees", async () => {

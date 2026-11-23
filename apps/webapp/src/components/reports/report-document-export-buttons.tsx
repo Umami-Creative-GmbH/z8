@@ -68,7 +68,7 @@ export function useProjectReportExportLabels(): ProjectReportExportLabels {
 		),
 		costUnknownNote: t(
 			"reports.projects.export.costUnknownNote",
-			"Cost unknown: some of the work has no cost rate or contractor rate, so its cost and margin are not shown.",
+			"Cost unknown: some of the work has no usable cost rate or contractor rate, so its cost and margin are not shown.",
 		),
 		invoicedHours: t("reports.projects.export.invoicedHours", "Invoiced hours"),
 		invoicedRevenue: t("reports.projects.export.invoicedRevenue", "Invoiced revenue"),
