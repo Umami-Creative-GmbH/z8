@@ -262,7 +262,8 @@ function severityOf(tier: "ok" | "warning" | "critical" | "exceeded"): Statutory
  * Judges one employee's compliance weeks from `judgedWeeks.from` (a Monday) up to
  * `judgedWeeks.toExclusive` (a Monday), using every week of the rolling window before them. With
  * `ceilingToExclusive` (a later Monday) the weeks after them are judged for the 26-week ceiling
- * only: a judged week crossing 20 h raises the rolling count of later weeks too.
+ * only, and only when a judged week is itself above 20 h: it raises the rolling count of later
+ * weeks too. Without such a week the later weeks are not the judged window's findings.
  */
 export function evaluateWorkingStudentEmployee(input: {
 	readonly organizationId: string;
@@ -301,6 +302,7 @@ export function evaluateWorkingStudentEmployee(input: {
 	const weeks: WorkingStudentWeek[] = [];
 	const counted: { monday: PlainDate; source: "own" | "prior" }[] = [];
 	const findings: WorkingStudentFinding[] = [];
+	let judgedWeekOverLimit = false;
 
 	for (
 		let monday = evaluatedFrom;
@@ -355,7 +357,10 @@ export function evaluateWorkingStudentEmployee(input: {
 		weeks.push(week);
 
 		const judged = comparePlainDates(monday, judgedFrom) >= 0;
-		if (!judged || !isWorkingStudentWeek) continue;
+		const ceilingOnly = comparePlainDates(monday, judgedUntil) >= 0;
+		if (judged && !ceilingOnly && overLimit) judgedWeekOverLimit = true;
+		// A later week is only the judged window's business when a judged week raises its count.
+		if (!judged || !isWorkingStudentWeek || (ceilingOnly && !judgedWeekOverLimit)) continue;
 
 		const periodEnd = monday.add({ weeks: 1 }).toString();
 		const base = {
@@ -368,7 +373,6 @@ export function evaluateWorkingStudentEmployee(input: {
 			acknowledgementKind: "working_student_over_20h_week" as const,
 		};
 
-		const ceilingOnly = comparePlainDates(monday, judgedUntil) >= 0;
 		if (lectureBreach && limitMinutes !== null && !ceilingOnly) {
 			const legalReference =
 				thresholds.rowOn(WEEKLY_LIMIT_KEY, weekStart)?.legalReference ??

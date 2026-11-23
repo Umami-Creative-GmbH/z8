@@ -67,8 +67,9 @@ export interface WorkingStudentMonitorRequest {
 	readonly preferences?: StatutoryPreferences;
 	/**
 	 * Also judge later weeks for the 26-week ceiling: every week up to 51 weeks after the judged
-	 * ones (or the last planned work) whose rolling window includes a judged week. Scheduling and
-	 * Staffing set it, so a week newly above 20 h shows the later week it makes the 27th.
+	 * ones (or the last planned work) whose rolling window includes a judged week, as long as a
+	 * judged week is itself above 20 h. Scheduling and Staffing set it, so a week newly above 20 h
+	 * shows the later week it makes the 27th.
 	 */
 	readonly judgeCeilingForward?: boolean;
 }

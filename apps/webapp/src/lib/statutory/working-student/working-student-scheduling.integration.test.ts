@@ -245,6 +245,40 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 		]);
 	});
 
+	it("leaves later ceiling weeks out of a window whose own weeks stay within 20 h", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 22 planned weekend weeks above 20 h in W12–W33; W10 itself has 10 h of lecture-week work.
+		for (let index = 2; index <= 23; index++) {
+			await fx.shift(org, subareaId, student, weekendOver20h(addWeeks(W10_2030, index)));
+		}
+		await fx.shift(org, subareaId, student, { date: W10_2030, start: "09:00", end: "14:00" });
+		await fx.shift(org, subareaId, student, { date: "2030-03-05", start: "09:00", end: "14:00" });
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* ScheduleComplianceService;
+				return yield* service.evaluateScheduleWindow({
+					organizationId: org.id,
+					startDate: shiftDateBounds(W10_2030, TZ).start,
+					endDateExclusive: shiftDateBounds(addWeeks(W10_2030, 1), TZ).start,
+					timezone: TZ,
+				});
+			}).pipe(
+				Effect.provide(
+					ScheduleComplianceServiceLive.pipe(
+						Layer.provide(workPolicyLayer),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+
+		expect(result.findings.filter((finding) => finding.type === "statutory")).toEqual([]);
+		expect(result.summary.byType.statutory).toBe(0);
+	});
+
 	it("warns Staffing when a proposed shift makes the 27th week above 20 h", async () => {
 		const org = await fx.organization("a", TZ);
 		const student = await fx.workingStudent(org, "student");
