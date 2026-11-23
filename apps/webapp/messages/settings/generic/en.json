@@ -4314,7 +4314,7 @@
         "minutes": "{minutes} min of school time credited"
       },
       "lessons": "{count} lessons",
-      "workplaceReturn": "Under 18: returning to work after school is flagged (§ 9 JArbSchG)",
+      "workplaceReturn": "Under 18: no return to work after this full school day (§ 9 Abs. 1 Nr. 2 JArbSchG)",
       "void": "Remove",
       "voidReason": "Why is it removed?",
       "voidConfirm": "Remove release day",

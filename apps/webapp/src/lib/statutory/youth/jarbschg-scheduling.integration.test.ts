@@ -6,13 +6,20 @@
 import { Effect, Layer } from "effect";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	ScheduleComplianceService,
 	ScheduleComplianceServiceLive,
 } from "@/lib/effect/services/schedule-compliance.service";
-import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
+import {
+	StaffingSuggestionService,
+	StaffingSuggestionServiceLive,
+} from "@/lib/effect/services/staffing-suggestion.service";
+import {
+	WorkPolicyService,
+	WorkPolicyServiceLive,
+} from "@/lib/effect/services/work-policy.service";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { integrationAdminPool } from "@/test/integration-database";
 import {
@@ -26,7 +33,7 @@ import {
 } from "../acknowledgements";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
-import { youthSeed } from "./testing/youth-seed";
+import { localInstant, youthSeed } from "./testing/youth-seed";
 
 const caller = vi.hoisted(() => ({ userId: "", organizationId: "" }));
 
@@ -213,6 +220,97 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			data: { published: false, requiresAcknowledgment: true },
 		});
 		expect(await shiftStatus(late)).toBe("draft");
+	});
+
+	describe("Staffing sees what a proposal breaks on neighbouring days", () => {
+		const staffingLayer = StaffingSuggestionServiceLive.pipe(
+			Layer.provide(
+				Layer.succeed(WorkPolicyService, {
+					getEffectivePolicyAt: () => Effect.succeed(null),
+				} as never),
+			),
+			Layer.provide(DatabaseServiceLive),
+		);
+		const youthWarnings = (
+			who: FixtureEmployee,
+			date: string,
+			startTime: string,
+			endTime: string,
+		) =>
+			Effect.runPromise(
+				Effect.gen(function* () {
+					const service = yield* StaffingSuggestionService;
+					const suggestions = yield* service.suggestForShift({
+						organizationId: org.id,
+						timezone: org.timezone,
+						candidates: [{ employeeId: who.employeeId, displayName: "Minor", isActive: true }],
+						shift: { subareaId, date, startTime, endTime },
+					});
+					return (suggestions[0]?.warnings ?? []).flatMap((warning) =>
+						warning.type === "compliance" && warning.finding.type === "statutory"
+							? [warning.finding.statutoryKind]
+							: [],
+					);
+				}).pipe(Effect.provide(staffingLayer)),
+			);
+
+		it("warns about the rest period a Monday evening shift cuts short before Tuesday 06:00", async () => {
+			const minor = await fx.employee(org, "early", { birthday: "2011-01-01" });
+			await shift(minor, "2027-03-02", "06:00", "12:00");
+			expect(await youthWarnings(minor, "2027-03-01", "14:00", "20:00")).toContain(
+				"jarbschg_rest_period",
+			);
+		});
+
+		it("warns about the weekly maximum and sixth day a Monday shift causes later in the week", async () => {
+			const minor = await fx.employee(org, "busy", { birthday: "2011-01-01" });
+			for (const date of ["2027-03-02", "2027-03-03", "2027-03-04", "2027-03-05", "2027-03-06"]) {
+				await shift(minor, date, "08:00", "16:12"); // 7.2 h of work each: 36 h over five days.
+			}
+			const warnings = await youthWarnings(minor, "2027-03-01", "07:00", "17:00");
+			expect(warnings).toEqual(
+				expect.arrayContaining(["jarbschg_weekly_max", "jarbschg_days_per_week"]),
+			);
+		});
+	});
+
+	describe("work in progress", () => {
+		const evaluateAt = async (who: FixtureEmployee, now: Instant) =>
+			jarbschgScheduleContributor.evaluate({
+				db,
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: WEEK.startDate, endExclusive: WEEK.endDateExclusive },
+				employeeIds: [who.employeeId],
+				proposedShifts: [],
+				replacesShiftId: null,
+				preferences: await loadOrganizationStatutoryPreferences(db, org.id),
+				now,
+			});
+
+		it("counts today's completed work together with today's later shift", async () => {
+			const minor = await fx.employee(org, "today", { birthday: "2011-01-01" });
+			await seed.work(org, minor, "2027-03-01", "08:00", 240);
+			const afternoon = await shift(minor, "2027-03-01", "13:00", "19:00");
+			const findings = await evaluateAt(minor, localInstant("2027-03-01", "12:30", org.timezone));
+			expect(findings).toContainEqual(
+				expect.objectContaining({ kind: "jarbschg_daily_max", subjectKey: `shift:${afternoon}` }),
+			);
+		});
+
+		it("keeps an open night clock-in after midnight", async () => {
+			const minor = await fx.employee(org, "nightowl", { birthday: "2011-01-01" });
+			const night = await shift(minor, "2027-03-01", "22:00", "02:00");
+			await seed.openWork(org, minor, "2027-03-01", "22:00");
+			const findings = await evaluateAt(minor, localInstant("2027-03-02", "01:00", org.timezone));
+			expect(findings).toContainEqual(
+				expect.objectContaining({
+					kind: "jarbschg_night_work",
+					subjectKey: `shift:${night}`,
+					summary: expect.objectContaining({ used: { unit: "minutes", value: 240 } }),
+				}),
+			);
+		});
 	});
 
 	it("drops adult ArbZG findings for executive-exempt adults, never youth limits", async () => {

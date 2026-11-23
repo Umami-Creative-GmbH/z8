@@ -4314,7 +4314,7 @@
         "minutes": "{minutes} Min. Unterrichtszeit angerechnet"
       },
       "lessons": "{count} Unterrichtsstunden",
-      "workplaceReturn": "Unter 18: Rückkehr in den Betrieb nach der Schule wird markiert (§ 9 JArbSchG)",
+      "workplaceReturn": "Unter 18: keine Rückkehr in den Betrieb nach diesem vollen Berufsschultag (§ 9 Abs. 1 Nr. 2 JArbSchG)",
       "void": "Entfernen",
       "voidReason": "Warum wird er entfernt?",
       "voidConfirm": "Freistellungstag entfernen",

@@ -10,7 +10,7 @@ import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { listApprenticeReleases, recordApprenticeRelease } from "../employee-context";
 import { isMinorOn } from "../youth/age";
-import { loadEmployeeBirthdays } from "../youth/youth-facts";
+import { loadEmployeeBirthdays, loadHolidayDateKeys } from "../youth/youth-facts";
 import { apprenticeReleaseDays } from "./release-credits";
 
 type Reader = Pick<DatabaseClient, "select">;
@@ -27,7 +27,10 @@ export interface ApprenticeReleaseCreditView {
 	readonly fullDays: number;
 	/** School minutes credited on days that are only partly released. */
 	readonly creditedMinutes: number;
-	/** Under 18 on a partly credited school day: their return to the workplace is flagged. */
+	/**
+	 * The week's full school day (more than five lessons of 45 minutes) of an employee under 18:
+	 * they may not return to the workplace afterwards (§ 9 Abs. 1 Nr. 2 JArbSchG).
+	 */
 	readonly flagsWorkplaceReturn: boolean;
 }
 
@@ -94,7 +97,7 @@ export async function loadApprenticeReleaseCredits(
 					creditedMinutes: partial.reduce((total, day) => total + (day.minutes ?? 0), 0),
 					flagsWorkplaceReturn:
 						release.releaseKind === "vocational_school_day" &&
-						partial.length > 0 &&
+						own.length > partial.length &&
 						isMinorOn(birthday, parsePlainDate(release.startsOn)),
 				};
 			})
@@ -166,9 +169,25 @@ export async function recordApprenticeReleaseWithCredit(
 			"Release days can only be recorded while the employee's terms make them an apprentice",
 		);
 	}
+	// The working day before the exam: a public holiday is no working day.
+	const holidays =
+		lookback.length > 0
+			? ((
+					await loadHolidayDateKeys(db, {
+						organizationId: input.organizationId,
+						employeeIds: [input.employeeId],
+						from: lookback[lookback.length - 1].toString(),
+						until: examDay.toString(),
+					})
+				).get(input.employeeId) ?? new Set<string>())
+			: new Set<string>();
 	const preExamDay = lookback.find((day) => {
 		const contract = contracts.get(day.toString());
-		return contract?.isWorkDay && contract.employmentProfile === "apprentice";
+		return (
+			contract?.isWorkDay &&
+			contract.employmentProfile === "apprentice" &&
+			!holidays.has(day.toString())
+		);
 	});
 	if (input.includePreExamDay && input.releaseKind === "exam_day" && !preExamDay) {
 		refuse(

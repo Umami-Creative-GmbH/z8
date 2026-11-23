@@ -39,7 +39,11 @@ describe("apprentice release actions (PostgreSQL)", () => {
 	let owner: FixtureEmployee;
 	let learner: FixtureEmployee;
 
-	const as = (who: FixtureEmployee, membershipRole: string, role: "employee" | "manager" | "admin") => {
+	const as = (
+		who: FixtureEmployee,
+		membershipRole: string,
+		role: "employee" | "manager" | "admin",
+	) => {
 		harness.caller = {
 			userId: who.userId,
 			activeOrganizationId: org.id,
@@ -77,6 +81,15 @@ describe("apprentice release actions (PostgreSQL)", () => {
 		expect(
 			await recordApprenticeReleaseAction({
 				employeeId: learner.employeeId,
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-09",
+				endsOn: "2027-03-09",
+				lessonCount: 6,
+			}),
+		).toMatchObject({ success: true });
+		expect(
+			await recordApprenticeReleaseAction({
+				employeeId: learner.employeeId,
 				releaseKind: "exam_day",
 				startsOn: "2027-05-12",
 				endsOn: "2027-05-12",
@@ -92,12 +105,40 @@ describe("apprentice release actions (PostgreSQL)", () => {
 			expect.objectContaining({ releaseKind: "pre_exam_day", startsOn: "2027-05-11", fullDays: 1 }),
 			expect.objectContaining({
 				releaseKind: "vocational_school_day",
-				fullDays: 0,
-				creditedMinutes: 180,
-				// Under 18 on a partly credited school day: returning to work is flagged.
+				startsOn: "2027-03-09",
+				fullDays: 1,
+				// The week's full school day: an under-18 may not return to work afterwards.
 				flagsWorkplaceReturn: true,
 			}),
+			expect.objectContaining({
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-02",
+				fullDays: 0,
+				creditedMinutes: 180,
+				// A partly credited school day: returning to work afterwards is lawful.
+				flagsWorkplaceReturn: false,
+			}),
 		]);
+	});
+
+	it("moves the pre-exam release day off a public holiday to the working day before it", async () => {
+		// The exam is on Tuesday 30 March 2027; Monday 29 March is a public holiday here.
+		const holidayId = await seed.publicHoliday(org, owner, "2027-03-29");
+		expect(holidayId).toBeTruthy();
+		expect(
+			await recordApprenticeReleaseAction({
+				employeeId: learner.employeeId,
+				releaseKind: "exam_day",
+				startsOn: "2027-03-30",
+				endsOn: "2027-03-30",
+				includePreExamDay: true,
+			}),
+		).toMatchObject({ success: true });
+		const result = await getApprenticeReleaseCreditsAction({ employeeId: learner.employeeId });
+		if (!result.success) throw new Error(result.error);
+		expect(result.data.releases).toContainEqual(
+			expect.objectContaining({ releaseKind: "pre_exam_day", startsOn: "2027-03-26" }),
+		);
 	});
 
 	it("refuses release days for employees who are not apprentices, and a school day without lessons", async () => {
@@ -139,7 +180,10 @@ describe("apprentice release actions (PostgreSQL)", () => {
 
 		as(manager, "member", "manager");
 		const managed = await getApprenticeReleaseCreditsAction({ employeeId: learner.employeeId });
-		expect(managed).toMatchObject({ success: true, data: { releases: [{ releaseKind: "exam_day" }] } });
+		expect(managed).toMatchObject({
+			success: true,
+			data: { releases: [{ releaseKind: "exam_day" }] },
+		});
 		expect(
 			await recordApprenticeReleaseAction({
 				employeeId: learner.employeeId,
@@ -150,9 +194,9 @@ describe("apprentice release actions (PostgreSQL)", () => {
 		).toMatchObject({ success: false });
 
 		as(stranger, "member", "manager");
-		expect(await getApprenticeReleaseCreditsAction({ employeeId: learner.employeeId })).toMatchObject(
-			{ success: false, code: "AuthorizationError" },
-		);
+		expect(
+			await getApprenticeReleaseCreditsAction({ employeeId: learner.employeeId }),
+		).toMatchObject({ success: false, code: "AuthorizationError" });
 
 		as(learner, "member", "employee");
 		const own = await getOwnApprenticeReleaseCreditsAction();

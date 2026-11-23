@@ -7,12 +7,7 @@
  * in force on each day (`de_jarbschg_*`); a day without baselines is not judged.
  */
 import { Temporal } from "temporal-polyfill";
-import {
-	compareInstants,
-	type Instant,
-	type PlainDate,
-	parsePlainDate,
-} from "@/lib/datetime/temporal-core";
+import { compareInstants, type Instant, type PlainDate } from "@/lib/datetime/temporal-core";
 
 export const jarbschgRules = [
 	"jarbschg_daily_max",
@@ -84,9 +79,14 @@ export interface YouthWorkInterval {
 	readonly end: Instant;
 	/** Working minutes, breaks excluded. */
 	readonly workMinutes: number;
-	/** Recorded work; only recorded work is judged for breaks and uninterrupted stretches. */
+	/** Completed recorded work; only it is judged for breaks and uninterrupted stretches. */
 	readonly recorded: boolean;
-	/** For recorded work: the planned shift it belongs to, whose sector exception covers it. */
+	/** An open clock-in, counted until now or the end of its shift; never blocks publication. */
+	readonly inProgress?: boolean;
+	/**
+	 * For work and the rest of a partly worked shift: the planned shift it belongs to. A sector
+	 * exception acknowledged for that shift covers the work inside the shift's bounds only.
+	 */
 	readonly plannedShift?: {
 		readonly ref: string;
 		readonly start: Instant;
@@ -103,13 +103,27 @@ export interface JarbschgBreach {
 	readonly actual: number;
 	readonly limit: number;
 	readonly unit: "minutes" | "days";
+	/**
+	 * Night, Saturday, Sunday and holiday breaches of work that belongs to a planned shift: how much
+	 * of the breach lies outside the shift's bounds (night minutes, or flagged days the shift does
+	 * not touch). Zero when the work stays within the shift.
+	 */
+	readonly outsidePlannedShift?: number;
 }
 
 export interface JarbschgEvaluationInput {
 	readonly timezone: string;
 	readonly intervals: readonly YouthWorkInterval[];
-	/** Local days that get breaches, `[start, endExclusive)`; earlier days only count toward totals. */
+	/** Local days being judged, `[start, endExclusive)`; other days count toward totals. */
 	readonly judged: { readonly start: string; readonly endExclusive: string };
+	/**
+	 * `judged_days` (default) reports breaches attributed to a judged day. `touching_judged_days`
+	 * also reports breaches attributed to other days that work on a judged day helps cause: the
+	 * rest period before the next day, and the weekly total, sixth working day and 8.5 h
+	 * compensation later in the compliance week. Planning a shift uses it, so a proposal sees what
+	 * it breaks on its neighbouring days.
+	 */
+	readonly report?: "judged_days" | "touching_judged_days";
 	readonly isMinorOn: (day: PlainDate) => boolean;
 	readonly limitsOn: (day: PlainDate) => JarbschgLimits | null;
 	/** Local public holiday dates, `YYYY-MM-DD`. */
@@ -122,7 +136,8 @@ export interface JarbschgEvaluationInput {
  */
 export function plannedShiftWorkMinutes(
 	grossMinutes: number,
-	breaks: { readonly first: number; readonly second: number } = { first: 30, second: 60 },
+	/** The break baselines in force (`de_jarbschg_break_after_270/360_minutes`). */
+	breaks: { readonly first: number; readonly second: number },
 ): number {
 	const gross = Math.max(0, Math.round(grossMinutes));
 	if (gross <= FIRST_BREAK_AFTER_MINUTES) return gross;
@@ -152,17 +167,50 @@ function groupBy<T>(items: readonly T[], key: (item: T) => string): Map<string, 
 	const groups = new Map<string, T[]>();
 	for (const item of items) {
 		const k = key(item);
-		groups.set(k, [...(groups.get(k) ?? []), item]);
+		const group = groups.get(k);
+		if (group) group.push(item);
+		else groups.set(k, [item]);
 	}
 	return groups;
 }
 
+/** Local days an interval touches: its start day through the day of its last minute. */
+function daysTouched(interval: Span, timezone: string): PlainDate[] {
+	const first = interval.start.toZonedDateTimeISO(timezone).toPlainDate();
+	const lastMoment =
+		compareInstants(interval.end, interval.start) > 0
+			? interval.end.subtract({ nanoseconds: 1 })
+			: interval.start;
+	const last = lastMoment.toZonedDateTimeISO(timezone).toPlainDate();
+	const days: PlainDate[] = [];
+	for (let day = first; Temporal.PlainDate.compare(day, last) <= 0; day = day.add({ days: 1 })) {
+		days.push(day);
+	}
+	return days;
+}
+
+type Span = { readonly start: Instant; readonly end: Instant };
+
+/** The parts of `span` before and after `bounds`. */
+function partsOutside(span: Span, bounds: Span): Span[] {
+	const parts: Span[] = [];
+	if (compareInstants(span.start, bounds.start) < 0) {
+		parts.push({
+			start: span.start,
+			end: compareInstants(span.end, bounds.start) < 0 ? span.end : bounds.start,
+		});
+	}
+	if (compareInstants(span.end, bounds.end) > 0) {
+		parts.push({
+			start: compareInstants(span.start, bounds.end) > 0 ? span.start : bounds.end,
+			end: span.end,
+		});
+	}
+	return parts;
+}
+
 /** Minutes of `interval` inside the local night `[nightStart, nightEnd)` of any day it touches. */
-function nightOverlapMinutes(
-	interval: YouthWorkInterval,
-	timezone: string,
-	limits: JarbschgLimits,
-): number {
+function nightOverlapMinutes(interval: Span, timezone: string, limits: JarbschgLimits): number {
 	const firstDay = interval.start.toZonedDateTimeISO(timezone).toPlainDate().subtract({ days: 1 });
 	const lastDay = interval.end.toZonedDateTimeISO(timezone).toPlainDate();
 	const at = (day: PlainDate, minuteOfDay: number) =>
@@ -192,8 +240,9 @@ function nightOverlapMinutes(
 
 /** Breaches of the JArbSchG working-time rules on the judged days the employee is a minor. */
 export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach[] {
-	const judgedStart = parsePlainDate(input.judged.start);
-	const judgedEnd = parsePlainDate(input.judged.endExclusive);
+	const isJudged = (dayKey: string) =>
+		dayKey >= input.judged.start && dayKey < input.judged.endExclusive;
+	const touching = input.report === "touching_judged_days";
 	const located: LocatedInterval[] = input.intervals
 		.map((interval) => {
 			const day = interval.start.toZonedDateTimeISO(input.timezone).toPlainDate();
@@ -206,72 +255,87 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 		})
 		.sort((left, right) => compareInstants(left.start, right.start));
 
-	const breaches: JarbschgBreach[] = [];
+	/** Each breach with the local days whose work it depends on. */
+	const found: { readonly breach: JarbschgBreach; readonly involves: readonly string[] }[] = [];
 	const limitsCache = new Map<string, JarbschgLimits | null>();
-	const limitsOf = (day: LocatedInterval) => {
-		if (!limitsCache.has(day.dayKey)) limitsCache.set(day.dayKey, input.limitsOn(day.day));
-		return limitsCache.get(day.dayKey) ?? null;
+	/** Limits on the interval's day when youth rules apply on it, else null. */
+	const youthLimits = (interval: LocatedInterval) => {
+		if (!input.isMinorOn(interval.day)) return null;
+		if (!limitsCache.has(interval.dayKey)) {
+			limitsCache.set(interval.dayKey, input.limitsOn(interval.day));
+		}
+		return limitsCache.get(interval.dayKey) ?? null;
 	};
-	/** Limits when the interval's day is judged and youth rules apply on it, else null. */
-	const judgedLimits = (interval: LocatedInterval) =>
-		Temporal.PlainDate.compare(interval.day, judgedStart) >= 0 &&
-		Temporal.PlainDate.compare(interval.day, judgedEnd) < 0 &&
-		input.isMinorOn(interval.day)
-			? limitsOf(interval)
-			: null;
 	const breach = (
 		rule: JarbschgRule,
 		interval: LocatedInterval,
 		actual: number,
 		limit: number,
 		unit: JarbschgBreach["unit"] = "minutes",
-	) => breaches.push({ rule, ref: interval.ref, day: interval.dayKey, actual, limit, unit });
+		involves: readonly string[] = [interval.dayKey],
+	) =>
+		found.push({
+			breach: { rule, ref: interval.ref, day: interval.dayKey, actual, limit, unit },
+			involves,
+		});
 
 	const byDay = groupBy(located, (interval) => interval.dayKey);
 	const dayMinutes = (dayKey: string) =>
 		(byDay.get(dayKey) ?? []).reduce((total, interval) => total + interval.workMinutes, 0);
 
-	for (const [, weekIntervals] of groupBy(located, (interval) => interval.weekKey)) {
+	for (const weekIntervals of groupBy(located, (interval) => interval.weekKey).values()) {
 		const monday = mondayOf(weekIntervals[0].day);
 		const weekTotal = weekIntervals.reduce((total, interval) => total + interval.workMinutes, 0);
 		const workedDays = [...new Set(weekIntervals.map((interval) => interval.dayKey))];
 
-		// § 8 Abs. 1 / 2a: 8 h a day, 8.5 h when another working day (Mon–Fri) is shortened.
+		// § 8 Abs. 1 / 2a: 8 h a day; 8.5 h only when other working days (Mon–Fri) of the week are
+		// shortened below 8 h so that the week stays within 40 h.
 		for (const dayKey of workedDays) {
 			const dayIntervals = byDay.get(dayKey) ?? [];
-			const limits = judgedLimits(dayIntervals[0]);
+			const limits = youthLimits(dayIntervals[0]);
 			if (!limits) continue;
 			const total = dayMinutes(dayKey);
 			if (total <= limits.maxDailyMinutes) continue;
 			const shortenedElsewhere = [0, 1, 2, 3, 4]
 				.map((offset) => monday.add({ days: offset }).toString())
 				.some((other) => other !== dayKey && dayMinutes(other) < limits.maxDailyMinutes);
-			const limit =
-				total <= limits.maxDailyCompensatoryMinutes && !shortenedElsewhere
-					? limits.maxDailyMinutes
-					: limits.maxDailyCompensatoryMinutes;
+			const compensated = shortenedElsewhere && weekTotal <= limits.maxWeeklyMinutes;
+			const limit = compensated ? limits.maxDailyCompensatoryMinutes : limits.maxDailyMinutes;
 			if (total <= limit) continue;
+			// Within the 8.5 h allowance the verdict depends on the rest of the week.
+			const involves = total <= limits.maxDailyCompensatoryMinutes ? workedDays : [dayKey];
 			let running = 0;
 			for (const interval of dayIntervals) {
 				running += interval.workMinutes;
-				if (running > limit) breach("jarbschg_daily_max", interval, total, limit);
+				if (running > limit) {
+					breach("jarbschg_daily_max", interval, total, limit, "minutes", involves);
+				}
 			}
 		}
 
 		// § 8 Abs. 1: 40 h a week; every piece of work beyond the cap is attributed.
 		let running = 0;
+		const daysSoFar: string[] = [];
 		for (const interval of weekIntervals) {
 			running += interval.workMinutes;
-			const limits = judgedLimits(interval);
+			if (daysSoFar[daysSoFar.length - 1] !== interval.dayKey) daysSoFar.push(interval.dayKey);
+			const limits = youthLimits(interval);
 			if (limits && running > limits.maxWeeklyMinutes) {
-				breach("jarbschg_weekly_max", interval, weekTotal, limits.maxWeeklyMinutes);
+				breach(
+					"jarbschg_weekly_max",
+					interval,
+					weekTotal,
+					limits.maxWeeklyMinutes,
+					"minutes",
+					daysSoFar.slice(),
+				);
 			}
 		}
 
 		// § 15: five working days a week.
 		workedDays.forEach((dayKey, index) => {
 			for (const interval of byDay.get(dayKey) ?? []) {
-				const limits = judgedLimits(interval);
+				const limits = youthLimits(interval);
 				if (limits && index >= limits.maxDaysPerWeek) {
 					breach(
 						"jarbschg_days_per_week",
@@ -279,27 +343,31 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 						workedDays.length,
 						limits.maxDaysPerWeek,
 						"days",
+						workedDays.slice(0, index + 1),
 					);
 				}
 			}
 		});
 	}
 
-	let previousEnd: Instant | null = null;
+	let previous: { readonly end: Instant; readonly dayKey: string } | null = null;
 	for (const [dayKey, dayIntervals] of byDay) {
 		const first = dayIntervals[0];
-		const limits = judgedLimits(first);
+		const limits = youthLimits(first);
 
 		// § 13: 12 h uninterrupted free time after the end of the daily work.
-		if (limits && previousEnd) {
-			const rest = minutesBetween(previousEnd, first.start);
+		if (limits && previous) {
+			const rest = minutesBetween(previous.end, first.start);
 			if (rest < limits.minRestMinutes) {
-				breach("jarbschg_rest_period", first, Math.max(0, rest), limits.minRestMinutes);
+				breach("jarbschg_rest_period", first, Math.max(0, rest), limits.minRestMinutes, "minutes", [
+					previous.dayKey,
+					dayKey,
+				]);
 			}
 		}
 		for (const interval of dayIntervals) {
-			if (!previousEnd || compareInstants(interval.end, previousEnd) > 0) {
-				previousEnd = interval.end;
+			if (!previous || compareInstants(interval.end, previous.end) > 0) {
+				previous = { end: interval.end, dayKey };
 			}
 		}
 		if (!limits) continue;
@@ -308,29 +376,33 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 		const recorded = dayIntervals.filter((interval) => interval.recorded);
 		if (recorded.length > 0) {
 			let breakMinutes = 0;
-			let blockStart = recorded[0];
-			let blockHasInnerBreak = false;
-			const closeBlock = (last: LocatedInterval) => {
-				const length = minutesBetween(blockStart.start, last.end);
-				if (!blockHasInnerBreak && length > limits.maxUninterruptedMinutes) {
-					breach("jarbschg_uninterrupted", last, length, limits.maxUninterruptedMinutes);
-				}
-			};
+			// Worked minutes since the last break segment, and the longest such stretch of the block.
+			let stretch = 0;
+			let longest = 0;
 			recorded.forEach((interval, index) => {
 				const innerBreak = elapsedMinutes(interval) - interval.workMinutes;
 				if (innerBreak >= limits.minBreakSegmentMinutes) {
 					breakMinutes += innerBreak;
-					blockHasInnerBreak = true;
+					// Where the break fell is not recorded: assume as late as keeps the stretch lawful.
+					const before = Math.min(
+						interval.workMinutes,
+						Math.max(0, limits.maxUninterruptedMinutes - stretch),
+					);
+					longest = Math.max(longest, stretch + before);
+					stretch = interval.workMinutes - before;
+				} else {
+					stretch += interval.workMinutes;
 				}
+				longest = Math.max(longest, stretch);
 				const next = recorded[index + 1];
 				const gap = next ? minutesBetween(interval.end, next.start) : 0;
 				if (!next || gap >= limits.minBreakSegmentMinutes) {
-					closeBlock(interval);
-					if (next) {
-						breakMinutes += gap;
-						blockStart = next;
-						blockHasInnerBreak = false;
+					if (longest > limits.maxUninterruptedMinutes) {
+						breach("jarbschg_uninterrupted", interval, longest, limits.maxUninterruptedMinutes);
 					}
+					breakMinutes += gap;
+					stretch = 0;
+					longest = 0;
 				}
 			});
 			const worked = recorded.reduce((total, interval) => total + interval.workMinutes, 0);
@@ -346,22 +418,68 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 		}
 
 		for (const interval of dayIntervals) {
+			const shift = interval.plannedShift;
+			const sector = (
+				rule: JarbschgRule,
+				actual: number,
+				unit: JarbschgBreach["unit"],
+				outside: number,
+			) =>
+				found.push({
+					breach: {
+						rule,
+						ref: interval.ref,
+						day: interval.dayKey,
+						actual,
+						limit: 0,
+						unit,
+						...(shift ? { outsidePlannedShift: outside } : {}),
+					},
+					involves: [interval.dayKey],
+				});
 			// § 14: no work between 20:00 and 06:00.
 			const night = nightOverlapMinutes(interval, input.timezone, limits);
-			if (night > 0) breach("jarbschg_night_work", interval, night, 0);
-			// §§ 16–18: no work on Saturdays, Sundays or public holidays.
-			if (interval.day.dayOfWeek === 6) breach("jarbschg_saturday_work", interval, 1, 0, "days");
-			if (interval.day.dayOfWeek === 7) breach("jarbschg_sunday_work", interval, 1, 0, "days");
-			if (input.holidays.has(dayKey)) breach("jarbschg_holiday_work", interval, 1, 0, "days");
+			if (night > 0) {
+				const outside = shift
+					? partsOutside(interval, shift).reduce(
+							(total, part) => total + nightOverlapMinutes(part, input.timezone, limits),
+							0,
+						)
+					: 0;
+				sector("jarbschg_night_work", night, "minutes", outside);
+			}
+			// §§ 16–18: no work on Saturdays, Sundays or public holidays, overnight work included.
+			const touched = daysTouched(interval, input.timezone);
+			const shiftDays = shift
+				? new Set(daysTouched(shift, input.timezone).map((day) => day.toString()))
+				: new Set<string>();
+			const flagged = (matches: (day: PlainDate) => boolean) => {
+				const days = touched.filter(matches);
+				return {
+					any: days.length > 0,
+					outside: days.filter((day) => !shiftDays.has(day.toString())).length,
+				};
+			};
+			const saturday = flagged((day) => day.dayOfWeek === 6);
+			if (saturday.any) sector("jarbschg_saturday_work", 1, "days", saturday.outside);
+			const sunday = flagged((day) => day.dayOfWeek === 7);
+			if (sunday.any) sector("jarbschg_sunday_work", 1, "days", sunday.outside);
+			const holiday = flagged((day) => input.holidays.has(day.toString()));
+			if (holiday.any) sector("jarbschg_holiday_work", 1, "days", holiday.outside);
 		}
 	}
 
 	const startOf = new Map(located.map((interval) => [interval.ref, interval.start]));
 	const ruleOrder = (rule: JarbschgRule) => jarbschgRules.indexOf(rule);
-	return breaches.sort(
-		(left, right) =>
-			left.day.localeCompare(right.day) ||
-			compareInstants(startOf.get(left.ref) as Instant, startOf.get(right.ref) as Instant) ||
-			ruleOrder(left.rule) - ruleOrder(right.rule),
-	);
+	return found
+		.filter(
+			({ breach: { day }, involves }) => isJudged(day) || (touching && involves.some(isJudged)),
+		)
+		.map(({ breach: reported }) => reported)
+		.sort(
+			(left, right) =>
+				left.day.localeCompare(right.day) ||
+				compareInstants(startOf.get(left.ref) as Instant, startOf.get(right.ref) as Instant) ||
+				ruleOrder(left.rule) - ruleOrder(right.rule),
+		);
 }

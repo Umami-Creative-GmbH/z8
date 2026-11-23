@@ -241,11 +241,19 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		expect(statutoryWarnings(examDay, "Minor")).toEqual([["bbig_release_day_shift", "critical"]]);
 		expect(statutoryWarnings(examDay, "Colleague")).toEqual([]);
 
-		// Thursday's school day is only partly credited: the minor's return to work is flagged.
+		// Tuesday is the week's full school day (> 5 lessons): an under-18 may not return to work
+		// afterwards (§ 9 Abs. 1 Nr. 2 JArbSchG).
+		const fullSchoolDay = await suggest("2027-03-02");
+		expect(statutoryWarnings(fullSchoolDay, "Adult")).toEqual([
+			["bbig_release_day_shift", "warning"],
+		]);
+		expect(statutoryWarnings(fullSchoolDay, "Minor")).toEqual([
+			["jarbschg_school_day_workplace_return", "critical"],
+		]);
+
+		// Thursday's school day is only partly credited: returning to work afterwards is lawful.
 		const partialSchoolDay = await suggest("2027-03-04");
 		expect(statutoryWarnings(partialSchoolDay, "Adult")).toEqual([]);
-		expect(statutoryWarnings(partialSchoolDay, "Minor")).toEqual([
-			["jarbschg_school_day_workplace_return", "warning"],
-		]);
+		expect(statutoryWarnings(partialSchoolDay, "Minor")).toEqual([]);
 	});
 });

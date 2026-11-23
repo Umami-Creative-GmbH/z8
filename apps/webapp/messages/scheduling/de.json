@@ -243,7 +243,7 @@
       },
       "apprenticeship": {
         "releaseDayShift": "Freistellungstag für Auszubildende: Berufsschul-, Blockunterrichts- oder Prüfungstag",
-        "workplaceReturn": "Unter 18: Rückkehr in den Betrieb nach der Berufsschule"
+        "workplaceReturn": "Unter 18: keine Arbeit am vollen Berufsschultag der Woche"
       }
     }
   }

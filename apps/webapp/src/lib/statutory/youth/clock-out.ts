@@ -3,7 +3,8 @@
  * committed and never blocks clocking: it records each broken youth rule of the work's local day
  * once in `work_policy_violation` (without a work policy: youth limits apply whatever the policy).
  * Night, Saturday, Sunday and holiday work on a planned shift whose statutory sector exception is
- * acknowledged and current is not recorded.
+ * acknowledged and current is not recorded; work that overruns the shift makes the exception
+ * stale, so its night or weekend work is recorded.
  */
 import { and, eq, gte, inArray, lt } from "drizzle-orm";
 import { workPolicyViolation } from "@/db/schema";
@@ -13,7 +14,6 @@ import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { attachAcknowledgementStates } from "../acknowledgements";
 import { isMinorOn } from "./age";
-import { youthFindingsOf } from "./jarbschg-contributor";
 import type { JarbschgRule } from "./jarbschg-rules";
 import {
 	loadEmployeeBirthdays,
@@ -21,8 +21,9 @@ import {
 	loadJarbschgLimits,
 	loadYouthShifts,
 	loadYouthWork,
-	withPlannedShifts,
 } from "./youth-facts";
+import { youthFindingsOf } from "./youth-findings";
+import { completedYouthInterval, withPlannedShifts } from "./youth-intervals";
 
 export interface JarbschgClockOutInput {
 	readonly organizationId: string;
@@ -69,7 +70,12 @@ export async function recordJarbschgViolationsAfterClockOut(
 			employeeId: input.employeeId,
 			birthday,
 			timezone: input.timezone,
-			intervals: withPlannedShifts(work.get(input.employeeId) ?? [], shifts),
+			intervals: withPlannedShifts(
+				(work.get(input.employeeId) ?? []).flatMap((record) =>
+					record.end ? [completedYouthInterval({ ...record, end: record.end })] : [],
+				),
+				shifts,
+			),
 			judged: { start: day.toString(), endExclusive: day.add({ days: 1 }).toString() },
 			limitsOn,
 			holidays: holidays.get(input.employeeId) ?? new Set(),

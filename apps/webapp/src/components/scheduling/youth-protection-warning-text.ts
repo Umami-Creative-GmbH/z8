@@ -79,7 +79,7 @@ export function youthProtectionWarningText(
 		case "jarbschg_school_day_workplace_return":
 			return t(
 				"scheduling:scheduling.statutory.apprenticeship.workplaceReturn",
-				"Under 18: return to work after vocational school",
+				"Under 18: no work on the week's full vocational school day",
 			);
 		default:
 			return null;

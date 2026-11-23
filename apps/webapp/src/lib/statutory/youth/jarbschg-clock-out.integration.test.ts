@@ -179,6 +179,43 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		expect(await types(minor)).toEqual(["jarbschg_night_work"]);
 	});
 
+	it("records night work that overruns an acknowledged shift", async () => {
+		const minor = await fx.employee(org, "overrun", { birthday: "2010-06-01" });
+		const subareaId = await seed.subarea(org, owner);
+		await seed.shift(org, minor, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: "2026-03-03",
+			startTime: "17:00",
+			endTime: "21:00",
+		});
+		const findings = await jarbschgScheduleContributor.evaluate({
+			db,
+			organizationId: org.id,
+			timezone: org.timezone,
+			window: { start: "2026-03-02", endExclusive: "2026-03-09" },
+			employeeIds: [minor.employeeId],
+			proposedShifts: [],
+			replacesShiftId: null,
+			preferences: DEFAULT_STATUTORY_PREFERENCES,
+			now: localInstant("2026-03-01", "12:00", org.timezone),
+		});
+		const night = findings.find((finding) => finding.kind === "jarbschg_night_work");
+		const subject = night ? statutoryAcknowledgementSubjectOf(night) : null;
+		if (!night || !subject) throw new Error("expected an acknowledgeable night finding");
+		await recordStatutoryAcknowledgement(db, {
+			...subject,
+			organizationId: org.id,
+			actorUserId: owner.userId,
+			inputFingerprint: night.inputFingerprint,
+			reason: "Hospitality until 21:00",
+		});
+
+		// Worked 17:00–01:30: the exception covered the shift, not four and a half hours past it.
+		await clockOut(minor, "2026-03-03", "17:00", 510);
+		expect(await types(minor)).toContain("jarbschg_night_work");
+	});
+
 	it("records youth violations but never blocks the clock-out, even with publish blocking on", async () => {
 		await seed.blockJarbschgPublish(org);
 		const minor = await fx.employee(org, "sunday", { birthday: "2010-06-01" });

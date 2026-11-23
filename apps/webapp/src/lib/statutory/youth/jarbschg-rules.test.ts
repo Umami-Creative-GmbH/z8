@@ -43,10 +43,12 @@ function shift(date: string, start: string, end: string): YouthWorkInterval {
 		ref: `shift:${counter}`,
 		start: startAt,
 		end: endAt,
-		workMinutes: plannedShiftWorkMinutes(gross),
+		workMinutes: plannedShiftWorkMinutes(gross, BREAKS),
 		recorded: false,
 	};
 }
+
+const BREAKS = { first: LIMITS.breakAfter270Minutes, second: LIMITS.breakAfter360Minutes };
 
 /** Recorded work without inner breaks. */
 function work(date: string, start: string, end: string): YouthWorkInterval {
@@ -63,6 +65,7 @@ function evaluate(
 	intervals: YouthWorkInterval[],
 	options: {
 		judged?: { start: string; endExclusive: string };
+		report?: "judged_days" | "touching_judged_days";
 		minorUntil?: string;
 		holidays?: string[];
 	} = {},
@@ -72,6 +75,7 @@ function evaluate(
 		timezone: ZONE,
 		intervals,
 		judged: options.judged ?? { start: "2026-03-02", endExclusive: "2026-03-09" },
+		report: options.report,
 		isMinorOn: (day: PlainDate) =>
 			adultFrom === null || Temporal.PlainDate.compare(day, adultFrom) < 0,
 		limitsOn: () => LIMITS,
@@ -83,12 +87,18 @@ const rules = (breaches: ReturnType<typeof evaluate>) => breaches.map((breach) =
 
 describe("plannedShiftWorkMinutes", () => {
 	it("assumes the statutory minimum youth break is taken within a planned shift", () => {
-		expect(plannedShiftWorkMinutes(240)).toBe(240);
-		expect(plannedShiftWorkMinutes(285)).toBe(270);
-		expect(plannedShiftWorkMinutes(330)).toBe(300);
-		expect(plannedShiftWorkMinutes(400)).toBe(360);
-		expect(plannedShiftWorkMinutes(540)).toBe(480);
-		expect(plannedShiftWorkMinutes(600)).toBe(540);
+		expect(plannedShiftWorkMinutes(240, BREAKS)).toBe(240);
+		expect(plannedShiftWorkMinutes(285, BREAKS)).toBe(270);
+		expect(plannedShiftWorkMinutes(330, BREAKS)).toBe(300);
+		expect(plannedShiftWorkMinutes(400, BREAKS)).toBe(360);
+		expect(plannedShiftWorkMinutes(540, BREAKS)).toBe(480);
+		expect(plannedShiftWorkMinutes(600, BREAKS)).toBe(540);
+	});
+
+	it("deducts the break baselines in force, not fixed 30 / 60 minutes", () => {
+		const breaks = { first: 20, second: 45 };
+		expect(plannedShiftWorkMinutes(300, breaks)).toBe(280);
+		expect(plannedShiftWorkMinutes(540, breaks)).toBe(495);
 	});
 });
 
@@ -221,6 +231,121 @@ describe("evaluateJarbschg", () => {
 		);
 		expect(breaches.every((breach) => breach.day === "2026-03-06")).toBe(true);
 		expect(rules(breaches)).toContain("jarbschg_weekly_max");
+	});
+
+	it("allows 8.5 h days only while the week stays within 40 h", () => {
+		// Mon–Thu 8.5 h + Fri 7.5 h = 41.5 h: Friday is shortened, but the week is too long.
+		const breaches = evaluate([
+			...["2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05"].map((day) =>
+				shift(day, "08:00", "17:30"),
+			),
+			shift("2026-03-06", "08:00", "16:30"),
+		]);
+		const daily = breaches.filter((breach) => breach.rule === "jarbschg_daily_max");
+		expect(daily.map((breach) => [breach.day, breach.actual, breach.limit])).toEqual([
+			["2026-03-02", 510, 480],
+			["2026-03-03", 510, 480],
+			["2026-03-04", 510, 480],
+			["2026-03-05", 510, 480],
+		]);
+	});
+
+	it("reports the 8 h limit for a too-long day when no other day is shortened", () => {
+		// A 9 h day and four 8 h days: nothing compensates, so the limit is 480, not 510.
+		const breaches = evaluate([
+			shift("2026-03-02", "07:00", "17:00"),
+			...["2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06"].map((day) =>
+				shift(day, "08:00", "17:00"),
+			),
+		]);
+		expect(breaches).toContainEqual(
+			expect.objectContaining({
+				rule: "jarbschg_daily_max",
+				day: "2026-03-02",
+				actual: 540,
+				limit: 480,
+			}),
+		);
+	});
+
+	it("measures uninterrupted work by worked minutes, not by wall-clock span", () => {
+		// 2 h + 2.5 h around a 10 min pause: 4 h 40 min span, but only 4.5 h worked.
+		expect(
+			evaluate([work("2026-03-02", "08:00", "10:00"), work("2026-03-02", "10:10", "12:40")]),
+		).toEqual([]);
+	});
+
+	it("does not carry an earlier break across a short pause into a long stretch", () => {
+		// 08:00–11:15 with a 15 min break inside, a 5 min pause, then 4 h 40 min without a break.
+		const withInnerBreak: YouthWorkInterval = {
+			...work("2026-03-02", "08:00", "11:15"),
+			workMinutes: 180,
+		};
+		const breaches = evaluate([withInnerBreak, work("2026-03-02", "11:20", "16:00")]);
+		expect(breaches).toContainEqual(
+			expect.objectContaining({ rule: "jarbschg_uninterrupted", actual: 280, limit: 270 }),
+		);
+	});
+
+	it("flags Saturday, Sunday and holiday work of overnight intervals", () => {
+		expect(rules(evaluate([shift("2026-03-06", "18:00", "01:00")]))).toEqual([
+			"jarbschg_night_work",
+			"jarbschg_saturday_work",
+		]);
+		expect(rules(evaluate([shift("2026-03-07", "19:00", "01:00")]))).toEqual([
+			"jarbschg_night_work",
+			"jarbschg_saturday_work",
+			"jarbschg_sunday_work",
+		]);
+		expect(
+			rules(evaluate([shift("2026-03-03", "18:00", "01:00")], { holidays: ["2026-03-04"] })),
+		).toEqual(["jarbschg_night_work", "jarbschg_holiday_work"]);
+		// Ending exactly at midnight does not touch the next day.
+		expect(rules(evaluate([shift("2026-03-06", "16:00", "00:00")]))).toEqual([
+			"jarbschg_night_work",
+		]);
+	});
+
+	describe("reporting breaches a judged day causes on other days", () => {
+		const monday = { start: "2026-03-02", endExclusive: "2026-03-03" };
+
+		it("reports the rest period a Monday shift cuts short on Tuesday", () => {
+			const intervals = [
+				shift("2026-03-02", "14:00", "20:00"),
+				shift("2026-03-03", "06:00", "12:00"),
+			];
+			expect(evaluate(intervals, { judged: monday })).toEqual([]);
+			expect(evaluate(intervals, { judged: monday, report: "touching_judged_days" })).toEqual([
+				expect.objectContaining({ rule: "jarbschg_rest_period", day: "2026-03-03", actual: 600 }),
+			]);
+		});
+
+		it("reports the weekly maximum and sixth day a Monday shift causes later in the week", () => {
+			// Monday 9 h on top of Tue–Sat 36 h over five days.
+			const intervals = [
+				shift("2026-03-02", "07:00", "17:00"),
+				...["2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07"].map((day) =>
+					shift(day, "08:00", "16:12"),
+				),
+			];
+			const breaches = evaluate(intervals, { judged: monday, report: "touching_judged_days" });
+			expect(breaches).toContainEqual(
+				expect.objectContaining({ rule: "jarbschg_weekly_max", day: "2026-03-07", actual: 2700 }),
+			);
+			expect(breaches).toContainEqual(
+				expect.objectContaining({ rule: "jarbschg_days_per_week", day: "2026-03-07", actual: 6 }),
+			);
+			// Saturday work does not depend on Monday.
+			expect(rules(breaches)).not.toContain("jarbschg_saturday_work");
+		});
+
+		it("does not report breaches on other days that the judged day does not affect", () => {
+			const intervals = [
+				shift("2026-03-02", "08:00", "12:00"),
+				shift("2026-03-04", "07:00", "18:00"),
+			];
+			expect(evaluate(intervals, { judged: monday, report: "touching_judged_days" })).toEqual([]);
+		});
 	});
 
 	it("applies adult rules from the exact 18th birthday", () => {

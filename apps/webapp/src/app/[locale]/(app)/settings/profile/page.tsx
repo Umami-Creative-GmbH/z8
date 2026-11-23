@@ -71,7 +71,9 @@ export default async function ProfilePage() {
 
 				{ownSkills && ownSkills.skills.length > 0 ? <OwnSkillsCard ownSkills={ownSkills} /> : null}
 
-				{ownEmployee ? <ApprenticeReleaseCard view="self" /> : null}
+				{ownEmployee ? (
+					<ApprenticeReleaseCard view="self" organizationId={ownEmployee.organizationId} />
+				) : null}
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 				<WeekStartSettings

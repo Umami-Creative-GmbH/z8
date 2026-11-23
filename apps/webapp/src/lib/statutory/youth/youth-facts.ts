@@ -19,15 +19,11 @@ import {
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { birthdayCalendarDate } from "@/lib/organization/employee-birthday";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
-import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
-import { statutoryInputFingerprint } from "../fingerprint";
+import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { loadStatutoryThresholds } from "../thresholds";
 import type { StatutoryThresholdKey } from "../threshold-catalog";
-import {
-	type JarbschgLimits,
-	plannedShiftWorkMinutes,
-	type YouthWorkInterval,
-} from "./jarbschg-rules";
+import type { JarbschgLimits } from "./jarbschg-rules";
+import type { YouthShiftRecord, YouthWorkRecord } from "./youth-intervals";
 
 type Reader = Pick<DatabaseClient, "select">;
 
@@ -119,29 +115,6 @@ export async function loadHolidayDateKeys(
 	);
 }
 
-export interface YouthShift {
-	readonly id: string;
-	readonly employeeId: string;
-	readonly date: PlainDate;
-	readonly interval: YouthWorkInterval;
-}
-
-/** A planned shift as youth work: its wall times in the organization zone, less the minimum break. */
-export function plannedYouthInterval(
-	ref: string,
-	wallTimes: { readonly date: PlainDate; readonly startTime: string; readonly endTime: string },
-	organizationTimezone: string,
-): YouthWorkInterval {
-	const { start, end } = shiftInterval(wallTimes, organizationTimezone);
-	return {
-		ref,
-		start,
-		end,
-		workMinutes: plannedShiftWorkMinutes(start.until(end).total({ unit: "minutes" })),
-		recorded: false,
-	};
-}
-
 /** Assigned shifts (draft and published) of the employees on organization-local days `[from, until)`. */
 export async function loadYouthShifts(
 	db: Reader,
@@ -153,7 +126,7 @@ export async function loadYouthShifts(
 		readonly until: string;
 		readonly excludeShiftId?: string | null;
 	},
-): Promise<YouthShift[]> {
+): Promise<YouthShiftRecord[]> {
 	if (input.employeeIds.length === 0) return [];
 	const bounds = shiftDateRangeBounds(input.from, input.until, input.organizationTimezone);
 	const conditions = [
@@ -176,22 +149,18 @@ export async function loadYouthShifts(
 	return rows.flatMap((row) => {
 		if (!row.employeeId) return [];
 		const date = shiftCalendarDate(row.date, input.organizationTimezone);
-		return [
-			{
-				id: row.id,
-				employeeId: row.employeeId,
-				date,
-				interval: plannedYouthInterval(
-					`shift:${row.id}`,
-					{ date, startTime: row.startTime, endTime: row.endTime },
-					input.organizationTimezone,
-				),
-			},
-		];
+		const { start, end } = shiftInterval(
+			{ date, startTime: row.startTime, endTime: row.endTime },
+			input.organizationTimezone,
+		);
+		return [{ id: row.id, employeeId: row.employeeId, date, start, end }];
 	});
 }
 
-/** Completed, not deleted work of the employees starting within `[from, until)` local to `timezone`. */
+/**
+ * Not deleted work of the employees starting within `[from, until)` local to `timezone`: completed
+ * work and open clock-ins (`end` null).
+ */
 export async function loadYouthWork(
 	db: Reader,
 	input: {
@@ -201,8 +170,8 @@ export async function loadYouthWork(
 		readonly from: string;
 		readonly until: string;
 	},
-): Promise<Map<string, YouthWorkInterval[]>> {
-	const result = new Map<string, YouthWorkInterval[]>();
+): Promise<Map<string, YouthWorkRecord[]>> {
+	const result = new Map<string, YouthWorkRecord[]>();
 	if (input.employeeIds.length === 0) return result;
 	const rows = await db
 		.select({
@@ -211,74 +180,30 @@ export async function loadYouthWork(
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
+			isActive: workPeriod.isActive,
 		})
 		.from(workPeriod)
 		.where(
 			and(
 				eq(workPeriod.organizationId, input.organizationId),
 				inArray(workPeriod.employeeId, [...new Set(input.employeeIds)]),
-				eq(workPeriod.isActive, false),
 				isNull(workPeriod.deletedAt),
 				gte(workPeriod.startTime, dateFromInstant(localDayRange(input.from, input.timezone).start)),
 				lt(workPeriod.startTime, dateFromInstant(localDayRange(input.until, input.timezone).start)),
 			),
 		);
 	for (const row of rows) {
-		if (!row.endTime) continue;
-		const start = instantFromDate(row.startTime);
-		const end = instantFromDate(row.endTime);
-		const elapsed = Math.round(start.until(end).total({ unit: "minutes" }));
-		result.set(row.employeeId, [
-			...(result.get(row.employeeId) ?? []),
-			{
-				ref: `work:${row.id}`,
-				start,
-				end,
-				workMinutes: row.durationMinutes ?? elapsed,
-				recorded: true,
-			},
-		]);
+		const end = row.isActive ? null : row.endTime;
+		if (!row.isActive && !end) continue;
+		const records = result.get(row.employeeId) ?? [];
+		records.push({
+			id: row.id,
+			employeeId: row.employeeId,
+			start: instantFromDate(row.startTime),
+			end: end ? instantFromDate(end) : null,
+			durationMinutes: row.durationMinutes,
+		});
+		result.set(row.employeeId, records);
 	}
 	return result;
-}
-
-/** Links each piece of recorded work to the employee's planned shift it belongs to, if any. */
-export function withPlannedShifts(
-	work: readonly YouthWorkInterval[],
-	shifts: readonly Pick<YouthShift, "interval">[],
-): YouthWorkInterval[] {
-	return work.map((interval) => {
-		const match = shifts.find((candidate) => workMatchesShift(candidate.interval, interval));
-		return match
-			? {
-					...interval,
-					plannedShift: {
-						ref: match.interval.ref,
-						start: match.interval.start,
-						end: match.interval.end,
-					},
-				}
-			: interval;
-	});
-}
-
-/**
- * The input fingerprint of a sector-exception finding (night, Saturday, Sunday, holiday work):
- * the rule, the employee and the planned shift's exact times. An acknowledged exception stays
- * current while the shift keeps its times, and the clock-out check recomputes the same value
- * for the shift the recorded work belongs to.
- */
-export function sectorExceptionFingerprint(input: {
-	readonly rule: string;
-	readonly employeeId: string;
-	readonly subjectKey: string;
-	readonly interval: Pick<YouthWorkInterval, "start" | "end">;
-}): string {
-	return statutoryInputFingerprint({
-		rule: input.rule,
-		employeeId: input.employeeId,
-		subjectKey: input.subjectKey,
-		start: input.interval.start,
-		end: input.interval.end,
-	});
 }

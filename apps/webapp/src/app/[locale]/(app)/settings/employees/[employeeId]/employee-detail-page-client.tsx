@@ -454,6 +454,7 @@ export function EmployeeDetailPageClient({
 							{isOrgAdminOrManager && (
 								<ApprenticeReleaseCard
 									view="employee"
+									organizationId={employee.organizationId}
 									employeeId={employeeId}
 									canManage={isOrgAdmin}
 								/>

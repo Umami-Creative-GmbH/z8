@@ -72,8 +72,28 @@ export function withoutExecutiveExemptFindings(
 			case "restTime":
 				return !exempt.has(plainDateAt(parseInstant(finding.toStartIso), timezone).toString());
 			case "overtime":
-				// Weekly and monthly totals span exempt days: drop them with the exemption.
-				return finding.period === "daily" ? !exempt.has(finding.periodKey) : false;
+				// A weekly or monthly total is dropped when its period contains an exempt day.
+				return !periodContainsExemptDay(finding.period, finding.periodKey, exempt);
 		}
 	});
+}
+
+/** Period keys as Scheduling writes them: a day, the Monday of a week, or `YYYY-MM`. */
+function periodContainsExemptDay(
+	period: "daily" | "weekly" | "monthly",
+	periodKey: string,
+	exempt: ReadonlySet<string>,
+): boolean {
+	switch (period) {
+		case "daily":
+			return exempt.has(periodKey);
+		case "weekly": {
+			const monday = parsePlainDate(periodKey);
+			return Array.from({ length: 7 }, (_, offset) => monday.add({ days: offset }).toString()).some(
+				(day) => exempt.has(day),
+			);
+		}
+		case "monthly":
+			return [...exempt].some((day) => day.startsWith(`${periodKey}-`));
+	}
 }

@@ -72,6 +72,69 @@ export function youthSeed(admin: Pool) {
 			return { id, start, end, durationMinutes: minutes };
 		},
 
+		/** An open clock-in from `date time`, recorded in `org.timezone`. */
+		async openWork(
+			org: FixtureOrganization,
+			who: FixtureEmployee,
+			date: string,
+			time: string,
+		): Promise<{ id: string; start: Instant }> {
+			const id = randomUUID();
+			const clockInId = randomUUID();
+			const start = localInstant(date, time, org.timezone);
+			await withCanonicalRecords(admin, async (client) => {
+				await client.query(
+					`insert into time_entry
+					 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					  timezone, timezone_source, hash, created_by)
+					 values ($1,$2,$3,'clock_in',$4,$5,$6,'user_setting',$7,$8)`,
+					[
+						clockInId,
+						who.employeeId,
+						org.id,
+						dateFromInstant(start),
+						start.toZonedDateTimeISO(org.timezone).offsetNanoseconds / 60_000_000_000,
+						org.timezone,
+						clockInId,
+						who.userId,
+					],
+				);
+				await client.query(
+					`insert into work_period
+					 (id, employee_id, organization_id, clock_in_id, start_time, is_active, updated_at)
+					 values ($1,$2,$3,$4,$5,true,now())`,
+					[id, who.employeeId, org.id, clockInId, dateFromInstant(start)],
+				);
+			});
+			return { id, start };
+		},
+
+		/** A one-day public holiday assigned to the whole organization. */
+		async publicHoliday(
+			org: FixtureOrganization,
+			creator: { userId: string },
+			date: string,
+		): Promise<string> {
+			const categoryId = randomUUID();
+			const holidayId = randomUUID();
+			await admin.query(
+				`insert into holiday_category (id, organization_id, type, name, blocks_time_entry, updated_at)
+				 values ($1, $2, 'public_holiday', $3, false, now())`,
+				[categoryId, org.id, `Public ${holidayId}`],
+			);
+			await admin.query(
+				`insert into holiday (id, organization_id, category_id, name, start_date, end_date, created_by, updated_at)
+				 values ($1, $2, $3, 'Holiday', $4, $5, $6, now())`,
+				[holidayId, org.id, categoryId, `${date}T00:00:00`, `${date}T23:59:59`, creator.userId],
+			);
+			await admin.query(
+				`insert into holiday_assignment (holiday_id, organization_id, assignment_type, created_by, updated_at)
+				 values ($1, $2, 'organization', $3, now())`,
+				[holidayId, org.id, creator.userId],
+			);
+			return holidayId;
+		},
+
 		/** A location and subarea for shifts, created by `creator`. */
 		async subarea(org: FixtureOrganization, creator: { userId: string }): Promise<string> {
 			const locationId = randomUUID();
@@ -196,9 +259,7 @@ export function youthSeed(admin: Pool) {
 			);
 		},
 
-		async violations(
-			who: FixtureEmployee,
-		): Promise<
+		async violations(who: FixtureEmployee): Promise<
 			{
 				violation_type: string;
 				policy_id: string | null;

@@ -1,12 +1,12 @@
 /**
  * Apprentice school and exam release conflicts in Scheduling and Staffing (#1993). A shift on a
  * day released in full (credited school day, block-release week, exam or pre-exam day) is a
- * conflict for every apprentice, and prohibited for one under 18 (§ 9 JArbSchG): with the
- * organization's `blockJarbschgShiftPublish` on, that shift blocks publication. On a school day
- * that is only partly credited, a shift of an apprentice under 18 flags their return to the
- * workplace after school.
+ * conflict for every apprentice, and prohibited for one under 18 (§§ 9, 10 JArbSchG): with the
+ * organization's `blockJarbschgShiftPublish` on, that shift blocks publication. On the week's full
+ * school day (more than five lessons) an apprentice under 18 may not return to the workplace
+ * afterwards (§ 9 Abs. 1 Nr. 2 JArbSchG); after a shorter school day they may.
  */
-import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { type Instant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { type StatutoryFinding, statutoryFindingId } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
 import type {
@@ -14,9 +14,9 @@ import type {
 	StatutoryScheduleContributor,
 } from "../scheduling/contributor";
 import { isMinorOn } from "../youth/age";
+import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { proposedShiftSubjectKey } from "../youth/jarbschg-contributor";
-import type { YouthWorkInterval } from "../youth/jarbschg-rules";
-import { loadEmployeeBirthdays, loadYouthShifts, plannedYouthInterval } from "../youth/youth-facts";
+import { loadEmployeeBirthdays, loadYouthShifts } from "../youth/youth-facts";
 import type { ApprenticeReleaseDay } from "./release-credits";
 import { loadApprenticeReleaseDays } from "./release-facts";
 
@@ -27,7 +27,9 @@ export type ApprenticeReleaseFindingKind =
 interface PlannedWork {
 	readonly employeeId: string;
 	readonly date: PlainDate;
-	readonly interval: YouthWorkInterval;
+	readonly ref: string;
+	readonly start: Instant;
+	readonly end: Instant;
 }
 
 async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFinding[]> {
@@ -62,7 +64,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		excludeShiftId: context.replacesShiftId,
 	});
 	const planned: PlannedWork[] = [
-		...shifts,
+		...shifts.map((shift) => ({ ...shift, ref: `shift:${shift.id}` })),
 		...context.proposedShifts
 			.filter((proposal) => releaseDays.has(proposal.employeeId))
 			.map((proposal) => {
@@ -70,8 +72,8 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 				return {
 					employeeId: proposal.employeeId,
 					date,
-					interval: plannedYouthInterval(
-						proposedShiftSubjectKey(proposal),
+					ref: proposedShiftSubjectKey(proposal),
+					...shiftInterval(
 						{ date, startTime: proposal.startTime, endTime: proposal.endTime },
 						context.timezone,
 					),
@@ -83,39 +85,40 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	for (const work of planned) {
 		const release = releaseOn.get(`${work.employeeId}:${work.date}`);
 		if (!release) continue;
+		// A partly credited school day leaves the rest of the day to work, for minors too.
+		if (release.credit !== "full_day") continue;
 		const minor = isMinorOn(birthdays.get(work.employeeId) ?? null, work.date);
-		const fullDay = release.credit === "full_day";
-		if (!fullDay && !minor) continue;
-		const kind: ApprenticeReleaseFindingKind = fullDay
-			? "bbig_release_day_shift"
-			: "jarbschg_school_day_workplace_return";
-		const subjectKey = work.interval.ref;
+		const kind: ApprenticeReleaseFindingKind =
+			minor && release.releaseKind === "vocational_school_day"
+				? "jarbschg_school_day_workplace_return"
+				: "bbig_release_day_shift";
+		const subjectKey = work.ref;
 		findings.push({
 			id: statutoryFindingId(kind, work.employeeId, subjectKey),
 			organizationId: context.organizationId,
 			employeeId: work.employeeId,
 			domain: "apprenticeship",
 			kind,
-			severity: fullDay && minor ? "critical" : "warning",
+			severity: minor ? "critical" : "warning",
 			subjectKey,
 			periodStart: work.date.toString(),
 			periodEnd: work.date.add({ days: 1 }).toString(),
 			legalReference: minor ? "§ 9 Abs. 1 JArbSchG" : "§ 15 Abs. 2 BBiG",
-			summary: { tier: fullDay ? "exceeded" : "warning" },
+			summary: { tier: "exceeded" },
 			adminDetail: null,
 			inputFingerprint: statutoryInputFingerprint({
 				kind,
 				employeeId: work.employeeId,
 				subjectKey,
-				start: work.interval.start,
-				end: work.interval.end,
+				start: work.start,
+				end: work.end,
 				releaseId: release.releaseId,
 				releaseKind: release.releaseKind,
 				credit: release.credit,
 				minor,
 			}),
 			acknowledgementKind: null,
-			blocksPublication: fullDay && minor && context.preferences.blockJarbschgShiftPublish,
+			blocksPublication: minor && context.preferences.blockJarbschgShiftPublish,
 		});
 	}
 	return findings;

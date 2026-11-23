@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,9 +41,16 @@ import type {
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-export type ApprenticeReleaseCardProps =
+export type ApprenticeReleaseCardProps = { readonly organizationId: string } & (
 	| { readonly view: "employee"; readonly employeeId: string; readonly canManage: boolean }
-	| { readonly view: "self" };
+	| { readonly view: "self" }
+);
+
+/** Release credits are organization data: every key carries the organization. */
+const releaseQueryKey = (organizationId: string, employeeId?: string) =>
+	employeeId
+		? (["apprentice-release", organizationId, employeeId] as const)
+		: (["apprentice-release", organizationId] as const);
 
 function kindLabel(kind: ApprenticeReleaseKind, t: Translate): string {
 	switch (kind) {
@@ -73,7 +81,7 @@ function creditText(release: ApprenticeReleaseCreditView, t: Translate): string 
 function useCredits(props: ApprenticeReleaseCardProps) {
 	const employeeId = props.view === "employee" ? props.employeeId : "self";
 	return useQuery({
-		queryKey: ["apprentice-release", employeeId],
+		queryKey: releaseQueryKey(props.organizationId, employeeId),
 		queryFn: async (): Promise<ApprenticeReleaseCredits> => {
 			const result =
 				props.view === "employee"
@@ -148,7 +156,7 @@ export function ApprenticeReleaseCard(props: ApprenticeReleaseCardProps) {
 											<IconAlertTriangle className="size-3.5" aria-hidden="true" />
 											{t(
 												"settings.apprenticeRelease.workplaceReturn",
-												"Under 18: returning to work after school is flagged (§ 9 JArbSchG)",
+												"Under 18: no return to work after this full school day (§ 9 Abs. 1 Nr. 2 JArbSchG)",
 											)}
 										</Badge>
 									) : null}
@@ -157,29 +165,46 @@ export function ApprenticeReleaseCard(props: ApprenticeReleaseCardProps) {
 									) : null}
 								</div>
 								{canManage && props.view === "employee" ? (
-									<VoidReleaseForm employeeId={props.employeeId} releaseId={release.id} />
+									<VoidReleaseForm
+										organizationId={props.organizationId}
+										employeeId={props.employeeId}
+										releaseId={release.id}
+									/>
 								) : null}
 							</li>
 						))}
 					</ul>
 				)}
 				{canManage && props.view === "employee" ? (
-					<RecordReleaseForm employeeId={props.employeeId} />
+					<RecordReleaseForm organizationId={props.organizationId} employeeId={props.employeeId} />
 				) : null}
 			</CardContent>
 		</Card>
 	);
 }
 
-function useInvalidate(employeeId: string) {
+/** Release days change the credits shown here, the self view and the employee's work balance. */
+function useInvalidate(organizationId: string, employeeId: string) {
 	const queryClient = useQueryClient();
-	return () => queryClient.invalidateQueries({ queryKey: ["apprentice-release", employeeId] });
+	return () =>
+		Promise.all([
+			queryClient.invalidateQueries({ queryKey: releaseQueryKey(organizationId) }),
+			queryClient.invalidateQueries({ queryKey: [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employeeId] }),
+		]);
 }
 
-function VoidReleaseForm({ employeeId, releaseId }: { employeeId: string; releaseId: string }) {
+function VoidReleaseForm({
+	organizationId,
+	employeeId,
+	releaseId,
+}: {
+	organizationId: string;
+	employeeId: string;
+	releaseId: string;
+}) {
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
-	const invalidate = useInvalidate(employeeId);
+	const invalidate = useInvalidate(organizationId, employeeId);
 	const mutation = useMutation({
 		mutationFn: async (reason: string) => {
 			const result = await voidApprenticeReleaseAction({ employeeId, releaseId, reason });
@@ -246,9 +271,15 @@ function VoidReleaseForm({ employeeId, releaseId }: { employeeId: string; releas
 	);
 }
 
-function RecordReleaseForm({ employeeId }: { employeeId: string }) {
+function RecordReleaseForm({
+	organizationId,
+	employeeId,
+}: {
+	organizationId: string;
+	employeeId: string;
+}) {
 	const { t } = useTranslate();
-	const invalidate = useInvalidate(employeeId);
+	const invalidate = useInvalidate(organizationId, employeeId);
 	const mutation = useMutation({
 		mutationFn: async (value: {
 			releaseKind: ApprenticeReleaseKind;
