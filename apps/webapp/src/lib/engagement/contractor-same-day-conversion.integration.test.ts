@@ -4,7 +4,10 @@
  * does too: its actual minutes on that day are only the employee time, so contractor work never
  * enters the balance and the employee part of the day never drops out. Required minutes follow
  * the stint in force at the end of the day, as the contract resolver decides a same-day rehire:
- * contractor -> employee requires the employee's day, employee -> contractor nothing.
+ * contractor -> employee requires the employee's day, employee -> contractor nothing. The
+ * employee morning of an employee -> contractor day is credited, unless the employee stint was
+ * trust-based: a trust-based day adds 0. Without a tracking start, the stored total balance reads
+ * the days as the month rows do.
  *
  * Both people work on Wednesday 6 May 2026 (UTC) under an 8-hour Office policy, the
  * organization's default, and convert at 12:00.
@@ -33,6 +36,8 @@ const { createLifecycleDatabaseFixture } =
 	await import("@/lib/employee-lifecycle/testing/database.test.fixture");
 const { createDepartureCommands } = await import("@/lib/employee-lifecycle/commands");
 const { computeEmployeePeriodBalance } = await import("@/lib/work-balance/period-aggregation");
+const { computeEmployeeWorkBalance } = await import("@/lib/work-balance/service");
+const { getMonthPeriodsBetween } = await import("@/lib/work-balance/periods");
 const { createVersionedWorkPolicy } = await import("@/lib/work-policy/versioned-policy-writer");
 type LifecycleDatabaseFixture =
 	import("@/lib/employee-lifecycle/testing/database.test.fixture").LifecycleDatabaseFixture;
@@ -127,6 +132,7 @@ describe("Work Balance on a same-day conversion (#1935)", () => {
 
 	let toEmployee: SeededEmployee;
 	let toContractor: SeededEmployee;
+	let trustToContractor: SeededEmployee;
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
@@ -182,6 +188,26 @@ describe("Work Balance on a same-day conversion (#1935)", () => {
 		await completedWork(toContractor, "2026-05-06T08:00:00Z", "2026-05-06T12:00:00Z");
 		await completedWork(toContractor, "2026-05-06T13:00:00Z", "2026-05-06T16:00:00Z");
 		await convertAtNoon(toContractor, "contractor");
+
+		// The same under trust-based employee terms: the employee morning is a trust-based day's.
+		now = parseInstant("2026-05-01T08:00:00Z");
+		trustToContractor = await fixture.seedEmployee();
+		await fixture.pool.query(
+			`insert into employee_employment_history
+			 (employee_id, organization_id, employment_period_id, valid_from, valid_from_date, contract_type,
+			  weekly_contract_minutes, balance_mode, review_state, created_by, updated_at)
+			 values ($1, $2, $3, '2026-01-01T00:00:00Z', '2026-01-01', 'fixed', 2400, 'trust_based',
+			         'confirmed', $4, now())`,
+			[
+				trustToContractor.employeeId,
+				organizationId,
+				trustToContractor.employmentPeriodId,
+				fixture.ownerUserId,
+			],
+		);
+		await completedWork(trustToContractor, "2026-05-06T08:00:00Z", "2026-05-06T12:00:00Z");
+		await completedWork(trustToContractor, "2026-05-06T13:00:00Z", "2026-05-06T16:00:00Z");
+		await convertAtNoon(trustToContractor, "contractor");
 	});
 
 	afterAll(async () => {
@@ -212,6 +238,70 @@ describe("Work Balance on a same-day conversion (#1935)", () => {
 				actualMinutes: 240,
 				requiredMinutes: 0,
 				balanceMinutes: 240,
+			});
+		},
+	);
+
+	it.each([
+		["without", false],
+		["with", true],
+	])(
+		"adds nothing for the employee morning of an employee -> contractor day under trust-based terms (%s a tracking start)",
+		async (_case, tracking) => {
+			expect(await balanceOfConversionDay(trustToContractor, tracking)).toMatchObject({
+				actualMinutes: 0,
+				requiredMinutes: 0,
+				balanceMinutes: 0,
+			});
+		},
+	);
+
+	// An organization without a tracking start keeps the total from all of the person's days
+	// (`computeEmployeeWorkBalance`); it must read them as the month and year rows do.
+	it.each([
+		["contractor -> employee", () => toEmployee, 180],
+		["employee -> contractor", () => toContractor, 240],
+		["trust-based employee -> contractor", () => trustToContractor, 0],
+	])(
+		"keeps the total balance of a %s day equal to its period rows (no tracking start)",
+		async (_case, person, actualMinutes) => {
+			const total = await computeEmployeeWorkBalance({
+				employeeId: person().employeeId,
+				organizationId: fixture.organizationId,
+				now: new Date("2026-05-07T08:00:00Z"),
+			});
+			if (!total) throw new Error("no total balance");
+			expect(total.computedThroughDate).toBe(CONVERSION_DAY);
+
+			const rows = [];
+			for (const month of getMonthPeriodsBetween(
+				total.computedFromDate,
+				total.computedThroughDate,
+			)) {
+				rows.push(
+					await computeEmployeePeriodBalance({
+						employeeId: person().employeeId,
+						organizationId: fixture.organizationId,
+						periodType: "month",
+						periodStart: month.periodStart,
+						periodEnd:
+							month.periodEnd < total.computedThroughDate
+								? month.periodEnd
+								: total.computedThroughDate,
+						calculationStartDate: total.computedFromDate,
+						timezone: "UTC",
+						isClosed: true,
+						now: new Date("2026-05-07T08:00:00Z"),
+					}),
+				);
+			}
+			const sum = (key: "actualMinutes" | "requiredMinutes") =>
+				rows.reduce((total, row) => total + row[key], 0);
+
+			expect(total.actualMinutes).toBe(actualMinutes);
+			expect({ actual: total.actualMinutes, required: total.requiredMinutes }).toEqual({
+				actual: sum("actualMinutes"),
+				required: sum("requiredMinutes"),
 			});
 		},
 	);

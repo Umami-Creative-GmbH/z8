@@ -931,9 +931,12 @@ describe("external contractor engagement kind (#1995)", () => {
 				action: "employee.invitation_contractor_terms_not_applied",
 				metadata: expect.objectContaining({ reason: "refused", refusal: "terms_exist" }),
 			});
-			expect(replayed.notices).toContainEqual(
-				expect.objectContaining({ user_id: fixture.ownerUserId }),
-			);
+			// The terms already there still apply: the notice never says the work is unpriced.
+			expect(replayed.notices).toContainEqual({
+				user_id: fixture.ownerUserId,
+				message: expect.stringContaining("already has compensation terms, which still apply"),
+			});
+			expect(replayed.notices.map((notice) => notice.message).join()).not.toContain("unpriced");
 		});
 
 		it("never drops the invitation's rate silently when nobody can be named to set it (#1935)", async () => {
@@ -959,9 +962,10 @@ describe("external contractor engagement kind (#1995)", () => {
 					}),
 				},
 			]);
-			expect(followUp.notices).toContainEqual(
-				expect.objectContaining({ user_id: fixture.ownerUserId }),
-			);
+			expect(followUp.notices).toContainEqual({
+				user_id: fixture.ownerUserId,
+				message: expect.stringContaining("their work stays unpriced until then"),
+			});
 		});
 
 		it("records a planned end nobody prepared as a system finding, not as the contractor's own action", async () => {

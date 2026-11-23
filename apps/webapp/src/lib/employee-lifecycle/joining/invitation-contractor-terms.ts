@@ -116,6 +116,10 @@ async function reportNotApplied(terms: InvitationContractorTerms, notApplied: No
 			draftId: terms.draftId,
 			name: person?.name || person?.email || terms.employeeId,
 			recipientUserIds,
+			reason:
+				notApplied.reason === "refused" && notApplied.refusal === "terms_exist"
+					? "terms_exist"
+					: "not_applied",
 		});
 	} catch (error) {
 		logger.error(

@@ -5,13 +5,21 @@ import { createNotification } from "./notification-service";
 
 const logger = createLogger("InvitationContractorTermsNeedReview");
 
-// The key sits next to its English default, as the Tolgee extractor reads it.
-const copy = {
+// The keys sit next to their English defaults, as the Tolgee extractor reads them.
+const unpricedCopy = {
 	titleKey: "common:notifications.content.invitationContractorTermsNeedReview.title",
 	titleDefault: "An External Contractor's rate needs review",
 	messageKey: "common:notifications.content.invitationContractorTermsNeedReview.message",
 	messageDefault:
 		"The rate from the invitation of {name} could not be applied when they joined. Set it in their External Contractor compensation; their work stays unpriced until then.",
+} as const satisfies NotificationCopy;
+
+const termsExistCopy = {
+	titleKey: "common:notifications.content.invitationContractorTermsNeedReview.title",
+	titleDefault: "An External Contractor's rate needs review",
+	messageKey: "common:notifications.content.invitationContractorTermsNeedReview.termsExistMessage",
+	messageDefault:
+		"The rate from the invitation of {name} was not applied when they joined: their engagement already has compensation terms, which still apply. Review in their External Contractor compensation whether they should change.",
 } as const satisfies NotificationCopy;
 
 export type InvitationContractorTermsNotice = {
@@ -21,6 +29,11 @@ export type InvitationContractorTermsNotice = {
 	draftId: string;
 	name: string;
 	recipientUserIds: readonly string[];
+	/**
+	 * Why the terms were not written: `terms_exist` when the engagement already has terms
+	 * (a reactivated contractor), which still price their work; anything else leaves it unpriced.
+	 */
+	reason: "terms_exist" | "not_applied";
 };
 
 /**
@@ -33,7 +46,10 @@ export type InvitationContractorTermsNotice = {
 export async function notifyInvitationContractorTermsNeedReview(
 	notice: InvitationContractorTermsNotice,
 ): Promise<void> {
-	const content = translatedContent(copy, { name: notice.name });
+	const content = translatedContent(
+		notice.reason === "terms_exist" ? termsExistCopy : unpricedCopy,
+		{ name: notice.name },
+	);
 	for (const userId of new Set(notice.recipientUserIds)) {
 		try {
 			await createNotification({

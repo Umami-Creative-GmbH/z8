@@ -1988,7 +1988,8 @@
       },
       "invitationContractorTermsNeedReview": {
         "title": "An External Contractor's rate needs review",
-        "message": "The rate from the invitation of {name} could not be applied when they joined. Set it in their External Contractor compensation; their work stays unpriced until then."
+        "message": "The rate from the invitation of {name} could not be applied when they joined. Set it in their External Contractor compensation; their work stays unpriced until then.",
+        "termsExistMessage": "The rate from the invitation of {name} was not applied when they joined: their engagement already has compensation terms, which still apply. Review in their External Contractor compensation whether they should change."
       }
     },
     "countFailed": "Unread count unavailable",

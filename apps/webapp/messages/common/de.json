@@ -1988,7 +1988,8 @@
       },
       "invitationContractorTermsNeedReview": {
         "title": "Der Satz eines Externen Dienstleisters muss geprüft werden",
-        "message": "Der Satz aus der Einladung von {name} konnte beim Beitritt nicht übernommen werden. Legen Sie ihn in der Vergütung Externer Dienstleister fest; bis dahin bleibt die Arbeit unbepreist."
+        "message": "Der Satz aus der Einladung von {name} konnte beim Beitritt nicht übernommen werden. Legen Sie ihn in der Vergütung Externer Dienstleister fest; bis dahin bleibt die Arbeit unbepreist.",
+        "termsExistMessage": "Der Satz aus der Einladung von {name} wurde beim Beitritt nicht übernommen: Für das Engagement gibt es bereits einen Satz, der weiter gilt. Prüfen Sie in der Vergütung Externer Dienstleister, ob er geändert werden soll."
       }
     },
     "countFailed": "Anzahl ungelesener Elemente nicht verfügbar",
