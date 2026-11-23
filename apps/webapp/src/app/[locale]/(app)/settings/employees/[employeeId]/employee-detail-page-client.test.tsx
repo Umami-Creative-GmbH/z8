@@ -13,7 +13,10 @@ import {
 	meetsSettingsAccess,
 	type SettingsAccess,
 } from "@/lib/organization-action/settings-access-level";
-import { minijobMonitorQueryKey } from "@/components/settings/contracts/minijob-query-keys";
+import {
+	MINIJOB_REVIEWS_QUERY_KEY,
+	minijobMonitorQueryKey,
+} from "@/components/settings/contracts/minijob-query-keys";
 import { queryKeys } from "@/lib/query";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
@@ -123,6 +126,16 @@ vi.mock("@/components/settings/employee-offboarding/leaving-date-panel", () => (
 	LeavingDatePanel: ({ employeeId }: { employeeId: string }) => (
 		<section aria-label="Leaving Date">{employeeId}</section>
 	),
+}));
+
+const dateCorrectionProps = vi.hoisted(() => ({
+	last: null as null | { onSaved?: () => Promise<void> | void },
+}));
+vi.mock("@/components/settings/employment-date-correction-card", () => ({
+	EmploymentDateCorrectionCard: (props: { onSaved?: () => Promise<void> | void }) => {
+		dateCorrectionProps.last = props;
+		return null;
+	},
 }));
 
 const contractTabProps = vi.hoisted(() => ({
@@ -705,7 +718,7 @@ describe("employee detail Minijob monitor refresh (#1989)", () => {
 		contractTabProps.last = null;
 	});
 
-	it("refreshes the Minijob monitor after every change to terms, history or wage", async () => {
+	it("refreshes the Minijob monitor and reviews after every change to terms, history, wage or start date", async () => {
 		const { queryClient } = renderDetail({
 			employee: { ...realEmployee, contractTypeToday: "hourly" } as EmployeeDetail,
 		});
@@ -733,15 +746,22 @@ describe("employee detail Minijob monitor refresh (#1989)", () => {
 			["confirmed history", () => history.onConfirm("history-1")],
 			["canceled history", () => history.onCancel("history-1")],
 			["wage change", () => history.changeWage.onSubmit({})],
+			["start date correction", () => dateCorrectionProps.last?.onSaved?.()],
 		];
+		const reviewsKey = [...MINIJOB_REVIEWS_QUERY_KEY, realEmployee.organizationId, false];
 
 		for (const [name, mutate] of mutations) {
 			queryClient.setQueryData(monitorKey, { months: [] });
+			queryClient.setQueryData(reviewsKey, []);
 			await act(async () => {
 				await mutate();
 			});
 			await waitFor(() =>
-				expect([name, queryClient.getQueryState(monitorKey)?.isInvalidated]).toEqual([name, true]),
+				expect([
+					name,
+					queryClient.getQueryState(monitorKey)?.isInvalidated,
+					queryClient.getQueryState(reviewsKey)?.isInvalidated,
+				]).toEqual([name, true, true]),
 			);
 		}
 	});

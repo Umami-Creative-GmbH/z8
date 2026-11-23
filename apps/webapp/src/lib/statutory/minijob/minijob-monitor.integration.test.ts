@@ -123,6 +123,29 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 		});
 	});
 
+	it("does not evaluate employees whose Minijob terms ended before the reported months", async () => {
+		const { org, owner, worker } = await setup();
+		const former = await fx.employee(org, "former", { contractType: "hourly" });
+		await mj.terms(worker, owner, { from: "2025-01-01", hourlyRate: 13 });
+		// A Minijobber until June 2025, regular since: a candidate only for its lookback, never reported.
+		await mj.terms(former, owner, { from: "2025-01-01", until: "2025-07-01", hourlyRate: 13 });
+		await mj.terms(former, owner, { from: "2025-07-01", hourlyRate: 13, profile: "regular" });
+		await mj.monthWork(org, former, "2025-03", 3000);
+		await mj.monthWork(org, worker, "2026-10", 3000);
+
+		const { findings, employees } = await evaluate(org, [worker.employeeId, former.employeeId], {
+			from: "2026-11",
+			until: "2026-12",
+		});
+
+		expect(employees.has(former.employeeId)).toBe(false);
+		expect(findings.some((f) => f.employeeId === former.employeeId)).toBe(false);
+		// The current Minijobber still reads the lookback: October 2026 counts toward the rolling sum.
+		expect(employees.get(worker.employeeId)?.find((m) => m.month === "2026-10")).toMatchObject({
+			earnedCents: 65_000,
+		});
+	});
+
 	it("adds every active external Minijob offset covering the month", async () => {
 		const { org, owner, worker } = await setup();
 		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 15 });

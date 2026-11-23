@@ -15,7 +15,10 @@ import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-p
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeContractTab } from "@/components/settings/contracts/employee-contract-tab";
 import { EmployeeMinijobMonitorCard } from "@/components/settings/contracts/employee-minijob-monitor-card";
-import { minijobMonitorQueryPrefix } from "@/components/settings/contracts/minijob-query-keys";
+import {
+	MINIJOB_REVIEWS_QUERY_KEY,
+	minijobMonitorQueryPrefix,
+} from "@/components/settings/contracts/minijob-query-keys";
 import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
 import { WorkingStudentMonitorCard } from "@/components/settings/contracts/working-student-monitor-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
@@ -247,8 +250,12 @@ export function EmployeeDetailPageClient({
 	});
 	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
 	// Terms, history and wage feed the Minijob monitor (#1989): refresh it after each change.
-	const refreshMinijobMonitor = () =>
+	// Terms, history, wage and employment-date changes move Minijob coverage and earnings: refresh
+	// the monitor and the exceedance reviews built from them.
+	const refreshMinijobMonitor = () => {
 		void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryPrefix(employeeId) });
+		void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
+	};
 	const refreshingMinijob =
 		<A, R>(mutate: (input: A) => Promise<R>) =>
 		(input: A) =>
@@ -413,6 +420,8 @@ export function EmployeeDetailPageClient({
 												: null
 										}
 										onSaved={async () => {
+											// The start date moves Minijob coverage too.
+											refreshMinijobMonitor();
 											await Promise.all([
 												employeeData.refetch(),
 												queryClient.invalidateQueries({

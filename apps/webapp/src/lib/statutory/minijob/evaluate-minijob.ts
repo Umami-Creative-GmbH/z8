@@ -118,11 +118,13 @@ export async function evaluateMinijobEarnings(
 	const rangeUntil = firstDayOf(input.months.until);
 	const { timezone } = input;
 
-	// Only employees that belong to this organization: the candidate query is organization-scoped.
+	// Only employees that belong to this organization (the candidate query is organization-scoped)
+	// and had Minijob terms in a reported month: no finding exists without one, so former
+	// Minijobbers are not loaded over the whole lookback on every Scheduling run.
 	const employeeIds = await loadMinijobCandidates(db, {
 		organizationId: input.organizationId,
 		employeeIds: input.employeeIds,
-		from: rangeFrom,
+		from: firstDayOf(input.months.from),
 		until: rangeUntil,
 	});
 	if (employeeIds.length === 0) return { findings: [], employees: new Map() };
