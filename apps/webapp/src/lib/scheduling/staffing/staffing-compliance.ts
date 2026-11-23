@@ -27,6 +27,8 @@ function findingKey(finding: ComplianceFinding): string {
 			return `maxHours|${finding.day}`;
 		case "overtime":
 			return `overtime|${finding.period}|${finding.periodKey}`;
+		case "statutory":
+			return `statutory|${finding.findingId}|${finding.severity}`;
 	}
 }
 

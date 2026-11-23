@@ -235,13 +235,17 @@ function collectOvertimeFindings(input: ScheduleComplianceInput): ComplianceFind
 	return findings;
 }
 
-function summarizeFindings(findings: ComplianceFinding[]): ScheduleComplianceResult {
+/** Findings with their per-type counts; also used to add statutory findings to a result. */
+export function summarizeComplianceFindings(
+	findings: ComplianceFinding[],
+): ScheduleComplianceResult {
 	const summary = {
 		totalFindings: findings.length,
 		byType: {
 			restTime: 0,
 			maxHours: 0,
 			overtime: 0,
+			statutory: 0,
 		},
 	};
 
@@ -259,7 +263,7 @@ export function evaluateScheduleCompliance(
 	input: ScheduleComplianceInput,
 ): ScheduleComplianceResult {
 	if (input.employees.length === 0) {
-		return summarizeFindings([]);
+		return summarizeComplianceFindings([]);
 	}
 
 	const findings = [
@@ -268,5 +272,5 @@ export function evaluateScheduleCompliance(
 		...collectOvertimeFindings(input),
 	];
 
-	return summarizeFindings(findings);
+	return summarizeComplianceFindings(findings);
 }

@@ -40,10 +40,7 @@ export function PublishComplianceDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconAlertTriangle
-							className="size-5 text-amber-600"
-							aria-hidden="true"
-						/>
+						<IconAlertTriangle className="size-5 text-amber-600" aria-hidden="true" />
 						{t(
 							"scheduling.publish.complianceAcknowledgmentRequired",
 							"Compliance Acknowledgment Required",
@@ -82,6 +79,13 @@ export function PublishComplianceDialog({
 									count: summary.byType.overtime,
 								})}
 							</Badge>
+							{summary.byType.statutory > 0 && (
+								<Badge variant="outline">
+									{t("scheduling.publish.statutory", "Statutory limits: {count}", {
+										count: summary.byType.statutory,
+									})}
+								</Badge>
+							)}
 						</div>
 					</div>
 				</ActionPanelBody>
@@ -102,10 +106,7 @@ export function PublishComplianceDialog({
 								{t("scheduling.publish.publishing", "Publishing…")}
 							</>
 						) : (
-							t(
-								"scheduling.publish.acknowledgeAndPublish",
-								"Acknowledge and Publish",
-							)
+							t("scheduling.publish.acknowledgeAndPublish", "Acknowledge and Publish")
 						)}
 					</Button>
 				</ActionPanelFooter>

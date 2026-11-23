@@ -74,6 +74,12 @@ export interface StatutoryFinding<Kind extends string = string> {
 	/** The acknowledgement kind that documents this finding, or null when it cannot be acknowledged. */
 	readonly acknowledgementKind: StatutoryAcknowledgementKind | null;
 	readonly acknowledgement?: StatutoryFindingAcknowledgement;
+	/**
+	 * True when this finding must stop shift publication (JArbSchG hard limits while the
+	 * organization's `blockJarbschgShiftPublish` is on and no sector exception is acknowledged).
+	 * Clock-in and clock-out are never blocked.
+	 */
+	readonly blocksPublication?: boolean;
 }
 
 export function statutoryFindingId(kind: string, employeeId: string, subjectKey: string): string {

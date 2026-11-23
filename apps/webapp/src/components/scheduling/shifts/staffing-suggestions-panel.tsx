@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { ComplianceFinding } from "@/lib/scheduling/compliance/types";
+import { statutoryWarningText } from "../statutory-warning-text";
 import type {
 	StaffingNote,
 	StaffingReason,
@@ -96,6 +97,8 @@ function complianceText(finding: ComplianceFinding, t: Translate, locale: string
 					threshold: formatHours(finding.thresholdMinutes, locale),
 				},
 			);
+		case "statutory":
+			return statutoryWarningText(finding, t);
 	}
 }
 

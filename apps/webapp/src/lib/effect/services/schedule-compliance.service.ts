@@ -3,13 +3,22 @@ import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { schedulePublishComplianceAck, shift, workPeriod } from "@/db/schema";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { dateFromInstant, instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	instantFromDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import type { DatabaseError } from "@/lib/effect/errors";
 import {
 	buildEmployeeComplianceInput,
 	normalizeScheduleComplianceRegulation,
 } from "@/lib/scheduling/compliance/employee-compliance-input";
-import { evaluateScheduleCompliance } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
+import {
+	evaluateScheduleCompliance,
+	summarizeComplianceFindings,
+} from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
+import { evaluateStatutoryScheduleFindings } from "@/lib/statutory/scheduling/evaluate";
 import type {
 	EmployeeScheduleComplianceInput,
 	ScheduleComplianceResult,
@@ -192,12 +201,29 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						}),
 					);
 
-					const evaluationResult = evaluateScheduleCompliance({
+					const regulationResult = evaluateScheduleCompliance({
 						timezone: input.timezone,
 						window,
 						regulation: effectiveRegulation,
 						employees,
 					});
+					// German statutory monitors (#1988 seam): wage-free findings from each contributor.
+					const statutoryFindings = yield* dbService.query("scheduleCompliance.statutory", () =>
+						evaluateStatutoryScheduleFindings(dbService.db, {
+							organizationId: input.organizationId,
+							timezone: input.timezone,
+							window: {
+								start: window.start.toString(),
+								endExclusive: window.endExclusive.toString(),
+							},
+							employeeIds,
+							now: systemClock.nowInstant(),
+						}),
+					);
+					const evaluationResult =
+						statutoryFindings.length === 0
+							? regulationResult
+							: summarizeComplianceFindings([...regulationResult.findings, ...statutoryFindings]);
 
 					return {
 						organizationId: input.organizationId,

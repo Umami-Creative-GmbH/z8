@@ -47,6 +47,13 @@ export function ScheduleComplianceBanner({ summary }: ScheduleComplianceBannerPr
 							count: summary.byType.overtime,
 						})}
 					</Badge>
+					{summary.byType.statutory > 0 && (
+						<Badge variant="outline" className="border-amber-400/60 bg-amber-100/70 text-amber-900">
+							{t("scheduling.scheduler.complianceBanner.statutory", "Statutory limits: {count}", {
+								count: summary.byType.statutory,
+							})}
+						</Badge>
+					)}
 				</div>
 			</AlertDescription>
 		</Alert>
