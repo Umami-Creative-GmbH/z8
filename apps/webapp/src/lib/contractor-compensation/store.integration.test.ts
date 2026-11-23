@@ -354,12 +354,14 @@ describe("contractor compensation terms on PostgreSQL", () => {
 			engagementKind: "employee" | "contractor",
 			startedAt: string,
 		) {
+			const id = randomUUID();
 			await fixture.pool.query(
 				`insert into employee_employment_period
 				 (id, organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
 				 values ($1, $2, $3, 'open', $4, 'recorded', $5)`,
-				[randomUUID(), fixture.organizationId, employeeId, startedAt, engagementKind],
+				[id, fixture.organizationId, employeeId, startedAt, engagementKind],
 			);
+			return id;
 		}
 
 		async function contractorWithOpenTerms() {
@@ -425,7 +427,7 @@ describe("contractor compensation terms on PostgreSQL", () => {
 		it("shows no rate today for a new engagement without terms after one that left terms open", async () => {
 			const own = await contractorWithOpenTerms();
 			await endPeriod(own.employmentPeriodId, "2026-03-15T23:00:00Z");
-			await addPeriod(own.employeeId, "contractor", "2026-04-01T00:00:00Z");
+			const next = await addPeriod(own.employeeId, "contractor", "2026-04-01T00:00:00Z");
 
 			const [row] = (
 				await listContractorCompensationOverview(db, fixture.organizationId, may)
@@ -437,7 +439,15 @@ describe("contractor compensation terms on PostgreSQL", () => {
 				may,
 			);
 			expect(row).toMatchObject({ engagementKind: "contractor", termsToday: null });
-			expect(record).toMatchObject({ activeEngagementKind: "contractor", termsInEffectId: null });
+			// The earlier engagement's terms stay on record, but only the new one's can be ended.
+			expect(record).toMatchObject({
+				activeEngagementKind: "contractor",
+				contractorEngagementId: next,
+				termsInEffectId: null,
+			});
+			expect(record?.history.map((terms) => terms.employmentPeriodId)).toEqual([
+				own.employmentPeriodId,
+			]);
 		});
 
 		it("lists a former contractor rehired as an employee by today's kind, without a rate", async () => {
@@ -458,7 +468,11 @@ describe("contractor compensation terms on PostgreSQL", () => {
 				may,
 			);
 			expect(row).toMatchObject({ engagementKind: "employee", termsToday: null });
-			expect(record).toMatchObject({ activeEngagementKind: "employee", termsInEffectId: null });
+			expect(record).toMatchObject({
+				activeEngagementKind: "employee",
+				contractorEngagementId: null,
+				termsInEffectId: null,
+			});
 		});
 
 		it("reports the terms in force after a change", async () => {

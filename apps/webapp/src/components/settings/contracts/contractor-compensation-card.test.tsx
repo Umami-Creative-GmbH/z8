@@ -51,6 +51,7 @@ function record(
 	return {
 		employeeId,
 		activeEngagementKind: "contractor",
+		contractorEngagementId: "p1",
 		engagementStartDate: "2026-01-05",
 		today: "2026-11-23",
 		history: [
@@ -247,6 +248,55 @@ describe("contractor compensation card", () => {
 		await waitFor(() =>
 			expect(actions.error).toHaveBeenCalledWith(
 				"Terms cannot start before the engagement started.",
+			),
+		);
+	});
+
+	it("offers no End rate when every rate belongs to an earlier engagement", async () => {
+		const earlier = record().history.map((terms) => ({ ...terms, employmentPeriodId: "p0" }));
+		actions.read.mockResolvedValue({
+			success: true,
+			data: record({ history: earlier, termsInEffectId: null }),
+		});
+		renderCard();
+
+		expect(await screen.findByRole("button", { name: "Set rate" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "End rate" })).toBeNull();
+	});
+
+	it("refuses to end a rate on a day no rate of this engagement applies", async () => {
+		const user = userEvent.setup();
+		const [, closed] = record().history;
+		actions.read.mockResolvedValue({
+			success: true,
+			data: record({ history: [closed], termsInEffectId: null }),
+		});
+		renderCard();
+
+		await user.click(await screen.findByRole("button", { name: "End rate" }));
+		await user.click(screen.getByRole("button", { name: "End rate" }));
+
+		expect(
+			await screen.findByText("No rate applies on this date, so there is nothing to end."),
+		).toBeTruthy();
+		expect(actions.end).not.toHaveBeenCalled();
+	});
+
+	it("says nothing changed when the server found no rate to end", async () => {
+		const user = userEvent.setup();
+		actions.read.mockResolvedValue({ success: true, data: record() });
+		actions.end.mockResolvedValue({
+			success: true,
+			data: { changed: false, history: record().history, termsInEffectId: "t2" },
+		});
+		renderCard();
+
+		await user.click(await screen.findByRole("button", { name: "End rate" }));
+		await user.click(screen.getByRole("button", { name: "End rate" }));
+
+		await waitFor(() =>
+			expect(actions.success).toHaveBeenCalledWith(
+				"No rate applied on that date, so nothing changed",
 			),
 		);
 	});

@@ -96,6 +96,7 @@
         "endTerms": "Satz beenden",
         "errors": {
           "beforeEngagement": "Konditionen können nicht vor Beginn des Einsatzes beginnen.",
+          "nothingToEnd": "An diesem Datum gilt kein Satz, daher gibt es nichts zu beenden.",
           "invalidBasis": "Wählen Sie Stunde oder Tag.",
           "invalidCurrency": "Geben Sie einen ISO-4217-Währungscode ein, zum Beispiel EUR.",
           "invalidDate": "Wählen Sie ein gültiges Datum.",
@@ -148,6 +149,7 @@
         "termsHeading": "Sätze",
         "title": "Dienstleistervergütung",
         "unchanged": "Diese Konditionen gelten bereits",
+        "nothingEnded": "An diesem Datum galt kein Satz, daher wurde nichts geändert",
         "vatId": "USt-IdNr."
       },
       "contractType": {

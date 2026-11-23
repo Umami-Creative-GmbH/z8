@@ -533,6 +533,11 @@ export interface ContractorCompensationRecord {
 	employeeId: string;
 	/** The kind of the employee's active engagement; null without one. */
 	activeEngagementKind: EngagementKind | null;
+	/**
+	 * The employment period of the active External Contractor engagement, the
+	 * only one whose terms can be set or ended; null without one.
+	 */
+	contractorEngagementId: string | null;
 	/** The first day terms may start on, in the organization's calendar; null when unknown. */
 	engagementStartDate: string | null;
 	/** Today in the organization's calendar, the editor's default date. */
@@ -564,6 +569,7 @@ export async function loadContractorCompensation(
 	return {
 		employeeId,
 		activeEngagementKind: period?.engagementKind ?? null,
+		contractorEngagementId: period?.engagementKind === "contractor" ? period.id : null,
 		engagementStartDate:
 			period?.startedAt && period.engagementKind === "contractor"
 				? localDay(instantFromDate(period.startedAt), timezone).toString()

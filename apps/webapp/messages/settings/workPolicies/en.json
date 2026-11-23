@@ -96,6 +96,7 @@
         "endTerms": "End rate",
         "errors": {
           "beforeEngagement": "Terms cannot start before the engagement started.",
+          "nothingToEnd": "No rate applies on this date, so there is nothing to end.",
           "invalidBasis": "Choose hourly or daily.",
           "invalidCurrency": "Enter an ISO 4217 currency code, such as EUR.",
           "invalidDate": "Choose a valid date.",
@@ -148,6 +149,7 @@
         "termsHeading": "Rates",
         "title": "Contractor compensation",
         "unchanged": "These terms already apply",
+        "nothingEnded": "No rate applied on that date, so nothing changed",
         "vatId": "VAT ID"
       },
       "contractType": {

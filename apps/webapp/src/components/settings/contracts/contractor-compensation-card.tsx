@@ -322,6 +322,10 @@ function ContractorTermsSection({
 	const [mode, setMode] = useState<"set" | "end" | null>(null);
 	// The server marks the terms pricing applies today (clipped to their engagement).
 	const inEffect = record.history.find((terms) => terms.id === record.termsInEffectId) ?? null;
+	// Only the active engagement's terms can be ended; earlier engagements' stay as recorded.
+	const endable = record.history.filter(
+		(terms) => terms.employmentPeriodId === record.contractorEngagementId,
+	);
 
 	const apply = async (change: Promise<ChangeResult>): Promise<boolean> => {
 		const result = await change.catch(() => null);
@@ -337,7 +341,12 @@ function ContractorTermsSection({
 		toast.success(
 			result.data.changed
 				? t("settings.contracts.contractors.saved", "Contractor terms saved")
-				: t("settings.contracts.contractors.unchanged", "These terms already apply"),
+				: mode === "end"
+					? t(
+							"settings.contracts.contractors.nothingEnded",
+							"No rate applied on that date, so nothing changed",
+						)
+					: t("settings.contracts.contractors.unchanged", "These terms already apply"),
 		);
 		setMode(null);
 		return true;
@@ -355,7 +364,7 @@ function ContractorTermsSection({
 							<IconPlus aria-hidden="true" className="mr-2 size-4" />
 							{t("settings.contracts.contractors.setTerms", "Set rate")}
 						</Button>
-						{record.history.length > 0 && (
+						{endable.length > 0 && (
 							<Button size="sm" variant="outline" onClick={() => setMode("end")}>
 								<IconX aria-hidden="true" className="mr-2 size-4" />
 								{t("settings.contracts.contractors.endTerms", "End rate")}
@@ -377,6 +386,7 @@ function ContractorTermsSection({
 					mode={mode}
 					record={record}
 					inEffect={inEffect}
+					endable={endable}
 					onCancel={() => setMode(null)}
 					onSubmit={(value) =>
 						apply(
@@ -517,12 +527,15 @@ function ContractorTermsForm({
 	mode,
 	record,
 	inEffect,
+	endable,
 	onCancel,
 	onSubmit,
 }: {
 	mode: "set" | "end";
 	record: ContractorCompensationRecord;
 	inEffect: ContractorTermsView | null;
+	/** The active engagement's terms; ending needs one that applies on the chosen day. */
+	endable: readonly ContractorTermsView[];
 	onCancel: () => void;
 	onSubmit: (value: TermsFormValues) => Promise<boolean>;
 }) {
@@ -603,6 +616,20 @@ function ContractorTermsForm({
 							return t(
 								"settings.contracts.contractors.errors.beforeEngagement",
 								"Terms cannot start before the engagement started.",
+							);
+						}
+						// Plain ISO days compare as strings; `effectiveTo` is exclusive.
+						if (
+							mode === "end" &&
+							!endable.some(
+								(terms) =>
+									terms.effectiveFrom <= value &&
+									(terms.effectiveTo === null || value < terms.effectiveTo),
+							)
+						) {
+							return t(
+								"settings.contracts.contractors.errors.nothingToEnd",
+								"No rate applies on this date, so there is nothing to end.",
 							);
 						}
 						return undefined;
