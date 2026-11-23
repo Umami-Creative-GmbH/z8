@@ -66,6 +66,12 @@ export interface WorkingStudentWorkInterval {
 	readonly end: Instant;
 	/** Net minutes (breaks deducted); spread evenly over the elapsed interval. */
 	readonly netMinutes: number;
+	/**
+	 * Set on a running clock-in, which is not completed work. `shift_end`: it counts up to the end of
+	 * the shift it belongs to, a fixed figure. `now`: it belongs to no shift and grows with the
+	 * clock, so the lecture-week fingerprint takes it by identity, not by its minutes.
+	 */
+	readonly runningUntil?: "shift_end" | "now";
 }
 
 export interface WorkingStudentLectureFreePeriod {
@@ -142,6 +148,10 @@ type Category = "core" | "lectureFree" | "eveningWeekend" | "otherProfile";
 interface WeekAccumulator {
 	core: number;
 	completedCore: number;
+	/** Core milliseconds of clock-ins that grow with `now` (`runningUntil: "now"`). */
+	growingCore: number;
+	/** Identities (`ref@start`) of those clock-ins touching the week. */
+	growing: Set<string>;
 	lectureFree: number;
 	eveningWeekend: number;
 	otherProfile: number;
@@ -177,8 +187,7 @@ function overlapMilliseconds(start: Instant, end: Instant, from: Instant, until:
 
 /**
  * Adds an interval's net milliseconds, by local day and category, to the weeks they fall in.
- * Intervals without deducted breaks add whole milliseconds, so a running clock-in plus the rest of
- * its shift sums exactly to the same total wherever `now` splits them (no float drift at x.5 min).
+ * Intervals without deducted breaks add whole milliseconds (no float drift at x.5 min).
  */
 function accumulate(
 	weeks: Map<string, WeekAccumulator>,
@@ -231,14 +240,20 @@ function accumulate(
 		const week = weeks.get(key) ?? {
 			core: 0,
 			completedCore: 0,
+			growingCore: 0,
+			growing: new Set<string>(),
 			lectureFree: 0,
 			eveningWeekend: 0,
 			otherProfile: 0,
 		};
 		week[daytimeCategory] += daytime * ratio;
 		week[nightCategory] += night * ratio;
-		if (daytimeCategory === "core" && interval.source === "work") {
+		if (daytimeCategory === "core" && interval.source === "work" && !interval.runningUntil) {
 			week.completedCore += daytime * ratio;
+		}
+		if (interval.runningUntil === "now") {
+			week.growing.add(`${interval.ref}@${interval.start.toString()}`);
+			if (daytimeCategory === "core") week.growingCore += daytime * ratio;
 		}
 		weeks.set(key, week);
 	}
@@ -404,13 +419,15 @@ export function evaluateWorkingStudentEmployee(input: {
 				},
 				// What the rule judges, not how the minutes were recorded: a shift worked as planned,
 				// weekend or evening work, and a re-recorded identical lecture-free period leave it as is.
+				// A clock-in without a shift grows by the minute: it counts by identity until clocked out.
 				inputFingerprint: statutoryInputFingerprint({
 					kind: "working_student_lecture_week",
 					employeeId: facts.employeeId,
 					subjectKey: week.subjectKey,
 					limitMinutes,
 					daytime: [WORKING_STUDENT_DAYTIME_START_MINUTE, WORKING_STUDENT_DAYTIME_END_MINUTE],
-					coreMinutes: core,
+					coreMinutes: minutes((acc?.core ?? 0) - (acc?.growingCore ?? 0)),
+					runningClockIns: [...(acc?.growing ?? [])].sort(),
 					workingStudentDays,
 					lectureFreeDays: lectureFreeWeekdaysOf(facts.lectureFreePeriods, monday),
 				}),

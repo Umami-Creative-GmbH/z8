@@ -32,7 +32,7 @@ import {
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
-import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadOrganizationStatutoryPreferences, type StatutoryPreferences } from "../preferences";
 import { loadStatutoryThresholds } from "../thresholds";
@@ -58,8 +58,9 @@ export interface WorkingStudentMonitorRequest {
 	readonly window: { readonly start: string; readonly endExclusive: string };
 	readonly employeeIds: readonly string[];
 	/**
-	 * Recorded work counts up to `now` (a running clock-in up to `now` itself), planned and proposed
-	 * shifts from `now` on: a shift in progress counts with its remaining part, an ended one not at all.
+	 * Completed work counts as recorded. Shifts (planned and proposed) that have not ended count in
+	 * full, a running clock-in on one of them up to the shift's end, a clock-in without a shift up to
+	 * `now`; an ended shift counts only by its recorded work.
 	 */
 	readonly now: Instant;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
@@ -120,6 +121,75 @@ function inWorkingStudentSpan(spans: readonly EmploymentProfileInterval[], date:
 		else return span.employmentProfile === WORKING_STUDENT;
 	}
 	return false;
+}
+
+/** A persisted or proposed shift that has not ended at `now`. */
+interface PlannedShift {
+	readonly source: "shift" | "proposed";
+	readonly ref: string;
+	readonly start: Instant;
+	readonly end: Instant;
+}
+
+/**
+ * One employee's work in progress and planned work, figured so a day going as planned leaves the
+ * totals (and the fingerprints made of them) as they are from one minute to the next:
+ *
+ * - a running clock-in that belongs to a shift that has not ended (it matches the shift, or runs
+ *   into it) counts from the clock-in to that shift's end, and stands in for the shift;
+ * - a running clock-in that belongs to no such shift counts up to `now` on the whole-minute grid,
+ *   so it grows once a minute whatever the seconds of the clock-in;
+ * - every other shift that has not ended counts in full, even one that started without a
+ *   clock-in, less the part completed work matched to it already covers (a clocked-out break
+ *   keeps the rest of the shift until the shift ends).
+ */
+function inProgressContributions(input: {
+	readonly now: Instant;
+	readonly planned: readonly PlannedShift[];
+	readonly open: readonly { readonly ref: string; readonly start: Instant }[];
+	readonly closed: readonly { readonly start: Instant; readonly end: Instant }[];
+}): WorkingStudentWorkInterval[] {
+	const contributions: WorkingStudentWorkInterval[] = [];
+	const covered = new Set<PlannedShift>();
+	for (const clockIn of input.open) {
+		let end: Instant | null = null;
+		for (const planned of input.planned) {
+			const belongs =
+				workMatchesShift(planned, { start: clockIn.start, end: null }) ||
+				(compareInstants(clockIn.start, planned.end) < 0 &&
+					compareInstants(planned.start, input.now) < 0);
+			if (!belongs) continue;
+			covered.add(planned);
+			if (!end || compareInstants(planned.end, end) > 0) end = planned.end;
+		}
+		const runningUntil = end ? "shift_end" : "now";
+		end ??= input.now.round({ smallestUnit: "minute", roundingMode: "floor" });
+		if (compareInstants(end, clockIn.start) <= 0) continue;
+		contributions.push({
+			source: "work",
+			ref: clockIn.ref,
+			start: clockIn.start,
+			end,
+			netMinutes: clockIn.start.until(end).total("minutes"),
+			runningUntil,
+		});
+	}
+	for (const planned of input.planned) {
+		if (covered.has(planned)) continue;
+		let start = planned.start;
+		for (const work of input.closed) {
+			if (workMatchesShift(planned, work) && compareInstants(work.end, start) > 0) start = work.end;
+		}
+		if (compareInstants(start, planned.end) >= 0) continue;
+		contributions.push({
+			source: planned.source,
+			ref: planned.ref,
+			start,
+			end: planned.end,
+			netMinutes: start.until(planned.end).total("minutes"),
+		});
+	}
+	return contributions;
 }
 
 /** Employees among `employeeIds` (all when null) who ever had confirmed working-student terms. */
@@ -307,36 +377,37 @@ export async function evaluateWorkingStudents(
 	const intervals = new Map<string, WorkingStudentWorkInterval[]>();
 	const add = (employeeId: string, interval: WorkingStudentWorkInterval) =>
 		push(intervals, employeeId, interval);
-	/**
-	 * A planned or proposed shift counts from `now` on: its past is judged by the work recorded for
-	 * it (a running clock-in counts up to `now`, so nothing is counted twice), its future by the plan.
-	 */
-	const addPlanned = (
-		employeeId: string,
-		source: "shift" | "proposed",
-		ref: string,
-		interval: { readonly start: Instant; readonly end: Instant },
-	) => {
-		if (compareInstants(interval.end, request.now) <= 0) return;
-		const start = compareInstants(interval.start, request.now) < 0 ? request.now : interval.start;
-		add(employeeId, {
-			source,
-			ref,
-			start,
-			end: interval.end,
-			netMinutes: start.until(interval.end).total("minutes"),
-		});
+
+	// Shifts (persisted and proposed) that have not ended; an ended one is judged by its work.
+	const plannedByEmployee = new Map<string, PlannedShift[]>();
+	const addPlanned = (employeeId: string, planned: PlannedShift) => {
+		if (compareInstants(planned.end, request.now) > 0) push(plannedByEmployee, employeeId, planned);
 	};
-	for (const row of openRows) {
-		const start = instantFromDate(row.startTime);
-		add(row.employeeId, {
-			source: "work",
-			ref: row.id,
-			start,
-			end: request.now,
-			netMinutes: start.until(request.now).total("minutes"),
-		});
+	for (const row of shiftRows) {
+		if (!row.employeeId) continue;
+		const interval = shiftInterval(
+			{
+				date: shiftCalendarDate(row.date, timezone),
+				startTime: row.startTime,
+				endTime: row.endTime,
+			},
+			timezone,
+		);
+		addPlanned(row.employeeId, { source: "shift", ref: row.id, ...interval });
 	}
+	for (const proposed of request.proposedShifts ?? []) {
+		const interval = shiftInterval(
+			{
+				date: parsePlainDate(proposed.date),
+				startTime: proposed.startTime,
+				endTime: proposed.endTime,
+			},
+			timezone,
+		);
+		const ref = `${proposed.date}T${proposed.startTime}-${proposed.endTime}`;
+		addPlanned(proposed.employeeId, { source: "proposed", ref, ...interval });
+	}
+
 	for (const row of workRows) {
 		if (!row.endTime) continue;
 		const start = instantFromDate(row.startTime);
@@ -349,29 +420,44 @@ export async function evaluateWorkingStudents(
 			netMinutes: row.durationMinutes ?? start.until(end).total("minutes"),
 		});
 	}
-	for (const row of shiftRows) {
-		if (!row.employeeId) continue;
-		const interval = shiftInterval(
-			{
-				date: shiftCalendarDate(row.date, timezone),
-				startTime: row.startTime,
-				endTime: row.endTime,
-			},
-			timezone,
-		);
-		addPlanned(row.employeeId, "shift", row.id, interval);
+	// Only recent work can belong to a shift that has not ended (a shift lasts less than a day).
+	const recentFrom = request.now.subtract({ hours: 48 });
+	const closedByEmployee = groupBy(
+		workRows.filter(
+			(row) =>
+				row.endTime && compareInstants(instantFromDate(row.endTime), recentFrom) > 0,
+		),
+		(row) => row.employeeId,
+	);
+	const openByEmployee = groupBy(openRows, (row) => row.employeeId);
+	for (const [employeeId, planned] of plannedByEmployee) {
+		for (const contribution of inProgressContributions({
+			now: request.now,
+			planned,
+			open: (openByEmployee.get(employeeId) ?? []).map((row) => ({
+				ref: row.id,
+				start: instantFromDate(row.startTime),
+			})),
+			closed: (closedByEmployee.get(employeeId) ?? []).flatMap((row) =>
+				row.endTime
+					? [{ start: instantFromDate(row.startTime), end: instantFromDate(row.endTime) }]
+					: [],
+			),
+		})) {
+			add(employeeId, contribution);
+		}
+		openByEmployee.delete(employeeId);
 	}
-	for (const proposed of request.proposedShifts ?? []) {
-		const interval = shiftInterval(
-			{
-				date: parsePlainDate(proposed.date),
-				startTime: proposed.startTime,
-				endTime: proposed.endTime,
-			},
-			timezone,
-		);
-		const ref = `${proposed.date}T${proposed.startTime}-${proposed.endTime}`;
-		addPlanned(proposed.employeeId, "proposed", ref, interval);
+	// Employees without a running or upcoming shift: every clock-in grows with the clock.
+	for (const [employeeId, rows] of openByEmployee) {
+		for (const contribution of inProgressContributions({
+			now: request.now,
+			planned: [],
+			open: rows.map((row) => ({ ref: row.id, start: instantFromDate(row.startTime) })),
+			closed: [],
+		})) {
+			add(employeeId, contribution);
+		}
 	}
 	const study = groupBy(studyRows, (row) => row.employeeId);
 	const offsets = groupBy(offsetRows, (row) => row.employeeId);
