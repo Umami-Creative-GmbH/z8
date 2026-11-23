@@ -259,6 +259,32 @@ describe("legacy settings 308 redirects (#1963)", () => {
 		}
 	});
 
+	it("redirects the retired /approvals workspace to the Approval inbox with 308, keeping the query (#1976)", async () => {
+		platform.configured = true;
+		try {
+			const response = await proxy(
+				new NextRequest(
+					"https://app.example.com/de/approvals?types=absence_entry&types=time_entry&q=x",
+				),
+			);
+			expect(response.status).toBe(308);
+			const location = new URL(response.headers.get("location") ?? "");
+			expect(location.pathname).toBe("/de/approvals/inbox");
+			expect(location.searchParams.getAll("types")).toEqual(["absence_entry", "time_entry"]);
+			expect(location.searchParams.get("q")).toBe("x");
+			expect(location.searchParams.get("tab")).toBeNull();
+
+			const bare = await proxy(new NextRequest("https://app.example.com/approvals/"));
+			expect(bare.status).toBe(308);
+			expect(new URL(bare.headers.get("location") ?? "").pathname).toBe("/en/approvals/inbox");
+
+			const inbox = await proxy(new NextRequest("https://app.example.com/de/approvals/inbox"));
+			expect(inbox.status).not.toBe(308);
+		} finally {
+			platform.configured = false;
+		}
+	});
+
 	it("handles trailing slashes without hijacking canonical sibling or child routes", async () => {
 		platform.configured = true;
 		try {

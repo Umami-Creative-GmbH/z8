@@ -54,7 +54,6 @@ vi.mock("./actions", () => ({
 }));
 vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 	getCurrentEmployee: vi.fn(),
-	getPendingApprovals: vi.fn(),
 }));
 
 import type { DashboardWidgetSnapshot } from "./dashboard-types";

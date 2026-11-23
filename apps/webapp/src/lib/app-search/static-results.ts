@@ -50,6 +50,7 @@ function toNavigationAccessContext(input: StaticAppSearchInput): NavigationAcces
 		missingVehicleLogs: input.navigationCapabilities?.missingVehicleLogs,
 		analytics: input.navigationCapabilities?.analytics,
 		projectReports: input.navigationCapabilities?.projectReports,
+		approvalInbox: input.navigationCapabilities?.approvalInbox,
 		platformAdmin: input.navigationCapabilities?.platformAdmin ?? false,
 	};
 
