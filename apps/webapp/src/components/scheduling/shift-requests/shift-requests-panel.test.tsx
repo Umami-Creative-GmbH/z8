@@ -218,6 +218,26 @@ describe("ShiftRequestsPanel", () => {
 		expect(screen.queryByLabelText("Reason for the skill override")).toBeNull();
 	});
 
+	it("words a youth-protection publication block in the reader's language (#1993)", async () => {
+		approveShiftRequestMock.mockResolvedValueOnce({
+			success: false,
+			error: "Cannot save: this change to a published shift breaks youth protection limits",
+			code: "ValidationError",
+			refusal: "statutory_publication_blocked",
+		});
+		renderPanel();
+
+		fireEvent.click(await screen.findByRole("button", { name: "Approve" }));
+		fireEvent.click(screen.getByRole("button", { name: "Confirm approval" }));
+
+		await waitFor(() =>
+			expect(toastErrorMock).toHaveBeenCalledWith("Failed to approve the request", {
+				description:
+					"This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
+			}),
+		);
+	});
+
 	it("checks a swap against the named colleague", async () => {
 		getPendingShiftRequestsMock.mockResolvedValue({
 			success: true,

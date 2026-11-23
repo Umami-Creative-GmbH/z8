@@ -22,6 +22,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { useSkillValidation } from "@/lib/query/use-skills";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
+import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
 import { assignedEmployeeIdOf } from "./shift-request-assignee";
 
 /** The server wants a skill override reason for this approval (#893). */
@@ -76,6 +77,15 @@ export function ApproveShiftRequestForm({
 			if (!result.success) {
 				if (result.refusal === SKILL_OVERRIDE_REASON_REQUIRED) {
 					throw new SkillOverrideReasonRequired();
+				}
+				// Approving reassigns a published shift: the JArbSchG publish block can refuse it (#1993).
+				if (result.refusal === STATUTORY_PUBLICATION_BLOCKED) {
+					throw new Error(
+						t(
+							"scheduling:scheduling.scheduler.shiftUpdate.statutoryBlocked",
+							"This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
+						),
+					);
 				}
 				throw new Error(result.error);
 			}
