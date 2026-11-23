@@ -296,7 +296,6 @@ export async function evaluateWorkingStudents(
 			start,
 			end: request.now,
 			netMinutes: start.until(request.now).total("minutes"),
-			inProgress: { start: start.toString(), end: "open" },
 		});
 	}
 	for (const row of workRows) {
@@ -331,9 +330,6 @@ export async function evaluateWorkingStudents(
 			start,
 			end: interval.end,
 			netMinutes: start.until(interval.end).total("minutes"),
-			...(started
-				? { inProgress: { start: interval.start.toString(), end: interval.end.toString() } }
-				: {}),
 		});
 	}
 	for (const proposed of request.proposedShifts ?? []) {

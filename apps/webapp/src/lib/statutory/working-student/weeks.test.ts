@@ -241,28 +241,76 @@ describe("working student 20-hour lecture-period rule", () => {
 		expect(findings).toEqual([]);
 	});
 
-	it("keeps the fingerprint for the same inputs and changes it when an interval changes", () => {
-		const intervals = weekdays(W10, "09:00", "14:00");
+	describe("lecture-week fingerprint", () => {
 		const fingerprint = (employee: WorkingStudentEmployeeFacts) =>
 			evaluate(employee, W10, W11).findings.find((f) => f.kind === "working_student_lecture_week")
 				?.inputFingerprint;
-		const original = fingerprint(facts({ intervals }));
+		const lectureFree = [{ id: "lf", startsOn: "2026-03-04", endsOn: "2026-03-04" }];
+		// Mon, Tue, Thu, Fri 09:00–16:00 worked (28 h core); Wednesday is lecture-free.
+		const worked = weekdays(W10, "09:00", "16:00").filter((_, index) => index !== 2);
+		const original = fingerprint(facts({ intervals: worked, lectureFreePeriods: lectureFree }));
 
-		expect(fingerprint(facts({ intervals }))).toBe(original);
-		expect(
-			fingerprint(
-				facts({ intervals: [...intervals.slice(1), { ...intervals[0], netMinutes: 320 }] }),
-			),
-		).not.toBe(original);
-		expect(
-			fingerprint(
-				facts({
-					intervals,
-					// A lecture-free Saturday leaves the breach as it was but is an evaluated input.
-					lectureFreePeriods: [{ id: "lf", startsOn: "2026-03-07", endsOn: "2026-03-07" }],
-				}),
-			),
-		).not.toBe(original);
+		it("is the same however the same core minutes are recorded or planned", () => {
+			// Friday as a planned shift, as a running clock-in plus the rest of the shift, as work.
+			const friday = "2026-03-06";
+			const [mon, tue, thu] = worked;
+			const asShift = work(friday, "09:00", "16:00", "shift");
+			const clockedIn = work(friday, "09:00", "12:30");
+			const rest = work(friday, "12:30", "16:00", "shift");
+			for (const fridayIntervals of [[asShift], [clockedIn, rest]]) {
+				expect(
+					fingerprint(
+						facts({
+							intervals: [mon, tue, thu, ...fridayIntervals].filter((i) => i !== undefined),
+							lectureFreePeriods: lectureFree,
+						}),
+					),
+				).toBe(original);
+			}
+		});
+
+		it("ignores weekend work and a re-recorded identical lecture-free period", () => {
+			expect(original).toMatch(/^v1:/);
+			expect(
+				fingerprint(
+					facts({
+						intervals: [...worked, work("2026-03-07", "10:00", "18:00", "shift")],
+						lectureFreePeriods: [
+							{ id: "replacement", startsOn: "2026-03-04", endsOn: "2026-03-04" },
+						],
+					}),
+				),
+			).toBe(original);
+		});
+
+		it("changes when the core minutes, the lecture-free days or the working-student days change", () => {
+			expect(
+				fingerprint(
+					facts({
+						intervals: [...worked, work("2026-03-02", "16:00", "17:00")],
+						lectureFreePeriods: lectureFree,
+					}),
+				),
+			).not.toBe(original);
+			expect(
+				fingerprint(
+					facts({
+						intervals: worked,
+						lectureFreePeriods: [{ id: "lf", startsOn: "2026-03-04", endsOn: "2026-03-05" }],
+					}),
+				),
+			).not.toBe(original);
+			// The profile changes on Sunday: the same core minutes, judged over fewer days.
+			expect(
+				fingerprint(
+					facts({
+						intervals: worked,
+						lectureFreePeriods: lectureFree,
+						isWorkingStudentDay: (date) => date < "2026-03-08",
+					}),
+				),
+			).not.toBe(original);
+		});
 	});
 });
 
@@ -359,6 +407,27 @@ describe("working student rolling 26-week ceiling", () => {
 			severity: "warning",
 			summary: { tier: "warning", usedPercent: 80, remaining: { unit: "weeks", value: 5 } },
 		});
+	});
+
+	it("fingerprints the counted weeks, not how the judged week's hours are made up", () => {
+		const earlier = mondays(first, 27).slice(6, 26).flatMap(permittedWeek); // 20 weeks before W10
+		const fingerprint = (intervals: WorkingStudentWorkInterval[]) =>
+			ceiling(evaluate(facts({ intervals }), W10, W11))?.inputFingerprint;
+		const original = fingerprint([...earlier, ...permittedWeek(W10)]);
+		expect(original).toMatch(/^v1:/);
+
+		// W10 planned instead of worked, or longer but still above 20 h: the same weeks count.
+		expect(
+			fingerprint([
+				...earlier,
+				...weekdays(W10, "09:00", "13:00", "shift"),
+				work("2026-03-07", "09:00", "16:00", "shift"),
+			]),
+		).toBe(original);
+		// One more counted week changes it.
+		expect(fingerprint([...earlier, ...permittedWeek(first), ...permittedWeek(W10)])).not.toBe(
+			original,
+		);
 	});
 
 	it("counts >20 h weeks under another employment profile toward the ceiling", () => {

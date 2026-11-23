@@ -7,7 +7,11 @@ import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { integrationAdminPool } from "@/test/integration-database";
-import { recordEmployeeStatutoryOffset, recordEmployeeStudyPeriod } from "../employee-context";
+import {
+	recordEmployeeStatutoryOffset,
+	recordEmployeeStudyPeriod,
+	voidEmployeeStudyPeriod,
+} from "../employee-context";
 import { evaluateWorkingStudents, type WorkingStudentMonitorRequest } from "./monitor";
 import {
 	addWeeks,
@@ -333,14 +337,24 @@ describe("working-student monitor (PostgreSQL)", () => {
 		]);
 	});
 
-	it("keeps the lecture-week fingerprint while a shift is in progress", async () => {
+	it("keeps the lecture-week fingerprint through a shift worked as planned, and only then", async () => {
 		const org = await fx.organization("a");
+		const admin = await fx.user("admin");
 		const student = await fx.workingStudent(org, "student");
 		const subareaId = await fx.subarea(org, student);
+		// 16 h worked Monday and Tuesday, Wednesday's 08:00–16:00 shift planned: 24 h of core time.
 		await fx.work(org, student, weekdays(W10, "08:00", "16:00").slice(0, 2));
 		await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "08:00", end: "16:00" });
-		await fx.openWork(org, student, { date: "2026-03-04", start: "08:00" });
+		const lectureFree = {
+			organizationId: org.id,
+			employeeId: student.employeeId,
+			actorUserId: admin.userId,
+			startsOn: "2026-03-05",
+			endsOn: "2026-03-06",
+		};
+		const recorded = await recordEmployeeStudyPeriod(db, lectureFree);
 
+		// Berlin is UTC+1 in March.
 		const fingerprintAt = async (now: string) => {
 			const evaluations = await evaluate(org.id, [student.employeeId], {
 				now: Temporal.Instant.from(now),
@@ -348,9 +362,32 @@ describe("working-student monitor (PostgreSQL)", () => {
 			return findingsOf(evaluations, student.employeeId, "working_student_lecture_week")[0]
 				?.inputFingerprint;
 		};
-		const atNoon = await fingerprintAt("2026-03-04T11:00:00Z");
-		expect(atNoon).toBeDefined();
-		expect(await fingerprintAt("2026-03-04T13:30:00Z")).toBe(atNoon);
+		const planned = await fingerprintAt("2026-03-04T06:00:00Z");
+		expect(planned).toMatch(/^v1:/);
+		expect(await fingerprintAt("2026-03-04T07:00:00Z"), "shift start").toBe(planned);
+
+		const clockIn = await fx.openWork(org, student, { date: "2026-03-04", start: "08:00" });
+		expect(await fingerprintAt("2026-03-04T07:00:00Z"), "clock-in").toBe(planned);
+		expect(await fingerprintAt("2026-03-04T11:00:00Z"), "while clocked in").toBe(planned);
+
+		await fx.clockOut(org, clockIn, { date: "2026-03-04", end: "16:00" });
+		expect(await fingerprintAt("2026-03-04T15:00:00Z"), "clock-out at shift end").toBe(planned);
+		const after = "2026-03-04T16:00:00Z";
+		expect(await fingerprintAt(after), "after the shift").toBe(planned);
+
+		await fx.shift(org, subareaId, student, { date: "2026-03-07", start: "10:00", end: "18:00" });
+		expect(await fingerprintAt(after), "a Saturday shift").toBe(planned);
+
+		await voidEmployeeStudyPeriod(db, {
+			...lectureFree,
+			periodId: recorded.id,
+			reason: "Recorded twice by mistake",
+		});
+		await recordEmployeeStudyPeriod(db, lectureFree);
+		expect(await fingerprintAt(after), "an identical lecture-free period").toBe(planned);
+
+		await fx.work(org, student, [{ date: "2026-03-04", start: "16:00", end: "17:00" }]);
+		expect(await fingerprintAt(after), "an extra hour of core work").not.toBe(planned);
 	});
 
 	it("splits a Sunday-to-Monday overnight shift across compliance weeks and keeps DST nights real", async () => {

@@ -66,12 +66,6 @@ export interface WorkingStudentWorkInterval {
 	readonly end: Instant;
 	/** Net minutes (breaks deducted); spread evenly over the elapsed interval. */
 	readonly netMinutes: number;
-	/**
-	 * For work in progress, whose bounds move with `now` (a running clock-in, the rest of a started
-	 * shift): the stable bounds that identify it in the input fingerprint, so an acknowledgement does
-	 * not go stale minute by minute. `end` is `"open"` for a running clock-in.
-	 */
-	readonly inProgress?: { readonly start: string; readonly end: string };
 }
 
 export interface WorkingStudentLectureFreePeriod {
@@ -150,7 +144,6 @@ interface WeekAccumulator {
 	lectureFree: number;
 	eveningWeekend: number;
 	otherProfile: number;
-	intervals: Map<string, WorkingStudentWorkInterval>;
 }
 
 function isLectureFree(
@@ -162,6 +155,17 @@ function isLectureFree(
 			comparePlainDates(parsePlainDate(period.startsOn), day) <= 0 &&
 			comparePlainDates(day, parsePlainDate(period.endsOn)) <= 0,
 	);
+}
+
+/** The lecture-free Monday–Friday days of the week starting `monday` (weekends are excused anyway). */
+function lectureFreeWeekdaysOf(
+	periods: readonly WorkingStudentLectureFreePeriod[],
+	monday: PlainDate,
+): string[] {
+	return [0, 1, 2, 3, 4]
+		.map((offset) => monday.add({ days: offset }))
+		.filter((day) => isLectureFree(periods, day))
+		.map((day) => day.toString());
 }
 
 function overlapMinutes(start: Instant, end: Instant, from: Instant, until: Instant): number {
@@ -224,9 +228,7 @@ function accumulate(
 			lectureFree: 0,
 			eveningWeekend: 0,
 			otherProfile: 0,
-			intervals: new Map(),
 		};
-		week.intervals.set(`${interval.source}:${interval.ref}`, interval);
 		week[daytimeCategory] += daytime * ratio;
 		week[nightCategory] += night * ratio;
 		if (daytimeCategory === "core" && interval.source === "work") {
@@ -338,21 +340,6 @@ export function evaluateWorkingStudentEmployee(input: {
 		if (!judged || !isWorkingStudentWeek) continue;
 
 		const periodEnd = monday.add({ weeks: 1 }).toString();
-		const weekIntervals = [...(acc?.intervals.values() ?? [])]
-			.map((interval) =>
-				interval.inProgress
-					? { source: interval.source, ref: interval.ref, ...interval.inProgress }
-					: {
-							source: interval.source,
-							ref: interval.ref,
-							start: interval.start.toString(),
-							end: interval.end.toString(),
-							netMinutes: interval.netMinutes,
-						},
-			)
-			.sort((a, b) =>
-				a.start === b.start ? (a.ref < b.ref ? -1 : 1) : a.start < b.start ? -1 : 1,
-			);
 		const base = {
 			organizationId: input.organizationId,
 			employeeId: facts.employeeId,
@@ -392,18 +379,17 @@ export function evaluateWorkingStudentEmployee(input: {
 						otherProfileMinutes: otherProfile,
 					},
 				},
+				// What the rule judges, not how the minutes were recorded: a shift worked as planned,
+				// weekend or evening work, and a re-recorded identical lecture-free period leave it as is.
 				inputFingerprint: statutoryInputFingerprint({
 					kind: "working_student_lecture_week",
 					employeeId: facts.employeeId,
 					subjectKey: week.subjectKey,
 					limitMinutes,
 					daytime: [WORKING_STUDENT_DAYTIME_START_MINUTE, WORKING_STUDENT_DAYTIME_END_MINUTE],
-					intervals: weekIntervals,
+					coreMinutes: core,
 					workingStudentDays,
-					lectureFreePeriods: facts.lectureFreePeriods
-						.filter((period) => period.startsOn < periodEnd && period.endsOn >= weekStart)
-						.map((period) => ({ ...period }))
-						.sort((a, b) => (a.startsOn < b.startsOn ? -1 : 1)),
+					lectureFreeDays: lectureFreeWeekdaysOf(facts.lectureFreePeriods, monday),
 				}),
 			});
 		}

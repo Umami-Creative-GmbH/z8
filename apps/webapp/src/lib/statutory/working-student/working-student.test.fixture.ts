@@ -157,6 +157,27 @@ export function workingStudentFixture(admin: Pool, prefix: string) {
 			return id;
 		},
 
+		/** Clocks out a running work period at an organization-local time on its start day. */
+		async clockOut(
+			org: FixtureOrganization,
+			workPeriodId: string,
+			spec: { readonly date: string; readonly end: string },
+		): Promise<void> {
+			const end = Temporal.PlainDateTime.from(`${spec.date}T${spec.end}`).toZonedDateTime(
+				org.timezone,
+			);
+			await withCanonicalRecords(admin, async (client) => {
+				await client.query(
+					`update work_period
+					 set end_time = $3::timestamptz,
+						 duration_minutes = round(extract(epoch from ($3::timestamptz - start_time)) / 60),
+						 is_active = false
+					 where id = $1 and organization_id = $2`,
+					[workPeriodId, org.id, new Date(end.epochMilliseconds)],
+				);
+			});
+		},
+
 		/** Completed work periods, each with its clock-in entry and canonical record. */
 		async work(org: FixtureOrganization, person: FixtureEmployee, specs: readonly WorkSpec[]) {
 			const ids: string[] = [];
