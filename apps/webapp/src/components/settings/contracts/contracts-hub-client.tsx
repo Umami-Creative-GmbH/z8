@@ -5,10 +5,17 @@ import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
 import { ContractsBulkCsvTab } from "./contracts-bulk-csv-tab";
 import { ContractsDefaultsTab } from "./contracts-defaults-tab";
 import { ContractsReviewsTab } from "./contracts-reviews-tab";
+import { ContractsStatutoryTab } from "./contracts-statutory-tab";
 import { ContractsTemplatesTab } from "./contracts-templates-tab";
 import { ContractsWorkPoliciesTab } from "./contracts-work-policies-tab";
 
-export type ContractsHubTab = "defaults" | "templates" | "work-policies" | "bulk" | "reviews";
+export type ContractsHubTab =
+	| "defaults"
+	| "templates"
+	| "work-policies"
+	| "bulk"
+	| "reviews"
+	| "statutory";
 
 export interface ContractsHubClientProps {
 	organizationId: string;
@@ -98,6 +105,15 @@ export function ContractsHubClient({
 							organizationTimezone={organizationTimezone}
 						/>
 					),
+				},
+				{
+					value: "statutory",
+					label: t("settings.contracts.tabs.statutory", "Statutory limits"),
+					description: t(
+						"settings.contracts.tabs.statutoryDescription",
+						"Review German statutory baselines and set when planners and HR are warned before a limit is reached.",
+					),
+					panel: <ContractsStatutoryTab organizationId={organizationId} />,
 				},
 			]}
 		/>

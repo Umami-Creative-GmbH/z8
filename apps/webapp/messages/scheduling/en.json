@@ -52,7 +52,8 @@
       "publishing": "Publishing…",
       "restTime": "Rest time: {count}",
       "totalFindings": "{count, plural, one {# total finding} other {# total findings}}",
-      "warningsDetectedBeforePublish": "Warnings detected before publish"
+      "warningsDetectedBeforePublish": "Warnings detected before publish",
+      "statutory": "Statutory limits: {count}"
     },
     "scheduler": {
       "assigned": "Assigned",
@@ -61,7 +62,8 @@
         "maxHours": "Max hours: {count}",
         "overtime": "Overtime: {count}",
         "restTime": "Rest time: {count}",
-        "title": "Compliance Warnings in This Date Range"
+        "title": "Compliance Warnings in This Date Range",
+        "statutory": "Statutory limits: {count}"
       },
       "focus": {
         "anonymous": "Showing one employee's shifts",
@@ -213,6 +215,18 @@
       "empty": "No templates available. Create templates in Settings to quickly add shifts.",
       "selectHint": "Choose a template, then set the shift date and assignment.",
       "title": "Shift Templates"
+    },
+    "statutory": {
+      "warning": "{area}: statutory limit at risk",
+      "warningPercent": "{area}: {percent} % of the statutory limit",
+      "domain": {
+        "minijob": "Minijob limit",
+        "shortTerm": "Short-term employment limit",
+        "workingStudent": "Working student limit",
+        "onCall": "On-call work (§ 12 TzBfG)",
+        "youthProtection": "Youth protection (JArbSchG)",
+        "apprenticeship": "Apprentice release (BBiG)"
+      }
     }
   }
 }

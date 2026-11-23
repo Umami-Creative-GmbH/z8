@@ -11,6 +11,7 @@ import {
 	loadOrganizationStatutoryPreferences,
 	saveOrganizationStatutoryPreferences,
 } from "./preferences";
+import { loadStatutorySettingsOverview } from "./settings-overview";
 
 describe("organization statutory preferences (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -61,6 +62,32 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			blockJarbschgShiftPublish: false,
 			isDefault: true,
 		});
+	});
+
+	it("gives org admins every baseline marked past, current or upcoming plus the preferences", async () => {
+		const org = await fx.organization("a");
+
+		const overview = await loadStatutorySettingsOverview(db, {
+			organizationId: org.id,
+			today: "2026-11-23",
+		});
+
+		const caps = overview.baselines
+			.filter((row) => row.key === "de_minijob_monthly_limit_cents")
+			.map((row) => [row.effectiveFromDate, row.value, row.status]);
+		expect(caps.slice(-3)).toEqual([
+			["2025-01-01", 55_600, "past"],
+			["2026-01-01", 60_300, "current"],
+			["2027-01-01", 63_300, "upcoming"],
+		]);
+		expect(overview.baselines.find((row) => row.key === "de_jarbschg_night_start")).toMatchObject({
+			domain: "youth_protection",
+			value: 1200,
+			unit: "minute_of_day",
+			legalReference: "§ 14 Abs. 1 JArbSchG",
+			status: "current",
+		});
+		expect(overview.preferences.isDefault).toBe(true);
 	});
 
 	it.each([

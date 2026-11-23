@@ -52,7 +52,8 @@
       "publishing": "Wird veröffentlicht…",
       "restTime": "Ruhezeit: {count}",
       "totalFindings": "{count, plural, one {# Feststellung insgesamt} other {# Feststellungen insgesamt}}",
-      "warningsDetectedBeforePublish": "Vor der Veröffentlichung erkannte Warnungen"
+      "warningsDetectedBeforePublish": "Vor der Veröffentlichung erkannte Warnungen",
+      "statutory": "Gesetzliche Grenzen: {count}"
     },
     "scheduler": {
       "assigned": "Zugewiesen",
@@ -61,7 +62,8 @@
         "maxHours": "Max. Stunden: {count}",
         "overtime": "Überstunden: {count}",
         "restTime": "Ruhezeit: {count}",
-        "title": "Compliance-Warnungen in diesem Datumsbereich"
+        "title": "Compliance-Warnungen in diesem Datumsbereich",
+        "statutory": "Gesetzliche Grenzen: {count}"
       },
       "focus": {
         "anonymous": "Schichten eines Mitarbeiters werden angezeigt",
@@ -213,6 +215,18 @@
       "empty": "Keine Vorlagen verfügbar. Erstellen Sie Vorlagen in den Einstellungen, um schnell Schichten hinzuzufügen.",
       "selectHint": "Wählen Sie eine Vorlage und legen Sie dann das Schichtdatum und die Zuweisung fest.",
       "title": "Schichtvorlagen"
+    },
+    "statutory": {
+      "warning": "{area}: gesetzliche Grenze gefährdet",
+      "warningPercent": "{area}: {percent} % der gesetzlichen Grenze",
+      "domain": {
+        "minijob": "Minijob-Grenze",
+        "shortTerm": "Grenze kurzfristige Beschäftigung",
+        "workingStudent": "Werkstudierenden-Grenze",
+        "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
+        "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
+        "apprenticeship": "Freistellung Auszubildende (BBiG)"
+      }
     }
   }
 }

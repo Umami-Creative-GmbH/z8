@@ -373,7 +373,9 @@
         "templates": "Templates",
         "templatesDescription": "Create and version immutable stamping contract templates and apply them with divergence protection.",
         "workPolicies": "Work Policies",
-        "workPoliciesDescription": "Publish effective-dated work policy versions, toggle schedule/regulation/presence rules, and manage assignments."
+        "workPoliciesDescription": "Publish effective-dated work policy versions, toggle schedule/regulation/presence rules, and manage assignments.",
+        "statutory": "Statutory limits",
+        "statutoryDescription": "Review German statutory baselines and set when planners and HR are warned before a limit is reached."
       },
       "teamMove": {
         "changesHeading": "Operational contract rules affected by moving primary team:",
@@ -451,6 +453,83 @@
         "versioningOn": "Future scheduling enabled",
         "versioningPendingDescription": "Metadata and current-day policy edits save seamlessly while preserving all ArbZG regulation rules and disabled section drafts. Future-dated scheduling activates once policy versioning rollout completes.",
         "versioningPendingTitle": "Current-day and metadata policy editing"
+      },
+      "statutory": {
+        "baselinesTitle": "German statutory baselines",
+        "baselinesDescription": "Z8 maintains these limits and their effective dates. Each day is judged against the values in force on that day; organizations cannot change them.",
+        "showHistory": "Show earlier values",
+        "loadFailed": "Could not load the statutory baselines. Try again.",
+        "empty": "No statutory baselines are available.",
+        "effectiveRange": "{from} – {until}",
+        "effectiveFrom": "From {from}",
+        "column": {
+          "area": "Area",
+          "limit": "Limit",
+          "value": "Value",
+          "effective": "In force",
+          "legalReference": "Legal basis"
+        },
+        "status": {
+          "current": "Current",
+          "upcoming": "Upcoming"
+        },
+        "domain": {
+          "minijob": "Minijob (§ 8 SGB IV)",
+          "shortTerm": "Short-term employment",
+          "workingStudent": "Working students",
+          "onCall": "On-call work (§ 12 TzBfG)",
+          "youthProtection": "Youth protection (JArbSchG)",
+          "apprenticeship": "Apprentices (BBiG)"
+        },
+        "key": {
+          "minijobMonthlyLimit": "Monthly earnings limit",
+          "minijobUnforeseeableMonths": "Unforeseeable exceedance months per 12 months",
+          "minijobUnforeseeableMultiplier": "Maximum earnings in an exceedance month",
+          "shortTermDays": "Working days per calendar year",
+          "shortTermMonths": "Months per calendar year",
+          "workingStudentWeekly": "Weekly hours during lecture periods",
+          "workingStudentWeeks": "Weeks above 20 hours per 12 months",
+          "workingStudentDays": "Days above 20 hours per 12 months",
+          "onCallNotice": "Full days of call-in notice",
+          "onCallMinCall": "Minimum call duration",
+          "onCallDefaultWeekly": "Weekly hours when none are agreed",
+          "onCallMinBand": "Extra call-off above an agreed minimum",
+          "onCallMaxBand": "Reduced call-off below an agreed maximum",
+          "youthDaily": "Daily working time",
+          "youthDailyCompensatory": "Daily working time with compensation in the week",
+          "youthWeekly": "Weekly working time",
+          "youthDays": "Working days per week",
+          "youthRest": "Minimum daily rest",
+          "youthBreak270": "Break for more than 4.5 up to 6 hours of work",
+          "youthBreak360": "Break for more than 6 hours of work",
+          "youthBreakSegment": "Shortest counted break",
+          "youthUninterrupted": "Longest work without a break",
+          "youthNightStart": "Night rest starts",
+          "youthNightEnd": "Night rest ends"
+        },
+        "value": {
+          "hours": "{hours} h",
+          "days": "{count, plural, one {# day} other {# days}}",
+          "weeks": "{count, plural, one {# week} other {# weeks}}",
+          "months": "{count, plural, one {# month} other {# months}}",
+          "percent": "{value} %",
+          "multiplier": "{value}× the monthly limit"
+        },
+        "preferences": {
+          "title": "Statutory warning settings",
+          "description": "Decide when planners and HR are warned before a statutory limit is reached. Warnings never block clocking in or out.",
+          "warning": "Warning at",
+          "warningHelp": "Share of a statutory limit that raises a warning.",
+          "critical": "Critical at",
+          "criticalHelp": "Share of a statutory limit that raises an urgent warning.",
+          "blockJarbschg": "Block publishing shifts that break youth protection limits",
+          "blockJarbschgHelp": "Shifts for employees under 18 cannot be published while they break a JArbSchG limit, unless a statutory exception is acknowledged. Recorded working time is never blocked.",
+          "save": "Save warning settings",
+          "saved": "Warning settings saved",
+          "saveFailed": "Could not save the settings.",
+          "percentRange": "Enter whole percentages from 1 to 100.",
+          "warningBelowCritical": "The warning percentage must be below the critical percentage."
+        }
       }
     },
     "timeRegulations": {

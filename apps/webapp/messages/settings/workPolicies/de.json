@@ -373,7 +373,9 @@
         "templates": "Vorlagen",
         "templatesDescription": "Erstellen und versionieren Sie unveränderliche Vertragsvorlagen und wenden Sie diese mit Abweichungsschutz an.",
         "workPolicies": "Arbeitsrichtlinien",
-        "workPoliciesDescription": "Veröffentlichen Sie stichtagsbezogene Versionen von Arbeitsrichtlinien, aktivieren oder deaktivieren Sie Schichtplanungs-, Regelungs- und Anwesenheitsregeln und verwalten Sie Zuweisungen."
+        "workPoliciesDescription": "Veröffentlichen Sie stichtagsbezogene Versionen von Arbeitsrichtlinien, aktivieren oder deaktivieren Sie Schichtplanungs-, Regelungs- und Anwesenheitsregeln und verwalten Sie Zuweisungen.",
+        "statutory": "Gesetzliche Grenzen",
+        "statutoryDescription": "Prüfen Sie die gesetzlichen Grenzwerte in Deutschland und legen Sie fest, wann Planer und HR vor dem Erreichen einer Grenze gewarnt werden."
       },
       "teamMove": {
         "changesHeading": "Betriebliche Vertragsregeln, die vom Wechsel des Primärteams betroffen sind:",
@@ -451,6 +453,83 @@
         "versioningOn": "Zukünftige Planung aktiviert",
         "versioningPendingDescription": "Metadaten und tagesaktuelle Richtlinienänderungen werden nahtlos gespeichert, während alle ArbZG-Vorschriften und Entwürfe deaktivierter Abschnitte erhalten bleiben. Zukünftige Planungen werden aktiviert, sobald die Einführung der Richtlinienversionierung abgeschlossen ist.",
         "versioningPendingTitle": "Bearbeitung von tagesaktuellen Richtlinien und Metadaten"
+      },
+      "statutory": {
+        "baselinesTitle": "Gesetzliche Grenzwerte (Deutschland)",
+        "baselinesDescription": "Z8 pflegt diese Grenzwerte und ihre Gültigkeitszeiträume. Jeder Tag wird mit den an diesem Tag geltenden Werten bewertet; Organisationen können sie nicht ändern.",
+        "showHistory": "Frühere Werte anzeigen",
+        "loadFailed": "Die gesetzlichen Grenzwerte konnten nicht geladen werden. Versuchen Sie es erneut.",
+        "empty": "Keine gesetzlichen Grenzwerte verfügbar.",
+        "effectiveRange": "{from} – {until}",
+        "effectiveFrom": "Ab {from}",
+        "column": {
+          "area": "Bereich",
+          "limit": "Grenze",
+          "value": "Wert",
+          "effective": "Gültig",
+          "legalReference": "Rechtsgrundlage"
+        },
+        "status": {
+          "current": "Aktuell",
+          "upcoming": "Künftig"
+        },
+        "domain": {
+          "minijob": "Minijob (§ 8 SGB IV)",
+          "shortTerm": "Kurzfristige Beschäftigung",
+          "workingStudent": "Werkstudierende",
+          "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
+          "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
+          "apprenticeship": "Auszubildende (BBiG)"
+        },
+        "key": {
+          "minijobMonthlyLimit": "Monatliche Verdienstgrenze",
+          "minijobUnforeseeableMonths": "Monate mit unvorhersehbarem Überschreiten je 12 Monate",
+          "minijobUnforeseeableMultiplier": "Höchstverdienst in einem Überschreitungsmonat",
+          "shortTermDays": "Arbeitstage je Kalenderjahr",
+          "shortTermMonths": "Monate je Kalenderjahr",
+          "workingStudentWeekly": "Wochenstunden in der Vorlesungszeit",
+          "workingStudentWeeks": "Wochen über 20 Stunden je 12 Monate",
+          "workingStudentDays": "Tage über 20 Stunden je 12 Monate",
+          "onCallNotice": "Volle Tage Ankündigungsfrist",
+          "onCallMinCall": "Mindestdauer eines Abrufs",
+          "onCallDefaultWeekly": "Wochenstunden ohne vereinbarte Dauer",
+          "onCallMinBand": "Zusätzlicher Abruf über eine vereinbarte Mindestdauer",
+          "onCallMaxBand": "Geringerer Abruf unter einer vereinbarten Höchstdauer",
+          "youthDaily": "Tägliche Arbeitszeit",
+          "youthDailyCompensatory": "Tägliche Arbeitszeit mit Ausgleich in der Woche",
+          "youthWeekly": "Wöchentliche Arbeitszeit",
+          "youthDays": "Arbeitstage je Woche",
+          "youthRest": "Tägliche Mindestruhezeit",
+          "youthBreak270": "Pause bei mehr als 4,5 bis 6 Stunden Arbeit",
+          "youthBreak360": "Pause bei mehr als 6 Stunden Arbeit",
+          "youthBreakSegment": "Kürzeste anrechenbare Pause",
+          "youthUninterrupted": "Längste Arbeit ohne Pause",
+          "youthNightStart": "Nachtruhe beginnt",
+          "youthNightEnd": "Nachtruhe endet"
+        },
+        "value": {
+          "hours": "{hours} Std.",
+          "days": "{count, plural, one {# Tag} other {# Tage}}",
+          "weeks": "{count, plural, one {# Woche} other {# Wochen}}",
+          "months": "{count, plural, one {# Monat} other {# Monate}}",
+          "percent": "{value} %",
+          "multiplier": "{value}-fache Monatsgrenze"
+        },
+        "preferences": {
+          "title": "Warnstufen für gesetzliche Grenzen",
+          "description": "Legen Sie fest, wann Planer und HR vor dem Erreichen einer gesetzlichen Grenze gewarnt werden. Warnungen blockieren niemals das Ein- oder Ausstempeln.",
+          "warning": "Warnung ab",
+          "warningHelp": "Anteil einer gesetzlichen Grenze, ab dem gewarnt wird.",
+          "critical": "Kritisch ab",
+          "criticalHelp": "Anteil einer gesetzlichen Grenze, ab dem dringend gewarnt wird.",
+          "blockJarbschg": "Veröffentlichung von Schichten sperren, die den Jugendarbeitsschutz verletzen",
+          "blockJarbschgHelp": "Schichten für Beschäftigte unter 18 können nicht veröffentlicht werden, solange sie eine Grenze des JArbSchG verletzen, außer eine gesetzliche Ausnahme ist bestätigt. Erfasste Arbeitszeit wird nie blockiert.",
+          "save": "Warnstufen speichern",
+          "saved": "Warnstufen gespeichert",
+          "saveFailed": "Die Einstellungen konnten nicht gespeichert werden.",
+          "percentRange": "Geben Sie ganze Prozentwerte von 1 bis 100 ein.",
+          "warningBelowCritical": "Die Warnstufe muss unter der kritischen Stufe liegen."
+        }
       }
     },
     "timeRegulations": {
