@@ -546,6 +546,43 @@ describe("TodayApprovalsPanel", () => {
 		).toBe("/approvals/inbox");
 	});
 
+	it("says why it can't confirm when the briefing goes stale while the panel is open", () => {
+		const { rerender } = render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		// A background read failed: the card's own alert is behind the modal panel.
+		rerender(<TodayApprovalsPanel items={[approvalItem()]} total={1} stale />);
+
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		expect(
+			(within(panel).getByRole("button", { name: "Confirm Rejection" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
+		expect(
+			within(panel).getByText(
+				"Today's approvals could not be refreshed. Close this panel and retry.",
+			),
+		).toBeTruthy();
+	});
+
+	it("keeps the item and the reason in the panel while it slides out", () => {
+		render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
+
+		fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+		const panel = screen.getByRole("dialog", { name: "Reject request" });
+		fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+			target: { value: "Overlaps the inventory week." },
+		});
+		fireEvent.click(within(panel).getByRole("button", { name: "Cancel" }));
+
+		// The sheet stays rendered for its close animation; it must not empty out meanwhile.
+		const closing = screen.getByRole("dialog", { name: "Reject request", hidden: true });
+		expect(within(closing).getByText("Vacation request")).toBeTruthy();
+		expect(
+			(within(closing).getByLabelText("Reason for rejection") as HTMLTextAreaElement).value,
+		).toBe("Overlaps the inventory week.");
+	});
+
 	it("returns focus to the approvals list after a saved rejection removes its Reject button", async () => {
 		render(<TodayApprovalsPanel items={[approvalItem()]} total={1} />);
 

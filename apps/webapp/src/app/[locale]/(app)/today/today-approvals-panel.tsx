@@ -75,6 +75,9 @@ export function TodayApprovalsPanel({
 	}, []);
 	// The item whose rejection reason the manager is writing, and that reason.
 	const [rejecting, setRejecting] = useState<BriefingApprovalActionItem | null>(null);
+	// What the panel shows: the last item it was opened for, kept while the sheet slides out so
+	// it never empties before it leaves. Opening the panel replaces it, and resets the reason.
+	const [panelItem, setPanelItem] = useState<BriefingApprovalActionItem | null>(null);
 	const [rejectReason, setRejectReason] = useState("");
 	// Where focus goes when the reject panel closes.
 	const listRef = useRef<HTMLUListElement>(null);
@@ -127,7 +130,6 @@ export function TodayApprovalsPanel({
 	// Adjusted during render (React's "state from props" pattern), not in an effect.
 	if (rejecting !== null && !rejectPanelOpen) {
 		setRejecting(null);
-		setRejectReason("");
 		setDecisionError(null);
 	}
 
@@ -211,11 +213,12 @@ export function TodayApprovalsPanel({
 		setDecisionError(null);
 		setRejectReason("");
 		setRejecting(item);
+		setPanelItem(item);
 	}
 
 	function closeRejectPanel() {
 		setRejecting(null);
-		setRejectReason("");
+		// The reason stays for the close animation; opening the panel again resets it.
 		// The error belonged to this rejection and was shown in its panel; dismissing it ends it.
 		setDecisionError(null);
 	}
@@ -447,11 +450,11 @@ export function TodayApprovalsPanel({
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-4">
-						{rejecting ? (
+						{panelItem ? (
 							<>
 								<div className="min-w-0 space-y-1 rounded-lg border bg-muted/20 p-3">
-									<p className="break-words font-medium text-sm">{rejecting.title}</p>
-									<p className="break-words text-muted-foreground text-sm">{rejecting.summary}</p>
+									<p className="break-words font-medium text-sm">{panelItem.title}</p>
+									<p className="break-words text-muted-foreground text-sm">{panelItem.summary}</p>
 								</div>
 								{decisionError ? <SectionError message={decisionError} /> : null}
 								{rejectingListed && !rejectingStillRejectable && !rejectionPending ? (
@@ -474,15 +477,24 @@ export function TodayApprovalsPanel({
 										</Link>
 									</p>
 								) : null}
+								{rejectPanelOpen && (error || stale) && !rejectionPending ? (
+									// The briefing's own alert is behind the modal panel: say why Confirm is off.
+									<p role="status" className="text-sm text-muted-foreground">
+										{t(
+											"today.approvals.rejectPanel.briefingUnavailable",
+											"Today's approvals could not be refreshed. Close this panel and retry.",
+										)}
+									</p>
+								) : null}
 								<ApprovalReasonForm
-									key={rejecting.approvalId}
+									key={panelItem.approvalId}
 									reason={rejectReason}
 									onReasonChange={setRejectReason}
 									onCancel={closeRejectPanel}
 									onConfirm={confirmRejection}
 									// Off while any decision or refresh is under way, so confirming never does nothing.
 									canReject={
-										rejectingStillRejectable && !decisionsOff && !decided.has(rejecting.approvalId)
+										rejectingStillRejectable && !decisionsOff && !decided.has(panelItem.approvalId)
 									}
 									isPending={rejectionPending}
 								/>

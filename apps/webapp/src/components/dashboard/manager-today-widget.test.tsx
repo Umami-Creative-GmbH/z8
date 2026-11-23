@@ -426,6 +426,8 @@ describe("ManagerTodayWidget", () => {
 		const metrics = await screen.findByTestId("manager-today-metrics");
 		const approvals = within(metrics).getByText("Approvals").closest("a");
 		expect(approvals?.textContent).toContain("—");
+		// Screen readers hear it in words, as `/today` says it, not "dash".
+		expect(within(approvals as HTMLElement).getByText("Unavailable").className).toContain("sr-only");
 		expect(approvals?.textContent).not.toContain("0+");
 		expect(screen.queryByText("No manager action is flagged right now.")).toBeNull();
 	});
