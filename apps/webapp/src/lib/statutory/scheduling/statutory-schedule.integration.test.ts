@@ -73,6 +73,7 @@ describe("statutory scheduling seam (PostgreSQL)", () => {
 			actorUserId: admin.userId,
 			employeeId: student.employeeId,
 			kind: "working_student_over_20h_week",
+			findingKind: "working_student_week",
 			subjectKey: "2026-W10",
 			inputFingerprint: "v1:1",
 			reason: "Exam preparation week agreed with university",

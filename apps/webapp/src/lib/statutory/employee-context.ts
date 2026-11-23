@@ -16,7 +16,7 @@ import {
 	employeeStudyPeriod,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadEmployeeInOrganization } from "./employee-scope";
@@ -56,6 +56,20 @@ function checkRange(from: string, until: string | null, inclusive: boolean): voi
 		if (error instanceof ValidationError) throw error;
 		refuse("statutory_invalid_range", "Dates must use YYYY-MM-DD");
 	}
+}
+
+/** A compliance week starts on Monday. */
+function parseWeekStart(value: string): PlainDate {
+	let day: PlainDate;
+	try {
+		day = parsePlainDate(value);
+	} catch {
+		refuse("statutory_invalid_range", "Dates must use YYYY-MM-DD", "firstWeekStartsOn");
+	}
+	if (day.dayOfWeek !== 1) {
+		refuse("statutory_invalid_range", "A week starts on Monday", "firstWeekStartsOn");
+	}
+	return day;
 }
 
 function checkCount(value: number, max: number): void {
@@ -104,10 +118,13 @@ export type RecordEmployeeStatutoryOffsetInput = WriteScope & {
 				readonly count: number;
 		  }
 		| {
-				/** Prior-employer weeks above 20 h that fell inside `[validFromDate, validUntilDate)`. */
+				/**
+				 * `count` consecutive Monday–Sunday prior-employer weeks above 20 h, the first starting on
+				 * the Monday `firstWeekStartsOn`. Stored as `[start, start + 7 × count)`, so a rolling
+				 * 12-month window can age each week out exactly; record separate runs as separate rows.
+				 */
 				readonly offsetKind: "prior_working_student_over_20h_weeks";
-				readonly validFromDate: string;
-				readonly validUntilDate: string;
+				readonly firstWeekStartsOn: string;
 				readonly count: number;
 		  }
 	);
@@ -151,17 +168,21 @@ export async function recordEmployeeStatutoryOffset(
 				countValue: input.count,
 			};
 			break;
-		case "prior_working_student_over_20h_weeks":
-			checkRange(input.validFromDate, input.validUntilDate, false);
+		case "prior_working_student_over_20h_weeks": {
 			checkCount(input.count, 53);
+			if (input.count < 1) {
+				refuse("statutory_invalid_value", "Record at least one week", "count");
+			}
+			const firstMonday = parseWeekStart(input.firstWeekStartsOn);
 			values = {
-				validFromDate: input.validFromDate,
-				validUntilDate: input.validUntilDate,
+				validFromDate: firstMonday.toString(),
+				validUntilDate: firstMonday.add({ days: 7 * input.count }).toString(),
 				amountCents: null,
 				currency: null,
 				countValue: input.count,
 			};
 			break;
+		}
 	}
 
 	await loadEmployeeInOrganization(db, input);

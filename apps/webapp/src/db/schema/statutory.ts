@@ -72,7 +72,9 @@ const voidColumns = {
  * External / prior-employment statutory offsets. `valid_until_date` is exclusive.
  * - `external_minijob_monthly_earnings`: `amount_cents` + `currency` per month while valid.
  * - `prior_short_term_*`: `count_value` for exactly one calendar year (Jan 1 .. next Jan 1).
- * - `prior_working_student_over_20h_weeks`: `count_value` weeks that fell inside the range.
+ * - `prior_working_student_over_20h_weeks`: `count_value` consecutive Monday–Sunday weeks above
+ *   20 h, starting on the Monday `valid_from_date` (`valid_until_date` = start + 7 × count), so a
+ *   rolling 12-month window can age each week out exactly.
  */
 export const employeeStatutoryOffset = pgTable(
 	"employee_statutory_offset",

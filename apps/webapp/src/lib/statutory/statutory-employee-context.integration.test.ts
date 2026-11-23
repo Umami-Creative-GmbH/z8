@@ -91,6 +91,38 @@ describe("per-employee statutory context (PostgreSQL)", () => {
 		]);
 	});
 
+	it("records prior working-student weeks as consecutive Monday weeks a window can age out", async () => {
+		const { orgA, adminA, workerA } = await twoOrganizations();
+		const base = {
+			organizationId: orgA.id,
+			actorUserId: adminA.userId,
+			employeeId: workerA.employeeId,
+			offsetKind: "prior_working_student_over_20h_weeks" as const,
+			note: "Certificate from previous employer",
+		};
+
+		const offset = await recordEmployeeStatutoryOffset(db, {
+			...base,
+			firstWeekStartsOn: "2025-03-03",
+			count: 10,
+		});
+		expect(offset).toMatchObject({
+			countValue: 10,
+			validFromDate: "2025-03-03",
+			validUntilDate: "2025-05-12",
+		});
+
+		for (const invalid of [
+			{ firstWeekStartsOn: "2025-03-04", count: 2 },
+			{ firstWeekStartsOn: "2025-03-03", count: 0 },
+			{ firstWeekStartsOn: "not-a-date", count: 1 },
+		]) {
+			await expect(
+				recordEmployeeStatutoryOffset(db, { ...base, ...invalid }),
+			).rejects.toBeInstanceOf(ValidationError);
+		}
+	});
+
 	it("never lets another organization write or read an employee's context", async () => {
 		const { orgA, orgB, adminA, adminB, workerA } = await twoOrganizations();
 		await recordEmployeeStudyPeriod(db, {

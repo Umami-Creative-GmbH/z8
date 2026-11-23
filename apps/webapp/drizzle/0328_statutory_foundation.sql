@@ -66,6 +66,23 @@ DO NOTHING;
 --> statement-breakpoint
 SELECT set_config('z8.statutory_baseline_maintenance', 'off', true);
 --> statement-breakpoint
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+--> statement-breakpoint
+-- One system baseline per key on any day: a later change must close the previous open-ended row,
+-- or the migration fails here instead of the lookup silently using the older value.
+DO $$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'statutory_threshold_system_no_overlap') THEN
+		ALTER TABLE "statutory_threshold"
+			ADD CONSTRAINT "statutory_threshold_system_no_overlap"
+			EXCLUDE USING gist (
+				"country_code" WITH =,
+				"threshold_key" WITH =,
+				daterange("effective_from_date", "effective_until_date", '[)') WITH &&
+			) WHERE ("organization_id" IS NULL);
+	END IF;
+END $$;
+--> statement-breakpoint
 CREATE OR REPLACE FUNCTION "z8_guard_statutory_baseline"()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -98,6 +115,10 @@ ALTER TABLE "contract_review_acknowledgement" ADD COLUMN IF NOT EXISTS "input_fi
 --> statement-breakpoint
 ALTER TABLE "contract_review_acknowledgement" ADD COLUMN IF NOT EXISTS "legal_note" text;
 --> statement-breakpoint
+-- The monitor finding kind the acknowledgement documents (e.g. `jarbschg_night_work`): several
+-- findings may share an acknowledgement kind and subject (night and Sunday work on one shift).
+ALTER TABLE "contract_review_acknowledgement" ADD COLUMN IF NOT EXISTS "finding_kind" text;
+--> statement-breakpoint
 DO $$
 BEGIN
 	IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'contract_review_ack_statutory_shape_check') THEN
@@ -105,9 +126,15 @@ BEGIN
 			ADD CONSTRAINT "contract_review_ack_statutory_shape_check"
 			CHECK (
 				("subject_key" IS NULL) = ("input_fingerprint" IS NULL)
+				AND ("finding_kind" IS NULL) = ("input_fingerprint" IS NULL)
 				AND (
 					"input_fingerprint" IS NULL
-					OR ("note" IS NOT NULL AND length(btrim("note")) > 0)
+					OR (
+						"note" IS NOT NULL AND length(btrim("note")) > 0
+						AND length(btrim("subject_key")) > 0
+						AND length(btrim("finding_kind")) > 0
+						AND length(btrim("input_fingerprint")) > 0
+					)
 				)
 			);
 	END IF;
@@ -115,16 +142,26 @@ END $$;
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "contractReviewAck_statutory_subject_idx"
 	ON "contract_review_acknowledgement" (
-		"organization_id", "employee_id", "review_kind", "subject_key", "acknowledged_at"
+		"organization_id", "employee_id", "review_kind", "finding_kind", "subject_key", "acknowledged_at"
 	)
 	WHERE "input_fingerprint" IS NOT NULL;
 --> statement-breakpoint
+-- Statutory acknowledgements are audit records: never updated, never turned into one by an update
+-- (which could backdate it), and never deleted directly. Deletes cascading from the employee,
+-- organization, agreement or employment history (nested trigger depth) stay allowed.
 CREATE OR REPLACE FUNCTION "z8_guard_statutory_acknowledgement"()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-	IF OLD."input_fingerprint" IS NOT NULL THEN
+	IF TG_OP = 'DELETE' THEN
+		IF OLD."input_fingerprint" IS NOT NULL AND pg_trigger_depth() <= 1 THEN
+			RAISE EXCEPTION 'Statutory acknowledgements are immutable'
+				USING ERRCODE = 'insufficient_privilege';
+		END IF;
+		RETURN OLD;
+	END IF;
+	IF OLD."input_fingerprint" IS NOT NULL OR NEW."input_fingerprint" IS NOT NULL THEN
 		RAISE EXCEPTION 'Statutory acknowledgements are immutable'
 			USING ERRCODE = 'insufficient_privilege';
 	END IF;
@@ -135,7 +172,7 @@ $$;
 DROP TRIGGER IF EXISTS "contract_review_ack_statutory_immutable" ON "contract_review_acknowledgement";
 --> statement-breakpoint
 CREATE TRIGGER "contract_review_ack_statutory_immutable"
-	BEFORE UPDATE ON "contract_review_acknowledgement"
+	BEFORE UPDATE OR DELETE ON "contract_review_acknowledgement"
 	FOR EACH ROW EXECUTE FUNCTION "z8_guard_statutory_acknowledgement"();
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "organization_statutory_preference" (
@@ -211,8 +248,12 @@ CREATE TABLE IF NOT EXISTS "employee_statutory_offset" (
 					AND date_trunc('year', "valid_from_date")::date = "valid_from_date"
 					AND "valid_until_date" = ("valid_from_date" + interval '1 year')::date
 				WHEN 'prior_working_student_over_20h_weeks' THEN
-					"count_value" BETWEEN 0 AND 53 AND "amount_cents" IS NULL
+					-- `count_value` consecutive Monday-Sunday weeks, every one above 20 h, so a rolling
+					-- window can age each week out exactly.
+					"count_value" BETWEEN 1 AND 53 AND "amount_cents" IS NULL
 					AND "valid_until_date" IS NOT NULL
+					AND extract(isodow FROM "valid_from_date") = 1
+					AND "valid_until_date" - "valid_from_date" = 7 * "count_value"
 				ELSE false
 			END
 		)
@@ -220,8 +261,6 @@ CREATE TABLE IF NOT EXISTS "employee_statutory_offset" (
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "employeeStatutoryOffset_lookup_idx"
 	ON "employee_statutory_offset" ("organization_id", "employee_id", "offset_kind", "valid_from_date");
---> statement-breakpoint
-CREATE EXTENSION IF NOT EXISTS btree_gist;
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "employee_study_period" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,

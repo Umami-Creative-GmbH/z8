@@ -1,13 +1,19 @@
 /**
  * Audited statutory acknowledgements (#1988), stored in `contract_review_acknowledgement`:
- * `review_kind` = acknowledgement kind, `subject_key` = what was evaluated (`2026-03`, `2026-W10`,
- * `shift:<id>`…), `input_fingerprint` = `statutoryInputFingerprint(evaluated inputs)`, `note` =
- * the mandatory reason, `legal_note` = optional legal reference or exemption.
+ * `review_kind` = acknowledgement kind, `finding_kind` = the monitor finding kind it documents,
+ * `subject_key` = what was evaluated (`2026-03`, `2026-W10`, `shift:<id>`…), `input_fingerprint`
+ * = `statutoryInputFingerprint(evaluated inputs)`, `note` = the mandatory reason, `legal_note` =
+ * optional legal reference or exemption.
  *
- * Rows are immutable (a database trigger refuses updates). Recording the same fingerprint twice
- * is idempotent; a changed fingerprint is recorded as a new row, so the history stays complete.
- * An acknowledgement is `current` when any recorded row matches the fingerprint of the latest
- * evaluation, `stale` when rows exist but none matches, and `none` otherwise.
+ * One subject is one finding: employee + acknowledgement kind + finding kind + subject key. Several
+ * findings may share an acknowledgement kind and subject key (night and Sunday work on one shift
+ * are both `jarbschg_sector_exception` on `shift:<id>`), and each is acknowledged on its own.
+ *
+ * Rows are immutable (a database trigger refuses updates and direct deletes). Recording the same
+ * fingerprint twice is idempotent; a changed fingerprint is recorded as a new row, so the history
+ * stays complete. An acknowledgement is `current` when any row of the subject matches the
+ * fingerprint of the latest evaluation, `stale` when the subject has rows but none matches, and
+ * `none` otherwise.
  */
 import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { type ContractReviewAcknowledgement, contractReviewAcknowledgement } from "@/db/schema";
@@ -20,14 +26,13 @@ import type { StatutoryFinding, StatutoryFindingAcknowledgement } from "./findin
 export interface StatutoryAcknowledgementSubject {
 	readonly employeeId: string;
 	readonly kind: StatutoryAcknowledgementKind;
+	/** The finding kind acknowledged, e.g. `minijob_monthly_cap` or `jarbschg_night_work`. */
+	readonly findingKind: string;
 	readonly subjectKey: string;
 }
 
-export interface StatutoryAcknowledgementRecord {
+export interface StatutoryAcknowledgementRecord extends StatutoryAcknowledgementSubject {
 	readonly id: string;
-	readonly employeeId: string;
-	readonly kind: StatutoryAcknowledgementKind;
-	readonly subjectKey: string;
 	readonly inputFingerprint: string;
 	readonly acknowledgedBy: string;
 	readonly acknowledgedAt: Date;
@@ -46,32 +51,32 @@ export type StatutoryAcknowledgementState =
 	  };
 
 export interface StatutoryAcknowledgementStates {
-	/**
-	 * The state of one evaluated subject. The fingerprint is part of the lookup: two findings may
-	 * share a kind and subject key (e.g. two JArbSchG rules on one shift) yet evaluate different
-	 * inputs, and each is current only against its own fingerprint.
-	 */
-	get(
-		subject: StatutoryAcknowledgementSubject & { readonly inputFingerprint: string },
-	): StatutoryAcknowledgementState;
+	get(subject: StatutoryAcknowledgementSubject): StatutoryAcknowledgementState;
 }
 
 export type StatutoryAcknowledgementRefusal =
 	| "statutory_reason_required"
 	| "statutory_subject_required";
 
-function subjectMapKey(subject: StatutoryAcknowledgementSubject): string {
-	return JSON.stringify([subject.employeeId, subject.kind, subject.subjectKey]);
+/** The acknowledgement subject of an acknowledgeable finding (null when it has no kind). */
+export function statutoryAcknowledgementSubjectOf(
+	finding: Pick<StatutoryFinding, "employeeId" | "kind" | "subjectKey" | "acknowledgementKind">,
+): StatutoryAcknowledgementSubject | null {
+	if (!finding.acknowledgementKind) return null;
+	return {
+		employeeId: finding.employeeId,
+		kind: finding.acknowledgementKind,
+		findingKind: finding.kind,
+		subjectKey: finding.subjectKey,
+	};
 }
 
-function evaluatedSubjectMapKey(
-	subject: StatutoryAcknowledgementSubject & { readonly inputFingerprint: string },
-): string {
+function subjectMapKey(subject: StatutoryAcknowledgementSubject): string {
 	return JSON.stringify([
 		subject.employeeId,
 		subject.kind,
+		subject.findingKind,
 		subject.subjectKey,
-		subject.inputFingerprint,
 	]);
 }
 
@@ -80,6 +85,7 @@ function toRecord(row: ContractReviewAcknowledgement): StatutoryAcknowledgementR
 		id: row.id,
 		employeeId: row.employeeId,
 		kind: row.reviewKind as StatutoryAcknowledgementKind,
+		findingKind: row.findingKind ?? "",
 		subjectKey: row.subjectKey ?? "",
 		inputFingerprint: row.inputFingerprint ?? "",
 		acknowledgedBy: row.acknowledgedBy,
@@ -93,8 +99,9 @@ function toRecord(row: ContractReviewAcknowledgement): StatutoryAcknowledgementR
 
 /**
  * Records an org admin's acknowledgement of an evaluated finding. The caller authorizes
- * (`organizationAction` with `requires: "orgAdmin"`) and must pass the fingerprint of its own
- * server-side evaluation, never one sent by the client.
+ * (`organizationAction` with `requires: "orgAdmin"`) and must pass the subject and fingerprint of
+ * its own server-side evaluation (`statutoryAcknowledgementSubjectOf(finding)`), never values sent
+ * by the client.
  */
 export async function recordStatutoryAcknowledgement(
 	db: Pick<DatabaseClient, "select" | "insert">,
@@ -118,16 +125,29 @@ export async function recordStatutoryAcknowledgement(
 		});
 	}
 	// Rows are immutable, so a caller bug must not persist an acknowledgement of nothing.
-	if (!input.subjectKey.trim() || !input.inputFingerprint.trim()) {
+	const missing = (
+		[
+			["subjectKey", input.subjectKey],
+			["findingKind", input.findingKind],
+			["inputFingerprint", input.inputFingerprint],
+		] as const
+	).find(([, value]) => !value.trim());
+	if (missing) {
 		throw new ValidationError({
-			message: "An acknowledgement needs the evaluated subject and input fingerprint",
-			field: input.subjectKey.trim() ? "inputFingerprint" : "subjectKey",
+			message: "An acknowledgement needs the evaluated finding, subject and input fingerprint",
+			field: missing[0],
 			refusal: "statutory_subject_required" satisfies StatutoryAcknowledgementRefusal,
 		});
 	}
 	await loadEmployeeInOrganization(db, input);
 
-	const dedupeKey = `statutory:${input.kind}:${input.employeeId}:${input.subjectKey}:${input.inputFingerprint}`;
+	const dedupeKey = `statutory:${JSON.stringify([
+		input.kind,
+		input.findingKind,
+		input.employeeId,
+		input.subjectKey,
+		input.inputFingerprint,
+	])}`;
 	await db
 		.insert(contractReviewAcknowledgement)
 		.values({
@@ -139,6 +159,7 @@ export async function recordStatutoryAcknowledgement(
 			acknowledgedBy: input.actorUserId,
 			note: reason,
 			legalNote: input.legalNote?.trim() || null,
+			findingKind: input.findingKind,
 			subjectKey: input.subjectKey,
 			inputFingerprint: input.inputFingerprint,
 			metadata: input.metadata ?? {},
@@ -163,7 +184,10 @@ export async function recordStatutoryAcknowledgement(
 	return toRecord(row);
 }
 
-/** Acknowledgement history, newest first, optionally narrowed to an employee, kind or subject. */
+/**
+ * Acknowledgement history, newest first, optionally narrowed to an employee, kind, finding kind or
+ * subject.
+ */
 export async function listStatutoryAcknowledgements(
 	db: Pick<DatabaseClient, "select">,
 	input: {
@@ -171,6 +195,7 @@ export async function listStatutoryAcknowledgements(
 		readonly employeeId?: string;
 		readonly kind?: StatutoryAcknowledgementKind;
 		readonly kinds?: readonly StatutoryAcknowledgementKind[];
+		readonly findingKind?: string;
 		readonly subjectKey?: string;
 	},
 ): Promise<StatutoryAcknowledgementRecord[]> {
@@ -183,6 +208,8 @@ export async function listStatutoryAcknowledgements(
 	if (input.kind) conditions.push(eq(contractReviewAcknowledgement.reviewKind, input.kind));
 	if (input.kinds)
 		conditions.push(inArray(contractReviewAcknowledgement.reviewKind, [...input.kinds]));
+	if (input.findingKind)
+		conditions.push(eq(contractReviewAcknowledgement.findingKind, input.findingKind));
 	if (input.subjectKey)
 		conditions.push(eq(contractReviewAcknowledgement.subjectKey, input.subjectKey));
 	const rows = await db
@@ -208,18 +235,31 @@ export async function loadStatutoryAcknowledgementStates(
 ): Promise<StatutoryAcknowledgementStates> {
 	const states = new Map<string, StatutoryAcknowledgementState>();
 	if (input.subjects.length > 0) {
-		const employeeIds = [...new Set(input.subjects.map((subject) => subject.employeeId))];
-		const kinds = [...new Set(input.subjects.map((subject) => subject.kind))];
-		const subjectKeys = [...new Set(input.subjects.map((subject) => subject.subjectKey))];
+		const distinct = <T>(pick: (subject: StatutoryAcknowledgementSubject) => T) => [
+			...new Set(input.subjects.map(pick)),
+		];
 		const rows = await db
 			.select()
 			.from(contractReviewAcknowledgement)
 			.where(
 				and(
 					eq(contractReviewAcknowledgement.organizationId, input.organizationId),
-					inArray(contractReviewAcknowledgement.employeeId, employeeIds),
-					inArray(contractReviewAcknowledgement.reviewKind, kinds),
-					inArray(contractReviewAcknowledgement.subjectKey, subjectKeys),
+					inArray(
+						contractReviewAcknowledgement.employeeId,
+						distinct((s) => s.employeeId),
+					),
+					inArray(
+						contractReviewAcknowledgement.reviewKind,
+						distinct((s) => s.kind),
+					),
+					inArray(
+						contractReviewAcknowledgement.findingKind,
+						distinct((s) => s.findingKind),
+					),
+					inArray(
+						contractReviewAcknowledgement.subjectKey,
+						distinct((s) => s.subjectKey),
+					),
 					isNotNull(contractReviewAcknowledgement.inputFingerprint),
 				),
 			)
@@ -235,10 +275,11 @@ export async function loadStatutoryAcknowledgementStates(
 			bySubject.set(key, [...(bySubject.get(key) ?? []), record]);
 		}
 		for (const subject of input.subjects) {
-			const records = bySubject.get(subjectMapKey(subject)) ?? [];
+			const key = subjectMapKey(subject);
+			const records = bySubject.get(key) ?? [];
 			const match = records.find((record) => record.inputFingerprint === subject.inputFingerprint);
 			states.set(
-				evaluatedSubjectMapKey(subject),
+				key,
 				match
 					? { status: "current", latest: match }
 					: records[0]
@@ -248,8 +289,7 @@ export async function loadStatutoryAcknowledgementStates(
 		}
 	}
 	return {
-		get: (subject) =>
-			states.get(evaluatedSubjectMapKey(subject)) ?? { status: "none", latest: null },
+		get: (subject) => states.get(subjectMapKey(subject)) ?? { status: "none", latest: null },
 	};
 }
 
@@ -262,27 +302,15 @@ export async function attachAcknowledgementStates<F extends StatutoryFinding>(
 	organizationId: string,
 	findings: readonly F[],
 ): Promise<F[]> {
-	const subjects = findings.flatMap((finding) =>
-		finding.acknowledgementKind
-			? [
-					{
-						employeeId: finding.employeeId,
-						kind: finding.acknowledgementKind,
-						subjectKey: finding.subjectKey,
-						inputFingerprint: finding.inputFingerprint,
-					},
-				]
-			: [],
-	);
+	const subjects = findings.flatMap((finding) => {
+		const subject = statutoryAcknowledgementSubjectOf(finding);
+		return subject ? [{ ...subject, inputFingerprint: finding.inputFingerprint }] : [];
+	});
 	const states = await loadStatutoryAcknowledgementStates(db, { organizationId, subjects });
 	return findings.map((finding) => {
-		if (!finding.acknowledgementKind) return finding;
-		const state = states.get({
-			employeeId: finding.employeeId,
-			kind: finding.acknowledgementKind,
-			subjectKey: finding.subjectKey,
-			inputFingerprint: finding.inputFingerprint,
-		});
+		const subject = statutoryAcknowledgementSubjectOf(finding);
+		if (!subject) return finding;
+		const state = states.get(subject);
 		const acknowledgement: StatutoryFindingAcknowledgement = {
 			status: state.status,
 			acknowledgedAt: state.latest?.acknowledgedAt ?? null,

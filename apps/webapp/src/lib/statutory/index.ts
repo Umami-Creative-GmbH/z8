@@ -19,6 +19,7 @@ export {
 	type StatutoryAcknowledgementState,
 	type StatutoryAcknowledgementStates,
 	type StatutoryAcknowledgementSubject,
+	statutoryAcknowledgementSubjectOf,
 } from "./acknowledgements";
 export {
 	type EmployeeContextRefusal,

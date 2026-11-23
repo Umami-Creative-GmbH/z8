@@ -3,7 +3,8 @@
  * see EUR amounts, hourly wages, external earnings, EUR baselines and acknowledgement reasons.
  * Everyone else (`restricted`: scoped managers, planners, the employee, anyone without settings
  * access) gets the wage-free summary. Redact before data leaves the server for any loader,
- * Scheduling or Staffing payload, fingerprint shown to managers, or UI.
+ * Scheduling or Staffing payload, or UI. Restricted readers never get the input fingerprint: it
+ * hashes wages and EUR amounts, and a low-entropy wage could be confirmed by guessing.
  */
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
@@ -21,8 +22,8 @@ export type StatutoryAudience = "full" | "restricted";
 /** A finding as a restricted audience receives it. */
 export type RedactedStatutoryFinding<Kind extends string = string> = Omit<
 	StatutoryFinding<Kind>,
-	"adminDetail"
-> & { readonly adminDetail: null };
+	"adminDetail" | "inputFingerprint"
+> & { readonly adminDetail: null; readonly inputFingerprint: null };
 
 export function statutoryAudienceOf(settingsAccess: SettingsAccess | null): StatutoryAudience {
 	return meetsSettingsAccess(settingsAccess, "orgAdmin") ? "full" : "restricted";
@@ -76,6 +77,7 @@ export function redactStatutoryFinding<F extends StatutoryFinding>(
 		...rest,
 		summary: safeSummary(finding.summary),
 		adminDetail: null,
+		inputFingerprint: null,
 		...(acknowledgement
 			? {
 					acknowledgement: {

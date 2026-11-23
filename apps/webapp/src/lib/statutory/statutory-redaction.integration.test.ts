@@ -94,6 +94,8 @@ describe("statutory wage redaction (PostgreSQL)", () => {
 			expect(redacted).toEqual({
 				...finding,
 				adminDetail: null,
+				// The fingerprint hashes wages: a guessed wage could be confirmed against it.
+				inputFingerprint: null,
 				acknowledgement: {
 					status: "current",
 					acknowledgedAt: finding.acknowledgement?.acknowledgedAt,

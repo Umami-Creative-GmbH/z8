@@ -3,7 +3,7 @@
  * Effective-dated resolution on any plain calendar date and across rolling ranges
  * that span a statutory change, against the rows the migration seeds.
  */
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { statutoryThreshold } from "@/db/schema";
@@ -84,6 +84,26 @@ describe("statutory threshold lookup (PostgreSQL)", () => {
 		expect(
 			await resolveStatutoryThreshold(db, "de_on_call_notice_full_days", "2026-06-15"),
 		).not.toBeNull();
+	});
+
+	it("refuses a baseline change that leaves the previous open-ended row overlapping", async () => {
+		// Even inside a baseline migration: the 2027 row is open-ended, so a 2028 row must close it.
+		await expect(
+			db.transaction(async (tx) => {
+				await tx.execute(sql`SELECT set_config('z8.statutory_baseline_maintenance', 'on', true)`);
+				await tx.insert(statutoryThreshold).values({
+					countryCode: "DE",
+					thresholdKey: "de_minijob_monthly_limit_cents",
+					effectiveFromDate: "2028-01-01",
+					integerValue: 66_000,
+					currency: "EUR",
+					unit: "cents",
+				});
+			}),
+		).rejects.toThrow();
+		expect(
+			(await resolveStatutoryThreshold(db, "de_minijob_monthly_limit_cents", "2028-03-01"))?.value,
+		).toBe(63_300);
 	});
 
 	it("agrees with the on-call fallbacks the Milestone 1 contract preview still hardcodes", async () => {
