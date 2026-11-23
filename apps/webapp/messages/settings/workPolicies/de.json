@@ -530,6 +530,87 @@
           "percentRange": "Geben Sie ganze Prozentwerte von 1 bis 100 ein.",
           "warningBelowCritical": "Die Warnstufe muss unter der kritischen Stufe liegen."
         }
+      },
+      "minijob": {
+        "column": {
+          "month": "Monat",
+          "monthly": "Monatsgrenze",
+          "rolling": "Rollierende 12 Monate",
+          "exceedance": "Überschreitung"
+        },
+        "currentMonth": "(aktuell)",
+        "amountOfCap": "{amount} von {cap}",
+        "planned": "{amount} geplant",
+        "external": "{amount} aus anderen Minijobs",
+        "missingWage": "Für einen Teil der Arbeit ist in den Vertragsbedingungen kein Stundenlohn hinterlegt; er wird nicht mitgezählt.",
+        "offsets": {
+          "saved": "Verdienst aus anderem Minijob gespeichert",
+          "monthRequired": "Wähle einen Monat.",
+          "fromMonth": "Erster Monat",
+          "refusal": {
+            "range": "Der letzte Monat darf nicht vor dem ersten Monat liegen.",
+            "value": "Gib einen monatlichen Betrag von 0 oder mehr ein.",
+            "note": "Gib an, woher der Verdienst stammt.",
+            "overlap": "Der Zeitraum überschneidet sich mit bereits erfasstem Verdienst."
+          },
+          "lastMonth": "Letzter Monat (optional)",
+          "lastMonthHelp": "Leer lassen, solange der andere Minijob weiterläuft.",
+          "amount": "Monatlicher Verdienst (EUR)",
+          "sourceEmployer": "Anderer Arbeitgeber (optional)",
+          "note": "Quelle",
+          "notePlaceholder": "Zum Beispiel: Lohnabrechnung des anderen Minijobs",
+          "save": "Verdienst speichern",
+          "voided": "Verdienst aus anderem Minijob storniert",
+          "voidReasonRequired": "Gib an, warum der Verdienst storniert wird.",
+          "voidReason": "Warum wird dieser Verdienst storniert?",
+          "confirmVoid": "Stornieren",
+          "title": "Verdienst aus anderen Minijobs",
+          "add": "Verdienst hinzufügen",
+          "empty": "Kein anderer Minijob erfasst.",
+          "perMonth": "{amount} pro Monat",
+          "range": "{from} – {until}",
+          "since": "Seit {from}",
+          "void": "Stornieren"
+        },
+        "title": "Minijob-Verdienstgrenze",
+        "descriptionAdmin": "Verdienter Lohn, geplante Schichten und Verdienst aus anderen Minijobs im Vergleich zur jeweils gültigen Monatsgrenze und zu den rollierenden 12 Monaten (§ 8 Abs. 1 Nr. 1 SGB IV).",
+        "descriptionRestricted": "Wie nah diese Person an der Minijob-Verdienstgrenze ist. Beträge sehen nur Organisationsadmins.",
+        "review": {
+          "acknowledged": "Überschreitung als unvorhersehbar dokumentiert",
+          "reason": "Warum war sie unvorhersehbar?",
+          "reasonPlaceholder": "Zum Beispiel: Vertretung bei unerwarteter Krankheit einer Kollegin",
+          "legalNote": "Rechtlicher Hinweis (optional)",
+          "acknowledge": "Als unvorhersehbar dokumentieren",
+          "title": "Minijob-Verdienst über der Monatsgrenze",
+          "description": "Bis zu zwei Monate innerhalb von 12 Monaten dürfen die Grenze um bis zum Doppelten überschreiten, wenn die Überschreitung unvorhersehbar war (§ 8 Abs. 1b SGB IV). Dokumentiere jeden solchen Monat; alles andere erfordert eine Vertrags- oder Planänderung.",
+          "loadFailed": "Die Minijob-Überschreitungen konnten nicht geladen werden.",
+          "total": "Verdienst inkl. geplanter Schichten",
+          "cap": "Monatsgrenze",
+          "external": "Andere Minijobs",
+          "doubleCap": "Doppelte Grenze",
+          "prior": "Frühere Überschreitungsmonate innerhalb von 12 Monaten: {months}",
+          "documentedReason": "Dokumentierter Grund: {reason}"
+        },
+        "refusal": {
+          "reasonRequired": "Erkläre, warum die Überschreitung unvorhersehbar war.",
+          "invalidMonth": "Wähle einen Kalendermonat.",
+          "notExceeded": "Der Verdienst des Monats liegt wieder innerhalb der Grenze; es gibt nichts zu dokumentieren.",
+          "notAcknowledgeable": "Dieser Monat kann nicht als unvorhersehbare Überschreitung gelten: Er liegt über dem Doppelten der Grenze oder ist die dritte Überschreitung innerhalb von 12 Monaten.",
+          "subjectRequired": "Der Monat konnte nicht ausgewertet werden. Lade die Seite neu und versuche es erneut."
+        },
+        "tier": {
+          "ok": "Innerhalb der Grenze",
+          "warning": "Grenze rückt näher",
+          "critical": "Knapp an der Grenze",
+          "exceeded": "Über der Grenze"
+        },
+        "exceedance": {
+          "acknowledged": "Als unvorhersehbar dokumentiert",
+          "unacknowledged": "Nicht dokumentiert",
+          "stale": "Dokumentation veraltet: Arbeit oder Schichten geändert",
+          "overDoubleCap": "Mehr als das Doppelte der Grenze",
+          "tooMany": "Zu viele Überschreitungsmonate innerhalb von 12 Monaten"
+        }
       }
     },
     "timeRegulations": {

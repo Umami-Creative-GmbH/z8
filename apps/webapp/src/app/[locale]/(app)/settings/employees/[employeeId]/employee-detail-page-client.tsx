@@ -14,6 +14,7 @@ import { ReactivationChecklistCard } from "@/components/organization/reactivatio
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeContractTab } from "@/components/settings/contracts/employee-contract-tab";
+import { EmployeeMinijobMonitorCard } from "@/components/settings/contracts/employee-minijob-monitor-card";
 import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
@@ -444,6 +445,7 @@ export function EmployeeDetailPageClient({
 									onAssigned={() => void employeeData.refetch()}
 								/>
 							)}
+							<EmployeeMinijobMonitorCard employeeId={employeeId} />
 						</TabsContent>
 
 						{/* Tab 3: Time & Balance */}

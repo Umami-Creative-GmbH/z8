@@ -228,6 +228,13 @@
         "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
         "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
         "apprenticeship": "Freistellung Auszubildende (BBiG)"
+      },
+      "minijob": {
+        "monthlyDocumented": "Minijob-Monatsgrenze überschritten (als unvorhersehbar dokumentiert)",
+        "monthlyExceeded": "Minijob-Monatsgrenze überschritten",
+        "monthlyApproaching": "Minijob-Monatsgrenze rückt näher",
+        "rollingExceeded": "Minijob-Verdienstgrenze für 12 Monate überschritten",
+        "rollingApproaching": "Minijob-Verdienstgrenze für 12 Monate rückt näher"
       }
     }
   }
