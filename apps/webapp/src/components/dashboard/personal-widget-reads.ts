@@ -92,13 +92,13 @@ export function loadVacationBalanceForEmployee(subject: {
 		const { balance, configuration, externalContractor } = yield* dbService.query(
 			"getVacationBalance:balance",
 			() =>
-			getEnhancedVacationBalanceResult({
-				employeeId: subject.employee.id,
-				organizationId: subject.organizationId,
-				year: currentYear,
-				timezone,
-				currentDate: dateFromInstant(systemClock.nowInstant()),
-			}),
+				getEnhancedVacationBalanceResult({
+					employeeId: subject.employee.id,
+					organizationId: subject.organizationId,
+					year: currentYear,
+					timezone,
+					currentDate: dateFromInstant(systemClock.nowInstant()),
+				}),
 		);
 		return {
 			year: currentYear,
