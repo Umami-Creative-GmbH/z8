@@ -12,6 +12,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { drizzleQueryFailure, serializedLog } from "@/test/log-redaction";
 
 const mockState = vi.hoisted(() => ({
 	headers: vi.fn(),
@@ -260,8 +261,9 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		});
 
 		it("logs a failed decision with its compliance exception target", async () => {
-			const error = new Error("connection reset");
-			mockState.decideComplianceExceptionForActor.mockRejectedValue(error);
+			mockState.decideComplianceExceptionForActor.mockRejectedValue(
+				Object.assign(new Error("connection reset"), { code: "ECONNRESET" }),
+			);
 
 			const response = await POST(createRequest({ reason: "Cover is planned" }), {
 				params: Promise.resolve({ id: "exception-1" }),
@@ -270,7 +272,8 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			expect(response.status).toBe(500);
 			expect(mockState.logger.error).toHaveBeenCalledWith(
 				{
-					err: error,
+					err: { name: "Error", code: "ECONNRESET" },
+					errorCode: "ECONNRESET",
 					action: "reject",
 					approvalId: "exception-1",
 					decisionStage: "decision",
@@ -280,6 +283,29 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 				},
 				"Failed to reject",
 			);
+		});
+
+		it("logs a failed decision update without the reason its query bound", async () => {
+			mockState.decideComplianceExceptionForActor.mockRejectedValue(
+				drizzleQueryFailure("update compliance_exception exception set status = $1", [
+					"rejected",
+					"Cover is planned",
+				]),
+			);
+
+			const response = await POST(createRequest({ reason: "Cover is planned" }), {
+				params: Promise.resolve({ id: "exception-1" }),
+			});
+
+			expect(response.status).toBe(500);
+			expect(mockState.logger.error).toHaveBeenCalledTimes(1);
+			const [logged, message] = mockState.logger.error.mock.calls[0] ?? [];
+			expect(message).toBe("Failed to reject");
+			const line = await serializedLog(logged);
+			expect(line).not.toContain("Cover is planned");
+			expect(JSON.parse(line)).toMatchObject({
+				err: { name: "DrizzleQueryError", code: "22001" },
+			});
 		});
 
 		it("leaves a blank reason to the adapter, which refuses it after authorizing", async () => {
@@ -900,7 +926,7 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		expect(response.status).toBe(500);
 		expect(mockState.logger.error).toHaveBeenCalledWith(
 			{
-				err: error,
+				err: { name: "Error", errorTag: "ApprovalTransitionEngineError", code: "invariant" },
 				action: "reject",
 				approvalId: "approval-1",
 				decisionStage: "decision",

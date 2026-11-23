@@ -7,6 +7,7 @@ import { employee, userSettings } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { NotFoundError } from "@/lib/effect/errors";
+import { errorLogSummary } from "@/lib/error-log-summary";
 import {
 	ComplianceGuardrailService,
 	ComplianceGuardrailServiceLive,
@@ -214,11 +215,12 @@ export const requestComplianceException = organizationAction(
 			return { exceptionId };
 		}).pipe(
 			Effect.tapError((error) =>
-				// Never the reason's text: an employee's reason may carry personal data.
+				// Never the reason's text: an employee's reason may carry personal data. A failed
+				// insert's error carries it as a bound param, so only its summary is logged.
 				Effect.sync(() =>
 					logger.error(
 						{
-							error,
+							error: errorLogSummary(error),
 							exceptionType: input.exceptionType,
 							plannedDurationMinutes: input.plannedDurationMinutes,
 							reasonLength: input.reason.length,

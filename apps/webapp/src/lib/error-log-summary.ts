@@ -1,0 +1,54 @@
+/**
+ * An error as a log may name it when the failure may carry user-written text: its name, tag,
+ * code and operation, never a message, stack, cause or bound params.
+ *
+ * Log this instead of the raw error wherever a failed query bound free text (a reason, a note):
+ * drizzle-orm's `DrizzleQueryError` writes every param into its message and an enumerable
+ * `params` field, `DatabaseError` keeps it as `cause`, and pino's error serializer adds every
+ * cause's message and stack to the logged line.
+ */
+export interface ErrorLogSummary {
+	name: string;
+	errorTag?: string;
+	/** The first code along the cause chain, such as PostgreSQL's SQLSTATE. */
+	code?: string;
+	/** The failed `DatabaseService.query`'s name. */
+	operation?: string;
+}
+
+const MAX_CAUSE_DEPTH = 8;
+const IDENTIFIER = /^[\w.:-]{1,80}$/;
+
+function identifier(value: unknown): string | undefined {
+	return typeof value === "string" && IDENTIFIER.test(value) ? value : undefined;
+}
+
+function property(error: unknown, key: string): unknown {
+	return error !== null && typeof error === "object"
+		? (error as Record<string, unknown>)[key]
+		: undefined;
+}
+
+/** An Error's name, or its class's when the name is the generic "Error" (DrizzleQueryError's is). */
+function errorName(error: Error): string {
+	const name = identifier(error.name) ?? "Error";
+	return name === "Error" ? (identifier(error.constructor?.name) ?? name) : name;
+}
+
+export function errorLogSummary(error: unknown): ErrorLogSummary {
+	const summary: ErrorLogSummary = {
+		name: error instanceof Error ? errorName(error) : typeof error,
+	};
+	const seen = new Set<unknown>();
+	let current: unknown = error;
+	for (let depth = 0; depth < MAX_CAUSE_DEPTH && current && !seen.has(current); depth++) {
+		seen.add(current);
+		summary.errorTag ??= identifier(property(current, "_tag"));
+		summary.code ??= identifier(property(current, "code"));
+		summary.operation ??= identifier(property(current, "operation"));
+		current = property(current, "cause");
+	}
+	return Object.fromEntries(
+		Object.entries(summary).filter(([, value]) => value !== undefined),
+	) as ErrorLogSummary;
+}

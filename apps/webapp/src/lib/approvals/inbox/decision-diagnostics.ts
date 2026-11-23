@@ -1,3 +1,4 @@
+import { errorLogSummary } from "@/lib/error-log-summary";
 import type { ComplianceExceptionDecisionTarget } from "./compliance-exception-inbox";
 import type { PersistedApprovalRequestForDecision } from "./decision-service";
 
@@ -47,7 +48,9 @@ export function buildApprovalDecisionFailureLog(input: {
 	const errorTag = errorProperty(input.error, "_tag");
 	const errorCode = errorProperty(input.error, "code");
 	return {
-		err: normalizedError(input.error),
+		// A failed rejection's query bound the reviewer's reason, which its error repeats in its
+		// message and params: a rejection logs only the error's summary.
+		err: input.action === "reject" ? errorLogSummary(input.error) : normalizedError(input.error),
 		action: input.action,
 		...(input.approvalId ? { approvalId: input.approvalId } : {}),
 		decisionStage: input.decisionStage,

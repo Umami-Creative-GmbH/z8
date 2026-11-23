@@ -1,5 +1,8 @@
 import { and, eq, exists, gte, inArray, lt, lte } from "drizzle-orm";
-import type { ApprovalInboxType } from "@/lib/approvals/inbox/types";
+import {
+	type ApprovalInboxType,
+	SUPPORTED_APPROVAL_INBOX_TYPES,
+} from "@/lib/approvals/inbox/types";
 import type { PrincipalContext } from "@/lib/authorization";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
@@ -120,6 +123,10 @@ const SECTION_LOAD_ERROR = "Section could not be loaded.";
 
 /** The approvals the briefing shows at most; the inbox lists the rest. */
 const BRIEFING_APPROVAL_LIMIT = 25;
+
+function isApprovalInboxType(value: string): value is ApprovalInboxType {
+	return (SUPPORTED_APPROVAL_INBOX_TYPES as readonly string[]).includes(value);
+}
 
 function inboxViewerRole(role: string): "admin" | "manager" | "employee" {
 	return role === "admin" || role === "manager" ? role : "employee";
@@ -713,10 +720,10 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		const uncounted = new Set<ApprovalInboxType>();
 		for (const warning of result.warnings) {
 			if (warning.failure === "covering_count") continue;
-			// The read service names each failed source by its approval type.
-			(warning.failure === "count" ? uncounted : unavailable).add(
-				warning.source as ApprovalInboxType,
-			);
+			// The read service names each failed source by its approval type; a warning's source
+			// is typed as any text because the inbox view also warns of a failed refresh.
+			if (!isApprovalInboxType(warning.source)) continue;
+			(warning.failure === "count" ? uncounted : unavailable).add(warning.source);
 		}
 		const unavailableTypes = [...unavailable];
 		const uncountedTypes = [...uncounted].filter((type) => !unavailable.has(type));

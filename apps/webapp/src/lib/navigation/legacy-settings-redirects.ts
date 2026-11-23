@@ -1,3 +1,5 @@
+import { COMPLIANCE_EXCEPTION_INBOX } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
+
 export interface LegacySettingsRedirectTarget {
 	readonly pathname: string;
 	readonly tab?: string;
@@ -36,7 +38,7 @@ export const LEGACY_SETTINGS_REDIRECTS: Readonly<Record<string, LegacySettingsRe
 	"/approvals": { pathname: "/approvals/inbox" },
 	// The standalone ArbZG exception queue; the Approval inbox lists them (#1977, ADR-0005).
 	// Exact match: `/settings/compliance/works-council` stays its own page.
-	"/settings/compliance": { pathname: "/approvals/inbox", types: "compliance_exception" },
+	"/settings/compliance": COMPLIANCE_EXCEPTION_INBOX,
 };
 
 /**

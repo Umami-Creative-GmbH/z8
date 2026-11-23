@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { databaseFailure, serializedLog } from "@/test/log-redaction";
 import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
@@ -50,7 +51,8 @@ vi.mock("@/lib/effect/services/compliance-guardrail.service", async () => {
 	const call =
 		(fn: (...args: unknown[]) => unknown) =>
 		(...args: unknown[]) =>
-			Effect.promise(async () => fn(...args));
+			// A rejection is the service's typed failure, as a failed query's DatabaseError is.
+			Effect.tryPromise({ try: async () => fn(...args), catch: (error) => error });
 	return {
 		ComplianceGuardrailService,
 		ComplianceGuardrailServiceLive: Layer.succeed(
@@ -193,6 +195,27 @@ describe("compliance actions", () => {
 			"Failed to request compliance exception",
 		);
 		expect(JSON.stringify(logger.error.mock.calls)).not.toContain("sick child");
+	});
+
+	it("logs a failed insert without the reason its query bound", async () => {
+		mocks.service.requestException.mockRejectedValue(
+			databaseFailure("createException", ["org-1", "Caring for my sick child"]),
+		);
+
+		await actions.requestComplianceException({
+			exceptionType: "rest_period",
+			reason: "Caring for my sick child",
+		});
+
+		expect(logger.error).toHaveBeenCalledTimes(1);
+		const [logged, message] = logger.error.mock.calls[0] ?? [];
+		expect(message).toBe("Failed to request compliance exception");
+		const line = await serializedLog(logged);
+		expect(line).not.toContain("sick child");
+		expect(JSON.parse(line)).toMatchObject({
+			error: { errorTag: "DatabaseError", operation: "createException", code: "22001" },
+			reasonLength: 24,
+		});
 	});
 
 	it("rejects an unknown exception type before requesting it", async () => {

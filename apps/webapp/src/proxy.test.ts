@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 
 vi.mock("next-intl/middleware", () => ({
 	default: vi.fn(() => () => NextResponse.next()),
@@ -303,6 +304,10 @@ describe("legacy settings 308 redirects (#1963)", () => {
 			expect(bare.status).toBe(308);
 			expect(bare.headers.get("location")).toBe(
 				"https://app.example.com/en/approvals/inbox?types=compliance_exception",
+			);
+			// The same inbox view every compliance notification and card links to.
+			expect(bare.headers.get("location")).toBe(
+				`https://app.example.com/en${COMPLIANCE_EXCEPTION_INBOX_PATH}`,
 			);
 
 			const worksCouncil = await proxy(
