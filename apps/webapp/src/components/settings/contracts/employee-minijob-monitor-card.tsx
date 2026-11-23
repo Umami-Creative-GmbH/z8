@@ -610,6 +610,9 @@ export function EmployeeMinijobMonitorCard({
 			return result.data;
 		},
 		staleTime: 60 * 1000,
+		// Coverage and earnings also move with leaving dates, offboarding and rehires made in other
+		// tabs: refetch whenever the card mounts instead of showing a figure cached before them.
+		refetchOnMount: "always",
 	});
 	const view = query.data;
 	if (!view || !view.applies) return null;

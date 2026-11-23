@@ -180,6 +180,30 @@ describe("EmployeeMinijobMonitorCard (#1989)", () => {
 		);
 	});
 
+	it("refetches when it mounts again, so changes made in other tabs show at once", async () => {
+		mocks.getEmployeeMinijobMonitorAction.mockResolvedValue({
+			success: true,
+			data: { audience: "restricted", applies: false, currentMonth: "2026-11", months: [] },
+		});
+		// Switching tabs unmounts and remounts the card within its 60 s stale time: a leaving date
+		// or offboarding recorded meanwhile must not be hidden behind the cached figures.
+		const { client, unmount } = renderCard();
+		await waitFor(() => expect(mocks.getEmployeeMinijobMonitorAction).toHaveBeenCalledTimes(1));
+		unmount();
+
+		render(
+			<QueryClientProvider client={client}>
+				<EmployeeMinijobMonitorCard
+					employeeId={EMPLOYEE_ID}
+					userId="user-1"
+					organizationId="org-1"
+				/>
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => expect(mocks.getEmployeeMinijobMonitorAction).toHaveBeenCalledTimes(2));
+	});
+
 	it("renders nothing for employees without Minijob terms", async () => {
 		mocks.getEmployeeMinijobMonitorAction.mockResolvedValue({
 			success: true,

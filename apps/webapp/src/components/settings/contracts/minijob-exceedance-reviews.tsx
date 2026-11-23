@@ -198,6 +198,9 @@ export function MinijobExceedanceReviews({
 			return result.data;
 		},
 		staleTime: 60 * 1000,
+		// Employee changes made elsewhere (terms, leaving dates, offboarding, rehires) move the
+		// exceedances: refetch whenever the list mounts instead of showing a cached list.
+		refetchOnMount: "always",
 	});
 	const reviews = query.data ?? [];
 	if (query.isLoading || (reviews.length === 0 && !query.isError)) return null;
