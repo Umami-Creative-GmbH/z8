@@ -13,6 +13,8 @@ import { dateFromInstant, type Instant, plainDateAt } from "@/lib/datetime/tempo
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { attachAcknowledgementStates } from "../acknowledgements";
+import type { StatutoryFinding } from "../finding";
+import { deepensBreachedLimit } from "../scheduling/evaluate";
 import { isMinorOn } from "./age";
 import type { JarbschgRule } from "./jarbschg-rules";
 import {
@@ -86,21 +88,29 @@ export async function recordJarbschgViolationsAfterClockOut(
 			blockPublish: false,
 		}),
 	);
-	const byRule = new Map<JarbschgRule, (typeof findings)[number]>();
+	// The day's figure of each rule: night and prohibited holiday minutes are found per piece of
+	// work and add up; the other rules already judge the day (or week), so the deepest one counts.
+	const byRule = new Map<JarbschgRule, RecordedFinding>();
 	for (const finding of findings) {
 		if (finding.acknowledgement?.status === "current") continue;
-		if (!byRule.has(finding.kind)) byRule.set(finding.kind, finding);
+		const figure = byRule.get(finding.kind);
+		if (!figure) byRule.set(finding.kind, finding);
+		else if (summedRules.has(finding.kind)) byRule.set(finding.kind, summed(figure, finding));
+		else if (deepensBreachedLimit(figure, finding)) byRule.set(finding.kind, finding);
 	}
 
-	// Each rule is recorded once per local day. The other rules only grow with more work, so their
-	// violations stand; the day's break total (§ 11 Abs. 1) is re-judged at every clock-out, because
-	// a clock-out that starts a break is judged before that break exists.
+	// Each rule is recorded once per local day. The other rules only grow with more work: an open
+	// violation takes the day's figures when a later clock-out deepens it, and never gives them
+	// back. The day's break total (§ 11 Abs. 1) is re-judged at every clock-out, because a clock-out
+	// that starts a break is judged before that break exists. An acknowledged violation is kept as
+	// it was reviewed.
 	const dayRange = localDayRange(day.toString(), input.timezone);
 	const existing = await db
 		.select({
 			id: workPolicyViolation.id,
 			violationType: workPolicyViolation.violationType,
 			acknowledgedAt: workPolicyViolation.acknowledgedAt,
+			details: workPolicyViolation.details,
 		})
 		.from(workPolicyViolation)
 		.where(
@@ -114,21 +124,22 @@ export async function recordJarbschgViolationsAfterClockOut(
 				lt(workPolicyViolation.violationDate, dateFromInstant(dayRange.endExclusive)),
 			),
 		);
-	const breakFinding = byRule.get("jarbschg_break");
-	// An acknowledged break violation is kept as reviewed; an open one follows the day's work.
 	for (const row of existing) {
-		if (row.violationType !== "jarbschg_break" || row.acknowledgedAt) continue;
-		if (breakFinding) {
+		if (row.acknowledgedAt) continue;
+		const rule = row.violationType as JarbschgRule;
+		const finding = byRule.get(rule);
+		// An open break violation follows the day's work; the others only deepen.
+		if (finding && (rule === "jarbschg_break" || deepensRecorded(row.details, finding))) {
 			await db
 				.update(workPolicyViolation)
-				.set({ workPeriodId: input.workPeriodId, details: violationDetails(breakFinding) })
+				.set({ workPeriodId: input.workPeriodId, details: violationDetails(finding) })
 				.where(
 					and(
 						eq(workPolicyViolation.id, row.id),
 						eq(workPolicyViolation.organizationId, input.organizationId),
 					),
 				);
-		} else {
+		} else if (!finding && rule === "jarbschg_break") {
 			await db
 				.delete(workPolicyViolation)
 				.where(
@@ -157,13 +168,43 @@ export async function recordJarbschgViolationsAfterClockOut(
 	return [...byRule.keys()];
 }
 
-function violationDetails(finding: {
-	readonly legalReference: string;
-	readonly summary: {
-		readonly used?: { readonly value: number; readonly unit: string } | null;
-		readonly limit?: { readonly value: number } | null;
+type RecordedFinding = Pick<StatutoryFinding<JarbschgRule>, "kind" | "legalReference" | "summary">;
+
+/** Rules breached by each piece of work on its own (minutes in the night or after 14:00). */
+const summedRules = new Set<JarbschgRule>(["jarbschg_night_work", "jarbschg_holiday_prohibited"]);
+
+function summed(day: RecordedFinding, more: RecordedFinding): RecordedFinding {
+	const { used } = day.summary;
+	const added = more.summary.used;
+	if (!used || !added || used.unit !== added.unit) return day;
+	return {
+		...day,
+		summary: { ...day.summary, used: { ...used, value: used.value + added.value } },
 	};
-}) {
+}
+
+/** Whether `finding` lies further past its limit than the figures recorded in `stored`. */
+function deepensRecorded(stored: unknown, finding: RecordedFinding): boolean {
+	const recorded = (typeof stored === "string" ? JSON.parse(stored) : (stored ?? {})) as {
+		readonly actualMinutes?: number;
+		readonly limitMinutes?: number;
+		readonly actualDays?: number;
+		readonly limitDays?: number;
+	};
+	const unit = finding.summary.used?.unit;
+	const [actual, limit] =
+		unit === "days"
+			? [recorded.actualDays, recorded.limitDays]
+			: [recorded.actualMinutes, recorded.limitMinutes];
+	// Figures that cannot be compared are refreshed: they were never the day's.
+	if (!unit || actual === undefined || limit === undefined) return true;
+	return deepensBreachedLimit(
+		{ summary: { used: { unit, value: actual }, limit: { unit, value: limit } } },
+		finding,
+	);
+}
+
+function violationDetails(finding: RecordedFinding) {
 	const inDays = finding.summary.used?.unit === "days";
 	return {
 		legalReference: finding.legalReference,

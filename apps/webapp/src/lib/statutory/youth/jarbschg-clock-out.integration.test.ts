@@ -126,6 +126,57 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		},
 	);
 
+	describe("a later clock-out the same day", () => {
+		const recorded = async (who: FixtureEmployee, type: string) => {
+			const row = (await seed.violations(who)).filter((entry) => entry.violation_type === type);
+			expect(row).toHaveLength(1);
+			return { ...row[0], details: JSON.parse(row[0]?.details ?? "{}") };
+		};
+
+		it("refreshes the day's holiday work to everything worked after 14:00 on 24 December", async () => {
+			const minor = await fx.employee(org, "eve-split", { birthday: "2010-06-01" });
+			await clockOut(minor, "2025-12-24", "13:00", 120); // 13:00–15:00: 60 min after 14:00.
+			const { work } = await clockOut(minor, "2025-12-24", "16:00", 240); // 16:00–20:00.
+
+			const holiday = await recorded(minor, "jarbschg_holiday_prohibited");
+			expect(holiday.details).toMatchObject({ actualMinutes: 300 });
+			expect(holiday.work_period_id).toBe(work.id);
+		});
+
+		it("leaves an acknowledged violation as it was reviewed", async () => {
+			const minor = await fx.employee(org, "eve-reviewed", { birthday: "2010-06-01" });
+			const { work: first } = await clockOut(minor, "2025-12-24", "13:00", 120);
+			await admin.query(
+				`update work_policy_violation set acknowledged_at = now(), acknowledged_by = $3
+				 where organization_id = $1 and employee_id = $2`,
+				[org.id, minor.employeeId, owner.employeeId],
+			);
+			await clockOut(minor, "2025-12-24", "16:00", 240);
+
+			const holiday = await recorded(minor, "jarbschg_holiday_prohibited");
+			expect(holiday.details).toMatchObject({ actualMinutes: 60 });
+			expect(holiday.work_period_id).toBe(first.id);
+		});
+
+		it("refreshes the daily maximum and night work the same way", async () => {
+			const minor = await fx.employee(org, "long-day", { birthday: "2010-06-01" });
+			// 07:00–16:00 (540 min), then 16:30–17:30: 600 min in the day.
+			await clockOut(minor, "2026-03-02", "07:00", 540);
+			await clockOut(minor, "2026-03-02", "16:30", 60);
+			expect((await recorded(minor, "jarbschg_daily_max")).details).toMatchObject({
+				actualMinutes: 600,
+			});
+
+			const night = await fx.employee(org, "late-night", { birthday: "2010-06-01" });
+			// 17:00–21:00 is 60 min past 20:00; 21:15–22:15 another 60.
+			await clockOut(night, "2026-03-03", "17:00", 240);
+			const { work } = await clockOut(night, "2026-03-03", "21:15", 60);
+			const recordedNight = await recorded(night, "jarbschg_night_work");
+			expect(recordedNight.details).toMatchObject({ actualMinutes: 120 });
+			expect(recordedNight.work_period_id).toBe(work.id);
+		});
+	});
+
 	it("records an ordinary public holiday as holiday work", async () => {
 		await seed.publicHoliday(org, owner, "2026-04-06"); // Easter Monday.
 		const minor = await fx.employee(org, "easter", { birthday: "2010-06-01" });
