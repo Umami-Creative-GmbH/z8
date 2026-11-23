@@ -84,7 +84,7 @@ describe("getWorkdayTimelineData", () => {
 		const result = await getWorkdayTimelineData({
 			employeeId: "employee-1",
 			organizationId: "org-1",
-			timezone: "Europe/Berlin",
+			timezone: "America/New_York",
 			dateParam: "2026-05-03",
 		});
 
@@ -98,8 +98,8 @@ describe("getWorkdayTimelineData", () => {
 			filters: { status: "pending" },
 			// Expense reports and compliance exceptions are not tied to a working day (#1979).
 			sources: ["time_correction", "absence", "travel_expense"],
-			// The organization's zone, read once for the shifts, is not read again for requests.
-			timeZone: "Europe/Berlin",
+			// Request dates read in the viewer's zone, as on /my-requests, not the organization's.
+			timeZone: "America/New_York",
 		});
 	});
 

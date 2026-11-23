@@ -98,7 +98,8 @@ export async function getWorkdayTimelineData({
 				organizationId,
 				filters: { status: "pending" },
 				sources: TIMELINE_REQUEST_SOURCES,
-				timeZone: organizationTimezone,
+				// The viewer's zone, as /my-requests reads request dates; the organization's is for shifts.
+				timeZone: timezone,
 			}),
 		]);
 
