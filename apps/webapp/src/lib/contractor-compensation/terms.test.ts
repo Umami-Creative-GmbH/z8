@@ -79,6 +79,10 @@ describe("reading entered contractor terms", () => {
 		["abc", "invalid_rate"],
 		["1000000", "rate_too_large"],
 		["10.005", "rate_too_precise"],
+		["85.1255", "rate_too_precise"],
+		["85,1255", "rate_too_precise"],
+		["1.", "invalid_rate"],
+		["", "invalid_rate"],
 	])("refuses the rate %s", (rateAmount, reason) => {
 		expect(parseContractorCompensation({ basis: "hourly", rateAmount, currency: "EUR" })).toEqual({
 			ok: false,

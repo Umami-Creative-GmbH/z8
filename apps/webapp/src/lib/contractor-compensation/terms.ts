@@ -75,6 +75,8 @@ export type ParsedContractorCompensation =
 	| { ok: false; reason: ContractorCompensationRefusal };
 
 const CURRENCY_CODE = /^[A-Z]{3}$/;
+/** A plain decimal, at any precision; `parseUnits` then decides whether it fits. */
+const DECIMAL_SYNTAX = /^-?\d{1,19}(?:\.\d{1,19})?$/;
 
 function supportedCurrencies(): ReadonlySet<string> | null {
 	const intl = Intl as typeof Intl & { supportedValuesOf?: (key: "currency") => string[] };
@@ -137,9 +139,9 @@ export function parseContractorCompensation(
 
 	const digits = currencyMinorUnitDigits(currency);
 	const normalized = normalizeDecimalInput(input.rateAmount);
-	if (parseUnits(normalized, STORED_RATE_SCALE) === null) {
-		return { ok: false, reason: "invalid_rate" };
-	}
+	if (!DECIMAL_SYNTAX.test(normalized)) return { ok: false, reason: "invalid_rate" };
+	// A well-formed decimal that `parseUnits` refuses has more decimals than the
+	// currency allows (its minor digits never exceed STORED_RATE_SCALE).
 	const rateMinor = parseUnits(normalized, digits);
 	if (rateMinor === null) return { ok: false, reason: "rate_too_precise" };
 	if (rateMinor <= BigInt(0)) return { ok: false, reason: "rate_not_positive" };
