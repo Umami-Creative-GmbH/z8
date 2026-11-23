@@ -1,11 +1,16 @@
 "use server";
 
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { z } from "zod";
 import * as authSchema from "@/db/auth-schema";
-import { employeeInvitationDraft, organizationNotificationSettings, team } from "@/db/schema";
+import {
+	employeeInvitationDraft,
+	organizationNotificationSettings,
+	project,
+	team,
+} from "@/db/schema";
 import { auth, runAuthMutation } from "@/lib/auth";
 import {
 	isInvitationActionable,
@@ -25,7 +30,9 @@ import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/ap
 import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone-change";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
+	contractorInvitationSchema,
 	invitationSchema,
+	refineInvitationEngagement,
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
 } from "@/lib/validations/invitation";
@@ -83,10 +90,40 @@ function validateInvitationAllowed(organizationId: string, email: string) {
 // Invitation Management Actions (org admins)
 // =============================================================================
 
-const sendInvitationSchema = z.strictObject({
-	...invitationSchema.shape,
-	email: z.string().transform(normalizeInvitationEmail).pipe(invitationSchema.shape.email),
-});
+const sendInvitationSchema = z
+	.strictObject({
+		...invitationSchema.shape,
+		email: z.string().transform(normalizeInvitationEmail).pipe(invitationSchema.shape.email),
+	})
+	.superRefine(refineInvitationEngagement);
+
+/** Every project a contractor invitation names belongs to the session's organization (#1995). */
+function validateInvitationProjects(organizationId: string, projectIds: readonly string[]) {
+	return Effect.gen(function* () {
+		if (projectIds.length === 0) return;
+		const dbService = yield* DatabaseService;
+		const found = yield* dbService.query("getInvitationProjects", () =>
+			dbService.db.query.project.findMany({
+				where: and(
+					eq(project.organizationId, organizationId),
+					inArray(project.id, [...projectIds]),
+				),
+				columns: { id: true },
+			}),
+		);
+		const known = new Set(found.map((row) => row.id));
+		const unknown = projectIds.find((projectId) => !known.has(projectId));
+		if (unknown) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Project not found in this organization",
+					field: "contractor.projectIds",
+					value: unknown,
+				}),
+			);
+		}
+	});
+}
 
 /**
  * Send an invitation to join the organization
@@ -106,9 +143,21 @@ export const sendInvitation = organizationAction(
 				targetTeamId: input.targetTeamId ?? null,
 				initialRole: initialRoleOf(input.role),
 				updatedBy: actor.userId,
+				// An employee or an External Contractor with what joining prepares for them (#1995).
+				engagement: {
+					kind: input.engagementKind,
+					contractor:
+						input.engagementKind === "contractor"
+							? (input.contractor ?? contractorInvitationSchema.parse({}))
+							: null,
+				},
 			} as const;
 
 			if (input.targetTeamId) yield* validateTargetTeam(organizationId, input.targetTeamId);
+			yield* validateInvitationProjects(
+				organizationId,
+				draftFields.engagement.contractor?.projectIds ?? [],
+			);
 			yield* validateInvitationAllowed(organizationId, input.email);
 
 			const existingInvitation = yield* dbService.query("checkExistingInvitation", () =>
@@ -786,9 +835,8 @@ export const deleteOrganization = organizationAction(
 			// Email failures are logged and do not fail the action.
 			yield* Effect.promise(async () => {
 				try {
-					const { sendOrganizationDeletionNotifications } = await import(
-						"@/lib/jobs/organization-deletion-notification"
-					);
+					const { sendOrganizationDeletionNotifications } =
+						await import("@/lib/jobs/organization-deletion-notification");
 					await sendOrganizationDeletionNotifications({
 						organizationId,
 						organizationName: organization.name,

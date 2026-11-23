@@ -17,6 +17,7 @@ import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracki
 import { onCurrentRoster } from "../current-roster";
 import { reactivateOnReturn } from "../reactivation";
 import {
+	applyContractorDraft,
 	consumeInvitationDrafts,
 	type DraftCleanup,
 	type DroppedPersonnelNumber,
@@ -98,6 +99,16 @@ export type JoiningOutcome =
 	| { kind: "already_current"; employee: Employee }
 	| { kind: "membership_only"; employee: Employee };
 
+/** The departure a contractor invitation's planned end date becomes (#1995). */
+export type PlannedEngagementEnd = {
+	organizationId: string;
+	employeeId: string;
+	/** Org-local ISO calendar date. */
+	lastWorkingDay: string;
+	requestId: string;
+	actorUserId: string;
+};
+
 /** The seat signal of the new membership, sent after commit. */
 export type SeatSignal = {
 	organizationId: string;
@@ -115,6 +126,8 @@ export type AfterJoining = {
 	draftCleanup: DraftCleanup | null;
 	/** Only for a `membership_only` outcome with recipients named in the input. */
 	rehireNotice: RehireNotice | null;
+	/** A contractor invitation's planned engagement end, scheduled as a departure (#1995). */
+	plannedEngagementEnd: PlannedEngagementEnd | null;
 	/** A repair of an older membership passes `seatSignal: false`: no seat changed now. */
 	run(options?: { seatSignal?: boolean }): Promise<void>;
 };
@@ -205,16 +218,20 @@ export async function joinOrganization(
 					recipients: input.rehireNotice,
 				}
 			: null;
+	const plannedEngagementEnd = plannedEngagementEndOf(outcome, draft, input);
 	return {
 		outcome,
 		afterCommit: {
 			seatSignal,
 			draftCleanup,
 			rehireNotice,
+			plannedEngagementEnd,
 			async run(options = {}) {
 				// The global `db` on purpose: this runs after the caller's transaction
 				// committed, and is shared with callers that are not Effect code.
 				audit.forwardCommitted();
+				// Before the draft clean-up, whose id is the departure's request id.
+				if (plannedEngagementEnd) await schedulePlannedEngagementEnd(plannedEngagementEnd);
 				if (draftCleanup) await consumeInvitationDrafts(db, draftCleanup);
 				if (rehireNotice) await sendRehireNotice(rehireNotice);
 				if (options.seatSignal !== false) await syncBillingSeatsAfterMemberChange(seatSignal);
@@ -365,11 +382,70 @@ async function settleArrivingEmployee(
 			outcome: personnelNumber.outcome,
 		});
 	}
-	if (draft) {
+	// Employment terms are employee-only; an External Contractor gets its contracting
+	// details and projects instead (#1995).
+	if (draft && settled.engagementKind === "employee") {
 		await writeDraftFirstTerms(tx, { organizationId, userId, employeeId: settled.id, draft });
+	}
+	if (draft && settled.engagementKind === "contractor" && draft.engagementKind === "contractor") {
+		await applyContractorDraft(tx, {
+			organizationId,
+			employeeId: settled.id,
+			actorUserId: draft.updatedBy ?? input.actorUserId ?? userId,
+			draft,
+		});
 	}
 	if (isAdminMembership) await grantOrganizationWideTeamPermissions(tx, settled);
 	return settled;
+}
+
+/**
+ * The planned engagement end of a contractor invitation (#1995), scheduled once
+ * the joining committed as a canonical departure by the admin who prepared the
+ * invitation. The draft's id is the request id, so a repeated step replays.
+ */
+function plannedEngagementEndOf(
+	outcome: JoiningOutcome,
+	draft: InvitationDraft | null,
+	input: JoiningInput,
+): PlannedEngagementEnd | null {
+	if (outcome.kind !== "joined" && outcome.kind !== "reactivated") return null;
+	if (outcome.employee.engagementKind !== "contractor") return null;
+	if (draft?.engagementKind !== "contractor" || !draft.plannedEndDate) return null;
+	const actorUserId = draft.updatedBy ?? input.actorUserId;
+	if (!actorUserId) return null;
+	return {
+		organizationId: input.organizationId,
+		employeeId: outcome.employee.id,
+		lastWorkingDay: draft.plannedEndDate,
+		requestId: draft.id,
+		actorUserId,
+	};
+}
+
+/** Best effort after commit: a failure is logged; admins can still schedule it by hand. */
+async function schedulePlannedEngagementEnd(planned: PlannedEngagementEnd) {
+	try {
+		const { EMPLOYEE_OFFBOARDING_RELEASE_READY } = await import("../release");
+		if (!EMPLOYEE_OFFBOARDING_RELEASE_READY) return;
+		const { createProductionDepartureCommands } = await import("../runtime");
+		await createProductionDepartureCommands().scheduleDeparture(
+			{ userId: planned.actorUserId, organizationId: planned.organizationId },
+			{
+				employeeId: planned.employeeId,
+				requestId: planned.requestId,
+				expectedRevision: null,
+				lastWorkingDay: planned.lastWorkingDay,
+				replacementEmployeeId: null,
+				acknowledgeUnassignedDuties: true,
+			},
+		);
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: planned.organizationId, employeeId: planned.employeeId },
+			"Could not schedule the planned end of a contractor engagement",
+		);
+	}
 }
 
 /**

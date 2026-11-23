@@ -9,15 +9,38 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
+import type { ContractorInvitation } from "@/lib/validations/invitation";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
 
-type InvitationDraftTransaction = Parameters<
-	Parameters<typeof appDb.transaction>[0]
->[0];
+type InvitationDraftTransaction = Parameters<Parameters<typeof appDb.transaction>[0]>[0];
 type InvitationDraftClient = typeof appDb | InvitationDraftTransaction;
 
 export function normalizeInvitationEmail(email: string): string {
 	return email.trim().toLowerCase();
+}
+
+/**
+ * Whom a new invitation brings in (#1995): an employee, or an External
+ * Contractor with the contracting details, projects and planned end that
+ * joining applies. A resend carries none and keeps the draft's.
+ */
+export type InvitationEngagement = {
+	kind: EngagementKind;
+	contractor: ContractorInvitation | null;
+};
+
+/** The draft columns an invitation's engagement writes. */
+function engagementDraftValues(engagement: InvitationEngagement) {
+	const contractor = engagement.kind === "contractor" ? engagement.contractor : null;
+	return {
+		engagementKind: engagement.kind,
+		contractorCompanyName: contractor?.companyName ?? null,
+		contractorVatId: contractor?.vatId ?? null,
+		contractorReferenceCode: contractor?.referenceCode ?? null,
+		plannedEndDate: contractor?.plannedEndDate ?? null,
+		projectIds: contractor?.projectIds ?? [],
+	};
 }
 
 export async function attachInvitationToEmployeeDraft(
@@ -30,8 +53,10 @@ export async function attachInvitationToEmployeeDraft(
 		initialTeamId: string | null;
 		initialRole: "admin" | "employee";
 		updatedBy: string;
+		engagement?: InvitationEngagement;
 	},
 ) {
+	const engagementValues = input.engagement ? engagementDraftValues(input.engagement) : {};
 	const drafts = await dbClient
 		.insert(employeeInvitationDraft)
 		.values({
@@ -43,15 +68,14 @@ export async function attachInvitationToEmployeeDraft(
 			role: input.initialRole,
 			contractType: "fixed",
 			updatedBy: input.updatedBy,
+			...engagementValues,
 		})
 		.onConflictDoUpdate({
-			target: [
-				employeeInvitationDraft.organizationId,
-				employeeInvitationDraft.normalizedEmail,
-			],
+			target: [employeeInvitationDraft.organizationId, employeeInvitationDraft.normalizedEmail],
 			set: {
 				invitationId: input.invitationId,
 				canCreateOrganizations: input.canCreateOrganizations,
+				...engagementValues,
 			},
 		})
 		.returning();
@@ -69,6 +93,7 @@ export async function persistEmployeeInvitationDraft(
 		targetTeamId: string | null;
 		initialRole: "admin" | "employee";
 		updatedBy: string;
+		engagement?: InvitationEngagement;
 	},
 ): Promise<{ outcome: "persisted" | "consumed" }> {
 	return await dbClient.transaction(async (tx) => {
@@ -85,8 +110,7 @@ export async function persistEmployeeInvitationDraft(
 		});
 		if (
 			!authoritativeInvitation ||
-			normalizeInvitationEmail(authoritativeInvitation.email) !==
-				input.normalizedEmail
+			normalizeInvitationEmail(authoritativeInvitation.email) !== input.normalizedEmail
 		) {
 			throw new Error("Invitation persistence conflict");
 		}
@@ -137,8 +161,7 @@ export async function persistEmployeeInvitationDraft(
 			});
 			if (
 				currentInvitation?.status === "accepted" &&
-				normalizeInvitationEmail(currentInvitation.email) ===
-					input.normalizedEmail
+				normalizeInvitationEmail(currentInvitation.email) === input.normalizedEmail
 			) {
 				return { outcome: "consumed" };
 			}
@@ -153,6 +176,7 @@ export async function persistEmployeeInvitationDraft(
 			initialTeamId: input.targetTeamId,
 			initialRole: input.initialRole,
 			updatedBy: input.updatedBy,
+			engagement: input.engagement,
 		});
 		if (!draft) throw new Error("Invitation persistence conflict");
 
@@ -217,10 +241,7 @@ export async function syncInvitationTargetTeam(
 
 		if (input.targetTeamId) {
 			const selectedTeam = await tx.query.team.findFirst({
-				where: and(
-					eq(team.id, input.targetTeamId),
-					eq(team.organizationId, input.organizationId),
-				),
+				where: and(eq(team.id, input.targetTeamId), eq(team.organizationId, input.organizationId)),
 				columns: { id: true },
 			});
 			if (!selectedTeam) throw new Error("Invitation target team conflict");

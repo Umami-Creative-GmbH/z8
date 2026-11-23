@@ -1746,9 +1746,12 @@ async function rehireEmployee(
 			throw new DepartureCommandError("rehire_conflict");
 		}
 
+		const engagementKind = input.engagementKind ?? "employee";
 		await assertRehireTermsBelongToOrganization(tx, actor.organizationId, target.id, input);
 		const timezone = await loadOrganizationTimezone(tx, actor.organizationId);
 
+		// The new period carries its own engagement kind; the employee follows it
+		// below, which the database allows only once this period is the open one (#1995).
 		const [period] = await tx
 			.insert(employeeEmploymentPeriod)
 			.values({
@@ -1757,6 +1760,7 @@ async function rehireEmployee(
 				status: "open",
 				startedAt: nowDate,
 				startProvenance: "recorded",
+				engagementKind,
 				createdAt: nowDate,
 				createdBy: actor.userId,
 			})
@@ -1767,30 +1771,34 @@ async function rehireEmployee(
 		// org-local rehire date, stored as a calendar date like all terms (D1).
 		const rehirePlainDate = plainDateAt(now, timezone);
 		const useDbClockTimestamp = deps.clock === systemClock;
-		const insertedTerms = await writeEmploymentTerms(tx, {
-			organizationId: actor.organizationId,
-			employeeId: target.id,
-			actorUserId: actor.userId,
-			now: nowDate,
-			useDbClockTimestamp,
-			terms: {
-				validFrom: utcMidnight(rehirePlainDate),
-				status: "active",
-				contractType: input.contractType,
-				weeklyContractMinutes: input.weeklyContractMinutes,
-				probationStartsOn: localDateStart(input.probationStartsOn, timezone),
-				probationEndsOn: localDateStart(input.probationEndsOn, timezone),
-				workModel: input.workModel,
-				workPolicyId: input.workPolicyId,
-				hourlyRate: input.hourlyRate ?? null,
-				currency: input.currency,
-				changeReason: input.changeReason,
-				reviewState: "confirmed",
-			},
-		});
+		// Employment terms and the work policy are employee-only (#1995).
+		const insertedTerms =
+			engagementKind === "employee"
+				? await writeEmploymentTerms(tx, {
+						organizationId: actor.organizationId,
+						employeeId: target.id,
+						actorUserId: actor.userId,
+						now: nowDate,
+						useDbClockTimestamp,
+						terms: {
+							validFrom: utcMidnight(rehirePlainDate),
+							status: "active",
+							contractType: input.contractType,
+							weeklyContractMinutes: input.weeklyContractMinutes,
+							probationStartsOn: localDateStart(input.probationStartsOn, timezone),
+							probationEndsOn: localDateStart(input.probationEndsOn, timezone),
+							workModel: input.workModel,
+							workPolicyId: input.workPolicyId,
+							hourlyRate: input.hourlyRate ?? null,
+							currency: input.currency,
+							changeReason: input.changeReason,
+							reviewState: "confirmed",
+						},
+					})
+				: null;
 		// A1-8: Project the rehire work policy into `work_policy_assignment` in the same
 		// transaction so transactional clock-out break snapshots resolve the selected policy.
-		if (input.workPolicyId) {
+		if (insertedTerms && input.workPolicyId) {
 			await replacePolicyAssignmentWindowInTx(tx, {
 				organizationId: actor.organizationId,
 				actorUserId: actor.userId,
@@ -1826,7 +1834,9 @@ async function rehireEmployee(
 			.set({
 				isActive: true,
 				role: input.role,
-				contractType: input.contractType,
+				engagementKind,
+				// An External Contractor keeps the column's default; it has no employee contract.
+				contractType: engagementKind === "employee" ? input.contractType : "fixed",
 				endDate: null,
 				updatedAt: nowDate,
 			})
@@ -1866,30 +1876,34 @@ async function rehireEmployee(
 			result,
 			metadata: {
 				previousEmploymentPeriodId: input.previousEmploymentPeriodId,
+				engagementKind,
 			},
 		});
 		return result;
 	});
 }
 
-/** Team, manager and work policy must all belong to the same organization. */
+/**
+ * Team, manager and work policy must all belong to the same organization. The
+ * contract terms and work policy are checked for an employee stint only.
+ */
 async function assertRehireTermsBelongToOrganization(
 	tx: LifecycleClient,
 	organizationId: string,
 	employeeId: string,
 	input: RehireEmployee,
 ) {
-	if (input.contractType === "hourly" && !input.hourlyRate) {
-		throw new DepartureCommandError("rehire_terms_invalid");
-	}
-	// Astra #3: Require an ACTIVE organization-owned work policy locked FOR SHARE (level 4).
-	const policyActive = await verifyActiveWorkPolicyForShareInTx(
-		tx,
-		organizationId,
-		input.workPolicyId,
-	);
-	if (!policyActive) {
-		throw new DepartureCommandError("rehire_terms_invalid");
+	if ((input.engagementKind ?? "employee") === "employee") {
+		if (input.contractType === "hourly" && !input.hourlyRate) {
+			throw new DepartureCommandError("rehire_terms_invalid");
+		}
+		// Astra #3: Require an ACTIVE organization-owned work policy locked FOR SHARE (level 4).
+		const policyActive =
+			input.workPolicyId !== null &&
+			(await verifyActiveWorkPolicyForShareInTx(tx, organizationId, input.workPolicyId));
+		if (!policyActive) {
+			throw new DepartureCommandError("rehire_terms_invalid");
+		}
 	}
 	const facts = await tx.execute<{
 		team_ok: boolean;

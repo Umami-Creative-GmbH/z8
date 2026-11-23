@@ -1,11 +1,16 @@
-import { and, eq, exists, lte, or, sql } from "drizzle-orm";
+import { and, eq, exists, inArray, lte, or, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { invitation, user } from "@/db/auth-schema";
-import { employee, employeeInvitationDraft, team } from "@/db/schema";
+import { employee, employeeInvitationDraft, project, projectAssignment, team } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import type { AuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import {
+	hasContractorProfileDetails,
+	normalizeContractorProfileDetails,
+	saveContractorProfile,
+} from "@/lib/engagement/contractor-profile";
 import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
 import {
@@ -91,11 +96,17 @@ export function draftCreationValues(draft: InvitationDraft | null) {
 		position: draft.position,
 		startDate: draft.startDate,
 		endDate: draft.endDate,
-		contractType: draft.contractType,
+		engagementKind: draft.engagementKind,
+		// An External Contractor has no employee contract type (#1995); the column keeps its default.
+		...(draft.engagementKind === "contractor" ? {} : { contractType: draft.contractType }),
 	};
 }
 
-/** Like `draftCreationValues`, for a reactivated employee: only what the draft sets. */
+/**
+ * Like `draftCreationValues`, for a reactivated employee: only what the draft
+ * sets. Never the engagement kind: a reactivation continues the open period,
+ * whose kind cannot change in place (#1995).
+ */
 export function draftReactivationValues(draft: InvitationDraft | null) {
 	if (!draft) return {};
 	return {
@@ -267,6 +278,56 @@ export function writeDraftFirstTerms(
 		hourlyRate: draftHourlyWage(draft.currentHourlyRate),
 		startDate: draft.startDate ?? null,
 	});
+}
+
+/**
+ * What a contractor invitation prepares besides the employee row (#1995): the
+ * contracting details and the projects, assigned only when they belong to this
+ * organization. Employee-only setup (terms, wage, work policy) is never written.
+ */
+export async function applyContractorDraft(
+	tx: JoiningTransaction,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		draft: InvitationDraft;
+	},
+) {
+	const { draft } = input;
+	const details = normalizeContractorProfileDetails({
+		companyName: draft.contractorCompanyName,
+		vatId: draft.contractorVatId,
+		referenceCode: draft.contractorReferenceCode,
+	});
+	if (hasContractorProfileDetails(details)) {
+		await saveContractorProfile(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			details,
+			updatedBy: input.actorUserId,
+		});
+	}
+	if (draft.projectIds.length === 0) return;
+	const projects = await tx
+		.select({ id: project.id })
+		.from(project)
+		.where(
+			and(eq(project.organizationId, input.organizationId), inArray(project.id, draft.projectIds)),
+		);
+	if (projects.length === 0) return;
+	await tx
+		.insert(projectAssignment)
+		.values(
+			projects.map((assigned) => ({
+				projectId: assigned.id,
+				organizationId: input.organizationId,
+				assignmentType: "employee" as const,
+				employeeId: input.employeeId,
+				createdBy: input.actorUserId,
+			})),
+		)
+		.onConflictDoNothing();
 }
 
 /** The draft's stored decimal-string wage, as employment terms hold it. */
