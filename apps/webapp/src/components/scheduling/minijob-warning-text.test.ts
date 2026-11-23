@@ -32,6 +32,11 @@ describe("Minijob warning text (#1989)", () => {
 			finding({ acknowledgementStatus: "current", severity: "info" }),
 			"Minijob monthly limit exceeded (documented as unforeseeable)",
 		],
+		// Acknowledged once, but now above twice the cap or one exceedance too many: not documented.
+		[
+			finding({ acknowledgementStatus: "current", severity: "critical" }),
+			"Minijob monthly limit exceeded",
+		],
 		[
 			finding({ summary: { tier: "warning" }, severity: "warning" }),
 			"Minijob monthly limit approaching",

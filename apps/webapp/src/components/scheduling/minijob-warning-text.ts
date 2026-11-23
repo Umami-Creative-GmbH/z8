@@ -14,7 +14,13 @@ export function minijobWarningText(
 	const exceeded = finding.summary.tier === "exceeded";
 	switch (finding.statutoryKind) {
 		case "minijob_monthly_cap":
-			if (exceeded && finding.acknowledgementStatus === "current") {
+			// A current acknowledgement documents the month only while it still qualifies: above twice
+			// the cap or one exceedance too many, the finding stays critical however it was acknowledged.
+			if (
+				exceeded &&
+				finding.acknowledgementStatus === "current" &&
+				finding.severity !== "critical"
+			) {
 				return t(
 					"scheduling:scheduling.statutory.minijob.monthlyDocumented",
 					"Minijob monthly limit exceeded (documented as unforeseeable)",
