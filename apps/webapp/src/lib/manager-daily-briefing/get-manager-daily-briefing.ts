@@ -294,6 +294,7 @@ export async function getManagerDailyBriefingFromSources({
 			: [];
 
 	const unavailableApprovalTypes = approvalBatch.unavailableTypes ?? [];
+	const uncountedApprovalTypes = approvalBatch.uncountedTypes ?? [];
 	const approvals = {
 		...buildSection<BriefingApprovalActionItem>(
 			"approvals",
@@ -301,6 +302,7 @@ export async function getManagerDailyBriefingFromSources({
 			approvalsResult,
 		),
 		...(unavailableApprovalTypes.length > 0 ? { unavailableTypes: unavailableApprovalTypes } : {}),
+		...(uncountedApprovalTypes.length > 0 ? { uncountedTypes: uncountedApprovalTypes } : {}),
 	};
 	const attendance = buildSection(
 		"attendance",
@@ -667,12 +669,22 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 			status: "pending",
 			limit: BRIEFING_APPROVAL_LIMIT,
 		});
-		// A source whose list read failed still counts in the total: name it, so the briefing never
-		// shows its count beside a list that silently lacks its items.
-		const unavailableTypes = [...new Set(result.warnings.map((warning) => warning.source))];
+		// Name each failed source, as the inbox tells its warnings apart (#1978), so the briefing
+		// never shows a total or a list that silently lacks its items. A failed count still lists
+		// its rows but leaves them out of the total; any other failure (or one of unknown kind)
+		// lacks rows. A "Covering for" header count is no total of the briefing's.
+		const unavailable = new Set<string>();
+		const uncounted = new Set<string>();
+		for (const warning of result.warnings) {
+			if (warning.failure === "covering_count") continue;
+			(warning.failure === "count" ? uncounted : unavailable).add(warning.source);
+		}
+		const unavailableTypes = [...unavailable];
+		const uncountedTypes = [...uncounted].filter((type) => !unavailable.has(type));
 		return Object.assign(result.items, {
 			totalCount: result.total,
 			...(unavailableTypes.length > 0 ? { unavailableTypes } : {}),
+			...(uncountedTypes.length > 0 ? { uncountedTypes } : {}),
 		});
 	},
 

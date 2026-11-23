@@ -79,4 +79,18 @@ describe("manager Today briefing", () => {
 		expect(screen.getByText(/Some approvals could not be loaded: Travel Expenses\./)).toBeTruthy();
 		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
 	});
+
+	it("shows open approvals as a lower bound when a type could not be counted", () => {
+		const briefing = briefingFixture();
+		briefing.summary.openApprovals = 2;
+		briefing.sections.approvals.items = [];
+		briefing.sections.approvals.uncountedTypes = ["absence_entry"];
+		render(<TodayBriefing briefing={briefing} />);
+
+		expect(
+			screen.getByText(/Some approvals could not be counted: Absence Requests\./),
+		).toBeTruthy();
+		const summary = screen.getByRole("region", { name: "Today summary" });
+		expect(within(summary).getByText("2+")).toBeTruthy();
+	});
 });

@@ -39,7 +39,8 @@ type TodayBriefingProps = {
 
 type SummaryCardProps = {
 	title: string;
-	value: number | undefined;
+	/** A count, or its text, such as a lower bound "3+". */
+	value: number | string | undefined;
 	description: string;
 	icon: IconComponent;
 	tone?: "default" | "critical" | "warning";
@@ -156,6 +157,10 @@ export function TodayBriefing({
 		briefing.needsActionError ||
 		Object.values(briefing.sections).some((section) => section.error),
 	);
+	// A failed approval source leaves the open approvals a lower bound (#1980).
+	const approvalsLowerBound =
+		(briefing.sections.approvals.unavailableTypes?.length ?? 0) > 0 ||
+		(briefing.sections.approvals.uncountedTypes?.length ?? 0) > 0;
 
 	return (
 		<div className="@container/main page-frame flex flex-1 flex-col gap-6" aria-busy={isRefreshing}>
@@ -204,6 +209,7 @@ export function TodayBriefing({
 					total={briefing.summary.openApprovals}
 					error={briefing.sections.approvals.error}
 					unavailableTypes={briefing.sections.approvals.unavailableTypes}
+					uncountedTypes={briefing.sections.approvals.uncountedTypes}
 					stale={Boolean(readError)}
 					onRetry={onRetry}
 					onDecision={onDecision}
@@ -227,7 +233,11 @@ export function TodayBriefing({
 									? incomplete
 									: briefing.sections[summarySection[key]].error)
 									? undefined
-									: briefing.summary[key]
+									: key === "openApprovals" && approvalsLowerBound
+										? t("today.approvals.totalAtLeast", "{count}+", {
+												count: briefing.summary[key],
+											})
+										: briefing.summary[key]
 							}
 						/>
 					),

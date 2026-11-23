@@ -28,8 +28,10 @@ type TodayApprovalsPanelProps = {
 	/** Every pending approval of the briefing's employees; `items` may show only the first. */
 	total?: number;
 	error?: string;
-	/** Approval types counted in `total` whose items could not be listed. */
+	/** Approval types whose items could not be listed. */
 	unavailableTypes?: string[];
+	/** Approval types whose items listed but whose count failed: `total` misses them. */
+	uncountedTypes?: string[];
 	onRetry?: () => void;
 	onDecision?: () => void;
 	stale?: boolean;
@@ -49,6 +51,7 @@ export function TodayApprovalsPanel({
 	total: totalProp,
 	error,
 	unavailableTypes = [],
+	uncountedTypes = [],
 	onRetry,
 	onDecision,
 	stale,
@@ -74,14 +77,35 @@ export function TodayApprovalsPanel({
 	const [rejecting, setRejecting] = useState<BriefingApprovalActionItem | null>(null);
 	const [rejectReason, setRejectReason] = useState("");
 	const total = Math.max(totalProp ?? items.length, items.length);
+	// A source failed: the total may miss its approvals, so it is only a lower bound (#1980).
+	const incomplete = unavailableTypes.length > 0 || uncountedTypes.length > 0;
 	// Counted approvals it does not list, never shown as an empty queue.
 	const truncated = total > items.length;
 	const typeLabels: Record<string, string> = getApprovalTypeLabels(t);
-	const unavailableTypeNames = unavailableTypes.map((type) => typeLabels[type] ?? type);
 	// "A, B and C" in the viewer's language, not English punctuation.
-	const unavailableTypeList = new Intl.ListFormat(locale, { type: "conjunction" }).format(
-		unavailableTypeNames,
-	);
+	const typeList = (types: string[]) =>
+		new Intl.ListFormat(locale, { type: "conjunction" }).format(
+			types.map((type) => typeLabels[type] ?? type),
+		);
+	// Each kind of failure in its own words, as the dashboard tells them apart (#1978).
+	const partialFailure = [
+		unavailableTypes.length > 0
+			? t(
+					"today.approvals.partialFailure",
+					"Some approvals could not be loaded: {types}. The list and total may be incomplete.",
+					{ types: typeList(unavailableTypes) },
+				)
+			: null,
+		uncountedTypes.length > 0
+			? t(
+					"today.approvals.partialFailureNotCounted",
+					"Some approvals could not be counted: {types}. The total may be incomplete.",
+					{ types: typeList(uncountedTypes) },
+				)
+			: null,
+	]
+		.filter((sentence) => sentence !== null)
+		.join(" ");
 	const isBusy = actingApprovalId !== null || isRefreshPending;
 	const decisionsOff = isBusy || Boolean(error) || stale;
 	// The panel's own rejection is on its way: neither Cancel nor Escape may drop it.
@@ -210,7 +234,11 @@ export function TodayApprovalsPanel({
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
 						<Badge variant={total > 0 ? "default" : "secondary"}>
-							{error || stale ? t("today.briefing.unavailable", "Unavailable") : total}
+							{error || stale
+								? t("today.briefing.unavailable", "Unavailable")
+								: incomplete
+									? t("today.approvals.totalAtLeast", "{count}+", { count: total })
+									: total}
 						</Badge>
 						<Button asChild size="sm" variant="outline">
 							<Link href="/approvals/inbox">{t("today.approvals.openInbox", "Open inbox")}</Link>
@@ -220,15 +248,8 @@ export function TodayApprovalsPanel({
 			</CardHeader>
 			<CardContent className="space-y-3">
 				{error ? <SectionError message={error} onRetry={onRetry} /> : null}
-				{!error && !stale && unavailableTypeNames.length > 0 ? (
-					<SectionError
-						message={t(
-							"today.approvals.partialFailure",
-							"Some approvals could not be loaded: {types}.",
-							{ types: unavailableTypeList },
-						)}
-						onRetry={onRetry}
-					/>
+				{!error && !stale && partialFailure ? (
+					<SectionError message={partialFailure} onRetry={onRetry} />
 				) : null}
 				{/* While the reject panel is open, it shows the decision's outcome itself. */}
 				{decisionError && !rejectPanelOpen ? <SectionError message={decisionError} /> : null}
@@ -328,31 +349,46 @@ export function TodayApprovalsPanel({
 						))}
 					</ul>
 				) : null}
-				{truncated && !error && !stale ? (
-					// The briefing lists the first page; the inbox holds the rest.
+				{(truncated || (incomplete && total > 0)) && !error && !stale ? (
+					// The briefing lists the first page; the inbox holds the rest. With a failed source,
+					// the total is a lower bound, so even a list as long as it may not be complete.
 					<p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
 						{items.length > 0 ? (
 							<>
 								<span>
-									{t(
-										"today.approvals.truncated",
-										"Showing {shown} of {total, plural, one {# pending approval} other {# pending approvals}}.",
-										{ shown: items.length, total },
-									)}
+									{incomplete
+										? t(
+												"today.approvals.truncatedAtLeast",
+												"Showing {shown} of at least {total, plural, one {# pending approval} other {# pending approvals}}.",
+												{ shown: items.length, total },
+											)
+										: t(
+												"today.approvals.truncated",
+												"Showing {shown} of {total, plural, one {# pending approval} other {# pending approvals}}.",
+												{ shown: items.length, total },
+											)}
 								</span>
 								<Link href="/approvals/inbox" className="font-medium underline underline-offset-4">
-									{t("today.approvals.openInboxForRest", "Open the inbox to see the rest")}
+									{truncated
+										? t("today.approvals.openInboxForRest", "Open the inbox to see the rest")
+										: t("today.approvals.openInboxLink", "Open the inbox")}
 								</Link>
 							</>
 						) : (
 							// Nothing could be listed here, so don't say "Showing 0 of N".
 							<>
 								<span>
-									{t(
-										"today.approvals.waitingInInbox",
-										"{total, plural, one {# pending approval is} other {# pending approvals are}} waiting in the inbox.",
-										{ total },
-									)}
+									{incomplete
+										? t(
+												"today.approvals.waitingInInboxAtLeast",
+												"At least {total, plural, one {# pending approval is} other {# pending approvals are}} waiting in the inbox.",
+												{ total },
+											)
+										: t(
+												"today.approvals.waitingInInbox",
+												"{total, plural, one {# pending approval is} other {# pending approvals are}} waiting in the inbox.",
+												{ total },
+											)}
 								</span>
 								<Link href="/approvals/inbox" className="font-medium underline underline-offset-4">
 									{t("today.approvals.openInboxLink", "Open the inbox")}
@@ -361,11 +397,7 @@ export function TodayApprovalsPanel({
 						)}
 					</p>
 				) : null}
-				{items.length === 0 &&
-				total === 0 &&
-				unavailableTypeNames.length === 0 &&
-				!error &&
-				!stale ? (
+				{items.length === 0 && total === 0 && !incomplete && !error && !stale ? (
 					<p className="rounded-lg border border-dashed bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
 						{t("today.approvals.empty", "No approvals are waiting.")}
 					</p>

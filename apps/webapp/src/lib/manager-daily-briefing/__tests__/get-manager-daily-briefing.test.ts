@@ -348,6 +348,33 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(briefing.sections.approvals.unavailableTypes).toEqual(["travel_expense_claim"]);
 	});
 
+	it("names the approval types the inbox listed but could not count, apart from those it could not list", async () => {
+		const shown = [
+			createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+		];
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue(
+				Object.assign(shown, {
+					totalCount: 0,
+					unavailableTypes: ["period_submission"],
+					uncountedTypes: ["absence_entry"],
+				}),
+			),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.summary.openApprovals).toBe(1);
+		expect(briefing.sections.approvals.unavailableTypes).toEqual(["period_submission"]);
+		expect(briefing.sections.approvals.uncountedTypes).toEqual(["absence_entry"]);
+	});
+
 	it("names no unavailable approval types when the inbox listed every one", async () => {
 		const briefing = await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
@@ -358,6 +385,7 @@ describe("getManagerDailyBriefingFromSources", () => {
 		});
 
 		expect(briefing.sections.approvals.unavailableTypes).toBeUndefined();
+		expect(briefing.sections.approvals.uncountedTypes).toBeUndefined();
 	});
 
 	it("carries the inbox item's approve and reject capabilities", async () => {

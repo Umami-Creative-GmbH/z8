@@ -629,7 +629,9 @@ describe("TodayApprovalsPanel", () => {
 		);
 		fireEvent.click(within(alert).getByRole("button", { name: "Retry approvals" }));
 		expect(onRetry).toHaveBeenCalledTimes(1);
-		expect(screen.getByText("3")).toBeTruthy();
+		// The failed source may hold more than it counted: a lower bound, never an exact total.
+		expect(screen.getByText("3+")).toBeTruthy();
+		expect(screen.getByText("At least 3 pending approvals are waiting in the inbox.")).toBeTruthy();
 		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
 	});
 
@@ -699,6 +701,72 @@ describe("TodayApprovalsPanel", () => {
 		expect(screen.getByRole("alert").textContent).toContain(
 			"Some approvals could not be loaded: Travel Expenses.",
 		);
+		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
+	});
+
+	it("says a type whose count failed could not be counted, and never presents its list as complete", () => {
+		const onRetry = vi.fn();
+		const items = Array.from({ length: 3 }, (_, index) =>
+			approvalItem({ id: `approval:${index}`, approvalId: `approval-${index}` }),
+		);
+		// The failed count came back as 0: the total is only the rows in hand.
+		render(
+			<TodayApprovalsPanel
+				items={items}
+				total={3}
+				uncountedTypes={["absence_entry"]}
+				onRetry={onRetry}
+			/>,
+		);
+
+		const alert = screen.getByRole("alert");
+		expect(alert.textContent).toContain(
+			"Some approvals could not be counted: Absence Requests. The total may be incomplete.",
+		);
+		expect(alert.textContent).not.toContain("could not be loaded");
+		fireEvent.click(within(alert).getByRole("button", { name: "Retry approvals" }));
+		expect(onRetry).toHaveBeenCalledTimes(1);
+		expect(screen.getByText("3+")).toBeTruthy();
+		expect(screen.getByText("Showing 3 of at least 3 pending approvals.")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Open the inbox" }).getAttribute("href")).toBe(
+			"/approvals/inbox",
+		);
+	});
+
+	it("names both kinds of failure, each in its own words", () => {
+		render(
+			<TodayApprovalsPanel
+				items={[approvalItem()]}
+				total={5}
+				unavailableTypes={["period_submission"]}
+				uncountedTypes={["absence_entry", "travel_expense_claim"]}
+				onRetry={vi.fn()}
+			/>,
+		);
+
+		const alert = screen.getByRole("alert");
+		expect(alert.textContent).toContain(
+			"Some approvals could not be loaded: Period Submissions. The list and total may be incomplete.",
+		);
+		expect(alert.textContent).toContain(
+			"Some approvals could not be counted: Absence Requests and Travel Expenses. The total may be incomplete.",
+		);
+		expect(screen.getAllByRole("button", { name: "Retry approvals" })).toHaveLength(1);
+		expect(screen.getByText("Showing 1 of at least 5 pending approvals.")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Open the inbox to see the rest" })).toBeTruthy();
+	});
+
+	it("says at least how many wait in the inbox when a failed source leaves none listed", () => {
+		render(<TodayApprovalsPanel items={[]} total={1} uncountedTypes={["absence_entry"]} />);
+
+		expect(screen.getByText("At least 1 pending approval is waiting in the inbox.")).toBeTruthy();
+		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
+	});
+
+	it("never claims no approvals wait when a type's count failed and none are listed", () => {
+		render(<TodayApprovalsPanel items={[]} total={0} uncountedTypes={["absence_entry"]} />);
+
+		expect(screen.getByRole("alert").textContent).toContain("could not be counted");
 		expect(screen.queryByText("No approvals are waiting.")).toBeNull();
 	});
 

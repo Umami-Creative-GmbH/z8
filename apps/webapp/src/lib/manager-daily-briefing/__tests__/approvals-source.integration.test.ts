@@ -5,10 +5,12 @@
  * requested organization.
  */
 import { randomUUID } from "node:crypto";
+import { Effect } from "effect";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
 import type { ApprovalInboxListParams } from "@/lib/approvals/inbox/read-service";
+import type { ApprovalInboxSourceFailure } from "@/lib/approvals/inbox/types";
 import type { PrincipalContext } from "@/lib/authorization";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
@@ -28,7 +30,9 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 // The inbox reads the briefing asks for, as it asks for them.
 const inboxReads = vi.hoisted(() => [] as ApprovalInboxListParams[]);
 // Warnings the next inbox read reports besides its own, as when a source's list read fails.
-const extraInboxWarnings = vi.hoisted(() => [] as Array<{ source: string; message: string }>);
+const extraInboxWarnings = vi.hoisted(
+	() => [] as Array<{ source: string; message: string; failure?: ApprovalInboxSourceFailure }>,
+);
 vi.mock("@/lib/approvals/inbox/read-service", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/lib/approvals/inbox/read-service")>();
 	return {
@@ -523,6 +527,39 @@ describe("manager daily briefing approvals source", () => {
 
 		expect(partial.unavailableTypes).toEqual(["travel_expense_claim"]);
 		expect(partial.totalCount).toBe(complete.totalCount);
+	});
+
+	it("names a type whose count read failed as not counted, apart from those it could not list", async () => {
+		signIn(manager, { membership: "member", role: "manager" });
+		await import("@/lib/approvals/init");
+		const { getApprovalHandler } = await import("@/lib/approvals/domain/registry");
+		const absences = getApprovalHandler("absence_entry");
+		if (!absences) throw new Error("no absence handler");
+		// The absence list reads; only its count fails, so the total misses its approvals.
+		const failedCount = vi
+			.spyOn(absences, "getCount")
+			.mockReturnValue(Effect.fail(new Error("count read failed")) as never);
+		// A "Covering for" header count is no total of the briefing's.
+		extraInboxWarnings.push({
+			source: "travel_expense_claim",
+			message: "Travel Expenses approvals of a section could not be counted.",
+			failure: "covering_count",
+		});
+		try {
+			const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
+				organizationId,
+				employeeIds: [requester.employeeId],
+				viewer: { id: manager.employeeId, role: "manager" },
+			});
+
+			expect(approvals.uncountedTypes).toEqual(["absence_entry"]);
+			expect(approvals.unavailableTypes).toBeUndefined();
+			// Its row still lists; only the total misses it.
+			expect(summarize(approvals).map(({ entityId }) => entityId)).toContain(seeded.absenceId);
+			expect(approvals.totalCount).toBe(3);
+		} finally {
+			failedCount.mockRestore();
+		}
 	});
 
 	it("reads no Covering for sections it would discard", async () => {

@@ -96,6 +96,11 @@ export interface ManagerDailyBriefing {
 			 * the panel names them instead of claiming nothing waits.
 			 */
 			unavailableTypes?: string[];
+			/**
+			 * The approval types the inbox listed but could not count (#1980): the total misses
+			 * them, so the panel shows it as a lower bound instead of a complete list.
+			 */
+			uncountedTypes?: string[];
 		};
 		attendance: BriefingSection;
 		absences: BriefingSection;
@@ -153,12 +158,14 @@ export interface BriefingCoverageRule {
 export type BriefingApproval = ApprovalInboxItem;
 
 /**
- * A page of approvals; `totalCount` is every match before the page, when known, and
- * `unavailableTypes` the types whose items could not be listed.
+ * A page of approvals; `totalCount` is every match before the page, when known,
+ * `unavailableTypes` the types whose items could not be listed, and `uncountedTypes` those
+ * whose items listed but whose count failed, so `totalCount` misses them.
  */
 export type BriefingApprovalBatch = BriefingApproval[] & {
 	totalCount?: number;
 	unavailableTypes?: string[];
+	uncountedTypes?: string[];
 };
 
 export function approvalToBriefingItem(approval: BriefingApproval): BriefingApprovalActionItem {
