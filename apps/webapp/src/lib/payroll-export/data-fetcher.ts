@@ -15,6 +15,7 @@ import {
 	workCategory,
 } from "@/db";
 import { timeRecord } from "@/db/schema";
+import { CONTRACTOR_UNAVAILABILITY_TYPE } from "@/lib/absences/absence-types";
 import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
@@ -319,7 +320,7 @@ export async function fetchAbsencesForExport(
 
 	// An External Contractor's unavailability is a calendar marker, never a payroll absence (#1996).
 	const payrollAbsences = absences.filter(
-		(a) => a.absence?.absenceCategory?.type !== "contractor_unavailability",
+		(a) => a.absence?.absenceCategory?.type !== CONTRACTOR_UNAVAILABILITY_TYPE,
 	);
 	// Only the employee days of an absence are payroll absence days (#1997).
 	const employeeTime = await loadEmployeeTime(
@@ -533,7 +534,7 @@ export async function getAbsenceCategories(organizationId: string) {
 			eq(absenceCategory.organizationId, organizationId),
 			eq(absenceCategory.isActive, true),
 			// An External Contractor's unavailability is never a payroll absence (#1996).
-			ne(absenceCategory.type, "contractor_unavailability"),
+			ne(absenceCategory.type, CONTRACTOR_UNAVAILABILITY_TYPE),
 		),
 		columns: {
 			id: true,

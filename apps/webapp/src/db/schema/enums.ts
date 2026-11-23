@@ -1,4 +1,5 @@
 import { pgEnum } from "drizzle-orm/pg-core";
+import { absenceTypes } from "@/lib/absences/absence-types";
 import {
 	APPROVAL_ACTOR_KINDS,
 	APPROVAL_ASSIGNMENT_STATUSES,
@@ -17,20 +18,7 @@ import {
 // ============================================
 
 export const roleEnum = pgEnum("role", ["admin", "manager", "employee"]);
-export const absenceTypeEnum = pgEnum("absence_type", [
-	"home_office",
-	"sick",
-	"vacation",
-	"personal",
-	"unpaid",
-	"parental",
-	"bereavement",
-	"custom",
-	// Built-in category drawing on the work balance (#1000)
-	"time_off_in_lieu",
-	// An External Contractor's calendar unavailability: never vacation, sick leave or payroll (#1996)
-	"contractor_unavailability",
-]);
+export const absenceTypeEnum = pgEnum("absence_type", absenceTypes);
 export const approvalStatusEnum = pgEnum("approval_status", [
 	"pending",
 	"approved",

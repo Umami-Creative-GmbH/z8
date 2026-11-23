@@ -1,17 +1,8 @@
 import type { LocaleTranslationMap } from "@/db/schema/absence";
+import type { AbsenceType } from "./absence-types";
 import { builtInAbsenceCategoryTranslations } from "./built-in-category-translations";
 
-export type AbsenceCategoryDisplayType =
-	| "home_office"
-	| "sick"
-	| "vacation"
-	| "personal"
-	| "unpaid"
-	| "parental"
-	| "bereavement"
-	| "custom"
-	| "time_off_in_lieu"
-	| "contractor_unavailability";
+export type AbsenceCategoryDisplayType = AbsenceType;
 
 type TranslateFn = (key: string, fallback: string) => string;
 

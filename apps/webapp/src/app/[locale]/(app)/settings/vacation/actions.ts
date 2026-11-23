@@ -19,6 +19,7 @@ import {
 	vacationAllowance,
 } from "@/db/schema";
 import type { LocaleTranslationMap } from "@/db/schema/absence";
+import { type AbsenceType, absenceTypes } from "@/lib/absences/absence-types";
 import {
 	CONTRACTOR_UNAVAILABILITY_RULES,
 	findAbsenceCategoryRuleConflict,
@@ -49,30 +50,9 @@ import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-track
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { findManagedEmployee } from "./managed-employee";
 
-export type AbsenceCategoryType =
-	| "home_office"
-	| "sick"
-	| "vacation"
-	| "personal"
-	| "unpaid"
-	| "parental"
-	| "bereavement"
-	| "custom"
-	| "time_off_in_lieu"
-	| "contractor_unavailability";
+export type AbsenceCategoryType = AbsenceType;
 
-const absenceCategoryTypeSchema = z.enum([
-	"home_office",
-	"sick",
-	"vacation",
-	"personal",
-	"unpaid",
-	"parental",
-	"bereavement",
-	"custom",
-	"time_off_in_lieu",
-	"contractor_unavailability",
-]);
+const absenceCategoryTypeSchema = z.enum(absenceTypes);
 
 const translationMapSchema = z.record(z.string(), z.string()).nullish();
 

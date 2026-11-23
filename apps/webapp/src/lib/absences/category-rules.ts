@@ -1,4 +1,5 @@
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
+import { CONTRACTOR_UNAVAILABILITY_TYPE } from "./absence-types";
 
 /** The rules of an absence category that decide what its approved absences do. */
 export interface AbsenceCategoryRules {
@@ -24,11 +25,7 @@ export function findAbsenceCategoryRuleConflict(
 	return null;
 }
 
-/**
- * The category type an External Contractor records unavailability with (#1996): a calendar
- * marker only. It is never vacation, sick leave, time off in lieu or a payroll absence.
- */
-export const CONTRACTOR_UNAVAILABILITY_TYPE = "contractor_unavailability";
+export { CONTRACTOR_UNAVAILABILITY_TYPE };
 
 export function isContractorUnavailabilityType(type: string | null | undefined): boolean {
 	return type === CONTRACTOR_UNAVAILABILITY_TYPE;
