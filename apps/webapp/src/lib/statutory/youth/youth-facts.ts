@@ -3,7 +3,7 @@
  * the clock-out compliance check. Every read is scoped to one organization and batched over the
  * employees judged.
  */
-import { and, eq, gte, inArray, isNull, lt, ne } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, ne, notInArray } from "drizzle-orm";
 import { employee, shift, workPeriod } from "@/db/schema";
 import {
 	getAssignedHolidayDateKeys,
@@ -125,6 +125,7 @@ export async function loadYouthShifts(
 		readonly from: string;
 		readonly until: string;
 		readonly excludeShiftId?: string | null;
+		readonly excludeShiftIds?: readonly string[];
 	},
 ): Promise<YouthShiftRecord[]> {
 	if (input.employeeIds.length === 0) return [];
@@ -136,6 +137,9 @@ export async function loadYouthShifts(
 		lt(shift.date, bounds.endExclusive),
 	];
 	if (input.excludeShiftId) conditions.push(ne(shift.id, input.excludeShiftId));
+	if (input.excludeShiftIds?.length) {
+		conditions.push(notInArray(shift.id, [...input.excludeShiftIds]));
+	}
 	const rows = await db
 		.select({
 			id: shift.id,

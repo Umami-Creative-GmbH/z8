@@ -79,6 +79,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		from: context.window.start,
 		until: context.window.endExclusive,
 		excludeShiftId: context.replacesShiftId,
+		excludeShiftIds: context.excludedShiftIds,
 	});
 	const planned: PlannedWork[] = [
 		...shifts.map((shift) => ({ ...shift, ref: `shift:${shift.id}` })),

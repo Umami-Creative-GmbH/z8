@@ -210,6 +210,55 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		expect(await shiftStatus(late)).toBe("published");
 	});
 
+	it("publishes another employee's drafts past a minor's already published blocked shift", async () => {
+		await seed.blockJarbschgPublish(org);
+		const minor = await fx.employee(org, "saturday", { birthday: "2011-01-01" });
+		const adult = await fx.employee(org, "weekday", { birthday: "1990-01-01" });
+		await seed.shift(org, minor, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: "2027-03-06",
+			startTime: "18:00",
+			endTime: "23:00",
+			status: "published",
+		});
+		const draft = await shift(adult, "2027-03-02", "09:00", "17:00");
+		expect((await evaluateWeek()).findings).toContainEqual(
+			expect.objectContaining({ employeeId: minor.employeeId, blocksPublication: true }),
+		);
+
+		const handshake = await publishShifts(WEEK);
+		if (!handshake.success) throw new Error(`publish refused: ${handshake.error}`);
+		const published = handshake.data.published
+			? handshake
+			: await publishShifts(WEEK, { evaluationFingerprint: handshake.data.evaluationFingerprint });
+		expect(published).toMatchObject({ success: true, data: { published: true, count: 1 } });
+		expect(await shiftStatus(draft)).toBe("published");
+	});
+
+	it("refuses publishing a draft that newly breaks a limit on a published shift", async () => {
+		await seed.blockJarbschgPublish(org);
+		const minor = await fx.employee(org, "early", { birthday: "2011-01-01" });
+		await seed.shift(org, minor, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: "2027-03-02",
+			startTime: "06:00",
+			endTime: "10:00",
+			status: "published",
+		});
+		// Monday until 19:30 leaves 10.5 h of rest before Tuesday 06:00: the breach lies on Tuesday.
+		const monday = await shift(minor, "2027-03-01", "15:30", "19:30");
+		expect((await evaluateWeek()).findings).toContainEqual(
+			expect.objectContaining({ statutoryKind: "jarbschg_rest_period", blocksPublication: true }),
+		);
+		expect(await publishShifts(WEEK)).toMatchObject({
+			success: false,
+			refusal: STATUTORY_PUBLICATION_BLOCKED,
+		});
+		expect(await shiftStatus(monday)).toBe("draft");
+	});
+
 	it("keeps hard limits blocking: a sector exception cannot lift a too-long day", async () => {
 		await seed.blockJarbschgPublish(org);
 		const minor = await fx.employee(org, "long", { birthday: "2011-01-01" });

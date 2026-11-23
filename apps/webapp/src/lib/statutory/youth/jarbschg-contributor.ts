@@ -75,6 +75,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		employeeIds: minors,
 		...range,
 		excludeShiftId: context.replacesShiftId,
+		excludeShiftIds: context.excludedShiftIds,
 	});
 	const work = await loadYouthWork(context.db, {
 		organizationId: context.organizationId,

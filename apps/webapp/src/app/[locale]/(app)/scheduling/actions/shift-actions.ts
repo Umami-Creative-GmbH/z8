@@ -27,6 +27,7 @@ import {
 	STATUTORY_PUBLICATION_BLOCKED,
 	statutoryPublicationRefusal,
 } from "@/lib/statutory/scheduling/publication-block";
+import { findingsBlockingPublication } from "@/lib/statutory/scheduling/publish-blocking";
 import {
 	loadUpcomingShifts,
 	UPCOMING_SHIFTS_LIMIT,
@@ -299,7 +300,20 @@ export async function publishShifts(
 			organizationId: currentEmployee.organizationId,
 			session,
 		});
-		const statutoryRefusal = statutoryPublicationRefusal(evaluation.findings);
+		// Only what this publication causes blocks it: findings on its drafts, or new ones they cause.
+		const blocking = yield* dbService.query("statutoryPublicationBlocking", () =>
+			findingsBlockingPublication(
+				dbService.db,
+				{
+					organizationId: currentEmployee.organizationId,
+					timezone,
+					window: { start: dateRange.startDate, endExclusive: dateRange.endDateExclusive },
+					now: systemClock.nowInstant(),
+				},
+				evaluation.findings,
+			),
+		);
+		const statutoryRefusal = statutoryPublicationRefusal(blocking);
 		if (statutoryRefusal) {
 			return yield* Effect.fail(
 				new ValidationError({

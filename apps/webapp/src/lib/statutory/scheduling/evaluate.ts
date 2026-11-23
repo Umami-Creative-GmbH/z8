@@ -23,6 +23,7 @@ export interface StatutoryScheduleRequest {
 	readonly now: Instant;
 	readonly proposedShifts?: readonly StatutoryProposedShift[];
 	readonly replacesShiftId?: string | null;
+	readonly excludedShiftIds?: readonly string[];
 }
 
 /** The wage-free Scheduling projection of a statutory finding. */
@@ -61,6 +62,7 @@ async function runContributors(
 		employeeIds: request.employeeIds,
 		proposedShifts: request.proposedShifts ?? [],
 		replacesShiftId: request.replacesShiftId ?? null,
+		excludedShiftIds: request.excludedShiftIds,
 		preferences,
 		now: request.now,
 	};
