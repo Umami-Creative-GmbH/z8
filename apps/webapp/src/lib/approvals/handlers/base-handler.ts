@@ -114,6 +114,15 @@ export function buildBaseConditions(
 		conditions.push(params.authorizationPredicate);
 	}
 
+	// Only these requesters' approvals, before any page is cut (#1980); none for an empty list.
+	if (params.requesterEmployeeIds) {
+		conditions.push(
+			params.requesterEmployeeIds.length > 0
+				? inArray(approvalRequest.requestedBy, params.requesterEmployeeIds)
+				: sql`false`,
+		);
+	}
+
 	if (!params.includeAllApprovers) {
 		const assignedApproverCondition = eq(
 			approvalRequest.approverId,
@@ -270,7 +279,7 @@ export function getApprovalCount(
 	organizationId: string,
 	visibility?: Pick<
 		ApprovalQueryParams,
-		"eligibleApprovalScopes" | "includeAllApprovers" | "coveredApproverIds"
+		"eligibleApprovalScopes" | "includeAllApprovers" | "coveredApproverIds" | "requesterEmployeeIds"
 	>,
 ): Effect.Effect<number, AnyAppError, DatabaseService> {
 	return Effect.gen(function* () {

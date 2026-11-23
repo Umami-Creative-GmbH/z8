@@ -1,4 +1,5 @@
 import { and, eq, exists, gte, inArray, lt, lte } from "drizzle-orm";
+import type { PrincipalContext } from "@/lib/authorization";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { shiftCalendarDate, shiftDateBounds } from "@/lib/scheduling/shift-date";
@@ -12,8 +13,8 @@ import {
 import type {
 	BriefingAbsence,
 	BriefingActionItem,
-	BriefingApproval,
 	BriefingApprovalActionItem,
+	BriefingApprovalBatch,
 	BriefingCoverageRule,
 	BriefingSection,
 	BriefingShift,
@@ -67,12 +68,12 @@ export type ManagerDailyBriefingSources = {
 		subareaIds?: string[];
 	}): Promise<BriefingCoverageRule[]>;
 	/**
-	 * The viewer's pending approvals as their unified Approval inbox lists them (#1980); the
-	 * briefing keeps those requested by its scoped employees.
+	 * The viewer's pending approvals as their unified Approval inbox lists them (#1980), those
+	 * requested by the scoped employees: the first page, with every match counted.
 	 */
 	getApprovals(
 		input: SourceScope & { viewer: Pick<CurrentEmployee, "id" | "role"> },
-	): Promise<BriefingApproval[]>;
+	): Promise<BriefingApprovalBatch>;
 	getOvertimeWarnings(input: SourceScope): Promise<BriefingActionItem[]>;
 	getPayrollIssues(input: SourceScope): Promise<BriefingActionItem[]>;
 	/** The scoped employees' work periods showing driving details missing (#1127). */
@@ -106,11 +107,39 @@ const SECTION_LOAD_ERROR = "Section could not be loaded.";
 
 /** The approvals the briefing shows at most; the inbox lists the rest. */
 const BRIEFING_APPROVAL_LIMIT = 25;
-/** How far into the viewer's inbox the briefing reads for its employees' approvals. */
-const BRIEFING_INBOX_READ_LIMIT = 100;
 
 function inboxViewerRole(role: string): "admin" | "manager" | "employee" {
 	return role === "admin" || role === "manager" ? role : "employee";
+}
+
+/**
+ * Whether the viewer is the session's own employee in its active organization, as the Approval
+ * inbox finds it: the principal's employee, or for a platform admin (whose principal has none)
+ * the session user's active employee there.
+ */
+async function isSessionEmployee(
+	principal: PrincipalContext,
+	input: { organizationId: string; viewer: { id: string } },
+): Promise<boolean> {
+	if (principal.activeOrganizationId !== input.organizationId) return false;
+	if (principal.employee) {
+		return (
+			principal.employee.id === input.viewer.id &&
+			principal.employee.organizationId === input.organizationId
+		);
+	}
+	if (!principal.isPlatformAdmin) return false;
+	const { db, employee } = await import("@/db");
+	const own = await db.query.employee.findFirst({
+		where: and(
+			eq(employee.id, input.viewer.id),
+			eq(employee.userId, principal.userId),
+			eq(employee.organizationId, input.organizationId),
+			eq(employee.isActive, true),
+		),
+		columns: { id: true },
+	});
+	return own !== undefined;
 }
 
 const SECTION_METADATA = {
@@ -235,7 +264,8 @@ export async function getManagerDailyBriefingFromSources({
 			)
 		: settledValue(coverageRulesResult, []);
 	const scopedEmployeeIds = new Set(employeeIds);
-	const approvalItems = settledValue(approvalsResult, []).flatMap((approval) =>
+	const approvalBatch = settledValue<BriefingApprovalBatch>(approvalsResult, []);
+	const approvalItems = approvalBatch.flatMap((approval) =>
 		scopedEmployeeIds.has(approval.requester.id) ? [approvalToBriefingItem(approval)] : [],
 	);
 	const overtimeItems = settledValue(overtimeResult, []);
@@ -308,7 +338,11 @@ export async function getManagerDailyBriefingFromSources({
 		...(drivingResult.status === "rejected"
 			? { needsActionError: "Driving details could not be checked." }
 			: {}),
-		summary: buildSummaryCounts(sectionItems),
+		summary: {
+			...buildSummaryCounts(sectionItems),
+			// Every pending approval of the briefing's employees, not only the page it shows.
+			openApprovals: approvalBatch.totalCount ?? approvalItems.length,
+		},
 		needsAction: sectionItems.needsAction,
 		sections,
 	};
@@ -592,35 +626,43 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		}
 
 		await import("@/lib/approvals/init");
-		const [{ getAbility }, { resolveApprovalInboxViewerScope }, { getApprovalInboxList }] =
-			await Promise.all([
-				import("@/lib/auth-helpers"),
-				import("@/lib/approvals/inbox/viewer-scope"),
-				import("@/lib/approvals/inbox/read-service"),
-			]);
-		const ability = await getAbility();
+		const [
+			{ getPrincipalContext },
+			{ defineAbilityFor },
+			{ resolveApprovalInboxViewerScope },
+			{ getApprovalInboxList },
+		] = await Promise.all([
+			import("@/lib/auth-helpers"),
+			import("@/lib/authorization"),
+			import("@/lib/approvals/inbox/viewer-scope"),
+			import("@/lib/approvals/inbox/read-service"),
+		]);
+		// The session's own inbox, as `/approvals/inbox` opens it: its active organization and its
+		// own employee there, or no approvals at all.
+		const principal = await getPrincipalContext();
+		if (!principal || !(await isSessionEmployee(principal, { organizationId, viewer }))) {
+			return [];
+		}
 		// The viewer's inbox exactly as `/approvals/inbox` shows it (#1977), or none at all.
-		const scope = ability
-			? await resolveApprovalInboxViewerScope({
-					ability,
-					employee: { id: viewer.id, organizationId, role: inboxViewerRole(viewer.role) },
-				})
-			: null;
+		const scope = await resolveApprovalInboxViewerScope({
+			ability: defineAbilityFor(principal),
+			employee: { id: viewer.id, organizationId, role: inboxViewerRole(viewer.role) },
+		});
 		if (!scope) {
 			return [];
 		}
 
-		// The inbox's own list, ordered by risk, priority and age; the briefing shows only its
-		// employees' requests, so it reads past those of others before keeping its first page.
+		// The inbox's own list, ordered by risk, priority and age, read for the briefing's employees
+		// alone, so others' requests never crowd theirs off the page. Its "Covering for" sections are
+		// not the briefing's, so they are not read.
 		const result = await getApprovalInboxList({
 			...scope,
+			covering: undefined,
+			requesterEmployeeIds: employeeIds,
 			status: "pending",
-			limit: BRIEFING_INBOX_READ_LIMIT,
+			limit: BRIEFING_APPROVAL_LIMIT,
 		});
-		const scopedEmployeeIds = new Set(employeeIds);
-		return result.items
-			.filter((approval) => scopedEmployeeIds.has(approval.requester.id))
-			.slice(0, BRIEFING_APPROVAL_LIMIT);
+		return Object.assign(result.items, { totalCount: result.total });
 	},
 
 	async getOvertimeWarnings() {

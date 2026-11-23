@@ -358,6 +358,7 @@ export async function getApprovalInboxListFromSources({
 				source.handler.getCount(params.approverId, params.organizationId, {
 					eligibleApprovalScopes: params.eligibleApprovalScopes,
 					includeAllApprovers: params.includeAllApprovers,
+					requesterEmployeeIds: params.requesterEmployeeIds,
 				}),
 			),
 		})),
@@ -742,6 +743,7 @@ function normalizeCanonicalFilters(
 		normalizedMinAgeDays && normalizedMinAgeDays > 0 ? normalizedMinAgeDays : undefined;
 	const filters: OrdinaryCanonicalListFilters = {
 		teamId: params.teamId || undefined,
+		requesterEmployeeIds: params.requesterEmployeeIds,
 		priority: params.priority,
 		minAgeDays,
 		dateRange: params.dateRange,

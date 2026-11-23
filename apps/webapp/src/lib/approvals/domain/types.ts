@@ -354,7 +354,10 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 		organizationId: string,
 		visibility?: Pick<
 			ApprovalQueryParams,
-			"eligibleApprovalScopes" | "includeAllApprovers" | "coveredApproverIds"
+			| "eligibleApprovalScopes"
+			| "includeAllApprovers"
+			| "coveredApproverIds"
+			| "requesterEmployeeIds"
 		>,
 	) => Effect.Effect<number, AnyAppError, ApprovalHandlerServices>;
 

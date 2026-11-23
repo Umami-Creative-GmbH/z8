@@ -36,7 +36,7 @@ import {
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { periodSubmissionHours } from "../presentation/period-submission-review";
 import type { ApprovalTriageReason } from "../triage-assessment";
-import { resultRows } from "./canonical-inbox-query";
+import { requesterEmployeeIdCondition, resultRows } from "./canonical-inbox-query";
 import type {
 	CanonicalInboxListFilters,
 	CanonicalInboxLoadInput,
@@ -190,6 +190,11 @@ function filterConditions(filters: CanonicalInboxListFilters | undefined, at: Da
 	if (!filters) return sql``;
 	const conditions: SQL[] = [];
 	if (filters.teamId) conditions.push(sql`requester.team_id = ${filters.teamId}::uuid`);
+	if (filters.requesterEmployeeIds) {
+		conditions.push(
+			requesterEmployeeIdCondition(sql`exception.employee_id`, filters.requesterEmployeeIds),
+		);
+	}
 	if (filters.priority && filters.priority !== PRIORITY) conditions.push(sql`false`);
 	if (filters.minAgeDays) {
 		conditions.push(

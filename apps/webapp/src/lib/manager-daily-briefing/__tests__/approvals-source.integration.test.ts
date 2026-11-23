@@ -8,7 +8,8 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import type { ApprovalType } from "@/lib/approvals/domain/types";
-import { type AppAbility, defineAbilityFor } from "@/lib/authorization/ability";
+import type { ApprovalInboxListParams } from "@/lib/approvals/inbox/read-service";
+import type { PrincipalContext } from "@/lib/authorization";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	type ClosedMonthDatabaseFixture,
@@ -19,11 +20,23 @@ import { managerDailyBriefingDatabaseSources } from "../get-manager-daily-briefi
 import type { BriefingApproval } from "../types";
 
 // The request's session principal; the briefing resolves the viewer's inbox scope from it.
-const session = vi.hoisted(() => ({ ability: null as AppAbility | null }));
+const session = vi.hoisted(() => ({ principal: null as PrincipalContext | null }));
 vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/auth-helpers")>()),
-	getAbility: async () => session.ability,
+	getPrincipalContext: async () => session.principal,
 }));
+// The inbox reads the briefing asks for, as it asks for them.
+const inboxReads = vi.hoisted(() => [] as ApprovalInboxListParams[]);
+vi.mock("@/lib/approvals/inbox/read-service", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/approvals/inbox/read-service")>();
+	return {
+		...actual,
+		getApprovalInboxList: async (params: ApprovalInboxListParams) => {
+			inboxReads.push(params);
+			return actual.getApprovalInboxList(params);
+		},
+	};
+});
 
 const SUBMITTED_AT = new Date("2026-10-01T08:00:00Z");
 
@@ -62,7 +75,7 @@ describe("manager daily briefing approvals source", () => {
 		access: { membership: "admin" | "member"; role: "admin" | "manager" | "employee" },
 		organization = organizationId,
 	) {
-		session.ability = defineAbilityFor({
+		session.principal = {
 			userId: viewer.userId,
 			isPlatformAdmin: false,
 			activeOrganizationId: organization,
@@ -76,7 +89,47 @@ describe("manager daily briefing approvals source", () => {
 			permissions: { orgWide: null, byTeamId: new Map() },
 			managedEmployeeIds: [],
 			customRoles: [],
-		});
+		};
+	}
+
+	/** A platform admin's session: no employee of its own in the principal. */
+	function signInAsPlatformAdmin(userId: string) {
+		session.principal = {
+			userId,
+			isPlatformAdmin: true,
+			activeOrganizationId: organizationId,
+			orgMembership: null,
+			employee: null,
+			permissions: { orgWide: null, byTeamId: new Map() },
+			managedEmployeeIds: [],
+			customRoles: [],
+		};
+	}
+
+	/** Pending absences of `requesterEmployeeId` for the manager, submitted long before the rest. */
+	async function seedEarlierPendingAbsences(requesterEmployeeId: string, count: number) {
+		const categoryId = randomUUID();
+		const submittedAt = new Date("2026-01-05T08:00:00Z");
+		await fixture.pool.query(
+			`insert into absence_category (id, organization_id, type, name, requires_work_time,
+				requires_approval, counts_against_vacation, is_active, created_at, updated_at)
+			 values ($1, $2, 'vacation', 'Vacation', false, true, true, true, $3, $3)`,
+			[categoryId, organizationId, submittedAt],
+		);
+		await fixture.pool.query(
+			`with absences as (
+				insert into absence_entry (id, employee_id, category_id, start_date, end_date, status,
+					organization_id, created_at, updated_at)
+				select gen_random_uuid(), $1, $2, '2026-01-12', '2026-01-12', 'pending', $3, $4, $4
+				from generate_series(1, $5)
+				returning id
+			)
+			insert into approval_request (id, organization_id, entity_type, entity_id, requested_by,
+				approver_id, status, created_at, updated_at)
+			select gen_random_uuid(), $3, 'absence_entry', absences.id, $1, $6, 'pending', $4, $4
+			from absences`,
+			[requesterEmployeeId, categoryId, organizationId, submittedAt, count, manager.employeeId],
+		);
 	}
 
 	async function seedPendingAbsence(input: {
@@ -246,7 +299,7 @@ describe("manager daily briefing approvals source", () => {
 	});
 
 	afterAll(async () => {
-		session.ability = null;
+		session.principal = null;
 		await fixture?.close();
 	});
 
@@ -284,7 +337,8 @@ describe("manager daily briefing approvals source", () => {
 
 		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
 			organizationId,
-			employeeIds: [requester.employeeId],
+			// The other tenant's requester never widens an organization-wide read.
+			employeeIds: [requester.employeeId, foreignRequester.employeeId],
 			viewer: { id: admin.employeeId, role: "admin" },
 		});
 
@@ -306,5 +360,91 @@ describe("manager daily briefing approvals source", () => {
 		});
 
 		expect(approvals).toEqual([]);
+	});
+
+	it("lists nothing when the session's active organization is not the requested one", async () => {
+		signIn(manager, { membership: "member", role: "manager" }, foreignOrganizationId);
+
+		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: manager.employeeId, role: "manager" },
+		});
+
+		expect(approvals).toEqual([]);
+	});
+
+	it("lists nothing when the session's employee is not the viewer", async () => {
+		signIn(admin, { membership: "admin", role: "admin" });
+
+		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: manager.employeeId, role: "manager" },
+		});
+
+		expect(approvals).toEqual([]);
+	});
+
+	it("reads a platform admin's inbox only for their own employee, as the inbox does", async () => {
+		signInAsPlatformAdmin(admin.userId);
+		const own = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: admin.employeeId, role: "admin" },
+		});
+		expect(summarize(own).map(({ entityId }) => entityId)).toContain(seeded.absenceId);
+
+		signInAsPlatformAdmin(ownerUserId);
+		const someoneElses = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: admin.employeeId, role: "admin" },
+		});
+		expect(someoneElses).toEqual([]);
+	});
+
+	it("reads no Covering for sections it would discard", async () => {
+		signIn(manager, { membership: "member", role: "manager" });
+		inboxReads.length = 0;
+
+		await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: manager.employeeId, role: "manager" },
+		});
+
+		expect(inboxReads).toHaveLength(1);
+		expect(inboxReads[0]?.covering).toBeUndefined();
+	});
+
+	it("keeps the briefing's employees' approvals behind a full page of others' that sort first", async () => {
+		await seedEarlierPendingAbsences(unmanaged.employeeId, 120);
+		signIn(manager, { membership: "member", role: "manager" });
+		// The manager's whole inbox opens with the others' requests: a page of 100 holds none of
+		// the requester's absence.
+		const { getApprovalInboxList } = await import("@/lib/approvals/inbox/read-service");
+		const wholeInbox = await getApprovalInboxList({
+			approverId: manager.employeeId,
+			organizationId,
+			status: "pending",
+			limit: 100,
+		});
+		expect(wholeInbox.items.map((item) => item.entityId)).not.toContain(seeded.absenceId);
+
+		const approvals = await managerDailyBriefingDatabaseSources.getApprovals({
+			organizationId,
+			employeeIds: [requester.employeeId],
+			viewer: { id: manager.employeeId, role: "manager" },
+		});
+
+		expect(summarize(approvals).map(({ type, entityId }) => ({ type, entityId }))).toEqual([
+			{ type: "absence_entry", entityId: seeded.absenceId },
+			{ type: "compliance_exception", entityId: seeded.exceptionId },
+			{ type: "period_submission", entityId: seeded.periodSubmissionId },
+			{ type: "travel_expense_claim", entityId: seeded.claimId },
+		]);
+		// Every pending approval of the briefing's employees, however many the briefing shows.
+		expect(approvals.totalCount).toBe(4);
 	});
 });

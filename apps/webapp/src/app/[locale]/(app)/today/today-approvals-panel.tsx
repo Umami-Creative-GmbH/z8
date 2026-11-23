@@ -62,6 +62,8 @@ export function TodayApprovalsPanel({
 	const [rejectReason, setRejectReason] = useState("");
 	const isBusy = actingApprovalId !== null || isRefreshPending;
 	const decisionsOff = isBusy || Boolean(error) || stale;
+	// The panel's own rejection is on its way: neither Cancel nor Escape may drop it.
+	const rejectionPending = rejecting !== null && actingApprovalId === rejecting.approvalId;
 
 	/** Settles true only when the decision was saved for this view. */
 	function decideApproval(
@@ -116,6 +118,8 @@ export function TodayApprovalsPanel({
 
 	function openRejectPanel(item: BriefingApprovalActionItem) {
 		if (decisionsOff) return;
+		// The panel shows only this rejection's outcome.
+		setDecisionError(null);
 		setRejectReason("");
 		setRejecting(item);
 	}
@@ -156,7 +160,8 @@ export function TodayApprovalsPanel({
 			</CardHeader>
 			<CardContent className="space-y-3">
 				{error ? <SectionError message={error} onRetry={onRetry} /> : null}
-				{decisionError ? <SectionError message={decisionError} /> : null}
+				{/* While the reject panel is open, it shows the decision's outcome itself. */}
+				{decisionError && !rejecting ? <SectionError message={decisionError} /> : null}
 				{error && items.length > 0 ? (
 					<p role="status" className="text-sm text-muted-foreground">
 						{t(
@@ -203,20 +208,23 @@ export function TodayApprovalsPanel({
 									</p>
 								) : (
 									<div className="flex shrink-0 gap-2">
-										<Button
-											aria-label={t("today.approvals.rejectLabel", "Reject {title}", {
-												title: item.title,
-											})}
-											disabled={decisionsOff}
-											onClick={() => openRejectPanel(item)}
-											size="sm"
-											type="button"
-											variant="outline"
-										>
-											{t("today.approvals.reject", "Reject")}
-										</Button>
-										{item.requiresDetailReview ? (
-											// Its approval needs acceptances only the inbox's detail view collects.
+										{item.canReject ? (
+											<Button
+												aria-label={t("today.approvals.rejectLabel", "Reject {title}", {
+													title: item.title,
+												})}
+												disabled={decisionsOff}
+												onClick={() => openRejectPanel(item)}
+												size="sm"
+												type="button"
+												variant="outline"
+											>
+												{t("today.approvals.reject", "Reject")}
+											</Button>
+										) : null}
+										{item.requiresDetailReview || !item.canApprove ? (
+											// The inbox approves it only in its detail view (acceptances to collect,
+											// a decision it blocks), or not from the list at all.
 											<Button asChild size="sm">
 												<Link
 													aria-label={t(
@@ -256,7 +264,8 @@ export function TodayApprovalsPanel({
 			<ActionPanel
 				open={rejecting !== null}
 				onOpenChange={(open) => {
-					if (!open && actingApprovalId === null) closeRejectPanel();
+					// Escape and the backdrop close it exactly when Cancel does.
+					if (!open && !rejectionPending) closeRejectPanel();
 				}}
 			>
 				<ActionPanelContent size="compact">
@@ -278,14 +287,16 @@ export function TodayApprovalsPanel({
 									<p className="break-words font-medium text-sm">{rejecting.title}</p>
 									<p className="break-words text-muted-foreground text-sm">{rejecting.summary}</p>
 								</div>
+								{decisionError ? <SectionError message={decisionError} /> : null}
 								<ApprovalReasonForm
 									key={rejecting.approvalId}
 									reason={rejectReason}
 									onReasonChange={setRejectReason}
 									onCancel={closeRejectPanel}
 									onConfirm={confirmRejection}
-									canReject={!error && !stale && !decided.has(rejecting.approvalId)}
-									isPending={actingApprovalId === rejecting.approvalId}
+									// Off while any decision or refresh is under way, so confirming never does nothing.
+									canReject={!decisionsOff && !decided.has(rejecting.approvalId)}
+									isPending={rejectionPending}
 								/>
 							</>
 						) : null}

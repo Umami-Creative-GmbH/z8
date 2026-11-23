@@ -1,10 +1,15 @@
 /* @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { Activity } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { TodayApprovalsPanel } from "./today-approvals-panel";
+import {
+	TodayDecisionReservations,
+	useTodayDecisionReservation,
+} from "./today-decision-reservations";
 
 const { refreshMock, toastErrorMock, toastSuccessMock } = vi.hoisted(() => ({
 	refreshMock: vi.fn(),
@@ -215,6 +220,118 @@ describe("TodayApprovalsPanel", () => {
 		expect(screen.getByRole("button", { name: "Reject Expense report" })).toBeTruthy();
 	});
 
+	it("sends a manager to the inbox for an item the inbox will not approve from the list", () => {
+		render(
+			<TodayApprovalsPanel
+				items={[approvalItem({ title: "Blocked absence", canApprove: false, canReject: true })]}
+			/>,
+		);
+
+		expect(screen.queryByRole("button", { name: "Approve Blocked absence" })).toBeNull();
+		expect(screen.getByRole("link", { name: "Review Blocked absence in inbox" })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Reject Blocked absence" })).toBeTruthy();
+	});
+
+	it("offers no decision at all on an item the inbox lets no one decide from the list", () => {
+		render(
+			<TodayApprovalsPanel
+				items={[
+					approvalItem({
+						title: "Time correction",
+						approvalType: "time_entry",
+						href: "/approvals/inbox?types=time_entry",
+						canApprove: false,
+						canReject: false,
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.queryByRole("button", { name: "Approve Time correction" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Reject Time correction" })).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "Review Time correction in inbox" }).getAttribute("href"),
+		).toBe("/approvals/inbox?types=time_entry");
+	});
+
+	it("offers Approve but no Reject when the inbox refuses only the rejection", () => {
+		render(
+			<TodayApprovalsPanel
+				items={[approvalItem({ title: "Sick day", canApprove: true, canReject: false })]}
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "Approve Sick day" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Reject Sick day" })).toBeNull();
+	});
+
+	it("holds the rejection confirm while another approval's decision is pending", () => {
+		const other = renderWithSharedReservations([approvalItem()]);
+		const panel = startRejection();
+		const confirm = within(panel).getByRole("button", { name: "Confirm Rejection" });
+		expect(confirm.hasAttribute("disabled")).toBe(false);
+
+		let held!: object;
+		act(() => {
+			held = other().reserve("approval-elsewhere") as object;
+		});
+		expect(confirm.hasAttribute("disabled")).toBe(true);
+
+		act(() => other().release(held));
+		expect(confirm.hasAttribute("disabled")).toBe(false);
+	});
+
+	it("closes on Escape as Cancel does while another approval's decision is pending", async () => {
+		const other = renderWithSharedReservations([approvalItem()]);
+		const panel = startRejection();
+		act(() => {
+			other().reserve("approval-elsewhere");
+		});
+		expect(within(panel).getByRole("button", { name: "Cancel" }).hasAttribute("disabled")).toBe(
+			false,
+		);
+
+		fireEvent.keyDown(panel, { key: "Escape" });
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	});
+
+	it("stays open on Escape, as Cancel is off, while its own rejection is pending", async () => {
+		let complete!: (value: unknown) => void;
+		vi.mocked(global.fetch).mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		render(<TodayApprovalsPanel items={[approvalItem()]} />);
+		const panel = startRejection();
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+		await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+
+		expect(within(panel).getByRole("button", { name: "Cancel" }).hasAttribute("disabled")).toBe(
+			true,
+		);
+		fireEvent.keyDown(panel, { key: "Escape" });
+		expect(screen.getByRole("dialog", { name: "Reject request" })).toBeTruthy();
+
+		await act(async () => complete({ ok: true, json: async () => ({ success: true }) }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	});
+
+	it("shows a failed rejection inside the panel as an alert", async () => {
+		global.fetch = vi.fn().mockResolvedValue({
+			ok: false,
+			json: async () => ({ success: false, error: "Already decided" }),
+		}) as unknown as typeof fetch;
+		render(<TodayApprovalsPanel items={[approvalItem()]} />);
+		const panel = startRejection();
+
+		fireEvent.click(within(panel).getByRole("button", { name: "Confirm Rejection" }));
+
+		expect((await within(panel).findByRole("alert")).textContent).toContain("Already decided");
+	});
+
 	it("keeps the row visible when approval fails", async () => {
 		global.fetch = vi.fn().mockResolvedValue({
 			ok: true,
@@ -324,6 +441,41 @@ function approvalItem(
 		entityId: "absence-1",
 		requesterName: "Ada Lovelace",
 		summary: "Vacation on Apr 28",
+		canApprove: true,
+		canReject: true,
 		...overrides,
 	};
+}
+
+type HeldReservation = ReturnType<typeof useTodayDecisionReservation>;
+
+/** Another /today surface sharing the panel's decision reservations. */
+function ReservationHolder({ onReady }: { onReady: (reservations: HeldReservation) => void }) {
+	const reservations = useTodayDecisionReservation();
+	onReady(reservations);
+	return null;
+}
+
+/** The panel among the page's shared decision reservations, with a handle on another surface. */
+function renderWithSharedReservations(items: BriefingApprovalActionItem[]) {
+	let other!: HeldReservation;
+	render(
+		<QueryClientProvider client={new QueryClient()}>
+			<TodayDecisionReservations scope={{ userId: "user-1", organizationId: "org-1" }}>
+				<TodayApprovalsPanel items={items} />
+				<ReservationHolder onReady={(reservations) => (other = reservations)} />
+			</TodayDecisionReservations>
+		</QueryClientProvider>,
+	);
+	return () => other;
+}
+
+/** Opens the reject panel of "Vacation request" and types a valid reason. */
+function startRejection() {
+	fireEvent.click(screen.getByRole("button", { name: /reject vacation request/i }));
+	const panel = screen.getByRole("dialog", { name: "Reject request" });
+	fireEvent.change(within(panel).getByLabelText("Reason for rejection"), {
+		target: { value: "Overlaps the inventory week." },
+	});
+	return panel;
 }

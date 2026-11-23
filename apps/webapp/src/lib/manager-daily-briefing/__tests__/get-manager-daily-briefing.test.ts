@@ -242,6 +242,63 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(byApprovalId.get("absence-1")?.requiresDetailReview).toBeUndefined();
 	});
 
+	it("counts every pending approval of the briefing's employees, not only those it shows", async () => {
+		const shown = [
+			createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			createApproval({ id: "approval-2", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+		];
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue(Object.assign(shown, { totalCount: 40 })),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.sections.approvals.items).toHaveLength(2);
+		expect(briefing.summary.openApprovals).toBe(40);
+	});
+
+	it("carries the inbox item's approve and reject capabilities", async () => {
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue([
+				createApproval({
+					id: "correction-1",
+					type: "time_entry",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+					capabilities: { canApprove: false, canReject: false },
+				}),
+				createApproval({
+					id: "blocked-1",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+					capabilities: { canApprove: false, canReject: true },
+				}),
+				createApproval({ id: "absence-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		const byApprovalId = new Map(
+			briefing.sections.approvals.items.map((item) => [item.approvalId, item]),
+		);
+		expect(byApprovalId.get("correction-1")).toMatchObject({ canApprove: false, canReject: false });
+		expect(byApprovalId.get("blocked-1")).toMatchObject({ canApprove: false, canReject: true });
+		expect(byApprovalId.get("absence-1")).toMatchObject({ canApprove: true, canReject: true });
+	});
+
 	it("does not surface manager coverage risks for subareas outside scoped shifts", async () => {
 		const sources = createSources({
 			getCoverageRules: vi.fn().mockResolvedValue([

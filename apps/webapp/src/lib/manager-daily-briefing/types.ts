@@ -32,6 +32,10 @@ export interface BriefingApprovalActionItem extends BriefingActionItem {
 	entityId: string;
 	requesterName: string;
 	summary: string;
+	/** The inbox lets the viewer approve it from the list; else the briefing offers no Approve. */
+	canApprove: boolean;
+	/** The inbox lets the viewer reject it from the list; else the briefing offers no Reject. */
+	canReject: boolean;
 	/** The viewer requested it, so someone else decides it (#686, #697). */
 	ownRequest?: boolean;
 	/**
@@ -137,6 +141,9 @@ export interface BriefingCoverageRule {
  */
 export type BriefingApproval = ApprovalInboxItem;
 
+/** A page of approvals; `totalCount` is every match before the page, when known. */
+export type BriefingApprovalBatch = BriefingApproval[] & { totalCount?: number };
+
 export function approvalToBriefingItem(approval: BriefingApproval): BriefingApprovalActionItem {
 	const { priority } = approval.triage;
 	return {
@@ -151,6 +158,8 @@ export function approvalToBriefingItem(approval: BriefingApproval): BriefingAppr
 		entityId: approval.entityId,
 		requesterName: approval.requester.name,
 		summary: approval.summary.detail,
+		canApprove: approval.capabilities.canApprove,
+		canReject: approval.capabilities.canReject,
 		...(approval.capabilities.ownRequest ? { ownRequest: true } : {}),
 		...(approval.capabilities.requiresDetailReview ? { requiresDetailReview: true } : {}),
 	};
