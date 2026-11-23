@@ -18,7 +18,11 @@ export function violationLocalDate(violationDate: Date, timezone: string): Plain
 
 /** The organization-local violation day, formatted in the UI locale. */
 export function formatViolationDate(violationDate: Date, display: ViolationDisplayContext): string {
-	return formatPlainDate(violationLocalDate(violationDate, display.timezone), display.locale, "dateMedium");
+	return formatPlainDate(
+		violationLocalDate(violationDate, display.timezone),
+		display.locale,
+		"dateMedium",
+	);
 }
 
 /** The organization-local violation day as ISO `YYYY-MM-DD` for exports. */
@@ -93,7 +97,10 @@ export function getViolationTypeLabel(type: string, t: Translate): string {
 		case "jarbschg_daily_max":
 			return t("settings.workPolicies.violationType.jarbschgDailyMax", "Youth Max Daily Exceeded");
 		case "jarbschg_weekly_max":
-			return t("settings.workPolicies.violationType.jarbschgWeeklyMax", "Youth Max Weekly Exceeded");
+			return t(
+				"settings.workPolicies.violationType.jarbschgWeeklyMax",
+				"Youth Max Weekly Exceeded",
+			);
 		case "jarbschg_days_per_week":
 			return t(
 				"settings.workPolicies.violationType.jarbschgDaysPerWeek",

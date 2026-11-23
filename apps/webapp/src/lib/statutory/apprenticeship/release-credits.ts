@@ -82,9 +82,7 @@ export function averageWorkingTimeOf(terms: {
 	}[];
 	readonly weeklyContractMinutes: number | null;
 }): AverageWorkingTime | null {
-	const workDays = terms.weeklyScheduleDays.filter(
-		(day) => day.isWorkDay && day.minutesPerDay > 0,
-	);
+	const workDays = terms.weeklyScheduleDays.filter((day) => day.isWorkDay && day.minutesPerDay > 0);
 	const scheduled = workDays.reduce((total, day) => total + day.minutesPerDay, 0);
 	if (scheduled > 0) {
 		return { dailyMinutes: Math.round(scheduled / workDays.length), weeklyMinutes: scheduled };

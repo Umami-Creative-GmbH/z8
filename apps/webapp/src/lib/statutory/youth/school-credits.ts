@@ -38,7 +38,8 @@ export function youthSchoolCreditsOf(days: readonly ApprenticeReleaseDay[]): You
 				? (day.minutes ?? 0)
 				: day.releaseKind === "vocational_school_block_week"
 					? Math.round(
-							(day.averageWorkingTime?.weeklyMinutes ?? FALLBACK_WEEK_MINUTES) / SCHOOL_DAYS_PER_WEEK,
+							(day.averageWorkingTime?.weeklyMinutes ?? FALLBACK_WEEK_MINUTES) /
+								SCHOOL_DAYS_PER_WEEK,
 						)
 					: (day.averageWorkingTime?.dailyMinutes ?? FALLBACK_DAY_MINUTES),
 	}));

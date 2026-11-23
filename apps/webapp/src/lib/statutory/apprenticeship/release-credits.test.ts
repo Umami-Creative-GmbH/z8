@@ -114,9 +114,9 @@ describe("apprenticeReleaseDays", () => {
 			["2026-03-17", "school_minutes", 300],
 			["2026-03-18", "school_minutes", 300],
 		]);
-		expect(days.filter((day) => day.date < "2026-03-16").every((day) => day.credit === "full_day")).toBe(
-			true,
-		);
+		expect(
+			days.filter((day) => day.date < "2026-03-16").every((day) => day.credit === "full_day"),
+		).toBe(true);
 	});
 
 	it("credits a partial first week of a multi-week block with its share too", () => {
