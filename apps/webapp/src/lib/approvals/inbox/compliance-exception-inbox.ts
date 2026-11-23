@@ -20,9 +20,9 @@ import {
 } from "@/lib/notifications/compliance-triggers";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
-import { defineAbilityFor } from "@/lib/authorization/ability";
+import { canOpenApprovalInbox, defineAbilityFor } from "@/lib/authorization/ability";
 import {
-	loadOrganizationPrincipalContexts,
+	loadOrganizationSessionPrincipalContexts,
 	type PrincipalLoaderExecutor,
 } from "@/lib/authorization/principal-loader";
 import type { PrincipalContext } from "@/lib/authorization/types";
@@ -917,9 +917,11 @@ type ComplianceExceptionScopesDatabase = Parameters<
 
 /**
  * The compliance exception scopes of many recipients of one organization (#1977), for a digest
- * run: `manage Compliance` is the organization, else the employees they are an eligible manager
- * of. The organization's eligibility and these users' permissions are read once, when the first
- * recipient asks, and every recipient's scope is resolved from them.
+ * run: none for a recipient who may not open the Approval inbox (`canOpenApprovalInbox` on the
+ * principal a session would give them, platform admins included), else `manage Compliance` is the
+ * organization and anyone else the employees they are an eligible manager of. The organization's
+ * eligibility and these users' principals are read once, when the first recipient asks, and every
+ * recipient's scope is resolved from them.
  */
 export function complianceExceptionInboxScopesFor(input: {
 	organizationId: string;
@@ -938,7 +940,7 @@ export function complianceExceptionInboxScopesFor(input: {
 				db: database,
 				organizationId: input.organizationId,
 			});
-			const principals = await loadOrganizationPrincipalContexts(database, {
+			const principals = await loadOrganizationSessionPrincipalContexts(database, {
 				organizationId: input.organizationId,
 				userIds: input.userIds,
 			});
@@ -954,13 +956,23 @@ export function complianceExceptionInboxScopesFor(input: {
 		async of(recipient) {
 			const [eligibility, principals] = await load();
 			const principal = principals.get(recipient.userId);
-			const canManageCompliance = principal
-				? defineAbilityFor(principal).cannot("manage", "Compliance") === false
-				: false;
+			if (!principal) return null;
+			// A platform admin's principal holds no employee; their every ability ignores its role.
+			const employee = principal.isPlatformAdmin
+				? {
+						id: recipient.employeeId,
+						organizationId: input.organizationId,
+						role: "employee" as const,
+					}
+				: principal.employee;
+			if (employee?.id !== recipient.employeeId) return null;
+			// The inbox's own gate: someone who may not open it sees no exception there.
+			const ability = defineAbilityFor(principal);
+			if (!canOpenApprovalInbox(ability, employee)) return null;
 			return resolveComplianceExceptionInboxScope({
 				organizationId: input.organizationId,
 				employeeId: recipient.employeeId,
-				canManageCompliance,
+				canManageCompliance: ability.cannot("manage", "Compliance") === false,
 				eligibleApprovalScopes: eligibleApprovalScopesOf(eligibility, recipient.employeeId),
 			});
 		},

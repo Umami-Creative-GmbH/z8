@@ -289,5 +289,43 @@ describe("daily digest shifts", () => {
 
 			expect((await digestFor(org, linked)).compliancePending).toBeUndefined();
 		});
+
+		it.each([
+			["whose membership awaits approval", "update member set status = 'pending' where id = $1"],
+			["without a membership", "delete from member where id = $1"],
+		])(
+			"counts and links none for a manager %s, who may not open the inbox",
+			async (_case, membershipChange) => {
+				const org = await fixture.organization("UTC");
+				const lead = await manager(org);
+				await exception(org, (await directReport(org, lead.employeeId)).employeeId);
+				await fixture.pool.query(membershipChange, [lead.memberId]);
+
+				const digest = await digestFor(org, lead);
+
+				expect(digest.compliancePending).toBeUndefined();
+				expect(JSON.stringify(buildDailyDigestCard(digest, "https://z8.test", "en"))).not.toContain(
+					"types=compliance_exception",
+				);
+			},
+		);
+
+		it("counts and links every pending exception of the organization for a platform admin, as their inbox lists them", async () => {
+			const org = await fixture.organization("UTC");
+			const platformAdmin = await fixture.seedEmployee({ organizationId: org.organizationId });
+			await fixture.pool.query(`update "user" set role = 'admin' where id = $1`, [
+				platformAdmin.userId,
+			]);
+			const lead = await manager(org);
+			await exception(org, (await directReport(org, lead.employeeId)).employeeId);
+			await exception(org, (await directReport(org, lead.employeeId)).employeeId);
+
+			const digest = await digestFor(org, platformAdmin);
+
+			expect(digest.compliancePending).toBe(2);
+			expect(JSON.stringify(buildDailyDigestCard(digest, "https://z8.test", "en"))).toContain(
+				"https://z8.test/approvals/inbox?types=compliance_exception",
+			);
+		});
 	});
 });

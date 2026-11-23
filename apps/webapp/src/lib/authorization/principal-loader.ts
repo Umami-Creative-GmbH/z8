@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { db } from "@/db";
-import { member } from "@/db/auth-schema";
+import { member, user } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions } from "@/db/schema";
 import {
 	customRole,
@@ -216,6 +216,52 @@ export async function loadOrganizationPrincipalContexts(
 			];
 		}),
 	);
+}
+
+/**
+ * A platform admin's principal (`user.role` is "admin"), as a signed-in session builds it:
+ * every ability, with no organization facts.
+ */
+export function platformAdminPrincipalContext(
+	userId: string,
+	activeOrganizationId: string | null,
+): PrincipalContext {
+	return {
+		userId,
+		isPlatformAdmin: true,
+		activeOrganizationId,
+		orgMembership: null,
+		employee: null,
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles: [],
+	};
+}
+
+/**
+ * The principals several users would get from a session in this organization, read together: a
+ * platform admin gets `platformAdminPrincipalContext`, as `getPrincipalContext` gives one, and
+ * everyone else their `loadOrganizationPrincipalContexts` principal.
+ */
+export async function loadOrganizationSessionPrincipalContexts(
+	executor: PrincipalLoaderExecutor,
+	input: { organizationId: string; userIds: readonly string[] },
+): Promise<Map<string, PrincipalContext>> {
+	const userIds = [...new Set(input.userIds)];
+	if (userIds.length === 0) return new Map();
+	// One after another, as above: `executor` may be a transaction.
+	const platformAdmins = await executor
+		.select({ id: user.id })
+		.from(user)
+		.where(and(inArray(user.id, userIds), eq(user.role, "admin")));
+	const principals = await loadOrganizationPrincipalContexts(executor, {
+		organizationId: input.organizationId,
+		userIds: userIds.filter((userId) => !platformAdmins.some((admin) => admin.id === userId)),
+	});
+	for (const admin of platformAdmins) {
+		principals.set(admin.id, platformAdminPrincipalContext(admin.id, input.organizationId));
+	}
+	return principals;
 }
 
 const customRoleColumns = {
