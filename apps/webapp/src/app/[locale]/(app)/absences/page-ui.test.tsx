@@ -53,6 +53,9 @@ vi.mock("@/components/absences/absences-view-container", () => ({
 vi.mock("@/components/absences/vacation-balance-card", () => ({
 	VacationBalanceCard: () => <p>Available vacation balance</p>,
 }));
+vi.mock("@/components/statutory/on-call/on-call-status-card", () => ({
+	OnCallStatusCard: () => null,
+}));
 
 /** Renders the page's streamed content for a URL query. */
 async function renderPage(

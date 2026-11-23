@@ -594,7 +594,92 @@
         "vehiclesTitle": "Organisationsfahrzeuge"
       }
     },
-    "yes": "Ja"
+    "yes": "Ja",
+    "onCall": {
+      "finding": {
+        "shortNotice": "Mit {days, plural, one {# vollen Tag} other {# vollen Tagen}} Vorlauf abgerufen; {required} sind erforderlich",
+        "shortCall": "Schicht von {duration} ist kürzer als der Mindesteinsatz von {minimum}",
+        "shortWorkCall": "Einsatz von {duration} gearbeitet, weniger als der Mindesteinsatz von {minimum}",
+        "nearBand": "Woche mit {used} abgerufen, nahe an der Grenze des Abrufkorridors von {limit}",
+        "overBand": "Woche mit {used} abgerufen, über dem Abrufkorridor von {limit}",
+        "underBand": "Woche mit {used} abgerufen, unter dem Abrufkorridor von {limit}",
+        "other": "Regel der Arbeit auf Abruf gefährdet"
+      },
+      "reference": {
+        "excluded": {
+          "notEmployed": "Nicht beschäftigt",
+          "unpaidAbsence": "Unbezahlte Abwesenheit",
+          "paidAbsence": "Urlaub oder Krankheit",
+          "publicHoliday": "Feiertag"
+        },
+        "none": "—",
+        "periodThreeMonths": "Referenzzeitraum (3 Monate): {from} – {until}",
+        "periodThirteenWeeks": "Referenzzeitraum (13 Wochen): {from} – {until}",
+        "numerator": "Gearbeitete Zeit",
+        "denominator": "Berücksichtigte Tage",
+        "denominatorValue": "{counted} von {total} Tagen",
+        "workedDays": "Arbeitstage",
+        "perDay": "Durchschnitt pro Tag",
+        "perWeek": "Durchschnitt pro Woche",
+        "perWorkedDay": "Durchschnitt pro Arbeitstag",
+        "excludedTitle": "Nicht im Durchschnitt berücksichtigt",
+        "excludedPeriod": "{from} – {until}: {reason} ({days, plural, one {# Tag} other {# Tage}})",
+        "shortened": "Das Arbeitsverhältnis begann im Referenzzeitraum, daher gilt der kürzere Zeitraum.",
+        "title": "Referenzstunden für Entgeltfortzahlung und Feiertage",
+        "threeMonths": "3 Monate",
+        "thirteenWeeks": "13 Wochen",
+        "description": "Nur zur Information: Was gezahlt wird, entscheidet die Lohnabrechnung. Abgerechnete Tage und abgeschlossene Monate bleiben unverändert.",
+        "noEvents": "Keine Krankheit und kein Feiertag an einem Abruftag in den letzten drei Monaten.",
+        "sickLeave": "Krank ab {date}",
+        "publicHoliday": "Feiertag am {date}",
+        "dateRequired": "Wähle ein Datum.",
+        "eventDate": "Für einen Tag berechnen",
+        "calculate": "Berechnen"
+      },
+      "hoursKind": {
+        "exact": "Genau vereinbarte Wochenstunden",
+        "minimum": "Mindestwochenstunden (bis +25 %)",
+        "maximum": "Höchstwochenstunden (bis −20 %)",
+        "unspecified": "Keine Wochenstunden vereinbart (20 Std. gelten)"
+      },
+      "title": "Arbeit auf Abruf (§ 12 TzBfG)",
+      "weekly": "{duration} pro Woche",
+      "statutoryMinimumCall": "Gesetzlicher Mindesteinsatz gilt",
+      "minimumCall": "Mindesteinsatz {duration}",
+      "notToday": "Heute nicht auf Abruf.",
+      "findingsTitle": "Prüfungen der letzten und nächsten vier Wochen",
+      "noFindings": "Keine Regel der Arbeit auf Abruf gefährdet.",
+      "agreementDocumented": "Zustimmung dokumentiert",
+      "agreementStale": "Schicht seit der Zustimmung geändert",
+      "reviews": {
+        "notOpen": "Für die Schicht gibt es keinen Hinweis auf zu kurzen Vorlauf mehr.",
+        "notPublished": "Die Schicht ist noch nicht veröffentlicht. Veröffentliche sie, bevor du die Zustimmung der Person dokumentierst.",
+        "draft": "Noch nicht veröffentlicht. Veröffentliche die Schicht, bevor du die Zustimmung der Person dokumentierst.",
+        "changed": "Die Schicht hat sich geändert, seit diese Liste geladen wurde. Prüfe sie erneut, bevor du die Zustimmung dokumentierst.",
+        "acknowledged": "Zustimmung dokumentiert",
+        "reasonRequired": "Beschreibe, wie die Person dem kurzen Vorlauf zugestimmt hat.",
+        "reason": "Freiwillige Zustimmung der Person (§ 12 Abs. 3 TzBfG)",
+        "acknowledge": "Zustimmung dokumentieren",
+        "documented": "Zustimmung dokumentiert: {reason}",
+        "stale": "Die Schicht wurde nach der dokumentierten Zustimmung geändert. Dokumentiere sie erneut, wenn sie weiter gilt.",
+        "title": "Arbeit auf Abruf (§ 12 TzBfG)",
+        "description": "Abrufe mit zu kurzem Vorlauf, Einsätze unter dem Minimum und Wochen außerhalb des Abrufkorridors in den letzten und nächsten vier Wochen. Ein- und Ausstempeln wird nie blockiert."
+      },
+      "payroll": {
+        "title": "Referenzstunden bei Arbeit auf Abruf (§ 12 TzBfG)",
+        "description": "Durchschnittliche Arbeitszeit vor jeder Krankheit und jedem Feiertag von Beschäftigten auf Abruf in diesem Zeitraum, zur Vorbereitung der Entgeltfortzahlung. Abgerechnete Tage bleiben unverändert.",
+        "perDay": "{duration} pro Tag",
+        "rangeTooLong": "Referenzstunden werden für höchstens drei Monate auf einmal aufgelistet. Wähle einen kürzeren Zeitraum.",
+        "paidSickDays": "Entgeltfortzahlung im Krankheitsfall für {days, plural, one {# Tag} other {# Tage}} in diesem Zeitraum",
+        "continuedPaySpan": "Entgeltfortzahlung geschuldet vom {from} bis {until} (§ 3 EFZG)",
+        "sickPayExhausted": "Keine Entgeltfortzahlung in diesem Zeitraum: Die sechs Wochen endeten am {date} (§ 3 Abs. 1 EFZG)",
+        "sickPayWaiting": "Keine Entgeltfortzahlung in diesem Zeitraum: Der Anspruch entsteht am {date}, nach vier Wochen Beschäftigung (§ 3 Abs. 3 EFZG)",
+        "sickPayNotOwed": "Für diese Krankheit ist keine Entgeltfortzahlung geschuldet: Sie endete in den ersten vier Wochen der Beschäftigung (§ 3 Abs. 3 EFZG)",
+        "holidaysPaidAsHolidays": "Feiertage während der Krankheit werden in eigenen Zeilen bezahlt, nicht als Krankheitstage: {dates}",
+        "hide": "Aufschlüsselung ausblenden",
+        "show": "Aufschlüsselung anzeigen"
+      }
+    }
   },
   "drivingLicence": {
     "applyingInterval": "Wird angewendet…",

@@ -167,6 +167,9 @@ vi.mock("@/components/settings/contracts/scoped-manager-policy-card", () => ({
 		return <section aria-label="Work Policy Assignment">{props.employeeId}</section>;
 	},
 }));
+vi.mock("@/components/statutory/on-call/on-call-status-card", () => ({
+	OnCallStatusCard: () => null,
+}));
 vi.mock("@/components/settings/contracts/working-student-monitor-card", () => ({
 	WorkingStudentMonitorCard: ({ canManage }: { canManage: boolean }) => (
 		<section aria-label="Working student monitor">{canManage ? "manage" : "read"}</section>

@@ -7,6 +7,9 @@ import {
 } from "../schedule-compliance.service";
 import { WorkPolicyService } from "../work-policy.service";
 
+// The statutory monitors read PostgreSQL; their seam has its own integration suites.
+vi.mock("@/lib/statutory/scheduling/contributors", () => ({ statutoryScheduleContributors: [] }));
+
 describe("ScheduleComplianceService", () => {
 	it("evaluateScheduleWindow returns organizationId and fingerprint", async () => {
 		const mockDb = {
