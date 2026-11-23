@@ -253,6 +253,8 @@ export interface StaffingContractFacts {
 	contractType: "fixed" | "hourly";
 	/** Set when those terms name a work policy: that policy's schedule cycle, null without one. */
 	termsScheduleCycle: { cycle: string | null } | null;
+	/** ArbZG scope on the shift date; `executive_exempt` skips adult working-time rules (#1993). */
+	arbzgScope?: "standard" | "executive_exempt";
 }
 
 export interface StaffingRankingFacts {
@@ -387,6 +389,7 @@ export async function loadStaffingRankingFacts(
 									: null,
 						}
 					: null,
+				arbzgScope: resolvedContract?.arbzgScope ?? "standard",
 			},
 		});
 	}

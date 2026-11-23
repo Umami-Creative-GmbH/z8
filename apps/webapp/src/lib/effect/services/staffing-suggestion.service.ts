@@ -291,8 +291,12 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 										at: shift.interval.start,
 									})
 									.pipe(Effect.catchTag("NotFoundError", () => Effect.succeed(null)));
+								// Executive employees are outside adult ArbZG rules; JArbSchG still
+								// applies through the statutory findings below (#1993).
 								const regulation = normalizeScheduleComplianceRegulation(
-									policy?.regulation ?? null,
+									facts.contract.arbzgScope === "executive_exempt"
+										? null
+										: (policy?.regulation ?? null),
 								);
 								const targetMinutes = hasUsableTarget(facts, policy)
 									? yield* loadWeeklyTargetMinutes({

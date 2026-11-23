@@ -4,6 +4,8 @@ import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
+import { fullReleaseDates } from "@/lib/statutory/apprenticeship/release-credits";
+import { loadApprenticeReleaseDays } from "@/lib/statutory/apprenticeship/release-facts";
 import {
 	type AbsenceDayRange,
 	countAbsenceDays,
@@ -107,9 +109,19 @@ export async function loadWorkingDaysForEmployees(
 		dates,
 	});
 
+	// Apprentice days released in full (school, block week, exam) are paid release, not working
+	// days, so an absence over them never deducts them from vacation (#1993).
+	const releaseDays = await loadApprenticeReleaseDays(database, {
+		organizationId: input.organizationId,
+		employeeIds,
+		from: input.startDate,
+		until: Temporal.PlainDate.from(input.endDate).add({ days: 1 }).toString(),
+	});
+
 	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
 	const workingDays = new Map<string, IsWorkingDay>();
 	for (const [employeeId, contractsByDate] of contractsByEmployee) {
+		const released = fullReleaseDates(releaseDays.get(employeeId) ?? []);
 		const holidays = holidayDateKeys(
 			await getVacationHolidays({
 				database,
@@ -121,7 +133,7 @@ export async function loadWorkingDaysForEmployees(
 		);
 		const isWorkingDay: IsWorkingDay = (day) => {
 			const dayStr = day.toString();
-			if (holidays.has(dayStr)) return false;
+			if (holidays.has(dayStr) || released.has(dayStr)) return false;
 			const weekdays = effectiveScheduledWeekdaysForContract(contractsByDate.get(dayStr));
 			return weekdays ? weekdays.has(day.dayOfWeek) : mondayToFriday(day);
 		};

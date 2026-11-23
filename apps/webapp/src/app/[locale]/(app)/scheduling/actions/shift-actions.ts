@@ -3,7 +3,7 @@
 import { Effect } from "effect";
 import { db } from "@/db";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
-import { AuthorizationError } from "@/lib/effect/errors";
+import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { CoverageService } from "@/lib/effect/services/coverage.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
@@ -23,6 +23,10 @@ import {
 	resolveScheduleWallTime,
 } from "@/lib/scheduling/schedule-local-input";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
+import {
+	STATUTORY_PUBLICATION_BLOCKED,
+	statutoryPublicationRefusal,
+} from "@/lib/statutory/scheduling/publication-block";
 import {
 	loadUpcomingShifts,
 	UPCOMING_SHIFTS_LIMIT,
@@ -295,6 +299,16 @@ export async function publishShifts(
 			organizationId: currentEmployee.organizationId,
 			session,
 		});
+		const statutoryRefusal = statutoryPublicationRefusal(evaluation.findings);
+		if (statutoryRefusal) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: statutoryRefusal,
+					field: "shifts",
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				}),
+			);
+		}
 		const publishDecision = buildPublishDecision({
 			count: 0,
 			compliance: {

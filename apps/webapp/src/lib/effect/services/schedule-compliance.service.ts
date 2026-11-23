@@ -19,6 +19,10 @@ import {
 	summarizeComplianceFindings,
 } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
 import { evaluateStatutoryScheduleFindings } from "@/lib/statutory/scheduling/evaluate";
+import {
+	loadExecutiveExemptDays,
+	withoutExecutiveExemptFindings,
+} from "@/lib/statutory/youth/executive-exempt";
 import type {
 	EmployeeScheduleComplianceInput,
 	ScheduleComplianceResult,
@@ -220,10 +224,27 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 							now: systemClock.nowInstant(),
 						}),
 					);
+					// Executive-exempt employees are outside adult ArbZG rules (#1993).
+					const exemptDays = yield* dbService.query("scheduleCompliance.executiveExempt", () =>
+						loadExecutiveExemptDays(dbService.db, {
+							organizationId: input.organizationId,
+							employeeIds,
+							from: window.start.toString(),
+							until: window.endExclusive.toString(),
+							timezone: input.timezone,
+						}),
+					);
 					const evaluationResult =
-						statutoryFindings.length === 0
+						statutoryFindings.length === 0 && exemptDays.size === 0
 							? regulationResult
-							: summarizeComplianceFindings([...regulationResult.findings, ...statutoryFindings]);
+							: summarizeComplianceFindings([
+									...withoutExecutiveExemptFindings(
+										regulationResult.findings,
+										exemptDays,
+										input.timezone,
+									),
+									...statutoryFindings,
+								]);
 
 					return {
 						organizationId: input.organizationId,
