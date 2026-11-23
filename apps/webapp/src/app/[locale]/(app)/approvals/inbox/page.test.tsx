@@ -9,7 +9,9 @@ import {
 	defineAbilityFor,
 	type PrincipalContext,
 } from "@/lib/authorization";
+import type { ReactElement } from "react";
 import { ApprovalInboxGate } from "./approval-inbox-gate";
+import ApprovalInboxPage from "./page";
 
 class RedirectSignal extends Error {
 	constructor(readonly href: string) {
@@ -23,10 +25,16 @@ const EMPLOYEE = "employee-1";
 const auth = vi.hoisted(() => ({
 	context: null as AuthContext | null,
 	ability: null as AppAbility | null,
+	/** Holds the session read open, as while the guard is still deciding. */
+	pending: false,
 }));
 vi.mock("@/lib/auth-helpers", () => ({
-	getAuthContext: async () => auth.context,
+	getAuthContext: () =>
+		auth.pending ? new Promise<never>(() => {}) : Promise.resolve(auth.context),
 	getAbility: async () => auth.ability,
+}));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 const redirectWithLocale = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/navigation/locale-redirect", () => ({ redirectWithLocale }));
@@ -65,18 +73,21 @@ function signedInAs(role: EmployeeRole, customRoles: PrincipalContext["customRol
 	});
 }
 
-async function gateOutcome() {
+async function outcomeOf(run: () => Promise<ReactElement>) {
 	try {
-		return { rendered: await ApprovalInboxGate() };
+		return { rendered: await run() };
 	} catch (error) {
 		if (error instanceof RedirectSignal) return { redirectedTo: error.href };
 		throw error;
 	}
 }
 
+const gateOutcome = () => outcomeOf(ApprovalInboxGate);
+
 beforeEach(() => {
 	auth.context = null;
 	auth.ability = null;
+	auth.pending = false;
 	redirectWithLocale.mockReset();
 	redirectWithLocale.mockImplementation(async (href: string) => {
 		throw new RedirectSignal(href);
@@ -138,5 +149,54 @@ describe("/approvals/inbox server guard", () => {
 		expect(screen.getByRole("heading", { level: 1, name: "Approval Inbox" })).toBeTruthy();
 		expect(screen.getByText("No employee profile to approve requests")).toBeTruthy();
 		expect(screen.queryByText("Approval inbox shell")).toBeNull();
+	});
+
+	it("shows the missing-employee state without a session context", async () => {
+		auth.context = null;
+		auth.ability = null;
+
+		const outcome = await gateOutcome();
+
+		expect(redirectWithLocale).not.toHaveBeenCalled();
+		render(outcome.rendered);
+		expect(screen.getByRole("heading", { level: 1, name: "Approval Inbox" })).toBeTruthy();
+		expect(screen.getByText("No employee profile to approve requests")).toBeTruthy();
+		expect(screen.queryByText("Approval inbox shell")).toBeNull();
+	});
+});
+
+describe("/approvals/inbox page entry", () => {
+	it("shows nothing inbox-specific while the guard is still deciding", () => {
+		auth.pending = true;
+
+		render(ApprovalInboxPage());
+
+		expect(screen.getByRole("status")).toBeTruthy();
+		expect(screen.queryByLabelText("Loading approval inbox")).toBeNull();
+		expect(screen.queryByTestId("approval-table-loading")).toBeNull();
+		expect(screen.queryByText("Approval inbox shell")).toBeNull();
+	});
+
+	it("mounts the server guard, which sends an employee without approval access home", async () => {
+		signedInAs("employee");
+		const guard = ApprovalInboxPage().props.children as ReactElement<
+			object,
+			() => Promise<ReactElement>
+		>;
+
+		expect(await outcomeOf(() => guard.type(guard.props))).toEqual({ redirectedTo: "/" });
+	});
+
+	it("mounts the server guard, which loads the inbox for a manager", async () => {
+		signedInAs("manager");
+		const guard = ApprovalInboxPage().props.children as ReactElement<
+			object,
+			() => Promise<ReactElement>
+		>;
+
+		const outcome = await outcomeOf(() => guard.type(guard.props));
+
+		render(outcome.rendered);
+		expect(screen.getByRole("heading", { name: "Approval inbox shell" })).toBeTruthy();
 	});
 });

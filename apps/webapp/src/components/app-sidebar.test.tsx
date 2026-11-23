@@ -12,6 +12,7 @@ import {
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { defineAbilityFor } from "@/lib/authorization";
 
 const {
 	navMainSpy,
@@ -910,7 +911,9 @@ describe("app sidebar compliance navigation", () => {
 			employee: { organizationId: "org_1", role: "admin" },
 		});
 		getRenderSettingsAccessMock.mockResolvedValue("orgAdmin");
-		requireAbilityMock.mockResolvedValue({});
+		// The Approval inbox decision also reads this ability (#1976); it grants nothing.
+		const ability = { cannot: () => true };
+		requireAbilityMock.mockResolvedValue(ability);
 		canViewWorksCouncilPortalMock.mockReturnValue(true);
 
 		vi.doMock("@/lib/auth-helpers", () => ({
@@ -935,7 +938,7 @@ describe("app sidebar compliance navigation", () => {
 			}),
 		);
 		expect(requireAbilityMock).toHaveBeenCalled();
-		expect(canViewWorksCouncilPortalMock).toHaveBeenCalledWith({}, "org_1", "org_1");
+		expect(canViewWorksCouncilPortalMock).toHaveBeenCalledWith(ability, "org_1", "org_1");
 	});
 
 	it("uses the active organization for works council navigation when no employee exists", async () => {
@@ -2069,7 +2072,25 @@ describe("app sidebar compliance navigation", () => {
 				can: (action: string, subject: string) =>
 					Boolean(grants.canCloseMonths) && action === "close" && subject === "PayrollPeriod",
 			};
-			requireAbilityMock.mockResolvedValue(abilityMock);
+			// The request ability decides the Approval inbox entry (#1976), so it is the member's real one.
+			requireAbilityMock.mockResolvedValue(
+				role
+					? defineAbilityFor({
+							userId: "user_1",
+							isPlatformAdmin: false,
+							activeOrganizationId: "org_1",
+							orgMembership: {
+								organizationId: "org_1",
+								role: role === "admin" ? "admin" : "member",
+								status: "approved",
+							},
+							employee: { id: "emp_1", organizationId: "org_1", role, teamId: null },
+							permissions: { orgWide: null, byTeamId: new Map() },
+							managedEmployeeIds: [],
+							customRoles: [],
+						})
+					: abilityMock,
+			);
 			getRenderOrganizationAbilityMock.mockResolvedValueOnce(abilityMock);
 			canViewWorksCouncilPortalMock.mockReturnValue(Boolean(grants.worksCouncil));
 

@@ -2,6 +2,12 @@
 
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	type AppAbility,
+	createEmptyAbility,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "@/lib/authorization";
 
 const mockState = vi.hoisted(() => ({
 	settingsAccess: "member" as "member" | "scopedManager" | "orgAdmin" | "owner" | null,
@@ -9,6 +15,8 @@ const mockState = vi.hoisted(() => ({
 	hasGrant: false,
 	canClose: false,
 	canReopen: false,
+	/** The member ability the request carries; null keeps the payroll-only stub. */
+	ability: null as AppAbility | null,
 	appSidebarSpy: vi.fn(),
 }));
 
@@ -41,14 +49,18 @@ vi.mock("@/lib/auth/render-context", () => ({
 		userId: "user-1",
 		employee: mockState.employee,
 	})),
-	getRenderAbility: vi.fn(async () => ({
-		can: (action: string, subject: string) => {
-			if (subject !== "PayrollPeriod") return false;
-			if (action === "close") return mockState.canClose;
-			if (action === "reopen") return mockState.canReopen;
-			return false;
-		},
-	})),
+	getRenderAbility: vi.fn(
+		async () =>
+			mockState.ability ?? {
+				can: (action: string, subject: string) => {
+					if (subject !== "PayrollPeriod") return false;
+					if (action === "close") return mockState.canClose;
+					if (action === "reopen") return mockState.canReopen;
+					return false;
+				},
+				cannot: () => true,
+			},
+	),
 	getRenderOrganizationAbility: vi.fn(async () => ({
 		can: (action: string, subject: string) => {
 			if (subject !== "PayrollPeriod") return false;
@@ -129,9 +141,84 @@ async function renderSidebar() {
 	});
 	render(element);
 	return mockState.appSidebarSpy.mock.calls.at(-1)?.[0] as {
-		navigationCapabilities: { payroll: boolean };
+		navigationCapabilities: { payroll: boolean; approvalInbox?: boolean };
 	};
 }
+
+function memberAbility(
+	employee: NonNullable<typeof mockState.employee>,
+	customRoles: PrincipalContext["customRoles"] = [],
+): AppAbility {
+	return defineAbilityFor({
+		userId: "user-1",
+		isPlatformAdmin: false,
+		activeOrganizationId: employee.organizationId,
+		orgMembership: {
+			organizationId: employee.organizationId,
+			role: employee.role === "admin" ? "admin" : "member",
+			status: "approved",
+		},
+		employee: { ...employee, teamId: null },
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles,
+	});
+}
+
+describe("ServerAppSidebar Approval inbox visibility (#1976)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.settingsAccess = "member";
+		mockState.employee = null;
+		mockState.ability = null;
+	});
+
+	it("lists the inbox for a custom-role approver without a manager role", async () => {
+		mockState.employee = { id: "emp-1", organizationId: "org-1", role: "employee" };
+		mockState.ability = memberAbility(mockState.employee, [
+			{
+				roleId: "role-1",
+				roleName: "Approver",
+				baseTier: "employee",
+				permissions: [{ action: "approve", subject: "Approval" }],
+			},
+		]);
+
+		const props = await renderSidebar();
+		expect(props.navigationCapabilities.approvalInbox).toBe(true);
+	});
+
+	it("lists the inbox for a manager", async () => {
+		mockState.employee = { id: "emp-1", organizationId: "org-1", role: "manager" };
+		mockState.ability = memberAbility(mockState.employee);
+
+		const props = await renderSidebar();
+		expect(props.navigationCapabilities.approvalInbox).toBe(true);
+	});
+
+	it("hides the inbox from an employee without approval permissions", async () => {
+		mockState.employee = { id: "emp-1", organizationId: "org-1", role: "employee" };
+		mockState.ability = memberAbility(mockState.employee);
+
+		const props = await renderSidebar();
+		expect(props.navigationCapabilities.approvalInbox).toBe(false);
+	});
+
+	it("hides the inbox from a manager whose ability carries no employee principal", async () => {
+		mockState.employee = { id: "emp-1", organizationId: "org-1", role: "manager" };
+		mockState.ability = createEmptyAbility();
+
+		const props = await renderSidebar();
+		expect(props.navigationCapabilities.approvalInbox).toBe(false);
+	});
+
+	it("hides the inbox without an employee in the active organization", async () => {
+		mockState.settingsAccess = "orgAdmin";
+
+		const props = await renderSidebar();
+		expect(props.navigationCapabilities.approvalInbox).toBe(false);
+	});
+});
 
 describe("ServerAppSidebar payroll navigation visibility (#1957)", () => {
 	beforeEach(() => {
@@ -141,6 +228,7 @@ describe("ServerAppSidebar payroll navigation visibility (#1957)", () => {
 		mockState.hasGrant = false;
 		mockState.canClose = false;
 		mockState.canReopen = false;
+		mockState.ability = null;
 	});
 
 	it("shows Payroll for an org admin without an employee record or payroll grant", async () => {

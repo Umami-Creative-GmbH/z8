@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/absences/actions";
 import { db } from "@/db";
 import {
@@ -569,37 +569,6 @@ async function loadSickNoteMarkers(input: {
 		logger.error({ error }, "Failed to load sick note markers for approvals");
 		return new Map();
 	}
-}
-
-export async function getPendingApprovalCounts() {
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { absences: 0, timeCorrections: 0 };
-	}
-
-	const counts = await db
-		.select({
-			type: approvalRequest.entityType,
-			count: count(),
-		})
-		.from(approvalRequest)
-		.where(
-			and(
-				eq(approvalRequest.organizationId, currentEmployee.organizationId),
-				eq(approvalRequest.approverId, currentEmployee.id),
-				ne(approvalRequest.requestedBy, currentEmployee.id),
-				eq(approvalRequest.status, "pending"),
-			),
-		)
-		.groupBy(approvalRequest.entityType);
-
-	return {
-		absences:
-			Number(counts.find((entry) => entry.type === "absence_entry")?.count) ||
-			0,
-		timeCorrections:
-			Number(counts.find((entry) => entry.type === "time_entry")?.count) || 0,
-	};
 }
 
 export { getCurrentEmployee };

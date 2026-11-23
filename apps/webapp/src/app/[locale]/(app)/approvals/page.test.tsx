@@ -1,5 +1,8 @@
+import type { ReactElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApprovalsRedirect } from "./approvals-redirect";
+import ApprovalsPage from "./page";
 
 class RedirectSignal extends Error {
 	constructor(readonly href: string) {
@@ -9,6 +12,9 @@ class RedirectSignal extends Error {
 
 const redirectWithLocale = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/navigation/locale-redirect", () => ({ redirectWithLocale }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
 
 beforeEach(() => {
 	redirectWithLocale.mockReset();
@@ -47,5 +53,25 @@ describe("/approvals", () => {
 		expect(params.get("types")).toBe("absence_entry,time_entry");
 		expect(params.getAll("tag")).toEqual(["first", "second"]);
 		expect(params.has("empty")).toBe(false);
+	});
+
+	it("mounts the redirect from the page entry, query included", async () => {
+		const page = ApprovalsPage({ searchParams: Promise.resolve({ types: "time_entry" }) });
+		const redirect = page.props.children as ReactElement<object, () => Promise<never>>;
+
+		const outcome = await redirect.type(redirect.props).catch((error: unknown) => error);
+
+		expect(outcome).toBeInstanceOf(RedirectSignal);
+		expect((outcome as RedirectSignal).href).toBe("/approvals/inbox?types=time_entry");
+	});
+
+	it("shows nothing inbox-specific before the redirect", () => {
+		const page = ApprovalsPage({ searchParams: new Promise(() => {}) });
+
+		const fallback = renderToStaticMarkup(page.props.fallback as ReactElement);
+
+		expect(fallback).toContain('aria-busy="true"');
+		expect(fallback).not.toContain("Loading approval inbox");
+		expect(fallback).not.toContain("approval-table-loading");
 	});
 });

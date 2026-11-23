@@ -83,6 +83,8 @@ export interface NavigationCapabilities {
 	analytics?: boolean;
 	/** Project reports visibility (projectsEnabled and project-report viewer access). */
 	projectReports?: boolean;
+	/** Approval inbox visibility: the same `canAccessApprovalInbox` decision as the route guard (#1976). */
+	approvalInbox?: boolean;
 	platformAdmin: boolean;
 }
 
@@ -140,6 +142,10 @@ function canViewMissingVehicleLogs(ctx: NavigationAccessContext): boolean {
 		meetsSettingsAccess(ctx.settingsAccess, "orgAdmin") ||
 		(meetsSettingsAccess(ctx.settingsAccess, "scopedManager") && ctx.employeeRole !== null)
 	);
+}
+
+function canOpenApprovalInbox(ctx: NavigationAccessContext): boolean {
+	return ctx.navigationCapabilities.approvalInbox ?? isManagerOrAdmin(ctx.employeeRole);
 }
 
 function canViewAnalytics(ctx: NavigationAccessContext): boolean {
@@ -413,7 +419,7 @@ export const APP_NAVIGATION_MANIFEST: readonly NavigationManifestEntry[] = [
 		sidebarSection: "team",
 		ownsHeading: true,
 		cmdK: { include: true },
-		isVisible: (ctx) => isManagerOrAdmin(ctx.employeeRole),
+		isVisible: canOpenApprovalInbox,
 	},
 	{
 		id: "analytics",

@@ -49,12 +49,7 @@ describe("approvals actions", () => {
 	});
 
 	it("no longer exposes the retired legacy queue reads and decisions (#1976)", () => {
-		for (const retired of [
-			"approveAbsence",
-			"rejectAbsence",
-			"getPendingApprovals",
-			"getPendingApprovalCounts",
-		]) {
+		for (const retired of ["approveAbsence", "rejectAbsence", "getPendingApprovals"]) {
 			expect(actions).not.toHaveProperty(retired);
 		}
 	});

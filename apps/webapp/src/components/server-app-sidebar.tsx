@@ -8,6 +8,7 @@ import {
 	getRenderSettingsAccess,
 	getRenderUserOrganizations as getUserOrganizations,
 } from "@/lib/auth/render-context";
+import { canAccessApprovalInbox } from "@/lib/authorization";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { readDrivingLicenceVisibilityForIdentity } from "@/lib/organization/driving-licence/visibility";
@@ -78,6 +79,7 @@ export async function ServerAppSidebar({
 		canCreateOrganizations,
 		capabilitiesUnavailable,
 		equipmentAccess,
+		showApprovalInboxNav,
 	} = await resolveSidebarAccess(showWorksCouncilNav);
 	return (
 		<AppSidebar
@@ -128,6 +130,7 @@ export async function ServerAppSidebar({
 						activeEmployee?.role === "admin" ||
 						activeEmployee?.role === "manager" ||
 						settingsCapabilities.canManageProjects),
+				approvalInbox: showApprovalInboxNav,
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccess={settingsAccess}
@@ -200,6 +203,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		drivingLicenceVisibility,
 		settingsCapabilities,
 		equipmentAccess,
+		showApprovalInboxNav,
 	] = await Promise.all([
 		capability(
 			showWorksCouncilNav && featureFlags.worksCouncilEnabled && identity
@@ -264,6 +268,15 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 				: { personal: false, staff: false },
 			{ personal: false, staff: false },
 		),
+		// The /approvals/inbox guard's decision, so custom-role approvers find the inbox (#1976).
+		capability(
+			activeEmployee
+				? getRenderAbility().then(
+						(ability) => !!ability && canAccessApprovalInbox(ability, activeEmployee),
+					)
+				: false,
+			false,
+		),
 	]);
 	const showFinanceNav = financeActor?.canRead ?? false;
 	const showPersonnelFilesNav = !!personnelFileAccess && managesAnyDocuments(personnelFileAccess);
@@ -289,5 +302,6 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		canCreateOrganizations,
 		capabilitiesUnavailable,
 		equipmentAccess,
+		showApprovalInboxNav,
 	};
 }

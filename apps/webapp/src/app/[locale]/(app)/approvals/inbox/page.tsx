@@ -1,10 +1,11 @@
 import { Suspense } from "react";
+import { NeutralPageLoading } from "@/components/shells/neutral-page-loading";
 import { ApprovalInboxGate } from "./approval-inbox-gate";
-import { ApprovalInboxLoadingState } from "./components/approval-inbox-loading-state";
 
+/** The guard decides before anything inbox-shaped renders; the inbox keeps its own loading state. */
 export default function ApprovalInboxPage() {
 	return (
-		<Suspense fallback={<ApprovalInboxLoadingState />}>
+		<Suspense fallback={<NeutralPageLoading />}>
 			<ApprovalInboxGate />
 		</Suspense>
 	);
