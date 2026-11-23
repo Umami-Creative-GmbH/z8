@@ -87,7 +87,12 @@ export async function loadOrganizationPrincipalForIdentity(
 		? await executor
 				.select()
 				.from(teamPermissions)
-				.where(eq(teamPermissions.employeeId, employeeId))
+				.where(
+					and(
+						eq(teamPermissions.employeeId, employeeId),
+						eq(teamPermissions.organizationId, organizationId),
+					),
+				)
 		: [];
 	const customRoleRows = employeeId
 		? await executor
@@ -175,7 +180,12 @@ export async function loadOrganizationPrincipalContexts(
 			? await executor
 					.select()
 					.from(teamPermissions)
-					.where(inArray(teamPermissions.employeeId, employeeIds))
+					.where(
+						and(
+							inArray(teamPermissions.employeeId, employeeIds),
+							eq(teamPermissions.organizationId, organizationId),
+						),
+					)
 			: [];
 	const customRoleRows =
 		employeeIds.length > 0

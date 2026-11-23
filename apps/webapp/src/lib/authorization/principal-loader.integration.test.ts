@@ -288,6 +288,28 @@ describe("organization principal loader on PostgreSQL", () => {
 			}
 		});
 
+		it("ignores team permissions recorded under another organization", async () => {
+			const holder = await person("a holder of another organization's team permissions", {
+				opensInbox: false,
+				managesCompliance: false,
+			});
+			await fixture.pool.query(
+				`insert into team_permissions
+				 (employee_id, organization_id, can_create_teams, can_approve_team_requests, granted_by,
+				  updated_at)
+				 values ($1, $2, true, true, $3, now())`,
+				[holder.employee.id, await fixture.createOrganization(), fixture.ownerEmployeeId],
+			);
+			const noPermissions = { orgWide: null, byTeamId: new Map() };
+
+			expect((await singly(holder.userId)).permissions).toEqual(noPermissions);
+			const batched = await loadOrganizationPrincipalContexts(fixture.db, {
+				organizationId: fixture.organizationId,
+				userIds: [holder.userId],
+			});
+			expect(batched.get(holder.userId)?.permissions).toEqual(noPermissions);
+		});
+
 		it("gives a platform admin a session's platform admin principal, and everyone else theirs", async () => {
 			const sessions = await loadOrganizationSessionPrincipalContexts(fixture.db, {
 				organizationId: fixture.organizationId,
