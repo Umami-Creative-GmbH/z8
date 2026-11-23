@@ -298,6 +298,29 @@ export function resolveEmploymentPeriodForDay(
 }
 
 /**
+ * The engagement kind of an employee-local calendar day (#1996), as the contract resolver
+ * decides it: the kind of the stint in force that day; outside every stint, the kind of the
+ * nearest one; with no recorded stint at all, `employee.engagement_kind`.
+ */
+export function engagementKindOnDay(input: {
+	periods: readonly EmploymentPeriodSnapshot[];
+	day: PlainDate;
+	employeeCalendarTimezone: string;
+	employeeEngagementKind?: EngagementKind;
+}): EngagementKind {
+	if (input.periods.length === 0) return input.employeeEngagementKind ?? "employee";
+	const { period } = resolveEmploymentPeriodForDay(
+		input.periods,
+		input.day,
+		input.employeeCalendarTimezone,
+	);
+	return (
+		period?.engagementKind ??
+		engagementKindOutsideEmployment(input.periods, input.day, input.employeeCalendarTimezone)
+	);
+}
+
+/**
  * The engagement kind of a day no employment period covers (#1996): the kind of the stint
  * that ended last before the day, or, before the first stint, of the stint that starts
  * first after it. Only callers that found no period on the day use this.
@@ -1274,13 +1297,12 @@ export function resolveEffectiveContractPure(
 	// kind of the nearest stint, so a contractor's non-employed days never inherit defaults.
 	const engagementKind: EngagementKind =
 		period?.engagementKind ??
-		(input.employmentPeriods.length === 0
-			? (input.employeeEngagementKind ?? "employee")
-			: engagementKindOutsideEmployment(
-					input.employmentPeriods,
-					day,
-					input.employeeCalendarTimezone,
-				));
+		engagementKindOnDay({
+			periods: input.employmentPeriods,
+			day,
+			employeeCalendarTimezone: input.employeeCalendarTimezone,
+			employeeEngagementKind: input.employeeEngagementKind,
+		});
 	if (engagementKind === "contractor") {
 		return contractorEngagementOnDay({
 			input,

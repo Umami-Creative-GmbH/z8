@@ -570,8 +570,7 @@ export function countIncompleteSetup(scope: StatisticsScope, now: Instant) {
 				at: now,
 			}),
 		);
-		return roster.filter((person) => !person.teamId || needsWorkPolicy(coverage, person.id))
-			.length;
+		return roster.filter((person) => !person.teamId || needsWorkPolicy(coverage, person.id)).length;
 	});
 }
 

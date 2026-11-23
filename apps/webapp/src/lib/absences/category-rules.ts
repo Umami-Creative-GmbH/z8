@@ -1,3 +1,5 @@
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
+
 /** The rules of an absence category that decide what its approved absences do. */
 export interface AbsenceCategoryRules {
 	requiresWorkTime: boolean;
@@ -35,14 +37,16 @@ export function isContractorUnavailabilityType(type: string | null | undefined):
 /** Why someone may not record an absence of a category, by their engagement kind (#1996). */
 export type EngagementCategoryRefusal =
 	| "contractor_records_unavailability_only"
-	| "unavailability_is_for_contractors";
+	| "unavailability_is_for_contractors"
+	/** The absence's days fall in an employee stint and in a contractor stint. */
+	| "absence_spans_engagement_change";
 
 /**
  * An External Contractor records only unavailability, never vacation, sick leave or any other
  * employee absence; an employee never records contractor unavailability.
  */
 export function engagementCategoryRefusal(
-	engagementKind: "employee" | "contractor",
+	engagementKind: EngagementKind,
 	categoryType: string,
 ): EngagementCategoryRefusal | null {
 	const unavailability = isContractorUnavailabilityType(categoryType);
@@ -52,11 +56,41 @@ export function engagementCategoryRefusal(
 	return unavailability ? "unavailability_is_for_contractors" : null;
 }
 
-/** The server's English refusal messages; the request form only offers allowed categories. */
+/**
+ * Whether an absence of a category may be recorded, decided by the kinds of the stints its days
+ * fall in, never by the person's kind today (#1996): a late sick note for an employee stint is
+ * still sick leave after they became a contractor. An absence across an employee and a
+ * contractor stint fits no category on every day, so it is refused and recorded in two parts.
+ */
+export function absenceEngagementRefusal(
+	kindsOnDays: Iterable<EngagementKind>,
+	categoryType: string,
+): EngagementCategoryRefusal | null {
+	const kinds = new Set(kindsOnDays);
+	if (kinds.size > 1) return "absence_spans_engagement_change";
+	const [kind = "employee"] = kinds;
+	return engagementCategoryRefusal(kind, categoryType);
+}
+
+/**
+ * Whether a picker offers a category to someone whose stints have these kinds: when any stint
+ * allows it. The server still decides each absence by the stints its dates fall in.
+ */
+export function categoryOfferedFor(
+	kindsOfStints: readonly EngagementKind[],
+	categoryType: string,
+): boolean {
+	const kinds: readonly EngagementKind[] = kindsOfStints.length ? kindsOfStints : ["employee"];
+	return kinds.some((kind) => engagementCategoryRefusal(kind, categoryType) === null);
+}
+
+/** The server's English refusal messages; the forms translate them by refusal code. */
 export const ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES: Record<EngagementCategoryRefusal, string> = {
 	contractor_records_unavailability_only:
 		"An External Contractor can only record unavailability, not vacation or leave",
 	unavailability_is_for_contractors: "Only External Contractors record unavailability",
+	absence_spans_engagement_change:
+		"These dates span a change between employment and external contractor work. Record each part separately.",
 };
 
 /** The rules every contractor unavailability category has; migration 0330 checks them too. */

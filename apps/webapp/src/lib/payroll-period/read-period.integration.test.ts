@@ -317,9 +317,7 @@ describe("readPeriod on PostgreSQL", () => {
 		const unavailable = (name: string | undefined) => name === "Unavailable";
 		expect(read.absences.filter((row) => unavailable(row.categoryName))).toEqual([]);
 		// The Overview summary (tab and PDF) and its blockers come from the same sources.
-		expect(read.summary.absenceDetails.filter((row) => unavailable(row.categoryName))).toEqual(
-			[],
-		);
+		expect(read.summary.absenceDetails.filter((row) => unavailable(row.categoryName))).toEqual([]);
 		expect(
 			read.summary.employees.flatMap((row) =>
 				row.absenceDaysByCategory.filter((absence) => unavailable(absence.categoryName)),

@@ -190,7 +190,7 @@ function TeamAbsencesTableContent({
 						? {
 								id: selectedEmployee.id,
 								name: selectedEmployee.name,
-								engagementKind: selectedEmployee.engagementKind,
+								engagementKinds: selectedEmployee.engagementKinds,
 							}
 						: null
 				}

@@ -1019,6 +1019,11 @@
     "tryDifferentSearch": "Versuchen Sie, Ihre Suche oder Filter anzupassen"
   },
   "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "An diesen Tagen arbeitet die Person als Externer Dienstleister: Es kann nur Nichtverfügbarkeit erfasst werden.",
+      "spansEngagementChange": "Diese Tage umfassen einen Wechsel zwischen Anstellung und Tätigkeit als Externer Dienstleister. Erfassen Sie jeden Teil separat.",
+      "unavailabilityIsForContractors": "An diesen Tagen ist die Person angestellt: Nichtverfügbarkeit gibt es nur für Externe Dienstleister."
+    },
     "externalContractor": "Externer Dienstleister",
     "filter": {
       "all": "Alle",

@@ -334,22 +334,9 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 					endDate: "2026-11-04",
 					endPeriod: "full_day",
 				},
-				{
-					id: person.employeeId,
-					organizationId: org.organizationId,
-					engagementKind: await engagementKindOf(person.employeeId),
-				},
+				{ id: person.employeeId, organizationId: org.organizationId },
 				person.userId,
 			);
-		}
-
-		/** The requester's engagement kind, as the requesting-employee lookup loads it. */
-		async function engagementKindOf(employeeId: string) {
-			const { rows } = await fixture.pool.query<{ engagement_kind: "employee" | "contractor" }>(
-				"select engagement_kind from employee where id = $1",
-				[employeeId],
-			);
-			return rows[0]?.engagement_kind;
 		}
 
 		it("records a contractor's unavailability without vacation, and refuses them vacation", async () => {
@@ -535,10 +522,10 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 			await categories(org.organizationId);
 
 			const forContractor = await getAbsenceCategories(org.organizationId, {
-				engagementKind: "contractor",
+				engagementKinds: ["contractor"],
 			});
 			const forEmployee = await getAbsenceCategories(org.organizationId, {
-				engagementKind: "employee",
+				engagementKinds: ["employee"],
 			});
 			expect(forContractor.map((category) => category.type)).toEqual(["contractor_unavailability"]);
 			expect(forEmployee.map((category) => category.type)).toEqual(["vacation"]);
@@ -589,6 +576,210 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 				{ canonicalReadiness: "absences" },
 			);
 			expect(absencesForPayroll).toEqual([]);
+		});
+
+		describe("by the stint each absence day falls in", () => {
+			/**
+			 * Employed until 30 June 2026, an External Contractor from 1 July: their kind today is
+			 * contractor, but June's days belong to the employee stint.
+			 */
+			async function convertedOnFirstOfJuly() {
+				const { organizationId, ownerUserId } = await fixture.organization("UTC");
+				const person = await fixture.seedEmployee({ organizationId });
+				await fixture.pool.query(
+					`update employee_employment_period set status = 'closed', ended_at = '2026-07-01T00:00:00Z'
+					 where employee_id = $1`,
+					[person.employeeId],
+				);
+				await fixture.pool.query(
+					`insert into employee_employment_period
+					 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+					 values ($1, $2, 'open', '2026-07-01T00:00:00Z', 'recorded', 'contractor')`,
+					[organizationId, person.employeeId],
+				);
+				await fixture.pool.query(
+					"update employee set engagement_kind = 'contractor' where id = $1",
+					[person.employeeId],
+				);
+				const category = await categories(organizationId);
+				const personal = randomUUID();
+				await fixture.pool.query(
+					`insert into absence_category
+					 (id, organization_id, type, name, requires_approval, counts_against_vacation, is_active, updated_at)
+					 values ($1, $2, 'personal', 'Personal', false, false, true, now())`,
+					[personal, organizationId],
+				);
+				return { organizationId, ownerUserId, person, category: { ...category, personal } };
+			}
+
+			const range = (startDate: string, endDate: string) => ({
+				startDate,
+				startPeriod: "full_day" as const,
+				endDate,
+				endPeriod: "full_day" as const,
+			});
+
+			it("takes a late employee absence for June and unavailability for July in self-service", async () => {
+				const org = await convertedOnFirstOfJuly();
+				const request = (categoryId: string, startDate: string, endDate: string) =>
+					requestAbsenceForEmployeeEffect(
+						{ categoryId, ...range(startDate, endDate) },
+						{ id: org.person.employeeId, organizationId: org.organizationId },
+						org.person.userId,
+					);
+
+				await expect(
+					request(org.category.personal, "2026-06-29", "2026-06-29"),
+				).resolves.toMatchObject({ success: true });
+				await expect(
+					request(org.category.unavailability, "2026-06-26", "2026-06-26"),
+				).resolves.toMatchObject({ success: false, refusal: "unavailability_is_for_contractors" });
+				await expect(
+					request(org.category.personal, "2026-07-06", "2026-07-06"),
+				).resolves.toMatchObject({
+					success: false,
+					refusal: "contractor_records_unavailability_only",
+				});
+				await expect(
+					request(org.category.unavailability, "2026-07-02", "2026-07-02"),
+				).resolves.toMatchObject({ success: true });
+				// Across the conversion no category fits every day: each part is recorded on its own.
+				await expect(
+					request(org.category.unavailability, "2026-06-30", "2026-07-01"),
+				).resolves.toMatchObject({ success: false, refusal: "absence_spans_engagement_change" });
+			});
+
+			it("lets a manager record a June absence and July unavailability", async () => {
+				const org = await convertedOnFirstOfJuly();
+				session.userId = org.ownerUserId;
+				session.organizationId = org.organizationId;
+				const record = (categoryId: string, startDate: string, endDate: string) =>
+					recordAbsenceForEmployee({
+						employeeId: org.person.employeeId,
+						categoryId,
+						...range(startDate, endDate),
+					});
+
+				await expect(
+					record(org.category.personal, "2026-06-22", "2026-06-23"),
+				).resolves.toMatchObject({ success: true });
+				await expect(
+					record(org.category.unavailability, "2026-06-24", "2026-06-24"),
+				).resolves.toMatchObject({ success: false, refusal: "unavailability_is_for_contractors" });
+				await expect(
+					record(org.category.unavailability, "2026-07-13", "2026-07-14"),
+				).resolves.toMatchObject({ success: true });
+				await expect(
+					record(org.category.personal, "2026-06-30", "2026-07-01"),
+				).resolves.toMatchObject({ success: false, refusal: "absence_spans_engagement_change" });
+			});
+
+			it("imports June's absences of the employee stint and July's unavailability", async () => {
+				const org = await convertedOnFirstOfJuly();
+				const { importBatch, importBatchJob, importStagedRow } = await import("@/db/schema");
+				const { processImportReviewJob } = await import("@/lib/import-review/worker");
+				const batchId = randomUUID();
+				const jobId = randomUUID();
+				await db.insert(importBatch).values({
+					id: batchId,
+					organizationId: org.organizationId,
+					provider: "clockin",
+					status: "committing",
+					selectedScope: {},
+					dateRange: { startDate: "2026-06-01", endDate: "2026-07-31" },
+					startedBy: org.ownerUserId,
+				});
+				await db.insert(importBatchJob).values({
+					id: jobId,
+					batchId,
+					organizationId: org.organizationId,
+					kind: "commit",
+					entityType: "absence",
+					partitionKey: "absence",
+				});
+				const rows = [
+					{ source: "june-personal", category: "Personal", from: "2026-06-08", to: "2026-06-10" },
+					{
+						source: "june-unavailable",
+						category: "Unavailable",
+						from: "2026-06-15",
+						to: "2026-06-15",
+					},
+					{
+						source: "july-unavailable",
+						category: "Unavailable",
+						from: "2026-07-06",
+						to: "2026-07-07",
+					},
+					{ source: "july-personal", category: "Personal", from: "2026-07-13", to: "2026-07-13" },
+					{ source: "across-personal", category: "Personal", from: "2026-06-29", to: "2026-07-02" },
+				];
+				await db.insert(importStagedRow).values(
+					rows.map((row) => ({
+						batchId,
+						organizationId: org.organizationId,
+						entityType: "absence" as const,
+						providerSourceId: `absence:${row.source}`,
+						sourcePayloadHash: `hash-${row.source}`,
+						sourcePayload: { id: row.source },
+						normalizedPayload: {
+							employeeId: org.person.employeeId,
+							startsAt: `${row.from}T00:00:00Z`,
+							endsAt: `${row.to}T23:59:00Z`,
+							categoryName: row.category,
+						},
+						rowStatus: "accepted" as const,
+						issueSeverity: "none" as const,
+					})),
+				);
+
+				await processImportReviewJob({
+					data: {
+						type: "import-review-commit" as const,
+						batchId,
+						jobId,
+						organizationId: org.organizationId,
+						entityType: "absence" as const,
+						committedBy: org.ownerUserId,
+					},
+					attemptsMade: 0,
+					opts: { attempts: 1 },
+				} as Parameters<typeof processImportReviewJob>[0]).catch(() => undefined);
+
+				const { rows: staged } = await fixture.pool.query<{
+					provider_source_id: string;
+					row_status: string;
+				}>(
+					"select provider_source_id, row_status from import_staged_row where batch_id = $1 order by provider_source_id",
+					[batchId],
+				);
+				expect(staged).toEqual([
+					{ provider_source_id: "absence:across-personal", row_status: "blocked" },
+					{ provider_source_id: "absence:july-personal", row_status: "blocked" },
+					{ provider_source_id: "absence:july-unavailable", row_status: "committed" },
+					{ provider_source_id: "absence:june-personal", row_status: "committed" },
+					{ provider_source_id: "absence:june-unavailable", row_status: "blocked" },
+				]);
+			});
+
+			it("offers the categories of every stint, the server deciding each request by its dates", async () => {
+				const org = await convertedOnFirstOfJuly();
+				const { loadEngagementKindsOfStints } = await import("@/lib/absences/absence-engagement");
+
+				const kinds = await loadEngagementKindsOfStints(db, {
+					organizationId: org.organizationId,
+					employeeIds: [org.person.employeeId],
+				});
+				const offered = await getAbsenceCategories(org.organizationId, {
+					engagementKinds: kinds.get(org.person.employeeId),
+				});
+				expect(kinds.get(org.person.employeeId)?.toSorted()).toEqual(["contractor", "employee"]);
+				expect(offered.map((category) => category.type).toSorted()).toEqual([
+					"contractor_unavailability",
+					"personal",
+					"vacation",
+				]);
+			});
 		});
 
 		it("refuses an unavailability category that would deduct vacation or work time", async () => {

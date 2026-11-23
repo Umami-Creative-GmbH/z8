@@ -1019,6 +1019,11 @@
     "tryDifferentSearch": "Try adjusting your search or filters"
   },
   "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "On these dates they work as an External Contractor: only unavailability can be recorded.",
+      "spansEngagementChange": "These dates span a change between employment and external contractor work. Record each part separately.",
+      "unavailabilityIsForContractors": "On these dates they are employed: unavailability is only for External Contractors."
+    },
     "externalContractor": "External Contractor",
     "filter": {
       "all": "All",
