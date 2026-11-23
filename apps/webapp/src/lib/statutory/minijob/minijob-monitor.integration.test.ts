@@ -266,13 +266,15 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 			totalCents: 16_500,
 			fingerprint: month(atOne, worker.employeeId)?.fingerprint,
 		});
-		// Work outside any shift grows for real: steady over minutes, stale after two more hours.
+		// Work outside any shift grows for real, but only in the total while it is open: the
+		// fingerprint never moves with a running clock-in.
 		expect(month(atOneFive, unplanned.employeeId)?.fingerprint).toBe(
 			month(atOne, unplanned.employeeId)?.fingerprint,
 		);
-		expect(month(atThree, unplanned.employeeId)?.fingerprint).not.toBe(
-			month(atOne, unplanned.employeeId)?.fingerprint,
-		);
+		expect(month(atThree, unplanned.employeeId)).toMatchObject({
+			totalCents: 10_000,
+			fingerprint: month(atOne, unplanned.employeeId)?.fingerprint,
+		});
 	});
 
 	it("keeps total and fingerprint steady for a clock-in before its shift starts", async () => {

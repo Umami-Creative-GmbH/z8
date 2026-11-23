@@ -295,12 +295,15 @@ export async function evaluateMinijobEarnings(
 		const matches = matchWorkToShifts(shiftsOf.get(employeeId) ?? [], works, input.now);
 		for (const work of works) {
 			const shifts = matches.get(work);
+			// Work in progress enters the fingerprint without its minutes (`plannedBasisOf`).
+			const open = work.end === null ? { open: true } : {};
 			if (!shifts) {
 				addItem(employeeId, {
 					source: "work",
 					id: work.id,
 					date: plainDateAt(work.start, timezone).toString(),
 					minutes: work.minutes,
+					...open,
 				});
 				continue;
 			}
@@ -324,6 +327,7 @@ export async function evaluateMinijobEarnings(
 					date: part.shift.date,
 					minutes: part.minutes,
 					shiftIds: [part.shift.row.id, ...sameMonth.map((other) => other.row.id)],
+					...open,
 				});
 			}
 		}
