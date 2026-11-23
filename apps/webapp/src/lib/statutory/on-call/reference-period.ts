@@ -18,7 +18,9 @@
  * Listed events: each illness from its first day, and each public holiday on which work was lost.
  * A holiday during approved unpaid or parental leave is not listed (no work is lost to it). A
  * holiday inside an illness is its own row with its own reference period (§ 4 Abs. 2 EFZG,
- * § 12 Abs. 5 TzBfG), and the illness's paid sick days leave it out.
+ * § 12 Abs. 5 TzBfG), and the illness's paid sick days leave it out. Both are paid only while
+ * continued pay is owed (§ 3 EFZG): not in the first four weeks of employment, and for at most six
+ * weeks of the illness.
  *
  * The numerator is the completed work of the remaining days, allocated to employee-local days by
  * the payroll allocation rule. It only reads: it never writes work balances, settled payroll days
@@ -92,16 +94,26 @@ export interface OnCallReferenceBreakdown {
 
 export type OnCallReferenceEventKind = "sick_leave" | "public_holiday";
 
+/** A span of days, `untilExclusive` exclusive. */
+export interface OnCallDaySpan {
+	readonly from: string;
+	readonly untilExclusive: string;
+}
+
 /**
- * The days of an illness, within the listed range, that its sick-leave row pays (§ 12 Abs. 4
- * TzBfG): employed and on-call days, without the public holidays inside it. § 4 Abs. 2 EFZG pays
- * those by the holiday rule, each as its own `public_holiday` row, so no day is paid twice.
+ * An illness's days within the listed range (`from` … `untilExclusive`) and the ones its sick-leave
+ * row pays (§ 12 Abs. 4 TzBfG): employed and on-call days while continued pay is owed (§ 3 EFZG,
+ * see {@link continuedPayOf}), without the public holidays inside it. § 4 Abs. 2 EFZG pays those by
+ * the holiday rule, each as its own `public_holiday` row, so no day is paid twice.
  */
 export interface OnCallPaidSickDays {
 	readonly from: string;
 	readonly untilExclusive: string;
+	/** Paid sick days in the range: 0 when no continued pay is owed in it. */
 	readonly days: number;
 	readonly holidaysPaidAsHolidays: readonly string[];
+	/** The illness's whole span of continued pay, or null when none is owed for it at all. */
+	readonly continuedPay: OnCallDaySpan | null;
 }
 
 export interface OnCallReferenceEvent {
@@ -162,6 +174,52 @@ export function continuedSickLeaves(leaves: readonly SickLeave[]): SickLeave[] {
 
 function dayAfter(date: string): string {
 	return parsePlainDate(date).add({ days: 1 }).toString();
+}
+
+/** § 3 Abs. 3 EFZG: the claim arises after four weeks of uninterrupted employment. */
+const EFZG_WAITING_DAYS = 28;
+/** § 3 Abs. 1 EFZG: continued pay for up to six weeks of the illness. */
+const EFZG_CONTINUED_PAY_DAYS = 42;
+
+/**
+ * The days of an illness on which continued pay is owed (§ 3 EFZG), or null when none is. The six
+ * weeks run from the illness's first day, or, when it began within the first four weeks of
+ * uninterrupted employment, from the day the claim arises (§ 3 Abs. 3 EFZG), and end with the
+ * illness. Back-to-back leave is one illness ({@link continuedSickLeaves}).
+ *
+ * Not covered: a new illness from the same cause as an earlier one (Fortsetzungserkrankung,
+ * § 3 Abs. 1 Satz 2 EFZG) is not counted against the earlier one's six weeks; each illness gets
+ * its own. Payroll has to apply that 6/12-month rule itself.
+ */
+function continuedPayOf(facts: ReferenceFacts, leave: SickLeave): OnCallDaySpan | null {
+	const employed = (day: PlainDate) => facts.contracts.get(day.toString())?.isEmployedOnDay ?? false;
+	const illnessEnd = parsePlainDate(leave.endDate);
+	// The first employed day of the illness among the loaded days (they cover its start).
+	let first = parsePlainDate(leave.startDate);
+	while (!employed(first)) {
+		first = first.add({ days: 1 });
+		if (comparePlainDates(first, illnessEnd) > 0 || !facts.contracts.has(first.toString())) {
+			return null;
+		}
+	}
+	// The start of the uninterrupted employment it belongs to. The loaded days reach at least
+	// three months back, so a run reaching their start is well past the waiting time. Days after
+	// the loaded ones are not needed: once the claim arises, the six weeks run on even if the
+	// employment ends (§ 8 EFZG), and days not employed are not counted as paid sick days.
+	let employedSince = first;
+	while (employed(employedSince.subtract({ days: 1 }))) {
+		employedSince = employedSince.subtract({ days: 1 });
+	}
+	const claimArises = employedSince.add({ days: EFZG_WAITING_DAYS });
+	const from = comparePlainDates(claimArises, first) > 0 ? claimArises : first;
+	if (comparePlainDates(from, illnessEnd) > 0) return null;
+	const sixWeeksEnd = from.add({ days: EFZG_CONTINUED_PAY_DAYS }).toString();
+	const until = dayAfter(leave.endDate);
+	return { from: from.toString(), untilExclusive: sixWeeksEnd < until ? sixWeeksEnd : until };
+}
+
+function within(span: OnCallDaySpan | null, day: string): boolean {
+	return span !== null && day >= span.from && day < span.untilExclusive;
 }
 
 /**
@@ -434,13 +492,19 @@ function eventsOf(
 	},
 ): OnCallReferenceEvent[] {
 	const inRange = (day: string) => day >= input.from && day < input.untilExclusive;
-	// Illnesses listed: running in the range and on call on their first day.
-	const illnesses = continuedSickLeaves(facts.sickLeaves).filter(
-		(leave) =>
-			leave.startDate < input.untilExclusive &&
-			leave.endDate >= input.from &&
-			onCallOn(facts, leave.startDate),
-	);
+	const illnesses = continuedSickLeaves(facts.sickLeaves).map((leave) => ({
+		...leave,
+		continuedPay: continuedPayOf(facts, leave),
+	}));
+	// A holiday inside an illness on which no continued pay is owed (the first four weeks of
+	// employment, or after the six weeks) is not paid by the holiday rule either.
+	const unpaidIllnessDay = (day: string) =>
+		illnesses.some(
+			(illness) =>
+				day >= illness.startDate &&
+				day <= illness.endDate &&
+				!within(illness.continuedPay, day),
+		);
 	// A holiday is paid only where work was lost (as the band and the denominator see it). During
 	// approved unpaid or parental leave no work is lost to it, so there is no holiday pay. A holiday
 	// inside an illness is its own row: § 4 Abs. 2 EFZG pays it by the holiday rule, and § 12 Abs. 5
@@ -451,15 +515,24 @@ function eventsOf(
 				inRange(day) &&
 				onCallOn(facts, day) &&
 				(facts.workMinutesByDay[day] ?? 0) === 0 &&
-				facts.exclusionByDay.get(day) !== "unpaid_absence",
+				facts.exclusionByDay.get(day) !== "unpaid_absence" &&
+				!unpaidIllnessDay(day),
 		)
 		.toSorted();
 	const paidHolidaySet = new Set(paidHolidays);
-	const sickRows = illnesses.map((leave) => ({
-		kind: "sick_leave" as const,
-		eventDate: leave.startDate,
-		paidSickDays: paidSickDaysOf(facts, leave, input, paidHolidaySet),
-	}));
+	// Illnesses listed: running in the range and on call on their first day.
+	const sickRows = illnesses
+		.filter(
+			(illness) =>
+				illness.startDate < input.untilExclusive &&
+				illness.endDate >= input.from &&
+				onCallOn(facts, illness.startDate),
+		)
+		.map((illness) => ({
+			kind: "sick_leave" as const,
+			eventDate: illness.startDate,
+			paidSickDays: paidSickDaysOf(facts, illness, input, paidHolidaySet),
+		}));
 	const holidayRows = paidHolidays.map((eventDate) => ({
 		kind: "public_holiday" as const,
 		eventDate,
@@ -479,21 +552,29 @@ function eventsOf(
 /** The illness's days in the listed range that its sick-leave row pays; see {@link OnCallPaidSickDays}. */
 function paidSickDaysOf(
 	facts: ReferenceFacts,
-	leave: SickLeave,
+	illness: SickLeave & { readonly continuedPay: OnCallDaySpan | null },
 	range: { readonly from: string; readonly untilExclusive: string },
 	paidHolidays: ReadonlySet<string>,
 ): OnCallPaidSickDays {
-	const from = leave.startDate > range.from ? leave.startDate : range.from;
-	const leaveEnd = dayAfter(leave.endDate);
-	const untilExclusive = leaveEnd < range.untilExclusive ? leaveEnd : range.untilExclusive;
+	const from = illness.startDate > range.from ? illness.startDate : range.from;
+	const illnessEnd = dayAfter(illness.endDate);
+	const untilExclusive = illnessEnd < range.untilExclusive ? illnessEnd : range.untilExclusive;
 	const holidaysPaidAsHolidays: string[] = [];
 	let days = 0;
 	for (const day of daysOf(parsePlainDate(from), parsePlainDate(untilExclusive))) {
 		const key = day.toString();
+		// Holidays inside the illness are paid only while continued pay is owed: `paidHolidays`
+		// already leaves out the others.
 		if (paidHolidays.has(key)) holidaysPaidAsHolidays.push(key);
-		else if (onCallOn(facts, key)) days += 1;
+		else if (within(illness.continuedPay, key) && onCallOn(facts, key)) days += 1;
 	}
-	return { from, untilExclusive, days, holidaysPaidAsHolidays };
+	return {
+		from,
+		untilExclusive,
+		days,
+		holidaysPaidAsHolidays,
+		continuedPay: illness.continuedPay,
+	};
 }
 
 /**

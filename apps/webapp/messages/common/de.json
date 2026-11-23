@@ -669,6 +669,10 @@
         "perDay": "{duration} pro Tag",
         "rangeTooLong": "Referenzstunden werden für höchstens drei Monate auf einmal aufgelistet. Wähle einen kürzeren Zeitraum.",
         "paidSickDays": "Entgeltfortzahlung im Krankheitsfall für {days, plural, one {# Tag} other {# Tage}} in diesem Zeitraum",
+        "continuedPaySpan": "Entgeltfortzahlung geschuldet vom {from} bis {until} (§ 3 EFZG)",
+        "sickPayExhausted": "Keine Entgeltfortzahlung in diesem Zeitraum: Die sechs Wochen endeten am {date} (§ 3 Abs. 1 EFZG)",
+        "sickPayWaiting": "Keine Entgeltfortzahlung in diesem Zeitraum: Der Anspruch entsteht am {date}, nach vier Wochen Beschäftigung (§ 3 Abs. 3 EFZG)",
+        "sickPayNotOwed": "Für diese Krankheit ist keine Entgeltfortzahlung geschuldet: Sie endete in den ersten vier Wochen der Beschäftigung (§ 3 Abs. 3 EFZG)",
         "holidaysPaidAsHolidays": "Feiertage während der Krankheit werden in eigenen Zeilen bezahlt, nicht als Krankheitstage: {dates}",
         "hide": "Aufschlüsselung ausblenden",
         "show": "Aufschlüsselung anzeigen"

@@ -211,10 +211,11 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 	it("lists only holidays on which work was lost; a holiday inside an illness is its own row, paid once", async () => {
 		const org = await onCall.organization("a");
 		const worker = await fx.employee(org, "worker");
-		const periodId = await onCall.employmentPeriod(org, worker, "2026-03-31T22:00:00Z");
+		// Hired more than 4 weeks before the illness, so continued pay is owed (§ 3 Abs. 3 EFZG).
+		const periodId = await onCall.employmentPeriod(org, worker, "2026-02-28T23:00:00Z");
 		await onCall.onCallTerms(org, worker, {
 			kind: "unspecified",
-			from: "2026-04-01",
+			from: "2026-03-01",
 			employmentPeriodId: periodId,
 		});
 		// Good Friday, not worked: paid by § 12 Abs. 5 TzBfG, listed.
@@ -255,6 +256,8 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			untilExclusive: "2026-04-23",
 			days: 9,
 			holidaysPaidAsHolidays: ["2026-04-15"],
+			// Within the six weeks: owed until the illness ends.
+			continuedPay: { from: "2026-04-13", untilExclusive: "2026-04-23" },
 		});
 		expect(holiday?.paidSickDays).toBeUndefined();
 		expect(holiday?.breakdown).toMatchObject({
@@ -268,6 +271,135 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			reason: "paid_absence",
 			days: 2,
 		});
+	});
+
+	/** Hired 2025-10-01 (Berlin), on call throughout, sick 2026-01-05 … 2026-03-31. */
+	async function longIllness() {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const periodId = await onCall.employmentPeriod(org, worker, "2025-09-30T22:00:00Z");
+		await onCall.onCallTerms(org, worker, {
+			kind: "unspecified",
+			from: "2025-10-01",
+			employmentPeriodId: periodId,
+		});
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-01-05",
+			endDate: "2026-03-31",
+		});
+		const listed = (from: string, untilExclusive: string) =>
+			listOnCallReferenceEvents(db, {
+				organizationId: org.id,
+				employeeId: worker.employeeId,
+				from,
+				untilExclusive,
+				method: "three_months",
+			});
+		return { org, worker, listed };
+	}
+
+	it("pays an illness for at most 6 weeks from its first day (§ 3 Abs. 1 EFZG)", async () => {
+		const { org, listed } = await longIllness();
+
+		// 2026-01-05 + 42 days: continued pay ends with 2026-02-15.
+		const whole = await listed("2026-01-01", "2026-04-01");
+		expect(whole.map((event) => [event.kind, event.eventDate])).toEqual([
+			["sick_leave", "2026-01-05"],
+		]);
+		expect(whole[0]?.paidSickDays).toEqual({
+			from: "2026-01-05",
+			untilExclusive: "2026-04-01",
+			days: 42,
+			holidaysPaidAsHolidays: [],
+			continuedPay: { from: "2026-01-05", untilExclusive: "2026-02-16" },
+		});
+
+		// March is past the 6 weeks: the illness is listed, but nothing is owed for it.
+		const march = await listed("2026-03-01", "2026-04-01");
+		expect(march.map((event) => [event.kind, event.eventDate])).toEqual([
+			["sick_leave", "2026-01-05"],
+		]);
+		expect(march[0]?.paidSickDays).toMatchObject({ from: "2026-03-01", days: 0 });
+
+		const payroll = await listOnCallPayrollReferenceRows(db, {
+			organizationId: org.id,
+			startDate: "2026-03-01",
+			endDate: "2026-03-31",
+			method: "three_months",
+		});
+		expect(payroll.map((row) => [row.kind, row.eventDate, row.paidSickDays?.days])).toEqual([
+			["sick_leave", "2026-01-05", 0],
+		]);
+	});
+
+	it("pays no holiday inside an illness after its 6 weeks of continued pay (§ 4 Abs. 2 EFZG)", async () => {
+		const { org, worker, listed } = await longIllness();
+		// In week 1: paid by the holiday rule. After week 6: nothing is owed for it.
+		await onCall.holiday(org, worker, "2026-01-06");
+		await onCall.holiday(org, worker, "2026-03-20");
+
+		const whole = await listed("2026-01-01", "2026-04-01");
+		expect(whole.map((event) => [event.kind, event.eventDate])).toEqual([
+			["sick_leave", "2026-01-05"],
+			["public_holiday", "2026-01-06"],
+		]);
+		expect(whole[0]?.paidSickDays).toMatchObject({
+			days: 41,
+			holidaysPaidAsHolidays: ["2026-01-06"],
+		});
+
+		const march = await listed("2026-03-01", "2026-04-01");
+		expect(march.map((event) => [event.kind, event.eventDate])).toEqual([
+			["sick_leave", "2026-01-05"],
+		]);
+		expect(march[0]?.paidSickDays).toMatchObject({ days: 0, holidaysPaidAsHolidays: [] });
+	});
+
+	it("owes nothing in the first 4 weeks of employment, then pays from day 29 (§ 3 Abs. 3 EFZG)", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		// Hired 2026-03-02: the 4 weeks end with 2026-03-29.
+		const periodId = await onCall.employmentPeriod(org, worker, "2026-03-01T23:00:00Z");
+		await onCall.onCallTerms(org, worker, {
+			kind: "unspecified",
+			from: "2026-03-02",
+			employmentPeriodId: periodId,
+		});
+		await onCall.absence(org, worker, {
+			type: "sick",
+			startDate: "2026-03-10",
+			endDate: "2026-05-31",
+		});
+		// Inside the illness but in the waiting time: no holiday pay either.
+		await onCall.holiday(org, worker, "2026-03-20");
+		const listed = (untilExclusive: string) =>
+			listOnCallReferenceEvents(db, {
+				organizationId: org.id,
+				employeeId: worker.employeeId,
+				from: "2026-03-01",
+				untilExclusive,
+				method: "three_months",
+			});
+
+		const untilWaitingEnds = await listed("2026-03-30");
+		expect(untilWaitingEnds.map((event) => [event.kind, event.eventDate])).toEqual([
+			["sick_leave", "2026-03-10"],
+		]);
+		expect(untilWaitingEnds[0]?.paidSickDays).toEqual({
+			from: "2026-03-10",
+			untilExclusive: "2026-03-30",
+			days: 0,
+			holidaysPaidAsHolidays: [],
+			// Six weeks from the day the entitlement arises.
+			continuedPay: { from: "2026-03-30", untilExclusive: "2026-05-11" },
+		});
+
+		const march = await listed("2026-04-01");
+		expect(march.map((event) => [event.kind, event.eventDate])).toEqual([
+			["sick_leave", "2026-03-10"],
+		]);
+		expect(march[0]?.paidSickDays).toMatchObject({ days: 2 });
 	});
 
 	it("lists no holiday during parental or unpaid leave: no work is lost to it", async () => {

@@ -16,6 +16,7 @@ import {
 	type RefusalMessages,
 } from "@/lib/organization-action/action-error-message";
 import type { OnCallReferenceMethod } from "@/lib/statutory/on-call/reference-period";
+import { type OnCallSickPayNote, sickPayNoteOf } from "@/lib/statutory/on-call/sick-pay";
 import type { OnCallPayrollRefusal } from "@/lib/statutory/on-call/views";
 
 const payrollRefusals: RefusalMessages<OnCallPayrollRefusal> = {
@@ -56,6 +57,41 @@ export function OnCallReferencePayrollCard({
 
 	if (rows.isPending || (rows.isSuccess && rows.data.length === 0)) return null;
 	const day = (value: string) => formatPlainDate(parsePlainDate(value), locale, "dateMedium");
+	const sickPayText = (note: OnCallSickPayNote) => {
+		switch (note.kind) {
+			case "paid": {
+				const paid = t(
+					"common.onCall.payroll.paidSickDays",
+					"Sick pay for {days, plural, one {# day} other {# days}} in this period",
+					{ days: note.days },
+				);
+				return note.limitedTo
+					? `${paid} · ${t(
+							"common.onCall.payroll.continuedPaySpan",
+							"Continued pay is owed from {from} to {until} (§ 3 EFZG)",
+							{ from: day(note.limitedTo.from), until: day(note.limitedTo.lastDay) },
+						)}`
+					: paid;
+			}
+			case "exhausted":
+				return t(
+					"common.onCall.payroll.sickPayExhausted",
+					"No sick pay in this period: the six weeks of continued pay ended on {date} (§ 3 Abs. 1 EFZG)",
+					{ date: day(note.lastDay) },
+				);
+			case "waiting":
+				return t(
+					"common.onCall.payroll.sickPayWaiting",
+					"No sick pay in this period: the claim arises on {date}, after four weeks of employment (§ 3 Abs. 3 EFZG)",
+					{ date: day(note.claimArises) },
+				);
+			case "not_owed":
+				return t(
+					"common.onCall.payroll.sickPayNotOwed",
+					"No sick pay is owed for this illness: it ended within the first four weeks of employment (§ 3 Abs. 3 EFZG)",
+				);
+		}
+	};
 
 	return (
 		<Card>
@@ -136,11 +172,7 @@ export function OnCallReferencePayrollCard({
 									</div>
 									{row.paidSickDays ? (
 										<p className="text-muted-foreground mt-1 text-sm">
-											{t(
-												"common.onCall.payroll.paidSickDays",
-												"Sick pay for {days, plural, one {# day} other {# days}} in this period",
-												{ days: row.paidSickDays.days },
-											)}
+											{sickPayText(sickPayNoteOf(row.paidSickDays))}
 											{row.paidSickDays.holidaysPaidAsHolidays.length > 0
 												? ` · ${t(
 														"common.onCall.payroll.holidaysPaidAsHolidays",
