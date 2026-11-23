@@ -20,6 +20,7 @@ import { causedBlockingFindings, publishedShiftSubjects } from "./caused-blockin
 import { statutoryBlockingScheduleContributors } from "./contributors";
 import { evaluateStatutoryFindings, toStatutoryComplianceFinding } from "./evaluate";
 import { publicationBlockingFindings } from "./publication-block";
+import { memoizedReader } from "./read-memo";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
 
@@ -75,12 +76,15 @@ export async function lockPublicationDrafts(
  * `lockPublicationDrafts`, so nothing is published that was not judged.
  */
 export async function findingsBlockingDraftPublication(
-	db: Reader,
+	transaction: Reader,
 	scope: PublicationScope,
 	drafts: readonly PublicationDraft[],
 ): Promise<StatutoryComplianceFinding[]> {
 	const employeeIds = [...new Set(drafts.flatMap((draft) => draft.employeeId ?? []))];
 	if (employeeIds.length === 0) return [];
+	// Both runs below judge the same persisted data (nothing is written between them): reads they
+	// share, such as the youth limits and the organization's preferences, run once.
+	const db = memoizedReader(transaction);
 	const request = {
 		organizationId: scope.organizationId,
 		timezone: scope.timezone,

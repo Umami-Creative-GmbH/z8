@@ -12,6 +12,7 @@ import type {
 } from "./contributor";
 import { statutoryScheduleContributors } from "./contributors";
 import { statutoryFindingChangeKey, statutoryPublishKey } from "./finding-key";
+import { memoizedReader } from "./read-memo";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
 
@@ -159,10 +160,12 @@ export async function addedStatutoryScheduleFindings(
 		employeeId,
 		...request.proposedShift,
 	}));
+	// Load once, judge twice: both runs read the same persisted data, only the proposal differs.
+	const reader = memoizedReader(db);
 	const baseline = new Map(
 		(
 			await runContributors(
-				db,
+				reader,
 				{ ...request, comparedProposedShifts: proposedShifts },
 				contributors,
 			)
@@ -171,7 +174,7 @@ export async function addedStatutoryScheduleFindings(
 			return [statutoryFindingChangeKey(projected), projected] as const;
 		}),
 	);
-	const proposed = await runContributors(db, { ...request, proposedShifts }, contributors);
+	const proposed = await runContributors(reader, { ...request, proposedShifts }, contributors);
 	for (const finding of proposed) {
 		const projected = toStatutoryComplianceFinding(finding);
 		const before = baseline.get(statutoryFindingChangeKey(projected));

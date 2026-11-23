@@ -65,7 +65,8 @@ export async function guardPublishedShiftEdit<T>(
 	const days = [edit.date];
 	if (edit.previousDate && !edit.previousDate.equals(edit.date)) days.push(edit.previousDate);
 	// Only monitors that can block publication: the save holds the shift row locked. One day after
-	// another: `db` is the save's transaction (one connection).
+	// another: `db` is the save's transaction (one connection). Unlike Staffing and publication it
+	// reads afresh after the save (no `memoizedReader`): the save is what it judges.
 	const evaluate = async () => {
 		const findings: StatutoryFinding[] = [];
 		for (const day of days) {

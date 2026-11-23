@@ -19,7 +19,12 @@ export interface StatutoryProposedShift {
 }
 
 export interface StatutoryScheduleContext {
-	/** Selects, plus relational reads for shared readers (e.g. assigned holidays). */
+	/**
+	 * Selects, plus relational reads for shared readers (e.g. assigned holidays). Read everything
+	 * through it: Staffing judges each request twice (without and with the proposal) and publication
+	 * twice (with and without the drafts) on one `memoizedReader`, so a read both runs make runs once
+	 * (load once, judge twice). Each read returns the contributor's own copy of the rows.
+	 */
 	readonly db: Pick<DatabaseClient, "select" | "query">;
 	readonly organizationId: string;
 	/** Organization calendar timezone: compliance weeks, months and years are local to it. */
