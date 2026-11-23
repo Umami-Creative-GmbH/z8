@@ -232,9 +232,13 @@ CREATE TABLE IF NOT EXISTS "employee_statutory_offset" (
 		CHECK ("valid_until_date" IS NULL OR "valid_until_date" > "valid_from_date"),
 	CONSTRAINT "employee_statutory_offset_note_check" CHECK (length(btrim("note")) > 0),
 	CONSTRAINT "employee_statutory_offset_void_check"
-		CHECK (("voided_at" IS NULL) = ("voided_by" IS NULL)),
-	CONSTRAINT "employee_statutory_offset_value_check"
 		CHECK (
+			("voided_at" IS NULL) = ("voided_by" IS NULL)
+			AND ("voided_at" IS NULL OR length(btrim(coalesce("void_reason", ''))) > 0)
+		),
+	-- coalesce: a CHECK that evaluates to NULL passes, so a missing count or end date must fail.
+	CONSTRAINT "employee_statutory_offset_value_check"
+		CHECK (coalesce(
 			CASE "offset_kind"
 				WHEN 'external_minijob_monthly_earnings' THEN
 					"amount_cents" IS NOT NULL AND "amount_cents" >= 0
@@ -255,8 +259,9 @@ CREATE TABLE IF NOT EXISTS "employee_statutory_offset" (
 					AND extract(isodow FROM "valid_from_date") = 1
 					AND "valid_until_date" - "valid_from_date" = 7 * "count_value"
 				ELSE false
-			END
-		)
+			END,
+			false
+		))
 );
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "employeeStatutoryOffset_lookup_idx"
@@ -287,7 +292,10 @@ CREATE TABLE IF NOT EXISTS "employee_study_period" (
 	CONSTRAINT "employee_study_period_kind_check" CHECK ("period_kind" IN ('lecture_free')),
 	CONSTRAINT "employee_study_period_date_range_check" CHECK ("ends_on" >= "starts_on"),
 	CONSTRAINT "employee_study_period_void_check"
-		CHECK (("voided_at" IS NULL) = ("voided_by" IS NULL)),
+		CHECK (
+			("voided_at" IS NULL) = ("voided_by" IS NULL)
+			AND ("voided_at" IS NULL OR length(btrim(coalesce("void_reason", ''))) > 0)
+		),
 	CONSTRAINT "employee_study_period_no_overlap"
 		EXCLUDE USING gist (
 			"organization_id" WITH =,
@@ -336,7 +344,10 @@ CREATE TABLE IF NOT EXISTS "employee_apprentice_release" (
 			AND ("school_minutes" IS NULL OR "school_minutes" BETWEEN 0 AND 10080)
 		),
 	CONSTRAINT "employee_apprentice_release_void_check"
-		CHECK (("voided_at" IS NULL) = ("voided_by" IS NULL)),
+		CHECK (
+			("voided_at" IS NULL) = ("voided_by" IS NULL)
+			AND ("voided_at" IS NULL OR length(btrim(coalesce("void_reason", ''))) > 0)
+		),
 	CONSTRAINT "employee_apprentice_release_no_overlap"
 		EXCLUDE USING gist (
 			"organization_id" WITH =,

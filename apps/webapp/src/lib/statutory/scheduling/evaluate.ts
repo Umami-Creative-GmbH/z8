@@ -4,7 +4,7 @@ import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/typ
 import { attachAcknowledgementStates } from "../acknowledgements";
 import type { StatutoryFinding } from "../finding";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
-import { safeSummary } from "../redaction";
+import { restrictedSummary } from "../redaction";
 import type {
 	StatutoryProposedShift,
 	StatutoryScheduleContext,
@@ -39,7 +39,7 @@ export function toStatutoryComplianceFinding(
 		subjectKey: finding.subjectKey,
 		legalReference: finding.legalReference,
 		// Planners and scoped managers read this: only the documented wage-free fields pass.
-		summary: safeSummary(finding.summary),
+		summary: restrictedSummary(finding),
 		acknowledgementStatus: finding.acknowledgementKind
 			? (finding.acknowledgement?.status ?? "none")
 			: null,

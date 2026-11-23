@@ -239,12 +239,15 @@ async function voidRow(
 		| typeof employeeApprenticeRelease,
 	input: WriteScope & { readonly id: string; readonly reason: string },
 ): Promise<void> {
+	// A voided record stops counting toward a statutory limit, so the audit trail must say why.
+	const reason = input.reason.trim();
+	if (!reason) refuse("statutory_note_required", "Record why this entry is voided", "reason");
 	const rows = await db
 		.update(table)
 		.set({
 			voidedAt: currentTimestamp(),
 			voidedBy: input.actorUserId,
-			voidReason: input.reason.trim() || null,
+			voidReason: reason,
 		})
 		.where(
 			and(

@@ -2,8 +2,10 @@
  * #1988: per-employee statutory context (external / prior-employment offsets, working-student
  * lecture-free periods, apprentice school and exam releases) is organization-scoped and audited.
  */
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
+import { employeeStatutoryOffset } from "@/db/schema";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
@@ -123,6 +125,56 @@ describe("per-employee statutory context (PostgreSQL)", () => {
 		}
 	});
 
+	it("refuses offsets without a count or end date and voids without a reason in the database", async () => {
+		const { orgA, adminA, workerA } = await twoOrganizations();
+		const row = {
+			organizationId: orgA.id,
+			employeeId: workerA.employeeId,
+			note: "Direct write",
+			createdBy: adminA.userId,
+		};
+
+		for (const values of [
+			{ offsetKind: "prior_short_term_work_days" as const, validFromDate: "2026-01-01" },
+			{
+				offsetKind: "prior_short_term_months" as const,
+				validFromDate: "2026-01-01",
+				countValue: 2,
+			},
+			{
+				offsetKind: "prior_working_student_over_20h_weeks" as const,
+				validFromDate: "2026-03-02",
+				validUntilDate: "2026-03-09",
+			},
+		]) {
+			await expect(
+				db.insert(employeeStatutoryOffset).values({ ...row, ...values }),
+			).rejects.toThrow();
+		}
+
+		const [offset] = await db
+			.insert(employeeStatutoryOffset)
+			.values({
+				...row,
+				offsetKind: "prior_short_term_months",
+				validFromDate: "2026-01-01",
+				validUntilDate: "2027-01-01",
+				countValue: 2,
+			})
+			.returning();
+		await expect(
+			db
+				.update(employeeStatutoryOffset)
+				.set({ voidedAt: new Date(), voidedBy: adminA.userId, voidReason: " " })
+				.where(
+					and(
+						eq(employeeStatutoryOffset.id, offset.id),
+						eq(employeeStatutoryOffset.organizationId, orgA.id),
+					),
+				),
+		).rejects.toThrow();
+	});
+
 	it("never lets another organization write or read an employee's context", async () => {
 		const { orgA, orgB, adminA, adminB, workerA } = await twoOrganizations();
 		await recordEmployeeStudyPeriod(db, {
@@ -189,6 +241,9 @@ describe("per-employee statutory context (PostgreSQL)", () => {
 		await expect(overlapping).rejects.toBeInstanceOf(ValidationError);
 		await expect(overlapping).rejects.toMatchObject({ refusal: "statutory_period_overlap" });
 
+		await expect(
+			voidEmployeeStudyPeriod(db, { ...base, periodId: first.id, reason: "  " }),
+		).rejects.toMatchObject({ refusal: "statutory_note_required", field: "reason" });
 		await voidEmployeeStudyPeriod(db, { ...base, periodId: first.id, reason: "Wrong semester" });
 		await recordEmployeeStudyPeriod(db, { ...base, startsOn: "2026-04-15", endsOn: "2026-04-30" });
 

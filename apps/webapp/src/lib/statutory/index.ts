@@ -58,8 +58,10 @@ export {
 	validateStatutoryPreferences,
 } from "./preferences";
 export {
+	isEarningsDerivedFinding,
 	loadStatutoryAudience,
 	type RedactedStatutoryFinding,
+	restrictedSummary,
 	redactStatutoryFinding,
 	redactStatutoryFindings,
 	redactStatutoryThresholds,

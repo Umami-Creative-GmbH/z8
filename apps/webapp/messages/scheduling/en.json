@@ -218,6 +218,8 @@
     },
     "statutory": {
       "warning": "{area}: statutory limit at risk",
+      "warningApproaching": "{area}: approaching the statutory limit",
+      "warningExceeded": "{area}: statutory limit exceeded",
       "warningPercent": "{area}: {percent} % of the statutory limit",
       "domain": {
         "minijob": "Minijob limit",

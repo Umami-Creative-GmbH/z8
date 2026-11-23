@@ -218,6 +218,8 @@
     },
     "statutory": {
       "warning": "{area}: gesetzliche Grenze gefährdet",
+      "warningApproaching": "{area}: gesetzliche Grenze fast erreicht",
+      "warningExceeded": "{area}: gesetzliche Grenze überschritten",
       "warningPercent": "{area}: {percent} % der gesetzlichen Grenze",
       "domain": {
         "minijob": "Minijob-Grenze",

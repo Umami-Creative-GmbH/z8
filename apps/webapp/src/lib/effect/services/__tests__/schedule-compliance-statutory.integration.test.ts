@@ -134,7 +134,8 @@ describe("schedule compliance with statutory contributors (PostgreSQL)", () => {
 				employeeId: person.employeeId,
 				statutoryKind: "minijob_monthly_cap",
 				severity: "critical",
-				summary: { tier: "exceeded", usedPercent: 104 },
+				// Earnings-derived: a percentage of the public Minijob cap would reveal earnings.
+				summary: { tier: "exceeded" },
 				acknowledgementStatus: "none",
 				blocksPublication: false,
 			}),

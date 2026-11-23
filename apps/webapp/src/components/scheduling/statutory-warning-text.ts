@@ -30,7 +30,8 @@ export function statutoryDomainLabel(domain: StatutoryDomain, t: Translate): str
 
 /**
  * Wage-free warning text for a statutory finding in Scheduling and Staffing. Monitors with a more
- * specific message add a `case` on `finding.statutoryKind` here (#1989–#1993).
+ * specific message add a `case` on `finding.statutoryKind` here (#1989–#1993). Earnings-derived
+ * findings (Minijob) arrive with their tier only, so they read "approaching" or "exceeded".
  */
 export function statutoryWarningText(finding: StatutoryComplianceFinding, t: Translate): string {
 	const area = statutoryDomainLabel(finding.domain, t);
@@ -41,5 +42,25 @@ export function statutoryWarningText(finding: StatutoryComplianceFinding, t: Tra
 			{ area, percent: finding.summary.usedPercent },
 		);
 	}
-	return t("scheduling:scheduling.statutory.warning", "{area}: statutory limit at risk", { area });
+	switch (finding.summary.tier) {
+		case "exceeded":
+			return t(
+				"scheduling:scheduling.statutory.warningExceeded",
+				"{area}: statutory limit exceeded",
+				{
+					area,
+				},
+			);
+		case "warning":
+		case "critical":
+			return t(
+				"scheduling:scheduling.statutory.warningApproaching",
+				"{area}: approaching the statutory limit",
+				{ area },
+			);
+		default:
+			return t("scheduling:scheduling.statutory.warning", "{area}: statutory limit at risk", {
+				area,
+			});
+	}
 }

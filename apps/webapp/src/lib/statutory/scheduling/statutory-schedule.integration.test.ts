@@ -204,7 +204,7 @@ describe("statutory scheduling seam (PostgreSQL)", () => {
 		expect(added.get(worker.employeeId)?.map((f) => f.summary.tier)).toEqual(["exceeded"]);
 	});
 
-	it("passes only the wage-free summary fields to Scheduling", async () => {
+	it("passes only the tier of an earnings-derived finding to Scheduling", async () => {
 		const org = await fx.organization("a");
 		const worker = await fx.employee(org, "worker");
 		const leaky: StatutoryScheduleContributor = {
@@ -233,10 +233,46 @@ describe("statutory scheduling seam (PostgreSQL)", () => {
 			[leaky],
 		);
 
+		// A percentage of the public Minijob cap, or minutes derived from it, would reveal earnings.
+		expect(finding?.summary).toEqual({ tier: "critical" });
+	});
+
+	it("passes only the documented summary fields of other findings to Scheduling", async () => {
+		const org = await fx.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const leaky: StatutoryScheduleContributor = {
+			domain: "working_student",
+			async evaluate(context) {
+				return (await capContributor().evaluate(context)).map((finding) => ({
+					...finding,
+					domain: "working_student" as const,
+					kind: "working_student_week",
+					summary: {
+						tier: "critical",
+						usedPercent: 96,
+						used: { unit: "minutes", value: 1_150, wageCents: 1_500 },
+						earningsCents: 58_000,
+					} as unknown as StatutoryFinding["summary"],
+				}));
+			},
+		};
+
+		const [finding] = await evaluateStatutoryScheduleFindings(
+			db,
+			{
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-02", endExclusive: "2026-03-09" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from("2026-02-27T09:00:00Z"),
+			},
+			[leaky],
+		);
+
 		expect(finding?.summary).toEqual({
 			tier: "critical",
 			usedPercent: 96,
-			used: { unit: "minutes", value: 600 },
+			used: { unit: "minutes", value: 1_150 },
 		});
 	});
 

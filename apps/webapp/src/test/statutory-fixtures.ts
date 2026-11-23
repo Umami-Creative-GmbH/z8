@@ -5,8 +5,11 @@
  *   const fx = statutoryFixture(integrationAdminPool(), "t1989");
  *   beforeEach(fx.cleanup); afterAll(fx.cleanup);
  *   const org = await fx.organization("a");
- *   const admin = await fx.member(org, "admin", { role: "admin" });
+ *   const admin = await fx.user("admin");
+ *   await fx.membership(org, admin, "admin");
  *   const worker = await fx.employee(org, "worker", { birthday: "2010-05-01" });
+ *   const manager = await fx.employee(org, "manager", { role: "manager" }); // scoped manager
+ *   await fx.membership(org, manager, "member");
  *
  * Uses raw SQL against the admin pool on purpose: seeding must not depend on the code under test.
  */

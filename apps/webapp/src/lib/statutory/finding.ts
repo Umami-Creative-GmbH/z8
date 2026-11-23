@@ -68,6 +68,13 @@ export interface StatutoryFinding<Kind extends string = string> {
 	readonly periodEnd: string;
 	readonly legalReference: string;
 	readonly summary: StatutoryFindingSummary;
+	/**
+	 * True when the finding measures earnings (Minijob caps, the short-term Berufsmäßigkeit earnings
+	 * check). Restricted readers then get the tier only: a percentage of a public EUR cap, or minutes
+	 * or days derived from one, reveals earnings and, with the visible hours, the wage. Findings in
+	 * the `minijob` domain are always treated as earnings-derived.
+	 */
+	readonly earningsDerived?: boolean;
 	readonly adminDetail: StatutoryFindingAdminDetail | null;
 	/** `statutoryInputFingerprint(evaluated inputs)`; acknowledgements go stale when it changes. */
 	readonly inputFingerprint: string;

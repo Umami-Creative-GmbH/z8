@@ -51,8 +51,25 @@ function safeQuantity(quantity: StatutoryQuantity | undefined): StatutoryQuantit
 		: undefined;
 }
 
-/** Keeps only the documented wage-free summary fields, even if a monitor misplaced data. */
-export function safeSummary(summary: StatutoryFindingSummary): StatutoryFindingSummary {
+/** Whether a finding measures earnings, so restricted readers may see its tier only. */
+export function isEarningsDerivedFinding(
+	finding: Pick<StatutoryFinding, "domain" | "earningsDerived">,
+): boolean {
+	return finding.earningsDerived === true || finding.domain === "minijob";
+}
+
+/**
+ * The summary a restricted reader may see. Keeps only the documented wage-free fields, even if a
+ * monitor misplaced data, and only the tier of an earnings-derived finding: its percentage or any
+ * quantity derived from a public EUR cap would reveal earnings.
+ */
+export function restrictedSummary(
+	finding: Pick<StatutoryFinding, "domain" | "earningsDerived" | "summary">,
+): StatutoryFindingSummary {
+	const { summary } = finding;
+	if (isEarningsDerivedFinding(finding)) {
+		return summary.tier !== undefined ? { tier: summary.tier } : {};
+	}
 	const safe: {
 		-readonly [K in keyof StatutoryFindingSummary]: StatutoryFindingSummary[K];
 	} = {};
@@ -75,7 +92,7 @@ export function redactStatutoryFinding<F extends StatutoryFinding>(
 	const { acknowledgement, ...rest } = finding;
 	return {
 		...rest,
-		summary: safeSummary(finding.summary),
+		summary: restrictedSummary(finding),
 		adminDetail: null,
 		inputFingerprint: null,
 		...(acknowledgement

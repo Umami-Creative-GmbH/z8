@@ -93,6 +93,8 @@ describe("statutory wage redaction (PostgreSQL)", () => {
 			const [redacted] = redactStatutoryFindings([finding], audience);
 			expect(redacted).toEqual({
 				...finding,
+				// 86 % of the public 603 EUR cap would reveal the earnings: the tier only.
+				summary: { tier: "warning" },
 				adminDetail: null,
 				// The fingerprint hashes wages: a guessed wage could be confirmed against it.
 				inputFingerprint: null,
