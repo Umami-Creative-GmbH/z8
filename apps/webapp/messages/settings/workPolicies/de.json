@@ -612,6 +612,93 @@
           "overDoubleCap": "Mehr als das Doppelte der Grenze",
           "tooMany": "Zu viele Überschreitungsmonate innerhalb von 12 Monaten"
         }
+      },
+      "workingStudent": {
+        "finding": {
+          "lectureWeek": "{hours} Std. Arbeit werktags tagsüber in einer Vorlesungswoche (Grenze {limit} Std.)",
+          "ceiling": "{used} von {limit} Wochen über 20 Std. in den letzten 12 Monaten",
+          "generic": "Grenze für Werkstudierende gefährdet"
+        },
+        "severity": {
+          "critical": "Kritisch",
+          "warning": "Warnung"
+        },
+        "ack": {
+          "current": "Bestätigt",
+          "stale": "Seit der Bestätigung geändert"
+        },
+        "week": {
+          "breach": "Über 20 Std. in der Vorlesungszeit",
+          "permitted": "Über 20 Std., zulässig",
+          "within": "Bis 20 Std."
+        },
+        "voidReasonRequired": "Geben Sie an, warum dieser Eintrag storniert wird.",
+        "voidReason": "Grund für die Stornierung",
+        "void": "Stornieren",
+        "cancel": "Abbrechen",
+        "lectureFree": {
+          "saved": "Vorlesungsfreie Zeit erfasst",
+          "startsOn": "Erster vorlesungsfreier Tag",
+          "endsOn": "Letzter vorlesungsfreier Tag",
+          "add": "Zeitraum hinzufügen",
+          "title": "Vorlesungsfreie Zeiten",
+          "empty": "Keine vorlesungsfreien Zeiten erfasst.",
+          "void": "Vorlesungsfreie Zeit stornieren"
+        },
+        "dateRequired": "Wählen Sie ein Datum.",
+        "note": "Notiz (optional)",
+        "prior": {
+          "saved": "Wochen beim Vorarbeitgeber erfasst",
+          "monday": "Wählen Sie den Montag, an dem die erste Woche beginnt.",
+          "firstWeek": "Erste Woche (Montag)",
+          "count": "Aufeinanderfolgende Wochen über 20 Std.",
+          "employer": "Vorarbeitgeber (optional)",
+          "note": "Nachweis",
+          "notePlaceholder": "z. B. Bescheinigung des Vorarbeitgebers",
+          "add": "Wochen hinzufügen",
+          "title": "Wochen über 20 Std. bei Vorarbeitgebern",
+          "empty": "Keine Wochen bei Vorarbeitgebern erfasst.",
+          "run": "{count, plural, one {# Woche} other {# Wochen}} ab {from}",
+          "void": "Wochen beim Vorarbeitgeber stornieren"
+        },
+        "refusal": {
+          "invalidValue": "Geben Sie eine Anzahl Wochen von 1 bis 53 ein.",
+          "noteRequired": "Fügen Sie eine Notiz zur Erläuterung hinzu.",
+          "overlap": "Dieser Zeitraum überschneidet sich mit einer erfassten vorlesungsfreien Zeit.",
+          "invalidRange": "Prüfen Sie die Daten: Das Ende darf nicht vor dem Beginn liegen, und Wochen beim Vorarbeitgeber beginnen an einem Montag."
+        },
+        "voided": "Eintrag storniert",
+        "rolling": {
+          "title": "26-Wochen-Kontingent",
+          "noBaseline": "Für diese Woche gilt kein gesetzlicher Grenzwert.",
+          "summary": "{used} von {limit} Wochen über 20 Std. in den letzten 12 Monaten; {remaining} verbleibend."
+        },
+        "notCurrent": "In dieser Woche nicht als Werkstudierende/r beschäftigt. Erfasste Wochen und Zeiträume bleiben verfügbar.",
+        "findings": "Offene Hinweise",
+        "column": {
+          "week": "Woche",
+          "total": "Gesamt",
+          "core": "Vorlesungszeit tagsüber",
+          "lectureFree": "Vorlesungsfrei",
+          "eveningWeekend": "Abend/Wochenende",
+          "otherProfile": "Anderes Profil",
+          "status": "Status"
+        },
+        "title": "Werkstudierende (§ 6 SGB V)",
+        "description": "In der Vorlesungszeit darf die Arbeit werktags tagsüber (06:00–18:00) 20 Stunden pro Woche nicht übersteigen; Arbeit abends, nachts, am Wochenende und in vorlesungsfreien Zeiten ist zulässig. Jede Woche über 20 Stunden zählt auf 26 Wochen in 12 Monaten, auch Wochen unter einem anderen Beschäftigungsprofil. Warnungen blockieren nie das Stempeln.",
+        "loadFailed": "Die Überwachung für Werkstudierende konnte nicht geladen werden.",
+        "reviews": {
+          "acknowledged": "Woche bestätigt",
+          "reasonRequired": "Erläutern Sie, warum diese Woche bestätigt wird.",
+          "reason": "Begründung",
+          "reasonPlaceholder": "z. B. prüfungsfreie Projektwoche, von der Hochschule bestätigt",
+          "legalNote": "Rechtlicher Hinweis (optional)",
+          "acknowledge": "Bestätigen",
+          "title": "Werkstudierende über 20 Stunden",
+          "description": "Vorlesungswochen mit mehr als 20 Stunden Arbeit werktags tagsüber und Wochen, die das 26-Wochen-Kontingent aufbrauchen. Bestätigen Sie eine Woche, sobald Sie sie geprüft haben.",
+          "notFound": "Für diese Woche liegt der Hinweis nicht mehr vor. Laden Sie die Prüfungen neu.",
+          "changed": "Die Werte dieser Woche haben sich geändert, seit Sie die Prüfungen geöffnet haben. Prüfen Sie die aktualisierten Werte und bestätigen Sie erneut."
+        }
       }
     },
     "timeRegulations": {

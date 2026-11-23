@@ -235,6 +235,10 @@
         "monthlyApproaching": "Minijob-Monatsgrenze rückt näher",
         "rollingExceeded": "Minijob-Verdienstgrenze für 12 Monate überschritten",
         "rollingApproaching": "Minijob-Verdienstgrenze für 12 Monate rückt näher"
+      },
+      "workingStudent": {
+        "lectureWeek": "Werkstudierende/r über 20 Std. in einer Vorlesungswoche: {hours} Std. Arbeit werktags tagsüber (Grenze {limit} Std.)",
+        "ceiling": "Werkstudierende/r: {used} von {limit} Wochen über 20 Std. in 12 Monaten"
       }
     }
   }

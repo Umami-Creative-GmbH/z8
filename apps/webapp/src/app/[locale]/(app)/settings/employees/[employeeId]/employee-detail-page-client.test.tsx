@@ -143,6 +143,11 @@ vi.mock("@/components/settings/contracts/scoped-manager-policy-card", () => ({
 		<section aria-label="Work Policy Assignment">{employeeId}</section>
 	),
 }));
+vi.mock("@/components/settings/contracts/working-student-monitor-card", () => ({
+	WorkingStudentMonitorCard: ({ canManage }: { canManage: boolean }) => (
+		<section aria-label="Working student monitor">{canManage ? "manage" : "read"}</section>
+	),
+}));
 vi.mock("@/components/settings/personal-data-export/employee-personal-data-export-card", () => ({
 	EmployeePersonalDataExportCard: ({ isOwnRecord }: { isOwnRecord: boolean }) => (
 		<section aria-label="Personal data export">{isOwnRecord ? "own record" : "colleague"}</section>
@@ -560,6 +565,10 @@ describe("employee detail wage history merge note (#1176)", () => {
 			fireEvent.click(tab);
 		});
 		expect(await screen.findByRole("region", { name: "Work Policy Assignment" })).toBeTruthy();
+		// #1991: the wage-free working-student monitor, read-only for managers.
+		expect(screen.getByRole("region", { name: "Working student monitor" }).textContent).toBe(
+			"read",
+		);
 		expect(screen.queryByText(/Merge note/)).toBeNull();
 		expect(screen.queryByRole("region", { name: "Effective Contract" })).toBeNull();
 		expect(screen.queryByRole("tab", { name: "Leaving Date" })).toBeNull();
@@ -577,6 +586,9 @@ describe("employee detail 6-tab deep links (#1930)", () => {
 		window.location.hash = "#employment-history";
 		renderDetail({ settingsAccess: "orgAdmin" });
 		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
+		expect(screen.getByRole("region", { name: "Working student monitor" }).textContent).toBe(
+			"manage",
+		);
 	});
 
 	it("auto-activates Leaving Date tab for #offboarding deep link", async () => {

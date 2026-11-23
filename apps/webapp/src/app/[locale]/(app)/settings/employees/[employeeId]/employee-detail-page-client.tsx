@@ -17,6 +17,7 @@ import { EmployeeContractTab } from "@/components/settings/contracts/employee-co
 import { EmployeeMinijobMonitorCard } from "@/components/settings/contracts/employee-minijob-monitor-card";
 import { minijobMonitorQueryPrefix } from "@/components/settings/contracts/minijob-query-keys";
 import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
+import { WorkingStudentMonitorCard } from "@/components/settings/contracts/working-student-monitor-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
@@ -460,6 +461,11 @@ export function EmployeeDetailPageClient({
 								employeeId={employeeId}
 								userId={currentUserId}
 								organizationId={employee.organizationId}
+							/>
+							<WorkingStudentMonitorCard
+								organizationId={employee.organizationId}
+								employeeId={employeeId}
+								canManage={isOrgAdmin}
 							/>
 						</TabsContent>
 

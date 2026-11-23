@@ -40,6 +40,7 @@ import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-opera
 import { Link } from "@/navigation";
 import { todayIsoDateInTimezone } from "./contract-formatters";
 import { MinijobExceedanceReviews } from "./minijob-exceedance-reviews";
+import { WorkingStudentReviewsSection } from "./working-student-reviews-section";
 
 type ReviewFilterKind =
 	| "all"
@@ -518,6 +519,10 @@ export function ContractsReviewsTab({
 					includeAcknowledged={includeResolved}
 				/>
 			)}
+			<WorkingStudentReviewsSection
+				organizationId={organizationId}
+				includeResolved={includeResolved}
+			/>
 		</div>
 	);
 }
