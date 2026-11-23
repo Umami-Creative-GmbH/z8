@@ -230,6 +230,7 @@
         "employeeDescription": "Die internen Vollkosten pro Stunde dieses Mitarbeiters, verwendet für die Marge. Getrennt vom Lohn.",
         "employeeTitle": "Kostensatz",
         "empty": "Noch kein Kostensatz vorhanden. Die Marge für die Arbeit dieses Mitarbeiters wird als Kosten unbekannt angezeigt.",
+        "emptyContractor": "Noch kein Kostensatz vorhanden. Für die Arbeit dieser Person als Externer Dienstleister verwendet die Marge ihren Dienstleistersatz; andere Arbeit und Dienstleisterarbeit ohne Satz werden als Kosten unbekannt angezeigt.",
         "history": "Verlauf",
         "historyAction": "Verlauf des Kostensatzes für {name}",
         "hourly": "Stündlich",

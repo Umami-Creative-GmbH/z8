@@ -230,6 +230,7 @@
         "employeeDescription": "This employee's fully loaded internal cost per hour, used for margin. Separate from the wage.",
         "employeeTitle": "Cost rate",
         "empty": "No cost rate yet. Margin for this employee's work shows as cost unknown.",
+        "emptyContractor": "No cost rate yet. Margin uses this person's External Contractor rate for their contractor work; other work, and contractor work without a rate, shows as cost unknown.",
         "history": "History",
         "historyAction": "History of the cost rate for {name}",
         "hourly": "Hourly",

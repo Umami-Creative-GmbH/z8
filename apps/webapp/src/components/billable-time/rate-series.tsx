@@ -22,8 +22,12 @@ type ChangeResult = { changed: boolean; periods: BillableRatePeriodView[] };
 interface RateSeriesProps<History extends RateSeriesHistory>
 	extends Pick<
 		RateHistoryCardProps,
-		"title" | "description" | "bare" | "emptyText" | "setRateHelp"
+		"title" | "description" | "bare" | "setRateHelp"
 	> {
+	/** The empty state; may depend on the loaded history. */
+	emptyText:
+		| RateHistoryCardProps["emptyText"]
+		| ((history: History | undefined) => RateHistoryCardProps["emptyText"]);
 	queryKey: QueryKey;
 	loadHistory: () => Promise<ServerActionResult<History>>;
 	setRate: (input: {
@@ -49,6 +53,7 @@ export function RateSeries<History extends RateSeriesHistory>({
 	messages,
 	suggestion,
 	onChanged,
+	emptyText,
 	...card
 }: RateSeriesProps<History>) {
 	const { t } = useTranslate();
@@ -101,6 +106,9 @@ export function RateSeries<History extends RateSeriesHistory>({
 	return (
 		<RateHistoryCard
 			{...card}
+			emptyText={
+				typeof emptyText === "function" ? emptyText(history.data) : emptyText
+			}
 			currency={history.data?.currency ?? ""}
 			periods={history.data?.periods ?? []}
 			isLoading={history.isPending}

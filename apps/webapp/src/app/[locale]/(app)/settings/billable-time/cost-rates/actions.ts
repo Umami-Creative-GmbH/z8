@@ -10,6 +10,7 @@ import {
 	listCostRateHistory,
 } from "@/lib/billable-time/cost-rates";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
+import { hasContractorEngagement } from "@/lib/contractor-statements/engagement";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { createRateActions } from "../rate-actions";
@@ -22,6 +23,11 @@ export interface CostRateHistory {
 	periods: CostRatePeriodView[];
 	/** An hourly employee's wage in effect, offered (never copied) as a starting value. */
 	suggestedWage: SuggestedWage | null;
+	/**
+	 * Whether the person ever had an External Contractor engagement here: their contractor
+	 * terms then cost contractor work that has no cost rate (#1999).
+	 */
+	externalContractor: boolean;
 }
 export type CostRateChangeResult = {
 	changed: boolean;
@@ -53,13 +59,16 @@ const rateActions = createRateActions({
 			employeeExists(service.db, organizationId, employeeId),
 		);
 		if (!exists) return yield* Effect.fail(employeeNotFound());
-		const [periods, suggestedWage] = yield* service.query("billableTime.costRates.history", () =>
-			Promise.all([
-				listCostRateHistory(service.db, organizationId, employeeId),
-				getSuggestedWage(service.db, organizationId, employeeId, currency),
-			]),
+		const [periods, suggestedWage, externalContractor] = yield* service.query(
+			"billableTime.costRates.history",
+			() =>
+				Promise.all([
+					listCostRateHistory(service.db, organizationId, employeeId),
+					getSuggestedWage(service.db, organizationId, employeeId, currency),
+					hasContractorEngagement(service.db, organizationId, employeeId),
+				]),
 		);
-		return { currency, periods, suggestedWage };
+		return { currency, periods, suggestedWage, externalContractor };
 	}),
 	change: (database, { target: employeeId, ...input }) =>
 		changeCostRate(database, { ...input, employeeId }),
