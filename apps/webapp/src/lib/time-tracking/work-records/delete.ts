@@ -71,7 +71,6 @@ export async function deleteWorkRecord(
 	const plan = planDeletion(pairOf(locked), {
 		clockInAt: instantFromDate(markedIn.timestamp),
 		clockOutAt: instantFromDate(markedOut.timestamp),
-		toleratedDrift: change.toleratedDrift,
 	});
 	if (plan.kind !== "delete") return plan;
 	if (!canonical) return { kind: "canonical_record_missing" };
