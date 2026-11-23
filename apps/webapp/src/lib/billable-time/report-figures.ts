@@ -1,6 +1,7 @@
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { divideToUnits, formatUnits, parseUnits } from "@/lib/money/exact-decimal";
 import { type BillableRatePeriod, priceWorkPeriod } from "./applicable-rate";
+import type { ContractorCosts } from "./contractor-cost";
 import { type CostRatePeriod, costWorkPeriod } from "./cost-rate";
 import {
 	type AccruedAmount,
@@ -120,13 +121,13 @@ export interface BillableRevenueFigures extends BillableFiguresBase {
 /** Figures for owners and admins. */
 export interface BillableMarginFigures extends BillableFiguresBase {
 	access: "full";
-	/** Null ("cost unknown") while any of the billable work has no cost rate. */
+	/** Null ("cost unknown") while any of the billable work has no cost rate or contractor cost. */
 	cost: string | null;
 	/** Revenue minus cost; null ("cost unknown") whenever cost is. */
 	margin: string | null;
 	/** Margin as a share of revenue, one decimal; null when unknown or without revenue. */
 	marginPercent: string | null;
-	/** Billable work with time that has no cost rate. */
+	/** Billable work with time that has no cost rate or contractor cost. */
 	costUnknownWorkCount: number;
 }
 
@@ -192,6 +193,11 @@ export interface BillableFiguresTally {
 export interface ReportRates {
 	billable: readonly BillableRatePeriod[];
 	cost: readonly CostRatePeriod[];
+	/**
+	 * External Contractors' cost from their terms (#1999), used on days without
+	 * an explicit cost rate. Absent for viewers who see no cost.
+	 */
+	contractor?: ContractorCosts;
 }
 
 export function emptyBillableFiguresTally(): BillableFiguresTally {
@@ -280,7 +286,7 @@ export function addReportedWork(
 			tally.unpricedMs += priced.unpricedMs;
 		}
 	}
-	const cost = costWorkPeriod(work, rates.cost);
+	const cost = costWorkPeriod(work, rates.cost, rates.contractor);
 	tally.cost += cost.accrued;
 	if (cost.unknownMs > 0) tally.costUnknownWorkCount += 1;
 	return tally;
