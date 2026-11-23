@@ -65,6 +65,8 @@ const { requestAbsenceForEmployeeEffect } =
 const { getAbsenceCategories, getVacationBalanceResult } =
 	await import("@/app/[locale]/(app)/absences/queries");
 const { recordAbsenceForEmployee } = await import("@/app/[locale]/(app)/team/absences/actions");
+const { decideAbsenceChange, requestAbsenceChange } =
+	await import("@/lib/absences/change-request-service");
 const { getAbsencesForMonth } = await import("@/lib/calendar/absence-service");
 const { fetchAbsencesForExport } = await import("@/lib/payroll-export/data-fetcher");
 const { getDailyWorkRequirementsForEmployee } =
@@ -760,6 +762,149 @@ describe("an External Contractor outside the employee domains (#1996)", () => {
 					{ provider_source_id: "absence:june-personal", row_status: "committed" },
 					{ provider_source_id: "absence:june-unavailable", row_status: "blocked" },
 				]);
+			});
+
+			describe("in absence change requests", () => {
+				/** The converted person, a manager deciding their requests, and one recorded absence. */
+				async function recordedAbsence(
+					category: "personal" | "unavailability",
+					startDate: string,
+					endDate: string,
+				) {
+					const org = await convertedOnFirstOfJuly();
+					const manager = await fixture.seedEmployee({ organizationId: org.organizationId });
+					await fixture.pool.query("update employee set role = 'manager' where id = $1", [
+						manager.employeeId,
+					]);
+					await fixture.pool.query(
+						`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+						 values ($1, $2, $3, true, $4)`,
+						[randomUUID(), org.person.employeeId, manager.employeeId, org.ownerUserId],
+					);
+					await expect(
+						requestAbsenceForEmployeeEffect(
+							{ categoryId: org.category[category], ...range(startDate, endDate) },
+							{ id: org.person.employeeId, organizationId: org.organizationId },
+							org.person.userId,
+						),
+					).resolves.toMatchObject({ success: true });
+					const { rows } = await fixture.pool.query<{ id: string }>(
+						"select id from absence_entry where organization_id = $1 and employee_id = $2",
+						[org.organizationId, org.person.employeeId],
+					);
+					const absenceId = rows[0]?.id;
+					if (!absenceId) throw new Error("Recorded absence missing");
+					const change = (startDate: string, endDate: string) =>
+						requestAbsenceChange({
+							organizationId: org.organizationId,
+							userId: org.person.userId,
+							absenceId,
+							kind: "change",
+							proposed: range(startDate, endDate),
+							coverage: "choose",
+							reason: "Moved",
+						});
+					const approve = async (workflowId: string) => {
+						const assignments = await fixture.pool.query<{ id: string }>(
+							"select id from approval_stage_assignment where workflow_id = $1 and status = 'pending'",
+							[workflowId],
+						);
+						const assignmentId = assignments.rows[0]?.id;
+						if (!assignmentId) throw new Error("Pending assignment missing");
+						return decideAbsenceChange({
+							organizationId: org.organizationId,
+							actorEmployeeId: manager.employeeId,
+							assignmentId,
+							action: "approve",
+						});
+					};
+					const recorded = async () =>
+						(
+							await fixture.pool.query<{ start_date: string; end_date: string }>(
+								"select start_date::text, end_date::text from absence_entry where id = $1",
+								[absenceId],
+							)
+						).rows[0];
+					return { ...org, absenceId, change, approve, recorded };
+				}
+
+				/** Moves the conversion from employee to contractor to the start of `day` (UTC). */
+				async function convertOn(personId: string, day: string) {
+					const at = `${day}T00:00:00Z`;
+					// Keep the stints from overlapping at every step.
+					const earlier = day < "2026-07-01";
+					for (const step of earlier ? ["closed", "open"] : ["open", "closed"])
+						await fixture.pool.query(
+							step === "closed"
+								? "update employee_employment_period set ended_at = $2 where employee_id = $1 and status = 'closed'"
+								: "update employee_employment_period set started_at = $2 where employee_id = $1 and status = 'open'",
+							[personId, at],
+						);
+				}
+
+				it("refuses moving an employee absence onto contractor days or across the conversion", async () => {
+					const org = await recordedAbsence("personal", "2026-06-22", "2026-06-23");
+
+					await expect(org.change("2026-07-06", "2026-07-07")).rejects.toMatchObject({
+						refusal: "contractor_records_unavailability_only",
+					});
+					await expect(org.change("2026-06-30", "2026-07-01")).rejects.toMatchObject({
+						refusal: "absence_spans_engagement_change",
+					});
+					await expect(org.change("2026-06-25", "2026-06-26")).resolves.toMatchObject({
+						workflowId: expect.any(String),
+					});
+				});
+
+				it("refuses moving contractor unavailability onto employee days", async () => {
+					const org = await recordedAbsence("unavailability", "2026-07-13", "2026-07-13");
+
+					await expect(org.change("2026-06-29", "2026-06-29")).rejects.toMatchObject({
+						refusal: "unavailability_is_for_contractors",
+					});
+					await expect(org.change("2026-07-08", "2026-07-08")).resolves.toMatchObject({
+						workflowId: expect.any(String),
+					});
+				});
+
+				it("re-checks the stints on approval: an employee absence now on contractor days", async () => {
+					const org = await recordedAbsence("personal", "2026-06-22", "2026-06-23");
+					const submitted = await org.change("2026-06-25", "2026-06-26");
+					await convertOn(org.person.employeeId, "2026-06-24");
+
+					await expect(org.approve(submitted.workflowId)).rejects.toMatchObject({
+						code: "obsolete",
+					});
+					expect(await org.recorded()).toEqual({
+						start_date: "2026-06-22",
+						end_date: "2026-06-23",
+					});
+				});
+
+				it("re-checks the stints on approval: unavailability now on employee days", async () => {
+					const org = await recordedAbsence("unavailability", "2026-07-13", "2026-07-13");
+					const submitted = await org.change("2026-07-08", "2026-07-08");
+					await convertOn(org.person.employeeId, "2026-07-10");
+
+					await expect(org.approve(submitted.workflowId)).rejects.toMatchObject({
+						code: "obsolete",
+					});
+					expect(await org.recorded()).toEqual({
+						start_date: "2026-07-13",
+						end_date: "2026-07-13",
+					});
+				});
+
+				it("approves a move within the stint", async () => {
+					const org = await recordedAbsence("unavailability", "2026-07-13", "2026-07-13");
+					const submitted = await org.change("2026-07-08", "2026-07-08");
+
+					await org.approve(submitted.workflowId);
+					expect(await org.recorded()).toEqual({
+						start_date: "2026-07-08",
+						end_date: "2026-07-08",
+					});
+				});
 			});
 
 			it("offers the categories of every stint, the server deciding each request by its dates", async () => {

@@ -57,6 +57,8 @@ export class AbsenceChangeError extends Error {
 	constructor(
 		readonly code: string,
 		message: string,
+		/** A machine-readable refusal the form translates, e.g. an engagement refusal (#1996). */
+		readonly refusal?: string,
 	) {
 		super(message);
 		this.name = "AbsenceChangeError";
