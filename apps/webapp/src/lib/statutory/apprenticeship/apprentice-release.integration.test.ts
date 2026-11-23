@@ -1,7 +1,7 @@
 /**
  * #1993: BBiG § 15 / JArbSchG § 9 apprentice release (real PostgreSQL). Credited school, block
  * and exam days release required working time in Work Balance (single and range readers agree),
- * are no working days for Absences (a vacation over them never deducts them), and Staffing warns
+ * in full or in part are no working days for Absences (a vacation over them never deducts them), and Staffing warns
  * planners about shifts on them. Only employees whose terms make them apprentices are credited.
  */
 import { Effect, Layer } from "effect";
@@ -1387,7 +1387,7 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		expect(required["2027-03-02"]?.requiredMinutes).toBe(required["2027-03-01"]?.requiredMinutes);
 	});
 
-	it("never counts full release days as vacation days", async () => {
+	it("never counts credited release days as vacation days", async () => {
 		const learner = await apprentice("vacation", "2005-05-05");
 		const regular = await apprentice("colleague", "2005-05-05", "regular");
 		await recordReleases(learner);
@@ -1400,8 +1400,9 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		};
 		const days = (who: FixtureEmployee) =>
 			getAbsenceDays(db, { organizationId: org.id, employeeId: who.employeeId, absence: week });
-		// Tuesday is a full school day: the apprentice's vacation week costs one day less.
-		expect(await days(learner)).toBe((await days(regular)) - 1);
+		// Tuesday is the week's full school day and Thursday a partly credited one: the apprentice's
+		// vacation week costs two days less.
+		expect(await days(learner)).toBe((await days(regular)) - 2);
 
 		const blockWeek = { ...week, startDate: "2027-03-08", endDate: "2027-03-12" };
 		expect(
@@ -1411,6 +1412,70 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 				absence: blockWeek,
 			}),
 		).toBe(0);
+	});
+
+	describe("partly credited release days never cost a vacation day", () => {
+		const vacation = (who: FixtureEmployee, startDate: string, endDate: string) =>
+			getAbsenceDays(db, {
+				organizationId: org.id,
+				employeeId: who.employeeId,
+				absence: { startDate, startPeriod: "full_day", endDate, endPeriod: "full_day" },
+			});
+		const scopeOf = (who: FixtureEmployee) => ({
+			organizationId: org.id,
+			employeeId: who.employeeId,
+			actorUserId: owner.userId,
+		});
+
+		it.each([
+			// § 19 Abs. 3 Satz 2 JArbSchG: a school day attended during a minor's vacation is given back.
+			{ name: "a minor", birthday: "2011-01-01" },
+			{ name: "an adult", birthday: "2005-05-05" },
+		])("a short school day of $name, until the release is voided", async ({ birthday }) => {
+			const learner = await apprentice("short", birthday);
+			// Wednesday 3 March 2027: four lessons, only partly credited.
+			const release = await recordApprenticeRelease(db, {
+				...scopeOf(learner),
+				releaseKind: "vocational_school_day",
+				startsOn: "2027-03-03",
+				endsOn: "2027-03-03",
+				lessonCount: 4,
+			});
+			expect(await vacation(learner, "2027-03-01", "2027-03-05")).toBe(4);
+
+			await voidApprenticeReleaseWithCredit(db, {
+				...scopeOf(learner),
+				releaseId: release.id,
+				reason: "Recorded in error",
+			});
+			expect(await vacation(learner, "2027-03-01", "2027-03-05")).toBe(5);
+		});
+
+		it("the days of a block week under 25 hours", async () => {
+			const learner = await apprentice("shortblock", "2005-05-05");
+			// Monday to Wednesday 8–10 March 2027, 15 h: no full block week.
+			await recordApprenticeRelease(db, {
+				...scopeOf(learner),
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-08",
+				endsOn: "2027-03-10",
+				schoolMinutes: 900,
+			});
+			expect(await vacation(learner, "2027-03-08", "2027-03-12")).toBe(2);
+		});
+
+		it("an exam recorded with its time", async () => {
+			const learner = await apprentice("timedexam", "2005-05-05");
+			await recordApprenticeReleaseWithCredit(db, {
+				...scopeOf(learner),
+				releaseKind: "exam_day",
+				startsOn: "2027-03-17",
+				endsOn: "2027-03-17",
+				examStartTime: "09:00",
+				examEndTime: "12:00",
+			});
+			expect(await vacation(learner, "2027-03-15", "2027-03-19")).toBe(4);
+		});
 	});
 
 	it("warns planners in Staffing about shifts on school and exam release days", async () => {

@@ -3,8 +3,8 @@
  *
  * Release days are paid: Work Balance credits them by releasing required working time, never by
  * adding worked minutes, so a release day can bring the day's requirement down to zero but never
- * produces a negative balance, and Absences count full release days as no working day, so a
- * vacation spanning them never deducts them.
+ * produces a negative balance, and Absences count every credited release day, full or partly
+ * credited, as no working day, so a vacation spanning them never deducts them.
  *
  * - A vocational-school day with more than five lessons of at least 45 minutes, once per
  *   compliance week, credits the full working day (§ 15 Abs. 2 Nr. 2 BBiG); other school days
@@ -215,9 +215,14 @@ export function apprenticeReleaseDays(
 	return days.sort((left, right) => left.date.localeCompare(right.date));
 }
 
-/** The dates released in full. Absences count them as no working day. */
-export function fullReleaseDates(days: readonly ApprenticeReleaseDay[]): Set<string> {
-	return new Set(days.filter((day) => day.credit === "full_day").map((day) => day.date));
+/**
+ * The dates of credited release days, released in full or partly credited. Absences count them as
+ * no working day: a vacation over a short school day, a block day under 25 hours or a timed exam
+ * never deducts it (#1993 AC; for minors § 19 Abs. 3 Satz 2 JArbSchG gives a school day attended
+ * during a vacation back).
+ */
+export function creditedReleaseDates(days: readonly ApprenticeReleaseDay[]): Set<string> {
+	return new Set(days.map((day) => day.date));
 }
 
 /**

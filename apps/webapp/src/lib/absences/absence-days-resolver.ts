@@ -4,7 +4,7 @@ import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
-import { fullReleaseDates } from "@/lib/statutory/apprenticeship/release-credits";
+import { creditedReleaseDates } from "@/lib/statutory/apprenticeship/release-credits";
 import { loadApprenticeReleaseDays } from "@/lib/statutory/apprenticeship/release-facts";
 import {
 	type AbsenceDayRange,
@@ -109,8 +109,9 @@ export async function loadWorkingDaysForEmployees(
 		dates,
 	});
 
-	// Apprentice days released in full (school, block week, exam) are paid release, not working
-	// days, so an absence over them never deducts them from vacation (#1993).
+	// Credited apprentice release days (school, block week, exam), in full or partly credited, are
+	// paid release, not working days, so an absence over them never deducts them from vacation
+	// (#1993; § 19 Abs. 3 Satz 2 JArbSchG for minors).
 	const releaseDays = await loadApprenticeReleaseDays(database, {
 		organizationId: input.organizationId,
 		employeeIds,
@@ -121,7 +122,7 @@ export async function loadWorkingDaysForEmployees(
 	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
 	const workingDays = new Map<string, IsWorkingDay>();
 	for (const [employeeId, contractsByDate] of contractsByEmployee) {
-		const released = fullReleaseDates(releaseDays.get(employeeId) ?? []);
+		const released = creditedReleaseDates(releaseDays.get(employeeId) ?? []);
 		const holidays = holidayDateKeys(
 			await getVacationHolidays({
 				database,
