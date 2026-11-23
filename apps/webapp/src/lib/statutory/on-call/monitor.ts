@@ -431,10 +431,11 @@ function bandFindings(
 		return worked + stillPlanned;
 	};
 	// § 12 Abs. 4–5 TzBfG: approved absence and public holidays are paid by the reference period,
-	// not called. Unless worked anyway, such a day leaves the band, which is prorated to the days
-	// that could be called, as for days outside the on-call terms.
+	// not called. Unless worked anyway or still planned (a call scheduled on it counts like any
+	// other), such a day leaves the band, which is prorated to the days that could be called, as for
+	// days outside the on-call terms.
 	const isReleased = (day: PlainDate) =>
-		released?.has(day.toString()) === true && (work?.get(day.toString()) ?? 0) === 0;
+		released?.has(day.toString()) === true && minutesOn(day) === 0;
 	const releasedDays = onCallDays.filter(isReleased).map((day) => day.toString());
 	const callableDays = onCallDays.filter((day) => !isReleased(day));
 	const band = onCallWeeklyBand(input.facts, (day) => terms.get(day.toString()), callableDays);

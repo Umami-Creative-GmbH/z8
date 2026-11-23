@@ -500,4 +500,41 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		);
 		expect(added.get(regular.employeeId)).toBeUndefined();
 	});
+
+	it("tells Staffing that a call proposed on a holiday would take the week over its band", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "oncall");
+		await onCall.onCallTerms(org, worker, { kind: "maximum", weeklyMinutes: 600 });
+		await onCall.holiday(org, worker, "2026-03-09");
+		await onCall.holiday(org, worker, "2026-03-11");
+		await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: "2026-03-10",
+			startTime: "08:00",
+			endTime: "11:00",
+			publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
+		});
+
+		const added = await addedStatutoryScheduleFindings(
+			db,
+			{
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-09", endExclusive: "2026-03-10" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from("2026-03-02T12:00:00Z"),
+				proposedShift: { date: "2026-03-09", startTime: "08:00", endTime: "16:00" },
+				replacesShiftId: null,
+			},
+			[onCallScheduleContributor],
+		);
+
+		// Wednesday, neither planned nor worked, stays released: six callable days, at most
+		// 600 × 6/7 = 514 minutes, and 480 + 180 = 660 planned.
+		expect(
+			added
+				.get(worker.employeeId)
+				?.map((f) => [f.statutoryKind, f.summary.used?.value, f.summary.limit?.value]),
+		).toEqual([["on_call_weekly_over_band", 660, 514]]);
+	});
 });

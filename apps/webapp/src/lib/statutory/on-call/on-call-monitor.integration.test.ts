@@ -594,6 +594,43 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 
 				expect(await bandFindings(org, who.employeeId)).toEqual([]);
 			});
+
+			it("counts a call planned on a holiday, and still releases a holiday neither planned nor worked", async () => {
+				const { org, who } = await worker("maximum");
+				await onCall.holiday(org, who, "2026-03-09");
+				await onCall.holiday(org, who, "2026-03-11");
+				const publishedAt = Temporal.Instant.from("2026-02-01T09:00:00Z");
+				await onCall.shift(org, {
+					employeeId: who.employeeId,
+					date: "2026-03-09",
+					startTime: "08:00",
+					endTime: "16:00",
+					publishedAt,
+				});
+				await onCall.shift(org, {
+					employeeId: who.employeeId,
+					date: "2026-03-10",
+					startTime: "08:00",
+					endTime: "11:00",
+					publishedAt,
+				});
+
+				const findings = await evaluateOnCallFindings(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: WEEK,
+					employeeIds: [who.employeeId],
+					now: Temporal.Instant.from("2026-03-02T12:00:00Z"),
+				});
+
+				// Wednesday is released, Monday is called: six callable days, at most 600 × 6/7 = 514
+				// minutes, and 480 + 180 = 660 planned.
+				expect(
+					findings
+						.filter((f) => f.kind.startsWith("on_call_weekly"))
+						.map((f) => [f.kind, f.summary.used?.value, f.summary.limit?.value]),
+				).toEqual([["on_call_weekly_over_band", 660, 514]]);
+			});
 		});
 
 		it("adds today's unplanned call to the shift still to come", async () => {
