@@ -557,6 +557,96 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 		expect(payroll[0]?.breakdown).toEqual(fromMarch2);
 	});
 
+	/**
+	 * Hired 2025-12-01 (Berlin), on call throughout. A child's sickness is § 45 SGB V
+	 * (Kinderkrankengeld), not the employee's own illness: no § 3 EFZG continued pay and no
+	 * § 12 Abs. 4 TzBfG event.
+	 */
+	async function childSickWorker() {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const periodId = await onCall.employmentPeriod(org, worker, "2025-11-30T23:00:00Z");
+		await onCall.onCallTerms(org, worker, {
+			kind: "unspecified",
+			from: "2025-12-01",
+			employmentPeriodId: periodId,
+		});
+		return { org, worker };
+	}
+
+	it("dates own illness after child-sick days from its own first day (§ 45 SGB V is no illness)", async () => {
+		const { org, worker } = await childSickWorker();
+		// Child sick Mon 03-02 … Wed 03-04, then ill themself Thu 03-05 … 04-30.
+		await onCall.absence(org, worker, {
+			type: "sick",
+			sickDetail: "child_sick",
+			startDate: "2026-03-02",
+			endDate: "2026-03-04",
+		});
+		await onCall.absence(org, worker, {
+			type: "sick",
+			sickDetail: "with_certificate",
+			startDate: "2026-03-05",
+			endDate: "2026-04-30",
+		});
+
+		const payroll = await listOnCallPayrollReferenceRows(db, {
+			organizationId: org.id,
+			startDate: "2026-03-01",
+			endDate: "2026-04-30",
+			method: "three_months",
+		});
+
+		expect(payroll.map((row) => [row.kind, row.eventDate])).toEqual([["sick_leave", "2026-03-05"]]);
+		// Six weeks from Thursday: 03-05 + 42 days.
+		expect(payroll[0]?.paidSickDays).toMatchObject({
+			from: "2026-03-05",
+			days: 42,
+			continuedPay: { from: "2026-03-05", untilExclusive: "2026-04-16" },
+		});
+		expect(payroll[0]?.breakdown).toMatchObject({
+			referenceStart: "2025-12-05",
+			referenceEndExclusive: "2026-03-05",
+		});
+		// The child-sick days released the employee without pay: left out of the average.
+		expect(payroll[0]?.breakdown.excludedPeriods).toContainEqual({
+			from: "2026-03-02",
+			untilExclusive: "2026-03-05",
+			reason: "unpaid_absence",
+			days: 3,
+		});
+
+		// A payroll period starting inside the illness does not walk back into the child-sick days.
+		const april = await listOnCallPayrollReferenceRows(db, {
+			organizationId: org.id,
+			startDate: "2026-04-01",
+			endDate: "2026-04-30",
+			method: "three_months",
+		});
+		expect(april.map((row) => [row.kind, row.eventDate])).toEqual([["sick_leave", "2026-03-05"]]);
+	});
+
+	it("lists no sick-leave row and no holiday pay for child-sick days alone", async () => {
+		const { org, worker } = await childSickWorker();
+		await onCall.absence(org, worker, {
+			type: "sick",
+			sickDetail: "child_sick",
+			startDate: "2026-03-02",
+			endDate: "2026-03-06",
+		});
+		// Released without pay for the child already: no work is lost to the holiday.
+		await onCall.holiday(org, worker, "2026-03-04");
+
+		const payroll = await listOnCallPayrollReferenceRows(db, {
+			organizationId: org.id,
+			startDate: "2026-03-01",
+			endDate: "2026-03-31",
+			method: "three_months",
+		});
+
+		expect(payroll).toEqual([]);
+	});
+
 	it("lists no event for days after the employment ended, though the on-call terms run on", async () => {
 		const org = await onCall.organization("a");
 		const worker = await fx.employee(org, "worker");

@@ -1,6 +1,6 @@
 /**
  * Days an on-call employee is released from work (#1992): approved absence that does not require
- * work, and assigned public holidays. Read once for many employees, in two queries plus the
+ * work (a child's sickness too, as unpaid release), and assigned public holidays. Read once for many employees, in two queries plus the
  * holiday reader. Shared by the weekly call-off band (a released day cannot be called) and the
  * § 12 Abs. 4–5 TzBfG reference period (released days leave its average). Read-only.
  */
@@ -29,7 +29,10 @@ const UNPAID_ABSENCE_TYPES = new Set(["unpaid", "parental"]);
 export interface OnCallReleasedDays {
 	/** Release reason per released day (`YYYY-MM-DD`) of the range. */
 	readonly reasonByDay: ReadonlyMap<string, OnCallReleaseReason>;
-	/** Approved sick leave touching the range, `endDate` inclusive (not clipped). */
+	/**
+	 * The employee's own approved sick leave touching the range, `endDate` inclusive (not clipped).
+	 * Child-sick days are not their illness and are not listed.
+	 */
 	readonly sickLeaves: readonly { readonly startDate: string; readonly endDate: string }[];
 	/** Assigned public holidays in the range. */
 	readonly holidays: ReadonlySet<string>;
@@ -62,6 +65,7 @@ export async function loadOnCallReleasedDays(
 			employeeId: absenceEntry.employeeId,
 			startDate: absenceEntry.startDate,
 			endDate: absenceEntry.endDate,
+			sickDetail: absenceEntry.sickDetail,
 			type: absenceCategory.type,
 			requiresWorkTime: absenceCategory.requiresWorkTime,
 		})
@@ -100,21 +104,39 @@ export async function loadOnCallReleasedDays(
 				reasonByDay.set(day, reason);
 			}
 		};
-		const sickLeaves: { startDate: string; endDate: string }[] = [];
-		for (const absence of absencesByEmployee.get(employeeId) ?? []) {
-			// Home office and other categories that require work are work, not absence.
-			if (absence.requiresWorkTime) continue;
-			const reason = UNPAID_ABSENCE_TYPES.has(absence.type) ? "unpaid_absence" : "paid_absence";
-			if (absence.type === "sick") {
-				sickLeaves.push({ startDate: absence.startDate, endDate: absence.endDate });
-			}
+		const daysOfAbsence = (absence: { startDate: string; endDate: string }) => {
+			const days: string[] = [];
 			for (
 				let day = parsePlainDate(absence.startDate > from ? absence.startDate : from);
 				day.toString() <= absence.endDate && day.toString() <= last;
 				day = day.add({ days: 1 })
 			) {
-				release(day.toString(), reason);
+				days.push(day.toString());
 			}
+			return days;
+		};
+		const sickLeaves: { startDate: string; endDate: string }[] = [];
+		const childSickDays: string[] = [];
+		for (const absence of absencesByEmployee.get(employeeId) ?? []) {
+			// Home office and other categories that require work are work, not absence.
+			if (absence.requiresWorkTime) continue;
+			// A child's sickness (§ 45 SGB V) releases the employee without pay: Kinderkrankengeld
+			// replaces it. It is not their own illness, so no § 3 EFZG continued pay and no
+			// § 12 Abs. 4 TzBfG event.
+			if (absence.type === "sick" && absence.sickDetail === "child_sick") {
+				childSickDays.push(...daysOfAbsence(absence));
+				continue;
+			}
+			const reason = UNPAID_ABSENCE_TYPES.has(absence.type) ? "unpaid_absence" : "paid_absence";
+			if (absence.type === "sick") {
+				sickLeaves.push({ startDate: absence.startDate, endDate: absence.endDate });
+			}
+			for (const day of daysOfAbsence(absence)) release(day, reason);
+		}
+		// Only where nothing else released the day: the employee's own illness or leave on the same
+		// day keeps its own reason (and pay).
+		for (const day of childSickDays) {
+			if (!reasonByDay.has(day)) reasonByDay.set(day, "unpaid_absence");
 		}
 		const holidays = new Set(
 			[...getAssignedHolidayDateKeys(holidaysByEmployee.get(employeeId) ?? [])].filter(

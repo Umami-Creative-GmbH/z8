@@ -39,6 +39,19 @@ _Avoid_: dismissal, resolution
 Everyone below org admin (scoped managers, planners, the employee). Sees summaries only, never EUR
 amounts, wages, external earnings or EUR baselines.
 
+**Released day** (on-call):
+A day an on-call employee cannot be called: approved absence that requires no work, or an assigned
+public holiday, unless worked or still planned anyway. It leaves the weekly call-off band and the
+§ 12 Abs. 4–5 TzBfG reference-period average. A child-sick day (`sick_detail = 'child_sick'`)
+releases the employee too, as unpaid release (§ 45 SGB V, Kinderkrankengeld replaces pay): a public
+holiday inside it is not paid as a holiday.
+
+**Own illness** (on-call):
+Approved sick leave other than child-sick days, back-to-back leave joined into one. Only an own
+illness is a § 12 Abs. 4 TzBfG sick-leave event and gets § 3 EFZG continued pay (waiting time, six
+weeks); child-sick days around it neither start nor extend it.
+_Avoid_: counting `child_sick` absence as sick leave
+
 ## Relationships
 
 - **Contracts → Statutory Compliance**: a monitor applies to an employee through the effective

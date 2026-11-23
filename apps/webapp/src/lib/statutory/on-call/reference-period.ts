@@ -8,15 +8,17 @@
  * (Abs. 4 Satz 3). The calculator therefore leaves out of both the numerator and the denominator:
  *
  * - days outside an active employment period (`not_employed`),
- * - days with approved unpaid absence (`unpaid_absence`: unpaid and parental leave),
- * - days with other approved absence that releases work (`paid_absence`: vacation, sickness…),
+ * - days with approved unpaid absence (`unpaid_absence`: unpaid and parental leave, and a child's
+ *   sickness, § 45 SGB V, on days nothing else released),
+ * - days with other approved absence that releases work (`paid_absence`: vacation, own sickness…),
  * - assigned public holidays (`public_holiday`).
  *
  * Only lost work is left out: an absence or holiday day with completed work (a worked holiday, a
  * half-day of vacation) counts like any other day, as in the on-call monitor's weekly band.
  *
- * Listed events: each illness from its first day, and each public holiday on which work was lost.
- * A holiday during approved unpaid or parental leave is not listed (no work is lost to it). A
+ * Listed events: each of the employee's own illnesses from its first day (child-sick days are not
+ * one: Kinderkrankengeld replaces pay, no § 3 EFZG), and each public holiday on which work was lost.
+ * A holiday during approved unpaid, parental or child-sick leave is not listed (no work is lost to it). A
  * holiday inside an illness is its own row with its own reference period (§ 4 Abs. 2 EFZG,
  * § 12 Abs. 5 TzBfG), and the illness's paid sick days leave it out. Both are paid only while
  * continued pay is owed (§ 3 EFZG): not in the first four weeks of employment, and for at most six
@@ -26,7 +28,7 @@
  * the payroll allocation rule. It only reads: it never writes work balances, settled payroll days
  * or closed months, so payroll can quote it without changing what was paid.
  */
-import { and, eq, gt, gte, inArray, isNotNull, lt, min } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, min, ne, or } from "drizzle-orm";
 import { absenceCategory, absenceEntry, workPeriod } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
@@ -262,6 +264,8 @@ export async function earliestSickStarts(
 							eq(absenceEntry.status, "approved"),
 							eq(absenceCategory.type, "sick"),
 							eq(absenceCategory.requiresWorkTime, false),
+							// A child's sickness (§ 45 SGB V) is not the employee's own illness.
+							or(isNull(absenceEntry.sickDetail), ne(absenceEntry.sickDetail, "child_sick")),
 							lt(absenceEntry.startDate, untilExclusive),
 							gte(absenceEntry.endDate, from),
 						),

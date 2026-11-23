@@ -250,6 +250,8 @@ export function onCallFixture(admin: Pool, fx: StatutoryFixture) {
 				startDate: string;
 				endDate: string;
 				status?: "approved" | "pending";
+				/** Sick absences only; null like legacy sick leave when omitted. */
+				sickDetail?: "child_sick" | "with_certificate" | "without_certificate" | "other";
 			},
 		): Promise<void> {
 			const categoryId = randomUUID();
@@ -259,8 +261,8 @@ export function onCallFixture(admin: Pool, fx: StatutoryFixture) {
 				[categoryId, org.id, input.type, input.type, input.type === "home_office"],
 			);
 			await admin.query(
-				`INSERT INTO absence_entry (employee_id, organization_id, category_id, start_date, end_date, status, updated_at)
-				 VALUES ($1, $2, $3, $4, $5, $6, now())`,
+				`INSERT INTO absence_entry (employee_id, organization_id, category_id, start_date, end_date, status, sick_detail, updated_at)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, now())`,
 				[
 					who.employeeId,
 					org.id,
@@ -268,6 +270,7 @@ export function onCallFixture(admin: Pool, fx: StatutoryFixture) {
 					input.startDate,
 					input.endDate,
 					input.status ?? "approved",
+					input.sickDetail ?? null,
 				],
 			);
 		},
