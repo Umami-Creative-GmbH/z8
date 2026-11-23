@@ -126,7 +126,8 @@ describe("contractor compensation actions on PostgreSQL", () => {
 			success: true,
 			data: {
 				activeEngagementKind: "contractor",
-				engagementStartDate: "2026-01-01",
+				// The engagement starts at 2026-01-01T00:00Z, still 31 December west of UTC.
+				earliestTermsDate: "2025-12-31",
 				history: [
 					{
 						effectiveFrom: "2026-02-01",

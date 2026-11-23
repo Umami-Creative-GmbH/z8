@@ -52,7 +52,7 @@ function record(
 		employeeId,
 		activeEngagementKind: "contractor",
 		contractorEngagementId: "p1",
-		engagementStartDate: "2026-01-05",
+		earliestTermsDate: "2026-01-05",
 		today: "2026-11-23",
 		history: [
 			{

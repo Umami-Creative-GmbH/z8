@@ -301,8 +301,9 @@ describe("contractor compensation terms on PostgreSQL", () => {
 			).toEqual({ ok: false, reason: "not_contractor" });
 		});
 
-		it("refuses terms before the engagement started, in the organization's calendar", async () => {
-			// The fixture's periods start at 2026-01-01T00:00Z, 01:00 on 1 January in Berlin.
+		it("refuses terms before the engagement's first day anywhere, though the organization's calendar starts it later", async () => {
+			// The fixture's periods start at 2026-01-01T00:00Z: 01:00 on 1 January in
+			// Berlin, but still 31 December west of UTC, where a contractor may work.
 			const own = await fixture.seedEmployee({ engagementKind: "contractor" });
 			const change = (effectiveFrom: string) =>
 				changeContractorTerms(db, {
@@ -312,8 +313,11 @@ describe("contractor compensation terms on PostgreSQL", () => {
 					change: { kind: "set", effectiveFrom, compensation: hourlyInput("90") },
 				});
 
-			expect(await change("2025-12-31")).toEqual({ ok: false, reason: "before_engagement" });
-			expect(await change("2026-01-01")).toMatchObject({ ok: true, changed: true });
+			expect(await change("2025-12-30")).toEqual({ ok: false, reason: "before_engagement" });
+			expect(await change("2025-12-31")).toMatchObject({ ok: true, changed: true });
+			expect(
+				await loadContractorCompensation(db, fixture.organizationId, own.employeeId),
+			).toMatchObject({ earliestTermsDate: "2025-12-31" });
 		});
 
 		it("refuses invalid terms and dates without writing", async () => {
@@ -389,23 +393,40 @@ describe("contractor compensation terms on PostgreSQL", () => {
 
 		it.each([
 			// Scheduled departure: the period ends at local midnight after the last working day.
-			["at local midnight after its last day", "2026-03-15T23:00:00Z", "2026-03-16"],
+			["at local midnight after its last day", "2026-03-15T23:00:00Z", "2026-03-15", "2026-03-16"],
 			// Offboarded now: the period ends during its last day.
-			["during its last day", "2026-03-16T10:00:00Z", "2026-03-17"],
+			["during its last day", "2026-03-16T10:00:00Z", "2026-03-16", "2026-03-17"],
 		])(
-			"prices open terms only through the last day of an engagement that ended %s",
-			async (_name, endedAt, exclusiveEnd) => {
+			"shows open terms in effect only through the last day of an engagement that ended %s",
+			async (_name, endedAt, lastDay, dayAfter) => {
 				const own = await contractorWithOpenTerms();
 				await endPeriod(own.employmentPeriodId, endedAt);
+				const inEffectOn = async (date: string) =>
+					(
+						await loadContractorCompensation(
+							db,
+							fixture.organizationId,
+							own.employeeId,
+							Temporal.Instant.from(`${date}T08:00:00Z`),
+						)
+					)?.termsInEffectId ?? null;
 
-				const terms = await listContractorTermsForPricing(db, fixture.organizationId, {
-					employeeIds: [own.employeeId],
-				});
-				expect(terms.map((entry) => [entry.from.toString(), entry.to?.toString()])).toEqual([
-					["2026-02-01", exclusiveEnd],
-				]);
+				expect(await inEffectOn(lastDay)).not.toBeNull();
+				expect(await inEffectOn(dayAfter)).toBeNull();
 			},
 		);
+
+		it("hands pricing an engagement's terms as stored: the engagement's own instants bound them", async () => {
+			const own = await contractorWithOpenTerms();
+			await endPeriod(own.employmentPeriodId, "2026-03-15T23:00:00Z");
+
+			const terms = await listContractorTermsForPricing(db, fixture.organizationId, {
+				employeeIds: [own.employeeId],
+			});
+			expect(
+				terms.map((entry) => [entry.employmentPeriodId, entry.from.toString(), entry.to]),
+			).toEqual([[own.employmentPeriodId, "2026-02-01", null]]);
+		});
 
 		it("shows the terms in force today of an active contractor", async () => {
 			const own = await contractorWithOpenTerms();

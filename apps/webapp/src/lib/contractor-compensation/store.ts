@@ -16,6 +16,7 @@ import {
 	type PlainDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import {
 	type ContractorProfileDetails,
 	loadContractorProfile,
@@ -243,15 +244,13 @@ export async function changeContractorTerms(
 		if (!period || period.engagementKind !== "contractor") {
 			return { ok: false, reason: "not_contractor" };
 		}
-		const { timezone, today } = await loadOrganizationDay(tx, {
+		const { today } = await loadOrganizationDay(tx, {
 			organizationId: input.organizationId,
 			now: input.now ?? systemClock.nowInstant(),
 		});
-		if (period.startedAt) {
-			const firstDay = localDay(instantFromDate(period.startedAt), timezone);
-			if (Temporal.PlainDate.compare(from, firstDay) < 0) {
-				return { ok: false, reason: "before_engagement" };
-			}
+		const earliest = earliestTermsDay(period.startedAt);
+		if (earliest && Temporal.PlainDate.compare(from, earliest) < 0) {
+			return { ok: false, reason: "before_engagement" };
 		}
 
 		const applied = await writeRatePeriodChange(tx, {
@@ -311,6 +310,23 @@ function localDay(instant: Instant, timezone: string): PlainDate {
 }
 
 /**
+ * UTC−14:00, the westernmost captured offset Z8 accepts elsewhere (±840
+ * minutes); no time zone in use lies further west than UTC−12:00.
+ */
+const WESTERNMOST_OFFSET_TIME_ZONE = offsetMinutesToTimeZoneId(-840);
+
+/**
+ * The first day an engagement's terms may start on: the earliest local day
+ * its start instant falls on at any captured offset. Pricing assigns work to
+ * the contractor's local day at their start entry's offset, so a contractor
+ * west of the organization can work inside the engagement on the day before
+ * its first day in the organization's calendar. Null when the start is unknown.
+ */
+function earliestTermsDay(startedAt: Date | null): PlainDate | null {
+	return startedAt ? localDay(instantFromDate(startedAt), WESTERNMOST_OFFSET_TIME_ZONE) : null;
+}
+
+/**
  * An engagement's days in the organization's calendar, from its first day to
  * the day after its last (exclusive). The period is half-open
  * `[started_at, ended_at)`, so its last day is the day of the last instant
@@ -334,17 +350,26 @@ function engagementDays(
 
 type TermsRow = typeof contractorCompensationTerms.$inferSelect;
 
+function termsPeriod(row: TermsRow, from: PlainDate, to: PlainDate | null): ContractorTermsPeriod {
+	return {
+		id: row.id,
+		employeeId: row.employeeId,
+		employmentPeriodId: row.employmentPeriodId,
+		from,
+		to,
+		compensation: fromStoredCompensation(row),
+	};
+}
+
 /**
- * Terms of the given contractors, each clipped to its engagement's days
- * (`engagementDays`), so terms left open on an ended engagement never apply
- * after it. Optionally only those in force on some day of `[fromDay, toDay]`.
- * The one rule behind pricing and every "in effect today" mark.
+ * Terms of the given contractors with their engagement's instants,
+ * optionally only those in force on some day of `[fromDay, toDay]`.
  */
-async function loadClippedTerms(
+async function loadTermsWithEngagement(
 	reader: Reader,
 	organizationId: string,
 	scope: { employeeIds: readonly string[]; fromDay?: PlainDate; toDay?: PlainDate },
-): Promise<{ row: TermsRow; terms: ContractorTermsPeriod }[]> {
+): Promise<{ row: TermsRow; startedAt: Date | null; endedAt: Date | null }[]> {
 	if (scope.employeeIds.length === 0) return [];
 	const conditions = [
 		eq(contractorCompensationTerms.organizationId, organizationId),
@@ -362,57 +387,35 @@ async function loadClippedTerms(
 		);
 		if (open) conditions.push(open);
 	}
-	const [timezone, rows] = await Promise.all([
-		loadOrganizationTimezone(reader, organizationId),
-		reader
-			.select({
-				terms: contractorCompensationTerms,
-				startedAt: employeeEmploymentPeriod.startedAt,
-				endedAt: employeeEmploymentPeriod.endedAt,
-			})
-			.from(contractorCompensationTerms)
-			.innerJoin(
-				employeeEmploymentPeriod,
-				and(
-					eq(employeeEmploymentPeriod.id, contractorCompensationTerms.employmentPeriodId),
-					eq(employeeEmploymentPeriod.organizationId, organizationId),
-				),
-			)
-			.where(and(...conditions))
-			.orderBy(
-				asc(contractorCompensationTerms.employeeId),
-				asc(contractorCompensationTerms.effectiveFrom),
+	const rows = await reader
+		.select({
+			terms: contractorCompensationTerms,
+			startedAt: employeeEmploymentPeriod.startedAt,
+			endedAt: employeeEmploymentPeriod.endedAt,
+		})
+		.from(contractorCompensationTerms)
+		.innerJoin(
+			employeeEmploymentPeriod,
+			and(
+				eq(employeeEmploymentPeriod.id, contractorCompensationTerms.employmentPeriodId),
+				eq(employeeEmploymentPeriod.organizationId, organizationId),
 			),
-	]);
-
-	const compare = Temporal.PlainDate.compare;
-	return rows.flatMap(({ terms: row, startedAt, endedAt }) => {
-		let from = Temporal.PlainDate.from(row.effectiveFrom);
-		let to = row.effectiveTo === null ? null : Temporal.PlainDate.from(row.effectiveTo);
-		const engagement = engagementDays({ startedAt, endedAt }, timezone);
-		if (engagement.first && compare(engagement.first, from) > 0) from = engagement.first;
-		if (engagement.end && (to === null || compare(engagement.end, to) < 0)) to = engagement.end;
-		if (to !== null && compare(from, to) >= 0) return [];
-		return [
-			{
-				row,
-				terms: {
-					id: row.id,
-					employeeId: row.employeeId,
-					employmentPeriodId: row.employmentPeriodId,
-					from,
-					to,
-					compensation: fromStoredCompensation(row),
-				},
-			},
-		];
-	});
+		)
+		.where(and(...conditions))
+		.orderBy(
+			asc(contractorCompensationTerms.employeeId),
+			asc(contractorCompensationTerms.effectiveFrom),
+		);
+	return rows.map(({ terms, startedAt, endedAt }) => ({ row: terms, startedAt, endedAt }));
 }
 
 /**
- * The terms of the given contractors for pricing, optionally only those in
- * force on some day of `[fromDay, toDay]`, each clipped to its engagement's
- * days in the organization's calendar (`engagementDays`). Set-based: pass the
+ * The terms of the given contractors for pricing, as stored, optionally only
+ * those in force on some day of `[fromDay, toDay]`. Not clipped to any
+ * calendar: `priceContractorWork` prices each contractor-local day only by
+ * the terms of the engagement it was worked in, and only work inside that
+ * engagement's instants, so open terms of an ended engagement never price
+ * later work and a new engagement never inherits them. Set-based: pass the
  * result to `priceContractorWork`.
  */
 export async function listContractorTermsForPricing(
@@ -420,13 +423,21 @@ export async function listContractorTermsForPricing(
 	organizationId: string,
 	scope: { employeeIds: readonly string[]; fromDay?: PlainDate; toDay?: PlainDate },
 ): Promise<ContractorTermsPeriod[]> {
-	return (await loadClippedTerms(reader, organizationId, scope)).map(({ terms }) => terms);
+	return (await loadTermsWithEngagement(reader, organizationId, scope)).map(({ row }) =>
+		termsPeriod(
+			row,
+			Temporal.PlainDate.from(row.effectiveFrom),
+			row.effectiveTo === null ? null : Temporal.PlainDate.from(row.effectiveTo),
+		),
+	);
 }
 
 /**
- * The terms each of the given contractors is priced by on `day`, by the same
- * clipping and choice as pricing: an ended engagement's open terms are not in
- * effect, nor do they carry over to a later engagement.
+ * The terms each of the given contractors has in effect on `day` of the
+ * organization's calendar: each engagement's terms clipped to the
+ * engagement's days in that calendar (`engagementDays`), so an ended
+ * engagement's open terms are not in effect, nor do they carry over to a
+ * later engagement; of two, the later-starting.
  */
 async function termsInEffectOn(
 	reader: Reader,
@@ -434,10 +445,19 @@ async function termsInEffectOn(
 	employeeIds: readonly string[],
 	day: PlainDate,
 ): Promise<Map<string, ContractorTermsView>> {
-	const clipped = await loadClippedTerms(reader, organizationId, {
-		employeeIds,
-		fromDay: day,
-		toDay: day,
+	const [timezone, rows] = await Promise.all([
+		loadOrganizationTimezone(reader, organizationId),
+		loadTermsWithEngagement(reader, organizationId, { employeeIds, fromDay: day, toDay: day }),
+	]);
+	const compare = Temporal.PlainDate.compare;
+	const clipped = rows.flatMap(({ row, startedAt, endedAt }) => {
+		let from = Temporal.PlainDate.from(row.effectiveFrom);
+		let to = row.effectiveTo === null ? null : Temporal.PlainDate.from(row.effectiveTo);
+		const engagement = engagementDays({ startedAt, endedAt }, timezone);
+		if (engagement.first && compare(engagement.first, from) > 0) from = engagement.first;
+		if (engagement.end && (to === null || compare(engagement.end, to) < 0)) to = engagement.end;
+		if (to !== null && compare(from, to) >= 0) return [];
+		return [{ row, terms: termsPeriod(row, from, to) }];
 	});
 	const periods = clipped.map(({ terms }) => terms);
 	const result = new Map<string, ContractorTermsView>();
@@ -538,8 +558,12 @@ export interface ContractorCompensationRecord {
 	 * only one whose terms can be set or ended; null without one.
 	 */
 	contractorEngagementId: string | null;
-	/** The first day terms may start on, in the organization's calendar; null when unknown. */
-	engagementStartDate: string | null;
+	/**
+	 * The first day terms of the active contractor engagement may start on: its
+	 * start's earliest local day at any captured offset, so up to a day before
+	 * its first day in the organization's calendar; null when unknown.
+	 */
+	earliestTermsDate: string | null;
 	/** Today in the organization's calendar, the editor's default date. */
 	today: string;
 	/** Newest first, across engagements. */
@@ -559,7 +583,7 @@ export async function loadContractorCompensation(
 	now: Instant = systemClock.nowInstant(),
 ): Promise<ContractorCompensationRecord | null> {
 	if (!(await employeeInOrganization(reader, organizationId, employeeId))) return null;
-	const [{ timezone, today }, period, history, details] = await Promise.all([
+	const [{ today }, period, history, details] = await Promise.all([
 		loadOrganizationDay(reader, { organizationId, now }),
 		loadActivePeriod(reader, organizationId, employeeId),
 		listContractorTermsHistory(reader, organizationId, employeeId),
@@ -570,9 +594,9 @@ export async function loadContractorCompensation(
 		employeeId,
 		activeEngagementKind: period?.engagementKind ?? null,
 		contractorEngagementId: period?.engagementKind === "contractor" ? period.id : null,
-		engagementStartDate:
-			period?.startedAt && period.engagementKind === "contractor"
-				? localDay(instantFromDate(period.startedAt), timezone).toString()
+		earliestTermsDate:
+			period?.engagementKind === "contractor"
+				? (earliestTermsDay(period.startedAt)?.toString() ?? null)
 				: null,
 		today: today.toString(),
 		history,

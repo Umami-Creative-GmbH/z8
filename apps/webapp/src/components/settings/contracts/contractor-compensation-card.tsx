@@ -612,7 +612,7 @@ function ContractorTermsForm({
 								"Choose the first day it applies",
 							);
 						}
-						if (record.engagementStartDate && value < record.engagementStartDate) {
+						if (record.earliestTermsDate && value < record.earliestTermsDate) {
 							return t(
 								"settings.contracts.contractors.errors.beforeEngagement",
 								"Terms cannot start before the engagement started.",
@@ -648,7 +648,7 @@ function ContractorTermsForm({
 								value={field.state.value}
 								onChange={field.handleChange}
 								onBlur={field.handleBlur}
-								min={record.engagementStartDate ?? undefined}
+								min={record.earliestTermsDate ?? undefined}
 							/>
 						</TFormControl>
 						<TFormMessage field={field} />
