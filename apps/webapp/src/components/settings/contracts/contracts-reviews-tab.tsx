@@ -40,6 +40,7 @@ import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-opera
 import { Link } from "@/navigation";
 import { OnCallReviewsSection } from "./on-call-reviews-section";
 import { todayIsoDateInTimezone } from "./contract-formatters";
+import { MinijobExceedanceReviews } from "./minijob-exceedance-reviews";
 import { WorkingStudentReviewsSection } from "./working-student-reviews-section";
 
 type ReviewFilterKind =
@@ -513,6 +514,12 @@ export function ContractsReviewsTab({
 					)}
 				</CardContent>
 			</Card>
+			{filterKind === "all" && (
+				<MinijobExceedanceReviews
+					organizationId={organizationId}
+					includeAcknowledged={includeResolved}
+				/>
+			)}
 			<OnCallReviewsSection organizationId={organizationId} />
 			<WorkingStudentReviewsSection
 				organizationId={organizationId}

@@ -13,6 +13,10 @@ import {
 	meetsSettingsAccess,
 	type SettingsAccess,
 } from "@/lib/organization-action/settings-access-level";
+import {
+	MINIJOB_REVIEWS_QUERY_KEY,
+	minijobMonitorQueryKey,
+} from "@/components/settings/contracts/minijob-query-keys";
 import { queryKeys } from "@/lib/query";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
@@ -124,10 +128,27 @@ vi.mock("@/components/settings/employee-offboarding/leaving-date-panel", () => (
 	),
 }));
 
+const dateCorrectionProps = vi.hoisted(() => ({
+	last: null as null | { onSaved?: () => Promise<void> | void },
+}));
+vi.mock("@/components/settings/employment-date-correction-card", () => ({
+	EmploymentDateCorrectionCard: (props: { onSaved?: () => Promise<void> | void }) => {
+		dateCorrectionProps.last = props;
+		return null;
+	},
+}));
+
+const contractTabProps = vi.hoisted(() => ({
+	last: null as null | { onContractMutated?: () => void },
+}));
 vi.mock("@/components/settings/contracts/employee-contract-tab", () => ({
-	EmployeeContractTab: ({ employeeId }: { employeeId: string }) => (
-		<section aria-label="Effective Contract">{employeeId}</section>
-	),
+	EmployeeContractTab: (props: { employeeId: string; onContractMutated?: () => void }) => {
+		contractTabProps.last = props;
+		return <section aria-label="Effective Contract">{props.employeeId}</section>;
+	},
+}));
+vi.mock("@/components/settings/contracts/employee-minijob-monitor-card", () => ({
+	EmployeeMinijobMonitorCard: () => null,
 }));
 
 vi.mock("@/components/settings/contracts/scoped-manager-policy-card", () => ({
@@ -293,13 +314,13 @@ function employeeHookResult(employee: EmployeeDetail) {
 		hasEmployee: true,
 		updateEmployee: saveEmployeeMock,
 		isUpdating: false,
-		changeWage: vi.fn(),
+		changeWage: vi.fn().mockResolvedValue({ success: true }),
 		isChangingWage: false,
-		createEmploymentHistory: vi.fn(),
+		createEmploymentHistory: vi.fn().mockResolvedValue({ success: true }),
 		isCreatingEmploymentHistory: false,
-		confirmEmploymentHistory: vi.fn(),
+		confirmEmploymentHistory: vi.fn().mockResolvedValue({ success: true }),
 		isConfirmingEmploymentHistory: false,
-		cancelEmploymentHistory: vi.fn(),
+		cancelEmploymentHistory: vi.fn().mockResolvedValue({ success: true }),
 		isCancelingEmploymentHistory: false,
 		requestWorkBalanceRecalculation: vi.fn(),
 		isRequestingWorkBalanceRecalculation: false,
@@ -689,6 +710,63 @@ describe("employee detail Change wage (#1177)", () => {
 		expect(await screen.findByRole("region", { name: "Effective Contract" })).toBeTruthy();
 
 		expect(employmentHistoryCardProps.last?.changeWage).toBeUndefined();
+	});
+});
+
+describe("employee detail Minijob monitor refresh (#1989)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		window.location.hash = "";
+		employmentHistoryCardProps.last = null;
+		contractTabProps.last = null;
+	});
+
+	it("refreshes the Minijob monitor and reviews after every change to terms, history, wage or start date", async () => {
+		const { queryClient } = renderDetail({
+			employee: { ...realEmployee, contractTypeToday: "hourly" } as EmployeeDetail,
+		});
+		const tab = await screen.findByRole("tab", { name: "Contract" });
+		act(() => {
+			fireEvent.mouseDown(tab);
+			fireEvent.click(tab);
+		});
+		await screen.findByRole("region", { name: "Effective Contract" });
+		// The monitor as the viewer (renderDetail's default owner) caches it.
+		const monitorKey = minijobMonitorQueryKey(
+			"owner-user",
+			realEmployee.organizationId,
+			realEmployee.id,
+		);
+		const history = employmentHistoryCardProps.last as {
+			onCreate: (input: unknown) => Promise<unknown>;
+			onConfirm: (id: string) => Promise<unknown>;
+			onCancel: (id: string) => Promise<unknown>;
+			changeWage: { onSubmit: (input: unknown) => Promise<unknown> };
+		};
+		const mutations: [string, () => unknown][] = [
+			["contract terms", () => contractTabProps.last?.onContractMutated?.()],
+			["new history", () => history.onCreate({})],
+			["confirmed history", () => history.onConfirm("history-1")],
+			["canceled history", () => history.onCancel("history-1")],
+			["wage change", () => history.changeWage.onSubmit({})],
+			["start date correction", () => dateCorrectionProps.last?.onSaved?.()],
+		];
+		const reviewsKey = [...MINIJOB_REVIEWS_QUERY_KEY, realEmployee.organizationId, false];
+
+		for (const [name, mutate] of mutations) {
+			queryClient.setQueryData(monitorKey, { months: [] });
+			queryClient.setQueryData(reviewsKey, []);
+			await act(async () => {
+				await mutate();
+			});
+			await waitFor(() =>
+				expect([
+					name,
+					queryClient.getQueryState(monitorKey)?.isInvalidated,
+					queryClient.getQueryState(reviewsKey)?.isInvalidated,
+				]).toEqual([name, true, true]),
+			);
+		}
 	});
 });
 

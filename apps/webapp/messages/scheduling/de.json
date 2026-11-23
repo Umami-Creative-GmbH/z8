@@ -229,6 +229,13 @@
         "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
         "apprenticeship": "Freistellung Auszubildende (BBiG)"
       },
+      "minijob": {
+        "monthlyDocumented": "Minijob-Monatsgrenze überschritten (als unvorhersehbar dokumentiert)",
+        "monthlyExceeded": "Minijob-Monatsgrenze überschritten",
+        "monthlyApproaching": "Minijob-Monatsgrenze rückt näher",
+        "rollingExceeded": "Minijob-Verdienstgrenze für 12 Monate überschritten",
+        "rollingApproaching": "Minijob-Verdienstgrenze für 12 Monate rückt näher"
+      },
       "onCall": {
         "shortNotice": "Abruf: {days, plural, one {# voller Tag} other {# volle Tage}} Vorlauf, {required} erforderlich (§ 12 Abs. 3 TzBfG)",
         "shortCall": "Abruf: Einsatz von {duration} unter dem Minimum von {minimum}",

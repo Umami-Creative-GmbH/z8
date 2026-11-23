@@ -229,6 +229,13 @@
         "youthProtection": "Youth protection (JArbSchG)",
         "apprenticeship": "Apprentice release (BBiG)"
       },
+      "minijob": {
+        "monthlyDocumented": "Minijob monthly limit exceeded (documented as unforeseeable)",
+        "monthlyExceeded": "Minijob monthly limit exceeded",
+        "monthlyApproaching": "Minijob monthly limit approaching",
+        "rollingExceeded": "Minijob 12-month earnings limit exceeded",
+        "rollingApproaching": "Minijob 12-month earnings limit approaching"
+      },
       "onCall": {
         "shortNotice": "On-call: {days, plural, one {# full day} other {# full days}} notice, {required} required (§ 12 Abs. 3 TzBfG)",
         "shortCall": "On-call: call of {duration} is below the minimum of {minimum}",

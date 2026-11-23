@@ -531,6 +531,89 @@
           "warningBelowCritical": "The warning percentage must be below the critical percentage."
         }
       },
+      "minijob": {
+        "column": {
+          "month": "Month",
+          "monthly": "Monthly limit",
+          "rolling": "Rolling 12 months",
+          "exceedance": "Exceedance"
+        },
+        "currentMonth": "(current)",
+        "amountOfCap": "{amount} of {cap}",
+        "planned": "{amount} planned",
+        "external": "{amount} other Minijobs",
+        "missingWage": "Some work has no hourly wage in its terms and is not counted.",
+        "offsets": {
+          "saved": "External Minijob earnings saved",
+          "monthRequired": "Choose a month.",
+          "fromMonth": "First month",
+          "refusal": {
+            "range": "The last month must not be before the first month.",
+            "value": "Enter a monthly amount of 0 or more.",
+            "note": "Record where the earnings come from.",
+            "overlap": "The period overlaps existing earnings."
+          },
+          "lastMonth": "Last month (optional)",
+          "lastMonthHelp": "Leave empty while the other Minijob continues.",
+          "amount": "Monthly earnings (EUR)",
+          "sourceEmployer": "Other employer (optional)",
+          "note": "Source",
+          "notePlaceholder": "For example: payslip of the other Minijob",
+          "save": "Save earnings",
+          "voided": "External Minijob earnings voided",
+          "voidReasonRequired": "Record why the earnings are voided.",
+          "voidReason": "Why void these earnings?",
+          "confirmVoid": "Void",
+          "title": "Earnings from other Minijobs",
+          "add": "Add earnings",
+          "empty": "No other Minijob recorded.",
+          "perMonth": "{amount} a month",
+          "range": "{from} – {until}",
+          "since": "Since {from}",
+          "void": "Void"
+        },
+        "title": "Minijob earnings limit",
+        "descriptionAdmin": "Earned wages, planned shifts and earnings from other Minijobs against the monthly limit in force each month and the rolling 12 months (§ 8 Abs. 1 Nr. 1 SGB IV).",
+        "descriptionRestricted": "How close this employee is to the Minijob earnings limit. Amounts are visible to organization admins only.",
+        "review": {
+          "acknowledged": "Exceedance documented as unforeseeable",
+          "reason": "Why was it unforeseeable?",
+          "reasonPlaceholder": "For example: covered a colleague's unplanned sick leave",
+          "legalNote": "Legal note (optional)",
+          "acknowledge": "Document as unforeseeable",
+          "title": "Minijob earnings above the monthly limit",
+          "description": "Up to two months within 12 months may exceed the limit by up to twice the amount when the exceedance was unforeseeable (§ 8 Abs. 1b SGB IV). Document each such month; everything else needs a contract or schedule change.",
+          "loadFailed": "Could not load the Minijob exceedances.",
+          "total": "Earnings incl. planned shifts",
+          "cap": "Monthly limit",
+          "external": "Other Minijobs",
+          "doubleCap": "Twice the limit",
+          "prior": "Earlier exceedance months within 12 months: {months}",
+          "documentedReason": "Documented reason: {reason}"
+        },
+        "refusal": {
+          "reasonRequired": "Explain why the exceedance was unforeseeable.",
+          "invalidMonth": "Choose a calendar month.",
+          "notExceeded": "The month's earnings are within the limit again; nothing to document.",
+          "notAcknowledgeable": "This month cannot count as an unforeseeable exceedance: it is above twice the limit or the third exceedance within 12 months.",
+          "changed": "The month's earnings changed since you opened this list. Review the updated figures and document them again.",
+          "subjectRequired": "The month could not be evaluated. Reload and try again."
+        },
+        "tier": {
+          "ok": "Within limit",
+          "warning": "Approaching limit",
+          "critical": "Close to limit",
+          "exceeded": "Over limit",
+          "exceededDocumented": "Exceeded (documented as unforeseeable)"
+        },
+        "exceedance": {
+          "acknowledged": "Documented as unforeseeable",
+          "unacknowledged": "Not documented",
+          "stale": "Documentation outdated: work or shifts changed",
+          "overDoubleCap": "More than twice the limit",
+          "tooMany": "Too many exceedance months within 12 months"
+        }
+      },
       "workingStudent": {
         "finding": {
           "lectureWeek": "{hours} h of weekday daytime work in a lecture week (limit {limit} h)",

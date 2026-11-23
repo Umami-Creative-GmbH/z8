@@ -113,6 +113,12 @@ export async function recordStatutoryAcknowledgement(
 		readonly legalNote?: string | null;
 		/** Admin-only context worth keeping (e.g. evaluated amounts); never shown to scoped managers. */
 		readonly metadata?: Record<string, unknown>;
+		/**
+		 * Distinguishes acknowledgements of the same fingerprint that document different figures
+		 * (e.g. a Minijob month's total), so documenting the new figures records a new row instead
+		 * of deduplicating onto the old one.
+		 */
+		readonly revision?: string;
 	},
 ): Promise<StatutoryAcknowledgementRecord> {
 	const reason = input.reason.trim();
@@ -146,6 +152,7 @@ export async function recordStatutoryAcknowledgement(
 		input.employeeId,
 		input.subjectKey,
 		input.inputFingerprint,
+		...(input.revision ? [input.revision] : []),
 	])}`;
 	await db
 		.insert(contractReviewAcknowledgement)
@@ -293,7 +300,8 @@ export async function loadStatutoryAcknowledgementStates(
 
 /**
  * Loads and attaches the acknowledgement state of every acknowledgeable finding. Findings without
- * an `acknowledgementKind` pass through unchanged.
+ * an `acknowledgementKind` pass through unchanged, and so do findings whose contributor already
+ * attached a state it judged beyond the fingerprint (e.g. Minijob months, by acknowledged total).
  */
 export async function attachAcknowledgementStates<F extends StatutoryFinding>(
 	db: Pick<DatabaseClient, "select">,
@@ -301,13 +309,13 @@ export async function attachAcknowledgementStates<F extends StatutoryFinding>(
 	findings: readonly F[],
 ): Promise<F[]> {
 	const subjects = findings.flatMap((finding) => {
-		const subject = statutoryAcknowledgementSubjectOf(finding);
+		const subject = finding.acknowledgement ? null : statutoryAcknowledgementSubjectOf(finding);
 		return subject ? [{ ...subject, inputFingerprint: finding.inputFingerprint }] : [];
 	});
 	const states = await loadStatutoryAcknowledgementStates(db, { organizationId, subjects });
 	return findings.map((finding) => {
 		const subject = statutoryAcknowledgementSubjectOf(finding);
-		if (!subject) return finding;
+		if (!subject || finding.acknowledgement) return finding;
 		const state = states.get(subject);
 		const acknowledgement: StatutoryFindingAcknowledgement = {
 			status: state.status,
