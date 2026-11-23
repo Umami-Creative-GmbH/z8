@@ -112,11 +112,12 @@ export function youthProtectionWarningText(
 			);
 		// A shift through two release days has a conflict on each: the line names its day.
 		case "bbig_release_day_shift":
-			// Work past a full block week's 2 h of in-company training: the week's work and the limit.
+			// Work past a full block week's 2 h of in-company training: the week's total work on its
+			// block days (every finding of the week holds the same total), the limit, and the day.
 			if (finding.summary.limit) {
 				return t(
-					"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingOn",
-					"Block-release week: {used} min of work on its school days by {date}, beyond the {limit} min of in-company training allowed a week",
+					"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingWeek",
+					"Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
 					{ used, limit, date: releaseDateText(finding, locale) },
 				);
 			}

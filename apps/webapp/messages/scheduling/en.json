@@ -248,7 +248,7 @@
       },
       "apprenticeship": {
         "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
-        "blockWeekTrainingOn": "Block-release week: {used} min of work on its school days by {date}, beyond the {limit} min of in-company training allowed a week",
+        "blockWeekTrainingWeek": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
         "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
       },
       "shortTerm": {

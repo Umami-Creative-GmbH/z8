@@ -1571,6 +1571,25 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			).toEqual([[`shift:${ids[1]}`, 30]]);
 		});
 
+		it("gives every block day past the allowance the week's total, not a running one", async () => {
+			const { learner, ids } = await blockWeekWith("2009-06-01", [
+				["2027-03-08", "15:00", "16:40"], // Monday, 100 min.
+				["2027-03-11", "15:00", "16:00"], // Thursday, 60 min: 40 past the allowance.
+				["2027-03-12", "15:00", "16:30"], // Friday, 90 min.
+			]);
+			expect(
+				(await conflicts(learner)).map((finding) => [
+					finding.subjectKey,
+					finding.periodStart,
+					finding.coveredMinutes,
+					finding.summary.used,
+				]),
+			).toEqual([
+				[`shift:${ids[1]}`, "2027-03-11", 40, { unit: "minutes", value: 250 }],
+				[`shift:${ids[2]}`, "2027-03-12", 90, { unit: "minutes", value: 250 }],
+			]);
+		});
+
 		it("lets two 1 h shifts on different block days pass and flags a third", async () => {
 			const two = await blockWeekWith("2009-06-01", [
 				["2027-03-08", "15:00", "16:00"],
