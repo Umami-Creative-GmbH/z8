@@ -208,7 +208,7 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 		});
 	});
 
-	it("lists only holidays on which work was lost and that no listed illness already pays", async () => {
+	it("lists only holidays on which work was lost; a holiday inside an illness is its own row, paid once", async () => {
 		const org = await onCall.organization("a");
 		const worker = await fx.employee(org, "worker");
 		const periodId = await onCall.employmentPeriod(org, worker, "2026-03-31T22:00:00Z");
@@ -217,12 +217,13 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 			from: "2026-04-01",
 			employmentPeriodId: periodId,
 		});
-		// Good Friday, not worked: paid by § 12 Abs. 4 TzBfG, listed.
+		// Good Friday, not worked: paid by § 12 Abs. 5 TzBfG, listed.
 		await onCall.holiday(org, worker, "2026-04-03");
 		// Easter Monday, worked anyway: no work was lost, nothing to pay.
 		await onCall.holiday(org, worker, "2026-04-06");
 		await onCall.work(org, worker, { date: "2026-04-06", startTime: "09:00", endTime: "13:00" });
-		// A 10-day illness with a holiday on its third day: the sick leave pays that day once.
+		// A 10-day illness with a holiday on its third day: § 4 Abs. 2 EFZG pays that day by the
+		// holiday rule, so it is its own row with the 3 months before the holiday itself.
 		await onCall.absence(org, worker, {
 			type: "sick",
 			startDate: "2026-04-13",
@@ -241,6 +242,69 @@ describe("§ 12 TzBfG reference-period calculator (PostgreSQL)", () => {
 		expect(events.map((event) => [event.kind, event.eventDate])).toEqual([
 			["public_holiday", "2026-04-03"],
 			["sick_leave", "2026-04-13"],
+			["public_holiday", "2026-04-15"],
+		]);
+		const [, sick, holiday] = events;
+		expect(sick?.breakdown).toMatchObject({
+			referenceStart: "2026-01-13",
+			referenceEndExclusive: "2026-04-13",
+		});
+		// The sick leave pays 04-13 … 04-22 except the holiday: 9 days.
+		expect(sick?.paidSickDays).toEqual({
+			from: "2026-04-13",
+			untilExclusive: "2026-04-23",
+			days: 9,
+			holidaysPaidSeparately: ["2026-04-15"],
+		});
+		expect(holiday?.paidSickDays).toBeUndefined();
+		expect(holiday?.breakdown).toMatchObject({
+			referenceStart: "2026-01-15",
+			referenceEndExclusive: "2026-04-15",
+			onCallOnEventDate: true,
+		});
+		expect(holiday?.breakdown.excludedPeriods).toContainEqual({
+			from: "2026-04-13",
+			untilExclusive: "2026-04-15",
+			reason: "paid_absence",
+			days: 2,
+		});
+	});
+
+	it("lists no holiday during parental or unpaid leave: no work is lost to it", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		const periodId = await onCall.employmentPeriod(org, worker, "2025-10-31T23:00:00Z");
+		await onCall.onCallTerms(org, worker, {
+			kind: "unspecified",
+			from: "2025-11-01",
+			employmentPeriodId: periodId,
+		});
+		await onCall.absence(org, worker, {
+			type: "parental",
+			startDate: "2025-12-01",
+			endDate: "2026-01-31",
+		});
+		await onCall.absence(org, worker, {
+			type: "unpaid",
+			startDate: "2026-02-09",
+			endDate: "2026-02-13",
+		});
+		for (const date of ["2025-12-25", "2025-12-26", "2026-01-01", "2026-02-10"]) {
+			await onCall.holiday(org, worker, date);
+		}
+		// An ordinary holiday not worked is still listed.
+		await onCall.holiday(org, worker, "2026-02-16");
+
+		const events = await listOnCallReferenceEvents(db, {
+			organizationId: org.id,
+			employeeId: worker.employeeId,
+			from: "2025-12-01",
+			untilExclusive: "2026-03-01",
+			method: "three_months",
+		});
+
+		expect(events.map((event) => [event.kind, event.eventDate])).toEqual([
+			["public_holiday", "2026-02-16"],
 		]);
 	});
 

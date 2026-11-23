@@ -15,6 +15,11 @@
  * Only lost work is left out: an absence or holiday day with completed work (a worked holiday, a
  * half-day of vacation) counts like any other day, as in the on-call monitor's weekly band.
  *
+ * Listed events: each illness from its first day, and each public holiday on which work was lost.
+ * A holiday during approved unpaid or parental leave is not listed (no work is lost to it). A
+ * holiday inside an illness is its own row with its own reference period (§ 4 Abs. 2 EFZG,
+ * § 12 Abs. 5 TzBfG), and the illness's paid sick days leave it out.
+ *
  * The numerator is the completed work of the remaining days, allocated to employee-local days by
  * the payroll allocation rule. It only reads: it never writes work balances, settled payroll days
  * or closed months, so payroll can quote it without changing what was paid.
@@ -87,10 +92,24 @@ export interface OnCallReferenceBreakdown {
 
 export type OnCallReferenceEventKind = "sick_leave" | "public_holiday";
 
+/**
+ * The days of an illness, within the listed range, that its sick-leave row pays (§ 12 Abs. 4
+ * TzBfG): employed and on-call days, without the public holidays inside it. § 4 Abs. 2 EFZG pays
+ * those by the holiday rule, each as its own `public_holiday` row, so no day is paid twice.
+ */
+export interface OnCallPaidSickDays {
+	readonly from: string;
+	readonly untilExclusive: string;
+	readonly days: number;
+	readonly holidaysPaidSeparately: readonly string[];
+}
+
 export interface OnCallReferenceEvent {
 	readonly kind: OnCallReferenceEventKind;
 	readonly eventDate: string;
 	readonly breakdown: OnCallReferenceBreakdown;
+	/** Sick leave only. */
+	readonly paidSickDays?: OnCallPaidSickDays;
 }
 
 export function referenceStartOf(eventDate: PlainDate, method: OnCallReferenceMethod): PlainDate {
@@ -422,21 +441,30 @@ function eventsOf(
 			leave.endDate >= input.from &&
 			onCallOn(facts, leave.startDate),
 	);
-	// A holiday is paid only where work was lost (as the band and the denominator see it), and only
-	// once: a holiday inside a listed illness is paid by that sick leave.
-	const holidayPaid = (day: string) =>
-		(facts.workMinutesByDay[day] ?? 0) === 0 &&
-		!illnesses.some((leave) => leave.startDate <= day && day <= leave.endDate);
-	const candidates: { kind: OnCallReferenceEventKind; eventDate: string }[] = [
-		...[...new Set(illnesses.map((leave) => leave.startDate))].map((eventDate) => ({
-			kind: "sick_leave" as const,
-			eventDate,
-		})),
-		...[...facts.holidays]
-			.filter((day) => inRange(day) && onCallOn(facts, day) && holidayPaid(day))
-			.map((eventDate) => ({ kind: "public_holiday" as const, eventDate })),
-	];
-	return candidates
+	// A holiday is paid only where work was lost (as the band and the denominator see it). During
+	// approved unpaid or parental leave no work is lost to it, so there is no holiday pay. A holiday
+	// inside an illness is its own row: § 4 Abs. 2 EFZG pays it by the holiday rule, and § 12 Abs. 5
+	// TzBfG dates its reference period from the holiday itself.
+	const paidHolidays = [...facts.holidays]
+		.filter(
+			(day) =>
+				inRange(day) &&
+				onCallOn(facts, day) &&
+				(facts.workMinutesByDay[day] ?? 0) === 0 &&
+				facts.exclusionByDay.get(day) !== "unpaid_absence",
+		)
+		.toSorted();
+	const paidHolidaySet = new Set(paidHolidays);
+	const sickRows = illnesses.map((leave) => ({
+		kind: "sick_leave" as const,
+		eventDate: leave.startDate,
+		paidSickDays: paidSickDaysOf(facts, leave, input, paidHolidaySet),
+	}));
+	const holidayRows = paidHolidays.map((eventDate) => ({
+		kind: "public_holiday" as const,
+		eventDate,
+	}));
+	return [...sickRows, ...holidayRows]
 		.toSorted((a, b) => a.eventDate.localeCompare(b.eventDate) || a.kind.localeCompare(b.kind))
 		.map((event) => ({
 			...event,
@@ -446,6 +474,26 @@ function eventsOf(
 				method: input.method,
 			}),
 		}));
+}
+
+/** The illness's days in the listed range that its sick-leave row pays; see {@link OnCallPaidSickDays}. */
+function paidSickDaysOf(
+	facts: ReferenceFacts,
+	leave: SickLeave,
+	range: { readonly from: string; readonly untilExclusive: string },
+	paidHolidays: ReadonlySet<string>,
+): OnCallPaidSickDays {
+	const from = leave.startDate > range.from ? leave.startDate : range.from;
+	const leaveEnd = dayAfter(leave.endDate);
+	const untilExclusive = leaveEnd < range.untilExclusive ? leaveEnd : range.untilExclusive;
+	const holidaysPaidSeparately: string[] = [];
+	let days = 0;
+	for (const day of daysOf(parsePlainDate(from), parsePlainDate(untilExclusive))) {
+		const key = day.toString();
+		if (paidHolidays.has(key)) holidaysPaidSeparately.push(key);
+		else if (onCallOn(facts, key)) days += 1;
+	}
+	return { from, untilExclusive, days, holidaysPaidSeparately };
 }
 
 /**
