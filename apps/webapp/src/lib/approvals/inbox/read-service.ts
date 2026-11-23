@@ -831,8 +831,10 @@ export async function getApprovalInboxList(
 
 /**
  * The viewer's pending counts and total exactly as `getApprovalInboxList` counts them, with the
- * sources whose count failed among its warnings (#1980), but no rows: no list read, no triage
- * policy or evidence, no "Covering for" section. For a caller that shows only the total.
+ * sources whose count failed among its warnings (#1980). It skips the list reads, the triage
+ * policy and evidence, and "Covering for" sections. It is not row-free for every source: a
+ * source whose own count reads its rows (the legacy time-correction handler counts through
+ * `getApprovals`) still does. For a caller that shows only the total.
  */
 export async function getApprovalInboxTotals(
 	params: Omit<ApprovalInboxListParams, "limit" | "cursor">,

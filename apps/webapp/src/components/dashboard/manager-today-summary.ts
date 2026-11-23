@@ -1,7 +1,12 @@
 export type ManagerTodayBriefingSummary = {
 	criticalIssues: number;
 	openApprovals: number;
-	/** `openApprovals` is a lower bound: an approval type failed to load or count (#1980). */
+	/**
+	 * `openApprovals` is a lower bound (#1980). The dashboard reads counts only, so only a failed
+	 * count can set it here; a type whose list failed but whose count succeeded is counted
+	 * exactly. `/today` reads the list too, and there a failed list can hide a failed count, so it
+	 * reads every failure as a lower bound: the two can differ for a list-only failure.
+	 */
 	openApprovalsAtLeast?: true;
 	attendanceExceptions: number;
 	absencesToday: number;

@@ -308,7 +308,7 @@ describe("getApprovalInboxListFromSources", () => {
 	});
 
 	describe("counting alone, for a pending total (#1980)", () => {
-		it("counts every source as the list does, without reading a row or its triage evidence", async () => {
+		it("counts every source as the list does, without its list read or triage evidence", async () => {
 			const absences = source("absence_entry", [
 				item({ id: "absence-1" }),
 				item({ id: "absence-2" }),

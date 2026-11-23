@@ -39,8 +39,9 @@ export interface BriefingApprovalActionItem extends BriefingActionItem {
 	/** The viewer requested it, so someone else decides it (#686, #697). */
 	ownRequest?: boolean;
 	/**
-	 * Approval needs acceptances only the inbox's detail view collects (#604): no one-click
-	 * approve, the briefing sends the manager to the inbox instead (#1980).
+	 * Approval needs acceptances only the inbox's detail view collects (#604), or is decided one
+	 * at a time with its details in view (a compliance exception): no one-click approve, the
+	 * briefing sends the manager to the inbox instead (#1980).
 	 */
 	requiresDetailReview?: boolean;
 	/**
@@ -191,7 +192,11 @@ export function approvalToBriefingItem(approval: BriefingApproval): BriefingAppr
 		canApprove: approval.capabilities.canApprove,
 		canReject: approval.capabilities.canReject,
 		...(approval.capabilities.ownRequest ? { ownRequest: true } : {}),
-		...(approval.capabilities.requiresDetailReview ? { requiresDetailReview: true } : {}),
+		// A single-decision item (an ArbZG compliance exception, #1977) is reviewed in the inbox with
+		// its type, duration and validity window in view, never approved from a one-line row.
+		...(approval.capabilities.requiresDetailReview || approval.capabilities.singleDecisionOnly
+			? { requiresDetailReview: true }
+			: {}),
 		...(approval.summary.localized ? { localized: approval.summary.localized } : {}),
 	};
 }

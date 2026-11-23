@@ -242,6 +242,35 @@ describe("getManagerDailyBriefingFromSources", () => {
 		expect(byApprovalId.get("absence-1")?.requiresDetailReview).toBeUndefined();
 	});
 
+	it("sends an ArbZG compliance exception to the inbox's detail review, never a one-click approve", async () => {
+		// A statutory waiver is decided one at a time, with its type, duration and validity window
+		// in view (#1977): the briefing's one-line row shows none of them.
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue([
+				createApproval({
+					id: "exception-1",
+					type: "compliance_exception",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+					capabilities: { canApprove: true, singleDecisionOnly: true },
+				}),
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.sections.approvals.items[0]).toMatchObject({
+			approvalId: "exception-1",
+			requiresDetailReview: true,
+		});
+	});
+
 	it("carries the inbox item's localized summary texts for the panel to translate", async () => {
 		const localized = {
 			title: { key: "approvals:approvals.periodSubmission.title", fallback: "Period submission" },
