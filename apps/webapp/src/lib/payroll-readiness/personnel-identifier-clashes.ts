@@ -4,6 +4,7 @@ import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { db, timeRecord } from "@/db";
 import { mapConcurrently } from "@/lib/async/map-concurrently";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { employeesWithPayoutsOrExpenseLines } from "@/lib/payroll-export/payout-and-expense-employees";
 import type { PersonnelIdentifierClash } from "@/lib/payroll-export/personnel-identifier";
 import { findPersonnelIdentifierClashes } from "@/lib/payroll-export/personnel-identifier-store";
@@ -51,10 +52,15 @@ export async function loadPersonnelIdentifierClashes(input: {
 			filters,
 		});
 		for (const employeeId of otherRows) employeeIds.add(employeeId);
+		// The export carries employee time only (#1997): an External Contractor clashes with nobody.
+		const candidates = [...employeeIds];
+		const carried = (
+			await loadEmployeeTime(db, input.organizationId, candidates)
+		).withEmployeeTimeOn(candidates, input.from.toString(), input.asOf.toString());
 		return findPersonnelIdentifierClashes(db, {
 			organizationId: input.organizationId,
 			configs: [config],
-			employeeIds: [...employeeIds],
+			employeeIds: carried,
 			asOf: input.asOf,
 		});
 	});

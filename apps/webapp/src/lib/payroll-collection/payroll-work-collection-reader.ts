@@ -36,6 +36,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
+import { type EmployeeTime, loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { createLogger } from "@/lib/logger";
 import { readPersonnelIdentifierValues } from "@/lib/payroll-export/personnel-identifier-store";
 import { withAppendEvidenceSnapshot } from "@/lib/time-tracking/append-assurance-reader";
@@ -152,7 +153,15 @@ export async function readPayrollWorkCollectionFromSnapshot(
 	filters: PayrollCollectionFilters,
 	options: Pick<PayrollCollectionRequest, "personnelIdentifier"> = {},
 ): Promise<PayrollWorkCollection> {
-	const employeeIds = await resolveScopeEmployeeIds(reader, organizationId, filters);
+	const candidates = await resolveScopeEmployeeIds(reader, organizationId, filters);
+	// Only people with employee time on the dates are in scope (#1997): an External Contractor
+	// is never collected, blocked or asked for a personnel identifier.
+	const employeeTime = await loadEmployeeTime(reader, organizationId, candidates);
+	const employeeIds = employeeTime.withEmployeeTimeOn(
+		candidates,
+		filters.startDate,
+		filters.endDate,
+	);
 	const request: PayrollCollectionRequest = {
 		organizationId,
 		startDate: filters.startDate,
@@ -162,7 +171,10 @@ export async function readPayrollWorkCollectionFromSnapshot(
 		projectIds: filters.projectIds ?? null,
 		personnelIdentifier: options.personnelIdentifier ?? null,
 	};
-	return assessPayrollWorkCollection(await readPayrollCollectionSnapshot(reader, request), request);
+	return assessPayrollWorkCollection(
+		await readPayrollCollectionSnapshot(reader, request, employeeTime),
+		request,
+	);
 }
 
 async function repairEligibleGaps(
@@ -239,6 +251,7 @@ async function resolveScopeEmployeeIds(
 async function readPayrollCollectionSnapshot(
 	reader: Reader,
 	request: PayrollCollectionRequest,
+	employeeTime: EmployeeTime,
 ): Promise<PayrollCollectionSnapshot> {
 	const { organizationId, employeeIds } = request;
 	const range = calendarDateEnvelope(request.startDate, request.endDate);
@@ -432,6 +445,7 @@ async function readPayrollCollectionSnapshot(
 			lastName: row.lastName,
 			email: row.email,
 			timezone: resolveEffectiveTimezone(row.timezone, organizationRow?.timezone ?? null),
+			stints: employeeTime.stintsOf(row.id),
 		})),
 		records: recordRows.map((row): PayrollCollectionWorkRecord => {
 			const detail = detailByRecord.get(row.id);

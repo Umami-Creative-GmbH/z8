@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PayrollExportJobSummary } from "@/lib/payroll-export/types";
 
+// Everyone is an employee here: External Contractor exclusion has its own PostgreSQL suites (#1997).
+vi.mock("@/lib/engagement/engagement-stints", async () => ({
+	loadEmployeeTime: async () =>
+		(await import("@/lib/engagement/testing/all-employee-time")).allEmployeeTime(),
+}));
 vi.mock("next-intl/server", () => ({
 	getLocale: vi.fn(async () => "en"),
 }));

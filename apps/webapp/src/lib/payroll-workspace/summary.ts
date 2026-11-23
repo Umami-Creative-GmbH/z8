@@ -30,10 +30,10 @@ import {
 	type OpenDepartureClockRepair,
 } from "@/lib/employee-lifecycle/reviews";
 import { loadCurrentContractTypes } from "@/lib/employment-history/load-terms-in-force";
-import {
-	allocateProtectedMinutes,
-	employeePayrollWindow,
-} from "@/lib/payroll-allocation/protected-minutes";
+import { PLAIN_EMPLOYEE_STINTS } from "@/lib/engagement/employee-time";
+import { type EmployeeTime, loadEmployeeTime } from "@/lib/engagement/engagement-stints";
+import { allocateEmployeeMinutes } from "@/lib/payroll-allocation/employee-minutes";
+import { employeePayrollWindow } from "@/lib/payroll-allocation/protected-minutes";
 import {
 	type CollectedPayrollWork,
 	missingPersonnelIdentifierBlockers,
@@ -176,6 +176,8 @@ export function buildPayrollSummaryFromRows(input: {
 export function calculatePayrollWorkedMinutes(
 	workRows: PayrollSummaryWorkRow[],
 	period: Pick<PayrollPeriod, "start" | "end">,
+	/** Only employee time is credited (#1997); absent, all time is employee time. */
+	employeeTime?: Pick<EmployeeTime, "stintsOf">,
 ): {
 	workedMinutesByEmployee: Map<string, number>;
 	/** The credited part of each allocated record, for attributing it to local days. */
@@ -186,9 +188,10 @@ export function calculatePayrollWorkedMinutes(
 	const credited: CreditedWorkSpan[] = [];
 	const blockers: PayrollBlocker[] = [];
 	for (const row of workRows) {
-		const allocation = allocateProtectedMinutes(
+		const allocation = allocateEmployeeMinutes(
 			{ startAt: row.startAt, endAt: row.endAt, storedMinutes: row.durationMinutes },
 			employeePayrollWindow(period.start, period.end, row.timezone),
+			employeeTime?.stintsOf(row.employeeId) ?? PLAIN_EMPLOYEE_STINTS,
 		);
 
 		if (allocation.status === "outside") continue;
@@ -436,15 +439,18 @@ export async function loadPayrollPeriodSources(input: {
 	const organizationTimezone = organizationRow?.timezone ?? null;
 	const organizationName = organizationRow?.name ?? "";
 
-	if (input.allowedEmployeeIds.length === 0) {
+	// Payroll reads employee time only (#1997): an External Contractor has no row, work,
+	// absence or blocker here, and a converted person only those of their employee stint.
+	const candidates = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
+	const employeeTime = await loadEmployeeTime(db, input.organizationId, candidates);
+	const allowedEmployeeIds = employeeTime.withEmployeeTimeOn(candidates, period.start, period.end);
+	if (allowedEmployeeIds.length === 0) {
 		return {
 			period,
 			organizationTimezone,
 			sources: { organizationName, employees: [], work: [], absences: [], blockers: [] },
 		};
 	}
-
-	const allowedEmployeeIds = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
 	const identifierBlockers = (employeesWithRows: Iterable<string>) =>
 		getMissingIdentifierBlockers({
 			organizationId: input.organizationId,
@@ -463,9 +469,10 @@ export async function loadPayrollPeriodSources(input: {
 				endDate: period.end,
 				employeeIds: allowedEmployeeIds,
 			}),
-			getAbsenceRows(input.organizationId, allowedEmployeeIds, period),
+			getAbsenceRows(input.organizationId, allowedEmployeeIds, period, employeeTime),
 			getBlockers(input.organizationId, allowedEmployeeIds, input.period, organizationTimezone, {
 				collectionOwnsWorkBlockers: true,
+				employeeTime,
 			}),
 		]);
 
@@ -499,11 +506,13 @@ export async function loadPayrollPeriodSources(input: {
 	const [employeeRows, workRows, absences, blockers] = await Promise.all([
 		getEmployeeRows(input.organizationId, allowedEmployeeIds, organizationTimezone),
 		getWorkRows(input.organizationId, allowedEmployeeIds, period, organizationTimezone),
-		getAbsenceRows(input.organizationId, allowedEmployeeIds, period),
-		getBlockers(input.organizationId, allowedEmployeeIds, input.period, organizationTimezone),
+		getAbsenceRows(input.organizationId, allowedEmployeeIds, period, employeeTime),
+		getBlockers(input.organizationId, allowedEmployeeIds, input.period, organizationTimezone, {
+			employeeTime,
+		}),
 	]);
 
-	const work = calculatePayrollWorkedMinutes(workRows, period);
+	const work = calculatePayrollWorkedMinutes(workRows, period, employeeTime);
 	return {
 		period,
 		organizationTimezone,
@@ -756,6 +765,7 @@ async function getAbsenceRows(
 	organizationId: string,
 	allowedEmployeeIds: string[],
 	period: Pick<PayrollPeriod, "start" | "end">,
+	employeeTime: Pick<EmployeeTime, "employeeDaysOf">,
 ): Promise<PayrollPeriodAbsenceSource[]> {
 	const { db } = await import("@/db");
 	const rows = await db
@@ -800,18 +810,26 @@ async function getAbsenceRows(
 			),
 		);
 
-	return rows.map((row) => ({
-		id: row.id,
-		employeeId: row.employeeId,
-		approvalState: row.approvalState === "approved" ? "approved" : "pending",
-		categoryId: row.categoryId,
-		categoryName: row.categoryName,
-		categoryType: row.categoryType,
-		categoryColor: row.categoryColor,
-		...absenceRecordDates(row),
-		startPeriod: row.startPeriod,
-		endPeriod: row.endPeriod,
-	}));
+	return rows.flatMap((row) => {
+		// Only an absence's employee days are payroll absence days (#1997).
+		const recorded = absenceRecordDates(row);
+		const days = employeeTime.employeeDaysOf(row.employeeId, recorded);
+		if (!days) return [];
+		return {
+			id: row.id,
+			employeeId: row.employeeId,
+			approvalState: row.approvalState === "approved" ? "approved" : "pending",
+			categoryId: row.categoryId,
+			categoryName: row.categoryName,
+			categoryType: row.categoryType,
+			categoryColor: row.categoryColor,
+			...recorded,
+			...days,
+			// A trimmed edge is a whole employee day, never the recorded half day of a contractor day.
+			startPeriod: days.startDate === recorded.startDate ? row.startPeriod : "full_day",
+			endPeriod: days.endDate === recorded.endDate ? row.endPeriod : "full_day",
+		};
+	});
 }
 
 /**
@@ -837,10 +855,19 @@ async function getBlockers(
 	options: {
 		/** Scoped collection reports open work, corrections and departure timers itself (#322). */
 		collectionOwnsWorkBlockers?: boolean;
+		/** Only employee time blocks payroll (#1997); absent, all time is employee time. */
+		employeeTime?: Pick<EmployeeTime, "within" | "employeeDaysOf">;
 	} = {},
 ): Promise<PayrollBlocker[]> {
 	const { db } = await import("@/db");
 	const collectionOwnsWorkBlockers = options.collectionOwnsWorkBlockers === true;
+	const employeeTime = options.employeeTime;
+	const inEmployeeTime = (employeeId: string, start: Date, end: Date | null) =>
+		!employeeTime ||
+		employeeTime.within(employeeId, {
+			start: instantFromDate(start),
+			endExclusive: instantFromDate(end && end > start ? end : start),
+		}).length > 0;
 	const periodStartInstant = period.start.toZonedDateTime("UTC").toInstant();
 	const periodEndExclusiveInstant = period.end.add({ days: 1 }).toZonedDateTime("UTC").toInstant();
 	const periodEndInstant = periodEndExclusiveInstant.subtract({ milliseconds: 1 });
@@ -848,7 +875,7 @@ async function getBlockers(
 		start: periodStartInstant,
 		end: periodEndInstant,
 	};
-	const [missingClockOutRows, pendingAbsenceRows, pendingApprovalRows, clockRepairs] =
+	const [allMissingClockOutRows, allPendingAbsenceRows, allPendingApprovalRows, allClockRepairs] =
 		await Promise.all([
 			collectionOwnsWorkBlockers
 				? []
@@ -957,6 +984,26 @@ async function getBlockers(
 						rangeEndExclusive: dateFromInstant(periodEndExclusiveInstant),
 					}),
 		]);
+	// External Contractor time never blocks payroll (#1997): open or pending work and departure
+	// timers in a contractor stint, and pending absences on its days, are no payroll blockers.
+	const missingClockOutRows = allMissingClockOutRows.filter((row) =>
+		inEmployeeTime(row.employeeId, row.startAt, null),
+	);
+	const pendingAbsenceRows = allPendingAbsenceRows.filter(
+		(row) => !employeeTime || employeeTime.employeeDaysOf(row.employeeId, absenceRecordDates(row)),
+	);
+	const pendingApprovalRows = allPendingApprovalRows.filter((row) =>
+		inEmployeeTime(row.employeeId, row.startAt, row.endAt),
+	);
+	const clockRepairs = allClockRepairs.filter(
+		(repair) =>
+			!repair.affectedEndAt ||
+			inEmployeeTime(
+				repair.employeeId,
+				new Date(repair.affectedEndAt.getTime() - 1),
+				repair.affectedEndAt,
+			),
+	);
 
 	const affectedEmployeeIds = Array.from(
 		new Set(

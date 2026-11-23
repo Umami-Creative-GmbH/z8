@@ -16,6 +16,8 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
+import { absenceRecordDates } from "@/lib/payroll-workspace/absence-record-dates";
 import { loadPeriodSubmissionGaps } from "@/lib/time-tracking/period-submissions/submission-gaps-store";
 import { loadPayrollSetupChecks } from "./payroll-setup-checks";
 import { loadPersonnelIdentifierClashes } from "./personnel-identifier-clashes";
@@ -230,14 +232,14 @@ export async function getPayrollReadiness(
 	const locale = input.locale ?? "en";
 
 	const [
-		activeWorkRecords,
-		pendingTimeRecords,
-		activeEmployees,
+		allActiveWorkRecords,
+		allPendingTimeRecords,
+		allActiveEmployees,
 		latestExportJobs,
-		travelExpenseClaims,
-		pendingTravelExpenseReports,
-		clockRepairLookup,
-		periodSubmissionLookup,
+		allTravelExpenseClaims,
+		allPendingTravelExpenseReports,
+		allClockRepairs,
+		allPeriodSubmissions,
 	] = await Promise.all([
 		db.query.timeRecord.findMany({
 			where: and(
@@ -348,6 +350,62 @@ export async function getPayrollReadiness(
 			() => ({ available: false as const, collected: true, gaps: [] }),
 		),
 	]);
+
+	// Payroll readiness is about employee payroll only (#1997): an External Contractor, and a
+	// converted person's contractor stint, never trigger a check or are named by one.
+	const employeeTime = await loadEmployeeTime(db, organizationId, [
+		...allActiveEmployees.map((row) => row.id),
+		...allActiveWorkRecords.map((row) => row.employeeId),
+		...allPendingTimeRecords.map((row) => row.employeeId),
+		...allTravelExpenseClaims.map((row) => row.employeeId),
+		...allPendingTravelExpenseReports.map((row) => row.employeeId),
+		...allClockRepairs.repairs.map((row) => row.employeeId),
+		...allPeriodSubmissions.gaps.map((row) => row.employeeId),
+	]);
+	const inPeriod = (employeeId: string) =>
+		employeeTime.hasEmployeeTimeOn(employeeId, selectedStartDate, selectedEndDate);
+	const activeEmployees = allActiveEmployees.filter((row) => inPeriod(row.id));
+	const activeWorkRecords = allActiveWorkRecords.filter(
+		(record) =>
+			employeeTime.within(record.employeeId, {
+				start: instantFromDate(record.startAt),
+				endExclusive: instantFromDate(record.startAt),
+			}).length > 0,
+	);
+	const pendingTimeRecords = allPendingTimeRecords.filter((record) =>
+		record.recordKind === "absence"
+			? employeeTime.employeeDaysOf(
+					record.employeeId,
+					absenceRecordDates({ ...record, startPeriod: "full_day", endPeriod: "full_day" }),
+				) !== null
+			: employeeTime.within(record.employeeId, {
+					start: instantFromDate(record.startAt),
+					endExclusive: instantFromDate(
+						record.endAt && record.endAt > record.startAt ? record.endAt : record.startAt,
+					),
+				}).length > 0,
+	);
+	const travelExpenseClaims = allTravelExpenseClaims.filter((row) => inPeriod(row.employeeId));
+	const pendingTravelExpenseReports = allPendingTravelExpenseReports.filter((row) =>
+		inPeriod(row.employeeId),
+	);
+	const clockRepairLookup = {
+		...allClockRepairs,
+		repairs: allClockRepairs.repairs.filter(
+			(repair) =>
+				!repair.affectedEndAt ||
+				employeeTime.within(repair.employeeId, {
+					start: instantFromDate(repair.affectedEndAt).subtract({ nanoseconds: 1 }),
+					endExclusive: instantFromDate(repair.affectedEndAt),
+				}).length > 0,
+		),
+	};
+	const periodSubmissionLookup = {
+		...allPeriodSubmissions,
+		gaps: allPeriodSubmissions.gaps.filter((gap) =>
+			employeeTime.hasEmployeeTimeOn(gap.employeeId, gap.startDate, gap.endDate),
+		),
+	};
 
 	// The setup checks the payroll setup go-live check reuses: terms over the period for
 	// every active employee, clashes among the employees the period's export would carry.

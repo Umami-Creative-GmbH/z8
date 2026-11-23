@@ -12,6 +12,7 @@ import { getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { isOrgAdminForOrganization } from "@/lib/payroll-access/org-admin";
 import {
 	getActivePayrollAccessGrantScope,
@@ -1102,13 +1103,21 @@ async function resolvePayrollExportScope(
 			leftAfterStartOf: request.startDate,
 		}),
 	]);
+	const scoped = intersectPayrollScope({
+		allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
+		requestedEmployeeIds,
+	});
+	// An External Contractor has no employee payroll (#1997): only people with employee time
+	// in the period count, so a scope of contractors only exports nobody and says so.
+	const employeeTime = await loadEmployeeTime(db, actor.organizationId, scoped);
 	return {
 		actor,
 		period,
-		employeeIds: intersectPayrollScope({
-			allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
-			requestedEmployeeIds,
-		}),
+		employeeIds: employeeTime.withEmployeeTimeOn(
+			scoped,
+			period.start.toString(),
+			period.end.toString(),
+		),
 	};
 }
 
