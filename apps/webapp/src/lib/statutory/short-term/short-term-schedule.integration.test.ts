@@ -10,6 +10,7 @@ import { statutoryFixture } from "@/test/statutory-fixtures";
 import {
 	addedStatutoryScheduleFindings,
 	evaluateStatutoryScheduleFindings,
+	evaluateStatutoryScheduleWindow,
 } from "../scheduling/evaluate";
 import { shortTermFixture } from "./__tests__/short-term-fixture";
 
@@ -79,6 +80,44 @@ describe("short-term allowance in Scheduling and Staffing (PostgreSQL)", () => {
 				blocksPublication: false,
 			},
 		]);
+	});
+
+	it("keeps the publish keys steady while an unplanned clock-in runs and changes them when the excess deepens", async () => {
+		const org = await fx.organization("a");
+		const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+		await st.terms(worker, { from: "2026-01-01", hourlyRate: 20 });
+		await workDays(org, worker, 50);
+		await st.priorShortTerm(worker, "prior_short_term_work_days", 2026, 22);
+		await st.shift(org, worker, "2026-06-03", "09:00", "17:00", "published");
+		// Clocked in on Monday 1 June without a shift: a working day while it runs.
+		await st.openWork(org, worker, "2026-06-01", "07:00:42");
+		const publishKeys = async (now: string) => {
+			const { findings, publishKeys } = await evaluateStatutoryScheduleWindow(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-06-01", endExclusive: "2026-06-08" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from(now),
+			});
+			return { used: findings.map((f) => f.summary.used?.value), publishKeys };
+		};
+
+		const first = await publishKeys("2026-06-01T06:00:10Z");
+		// 50 worked, 22 prior, the running Monday and Wednesday's shift: 74 of 70 days.
+		expect(first.used).toEqual([74]);
+		for (const now of ["2026-06-01T06:01:10Z", "2026-06-01T09:37:55Z"]) {
+			expect(await publishKeys(now)).toEqual(first);
+		}
+
+		// A second shift on Wednesday is no further working day.
+		await st.shift(org, worker, "2026-06-03", "18:00", "20:00", "published");
+		expect(await publishKeys("2026-06-01T06:00:10Z")).toEqual(first);
+
+		// Thursday is: 75 of 70 days, at the same severity and tier.
+		await st.shift(org, worker, "2026-06-04", "09:00", "13:00", "published");
+		const deeper = await publishKeys("2026-06-01T06:00:10Z");
+		expect(deeper.used).toEqual([75]);
+		expect(deeper.publishKeys).not.toEqual(first.publishKeys);
 	});
 
 	describe("3-month limit", () => {

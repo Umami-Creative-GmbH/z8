@@ -18,8 +18,7 @@ import {
 	evaluateScheduleCompliance,
 	summarizeComplianceFindings,
 } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
-import { evaluateStatutoryScheduleFindings } from "@/lib/statutory/scheduling/evaluate";
-import { statutoryFindingChangeKey } from "@/lib/statutory/scheduling/finding-key";
+import { evaluateStatutoryScheduleWindow } from "@/lib/statutory/scheduling/evaluate";
 import {
 	loadExecutiveExemptDays,
 	withoutExecutiveExemptFindings,
@@ -64,13 +63,17 @@ function buildFingerprint(params: {
 	endDateExclusive: Date;
 	timezone: string;
 	result: ScheduleComplianceResult;
+	/** `statutoryPublishKey` of each statutory finding of `result`. */
+	statutoryPublishKeys: readonly string[];
 }): string {
-	const normalizedFindings = [...params.result.findings]
-		// A statutory finding counts by what a planner acknowledges, not its running totals.
-		.map((finding) =>
-			finding.type === "statutory" ? statutoryFindingChangeKey(finding) : { ...finding },
-		)
-		.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+	const normalizedFindings = [
+		...params.result.findings.flatMap((finding) =>
+			finding.type === "statutory" ? [] : [{ ...finding }],
+		),
+		// A statutory finding counts by what a planner acknowledges and how deep its breach goes,
+		// not by its running totals. Its key is built server-side and only reaches the client hashed.
+		...params.statutoryPublishKeys,
+	].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 
 	const payload = {
 		organizationId: params.organizationId,
@@ -216,8 +219,8 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						employees,
 					});
 					// German statutory monitors (#1988 seam): wage-free findings from each contributor.
-					const statutoryFindings = yield* dbService.query("scheduleCompliance.statutory", () =>
-						evaluateStatutoryScheduleFindings(dbService.db, {
+					const statutory = yield* dbService.query("scheduleCompliance.statutory", () =>
+						evaluateStatutoryScheduleWindow(dbService.db, {
 							organizationId: input.organizationId,
 							timezone: input.timezone,
 							window: {
@@ -238,6 +241,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 							timezone: input.timezone,
 						}),
 					);
+					const statutoryFindings = statutory.findings;
 					const evaluationResult =
 						statutoryFindings.length === 0 && exemptDays.size === 0
 							? regulationResult
@@ -259,6 +263,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 							endDateExclusive: input.endDateExclusive,
 							timezone: input.timezone,
 							result: evaluationResult,
+							statutoryPublishKeys: statutory.publishKeys,
 						}),
 					};
 				}),

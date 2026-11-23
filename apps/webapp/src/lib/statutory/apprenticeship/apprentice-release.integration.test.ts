@@ -25,6 +25,7 @@ import {
 } from "@/test/statutory-fixtures";
 import { recordApprenticeRelease } from "../employee-context";
 import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
+import { evaluateStatutoryScheduleWindow } from "../scheduling/evaluate";
 import { apprenticeReleaseScheduleContributor } from "./release-conflict-contributor";
 import {
 	recordApprenticeReleaseWithCredit,
@@ -1814,5 +1815,56 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		const partialSchoolDay = await suggest("2027-03-04");
 		expect(statutoryWarnings(partialSchoolDay, "Adult")).toEqual([]);
 		expect(statutoryWarnings(partialSchoolDay, "Minor")).toEqual([]);
+	});
+
+	it("keeps a release conflict's publish keys while the day's clock runs, and changes them when it covers more", async () => {
+		const learner = await apprentice("learner", "2005-05-05");
+		await recordReleases(learner);
+		const subareaId = await seed.subarea(org, owner);
+		const examShift = await seed.shift(org, learner, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: "2027-03-17",
+			startTime: "10:00",
+			endTime: "12:00",
+		});
+		await seed.openWork(org, learner, "2027-03-17", "07:00:42");
+		const publishKeys = async (time: string) => {
+			const { findings, publishKeys } = await evaluateStatutoryScheduleWindow(
+				db,
+				{
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: { start: "2027-03-15", endExclusive: "2027-03-22" },
+					employeeIds: [learner.employeeId],
+					now: localInstant("2027-03-17", time, org.timezone),
+				},
+				[apprenticeReleaseScheduleContributor],
+			);
+			return {
+				findings: findings.map((f) => [f.statutoryKind, f.severity, f.summary.tier]),
+				publishKeys,
+			};
+		};
+
+		const first = await publishKeys("08:00:10");
+		expect(first.findings).toEqual([["bbig_release_day_shift", "warning", "exceeded"]]);
+		for (const time of ["08:01:10", "09:37:55"]) {
+			expect(await publishKeys(time)).toEqual(first);
+		}
+		// A shift on the day after the exam is no release conflict.
+		await seed.shift(org, learner, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: "2027-03-18",
+			startTime: "10:00",
+			endTime: "12:00",
+		});
+		expect(await publishKeys("08:00:10")).toEqual(first);
+		// Two more hours on the exam day: the same conflict, deeper.
+		await admin.query("update shift set end_time = '14:00' where id = $1", [examShift]);
+		const deeper = await publishKeys("08:00:10");
+		expect(deeper.findings).toEqual(first.findings);
+		expect(deeper.publishKeys).not.toEqual(first.publishKeys);
 	});
 });

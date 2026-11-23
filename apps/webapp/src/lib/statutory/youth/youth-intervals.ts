@@ -157,13 +157,19 @@ function restOfShiftMinutes(
 	return Math.max(0, minutesBetween(restStart, restEnd) - Math.max(0, owedBreak - breakTaken));
 }
 
-/** One employee's work to judge, as of `now`. */
+/**
+ * One employee's work to judge, as of `now`. With `withoutRunningGrowth`, open clock-ins count
+ * only what does not grow with the clock: one without a shift not at all, one within its shift up
+ * to the shift's end, not past it. The planner's publish acknowledgement judges breach depth by
+ * that view (`StatutoryFinding.stableDepth`).
+ */
 export function youthIntervalsOf(input: {
 	readonly work: readonly YouthWorkRecord[];
 	readonly shifts: readonly YouthShiftRecord[];
 	readonly now: Instant;
 	readonly timezone: string;
 	readonly limitsOn: LimitsOn;
+	readonly withoutRunningGrowth?: boolean;
 }): YouthWorkInterval[] {
 	const intervals: YouthWorkInterval[] = [];
 	const limitsAt = (instant: Instant) => input.limitsOn(plainDateAt(instant, input.timezone));
@@ -201,6 +207,7 @@ export function youthIntervalsOf(input: {
 
 	for (const { record, shift } of open) {
 		const ref = `work:${record.id}`;
+		if (!shift && input.withoutRunningGrowth) continue;
 		if (!shift) {
 			intervals.push({
 				...plannedYouthInterval(
@@ -215,7 +222,10 @@ export function youthIntervalsOf(input: {
 		// The clock-in works the rest of its shift: the break the shift still owes is planned in it,
 		// as for a shift the minor clocked out of. Fixed until the shift ends, then it overruns.
 		const state = stateOf(shift.id);
-		const end = later(later(input.now, shift.end), record.start);
+		const end = later(
+			input.withoutRunningGrowth ? shift.end : later(input.now, shift.end),
+			record.start,
+		);
 		intervals.push({
 			ref,
 			start: record.start,

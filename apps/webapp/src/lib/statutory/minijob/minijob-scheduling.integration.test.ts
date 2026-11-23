@@ -11,6 +11,7 @@ import { statutoryScheduleContributors } from "../scheduling/contributors";
 import {
 	addedStatutoryScheduleFindings,
 	evaluateStatutoryScheduleFindings,
+	evaluateStatutoryScheduleWindow,
 } from "../scheduling/evaluate";
 import { minijobFixture } from "./__tests__/minijob-database-fixture";
 import { minijobScheduleContributor } from "./minijob-schedule-contributor";
@@ -81,6 +82,48 @@ describe("Minijob warnings in Scheduling and Staffing (PostgreSQL)", () => {
 				blocksPublication: false,
 			},
 		]);
+	});
+
+	it("keeps the publish keys steady while an unplanned clock-in runs, and by tier alone", async () => {
+		const org = await fx.organization("a");
+		const owner = await fx.user("owner");
+		await fx.membership(org, owner, "owner");
+		const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+		await mj.terms(worker, owner, { from: "2026-01-01", hourlyRate: 13.37 });
+		// 50 h of December shifts earn 668.50 € of the 603 € cap; clocked in on 1 December without one.
+		for (const date of ["2026-12-02", "2026-12-03", "2026-12-04", "2026-12-07", "2026-12-08"]) {
+			await mj.shift(org, worker, owner, { date, startTime: "08:00", endTime: "18:00" });
+		}
+		await mj.openWork(org, worker, "2026-12-01", "08:00:42");
+		const publishKeys = async (now: string) => {
+			const { findings, publishKeys } = await evaluateStatutoryScheduleWindow(
+				db,
+				{
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: { start: "2026-12-01", endExclusive: "2026-12-08" },
+					employeeIds: [worker.employeeId],
+					now: Temporal.Instant.from(now),
+				},
+				[minijobScheduleContributor],
+			);
+			return { summaries: findings.map((f) => f.summary), publishKeys };
+		};
+
+		const first = await publishKeys("2026-12-01T10:00:10Z");
+		expect(first.summaries).toEqual([{ tier: "exceeded" }]);
+		for (const now of ["2026-12-01T10:01:10Z", "2026-12-01T14:37:55Z"]) {
+			expect(await publishKeys(now)).toEqual(first);
+		}
+		// Earnings-derived: a deeper exceedance at the same tier is no figure a planner sees, and a
+		// hash of the earnings would confirm a guessed wage.
+		await mj.shift(org, worker, owner, {
+			date: "2026-12-09",
+			startTime: "08:00",
+			endTime: "12:00",
+		});
+		expect(await publishKeys("2026-12-01T10:00:10Z")).toEqual(first);
+		expect(first.publishKeys.join()).not.toMatch(/668|603|1337/);
 	});
 
 	const PROJECTED_KEYS = [

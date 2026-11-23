@@ -15,6 +15,7 @@ import {
 import { ShiftService, ShiftServiceLive } from "@/lib/effect/services/shift.service";
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import {
@@ -573,6 +574,144 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		// The running clock-in moved the week's total by a minute; the planner's decision did not change.
 		expect([usedOf(first), usedOf(second)]).toEqual([[119 + 240], [120 + 240]]);
 		expect(second.fingerprint).toBe(first.fingerprint);
+	});
+
+	it("keeps the publish fingerprint of a week over its band steady while an unplanned clock-in runs, and makes it stale when the breach deepens", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker");
+		await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+		// 24 h planned Wednesday to Friday against the 20 h default week; clocked in on Tuesday
+		// without a shift.
+		for (const date of ["2026-03-11", "2026-03-12", "2026-03-13"]) {
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date,
+				startTime: "09:00",
+				endTime: "17:00",
+				publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+			});
+		}
+		await onCall.openWork(org, worker, { date: "2026-03-10", startTime: "08:00:42" });
+		const evaluate = async (now: Temporal.Instant) => {
+			const clock = vi.spyOn(Temporal.Now, "instant").mockReturnValue(now);
+			try {
+				return await Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* ScheduleComplianceService;
+						return yield* service.evaluateScheduleWindow({
+							organizationId: org.id,
+							startDate: shiftStoredDate("2026-03-09", org.timezone),
+							endDateExclusive: shiftStoredDate("2026-03-16", org.timezone),
+							timezone: org.timezone,
+						});
+					}).pipe(Effect.provide(complianceLayer)),
+				);
+			} finally {
+				clock.mockRestore();
+			}
+		};
+		const overBand = (result: Awaited<ReturnType<typeof evaluate>>) =>
+			result.findings.flatMap((f) =>
+				f.type === "statutory" && f.statutoryKind === "on_call_weekly_over_band"
+					? [[f.severity, f.summary.tier, f.summary.used?.value]]
+					: [],
+			);
+
+		const first = await evaluate(localInstant("2026-03-10", "10:00:10", org.timezone));
+		const second = await evaluate(localInstant("2026-03-10", "10:01:10", org.timezone));
+		const later = await evaluate(localInstant("2026-03-10", "11:37:55", org.timezone));
+
+		expect([overBand(first), overBand(second)]).toEqual([
+			[["warning", "exceeded", 1440 + 119]],
+			[["warning", "exceeded", 1440 + 120]],
+		]);
+		expect(second.fingerprint).toBe(first.fingerprint);
+		expect(later.fingerprint).toBe(first.fingerprint);
+
+		// A shift in the next week leaves this week's breach as it is.
+		await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: "2026-03-17",
+			startTime: "09:00",
+			endTime: "13:00",
+			publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+		});
+		expect((await evaluate(localInstant("2026-03-10", "10:00:10", org.timezone))).fingerprint).toBe(
+			first.fingerprint,
+		);
+		// A planned Saturday deepens it at the same severity and tier.
+		await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: "2026-03-14",
+			startTime: "10:00",
+			endTime: "12:00",
+			publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+		});
+		const deeper = await evaluate(localInstant("2026-03-10", "10:00:10", org.timezone));
+		expect(overBand(deeper)).toEqual([["warning", "exceeded", 1560 + 119]]);
+		expect(deeper.fingerprint).not.toBe(first.fingerprint);
+
+		// Clocked out at 10:30: the minutes are fixed, and count.
+		await withCanonicalRecords(admin, (client) =>
+			client.query(
+				`update work_period set end_time = start_time + interval '149 minutes 18 seconds',
+				 duration_minutes = 149, is_active = false
+				 where organization_id = $1 and employee_id = $2 and is_active`,
+				[org.id, worker.employeeId],
+			),
+		);
+		const clockedOut = await evaluate(localInstant("2026-03-10", "11:00:10", org.timezone));
+		expect(overBand(clockedOut)).toEqual([["warning", "exceeded", 1560 + 149]]);
+		expect(clockedOut.fingerprint).not.toBe(deeper.fingerprint);
+	});
+
+	it("keeps the publish fingerprint steady while a clock-in runs past the end of its shift", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+		await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+		// 24 h planned Wednesday to Friday, and a 2 h Tuesday morning call clocked in at 08:00:42.
+		for (const [date, startTime, endTime] of [
+			["2026-03-10", "08:00", "10:00"],
+			["2026-03-11", "09:00", "17:00"],
+			["2026-03-12", "09:00", "17:00"],
+			["2026-03-13", "09:00", "17:00"],
+		] as const) {
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date,
+				startTime,
+				endTime,
+				publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+			});
+		}
+		await onCall.openWork(org, worker, { date: "2026-03-10", startTime: "08:00:42" });
+		const fingerprintAt = async (time: string) => {
+			const clock = vi
+				.spyOn(Temporal.Now, "instant")
+				.mockReturnValue(localInstant("2026-03-10", time, org.timezone));
+			try {
+				return (
+					await Effect.runPromise(
+						Effect.gen(function* () {
+							const service = yield* ScheduleComplianceService;
+							return yield* service.evaluateScheduleWindow({
+								organizationId: org.id,
+								startDate: shiftStoredDate("2026-03-09", org.timezone),
+								endDateExclusive: shiftStoredDate("2026-03-16", org.timezone),
+								timezone: org.timezone,
+							});
+						}).pipe(Effect.provide(complianceLayer)),
+					)
+				).fingerprint;
+			} finally {
+				clock.mockRestore();
+			}
+		};
+
+		const within = await fingerprintAt("09:30:10");
+		for (const time of ["09:59:30", "10:00:50", "10:45:20", "12:13:14"]) {
+			expect(await fingerprintAt(time)).toBe(within);
+		}
 	});
 
 	it("tells Staffing that an on-call candidate's short-notice, short call would add findings", async () => {

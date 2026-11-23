@@ -11,7 +11,7 @@ import type {
 	StatutoryScheduleContributor,
 } from "./contributor";
 import { statutoryScheduleContributors } from "./contributors";
-import { statutoryFindingChangeKey } from "./finding-key";
+import { statutoryFindingChangeKey, statutoryPublishKey } from "./finding-key";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
 
@@ -108,9 +108,26 @@ export async function evaluateStatutoryScheduleFindings(
 	request: StatutoryScheduleRequest,
 	contributors: readonly StatutoryScheduleContributor[] = statutoryScheduleContributors,
 ): Promise<StatutoryComplianceFinding[]> {
-	return (await evaluateStatutoryFindings(db, request, contributors)).map(
-		toStatutoryComplianceFinding,
-	);
+	return (await evaluateStatutoryScheduleWindow(db, request, contributors)).findings;
+}
+
+/**
+ * The judged window for the publish handshake: the findings projected for Scheduling, and the
+ * server-side publish key of each (`statutoryPublishKey`), which the publish fingerprint hashes.
+ */
+export async function evaluateStatutoryScheduleWindow(
+	db: Reader,
+	request: StatutoryScheduleRequest,
+	contributors: readonly StatutoryScheduleContributor[] = statutoryScheduleContributors,
+): Promise<{ findings: StatutoryComplianceFinding[]; publishKeys: string[] }> {
+	const findings: StatutoryComplianceFinding[] = [];
+	const publishKeys: string[] = [];
+	for (const finding of await evaluateStatutoryFindings(db, request, contributors)) {
+		const projected = toStatutoryComplianceFinding(finding);
+		findings.push(projected);
+		publishKeys.push(statutoryPublishKey(projected, finding));
+	}
+	return { findings, publishKeys };
 }
 
 /**

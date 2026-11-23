@@ -435,6 +435,10 @@ export function evaluateWorkingStudentEmployee(input: {
 					workingStudentDays,
 					lectureFreeDays: lectureFreeWeekdaysOf(facts.lectureFreePeriods, monday),
 				}),
+				// The planner's publish acknowledgement judges the depth the same way.
+				...(acc && acc.growing.size > 0
+					? { stableDepth: { used: minutes(acc.core - acc.growingCore) } }
+					: {}),
 			});
 		}
 

@@ -1996,6 +1996,59 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 			expect(await shiftStatus(friday)).toBe("published");
 		});
 
+		it("keeps the publish fingerprint of breaches an unplanned clock-in grows steady, and makes it stale when the week deepens", async () => {
+			const minor = await fx.employee(org, "overtime", { birthday: "2011-01-01" });
+			// Monday 6 h worked, back from 15:00:42 without a shift; Tuesday to Friday 8 h each and a
+			// 3 h Saturday: 41 h planned and recorded, and the running clock-in on top.
+			await seed.work(org, minor, "2027-03-01", "08:00", 360);
+			await seed.openWork(org, minor, "2027-03-01", "15:00:42");
+			for (const date of ["2027-03-02", "2027-03-03", "2027-03-04", "2027-03-05"]) {
+				await shift(minor, date, "08:00", "17:00");
+			}
+			const saturday = await shift(minor, "2027-03-06", "10:00", "13:00");
+			const atMonday = async (time: string) => {
+				const clock = vi
+					.spyOn(Temporal.Now, "instant")
+					.mockReturnValue(localInstant("2027-03-01", time, org.timezone));
+				try {
+					return await evaluateWeek();
+				} finally {
+					clock.mockRestore();
+				}
+			};
+			const youthKinds = (result: Awaited<ReturnType<typeof evaluateWeek>>) =>
+				result.findings
+					.flatMap((finding) =>
+						finding.type === "statutory" && finding.statutoryKind.startsWith("jarbschg_")
+							? [`${finding.statutoryKind}:${finding.severity}:${finding.summary.tier}`]
+							: [],
+					)
+					.sort();
+
+			const first = await atMonday("17:30:10");
+			expect(youthKinds(first)).toEqual(
+				expect.arrayContaining([
+					"jarbschg_daily_max:critical:exceeded",
+					"jarbschg_weekly_max:critical:exceeded",
+				]),
+			);
+			for (const time of ["17:31:10", "17:55:55"]) {
+				const later = await atMonday(time);
+				expect(youthKinds(later)).toEqual(youthKinds(first));
+				expect(later.fingerprint).toBe(first.fingerprint);
+			}
+
+			// A shift in the next week leaves this week's breaches as they are.
+			await shift(minor, "2027-03-10", "08:00", "12:00");
+			expect((await atMonday("17:30:10")).fingerprint).toBe(first.fingerprint);
+
+			// An hour more on Saturday deepens the week at the same severity and tier.
+			await admin.query("update shift set end_time = '14:00' where id = $1", [saturday]);
+			const deeper = await atMonday("17:30:10");
+			expect(youthKinds(deeper)).toEqual(youthKinds(first));
+			expect(deeper.fingerprint).not.toBe(first.fingerprint);
+		});
+
 		it("still flags a lunch break after a day started two hours early", async () => {
 			const minor = await fx.employee(org, "early", { birthday: "2011-01-01" });
 			await shift(minor, "2027-03-01", "08:00", "17:00");

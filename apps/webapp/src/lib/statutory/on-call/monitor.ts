@@ -46,6 +46,7 @@ import {
 	type OnCallReader,
 	type OnCallShift,
 	type OnCallWorkCall,
+	type OnCallWorkPiece,
 	overlapMinutes,
 	shiftMinutes,
 } from "./facts";
@@ -385,6 +386,38 @@ function fullWeekBand(
 	}
 }
 
+/**
+ * The minutes running clock-ins have added to a week as the clock ran. Within a shift a running
+ * clock-in adds nothing: worked plus still planned is clock-in to shift end. Outside any shift, or
+ * past the end of the last shift it ran in, every further minute adds one. The planner's publish
+ * acknowledgement counts the week without them (`stableDepth`), so it holds while the clock runs.
+ */
+function growingWorkOf(
+	running: readonly OnCallWorkPiece[],
+	shifts: readonly OnCallShift[],
+	timezone: string,
+): number {
+	let minutes = 0;
+	for (const piece of running) {
+		const fixedUntil = shifts
+			.map((shift) => shiftInterval(shift, timezone))
+			.filter(
+				(interval) =>
+					compareInstants(interval.start, piece.end) <= 0 &&
+					compareInstants(interval.end, piece.start) > 0,
+			)
+			.reduce<Instant | null>(
+				(latest, interval) =>
+					latest && compareInstants(latest, interval.end) >= 0 ? latest : interval.end,
+				null,
+			);
+		minutes += fixedUntil
+			? Math.max(0, piece.minutes - Math.round(piece.start.until(fixedUntil).total("minutes")))
+			: piece.minutes;
+	}
+	return minutes;
+}
+
 function bandFindings(
 	base: Base,
 	input: {
@@ -460,6 +493,13 @@ function bandFindings(
 	if (!band) return [];
 	const minutesByDay = callableDays.map((day) => [day.toString(), minutesOn(day)] as const);
 	const used = minutesByDay.reduce((sum, [, minutes]) => sum + minutes, 0);
+	const growing = growingWorkOf(
+		running.filter((piece) =>
+			callableDays.some((day) => plainDateAt(piece.start, input.timezone).equals(day)),
+		),
+		input.shifts,
+		input.timezone,
+	);
 	const subjectKey = isoWeekKey(input.monday);
 	const weekEnded = comparePlainDates(input.monday.add({ days: 7 }), input.today) <= 0;
 	const legalReference = band.hoursKind === "unspecified" ? DEFAULT_WEEK_REFERENCE : BAND_REFERENCE;
@@ -513,6 +553,7 @@ function bandFindings(
 				},
 				inputFingerprint: fingerprint("on_call_weekly_over_band"),
 				acknowledgementKind: null,
+				...(growing > 0 ? { stableDepth: { used: used - growing } } : {}),
 			}),
 		];
 	}

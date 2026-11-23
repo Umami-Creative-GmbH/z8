@@ -116,8 +116,8 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 					limitsOn(date),
 				);
 			});
-		findings.push(
-			...youthFindingsOf({
+		const findingsOf = (withoutRunningGrowth: boolean) =>
+			youthFindingsOf({
 				organizationId: context.organizationId,
 				employeeId,
 				birthday: birthdays.get(employeeId) ?? null,
@@ -129,6 +129,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 						now: context.now,
 						timezone: context.timezone,
 						limitsOn,
+						withoutRunningGrowth,
 					}),
 					...proposals,
 				],
@@ -138,10 +139,33 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 				holidays: holidays.get(employeeId) ?? new Set(),
 				credits: credits.get(employeeId),
 				blockPublish: context.preferences.blockJarbschgShiftPublish,
-			}),
-		);
+			});
+		const judged = findingsOf(false);
+		const running = (work.get(employeeId) ?? []).some((record) => record.end === null);
+		findings.push(...(running ? withStableDepth(judged, findingsOf(true)) : judged));
 	}
 	return findings;
+}
+
+/**
+ * Each finding with the depth it has without the growth of running clock-ins (`stableDepth`),
+ * read from the same findings judged on that view: null where only the running work breaks it.
+ */
+function withStableDepth(
+	findings: readonly StatutoryFinding[],
+	withoutGrowth: readonly StatutoryFinding[],
+): StatutoryFinding[] {
+	const stable = new Map(withoutGrowth.map((finding) => [finding.id, finding]));
+	return findings.map((finding) => {
+		const without = stable.get(finding.id);
+		return {
+			...finding,
+			stableDepth: {
+				used: without?.summary.used?.value ?? null,
+				coveredMinutes: without?.coveredMinutes ?? null,
+			},
+		};
+	});
 }
 
 export const jarbschgScheduleContributor: StatutoryScheduleContributor = {

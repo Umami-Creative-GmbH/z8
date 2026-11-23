@@ -143,6 +143,48 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 		// The running clock-in grew the week by a minute; what the planner acknowledges did not change.
 		expect([usedOf(first), usedOf(second)]).toEqual([[1200 + 120], [1200 + 121]]);
 		expect(second.fingerprint).toBe(first.fingerprint);
+		// An hour later, too.
+		expect((await evaluate("2026-03-04T11:07:55Z")).fingerprint).toBe(first.fingerprint);
+	});
+
+	it("makes the publish acknowledgement stale when a lecture-week breach deepens", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// Already 22 h of lecture-week daytime by plan in 2030-W10: Mon 8 h, Tue 8 h, Wed 6 h.
+		await fx.shift(org, subareaId, student, { date: "2030-03-04", start: "09:00", end: "17:00" });
+		await fx.shift(org, subareaId, student, { date: "2030-03-05", start: "09:00", end: "17:00" });
+		await fx.shift(org, subareaId, student, { date: "2030-03-06", start: "09:00", end: "15:00" });
+		const fingerprint = async () =>
+			(
+				await Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* ScheduleComplianceService;
+						return yield* service.evaluateScheduleWindow({
+							organizationId: org.id,
+							startDate: shiftDateBounds("2030-03-04", TZ).start,
+							endDateExclusive: shiftDateBounds("2030-03-11", TZ).start,
+							timezone: TZ,
+						});
+					}).pipe(
+						Effect.provide(
+							ScheduleComplianceServiceLive.pipe(
+								Layer.provide(workPolicyLayer),
+								Layer.provide(DatabaseServiceLive),
+							),
+						),
+					),
+				)
+			).fingerprint;
+		const shown = await fingerprint();
+
+		// A Saturday shift is permitted weekend work: the lecture week is as deep as before.
+		await fx.shift(org, subareaId, student, { date: "2030-03-09", start: "10:00", end: "12:00" });
+		expect(await fingerprint()).toBe(shown);
+
+		// A Thursday daytime shift deepens it, 22 h → 30 h, at the same severity and tier.
+		await fx.shift(org, subareaId, student, { date: "2030-03-07", start: "09:00", end: "17:00" });
+		expect(await fingerprint()).not.toBe(shown);
 	});
 
 	it("warns Staffing about the working student a proposed daytime shift pushes over 20 h", async () => {
