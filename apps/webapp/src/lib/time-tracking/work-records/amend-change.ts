@@ -74,10 +74,8 @@ export type WorkApprovalDecision = "approved" | "rejected";
 
 /**
  * Facets on which a locked pair may disagree because the change rewrites them
- * from the work period: its interval and minutes. Only time-correction
- * finalization names them, for history from before the legacy split and the
- * legacy automatic break kept the canonical work record (#304). #1229 removes
- * this once production shows no divergence.
+ * from the work period: its interval and minutes. A change names them only to
+ * repair a divergent pair; a business change over one is refused (#1229).
  */
 export type ToleratedDrift = "interval" | "duration";
 

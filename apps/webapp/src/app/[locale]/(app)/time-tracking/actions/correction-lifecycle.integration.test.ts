@@ -1165,7 +1165,7 @@ describe("approval-based correction lifecycles on PostgreSQL", () => {
 			await expectRecordAgreement({ organizationId: ids.organization });
 		});
 
-		it("refuses to finalize over a pair that disagrees beyond the tolerated drift, changing nothing", async () => {
+		it("refuses to finalize over a pair that disagrees on a project, changing nothing", async () => {
 			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
 			await expect(requestTimesAndLocation(work.id)).resolves.toMatchObject({ success: true });
 			// Only the canonical record books a project: the full agreement rule refuses it.
@@ -1413,26 +1413,24 @@ describe("approval-based correction lifecycles on PostgreSQL", () => {
 		expect(await snapshot()).toEqual(committed);
 	});
 
-	it("finalizes over pre-#388 minutes drift, rewriting both minutes", async () => {
+	// A pair that disagrees on its minutes or interval is refused like any other divergence (#1229).
+	it("refuses to finalize over a pair whose minutes disagree, changing nothing", async () => {
 		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
 		await expect(
 			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
 		).resolves.toMatchObject({ success: true });
-		// The legacy clock-out floored the canonical minutes and rounded the period's.
 		await admin.query("update work_period set duration_minutes = 121 where id = $1", [work.id]);
+		const approvalId = await pendingApprovalId(work.id);
+		const committed = await snapshot();
 
-		await expect(approve(await pendingApprovalId(work.id))).resolves.toMatchObject({
-			status: "approved",
+		await expect(approve(approvalId)).rejects.toMatchObject({
+			details: { reason: "canonical_record_source_mismatch" },
 		});
-		expect(await period(work.id)).toMatchObject({
-			duration_minutes: 90,
-			record_duration: 90,
-		});
+		expect(await snapshot()).toEqual(committed);
 	});
 
-	it("finalizes over a canonical interval a legacy break left stale, rewriting it", async () => {
+	it("refuses to finalize over a pair whose interval disagrees, changing nothing", async () => {
 		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
-		// Legacy break enforcement and splits move only the period's end; its record keeps the original end.
 		await admin.query(
 			`update time_record set end_at = end_at + interval '2 hours', duration_minutes = 240
 			 where id = (select canonical_record_id from work_period where id = $1)`,
@@ -1441,18 +1439,13 @@ describe("approval-based correction lifecycles on PostgreSQL", () => {
 		await expect(
 			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
 		).resolves.toMatchObject({ success: true });
+		const approvalId = await pendingApprovalId(work.id);
+		const committed = await snapshot();
 
-		await expect(approve(await pendingApprovalId(work.id))).resolves.toMatchObject({
-			status: "approved",
+		await expect(approve(approvalId)).rejects.toMatchObject({
+			details: { reason: "canonical_record_source_mismatch" },
 		});
-		expect(await period(work.id)).toMatchObject({
-			start_time: new Date("2026-07-22T08:30:00Z"),
-			end_time: new Date("2026-07-22T10:00:00Z"),
-			duration_minutes: 90,
-			record_start: new Date("2026-07-22T08:30:00Z"),
-			record_end: new Date("2026-07-22T10:00:00Z"),
-			record_duration: 90,
-		});
+		expect(await snapshot()).toEqual(committed);
 	});
 
 	it.each([
