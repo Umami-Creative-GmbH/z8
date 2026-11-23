@@ -352,6 +352,8 @@ export async function recordApprenticeRelease(
 		readonly endsOn: string;
 		readonly lessonCount?: number | null;
 		readonly schoolMinutes?: number | null;
+		/** An exam's local start time, `HH:MM`; its `schoolMinutes` are then its duration. */
+		readonly examStartTime?: string | null;
 		readonly note?: string | null;
 	},
 ): Promise<EmployeeApprenticeRelease> {
@@ -373,6 +375,7 @@ export async function recordApprenticeRelease(
 				endsOn: input.endsOn,
 				lessonCount: input.lessonCount ?? null,
 				schoolMinutes: input.schoolMinutes ?? null,
+				examStartTime: input.examStartTime ?? null,
 				note: input.note?.trim() || null,
 				createdBy: input.actorUserId,
 			})

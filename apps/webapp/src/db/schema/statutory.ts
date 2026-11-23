@@ -9,6 +9,7 @@ import {
 	integer,
 	pgTable,
 	text,
+	time,
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -227,8 +228,13 @@ export const employeeApprenticeRelease = pgTable(
 		endsOn: date("ends_on", { mode: "string" }).notNull(),
 		/** School lessons on a vocational-school day (> 5 lessons credits a full day). */
 		lessonCount: integer("lesson_count"),
-		/** Planned school minutes of a block-release week (>= 25 h across >= 5 days). */
+		/**
+		 * Planned school minutes per week of a block-release record (>= 25 h across >= 5 days), or
+		 * an exam's participation time including breaks.
+		 */
 		schoolMinutes: integer("school_minutes"),
+		/** When an exam starts (local wall time); with it, the exam day credits only its time. */
+		examStartTime: time("exam_start_time"),
 		note: text("note"),
 		...auditColumns,
 	},
@@ -243,6 +249,10 @@ export const employeeApprenticeRelease = pgTable(
 		check(
 			"employee_apprentice_release_amounts_check",
 			sql`("lesson_count" IS NULL OR "lesson_count" BETWEEN 0 AND 20) AND ("school_minutes" IS NULL OR "school_minutes" BETWEEN 0 AND 10080)`,
+		),
+		check(
+			"employee_apprentice_release_exam_time_check",
+			sql`"exam_start_time" IS NULL OR ("release_kind" = 'exam_day' AND "school_minutes" IS NOT NULL)`,
 		),
 		check("employee_apprentice_release_void_check", voidCheckSql),
 	],

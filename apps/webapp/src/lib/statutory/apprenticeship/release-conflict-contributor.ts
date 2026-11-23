@@ -1,12 +1,19 @@
 /**
  * Apprentice school and exam release conflicts in Scheduling and Staffing (#1993). A shift on a
- * day released in full (credited school day, block-release week, exam or pre-exam day) is a
+ * day released in full (credited school day, block-release week, pre-exam day, or an exam day
+ * recorded without its time), or during an exam recorded with its time, is a
  * conflict for every apprentice, and prohibited for one under 18 (§§ 9, 10 JArbSchG): with the
  * organization's `blockJarbschgShiftPublish` on, that shift blocks publication. On the week's full
  * school day (more than five lessons) an apprentice under 18 may not return to the workplace
  * afterwards (§ 9 Abs. 1 Nr. 2 JArbSchG); after a shorter school day they may.
  */
-import { type Instant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { Temporal } from "temporal-polyfill";
+import {
+	compareInstants,
+	type Instant,
+	type PlainDate,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import { type StatutoryFinding, statutoryFindingId } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
 import type {
@@ -30,6 +37,16 @@ interface PlannedWork {
 	readonly ref: string;
 	readonly start: Instant;
 	readonly end: Instant;
+}
+
+/** Whether planned work overlaps an exam credited with its time, resolved in `timezone`. */
+function overlapsExam(work: PlannedWork, release: ApprenticeReleaseDay, timezone: string): boolean {
+	if (!release.examStartTime || release.minutes === null) return false;
+	const start = work.date
+		.toZonedDateTime({ timeZone: timezone, plainTime: Temporal.PlainTime.from(release.examStartTime) })
+		.toInstant();
+	const end = start.add({ minutes: release.minutes });
+	return compareInstants(work.start, end) < 0 && compareInstants(start, work.end) < 0;
 }
 
 async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFinding[]> {
@@ -85,9 +102,10 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	for (const work of planned) {
 		const release = releaseOn.get(`${work.employeeId}:${work.date}`);
 		if (!release) continue;
-		// A partly credited school day leaves the rest of the day to work, for minors too; for them
-		// the youth rules count its school time toward the day's limit (`youth/school-credits.ts`).
-		if (release.credit !== "full_day") continue;
+		// A partly credited school or exam day leaves the rest of the day to work, for minors too;
+		// for them the youth rules count its credited time toward the day's limit
+		// (`youth/school-credits.ts`). Only work during the exam itself conflicts.
+		if (release.credit !== "full_day" && !overlapsExam(work, release, context.timezone)) continue;
 		const minor = isMinorOn(birthdays.get(work.employeeId) ?? null, work.date);
 		const kind: ApprenticeReleaseFindingKind =
 			minor && release.releaseKind === "vocational_school_day"

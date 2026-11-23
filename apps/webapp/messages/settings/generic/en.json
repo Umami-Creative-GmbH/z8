@@ -4311,7 +4311,8 @@
       },
       "credit": {
         "fullDays": "{count, plural, one {# working day credited in full} other {# working days credited in full}}",
-        "minutes": "{minutes} min of school time credited"
+        "minutes": "{minutes} min of school time credited",
+        "exam": "Exam from {start}: {minutes} min credited"
       },
       "lessons": "{count} lessons",
       "workplaceReturn": "Under 18: no return to work after this full school day (§ 9 Abs. 1 Nr. 2 JArbSchG)",
@@ -4328,6 +4329,9 @@
         "schoolHoursPerWeek": "School hours per week (clock hours)",
         "lessons": "Lessons (45 min each)",
         "includePreExamDay": "Also release the working day before the written final exam",
+        "examStartTime": "Exam starts",
+        "examEndTime": "Exam ends (including breaks)",
+        "examTimeHint": "The exam frees and credits its time only. Leave both empty to release the whole day.",
         "note": "Note (optional)"
       }
     }

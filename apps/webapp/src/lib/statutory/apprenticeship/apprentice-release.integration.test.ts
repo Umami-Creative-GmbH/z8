@@ -24,6 +24,7 @@ import {
 	statutoryFixture,
 } from "@/test/statutory-fixtures";
 import { recordApprenticeRelease } from "../employee-context";
+import { recordApprenticeReleaseWithCredit } from "./release-credit-view";
 import { loadYouthSchoolCredits } from "../youth/school-credits";
 import { youthSeed } from "../youth/testing/youth-seed";
 
@@ -253,7 +254,7 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			{ employeeId: minor.employeeId, displayName: "Minor", isActive: true },
 			{ employeeId: colleague.employeeId, displayName: "Colleague", isActive: true },
 		];
-		const suggest = (date: string) =>
+		const suggest = (date: string, startTime = "09:00", endTime = "13:00") =>
 			Effect.runPromise(
 				Effect.gen(function* () {
 					const service = yield* StaffingSuggestionService;
@@ -261,7 +262,7 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 						organizationId: org.id,
 						timezone: org.timezone,
 						candidates,
-						shift: { subareaId, date, startTime: "09:00", endTime: "13:00" },
+						shift: { subareaId, date, startTime, endTime },
 					});
 				}).pipe(Effect.provide(staffingLayer)),
 			);
@@ -292,6 +293,22 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 			["jarbschg_daily_max", "critical"],
 			["jarbschg_school_day_workplace_return", "critical"],
 		]);
+
+		// An exam from 08:00 to 11:00 releases and credits its time only (§ 10 Abs. 1 Nr. 1 JArbSchG).
+		await recordApprenticeReleaseWithCredit(db, {
+			organizationId: org.id,
+			employeeId: minor.employeeId,
+			actorUserId: owner.userId,
+			releaseKind: "exam_day",
+			startsOn: "2027-03-24",
+			endsOn: "2027-03-24",
+			examStartTime: "08:00",
+			examEndTime: "11:00",
+		});
+		const afternoon = await suggest("2027-03-24", "13:00", "17:00");
+		expect(statutoryWarnings(afternoon, "Minor")).toEqual([]);
+		const overlapping = await suggest("2027-03-24", "10:00", "12:00");
+		expect(statutoryWarnings(overlapping, "Minor")).toEqual([["bbig_release_day_shift", "critical"]]);
 
 		// Thursday's school day is only partly credited: returning to work afterwards is lawful.
 		const partialSchoolDay = await suggest("2027-03-04");

@@ -4311,7 +4311,8 @@
       },
       "credit": {
         "fullDays": "{count, plural, one {# Arbeitstag voll angerechnet} other {# Arbeitstage voll angerechnet}}",
-        "minutes": "{minutes} Min. Unterrichtszeit angerechnet"
+        "minutes": "{minutes} Min. Unterrichtszeit angerechnet",
+        "exam": "Prüfung ab {start}: {minutes} Min. angerechnet"
       },
       "lessons": "{count} Unterrichtsstunden",
       "workplaceReturn": "Unter 18: keine Rückkehr in den Betrieb nach diesem vollen Berufsschultag (§ 9 Abs. 1 Nr. 2 JArbSchG)",
@@ -4328,6 +4329,9 @@
         "schoolHoursPerWeek": "Unterrichtszeit je Woche (Zeitstunden)",
         "lessons": "Unterrichtsstunden (je 45 Min.)",
         "includePreExamDay": "Auch den Arbeitstag vor der schriftlichen Abschlussprüfung freistellen",
+        "examStartTime": "Prüfungsbeginn",
+        "examEndTime": "Prüfungsende (inklusive Pausen)",
+        "examTimeHint": "Die Prüfung stellt nur für ihre Dauer frei und wird nur mit ihr angerechnet. Beide Felder leer lassen, um den ganzen Tag freizustellen.",
         "note": "Notiz (optional)"
       }
     }

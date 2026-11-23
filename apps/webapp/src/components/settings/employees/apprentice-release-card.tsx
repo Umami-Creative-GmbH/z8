@@ -66,6 +66,12 @@ function kindLabel(kind: ApprenticeReleaseKind, t: Translate): string {
 }
 
 function creditText(release: ApprenticeReleaseCreditView, t: Translate): string {
+	if (release.examStartTime !== null) {
+		return t("settings.apprenticeRelease.credit.exam", "Exam from {start}: {minutes} min credited", {
+			start: release.examStartTime,
+			minutes: release.creditedMinutes,
+		});
+	}
 	if (release.creditedMinutes === 0) {
 		return t(
 			"settings.apprenticeRelease.credit.fullDays",
@@ -287,11 +293,14 @@ function RecordReleaseForm({
 			endsOn: string;
 			lessonCount: string;
 			schoolHours: string;
+			examStartTime: string;
+			examEndTime: string;
 			note: string;
 			includePreExamDay: boolean;
 		}) => {
 			const blockWeek = value.releaseKind === "vocational_school_block_week";
 			const schoolDay = value.releaseKind === "vocational_school_day";
+			const examDay = value.releaseKind === "exam_day";
 			const result = await recordApprenticeReleaseAction({
 				employeeId,
 				releaseKind: value.releaseKind,
@@ -300,8 +309,10 @@ function RecordReleaseForm({
 				lessonCount: schoolDay && value.lessonCount !== "" ? Number(value.lessonCount) : null,
 				schoolMinutes:
 					blockWeek && value.schoolHours !== "" ? Math.round(Number(value.schoolHours) * 60) : null,
+				examStartTime: examDay && value.examStartTime !== "" ? value.examStartTime : null,
+				examEndTime: examDay && value.examEndTime !== "" ? value.examEndTime : null,
 				note: value.note.trim() || null,
-				includePreExamDay: value.releaseKind === "exam_day" && value.includePreExamDay,
+				includePreExamDay: examDay && value.includePreExamDay,
 			});
 			if (!result.success) throw new Error(result.error);
 		},
@@ -319,6 +330,8 @@ function RecordReleaseForm({
 			endsOn: "",
 			lessonCount: "",
 			schoolHours: "",
+			examStartTime: "",
+			examEndTime: "",
 			note: "",
 			includePreExamDay: true,
 		},
@@ -446,6 +459,54 @@ function RecordReleaseForm({
 									</div>
 								)}
 							</form.Field>
+						) : null}
+						{kind === "exam_day" ? (
+							<>
+								<form.Field name="examStartTime">
+									{(field) => (
+										<div className="space-y-1.5">
+											<Label htmlFor="apprentice-release-exam-start">
+												{t("settings.apprenticeRelease.fields.examStartTime", "Exam starts")}
+											</Label>
+											<Input
+												id="apprentice-release-exam-start"
+												type="time"
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+												aria-describedby="apprentice-release-exam-hint"
+											/>
+										</div>
+									)}
+								</form.Field>
+								<form.Field name="examEndTime">
+									{(field) => (
+										<div className="space-y-1.5">
+											<Label htmlFor="apprentice-release-exam-end">
+												{t(
+													"settings.apprenticeRelease.fields.examEndTime",
+													"Exam ends (including breaks)",
+												)}
+											</Label>
+											<Input
+												id="apprentice-release-exam-end"
+												type="time"
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+												aria-describedby="apprentice-release-exam-hint"
+											/>
+										</div>
+									)}
+								</form.Field>
+								<p
+									id="apprentice-release-exam-hint"
+									className="text-muted-foreground text-xs sm:col-span-2"
+								>
+									{t(
+										"settings.apprenticeRelease.fields.examTimeHint",
+										"The exam frees and credits its time only. Leave both empty to release the whole day.",
+									)}
+								</p>
+							</>
 						) : null}
 						{kind === "exam_day" ? (
 							<form.Field name="includePreExamDay">

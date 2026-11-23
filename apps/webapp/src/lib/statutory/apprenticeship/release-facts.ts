@@ -38,6 +38,7 @@ export async function loadApprenticeReleaseRecords(
 			endsOn: employeeApprenticeRelease.endsOn,
 			lessonCount: employeeApprenticeRelease.lessonCount,
 			schoolMinutes: employeeApprenticeRelease.schoolMinutes,
+			examStartTime: employeeApprenticeRelease.examStartTime,
 		})
 		.from(employeeApprenticeRelease)
 		.where(

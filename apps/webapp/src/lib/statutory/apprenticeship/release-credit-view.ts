@@ -4,12 +4,14 @@
  * the employee's managers and the employee see the same view.
  */
 import { and, eq } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { type ApprenticeReleaseKind, employeeApprenticeRelease } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	markEmployeeWorkBalanceDirty,
 	refreshEmployeeWorkBalanceFromPeriods,
@@ -35,6 +37,8 @@ export interface ApprenticeReleaseCreditView {
 	readonly endsOn: string;
 	readonly lessonCount: number | null;
 	readonly schoolMinutes: number | null;
+	/** An exam's local start time, `HH:MM`, when it was recorded with its time. */
+	readonly examStartTime: string | null;
 	readonly note: string | null;
 	/** Days released in full: their whole working time is credited. */
 	readonly fullDays: number;
@@ -57,7 +61,8 @@ export type ApprenticeReleaseRefusal =
 	| "apprentice_release_not_apprentice"
 	| "apprentice_release_lessons_required"
 	| "apprentice_release_school_minutes_required"
-	| "apprentice_release_no_preceding_working_day";
+	| "apprentice_release_no_preceding_working_day"
+	| "apprentice_release_exam_time_invalid";
 
 function refuse(refusal: ApprenticeReleaseRefusal, message: string, field?: string): never {
 	throw new ValidationError({ message, refusal, field });
@@ -105,6 +110,7 @@ export async function loadApprenticeReleaseCredits(
 					endsOn: release.endsOn,
 					lessonCount: release.lessonCount,
 					schoolMinutes: release.schoolMinutes,
+					examStartTime: release.examStartTime?.slice(0, 5) ?? null,
 					note: release.note,
 					fullDays: own.length - partial.length,
 					creditedMinutes: partial.reduce((total, day) => total + (day.minutes ?? 0), 0),
@@ -135,10 +141,15 @@ export async function recordApprenticeReleaseWithCredit(
 		readonly endsOn: string;
 		readonly lessonCount?: number | null;
 		readonly schoolMinutes?: number | null;
+		/** When the exam starts and ends, local `HH:MM`: the exam day then credits only that time. */
+		readonly examStartTime?: string | null;
+		readonly examEndTime?: string | null;
 		readonly note?: string | null;
 		readonly includePreExamDay?: boolean;
 	},
 ): Promise<void> {
+	const exam =
+		input.releaseKind === "exam_day" ? await examTimeOf(db, input) : { startTime: null, minutes: null };
 	if (input.releaseKind === "vocational_school_day" && input.lessonCount == null) {
 		refuse("apprentice_release_lessons_required", "Enter the number of lessons", "lessonCount");
 	}
@@ -244,7 +255,8 @@ export async function recordApprenticeReleaseWithCredit(
 			startsOn: input.startsOn,
 			endsOn: input.endsOn,
 			lessonCount: input.lessonCount ?? null,
-			schoolMinutes: input.schoolMinutes ?? null,
+			schoolMinutes: input.releaseKind === "exam_day" ? exam.minutes : (input.schoolMinutes ?? null),
+			examStartTime: exam.startTime,
 		});
 		await markEmployeeWorkBalanceDirty(
 			{ organizationId: input.organizationId, employeeId: input.employeeId, dirtyFromDate },
@@ -292,6 +304,47 @@ export async function voidApprenticeReleaseWithCredit(
 }
 
 const mondayOf = (day: PlainDate) => day.subtract({ days: day.dayOfWeek - 1 }).toString();
+
+const WALL_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/**
+ * An exam's start and participation time including breaks, from its local start and end on the
+ * exam day in the organization's zone. Both or neither: without them the whole day is released.
+ */
+async function examTimeOf(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly startsOn: string;
+		readonly examStartTime?: string | null;
+		readonly examEndTime?: string | null;
+	},
+): Promise<{ readonly startTime: string | null; readonly minutes: number | null }> {
+	const startTime = input.examStartTime || null;
+	const endTime = input.examEndTime || null;
+	if (!startTime && !endTime) return { startTime: null, minutes: null };
+	if (!startTime || !endTime || !WALL_TIME.test(startTime) || !WALL_TIME.test(endTime)) {
+		refuse(
+			"apprentice_release_exam_time_invalid",
+			"Enter when the exam starts and ends, or neither",
+			"examStartTime",
+		);
+	}
+	const timezone = await loadOrganizationTimezone(db, input.organizationId);
+	let day: PlainDate;
+	try {
+		day = parsePlainDate(input.startsOn);
+	} catch {
+		throw new ValidationError({ message: "Dates must use YYYY-MM-DD", refusal: "statutory_invalid_range" });
+	}
+	const at = (time: string) =>
+		day.toZonedDateTime({ timeZone: timezone, plainTime: Temporal.PlainTime.from(time) }).toInstant();
+	const minutes = Math.round(at(startTime).until(at(endTime)).total({ unit: "minutes" }));
+	if (minutes <= 0) {
+		refuse("apprentice_release_exam_time_invalid", "The exam must end after it starts", "examEndTime");
+	}
+	return { startTime, minutes };
+}
 
 /** Recomputes the stored balance now; the balance worker retries a failed refresh. */
 async function refreshWorkBalanceAfterCommit(input: {

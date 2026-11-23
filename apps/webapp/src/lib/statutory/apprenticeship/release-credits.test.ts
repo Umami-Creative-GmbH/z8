@@ -15,6 +15,7 @@ function release(
 		endsOn: partial.startsOn,
 		lessonCount: null,
 		schoolMinutes: null,
+		examStartTime: null,
 		...partial,
 	};
 }
@@ -125,6 +126,22 @@ describe("apprenticeReleaseDays", () => {
 		expect(days.map((day) => [day.credit, day.minutes])).toEqual(
 			Array.from({ length: 4 }, () => ["school_minutes", 300]),
 		);
+	});
+
+	it("credits an exam with its recorded participation time, the day before the exam in full", () => {
+		const days = apprenticeReleaseDays([
+			release({ releaseKind: "pre_exam_day", startsOn: "2026-05-11" }),
+			release({
+				releaseKind: "exam_day",
+				startsOn: "2026-05-12",
+				schoolMinutes: 180,
+				examStartTime: "08:00",
+			}),
+		]);
+		expect(days.map((day) => [day.date, day.credit, day.minutes])).toEqual([
+			["2026-05-11", "full_day", null],
+			["2026-05-12", "school_minutes", 180],
+		]);
 	});
 
 	it("credits exam and pre-exam days as full days", () => {

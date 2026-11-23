@@ -14,8 +14,10 @@
  *   week (§ 15 Abs. 2 Nr. 3); a shorter block spreads its school time over its days. A block
  *   record may span several weeks: it is credited per compliance week (Monday to Sunday), on its
  *   school days (Monday to Friday) only, and its school minutes are the school time per week.
- * - The exam day and the working day immediately before the written final exam are released in
- *   full (§ 15 Abs. 2 Nr. 4–5 BBiG, § 10 JArbSchG).
+ * - An exam frees and credits its participation time including breaks (§ 15 Abs. 2 Nr. 4 BBiG,
+ *   § 10 Abs. 1 Nr. 1 JArbSchG); an exam recorded without its time releases the whole day. The
+ *   working day immediately before the written final exam is released in full (§ 15 Abs. 2
+ *   Nr. 5 BBiG, § 10 Abs. 1 Nr. 2 JArbSchG).
  */
 import type { ApprenticeReleaseKind } from "@/db/schema";
 import { preserveTrustBasedBalanceDates } from "@/lib/calendar/trust-based-dates";
@@ -38,6 +40,8 @@ export interface ApprenticeReleaseRecord {
 	readonly endsOn: string;
 	readonly lessonCount: number | null;
 	readonly schoolMinutes: number | null;
+	/** An exam's local start time (`HH:MM[:SS]`); its `schoolMinutes` are its duration. */
+	readonly examStartTime: string | null;
 }
 
 /** One credited release day. */
@@ -48,6 +52,8 @@ export interface ApprenticeReleaseDay {
 	/** `full_day` releases the whole day; `school_minutes` credits `minutes` of it. */
 	readonly credit: "full_day" | "school_minutes";
 	readonly minutes: number | null;
+	/** An exam credited with its time: when it starts, local wall time. */
+	readonly examStartTime?: string;
 }
 
 function eachDay(startsOn: string, endsOn: string): PlainDate[] {
@@ -81,6 +87,20 @@ export function apprenticeReleaseDays(
 		const base = { releaseId: release.id, releaseKind: release.releaseKind };
 		switch (release.releaseKind) {
 			case "exam_day":
+				// The exam frees and credits its participation time including breaks; without a
+				// recorded time the whole day is released, as before exam times were recorded.
+				if (release.schoolMinutes !== null && release.examStartTime !== null) {
+					days.push({
+						...base,
+						date: release.startsOn,
+						credit: "school_minutes",
+						minutes: release.schoolMinutes,
+						examStartTime: release.examStartTime,
+					});
+				} else {
+					days.push({ ...base, date: release.startsOn, credit: "full_day", minutes: null });
+				}
+				break;
 			case "pre_exam_day":
 				days.push({ ...base, date: release.startsOn, credit: "full_day", minutes: null });
 				break;

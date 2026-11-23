@@ -26,6 +26,7 @@ import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timez
 
 const employeeId = z.uuid("Invalid selection.");
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+const wallTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM");
 
 const recordSchema = z.strictObject({
 	employeeId,
@@ -34,6 +35,8 @@ const recordSchema = z.strictObject({
 	endsOn: isoDate,
 	lessonCount: z.number().int().min(0).max(20).nullable().optional(),
 	schoolMinutes: z.number().int().min(0).max(10_080).nullable().optional(),
+	examStartTime: wallTime.nullable().optional(),
+	examEndTime: wallTime.nullable().optional(),
 	note: z.string().max(500).nullable().optional(),
 	includePreExamDay: z.boolean().optional(),
 });

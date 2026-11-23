@@ -5,7 +5,8 @@
  *
  * - the week's full school day (more than five lessons) counts 8 h;
  * - a full block-release week counts 40 h in each school week, spread over its weekdays;
- * - the exam day and the working day before the written final exam count 8 h;
+ * - an exam counts its participation time including breaks, 8 h when recorded without its time;
+ * - the working day before the written final exam counts 8 h;
  * - other school days count their school time including breaks.
  *
  * Work Balance credits releases separately (`release-credits.ts`); this only feeds the youth rules.
