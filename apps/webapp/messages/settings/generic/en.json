@@ -3085,7 +3085,15 @@
       "updateProfile": "Update Profile",
       "updateSuccess": "Profile updated successfully",
       "uploading": "Uploading",
-      "uploadProfilePicture": "Upload profile picture"
+      "uploadProfilePicture": "Upload profile picture",
+      "workingStudent": {
+        "title": "Working student status",
+        "description": "As a working student, you may work more than 20 hours in at most 26 weeks within 12 months.",
+        "noBaseline": "No statutory limit applies to this week.",
+        "balance": "{remaining} of {limit} weeks above 20 hours remaining ({used} used in the last 12 months).",
+        "lectureFree": "Recorded lecture-free periods",
+        "lectureFreeEmpty": "No lecture-free periods recorded. Ask HR to record your semester breaks."
+      }
     },
     "projects": {
       "budgetUsed": "Budget used",

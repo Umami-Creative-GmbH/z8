@@ -68,6 +68,10 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-offboarding.actions", 
 	resolveDepartureReviewAction: mocks.resolveDepartureReviewAction,
 }));
 
+vi.mock("./working-student-reviews-section", () => ({
+	WorkingStudentReviewsSection: () => null,
+}));
+
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({
 	getWorkPolicies: mocks.getWorkPolicies,
 }));

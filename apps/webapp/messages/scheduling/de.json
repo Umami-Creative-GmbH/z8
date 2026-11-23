@@ -246,6 +246,10 @@
       "apprenticeship": {
         "releaseDayShift": "Freistellungstag für Auszubildende: Berufsschul-, Blockunterrichts- oder Prüfungstag",
         "workplaceReturn": "Unter 18: keine Arbeit am vollen Berufsschultag der Woche"
+      },
+      "workingStudent": {
+        "lectureWeek": "Werkstudierende/r über 20 Std. in einer Vorlesungswoche: {hours} Std. Arbeit werktags tagsüber (Grenze {limit} Std.)",
+        "ceiling": "Werkstudierende/r: {used} von {limit} Wochen über 20 Std. in 12 Monaten"
       }
     }
   }

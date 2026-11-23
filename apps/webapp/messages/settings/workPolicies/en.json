@@ -549,6 +549,93 @@
           "percentRange": "Enter whole percentages from 1 to 100.",
           "warningBelowCritical": "The warning percentage must be below the critical percentage."
         }
+      },
+      "workingStudent": {
+        "finding": {
+          "lectureWeek": "{hours} h of weekday daytime work in a lecture week (limit {limit} h)",
+          "ceiling": "{used} of {limit} weeks above 20 h in the last 12 months",
+          "generic": "Working-student limit at risk"
+        },
+        "severity": {
+          "critical": "Critical",
+          "warning": "Warning"
+        },
+        "ack": {
+          "current": "Acknowledged",
+          "stale": "Changed since acknowledged"
+        },
+        "week": {
+          "breach": "Above 20 h in lecture time",
+          "permitted": "Above 20 h, permitted",
+          "within": "Within 20 h"
+        },
+        "voidReasonRequired": "Say why this entry is voided.",
+        "voidReason": "Reason for voiding",
+        "void": "Void",
+        "cancel": "Cancel",
+        "lectureFree": {
+          "saved": "Lecture-free period recorded",
+          "startsOn": "First lecture-free day",
+          "endsOn": "Last lecture-free day",
+          "add": "Add period",
+          "title": "Lecture-free periods",
+          "empty": "No lecture-free periods recorded.",
+          "void": "Void lecture-free period"
+        },
+        "dateRequired": "Choose a date.",
+        "note": "Note (optional)",
+        "prior": {
+          "saved": "Prior-employer weeks recorded",
+          "monday": "Choose the Monday the first week starts on.",
+          "firstWeek": "First week (Monday)",
+          "count": "Consecutive weeks above 20 h",
+          "employer": "Previous employer (optional)",
+          "note": "Evidence",
+          "notePlaceholder": "e.g. certificate of the previous employer",
+          "add": "Add prior weeks",
+          "title": "Prior-employer weeks above 20 h",
+          "empty": "No prior-employer weeks recorded.",
+          "run": "{count, plural, one {# week} other {# weeks}} from {from}",
+          "void": "Void prior-employer weeks"
+        },
+        "refusal": {
+          "invalidValue": "Enter a number of weeks from 1 to 53.",
+          "noteRequired": "Add a note explaining the entry.",
+          "overlap": "This period overlaps a recorded lecture-free period.",
+          "invalidRange": "Check the dates: the end must not be before the start, and prior weeks start on a Monday."
+        },
+        "voided": "Entry voided",
+        "rolling": {
+          "title": "26-week balance",
+          "noBaseline": "No statutory baseline covers this week.",
+          "summary": "{used} of {limit} weeks above 20 h in the last 12 months; {remaining} remaining."
+        },
+        "notCurrent": "Not a working student this week. Recorded weeks and periods stay available.",
+        "findings": "Open findings",
+        "column": {
+          "week": "Week",
+          "total": "Total",
+          "core": "Lecture daytime",
+          "lectureFree": "Lecture-free",
+          "eveningWeekend": "Evening/weekend",
+          "otherProfile": "Other profile",
+          "status": "Status"
+        },
+        "title": "Working student (§ 6 SGB V)",
+        "description": "In lecture periods, weekday daytime work (06:00–18:00) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+        "loadFailed": "Could not load the working-student monitor.",
+        "reviews": {
+          "acknowledged": "Week acknowledged",
+          "reasonRequired": "Explain why this week is acknowledged.",
+          "reason": "Reason",
+          "reasonPlaceholder": "e.g. exam-free project week confirmed by the university",
+          "legalNote": "Legal note (optional)",
+          "acknowledge": "Acknowledge",
+          "title": "Working students above 20 hours",
+          "description": "Lecture weeks above 20 hours of weekday daytime work and weeks that use up the 26-week allowance. Acknowledge a week once you have reviewed it.",
+          "notFound": "This week no longer has the finding. Reload the reviews.",
+          "changed": "This week's figures changed since you opened the reviews. Review the updated figures and acknowledge again."
+        }
       }
     },
     "timeRegulations": {

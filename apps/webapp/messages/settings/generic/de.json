@@ -3085,7 +3085,15 @@
       "updateProfile": "Profil aktualisieren",
       "updateSuccess": "Profil erfolgreich aktualisiert",
       "uploading": "Wird hochgeladen",
-      "uploadProfilePicture": "Profilbild hochladen"
+      "uploadProfilePicture": "Profilbild hochladen",
+      "workingStudent": {
+        "title": "Status als Werkstudierende/r",
+        "description": "Als Werkstudierende/r dürfen Sie in höchstens 26 Wochen innerhalb von 12 Monaten mehr als 20 Stunden arbeiten.",
+        "noBaseline": "Für diese Woche gilt keine gesetzliche Grenze.",
+        "balance": "{remaining} von {limit} Wochen über 20 Stunden verbleibend ({used} in den letzten 12 Monaten genutzt).",
+        "lectureFree": "Erfasste vorlesungsfreie Zeiten",
+        "lectureFreeEmpty": "Keine vorlesungsfreien Zeiten erfasst. Bitten Sie die Personalabteilung, Ihre Semesterferien zu erfassen."
+      }
     },
     "projects": {
       "budgetUsed": "Verbrauchtes Budget",

@@ -246,6 +246,10 @@
       "apprenticeship": {
         "releaseDayShift": "Apprentice release day: school, block-release or exam day",
         "workplaceReturn": "Under 18: no work on the week's full vocational school day"
+      },
+      "workingStudent": {
+        "lectureWeek": "Working student >20 h in lecture week: {hours} h of weekday daytime work (limit {limit} h)",
+        "ceiling": "Working student: {used} of {limit} weeks above 20 h in 12 months"
       }
     }
   }

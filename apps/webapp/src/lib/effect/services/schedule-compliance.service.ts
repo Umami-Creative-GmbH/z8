@@ -19,6 +19,7 @@ import {
 	summarizeComplianceFindings,
 } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
 import { evaluateStatutoryScheduleFindings } from "@/lib/statutory/scheduling/evaluate";
+import { statutoryFindingChangeKey } from "@/lib/statutory/scheduling/finding-key";
 import {
 	loadExecutiveExemptDays,
 	withoutExecutiveExemptFindings,
@@ -65,7 +66,10 @@ function buildFingerprint(params: {
 	result: ScheduleComplianceResult;
 }): string {
 	const normalizedFindings = [...params.result.findings]
-		.map((finding) => ({ ...finding }))
+		// A statutory finding counts by what a planner acknowledges, not its running totals.
+		.map((finding) =>
+			finding.type === "statutory" ? statutoryFindingChangeKey(finding) : { ...finding },
+		)
 		.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 
 	const payload = {
