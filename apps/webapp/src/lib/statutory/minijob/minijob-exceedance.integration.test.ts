@@ -57,8 +57,8 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 			.map((f) => [f.subjectKey, f.severity, f.adminDetail?.facts?.exceedanceStatus]);
 	}
 
-	/** The fingerprint an org admin is shown for the month. */
-	async function shownFingerprint({ org, worker }: Setup, month: string) {
+	/** The fingerprint and total an org admin is shown for the month. */
+	async function shownFigures({ org, worker }: Setup, month: string) {
 		const { employees } = await evaluateMinijobEarnings(db, {
 			organizationId: org.id,
 			timezone: org.timezone,
@@ -67,22 +67,25 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 			preferences: DEFAULT_STATUTORY_PREFERENCES,
 			now: NOW,
 		});
-		return employees.get(worker.employeeId)?.find((m) => m.month === month)?.fingerprint ?? "";
+		const shown = employees.get(worker.employeeId)?.find((m) => m.month === month);
+		return { fingerprint: shown?.fingerprint ?? "", totalCents: shown?.totalCents ?? 0 };
 	}
 
 	async function acknowledge(
 		s: Setup,
 		month: string,
 		reason = "Covered a sick colleague",
-		expectedFingerprint?: string,
+		shown?: { fingerprint: string; totalCents: number },
 	) {
+		const figures = shown ?? (await shownFigures(s, month));
 		return acknowledgeMinijobExceedance(db, {
 			organizationId: s.org.id,
 			actorUserId: s.owner.userId,
 			employeeId: s.worker.employeeId,
 			month,
 			reason,
-			expectedFingerprint: expectedFingerprint ?? (await shownFingerprint(s, month)),
+			expectedFingerprint: figures.fingerprint,
+			expectedTotalCents: figures.totalCents,
 			now: NOW,
 		});
 	}
@@ -90,7 +93,7 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 	it("refuses to acknowledge figures that changed since they were shown", async () => {
 		const s = await setup();
 		await mj.monthWork(s.org, s.worker, "2026-01", 4200);
-		const shown = await shownFingerprint(s, "2026-01");
+		const shown = await shownFigures(s, "2026-01");
 
 		await mj.work(s.org, s.worker, "2026-01-28", 60);
 
@@ -332,6 +335,7 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 			month: "2026-01",
 			reason: "Covered a sick colleague",
 			expectedFingerprint: shown?.inputFingerprint ?? "",
+			expectedTotalCents: shown?.totalCents ?? 0,
 			now,
 		});
 		expect(acknowledged.inputFingerprint).toBe(shown?.inputFingerprint);
@@ -435,9 +439,12 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 			return reviews.find((review) => review.month === "2026-12");
 		}
 
-		/** Documents December as an org admin shown it at `now`. */
-		async function acknowledgeDecember(s: Setup, now: Temporal.Instant) {
-			const shown = await reviewedDecember(s, now);
+		/** Documents December as an org admin was shown it in Reviews & Conflicts. */
+		function acknowledgeShown(
+			s: Setup,
+			shown: Awaited<ReturnType<typeof reviewedDecember>>,
+			now: Temporal.Instant,
+		) {
 			return acknowledgeMinijobExceedance(db, {
 				organizationId: s.org.id,
 				actorUserId: s.owner.userId,
@@ -445,8 +452,14 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 				month: "2026-12",
 				reason: "Christmas cover agreed after a resignation",
 				expectedFingerprint: shown?.inputFingerprint ?? "",
+				expectedTotalCents: shown?.totalCents ?? 0,
 				now,
 			});
+		}
+
+		/** Documents December as an org admin shown it at `now`. */
+		async function acknowledgeDecember(s: Setup, now: Temporal.Instant) {
+			return acknowledgeShown(s, await reviewedDecember(s, now), now);
 		}
 
 		/** December's state on every surface: monitor, Reviews & Conflicts and Scheduling. */
@@ -514,6 +527,36 @@ describe("Minijob unforeseeable exceedances (PostgreSQL)", () => {
 
 			// Documenting the new figures makes the month current again.
 			await acknowledgeDecember(s, AFTER_FIRST_SHIFT);
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
+				totalCents: 78_000,
+				...documented,
+			});
+		});
+
+		it("refuses to document a total that rose after the admin was shown it", async () => {
+			const s = await december();
+			// The 1 December shift lapsed unworked: the admin is shown 52 hours, 676 €.
+			const shown = await reviewedDecember(s, AFTER_FIRST_SHIFT);
+			expect(shown?.totalCents).toBe(67_600);
+
+			// Before they click, a manager adds the forgotten 8 hours: 780 €, same fingerprint.
+			await mj.work(s.org, s.worker, "2026-12-01", 480);
+			expect((await reviewedDecember(s, AFTER_FIRST_SHIFT))?.inputFingerprint).toBe(
+				shown?.inputFingerprint,
+			);
+
+			await expect(acknowledgeShown(s, shown, AFTER_FIRST_SHIFT)).rejects.toMatchObject({
+				refusal: "minijob_exceedance_changed",
+			});
+			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toMatchObject({
+				totalCents: 78_000,
+				monitor: "unacknowledged",
+			});
+
+			// After reloading, the admin documents the 780 € they now see.
+			const reloaded = await reviewedDecember(s, AFTER_FIRST_SHIFT);
+			const record = await acknowledgeShown(s, reloaded, AFTER_FIRST_SHIFT);
+			expect(record.metadata.amountsCents).toMatchObject({ total: 78_000 });
 			expect(await decemberEverywhere(s, AFTER_FIRST_SHIFT)).toEqual({
 				totalCents: 78_000,
 				...documented,

@@ -489,6 +489,7 @@ describe("Minijob earnings monitor (PostgreSQL)", () => {
 			month: "2026-01",
 			reason: "Covered a sick colleague",
 			expectedFingerprint: planned["2026-01"]?.fingerprint ?? "",
+			expectedTotalCents: planned["2026-01"]?.total ?? 0,
 			now: Temporal.Instant.from("2026-01-31T11:00:00Z"),
 		});
 

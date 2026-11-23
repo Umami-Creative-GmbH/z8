@@ -93,7 +93,12 @@ describe("MinijobExceedanceReviews (#1989)", () => {
 
 		await waitFor(() =>
 			expect(mocks.acknowledgeMinijobExceedanceAction).toHaveBeenCalledWith(
-				expect.objectContaining({ employeeId: EMPLOYEE_ID, expectedFingerprint: "v1:shown" }),
+				// The figures the admin was shown are the precondition: fingerprint and total.
+				expect.objectContaining({
+					employeeId: EMPLOYEE_ID,
+					expectedFingerprint: "v1:shown",
+					expectedTotalCents: 70_000,
+				}),
 			),
 		);
 		await waitFor(() =>

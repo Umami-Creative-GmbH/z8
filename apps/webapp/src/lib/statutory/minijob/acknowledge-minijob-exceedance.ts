@@ -1,7 +1,8 @@
 /**
  * Documents an occasional unforeseeable Minijob exceedance (§ 8 Abs. 1b SGB IV, #1989). The
  * month is evaluated again here, so the acknowledgement always carries the server's own input
- * fingerprint, and only when it is the one the admin was shown; a month above twice its cap, or a
+ * fingerprint, and only when it and the month's total are the ones the admin was shown (the total
+ * within one material step); a month above twice its cap, or a
  * third exceedance month within 12 months, cannot be acknowledged. Callers authorize org admins
  * first.
  */
@@ -17,7 +18,7 @@ import {
 import { loadEmployeeInOrganization } from "../employee-scope";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { evaluateMinijobEarnings } from "./evaluate-minijob";
-import { addMonths, MINIJOB_MONTHLY_FINDING } from "./minijob-months";
+import { addMonths, MINIJOB_MONTHLY_FINDING, minijobTotalCoveredBy } from "./minijob-months";
 
 export type MinijobExceedanceRefusal =
 	| "minijob_invalid_month"
@@ -40,6 +41,8 @@ export async function acknowledgeMinijobExceedance(
 		readonly legalNote?: string | null;
 		/** The month's fingerprint as the admin was shown it: nobody documents unseen figures. */
 		readonly expectedFingerprint: string;
+		/** The month's total in EUR cents as the admin was shown it (org admins only). */
+		readonly expectedTotalCents: number;
 		readonly now: Instant;
 	},
 ): Promise<StatutoryAcknowledgementRecord> {
@@ -53,7 +56,7 @@ export async function acknowledgeMinijobExceedance(
 	await loadEmployeeInOrganization(db, input);
 	const timezone = await loadOrganizationTimezone(db, input.organizationId);
 	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
-	const { findings } = await evaluateMinijobEarnings(db, {
+	const { findings, employees } = await evaluateMinijobEarnings(db, {
 		organizationId: input.organizationId,
 		timezone,
 		employeeIds: [input.employeeId],
@@ -80,7 +83,15 @@ export async function acknowledgeMinijobExceedance(
 			refusal: "minijob_exceedance_not_acknowledgeable" satisfies MinijobExceedanceRefusal,
 		});
 	}
-	if (finding.inputFingerprint !== input.expectedFingerprint) {
+	// Work added to a lapsed or short shift raises the total without changing the fingerprint, so
+	// the total the admin was shown is a precondition too, by the step rule that keeps an
+	// acknowledgement current.
+	const month = employees.get(input.employeeId)?.find((m) => m.month === input.month);
+	if (
+		finding.inputFingerprint !== input.expectedFingerprint ||
+		!month ||
+		!minijobTotalCoveredBy(month, input.expectedTotalCents)
+	) {
 		throw new ValidationError({
 			message: "The month's earnings changed since they were shown. Review them again",
 			field: "month",

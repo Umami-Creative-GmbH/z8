@@ -201,6 +201,7 @@ describe("Minijob monitor actions (PostgreSQL)", () => {
 				reason: "Sick cover",
 				legalNote: null,
 				expectedFingerprint: "guessed",
+				expectedTotalCents: 0,
 			}),
 		).toMatchObject({ success: false, code: "AuthorizationError" });
 
@@ -240,6 +241,7 @@ describe("Minijob monitor actions (PostgreSQL)", () => {
 			await reviewActions.acknowledgeMinijobExceedanceAction({
 				...acknowledgement,
 				expectedFingerprint: shown.inputFingerprint,
+				expectedTotalCents: shown.totalCents,
 			}),
 		).toMatchObject({ success: false, refusal: "minijob_exceedance_changed" });
 
@@ -251,6 +253,7 @@ describe("Minijob monitor actions (PostgreSQL)", () => {
 			await reviewActions.acknowledgeMinijobExceedanceAction({
 				...acknowledgement,
 				expectedFingerprint: reloaded.data[0].inputFingerprint,
+				expectedTotalCents: reloaded.data[0].totalCents,
 			}),
 		).toMatchObject({ success: true });
 

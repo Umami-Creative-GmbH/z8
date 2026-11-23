@@ -360,10 +360,22 @@ export function minijobAcknowledgementStatus(
 	},
 ): MinijobAcknowledgementStatus {
 	if (acknowledgement.status !== "current") return acknowledgement.status;
-	const acknowledged = acknowledgement.acknowledgedTotalCents;
-	return acknowledged !== null && month.totalCents - acknowledged <= month.materialRiseCents
-		? "current"
-		: "stale";
+	return minijobTotalCoveredBy(month, acknowledgement.acknowledgedTotalCents) ? "current" : "stale";
+}
+
+/**
+ * Whether figures that documented `documentedTotalCents` still cover the month: its total is at
+ * most one material step (`materialRiseCents`) above them. The same rule keeps an acknowledgement
+ * current and lets an admin document the total they were shown.
+ */
+export function minijobTotalCoveredBy(
+	month: Pick<MinijobMonth, "totalCents" | "materialRiseCents">,
+	documentedTotalCents: number | null,
+): boolean {
+	return (
+		documentedTotalCents !== null &&
+		month.totalCents - documentedTotalCents <= month.materialRiseCents
+	);
 }
 
 /**

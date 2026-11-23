@@ -67,6 +67,7 @@ function AcknowledgeForm({ review }: { review: MinijobExceedanceReview }) {
 				reason: value.reason,
 				legalNote: value.legalNote.trim() || null,
 				expectedFingerprint: review.inputFingerprint,
+				expectedTotalCents: review.totalCents,
 			});
 			if (!result.success) throw new Error(actionErrorMessage(t, result, ACKNOWLEDGE_REFUSALS));
 			return result.data;
