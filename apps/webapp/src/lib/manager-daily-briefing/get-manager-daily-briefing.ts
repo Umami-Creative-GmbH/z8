@@ -142,12 +142,13 @@ async function isSessionEmployee(
 	}
 	if (!principal.isPlatformAdmin) return false;
 	const { db, employee } = await import("@/db");
+	const { onCurrentRoster } = await import("@/lib/employee-lifecycle/current-roster");
 	const own = await db.query.employee.findFirst({
 		where: and(
 			eq(employee.id, input.viewer.id),
 			eq(employee.userId, principal.userId),
-			eq(employee.organizationId, input.organizationId),
-			eq(employee.isActive, true),
+			// The organization's current roster: active, and no departure that has come due.
+			onCurrentRoster(input.organizationId, employee),
 		),
 		columns: { id: true },
 	});
