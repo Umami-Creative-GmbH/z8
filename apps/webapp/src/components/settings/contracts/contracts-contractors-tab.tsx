@@ -39,7 +39,8 @@ const OVERVIEW_QUERY_KEY = ["contractor-compensation", "overview"] as const;
 
 /**
  * Settings → Contracts → Contractors (#1998): every External Contractor with
- * the rate in force today and their contracting company. Org admins only (the
+ * the rate priced today and their contracting company; former contractors stay
+ * listed for their rate history, marked as such. Org admins only (the
  * page and the actions both require it). Editing opens the same editor as
  * Employee Detail.
  */
@@ -136,7 +137,16 @@ export function ContractsContractorsTab() {
 											<TableCell>
 												<div className="flex flex-wrap items-center gap-2">
 													<span className="font-medium">{row.name}</span>
-													<ExternalContractorBadge engagementKind="contractor" />
+													{row.engagementKind === "contractor" ? (
+														<ExternalContractorBadge engagementKind="contractor" />
+													) : (
+														<Badge variant="outline">
+															{t(
+																"settings.contracts.contractors.formerContractor",
+																"Former contractor",
+															)}
+														</Badge>
+													)}
 													{!row.isActive && (
 														<Badge variant="outline">
 															{t("settings.contracts.contractors.inactive", "Inactive")}

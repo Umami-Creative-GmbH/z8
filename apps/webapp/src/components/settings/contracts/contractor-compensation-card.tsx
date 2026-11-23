@@ -176,15 +176,6 @@ export function describeCompensation(
 	}
 }
 
-function termsInEffect(history: readonly ContractorTermsView[], today: string) {
-	return (
-		history.find(
-			(terms) =>
-				terms.effectiveFrom <= today && (terms.effectiveTo === null || today < terms.effectiveTo),
-		) ?? null
-	);
-}
-
 export interface ContractorCompensationCardProps {
 	employeeId: string;
 	/** Render without the card frame, e.g. inside an action panel. */
@@ -269,7 +260,7 @@ export function ContractorCompensationCard({
 				employeeId={employeeId}
 				record={data}
 				canEdit={isContractor}
-				onSaved={(history) => refresh({ history })}
+				onSaved={refresh}
 			/>
 			{isContractor && (
 				<ContractorDetailsForm
@@ -312,7 +303,8 @@ export function ContractorCompensationCard({
 	);
 }
 
-type ChangeResult = ServerActionResult<{ changed: boolean; history: ContractorTermsView[] }>;
+type SavedTerms = Pick<ContractorCompensationRecord, "history" | "termsInEffectId">;
+type ChangeResult = ServerActionResult<SavedTerms & { changed: boolean }>;
 
 function ContractorTermsSection({
 	employeeId,
@@ -323,12 +315,13 @@ function ContractorTermsSection({
 	employeeId: string;
 	record: ContractorCompensationRecord;
 	canEdit: boolean;
-	onSaved: (history: ContractorTermsView[]) => void;
+	onSaved: (saved: SavedTerms) => void;
 }) {
 	const { t } = useTranslate();
 	const { locale } = useDisplayContext();
 	const [mode, setMode] = useState<"set" | "end" | null>(null);
-	const inEffect = termsInEffect(record.history, record.today);
+	// The server marks the terms pricing applies today (clipped to their engagement).
+	const inEffect = record.history.find((terms) => terms.id === record.termsInEffectId) ?? null;
 
 	const apply = async (change: Promise<ChangeResult>): Promise<boolean> => {
 		const result = await change.catch(() => null);
@@ -340,7 +333,7 @@ function ContractorTermsSection({
 			toast.error(actionErrorMessage(t, result, CONTRACTOR_COMPENSATION_REFUSALS));
 			return false;
 		}
-		onSaved(result.data.history);
+		onSaved({ history: result.data.history, termsInEffectId: result.data.termsInEffectId });
 		toast.success(
 			result.data.changed
 				? t("settings.contracts.contractors.saved", "Contractor terms saved")

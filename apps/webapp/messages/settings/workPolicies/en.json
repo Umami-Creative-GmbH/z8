@@ -109,6 +109,7 @@
           "rateTooLarge": "Enter a rate below one million.",
           "rateTooPrecise": "The rate has more decimals than the currency allows."
         },
+        "formerContractor": "Former contractor",
         "halfDayThreshold": "Half-day threshold (minutes)",
         "hourlyRate": "Hourly rate",
         "inactive": "Inactive",

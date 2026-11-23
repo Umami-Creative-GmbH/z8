@@ -109,6 +109,7 @@
           "rateTooLarge": "Geben Sie einen Satz unter einer Million ein.",
           "rateTooPrecise": "Der Satz hat mehr Nachkommastellen, als die Währung erlaubt."
         },
+        "formerContractor": "Ehemaliger Dienstleister",
         "halfDayThreshold": "Halbtagsgrenze (Minuten)",
         "hourlyRate": "Stundensatz",
         "inactive": "Inaktiv",

@@ -5,6 +5,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { DatabaseError } from "pg";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import {
@@ -12,7 +13,13 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { changeContractorTerms, listContractorTermsHistory } from "./store";
+import {
+	changeContractorTerms,
+	listContractorCompensationOverview,
+	listContractorTermsForPricing,
+	listContractorTermsHistory,
+	loadContractorCompensation,
+} from "./store";
 import type { ContractorCompensationInput } from "./terms";
 
 const hourlyInput = (rateAmount: string): ContractorCompensationInput => ({
@@ -331,6 +338,148 @@ describe("contractor compensation terms on PostgreSQL", () => {
 					change: { kind: "set", effectiveFrom: "2026-02-30", compensation: hourlyInput("90") },
 				}),
 			).toEqual({ ok: false, reason: "invalid_date" });
+		});
+	});
+
+	describe("engagement boundaries", () => {
+		async function endPeriod(periodId: string, endedAt: string) {
+			await fixture.pool.query(
+				`update employee_employment_period set status = 'closed', ended_at = $2 where id = $1`,
+				[periodId, endedAt],
+			);
+		}
+
+		async function addPeriod(
+			employeeId: string,
+			engagementKind: "employee" | "contractor",
+			startedAt: string,
+		) {
+			await fixture.pool.query(
+				`insert into employee_employment_period
+				 (id, organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+				 values ($1, $2, $3, 'open', $4, 'recorded', $5)`,
+				[randomUUID(), fixture.organizationId, employeeId, startedAt, engagementKind],
+			);
+		}
+
+		async function contractorWithOpenTerms() {
+			const own = await fixture.seedEmployee({ engagementKind: "contractor" });
+			const outcome = await changeContractorTerms(db, {
+				organizationId: fixture.organizationId,
+				actorUserId: fixture.ownerUserId,
+				employeeId: own.employeeId,
+				change: {
+					kind: "set",
+					effectiveFrom: "2026-02-01",
+					compensation: {
+						basis: "daily",
+						rateAmount: "650",
+						currency: "EUR",
+						dayUnitRule: "any_work_full_day",
+					},
+				},
+			});
+			if (!outcome.ok) throw new Error(outcome.reason);
+			return own;
+		}
+
+		const may = Temporal.Instant.from("2026-05-04T10:00:00Z");
+
+		it.each([
+			// Scheduled departure: the period ends at local midnight after the last working day.
+			["at local midnight after its last day", "2026-03-15T23:00:00Z", "2026-03-16"],
+			// Offboarded now: the period ends during its last day.
+			["during its last day", "2026-03-16T10:00:00Z", "2026-03-17"],
+		])(
+			"prices open terms only through the last day of an engagement that ended %s",
+			async (_name, endedAt, exclusiveEnd) => {
+				const own = await contractorWithOpenTerms();
+				await endPeriod(own.employmentPeriodId, endedAt);
+
+				const terms = await listContractorTermsForPricing(db, fixture.organizationId, {
+					employeeIds: [own.employeeId],
+				});
+				expect(terms.map((entry) => [entry.from.toString(), entry.to?.toString()])).toEqual([
+					["2026-02-01", exclusiveEnd],
+				]);
+			},
+		);
+
+		it("shows the terms in force today of an active contractor", async () => {
+			const own = await contractorWithOpenTerms();
+
+			const [row] = (
+				await listContractorCompensationOverview(db, fixture.organizationId, may)
+			).filter((entry) => entry.employeeId === own.employeeId);
+			const record = await loadContractorCompensation(
+				db,
+				fixture.organizationId,
+				own.employeeId,
+				may,
+			);
+			expect(row).toMatchObject({ engagementKind: "contractor" });
+			expect(row?.termsToday?.compensation.rateAmount).toBe("650.00");
+			expect(record?.termsInEffectId).toBe(row?.termsToday?.id);
+		});
+
+		it("shows no rate today for a new engagement without terms after one that left terms open", async () => {
+			const own = await contractorWithOpenTerms();
+			await endPeriod(own.employmentPeriodId, "2026-03-15T23:00:00Z");
+			await addPeriod(own.employeeId, "contractor", "2026-04-01T00:00:00Z");
+
+			const [row] = (
+				await listContractorCompensationOverview(db, fixture.organizationId, may)
+			).filter((entry) => entry.employeeId === own.employeeId);
+			const record = await loadContractorCompensation(
+				db,
+				fixture.organizationId,
+				own.employeeId,
+				may,
+			);
+			expect(row).toMatchObject({ engagementKind: "contractor", termsToday: null });
+			expect(record).toMatchObject({ activeEngagementKind: "contractor", termsInEffectId: null });
+		});
+
+		it("lists a former contractor rehired as an employee by today's kind, without a rate", async () => {
+			const own = await contractorWithOpenTerms();
+			await endPeriod(own.employmentPeriodId, "2026-03-15T23:00:00Z");
+			await addPeriod(own.employeeId, "employee", "2026-04-01T00:00:00Z");
+			await fixture.pool.query(`update employee set engagement_kind = 'employee' where id = $1`, [
+				own.employeeId,
+			]);
+
+			const [row] = (
+				await listContractorCompensationOverview(db, fixture.organizationId, may)
+			).filter((entry) => entry.employeeId === own.employeeId);
+			const record = await loadContractorCompensation(
+				db,
+				fixture.organizationId,
+				own.employeeId,
+				may,
+			);
+			expect(row).toMatchObject({ engagementKind: "employee", termsToday: null });
+			expect(record).toMatchObject({ activeEngagementKind: "employee", termsInEffectId: null });
+		});
+
+		it("reports the terms in force after a change", async () => {
+			const own = await fixture.seedEmployee({ engagementKind: "contractor" });
+			const outcome = await changeContractorTerms(db, {
+				organizationId: fixture.organizationId,
+				actorUserId: fixture.ownerUserId,
+				employeeId: own.employeeId,
+				change: { kind: "set", effectiveFrom: "2026-02-01", compensation: hourlyInput("90") },
+				now: may,
+			});
+			expect(outcome.ok && outcome.termsInEffectId).toBe(outcome.ok && outcome.history[0]?.id);
+
+			const ended = await changeContractorTerms(db, {
+				organizationId: fixture.organizationId,
+				actorUserId: fixture.ownerUserId,
+				employeeId: own.employeeId,
+				change: { kind: "end", effectiveFrom: "2026-05-01" },
+				now: may,
+			});
+			expect(ended).toMatchObject({ ok: true, termsInEffectId: null });
 		});
 	});
 

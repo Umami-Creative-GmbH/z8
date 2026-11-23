@@ -85,6 +85,7 @@ function record(
 				},
 			},
 		],
+		termsInEffectId: "t2",
 		details: { companyName: "Freelance GmbH", vatId: null, referenceCode: null },
 		...overrides,
 	};
@@ -123,6 +124,31 @@ describe("contractor compensation card", () => {
 		expect(screen.getByDisplayValue("Freelance GmbH")).toBeTruthy();
 	});
 
+	it("marks no terms in effect when pricing applies none today, even an open one", async () => {
+		// E.g. the open terms of an ended engagement, while a new one has no terms yet.
+		actions.read.mockResolvedValue({ success: true, data: record({ termsInEffectId: null }) });
+		renderCard();
+
+		expect(await screen.findByText("€650.00 per day")).toBeTruthy();
+		expect(screen.queryByText("In effect")).toBeNull();
+	});
+
+	it("moves the in-effect mark to what the server reports after a change", async () => {
+		const user = userEvent.setup();
+		actions.read.mockResolvedValue({ success: true, data: record() });
+		actions.end.mockResolvedValue({
+			success: true,
+			data: { changed: true, history: record().history, termsInEffectId: null },
+		});
+		renderCard();
+
+		expect(await screen.findByText("In effect")).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "End rate" }));
+		await user.click(screen.getByRole("button", { name: "End rate" }));
+
+		await waitFor(() => expect(screen.queryByText("In effect")).toBeNull());
+	});
+
 	it("renders nothing for an employee without contractor terms", async () => {
 		actions.read.mockResolvedValue({
 			success: true,
@@ -151,7 +177,7 @@ describe("contractor compensation card", () => {
 		actions.read.mockResolvedValue({ success: true, data: record() });
 		actions.set.mockResolvedValue({
 			success: true,
-			data: { changed: true, history: record().history },
+			data: { changed: true, history: record().history, termsInEffectId: "t2" },
 		});
 		renderCard();
 

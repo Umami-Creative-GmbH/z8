@@ -94,9 +94,14 @@ const changeTerms = (
 			},
 			"Contractor terms changed",
 		);
-		return { changed: outcome.changed, history: outcome.history } satisfies {
+		return {
+			changed: outcome.changed,
+			history: outcome.history,
+			termsInEffectId: outcome.termsInEffectId,
+		} satisfies {
 			changed: boolean;
 			history: ContractorTermsView[];
+			termsInEffectId: string | null;
 		};
 	});
 

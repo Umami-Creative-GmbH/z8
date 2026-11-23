@@ -26,7 +26,7 @@ import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import type { ContractorTermsPeriod } from "./pricing";
+import { type ContractorTermsPeriod, termsInForceOn } from "./pricing";
 import {
 	type ContractorCompensation,
 	type ContractorCompensationInput,
@@ -72,7 +72,13 @@ export type ContractorTermsRefusal =
 	| "before_engagement";
 
 export type ContractorTermsOutcome =
-	| { ok: true; changed: boolean; history: ContractorTermsView[] }
+	| {
+			ok: true;
+			changed: boolean;
+			history: ContractorTermsView[];
+			/** The terms priced today in the organization's calendar, if any. */
+			termsInEffectId: string | null;
+	  }
 	| { ok: false; reason: ContractorTermsRefusal };
 
 /** An active period: open, or a legacy period a reactivation would reopen. */
@@ -217,6 +223,7 @@ export async function changeContractorTerms(
 		actorUserId: string;
 		employeeId: string;
 		change: ContractorTermsChange;
+		now?: Instant;
 	},
 ): Promise<ContractorTermsOutcome> {
 	const from = parseDay(input.change.effectiveFrom);
@@ -236,9 +243,12 @@ export async function changeContractorTerms(
 		if (!period || period.engagementKind !== "contractor") {
 			return { ok: false, reason: "not_contractor" };
 		}
+		const { timezone, today } = await loadOrganizationDay(tx, {
+			organizationId: input.organizationId,
+			now: input.now ?? systemClock.nowInstant(),
+		});
 		if (period.startedAt) {
-			const timezone = await loadOrganizationTimezone(tx, input.organizationId);
-			const firstDay = instantFromDate(period.startedAt).toZonedDateTimeISO(timezone).toPlainDate();
+			const firstDay = localDay(instantFromDate(period.startedAt), timezone);
 			if (Temporal.PlainDate.compare(from, firstDay) < 0) {
 				return { ok: false, reason: "before_engagement" };
 			}
@@ -264,8 +274,16 @@ export async function changeContractorTerms(
 			},
 		});
 
-		const history = await listContractorTermsHistory(tx, input.organizationId, input.employeeId);
-		return { ok: true, changed: applied.changed, history };
+		const [history, inEffect] = await Promise.all([
+			listContractorTermsHistory(tx, input.organizationId, input.employeeId),
+			termsInEffectOn(tx, input.organizationId, [input.employeeId], today),
+		]);
+		return {
+			ok: true,
+			changed: applied.changed,
+			history,
+			termsInEffectId: inEffect.get(input.employeeId)?.id ?? null,
+		};
 	});
 }
 
@@ -293,17 +311,40 @@ function localDay(instant: Instant, timezone: string): PlainDate {
 }
 
 /**
- * The terms of the given contractors for pricing, optionally only those in
- * force on some day of `[fromDay, toDay]`. Each set is clipped to its
- * engagement's days in the organization's calendar (first day through the day
- * it ended), so terms left open on an ended engagement never price later work.
- * Set-based: pass the result to `priceContractorWork`.
+ * An engagement's days in the organization's calendar, from its first day to
+ * the day after its last (exclusive). The period is half-open
+ * `[started_at, ended_at)`, so its last day is the day of the last instant
+ * before `ended_at`, as `resolveEmploymentPeriodForDay` counts it: a scheduled
+ * departure ending at local midnight ends on the day before, an offboarding
+ * during a day ends on that day.
  */
-export async function listContractorTermsForPricing(
+function engagementDays(
+	period: { startedAt: Date | null; endedAt: Date | null },
+	timezone: string,
+): { first: PlainDate | null; end: PlainDate | null } {
+	return {
+		first: period.startedAt ? localDay(instantFromDate(period.startedAt), timezone) : null,
+		end: period.endedAt
+			? localDay(instantFromDate(period.endedAt).subtract({ nanoseconds: 1 }), timezone).add({
+					days: 1,
+				})
+			: null,
+	};
+}
+
+type TermsRow = typeof contractorCompensationTerms.$inferSelect;
+
+/**
+ * Terms of the given contractors, each clipped to its engagement's days
+ * (`engagementDays`), so terms left open on an ended engagement never apply
+ * after it. Optionally only those in force on some day of `[fromDay, toDay]`.
+ * The one rule behind pricing and every "in effect today" mark.
+ */
+async function loadClippedTerms(
 	reader: Reader,
 	organizationId: string,
 	scope: { employeeIds: readonly string[]; fromDay?: PlainDate; toDay?: PlainDate },
-): Promise<ContractorTermsPeriod[]> {
+): Promise<{ row: TermsRow; terms: ContractorTermsPeriod }[]> {
 	if (scope.employeeIds.length === 0) return [];
 	const conditions = [
 		eq(contractorCompensationTerms.organizationId, organizationId),
@@ -345,29 +386,95 @@ export async function listContractorTermsForPricing(
 	]);
 
 	const compare = Temporal.PlainDate.compare;
-	return rows.flatMap(({ terms, startedAt, endedAt }) => {
-		let from = Temporal.PlainDate.from(terms.effectiveFrom);
-		let to = terms.effectiveTo === null ? null : Temporal.PlainDate.from(terms.effectiveTo);
-		if (startedAt) {
-			const first = localDay(instantFromDate(startedAt), timezone);
-			if (compare(first, from) > 0) from = first;
-		}
-		if (endedAt) {
-			const afterLast = localDay(instantFromDate(endedAt), timezone).add({ days: 1 });
-			if (to === null || compare(afterLast, to) < 0) to = afterLast;
-		}
+	return rows.flatMap(({ terms: row, startedAt, endedAt }) => {
+		let from = Temporal.PlainDate.from(row.effectiveFrom);
+		let to = row.effectiveTo === null ? null : Temporal.PlainDate.from(row.effectiveTo);
+		const engagement = engagementDays({ startedAt, endedAt }, timezone);
+		if (engagement.first && compare(engagement.first, from) > 0) from = engagement.first;
+		if (engagement.end && (to === null || compare(engagement.end, to) < 0)) to = engagement.end;
 		if (to !== null && compare(from, to) >= 0) return [];
 		return [
 			{
-				id: terms.id,
-				employeeId: terms.employeeId,
-				employmentPeriodId: terms.employmentPeriodId,
-				from,
-				to,
-				compensation: fromStoredCompensation(terms),
+				row,
+				terms: {
+					id: row.id,
+					employeeId: row.employeeId,
+					employmentPeriodId: row.employmentPeriodId,
+					from,
+					to,
+					compensation: fromStoredCompensation(row),
+				},
 			},
 		];
 	});
+}
+
+/**
+ * The terms of the given contractors for pricing, optionally only those in
+ * force on some day of `[fromDay, toDay]`, each clipped to its engagement's
+ * days in the organization's calendar (`engagementDays`). Set-based: pass the
+ * result to `priceContractorWork`.
+ */
+export async function listContractorTermsForPricing(
+	reader: Reader,
+	organizationId: string,
+	scope: { employeeIds: readonly string[]; fromDay?: PlainDate; toDay?: PlainDate },
+): Promise<ContractorTermsPeriod[]> {
+	return (await loadClippedTerms(reader, organizationId, scope)).map(({ terms }) => terms);
+}
+
+/**
+ * The terms each of the given contractors is priced by on `day`, by the same
+ * clipping and choice as pricing: an ended engagement's open terms are not in
+ * effect, nor do they carry over to a later engagement.
+ */
+async function termsInEffectOn(
+	reader: Reader,
+	organizationId: string,
+	employeeIds: readonly string[],
+	day: PlainDate,
+): Promise<Map<string, ContractorTermsView>> {
+	const clipped = await loadClippedTerms(reader, organizationId, {
+		employeeIds,
+		fromDay: day,
+		toDay: day,
+	});
+	const periods = clipped.map(({ terms }) => terms);
+	const result = new Map<string, ContractorTermsView>();
+	for (const employeeId of new Set(employeeIds)) {
+		const inForce = termsInForceOn(employeeId, day, periods);
+		const entry = inForce && clipped.find(({ terms }) => terms.id === inForce.id);
+		if (entry) result.set(employeeId, viewFromRow(entry.row));
+	}
+	return result;
+}
+
+/** Each given employee's active employment period's kind, when they have one. */
+async function loadActiveEngagementKinds(
+	reader: Reader,
+	organizationId: string,
+	employeeIds: readonly string[],
+): Promise<Map<string, EngagementKind>> {
+	if (employeeIds.length === 0) return new Map();
+	const rows = await reader
+		.select({
+			employeeId: employeeEmploymentPeriod.employeeId,
+			engagementKind: employeeEmploymentPeriod.engagementKind,
+		})
+		.from(employeeEmploymentPeriod)
+		.where(
+			and(
+				eq(employeeEmploymentPeriod.organizationId, organizationId),
+				inArray(employeeEmploymentPeriod.employeeId, [...employeeIds]),
+				activePeriodCondition,
+			),
+		)
+		.orderBy(desc(employeeEmploymentPeriod.startedAt));
+	const kinds = new Map<string, EngagementKind>();
+	for (const row of rows) {
+		if (!kinds.has(row.employeeId)) kinds.set(row.employeeId, row.engagementKind);
+	}
+	return kinds;
 }
 
 export type ContractorDetailsRefusal = "employee_not_found" | "not_contractor";
@@ -428,10 +535,15 @@ export interface ContractorCompensationRecord {
 	activeEngagementKind: EngagementKind | null;
 	/** The first day terms may start on, in the organization's calendar; null when unknown. */
 	engagementStartDate: string | null;
-	/** Today in the organization's calendar, for "in effect" marks. */
+	/** Today in the organization's calendar, the editor's default date. */
 	today: string;
 	/** Newest first, across engagements. */
 	history: ContractorTermsView[];
+	/**
+	 * The terms priced today, as pricing clips them to their engagement; null
+	 * when none apply (e.g. an ended engagement's terms left open).
+	 */
+	termsInEffectId: string | null;
 	details: ContractorProfileDetails | null;
 }
 
@@ -448,6 +560,7 @@ export async function loadContractorCompensation(
 		listContractorTermsHistory(reader, organizationId, employeeId),
 		loadContractorProfile(reader, { organizationId, employeeId }),
 	]);
+	const inEffect = await termsInEffectOn(reader, organizationId, [employeeId], today);
 	return {
 		employeeId,
 		activeEngagementKind: period?.engagementKind ?? null,
@@ -457,6 +570,7 @@ export async function loadContractorCompensation(
 				: null,
 		today: today.toString(),
 		history,
+		termsInEffectId: inEffect.get(employeeId)?.id ?? null,
 		details,
 	};
 }
@@ -466,13 +580,19 @@ export interface ContractorCompensationOverviewRow {
 	employeeId: string;
 	name: string;
 	isActive: boolean;
+	/**
+	 * The kind of the person's active engagement; null without one. Anyone
+	 * else is a former contractor listed for their terms history.
+	 */
+	engagementKind: EngagementKind | null;
+	/** The terms priced today, clipped to their engagement as pricing does. */
 	termsToday: ContractorTermsView | null;
 	details: ContractorProfileDetails | null;
 }
 
 /**
  * Every External Contractor of the organization (by today's engagement kind)
- * and anyone else with contractor terms on record, with the terms in force
+ * and anyone else with contractor terms on record, with the terms priced
  * today in the organization's calendar.
  */
 export async function listContractorCompensationOverview(
@@ -485,53 +605,39 @@ export async function listContractorCompensationOverview(
 		.select({ employeeId: contractorCompensationTerms.employeeId })
 		.from(contractorCompensationTerms)
 		.where(eq(contractorCompensationTerms.organizationId, organizationId));
-	const [people, terms] = await Promise.all([
-		reader
-			.select({
-				id: employee.id,
-				isActive: employee.isActive,
-				firstName: user.firstName,
-				lastName: user.lastName,
-				name: user.name,
-				email: user.email,
-			})
-			.from(employee)
-			.leftJoin(user, eq(user.id, employee.userId))
-			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					or(eq(employee.engagementKind, "contractor"), inArray(employee.id, withTerms)),
-				),
+	const people = await reader
+		.select({
+			id: employee.id,
+			isActive: employee.isActive,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			name: user.name,
+			email: user.email,
+		})
+		.from(employee)
+		.leftJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				or(eq(employee.engagementKind, "contractor"), inArray(employee.id, withTerms)),
 			),
-		reader
-			.select()
-			.from(contractorCompensationTerms)
-			.where(
-				and(
-					eq(contractorCompensationTerms.organizationId, organizationId),
-					sql`${contractorCompensationTerms.effectiveFrom} <= ${today.toString()}::date`,
-					or(
-						isNull(contractorCompensationTerms.effectiveTo),
-						sql`${contractorCompensationTerms.effectiveTo} > ${today.toString()}::date`,
-					),
-				),
-			)
-			.orderBy(desc(contractorCompensationTerms.effectiveFrom)),
-	]);
-	const profiles = await Promise.all(
-		people.map((person) =>
-			loadContractorProfile(reader, { organizationId, employeeId: person.id }),
+		);
+	const employeeIds = people.map((person) => person.id);
+	const [kinds, todayByEmployee, profiles] = await Promise.all([
+		loadActiveEngagementKinds(reader, organizationId, employeeIds),
+		termsInEffectOn(reader, organizationId, employeeIds, today),
+		Promise.all(
+			people.map((person) =>
+				loadContractorProfile(reader, { organizationId, employeeId: person.id }),
+			),
 		),
-	);
-	const todayByEmployee = new Map<string, ContractorTermsView>();
-	for (const row of terms) {
-		if (!todayByEmployee.has(row.employeeId)) todayByEmployee.set(row.employeeId, viewFromRow(row));
-	}
+	]);
 	return people
 		.map((person, index) => ({
 			employeeId: person.id,
 			name: buildAuthUserDisplayName(person) || person.id,
 			isActive: person.isActive,
+			engagementKind: kinds.get(person.id) ?? null,
 			termsToday: todayByEmployee.get(person.id) ?? null,
 			details: profiles[index] ?? null,
 		}))
