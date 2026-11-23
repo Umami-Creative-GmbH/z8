@@ -387,33 +387,34 @@ function fullWeekBand(
 }
 
 /**
- * The minutes running clock-ins have added to a week as the clock ran. Within a shift a running
- * clock-in adds nothing: worked plus still planned is clock-in to shift end. Outside any shift, or
- * past the end of the last shift it ran in, every further minute adds one. The planner's publish
- * acknowledgement counts the week without them (`stableDepth`), so it holds while the clock runs.
+ * The minutes running clock-ins have added to a week as the clock ran: their minutes outside every
+ * planned shift. Inside a shift a running clock-in adds nothing, as worked plus still planned is
+ * the shift. Before a shift (clocked in early) and past its end every further minute adds one,
+ * whether or not the clock has reached the shift yet, so the figure does not jump when it does.
+ * The planner's publish acknowledgement counts the week without them (`stableDepth`), so it holds
+ * while the clock runs.
  */
 function growingWorkOf(
 	running: readonly OnCallWorkPiece[],
 	shifts: readonly OnCallShift[],
 	timezone: string,
 ): number {
+	// Planned time as disjoint intervals: overlapping shifts count their shared time once.
+	const planned: { start: Instant; end: Instant }[] = [];
+	for (const interval of shifts
+		.map((shift) => shiftInterval(shift, timezone))
+		.toSorted((a, b) => compareInstants(a.start, b.start))) {
+		const last = planned.at(-1);
+		if (last && compareInstants(interval.start, last.end) <= 0) {
+			if (compareInstants(interval.end, last.end) > 0) last.end = interval.end;
+		} else {
+			planned.push({ ...interval });
+		}
+	}
 	let minutes = 0;
 	for (const piece of running) {
-		const fixedUntil = shifts
-			.map((shift) => shiftInterval(shift, timezone))
-			.filter(
-				(interval) =>
-					compareInstants(interval.start, piece.end) <= 0 &&
-					compareInstants(interval.end, piece.start) > 0,
-			)
-			.reduce<Instant | null>(
-				(latest, interval) =>
-					latest && compareInstants(latest, interval.end) >= 0 ? latest : interval.end,
-				null,
-			);
-		minutes += fixedUntil
-			? Math.max(0, piece.minutes - Math.round(piece.start.until(fixedUntil).total("minutes")))
-			: piece.minutes;
+		const inShifts = planned.reduce((sum, interval) => sum + overlapMinutes([piece], interval), 0);
+		minutes += Math.max(0, piece.minutes - inShifts);
 	}
 	return minutes;
 }

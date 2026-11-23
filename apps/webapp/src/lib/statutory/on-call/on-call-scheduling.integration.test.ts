@@ -714,6 +714,65 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		}
 	});
 
+	it("keeps the publish fingerprint steady while a clock-in made before its shift runs into it", async () => {
+		const org = await onCall.organization("a");
+		const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+		await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+		// 24 h planned Wednesday to Friday, and a Tuesday 10:00–12:00 call clocked in early at 08:00:42.
+		for (const [date, startTime, endTime] of [
+			["2026-03-10", "10:00", "12:00"],
+			["2026-03-11", "09:00", "17:00"],
+			["2026-03-12", "09:00", "17:00"],
+			["2026-03-13", "09:00", "17:00"],
+		] as const) {
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date,
+				startTime,
+				endTime,
+				publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+			});
+		}
+		await onCall.openWork(org, worker, { date: "2026-03-10", startTime: "08:00:42" });
+		const fingerprintAt = async (time: string) => {
+			const clock = vi
+				.spyOn(Temporal.Now, "instant")
+				.mockReturnValue(localInstant("2026-03-10", time, org.timezone));
+			try {
+				return (
+					await Effect.runPromise(
+						Effect.gen(function* () {
+							const service = yield* ScheduleComplianceService;
+							return yield* service.evaluateScheduleWindow({
+								organizationId: org.id,
+								startDate: shiftStoredDate("2026-03-09", org.timezone),
+								endDateExclusive: shiftStoredDate("2026-03-16", org.timezone),
+								timezone: org.timezone,
+							});
+						}).pipe(Effect.provide(complianceLayer)),
+					)
+				).fingerprint;
+			} finally {
+				clock.mockRestore();
+			}
+		};
+
+		const early = await fingerprintAt("09:59:10");
+		for (const time of ["10:00:10", "10:00:50", "11:00:10", "12:30:10"]) {
+			expect(await fingerprintAt(time)).toBe(early);
+		}
+
+		// Another planned shift in the week deepens the breach.
+		await onCall.shift(org, {
+			employeeId: worker.employeeId,
+			date: "2026-03-14",
+			startTime: "10:00",
+			endTime: "12:00",
+			publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+		});
+		expect(await fingerprintAt("10:00:10")).not.toBe(early);
+	});
+
 	it("tells Staffing that an on-call candidate's short-notice, short call would add findings", async () => {
 		const org = await onCall.organization("a");
 		const onCallWorker = await fx.employee(org, "oncall");
