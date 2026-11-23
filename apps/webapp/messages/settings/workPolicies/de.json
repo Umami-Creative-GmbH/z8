@@ -614,7 +614,8 @@
           "acknowledge": "Bestätigen",
           "title": "Werkstudierende über 20 Stunden",
           "description": "Vorlesungswochen mit mehr als 20 Stunden Arbeit werktags tagsüber und Wochen, die das 26-Wochen-Kontingent aufbrauchen. Bestätigen Sie eine Woche, sobald Sie sie geprüft haben.",
-          "notFound": "Für diese Woche liegt der Hinweis nicht mehr vor. Laden Sie die Prüfungen neu."
+          "notFound": "Für diese Woche liegt der Hinweis nicht mehr vor. Laden Sie die Prüfungen neu.",
+          "changed": "Die Werte dieser Woche haben sich geändert, seit Sie die Prüfungen geöffnet haben. Prüfen Sie die aktualisierten Werte und bestätigen Sie erneut."
         }
       }
     },

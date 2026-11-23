@@ -614,7 +614,8 @@
           "acknowledge": "Acknowledge",
           "title": "Working students above 20 hours",
           "description": "Lecture weeks above 20 hours of weekday daytime work and weeks that use up the 26-week allowance. Acknowledge a week once you have reviewed it.",
-          "notFound": "This week no longer has the finding. Reload the reviews."
+          "notFound": "This week no longer has the finding. Reload the reviews.",
+          "changed": "This week's figures changed since you opened the reviews. Review the updated figures and acknowledge again."
         }
       }
     },

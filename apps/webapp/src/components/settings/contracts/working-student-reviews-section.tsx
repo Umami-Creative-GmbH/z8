@@ -49,6 +49,10 @@ const ACKNOWLEDGE_REFUSALS = {
 		"settings.contracts.workingStudent.reviews.notFound",
 		"This week no longer has the finding. Reload the reviews.",
 	],
+	working_student_finding_changed: [
+		"settings.contracts.workingStudent.reviews.changed",
+		"This week's figures changed since you opened the reviews. Review the updated figures and acknowledge again.",
+	],
 } satisfies RefusalMessages<StatutoryAcknowledgementRefusal | WorkingStudentAcknowledgementRefusal>;
 
 function AcknowledgeForm({
@@ -66,6 +70,8 @@ function AcknowledgeForm({
 				employeeId: item.finding.employeeId,
 				findingKind: item.finding.kind,
 				weekStart: item.finding.periodStart,
+				// Only the figures shown here may be acknowledged; changed ones are refused.
+				expectedInputFingerprint: item.finding.inputFingerprint,
 				reason: value.reason,
 				legalNote: value.legalNote.trim() || null,
 			});
@@ -77,7 +83,11 @@ function AcknowledgeForm({
 			);
 			void invalidateWorkingStudentFindings(queryClient, organizationId, item.finding.employeeId);
 		},
-		onError: (error) => toast.error(error.message),
+		onError: (error) => {
+			toast.error(error.message);
+			// Show the current figures, which a refusal is usually about.
+			void invalidateWorkingStudentFindings(queryClient, organizationId, item.finding.employeeId);
+		},
 	});
 	const form = useForm({
 		defaultValues: { reason: "", legalNote: "" },

@@ -224,11 +224,14 @@ describe("working-student actions (PostgreSQL)", () => {
 			finding: { periodStart: week, severity: "critical", acknowledgement: { status: "none" } },
 		});
 
+		const shown = item?.finding.inputFingerprint ?? "";
+		expect(shown).toMatch(/^v1:/);
 		expect(
 			await acknowledgeWorkingStudentFindingAction({
 				employeeId: student.employeeId,
 				findingKind: "working_student_lecture_week",
 				weekStart: week,
+				expectedInputFingerprint: shown,
 				reason: "   ",
 			}),
 		).toMatchObject({ success: false, refusal: "statutory_reason_required" });
@@ -237,6 +240,7 @@ describe("working-student actions (PostgreSQL)", () => {
 				employeeId: student.employeeId,
 				findingKind: "working_student_lecture_week",
 				weekStart: addWeeks(week, -10),
+				expectedInputFingerprint: shown,
 				reason: "Nothing to acknowledge",
 			}),
 		).toMatchObject({ success: false, refusal: "working_student_finding_not_found" });
@@ -244,6 +248,7 @@ describe("working-student actions (PostgreSQL)", () => {
 			employeeId: student.employeeId,
 			findingKind: "working_student_lecture_week",
 			weekStart: week,
+			expectedInputFingerprint: shown,
 			reason: "Exam-free project week confirmed by the university",
 		});
 		expect(acknowledged).toMatchObject({
@@ -271,6 +276,42 @@ describe("working-student actions (PostgreSQL)", () => {
 			stale.success &&
 				stale.data.find((i) => i.finding.id === item?.finding.id)?.finding.acknowledgement,
 		).toMatchObject({ status: "stale" });
+	});
+
+	it("refuses to acknowledge figures that changed since the admin saw them", async () => {
+		const { org, student, asAdmin } = await setup();
+		const week = addWeeks(currentMonday(), -2);
+		await fx.work(org, student, weekdays(week, "09:00", "13:30")); // 22.5 h
+
+		asAdmin();
+		const listed = await listWorkingStudentReviewsAction();
+		if (!listed.success) throw new Error(listed.error);
+		const seen = listed.data.find((i) => i.finding.kind === "working_student_lecture_week");
+		expect(seen?.finding.summary.used).toEqual({ unit: "minutes", value: 1350 });
+
+		// More work is recorded after the admin opened the reviews: the week now has 28.5 h.
+		await fx.work(org, student, weekdays(week, "13:30", "14:42"));
+		const outdated = {
+			employeeId: student.employeeId,
+			findingKind: "working_student_lecture_week" as const,
+			weekStart: week,
+			expectedInputFingerprint: seen?.finding.inputFingerprint ?? "",
+			reason: "Confirmed with the university",
+		};
+		expect(await acknowledgeWorkingStudentFindingAction(outdated)).toMatchObject({
+			success: false,
+			refusal: "working_student_finding_changed",
+		});
+		const after = await listWorkingStudentReviewsAction();
+		expect(
+			after.success &&
+				after.data.find((i) => i.finding.id === seen?.finding.id)?.finding.acknowledgement,
+		).toMatchObject({ status: "none" });
+
+		// An acknowledgement without the fingerprint the admin saw is refused as well.
+		expect(
+			await acknowledgeWorkingStudentFindingAction({ ...outdated, expectedInputFingerprint: "" }),
+		).toMatchObject({ success: false });
 	});
 
 	it("gives employees only their own remaining 26-week balance and lecture-free periods", async () => {

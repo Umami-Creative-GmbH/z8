@@ -306,7 +306,9 @@ export async function listWorkingStudentReviewItems(
 
 export type WorkingStudentAcknowledgementRefusal =
 	| "working_student_invalid_week"
-	| "working_student_finding_not_found";
+	| "working_student_finding_not_found"
+	/** The finding's figures changed since the admin saw them: review them again. */
+	| "working_student_finding_changed";
 
 function refuse(refusal: WorkingStudentAcknowledgementRefusal, message: string, field: string) {
 	return new ValidationError({ message, refusal, field });
@@ -314,7 +316,8 @@ function refuse(refusal: WorkingStudentAcknowledgementRefusal, message: string, 
 
 /**
  * Records an org admin's reasoned acknowledgement of a working-student finding. The finding is
- * re-evaluated here, so the stored fingerprint is always the server's own.
+ * re-evaluated here and must still carry the fingerprint the admin was shown, so nobody
+ * acknowledges figures they never saw; the stored fingerprint is always the server's own.
  */
 export async function acknowledgeWorkingStudentFinding(
 	db: Pick<DatabaseClient, "select" | "insert">,
@@ -325,6 +328,8 @@ export async function acknowledgeWorkingStudentFinding(
 		readonly findingKind: WorkingStudentFindingKind;
 		/** Monday of the compliance week the finding judges. */
 		readonly weekStart: string;
+		/** The finding's `inputFingerprint` as the admin saw it. */
+		readonly expectedInputFingerprint: string;
 		readonly reason: string;
 		readonly legalNote?: string | null;
 		readonly now: Instant;
@@ -361,6 +366,13 @@ export async function acknowledgeWorkingStudentFinding(
 			"working_student_finding_not_found",
 			"This week no longer has the finding; reload the reviews",
 			"weekStart",
+		);
+	}
+	if (finding.inputFingerprint !== input.expectedInputFingerprint) {
+		throw refuse(
+			"working_student_finding_changed",
+			"The week's figures changed since you opened the reviews; reload and review them again",
+			"expectedInputFingerprint",
 		);
 	}
 	return recordStatutoryAcknowledgement(db, {

@@ -70,6 +70,8 @@ export const acknowledgeWorkingStudentFindingAction = organizationAction(
 			employeeId: uuidSchema,
 			findingKind: z.enum(workingStudentFindingKinds),
 			weekStart: isoDateSchema,
+			// The finding's fingerprint as the admin saw it: figures that changed since are refused.
+			expectedInputFingerprint: z.string().min(1).max(200),
 			reason: reasonSchema,
 			legalNote: z.string().max(500).nullish(),
 		}),
