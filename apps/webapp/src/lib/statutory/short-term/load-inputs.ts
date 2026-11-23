@@ -100,12 +100,12 @@ export interface ShortTermYearWeek {
 	/** Average work days per week of each short-term terms version that plans real week days. */
 	readonly plannedWorkDaysPerWeek: readonly number[];
 	/**
-	 * Whether some short-term terms of the year plan no real week of the employee's own: a schedule
-	 * from published shifts or on-call terms, a week only inherited from a team or organization
-	 * default, or weekly hours alone (which the resolver spreads Monday–Friday).
+	 * Counted days (`YYYY-MM-DD`, sorted, distinct) under short-term terms that plan no real week of
+	 * the employee's own: a schedule from published shifts or on-call terms, a week only inherited
+	 * from a team or organization default, or weekly hours alone (which the resolver spreads
+	 * Monday–Friday). Their week is read from these days; such terms without counted days say
+	 * nothing about the week.
 	 */
-	readonly unplannedTerms: boolean;
-	/** Counted days (`YYYY-MM-DD`, sorted, distinct) under such terms: their week is read from them. */
 	readonly unplannedDays: readonly string[];
 }
 
@@ -787,7 +787,6 @@ export async function loadShortTermInputs(
 			const counted = [...countedDays].filter((date) => yearOf(date) === year);
 			const plannedWorkDaysPerWeek: number[] = [];
 			const unplannedDays = new Set<string>();
-			let unplannedTerms = false;
 			let anyTerms = false;
 			for (const date of [...(samples.get(year) ?? []), ...counted]) {
 				const contract = shortTermOn(date);
@@ -798,13 +797,11 @@ export async function loadShortTermInputs(
 					plannedWorkDaysPerWeek.push(perWeek);
 					continue;
 				}
-				unplannedTerms = true;
 				if (countedDays.has(date)) unplannedDays.add(date);
 			}
 			if (!anyTerms) continue;
 			weekByYear.set(year, {
 				plannedWorkDaysPerWeek,
-				unplannedTerms,
 				unplannedDays: [...unplannedDays].sort(),
 			});
 		}

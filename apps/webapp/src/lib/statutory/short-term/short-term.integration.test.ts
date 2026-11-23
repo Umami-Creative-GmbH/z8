@@ -451,6 +451,26 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 			});
 		});
 
+		it("lets only terms with counted days choose the limit, not unworked weekly-hours terms", async () => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			// Weekly hours alone from 1 January, never worked under; an own Monday–Friday policy from
+			// 1 June.
+			await st.terms(worker, { from: "2026-01-01", weeklyMinutes: 1200 });
+			await st.terms(worker, { from: "2026-06-01", workPolicyId: await st.weekdayPolicy(org) });
+			await workOn(org, worker, datesOn("2026-06-02", "2026-09-04", [1, 2, 3, 4, 5]));
+
+			const [evaluation] = await evaluate(org, [worker.employeeId]);
+
+			// 2 June – 1 September is 3 months (92 days); 2 June – 4 September uses 95.
+			expect(evaluation?.allowance).toMatchObject({
+				limitKind: "months",
+				used: 95,
+				limit: 92,
+				tier: "exceeded",
+			});
+		});
+
 		it("reads the week from the work, not from a work policy the employee only inherits", async () => {
 			const org = await fx.organization("a");
 			const weekdays = await st.weekdayPolicy(org);

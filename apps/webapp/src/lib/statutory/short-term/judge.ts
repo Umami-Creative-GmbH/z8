@@ -209,8 +209,10 @@ export function observedWorkDaysPerWeek(
 /**
  * The allowance the employee's own short-term terms call for: `months` only when every terms
  * version that sets the employee's own week plans 5 or more work days a week, and the days under
- * terms without one (inherited defaults included) show a full week of 5 or more days. Prior
- * employers may still switch the year to working days.
+ * terms without one (inherited defaults included) show a full week of 5 or more days. Terms
+ * without an own week that nobody worked under say nothing about the week and do not choose the
+ * limit; with no week planned or observed at all, the year counts working days. Prior employers
+ * may still switch the year to working days.
  */
 function ownLimitKindOf(
 	week: ShortTermYearWeek,
@@ -219,7 +221,9 @@ function ownLimitKindOf(
 	if (week.plannedWorkDaysPerWeek.some((perWeek) => perWeek < SHORT_TERM_FULL_WEEK_DAYS)) {
 		return "work_days";
 	}
-	if (!week.unplannedTerms) return "months";
+	if (week.unplannedDays.length === 0) {
+		return week.plannedWorkDaysPerWeek.length > 0 ? "months" : "work_days";
+	}
 	return (observedWorkDaysPerWeek(week.unplannedDays, employmentOf) ?? 0) >=
 		SHORT_TERM_FULL_WEEK_DAYS
 		? "months"
