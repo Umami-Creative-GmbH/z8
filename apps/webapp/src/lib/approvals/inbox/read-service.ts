@@ -51,6 +51,7 @@ import type {
 	CanonicalInboxCountInput,
 	CanonicalInboxLoadInput,
 	CanonicalInboxRead,
+	CanonicalInboxReadDatabase,
 } from "./canonical-inbox-read";
 import { CANONICAL_INBOX_READS, ordinaryWorkPeriodInboxRead } from "./canonical-inbox-reads";
 import {
@@ -954,7 +955,8 @@ export async function getApprovalInboxDetail({
 	eligibleApprovalScopes?: ApprovalQueryParams["eligibleApprovalScopes"];
 	/** Absent approvers the viewer covers for (#1016); canonical reads only. */
 	covering?: ApprovalInboxCover[];
-	database?: Pick<typeof db, "query">;
+	/** Opens approval requests, and compliance exceptions through their adapter (#1977). */
+	database?: Pick<typeof db, "query"> & CanonicalInboxReadDatabase;
 	/** The canonical kinds' inbox reads (#1058) an assignment id is looked up in. */
 	canonicalReads?: readonly CanonicalInboxRead[];
 	/** Stands in for the ordinary work-period read's list. */
@@ -977,6 +979,7 @@ export async function getApprovalInboxDetail({
 				scope: complianceExceptionScope,
 				exceptionId: approvalId,
 				...(now ? { now: instantFromDate(now) } : {}),
+				database,
 			});
 			if (exception) return exception;
 		}

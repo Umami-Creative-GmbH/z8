@@ -1100,4 +1100,48 @@ describe("an employee who only manages Compliance (#1977)", () => {
 		).rejects.toThrow("Approval not found");
 		expect(loadCanonicalOrdinaryApprovals).not.toHaveBeenCalled();
 	});
+
+	it("opens a compliance exception from the database it is given", async () => {
+		const exceptionId = "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f";
+		const execute = vi.fn(async () => ({
+			rows: [
+				{
+					id: exceptionId,
+					employeeId: "employee-2",
+					exceptionType: "rest_period",
+					status: "pending",
+					reason: "Night shift handover",
+					plannedDurationMinutes: 90,
+					validFrom: "2026-03-10T08:00:00Z",
+					validUntil: "2026-03-11T08:00:00Z",
+					createdAt: "2026-03-10T08:00:00Z",
+					approvedAt: null,
+					rejectedAt: null,
+					rejectionReason: null,
+					teamId: null,
+					userName: "Avery Employee",
+					userEmail: "avery@example.com",
+					userImage: null,
+					approverName: null,
+					organizationTimeZone: "Europe/Berlin",
+					totalCount: 1,
+				},
+			],
+		}));
+
+		const detail = await getApprovalInboxDetail({
+			approvalId: exceptionId,
+			organizationId: "org-1",
+			complianceExceptionsOnly: true,
+			complianceExceptionScope: { kind: "organization" },
+			database: {
+				query: { approvalRequest: { findFirst: vi.fn(async () => undefined) } },
+				execute,
+			} as never,
+			now: new Date("2026-03-10T12:00:00Z"),
+		});
+
+		expect(execute).toHaveBeenCalledTimes(1);
+		expect(detail.item).toMatchObject({ id: exceptionId, type: "compliance_exception" });
+	});
 });

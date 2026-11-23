@@ -126,12 +126,14 @@ export interface ApprovalInboxItem {
 /**
  * A typed value the viewer formats in their own locale (#687), like the report
  * pages: calendar days exactly as entered (never shifted by a zone), a recorded
- * UTC instant (shown in UTC), a frozen decimal amount with its currency, an
- * ISO 3166 country code.
+ * UTC instant (shown in UTC), an instant shown in a named zone with that
+ * zone's label (never the viewer's zone), a frozen decimal amount with its
+ * currency, an ISO 3166 country code.
  */
 export type ApprovalInboxValue =
 	| { kind: "plain_date"; date: string }
 	| { kind: "instant"; at: string }
+	| { kind: "zoned_instant"; at: string; timeZone: string }
 	| { kind: "plain_date_range"; start: string; end: string }
 	| { kind: "money"; amount: string; currency: string; signed?: true }
 	| { kind: "country"; code: string };

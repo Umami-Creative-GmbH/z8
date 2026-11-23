@@ -44,6 +44,17 @@ describe("formatApprovalInboxValue", () => {
 		[{ kind: "money", amount: "-12.00", currency: "EUR", signed: true }, "-€12.00", "-12,00 €"],
 		[{ kind: "country", code: "DE" }, "Germany", "Deutschland"],
 		[{ kind: "country", code: "FR" }, "France", "Frankreich"],
+		// An instant in a named zone, labelled with it: never the viewer's zone (#1977).
+		[
+			{ kind: "zoned_instant", at: "2026-03-10T08:00:00.000Z", timeZone: "Europe/Berlin" },
+			"Mar 10, 2026, 9:00 AM Europe/Berlin",
+			"10.03.2026, 09:00 Europe/Berlin",
+		],
+		[
+			{ kind: "zoned_instant", at: "2026-07-10T08:00:00.000Z", timeZone: "America/New_York" },
+			"Jul 10, 2026, 4:00 AM America/New_York",
+			"10.07.2026, 04:00 America/New_York",
+		],
 	];
 
 	it.each(cases)("formats %j like the report pages in EN and DE", (value, en, de) => {
@@ -78,6 +89,19 @@ describe("resolveLocalizedText", () => {
 				},
 			}),
 		).toBe("reimbursable 89.90 EUR on 2026-09-14");
+		expect(
+			localizedTextFallback({
+				key: "x.validity",
+				fallback: "valid from {from}",
+				params: {
+					from: {
+						kind: "zoned_instant",
+						at: "2026-03-10T08:00:00.000Z",
+						timeZone: "Europe/Berlin",
+					},
+				},
+			}),
+		).toBe("valid from 2026-03-10T09:00+01:00[Europe/Berlin]");
 	});
 
 	it("names a per diem location in the reader's language (#681)", () => {

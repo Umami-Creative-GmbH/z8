@@ -153,10 +153,6 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.facts.workforce.restPeriodViolations",
 		default: "Rest-period violations: {count}",
 	},
-	linkInspectCompliance: {
-		key: "compliance.commandCenter.links.inspectCompliance",
-		default: "Inspect compliance",
-	},
 	linkInspectInAuditLog: {
 		key: "compliance.commandCenter.links.inspectInAuditLog",
 		default: "Inspect in Audit Log",
@@ -168,10 +164,6 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 	linkOpenAuditLog: {
 		key: "compliance.commandCenter.links.openAuditLog",
 		default: "Open Audit Log",
-	},
-	linkOpenComplianceSettings: {
-		key: "compliance.commandCenter.links.openComplianceSettings",
-		default: "Open Compliance Settings",
 	},
 	linkReviewComplianceExceptions: {
 		key: "compliance.commandCenter.links.reviewComplianceExceptions",

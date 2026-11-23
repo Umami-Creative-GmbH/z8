@@ -72,7 +72,7 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 	async function exception(input: {
 		employeeId: string;
 		organizationId?: string;
-		status?: "pending" | "approved" | "rejected" | "expired";
+		status?: "pending" | "approved" | "rejected" | "expired" | "used";
 		exceptionType?: "rest_period" | "overtime_daily" | "overtime_weekly" | "overtime_monthly";
 		createdAt?: string;
 		validUntil?: string;
@@ -144,6 +144,29 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 
 		expect(list.counts.compliance_exception).toBe(1);
 		expect(list.supportedTypes).toContain("compliance_exception");
+		// The validity window in the organization's zone (Berlin, UTC+1 in March), never UTC.
+		expect(list.items[0]?.summary).toMatchObject({
+			subtitle:
+				"Valid 2026-03-10T09:00+01:00[Europe/Berlin] – 2026-03-11T09:00+01:00[Europe/Berlin]",
+			localized: {
+				subtitle: {
+					key: "approvals:approvals.complianceException.validity",
+					fallback: "Valid {from} – {until}",
+					params: {
+						from: {
+							kind: "zoned_instant",
+							at: "2026-03-10T08:00:00.000Z",
+							timeZone: "Europe/Berlin",
+						},
+						until: {
+							kind: "zoned_instant",
+							at: "2026-03-11T08:00:00.000Z",
+							timeZone: "Europe/Berlin",
+						},
+					},
+				},
+			},
+		});
 		expect(list.items).toEqual([
 			expect.objectContaining({
 				id: exceptionId,
@@ -229,6 +252,28 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 		expect(rejected.counts.compliance_exception).toBe(0);
 	});
 
+	it("lists a used exception as approved, under the approved filter only", async () => {
+		const usedId = await exception({ employeeId: employee.employeeId, status: "used" });
+		const idsUnder = async (status: "pending" | "approved" | "rejected") => {
+			const list = await getApprovalInboxListFromSources({
+				sources: [],
+				params: {
+					approverId: manager.employeeId,
+					organizationId,
+					status,
+					complianceExceptionScope: { kind: "organization" },
+				},
+				complianceExceptionRead: complianceExceptionInboxRead,
+				now: NOW,
+			});
+			return list.items.map((item) => [item.id, item.status]);
+		};
+
+		await expect(idsUnder("approved")).resolves.toEqual([[usedId, "approved"]]);
+		await expect(idsUnder("pending")).resolves.toEqual([]);
+		await expect(idsUnder("rejected")).resolves.toEqual([]);
+	});
+
 	it("shows a compliance manager their own pending exception without any decision", async () => {
 		const ownId = await exception({ employeeId: manager.employeeId });
 
@@ -309,14 +354,22 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 							key: "approvals:approvals.complianceException.validFrom",
 							fallback: "Valid from",
 						},
-						value: { kind: "instant", at: "2026-03-10T08:00:00.000Z" },
+						value: {
+							kind: "zoned_instant",
+							at: "2026-03-10T08:00:00.000Z",
+							timeZone: "Europe/Berlin",
+						},
 					},
 					{
 						label: {
 							key: "approvals:approvals.complianceException.validUntil",
 							fallback: "Valid until",
 						},
-						value: { kind: "instant", at: "2026-03-11T08:00:00.000Z" },
+						value: {
+							kind: "zoned_instant",
+							at: "2026-03-11T08:00:00.000Z",
+							timeZone: "Europe/Berlin",
+						},
 					},
 				],
 			},
@@ -615,11 +668,38 @@ describe("compliance exceptions in the Approval inbox on PostgreSQL", () => {
 			expect(lost[0]?.reason).toBeInstanceOf(ConflictError);
 			const decided = await row(exceptionId);
 			const winner = won[0]?.value;
+			// The loser learns how the exception was decided, not merely that it was.
+			expect(lost[0]?.reason.message).toBe(`Request is already ${winner?.status}`);
 			expect(decided?.status).toBe(winner?.status);
 			expect(decided?.approver_id).toBe(
 				winner?.status === "approved" ? manager.employeeId : outsider.employeeId,
 			);
 			expect(notify.approved.mock.calls.length + notify.rejected.mock.calls.length).toBe(1);
+		});
+
+		it("refuses as expired when the validity window closes before the decision is written", async () => {
+			// Valid 2026-03-10T08:00Z – 2026-03-11T08:00Z: open when read, closed when written.
+			const exceptionId = await exception({ employeeId: employee.employeeId });
+			const readings = ["2026-03-11T07:59:59.999Z", "2026-03-11T08:00:00Z"];
+			const closingClock: Clock = {
+				nowInstant: () => parseInstant(readings.shift() ?? "2026-03-11T08:00:00Z"),
+			};
+			const notify = notifications();
+
+			const decision = decideComplianceExceptionFromInbox({
+				organizationId,
+				exceptionId,
+				actorEmployeeId: manager.employeeId,
+				scope: { kind: "organization" },
+				action: "approve",
+				clock: closingClock,
+				notify,
+			});
+
+			await expect(decision).rejects.toBeInstanceOf(ConflictError);
+			await expect(decision).rejects.toThrow("Request is already expired");
+			expect(await row(exceptionId)).toMatchObject({ status: "pending", approver_id: null });
+			expect(notify.approved).not.toHaveBeenCalled();
 		});
 	});
 

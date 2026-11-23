@@ -18,6 +18,7 @@ import {
 	onComplianceExceptionApproved,
 	onComplianceExceptionRejected,
 } from "@/lib/notifications/compliance-triggers";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { periodSubmissionHours } from "../presentation/period-submission-review";
@@ -28,6 +29,7 @@ import type {
 	CanonicalInboxLoadInput,
 	CanonicalInboxReadDatabase,
 } from "./canonical-inbox-read";
+import { localizedTextFallback } from "./localized-text";
 import { getAgeDays } from "./serialization";
 import type {
 	ApprovalInboxCapabilities,
@@ -40,6 +42,7 @@ import type {
 	ApprovalInboxRiskLevel,
 	ApprovalInboxStatus,
 	ApprovalInboxTriage,
+	ApprovalInboxValue,
 } from "./types";
 
 /**
@@ -236,12 +239,13 @@ function candidateQuery(
 			exception.rejected_at as "rejectedAt", exception.rejection_reason as "rejectionReason",
 			requester.team_id as "teamId", requester_user.name as "userName",
 			requester_user.email as "userEmail", requester_user.image as "userImage",
-			approver_user.name as "approverName",
+			approver_user.name as "approverName", organization.timezone as "organizationTimeZone",
 			count(*) over()::integer as "totalCount"`;
 	const limit = input.exceptionId ? 1 : Math.min(Math.max(Math.floor(input.limit ?? 51), 1), 101);
 	return sql`
 		select ${selection}
 		from compliance_exception exception
+		join organization on organization.id = exception.organization_id
 		join employee requester
 			on requester.id = exception.employee_id and requester.organization_id = exception.organization_id
 		join "user" requester_user on requester_user.id = requester.user_id
@@ -311,9 +315,21 @@ function exceptionTypeOf(value: unknown): ComplianceExceptionType {
 		: "overtime_daily";
 }
 
+/**
+ * One end of the validity window, shown in the organization's zone with its label: the rules
+ * the exception waives are the organization's, so neither UTC nor the viewer's zone. Every row
+ * of a query carries the zone, read with it in the same statement.
+ */
+function validityInstant(value: unknown, row: Record<string, unknown>): ApprovalInboxValue {
+	return {
+		kind: "zoned_instant",
+		at: decodeApprovalDatabaseTimestamptz(value).toISOString(),
+		timeZone: resolveOrganizationTimezone(row.organizationTimeZone ?? undefined).timezone,
+	};
+}
+
 function toItem(row: Record<string, unknown>, now: Instant): ApprovalInboxItem {
 	const createdAt = decodeApprovalDatabaseTimestamptz(row.createdAt);
-	const validFrom = decodeApprovalDatabaseTimestamptz(row.validFrom);
 	const validUntil = decodeApprovalDatabaseTimestamptz(row.validUntil);
 	const status = inboxStatusOf(String(row.status));
 	const exceptionType = exceptionTypeOf(row.exceptionType);
@@ -324,8 +340,8 @@ function toItem(row: Record<string, unknown>, now: Instant): ApprovalInboxItem {
 		key: "approvals:approvals.complianceException.validity",
 		fallback: "Valid {from} – {until}",
 		params: {
-			from: { kind: "instant" as const, at: validFrom.toISOString() },
-			until: { kind: "instant" as const, at: validUntil.toISOString() },
+			from: validityInstant(row.validFrom, row),
+			until: validityInstant(row.validUntil, row),
 		},
 	};
 	return {
@@ -342,7 +358,7 @@ function toItem(row: Record<string, unknown>, now: Instant): ApprovalInboxItem {
 		},
 		summary: {
 			title: `ArbZG exception: ${EXCEPTION_TYPE_ENGLISH[exceptionType]}`,
-			subtitle: `Valid ${validFrom.toISOString()} – ${validUntil.toISOString()}`,
+			subtitle: localizedTextFallback(validity),
 			detail: reason,
 			badge: null,
 			localized: {
@@ -443,20 +459,8 @@ function toDetail(row: Record<string, unknown>, now: Instant): ApprovalInboxDeta
 									params: { duration: periodSubmissionHours(planned) },
 								},
 				},
-				{
-					label: DETAIL_TEXT.validFrom,
-					value: {
-						kind: "instant",
-						at: decodeApprovalDatabaseTimestamptz(row.validFrom).toISOString(),
-					},
-				},
-				{
-					label: DETAIL_TEXT.validUntil,
-					value: {
-						kind: "instant",
-						at: decodeApprovalDatabaseTimestamptz(row.validUntil).toISOString(),
-					},
-				},
+				{ label: DETAIL_TEXT.validFrom, value: validityInstant(row.validFrom, row) },
+				{ label: DETAIL_TEXT.validUntil, value: validityInstant(row.validUntil, row) },
 			],
 		},
 		{ type: "text", title: DETAIL_TEXT.employeeReason, body: String(row.reason ?? "") },
@@ -547,6 +551,29 @@ function stale(status: string): ConflictError {
 }
 
 /**
+ * Why a decision's conditional update matched no row: the exception as it is now, read again,
+ * names how it closed (approved, rejected, expired) once the write found it no longer pending.
+ */
+async function lostDecision(input: {
+	organizationId: string;
+	exceptionId: string;
+	at: Instant;
+	database: CanonicalInboxReadDatabase;
+}): Promise<ConflictError | NotFoundError> {
+	const [current] = resultRows(
+		await input.database.execute(sql`
+			select status, valid_until as "validUntil" from compliance_exception
+			where organization_id = ${input.organizationId} and id = ${input.exceptionId}::uuid
+		`),
+	);
+	if (!current) return notFound(input.exceptionId);
+	if (current.status !== "pending") return stale(closedStatusOf(String(current.status)));
+	const validUntil = instantFromDate(decodeApprovalDatabaseTimestamptz(current.validUntil));
+	if (compareInstants(validUntil, input.at) <= 0) return stale("expired");
+	return stale("decided");
+}
+
+/**
  * Decides one exception from the inbox (#1977): only within the actor's scope, never their own,
  * only while it is pending and its validity window is open, and a rejection only with a reason.
  * The decision is one conditional update, so a concurrent decision or expiry leaves it stale.
@@ -565,8 +592,8 @@ export async function decideComplianceExceptionFromInbox(input: {
 	database?: CanonicalInboxReadDatabase;
 }): Promise<ApprovalInboxDecisionSuccess> {
 	const database = readDatabase(input);
-	const now = (input.clock ?? systemClock).nowInstant();
-	const at = dateFromInstant(now);
+	const clock = input.clock ?? systemClock;
+	const now = clock.nowInstant();
 	if (!UUID_PATTERN.test(input.exceptionId)) throw notFound(input.exceptionId);
 	const [target] = resultRows(
 		await database.execute(sql`
@@ -617,6 +644,10 @@ export async function decideComplianceExceptionFromInbox(input: {
 	);
 	if (!actor) throw notFound(input.exceptionId);
 
+	// The decision is judged and stamped at the instant it is written, which may be later than
+	// the checks above: the window can close in between.
+	const decidedAt = clock.nowInstant();
+	const at = dateFromInstant(decidedAt);
 	const decided = resultRows(
 		await database.execute(sql`
 			update compliance_exception
@@ -631,11 +662,18 @@ export async function decideComplianceExceptionFromInbox(input: {
 			where organization_id = ${input.organizationId}
 				and id = ${input.exceptionId}::uuid
 				and employee_id <> ${input.actorEmployeeId}::uuid
-				and ${awaitingComplianceExceptionDecision(now)}
+				and ${awaitingComplianceExceptionDecision(decidedAt)}
 			returning id
 		`),
 	);
-	if (decided.length === 0) throw stale("decided");
+	if (decided.length === 0) {
+		throw await lostDecision({
+			organizationId: input.organizationId,
+			exceptionId: input.exceptionId,
+			at: decidedAt,
+			database,
+		});
+	}
 
 	const notify = input.notify ?? DEFAULT_NOTIFICATIONS;
 	const notification = {
