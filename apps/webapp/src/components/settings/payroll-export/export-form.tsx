@@ -531,7 +531,9 @@ function FiltersSection({
 	onClearProjects: () => void;
 	t: Translate;
 }) {
-	// All | Employees | External Contractors (#1995): narrows the picker, never the chosen people.
+	// All | Employees | External Contractors (#1995): narrows the picker, never the chosen people
+	// nor what the export includes, and says so. Payroll exports leave contractor periods out by
+	// themselves once #1997 ships, so this is no export scope.
 	const [engagement, setEngagement] = useState<EngagementFilter>("all");
 	const allEmployees = options?.employees ?? [];
 	const hasContractors = allEmployees.some((row) => row.engagementKind === "contractor");
@@ -557,6 +559,14 @@ function FiltersSection({
 					<EngagementFilterToggle value={engagement} onValueChange={setEngagement} />
 				)}
 			</div>
+			{hasContractors && engagement !== "all" && (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.payrollExport.export.engagementPickerHint",
+						"This only narrows the list of people to pick from. With nobody selected, the export includes everyone.",
+					)}
+				</p>
+			)}
 			<div className="grid gap-4 md:grid-cols-3">
 				<EmployeeMultiSelect
 					label={t("settings.payrollExport.export.employees", "Employees")}

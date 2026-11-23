@@ -78,8 +78,15 @@ silently:
 Both write the audit entry `employee.planned_engagement_end_not_applied` (reason
 `planned_end_passed` with `scheduledLastWorkingDay`, or `schedule_refused` with the command's
 `refusal` code, `no_admin_actor` or `offboarding_not_released`; always with `plannedEndDate`,
-`draftId` and `invitationId`). The organization's current owners and admins also get an
+`draftId` and `invitationId`). The entry stands on the preparing admin; when no admin can be named
+it is a system finding (`actorKind: "system"` in its metadata) and stands on the contractor's user
+only because an audit entry needs one. The organization's current owners and admins also get an
 `employee_offboarding_review` notification that links to the employee's page.
+
+An invitation's engagement (kind, contracting details, projects, planned end) is set when the
+draft is attached to that invitation. Inviting the same email again while that invitation is
+pending answers "already pending" and only repairs the team and organization-creation flag: the
+draft keeps the engagement it was sent with (`persistEmployeeInvitationDraft`).
 
 A reactivation never applies the draft's engagement kind: the open period's kind cannot change in
 place. When the draft's kind differs from the returning employee's (a contractor invitation for a

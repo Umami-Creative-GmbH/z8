@@ -60,6 +60,7 @@
         "description": "Arbeitszeiträume und Abwesenheiten im DATEV Lohn & Gehalt-Format exportieren",
         "employees": "Mitarbeiter",
         "endDate": "Enddatum",
+        "engagementPickerHint": "Grenzt nur die Personenliste zur Auswahl ein. Ohne Auswahl enthält der Export alle Personen.",
         "error": "Export fehlgeschlagen",
         "exportButtonDatev": "Nach DATEV exportieren",
         "exportButtonLexware": "Nach Lexware exportieren",

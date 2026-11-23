@@ -253,8 +253,8 @@ describe("external contractor engagement kind (#1995)", () => {
 			teamId: string | null;
 			projectIds: string[];
 			plannedEndDate: string | null;
-			/** The admin who prepared the invitation; the owner unless named. */
-			preparedBy?: string;
+			/** The admin who prepared the invitation; the owner unless named, nobody when null. */
+			preparedBy?: string | null;
 		}) {
 			const userId = randomUUID();
 			const memberId = randomUUID();
@@ -289,7 +289,7 @@ describe("external contractor engagement kind (#1995)", () => {
 					draft.teamId,
 					draft.plannedEndDate,
 					draft.projectIds,
-					draft.preparedBy ?? fixture.ownerUserId,
+					draft.preparedBy === undefined ? fixture.ownerUserId : draft.preparedBy,
 				],
 			);
 			return { userId, memberId, invitationId };
@@ -420,6 +420,76 @@ describe("external contractor engagement kind (#1995)", () => {
 					vat_id: null,
 					reference_code: "CC-200",
 					assigned: true,
+				},
+			]);
+		});
+
+		it("keeps a pending contractor invitation's engagement when it is sent again as an employee, while still repairing its team and organization creation", async () => {
+			const projectId = await seedProject();
+			const teamId = await seedTeam();
+			const email = `${randomUUID()}@pending.test`;
+			const invitationId = randomUUID();
+			await fixture.pool.query(
+				`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id)
+				 values ($1, $2, $3, 'member', 'pending', now() + interval '7 days', $4)`,
+				[invitationId, fixture.organizationId, email, fixture.ownerUserId],
+			);
+			const pendingInvitation = {
+				organizationId: fixture.organizationId,
+				normalizedEmail: email,
+				invitationId,
+				initialRole: "employee" as const,
+				updatedBy: fixture.ownerUserId,
+			};
+			await persistEmployeeInvitationDraft(db, {
+				...pendingInvitation,
+				canCreateOrganizations: false,
+				targetTeamId: null,
+				engagement: {
+					kind: "contractor",
+					contractor: {
+						companyName: "Hopper Consulting GmbH",
+						vatId: "DE123456789",
+						referenceCode: "PO-4711",
+						projectIds: [projectId],
+						plannedEndDate: "2099-06-30",
+					},
+				},
+			});
+			await fixture.pool.query(
+				`update employee_invitation_draft set first_name = 'Grace'
+				 where organization_id = $1 and normalized_email = $2`,
+				[fixture.organizationId, email],
+			);
+
+			// Another admin invites the same email while the invitation is pending, as an employee.
+			await persistEmployeeInvitationDraft(db, {
+				...pendingInvitation,
+				canCreateOrganizations: true,
+				targetTeamId: teamId,
+				engagement: { kind: "employee", contractor: null },
+			});
+
+			const { rows } = await fixture.pool.query(
+				`select d.engagement_kind, d.contract_type, d.contractor_company_name, d.contractor_vat_id,
+				   d.contractor_reference_code, d.planned_end_date::text, d.project_ids::text[], d.first_name,
+				   d.can_create_organizations, i.target_team_id
+				 from employee_invitation_draft d join invitation i on i.id = d.invitation_id
+				 where d.organization_id = $1 and d.normalized_email = $2`,
+				[fixture.organizationId, email],
+			);
+			expect(rows).toEqual([
+				{
+					engagement_kind: "contractor",
+					contract_type: "fixed",
+					contractor_company_name: "Hopper Consulting GmbH",
+					contractor_vat_id: "DE123456789",
+					contractor_reference_code: "PO-4711",
+					planned_end_date: "2099-06-30",
+					project_ids: [projectId],
+					first_name: "Grace",
+					can_create_organizations: true,
+					target_team_id: teamId,
 				},
 			]);
 		});
@@ -700,6 +770,31 @@ describe("external contractor engagement kind (#1995)", () => {
 				type: "employee_offboarding_review",
 			});
 			expect(followUp.notices.map((notice) => notice.user_id)).not.toContain(formerAdmin.userId);
+		});
+
+		it("records a planned end nobody prepared as a system finding, not as the contractor's own action", async () => {
+			const joiner = await acceptedContractorInvitation({
+				teamId: null,
+				projectIds: [],
+				plannedEndDate: "2099-06-30",
+				preparedBy: null,
+			});
+
+			const employeeId = await joinAndSettle(joiner);
+
+			const followUp = await plannedEndFollowUp(employeeId);
+			expect(followUp.departures).toEqual([]);
+			expect(followUp.audits).toEqual([
+				expect.objectContaining({
+					reason: "no_admin_actor",
+					actorKind: "system",
+					plannedEndDate: "2099-06-30",
+				}),
+			]);
+			expect(followUp.notices).toContainEqual({
+				user_id: fixture.ownerUserId,
+				type: "employee_offboarding_review",
+			});
 		});
 	});
 

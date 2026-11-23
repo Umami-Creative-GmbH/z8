@@ -60,6 +60,7 @@
         "description": "Export work periods and absences to DATEV Lohn & Gehalt format",
         "employees": "Employees",
         "endDate": "End Date",
+        "engagementPickerHint": "This only narrows the list of people to pick from. With nobody selected, the export includes everyone.",
         "error": "Export failed",
         "exportButtonDatev": "Export to DATEV",
         "exportButtonLexware": "Export to Lexware",

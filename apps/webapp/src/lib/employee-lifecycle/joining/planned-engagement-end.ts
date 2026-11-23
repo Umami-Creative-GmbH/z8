@@ -102,7 +102,12 @@ function refusalOf(error: unknown): string {
 	return "unexpected_error";
 }
 
-/** Best effort: the audit entry and the admins' notice never fail the step. */
+/**
+ * Best effort: the audit entry and the admins' notice never fail the step.
+ * With no admin to name, the entry is a system finding (`actorKind: "system"`,
+ * as other lifecycle side effects record it): the audit log needs a user, so it
+ * stands on the contractor's, but the contractor did not do anything.
+ */
 async function reportNotApplied(planned: PlannedEngagementEnd, notApplied: NotApplied) {
 	try {
 		await withAuditTrail((audit) =>
@@ -114,6 +119,7 @@ async function reportNotApplied(planned: PlannedEngagementEnd, notApplied: NotAp
 				targetId: planned.employeeId,
 				employeeId: planned.employeeId,
 				metadata: {
+					...(planned.actorUserId ? {} : { actorKind: "system" }),
 					...notApplied,
 					plannedEndDate: planned.lastWorkingDay,
 					draftId: planned.requestId,

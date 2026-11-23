@@ -91,6 +91,36 @@ export async function attachInvitationToEmployeeDraft(
 	return drafts[0];
 }
 
+/**
+ * Whether the email's draft already belongs to this invitation. Its engagement
+ * was then set when the invitation was sent, and inviting the same email again
+ * while it is pending (which only repairs the team and organization creation)
+ * keeps it: the second admin's kind, contracting details, projects and planned
+ * end never replace the first's (#1995). Only read when an engagement is given.
+ */
+async function isDraftAttachedTo(
+	tx: InvitationDraftTransaction,
+	input: {
+		organizationId: string;
+		normalizedEmail: string;
+		invitationId: string;
+		engagement?: InvitationEngagement;
+	},
+): Promise<boolean> {
+	if (!input.engagement) return false;
+	const [draft] = await tx
+		.select({ invitationId: employeeInvitationDraft.invitationId })
+		.from(employeeInvitationDraft)
+		.where(
+			and(
+				eq(employeeInvitationDraft.organizationId, input.organizationId),
+				eq(employeeInvitationDraft.normalizedEmail, input.normalizedEmail),
+			),
+		)
+		.limit(1);
+	return draft?.invitationId === input.invitationId;
+}
+
 export async function persistEmployeeInvitationDraft(
 	dbClient: typeof appDb,
 	input: {
@@ -184,7 +214,7 @@ export async function persistEmployeeInvitationDraft(
 			initialTeamId: input.targetTeamId,
 			initialRole: input.initialRole,
 			updatedBy: input.updatedBy,
-			engagement: input.engagement,
+			engagement: (await isDraftAttachedTo(tx, input)) ? undefined : input.engagement,
 		});
 		if (!draft) throw new Error("Invitation persistence conflict");
 

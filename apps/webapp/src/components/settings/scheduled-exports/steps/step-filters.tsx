@@ -79,7 +79,9 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 		},
 	];
 
-	// All | Employees | External Contractors (#1995): narrows the picker, never the chosen people.
+	// All | Employees | External Contractors (#1995): narrows the picker, never the chosen people
+	// nor what the export includes, and says so. Payroll exports leave contractor periods out by
+	// themselves once #1997 ships, so this is no export scope.
 	const allEmployees = filterOptions?.employees || [];
 	const hasContractors = allEmployees.some((emp) => emp.engagementKind === "contractor");
 	const selectableEmployeesFor = (chosenIds: readonly string[]) =>
@@ -160,6 +162,14 @@ export function StepFilters({ form, filterOptions }: StepFiltersProps) {
 						"Leave empty to include all employees, teams, and projects",
 					)}
 				</p>
+				{hasContractors && engagement !== "all" && (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.scheduledExports.filters.engagementPickerHint",
+							"This only narrows the list of people to pick from. With nobody selected, the export includes everyone.",
+						)}
+					</p>
+				)}
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-3">

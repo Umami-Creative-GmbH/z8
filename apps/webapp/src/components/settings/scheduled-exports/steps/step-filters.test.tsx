@@ -61,6 +61,18 @@ describe("scheduled export filters: All | Employees | External Contractors (#199
 		expect(offered()).toBe("ada,alan");
 	});
 
+	it("says the engagement filter only narrows the picker, not what the export includes", () => {
+		render(<StepFilters form={formWith({})} filterOptions={options(people)} />);
+		const hint =
+			"This only narrows the list of people to pick from. With nobody selected, the export includes everyone.";
+
+		expect(screen.queryByText(hint)).toBeNull();
+		fireEvent.click(screen.getByRole("radio", { name: "Employees" }));
+		expect(screen.getByText(hint)).toBeTruthy();
+		fireEvent.click(screen.getByRole("radio", { name: "All" }));
+		expect(screen.queryByText(hint)).toBeNull();
+	});
+
 	it("offers no engagement filter while the organization has no External Contractors", () => {
 		render(
 			<StepFilters
