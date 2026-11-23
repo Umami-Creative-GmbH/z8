@@ -18,6 +18,8 @@ import type { FixtureEmployee, FixtureOrganization, FixtureUser } from "@/test/s
 
 export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser>) {
 	const subareas = new Map<string, string>();
+	/** Latest version number of each work policy created through `workPolicy()`. */
+	const versionNumbers = new Map<string, number>();
 
 	async function subareaOf(org: FixtureOrganization): Promise<string> {
 		const known = subareas.get(org.id);
@@ -39,10 +41,51 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 		return subareaId;
 	}
 
+	/** One work policy version with a detailed schedule cycle (see `workPolicy()`). */
+	async function insertPolicyVersion(
+		org: FixtureOrganization,
+		policyId: string,
+		versionNumber: number,
+		effectiveFromDate: string,
+		weeks: readonly (readonly string[])[],
+		userId: string,
+	): Promise<void> {
+		const {
+			rows: [version],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO work_policy_version
+			 (organization_id, policy_id, version_number, effective_from_date, schedule_enabled,
+			  regulation_enabled, presence_enabled, is_legacy_baseline, sealed_at, created_by)
+			 VALUES ($1, $2, $3, $4, true, false, false, $5, NULL, $6) RETURNING id`,
+			[org.id, policyId, versionNumber, effectiveFromDate, versionNumber === 1, userId],
+		);
+		const {
+			rows: [schedule],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO work_policy_schedule
+			 (policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
+			 VALUES ($1, $2, $3, 'detailed', 'custom', now()) RETURNING id`,
+			[policyId, version.id, weeks.length > 1 ? "biweekly" : "weekly"],
+		);
+		const allDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+		for (const [index, workDays] of weeks.entries()) {
+			for (const day of allDays) {
+				const isWorkDay = workDays.includes(day);
+				await admin.query(
+					`INSERT INTO work_policy_schedule_day
+					 (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day, cycle_week)
+					 VALUES ($1, $2, $3, $4, $5, $6)`,
+					[schedule.id, version.id, day, isWorkDay ? "4.00" : "0.00", isWorkDay, index + 1],
+				);
+			}
+		}
+	}
+
 	return {
 		/** Forget per-organization state between tests (organizations are recreated). */
 		reset() {
 			subareas.clear();
+			versionNumbers.clear();
 		},
 
 		/**
@@ -145,65 +188,64 @@ export function shortTermFixture(admin: Pool, creator: () => Promise<FixtureUser
 				 VALUES ($1, $2, true, false, false, $3, now()) RETURNING id`,
 				[org.id, `Rota ${randomUUID().slice(0, 8)}`, userId],
 			);
-			const {
-				rows: [version],
-			} = await admin.query<{ id: string }>(
-				`INSERT INTO work_policy_version
-				 (organization_id, policy_id, version_number, effective_from_date, schedule_enabled,
-				  regulation_enabled, presence_enabled, is_legacy_baseline, sealed_at, created_by)
-				 VALUES ($1, $2, 1, '1970-01-05', true, false, false, true, NULL, $3) RETURNING id`,
-				[org.id, policy.id, userId],
-			);
-			const {
-				rows: [schedule],
-			} = await admin.query<{ id: string }>(
-				`INSERT INTO work_policy_schedule
-				 (policy_id, policy_version_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
-				 VALUES ($1, $2, $3, 'detailed', 'custom', now()) RETURNING id`,
-				[policy.id, version.id, weeks.length > 1 ? "biweekly" : "weekly"],
-			);
-			const allDays = [
-				"monday",
-				"tuesday",
-				"wednesday",
-				"thursday",
-				"friday",
-				"saturday",
-				"sunday",
-			];
-			for (const [index, workDays] of weeks.entries()) {
-				for (const day of allDays) {
-					const isWorkDay = workDays.includes(day);
-					await admin.query(
-						`INSERT INTO work_policy_schedule_day
-						 (schedule_id, policy_version_id, day_of_week, hours_per_day, is_work_day, cycle_week)
-						 VALUES ($1, $2, $3, $4, $5, $6)`,
-						[schedule.id, version.id, day, isWorkDay ? "4.00" : "0.00", isWorkDay, index + 1],
-					);
-				}
-			}
+			await insertPolicyVersion(org, policy.id, 1, "1970-01-05", weeks, userId);
 			return policy.id;
+		},
+
+		/**
+		 * A new version of a work policy from `workPolicy()`, in force from `effectiveFromDate`:
+		 * `weeks` as in `workPolicy()`.
+		 */
+		async policyVersion(
+			org: FixtureOrganization,
+			policyId: string,
+			effectiveFromDate: string,
+			weeks: readonly (readonly string[])[],
+		): Promise<void> {
+			const { userId } = await creator();
+			const versionNumber = (versionNumbers.get(policyId) ?? 1) + 1;
+			versionNumbers.set(policyId, versionNumber);
+			await insertPolicyVersion(org, policyId, versionNumber, effectiveFromDate, weeks, userId);
 		},
 
 		/**
 		 * Assigns a work policy from `workPolicy()` to the whole organization (inherited by every
 		 * employee without their own policy) or, with `employee`, to that employee alone (as a
-		 * manager would, so terms without a policy do not release it).
+		 * manager would, so terms without a policy do not release it), from `from` when given.
 		 */
 		async assignPolicy(
 			org: FixtureOrganization,
 			policyId: string,
 			employee?: FixtureEmployee,
+			options: { from?: string } = {},
 		): Promise<void> {
 			const { userId } = await creator();
 			await admin.query(
 				`INSERT INTO work_policy_assignment
 				 (policy_id, organization_id, assignment_type, employee_id, priority, source_kind,
-				  is_active, created_by, updated_at)
-				 VALUES ($1, $2, $3, $4, $5, $6, true, $7, now())`,
+				  is_active, created_by, updated_at, effective_from_date)
+				 VALUES ($1, $2, $3, $4, $5, $6, true, $7, now(), $8)`,
 				employee
-					? [policyId, org.id, "employee", employee.employeeId, 2, "manager_assignment", userId]
-					: [policyId, org.id, "organization", null, 0, "legacy", userId],
+					? [
+							policyId,
+							org.id,
+							"employee",
+							employee.employeeId,
+							2,
+							"manager_assignment",
+							userId,
+							options.from ?? "1970-01-01",
+						]
+					: [
+							policyId,
+							org.id,
+							"organization",
+							null,
+							0,
+							"legacy",
+							userId,
+							options.from ?? "1970-01-01",
+						],
 			);
 		},
 

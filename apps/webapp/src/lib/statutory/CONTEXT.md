@@ -105,7 +105,8 @@ Applies to a week of fewer than 5 days or an irregular week, and to the whole ye
 stint has one. Counts short-term days. A fixed-term employment whose terms plan the employee's own
 week counts its **agreed working days** instead: every calendar day of its agreed length that the
 week in force that day plans (a multi-week rota by its mean), plus short-term days the week does
-not plan. Like the agreed length, they count as soon as it is agreed: a fixed term from 1 March to
+not plan. The week in force can change with a new terms row, an individual work-policy assignment
+starting or ending, or a new version of the employee's own policy. Like the agreed length, they count as soon as it is agreed: a fixed term from 1 March to
 28 February planning Monday and Tuesday holds 104 working days and is exceeded before any shift is
 planned (reason `agreed_fixed_term_exceeds_working_days`, with `agreedWorkingDays`, in the
 finding's admin detail). Without an own week, only its short-term days count.
@@ -118,7 +119,10 @@ observed in the short-term days worked or planned under them. A week off inside 
 week left short by an approved absence (sickness, leave; not home office), are not observed
 weeks: they say nothing about the week. Open-ended framework terms with no short-term days say
 nothing about the week and do not choose the limit, whether or not they plan an own week; a
-fixed-term employment's own week does, as it is agreed in advance.
+fixed-term employment's own week does, as it is agreed in advance. A fixed-term employment across
+the year end is one employment with one limit: both calendar years read its week from its whole
+agreed length (its terms and short-term days in either year), so a December of five-day weeks
+chooses 3 months for January too.
 
 **Prior-employer offset**:
 Short-term working days or months another employer used in the same calendar year, recorded as

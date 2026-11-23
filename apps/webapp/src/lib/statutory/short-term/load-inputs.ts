@@ -8,6 +8,7 @@ import {
 	shift,
 	workPeriod,
 } from "@/db/schema";
+import { loadOwnWeekChangeDates } from "@/lib/contracts/own-week-change-dates";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { ContractFieldSource, DayOfWeek, EffectiveContractOnDay } from "@/lib/contracts/types";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
@@ -97,7 +98,11 @@ export interface ShortTermPriorOffset {
 	readonly count: number;
 }
 
-/** The working week behind one calendar year's short-term terms. */
+/**
+ * The working week behind one calendar year's short-term terms. A fixed-term employment
+ * overlapping the year contributes its whole agreed length (terms and counted days in the other
+ * year too), so it has one limit in both years.
+ */
 export interface ShortTermYearWeek {
 	/**
 	 * Average work days per week of each short-term terms version that plans real week days and
@@ -370,6 +375,10 @@ function overlaps(a: DaySpan, b: DaySpan): boolean {
 	return a.from < b.until && b.from < a.until;
 }
 
+function yearSpan(year: number): DaySpan {
+	return { from: `${year}-01-01`, until: `${year + 1}-01-01` };
+}
+
 /**
  * The agreed length of a fixed-term short-term employment as the judge reads it (`agreedStints`):
  * from its first day to its agreed last day, or to where later terms take over if that is
@@ -424,6 +433,7 @@ const TERMS_ROW_COLUMNS = {
 	validFromDate: employeeEmploymentHistory.validFromDate,
 	validUntilDate: employeeEmploymentHistory.validUntilDate,
 	createdAt: employeeEmploymentHistory.createdAt,
+	workPolicyId: employeeEmploymentHistory.workPolicyId,
 };
 
 interface TermsRow {
@@ -622,23 +632,41 @@ export async function loadShortTermInputs(
 	const employmentsByEmployee = new Map<string, ShortTermEmployment[]>();
 	const spansByEmployee = new Map<string, DaySpan[]>();
 	const rangeByEmployee = new Map<string, DaySpan>();
+	// Days on which the own week of an employee with a fixed-term short-term employment can change
+	// without a new terms row (an individual policy assignment, a new policy version).
+	const termsPolicyIds = new Map<string, string[]>();
+	for (const employeeId of candidates) {
+		const rows = allTermRowsByEmployee.get(employeeId) ?? [];
+		if (!rows.some((row) => fixedTermEndsOnByPeriod.has(row.employmentPeriodId ?? ""))) continue;
+		termsPolicyIds.set(employeeId, [
+			...new Set(rows.flatMap((row) => (row.workPolicyId ? [row.workPolicyId] : []))),
+		]);
+	}
+	const weekChangeDates = await loadOwnWeekChangeDates(db, {
+		organizationId: input.organizationId,
+		timezone: input.timezone,
+		termsPolicyIds,
+	});
+
 	/**
-	 * Per fixed-term employment overlapping the window, its agreed span and the days its terms may
-	 * change within it (the span's first day and each later terms row's start): its agreed week is
-	 * resolved once on each, not on every day.
+	 * Per fixed-term employment overlapping the window, its agreed span and the days its own week
+	 * may change within it (the span's first day, each later terms row's start and each
+	 * `ownWeekChangeDates` day): its agreed week is resolved once on each, not on every day.
 	 */
 	const agreedWeekStarts = new Map<ShortTermEmployment, { span: DaySpan; starts: string[] }>();
 	for (const employeeId of candidates) {
 		const termRowsOfEmployee = allTermRowsByEmployee.get(employeeId) ?? [];
 		const employments = shortTermEmployments(termRowsOfEmployee, fixedTermEndsOnByPeriod);
+		const changes = [
+			...termRowsOfEmployee.map((row) => row.validFromDate),
+			...(weekChangeDates.get(employeeId) ?? []),
+		];
 		const spans = employments.flatMap((employment) => {
 			const span = agreedSpanOf(employment);
 			if (!span || !overlaps(span, window)) return [];
 			const starts = new Set([span.from]);
-			for (const row of termRowsOfEmployee) {
-				if (span.from < row.validFromDate && row.validFromDate < span.until) {
-					starts.add(row.validFromDate);
-				}
+			for (const date of changes) {
+				if (span.from < date && date < span.until) starts.add(date);
 			}
 			agreedWeekStarts.set(employment, { span, starts: [...starts].sort() });
 			return [span];
@@ -1059,10 +1087,22 @@ export async function loadShortTermInputs(
 		const countedDays = new Set([...work, ...planned].map((item) => item.date));
 		for (const year of input.years) {
 			const counted = [...countedDays].filter((date) => yearOf(date) === year);
+			// A fixed-term employment overlapping the year has one limit over its whole agreed
+			// length: its week starts and counted days in the other year say as much about the week
+			// as the year's own, so both years choose the same limit for it.
+			const dates = new Set([...(samples.get(year) ?? []), ...counted]);
+			for (const employment of employmentsByEmployee.get(employeeId) ?? []) {
+				const agreed = agreedWeekStarts.get(employment);
+				if (!agreed || !overlaps(agreed.span, yearSpan(year))) continue;
+				for (const date of agreed.starts) dates.add(date);
+				for (const date of countedDays) {
+					if (agreed.span.from <= date && date < agreed.span.until) dates.add(date);
+				}
+			}
 			const plannedWorkDaysPerWeek: number[] = [];
 			const unplannedDays = new Set<string>();
 			let anyTerms = false;
-			for (const date of [...(samples.get(year) ?? []), ...counted]) {
+			for (const date of dates) {
 				const contract = shortTermOn(date);
 				if (!contract) continue;
 				anyTerms = true;
