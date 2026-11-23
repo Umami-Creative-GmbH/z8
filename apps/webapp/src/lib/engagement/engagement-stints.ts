@@ -5,11 +5,12 @@ import {
 	engagementKindOnDay,
 } from "@/lib/contracts/resolve-contract";
 import { type InstantRange, localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { compareInstants, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
+	type DaysEngagement,
 	type EngagementStints,
 	employeeTimeWithin,
 	hasEmployeeTimeWithin,
@@ -81,6 +82,13 @@ export interface EmployeeTime {
 	): { startDate: string; endDate: string } | null;
 	/** The employees, of `employeeIds`, with employee time on any of the days. */
 	withEmployeeTimeOn(employeeIds: readonly string[], startDate: string, endDate: string): string[];
+	/**
+	 * Whose time all of `startDate`..`endDate` (inclusive, employee-local days) is, for a record
+	 * that is paid whole or not at all (a travel expense report): `employee` when every moment of
+	 * the days is employee time, `contractor` when none is, `both` when the days meet an
+	 * engagement change (a conversion day counts as both).
+	 */
+	engagementOfDays(employeeId: string, startDate: string, endDate: string): DaysEngagement;
 }
 
 /** `EmployeeTime` over loaded stints and each employee's effective calendar zone. */
@@ -134,6 +142,23 @@ export function employeeTime(
 		},
 		withEmployeeTimeOn: (employeeIds, startDate, endDate) =>
 			employeeIds.filter((employeeId) => hasEmployeeTimeOn(employeeId, startDate, endDate)),
+		engagementOfDays: (employeeId, startDate, endDate) => {
+			const own = stintsOf(employeeId);
+			if (own.periods.length === 0) return own.employeeEngagementKind;
+			const timezone = timezoneOf(employeeId);
+			const window: InstantRange = {
+				start: localDayRange(startDate, timezone).start,
+				endExclusive: localDayRange(endDate, timezone).endExclusive,
+			};
+			const parts = employeeTimeWithin(own, window);
+			const [only] = parts;
+			if (!only) return "contractor";
+			return parts.length === 1 &&
+				compareInstants(only.start, window.start) === 0 &&
+				compareInstants(only.endExclusive, window.endExclusive) === 0
+				? "employee"
+				: "both";
+		},
 	};
 }
 

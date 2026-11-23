@@ -13,6 +13,12 @@ export interface EngagementStints {
 	readonly employeeEngagementKind: EngagementKind;
 }
 
+/**
+ * Whose time a span of days is (#1997): all `employee` time, none of it (`contractor`), or `both`
+ * where the days meet an engagement change.
+ */
+export type DaysEngagement = "employee" | "contractor" | "both";
+
 /** A person without any recorded stint who is an employee: all time is employee time. */
 export const PLAIN_EMPLOYEE_STINTS: EngagementStints = {
 	periods: [],

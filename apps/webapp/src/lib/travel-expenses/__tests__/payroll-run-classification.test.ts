@@ -61,6 +61,7 @@ function report(overrides: Partial<Input> = {}): Input {
 		revision: { id: "revision-1", facts: facts([receipt("hotel", "accommodation", "100.00")]) },
 		format: "datev_lohn",
 		period: PERIOD,
+		engagement: "employee",
 		codes: ALL_MAPPED,
 		priorLines: [],
 		...overrides,
@@ -109,6 +110,17 @@ describe("classifyPayrollRunCandidate", () => {
 				}),
 			),
 		).toEqual({ outcome: "skip", skip: { reason: "legacy_claim" } });
+	});
+
+	it("never takes a report of External Contractor days, nor one across an engagement change (#1997)", () => {
+		expect(classifyPayrollRunCandidate(report({ engagement: "contractor" }))).toEqual({
+			outcome: "skip",
+			skip: { reason: "external_contractor_days" },
+		});
+		expect(classifyPayrollRunCandidate(report({ engagement: "both" }))).toEqual({
+			outcome: "skip",
+			skip: { reason: "spans_engagement_change" },
+		});
 	});
 
 	it("names the unconfirmed run of another period that holds the report", () => {

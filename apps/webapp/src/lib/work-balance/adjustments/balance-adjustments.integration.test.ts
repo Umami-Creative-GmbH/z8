@@ -121,7 +121,7 @@ describe("overtime payouts on PostgreSQL", () => {
 		await refresh();
 	});
 
-	async function seedCompletedWork(start: string, end: string) {
+	async function seedCompletedWork(start: string, end: string, workerId: string = employeeId) {
 		const clockInId = randomUUID();
 		const clockOutId = randomUUID();
 		for (const [entryId, type, timestamp] of [
@@ -133,7 +133,7 @@ describe("overtime payouts on PostgreSQL", () => {
 				 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone,
 				  timezone_source, hash, created_by)
 				 values ($1, $2, $3, $4, $5, 0, 'UTC', 'user_setting', $7, $6)`,
-				[entryId, employeeId, organizationId, type, timestamp, owner.userId, entryId],
+				[entryId, workerId, organizationId, type, timestamp, owner.userId, entryId],
 			);
 		}
 		await withCanonicalRecords(fixture.pool, (client) =>
@@ -142,7 +142,7 @@ describe("overtime payouts on PostgreSQL", () => {
 				 (employee_id, organization_id, clock_in_id, clock_out_id, start_time, end_time,
 				  duration_minutes, is_active, updated_at)
 				 values ($1, $2, $3, $4, $5, $6, 720, false, now())`,
-				[employeeId, organizationId, clockInId, clockOutId, start, end],
+				[workerId, organizationId, clockInId, clockOutId, start, end],
 			),
 		);
 	}
@@ -170,12 +170,18 @@ describe("overtime payouts on PostgreSQL", () => {
 	}
 
 	async function recordPayout(
-		input: Partial<{ day: string; hours: number; minutes: number; reason: string }> = {},
+		input: Partial<{
+			employeeId: string;
+			day: string;
+			hours: number;
+			minutes: number;
+			reason: string;
+		}> = {},
 		asUser = admin.userId,
 	) {
 		actAs(asUser);
 		return actions.recordOvertimePayoutAction({
-			employeeId,
+			employeeId: input.employeeId ?? employeeId,
 			day: input.day ?? payoutDay.toString(),
 			hours: input.hours ?? 5,
 			minutes: input.minutes ?? 0,
@@ -294,6 +300,68 @@ describe("overtime payouts on PostgreSQL", () => {
 			success: true,
 		});
 		expect(await balanceMinutes()).toBe(0);
+	});
+
+	it("refuses a payout dated on a day of an External Contractor stint (#1997)", async () => {
+		/** A person who worked 12h three days ago and changed from `from` to `to` at the start of `changeDay`. */
+		async function converted(
+			from: "employee" | "contractor",
+			to: "employee" | "contractor",
+			changeDay: typeof today,
+		) {
+			const person = await fixture.seedEmployee({ withPeriod: false });
+			const start = `${today.subtract({ days: 7 }).toString()}T00:00:00Z`;
+			const change = `${changeDay.toString()}T00:00:00Z`;
+			await fixture.pool.query(`update employee set start_date = $2 where id = $1`, [
+				person.employeeId,
+				start,
+			]);
+			await fixture.pool.query(
+				`insert into employee_employment_period
+				 (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+				 values ($1, $2, 'closed', $3, $4, 'recorded', $5), ($1, $2, 'open', $4, null, 'recorded', $6)`,
+				[organizationId, person.employeeId, start, change, from, to],
+			);
+			await fixture.pool.query(`update employee set engagement_kind = $2 where id = $1`, [
+				person.employeeId,
+				to,
+			]);
+			return person.employeeId;
+		}
+
+		// Employee until the start of yesterday, then External Contractor: +12h of employee time.
+		const leaver = await converted("employee", "contractor", today.subtract({ days: 1 }));
+		await seedCompletedWork(
+			`${workDay.toString()}T08:00:00Z`,
+			`${workDay.toString()}T20:00:00Z`,
+			leaver,
+		);
+		expect(await recordPayout({ employeeId: leaver, day: today.toString() })).toMatchObject({
+			success: false,
+			refusal: "external_contractor_day",
+		});
+		expect(await recordPayout({ employeeId: leaver, day: payoutDay.toString() })).toMatchObject({
+			success: true,
+		});
+
+		// External Contractor until the start of two days ago, then employee.
+		const joiner = await converted("contractor", "employee", today.subtract({ days: 2 }));
+		const yesterday = today.subtract({ days: 1 });
+		await seedCompletedWork(
+			`${yesterday.toString()}T08:00:00Z`,
+			`${yesterday.toString()}T20:00:00Z`,
+			joiner,
+		);
+		expect(await recordPayout({ employeeId: joiner, day: workDay.toString() })).toMatchObject({
+			success: false,
+			refusal: "external_contractor_day",
+		});
+		expect(await recordPayout({ employeeId: joiner, day: today.toString() })).toMatchObject({
+			success: true,
+		});
+
+		// A plain employee is unaffected.
+		expect(await recordPayout()).toMatchObject({ success: true });
 	});
 
 	it("counts a payout dated today from tomorrow in the yearly team balance too", async () => {

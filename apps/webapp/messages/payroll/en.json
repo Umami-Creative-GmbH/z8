@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "This format is an API connector, which never carries expense amounts.",
         "currencyNotEur": "Not in euros: payroll runs carry only euro amounts.",
+        "externalContractorDays": "Its days fall in an External Contractor engagement: payroll never carries it.",
         "includedInOtherRun": "Included in the unconfirmed payroll run {period} ({format}).",
         "legacyClaim": "Legacy claims are never paid through payroll.",
         "negativeDifference": "An adjustment lowered what earlier payroll runs carried for: {kinds}.",
         "noStatutoryBaseline": "No statutory baseline for: {items}.",
         "nothingOwed": "Its payroll lines leave nothing left for payroll to carry.",
         "reimbursedOutsidePayroll": "Already partly paid by bank transfer or recovered: payroll cannot take the rest.",
+        "spansEngagementChange": "Its days span a change between employee and External Contractor: payroll carries no part of it.",
         "unmappedWageType": "No wage type is mapped for this format for: {kinds}."
       },
       "title": "Expense reports this payroll run will not carry",

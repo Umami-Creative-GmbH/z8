@@ -774,11 +774,10 @@ function serializeFilters(filters: PayrollExportFilters) {
  * export's employee set, so a payroll access holder's run covers only their
  * payroll scope. An explicitly empty selection covers nobody.
  *
- * A run takes reports by person, not by day (#1997): it carries every report
- * awaiting reimbursement that was approved by the period's end, whatever days
- * the report covers, so it is not payroll-scoped by day. A person with no
- * employee time in the period is left out; a converted person's reports are
- * carried whole, including any from their External Contractor stint.
+ * A person with no employee time in the period is left out (#1997). Of the
+ * others, the run takes only reports whose days are all employee time:
+ * `classifyPayrollRunCandidates` skips a converted person's External
+ * Contractor reports and any report across the conversion.
  */
 export async function resolvePayrollRunEmployeeIds(
 	organizationId: string,

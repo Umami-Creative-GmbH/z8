@@ -89,6 +89,21 @@ describe("payroll scope (#1997)", () => {
 		expect(scope.isPayrollDay("worker", "2026-07-14")).toBe(true);
 	});
 
+	it("tells whose time a span of days is, for records paid whole or not at all", () => {
+		const days = (startDate: string, endDate: string) => ({ startDate, endDate });
+		expect(scope.engagementOfDays("converted", days("2026-07-16", "2026-07-18"))).toBe("employee");
+		expect(scope.engagementOfDays("converted", days("2026-07-10", "2026-07-14"))).toBe(
+			"contractor",
+		);
+		// The conversion day is part contractor, part employee time.
+		expect(scope.engagementOfDays("converted", days("2026-07-15", "2026-07-15"))).toBe("both");
+		expect(scope.engagementOfDays("converted", days("2026-07-13", "2026-07-17"))).toBe("both");
+		expect(scope.engagementOfDays("contractor", days("2026-07-16", "2026-07-18"))).toBe(
+			"contractor",
+		);
+		expect(scope.engagementOfDays("worker", days("2026-07-13", "2026-07-17"))).toBe("employee");
+	});
+
 	it("shows employee records whole, contractor records not at all and records across the conversion from it", () => {
 		const employeeWork = record("2026-07-20T08:00:00Z", "2026-07-20T11:00:00Z", 180);
 		expect(scope.clipRecord("converted", employeeWork)).toBe(employeeWork);

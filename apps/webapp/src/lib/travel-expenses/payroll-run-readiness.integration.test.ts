@@ -9,6 +9,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -291,7 +292,12 @@ async function submitAndApprove(reportId: string, owner: Owner) {
 /** An approved standalone receipt paid by `owner`; approved now. */
 async function approvedReceipt(
 	amount: string,
-	options: { owner?: Owner; category?: "accommodation" | "meals"; currency?: string } = {},
+	options: {
+		owner?: Owner;
+		category?: "accommodation" | "meals";
+		currency?: string;
+		expenseDate?: string;
+	} = {},
 ) {
 	const owner = options.owner ?? "requester";
 	signIn(owner);
@@ -305,7 +311,7 @@ async function approvedReceipt(
 		itemId: item.id,
 		expectedVersion: item.version,
 		values: {
-			expenseDate: day(-3),
+			expenseDate: options.expenseDate ?? day(-3),
 			category: options.category ?? "accommodation",
 			description: "Hotel Hamburg",
 			amount,
@@ -326,6 +332,83 @@ async function approvedReceipt(
 	);
 	if (uploaded.status !== 200) throw new Error(`upload ${uploaded.status}`);
 	return submitAndApprove(reportId, owner);
+}
+
+/** An approved trip of the requester from `startDate` to `endDate` with a EUR hotel receipt on its first day. */
+async function approvedTrip(amount: string, startDate: string, endDate: string) {
+	signIn("requester");
+	const created = await actions.createTripReportAction();
+	if (!created.success) throw new Error(created.error);
+	const { reportId } = created.data;
+	const report = await loadOwn("requester", reportId);
+	signIn("requester");
+	const details = await actions.saveTripDetailsDraftAction({
+		reportId,
+		expectedVersion: report.trip?.version ?? 1,
+		values: {
+			purpose: "Customer workshop",
+			startDate,
+			endDate,
+			timeZone: "Europe/Berlin",
+			destinations: [{ place: "Hamburg", countryCode: "DE" }],
+		},
+	});
+	if (!details.success) throw new Error(details.error);
+	signIn("requester");
+	const added = await actions.addTripReportItemAction({ reportId });
+	if (!added.success) throw new Error(added.error);
+	signIn("requester");
+	const saved = await actions.saveReceiptItemDraftAction({
+		reportId,
+		itemId: added.data.item.id,
+		expectedVersion: added.data.item.version,
+		values: {
+			expenseDate: startDate,
+			category: "accommodation",
+			description: "Hotel Hamburg",
+			amount,
+			currency: "EUR",
+			paidBy: "employee",
+			accountingReference: null,
+		},
+	});
+	if (!saved.success) throw new Error(saved.error);
+	const tusFileKey = createOwnedTusFileKey("t854-requester");
+	harness.tus.set(tusFileKey, pdfBytes);
+	const uploaded = await processReceipt(
+		new Request("http://localhost/api/upload/travel-expense/report-receipt", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				tusFileKey,
+				reportId,
+				itemId: added.data.item.id,
+				fileName: "hotel.pdf",
+			}),
+		}) as unknown as NextRequest,
+	);
+	if (uploaded.status !== 200) throw new Error(`upload ${uploaded.status}`);
+	return submitAndApprove(reportId, "requester");
+}
+
+/** The instant the Berlin day `date` starts, plus `hours`. */
+function berlinInstant(date: string, hours = 0) {
+	return localDayRange(date, "Europe/Berlin").start.add({ hours }).toString();
+}
+
+/** Converts the requester at `at`: a closed `from` stint until then, an open `to` stint after. */
+async function convertRequester(
+	from: "employee" | "contractor",
+	to: "employee" | "contractor",
+	at: string,
+) {
+	await admin.query(
+		`insert into employee_employment_period
+		   (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+		 values ($1, $2, 'closed', $3, $4, 'recorded', $5), ($1, $2, 'open', $4, null, 'recorded', $6)`,
+		[ORG, ids.requester, berlinInstant(day(-90)), at, from, to],
+	);
+	await admin.query("update employee set engagement_kind = $1 where id = $2", [to, ids.requester]);
 }
 
 /** An approved mileage allowance an administrator set by hand (#610): no statutory baseline. */
@@ -546,6 +629,62 @@ describe("payroll readiness for payroll runs (#854)", () => {
 			[ORG],
 		);
 		expect(await readiness(current)).toEqual({ applies: false });
+	});
+
+	describe("External Contractor stints (#1997)", () => {
+		it("never carries a trip of a converted person's External Contractor days (employee → contractor)", async () => {
+			await convertRequester("employee", "contractor", berlinInstant(day(-6)));
+			const employeeTrip = await approvedTrip("100.00", day(-10), day(-8));
+			const contractorTrip = await approvedTrip("40.00", day(-4), day(-2));
+			const control = await approvedReceipt("25.00", { owner: "colleague" });
+
+			expect((await listed(current)).map(({ source, skip }) => ({ id: source.id, skip }))).toEqual([
+				{ id: contractorTrip, skip: { reason: "external_contractor_days" } },
+			]);
+			const run = await exportPayroll(current, [ids.requester, ids.colleague]);
+			expect(await includedIn(run)).toEqual([employeeTrip, control].sort());
+			// Never held by the run: it stays free for a bank transfer.
+			await reimburse(contractorTrip, "40.00", "40.00");
+		});
+
+		it("leaves earlier External Contractor trips out of the first run after hiring (contractor → employee)", async () => {
+			await convertRequester("contractor", "employee", berlinInstant(day(-12)));
+			const contractorTrip = await approvedTrip("40.00", day(-16), day(-14));
+			const employeeTrip = await approvedTrip("100.00", day(-4), day(-2));
+
+			expect((await listed(current)).map(({ source, skip }) => ({ id: source.id, skip }))).toEqual([
+				{ id: contractorTrip, skip: { reason: "external_contractor_days" } },
+			]);
+			const run = await exportPayroll(current);
+			expect(await includedIn(run)).toEqual([employeeTrip]);
+		});
+
+		it("flags rather than half-carries a trip across the conversion", async () => {
+			await convertRequester("employee", "contractor", berlinInstant(day(-6)));
+			const spanning = await approvedTrip("100.00", day(-8), day(-5));
+			// A conversion at noon: that day is part employee time, part External Contractor time.
+			const conversionDay = await approvedReceipt("30.00", {
+				owner: "colleague",
+				expenseDate: day(-3),
+			});
+			await admin.query(
+				`insert into employee_employment_period
+				   (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+				 values ($1, $2, 'closed', $3, $4, 'recorded', 'employee'), ($1, $2, 'open', $4, null, 'recorded', 'contractor')`,
+				[ORG, ids.colleague, berlinInstant(day(-90)), berlinInstant(day(-3), 12)],
+			);
+			await admin.query("update employee set engagement_kind = 'contractor' where id = $1", [
+				ids.colleague,
+			]);
+
+			const entries = await listed(current);
+			expect(Object.fromEntries(entries.map(({ source, skip }) => [source.id, skip]))).toEqual({
+				[spanning]: { reason: "spans_engagement_change" },
+				[conversionDay]: { reason: "spans_engagement_change" },
+			});
+			const run = await exportPayroll(current);
+			expect(await includedIn(run)).toEqual([]);
+		});
 	});
 
 	it("limits the workspace to the reader's payroll scope and the organization", async () => {

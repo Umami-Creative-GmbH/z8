@@ -509,6 +509,7 @@ export async function loadPayrollPeriodSources(input: {
 						...approvedAbsenceEmployees(absences),
 					])),
 				],
+				isPayrollDay: payrollScope.isPayrollDay,
 			},
 		};
 	}
@@ -542,6 +543,7 @@ export async function loadPayrollPeriodSources(input: {
 					...approvedAbsenceEmployees(absences),
 				])),
 			],
+			isPayrollDay: payrollScope.isPayrollDay,
 		},
 	};
 }

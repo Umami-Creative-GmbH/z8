@@ -53,6 +53,7 @@ vi.mock("@/lib/queue", () => ({ addJob: async () => ({ id: "queued" }) }));
 const {
 	getPayrollDayRecordsAction,
 	getPayrollExportScopeAction,
+	getPayrollPeriodAction,
 	getPayrollReadinessForWorkspaceAction,
 	getPayrollRunReadinessAction,
 	getPayrollWorkspaceSummaryAction,
@@ -547,6 +548,23 @@ describe("External Contractor periods never reach employee payroll (#1997)", () 
 		).toBe(120);
 		// The control carries every day of the period.
 		expect(dates(ids.worker)).toHaveLength(31);
+	});
+
+	it("counts only days with employee time as unsettled, so the figure can reach zero", async () => {
+		const result = await getPayrollPeriodAction(july);
+		if (!result.success) throw new Error(result.error);
+		const rows = result.data.employees;
+
+		// The grid still shows the converted person's whole month; only 15–31 July can be settled.
+		expect(rows.find((row) => row.id === ids.converted)?.days).toHaveLength(31);
+		expect(rows.some((row) => row.id === ids.contractor)).toBe(false);
+		const others = rows.filter((row) => row.id !== ids.converted);
+		expect(others.every((row) => row.days.length === 31)).toBe(true);
+		expect(result.data.settlement).toEqual({
+			settledDays: 0,
+			changedSinceSettledDays: 0,
+			unsettledDays: others.length * 31 + 17,
+		});
 	});
 
 	it("lists no External Contractor's expenses in payroll-run readiness", async () => {

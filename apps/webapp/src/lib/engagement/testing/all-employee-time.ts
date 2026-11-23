@@ -21,5 +21,6 @@ export function allEmployeeTime(): EmployeeTime {
 			endDate: dates.endDate,
 		}),
 		withEmployeeTimeOn: (employeeIds) => [...employeeIds],
+		engagementOfDays: () => "employee",
 	};
 }

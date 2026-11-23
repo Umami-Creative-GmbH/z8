@@ -168,6 +168,16 @@ function reasonText(t: Translate, locale: string, skip: PayrollRunSkip): string 
 					format: skip.run.formatName,
 				},
 			);
+		case "external_contractor_days":
+			return t(
+				"payroll.runReadiness.reason.externalContractorDays",
+				"Its days fall in an External Contractor engagement: payroll never carries it.",
+			);
+		case "spans_engagement_change":
+			return t(
+				"payroll.runReadiness.reason.spansEngagementChange",
+				"Its days span a change between employee and External Contractor: payroll carries no part of it.",
+			);
 		case "nothing_owed":
 			return t(
 				"payroll.runReadiness.reason.nothingOwed",

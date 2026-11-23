@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Dieses Format ist ein API-Connector, der niemals Ausgabenbeträge überträgt.",
         "currencyNotEur": "Nicht in Euro: Abrechnungsläufe enthalten nur Euro-Beträge.",
+        "externalContractorDays": "Die Tage fallen in eine Tätigkeit als Externer Dienstleister: Die Abrechnung übernimmt sie nie.",
         "includedInOtherRun": "Im unbestätigten Abrechnungslauf {period} ({format}) enthalten.",
         "legacyClaim": "Altforderungen werden niemals über die Lohnabrechnung ausgezahlt.",
         "negativeDifference": "Eine Anpassung hat den Betrag früherer Abrechnungsläufe reduziert für: {kinds}.",
         "noStatutoryBaseline": "Keine gesetzliche Grundlage für: {items}.",
         "nothingOwed": "Die Abrechnungszeilen lassen keinen Restbetrag für die Abrechnung übrig.",
         "reimbursedOutsidePayroll": "Bereits teilweise per Banküberweisung bezahlt oder zurückgefordert: Die Abrechnung kann den Rest nicht übernehmen.",
+        "spansEngagementChange": "Die Tage reichen über einen Wechsel zwischen Arbeitnehmer und Externem Dienstleister: Die Abrechnung übernimmt keinen Teil davon.",
         "unmappedWageType": "Für dieses Format ist keine Lohnart zugeordnet für: {kinds}."
       },
       "title": "Ausgabenberichte, die dieser Abrechnungslauf nicht berücksichtigt",

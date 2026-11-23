@@ -46,6 +46,11 @@ export type BalanceAdjustmentErrorCode =
 	| "reason_required"
 	| "amount_not_positive"
 	| "future_day"
+	/**
+	 * #1997: a payout dated on a day of an External Contractor stint, which payroll never carries.
+	 * It must be dated within an employee stint.
+	 */
+	| "external_contractor_day"
 	| "exceeds_balance"
 	/**
 	 * The payout would leave the work balance below zero at the end of the day

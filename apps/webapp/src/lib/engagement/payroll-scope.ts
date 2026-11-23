@@ -2,7 +2,7 @@ import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
 import { compareInstants, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { allocateEmployeeMinutes } from "@/lib/payroll-allocation/employee-minutes";
-import { employeeTimeWithin } from "./employee-time";
+import { type DaysEngagement, employeeTimeWithin } from "./employee-time";
 import { type EmployeeTime, loadEmployeeTime } from "./engagement-stints";
 
 /**
@@ -26,6 +26,16 @@ export interface PayrollScope {
 	 * time. A conversion day is a payroll day for the employee part of it.
 	 */
 	isPayrollDay(employeeId: string, date: string): boolean;
+	/**
+	 * Whose time the days of a record paid whole or not at all are (a travel expense report's trip
+	 * or expense days): payroll carries it only when they are all `employee` time; `contractor`
+	 * days are paid outside payroll, and days that meet an engagement change (`both`) are never
+	 * half-carried.
+	 */
+	engagementOfDays(
+		employeeId: string,
+		dates: { startDate: string; endDate: string },
+	): DaysEngagement;
 	/**
 	 * A work or break record as payroll shows it: the record itself when all of it is employee
 	 * time; the part from its first to its last employee instant, with the minutes the payroll
@@ -64,6 +74,8 @@ export function payrollScope(
 		employeeTime,
 		includes: (employeeId) => included.has(employeeId),
 		isPayrollDay: (employeeId, date) => employeeTime.hasEmployeeTimeOn(employeeId, date, date),
+		engagementOfDays: (employeeId, dates) =>
+			employeeTime.engagementOfDays(employeeId, dates.startDate, dates.endDate),
 		clipRecord: (employeeId, record) => clipToEmployeeTime(employeeTime, employeeId, record),
 		blockingClockRepairs: (repairs) =>
 			repairs.filter(
