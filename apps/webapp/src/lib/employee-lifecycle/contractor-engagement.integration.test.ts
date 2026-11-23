@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import type { InvitationEngagement } from "@/lib/auth/employee-invitation-draft";
 import { todayInOrganization } from "@/lib/personnel-file/organization-day";
+import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/cache", async (original) =>
@@ -1353,6 +1354,59 @@ describe("external contractor engagement kind (#1995)", () => {
 			// The same history for an employee still opens one.
 			expect(employeeEnd).toMatchObject({ payrollReconciliationReviewOpened: true });
 			expect(await reviewKinds(employeeEnd.departureId)).toContain("payroll_reconciliation");
+		});
+
+		it("flags contractor work recorded after the engagement's end for the admins (#1935)", async () => {
+			// Work after a contractor stint ends is neither payroll (no employee time) nor priced
+			// (outside every contractor engagement); the departure review must surface it.
+			now = TODAY;
+			const contractor = await seedContractor();
+			const clockIn = randomUUID();
+			const clockOut = randomUUID();
+			await withCanonicalRecords(fixture.pool, async (client) => {
+				for (const [id, type, timestamp] of [
+					[clockIn, "clock_in", "2026-08-20T08:00:00Z"],
+					[clockOut, "clock_out", "2026-08-20T12:00:00Z"],
+				]) {
+					await client.query(
+						`insert into time_entry (id, employee_id, organization_id, type, timestamp,
+						 utc_offset_minutes, timezone, timezone_source, hash, created_by)
+						 values ($1::uuid, $2, $3, $4, $5, 0, 'UTC', 'user_setting', $1::uuid::text, $6)`,
+						[
+							id,
+							contractor.employeeId,
+							fixture.organizationId,
+							type,
+							timestamp,
+							fixture.ownerUserId,
+						],
+					);
+				}
+				await client.query(
+					`insert into work_period (employee_id, organization_id, clock_in_id, clock_out_id,
+					 start_time, end_time, duration_minutes, is_active, approval_status, updated_at)
+					 values ($1, $2, $3, $4, '2026-08-20T08:00:00Z', '2026-08-20T12:00:00Z', 240, false,
+					         'approved', now())`,
+					[contractor.employeeId, fixture.organizationId, clockIn, clockOut],
+				);
+			});
+
+			const end = await commands().recordPastDeparture(ownerActor(), {
+				employeeId: contractor.employeeId,
+				requestId: randomUUID(),
+				lastWorkingDay: "2026-08-15",
+				replacementEmployeeId: null,
+				acknowledgeUnassignedDuties: true,
+			});
+
+			expect(end).toMatchObject({ status: "effective", payrollReconciliationReviewOpened: false });
+			expect(await reviewKinds(end.departureId)).toEqual(["work_after_cutoff"]);
+			const queue = await listContractsReviewQueue(fixture.db, fixture.organizationId);
+			expect(
+				queue.departureReviews
+					.filter((review) => review.departureId === end.departureId)
+					.map((review) => ({ kind: review.kind, engagementKind: review.engagementKind })),
+			).toEqual([{ kind: "work_after_cutoff", engagementKind: "contractor" }]);
 		});
 
 		it("keeps a review on the kind of the stint it is about after the person converts", async () => {
