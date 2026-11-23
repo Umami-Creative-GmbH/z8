@@ -39,6 +39,21 @@ describe("contractor statement CSV", () => {
 		]);
 	});
 
+	it("says it lists approved work only and counts the work awaiting approval", () => {
+		const table = rows(contractorStatementCsv(sampleStatement(), { t: catalogT("en") }));
+		expect(table.slice(10, 12)).toEqual([
+			["Only approved work is listed. Work awaiting approval is added once it is approved."],
+			["Work periods awaiting approval, not included: 2"],
+		]);
+		const none = rows(
+			contractorStatementCsv(sampleStatement({ awaitingApprovalWorkPeriods: 0 }), {
+				t: catalogT("de"),
+			}),
+		);
+		expect(none[11]).toEqual([]);
+		expect(none[10][0]).toContain("Nur freigegebene Arbeit");
+	});
+
 	it("itemizes days, their work by project and task, and the totals", () => {
 		const table = rows(contractorStatementCsv(sampleStatement(), { t: catalogT("en") }));
 		const start = table.findIndex((row) => row[0] === "Row type");
@@ -50,7 +65,6 @@ describe("contractor statement CSV", () => {
 			"Project",
 			"Task",
 			"Worked minutes",
-			"Awaiting approval",
 			"Paid by",
 			"Day-unit rule",
 			"Rate",
@@ -68,7 +82,6 @@ describe("contractor statement CSV", () => {
 				"",
 				"",
 				"270",
-				"",
 				"Day rate",
 				"Half day up to 240 min, full day above",
 				"600.00",
@@ -85,7 +98,6 @@ describe("contractor statement CSV", () => {
 				"Website, relaunch",
 				"Design",
 				"180",
-				"No",
 				"",
 				"",
 				"",
@@ -102,7 +114,6 @@ describe("contractor statement CSV", () => {
 				"Shop",
 				"",
 				"90",
-				"Yes",
 				"",
 				"",
 				"",
@@ -119,7 +130,6 @@ describe("contractor statement CSV", () => {
 				"",
 				"",
 				"120",
-				"",
 				"Day rate",
 				"Half day up to 240 min, full day above",
 				"600.00",
@@ -136,7 +146,6 @@ describe("contractor statement CSV", () => {
 				"Shop",
 				"",
 				"120",
-				"No",
 				"",
 				"",
 				"",
@@ -145,7 +154,7 @@ describe("contractor statement CSV", () => {
 				"",
 				"300.00",
 			],
-			["Day", "2026-03-20", "", "", "", "", "60", "", "No rate applies", "", "", "", "", "", ""],
+			["Day", "2026-03-20", "", "", "", "", "60", "No rate applies", "", "", "", "", "", ""],
 			[
 				"Work",
 				"2026-03-20",
@@ -154,7 +163,6 @@ describe("contractor statement CSV", () => {
 				"",
 				"",
 				"60",
-				"No",
 				"",
 				"",
 				"",
@@ -163,8 +171,8 @@ describe("contractor statement CSV", () => {
 				"",
 				"",
 			],
-			["Total", "", "", "", "", "", "390", "", "", "", "", "EUR", "1.5000", "Days", "900.00"],
-			["Unpriced", "", "", "", "", "", "60", "", "", "", "", "", "", "", ""],
+			["Total", "", "", "", "", "", "390", "", "", "", "EUR", "1.5000", "Days", "900.00"],
+			["Unpriced", "", "", "", "", "", "60", "", "", "", "", "", "", ""],
 		]);
 	});
 

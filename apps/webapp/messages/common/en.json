@@ -597,7 +597,6 @@
     "yes": "Yes"
   },
   "contractorStatement": {
-    "awaitingApprovalNotice": "Some work still awaits approval of a change; it is included as currently recorded.",
     "basis": {
       "daily": "Day rate",
       "hourly": "Hourly rate"
@@ -605,7 +604,6 @@
     "byProject": "By project",
     "columns": {
       "amount": "Amount",
-      "awaitingApproval": "Awaiting approval",
       "basis": "Paid by",
       "currency": "Currency",
       "date": "Date",
@@ -648,7 +646,6 @@
       "toRequired": "Choose the last day"
     },
     "generated": "Generated (UTC)",
-    "no": "No",
     "noProject": "No project",
     "noRate": "No rate applies",
     "notice": "Verification statement only. Not an invoice or self-billing credit note (Gutschrift): Z8 never issues invoices. It lists the work recorded in Z8 and what the contractor's agreed rates price it at, so an invoice can be checked against it.",
@@ -662,12 +659,6 @@
       "unpriced": "Unpriced",
       "work": "Work"
     },
-    "rules": {
-      "anyWorkFullDay": "Any day with work counts as a full day",
-      "halfAndFullDay": "Half day up to {minutes} min, full day above",
-      "proratedCapped": "Prorated by a {minutes}-minute day, at most one day",
-      "proratedUncapped": "Prorated by a {minutes}-minute day, without a cap"
-    },
     "times": "Days are the contractor's local calendar days; times are shown at the UTC offset recorded with the work.",
     "title": "Contractor Time & Fee Verification Statement",
     "totals": "Totals",
@@ -678,7 +669,8 @@
     "unpricedNotice": "Some work had no agreed rate on its day. It is listed without an amount and is not in the totals.",
     "vatId": "VAT ID",
     "workedHours": "Worked hours",
-    "yes": "Yes"
+    "approvedOnly": "Only approved work is listed. Work awaiting approval is added once it is approved.",
+    "awaitingApprovalExcluded": "Work periods awaiting approval, not included: {count}"
   },
   "drivingLicence": {
     "applyingInterval": "Applying…",
@@ -3665,5 +3657,13 @@
   },
   "worksCouncil": {
     "loadingLabel": "Loading works council"
+  },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Any day with work counts as a full day",
+      "halfAndFullDay": "Half day up to {minutes} min, full day above",
+      "proratedCapped": "Prorated by a {minutes}-minute day, at most one day",
+      "proratedUncapped": "Prorated by a {minutes}-minute day, without a cap"
+    }
   }
 }

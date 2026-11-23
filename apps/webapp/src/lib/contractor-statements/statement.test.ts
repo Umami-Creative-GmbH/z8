@@ -61,7 +61,6 @@ function details(entries: Record<string, Partial<StatementWorkDetails>>) {
 			{
 				projectName: null,
 				taskName: null,
-				awaitingApproval: false,
 				startOffsetMinutes: 60,
 				...value,
 			},
@@ -91,6 +90,7 @@ describe("contractor statement", () => {
 			period: { fromDay: day("2026-03-01"), toDay: day("2026-03-31") },
 			pricing,
 			work: details({ w1: { projectName: "Website" } }),
+			awaitingApprovalWorkPeriods: 0,
 		});
 
 		const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
@@ -134,9 +134,10 @@ describe("contractor statement", () => {
 			pricing,
 			work: details({
 				w1: { projectName: "Website", taskName: "Design" },
-				w2: { projectName: "Shop", awaitingApproval: true },
+				w2: { projectName: "Shop" },
 				w3: { projectName: "Website", taskName: "Build" },
 			}),
+			awaitingApprovalWorkPeriods: 2,
 		});
 
 		expect(statement.period).toEqual({ fromDay: "2026-03-01", toDay: "2026-03-31" });
@@ -162,7 +163,6 @@ describe("contractor statement", () => {
 						workedMinutes: 180,
 						projectName: "Website",
 						taskName: "Design",
-						awaitingApproval: false,
 						amount: "240.00",
 					},
 					{
@@ -172,7 +172,6 @@ describe("contractor statement", () => {
 						workedMinutes: 90,
 						projectName: "Shop",
 						taskName: null,
-						awaitingApproval: true,
 						amount: "120.00",
 					},
 				],
@@ -202,7 +201,8 @@ describe("contractor statement", () => {
 			{ projectName: "Website", currency: "EUR", workedMinutes: 300, amount: "421.00" },
 		]);
 		expect(statement.unpriced).toEqual({ workedMinutes: 0, days: 0 });
-		expect(statement.awaitingApprovalLines).toBe(1);
+		// Work awaiting approval is left out by the loader; the statement reports how much.
+		expect(statement.awaitingApprovalWorkPeriods).toBe(2);
 	});
 
 	it("names the day-unit rule of daily terms and keeps unpriced days without an amount", () => {
@@ -228,6 +228,7 @@ describe("contractor statement", () => {
 			period: { fromDay: day("2026-03-01"), toDay: day("2026-03-31") },
 			pricing,
 			work: details({}),
+			awaitingApprovalWorkPeriods: 0,
 		});
 
 		expect(statement.days.map((entry) => entry.pricing)).toEqual([
@@ -257,6 +258,7 @@ describe("contractor statement", () => {
 			period: { fromDay: day("2026-03-01"), toDay: day("2026-03-31") },
 			pricing: { days: [], totals: [], unpriced: [] },
 			work: details({}),
+			awaitingApprovalWorkPeriods: 0,
 		});
 		const text = JSON.stringify(statement);
 		for (const word of ["billable", "margin", "costRate", "revenue", "sellRate"]) {

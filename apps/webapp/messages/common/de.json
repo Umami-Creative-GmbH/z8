@@ -597,7 +597,6 @@
     "yes": "Ja"
   },
   "contractorStatement": {
-    "awaitingApprovalNotice": "Für manche Arbeit steht die Genehmigung einer Änderung noch aus; sie ist so enthalten, wie sie derzeit erfasst ist.",
     "basis": {
       "daily": "Tagessatz",
       "hourly": "Stundensatz"
@@ -605,7 +604,6 @@
     "byProject": "Nach Projekt",
     "columns": {
       "amount": "Betrag",
-      "awaitingApproval": "Genehmigung ausstehend",
       "basis": "Vergütung",
       "currency": "Währung",
       "date": "Datum",
@@ -648,7 +646,6 @@
       "toRequired": "Wählen Sie den letzten Tag"
     },
     "generated": "Erstellt (UTC)",
-    "no": "Nein",
     "noProject": "Kein Projekt",
     "noRate": "Kein Satz vereinbart",
     "notice": "Nur zur Prüfung. Kein Rechnungs- oder Gutschriftsdokument: Z8 stellt keine Rechnungen aus. Der Nachweis listet die in Z8 erfasste Arbeit und ihren Preis nach den vereinbarten Sätzen, damit eine Rechnung daran geprüft werden kann.",
@@ -662,12 +659,6 @@
       "unpriced": "Ohne Satz",
       "work": "Arbeit"
     },
-    "rules": {
-      "anyWorkFullDay": "Jeder Tag mit Arbeit zählt als voller Tag",
-      "halfAndFullDay": "Halber Tag bis {minutes} Min., darüber voller Tag",
-      "proratedCapped": "Anteilig nach einem {minutes}-Minuten-Tag, höchstens ein Tag",
-      "proratedUncapped": "Anteilig nach einem {minutes}-Minuten-Tag, ohne Obergrenze"
-    },
     "times": "Tage sind die lokalen Kalendertage des Dienstleisters; Uhrzeiten werden mit dem bei der Arbeit erfassten UTC-Versatz angezeigt.",
     "title": "Zeit- und Honorarnachweis für Externe Dienstleister",
     "totals": "Summen",
@@ -678,7 +669,8 @@
     "unpricedNotice": "Für manche Arbeit galt an ihrem Tag kein vereinbarter Satz. Sie ist ohne Betrag aufgeführt und nicht in den Summen enthalten.",
     "vatId": "USt-IdNr.",
     "workedHours": "Gearbeitete Stunden",
-    "yes": "Ja"
+    "approvedOnly": "Nur freigegebene Arbeit ist aufgeführt. Arbeit, deren Freigabe aussteht, kommt hinzu, sobald sie freigegeben ist.",
+    "awaitingApprovalExcluded": "Nicht enthaltene Arbeitszeiträume mit ausstehender Freigabe: {count}"
   },
   "drivingLicence": {
     "applyingInterval": "Wird angewendet…",
@@ -3665,5 +3657,13 @@
   },
   "worksCouncil": {
     "loadingLabel": "Betriebsrat wird geladen"
+  },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Jeder Tag mit Arbeit zählt als voller Tag",
+      "halfAndFullDay": "Halber Tag bis {minutes} Min., darüber voller Tag",
+      "proratedCapped": "Anteilig nach einem {minutes}-Minuten-Tag, höchstens ein Tag",
+      "proratedUncapped": "Anteilig nach einem {minutes}-Minuten-Tag, ohne Obergrenze"
+    }
   }
 }

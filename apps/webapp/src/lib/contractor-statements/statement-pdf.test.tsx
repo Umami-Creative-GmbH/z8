@@ -43,7 +43,8 @@ describe("contractor statement PDF", () => {
 			"€900.00",
 			"1.5000 Days",
 			"Some work had no agreed rate on its day.",
-			"Some work still awaits approval of a change",
+			"Only approved work is listed.",
+			"Work periods awaiting approval, not included: 2",
 		]) {
 			expect(text).toContain(expected);
 		}
@@ -176,12 +177,13 @@ describe("contractor statement PDF", () => {
 						totals: [],
 						projects: [],
 						unpriced: { workedMinutes: 0, days: 0 },
-						awaitingApprovalLines: 0,
+						awaitingApprovalWorkPeriods: 0,
 					}),
 					{ t: catalogT("en"), locale: "en" },
 				),
 			),
 		);
 		expect(text).toContain("No completed work as External Contractor in this period.");
+		expect(text).not.toContain("awaiting approval, not included");
 	});
 });

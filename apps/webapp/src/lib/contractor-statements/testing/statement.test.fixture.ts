@@ -69,7 +69,6 @@ export function sampleStatement(overrides: Partial<ContractorStatement> = {}): C
 						workedMinutes: 180,
 						projectName: "Website, relaunch",
 						taskName: "Design",
-						awaitingApproval: false,
 						amount: "400.00",
 					},
 					{
@@ -79,7 +78,6 @@ export function sampleStatement(overrides: Partial<ContractorStatement> = {}): C
 						workedMinutes: 90,
 						projectName: "Shop",
 						taskName: null,
-						awaitingApproval: true,
 						amount: "200.00",
 					},
 				],
@@ -104,7 +102,6 @@ export function sampleStatement(overrides: Partial<ContractorStatement> = {}): C
 						workedMinutes: 120,
 						projectName: "Shop",
 						taskName: null,
-						awaitingApproval: false,
 						amount: "300.00",
 					},
 				],
@@ -121,7 +118,6 @@ export function sampleStatement(overrides: Partial<ContractorStatement> = {}): C
 						workedMinutes: 60,
 						projectName: null,
 						taskName: null,
-						awaitingApproval: false,
 						amount: null,
 					},
 				],
@@ -135,7 +131,7 @@ export function sampleStatement(overrides: Partial<ContractorStatement> = {}): C
 			{ projectName: "Website, relaunch", currency: "EUR", workedMinutes: 180, amount: "400.00" },
 		],
 		unpriced: { workedMinutes: 60, days: 1 },
-		awaitingApprovalLines: 1,
+		awaitingApprovalWorkPeriods: 2,
 		...overrides,
 	};
 }

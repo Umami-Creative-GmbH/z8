@@ -173,7 +173,10 @@ export async function loadReportedProjectWork(
  * External Contractors' cost from their terms (#1999): the contractor pricing
  * engine prices every local day of the range once, from all of the people's
  * completed work that day (any project, billable or not), and the report reads
- * each work period's allocated part. Only people with a contractor engagement
+ * each work period's allocated part. Rejected work is never priced (its cost is
+ * unknown); work awaiting approval is, because margin reads the work as
+ * currently recorded, like the report's revenue. Contractor Time & Fee
+ * Statements verify approved work only. Only people with a contractor engagement
  * in the window are priced. Queries run one after another, like the rest of
  * the report (`reader` may be a transaction).
  */

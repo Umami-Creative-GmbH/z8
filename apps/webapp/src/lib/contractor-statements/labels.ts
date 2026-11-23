@@ -1,4 +1,4 @@
-import type { CompensationBasis, DayUnitRule } from "@/lib/contractor-compensation/terms";
+import type { CompensationBasis } from "@/lib/contractor-compensation/terms";
 import type { ContractorUnits } from "@/lib/contractor-compensation/pricing";
 
 /**
@@ -38,7 +38,6 @@ export function statementLabels(t: StatementTranslate) {
 		project: t("common:contractorStatement.columns.project", "Project"),
 		task: t("common:contractorStatement.columns.task", "Task"),
 		workedMinutes: t("common:contractorStatement.columns.workedMinutes", "Worked minutes"),
-		awaitingApproval: t("common:contractorStatement.columns.awaitingApproval", "Awaiting approval"),
 		basis: t("common:contractorStatement.columns.basis", "Paid by"),
 		dayUnitRule: t("common:contractorStatement.columns.dayUnitRule", "Day-unit rule"),
 		rate: t("common:contractorStatement.columns.rate", "Rate"),
@@ -50,8 +49,6 @@ export function statementLabels(t: StatementTranslate) {
 		rowWork: t("common:contractorStatement.rows.work", "Work"),
 		rowTotal: t("common:contractorStatement.rows.total", "Total"),
 		rowUnpriced: t("common:contractorStatement.rows.unpriced", "Unpriced"),
-		yes: t("common:contractorStatement.yes", "Yes"),
-		no: t("common:contractorStatement.no", "No"),
 		noRate: t("common:contractorStatement.noRate", "No rate applies"),
 		hours: t("common:contractorStatement.units.hours", "Hours"),
 		days: t("common:contractorStatement.units.days", "Days"),
@@ -70,9 +67,9 @@ export function statementLabels(t: StatementTranslate) {
 			"common:contractorStatement.unpricedNotice",
 			"Some work had no agreed rate on its day. It is listed without an amount and is not in the totals.",
 		),
-		awaitingApprovalNotice: t(
-			"common:contractorStatement.awaitingApprovalNotice",
-			"Some work still awaits approval of a change; it is included as currently recorded.",
+		approvedOnly: t(
+			"common:contractorStatement.approvedOnly",
+			"Only approved work is listed. Work awaiting approval is added once it is approved.",
 		),
 		empty: t(
 			"common:contractorStatement.empty",
@@ -91,31 +88,11 @@ export function unitLabel(labels: StatementLabels, unit: ContractorUnits["unit"]
 	return unit === "hour" ? labels.hours : labels.days;
 }
 
-/** How a daily rate counts days: "Half day up to 240 min, full day above". */
-export function dayUnitRuleLabel(t: StatementTranslate, rule: DayUnitRule): string {
-	switch (rule.kind) {
-		case "any_work_full_day":
-			return t(
-				"common:contractorStatement.rules.anyWorkFullDay",
-				"Any day with work counts as a full day",
-			);
-		case "half_and_full_day":
-			return t(
-				"common:contractorStatement.rules.halfAndFullDay",
-				"Half day up to {minutes} min, full day above",
-				{ minutes: rule.halfDayThresholdMinutes },
-			);
-		case "prorated_by_standard_day":
-			return rule.capAtOneDay
-				? t(
-						"common:contractorStatement.rules.proratedCapped",
-						"Prorated by a {minutes}-minute day, at most one day",
-						{ minutes: rule.standardDayMinutes },
-					)
-				: t(
-						"common:contractorStatement.rules.proratedUncapped",
-						"Prorated by a {minutes}-minute day, without a cap",
-						{ minutes: rule.standardDayMinutes },
-					);
-	}
+/** "Work periods awaiting approval, not included: 2". */
+export function awaitingApprovalNotice(t: StatementTranslate, count: number): string {
+	return t(
+		"common:contractorStatement.awaitingApprovalExcluded",
+		"Work periods awaiting approval, not included: {count}",
+		{ count },
+	);
 }

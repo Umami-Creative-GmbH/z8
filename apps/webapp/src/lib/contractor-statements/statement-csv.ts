@@ -1,7 +1,8 @@
+import { dayUnitRuleLabel } from "@/lib/contractor-compensation/day-unit-rule-label";
 import { csvFile, csvText } from "@/lib/export/csv-cells";
 import {
+	awaitingApprovalNotice,
 	basisLabel,
-	dayUnitRuleLabel,
 	type StatementTranslate,
 	statementLabels,
 	unitLabel,
@@ -52,6 +53,10 @@ export function contractorStatementCsv(
 		text([labels.referenceCode, contractor.referenceCode]),
 		text([labels.period, statement.period.fromDay, statement.period.toDay]),
 		text([labels.generated, statement.generatedAt]),
+		text([labels.approvedOnly]),
+		...(statement.awaitingApprovalWorkPeriods > 0
+			? [text([awaitingApprovalNotice(t, statement.awaitingApprovalWorkPeriods)])]
+			: []),
 		[],
 	];
 
@@ -63,7 +68,6 @@ export function contractorStatementCsv(
 		labels.project,
 		labels.task,
 		labels.workedMinutes,
-		labels.awaitingApproval,
 		labels.basis,
 		labels.dayUnitRule,
 		labels.rate,
@@ -84,7 +88,6 @@ export function contractorStatementCsv(
 			cell(""),
 			cell(""),
 			figure(day.workedMinutes),
-			cell(""),
 			cell(pricing ? basisLabel(labels, pricing.basis) : labels.noRate),
 			cell(pricing?.dayUnitRule ? dayUnitRuleLabel(t, pricing.dayUnitRule) : ""),
 			figure(pricing?.rate),
@@ -102,7 +105,6 @@ export function contractorStatementCsv(
 				cell(line.projectName),
 				cell(line.taskName),
 				figure(line.workedMinutes),
-				cell(line.awaitingApproval ? labels.yes : labels.no),
 				cell(""),
 				cell(""),
 				cell(""),
@@ -129,7 +131,6 @@ export function contractorStatementCsv(
 			cell(""),
 			cell(""),
 			cell(""),
-			cell(""),
 			cell(total.currency),
 			figure(single ? (hasHours ? total.hours : total.days) : ""),
 			cell(single ? (hasHours ? labels.hours : labels.days) : ""),
@@ -141,7 +142,7 @@ export function contractorStatementCsv(
 			cell(labels.rowUnpriced),
 			...Array.from({ length: 5 }, () => cell("")),
 			figure(statement.unpriced.workedMinutes),
-			...Array.from({ length: 8 }, () => cell("")),
+			...Array.from({ length: 7 }, () => cell("")),
 		]);
 	}
 

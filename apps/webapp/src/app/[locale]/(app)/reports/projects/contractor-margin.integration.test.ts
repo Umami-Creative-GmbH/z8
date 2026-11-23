@@ -88,6 +88,7 @@ const ids = {
 	tokyo: id("20"),
 	usd: id("21"),
 	lateStart: id("22"),
+	reviewed: id("23"),
 	customer: id("c1"),
 	foreignCustomer: id("c2"),
 	website: id("a1"),
@@ -105,7 +106,7 @@ const contractors = [
 	ids.unpriced,
 ] as const;
 /** Contractors a single test seeds with its own engagement. */
-const ownSetupContractors = [ids.tokyo, ids.usd, ids.lateStart] as const;
+const ownSetupContractors = [ids.tokyo, ids.usd, ids.lateStart, ids.reviewed] as const;
 const userOf = (employeeId: string) => `t1999-user-${employeeId.slice(-4)}`;
 const everyEmployee = [
 	ids.owner,
@@ -154,6 +155,7 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 		/** The clock entries' captured offset and zone; UTC by default. */
 		offsetMinutes?: number;
 		timezone?: string;
+		approvalStatus?: "approved" | "pending" | "rejected";
 	}) {
 		const organizationId = options.organizationId ?? ORG;
 		const minutes = (new Date(options.end).getTime() - new Date(options.start).getTime()) / 60_000;
@@ -184,7 +186,7 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 				`insert into work_period
 				 (employee_id, organization_id, clock_in_id, clock_out_id, project_id, is_billable, start_time,
 				  end_time, duration_minutes, is_active, approval_status, updated_at)
-				 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, 'approved', now())`,
+				 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, $10, now())`,
 				[
 					options.employeeId,
 					organizationId,
@@ -195,6 +197,7 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 					options.start,
 					options.end,
 					minutes,
+					options.approvalStatus ?? "approved",
 				],
 			),
 		);
@@ -637,6 +640,43 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 		const website = await costsByEmployee(ids.website);
 
 		expect(website[ids.lateStart]).toEqual({ revenue: "400.00", cost: null, margin: null });
+		expect(report.summary.billable).toMatchObject({ cost: null, costUnknownWorkCount: 1 });
+	});
+
+	it("never prices rejected work and prices work awaiting approval as recorded", async () => {
+		const periodId = await contractor(ids.reviewed);
+		await terms(ids.reviewed, periodId, { basis: "daily", rate: "600", rule: "any_work_full_day" });
+		const day = { employeeId: ids.reviewed };
+		await work({
+			...day,
+			projectId: ids.website,
+			start: "2026-03-10T08:00:00Z",
+			end: "2026-03-10T10:00:00Z",
+		});
+		await work({
+			...day,
+			projectId: ids.support,
+			start: "2026-03-10T10:00:00Z",
+			end: "2026-03-10T11:00:00Z",
+			approvalStatus: "pending",
+		});
+		await work({
+			...day,
+			projectId: ids.website,
+			start: "2026-03-10T11:00:00Z",
+			end: "2026-03-10T12:00:00Z",
+			approvalStatus: "rejected",
+		});
+		actAs(ids.owner);
+		const support = await costsByEmployee(ids.support);
+		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
+		const website = await costsByEmployee(ids.website);
+
+		// The day's fee is shared by the 3 h of approved and pending work (not 4 h with the
+		// rejected hour): the pending hour carries 200.00.
+		expect(support[ids.reviewed]).toEqual({ revenue: "80.00", cost: "200.00", margin: "-120.00" });
+		// The rejected hour gets no share of the fee: its cost is unknown, never priced.
+		expect(website[ids.reviewed]).toMatchObject({ cost: null, margin: null });
 		expect(report.summary.billable).toMatchObject({ cost: null, costUnknownWorkCount: 1 });
 	});
 

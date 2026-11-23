@@ -38,17 +38,23 @@ function instantWindow(range: Pick<ContractorDayRange, "fromDay" | "toDay">) {
 	return { start: dateFromInstant(start), end: dateFromInstant(end) };
 }
 
+/** Completed work the engine may price, and whether a change to it still awaits approval. */
+export type PricingWork = ContractorWork & { awaitingApproval: boolean };
+
 /**
  * The given people's completed work that may touch a local day of the range:
- * completed, not deleted, with its start entry's captured offset, whatever
- * the engagement. The engine keeps only the parts inside contractor
- * engagements and on the range's local days.
+ * completed, not deleted, not rejected, with its start entry's captured
+ * offset, whatever the engagement. Rejected work is never priced anywhere (as
+ * it never counts toward breaks taken); work awaiting approval is included and
+ * marked, so each reader decides (Billable Time margin keeps it, statements
+ * leave it out). The engine keeps only the parts inside contractor engagements
+ * and on the range's local days.
  */
 export async function loadContractorWork(
 	reader: Reader,
 	organizationId: string,
 	range: ContractorDayRange,
-): Promise<ContractorWork[]> {
+): Promise<PricingWork[]> {
 	if (range.employeeIds.length === 0) return [];
 	const window = instantWindow(range);
 	const rows = await reader
@@ -59,6 +65,7 @@ export async function loadContractorWork(
 			endTime: workPeriod.endTime,
 			durationMinutes: workPeriod.durationMinutes,
 			startOffsetMinutes: timeEntry.utcOffsetMinutes,
+			approvalStatus: workPeriod.approvalStatus,
 		})
 		.from(workPeriod)
 		.innerJoin(
@@ -73,6 +80,7 @@ export async function loadContractorWork(
 				eq(workPeriod.organizationId, organizationId),
 				inArray(workPeriod.employeeId, [...range.employeeIds]),
 				completedWorkPeriodCondition(),
+				ne(workPeriod.approvalStatus, "rejected"),
 				isNotNull(workPeriod.endTime),
 				isNotNull(workPeriod.durationMinutes),
 				gte(workPeriod.startTime, window.start),
@@ -92,6 +100,7 @@ export async function loadContractorWork(
 						endedAt: instantFromDate(row.endTime),
 						startOffsetMinutes: row.startOffsetMinutes,
 						durationMinutes: row.durationMinutes,
+						awaitingApproval: row.approvalStatus === "pending",
 					},
 				],
 	);
@@ -149,13 +158,16 @@ export async function loadContractorEngagements(
  * Prices the given contractors' completed work inside their contractor
  * engagements on the local days of the range, with each engagement's terms in
  * force on each day. Work as an employee (before or after a conversion) is
- * neither priced nor reported as unpriced. The one entry point for Billable
- * Time margin and Contractor Statements; it never writes.
+ * neither priced nor reported as unpriced; rejected work is never priced.
+ * Work awaiting approval is priced unless `approvedOnly` (Contractor
+ * Statements, which verify approved work only). Billable Time margin prices
+ * the same work as without `approvedOnly`. It never writes.
  */
 export async function priceContractorDays(
 	reader: Reader,
 	organizationId: string,
 	range: ContractorDayRange,
+	options: { approvedOnly?: boolean } = {},
 ): Promise<ContractorPricing> {
 	const [work, engagements, terms] = await Promise.all([
 		loadContractorWork(reader, organizationId, range),
@@ -163,7 +175,7 @@ export async function priceContractorDays(
 		listContractorTermsForPricing(reader, organizationId, range),
 	]);
 	return priceContractorWork({
-		work,
+		work: options.approvedOnly ? work.filter((item) => !item.awaitingApproval) : work,
 		engagements,
 		terms,
 		range: { fromDay: range.fromDay, toDay: range.toDay },

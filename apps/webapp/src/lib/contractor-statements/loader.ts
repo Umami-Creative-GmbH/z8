@@ -6,13 +6,18 @@ import { organization, user } from "@/db/auth-schema";
 import { employee, project, projectTask, timeEntry, workPeriod } from "@/db/schema";
 import { employeeContractorProfile } from "@/db/schema/contractor-profile";
 import {
+	type ContractorEngagement,
+	priceContractorWork,
+} from "@/lib/contractor-compensation/pricing";
+import {
 	loadContractorEngagements,
-	priceContractorDays,
+	loadContractorWork,
 } from "@/lib/contractor-compensation/pricing-loader";
-import type { ContractorEngagement } from "@/lib/contractor-compensation/pricing";
+import { listContractorTermsForPricing } from "@/lib/contractor-compensation/store";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
+import type { ContractorStatementRefusal } from "./refusal";
 import {
 	buildContractorStatement,
 	type ContractorStatement,
@@ -20,20 +25,22 @@ import {
 } from "./statement";
 
 /**
- * Loads a Contractor Time & Fee Statement (#2000): one person's External
- * Contractor work on the local days of a period, priced by the #1998 engine
- * (`priceContractorDays`), with the project and task of each work period and
- * the contracting details. Read-only and organization-scoped; who may read
- * whose statement is the caller's decision (`actions.ts`).
+ * Loads a Contractor Time & Fee Statement (#2000): one person's approved
+ * External Contractor work on the local days of a period, priced by the #1998
+ * engine (as `priceContractorDays(…, { approvedOnly: true })` prices it), with
+ * the project and task of each work period and the contracting details.
+ * Read-only and organization-scoped; who may read whose statement is the
+ * caller's decision (`actions.ts`).
  *
  * Only contractor engagements count: work as an employee (before or after a
- * conversion) is left out by the engine. Completed work is included whether
- * or not a change to it awaits approval; such lines are marked.
+ * conversion) is left out by the engine. Only approved work is listed (spec
+ * US14): rejected work never, and work whose change awaits approval is left
+ * out and counted (`awaitingApprovalWorkPeriods`).
  */
 
 type Reader = Pick<Transaction, "select">;
 
-export type ContractorStatementRefusal = "employee_not_found" | "not_contractor" | "invalid_period";
+export type { ContractorStatementRefusal } from "./refusal";
 
 export type ContractorStatementResult =
 	| { ok: true; statement: ContractorStatement }
@@ -90,7 +97,26 @@ export async function loadContractorStatement(
 	}
 
 	// One query at a time: the reader may be a transaction's single connection.
-	const pricing = await priceContractorDays(reader, organizationId, range);
+	const candidates = await loadContractorWork(reader, organizationId, range);
+	const terms = await listContractorTermsForPricing(reader, organizationId, range);
+	const days = { fromDay: period.fromDay, toDay: period.toDay };
+	// A verification statement lists approved work only (spec US14); work whose
+	// change awaits approval is left out and counted, so the reader knows to expect it.
+	const pricing = priceContractorWork({
+		work: candidates.filter((item) => !item.awaitingApproval),
+		engagements,
+		terms,
+		range: days,
+	});
+	const awaiting = priceContractorWork({
+		work: candidates.filter((item) => item.awaitingApproval),
+		engagements,
+		terms: [],
+		range: days,
+	});
+	const awaitingApprovalWorkPeriods = new Set(
+		awaiting.days.flatMap((day) => day.shares.map((share) => share.workId)),
+	).size;
 	const [profile] = await reader
 		.select({
 			companyName: employeeContractorProfile.companyName,
@@ -127,6 +153,7 @@ export async function loadContractorStatement(
 			generatedAt: input.generatedAt,
 			pricing,
 			work,
+			awaitingApprovalWorkPeriods,
 		}),
 	};
 }
@@ -165,7 +192,6 @@ async function loadWorkDetails(
 			id: workPeriod.id,
 			projectName: project.name,
 			taskName: projectTask.name,
-			approvalStatus: workPeriod.approvalStatus,
 			startOffsetMinutes: timeEntry.utcOffsetMinutes,
 		})
 		.from(workPeriod)
@@ -193,7 +219,6 @@ async function loadWorkDetails(
 			{
 				projectName: row.projectName,
 				taskName: row.taskName,
-				awaitingApproval: row.approvalStatus === "pending",
 				startOffsetMinutes: row.startOffsetMinutes,
 			},
 		]),

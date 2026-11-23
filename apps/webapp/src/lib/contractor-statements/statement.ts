@@ -32,8 +32,6 @@ import { currencyMinorUnitDigits, formatUnits } from "@/lib/money/exact-decimal"
 export interface StatementWorkDetails {
 	projectName: string | null;
 	taskName: string | null;
-	/** The work period still awaits approval of a change. */
-	awaitingApproval: boolean;
 	/** The UTC offset captured on its start entry; local times are shown at it. */
 	startOffsetMinutes: number;
 }
@@ -68,7 +66,6 @@ export interface StatementLine {
 	workedMinutes: number;
 	projectName: string | null;
 	taskName: string | null;
-	awaitingApproval: boolean;
 	/** This line's part of the day's amount; null on an unpriced day. */
 	amount: string | null;
 }
@@ -110,8 +107,11 @@ export interface ContractorStatement {
 	projects: StatementProjectTotal[];
 	/** Contractor work on days without terms. */
 	unpriced: { workedMinutes: number; days: number };
-	/** Lines whose work still awaits approval of a change. */
-	awaitingApprovalLines: number;
+	/**
+	 * Contractor work periods on the period's days whose change still awaits
+	 * approval. The statement lists approved work only, so they are left out.
+	 */
+	awaitingApprovalWorkPeriods: number;
 }
 
 export interface ContractorStatementInput {
@@ -119,10 +119,12 @@ export interface ContractorStatementInput {
 	contractor: StatementContractor;
 	period: { fromDay: PlainDate; toDay: PlainDate };
 	generatedAt: Instant;
-	/** The engine's result for this contractor and period. */
+	/** The engine's result for this contractor's approved work in the period. */
 	pricing: ContractorPricing;
 	/** Per work period id. */
 	work: ReadonlyMap<string, StatementWorkDetails>;
+	/** Work periods left out because a change to them awaits approval. */
+	awaitingApprovalWorkPeriods: number;
 }
 
 export const STATEMENT_UNIT_SCALE = 4;
@@ -159,7 +161,6 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 		{ projectName: string | null; currency: string; workedMinutes: number; amountMinor: bigint }
 	>();
 	const unpriced = { workedMinutes: 0, days: 0 };
-	let awaitingApprovalLines = 0;
 	// Shares are exact milliseconds that may fall between whole minutes. Each line
 	// takes the difference of the rounded running sum (per currency, and for
 	// unpriced work), so its lines, days, projects and total always add up.
@@ -190,7 +191,6 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 				// The loader details every work period; UTC only if one were missing.
 				const offset = details?.startOffsetMinutes ?? 0;
 				const allocation = allocations[index];
-				if (details?.awaitingApproval) awaitingApprovalLines += 1;
 				if (currency && allocation) {
 					const projectName = details?.projectName ?? null;
 					const key = `${projectName ?? ""}\u0000${currency}`;
@@ -211,7 +211,6 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 					workedMinutes,
 					projectName: details?.projectName ?? null,
 					taskName: details?.taskName ?? null,
-					awaitingApproval: details?.awaitingApproval ?? false,
 					amount: currency && allocation ? money(allocation.amountMinor, currency) : null,
 				};
 			});
@@ -252,6 +251,6 @@ export function buildContractorStatement(input: ContractorStatementInput): Contr
 				amount: money(total.amountMinor, total.currency),
 			})),
 		unpriced,
-		awaitingApprovalLines,
+		awaitingApprovalWorkPeriods: input.awaitingApprovalWorkPeriods,
 	};
 }

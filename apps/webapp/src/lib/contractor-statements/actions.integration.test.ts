@@ -207,7 +207,7 @@ describe("contractor statement exports on PostgreSQL", () => {
 		expect(csv.data.filename).toMatch(/^contractor-statement-.+-2026-03-01-2026-03-31\.csv$/);
 		const text = Buffer.from(csv.data.base64, "base64").toString("utf8");
 		expect(text).toContain("Contractor Time & Fee Verification Statement");
-		expect(text).toContain('"Total","","","","","",240,"","","","","EUR",4.0000,"Hours",340.00');
+		expect(text).toContain('"Total","","","","","",240,"","","","EUR",4.0000,"Hours",340.00');
 
 		const pdf = await exportContractorStatement({
 			employeeId: otherContractorId,

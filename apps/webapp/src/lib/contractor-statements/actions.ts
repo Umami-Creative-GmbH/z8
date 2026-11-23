@@ -4,14 +4,14 @@ import { Effect } from "effect";
 import { getLocale } from "next-intl/server";
 import { z } from "zod";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { NotFoundError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { organizationAction } from "@/lib/organization-action/organization-action";
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
+import { storeStep } from "@/lib/organization-action/store-step";
 import { getTranslate } from "@/tolgee/server";
-import type { ContractorStatementRefusal } from "./loader";
+import { ContractorStatementRefused } from "./refusal";
 import { contractorStatementCsv, contractorStatementFilename } from "./statement-csv";
 
 /**
@@ -38,18 +38,6 @@ export interface ContractorStatementFile {
 
 const daySchema = z.string().max(10);
 
-const REFUSALS: Record<Exclude<ContractorStatementRefusal, "employee_not_found">, string> = {
-	not_contractor: "This person had no External Contractor engagement in this period",
-	invalid_period: "Choose a period of at most one year whose first day is not after its last",
-};
-
-function refusalError(reason: ContractorStatementRefusal) {
-	if (reason === "employee_not_found") {
-		return new NotFoundError({ message: "The contractor was not found", entityType: "employee" });
-	}
-	return new ValidationError({ message: REFUSALS[reason], refusal: reason });
-}
-
 export const exportContractorStatement = organizationAction(
 	{
 		name: "contractorStatement.export",
@@ -72,19 +60,28 @@ export const exportContractorStatement = organizationAction(
 				action: "export",
 			});
 
-			const service = yield* DatabaseService;
-			// Loaded on use: pages that render the export button never load the pricing store.
-			const result = yield* service.query("contractorStatement.load", async () => {
-				const { loadContractorStatement } = await import("./loader");
-				return loadContractorStatement(service.db, organizationId, {
-					employeeId: input.employeeId,
-					fromDay: input.fromDay,
-					toDay: input.toDay,
-					generatedAt: systemClock.nowInstant(),
-				});
-			});
-			if (!result.ok) return yield* Effect.fail(refusalError(result.reason));
-			const { statement } = result;
+			const statement = yield* storeStep(
+				"contractorStatement.load",
+				async (db) => {
+					// Loaded on use: pages that render the export button never load the pricing store.
+					const { loadContractorStatement } = await import("./loader");
+					const result = await loadContractorStatement(db, organizationId, {
+						employeeId: input.employeeId,
+						fromDay: input.fromDay,
+						toDay: input.toDay,
+						generatedAt: systemClock.nowInstant(),
+					});
+					if (result.ok) return result.statement;
+					if (result.reason === "employee_not_found") {
+						throw new NotFoundError({
+							message: "The contractor was not found",
+							entityType: "employee",
+						});
+					}
+					throw new ContractorStatementRefused(result.reason);
+				},
+				{ refusal: ContractorStatementRefused },
+			);
 
 			const [t, locale] = yield* Effect.promise(() => Promise.all([getTranslate(), getLocale()]));
 			const file: ContractorStatementFile =

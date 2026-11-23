@@ -94,7 +94,7 @@ describe("contractor statements on PostgreSQL", () => {
 		offset?: number;
 		projectId?: string | null;
 		taskId?: string | null;
-		approvalStatus?: "approved" | "pending";
+		approvalStatus?: "approved" | "pending" | "rejected";
 	}) {
 		const clockIn = randomUUID();
 		const clockOut = randomUUID();
@@ -154,12 +154,22 @@ describe("contractor statements on PostgreSQL", () => {
 	}
 
 	/** The engine's own totals for the same contractor and days. */
-	async function engineTotals(employeeId: string, fromDay: string, toDay: string) {
-		const pricing = await priceContractorDays(db, fixture.organizationId, {
-			employeeIds: [employeeId],
-			fromDay: Temporal.PlainDate.from(fromDay),
-			toDay: Temporal.PlainDate.from(toDay),
-		});
+	async function engineTotals(
+		employeeId: string,
+		fromDay: string,
+		toDay: string,
+		options: { approvedOnly?: boolean } = {},
+	) {
+		const pricing = await priceContractorDays(
+			db,
+			fixture.organizationId,
+			{
+				employeeIds: [employeeId],
+				fromDay: Temporal.PlainDate.from(fromDay),
+				toDay: Temporal.PlainDate.from(toDay),
+			},
+			options,
+		);
 		return pricing.totals.map((total) => ({
 			currency: total.currency,
 			amountMinor: Number(total.amountMinor),
@@ -203,7 +213,23 @@ describe("contractor statements on PostgreSQL", () => {
 			end: "2026-03-14T17:00:00Z",
 			offset: 540,
 			projectId: shop.projectId,
+		});
+		// A change awaiting approval is left out and counted; rejected work never appears.
+		await completedWork({
+			employeeId,
+			start: "2026-03-20T08:00:00Z",
+			end: "2026-03-20T10:00:00Z",
+			offset: 60,
+			projectId: shop.projectId,
 			approvalStatus: "pending",
+		});
+		await completedWork({
+			employeeId,
+			start: "2026-03-21T08:00:00Z",
+			end: "2026-03-21T10:00:00Z",
+			offset: 60,
+			projectId: shop.projectId,
+			approvalStatus: "rejected",
 		});
 
 		const statement = await statementOf(employeeId, "2026-03-01", "2026-03-31");
@@ -227,7 +253,6 @@ describe("contractor statements on PostgreSQL", () => {
 					line.end,
 					line.projectName,
 					line.taskName,
-					line.awaitingApproval,
 					line.amount,
 				]),
 			})),
@@ -238,14 +263,7 @@ describe("contractor statements on PostgreSQL", () => {
 				units: "3.0000",
 				amount: "240.00",
 				lines: [
-					[
-						"2026-03-02T09:00+01:00",
-						"2026-03-02T12:00+01:00",
-						"Website",
-						"Design",
-						false,
-						"240.00",
-					],
+					["2026-03-02T09:00+01:00", "2026-03-02T12:00+01:00", "Website", "Design", "240.00"],
 				],
 			},
 			{
@@ -253,26 +271,31 @@ describe("contractor statements on PostgreSQL", () => {
 				rate: "80.00",
 				units: "2.0000",
 				amount: "160.00",
-				lines: [["2026-03-14T22:00+09:00", "2026-03-15T00:00+09:00", "Shop", null, true, "160.00"]],
+				lines: [["2026-03-14T22:00+09:00", "2026-03-15T00:00+09:00", "Shop", null, "160.00"]],
 			},
 			{
 				date: "2026-03-15",
 				rate: "90.50",
 				units: "2.0000",
 				amount: "181.00",
-				lines: [["2026-03-15T00:00+09:00", "2026-03-15T02:00+09:00", "Shop", null, true, "181.00"]],
+				lines: [["2026-03-15T00:00+09:00", "2026-03-15T02:00+09:00", "Shop", null, "181.00"]],
 			},
 		]);
 		expect(statement.totals).toEqual([
 			{ currency: "EUR", amount: "581.00", hours: "7.0000", days: "0.0000", workedMinutes: 420 },
 		]);
+		expect(statement.awaitingApprovalWorkPeriods).toBe(1);
+		expect(
+			await engineTotals(employeeId, "2026-03-01", "2026-03-31", { approvedOnly: true }),
+		).toEqual([{ currency: "EUR", amountMinor: 58_100, hours: "7.0000", days: "0.0000" }]);
+		// Billable Time margin prices the work awaiting approval too, never the rejected work.
 		expect(await engineTotals(employeeId, "2026-03-01", "2026-03-31")).toEqual([
-			{ currency: "EUR", amountMinor: 58_100, hours: "7.0000", days: "0.0000" },
+			{ currency: "EUR", amountMinor: 76_200, hours: "9.0000", days: "0.0000" },
 		]);
-		expect(statement.awaitingApprovalLines).toBe(2);
 
 		const csv = contractorStatementCsv(statement, { t: catalogT("en") });
-		expect(csv).toContain('"Total","","","","","",420,"","","","","EUR",7.0000,"Hours",581.00');
+		expect(csv).toContain('"Total","","","","","",420,"","","","EUR",7.0000,"Hours",581.00');
+		expect(csv).toContain('"Work periods awaiting approval, not included: 1"');
 		const pdf = (
 			await pdfText(
 				await renderContractorStatementPdf(statement, { t: catalogT("en"), locale: "en" }),

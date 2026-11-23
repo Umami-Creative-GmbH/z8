@@ -1,10 +1,11 @@
 import { Document, Page, renderToBuffer, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { Temporal } from "temporal-polyfill";
 import { formatBillableAmount, formatBillableHours } from "@/lib/billable-time/format";
+import { dayUnitRuleLabel } from "@/lib/contractor-compensation/day-unit-rule-label";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import {
+	awaitingApprovalNotice,
 	basisLabel,
-	dayUnitRuleLabel,
 	type StatementLabels,
 	type StatementTranslate,
 	statementLabels,
@@ -177,7 +178,6 @@ function DayRows({
 					<Text style={styles.colTime}>{timeRange(line)}</Text>
 					<Text style={styles.colWork}>
 						{[line.projectName ?? labels.noProject, line.taskName].filter(Boolean).join(" / ")}
-						{line.awaitingApproval ? ` · ${labels.awaitingApproval}` : ""}
 					</Text>
 					<Text style={styles.colWorked}>{format.hours(line.workedMinutes)}</Text>
 					<Text style={styles.colUnits} />
@@ -227,7 +227,12 @@ export async function renderContractorStatementPdf(
 					<Detail label={labels.organization} value={statement.organizationName} />
 					<Detail label={labels.generated} value={statement.generatedAt} />
 				</View>
-				<Text style={styles.note}>{labels.times}</Text>
+				<Text style={styles.note}>
+					{labels.times} {labels.approvedOnly}
+					{statement.awaitingApprovalWorkPeriods > 0
+						? ` ${awaitingApprovalNotice(t, statement.awaitingApprovalWorkPeriods)}`
+						: ""}
+				</Text>
 
 				{statement.days.length === 0 ? (
 					<Text>{labels.empty}</Text>
@@ -306,9 +311,6 @@ export async function renderContractorStatementPdf(
 						{labels.unpricedNotice} {labels.rowUnpriced}:{" "}
 						{format.hours(statement.unpriced.workedMinutes)}
 					</Text>
-				)}
-				{statement.awaitingApprovalLines > 0 && (
-					<Text style={styles.note}>{labels.awaitingApprovalNotice}</Text>
 				)}
 			</Page>
 		</Document>,
