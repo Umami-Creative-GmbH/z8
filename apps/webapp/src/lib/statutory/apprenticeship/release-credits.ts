@@ -8,7 +8,7 @@
  *
  * - A vocational-school day with more than five lessons of at least 45 minutes, once per
  *   compliance week, credits the full working day (§ 15 Abs. 2 Nr. 2 BBiG); other school days
- *   credit their school time including breaks (§ 15 Abs. 3 Nr. 1), lessons × 45 min when the
+ *   credit their school time including breaks (§ 15 Abs. 2 Nr. 1), lessons × 45 min when the
  *   school time is not recorded.
  * - A block-release week of at least 25 hours on at least five days credits the full working
  *   week (§ 15 Abs. 2 Nr. 3); a shorter block spreads its school time over its days. A block
@@ -16,7 +16,7 @@
  *   school days (Monday to Friday) only, and its school minutes are the school time per week; a
  *   partial first or last week credits the share of that time its school days make of five.
  * - An exam frees and credits its participation time including breaks (§ 15 Abs. 2 Nr. 4 BBiG,
- *   § 10 Abs. 1 Nr. 1 JArbSchG); an exam recorded without its time releases the whole day. The
+ *   § 10 Abs. 2 Nr. 1 JArbSchG); an exam recorded without its time releases the whole day. The
  *   working day immediately before the written final exam is released in full (§ 15 Abs. 2
  *   Nr. 5 BBiG, § 10 Abs. 1 Nr. 2 JArbSchG).
  */

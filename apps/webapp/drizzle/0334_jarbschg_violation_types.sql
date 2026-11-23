@@ -12,7 +12,7 @@ ALTER TYPE "public"."time_regulation_violation_type" ADD VALUE IF NOT EXISTS 'ja
 ALTER TYPE "public"."time_regulation_violation_type" ADD VALUE IF NOT EXISTS 'jarbschg_holiday_work';--> statement-breakpoint
 ALTER TYPE "public"."time_regulation_violation_type" ADD VALUE IF NOT EXISTS 'jarbschg_holiday_prohibited';--> statement-breakpoint
 -- An exam day records when the exam starts; its `school_minutes` hold the participation time
--- including breaks, credited instead of a full day (§ 10 Abs. 1 Nr. 1 JArbSchG, § 15 BBiG).
+-- including breaks, credited instead of a full day (§ 10 Abs. 2 Nr. 1 JArbSchG, § 15 Abs. 2 Nr. 4 BBiG).
 ALTER TABLE "employee_apprentice_release" ADD COLUMN IF NOT EXISTS "exam_start_time" time;--> statement-breakpoint
 ALTER TABLE "employee_apprentice_release" ADD CONSTRAINT "employee_apprentice_release_exam_time_check" CHECK ("exam_start_time" IS NULL OR ("release_kind" = 'exam_day' AND "school_minutes" IS NOT NULL));--> statement-breakpoint
 -- A pre-exam day records the exam it was released for, and a release voided to make room for it

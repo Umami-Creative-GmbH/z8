@@ -135,7 +135,9 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 			subjectKey,
 			periodStart: work.date.toString(),
 			periodEnd: work.date.add({ days: 1 }).toString(),
-			legalReference: minor ? minorReleaseReference[release.releaseKind] : "§ 15 Abs. 2 BBiG",
+			legalReference: minor
+				? minorReleaseReference[release.releaseKind]
+				: "§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
 			summary: { tier: "exceeded" },
 			adminDetail: null,
 			inputFingerprint: statutoryInputFingerprint({
