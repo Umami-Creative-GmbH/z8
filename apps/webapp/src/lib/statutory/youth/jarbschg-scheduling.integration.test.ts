@@ -1145,6 +1145,127 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 						expect((await shiftRow(night))?.end_time).toBe("06:30");
 					});
 				});
+
+				describe("a night shift into the apprentice's 18th birthday is judged by the age on each release day", () => {
+					let learner: FixtureEmployee;
+					let night: string;
+					const edit = (startTime: string, endTime: string) =>
+						upsertShift({
+							id: night,
+							employeeId: learner.employeeId,
+							subareaId,
+							date: "2027-03-01",
+							startTime,
+							endTime,
+						});
+					/** The night shift's release conflicts the edit is refused for, if any. */
+					const refusedReleaseConflicts = (startTime: string, endTime: string) =>
+						db
+							.transaction((tx) =>
+								guardPublishedShiftEdit(
+									tx,
+									{
+										organizationId: org.id,
+										timezone: org.timezone,
+										shiftId: night,
+										published: true,
+										employeeId: learner.employeeId,
+										date: parsePlainDate("2027-03-01"),
+										previousDate: parsePlainDate("2027-03-01"),
+										now: systemClock.nowInstant(),
+									},
+									() =>
+										tx
+											.update(shiftTable)
+											.set({ startTime, endTime })
+											.where(and(eq(shiftTable.id, night), eq(shiftTable.organizationId, org.id))),
+								),
+							)
+							.then(
+								() => [],
+								(error: unknown) => {
+									if (!(error instanceof PublishedShiftEditBlocked)) throw error;
+									return error.blocking.flatMap((finding) =>
+										finding.domain === "apprenticeship"
+											? [[finding.releaseDay, finding.statutoryKind, finding.legalReference]]
+											: [],
+									);
+								},
+							);
+
+					beforeEach(async () => {
+						await seed.blockJarbschgPublish(org);
+						// Turns 18 on Tuesday 2 March 2027.
+						learner = await fx.employee(org, "birthday-night", { birthday: "2009-03-02" });
+						await seed.terms(learner, {
+							from: "2026-01-01",
+							createdBy: owner.userId,
+							employmentProfile: "apprentice",
+						});
+						// Monday: six lessons, the week's full school day. Tuesday: a pre-exam day.
+						await release(learner, {
+							releaseKind: "vocational_school_day",
+							startsOn: "2027-03-01",
+							endsOn: "2027-03-01",
+							lessonCount: 6,
+						});
+						await release(learner, {
+							releaseKind: "pre_exam_day",
+							startsOn: "2027-03-02",
+							endsOn: "2027-03-02",
+						});
+						// Published before the block: Monday 22:00 to Tuesday 06:00.
+						night = await published(learner, "2027-03-01", "22:00", "06:00");
+					});
+
+					it("is the minor's blocking JArbSchG conflict on Monday and the adult's BBiG warning on Tuesday", async () => {
+						const conflicts = (await evaluateWeek()).findings.flatMap((finding) =>
+							finding.type === "statutory" &&
+							finding.domain === "apprenticeship" &&
+							finding.subjectKey === `shift:${night}`
+								? [
+										[
+											finding.releaseDay,
+											finding.statutoryKind,
+											finding.severity,
+											finding.legalReference,
+											finding.blocksPublication,
+										],
+									]
+								: [],
+						);
+						expect(conflicts).toEqual([
+							[
+								"2027-03-01",
+								"jarbschg_school_day_workplace_return",
+								"critical",
+								"§ 9 Abs. 1 Nr. 2 JArbSchG",
+								true,
+							],
+							[
+								"2027-03-02",
+								"bbig_release_day_shift",
+								"warning",
+								"§ 15 Abs. 1 Satz 2 Nr. 2–5 BBiG",
+								false,
+							],
+						]);
+					});
+
+					it("saves moving work from Monday into the adult's Tuesday", async () => {
+						expect(await refusedReleaseConflicts("23:00", "07:00")).toEqual([]);
+						expect(await edit("23:00", "07:00")).toMatchObject({ success: true });
+						expect((await shiftRow(night))?.start_time).toBe("23:00");
+					});
+
+					it("refuses adding minutes on the minor's Monday", async () => {
+						expect(await refusedReleaseConflicts("21:00", "06:00")).toEqual([
+							["2027-03-01", "jarbschg_school_day_workplace_return", "§ 9 Abs. 1 Nr. 2 JArbSchG"],
+						]);
+						expect(await edit("21:00", "06:00")).toMatchObject(refused);
+						expect((await shiftRow(night))?.start_time).toBe("22:00");
+					});
+				});
 			});
 
 			describe("a release conflict deepens with more planned work inside the release time", () => {
