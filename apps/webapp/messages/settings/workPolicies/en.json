@@ -674,7 +674,14 @@
           "saved": "Warning settings saved",
           "saveFailed": "Could not save the settings.",
           "percentRange": "Enter whole percentages from 1 to 100.",
-          "warningBelowCritical": "The warning percentage must be below the critical percentage."
+          "warningBelowCritical": "The warning percentage must be below the critical percentage.",
+          "daytimeBand": "Working-student daytime band",
+          "daytimeBandHelp": "Weekday work inside this band during lecture periods counts against the 20-hour rule for working students (§ 6 Abs. 1 Nr. 3 SGB V). Evening and night work outside it, weekends and lecture-free periods do not count.",
+          "daytimeBandInsurer": "The law names no hours. Use the band your health insurer and payroll advisor accept.",
+          "daytimeStart": "Counts from",
+          "daytimeEnd": "Counts until",
+          "daytimeBandRange": "Choose whole quarter hours from 00:00 to 24:00.",
+          "daytimeBandOrder": "The daytime band must start before it ends."
         }
       },
       "shortTerm": {
@@ -903,7 +910,8 @@
           "status": "Status"
         },
         "title": "Working student (§ 6 SGB V)",
-        "description": "In lecture periods, weekday daytime work (06:00–18:00) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+        "description": "In lecture periods, weekday daytime work ({start}–{end}) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+        "descriptionWithoutBand": "In lecture periods, weekday daytime work may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
         "loadFailed": "Could not load the working-student monitor.",
         "reviews": {
           "acknowledged": "Week acknowledged",

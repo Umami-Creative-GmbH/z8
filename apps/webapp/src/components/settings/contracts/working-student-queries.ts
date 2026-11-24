@@ -27,3 +27,18 @@ export function invalidateWorkingStudentFindings(
 		invalidateStatutoryReviewViews(queryClient, organizationId),
 	]);
 }
+
+/**
+ * After a change to the organization's statutory preferences (warning tiers, the daytime band,
+ * #2017): every employee's monitor card and the organization's review lists judge anew.
+ */
+export function invalidateOrganizationWorkingStudentFindings(
+	queryClient: QueryClient,
+	organizationId: string,
+): Promise<unknown> {
+	return Promise.all([
+		queryClient.invalidateQueries({ queryKey: ["working-student-monitor", organizationId] }),
+		queryClient.invalidateQueries({ queryKey: workingStudentQueryKeys.reviews(organizationId) }),
+		invalidateStatutoryReviewViews(queryClient, organizationId),
+	]);
+}
