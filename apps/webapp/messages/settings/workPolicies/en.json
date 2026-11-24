@@ -449,10 +449,10 @@
         "minorContractors": {
           "acknowledge": "Record assessment…",
           "acknowledged": "Assessment recorded",
-          "afterEnd": "The engagement has ended, but the person is still on the roster as a contractor. Their shifts and work after it are not judged under youth protection either.",
-          "beforeStart": "The engagement has not started yet, but the person is already on the roster as a contractor. Their shifts and work before it are not judged under youth protection either.",
+          "afterEnd": "After the engagement ends on {date}, the person stays on the roster as a contractor. Their shifts and work after that day are not judged under youth protection either.",
+          "beforeStart": "Before the engagement starts on {date}, the person is on the roster as a contractor. Their shifts and work before that day are not judged under youth protection either.",
           "confirm": "Record assessment",
-          "description": "The youth protection limits do not judge External Contractors. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the engagement period or the birthday changes.",
+          "description": "The youth protection limits do not judge External Contractors. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the engagement period or the birthday changes, or once the person is on the roster as a contractor after the engagement ends.",
           "documented": "Assessment recorded",
           "empty": "No contractor under 18 needs a review.",
           "hint": "If the work resembles an employee's (bound by instructions, integrated into your organization, no own clients or business risk), youth protection applies: switch on “Apply youth protection (JArbSchG) to minor contractors” in the statutory limits, or employ the minor instead.",
@@ -463,7 +463,7 @@
           "reason": "Your assessment of the engagement",
           "reasonRequired": "Explain why the work does or does not fall under youth protection.",
           "refusal": {
-            "changed": "The engagement or the birthday changed since this list was loaded. Review it again.",
+            "changed": "The engagement or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
             "notFound": "This engagement no longer needs a review. The list shows the current ones.",
             "reasonRequired": "Explain why the work does or does not fall under youth protection.",
             "subjectRequired": "This engagement cannot be documented. Reload the list and try again."

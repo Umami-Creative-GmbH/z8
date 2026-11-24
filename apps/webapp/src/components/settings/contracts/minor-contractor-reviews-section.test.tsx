@@ -111,7 +111,9 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 		expect(screen.getByText("Beauftragt bis 31. März 2027 (Beginn nicht erfasst)")).toBeTruthy();
 	});
 
-	it("says when the person is on the roster as a contractor outside the engagement", async () => {
+	// The flags turn true while the window still lies partly inside the engagement, so the notices
+	// name the day instead of saying the engagement has ended or not started yet.
+	it("says from which day the person is on the roster as a contractor outside the engagement", async () => {
 		show("en", [
 			{ ...review, contractorAfterEnd: true },
 			{ ...review, findingId: "f2", employeeName: "Ben Roth", contractorBeforeStart: true },
@@ -119,14 +121,15 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 
 		expect(
 			await screen.findByText(
-				"The engagement has ended, but the person is still on the roster as a contractor. Their shifts and work after it are not judged under youth protection either.",
+				"After the engagement ends on Mar 31, 2027, the person stays on the roster as a contractor. Their shifts and work after that day are not judged under youth protection either.",
 			),
 		).toBeTruthy();
 		expect(
 			screen.getByText(
-				"The engagement has not started yet, but the person is already on the roster as a contractor. Their shifts and work before it are not judged under youth protection either.",
+				"Before the engagement starts on Jan 4, 2027, the person is on the roster as a contractor. Their shifts and work before that day are not judged under youth protection either.",
 			),
 		).toBeTruthy();
+		expect(screen.queryByText(/has ended|not started yet/)).toBeNull();
 	});
 
 	it("says it in German", async () => {
@@ -136,9 +139,34 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 		]);
 
 		expect(
-			await screen.findByText(/^Die Beauftragung ist beendet, die Person ist aber weiterhin/),
+			await screen.findByText(
+				"Nach dem Ende der Beauftragung am 31. März 2027 bleibt die Person als Externer Dienstleister erfasst. Ihre Schichten und Arbeit nach diesem Tag werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
+			),
 		).toBeTruthy();
-		expect(screen.getByText(/^Die Beauftragung hat noch nicht begonnen/)).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Vor dem Beginn der Beauftragung am 4. Jan. 2027 ist die Person bereits als Externer Dienstleister erfasst. Ihre Schichten und Arbeit vor diesem Tag werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
+			),
+		).toBeTruthy();
+	});
+
+	it("names every change that opens a recorded assessment again", async () => {
+		show();
+
+		expect(
+			await screen.findByText(
+				/It opens again when the engagement period or the birthday changes, or once the person is on the roster as a contractor after the engagement ends\.$/,
+			),
+		).toBeTruthy();
+		expect(minorContractorReviewRefusals.statutory_finding_changed[1]).toBe(
+			"The engagement or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
+		);
+		expect(de["settings.contracts.reviews.minorContractors.description"]).toMatch(
+			/oder die Person nach dem Ende der Beauftragung als Externer Dienstleister erfasst ist\.$/,
+		);
+		expect(de["settings.contracts.reviews.minorContractors.refusal.changed"]).toMatch(
+			/nach dem Ende der Beauftragung als Externer Dienstleister erfasst/,
+		);
 	});
 
 	it("documents the engagement the admin was shown, with a reason", async () => {

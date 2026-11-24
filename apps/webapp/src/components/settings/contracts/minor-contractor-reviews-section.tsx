@@ -46,7 +46,7 @@ export const minorContractorReviewRefusals = {
 	],
 	statutory_finding_changed: [
 		"settings.contracts.reviews.minorContractors.refusal.changed",
-		"The engagement or the birthday changed since this list was loaded. Review it again.",
+		"The engagement or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
 	],
 	statutory_reason_required: [
 		"settings.contracts.reviews.minorContractors.refusal.reasonRequired",
@@ -64,7 +64,8 @@ export const minorContractorReviewRefusals = {
  * External Contractor engagements of minors (#2022). The youth protection monitor does not judge
  * contractor days, but § 1 Abs. 1 Nr. 3 JArbSchG covers minors whose services resemble an
  * employee's work: an org admin checks each engagement and documents the assessment with a reason.
- * The documentation re-opens when the engagement period or the birthday changes.
+ * The documentation re-opens when the engagement period or the birthday changes, or once the
+ * person is on the roster as a contractor after the engagement ends (while under 18).
  */
 export function MinorContractorReviewsSection({
 	organizationId,
@@ -104,7 +105,7 @@ export function MinorContractorReviewsSection({
 				<CardDescription>
 					{t(
 						"settings.contracts.reviews.minorContractors.description",
-						"The youth protection limits do not judge External Contractors. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the engagement period or the birthday changes.",
+						"The youth protection limits do not judge External Contractors. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the engagement period or the birthday changes, or once the person is on the roster as a contractor after the engagement ends.",
 					)}
 				</CardDescription>
 			</CardHeader>
@@ -240,19 +241,24 @@ function MinorContractorReviewItem({
 				) : null}
 				<span className="text-muted-foreground text-xs">{review.legalReference}</span>
 			</div>
-			{review.contractorAfterEnd ? (
+			{/* The flags turn true while the review window still lies partly inside the engagement:
+			    name the day rather than say it has ended or not started yet. An ended stint always
+			    has an end, and only a recorded start precedes days before it. */}
+			{review.contractorAfterEnd && lastDay ? (
 				<p className="text-muted-foreground text-sm">
 					{t(
 						"settings.contracts.reviews.minorContractors.afterEnd",
-						"The engagement has ended, but the person is still on the roster as a contractor. Their shifts and work after it are not judged under youth protection either.",
+						"After the engagement ends on {date}, the person stays on the roster as a contractor. Their shifts and work after that day are not judged under youth protection either.",
+						{ date: formatDate(lastDay) },
 					)}
 				</p>
 			) : null}
-			{review.contractorBeforeStart ? (
+			{review.contractorBeforeStart && review.periodStart ? (
 				<p className="text-muted-foreground text-sm">
 					{t(
 						"settings.contracts.reviews.minorContractors.beforeStart",
-						"The engagement has not started yet, but the person is already on the roster as a contractor. Their shifts and work before it are not judged under youth protection either.",
+						"Before the engagement starts on {date}, the person is on the roster as a contractor. Their shifts and work before that day are not judged under youth protection either.",
+						{ date: formatDate(review.periodStart) },
 					)}
 				</p>
 			) : null}
