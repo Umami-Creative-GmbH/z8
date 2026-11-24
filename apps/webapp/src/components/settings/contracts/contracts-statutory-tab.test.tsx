@@ -196,6 +196,23 @@ describe("ContractsStatutoryTab (#1988)", () => {
 		expect(mocks.updateStatutoryPreferencesAction).not.toHaveBeenCalled();
 	});
 
+	it("clears the daytime band's order error once the end moves after the start", async () => {
+		const user = userEvent.setup();
+		renderTab();
+
+		await user.click(await screen.findByRole("combobox", { name: "Counts from" }));
+		await user.click(await screen.findByRole("option", { name: "18:00" }));
+		await user.click(screen.getByRole("button", { name: "Save warning settings" }));
+		expect(await screen.findByText("The daytime band must start before it ends.")).toBeTruthy();
+
+		await user.click(screen.getByRole("combobox", { name: "Counts until" }));
+		await user.click(await screen.findByRole("option", { name: "22:00" }));
+
+		await waitFor(() =>
+			expect(screen.queryByText("The daytime band must start before it ends.")).toBeNull(),
+		);
+	});
+
 	it("keeps a warning tier at or above the critical tier from being saved", async () => {
 		renderTab();
 		const warning = await screen.findByLabelText("Warning at");

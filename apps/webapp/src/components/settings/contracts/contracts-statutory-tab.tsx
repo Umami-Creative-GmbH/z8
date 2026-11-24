@@ -59,7 +59,7 @@ import {
 	WORKING_STUDENT_DAYTIME_STEP_MINUTES,
 } from "@/lib/statutory/daytime-band";
 import type { StatutoryPreferenceRefusal } from "@/lib/statutory/preferences";
-import { invalidateOrganizationWorkingStudentFindings } from "./working-student-queries";
+import { invalidateOrganizationStatutoryFindings } from "./working-student-queries";
 import type { StatutoryBaselineView } from "@/lib/statutory/settings-overview";
 import type {
 	StatutoryDomain,
@@ -393,8 +393,9 @@ function PreferencesCard({
 			void queryClient.invalidateQueries({
 				queryKey: ["contracts", "statutory", organizationId],
 			});
-			// The tiers and the daytime band change findings: the views that show them judge anew.
-			void invalidateOrganizationWorkingStudentFindings(queryClient, organizationId);
+			// The tiers, the publish block and the daytime band change findings and warnings: the
+			// views that show them judge anew.
+			void invalidateOrganizationStatutoryFindings(queryClient, organizationId);
 		},
 		onError: (error) => {
 			toast.error(
@@ -421,6 +422,14 @@ function PreferencesCard({
 			: t(
 					"settings.contracts.statutory.preferences.percentRange",
 					"Enter whole percentages from 1 to 100.",
+				);
+
+	const bandOrderError = (startMinute: number, endMinute: number) =>
+		startMinute < endMinute
+			? undefined
+			: t(
+					"settings.contracts.statutory.preferences.daytimeBandOrder",
+					"The daytime band must start before it ends.",
 				);
 
 	return (
@@ -598,14 +607,18 @@ function PreferencesCard({
 							<form.Field
 								name="workingStudentDaytimeStartMinute"
 								validators={{
+									// Changing either end re-judges the pair, so a fixed band clears the error.
+									onChange: ({ value, fieldApi }) =>
+										bandOrderError(
+											value,
+											fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute"),
+										),
 									onChangeListenTo: ["workingStudentDaytimeEndMinute"],
 									onSubmit: ({ value, fieldApi }) =>
-										value < fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute")
-											? undefined
-											: t(
-													"settings.contracts.statutory.preferences.daytimeBandOrder",
-													"The daytime band must start before it ends.",
-												),
+										bandOrderError(
+											value,
+											fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute"),
+										),
 								}}
 							>
 								{(field) => (

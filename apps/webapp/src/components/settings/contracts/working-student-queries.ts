@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query/keys";
 import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 
 /** TanStack Query keys for working-student data (#1991), always scoped to the organization. */
@@ -29,10 +30,12 @@ export function invalidateWorkingStudentFindings(
 }
 
 /**
- * After a change to the organization's statutory preferences (warning tiers, the daytime band,
- * #2017): every employee's monitor card and the organization's review lists judge anew.
+ * After a change to the organization's statutory preferences (warning tiers, the JArbSchG publish
+ * block, the working-student daytime band, #2017): every view of its statutory warnings judges
+ * anew, the working-student monitor cards, the review lists, Scheduling's compliance warnings and
+ * Staffing's suggestions.
  */
-export function invalidateOrganizationWorkingStudentFindings(
+export function invalidateOrganizationStatutoryFindings(
 	queryClient: QueryClient,
 	organizationId: string,
 ): Promise<unknown> {
@@ -40,5 +43,11 @@ export function invalidateOrganizationWorkingStudentFindings(
 		queryClient.invalidateQueries({ queryKey: ["working-student-monitor", organizationId] }),
 		queryClient.invalidateQueries({ queryKey: workingStudentQueryKeys.reviews(organizationId) }),
 		invalidateStatutoryReviewViews(queryClient, organizationId),
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.compliance.scheduleWarningsScope(organizationId),
+		}),
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.shifts.staffingSuggestionsScope(organizationId),
+		}),
 	]);
 }
