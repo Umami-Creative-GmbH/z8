@@ -242,10 +242,7 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		expect(await publishShifts(WEEK)).toMatchObject({ success: false, code: "ValidationError" });
 		expect(await shiftStatus(late)).toBe("draft");
 
-		await admin.query(
-			"update organization_statutory_preference set apply_jarbschg_to_minor_contractors = false where organization_id = $1",
-			[org.id],
-		);
+		await seed.applyJarbschgToMinorContractors(org, false);
 		// Off (the default): a contractor's shift is no employee's, so nothing judges or blocks it.
 		expect(await youth()).toEqual([]);
 		const handshake = await publishShifts(WEEK);

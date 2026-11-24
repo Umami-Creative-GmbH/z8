@@ -2,7 +2,8 @@
  * #2022: minor contractors for youth-protection review (real PostgreSQL). A contractor under 18 on
  * a day of an engagement in the review window is one warning per engagement period in the Youth &
  * Apprentice review domain, acknowledgeable with a reason; the acknowledgement re-opens when the
- * engagement period or the birthday changes. With the organization judging minor contractors under
+ * engagement period or the birthday changes, or once the window holds a day of the minor after the
+ * engagement ended. With the organization judging minor contractors under
  * JArbSchG, none is raised. Organization-scoped throughout.
  */
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
