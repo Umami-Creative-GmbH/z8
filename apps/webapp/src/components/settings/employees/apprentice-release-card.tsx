@@ -20,6 +20,7 @@ import {
 	voidApprenticeReleaseAction,
 } from "@/app/[locale]/(app)/settings/employees/apprentice-release-actions";
 import { Badge } from "@/components/ui/badge";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
@@ -34,8 +35,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { ApprenticeReleaseKind } from "@/db/schema";
-import { parsePlainDate, parsePlainTimeMinute } from "@/lib/datetime/temporal-core";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDateRange } from "@/lib/datetime/temporal-format";
+import { formatTimeStringForPreference, type TimeFormat } from "@/lib/user-preferences/time-format";
 import {
 	actionErrorMessage,
 	type RefusalMessages,
@@ -101,13 +103,9 @@ export const apprenticeReleaseRefusals = {
 	],
 } as const satisfies RefusalMessages<ApprenticeReleaseRefusal | EmployeeContextRefusal>;
 
-/** A recorded `HH:MM` wall time as the reader's locale writes it. */
-function wallTimeText(value: string, locale: string): string {
-	try {
-		return parsePlainTimeMinute(value).toLocaleString(locale, { timeStyle: "short" });
-	} catch {
-		return value;
-	}
+/** A recorded `HH:MM` wall time in the reader's chosen time format (12- or 24-hour). */
+function wallTimeText(value: string, timeFormat: TimeFormat): string {
+	return formatTimeStringForPreference(value, timeFormat);
 }
 
 export type ApprenticeReleaseCardProps = { readonly organizationId: string } & (
@@ -134,13 +132,17 @@ function kindLabel(kind: ApprenticeReleaseKind, t: Translate): string {
 	}
 }
 
-function creditText(release: ApprenticeReleaseCreditView, t: Translate, locale: string): string {
+function creditText(
+	release: ApprenticeReleaseCreditView,
+	t: Translate,
+	timeFormat: TimeFormat,
+): string {
 	if (release.examStartTime !== null) {
 		return t(
 			"settings.apprenticeRelease.credit.exam",
 			"Exam from {start}: {minutes} min credited",
 			{
-				start: wallTimeText(release.examStartTime, locale),
+				start: wallTimeText(release.examStartTime, timeFormat),
 				minutes: release.creditedMinutes,
 			},
 		);
@@ -154,8 +156,8 @@ function creditText(release: ApprenticeReleaseCreditView, t: Translate, locale: 
 			"settings.apprenticeRelease.credit.schoolTime",
 			"School {start}–{end}: {minutes} min credited",
 			{
-				start: wallTimeText(release.schoolStartTime, locale),
-				end: wallTimeText(release.schoolEndTime, locale),
+				start: wallTimeText(release.schoolStartTime, timeFormat),
+				end: wallTimeText(release.schoolEndTime, timeFormat),
 				minutes: release.creditedMinutes,
 			},
 		);
@@ -196,6 +198,7 @@ function useCredits(props: ApprenticeReleaseCardProps) {
 export function ApprenticeReleaseCard(props: ApprenticeReleaseCardProps) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
+	const timeFormat = useTimeFormat();
 	const credits = useCredits(props);
 	const canManage = props.view === "employee" && props.canManage;
 	const data = credits.data;
@@ -242,7 +245,7 @@ export function ApprenticeReleaseCard(props: ApprenticeReleaseCardProps) {
 											)}
 										</span>
 									</div>
-									<p className="text-sm">{creditText(release, t, locale)}</p>
+									<p className="text-sm">{creditText(release, t, timeFormat)}</p>
 									{release.releaseKind === "vocational_school_block_week" &&
 									release.fullDays > 0 ? (
 										// #2023: full block days allow 2 h of training a week outside the § 8 totals.

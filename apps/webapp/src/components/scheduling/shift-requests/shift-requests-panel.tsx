@@ -12,11 +12,13 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
+import { formatTimeStringForPreference } from "@/lib/user-preferences/time-format";
 import { assignedEmployeeIdOf } from "./shift-request-assignee";
 import { ApproveShiftRequestForm, RejectShiftRequestForm } from "./shift-request-decision";
 import { usePendingShiftRequests } from "./use-pending-shift-requests";
@@ -160,6 +162,7 @@ function ShiftRequestItem({
 }: ShiftRequestItemProps) {
 	const { t } = useTranslate();
 	const locale = useTolgee().getLanguage() || "en";
+	const timeFormat = useTimeFormat();
 	const unnamed = t("scheduling:scheduling.shiftRequests.unnamedEmployee", "Unnamed employee");
 	const requester = employeeName(request.requester) || unnamed;
 	const target = employeeName(request.targetEmployee) || unnamed;
@@ -183,8 +186,8 @@ function ShiftRequestItem({
 				<h3 id={headingId} className="text-sm font-medium">
 					{t("scheduling:scheduling.shiftRequests.shiftWhen", "{date}, {start}–{end}", {
 						date: shiftDate,
-						start: request.shift.startTime,
-						end: request.shift.endTime,
+						start: formatTimeStringForPreference(request.shift.startTime, timeFormat),
+						end: formatTimeStringForPreference(request.shift.endTime, timeFormat),
 					})}
 				</h3>
 			</div>

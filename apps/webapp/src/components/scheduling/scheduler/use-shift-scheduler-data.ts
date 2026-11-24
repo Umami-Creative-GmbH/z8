@@ -187,8 +187,13 @@ export function useShiftSchedulerData({
 	const complianceFindingsCount = complianceSummary?.totalFindings ?? 0;
 	const hasComplianceWarnings = complianceFindingsCount > 0;
 
+	const eventLabels = {
+		openShift: t("scheduling:scheduling.scheduler.open", "Open Shift"),
+		draft: t("scheduling:scheduling.shiftDialog.draft", "Draft"),
+		assigned: t("scheduling:scheduling.scheduler.assigned", "Assigned"),
+	};
 	const events = filterShiftsForEmployee(shifts, employeeFilter).map((shift) =>
-		shiftToEvent(shift, organizationTimezone),
+		shiftToEvent(shift, organizationTimezone, eventLabels),
 	);
 
 	return {
