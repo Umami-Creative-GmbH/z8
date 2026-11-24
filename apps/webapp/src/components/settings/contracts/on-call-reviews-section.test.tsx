@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	listOnCallReviewItemsAction: vi.fn(),
 	acknowledgeOnCallShortNoticeAction: vi.fn(),
+	listStatutoryAcknowledgementHistoryAction: vi.fn(),
 	toastSuccess: vi.fn(),
 	toastError: vi.fn(),
 }));
@@ -30,6 +31,10 @@ vi.mock("@/navigation", () => ({
 	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
 		<a href={href}>{children}</a>
 	),
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/contracts/statutory-review-actions", () => ({
+	listStatutoryAcknowledgementHistoryAction: mocks.listStatutoryAcknowledgementHistoryAction,
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/contracts/on-call-actions", () => ({
@@ -153,5 +158,69 @@ describe("OnCallReviewsSection (#1992)", () => {
 		).toBeTruthy();
 		expect(screen.queryByRole("textbox")).toBeNull();
 		expect(screen.queryByRole("button", { name: "Document agreement" })).toBeNull();
+	});
+
+	it("honours Show resolved and highlights an agreement invalidated by a changed shift, with its history", async () => {
+		const documented = shortNotice("Alice", "11111111-1111-4111-8111-111111111111", "v1:a");
+		const changed = shortNotice("Bob", "22222222-2222-4222-8222-222222222222", "v1:b2");
+		mocks.listOnCallReviewItemsAction.mockResolvedValue({
+			success: true,
+			data: [
+				{
+					...documented,
+					finding: {
+						...documented.finding,
+						acknowledgement: { status: "current", reason: "Agreed by phone" },
+					},
+				},
+				{ ...changed, finding: { ...changed.finding, acknowledgement: { status: "stale" } } },
+			],
+		});
+		mocks.listStatutoryAcknowledgementHistoryAction.mockResolvedValue({
+			success: true,
+			data: [
+				{
+					id: "ack-1",
+					acknowledgedAt: new Date("2026-11-20T09:15:00Z"),
+					acknowledgedBy: "u1",
+					acknowledgedByName: "Hanna Admin",
+					reason: "Agreed by phone",
+					legalNote: "§ 12 Abs. 3 TzBfG",
+					state: "stale",
+				},
+			],
+		});
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const view = render(
+			<QueryClientProvider client={client}>
+				<OnCallReviewsSection organizationId="org-a" />
+			</QueryClientProvider>,
+		);
+
+		expect(await screen.findByText("Bob")).toBeTruthy();
+		expect(screen.queryByText("Alice")).toBeNull();
+		const bob = screen.getByText("Bob").closest("li");
+		expect(bob?.className).toMatch(/border-amber/);
+
+		fireEvent.click(screen.getByRole("button", { name: "Acknowledgement history" }));
+		expect(await screen.findByText("Hanna Admin")).toBeTruthy();
+		expect(screen.getByText("Reason: Agreed by phone")).toBeTruthy();
+		expect(screen.getByText("Legal note: § 12 Abs. 3 TzBfG")).toBeTruthy();
+		expect(screen.getByText("Invalidated")).toBeTruthy();
+		expect(mocks.listStatutoryAcknowledgementHistoryAction).toHaveBeenCalledWith({
+			employeeId: "Bob-id",
+			acknowledgementKind: "on_call_short_notice_agreement",
+			findingKind: "on_call_short_notice",
+			subjectKey: "shift:22222222-2222-4222-8222-222222222222",
+			currentInputFingerprint: "v1:b2",
+			currentStatus: "stale",
+		});
+
+		view.rerender(
+			<QueryClientProvider client={client}>
+				<OnCallReviewsSection organizationId="org-a" includeResolved />
+			</QueryClientProvider>,
+		);
+		expect(await screen.findByText("Alice")).toBeTruthy();
 	});
 });

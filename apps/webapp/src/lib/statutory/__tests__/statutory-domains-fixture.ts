@@ -68,6 +68,9 @@ export function statutoryDomainsFixture(admin: Pool, fx: StatutoryFixture) {
 			shortTerm.reset();
 		},
 
+		/** A further shift (published unless `status` says otherwise). */
+		shift: onCall.shift,
+
 		/** Further weekday daytime work for an employee, e.g. to change a judged week. */
 		workWeekdays,
 

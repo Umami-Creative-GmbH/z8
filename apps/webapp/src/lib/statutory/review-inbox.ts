@@ -18,6 +18,7 @@ import { employee } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { StatutoryAcknowledgementKind } from "./acknowledgement-kinds";
@@ -34,9 +35,14 @@ import { loadMinijobExceedanceReviews } from "./minijob/minijob-reviews";
 import { minijobScheduleContributor } from "./minijob/minijob-schedule-contributor";
 import { listOnCallReviewItems } from "./on-call/views";
 import type { StatutoryScheduleContributor } from "./scheduling/contributor";
-import { evaluateStatutoryFindings } from "./scheduling/evaluate";
+import { evaluateStatutoryFindings, toStatutoryComplianceFinding } from "./scheduling/evaluate";
 import { shortTermScheduleContributor } from "./short-term/contributor";
 import { listShortTermBerufsmaessigkeitReviews } from "./short-term/monitor";
+import {
+	type StatutoryReviewDomain,
+	statutoryReviewDomainOf,
+	statutoryReviewDomains,
+} from "./review-domains";
 import type { StatutoryDomain } from "./threshold-catalog";
 import { listWorkingStudentReviewItems } from "./working-student/views";
 import { jarbschgScheduleContributor } from "./youth/jarbschg-contributor";
@@ -44,28 +50,11 @@ import { listOpenYouthSectorExceptions } from "./youth/sector-exception-review";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
 
-/** The inbox's statutory domain filters; JArbSchG and BBiG share one. */
-export const statutoryReviewDomains = [
-	"minijob",
-	"short_term",
-	"working_student",
-	"on_call",
-	"youth_apprentice",
-] as const;
-export type StatutoryReviewDomain = (typeof statutoryReviewDomains)[number];
-
-export function statutoryReviewDomainOf(domain: StatutoryDomain): StatutoryReviewDomain {
-	switch (domain) {
-		case "minijob":
-		case "short_term":
-		case "working_student":
-		case "on_call":
-			return domain;
-		case "youth_protection":
-		case "apprenticeship":
-			return "youth_apprentice";
-	}
-}
+export {
+	statutoryReviewDomainOf,
+	statutoryReviewDomains,
+	type StatutoryReviewDomain,
+} from "./review-domains";
 
 /** Days before today the monitor findings cover: recently worked shifts. */
 export const STATUTORY_MONITOR_LOOKBACK_DAYS = 7;
@@ -105,6 +94,8 @@ export interface StatutoryReviewInboxItem {
 	readonly acknowledgeable: boolean;
 	/** `review`: from the domain's review list (with its acknowledgement form); `monitor`: a finding only the monitor reports. */
 	readonly source: "review" | "monitor";
+	/** Monitor findings only: the wage-free projection Scheduling shows, for its warning text. */
+	readonly warning?: StatutoryComplianceFinding;
 }
 
 export interface StatutoryReviewDomainSummary {
@@ -219,7 +210,10 @@ export async function loadStatutoryMonitorFindings(
 	for (const finding of findings) {
 		if (seen.has(finding.id)) continue;
 		seen.add(finding.id);
-		items.push(itemOf(finding, names.get(finding.employeeId) ?? finding.employeeId, "monitor"));
+		items.push({
+			...itemOf(finding, names.get(finding.employeeId) ?? finding.employeeId, "monitor"),
+			warning: toStatutoryComplianceFinding(finding),
+		});
 	}
 	return items;
 }

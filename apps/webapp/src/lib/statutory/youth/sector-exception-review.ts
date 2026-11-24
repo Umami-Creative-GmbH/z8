@@ -3,8 +3,8 @@
  * Saturday, Sunday and holiday findings, and shift spans of up to 11 h (§ 12), of employees
  * under 18 around today, and the action that
  * acknowledges one. The admin acknowledges what they were shown: the action re-evaluates the
- * finding and refuses when its fingerprint no longer matches. #1994 folds this list into the
- * unified Reviews inbox.
+ * finding and refuses when its fingerprint no longer matches. The unified Reviews inbox (#1994)
+ * lists it under Youth & Apprentice.
  */
 import { and, eq, isNotNull } from "drizzle-orm";
 import { user } from "@/db/auth-schema";

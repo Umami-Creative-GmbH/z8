@@ -1,6 +1,6 @@
 "use client";
 
-import { IconPhoneCall } from "@tabler/icons-react";
+import { IconInfoCircle, IconPhoneCall } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -26,7 +26,13 @@ import {
 } from "@/lib/organization-action/action-error-message";
 import type { OnCallAcknowledgementRefusal } from "@/lib/statutory/on-call/acknowledge";
 import type { OnCallReviewItem } from "@/lib/statutory/on-call/views";
+import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import {
+	InvalidatedAcknowledgementNotice,
+	invalidatedItemClassName,
+	StatutoryAcknowledgementHistory,
+} from "./statutory-review-shared";
 
 function AcknowledgeShortNoticeForm({
 	organizationId,
@@ -140,7 +146,7 @@ function ReviewRow({
 	const shiftId = finding.subjectKey.startsWith("shift:") ? finding.subjectKey.slice(6) : null;
 
 	return (
-		<li className="rounded-lg border p-3">
+		<li className={cn("space-y-1 rounded-lg border p-3", invalidatedItemClassName(status))}>
 			<div className="flex flex-wrap items-center gap-2 text-sm">
 				<Link
 					className="font-medium underline-offset-4 hover:underline"
@@ -162,12 +168,25 @@ function ReviewRow({
 				</p>
 			) : null}
 			{status === "stale" ? (
-				<p className="mt-1 text-muted-foreground text-sm">
+				<InvalidatedAcknowledgementNotice className="mt-1 text-sm">
 					{t(
 						"common.onCall.reviews.stale",
 						"The shift changed after the agreement was documented. Document it again if it still holds.",
 					)}
-				</p>
+				</InvalidatedAcknowledgementNotice>
+			) : null}
+			{finding.acknowledgementKind ? (
+				<StatutoryAcknowledgementHistory
+					organizationId={organizationId}
+					subject={{
+						employeeId: item.employeeId,
+						acknowledgementKind: finding.acknowledgementKind,
+						findingKind: finding.kind,
+						subjectKey: finding.subjectKey,
+					}}
+					currentInputFingerprint={finding.inputFingerprint}
+					currentStatus={status}
+				/>
 			) : null}
 			{finding.kind === "on_call_short_notice" &&
 			finding.acknowledgementKind &&
@@ -196,7 +215,17 @@ function ReviewRow({
  * § 12 TzBfG on-call findings of the last and next four weeks in Settings → Contracts → Reviews &
  * Conflicts (#1992), with short-notice agreements. Org admins only.
  */
-export function OnCallReviewsSection({ organizationId }: { readonly organizationId: string }) {
+export function OnCallReviewsSection({
+	organizationId,
+	includeResolved = false,
+	showWhenEmpty = false,
+}: {
+	readonly organizationId: string;
+	/** Also list short-notice call-ins whose agreement is documented (current). */
+	readonly includeResolved?: boolean;
+	/** Show the card with an empty note instead of nothing (the domain filter is selected). */
+	readonly showWhenEmpty?: boolean;
+}) {
 	const { t } = useTranslate();
 	const items = useQuery({
 		queryKey: onCallReviewsQueryKey(organizationId),
@@ -206,8 +235,11 @@ export function OnCallReviewsSection({ organizationId }: { readonly organization
 			return result.data;
 		},
 	});
+	const shown = (items.data ?? []).filter(
+		(item) => includeResolved || item.finding.acknowledgement?.status !== "current",
+	);
 
-	if (items.isPending || (items.isSuccess && items.data.length === 0)) return null;
+	if (items.isPending || (items.isSuccess && shown.length === 0 && !showWhenEmpty)) return null;
 
 	return (
 		<Card>
@@ -228,9 +260,14 @@ export function OnCallReviewsSection({ organizationId }: { readonly organization
 					<p role="alert" className="text-destructive text-sm">
 						{items.error.message}
 					</p>
+				) : shown.length === 0 ? (
+					<div className="flex items-center gap-2 rounded-lg border border-dashed p-6 text-muted-foreground text-sm">
+						<IconInfoCircle className="size-4" aria-hidden="true" />
+						{t("common.onCall.reviews.empty", "No on-call findings to review.")}
+					</div>
 				) : (
 					<ul className="space-y-2">
-						{items.data.map((item) => (
+						{shown.map((item) => (
 							<ReviewRow key={item.finding.id} organizationId={organizationId} item={item} />
 						))}
 					</ul>

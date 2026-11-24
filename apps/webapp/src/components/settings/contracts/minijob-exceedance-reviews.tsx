@@ -1,6 +1,12 @@
 "use client";
 
-import { IconAlertTriangle, IconCheck, IconExternalLink, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconCheck,
+	IconExternalLink,
+	IconInfoCircle,
+	IconLoader2,
+} from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -24,8 +30,14 @@ import type { StatutoryAcknowledgementRefusal } from "@/lib/statutory/acknowledg
 import type { MinijobExceedanceRefusal } from "@/lib/statutory/minijob/acknowledge-minijob-exceedance";
 import type { MinijobExceedanceReview } from "@/lib/statutory/minijob/minijob-reviews";
 import { Link } from "@/navigation";
+import { cn } from "@/lib/utils";
 import { formatEuroCents, formatMinijobMonth, minijobExceedanceLabel } from "./minijob-labels";
 import { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryPrefix } from "./minijob-query-keys";
+import {
+	InvalidatedAcknowledgementNotice,
+	invalidatedItemClassName,
+	StatutoryAcknowledgementHistory,
+} from "./statutory-review-shared";
 
 // Minijob exceedance months in Settings → Contracts → Reviews & Conflicts (#1989, org admins).
 
@@ -182,12 +194,15 @@ export interface MinijobExceedanceReviewsProps {
 	readonly organizationId: string;
 	/** Also list months already documented by a current acknowledgement. */
 	readonly includeAcknowledged: boolean;
+	/** Show the card with an empty note instead of nothing (the Minijob filter is selected). */
+	readonly showWhenEmpty?: boolean;
 }
 
-/** Renders nothing while there is nothing to review. */
+/** Renders nothing while there is nothing to review, unless `showWhenEmpty`. */
 export function MinijobExceedanceReviews({
 	organizationId,
 	includeAcknowledged,
+	showWhenEmpty = false,
 }: MinijobExceedanceReviewsProps) {
 	const { t } = useTranslate();
 	const query = useQuery({
@@ -203,7 +218,7 @@ export function MinijobExceedanceReviews({
 		refetchOnMount: "always",
 	});
 	const reviews = query.data ?? [];
-	if (query.isLoading || (reviews.length === 0 && !query.isError)) return null;
+	if (query.isLoading || (reviews.length === 0 && !query.isError && !showWhenEmpty)) return null;
 
 	return (
 		<Card>
@@ -227,22 +242,42 @@ export function MinijobExceedanceReviews({
 							"Could not load the Minijob exceedances.",
 						)}
 					</p>
+				) : reviews.length === 0 ? (
+					<div className="flex items-center gap-2 rounded-lg border border-dashed p-6 text-muted-foreground text-sm">
+						<IconInfoCircle className="size-4" aria-hidden="true" />
+						{t(
+							"settings.contracts.minijob.review.empty",
+							"No Minijob month above the monthly limit to review.",
+						)}
+					</div>
 				) : (
-					<ReviewList reviews={reviews} />
+					<ReviewList organizationId={organizationId} reviews={reviews} />
 				)}
 			</CardContent>
 		</Card>
 	);
 }
 
-function ReviewList({ reviews }: { reviews: readonly MinijobExceedanceReview[] }) {
+function ReviewList({
+	organizationId,
+	reviews,
+}: {
+	organizationId: string;
+	reviews: readonly MinijobExceedanceReview[];
+}) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	return (
 		<ul className="space-y-3">
 			{reviews.map((review) => (
-				<li key={review.id} className="space-y-3 rounded-lg border p-4">
+				<li
+					key={review.id}
+					className={cn(
+						"space-y-3 rounded-lg border p-4",
+						invalidatedItemClassName(review.acknowledgement.status),
+					)}
+				>
 					<div className="flex flex-wrap items-start justify-between gap-3">
 						<div className="space-y-1">
 							<Link
@@ -314,6 +349,18 @@ function ReviewList({ reviews }: { reviews: readonly MinijobExceedanceReview[] }
 							)}
 						</p>
 					)}
+					{review.acknowledgement.status === "stale" ? <InvalidatedAcknowledgementNotice /> : null}
+					<StatutoryAcknowledgementHistory
+						organizationId={organizationId}
+						subject={{
+							employeeId: review.employeeId,
+							acknowledgementKind: "minijob_unforeseeable_exceedance",
+							findingKind: "minijob_monthly_cap",
+							subjectKey: review.month,
+						}}
+						currentInputFingerprint={review.inputFingerprint}
+						currentStatus={review.acknowledgement.status}
+					/>
 					{review.acknowledgeable && review.status !== "acknowledged" && (
 						<AcknowledgeForm review={review} />
 					)}

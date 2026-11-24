@@ -1,6 +1,12 @@
 "use client";
 
-import { IconCheck, IconExternalLink, IconLoader2, IconSchool } from "@tabler/icons-react";
+import {
+	IconCheck,
+	IconExternalLink,
+	IconInfoCircle,
+	IconLoader2,
+	IconSchool,
+} from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -25,7 +31,13 @@ import type {
 	WorkingStudentAcknowledgementRefusal,
 	WorkingStudentReviewItem,
 } from "@/lib/statutory/working-student/views";
+import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import {
+	InvalidatedAcknowledgementNotice,
+	invalidatedItemClassName,
+	StatutoryAcknowledgementHistory,
+} from "./statutory-review-shared";
 import { AcknowledgementBadge, workingStudentFindingText } from "./working-student-monitor-card";
 import {
 	invalidateWorkingStudentFindings,
@@ -182,9 +194,12 @@ function AcknowledgeForm({
 export function WorkingStudentReviewsSection({
 	organizationId,
 	includeResolved,
+	showWhenEmpty = false,
 }: {
 	organizationId: string;
 	includeResolved: boolean;
+	/** Show the card with an empty note instead of nothing (the domain filter is selected). */
+	showWhenEmpty?: boolean;
 }) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
@@ -202,7 +217,7 @@ export function WorkingStudentReviewsSection({
 	const items = (query.data ?? []).filter(
 		(item) => includeResolved || item.finding.acknowledgement?.status !== "current",
 	);
-	if (query.isLoading || (query.isSuccess && items.length === 0)) return null;
+	if (query.isLoading || (query.isSuccess && items.length === 0 && !showWhenEmpty)) return null;
 
 	return (
 		<Card>
@@ -226,10 +241,24 @@ export function WorkingStudentReviewsSection({
 							"Could not load the working-student monitor.",
 						)}
 					</p>
+				) : items.length === 0 ? (
+					<div className="flex items-center gap-2 rounded-lg border border-dashed p-6 text-muted-foreground text-sm">
+						<IconInfoCircle className="size-4" aria-hidden="true" />
+						{t(
+							"settings.contracts.workingStudent.reviews.empty",
+							"No working-student week to review.",
+						)}
+					</div>
 				) : (
 					<ul className="space-y-3">
 						{items.map((item) => (
-							<li key={item.finding.id} className="space-y-3 rounded-md border p-3">
+							<li
+								key={item.finding.id}
+								className={cn(
+									"space-y-3 rounded-md border p-3",
+									invalidatedItemClassName(item.finding.acknowledgement?.status),
+								)}
+							>
 								<div className="flex flex-wrap items-center gap-2 text-sm">
 									<Badge variant={item.finding.severity === "critical" ? "destructive" : "outline"}>
 										{item.finding.severity === "critical"
@@ -247,6 +276,22 @@ export function WorkingStudentReviewsSection({
 									<span>{workingStudentFindingText(item.finding, t, locale)}</span>
 									<AcknowledgementBadge status={item.finding.acknowledgement?.status} />
 								</div>
+								{item.finding.acknowledgement?.status === "stale" ? (
+									<InvalidatedAcknowledgementNotice />
+								) : null}
+								{item.finding.acknowledgementKind ? (
+									<StatutoryAcknowledgementHistory
+										organizationId={organizationId}
+										subject={{
+											employeeId: item.finding.employeeId,
+											acknowledgementKind: item.finding.acknowledgementKind,
+											findingKind: item.finding.kind,
+											subjectKey: item.finding.subjectKey,
+										}}
+										currentInputFingerprint={item.finding.inputFingerprint}
+										currentStatus={item.finding.acknowledgement?.status}
+									/>
+								) : null}
 								{item.finding.acknowledgement?.status === "current" ? (
 									<p className="text-muted-foreground text-xs">
 										{item.finding.acknowledgement.reason}

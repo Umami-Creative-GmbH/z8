@@ -88,7 +88,7 @@ describe("youth sector exception actions (PostgreSQL)", () => {
 		).filter((finding) => finding.blocksPublication);
 
 	async function openExceptions() {
-		const result = await listYouthSectorExceptionsAction();
+		const result = await listYouthSectorExceptionsAction({});
 		if (!result.success) throw new Error(result.error);
 		return result.data;
 	}
@@ -219,7 +219,7 @@ describe("youth sector exception actions (PostgreSQL)", () => {
 			membershipRole: "member",
 			employee: { id: minor.employeeId, role: "employee", former: false },
 		};
-		expect(await listYouthSectorExceptionsAction()).toMatchObject({ success: false });
+		expect(await listYouthSectorExceptionsAction({})).toMatchObject({ success: false });
 		expect(
 			await acknowledgeYouthSectorExceptionAction({
 				employeeId: night.employeeId,

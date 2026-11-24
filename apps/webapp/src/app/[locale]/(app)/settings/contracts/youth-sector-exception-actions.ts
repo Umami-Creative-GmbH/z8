@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { organizationAction } from "@/lib/organization-action/organization-action";
 import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	acknowledgeYouthSectorException,
@@ -28,8 +28,13 @@ const acknowledgeSchema = z.strictObject({
 export type AcknowledgeYouthSectorExceptionInput = z.input<typeof acknowledgeSchema>;
 
 export const listYouthSectorExceptionsAction = organizationAction(
-	{ name: "statutory.youthSectorExceptions.list", requires: "orgAdmin", schema: noInput },
-	({ organizationId }) =>
+	{
+		name: "statutory.youthSectorExceptions.list",
+		requires: "orgAdmin",
+		// "Show resolved" in Reviews & Conflicts also lists documented exceptions (#1994).
+		schema: z.strictObject({ includeAcknowledged: z.boolean().optional() }),
+	},
+	({ organizationId, input }) =>
 		storeStep(
 			"statutory.youthSectorExceptions.list",
 			async (db): Promise<OpenYouthSectorException[]> =>
@@ -37,6 +42,7 @@ export const listYouthSectorExceptionsAction = organizationAction(
 					organizationId,
 					timezone: await loadOrganizationTimezone(db, organizationId),
 					now: systemClock.nowInstant(),
+					includeAcknowledged: input.includeAcknowledged ?? false,
 				}),
 		),
 );

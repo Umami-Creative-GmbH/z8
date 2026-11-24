@@ -24,7 +24,13 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { ShortTermBerufsmaessigkeitReview } from "@/lib/statutory/short-term/monitor";
 import { Link } from "@/navigation";
+import { cn } from "@/lib/utils";
 import { shortTermMonitorQueryKey, shortTermReviewsQueryKey } from "./short-term-query-keys";
+import {
+	InvalidatedAcknowledgementNotice,
+	invalidatedItemClassName,
+	StatutoryAcknowledgementHistory,
+} from "./statutory-review-shared";
 import {
 	formatCents,
 	formatMonth,
@@ -171,8 +177,14 @@ function ReviewItem({
 	const locale = useFormattingLocale();
 	const detail = review.finding.adminDetail;
 	const currency = detail?.currency ?? "EUR";
+	const acknowledgementStatus = review.finding.acknowledgement?.status;
 	return (
-		<li className="space-y-3 rounded-lg border p-4 text-sm">
+		<li
+			className={cn(
+				"space-y-3 rounded-lg border p-4 text-sm",
+				invalidatedItemClassName(acknowledgementStatus),
+			)}
+		>
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="flex flex-wrap items-center gap-2">
 					<Link
@@ -210,7 +222,21 @@ function ReviewItem({
 					})}
 				</p>
 			)}
-			{review.finding.acknowledgement?.status !== "current" && (
+			{acknowledgementStatus === "stale" ? <InvalidatedAcknowledgementNotice /> : null}
+			{review.finding.acknowledgementKind ? (
+				<StatutoryAcknowledgementHistory
+					organizationId={organizationId}
+					subject={{
+						employeeId: review.employeeId,
+						acknowledgementKind: review.finding.acknowledgementKind,
+						findingKind: review.finding.kind,
+						subjectKey: review.finding.subjectKey,
+					}}
+					currentInputFingerprint={review.finding.inputFingerprint}
+					currentStatus={acknowledgementStatus}
+				/>
+			) : null}
+			{acknowledgementStatus !== "current" && (
 				<AcknowledgeForm organizationId={organizationId} review={review} t={t} />
 			)}
 		</li>

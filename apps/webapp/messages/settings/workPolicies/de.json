@@ -358,7 +358,40 @@
           },
           "shiftSpanMinutes": "{minutes} Min. Schichtzeit",
           "stale": "Seit der letzten Bestätigung geändert",
-          "title": "Jugendarbeitsschutz: Branchenausnahmen"
+          "title": "Jugendarbeitsschutz: Branchenausnahmen",
+          "empty": "Kein Jugendschutz-Befund benötigt eine Branchenausnahme.",
+          "documented": "Branchenausnahme erfasst"
+        },
+        "inboxTitle": "Prüfungen & Konflikte",
+        "inboxDescription": "Gesetzliche Befunde und Bestätigungen, Vertragsmigrationskonflikte und Austrittsprüfungen an einem Ort. Bestätigungen, die durch neuere Arbeit oder Schichten ungültig wurden, sind hervorgehoben.",
+        "migrationTitle": "Vertragsmigration und Austrittsprüfungen",
+        "invalidated": "Bestätigung ungültig: Arbeit, Schichten oder Beträge haben sich nach der Bestätigung geändert. Prüfen Sie die aktuellen Werte und bestätigen Sie erneut, wenn sie weiterhin gilt.",
+        "domain": {
+          "label": "Bereich",
+          "all": "Alle",
+          "minijob": "Minijob",
+          "shortTerm": "Kurzfristig",
+          "workingStudent": "Werkstudierende",
+          "onCall": "Abrufarbeit",
+          "youthApprentice": "Jugendliche & Azubis",
+          "migrationDeparture": "Migration & Austritt"
+        },
+        "history": {
+          "toggle": "Verlauf der Bestätigungen",
+          "current": "Aktuell",
+          "stale": "Ungültig",
+          "superseded": "Früher",
+          "reason": "Begründung: {reason}",
+          "legalNote": "Rechtlicher Hinweis: {note}"
+        },
+        "monitor": {
+          "title": "Gesetzliche Grenzen mit Handlungsbedarf",
+          "description": "Grenzen, die in der letzten Woche und den nächsten acht Wochen fast erreicht oder überschritten sind und nicht bestätigt werden können: Ändern Sie stattdessen den Dienstplan oder den Vertrag. Sie werden angezeigt, bis die Werte wieder innerhalb der Grenze liegen.",
+          "empty": "Keine gesetzliche Grenze fast erreicht oder überschritten."
+        },
+        "severity": {
+          "critical": "Kritisch",
+          "warning": "Warnung"
         }
       },
       "scheduleMode": {
@@ -684,7 +717,8 @@
           "external": "Andere Minijobs",
           "doubleCap": "Doppelte Grenze",
           "prior": "Frühere Überschreitungsmonate innerhalb von 12 Monaten: {months}",
-          "documentedReason": "Dokumentierter Grund: {reason}"
+          "documentedReason": "Dokumentierter Grund: {reason}",
+          "empty": "Kein Minijob-Monat über der Monatsgrenze zu prüfen."
         },
         "refusal": {
           "reasonRequired": "Erkläre, warum die Überschreitung unvorhersehbar war.",
@@ -793,7 +827,8 @@
           "title": "Werkstudierende über 20 Stunden",
           "description": "Vorlesungswochen mit mehr als 20 Stunden Arbeit werktags tagsüber und Wochen, die das 26-Wochen-Kontingent aufbrauchen. Bestätigen Sie eine Woche, sobald Sie sie geprüft haben.",
           "notFound": "Für diese Woche liegt der Hinweis nicht mehr vor. Laden Sie die Prüfungen neu.",
-          "changed": "Die Werte dieser Woche haben sich geändert, seit Sie die Prüfungen geöffnet haben. Prüfen Sie die aktualisierten Werte und bestätigen Sie erneut."
+          "changed": "Die Werte dieser Woche haben sich geändert, seit Sie die Prüfungen geöffnet haben. Prüfen Sie die aktualisierten Werte und bestätigen Sie erneut.",
+          "empty": "Keine Werkstudierenden-Woche zu prüfen."
         }
       }
     },

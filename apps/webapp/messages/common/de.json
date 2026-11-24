@@ -663,7 +663,8 @@
         "documented": "Zustimmung dokumentiert: {reason}",
         "stale": "Die Schicht wurde nach der dokumentierten Zustimmung geändert. Dokumentiere sie erneut, wenn sie weiter gilt.",
         "title": "Arbeit auf Abruf (§ 12 TzBfG)",
-        "description": "Abrufe mit zu kurzem Vorlauf, Einsätze unter dem Minimum und Wochen außerhalb des Abrufkorridors in den letzten und nächsten vier Wochen. Ein- und Ausstempeln wird nie blockiert."
+        "description": "Abrufe mit zu kurzem Vorlauf, Einsätze unter dem Minimum und Wochen außerhalb des Abrufkorridors in den letzten und nächsten vier Wochen. Ein- und Ausstempeln wird nie blockiert.",
+        "empty": "Keine Befunde zur Arbeit auf Abruf zu prüfen."
       },
       "payroll": {
         "title": "Referenzstunden bei Arbeit auf Abruf (§ 12 TzBfG)",

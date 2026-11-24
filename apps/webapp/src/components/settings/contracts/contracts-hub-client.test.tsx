@@ -77,6 +77,10 @@ vi.mock("./working-student-reviews-section", () => ({
 	WorkingStudentReviewsSection: () => null,
 }));
 
+vi.mock("./statutory-monitor-findings-section", () => ({
+	StatutoryMonitorFindingsSection: () => null,
+}));
+
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({
 	getWorkPolicies: mocks.getWorkPolicies,
 }));

@@ -47,6 +47,8 @@ const finding: OpenYouthSectorException = {
 	findingKind: "jarbschg_sunday_work",
 	subjectKey: "shift:s1",
 	periodStart: "2027-03-07",
+	periodEnd: "2027-03-08",
+	severity: "critical",
 	legalReference: "§ 17 JArbSchG",
 	used: null,
 	acknowledgementStatus: "none",

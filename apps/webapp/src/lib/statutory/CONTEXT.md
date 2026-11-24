@@ -55,6 +55,19 @@ period or shift span) is matched by its day or week when the running work carrie
 acknowledgement, publication block or breach depth changes, not while the clock runs.
 _Avoid_: input fingerprint (that one documents an org admin's acknowledgement)
 
+**Review inbox**:
+Settings → Contracts → Reviews & Conflicts and the Compliance Command Center's workforce card
+(`review-inbox.ts`), org admins only. Per **review domain** (Minijob, short-term, working student,
+on-call, youth & apprentice: JArbSchG and BBiG share one) it holds the **open** findings (not
+documented by a current acknowledgement), the **pending** acknowledgements (acknowledgeable, none
+recorded) and the **stale** ones. What needs review is each monitor's own review list's decision;
+findings that cannot be acknowledged (Minijob tiers and rolling cap, short-term limits, JArbSchG
+hard limits, apprentice release conflicts) come from the monitors over the planning horizon (the
+last week to eight weeks ahead). The Command Center shows counts only; an acknowledgement's history
+(who, when, reason, legal note, current / invalidated / earlier) is read per subject and never
+carries fingerprints.
+_Avoid_: queue (the migration & departure reviews), dismissed
+
 **Restricted audience**:
 Everyone below org admin (scoped managers, planners, the employee). Sees summaries only, never EUR
 amounts, wages, external earnings or EUR baselines.

@@ -11,6 +11,7 @@ import {
 	STATUTORY_DOMAINS_NOW as now,
 	statutoryDomainsFixture,
 } from "./__tests__/statutory-domains-fixture";
+import { loadStatutoryAcknowledgementHistory } from "./acknowledgement-history";
 import { acknowledgeOnCallShortNotice } from "./on-call/acknowledge";
 import { listOnCallReviewItems } from "./on-call/views";
 import { loadStatutoryReviewInbox } from "./review-inbox";
@@ -197,6 +198,85 @@ describe("statutory review inbox (PostgreSQL)", () => {
 				expect.objectContaining({ domain: "on_call", staleAcknowledgements: 1 }),
 			]),
 		);
+	});
+
+	it("shows an acknowledgement's audited history: who, when, why, legal note, current or invalidated", async () => {
+		const seed = await domains.seed("a");
+		const organizationId = seed.org.id;
+		const weekOf = async () =>
+			(await listWorkingStudentReviewItems(db, { organizationId, now }))[0].finding;
+		const first = await weekOf();
+		const acknowledge = (finding: typeof first, reason: string, legalNote: string | null) =>
+			acknowledgeWorkingStudentFinding(db, {
+				organizationId,
+				actorUserId: seed.owner.userId,
+				employeeId: seed.student.employeeId,
+				findingKind: finding.kind,
+				weekStart: finding.periodStart,
+				expectedInputFingerprint: finding.inputFingerprint,
+				reason,
+				legalNote,
+				now,
+			});
+		await acknowledge(first, "Project week", "§ 8 SGB IV");
+		await domains.workWeekdays(seed.org, seed.student, "2026-11-09", "14:00", "15:00");
+		const second = await weekOf();
+		await acknowledge(second, "Project week, extended", null);
+		const subject = {
+			employeeId: seed.student.employeeId,
+			kind: "working_student_over_20h_week" as const,
+			findingKind: second.kind,
+			subjectKey: second.subjectKey,
+		};
+
+		const current = await loadStatutoryAcknowledgementHistory(db, {
+			organizationId,
+			subject,
+			currentInputFingerprint: second.inputFingerprint,
+			currentStatus: "current",
+		});
+		expect(current).toEqual([
+			expect.objectContaining({
+				reason: "Project week, extended",
+				legalNote: null,
+				acknowledgedByName: "a-owner",
+				state: "current",
+			}),
+			expect.objectContaining({
+				reason: "Project week",
+				legalNote: "§ 8 SGB IV",
+				acknowledgedByName: "a-owner",
+				state: "superseded",
+			}),
+		]);
+		expect(current[0].acknowledgedAt.getTime()).toBeGreaterThanOrEqual(
+			current[1].acknowledgedAt.getTime(),
+		);
+
+		// More work after the second acknowledgement: the newest one is invalidated.
+		await domains.workWeekdays(seed.org, seed.student, "2026-11-09", "15:00", "16:00");
+		const third = await weekOf();
+		expect(third.acknowledgement?.status).toBe("stale");
+		const stale = await loadStatutoryAcknowledgementHistory(db, {
+			organizationId,
+			subject,
+			currentInputFingerprint: third.inputFingerprint,
+			currentStatus: "stale",
+		});
+		expect(stale.map((row) => row.state)).toEqual(["stale", "superseded"]);
+		// Never the fingerprint itself: it is not needed to read the history.
+		expect(JSON.stringify(stale)).not.toContain(second.inputFingerprint);
+
+		// Another organization's admin reads nothing of it.
+		const other = await fx.organization("other");
+		expect(
+			await loadStatutoryAcknowledgementHistory(db, {
+				organizationId: other.id,
+				subject,
+				currentInputFingerprint: third.inputFingerprint,
+				currentStatus: "stale",
+			}),
+		).toEqual([]);
 	});
 
 	it("never shows one organization's findings or acknowledgements in another's inbox", async () => {

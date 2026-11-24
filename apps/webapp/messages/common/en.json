@@ -663,7 +663,8 @@
         "documented": "Agreement documented: {reason}",
         "stale": "The shift changed after the agreement was documented. Document it again if it still holds.",
         "title": "On-call work (§ 12 TzBfG)",
-        "description": "Short-notice call-ins, calls below the minimum and weeks outside the call-off band in the last and next four weeks. Clocking is never blocked."
+        "description": "Short-notice call-ins, calls below the minimum and weeks outside the call-off band in the last and next four weeks. Clocking is never blocked.",
+        "empty": "No on-call findings to review."
       },
       "payroll": {
         "title": "On-call reference hours (§ 12 TzBfG)",

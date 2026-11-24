@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconMoonStars, IconShieldCheck } from "@tabler/icons-react";
+import { IconInfoCircle, IconLoader2, IconMoonStars, IconShieldCheck } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -29,6 +29,12 @@ import type {
 	OpenYouthSectorException,
 	YouthSectorExceptionRefusal,
 } from "@/lib/statutory/youth/sector-exception-review";
+import { cn } from "@/lib/utils";
+import {
+	InvalidatedAcknowledgementNotice,
+	invalidatedItemClassName,
+	StatutoryAcknowledgementHistory,
+} from "./statutory-review-shared";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -85,20 +91,32 @@ function usedMinutesLabel(kind: JarbschgSectorExceptionKind, minutes: number, t:
 /**
  * Open JArbSchG night, Saturday, Sunday and holiday findings of employees under 18 (#1993). An
  * org admin records a statutory sector exception with a reason; it covers the shift as shown and
- * lifts its publication block. #1994 folds this list into the unified Reviews inbox.
+ * lifts its publication block. The unified Reviews inbox (#1994) shows it under Youth & Apprentice.
  */
-export function YouthSectorExceptionsSection({ organizationId }: { organizationId: string }) {
+export function YouthSectorExceptionsSection({
+	organizationId,
+	includeResolved = false,
+	showWhenEmpty = false,
+}: {
+	organizationId: string;
+	/** Also list findings a current sector exception documents. */
+	includeResolved?: boolean;
+	/** Show the card with an empty note instead of nothing (the domain filter is selected). */
+	showWhenEmpty?: boolean;
+}) {
 	const { t } = useTranslate();
 	const query = useQuery({
-		queryKey: youthSectorExceptionsKey(organizationId),
+		queryKey: [...youthSectorExceptionsKey(organizationId), includeResolved],
 		queryFn: async (): Promise<OpenYouthSectorException[]> => {
-			const result = await listYouthSectorExceptionsAction();
+			const result = await listYouthSectorExceptionsAction({
+				includeAcknowledged: includeResolved,
+			});
 			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},
 	});
 	const findings = query.data ?? [];
-	if (query.isLoading || (findings.length === 0 && !query.isError)) return null;
+	if (query.isLoading || (findings.length === 0 && !query.isError && !showWhenEmpty)) return null;
 
 	return (
 		<Card>
@@ -122,6 +140,14 @@ export function YouthSectorExceptionsSection({ organizationId }: { organizationI
 							"Could not load youth protection findings.",
 						)}
 					</p>
+				) : findings.length === 0 ? (
+					<div className="flex items-center gap-2 rounded-lg border border-dashed p-6 text-muted-foreground text-sm">
+						<IconInfoCircle className="size-4" aria-hidden="true" />
+						{t(
+							"settings.contracts.reviews.youth.empty",
+							"No youth protection finding needs a sector exception.",
+						)}
+					</div>
 				) : (
 					<ul className="divide-y rounded-md border">
 						{findings.map((finding) => (
@@ -188,7 +214,12 @@ function YouthSectorExceptionItem({
 	});
 
 	return (
-		<li className="flex flex-col gap-3 p-3">
+		<li
+			className={cn(
+				"flex flex-col gap-3 p-3",
+				invalidatedItemClassName(finding.acknowledgementStatus),
+			)}
+		>
 			<div className="flex flex-wrap items-center gap-2">
 				<span className="font-medium">{finding.employeeName}</span>
 				<Badge variant="outline">{kindLabel(finding.findingKind, t)}</Badge>
@@ -201,13 +232,33 @@ function YouthSectorExceptionItem({
 					</span>
 				) : null}
 				{finding.acknowledgementStatus === "stale" ? (
-					<Badge variant="secondary">
+					<Badge
+						variant="outline"
+						className="border-amber-500/70 text-amber-800 dark:text-amber-300"
+					>
 						{t("settings.contracts.reviews.youth.stale", "Changed since last acknowledged")}
+					</Badge>
+				) : null}
+				{finding.acknowledgementStatus === "current" ? (
+					<Badge variant="secondary">
+						{t("settings.contracts.reviews.youth.documented", "Sector exception recorded")}
 					</Badge>
 				) : null}
 				<span className="text-muted-foreground text-xs">{finding.legalReference}</span>
 			</div>
-			{open ? (
+			{finding.acknowledgementStatus === "stale" ? <InvalidatedAcknowledgementNotice /> : null}
+			<StatutoryAcknowledgementHistory
+				organizationId={organizationId}
+				subject={{
+					employeeId: finding.employeeId,
+					acknowledgementKind: "jarbschg_sector_exception",
+					findingKind: finding.findingKind,
+					subjectKey: finding.subjectKey,
+				}}
+				currentInputFingerprint={finding.inputFingerprint}
+				currentStatus={finding.acknowledgementStatus}
+			/>
+			{finding.acknowledgementStatus === "current" ? null : open ? (
 				<form
 					className="grid gap-3 sm:grid-cols-2"
 					onSubmit={(event) => {

@@ -358,7 +358,40 @@
           },
           "shiftSpanMinutes": "{minutes} min shift span",
           "stale": "Changed since last acknowledged",
-          "title": "Youth protection: sector exceptions"
+          "title": "Youth protection: sector exceptions",
+          "empty": "No youth protection finding needs a sector exception.",
+          "documented": "Sector exception recorded"
+        },
+        "inboxTitle": "Reviews & Conflicts",
+        "inboxDescription": "Statutory findings and acknowledgements, contract migration conflicts and departure reviews in one place. Acknowledgements that newer work or shifts invalidated are highlighted.",
+        "migrationTitle": "Contract migration and departure reviews",
+        "invalidated": "Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
+        "domain": {
+          "label": "Area",
+          "all": "All",
+          "minijob": "Minijob",
+          "shortTerm": "Short-Term",
+          "workingStudent": "Working Student",
+          "onCall": "On-Call",
+          "youthApprentice": "Youth & Apprentice",
+          "migrationDeparture": "Migration & Departure"
+        },
+        "history": {
+          "toggle": "Acknowledgement history",
+          "current": "Current",
+          "stale": "Invalidated",
+          "superseded": "Earlier",
+          "reason": "Reason: {reason}",
+          "legalNote": "Legal note: {note}"
+        },
+        "monitor": {
+          "title": "Statutory limits to act on",
+          "description": "Limits approaching or exceeded in the last week and the next eight weeks that cannot be acknowledged: change the schedule or the contract instead. Shown until the figures are back within the limit.",
+          "empty": "No statutory limits approaching or exceeded."
+        },
+        "severity": {
+          "critical": "Critical",
+          "warning": "Warning"
         }
       },
       "scheduleMode": {
@@ -684,7 +717,8 @@
           "external": "Other Minijobs",
           "doubleCap": "Twice the limit",
           "prior": "Earlier exceedance months within 12 months: {months}",
-          "documentedReason": "Documented reason: {reason}"
+          "documentedReason": "Documented reason: {reason}",
+          "empty": "No Minijob month above the monthly limit to review."
         },
         "refusal": {
           "reasonRequired": "Explain why the exceedance was unforeseeable.",
@@ -793,7 +827,8 @@
           "title": "Working students above 20 hours",
           "description": "Lecture weeks above 20 hours of weekday daytime work and weeks that use up the 26-week allowance. Acknowledge a week once you have reviewed it.",
           "notFound": "This week no longer has the finding. Reload the reviews.",
-          "changed": "This week's figures changed since you opened the reviews. Review the updated figures and acknowledge again."
+          "changed": "This week's figures changed since you opened the reviews. Review the updated figures and acknowledge again.",
+          "empty": "No working-student week to review."
         }
       }
     },

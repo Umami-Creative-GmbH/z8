@@ -1,0 +1,81 @@
+/**
+ * The audited acknowledgement history of one statutory subject (#1994), for org admins in
+ * Settings → Contracts → Reviews & Conflicts: every `contract_review_acknowledgement` row of the
+ * subject, newest first, with who recorded it, when, why and the legal note, and whether it still
+ * documents the finding.
+ *
+ * Which row documents the finding is the monitor's decision (`StatutoryFinding.acknowledgement`),
+ * judged against the finding's current input fingerprint: `current` marks the newest row recorded
+ * for that fingerprint, `stale` the newest row once newer work, shifts or figures invalidated it,
+ * and every other row is `superseded`. Fingerprints never leave the server in the result.
+ */
+import { inArray } from "drizzle-orm";
+import { user } from "@/db/auth-schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import {
+	listStatutoryAcknowledgements,
+	type StatutoryAcknowledgementSubject,
+} from "./acknowledgements";
+
+export type StatutoryAcknowledgementHistoryState = "current" | "stale" | "superseded";
+
+export interface StatutoryAcknowledgementHistoryEntry {
+	readonly id: string;
+	readonly acknowledgedAt: Date;
+	readonly acknowledgedBy: string;
+	readonly acknowledgedByName: string;
+	readonly reason: string;
+	readonly legalNote: string | null;
+	readonly state: StatutoryAcknowledgementHistoryState;
+}
+
+export async function loadStatutoryAcknowledgementHistory(
+	db: Pick<DatabaseClient, "select">,
+	input: {
+		readonly organizationId: string;
+		readonly subject: StatutoryAcknowledgementSubject;
+		/** The finding's input fingerprint as the monitor evaluated it now. */
+		readonly currentInputFingerprint: string;
+		/** The finding's acknowledgement status as the monitor judged it (Minijob also by total). */
+		readonly currentStatus: "none" | "current" | "stale";
+	},
+): Promise<StatutoryAcknowledgementHistoryEntry[]> {
+	const rows = await listStatutoryAcknowledgements(db, {
+		organizationId: input.organizationId,
+		employeeId: input.subject.employeeId,
+		kind: input.subject.kind,
+		findingKind: input.subject.findingKind,
+		subjectKey: input.subject.subjectKey,
+	});
+	if (rows.length === 0) return [];
+
+	const actors = await db
+		.select({
+			id: user.id,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			name: user.name,
+			email: user.email,
+		})
+		.from(user)
+		.where(inArray(user.id, [...new Set(rows.map((row) => row.acknowledgedBy))]));
+	const nameOf = new Map(actors.map((actor) => [actor.id, buildAuthUserDisplayName(actor)]));
+
+	// Rows are newest first: the first match is the one the monitor's state refers to.
+	const documenting =
+		input.currentStatus === "current"
+			? rows.find((row) => row.inputFingerprint === input.currentInputFingerprint)
+			: input.currentStatus === "stale"
+				? rows[0]
+				: undefined;
+	return rows.map((row) => ({
+		id: row.id,
+		acknowledgedAt: row.acknowledgedAt,
+		acknowledgedBy: row.acknowledgedBy,
+		acknowledgedByName: nameOf.get(row.acknowledgedBy) || row.acknowledgedBy,
+		reason: row.reason,
+		legalNote: row.legalNote,
+		state: row === documenting ? (input.currentStatus as "current" | "stale") : "superseded",
+	}));
+}
