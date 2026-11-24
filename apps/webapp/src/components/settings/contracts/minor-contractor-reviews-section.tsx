@@ -189,7 +189,28 @@ function MinorContractorReviewItem({
 		},
 	});
 
-	const lastDay = parsePlainDate(review.periodEnd).subtract({ days: 1 }).toString();
+	const lastDay = review.periodEnd
+		? parsePlainDate(review.periodEnd).subtract({ days: 1 }).toString()
+		: null;
+	const period = review.periodStart
+		? lastDay
+			? t("settings.contracts.reviews.minorContractors.period", "Engaged {from} – {until}", {
+					from: formatDate(review.periodStart),
+					until: formatDate(lastDay),
+				})
+			: t("settings.contracts.reviews.minorContractors.since", "Engaged since {from}", {
+					from: formatDate(review.periodStart),
+				})
+		: lastDay
+			? t(
+					"settings.contracts.reviews.minorContractors.untilStartUnrecorded",
+					"Engaged until {until} (start not recorded)",
+					{ until: formatDate(lastDay) },
+				)
+			: t(
+					"settings.contracts.reviews.minorContractors.startUnrecorded",
+					"Engagement start not recorded",
+				);
 
 	return (
 		<li
@@ -206,16 +227,7 @@ function MinorContractorReviewItem({
 						"Contractor under 18: check whether the work falls under § 1 Abs. 1 Nr. 3 JArbSchG",
 					)}
 				</Badge>
-				<span className="text-muted-foreground text-sm tabular-nums">
-					{review.openEnded
-						? t("settings.contracts.reviews.minorContractors.since", "Engaged since {from}", {
-								from: formatDate(review.periodStart),
-							})
-						: t("settings.contracts.reviews.minorContractors.period", "Engaged {from} – {until}", {
-								from: formatDate(review.periodStart),
-								until: formatDate(lastDay),
-							})}
-				</span>
+				<span className="text-muted-foreground text-sm tabular-nums">{period}</span>
 				{review.acknowledgementStatus === "stale" ? (
 					<Badge variant="outline" className="border-warning/60 text-warning">
 						{t("settings.contracts.reviews.minorContractors.stale", "Changed since last assessed")}

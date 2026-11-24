@@ -7,7 +7,7 @@
  * is one warning an org admin reviews and documents with a reason. Its fingerprint covers the
  * engagement period and the birthday, so the documentation re-opens when either changes.
  */
-import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
@@ -26,7 +26,6 @@ import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
-import { birthdayCalendarDate } from "@/lib/organization/employee-birthday";
 import {
 	attachAcknowledgementStates,
 	recordStatutoryAcknowledgement,
@@ -38,6 +37,7 @@ import { statutoryInputFingerprint } from "../fingerprint";
 import { loadOrganizationStatutoryPreferences, type StatutoryPreferences } from "../preferences";
 import { statutoryReviewWindow } from "../review-window";
 import { isMinorOn } from "./age";
+import { loadEmployeeBirthdays, loadEmployeeEngagementKinds } from "./youth-facts";
 
 type Reader = Pick<DatabaseClient, "select">;
 
@@ -164,49 +164,77 @@ export async function evaluateMinorContractorReviewFindings(
 		readonly preferences?: Pick<StatutoryPreferences, "applyJarbschgToMinorContractors">;
 		/** Only these employees (still only those on the organization's current roster). */
 		readonly employeeIds?: readonly string[];
+		/**
+		 * The organization's current roster, when the caller already read it (the review inbox): it is
+		 * not read again, and `employeeIds` is ignored.
+		 */
+		readonly currentRoster?: readonly string[];
 	},
 ): Promise<MinorContractorFinding[]> {
 	const preferences =
 		input.preferences ?? (await loadOrganizationStatutoryPreferences(db, input.organizationId));
 	if (preferences.applyJarbschgToMinorContractors) return [];
-	if (input.employeeIds?.length === 0) return [];
+	const roster = input.currentRoster ?? (await currentRosterOf(db, input));
+	if (roster.length === 0) return [];
 	const window = statutoryReviewWindow(plainDateAt(input.now, input.timezone));
 	const windowStart = parsePlainDate(window.start);
-	const conditions = [
-		onCurrentRoster(input.organizationId, employee, input.now),
-		isNotNull(employee.birthday),
-	];
-	if (input.employeeIds) conditions.push(inArray(employee.id, [...new Set(input.employeeIds)]));
-	const people = await db
-		.select({
-			id: employee.id,
-			birthday: employee.birthday,
-			engagementKind: employee.engagementKind,
-		})
-		.from(employee)
-		.where(and(...conditions));
+	// The same reads as the youth protection monitor's (`jarbschg-contributor.ts`), so a
+	// request-scoped `memoizedReader` runs each once for both.
+	const birthdays = await loadEmployeeBirthdays(db, {
+		organizationId: input.organizationId,
+		employeeIds: roster,
+	});
 	// Under 18 on any day of the window is under 18 on its first day.
-	const minors = people.flatMap((person) => {
-		const birthday = person.birthday ? birthdayCalendarDate(person.birthday) : null;
-		return birthday && isMinorOn(birthday, windowStart) ? [{ ...person, birthday }] : [];
+	const minors = roster.flatMap((employeeId) => {
+		const birthday = birthdays.get(employeeId) ?? null;
+		return birthday && isMinorOn(birthday, windowStart) ? [{ employeeId, birthday }] : [];
 	});
 	if (minors.length === 0) return [];
-	const periodsOf = await loadEmploymentPeriodSnapshots(db, {
+	const scope = {
 		organizationId: input.organizationId,
-		employeeIds: minors.map((person) => person.id),
-	});
-	const findings = minors.flatMap((person) =>
-		minorContractorEngagementFindings({
+		employeeIds: minors.map((minor) => minor.employeeId),
+	};
+	const [engagementKinds, periodsOf] = await Promise.all([
+		loadEmployeeEngagementKinds(db, scope),
+		loadEmploymentPeriodSnapshots(db, scope),
+	]);
+	const findings = minors.flatMap(({ employeeId, birthday }) => {
+		const employeeEngagementKind = engagementKinds.get(employeeId);
+		if (!employeeEngagementKind) return [];
+		return minorContractorEngagementFindings({
 			organizationId: input.organizationId,
-			employeeId: person.id,
-			birthday: person.birthday,
-			employeeEngagementKind: person.engagementKind,
-			periods: periodsOf.get(person.id) ?? [],
+			employeeId,
+			birthday,
+			employeeEngagementKind,
+			periods: periodsOf.get(employeeId) ?? [],
 			timezone: input.timezone,
 			window,
-		}),
-	);
+		});
+	});
+	if (findings.length === 0) return [];
 	return attachAcknowledgementStates(db, input.organizationId, findings);
+}
+
+/** The organization's current roster, only `employeeIds` when given. */
+async function currentRosterOf(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly now: Instant;
+		readonly employeeIds?: readonly string[];
+	},
+): Promise<string[]> {
+	if (input.employeeIds?.length === 0) return [];
+	const rows = await db
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(
+				onCurrentRoster(input.organizationId, employee, input.now),
+				input.employeeIds ? inArray(employee.id, [...new Set(input.employeeIds)]) : undefined,
+			),
+		);
+	return rows.map((row) => row.id);
 }
 
 /** A minor contractor engagement for org admins in Reviews & Conflicts. */
@@ -215,11 +243,13 @@ export interface MinorContractorReview {
 	readonly employeeId: string;
 	readonly employeeName: string;
 	readonly subjectKey: string;
-	/** The engagement's first local day (the window's first, when its start was not recorded). */
-	readonly periodStart: string;
-	/** The day after its last; the window's end while it is open-ended. */
-	readonly periodEnd: string;
-	readonly openEnded: boolean;
+	/**
+	 * The engagement's first local day; null when its start was not recorded (no stint, or a legacy
+	 * one). Never the review window's start, which moves every day.
+	 */
+	readonly periodStart: string | null;
+	/** The day after its last; null while it is open-ended. */
+	readonly periodEnd: string | null;
 	readonly legalReference: string;
 	readonly acknowledgementStatus: "none" | "current" | "stale";
 	/** What the admin documents; passed back as the expected precondition. */
@@ -272,21 +302,24 @@ export async function listMinorContractorReviews(
 		...new Set(findings.map((finding) => finding.employeeId)),
 	]);
 	return findings
-		.map((finding): MinorContractorReview => ({
-			findingId: finding.id,
-			employeeId: finding.employeeId,
-			employeeName: names.get(finding.employeeId) ?? finding.employeeId,
-			subjectKey: finding.subjectKey,
-			periodStart: finding.periodStart,
-			periodEnd: finding.periodEnd,
-			openEnded: finding.adminDetail?.facts?.openEnded === true,
-			legalReference: finding.legalReference,
-			acknowledgementStatus: finding.acknowledgement?.status ?? "none",
-			inputFingerprint: finding.inputFingerprint,
-		}))
+		.map((finding): MinorContractorReview => {
+			const facts = finding.adminDetail?.facts;
+			return {
+				findingId: finding.id,
+				employeeId: finding.employeeId,
+				employeeName: names.get(finding.employeeId) ?? finding.employeeId,
+				subjectKey: finding.subjectKey,
+				periodStart: facts?.startRecorded === true ? finding.periodStart : null,
+				periodEnd: facts?.openEnded === true ? null : finding.periodEnd,
+				legalReference: finding.legalReference,
+				acknowledgementStatus: finding.acknowledgement?.status ?? "none",
+				inputFingerprint: finding.inputFingerprint,
+			};
+		})
 		.sort(
 			(left, right) =>
-				left.periodStart.localeCompare(right.periodStart) ||
+				// An unrecorded start first: it may be the earliest.
+				(left.periodStart ?? "").localeCompare(right.periodStart ?? "") ||
 				left.employeeName.localeCompare(right.employeeName) ||
 				left.findingId.localeCompare(right.findingId),
 		);

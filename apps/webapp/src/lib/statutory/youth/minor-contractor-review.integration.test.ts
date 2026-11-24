@@ -100,14 +100,13 @@ describe("minor contractors for youth-protection review (PostgreSQL)", () => {
 				subjectKey: `engagement:${first}`,
 				periodStart: "2027-01-01",
 				periodEnd: "2027-03-01",
-				openEnded: false,
 				legalReference: "§ 1 Abs. 1 Nr. 3 JArbSchG",
 				acknowledgementStatus: "none",
 			}),
 			expect.objectContaining({
 				subjectKey: `engagement:${second}`,
 				periodStart: "2027-04-01",
-				openEnded: true,
+				periodEnd: null,
 			}),
 		]);
 		expect(await youthDomain()).toMatchObject({
@@ -117,6 +116,59 @@ describe("minor contractors for youth-protection review (PostgreSQL)", () => {
 			pendingAcknowledgements: 2,
 			staleAcknowledgements: 0,
 		});
+	});
+
+	it("shows an engagement whose start was not recorded the same on consecutive days", async () => {
+		// A legacy stint without a recorded start, and a contractor with no stint at all.
+		const legacy = await fx.employee(org, "legacy", { birthday: "2011-05-01" });
+		const unrecorded = await fx.employee(org, "unrecorded", { birthday: "2011-06-01" });
+		/** Replaces the employee's stints by one legacy contractor stint with no recorded start. */
+		const legacyContractor = async (who: FixtureEmployee) => {
+			await admin.query("delete from employee_employment_period where employee_id = $1", [
+				who.employeeId,
+			]);
+			const {
+				rows: [row],
+			} = await admin.query<{ id: string }>(
+				`insert into employee_employment_period
+				 (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+				 values ($1, $2, 'legacy_unknown', null, null, 'unknown', 'contractor') returning id`,
+				[org.id, who.employeeId],
+			);
+			await admin.query("update employee set engagement_kind = 'contractor' where id = $1", [
+				who.employeeId,
+			]);
+			return row.id;
+		};
+		const period = await legacyContractor(legacy);
+		await legacyContractor(unrecorded);
+		await admin.query("delete from employee_employment_period where employee_id = $1", [
+			unrecorded.employeeId,
+		]);
+		const listOn = (day: string) =>
+			listMinorContractorReviews(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				now: localInstant(day, "12:00", org.timezone),
+			});
+
+		const today = await listOn("2027-03-02");
+		expect(today).toEqual([
+			expect.objectContaining({
+				employeeId: legacy.employeeId,
+				subjectKey: `engagement:${period}`,
+				periodStart: null,
+				periodEnd: null,
+			}),
+			expect.objectContaining({
+				employeeId: unrecorded.employeeId,
+				subjectKey: "engagement:employee",
+				periodStart: null,
+				periodEnd: null,
+			}),
+		]);
+		// Neither the item nor what the admin documents moves with the review window.
+		expect(await listOn("2027-03-03")).toEqual(today);
 	});
 
 	it("documents an engagement with a reason and re-opens it when the birthday or the period changes", async () => {
@@ -161,7 +213,6 @@ describe("minor contractors for youth-protection review (PostgreSQL)", () => {
 			expect.objectContaining({
 				acknowledgementStatus: "stale",
 				periodEnd: "2027-04-15",
-				openEnded: false,
 			}),
 		]);
 	});

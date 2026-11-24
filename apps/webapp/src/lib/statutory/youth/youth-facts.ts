@@ -15,6 +15,7 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { birthdayCalendarDate } from "@/lib/organization/employee-birthday";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
@@ -64,6 +65,12 @@ export async function loadJarbschgLimits(
 	};
 }
 
+/**
+ * `employeeIds` once each, in one order: callers passing the same employees in different orders
+ * then run the same statement, which a request-scoped `memoizedReader` reads once.
+ */
+const canonicalIds = (employeeIds: readonly string[]) => [...new Set(employeeIds)].sort();
+
 /** Recorded birthdays (calendar dates) of the organization's employees; null when unknown. */
 export async function loadEmployeeBirthdays(
 	db: Reader,
@@ -76,12 +83,30 @@ export async function loadEmployeeBirthdays(
 		.where(
 			and(
 				eq(employee.organizationId, input.organizationId),
-				inArray(employee.id, [...new Set(input.employeeIds)]),
+				inArray(employee.id, canonicalIds(input.employeeIds)),
 			),
 		);
 	return new Map(
 		rows.map((row) => [row.id, row.birthday ? birthdayCalendarDate(row.birthday) : null]),
 	);
+}
+
+/** The organization's employees' engagement kind (`employee.engagement_kind`). */
+export async function loadEmployeeEngagementKinds(
+	db: Reader,
+	input: { readonly organizationId: string; readonly employeeIds: readonly string[] },
+): Promise<Map<string, EngagementKind>> {
+	if (input.employeeIds.length === 0) return new Map();
+	const rows = await db
+		.select({ id: employee.id, engagementKind: employee.engagementKind })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				inArray(employee.id, canonicalIds(input.employeeIds)),
+			),
+		);
+	return new Map(rows.map((row) => [row.id, row.engagementKind]));
 }
 
 /**
@@ -101,19 +126,15 @@ export async function loadContractorDays(
 	},
 ): Promise<Map<string, Set<string>>> {
 	const result = new Map<string, Set<string>>();
-	const employeeIds = [...new Set(input.employeeIds)];
+	const employeeIds = canonicalIds(input.employeeIds);
 	if (employeeIds.length === 0) return result;
+	const scope = { organizationId: input.organizationId, employeeIds };
 	const [kinds, periodsOf] = await Promise.all([
-		db
-			.select({ id: employee.id, engagementKind: employee.engagementKind })
-			.from(employee)
-			.where(
-				and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
-			),
-		loadEmploymentPeriodSnapshots(db, { organizationId: input.organizationId, employeeIds }),
+		loadEmployeeEngagementKinds(db, scope),
+		loadEmploymentPeriodSnapshots(db, scope),
 	]);
 	const until = parsePlainDate(input.until);
-	for (const { id, engagementKind } of kinds) {
+	for (const [id, engagementKind] of kinds) {
 		const periods = periodsOf.get(id) ?? [];
 		const everContractor =
 			periods.length === 0

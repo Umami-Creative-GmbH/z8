@@ -49,7 +49,6 @@ const review: MinorContractorReview = {
 	subjectKey: "engagement:p1",
 	periodStart: "2027-01-04",
 	periodEnd: "2027-04-01",
-	openEnded: false,
 	legalReference: "§ 1 Abs. 1 Nr. 3 JArbSchG",
 	acknowledgementStatus: "none",
 	inputFingerprint: "v1:shown",
@@ -84,9 +83,30 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 	});
 
 	it("names an open-ended engagement by its start, in German", async () => {
-		show("de", [{ ...review, openEnded: true }]);
+		show("de", [{ ...review, periodEnd: null }]);
 
 		expect(await screen.findByText("Beauftragt seit 4. Jan. 2027")).toBeTruthy();
+	});
+
+	it("says an engagement's start was not recorded instead of showing a date", async () => {
+		show("en", [
+			{ ...review, periodStart: null, periodEnd: null },
+			{ ...review, findingId: "f2", employeeName: "Ben Roth", periodStart: null },
+		]);
+
+		expect(await screen.findByText("Engagement start not recorded")).toBeTruthy();
+		expect(screen.getByText("Engaged until Mar 31, 2027 (start not recorded)")).toBeTruthy();
+		expect(screen.queryByText(/Engaged since/)).toBeNull();
+	});
+
+	it("says an engagement's start was not recorded, in German", async () => {
+		show("de", [
+			{ ...review, periodStart: null, periodEnd: null },
+			{ ...review, findingId: "f2", employeeName: "Ben Roth", periodStart: null },
+		]);
+
+		expect(await screen.findByText("Beginn der Beauftragung nicht erfasst")).toBeTruthy();
+		expect(screen.getByText("Beauftragt bis 31. März 2027 (Beginn nicht erfasst)")).toBeTruthy();
 	});
 
 	it("documents the engagement the admin was shown, with a reason", async () => {

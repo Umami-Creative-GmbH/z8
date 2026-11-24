@@ -468,7 +468,9 @@
           },
           "since": "Beauftragt seit {from}",
           "stale": "Seit der letzten Einschätzung geändert",
-          "title": "Jugendarbeitsschutz: Externe Dienstleister unter 18"
+          "startUnrecorded": "Beginn der Beauftragung nicht erfasst",
+          "title": "Jugendarbeitsschutz: Externe Dienstleister unter 18",
+          "untilStartUnrecorded": "Beauftragt bis {until} (Beginn nicht erfasst)"
         },
         "migrationTitle": "Vertragsmigration und Austrittsprüfungen",
         "invalidated": "Bestätigung ungültig: Arbeit, Schichten oder Beträge haben sich nach der Bestätigung geändert. Prüfen Sie die aktuellen Werte und bestätigen Sie erneut, wenn sie weiterhin gilt.",

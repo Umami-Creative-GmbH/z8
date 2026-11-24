@@ -468,7 +468,9 @@
           },
           "since": "Engaged since {from}",
           "stale": "Changed since last assessed",
-          "title": "Youth protection: contractors under 18"
+          "startUnrecorded": "Engagement start not recorded",
+          "title": "Youth protection: contractors under 18",
+          "untilStartUnrecorded": "Engaged until {until} (start not recorded)"
         },
         "migrationTitle": "Contract migration and departure reviews",
         "invalidated": "Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
