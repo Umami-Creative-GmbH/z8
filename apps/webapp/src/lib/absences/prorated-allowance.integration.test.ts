@@ -222,6 +222,25 @@ describe("prorated allowance in every balance reader (#1110)", () => {
 		});
 	});
 
+	it("gives no allowance, not a configuration conflict, in a year without an employed day (#2013)", async () => {
+		const { employeeId } = await fixture.seedEmployee({
+			startDate: utcDate("2020-01-01"),
+			withPeriod: false,
+			isActive: false,
+		});
+		await fixture.pool.query(
+			`insert into employee_employment_period
+			 (organization_id, employee_id, status, started_at, ended_at, start_provenance)
+			 values ($1, $2, 'closed', $3, $4, 'recorded')`,
+			[fixture.organizationId, employeeId, utcDate("2020-01-01"), utcDate("2025-07-01")],
+		);
+
+		expect(await getVacationBalanceResult(employeeId, 2026)).toMatchObject({
+			configuration: { status: "resolved" },
+			balance: { totalDays: 0, allowance: { days: 0, reason: { kind: "not_employed" } } },
+		});
+	});
+
 	it("keeps the full allowance in a year before 2026", async () => {
 		expect((await getVacationBalance(joinerId, 2025))?.totalDays).toBe(30);
 	});
