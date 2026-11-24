@@ -75,12 +75,7 @@ describe("go-live checks (PostgreSQL)", () => {
 	async function seedNamed(organizationId: string, name: string, teamId: string | null = null) {
 		const seeded = await fixture.seedEmployee({ organizationId });
 		await fixture.pool.query(`update "user" set name = $1 where id = $2`, [name, seeded.userId]);
-		if (teamId) {
-			await fixture.pool.query(`update employee set team_id = $1 where id = $2`, [
-				teamId,
-				seeded.employeeId,
-			]);
-		}
+		if (teamId) await fixture.placeInTeam(seeded.employeeId, teamId);
 		return seeded;
 	}
 
