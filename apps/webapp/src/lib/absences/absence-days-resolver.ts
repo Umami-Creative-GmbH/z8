@@ -132,8 +132,8 @@ export async function loadWorkingDaysForEmployees(
 
 /**
  * The working days per week of each employee in the organization over a range (Absences ADR
- * 0003), from the unified contract in effect on each day, without holidays. Days the employee is
- * not employed are left out, so consumers count them as the five-day reference week.
+ * 0003), from the unified contract in effect on each day, without holidays. Days without an
+ * employment period are `notEmployed` periods (#2009), never a week without working days.
  * An employee outside the organization gets no entry.
  */
 export async function loadWorkingWeekPeriodsForEmployees(
@@ -158,16 +158,19 @@ export async function loadWorkingWeekPeriodsForEmployees(
 		for (const day of dates) {
 			const dayStr = day.toString();
 			const contract = contractsByDate.get(dayStr);
-			// A day outside employment has no working week: it is left out, not a schedule with
-			// zero working days, which ADR 0003 reserves for an explicitly configured schedule.
-			if (contract && !contract.isEmployedOnDay) continue;
+			const last = periods.at(-1);
+			// A day without employment has no working week: never a schedule without working days.
+			if (contract && !contract.isEmployedOnDay) {
+				if (last?.notEmployed) last.endDate = dayStr;
+				else periods.push({ startDate: dayStr, endDate: dayStr, notEmployed: true });
+				continue;
+			}
 			const weekdays = effectiveScheduledWeekdaysForContract(contract);
 			const workingDaysPerWeek = weekdays ? weekdays.size : MONDAY_TO_FRIDAY_DAYS;
 			const workPolicyId = contract?.workPolicy?.policyId ?? null;
-			const last = periods.at(-1);
 			if (
 				last &&
-				last.endDate === day.subtract({ days: 1 }).toString() &&
+				!last.notEmployed &&
 				last.workingDaysPerWeek === workingDaysPerWeek &&
 				last.workPolicyId === workPolicyId
 			) {

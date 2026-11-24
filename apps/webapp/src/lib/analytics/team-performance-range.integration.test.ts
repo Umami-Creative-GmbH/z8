@@ -195,15 +195,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			`insert into team (id,organization_id,name,updated_at) values ($1,$2,'Isolated team',now())`,
 			[teamId, fixture.organizationId],
 		);
-		await fixture.pool.query(`update employee set team_id=$2 where id=$1`, [
-			person.employeeId,
-			teamId,
-		]);
-		// The capture trigger dates the membership from now(); backdate it to the terms' valid_from below.
-		await fixture.pool.query(
-			`update employee_team_history set effective_from='2026-01-01T00:00:00Z' where employee_id=$1`,
-			[person.employeeId],
-		);
+		await fixture.placeInTeam(person.employeeId, teamId);
 		await fixture.pool.query(
 			`insert into user_settings (user_id,timezone,updated_at) values ($1,$2,now())`,
 			[person.userId, timezone],
