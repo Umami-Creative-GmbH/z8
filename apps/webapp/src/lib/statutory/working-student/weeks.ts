@@ -30,6 +30,7 @@
  */
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import { comparePlainDates, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { MINUTES_PER_DAY } from "../daytime-band";
 import {
 	classifyStatutoryUsage,
 	type StatutoryFinding,
@@ -224,7 +225,8 @@ function accumulate(
 	 */
 	const at = (day: PlainDate, minute: number): Instant => {
 		if (minute <= 0) return day.toZonedDateTime(timezone).toInstant();
-		if (minute >= 24 * 60) return day.add({ days: 1 }).toZonedDateTime(timezone).toInstant();
+		if (minute >= MINUTES_PER_DAY)
+			return day.add({ days: 1 }).toZonedDateTime(timezone).toInstant();
 		const wallTime = day.toPlainDateTime({ hour: Math.floor(minute / 60), minute: minute % 60 });
 		const zoned = wallTime.toZonedDateTime(timezone, { disambiguation: "compatible" });
 		if (zoned.toPlainDateTime().equals(wallTime)) return zoned.toInstant();

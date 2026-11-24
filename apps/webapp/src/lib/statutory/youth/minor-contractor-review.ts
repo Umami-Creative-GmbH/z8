@@ -10,10 +10,8 @@
  * the engagement decides the days before the first start, so the documentation re-opens when the
  * person's engagements or the birthday change, or once such days after the end appear.
  */
-import { and, eq, inArray } from "drizzle-orm";
-import { user } from "@/db/auth-schema";
+import { and, inArray } from "drizzle-orm";
 import { employee } from "@/db/schema";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import {
 	type EmploymentPeriodSnapshot,
 	engagementPeriodDecidingDay,
@@ -37,6 +35,7 @@ import {
 	type StatutoryAcknowledgementRecord,
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
+import { employeeDisplayNames } from "../employee-display-names";
 import { type StatutoryFinding, statutoryFindingId } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
 import { loadOrganizationStatutoryPreferences, type StatutoryPreferences } from "../preferences";
@@ -383,28 +382,6 @@ export type MinorContractorReviewRefusal =
 	| "statutory_finding_not_found"
 	| "statutory_finding_changed";
 
-async function employeeNames(
-	db: Reader,
-	organizationId: string,
-	employeeIds: readonly string[],
-): Promise<Map<string, string>> {
-	if (employeeIds.length === 0) return new Map();
-	const rows = await db
-		.select({
-			id: employee.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			name: user.name,
-			email: user.email,
-		})
-		.from(employee)
-		.leftJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])),
-		);
-	return new Map(rows.map((row) => [row.id, buildAuthUserDisplayName(row) || row.id]));
-}
-
 /**
  * Open minor contractor engagements (not documented, or documented before the person's engagements
  * or birthday changed or contractor days of the minor after the stint's end appeared), earliest
@@ -423,7 +400,7 @@ export async function listMinorContractorReviews(
 	const findings = (await evaluateMinorContractorReviewFindings(db, input)).filter(
 		(finding) => input.includeAcknowledged || finding.acknowledgement?.status !== "current",
 	);
-	const names = await employeeNames(db, input.organizationId, [
+	const names = await employeeDisplayNames(db, input.organizationId, [
 		...new Set(findings.map((finding) => finding.employeeId)),
 	]);
 	return findings
@@ -432,7 +409,7 @@ export async function listMinorContractorReviews(
 			return {
 				findingId: finding.id,
 				employeeId: finding.employeeId,
-				employeeName: names.get(finding.employeeId) ?? finding.employeeId,
+				employeeName: names.get(finding.employeeId) || finding.employeeId,
 				subjectKey: finding.subjectKey,
 				periodStart: facts?.startRecorded === true ? finding.periodStart : null,
 				periodEnd: facts?.openEnded === true ? null : finding.periodEnd,

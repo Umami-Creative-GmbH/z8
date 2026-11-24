@@ -16,10 +16,7 @@
  * monitors share are read once. A domain that fails to load is reported `unavailable` instead of
  * failing the whole inbox.
  */
-import { and, eq, inArray } from "drizzle-orm";
-import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { type Instant, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
@@ -27,6 +24,7 @@ import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { StatutoryAcknowledgementReviewStatus } from "./acknowledgement-history";
 import type { StatutoryAcknowledgementKind } from "./acknowledgement-kinds";
+import { employeeDisplayNames } from "./employee-display-names";
 import { apprenticeReleaseScheduleContributor } from "./apprenticeship/release-conflict-contributor";
 import type { StatutoryFinding, StatutorySeverity } from "./finding";
 import {
@@ -170,28 +168,6 @@ function isMonitorOnlyFinding(finding: StatutoryFinding): boolean {
 	return finding.acknowledgementKind === null && finding.severity !== "info";
 }
 
-async function employeeNames(
-	db: Reader,
-	organizationId: string,
-	employeeIds: readonly string[],
-): Promise<Map<string, string>> {
-	if (employeeIds.length === 0) return new Map();
-	const rows = await db
-		.select({
-			id: employee.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			name: user.name,
-			email: user.email,
-		})
-		.from(employee)
-		.leftJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])),
-		);
-	return new Map(rows.map((row) => [row.id, buildAuthUserDisplayName(row) || row.id]));
-}
-
 /** Gives items without a name (read here, not by their review list) their employee's name. */
 async function withEmployeeNames(
 	db: Reader,
@@ -199,12 +175,12 @@ async function withEmployeeNames(
 	items: readonly StatutoryReviewInboxItem[],
 ): Promise<StatutoryReviewInboxItem[]> {
 	const unnamed = items.filter((item) => item.employeeName === "");
-	const names = await employeeNames(db, organizationId, [
+	const names = await employeeDisplayNames(db, organizationId, [
 		...new Set(unnamed.map((item) => item.employeeId)),
 	]);
 	return items.map((item) =>
 		item.employeeName === ""
-			? { ...item, employeeName: names.get(item.employeeId) ?? item.employeeId }
+			? { ...item, employeeName: names.get(item.employeeId) || item.employeeId }
 			: item,
 	);
 }

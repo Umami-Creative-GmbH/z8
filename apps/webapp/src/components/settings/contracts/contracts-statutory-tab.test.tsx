@@ -33,6 +33,8 @@ vi.mock("@/app/[locale]/(app)/settings/contracts/statutory-actions", () => ({
 }));
 
 const { ContractsStatutoryTab } = await import("./contracts-statutory-tab");
+const { UserPreferencesProvider } =
+	await import("@/components/providers/user-preferences-provider");
 
 function baseline(
 	key: string,
@@ -57,12 +59,14 @@ function baseline(
 	};
 }
 
-function renderTab() {
+function renderTab({ timeFormat = "24h" }: { timeFormat?: "24h" | "12h" } = {}) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	return render(
-		<QueryClientProvider client={client}>
-			<ContractsStatutoryTab organizationId="org-1" />
-		</QueryClientProvider>,
+		<UserPreferencesProvider timeFormat={timeFormat}>
+			<QueryClientProvider client={client}>
+				<ContractsStatutoryTab organizationId="org-1" />
+			</QueryClientProvider>
+		</UserPreferencesProvider>,
 	);
 }
 
@@ -203,6 +207,29 @@ describe("ContractsStatutoryTab (#1988)", () => {
 			expect(mocks.updateStatutoryPreferencesAction).toHaveBeenCalledWith(
 				expect.objectContaining({
 					workingStudentDaytimeStartMinute: 420,
+					workingStudentDaytimeEndMinute: 1440,
+				}),
+			),
+		);
+	});
+
+	it("writes the daytime band in the reader's 12-hour time, the end of the day as midnight", async () => {
+		const user = userEvent.setup();
+		renderTab({ timeFormat: "12h" });
+		const from = await screen.findByRole("combobox", { name: "Counts from" });
+		const until = screen.getByRole("combobox", { name: "Counts until" });
+
+		expect(from.textContent).toContain("6:00 AM");
+		expect(until.textContent).toContain("6:00 PM");
+
+		await user.click(until);
+		await user.click(await screen.findByRole("option", { name: "12:00 AM" }));
+		await user.click(screen.getByRole("button", { name: "Save warning settings" }));
+
+		await waitFor(() =>
+			expect(mocks.updateStatutoryPreferencesAction).toHaveBeenCalledWith(
+				expect.objectContaining({
+					workingStudentDaytimeStartMinute: 360,
 					workingStudentDaytimeEndMinute: 1440,
 				}),
 			),

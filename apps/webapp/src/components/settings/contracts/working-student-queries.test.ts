@@ -1,12 +1,12 @@
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { queryKeys } from "@/lib/query/keys";
-import { youthReviewQueryKeys } from "./statutory-review-query-keys";
 import {
 	invalidateOrganizationStatutoryFindings,
-	invalidateWorkingStudentFindings,
 	workingStudentQueryKeys,
-} from "./working-student-queries";
+	youthReviewQueryKeys,
+} from "./statutory-review-query-keys";
+import { invalidateWorkingStudentFindings } from "./working-student-queries";
 
 describe("working-student query keys", () => {
 	it("scope every key to the organization", () => {

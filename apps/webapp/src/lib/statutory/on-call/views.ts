@@ -5,9 +5,7 @@
  * restricted audience before they leave the server.
  */
 import { and, asc, eq, inArray, lt } from "drizzle-orm";
-import { user } from "@/db/auth-schema";
-import { employee, employeeEmploymentHistory } from "@/db/schema";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { employeeEmploymentHistory } from "@/db/schema";
 import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
 	comparePlainDates,
@@ -18,6 +16,7 @@ import {
 import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { attachAcknowledgementStates } from "../acknowledgements";
+import { employeeDisplayNames } from "../employee-display-names";
 import { loadEmployeeInOrganization } from "../employee-scope";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import {
@@ -55,29 +54,6 @@ export interface OnCallReviewItem {
 	readonly employeeId: string;
 	readonly employeeName: string;
 	readonly finding: OnCallFinding;
-}
-
-async function employeeNames(
-	db: Reader,
-	organizationId: string,
-	employeeIds: readonly string[],
-): Promise<Map<string, string>> {
-	if (employeeIds.length === 0) return new Map();
-	// The display name derives from the user, not the deprecated employee name columns.
-	const rows = await db
-		.select({
-			id: employee.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			name: user.name,
-			email: user.email,
-		})
-		.from(employee)
-		.leftJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(eq(employee.organizationId, organizationId), inArray(employee.id, [...employeeIds])),
-		);
-	return new Map(rows.map((row) => [row.id, buildAuthUserDisplayName(row) || row.id]));
 }
 
 function reviewWindow(now: Instant, timezone: string) {
@@ -120,13 +96,13 @@ export async function listOnCallReviewItems(
 	const names =
 		input.withNames === false
 			? new Map<string, string>()
-			: await employeeNames(db, input.organizationId, [
+			: await employeeDisplayNames(db, input.organizationId, [
 					...new Set(findings.map((finding) => finding.employeeId)),
 				]);
 	return findings
 		.map((finding) => ({
 			employeeId: finding.employeeId,
-			employeeName: names.get(finding.employeeId) ?? finding.employeeId,
+			employeeName: names.get(finding.employeeId) || finding.employeeId,
 			finding,
 		}))
 		.toSorted(
@@ -318,7 +294,7 @@ export async function listOnCallPayrollReferenceRows(
 	].toSorted();
 	if (employeeIds.length === 0) return [];
 
-	const names = await employeeNames(db, input.organizationId, employeeIds);
+	const names = await employeeDisplayNames(db, input.organizationId, employeeIds);
 	const events = await listOnCallReferenceEventsBatch(db, {
 		organizationId: input.organizationId,
 		employeeIds,
@@ -331,7 +307,7 @@ export async function listOnCallPayrollReferenceRows(
 			list.map((event) => ({
 				...event,
 				employeeId,
-				employeeName: names.get(employeeId) ?? employeeId,
+				employeeName: names.get(employeeId) || employeeId,
 			})),
 		)
 		.toSorted(

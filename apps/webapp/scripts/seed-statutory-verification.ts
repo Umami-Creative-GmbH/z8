@@ -38,7 +38,7 @@
  */
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
-import { Temporal } from "temporal-polyfill";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import {
 	removeStatutoryVerificationSeed,
 	seedStatutoryVerification,
@@ -106,7 +106,7 @@ async function main(): Promise<void> {
 		);
 		const people = await seedStatutoryVerification(pool, {
 			password,
-			now: Temporal.Instant.fromEpochMilliseconds(Date.now()),
+			now: systemClock.nowInstant(),
 		});
 		console.log("\nSeeded organization 'Statutory Verification' (Europe/Berlin).\n");
 		for (const who of people) console.log(`  ${who.email.padEnd(32)} ${who.name}`);
