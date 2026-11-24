@@ -27,9 +27,12 @@
  *
  *   pnpm db:seed:statutory-verification --confirm-database=<POSTGRES_DB>
  *
- * It refuses a non-local host and a database other than the confirmed one. Every run first
+ * It refuses a non-local host and a database other than the confirmed one. Because a port-forward
+ * or SSH tunnel to production also answers on `localhost`, it also refuses, before writing or
+ * removing anything, a database that holds any organization besides its own (`stv-org`); pass
+ * `--allow-populated-database` only for a disposable copy that already has data. Every run first
  * removes what an earlier run created (ids start with `stv-`) and seeds afresh; `--remove` only
- * removes it. The password for every login is `STATUTORY_SEED_PASSWORD`, which is never printed,
+ * removes it, behind the same checks. The password for every login is `STATUTORY_SEED_PASSWORD`, which is never printed,
  * or else a generated one printed at the end. Keep it out of `src/db/seed`: those seeders run in
  * production.
  */
@@ -40,6 +43,10 @@ import {
 	removeStatutoryVerificationSeed,
 	seedStatutoryVerification,
 } from "@/lib/statutory/__tests__/verification-seed";
+import {
+	ALLOW_POPULATED_DATABASE_FLAG,
+	checkVerificationSeedTarget,
+} from "@/lib/statutory/__tests__/verification-seed-guard";
 import { verificationSeedPassword } from "@/lib/statutory/__tests__/verification-seed-password";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
@@ -81,6 +88,14 @@ function databaseConfig() {
 async function main(): Promise<void> {
 	const pool = new Pool(databaseConfig());
 	try {
+		// Before any write, the removal included: a tunnel to production also answers on localhost.
+		const target = await checkVerificationSeedTarget(pool, {
+			allowPopulated: process.argv.includes(ALLOW_POPULATED_DATABASE_FLAG),
+		});
+		if (!target.ok) {
+			await pool.end();
+			refuse(target.reason);
+		}
 		await removeStatutoryVerificationSeed(pool);
 		if (process.argv.includes("--remove")) {
 			console.log("Removed the statutory verification seed.");

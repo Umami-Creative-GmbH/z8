@@ -14,6 +14,7 @@ import {
 	seedStatutoryVerification,
 	type StatutoryVerificationPerson,
 } from "./__tests__/verification-seed";
+import { checkVerificationSeedTarget } from "./__tests__/verification-seed-guard";
 import type { StatutoryFinding } from "./finding";
 import { evaluateStatutoryFindings } from "./scheduling/evaluate";
 
@@ -161,6 +162,32 @@ describe("statutory verification seed (PostgreSQL)", () => {
 		);
 		// Monday 16 November 2026, 14:00 in Berlin.
 		expect(first?.start).toBe("2026-11-16T13:00");
+	});
+});
+
+describe("statutory verification seed's database guard (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
+	const foreignOrganizationId = "stv-guard-foreign-org";
+
+	beforeAll(() =>
+		admin.query(
+			`INSERT INTO organization (id, name, slug, created_at) VALUES ($1, 'Real customer', $1, now())`,
+			[foreignOrganizationId],
+		),
+	);
+	afterAll(() => admin.query(`DELETE FROM organization WHERE id = $1`, [foreignOrganizationId]));
+
+	it("refuses a database that holds another organization", async () => {
+		const verdict = await checkVerificationSeedTarget(admin, { allowPopulated: false });
+
+		expect(verdict.ok).toBe(false);
+		expect(!verdict.ok && verdict.reason).toContain("--allow-populated-database");
+	});
+
+	it("lets an explicit override through", async () => {
+		expect(await checkVerificationSeedTarget(admin, { allowPopulated: true })).toEqual({
+			ok: true,
+		});
 	});
 });
 
