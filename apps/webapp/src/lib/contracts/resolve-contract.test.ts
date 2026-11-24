@@ -11,6 +11,7 @@ import {
 	type PureResolveContractInput,
 	type WorkPolicySnapshot,
 } from "./index";
+import { engagementPeriodDecidingDay } from "./resolve-contract";
 
 function baseInput(overrides: Partial<PureResolveContractInput> = {}): PureResolveContractInput {
 	return {
@@ -563,6 +564,63 @@ describe("contracts pure helpers & resolver", () => {
 		];
 		expect(kindOn("2025-12-15", employeeThenContractor)).toBe("employee");
 		expect(kindOn("2026-03-15", employeeThenContractor)).toBe("employee");
+	});
+
+	it("breaks a tie between stints ending or starting at the same instant by the later record, whatever the row order", () => {
+		const period = (
+			id: string,
+			engagementKind: "employee" | "contractor",
+			startedAt: string,
+			endedAt: string | null,
+			createdAt: string,
+		) => ({
+			id,
+			employeeId: "emp-1",
+			status: endedAt ? ("closed" as const) : ("open" as const),
+			startedAt: parseInstant(startedAt),
+			startProvenance: "recorded" as const,
+			endedAt: endedAt ? parseInstant(endedAt) : null,
+			createdAt: parseInstant(createdAt),
+			engagementKind,
+		});
+		const decide = (date: string, periods: ReturnType<typeof period>[]) => {
+			const decided = engagementPeriodDecidingDay(periods, parsePlainDate(date), "UTC");
+			return decided && `${decided.position}:${decided.period.id}`;
+		};
+		const sameEnd = [
+			period(
+				"contractor",
+				"contractor",
+				"2026-01-01T00:00:00Z",
+				"2026-03-01T00:00:00Z",
+				"2026-02-01T00:00:00Z",
+			),
+			period(
+				"employee",
+				"employee",
+				"2026-02-01T00:00:00Z",
+				"2026-03-01T00:00:00Z",
+				"2026-01-01T00:00:00Z",
+			),
+		];
+		expect(decide("2026-03-15", sameEnd)).toBe("after_end:contractor");
+		expect(decide("2026-03-15", [...sameEnd].reverse())).toBe("after_end:contractor");
+
+		const sameStart = [
+			period("employee", "employee", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),
+			period("contractor", "contractor", "2026-04-01T00:00:00Z", null, "2026-01-02T00:00:00Z"),
+		];
+		expect(decide("2026-03-15", sameStart)).toBe("before_start:contractor");
+		expect(decide("2026-03-15", [...sameStart].reverse())).toBe("before_start:contractor");
+
+		// Same record time too: the id decides, as for a day in force.
+		const sameRecord = [
+			period("a", "employee", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),
+			period("b", "contractor", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),
+		];
+		expect(decide("2026-03-15", sameRecord)).toBe("before_start:b");
+		expect(decide("2026-03-15", [...sameRecord].reverse())).toBe("before_start:b");
+		expect(decide("2026-04-15", sameRecord)).toBe("in_force:b");
 	});
 
 	it("falls back to the employee's engagement kind for a contractor without recorded periods", () => {

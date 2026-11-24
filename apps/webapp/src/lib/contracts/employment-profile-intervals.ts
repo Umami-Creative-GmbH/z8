@@ -62,7 +62,9 @@ export async function loadEmploymentPeriodSnapshots(
 				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
 				inArray(employeeEmploymentPeriod.employeeId, employeeIds),
 			),
-		);
+		)
+		// A stable order for every caller; the resolver's tie-breaks do not depend on it.
+		.orderBy(asc(employeeEmploymentPeriod.createdAt), asc(employeeEmploymentPeriod.id));
 	for (const row of periodRows) {
 		push(periodsByEmployee, row.employeeId, employmentPeriodSnapshotOf(row));
 	}

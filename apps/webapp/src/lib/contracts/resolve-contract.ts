@@ -336,6 +336,17 @@ export function engagementPeriodDecidingDay(
 }
 
 /**
+ * Whether `candidate` wins a tie between stints ending or starting at the same instant over
+ * `current`: the later record, then the greater id, as `resolveEmploymentPeriodForDay` breaks ties.
+ * Independent of the order the stints were read in.
+ */
+function winsTie(candidate: EmploymentPeriodSnapshot, current: EmploymentPeriodSnapshot): boolean {
+	const created = compareInstants(candidate.createdAt, current.createdAt);
+	if (created !== 0) return created > 0;
+	return candidate.id.localeCompare(current.id) > 0;
+}
+
+/**
  * The stint deciding a day no employment period covers (#1996): the stint that ended last
  * before the day, or, before the first stint, the stint that starts first after it. Only
  * callers that found no period on the day use this.
@@ -349,28 +360,26 @@ function periodOutsideEmployment(
 	readonly position: "after_end" | "before_start";
 } | null {
 	const dayStart = day.toZonedDateTime(employeeCalendarTimezone).toInstant();
-	let preceding: EmploymentPeriodSnapshot | null = null;
-	let following: EmploymentPeriodSnapshot | null = null;
+	let preceding: { period: EmploymentPeriodSnapshot; endedAt: Instant } | null = null;
+	let following: { period: EmploymentPeriodSnapshot; startedAt: Instant } | null = null;
 	for (const period of periods) {
 		if (period.endedAt !== null && compareInstants(period.endedAt, dayStart) <= 0) {
-			if (preceding?.endedAt == null || compareInstants(period.endedAt, preceding.endedAt) > 0) {
-				preceding = period;
+			const order = preceding ? compareInstants(period.endedAt, preceding.endedAt) : 1;
+			if (order > 0 || (order === 0 && preceding && winsTie(period, preceding.period))) {
+				preceding = { period, endedAt: period.endedAt };
 			}
 			continue;
 		}
 		const start =
 			period.startProvenance === "recorded" && period.startedAt ? period.startedAt : null;
 		if (start === null) continue;
-		if (
-			following === null ||
-			following.startedAt === null ||
-			compareInstants(start, following.startedAt) < 0
-		) {
-			following = period;
+		const order = following ? compareInstants(start, following.startedAt) : -1;
+		if (order < 0 || (order === 0 && following && winsTie(period, following.period))) {
+			following = { period, startedAt: start };
 		}
 	}
-	if (preceding) return { period: preceding, position: "after_end" };
-	if (following) return { period: following, position: "before_start" };
+	if (preceding) return { period: preceding.period, position: "after_end" };
+	if (following) return { period: following.period, position: "before_start" };
 	return null;
 }
 
