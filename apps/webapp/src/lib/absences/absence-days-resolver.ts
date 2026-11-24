@@ -155,25 +155,19 @@ export async function loadWorkingWeekPeriodsForEmployees(
 	const result = new Map<string, WorkingWeekPeriod[]>();
 	for (const [employeeId, contractsByDate] of contractsByEmployee) {
 		const periods: WorkingWeekPeriod[] = [];
-		let previousDayIncluded = false;
 		for (const day of dates) {
 			const dayStr = day.toString();
 			const contract = contractsByDate.get(dayStr);
 			// A day outside employment has no working week: it is left out, not a schedule with
 			// zero working days, which ADR 0003 reserves for an explicitly configured schedule.
-			if (contract && !contract.isEmployedOnDay) {
-				previousDayIncluded = false;
-				continue;
-			}
+			if (contract && !contract.isEmployedOnDay) continue;
 			const weekdays = effectiveScheduledWeekdaysForContract(contract);
 			const workingDaysPerWeek = weekdays ? weekdays.size : MONDAY_TO_FRIDAY_DAYS;
 			const workPolicyId = contract?.workPolicy?.policyId ?? null;
 			const last = periods.at(-1);
-			const continuesLast = previousDayIncluded;
-			previousDayIncluded = true;
 			if (
 				last &&
-				continuesLast &&
+				last.endDate === day.subtract({ days: 1 }).toString() &&
 				last.workingDaysPerWeek === workingDaysPerWeek &&
 				last.workPolicyId === workPolicyId
 			) {
