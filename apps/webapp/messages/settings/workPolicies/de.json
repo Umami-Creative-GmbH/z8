@@ -446,6 +446,35 @@
           "empty": "Kein Jugendschutz-Befund benötigt eine Branchenausnahme.",
           "documented": "Branchenausnahme erfasst"
         },
+        "minorContractors": {
+          "acknowledge": "Einschätzung erfassen…",
+          "acknowledged": "Einschätzung erfasst",
+          "afterEnd": "Nach dem Ende der Beauftragung am {date} bleibt die Person als Externer Dienstleister erfasst. Ihre Schichten und Arbeit nach diesem Tag werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
+          "beforeStart": "Vor dem Beginn der Beauftragung am {date} ist die Person bereits als Externer Dienstleister erfasst. Ihre Schichten und Arbeit vor diesem Tag werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
+          "confirm": "Einschätzung erfassen",
+          "description": "Die Grenzen des Jugendarbeitsschutzes gelten nicht für Externe Dienstleister. Das JArbSchG erfasst aber auch Minderjährige, deren Dienstleistungen der Arbeit von Beschäftigten ähnlich sind (§ 1 Abs. 1 Nr. 3 JArbSchG). Prüfen Sie jede Beauftragung und erfassen Sie Ihre Einschätzung. Sie wird wieder offen, wenn sich der Beauftragungszeitraum oder das Geburtsdatum ändert oder die Person nach dem Ende der Beauftragung als Externer Dienstleister erfasst ist.",
+          "documented": "Einschätzung erfasst",
+          "empty": "Kein Externer Dienstleister unter 18 muss geprüft werden.",
+          "hint": "Ähnelt die Tätigkeit der Arbeit von Beschäftigten (weisungsgebunden, in Ihre Organisation eingebunden, keine eigenen Kunden und kein unternehmerisches Risiko), gilt der Jugendarbeitsschutz: Schalten Sie in den gesetzlichen Grenzen „Jugendarbeitsschutz (JArbSchG) auf minderjährige Externe Dienstleister anwenden“ ein oder beschäftigen Sie die Person stattdessen.",
+          "kind": "Externer Dienstleister unter 18: prüfen, ob die Tätigkeit unter § 1 Abs. 1 Nr. 3 JArbSchG fällt",
+          "legalNote": "Rechtlicher Hinweis (optional)",
+          "loadFailed": "Externe Dienstleister unter 18 konnten nicht geladen werden.",
+          "onDay": "Beauftragt am {date}",
+          "period": "Beauftragt {from} – {until}",
+          "reason": "Ihre Einschätzung der Beauftragung",
+          "reasonRequired": "Begründen Sie, warum die Tätigkeit unter den Jugendarbeitsschutz fällt oder nicht.",
+          "refusal": {
+            "changed": "Die Beauftragung oder das Geburtsdatum hat sich seit dem Laden der Liste geändert, oder die Person ist jetzt nach dem Ende der Beauftragung als Externer Dienstleister erfasst. Prüfen Sie sie erneut.",
+            "notFound": "Diese Beauftragung muss nicht mehr geprüft werden. Die Liste zeigt die aktuellen.",
+            "reasonRequired": "Begründen Sie, warum die Tätigkeit unter den Jugendarbeitsschutz fällt oder nicht.",
+            "subjectRequired": "Diese Beauftragung kann nicht dokumentiert werden. Laden Sie die Liste neu und versuchen Sie es erneut."
+          },
+          "since": "Beauftragt seit {from}",
+          "stale": "Seit der letzten Einschätzung geändert",
+          "startUnrecorded": "Beginn der Beauftragung nicht erfasst",
+          "title": "Jugendarbeitsschutz: Externe Dienstleister unter 18",
+          "untilStartUnrecorded": "Beauftragt bis {until} (Beginn nicht erfasst)"
+        },
         "migrationTitle": "Vertragsmigration und Austrittsprüfungen",
         "invalidated": "Bestätigung ungültig: Arbeit, Schichten oder Beträge haben sich nach der Bestätigung geändert. Prüfen Sie die aktuellen Werte und bestätigen Sie erneut, wenn sie weiterhin gilt.",
         "noLongerApplies": "Bestätigung gilt nicht mehr: Der Befund kann nicht mehr bestätigt werden, daher zählt der dokumentierte Grund nicht mehr. Passen Sie stattdessen den Dienstplan oder den Vertrag an.",
@@ -682,7 +711,9 @@
           "daytimeStart": "Zählt ab",
           "daytimeEnd": "Zählt bis",
           "daytimeBandRange": "Wählen Sie volle Viertelstunden von 00:00 bis 24:00.",
-          "daytimeBandOrder": "Das Tageszeitfenster muss vor seinem Ende beginnen."
+          "daytimeBandOrder": "Das Tageszeitfenster muss vor seinem Ende beginnen.",
+          "minorContractors": "Jugendarbeitsschutz (JArbSchG) auf minderjährige Externe Dienstleister anwenden",
+          "minorContractorsHelp": "Das JArbSchG erfasst auch Minderjährige, deren Dienstleistungen der Arbeit von Beschäftigten ähnlich sind (§ 1 Abs. 1 Nr. 3 JArbSchG). Aus: Jede Beauftragung eines Externen Dienstleisters unter 18 erscheint unter Prüfungen & Konflikte, damit Sie das prüfen können. Ein: Die Arbeitszeit wird wie bei Beschäftigten unter 18 beurteilt, in der Schichtplanung, bei Besetzungsvorschlägen, bei der Veröffentlichungssperre und bei erfasster Arbeitszeit."
         }
       },
       "shortTerm": {

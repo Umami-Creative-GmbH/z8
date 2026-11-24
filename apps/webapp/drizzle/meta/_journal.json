@@ -2360,6 +2360,13 @@
       "when": 1813766400000,
       "tag": "0336_working_student_daytime_band",
       "breakpoints": true
+    },
+    {
+      "idx": 337,
+      "version": "7",
+      "when": 1813852800000,
+      "tag": "0337_jarbschg_minor_contractors",
+      "breakpoints": true
     }
   ]
 }

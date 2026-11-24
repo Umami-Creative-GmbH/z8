@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { ValidationError } from "@/lib/effect/errors";
 import { DEFAULT_STATUTORY_PREFERENCES, validateStatutoryPreferences } from "./preferences";
 
+describe("minor contractors under JArbSchG (#2022)", () => {
+	it("defaults to flagging minor contractors for review instead of judging them", () => {
+		expect(DEFAULT_STATUTORY_PREFERENCES.applyJarbschgToMinorContractors).toBe(false);
+	});
+});
+
 describe("validateStatutoryPreferences: working-student daytime band (#2017)", () => {
 	const withBand = (start: number, end: number) => ({
 		...DEFAULT_STATUTORY_PREFERENCES,

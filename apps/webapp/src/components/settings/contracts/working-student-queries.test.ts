@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { queryKeys } from "@/lib/query/keys";
+import { youthReviewQueryKeys } from "./statutory-review-query-keys";
 import {
 	invalidateOrganizationStatutoryFindings,
 	invalidateWorkingStudentFindings,
@@ -51,12 +52,17 @@ describe("working-student query keys", () => {
 			reviews: workingStudentQueryKeys.reviews("org-a"),
 			scheduleWarnings: queryKeys.compliance.scheduleWarnings("org-a", week),
 			staffing: queryKeys.shifts.staffingSuggestions("org-a", proposed),
+			// #2022: judging minor contractors changes the youth review lists.
+			sectorExceptions: [...youthReviewQueryKeys.sectorExceptions("org-a"), false],
+			minorContractors: [...youthReviewQueryKeys.minorContractors("org-a"), true],
 		};
 		const foreignKeys = {
 			card: workingStudentQueryKeys.monitor("org-b", "emp-1"),
 			reviews: workingStudentQueryKeys.reviews("org-b"),
 			scheduleWarnings: queryKeys.compliance.scheduleWarnings("org-b", week),
 			staffing: queryKeys.shifts.staffingSuggestions("org-b", proposed),
+			sectorExceptions: [...youthReviewQueryKeys.sectorExceptions("org-b"), false],
+			minorContractors: [...youthReviewQueryKeys.minorContractors("org-b"), true],
 		};
 		for (const key of [...Object.values(ownKeys), ...Object.values(foreignKeys)]) {
 			client.setQueryData(key, { loaded: true });

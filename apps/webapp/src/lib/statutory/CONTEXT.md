@@ -89,6 +89,36 @@ reads no names; an acknowledgement's history (who, when, reason, legal note, cur
 invalidated / no longer applies / earlier) is read per subject and never carries fingerprints.
 _Avoid_: queue (the migration & departure reviews), dismissed
 
+**Minor contractor** (youth protection):
+An External Contractor (`engagementKind = contractor` employment period, #1996) who is under 18 on
+a contractor day. Contractor days are no employee's, so no Milestone 2 monitor judges them, the
+JArbSchG monitor included. A contractor day is what the contract resolver says
+(`engagementKindOnDay`, `loadContractorDays`): a day in a contractor stint, and outside every stint
+a day whose deciding stint (`engagementPeriodDecidingDay`: the one that ended last before it, or
+before the first stint the one that starts first after it) is a contractor's. But § 1 Abs. 1 Nr. 3
+JArbSchG also covers minors whose services resemble an employee's work, so by default every
+contractor engagement that decides a contractor day of a minor in the review horizon
+(`review-window.ts`, current roster) is one **review item** (`jarbschg_minor_contractor`, subject
+`engagement:<period id>`; `engagement:unrecorded` for a contractor with no recorded stint, judged by
+`employee.engagement_kind`), so no day the monitor skips goes unreviewed. An ended stint whose
+person is still on the roster as a contractor, or a first stint not yet started, keeps its own
+item, which says so. It is a warning in the Youth & Apprentice review domain and the Compliance
+Command Center, never a publish block. An org admin documents their assessment with a reason
+(`jarbschg_minor_contractor_review`); the fingerprint covers the stint's recorded start and end,
+the birthday, and whether the window holds contractor days after the stint ended on which the
+person is still under 18. So a corrected birthday or a changed period re-opens it, and so does the
+window first reaching such a day after the end of a stint with no later one (that turns true once
+and only changed data turns it back). The window otherwise moving does not: not past the start of
+a first stint, and not onto days after the end that fall on or after the 18th birthday. The
+organization statutory preference **Apply youth protection (JArbSchG) to minor contractors**
+(`applyJarbschgToMinorContractors`, default off, migration 0337, org admins only, audited with
+the other preferences) judges contractor days of minors exactly like employee days instead,
+everywhere the monitor runs (Scheduling, Staffing, the publish block, clock-out recording, review
+lists), and raises no review item. Minijob,
+short-term, working-student, on-call and apprentice release monitors keep excluding contractors
+either way.
+_Avoid_: judging every minor contractor as an employee by default, silently skipping them
+
 **Restricted audience**:
 Everyone below org admin (scoped managers, planners, the employee). Sees summaries only, never EUR
 amounts, wages, external earnings or EUR baselines.

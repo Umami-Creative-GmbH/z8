@@ -55,6 +55,9 @@ vi.mock("./on-call-reviews-section", () => ({ OnCallReviewsSection: stub("on_cal
 vi.mock("./youth-sector-exceptions-section", () => ({
 	YouthSectorExceptionsSection: stub("youth_apprentice"),
 }));
+vi.mock("./minor-contractor-reviews-section", () => ({
+	MinorContractorReviewsSection: stub("minor_contractors"),
+}));
 vi.mock("./statutory-monitor-findings-section", () => ({
 	StatutoryMonitorFindingsSection: stub("monitor"),
 }));
@@ -123,6 +126,20 @@ describe("ContractsReviewsTab (#1994)", () => {
 		renderTab("domain=payroll");
 
 		expect(shown()).toEqual([...statutorySections, "monitor"]);
+	});
+
+	it("lists minor contractor engagements with Youth & Apprentice (#2022)", () => {
+		renderTab("domain=youth_apprentice");
+		expect(screen.getByTestId("minor_contractors").dataset.resolved).toBe("false");
+		cleanup();
+
+		renderTab("domain=on_call");
+		expect(screen.queryByTestId("minor_contractors")).toBeNull();
+		cleanup();
+
+		renderTab();
+		fireEvent.click(screen.getByRole("checkbox", { name: "Show resolved" }));
+		expect(screen.getByTestId("minor_contractors").dataset.resolved).toBe("true");
 	});
 
 	it("hands Show resolved to every statutory section", () => {

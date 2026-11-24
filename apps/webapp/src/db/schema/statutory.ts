@@ -57,6 +57,13 @@ export const organizationStatutoryPreference = pgTable(
 		criticalThresholdPercent: integer("critical_threshold_percent").default(95).notNull(),
 		blockJarbschgShiftPublish: boolean("block_jarbschg_shift_publish").default(false).notNull(),
 		/**
+		 * #2022, migration 0337: judge External Contractor days of minors under JArbSchG like
+		 * employee days. Off: each minor contractor engagement is flagged for review instead.
+		 */
+		applyJarbschgToMinorContractors: boolean("apply_jarbschg_to_minor_contractors")
+			.default(false)
+			.notNull(),
+		/**
 		 * Working-student weekday daytime band (#2017, migration 0336), minutes after local midnight:
 		 * `[start, end)`, whole quarter hours, 0 ≤ start < end ≤ 1440. Default 06:00–18:00.
 		 */

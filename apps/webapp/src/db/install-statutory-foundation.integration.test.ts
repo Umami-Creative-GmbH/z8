@@ -4,6 +4,7 @@
  * #1993: migration 0335 re-applies over a pushed or migrated database without error.
  * #2017: migration 0336 (working-student daytime band) too; Drizzle declares its columns and check,
  * so `drizzle-kit push` builds them and the installer needs nothing more.
+ * #2022: migration 0337 (minor contractors under JArbSchG) likewise.
  */
 import { readFile } from "node:fs/promises";
 import { getTableConfig } from "drizzle-orm/pg-core";
@@ -231,6 +232,86 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 				]);
 			} finally {
 				await apply0336();
+				await pool.query(`DELETE FROM organization WHERE id = $1`, [organizationId]);
+			}
+		});
+	});
+
+	describe("migration 0337 (#2022)", () => {
+		async function apply0337() {
+			const migration = await readFile(
+				new URL("../../drizzle/0337_jarbschg_minor_contractors.sql", import.meta.url),
+				"utf8",
+			);
+			const client = await pool.connect();
+			try {
+				await client.query("BEGIN");
+				await client.query("SET LOCAL search_path TO public");
+				await client.query(migration);
+				await client.query("COMMIT");
+			} catch (error) {
+				await client.query("ROLLBACK");
+				throw error;
+			} finally {
+				client.release();
+			}
+		}
+
+		async function column() {
+			const { rows } = await pool.query<{
+				column_default: string;
+				is_nullable: string;
+				data_type: string;
+			}>(
+				`SELECT column_default, is_nullable, data_type FROM information_schema.columns
+				 WHERE table_schema = 'public' AND table_name = 'organization_statutory_preference'
+					AND column_name = 'apply_jarbschg_to_minor_contractors'`,
+			);
+			return rows;
+		}
+
+		it("re-applies over a database that already has the column, twice", async () => {
+			const before = await column();
+			expect(before).toEqual([
+				{ column_default: "false", is_nullable: "NO", data_type: "boolean" },
+			]);
+
+			await apply0337();
+			await apply0337();
+
+			expect(await column()).toEqual(before);
+		});
+
+		it("keeps flagging minor contractors for review in an organization's existing preferences", async () => {
+			const before = await column();
+			const organizationId = `t2022-minor-${crypto.randomUUID()}`;
+			await pool.query(
+				`ALTER TABLE "organization_statutory_preference" DROP COLUMN "apply_jarbschg_to_minor_contractors"`,
+			);
+			try {
+				await pool.query(
+					`INSERT INTO organization (id, name, slug, created_at) VALUES ($1, $1, $1, now())`,
+					[organizationId],
+				);
+				await pool.query(
+					`INSERT INTO organization_statutory_preference (organization_id, block_jarbschg_shift_publish)
+					 VALUES ($1, true)`,
+					[organizationId],
+				);
+
+				await apply0337();
+
+				expect(await column()).toEqual(before);
+				const { rows } = await pool.query(
+					`SELECT block_jarbschg_shift_publish, apply_jarbschg_to_minor_contractors
+					 FROM organization_statutory_preference WHERE organization_id = $1`,
+					[organizationId],
+				);
+				expect(rows).toEqual([
+					{ block_jarbschg_shift_publish: true, apply_jarbschg_to_minor_contractors: false },
+				]);
+			} finally {
+				await apply0337();
 				await pool.query(`DELETE FROM organization WHERE id = $1`, [organizationId]);
 			}
 		});

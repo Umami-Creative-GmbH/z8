@@ -11,6 +11,7 @@ import {
 	type PureResolveContractInput,
 	type WorkPolicySnapshot,
 } from "./index";
+import { type EmploymentPeriodSnapshot, engagementPeriodDecidingDay } from "./resolve-contract";
 
 function baseInput(overrides: Partial<PureResolveContractInput> = {}): PureResolveContractInput {
 	return {
@@ -563,6 +564,184 @@ describe("contracts pure helpers & resolver", () => {
 		];
 		expect(kindOn("2025-12-15", employeeThenContractor)).toBe("employee");
 		expect(kindOn("2026-03-15", employeeThenContractor)).toBe("employee");
+	});
+
+	it("continues the stint that decides the last or first day in force past a tie, whatever the row order", () => {
+		const period = (
+			id: string,
+			engagementKind: "employee" | "contractor",
+			startedAt: string,
+			endedAt: string | null,
+			createdAt: string,
+		) => ({
+			id,
+			employeeId: "emp-1",
+			status: endedAt ? ("closed" as const) : ("open" as const),
+			startedAt: parseInstant(startedAt),
+			startProvenance: "recorded" as const,
+			endedAt: endedAt ? parseInstant(endedAt) : null,
+			createdAt: parseInstant(createdAt),
+			engagementKind,
+		});
+		const decide = (date: string, periods: readonly EmploymentPeriodSnapshot[], tz = "UTC") => {
+			const decided = engagementPeriodDecidingDay(periods, parsePlainDate(date), tz);
+			return decided && `${decided.position}:${decided.period.id}`;
+		};
+		const sameEnd = [
+			period(
+				"contractor",
+				"contractor",
+				"2026-01-01T00:00:00Z",
+				"2026-03-01T00:00:00Z",
+				"2026-02-01T00:00:00Z",
+			),
+			period(
+				"employee",
+				"employee",
+				"2026-02-01T00:00:00Z",
+				"2026-03-01T00:00:00Z",
+				"2026-01-01T00:00:00Z",
+			),
+		];
+		// Both end together: the later start decides the last day in force and every day after,
+		// although the contractor stint was recorded later.
+		for (const rows of [sameEnd, [...sameEnd].reverse()]) {
+			expect(decide("2026-02-28", rows)).toBe("in_force:employee");
+			expect(decide("2026-03-01", rows)).toBe("after_end:employee");
+			expect(decide("2026-03-15", rows)).toBe("after_end:employee");
+		}
+
+		// A zero-length contractor stint at the employee stint's end was never in force: the
+		// employee stint decides the last day in force and keeps deciding after it, although the
+		// contractor stint starts later and was recorded later.
+		const zeroLengthAtEnd = [
+			period(
+				"employee",
+				"employee",
+				"2026-01-01T00:00:00Z",
+				"2026-03-01T00:00:00Z",
+				"2026-01-01T00:00:00Z",
+			),
+			period(
+				"contractor",
+				"contractor",
+				"2026-03-01T00:00:00Z",
+				"2026-03-01T00:00:00Z",
+				"2026-02-01T00:00:00Z",
+			),
+		];
+		for (const rows of [zeroLengthAtEnd, [...zeroLengthAtEnd].reverse()]) {
+			expect(decide("2026-02-28", rows)).toBe("in_force:employee");
+			expect(decide("2026-03-01", rows)).toBe("after_end:employee");
+			expect(decide("2026-03-15", rows)).toBe("after_end:employee");
+		}
+
+		// The same zero-length stint at an end during the day is the resolver's pick of that day (it
+		// started last), so it keeps deciding the days after it.
+		const zeroLengthMidDay = zeroLengthAtEnd.map((row) =>
+			row.id === "employee"
+				? { ...row, endedAt: parseInstant("2026-03-01T12:00:00Z") }
+				: {
+						...row,
+						startedAt: parseInstant("2026-03-01T12:00:00Z"),
+						endedAt: parseInstant("2026-03-01T12:00:00Z"),
+					},
+		);
+		for (const rows of [zeroLengthMidDay, [...zeroLengthMidDay].reverse()]) {
+			expect(decide("2026-02-28", rows)).toBe("in_force:employee");
+			expect(decide("2026-03-01", rows)).toBe("in_force:contractor");
+			expect(decide("2026-03-02", rows)).toBe("after_end:contractor");
+		}
+
+		// The employee's own midnight decides, not UTC's: in Berlin 2026-02-28T23:00Z is the start
+		// of 1 March, 2026-03-01T00:00Z is 01:00 on it, and 2026-03-28T23:00Z starts the DST day.
+		const zeroLengthAt = (end: string) =>
+			zeroLengthAtEnd.map((row) =>
+				row.id === "employee"
+					? { ...row, endedAt: parseInstant(end) }
+					: { ...row, startedAt: parseInstant(end), endedAt: parseInstant(end) },
+			);
+		const BERLIN = "Europe/Berlin";
+		for (const ordered of [
+			zeroLengthAt("2026-02-28T23:00:00Z"),
+			[...zeroLengthAt("2026-02-28T23:00:00Z")].reverse(),
+		]) {
+			expect(decide("2026-02-28", ordered, BERLIN)).toBe("in_force:employee");
+			expect(decide("2026-03-01", ordered, BERLIN)).toBe("after_end:employee");
+		}
+		for (const ordered of [
+			zeroLengthAt("2026-03-01T00:00:00Z"),
+			[...zeroLengthAt("2026-03-01T00:00:00Z")].reverse(),
+		]) {
+			expect(decide("2026-03-01", ordered, BERLIN)).toBe("in_force:contractor");
+			expect(decide("2026-03-02", ordered, BERLIN)).toBe("after_end:contractor");
+		}
+		for (const ordered of [
+			zeroLengthAt("2026-03-28T23:00:00Z"),
+			[...zeroLengthAt("2026-03-28T23:00:00Z")].reverse(),
+		]) {
+			expect(decide("2026-03-28", ordered, BERLIN)).toBe("in_force:employee");
+			expect(decide("2026-03-29", ordered, BERLIN)).toBe("after_end:employee");
+		}
+
+		// Both end together during a day, so neither is active at its end: the later start still
+		// decides that last day and the days after.
+		const sameMidDayEnd = sameEnd.map((row) => ({
+			...row,
+			endedAt: parseInstant("2026-03-01T12:00:00Z"),
+		}));
+		for (const rows of [sameMidDayEnd, [...sameMidDayEnd].reverse()]) {
+			expect(decide("2026-03-01", rows)).toBe("in_force:employee");
+			expect(decide("2026-03-02", rows)).toBe("after_end:employee");
+		}
+
+		// A stint without a start counts as starting earliest, as on a day in force, even though it
+		// was recorded later.
+		const unrecordedStart = [
+			{ ...sameEnd[0], id: "unrecorded", startedAt: null, startProvenance: "unknown" },
+			{ ...sameEnd[1], id: "recorded" },
+		];
+		for (const rows of [unrecordedStart, [...unrecordedStart].reverse()]) {
+			expect(decide("2026-02-28", rows)).toBe("in_force:recorded");
+			expect(decide("2026-03-01", rows)).toBe("after_end:recorded");
+		}
+
+		// Both start together: the stint still in force at the end of the start day decides that
+		// day and every day before, although the short contractor stint was recorded later.
+		const sameStart = [
+			period(
+				"contractor",
+				"contractor",
+				"2026-04-01T10:00:00Z",
+				"2026-04-01T12:00:00Z",
+				"2026-01-02T00:00:00Z",
+			),
+			period("employee", "employee", "2026-04-01T10:00:00Z", null, "2026-01-01T00:00:00Z"),
+		];
+		for (const rows of [sameStart, [...sameStart].reverse()]) {
+			expect(decide("2026-03-15", rows)).toBe("before_start:employee");
+			expect(decide("2026-03-31", rows)).toBe("before_start:employee");
+			expect(decide("2026-04-01", rows)).toBe("in_force:employee");
+		}
+
+		// Both open from the same instant: the later record decides, as for a day in force.
+		const sameStartOpen = [
+			period("employee", "employee", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),
+			period("contractor", "contractor", "2026-04-01T00:00:00Z", null, "2026-01-02T00:00:00Z"),
+		];
+		for (const rows of [sameStartOpen, [...sameStartOpen].reverse()]) {
+			expect(decide("2026-03-31", rows)).toBe("before_start:contractor");
+			expect(decide("2026-04-01", rows)).toBe("in_force:contractor");
+		}
+
+		// Same record time too: the id decides, as for a day in force.
+		const sameRecord = [
+			period("a", "employee", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),
+			period("b", "contractor", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),
+		];
+		expect(decide("2026-03-15", sameRecord)).toBe("before_start:b");
+		expect(decide("2026-03-15", [...sameRecord].reverse())).toBe("before_start:b");
+		expect(decide("2026-04-15", sameRecord)).toBe("in_force:b");
 	});
 
 	it("falls back to the employee's engagement kind for a contractor without recorded periods", () => {

@@ -25,7 +25,10 @@ import {
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
 import { recordApprenticeRelease } from "../employee-context";
-import { DEFAULT_STATUTORY_PREFERENCES } from "../preferences";
+import {
+	DEFAULT_STATUTORY_PREFERENCES,
+	loadOrganizationStatutoryPreferences,
+} from "../preferences";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
 import { localInstant, youthSeed } from "./testing/youth-seed";
 
@@ -154,6 +157,47 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 			"jarbschg_uninterrupted",
 		]);
 		expect(recorded.every((row) => row.work_period_id === work.id)).toBe(true);
+	});
+
+	it("records a minor contractor's violations only when the organization applies JArbSchG to minor contractors (#2022)", async () => {
+		const minor = await fx.employee(org, "contractor-judged", { birthday: "2010-06-01" });
+		const adult = await fx.employee(org, "contractor-adult", { birthday: "1990-06-01" });
+		for (const who of [minor, adult]) {
+			await seed.engagement(org, who, { kind: "contractor", from: "2026-01-01", until: null });
+		}
+		const evaluate = async () =>
+			jarbschgScheduleContributor.evaluate({
+				db,
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-02", endExclusive: "2026-03-04" },
+				employeeIds: [minor.employeeId, adult.employeeId],
+				proposedShifts: [],
+				replacesShiftId: null,
+				preferences: await loadOrganizationStatutoryPreferences(db, org.id),
+				now: localInstant("2026-03-05", "12:00", org.timezone),
+			});
+
+		// Off (the default): the contractor day records nothing and Scheduling judges nothing.
+		await clockOut(minor, "2026-03-02", "13:00", 480);
+		expect(await types(minor)).toEqual([]);
+		expect(await evaluate()).toEqual([]);
+
+		// On: the next contractor day is judged like an employee's, the adult's still is not.
+		await seed.applyJarbschgToMinorContractors(org);
+		await clockOut(minor, "2026-03-03", "13:00", 480);
+		await clockOut(adult, "2026-03-03", "13:00", 480);
+		expect(await types(minor)).toEqual([
+			"jarbschg_break",
+			"jarbschg_night_work",
+			"jarbschg_uninterrupted",
+		]);
+		expect(await types(adult)).not.toContain("jarbschg_night_work");
+		const findings = await evaluate();
+		expect(new Set(findings.map((finding) => finding.employeeId))).toEqual(
+			new Set([minor.employeeId]),
+		);
+		expect(findings.map((finding) => finding.kind)).toContain("jarbschg_night_work");
 	});
 
 	it.each([

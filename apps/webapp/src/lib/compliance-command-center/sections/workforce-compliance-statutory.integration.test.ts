@@ -16,6 +16,7 @@ import {
 	acknowledgeMinijobShortTermAndYouth,
 	invalidateMinijobShortTermAndYouth,
 } from "@/lib/statutory/__tests__/statutory-domains-acknowledgements";
+import { youthSeed } from "@/lib/statutory/youth/testing/youth-seed";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { getWorkforceComplianceSection } from "./workforce-compliance";
@@ -25,6 +26,7 @@ describe("Compliance Command Center workforce compliance with statutory monitors
 	const admin = integrationAdminPool();
 	const fx = statutoryFixture(admin, "t1994-ccc");
 	const domains = statutoryDomainsFixture(admin, fx);
+	const youth = youthSeed(admin);
 
 	beforeEach(async () => {
 		await fx.cleanup();
@@ -93,6 +95,41 @@ describe("Compliance Command Center workforce compliance with statutory monitors
 		for (const who of [seed.mini, seed.seasonal, seed.student, seed.caller, seed.minor]) {
 			expect(payload).not.toContain(who.employeeId);
 		}
+	});
+
+	it("counts a minor contractor's engagement as a youth review warning unless JArbSchG judges it (#2022)", async () => {
+		const seed = await domains.seed("a");
+		const contractor = await fx.employee(seed.org, "minor-contractor", { birthday: "2011-05-01" });
+		await youth.engagement(seed.org, contractor, {
+			kind: "contractor",
+			from: "2026-01-01",
+			until: null,
+		});
+
+		const flagged = await getWorkforceComplianceSection(seed.org.id, { now });
+		expect(flagged.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryFindings",
+			params: { critical: 3, warning: 8 },
+		});
+		expect(flagged.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryAcknowledgements",
+			params: { pending: 6, stale: 0 },
+		});
+		expect(flagged.card.links).toContainEqual({
+			label: {
+				key: "compliance.commandCenter.links.statutoryDomain.youth_apprentice",
+				params: { count: 3 },
+			},
+			href: "/settings/contracts?tab=reviews&domain=youth_apprentice",
+		});
+		expect(JSON.stringify(flagged)).not.toContain(contractor.employeeId);
+
+		await youth.applyJarbschgToMinorContractors(seed.org);
+		const judged = await getWorkforceComplianceSection(seed.org.id, { now });
+		expect(judged.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryFindings",
+			params: { critical: 3, warning: 7 },
+		});
 	});
 
 	it("counts a Minijob month acknowledged before it became a third exceedance as critical", async () => {

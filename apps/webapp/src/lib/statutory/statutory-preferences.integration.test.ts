@@ -28,6 +28,7 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: 80,
 			criticalThresholdPercent: 95,
 			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: false,
 			workingStudentDaytimeStartMinute: 360,
 			workingStudentDaytimeEndMinute: 1080,
 			isDefault: true,
@@ -45,6 +46,7 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: 70,
 			criticalThresholdPercent: 90,
 			blockJarbschgShiftPublish: true,
+			applyJarbschgToMinorContractors: false,
 			workingStudentDaytimeStartMinute: 360,
 			workingStudentDaytimeEndMinute: 1080,
 		});
@@ -54,6 +56,7 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: 75,
 			criticalThresholdPercent: 90,
 			blockJarbschgShiftPublish: true,
+			applyJarbschgToMinorContractors: false,
 			workingStudentDaytimeStartMinute: 420,
 			workingStudentDaytimeEndMinute: 1140,
 		});
@@ -69,6 +72,7 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: 75,
 			criticalThresholdPercent: 90,
 			blockJarbschgShiftPublish: true,
+			applyJarbschgToMinorContractors: false,
 			workingStudentDaytimeStartMinute: 420,
 			workingStudentDaytimeEndMinute: 1140,
 			isDefault: false,
@@ -76,8 +80,36 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 		expect(await loadOrganizationStatutoryPreferences(db, orgB.id)).toMatchObject({
 			warningThresholdPercent: 80,
 			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: false,
 			workingStudentDaytimeStartMinute: 360,
 			workingStudentDaytimeEndMinute: 1080,
+			isDefault: true,
+		});
+	});
+
+	it("stores whether minor contractors are judged under JArbSchG, per organization (#2022)", async () => {
+		const orgA = await fx.organization("a");
+		const orgB = await fx.organization("b");
+		const admin = await fx.user("admin");
+
+		const saved = await saveOrganizationStatutoryPreferences(db, {
+			organizationId: orgA.id,
+			actorUserId: admin.userId,
+			warningThresholdPercent: 80,
+			criticalThresholdPercent: 95,
+			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: true,
+			workingStudentDaytimeStartMinute: 360,
+			workingStudentDaytimeEndMinute: 1080,
+		});
+
+		expect(saved.previous).toMatchObject({ applyJarbschgToMinorContractors: false });
+		expect(await loadOrganizationStatutoryPreferences(db, orgA.id)).toMatchObject({
+			applyJarbschgToMinorContractors: true,
+			isDefault: false,
+		});
+		expect(await loadOrganizationStatutoryPreferences(db, orgB.id)).toMatchObject({
+			applyJarbschgToMinorContractors: false,
 			isDefault: true,
 		});
 	});
@@ -91,6 +123,7 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: 80,
 			criticalThresholdPercent: 95,
 			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: false,
 		};
 		await saveOrganizationStatutoryPreferences(db, {
 			...base,
@@ -164,6 +197,7 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: warning,
 			criticalThresholdPercent: critical,
 			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: false,
 			workingStudentDaytimeStartMinute: 360,
 			workingStudentDaytimeEndMinute: 1080,
 		});

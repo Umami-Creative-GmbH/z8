@@ -322,6 +322,43 @@ export function youthSeed(admin: Pool) {
 			);
 		},
 
+		/**
+		 * #2022: judge External Contractor days of minors under JArbSchG like employee days, or with
+		 * `apply` false review them again.
+		 */
+		async applyJarbschgToMinorContractors(org: FixtureOrganization, apply = true): Promise<void> {
+			await admin.query(
+				`insert into organization_statutory_preference (organization_id, apply_jarbschg_to_minor_contractors)
+				 values ($1, $2)
+				 on conflict (organization_id) do update set apply_jarbschg_to_minor_contractors = $2`,
+				[org.id, apply],
+			);
+		},
+
+		/** An employment period (stint) of `kind` from local midnight of `from` until `until`'s. */
+		async engagement(
+			org: FixtureOrganization,
+			who: FixtureEmployee,
+			input: { kind: "contractor" | "employee"; from: string; until: string | null },
+		): Promise<string> {
+			const {
+				rows: [row],
+			} = await admin.query<{ id: string }>(
+				`insert into employee_employment_period
+				 (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+				 values ($1, $2, $3, $4, $5, 'recorded', $6) returning id`,
+				[
+					org.id,
+					who.employeeId,
+					input.until ? "closed" : "open",
+					localInstant(input.from, "00:00", org.timezone).toString(),
+					input.until ? localInstant(input.until, "00:00", org.timezone).toString() : null,
+					input.kind,
+				],
+			);
+			return row.id;
+		},
+
 		async violations(who: FixtureEmployee): Promise<
 			{
 				violation_type: string;
