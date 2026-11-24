@@ -483,7 +483,8 @@ describe("scoped work-hours range evidence on PostgreSQL", () => {
 		expect(result.byEmployee.length).toBeGreaterThan(64);
 		expect(evidence.tracking).toBe(2);
 		expect(evidence.roster).toBe(1);
-		expect(evidence.queries).toBeLessThanOrEqual(30);
+		// 30 + one apprentice release-day read per range batch, which releases required time (#1993).
+		expect(evidence.queries).toBeLessThanOrEqual(32);
 		const ids = new Set(result.byEmployee.map((row) => row.employeeId));
 		const periodInputs = statements
 			.filter((query) => query.text.includes('from "work_period"'))
