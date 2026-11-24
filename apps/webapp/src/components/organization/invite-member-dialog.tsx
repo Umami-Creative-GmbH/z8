@@ -6,12 +6,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	type CreateKioskOnlyEmployeeActionInput,
 	createKioskOnlyEmployeeAction,
 	getKioskOnlyEmployeeLocationsAction,
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organization/actions";
+import { getProjects } from "@/app/[locale]/(app)/settings/projects/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
 import { KIOSK_PIN_REFUSALS } from "@/components/settings/kiosk/kiosk-pin-refusals";
 import {
@@ -25,6 +27,7 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,7 +37,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	compensationInputOf,
+	defaultCompensationValues,
+} from "@/components/settings/contracts/contractor-terms-form";
 import { useSession } from "@/lib/auth-client";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	meetsSettingsAccess,
@@ -42,10 +50,19 @@ import {
 } from "@/lib/organization-action/settings-access-level";
 import { queryKeys } from "@/lib/query";
 import { useRouter } from "@/navigation";
+import { InvitationCompensationFields } from "./invitation-compensation-fields";
+import { invitationErrorMessage } from "./invitation-refusals";
+import type {
+	InviteMemberFormApi,
+	InviteMemberFormValues,
+	InviteMemberSubmitMeta,
+} from "./invite-member-form";
 
 interface InviteMemberDialogProps {
 	organizationId: string;
 	organizationName: string;
+	/** Today in the organization's timezone (ISO date), worked out on the server. */
+	organizationToday: string;
 	/** The viewer's settings access, worked out on the server (ADR 0002). */
 	settingsAccess: SettingsAccess | null;
 	open: boolean;
@@ -53,7 +70,7 @@ interface InviteMemberDialogProps {
 }
 
 type InvitationActivation = { arrival: object };
-const defaultSubmitMeta: { activation: InvitationActivation | null } = { activation: null };
+const defaultSubmitMeta: InviteMemberSubmitMeta = { activation: null };
 
 function useInvitationLifetime(identity: string | null) {
 	const arrival = useRef<object | null>(null);
@@ -131,11 +148,16 @@ function useMemberMutations(
 export function InviteMemberDialog({
 	organizationId,
 	organizationName,
+	organizationToday,
 	settingsAccess,
 	open,
 	onOpenChange,
 }: InviteMemberDialogProps) {
 	const { t } = useTranslate();
+	// The earliest planned engagement end: the organization's tomorrow (#1995).
+	const firstPlannedEndDate = Temporal.PlainDate.from(organizationToday)
+		.add({ days: 1 })
+		.toString();
 	const { refresh } = useRouter();
 	const session = useSession();
 	const actorId = session.data?.user.id;
@@ -162,21 +184,39 @@ export function InviteMemberDialog({
 		enabled: open && available,
 	});
 	const kioskLocations = locationsResult?.success ? locationsResult.data : [];
+	// Projects an External Contractor invitation can assign (#1995).
+	const { data: projectsResult } = useQuery({
+		queryKey: ["contractorInvitationProjects", organizationId],
+		queryFn: () => getProjects(),
+		enabled: open && available,
+	});
+	const projects = projectsResult?.success
+		? projectsResult.data
+				.filter((project) => project.isActive)
+				.map((project) => ({ id: project.id, name: project.name }))
+		: [];
 
 	const { inviteMutation, kioskOnlyMutation } = useMemberMutations(organizationId, lifetime);
 
-	const form = useForm({
+	const form: InviteMemberFormApi = useForm({
 		defaultValues: {
 			email: "",
-			role: "member" as "owner" | "admin" | "member",
+			role: "member",
 			canCreateOrganizations: false,
 			targetTeamId: "none",
-			// Kiosk-only employees (#857): no email, no sign-in, clock only at kiosks.
 			kioskOnly: false,
 			firstName: "",
 			lastName: "",
-			locationIds: [] as string[],
-		},
+			locationIds: [],
+			engagementKind: "employee",
+			contractorCompanyName: "",
+			contractorVatId: "",
+			contractorReferenceCode: "",
+			contractorProjectIds: [],
+			plannedEndDate: "",
+			contractorCompensationEnabled: false,
+			contractorCompensation: defaultCompensationValues(),
+		} satisfies InviteMemberFormValues as InviteMemberFormValues,
 		onSubmitMeta: defaultSubmitMeta,
 		onSubmit: async ({ value, meta }) => {
 			const activation = meta.activation;
@@ -219,6 +259,21 @@ export function InviteMemberDialog({
 						role: value.role,
 						canCreateOrganizations: value.canCreateOrganizations,
 						targetTeamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+						engagementKind: value.engagementKind,
+						...(value.engagementKind === "contractor"
+							? {
+									contractor: {
+										companyName: value.contractorCompanyName,
+										vatId: value.contractorVatId,
+										referenceCode: value.contractorReferenceCode,
+										projectIds: value.contractorProjectIds,
+										plannedEndDate: value.plannedEndDate || null,
+										compensation: value.contractorCompensationEnabled
+											? compensationInputOf(value.contractorCompensation)
+											: null,
+									},
+								}
+							: {}),
 					},
 				})
 				.catch(() => {
@@ -236,7 +291,7 @@ export function InviteMemberDialog({
 				onOpenChange(false);
 				refresh();
 			} else {
-				toast.error(result.error || t("organization.invite.error", "Failed to send invitation"));
+				toast.error(invitationErrorMessage(t, result));
 			}
 		},
 	});
@@ -476,6 +531,213 @@ export function InviteMemberDialog({
 										</form.Field>
 									</>
 								)
+							}
+						</form.Subscribe>
+
+						<form.Subscribe selector={(state) => state.values.kioskOnly}>
+							{(kioskOnly) =>
+								kioskOnly ? null : (
+									<form.Field name="engagementKind">
+										{(field) => (
+											<div className="space-y-2">
+												<Label htmlFor="engagementKind">
+													{t("organization.invite.engagement.label", "Invite as")}
+												</Label>
+												<Select
+													value={field.state.value}
+													onValueChange={(value: EngagementKind) => field.handleChange(value)}
+												>
+													<SelectTrigger id="engagementKind">
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="employee">
+															<div className="flex flex-col items-start">
+																<span className="font-medium">
+																	{t("organization.invite.engagement.employee", "Employee")}
+																</span>
+																<span className="text-xs text-muted-foreground">
+																	{t(
+																		"organization.invite.engagement.employeeDescription",
+																		"Employment terms, work policy and vacation allowance apply",
+																	)}
+																</span>
+															</div>
+														</SelectItem>
+														<SelectItem value="contractor">
+															<div className="flex flex-col items-start">
+																<span className="font-medium">
+																	{t("common:engagement.externalContractor", "External Contractor")}
+																</span>
+																<span className="text-xs text-muted-foreground">
+																	{t(
+																		"organization.invite.engagement.contractorDescription",
+																		"Tracks time on projects; no employment terms, work policy or vacation",
+																	)}
+																</span>
+															</div>
+														</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+										)}
+									</form.Field>
+								)
+							}
+						</form.Subscribe>
+
+						<form.Subscribe
+							selector={(state) =>
+								!state.values.kioskOnly && state.values.engagementKind === "contractor"
+							}
+						>
+							{(contractor) =>
+								contractor ? (
+									<fieldset className="space-y-4 rounded-md border p-4">
+										<legend className="px-1 text-sm font-medium">
+											{t("organization.invite.contractor.legend", "Contractor details (optional)")}
+										</legend>
+										<form.Field name="contractorCompanyName">
+											{(field) => (
+												<div className="space-y-2">
+													<Label htmlFor="contractorCompanyName">
+														{t("organization.invite.contractor.companyName", "Contracting company")}
+													</Label>
+													<Input
+														id="contractorCompanyName"
+														autoComplete="organization"
+														maxLength={200}
+														value={field.state.value}
+														onChange={(e) => field.handleChange(e.target.value)}
+													/>
+												</div>
+											)}
+										</form.Field>
+										<div className="grid gap-4 sm:grid-cols-2">
+											<form.Field name="contractorVatId">
+												{(field) => (
+													<div className="space-y-2">
+														<Label htmlFor="contractorVatId">
+															{t("organization.invite.contractor.vatId", "VAT ID")}
+														</Label>
+														<Input
+															id="contractorVatId"
+															autoComplete="off"
+															maxLength={50}
+															value={field.state.value}
+															onChange={(e) => field.handleChange(e.target.value)}
+														/>
+													</div>
+												)}
+											</form.Field>
+											<form.Field name="contractorReferenceCode">
+												{(field) => (
+													<div className="space-y-2">
+														<Label htmlFor="contractorReferenceCode">
+															{t(
+																"organization.invite.contractor.referenceCode",
+																"PO or cost center",
+															)}
+														</Label>
+														<Input
+															id="contractorReferenceCode"
+															autoComplete="off"
+															maxLength={100}
+															value={field.state.value}
+															onChange={(e) => field.handleChange(e.target.value)}
+														/>
+													</div>
+												)}
+											</form.Field>
+										</div>
+										<form.Field
+											name="plannedEndDate"
+											validators={{
+												// A leaving date that has started can no longer be scheduled (#1995).
+												onChange: ({ value, fieldApi }) =>
+													!value ||
+													fieldApi.form.getFieldValue("engagementKind") !== "contractor" ||
+													value >= firstPlannedEndDate
+														? undefined
+														: t(
+																"organization.invite.contractor.plannedEndDateNotFuture",
+																"The planned engagement end must be after today.",
+															),
+											}}
+										>
+											{(field) => (
+												<div className="space-y-2">
+													<Label htmlFor="plannedEndDate">
+														{t(
+															"organization.invite.contractor.plannedEndDate",
+															"Planned engagement end",
+														)}
+													</Label>
+													<DatePicker
+														id="plannedEndDate"
+														value={field.state.value || null}
+														min={firstPlannedEndDate}
+														aria-invalid={field.state.meta.errors.length > 0}
+														onChange={field.handleChange}
+													/>
+													<p className="text-xs text-muted-foreground">
+														{t(
+															"organization.invite.contractor.plannedEndDateDescription",
+															"The last working day. Once they join, it becomes a scheduled leaving date that ends their access and seat.",
+														)}
+													</p>
+													{field.state.meta.errors.length > 0 ? (
+														<p className="text-sm text-destructive" role="alert">
+															{String(field.state.meta.errors[0])}
+														</p>
+													) : null}
+												</div>
+											)}
+										</form.Field>
+										<form.Field name="contractorProjectIds">
+											{(field) => (
+												<fieldset className="space-y-2">
+													<legend className="text-sm font-medium leading-none">
+														{t("organization.invite.contractor.projects", "Projects")}
+													</legend>
+													{projects.length === 0 ? (
+														<p className="text-sm text-muted-foreground">
+															{t(
+																"organization.invite.contractor.noProjects",
+																"No active projects yet. You can assign projects later.",
+															)}
+														</p>
+													) : (
+														projects.map((option) => {
+															const id = `contractorProject-${option.id}`;
+															return (
+																<div key={option.id} className="flex items-center gap-x-2">
+																	<Checkbox
+																		id={id}
+																		checked={field.state.value.includes(option.id)}
+																		onCheckedChange={(checked) =>
+																			field.handleChange(
+																				checked === true
+																					? [...field.state.value, option.id]
+																					: field.state.value.filter(
+																							(projectId) => projectId !== option.id,
+																						),
+																			)
+																		}
+																	/>
+																	<label htmlFor={id} className="text-sm leading-none">
+																		{option.name}
+																	</label>
+																</div>
+															);
+														})
+													)}
+												</fieldset>
+											)}
+										</form.Field>
+										<InvitationCompensationFields form={form} />
+									</fieldset>
+								) : null
 							}
 						</form.Subscribe>
 

@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => {
 				invitation: { findFirst: vi.fn() },
 				employeeInvitationDraft: { findFirst: vi.fn() },
 				team: { findFirst: vi.fn() },
+				project: { findMany: vi.fn() },
 				user: { findFirst: vi.fn() },
 				organization: { findFirst: vi.fn() },
 			},
@@ -124,6 +125,7 @@ const formerAdmin: StubCaller = {
 };
 
 const TEAM_ID = "11111111-1111-4111-8111-111111111111";
+const PROJECT_ID = "22222222-2222-4222-8222-222222222222";
 const pendingInvitation = {
 	id: "invite-old",
 	organizationId: "org-1",
@@ -316,8 +318,160 @@ describe("sendInvitation", () => {
 			targetTeamId: TEAM_ID,
 			initialRole: "admin",
 			updatedBy: "user-admin",
+			engagement: { kind: "employee", contractor: null },
 		});
 		expect(whereParams(mocks.db.query.team.findFirst)).toEqual([TEAM_ID, "org-1"]);
+	});
+
+	it("invites an External Contractor with contracting details, projects and a planned end (#1995)", async () => {
+		api.createInvitation.mockResolvedValue({ id: "better-auth-invitation" });
+		mocks.db.query.project.findMany.mockResolvedValue([{ id: PROJECT_ID }]);
+
+		const result = await sendInvitation({
+			email: "grace@hopper.example",
+			role: "member",
+			engagementKind: "contractor",
+			contractor: {
+				companyName: "Hopper Consulting GmbH",
+				vatId: "DE123456789",
+				referenceCode: "PO-4711",
+				projectIds: [PROJECT_ID],
+				plannedEndDate: "2027-06-30",
+			},
+		});
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mocks.persistDraft).toHaveBeenCalledWith(
+			mocks.db,
+			expect.objectContaining({
+				engagement: {
+					kind: "contractor",
+					contractor: {
+						companyName: "Hopper Consulting GmbH",
+						vatId: "DE123456789",
+						referenceCode: "PO-4711",
+						projectIds: [PROJECT_ID],
+						plannedEndDate: "2027-06-30",
+						compensation: null,
+					},
+				},
+			}),
+		);
+	});
+
+	it("stores a contractor invitation's first compensation terms as the terms table does (#1935)", async () => {
+		const result = await sendInvitation({
+			email: "grace@hopper.example",
+			role: "member",
+			engagementKind: "contractor",
+			contractor: {
+				compensation: {
+					basis: "daily",
+					rateAmount: "650,5",
+					currency: "eur",
+					dayUnitRule: "half_and_full_day",
+					halfDayThresholdMinutes: 300,
+				},
+			},
+		});
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mocks.persistDraft).toHaveBeenCalledWith(
+			mocks.db,
+			expect.objectContaining({
+				engagement: {
+					kind: "contractor",
+					contractor: expect.objectContaining({
+						compensation: {
+							compensationBasis: "daily",
+							rateAmount: "650.50",
+							currency: "EUR",
+							dayUnitRule: "half_and_full_day",
+							halfDayThresholdMinutes: 300,
+							standardDayMinutes: null,
+							capAtOneDay: null,
+						},
+					}),
+				},
+			}),
+		);
+	});
+
+	it("refuses invalid first compensation terms with the parser's code before inviting (#1935)", async () => {
+		expect(
+			await sendInvitation({
+				email: "grace@hopper.example",
+				role: "member",
+				engagementKind: "contractor",
+				contractor: {
+					compensation: { basis: "hourly", rateAmount: "85.505", currency: "EUR" },
+				},
+			}),
+		).toMatchObject({ success: false, code: "ValidationError", refusal: "rate_too_precise" });
+		expect(api.createInvitation).not.toHaveBeenCalled();
+		expect(mocks.persistDraft).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["today in the organization's timezone", "2027-06-30"],
+		["a past day", "2027-06-29"],
+	])("refuses a planned engagement end of %s before inviting (#1995)", async (_case, date) => {
+		// 22:30 UTC on 29 June is already 30 June in Berlin.
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date("2027-06-29T22:30:00.000Z"));
+		mocks.db.query.organization.findFirst.mockResolvedValue({
+			id: "org-1",
+			name: "Organization One",
+			timezone: "Europe/Berlin",
+			deletedAt: null,
+		});
+		try {
+			expect(
+				await sendInvitation({
+					email: "grace@hopper.example",
+					role: "member",
+					engagementKind: "contractor",
+					contractor: { plannedEndDate: date },
+				}),
+			).toMatchObject({
+				success: false,
+				code: "ValidationError",
+				refusal: "planned_end_not_future",
+			});
+			expect(api.createInvitation).not.toHaveBeenCalled();
+			expect(mocks.persistDraft).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("refuses a contractor's project outside the organization before inviting (#1995)", async () => {
+		mocks.db.query.project.findMany.mockResolvedValue([]);
+
+		expect(
+			await sendInvitation({
+				email: "grace@hopper.example",
+				role: "member",
+				engagementKind: "contractor",
+				contractor: { projectIds: [PROJECT_ID] },
+			}),
+		).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "project_not_found",
+		});
+		expect(api.createInvitation).not.toHaveBeenCalled();
+	});
+
+	it("refuses contracting details on an employee invitation (#1995)", async () => {
+		expect(
+			await sendInvitation({
+				email: "invitee@example.com",
+				role: "member",
+				contractor: { companyName: "Acme" },
+			}),
+		).toMatchObject({ success: false, code: "ValidationError" });
+		expect(api.createInvitation).not.toHaveBeenCalled();
 	});
 
 	it("refuses a submitted organization ID instead of trusting it", async () => {

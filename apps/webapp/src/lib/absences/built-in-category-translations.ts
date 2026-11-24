@@ -21,6 +21,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Time off taken against the work balance",
 			name: "Time off in lieu",
 		},
+		contractor_unavailability: {
+			description:
+				"Calendar note that an External Contractor is unavailable; not vacation or leave",
+			name: "Unavailable (External Contractor)",
+		},
 	},
 	de: {
 		vacation: { name: "Urlaub", description: "Bezahlte Freizeit" },
@@ -46,6 +51,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Vom Arbeitszeitsaldo abgezogene Abwesenheit",
 			name: "Freizeitausgleich",
 		},
+		contractor_unavailability: {
+			description:
+				"Kalenderhinweis, dass ein Externer Dienstleister nicht verfügbar ist; kein Urlaub und keine Abwesenheit",
+			name: "Nicht verfügbar (Externer Dienstleister)",
+		},
 	},
 	fr: {
 		vacation: { name: "Vacances", description: "Congé payé" },
@@ -67,6 +77,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 		time_off_in_lieu: {
 			description: "Congé pris sur le solde de travail",
 			name: "Récupération",
+		},
+		contractor_unavailability: {
+			description:
+				"Note de calendrier : un prestataire externe n’est pas disponible ; ni congé ni absence",
+			name: "Indisponible (prestataire externe)",
 		},
 	},
 	es: {
@@ -90,6 +105,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Tiempo libre descontado del saldo de trabajo",
 			name: "Descanso compensatorio",
 		},
+		contractor_unavailability: {
+			description:
+				"Nota de calendario: un colaborador externo no está disponible; no es vacaciones ni permiso",
+			name: "No disponible (colaborador externo)",
+		},
 	},
 	it: {
 		vacation: { name: "Ferie", description: "Ferie retribuite" },
@@ -112,6 +132,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Permesso scalato dal saldo ore",
 			name: "Riposo compensativo",
 		},
+		contractor_unavailability: {
+			description:
+				"Nota di calendario: un collaboratore esterno non è disponibile; non è ferie né permesso",
+			name: "Non disponibile (collaboratore esterno)",
+		},
 	},
 	pt: {
 		vacation: { name: "Férias", description: "Tempo livre remunerado" },
@@ -127,6 +152,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 		time_off_in_lieu: {
 			description: "Folga descontada do saldo de trabalho",
 			name: "Folga compensatória",
+		},
+		contractor_unavailability: {
+			description:
+				"Nota de calendário: um prestador externo não está disponível; não é férias nem licença",
+			name: "Indisponível (prestador externo)",
 		},
 	},
 	el: {
@@ -147,6 +177,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Άδεια που αφαιρείται από το υπόλοιπο εργασίας",
 			name: "Αντισταθμιστική άδεια",
 		},
+		contractor_unavailability: {
+			description:
+				"Σημείωση ημερολογίου ότι ένας εξωτερικός συνεργάτης δεν είναι διαθέσιμος· όχι άδεια",
+			name: "Μη διαθέσιμος (εξωτερικός συνεργάτης)",
+		},
 	},
 	pl: {
 		vacation: { name: "Urlop wypoczynkowy", description: "Płatny urlop" },
@@ -166,6 +201,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Czas wolny rozliczany z bilansu czasu pracy",
 			name: "Czas wolny za nadgodziny",
 		},
+		contractor_unavailability: {
+			description:
+				"Notatka w kalendarzu, że zewnętrzny wykonawca jest niedostępny; nie urlop ani nieobecność",
+			name: "Niedostępny (zewnętrzny wykonawca)",
+		},
 	},
 	tr: {
 		vacation: { name: "Yıllık İzin", description: "Ücretli izin" },
@@ -181,6 +221,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 		time_off_in_lieu: {
 			description: "Çalışma bakiyesinden kullanılan izin",
 			name: "Telafi izni",
+		},
+		contractor_unavailability: {
+			description:
+				"Harici hizmet sağlayıcının müsait olmadığını gösteren takvim notu; izin değildir",
+			name: "Müsait değil (harici hizmet sağlayıcı)",
 		},
 	},
 	gsw: {
@@ -204,6 +249,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Freiziit bezoge über de Arbeitsziitsaldo",
 			name: "Freiziitusgliich",
 		},
+		contractor_unavailability: {
+			description:
+				"Kalenderhiiwis, dass en externe Dienstleister nöd verfüegbar isch; kei Ferie und kei Abweseheit",
+			name: "Nöd verfüegbar (externe Dienstleister)",
+		},
 	},
 	no: {
 		vacation: { name: "Ferie", description: "Betalt fri" },
@@ -222,6 +272,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 		time_off_in_lieu: {
 			description: "Fravær som trekkes fra arbeidssaldoen",
 			name: "Avspasering",
+		},
+		contractor_unavailability: {
+			description:
+				"Kalendernotat om at en ekstern konsulent ikke er tilgjengelig; ikke ferie eller fravær",
+			name: "Ikke tilgjengelig (ekstern konsulent)",
 		},
 	},
 	sv: {
@@ -244,6 +299,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 		time_off_in_lieu: {
 			description: "Ledighet som tas från arbetssaldot",
 			name: "Kompledighet",
+		},
+		contractor_unavailability: {
+			description:
+				"Kalenderanteckning om att en extern konsult inte är tillgänglig; inte semester eller ledighet",
+			name: "Inte tillgänglig (extern konsult)",
 		},
 	},
 	ro: {
@@ -270,6 +330,10 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Timp liber dedus din soldul orelor de lucru",
 			name: "Timp liber compensatoriu",
 		},
+		contractor_unavailability: {
+			description: "Notă în calendar că un colaborator extern nu este disponibil; nu este concediu",
+			name: "Indisponibil (colaborator extern)",
+		},
 	},
 	hr: {
 		vacation: { name: "Godišnji odmor", description: "Plaćeni dopust" },
@@ -292,6 +356,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Slobodno vrijeme na teret radnog salda",
 			name: "Slobodno vrijeme u zamjenu",
 		},
+		contractor_unavailability: {
+			description:
+				"Bilješka u kalendaru da vanjski suradnik nije dostupan; nije godišnji odmor ni dopust",
+			name: "Nedostupan (vanjski suradnik)",
+		},
 	},
 	bs: {
 		vacation: { name: "Godišnji odmor", description: "Plaćeno odsustvo" },
@@ -311,6 +380,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Slobodno vrijeme koje se oduzima od radnog salda",
 			name: "Zamjensko slobodno vrijeme",
 		},
+		contractor_unavailability: {
+			description:
+				"Bilješka u kalendaru da vanjski saradnik nije dostupan; nije godišnji odmor ni odsustvo",
+			name: "Nedostupan (vanjski saradnik)",
+		},
 	},
 	sq: {
 		vacation: { name: "Pushime", description: "Pushim me pagesë" },
@@ -329,6 +403,11 @@ export const builtInAbsenceCategoryTranslations: Record<
 		time_off_in_lieu: {
 			description: "Leje e marrë në llogari të bilancit të punës",
 			name: "Pushim kompensues",
+		},
+		contractor_unavailability: {
+			description:
+				"Shënim në kalendar që një bashkëpunëtor i jashtëm nuk është i disponueshëm; nuk është pushim",
+			name: "I padisponueshëm (bashkëpunëtor i jashtëm)",
 		},
 	},
 	uk: {
@@ -358,6 +437,10 @@ export const builtInAbsenceCategoryTranslations: Record<
 			description: "Відгул, що списується з робочого балансу",
 			name: "Відгул",
 		},
+		contractor_unavailability: {
+			description: "Позначка в календарі, що зовнішній виконавець недоступний; не відпустка",
+			name: "Недоступний (зовнішній виконавець)",
+		},
 	},
 	ru: {
 		vacation: { name: "Отпуск", description: "Оплачиваемый отпуск" },
@@ -385,6 +468,10 @@ export const builtInAbsenceCategoryTranslations: Record<
 		time_off_in_lieu: {
 			description: "Отгул в счет рабочего баланса",
 			name: "Отгул",
+		},
+		contractor_unavailability: {
+			description: "Отметка в календаре, что внешний исполнитель недоступен; не отпуск",
+			name: "Недоступен (внешний исполнитель)",
 		},
 	},
 };

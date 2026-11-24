@@ -117,6 +117,22 @@ describe("VacationBalanceWidget organization year", () => {
 			).toBeTruthy();
 		},
 	);
+	it("tells an External Contractor that vacation does not apply, without an error (#1996)", async () => {
+		getVacationFixture.mockResolvedValue({
+			success: true,
+			data: { year: 2026, balance: null, configuration: null, externalContractor: true },
+		});
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<VacationBalanceWidget />
+			</QueryClientProvider>,
+		);
+		expect(
+			await screen.findByText("Vacation does not apply to External Contractors."),
+		).toBeTruthy();
+		expect(screen.queryByText("Vacation balance is unavailable.")).toBeNull();
+		expect(screen.queryByText("Missing vacation policy")).toBeNull();
+	});
 	it("waits for the selected year while loading", () => {
 		getVacationFixture.mockImplementation(() => new Promise(() => {}));
 		render(

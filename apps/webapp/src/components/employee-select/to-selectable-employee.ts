@@ -15,6 +15,7 @@ export interface SelectableEmployeeSource {
 	isFormer?: boolean;
 	formerSince?: string | null;
 	clockStatus?: "clocked-in" | "on-break" | "clocked-out" | "unknown";
+	engagementKind?: "employee" | "contractor" | null;
 	teamId?: string | null;
 	teamName?: string | null;
 	team?: { id: string; name: string } | null;
@@ -84,6 +85,7 @@ export function toSelectableEmployee(
 		...(isFormer !== undefined ? { isFormer } : {}),
 		...((!isActive || isFormer) && formerSince !== undefined ? { formerSince } : {}),
 		...(source.clockStatus ? { clockStatus: source.clockStatus } : {}),
+		...(source.engagementKind ? { engagementKind: source.engagementKind } : {}),
 		teamId: source.teamId ?? team?.id ?? null,
 		user: {
 			id: userId,

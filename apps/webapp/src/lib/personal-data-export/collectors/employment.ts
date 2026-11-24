@@ -8,7 +8,10 @@
  * vehicles (#807, archived ones too), custom roles, groups,
  * cost centres, every policy assignment that reaches the employee (holiday
  * presets, single holidays and holiday categories included), and custom field
- * values, and go-live exclusions with their reason (#1513).
+ * values, and go-live exclusions with their reason (#1513). For an External
+ * Contractor (#2001): the engagement kind of the person and of each period, the
+ * contracting details and the contractor compensation terms, their own pay like
+ * the hourly wage, never withheld (`employment-contractor.ts`).
  *
  * Assignments that reach the employee through a team or the organization
  * default are exported for the employee's own teams (current and past) and
@@ -91,6 +94,7 @@ import {
 	plainDateText,
 	userNameLookup,
 } from "../values";
+import { CONTRACTOR_TERMS_COLUMNS, loadContractorEngagement } from "./employment-contractor";
 import { employmentFieldGuide } from "./employment-fields";
 import { collectWithheldEmploymentParts } from "./employment-withheld";
 
@@ -150,6 +154,7 @@ async function collectEmployment(
 			endDate: person.endDate,
 			isActive: person.isActive,
 			contractType: person.contractType,
+			engagementKind: person.engagementKind,
 			createdAt: person.createdAt,
 			updatedAt: person.updatedAt,
 			userName: user.name,
@@ -662,8 +667,12 @@ async function collectEmployment(
 		for (const row of permissionTeams) teamNames.set(row.id, row.name);
 	}
 
+	const contractor = await loadContractorEngagement(database, scope);
+
 	const [byUser, byEmployee] = await Promise.all([
 		userNameLookup(database, [
+			contractor.details?.updatedBy,
+			...contractor.terms.flatMap((row) => [row.createdBy, row.updatedBy]),
 			...departureEvents.map((row) => row.actorUserId),
 			...memberships.map((row) => row.createdBy),
 			...periods.map((row) => row.createdBy),
@@ -708,6 +717,7 @@ async function collectEmployment(
 		position: subject.position,
 		primary_team: teamName(subject.teamId),
 		contract_type: subject.contractType,
+		engagement_kind: subject.engagementKind,
 		start_date: instantText(subject.startDate),
 		end_date: instantText(subject.endDate),
 		is_active: subject.isActive,
@@ -725,9 +735,19 @@ async function collectEmployment(
 			recordPart("employee", employeeRecord),
 			tablePart(
 				"employment_periods",
-				["id", "status", "started_at", "ended_at", "start_provenance", "created_at", "created_by"],
+				[
+					"id",
+					"engagement_kind",
+					"status",
+					"started_at",
+					"ended_at",
+					"start_provenance",
+					"created_at",
+					"created_by",
+				],
 				periods.map((row) => ({
 					id: row.id,
+					engagement_kind: row.engagementKind,
 					status: row.status,
 					started_at: instantText(row.startedAt),
 					ended_at: instantText(row.endedAt),
@@ -815,6 +835,38 @@ async function collectEmployment(
 					currency: row.currency,
 					change_reason: row.changeReason,
 					review_state: row.reviewState,
+					created_at: instantText(row.createdAt),
+					created_by: byUser(row.createdBy),
+					updated_at: instantText(row.updatedAt),
+					updated_by: byUser(row.updatedBy),
+				})),
+			),
+			recordPart(
+				"contractor_details",
+				contractor.details && {
+					company_name: contractor.details.companyName,
+					vat_id: contractor.details.vatId,
+					reference_code: contractor.details.referenceCode,
+					created_at: instantText(contractor.details.createdAt),
+					updated_at: instantText(contractor.details.updatedAt),
+					updated_by: byUser(contractor.details.updatedBy),
+				},
+			),
+			tablePart(
+				"contractor_compensation_terms",
+				CONTRACTOR_TERMS_COLUMNS,
+				contractor.terms.map((row) => ({
+					id: row.id,
+					employment_period_id: row.employmentPeriodId,
+					compensation_basis: row.compensationBasis,
+					rate: row.rate,
+					currency: row.currency,
+					day_unit_rule: row.dayUnitRule,
+					half_day_threshold_minutes: row.halfDayThresholdMinutes,
+					standard_day_minutes: row.standardDayMinutes,
+					cap_at_one_day: row.capAtOneDay,
+					effective_from: row.effectiveFrom,
+					effective_to: row.effectiveTo,
 					created_at: instantText(row.createdAt),
 					created_by: byUser(row.createdBy),
 					updated_at: instantText(row.updatedAt),

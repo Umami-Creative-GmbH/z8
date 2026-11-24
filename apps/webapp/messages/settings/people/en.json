@@ -409,6 +409,7 @@
         "clearSearch": "Clear search",
         "clockReview": "Needs review: offboarding clock-out",
         "confirmRehire": "Confirm rehire",
+        "contractorRehireHint": "An External Contractor gets no employment terms, work policy or vacation allowance. Contractor rates are set separately.",
         "correctTime": "Correct time",
         "currency": "Currency",
         "currencyInvalid": "Enter a three-letter currency code.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Access ended at {cutoff} ({timezone}).",
         "employmentGap": "Not employed {startDate} – {endDate}",
         "employmentStint": "Employment {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Employee"
+        },
+        "engagementKind": "Engagement",
         "errors": {
           "actorNotAuthorized": "Only organization owners and admins can manage employee departures.",
           "departureAlreadyEffective": "This departure has already taken effect. Rehire the employee to restore access.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Employee not found.",
           "exceedsBalance": "The payout is more than the employee's work balance at the end of that day.",
           "exceedsLaterBalance": "The payout would leave the work balance below zero after a later overtime payout. Cancel that payout first or record less.",
+          "externalContractorDay": "On this day the person works as an External Contractor, so payroll would never pay this payout. Date it on a day they were employed.",
           "failed": "The work balance could not be updated. Try again.",
           "futureDay": "The day cannot be after today in the employee's timezone.",
           "invalidInput": "Check the day, the hours and minutes, and the reason.",

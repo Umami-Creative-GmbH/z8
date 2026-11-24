@@ -312,6 +312,19 @@ function WorkPolicySection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 	const policy = rehearsal.workPolicy;
 	const title = t("settings.implementationChecklist.rehearsal.workPolicy.title", "Work policy");
 
+	if (policy.status === "not_applicable") {
+		return (
+			<Section title={title}>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.implementationChecklist.rehearsal.workPolicy.notApplicable",
+						"No work policy applies: they work as an External Contractor.",
+					)}
+				</p>
+			</Section>
+		);
+	}
+
 	if (policy.status === "none") {
 		return (
 			<Section title={title}>
@@ -622,6 +635,11 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 		"settings.implementationChecklist.rehearsal.payroll.notYetInvited",
 		"Not yet: they're still invited",
 	);
+	// An External Contractor has no employee payroll (#1997): nothing to set up for them.
+	const notNeeded = t(
+		"settings.implementationChecklist.rehearsal.payroll.notNeededExternalContractor",
+		"Not needed: External Contractor",
+	);
 	const identifier = prerequisites.personnelIdentifier;
 	const needsEmployeesFix =
 		prerequisites.employmentTerms === "missing" || identifier.status === "shared";
@@ -651,6 +669,8 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 									"settings.implementationChecklist.rehearsal.payroll.unavailable",
 									"Couldn't be checked",
 								)
+							) : identifier.status === "external-contractor" ? (
+								notNeeded
 							) : (
 								invited
 							),
@@ -674,6 +694,8 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 										"No confirmed terms covering today",
 									)}
 								</Problem>
+							) : prerequisites.employmentTerms === "external-contractor" ? (
+								notNeeded
 							) : (
 								invited
 							),

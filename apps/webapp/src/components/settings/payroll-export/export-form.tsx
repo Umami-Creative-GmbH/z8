@@ -16,6 +16,7 @@ import {
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
 import { EmployeeMultiSelect, toSelectableEmployee } from "@/components/employee-select";
+import { EngagementFilterToggle } from "@/components/engagement/engagement-kind-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	type EngagementFilter,
+	engagementPickerRows,
+	hasExternalContractors,
+} from "@/lib/engagement/engagement-filter";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	type PayrollExportFormatId,
@@ -529,18 +535,46 @@ function FiltersSection({
 	onClearProjects: () => void;
 	t: Translate;
 }) {
-	const selectableEmployees = (options?.employees ?? []).map(
-		({ id, firstName, lastName, employeeNumber }) =>
+	// All | Employees | External Contractors (#1995): narrows the picker, never the chosen people
+	// nor what the export includes, and says so. Payroll exports leave contractor time out by
+	// themselves (#1997), even for a picked External Contractor, so this is no export scope.
+	const [engagement, setEngagement] = useState<EngagementFilter>("all");
+	const allEmployees = options?.employees ?? [];
+	const hasContractors = hasExternalContractors(allEmployees);
+	const selectableEmployees = engagementPickerRows(allEmployees, engagement, employeeIds).map(
+		({ id, firstName, lastName, employeeNumber, engagementKind }) =>
 			toSelectableEmployee({
 				id,
 				firstName,
 				lastName,
 				employeeNumber,
+				engagementKind,
 			}),
 	);
 	return (
 		<div className="space-y-4">
-			<Label>{t("settings.payrollExport.export.filters", "Filters (Optional)")}</Label>
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<Label>{t("settings.payrollExport.export.filters", "Filters (Optional)")}</Label>
+				{hasContractors && (
+					<EngagementFilterToggle value={engagement} onValueChange={setEngagement} />
+				)}
+			</div>
+			{hasContractors && engagement !== "all" && (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.payrollExport.export.engagementPickerHint",
+						"This only narrows the list of people to pick from. With nobody selected, the export includes everyone.",
+					)}
+				</p>
+			)}
+			{hasContractors && (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.payrollExport.export.contractorTimeExcluded",
+						"Payroll exports include only time worked as an employee. Time worked as an External Contractor is always left out, even if you pick the person.",
+					)}
+				</p>
+			)}
 			<div className="grid gap-4 md:grid-cols-3">
 				<EmployeeMultiSelect
 					label={t("settings.payrollExport.export.employees", "Employees")}

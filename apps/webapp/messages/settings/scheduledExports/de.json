@@ -109,6 +109,8 @@
         "dateRange": "Datumsbereich",
         "dateRangeHint": "Der Datumsbereich wird automatisch basierend auf dem Ausführungszeitpunkt des Exports berechnet",
         "employees": "Mitarbeiter",
+        "contractorTimeExcluded": "Lohnexporte enthalten nur Arbeitszeit als Arbeitnehmer. Zeit als Externer Dienstleister bleibt immer außen vor, auch wenn Sie die Person auswählen.",
+        "engagementPickerHint": "Grenzt nur die Personenliste zur Auswahl ein. Ohne Auswahl enthält der Export alle Personen.",
         "filtersHint": "Leer lassen, um alle Mitarbeiter, Teams und Projekte einzubeziehen",
         "filtersOptional": "Filter (Optional)",
         "noEmployees": "Keine Mitarbeiter gefunden",

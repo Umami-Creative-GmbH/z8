@@ -7,6 +7,7 @@ import type {
 	ScheduleMode,
 	ScheduleSource,
 } from "@/db/schema/contract-types";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import type { ContractType } from "@/lib/validations/employee";
 
 export type DayOfWeek =
@@ -138,6 +139,18 @@ export interface ResolvedOnCallTerms {
 
 export type EffectivePresenceStatus = "required" | "exempt" | "not_configured";
 
+/**
+ * The balance mode a resolved day carries: a contract's own mode, or `excluded`
+ * on a day inside an External Contractor period, which keeps no work balance at
+ * all (#1996). `excluded` is never stored on terms, templates or defaults.
+ */
+export type ResolvedBalanceMode = BalanceMode | "excluded";
+
+/** The balance mode a resolved day's terms may store: `excluded` is never written. */
+export function storedBalanceMode(mode: ResolvedBalanceMode): BalanceMode | null {
+	return mode === "excluded" ? null : mode;
+}
+
 export interface EffectiveContractOnDay {
 	readonly date: string;
 	readonly dayOfWeek: DayOfWeek;
@@ -145,6 +158,13 @@ export interface EffectiveContractOnDay {
 	readonly employeeId: string;
 	readonly employmentPeriodId: string | null;
 	readonly isEmployedOnDay: boolean;
+	/**
+	 * The engagement kind of the stint in force on this day. A `contractor` day
+	 * inherits no Org or Primary Team default contract and no work policy, keeps
+	 * no work balance (`balanceMode: "excluded"`, zero required time) and has no
+	 * employee statutory profile (#1996).
+	 */
+	readonly engagementKind: EngagementKind;
 	readonly primaryTeamId: string | null;
 	readonly employmentHistoryId: string | null;
 	readonly contractDefaultId: string | null;
@@ -163,7 +183,7 @@ export interface EffectiveContractOnDay {
 	readonly presenceOverrideSource: ContractFieldSource;
 	readonly presenceStatus: EffectivePresenceStatus;
 	readonly effectivePresence: ResolvedWorkPolicyPresence | null;
-	readonly balanceMode: BalanceMode;
+	readonly balanceMode: ResolvedBalanceMode;
 	readonly balanceModeSource: ContractFieldSource;
 	readonly scheduleSource: ScheduleSource;
 	readonly scheduleSourceSource: ContractFieldSource;
@@ -180,7 +200,8 @@ export interface EffectiveContractOnDay {
 	readonly contractType: ContractType;
 	readonly hourlyRate: number | null;
 	readonly currency: string;
-	readonly employmentProfile: EmploymentProfile;
+	/** Null on a contractor day: an External Contractor has no employee statutory profile. */
+	readonly employmentProfile: EmploymentProfile | null;
 	readonly arbzgScope: ArbzgScope;
 	readonly onCallTerms: ResolvedOnCallTerms | null;
 	readonly migratedLegacyTerms: boolean;

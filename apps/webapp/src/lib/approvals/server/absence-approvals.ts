@@ -12,6 +12,8 @@ import {
 } from "@/db/schema";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { getAbsenceDays } from "@/lib/absences/absence-days-resolver";
+import { loadAbsenceEngagementRefusal } from "@/lib/absences/absence-engagement";
+import { ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES } from "@/lib/absences/category-rules";
 import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
 import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
 import { getAbility } from "@/lib/auth-helpers";
@@ -969,6 +971,36 @@ function ensureAbsenceRecord(
 			);
 }
 
+/**
+ * Refuses approving an absence whose category no longer fits the stints its days fall in
+ * (#1996), as a new request for those days is refused. A departure leaves pending requests in
+ * place, so the person may have become a contractor (or an employee) on those days since they
+ * asked. Every approval path persists through `updateAbsenceStatus`, so each meets this check.
+ */
+function refuseAbsenceOffItsStints(
+	dbService: ApprovalDbService,
+	organizationId: string,
+	absenceId: string,
+) {
+	return dbService
+		.query("absences.engagementRefusalOnApproval", () =>
+			loadAbsenceEngagementRefusal(dbService.db, { organizationId, absenceId }),
+		)
+		.pipe(
+			Effect.flatMap((refusal) =>
+				refusal
+					? Effect.fail(
+							new ValidationError({
+								message: ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES[refusal],
+								field: "categoryId",
+								refusal,
+							}),
+						)
+					: Effect.void,
+			),
+		);
+}
+
 function updateAbsenceStatus(
 	dbService: ApprovalDbService,
 	entityId: string,
@@ -976,6 +1008,38 @@ function updateAbsenceStatus(
 	status: "approved" | "rejected",
 	reason?: string,
 	finalizedAt: Instant = systemClock.nowInstant(),
+	expectedLinks?: ExpectedAbsenceLinks,
+) {
+	const stintCheck =
+		status === "approved"
+			? refuseAbsenceOffItsStints(
+					dbService,
+					currentEmployee.organizationId,
+					entityId,
+				)
+			: Effect.void;
+	return stintCheck.pipe(
+		Effect.andThen(() =>
+			persistAbsenceStatus(
+				dbService,
+				entityId,
+				currentEmployee,
+				status,
+				reason,
+				finalizedAt,
+				expectedLinks,
+			),
+		),
+	);
+}
+
+function persistAbsenceStatus(
+	dbService: ApprovalDbService,
+	entityId: string,
+	currentEmployee: CurrentApprover,
+	status: "approved" | "rejected",
+	reason: string | undefined,
+	finalizedAt: Instant,
 	expectedLinks?: ExpectedAbsenceLinks,
 ) {
 	return dbService

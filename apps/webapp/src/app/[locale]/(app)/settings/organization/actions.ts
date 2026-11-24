@@ -1,11 +1,16 @@
 "use server";
 
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { z } from "zod";
 import * as authSchema from "@/db/auth-schema";
-import { employeeInvitationDraft, organizationNotificationSettings, team } from "@/db/schema";
+import {
+	employeeInvitationDraft,
+	organizationNotificationSettings,
+	project,
+	team,
+} from "@/db/schema";
 import { auth, runAuthMutation } from "@/lib/auth";
 import {
 	isInvitationActionable,
@@ -13,19 +18,29 @@ import {
 	persistEmployeeInvitationDraft,
 	syncInvitationTargetTeam,
 } from "@/lib/auth/employee-invitation-draft";
-import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	type ContractorCompensationInput,
+	parseContractorCompensation,
+	toStoredCompensation,
+} from "@/lib/contractor-compensation/terms";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
+import { todayInOrganization } from "@/lib/personnel-file/organization-day";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone-change";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
+	contractorInvitationSchema,
+	type InvitationEngagementRefusal,
 	invitationSchema,
+	isPlannedEndAfterOrganizationToday,
+	refineInvitationEngagement,
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
 } from "@/lib/validations/invitation";
@@ -83,10 +98,93 @@ function validateInvitationAllowed(organizationId: string, email: string) {
 // Invitation Management Actions (org admins)
 // =============================================================================
 
-const sendInvitationSchema = z.strictObject({
-	...invitationSchema.shape,
-	email: z.string().transform(normalizeInvitationEmail).pipe(invitationSchema.shape.email),
-});
+const sendInvitationSchema = z
+	.strictObject({
+		...invitationSchema.shape,
+		email: z.string().transform(normalizeInvitationEmail).pipe(invitationSchema.shape.email),
+	})
+	.superRefine(refineInvitationEngagement);
+
+/** Every project a contractor invitation names belongs to the session's organization (#1995). */
+function validateInvitationProjects(organizationId: string, projectIds: readonly string[]) {
+	return Effect.gen(function* () {
+		if (projectIds.length === 0) return;
+		const dbService = yield* DatabaseService;
+		const found = yield* dbService.query("getInvitationProjects", () =>
+			dbService.db.query.project.findMany({
+				where: and(
+					eq(project.organizationId, organizationId),
+					inArray(project.id, [...projectIds]),
+				),
+				columns: { id: true },
+			}),
+		);
+		const known = new Set(found.map((row) => row.id));
+		const unknown = projectIds.find((projectId) => !known.has(projectId));
+		if (unknown) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Project not found in this organization",
+					field: "contractor.projectIds",
+					value: unknown,
+					refusal: "project_not_found" satisfies InvitationEngagementRefusal,
+				}),
+			);
+		}
+	});
+}
+
+/**
+ * A contractor's planned engagement end is a later day than the organization's
+ * today (#1995): joining schedules it as a leaving date, which cannot be in the past.
+ */
+function validatePlannedEndDate(
+	organizationId: string,
+	plannedEndDate: string | null | undefined,
+	now: Instant,
+) {
+	return Effect.gen(function* () {
+		if (!plannedEndDate) return;
+		const dbService = yield* DatabaseService;
+		const organization = yield* dbService.query("getInvitationOrganizationTimezone", () =>
+			dbService.db.query.organization.findFirst({
+				where: eq(authSchema.organization.id, organizationId),
+				columns: { timezone: true },
+			}),
+		);
+		const today = todayInOrganization(now, organization?.timezone);
+		if (!isPlannedEndAfterOrganizationToday(plannedEndDate, today)) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "The planned engagement end must be after today",
+					field: "contractor.plannedEndDate",
+					value: plannedEndDate,
+					refusal: "planned_end_not_future" satisfies InvitationEngagementRefusal,
+				}),
+			);
+		}
+	});
+}
+
+/**
+ * The invitation's first contractor terms (#1935), parsed now so a refusal
+ * reaches the admin who invites, and stored as the terms table stores them.
+ * Refused with the parser's code; the message is a diagnostic only.
+ */
+function validateInvitationCompensation(
+	compensation: ContractorCompensationInput | null | undefined,
+) {
+	if (!compensation) return Effect.succeed(null);
+	const parsed = parseContractorCompensation(compensation);
+	if (parsed.ok) return Effect.succeed(toStoredCompensation(parsed.compensation));
+	return Effect.fail(
+		new ValidationError({
+			message: `Invitation compensation refused: ${parsed.reason}`,
+			field: "contractor.compensation",
+			refusal: parsed.reason satisfies InvitationEngagementRefusal,
+		}),
+	);
+}
 
 /**
  * Send an invitation to join the organization
@@ -99,6 +197,11 @@ export const sendInvitation = organizationAction(
 		return Effect.gen(function* () {
 			const now = systemClock.nowInstant();
 			const dbService = yield* DatabaseService;
+			const contractor =
+				input.engagementKind === "contractor"
+					? (input.contractor ?? contractorInvitationSchema.parse({}))
+					: null;
+			const compensation = yield* validateInvitationCompensation(contractor?.compensation);
 			const draftFields = {
 				organizationId,
 				normalizedEmail: input.email,
@@ -106,9 +209,23 @@ export const sendInvitation = organizationAction(
 				targetTeamId: input.targetTeamId ?? null,
 				initialRole: initialRoleOf(input.role),
 				updatedBy: actor.userId,
+				// An employee or an External Contractor with what joining prepares for them (#1995).
+				engagement: {
+					kind: input.engagementKind,
+					contractor: contractor ? { ...contractor, compensation } : null,
+				},
 			} as const;
 
 			if (input.targetTeamId) yield* validateTargetTeam(organizationId, input.targetTeamId);
+			yield* validateInvitationProjects(
+				organizationId,
+				draftFields.engagement.contractor?.projectIds ?? [],
+			);
+			yield* validatePlannedEndDate(
+				organizationId,
+				draftFields.engagement.contractor?.plannedEndDate,
+				now,
+			);
 			yield* validateInvitationAllowed(organizationId, input.email);
 
 			const existingInvitation = yield* dbService.query("checkExistingInvitation", () =>
@@ -786,9 +903,8 @@ export const deleteOrganization = organizationAction(
 			// Email failures are logged and do not fail the action.
 			yield* Effect.promise(async () => {
 				try {
-					const { sendOrganizationDeletionNotifications } = await import(
-						"@/lib/jobs/organization-deletion-notification"
-					);
+					const { sendOrganizationDeletionNotifications } =
+						await import("@/lib/jobs/organization-deletion-notification");
 					await sendOrganizationDeletionNotifications({
 						organizationId,
 						organizationName: organization.name,

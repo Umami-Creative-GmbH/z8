@@ -20,6 +20,7 @@ hands back an outcome and one after-commit step that the caller runs once its tr
 | --- | --- |
 | `joining.ts` | `joinOrganization(tx, input)`, the outcome, the after-commit step, `acquireJoiningLocks` |
 | `invitation-draft.ts` | Loading the invitation draft, applying its values, first terms and personnel number, and the draft clean-up |
+| `planned-engagement-end.ts` | Scheduling a contractor invitation's planned engagement end after commit, and telling admins when it is not scheduled as planned |
 | `member-without-employee.ts` | `joinMemberWithoutEmployee`: joins a member with no employee row, never touches one who has a row |
 | `backfill.ts` | The one-time backfill of members without an employee (#1671) |
 
@@ -51,13 +52,65 @@ The role rule: a new employee takes the draft's role when there is a draft, othe
 or admin membership, otherwise employee. A reactivated employee takes the draft's values when there is a
 draft, otherwise admin for an owner or admin membership, otherwise keeps the old role.
 
+## External Contractors
+
+An invitation can bring in an **External Contractor** (#1995, spec #1935): the draft carries
+`engagement_kind = 'contractor'`, optional company, VAT ID and PO/cost-center reference, projects and
+a planned engagement end. Joining then creates the employee with that engagement kind and
+
+- writes no employment terms (the draft's contract type and wage are employee-only and ignored),
+- writes the contracting details to `employee_contractor_profile` and assigns the draft's projects
+  that belong to the organization (`applyContractorDraft`),
+- schedules the planned end as a canonical departure after commit, by the admin who prepared the
+  invitation, with the draft's id as the request id (`joining/planned-engagement-end.ts`).
+
+The invitation only accepts a planned end after the organization's today (`sendInvitation` checks
+it in the organization's timezone; the picker starts at tomorrow). The invitation can still be
+accepted after that day, or scheduling can be refused, so joining never drops a planned end
+silently:
+
+- **The day passed before they joined:** the leaving date is today in the organization's timezone,
+  the earliest a scheduled departure allows. The contractor keeps access for the rest of today and
+  never past the end the organization set; an admin who extends the engagement moves the leaving date.
+- **Scheduling refused or impossible** (the preparing admin is no longer one, no admin can be named,
+  the offboarding release gate is off, any other refusal): nothing is scheduled.
+
+Both write the audit entry `employee.planned_engagement_end_not_applied` (reason
+`planned_end_passed` with `scheduledLastWorkingDay`, or `schedule_refused` with the command's
+`refusal` code, `no_admin_actor` or `offboarding_not_released`; always with `plannedEndDate`,
+`draftId` and `invitationId`). The entry stands on the preparing admin; when no admin can be named
+it is a system finding (`actorKind: "system"` in its metadata) and stands on the contractor's user
+only because an audit entry needs one. The organization's current owners and admins also get an
+`employee_offboarding_review` notification that links to the employee's page.
+
+An invitation's engagement (kind, contracting details, projects, planned end) is set when the
+draft is attached to that invitation. Inviting the same email again while that invitation is
+pending answers "already pending" and only repairs the team and organization-creation flag: the
+draft keeps the engagement it was sent with (`persistEmployeeInvitationDraft`).
+
+A reactivation never applies the draft's engagement kind: the open period's kind cannot change in
+place. When the draft's kind differs from the returning employee's (a contractor invitation for a
+switched-off employee, or the reverse), the person comes back as what their open period is, with
+the draft's personal values and team but neither its employment terms nor its contracting details,
+projects or planned end; the audit entry `employee.invitation_draft_not_applied` (reason
+`engagement_kind_differs`, with both kinds) records it. Converting contractor ↔ employee is a
+departure followed by a rehire that names the new period's kind
+([Employee Offboarding](employee-offboarding.md#rehire)).
+
+A new invitation that replaces a draft of the other kind clears the old kind's fields: a contractor
+invitation resets the contract type to `fixed` and drops the wage, an employee invitation drops the
+contracting details, projects and planned end.
+
 ## After-commit step
 
 `afterCommit.run()` runs once the caller's transaction committed:
 
 1. forwards the audit entries joining recorded to the external audit service,
-2. consumes the invitation draft (`draftCleanup`),
-3. sends the seat signal (`syncBillingSeatsAfterMemberChange`, best effort; the hourly seat
+2. schedules a contractor invitation's planned engagement end (`plannedEngagementEnd`, see
+   [External Contractors](#external-contractors)), before the draft whose id it replays on is consumed,
+3. consumes the invitation draft (`draftCleanup`),
+4. sends the rehire notice of a `membership_only` outcome (`rehireNotice`),
+5. sends the seat signal (`syncBillingSeatsAfterMemberChange`, best effort; the hourly seat
    reconciliation is the safety net).
 
 `run({ seatSignal: false })` skips the seat signal for an older membership, where no seat changed now.

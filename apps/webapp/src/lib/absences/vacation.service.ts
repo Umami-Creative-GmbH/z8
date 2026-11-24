@@ -22,7 +22,11 @@ import {
 	upsertEmployeeVacationAllowance,
 } from "@/lib/query/vacation.queries";
 import { calculateCarryoverExpiryDate } from "./date-utils";
-import { loadProratedVacationAllowances } from "./prorated-allowance-store";
+import { outsideVacationInYear } from "./prorated-allowance";
+import {
+	loadEmployeeEmployments,
+	loadProratedVacationAllowances,
+} from "./prorated-allowance-store";
 import {
 	type VacationBalance,
 	type VacationBalanceConfiguration,
@@ -113,6 +117,8 @@ export async function getEnhancedVacationBalanceResult(input: {
 }): Promise<{
 	balance: EnhancedVacationBalance | null;
 	configuration: VacationBalanceConfiguration | null;
+	/** An External Contractor that year (#1996): vacation does not apply, nothing is missing. */
+	externalContractor: boolean;
 }> {
 	const {
 		employeeId,
@@ -129,7 +135,7 @@ export async function getEnhancedVacationBalanceResult(input: {
 		),
 		columns: { organizationId: true },
 	});
-	if (!emp) return { balance: null, configuration: null };
+	if (!emp) return { balance: null, configuration: null, externalContractor: false };
 	const result = await loadVacationBalances(db, {
 		organizationId: emp.organizationId,
 		employeeIds: [employeeId],
@@ -148,6 +154,7 @@ export async function getEnhancedVacationBalanceResult(input: {
 				})
 			: null,
 		configuration: result.configurations.get(employeeId) ?? null,
+		externalContractor: result.externalContractors.has(employeeId),
 	};
 }
 
@@ -239,11 +246,24 @@ export async function calculateAnnualCarryover(
 		};
 	}
 
-	// Get all employees with vacation data
-	const employees = await getEmployeesWithVacationData(
+	// Get all employees with vacation data. No carry-over leaves or enters a year outside
+	// vacation, such as one spent entirely as an External Contractor (#1996).
+	const withVacationData = await getEmployeesWithVacationData(
 		organizationId,
 		fromYear,
 	);
+	const employments = await loadEmployeeEmployments(db, {
+		organizationId,
+		employeeIds: withVacationData.map((emp) => emp.id),
+	});
+	const employees = withVacationData.filter((emp) => {
+		const employee = employments.get(emp.id);
+		return (
+			employee !== undefined &&
+			!outsideVacationInYear(employee, fromYear) &&
+			!outsideVacationInYear(employee, toYear)
+		);
+	});
 	// The fromYear allowance of each employee, prorated in a start or exit year (#1110), and
 	// their adjustments, manual and accrual (#1105, #1106)
 	const employeeIds = employees.map((emp) => emp.id);

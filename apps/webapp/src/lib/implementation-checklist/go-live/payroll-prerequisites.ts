@@ -1,6 +1,7 @@
 import { employee } from "@/db/schema";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { findPersonnelIdentifierClashes } from "@/lib/payroll-export/personnel-identifier-store";
 import {
@@ -19,12 +20,20 @@ export type PayrollPrerequisites = {
 	mandatory: boolean;
 	exportTargetCount: number;
 	wageTypeMappings: "present" | "missing";
-	employmentTerms: "confirmed" | "missing" | "not-applicable";
+	/** `external-contractor`: an External Contractor today has no employee payroll (#1997). */
+	employmentTerms: "confirmed" | "missing" | "not-applicable" | "external-contractor";
 	personnelIdentifier:
 		| { status: "unique" }
 		| { status: "shared"; identifier: string; sharedWith: string[] }
 		| { status: "unavailable" }
-		| { status: "not-applicable" };
+		| { status: "not-applicable" }
+		| { status: "external-contractor" };
+};
+
+/** Payroll readiness's setup checks for go-live, with who has no employee payroll today. */
+export type GoLivePayrollSetup = PayrollSetupChecks & {
+	/** Employees who are External Contractors today: no terms or identifier are expected (#1997). */
+	externalContractors: ReadonlySet<string>;
 };
 
 /**
@@ -32,20 +41,25 @@ export type PayrollPrerequisites = {
  * for the given employees: confirmed terms covering today, and the personnel
  * identifier clashes they are part of. Identifiers are compared with the whole
  * current roster, since an export merges anyone sharing one, going live yet or
- * not; only clashes involving one of `employeeIds` are kept. Read-only.
+ * not; only clashes involving one of `employeeIds` are kept. External Contractors
+ * (today) are left out of both: payroll exports never carry them (#1997). Read-only.
  */
-export function loadGoLivePayrollSetup(
+export async function loadGoLivePayrollSetup(
 	db: DatabaseClient,
 	input: { organizationId: string; asOf: GoLiveAsOf; employeeIds: readonly string[] },
-): Promise<PayrollSetupChecks> {
+): Promise<GoLivePayrollSetup> {
 	const { organizationId, asOf } = input;
 	// Terms dates are stored as UTC midnight of the calendar date, so today is that UTC day.
 	const start = utcMidnight(asOf.today);
 	const end = new Date(utcMidnight(asOf.today.add({ days: 1 })).getTime() - 1);
-	const checked = new Set(input.employeeIds);
-	return loadPayrollSetupChecks(db, {
+	const today = asOf.today.toString();
+	const employeesToday = async (ids: readonly string[]) =>
+		(await loadEmployeeTime(db, organizationId, ids)).withEmployeeTimeOn(ids, today, today);
+	const employees = await employeesToday(input.employeeIds);
+	const checked = new Set(employees);
+	const setup = await loadPayrollSetupChecks(db, {
 		organizationId,
-		employees: input.employeeIds.map((id) => ({ id })),
+		employees: employees.map((id) => ({ id })),
 		termsWindow: { start, end },
 		findIdentifierClashes: async (configs) => {
 			if (configs.length === 0 || checked.size === 0) return [];
@@ -56,7 +70,9 @@ export function loadGoLivePayrollSetup(
 			const clashes = await findPersonnelIdentifierClashes(db, {
 				organizationId,
 				configs,
-				employeeIds: [...new Set([...input.employeeIds, ...roster.map((row) => row.id)])],
+				employeeIds: await employeesToday([
+					...new Set([...input.employeeIds, ...roster.map((row) => row.id)]),
+				]),
 				asOf: asOf.today,
 			});
 			return clashes.filter((clash) =>
@@ -64,11 +80,15 @@ export function loadGoLivePayrollSetup(
 			);
 		},
 	});
+	return {
+		...setup,
+		externalContractors: new Set(input.employeeIds.filter((id) => !checked.has(id))),
+	};
 }
 
 /** One member's prerequisites from setup checks loaded for a group they belong to. */
 export function payrollPrerequisitesOf(
-	setup: PayrollSetupChecks,
+	setup: GoLivePayrollSetup,
 	member: GoLiveMember,
 ): PayrollPrerequisites {
 	const organizationWide = {
@@ -85,6 +105,13 @@ export function payrollPrerequisitesOf(
 	}
 
 	const { employeeId } = member;
+	if (setup.externalContractors.has(employeeId)) {
+		return {
+			...organizationWide,
+			employmentTerms: "external-contractor",
+			personnelIdentifier: { status: "external-contractor" },
+		};
+	}
 	const missingTerms = setup.employmentHistory.affectedEmployees.some(
 		(employee) => employee.id === employeeId,
 	);

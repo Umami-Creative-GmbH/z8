@@ -9,6 +9,7 @@ import {
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { isEngagementKind } from "@/lib/engagement/engagement-kind";
 import { equipmentDepartureDeadline } from "@/lib/organization/equipment/deadlines";
 import { readEquipmentDepartureReturns } from "@/lib/organization/equipment/lifecycle";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -757,9 +758,11 @@ export async function previewPastDeparture(
 		timezone: string | null;
 		open_period_id: string | null;
 		open_period_started_at: Date | null;
+		open_period_engagement_kind: string | null;
 	}>(sql`
 		SELECT e.user_id, o.timezone,
-			p.id AS open_period_id, p.started_at AS open_period_started_at
+			p.id AS open_period_id, p.started_at AS open_period_started_at,
+			p.engagement_kind AS open_period_engagement_kind
 		FROM employee e
 		JOIN organization o ON o.id = e.organization_id
 		LEFT JOIN employee_employment_period p
@@ -859,6 +862,9 @@ export async function previewPastDeparture(
 			cutoff: cutoff.cutoff,
 			timezone: cutoff.timezone,
 			lastWorkingDay: cutoff.lastWorkingDay,
+			engagementKind: isEngagementKind(target.open_period_engagement_kind)
+				? target.open_period_engagement_kind
+				: "employee",
 		}),
 		evaluateDepartureAuthority(database, {
 			organizationId: input.organizationId,

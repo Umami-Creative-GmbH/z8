@@ -47,8 +47,12 @@ _Avoid_: Billable flag (for the project setting)
 Billable work's hours multiplied by its applicable rate.
 _Avoid_: Turnover, sales
 
+**Contractor cost**:
+The cost of an External Contractor's work on a day without a cost rate, taken from the contractor's hourly or daily rate in the billable currency. A daily fee is priced once per contractor-local day from all of that day's work and split across its work periods by duration, so it is never counted twice.
+_Avoid_: Contractor cost rate, fee (alone)
+
 **Margin**:
-Revenue minus the cost of the same work at the employees' cost rates. Margin is unknown, not total, while any of that work has no cost rate.
+Revenue minus the cost of the same work: the employees' cost rates, or contractor cost for External Contractors without one. Margin is unknown, not total, while any of that work has neither.
 _Avoid_: Profit
 
 ### Hand-off

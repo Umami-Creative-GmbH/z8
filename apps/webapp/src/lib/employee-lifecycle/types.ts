@@ -1,5 +1,6 @@
 import type { db } from "@/db";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import type {
 	WorkTransactionClient,
 	WorkTransactionScope,
@@ -145,7 +146,13 @@ export type RehireEmployee = {
 	role: "admin" | "manager" | "employee";
 	teamId: string | null;
 	primaryManagerId: string | null;
-	workPolicyId: string;
+	/**
+	 * The engagement kind of the new period (#1995). Converting contractor <->
+	 * employee happens only here, on a new period. Absent: employee.
+	 */
+	engagementKind?: EngagementKind;
+	/** Required for an employee; an External Contractor gets no work policy or terms. */
+	workPolicyId: string | null;
 	weeklyContractMinutes: number;
 	contractType: UpsertEmploymentHistory["contractType"];
 	workModel: UpsertEmploymentHistory["workModel"];

@@ -182,6 +182,7 @@ export async function getCalendarManagedEmployees(
 				position: recordEmployee.position,
 				role: recordEmployee.role,
 				isActive: recordEmployee.isActive,
+				engagementKind: recordEmployee.engagementKind ?? "employee",
 				...formerMark(formerSinceById, recordEmployee.id),
 				isPrimaryManager: record.isPrimary,
 				isCurrentUser: false,

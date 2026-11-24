@@ -2304,6 +2304,34 @@
       "when": 1813075200000,
       "tag": "0328_driving_licence_declared_classes",
       "breakpoints": true
+    },
+    {
+      "idx": 329,
+      "version": "7",
+      "when": 1813161600000,
+      "tag": "0329_contractor_engagement_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 330,
+      "version": "7",
+      "when": 1813248000000,
+      "tag": "0330_contractor_compensation_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 331,
+      "version": "7",
+      "when": 1813334400000,
+      "tag": "0331_contractor_unavailability",
+      "breakpoints": true
+    },
+    {
+      "idx": 332,
+      "version": "7",
+      "when": 1813420800000,
+      "tag": "0332_invitation_contractor_compensation",
+      "breakpoints": true
     }
   ]
 }

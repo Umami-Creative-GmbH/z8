@@ -32,6 +32,9 @@ vi.mock("@/db", () => ({
 		},
 	},
 }));
+vi.mock("@/lib/absences/absence-engagement", () => ({
+	loadEngagementKindsOfStints: async () => new Map(),
+}));
 vi.mock("./actions", () => ({
 	getCurrentEmployee: readers.employee,
 	getVacationBalanceResult: readers.balance,
@@ -72,6 +75,7 @@ describe("Personal absences arrival", () => {
 		readers.employee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
+			engagementKind: "employee",
 		});
 		readers.balance.mockResolvedValue({
 			balance: null,

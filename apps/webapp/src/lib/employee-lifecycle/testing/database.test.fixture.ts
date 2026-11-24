@@ -30,6 +30,8 @@ export type SeedEmployeeInput = {
 	/** Legacy employee dates; start defaults to the fixture creation instant. */
 	startDate?: Date | null;
 	endDate?: Date | null;
+	/** The engagement kind of the employee and its seeded period (#1995); default employee. */
+	engagementKind?: "employee" | "contractor";
 };
 
 export type LifecycleDatabaseFixture = {
@@ -95,8 +97,8 @@ export async function createLifecycleDatabaseFixture(
 		);
 		await pool.query(
 			`insert into employee
-			 (id, user_id, organization_id, role, is_active, start_date, end_date, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			 (id, user_id, organization_id, role, is_active, start_date, end_date, updated_at, engagement_kind)
+			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 			[
 				employeeId,
 				userId,
@@ -106,14 +108,21 @@ export async function createLifecycleDatabaseFixture(
 				input.startDate === undefined ? createdAt : input.startDate,
 				input.endDate ?? null,
 				createdAt,
+				input.engagementKind ?? "employee",
 			],
 		);
 		if (input.withPeriod !== false) {
 			await pool.query(
 				`insert into employee_employment_period
-				 (id, organization_id, employee_id, status, started_at, start_provenance)
-				 values ($1, $2, $3, 'open', $4, 'recorded')`,
-				[employmentPeriodId, targetOrganizationId, employeeId, createdAt],
+				 (id, organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+				 values ($1, $2, $3, 'open', $4, 'recorded', $5)`,
+				[
+					employmentPeriodId,
+					targetOrganizationId,
+					employeeId,
+					createdAt,
+					input.engagementKind ?? "employee",
+				],
 			);
 		}
 		return { userId, memberId, employeeId, employmentPeriodId };

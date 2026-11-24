@@ -22,9 +22,20 @@
  */
 import { createHash } from "node:crypto";
 import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
-import { type Instant, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import {
-	allocateProtectedMinutes,
+	compareInstants,
+	type Instant,
+	instantToCanonicalString,
+	parseInstant,
+} from "@/lib/datetime/temporal-core";
+import {
+	type EngagementStints,
+	employeeTimeWithin,
+	hasEmployeeTimeWithin,
+	PLAIN_EMPLOYEE_STINTS,
+} from "@/lib/engagement/employee-time";
+import { allocateEmployeeMinutes } from "@/lib/payroll-allocation/employee-minutes";
+import {
 	employeePayrollWindow,
 	type ProtectedMinuteBlockReason,
 } from "@/lib/payroll-allocation/protected-minutes";
@@ -47,6 +58,12 @@ export interface PayrollCollectionRequest {
 	startDate: string;
 	endDate: string;
 	employeeIds: readonly string[];
+	/**
+	 * Everyone the filters select, before `employeeIds` drops those without employee time in the
+	 * period (#1997); defaults to `employeeIds`. A payroll run's reports go by their own days, so
+	 * it may carry expense lines of a selected person outside `employeeIds`.
+	 */
+	selectedEmployeeIds?: readonly string[];
 	/** The filters the employee scope was resolved from, kept as scope evidence. */
 	teamIds: readonly string[] | null;
 	projectIds: readonly string[] | null;
@@ -54,7 +71,8 @@ export interface PayrollCollectionRequest {
 	 * The employee custom field the export configuration names as personnel
 	 * identifier or match key (#821); absent or null when it names none.
 	 * `employeesWithOtherRows`: employees the export also carries absences or
-	 * expense lines for; they need a value like employees with work.
+	 * expense lines for; they need a value like employees with work. Only selected
+	 * ones count (`selectedEmployeeIds`).
 	 */
 	personnelIdentifier?: {
 		customFieldId: string;
@@ -70,6 +88,11 @@ export interface PayrollCollectionEmployee {
 	email: string | null;
 	/** Effective zone that defines the employee-local payroll window. */
 	timezone: string;
+	/**
+	 * The employee's stints (#1997): only employee time is collected; work in an External
+	 * Contractor stint is neither credited nor blocks. Absent: all time is employee time.
+	 */
+	stints?: EngagementStints;
 }
 
 export interface PayrollCollectionWorkRecord {
@@ -228,6 +251,16 @@ export function assessPayrollWorkCollection(
 		if (!owner) continue;
 		const window = employeePayrollWindow(request.startDate, request.endDate, owner.timezone);
 		if (!touchesWindow(record, window)) continue;
+		// External Contractor work is no payroll work at all (#1997): not credited, excluded or blocking.
+		const stints = owner.stints ?? PLAIN_EMPLOYEE_STINTS;
+		const inEmployeeTime =
+			record.endAt === null
+				? // Open work belongs to the stint it started in.
+					hasEmployeeTimeWithin(stints, { start: record.startAt, endExclusive: record.startAt })
+				: employeeTimeWithin(stints, window).some((employeeWindow) =>
+						touchesWindow(record, employeeWindow),
+					);
+		if (!inEmployeeTime) continue;
 
 		const blocker = (kind: PayrollWorkBlockerKind, reason: PayrollWorkBlocker["reason"] = null) =>
 			blockers.push({
@@ -260,9 +293,10 @@ export function assessPayrollWorkCollection(
 			continue;
 		}
 
-		const allocation = allocateProtectedMinutes(
+		const allocation = allocateEmployeeMinutes(
 			{ startAt: record.startAt, endAt: record.endAt, storedMinutes: record.durationMinutes },
 			window,
+			stints,
 		);
 		if (allocation.status === "blocked") {
 			blocker("unresolved_work_minutes", allocation.reason);
@@ -306,7 +340,16 @@ export function assessPayrollWorkCollection(
 
 	for (const finding of snapshot.diagnostics.findings) {
 		if (!(finding.blocking && finding.relevant)) continue;
-		const named = finding.employeeIds.filter((employeeId) => scoped.has(employeeId));
+		const scopedNamed = finding.employeeIds.filter((employeeId) => scoped.has(employeeId));
+		// Work dated entirely in an External Contractor stint is no payroll uncertainty (#1997).
+		const { relevance } = finding;
+		const named =
+			relevance.level === "interval"
+				? scopedNamed.filter((employeeId) =>
+						intervalTouchesEmployeeTime(employees.get(employeeId), relevance, request),
+					)
+				: scopedNamed;
+		if (scopedNamed.length > 0 && named.length === 0) continue;
 		// Unestablished ownership, or evidence naming only others, widens to the scope.
 		const affected =
 			finding.relevance.level === "organization" || named.length === 0 ? scope : named;
@@ -325,6 +368,13 @@ export function assessPayrollWorkCollection(
 
 	for (const repair of snapshot.departureRepairs) {
 		if (!scoped.has(repair.employeeId)) continue;
+		// A timer that ran in an External Contractor stint is no payroll work (#1997).
+		if (
+			repair.affectedEndAt &&
+			!employeeTimeEndsAt(employees.get(repair.employeeId), repair.affectedEndAt)
+		) {
+			continue;
+		}
 		blockers.push({
 			kind: "offboarding_clock_repair",
 			sourceId: repair.reviewId,
@@ -334,11 +384,12 @@ export function assessPayrollWorkCollection(
 		});
 	}
 
+	const otherRows = identifierEmployeesWithOtherRows(request);
 	const personnelIdentifier = request.personnelIdentifier
 		? freezePersonnelIdentifier(
 				request.personnelIdentifier.customFieldId,
 				request.endDate,
-				scope,
+				[...new Set([...scope, ...otherRows])],
 				snapshot.personnelIdentifiers ?? {},
 			)
 		: null;
@@ -348,12 +399,7 @@ export function assessPayrollWorkCollection(
 			...missingPersonnelIdentifierBlockers({
 				customFieldId: personnelIdentifier.customFieldId,
 				values: personnelIdentifier.values,
-				employeeIds: [
-					...work.map((line) => line.employeeId),
-					...(request.personnelIdentifier?.employeesWithOtherRows ?? []).filter((id) =>
-						scoped.has(id),
-					),
-				],
+				employeeIds: [...work.map((line) => line.employeeId), ...otherRows],
 			}),
 		);
 	}
@@ -415,7 +461,20 @@ export function missingPersonnelIdentifierBlockers(input: {
 		}));
 }
 
-/** The scoped employees' identifier values, read as of the period's last day. */
+/**
+ * The selected employees the export carries absences or expense lines for (#821): they need an
+ * identifier value. Outside the scope only a payroll run's expense lines reach them (#1997).
+ */
+export function identifierEmployeesWithOtherRows(request: PayrollCollectionRequest): string[] {
+	const selected = new Set([...request.employeeIds, ...(request.selectedEmployeeIds ?? [])]);
+	return [
+		...new Set(
+			(request.personnelIdentifier?.employeesWithOtherRows ?? []).filter((id) => selected.has(id)),
+		),
+	];
+}
+
+/** The identifier values of the scoped employees and those with other rows, as of the period's last day. */
 function freezePersonnelIdentifier(
 	customFieldId: string,
 	asOf: string,
@@ -443,6 +502,33 @@ export function payrollWorkInputDigest(
 ): string {
 	const { digest: _digest, ...facts } = input;
 	return createHash("sha256").update(canonicalJson(facts)).digest("hex");
+}
+
+/**
+ * Whether a finding's interval reaches the employee's employee time inside their payroll window.
+ * An interval without a known end stays uncertain from its start to the window's end.
+ */
+function intervalTouchesEmployeeTime(
+	owner: PayrollCollectionEmployee | undefined,
+	relevance: { start: string; end: string | null },
+	request: Pick<PayrollCollectionRequest, "startDate" | "endDate">,
+): boolean {
+	if (!owner?.stints) return true;
+	const window = employeePayrollWindow(request.startDate, request.endDate, owner.timezone);
+	const start = parseInstant(relevance.start);
+	const end = relevance.end ? parseInstant(relevance.end) : window.endExclusive;
+	return hasEmployeeTimeWithin(owner.stints, {
+		start,
+		endExclusive: compareInstants(end, start) > 0 ? end : start,
+	});
+}
+
+/** Whether the moment just before `at` is the employee's employee time. */
+function employeeTimeEndsAt(owner: PayrollCollectionEmployee | undefined, at: Instant): boolean {
+	return hasEmployeeTimeWithin(owner?.stints ?? PLAIN_EMPLOYEE_STINTS, {
+		start: at.subtract({ nanoseconds: 1 }),
+		endExclusive: at,
+	});
 }
 
 /**

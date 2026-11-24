@@ -178,6 +178,7 @@
       "days-remaining": "verbleibende Tage",
       "description": "{year} Urlaubstage",
       "expires-in": "Läuft in {days} Tagen ab",
+      "externalContractor": "Urlaub gilt nicht für Externe Dienstleister.",
       "label-available": "Verfügbar",
       "label-pending": "Ausstehend",
       "label-used": "Verbraucht",

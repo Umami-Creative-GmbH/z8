@@ -275,6 +275,19 @@ describe("go-live checks (PostgreSQL)", () => {
 		expect(resolveGoLiveReadiness(results, 2)).toEqual({ status: "ready", warnings: [] });
 	});
 
+	it("needs no work policy for an external contractor: no work policy applies to their stint", async () => {
+		const { organizationId } = await createOrganizationWithOwner();
+		// The organization-wide policy covers employees; it never applies to a contractor's stint.
+		await assign(organizationId, await createPolicy(organizationId, "Default"), {
+			type: "organization",
+		});
+		await fixture.seedEmployee({ organizationId, engagementKind: "contractor" });
+
+		const result = workPolicyResult(await run(organizationId));
+
+		expect(result).toMatchObject({ outcome: "passed", checkedMemberCount: 2, failures: [] });
+	});
+
 	it("is unavailable, never passing, when a lookup fails", async () => {
 		const { organizationId } = await createOrganizationWithOwner();
 		await assign(organizationId, await createPolicy(organizationId, "Default"), {

@@ -12,6 +12,7 @@ import { getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { loadPayrollScope } from "@/lib/engagement/payroll-scope";
 import { isOrgAdminForOrganization } from "@/lib/payroll-access/org-admin";
 import {
 	getActivePayrollAccessGrantScope,
@@ -37,6 +38,7 @@ import {
 	type PayrollWorkspaceExportFormatId,
 	payrollWorkspaceExportFormatIds,
 } from "@/lib/payroll-export/format-registry";
+import { employeesWithPayoutsOrExpenseLines } from "@/lib/payroll-export/payout-and-expense-employees";
 import {
 	type ConfirmExportPreview,
 	type ConfirmExportResult,
@@ -752,7 +754,10 @@ export async function startScopedPayrollExportAction(
 > {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		const { actor, period, employeeIds } = await resolvePayrollExportScope(t, request);
+		const { actor, period, accessEmployeeIds, employeeIds } = await resolvePayrollExportScope(
+			t,
+			request,
+		);
 		if (!actor.employeeId) {
 			throw new ValidationError({
 				message: t(
@@ -762,7 +767,28 @@ export async function startScopedPayrollExportAction(
 				field: "formatId",
 			});
 		}
-		if (employeeIds.length === 0) {
+
+		// The whole access scope, as a settings or scheduled export selects people: the export
+		// narrows work, absences and payouts to employee time itself, while a payroll run
+		// classifies everyone's reports by their own days (#1997), as readiness and the
+		// identifier check do.
+		const filters: PayrollExportFilters = {
+			dateRange: {
+				start: period.start,
+				end: period.end,
+			},
+			employeeIds: accessEmployeeIds,
+		};
+
+		// Nobody with employee time is still an export when the run carries someone's reports.
+		if (
+			employeeIds.length === 0 &&
+			(await employeesWithPayoutsOrExpenseLines({
+				organizationId: actor.organizationId,
+				formatId,
+				filters,
+			}).then((carried) => carried.size === 0))
+		) {
 			throw new ValidationError({
 				message: t(
 					"payroll.export.nobodyEmployedInPeriod",
@@ -782,14 +808,6 @@ export async function startScopedPayrollExportAction(
 				field: "formatId",
 			});
 		}
-
-		const filters: PayrollExportFilters = {
-			dateRange: {
-				start: period.start,
-				end: period.end,
-			},
-			employeeIds,
-		};
 
 		// Only an organization administrator executes eligible historical repairs (#322),
 		// as for the repair route; other payroll users collect without repair.
@@ -1083,7 +1101,8 @@ async function isExportJobInPayrollActorScope(
  * The employees a payroll workspace export covers (#1001, #1957): org-wide for org
  * admins, active payroll access grant scope for delegated officers, plus covered
  * employees who left on or after the period's first day. An employee selection narrows
- * both.
+ * both. `accessEmployeeIds` is that scope; `employeeIds` only its people with employee time
+ * in the period (#1997), whose work, absences and payouts the file carries.
  */
 async function resolvePayrollExportScope(
 	t: PayrollTranslate,
@@ -1091,6 +1110,7 @@ async function resolvePayrollExportScope(
 ): Promise<{
 	actor: PayrollWorkspaceActor;
 	period: { start: PlainDate; end: PlainDate; label: string };
+	accessEmployeeIds: string[];
 	employeeIds: string[];
 }> {
 	const actor = await requirePayrollWorkspaceActor(t);
@@ -1102,13 +1122,21 @@ async function resolvePayrollExportScope(
 			leftAfterStartOf: request.startDate,
 		}),
 	]);
+	const scoped = intersectPayrollScope({
+		allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
+		requestedEmployeeIds,
+	});
+	// An External Contractor has no employee payroll (#1997): only people with employee time
+	// in the period count, so a scope of contractors only exports nobody and says so.
+	const payrollScope = await loadPayrollScope(db, actor.organizationId, scoped, {
+		startDate: period.start.toString(),
+		endDate: period.end.toString(),
+	});
 	return {
 		actor,
 		period,
-		employeeIds: intersectPayrollScope({
-			allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
-			requestedEmployeeIds,
-		}),
+		accessEmployeeIds: scoped,
+		employeeIds: [...payrollScope.employeeIds],
 	};
 }
 
@@ -1276,22 +1304,29 @@ export async function discardScopedPayrollRunAction(
 /**
  * Payroll readiness for payroll runs (#854): the expense reports and legacy
  * claims awaiting reimbursement that an export of this period, format and
- * employee selection would not carry, limited to the reader's payroll scope.
+ * employee selection would not carry, limited to the employees whose reports
+ * that run classifies: the reader's payroll scope, with or without employee
+ * time in the period, since a report goes by its own days (#1997). An External
+ * Contractor's reports are listed as left out, to be paid by bank transfer.
  */
 export async function getPayrollRunReadinessAction(
 	request: PayrollWorkspaceRequest & { formatId: string },
 ): Promise<ServerActionResult<PayrollRunReadiness>> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		const { actor, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(t, request);
+		// The run's employees: covered employees who left included, a selection outside the
+		// reader's scope refused.
+		const { actor, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+			undefined,
+			{ includeDeparted: true },
+		);
 		return getPayrollRunReadiness(db, {
 			organizationId: actor.organizationId,
 			formatId,
-			// Validated above as exact ISO dates: the period's logical dates.
-			period: {
-				startDate: parsePlainDate(request.startDate).toString(),
-				endDate: parsePlainDate(request.endDate).toString(),
-			},
+			// Validated as exact ISO dates: the period's logical dates.
+			period: { startDate: period.start.toString(), endDate: period.end.toString() },
 			employeeIds: scopedEmployeeIds,
 		});
 	});

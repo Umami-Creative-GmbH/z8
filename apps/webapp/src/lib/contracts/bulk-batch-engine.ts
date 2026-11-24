@@ -36,7 +36,7 @@ import type { ContractType } from "@/lib/validations/employee";
 import { adoptContractDefaultInTx, commitContractChangeInTx } from "./commit-contract-change";
 import { type ContractWriteTx, parseIsoCalendarDate } from "./contract-validation";
 import { resolveEffectiveContractOnDay } from "./resolve-contract";
-import type { CustomWorkDay, WorkModel } from "./types";
+import { type CustomWorkDay, storedBalanceMode, type WorkModel } from "./types";
 
 const logger = createLogger("ContractChangeBatchEngine");
 
@@ -648,7 +648,7 @@ async function loadPriorSparseStateInTx(
 		customDays,
 		workModel: divergedFields.has("workModel") ? resolved.workModel : null,
 		presenceOverride: divergedFields.has("presenceOverride") ? resolved.presenceOverride : null,
-		balanceMode: divergedFields.has("balanceMode") ? resolved.balanceMode : null,
+		balanceMode: divergedFields.has("balanceMode") ? storedBalanceMode(resolved.balanceMode) : null,
 		scheduleSource: divergedFields.has("scheduleSource") ? resolved.scheduleSource : null,
 		onCallHoursKind: resolved.onCallTerms?.hoursKind ?? null,
 		onCallWeeklyMinutes: resolved.onCallTerms?.weeklyMinutes ?? null,
@@ -656,7 +656,7 @@ async function loadPriorSparseStateInTx(
 		contractType: resolved.contractType,
 		hourlyRate: resolved.hourlyRate,
 		currency: resolved.currency,
-		employmentProfile: resolved.employmentProfile,
+		employmentProfile: resolved.employmentProfile ?? "regular",
 		arbzgScope: resolved.arbzgScope,
 		divergedFields,
 	};

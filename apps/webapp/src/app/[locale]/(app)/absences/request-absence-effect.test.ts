@@ -69,6 +69,11 @@ vi.mock("@/lib/absences/absence-days-resolver", () => ({
 	loadWorkingDays: callerMocks.loadWorkingDays,
 }));
 
+// Engagement kinds of the absence's days (#1996): contractor-employee-domain-exclusions.integration.test.ts.
+vi.mock("@/lib/absences/absence-engagement", () => ({
+	loadEngagementKindsOnDays: async () => new Set(["employee"]),
+}));
+
 // Per-year vacation balances (#1340): vacation-year-balance-store.test.ts and plan-preview.integration.test.ts.
 vi.mock("@/lib/absences/vacation-year-balance-store", () => ({
 	findYearsExceedingBalance: callerMocks.findYearsExceedingBalance,

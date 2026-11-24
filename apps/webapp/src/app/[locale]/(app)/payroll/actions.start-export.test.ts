@@ -16,6 +16,11 @@ const mockState = vi.hoisted(() => ({
 	listUnconfirmedPayrollRuns: vi.fn<() => Promise<UnconfirmedPayrollRun[]>>(),
 }));
 
+// Everyone is an employee here: External Contractor exclusion has its own PostgreSQL suites (#1997).
+vi.mock("@/lib/engagement/engagement-stints", async () => ({
+	loadEmployeeTime: async () =>
+		(await import("@/lib/engagement/testing/all-employee-time")).allEmployeeTime(),
+}));
 vi.mock("@/db", () => ({
 	db: {},
 	payrollExportConfig: {},

@@ -1,16 +1,8 @@
 import type { LocaleTranslationMap } from "@/db/schema/absence";
+import type { AbsenceType } from "./absence-types";
 import { builtInAbsenceCategoryTranslations } from "./built-in-category-translations";
 
-export type AbsenceCategoryDisplayType =
-	| "home_office"
-	| "sick"
-	| "vacation"
-	| "personal"
-	| "unpaid"
-	| "parental"
-	| "bereavement"
-	| "custom"
-	| "time_off_in_lieu";
+export type AbsenceCategoryDisplayType = AbsenceType;
 
 type TranslateFn = (key: string, fallback: string) => string;
 
@@ -79,6 +71,12 @@ export const builtInAbsenceCategoryText: Record<
 		name: "Time off in lieu",
 		descriptionKey: "settings.absenceCategories.defaults.timeOffInLieu.description",
 		description: "Time off taken against the work balance",
+	},
+	contractor_unavailability: {
+		nameKey: "settings.absenceCategories.defaults.contractorUnavailability.name",
+		name: "Unavailable (External Contractor)",
+		descriptionKey: "settings.absenceCategories.defaults.contractorUnavailability.description",
+		description: "Calendar note that an External Contractor is unavailable; not vacation or leave",
 	},
 };
 

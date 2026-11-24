@@ -16,6 +16,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import {
 	type EmploymentStint,
+	outsideVacationInYear,
 	REFERENCE_WORKING_DAYS_PER_WEEK,
 } from "./prorated-allowance";
 import {
@@ -291,6 +292,8 @@ export async function accrueVacationPeriods(
 	const employees = [
 		...(await loadEmployeeEmployments(db, { organizationId })),
 	].flatMap(([id, employee]) => {
+		// A year outside vacation accrues nothing (#1996).
+		if (outsideVacationInYear(employee, input.year)) return [];
 		const employments = accruingEmployments(employee);
 		return employments.length > 0 ? [{ id, employments }] : [];
 	});

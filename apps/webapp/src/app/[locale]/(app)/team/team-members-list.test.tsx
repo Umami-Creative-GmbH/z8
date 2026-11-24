@@ -320,6 +320,46 @@ describe("TeamMembersList", () => {
 		expect(bodyRows[2]?.textContent).toContain("Ada Lovelace");
 	});
 
+	it("badges External Contractors and filters the roster by engagement kind in card and table views", () => {
+		render(
+			<TeamMembersList
+				employees={[
+					employee({}),
+					employee({
+						id: "employee-2",
+						engagementKind: "contractor",
+						user: {
+							id: "user-2",
+							firstName: "Grace",
+							lastName: "Hopper",
+							name: "Grace Hopper",
+							email: "grace@example.com",
+							image: null,
+						},
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.getAllByText("External Contractor")).toHaveLength(1);
+
+		fireEvent.click(screen.getByRole("radio", { name: "External Contractors" }));
+		expect(screen.getByText("Grace Hopper")).toBeTruthy();
+		expect(screen.queryByText("Ada Lovelace")).toBeNull();
+
+		fireEvent.click(screen.getByRole("radio", { name: "Employees" }));
+		expect(screen.getByText("Ada Lovelace")).toBeTruthy();
+		expect(screen.queryByText("Grace Hopper")).toBeNull();
+
+		fireEvent.click(screen.getByRole("radio", { name: "All" }));
+		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
+		const rows = screen.getAllByRole("row").slice(1);
+		const contractor = rows.find((row) => row.textContent?.includes("Grace Hopper"));
+		const staff = rows.find((row) => row.textContent?.includes("Ada Lovelace"));
+		expect(contractor && within(contractor).getByText("External Contractor")).toBeTruthy();
+		expect(staff && within(staff).queryByText("External Contractor")).toBeNull();
+	});
+
 	it("hides former employees by default and offers to show them through the URL", () => {
 		render(<TeamMembersList employees={[employee({})]} />);
 

@@ -5,6 +5,7 @@ import { Effect } from "effect";
 import {
 	absenceCategory,
 	absenceEntry,
+	employee,
 	employeeDeparture,
 	employeeEmploymentPeriod,
 	shift,
@@ -25,6 +26,7 @@ import {
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
 import type { EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import type { EmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { resolvedPolicyVersionToEffectiveWorkPolicy } from "@/lib/work-policy/effective-work-policies";
@@ -38,6 +40,8 @@ import {
 export type RequirementEmployee = EmployeeRequirementInputs["scopedEmployee"] & {
 	organizationId: string;
 	teamId: string | null;
+	/** The kind in force today (#1996); read here only when absent and the person has no period. */
+	engagementKind?: EngagementKind;
 };
 
 function enumeratePlainDates(start: PlainDate, end: PlainDate): PlainDate[] {
@@ -97,6 +101,7 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 					startProvenance: employeeEmploymentPeriod.startProvenance,
 					endedAt: employeeEmploymentPeriod.endedAt,
 					createdAt: employeeEmploymentPeriod.createdAt,
+					engagementKind: employeeEmploymentPeriod.engagementKind,
 					departureId: employeeDeparture.id,
 				})
 				.from(employeeEmploymentPeriod)
@@ -131,8 +136,33 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 				startProvenance: row.startProvenance,
 				endedAt: row.endedAt ? instantFromDate(row.endedAt) : null,
 				createdAt: instantFromDate(row.createdAt),
+				engagementKind: row.engagementKind,
 			});
 		}
+		// The kind in force today decides only for someone without any recorded period. Callers
+		// usually pass it with the person; only the others are read, so a roster stays one read.
+		const unknownKindIds = people
+			.filter((person) => person.engagementKind === undefined && !periodsByEmployee.has(person.id))
+			.map((person) => person.id);
+		const engagementKindRows = unknownKindIds.length
+			? yield* database.query("calendar.rangeEngagementKinds", () =>
+					database.db
+						.select({ id: employee.id, engagementKind: employee.engagementKind })
+						.from(employee)
+						.where(
+							and(
+								eq(employee.organizationId, input.organizationId),
+								inArray(employee.id, unknownKindIds),
+							),
+						),
+				)
+			: [];
+		const engagementKindByEmployee = new Map<string, EngagementKind>(
+			people.flatMap((person) =>
+				person.engagementKind === undefined ? [] : [[person.id, person.engagementKind] as const],
+			),
+		);
+		for (const row of engagementKindRows) engagementKindByEmployee.set(row.id, row.engagementKind);
 		for (const employeeId of scopedIds) {
 			const rows = periodsByEmployee.get(employeeId) ?? [];
 			const intervals = rows.map((period) => ({
@@ -158,6 +188,7 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 					preloadedEmployees: people.map((person) => ({
 						id: person.id,
 						contractType: person.contractType,
+						engagementKind: engagementKindByEmployee.get(person.id) ?? "employee",
 						teamId: person.teamId,
 						userTimezone: person.userSettings?.timezone ?? null,
 					})),

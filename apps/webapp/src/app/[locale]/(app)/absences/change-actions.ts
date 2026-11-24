@@ -52,7 +52,12 @@ async function failure(error: unknown): Promise<ServerActionResult<never>> {
 	const closed = await monthClosedActionResult(error);
 	if (closed) return closed;
 	if (error instanceof AbsenceChangeError)
-		return { success: false, error: error.message, code: error.code };
+		return {
+			success: false,
+			error: error.message,
+			code: error.code,
+			...(error.refusal ? { refusal: error.refusal } : {}),
+		};
 	logger.error(
 		{ errorName: error instanceof Error ? error.name : "Unknown" },
 		"Absence change action failed",

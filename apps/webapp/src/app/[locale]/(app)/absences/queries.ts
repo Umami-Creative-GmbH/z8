@@ -4,6 +4,7 @@ import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceCategory, absenceEntry, employee } from "@/db/schema";
 import { getAbsenceDaysByAbsenceId } from "@/lib/absences/absence-days-resolver";
+import { categoryOfferedFor } from "@/lib/absences/category-rules";
 import {
 	type DeputyDisplay,
 	loadDeputyDisplays,
@@ -18,6 +19,7 @@ import type {
 } from "@/lib/absences/types";
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { holidayCalendarDate } from "@/lib/holidays/recurrence";
 import { mapAbsenceWithCategory } from "./mappers";
 
@@ -41,6 +43,8 @@ export async function getVacationBalanceResult(
 ): Promise<{
 	balance: VacationBalance | null;
 	configuration: VacationBalanceConfiguration | null;
+	/** An External Contractor that year (#1996): vacation does not apply, nothing is missing. */
+	externalContractor: boolean;
 }> {
 	const emp = await db.query.employee.findFirst({
 		where: eq(employee.id, employeeId),
@@ -48,10 +52,10 @@ export async function getVacationBalanceResult(
 	});
 
 	if (!emp) {
-		return { balance: null, configuration: null };
+		return { balance: null, configuration: null, externalContractor: false };
 	}
 
-	const { balances, configurations } = await loadVacationBalances(db, {
+	const { balances, configurations, externalContractors } = await loadVacationBalances(db, {
 		organizationId: emp.organizationId,
 		employeeIds: [employeeId],
 		year,
@@ -60,6 +64,7 @@ export async function getVacationBalanceResult(
 	return {
 		balance: balances.get(employeeId) ?? null,
 		configuration: configurations.get(employeeId) ?? null,
+		externalContractor: externalContractors.has(employeeId),
 	};
 }
 
@@ -161,7 +166,16 @@ export async function getHolidays(
 	});
 }
 
-export async function getAbsenceCategories(organizationId: string): Promise<
+/**
+ * The organization's active absence categories. With `engagementKinds` (the kinds of the
+ * person's stints), only those one of their stints allows (#1996): an External Contractor sees
+ * only unavailability, an employee never does, and someone converted between the two sees both.
+ * The request itself is decided by the stints its dates fall in.
+ */
+export async function getAbsenceCategories(
+	organizationId: string,
+	options: { engagementKinds?: readonly EngagementKind[] } = {},
+): Promise<
 	Array<{
 		id: string;
 		name: string;
@@ -180,7 +194,11 @@ export async function getAbsenceCategories(organizationId: string): Promise<
 		),
 	});
 
-	return categories.map((c) => ({
+	const { engagementKinds } = options;
+	const allowed = engagementKinds
+		? categories.filter((c) => categoryOfferedFor(engagementKinds, c.type))
+		: categories;
+	return allowed.map((c) => ({
 		id: c.id,
 		name: c.name,
 		type: c.type,

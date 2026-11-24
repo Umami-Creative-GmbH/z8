@@ -447,6 +447,29 @@ describe("cost rates on PostgreSQL", () => {
 	});
 
 	describe("separate from the wage", () => {
+		it("tells whether External Contractor terms can cost the person's work instead (#2001)", async () => {
+			// Cy worked as an External Contractor before becoming a manager here.
+			await admin.query(
+				`insert into employee_employment_period
+				 (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+				 values ($1, $2, 'closed', '2026-01-01T00:00:00Z', '2026-03-01T00:00:00Z', 'recorded', 'contractor')`,
+				[ids.organization, ids.managerEmployee],
+			);
+
+			await expect(
+				getCostRateHistory({ employeeId: ids.managerEmployee }),
+			).resolves.toMatchObject({
+				success: true,
+				data: { externalContractor: true },
+			});
+			await expect(
+				getCostRateHistory({ employeeId: ids.hourlyEmployee }),
+			).resolves.toMatchObject({
+				success: true,
+				data: { externalContractor: false },
+			});
+		});
+
 		it("suggests the hourly wage in effect without copying it", async () => {
 			await expect(
 				getCostRateHistory({ employeeId: ids.hourlyEmployee }),

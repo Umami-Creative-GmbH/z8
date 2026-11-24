@@ -1,7 +1,7 @@
 import { and, asc, eq, gt, gte, isNull, lt, or, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { payrollSettledDay, timeEntry, workPeriod } from "@/db/schema";
-import { employeeDepartureReview } from "@/db/schema/employee-lifecycle";
+import { employeeDepartureReview, employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -9,6 +9,7 @@ import {
 	instantFromDate,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+import { type EngagementKind, isEngagementKind } from "@/lib/engagement/engagement-kind";
 import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
 import type { LifecycleClient } from "./types";
 import type { PastDepartureImpactSummary } from "./view-types";
@@ -38,6 +39,12 @@ export async function inspectRetrospectiveDepartureImpact(
 		upperBound?: Instant | null;
 		timezone: string;
 		lastWorkingDay: string;
+		/**
+		 * The engagement kind of the period that ends (#1995). Payroll
+		 * reconciliation is employee-only: an External Contractor's stint never
+		 * requires it. Absent: employee.
+		 */
+		engagementKind?: EngagementKind;
 	},
 ): Promise<PastDepartureImpactSummary> {
 	const cutoffDate = dateFromInstant(input.cutoff);
@@ -171,7 +178,9 @@ export async function inspectRetrospectiveDepartureImpact(
 
 	const uniqueSettledDates = [...new Set(settledRows.map((row) => row.date))].sort();
 	const settledDayCount = settledRows.length;
-	const requiresPayrollReconciliation = overlappingClosedMonths.length > 0 || settledDayCount > 0;
+	const requiresPayrollReconciliation =
+		(input.engagementKind ?? "employee") === "employee" &&
+		(overlappingClosedMonths.length > 0 || settledDayCount > 0);
 	const requiresWorkAfterCutoffReview = postCutoffPeriods.length > 0 || timeEntryCount > 0;
 
 	return {
@@ -227,6 +236,16 @@ export async function reconcileRetrospectiveDepartureReviewsInTx(
 		autoResolveCleared?: boolean;
 	},
 ): Promise<ReconcileRetrospectiveReviewsResult> {
+	const [period] = await tx
+		.select({ engagementKind: employeeEmploymentPeriod.engagementKind })
+		.from(employeeEmploymentPeriod)
+		.where(
+			and(
+				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
+				eq(employeeEmploymentPeriod.employeeId, input.employeeId),
+				eq(employeeEmploymentPeriod.id, input.employmentPeriodId),
+			),
+		);
 	const impact = await inspectRetrospectiveDepartureImpact(tx, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
@@ -234,6 +253,7 @@ export async function reconcileRetrospectiveDepartureReviewsInTx(
 		upperBound: input.upperBound ?? null,
 		timezone: input.timezone,
 		lastWorkingDay: input.lastWorkingDay,
+		engagementKind: isEngagementKind(period?.engagementKind) ? period.engagementKind : "employee",
 	});
 	const cutoffDate = dateFromInstant(input.cutoff);
 	const nowDate = dateFromInstant(input.now);

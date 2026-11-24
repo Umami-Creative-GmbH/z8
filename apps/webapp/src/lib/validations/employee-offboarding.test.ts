@@ -93,6 +93,32 @@ describe("rehireEmployeeSchema", () => {
 			"validFrom",
 		);
 	});
+
+	describe("the engagement kind of the new period (#1995)", () => {
+		it("rehires an employee unless told otherwise, and still needs their work policy", () => {
+			expect(rehireEmployeeSchema.parse(valid).engagementKind).toBe("employee");
+			const withoutPolicy = rehireEmployeeSchema.safeParse({ ...valid, workPolicyId: null });
+			expect(withoutPolicy.success).toBe(false);
+			expect(withoutPolicy.error?.issues[0]?.path).toEqual(["workPolicyId"]);
+		});
+
+		it("engages an External Contractor without a work policy or an hourly wage", () => {
+			const parsed = rehireEmployeeSchema.parse({
+				...valid,
+				engagementKind: "contractor",
+				workPolicyId: null,
+				contractType: "hourly",
+				hourlyRate: null,
+			});
+			expect(parsed).toMatchObject({ engagementKind: "contractor", workPolicyId: null });
+		});
+
+		it("refuses an unknown engagement kind", () => {
+			expect(
+				rehireEmployeeSchema.safeParse({ ...valid, engagementKind: "freelancer" }).success,
+			).toBe(false);
+		});
+	});
 });
 
 describe("departure command schemas", () => {

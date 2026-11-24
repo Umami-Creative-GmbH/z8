@@ -15,6 +15,11 @@ import {
 	refusalForAbsenceDays,
 } from "./absence-days";
 import { loadWorkingDays } from "./absence-days-resolver";
+import { loadEngagementKindsOnDays } from "./absence-engagement";
+import {
+	absenceEngagementRefusal,
+	ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES,
+} from "./category-rules";
 import { hasExactAbsenceHours } from "./change-request-coverage";
 import type { AbsenceChangeDatabase } from "./change-request-store";
 import {
@@ -190,6 +195,23 @@ export async function validateAbsenceProposal(
 			"This absence category is unavailable.",
 		);
 	const proposed = input.proposed;
+	// The moved days decide the category as a new request's days do (#1996). Re-checked on
+	// approval, since the stints may change while the request is pending.
+	const engagementRefusal = absenceEngagementRefusal(
+		await loadEngagementKindsOnDays(database, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			startDate: proposed.startDate,
+			endDate: proposed.endDate,
+		}),
+		category.type,
+	);
+	if (engagementRefusal)
+		throw new AbsenceChangeError(
+			"engagement_category",
+			ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES[engagementRefusal],
+			engagementRefusal,
+		);
 	try {
 		await assertHistoricalVacationNotOverlapping(database, {
 			organizationId: input.organizationId,

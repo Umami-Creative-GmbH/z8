@@ -2,7 +2,11 @@
 
 import { IconCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { FormerEmployeeBadge, isMarkedFormer } from "@/components/former-employees/former-employee-ui";
+import { ExternalContractorBadge } from "@/components/engagement/engagement-kind-ui";
+import {
+	FormerEmployeeBadge,
+	isMarkedFormer,
+} from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
@@ -99,6 +103,7 @@ export function EmployeeSelectItem({
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-2">
 					<span className="font-medium truncate">{displayName}</span>
+					<ExternalContractorBadge engagementKind={employee.engagementKind} />
 					{isFormer && <FormerEmployeeBadge since={employee.formerSince} />}
 				</div>
 				{detailParts.length > 0 && (

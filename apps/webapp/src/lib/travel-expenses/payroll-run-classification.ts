@@ -1,5 +1,6 @@
 import type { TravelExpensePayrollRunInclusionLine } from "@/db/schema";
 import type { TravelExpenseReportSubmittedItem } from "@/lib/approvals/evidence/travel-expense-report-facts";
+import type { DaysEngagement } from "@/lib/engagement/employee-time";
 import { isExpensePayrollFormat } from "@/lib/payroll-export/expense-wage-type.types";
 import type { PayrollLineKind } from "./payroll-line-kind";
 import {
@@ -34,6 +35,16 @@ export type PayrollRunSkip =
 	| { reason: "unmapped_wage_type"; kinds: PayrollLineKind[] }
 	/** A run of another period, or a partly confirmed run, still includes it. */
 	| { reason: "included_in_other_run"; run: IncludedPayrollRun }
+	/**
+	 * Its days are time of an External Contractor stint (#1997): payroll never carries it; it is
+	 * paid outside payroll.
+	 */
+	| { reason: "external_contractor_days" }
+	/**
+	 * Its days meet an engagement change (#1997): part employee time, part External Contractor
+	 * time. Payroll never carries part of a report, so it is paid outside payroll.
+	 */
+	| { reason: "spans_engagement_change" }
 	| {
 			reason:
 				| "legacy_claim"
@@ -63,6 +74,11 @@ export interface PayrollRunCandidateInput {
 	/** Any payroll export format; API connectors take nothing. */
 	format: string;
 	period: { startDate: string; endDate: string };
+	/**
+	 * Whose time the report's days are (`PayrollScope.engagementOfDays`): payroll carries only a
+	 * report whose days are all employee time.
+	 */
+	engagement: DaysEngagement;
 	/** The format's wage-type code per payroll line kind; a missing kind is unmapped. */
 	codes: ReadonlyMap<string, string>;
 	/** Every line earlier confirmed payroll runs carried for the report. */
@@ -92,6 +108,8 @@ export function classifyPayrollRunCandidate(
 	) {
 		return skip({ reason: "included_in_other_run", run: held });
 	}
+	if (input.engagement === "contractor") return skip({ reason: "external_contractor_days" });
+	if (input.engagement === "both") return skip({ reason: "spans_engagement_change" });
 	const { revision } = input;
 	const result = computePayrollLines({
 		source: "report",

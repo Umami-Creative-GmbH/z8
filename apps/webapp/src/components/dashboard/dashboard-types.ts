@@ -118,6 +118,8 @@ export type HydrationWidgetData = {
 export type VacationBalanceData = {
 	year: number;
 	configuration: VacationBalanceConfiguration | null;
+	/** An External Contractor that year (#1996): vacation does not apply. */
+	externalContractor?: boolean;
 	balance: {
 		totalDays: number;
 		usedDays: number;

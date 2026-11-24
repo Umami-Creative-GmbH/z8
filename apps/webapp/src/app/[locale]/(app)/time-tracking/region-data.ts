@@ -4,6 +4,7 @@ import { unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import { hasContractorEngagement } from "@/lib/contractor-statements/engagement";
 import { localWeekRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
@@ -41,6 +42,24 @@ export type DrivingRegionData = {
 
 /** How many of the employee's flagged work periods the notice lists. */
 const DRIVING_NOTICE_LIMIT = 20;
+
+/**
+ * The contractor statement self-service (#2000): today in the employee's zone, the default
+ * period's end, when they ever had an External Contractor engagement; null otherwise.
+ */
+export async function readContractorStatementRegion(
+	context: EmployeeRenderContext,
+): Promise<{ today: string } | null> {
+	const isContractor = await hasContractorEngagement(
+		db,
+		context.employee.organizationId,
+		context.employee.id,
+	);
+	if (!isContractor) return null;
+	return {
+		today: systemClock.nowInstant().toZonedDateTimeISO(context.timezone).toPlainDate().toString(),
+	};
+}
 
 export const readSummaryRegion = cache(
 	async (context: EmployeeRenderContext): Promise<SummaryRegionData> => {
