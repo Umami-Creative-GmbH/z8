@@ -106,10 +106,7 @@ describe("go-live group (PostgreSQL)", () => {
 
 	async function seedInTeam(organizationId: string, teamId: string) {
 		const seeded = await fixture.seedEmployee({ organizationId });
-		await fixture.pool.query(`update employee set team_id = $1 where id = $2`, [
-			teamId,
-			seeded.employeeId,
-		]);
+		await fixture.placeInTeam(seeded.employeeId, teamId);
 		return seeded;
 	}
 
@@ -393,10 +390,7 @@ describe("go-live group (PostgreSQL)", () => {
 		const { organizationId, owner } = await createOrganizationWithOwner();
 		const warehouse = await createTeam(organizationId, "Warehouse");
 		await assignTeamPolicy(organizationId, warehouse, "Warehouse hours");
-		await fixture.pool.query(`update employee set team_id = $1 where id = $2`, [
-			warehouse,
-			owner.employeeId,
-		]);
+		await fixture.placeInTeam(owner.employeeId, warehouse);
 		await invite(organizationId, `${randomUUID()}@invitee.test`, { teamId: warehouse });
 		const unplacedEmail = `${randomUUID()}@invitee.test`;
 		const unplaced = await invite(organizationId, unplacedEmail);

@@ -54,14 +54,14 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 		input: { role?: "employee" | "manager" | "admin"; teamId?: string; name?: string } = {},
 	) {
 		const seeded = await fixture.seedEmployee({ organizationId });
-		await sql(`update employee set role = $1, team_id = $2 where id = $3`, [
+		await sql(`update employee set role = $1 where id = $2`, [
 			input.role ?? "employee",
-			input.teamId ?? null,
 			seeded.employeeId,
 		]);
 		if (input.name)
 			await sql(`update "user" set name = $1 where id = $2`, [input.name, seeded.userId]);
 		if (input.teamId) {
+			await fixture.placeInTeam(seeded.employeeId, input.teamId);
 			await sql(
 				`insert into team_membership (organization_id, team_id, employee_id) values ($1, $2, $3)`,
 				[organizationId, input.teamId, seeded.employeeId],
