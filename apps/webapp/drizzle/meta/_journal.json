@@ -2353,6 +2353,13 @@
       "when": 1813680000000,
       "tag": "0335_jarbschg_violation_types",
       "breakpoints": true
+    },
+    {
+      "idx": 336,
+      "version": "7",
+      "when": 1813766400000,
+      "tag": "0336_working_student_daytime_band",
+      "breakpoints": true
     }
   ]
 }

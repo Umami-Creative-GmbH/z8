@@ -2,6 +2,8 @@
  * #1988: `db:push` re-applies migration 0333 for what schema push cannot create (baseline seed,
  * guard triggers, exclusion constraints). Re-applying it to a migrated database changes nothing.
  * #1993: migration 0335 re-applies over a pushed or migrated database without error.
+ * #2017: migration 0336 (working-student daytime band) too; Drizzle declares its columns and check,
+ * so `drizzle-kit push` builds them and the installer needs nothing more.
  */
 import { readFile } from "node:fs/promises";
 import { getTableConfig } from "drizzle-orm/pg-core";
@@ -141,6 +143,96 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 			await apply0331();
 
 			expect(await releaseConstraints()).toEqual(before);
+		});
+	});
+
+	describe("migration 0336 (#2017)", () => {
+		async function apply0336() {
+			const migration = await readFile(
+				new URL("../../drizzle/0336_working_student_daytime_band.sql", import.meta.url),
+				"utf8",
+			);
+			const client = await pool.connect();
+			try {
+				await client.query("BEGIN");
+				await client.query("SET LOCAL search_path TO public");
+				await client.query(migration);
+				await client.query("COMMIT");
+			} catch (error) {
+				await client.query("ROLLBACK");
+				throw error;
+			} finally {
+				client.release();
+			}
+		}
+
+		async function band() {
+			const columns = await pool.query<{ column_name: string; column_default: string }>(
+				`SELECT column_name, column_default FROM information_schema.columns
+				 WHERE table_schema = 'public' AND table_name = 'organization_statutory_preference'
+					AND column_name LIKE 'working_student_daytime_%'
+				 ORDER BY column_name`,
+			);
+			const check = await pool.query<{ definition: string }>(
+				`SELECT pg_get_constraintdef(oid) AS definition FROM pg_constraint
+				 WHERE conname = 'organization_statutory_preference_daytime_band_check'`,
+			);
+			return { columns: columns.rows, check: check.rows.map((row) => row.definition) };
+		}
+
+		it("re-applies over a database that already has the band, twice", async () => {
+			const before = await band();
+			expect(before.columns).toEqual([
+				{ column_name: "working_student_daytime_end_minute", column_default: "1080" },
+				{ column_name: "working_student_daytime_start_minute", column_default: "360" },
+			]);
+			expect(before.check).toHaveLength(1);
+
+			await apply0336();
+			await apply0336();
+
+			expect(await band()).toEqual(before);
+		});
+
+		it("gives an organization's existing preferences the 06:00–18:00 band", async () => {
+			const before = await band();
+			const organizationId = `t2017-band-${crypto.randomUUID()}`;
+			await pool.query(
+				`ALTER TABLE "organization_statutory_preference"
+				 DROP COLUMN "working_student_daytime_start_minute",
+				 DROP COLUMN "working_student_daytime_end_minute"`,
+			);
+			try {
+				await pool.query(
+					`INSERT INTO organization (id, name, slug, created_at) VALUES ($1, $1, $1, now())`,
+					[organizationId],
+				);
+				await pool.query(
+					`INSERT INTO organization_statutory_preference (organization_id, warning_threshold_percent)
+					 VALUES ($1, 70)`,
+					[organizationId],
+				);
+
+				await apply0336();
+
+				expect(await band()).toEqual(before);
+				const { rows } = await pool.query(
+					`SELECT warning_threshold_percent, working_student_daytime_start_minute,
+						working_student_daytime_end_minute
+					 FROM organization_statutory_preference WHERE organization_id = $1`,
+					[organizationId],
+				);
+				expect(rows).toEqual([
+					{
+						warning_threshold_percent: 70,
+						working_student_daytime_start_minute: 360,
+						working_student_daytime_end_minute: 1080,
+					},
+				]);
+			} finally {
+				await apply0336();
+				await pool.query(`DELETE FROM organization WHERE id = $1`, [organizationId]);
+			}
 		});
 	});
 

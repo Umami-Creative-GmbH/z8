@@ -5,9 +5,10 @@
  * Compliance weeks run Monday–Sunday in the organization's timezone. Every minute of work on a day
  * the employee is a working student is classified by where it falls in that zone:
  *
- * - **core**: a lecture-period weekday between 06:00 and 18:00, the time studies need;
+ * - **core**: a lecture-period weekday inside the organization's daytime band (default
+ *   06:00–18:00), the time studies need;
  * - **lecture-free**: a day inside a recorded `employee_study_period` (semester break);
- * - **evening/weekend**: Saturday, Sunday, or a weekday before 06:00 or from 18:00.
+ * - **evening/weekend**: Saturday, Sunday, or a weekday before or after the daytime band.
  *
  * Minutes on days under another employment profile (regular, short-term, …) are **other-profile**
  * minutes: they never count toward the lecture-week rule, which binds only working-student days.
@@ -22,9 +23,10 @@
  * on its own. Findings are raised only for weeks in which the employee is a working student on at
  * least one day.
  *
- * The 06:00–18:00 daytime band is Z8's reading of the social-insurance carriers' "evening and night
- * hours" exception (GKV-Spitzenverband circular on employed students); the law names no hour, so it
- * is not a statutory baseline. Both limits come from `statutory_threshold`.
+ * The daytime band reads the social-insurance carriers' "evening and night hours" exception
+ * (GKV-Spitzenverband circular on employed students); the law names no hour, so it is not a
+ * statutory baseline but an organization statutory preference (#2017): each organization sets the
+ * band its health insurer accepts. Both limits come from `statutory_threshold`.
  */
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import { comparePlainDates, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
@@ -38,9 +40,24 @@ import { statutoryInputFingerprint } from "../fingerprint";
 import type { StatutoryPreferences } from "../preferences";
 import type { StatutoryThresholdTable } from "../thresholds";
 
-/** Weekday daytime (minutes after local midnight) that counts against the lecture-week limit. */
-export const WORKING_STUDENT_DAYTIME_START_MINUTE = 6 * 60;
-export const WORKING_STUDENT_DAYTIME_END_MINUTE = 18 * 60;
+/** Weekday daytime (minutes after local midnight, `[start, end)`) that counts against the lecture-week limit. */
+export interface WorkingStudentDaytimeBand {
+	readonly startMinute: number;
+	readonly endMinute: number;
+}
+
+/** The organization's daytime band, from its statutory preferences. */
+export function workingStudentDaytimeBandOf(
+	preferences: Pick<
+		StatutoryPreferences,
+		"workingStudentDaytimeStartMinute" | "workingStudentDaytimeEndMinute"
+	>,
+): WorkingStudentDaytimeBand {
+	return {
+		startMinute: preferences.workingStudentDaytimeStartMinute,
+		endMinute: preferences.workingStudentDaytimeEndMinute,
+	};
+}
 
 /** Weeks of the rolling ceiling window, the judged week included. */
 export const WORKING_STUDENT_ROLLING_WEEKS = 52;
@@ -193,17 +210,26 @@ function accumulate(
 	weeks: Map<string, WeekAccumulator>,
 	interval: WorkingStudentWorkInterval,
 	timezone: string,
+	band: WorkingStudentDaytimeBand,
 	facts: Pick<WorkingStudentEmployeeFacts, "lectureFreePeriods" | "isWorkingStudentDay">,
 ): void {
 	const elapsed = interval.end.epochMilliseconds - interval.start.epochMilliseconds;
 	const net = interval.netMinutes * 60_000;
 	if (elapsed <= 0 || net <= 0) return;
 	const ratio = Math.abs(net - elapsed) < 1 ? 1 : net / elapsed;
+	/**
+	 * The instant of a wall-clock minute of `day`: 00:00 is the day's start and 24:00 the next day's,
+	 * also when a DST change skips or repeats midnight; a skipped time moves forward by the gap.
+	 */
 	const at = (day: PlainDate, minute: number) =>
-		day
-			.toPlainDateTime({ hour: Math.floor(minute / 60), minute: minute % 60 })
-			.toZonedDateTime(timezone)
-			.toInstant();
+		minute <= 0
+			? day.toZonedDateTime(timezone).toInstant()
+			: minute >= 24 * 60
+				? day.add({ days: 1 }).toZonedDateTime(timezone).toInstant()
+				: day
+						.toPlainDateTime({ hour: Math.floor(minute / 60), minute: minute % 60 })
+						.toZonedDateTime(timezone)
+						.toInstant();
 
 	for (
 		let day = plainDateAt(interval.start, timezone);
@@ -212,8 +238,8 @@ function accumulate(
 	) {
 		const dayStart = day.toZonedDateTime(timezone).toInstant();
 		const nextDay = day.add({ days: 1 }).toZonedDateTime(timezone).toInstant();
-		const daytimeStart = at(day, WORKING_STUDENT_DAYTIME_START_MINUTE);
-		const daytimeEnd = at(day, WORKING_STUDENT_DAYTIME_END_MINUTE);
+		const daytimeStart = at(day, band.startMinute);
+		const daytimeEnd = at(day, band.endMinute);
 		const night =
 			overlapMilliseconds(interval.start, interval.end, dayStart, daytimeStart) +
 			overlapMilliseconds(interval.start, interval.end, daytimeEnd, nextDay);
@@ -292,13 +318,18 @@ export function evaluateWorkingStudentEmployee(input: {
 		readonly ceilingForwardOpen?: boolean;
 	};
 	readonly thresholds: StatutoryThresholdTable;
+	/** Warning tiers and the organization's daytime band. */
 	readonly preferences: Pick<
 		StatutoryPreferences,
-		"warningThresholdPercent" | "criticalThresholdPercent"
+		| "warningThresholdPercent"
+		| "criticalThresholdPercent"
+		| "workingStudentDaytimeStartMinute"
+		| "workingStudentDaytimeEndMinute"
 	>;
 	readonly facts: WorkingStudentEmployeeFacts;
 }): WorkingStudentEvaluation {
 	const { facts, thresholds } = input;
+	const band = workingStudentDaytimeBandOf(input.preferences);
 	const judgedFrom = mondayOf(parsePlainDate(input.judgedWeeks.from));
 	const judgedUntil = parsePlainDate(input.judgedWeeks.toExclusive);
 	const ceilingUntil = input.judgedWeeks.ceilingToExclusive
@@ -310,7 +341,7 @@ export function evaluateWorkingStudentEmployee(input: {
 
 	const accumulators = new Map<string, WeekAccumulator>();
 	for (const interval of facts.intervals) {
-		accumulate(accumulators, interval, input.timezone, facts);
+		accumulate(accumulators, interval, input.timezone, band, facts);
 	}
 	const workingStudentDaysOf = (monday: PlainDate) =>
 		[0, 1, 2, 3, 4, 5, 6]
@@ -424,12 +455,14 @@ export function evaluateWorkingStudentEmployee(input: {
 				// What the rule judges, not how the minutes were recorded: a shift worked as planned,
 				// weekend or evening work, and a re-recorded identical lecture-free period leave it as is.
 				// A clock-in without a shift grows by the minute: it counts by identity until clocked out.
+				// The organization's daytime band decides which minutes are core: changing it makes the
+				// week's acknowledgement stale.
 				inputFingerprint: statutoryInputFingerprint({
 					kind: "working_student_lecture_week",
 					employeeId: facts.employeeId,
 					subjectKey: week.subjectKey,
 					limitMinutes,
-					daytime: [WORKING_STUDENT_DAYTIME_START_MINUTE, WORKING_STUDENT_DAYTIME_END_MINUTE],
+					daytime: [band.startMinute, band.endMinute],
 					coreMinutes: minutes((acc?.core ?? 0) - (acc?.growingCore ?? 0)),
 					runningClockIns: [...(acc?.growing ?? [])].sort(),
 					workingStudentDays,
