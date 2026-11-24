@@ -77,7 +77,7 @@ export interface JarbschgSectorWorkHours {
  * 17, § 2 Abs. 2). A child under 15 gets null: § 7 S. 2 would extend § 14 to a child past full-time
  * schooling, which Z8 deliberately does not support, so that rare case stays blocked. A Jugendlicher
  * still in full-time compulsory schooling counts as a child (§ 2 Abs. 3) except in a school-holiday
- * job of at most four weeks a year (§ 5 Abs. 4); the data cannot tell, so the acknowledging admin
+ * job of at most four weeks per calendar year (§ 5 Abs. 4); the data cannot tell, so the acknowledging admin
  * confirms it. Night work outside it cannot be acknowledged. Abs. 7 (performances until 23:00) needs the authority's approval and is not an
  * employer's acknowledgement. Abs. 4 (no Abs. 2 Nr. 1–3 extension past 20:00 before a vocational
  * school day with lessons before 09:00) is not judged here: the acknowledging admin confirms it.
