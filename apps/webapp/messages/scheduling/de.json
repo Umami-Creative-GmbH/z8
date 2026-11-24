@@ -274,9 +274,12 @@
         "shiftSpanOn": "Unter 18: Die Schichtzeit am {date} beträgt {used} Min. vom Beginn der ersten bis zum Ende der letzten Arbeit; erlaubt sind höchstens {limit} Min. (11 Std. im Gaststättengewerbe, in der Landwirtschaft, Tierhaltung und auf Bau- und Montagestellen)"
       },
       "apprenticeship": {
+        "releaseDayShift": "Freistellungstag für Auszubildende: Berufsschul-, Blockunterrichts- oder Prüfungstag",
         "releaseDayShiftOn": "Freistellungstag für Auszubildende am {date}: Berufsschul-, Blockunterrichts- oder Prüfungstag",
+        "blockWeekTraining": "Blockunterrichtswoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildungsveranstaltungen erlaubt; an diesem Tag überschritten",
         "blockWeekTrainingWeek": "Blockunterrichtswoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildungsveranstaltungen erlaubt; überschritten am {date}",
         "blockWeekTrainingNote": "Die erlaubten Ausbildungsveranstaltungen (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) kommen zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen bei Beschäftigten unter 18 nicht zu den Tages- und Wochenhöchstgrenzen nach § 8",
+        "workplaceReturn": "Unter 18: keine Arbeit an diesem Tag, dem vollen Berufsschultag der Woche",
         "workplaceReturnOn": "Unter 18: keine Arbeit am {date}, dem vollen Berufsschultag der Woche"
       },
       "shortTerm": {

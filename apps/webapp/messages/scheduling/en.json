@@ -274,9 +274,12 @@
         "shiftSpanOn": "Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)"
       },
       "apprenticeship": {
+        "releaseDayShift": "Apprentice release day: school, block-release or exam day",
         "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
+        "blockWeekTraining": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance this day",
         "blockWeekTrainingWeek": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
         "blockWeekTrainingNote": "The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
+        "workplaceReturn": "Under 18: no work this day, the week's full vocational school day",
         "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
       },
       "shortTerm": {

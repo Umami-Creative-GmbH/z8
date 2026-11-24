@@ -208,6 +208,58 @@ describe("youthProtectionWarningText (#1993)", () => {
 		},
 	);
 
+	const release = {
+		...base,
+		domain: "apprenticeship" as const,
+		summary: { tier: "exceeded" as const },
+		day: undefined,
+		releaseDay: "2027-03-11",
+	};
+	const blockWeekSummary = {
+		tier: "exceeded" as const,
+		used: { unit: "minutes" as const, value: 250 },
+		limit: { unit: "minutes" as const, value: 120 },
+	};
+
+	it.each([
+		[
+			"a release-day conflict",
+			{ ...release, statutoryKind: "bbig_release_day_shift" },
+			"Apprentice release day: school, block-release or exam day",
+		],
+		[
+			"work past a block week's training allowance",
+			{ ...release, statutoryKind: "bbig_release_day_shift", summary: blockWeekSummary },
+			"Block-release week: 250 min of work on this week's school days, 120 min of in-company training allowed; past the allowance this day. The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
+		],
+		[
+			"a minor's return to work on a full school day",
+			{ ...release, statutoryKind: "jarbschg_school_day_workplace_return" },
+			"Under 18: no work this day, the week's full vocational school day",
+		],
+	])("leaves the release day of %s to a list that shows it beside the text", (_, finding, expected) => {
+		const calls: { key: string; fallback: string; params?: Record<string, unknown> }[] = [];
+		const t = ((key: string, fallback: string, params?: Record<string, unknown>) => {
+			calls.push({ key, fallback, params });
+			return fallback.replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name] ?? ""));
+		}) as Parameters<typeof youthProtectionWarningText>[1];
+
+		const text = youthProtectionWarningText(finding, t, "en-US", "24h", { dayShownBeside: true });
+
+		expect(text).toBe(expected);
+		expect(text).not.toContain("2027");
+		for (const { key, fallback, params } of calls) {
+			expect(catalogText(enCatalog, key)).toBe(fallback);
+			const german = catalogText(deCatalog, key);
+			expect(typeof german).toBe("string");
+			expect(german).not.toBe(fallback);
+			expect(german).not.toContain("{date}");
+			for (const name of Object.keys(params ?? {})) expect(german).toContain(`{${name}}`);
+		}
+		// Without a date beside it, the text still names the release day.
+		expect(textOf(finding).text).toContain("Mar 11, 2027");
+	});
+
 	it("keeps the release-day wording for other release conflicts", () => {
 		const { call } = textOf({
 			...base,

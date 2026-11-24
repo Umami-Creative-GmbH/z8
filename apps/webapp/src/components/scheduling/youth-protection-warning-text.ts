@@ -36,7 +36,7 @@ function findingWeekText(finding: StatutoryComplianceFinding, locale: string): s
  * Planner text for JArbSchG youth-protection and BBiG apprentice-release findings (#1993), or
  * null for other statutory kinds. Quantities are minutes or days, never money; clock times follow
  * the reader's `timeFormat`. With `dayShownBeside` (a list that shows the day or week next to the
- * text) a daily, weekly or shift-span line leaves its date out.
+ * text) a daily, weekly, shift-span or release-day line leaves its date out.
  */
 export function youthProtectionWarningText(
 	finding: StatutoryComplianceFinding,
@@ -162,11 +162,17 @@ export function youthProtectionWarningText(
 			// Work past a full block week's 2 h of in-company training: the week's total work on its
 			// block days (every finding of the week holds the same total), the limit, and the day.
 			if (finding.summary.limit) {
-				const week = t(
-					"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingWeek",
-					"Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
-					{ used, limit, date: releaseDateText(finding, locale) },
-				);
+				const week = dayShownBeside
+					? t(
+							"scheduling:scheduling.statutory.apprenticeship.blockWeekTraining",
+							"Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance this day",
+							{ used, limit },
+						)
+					: t(
+							"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingWeek",
+							"Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
+							{ used, limit, date: releaseDateText(finding, locale) },
+						);
 				// #2023: the allowed minutes stay out of a minor's § 8 totals; say why.
 				const note = t(
 					"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingNote",
@@ -174,12 +180,24 @@ export function youthProtectionWarningText(
 				);
 				return `${week}. ${note}`;
 			}
+			if (dayShownBeside) {
+				return t(
+					"scheduling:scheduling.statutory.apprenticeship.releaseDayShift",
+					"Apprentice release day: school, block-release or exam day",
+				);
+			}
 			return t(
 				"scheduling:scheduling.statutory.apprenticeship.releaseDayShiftOn",
 				"Apprentice release day on {date}: school, block-release or exam day",
 				{ date: releaseDateText(finding, locale) },
 			);
 		case "jarbschg_school_day_workplace_return":
+			if (dayShownBeside) {
+				return t(
+					"scheduling:scheduling.statutory.apprenticeship.workplaceReturn",
+					"Under 18: no work this day, the week's full vocational school day",
+				);
+			}
 			return t(
 				"scheduling:scheduling.statutory.apprenticeship.workplaceReturnOn",
 				"Under 18: no work on {date}, the week's full vocational school day",
