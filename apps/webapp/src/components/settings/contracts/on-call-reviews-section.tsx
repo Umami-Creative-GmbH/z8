@@ -28,6 +28,7 @@ import type { OnCallAcknowledgementRefusal } from "@/lib/statutory/on-call/ackno
 import type { OnCallReviewItem } from "@/lib/statutory/on-call/views";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
 	invalidatedItemClassName,
@@ -74,6 +75,7 @@ function AcknowledgeShortNoticeForm({
 			toast.success(t("common.onCall.reviews.acknowledged", "Agreement documented"));
 			// Reviews & Conflicts and every Employee Detail status show these findings.
 			void queryClient.invalidateQueries({ queryKey: onCallQueryScope(organizationId) });
+			void invalidateStatutoryReviewViews(queryClient, organizationId);
 		},
 		onError: (error) => {
 			toast.error(error.message);

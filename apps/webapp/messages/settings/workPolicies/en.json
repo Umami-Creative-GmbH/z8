@@ -364,6 +364,7 @@
         },
         "migrationTitle": "Contract migration and departure reviews",
         "invalidated": "Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
+        "noLongerApplies": "Acknowledgement no longer applies: the finding can no longer be acknowledged, so the documented reason no longer counts. Change the schedule or the contract instead.",
         "domain": {
           "label": "Area",
           "all": "All",
@@ -718,6 +719,8 @@
           "doubleCap": "Twice the limit",
           "prior": "Earlier exceedance months within 12 months: {months}",
           "documentedReason": "Documented reason: {reason}",
+          "documentedReasonNoLongerCounts": "Documented reason (no longer counts): {reason}",
+          "noLongerApplies": "Acknowledgement no longer applies: the month became the third exceedance within 12 months or went above twice the limit, which no acknowledgement covers. The documented reason no longer counts.",
           "empty": "No Minijob month above the monthly limit to review."
         },
         "refusal": {

@@ -14,12 +14,15 @@ import type {
 	StatutoryAcknowledgementHistoryState,
 	StatutoryAcknowledgementReviewStatus,
 } from "@/lib/statutory/acknowledgement-history";
-import type { StatutoryAcknowledgementKind } from "@/lib/statutory/acknowledgement-kinds";
 import {
 	isStatutoryReviewDomain,
 	type StatutoryReviewDomain,
 } from "@/lib/statutory/review-domains";
 import { cn } from "@/lib/utils";
+import {
+	type StatutoryAcknowledgementHistorySubject,
+	statutoryAcknowledgementHistoryQueryKey,
+} from "./statutory-review-query-keys";
 
 // Shared pieces of the unified Settings → Contracts → Reviews & Conflicts inbox (#1994).
 
@@ -67,23 +70,40 @@ export function reviewDomainLabel(filter: ReviewDomainFilter, t: Translate): str
 const ReviewInboxTimezone = createContext<string | null>(null);
 export const ReviewInboxTimezoneProvider = ReviewInboxTimezone.Provider;
 
-/** Classes that highlight an item whose acknowledgement newer work or shifts invalidated. */
+/**
+ * Classes that highlight an item whose acknowledgement no longer documents it: newer work, shifts
+ * or figures invalidated it (`stale`), or the finding can no longer be acknowledged
+ * (`no_longer_applies`).
+ */
 export function invalidatedItemClassName(status: string | null | undefined): string {
-	return status === "stale"
+	return status === "stale" || status === "no_longer_applies"
 		? "border-amber-500/70 bg-amber-50/60 dark:border-amber-400/60 dark:bg-amber-950/30"
 		: "";
 }
 
 /** Says, next to a highlighted item, why its acknowledgement no longer holds. */
 export function InvalidatedAcknowledgementNotice({
+	status = "stale",
 	className,
 	children,
 }: {
+	/** `stale` (the default): acknowledge again if it still holds; `no_longer_applies`: it cannot be. */
+	status?: "stale" | "no_longer_applies";
 	className?: string;
 	/** A domain's own wording; the generic one otherwise. */
 	children?: ReactNode;
 }) {
 	const { t } = useTranslate();
+	const generic =
+		status === "no_longer_applies"
+			? t(
+					"settings.contracts.reviews.noLongerApplies",
+					"Acknowledgement no longer applies: the finding can no longer be acknowledged, so the documented reason no longer counts. Change the schedule or the contract instead.",
+				)
+			: t(
+					"settings.contracts.reviews.invalidated",
+					"Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
+				);
 	return (
 		<p
 			className={cn(
@@ -92,41 +112,9 @@ export function InvalidatedAcknowledgementNotice({
 			)}
 		>
 			<IconAlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
-			<span>
-				{children ??
-					t(
-						"settings.contracts.reviews.invalidated",
-						"Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
-					)}
-			</span>
+			<span>{children ?? generic}</span>
 		</p>
 	);
-}
-
-export interface StatutoryAcknowledgementHistorySubject {
-	readonly employeeId: string;
-	readonly acknowledgementKind: StatutoryAcknowledgementKind;
-	readonly findingKind: string;
-	readonly subjectKey: string;
-}
-
-export function statutoryAcknowledgementHistoryQueryKey(
-	organizationId: string,
-	subject: StatutoryAcknowledgementHistorySubject,
-	currentInputFingerprint: string,
-	currentStatus: string,
-) {
-	return [
-		"contracts",
-		"statutory-acknowledgement-history",
-		organizationId,
-		subject.employeeId,
-		subject.acknowledgementKind,
-		subject.findingKind,
-		subject.subjectKey,
-		currentInputFingerprint,
-		currentStatus,
-	] as const;
 }
 
 function historyStateLabel(state: StatutoryAcknowledgementHistoryState, t: Translate) {

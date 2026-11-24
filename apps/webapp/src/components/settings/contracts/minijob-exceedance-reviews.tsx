@@ -33,6 +33,7 @@ import { Link } from "@/navigation";
 import { cn } from "@/lib/utils";
 import { formatEuroCents, formatMinijobMonth, minijobExceedanceLabel } from "./minijob-labels";
 import { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryPrefix } from "./minijob-query-keys";
+import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
 	invalidatedItemClassName,
@@ -68,7 +69,13 @@ const ACKNOWLEDGE_REFUSALS = {
 	],
 } satisfies RefusalMessages<MinijobExceedanceRefusal | StatutoryAcknowledgementRefusal>;
 
-function AcknowledgeForm({ review }: { review: MinijobExceedanceReview }) {
+function AcknowledgeForm({
+	organizationId,
+	review,
+}: {
+	organizationId: string;
+	review: MinijobExceedanceReview;
+}) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const mutation = useMutation({
@@ -95,6 +102,7 @@ function AcknowledgeForm({ review }: { review: MinijobExceedanceReview }) {
 			void queryClient.invalidateQueries({
 				queryKey: minijobMonitorQueryPrefix(review.employeeId),
 			});
+			void invalidateStatutoryReviewViews(queryClient, organizationId);
 		},
 		onError: (error) => {
 			toast.error(error.message);
@@ -340,16 +348,29 @@ function ReviewList({
 					)}
 					{review.acknowledgement.status !== "none" && review.acknowledgement.reason && (
 						<p className="text-xs">
-							{t(
-								"settings.contracts.minijob.review.documentedReason",
-								"Documented reason: {reason}",
-								{
-									reason: review.acknowledgement.reason,
-								},
-							)}
+							{review.acknowledgement.status === "no_longer_applies"
+								? t(
+										"settings.contracts.minijob.review.documentedReasonNoLongerCounts",
+										"Documented reason (no longer counts): {reason}",
+										{ reason: review.acknowledgement.reason },
+									)
+								: t(
+										"settings.contracts.minijob.review.documentedReason",
+										"Documented reason: {reason}",
+										{ reason: review.acknowledgement.reason },
+									)}
 						</p>
 					)}
-					{review.acknowledgement.status === "stale" ? <InvalidatedAcknowledgementNotice /> : null}
+					{review.acknowledgement.status === "no_longer_applies" ? (
+						<InvalidatedAcknowledgementNotice status="no_longer_applies">
+							{t(
+								"settings.contracts.minijob.review.noLongerApplies",
+								"Acknowledgement no longer applies: the month became the third exceedance within 12 months or went above twice the limit, which no acknowledgement covers. The documented reason no longer counts.",
+							)}
+						</InvalidatedAcknowledgementNotice>
+					) : review.acknowledgement.status === "stale" ? (
+						<InvalidatedAcknowledgementNotice />
+					) : null}
 					<StatutoryAcknowledgementHistory
 						organizationId={organizationId}
 						subject={{
@@ -362,7 +383,7 @@ function ReviewList({
 						currentStatus={review.acknowledgement.status}
 					/>
 					{review.acknowledgeable && review.status !== "acknowledged" && (
-						<AcknowledgeForm review={review} />
+						<AcknowledgeForm organizationId={organizationId} review={review} />
 					)}
 				</li>
 			))}

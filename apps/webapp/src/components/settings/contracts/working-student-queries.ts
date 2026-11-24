@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 
 /** TanStack Query keys for working-student data (#1991), always scoped to the organization. */
 export const workingStudentQueryKeys = {
@@ -23,5 +24,6 @@ export function invalidateWorkingStudentFindings(
 			queryKey: workingStudentQueryKeys.monitor(organizationId, employeeId),
 		}),
 		queryClient.invalidateQueries({ queryKey: workingStudentQueryKeys.reviews(organizationId) }),
+		invalidateStatutoryReviewViews(queryClient, organizationId),
 	]);
 }

@@ -364,6 +364,7 @@
         },
         "migrationTitle": "Vertragsmigration und Austrittsprüfungen",
         "invalidated": "Bestätigung ungültig: Arbeit, Schichten oder Beträge haben sich nach der Bestätigung geändert. Prüfen Sie die aktuellen Werte und bestätigen Sie erneut, wenn sie weiterhin gilt.",
+        "noLongerApplies": "Bestätigung gilt nicht mehr: Der Befund kann nicht mehr bestätigt werden, daher zählt der dokumentierte Grund nicht mehr. Passen Sie stattdessen den Dienstplan oder den Vertrag an.",
         "domain": {
           "label": "Bereich",
           "all": "Alle",
@@ -718,6 +719,8 @@
           "doubleCap": "Doppelte Grenze",
           "prior": "Frühere Überschreitungsmonate innerhalb von 12 Monaten: {months}",
           "documentedReason": "Dokumentierter Grund: {reason}",
+          "documentedReasonNoLongerCounts": "Dokumentierter Grund (zählt nicht mehr): {reason}",
+          "noLongerApplies": "Bestätigung gilt nicht mehr: Der Monat ist zur dritten Überschreitung innerhalb von 12 Monaten geworden oder liegt über dem Doppelten der Grenze, was keine Bestätigung abdeckt. Der dokumentierte Grund zählt nicht mehr.",
           "empty": "Kein Minijob-Monat über der Monatsgrenze zu prüfen."
         },
         "refusal": {

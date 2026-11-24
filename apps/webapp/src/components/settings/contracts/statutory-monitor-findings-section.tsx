@@ -12,10 +12,8 @@ import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { StatutoryReviewDomain } from "@/lib/statutory/review-domains";
 import { Link } from "@/navigation";
+import { statutoryMonitorFindingsQueryKey } from "./statutory-review-query-keys";
 import { reviewDomainLabel } from "./statutory-review-shared";
-
-export const statutoryMonitorFindingsQueryKey = (organizationId: string) =>
-	["contracts", "statutory-monitor-findings", organizationId] as const;
 
 /**
  * Statutory findings an org admin cannot acknowledge, only act on (#1994): Minijob tiers and the

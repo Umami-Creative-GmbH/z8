@@ -30,6 +30,7 @@ import type {
 	YouthSectorExceptionRefusal,
 } from "@/lib/statutory/youth/sector-exception-review";
 import { cn } from "@/lib/utils";
+import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
 	invalidatedItemClassName,
@@ -203,6 +204,7 @@ function YouthSectorExceptionItem({
 			Promise.all([
 				queryClient.invalidateQueries({ queryKey: youthSectorExceptionsKey(organizationId) }),
 				queryClient.invalidateQueries({ queryKey: queryKeys.compliance.all }),
+				invalidateStatutoryReviewViews(queryClient, organizationId),
 			]),
 	});
 	const form = useForm({

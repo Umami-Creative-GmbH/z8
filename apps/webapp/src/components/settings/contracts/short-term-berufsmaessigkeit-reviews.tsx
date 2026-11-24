@@ -26,6 +26,7 @@ import type { ShortTermBerufsmaessigkeitReview } from "@/lib/statutory/short-ter
 import { Link } from "@/navigation";
 import { cn } from "@/lib/utils";
 import { shortTermMonitorQueryKey, shortTermReviewsQueryKey } from "./short-term-query-keys";
+import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
 	invalidatedItemClassName,
@@ -55,6 +56,7 @@ function AcknowledgeForm({
 		void queryClient.invalidateQueries({
 			queryKey: shortTermMonitorQueryKey(organizationId, review.employeeId),
 		});
+		void invalidateStatutoryReviewViews(queryClient, organizationId);
 	};
 	const mutation = useMutation({
 		mutationFn: async (value: { reason: string; legalNote: string }) => {
