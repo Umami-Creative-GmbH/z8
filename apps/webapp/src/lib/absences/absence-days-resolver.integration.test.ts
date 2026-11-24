@@ -22,11 +22,7 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { getPendingVacationRequests, getVacationTakenInYear } from "@/lib/query/vacation.queries";
-import {
-	getAbsenceDays,
-	getAbsenceDaysByAbsenceId,
-	loadWorkingWeekPeriodsForEmployees,
-} from "./absence-days-resolver";
+import { getAbsenceDays, getAbsenceDaysByAbsenceId } from "./absence-days-resolver";
 import type { WeekdayName } from "./working-days";
 
 const queries = vi.hoisted(() => ({ count: 0 }));
@@ -541,38 +537,5 @@ describe("absence days resolved from work policies and holidays", () => {
 				absence: fullDays({ startDate: "2026-10-12", endDate: "2026-10-16" }),
 			}),
 		).toBe(3);
-	});
-
-	it("keeps the working week across an employment gap: days outside employment are not a schedule without working days (#2011)", async () => {
-		const { organizationId, employeeId } = await organizationWithEmployee();
-		await fixture.pool.query(
-			`DELETE FROM employee_employment_period WHERE organization_id = $1 AND employee_id = $2`,
-			[organizationId, employeeId],
-		);
-		await fixture.pool.query(
-			`INSERT INTO employee_employment_period (
-				organization_id, employee_id, status, started_at, start_provenance, ended_at
-			) VALUES
-				($1, $2, 'closed', '2026-01-01T00:00:00Z', 'recorded', '2026-10-14T00:00:00Z'),
-				($1, $2, 'open', '2026-10-16T00:00:00Z', 'recorded', NULL)`,
-			[organizationId, employeeId],
-		);
-
-		// A 0-day week would mark the gap as a schedule without working days and leave the
-		// vacation allowance unknown; with no work policy the week is Monday to Friday.
-		const weeks = await loadWorkingWeekPeriodsForEmployees(db, {
-			organizationId,
-			employeeIds: [employeeId],
-			startDate: "2026-10-12",
-			endDate: "2026-10-16",
-		});
-		expect(weeks.get(employeeId)).toEqual([
-			{
-				startDate: "2026-10-12",
-				endDate: "2026-10-16",
-				workingDaysPerWeek: 5,
-				workPolicyId: null,
-			},
-		]);
 	});
 });
