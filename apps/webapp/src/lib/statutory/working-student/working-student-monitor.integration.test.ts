@@ -491,7 +491,7 @@ describe("working-student monitor (PostgreSQL)", () => {
 			});
 		});
 
-		it("counts a clock-in made before its shift from the clock-in to the shift's end", async () => {
+		it("counts a clock-in made before its shift as its early minutes so far plus the shift", async () => {
 			const org = await fx.organization("a");
 			const student = await fx.workingStudent(org, "student");
 			const subareaId = await fx.subarea(org, student);
@@ -500,16 +500,21 @@ describe("working-student monitor (PostgreSQL)", () => {
 			await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "09:00", end: "17:00" });
 			await fx.openWork(org, student, { date: "2026-03-04", start: "08:45:42" });
 
-			// 960 + 495 minutes (from 08:45), before the shift starts and while it runs.
+			// 960 + the minutes from 08:45 so far + the 480 planned: the early minutes grow until the
+			// shift starts (08:50, 08:50, 08:51, then 09:00 and 12:13), the fingerprint holds.
 			const first = await lectureWeekAt(org.id, student.employeeId, "2026-03-04T07:50:10Z");
-			expect(first).toMatchObject({ coreMinutes: 1455, used: 1455 });
-			for (const now of [
-				"2026-03-04T07:50:50Z",
-				"2026-03-04T07:51:20Z",
-				"2026-03-04T08:00:00Z",
-				"2026-03-04T11:13:42.5Z",
-			]) {
-				expect(await lectureWeekAt(org.id, student.employeeId, now), now).toEqual(first);
+			expect(first).toMatchObject({ coreMinutes: 1445, used: 1445 });
+			for (const [now, minutes] of [
+				["2026-03-04T07:50:50Z", 1445],
+				["2026-03-04T07:51:20Z", 1446],
+				["2026-03-04T08:00:00Z", 1455],
+				["2026-03-04T11:13:42.5Z", 1455],
+			] as const) {
+				expect(await lectureWeekAt(org.id, student.employeeId, now), now).toEqual({
+					coreMinutes: minutes,
+					used: minutes,
+					fingerprint: first.fingerprint,
+				});
 			}
 			await acknowledgementStaysCurrent(org, student.employeeId, {
 				seenAt: "2026-03-04T07:50:10Z",

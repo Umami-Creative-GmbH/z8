@@ -202,6 +202,68 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 		expect(past.fingerprint).toBe(before.fingerprint);
 	});
 
+	it("keeps the publish fingerprint steady while a clock-in made hours before its shift reaches it", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// 16 h worked Monday and Tuesday; Wednesday 09:00–13:00 planned and clocked in at 06:00:42.
+		await fx.work(org, student, weekdays("2026-03-02", "08:00", "16:00").slice(0, 2));
+		await fx.shift(org, subareaId, student, { date: "2026-03-04", start: "09:00", end: "13:00" });
+		await fx.openWork(org, student, { date: "2026-03-04", start: "06:00:42" });
+
+		const evaluate = async (now: string) => {
+			const clock = vi.spyOn(Temporal.Now, "instant").mockReturnValue(Temporal.Instant.from(now));
+			try {
+				return await Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* ScheduleComplianceService;
+						return yield* service.evaluateScheduleWindow({
+							organizationId: org.id,
+							startDate: shiftDateBounds("2026-03-02", TZ).start,
+							endDateExclusive: shiftDateBounds("2026-03-09", TZ).start,
+							timezone: TZ,
+						});
+					}).pipe(
+						Effect.provide(
+							ScheduleComplianceServiceLive.pipe(
+								Layer.provide(workPolicyLayer),
+								Layer.provide(DatabaseServiceLive),
+							),
+						),
+					),
+				);
+			} finally {
+				clock.mockRestore();
+			}
+		};
+		const usedOf = (result: Awaited<ReturnType<typeof evaluate>>) =>
+			result.findings.flatMap((finding) =>
+				finding.type === "statutory" && finding.statutoryKind === "working_student_lecture_week"
+					? [finding.summary.used?.value]
+					: [],
+			);
+
+		// Berlin is UTC+1 in March: 08:59:10, 09:00:10, 09:01:10 and 12:00:10 on Wednesday.
+		const samples: Awaited<ReturnType<typeof evaluate>>[] = [];
+		for (const time of ["07:59:10", "08:00:10", "08:01:10", "11:00:10"]) {
+			samples.push(await evaluate(`2026-03-04T${time}Z`));
+		}
+
+		// Worked so far plus the shift still planned: the early minutes grow until the shift starts.
+		expect(samples.map(usedOf)).toEqual([
+			[960 + 179 + 240],
+			[960 + 180 + 240],
+			[960 + 180 + 240],
+			[960 + 180 + 240],
+		]);
+		const [first] = samples;
+		for (const sample of samples) expect(sample.fingerprint).toBe(first?.fingerprint);
+
+		// A Thursday daytime shift deepens the breach.
+		await fx.shift(org, subareaId, student, { date: "2026-03-05", start: "09:00", end: "17:00" });
+		expect((await evaluate("2026-03-04T08:00:10Z")).fingerprint).not.toBe(first?.fingerprint);
+	});
+
 	it("makes the publish acknowledgement stale when a lecture-week breach deepens", async () => {
 		const org = await fx.organization("a", TZ);
 		const student = await fx.workingStudent(org, "student");

@@ -44,7 +44,10 @@ How far a finding goes past its visible limit: `used` and `limit` in the same un
 readers see counts: an earnings-derived finding has its tier alone. A running clock-in counts
 without the minutes it grows by (`stableDepth`, server-only): its time inside planned shifts
 counts to the shift's end, also once it runs past it; only its minutes outside them (clocked in
-early, or past the shift's end) grow. A breach the rules attribute by position (a minor's rest
+early, between shifts, or past the shift's end) grow, whether or not the clock has reached the
+shift. While nobody is clocked in, a started shift still counts its rest from the end of its last
+recorded work, or from its start, until it ends: a break, a late start or a missed shift holds the
+figures. A breach the rules attribute by position (a minor's rest
 period or shift span) is matched by its day or week when the running work carries it. The planner's publish acknowledgement goes stale when a finding's severity, tier,
 acknowledgement, publication block or breach depth changes, not while the clock runs.
 _Avoid_: input fingerprint (that one documents an org admin's acknowledgement)

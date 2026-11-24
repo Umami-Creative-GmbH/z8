@@ -143,11 +143,12 @@ interface PlannedShift {
  *
  * - a running clock-in counts on the whole-minute grid, from the minute it was made in, so its
  *   seconds never tip the rounded totals;
- * - a running clock-in that belongs to a shift (it matches the shift, or runs into it) counts from
- *   the clock-in to that shift's end, and stands in for the shift; it keeps belonging to it once
- *   the shift has ended, and only the minutes past the shift's end grow with the clock, so the
- *   figure does not jump at the shift's end;
- * - a running clock-in that belongs to no shift counts up to `now`, so it grows once a minute;
+ * - a running clock-in that belongs to a shift (it matches the shift, or runs into it) stands in
+ *   for the shift: its time inside the shift counts to the shift's end, a fixed figure, also once
+ *   the shift has ended;
+ * - its minutes outside its shifts (clocked in early, between two shifts, past the last one's end)
+ *   count up to `now` and grow once a minute, whether or not the clock has reached the shift yet,
+ *   so the figure does not jump when it does; a clock-in that belongs to no shift grows whole;
  * - every other shift that has not ended counts in full, even one that started without a
  *   clock-in, less the part completed work matched to it already covers (a clocked-out break
  *   keeps the rest of the shift until the shift ends). An ended shift counts by its work.
@@ -180,23 +181,36 @@ function inProgressContributions(input: {
 	for (const clockIn of input.open) {
 		// Counted from the clock-in's whole minute: 08:00:42 on an 08:00 shift is the shift as planned.
 		const start = clockIn.start.round({ smallestUnit: "minute", roundingMode: "floor" });
-		let shiftEnd: Instant | null = null;
-		for (const planned of input.planned) {
-			const belongs =
-				workMatchesShift(planned, { start: clockIn.start, end: null }) ||
-				(compareInstants(clockIn.start, planned.end) < 0 &&
-					compareInstants(planned.start, input.now) < 0);
-			if (!belongs) continue;
+		// Its shifts' time from the clock-in on, as disjoint intervals in start order.
+		const inShifts: { start: Instant; end: Instant }[] = [];
+		for (const planned of input.planned
+			.filter(
+				(planned) =>
+					workMatchesShift(planned, { start: clockIn.start, end: null }) ||
+					(compareInstants(clockIn.start, planned.end) < 0 &&
+						compareInstants(planned.start, input.now) < 0),
+			)
+			.toSorted((a, b) => compareInstants(a.start, b.start))) {
 			covered.add(planned);
-			if (!shiftEnd || compareInstants(planned.end, shiftEnd) > 0) shiftEnd = planned.end;
+			const from = compareInstants(planned.start, start) > 0 ? planned.start : start;
+			const last = inShifts.at(-1);
+			if (last && compareInstants(from, last.end) <= 0) {
+				if (compareInstants(planned.end, last.end) > 0) last.end = planned.end;
+			} else if (compareInstants(from, planned.end) < 0) {
+				inShifts.push({ start: from, end: planned.end });
+			}
 		}
-		if (!shiftEnd) {
-			push(clockIn.ref, start, nowMinute, "now");
-			continue;
+		// Inside its shifts it counts to their end, a fixed figure. Every minute outside them (clocked
+		// in early, between shifts, past the last one's end) grows with the clock, whether or not the
+		// clock has reached the shift yet, so the figure does not jump when it does.
+		let cursor = start;
+		for (const interval of inShifts) {
+			const gapEnd = compareInstants(interval.start, nowMinute) < 0 ? interval.start : nowMinute;
+			push(clockIn.ref, cursor, gapEnd, "now");
+			push(clockIn.ref, interval.start, interval.end, "shift_end");
+			cursor = interval.end;
 		}
-		push(clockIn.ref, start, shiftEnd, "shift_end");
-		// Still clocked in past the shift's end: those minutes grow with the clock.
-		push(clockIn.ref, compareInstants(start, shiftEnd) > 0 ? start : shiftEnd, nowMinute, "now");
+		push(clockIn.ref, cursor, nowMinute, "now");
 	}
 	for (const planned of input.planned) {
 		if (covered.has(planned) || compareInstants(planned.end, input.now) <= 0) continue;
