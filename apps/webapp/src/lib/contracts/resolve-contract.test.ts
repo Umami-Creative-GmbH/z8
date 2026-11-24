@@ -757,6 +757,96 @@ describe("contracts pure helpers & resolver", () => {
 			expect(decide("2026-03-10", rows)).toBe("in_force:contractor");
 		}
 
+		// The employee's own midnight decides here too. In Berlin 2026-03-09T23:00Z starts 10 March,
+		// so the zero-length stint is never in force; at 2026-03-10T00:00Z (01:00) it is, and wins
+		// that day on its later record; 2026-03-28T23:00Z starts the DST day.
+		const zeroLengthStartingAt = (start: string, contractorEnd: string) =>
+			zeroLengthAtStart.map((row) =>
+				row.id === "employee"
+					? { ...row, startedAt: parseInstant(start), endedAt: parseInstant(start) }
+					: { ...row, startedAt: parseInstant(start), endedAt: parseInstant(contractorEnd) },
+			);
+		const startCases = [
+			{
+				start: "2026-03-09T23:00:00Z",
+				end: "2026-03-10T11:00:00Z",
+				days: ["2026-03-09", "2026-03-10"],
+				kind: "contractor",
+			},
+			{
+				start: "2026-03-10T00:00:00Z",
+				end: "2026-03-10T11:00:00Z",
+				days: ["2026-03-09", "2026-03-10"],
+				kind: "employee",
+			},
+			{
+				start: "2026-03-28T23:00:00Z",
+				end: "2026-03-29T10:00:00Z",
+				days: ["2026-03-28", "2026-03-29"],
+				kind: "contractor",
+			},
+		];
+		for (const { start, end, days, kind } of startCases) {
+			const rows = zeroLengthStartingAt(start, end);
+			for (const ordered of [rows, [...rows].reverse()]) {
+				expect(decide(days[0] as string, ordered, BERLIN)).toBe(`before_start:${kind}`);
+				expect(decide(days[1] as string, ordered, BERLIN)).toBe(`in_force:${kind}`);
+			}
+		}
+
+		// A first-day conversion: the contractor stint that takes over during the first day decides
+		// that day, so it decides the days before it too.
+		const firstDayConversion = [
+			period(
+				"employee",
+				"employee",
+				"2026-03-10T08:00:00Z",
+				"2026-03-10T12:00:00Z",
+				"2026-01-01T00:00:00Z",
+			),
+			period("contractor", "contractor", "2026-03-10T12:00:00Z", null, "2026-01-01T00:00:00Z"),
+		];
+		for (const rows of [firstDayConversion, [...firstDayConversion].reverse()]) {
+			expect(decide("2026-03-09", rows)).toBe("before_start:contractor");
+			expect(decide("2026-03-10", rows)).toBe("in_force:contractor");
+		}
+
+		// Three stints starting together, in every row order: the one in force at the end of the
+		// start day decides it and every day before.
+		const threeTied = [
+			period(
+				"short",
+				"contractor",
+				"2026-03-10T08:00:00Z",
+				"2026-03-10T10:00:00Z",
+				"2026-01-03T00:00:00Z",
+			),
+			period("open", "employee", "2026-03-10T08:00:00Z", null, "2026-01-01T00:00:00Z"),
+			period(
+				"zero",
+				"contractor",
+				"2026-03-10T08:00:00Z",
+				"2026-03-10T08:00:00Z",
+				"2026-01-02T00:00:00Z",
+			),
+		];
+		const [a, b, c] = threeTied as [
+			EmploymentPeriodSnapshot,
+			EmploymentPeriodSnapshot,
+			EmploymentPeriodSnapshot,
+		];
+		for (const rows of [
+			[a, b, c],
+			[a, c, b],
+			[b, a, c],
+			[b, c, a],
+			[c, a, b],
+			[c, b, a],
+		]) {
+			expect(decide("2026-03-09", rows)).toBe("before_start:open");
+			expect(decide("2026-03-10", rows)).toBe("in_force:open");
+		}
+
 		// Same record time too: the id decides, as for a day in force.
 		const sameRecord = [
 			period("a", "employee", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),

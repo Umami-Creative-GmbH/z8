@@ -353,16 +353,16 @@ export function engagementPeriodDecidingDay(
 
 /**
  * The stint deciding a day no employment period covers (#1996): the stint that ended last
- * before the day, or, before the first stint, the stint that starts first after it. Only
- * callers that found no period on the day use this.
+ * before the day, or, before the first stint, the stint `resolveEmploymentPeriodForDay` picks on
+ * the first day a stint starts. Only callers that found no period on the day use this.
  *
- * Stints ending (or starting) at the same instant tie. Among the tied stints, the tie goes to the
- * one `resolveEmploymentPeriodForDay` picks on the last day in force (or the first), so the
- * engagement kind does not flip at the boundary: after the end, the one the resolver picks on the
- * last day before it (a zero-length stint ending at midnight is never picked; otherwise the later
- * start, then the later record, then the greater id); before the start, the one the resolver picks
- * on the start day (a zero-length stint at that day's midnight is never picked; otherwise the stint
- * still active at the end of the day first, then the later record, then the greater id).
+ * Stints ending at the same instant tie. Among the tied stints, the tie goes to the one the
+ * resolver picks on the last day in force (a zero-length stint ending at midnight is never
+ * picked; otherwise the later start, then the later record, then the greater id), so the
+ * engagement kind does not flip at the boundary. Before the first stint the resolver's pick on the
+ * first start day decides directly, so it does not flip there either, also when a stint that starts
+ * later that day takes over. Only when the resolver covers none of the stints starting that day
+ * (all zero-length at its midnight) does the earliest start decide, ties by record and id.
  *
  * Known difference: payroll (`engagement/employee-time.ts`, `kindAt`) lets the contractor win
  * overlapping stints instead. The schema allows overlapping stints, but normal conversions
@@ -406,7 +406,16 @@ function periodOutsideEmployment(
 		}
 	}
 	if (preceding) return { period: preceding.period, position: "after_end" };
-	if (following) return { period: following.period, position: "before_start" };
+	if (following) {
+		// The days before the first stint continue whichever stint decides the first day in force,
+		// also when a later stint takes over on that same day (a first-day conversion).
+		const firstDay = resolveEmploymentPeriodForDay(
+			periods,
+			plainDateAt(following.startedAt, employeeCalendarTimezone),
+			employeeCalendarTimezone,
+		);
+		return { period: firstDay.period ?? following.period, position: "before_start" };
+	}
 	return null;
 }
 
@@ -435,10 +444,8 @@ function endsTieBefore(
 }
 
 /**
- * Whether `left` decides the days before a start it shares with `right`: whichever of the two the
- * resolver picks on the start day decides the days before it. A zero-length stint starting at the
- * day's midnight is never in force, so the other one decides. When the resolver covers neither
- * (both zero-length at midnight), the comparator settles it by start, record and id.
+ * Whether `left` precedes `right` among stints starting at the same instant, for the fallback when
+ * the resolver covers none of them on their start day: the comparator at the end of that day.
  */
 function startsTieBefore(
 	left: EmploymentPeriodSnapshot,
@@ -446,14 +453,7 @@ function startsTieBefore(
 	sharedStart: Instant,
 	employeeCalendarTimezone: string,
 ): boolean {
-	const startDay = plainDateAt(sharedStart, employeeCalendarTimezone);
-	const { period } = resolveEmploymentPeriodForDay(
-		[left, right],
-		startDay,
-		employeeCalendarTimezone,
-	);
-	if (period) return period === left;
-	const startDayEnd = startDay
+	const startDayEnd = plainDateAt(sharedStart, employeeCalendarTimezone)
 		.add({ days: 1 })
 		.toZonedDateTime(employeeCalendarTimezone)
 		.toInstant();
