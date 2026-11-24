@@ -94,6 +94,11 @@ export interface StatutoryComplianceFinding {
 	 * and weekly maximums sit on every piece of work past the cap. A date, never money.
 	 */
 	day?: string;
+	/**
+	 * JArbSchG night work (#1993): the night minutes outside the hours § 14 JArbSchG allows for the
+	 * minor's age, which no sector exception covers. Minutes, never money.
+	 */
+	beyondSectorHours?: number;
 	/** Null when the finding cannot be acknowledged. */
 	acknowledgementStatus: "none" | "current" | "stale" | null;
 	/** True when the organization blocks publishing this finding (JArbSchG hard limits). */

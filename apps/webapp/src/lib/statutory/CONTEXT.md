@@ -123,16 +123,25 @@ planned shifts and stays current while the day is worked roughly as planned (clo
 minutes early, out a few minutes late); other shifts, or a span 15 minutes or more past the
 planned shifts' span, make it stale.
 
-**Night-work sector hours** (§ 14 Abs. 2, 3 JArbSchG):
+**Night-work sector hours** (§ 14 Abs. 2, 3, 5, 6 JArbSchG):
 Minors may work only from 06:00 to 20:00 (§ 14 Abs. 1). An org admin's sector exception covers
-night work only inside the widest hours § 14 Abs. 2, 3 allows for the minor's age on that day:
-from their 16th birthday 05:00 to 23:00 (hospitality and fairgrounds until 22:00, multi-shift
-operations until 23:00, agriculture from 05:00 or until 21:00, bakeries from 05:00), from their
-17th birthday also from 04:00 (bakeries). The evening is judged by the age that day, the early
-morning by the age that morning. Night work outside them, or by anyone under 16, cannot be
-acknowledged, as a span over 11 hours cannot: the finding stays and blocks publication like a
-hard limit. Extensions after notice to or by permit of the supervisory authority (§ 14 Abs. 5,
-7) are not employer acknowledgements and are not modelled.
+night work only inside the union of the hours § 14 lets the employer use for the minor's age
+without the supervisory authority's approval: at any age 05:00 to 21:00 (Abs. 5 S. 1: until 21:00
+where the usual working time ends after 20:00 for transport reasons, after notice to the
+authority; Abs. 6: from 05:00 in the warm season in workplaces with extraordinary heat); from the
+16th birthday 05:00 to 23:30 (Abs. 2: hospitality and fairgrounds until 22:00, multi-shift
+operations until 23:00, agriculture from 05:00 or until 21:00, bakeries from 05:00; Abs. 5 S. 2:
+multi-shift operations from 05:30 or until 23:30 after notice); from the 17th birthday also from
+04:00 (Abs. 3, bakeries). The evening is judged by the age that day, the early morning by the age
+that morning. Night work outside them cannot be acknowledged, as a span over 11 hours cannot:
+the finding stays and blocks publication like a hard limit, and the planner names only its
+minutes outside the hours (`beyondSectorHours`). Abs. 5 needs only a notice to the authority,
+which the admin confirms; Abs. 7 (performances until 23:00) needs the authority's approval and is
+out of scope. Which permission applies, and that § 14 Abs. 4 does not exclude it (no Abs. 2
+Nr. 1–3 work after 20:00 on the day before a vocational school day whose lessons start before
+09:00), is what the acknowledgement confirms: lesson start times of school days are optional, block
+weeks carry none and minors at school need not be recorded as apprentices, so Abs. 4 is not
+judged automatically.
 _Avoid_: one acknowledgement lifting night work at any hour or age
 
 ## Relationships

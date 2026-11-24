@@ -136,4 +136,16 @@ describe("limitDirection reaches Scheduling and restricted readers", () => {
 		expect(projected.day).toBe("2027-03-02");
 		expect(projected.releaseDay).toBeUndefined();
 	});
+
+	it("carries the night minutes outside the § 14 sector hours, and only those", () => {
+		const night = {
+			...finding({ tier: "exceeded", used: minutes(225) }),
+			kind: "jarbschg_night_work",
+			beyondSectorHours: 15,
+		};
+		expect(toStatutoryComplianceFinding(night).beyondSectorHours).toBe(15);
+		expect(
+			"beyondSectorHours" in toStatutoryComplianceFinding(finding({ used: minutes(540) })),
+		).toBe(false);
+	});
 });

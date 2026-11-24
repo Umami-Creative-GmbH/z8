@@ -219,11 +219,11 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		expect(await shiftStatus(late)).toBe("published");
 	});
 
-	it("keeps blocking night work outside the § 14 Abs. 2, 3 sector hours: under 16, or at 02:00", async () => {
+	it("keeps blocking night work outside the § 14 sector hours: a 15-year-old past 21:00, or at 02:00", async () => {
 		await seed.blockJarbschgPublish(org);
 		const fifteen = await fx.employee(org, "fifteen", { birthday: "2012-01-01" });
 		const sixteen = await fx.employee(org, "sixteen", { birthday: "2011-01-01" });
-		const evening = await shift(fifteen, "2027-03-02", "17:00", "21:00");
+		const evening = await shift(fifteen, "2027-03-02", "17:00", "21:30");
 		const overnight = await shift(sixteen, "2027-03-03", "22:00", "03:00");
 
 		await acknowledgeSectorExceptions(fifteen);

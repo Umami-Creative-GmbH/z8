@@ -166,11 +166,11 @@ export function jarbschgFindingOf(input: {
 }): StatutoryFinding<JarbschgRule> {
 	const { breach, interval } = input;
 	const sectorException = jarbschgSectorExceptionRules.has(breach.rule);
-	// § 14 Abs. 2, 3: night work outside the sector hours for the minor's age (any night work under
-	// 16) has no exception; it is judged like a sector finding but cannot be acknowledged.
-	const acknowledgeableSector =
-		sectorException &&
-		!(breach.rule === "jarbschg_night_work" && (breach.beyondSectorHours ?? 0) > 0);
+	// § 14 Abs. 2, 3, 5, 6: night work outside the sector hours for the minor's age has no
+	// exception; it is judged like a sector finding but cannot be acknowledged.
+	const beyondSectorHours =
+		breach.rule === "jarbschg_night_work" ? (breach.beyondSectorHours ?? 0) : 0;
+	const acknowledgeableSector = sectorException && beyondSectorHours === 0;
 	// § 12: a span of up to 11 h is lawful in the sectors the law names; the admin acknowledges that
 	// the sector applies, as for the other sector exceptions. Judged by the day's span alone.
 	const sectorShiftSpan =
@@ -227,6 +227,7 @@ export function jarbschgFindingOf(input: {
 		...(sectorException && breach.coveredMinutes !== undefined
 			? { coveredMinutes: breach.coveredMinutes }
 			: {}),
+		...(beyondSectorHours > 0 ? { beyondSectorHours } : {}),
 		// Recorded or running work cannot be unpublished; only planned shifts block publication.
 		blocksPublication: input.blockPublish && !interval.recorded && !interval.inProgress,
 	};

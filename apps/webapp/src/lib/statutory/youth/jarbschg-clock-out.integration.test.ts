@@ -404,19 +404,19 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 				})
 			).find((finding) => finding.kind === "jarbschg_night_work");
 		const subareaId = await seed.subarea(org, owner);
-		// 15 years old: no sector hours apply.
+		// 15 years old until 21:30: past the 21:00 § 14 Abs. 5 S. 1 allows at any age.
 		const fifteen = await fx.employee(org, "fifteen", { birthday: "2010-06-01" });
 		await seed.shift(org, fifteen, {
 			subareaId,
 			creatorUserId: owner.userId,
 			date: "2026-03-03",
 			startTime: "17:00",
-			endTime: "21:00",
+			endTime: "21:30",
 		});
 		const young = await nightOf(fifteen);
 		expect(young).toMatchObject({ acknowledgementKind: null });
 		expect(young && statutoryAcknowledgementSubjectOf(young)).toBeNull();
-		// 16 years old until 22:30: within the multi-shift hours (until 23:00).
+		// 16 years old until 22:30: within the multi-shift hours (until 23:00, 23:30 after notice).
 		const sixteen = await fx.employee(org, "sixteen", { birthday: "2009-06-01" });
 		await seed.shift(org, sixteen, {
 			subareaId,

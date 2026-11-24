@@ -41,7 +41,7 @@ export const JARBSCHG_SECTOR_MAX_SHIFT_SPAN_MINUTES = 660;
 /**
  * Rules a statutory sector exception may lift (§§ 14 Abs. 2–7, 16 Abs. 2, 17 Abs. 2, 18 Abs. 2
  * JArbSchG): night, Saturday, Sunday and ordinary holiday work; night work only within the
- * hours § 14 Abs. 2, 3 allows for the minor's age (`jarbschgSectorWorkHours`, like the 11 h cap
+ * hours § 14 Abs. 2, 3, 5, 6 allow for the minor's age (`jarbschgSectorWorkHours`, like the 11 h cap
  * on a sector shift span). The others are hard limits,
  * among them `jarbschg_holiday_prohibited`: work on 24 and 31 December after 14:00 (§ 18 Abs. 1,
  * which has no exception) and on 25 December, 1 January, Easter Sunday and 1 May (excluded from
@@ -63,17 +63,28 @@ export interface JarbschgSectorWorkHours {
 }
 
 /**
- * The widest hours § 14 JArbSchG lets an employer extend a minor's day to, by age, or null when
- * none apply. § 14 Abs. 2: over-16s (from their 16th birthday) until 22:00 in hospitality and
- * the Schaustellergewerbe, until 23:00 in multi-shift operations, from 05:00 or until 21:00 in
- * agriculture, from 05:00 in bakeries and Konditoreien; § 14 Abs. 3: over-17s in bakeries from
- * 04:00. The union is 05:00–23:00 at 16 and 04:00–23:00 from 17. Night work outside it, or by
- * anyone under 16, cannot be acknowledged: the extensions after notice to or by permit of the
- * supervisory authority (§ 14 Abs. 5, 7) are not an employer's acknowledgement.
+ * The widest hours § 14 JArbSchG lets an employer extend a minor's day to without the supervisory
+ * authority's approval, by age (completed years), or null when the age is unknown. The union of:
+ * - Abs. 2 (from the 16th birthday, "über 16 Jahre"): Nr. 1 hospitality and the
+ *   Schaustellergewerbe until 22:00, Nr. 2 multi-shift operations until 23:00, Nr. 3 agriculture
+ *   from 05:00 or until 21:00, Nr. 4 bakeries and Konditoreien from 05:00;
+ * - Abs. 3 (from the 17th birthday): bakeries from 04:00;
+ * - Abs. 5 S. 1 (any age, after notice to the supervisory authority): until 21:00 where the usual
+ *   working time ends after 20:00 for transport reasons; Abs. 5 S. 2 (from the 16th birthday,
+ *   after notice): multi-shift operations from 05:30 or until 23:30;
+ * - Abs. 6 (any age): in workplaces with extraordinary heat, from 05:00 in the warm season.
+ * So 05:00–21:00 under 16, 05:00–23:30 at 16 and 04:00–23:30 from 17. Night work outside it cannot
+ * be acknowledged. Abs. 7 (performances until 23:00) needs the authority's approval and is not an
+ * employer's acknowledgement. Abs. 4 (no Abs. 2 Nr. 1–3 extension past 20:00 before a vocational
+ * school day with lessons before 09:00) is not judged here: the acknowledging admin confirms it.
  */
 export function jarbschgSectorWorkHours(ageYears: number | null): JarbschgSectorWorkHours | null {
-	if (ageYears === null || ageYears < 16) return null;
-	return { fromMinuteOfDay: ageYears >= 17 ? 4 * 60 : 5 * 60, untilMinuteOfDay: 23 * 60 };
+	if (ageYears === null) return null;
+	if (ageYears < 16) return { fromMinuteOfDay: 5 * 60, untilMinuteOfDay: 21 * 60 };
+	return {
+		fromMinuteOfDay: ageYears >= 17 ? 4 * 60 : 5 * 60,
+		untilMinuteOfDay: 23 * 60 + 30,
+	};
 }
 
 /**
@@ -206,7 +217,7 @@ export interface JarbschgBreach {
 	 */
 	readonly coveredMinutes?: number;
 	/**
-	 * Night breaches: the night minutes outside the sector hours § 14 Abs. 2, 3 allows for the
+	 * Night breaches: the night minutes outside the sector hours § 14 Abs. 2, 3, 5, 6 allow for the
 	 * minor's age (`jarbschgSectorWorkHours`). Above zero, no sector exception covers the work.
 	 */
 	readonly beyondSectorHours?: number;
@@ -391,7 +402,7 @@ function nightOverlapMinutes(interval: Span, timezone: string, limits: JarbschgL
 }
 
 /**
- * Night minutes of `interval` outside the § 14 Abs. 2, 3 sector hours: the evening judged by the
+ * Night minutes of `interval` outside the § 14 Abs. 2, 3, 5, 6 sector hours: the evening judged by the
  * minor's age on its day, the early morning by their age on that morning.
  */
 function nightMinutesBeyondSectorHours(
@@ -693,7 +704,7 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 					involves: [interval.dayKey],
 				});
 			// § 14 Abs. 1: no work between 20:00 and 06:00; a sector exception covers only the hours
-			// § 14 Abs. 2, 3 allows for the minor's age.
+			// § 14 Abs. 2, 3, 5, 6 allow for the minor's age.
 			const night = nightOverlapMinutes(minorSpan, input.timezone, limits);
 			if (night > 0) {
 				const outside = shift
