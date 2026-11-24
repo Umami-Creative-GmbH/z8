@@ -12,11 +12,11 @@ import { useTolgee, useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Temporal } from "temporal-polyfill";
 import type { DateRange, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
-import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { useTimeFormat, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
+import { scheduleXTimeAxisFormat, toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import { parsePlainDate, type ZonedDateTime } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
@@ -24,6 +24,7 @@ import { ShiftDetailsPanel } from "../shifts/shift-details-panel";
 import { employeeScheduleWeek, employeeShiftEvent } from "./employee-schedule-utils";
 import { EmployeeShiftAgenda } from "./employee-shift-agenda";
 import { ScheduleReadFailure } from "./schedule-read-failure";
+import { shiftCalendarEventComponents } from "./shift-calendar-event";
 import { calendarRangeToDateRange } from "./shift-scheduler-utils";
 import { useShiftSchedulerData } from "./use-shift-scheduler-data";
 
@@ -51,6 +52,7 @@ export function EmployeeShiftSchedule({
 	const isDark = resolvedTheme === "dark";
 	const isMobile = useIsMobile();
 	const weekStartDay = useWeekStartDay();
+	const timeFormat = useTimeFormat();
 	const today = Temporal.Now.plainDateISO(parseIanaTimeZone(organizationTimezone));
 	const [anchorKey, setAnchorKey] = useState(() => focusDate ?? today.toString());
 	const week = employeeScheduleWeek(parsePlainDate(anchorKey), weekStartDay);
@@ -83,6 +85,7 @@ export function EmployeeShiftSchedule({
 		timezone: organizationTimezone,
 		firstDayOfWeek: weekStartDay === "monday" ? 1 : 7,
 		locale: toScheduleXLocale(locale),
+		weekOptions: { timeAxisFormatOptions: scheduleXTimeAxisFormat(timeFormat) },
 		isResponsive: false,
 		events: [],
 		isDark,
@@ -145,7 +148,10 @@ export function EmployeeShiftSchedule({
 				)}
 				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border">
 					<div className="h-full min-w-[42rem]">
-						<ScheduleXCalendar calendarApp={calendar} />
+						<ScheduleXCalendar
+							calendarApp={calendar}
+							customComponents={shiftCalendarEventComponents}
+						/>
 					</div>
 					{shiftsLoading && (
 						<div

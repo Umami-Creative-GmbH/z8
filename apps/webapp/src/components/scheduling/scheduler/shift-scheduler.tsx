@@ -14,11 +14,11 @@ import type {
 	ShiftTemplate,
 	ShiftWithRelations,
 } from "@/app/[locale]/(app)/scheduling/types";
-import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { useTimeFormat, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
+import { scheduleXTimeAxisFormat, toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import { type PlainDate, parsePlainDate, type ZonedDateTime } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { ShiftRequestsReview } from "../shift-requests/shift-requests-panel";
@@ -31,6 +31,7 @@ import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
 import { ScheduleReadFailure } from "./schedule-read-failure";
 import { ScheduleShiftList } from "./schedule-shift-list";
 import { createScheduleXDragAndDropPlugin } from "./schedule-x-drag-and-drop";
+import { shiftCalendarEventComponents } from "./shift-calendar-event";
 import {
 	calendarRangeToDateRange,
 	eventToShiftTimes,
@@ -232,7 +233,10 @@ function PlannerShiftScheduler({
 				{/* `isolate` keeps Schedule-X's z-indexes (sticky header 100) below dialogs and sheets. */}
 				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border lg:flex-1">
 					<div className="h-full min-w-[42rem]">
-						<ScheduleXCalendar calendarApp={calendar} />
+						<ScheduleXCalendar
+							calendarApp={calendar}
+							customComponents={shiftCalendarEventComponents}
+						/>
 					</div>
 					{/* Over the calendar, not instead of it, so it stays mounted while a new range loads. */}
 					{shiftsLoading && (
@@ -358,11 +362,14 @@ function usePlannerCalendar({
 		setDateRange(calendarRangeToDateRange(range));
 	};
 
+	const timeFormat = useTimeFormat();
+
 	// Create calendar
 	const calendar = useCalendarApp({
 		views: [createViewDay(), createViewWeek(), createViewMonthGrid()],
 		defaultView: "week",
 		locale: toScheduleXLocale(locale),
+		weekOptions: { timeAxisFormatOptions: scheduleXTimeAxisFormat(timeFormat) },
 		isResponsive: false,
 		selectedDate: initialView.selectedDate,
 		timezone: organizationTimezone,

@@ -1,3 +1,5 @@
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
+
 // Every app language maps explicitly; `language-coverage.test.ts` fails when one is missing.
 export const SCHEDULE_X_LOCALES: Readonly<Record<string, string>> = {
 	en: "en-US",
@@ -26,4 +28,15 @@ export const SCHEDULE_X_LOCALES: Readonly<Record<string, string>> = {
 
 export function toScheduleXLocale(language: string | undefined): string {
 	return SCHEDULE_X_LOCALES[language ?? ""] ?? SCHEDULE_X_LOCALES.en;
+}
+
+/**
+ * Schedule-X's `weekOptions.timeAxisFormatOptions` for the user's 12/24-hour setting. Schedule-X
+ * accepts only `xx-YY` locales, so the hour cycle can't ride on the locale (`-u-hc-h23`); its
+ * event times ignore this option and are drawn by our own event components instead.
+ */
+export function scheduleXTimeAxisFormat(timeFormat: TimeFormat): Intl.DateTimeFormatOptions {
+	return timeFormat === "12h"
+		? { hour: "numeric", hourCycle: "h12" }
+		: { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
 }
