@@ -151,7 +151,7 @@ function MonthsTable({
 											</span>
 										)}
 										{detail && detail.missingWageMinutes > 0 && (
-											<span className="text-amber-700 text-xs dark:text-amber-400">
+											<span className="text-warning text-xs">
 												{t(
 													"settings.contracts.minijob.missingWage",
 													"Some work has no hourly wage in its terms and is not counted.",

@@ -177,7 +177,8 @@ describe("MinijobExceedanceReviews (#1989)", () => {
 		const notice = await screen.findByText(/Acknowledgement no longer applies/);
 		expect(notice.textContent).toContain("above twice the limit");
 		expect(notice.textContent).toContain("documented reason no longer counts");
-		expect(notice.closest("li")?.className).toContain("border-amber-500/70");
+		expect(notice.closest("li")?.className).toContain("border-warning");
+		expect(notice.closest("li")?.className).not.toMatch(/amber/);
 		expect(
 			screen.getByText("Documented reason (no longer counts): Covered a sick colleague"),
 		).toBeTruthy();

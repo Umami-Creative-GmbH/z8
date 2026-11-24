@@ -40,7 +40,7 @@ export function PublishComplianceDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconAlertTriangle className="size-5 text-amber-600" aria-hidden="true" />
+						<IconAlertTriangle className="size-5 text-warning" aria-hidden="true" />
 						{t(
 							"scheduling.publish.complianceAcknowledgmentRequired",
 							"Compliance Acknowledgment Required",

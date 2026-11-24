@@ -64,9 +64,7 @@ export function MinijobTierBadge({
 		<Badge
 			variant={variant}
 			className={
-				tier === "warning" || tier === "critical"
-					? "border-amber-500/50 text-amber-700 dark:text-amber-400"
-					: undefined
+				tier === "warning" || tier === "critical" ? "border-warning/50 text-warning" : undefined
 			}
 		>
 			{tierLabel(tier, t)}

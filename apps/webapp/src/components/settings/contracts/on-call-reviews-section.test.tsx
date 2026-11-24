@@ -204,7 +204,7 @@ describe("OnCallReviewsSection (#1992)", () => {
 		expect(await screen.findByText("Bob")).toBeTruthy();
 		expect(screen.queryByText("Alice")).toBeNull();
 		const bob = screen.getByText("Bob").closest("li");
-		expect(bob?.className).toMatch(/border-amber/);
+		expect(bob?.className).toMatch(/border-warning/);
 
 		fireEvent.click(screen.getByRole("button", { name: "Acknowledgement history" }));
 		expect(await screen.findByText("Hanna Admin")).toBeTruthy();

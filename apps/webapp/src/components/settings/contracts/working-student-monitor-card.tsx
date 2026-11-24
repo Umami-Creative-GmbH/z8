@@ -110,7 +110,7 @@ function SeverityBadge({ severity }: { severity: WorkingStudentFindingView["seve
 			{t("settings.contracts.workingStudent.severity.critical", "Critical")}
 		</Badge>
 	) : (
-		<Badge variant="outline" className="border-amber-500/60 text-amber-700 dark:text-amber-400">
+		<Badge variant="outline" className="border-warning/60 text-warning">
 			{t("settings.contracts.workingStudent.severity.warning", "Warning")}
 		</Badge>
 	);
@@ -632,7 +632,7 @@ function MonitorContent({
 							key={finding.id}
 							className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm"
 						>
-							<IconAlertTriangle className="size-4 text-amber-600" aria-hidden="true" />
+							<IconAlertTriangle className="size-4 text-warning" aria-hidden="true" />
 							<SeverityBadge severity={finding.severity} />
 							<span className="font-medium tabular-nums">{finding.subjectKey}</span>
 							<span>{workingStudentFindingText(finding, t, locale)}</span>

@@ -73,7 +73,7 @@ export function reviewDomainLabel(filter: ReviewDomainFilter, t: Translate): str
  */
 export function invalidatedItemClassName(status: string | null | undefined): string {
 	return status === "stale" || status === "no_longer_applies"
-		? "border-amber-500/70 bg-amber-50/60 dark:border-amber-400/60 dark:bg-amber-950/30"
+		? "border-warning/60 bg-warning/10"
 		: "";
 }
 
@@ -101,12 +101,7 @@ export function InvalidatedAcknowledgementNotice({
 					"Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
 				);
 	return (
-		<p
-			className={cn(
-				"flex items-start gap-1.5 text-amber-800 text-xs dark:text-amber-300",
-				className,
-			)}
-		>
+		<p className={cn("flex items-start gap-1.5 text-warning text-xs", className)}>
 			<IconAlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
 			<span>{children ?? generic}</span>
 		</p>
@@ -214,7 +209,7 @@ export function StatutoryAcknowledgementHistory({
 											variant={entry.state === "current" ? "secondary" : "outline"}
 											className={cn(
 												(entry.state === "stale" || entry.state === "no_longer_applies") &&
-													"border-amber-500/70 text-amber-800 dark:text-amber-300",
+													"border-warning/60 text-warning",
 												entry.state === "superseded" && "text-muted-foreground",
 											)}
 										>
@@ -233,7 +228,7 @@ export function StatutoryAcknowledgementHistory({
 										</time>
 									</div>
 									{entry.state === "no_longer_applies" ? (
-										<p className="text-amber-800 dark:text-amber-300">
+										<p className="text-warning">
 											{t(
 												"settings.contracts.reviews.history.noLongerAppliesDetail",
 												"Recorded for these figures, but it does not document the current state: the finding can no longer be acknowledged.",

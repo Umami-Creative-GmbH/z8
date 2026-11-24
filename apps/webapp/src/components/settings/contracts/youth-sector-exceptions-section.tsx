@@ -234,10 +234,7 @@ function YouthSectorExceptionItem({
 					</span>
 				) : null}
 				{finding.acknowledgementStatus === "stale" ? (
-					<Badge
-						variant="outline"
-						className="border-amber-500/70 text-amber-800 dark:text-amber-300"
-					>
+					<Badge variant="outline" className="border-warning/60 text-warning">
 						{t("settings.contracts.reviews.youth.stale", "Changed since last acknowledged")}
 					</Badge>
 				) : null}
