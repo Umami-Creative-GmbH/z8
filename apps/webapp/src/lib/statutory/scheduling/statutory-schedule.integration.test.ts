@@ -10,7 +10,10 @@ import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { recordStatutoryAcknowledgement } from "../acknowledgements";
 import { type StatutoryFinding, statutoryFindingId } from "../finding";
-import { saveOrganizationStatutoryPreferences } from "../preferences";
+import {
+	DEFAULT_STATUTORY_PREFERENCES,
+	saveOrganizationStatutoryPreferences,
+} from "../preferences";
 import type { StatutoryScheduleContext, StatutoryScheduleContributor } from "./contributor";
 import { addedStatutoryScheduleFindings, evaluateStatutoryScheduleFindings } from "./evaluate";
 
@@ -62,6 +65,7 @@ describe("statutory scheduling seam (PostgreSQL)", () => {
 		const admin = await fx.user("admin");
 		const student = await fx.employee(org, "student");
 		await saveOrganizationStatutoryPreferences(db, {
+			...DEFAULT_STATUTORY_PREFERENCES,
 			organizationId: org.id,
 			actorUserId: admin.userId,
 			warningThresholdPercent: 30,
