@@ -238,6 +238,35 @@ function parseFixedDays(raw: string | null): readonly DayOfWeek[] | null {
 }
 
 /**
+ * Which of two stints covering the same day decides it: negative when `left` does. The stint
+ * still active at the end of the day (`nextDayStart`) first, then the later `startedAt` (none
+ * counts as earliest), then the later record (`createdAt`), then the greater id. Independent of
+ * the order the stints were read in. `resolveEmploymentPeriodForDay` sorts by it, and
+ * `periodOutsideEmployment` breaks ties by it so the days just outside a tie continue the stint
+ * that decides the last (or first) day in force.
+ */
+function compareStintsForDay(
+	left: EmploymentPeriodSnapshot,
+	right: EmploymentPeriodSnapshot,
+	nextDayStart: Instant,
+): number {
+	const leftActiveAtEod =
+		left.endedAt === null || compareInstants(left.endedAt, nextDayStart) >= 0 ? 1 : 0;
+	const rightActiveAtEod =
+		right.endedAt === null || compareInstants(right.endedAt, nextDayStart) >= 0 ? 1 : 0;
+	if (rightActiveAtEod !== leftActiveAtEod) return rightActiveAtEod - leftActiveAtEod;
+
+	const leftStart = left.startedAt?.epochNanoseconds ?? BigInt(-1);
+	const rightStart = right.startedAt?.epochNanoseconds ?? BigInt(-1);
+	if (rightStart > leftStart) return 1;
+	if (rightStart < leftStart) return -1;
+
+	const createdCmp = compareInstants(right.createdAt, left.createdAt);
+	if (createdCmp !== 0) return createdCmp;
+	return right.id.localeCompare(left.id);
+}
+
+/**
  * Resolves the active employment period for a calendar day in `employeeCalendarTimezone`.
  * Half-open `[startedAt, endedAt)`. On a same-day departure + rehire, deduplicates the
  * shared calendar date once by selecting the rehire stint active at end-of-day.
@@ -272,22 +301,9 @@ export function resolveEmploymentPeriodForDay(
 		return { employmentPeriodId: null, period: null, isEmployed: false };
 	}
 
-	const sorted = [...intersecting].sort((left, right) => {
-		const leftActiveAtEod =
-			left.endedAt === null || compareInstants(left.endedAt, nextDayStart) >= 0 ? 1 : 0;
-		const rightActiveAtEod =
-			right.endedAt === null || compareInstants(right.endedAt, nextDayStart) >= 0 ? 1 : 0;
-		if (rightActiveAtEod !== leftActiveAtEod) return rightActiveAtEod - leftActiveAtEod;
-
-		const leftStart = left.startedAt?.epochNanoseconds ?? BigInt(-1);
-		const rightStart = right.startedAt?.epochNanoseconds ?? BigInt(-1);
-		if (rightStart > leftStart) return 1;
-		if (rightStart < leftStart) return -1;
-
-		const createdCmp = compareInstants(right.createdAt, left.createdAt);
-		if (createdCmp !== 0) return createdCmp;
-		return right.id.localeCompare(left.id);
-	});
+	const sorted = [...intersecting].sort((left, right) =>
+		compareStintsForDay(left, right, nextDayStart),
+	);
 
 	const winner = sorted[0] ?? null;
 	return {
@@ -336,20 +352,19 @@ export function engagementPeriodDecidingDay(
 }
 
 /**
- * Whether `candidate` wins a tie between stints ending or starting at the same instant over
- * `current`: the later record, then the greater id, as `resolveEmploymentPeriodForDay` breaks ties.
- * Independent of the order the stints were read in.
- */
-function winsTie(candidate: EmploymentPeriodSnapshot, current: EmploymentPeriodSnapshot): boolean {
-	const created = compareInstants(candidate.createdAt, current.createdAt);
-	if (created !== 0) return created > 0;
-	return candidate.id.localeCompare(current.id) > 0;
-}
-
-/**
  * The stint deciding a day no employment period covers (#1996): the stint that ended last
  * before the day, or, before the first stint, the stint that starts first after it. Only
  * callers that found no period on the day use this.
+ *
+ * Stints ending (or starting) at the same instant tie. The tie goes to the stint
+ * `resolveEmploymentPeriodForDay` picks on the last day in force (or the first), so the
+ * engagement kind does not flip at the boundary: after the end, the later start, then the later
+ * record, then the greater id; before the start, the stint still active at the end of its start
+ * day first, then the later record, then the greater id.
+ *
+ * Known difference: payroll (`engagement/employee-time.ts`, `kindAt`) lets the contractor win
+ * overlapping stints instead. The schema allows overlapping stints, but normal conversions
+ * (which end one stint where the next starts) never create them.
  */
 function periodOutsideEmployment(
 	periods: readonly EmploymentPeriodSnapshot[],
@@ -365,7 +380,13 @@ function periodOutsideEmployment(
 	for (const period of periods) {
 		if (period.endedAt !== null && compareInstants(period.endedAt, dayStart) <= 0) {
 			const order = preceding ? compareInstants(period.endedAt, preceding.endedAt) : 1;
-			if (order > 0 || (order === 0 && preceding && winsTie(period, preceding.period))) {
+			// Same end: both are active at the end of every day before it, so the start decides.
+			if (
+				order > 0 ||
+				(order === 0 &&
+					preceding &&
+					compareStintsForDay(period, preceding.period, period.endedAt) < 0)
+			) {
 				preceding = { period, endedAt: period.endedAt };
 			}
 			continue;
@@ -374,7 +395,15 @@ function periodOutsideEmployment(
 			period.startProvenance === "recorded" && period.startedAt ? period.startedAt : null;
 		if (start === null) continue;
 		const order = following ? compareInstants(start, following.startedAt) : -1;
-		if (order < 0 || (order === 0 && following && winsTie(period, following.period))) {
+		// Same start: the comparator judges the start day, the first day either is in force.
+		const startDayEnd = plainDateAt(start, employeeCalendarTimezone)
+			.add({ days: 1 })
+			.toZonedDateTime(employeeCalendarTimezone)
+			.toInstant();
+		if (
+			order < 0 ||
+			(order === 0 && following && compareStintsForDay(period, following.period, startDayEnd) < 0)
+		) {
 			following = { period, startedAt: start };
 		}
 	}

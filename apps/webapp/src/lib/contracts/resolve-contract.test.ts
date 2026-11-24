@@ -566,7 +566,7 @@ describe("contracts pure helpers & resolver", () => {
 		expect(kindOn("2026-03-15", employeeThenContractor)).toBe("employee");
 	});
 
-	it("breaks a tie between stints ending or starting at the same instant by the later record, whatever the row order", () => {
+	it("continues the stint that decides the last or first day in force past a tie, whatever the row order", () => {
 		const period = (
 			id: string,
 			engagementKind: "employee" | "contractor",
@@ -603,15 +603,41 @@ describe("contracts pure helpers & resolver", () => {
 				"2026-01-01T00:00:00Z",
 			),
 		];
-		expect(decide("2026-03-15", sameEnd)).toBe("after_end:contractor");
-		expect(decide("2026-03-15", [...sameEnd].reverse())).toBe("after_end:contractor");
+		// Both end together: the later start decides the last day in force and every day after,
+		// although the contractor stint was recorded later.
+		for (const rows of [sameEnd, [...sameEnd].reverse()]) {
+			expect(decide("2026-02-28", rows)).toBe("in_force:employee");
+			expect(decide("2026-03-01", rows)).toBe("after_end:employee");
+			expect(decide("2026-03-15", rows)).toBe("after_end:employee");
+		}
 
+		// Both start together: the stint still in force at the end of the start day decides that
+		// day and every day before, although the short contractor stint was recorded later.
 		const sameStart = [
+			period(
+				"contractor",
+				"contractor",
+				"2026-04-01T10:00:00Z",
+				"2026-04-01T12:00:00Z",
+				"2026-01-02T00:00:00Z",
+			),
+			period("employee", "employee", "2026-04-01T10:00:00Z", null, "2026-01-01T00:00:00Z"),
+		];
+		for (const rows of [sameStart, [...sameStart].reverse()]) {
+			expect(decide("2026-03-15", rows)).toBe("before_start:employee");
+			expect(decide("2026-03-31", rows)).toBe("before_start:employee");
+			expect(decide("2026-04-01", rows)).toBe("in_force:employee");
+		}
+
+		// Both open from the same instant: the later record decides, as for a day in force.
+		const sameStartOpen = [
 			period("employee", "employee", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),
 			period("contractor", "contractor", "2026-04-01T00:00:00Z", null, "2026-01-02T00:00:00Z"),
 		];
-		expect(decide("2026-03-15", sameStart)).toBe("before_start:contractor");
-		expect(decide("2026-03-15", [...sameStart].reverse())).toBe("before_start:contractor");
+		for (const rows of [sameStartOpen, [...sameStartOpen].reverse()]) {
+			expect(decide("2026-03-31", rows)).toBe("before_start:contractor");
+			expect(decide("2026-04-01", rows)).toBe("in_force:contractor");
+		}
 
 		// Same record time too: the id decides, as for a day in force.
 		const sameRecord = [
