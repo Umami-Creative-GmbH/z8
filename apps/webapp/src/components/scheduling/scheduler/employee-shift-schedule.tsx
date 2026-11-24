@@ -5,7 +5,7 @@ import "temporal-polyfill/global";
 
 import { createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
 import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
-import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
+import { useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -24,7 +24,9 @@ import { ShiftDetailsPanel } from "../shifts/shift-details-panel";
 import { employeeScheduleWeek, employeeShiftEvent } from "./employee-schedule-utils";
 import { EmployeeShiftAgenda } from "./employee-shift-agenda";
 import { ScheduleReadFailure } from "./schedule-read-failure";
+import { ScheduleXPortalCalendar } from "./schedule-x-portal-calendar";
 import { shiftCalendarEventComponents } from "./shift-calendar-event";
+import { SHIFT_CALENDARS } from "./shift-calendars";
 import { calendarRangeToDateRange } from "./shift-scheduler-utils";
 import { useShiftSchedulerData } from "./use-shift-scheduler-data";
 
@@ -89,13 +91,7 @@ export function EmployeeShiftSchedule({
 		isResponsive: false,
 		events: [],
 		isDark,
-		calendars: {
-			published: {
-				colorName: "published",
-				lightColors: { main: "#3b82f6", container: "#dbeafe", onContainer: "#1e40af" },
-				darkColors: { main: "#60a5fa", container: "#1e3a8a", onContainer: "#bfdbfe" },
-			},
-		},
+		calendars: { published: SHIFT_CALENDARS.published },
 		plugins: [calendarControls],
 		callbacks: {
 			onEventClick: (event: { id: string | number }) => {
@@ -148,7 +144,7 @@ export function EmployeeShiftSchedule({
 				)}
 				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border">
 					<div className="h-full min-w-[42rem]">
-						<ScheduleXCalendar
+						<ScheduleXPortalCalendar
 							calendarApp={calendar}
 							customComponents={shiftCalendarEventComponents}
 						/>

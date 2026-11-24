@@ -2,6 +2,8 @@
 
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { formatTimeStringForPreference, type TimeFormat } from "@/lib/user-preferences/time-format";
+import "./shift-calendar-event.css";
+import { shiftColorName } from "./shift-calendars";
 
 /**
  * The part of the event a shift's custom component reads. Schedule-X hands custom components the
@@ -10,10 +12,7 @@ import { formatTimeStringForPreference, type TimeFormat } from "@/lib/user-prefe
 interface ShiftCalendarEventProps {
 	calendarEvent: {
 		title?: string;
-		/**
-		 * `published`, `draft` or `open`. Both shift calendars name each calendar's `colorName` after
-		 * its id, so the id selects the colour variables.
-		 */
+		/** `published`, `draft` or `open`: one of `SHIFT_CALENDARS`, which selects the colours. */
 		calendarId?: string;
 		start?: CalendarEventEndpoint;
 		end?: CalendarEventEndpoint;
@@ -55,14 +54,14 @@ function wallTime(
 	);
 }
 
-function colorStyle(colorName: string | undefined) {
-	return colorName
-		? {
-				backgroundColor: `var(--sx-color-${colorName}-container)`,
-				color: `var(--sx-color-on-${colorName}-container)`,
-				borderInlineStart: `3px solid var(--sx-color-${colorName})`,
-			}
-		: undefined;
+/** Schedule-X's own event colours, with the start border it omits where an event continues. */
+function colorStyle(calendarId: string | undefined, { startBorder = true } = {}) {
+	const colorName = shiftColorName(calendarId);
+	return {
+		backgroundColor: `var(--sx-color-${colorName}-container)`,
+		color: `var(--sx-color-on-${colorName}-container)`,
+		...(startBorder ? { borderInlineStart: `3px solid var(--sx-color-${colorName})` } : {}),
+	};
 }
 
 /**
@@ -101,14 +100,21 @@ function ShiftTimeGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
 	);
 }
 
-function ShiftMonthGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
+/**
+ * `hasStartDate` is false on the part of an event that continues from an earlier week, which
+ * Schedule-X draws without the start border.
+ */
+function ShiftMonthGridEvent({
+	calendarEvent,
+	hasStartDate = true,
+}: ShiftCalendarEventProps & { hasStartDate?: boolean }) {
 	const timeFormat = useTimeFormat();
 	const start = wallTime(calendarEvent.start, timeFormat);
 	return (
 		<div
-			className="flex w-full min-w-0 items-baseline gap-1 rounded-sm px-1 text-xs"
+			className="flex h-full w-full min-w-0 items-center gap-1 self-stretch rounded-sm px-1 text-xs"
 			data-shift-event=""
-			style={colorStyle(calendarEvent.calendarId)}
+			style={colorStyle(calendarEvent.calendarId, { startBorder: hasStartDate })}
 		>
 			{start ? <span className="shrink-0 tabular-nums opacity-80">{start}</span> : null}
 			<span className="truncate">{calendarEvent.title}</span>
@@ -118,19 +124,21 @@ function ShiftMonthGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
 
 /**
  * A shift crossing midnight is a multi-day timed event, which the week and day views draw in the
- * date-grid row above the hours rather than in the time grid.
+ * date-grid row above the hours rather than in the time grid. Where it runs past the visible days,
+ * `shift-calendar-event.css` draws Schedule-X's continuation arrows, which it leaves out for custom
+ * components.
  */
 function ShiftDateGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
 	const timeFormat = useTimeFormat();
 	const start = wallTime(calendarEvent.start, timeFormat);
 	return (
 		<div
-			className="flex w-full min-w-0 items-baseline gap-1 rounded-sm px-1 text-xs"
+			className="relative flex h-full w-full min-w-0 items-center gap-1 self-stretch rounded-sm px-1 text-xs"
 			data-shift-event=""
 			style={colorStyle(calendarEvent.calendarId)}
 		>
 			<span className="truncate">{calendarEvent.title}</span>
-			{start ? <span className="shrink-0 tabular-nums opacity-80">{start}</span> : null}
+			{start ? <span className="shrink-0 font-normal tabular-nums opacity-80">{start}</span> : null}
 		</div>
 	);
 }
