@@ -1,6 +1,7 @@
 /**
  * The employment-profile intervals agree, day by day, with the canonical batch contract resolver
- * across supersession, same-day ties, a departure mid-day and a rehire with its own terms (#1991).
+ * across supersession, same-day ties, a departure mid-day, a rehire with its own terms (#1991) and a
+ * conversion to an External Contractor, whose days have no employment profile (#1996).
  */
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,7 +17,8 @@ const UNTIL = "2026-03-02";
 
 describe("employment-profile intervals (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 120_000, hookTimeout: 60_000 });
-	const fx = workingStudentFixture(integrationAdminPool(), "t1991-profiles");
+	const admin = integrationAdminPool();
+	const fx = workingStudentFixture(admin, "t1991-profiles");
 
 	beforeEach(fx.cleanup);
 	afterAll(fx.cleanup);
@@ -60,7 +62,29 @@ describe("employment-profile intervals (PostgreSQL)", () => {
 		}
 
 		const steady = await fx.workingStudent(org, "steady");
-		const employeeIds = [changing.employeeId, superseded.employeeId, steady.employeeId];
+
+		// A working student converted to an External Contractor on 2025-09-01. The unscoped terms row
+		// still covers the contractor stint, but a contractor day has no employment profile.
+		const converted = await fx.employee(org, "converted", { contractType: "hourly" });
+		await fx.employmentPeriod(org, converted, "2025-01-01T07:00:00Z", "2025-08-31T22:00:00Z");
+		await admin.query(
+			`insert into employee_employment_period
+			 (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+			 values ($1, $2, 'open', '2025-08-31T22:00:00Z', null, 'recorded', 'contractor')`,
+			[org.id, converted.employeeId],
+		);
+		await fx.terms(org, converted, {
+			from: "2025-01-01",
+			profile: "working_student",
+			createdAt: "2025-01-01T00:00:00Z",
+		});
+
+		const employeeIds = [
+			changing.employeeId,
+			superseded.employeeId,
+			steady.employeeId,
+			converted.employeeId,
+		];
 
 		const dates: string[] = [];
 		for (
@@ -102,6 +126,11 @@ describe("employment-profile intervals (PostgreSQL)", () => {
 		// Resolved once per distinct span, not once per day.
 		expect(intervals.get(changing.employeeId)?.length).toBeGreaterThanOrEqual(7);
 		expect(intervals.get(changing.employeeId)?.length).toBeLessThan(20);
+		expect(intervals.get(converted.employeeId)).toEqual([
+			{ from: FROM, untilExclusive: "2025-01-01", employmentProfile: null },
+			{ from: "2025-01-01", untilExclusive: "2025-09-01", employmentProfile: "working_student" },
+			{ from: "2025-09-01", untilExclusive: UNTIL, employmentProfile: null },
+		]);
 		expect(intervals.get(steady.employeeId)).toEqual([
 			{ from: FROM, untilExclusive: UNTIL, employmentProfile: "working_student" },
 		]);

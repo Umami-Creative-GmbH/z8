@@ -18,6 +18,7 @@ import { deepensBreachedLimit } from "../scheduling/evaluate";
 import { isMinorOn } from "./age";
 import type { JarbschgRule } from "./jarbschg-rules";
 import {
+	loadContractorDays,
 	loadEmployeeBirthdays,
 	loadHolidayDateKeys,
 	loadJarbschgLimits,
@@ -60,6 +61,11 @@ export async function recordJarbschgViolationsAfterClockOut(
 		until: monday.add({ days: 8 }).toString(),
 	};
 	const scope = { organizationId: input.organizationId, employeeIds: [input.employeeId] };
+	// Contractor work records no `work_policy_violation` (#1996), youth limits included.
+	const contractorDays = (
+		await loadContractorDays(db, { ...scope, timezone: input.timezone, ...range })
+	).get(input.employeeId);
+	if (contractorDays?.has(day.toString())) return [];
 	const organizationTimezone = await loadOrganizationTimezone(db, input.organizationId);
 	const work = await loadYouthWork(db, { ...scope, timezone: input.timezone, ...range });
 	const shifts = await loadYouthShifts(db, { ...scope, organizationTimezone, ...range });
@@ -89,6 +95,7 @@ export async function recordJarbschgViolationsAfterClockOut(
 			// The day's own night minutes: a night shift clocked across midnight records each piece
 			// on the local day it starts on, once.
 			sectorMinutes: "judged_days",
+			contractorDays,
 		}),
 	);
 	// The day's figure of each rule: night and prohibited holiday minutes are found per piece of

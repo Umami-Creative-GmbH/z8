@@ -278,6 +278,8 @@ export function youthFindingsOf(input: {
 	 * (the fingerprint, and so the acknowledgement state, still covers the whole shift).
 	 */
 	readonly sectorMinutes?: "whole_subject" | "judged_days";
+	/** Local days spent as an External Contractor: no youth limit judges them (#1996). */
+	readonly contractorDays?: ReadonlySet<string>;
 }): StatutoryFinding<JarbschgRule>[] {
 	const byRef = new Map(input.intervals.map((interval) => [interval.ref, interval]));
 	const evaluate = (
@@ -289,7 +291,8 @@ export function youthFindingsOf(input: {
 			intervals: input.intervals,
 			judged,
 			report,
-			isMinorOn: (day) => isMinorOn(input.birthday, day),
+			isMinorOn: (day) =>
+				!input.contractorDays?.has(day.toString()) && isMinorOn(input.birthday, day),
 			limitsOn: input.limitsOn,
 			holidays: input.holidays,
 			credits: input.credits,

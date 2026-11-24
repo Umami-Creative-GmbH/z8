@@ -108,6 +108,54 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		]);
 	});
 
+	it("judges no day a minor works as an External Contractor (#1996)", async () => {
+		const minor = await fx.employee(org, "contractor-minor", { birthday: "2010-06-01" });
+		const stint = async (kind: "contractor" | "employee", from: string, until: string | null) =>
+			admin.query(
+				`insert into employee_employment_period
+				 (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+				 values ($1, $2, $3, $4, $5, 'recorded', $6)`,
+				[
+					org.id,
+					minor.employeeId,
+					until ? "closed" : "open",
+					localInstant(from, "00:00", org.timezone).toString(),
+					until ? localInstant(until, "00:00", org.timezone).toString() : null,
+					kind,
+				],
+			);
+		// A contractor until Tuesday, an employee from then on.
+		await stint("contractor", "2026-01-01", "2026-03-03");
+		await stint("employee", "2026-03-03", null);
+
+		// Monday, as a contractor: the same work that breaks three youth rules records nothing.
+		await clockOut(minor, "2026-03-02", "13:00", 480);
+		expect(await types(minor)).toEqual([]);
+		const evaluate = () =>
+			jarbschgScheduleContributor.evaluate({
+				db,
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-02", endExclusive: "2026-03-03" },
+				employeeIds: [minor.employeeId],
+				proposedShifts: [],
+				replacesShiftId: null,
+				preferences: DEFAULT_STATUTORY_PREFERENCES,
+				now: localInstant("2026-03-04", "12:00", org.timezone),
+			});
+		expect(await evaluate()).toEqual([]);
+
+		// Tuesday, as an employee: judged again.
+		const { work } = await clockOut(minor, "2026-03-03", "13:00", 480);
+		const recorded = await seed.violations(minor);
+		expect(recorded.map((row) => row.violation_type)).toEqual([
+			"jarbschg_break",
+			"jarbschg_night_work",
+			"jarbschg_uninterrupted",
+		]);
+		expect(recorded.every((row) => row.work_period_id === work.id)).toBe(true);
+	});
+
 	it.each([
 		{ name: "25 December", date: "2025-12-25", time: "09:00", holiday: true },
 		{ name: "24 December after 14:00", date: "2025-12-24", time: "12:00", holiday: false },

@@ -4,11 +4,16 @@
  * employees judged.
  */
 import { and, eq, gte, inArray, isNull, lt, ne, notInArray } from "drizzle-orm";
-import { employee, shift, workPeriod } from "@/db/schema";
+import { employee, employeeEmploymentPeriod, shift, workPeriod } from "@/db/schema";
 import {
 	getAssignedHolidayDateKeys,
 	getAssignedHolidaysForEmployees,
 } from "@/lib/calendar/assigned-holidays";
+import {
+	type EmploymentPeriodSnapshot,
+	employmentPeriodSnapshotOf,
+	engagementKindOnDay,
+} from "@/lib/contracts/resolve-contract";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	dateFromInstant,
@@ -84,6 +89,84 @@ export async function loadEmployeeBirthdays(
 	return new Map(
 		rows.map((row) => [row.id, row.birthday ? birthdayCalendarDate(row.birthday) : null]),
 	);
+}
+
+/**
+ * The local days of `[from, until)` each employee spends as an External Contractor, as the contract
+ * resolver decides them (`engagementKindOnDay`, #1996). A contractor is no employee: youth limits
+ * judge no contractor day, and contractor work records no violation. Employees with no contractor
+ * day are left out.
+ */
+export async function loadContractorDays(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly employeeIds: readonly string[];
+		readonly timezone: string;
+		readonly from: string;
+		readonly until: string;
+	},
+): Promise<Map<string, Set<string>>> {
+	const result = new Map<string, Set<string>>();
+	const employeeIds = [...new Set(input.employeeIds)];
+	if (employeeIds.length === 0) return result;
+	const [kinds, periodRows] = await Promise.all([
+		db
+			.select({ id: employee.id, engagementKind: employee.engagementKind })
+			.from(employee)
+			.where(
+				and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
+			),
+		db
+			.select({
+				id: employeeEmploymentPeriod.id,
+				employeeId: employeeEmploymentPeriod.employeeId,
+				status: employeeEmploymentPeriod.status,
+				startedAt: employeeEmploymentPeriod.startedAt,
+				startProvenance: employeeEmploymentPeriod.startProvenance,
+				endedAt: employeeEmploymentPeriod.endedAt,
+				createdAt: employeeEmploymentPeriod.createdAt,
+				engagementKind: employeeEmploymentPeriod.engagementKind,
+			})
+			.from(employeeEmploymentPeriod)
+			.where(
+				and(
+					eq(employeeEmploymentPeriod.organizationId, input.organizationId),
+					inArray(employeeEmploymentPeriod.employeeId, employeeIds),
+				),
+			),
+	]);
+	const periodsOf = new Map<string, EmploymentPeriodSnapshot[]>();
+	for (const row of periodRows) {
+		const own = periodsOf.get(row.employeeId);
+		if (own) own.push(employmentPeriodSnapshotOf(row));
+		else periodsOf.set(row.employeeId, [employmentPeriodSnapshotOf(row)]);
+	}
+	const until = parsePlainDate(input.until);
+	for (const { id, engagementKind } of kinds) {
+		const periods = periodsOf.get(id) ?? [];
+		const everContractor =
+			periods.length === 0
+				? engagementKind === "contractor"
+				: periods.some((period) => period.engagementKind === "contractor");
+		if (!everContractor) continue;
+		const days = new Set<string>();
+		for (
+			let day = parsePlainDate(input.from);
+			day.until(until).sign > 0;
+			day = day.add({ days: 1 })
+		) {
+			const kind = engagementKindOnDay({
+				periods,
+				day,
+				employeeCalendarTimezone: input.timezone,
+				employeeEngagementKind: engagementKind,
+			});
+			if (kind === "contractor") days.add(day.toString());
+		}
+		if (days.size > 0) result.set(id, days);
+	}
+	return result;
 }
 
 /**

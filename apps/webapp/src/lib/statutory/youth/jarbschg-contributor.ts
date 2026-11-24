@@ -1,7 +1,8 @@
 /**
  * JArbSchG youth protection in Scheduling and Staffing (#1993). Every employee who is under 18 on
  * a judged day is held to the youth limits, whatever their employment profile, ArbZG scope or
- * work policy; from the 18th birthday on, adult rules apply alone.
+ * work policy; from the 18th birthday on, adult rules apply alone. Days spent as an External
+ * Contractor (#1996) are no employee's and are not judged.
  *
  * The work judged is recorded work, open clock-ins and the planned shifts (draft and published)
  * not yet worked, plus Staffing's proposal (`youthIntervalsOf`), with an apprentice's school and
@@ -24,6 +25,7 @@ import type {
 import { isMinorOn } from "./age";
 import type { YouthWorkInterval } from "./jarbschg-rules";
 import {
+	loadContractorDays,
 	loadEmployeeBirthdays,
 	loadHolidayDateKeys,
 	loadJarbschgLimits,
@@ -59,15 +61,30 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		organizationId: context.organizationId,
 		employeeIds: context.employeeIds,
 	});
-	const minors = context.employeeIds.filter((employeeId) =>
+	const underage = context.employeeIds.filter((employeeId) =>
 		judgedDays.some((day) => isMinorOn(birthdays.get(employeeId) ?? null, day)),
 	);
-	if (minors.length === 0) return [];
+	if (underage.length === 0) return [];
 
 	// Whole compliance weeks around the window, plus the day before and after for rest periods.
 	const from = mondayOf(windowStart).subtract({ days: 1 });
 	const until = mondayOf(windowEnd.subtract({ days: 1 })).add({ days: 8 });
 	const range = { from: from.toString(), until: until.toString() };
+	// External Contractor days are no employee's (#1996): youth limits judge none of them.
+	const contractorDays = await loadContractorDays(context.db, {
+		organizationId: context.organizationId,
+		employeeIds: underage,
+		timezone: context.timezone,
+		...range,
+	});
+	const minors = underage.filter((employeeId) =>
+		judgedDays.some(
+			(day) =>
+				!contractorDays.get(employeeId)?.has(day.toString()) &&
+				isMinorOn(birthdays.get(employeeId) ?? null, day),
+		),
+	);
+	if (minors.length === 0) return [];
 
 	const limitsOn = await loadJarbschgLimits(context.db, range);
 	const shifts = await loadYouthShifts(context.db, {
@@ -139,6 +156,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 				holidays: holidays.get(employeeId) ?? new Set(),
 				credits: credits.get(employeeId),
 				blockPublish: context.preferences.blockJarbschgShiftPublish,
+				contractorDays: contractorDays.get(employeeId),
 			});
 		const judged = findingsOf(false);
 		const running = (work.get(employeeId) ?? []).some((record) => record.end === null);
