@@ -22,7 +22,7 @@ export interface DatedStatutoryFinding {
 }
 
 export interface ScheduleStatutoryFindingItem extends DatedStatutoryFinding {
-	/** The employee's user name (`buildAuthUserDisplayName`). */
+	/** The employee's user name (`buildAuthUserDisplayName`); empty when none is on record. */
 	readonly employeeName: string;
 }
 

@@ -129,6 +129,22 @@ vi.mock("@/lib/statutory/scheduling/publish-blocking", async (importOriginal) =>
 	};
 });
 
+/** While `fails`, building the viewer's list (the names query) fails. */
+const listBuilder = vi.hoisted(() => ({ fails: false }));
+
+vi.mock("@/lib/statutory/scheduling/findings-list-view", async (importOriginal) => {
+	const original = await importOriginal<typeof import("./findings-list-view")>();
+	return {
+		...original,
+		scheduleStatutoryFindingsFor: async (
+			...args: Parameters<typeof original.scheduleStatutoryFindingsFor>
+		) => {
+			if (listBuilder.fails) throw new Error("names query failed");
+			return original.scheduleStatutoryFindingsFor(...args);
+		},
+	};
+});
+
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Layer } = await import("effect");
 	const { db } = await import("@/db");
@@ -155,6 +171,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 const { getScheduleComplianceSummary, publishShifts } =
 	await import("@/app/[locale]/(app)/scheduling/actions/shift-actions");
 const { db } = await import("@/db");
+const { scheduleStatutoryFindingsFor } = await import("./findings-list-view");
 
 const WEEK = { startDate: "2027-03-01", endDateExclusive: "2027-03-08" };
 
@@ -200,6 +217,7 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 			[subareaId, locationId, owner.userId],
 		);
 		publication.beforeLock = null;
+		listBuilder.fails = false;
 		fakeContributors.settings.youthBlocks = true;
 		await insertDrafts();
 	});
@@ -375,6 +393,78 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 		expect(payload).not.toContain(other.employeeId);
 		expect(payload).not.toMatch(ADMIN_ONLY);
 		expect(await draftStatuses()).toEqual(["draft", "draft"]);
+
+		// Acknowledging what was shown publishes.
+		const acknowledged = await publishShifts(WEEK, {
+			evaluationFingerprint: result.data.evaluationFingerprint,
+		});
+		if (!acknowledged.success) throw new Error(acknowledged.error);
+		expect(acknowledged.data).toMatchObject({ published: true, count: 2 });
+		expect(await draftStatuses()).toEqual(["published", "published"]);
+	});
+
+	describe("when the list cannot be built", () => {
+		beforeEach(() => {
+			listBuilder.fails = true;
+		});
+
+		it("still gives the banner its counts", async () => {
+			signInAs(manager, "member", "manager");
+
+			const result = await getScheduleComplianceSummary(WEEK);
+			if (!result.success) throw new Error(result.error);
+
+			expect(result.data.summary.byType.statutory).toBe(4);
+			expect(result.data.statutoryFindings).toEqual({
+				items: [],
+				outsideScopeCount: 0,
+				canOpenReviews: false,
+			});
+		});
+
+		it("still refuses with the publish block, without a list", async () => {
+			await blockJArbSchGPublishing();
+			signInAs(manager, "member", "manager");
+
+			const refused = await publishShifts(WEEK);
+			if (refused.success) throw new Error("expected the publish block to refuse");
+
+			expect(refused.code).toBe("ValidationError");
+			expect(refused.refusal).toBe(STATUTORY_PUBLICATION_BLOCKED);
+			expect(refused.details).toBeUndefined();
+			expect(await draftStatuses()).toEqual(["draft", "draft"]);
+		});
+
+		it("still refuses with the publish block when the publication refuses its locked drafts", async () => {
+			await blockJArbSchGPublishing();
+			await db.delete(shiftTable).where(eq(shiftTable.organizationId, org.id));
+			publication.beforeLock = insertDrafts;
+			signInAs(manager, "member", "manager");
+
+			const refused = await publishShifts(WEEK);
+			if (refused.success) throw new Error("expected the publication to refuse its locked drafts");
+
+			expect(refused.code).toBe("ValidationError");
+			expect(refused.refusal).toBe(STATUTORY_PUBLICATION_BLOCKED);
+			expect(refused.details).toBeUndefined();
+			expect(await draftStatuses()).toEqual(["draft", "draft"]);
+		});
+
+		it("still asks for an acknowledgement, and publishes once it is given", async () => {
+			fakeContributors.settings.youthBlocks = false;
+			signInAs(manager, "member", "manager");
+
+			const result = await publishShifts(WEEK);
+			if (!result.success) throw new Error(result.error);
+			if (result.data.published) throw new Error("expected the planner to be asked to acknowledge");
+			expect(result.data.requiresAcknowledgment).toBe(true);
+
+			const acknowledged = await publishShifts(WEEK, {
+				evaluationFingerprint: result.data.evaluationFingerprint,
+			});
+			if (!acknowledged.success) throw new Error(acknowledged.error);
+			expect(acknowledged.data).toMatchObject({ published: true, count: 2 });
+		});
 	});
 
 	it("gives a workforce admin every employee's findings, without the way to Reviews & Conflicts", async () => {
@@ -393,6 +483,59 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 		expect(statutoryFindings.outsideScopeCount).toBe(0);
 		expect(statutoryFindings.canOpenReviews).toBe(false);
 		expect(JSON.stringify(statutoryFindings)).not.toMatch(ADMIN_ONLY);
+	});
+
+	it("lists a finding whose employee has no name on record for a viewer who reaches them, unnamed", async () => {
+		const nameless = crypto.randomUUID();
+		const youthFinding = (employeeId: string) => ({
+			finding: {
+				type: "statutory" as const,
+				employeeId,
+				findingId: `jarbschg_daily_max:${employeeId}:shift:s1`,
+				statutoryKind: "jarbschg_daily_max",
+				domain: "youth_protection" as const,
+				severity: "critical" as const,
+				subjectKey: "shift:s1",
+				legalReference: "§ 8 Abs. 1 JArbSchG",
+				summary: { tier: "exceeded" as const },
+				day: "2027-03-02",
+				acknowledgementStatus: null,
+				blocksPublication: true,
+			},
+			period: null,
+		});
+		const findings = [youthFinding(nameless), youthFinding(managed.employeeId)];
+
+		const orgWide = await scheduleStatutoryFindingsFor(db, {
+			organizationId: org.id,
+			viewer: {
+				scope: { organizationWide: true, employeeIds: new Set(), teamIds: new Set() },
+				audience: "full",
+			},
+			findings,
+		});
+		expect(orgWide.outsideScopeCount).toBe(0);
+		expect(orgWide.items.map((item) => [item.finding.employeeId, item.employeeName])).toEqual(
+			expect.arrayContaining([
+				[nameless, ""],
+				[managed.employeeId, "managed"],
+			]),
+		);
+
+		const scoped = await scheduleStatutoryFindingsFor(db, {
+			organizationId: org.id,
+			viewer: {
+				scope: {
+					organizationWide: false,
+					employeeIds: new Set([managed.employeeId]),
+					teamIds: new Set(),
+				},
+				audience: "restricted",
+			},
+			findings,
+		});
+		expect(scoped.items.map((item) => item.finding.employeeId)).toEqual([managed.employeeId]);
+		expect(scoped.outsideScopeCount).toBe(1);
 	});
 
 	it("gives an org admin every employee's findings and the way to Reviews & Conflicts", async () => {

@@ -3,6 +3,7 @@
 import { Effect } from "effect";
 import { db } from "@/db";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { failureOfCause, isInterruptOnly } from "@/lib/effect/cause-failure";
 import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { CoverageService } from "@/lib/effect/services/coverage.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -30,10 +31,12 @@ import {
 	STATUTORY_PUBLICATION_BLOCKED,
 	statutoryPublicationRefusal,
 } from "@/lib/statutory/scheduling/publication-block";
+import { StatutoryPublicationBlockedError } from "@/lib/statutory/scheduling/publication-blocked-error";
 import { findingsBlockingPublication } from "@/lib/statutory/scheduling/publish-blocking";
-import type {
-	DatedStatutoryFinding,
-	ScheduleStatutoryFindings,
+import {
+	type DatedStatutoryFinding,
+	NO_SCHEDULE_STATUTORY_FINDINGS,
+	type ScheduleStatutoryFindings,
 } from "@/lib/statutory/scheduling/findings-list";
 import {
 	type ScheduleStatutoryFindingsViewer,
@@ -159,7 +162,11 @@ function loadStatutoryFindingsViewer(
 	});
 }
 
-/** The statutory findings list `findings` makes for the current viewer. */
+/**
+ * The statutory findings list `findings` makes for the current viewer, or null when it cannot be
+ * built. The list only explains counts, refusals and acknowledgements: a failure to build it is
+ * logged and takes none of them down.
+ */
 function statutoryFindingsForViewer(
 	currentEmployee: Pick<CurrentEmployee, "organizationId">,
 	findings: readonly DatedStatutoryFinding[],
@@ -176,23 +183,28 @@ function statutoryFindingsForViewer(
 				dated,
 			}),
 		);
-	});
+	}).pipe(
+		Effect.catchCause((cause) =>
+			isInterruptOnly(cause)
+				? Effect.interrupt
+				: Effect.sync(() => {
+						logger.error(
+							{
+								error: failureOfCause(cause),
+								organizationId: currentEmployee.organizationId,
+							},
+							"Could not list statutory findings",
+						);
+						return null;
+					}),
+		),
+	);
 }
 
-/** The blocking findings `ShiftService.publishShifts` refused its locked drafts for. */
-function blockingFindingsOf(
-	error: ValidationError,
-): StatutoryComplianceFinding[] {
-	const value = error.value;
-	return value &&
-		typeof value === "object" &&
-		"blockingFindings" in value &&
-		Array.isArray(value.blockingFindings)
-		? (value.blockingFindings as StatutoryComplianceFinding[])
-		: [];
-}
-
-/** The publish-block refusal, listing its blocking findings for the current viewer (#2026). */
+/**
+ * The publish-block refusal, listing its blocking findings for the current viewer (#2026); without
+ * a list when it cannot be built, which the client shows as the refusal's message.
+ */
 function statutoryPublicationBlocked(
 	currentEmployee: Pick<CurrentEmployee, "organizationId">,
 	message: string,
@@ -209,7 +221,7 @@ function statutoryPublicationBlocked(
 			new ValidationError({
 				message,
 				field: "shifts",
-				value: { statutoryFindings },
+				...(statutoryFindings ? { value: { statutoryFindings } } : {}),
 				refusal: STATUTORY_PUBLICATION_BLOCKED,
 			}),
 		);
@@ -443,10 +455,11 @@ export async function publishShifts(
 			// The planner acknowledges these: list who, which limit and which day (#2026).
 			return {
 				...publishDecision,
-				statutoryFindings: yield* statutoryFindingsForViewer(
-					currentEmployee,
-					evaluation.datedStatutoryFindings,
-				),
+				statutoryFindings:
+					(yield* statutoryFindingsForViewer(
+						currentEmployee,
+						evaluation.datedStatutoryFindings,
+					)) ?? NO_SCHEDULE_STATUTORY_FINDINGS,
 			};
 		}
 
@@ -460,14 +473,13 @@ export async function publishShifts(
 			.pipe(
 				// The publication judges its locked drafts again: a refusal there lists them too.
 				Effect.catchIf(
-					(error): error is ValidationError =>
-						error._tag === "ValidationError" &&
-						error.refusal === STATUTORY_PUBLICATION_BLOCKED,
+					(error): error is StatutoryPublicationBlockedError =>
+						error instanceof StatutoryPublicationBlockedError,
 					(error) =>
 						statutoryPublicationBlocked(
 							currentEmployee,
 							error.message,
-							blockingFindingsOf(error),
+							error.blockingFindings,
 							evaluation.datedStatutoryFindings,
 						),
 				),
@@ -550,10 +562,11 @@ export async function getScheduleComplianceSummary(
 		return {
 			summary: evaluation.summary,
 			evaluationFingerprint: evaluation.fingerprint,
-			statutoryFindings: yield* statutoryFindingsForViewer(
-				currentEmployee,
-				evaluation.datedStatutoryFindings,
-			),
+			statutoryFindings:
+				(yield* statutoryFindingsForViewer(
+					currentEmployee,
+					evaluation.datedStatutoryFindings,
+				)) ?? NO_SCHEDULE_STATUTORY_FINDINGS,
 		};
 	}).pipe(Effect.provide(ScheduleComplianceServiceLive));
 

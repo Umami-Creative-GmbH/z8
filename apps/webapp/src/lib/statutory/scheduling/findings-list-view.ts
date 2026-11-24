@@ -94,16 +94,17 @@ export async function scheduleStatutoryFindingsFor(
 		),
 	);
 
+	// The findings are this organization's: one whose employee has no name on record (removed since
+	// it was judged) is still the viewer's to see, unnamed. The names query reads this organization
+	// only, so it names no one else's employee.
 	const items = visible
-		// An employee of another organization never reaches the list.
-		.filter(({ finding }) => names.has(finding.employeeId))
 		.map(({ finding, period }) => ({
 			finding,
 			period:
 				period ??
 				knownPeriods.get(`${finding.findingId}|${finding.day ?? finding.releaseDay ?? ""}`) ??
 				namedDayPeriod(finding),
-			employeeName: names.get(finding.employeeId) || finding.employeeId,
+			employeeName: names.get(finding.employeeId) ?? "",
 		}))
 		.toSorted(compareItems);
 

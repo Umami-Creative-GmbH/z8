@@ -2,6 +2,8 @@ import { Cause, Exit } from "effect";
 import { makeDynamicHangingPromise } from "next/dist/server/dynamic-rendering-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthenticationError, ConflictError, DatabaseError, ValidationError } from "./errors";
+import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
+import { StatutoryPublicationBlockedError } from "@/lib/statutory/scheduling/publication-blocked-error";
 import { toServerActionResult } from "./result";
 
 afterEach(() => {
@@ -84,6 +86,39 @@ describe("toServerActionResult", () => {
 			code: "ValidationError",
 			holidayName: "New Year",
 		});
+	});
+
+	it("refuses a statutory publish block without its unscoped blocking findings", () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		const error = new StatutoryPublicationBlockedError({
+			message: "Cannot publish",
+			blockingFindings: [
+				{
+					type: "statutory",
+					employeeId: "employee-outside-scope",
+					findingId: "jarbschg_daily_max:employee-outside-scope:shift:s1",
+					statutoryKind: "jarbschg_daily_max",
+					domain: "youth_protection",
+					severity: "critical",
+					subjectKey: "shift:s1",
+					legalReference: "§ 8 Abs. 1 JArbSchG",
+					summary: { tier: "exceeded" },
+					day: "2027-03-02",
+					acknowledgementStatus: null,
+					blocksPublication: true,
+				},
+			],
+		});
+
+		const result = toServerActionResult(Exit.fail(error));
+
+		expect(result).toEqual({
+			success: false,
+			error: "Cannot publish",
+			code: "ValidationError",
+			refusal: STATUTORY_PUBLICATION_BLOCKED,
+		});
+		expect(JSON.stringify(result)).not.toContain("employee-outside-scope");
 	});
 
 	it("reports the typed failure, not a finalizer defect, when the cause holds both", () => {
