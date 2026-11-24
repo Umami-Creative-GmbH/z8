@@ -188,10 +188,17 @@ function statutoryFindingsForViewer(
 		const { blockingThisPublication } = options;
 		const blocking =
 			typeof blockingThisPublication === "function"
-				? yield* dbService.query(
-						"scheduling.statutoryFindingsBlockingPublication",
-						blockingThisPublication,
-					)
+				? yield* dbService
+						.query("scheduling.statutoryFindingsBlockingPublication", blockingThisPublication)
+						.pipe(
+							// Only the "Blocks publishing" marks depend on it: list the findings unmarked.
+							// `publishShifts` still refuses with its own list.
+							recoverLogged(
+								currentEmployee,
+								"Could not judge which statutory findings block publishing",
+								(): readonly StatutoryComplianceFinding[] => [],
+							),
+						)
 				: blockingThisPublication;
 		return yield* dbService.query("scheduling.statutoryFindingsList", () =>
 			scheduleStatutoryFindingsFor(dbService.db, {
@@ -202,22 +209,35 @@ function statutoryFindingsForViewer(
 				blockingThisPublication: blocking,
 			}),
 		);
-	}).pipe(
-		Effect.catchCause((cause) =>
-			isInterruptOnly(cause)
-				? Effect.interrupt
-				: Effect.sync(() => {
-						logger.error(
-							{
-								error: failureOfCause(cause),
-								organizationId: currentEmployee.organizationId,
-							},
-							"Could not list statutory findings",
-						);
-						return null;
-					}),
-		),
-	);
+	}).pipe(recoverLogged(currentEmployee, "Could not list statutory findings", () => null));
+}
+
+/**
+ * Logs any failure (its error and the organization, nothing else) and recovers with `fallback`;
+ * an interruption still interrupts.
+ */
+function recoverLogged<B>(
+	currentEmployee: Pick<CurrentEmployee, "organizationId">,
+	message: string,
+	fallback: () => B,
+) {
+	return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A | B, never, R> =>
+		effect.pipe(
+			Effect.catchCause((cause) =>
+				isInterruptOnly(cause)
+					? Effect.interrupt
+					: Effect.sync(() => {
+							logger.error(
+								{
+									error: failureOfCause(cause),
+									organizationId: currentEmployee.organizationId,
+								},
+								message,
+							);
+							return fallback();
+						}),
+			),
+		);
 }
 
 /**

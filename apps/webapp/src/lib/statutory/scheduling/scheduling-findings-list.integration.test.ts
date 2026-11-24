@@ -115,13 +115,25 @@ vi.mock("@/lib/statutory/scheduling/contributors", () => ({
 	] as unknown as StatutoryScheduleContributor[],
 }));
 
-/** Runs as the publication's transaction starts, before it locks the range's drafts. */
-const publication = vi.hoisted(() => ({ beforeLock: null as null | (() => Promise<void>) }));
+/**
+ * `beforeLock` runs as the publication's transaction starts, before it locks the range's drafts.
+ * While `blockingCheckFails`, judging what publishing the range is refused for fails.
+ */
+const publication = vi.hoisted(() => ({
+	beforeLock: null as null | (() => Promise<void>),
+	blockingCheckFails: false,
+}));
 
 vi.mock("@/lib/statutory/scheduling/publish-blocking", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./publish-blocking")>();
 	return {
 		...original,
+		findingsBlockingPublication: async (
+			...args: Parameters<typeof original.findingsBlockingPublication>
+		) => {
+			if (publication.blockingCheckFails) throw new Error("blocking check failed");
+			return original.findingsBlockingPublication(...args);
+		},
 		lockPublicationDrafts: async (...args: Parameters<typeof original.lockPublicationDrafts>) => {
 			const beforeLock = publication.beforeLock;
 			publication.beforeLock = null;
@@ -222,6 +234,7 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 			[subareaId, locationId, owner.userId],
 		);
 		publication.beforeLock = null;
+		publication.blockingCheckFails = false;
 		listBuilder.fails = false;
 		fakeContributors.settings.youthBlocks = true;
 		fakeContributors.settings.breaching = null;
@@ -419,6 +432,7 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 		expect(listed.items).toEqual([
 			expect.objectContaining({
 				employeeName: "managed",
+				blocksThisPublication: true,
 				finding: expect.objectContaining({
 					employeeId: managed.employeeId,
 					statutoryKind: "jarbschg_daily_max",
@@ -466,6 +480,23 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 		if (!acknowledged.success) throw new Error(acknowledged.error);
 		expect(acknowledged.data).toMatchObject({ published: true, count: 2 });
 		expect(await draftStatuses()).toEqual(["published", "published"]);
+	});
+
+	it("still lists the banner's findings, none marked as blocking, when judging what blocks publishing fails", async () => {
+		await blockJArbSchGPublishing();
+		publication.blockingCheckFails = true;
+		signInAs(manager, "member", "manager");
+
+		const result = await getScheduleComplianceSummary(WEEK);
+		if (!result.success) throw new Error(result.error);
+		const { statutoryFindings } = result.data;
+
+		expect(statutoryFindings.items.map((item) => item.finding.statutoryKind).toSorted()).toEqual([
+			"jarbschg_daily_max",
+			"minijob_monthly_cap",
+		]);
+		expect(statutoryFindings.items.every((item) => !item.blocksThisPublication)).toBe(true);
+		expect(statutoryFindings.outsideScopeCount).toBe(2);
 	});
 
 	describe("when the list cannot be built", () => {
