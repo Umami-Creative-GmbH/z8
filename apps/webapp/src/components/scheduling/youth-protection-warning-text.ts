@@ -78,6 +78,14 @@ export function youthProtectionWarningText(
 				{ used, limit },
 			);
 		case "jarbschg_night_work":
+			// Outside the hours § 14 Abs. 2, 3 allows for the minor's age, or under 16: no exception.
+			if (finding.acknowledgementStatus === null) {
+				return t(
+					"scheduling:scheduling.statutory.jarbschg.nightWorkBeyondSector",
+					"Under 18: {used} min of night work between 20:00 and 06:00, outside the hours a sector exception allows (from 16: 05:00 to 23:00; from 17 in bakeries: from 04:00); no exception allows it",
+					{ used },
+				);
+			}
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.nightWork",
 				"Under 18: {used} min of night work between 20:00 and 06:00",

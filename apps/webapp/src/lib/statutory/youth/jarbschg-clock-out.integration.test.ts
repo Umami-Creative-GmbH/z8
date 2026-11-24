@@ -348,7 +348,7 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 	});
 
 	it("does not record night work covered by an acknowledged sector exception", async () => {
-		const minor = await fx.employee(org, "baker", { birthday: "2010-06-01" });
+		const minor = await fx.employee(org, "baker", { birthday: "2009-06-01" });
 		const subareaId = await seed.subarea(org, owner);
 		const shiftId = await seed.shift(org, minor, {
 			subareaId,
@@ -386,6 +386,48 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 		// Work the shift does not cover is still recorded.
 		await clockOut(minor, "2026-03-05", "17:00", 240);
 		expect(await types(minor)).toEqual(["jarbschg_night_work"]);
+	});
+
+	it("offers no sector exception for night work outside the § 14 Abs. 2, 3 hours", async () => {
+		const nightOf = async (who: FixtureEmployee) =>
+			(
+				await jarbschgScheduleContributor.evaluate({
+					db,
+					organizationId: org.id,
+					timezone: org.timezone,
+					window: { start: "2026-03-02", endExclusive: "2026-03-09" },
+					employeeIds: [who.employeeId],
+					proposedShifts: [],
+					replacesShiftId: null,
+					preferences: DEFAULT_STATUTORY_PREFERENCES,
+					now: localInstant("2026-03-01", "12:00", org.timezone),
+				})
+			).find((finding) => finding.kind === "jarbschg_night_work");
+		const subareaId = await seed.subarea(org, owner);
+		// 15 years old: no sector hours apply.
+		const fifteen = await fx.employee(org, "fifteen", { birthday: "2010-06-01" });
+		await seed.shift(org, fifteen, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: "2026-03-03",
+			startTime: "17:00",
+			endTime: "21:00",
+		});
+		const young = await nightOf(fifteen);
+		expect(young).toMatchObject({ acknowledgementKind: null });
+		expect(young && statutoryAcknowledgementSubjectOf(young)).toBeNull();
+		// 16 years old until 22:30: within the multi-shift hours (until 23:00).
+		const sixteen = await fx.employee(org, "sixteen", { birthday: "2009-06-01" });
+		await seed.shift(org, sixteen, {
+			subareaId,
+			creatorUserId: owner.userId,
+			date: "2026-03-03",
+			startTime: "16:00",
+			endTime: "22:30",
+		});
+		expect(await nightOf(sixteen)).toMatchObject({
+			acknowledgementKind: "jarbschg_sector_exception",
+		});
 	});
 
 	describe("a § 12 shift span acknowledged as a sector exception", () => {
@@ -501,7 +543,7 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 	});
 
 	it("records night work that overruns an acknowledged shift", async () => {
-		const minor = await fx.employee(org, "overrun", { birthday: "2010-06-01" });
+		const minor = await fx.employee(org, "overrun", { birthday: "2009-06-01" });
 		const subareaId = await seed.subarea(org, owner);
 		await seed.shift(org, minor, {
 			subareaId,
@@ -540,7 +582,7 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 	it("honours a night exception for unplanned work up to the acknowledged span, not beyond", async () => {
 		/** Clocked in at 17:00 without a shift; the exception is acknowledged at 20:50. */
 		async function acknowledgedOpenWork(key: string) {
-			const minor = await fx.employee(org, key, { birthday: "2010-06-01" });
+			const minor = await fx.employee(org, key, { birthday: "2009-06-01" });
 			const open = await seed.openWork(org, minor, "2026-03-03", "17:00");
 			const findings = await jarbschgScheduleContributor.evaluate({
 				db,

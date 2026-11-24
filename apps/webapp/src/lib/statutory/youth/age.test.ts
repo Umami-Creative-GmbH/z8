@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { adulthoodStartsOn, isMinorOn } from "./age";
+import { adulthoodStartsOn, ageOn, isMinorOn } from "./age";
 
 const day = parsePlainDate;
 
@@ -26,5 +26,15 @@ describe("isMinorOn", () => {
 
 	it("is never a minor without a birthday", () => {
 		expect(isMinorOn(null, day("2026-01-01"))).toBe(false);
+	});
+});
+
+describe("ageOn", () => {
+	it("counts completed years from the birthday on, a 29 February birthday from 1 March", () => {
+		expect(ageOn(day("2010-03-04"), day("2026-03-03"))).toBe(15);
+		expect(ageOn(day("2010-03-04"), day("2026-03-04"))).toBe(16);
+		expect(ageOn(day("2008-02-29"), day("2025-02-28"))).toBe(16);
+		expect(ageOn(day("2008-02-29"), day("2025-03-01"))).toBe(17);
+		expect(ageOn(null, day("2026-01-01"))).toBeNull();
 	});
 });

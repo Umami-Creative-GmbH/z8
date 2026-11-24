@@ -219,6 +219,38 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		expect(await shiftStatus(late)).toBe("published");
 	});
 
+	it("keeps blocking night work outside the § 14 Abs. 2, 3 sector hours: under 16, or at 02:00", async () => {
+		await seed.blockJarbschgPublish(org);
+		const fifteen = await fx.employee(org, "fifteen", { birthday: "2012-01-01" });
+		const sixteen = await fx.employee(org, "sixteen", { birthday: "2011-01-01" });
+		const evening = await shift(fifteen, "2027-03-02", "17:00", "21:00");
+		const overnight = await shift(sixteen, "2027-03-03", "22:00", "03:00");
+
+		await acknowledgeSectorExceptions(fifteen);
+		await acknowledgeSectorExceptions(sixteen);
+		const night = (await evaluateWeek()).findings.filter(
+			(finding) => finding.type === "statutory" && finding.statutoryKind === "jarbschg_night_work",
+		);
+		expect(night).toHaveLength(2);
+		expect(night).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					subjectKey: `shift:${evening}`,
+					acknowledgementStatus: null,
+					blocksPublication: true,
+				}),
+				expect.objectContaining({
+					subjectKey: `shift:${overnight}`,
+					acknowledgementStatus: null,
+					blocksPublication: true,
+				}),
+			]),
+		);
+		expect(await publishShifts(WEEK)).toMatchObject({ success: false, code: "ValidationError" });
+		expect(await shiftStatus(evening)).toBe("draft");
+		expect(await shiftStatus(overnight)).toBe("draft");
+	});
+
 	it("publishes another employee's drafts past a minor's already published blocked shift", async () => {
 		await seed.blockJarbschgPublish(org);
 		const minor = await fx.employee(org, "saturday", { birthday: "2011-01-01" });

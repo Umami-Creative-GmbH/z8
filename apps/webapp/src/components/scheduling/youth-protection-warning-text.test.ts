@@ -79,6 +79,23 @@ describe("youthProtectionWarningText (#1993)", () => {
 		expect(catalogText(deCatalog, call?.key ?? "")).not.toBe(call?.fallback);
 	});
 
+	it("says when no sector exception can cover night work (§ 14 Abs. 2, 3 JArbSchG)", () => {
+		const night = {
+			...base,
+			statutoryKind: "jarbschg_night_work",
+			legalReference: "§ 14 JArbSchG",
+			summary: { tier: "exceeded" as const, used: { unit: "minutes" as const, value: 120 } },
+		};
+		const acknowledgeable = textOf({ ...night, acknowledgementStatus: "none" });
+		expect(acknowledgeable.call?.key).toBe("scheduling:scheduling.statutory.jarbschg.nightWork");
+		const hard = textOf(night);
+		expect(hard.call?.key).toBe("scheduling:scheduling.statutory.jarbschg.nightWorkBeyondSector");
+		expect(hard.text).toContain("120 min");
+		expect(catalogText(enCatalog, hard.call?.key ?? "")).toBe(hard.call?.fallback);
+		expect(typeof catalogText(deCatalog, hard.call?.key ?? "")).toBe("string");
+		expect(catalogText(deCatalog, hard.call?.key ?? "")).not.toBe(hard.call?.fallback);
+	});
+
 	it("keeps the release-day wording for other release conflicts", () => {
 		const { call } = textOf({
 			...base,

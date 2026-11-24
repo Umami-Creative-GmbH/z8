@@ -49,11 +49,12 @@ function findings(input: {
 	shifts?: YouthShiftRecord[];
 	now: Instant;
 	judged?: { start: string; endExclusive: string };
+	birthday?: string;
 }) {
 	return youthFindingsOf({
 		organizationId: "org-1",
 		employeeId: EMPLOYEE,
-		birthday: parsePlainDate("2011-01-01"),
+		birthday: parsePlainDate(input.birthday ?? "2011-01-01"),
 		timezone: ZONE,
 		intervals: youthIntervalsOf({
 			work: input.work ?? [],
@@ -442,6 +443,82 @@ describe("sector exception fingerprints", () => {
 		expect(fingerprint("03:30", tuesday)).not.toBe(planned?.inputFingerprint);
 		expect(fingerprint("03:30", tuesday)).toBe(fingerprint("03:30", wednesday));
 		expect(fingerprint("03:30", week)).toBe(fingerprint("03:30", wednesday));
+	});
+});
+
+describe("night work and the § 14 Abs. 2, 3 JArbSchG sector hours", () => {
+	// Tuesday 3 March 2026; ages on that day.
+	const BIRTHDAY_15 = "2011-01-01";
+	const BIRTHDAY_16 = "2010-01-01";
+	const BIRTHDAY_17 = "2009-01-01";
+	const nightFinding = (birthday: string, start: string, end: string) =>
+		nightOf(
+			findings({
+				birthday,
+				shifts: [shift("s", "2026-03-03", start, end)],
+				now: at("2026-03-01", "12:00"),
+			}),
+		);
+
+	it("is not acknowledgeable for a 15-year-old: no sector hours apply under 16", () => {
+		const finding = nightFinding(BIRTHDAY_15, "15:00", "21:00");
+		expect(finding).toMatchObject({ legalReference: "§ 14 JArbSchG", blocksPublication: true });
+		expect(finding?.acknowledgementKind).toBeNull();
+	});
+
+	it("is acknowledgeable for a 16-year-old until 23:00 (hospitality 22:00, multi-shift 23:00)", () => {
+		expect(nightFinding(BIRTHDAY_16, "16:00", "22:30")?.acknowledgementKind).toBe(
+			"jarbschg_sector_exception",
+		);
+		expect(nightFinding(BIRTHDAY_16, "16:00", "23:00")?.acknowledgementKind).toBe(
+			"jarbschg_sector_exception",
+		);
+		expect(nightFinding(BIRTHDAY_16, "16:00", "23:15")?.acknowledgementKind).toBeNull();
+	});
+
+	it("is acknowledgeable from 05:00 at 16, from 04:00 at 17 (bakeries), never earlier", () => {
+		expect(nightFinding(BIRTHDAY_16, "05:00", "11:00")?.acknowledgementKind).toBe(
+			"jarbschg_sector_exception",
+		);
+		expect(nightFinding(BIRTHDAY_16, "04:00", "10:00")?.acknowledgementKind).toBeNull();
+		expect(nightFinding(BIRTHDAY_17, "04:00", "10:00")?.acknowledgementKind).toBe(
+			"jarbschg_sector_exception",
+		);
+		expect(nightFinding(BIRTHDAY_17, "03:45", "10:00")?.acknowledgementKind).toBeNull();
+	});
+
+	it("is never acknowledgeable at 02:00, whatever the age", () => {
+		for (const birthday of [BIRTHDAY_15, BIRTHDAY_16, BIRTHDAY_17]) {
+			const finding = nightFinding(birthday, "22:00", "03:00");
+			expect(finding?.acknowledgementKind).toBeNull();
+			expect(finding?.blocksPublication).toBe(true);
+		}
+	});
+
+	it("judges the morning by the age on that morning: a 17th birthday at midnight", () => {
+		// Turns 17 on Wednesday 4 March: Tuesday 16:00–23:00 and Wednesday from 04:00 are covered.
+		const result = findings({
+			birthday: "2009-03-04",
+			shifts: [
+				shift("eve", "2026-03-03", "16:00", "23:00"),
+				shift("dawn", "2026-03-04", "04:00", "10:00"),
+			],
+			now: at("2026-03-01", "12:00"),
+		}).filter((finding) => finding.kind === "jarbschg_night_work");
+		expect(result.map((finding) => [finding.subjectKey, finding.acknowledgementKind])).toEqual([
+			["shift:eve", "jarbschg_sector_exception"],
+			["shift:dawn", "jarbschg_sector_exception"],
+		]);
+	});
+
+	it("loses its acknowledgeability once recorded work runs past the sector hours", () => {
+		const result = findings({
+			birthday: BIRTHDAY_16,
+			shifts: [shift("s", "2026-03-03", "16:00", "22:30")],
+			work: [work("w", at("2026-03-03", "16:00"), at("2026-03-03", "23:20"))],
+			now: at("2026-03-04", "08:00"),
+		});
+		expect(nightOf(result)).toMatchObject({ subjectKey: "shift:s", acknowledgementKind: null });
 	});
 });
 

@@ -11,7 +11,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { statutoryFindingId, type StatutoryFinding } from "../finding";
 import { statutoryInputFingerprint } from "../fingerprint";
-import { isMinorOn } from "./age";
+import { ageOn, isMinorOn } from "./age";
 import {
 	evaluateJarbschg,
 	type JarbschgBreach,
@@ -166,6 +166,11 @@ export function jarbschgFindingOf(input: {
 }): StatutoryFinding<JarbschgRule> {
 	const { breach, interval } = input;
 	const sectorException = jarbschgSectorExceptionRules.has(breach.rule);
+	// § 14 Abs. 2, 3: night work outside the sector hours for the minor's age (any night work under
+	// 16) has no exception; it is judged like a sector finding but cannot be acknowledged.
+	const acknowledgeableSector =
+		sectorException &&
+		!(breach.rule === "jarbschg_night_work" && (breach.beyondSectorHours ?? 0) > 0);
 	// § 12: a span of up to 11 h is lawful in the sectors the law names; the admin acknowledges that
 	// the sector applies, as for the other sector exceptions. Judged by the day's span alone.
 	const sectorShiftSpan =
@@ -217,7 +222,8 @@ export function jarbschgFindingOf(input: {
 						actual: breach.actual,
 						limit: breach.limit,
 					}),
-		acknowledgementKind: sectorException || sectorShiftSpan ? "jarbschg_sector_exception" : null,
+		acknowledgementKind:
+			acknowledgeableSector || sectorShiftSpan ? "jarbschg_sector_exception" : null,
 		...(sectorException && breach.coveredMinutes !== undefined
 			? { coveredMinutes: breach.coveredMinutes }
 			: {}),
@@ -293,6 +299,7 @@ export function youthFindingsOf(input: {
 			report,
 			isMinorOn: (day) =>
 				!input.contractorDays?.has(day.toString()) && isMinorOn(input.birthday, day),
+			ageOn: (day) => ageOn(input.birthday, day),
 			limitsOn: input.limitsOn,
 			holidays: input.holidays,
 			credits: input.credits,
@@ -317,15 +324,19 @@ export function youthFindingsOf(input: {
 	// shift clocked out of for lunch with the rest still planned): its sector-exception finding
 	// totals every piece, whichever days are judged, so Scheduling, Staffing, clock-out and the
 	// acknowledgement action agree on its fingerprint, and an edit that extends the shift deepens it.
-	const sectorTotals = new Map<string, { night: number; outside: number; covered: number }>();
+	const sectorTotals = new Map<
+		string,
+		{ night: number; outside: number; covered: number; beyond: number }
+	>();
 	for (const breach of evaluate(EVERY_DAY, "judged_days")) {
 		if (!jarbschgSectorExceptionRules.has(breach.rule)) continue;
 		const finding = findingOf(breach);
 		if (!finding) continue;
-		const total = sectorTotals.get(finding.id) ?? { night: 0, outside: 0, covered: 0 };
+		const total = sectorTotals.get(finding.id) ?? { night: 0, outside: 0, covered: 0, beyond: 0 };
 		if (breach.unit === "minutes") total.night += breach.actual;
 		total.outside += breach.outsidePlannedShift ?? 0;
 		total.covered += breach.coveredMinutes ?? 0;
+		total.beyond += breach.beyondSectorHours ?? 0;
 		sectorTotals.set(finding.id, total);
 	}
 
@@ -360,6 +371,7 @@ export function youthFindingsOf(input: {
 						actual: breach.unit === "minutes" ? (judged?.night ?? total.night) : breach.actual,
 						outsidePlannedShift: total.outside,
 						coveredMinutes: judged?.covered ?? total.covered,
+						beyondSectorHours: total.beyond,
 					}
 				: breach,
 		);

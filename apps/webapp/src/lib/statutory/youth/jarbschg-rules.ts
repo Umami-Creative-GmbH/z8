@@ -40,7 +40,9 @@ export const JARBSCHG_SECTOR_MAX_SHIFT_SPAN_MINUTES = 660;
 
 /**
  * Rules a statutory sector exception may lift (§§ 14 Abs. 2–7, 16 Abs. 2, 17 Abs. 2, 18 Abs. 2
- * JArbSchG): night, Saturday, Sunday and ordinary holiday work. The others are hard limits,
+ * JArbSchG): night, Saturday, Sunday and ordinary holiday work; night work only within the
+ * hours § 14 Abs. 2, 3 allows for the minor's age (`jarbschgSectorWorkHours`, like the 11 h cap
+ * on a sector shift span). The others are hard limits,
  * among them `jarbschg_holiday_prohibited`: work on 24 and 31 December after 14:00 (§ 18 Abs. 1,
  * which has no exception) and on 25 December, 1 January, Easter Sunday and 1 May (excluded from
  * the § 18 Abs. 2 exception).
@@ -51,6 +53,28 @@ export const jarbschgSectorExceptionRules: ReadonlySet<JarbschgRule> = new Set([
 	"jarbschg_sunday_work",
 	"jarbschg_holiday_work",
 ]);
+
+/** Local hours a sector exception may extend a minor's working day to. */
+export interface JarbschgSectorWorkHours {
+	/** Earliest start, minutes after local midnight. */
+	readonly fromMinuteOfDay: number;
+	/** Latest end, minutes after local midnight. */
+	readonly untilMinuteOfDay: number;
+}
+
+/**
+ * The widest hours § 14 JArbSchG lets an employer extend a minor's day to, by age, or null when
+ * none apply. § 14 Abs. 2: over-16s (from their 16th birthday) until 22:00 in hospitality and
+ * the Schaustellergewerbe, until 23:00 in multi-shift operations, from 05:00 or until 21:00 in
+ * agriculture, from 05:00 in bakeries and Konditoreien; § 14 Abs. 3: over-17s in bakeries from
+ * 04:00. The union is 05:00–23:00 at 16 and 04:00–23:00 from 17. Night work outside it, or by
+ * anyone under 16, cannot be acknowledged: the extensions after notice to or by permit of the
+ * supervisory authority (§ 14 Abs. 5, 7) are not an employer's acknowledgement.
+ */
+export function jarbschgSectorWorkHours(ageYears: number | null): JarbschgSectorWorkHours | null {
+	if (ageYears === null || ageYears < 16) return null;
+	return { fromMinuteOfDay: ageYears >= 17 ? 4 * 60 : 5 * 60, untilMinuteOfDay: 23 * 60 };
+}
 
 /**
  * Rules whose limit is a minimum the work must leave (§ 13 rest, § 11 breaks): their breach is
@@ -181,6 +205,11 @@ export interface JarbschgBreach {
 	 * what a sector exception for it covers.
 	 */
 	readonly coveredMinutes?: number;
+	/**
+	 * Night breaches: the night minutes outside the sector hours § 14 Abs. 2, 3 allows for the
+	 * minor's age (`jarbschgSectorWorkHours`). Above zero, no sector exception covers the work.
+	 */
+	readonly beyondSectorHours?: number;
 }
 
 export interface JarbschgEvaluationInput {
@@ -197,6 +226,11 @@ export interface JarbschgEvaluationInput {
 	 */
 	readonly report?: "judged_days" | "touching_judged_days";
 	readonly isMinorOn: (day: PlainDate) => boolean;
+	/**
+	 * Completed years on a local day, for the § 14 sector hours. Without it no night work is
+	 * within them.
+	 */
+	readonly ageOn?: (day: PlainDate) => number | null;
 	readonly limitsOn: (day: PlainDate) => JarbschgLimits | null;
 	/** Local public holiday dates, `YYYY-MM-DD`. */
 	readonly holidays: ReadonlySet<string>;
@@ -308,33 +342,88 @@ function overlapMinutes(span: Span, from: Instant, to: Instant): number {
 	return compareInstants(start, end) < 0 ? start.until(end).total({ unit: "minutes" }) : 0;
 }
 
-/** Minutes of `interval` inside the local night `[nightStart, nightEnd)` of any day it touches. */
-function nightOverlapMinutes(interval: Span, timezone: string, limits: JarbschgLimits): number {
+/** The instant of a local day's minute. */
+function localMinuteOf(day: PlainDate, minuteOfDay: number, timezone: string): Instant {
+	return day
+		.toZonedDateTime({
+			timeZone: timezone,
+			plainTime: Temporal.PlainTime.from({
+				hour: Math.floor(minuteOfDay / 60),
+				minute: minuteOfDay % 60,
+			}),
+		})
+		.toInstant();
+}
+
+/**
+ * The local nights `[nightStart, nightEnd)` an interval may touch, each with the day it begins
+ * on: from the night before the interval's first day through the night of its last.
+ */
+function nightsAround(
+	interval: Span,
+	timezone: string,
+	limits: JarbschgLimits,
+): { readonly day: PlainDate; readonly start: Instant; readonly end: Instant }[] {
 	const firstDay = interval.start.toZonedDateTimeISO(timezone).toPlainDate().subtract({ days: 1 });
 	const lastDay = interval.end.toZonedDateTimeISO(timezone).toPlainDate();
-	const at = (day: PlainDate, minuteOfDay: number) =>
-		day
-			.toZonedDateTime({
-				timeZone: timezone,
-				plainTime: Temporal.PlainTime.from({
-					hour: Math.floor(minuteOfDay / 60),
-					minute: minuteOfDay % 60,
-				}),
-			})
-			.toInstant();
-	let overlap = 0;
+	const nights = [];
 	for (
 		let day = firstDay;
 		Temporal.PlainDate.compare(day, lastDay) <= 0;
 		day = day.add({ days: 1 })
 	) {
-		const nightStart = at(day, limits.nightStartMinuteOfDay);
-		const nightEnd = at(day.add({ days: 1 }), limits.nightEndMinuteOfDay);
-		const from = compareInstants(interval.start, nightStart) > 0 ? interval.start : nightStart;
-		const to = compareInstants(interval.end, nightEnd) < 0 ? interval.end : nightEnd;
-		if (compareInstants(from, to) < 0) overlap += minutesBetween(from, to);
+		nights.push({
+			day,
+			start: localMinuteOf(day, limits.nightStartMinuteOfDay, timezone),
+			end: localMinuteOf(day.add({ days: 1 }), limits.nightEndMinuteOfDay, timezone),
+		});
 	}
-	return overlap;
+	return nights;
+}
+
+/** Minutes of `interval` inside the local night `[nightStart, nightEnd)` of any day it touches. */
+function nightOverlapMinutes(interval: Span, timezone: string, limits: JarbschgLimits): number {
+	return nightsAround(interval, timezone, limits).reduce((overlap, night) => {
+		const from = compareInstants(interval.start, night.start) > 0 ? interval.start : night.start;
+		const to = compareInstants(interval.end, night.end) < 0 ? interval.end : night.end;
+		return compareInstants(from, to) < 0 ? overlap + minutesBetween(from, to) : overlap;
+	}, 0);
+}
+
+/**
+ * Night minutes of `interval` outside the § 14 Abs. 2, 3 sector hours: the evening judged by the
+ * minor's age on its day, the early morning by their age on that morning.
+ */
+function nightMinutesBeyondSectorHours(
+	interval: Span,
+	timezone: string,
+	limits: JarbschgLimits,
+	ageOn: ((day: PlainDate) => number | null) | undefined,
+): number {
+	const beyond = nightsAround(interval, timezone, limits).reduce((total, night) => {
+		const minutes = overlapMinutes(interval, night.start, night.end);
+		if (minutes <= 0) return total;
+		const morningDay = night.day.add({ days: 1 });
+		const evening = jarbschgSectorWorkHours(ageOn?.(night.day) ?? null);
+		const morning = jarbschgSectorWorkHours(ageOn?.(morningDay) ?? null);
+		const covered =
+			(evening
+				? overlapMinutes(
+						interval,
+						night.start,
+						localMinuteOf(night.day, evening.untilMinuteOfDay, timezone),
+					)
+				: 0) +
+			(morning
+				? overlapMinutes(
+						interval,
+						localMinuteOf(morningDay, morning.fromMinuteOfDay, timezone),
+						night.end,
+					)
+				: 0);
+		return total + Math.max(0, minutes - covered);
+	}, 0);
+	return Math.round(beyond);
 }
 
 /** Breaches of the JArbSchG working-time rules on the judged days the employee is a minor. */
@@ -587,6 +676,7 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 				unit: JarbschgBreach["unit"],
 				outside: number,
 				coveredMinutes: number,
+				beyondSectorHours?: number,
 			) =>
 				found.push({
 					breach: {
@@ -598,10 +688,12 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 						unit,
 						...(shift ? { outsidePlannedShift: outside } : {}),
 						coveredMinutes,
+						...(beyondSectorHours === undefined ? {} : { beyondSectorHours }),
 					},
 					involves: [interval.dayKey],
 				});
-			// § 14: no work between 20:00 and 06:00.
+			// § 14 Abs. 1: no work between 20:00 and 06:00; a sector exception covers only the hours
+			// § 14 Abs. 2, 3 allows for the minor's age.
 			const night = nightOverlapMinutes(minorSpan, input.timezone, limits);
 			if (night > 0) {
 				const outside = shift
@@ -610,7 +702,13 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 							0,
 						)
 					: 0;
-				sector("jarbschg_night_work", night, "minutes", outside, night);
+				const beyond = nightMinutesBeyondSectorHours(
+					minorSpan,
+					input.timezone,
+					limits,
+					input.ageOn,
+				);
+				sector("jarbschg_night_work", night, "minutes", outside, night, beyond);
 			}
 			// §§ 16–18: no work on Saturdays, Sundays or public holidays, overnight work included.
 			const touched = daysTouched(minorSpan, input.timezone);

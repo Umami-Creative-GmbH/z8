@@ -1,6 +1,7 @@
 /**
- * Statutory sector exceptions for JArbSchG findings (#1993), org admins only: the open night,
- * Saturday, Sunday and holiday findings, and shift spans of up to 11 h (§ 12), of employees
+ * Statutory sector exceptions for JArbSchG findings (#1993), org admins only: the open night
+ * findings within the § 14 Abs. 2, 3 hours for the minor's age, Saturday, Sunday and holiday
+ * findings, and shift spans of up to 11 h (§ 12), of employees
  * under 18 around today, and the action that
  * acknowledges one. The admin acknowledges what they were shown: the action re-evaluates the
  * finding and refuses when its fingerprint no longer matches. The unified Reviews inbox (#1994)

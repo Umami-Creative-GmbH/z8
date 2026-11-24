@@ -123,6 +123,18 @@ planned shifts and stays current while the day is worked roughly as planned (clo
 minutes early, out a few minutes late); other shifts, or a span 15 minutes or more past the
 planned shifts' span, make it stale.
 
+**Night-work sector hours** (§ 14 Abs. 2, 3 JArbSchG):
+Minors may work only from 06:00 to 20:00 (§ 14 Abs. 1). An org admin's sector exception covers
+night work only inside the widest hours § 14 Abs. 2, 3 allows for the minor's age on that day:
+from their 16th birthday 05:00 to 23:00 (hospitality and fairgrounds until 22:00, multi-shift
+operations until 23:00, agriculture from 05:00 or until 21:00, bakeries from 05:00), from their
+17th birthday also from 04:00 (bakeries). The evening is judged by the age that day, the early
+morning by the age that morning. Night work outside them, or by anyone under 16, cannot be
+acknowledged, as a span over 11 hours cannot: the finding stays and blocks publication like a
+hard limit. Extensions after notice to or by permit of the supervisory authority (§ 14 Abs. 5,
+7) are not employer acknowledgements and are not modelled.
+_Avoid_: one acknowledgement lifting night work at any hour or age
+
 ## Relationships
 
 - **Contracts → Statutory Compliance**: a monitor applies to an employee through the effective
