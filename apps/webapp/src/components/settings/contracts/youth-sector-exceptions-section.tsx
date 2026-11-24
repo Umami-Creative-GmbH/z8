@@ -266,6 +266,16 @@ function YouthSectorExceptionItem({
 						void form.handleSubmit();
 					}}
 				>
+					{finding.findingKind === "jarbschg_night_work" ? (
+						// The acknowledgeable hours are the union of every § 14 permission for the minor's
+						// age; which one applies, and that Abs. 4 does not exclude it, the admin confirms.
+						<p className="text-muted-foreground text-sm sm:col-span-2">
+							{t(
+								"settings.contracts.reviews.youth.nightConfirms",
+								"Recording this confirms that one of these § 14 JArbSchG permissions applies to this work: hospitality or fairgrounds until 22:00 (from 16, Abs. 2 Nr. 1); multi-shift operations until 23:00 (from 16, Abs. 2 Nr. 2), or from 05:30 or until 23:30 after notifying the supervisory authority (Abs. 5 S. 2); agriculture from 05:00 or until 21:00 (from 16, Abs. 2 Nr. 3); bakeries from 05:00 (from 16, Abs. 2 Nr. 4) or from 04:00 (from 17, Abs. 3); until 21:00 at any age where the usual working time ends after 20:00 for transport reasons, after notifying the supervisory authority (Abs. 5 S. 1); from 05:00 at any age in a workplace with extraordinary heat in the warm season (Abs. 6). It also confirms that § 14 Abs. 4 does not exclude it: no work after 20:00 under Abs. 2 Nr. 1–3 on the day before a vocational school day whose lessons start before 09:00.",
+							)}
+						</p>
+					) : null}
 					<form.Field
 						name="reason"
 						validators={{

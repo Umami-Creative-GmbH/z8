@@ -118,6 +118,35 @@ describe("YouthSectorExceptionsSection (#1993)", () => {
 		expect(await screen.findByText("90 min at night")).toBeTruthy();
 	});
 
+	it("says what recording a night-work exception confirms, § 14 Abs. 4 included, in German", async () => {
+		show("de", {
+			...finding,
+			findingId: "jarbschg_night_work:e1:shift:s1",
+			findingKind: "jarbschg_night_work",
+			legalReference: "§ 14 JArbSchG",
+			used: { unit: "minutes", value: 90 },
+		});
+
+		fireEvent.click(
+			await screen.findByRole("button", {
+				name: de["settings.contracts.reviews.youth.acknowledge"],
+			}),
+		);
+		const key = "settings.contracts.reviews.youth.nightConfirms";
+		expect(en[key]).toContain("§ 14 Abs. 4");
+		expect(en[key]).toContain("23:30");
+		expect(de[key]).toBeTruthy();
+		expect(de[key]).not.toBe(en[key]);
+		expect(screen.getByText(de[key])).toBeTruthy();
+	});
+
+	it("shows no night-work confirmation for a Sunday exception", async () => {
+		show("en");
+
+		fireEvent.click(await screen.findByRole("button", { name: "Record sector exception…" }));
+		expect(screen.queryByText(/§ 14 Abs\. 4/)).toBeNull();
+	});
+
 	it("has a German text for the shift span figure", () => {
 		const key = "settings.contracts.reviews.youth.shiftSpanMinutes";
 		expect(en[key]).toBe("{minutes} min shift span");
