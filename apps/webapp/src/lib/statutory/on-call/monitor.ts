@@ -396,7 +396,7 @@ function fullWeekBand(
  * shift, on its own day and week, whichever day the work started (a Sunday clock-in running into
  * Monday's shift). Minutes outside every shift (clocked in early, between shifts, past the end)
  * count on the work's start day. Only shifts up to the day after the start day take work
- * (`shiftTakesWorkOf`; the loaded shifts reach one day past the loaded days, for every employee
+ * (`lastShiftDayOf`; the loaded shifts reach one day past the loaded days, for every employee
  * alike): a clock-in left running for days counts on its start day, whichever range it is judged
  * in. A running clock-in's minutes outside shifts grow: every further minute adds one, whether or
  * not the clock has reached a shift yet, so the figure does not jump when it does. Its minutes

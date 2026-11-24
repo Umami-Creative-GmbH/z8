@@ -120,7 +120,9 @@ export interface StatutoryFinding<Kind extends string = string> {
 	/**
 	 * Server-only, like `inputFingerprint`: dropped by redaction and never projected for Scheduling.
 	 * Set by a monitor whose `summary.used` or `coveredMinutes` grow with a running clock-in: the same
-	 * figures without that growth (`used` null when only the running work makes the breach). A
+	 * figures without that growth, also when they fall inside the limit (on-call, working student),
+	 * so a plan change under the limit still changes the key; `used` is null only where a monitor
+	 * judges the breach without the running work and finds no breach of that scope (youth). A
 	 * clock-in within its shift counts to the shift's end, as planned. The planner's publish
 	 * acknowledgement hashes these instead (`statutoryBreachDepth`), so it holds while the clock runs
 	 * and goes stale when the breach deepens otherwise, or once the clock-out fixes the minutes.
