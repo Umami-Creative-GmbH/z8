@@ -220,6 +220,24 @@
       "title": "Schichtvorlagen"
     },
     "statutory": {
+      "findings": {
+        "acknowledgeListLabel": "Zu bestätigende gesetzliche Befunde",
+        "blockedTitle": "Veröffentlichung abgelehnt",
+        "blockingListLabel": "Befunde, die die Veröffentlichung sperren",
+        "blocksPublishing": "Sperrt die Veröffentlichung",
+        "close": "Schließen",
+        "hide": "Gesetzliche Befunde ausblenden ({count})",
+        "listLabel": "Gesetzliche Befunde",
+        "openReviews": "In Prüfungen & Konflikte öffnen",
+        "outsideScope": "{count, plural, one {# weiterer Befund betrifft eine Person, die Sie nicht verwalten.} other {# weitere Befunde betreffen Personen, die Sie nicht verwalten.}}",
+        "severity": {
+          "critical": "Kritisch",
+          "info": "Hinweis",
+          "warning": "Warnung"
+        },
+        "show": "Gesetzliche Befunde anzeigen ({count})",
+        "showShifts": "Schichten von {name} anzeigen"
+      },
       "warning": "{area}: gesetzliche Grenze gefährdet",
       "warningApproaching": "{area}: gesetzliche Grenze fast erreicht",
       "warningExceeded": "{area}: gesetzliche Grenze überschritten",

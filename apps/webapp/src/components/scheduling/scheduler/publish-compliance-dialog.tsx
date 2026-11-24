@@ -13,12 +13,20 @@ import {
 } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
+import type { ScheduleStatutoryFindings } from "@/lib/statutory/scheduling/findings-list";
+import { StatutoryFindingsList } from "./statutory-findings-list";
 
 interface PublishComplianceDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	summary: ScheduleComplianceSummary | null;
+	/** The statutory findings being acknowledged, for this viewer (#2026). */
+	statutoryFindings?: ScheduleStatutoryFindings | null;
+	/** The range being published, where a finding's calendar link opens. */
+	dateRange?: DateRange;
+	shiftEmployeeIds?: ReadonlySet<string>;
 	onConfirm: () => void;
 	isConfirming: boolean;
 }
@@ -27,6 +35,9 @@ export function PublishComplianceDialog({
 	open,
 	onOpenChange,
 	summary,
+	statutoryFindings,
+	dateRange,
+	shiftEmployeeIds,
 	onConfirm,
 	isConfirming,
 }: PublishComplianceDialogProps) {
@@ -88,6 +99,21 @@ export function PublishComplianceDialog({
 							)}
 						</div>
 					</div>
+					{statutoryFindings &&
+						dateRange &&
+						(statutoryFindings.items.length > 0 || statutoryFindings.outsideScopeCount > 0) && (
+							<div className="mt-4">
+								<StatutoryFindingsList
+									findings={statutoryFindings}
+									dateRange={dateRange}
+									shiftEmployeeIds={shiftEmployeeIds}
+									label={t(
+										"scheduling:scheduling.statutory.findings.acknowledgeListLabel",
+										"Statutory findings to acknowledge",
+									)}
+								/>
+							</div>
+						)}
 				</ActionPanelBody>
 
 				<ActionPanelFooter>

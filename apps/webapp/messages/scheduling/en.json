@@ -220,6 +220,24 @@
       "title": "Shift Templates"
     },
     "statutory": {
+      "findings": {
+        "acknowledgeListLabel": "Statutory findings to acknowledge",
+        "blockedTitle": "Publishing refused",
+        "blockingListLabel": "Findings that block publishing",
+        "blocksPublishing": "Blocks publishing",
+        "close": "Close",
+        "hide": "Hide statutory findings ({count})",
+        "listLabel": "Statutory findings",
+        "openReviews": "Open in Reviews & Conflicts",
+        "outsideScope": "{count, plural, one {# more finding concerns an employee you don't manage.} other {# more findings concern employees you don't manage.}}",
+        "severity": {
+          "critical": "Critical",
+          "info": "Note",
+          "warning": "Warning"
+        },
+        "show": "Show statutory findings ({count})",
+        "showShifts": "Show {name}'s shifts"
+      },
       "warning": "{area}: statutory limit at risk",
       "warningApproaching": "{area}: approaching the statutory limit",
       "warningExceeded": "{area}: statutory limit exceeded",

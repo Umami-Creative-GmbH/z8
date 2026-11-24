@@ -180,6 +180,9 @@ export function useShiftSchedulerData({
 	const shifts = shiftsResult || [];
 	const templates = templatesResult || [];
 	const complianceSummary = complianceSummaryResult?.summary;
+	// Who, which limit and which day behind the statutory count (#2026).
+	const statutoryFindings = complianceSummaryResult?.statutoryFindings ?? null;
+	const shiftEmployeeIds = new Set(shifts.flatMap((shift) => shift.employeeId ?? []));
 	const draftCount = shifts.filter((shift) => shift.status === "draft").length;
 	const complianceFindingsCount = complianceSummary?.totalFindings ?? 0;
 	const hasComplianceWarnings = complianceFindingsCount > 0;
@@ -203,6 +206,8 @@ export function useShiftSchedulerData({
 		supportingDataRetryPending,
 		retrySupportingData,
 		complianceSummary,
+		statutoryFindings,
+		shiftEmployeeIds,
 		draftCount,
 		complianceFindingsCount,
 		hasComplianceWarnings,
