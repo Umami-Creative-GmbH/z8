@@ -17,6 +17,7 @@ import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-
 import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
 import { schedulingActionErrorMessage } from "../scheduling-action-error";
 import { SHIFT_UPDATE_REFUSALS } from "../shifts/use-shift-dialog-mutations";
+import { schedulerComplianceQueryKey, schedulerShiftsQueryKey } from "./scheduler-query-keys";
 import { filterShiftsForEmployee, shiftToEvent } from "./shift-scheduler-utils";
 
 /** How a refused drag of a shift on the calendar is worded. */
@@ -68,13 +69,7 @@ export function useShiftSchedulerData({
 		isFetching: shiftsFetching,
 		refetch: retryShifts,
 	} = useQuery({
-		// A planner's drafts must never hydrate an employee's published-only view.
-		queryKey: [
-			...queryKeys.shifts.list(organizationId, dateRange),
-			"scheduling-viewer",
-			employeeId,
-			isManager,
-		],
+		queryKey: schedulerShiftsQueryKey(organizationId, dateRange, employeeId, isManager),
 		queryFn: async () => {
 			const result = await getShifts({
 				startDate: dateRange.startDate,
@@ -115,7 +110,7 @@ export function useShiftSchedulerData({
 		isFetching: complianceFetching,
 		refetch: retryCompliance,
 	} = useQuery({
-		queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
+		queryKey: schedulerComplianceQueryKey(organizationId, dateRange, employeeId),
 		queryFn: async () => {
 			const result = await getScheduleComplianceSummary(dateRange);
 			if (!result.success) throw new Error(result.error);
@@ -180,6 +175,9 @@ export function useShiftSchedulerData({
 	const shifts = shiftsResult || [];
 	const templates = templatesResult || [];
 	const complianceSummary = complianceSummaryResult?.summary;
+	// Who, which limit and which day behind the statutory count (#2026).
+	const statutoryFindings = complianceSummaryResult?.statutoryFindings ?? null;
+	const shiftEmployeeIds = new Set(shifts.flatMap((shift) => shift.employeeId ?? []));
 	const draftCount = shifts.filter((shift) => shift.status === "draft").length;
 	const complianceFindingsCount = complianceSummary?.totalFindings ?? 0;
 	const hasComplianceWarnings = complianceFindingsCount > 0;
@@ -208,6 +206,8 @@ export function useShiftSchedulerData({
 		supportingDataRetryPending,
 		retrySupportingData,
 		complianceSummary,
+		statutoryFindings,
+		shiftEmployeeIds,
 		draftCount,
 		complianceFindingsCount,
 		hasComplianceWarnings,

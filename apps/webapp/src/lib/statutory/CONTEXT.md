@@ -254,6 +254,18 @@ _Avoid_: one acknowledgement lifting night work at any hour or age
   refused, shortening it to 9 h on Tuesday saves
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
+- **Scheduling findings list** (#2026): the compliance banner, the publish dialog and the
+  publish-block refusal list the statutory findings behind their counts
+  (`scheduling/findings-list-view.ts`): employee name, the wage-free projection and the period
+  each judges. A scoped manager gets only the employees of their `ManagedScope` (manager links);
+  the rest is counted, never named. An org admin or workforce admin gets every employee, and only an
+  org admin the link to the finding's Reviews & Conflicts domain. Org admins get the projection too:
+  amounts stay in Reviews & Conflicts. The counts and the publish fingerprint stay organization-wide.
+  **Blocks publishing** on a listed finding means this publication is refused for it
+  (`blocksThisPublication`, decided by `findingsBlockingPublication` for the range's drafts),
+  not the finding's `blocksPublication`, which only says it can block: a published shift's breach
+  beside an unrelated draft can block but does not block this publication. When that check fails,
+  the banner still lists the findings, none marked; `publishShifts` still refuses with its own list
 
 ## Decisions
 

@@ -364,13 +364,27 @@ describe("employment periods", () => {
 			weekly_contract_minutes: 1200,
 			work_policy_id: policyId,
 		});
-		expect(
-			await row(
-				`select count(*)::int as count from work_policy_assignment
-				 where employee_id = $1 and organization_id = $2 and assignment_type = 'employee' and is_active = true`,
-				[target.employeeId, fixture.organizationId],
-			),
-		).toEqual({ count: 0 });
+		// The rehire projects its work policy into exactly one employee assignment,
+		// sourced from the rehire terms, so clock-out break snapshots resolve it (A1-8).
+		const { rows: assignments } = await fixture.pool.query(
+			`select a.policy_id, a.effective_from_date::text, a.effective_until_date::text, a.source_kind,
+			        a.source_employment_history_id = (
+			          select id from employee_employment_history where employment_period_id = $3
+			        ) as sourced_from_rehire_terms
+			 from work_policy_assignment a
+			 where a.employee_id = $1 and a.organization_id = $2
+			   and a.assignment_type = 'employee' and a.is_active = true`,
+			[target.employeeId, fixture.organizationId, result.employmentPeriodId],
+		);
+		expect(assignments).toEqual([
+			{
+				policy_id: policyId,
+				effective_from_date: "2026-11-02",
+				effective_until_date: null,
+				source_kind: "employment_terms",
+				sourced_from_rehire_terms: true,
+			},
+		]);
 		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
 			is_active: true,
 		});

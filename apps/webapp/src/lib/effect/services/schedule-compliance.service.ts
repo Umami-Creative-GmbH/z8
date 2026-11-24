@@ -19,6 +19,7 @@ import {
 	summarizeComplianceFindings,
 } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
 import { evaluateStatutoryScheduleWindow } from "@/lib/statutory/scheduling/evaluate";
+import type { DatedStatutoryFinding } from "@/lib/statutory/scheduling/findings-list";
 import {
 	loadExecutiveExemptDays,
 	withoutExecutiveExemptFindings,
@@ -45,6 +46,11 @@ export interface EvaluateScheduleWindowInput {
 export interface EvaluateScheduleWindowResult extends ScheduleComplianceResult {
 	organizationId: string;
 	fingerprint: string;
+	/**
+	 * The statutory findings of `findings`, each with the period it judges, for Scheduling's
+	 * findings list (#2026). Server-side: the Scheduling action scopes and names them.
+	 */
+	datedStatutoryFindings: DatedStatutoryFinding[];
 }
 
 export interface RecordPublishAcknowledgmentInput {
@@ -265,6 +271,10 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 							result: evaluationResult,
 							statutoryPublishKeys: statutory.publishKeys,
 						}),
+						datedStatutoryFindings: statutoryFindings.map((finding, index) => ({
+							finding,
+							period: statutory.periods[index] ?? null,
+						})),
 					};
 				}),
 

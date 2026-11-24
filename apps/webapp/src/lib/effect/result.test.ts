@@ -1,7 +1,10 @@
+import { inspect } from "node:util";
 import { Cause, Exit } from "effect";
 import { makeDynamicHangingPromise } from "next/dist/server/dynamic-rendering-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthenticationError, ConflictError, DatabaseError, ValidationError } from "./errors";
+import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
+import { StatutoryPublicationBlockedError } from "@/lib/statutory/scheduling/publication-blocked-error";
 import { toServerActionResult } from "./result";
 
 afterEach(() => {
@@ -69,6 +72,61 @@ describe("toServerActionResult", () => {
 		expect(result).not.toHaveProperty("details");
 	});
 
+	it.each([
+		[
+			"a refusal listing the viewer's findings",
+			() =>
+				new ValidationError({
+					message: "Cannot publish",
+					field: "shifts",
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+					value: {
+						statutoryFindings: {
+							items: [{ employeeName: "Anna Berg", finding: { employeeId: "employee-anna" } }],
+							outsideScopeCount: 0,
+							canOpenReviews: false,
+						},
+					},
+				}),
+		],
+		[
+			"the publication's own publish-block refusal",
+			() =>
+				new StatutoryPublicationBlockedError({
+					message: "Cannot publish",
+					blockingFindings: [
+						{
+							type: "statutory",
+							employeeId: "employee-anna",
+							findingId: "jarbschg_daily_max:employee-anna:shift:s1",
+							statutoryKind: "jarbschg_daily_max",
+							domain: "youth_protection",
+							severity: "critical",
+							subjectKey: "shift:s1",
+							legalReference: "§ 8 Abs. 1 JArbSchG",
+							summary: { tier: "exceeded" },
+							day: "2027-03-02",
+							acknowledgementStatus: null,
+							blocksPublication: true,
+						},
+					],
+				}),
+		],
+	])("logs %s by its tag, refusal and message only, never the findings it carries", (_, make) => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+		const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		toServerActionResult(Exit.fail(make()));
+
+		const logged = [...consoleError.mock.calls, ...consoleWarn.mock.calls]
+			.flat()
+			.map((arg) => inspect(arg, { depth: null, showHidden: true }))
+			.join("\n");
+		expect(logged).toContain(STATUTORY_PUBLICATION_BLOCKED);
+		expect(logged).toContain("Cannot publish");
+		expect(logged).not.toMatch(/Anna Berg|employee-anna|jarbschg_daily_max|statutoryFindings/);
+	});
+
 	it("passes a validation value through as the holiday name", () => {
 		vi.spyOn(console, "error").mockImplementation(() => {});
 
@@ -84,6 +142,39 @@ describe("toServerActionResult", () => {
 			code: "ValidationError",
 			holidayName: "New Year",
 		});
+	});
+
+	it("refuses a statutory publish block without its unscoped blocking findings", () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		const error = new StatutoryPublicationBlockedError({
+			message: "Cannot publish",
+			blockingFindings: [
+				{
+					type: "statutory",
+					employeeId: "employee-outside-scope",
+					findingId: "jarbschg_daily_max:employee-outside-scope:shift:s1",
+					statutoryKind: "jarbschg_daily_max",
+					domain: "youth_protection",
+					severity: "critical",
+					subjectKey: "shift:s1",
+					legalReference: "§ 8 Abs. 1 JArbSchG",
+					summary: { tier: "exceeded" },
+					day: "2027-03-02",
+					acknowledgementStatus: null,
+					blocksPublication: true,
+				},
+			],
+		});
+
+		const result = toServerActionResult(Exit.fail(error));
+
+		expect(result).toEqual({
+			success: false,
+			error: "Cannot publish",
+			code: "ValidationError",
+			refusal: STATUTORY_PUBLICATION_BLOCKED,
+		});
+		expect(JSON.stringify(result)).not.toContain("employee-outside-scope");
 	});
 
 	it("reports the typed failure, not a finalizer defect, when the cause holds both", () => {

@@ -25,7 +25,9 @@ stint is restored.
 - Employee detail page: **Settings → Employees → (employee) → Employment and
   departure**. Owners and admins see the actions the server offers
   (schedule, edit, cancel, offboard now, rehire, resolve, retry, assign
-  replacement). The employee's managers see a read-only view.
+  replacement). The view is for org admins only: managers, including holders
+  of a payroll access grant that covers the employee, don't see it, so it
+  offers them no work balance or final payout.
 - Directory: once released, *Deactivate* / *Reactivate* in the employee and
   member tables open the departure card instead of flipping the active flag.
 - Notifications: *Employee offboarding needs review* links to the specific

@@ -220,6 +220,29 @@
       "title": "Shift Templates"
     },
     "statutory": {
+      "findings": {
+        "acknowledgeListLabel": "Statutory findings to acknowledge",
+        "blockedTitle": "Publishing refused",
+        "blockingListLabel": "Findings that block publishing",
+        "blocksPublishing": "Blocks publishing",
+        "close": "Close",
+        "hide": "Hide statutory findings ({count})",
+        "hideOfTotal": "Hide statutory findings ({count} of {total})",
+        "listLabel": "Statutory findings",
+        "openReviews": "Open in Reviews & Conflicts",
+        "outsideScope": "{count, plural, one {# more finding concerns an employee you don't manage.} other {# more findings concern employees you don't manage.}}",
+        "outsideScopeOnly": "{count, plural, one {# finding concerns an employee you don't manage.} other {# findings concern employees you don't manage.}}",
+        "severity": {
+          "critical": "Critical",
+          "info": "Note",
+          "warning": "Warning"
+        },
+        "show": "Show statutory findings ({count})",
+        "showOfTotal": "Show statutory findings ({count} of {total})",
+        "showShifts": "Show {name}'s shifts",
+        "unnamedEmployee": "Unnamed employee",
+        "weekOf": "Week of {date}"
+      },
       "warning": "{area}: statutory limit at risk",
       "warningApproaching": "{area}: approaching the statutory limit",
       "warningExceeded": "{area}: statutory limit exceeded",
@@ -233,24 +256,30 @@
         "apprenticeship": "Apprentice release (BBiG)"
       },
       "jarbschg": {
+        "dailyMax": "Under 18: {used} min of work this day exceeds the {limit} min youth limit",
         "dailyMaxOn": "Under 18: {used} min of work on {date} exceeds the {limit} min youth limit",
+        "weeklyMax": "Under 18: {used} min of work this week exceeds the {limit} min youth limit",
         "weeklyMaxWeekOf": "Under 18: {used} min of work in the week of {date} exceeds the {limit} min youth limit",
         "daysPerWeek": "Under 18: {used} working days this week, at most {limit} allowed",
         "restPeriod": "Under 18: only {used} min of rest before this shift, {limit} min required",
         "break": "Under 18: {used} min of breaks taken, {limit} min required",
         "uninterrupted": "Under 18: {used} min worked without a break, at most {limit} min allowed",
-        "nightWork": "Under 18: {used} min of night work between 20:00 and 06:00",
-        "nightWorkBeyondSector": "Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: 05:00 to 21:00; from 16 until 23:30; from 17 in bakeries from 04:00; none under 15); no exception allows it",
+        "nightWork": "Under 18: {used} min of night work between {from} and {until}",
+        "nightWorkBeyondSector": "Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: {from15} to {until15}; from 16 until {until16}; from 17 in bakeries from {bakeryFrom17}; none under 15); no exception allows it",
         "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
         "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
         "holidayWork": "Under 18: work on a public holiday needs a statutory sector exception",
-        "holidayProhibited": "Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+        "holidayProhibited": "Under 18: {used} min of prohibited work: none after {cutoff} on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+        "shiftSpan": "Under 18: the shift span is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",
         "shiftSpanOn": "Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)"
       },
       "apprenticeship": {
+        "releaseDayShift": "Apprentice release day: school, block-release or exam day",
         "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
+        "blockWeekTraining": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance this day",
         "blockWeekTrainingWeek": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
         "blockWeekTrainingNote": "The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
+        "workplaceReturn": "Under 18: no work this day, the week's full vocational school day",
         "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
       },
       "shortTerm": {

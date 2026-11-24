@@ -39,7 +39,8 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-const { getVacationBalance } = await import("@/app/[locale]/(app)/absences/queries");
+const { getVacationBalance, getVacationBalanceResult } =
+	await import("@/app/[locale]/(app)/absences/queries");
 const { getManagerAbsenceEmployees } = await import("@/app/[locale]/(app)/team/absences/actions");
 const { employeeVacationAllowance, vacationAllowance } = await import("@/db/schema");
 const { createLifecycleDatabaseFixture } = await import(
@@ -201,6 +202,43 @@ describe("prorated allowance in every balance reader (#1110)", () => {
 			expect(dashboard).toMatchObject({ totalDays: expected, baseAllowance: expected });
 			expect(managerAllowance(employeeId)).toBe(expected);
 		}
+	});
+
+	it("prorates a joiner with a recorded start, as days before employment have no working week (#2013)", async () => {
+		const { employeeId } = await fixture.seedEmployee({
+			startDate: utcDate("2026-10-01"),
+			withPeriod: false,
+		});
+		await fixture.pool.query(
+			`insert into employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance)
+			 values ($1, $2, 'open', $3, 'recorded')`,
+			[fixture.organizationId, employeeId, utcDate("2026-10-01")],
+		);
+
+		expect(await getVacationBalanceResult(employeeId, 2026)).toMatchObject({
+			configuration: { status: "resolved" },
+			balance: { totalDays: 8, allowance: { days: 8, fullAllowance: 30 } },
+		});
+	});
+
+	it("gives no allowance, not a configuration conflict, in a year without an employed day (#2013)", async () => {
+		const { employeeId } = await fixture.seedEmployee({
+			startDate: utcDate("2020-01-01"),
+			withPeriod: false,
+			isActive: false,
+		});
+		await fixture.pool.query(
+			`insert into employee_employment_period
+			 (organization_id, employee_id, status, started_at, ended_at, start_provenance)
+			 values ($1, $2, 'closed', $3, $4, 'recorded')`,
+			[fixture.organizationId, employeeId, utcDate("2020-01-01"), utcDate("2025-07-01")],
+		);
+
+		expect(await getVacationBalanceResult(employeeId, 2026)).toMatchObject({
+			configuration: { status: "resolved" },
+			balance: { totalDays: 0, allowance: { days: 0, reason: { kind: "not_employed" } } },
+		});
 	});
 
 	it("keeps the full allowance in a year before 2026", async () => {

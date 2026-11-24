@@ -34,6 +34,7 @@ import {
 	STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
 	statutoryPublicationRefusal,
 } from "@/lib/statutory/scheduling/publication-block";
+import { StatutoryPublicationBlockedError } from "@/lib/statutory/scheduling/publication-blocked-error";
 import {
 	findingsBlockingDraftPublication,
 	lockPublicationDrafts,
@@ -190,6 +191,7 @@ export class ShiftService extends Context.Service<
 		/**
 		 * Publishes the range's drafts. They are judged by the JArbSchG publish block in the same
 		 * transaction, as `statutory` describes the range (organization-local days of `dateRange`).
+		 * A refusal of the publish block fails with `StatutoryPublicationBlockedError`.
 		 */
 		readonly publishShifts: (
 			organizationId: string,
@@ -198,7 +200,7 @@ export class ShiftService extends Context.Service<
 			statutory: Omit<PublicationScope, "organizationId">,
 		) => Effect.Effect<
 			{ count: number; affectedEmployeeIds: string[] },
-			AuthorizationError | ValidationError | DatabaseError
+			AuthorizationError | ValidationError | StatutoryPublicationBlockedError | DatabaseError
 		>;
 
 		// Analytics
@@ -881,7 +883,7 @@ export const ShiftServiceLive = Layer.effect(
 								drafts,
 							);
 							const refusal = statutoryPublicationRefusal(blocking);
-							if (refusal) return { kind: "statutory_blocked", refusal } as const;
+							if (refusal) return { kind: "statutory_blocked", refusal, blocking } as const;
 
 							await tx
 								.update(shift)
@@ -908,10 +910,11 @@ export const ShiftServiceLive = Layer.effect(
 
 					if (outcome.kind === "statutory_blocked") {
 						return yield* Effect.fail(
-							new ValidationError({
+							// The Scheduling action lists them for its viewer (#2026); unscoped, they
+							// never reach a result.
+							new StatutoryPublicationBlockedError({
 								message: outcome.refusal,
-								field: "shifts",
-								refusal: STATUTORY_PUBLICATION_BLOCKED,
+								blockingFindings: outcome.blocking,
 							}),
 						);
 					}

@@ -141,6 +141,28 @@ function subject(
 		},
 	};
 }
+/**
+ * A manager who is not an org admin and reaches Payroll only through a payroll access grant, with
+ * finance and personnel-file officer grants. Since #1957 org admins see Payroll without reading
+ * `payroll_access_grant`, so only someone like this shows what that read decides.
+ */
+async function payrollGrantee() {
+	const person = await fixture.seedEmployee({ role: "member" });
+	await fixture.pool.query("update employee set role='manager' where id=$1", [person.employeeId]);
+	await fixture.pool.query(
+		`insert into payroll_access_grant (organization_id,payroll_employee_id,scope,created_by,updated_at) values ($1,$2,'all',$3,now())`,
+		[fixture.organizationId, person.employeeId, fixture.ownerUserId],
+	);
+	await fixture.pool.query(
+		`insert into expense_officer_grant (organization_id,officer_employee_id,scope,created_by) values ($1,$2,'specific',$3)`,
+		[fixture.organizationId, person.employeeId, fixture.ownerUserId],
+	);
+	await fixture.pool.query(
+		`insert into personnel_file_officer_grant (organization_id,officer_employee_id,scope,categories,created_by) values ($1,$2,'specific',ARRAY['payslip'],$3)`,
+		[fixture.organizationId, person.employeeId, fixture.ownerUserId],
+	);
+	return subject(person.userId);
+}
 function startRegion(actor: Subject | null) {
 	return requests.run(actor, () => {
 		const stream = renderToReadableStream(
@@ -268,11 +290,12 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		expect(locationQueries[0]).toMatch(/limit \$\d+/);
 	});
 	it("starts unrelated capability reads before a held payroll read finishes", async () => {
+		const grantee = await payrollGrantee();
 		let release = () => {};
 		boundary.hold = new Promise<void>((resolve) => {
 			release = resolve;
 		});
-		const pending = render(subject());
+		const pending = render(grantee);
 		try {
 			await vi.waitFor(() =>
 				expect(
@@ -292,11 +315,12 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		}
 	});
 	it("streams permitted page content and known clock status while sidebar payroll is pending", async () => {
+		const grantee = await payrollGrantee();
 		let release = () => {};
 		boundary.hold = new Promise<void>((resolve) => {
 			release = resolve;
 		});
-		const pending = startRegion(subject());
+		const pending = startRegion(grantee);
 		try {
 			await vi.waitFor(() => expect(pending.output()).toContain("Loading navigation"));
 			await vi.waitFor(() => expect(pending.output()).toContain("Clock In"));
@@ -308,12 +332,15 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 			await pending.completion;
 		}
 		expect(pending.output()).toContain('"href":"/finance"');
+		expect(pending.output()).toContain('"href":"/payroll"');
 	});
 	it("keeps successful navigation, permitted page and known clock when one capability fails", async () => {
+		const grantee = await payrollGrantee();
 		boundary.fail = true;
 		try {
-			const output = await startRegion(subject()).completion;
+			const output = await startRegion(grantee).completion;
 			expect(output).toContain("Some navigation is unavailable");
+			expect(output).not.toContain('"href":"/payroll"');
 			expect(output).toContain('"href":"/finance"');
 			expect(output).toContain('"href":"/personnelFiles"');
 			expect(output).toContain("Clock In");
@@ -383,7 +410,9 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		const output = await render(subject(owner.userId));
 		expect(output).toContain('"href":"/personnelFiles"');
 		expect(output).toContain('"href":"/worksCouncil"');
-		for (const name of ["finance", "payroll", "myDocuments", "teamPresence", "periodSubmissions"])
+		// An org admin sees Payroll without a payroll grant read (#1957).
+		expect(output).toContain('"href":"/payroll"');
+		for (const name of ["finance", "myDocuments", "teamPresence", "periodSubmissions"])
 			expect(output).not.toContain(`"href":"/${name}"`);
 		expect(boundary.queries.some((query) => query.includes('from "payroll_access_grant"'))).toBe(
 			false,
@@ -442,17 +471,14 @@ describe("authorized sidebar capabilities on the real RSC request cache", () => 
 		},
 	);
 	it("recovers a failed payroll capability on a fresh sidebar render without retaining failure state", async () => {
-		await fixture.pool.query(
-			`insert into payroll_access_grant (organization_id,payroll_employee_id,scope,created_by,updated_at) values ($1,$2,'all',$3,now())`,
-			[fixture.organizationId, fixture.ownerEmployeeId, fixture.ownerUserId],
-		);
+		const grantee = await payrollGrantee();
 		boundary.fail = true;
 		try {
-			expect(await startRegion(subject()).completion).not.toContain('"href":"/payroll"');
+			expect(await startRegion(grantee).completion).not.toContain('"href":"/payroll"');
 		} finally {
 			boundary.fail = false;
 		}
-		const recovered = await startRegion(subject()).completion;
+		const recovered = await startRegion(grantee).completion;
 		expect(recovered).toContain('"href":"/payroll"');
 		expect(recovered).not.toContain("Some navigation is unavailable");
 	});

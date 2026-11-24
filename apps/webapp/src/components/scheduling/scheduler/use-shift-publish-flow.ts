@@ -8,6 +8,7 @@ import { publishShifts } from "@/app/[locale]/(app)/scheduling/actions";
 import type { DateRange, PublishAcknowledgmentInput } from "@/app/[locale]/(app)/scheduling/types";
 import type { RefusalMessages } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
+import type { ScheduleStatutoryFindings } from "@/lib/statutory/scheduling/findings-list";
 import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
 import { schedulingActionErrorMessage } from "../scheduling-action-error";
 import {
@@ -22,6 +23,29 @@ const PUBLISH_REFUSALS = {
 	],
 } satisfies RefusalMessages<typeof STATUTORY_PUBLICATION_BLOCKED>;
 
+/** A refused publication; `statutoryFindings` lists what blocks it, when the refusal says. */
+class PublishRefusal extends Error {
+	constructor(
+		message: string,
+		readonly refusal: string | undefined,
+		readonly statutoryFindings: ScheduleStatutoryFindings | null,
+	) {
+		super(message);
+	}
+}
+
+/**
+ * The blocking findings a publish-block refusal carries (#2026), or null when it carries nothing to
+ * show: no listed finding and none outside the viewer's scope. The refusal toast covers that case.
+ */
+function blockingFindingsOfRefusal(details: Record<string, unknown> | undefined) {
+	const listed = details?.statutoryFindings as ScheduleStatutoryFindings | undefined;
+	if (!listed || !Array.isArray(listed.items)) return null;
+	const outsideScopeCount =
+		typeof listed.outsideScopeCount === "number" ? listed.outsideScopeCount : 0;
+	return listed.items.length > 0 || outsideScopeCount > 0 ? listed : null;
+}
+
 interface UseShiftPublishFlowOptions {
 	organizationId: string;
 	dateRange: DateRange;
@@ -33,12 +57,32 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 	const [pendingAcknowledgment, setPendingAcknowledgment] =
 		useState<PendingPublishAcknowledgment | null>(null);
 	const [isComplianceDialogOpen, setIsComplianceDialogOpen] = useState(false);
+	const [blockedFindings, setBlockedFindings] = useState<ScheduleStatutoryFindings | null>(null);
+	const [isBlockedDialogOpen, setIsBlockedDialogOpen] = useState(false);
+
+	/**
+	 * The calendar's shifts and compliance findings. Refreshed also when publishing is refused or
+	 * needs an acknowledgement: what the server judged (e.g. another planner's new draft) may not
+	 * be in the calendar yet.
+	 */
+	const refreshCalendar = () => {
+		queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
+		});
+	};
 
 	const publishMutation = useMutation({
 		mutationFn: async (acknowledgment?: PublishAcknowledgmentInput | null) => {
 			const result = await publishShifts(dateRange, acknowledgment ?? null);
 			if (!result.success) {
-				throw new Error(schedulingActionErrorMessage(t, result, PUBLISH_REFUSALS));
+				throw new PublishRefusal(
+					schedulingActionErrorMessage(t, result, PUBLISH_REFUSALS),
+					result.refusal,
+					result.refusal === STATUTORY_PUBLICATION_BLOCKED
+						? blockingFindingsOfRefusal(result.details)
+						: null,
+				);
 			}
 			return result.data;
 		},
@@ -48,6 +92,7 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 			if (nextPendingAcknowledgment) {
 				setPendingAcknowledgment(nextPendingAcknowledgment);
 				setIsComplianceDialogOpen(true);
+				refreshCalendar();
 				return;
 			}
 
@@ -58,12 +103,19 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 					count: result.count,
 				}),
 			);
-			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
-			});
+			refreshCalendar();
 		},
 		onError: (error) => {
+			if (error instanceof PublishRefusal && error.refusal === STATUTORY_PUBLICATION_BLOCKED) {
+				refreshCalendar();
+			}
+			// The publish block names who, which limit and which day: show them, not only a count.
+			if (error instanceof PublishRefusal && error.statutoryFindings) {
+				setIsComplianceDialogOpen(false);
+				setBlockedFindings(error.statutoryFindings);
+				setIsBlockedDialogOpen(true);
+				return;
+			}
 			toast.error(t("scheduling.scheduler.publish.failed", "Failed to publish shifts"), {
 				description: error.message,
 			});
@@ -88,6 +140,9 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 		pendingAcknowledgment,
 		isComplianceDialogOpen,
 		setIsComplianceDialogOpen,
+		blockedFindings,
+		isBlockedDialogOpen,
+		setIsBlockedDialogOpen,
 		publish,
 		confirmPublish,
 		isPublishing: publishMutation.isPending,

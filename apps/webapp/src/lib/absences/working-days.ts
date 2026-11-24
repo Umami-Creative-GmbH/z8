@@ -139,10 +139,17 @@ function effectiveWeekdaysFrom(assignments: readonly WorkingDayPolicyAssignment[
 	};
 }
 
-/** Days with the same scheduled working week (Absences ADR 0003). Dates are inclusive. */
-export interface WorkingWeekPeriod {
+/**
+ * Days with the same working week (Absences ADR 0003): a scheduled working week, or days without
+ * any employment period (`notEmployed`), which have no working week at all. Dates are inclusive.
+ */
+export type WorkingWeekPeriod = ScheduledWorkingWeek | NotEmployedPeriod;
+
+/** Employed days with the same scheduled working week. */
+export interface ScheduledWorkingWeek {
 	startDate: string;
 	endDate: string;
+	notEmployed?: false;
 	/**
 	 * The distinct weekdays the effective schedule works, before holidays and regardless of hours.
 	 * Five without a policy or schedule; 0 only for an explicitly configured schedule without
@@ -151,6 +158,18 @@ export interface WorkingWeekPeriod {
 	workingDaysPerWeek: number;
 	/** The work policy in effect; null when no work policy applies. */
 	workPolicyId: string | null;
+}
+
+/**
+ * Days without any employment period (#2009): neither a working week nor a schedule without
+ * working days. They earn no allowance and are never a configuration error.
+ */
+export interface NotEmployedPeriod {
+	startDate: string;
+	endDate: string;
+	notEmployed: true;
+	workingDaysPerWeek?: never;
+	workPolicyId?: never;
 }
 
 const MONDAY_TO_FRIDAY_DAYS = 5;
@@ -166,10 +185,10 @@ export function workingWeekPeriodsFrom(input: {
 	startDate: string;
 	/** Last calendar day (inclusive), `YYYY-MM-DD`. */
 	endDate: string;
-}): WorkingWeekPeriod[] {
+}): ScheduledWorkingWeek[] {
 	const effectiveWeekdays = effectiveWeekdaysFrom(input.assignments);
 	const end = Temporal.PlainDate.from(input.endDate);
-	const periods: WorkingWeekPeriod[] = [];
+	const periods: ScheduledWorkingWeek[] = [];
 	for (
 		let day = Temporal.PlainDate.from(input.startDate);
 		Temporal.PlainDate.compare(day, end) <= 0;
