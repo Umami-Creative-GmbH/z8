@@ -167,8 +167,11 @@ function workingWeekPeriodsBetween(
 	range: { from: Temporal.PlainDate; until: Temporal.PlainDate },
 ): WorkingWeekPeriod[] {
 	const rates: WorkingWeekPeriod[] = [];
-	const fiveDays: Week = { workingDaysPerWeek: REFERENCE_WORKING_DAYS_PER_WEEK, workPolicyId: null };
-	const push = (from: Temporal.PlainDate, until: Temporal.PlainDate, week: Week) => {
+	const fiveDays: UndatedWorkingWeekPeriod = {
+		workingDaysPerWeek: REFERENCE_WORKING_DAYS_PER_WEEK,
+		workPolicyId: null,
+	};
+	const push = (from: Temporal.PlainDate, until: Temporal.PlainDate, week: UndatedWorkingWeekPeriod) => {
 		if (Temporal.PlainDate.compare(from, until) >= 0) return;
 		rates.push({
 			...week,
@@ -195,8 +198,8 @@ function workingWeekPeriodsBetween(
 	return rates;
 }
 
-/** A working week without its dates. */
-type Week =
+/** A working-week period without its dates. */
+type UndatedWorkingWeekPeriod =
 	| Omit<ScheduledWorkingWeek, "startDate" | "endDate">
 	| Omit<NotEmployedPeriod, "startDate" | "endDate">;
 

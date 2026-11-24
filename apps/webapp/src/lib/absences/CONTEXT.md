@@ -17,7 +17,7 @@ A day the employee's work policy in effect on that day schedules them to work, a
 _Avoid_: business day, weekday, workday
 
 **Working days per week**:
-The number of distinct days an employee's effective work policy schedules them to work each week, before public holidays are excluded and regardless of hours per day. With no schedule, it is five. A day without any employment period has no working days per week at all: it earns no allowance and is never a schedule without working days (#2009).
+The number of distinct days an employee's effective work policy schedules them to work each week, before public holidays are excluded and regardless of hours per day. With no schedule, it is five. A day without any employment period has no working days per week at all: it is not employment, and never a schedule without working days.
 _Avoid_: weekly hours, full-time equivalent
 
 **Absence days**:

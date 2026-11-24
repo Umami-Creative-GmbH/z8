@@ -39,7 +39,7 @@ const { loadProratedVacationAllowances } = await import("./prorated-allowance-st
 const { calculateAnnualCarryover } = await import("./vacation.service");
 const { loadVacationBalances } = await import("./vacation-balance-store");
 
-const instant = (date: string) => new Date(`${date}T00:00:00.000Z`);
+const utcDate = (date: string) => new Date(`${date}T00:00:00.000Z`);
 
 /** Inclusive date ranges, oldest first, with adjacent ranges joined. */
 function joinedRanges(ranges: ReadonlyArray<{ startDate: string; endDate: string }>) {
@@ -69,12 +69,13 @@ describe("vacation across a gap without employment (#2009)", () => {
 	 */
 	async function employeeWithStints(stints: ReadonlyArray<{ from: string; through?: string }>) {
 		const { employeeId } = await fixture.seedEmployee({
-			startDate: instant(stints[0]?.from ?? "2026-01-01"),
+			startDate: utcDate(stints[0]?.from ?? "2026-01-01"),
 			withPeriod: false,
 		});
 		for (const stint of stints) {
+			// Periods are half-open: the last working day ends at the next day's start.
 			const endedAt = stint.through
-				? new Date(instant(stint.through).getTime() + 24 * 60 * 60 * 1000)
+				? utcDate(Temporal.PlainDate.from(stint.through).add({ days: 1 }).toString())
 				: null;
 			await fixture.pool.query(
 				`insert into employee_employment_period
@@ -85,7 +86,7 @@ describe("vacation across a gap without employment (#2009)", () => {
 					fixture.organizationId,
 					employeeId,
 					endedAt ? "closed" : "open",
-					instant(stint.from),
+					utcDate(stint.from),
 					endedAt,
 				],
 			);
@@ -294,21 +295,32 @@ describe("vacation across a gap without employment (#2009)", () => {
 
 	it("carries over the shared policy's year of everyone employed with working days", async () => {
 		// An organization not yet calculating with dated policies carries over the shared policy.
-		await fixture.pool.query(
-			"update vacation_policy_rollout set calculations_enabled = false where organization_id = $1",
-			[fixture.organizationId],
-		);
-		const summary = await calculateAnnualCarryover(
-			fixture.organizationId,
-			2026,
-			fixture.ownerUserId,
-		);
-		const remaining = (employeeId: string) =>
-			summary.results.find((result) => result.employeeId === employeeId)?.previousYearRemaining;
+		const calculations = (enabled: boolean) =>
+			fixture.pool.query(
+				"update vacation_policy_rollout set calculations_enabled = $2 where organization_id = $1",
+				[fixture.organizationId, enabled],
+			);
+		await calculations(false);
+		try {
+			const summary = await calculateAnnualCarryover(
+				fixture.organizationId,
+				2026,
+				fixture.ownerUserId,
+			);
+			const remaining = (employeeId: string) =>
+				summary.results.find((result) => result.employeeId === employeeId)?.previousYearRemaining;
 
-		expect(remaining(oneDayGapId)).toBe(22);
-		expect(remaining(quarterGapId)).toBe(16);
-		expect(remaining(lateStarterId)).toBe(12);
-		expect(summary.errors.map((error) => error.employeeId)).toEqual([noWorkingDaysId]);
+			expect(remaining(oneDayGapId)).toBe(22);
+			expect(remaining(quarterGapId)).toBe(16);
+			expect(remaining(lateStarterId)).toBe(12);
+			expect(summary.errors).toEqual([
+				{
+					employeeId: noWorkingDaysId,
+					error: "A work schedule without working days requires review for the selected year.",
+				},
+			]);
+		} finally {
+			await calculations(true);
+		}
 	});
 });
