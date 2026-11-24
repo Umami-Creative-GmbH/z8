@@ -28,6 +28,7 @@
       },
       "arbzgScope": {
         "executiveExempt": "Leitende Angestellte (§ 18 ArbZG)",
+        "executiveExemptNote": "Leitende Angestellte (§ 18 Abs. 1 Nr. 1 ArbZG): keine Prüfung der ArbZG-Grenzen für Erwachsene, kein automatischer Pausenabzug und keine Pausenerinnerungen. Der Jugendarbeitsschutz (JArbSchG) gilt weiter, solange die Person unter 18 ist.",
         "standard": "Standard (ArbZG gilt)"
       },
       "balanceMode": {
