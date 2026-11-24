@@ -311,6 +311,8 @@ export async function listShortTermBerufsmaessigkeitReviews(
 		readonly timezone: string;
 		readonly now: Instant;
 		readonly includeResolved?: boolean;
+		/** False: leave names empty (counts only). */
+		readonly withNames?: boolean;
 	},
 ): Promise<ShortTermBerufsmaessigkeitReview[]> {
 	const year = plainDateAt(input.now, input.timezone).year;
@@ -318,14 +320,7 @@ export async function listShortTermBerufsmaessigkeitReviews(
 	// next January's rota), and this inbox is where its prompts are documented.
 	const years = [year - 1, year, year + 1];
 	const rows = await db
-		.select({
-			employeeId: employeeEmploymentHistory.employeeId,
-			// The display name derives from the user, not the deprecated employee name columns.
-			firstName: user.firstName,
-			lastName: user.lastName,
-			name: user.name,
-			email: user.email,
-		})
+		.select({ employeeId: employeeEmploymentHistory.employeeId })
 		.from(employeeEmploymentHistory)
 		.innerJoin(
 			employee,
@@ -334,7 +329,6 @@ export async function listShortTermBerufsmaessigkeitReviews(
 				eq(employee.organizationId, input.organizationId),
 			),
 		)
-		.leftJoin(user, eq(user.id, employee.userId))
 		.where(
 			and(
 				eq(employeeEmploymentHistory.organizationId, input.organizationId),
@@ -348,22 +342,42 @@ export async function listShortTermBerufsmaessigkeitReviews(
 			),
 		);
 	if (rows.length === 0) return [];
-	const names = new Map(
-		rows.map((row) => [row.employeeId, buildAuthUserDisplayName(row) || row.employeeId]),
-	);
 	const { findings } = await evaluateYearWithAcknowledgements(db, {
 		organizationId: input.organizationId,
 		timezone: input.timezone,
-		employeeIds: [...names.keys()],
+		employeeIds: [...new Set(rows.map((row) => row.employeeId))],
 		years,
 		now: input.now,
 	});
-	return findings
-		.filter(
-			(finding) =>
-				finding.kind === BERUFSMAESSIGKEIT_FINDING_KIND &&
-				(input.includeResolved || finding.acknowledgement?.status !== "current"),
-		)
+	const shown = findings.filter(
+		(finding) =>
+			finding.kind === BERUFSMAESSIGKEIT_FINDING_KIND &&
+			(input.includeResolved || finding.acknowledgement?.status !== "current"),
+	);
+	const people =
+		input.withNames === false || shown.length === 0
+			? []
+			: await db
+					.select({
+						id: employee.id,
+						// The display name derives from the user, not the deprecated employee name columns.
+						firstName: user.firstName,
+						lastName: user.lastName,
+						name: user.name,
+						email: user.email,
+					})
+					.from(employee)
+					.leftJoin(user, eq(user.id, employee.userId))
+					.where(
+						and(
+							eq(employee.organizationId, input.organizationId),
+							inArray(employee.id, [...new Set(shown.map((finding) => finding.employeeId))]),
+						),
+					);
+	const names = new Map(
+		people.map((person) => [person.id, buildAuthUserDisplayName(person) || person.id]),
+	);
+	return shown
 		.map((finding) => ({
 			employeeId: finding.employeeId,
 			employeeName: names.get(finding.employeeId) ?? finding.employeeId,

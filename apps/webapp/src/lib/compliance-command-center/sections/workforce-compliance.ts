@@ -200,7 +200,8 @@ async function loadStatutorySummaries(
 	now: Instant,
 ): Promise<readonly StatutoryReviewDomainSummary[] | null> {
 	try {
-		return (await loadStatutoryReviewInbox(db, { organizationId, now })).domains;
+		// Counts only: the section shows no names, so none are read.
+		return (await loadStatutoryReviewInbox(db, { organizationId, now, countsOnly: true })).domains;
 	} catch (error) {
 		console.error("[compliance-command-center] statutory monitors unavailable", error);
 		return null;

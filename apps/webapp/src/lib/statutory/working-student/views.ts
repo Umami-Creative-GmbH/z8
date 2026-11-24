@@ -257,7 +257,12 @@ export interface WorkingStudentReviewItem {
  */
 export async function listWorkingStudentReviewItems(
 	db: Reader,
-	input: { readonly organizationId: string; readonly now: Instant },
+	input: {
+		readonly organizationId: string;
+		readonly now: Instant;
+		/** False: leave names empty (counts only). */
+		readonly withNames?: boolean;
+	},
 ): Promise<WorkingStudentReviewItem[]> {
 	const candidates = await loadWorkingStudentCandidates(db, {
 		organizationId: input.organizationId,
@@ -282,22 +287,25 @@ export async function listWorkingStudentReviewItems(
 	);
 	if (findings.length === 0) return [];
 	// The display name derives from the user, not the deprecated employee name columns.
-	const people = await db
-		.select({
-			id: employee.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			name: user.name,
-			email: user.email,
-		})
-		.from(employee)
-		.leftJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(
-				eq(employee.organizationId, input.organizationId),
-				inArray(employee.id, [...new Set(findings.map((finding) => finding.employeeId))]),
-			),
-		);
+	const people =
+		input.withNames === false
+			? []
+			: await db
+					.select({
+						id: employee.id,
+						firstName: user.firstName,
+						lastName: user.lastName,
+						name: user.name,
+						email: user.email,
+					})
+					.from(employee)
+					.leftJoin(user, eq(user.id, employee.userId))
+					.where(
+						and(
+							eq(employee.organizationId, input.organizationId),
+							inArray(employee.id, [...new Set(findings.map((finding) => finding.employeeId))]),
+						),
+					);
 	const names = new Map(people.map((person) => [person.id, buildAuthUserDisplayName(person)]));
 	const rank = { critical: 0, warning: 1, info: 2 } as const;
 	return findings

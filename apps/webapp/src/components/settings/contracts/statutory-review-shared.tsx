@@ -10,7 +10,10 @@ import { Button } from "@/components/ui/button";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import type { StatutoryAcknowledgementHistoryState } from "@/lib/statutory/acknowledgement-history";
+import type {
+	StatutoryAcknowledgementHistoryState,
+	StatutoryAcknowledgementReviewStatus,
+} from "@/lib/statutory/acknowledgement-history";
 import type { StatutoryAcknowledgementKind } from "@/lib/statutory/acknowledgement-kinds";
 import {
 	isStatutoryReviewDomain,
@@ -132,6 +135,8 @@ function historyStateLabel(state: StatutoryAcknowledgementHistoryState, t: Trans
 			return t("settings.contracts.reviews.history.current", "Current");
 		case "stale":
 			return t("settings.contracts.reviews.history.stale", "Invalidated");
+		case "no_longer_applies":
+			return t("settings.contracts.reviews.history.noLongerApplies", "No longer applies");
 		case "superseded":
 			return t("settings.contracts.reviews.history.superseded", "Earlier");
 	}
@@ -150,7 +155,7 @@ export function StatutoryAcknowledgementHistory({
 	readonly organizationId: string;
 	readonly subject: StatutoryAcknowledgementHistorySubject;
 	readonly currentInputFingerprint: string;
-	readonly currentStatus: "none" | "current" | "stale" | null | undefined;
+	readonly currentStatus: StatutoryAcknowledgementReviewStatus | null | undefined;
 }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
@@ -222,7 +227,7 @@ export function StatutoryAcknowledgementHistory({
 										<Badge
 											variant={entry.state === "current" ? "secondary" : "outline"}
 											className={cn(
-												entry.state === "stale" &&
+												(entry.state === "stale" || entry.state === "no_longer_applies") &&
 													"border-amber-500/70 text-amber-800 dark:text-amber-300",
 												entry.state === "superseded" && "text-muted-foreground",
 											)}
@@ -241,6 +246,14 @@ export function StatutoryAcknowledgementHistory({
 											)}
 										</time>
 									</div>
+									{entry.state === "no_longer_applies" ? (
+										<p className="text-amber-800 dark:text-amber-300">
+											{t(
+												"settings.contracts.reviews.history.noLongerAppliesDetail",
+												"Recorded for these figures, but it does not document the current state: the finding can no longer be acknowledged.",
+											)}
+										</p>
+									) : null}
 									<p className="break-words">
 										{t("settings.contracts.reviews.history.reason", "Reason: {reason}", {
 											reason: entry.reason,

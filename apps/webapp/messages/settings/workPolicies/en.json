@@ -378,6 +378,8 @@
           "toggle": "Acknowledgement history",
           "current": "Current",
           "stale": "Invalidated",
+          "noLongerApplies": "No longer applies",
+          "noLongerAppliesDetail": "Recorded for these figures, but it does not document the current state: the finding can no longer be acknowledged.",
           "superseded": "Earlier",
           "reason": "Reason: {reason}",
           "legalNote": "Legal note: {note}"

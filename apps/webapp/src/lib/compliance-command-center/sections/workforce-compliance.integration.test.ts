@@ -5,6 +5,9 @@
  * only, scoped to the organization.
  */
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "@/db";
+import { acknowledgeMinijobExceedance } from "@/lib/statutory/minijob/acknowledge-minijob-exceedance";
+import { loadMinijobExceedanceReviews } from "@/lib/statutory/minijob/minijob-reviews";
 import {
 	STATUTORY_DOMAINS_NOW as now,
 	statutoryDomainsFixture,
@@ -103,6 +106,64 @@ describe("Compliance Command Center workforce compliance with statutory monitors
 		for (const who of [seed.mini, seed.seasonal, seed.student, seed.caller, seed.minor]) {
 			expect(payload).not.toContain(who.employeeId);
 		}
+	});
+
+	it("counts a Minijob month acknowledged before it became a third exceedance as critical", async () => {
+		const seed = await domains.seed("a");
+		const organizationId = seed.org.id;
+		await domains.monthWork(seed.org, seed.mini, "2026-03", 2700);
+		const [march] = (await loadMinijobExceedanceReviews(db, { organizationId, now })).filter(
+			(review) => review.month === "2026-03",
+		);
+		await acknowledgeMinijobExceedance(db, {
+			organizationId,
+			actorUserId: seed.owner.userId,
+			employeeId: seed.mini.employeeId,
+			month: "2026-03",
+			reason: "Covered a sick colleague",
+			expectedFingerprint: march.inputFingerprint,
+			expectedTotalCents: march.totalCents,
+			now,
+		});
+		await domains.monthWork(seed.org, seed.mini, "2026-01", 2700);
+		await domains.monthWork(seed.org, seed.mini, "2026-02", 2700);
+
+		const section = await getWorkforceComplianceSection(organizationId, { now });
+
+		// January, February, March (the third, documented before) and November.
+		expect(section.recentCriticalEvents).toContainEqual(
+			expect.objectContaining({
+				id: "statutory-minijob",
+				severity: "critical",
+				description: {
+					key: "compliance.commandCenter.events.statutory.description",
+					params: { critical: 4, warning: 0, pending: 2, stale: 0 },
+				},
+			}),
+		);
+	});
+
+	it("counts a Minijob exceedance planned in the last month of the planning horizon", async () => {
+		const seed = await domains.seed("a");
+		// 18 November + 8 weeks reaches 13 January 2027: six 8-hour January shifts, 720 EUR.
+		for (const date of ["04", "05", "06", "07", "08", "11"]) {
+			await domains.shift(seed.org, {
+				employeeId: seed.mini.employeeId,
+				date: `2027-01-${date}`,
+				startTime: "08:00",
+				endTime: "16:00",
+			});
+		}
+
+		const section = await getWorkforceComplianceSection(seed.org.id, { now });
+
+		expect(section.card.links).toContainEqual({
+			label: {
+				key: "compliance.commandCenter.links.statutoryDomain.minijob",
+				params: { count: 2 },
+			},
+			href: "/settings/contracts?tab=reviews&domain=minijob",
+		});
 	});
 
 	it("counts only its own organization's statutory findings", async () => {

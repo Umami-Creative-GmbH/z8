@@ -22,16 +22,23 @@ import {
 } from "../acknowledgements";
 import type { StatutoryFinding, StatutoryQuantity, StatutorySeverity } from "../finding";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
+import {
+	STATUTORY_MONITOR_LOOKAHEAD_DAYS,
+	STATUTORY_MONITOR_LOOKBACK_DAYS,
+	statutoryReviewWindow,
+} from "../review-window";
 import { isMinorOn } from "./age";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
 import type { JarbschgRule } from "./jarbschg-rules";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
 
-/** Days before today still listed: recently worked shifts can be documented. */
-export const SECTOR_EXCEPTION_LOOKBACK_DAYS = 7;
-/** Days after today listed: the planning horizon. */
-export const SECTOR_EXCEPTION_LOOKAHEAD_DAYS = 56;
+/**
+ * Listed from a week before today through the planning horizon (`statutoryReviewWindow`): the
+ * statutory review inbox reads its sector exceptions over the same days.
+ */
+export const SECTOR_EXCEPTION_LOOKBACK_DAYS = STATUTORY_MONITOR_LOOKBACK_DAYS;
+export const SECTOR_EXCEPTION_LOOKAHEAD_DAYS = STATUTORY_MONITOR_LOOKAHEAD_DAYS;
 
 export const jarbschgSectorExceptionKinds = [
 	"jarbschg_night_work",
@@ -71,6 +78,16 @@ export type YouthSectorExceptionRefusal =
 
 const isSectorExceptionKind = (kind: string): kind is JarbschgSectorExceptionKind =>
 	(jarbschgSectorExceptionKinds as readonly string[]).includes(kind);
+
+/** Whether a JArbSchG finding is a sector exception an org admin can document. */
+export function isYouthSectorExceptionFinding(
+	finding: StatutoryFinding,
+): finding is StatutoryFinding & { readonly kind: JarbschgSectorExceptionKind } {
+	return (
+		finding.acknowledgementKind === "jarbschg_sector_exception" &&
+		isSectorExceptionKind(finding.kind)
+	);
+}
 
 function nameOf(row: {
 	firstName: string | null;
@@ -126,9 +143,8 @@ export async function listOpenYouthSectorExceptions(
 		readonly includeAcknowledged?: boolean;
 	},
 ): Promise<OpenYouthSectorException[]> {
-	const today = plainDateAt(input.now, input.timezone);
-	const windowStart = today.subtract({ days: SECTOR_EXCEPTION_LOOKBACK_DAYS });
-	const windowEnd = today.add({ days: SECTOR_EXCEPTION_LOOKAHEAD_DAYS });
+	const window = statutoryReviewWindow(plainDateAt(input.now, input.timezone));
+	const windowStart = parsePlainDate(window.start);
 	const people = await db
 		.select({
 			employeeId: employee.id,
@@ -152,13 +168,13 @@ export async function listOpenYouthSectorExceptions(
 	const findings = await evaluateSectorFindings(db, {
 		...input,
 		employeeIds: minors.map((person) => person.employeeId),
-		window: { start: windowStart.toString(), endExclusive: windowEnd.toString() },
+		window,
 	});
 
 	const open: OpenYouthSectorException[] = [];
 	for (const finding of findings) {
 		const status = finding.acknowledgement?.status ?? "none";
-		if (!isSectorExceptionKind(finding.kind)) continue;
+		if (!isYouthSectorExceptionFinding(finding)) continue;
 		if (status === "current" && !input.includeAcknowledged) continue;
 		open.push({
 			findingId: finding.id,

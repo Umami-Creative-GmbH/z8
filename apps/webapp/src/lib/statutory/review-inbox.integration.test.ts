@@ -12,6 +12,8 @@ import {
 	statutoryDomainsFixture,
 } from "./__tests__/statutory-domains-fixture";
 import { loadStatutoryAcknowledgementHistory } from "./acknowledgement-history";
+import { acknowledgeMinijobExceedance } from "./minijob/acknowledge-minijob-exceedance";
+import { loadMinijobExceedanceReviews } from "./minijob/minijob-reviews";
 import { acknowledgeOnCallShortNotice } from "./on-call/acknowledge";
 import { listOnCallReviewItems } from "./on-call/views";
 import { loadStatutoryReviewInbox } from "./review-inbox";
@@ -277,6 +279,114 @@ describe("statutory review inbox (PostgreSQL)", () => {
 				currentStatus: "stale",
 			}),
 		).toEqual([]);
+	});
+
+	it("keeps an acknowledged Minijob month open and critical once it became a third exceedance", async () => {
+		const seed = await domains.seed("a");
+		const organizationId = seed.org.id;
+		const employeeId = seed.mini.employeeId;
+		// 45 h at 15 EUR/h: March 2026 is the first exceedance, so it can be acknowledged.
+		await domains.monthWork(seed.org, seed.mini, "2026-03", 2700);
+		const marchOf = async () =>
+			(
+				await loadMinijobExceedanceReviews(db, { organizationId, now, includeAcknowledged: true })
+			).find((review) => review.employeeId === employeeId && review.month === "2026-03");
+		const shown = await marchOf();
+		await acknowledgeMinijobExceedance(db, {
+			organizationId,
+			actorUserId: seed.owner.userId,
+			employeeId,
+			month: "2026-03",
+			reason: "Covered a sick colleague",
+			expectedFingerprint: shown?.inputFingerprint ?? "",
+			expectedTotalCents: shown?.totalCents ?? 0,
+			now,
+		});
+		const documented = await loadStatutoryReviewInbox(db, { organizationId, now });
+		expect(documented.items.map((item) => item.subjectKey)).not.toContain("2026-03");
+
+		// Exceedances recorded later in January and February make March the third in 12 months.
+		await domains.monthWork(seed.org, seed.mini, "2026-01", 2700);
+		await domains.monthWork(seed.org, seed.mini, "2026-02", 2700);
+
+		const march = await marchOf();
+		expect(march).toMatchObject({ status: "too_many_exceedances", severity: "critical" });
+		// The acknowledgement still matches March's own figures, but it no longer documents it.
+		expect(march?.acknowledgement.status).toBe("no_longer_applies");
+		const inbox = await loadStatutoryReviewInbox(db, { organizationId, now });
+		expect(inbox.items).toContainEqual(
+			expect.objectContaining({
+				reviewDomain: "minijob",
+				employeeId,
+				subjectKey: "2026-03",
+				severity: "critical",
+				acknowledgeable: false,
+				acknowledgementStatus: "no_longer_applies",
+			}),
+		);
+		// January, February, March and November exceed the cap; none is documented.
+		expect(inbox.domains).toContainEqual(
+			expect.objectContaining({
+				domain: "minijob",
+				critical: 4,
+				pendingAcknowledgements: 2,
+				staleAcknowledgements: 0,
+			}),
+		);
+
+		const history = await loadStatutoryAcknowledgementHistory(db, {
+			organizationId,
+			subject: {
+				employeeId,
+				kind: "minijob_unforeseeable_exceedance",
+				findingKind: "minijob_monthly_cap",
+				subjectKey: "2026-03",
+			},
+			currentInputFingerprint: march?.inputFingerprint ?? "",
+			currentStatus: march?.acknowledgement.status ?? "none",
+		});
+		expect(history).toEqual([
+			expect.objectContaining({ reason: "Covered a sick colleague", state: "no_longer_applies" }),
+		]);
+	});
+
+	it("lists a Minijob exceedance planned in the last month of the planning horizon", async () => {
+		const seed = await domains.seed("a");
+		const organizationId = seed.org.id;
+		// 18 November + 8 weeks reaches 13 January 2027: six 8-hour January shifts, 720 EUR.
+		for (const date of ["04", "05", "06", "07", "08", "11"]) {
+			await domains.shift(seed.org, {
+				employeeId: seed.mini.employeeId,
+				date: `2027-01-${date}`,
+				startTime: "08:00",
+				endTime: "16:00",
+			});
+		}
+
+		const inbox = await loadStatutoryReviewInbox(db, { organizationId, now });
+
+		expect(inbox.items).toContainEqual(
+			expect.objectContaining({
+				reviewDomain: "minijob",
+				employeeId: seed.mini.employeeId,
+				kind: "minijob_monthly_cap",
+				subjectKey: "2027-01",
+				severity: "critical",
+				acknowledgeable: true,
+				acknowledgementStatus: "none",
+			}),
+		);
+		expect(inbox.domains).toContainEqual(
+			expect.objectContaining({ domain: "minijob", critical: 2, pendingAcknowledgements: 2 }),
+		);
+		// Reviews & Conflicts' Minijob list shows it with its acknowledgement form.
+		expect(await loadMinijobExceedanceReviews(db, { organizationId, now })).toContainEqual(
+			expect.objectContaining({
+				month: "2027-01",
+				acknowledgeable: true,
+				status: "unacknowledged",
+			}),
+		);
 	});
 
 	it("never shows one organization's findings or acknowledgements in another's inbox", async () => {

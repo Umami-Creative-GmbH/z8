@@ -95,7 +95,13 @@ function reviewWindow(now: Instant, timezone: string) {
  */
 export async function listOnCallReviewItems(
 	db: Reader,
-	input: { readonly organizationId: string; readonly timezone: string; readonly now: Instant },
+	input: {
+		readonly organizationId: string;
+		readonly timezone: string;
+		readonly now: Instant;
+		/** False: leave names empty (counts only). */
+		readonly withNames?: boolean;
+	},
 ): Promise<OnCallReviewItem[]> {
 	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
 	const findings = await attachAcknowledgementStates(
@@ -111,9 +117,12 @@ export async function listOnCallReviewItems(
 			})
 		).filter((finding) => finding.severity !== "info"),
 	);
-	const names = await employeeNames(db, input.organizationId, [
-		...new Set(findings.map((finding) => finding.employeeId)),
-	]);
+	const names =
+		input.withNames === false
+			? new Map<string, string>()
+			: await employeeNames(db, input.organizationId, [
+					...new Set(findings.map((finding) => finding.employeeId)),
+				]);
 	return findings
 		.map((finding) => ({
 			employeeId: finding.employeeId,

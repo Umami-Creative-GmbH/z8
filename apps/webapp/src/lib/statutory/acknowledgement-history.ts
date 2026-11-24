@@ -7,7 +7,9 @@
  * Which row documents the finding is the monitor's decision (`StatutoryFinding.acknowledgement`),
  * judged against the finding's current input fingerprint: `current` marks the newest row recorded
  * for that fingerprint, `stale` the newest row once newer work, shifts or figures invalidated it,
- * and every other row is `superseded`. Fingerprints never leave the server in the result.
+ * `no_longer_applies` the row recorded for that fingerprint when the finding no longer qualifies
+ * for an acknowledgement (a Minijob month that became a third exceedance), and every other row is
+ * `superseded`. Fingerprints never leave the server in the result.
  */
 import { inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
@@ -18,7 +20,29 @@ import {
 	type StatutoryAcknowledgementSubject,
 } from "./acknowledgements";
 
-export type StatutoryAcknowledgementHistoryState = "current" | "stale" | "superseded";
+/**
+ * Whether a finding's acknowledgement documents it, as its monitor judged: `current` documents it;
+ * `stale` was invalidated by newer work, shifts or figures; `no_longer_applies` still matches the
+ * finding's figures, but the finding no longer qualifies for one, so it documents nothing.
+ */
+export type StatutoryAcknowledgementReviewStatus =
+	| "none"
+	| "current"
+	| "stale"
+	| "no_longer_applies";
+
+export const statutoryAcknowledgementReviewStatuses = [
+	"none",
+	"current",
+	"stale",
+	"no_longer_applies",
+] as const satisfies readonly StatutoryAcknowledgementReviewStatus[];
+
+export type StatutoryAcknowledgementHistoryState =
+	| "current"
+	| "stale"
+	| "no_longer_applies"
+	| "superseded";
 
 export interface StatutoryAcknowledgementHistoryEntry {
 	readonly id: string;
@@ -38,7 +62,7 @@ export async function loadStatutoryAcknowledgementHistory(
 		/** The finding's input fingerprint as the monitor evaluated it now. */
 		readonly currentInputFingerprint: string;
 		/** The finding's acknowledgement status as the monitor judged it (Minijob also by total). */
-		readonly currentStatus: "none" | "current" | "stale";
+		readonly currentStatus: StatutoryAcknowledgementReviewStatus;
 	},
 ): Promise<StatutoryAcknowledgementHistoryEntry[]> {
 	const rows = await listStatutoryAcknowledgements(db, {
@@ -63,10 +87,11 @@ export async function loadStatutoryAcknowledgementHistory(
 	const nameOf = new Map(actors.map((actor) => [actor.id, buildAuthUserDisplayName(actor)]));
 
 	// Rows are newest first: the first match is the one the monitor's state refers to.
+	const status = input.currentStatus;
 	const documenting =
-		input.currentStatus === "current"
+		status === "current" || status === "no_longer_applies"
 			? rows.find((row) => row.inputFingerprint === input.currentInputFingerprint)
-			: input.currentStatus === "stale"
+			: status === "stale"
 				? rows[0]
 				: undefined;
 	return rows.map((row) => ({
@@ -76,6 +101,6 @@ export async function loadStatutoryAcknowledgementHistory(
 		acknowledgedByName: nameOf.get(row.acknowledgedBy) || row.acknowledgedBy,
 		reason: row.reason,
 		legalNote: row.legalNote,
-		state: row === documenting ? (input.currentStatus as "current" | "stale") : "superseded",
+		state: row === documenting && status !== "none" ? status : "superseded",
 	}));
 }

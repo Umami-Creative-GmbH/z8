@@ -8,45 +8,50 @@
  * working-student weeks, on-call findings, JArbSchG sector exceptions), plus the monitor findings
  * no review list carries because they cannot be acknowledged (Minijob tiers and the rolling
  * 12-month cap, short-term day and month limits, JArbSchG hard limits, apprentice release
- * conflicts) within the planning horizon.
+ * conflicts) within the planning horizon (`review-window.ts`), which every review list covers.
  *
- * A domain that fails to load is reported `unavailable` instead of failing the whole inbox.
+ * One load evaluates each monitor once: the Minijob review months and the JArbSchG and apprentice
+ * horizon each give both their review items and their other findings, and every read goes through
+ * one request-scoped `memoizedReader`, so the timezone, preferences, roster and the data several
+ * monitors share are read once. A domain that fails to load is reported `unavailable` instead of
+ * failing the whole inbox.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
+import { type Instant, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import type { StatutoryAcknowledgementReviewStatus } from "./acknowledgement-history";
 import type { StatutoryAcknowledgementKind } from "./acknowledgement-kinds";
 import { apprenticeReleaseScheduleContributor } from "./apprenticeship/release-conflict-contributor";
 import type { StatutoryFinding, StatutorySeverity } from "./finding";
 import {
-	addMonths,
-	firstDayOf,
-	MINIJOB_EXCEEDANCE_ACKNOWLEDGEMENT,
-	MINIJOB_EXCEEDANCE_LEGAL_REFERENCE,
-	MINIJOB_MONTHLY_FINDING,
-} from "./minijob/minijob-months";
-import { loadMinijobExceedanceReviews } from "./minijob/minijob-reviews";
+	evaluateMinijobReviewFindings,
+	isMinijobExceedanceReviewFinding,
+	minijobAcknowledgementReviewStatus,
+} from "./minijob/minijob-reviews";
 import { minijobScheduleContributor } from "./minijob/minijob-schedule-contributor";
 import { listOnCallReviewItems } from "./on-call/views";
-import type { StatutoryScheduleContributor } from "./scheduling/contributor";
-import { evaluateStatutoryFindings, toStatutoryComplianceFinding } from "./scheduling/evaluate";
-import { shortTermScheduleContributor } from "./short-term/contributor";
-import { listShortTermBerufsmaessigkeitReviews } from "./short-term/monitor";
+import { loadOrganizationStatutoryPreferences } from "./preferences";
 import {
 	type StatutoryReviewDomain,
 	statutoryReviewDomainOf,
 	statutoryReviewDomains,
 } from "./review-domains";
+import { statutoryReviewWindow } from "./review-window";
+import type { StatutoryScheduleContributor } from "./scheduling/contributor";
+import { evaluateStatutoryFindings, toStatutoryComplianceFinding } from "./scheduling/evaluate";
+import { memoizedReader } from "./scheduling/read-memo";
+import { shortTermScheduleContributor } from "./short-term/contributor";
+import { listShortTermBerufsmaessigkeitReviews } from "./short-term/monitor";
 import type { StatutoryDomain } from "./threshold-catalog";
 import { listWorkingStudentReviewItems } from "./working-student/views";
 import { jarbschgScheduleContributor } from "./youth/jarbschg-contributor";
-import { listOpenYouthSectorExceptions } from "./youth/sector-exception-review";
+import { isYouthSectorExceptionFinding } from "./youth/sector-exception-review";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
 
@@ -55,19 +60,10 @@ export {
 	statutoryReviewDomains,
 	type StatutoryReviewDomain,
 } from "./review-domains";
+export { STATUTORY_MONITOR_LOOKAHEAD_DAYS, STATUTORY_MONITOR_LOOKBACK_DAYS } from "./review-window";
 
-/** Days before today the monitor findings cover: recently worked shifts. */
-export const STATUTORY_MONITOR_LOOKBACK_DAYS = 7;
-/** Days after today the monitor findings cover: the planning horizon. */
-export const STATUTORY_MONITOR_LOOKAHEAD_DAYS = 56;
-
-/**
- * The monitors whose review lists hold only acknowledgeable findings: their other findings are
- * read here. Working-student and on-call review lists already carry every finding.
- */
-const monitorOnlyContributors: readonly StatutoryScheduleContributor[] = [
-	minijobScheduleContributor,
-	shortTermScheduleContributor,
+/** The monitors whose horizon findings the inbox reads beside their review lists. */
+const youthContributors: readonly StatutoryScheduleContributor[] = [
 	jarbschgScheduleContributor,
 	apprenticeReleaseScheduleContributor,
 ];
@@ -78,6 +74,7 @@ export interface StatutoryReviewInboxItem {
 	readonly reviewDomain: StatutoryReviewDomain;
 	readonly domain: StatutoryDomain;
 	readonly employeeId: string;
+	/** Empty when the inbox was loaded for counts only. */
 	readonly employeeName: string;
 	/** The monitor's finding kind, e.g. `minijob_monthly_cap`. */
 	readonly kind: string;
@@ -88,8 +85,11 @@ export interface StatutoryReviewInboxItem {
 	readonly legalReference: string;
 	/** Null when the finding cannot be acknowledged. */
 	readonly acknowledgementKind: StatutoryAcknowledgementKind | null;
-	/** Null when the finding cannot be acknowledged. */
-	readonly acknowledgementStatus: "none" | "current" | "stale" | null;
+	/**
+	 * Whether an acknowledgement documents the finding, as its monitor judged (`current` only
+	 * while the finding still qualifies for one). Null when the finding cannot be acknowledged.
+	 */
+	readonly acknowledgementStatus: StatutoryAcknowledgementReviewStatus | null;
 	/** Whether an org admin can document the finding now (an acknowledgement kind alone is not enough, e.g. a third Minijob exceedance). */
 	readonly acknowledgeable: boolean;
 	/** `review`: from the domain's review list (with its acknowledgement form); `monitor`: a finding only the monitor reports. */
@@ -120,6 +120,8 @@ export interface StatutoryReviewInboxRequest {
 	readonly now: Instant;
 	/** Also list findings documented by a current acknowledgement. */
 	readonly includeResolved?: boolean;
+	/** For counts (the Command Center): items carry no employee names, and none are read. */
+	readonly countsOnly?: boolean;
 }
 
 function itemOf(
@@ -149,6 +151,24 @@ function itemOf(
 	};
 }
 
+/** A Minijob exceedance month of the review list: documented only while it qualifies. */
+function minijobReviewItemOf(finding: StatutoryFinding): StatutoryReviewInboxItem {
+	return {
+		...itemOf(finding, "", "review"),
+		acknowledgementStatus: minijobAcknowledgementReviewStatus(finding),
+		acknowledgeable: finding.adminDetail?.facts?.acknowledgeable === true,
+	};
+}
+
+function monitorItemOf(finding: StatutoryFinding): StatutoryReviewInboxItem {
+	return { ...itemOf(finding, "", "monitor"), warning: toStatutoryComplianceFinding(finding) };
+}
+
+/** Findings no review list carries: they cannot be acknowledged. */
+function isMonitorOnlyFinding(finding: StatutoryFinding): boolean {
+	return finding.acknowledgementKind === null && finding.severity !== "info";
+}
+
 async function employeeNames(
 	db: Reader,
 	organizationId: string,
@@ -171,6 +191,172 @@ async function employeeNames(
 	return new Map(rows.map((row) => [row.id, buildAuthUserDisplayName(row) || row.id]));
 }
 
+/** Gives items without a name (read here, not by their review list) their employee's name. */
+async function withEmployeeNames(
+	db: Reader,
+	organizationId: string,
+	items: readonly StatutoryReviewInboxItem[],
+): Promise<StatutoryReviewInboxItem[]> {
+	const unnamed = items.filter((item) => item.employeeName === "");
+	const names = await employeeNames(db, organizationId, [
+		...new Set(unnamed.map((item) => item.employeeId)),
+	]);
+	return items.map((item) =>
+		item.employeeName === ""
+			? { ...item, employeeName: names.get(item.employeeId) ?? item.employeeId }
+			: item,
+	);
+}
+
+interface InboxContext {
+	readonly organizationId: string;
+	readonly timezone: string;
+	readonly now: Instant;
+	readonly window: { readonly start: string; readonly endExclusive: string };
+	readonly withNames: boolean;
+	/** The organization's current roster, read once per load. */
+	readonly roster: () => Promise<readonly string[]>;
+}
+
+function inboxContext(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly timezone: string;
+		readonly now: Instant;
+		readonly withNames: boolean;
+	},
+): InboxContext {
+	let roster: Promise<readonly string[]> | null = null;
+	return {
+		...input,
+		window: statutoryReviewWindow(plainDateAt(input.now, input.timezone)),
+		roster: () => {
+			roster ??= db
+				.select({ id: employee.id })
+				.from(employee)
+				.where(onCurrentRoster(input.organizationId, employee, input.now))
+				.then((rows) => rows.map((row) => row.id));
+			return roster;
+		},
+	};
+}
+
+/** The horizon's findings of `contributors` for the current roster, acknowledgements attached. */
+async function horizonFindings(
+	db: Reader,
+	context: InboxContext,
+	contributors: readonly StatutoryScheduleContributor[],
+): Promise<StatutoryFinding[]> {
+	const employeeIds = await context.roster();
+	if (employeeIds.length === 0) return [];
+	return evaluateStatutoryFindings(
+		db,
+		{
+			organizationId: context.organizationId,
+			timezone: context.timezone,
+			window: context.window,
+			employeeIds,
+			now: context.now,
+		},
+		contributors,
+	);
+}
+
+/** Whether a Minijob finding judges a month the horizon touches, for an employee on the roster. */
+function inHorizonMonths(context: InboxContext, roster: ReadonlySet<string>) {
+	const firstMonth = context.window.start.slice(0, 7);
+	const lastMonth = parsePlainDate(context.window.endExclusive)
+		.subtract({ days: 1 })
+		.toString()
+		.slice(0, 7);
+	return (finding: StatutoryFinding) =>
+		roster.has(finding.employeeId) &&
+		finding.subjectKey >= firstMonth &&
+		finding.subjectKey <= lastMonth;
+}
+
+/** Each domain's items: its review list's, and the findings only its monitor reports. */
+const domainLoaders: Record<
+	StatutoryReviewDomain,
+	(db: Reader, context: InboxContext) => Promise<StatutoryReviewInboxItem[]>
+> = {
+	async minijob(db, context) {
+		// One evaluation: the review months cover every month the horizon touches.
+		const [findings, roster] = await Promise.all([
+			evaluateMinijobReviewFindings(db, {
+				organizationId: context.organizationId,
+				timezone: context.timezone,
+				now: context.now,
+				preferences: await loadOrganizationStatutoryPreferences(db, context.organizationId),
+			}),
+			context.roster(),
+		]);
+		const inHorizon = inHorizonMonths(context, new Set(roster));
+		return [
+			...findings.filter(isMinijobExceedanceReviewFinding).map(minijobReviewItemOf),
+			...findings
+				.filter((finding) => isMonitorOnlyFinding(finding) && inHorizon(finding))
+				.map(monitorItemOf),
+		];
+	},
+	async short_term(db, context) {
+		const [reviews, findings] = await Promise.all([
+			listShortTermBerufsmaessigkeitReviews(db, {
+				organizationId: context.organizationId,
+				timezone: context.timezone,
+				now: context.now,
+				includeResolved: true,
+				withNames: context.withNames,
+			}),
+			horizonFindings(db, context, [shortTermScheduleContributor]),
+		]);
+		return [
+			...reviews.map((review) => itemOf(review.finding, review.employeeName, "review")),
+			...findings.filter(isMonitorOnlyFinding).map(monitorItemOf),
+		];
+	},
+	async working_student(db, context) {
+		const items = await listWorkingStudentReviewItems(db, {
+			organizationId: context.organizationId,
+			now: context.now,
+			withNames: context.withNames,
+		});
+		return items.map((item) => itemOf(item.finding, item.employeeName, "review"));
+	},
+	async on_call(db, context) {
+		const items = await listOnCallReviewItems(db, {
+			organizationId: context.organizationId,
+			timezone: context.timezone,
+			now: context.now,
+			withNames: context.withNames,
+		});
+		return items.map((item) => itemOf(item.finding, item.employeeName, "review"));
+	},
+	async youth_apprentice(db, context) {
+		// One evaluation: the sector-exception list covers the same horizon.
+		const findings = await horizonFindings(db, context, youthContributors);
+		return [
+			...findings
+				.filter(isYouthSectorExceptionFinding)
+				.map((finding) => itemOf(finding, "", "review")),
+			...findings.filter(isMonitorOnlyFinding).map(monitorItemOf),
+		];
+	},
+};
+
+/** Items listed once each, in the order the domains gave them. */
+function uniqueItems(items: Iterable<StatutoryReviewInboxItem>): StatutoryReviewInboxItem[] {
+	const seen = new Set<string>();
+	const unique: StatutoryReviewInboxItem[] = [];
+	for (const item of items) {
+		if (seen.has(item.id)) continue;
+		seen.add(item.id);
+		unique.push(item);
+	}
+	return unique;
+}
+
 /**
  * Findings of the monitors that only list acknowledgeable findings for review, in the planning
  * horizon around today, for the organization's current roster. Acknowledgeable findings are left
@@ -180,113 +366,21 @@ export async function loadStatutoryMonitorFindings(
 	db: Reader,
 	input: { readonly organizationId: string; readonly timezone: string; readonly now: Instant },
 ): Promise<StatutoryReviewInboxItem[]> {
-	const roster = await db
-		.select({ id: employee.id })
-		.from(employee)
-		.where(onCurrentRoster(input.organizationId, employee, input.now));
-	if (roster.length === 0) return [];
-	const today = plainDateAt(input.now, input.timezone);
-	const findings = (
-		await evaluateStatutoryFindings(
-			db,
-			{
-				organizationId: input.organizationId,
-				timezone: input.timezone,
-				window: {
-					start: today.subtract({ days: STATUTORY_MONITOR_LOOKBACK_DAYS }).toString(),
-					endExclusive: today.add({ days: STATUTORY_MONITOR_LOOKAHEAD_DAYS + 1 }).toString(),
-				},
-				employeeIds: roster.map((row) => row.id),
-				now: input.now,
-			},
-			monitorOnlyContributors,
-		)
-	).filter((finding) => finding.acknowledgementKind === null && finding.severity !== "info");
-	const names = await employeeNames(db, input.organizationId, [
-		...new Set(findings.map((finding) => finding.employeeId)),
+	const reader = memoizedReader(db);
+	const context = inboxContext(reader, { ...input, withNames: true });
+	const findings = await horizonFindings(reader, context, [
+		minijobScheduleContributor,
+		shortTermScheduleContributor,
+		...youthContributors,
 	]);
-	const seen = new Set<string>();
-	const items: StatutoryReviewInboxItem[] = [];
-	for (const finding of findings) {
-		if (seen.has(finding.id)) continue;
-		seen.add(finding.id);
-		items.push({
-			...itemOf(finding, names.get(finding.employeeId) ?? finding.employeeId, "monitor"),
-			warning: toStatutoryComplianceFinding(finding),
-		});
-	}
-	return items;
+	return withEmployeeNames(
+		reader,
+		input.organizationId,
+		uniqueItems(findings.filter(isMonitorOnlyFinding).map(monitorItemOf)),
+	);
 }
 
-/** Review items of each domain's own review list, with every acknowledgement state. */
-const reviewLoaders: Record<
-	StatutoryReviewDomain,
-	(
-		db: Reader,
-		input: { organizationId: string; timezone: string; now: Instant },
-	) => Promise<StatutoryReviewInboxItem[]>
-> = {
-	async minijob(db, input) {
-		const reviews = await loadMinijobExceedanceReviews(db, { ...input, includeAcknowledged: true });
-		return reviews.map((review) => ({
-			id: review.id,
-			reviewDomain: "minijob",
-			domain: "minijob",
-			employeeId: review.employeeId,
-			employeeName: review.employeeName,
-			kind: MINIJOB_MONTHLY_FINDING,
-			severity: review.severity,
-			subjectKey: review.month,
-			periodStart: firstDayOf(review.month),
-			periodEnd: firstDayOf(addMonths(review.month, 1)),
-			legalReference: MINIJOB_EXCEEDANCE_LEGAL_REFERENCE,
-			acknowledgementKind: MINIJOB_EXCEEDANCE_ACKNOWLEDGEMENT,
-			acknowledgementStatus: review.acknowledgement.status,
-			acknowledgeable: review.acknowledgeable,
-			source: "review",
-		}));
-	},
-	async short_term(db, input) {
-		const reviews = await listShortTermBerufsmaessigkeitReviews(db, {
-			...input,
-			includeResolved: true,
-		});
-		return reviews.map((review) => itemOf(review.finding, review.employeeName, "review"));
-	},
-	async working_student(db, input) {
-		const items = await listWorkingStudentReviewItems(db, input);
-		return items.map((item) => itemOf(item.finding, item.employeeName, "review"));
-	},
-	async on_call(db, input) {
-		const items = await listOnCallReviewItems(db, input);
-		return items.map((item) => itemOf(item.finding, item.employeeName, "review"));
-	},
-	async youth_apprentice(db, input) {
-		const findings = await listOpenYouthSectorExceptions(db, {
-			...input,
-			includeAcknowledged: true,
-		});
-		return findings.map((finding) => ({
-			id: finding.findingId,
-			reviewDomain: "youth_apprentice",
-			domain: "youth_protection",
-			employeeId: finding.employeeId,
-			employeeName: finding.employeeName,
-			kind: finding.findingKind,
-			severity: finding.severity,
-			subjectKey: finding.subjectKey,
-			periodStart: finding.periodStart,
-			periodEnd: finding.periodEnd,
-			legalReference: finding.legalReference,
-			acknowledgementKind: "jarbschg_sector_exception",
-			acknowledgementStatus: finding.acknowledgementStatus,
-			acknowledgeable: true,
-			source: "review",
-		}));
-	},
-};
-
-/** Whether an item still needs an org admin: not documented by a current acknowledgement. */
+/** Whether an item still needs an org admin: not documented by an acknowledgement. */
 export function isOpenStatutoryReviewItem(item: StatutoryReviewInboxItem): boolean {
 	return item.severity !== "info" && item.acknowledgementStatus !== "current";
 }
@@ -319,41 +413,32 @@ export async function loadStatutoryReviewInbox(
 	db: Reader,
 	input: StatutoryReviewInboxRequest,
 ): Promise<StatutoryReviewInbox> {
-	const timezone = await loadOrganizationTimezone(db, input.organizationId);
-	const context = { organizationId: input.organizationId, timezone, now: input.now };
-	const [monitor, ...reviews] = await Promise.allSettled([
-		loadStatutoryMonitorFindings(db, context),
-		...statutoryReviewDomains.map((domain) => reviewLoaders[domain](db, context)),
-	]);
+	const reader = memoizedReader(db);
+	const context = inboxContext(reader, {
+		organizationId: input.organizationId,
+		timezone: await loadOrganizationTimezone(reader, input.organizationId),
+		now: input.now,
+		withNames: !input.countsOnly,
+	});
+	const results = await Promise.allSettled(
+		statutoryReviewDomains.map((domain) => domainLoaders[domain](reader, context)),
+	);
 
 	const unavailable = new Set<StatutoryReviewDomain>();
-	const all: StatutoryReviewInboxItem[] = [];
-	const seen = new Set<string>();
-	for (const [index, result] of reviews.entries()) {
+	const loaded: StatutoryReviewInboxItem[] = [];
+	for (const [index, result] of results.entries()) {
 		const domain = statutoryReviewDomains[index];
 		if (result.status === "rejected") {
-			console.error(`[statutory-review-inbox] ${domain} review list failed`, result.reason);
+			console.error(`[statutory-review-inbox] ${domain} findings failed`, result.reason);
 			unavailable.add(domain);
 			continue;
 		}
-		for (const item of result.value) {
-			if (seen.has(item.id)) continue;
-			seen.add(item.id);
-			all.push(item);
-		}
+		loaded.push(...result.value);
 	}
-	if (monitor.status === "rejected") {
-		console.error("[statutory-review-inbox] monitor findings failed", monitor.reason);
-		for (const domain of ["minijob", "short_term", "youth_apprentice"] as const) {
-			unavailable.add(domain);
-		}
-	} else {
-		for (const item of monitor.value) {
-			if (seen.has(item.id)) continue;
-			seen.add(item.id);
-			all.push(item);
-		}
-	}
+	const unique = uniqueItems(loaded);
+	const all = input.countsOnly
+		? unique.map((item) => ({ ...item, employeeName: "" }))
+		: await withEmployeeNames(reader, input.organizationId, unique);
 
 	const severityRank: Record<StatutorySeverity, number> = { critical: 0, warning: 1, info: 2 };
 	const items = all

@@ -378,6 +378,8 @@
           "toggle": "Verlauf der Bestätigungen",
           "current": "Aktuell",
           "stale": "Ungültig",
+          "noLongerApplies": "Gilt nicht mehr",
+          "noLongerAppliesDetail": "Für diese Zahlen erfasst, belegt aber nicht den aktuellen Stand: Der Befund kann nicht mehr bestätigt werden.",
           "superseded": "Früher",
           "reason": "Begründung: {reason}",
           "legalNote": "Rechtlicher Hinweis: {note}"

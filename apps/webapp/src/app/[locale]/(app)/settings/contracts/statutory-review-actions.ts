@@ -4,7 +4,10 @@ import { z } from "zod";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import { storeStep } from "@/lib/organization-action/store-step";
-import { loadStatutoryAcknowledgementHistory } from "@/lib/statutory/acknowledgement-history";
+import {
+	loadStatutoryAcknowledgementHistory,
+	statutoryAcknowledgementReviewStatuses,
+} from "@/lib/statutory/acknowledgement-history";
 import { statutoryAcknowledgementKinds } from "@/lib/statutory/acknowledgement-kinds";
 import { loadStatutoryMonitorFindings } from "@/lib/statutory/review-inbox";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -38,7 +41,7 @@ export const listStatutoryAcknowledgementHistoryAction = organizationAction(
 			 * what is recorded.
 			 */
 			currentInputFingerprint: z.string().max(200),
-			currentStatus: z.enum(["none", "current", "stale"]),
+			currentStatus: z.enum(statutoryAcknowledgementReviewStatuses),
 		}),
 	},
 	({ organizationId, input }) =>
