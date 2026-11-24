@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import type { ComplianceSectionCard as ComplianceSectionCardModel } from "@/lib/compliance-command-center/types";
 import { Link } from "@/navigation";
 import {
+	COMPLIANCE_COMMAND_CENTER_I18N,
 	COMPLIANCE_SECTION_I18N,
 	COMPLIANCE_STATUS_I18N,
 	renderComplianceText,
@@ -23,17 +24,10 @@ export function ComplianceSectionCard({
 		>
 			<div className="min-w-0 space-y-2">
 				<div className="flex flex-wrap items-center gap-2">
-					<h3
-						id={`compliance-${section.key}`}
-						className="font-semibold text-balance break-words"
-					>
+					<h3 id={`compliance-${section.key}`} className="font-semibold text-balance break-words">
 						{renderComplianceText(t, COMPLIANCE_SECTION_I18N[section.key])}
 					</h3>
-					<Badge
-						variant={
-							section.status === "critical" ? "destructive" : "secondary"
-						}
-					>
+					<Badge variant={section.status === "critical" ? "destructive" : "secondary"}>
 						{renderComplianceText(t, COMPLIANCE_STATUS_I18N[section.status])}
 					</Badge>
 				</div>
@@ -46,13 +40,35 @@ export function ComplianceSectionCard({
 				>
 					{renderComplianceText(t, section.primaryLink.label)}
 				</Link>
+				{section.links && section.links.length > 0 ? (
+					<nav
+						aria-label={renderComplianceText(
+							t,
+							COMPLIANCE_COMMAND_CENTER_I18N.statutoryReviewsHeading,
+						)}
+						className="space-y-1"
+					>
+						<p className="text-xs font-medium text-muted-foreground">
+							{renderComplianceText(t, COMPLIANCE_COMMAND_CENTER_I18N.statutoryReviewsHeading)}
+						</p>
+						<ul className="flex flex-wrap gap-x-4 gap-y-1">
+							{section.links.map((link) => (
+								<li key={link.href}>
+									<Link
+										className="inline-flex min-h-9 items-center rounded-sm text-sm font-medium text-primary tabular-nums underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+										href={link.href}
+									>
+										{renderComplianceText(t, link.label)}
+									</Link>
+								</li>
+							))}
+						</ul>
+					</nav>
+				) : null}
 			</div>
 			<ul className="min-w-0 space-y-2 text-sm text-muted-foreground tabular-nums">
 				{section.facts.map((fact) => (
-					<li
-						className="break-words"
-						key={typeof fact === "string" ? fact : fact.key}
-					>
+					<li className="break-words" key={typeof fact === "string" ? fact : fact.key}>
 						{renderComplianceText(t, fact)}
 					</li>
 				))}

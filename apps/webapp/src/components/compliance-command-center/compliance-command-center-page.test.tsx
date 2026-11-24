@@ -16,14 +16,9 @@ const tolgeeTranslations = vi.hoisted(() => new Map<string, string>());
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (
-			_key: string,
-			fallback: string,
-			params?: Record<string, string | number>,
-		) =>
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
-				(message, [key, value]) =>
-					message.replaceAll(`{${key}}`, String(value)),
+				(message, [key, value]) => message.replaceAll(`{${key}}`, String(value)),
 				tolgeeTranslations.get(_key) ?? fallback,
 			),
 	}),
@@ -40,13 +35,9 @@ describe("ComplianceCommandCenterPage", () => {
 	it("announces loading without exposing findings or inventing zero counts", () => {
 		render(<CompliancePageLoading />);
 		expect(
-			screen
-				.getByRole("status", { name: "Loading compliance signals" })
-				.getAttribute("aria-busy"),
+			screen.getByRole("status", { name: "Loading compliance signals" }).getAttribute("aria-busy"),
 		).toBe("true");
-		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-			"Compliance",
-		);
+		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Compliance");
 		expect(screen.queryByText(/Rest-period violations:/)).toBeNull();
 	});
 	beforeEach(() => {
@@ -130,37 +121,29 @@ describe("ComplianceCommandCenterPage", () => {
 		render(
 			<>
 				<header>
-					{appPageOwnsHeading("/en/compliance") ? (
-						<span>Compliance</span>
-					) : (
-						<h1>Compliance</h1>
-					)}
+					{appPageOwnsHeading("/en/compliance") ? <span>Compliance</span> : <h1>Compliance</h1>}
 				</header>
 				<ComplianceCommandCenterPage data={data} />
 			</>,
 		);
-		expect(
-			screen
-				.getAllByRole("heading", { level: 1 })
-				.map((node) => node.textContent),
-		).toEqual(["Compliance"]);
-		expect(
-			screen
-				.getAllByRole("heading", { level: 3 })
-				.map((node) => node.textContent),
-		).toEqual(["Workforce compliance", "Access controls", "Audit evidence"]);
+		expect(screen.getAllByRole("heading", { level: 1 }).map((node) => node.textContent)).toEqual([
+			"Compliance",
+		]);
+		expect(screen.getAllByRole("heading", { level: 3 }).map((node) => node.textContent)).toEqual([
+			"Workforce compliance",
+			"Access controls",
+			"Audit evidence",
+		]);
 		const events = screen.getByRole("heading", {
 			name: "Recent Critical Events",
 		});
 		const coverage = screen.getByRole("heading", { name: "Coverage" });
 		expect(
-			events.compareDocumentPosition(coverage) &
-				Node.DOCUMENT_POSITION_FOLLOWING,
+			events.compareDocumentPosition(coverage) & Node.DOCUMENT_POSITION_FOLLOWING,
 		).toBeTruthy();
 		expect(
-			coverage.compareDocumentPosition(
-				screen.getByText("Audit evidence could not be loaded."),
-			) & Node.DOCUMENT_POSITION_FOLLOWING,
+			coverage.compareDocumentPosition(screen.getByText("Audit evidence could not be loaded.")) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
 		).toBeTruthy();
 		for (const fact of [
 			"Rest-period violations: 3",
@@ -171,18 +154,14 @@ describe("ComplianceCommandCenterPage", () => {
 		])
 			expect(screen.getByText(fact)).toBeTruthy();
 		expect(
-			screen
-				.getByRole("link", { name: "Open Compliance Settings" })
-				.getAttribute("href"),
+			screen.getByRole("link", { name: "Open Compliance Settings" }).getAttribute("href"),
 		).toBe("/settings/compliance");
-		expect(
-			screen
-				.getByRole("link", { name: "Open Audit Export" })
-				.getAttribute("href"),
-		).toBe("/settings/audit-export");
-		expect(
-			screen.getByRole("link", { name: "Open Audit Log" }).getAttribute("href"),
-		).toBe("/settings/audit-export?tab=activity");
+		expect(screen.getByRole("link", { name: "Open Audit Export" }).getAttribute("href")).toBe(
+			"/settings/audit-export",
+		);
+		expect(screen.getByRole("link", { name: "Open Audit Log" }).getAttribute("href")).toBe(
+			"/settings/audit-export?tab=activity",
+		);
 		expect(screen.getByText(/does not reevaluate/)).toBeTruthy();
 	});
 
@@ -227,8 +206,7 @@ describe("ComplianceCommandCenterPage", () => {
 							sectionKey: "accessControls",
 							severity: "critical",
 							title: "Admin role changed outside scheduled review",
-							description:
-								"A privileged role change occurred without an approval note.",
+							description: "A privileged role change occurred without an approval note.",
 							occurredAt: "2026-04-11T09:30:00.000Z",
 							primaryLink: {
 								label: "Review Audit Log",
@@ -236,29 +214,17 @@ describe("ComplianceCommandCenterPage", () => {
 							},
 						},
 					],
-					coverageNotes: [
-						"Access controls only summarize logged audit events.",
-					],
+					coverageNotes: ["Access controls only summarize logged audit events."],
 				}}
 			/>,
 		);
 
 		expect(screen.getByText("Compliance signals need review")).toBeTruthy();
-		expect(
-			screen.getByText("Audit evidence signals look healthy"),
-		).toBeTruthy();
-		expect(
-			screen.getByText("Access-control events could not be loaded."),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("heading", { name: "Recent Critical Events" }),
-		).toBeTruthy();
-		expect(
-			screen.getByText("Admin role changed outside scheduled review"),
-		).toBeTruthy();
-		expect(
-			screen.getByText("Access controls only summarize logged audit events."),
-		).toBeTruthy();
+		expect(screen.getByText("Audit evidence signals look healthy")).toBeTruthy();
+		expect(screen.getByText("Access-control events could not be loaded.")).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Recent Critical Events" })).toBeTruthy();
+		expect(screen.getByText("Admin role changed outside scheduled review")).toBeTruthy();
+		expect(screen.getByText("Access controls only summarize logged audit events.")).toBeTruthy();
 	});
 
 	it("distinguishes all-clear events from partial and unavailable sources during refresh recovery", () => {
@@ -300,34 +266,22 @@ describe("ComplianceCommandCenterPage", () => {
 				recentCriticalEvents: [],
 				coverageNotes: [],
 			});
-		const { rerender, unmount } = render(
-			<ComplianceCommandCenterPage data={makeData(true)} />,
-		);
-		expect(
-			screen.queryByText("No recent critical events were detected."),
-		).toBeNull();
+		const { rerender, unmount } = render(<ComplianceCommandCenterPage data={makeData(true)} />);
+		expect(screen.queryByText("No recent critical events were detected.")).toBeNull();
 		expect(
 			screen.getByText(
 				"Recent events are limited to available sources. Some signals could not be loaded.",
 			),
 		).toBeTruthy();
-		expect(
-			screen.getByText("Some compliance signals are unavailable"),
-		).toBeTruthy();
+		expect(screen.getByText("Some compliance signals are unavailable")).toBeTruthy();
 		const settingsLink = screen.getByRole("link", {
 			name: "Open Compliance Settings",
 		});
 		vi.advanceTimersByTime(60_000);
 		rerender(<ComplianceCommandCenterPage data={makeData(false)} />);
-		expect(screen.getByRole("link", { name: "Open Compliance Settings" })).toBe(
-			settingsLink,
-		);
-		expect(
-			screen.getByText("No active issues detected in monitored signals"),
-		).toBeTruthy();
-		expect(
-			screen.getByText("No recent critical events were detected."),
-		).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Open Compliance Settings" })).toBe(settingsLink);
+		expect(screen.getByText("No active issues detected in monitored signals")).toBeTruthy();
+		expect(screen.getByText("No recent critical events were detected.")).toBeTruthy();
 		vi.advanceTimersByTime(60_000);
 		expect(refresh).toHaveBeenCalledTimes(1);
 		rerender(<ComplianceCommandCenterPage data={makeData(true, true)} />);
@@ -336,19 +290,14 @@ describe("ComplianceCommandCenterPage", () => {
 				"Recent events could not be confirmed because the signal sources are unavailable.",
 			),
 		).toBeTruthy();
-		expect(
-			screen.queryByText("No recent critical events were detected."),
-		).toBeNull();
+		expect(screen.queryByText("No recent critical events were detected.")).toBeNull();
 		unmount();
 		vi.advanceTimersByTime(120_000);
 		expect(refresh).toHaveBeenCalledTimes(1);
 	});
 
 	it("renders translated command-center chrome and interpolated data", () => {
-		tolgeeTranslations.set(
-			"compliance.commandCenter.overview",
-			"Compliance-Überblick",
-		);
+		tolgeeTranslations.set("compliance.commandCenter.overview", "Compliance-Überblick");
 		tolgeeTranslations.set("compliance.commandCenter.status.healthy", "stabil");
 		tolgeeTranslations.set(
 			"compliance.commandCenter.recentEvents.title",
@@ -382,12 +331,8 @@ describe("ComplianceCommandCenterPage", () => {
 
 		expect(screen.getByText("Compliance-Überblick")).toBeTruthy();
 		expect(screen.getByText("stabil")).toBeTruthy();
-		expect(
-			screen.getByRole("heading", { name: "Aktuelle kritische Ereignisse" }),
-		).toBeTruthy();
-		expect(
-			screen.getByText("Keine kritischen Ereignisse erkannt."),
-		).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Aktuelle kritische Ereignisse" })).toBeTruthy();
+		expect(screen.getByText("Keine kritischen Ereignisse erkannt.")).toBeTruthy();
 		expect(screen.getByText(/Zuletzt aktualisiert:/)).toBeTruthy();
 	});
 
@@ -411,5 +356,59 @@ describe("ComplianceCommandCenterPage", () => {
 
 		vi.advanceTimersByTime(120_000);
 		expect(refresh).toHaveBeenCalledTimes(1);
+	});
+	it("links each statutory domain with open findings to its filtered Reviews & Conflicts inbox", () => {
+		const data = buildComplianceCommandCenterData({
+			refreshedAt: "2026-11-18T10:00:00.000Z",
+			sections: [
+				{
+					key: "workforceCompliance",
+					status: "critical",
+					headline: {
+						key: "compliance.commandCenter.sections.workforceCompliance.headline.critical",
+					},
+					facts: [
+						{
+							key: "compliance.commandCenter.facts.workforce.statutoryFindings",
+							params: { critical: 1, warning: 5 },
+						},
+					],
+					updatedAt: null,
+					primaryLink: {
+						label: { key: "compliance.commandCenter.links.openComplianceSettings" },
+						href: "/settings/compliance",
+					},
+					links: [
+						{
+							label: {
+								key: "compliance.commandCenter.links.statutoryDomain.minijob",
+								params: { count: 1 },
+							},
+							href: "/settings/contracts?tab=reviews&domain=minijob",
+						},
+						{
+							label: {
+								key: "compliance.commandCenter.links.statutoryDomain.on_call",
+								params: { count: 5 },
+							},
+							href: "/settings/contracts?tab=reviews&domain=on_call",
+						},
+					],
+				},
+			],
+			recentCriticalEvents: [],
+			coverageNotes: [],
+		});
+		render(<ComplianceCommandCenterPage data={data} />);
+
+		const nav = screen.getByRole("navigation", { name: "Statutory reviews" });
+		expect(nav).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Minijob: 1 open" }).getAttribute("href")).toBe(
+			"/settings/contracts?tab=reviews&domain=minijob",
+		);
+		expect(screen.getByRole("link", { name: "On-call: 5 open" }).getAttribute("href")).toBe(
+			"/settings/contracts?tab=reviews&domain=on_call",
+		);
+		expect(screen.getByText("Statutory findings: 1 critical, 5 warnings")).toBeTruthy();
 	});
 });

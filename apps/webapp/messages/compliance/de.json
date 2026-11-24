@@ -5,7 +5,7 @@
         "accessControls": "Zugriffskontrollen fassen nur sensible Audit-Log-Ereignisse zusammen, die bereits heute erfasst werden.",
         "auditEvidence": "Audit-Nachweise nutzen die Live-Audit-Export-Konfiguration, Audit-Paket-Anfragen und aktuelle Verifizierungsergebnisse.",
         "title": "Abdeckung",
-        "workforceCompliance": "Die Compliance der Belegschaft basiert auf den Verstößen gegen Arbeitsrichtlinien der letzten 7 Tage und ausstehenden Ausnahmeanträgen."
+        "workforceCompliance": "Die Compliance der Belegschaft basiert auf den Verstößen gegen Arbeitsrichtlinien der letzten 7 Tage und ausstehenden Ausnahmeanträgen sowie auf den offenen Befunden und Bestätigungen der gesetzlichen Prüfungen (Minijob, kurzfristige Beschäftigung, Werkstudierende, Arbeit auf Abruf, Jugendarbeitsschutz und Auszubildende)."
       },
       "events": {
         "auditEvidenceFailures": {
@@ -27,6 +27,24 @@
         "workforceFindings": {
           "description": "Ruhezeit: {restPeriodViolations}, Sonstige Richtlinien: {generalPolicyViolations}, Überstunden: {overtimeViolations}",
           "title": "Aktuelle Ergebnisse zur Arbeitsplatzrichtlinie"
+        },
+        "statutory": {
+          "description": "{critical} kritisch, {warning} Warnungen; {pending} Bestätigungen ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig",
+          "minijob": {
+            "title": "Minijob-Verdienstgrenzen"
+          },
+          "short_term": {
+            "title": "Grenzen der kurzfristigen Beschäftigung"
+          },
+          "working_student": {
+            "title": "Werkstudierende über 20 Stunden"
+          },
+          "on_call": {
+            "title": "Arbeit auf Abruf (§ 12 TzBfG)"
+          },
+          "youth_apprentice": {
+            "title": "Jugendarbeitsschutz und Auszubildende (JArbSchG, BBiG)"
+          }
         }
       },
       "facts": {
@@ -53,7 +71,10 @@
           "generalPolicyViolations": "Sonstige Richtlinienverstöße: {count}",
           "overtimeViolations": "Überstundenverstöße: {count}",
           "pendingExceptions": "Ausstehende Ausnahmen: {count}",
-          "restPeriodViolations": "Ruhezeitverstöße: {count}"
+          "restPeriodViolations": "Ruhezeitverstöße: {count}",
+          "statutoryFindings": "Gesetzliche Befunde: {critical} kritisch, {warning} Warnungen",
+          "statutoryAcknowledgements": "Gesetzliche Bestätigungen: {pending} ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig",
+          "statutoryUnavailable": "Einige gesetzliche Prüfungen konnten nicht geladen werden."
         }
       },
       "footer": {
@@ -66,7 +87,15 @@
         "openAuditExport": "Audit-Export öffnen",
         "openAuditLog": "Audit-Protokoll öffnen",
         "openComplianceSettings": "Compliance-Einstellungen öffnen",
-        "reviewAuditExport": "Audit-Export überprüfen"
+        "reviewAuditExport": "Audit-Export überprüfen",
+        "openStatutoryReviews": "In Prüfungen & Konflikte öffnen",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} offen",
+          "short_term": "Kurzfristig: {count} offen",
+          "working_student": "Werkstudierende: {count} offen",
+          "on_call": "Abrufarbeit: {count} offen",
+          "youth_apprentice": "Jugendliche & Azubis: {count} offen"
+        }
       },
       "loading": "Compliance-Signale werden geladen",
       "overview": "Compliance-Übersicht",
@@ -100,11 +129,12 @@
         },
         "workforceCompliance": {
           "headline": {
-            "critical": "Verstöße gegen die Personalrichtlinien erfordern eine Überprüfung",
-            "healthy": "Es wurden keine aktuellen Probleme bei den Personalrichtlinien erkannt",
+            "critical": "Verstöße gegen die Personalrichtlinien oder gesetzliche Befunde erfordern eine Überprüfung",
+            "healthy": "Es wurden keine aktuellen Probleme bei den Personalrichtlinien und keine offenen gesetzlichen Befunde erkannt",
             "warning": "Die Einhaltung der Personalrichtlinien weicht ab"
           },
-          "title": "Personal-Compliance"
+          "title": "Personal-Compliance",
+          "statutoryReviews": "Gesetzliche Prüfungen"
         }
       },
       "status": {

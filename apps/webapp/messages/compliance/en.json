@@ -5,7 +5,7 @@
         "accessControls": "Access controls only summarize sensitive audit-log events that are already captured today.",
         "auditEvidence": "Audit evidence uses live audit-export configuration, audit-pack requests, and recent verification results.",
         "title": "Coverage",
-        "workforceCompliance": "Workforce compliance uses the last 7 days of work-policy violations and pending exception requests."
+        "workforceCompliance": "Workforce compliance uses the last 7 days of work-policy violations and pending exception requests, plus the open findings and acknowledgements of the German statutory monitors (Minijob, short-term employment, working students, on-call work, youth protection and apprentices)."
       },
       "events": {
         "auditEvidenceFailures": {
@@ -27,6 +27,24 @@
         "workforceFindings": {
           "description": "Rest: {restPeriodViolations}, Other policy: {generalPolicyViolations}, Overtime: {overtimeViolations}",
           "title": "Recent workforce policy findings"
+        },
+        "statutory": {
+          "description": "{critical} critical, {warning} warnings; {pending} acknowledgements pending, {stale} invalidated by newer work or shifts",
+          "minijob": {
+            "title": "Minijob earnings limits"
+          },
+          "short_term": {
+            "title": "Short-term employment limits"
+          },
+          "working_student": {
+            "title": "Working students above 20 hours"
+          },
+          "on_call": {
+            "title": "On-call work (§ 12 TzBfG)"
+          },
+          "youth_apprentice": {
+            "title": "Youth protection and apprentices (JArbSchG, BBiG)"
+          }
         }
       },
       "facts": {
@@ -53,7 +71,10 @@
           "generalPolicyViolations": "Other policy violations: {count}",
           "overtimeViolations": "Overtime violations: {count}",
           "pendingExceptions": "Pending exceptions: {count}",
-          "restPeriodViolations": "Rest-period violations: {count}"
+          "restPeriodViolations": "Rest-period violations: {count}",
+          "statutoryFindings": "Statutory findings: {critical} critical, {warning} warnings",
+          "statutoryAcknowledgements": "Statutory acknowledgements: {pending} pending, {stale} invalidated by newer work or shifts",
+          "statutoryUnavailable": "Some statutory monitors could not be loaded."
         }
       },
       "footer": {
@@ -66,7 +87,15 @@
         "openAuditExport": "Open Audit Export",
         "openAuditLog": "Open Audit Log",
         "openComplianceSettings": "Open Compliance Settings",
-        "reviewAuditExport": "Review audit export"
+        "reviewAuditExport": "Review audit export",
+        "openStatutoryReviews": "Open in Reviews & Conflicts",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} open",
+          "short_term": "Short-term: {count} open",
+          "working_student": "Working students: {count} open",
+          "on_call": "On-call: {count} open",
+          "youth_apprentice": "Youth & apprentices: {count} open"
+        }
       },
       "loading": "Loading compliance signals",
       "overview": "Compliance overview",
@@ -100,11 +129,12 @@
         },
         "workforceCompliance": {
           "headline": {
-            "critical": "Workforce policy violations need review",
-            "healthy": "No recent workforce policy issues were detected",
+            "critical": "Workforce policy violations or statutory findings need review",
+            "healthy": "No recent workforce policy issues or open statutory findings were detected",
             "warning": "Workforce compliance is drifting"
           },
-          "title": "Workforce compliance"
+          "title": "Workforce compliance",
+          "statutoryReviews": "Statutory reviews"
         }
       },
       "status": {

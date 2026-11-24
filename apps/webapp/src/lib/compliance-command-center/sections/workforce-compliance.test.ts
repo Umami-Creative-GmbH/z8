@@ -10,6 +10,7 @@ const mockState = vi.hoisted(() => {
 
 	return {
 		select: vi.fn(),
+		loadStatutoryReviewInbox: vi.fn(),
 		violationWhere,
 		violationGroupBy,
 		exceptionWhere,
@@ -47,9 +48,12 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-const { deriveWorkforceComplianceSection, getWorkforceComplianceSection } = await import(
-	"./workforce-compliance"
-);
+vi.mock("@/lib/statutory/review-inbox", () => ({
+	loadStatutoryReviewInbox: mockState.loadStatutoryReviewInbox,
+}));
+
+const { deriveWorkforceComplianceSection, getWorkforceComplianceSection } =
+	await import("./workforce-compliance");
 
 describe("deriveWorkforceComplianceSection", () => {
 	it("marks the section critical when rest-period or max-hours violations exist", () => {
@@ -79,12 +83,108 @@ describe("deriveWorkforceComplianceSection", () => {
 
 		expect(result.card.status).toBe("warning");
 	});
+
+	const quietPolicy = {
+		restPeriodViolations: 0,
+		generalPolicyViolations: 0,
+		overtimeViolations: 0,
+		pendingExceptions: 0,
+		latestViolationAt: null,
+		evaluatedAt: "2026-11-18T10:00:00Z",
+	};
+	const domain = (
+		name: "minijob" | "short_term" | "working_student" | "on_call" | "youth_apprentice",
+		counts: Partial<{
+			critical: number;
+			warning: number;
+			pendingAcknowledgements: number;
+			staleAcknowledgements: number;
+		}> = {},
+		status: "loaded" | "unavailable" = "loaded",
+	) => ({
+		domain: name,
+		status,
+		critical: 0,
+		warning: 0,
+		pendingAcknowledgements: 0,
+		staleAcknowledgements: 0,
+		...counts,
+	});
+
+	it("turns critical for a critical statutory finding and links its domain's reviews", () => {
+		const result = deriveWorkforceComplianceSection({
+			...quietPolicy,
+			statutory: [
+				domain("minijob", { critical: 2, pendingAcknowledgements: 1 }),
+				domain("on_call"),
+			],
+		});
+
+		expect(result.card.status).toBe("critical");
+		expect(result.card.links).toEqual([
+			{
+				label: {
+					key: "compliance.commandCenter.links.statutoryDomain.minijob",
+					params: { count: 2 },
+				},
+				href: "/settings/contracts?tab=reviews&domain=minijob",
+			},
+		]);
+		expect(result.recentCriticalEvents.map((event) => event.id)).toEqual(["statutory-minijob"]);
+	});
+
+	it("warns about an acknowledgement invalidated by newer work even without an open warning", () => {
+		const result = deriveWorkforceComplianceSection({
+			...quietPolicy,
+			statutory: [domain("working_student", { staleAcknowledgements: 1 })],
+		});
+
+		expect(result.card.status).toBe("warning");
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryAcknowledgements",
+			params: { pending: 0, stale: 1 },
+		});
+	});
+
+	it("reports statutory monitors it could not read instead of calling them healthy", () => {
+		const unreadable = deriveWorkforceComplianceSection({ ...quietPolicy, statutory: null });
+		const partly = deriveWorkforceComplianceSection({
+			...quietPolicy,
+			statutory: [domain("minijob"), domain("on_call", {}, "unavailable")],
+		});
+
+		for (const result of [unreadable, partly]) {
+			expect(result.card.status).toBe("warning");
+			expect(result.card.facts).toContainEqual({
+				key: "compliance.commandCenter.facts.workforce.statutoryUnavailable",
+			});
+		}
+	});
 });
 
 describe("getWorkforceComplianceSection", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.configureSelectChain();
+		mockState.loadStatutoryReviewInbox.mockResolvedValue({ items: [], domains: [] });
+	});
+
+	it("degrades to an unavailable statutory fact when the monitors fail", async () => {
+		mockState.violationGroupBy.mockResolvedValue([]);
+		mockState.exceptionWhere.mockResolvedValue([{ count: 0 }]);
+		mockState.loadStatutoryReviewInbox.mockRejectedValue(new Error("monitor down"));
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+		const result = await getWorkforceComplianceSection("org-1");
+
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryUnavailable",
+		});
+		expect(mockState.loadStatutoryReviewInbox).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-1" }),
+		);
+		consoleError.mockRestore();
 	});
 
 	it("counts non-overtime policy violations toward the critical max-hours bucket", async () => {

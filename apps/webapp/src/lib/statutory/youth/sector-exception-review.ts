@@ -20,7 +20,7 @@ import {
 	type StatutoryAcknowledgementRecord,
 	statutoryAcknowledgementSubjectOf,
 } from "../acknowledgements";
-import type { StatutoryFinding, StatutoryQuantity } from "../finding";
+import type { StatutoryFinding, StatutoryQuantity, StatutorySeverity } from "../finding";
 import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { isMinorOn } from "./age";
 import { jarbschgScheduleContributor } from "./jarbschg-contributor";
@@ -43,7 +43,10 @@ export const jarbschgSectorExceptionKinds = [
 ] as const satisfies readonly JarbschgRule[];
 export type JarbschgSectorExceptionKind = (typeof jarbschgSectorExceptionKinds)[number];
 
-/** An open (unacknowledged or stale) sector-exception finding, for org admins. */
+/**
+ * A sector-exception finding for org admins: open (unacknowledged or stale), or documented by a
+ * current acknowledgement when listed with `includeAcknowledged`.
+ */
 export interface OpenYouthSectorException {
 	readonly findingId: string;
 	readonly employeeId: string;
@@ -52,9 +55,12 @@ export interface OpenYouthSectorException {
 	readonly subjectKey: string;
 	/** Local day the finding is dated to, `YYYY-MM-DD`. */
 	readonly periodStart: string;
+	/** The day after `periodStart` (exclusive end). */
+	readonly periodEnd: string;
+	readonly severity: StatutorySeverity;
 	readonly legalReference: string;
 	readonly used: StatutoryQuantity | null;
-	readonly acknowledgementStatus: "none" | "stale";
+	readonly acknowledgementStatus: "none" | "current" | "stale";
 	/** What the admin acknowledges; passed back as the expected precondition. */
 	readonly inputFingerprint: string;
 }
@@ -106,10 +112,19 @@ async function evaluateSectorFindings(
 	);
 }
 
-/** Open sector-exception findings of the organization's employees under 18, oldest day first. */
+/**
+ * Open sector-exception findings of the organization's employees under 18, oldest day first; with
+ * `includeAcknowledged` also those a current acknowledgement documents (Reviews & Conflicts'
+ * "Show resolved").
+ */
 export async function listOpenYouthSectorExceptions(
 	db: Reader,
-	input: { readonly organizationId: string; readonly timezone: string; readonly now: Instant },
+	input: {
+		readonly organizationId: string;
+		readonly timezone: string;
+		readonly now: Instant;
+		readonly includeAcknowledged?: boolean;
+	},
 ): Promise<OpenYouthSectorException[]> {
 	const today = plainDateAt(input.now, input.timezone);
 	const windowStart = today.subtract({ days: SECTOR_EXCEPTION_LOOKBACK_DAYS });
@@ -126,10 +141,7 @@ export async function listOpenYouthSectorExceptions(
 		.from(employee)
 		.leftJoin(user, eq(user.id, employee.userId))
 		.where(
-			and(
-				onCurrentRoster(input.organizationId, employee, input.now),
-				isNotNull(employee.birthday),
-			),
+			and(onCurrentRoster(input.organizationId, employee, input.now), isNotNull(employee.birthday)),
 		);
 	// Under 18 on the window's first day is under 18 somewhere in it.
 	const minors = people.filter(
@@ -146,7 +158,8 @@ export async function listOpenYouthSectorExceptions(
 	const open: OpenYouthSectorException[] = [];
 	for (const finding of findings) {
 		const status = finding.acknowledgement?.status ?? "none";
-		if (status === "current" || !isSectorExceptionKind(finding.kind)) continue;
+		if (!isSectorExceptionKind(finding.kind)) continue;
+		if (status === "current" && !input.includeAcknowledged) continue;
 		open.push({
 			findingId: finding.id,
 			employeeId: finding.employeeId,
@@ -154,6 +167,8 @@ export async function listOpenYouthSectorExceptions(
 			findingKind: finding.kind,
 			subjectKey: finding.subjectKey,
 			periodStart: finding.periodStart,
+			periodEnd: finding.periodEnd,
+			severity: finding.severity,
 			legalReference: finding.legalReference,
 			used: finding.summary.used ?? null,
 			acknowledgementStatus: status,
