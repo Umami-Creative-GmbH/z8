@@ -2,6 +2,11 @@ import type { useTranslate } from "@tolgee/react";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
+import {
+	DEFAULT_TIME_FORMAT,
+	formatTimeStringForPreference,
+	type TimeFormat,
+} from "@/lib/user-preferences/time-format";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -29,12 +34,14 @@ function findingWeekText(finding: StatutoryComplianceFinding, locale: string): s
 
 /**
  * Planner text for JArbSchG youth-protection and BBiG apprentice-release findings (#1993), or
- * null for other statutory kinds. Quantities are minutes or days, never money.
+ * null for other statutory kinds. Quantities are minutes or days, never money; clock times follow
+ * the reader's `timeFormat`.
  */
 export function youthProtectionWarningText(
 	finding: StatutoryComplianceFinding,
 	t: Translate,
 	locale: string,
+	timeFormat: TimeFormat = DEFAULT_TIME_FORMAT,
 ): string | null {
 	const used = finding.summary.used?.value ?? 0;
 	const limit = finding.summary.limit?.value ?? 0;
@@ -77,21 +84,29 @@ export function youthProtectionWarningText(
 				"Under 18: {used} min worked without a break, at most {limit} min allowed",
 				{ used, limit },
 			);
-		case "jarbschg_night_work":
+		case "jarbschg_night_work": {
+			const time = (value: string) => formatTimeStringForPreference(value, timeFormat);
 			// Outside the hours § 14 Abs. 2, 3, 5, 6 allow for the minor's age: no exception. Only the
 			// minutes outside them are named, not the night work an exception could cover.
 			if (finding.acknowledgementStatus === null) {
 				return t(
 					"scheduling:scheduling.statutory.jarbschg.nightWorkBeyondSector",
-					"Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: 05:00 to 21:00; from 16 until 23:30; from 17 in bakeries from 04:00; none under 15); no exception allows it",
-					{ minutes: finding.beyondSectorHours ?? used },
+					"Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: {from15} to {until15}; from 16 until {until16}; from 17 in bakeries from {bakeryFrom17}; none under 15); no exception allows it",
+					{
+						minutes: finding.beyondSectorHours ?? used,
+						from15: time("05:00"),
+						until15: time("21:00"),
+						until16: time("23:30"),
+						bakeryFrom17: time("04:00"),
+					},
 				);
 			}
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.nightWork",
-				"Under 18: {used} min of night work between 20:00 and 06:00",
-				{ used },
+				"Under 18: {used} min of night work between {from} and {until}",
+				{ used, from: time("20:00"), until: time("06:00") },
 			);
+		}
 		case "jarbschg_saturday_work":
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.saturdayWork",

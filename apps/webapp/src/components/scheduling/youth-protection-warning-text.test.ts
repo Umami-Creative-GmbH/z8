@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import deCatalog from "../../../messages/scheduling/de.json";
 import enCatalog from "../../../messages/scheduling/en.json";
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { youthProtectionWarningText } from "./youth-protection-warning-text";
 
 function catalogText(catalog: unknown, key: string): unknown {
@@ -35,13 +36,13 @@ const base: StatutoryComplianceFinding = {
 };
 
 /** The key asked for, the values it was given, and the English default. */
-function textOf(finding: StatutoryComplianceFinding) {
+function textOf(finding: StatutoryComplianceFinding, timeFormat?: TimeFormat) {
 	const calls: { key: string; fallback: string; params?: Record<string, unknown> }[] = [];
 	const t = ((key: string, fallback: string, params?: Record<string, unknown>) => {
 		calls.push({ key, fallback, params });
 		return fallback.replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name] ?? ""));
 	}) as Parameters<typeof youthProtectionWarningText>[1];
-	const text = youthProtectionWarningText(finding, t, "en-US");
+	const text = youthProtectionWarningText(finding, t, "en-US", timeFormat);
 	return { text, call: calls[0], calls };
 }
 
@@ -119,12 +120,39 @@ describe("youthProtectionWarningText (#1993)", () => {
 		expect(acknowledgeable.call?.key).toBe("scheduling:scheduling.statutory.jarbschg.nightWork");
 		const hard = textOf(night);
 		expect(hard.call?.key).toBe("scheduling:scheduling.statutory.jarbschg.nightWorkBeyondSector");
-		expect(hard.call?.params).toEqual({ minutes: 15 });
+		expect(hard.call?.params).toMatchObject({ minutes: 15 });
 		expect(hard.text).toContain("15 min");
 		expect(hard.text).not.toContain("225");
 		expect(catalogText(enCatalog, hard.call?.key ?? "")).toBe(hard.call?.fallback);
 		expect(typeof catalogText(deCatalog, hard.call?.key ?? "")).toBe("string");
 		expect(catalogText(deCatalog, hard.call?.key ?? "")).not.toBe(hard.call?.fallback);
+	});
+
+	it("writes the night-work hours in the reader's time format", () => {
+		const night = {
+			...base,
+			statutoryKind: "jarbschg_night_work",
+			legalReference: "§ 14 JArbSchG",
+			summary: { tier: "exceeded" as const, used: { unit: "minutes" as const, value: 90 } },
+			acknowledgementStatus: "none" as const,
+		};
+
+		expect(textOf(night).text).toBe("Under 18: 90 min of night work between 20:00 and 06:00");
+		expect(textOf(night, "12h").text).toBe(
+			"Under 18: 90 min of night work between 8:00 PM and 6:00 AM",
+		);
+
+		const beyond = textOf({ ...night, acknowledgementStatus: null, beyondSectorHours: 15 }, "12h");
+		expect(beyond.text).toBe(
+			"Under 18: 15 min of night work outside the hours a sector exception allows (from 15: 5:00 AM to 9:00 PM; from 16 until 11:30 PM; from 17 in bakeries from 4:00 AM; none under 15); no exception allows it",
+		);
+		for (const { key, fallback, params } of [textOf(night).call, beyond.call]) {
+			expect(catalogText(enCatalog, key)).toBe(fallback);
+			const german = catalogText(deCatalog, key);
+			expect(typeof german).toBe("string");
+			// Every value the text is given has a place in the German text too.
+			for (const name of Object.keys(params ?? {})) expect(german).toContain(`{${name}}`);
+		}
 	});
 
 	it("keeps the release-day wording for other release conflicts", () => {

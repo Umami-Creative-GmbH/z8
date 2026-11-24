@@ -227,6 +227,7 @@
         "blocksPublishing": "Sperrt die Veröffentlichung",
         "close": "Schließen",
         "hide": "Gesetzliche Befunde ausblenden ({count})",
+        "hideOfTotal": "Gesetzliche Befunde ausblenden ({count} von {total})",
         "listLabel": "Gesetzliche Befunde",
         "openReviews": "In Prüfungen & Konflikte öffnen",
         "outsideScope": "{count, plural, one {# weiterer Befund betrifft eine Person, die Sie nicht verwalten.} other {# weitere Befunde betreffen Personen, die Sie nicht verwalten.}}",
@@ -237,7 +238,10 @@
           "warning": "Warnung"
         },
         "show": "Gesetzliche Befunde anzeigen ({count})",
-        "showShifts": "Schichten von {name} anzeigen"
+        "showOfTotal": "Gesetzliche Befunde anzeigen ({count} von {total})",
+        "showShifts": "Schichten von {name} anzeigen",
+        "unnamedEmployee": "Person ohne Namen",
+        "weekOf": "Woche ab {date}"
       },
       "warning": "{area}: gesetzliche Grenze gefährdet",
       "warningApproaching": "{area}: gesetzliche Grenze fast erreicht",
@@ -258,8 +262,8 @@
         "restPeriod": "Unter 18: nur {used} Min. Ruhezeit vor dieser Schicht, {limit} Min. erforderlich",
         "break": "Unter 18: {used} Min. Pause genommen, {limit} Min. erforderlich",
         "uninterrupted": "Unter 18: {used} Min. ohne Pause gearbeitet, höchstens {limit} Min. erlaubt",
-        "nightWork": "Unter 18: {used} Min. Nachtarbeit zwischen 20:00 und 06:00 Uhr",
-        "nightWorkBeyondSector": "Unter 18: {minutes} Min. Nachtarbeit außerhalb der Zeiten, die eine Branchenausnahme erlaubt (ab 15: 05:00 bis 21:00 Uhr; ab 16 bis 23:30 Uhr; ab 17 in Bäckereien ab 04:00 Uhr; unter 15 keine); keine Ausnahme erlaubt sie",
+        "nightWork": "Unter 18: {used} Min. Nachtarbeit zwischen {from} und {until}",
+        "nightWorkBeyondSector": "Unter 18: {minutes} Min. Nachtarbeit außerhalb der Zeiten, die eine Branchenausnahme erlaubt (ab 15: {from15} bis {until15}; ab 16 bis {until16}; ab 17 in Bäckereien ab {bakeryFrom17}; unter 15 keine); keine Ausnahme erlaubt sie",
         "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
         "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
         "holidayWork": "Unter 18: Arbeit an Feiertagen braucht eine gesetzliche Branchenausnahme",

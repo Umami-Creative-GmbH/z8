@@ -32,6 +32,8 @@ vi.mock("@/navigation", () => ({
 	),
 }));
 
+const { UserPreferencesProvider } =
+	await import("@/components/providers/user-preferences-provider");
 const { StatutoryFindingsList } = await import("./statutory-findings-list");
 const { ScheduleComplianceBanner } = await import("./schedule-compliance-banner");
 
@@ -196,6 +198,169 @@ describe("StatutoryFindingsList", () => {
 		expect(onShiftLinkClick).toHaveBeenCalledTimes(1);
 	});
 
+	/** One listed finding of Anna's with the given kind and period, no named day. */
+	function periodItem(
+		statutoryKind: string,
+		domain: StatutoryComplianceFinding["domain"],
+		period: { start: string; endExclusive: string },
+		overrides: Partial<StatutoryComplianceFinding> = {},
+	): ScheduleStatutoryFindingItem {
+		return {
+			employeeName: "Anna Berg",
+			finding: finding({
+				findingId: `${statutoryKind}:${ANNA}:${period.start}`,
+				statutoryKind,
+				domain,
+				severity: "warning",
+				subjectKey: period.start,
+				summary: { tier: "warning", usedPercent: 90 },
+				day: undefined,
+				blocksPublication: false,
+				...overrides,
+			}),
+			period,
+		};
+	}
+
+	function whenAndLink(item: ScheduleStatutoryFindingItem) {
+		render(<StatutoryFindingsList findings={findings({ items: [item] })} dateRange={RANGE} />);
+		const row = screen.getByRole("listitem");
+		return {
+			row,
+			href: within(row).getByRole("link", { name: "Show Anna Berg's shifts" }).getAttribute("href"),
+		};
+	}
+
+	it("names the week of a working-student week", () => {
+		const { row, href } = whenAndLink(
+			periodItem("working_student_lecture_week", "working_student", {
+				start: "2027-03-01",
+				endExclusive: "2027-03-08",
+			}),
+		);
+
+		expect(within(row).getByText("Mar 1 – 7, 2027")).toBeTruthy();
+		expect(href).toBe(`/scheduling?employeeId=${ANNA}&date=2027-03-01`);
+	});
+
+	it("names the week of an on-call week", () => {
+		const { row } = whenAndLink(
+			periodItem("on_call_weekly_over_band", "on_call", {
+				start: "2027-03-01",
+				endExclusive: "2027-03-08",
+			}),
+		);
+
+		expect(within(row).getByText("Mar 1 – 7, 2027")).toBeTruthy();
+	});
+
+	it("names the year of a short-term year and opens the calendar on the visible range", () => {
+		const { row, href } = whenAndLink(
+			periodItem("short_term_work_days", "short_term", {
+				start: "2027-01-01",
+				endExclusive: "2028-01-01",
+			}),
+		);
+
+		expect(within(row).getByText("Jan 1 – Dec 31, 2027")).toBeTruthy();
+		// The year starts before the visible range: the link opens the range, not 1 January.
+		expect(href).toBe(`/scheduling?employeeId=${ANNA}&date=2027-03-01`);
+	});
+
+	it("names a rolling 12-month window and opens the calendar on the visible range", () => {
+		const { row, href } = whenAndLink(
+			periodItem("minijob_rolling_12m_cap", "minijob", {
+				start: "2026-04-01",
+				endExclusive: "2027-04-01",
+			}),
+		);
+
+		expect(within(row).getByText("Apr 1, 2026 – Mar 31, 2027")).toBeTruthy();
+		expect(href).toBe(`/scheduling?employeeId=${ANNA}&date=2027-03-01`);
+	});
+
+	it("names the day of a single-day on-call finding", () => {
+		const { row, href } = whenAndLink(
+			periodItem("on_call_short_notice", "on_call", {
+				start: "2027-03-04",
+				endExclusive: "2027-03-05",
+			}),
+		);
+
+		expect(within(row).getByText("Mar 4, 2027")).toBeTruthy();
+		expect(href).toBe(`/scheduling?employeeId=${ANNA}&date=2027-03-04`);
+	});
+
+	it.each([
+		[
+			"jarbschg_weekly_max",
+			{ used: { unit: "minutes", value: 2_700 }, limit: { unit: "minutes", value: 2_400 } },
+		],
+		[
+			"jarbschg_days_per_week",
+			{ used: { unit: "days", value: 6 }, limit: { unit: "days", value: 5 } },
+		],
+	] as const)(
+		"names the week (Monday to Sunday) of a %s finding, and opens its shift's day",
+		(kind, summary) => {
+			// Thursday's shift is past the week's limit.
+			const { row, href } = whenAndLink({
+				employeeName: "Anna Berg",
+				finding: finding({
+					statutoryKind: kind,
+					summary: { tier: "exceeded", ...summary },
+					day: "2027-03-04",
+				}),
+				period: { start: "2027-03-04", endExclusive: "2027-03-05" },
+			});
+
+			expect(within(row).getByText("Week of Mar 1, 2027")).toBeTruthy();
+			expect(href).toBe(`/scheduling?employeeId=${ANNA}&date=2027-03-04`);
+		},
+	);
+
+	it("lists a finding whose employee has no name on record as an unnamed employee", () => {
+		render(
+			<StatutoryFindingsList
+				findings={findings({ items: [{ ...youthDay, employeeName: "" }] })}
+				dateRange={RANGE}
+			/>,
+		);
+
+		const row = screen.getByRole("listitem");
+		expect(within(row).getByText("Unnamed employee")).toBeTruthy();
+		expect(within(row).getByRole("link", { name: "Show Unnamed employee's shifts" })).toBeTruthy();
+		expect(row.textContent).not.toContain(ANNA);
+	});
+
+	it("writes clock times in the reader's time format", () => {
+		render(
+			<UserPreferencesProvider timeFormat="12h">
+				<StatutoryFindingsList
+					findings={findings({
+						items: [
+							{
+								...youthDay,
+								finding: finding({
+									statutoryKind: "jarbschg_night_work",
+									legalReference: "§ 14 JArbSchG",
+									summary: { tier: "exceeded", used: { unit: "minutes", value: 60 } },
+									acknowledgementStatus: "none",
+									blocksPublication: false,
+								}),
+							},
+						],
+					})}
+					dateRange={RANGE}
+				/>
+			</UserPreferencesProvider>,
+		);
+
+		expect(
+			screen.getByText("Under 18: 60 min of night work between 8:00 PM and 6:00 AM"),
+		).toBeTruthy();
+	});
+
 	it("writes dates in the reader's language", () => {
 		language.current = "de";
 		render(<StatutoryFindingsList findings={findings()} dateRange={RANGE} />);
@@ -230,6 +395,22 @@ describe("ScheduleComplianceBanner", () => {
 		const list = screen.getByRole("list", { name: "Statutory findings" });
 		expect(toggle.getAttribute("aria-controls")).toBe(list.parentElement?.id);
 		expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+	});
+
+	it("tells a scoped manager, while collapsed, that the list holds only some of the findings", () => {
+		render(
+			<ScheduleComplianceBanner
+				summary={{ ...summary, totalFindings: 4, byType: { ...summary.byType, statutory: 4 } }}
+				statutoryFindings={findings({ outsideScopeCount: 2 })}
+				dateRange={RANGE}
+			/>,
+		);
+
+		const toggle = screen.getByRole("button", { name: "Show statutory findings (2 of 4)" });
+		fireEvent.click(toggle);
+
+		expect(toggle.textContent).toBe("Hide statutory findings (2 of 4)");
+		expect(screen.getByText("2 more findings concern employees you don't manage.")).toBeTruthy();
 	});
 
 	it("offers no list when a scoped manager reaches none of the findings", () => {

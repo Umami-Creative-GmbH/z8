@@ -22,6 +22,39 @@ interface ScheduleComplianceBannerProps {
 	shiftEmployeeIds?: ReadonlySet<string>;
 }
 
+/**
+ * The disclosure's label. Beside findings out of the viewer's reach it says the list holds only
+ * some ("2 of 4"), so the gap to the statutory count is plain before the list is opened.
+ */
+function statutoryToggleLabel(
+	shown: boolean,
+	listed: number,
+	outsideScope: number,
+	t: ReturnType<typeof useTranslate>["t"],
+): string {
+	if (outsideScope > 0) {
+		const params = { count: listed, total: listed + outsideScope };
+		return shown
+			? t(
+					"scheduling:scheduling.statutory.findings.hideOfTotal",
+					"Hide statutory findings ({count} of {total})",
+					params,
+				)
+			: t(
+					"scheduling:scheduling.statutory.findings.showOfTotal",
+					"Show statutory findings ({count} of {total})",
+					params,
+				);
+	}
+	return shown
+		? t("scheduling:scheduling.statutory.findings.hide", "Hide statutory findings ({count})", {
+				count: listed,
+			})
+		: t("scheduling:scheduling.statutory.findings.show", "Show statutory findings ({count})", {
+				count: listed,
+			});
+}
+
 export function ScheduleComplianceBanner({
 	summary,
 	statutoryFindings,
@@ -95,17 +128,7 @@ export function ScheduleComplianceBanner({
 								)}
 								aria-hidden="true"
 							/>
-							{showStatutory
-								? t(
-										"scheduling:scheduling.statutory.findings.hide",
-										"Hide statutory findings ({count})",
-										{ count: listed },
-									)
-								: t(
-										"scheduling:scheduling.statutory.findings.show",
-										"Show statutory findings ({count})",
-										{ count: listed },
-									)}
+							{statutoryToggleLabel(showStatutory, listed, outsideScope, t)}
 						</Button>
 						<StatutoryFindingsList
 							id={listId}

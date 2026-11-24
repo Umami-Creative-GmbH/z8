@@ -4,6 +4,7 @@ import { IconCalendarEvent, IconExternalLink, IconLock } from "@tabler/icons-rea
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useId } from "react";
 import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate, formatPlainDateRange } from "@/lib/datetime/temporal-format";
@@ -18,15 +19,30 @@ import { statutoryWarningText } from "../statutory-warning-text";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
+/** Youth findings that judge the week (§ 8 Abs. 1, § 15 JArbSchG count Monday to Sunday). */
+const YOUTH_WEEK_KINDS: ReadonlySet<string> = new Set([
+	"jarbschg_weekly_max",
+	"jarbschg_days_per_week",
+]);
+
 /**
  * The day, week or month a finding concerns, as the reader's locale writes it: the day a youth or
- * apprentice finding names, else the period it judges (a whole month by its name).
+ * apprentice finding names (the week of a youth weekly limit), else the period it judges (a whole
+ * month by its name).
  */
 export function statutoryFindingWhen(
 	item: Pick<ScheduleStatutoryFindingItem, "finding" | "period">,
 	locale: string,
+	t: Translate,
 ): string | null {
 	const day = item.finding.day ?? item.finding.releaseDay;
+	if (day && YOUTH_WEEK_KINDS.has(item.finding.statutoryKind)) {
+		const date = parsePlainDate(day);
+		const monday = date.subtract({ days: date.dayOfWeek - 1 });
+		return t("scheduling:scheduling.statutory.findings.weekOf", "Week of {date}", {
+			date: formatPlainDate(monday, locale, "dateMedium"),
+		});
+	}
 	if (day) return formatPlainDate(parsePlainDate(day), locale, "dateMedium");
 	if (!item.period) return null;
 	const start = parsePlainDate(item.period.start);
@@ -179,8 +195,12 @@ function StatutoryFindingRow({
 	onShiftLinkClick?: () => void;
 }) {
 	const { t } = useTranslate();
-	const { finding, employeeName } = item;
-	const when = statutoryFindingWhen(item, locale);
+	const timeFormat = useTimeFormat();
+	const { finding } = item;
+	const employeeName =
+		item.employeeName ||
+		t("scheduling:scheduling.statutory.findings.unnamedEmployee", "Unnamed employee");
+	const when = statutoryFindingWhen(item, locale, t);
 	const shiftsHref = `/scheduling?${new URLSearchParams({
 		employeeId: finding.employeeId,
 		date: statutoryFindingFocusDate(item, dateRange),
@@ -193,7 +213,7 @@ function StatutoryFindingRow({
 				<span className="min-w-0 font-medium break-words">{employeeName}</span>
 				{when && <span className="text-muted-foreground tabular-nums">{when}</span>}
 			</div>
-			<p className="break-words">{statutoryWarningText(finding, t, locale)}</p>
+			<p className="break-words">{statutoryWarningText(finding, t, locale, timeFormat)}</p>
 			<div className="flex flex-wrap items-center gap-2">
 				<Badge variant="outline" className={SEVERITY_BADGE[finding.severity]}>
 					{severityLabel(finding.severity, t)}
