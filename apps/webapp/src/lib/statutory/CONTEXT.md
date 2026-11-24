@@ -209,6 +209,32 @@ _Avoid_: one acknowledgement lifting night work at any hour or age
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
 
+## Decisions
+
+Confirmed as intended in the final review of PR #2007 and made visible in the product (#2023).
+
+**Executive exemption switches off all adult ArbZG handling.** `arbzg_scope = 'executive_exempt'`
+marks leitende Angestellte, whom § 18 Abs. 1 Nr. 1 ArbZG takes out of the ArbZG entirely. So it
+suppresses adult ArbZG findings and also the automatic ArbZG break deductions and break
+reminders: none of them has a legal basis for these employees. JArbSchG is a separate law that
+§ 18 ArbZG does not touch, so a minor marked exempt keeps every youth-protection check. Explained
+beside the ArbZG scope wherever an admin sets or sees it (effective contract terms, the change form,
+contract templates).
+
+**The on-call sick-pay line is guidance, not a payroll calculation.** The payroll reference card
+states whether § 3 EFZG continued pay is owed for an own illness (owed, waiting time of § 3 Abs. 3,
+six weeks of § 3 Abs. 1 exhausted, not owed). Z8 does not see everything that decides the claim
+(a new illness or a continuation of an earlier one, § 3 Abs. 1 Satz 2; fault), so the line is labelled
+"Guidance for payroll" and the card says the payroll system decides. It changes no figure.
+
+**The block-week training allowance stays out of a minor's § 8 totals.** In a full block-release
+week, § 9 Abs. 1 Nr. 3 JArbSchG and § 15 Abs. 1 Satz 2 Nr. 3 BBiG allow in-company training of up to
+two hours a week. § 9 Abs. 2 Nr. 2 JArbSchG credits the block week with 40 hours, the § 8 weekly
+maximum, so counting the allowed minutes as well would breach § 8 every time and the allowance
+could never be used. They are therefore left out of a minor's day and week totals (see
+**Block-week training allowance**). Said where the allowance shows: the apprentice's block-week
+release credit and the release-conflict warning in Staffing and Reviews & Conflicts.
+
 ## Short-term employment
 
 § 8 Abs. 1 Nr. 2 SGB IV (*kurzfristige Beschäftigung*), judged per calendar year in the
