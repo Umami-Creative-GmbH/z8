@@ -24,6 +24,7 @@
     "db:install-departure-access": "tsx scripts/install-employee-departure-access.ts",
     "db:install-statutory-foundation": "tsx scripts/install-statutory-foundation.ts",
     "db:seed": "tsx src/db/seed/do-seed.ts",
+    "db:seed:statutory-verification": "tsx scripts/seed-statutory-verification.ts",
     "approvals:list": "tsx scripts/approvals.ts list",
     "approvals:delete": "tsx scripts/approvals.ts delete",
     "approvals:pilot-readiness": "tsx scripts/approval-pilot-readiness.ts",

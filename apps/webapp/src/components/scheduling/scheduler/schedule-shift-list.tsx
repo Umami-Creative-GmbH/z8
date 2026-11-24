@@ -2,11 +2,13 @@
 
 import { useTolgee, useTranslate } from "@tolgee/react";
 import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { shiftEndsNextDay, shiftPlaceLabel } from "@/lib/scheduling/shift-labels";
+import { formatTimeStringForPreference } from "@/lib/user-preferences/time-format";
 
 /** The same calendar records, with native buttons for keyboard and non-gesture access. */
 export function ScheduleShiftList({
@@ -20,6 +22,7 @@ export function ScheduleShiftList({
 }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() || "en";
+	const timeFormat = useTimeFormat();
 	return (
 		<details className="rounded-lg border">
 			<summary className="cursor-pointer rounded-lg p-4 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -54,7 +57,8 @@ export function ScheduleShiftList({
 									locale,
 									"weekdayMonthDay",
 								)}{" "}
-								· {shift.startTime} – {shift.endTime}
+								· {formatTimeStringForPreference(shift.startTime, timeFormat)} –{" "}
+								{formatTimeStringForPreference(shift.endTime, timeFormat)}
 								{shiftEndsNextDay(shift) && (
 									<> ({t("scheduling:scheduling.shiftDetails.endsNextDay", "ends next day")})</>
 								)}

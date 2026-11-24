@@ -6,6 +6,7 @@ import { type ComponentProps, useState } from "react";
 import { z } from "zod";
 import type { ShiftTemplate, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import { EmployeeSingleSelect, toSelectableEmployee } from "@/components/employee-select";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { SkillWarningAlert, SkillWarningBadge } from "@/components/scheduling/skill-warning-alert";
 import { ActionPanelFooter } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { StaffingSuggestion } from "@/lib/scheduling/staffing/types";
+import { formatTimeStringForPreference } from "@/lib/user-preferences/time-format";
 import { StaffingSuggestionsPanel } from "./staffing-suggestions-panel";
 import type { ShiftDialogEmployee, ShiftDialogLocation } from "./use-shift-dialog-data";
 import type { ShiftDialogFormApi, ShiftDialogFormValues } from "./use-shift-dialog-form";
@@ -234,6 +236,7 @@ function ShiftTemplateField({
 	templates: ShiftTemplate[];
 }) {
 	const { t } = useTranslate();
+	const timeFormat = useTimeFormat();
 
 	return (
 		<form.Field name="templateId">
@@ -262,7 +265,9 @@ function ShiftTemplateField({
 								template.isActive
 									? [
 											<SelectItem key={template.id} value={template.id}>
-												{template.name} ({template.startTime} - {template.endTime})
+												{template.name} (
+												{formatTimeStringForPreference(template.startTime, timeFormat)} –{" "}
+												{formatTimeStringForPreference(template.endTime, timeFormat)})
 											</SelectItem>,
 										]
 									: [],
