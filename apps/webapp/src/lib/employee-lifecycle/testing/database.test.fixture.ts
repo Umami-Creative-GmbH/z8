@@ -48,10 +48,10 @@ export type LifecycleDatabaseFixture = {
 	seedEmployee(input?: SeedEmployeeInput): Promise<SeededEmployee>;
 	/**
 	 * Sets a teamless employee's primary team and moves the history row the
-	 * capture trigger wrote back to `from` (default: the fixture creation
-	 * instant), so the team is in force at fixed instants before the run date.
+	 * capture trigger wrote back to the fixture creation instant, so the team
+	 * is in force at fixed instants before the run date.
 	 */
-	placeInTeam(employeeId: string, teamId: string, from?: Date): Promise<void>;
+	placeInTeam(employeeId: string, teamId: string): Promise<void>;
 	/**
 	 * A database bound to one backend that a test may terminate with
 	 * `pg_terminate_backend(backendPid)` to simulate a process crash.
@@ -134,12 +134,12 @@ export async function createLifecycleDatabaseFixture(
 		return { userId, memberId, employeeId, employmentPeriodId };
 	}
 
-	async function placeInTeam(employeeId: string, teamId: string, from: Date = createdAt) {
+	async function placeInTeam(employeeId: string, teamId: string) {
 		await pool.query(`update employee set team_id = $1 where id = $2`, [teamId, employeeId]);
 		const backdated = await pool.query(
 			`update employee_team_history set effective_from = $1
 			 where employee_id = $2 and team_id = $3 and effective_to is null`,
-			[from, employeeId, teamId],
+			[createdAt, employeeId, teamId],
 		);
 		if (backdated.rowCount !== 1) {
 			throw new Error(`expected one open team history row for employee ${employeeId}`);
