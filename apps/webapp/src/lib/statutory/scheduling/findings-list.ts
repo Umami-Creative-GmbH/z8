@@ -24,10 +24,19 @@ export interface DatedStatutoryFinding {
 export interface ScheduleStatutoryFindingItem extends DatedStatutoryFinding {
 	/** The employee's user name (`buildAuthUserDisplayName`); empty when none is on record. */
 	readonly employeeName: string;
+	/**
+	 * Publishing the range's drafts is refused for this finding (`findingsBlockingPublication`):
+	 * it is on a draft, or a draft causes or deepens it. A breach that `blocksPublication` but that
+	 * the drafts leave as it is, e.g. on a published shift, does not stop this publication.
+	 */
+	readonly blocksThisPublication: boolean;
 }
 
 export interface ScheduleStatutoryFindings {
-	/** Findings of employees the viewer may see: blocking first, then by severity, name and date. */
+	/**
+	 * Findings of employees the viewer may see: those blocking this publication first, then by
+	 * severity, name and date.
+	 */
 	readonly items: readonly ScheduleStatutoryFindingItem[];
 	/** Findings of employees outside a scoped manager's reach: counted, never named. */
 	readonly outsideScopeCount: number;

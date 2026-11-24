@@ -28,7 +28,8 @@ const caller = vi.hoisted(() => ({
  * unless `youthBlocks` is off.
  */
 const fakeContributors = vi.hoisted(() => {
-	const settings = { youthBlocks: true };
+	/** `breaching`: whose shifts break the youth daily maximum; everyone's when null. */
+	const settings = { youthBlocks: true, breaching: null as ReadonlySet<string> | null };
 	const minijob = {
 		domain: "minijob",
 		evaluate: async (context: StatutoryScheduleContext) =>
@@ -77,6 +78,7 @@ const fakeContributors = vi.hoisted(() => {
 				);
 			return drafts
 				.filter((row) => !context.excludedShiftIds?.includes(row.id))
+				.filter((row) => !settings.breaching || settings.breaching.has(row.employeeId as string))
 				.map((row) => ({
 					id: `jarbschg_daily_max:${row.employeeId}:shift:${row.id}`,
 					organizationId: context.organizationId,
@@ -175,9 +177,12 @@ const { scheduleStatutoryFindingsFor } = await import("./findings-list-view");
 
 const WEEK = { startDate: "2027-03-01", endDateExclusive: "2027-03-08" };
 
-/** Anything an org admin alone may see, in any form a payload could carry it. */
+/**
+ * Anything an org admin alone may see, in any form a payload could carry it. The amounts match
+ * only as numbers of their own, never inside a random UUID's hex.
+ */
 const ADMIN_ONLY =
-	/adminDetail|inputFingerprint|secret-fingerprint|youth-fingerprint|amountsCents|hourlyWage|currency|EUR|€|62700|60300|1390|Christmas rush|acknowledgedBy|"reason"/;
+	/adminDetail|inputFingerprint|secret-fingerprint|youth-fingerprint|amountsCents|hourlyWage|currency|EUR|€|(?<![\w-])(?:62700|60300|1390)(?![\w-])|Christmas rush|acknowledgedBy|"reason"/;
 
 describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 	const admin = integrationAdminPool();
@@ -219,21 +224,42 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 		publication.beforeLock = null;
 		listBuilder.fails = false;
 		fakeContributors.settings.youthBlocks = true;
+		fakeContributors.settings.breaching = null;
 		await insertDrafts();
 	});
 	afterAll(fx.cleanup);
 
+	/** A 10-hour shift on 2 March for `who`. */
+	const insertShift = (who: FixtureEmployee, status: "draft" | "published") =>
+		admin.query(
+			`insert into shift
+			 (id, organization_id, employee_id, subarea_id, date, start_time, end_time, status, created_by, updated_at)
+			 values ($1, $2, $3, $4, '2027-03-01T23:00:00Z', '08:00', '18:00', $5, $6, now())`,
+			[crypto.randomUUID(), org.id, who.employeeId, subareaId, status, owner.userId],
+		);
+
 	/** A 10-hour draft on 2 March for the managed and the other employee. */
 	const insertDrafts = async () => {
 		for (const who of [managed, other]) {
-			await admin.query(
-				`insert into shift
-				 (id, organization_id, employee_id, subarea_id, date, start_time, end_time, status, created_by, updated_at)
-				 values ($1, $2, $3, $4, '2027-03-01T23:00:00Z', '08:00', '18:00', 'draft', $5, now())`,
-				[crypto.randomUUID(), org.id, who.employeeId, subareaId, owner.userId],
-			);
+			await insertShift(who, "draft");
 		}
 	};
+
+	/**
+	 * The managed employee's breach is on a published shift; the only draft is the other
+	 * employee's, which breaks nothing: publishing it is not refused for the breach.
+	 */
+	const publishedBreachBesideAnUnrelatedDraft = async () => {
+		await blockJArbSchGPublishing();
+		fakeContributors.settings.breaching = new Set([managed.employeeId]);
+		await db.delete(shiftTable).where(eq(shiftTable.organizationId, org.id));
+		await insertShift(managed, "published");
+		await insertShift(other, "draft");
+	};
+
+	const youthItemOf = (findings: {
+		items: readonly { finding: { statutoryKind: string }; blocksThisPublication: boolean }[];
+	}) => findings.items.find((item) => item.finding.statutoryKind === "jarbschg_daily_max");
 
 	const blockJArbSchGPublishing = () =>
 		admin.query(
@@ -301,6 +327,8 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 				}),
 			]),
 		);
+		// The managed employee's draft breaks the limit: publishing the range is refused for it.
+		expect(youthItemOf(statutoryFindings)?.blocksThisPublication).toBe(true);
 		// The other employee's two findings are counted, never named.
 		expect(statutoryFindings.outsideScopeCount).toBe(2);
 		expect(statutoryFindings.canOpenReviews).toBe(false);
@@ -324,6 +352,7 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 		expect(listed.items).toEqual([
 			expect.objectContaining({
 				employeeName: "managed",
+				blocksThisPublication: true,
 				finding: expect.objectContaining({
 					employeeId: managed.employeeId,
 					statutoryKind: "jarbschg_daily_max",
@@ -333,6 +362,42 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 		expect(listed.outsideScopeCount).toBe(1);
 		expect(JSON.stringify(refused.details)).not.toMatch(ADMIN_ONLY);
 		expect(await draftStatuses()).toEqual(["draft", "draft"]);
+	});
+
+	describe("a published shift's breach beside an unrelated draft", () => {
+		beforeEach(publishedBreachBesideAnUnrelatedDraft);
+
+		it("is not marked as blocking in the banner: publishing the drafts is not refused for it", async () => {
+			signInAs(manager, "member", "manager");
+
+			const result = await getScheduleComplianceSummary(WEEK);
+			if (!result.success) throw new Error(result.error);
+			const youth = youthItemOf(result.data.statutoryFindings);
+
+			expect(youth?.finding).toMatchObject({
+				employeeId: managed.employeeId,
+				blocksPublication: true,
+			});
+			expect(youth?.blocksThisPublication).toBe(false);
+		});
+
+		it("is not marked as blocking in the acknowledgement, and the publication goes through", async () => {
+			signInAs(manager, "member", "manager");
+
+			const result = await publishShifts(WEEK);
+			if (!result.success) throw new Error(result.error);
+			if (result.data.published) throw new Error("expected the planner to be asked to acknowledge");
+			const youth = youthItemOf(result.data.statutoryFindings ?? { items: [] });
+
+			expect(youth?.finding).toMatchObject({ blocksPublication: true });
+			expect(youth?.blocksThisPublication).toBe(false);
+
+			const acknowledged = await publishShifts(WEEK, {
+				evaluationFingerprint: result.data.evaluationFingerprint,
+			});
+			if (!acknowledged.success) throw new Error(acknowledged.error);
+			expect(acknowledged.data).toMatchObject({ published: true, count: 1 });
+		});
 	});
 
 	it("lists only the scoped manager's findings, wage-free, when the publication refuses drafts saved after its check", async () => {
@@ -504,7 +569,14 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 			},
 			period: null,
 		});
-		const findings = [youthFinding(nameless), youthFinding(managed.employeeId)];
+		// Named in another organization: this organization's names query never reaches them.
+		const foreignOrg = await fx.organization("b");
+		const foreign = await fx.employee(foreignOrg, "foreign");
+		const findings = [
+			youthFinding(nameless),
+			youthFinding(foreign.employeeId),
+			youthFinding(managed.employeeId),
+		];
 
 		const orgWide = await scheduleStatutoryFindingsFor(db, {
 			organizationId: org.id,
@@ -513,14 +585,17 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 				audience: "full",
 			},
 			findings,
+			blockingThisPublication: [],
 		});
 		expect(orgWide.outsideScopeCount).toBe(0);
 		expect(orgWide.items.map((item) => [item.finding.employeeId, item.employeeName])).toEqual(
 			expect.arrayContaining([
 				[nameless, ""],
+				[foreign.employeeId, ""],
 				[managed.employeeId, "managed"],
 			]),
 		);
+		expect(JSON.stringify(orgWide)).not.toContain("foreign");
 
 		const scoped = await scheduleStatutoryFindingsFor(db, {
 			organizationId: org.id,
@@ -533,9 +608,10 @@ describe("statutory findings listed in Scheduling (PostgreSQL)", () => {
 				audience: "restricted",
 			},
 			findings,
+			blockingThisPublication: [],
 		});
 		expect(scoped.items.map((item) => item.finding.employeeId)).toEqual([managed.employeeId]);
-		expect(scoped.outsideScopeCount).toBe(1);
+		expect(scoped.outsideScopeCount).toBe(2);
 	});
 
 	it("gives an org admin every employee's findings and the way to Reviews & Conflicts", async () => {

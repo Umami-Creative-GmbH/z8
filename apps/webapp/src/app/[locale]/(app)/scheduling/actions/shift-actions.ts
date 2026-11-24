@@ -170,17 +170,36 @@ function loadStatutoryFindingsViewer(
 function statutoryFindingsForViewer(
 	currentEmployee: Pick<CurrentEmployee, "organizationId">,
 	findings: readonly DatedStatutoryFinding[],
-	dated?: readonly DatedStatutoryFinding[],
+	options: {
+		/** Where to look up the period of a finding that came without one. */
+		readonly dated?: readonly DatedStatutoryFinding[];
+		/**
+		 * What publishing the range's drafts is refused for, as the publish block decides
+		 * (`findingsBlockingPublication`), or how to find out.
+		 */
+		readonly blockingThisPublication:
+			| readonly StatutoryComplianceFinding[]
+			| (() => Promise<readonly StatutoryComplianceFinding[]>);
+	},
 ) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const viewer = yield* loadStatutoryFindingsViewer(currentEmployee);
+		const { blockingThisPublication } = options;
+		const blocking =
+			typeof blockingThisPublication === "function"
+				? yield* dbService.query(
+						"scheduling.statutoryFindingsBlockingPublication",
+						blockingThisPublication,
+					)
+				: blockingThisPublication;
 		return yield* dbService.query("scheduling.statutoryFindingsList", () =>
 			scheduleStatutoryFindingsFor(dbService.db, {
 				organizationId: currentEmployee.organizationId,
 				viewer,
 				findings,
-				dated,
+				dated: options.dated,
+				blockingThisPublication: blocking,
 			}),
 		);
 	}).pipe(
@@ -215,7 +234,7 @@ function statutoryPublicationBlocked(
 		const statutoryFindings = yield* statutoryFindingsForViewer(
 			currentEmployee,
 			blocking.map((finding) => ({ finding, period: null })),
-			dated,
+			{ dated, blockingThisPublication: blocking },
 		);
 		return yield* Effect.fail(
 			new ValidationError({
@@ -251,8 +270,17 @@ function getScheduleComplianceEvaluation(
 			timezone,
 		});
 
-		return { evaluation };
+		return { evaluation, timezone };
 	});
+}
+
+/** What the JArbSchG publish block judges when the range's drafts are published now. */
+function statutoryPublicationScope(dateRange: DateRange, timezone: string) {
+	return {
+		timezone,
+		window: { start: dateRange.startDate, endExclusive: dateRange.endDateExclusive },
+		now: systemClock.nowInstant(),
+	};
 }
 
 export async function upsertShift(
@@ -418,11 +446,7 @@ export async function publishShifts(
 			organizationId: currentEmployee.organizationId,
 			session,
 		});
-		const statutoryScope = {
-			timezone,
-			window: { start: dateRange.startDate, endExclusive: dateRange.endDateExclusive },
-			now: systemClock.nowInstant(),
-		};
+		const statutoryScope = statutoryPublicationScope(dateRange, timezone);
 		// Only what this publication causes blocks it: findings on its drafts, or new ones they cause.
 		// Refused here before the planner is asked to acknowledge warnings; the publication judges
 		// the drafts it publishes again, in its transaction.
@@ -452,13 +476,15 @@ export async function publishShifts(
 		});
 
 		if (!publishDecision.published) {
-			// The planner acknowledges these: list who, which limit and which day (#2026).
+			// The planner acknowledges these: list who, which limit and which day (#2026). Nothing
+			// blocked this publication, whatever a published shift's breach `blocksPublication`.
 			return {
 				...publishDecision,
 				statutoryFindings:
 					(yield* statutoryFindingsForViewer(
 						currentEmployee,
 						evaluation.datedStatutoryFindings,
+						{ blockingThisPublication: [] },
 					)) ?? NO_SCHEDULE_STATUTORY_FINDINGS,
 			};
 		}
@@ -554,7 +580,8 @@ export async function getScheduleComplianceSummary(
 			message: "Only managers and admins can view schedule compliance warnings",
 			queryName: "getCurrentEmployeeForScheduleComplianceSummary",
 		});
-		const { evaluation } = yield* getScheduleComplianceEvaluation(dateRange, {
+		const dbService = yield* DatabaseService;
+		const { evaluation, timezone } = yield* getScheduleComplianceEvaluation(dateRange, {
 			organizationId: currentEmployee.organizationId,
 			session,
 		});
@@ -566,6 +593,19 @@ export async function getScheduleComplianceSummary(
 				(yield* statutoryFindingsForViewer(
 					currentEmployee,
 					evaluation.datedStatutoryFindings,
+					{
+						// "Blocks publishing" only where publishing the visible drafts now would be refused
+						// for it, as `publishShifts` decides; judged only when a finding can block.
+						blockingThisPublication: () =>
+							findingsBlockingPublication(
+								dbService.db,
+								{
+									organizationId: currentEmployee.organizationId,
+									...statutoryPublicationScope(dateRange, timezone),
+								},
+								evaluation.findings,
+							),
+					},
 				)) ?? NO_SCHEDULE_STATUTORY_FINDINGS,
 		};
 	}).pipe(Effect.provide(ScheduleComplianceServiceLive));

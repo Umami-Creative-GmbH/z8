@@ -1,7 +1,7 @@
 /**
  * Builds Scheduling's statutory findings list (#2026) for one viewer: only employees the viewer
- * may see, named by the user-name rule, ordered so what blocks publication and what is critical
- * comes first. Server-side; the items it returns are the wage-free Scheduling projection.
+ * may see, named by the user-name rule, ordered so what blocks this publication and what is
+ * critical comes first. Server-side; the items it returns are the wage-free Scheduling projection.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
@@ -39,9 +39,14 @@ function namedDayPeriod(finding: StatutoryComplianceFinding): StatutoryFindingPe
 	return { start: day, endExclusive: parsePlainDate(day).add({ days: 1 }).toString() };
 }
 
+/** One finding on one day: a finding of a week or a shift through two days has one per day. */
+function datedFindingKey(finding: StatutoryComplianceFinding): string {
+	return `${finding.findingId}|${finding.day ?? finding.releaseDay ?? ""}`;
+}
+
 function compareItems(a: ScheduleStatutoryFindingItem, b: ScheduleStatutoryFindingItem): number {
 	return (
-		Number(b.finding.blocksPublication) - Number(a.finding.blocksPublication) ||
+		Number(b.blocksThisPublication) - Number(a.blocksThisPublication) ||
 		SEVERITY_ORDER[a.finding.severity] - SEVERITY_ORDER[b.finding.severity] ||
 		a.employeeName.localeCompare(b.employeeName) ||
 		a.finding.employeeId.localeCompare(b.finding.employeeId) ||
@@ -62,6 +67,11 @@ export async function scheduleStatutoryFindingsFor(
 		readonly findings: readonly DatedStatutoryFinding[];
 		/** Where to look up the period of a finding that came without one. */
 		readonly dated?: readonly DatedStatutoryFinding[];
+		/**
+		 * What publishing the range's drafts is refused for (`findingsBlockingPublication`): the
+		 * refusal's own findings, none when nothing blocked it.
+		 */
+		readonly blockingThisPublication: readonly StatutoryComplianceFinding[];
 	},
 ): Promise<ScheduleStatutoryFindings> {
 	const visible = input.findings.filter(({ finding }) =>
@@ -90,9 +100,10 @@ export async function scheduleStatutoryFindingsFor(
 	const names = new Map(rows.map((row) => [row.id, buildAuthUserDisplayName(row)]));
 	const knownPeriods = new Map(
 		(input.dated ?? []).flatMap(({ finding, period }) =>
-			period ? [[`${finding.findingId}|${finding.day ?? finding.releaseDay ?? ""}`, period]] : [],
+			period ? [[datedFindingKey(finding), period]] : [],
 		),
 	);
+	const blocking = new Set(input.blockingThisPublication.map(datedFindingKey));
 
 	// The findings are this organization's: one whose employee has no name on record (removed since
 	// it was judged) is still the viewer's to see, unnamed. The names query reads this organization
@@ -100,11 +111,9 @@ export async function scheduleStatutoryFindingsFor(
 	const items = visible
 		.map(({ finding, period }) => ({
 			finding,
-			period:
-				period ??
-				knownPeriods.get(`${finding.findingId}|${finding.day ?? finding.releaseDay ?? ""}`) ??
-				namedDayPeriod(finding),
+			period: period ?? knownPeriods.get(datedFindingKey(finding)) ?? namedDayPeriod(finding),
 			employeeName: names.get(finding.employeeId) ?? "",
+			blocksThisPublication: blocking.has(datedFindingKey(finding)),
 		}))
 		.toSorted(compareItems);
 

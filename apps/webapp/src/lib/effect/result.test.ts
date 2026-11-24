@@ -1,3 +1,4 @@
+import { inspect } from "node:util";
 import { Cause, Exit } from "effect";
 import { makeDynamicHangingPromise } from "next/dist/server/dynamic-rendering-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -69,6 +70,61 @@ describe("toServerActionResult", () => {
 			code: "ConflictError",
 		});
 		expect(result).not.toHaveProperty("details");
+	});
+
+	it.each([
+		[
+			"a refusal listing the viewer's findings",
+			() =>
+				new ValidationError({
+					message: "Cannot publish",
+					field: "shifts",
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+					value: {
+						statutoryFindings: {
+							items: [{ employeeName: "Anna Berg", finding: { employeeId: "employee-anna" } }],
+							outsideScopeCount: 0,
+							canOpenReviews: false,
+						},
+					},
+				}),
+		],
+		[
+			"the publication's own publish-block refusal",
+			() =>
+				new StatutoryPublicationBlockedError({
+					message: "Cannot publish",
+					blockingFindings: [
+						{
+							type: "statutory",
+							employeeId: "employee-anna",
+							findingId: "jarbschg_daily_max:employee-anna:shift:s1",
+							statutoryKind: "jarbschg_daily_max",
+							domain: "youth_protection",
+							severity: "critical",
+							subjectKey: "shift:s1",
+							legalReference: "§ 8 Abs. 1 JArbSchG",
+							summary: { tier: "exceeded" },
+							day: "2027-03-02",
+							acknowledgementStatus: null,
+							blocksPublication: true,
+						},
+					],
+				}),
+		],
+	])("logs %s by its tag, refusal and message only, never the findings it carries", (_, make) => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+		const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		toServerActionResult(Exit.fail(make()));
+
+		const logged = [...consoleError.mock.calls, ...consoleWarn.mock.calls]
+			.flat()
+			.map((arg) => inspect(arg, { depth: null, showHidden: true }))
+			.join("\n");
+		expect(logged).toContain(STATUTORY_PUBLICATION_BLOCKED);
+		expect(logged).toContain("Cannot publish");
+		expect(logged).not.toMatch(/Anna Berg|employee-anna|jarbschg_daily_max|statutoryFindings/);
 	});
 
 	it("passes a validation value through as the holiday name", () => {
