@@ -12,6 +12,7 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { queryKeys } from "@/lib/query/keys";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import type { ScheduleStatutoryFindings } from "@/lib/statutory/scheduling/findings-list";
 import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
@@ -76,6 +77,7 @@ const blocking: ScheduleStatutoryFindings = {
 			employeeName: "Anna Berg",
 			finding: nightWork,
 			period: { start: "2027-03-02", endExclusive: "2027-03-03" },
+			blocksThisPublication: true,
 		},
 	],
 	outsideScopeCount: 1,
@@ -84,6 +86,7 @@ const blocking: ScheduleStatutoryFindings = {
 
 describe("PublishComplianceDialog", () => {
 	it("lists the statutory findings the planner acknowledges: who, which limit, which day", () => {
+		// A published shift's breach `blocksPublication`, yet nothing blocked this publication.
 		render(
 			<PublishComplianceDialog
 				open
@@ -94,7 +97,7 @@ describe("PublishComplianceDialog", () => {
 				}}
 				statutoryFindings={{
 					...blocking,
-					items: [{ ...blocking.items[0], finding: { ...nightWork, blocksPublication: false } }],
+					items: [{ ...blocking.items[0], blocksThisPublication: false }],
 					outsideScopeCount: 0,
 				}}
 				dateRange={RANGE}
@@ -177,8 +180,9 @@ describe("PublishBlockedDialog", () => {
 });
 
 describe("useShiftPublishFlow refusal", () => {
+	let client: QueryClient;
 	const renderFlow = () => {
-		const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+		client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 		const wrapper = ({ children }: { children: ReactNode }) => (
 			<QueryClientProvider client={client}>{children}</QueryClientProvider>
 		);
@@ -186,6 +190,65 @@ describe("useShiftPublishFlow refusal", () => {
 			wrapper,
 		});
 	};
+
+	/** The calendar's shifts and the compliance banner, as `useShiftSchedulerData` keys them. */
+	const seedCalendarQueries = () => {
+		const shiftsKey = [...queryKeys.shifts.list("org", RANGE), "scheduling-viewer", "me", true];
+		const complianceKey = [
+			...queryKeys.compliance.scheduleWarnings("org", RANGE),
+			"scheduling-viewer",
+			"me",
+		];
+		client.setQueryData(shiftsKey, []);
+		client.setQueryData(complianceKey, {});
+		return {
+			stale: () => [
+				client.getQueryState(shiftsKey)?.isInvalidated,
+				client.getQueryState(complianceKey)?.isInvalidated,
+			],
+		};
+	};
+
+	it("refreshes the calendar's shifts and findings when a refusal arrives: another planner may have added the draft", async () => {
+		publishShiftsMock.mockResolvedValue({
+			success: false,
+			code: "ValidationError",
+			error: "Cannot publish.",
+			refusal: STATUTORY_PUBLICATION_BLOCKED,
+			details: { statutoryFindings: blocking },
+		});
+		const { result } = renderFlow();
+		const calendar = seedCalendarQueries();
+
+		act(() => result.current.publish());
+
+		await waitFor(() => expect(result.current.isBlockedDialogOpen).toBe(true));
+		expect(calendar.stale()).toEqual([true, true]);
+	});
+
+	it("refreshes the calendar's shifts and findings when the planner is asked to acknowledge", async () => {
+		publishShiftsMock.mockResolvedValue({
+			success: true,
+			data: {
+				published: false,
+				requiresAcknowledgment: true,
+				count: 0,
+				complianceSummary: {
+					totalFindings: 1,
+					byType: { restTime: 0, maxHours: 0, overtime: 0, statutory: 1 },
+				},
+				evaluationFingerprint: "fp-1",
+				statutoryFindings: blocking,
+			},
+		});
+		const { result } = renderFlow();
+		const calendar = seedCalendarQueries();
+
+		act(() => result.current.publish());
+
+		await waitFor(() => expect(result.current.isComplianceDialogOpen).toBe(true));
+		expect(calendar.stale()).toEqual([true, true]);
+	});
 
 	it("opens the blocking findings instead of a toast when the refusal lists them", async () => {
 		publishShiftsMock.mockResolvedValue({

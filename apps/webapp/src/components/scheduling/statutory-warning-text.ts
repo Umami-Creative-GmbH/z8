@@ -38,19 +38,22 @@ export function statutoryDomainLabel(domain: StatutoryDomain, t: Translate): str
  * Wage-free warning text for a statutory finding in Scheduling and Staffing. Monitors with a more
  * specific message add a `case` on `finding.statutoryKind` here (#1989–#1993). Earnings-derived
  * findings (Minijob) arrive with their tier only, so they read "approaching" or "exceeded".
+ * `dayShownBeside`: the reader sees the finding's day or week next to the text, which then
+ * leaves it out where it can.
  */
 export function statutoryWarningText(
 	finding: StatutoryComplianceFinding,
 	t: Translate,
 	locale = "en",
 	timeFormat?: TimeFormat,
+	options: { readonly dayShownBeside?: boolean } = {},
 ): string {
 	const specific =
 		minijobWarningText(finding, t) ?? // #1989
 		shortTermWarningText(finding, t) ?? // #1990
 		workingStudentWarningText(finding, t) ?? // #1991
 		onCallWarningText(finding, t) ?? // #1992
-		youthProtectionWarningText(finding, t, locale, timeFormat); // #1993
+		youthProtectionWarningText(finding, t, locale, timeFormat, options); // #1993
 	if (specific) return specific;
 	const area = statutoryDomainLabel(finding.domain, t);
 	if (finding.summary.usedPercent !== undefined) {

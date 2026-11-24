@@ -131,7 +131,7 @@ interface StatutoryFindingsListProps {
 
 /**
  * Scheduling's statutory findings (#2026): who, which limit in plain words, which day or week, its
- * severity, whether it blocks publishing, and the way to the employee's shifts. Wage-free: items
+ * severity, whether publishing the drafts is refused for it, and the way to the employee's shifts. Wage-free: items
  * carry the restricted summary only. Org admins also get the matching Reviews & Conflicts domain.
  */
 export function StatutoryFindingsList({
@@ -152,6 +152,9 @@ export function StatutoryFindingsList({
 		<div id={wrapperId} hidden={hidden} className="space-y-2">
 			{findings.items.length > 0 && (
 				<ul
+					// Safari drops the implicit list role of a list without list styles: keep it explicit.
+					// oxlint-disable-next-line jsx-a11y/no-redundant-roles
+					role="list"
 					className="divide-y rounded-md border bg-background text-foreground"
 					aria-label={
 						label ?? t("scheduling:scheduling.statutory.findings.listLabel", "Statutory findings")
@@ -213,12 +216,15 @@ function StatutoryFindingRow({
 				<span className="min-w-0 font-medium break-words">{employeeName}</span>
 				{when && <span className="text-muted-foreground tabular-nums">{when}</span>}
 			</div>
-			<p className="break-words">{statutoryWarningText(finding, t, locale, timeFormat)}</p>
+			<p className="break-words">
+				{statutoryWarningText(finding, t, locale, timeFormat, { dayShownBeside: when !== null })}
+			</p>
 			<div className="flex flex-wrap items-center gap-2">
 				<Badge variant="outline" className={SEVERITY_BADGE[finding.severity]}>
 					{severityLabel(finding.severity, t)}
 				</Badge>
-				{finding.blocksPublication && (
+				{/* Only where publishing the drafts is refused for it: a published shift's breach is not. */}
+				{item.blocksThisPublication && (
 					<Badge variant="outline" className="gap-1 border-destructive/40 text-destructive">
 						<IconLock className="size-3" aria-hidden="true" />
 						{t("scheduling:scheduling.statutory.findings.blocksPublishing", "Blocks publishing")}

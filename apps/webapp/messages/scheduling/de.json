@@ -256,7 +256,9 @@
         "apprenticeship": "Freistellung Auszubildende (BBiG)"
       },
       "jarbschg": {
+        "dailyMax": "Unter 18: {used} Min. Arbeit an diesem Tag überschreiten die Jugendgrenze von {limit} Min.",
         "dailyMaxOn": "Unter 18: {used} Min. Arbeit am {date} überschreiten die Jugendgrenze von {limit} Min.",
+        "weeklyMax": "Unter 18: {used} Min. Arbeit in dieser Woche überschreiten die Jugendgrenze von {limit} Min.",
         "weeklyMaxWeekOf": "Unter 18: {used} Min. Arbeit in der Woche ab {date} überschreiten die Jugendgrenze von {limit} Min.",
         "daysPerWeek": "Unter 18: {used} Arbeitstage in dieser Woche, höchstens {limit} erlaubt",
         "restPeriod": "Unter 18: nur {used} Min. Ruhezeit vor dieser Schicht, {limit} Min. erforderlich",
@@ -267,7 +269,8 @@
         "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
         "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
         "holidayWork": "Unter 18: Arbeit an Feiertagen braucht eine gesetzliche Branchenausnahme",
-        "holidayProhibited": "Unter 18: {used} Min. verbotene Arbeit: keine Arbeit am 24. und 31. Dezember nach 14 Uhr, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai; keine Ausnahme erlaubt sie",
+        "holidayProhibited": "Unter 18: {used} Min. verbotene Arbeit: keine Arbeit am 24. und 31. Dezember ab {cutoff}, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai; keine Ausnahme erlaubt sie",
+        "shiftSpan": "Unter 18: Die Schichtzeit beträgt {used} Min. vom Beginn der ersten bis zum Ende der letzten Arbeit; erlaubt sind höchstens {limit} Min. (11 Std. im Gaststättengewerbe, in der Landwirtschaft, Tierhaltung und auf Bau- und Montagestellen)",
         "shiftSpanOn": "Unter 18: Die Schichtzeit am {date} beträgt {used} Min. vom Beginn der ersten bis zum Ende der letzten Arbeit; erlaubt sind höchstens {limit} Min. (11 Std. im Gaststättengewerbe, in der Landwirtschaft, Tierhaltung und auf Bau- und Montagestellen)"
       },
       "apprenticeship": {

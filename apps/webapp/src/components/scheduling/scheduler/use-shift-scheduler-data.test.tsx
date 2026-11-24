@@ -4,6 +4,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { queryKeys } from "@/lib/query/keys";
 
 const german: Record<string, string> = {
 	"scheduling:scheduling.scheduler.open": "Offene Schicht",
@@ -80,5 +81,51 @@ describe("useShiftSchedulerData calendar events (#2018)", () => {
 		const titles = new Map(result.current.events.map((event) => [event.id, event.title]));
 		expect(titles.get("shift-a")).toBe("[Entwurf] Offene Schicht");
 		expect(titles.get("shift-b")).toBe("Zugewiesen");
+	});
+});
+
+describe("useShiftSchedulerData statutory findings (#2026)", () => {
+	it("keeps each viewer's findings to that viewer: a scoped manager never reads another planner's cached list", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const shared = ({ children }: { children: ReactNode }) => (
+			<QueryClientProvider client={client}>{children}</QueryClientProvider>
+		);
+		const dateRange = { startDate: "2026-11-16", endDateExclusive: "2026-11-23" };
+		const viewerKeys = () =>
+			client
+				.getQueryCache()
+				.findAll({ queryKey: queryKeys.compliance.scheduleWarnings("org-a", dateRange) })
+				.map((query) => query.queryKey);
+
+		for (const employeeId of ["admin-a", "manager-a"]) {
+			const { result } = renderHook(
+				() =>
+					useShiftSchedulerData({
+						organizationId: "org-a",
+						employeeId,
+						organizationTimezone: "Europe/Berlin",
+						dateRange,
+						isManager: true,
+					}),
+				{ wrapper: shared },
+			);
+			await waitFor(() => expect(result.current.complianceSummary).toBeDefined());
+		}
+
+		expect(viewerKeys()).toHaveLength(2);
+		expect(viewerKeys()).toEqual(
+			expect.arrayContaining([
+				[
+					...queryKeys.compliance.scheduleWarnings("org-a", dateRange),
+					"scheduling-viewer",
+					"admin-a",
+				],
+				[
+					...queryKeys.compliance.scheduleWarnings("org-a", dateRange),
+					"scheduling-viewer",
+					"manager-a",
+				],
+			]),
+		);
 	});
 });

@@ -35,13 +35,15 @@ function findingWeekText(finding: StatutoryComplianceFinding, locale: string): s
 /**
  * Planner text for JArbSchG youth-protection and BBiG apprentice-release findings (#1993), or
  * null for other statutory kinds. Quantities are minutes or days, never money; clock times follow
- * the reader's `timeFormat`.
+ * the reader's `timeFormat`. With `dayShownBeside` (a list that shows the day or week next to the
+ * text) a daily, weekly or shift-span line leaves its date out.
  */
 export function youthProtectionWarningText(
 	finding: StatutoryComplianceFinding,
 	t: Translate,
 	locale: string,
 	timeFormat: TimeFormat = DEFAULT_TIME_FORMAT,
+	{ dayShownBeside = false }: { readonly dayShownBeside?: boolean } = {},
 ): string | null {
 	const used = finding.summary.used?.value ?? 0;
 	const limit = finding.summary.limit?.value ?? 0;
@@ -49,12 +51,26 @@ export function youthProtectionWarningText(
 		// Every piece of work past a cap has a finding: the line names its day or week, so
 		// Staffing can show one line per day and per week.
 		case "jarbschg_daily_max":
+			if (dayShownBeside) {
+				return t(
+					"scheduling:scheduling.statutory.jarbschg.dailyMax",
+					"Under 18: {used} min of work this day exceeds the {limit} min youth limit",
+					{ used, limit },
+				);
+			}
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.dailyMaxOn",
 				"Under 18: {used} min of work on {date} exceeds the {limit} min youth limit",
 				{ used, limit, date: findingDayText(finding, locale) },
 			);
 		case "jarbschg_weekly_max":
+			if (dayShownBeside) {
+				return t(
+					"scheduling:scheduling.statutory.jarbschg.weeklyMax",
+					"Under 18: {used} min of work this week exceeds the {limit} min youth limit",
+					{ used, limit },
+				);
+			}
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.weeklyMaxWeekOf",
 				"Under 18: {used} min of work in the week of {date} exceeds the {limit} min youth limit",
@@ -125,10 +141,17 @@ export function youthProtectionWarningText(
 		case "jarbschg_holiday_prohibited":
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.holidayProhibited",
-				"Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
-				{ used },
+				"Under 18: {used} min of prohibited work: none after {cutoff} on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+				{ used, cutoff: formatTimeStringForPreference("14:00", timeFormat) },
 			);
 		case "jarbschg_shift_span":
+			if (dayShownBeside) {
+				return t(
+					"scheduling:scheduling.statutory.jarbschg.shiftSpan",
+					"Under 18: the shift span is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",
+					{ used, limit },
+				);
+			}
 			return t(
 				"scheduling:scheduling.statutory.jarbschg.shiftSpanOn",
 				"Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",

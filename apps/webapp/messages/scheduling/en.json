@@ -256,7 +256,9 @@
         "apprenticeship": "Apprentice release (BBiG)"
       },
       "jarbschg": {
+        "dailyMax": "Under 18: {used} min of work this day exceeds the {limit} min youth limit",
         "dailyMaxOn": "Under 18: {used} min of work on {date} exceeds the {limit} min youth limit",
+        "weeklyMax": "Under 18: {used} min of work this week exceeds the {limit} min youth limit",
         "weeklyMaxWeekOf": "Under 18: {used} min of work in the week of {date} exceeds the {limit} min youth limit",
         "daysPerWeek": "Under 18: {used} working days this week, at most {limit} allowed",
         "restPeriod": "Under 18: only {used} min of rest before this shift, {limit} min required",
@@ -267,7 +269,8 @@
         "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
         "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
         "holidayWork": "Under 18: work on a public holiday needs a statutory sector exception",
-        "holidayProhibited": "Under 18: {used} min of prohibited work: none after 14:00 on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+        "holidayProhibited": "Under 18: {used} min of prohibited work: none after {cutoff} on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+        "shiftSpan": "Under 18: the shift span is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",
         "shiftSpanOn": "Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)"
       },
       "apprenticeship": {

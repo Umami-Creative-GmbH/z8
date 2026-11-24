@@ -115,7 +115,13 @@ export function useShiftSchedulerData({
 		isFetching: complianceFetching,
 		refetch: retryCompliance,
 	} = useQuery({
-		queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
+		// The statutory findings are the viewer's (#2026): a scoped manager lists only whom they
+		// manage, so one viewer's list never hydrates another's. Invalidation matches by prefix.
+		queryKey: [
+			...queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
+			"scheduling-viewer",
+			employeeId,
+		],
 		queryFn: async () => {
 			const result = await getScheduleComplianceSummary(dateRange);
 			if (!result.success) throw new Error(result.error);

@@ -21,19 +21,19 @@ interface PublishBlockedDialogProps {
 	onOpenChange: (open: boolean) => void;
 	statutoryFindings: ScheduleStatutoryFindings | null;
 	dateRange: DateRange;
-	shiftEmployeeIds?: ReadonlySet<string>;
 }
 
 /**
  * The JArbSchG publish block's refusal (#2026): which employee, which limit and which day blocks
- * publishing, so the planner knows what to change.
+ * publishing, so the planner knows what to change. Every blocking finding concerns a planned
+ * shift, so each links to the employee's shifts, also one the calendar has not loaded yet (e.g.
+ * another planner's new draft).
  */
 export function PublishBlockedDialog({
 	open,
 	onOpenChange,
 	statutoryFindings,
 	dateRange,
-	shiftEmployeeIds,
 }: PublishBlockedDialogProps) {
 	const { t } = useTranslate();
 	if (!statutoryFindings) {
@@ -60,7 +60,6 @@ export function PublishBlockedDialog({
 					<StatutoryFindingsList
 						findings={statutoryFindings}
 						dateRange={dateRange}
-						shiftEmployeeIds={shiftEmployeeIds}
 						onShiftLinkClick={() => onOpenChange(false)}
 						label={t(
 							"scheduling:scheduling.statutory.findings.blockingListLabel",

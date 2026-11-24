@@ -67,6 +67,7 @@ const youthDay: ScheduleStatutoryFindingItem = {
 	employeeName: "Anna Berg",
 	finding: finding({}),
 	period: { start: "2027-03-02", endExclusive: "2027-03-03" },
+	blocksThisPublication: true,
 };
 const minijobMonth: ScheduleStatutoryFindingItem = {
 	employeeName: "Ben Carter",
@@ -84,6 +85,7 @@ const minijobMonth: ScheduleStatutoryFindingItem = {
 		blocksPublication: false,
 	}),
 	period: { start: "2027-03-01", endExclusive: "2027-04-01" },
+	blocksThisPublication: false,
 };
 
 function findings(overrides: Partial<ScheduleStatutoryFindings> = {}): ScheduleStatutoryFindings {
@@ -107,10 +109,9 @@ describe("StatutoryFindingsList", () => {
 		const [youth, minijob] = within(list).getAllByRole("listitem");
 
 		expect(within(youth).getByText("Anna Berg")).toBeTruthy();
+		// The day stands beside the text, once.
 		expect(
-			within(youth).getByText(
-				"Under 18: 600 min of work on Mar 2, 2027 exceeds the 480 min youth limit",
-			),
+			within(youth).getByText("Under 18: 600 min of work this day exceeds the 480 min youth limit"),
 		).toBeTruthy();
 		expect(within(youth).getByText("Mar 2, 2027")).toBeTruthy();
 		expect(within(youth).getByText("Critical")).toBeTruthy();
@@ -126,6 +127,25 @@ describe("StatutoryFindingsList", () => {
 		expect(
 			within(minijob).getByRole("link", { name: "Show Ben Carter's shifts" }).getAttribute("href"),
 		).toBe(`/scheduling?employeeId=${BEN}&date=2027-03-01`);
+	});
+
+	it("says 'Blocks publishing' only where this publication is refused for it, not for a published shift's breach", () => {
+		const publishedBreach = { ...youthDay, blocksThisPublication: false };
+		render(
+			<StatutoryFindingsList findings={findings({ items: [publishedBreach] })} dateRange={RANGE} />,
+		);
+
+		const row = screen.getByRole("listitem");
+		expect(within(row).getByText("Critical")).toBeTruthy();
+		expect(within(row).queryByText("Blocks publishing")).toBeNull();
+	});
+
+	it("keeps its list semantics where list styles are removed (Safari)", () => {
+		render(<StatutoryFindingsList findings={findings()} dateRange={RANGE} />);
+
+		expect(screen.getByRole("list", { name: "Statutory findings" }).getAttribute("role")).toBe(
+			"list",
+		);
 	});
 
 	it("shows an earnings-derived finding by its tier and month only", () => {
@@ -219,6 +239,7 @@ describe("StatutoryFindingsList", () => {
 				...overrides,
 			}),
 			period,
+			blocksThisPublication: false,
 		};
 	}
 
@@ -312,9 +333,12 @@ describe("StatutoryFindingsList", () => {
 					day: "2027-03-04",
 				}),
 				period: { start: "2027-03-04", endExclusive: "2027-03-05" },
+				blocksThisPublication: false,
 			});
 
 			expect(within(row).getByText("Week of Mar 1, 2027")).toBeTruthy();
+			// Named once, beside the text, not again in it.
+			expect(row.textContent?.match(/Mar 1, 2027/g)).toHaveLength(1);
 			expect(href).toBe(`/scheduling?employeeId=${ANNA}&date=2027-03-04`);
 		},
 	);
@@ -395,6 +419,24 @@ describe("ScheduleComplianceBanner", () => {
 		const list = screen.getByRole("list", { name: "Statutory findings" });
 		expect(toggle.getAttribute("aria-controls")).toBe(list.parentElement?.id);
 		expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+	});
+
+	it("does not say a published shift's breach blocks publishing the drafts", () => {
+		render(
+			<ScheduleComplianceBanner
+				summary={summary}
+				statutoryFindings={findings({ items: [{ ...youthDay, blocksThisPublication: false }] })}
+				dateRange={RANGE}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Show statutory findings (1)" }));
+
+		const row = within(screen.getByRole("list", { name: "Statutory findings" })).getByRole(
+			"listitem",
+		);
+		expect(within(row).getByText("Anna Berg")).toBeTruthy();
+		expect(within(row).queryByText("Blocks publishing")).toBeNull();
 	});
 
 	it("tells a scoped manager, while collapsed, that the list holds only some of the findings", () => {

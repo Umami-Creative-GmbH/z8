@@ -155,6 +155,59 @@ describe("youthProtectionWarningText (#1993)", () => {
 		}
 	});
 
+	it("writes the 24 and 31 December cut-off in the reader's time format", () => {
+		const holiday = {
+			...base,
+			statutoryKind: "jarbschg_holiday_prohibited",
+			legalReference: "§ 18 Abs. 1 JArbSchG",
+			summary: { tier: "exceeded" as const, used: { unit: "minutes" as const, value: 120 } },
+		};
+
+		expect(textOf(holiday).text).toContain("none after 14:00 on 24 or 31 December");
+		const twelveHour = textOf(holiday, "12h");
+		expect(twelveHour.text).toContain("none after 2:00 PM on 24 or 31 December");
+		expect(twelveHour.call?.params).toEqual({ used: 120, cutoff: "2:00 PM" });
+		expect(catalogText(enCatalog, twelveHour.call?.key ?? "")).toBe(twelveHour.call?.fallback);
+		const german = catalogText(deCatalog, twelveHour.call?.key ?? "");
+		expect(german).toContain("{cutoff}");
+		expect(german).not.toContain("14 Uhr");
+	});
+
+	it.each([
+		["jarbschg_daily_max", "Under 18: 720 min of work this day exceeds the 600 min youth limit"],
+		["jarbschg_weekly_max", "Under 18: 720 min of work this week exceeds the 600 min youth limit"],
+		[
+			"jarbschg_shift_span",
+			"Under 18: the shift span is 720 min, from the first work to the end of the last; at most 600 min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",
+		],
+	])(
+		"leaves the date of a %s finding to a list that shows it beside the text",
+		(kind, expected) => {
+			const calls: { key: string; fallback: string; params?: Record<string, unknown> }[] = [];
+			const t = ((key: string, fallback: string, params?: Record<string, unknown>) => {
+				calls.push({ key, fallback, params });
+				return fallback.replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name] ?? ""));
+			}) as Parameters<typeof youthProtectionWarningText>[1];
+			const finding = { ...base, statutoryKind: kind };
+
+			const text = youthProtectionWarningText(finding, t, "en-US", "24h", { dayShownBeside: true });
+
+			expect(text).toBe(expected);
+			expect(text).not.toContain("2027");
+			const [{ key, fallback, params }] = calls;
+			expect(catalogText(enCatalog, key)).toBe(fallback);
+			const german = catalogText(deCatalog, key);
+			expect(typeof german).toBe("string");
+			expect(german).not.toBe(fallback);
+			expect(german).not.toContain("{date}");
+			for (const name of Object.keys(params ?? {})) expect(german).toContain(`{${name}}`);
+			// Without a date beside it, the text still names the day or week.
+			expect(textOf(finding).text).toContain(
+				kind === "jarbschg_weekly_max" ? "Mar 1, 2027" : "Mar 2, 2027",
+			);
+		},
+	);
+
 	it("keeps the release-day wording for other release conflicts", () => {
 		const { call } = textOf({
 			...base,

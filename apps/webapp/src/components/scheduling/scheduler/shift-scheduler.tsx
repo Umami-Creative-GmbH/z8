@@ -315,7 +315,6 @@ function PlannerShiftScheduler({
 				onOpenChange={setIsBlockedDialogOpen}
 				statutoryFindings={blockedFindings}
 				dateRange={dateRange}
-				shiftEmployeeIds={shiftEmployeeIds}
 			/>
 		</div>
 	);

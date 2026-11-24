@@ -27,6 +27,7 @@ const PUBLISH_REFUSALS = {
 class PublishRefusal extends Error {
 	constructor(
 		message: string,
+		readonly refusal: string | undefined,
 		readonly statutoryFindings: ScheduleStatutoryFindings | null,
 	) {
 		super(message);
@@ -59,12 +60,25 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 	const [blockedFindings, setBlockedFindings] = useState<ScheduleStatutoryFindings | null>(null);
 	const [isBlockedDialogOpen, setIsBlockedDialogOpen] = useState(false);
 
+	/**
+	 * The calendar's shifts and compliance findings. Refreshed also when publishing is refused or
+	 * needs an acknowledgement: what the server judged (e.g. another planner's new draft) may not
+	 * be in the calendar yet.
+	 */
+	const refreshCalendar = () => {
+		queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
+		});
+	};
+
 	const publishMutation = useMutation({
 		mutationFn: async (acknowledgment?: PublishAcknowledgmentInput | null) => {
 			const result = await publishShifts(dateRange, acknowledgment ?? null);
 			if (!result.success) {
 				throw new PublishRefusal(
 					schedulingActionErrorMessage(t, result, PUBLISH_REFUSALS),
+					result.refusal,
 					result.refusal === STATUTORY_PUBLICATION_BLOCKED
 						? blockingFindingsOfRefusal(result.details)
 						: null,
@@ -78,6 +92,7 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 			if (nextPendingAcknowledgment) {
 				setPendingAcknowledgment(nextPendingAcknowledgment);
 				setIsComplianceDialogOpen(true);
+				refreshCalendar();
 				return;
 			}
 
@@ -88,12 +103,12 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 					count: result.count,
 				}),
 			);
-			queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
-			});
+			refreshCalendar();
 		},
 		onError: (error) => {
+			if (error instanceof PublishRefusal && error.refusal === STATUTORY_PUBLICATION_BLOCKED) {
+				refreshCalendar();
+			}
 			// The publish block names who, which limit and which day: show them, not only a count.
 			if (error instanceof PublishRefusal && error.statutoryFindings) {
 				setIsComplianceDialogOpen(false);
