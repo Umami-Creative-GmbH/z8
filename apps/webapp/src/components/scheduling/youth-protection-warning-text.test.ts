@@ -72,7 +72,7 @@ describe("youthProtectionWarningText (#1993)", () => {
 		});
 		expect(call?.params).toEqual({ used: 250, limit: 120, date: "Mar 11, 2027" });
 		expect(text).toBe(
-			"Block-release week: 250 min of work on this week's school days, 120 min of in-company training allowed; past the allowance on Mar 11, 2027. The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 weekly limit",
+			"Block-release week: 250 min of work on this week's school days, 120 min of in-company training allowed; past the allowance on Mar 11, 2027. The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
 		);
 		expect(catalogText(enCatalog, call?.key ?? "")).toBe(call?.fallback);
 		expect(typeof catalogText(deCatalog, call?.key ?? "")).toBe("string");

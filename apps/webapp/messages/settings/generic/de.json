@@ -4315,7 +4315,7 @@
       "title": "Berufsschul- und Prüfungsfreistellung",
       "description": "Berufsschultage, Blockunterricht und Prüfungstage sind bezahlte Freistellung (§ 15 BBiG): Sie werden als Arbeitszeit angerechnet, nie vom Urlaub abgezogen und führen nie zu einem negativen Arbeitszeitsaldo.",
       "empty": "Noch keine Freistellungstage erfasst.",
-      "blockWeekTrainingNote": "An diesen Blockunterrichtstagen sind bis zu 2 Stunden betriebliche Ausbildungsveranstaltungen pro Woche erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). Bei Beschäftigten unter 18 kommen sie zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen nicht zur Wochenhöchstgrenze nach § 8.",
+      "blockWeekTrainingNote": "An diesen Blockunterrichtstagen sind bis zu 2 Stunden betriebliche Ausbildungsveranstaltungen pro Woche erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Bei Beschäftigten unter 18 kommen sie zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen nicht zu den Tages- und Wochenhöchstgrenzen nach § 8.",
       "kind": {
         "schoolDay": "Berufsschultag",
         "blockWeek": "Blockunterrichtswoche",

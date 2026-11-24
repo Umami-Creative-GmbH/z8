@@ -8,7 +8,7 @@
  * school day (more than five lessons) an apprentice under 18 may not return to the workplace
  * afterwards (§ 9 Abs. 1 Nr. 2 JArbSchG); after a shorter school day they may. In a full
  * block-release week, up to 2 h a week of in-company training are allowed (§ 9 Abs. 1 Nr. 3
- * JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG): only the work on its block days past them conflicts.
+ * JArbSchG, § 15 Abs. 1 Satz 3 BBiG): only the work on its block days past them conflicts.
  */
 import { Temporal } from "temporal-polyfill";
 import type { ApprenticeReleaseKind } from "@/db/schema";
@@ -433,7 +433,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		}
 	}
 
-	// § 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG: up to 2 h a week of planned work on
+	// § 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG: up to 2 h a week of planned work on
 	// full block days, earliest first and overlapping shifts counted once, are allowed in-company
 	// training. Only work past them conflicts, judged on the whole week whichever days are judged.
 	const blockWork = new Map<string, { readonly part: Span }[]>();

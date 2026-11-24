@@ -250,7 +250,7 @@
       "apprenticeship": {
         "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
         "blockWeekTrainingWeek": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
-        "blockWeekTrainingNote": "The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 weekly limit",
+        "blockWeekTrainingNote": "The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
         "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
       },
       "shortTerm": {

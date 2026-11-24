@@ -123,7 +123,7 @@ _Avoid_: bucketing on-call band work by its start day alone
 **Block-week training allowance**:
 In a full block-release week (at least 25 hours of lessons on at least five days), additional
 in-company training events of up to two hours a week are allowed (§ 9 Abs. 1 Nr. 3 JArbSchG,
-§ 15 Abs. 1 Satz 2 Nr. 3 BBiG). Up to 120 minutes of planned work on the week's block days,
+§ 15 Abs. 1 Satz 3 BBiG). Up to 120 minutes of planned work on the week's block days,
 earliest first and work that overlapping shifts share counted once, are no release conflict;
 for a minor they also stay outside the § 8 JArbSchG day and week totals: they come on top of the
 block week, which § 9 Abs. 2 Nr. 2 JArbSchG credits with the average weekly working time. Only the work past them conflicts, on the block day it
@@ -228,7 +228,7 @@ six weeks of § 3 Abs. 1 exhausted, not owed). Z8 does not see everything that d
 "Guidance for payroll" and the card says the payroll system decides. It changes no figure.
 
 **The block-week training allowance stays out of a minor's § 8 totals.** In a full block-release
-week, § 9 Abs. 1 Nr. 3 JArbSchG and § 15 Abs. 1 Satz 2 Nr. 3 BBiG allow in-company training of up to
+week, § 9 Abs. 1 Nr. 3 JArbSchG and § 15 Abs. 1 Satz 3 BBiG allow in-company training of up to
 two hours a week, in addition to the block week, which § 9 Abs. 2 Nr. 2 JArbSchG credits with the
 average weekly working time (Z8 uses 40 hours when the terms give none). For a full-time minor that
 already reaches the § 8 weekly maximum, so counting the allowed minutes as well would breach § 8 and
