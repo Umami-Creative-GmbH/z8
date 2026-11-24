@@ -264,6 +264,56 @@ describe("working-student findings in Scheduling and Staffing (PostgreSQL)", () 
 		expect((await evaluate("2026-03-04T08:00:10Z")).fingerprint).not.toBe(first?.fingerprint);
 	});
 
+	it("keeps the publish fingerprint at midnight while a clock-in runs for days past its shift", async () => {
+		const org = await fx.organization("a", TZ);
+		const student = await fx.workingStudent(org, "student");
+		const subareaId = await fx.subarea(org, student);
+		// Monday 08:00–16:00 planned, clocked in at 08:00 and never clocked out.
+		await fx.shift(org, subareaId, student, { date: "2026-03-02", start: "08:00", end: "16:00" });
+		await fx.openWork(org, student, { date: "2026-03-02", start: "08:00:00" });
+
+		const evaluate = async (now: string) => {
+			const clock = vi.spyOn(Temporal.Now, "instant").mockReturnValue(Temporal.Instant.from(now));
+			try {
+				return await Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* ScheduleComplianceService;
+						return yield* service.evaluateScheduleWindow({
+							organizationId: org.id,
+							startDate: shiftDateBounds("2026-03-02", TZ).start,
+							endDateExclusive: shiftDateBounds("2026-03-09", TZ).start,
+							timezone: TZ,
+						});
+					}).pipe(
+						Effect.provide(
+							ScheduleComplianceServiceLive.pipe(
+								Layer.provide(workPolicyLayer),
+								Layer.provide(DatabaseServiceLive),
+							),
+						),
+					),
+				);
+			} finally {
+				clock.mockRestore();
+			}
+		};
+		const usedOf = (result: Awaited<ReturnType<typeof evaluate>>) =>
+			result.findings.flatMap((finding) =>
+				finding.type === "statutory" && finding.statutoryKind === "working_student_lecture_week"
+					? [[finding.severity, finding.summary.used?.value]]
+					: [],
+			);
+
+		// Berlin is UTC+1 in March: Tuesday 23:59:10 and Wednesday 00:01:10. Lecture-week daytime
+		// (06:00–18:00) so far: Monday 08:00–18:00 and Tuesday 06:00–18:00, over the 20 h week.
+		const tuesday = await evaluate("2026-03-03T22:59:10Z");
+		const wednesday = await evaluate("2026-03-03T23:01:10Z");
+		expect(usedOf(tuesday)).toEqual([["warning", 600 + 720]]);
+		expect(usedOf(wednesday)).toEqual(usedOf(tuesday));
+		// Monday's shift still counts to its end once its date is the day before yesterday.
+		expect(wednesday.fingerprint).toBe(tuesday.fingerprint);
+	});
+
 	it("makes the publish acknowledgement stale when a lecture-week breach deepens", async () => {
 		const org = await fx.organization("a", TZ);
 		const student = await fx.workingStudent(org, "student");

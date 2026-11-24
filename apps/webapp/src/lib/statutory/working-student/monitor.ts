@@ -7,7 +7,7 @@
  * resolution, once per employment-profile span. Batched for many employees (Staffing passes up to
  * ~1000 candidates); employees who never had working-student terms cost one query.
  */
-import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or } from "drizzle-orm";
 import {
 	employeeEmploymentHistory,
 	employeeStatutoryOffset,
@@ -343,13 +343,40 @@ export async function evaluateWorkingStudents(
 	// starting the day before the range (or before today) may still run into it.
 	const yesterday = plainDateAt(request.now, timezone).subtract({ days: 1 });
 	const dayBeforeRange = from.subtract({ days: 1 });
-	const shiftsFrom = comparePlainDates(yesterday, dayBeforeRange) > 0 ? yesterday : dayBeforeRange;
+	const later = (a: PlainDate, b: PlainDate) => (comparePlainDates(a, b) > 0 ? a : b);
+	const shiftsFrom = later(yesterday, dayBeforeRange);
+	// An open clock-in stands in for every shift it has run through (`inProgressContributions`),
+	// however long ago it started: its employee's shifts load from the day before it, so a shift it
+	// covers keeps counting to its end when its date falls behind yesterday at midnight.
+	const openShiftsFrom = new Map<string, PlainDate>();
+	for (const row of openRows) {
+		const day = later(
+			plainDateAt(instantFromDate(row.startTime), timezone).subtract({ days: 1 }),
+			dayBeforeRange,
+		);
+		const known = openShiftsFrom.get(row.employeeId);
+		if (comparePlainDates(day, shiftsFrom) < 0 && (!known || comparePlainDates(day, known) < 0)) {
+			openShiftsFrom.set(row.employeeId, day);
+		}
+	}
+	const earliestShiftsFrom = [...openShiftsFrom.values()].reduce(
+		(a, b) => (comparePlainDates(a, b) <= 0 ? a : b),
+		shiftsFrom,
+	);
 	const loadShifts = async () => {
 		const shiftBounds = shiftDateRangeBounds(shiftsFrom, until, timezone);
 		const shiftConditions = [
 			eq(shift.organizationId, request.organizationId),
 			inArray(shift.employeeId, inScope),
-			gte(shift.date, shiftBounds.start),
+			or(
+				gte(shift.date, shiftBounds.start),
+				...[...openShiftsFrom].map(([employeeId, day]) =>
+					and(
+						eq(shift.employeeId, employeeId),
+						gte(shift.date, shiftDateRangeBounds(day, until, timezone).start),
+					),
+				),
+			),
 			lt(shift.date, shiftBounds.endExclusive),
 		];
 		if (request.replacesShiftId) shiftConditions.push(ne(shift.id, request.replacesShiftId));
@@ -365,7 +392,7 @@ export async function evaluateWorkingStudents(
 			.where(and(...shiftConditions));
 	};
 	// Once the whole range is over, no shift in it can still count.
-	const shiftRows = comparePlainDates(shiftsFrom, until) < 0 ? await loadShifts() : [];
+	const shiftRows = comparePlainDates(earliestShiftsFrom, until) < 0 ? await loadShifts() : [];
 
 	const studyRows = await db
 		.select({
