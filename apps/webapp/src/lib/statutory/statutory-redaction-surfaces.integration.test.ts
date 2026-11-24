@@ -292,7 +292,7 @@ describe("statutory wage and EUR redaction on every restricted surface (PostgreS
 			berufsmaessigkeitReviews: await shortTermActions.listShortTermBerufsmaessigkeitReviewsAction({
 				includeResolved: true,
 			}),
-			onCallReviews: await onCallActions.listOnCallReviewItemsAction({}),
+			onCallReviews: await onCallActions.listOnCallReviewItemsAction(),
 			workingStudentReviews: await workingStudentActions.listWorkingStudentReviewsAction(),
 			youthSectorExceptions: await youthActions.listYouthSectorExceptionsAction({}),
 			monitorFindings: await reviewActions.listStatutoryMonitorFindingsAction(),

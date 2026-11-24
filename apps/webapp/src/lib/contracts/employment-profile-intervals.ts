@@ -34,6 +34,41 @@ function push<K, V>(map: Map<K, V[]>, key: K, value: V) {
 }
 
 /**
+ * The employment periods of the organization's `employeeIds`, as the contract resolver reads them,
+ * per employee. One query.
+ */
+export async function loadEmploymentPeriodSnapshots(
+	db: ReadOnlyContractDb,
+	input: { readonly organizationId: string; readonly employeeIds: readonly string[] },
+): Promise<Map<string, EmploymentPeriodSnapshot[]>> {
+	const periodsByEmployee = new Map<string, EmploymentPeriodSnapshot[]>();
+	const employeeIds = [...new Set(input.employeeIds)];
+	if (employeeIds.length === 0) return periodsByEmployee;
+	const periodRows = await db
+		.select({
+			id: employeeEmploymentPeriod.id,
+			employeeId: employeeEmploymentPeriod.employeeId,
+			status: employeeEmploymentPeriod.status,
+			startedAt: employeeEmploymentPeriod.startedAt,
+			startProvenance: employeeEmploymentPeriod.startProvenance,
+			endedAt: employeeEmploymentPeriod.endedAt,
+			createdAt: employeeEmploymentPeriod.createdAt,
+			engagementKind: employeeEmploymentPeriod.engagementKind,
+		})
+		.from(employeeEmploymentPeriod)
+		.where(
+			and(
+				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
+				inArray(employeeEmploymentPeriod.employeeId, employeeIds),
+			),
+		);
+	for (const row of periodRows) {
+		push(periodsByEmployee, row.employeeId, employmentPeriodSnapshotOf(row));
+	}
+	return periodsByEmployee;
+}
+
+/**
  * Consecutive spans covering `[from, untilExclusive)` for each of `employeeIds`, adjacent spans
  * always differing in profile. Callers pass employees of the organization.
  */
@@ -56,24 +91,10 @@ export async function loadEmploymentProfileIntervals(
 			: input.untilExclusive;
 	if (employeeIds.length === 0 || comparePlainDates(from, until) >= 0) return result;
 
-	const periodRows = await db
-		.select({
-			id: employeeEmploymentPeriod.id,
-			employeeId: employeeEmploymentPeriod.employeeId,
-			status: employeeEmploymentPeriod.status,
-			startedAt: employeeEmploymentPeriod.startedAt,
-			startProvenance: employeeEmploymentPeriod.startProvenance,
-			endedAt: employeeEmploymentPeriod.endedAt,
-			createdAt: employeeEmploymentPeriod.createdAt,
-			engagementKind: employeeEmploymentPeriod.engagementKind,
-		})
-		.from(employeeEmploymentPeriod)
-		.where(
-			and(
-				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
-				inArray(employeeEmploymentPeriod.employeeId, employeeIds),
-			),
-		);
+	const periodsByEmployee = await loadEmploymentPeriodSnapshots(db, {
+		organizationId: input.organizationId,
+		employeeIds,
+	});
 	// Same rows and order as the batch resolver.
 	const termsRows = await db
 		.select({
@@ -90,9 +111,6 @@ export async function loadEmploymentProfileIntervals(
 		)
 		.orderBy(asc(employeeEmploymentHistory.validFrom), asc(employeeEmploymentHistory.createdAt));
 
-	const periodsByEmployee = new Map<string, EmploymentPeriodSnapshot[]>();
-	for (const row of periodRows)
-		push(periodsByEmployee, row.employeeId, employmentPeriodSnapshotOf(row));
 	const termsByEmployee = new Map<string, EmploymentHistorySnapshot[]>();
 	for (const { row, createdAtIso } of termsRows) {
 		// Custom working days never decide the profile.

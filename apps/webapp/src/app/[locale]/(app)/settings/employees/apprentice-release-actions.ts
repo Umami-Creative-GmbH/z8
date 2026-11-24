@@ -19,6 +19,7 @@ import {
 } from "@/lib/statutory/apprenticeship/release-credit-view";
 import { loadEmployeeInOrganization } from "@/lib/statutory/employee-scope";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { scopeReachesEmployee } from "./managed-employee";
 
 // Apprentice school and exam release days (#1993, BBiG § 15 / JArbSchG § 9). Org admins record
 // and void them; the employee's managers and the employee themself read the credits. Release
@@ -66,7 +67,7 @@ function loadCredits(organizationId: string, subjectEmployeeId: string) {
 function refuseUnlessManaged(actor: OrganizationActor, subjectEmployeeId: string) {
 	return Effect.gen(function* () {
 		const scope = yield* actor.managedScope();
-		yield* refuseUnless(scope.organizationWide || scope.employeeIds.has(subjectEmployeeId), {
+		yield* refuseUnless(scopeReachesEmployee(scope, subjectEmployeeId), {
 			userId: actor.userId,
 			message: "You can only view release days of employees you manage",
 			resource: "apprentice_release",

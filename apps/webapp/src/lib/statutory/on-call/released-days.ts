@@ -6,12 +6,9 @@
  */
 import { and, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { absenceCategory, absenceEntry } from "@/db/schema";
-import {
-	getAssignedHolidayDateKeys,
-	getAssignedHolidaysForEmployees,
-} from "@/lib/calendar/assigned-holidays";
 import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { loadHolidayDateKeys } from "../holiday-days";
 
 export type OnCallReleasedDayReader = Pick<DatabaseClient, "select" | "query">;
 
@@ -134,13 +131,11 @@ export async function loadOnCallReleasedDays(
 				gte(absenceEntry.endDate, from),
 			),
 		);
-	const holidaysByEmployee = await getAssignedHolidaysForEmployees({
+	const holidaysByEmployee = await loadHolidayDateKeys(db, {
 		organizationId: input.organizationId,
 		employeeIds: input.employeeIds,
-		startDate: new Date(`${from}T00:00:00.000Z`),
-		endDate: new Date(`${last}T23:59:59.999Z`),
-		// The holiday reader only reads; it takes the full client type.
-		database: db as DatabaseClient,
+		from,
+		until,
 	});
 
 	const absencesByEmployee = Map.groupBy(absences, (row) => row.employeeId);
@@ -197,9 +192,7 @@ export async function loadOnCallReleasedDays(
 			if (!reasonByDay.has(day)) reasonByDay.set(day, "unpaid_absence");
 		}
 		const holidays = new Set(
-			[...getAssignedHolidayDateKeys(holidaysByEmployee.get(employeeId) ?? [])].filter(
-				(day) => day >= from && day < until,
-			),
+			[...(holidaysByEmployee.get(employeeId) ?? [])].filter((day) => day >= from && day < until),
 		);
 		for (const day of holidays) release(day, "public_holiday");
 		result.set(

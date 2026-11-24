@@ -19,6 +19,7 @@ import {
 	loadWorkingStudentMonitor,
 } from "@/lib/statutory/working-student/views";
 import { workingStudentFindingKinds } from "@/lib/statutory/working-student/weeks";
+import { scopeReachesEmployee } from "../employees/managed-employee";
 
 // Working-student monitor (#1991). Reading the monitor card is open to scoped managers for the
 // employees they manage (wage-free, redacted); recording statutory context and acknowledging
@@ -37,7 +38,7 @@ export const getWorkingStudentMonitorAction = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const scope = yield* actor.managedScope();
-			yield* refuseUnless(scope.organizationWide || scope.employeeIds.has(input.employeeId), {
+			yield* refuseUnless(scopeReachesEmployee(scope, input.employeeId), {
 				userId: actor.userId,
 				message: "You can only view employees you manage",
 				resource: "working_student_monitor",

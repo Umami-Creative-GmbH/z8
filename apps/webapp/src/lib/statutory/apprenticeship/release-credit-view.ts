@@ -22,7 +22,8 @@ import {
 	voidApprenticeRelease,
 } from "../employee-context";
 import { isMinorOn } from "../youth/age";
-import { loadEmployeeBirthdays, loadHolidayDateKeys } from "../youth/youth-facts";
+import { loadHolidayDateKeys } from "../holiday-days";
+import { loadEmployeeBirthdays } from "../youth/youth-facts";
 import { apprenticeReleaseDays } from "./release-credits";
 import { loadApprenticeReleaseRecords } from "./release-facts";
 

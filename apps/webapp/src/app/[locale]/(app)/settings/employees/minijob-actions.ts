@@ -17,6 +17,7 @@ import {
 	loadEmployeeMinijobMonitor,
 } from "@/lib/statutory/minijob/minijob-monitor-view";
 import { addMonths } from "@/lib/statutory/minijob/minijob-months";
+import { scopeReachesEmployee } from "./managed-employee";
 
 // Minijob earnings monitor on Employee Detail (#1989). Scoped managers read the wage-free tiers
 // of the employees they manage; only org admins see EUR amounts and edit external offsets.
@@ -51,7 +52,7 @@ export const getEmployeeMinijobMonitorAction = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const scope = yield* actor.managedScope();
-			yield* refuseUnless(scope.organizationWide || scope.employeeIds.has(input.employeeId), {
+			yield* refuseUnless(scopeReachesEmployee(scope, input.employeeId), {
 				userId: actor.userId,
 				message: "You can only view employees you manage",
 				resource: "minijob_monitor",

@@ -18,6 +18,7 @@ import {
 	loadShortTermMonitor,
 } from "@/lib/statutory/short-term/monitor";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { scopeReachesEmployee } from "../employees/managed-employee";
 
 // Short-term employment monitor (#1990, § 8 Abs. 1 Nr. 2 SGB IV). Scoped managers read the
 // wage-free allowance of employees they manage; prior-employer entries, Berufsmäßigkeit prompts
@@ -36,7 +37,7 @@ export const getShortTermMonitorAction = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const scope = yield* actor.managedScope();
-			yield* refuseUnless(scope.organizationWide || scope.employeeIds.has(input.employeeId), {
+			yield* refuseUnless(scopeReachesEmployee(scope, input.employeeId), {
 				userId: actor.userId,
 				message: "You can only view statutory limits of employees you manage",
 				resource: "statutory_short_term",

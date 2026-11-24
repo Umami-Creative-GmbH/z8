@@ -232,7 +232,7 @@ export function OnCallReviewsSection({
 	const items = useQuery({
 		queryKey: onCallReviewsQueryKey(organizationId),
 		queryFn: async () => {
-			const result = await listOnCallReviewItemsAction({});
+			const result = await listOnCallReviewItemsAction();
 			if (!result.success) throw new Error(actionErrorMessage(t, result));
 			return result.data;
 		},

@@ -3,7 +3,7 @@
 import { Effect } from "effect";
 import { z } from "zod";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { organizationAction } from "@/lib/organization-action/organization-action";
+import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 import type { OrganizationActor } from "@/lib/organization-action/organization-action";
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access";
@@ -22,6 +22,7 @@ import {
 } from "@/lib/statutory/on-call/views";
 import { statutoryAudienceOf } from "@/lib/statutory/redaction";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { scopeReachesEmployee } from "../employees/managed-employee";
 
 // § 12 TzBfG on-call monitor and reference-period calculator surfaces (#1992). Minutes and days
 // only, never wages: managers and the employee see the redacted findings, org admins the full ones.
@@ -35,7 +36,7 @@ function authorizeEmployeeView(actor: OrganizationActor, employeeId: string) {
 		if (actor.employee?.id === employeeId) return;
 		yield* actor.require("scopedManager");
 		const scope = yield* actor.managedScope();
-		yield* refuseUnless(scope.organizationWide || scope.employeeIds.has(employeeId), {
+		yield* refuseUnless(scopeReachesEmployee(scope, employeeId), {
 			userId: actor.userId,
 			message: "You can only view on-call details of employees you manage",
 			resource: "employee_on_call",
@@ -45,7 +46,7 @@ function authorizeEmployeeView(actor: OrganizationActor, employeeId: string) {
 }
 
 export const listOnCallReviewItemsAction = organizationAction(
-	{ name: "contracts.onCall.listReviewItems", requires: "orgAdmin", schema: z.strictObject({}) },
+	{ name: "contracts.onCall.listReviewItems", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
 		storeStep("contracts.onCall.listReviewItems", async (db) =>
 			listOnCallReviewItems(db, {

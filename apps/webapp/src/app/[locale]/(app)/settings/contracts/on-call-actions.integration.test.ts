@@ -94,7 +94,7 @@ describe("on-call actions (PostgreSQL)", () => {
 			worker.employeeId,
 		]);
 
-		const listed = await listOnCallReviewItemsAction({});
+		const listed = await listOnCallReviewItemsAction();
 		expect(listed.success).toBe(true);
 		const notice = listed.success
 			? listed.data.find((item) => item.finding.kind === "on_call_short_notice")
@@ -119,7 +119,7 @@ describe("on-call actions (PostgreSQL)", () => {
 			reason: "Worker asked for the extra call",
 		});
 		expect(acknowledged.success).toBe(true);
-		const after = await listOnCallReviewItemsAction({});
+		const after = await listOnCallReviewItemsAction();
 		expect(
 			after.success
 				? after.data.find((item) => item.finding.kind === "on_call_short_notice")?.finding
@@ -132,7 +132,7 @@ describe("on-call actions (PostgreSQL)", () => {
 		const { manager, shiftId, as } = await scenario();
 		as(manager, "member", { id: manager.employeeId, role: "manager", former: false });
 
-		expect(await listOnCallReviewItemsAction({})).toMatchObject({
+		expect(await listOnCallReviewItemsAction()).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
 		});

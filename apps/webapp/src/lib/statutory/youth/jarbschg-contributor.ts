@@ -27,11 +27,11 @@ import type { YouthWorkInterval } from "./jarbschg-rules";
 import {
 	loadContractorDays,
 	loadEmployeeBirthdays,
-	loadHolidayDateKeys,
 	loadJarbschgLimits,
 	loadYouthShifts,
 	loadYouthWork,
 } from "./youth-facts";
+import { loadHolidayDateKeys } from "../holiday-days";
 import { loadYouthSchoolCredits } from "./school-credits";
 import { youthBreachScopeOf, youthFindingsOf } from "./youth-findings";
 import { plannedYouthInterval, type YouthShiftRecord, youthIntervalsOf } from "./youth-intervals";

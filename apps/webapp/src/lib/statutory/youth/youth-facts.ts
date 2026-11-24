@@ -4,16 +4,9 @@
  * employees judged.
  */
 import { and, eq, gte, inArray, isNull, lt, ne, notInArray } from "drizzle-orm";
-import { employee, employeeEmploymentPeriod, shift, workPeriod } from "@/db/schema";
-import {
-	getAssignedHolidayDateKeys,
-	getAssignedHolidaysForEmployees,
-} from "@/lib/calendar/assigned-holidays";
-import {
-	type EmploymentPeriodSnapshot,
-	employmentPeriodSnapshotOf,
-	engagementKindOnDay,
-} from "@/lib/contracts/resolve-contract";
+import { employee, shift, workPeriod } from "@/db/schema";
+import { loadEmploymentPeriodSnapshots } from "@/lib/contracts/employment-profile-intervals";
+import { engagementKindOnDay } from "@/lib/contracts/resolve-contract";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	dateFromInstant,
@@ -110,38 +103,15 @@ export async function loadContractorDays(
 	const result = new Map<string, Set<string>>();
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return result;
-	const [kinds, periodRows] = await Promise.all([
+	const [kinds, periodsOf] = await Promise.all([
 		db
 			.select({ id: employee.id, engagementKind: employee.engagementKind })
 			.from(employee)
 			.where(
 				and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
 			),
-		db
-			.select({
-				id: employeeEmploymentPeriod.id,
-				employeeId: employeeEmploymentPeriod.employeeId,
-				status: employeeEmploymentPeriod.status,
-				startedAt: employeeEmploymentPeriod.startedAt,
-				startProvenance: employeeEmploymentPeriod.startProvenance,
-				endedAt: employeeEmploymentPeriod.endedAt,
-				createdAt: employeeEmploymentPeriod.createdAt,
-				engagementKind: employeeEmploymentPeriod.engagementKind,
-			})
-			.from(employeeEmploymentPeriod)
-			.where(
-				and(
-					eq(employeeEmploymentPeriod.organizationId, input.organizationId),
-					inArray(employeeEmploymentPeriod.employeeId, employeeIds),
-				),
-			),
+		loadEmploymentPeriodSnapshots(db, { organizationId: input.organizationId, employeeIds }),
 	]);
-	const periodsOf = new Map<string, EmploymentPeriodSnapshot[]>();
-	for (const row of periodRows) {
-		const own = periodsOf.get(row.employeeId);
-		if (own) own.push(employmentPeriodSnapshotOf(row));
-		else periodsOf.set(row.employeeId, [employmentPeriodSnapshotOf(row)]);
-	}
 	const until = parsePlainDate(input.until);
 	for (const { id, engagementKind } of kinds) {
 		const periods = periodsOf.get(id) ?? [];
@@ -167,35 +137,6 @@ export async function loadContractorDays(
 		if (days.size > 0) result.set(id, days);
 	}
 	return result;
-}
-
-/**
- * Public holiday date keys per employee over `[from, until)`. The holiday reader needs the
- * relational query API; it only reads.
- */
-export async function loadHolidayDateKeys(
-	db: Reader,
-	input: {
-		readonly organizationId: string;
-		readonly employeeIds: readonly string[];
-		readonly from: string;
-		readonly until: string;
-	},
-): Promise<Map<string, Set<string>>> {
-	if (input.employeeIds.length === 0) return new Map();
-	const holidays = await getAssignedHolidaysForEmployees({
-		organizationId: input.organizationId,
-		employeeIds: input.employeeIds,
-		startDate: new Date(`${input.from}T00:00:00.000Z`),
-		endDate: new Date(`${parsePlainDate(input.until).subtract({ days: 1 })}T23:59:59.999Z`),
-		database: db as DatabaseClient,
-	});
-	return new Map(
-		input.employeeIds.map((employeeId) => [
-			employeeId,
-			getAssignedHolidayDateKeys(holidays.get(employeeId) ?? []),
-		]),
-	);
 }
 
 /** Assigned shifts (draft and published) of the employees on organization-local days `[from, until)`. */
