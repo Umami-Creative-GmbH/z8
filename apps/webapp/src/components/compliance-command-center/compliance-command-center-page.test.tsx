@@ -399,6 +399,10 @@ describe("ComplianceCommandCenterPage", () => {
 			recentCriticalEvents: [],
 			coverageNotes: [],
 		});
+		tolgeeTranslations.set(
+			"compliance.commandCenter.facts.workforce.statutoryFindings",
+			"Statutory findings: {critical} critical, {warning} warnings",
+		);
 		render(<ComplianceCommandCenterPage data={data} />);
 
 		const nav = screen.getByRole("navigation", { name: "Statutory reviews" });

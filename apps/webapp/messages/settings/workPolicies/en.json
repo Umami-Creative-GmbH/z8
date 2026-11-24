@@ -362,8 +362,6 @@
           "empty": "No youth protection finding needs a sector exception.",
           "documented": "Sector exception recorded"
         },
-        "inboxTitle": "Reviews & Conflicts",
-        "inboxDescription": "Statutory findings and acknowledgements, contract migration conflicts and departure reviews in one place. Acknowledgements that newer work or shifts invalidated are highlighted.",
         "migrationTitle": "Contract migration and departure reviews",
         "invalidated": "Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
         "domain": {
@@ -429,7 +427,7 @@
         "defaults": "Defaults",
         "defaultsDescription": "Configure date-effective organization and primary-team default contracts with affected-employee previews.",
         "reviews": "Reviews & Conflicts",
-        "reviewsDescription": "Resolve contract migration conflicts, post-cutoff work reviews, payroll reconciliations, and migrated legacy terms.",
+        "reviewsDescription": "Statutory findings and acknowledgements, contract migration conflicts, departure and payroll reviews, and migrated legacy terms in one place. Acknowledgements that newer work or shifts invalidated are highlighted.",
         "templates": "Templates",
         "templatesDescription": "Create and version immutable stamping contract templates and apply them with divergence protection.",
         "workPolicies": "Work Policies",

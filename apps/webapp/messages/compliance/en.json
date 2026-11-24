@@ -29,7 +29,7 @@
           "title": "Recent workforce policy findings"
         },
         "statutory": {
-          "description": "{critical} critical, {warning} warnings; {pending} acknowledgements pending, {stale} invalidated by newer work or shifts",
+          "description": "{critical} critical, {warning, plural, one {# warning} other {# warnings}}; {pending, plural, one {# acknowledgement} other {# acknowledgements}} pending, {stale} invalidated by newer work or shifts",
           "minijob": {
             "title": "Minijob earnings limits"
           },
@@ -72,7 +72,7 @@
           "overtimeViolations": "Overtime violations: {count}",
           "pendingExceptions": "Pending exceptions: {count}",
           "restPeriodViolations": "Rest-period violations: {count}",
-          "statutoryFindings": "Statutory findings: {critical} critical, {warning} warnings",
+          "statutoryFindings": "Statutory findings: {critical} critical, {warning, plural, one {# warning} other {# warnings}}",
           "statutoryAcknowledgements": "Statutory acknowledgements: {pending} pending, {stale} invalidated by newer work or shifts",
           "statutoryUnavailable": "Some statutory monitors could not be loaded."
         }
@@ -88,13 +88,19 @@
         "openAuditLog": "Open Audit Log",
         "openComplianceSettings": "Open Compliance Settings",
         "reviewAuditExport": "Review audit export",
-        "openStatutoryReviews": "Open in Reviews & Conflicts",
         "statutoryDomain": {
           "minijob": "Minijob: {count} open",
           "short_term": "Short-term: {count} open",
           "working_student": "Working students: {count} open",
           "on_call": "On-call: {count} open",
           "youth_apprentice": "Youth & apprentices: {count} open"
+        },
+        "reviewDomain": {
+          "minijob": "Review Minijob findings",
+          "short_term": "Review short-term findings",
+          "working_student": "Review working-student findings",
+          "on_call": "Review on-call findings",
+          "youth_apprentice": "Review youth and apprentice findings"
         }
       },
       "loading": "Loading compliance signals",

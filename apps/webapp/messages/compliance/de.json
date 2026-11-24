@@ -29,7 +29,7 @@
           "title": "Aktuelle Ergebnisse zur Arbeitsplatzrichtlinie"
         },
         "statutory": {
-          "description": "{critical} kritisch, {warning} Warnungen; {pending} Bestätigungen ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig",
+          "description": "{critical} kritisch, {warning, plural, one {# Warnung} other {# Warnungen}}; {pending, plural, one {# Bestätigung} other {# Bestätigungen}} ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig",
           "minijob": {
             "title": "Minijob-Verdienstgrenzen"
           },
@@ -72,7 +72,7 @@
           "overtimeViolations": "Überstundenverstöße: {count}",
           "pendingExceptions": "Ausstehende Ausnahmen: {count}",
           "restPeriodViolations": "Ruhezeitverstöße: {count}",
-          "statutoryFindings": "Gesetzliche Befunde: {critical} kritisch, {warning} Warnungen",
+          "statutoryFindings": "Gesetzliche Befunde: {critical} kritisch, {warning, plural, one {# Warnung} other {# Warnungen}}",
           "statutoryAcknowledgements": "Gesetzliche Bestätigungen: {pending} ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig",
           "statutoryUnavailable": "Einige gesetzliche Prüfungen konnten nicht geladen werden."
         }
@@ -88,13 +88,19 @@
         "openAuditLog": "Audit-Protokoll öffnen",
         "openComplianceSettings": "Compliance-Einstellungen öffnen",
         "reviewAuditExport": "Audit-Export überprüfen",
-        "openStatutoryReviews": "In Prüfungen & Konflikte öffnen",
         "statutoryDomain": {
           "minijob": "Minijob: {count} offen",
           "short_term": "Kurzfristig: {count} offen",
           "working_student": "Werkstudierende: {count} offen",
           "on_call": "Abrufarbeit: {count} offen",
           "youth_apprentice": "Jugendliche & Azubis: {count} offen"
+        },
+        "reviewDomain": {
+          "minijob": "Minijob-Befunde prüfen",
+          "short_term": "Befunde zur kurzfristigen Beschäftigung prüfen",
+          "working_student": "Werkstudierenden-Befunde prüfen",
+          "on_call": "Befunde zur Abrufarbeit prüfen",
+          "youth_apprentice": "Befunde zu Jugendlichen und Azubis prüfen"
         }
       },
       "loading": "Compliance-Signale werden geladen",

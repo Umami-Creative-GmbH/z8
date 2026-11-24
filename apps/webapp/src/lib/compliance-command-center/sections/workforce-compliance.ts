@@ -100,7 +100,7 @@ function statutoryParts(snapshot: WorkforceComplianceSnapshot, occurredAt: strin
 		}),
 		occurredAt,
 		primaryLink: {
-			label: text("compliance.commandCenter.links.openStatutoryReviews"),
+			label: text(`compliance.commandCenter.links.reviewDomain.${summary.domain}`),
 			href: statutoryReviewsHref(summary.domain),
 		},
 	}));

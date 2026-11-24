@@ -37,7 +37,7 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 	eventStatutoryDescription: {
 		key: "compliance.commandCenter.events.statutory.description",
 		default:
-			"{critical} critical, {warning} warnings; {pending} acknowledgements pending, {stale} invalidated by newer work or shifts",
+			"{critical} critical, {warning, plural, one {# warning} other {# warnings}}; {pending, plural, one {# acknowledgement} other {# acknowledgements}} pending, {stale} invalidated by newer work or shifts",
 	},
 	eventStatutoryMinijobTitle: {
 		key: "compliance.commandCenter.events.statutory.minijob.title",
@@ -61,7 +61,8 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 	},
 	factWorkforceStatutoryFindings: {
 		key: "compliance.commandCenter.facts.workforce.statutoryFindings",
-		default: "Statutory findings: {critical} critical, {warning} warnings",
+		default:
+			"Statutory findings: {critical} critical, {warning, plural, one {# warning} other {# warnings}}",
 	},
 	factWorkforceStatutoryAcknowledgements: {
 		key: "compliance.commandCenter.facts.workforce.statutoryAcknowledgements",
@@ -72,9 +73,25 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.facts.workforce.statutoryUnavailable",
 		default: "Some statutory monitors could not be loaded.",
 	},
-	linkOpenStatutoryReviews: {
-		key: "compliance.commandCenter.links.openStatutoryReviews",
-		default: "Open in Reviews & Conflicts",
+	linkReviewDomainMinijob: {
+		key: "compliance.commandCenter.links.reviewDomain.minijob",
+		default: "Review Minijob findings",
+	},
+	linkReviewDomainShortTerm: {
+		key: "compliance.commandCenter.links.reviewDomain.short_term",
+		default: "Review short-term findings",
+	},
+	linkReviewDomainWorkingStudent: {
+		key: "compliance.commandCenter.links.reviewDomain.working_student",
+		default: "Review working-student findings",
+	},
+	linkReviewDomainOnCall: {
+		key: "compliance.commandCenter.links.reviewDomain.on_call",
+		default: "Review on-call findings",
+	},
+	linkReviewDomainYouthApprentice: {
+		key: "compliance.commandCenter.links.reviewDomain.youth_apprentice",
+		default: "Review youth and apprentice findings",
 	},
 	linkStatutoryDomainMinijob: {
 		key: "compliance.commandCenter.links.statutoryDomain.minijob",

@@ -362,8 +362,6 @@
           "empty": "Kein Jugendschutz-Befund benötigt eine Branchenausnahme.",
           "documented": "Branchenausnahme erfasst"
         },
-        "inboxTitle": "Prüfungen & Konflikte",
-        "inboxDescription": "Gesetzliche Befunde und Bestätigungen, Vertragsmigrationskonflikte und Austrittsprüfungen an einem Ort. Bestätigungen, die durch neuere Arbeit oder Schichten ungültig wurden, sind hervorgehoben.",
         "migrationTitle": "Vertragsmigration und Austrittsprüfungen",
         "invalidated": "Bestätigung ungültig: Arbeit, Schichten oder Beträge haben sich nach der Bestätigung geändert. Prüfen Sie die aktuellen Werte und bestätigen Sie erneut, wenn sie weiterhin gilt.",
         "domain": {
@@ -429,7 +427,7 @@
         "defaults": "Standardwerte",
         "defaultsDescription": "Konfigurieren Sie stichtagsbezogene Standardverträge für Organisationen und Primärteams mit Vorschauen betroffener Mitarbeiter.",
         "reviews": "Prüfungen & Konflikte",
-        "reviewsDescription": "Lösen Sie Konflikte bei der Vertragsmigration, Arbeitszeitprüfungen nach Stichtagen, Abrechnungsabgleiche und migrierte Altbestimmungen.",
+        "reviewsDescription": "Gesetzliche Befunde und Bestätigungen, Vertragsmigrationskonflikte, Austritts- und Abrechnungsprüfungen sowie migrierte Altbestimmungen an einem Ort. Bestätigungen, die durch neuere Arbeit oder Schichten ungültig wurden, sind hervorgehoben.",
         "templates": "Vorlagen",
         "templatesDescription": "Erstellen und versionieren Sie unveränderliche Vertragsvorlagen und wenden Sie diese mit Abweichungsschutz an.",
         "workPolicies": "Arbeitsrichtlinien",

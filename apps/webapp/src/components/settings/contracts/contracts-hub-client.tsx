@@ -97,7 +97,7 @@ export function ContractsHubClient({
 					label: t("settings.contracts.tabs.reviews", "Reviews & Conflicts"),
 					description: t(
 						"settings.contracts.tabs.reviewsDescription",
-						"Resolve contract migration conflicts, post-cutoff work reviews, payroll reconciliations, and migrated legacy terms.",
+						"Statutory findings and acknowledgements, contract migration conflicts, departure and payroll reviews, and migrated legacy terms in one place. Acknowledgements that newer work or shifts invalidated are highlighted.",
 					),
 					panel: (
 						<ContractsReviewsTab

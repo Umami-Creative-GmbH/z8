@@ -89,7 +89,7 @@ describe("Compliance Command Center workforce compliance with statutory monitors
 					params: { critical: 1, warning: 0, pending: 1, stale: 0 },
 				},
 				primaryLink: {
-					label: { key: "compliance.commandCenter.links.openStatutoryReviews" },
+					label: { key: "compliance.commandCenter.links.reviewDomain.minijob" },
 					href: "/settings/contracts?tab=reviews&domain=minijob",
 				},
 			}),

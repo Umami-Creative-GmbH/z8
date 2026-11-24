@@ -83,19 +83,9 @@ export function ContractsReviewsTab({
 	return (
 		<ReviewInboxTimezoneProvider value={organizationTimezone}>
 			<div className="space-y-6">
+				{/* The tab's own description introduces the inbox; this card holds only its filters. */}
 				<Card>
-					<CardHeader className="pb-3">
-						<CardTitle>
-							{t("settings.contracts.reviews.inboxTitle", "Reviews & Conflicts")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.contracts.reviews.inboxDescription",
-								"Statutory findings and acknowledgements, contract migration conflicts and departure reviews in one place. Acknowledgements that newer work or shifts invalidated are highlighted.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3">
+					<CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-6">
 						<div className="flex items-center gap-2">
 							<Label htmlFor="reviews-domain-filter" className="text-sm">
 								{t("settings.contracts.reviews.domain.label", "Area")}
