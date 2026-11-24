@@ -187,6 +187,7 @@ export function useShiftSchedulerData({
 	const eventLabels = {
 		openShift: t("scheduling:scheduling.scheduler.open", "Open Shift"),
 		draft: t("scheduling:scheduling.shiftDialog.draft", "Draft"),
+		assigned: t("scheduling:scheduling.scheduler.assigned", "Assigned"),
 	};
 	const events = filterShiftsForEmployee(shifts, employeeFilter).map((shift) =>
 		shiftToEvent(shift, organizationTimezone, eventLabels),

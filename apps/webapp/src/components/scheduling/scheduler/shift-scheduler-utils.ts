@@ -15,13 +15,21 @@ function formatWallTime(dateTime: { hour: number; minute: number }): string {
 	return `${String(dateTime.hour).padStart(2, "0")}:${String(dateTime.minute).padStart(2, "0")}`;
 }
 
-/** The planner's words for an unassigned shift and a draft, in their language. */
+/**
+ * The planner's words for an unassigned shift, a draft and an assigned shift whose employee has no
+ * name to show, in their language.
+ */
 export interface ShiftEventLabels {
 	readonly openShift: string;
 	readonly draft: string;
+	readonly assigned: string;
 }
 
-const ENGLISH_EVENT_LABELS: ShiftEventLabels = { openShift: "Open Shift", draft: "Draft" };
+const ENGLISH_EVENT_LABELS: ShiftEventLabels = {
+	openShift: "Open Shift",
+	draft: "Draft",
+	assigned: "Assigned",
+};
 
 /**
  * A Schedule-X event for the planner. Schedule-X 4 takes timed events only as `ZonedDateTime`, so
@@ -47,7 +55,8 @@ export function shiftToEvent(
 
 	let title = isOpenShift
 		? labels.openShift
-		: `${shift.employee?.firstName || ""} ${shift.employee?.lastName || ""}`.trim() || "Assigned";
+		: `${shift.employee?.firstName || ""} ${shift.employee?.lastName || ""}`.trim() ||
+			labels.assigned;
 
 	if (isDraft) {
 		title = `[${labels.draft}] ${title}`;

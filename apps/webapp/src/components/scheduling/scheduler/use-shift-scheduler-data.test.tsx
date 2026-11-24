@@ -8,6 +8,7 @@ import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 const german: Record<string, string> = {
 	"scheduling:scheduling.scheduler.open": "Offene Schicht",
 	"scheduling:scheduling.shiftDialog.draft": "Entwurf",
+	"scheduling:scheduling.scheduler.assigned": "Zugewiesen",
 };
 
 vi.mock("@tolgee/react", () => ({
@@ -35,8 +36,17 @@ const draftOpenShift: ShiftWithRelations = {
 	subarea: { id: "reception", name: "Reception", location: { id: "office", name: "Office" } },
 };
 
+/** Assigned to an employee whose name the planner cannot see. */
+const unnamedAssignedShift: ShiftWithRelations = {
+	...draftOpenShift,
+	id: "shift-b",
+	employeeId: "employee-b",
+	status: "published",
+	employee: null,
+};
+
 vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({
-	getShifts: async () => ({ success: true, data: [draftOpenShift] }),
+	getShifts: async () => ({ success: true, data: [draftOpenShift, unnamedAssignedShift] }),
 	getShiftTemplates: async () => ({ success: true, data: [] }),
 	getScheduleComplianceSummary: async () => ({
 		success: true,
@@ -66,7 +76,9 @@ describe("useShiftSchedulerData calendar events (#2018)", () => {
 			{ wrapper },
 		);
 
-		await waitFor(() => expect(result.current.events).toHaveLength(1));
-		expect(result.current.events[0]?.title).toBe("[Entwurf] Offene Schicht");
+		await waitFor(() => expect(result.current.events).toHaveLength(2));
+		const titles = new Map(result.current.events.map((event) => [event.id, event.title]));
+		expect(titles.get("shift-a")).toBe("[Entwurf] Offene Schicht");
+		expect(titles.get("shift-b")).toBe("Zugewiesen");
 	});
 });
