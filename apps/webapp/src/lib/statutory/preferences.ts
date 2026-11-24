@@ -54,7 +54,11 @@ export type StatutoryPreferenceRefusal =
 	| "statutory_daytime_band_out_of_range"
 	| "statutory_daytime_band_start_not_before_end";
 
-const preferenceColumns = {
+/**
+ * The preference columns, read when a query runs rather than when the module loads: services far
+ * from statutory work import this module, and their unit tests mock `@/db/schema` without it.
+ */
+const preferenceColumns = () => ({
 	warningThresholdPercent: organizationStatutoryPreference.warningThresholdPercent,
 	criticalThresholdPercent: organizationStatutoryPreference.criticalThresholdPercent,
 	blockJarbschgShiftPublish: organizationStatutoryPreference.blockJarbschgShiftPublish,
@@ -62,14 +66,14 @@ const preferenceColumns = {
 	workingStudentDaytimeStartMinute:
 		organizationStatutoryPreference.workingStudentDaytimeStartMinute,
 	workingStudentDaytimeEndMinute: organizationStatutoryPreference.workingStudentDaytimeEndMinute,
-};
+});
 
 export async function loadOrganizationStatutoryPreferences(
 	db: Pick<DatabaseClient, "select">,
 	organizationId: string,
 ): Promise<LoadedStatutoryPreferences> {
 	const [row] = await db
-		.select(preferenceColumns)
+		.select(preferenceColumns())
 		.from(organizationStatutoryPreference)
 		.where(eq(organizationStatutoryPreference.organizationId, organizationId))
 		.limit(1);
