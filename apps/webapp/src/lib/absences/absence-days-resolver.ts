@@ -52,16 +52,15 @@ function enumerateDateRange(startDate: string, endDate: string): Temporal.PlainD
 }
 
 /**
- * Resolves the effective scheduled ISO weekdays (1=Mon..7=Sun) from a single day's
- * unified contract, or `null` when no schedule applies (so absences fall back to Mon-Fri).
- * Honors `isEmployedOnDay` (A1-26), multi-week `cycleWeek` and all simple cycles resolved by
- * `resolveEffectiveContractPure` (A1-13), versioned `scheduleEnabled` flags, and custom working days.
+ * The scheduled ISO weekdays (1=Mon..7=Sun) of a single day's unified contract, whether or not
+ * the employee is employed that day, or `null` when no schedule applies (Mon-Fri).
+ * Honors multi-week `cycleWeek` and all simple cycles resolved by `resolveEffectiveContractPure`
+ * (A1-13), versioned `scheduleEnabled` flags, and custom working days.
  */
-function effectiveScheduledWeekdaysForContract(
+function scheduledWeekdaysForContract(
 	contract: EffectiveContractOnDay | undefined,
 ): ReadonlySet<number> | null {
 	if (!contract) return null;
-	if (!contract.isEmployedOnDay) return new Set();
 	if (contract.scheduleSource !== "policy") return null;
 
 	if (contract.scheduleMode === "custom_days" || contract.scheduleMode === "hours_only") {
@@ -82,6 +81,17 @@ function effectiveScheduledWeekdaysForContract(
 		d.isWorkDay ? [ISO_WEEKDAY[d.dayOfWeek]] : [],
 	);
 	return new Set(days);
+}
+
+/**
+ * The weekdays an absence can take on a single day: none outside employment (A1-26), else the
+ * contract's schedule, or `null` (Mon-Fri).
+ */
+function absenceWeekdaysForContract(
+	contract: EffectiveContractOnDay | undefined,
+): ReadonlySet<number> | null {
+	if (contract && !contract.isEmployedOnDay) return new Set();
+	return scheduledWeekdaysForContract(contract);
 }
 
 /**
@@ -122,7 +132,7 @@ export async function loadWorkingDaysForEmployees(
 		const isWorkingDay: IsWorkingDay = (day) => {
 			const dayStr = day.toString();
 			if (holidays.has(dayStr)) return false;
-			const weekdays = effectiveScheduledWeekdaysForContract(contractsByDate.get(dayStr));
+			const weekdays = absenceWeekdaysForContract(contractsByDate.get(dayStr));
 			return weekdays ? weekdays.has(day.dayOfWeek) : mondayToFriday(day);
 		};
 		workingDays.set(employeeId, isWorkingDay);
@@ -134,6 +144,10 @@ export async function loadWorkingDaysForEmployees(
  * The working days per week of each employee in the organization over a range (Absences ADR
  * 0003), from the unified contract in effect on each day, without holidays.
  * An employee outside the organization gets no entry.
+ *
+ * A day outside employment keeps its schedule rather than counting as a work schedule without
+ * working days, which would leave the vacation allowance unknown (#2011). Employment prorates
+ * the allowance instead.
  */
 export async function loadWorkingWeekPeriodsForEmployees(
 	database: AbsenceDaysDatabase,
@@ -157,7 +171,7 @@ export async function loadWorkingWeekPeriodsForEmployees(
 		for (const day of dates) {
 			const dayStr = day.toString();
 			const contract = contractsByDate.get(dayStr);
-			const weekdays = effectiveScheduledWeekdaysForContract(contract);
+			const weekdays = scheduledWeekdaysForContract(contract);
 			const workingDaysPerWeek = weekdays ? weekdays.size : MONDAY_TO_FRIDAY_DAYS;
 			const workPolicyId = contract?.workPolicy?.policyId ?? null;
 			const last = periods.at(-1);
