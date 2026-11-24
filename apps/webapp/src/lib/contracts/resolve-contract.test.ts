@@ -583,8 +583,8 @@ describe("contracts pure helpers & resolver", () => {
 			createdAt: parseInstant(createdAt),
 			engagementKind,
 		});
-		const decide = (date: string, periods: readonly EmploymentPeriodSnapshot[]) => {
-			const decided = engagementPeriodDecidingDay(periods, parsePlainDate(date), "UTC");
+		const decide = (date: string, periods: readonly EmploymentPeriodSnapshot[], tz = "UTC") => {
+			const decided = engagementPeriodDecidingDay(periods, parsePlainDate(date), tz);
 			return decided && `${decided.position}:${decided.period.id}`;
 		};
 		const sameEnd = [
@@ -651,6 +651,37 @@ describe("contracts pure helpers & resolver", () => {
 			expect(decide("2026-02-28", rows)).toBe("in_force:employee");
 			expect(decide("2026-03-01", rows)).toBe("in_force:contractor");
 			expect(decide("2026-03-02", rows)).toBe("after_end:contractor");
+		}
+
+		// The employee's own midnight decides, not UTC's: in Berlin 2026-02-28T23:00Z is the start
+		// of 1 March, 2026-03-01T00:00Z is 01:00 on it, and 2026-03-28T23:00Z starts the DST day.
+		const zeroLengthAt = (end: string) =>
+			zeroLengthAtEnd.map((row) =>
+				row.id === "employee"
+					? { ...row, endedAt: parseInstant(end) }
+					: { ...row, startedAt: parseInstant(end), endedAt: parseInstant(end) },
+			);
+		const BERLIN = "Europe/Berlin";
+		for (const ordered of [
+			zeroLengthAt("2026-02-28T23:00:00Z"),
+			[...zeroLengthAt("2026-02-28T23:00:00Z")].reverse(),
+		]) {
+			expect(decide("2026-02-28", ordered, BERLIN)).toBe("in_force:employee");
+			expect(decide("2026-03-01", ordered, BERLIN)).toBe("after_end:employee");
+		}
+		for (const ordered of [
+			zeroLengthAt("2026-03-01T00:00:00Z"),
+			[...zeroLengthAt("2026-03-01T00:00:00Z")].reverse(),
+		]) {
+			expect(decide("2026-03-01", ordered, BERLIN)).toBe("in_force:contractor");
+			expect(decide("2026-03-02", ordered, BERLIN)).toBe("after_end:contractor");
+		}
+		for (const ordered of [
+			zeroLengthAt("2026-03-28T23:00:00Z"),
+			[...zeroLengthAt("2026-03-28T23:00:00Z")].reverse(),
+		]) {
+			expect(decide("2026-03-28", ordered, BERLIN)).toBe("in_force:employee");
+			expect(decide("2026-03-29", ordered, BERLIN)).toBe("after_end:employee");
 		}
 
 		// Both end together during a day, so neither is active at its end: the later start still
