@@ -398,6 +398,35 @@ describe("working-week conversion (Absences ADR 0003)", () => {
 		});
 	});
 
+	it("gives days without employment no rate and no configuration error (#2009)", () => {
+		const workingWeeks: WorkingWeekPeriod[] = [
+			week("2027-01-01", "2027-03-31", 4),
+			{ startDate: "2027-04-01", endDate: "2027-06-30", notEmployed: true },
+			week("2027-07-01", "2027-12-31", 4),
+		];
+		expect(
+			resolveWeightedVacationPolicy(fullYear(), { year: 2027, workingWeeks }).configuration,
+		).toEqual({ status: "resolved" });
+		// 24 converted days: 3 months → 6, 6 months → 12. The gap converts at no rate at all.
+		expect(
+			allowance({
+				periods: fullYear("30", "0"),
+				workingWeeks,
+				employments: [stint("2020-01-01", "2027-03-31"), stint("2027-07-01")],
+			}),
+		).toMatchObject({
+			fullAllowance: 24,
+			days: 18,
+			workingWeek: {
+				referenceAllowance: 30,
+				periods: [
+					{ startDate: "2027-01-01", endDate: "2027-03-31", workingDaysPerWeek: 4 },
+					{ startDate: "2027-07-01", endDate: "2027-12-31", workingDaysPerWeek: 4 },
+				],
+			},
+		});
+	});
+
 	it("does not depend on the viewer timezone", () => {
 		const previous = process.env.TZ;
 		try {

@@ -90,6 +90,14 @@ describe("work balances of employees who have left on PostgreSQL", () => {
 			forceFullRebuild: true,
 			now: new Date(`${day(4)}T12:00:00Z`),
 		});
+		// The worker's batch is database-wide, oldest refresh request first, and other suites leave
+		// employees in the same database. A long-standing request puts this one at the head of the
+		// queue; it changes the order only, not whether or how the worker refreshes the balance.
+		await fixture.pool.query(
+			`update employee_work_balance set refresh_requested_at = '1970-01-01T00:00:00Z'
+			 where employee_id = $1 and organization_id = $2`,
+			[employee.employeeId, fixture.organizationId],
+		);
 		await fixture.pool.query(
 			`update employee_employment_period set status = 'closed', ended_at = $2 where id = $1`,
 			[employee.employmentPeriodId, `${day(endedDaysAgo)}T00:00:00Z`],
