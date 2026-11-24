@@ -30,7 +30,10 @@ import type {
 	YouthSectorExceptionRefusal,
 } from "@/lib/statutory/youth/sector-exception-review";
 import { cn } from "@/lib/utils";
-import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
+import {
+	invalidateStatutoryReviewViews,
+	youthReviewQueryKeys,
+} from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
 	invalidatedItemClassName,
@@ -59,8 +62,7 @@ export const youthSectorExceptionRefusals = {
 	],
 } as const satisfies RefusalMessages<YouthSectorExceptionRefusal | StatutoryAcknowledgementRefusal>;
 
-const youthSectorExceptionsKey = (organizationId: string) =>
-	["contracts", "youth-sector-exceptions", organizationId] as const;
+const youthSectorExceptionsKey = youthReviewQueryKeys.sectorExceptions;
 
 function kindLabel(kind: JarbschgSectorExceptionKind, t: Translate): string {
 	switch (kind) {

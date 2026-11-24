@@ -445,6 +445,30 @@
           "empty": "No youth protection finding needs a sector exception.",
           "documented": "Sector exception recorded"
         },
+        "minorContractors": {
+          "acknowledge": "Record assessment…",
+          "acknowledged": "Assessment recorded",
+          "confirm": "Record assessment",
+          "description": "The youth protection limits do not judge External Contractors. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the engagement period or the birthday changes.",
+          "documented": "Assessment recorded",
+          "empty": "No contractor under 18 needs a review.",
+          "hint": "If the work resembles an employee's (bound by instructions, integrated into your organization, no own clients or business risk), youth protection applies: switch on “Apply youth protection (JArbSchG) to minor contractors” in the statutory limits, or employ the minor instead.",
+          "kind": "Contractor under 18: check whether the work falls under § 1 Abs. 1 Nr. 3 JArbSchG",
+          "legalNote": "Legal note (optional)",
+          "loadFailed": "Could not load contractors under 18.",
+          "period": "Engaged {from} – {until}",
+          "reason": "Your assessment of the engagement",
+          "reasonRequired": "Explain why the work does or does not fall under youth protection.",
+          "refusal": {
+            "changed": "The engagement or the birthday changed since this list was loaded. Review it again.",
+            "notFound": "This engagement no longer needs a review. The list shows the current ones.",
+            "reasonRequired": "Explain why the work does or does not fall under youth protection.",
+            "subjectRequired": "This engagement cannot be documented. Reload the list and try again."
+          },
+          "since": "Engaged since {from}",
+          "stale": "Changed since last assessed",
+          "title": "Youth protection: contractors under 18"
+        },
         "migrationTitle": "Contract migration and departure reviews",
         "invalidated": "Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
         "noLongerApplies": "Acknowledgement no longer applies: the finding can no longer be acknowledged, so the documented reason no longer counts. Change the schedule or the contract instead.",
@@ -681,7 +705,9 @@
           "daytimeStart": "Counts from",
           "daytimeEnd": "Counts until",
           "daytimeBandRange": "Choose whole quarter hours from 00:00 to 24:00.",
-          "daytimeBandOrder": "The daytime band must start before it ends."
+          "daytimeBandOrder": "The daytime band must start before it ends.",
+          "minorContractors": "Apply youth protection (JArbSchG) to minor contractors",
+          "minorContractorsHelp": "JArbSchG also covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Off: each engagement of an External Contractor under 18 is flagged in Reviews & Conflicts so you can check whether it does. On: their working time is judged like an employee's under 18 in Scheduling, Staffing, the publish block and recorded working time."
         }
       },
       "shortTerm": {

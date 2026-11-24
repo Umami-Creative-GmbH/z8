@@ -52,6 +52,7 @@ import { listShortTermBerufsmaessigkeitReviews } from "./short-term/monitor";
 import type { StatutoryDomain } from "./threshold-catalog";
 import { listWorkingStudentReviewItems } from "./working-student/views";
 import { jarbschgScheduleContributor } from "./youth/jarbschg-contributor";
+import { evaluateMinorContractorReviewFindings } from "./youth/minor-contractor-review";
 import { isYouthSectorExceptionFinding } from "./youth/sector-exception-review";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
@@ -335,11 +336,21 @@ const domainLoaders: Record<
 	},
 	async youth_apprentice(db, context) {
 		// One evaluation: the sector-exception list covers the same horizon.
-		const findings = await horizonFindings(db, context, youthContributors);
+		const [findings, minorContractors] = await Promise.all([
+			horizonFindings(db, context, youthContributors),
+			// #2022: minor contractor engagements over the same horizon and roster.
+			evaluateMinorContractorReviewFindings(db, {
+				organizationId: context.organizationId,
+				timezone: context.timezone,
+				now: context.now,
+				employeeIds: await context.roster(),
+			}),
+		]);
 		return [
 			...findings
 				.filter(isYouthSectorExceptionFinding)
 				.map((finding) => itemOf(finding, "", "review")),
+			...minorContractors.map((finding) => itemOf(finding, "", "review")),
 			...findings.filter(isMonitorOnlyFinding).map(monitorItemOf),
 		];
 	},

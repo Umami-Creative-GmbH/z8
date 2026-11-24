@@ -46,6 +46,7 @@ import { type EngagementFilter, filterByEngagement } from "@/lib/engagement/enga
 import { Link } from "@/navigation";
 import { todayIsoDateInTimezone } from "./contract-formatters";
 import { MinijobExceedanceReviews } from "./minijob-exceedance-reviews";
+import { MinorContractorReviewsSection } from "./minor-contractor-reviews-section";
 import { OnCallReviewsSection } from "./on-call-reviews-section";
 import { ShortTermBerufsmaessigkeitReviews } from "./short-term-berufsmaessigkeit-reviews";
 import { StatutoryMonitorFindingsSection } from "./statutory-monitor-findings-section";
@@ -168,6 +169,13 @@ export function ContractsReviewsTab({
 					organizationId={organizationId}
 					includeResolved={includeResolved}
 					showWhenEmpty={domain === "youth_apprentice"}
+				/>
+			)}
+			{shows("youth_apprentice") && (
+				<MinorContractorReviewsSection
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={false}
 				/>
 			)}
 		</div>
