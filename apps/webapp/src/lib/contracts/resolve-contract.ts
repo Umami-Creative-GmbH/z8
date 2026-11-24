@@ -360,8 +360,9 @@ export function engagementPeriodDecidingDay(
  * one `resolveEmploymentPeriodForDay` picks on the last day in force (or the first), so the
  * engagement kind does not flip at the boundary: after the end, the one the resolver picks on the
  * last day before it (a zero-length stint ending at midnight is never picked; otherwise the later
- * start, then the later record, then the greater id); before the start, the stint still active at
- * the end of its start day first, then the later record, then the greater id.
+ * start, then the later record, then the greater id); before the start, the one the resolver picks
+ * on the start day (a zero-length stint at that day's midnight is never picked; otherwise the stint
+ * still active at the end of the day first, then the later record, then the greater id).
  *
  * Known difference: payroll (`engagement/employee-time.ts`, `kindAt`) lets the contractor win
  * overlapping stints instead. The schema allows overlapping stints, but normal conversions
@@ -399,15 +400,7 @@ function periodOutsideEmployment(
 			order < 0 ||
 			(order === 0 &&
 				following &&
-				compareStintsForDay(
-					period,
-					following.period,
-					// Same start: the comparator judges the start day, the first day either is in force.
-					plainDateAt(start, employeeCalendarTimezone)
-						.add({ days: 1 })
-						.toZonedDateTime(employeeCalendarTimezone)
-						.toInstant(),
-				) < 0)
+				startsTieBefore(period, following.period, start, employeeCalendarTimezone))
 		) {
 			following = { period, startedAt: start };
 		}
@@ -439,6 +432,32 @@ function endsTieBefore(
 	);
 	if (period) return period === left;
 	return compareStintsForDay(left, right, sharedEnd) < 0;
+}
+
+/**
+ * Whether `left` decides the days before a start it shares with `right`: whichever of the two the
+ * resolver picks on the start day decides the days before it. A zero-length stint starting at the
+ * day's midnight is never in force, so the other one decides. When the resolver covers neither
+ * (both zero-length at midnight), the comparator settles it by start, record and id.
+ */
+function startsTieBefore(
+	left: EmploymentPeriodSnapshot,
+	right: EmploymentPeriodSnapshot,
+	sharedStart: Instant,
+	employeeCalendarTimezone: string,
+): boolean {
+	const startDay = plainDateAt(sharedStart, employeeCalendarTimezone);
+	const { period } = resolveEmploymentPeriodForDay(
+		[left, right],
+		startDay,
+		employeeCalendarTimezone,
+	);
+	if (period) return period === left;
+	const startDayEnd = startDay
+		.add({ days: 1 })
+		.toZonedDateTime(employeeCalendarTimezone)
+		.toInstant();
+	return compareStintsForDay(left, right, startDayEnd) < 0;
 }
 
 /**

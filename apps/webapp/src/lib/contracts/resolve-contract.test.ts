@@ -734,6 +734,29 @@ describe("contracts pure helpers & resolver", () => {
 			expect(decide("2026-04-01", rows)).toBe("in_force:contractor");
 		}
 
+		// A zero-length stint at the start day's midnight is never in force: the stint the resolver
+		// picks that day decides the days before it, although the zero-length one was recorded later.
+		const zeroLengthAtStart = [
+			period(
+				"employee",
+				"employee",
+				"2026-03-10T00:00:00Z",
+				"2026-03-10T00:00:00Z",
+				"2026-01-02T00:00:00Z",
+			),
+			period(
+				"contractor",
+				"contractor",
+				"2026-03-10T00:00:00Z",
+				"2026-03-10T12:00:00Z",
+				"2026-01-01T00:00:00Z",
+			),
+		];
+		for (const rows of [zeroLengthAtStart, [...zeroLengthAtStart].reverse()]) {
+			expect(decide("2026-03-09", rows)).toBe("before_start:contractor");
+			expect(decide("2026-03-10", rows)).toBe("in_force:contractor");
+		}
+
 		// Same record time too: the id decides, as for a day in force.
 		const sameRecord = [
 			period("a", "employee", "2026-04-01T00:00:00Z", null, "2026-01-01T00:00:00Z"),
