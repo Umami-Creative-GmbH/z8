@@ -436,8 +436,9 @@ export async function seedStatutoryVerification(
 		}
 	}
 
-	// Short-term: 55 working days at a prior employer this year, plus Monday and Tuesday of the
-	// last two weeks and of this week here: 61 of 70 working days.
+	// Short-term: 55 working days at a prior employer this year, plus six Mondays and Tuesdays here:
+	// 61 of 70 working days. Those of the last two weeks and this week; only days of this calendar
+	// year count, so early in January the missing ones move to the following weeks.
 	await pool.query(
 		`INSERT INTO employee_statutory_offset (organization_id, employee_id, offset_kind,
 			valid_from_date, valid_until_date, count_value, note, created_by)
@@ -450,11 +451,17 @@ export async function seedStatutoryVerification(
 			admin.userId,
 		],
 	);
-	for (const monday of [thisMonday.subtract({ days: 14 }), lastMonday, thisMonday]) {
+	let seasonalDays = 0;
+	for (
+		let monday = thisMonday.subtract({ weeks: 2 });
+		seasonalDays < 6;
+		monday = monday.add({ weeks: 1 })
+	) {
 		for (const offset of [0, 1]) {
 			const date = monday.add({ days: offset });
-			if (date.year !== today.year) continue;
+			if (date.year !== today.year || seasonalDays === 6) continue;
 			await planOrWork({ who: seasonal, date, start: "09:00", end: "15:00" });
+			seasonalDays++;
 		}
 	}
 

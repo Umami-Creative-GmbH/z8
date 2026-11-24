@@ -163,3 +163,31 @@ describe("statutory verification seed (PostgreSQL)", () => {
 		expect(first?.start).toBe("2026-11-16T13:00");
 	});
 });
+
+describe("statutory verification seed on New Year's Day (PostgreSQL)", () => {
+	vi.setConfig({ testTimeout: 180_000, hookTimeout: 120_000 });
+	const admin = integrationAdminPool();
+	/** Friday 1 January 2027, 11:00 in Berlin: this week's and the last two weeks' Mondays are in 2026. */
+	const newYear = Temporal.Instant.from("2027-01-01T10:00:00Z");
+
+	beforeAll(() => removeStatutoryVerificationSeed(admin));
+	afterAll(() => removeStatutoryVerificationSeed(admin));
+
+	it("still brings the short-term employee to the working-day warning", async () => {
+		const seeded = await seedStatutoryVerification(admin, { password, now: newYear });
+		const seasonal = seeded.find((person) => person.key === "seasonal")?.employeeId;
+		const findings = await evaluateStatutoryFindings(db, {
+			organizationId,
+			timezone: "Europe/Berlin",
+			window: { start: "2026-12-28", endExclusive: "2027-02-01" },
+			employeeIds: seeded.map((person) => person.employeeId),
+			now: newYear,
+		});
+
+		expect(
+			findings
+				.filter((finding) => finding.employeeId === seasonal)
+				.map((finding) => `${finding.kind}:${finding.severity}`),
+		).toContain("short_term_work_days:warning");
+	});
+});
