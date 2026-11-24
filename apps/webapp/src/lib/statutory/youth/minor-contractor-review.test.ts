@@ -292,6 +292,29 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 			);
 		});
 
+		it("re-opens a documentation once removing another stint hands it the days before the first start", () => {
+			// Employee stint p0 decides the days before a first-day conversion: employee e 08–12, then
+			// contractor c from 12:00. Removing p0 leaves c deciding every day before 2026-03-10.
+			const at = (date: string, time: string) => localInstant(date, time, timezone);
+			const p0 = { ...stint("p0", "employee", "2026-03-01", "2026-03-05") };
+			const e = {
+				...stint("e", "employee", "2026-03-10", null),
+				startedAt: at("2026-03-10", "08:00"),
+				endedAt: at("2026-03-10", "12:00"),
+				status: "closed" as const,
+			};
+			const c = {
+				...stint("c", "contractor", "2026-03-10", null),
+				startedAt: at("2026-03-10", "12:00"),
+			};
+			const withP0 = judge({ birthday: "2010-06-01", periods: [p0, e, c] });
+			const withoutP0 = judge({ birthday: "2010-06-01", periods: [e, c] });
+
+			expect(withP0.map((finding) => finding.subjectKey)).toEqual(["engagement:c"]);
+			expect(withoutP0.map((finding) => finding.subjectKey)).toEqual(["engagement:c"]);
+			expect(withoutP0[0]?.inputFingerprint).not.toBe(withP0[0]?.inputFingerprint);
+		});
+
 		it("raises none for an adult or for a minor whose outside days are employee days", () => {
 			expect(
 				judgeIn([stint("p1", "contractor", "2026-09-01", "2026-11-01")], "2000-01-01"),

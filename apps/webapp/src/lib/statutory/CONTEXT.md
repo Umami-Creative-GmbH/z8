@@ -95,18 +95,21 @@ a contractor day. Contractor days are no employee's, so no Milestone 2 monitor j
 JArbSchG monitor included. A contractor day is what the contract resolver says
 (`engagementKindOnDay`, `loadContractorDays`): a day in a contractor stint, and outside every stint
 a day whose deciding stint (`engagementPeriodDecidingDay`: the one that ended last before it, or
-before the first stint the one that starts first after it) is a contractor's. But § 1 Abs. 1 Nr. 3
+before the first stint the one the resolver picks on the first day a stint starts, which after a
+first-day conversion is the later stint) is a contractor's. But § 1 Abs. 1 Nr. 3
 JArbSchG also covers minors whose services resemble an employee's work, so by default every
 contractor engagement that decides a contractor day of a minor in the review horizon
 (`review-window.ts`, current roster) is one **review item** (`jarbschg_minor_contractor`, subject
 `engagement:<period id>`; `engagement:unrecorded` for a contractor with no recorded stint, judged by
 `employee.engagement_kind`), so no day the monitor skips goes unreviewed. An ended stint whose
-person is still on the roster as a contractor, or a first stint not yet started, keeps its own
-item, which says so. It is a warning in the Youth & Apprentice review domain and the Compliance
+person is still on the roster as a contractor, or the stint deciding the days before the first
+start, keeps its own item, which says so. It is a warning in the Youth & Apprentice review domain and the Compliance
 Command Center, never a publish block. An org admin documents their assessment with a reason
 (`jarbschg_minor_contractor_review`); the fingerprint covers the stint's recorded start and end,
-the birthday, and whether the window holds contractor days after the stint ended on which the
-person is still under 18. So a corrected birthday or a changed period re-opens it, and so does the
+the birthday, whether the window holds contractor days after the stint ended on which the
+person is still under 18, and whether the stint decides the days before the first start while the
+person is under 18 (only other stints' data changes that, e.g. removing the stint that decided
+them). So a corrected birthday or a changed period re-opens it, and so does the
 window first reaching such a day after the end of a stint with no later one (that turns true once
 and only changed data turns it back). The window otherwise moving does not: not past the start of
 a first stint, and not onto days after the end that fall on or after the 18th birthday. The

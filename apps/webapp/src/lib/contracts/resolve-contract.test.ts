@@ -811,8 +811,8 @@ describe("contracts pure helpers & resolver", () => {
 			expect(decide("2026-03-10", rows)).toBe("in_force:contractor");
 		}
 
-		// Three stints starting together, in every row order: the one in force at the end of the
-		// start day decides it and every day before.
+		// Regression guard: three stints starting together, in every row order. The one in force at
+		// the end of the start day decides it and every day before.
 		const threeTied = [
 			period(
 				"short",
