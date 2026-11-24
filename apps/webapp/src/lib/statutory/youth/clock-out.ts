@@ -14,6 +14,7 @@ import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { attachAcknowledgementStates } from "../acknowledgements";
 import type { StatutoryFinding } from "../finding";
+import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { deepensBreachedLimit } from "../scheduling/evaluate";
 import { isMinorOn } from "./age";
 import type { JarbschgRule } from "./jarbschg-rules";
@@ -61,10 +62,17 @@ export async function recordJarbschgViolationsAfterClockOut(
 		until: monday.add({ days: 8 }).toString(),
 	};
 	const scope = { organizationId: input.organizationId, employeeIds: [input.employeeId] };
-	// Contractor work records no `work_policy_violation` (#1996), youth limits included.
-	const contractorDays = (
-		await loadContractorDays(db, { ...scope, timezone: input.timezone, ...range })
-	).get(input.employeeId);
+	// Contractor work records no `work_policy_violation` (#1996), youth limits included, unless the
+	// organization judges minor contractors under JArbSchG (#2022).
+	const { applyJarbschgToMinorContractors } = await loadOrganizationStatutoryPreferences(
+		db,
+		input.organizationId,
+	);
+	const contractorDays = applyJarbschgToMinorContractors
+		? undefined
+		: (await loadContractorDays(db, { ...scope, timezone: input.timezone, ...range })).get(
+				input.employeeId,
+			);
 	if (contractorDays?.has(day.toString())) return [];
 	const organizationTimezone = await loadOrganizationTimezone(db, input.organizationId);
 	const work = await loadYouthWork(db, { ...scope, timezone: input.timezone, ...range });

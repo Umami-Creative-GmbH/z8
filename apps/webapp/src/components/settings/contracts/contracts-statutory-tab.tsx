@@ -6,6 +6,7 @@ import {
 	IconLoader2,
 	IconScale,
 	IconSchool,
+	IconUserShield,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -366,6 +367,7 @@ interface PreferencesFormValues {
 	warningThresholdPercent: number;
 	criticalThresholdPercent: number;
 	blockJarbschgShiftPublish: boolean;
+	applyJarbschgToMinorContractors: boolean;
 	workingStudentDaytimeStartMinute: number;
 	workingStudentDaytimeEndMinute: number;
 }
@@ -575,6 +577,36 @@ function PreferencesCard({
 						)}
 					</form.Field>
 
+					<form.Field name="applyJarbschgToMinorContractors">
+						{(field) => (
+							<div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+								<div className="space-y-1">
+									<Label
+										htmlFor="statutory-jarbschg-minor-contractors"
+										className="flex items-center gap-2 font-medium"
+									>
+										<IconUserShield className="size-4 text-primary" aria-hidden="true" />
+										{t(
+											"settings.contracts.statutory.preferences.minorContractors",
+											"Apply youth protection (JArbSchG) to minor contractors",
+										)}
+									</Label>
+									<p className="text-muted-foreground text-sm">
+										{t(
+											"settings.contracts.statutory.preferences.minorContractorsHelp",
+											"JArbSchG also covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Off: each engagement of an External Contractor under 18 is flagged in Reviews & Conflicts so you can check whether it does. On: their working time is judged like an employee's under 18 in Scheduling, Staffing, the publish block and recorded working time.",
+										)}
+									</p>
+								</div>
+								<Switch
+									id="statutory-jarbschg-minor-contractors"
+									checked={field.state.value}
+									onCheckedChange={(checked) => field.handleChange(checked)}
+								/>
+							</div>
+						)}
+					</form.Field>
+
 					<fieldset className="space-y-4 rounded-lg border p-4">
 						<legend className="sr-only">
 							{t(
@@ -744,12 +776,13 @@ export function ContractsStatutoryTab({ organizationId }: ContractsStatutoryTabP
 		<div className="space-y-6">
 			<PreferencesCard
 				// Remount after a save so the form starts from the stored values.
-				key={`${preferences.warningThresholdPercent}:${preferences.criticalThresholdPercent}:${preferences.blockJarbschgShiftPublish}:${preferences.workingStudentDaytimeStartMinute}:${preferences.workingStudentDaytimeEndMinute}`}
+				key={`${preferences.warningThresholdPercent}:${preferences.criticalThresholdPercent}:${preferences.blockJarbschgShiftPublish}:${preferences.applyJarbschgToMinorContractors}:${preferences.workingStudentDaytimeStartMinute}:${preferences.workingStudentDaytimeEndMinute}`}
 				organizationId={organizationId}
 				initial={{
 					warningThresholdPercent: preferences.warningThresholdPercent,
 					criticalThresholdPercent: preferences.criticalThresholdPercent,
 					blockJarbschgShiftPublish: preferences.blockJarbschgShiftPublish,
+					applyJarbschgToMinorContractors: preferences.applyJarbschgToMinorContractors,
 					workingStudentDaytimeStartMinute: preferences.workingStudentDaytimeStartMinute,
 					workingStudentDaytimeEndMinute: preferences.workingStudentDaytimeEndMinute,
 				}}

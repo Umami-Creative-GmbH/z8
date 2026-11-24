@@ -219,6 +219,44 @@ describe("JArbSchG in Scheduling (PostgreSQL)", () => {
 		expect(await shiftStatus(late)).toBe("published");
 	});
 
+	it("judges and blocks a minor contractor's shifts only when the organization applies JArbSchG to minor contractors (#2022)", async () => {
+		await seed.blockJarbschgPublish(org);
+		const minor = await fx.employee(org, "contractor", { birthday: "2011-01-01" });
+		await seed.engagement(org, minor, { kind: "contractor", from: "2027-01-01", until: null });
+		const late = await shift(minor, "2027-03-02", "17:00", "21:00");
+		const youth = async () =>
+			(await evaluateWeek()).findings.filter(
+				(finding) => finding.type === "statutory" && finding.domain === "youth_protection",
+			);
+
+		// On: the contractor's shift is judged like an employee's and blocks publication.
+		await seed.applyJarbschgToMinorContractors(org);
+		expect(await youth()).toContainEqual(
+			expect.objectContaining({
+				employeeId: minor.employeeId,
+				statutoryKind: "jarbschg_night_work",
+				subjectKey: `shift:${late}`,
+				blocksPublication: true,
+			}),
+		);
+		expect(await publishShifts(WEEK)).toMatchObject({ success: false, code: "ValidationError" });
+		expect(await shiftStatus(late)).toBe("draft");
+
+		await admin.query(
+			"update organization_statutory_preference set apply_jarbschg_to_minor_contractors = false where organization_id = $1",
+			[org.id],
+		);
+		// Off (the default): a contractor's shift is no employee's, so nothing judges or blocks it.
+		expect(await youth()).toEqual([]);
+		const handshake = await publishShifts(WEEK);
+		if (!handshake.success) throw new Error(`publish refused: ${handshake.error}`);
+		const published = handshake.data.published
+			? handshake
+			: await publishShifts(WEEK, { evaluationFingerprint: handshake.data.evaluationFingerprint });
+		expect(published).toMatchObject({ success: true, data: { published: true, count: 1 } });
+		expect(await shiftStatus(late)).toBe("published");
+	});
+
 	it("keeps blocking night work outside the § 14 sector hours: a 15-year-old past 21:00, or at 02:00", async () => {
 		await seed.blockJarbschgPublish(org);
 		const fifteen = await fx.employee(org, "fifteen", { birthday: "2012-01-01" });

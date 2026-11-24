@@ -11,13 +11,20 @@ import {
 
 /**
  * Organization statutory preferences: warning tiers (percentages of a statutory cap, 1..100,
- * warning < critical), the JArbSchG shift-publish block and the working-student daytime band.
+ * warning < critical), the JArbSchG shift-publish block, whether minor contractors are judged
+ * under JArbSchG, and the working-student daytime band.
  */
 export interface StatutoryPreferences {
 	readonly warningThresholdPercent: number;
 	readonly criticalThresholdPercent: number;
 	/** When true, JArbSchG hard-limit breaches block shift publication (never clock-in/out). */
 	readonly blockJarbschgShiftPublish: boolean;
+	/**
+	 * When true, External Contractor days of minors are judged by the JArbSchG monitor like
+	 * employee days (§ 1 Abs. 1 Nr. 3 JArbSchG); when false (default), each minor contractor
+	 * engagement is flagged for review instead (#2022). Other monitors never judge contractors.
+	 */
+	readonly applyJarbschgToMinorContractors: boolean;
 	/**
 	 * Weekday daytime that counts against the working students' 20-hour lecture-week rule
 	 * (§ 6 Abs. 1 Nr. 3 SGB V), as minutes after local midnight: `[start, end)`, whole quarter
@@ -36,6 +43,7 @@ export const DEFAULT_STATUTORY_PREFERENCES: StatutoryPreferences = Object.freeze
 	warningThresholdPercent: 80,
 	criticalThresholdPercent: 95,
 	blockJarbschgShiftPublish: false,
+	applyJarbschgToMinorContractors: false,
 	workingStudentDaytimeStartMinute: DEFAULT_WORKING_STUDENT_DAYTIME_START_MINUTE,
 	workingStudentDaytimeEndMinute: DEFAULT_WORKING_STUDENT_DAYTIME_END_MINUTE,
 });
@@ -50,6 +58,7 @@ const preferenceColumns = {
 	warningThresholdPercent: organizationStatutoryPreference.warningThresholdPercent,
 	criticalThresholdPercent: organizationStatutoryPreference.criticalThresholdPercent,
 	blockJarbschgShiftPublish: organizationStatutoryPreference.blockJarbschgShiftPublish,
+	applyJarbschgToMinorContractors: organizationStatutoryPreference.applyJarbschgToMinorContractors,
 	workingStudentDaytimeStartMinute:
 		organizationStatutoryPreference.workingStudentDaytimeStartMinute,
 	workingStudentDaytimeEndMinute: organizationStatutoryPreference.workingStudentDaytimeEndMinute,
@@ -127,6 +136,7 @@ export async function saveOrganizationStatutoryPreferences(
 		warningThresholdPercent: input.warningThresholdPercent,
 		criticalThresholdPercent: input.criticalThresholdPercent,
 		blockJarbschgShiftPublish: input.blockJarbschgShiftPublish,
+		applyJarbschgToMinorContractors: input.applyJarbschgToMinorContractors,
 		workingStudentDaytimeStartMinute: input.workingStudentDaytimeStartMinute,
 		workingStudentDaytimeEndMinute: input.workingStudentDaytimeEndMinute,
 	};

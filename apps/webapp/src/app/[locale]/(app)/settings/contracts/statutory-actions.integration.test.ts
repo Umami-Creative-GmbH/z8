@@ -43,6 +43,7 @@ const lateBand = {
 	warningThresholdPercent: 80,
 	criticalThresholdPercent: 95,
 	blockJarbschgShiftPublish: false,
+	applyJarbschgToMinorContractors: false,
 	workingStudentDaytimeStartMinute: 7 * 60,
 	workingStudentDaytimeEndMinute: 19 * 60,
 };
@@ -159,6 +160,44 @@ describe("updateStatutoryPreferencesAction: working-student daytime band (Postgr
 			[orgA, memberA],
 		);
 		expect(rows).toEqual([]);
+	});
+
+	it("lets an org admin judge minor contractors under JArbSchG, audited, and refuses members (#2022)", async () => {
+		as(memberA, orgA);
+		expect(
+			await updateStatutoryPreferencesAction({
+				...lateBand,
+				applyJarbschgToMinorContractors: true,
+			}),
+		).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(await loadOrganizationStatutoryPreferences(db, orgA)).toMatchObject({
+			applyJarbschgToMinorContractors: false,
+			isDefault: true,
+		});
+
+		as(adminA, orgA);
+		expect(
+			await updateStatutoryPreferencesAction({
+				...lateBand,
+				applyJarbschgToMinorContractors: true,
+			}),
+		).toMatchObject({ success: true, data: { applyJarbschgToMinorContractors: true } });
+
+		expect(await loadOrganizationStatutoryPreferences(db, orgA)).toMatchObject({
+			applyJarbschgToMinorContractors: true,
+		});
+		expect(await loadOrganizationStatutoryPreferences(db, orgB)).toMatchObject({
+			applyJarbschgToMinorContractors: false,
+		});
+		const { rows } = await pool.query<{ performed_by: string; changes: string }>(
+			"select performed_by, changes from audit_log where organization_id = $1 and action = 'statutory.preferences_updated'",
+			[orgA],
+		);
+		expect(rows.map((row) => row.performed_by)).toEqual([adminA]);
+		expect(JSON.parse(rows[0]?.changes ?? "null")).toMatchObject({
+			before: { applyJarbschgToMinorContractors: false },
+			after: { applyJarbschgToMinorContractors: true },
+		});
 	});
 
 	it("refuses an invalid band before saving or auditing anything", async () => {

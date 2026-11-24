@@ -2,7 +2,8 @@
  * JArbSchG youth protection in Scheduling and Staffing (#1993). Every employee who is under 18 on
  * a judged day is held to the youth limits, whatever their employment profile, ArbZG scope or
  * work policy; from the 18th birthday on, adult rules apply alone. Days spent as an External
- * Contractor (#1996) are no employee's and are not judged.
+ * Contractor (#1996) are no employee's and are not judged, unless the organization applies
+ * JArbSchG to minor contractors (#2022): then they are judged like employee days.
  *
  * The work judged is recorded work, open clock-ins and the planned shifts (draft and published)
  * not yet worked, plus Staffing's proposal (`youthIntervalsOf`), with an apprentice's school and
@@ -70,13 +71,16 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	const from = mondayOf(windowStart).subtract({ days: 1 });
 	const until = mondayOf(windowEnd.subtract({ days: 1 })).add({ days: 8 });
 	const range = { from: from.toString(), until: until.toString() };
-	// External Contractor days are no employee's (#1996): youth limits judge none of them.
-	const contractorDays = await loadContractorDays(context.db, {
-		organizationId: context.organizationId,
-		employeeIds: underage,
-		timezone: context.timezone,
-		...range,
-	});
+	// External Contractor days are no employee's (#1996): youth limits judge none of them, unless the
+	// organization judges minor contractors under JArbSchG (#2022).
+	const contractorDays = context.preferences.applyJarbschgToMinorContractors
+		? new Map<string, Set<string>>()
+		: await loadContractorDays(context.db, {
+				organizationId: context.organizationId,
+				employeeIds: underage,
+				timezone: context.timezone,
+				...range,
+			});
 	const minors = underage.filter((employeeId) =>
 		judgedDays.some(
 			(day) =>
