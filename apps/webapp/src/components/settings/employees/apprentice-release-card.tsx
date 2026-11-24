@@ -249,7 +249,7 @@ export function ApprenticeReleaseCard(props: ApprenticeReleaseCardProps) {
 										<p className="text-muted-foreground text-xs">
 											{t(
 												"settings.apprenticeRelease.blockWeekTrainingNote",
-												"Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). For an employee under 18, these hours do not count towards the 40-hour week, which the block week already fills with its credited 40 hours.",
+												"Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). For an employee under 18, these hours come on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and do not count towards the § 8 weekly limit.",
 											)}
 										</p>
 									) : null}

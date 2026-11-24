@@ -139,7 +139,7 @@ describe("ApprenticeReleaseCard (#1993)", () => {
 
 		expect(
 			await screen.findAllByText(
-				"Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). For an employee under 18, these hours do not count towards the 40-hour week, which the block week already fills with its credited 40 hours.",
+				"Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). For an employee under 18, these hours come on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and do not count towards the § 8 weekly limit.",
 			),
 		).toHaveLength(1);
 	});
@@ -156,7 +156,7 @@ describe("ApprenticeReleaseCard (#1993)", () => {
 
 		expect(
 			await screen.findByText(
-				"An diesen Blockunterrichtstagen sind bis zu 2 Stunden betriebliche Ausbildungsveranstaltungen pro Woche erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). Bei Beschäftigten unter 18 zählen sie nicht zur 40-Stunden-Woche, die die Blockwoche mit ihren angerechneten 40 Stunden bereits ausfüllt.",
+				"An diesen Blockunterrichtstagen sind bis zu 2 Stunden betriebliche Ausbildungsveranstaltungen pro Woche erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). Bei Beschäftigten unter 18 kommen sie zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen nicht zur Wochenhöchstgrenze nach § 8.",
 			),
 		).toBeTruthy();
 	});

@@ -265,8 +265,9 @@ export interface YouthCreditedTime {
 	readonly minutes: number;
 	/**
 	 * A school day of a full block-release week: up to two hours a week of work on such days are
-	 * the additional in-company training § 9 Abs. 1 Nr. 3 JArbSchG allows beside the 40 h the week
-	 * is credited with, so they stay out of the § 8 day and week totals.
+	 * the additional in-company training § 9 Abs. 1 Nr. 3 JArbSchG allows on top of the block week
+	 * (credited with the average working week, § 9 Abs. 2 Nr. 2), so they stay out of the § 8 day
+	 * and week totals.
 	 */
 	readonly blockReleaseWeek?: boolean;
 }

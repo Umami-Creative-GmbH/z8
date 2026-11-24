@@ -132,7 +132,7 @@ export function youthProtectionWarningText(
 				// #2023: the allowed minutes stay out of a minor's § 8 totals; say why.
 				const note = t(
 					"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingNote",
-					"The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG) does not count towards an under-18's 40-hour week, which the block week already fills with its credited 40 hours",
+					"The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 weekly limit",
 				);
 				return `${week}. ${note}`;
 			}
