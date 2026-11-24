@@ -178,17 +178,21 @@ describe("OnCallReviewsSection (#1992)", () => {
 		});
 		mocks.listStatutoryAcknowledgementHistoryAction.mockResolvedValue({
 			success: true,
-			data: [
-				{
-					id: "ack-1",
-					acknowledgedAt: new Date("2026-11-20T09:15:00Z"),
-					acknowledgedBy: "u1",
-					acknowledgedByName: "Hanna Admin",
-					reason: "Agreed by phone",
-					legalNote: "§ 12 Abs. 3 TzBfG",
-					state: "stale",
-				},
-			],
+			data: {
+				// The organization's zone, not the viewer's: 09:15 UTC is 22:15 in Auckland.
+				timezone: "Pacific/Auckland",
+				entries: [
+					{
+						id: "ack-1",
+						acknowledgedAt: new Date("2026-11-20T09:15:00Z"),
+						acknowledgedBy: "u1",
+						acknowledgedByName: "Hanna Admin",
+						reason: "Agreed by phone",
+						legalNote: "§ 12 Abs. 3 TzBfG",
+						state: "stale",
+					},
+				],
+			},
 		});
 		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		const view = render(
@@ -207,6 +211,7 @@ describe("OnCallReviewsSection (#1992)", () => {
 		expect(screen.getByText("Reason: Agreed by phone")).toBeTruthy();
 		expect(screen.getByText("Legal note: § 12 Abs. 3 TzBfG")).toBeTruthy();
 		expect(screen.getByText("Invalidated")).toBeTruthy();
+		expect(screen.getByText(/10:15/).tagName).toBe("TIME");
 		expect(mocks.listStatutoryAcknowledgementHistoryAction).toHaveBeenCalledWith({
 			employeeId: "Bob-id",
 			acknowledgementKind: "on_call_short_notice_agreement",

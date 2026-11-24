@@ -45,8 +45,10 @@ export const listStatutoryAcknowledgementHistoryAction = organizationAction(
 		}),
 	},
 	({ organizationId, input }) =>
-		storeStep("contracts.statutoryReviews.acknowledgementHistory", (db) =>
-			loadStatutoryAcknowledgementHistory(db, {
+		storeStep("contracts.statutoryReviews.acknowledgementHistory", async (db) => ({
+			// Acknowledgement times are shown in the organization's zone, never the viewer's.
+			timezone: await loadOrganizationTimezone(db, organizationId),
+			entries: await loadStatutoryAcknowledgementHistory(db, {
 				organizationId,
 				subject: {
 					employeeId: input.employeeId,
@@ -57,5 +59,5 @@ export const listStatutoryAcknowledgementHistoryAction = organizationAction(
 				currentInputFingerprint: input.currentInputFingerprint,
 				currentStatus: input.currentStatus,
 			}),
-		),
+		})),
 );

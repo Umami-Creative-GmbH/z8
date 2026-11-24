@@ -3,7 +3,7 @@
 import { IconAlertTriangle, IconChevronDown, IconHistory } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { createContext, type ReactNode, useContext, useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { listStatutoryAcknowledgementHistoryAction } from "@/app/[locale]/(app)/settings/contracts/statutory-review-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,10 +65,6 @@ export function reviewDomainLabel(filter: ReviewDomainFilter, t: Translate): str
 			return t("settings.contracts.reviews.domain.migrationDeparture", "Migration & Departure");
 	}
 }
-
-/** The organization timezone acknowledgement times are shown in. */
-const ReviewInboxTimezone = createContext<string | null>(null);
-export const ReviewInboxTimezoneProvider = ReviewInboxTimezone.Provider;
 
 /**
  * Classes that highlight an item whose acknowledgement no longer documents it: newer work, shifts
@@ -147,7 +143,6 @@ export function StatutoryAcknowledgementHistory({
 }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
-	const timezone = useContext(ReviewInboxTimezone);
 	const [open, setOpen] = useState(false);
 	const panelId = useId();
 	const status = currentStatus ?? "none";
@@ -171,11 +166,14 @@ export function StatutoryAcknowledgementHistory({
 	});
 	if (status === "none") return null;
 
-	const context = {
-		locale,
-		timezone: timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-		timeFormat: localeDefaultTimeFormat(locale),
-	};
+	// The organization's zone, as the action returns it with the entries.
+	const context = query.data
+		? {
+				locale,
+				timezone: query.data.timezone,
+				timeFormat: localeDefaultTimeFormat(locale),
+			}
+		: null;
 	return (
 		<div className="space-y-2">
 			<Button
@@ -207,9 +205,9 @@ export function StatutoryAcknowledgementHistory({
 						<p className="text-destructive text-xs" role="alert">
 							{query.error.message}
 						</p>
-					) : (
+					) : context ? (
 						<ol className="space-y-2 border-l pl-3">
-							{query.data.map((entry) => (
+							{query.data.entries.map((entry) => (
 								<li key={entry.id} className="space-y-0.5 text-xs">
 									<div className="flex flex-wrap items-center gap-2">
 										<Badge
@@ -257,7 +255,7 @@ export function StatutoryAcknowledgementHistory({
 								</li>
 							))}
 						</ol>
-					)}
+					) : null}
 				</div>
 			) : null}
 		</div>

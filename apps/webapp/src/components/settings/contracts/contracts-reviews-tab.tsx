@@ -52,7 +52,6 @@ import { StatutoryMonitorFindingsSection } from "./statutory-monitor-findings-se
 import {
 	parseReviewDomainFilter,
 	type ReviewDomainFilter,
-	ReviewInboxTimezoneProvider,
 	reviewDomainFilters,
 	reviewDomainLabel,
 } from "./statutory-review-shared";
@@ -86,94 +85,92 @@ export function ContractsReviewsTab({
 	const statutoryDomain = domain === "all" || domain === "migration_departure" ? null : domain;
 
 	return (
-		<ReviewInboxTimezoneProvider value={organizationTimezone}>
-			<div className="space-y-6">
-				{/* The tab's own description introduces the inbox; this card holds only its filters. */}
-				<Card>
-					<CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-6">
-						<div className="flex items-center gap-2">
-							<Label htmlFor="reviews-domain-filter" className="text-sm">
-								{t("settings.contracts.reviews.domain.label", "Area")}
-							</Label>
-							<Select
-								value={domain}
-								onValueChange={(value) => setDomain(parseReviewDomainFilter(value))}
-							>
-								<SelectTrigger id="reviews-domain-filter" className="w-56">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{reviewDomainFilters.map((filter) => (
-										<SelectItem key={filter} value={filter}>
-											{reviewDomainLabel(filter, t)}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="flex items-center gap-2">
-							<Checkbox
-								id="reviews-include-resolved"
-								checked={includeResolved}
-								onCheckedChange={(c) => setIncludeResolved(c === true)}
-							/>
-							<Label htmlFor="reviews-include-resolved" className="text-sm">
-								{t("settings.contracts.reviews.showResolved", "Show resolved")}
-							</Label>
-						</div>
-					</CardContent>
-				</Card>
-				{shows("migration_departure") && (
-					<MigrationAndDepartureReviews
-						organizationId={organizationId}
-						organizationTimezone={organizationTimezone}
-						includeResolved={includeResolved}
-					/>
-				)}
-				{statutoryDomain !== null || domain === "all" ? (
-					<StatutoryMonitorFindingsSection
-						organizationId={organizationId}
-						domain={statutoryDomain}
-						showWhenEmpty={false}
-					/>
-				) : null}
-				{shows("minijob") && (
-					<MinijobExceedanceReviews
-						organizationId={organizationId}
-						includeAcknowledged={includeResolved}
-						showWhenEmpty={domain === "minijob"}
-					/>
-				)}
-				{shows("short_term") && (
-					<ShortTermBerufsmaessigkeitReviews
-						organizationId={organizationId}
-						includeResolved={includeResolved}
-						showWhenEmpty={domain === "short_term"}
-					/>
-				)}
-				{shows("working_student") && (
-					<WorkingStudentReviewsSection
-						organizationId={organizationId}
-						includeResolved={includeResolved}
-						showWhenEmpty={domain === "working_student"}
-					/>
-				)}
-				{shows("on_call") && (
-					<OnCallReviewsSection
-						organizationId={organizationId}
-						includeResolved={includeResolved}
-						showWhenEmpty={domain === "on_call"}
-					/>
-				)}
-				{shows("youth_apprentice") && (
-					<YouthSectorExceptionsSection
-						organizationId={organizationId}
-						includeResolved={includeResolved}
-						showWhenEmpty={domain === "youth_apprentice"}
-					/>
-				)}
-			</div>
-		</ReviewInboxTimezoneProvider>
+		<div className="space-y-6">
+			{/* The tab's own description introduces the inbox; this card holds only its filters. */}
+			<Card>
+				<CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-6">
+					<div className="flex items-center gap-2">
+						<Label htmlFor="reviews-domain-filter" className="text-sm">
+							{t("settings.contracts.reviews.domain.label", "Area")}
+						</Label>
+						<Select
+							value={domain}
+							onValueChange={(value) => setDomain(parseReviewDomainFilter(value))}
+						>
+							<SelectTrigger id="reviews-domain-filter" className="w-56">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{reviewDomainFilters.map((filter) => (
+									<SelectItem key={filter} value={filter}>
+										{reviewDomainLabel(filter, t)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="flex items-center gap-2">
+						<Checkbox
+							id="reviews-include-resolved"
+							checked={includeResolved}
+							onCheckedChange={(c) => setIncludeResolved(c === true)}
+						/>
+						<Label htmlFor="reviews-include-resolved" className="text-sm">
+							{t("settings.contracts.reviews.showResolved", "Show resolved")}
+						</Label>
+					</div>
+				</CardContent>
+			</Card>
+			{shows("migration_departure") && (
+				<MigrationAndDepartureReviews
+					organizationId={organizationId}
+					organizationTimezone={organizationTimezone}
+					includeResolved={includeResolved}
+				/>
+			)}
+			{statutoryDomain !== null || domain === "all" ? (
+				<StatutoryMonitorFindingsSection
+					organizationId={organizationId}
+					domain={statutoryDomain}
+					showWhenEmpty={false}
+				/>
+			) : null}
+			{shows("minijob") && (
+				<MinijobExceedanceReviews
+					organizationId={organizationId}
+					includeAcknowledged={includeResolved}
+					showWhenEmpty={domain === "minijob"}
+				/>
+			)}
+			{shows("short_term") && (
+				<ShortTermBerufsmaessigkeitReviews
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={domain === "short_term"}
+				/>
+			)}
+			{shows("working_student") && (
+				<WorkingStudentReviewsSection
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={domain === "working_student"}
+				/>
+			)}
+			{shows("on_call") && (
+				<OnCallReviewsSection
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={domain === "on_call"}
+				/>
+			)}
+			{shows("youth_apprentice") && (
+				<YouthSectorExceptionsSection
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={domain === "youth_apprentice"}
+				/>
+			)}
+		</div>
 	);
 }
 
