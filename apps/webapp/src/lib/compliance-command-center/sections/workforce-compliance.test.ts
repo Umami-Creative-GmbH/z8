@@ -161,6 +161,40 @@ describe("deriveWorkforceComplianceSection", () => {
 		});
 	});
 
+	it("links every domain an org admin has to act on, acknowledgements alone included", () => {
+		const result = deriveWorkforceComplianceSection({
+			...quietPolicy,
+			statutory: [
+				domain("minijob", { pendingAcknowledgements: 2 }),
+				domain("working_student", { staleAcknowledgements: 1 }),
+				domain("short_term"),
+				domain("on_call", {}, "unavailable"),
+			],
+		});
+
+		expect(result.card.status).toBe("warning");
+		expect(result.card.links).toEqual([
+			{
+				label: {
+					key: "compliance.commandCenter.links.statutoryDomain.minijob",
+					params: { count: 2 },
+				},
+				href: "/settings/contracts?tab=reviews&domain=minijob",
+			},
+			{
+				label: {
+					key: "compliance.commandCenter.links.statutoryDomain.working_student",
+					params: { count: 1 },
+				},
+				href: "/settings/contracts?tab=reviews&domain=working_student",
+			},
+		]);
+		// An unreadable domain has nothing to open: it is reported as a fact.
+		expect(result.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryUnavailable",
+		});
+	});
+
 	it("reports statutory monitors it could not read instead of calling them healthy", () => {
 		const unreadable = deriveWorkforceComplianceSection({ ...quietPolicy, statutory: null });
 		const partly = deriveWorkforceComplianceSection({

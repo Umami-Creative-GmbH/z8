@@ -42,8 +42,17 @@ export function statutoryReviewsHref(domain: StatutoryReviewDomainSummary["domai
 	return `/settings/contracts?tab=reviews&domain=${domain}`;
 }
 
-function openFindings(summary: StatutoryReviewDomainSummary): number {
-	return summary.critical + summary.warning;
+/**
+ * What in a domain needs an org admin: its open findings, or its pending and stale
+ * acknowledgements when they are all the domain reports. An unreadable domain needs nothing
+ * openable; it is reported as a fact.
+ */
+function needingAction(summary: StatutoryReviewDomainSummary): number {
+	if (summary.status === "unavailable") return 0;
+	return Math.max(
+		summary.critical + summary.warning,
+		summary.pendingAcknowledgements + summary.staleAcknowledgements,
+	);
 }
 
 function statutoryParts(snapshot: WorkforceComplianceSnapshot) {
@@ -84,11 +93,12 @@ function statutoryParts(snapshot: WorkforceComplianceSnapshot) {
 
 	// Open findings are a standing backlog, not events: the card lists them per domain and they stay
 	// out of "Recent critical events", where they would crowd out what actually just happened.
+	// Every domain an org admin has to act on is linked, also one with acknowledgements alone.
 	const links: CompliancePrimaryLink[] = statutory
-		.filter((summary) => openFindings(summary) > 0)
+		.filter((summary) => needingAction(summary) > 0)
 		.map((summary) => ({
 			label: text(`compliance.commandCenter.links.statutoryDomain.${summary.domain}`, {
-				count: openFindings(summary),
+				count: needingAction(summary),
 			}),
 			href: statutoryReviewsHref(summary.domain),
 		}));
