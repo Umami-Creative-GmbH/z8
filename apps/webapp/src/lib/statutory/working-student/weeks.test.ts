@@ -773,6 +773,23 @@ describe("working student weekday daytime band (#2017)", () => {
 		});
 	});
 
+	it("starts a band at the gap's first minute at the first minute after the gap", () => {
+		// Asia/Jerusalem skips Friday 2026-03-27 02:00–03:00: a 02:00–08:00 band starts at 03:00.
+		// Thursday 20:00 to Friday 04:00 is 7 real hours: 4 Thursday evening, 2 before the band, 1 in it.
+		const { weeks } = evaluateWithBand(
+			{ start: 2 * 60, end: 8 * 60 },
+			[workIn("Asia/Jerusalem", "2026-03-26T20:00", "2026-03-27T04:00")],
+			"2026-03-23",
+			"Asia/Jerusalem",
+		);
+
+		expect(weeks.at(-1)).toMatchObject({
+			totalMinutes: 420,
+			coreMinutes: 60,
+			eveningWeekendMinutes: 360,
+		});
+	});
+
 	it("makes the lecture-week fingerprint depend on the band", () => {
 		const intervals = weekdays(W10, "09:00", "14:00");
 		const fingerprint = (band: { start: number; end: number }) =>

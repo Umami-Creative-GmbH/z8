@@ -229,7 +229,9 @@ function accumulate(
 		const zoned = wallTime.toZonedDateTime(timezone, { disambiguation: "compatible" });
 		if (zoned.toPlainDateTime().equals(wallTime)) return zoned.toInstant();
 		// Skipped: "compatible" moved it forward by the gap; the gap ends at the transition before it.
-		return (zoned.getTimeZoneTransition("previous") ?? zoned).toInstant();
+		// Looked up from just after the moved instant: an edge at the gap's first minute lands exactly
+		// on the transition, and "previous" only finds transitions strictly before its start.
+		return (zoned.add({ nanoseconds: 1 }).getTimeZoneTransition("previous") ?? zoned).toInstant();
 	};
 
 	for (
