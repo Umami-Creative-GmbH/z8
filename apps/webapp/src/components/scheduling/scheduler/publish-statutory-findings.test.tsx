@@ -1,7 +1,15 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	renderHook,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
@@ -27,8 +35,10 @@ vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href }: { children: ReactNode; href: string }) => (
-		<a href={href}>{children}</a>
+	Link: ({ children, href, ...props }: { children: ReactNode; href: string }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
 	),
 }));
 vi.mock("sonner", () => ({ toast: { error: toastError, success: vi.fn() } }));
@@ -102,6 +112,28 @@ describe("PublishComplianceDialog", () => {
 		expect(within(item).getByText("Mar 2, 2027")).toBeTruthy();
 		expect(within(item).queryByText("Blocks publishing")).toBeNull();
 	});
+
+	it("closes when the planner follows a finding's shift link, which may be the page they are on", () => {
+		const onOpenChange = vi.fn();
+		render(
+			<PublishComplianceDialog
+				open
+				onOpenChange={onOpenChange}
+				summary={{
+					totalFindings: 1,
+					byType: { restTime: 0, maxHours: 0, overtime: 0, statutory: 1 },
+				}}
+				statutoryFindings={blocking}
+				dateRange={RANGE}
+				onConfirm={vi.fn()}
+				isConfirming={false}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("link", { name: "Show Anna Berg's shifts" }));
+
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
 });
 
 describe("PublishBlockedDialog", () => {
@@ -125,6 +157,22 @@ describe("PublishBlockedDialog", () => {
 			within(item).getByRole("link", { name: "Show Anna Berg's shifts" }).getAttribute("href"),
 		).toBe(`/scheduling?employeeId=${ANNA}&date=2027-03-02`);
 		expect(screen.getByText("1 more finding concerns an employee you don't manage.")).toBeTruthy();
+	});
+
+	it("closes when the planner follows a finding's shift link, which may be the page they are on", () => {
+		const onOpenChange = vi.fn();
+		render(
+			<PublishBlockedDialog
+				open
+				onOpenChange={onOpenChange}
+				statutoryFindings={blocking}
+				dateRange={RANGE}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("link", { name: "Show Anna Berg's shifts" }));
+
+		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 });
 

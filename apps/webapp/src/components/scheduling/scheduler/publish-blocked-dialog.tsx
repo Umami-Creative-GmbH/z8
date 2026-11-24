@@ -61,6 +61,7 @@ export function PublishBlockedDialog({
 						findings={statutoryFindings}
 						dateRange={dateRange}
 						shiftEmployeeIds={shiftEmployeeIds}
+						onShiftLinkClick={() => onOpenChange(false)}
 						label={t(
 							"scheduling:scheduling.statutory.findings.blockingListLabel",
 							"Findings that block publishing",

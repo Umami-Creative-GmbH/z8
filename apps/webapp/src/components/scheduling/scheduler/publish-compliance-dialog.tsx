@@ -107,6 +107,7 @@ export function PublishComplianceDialog({
 									findings={statutoryFindings}
 									dateRange={dateRange}
 									shiftEmployeeIds={shiftEmployeeIds}
+									onShiftLinkClick={() => onOpenChange(false)}
 									label={t(
 										"scheduling:scheduling.statutory.findings.acknowledgeListLabel",
 										"Statutory findings to acknowledge",
