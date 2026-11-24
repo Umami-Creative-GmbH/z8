@@ -49,6 +49,8 @@ const review: MinorContractorReview = {
 	subjectKey: "engagement:p1",
 	periodStart: "2027-01-04",
 	periodEnd: "2027-04-01",
+	contractorAfterEnd: false,
+	contractorBeforeStart: false,
 	legalReference: "§ 1 Abs. 1 Nr. 3 JArbSchG",
 	acknowledgementStatus: "none",
 	inputFingerprint: "v1:shown",
@@ -107,6 +109,36 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 
 		expect(await screen.findByText("Beginn der Beauftragung nicht erfasst")).toBeTruthy();
 		expect(screen.getByText("Beauftragt bis 31. März 2027 (Beginn nicht erfasst)")).toBeTruthy();
+	});
+
+	it("says when the person is on the roster as a contractor outside the engagement", async () => {
+		show("en", [
+			{ ...review, contractorAfterEnd: true },
+			{ ...review, findingId: "f2", employeeName: "Ben Roth", contractorBeforeStart: true },
+		]);
+
+		expect(
+			await screen.findByText(
+				"The engagement has ended, but the person is still on the roster as a contractor. Their shifts and work after it are not judged under youth protection either.",
+			),
+		).toBeTruthy();
+		expect(
+			screen.getByText(
+				"The engagement has not started yet, but the person is already on the roster as a contractor. Their shifts and work before it are not judged under youth protection either.",
+			),
+		).toBeTruthy();
+	});
+
+	it("says it in German", async () => {
+		show("de", [
+			{ ...review, contractorAfterEnd: true },
+			{ ...review, findingId: "f2", employeeName: "Ben Roth", contractorBeforeStart: true },
+		]);
+
+		expect(
+			await screen.findByText(/^Die Beauftragung ist beendet, die Person ist aber weiterhin/),
+		).toBeTruthy();
+		expect(screen.getByText(/^Die Beauftragung hat noch nicht begonnen/)).toBeTruthy();
 	});
 
 	it("documents the engagement the admin was shown, with a reason", async () => {

@@ -3,21 +3,23 @@
  * employee's (#1996), so the JArbSchG monitor does not judge them. But § 1 Abs. 1 Nr. 3 JArbSchG
  * also covers minors who perform services similar to an employee's work, so a contractor under 18
  * may still fall under youth protection. Unless the organization judges minor contractors fully
- * under JArbSchG (`applyJarbschgToMinorContractors`), each contractor engagement period of a minor
- * is one warning an org admin reviews and documents with a reason. Its fingerprint covers the
- * engagement period and the birthday, so the documentation re-opens when either changes.
+ * under JArbSchG (`applyJarbschgToMinorContractors`), each contractor engagement that decides a
+ * contractor day of a minor (the days the monitor skips, `engagementKindOnDay`) is one warning an
+ * org admin reviews and documents with a reason. Its fingerprint covers the engagement period and
+ * the birthday, so the documentation re-opens when either changes.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { loadEmploymentPeriodSnapshots } from "@/lib/contracts/employment-profile-intervals";
-import type { EmploymentPeriodSnapshot } from "@/lib/contracts/resolve-contract";
+import {
+	type EmploymentPeriodSnapshot,
+	engagementPeriodDecidingDay,
+} from "@/lib/contracts/resolve-contract";
 import {
 	comparePlainDates,
-	earlierPlainDate,
 	type Instant,
-	laterPlainDate,
 	type PlainDate,
 	parsePlainDate,
 	plainDateAt,
@@ -78,9 +80,73 @@ function engagementOf(period: EmploymentPeriodSnapshot, timezone: string): Engag
 	};
 }
 
+const UNRECORDED: Engagement = {
+	key: UNRECORDED_ENGAGEMENT,
+	start: null,
+	endExclusive: null,
+	fingerprintInput: { engagementPeriodId: null },
+};
+
+/** The contractor days of one deciding engagement inside the window. */
+interface ContractorDays {
+	readonly engagement: Engagement;
+	/** Its first contractor day in the window. */
+	readonly firstDay: PlainDate;
+	/** A day after the stint ended still counts as its contractor day. */
+	afterEnd: boolean;
+	/** A day before the first stint started counts as its contractor day. */
+	beforeStart: boolean;
+}
+
 /**
- * One review finding per contractor engagement of the employee on which they are under 18 on at
- * least one day inside `window`. Pure: the caller loads the stints, the birthday and the window.
+ * The window's contractor days, grouped by the engagement that decides each one, exactly as the
+ * youth protection monitor skips them (`loadContractorDays` → `engagementKindOnDay`): days in a
+ * contractor stint, days after a contractor stint ended with no later one, days before a first
+ * contractor stint, and every day of a contractor with no recorded stint.
+ */
+function contractorDaysByEngagement(input: {
+	readonly employeeEngagementKind: EngagementKind;
+	readonly periods: readonly EmploymentPeriodSnapshot[];
+	readonly timezone: string;
+	readonly windowStart: PlainDate;
+	readonly windowEnd: PlainDate;
+}): ContractorDays[] {
+	const byKey = new Map<string, ContractorDays>();
+	if (input.periods.length === 0) {
+		if (input.employeeEngagementKind !== "contractor") return [];
+		if (comparePlainDates(input.windowStart, input.windowEnd) >= 0) return [];
+		return [
+			{ engagement: UNRECORDED, firstDay: input.windowStart, afterEnd: false, beforeStart: false },
+		];
+	}
+	if (!input.periods.some((period) => period.engagementKind === "contractor")) return [];
+	for (
+		let day = input.windowStart;
+		comparePlainDates(day, input.windowEnd) < 0;
+		day = day.add({ days: 1 })
+	) {
+		const decided = engagementPeriodDecidingDay(input.periods, day, input.timezone);
+		if (decided?.period.engagementKind !== "contractor") continue;
+		let days = byKey.get(decided.period.id);
+		if (!days) {
+			days = {
+				engagement: engagementOf(decided.period, input.timezone),
+				firstDay: day,
+				afterEnd: false,
+				beforeStart: false,
+			};
+			byKey.set(decided.period.id, days);
+		}
+		if (decided.position === "after_end") days.afterEnd = true;
+		if (decided.position === "before_start") days.beforeStart = true;
+	}
+	return [...byKey.values()];
+}
+
+/**
+ * One review finding per engagement that decides a contractor day of the employee inside `window`
+ * on which they are under 18: the days the youth protection monitor skips. Pure: the caller loads
+ * the stints, the birthday and the window.
  */
 export function minorContractorEngagementFindings(input: {
 	readonly organizationId: string;
@@ -95,30 +161,17 @@ export function minorContractorEngagementFindings(input: {
 	if (!birthday) return [];
 	const windowStart = parsePlainDate(input.window.start);
 	const windowEnd = parsePlainDate(input.window.endExclusive);
-	const engagements: Engagement[] =
-		input.periods.length === 0
-			? input.employeeEngagementKind === "contractor"
-				? [
-						{
-							key: UNRECORDED_ENGAGEMENT,
-							start: null,
-							endExclusive: null,
-							fingerprintInput: { engagementPeriodId: null },
-						},
-					]
-				: []
-			: input.periods
-					.filter((period) => period.engagementKind === "contractor")
-					.map((period) => engagementOf(period, input.timezone));
 
 	const findings: MinorContractorFinding[] = [];
-	for (const engagement of engagements) {
-		const from = engagement.start ? laterPlainDate(engagement.start, windowStart) : windowStart;
-		const until = engagement.endExclusive
-			? earlierPlainDate(engagement.endExclusive, windowEnd)
-			: windowEnd;
-		// Age only grows: a minor on any day of the overlap is a minor on its first day.
-		if (comparePlainDates(from, until) >= 0 || !isMinorOn(birthday, from)) continue;
+	for (const { engagement, firstDay, afterEnd, beforeStart } of contractorDaysByEngagement({
+		employeeEngagementKind: input.employeeEngagementKind,
+		periods: input.periods,
+		timezone: input.timezone,
+		windowStart,
+		windowEnd,
+	})) {
+		// Age only grows: a minor on any of its contractor days is a minor on the first one.
+		if (!isMinorOn(birthday, firstDay)) continue;
 		const subjectKey = `engagement:${engagement.key}`;
 		findings.push({
 			id: statutoryFindingId(MINOR_CONTRACTOR_FINDING_KIND, input.employeeId, subjectKey),
@@ -128,7 +181,7 @@ export function minorContractorEngagementFindings(input: {
 			kind: MINOR_CONTRACTOR_FINDING_KIND,
 			severity: "warning",
 			subjectKey,
-			periodStart: (engagement.start ?? from).toString(),
+			periodStart: (engagement.start ?? firstDay).toString(),
 			periodEnd: (engagement.endExclusive ?? windowEnd).toString(),
 			legalReference: MINOR_CONTRACTOR_LEGAL_REFERENCE,
 			summary: {},
@@ -136,6 +189,9 @@ export function minorContractorEngagementFindings(input: {
 				facts: {
 					openEnded: engagement.endExclusive === null,
 					startRecorded: engagement.start !== null,
+					// Not fingerprinted: the window moving past the end must not re-open a documentation.
+					contractorAfterEnd: afterEnd,
+					contractorBeforeStart: beforeStart,
 				},
 			},
 			inputFingerprint: statutoryInputFingerprint({
@@ -250,6 +306,10 @@ export interface MinorContractorReview {
 	readonly periodStart: string | null;
 	/** The day after its last; null while it is open-ended. */
 	readonly periodEnd: string | null;
+	/** It ended, but the person is still on the roster as a contractor on later days of the window. */
+	readonly contractorAfterEnd: boolean;
+	/** It has not started, but the person is already on the roster as a contractor before it. */
+	readonly contractorBeforeStart: boolean;
 	readonly legalReference: string;
 	readonly acknowledgementStatus: "none" | "current" | "stale";
 	/** What the admin documents; passed back as the expected precondition. */
@@ -311,6 +371,8 @@ export async function listMinorContractorReviews(
 				subjectKey: finding.subjectKey,
 				periodStart: facts?.startRecorded === true ? finding.periodStart : null,
 				periodEnd: facts?.openEnded === true ? null : finding.periodEnd,
+				contractorAfterEnd: facts?.contractorAfterEnd === true,
+				contractorBeforeStart: facts?.contractorBeforeStart === true,
 				legalReference: finding.legalReference,
 				acknowledgementStatus: finding.acknowledgement?.status ?? "none",
 				inputFingerprint: finding.inputFingerprint,

@@ -240,6 +240,22 @@ function MinorContractorReviewItem({
 				) : null}
 				<span className="text-muted-foreground text-xs">{review.legalReference}</span>
 			</div>
+			{review.contractorAfterEnd ? (
+				<p className="text-muted-foreground text-sm">
+					{t(
+						"settings.contracts.reviews.minorContractors.afterEnd",
+						"The engagement has ended, but the person is still on the roster as a contractor. Their shifts and work after it are not judged under youth protection either.",
+					)}
+				</p>
+			) : null}
+			{review.contractorBeforeStart ? (
+				<p className="text-muted-foreground text-sm">
+					{t(
+						"settings.contracts.reviews.minorContractors.beforeStart",
+						"The engagement has not started yet, but the person is already on the roster as a contractor. Their shifts and work before it are not judged under youth protection either.",
+					)}
+				</p>
+			) : null}
 			{review.acknowledgementStatus === "stale" ? <InvalidatedAcknowledgementNotice /> : null}
 			<StatutoryAcknowledgementHistory
 				organizationId={organizationId}

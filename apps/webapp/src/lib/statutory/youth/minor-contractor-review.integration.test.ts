@@ -118,6 +118,89 @@ describe("minor contractors for youth-protection review (PostgreSQL)", () => {
 		});
 	});
 
+	it("raises the item for contractor days outside every stint, as the monitor skips them", async () => {
+		// Today 2026-11-24: the window runs 2026-11-17 – 2027-01-20.
+		const listOn = (day: string) =>
+			listMinorContractorReviews(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				now: localInstant(day, "12:00", org.timezone),
+			});
+		// A 16-year-old whose contractor stint ended on 2026-10-31: still on the roster as a contractor,
+		// so the monitor skips a 2026-12-05 21:00–23:00 shift as a contractor day.
+		const ended = await fx.employee(org, "ended", { birthday: "2010-06-01" });
+		const endedStint = await seed.engagement(org, ended, {
+			kind: "contractor",
+			from: "2026-09-01",
+			until: "2026-11-01",
+		});
+		// A minor before a first contractor stint starting 2027-02-01.
+		const upcoming = await fx.employee(org, "upcoming", { birthday: "2010-06-01" });
+		const upcomingStint = await seed.engagement(org, upcoming, {
+			kind: "contractor",
+			from: "2027-02-01",
+			until: null,
+		});
+		// A minor employee whose stint ended: their days stay employee days.
+		const formerEmployee = await fx.employee(org, "former", { birthday: "2010-06-01" });
+		await seed.engagement(org, formerEmployee, {
+			kind: "employee",
+			from: "2026-09-01",
+			until: "2026-11-01",
+		});
+
+		const reviews = await listOn("2026-11-24");
+		expect(reviews).toEqual([
+			expect.objectContaining({
+				employeeId: ended.employeeId,
+				subjectKey: `engagement:${endedStint}`,
+				periodStart: "2026-09-01",
+				periodEnd: "2026-11-01",
+				contractorAfterEnd: true,
+				contractorBeforeStart: false,
+			}),
+			expect.objectContaining({
+				employeeId: upcoming.employeeId,
+				subjectKey: `engagement:${upcomingStint}`,
+				periodStart: "2027-02-01",
+				periodEnd: null,
+				contractorAfterEnd: false,
+				contractorBeforeStart: true,
+			}),
+		]);
+		// What the admin documents does not move with the window.
+		expect((await listOn("2026-11-25")).map((review) => review.inputFingerprint)).toEqual(
+			reviews.map((review) => review.inputFingerprint),
+		);
+
+		// Documented, then the ended stint's end is corrected: open again.
+		await acknowledgeMinorContractorReview(db, {
+			organizationId: org.id,
+			actorUserId: owner.userId,
+			timezone: org.timezone,
+			now: localInstant("2026-11-24", "12:00", org.timezone),
+			employeeId: ended.employeeId,
+			subjectKey: `engagement:${endedStint}`,
+			expectedFingerprint: reviews[0].inputFingerprint,
+			reason: "Engagement over; removing them from the roster",
+		});
+		expect((await listOn("2026-11-24")).map((review) => review.employeeId)).toEqual([
+			upcoming.employeeId,
+		]);
+		await admin.query("update employee_employment_period set ended_at = $2 where id = $1", [
+			endedStint,
+			localInstant("2026-11-10", "00:00", org.timezone).toString(),
+		]);
+		expect(await listOn("2026-11-24")).toEqual([
+			expect.objectContaining({ employeeId: ended.employeeId, acknowledgementStatus: "stale" }),
+			expect.objectContaining({ employeeId: upcoming.employeeId }),
+		]);
+
+		// The organization judging minor contractors under JArbSchG raises none of them.
+		await seed.applyJarbschgToMinorContractors(org);
+		expect(await listOn("2026-11-24")).toEqual([]);
+	});
+
 	it("shows an engagement whose start was not recorded the same on consecutive days", async () => {
 		// A legacy stint without a recorded start, and a contractor with no stint at all.
 		const legacy = await fx.employee(org, "legacy", { birthday: "2011-05-01" });

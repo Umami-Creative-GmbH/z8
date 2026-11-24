@@ -449,6 +449,8 @@
         "minorContractors": {
           "acknowledge": "Record assessment…",
           "acknowledged": "Assessment recorded",
+          "afterEnd": "The engagement has ended, but the person is still on the roster as a contractor. Their shifts and work after it are not judged under youth protection either.",
+          "beforeStart": "The engagement has not started yet, but the person is already on the roster as a contractor. Their shifts and work before it are not judged under youth protection either.",
           "confirm": "Record assessment",
           "description": "The youth protection limits do not judge External Contractors. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the engagement period or the birthday changes.",
           "documented": "Assessment recorded",

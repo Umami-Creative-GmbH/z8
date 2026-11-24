@@ -449,6 +449,8 @@
         "minorContractors": {
           "acknowledge": "Einschätzung erfassen…",
           "acknowledged": "Einschätzung erfasst",
+          "afterEnd": "Die Beauftragung ist beendet, die Person ist aber weiterhin als Externer Dienstleister erfasst. Ihre Schichten und Arbeit danach werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
+          "beforeStart": "Die Beauftragung hat noch nicht begonnen, die Person ist aber bereits als Externer Dienstleister erfasst. Ihre Schichten und Arbeit davor werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
           "confirm": "Einschätzung erfassen",
           "description": "Die Grenzen des Jugendarbeitsschutzes gelten nicht für Externe Dienstleister. Das JArbSchG erfasst aber auch Minderjährige, deren Dienstleistungen der Arbeit von Beschäftigten ähnlich sind (§ 1 Abs. 1 Nr. 3 JArbSchG). Prüfen Sie jede Beauftragung und erfassen Sie Ihre Einschätzung. Sie wird wieder offen, wenn sich der Beauftragungszeitraum oder das Geburtsdatum ändert.",
           "documented": "Einschätzung erfasst",

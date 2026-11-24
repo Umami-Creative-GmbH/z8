@@ -309,27 +309,45 @@ export function engagementKindOnDay(input: {
 	employeeEngagementKind?: EngagementKind;
 }): EngagementKind {
 	if (input.periods.length === 0) return input.employeeEngagementKind ?? "employee";
-	const { period } = resolveEmploymentPeriodForDay(
-		input.periods,
-		input.day,
-		input.employeeCalendarTimezone,
-	);
 	return (
-		period?.engagementKind ??
-		engagementKindOutsideEmployment(input.periods, input.day, input.employeeCalendarTimezone)
+		engagementPeriodDecidingDay(input.periods, input.day, input.employeeCalendarTimezone)?.period
+			.engagementKind ?? "employee"
 	);
 }
 
 /**
- * The engagement kind of a day no employment period covers (#1996): the kind of the stint
- * that ended last before the day, or, before the first stint, of the stint that starts
- * first after it. Only callers that found no period on the day use this.
+ * The stint whose engagement kind `engagementKindOnDay` gives an employee-local day (#1996): the
+ * one in force that day (`in_force`); outside every stint, the one that ended last before the day
+ * (`after_end`), or, before the first stint, the one that starts first after it (`before_start`).
+ * Null when no stint decides it (none recorded, or none with a known position).
  */
-function engagementKindOutsideEmployment(
+export function engagementPeriodDecidingDay(
 	periods: readonly EmploymentPeriodSnapshot[],
 	day: PlainDate,
 	employeeCalendarTimezone: string,
-): EngagementKind {
+): {
+	readonly period: EmploymentPeriodSnapshot;
+	readonly position: "in_force" | "after_end" | "before_start";
+} | null {
+	if (periods.length === 0) return null;
+	const { period } = resolveEmploymentPeriodForDay(periods, day, employeeCalendarTimezone);
+	if (period) return { period, position: "in_force" };
+	return periodOutsideEmployment(periods, day, employeeCalendarTimezone);
+}
+
+/**
+ * The stint deciding a day no employment period covers (#1996): the stint that ended last
+ * before the day, or, before the first stint, the stint that starts first after it. Only
+ * callers that found no period on the day use this.
+ */
+function periodOutsideEmployment(
+	periods: readonly EmploymentPeriodSnapshot[],
+	day: PlainDate,
+	employeeCalendarTimezone: string,
+): {
+	readonly period: EmploymentPeriodSnapshot;
+	readonly position: "after_end" | "before_start";
+} | null {
 	const dayStart = day.toZonedDateTime(employeeCalendarTimezone).toInstant();
 	let preceding: EmploymentPeriodSnapshot | null = null;
 	let following: EmploymentPeriodSnapshot | null = null;
@@ -351,7 +369,9 @@ function engagementKindOutsideEmployment(
 			following = period;
 		}
 	}
-	return (preceding ?? following)?.engagementKind ?? "employee";
+	if (preceding) return { period: preceding, position: "after_end" };
+	if (following) return { period: following, position: "before_start" };
+	return null;
 }
 
 /**
