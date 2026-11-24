@@ -219,17 +219,18 @@ function accumulate(
 	const ratio = Math.abs(net - elapsed) < 1 ? 1 : net / elapsed;
 	/**
 	 * The instant of a wall-clock minute of `day`: 00:00 is the day's start and 24:00 the next day's,
-	 * also when a DST change skips or repeats midnight; a skipped time moves forward by the gap.
+	 * also when a DST change skips or repeats midnight. A time clocks skip is the first instant after
+	 * the gap (its first existing minute); a repeated time is its first occurrence.
 	 */
-	const at = (day: PlainDate, minute: number) =>
-		minute <= 0
-			? day.toZonedDateTime(timezone).toInstant()
-			: minute >= 24 * 60
-				? day.add({ days: 1 }).toZonedDateTime(timezone).toInstant()
-				: day
-						.toPlainDateTime({ hour: Math.floor(minute / 60), minute: minute % 60 })
-						.toZonedDateTime(timezone)
-						.toInstant();
+	const at = (day: PlainDate, minute: number): Instant => {
+		if (minute <= 0) return day.toZonedDateTime(timezone).toInstant();
+		if (minute >= 24 * 60) return day.add({ days: 1 }).toZonedDateTime(timezone).toInstant();
+		const wallTime = day.toPlainDateTime({ hour: Math.floor(minute / 60), minute: minute % 60 });
+		const zoned = wallTime.toZonedDateTime(timezone, { disambiguation: "compatible" });
+		if (zoned.toPlainDateTime().equals(wallTime)) return zoned.toInstant();
+		// Skipped: "compatible" moved it forward by the gap; the gap ends at the transition before it.
+		return (zoned.getTimeZoneTransition("previous") ?? zoned).toInstant();
+	};
 
 	for (
 		let day = plainDateAt(interval.start, timezone);
@@ -238,12 +239,15 @@ function accumulate(
 	) {
 		const dayStart = day.toZonedDateTime(timezone).toInstant();
 		const nextDay = day.add({ days: 1 }).toZonedDateTime(timezone).toInstant();
+		// A well-formed daytime interval inside the day: a band whose edges fall in a DST gap can
+		// resolve end before start, and then the day has no daytime. Night is its complement, so no
+		// minute counts twice.
 		const daytimeStart = at(day, band.startMinute);
-		const daytimeEnd = at(day, band.endMinute);
-		const night =
-			overlapMilliseconds(interval.start, interval.end, dayStart, daytimeStart) +
-			overlapMilliseconds(interval.start, interval.end, daytimeEnd, nextDay);
+		const bandEnd = at(day, band.endMinute);
+		const daytimeEnd =
+			bandEnd.epochMilliseconds < daytimeStart.epochMilliseconds ? daytimeStart : bandEnd;
 		const daytime = overlapMilliseconds(interval.start, interval.end, daytimeStart, daytimeEnd);
+		const night = overlapMilliseconds(interval.start, interval.end, dayStart, nextDay) - daytime;
 		if (night + daytime === 0) continue;
 
 		const workingStudent = facts.isWorkingStudentDay(day.toString());

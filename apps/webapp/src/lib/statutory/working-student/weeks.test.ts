@@ -730,6 +730,49 @@ describe("working student weekday daytime band (#2017)", () => {
 		});
 	});
 
+	it("counts no minute twice when the whole band falls in the hour clocks skip", () => {
+		// Europe/Berlin skips Sunday 2026-03-29 02:00–03:00: a 02:15–03:00 band has no daytime.
+		const berlin = evaluateWithBand(
+			{ start: 2 * 60 + 15, end: 3 * 60 },
+			[work("2026-03-29", "01:00", "05:00")],
+			"2026-03-23",
+		);
+		expect(berlin.weeks.at(-1)).toMatchObject({
+			totalMinutes: 180,
+			coreMinutes: 0,
+			eveningWeekendMinutes: 180,
+		});
+
+		// Africa/Cairo skips Friday 2026-04-24 00:00–01:00: a 00:15–01:00 band has no daytime.
+		const cairo = evaluateWithBand(
+			{ start: 15, end: 60 },
+			[workIn("Africa/Cairo", "2026-04-23T22:00", "2026-04-24T03:00")],
+			"2026-04-20",
+			"Africa/Cairo",
+		);
+		expect(cairo.weeks.at(-1)).toMatchObject({
+			totalMinutes: 240,
+			coreMinutes: 0,
+			eveningWeekendMinutes: 240,
+		});
+	});
+
+	it("starts a band whose start clocks skip at the first minute after the gap", () => {
+		// Africa/Cairo skips Friday 2026-04-24 00:00–01:00: a 00:15–08:00 band starts at 01:00.
+		const { weeks } = evaluateWithBand(
+			{ start: 15, end: 8 * 60 },
+			[workIn("Africa/Cairo", "2026-04-24T01:00", "2026-04-24T02:00")],
+			"2026-04-20",
+			"Africa/Cairo",
+		);
+
+		expect(weeks.at(-1)).toMatchObject({
+			totalMinutes: 60,
+			coreMinutes: 60,
+			eveningWeekendMinutes: 0,
+		});
+	});
+
 	it("makes the lecture-week fingerprint depend on the band", () => {
 		const intervals = weekdays(W10, "09:00", "14:00");
 		const fingerprint = (band: { start: number; end: number }) =>

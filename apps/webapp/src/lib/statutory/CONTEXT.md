@@ -24,7 +24,9 @@ block, not a statutory baseline: the law names no hour and health insurers read 
 night" differently, so each organization sets the band its insurer and payroll advisor accept
 (Settings → Contracts → statutory limits, org admins only, audited with what it replaced).
 Default 06:00–18:00; whole quarter hours, start before end, 00:00 to 24:00 (24:00 is the next
-day's start, also across a DST change). Every working-student evaluation reads it with the other
+day's start, also across a DST change). An edge in the hour clocks skip starts or ends at the first
+minute after the gap, and a band wholly inside the gap leaves that day without daytime; the rest of
+the day is evening/night, so no minute counts twice. Every working-student evaluation reads it with the other
 preferences, loaded once per evaluation. It is part of the lecture-week input fingerprint, so
 changing it makes that week's acknowledgement stale (changing it back makes it current again), and
 it decides the week's core minutes, the finding's breach depth.
