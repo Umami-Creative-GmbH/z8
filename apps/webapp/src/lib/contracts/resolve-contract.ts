@@ -358,10 +358,10 @@ export function engagementPeriodDecidingDay(
  *
  * Stints ending (or starting) at the same instant tie. Among the tied stints, the tie goes to the
  * one `resolveEmploymentPeriodForDay` picks on the last day in force (or the first), so the
- * engagement kind does not flip at the boundary: after the end, a stint that had a day in force
- * before one that started at its end (zero length), then the later start, then the later record,
- * then the greater id; before the start, the stint still active at the end of its start day
- * first, then the later record, then the greater id.
+ * engagement kind does not flip at the boundary: after the end, the one the resolver picks on the
+ * last day before it (a zero-length stint ending at midnight is never picked; otherwise the later
+ * start, then the later record, then the greater id); before the start, the stint still active at
+ * the end of its start day first, then the later record, then the greater id.
  *
  * Known difference: payroll (`engagement/employee-time.ts`, `kindAt`) lets the contractor win
  * overlapping stints instead. The schema allows overlapping stints, but normal conversions
@@ -383,7 +383,9 @@ function periodOutsideEmployment(
 			const order = preceding ? compareInstants(period.endedAt, preceding.endedAt) : 1;
 			if (
 				order > 0 ||
-				(order === 0 && preceding && endsTieBefore(period, preceding.period, period.endedAt))
+				(order === 0 &&
+					preceding &&
+					endsTieBefore(period, preceding.period, period.endedAt, employeeCalendarTimezone))
 			) {
 				preceding = { period, endedAt: period.endedAt };
 			}
@@ -416,24 +418,27 @@ function periodOutsideEmployment(
 }
 
 /**
- * Whether `left` decides the days after an end it shares with `right`. A zero-length stint (it
- * starts at that end) was never in force, so the other decides the last day in force and keeps
- * deciding after it. Otherwise both are in force on the last day, alike at its end, and the
- * comparator settles it by start, record and id.
+ * Whether `left` decides the days after an end it shares with `right`: whichever of the two the
+ * resolver picks on the last day before that end keeps deciding after it. That settles a
+ * zero-length stint (it starts at the shared end) as the resolver does: never in force when the
+ * end is at the day's midnight, the pick of that day when the end falls during it. When the
+ * resolver covers neither (both zero-length at midnight), the comparator settles it by start,
+ * record and id.
  */
 function endsTieBefore(
 	left: EmploymentPeriodSnapshot,
 	right: EmploymentPeriodSnapshot,
 	sharedEnd: Instant,
+	employeeCalendarTimezone: string,
 ): boolean {
-	const leftInForce = hadDayInForce(left);
-	if (leftInForce !== hadDayInForce(right)) return leftInForce;
+	const lastDay = plainDateAt(sharedEnd.subtract({ nanoseconds: 1 }), employeeCalendarTimezone);
+	const { period } = resolveEmploymentPeriodForDay(
+		[left, right],
+		lastDay,
+		employeeCalendarTimezone,
+	);
+	if (period) return period === left;
 	return compareStintsForDay(left, right, sharedEnd) < 0;
-}
-
-function hadDayInForce(period: EmploymentPeriodSnapshot): boolean {
-	const start = period.startProvenance === "recorded" && period.startedAt ? period.startedAt : null;
-	return start === null || period.endedAt === null || compareInstants(start, period.endedAt) < 0;
 }
 
 /**

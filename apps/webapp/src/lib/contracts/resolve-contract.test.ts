@@ -11,7 +11,7 @@ import {
 	type PureResolveContractInput,
 	type WorkPolicySnapshot,
 } from "./index";
-import { engagementPeriodDecidingDay } from "./resolve-contract";
+import { type EmploymentPeriodSnapshot, engagementPeriodDecidingDay } from "./resolve-contract";
 
 function baseInput(overrides: Partial<PureResolveContractInput> = {}): PureResolveContractInput {
 	return {
@@ -583,7 +583,7 @@ describe("contracts pure helpers & resolver", () => {
 			createdAt: parseInstant(createdAt),
 			engagementKind,
 		});
-		const decide = (date: string, periods: ReturnType<typeof period>[]) => {
+		const decide = (date: string, periods: readonly EmploymentPeriodSnapshot[]) => {
 			const decided = engagementPeriodDecidingDay(periods, parsePlainDate(date), "UTC");
 			return decided && `${decided.position}:${decided.period.id}`;
 		};
@@ -634,6 +634,23 @@ describe("contracts pure helpers & resolver", () => {
 			expect(decide("2026-02-28", rows)).toBe("in_force:employee");
 			expect(decide("2026-03-01", rows)).toBe("after_end:employee");
 			expect(decide("2026-03-15", rows)).toBe("after_end:employee");
+		}
+
+		// The same zero-length stint at an end during the day is the resolver's pick of that day (it
+		// started last), so it keeps deciding the days after it.
+		const zeroLengthMidDay = zeroLengthAtEnd.map((row) =>
+			row.id === "employee"
+				? { ...row, endedAt: parseInstant("2026-03-01T12:00:00Z") }
+				: {
+						...row,
+						startedAt: parseInstant("2026-03-01T12:00:00Z"),
+						endedAt: parseInstant("2026-03-01T12:00:00Z"),
+					},
+		);
+		for (const rows of [zeroLengthMidDay, [...zeroLengthMidDay].reverse()]) {
+			expect(decide("2026-02-28", rows)).toBe("in_force:employee");
+			expect(decide("2026-03-01", rows)).toBe("in_force:contractor");
+			expect(decide("2026-03-02", rows)).toBe("after_end:contractor");
 		}
 
 		// Both end together during a day, so neither is active at its end: the later start still
